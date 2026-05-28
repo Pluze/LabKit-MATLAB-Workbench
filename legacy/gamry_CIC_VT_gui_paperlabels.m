@@ -1,11 +1,10 @@
 function varargout = gamry_CIC_VT_gui_paperlabels(varargin)
-%GAMRY_CIC_VT_GUI_PAPERLABELS Compatibility entry point for the legacy GUI.
+%GAMRY_CIC_VT_GUI_PAPERLABELS Legacy-directory compatibility shim.
 
-    root = fileparts(mfilename('fullpath'));
-    legacyDir = fullfile(root, 'legacy');
+    root = fileparts(fileparts(mfilename('fullpath')));
     paths = strsplit(path, pathsep);
-    if ~any(strcmp(paths, legacyDir))
-        addpath(legacyDir, '-end');
+    if ~any(strcmp(paths, root))
+        addpath(root);
     end
 
     if nargout > 0
