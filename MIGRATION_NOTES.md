@@ -165,6 +165,32 @@ Still local after current Phase 4 progress:
 - EIS overlay/export table construction.
 - CIC, VT resistance, and CV/CSC scientific analysis extraction.
 
+## Phase 5 — VT Resistance Analysis Extraction
+
+Phase 5 has started.
+
+Completed work:
+
+- Added `gamrywb.analysis.computeVTResistance`.
+- Added `gamrywb.analysis.selectSteadyWindow`.
+- Added `gamrywb.analysis.estimateBaseline`.
+- Updated `legacy/gamry_VT_resistance_gui_legacy.m` to call the shared VT resistance analysis function.
+
+Behavior preserved:
+
+- Metadata-first pulse detection and GUI pulse mode strings.
+- Full-pulse and center-60-percent steady windows.
+- Median current and voltage estimates.
+- Baseline-corrected dV/I and raw Vf/I modes.
+- Legacy result fields used by summary tables, plots, and CSV export.
+
+Still local after current Phase 5 progress:
+
+- VT resistance plotting and CSV export formatting.
+- CIC/voltage-transient scientific analysis.
+- CV/CSC scientific analysis.
+- EIS overlay/export logic.
+
 ---
 
 ## Legacy Function Inventory
@@ -185,6 +211,7 @@ Still local after current Phase 4 progress:
 | `emptyPulse` | CIC, VT resistance, multi-DTA overlay | `+gamrywb/+analysis/emptyPulse.m` | Extracted. Includes legacy and normalized fields. |
 | pulse-gap alignment | multi-DTA overlay | `+gamrywb/+analysis/alignChronoByPulseGap.m` | Extracted for blank-gap-centered alignment with first-sample fallback. Multi-DTA overlay uses shared implementation. |
 | `buildExportTable` | multi-DTA overlay, EIS overlay | `+gamrywb/+io/buildChronoOverlayExportTable.m`, future EIS export builder | Chrono overlay export extracted. EIS export remains deferred to Phase 8. Preserve CSV headers and interpolation behavior. |
+| VT resistance analysis | VT resistance GUI | `+gamrywb/+analysis/computeVTResistance.m` | Started Phase 5. Preserve median windows, baselines, dV/I mode, raw Vf/I mode, and legacy result fields. |
 | `valuesForAxis` | EIS overlay | future `+gamrywb/+analysis/valuesForEISAxis.m` | Deferred to Phase 8. Preserve all axis labels and log-axis behavior. |
 | CV/CSC integration helpers | CV/CSC GUI | future `+gamrywb/+analysis/computeCSC.m` family | Deferred to Phase 7. Preserve sign-split and scan-rate-derived time behavior. |
 

@@ -216,7 +216,7 @@ Do not start CIC extraction without either golden references or a clearly docume
 
 ## 9. VT Resistance Validation
 
-When VT resistance extraction begins, verify:
+VT resistance extraction has started. Verify:
 
 ```text
 phase current median

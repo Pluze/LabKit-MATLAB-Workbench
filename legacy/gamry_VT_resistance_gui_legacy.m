@@ -320,131 +320,19 @@ function gamry_VT_resistance_gui_legacy
     end
 
     function item = analyzeItem(item)
-        A = struct();
-        A.ok = false;
-        A.message = '';
-        A.windowMode = ddSteadyWindow.Value;
-        A.voltageMode = ddVoltageMode.Value;
+        opts = struct();
+        opts.windowMode = ddSteadyWindow.Value;
+        opts.voltageMode = ddVoltageMode.Value;
+        opts.pulseMode = ddPulseMode.Value;
 
-        [curve, okCurve, msgCurve] = gamrywb.data.getMainCurve(item.tables);
-        if ~okCurve
-            A.message = msgCurve;
-            item.analysis = A;
-            addLog(sprintf('%s: %s', item.name, msgCurve));
-            return;
-        end
-
-        t = gamrywb.data.getColumn(curve,'T');
-        Vf = gamrywb.data.getColumn(curve,'Vf');
-        Im = gamrywb.data.getColumn(curve,'Im');
-        pt = gamrywb.data.getColumn(curve,'Pt');
-        if isempty(pt)
-            pt = (0:numel(t)-1).';
-        end
-
-        valid = ~(isnan(t) | isnan(Vf) | isnan(Im));
-        t = t(valid);
-        Vf = Vf(valid);
-        Im = Im(valid);
-        pt = pt(valid);
-        if numel(t) < 5
-            A.message = 'Not enough valid T/Vf/Im points.';
-            item.analysis = A;
-            return;
-        end
-
-        A.t = t;
-        A.Vf = Vf;
-        A.Im = Im;
-        A.pt = pt;
-
-        [pulse, pulseMsg] = gamrywb.analysis.detectPulses(t, Im, item.meta, ddPulseMode.Value);
-        A.pulse = pulse;
-        A.detectMode = pulse.method;
-        A.detectMsg = pulseMsg;
-        if ~pulse.ok
-            A.message = pulseMsg;
-            item.analysis = A;
-            addLog(sprintf('%s: %s', item.name, pulseMsg));
-            return;
-        end
-
-        [cStart, cEnd] = steadyBounds(pulse.cath_start, pulse.cath_end, A.windowMode);
-        [aStart, aEnd] = steadyBounds(pulse.anod_start, pulse.anod_end, A.windowMode);
-        cathMask = t >= cStart & t <= cEnd;
-        anodMask = t >= aStart & t <= aEnd;
-        if nnz(cathMask) < 2 || nnz(anodMask) < 2
-            A.message = 'Steady windows are too short after pulse detection.';
-            item.analysis = A;
-            return;
-        end
-
-        A.cathMask = cathMask;
-        A.anodMask = anodMask;
-        A.cathSteadyStart = cStart;
-        A.cathSteadyEnd = cEnd;
-        A.anodSteadyStart = aStart;
-        A.anodSteadyEnd = aEnd;
-
-        A.Ic_est_A = median(Im(cathMask),'omitnan');
-        A.Ia_est_A = median(Im(anodMask),'omitnan');
-        A.Vc_ss_V = median(Vf(cathMask),'omitnan');
-        A.Va_ss_V = median(Vf(anodMask),'omitnan');
-
-        A.cathBaselineStart = pulse.pre_start;
-        A.cathBaselineEnd = pulse.pre_end;
-        A.anodBaselineStart = pulse.post_start;
-        A.anodBaselineEnd = pulse.post_end;
-        A.cathBaselineWindow_s = max(0, A.cathBaselineEnd - A.cathBaselineStart);
-        A.anodBaselineWindow_s = max(0, A.anodBaselineEnd - A.anodBaselineStart);
-
-        A.Vc_baseline_V = gamrywb.util.medianInWindow(t, Vf, pulse.pre_start, pulse.pre_end);
-        A.Va_baseline_V = gamrywb.util.medianInWindow(t, Vf, pulse.post_start, pulse.post_end);
-        if ~isfinite(A.Vc_baseline_V)
-            A.Vc_baseline_V = 0;
-        end
-        if ~isfinite(A.Va_baseline_V)
-            A.Va_baseline_V = chooseFinite(A.Vc_baseline_V, 0);
-        end
-
-        A.dVc_V = A.Vc_ss_V - A.Vc_baseline_V;
-        A.dVa_V = A.Va_ss_V - A.Va_baseline_V;
-        A.Rc_raw_ohm = safeDivide(A.Vc_ss_V, A.Ic_est_A);
-        A.Ra_raw_ohm = safeDivide(A.Va_ss_V, A.Ia_est_A);
-        A.Rc_dV_ohm = safeDivide(A.dVc_V, A.Ic_est_A);
-        A.Ra_dV_ohm = safeDivide(A.dVa_V, A.Ia_est_A);
-
-        if strcmp(A.voltageMode,'Raw Vf/I')
-            A.Rc_ohm = A.Rc_raw_ohm;
-            A.Ra_ohm = A.Ra_raw_ohm;
-        else
-            A.Rc_ohm = A.Rc_dV_ohm;
-            A.Ra_ohm = A.Ra_dV_ohm;
-        end
-        A.Rc_abs_ohm = abs(A.Rc_ohm);
-        A.Ra_abs_ohm = abs(A.Ra_ohm);
-        A.Ravg_abs_ohm = mean([A.Rc_abs_ohm, A.Ra_abs_ohm],'omitnan');
-
-        A.ok = isfinite(A.Ravg_abs_ohm);
+        A = gamrywb.analysis.computeVTResistance(item, opts);
         if A.ok
-            A.message = 'OK';
             addLog(sprintf('%s: Rc=%.6g ohm, Ra=%.6g ohm, Ravg=%.6g ohm', ...
                 item.name, A.Rc_abs_ohm, A.Ra_abs_ohm, A.Ravg_abs_ohm));
-        else
-            A.message = 'Resistance could not be computed; check current and pulse detection.';
+        elseif isfield(A, 'logOnFailure') && A.logOnFailure
             addLog(sprintf('%s: %s', item.name, A.message));
         end
         item.analysis = A;
-    end
-
-    function [t1, t2] = steadyBounds(p1, p2, modeText)
-        t1 = p1;
-        t2 = p2;
-        if strcmp(modeText,'Center 60% median') && isfinite(p1) && isfinite(p2) && p2 > p1
-            dt = p2 - p1;
-            t1 = p1 + 0.20 * dt;
-            t2 = p1 + 0.80 * dt;
-        end
     end
 
     function onSelectFile()
@@ -836,25 +724,6 @@ function out = ternary(cond, a, b)
         out = a;
     else
         out = b;
-    end
-end
-
-function v = chooseFinite(varargin)
-    v = NaN;
-    for k = 1:nargin
-        x = varargin{k};
-        if isscalar(x) && isfinite(x)
-            v = x;
-            return;
-        end
-    end
-end
-
-function q = safeDivide(a, b)
-    if ~isscalar(a) || ~isscalar(b) || ~isfinite(a) || ~isfinite(b) || abs(b) < eps
-        q = NaN;
-    else
-        q = a / b;
     end
 end
 
