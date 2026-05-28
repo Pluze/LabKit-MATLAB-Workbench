@@ -110,7 +110,7 @@ Parser behavior details live in `docs/file_format_notes.md`.
 
 ## Phase 3 — Pulse Detection Extraction
 
-Phase 3 has started.
+Phase 3 is mostly complete for shared parser/data/pulse migration.
 
 Completed work:
 
@@ -141,6 +141,30 @@ Known scope limitation:
 - Current pulse detection is legacy-compatible for single cathodic-first biphasic pulse protocols used by the existing GUIs.
 - More general multi-cycle, anodic-first, or arbitrary protocol support is not part of the current behavior-preserving refactor.
 
+## Phase 4 — Chrono Overlay / Export Extraction
+
+Phase 4 has started.
+
+Completed work:
+
+- Added `gamrywb.io.buildChronoOverlayExportTable`.
+- Added `gamrywb.io.exportTableCSV`.
+- Added `gamrywb.plot.plotChronoVTIT`.
+- Updated `legacy/gamry_multiDTA_plot_export_gui_legacy.m` to use the shared chrono overlay plotter and export table builder.
+
+Behavior preserved:
+
+- Selected X-axis behavior: Time (s), Time (ms), and Sample #.
+- Voltage/current overlay titles, labels, legend behavior, grid behavior, and line width setting.
+- CSV column names beginning with `TimeGapCenterAligned_s`, `V_*`, and `I_*`.
+- Merged aligned-time export axis and interpolation with `NaN` outside each source range.
+
+Still local after current Phase 4 progress:
+
+- Multi-DTA GUI file selection, duplicate skipping, UI callbacks, and log display.
+- EIS overlay/export table construction.
+- CIC, VT resistance, and CV/CSC scientific analysis extraction.
+
 ---
 
 ## Legacy Function Inventory
@@ -160,7 +184,7 @@ Known scope limitation:
 | `pulsesFromCurrent` | CIC, VT resistance, multi-DTA overlay | `+gamrywb/+analysis/pulsesFromCurrent.m` | Extracted. Preserve threshold and longest-segment behavior. |
 | `emptyPulse` | CIC, VT resistance, multi-DTA overlay | `+gamrywb/+analysis/emptyPulse.m` | Extracted. Includes legacy and normalized fields. |
 | pulse-gap alignment | multi-DTA overlay | `+gamrywb/+analysis/alignChronoByPulseGap.m` | Extracted for blank-gap-centered alignment with first-sample fallback. Multi-DTA overlay uses shared implementation. |
-| `buildExportTable` | multi-DTA overlay, EIS overlay | future `+gamrywb/+io` export builders | Deferred to Phase 4/8. Preserve CSV headers and interpolation behavior. |
+| `buildExportTable` | multi-DTA overlay, EIS overlay | `+gamrywb/+io/buildChronoOverlayExportTable.m`, future EIS export builder | Chrono overlay export extracted. EIS export remains deferred to Phase 8. Preserve CSV headers and interpolation behavior. |
 | `valuesForAxis` | EIS overlay | future `+gamrywb/+analysis/valuesForEISAxis.m` | Deferred to Phase 8. Preserve all axis labels and log-axis behavior. |
 | CV/CSC integration helpers | CV/CSC GUI | future `+gamrywb/+analysis/computeCSC.m` family | Deferred to Phase 7. Preserve sign-split and scan-rate-derived time behavior. |
 

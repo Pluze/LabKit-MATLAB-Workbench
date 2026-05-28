@@ -183,7 +183,8 @@ Current implementation status:
 - `+gamrywb/+io` contains initial chrono, EIS, and CV/CT parsers.
 - `+gamrywb/+data` contains initial table/column accessors and chrono item construction.
 - `+gamrywb/+analysis` contains initial pulse detection helpers and pulse-gap alignment.
-- `+gamrywb/+plot` and `+gamrywb/+ui` are future package areas.
+- `+gamrywb/+plot` contains the initial chrono VT/IT overlay plot helper.
+- `+gamrywb/+ui` is a future package area.
 - New thin apps and unified workbench GUI have not started.
 
 ---

@@ -87,8 +87,9 @@ Current status at the time of this documentation cleanup:
 Phase 0: complete
 Phase 1: complete
 Phase 2: mostly complete
-Phase 3: started
-Phase 4+: not started
+Phase 3: mostly complete
+Phase 4: started
+Phase 5+: not started
 ```
 
 Summary:
@@ -97,7 +98,8 @@ Summary:
 - Low-risk utilities have been extracted into `+gamrywb/+util`.
 - Chrono, EIS, and CV/CT DTA parsers have been extracted.
 - Data accessors such as `getMainCurve`, `getZCurve`, and `getColumn` have been extracted.
-- Shared pulse detection has been started and is used by the multi-DTA overlay/export legacy GUI.
+- Shared pulse detection is used by the multi-DTA overlay/export, VT resistance, and CIC legacy GUIs.
+- Chrono overlay plotting and CSV export table construction have started moving into package helpers.
 - VT resistance and CIC still retain local pulse detection until later Phase 3 work.
 - Full CIC, VT resistance, CV/CSC, and EIS analysis extraction has not started.
 
@@ -318,7 +320,12 @@ interpolation for files with different time grids
 CSV column naming
 ```
 
-Status: not started.
+Status: started.
+
+Current implementation note:
+
+- `legacy/gamry_multiDTA_plot_export_gui_legacy.m` now uses `gamrywb.plot.plotChronoVTIT` for overlay plotting.
+- `legacy/gamry_multiDTA_plot_export_gui_legacy.m` now uses `gamrywb.io.buildChronoOverlayExportTable` and `gamrywb.io.exportTableCSV` for CSV export.
 
 ---
 

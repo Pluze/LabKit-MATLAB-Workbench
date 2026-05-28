@@ -282,16 +282,8 @@ function gamry_multiDTA_plot_export_gui_legacy
     end
 
     function refreshPlots()
-        cla(axV);
-        cla(axI);
-
         if isempty(S.items)
-            title(axV, 'Voltage');
-            title(axI, 'Current');
-            xlabel(axV, 'Blank-Center Aligned Time (s)');
-            xlabel(axI, 'Blank-Center Aligned Time (s)');
-            ylabel(axV, 'Vf (V)');
-            ylabel(axI, 'Im (A)');
+            gamrywb.plot.plotChronoVTIT(axV, axI, struct([]), plotOptions());
             return;
         end
 
@@ -307,48 +299,12 @@ function gamry_multiDTA_plot_export_gui_legacy
 
         idx = find(selectedMask);
         if isempty(idx)
+            cla(axV);
+            cla(axI);
             return;
         end
 
-        cmap = lines(numel(idx));
-        hold(axV, 'on');
-        hold(axI, 'on');
-
-        labels = cell(1, numel(idx));
-        for k = 1:numel(idx)
-            item = S.items(idx(k));
-            x = chooseX(item, ddXAxis.Value);
-            plot(axV, x, item.Vf, 'LineWidth', edLineWidth.Value, 'Color', cmap(k, :));
-            plot(axI, x, item.Im, 'LineWidth', edLineWidth.Value, 'Color', cmap(k, :));
-            labels{k} = item.name;
-        end
-
-        hold(axV, 'off');
-        hold(axI, 'off');
-
-        xlabelText = axisLabel(ddXAxis.Value);
-        xlabel(axV, xlabelText);
-        xlabel(axI, xlabelText);
-        ylabel(axV, 'Vf (V)');
-        ylabel(axI, 'Im (A)');
-        title(axV, sprintf('Voltage Overlay (%d file%s)', numel(idx), ternary(numel(idx) == 1, '', 's')));
-        title(axI, sprintf('Current Overlay (%d file%s)', numel(idx), ternary(numel(idx) == 1, '', 's')));
-
-        if cbGrid.Value
-            grid(axV, 'on');
-            grid(axI, 'on');
-        else
-            grid(axV, 'off');
-            grid(axI, 'off');
-        end
-
-        if cbLegend.Value
-            legend(axV, labels, 'Interpreter', 'none', 'Location', 'best');
-            legend(axI, labels, 'Interpreter', 'none', 'Location', 'best');
-        else
-            legend(axV, 'off');
-            legend(axI, 'off');
-        end
+        gamrywb.plot.plotChronoVTIT(axV, axI, S.items(idx), plotOptions());
     end
 
     function onExportCSV(~, ~)
@@ -375,59 +331,18 @@ function gamry_multiDTA_plot_export_gui_legacy
         end
 
         items = S.items(idx);
-        T = buildExportTable(items);
+        T = gamrywb.io.buildChronoOverlayExportTable(items);
         out = fullfile(p, f);
-        writetable(T, out);
+        gamrywb.io.exportTableCSV(T, out);
         addLog(sprintf('Exported CSV: %s', out));
     end
 
-    function T = buildExportTable(items)
-        timeUnion = [];
-        for i = 1:numel(items)
-            timeUnion = [timeUnion; items(i).tAligned(:)]; %#ok<AGROW>
-        end
-        timeUnion = unique(timeUnion);
-        timeUnion = sort(timeUnion);
-
-        T = table(timeUnion, 'VariableNames', {'TimeGapCenterAligned_s'});
-        for i = 1:numel(items)
-            safeName = gamrywb.util.sanitizeFieldName(items(i).name);
-            vName = ['V_' safeName];
-            iName = ['I_' safeName];
-
-            if numel(items(i).tAligned) >= 2
-                vData = interp1(items(i).tAligned, items(i).Vf, timeUnion, 'linear', NaN);
-                iData = interp1(items(i).tAligned, items(i).Im, timeUnion, 'linear', NaN);
-            else
-                vData = NaN(size(timeUnion));
-                iData = NaN(size(timeUnion));
-            end
-
-            T.(vName) = vData;
-            T.(iName) = iData;
-        end
-    end
-
-    function x = chooseX(item, mode)
-        switch mode
-            case 'Time (ms)'
-                x = 1e3 * item.tAligned;
-            case 'Sample #'
-                x = item.pt;
-            otherwise
-                x = item.tAligned;
-        end
-    end
-
-    function txt = axisLabel(mode)
-        switch mode
-            case 'Time (ms)'
-                txt = 'Blank-Center Aligned Time (ms)';
-            case 'Sample #'
-                txt = 'Sample #';
-            otherwise
-                txt = 'Blank-Center Aligned Time (s)';
-        end
+    function opts = plotOptions()
+        opts = struct();
+        opts.xAxis = ddXAxis.Value;
+        opts.lineWidth = edLineWidth.Value;
+        opts.showGrid = cbGrid.Value;
+        opts.showLegend = cbLegend.Value;
     end
 
     function addLog(msg)
@@ -436,13 +351,5 @@ function gamry_multiDTA_plot_export_gui_legacy
         old{end+1} = sprintf('[%s] %s', ts, char(msg));
         txtLog.Value = old;
         drawnow limitrate
-    end
-end
-
-function txt = ternary(cond, a, b)
-    if cond
-        txt = a;
-    else
-        txt = b;
     end
 end

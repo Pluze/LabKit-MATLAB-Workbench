@@ -18,8 +18,10 @@ This project is still in an unreleased behavior-preserving refactor stage.
 - Added shared EIS DTA parser under `+gamrywb/+io/parseEISDTA.m`.
 - Added shared CV/CT DTA parser under `+gamrywb/+io/parseCVCTDTA.m`.
 - Added shared DTA discovery and data accessor helpers.
+- Added shared chrono overlay export table and CSV writer helpers.
 - Added initial shared pulse detection helpers under `+gamrywb/+analysis`.
 - Added shared chrono item construction and pulse-gap alignment helpers.
+- Added shared chrono VT/IT overlay plot helper.
 - Added named demo DTA fixtures for parser and pulse-detection tests.
 - Added MATLAB pure-function test runner under `scripts/run_matlab_tests.sh`.
 - Added documentation pages under `docs/` for architecture, data models, file formats, validation, and future features.
@@ -30,6 +32,7 @@ This project is still in an unreleased behavior-preserving refactor stage.
 - Replaced root-level legacy GUI files with compatibility wrappers that preserve original command names.
 - Updated selected legacy GUI implementations to call extracted parser and utility functions where behavior is intended to remain identical.
 - Updated `legacy/gamry_multiDTA_plot_export_gui_legacy.m` to use shared pulse detection, chrono item construction, and pulse-gap alignment.
+- Updated `legacy/gamry_multiDTA_plot_export_gui_legacy.m` to use shared chrono overlay plotting and CSV export table construction.
 - Updated `legacy/gamry_VT_resistance_gui_legacy.m` to use shared chrono parsing, DTA discovery, table/column accessors, pulse detection, and low-risk utilities.
 - Updated `legacy/gamry_CIC_VT_gui_paperlabels_legacy.m` to use shared chrono parsing, DTA discovery, table/column accessors, pulse detection, and low-risk utilities.
 - Reorganized Markdown documentation so README, roadmap, migration notes, AI instructions, and detailed docs have separate responsibilities.

@@ -35,7 +35,7 @@ Default tests should cover:
 - data accessors
 - pulse detection
 - future analysis functions
-- future export table builders
+- export table builders
 
 Default tests should not cover:
 

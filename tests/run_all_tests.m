@@ -7,7 +7,7 @@ function results = run_all_tests()
     startup_gamrywb();
 
     tests = {@test_util_functions, @test_phase1_smoke, @test_parseChronoDTA, @test_parseEISDTA, ...
-        @test_parseCVCTDTA, @test_detectPulses, @test_makeChronoItem};
+        @test_parseCVCTDTA, @test_detectPulses, @test_makeChronoItem, @test_chronoOverlayExport};
     results = struct('name', {}, 'passed', {}, 'message', {});
 
     for k = 1:numel(tests)
