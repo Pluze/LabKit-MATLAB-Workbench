@@ -119,7 +119,10 @@ Completed work:
 - Added `gamrywb.analysis.pulsesFromMetadata`.
 - Added `gamrywb.analysis.pulsesFromCurrent`.
 - Added `gamrywb.analysis.emptyPulse`.
+- Added `gamrywb.data.makeChronoItem`.
+- Added `gamrywb.analysis.alignChronoByPulseGap`.
 - Updated only `legacy/gamry_multiDTA_plot_export_gui_legacy.m` to use the extracted pulse detection.
+- Updated `legacy/gamry_multiDTA_plot_export_gui_legacy.m` to use the shared chrono item constructor and pulse-gap alignment helper.
 
 Current pulse struct note:
 
@@ -130,8 +133,7 @@ Still local after current Phase 3 progress:
 
 - VT resistance pulse detection call sites.
 - CIC pulse detection call sites.
-- ChronoItem creation.
-- Shared pulse-gap alignment helper.
+- VT resistance and CIC chrono item loading call sites.
 
 Known scope limitation:
 
@@ -151,10 +153,12 @@ Known scope limitation:
 | `getZCurve` | EIS overlay | `+gamrywb/+data/getZCurve.m` | Extracted. Preserve `ZCURVE` first, then Freq/Zreal/Zimag header fallback. |
 | `getColByName` | all GUI families | `+gamrywb/+data/getColumn.m` | Extracted as case-insensitive column lookup. |
 | `findDTAFilesRecursive` | CIC, VT resistance, EIS overlay, multi-DTA overlay | `+gamrywb/+io/findDTAFilesRecursive.m` | Extracted. Preserve recursive `.DTA`/`.dta` scan behavior. |
+| chrono item construction | multi-DTA overlay, VT resistance, CIC | `+gamrywb/+data/makeChronoItem.m` | Partially migrated. Multi-DTA overlay uses shared implementation; VT resistance and CIC still local. |
 | `detectPulses` | CIC, VT resistance, multi-DTA overlay | `+gamrywb/+analysis/detectPulses.m` | Partially migrated. Multi-DTA overlay uses shared implementation; VT resistance and CIC still local. |
 | `pulsesFromMetadata` | CIC, VT resistance, multi-DTA overlay | `+gamrywb/+analysis/pulsesFromMetadata.m` | Extracted. Preserve ISTEP/TSTEP and VSTEP/TSTEP interpretation. |
 | `pulsesFromCurrent` | CIC, VT resistance, multi-DTA overlay | `+gamrywb/+analysis/pulsesFromCurrent.m` | Extracted. Preserve threshold and longest-segment behavior. |
 | `emptyPulse` | CIC, VT resistance, multi-DTA overlay | `+gamrywb/+analysis/emptyPulse.m` | Extracted. Includes legacy and normalized fields. |
+| pulse-gap alignment | multi-DTA overlay | `+gamrywb/+analysis/alignChronoByPulseGap.m` | Extracted for blank-gap-centered alignment with first-sample fallback. Multi-DTA overlay uses shared implementation. |
 | `buildExportTable` | multi-DTA overlay, EIS overlay | future `+gamrywb/+io` export builders | Deferred to Phase 4/8. Preserve CSV headers and interpolation behavior. |
 | `valuesForAxis` | EIS overlay | future `+gamrywb/+analysis/valuesForEISAxis.m` | Deferred to Phase 8. Preserve all axis labels and log-axis behavior. |
 | CV/CSC integration helpers | CV/CSC GUI | future `+gamrywb/+analysis/computeCSC.m` family | Deferred to Phase 7. Preserve sign-split and scan-rate-derived time behavior. |

@@ -181,8 +181,8 @@ Current implementation status:
 - Legacy GUI implementations are preserved under `legacy/`.
 - `+gamrywb/+util` exists and contains shared low-risk helpers.
 - `+gamrywb/+io` contains initial chrono, EIS, and CV/CT parsers.
-- `+gamrywb/+data` contains initial table/column accessors.
-- `+gamrywb/+analysis` contains initial pulse detection helpers.
+- `+gamrywb/+data` contains initial table/column accessors and chrono item construction.
+- `+gamrywb/+analysis` contains initial pulse detection helpers and pulse-gap alignment.
 - `+gamrywb/+plot` and `+gamrywb/+ui` are future package areas.
 - New thin apps and unified workbench GUI have not started.
 

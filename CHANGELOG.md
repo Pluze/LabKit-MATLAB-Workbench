@@ -19,6 +19,7 @@ This project is still in an unreleased behavior-preserving refactor stage.
 - Added shared CV/CT DTA parser under `+gamrywb/+io/parseCVCTDTA.m`.
 - Added shared DTA discovery and data accessor helpers.
 - Added initial shared pulse detection helpers under `+gamrywb/+analysis`.
+- Added shared chrono item construction and pulse-gap alignment helpers.
 - Added named demo DTA fixtures for parser and pulse-detection tests.
 - Added MATLAB pure-function test runner under `scripts/run_matlab_tests.sh`.
 - Added documentation pages under `docs/` for architecture, data models, file formats, validation, and future features.
@@ -28,7 +29,7 @@ This project is still in an unreleased behavior-preserving refactor stage.
 - Moved preserved legacy GUI implementations under `legacy/`.
 - Replaced root-level legacy GUI files with compatibility wrappers that preserve original command names.
 - Updated selected legacy GUI implementations to call extracted parser and utility functions where behavior is intended to remain identical.
-- Updated `legacy/gamry_multiDTA_plot_export_gui_legacy.m` to use shared pulse detection.
+- Updated `legacy/gamry_multiDTA_plot_export_gui_legacy.m` to use shared pulse detection, chrono item construction, and pulse-gap alignment.
 - Reorganized Markdown documentation so README, roadmap, migration notes, AI instructions, and detailed docs have separate responsibilities.
 
 ### Preserved

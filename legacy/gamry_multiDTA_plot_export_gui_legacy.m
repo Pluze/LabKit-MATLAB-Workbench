@@ -225,72 +225,14 @@ function gamry_multiDTA_plot_export_gui_legacy
     end
 
     function item = loadOneDTA(filepath)
-        item = struct();
-        item.filepath = filepath;
-        item.name = gamrywb.util.shortName(filepath);
-        [item.meta, item.tables, item.logmsg] = gamrywb.io.parseChronoDTA(filepath);
-
-        [curve, ok, msg] = gamrywb.data.getMainCurve(item.tables);
-        if ~ok
-            error('%s', msg);
-        end
-
-        t = gamrywb.data.getColumn(curve, 'T');
-        Vf = gamrywb.data.getColumn(curve, 'Vf');
-        Im = gamrywb.data.getColumn(curve, 'Im');
-        pt = gamrywb.data.getColumn(curve, 'Pt');
-        if isempty(pt)
-            pt = (0:numel(t)-1).';
-        end
-
-        valid = isfinite(t) & isfinite(Vf) & isfinite(Im);
-        t = t(valid);
-        Vf = Vf(valid);
-        Im = Im(valid);
-        pt = pt(valid);
-
-        if numel(t) < 2
-            error('Not enough valid T/Vf/Im data points.');
-        end
-
-        [t, ia] = unique(t, 'stable');
-        Vf = Vf(ia);
-        Im = Im(ia);
-        pt = pt(ia);
-
-        item.curve = curve;
-        item.t = t(:);
-        item.Vf = Vf(:);
-        item.Im = Im(:);
-        item.pt = pt(:);
-        item.n = numel(t);
-        item.message = msg;
-        [item.pulse, pulseMsg] = gamrywb.analysis.detectPulses(item.t, item.Im, item.meta);
-        item.pulseMessage = pulseMsg;
-        if item.pulse.ok
-            alignTime = 0.5 * (item.pulse.gap_start + item.pulse.gap_end);
-            if isfinite(alignTime)
-                item.alignTime = alignTime;
-                item.tAligned = item.t - alignTime;
-                addLog(sprintf('%s: aligned to cathodic/anodic blank center at %.9g s (gap %.9g to %.9g s, %s).', ...
-                    item.name, alignTime, item.pulse.gap_start, item.pulse.gap_end, item.pulse.method));
-            else
-                item.alignTime = item.t(1);
-                item.tAligned = item.t - item.alignTime;
-                addLog(sprintf('%s: blank center not found, fallback to first sample (%s).', ...
-                    item.name, pulseMsg));
-            end
-        else
-            item.alignTime = item.t(1);
-            item.tAligned = item.t - item.alignTime;
-            addLog(sprintf('%s: pulse gap not found, fallback to first sample (%s).', ...
-                item.name, pulseMsg));
-        end
+        item = gamrywb.data.makeChronoItem(filepath);
+        [item, alignMsg] = gamrywb.analysis.alignChronoByPulseGap(item);
+        addLog(alignMsg);
 
         for ii = 1:numel(item.logmsg)
             addLog(item.logmsg{ii});
         end
-        addLog(sprintf('%s: %s', item.name, msg));
+        addLog(sprintf('%s: %s', item.name, item.message));
     end
 
     function onRemoveSelected(~, ~)

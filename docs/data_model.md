@@ -107,6 +107,10 @@ item.alignTime
 
 These fields should be preserved until the corresponding GUI migration explicitly changes them.
 
+Current implementation note:
+
+`gamrywb.data.makeChronoItem` now creates a chrono item with both legacy-compatible fields such as `t`, `Vf`, `Im`, `alignTime`, and `tAligned`, and unit-explicit fields such as `t_s`, `Vf_V`, `Im_A`, `alignTime_s`, and `tAligned_s`.
+
 ---
 
 ## 4. EISItem
@@ -166,7 +170,7 @@ item.logmsg = {};
 item.analysis = struct();
 ```
 
-Current parser note:
+Parser note:
 
 `gamrywb.io.parseCVCTDTA` currently returns scan rate, curves, and log messages. A full `makeCVItem` wrapper is planned for a later phase.
 
