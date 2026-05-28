@@ -31,6 +31,7 @@ Current summary:
 - VT resistance analysis is package-backed.
 - CIC / voltage-transient analysis is package-backed.
 - CV/CT charge and CSC analysis are package-backed.
+- CV/CT selected-column access and plotting are package-backed.
 - EIS overlay/export extraction has not started.
 
 ---
@@ -194,7 +195,7 @@ Behavior preserved:
 Still local after current Phase 5 progress:
 
 - VT resistance plotting and CSV export formatting.
-- CV/CSC plotting/export formatting.
+- CV/CSC extraction, which was handled in later Phase 7 work.
 - EIS overlay/export logic.
 
 ## Phase 6 — CIC / Voltage Transient Analysis Extraction
@@ -223,7 +224,7 @@ Behavior preserved:
 Still local after current Phase 6 progress:
 
 - CIC plotting and CSV export formatting.
-- CV/CSC plotting/export formatting.
+- CV/CSC extraction, which was handled in later Phase 7 work.
 - EIS overlay/export logic.
 
 ## Phase 7 — CV / CSC Analysis Extraction
@@ -236,7 +237,10 @@ Completed work:
 - Added `gamrywb.analysis.computeCVCharge`.
 - Added `gamrywb.analysis.computeCSC`.
 - Added a private shared sign-split CV/CT integration helper.
+- Added `gamrywb.data.getCurveXY`.
+- Added `gamrywb.plot.plotCVCT`.
 - Updated `legacy/gamry_CV_CSC_dta_gui_legacy.m` to call the shared CSC analysis function.
+- Updated `legacy/gamry_CV_CSC_dta_gui_legacy.m` to use the shared selected-column plot helper.
 
 Behavior preserved:
 
@@ -247,12 +251,12 @@ Behavior preserved:
 - CV charge uses `abs(dV) / scanRate`, not direct `trapz(V, I)`.
 - Full mode remains cathodic plus anodic charge.
 - Area normalization remains `1e3 * Q / area_cm2` in mC/cm^2.
-- Legacy GUI status text, result formatting, and trim plotting behavior remain owned by the GUI.
+- Legacy GUI status text, result formatting, and trim overlay timing/color behavior remain owned by the GUI.
+- Selected-column plotting preserves exact-case column selection, NaN row filtering, titles, labels, grid setting, hold behavior, and line width.
 
 Still local after current Phase 7 progress:
 
-- CV/CSC plot helper extraction.
-- CV/CSC export table construction.
+- CV/CSC export table construction, once a batch/session export workflow exists.
 - EIS overlay/export logic.
 
 ---
@@ -267,6 +271,7 @@ Still local after current Phase 7 progress:
 | `getMainCurve` | CIC, VT resistance, multi-DTA overlay | `+gamrywb/+data/getMainCurve.m` | Extracted. Preserve preference for `CURVE`/`CURVE1`, then fallback to T/Vf/Im headers. |
 | `getZCurve` | EIS overlay | `+gamrywb/+data/getZCurve.m` | Extracted. Preserve `ZCURVE` first, then Freq/Zreal/Zimag header fallback. |
 | `getColByName` | all GUI families | `+gamrywb/+data/getColumn.m` | Extracted as case-insensitive column lookup. |
+| CV/CT selected X/Y access | CV/CSC GUI | `+gamrywb/+data/getCurveXY.m` | Extracted. Preserve exact-case selection and NaN row filtering. |
 | `findDTAFilesRecursive` | CIC, VT resistance, EIS overlay, multi-DTA overlay | `+gamrywb/+io/findDTAFilesRecursive.m` | Extracted. Preserve recursive `.DTA`/`.dta` scan behavior. |
 | chrono item construction | multi-DTA overlay, VT resistance, CIC | `+gamrywb/+data/makeChronoItem.m` | Multi-DTA overlay uses shared implementation. VT resistance and CIC use shared parsing/pulse helpers while preserving GUI failure handling. |
 | `detectPulses` | CIC, VT resistance, multi-DTA overlay | `+gamrywb/+analysis/detectPulses.m` | Migrated for multi-DTA overlay, VT resistance, and CIC. |
@@ -279,6 +284,7 @@ Still local after current Phase 7 progress:
 | CIC / voltage-transient analysis | CIC GUI | `+gamrywb/+analysis/computeCIC.m` and related helpers | Started Phase 6. Preserve Emc/Ema, injected charge, CIC normalization, safety classification, and legacy result fields. |
 | `valuesForAxis` | EIS overlay | future `+gamrywb/+analysis/valuesForEISAxis.m` | Deferred to Phase 8. Preserve all axis labels and log-axis behavior. |
 | CV/CSC integration helpers | CV/CSC GUI | `+gamrywb/+analysis/computeCTCharge.m`, `computeCVCharge.m`, `computeCSC.m` | Started Phase 7. Preserve sign-split, zero-crossing handling, and scan-rate-derived time behavior. |
+| CV/CT selected-column plotting | CV/CSC GUI | `+gamrywb/+plot/plotCVCT.m` | Extracted. Preserve title, labels, grid, hold, and line width behavior. |
 
 ---
 
@@ -381,7 +387,7 @@ Multi-DTA overlay/export must preserve:
 1. Parser implementations still duplicate some table-reading internals. This is acceptable during behavior-preserving extraction; deeper parser unification should wait until downstream behavior is verified.
 2. Shared pulse detection currently targets the legacy single cathodic-first biphasic use case. General protocol support should be treated as a future feature, not a refactor requirement.
 3. Existing tests validate extracted pure functions with demo fixtures, but not every legacy GUI output has a golden reference yet.
-4. CV/CSC plotting/export helper extraction and EIS overlay/export extraction remain future work.
+4. CV/CSC export helper extraction and EIS overlay/export extraction remain future work.
 5. Interactive GUI behavior is not covered by the default batch test runner.
 
 ---

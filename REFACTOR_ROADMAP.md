@@ -106,7 +106,7 @@ Summary:
 - VT resistance analysis extraction has started.
 - CIC / voltage-transient analysis extraction has started.
 - VT resistance and CIC now call package-backed analysis functions while preserving legacy GUI display/export behavior.
-- CV/CT charge and CSC analysis extraction has started.
+- CV/CT charge, CSC analysis, selected-column access, and plotting extraction has started.
 - EIS overlay/export extraction has not started.
 
 Completed migration details live in `MIGRATION_NOTES.md`.
@@ -459,7 +459,8 @@ Current implementation note:
 
 - `legacy/gamry_CV_CSC_dta_gui_legacy.m` now calls `gamrywb.analysis.computeCSC`.
 - `computeCSC` uses `computeCTCharge` and `computeCVCharge` to preserve the legacy sign-split integration behavior.
-- CV/CSC plotting and export table helpers remain deferred.
+- `legacy/gamry_CV_CSC_dta_gui_legacy.m` now uses `gamrywb.data.getCurveXY` and `gamrywb.plot.plotCVCT`.
+- The legacy CV/CSC GUI currently has no CSV export path; `buildCSCResultsTable` remains deferred until a batch/session export workflow exists.
 
 ---
 

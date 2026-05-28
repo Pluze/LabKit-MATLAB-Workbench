@@ -398,41 +398,25 @@ function gamry_CV_CSC_dta_gui_legacy
     function plotTop()
         if isempty(S.curves), return; end
         c = S.curves(S.currentCurve);
-        [x,y,xn,yn] = getSelectedXY(c, ddTopX.Value, ddTopY.Value);
-        if isempty(x) || isempty(y)
+        opts = struct('holdPlot', cbTopHold.Value, 'showGrid', cbTopGrid.Value, 'lineWidth', 1.2);
+        info = gamrywb.plot.plotCVCT(axTop, c, ddTopX.Value, ddTopY.Value, opts);
+        if ~info.ok
             addLog('Top plot skipped: invalid X/Y.');
             return;
         end
-
-        if ~cbTopHold.Value
-            cla(axTop);
-        end
-        plot(axTop, x, y, 'LineWidth', 1.2);
-        grid(axTop, cbTopGrid.Value);
-        title(axTop, c.name, 'Interpreter','none');
-        xlabel(axTop, xn, 'Interpreter','none');
-        ylabel(axTop, yn, 'Interpreter','none');
-        addLog(sprintf('Top plot: %s vs %s, n=%d', yn, xn, numel(x)));
+        addLog(sprintf('Top plot: %s vs %s, n=%d', info.yName, info.xName, numel(info.x)));
     end
 
     function plotBottom()
         if isempty(S.curves), return; end
         c = S.curves(S.currentCurve);
-        [x,y,xn,yn] = getSelectedXY(c, ddBotX.Value, ddBotY.Value);
-        if isempty(x) || isempty(y)
+        opts = struct('holdPlot', cbBotHold.Value, 'showGrid', cbBotGrid.Value, 'lineWidth', 1.2);
+        info = gamrywb.plot.plotCVCT(axBottom, c, ddBotX.Value, ddBotY.Value, opts);
+        if ~info.ok
             addLog('Bottom plot skipped: invalid X/Y.');
             return;
         end
-
-        if ~cbBotHold.Value
-            cla(axBottom);
-        end
-        plot(axBottom, x, y, 'LineWidth', 1.2);
-        grid(axBottom, cbBotGrid.Value);
-        title(axBottom, c.name, 'Interpreter','none');
-        xlabel(axBottom, xn, 'Interpreter','none');
-        ylabel(axBottom, yn, 'Interpreter','none');
-        addLog(sprintf('Bottom plot: %s vs %s, n=%d', yn, xn, numel(x)));
+        addLog(sprintf('Bottom plot: %s vs %s, n=%d', info.yName, info.xName, numel(info.x)));
     end
 
     function refreshCompare()
@@ -474,7 +458,7 @@ function gamry_CV_CSC_dta_gui_legacy
         clearTrim(axBottom);
 
         if cbTopTrim.Value && strcmp(ddTopY.Value,'Im')
-            [xTop, ~, ~, ~] = getSelectedXY(c, ddTopX.Value, ddTopY.Value);
+            [xTop, ~, ~, ~] = gamrywb.data.getCurveXY(c, ddTopX.Value, ddTopY.Value);
             if numel(xTop) == numel(R.IcathDisp)
                 hold(axTop,'on');
                 plot(axTop, xTop, R.IcathDisp, 'Color',[0.1 0.6 0.1], ...
@@ -486,7 +470,7 @@ function gamry_CV_CSC_dta_gui_legacy
         end
 
         if cbBotTrim.Value && strcmp(ddBotY.Value,'Im')
-            [xBot, ~, ~, ~] = getSelectedXY(c, ddBotX.Value, ddBotY.Value);
+            [xBot, ~, ~, ~] = gamrywb.data.getCurveXY(c, ddBotX.Value, ddBotY.Value);
             if numel(xBot) == numel(R.IcathDisp)
                 hold(axBottom,'on');
                 plot(axBottom, xBot, R.IcathDisp, 'Color',[0.1 0.6 0.1], ...
@@ -531,27 +515,6 @@ end
 function clearTrim(ax)
     delete(findobj(ax,'Tag','trimCath'));
     delete(findobj(ax,'Tag','trimAnod'));
-end
-
-%% ===================== DTA parser =====================
-
-function [x,y,xname,yname] = getSelectedXY(curve, xsel, ysel)
-    x = []; y = []; xname = ''; yname = '';
-    if isempty(curve.headers) || isempty(curve.data), return; end
-
-    ix = find(strcmp(curve.headers, xsel), 1);
-    iy = find(strcmp(curve.headers, ysel), 1);
-    if isempty(ix) || isempty(iy), return; end
-
-    x = curve.data(:,ix);
-    y = curve.data(:,iy);
-
-    good = ~(isnan(x) | isnan(y));
-    x = x(good);
-    y = y(good);
-
-    xname = curve.headers{ix};
-    yname = curve.headers{iy};
 end
 
 function setDropdownValueIfExists(dd, valueText)

@@ -24,6 +24,7 @@ This project is still in an unreleased behavior-preserving refactor stage.
 - Added shared VT resistance analysis helpers under `+gamrywb/+analysis`.
 - Added shared CIC / voltage-transient analysis helpers under `+gamrywb/+analysis`.
 - Added shared CV/CT charge and CSC analysis helpers under `+gamrywb/+analysis`.
+- Added shared CV/CT selected-column access and plotting helpers.
 - Added shared chrono VT/IT overlay plot helper.
 - Added named demo DTA fixtures for parser and pulse-detection tests.
 - Added MATLAB pure-function test runner under `scripts/run_matlab_tests.sh`.
@@ -41,6 +42,7 @@ This project is still in an unreleased behavior-preserving refactor stage.
 - Updated `legacy/gamry_CIC_VT_gui_paperlabels_legacy.m` to use shared chrono parsing, DTA discovery, table/column accessors, pulse detection, and low-risk utilities.
 - Updated `legacy/gamry_CIC_VT_gui_paperlabels_legacy.m` to call shared CIC / voltage-transient analysis.
 - Updated `legacy/gamry_CV_CSC_dta_gui_legacy.m` to call shared CV/CT charge and CSC analysis.
+- Updated `legacy/gamry_CV_CSC_dta_gui_legacy.m` to use shared CV/CT selected-column plotting.
 - Reorganized Markdown documentation so README, roadmap, migration notes, AI instructions, and detailed docs have separate responsibilities.
 
 ### Preserved
@@ -55,7 +57,7 @@ This project is still in an unreleased behavior-preserving refactor stage.
 - EIS overlay/export logic has not been fully extracted into package functions.
 - CIC plotting/export formatting remains in the legacy GUI.
 - VT resistance plotting/export formatting remains in the legacy GUI.
-- CV/CSC plotting/export formatting remains in the legacy GUI.
+- CV/CSC export formatting remains deferred until a batch/session export workflow exists.
 - New thin apps under `apps/` have not been implemented.
 - Unified workbench GUI has not been started.
 - Golden reference tests for every major analysis output are not complete yet.

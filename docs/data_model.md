@@ -178,6 +178,10 @@ Analysis note:
 
 `gamrywb.analysis.computeCSC` currently accepts a parsed curve struct plus an option struct containing `scanRate`, `mode`, and `area_cm2`. It returns legacy-compatible charge, CSC, relative-difference, and trim-vector fields. A full CVCT item wrapper can later normalize this call shape without changing the analysis rules.
 
+Plot note:
+
+`gamrywb.data.getCurveXY` and `gamrywb.plot.plotCVCT` currently operate on the same parsed curve struct. They preserve the legacy GUI's exact-case column matching and NaN row filtering.
+
 ---
 
 ## 6. Pulse Struct

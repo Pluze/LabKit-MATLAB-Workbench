@@ -272,6 +272,9 @@ relative difference
 max |dt - |dV|/v|
 exact current zero-crossing sign split
 legacy failure messages
+selected X/Y exact-case behavior
+selected X/Y NaN filtering
+plot title, labels, line width, and invalid-selection handling
 ```
 
 ---

@@ -129,7 +129,7 @@ CV/CT DTA
 curve struct + scan rate
   ↓ computeCSC
 result struct
-  ↓ GUI fields and trim overlays
+  ↓ plotCVCT / GUI fields and trim overlays
 ```
 
 ---
@@ -190,9 +190,9 @@ Current implementation status:
 - Legacy GUI implementations are preserved under `legacy/`.
 - `+gamrywb/+util` exists and contains shared low-risk helpers.
 - `+gamrywb/+io` contains initial chrono, EIS, and CV/CT parsers.
-- `+gamrywb/+data` contains initial table/column accessors and chrono item construction.
+- `+gamrywb/+data` contains initial table/column accessors, CV/CT selected-column access, and chrono item construction.
 - `+gamrywb/+analysis` contains initial pulse detection helpers, pulse-gap alignment, VT resistance analysis, CIC analysis, and CV/CSC analysis.
-- `+gamrywb/+plot` contains the initial chrono VT/IT overlay plot helper.
+- `+gamrywb/+plot` contains the initial chrono VT/IT overlay plot helper and CV/CT selected-column plot helper.
 - `+gamrywb/+ui` is a future package area.
 - New thin apps and unified workbench GUI have not started.
 
