@@ -6,6 +6,17 @@ This phase establishes the refactor safety baseline and extracts only low-risk u
 
 The original GUI command names remain available from the repository root through compatibility wrappers. The preserved implementations live in `legacy/*_legacy.m`; `legacy/<original name>.m` files are shims for users who add `legacy/` directly to the MATLAB path.
 
+## Phase 2 Progress
+
+Started Phase 2 with the lowest-risk chrono parser migration:
+
+- Added `gamrywb.io.parseChronoDTA`.
+- Added `gamrywb.io.findDTAFilesRecursive`.
+- Added `gamrywb.data.getMainCurve`.
+- Added `gamrywb.data.getColumn`.
+- Updated only `legacy/gamry_multiDTA_plot_export_gui_legacy.m` to use these package functions.
+- Left pulse detection, alignment, plotting, CSV export, EIS parsing, and CV/CT parsing local for later Phase 2/3+ commits.
+
 ## Git History Requirements
 
 The refactor must preserve a useful local git history. Do not treat a large uncommitted working tree as finished work.
