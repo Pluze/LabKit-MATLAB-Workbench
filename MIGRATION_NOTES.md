@@ -16,7 +16,8 @@ Phase 3: mostly complete
 Phase 4: started
 Phase 5: started
 Phase 6: started
-Phase 7+: not started
+Phase 7: started
+Phase 8+: not started
 ```
 
 Current summary:
@@ -29,7 +30,8 @@ Current summary:
 - Chrono overlay plotting and CSV export table construction have started moving into package helpers.
 - VT resistance analysis is package-backed.
 - CIC / voltage-transient analysis is package-backed.
-- CV/CSC analysis and EIS overlay/export extraction have not started.
+- CV/CT charge and CSC analysis are package-backed.
+- EIS overlay/export extraction has not started.
 
 ---
 
@@ -168,7 +170,7 @@ Still local after current Phase 4 progress:
 
 - Multi-DTA GUI file selection, duplicate skipping, UI callbacks, and log display.
 - EIS overlay/export table construction.
-- CIC, VT resistance, and CV/CSC scientific analysis extraction.
+- CIC, VT resistance, and CV/CSC plotting/export workflows outside the chrono overlay GUI.
 
 ## Phase 5 — VT Resistance Analysis Extraction
 
@@ -192,7 +194,7 @@ Behavior preserved:
 Still local after current Phase 5 progress:
 
 - VT resistance plotting and CSV export formatting.
-- CV/CSC scientific analysis.
+- CV/CSC plotting/export formatting.
 - EIS overlay/export logic.
 
 ## Phase 6 — CIC / Voltage Transient Analysis Extraction
@@ -221,7 +223,36 @@ Behavior preserved:
 Still local after current Phase 6 progress:
 
 - CIC plotting and CSV export formatting.
-- CV/CSC scientific analysis.
+- CV/CSC plotting/export formatting.
+- EIS overlay/export logic.
+
+## Phase 7 — CV / CSC Analysis Extraction
+
+Phase 7 has started.
+
+Completed work:
+
+- Added `gamrywb.analysis.computeCTCharge`.
+- Added `gamrywb.analysis.computeCVCharge`.
+- Added `gamrywb.analysis.computeCSC`.
+- Added a private shared sign-split CV/CT integration helper.
+- Updated `legacy/gamry_CV_CSC_dta_gui_legacy.m` to call the shared CSC analysis function.
+
+Behavior preserved:
+
+- Cathodic charge integrates only negative-current portions.
+- Anodic charge integrates only positive-current portions.
+- Current zero-crossings split segments exactly by linear interpolation.
+- CT charge uses recorded time.
+- CV charge uses `abs(dV) / scanRate`, not direct `trapz(V, I)`.
+- Full mode remains cathodic plus anodic charge.
+- Area normalization remains `1e3 * Q / area_cm2` in mC/cm^2.
+- Legacy GUI status text, result formatting, and trim plotting behavior remain owned by the GUI.
+
+Still local after current Phase 7 progress:
+
+- CV/CSC plot helper extraction.
+- CV/CSC export table construction.
 - EIS overlay/export logic.
 
 ---
@@ -247,7 +278,7 @@ Still local after current Phase 6 progress:
 | VT resistance analysis | VT resistance GUI | `+gamrywb/+analysis/computeVTResistance.m` | Started Phase 5. Preserve median windows, baselines, dV/I mode, raw Vf/I mode, and legacy result fields. |
 | CIC / voltage-transient analysis | CIC GUI | `+gamrywb/+analysis/computeCIC.m` and related helpers | Started Phase 6. Preserve Emc/Ema, injected charge, CIC normalization, safety classification, and legacy result fields. |
 | `valuesForAxis` | EIS overlay | future `+gamrywb/+analysis/valuesForEISAxis.m` | Deferred to Phase 8. Preserve all axis labels and log-axis behavior. |
-| CV/CSC integration helpers | CV/CSC GUI | future `+gamrywb/+analysis/computeCSC.m` family | Deferred to Phase 7. Preserve sign-split and scan-rate-derived time behavior. |
+| CV/CSC integration helpers | CV/CSC GUI | `+gamrywb/+analysis/computeCTCharge.m`, `computeCVCharge.m`, `computeCSC.m` | Started Phase 7. Preserve sign-split, zero-crossing handling, and scan-rate-derived time behavior. |
 
 ---
 
@@ -350,7 +381,7 @@ Multi-DTA overlay/export must preserve:
 1. Parser implementations still duplicate some table-reading internals. This is acceptable during behavior-preserving extraction; deeper parser unification should wait until downstream behavior is verified.
 2. Shared pulse detection currently targets the legacy single cathodic-first biphasic use case. General protocol support should be treated as a future feature, not a refactor requirement.
 3. Existing tests validate extracted pure functions with demo fixtures, but not every legacy GUI output has a golden reference yet.
-4. CV/CSC analysis and EIS overlay/export extraction remain future work.
+4. CV/CSC plotting/export helper extraction and EIS overlay/export extraction remain future work.
 5. Interactive GUI behavior is not covered by the default batch test runner.
 
 ---

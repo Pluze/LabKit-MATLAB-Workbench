@@ -174,6 +174,10 @@ Parser note:
 
 `gamrywb.io.parseCVCTDTA` currently returns scan rate, curves, and log messages. A full `makeCVItem` wrapper is planned for a later phase.
 
+Analysis note:
+
+`gamrywb.analysis.computeCSC` currently accepts a parsed curve struct plus an option struct containing `scanRate`, `mode`, and `area_cm2`. It returns legacy-compatible charge, CSC, relative-difference, and trim-vector fields. A full CVCT item wrapper can later normalize this call shape without changing the analysis rules.
+
 ---
 
 ## 6. Pulse Struct

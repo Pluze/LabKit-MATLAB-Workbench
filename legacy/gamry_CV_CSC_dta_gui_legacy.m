@@ -446,72 +446,28 @@ function gamry_CV_CSC_dta_gui_legacy
         end
 
         c = S.curves(S.currentCurve);
-        if isnan(S.scanRate) || S.scanRate <= 0
-            txtQct.Value = 'scan rate missing';
-            txtQcv.Value = 'scan rate missing';
+        opts = struct();
+        opts.mode = ddMode.Value;
+        opts.scanRate = S.scanRate;
+        opts.area_cm2 = edArea.Value;
+        R = gamrywb.analysis.computeCSC(c, opts);
+
+        if ~R.ok
+            txtQct.Value = R.message;
+            txtQcv.Value = R.message;
             txtDiff.Value = '-';
             txtRel.Value = '-';
             txtDtErr.Value = '-';
-            addLog('Compare skipped: scan rate missing.');
+            if isfield(R, 'logMessage') && ~isempty(R.logMessage)
+                addLog(R.logMessage);
+            end
             return;
         end
 
-        if ~ismember('T',c.headers) || ~ismember('Vf',c.headers) || ~ismember('Im',c.headers)
-            txtQct.Value = 'Need T, Vf, Im';
-            txtQcv.Value = 'Need T, Vf, Im';
-            txtDiff.Value = '-';
-            txtRel.Value = '-';
-            txtDtErr.Value = '-';
-            addLog('Compare skipped: T/Vf/Im not all present.');
-            return;
-        end
-
-        t = getColByName(c,'T');
-        V = getColByName(c,'Vf');
-        I = getColByName(c,'Im');
-
-        good = ~(isnan(t) | isnan(V) | isnan(I));
-        t = t(good);
-        V = V(good);
-        I = I(good);
-
-        if numel(t) < 2
-            txtQct.Value = 'Not enough points';
-            txtQcv.Value = 'Not enough points';
-            txtDiff.Value = '-';
-            txtRel.Value = '-';
-            txtDtErr.Value = '-';
-            addLog('Compare skipped: not enough valid points.');
-            return;
-        end
-
-        area_cm2 = parsePositiveScalar(edArea.Value);
-        R = integrate_signsplit_fullcurve(t, V, I, S.scanRate);
-
-        switch ddMode.Value
-            case 'Cathodic'
-                Qct = R.QctCath;
-                Qcv = R.QcvCath;
-            case 'Anodic'
-                Qct = R.QctAnod;
-                Qcv = R.QcvAnod;
-            otherwise
-                Qct = R.QctCath + R.QctAnod;
-                Qcv = R.QcvCath + R.QcvAnod;
-        end
-
-        d = Qct - Qcv;
-        denom = max(abs(Qct), abs(Qcv));
-        if denom == 0
-            rel = 0;
-        else
-            rel = 100 * abs(d) / denom;
-        end
-
-        txtQct.Value = formatChargeAndCSC(Qct, area_cm2);
-        txtQcv.Value = formatChargeAndCSC(Qcv, area_cm2);
-        txtDiff.Value = formatChargeAndCSC(d, area_cm2);
-        txtRel.Value = sprintf('%.6f %%', rel);
+        txtQct.Value = formatChargeAndCSC(R.Qct, R.area_cm2);
+        txtQcv.Value = formatChargeAndCSC(R.Qcv, R.area_cm2);
+        txtDiff.Value = formatChargeAndCSC(R.diff_C, R.area_cm2);
+        txtRel.Value = sprintf('%.6f %%', R.rel_pct);
         txtDtErr.Value = sprintf('%.6e s', R.dtErr);
 
         clearTrim(axTop);
@@ -543,12 +499,12 @@ function gamry_CV_CSC_dta_gui_legacy
 
         addLog(sprintf(['Compare [%s]: Qct=%.6e C, Qcv=%.6e C, ', ...
             'rel=%.6f %%, maxdt=%.3e s'], ...
-            ddMode.Value, Qct, Qcv, rel, R.dtErr));
+            ddMode.Value, R.Qct, R.Qcv, R.rel_pct, R.dtErr));
 
-        if isnan(area_cm2)
+        if isnan(R.area_cm2)
             lblStatus.Text = 'Charge shown (area not set)';
         else
-            lblStatus.Text = sprintf('CSC normalized by %.6g cm^2', area_cm2);
+            lblStatus.Text = sprintf('CSC normalized by %.6g cm^2', R.area_cm2);
         end
     end
 
@@ -569,121 +525,6 @@ function s = formatChargeAndCSC(Q, area_cm2)
     else
         CSC_mC_cm2 = 1e3 * Q / area_cm2; % C -> mC/cm^2
         s = sprintf('%.12e C | %.12e mC/cm^2', Q, CSC_mC_cm2);
-    end
-end
-
-function x = parsePositiveScalar(txt)
-    if isnumeric(txt)
-        x = txt;
-    else
-        txt = strtrim(char(txt));
-        if isempty(txt)
-            x = NaN;
-            return;
-        end
-        x = str2double(txt);
-    end
-    if ~isscalar(x) || isnan(x) || ~isfinite(x) || x <= 0
-        x = NaN;
-    end
-end
-
-function R = integrate_signsplit_fullcurve(t, V, I, scanRate)
-% Integrate over the full curve with exact sign splitting at current zero-crossings.
-% Inputs are column vectors; curve is assumed already limited to the water window.
-% CT uses measured dt; CV uses dt = |dV| / scanRate.
-% Returns charges plus display vectors marking cathodic/anodic segments.
-
-    t = t(:);
-    V = V(:);
-    I = I(:);
-
-    n = numel(t);
-
-    R = struct();
-    R.QctCath = 0;
-    R.QctAnod = 0;
-    R.QcvCath = 0;
-    R.QcvAnod = 0;
-    R.dtErr = NaN;
-
-    R.IcathDisp = I;
-    R.IanodDisp = I;
-    R.IcathDisp(I >= 0) = NaN;
-    R.IanodDisp(I <= 0) = NaN;
-
-    dtErrList = [];
-
-    for k = 1:n-1
-        t1 = t(k);   t2 = t(k+1);
-        V1 = V(k);   V2 = V(k+1);
-        I1 = I(k);   I2 = I(k+1);
-
-        if any(~isfinite([t1 t2 V1 V2 I1 I2]))
-            continue;
-        end
-
-        bp = [0, 1];
-
-        % exact zero crossing of current
-        s0 = crossing_fraction(I1, I2, 0);
-        if ~isempty(s0)
-            bp(end+1) = s0; %#ok<AGROW>
-        end
-
-        bp = unique(sort(bp));
-
-        for j = 1:numel(bp)-1
-            sa = bp(j);
-            sb = bp(j+1);
-
-            ta = lerp(t1, t2, sa);
-            tb = lerp(t1, t2, sb);
-            Va = lerp(V1, V2, sa);
-            Vb = lerp(V1, V2, sb);
-            Ia = lerp(I1, I2, sa);
-            Ib = lerp(I1, I2, sb);
-
-            dt_act = tb - ta;
-            dt_cv = abs(Vb - Va) / scanRate;
-            dtErrList(end+1) = abs(dt_act - dt_cv); %#ok<AGROW>
-
-            Imid = 0.5 * (Ia + Ib);
-
-            if Imid < 0
-                qct = abs(trapz([ta tb],[Ia Ib]));
-                qcv = abs(trapz([0 dt_cv],[Ia Ib]));
-                R.QctCath = R.QctCath + qct;
-                R.QcvCath = R.QcvCath + qcv;
-
-            elseif Imid > 0
-                qct = trapz([ta tb],[Ia Ib]);
-                qcv = trapz([0 dt_cv],[Ia Ib]);
-                R.QctAnod = R.QctAnod + qct;
-                R.QcvAnod = R.QcvAnod + qcv;
-            end
-        end
-    end
-
-    if isempty(dtErrList)
-        R.dtErr = NaN;
-    else
-        R.dtErr = max(dtErrList);
-    end
-end
-
-function y = lerp(a,b,s)
-    y = a + s*(b-a);
-end
-
-function s = crossing_fraction(y1, y2, y0)
-    if ~isfinite(y1) || ~isfinite(y2) || y1 == y2
-        s = [];
-        return;
-    end
-    s = (y0 - y1) / (y2 - y1);
-    if ~(s > 0 && s < 1)
-        s = [];
     end
 end
 
@@ -711,15 +552,6 @@ function [x,y,xname,yname] = getSelectedXY(curve, xsel, ysel)
 
     xname = curve.headers{ix};
     yname = curve.headers{iy};
-end
-
-function col = getColByName(curve, name)
-    idx = find(strcmp(curve.headers, name), 1);
-    if isempty(idx)
-        col = [];
-    else
-        col = curve.data(:,idx);
-    end
 end
 
 function setDropdownValueIfExists(dd, valueText)

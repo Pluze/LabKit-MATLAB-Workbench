@@ -19,13 +19,14 @@ Completed or started work:
 - Phase 4 started: chrono overlay plotting and CSV export table construction are package-backed.
 - Phase 5 started: VT resistance analysis is package-backed.
 - Phase 6 started: CIC / voltage-transient analysis is package-backed.
+- Phase 7 started: CV/CT charge and CSC analysis are package-backed.
 - Legacy GUI entry points remain available through root-level compatibility wrappers.
 - Demo DTA fixtures and MATLAB pure-function tests are available.
 
 Not started yet:
 
-- Full CV/CSC analysis extraction.
 - Full EIS overlay/export extraction.
+- CV/CSC plotting/export helper extraction.
 - New thin apps under `apps/`.
 - Unified workbench GUI.
 

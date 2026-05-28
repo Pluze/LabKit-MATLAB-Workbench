@@ -115,9 +115,10 @@ For each task:
 2. Make a small, logical change set.
 3. Avoid mixing documentation cleanup, functional refactors, tests, and formatting-only changes in the same commit when possible.
 4. Run the relevant MATLAB tests when executable code changes.
-5. Review the diff for unrelated changes.
-6. Commit with a concise message.
-7. Do not force-push unless explicitly approved.
+5. Check and update the relevant docs whenever code changes alter refactor status, package APIs, test coverage, fixtures, validation evidence, or remaining gaps.
+6. Review the diff for unrelated changes.
+7. Commit with a concise message.
+8. Do not force-push unless explicitly approved.
 
 Preferred commit message examples:
 
@@ -142,6 +143,14 @@ Do not move to the next phase until the current phase has:
 - legacy GUI compatibility preserved
 
 If a requested task is documentation-only, do not edit MATLAB source files.
+
+When a task changes MATLAB source, tests, fixtures, or package structure, inspect and update the matching documentation before committing. At minimum, consider:
+
+- `README.md` for current status and user-facing commands.
+- `REFACTOR_ROADMAP.md` for phase status and remaining work.
+- `MIGRATION_NOTES.md` for completed migration details and preserved behavior.
+- `CHANGELOG.md` for maintainer-facing changes.
+- `docs/architecture.md`, `docs/data_model.md`, `docs/file_format_notes.md`, and `docs/validation_protocol.md` when architecture, data models, parsers, or validation coverage changes.
 
 ---
 

@@ -234,7 +234,7 @@ batch result table values
 
 ## 10. CV/CSC Validation
 
-When CV/CSC extraction begins, verify:
+CV/CSC extraction has started. Verify:
 
 ```text
 negative-current integration
@@ -259,6 +259,19 @@ The legacy rule is:
 ```text
 dt = abs(dV) / scanRate
 Qcv = integral I * dt
+```
+
+Current default tests include a CV fixture reference check for:
+
+```text
+Full, cathodic, and anodic modes
+CT charge
+CV charge
+CSC normalization
+relative difference
+max |dt - |dV|/v|
+exact current zero-crossing sign split
+legacy failure messages
 ```
 
 ---

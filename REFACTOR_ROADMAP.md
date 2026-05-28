@@ -91,7 +91,8 @@ Phase 3: mostly complete
 Phase 4: started
 Phase 5: started
 Phase 6: started
-Phase 7+: not started
+Phase 7: started
+Phase 8+: not started
 ```
 
 Summary:
@@ -105,7 +106,8 @@ Summary:
 - VT resistance analysis extraction has started.
 - CIC / voltage-transient analysis extraction has started.
 - VT resistance and CIC now call package-backed analysis functions while preserving legacy GUI display/export behavior.
-- CV/CSC analysis and EIS overlay/export extraction have not started.
+- CV/CT charge and CSC analysis extraction has started.
+- EIS overlay/export extraction has not started.
 
 Completed migration details live in `MIGRATION_NOTES.md`.
 
@@ -451,7 +453,13 @@ Do not compute CV charge as trapz(V, I) directly.
 CSC = Q / area_cm2 when area is provided.
 ```
 
-Status: not started.
+Status: started.
+
+Current implementation note:
+
+- `legacy/gamry_CV_CSC_dta_gui_legacy.m` now calls `gamrywb.analysis.computeCSC`.
+- `computeCSC` uses `computeCTCharge` and `computeCVCharge` to preserve the legacy sign-split integration behavior.
+- CV/CSC plotting and export table helpers remain deferred.
 
 ---
 

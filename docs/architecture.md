@@ -123,6 +123,15 @@ result struct
 GUI table and plots
 ```
 
+```text
+CV/CT DTA
+  ↓ parseCVCTDTA
+curve struct + scan rate
+  ↓ computeCSC
+result struct
+  ↓ GUI fields and trim overlays
+```
+
 ---
 
 ## 4. What Belongs in GUI Code
@@ -182,7 +191,7 @@ Current implementation status:
 - `+gamrywb/+util` exists and contains shared low-risk helpers.
 - `+gamrywb/+io` contains initial chrono, EIS, and CV/CT parsers.
 - `+gamrywb/+data` contains initial table/column accessors and chrono item construction.
-- `+gamrywb/+analysis` contains initial pulse detection helpers, pulse-gap alignment, VT resistance analysis, and CIC analysis.
+- `+gamrywb/+analysis` contains initial pulse detection helpers, pulse-gap alignment, VT resistance analysis, CIC analysis, and CV/CSC analysis.
 - `+gamrywb/+plot` contains the initial chrono VT/IT overlay plot helper.
 - `+gamrywb/+ui` is a future package area.
 - New thin apps and unified workbench GUI have not started.
