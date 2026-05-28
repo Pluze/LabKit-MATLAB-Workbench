@@ -30,6 +30,7 @@ This project is still in an unreleased behavior-preserving refactor stage.
 - Replaced root-level legacy GUI files with compatibility wrappers that preserve original command names.
 - Updated selected legacy GUI implementations to call extracted parser and utility functions where behavior is intended to remain identical.
 - Updated `legacy/gamry_multiDTA_plot_export_gui_legacy.m` to use shared pulse detection, chrono item construction, and pulse-gap alignment.
+- Updated `legacy/gamry_VT_resistance_gui_legacy.m` to use shared chrono parsing, DTA discovery, table/column accessors, pulse detection, and low-risk utilities.
 - Reorganized Markdown documentation so README, roadmap, migration notes, AI instructions, and detailed docs have separate responsibilities.
 
 ### Preserved

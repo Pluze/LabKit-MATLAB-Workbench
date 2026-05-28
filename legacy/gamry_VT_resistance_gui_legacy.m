@@ -254,7 +254,7 @@ function gamry_VT_resistance_gui_legacy
         if isequal(folder,0)
             return;
         end
-        filepaths = findDTAFilesRecursive(folder);
+        filepaths = gamrywb.io.findDTAFilesRecursive(folder);
         if isempty(filepaths)
             uialert(fig,'No .DTA files found in the selected folder.','Open folder');
             return;
@@ -300,7 +300,7 @@ function gamry_VT_resistance_gui_legacy
         item.logmsg = {};
         item.analysis = [];
 
-        [item.meta, item.tables, item.logmsg] = parseGamryChronoDTA(filepath);
+        [item.meta, item.tables, item.logmsg] = gamrywb.io.parseChronoDTA(filepath);
         for ii = 1:numel(item.logmsg)
             addLog(item.logmsg{ii});
         end
@@ -326,7 +326,7 @@ function gamry_VT_resistance_gui_legacy
         A.windowMode = ddSteadyWindow.Value;
         A.voltageMode = ddVoltageMode.Value;
 
-        [curve, okCurve, msgCurve] = getMainCurve(item.tables);
+        [curve, okCurve, msgCurve] = gamrywb.data.getMainCurve(item.tables);
         if ~okCurve
             A.message = msgCurve;
             item.analysis = A;
@@ -334,10 +334,10 @@ function gamry_VT_resistance_gui_legacy
             return;
         end
 
-        t = getColByName(curve,'T');
-        Vf = getColByName(curve,'Vf');
-        Im = getColByName(curve,'Im');
-        pt = getColByName(curve,'Pt');
+        t = gamrywb.data.getColumn(curve,'T');
+        Vf = gamrywb.data.getColumn(curve,'Vf');
+        Im = gamrywb.data.getColumn(curve,'Im');
+        pt = gamrywb.data.getColumn(curve,'Pt');
         if isempty(pt)
             pt = (0:numel(t)-1).';
         end
@@ -358,7 +358,7 @@ function gamry_VT_resistance_gui_legacy
         A.Im = Im;
         A.pt = pt;
 
-        [pulse, pulseMsg] = detectPulses(item.meta, t, Im, ddPulseMode.Value);
+        [pulse, pulseMsg] = gamrywb.analysis.detectPulses(t, Im, item.meta, ddPulseMode.Value);
         A.pulse = pulse;
         A.detectMode = pulse.method;
         A.detectMsg = pulseMsg;
@@ -398,8 +398,8 @@ function gamry_VT_resistance_gui_legacy
         A.cathBaselineWindow_s = max(0, A.cathBaselineEnd - A.cathBaselineStart);
         A.anodBaselineWindow_s = max(0, A.anodBaselineEnd - A.anodBaselineStart);
 
-        A.Vc_baseline_V = median_in_window(t, Vf, pulse.pre_start, pulse.pre_end);
-        A.Va_baseline_V = median_in_window(t, Vf, pulse.post_start, pulse.post_end);
+        A.Vc_baseline_V = gamrywb.util.medianInWindow(t, Vf, pulse.pre_start, pulse.pre_end);
+        A.Va_baseline_V = gamrywb.util.medianInWindow(t, Vf, pulse.post_start, pulse.post_end);
         if ~isfinite(A.Vc_baseline_V)
             A.Vc_baseline_V = 0;
         end
@@ -445,166 +445,6 @@ function gamry_VT_resistance_gui_legacy
             t1 = p1 + 0.20 * dt;
             t2 = p1 + 0.80 * dt;
         end
-    end
-
-    function [pulse, msg] = detectPulses(meta, t, Im, modeText)
-        pulse = emptyPulse();
-        msg = 'Pulse detection failed.';
-        switch modeText
-            case 'Metadata only'
-                [pulse, ~, msg] = pulsesFromMetadata(meta, t);
-            case 'Auto from Im only'
-                [pulse, ~, msg] = pulsesFromCurrent(t, Im);
-            otherwise
-                [pulse, okM, msgM] = pulsesFromMetadata(meta, t);
-                if okM
-                    msg = msgM;
-                    return;
-                end
-                [pulse, okA, msgA] = pulsesFromCurrent(t, Im);
-                if okA
-                    msg = sprintf('%s | fallback success: %s', msgM, msgA);
-                else
-                    msg = sprintf('%s | %s', msgM, msgA);
-                end
-        end
-    end
-
-    function [pulse, ok, msg] = pulsesFromMetadata(meta, t)
-        pulse = emptyPulse();
-        ok = false;
-        if isempty(meta) || ~isfield(meta,'steps') || isempty(meta.steps)
-            msg = 'Metadata pulse detection: no ISTEP/TSTEP or VSTEP/TSTEP steps found.';
-            return;
-        end
-
-        steps = meta.steps;
-        Ivals = [steps.I];
-        Vvals = [steps.V];
-        Tvals = [steps.T];
-        if all(~isfinite(Tvals))
-            msg = 'Metadata pulse detection: invalid step values.';
-            return;
-        end
-
-        stepMode = '';
-        stepVals = [];
-        if any(isfinite(Ivals))
-            stepVals = Ivals;
-            stepMode = 'current';
-        elseif any(isfinite(Vvals))
-            stepVals = Vvals;
-            stepMode = 'voltage';
-        else
-            msg = 'Metadata pulse detection: neither current nor voltage step values were found.';
-            return;
-        end
-
-        [minStep, idxCath] = min(stepVals);
-        [maxStep, idxAnod] = max(stepVals);
-        if ~isfinite(minStep) || ~isfinite(maxStep) || minStep >= 0 || maxStep <= 0
-            msg = sprintf('Metadata pulse detection: could not find both negative and positive %s steps.', stepMode);
-            return;
-        end
-        if idxAnod < idxCath
-            msg = sprintf('Metadata pulse detection: positive %s step appears before negative step.', stepMode);
-            return;
-        end
-
-        t0 = 0;
-        starts = zeros(size(Tvals));
-        ends = zeros(size(Tvals));
-        for k = 1:numel(Tvals)
-            starts(k) = t0;
-            ends(k) = t0 + Tvals(k);
-            t0 = ends(k);
-        end
-
-        pulse.ok = true;
-        pulse.method = ['metadata-' stepMode];
-        pulse.cath_start = starts(idxCath);
-        pulse.cath_end = ends(idxCath);
-        pulse.anod_start = starts(idxAnod);
-        pulse.anod_end = ends(idxAnod);
-        if strcmp(stepMode,'current')
-            pulse.Ic_nominal = Ivals(idxCath);
-            pulse.Ia_nominal = Ivals(idxAnod);
-        else
-            pulse.Ic_nominal = NaN;
-            pulse.Ia_nominal = NaN;
-        end
-
-        if idxCath > 1
-            pulse.pre_start = starts(idxCath-1);
-            pulse.pre_end = ends(idxCath-1);
-        else
-            pulse.pre_start = t(1);
-            pulse.pre_end = pulse.cath_start;
-        end
-
-        pulse.gap_start = pulse.cath_end;
-        pulse.gap_end = pulse.anod_start;
-        if idxAnod < numel(Tvals)
-            pulse.post_start = starts(idxAnod+1);
-            pulse.post_end = ends(idxAnod+1);
-        else
-            pulse.post_start = pulse.anod_end;
-            pulse.post_end = t(end);
-        end
-
-        ok = true;
-        msg = sprintf('Metadata pulse detection OK (%s-controlled): cath step %d, anod step %d.', ...
-            stepMode, idxCath, idxAnod);
-    end
-
-    function [pulse, ok, msg] = pulsesFromCurrent(t, Im)
-        pulse = emptyPulse();
-        ok = false;
-        Iabs = abs(Im);
-        thr = max(1e-12, 0.25 * max(Iabs));
-        cathSeg = contiguousSegments(Im <= -thr);
-        anodSeg = contiguousSegments(Im >= thr);
-        if isempty(cathSeg) || isempty(anodSeg)
-            msg = 'Auto pulse detection: could not find both cathodic and anodic segments.';
-            return;
-        end
-
-        cathLen = cathSeg(:,2) - cathSeg(:,1) + 1;
-        [~, ic] = max(cathLen);
-        cseg = cathSeg(ic,:);
-        asegCandidates = anodSeg(anodSeg(:,1) > cseg(2), :);
-        if isempty(asegCandidates)
-            msg = 'Auto pulse detection: found cathodic segment but no later anodic segment.';
-            return;
-        end
-        anodLen = asegCandidates(:,2) - asegCandidates(:,1) + 1;
-        [~, ia] = max(anodLen);
-        aseg = asegCandidates(ia,:);
-
-        pulse.ok = true;
-        pulse.method = 'auto-from-Im';
-        pulse.cath_start = t(cseg(1));
-        pulse.cath_end = t(cseg(2));
-        pulse.anod_start = t(aseg(1));
-        pulse.anod_end = t(aseg(2));
-        pulse.Ic_nominal = median(Im(cseg(1):cseg(2)),'omitnan');
-        pulse.Ia_nominal = median(Im(aseg(1):aseg(2)),'omitnan');
-        pulse.pre_start = t(1);
-        pulse.pre_end = pulse.cath_start;
-        pulse.gap_start = pulse.cath_end;
-        pulse.gap_end = pulse.anod_start;
-        pulse.post_start = pulse.anod_end;
-        pulse.post_end = t(end);
-
-        ok = true;
-        msg = sprintf('Auto pulse detection OK: cath [%d %d], anod [%d %d].', cseg(1), cseg(2), aseg(1), aseg(2));
-    end
-
-    function pulse = emptyPulse()
-        pulse = struct('ok',false,'method','-', ...
-            'cath_start',NaN,'cath_end',NaN,'anod_start',NaN,'anod_end',NaN, ...
-            'Ic_nominal',NaN,'Ia_nominal',NaN, ...
-            'pre_start',NaN,'pre_end',NaN,'gap_start',NaN,'gap_end',NaN,'post_start',NaN,'post_end',NaN);
     end
 
     function onSelectFile()
@@ -906,17 +746,17 @@ function gamry_VT_resistance_gui_legacy
                 end
                 nanv = NaN;
                 fprintf(fid,'"%s",%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,"%s","%s","%s"\n', ...
-                    csvEscape(it.name), nanv, nanv, nanv, nanv, nanv, nanv, nanv, nanv, ...
-                    nanv, nanv, nanv, '', 'failed', csvEscape(msg));
+                    gamrywb.util.csvEscape(it.name), nanv, nanv, nanv, nanv, nanv, nanv, nanv, nanv, ...
+                    nanv, nanv, nanv, '', 'failed', gamrywb.util.csvEscape(msg));
             else
                 A = it.analysis;
                 Rc_bc = abs(A.Rc_dV_ohm);
                 Ra_bc = abs(A.Ra_dV_ohm);
                 Ravg_bc = mean([Rc_bc, Ra_bc], 'omitnan');
                 fprintf(fid,'"%s",%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,"%s","%s","%s"\n', ...
-                    csvEscape(it.name), A.Ic_est_A, A.Ia_est_A, A.Vc_ss_V, A.Va_ss_V, ...
+                    gamrywb.util.csvEscape(it.name), A.Ic_est_A, A.Ia_est_A, A.Vc_ss_V, A.Va_ss_V, ...
                     A.Vc_baseline_V, A.Va_baseline_V, A.dVc_V, A.dVa_V, Rc_bc, Ra_bc, Ravg_bc, ...
-                    csvEscape(A.windowMode), csvEscape(A.detectMode), csvEscape(A.message));
+                    gamrywb.util.csvEscape(A.windowMode), gamrywb.util.csvEscape(A.detectMode), gamrywb.util.csvEscape(A.message));
             end
         end
         fclose(fid);
@@ -974,211 +814,6 @@ function gamry_VT_resistance_gui_legacy
     end
 end
 
-function [meta, tables, logmsg] = parseGamryChronoDTA(filepath)
-    txt = fileread(filepath);
-    txt = erase(txt, char(13));
-    lines = splitlines(string(txt));
-    lines = cellstr(lines);
-
-    meta = struct();
-    meta.filepath = filepath;
-    meta.area_cm2 = NaN;
-    meta.sampleTime_s = NaN;
-    meta.steps = struct('idx',{},'I',{},'V',{},'T',{});
-    tables = struct('name',{},'headers',{},'units',{},'data',{},'numericMask',{});
-    logmsg = {};
-
-    nLines = numel(lines);
-    logmsg{end+1} = sprintf('Parsing DTA: %s', filepath);
-
-    stepI = containers.Map('KeyType','int32','ValueType','double');
-    stepV = containers.Map('KeyType','int32','ValueType','double');
-    stepT = containers.Map('KeyType','int32','ValueType','double');
-
-    for i = 1:nLines
-        tok = splitTabs(lines{i});
-        if numel(tok) < 3
-            continue;
-        end
-        key = strtrim(tok{1});
-        valueStr = tok{3};
-        valueNum = str2double(valueStr);
-
-        switch upper(key)
-            case 'AREA'
-                if isfinite(valueNum), meta.area_cm2 = valueNum; end
-            case 'SAMPLETIME'
-                if isfinite(valueNum), meta.sampleTime_s = valueNum; end
-        end
-
-        rI = regexp(key,'^ISTEP(\d+)$','tokens','once');
-        if ~isempty(rI)
-            idx = int32(str2double(rI{1}));
-            if isfinite(valueNum), stepI(idx) = valueNum; end
-        end
-        rV = regexp(key,'^VSTEP(\d+)$','tokens','once');
-        if ~isempty(rV)
-            idx = int32(str2double(rV{1}));
-            if isfinite(valueNum), stepV(idx) = valueNum; end
-        end
-        rT = regexp(key,'^TSTEP(\d+)$','tokens','once');
-        if ~isempty(rT)
-            idx = int32(str2double(rT{1}));
-            if isfinite(valueNum), stepT(idx) = valueNum; end
-        end
-    end
-
-    allIdx = unique([cell2mat(keys(stepI)), cell2mat(keys(stepV)), cell2mat(keys(stepT))]);
-    allIdx = sort(allIdx);
-    for k = 1:numel(allIdx)
-        idx = allIdx(k);
-        I = NaN;
-        V = NaN;
-        T = NaN;
-        if isKey(stepI,idx), I = stepI(idx); end
-        if isKey(stepV,idx), V = stepV(idx); end
-        if isKey(stepT,idx), T = stepT(idx); end
-        meta.steps(end+1) = struct('idx',double(idx),'I',I,'V',V,'T',T); %#ok<AGROW>
-    end
-
-    if ~isempty(meta.steps)
-        if any(isfinite([meta.steps.I]))
-            logmsg{end+1} = sprintf('Found %d ISTEP/TSTEP step(s).', numel(meta.steps));
-        elseif any(isfinite([meta.steps.V]))
-            logmsg{end+1} = sprintf('Found %d VSTEP/TSTEP step(s).', numel(meta.steps));
-        else
-            logmsg{end+1} = sprintf('Found %d step(s) with timing only.', numel(meta.steps));
-        end
-    else
-        logmsg{end+1} = 'No ISTEP/TSTEP or VSTEP/TSTEP sequence found.';
-    end
-
-    i = 1;
-    while i <= nLines
-        tok = splitTabs(lines{i});
-        if numel(tok) >= 3 && strcmpi(tok{2},'TABLE')
-            name = tok{1};
-            iHeader = nextNonEmpty(lines, i+1);
-            iUnits = nextNonEmpty(lines, iHeader+1);
-            if isnan(iHeader) || isnan(iUnits)
-                i = i + 1;
-                continue;
-            end
-
-            headers = splitTabs(lines{iHeader});
-            units = splitTabs(lines{iUnits});
-            if isDataLike(units)
-                dataStart = iUnits;
-                units = repmat({''}, size(headers));
-            else
-                dataStart = nextNonEmpty(lines, iUnits+1);
-            end
-
-            raw = [];
-            j = dataStart;
-            while j <= nLines
-                tokj = splitTabs(lines{j});
-                if isempty(tokj)
-                    j = j + 1;
-                    continue;
-                end
-                if numel(tokj) >= 3 && strcmpi(tokj{2},'TABLE')
-                    break;
-                end
-                row = nan(1, numel(headers));
-                nKeep = min(numel(tokj), numel(headers));
-                anyNumeric = false;
-                for c = 1:nKeep
-                    v = str2double(tokj{c});
-                    if ~isnan(v)
-                        row(c) = v;
-                        anyNumeric = true;
-                    end
-                end
-                if anyNumeric
-                    raw(end+1,:) = row; %#ok<AGROW>
-                end
-                j = j + 1;
-            end
-
-            if ~isempty(raw)
-                numericMask = any(~isnan(raw),1);
-                tables(end+1).name = name; %#ok<AGROW>
-                tables(end).headers = headers;
-                tables(end).units = units;
-                tables(end).data = raw;
-                tables(end).numericMask = numericMask;
-                logmsg{end+1} = sprintf('Table %s parsed: %d rows x %d cols.', name, size(raw,1), size(raw,2));
-            else
-                logmsg{end+1} = sprintf('Table %s found but no numeric rows.', name);
-            end
-            i = j;
-        else
-            i = i + 1;
-        end
-    end
-
-    if isempty(tables)
-        error('No numeric TABLE section was parsed from this DTA file.');
-    end
-end
-
-function [curve, ok, msg] = getMainCurve(tables)
-    ok = false;
-    msg = 'Main transient table not found.';
-    curve = struct();
-    if isempty(tables)
-        return;
-    end
-
-    idxMain = [];
-    for i = 1:numel(tables)
-        nm = lower(strtrim(tables(i).name));
-        if strcmp(nm,'curve') || strcmp(nm,'curve1')
-            idxMain = i;
-            break;
-        end
-    end
-    if isempty(idxMain)
-        for i = 1:numel(tables)
-            h = lower(tables(i).headers);
-            if any(strcmp(h,'t')) && any(strcmp(h,'vf')) && any(strcmp(h,'im'))
-                idxMain = i;
-                break;
-            end
-        end
-    end
-    if isempty(idxMain)
-        return;
-    end
-    curve = tables(idxMain);
-    ok = true;
-    msg = sprintf('Using table: %s', curve.name);
-end
-
-function filepaths = findDTAFilesRecursive(rootDir)
-    entries = dir(rootDir);
-    filepaths = {};
-    for i = 1:numel(entries)
-        name = entries(i).name;
-        if strcmp(name,'.') || strcmp(name,'..')
-            continue;
-        end
-        fullpath = fullfile(entries(i).folder, name);
-        if entries(i).isdir
-            subpaths = findDTAFilesRecursive(fullpath);
-            if ~isempty(subpaths)
-                filepaths = [filepaths, subpaths]; %#ok<AGROW>
-            end
-        else
-            [~,~,ext] = fileparts(name);
-            if strcmpi(ext,'.dta')
-                filepaths{end+1} = fullpath; %#ok<AGROW>
-            end
-        end
-    end
-end
-
 function idx = nearestIndex(x, xq)
     [~, idx] = min(abs(x - xq));
 end
@@ -1194,27 +829,6 @@ function v = interp1_safe(x, y, xq)
         idx = nearestIndex(x, xq);
         v = y(idx);
     end
-end
-
-function m = median_in_window(t, y, t1, t2)
-    if ~isfinite(t1) || ~isfinite(t2) || t2 < t1
-        m = NaN;
-        return;
-    end
-    mask = t >= t1 & t <= t2;
-    if ~any(mask)
-        m = NaN;
-    else
-        m = median(y(mask),'omitnan');
-    end
-end
-
-function seg = contiguousSegments(mask)
-    mask = mask(:).';
-    d = diff([false, mask, false]);
-    starts = find(d == 1);
-    ends = find(d == -1) - 1;
-    seg = [starts(:), ends(:)];
 end
 
 function out = ternary(cond, a, b)
@@ -1375,58 +989,4 @@ function txt = formatDurationUs(dt_s)
     else
         txt = sprintf('%.3f us', 1e6 * dt_s);
     end
-end
-
-function s = csvEscape(x)
-    s = strrep(char(x), '"', '""');
-end
-
-function col = getColByName(tbl, name)
-    col = [];
-    if isempty(tbl) || ~isfield(tbl,'headers') || ~isfield(tbl,'data')
-        return;
-    end
-    headers = tbl.headers;
-    idx = find(strcmpi(headers, name), 1);
-    if isempty(idx)
-        return;
-    end
-    col = tbl.data(:,idx);
-end
-
-function tok = splitTabs(line)
-    if isstring(line)
-        line = char(line);
-    end
-    if isempty(strtrim(line))
-        tok = {};
-        return;
-    end
-    tok = regexp(line,'\t','split');
-    tok = cellfun(@strtrim, tok, 'UniformOutput', false);
-    tok = tok(~cellfun(@isempty, tok));
-end
-
-function idx = nextNonEmpty(lines, startIdx)
-    idx = NaN;
-    for k = startIdx:numel(lines)
-        if ~isempty(strtrim(lines{k}))
-            idx = k;
-            return;
-        end
-    end
-end
-
-function tf = isDataLike(tok)
-    tf = false;
-    if isempty(tok)
-        return;
-    end
-    numericCount = 0;
-    for i = 1:numel(tok)
-        if ~isnan(str2double(tok{i}))
-            numericCount = numericCount + 1;
-        end
-    end
-    tf = numericCount >= max(1, ceil(0.5*numel(tok)));
 end

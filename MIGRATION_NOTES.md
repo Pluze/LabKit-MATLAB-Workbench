@@ -123,6 +123,7 @@ Completed work:
 - Added `gamrywb.analysis.alignChronoByPulseGap`.
 - Updated only `legacy/gamry_multiDTA_plot_export_gui_legacy.m` to use the extracted pulse detection.
 - Updated `legacy/gamry_multiDTA_plot_export_gui_legacy.m` to use the shared chrono item constructor and pulse-gap alignment helper.
+- Updated `legacy/gamry_VT_resistance_gui_legacy.m` to use shared chrono parsing, DTA discovery, table/column accessors, pulse detection, median-window utility, and CSV escaping.
 
 Current pulse struct note:
 
@@ -131,9 +132,9 @@ Current pulse struct note:
 
 Still local after current Phase 3 progress:
 
-- VT resistance pulse detection call sites.
 - CIC pulse detection call sites.
-- VT resistance and CIC chrono item loading call sites.
+- CIC chrono item loading call sites.
+- VT resistance still owns resistance analysis, plotting, CSV export structure, and UI callbacks.
 
 Known scope limitation:
 
@@ -153,8 +154,8 @@ Known scope limitation:
 | `getZCurve` | EIS overlay | `+gamrywb/+data/getZCurve.m` | Extracted. Preserve `ZCURVE` first, then Freq/Zreal/Zimag header fallback. |
 | `getColByName` | all GUI families | `+gamrywb/+data/getColumn.m` | Extracted as case-insensitive column lookup. |
 | `findDTAFilesRecursive` | CIC, VT resistance, EIS overlay, multi-DTA overlay | `+gamrywb/+io/findDTAFilesRecursive.m` | Extracted. Preserve recursive `.DTA`/`.dta` scan behavior. |
-| chrono item construction | multi-DTA overlay, VT resistance, CIC | `+gamrywb/+data/makeChronoItem.m` | Partially migrated. Multi-DTA overlay uses shared implementation; VT resistance and CIC still local. |
-| `detectPulses` | CIC, VT resistance, multi-DTA overlay | `+gamrywb/+analysis/detectPulses.m` | Partially migrated. Multi-DTA overlay uses shared implementation; VT resistance and CIC still local. |
+| chrono item construction | multi-DTA overlay, VT resistance, CIC | `+gamrywb/+data/makeChronoItem.m` | Partially migrated. Multi-DTA overlay uses shared implementation; VT resistance still preserves its legacy failure-handling path; CIC still local. |
+| `detectPulses` | CIC, VT resistance, multi-DTA overlay | `+gamrywb/+analysis/detectPulses.m` | Partially migrated. Multi-DTA overlay and VT resistance use shared implementation; CIC still local. |
 | `pulsesFromMetadata` | CIC, VT resistance, multi-DTA overlay | `+gamrywb/+analysis/pulsesFromMetadata.m` | Extracted. Preserve ISTEP/TSTEP and VSTEP/TSTEP interpretation. |
 | `pulsesFromCurrent` | CIC, VT resistance, multi-DTA overlay | `+gamrywb/+analysis/pulsesFromCurrent.m` | Extracted. Preserve threshold and longest-segment behavior. |
 | `emptyPulse` | CIC, VT resistance, multi-DTA overlay | `+gamrywb/+analysis/emptyPulse.m` | Extracted. Includes legacy and normalized fields. |

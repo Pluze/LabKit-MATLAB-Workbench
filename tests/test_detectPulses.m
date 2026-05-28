@@ -54,6 +54,11 @@ function test_detectPulses()
     assert(abs(pulse.gap.center_s - 0.12) < 1e-12, 'Normalized gap center should be populated.');
     assert(abs(pulse.cath.current_A + 1e-3) < 1e-15, 'Normalized cathodic current should be populated.');
 
+    [uiDefaultPulse, uiDefaultMsg] = gamrywb.analysis.detectPulses(t, Im, meta, "Metadata first, then auto");
+    assert(uiDefaultPulse.ok, uiDefaultMsg);
+    assert(strcmp(uiDefaultPulse.method, 'metadata-current'), ...
+        'Legacy GUI default pulse mode text should map to metadata-first detection.');
+
     opts = gamrywb.analysis.defaultPulseOptions();
     opts.mode = "current_only";
     [autoPulse, autoMsg] = gamrywb.analysis.detectPulses(t, Im, meta, opts);
@@ -61,6 +66,11 @@ function test_detectPulses()
     assert(strcmp(autoPulse.method, 'auto-from-Im'), 'current_only mode should use current detection.');
     assert(abs(autoPulse.cath_start - 0.03) < 1e-12, 'Auto cathodic start should use first threshold sample.');
     assert(abs(autoPulse.anod_start - 0.14) < 1e-12, 'Auto anodic start should use first later positive segment.');
+
+    [uiAutoPulse, uiAutoMsg] = gamrywb.analysis.detectPulses(t, Im, meta, "Auto from Im only");
+    assert(uiAutoPulse.ok, uiAutoMsg);
+    assert(strcmp(uiAutoPulse.method, 'auto-from-Im'), ...
+        'Legacy GUI auto pulse mode text should map to current-only detection.');
 
     badMeta = struct('steps', struct('idx', {}, 'I', {}, 'V', {}, 'T', {}));
     [fallbackPulse, fallbackMsg] = gamrywb.analysis.detectPulses(t, Im, badMeta);
