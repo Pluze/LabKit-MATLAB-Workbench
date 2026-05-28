@@ -2,7 +2,7 @@ function test_parseCVCTDTA()
 %TEST_PARSECVCTDTA Verify extracted CV/CT parser behavior.
 
     root = fileparts(fileparts(mfilename('fullpath')));
-    demoFile = fullfile(root, 'demo', 'Pt.DTA');
+    demoFile = fullfile(root, 'demo', 'cv_cyclic_voltammetry_pt_reference.DTA');
     [demoScanRate, demoCurves, demoLog] = gamrywb.io.parseCVCTDTA(demoFile);
     assert(abs(demoScanRate - 9.99998e-2) < 1e-12, 'Demo SCANRATE should convert from mV/s to V/s.');
     assert(~isempty(demoCurves), 'Demo CV file should contain at least one curve.');

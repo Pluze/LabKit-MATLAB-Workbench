@@ -24,5 +24,6 @@ function test_phase1_smoke()
         assert(~isempty(which(names{i})), ['Wrapper does not resolve: ' names{i}]);
     end
 
-    assert(exist(fullfile(root, 'demo', 'Pt.DTA'), 'file') == 2, 'Demo fixture Pt.DTA is missing.');
+    assert(exist(fullfile(root, 'demo', 'cv_cyclic_voltammetry_pt_reference.DTA'), 'file') == 2, ...
+        'Demo fixture cv_cyclic_voltammetry_pt_reference.DTA is missing.');
 end

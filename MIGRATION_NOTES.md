@@ -22,6 +22,19 @@ Started Phase 2 with the lowest-risk chrono parser migration:
 - Updated only `legacy/gamry_CV_CSC_dta_gui_legacy.m` to use the extracted CV/CT parser.
 - Left pulse detection, alignment, plotting, CSV export, and analysis logic local for later Phase 3+ commits.
 
+## Phase 3 Progress
+
+Started Phase 3 with shared pulse detection:
+
+- Added `gamrywb.analysis.defaultPulseOptions`.
+- Added `gamrywb.analysis.detectPulses`.
+- Added `gamrywb.analysis.pulsesFromMetadata`.
+- Added `gamrywb.analysis.pulsesFromCurrent`.
+- Added `gamrywb.analysis.emptyPulse`.
+- Updated only `legacy/gamry_multiDTA_plot_export_gui_legacy.m` to use the extracted pulse detection.
+- The pulse struct currently keeps legacy flat fields such as `cath_start` and `gap_end` while also adding normalized `cath`, `anod`, and `gap` nested fields for later migration.
+- VT resistance and CIC still use their local pulse detection until their Phase 3 migration commits.
+
 ## Git History Requirements
 
 The refactor must preserve a useful local git history. Do not treat a large uncommitted working tree as finished work.
@@ -41,6 +54,17 @@ Current local MATLAB test command:
 ```bash
 scripts/run_matlab_tests.sh
 ```
+
+## Demo Fixture Naming
+
+Demo DTA files are named by test role so parser and analysis tests can choose the correct fixture without relying on ambiguous file names:
+
+- `chrono_chronopot_current_pulse_0p2ms.DTA`, `chrono_chronopot_current_pulse_1ms.DTA`, and `chrono_chronopot_current_pt_0p65ms.DTA`: `TAG MULTI_STEP_CHRONOPOT` / `TITLE Chronopotentiometry Scan` current-controlled chrono fixtures.
+- `chrono_chronoamp_voltage_pulse_0p2ms.DTA` and `chrono_chronoamp_voltage_pulse_1ms.DTA`: `TAG MULTI_STEP_CHRONOA` / `TITLE Chronoamperometry Scan` voltage-controlled chrono fixtures.
+- `cv_cyclic_voltammetry_pt_reference.DTA` and `cv_cyclic_voltammetry_pt_replicate.DTA`: `TAG CV` / `TITLE Cyclic Voltammetry` fixtures.
+- `eis_potentiostatic_zcurve.DTA`: `TAG EISPOT` / `TITLE Potentiostatic EIS` fixture.
+
+Tests should assert required named fixtures exist and may assert minimum fixture counts, but should not fail merely because additional DTA files are added to `demo/`.
 
 ## Legacy Function Inventory
 
