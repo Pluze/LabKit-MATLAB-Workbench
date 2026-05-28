@@ -1,12 +1,40 @@
 # Gamry Electrochemistry Workbench
 
-MATLAB workbench for Gamry electrochemistry DTA analysis GUIs.
+MATLAB workbench for refactoring and maintaining Gamry electrochemistry DTA analysis GUIs.
 
-This repository is being refactored from several standalone MATLAB GUI files into a package-backed workbench while preserving legacy behavior.
+This repository is being migrated from several standalone MATLAB GUI scripts into a reusable `+gamrywb` package while preserving legacy behavior.
+
+---
+
+## Current Status
+
+The project is in an early behavior-preserving refactor stage.
+
+Completed or started work:
+
+- Phase 0 complete: legacy functions inventoried and migration notes started.
+- Phase 1 complete: package skeleton and low-risk utilities added.
+- Phase 2 mostly complete: chrono, EIS, and CV/CT parser modules extracted.
+- Phase 3 started: shared pulse detection extracted and first legacy GUI migrated to it.
+- Legacy GUI entry points remain available through root-level compatibility wrappers.
+- Demo DTA fixtures and MATLAB pure-function tests are available.
+
+Not started yet:
+
+- Full CIC analysis extraction.
+- Full VT resistance analysis extraction.
+- Full CV/CSC analysis extraction.
+- Full EIS overlay/export extraction.
+- New thin apps under `apps/`.
+- Unified workbench GUI.
+
+The current goal is **same behavior, less duplicate code, clearer boundaries**.
+
+---
 
 ## Getting Started
 
-Run this from the repository root in MATLAB:
+From the repository root in MATLAB, run:
 
 ```matlab
 startup_gamrywb
@@ -22,24 +50,58 @@ gamry_VT_resistance_gui
 gamry_CIC_VT_gui_paperlabels
 ```
 
-## Refactor Status
+The root-level entry points forward to preserved implementations under `legacy/`.
 
-Phase 0-1 is in progress:
+---
 
-- Legacy GUI implementations are preserved under `legacy/`.
-- Root-level compatibility wrappers keep the original GUI command names available.
-- Low-risk shared utilities are available under `+gamrywb/+util/`.
-- Scientific analysis, DTA parsing, plotting, and CSV export behavior are intentionally unchanged.
+## Running Tests
 
-## Demo Fixtures
+From a macOS shell, run:
 
-The `demo/` folder contains named fixtures used by MATLAB tests:
+```bash
+scripts/run_matlab_tests.sh
+```
 
-- `chrono_chronopot_current_pulse_0p2ms.DTA`
-- `chrono_chronopot_current_pulse_1ms.DTA`
-- `chrono_chronopot_current_pt_0p65ms.DTA`
-- `chrono_chronoamp_voltage_pulse_0p2ms.DTA`
-- `chrono_chronoamp_voltage_pulse_1ms.DTA`
-- `cv_cyclic_voltammetry_pt_reference.DTA`
-- `cv_cyclic_voltammetry_pt_replicate.DTA`
-- `eis_potentiostatic_zcurve.DTA`
+The test runner attempts to find MATLAB through:
+
+1. `MATLAB_CMD`
+2. `matlab` on PATH
+3. `/Applications/MATLAB_*.app/bin/matlab`
+
+The default tests are intended for pure functions only. Do not run interactive GUI apps in MATLAB `-batch` mode.
+
+---
+
+## Repository Layout
+
+```text
++gamrywb/             Reusable MATLAB package modules
+legacy/               Preserved legacy GUI implementations and compatibility shims
+apps/                 Future thin app entry points
+demo/                 Named DTA fixtures for tests and examples
+tests/                MATLAB pure-function tests
+scripts/              Local test runner scripts
+docs/                 Architecture, data model, parser, validation, and future notes
+```
+
+---
+
+## Documentation Map
+
+- `AGENTS.md`: AI/Codex operating instructions.
+- `REFACTOR_ROADMAP.md`: active phase plan and definition of done.
+- `MIGRATION_NOTES.md`: completed migration history, behavior notes, and open risks.
+- `CHANGELOG.md`: concise user-facing change record.
+- `docs/architecture.md`: target layering and module boundaries.
+- `docs/data_model.md`: planned struct models and naming conventions.
+- `docs/file_format_notes.md`: Gamry DTA parser assumptions.
+- `docs/validation_protocol.md`: test and reference-output strategy.
+- `docs/future_features.md`: future features that should not be started before v1.0.
+
+---
+
+## Important Refactor Rule
+
+Do not change scientific algorithms during structural refactoring unless explicitly requested.
+
+Legacy behavior should remain the reference for parser outputs, pulse timing, CIC/CSC/resistance calculations, plotting behavior, and CSV export formats.
