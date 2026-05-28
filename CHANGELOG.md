@@ -18,11 +18,11 @@ This project is still in an unreleased behavior-preserving refactor stage.
 - Added shared EIS DTA parser under `+gamrywb/+io/parseEISDTA.m`.
 - Added shared CV/CT DTA parser under `+gamrywb/+io/parseCVCTDTA.m`.
 - Added shared DTA discovery and data accessor helpers.
-- Added shared chrono overlay export table and CSV writer helpers.
 - Added initial shared pulse detection helpers under `+gamrywb/+analysis`.
 - Added shared chrono item construction and pulse-gap alignment helpers.
-- Added shared VT resistance analysis helpers under `+gamrywb/+analysis`.
+- Added shared chrono overlay export table and CSV writer helpers.
 - Added shared chrono VT/IT overlay plot helper.
+- Added shared VT resistance analysis helpers under `+gamrywb/+analysis`.
 - Added named demo DTA fixtures for parser and pulse-detection tests.
 - Added MATLAB pure-function test runner under `scripts/run_matlab_tests.sh`.
 - Added documentation pages under `docs/` for architecture, data models, file formats, validation, and future features.
@@ -35,7 +35,7 @@ This project is still in an unreleased behavior-preserving refactor stage.
 - Updated `legacy/gamry_multiDTA_plot_export_gui_legacy.m` to use shared pulse detection, chrono item construction, and pulse-gap alignment.
 - Updated `legacy/gamry_multiDTA_plot_export_gui_legacy.m` to use shared chrono overlay plotting and CSV export table construction.
 - Updated `legacy/gamry_VT_resistance_gui_legacy.m` to use shared chrono parsing, DTA discovery, table/column accessors, pulse detection, and low-risk utilities.
-- Updated `legacy/gamry_VT_resistance_gui_legacy.m` to call shared VT resistance analysis.
+- Updated `legacy/gamry_VT_resistance_gui_legacy.m` to call shared VT resistance analysis while keeping plotting, table display, and CSV export formatting local.
 - Updated `legacy/gamry_CIC_VT_gui_paperlabels_legacy.m` to use shared chrono parsing, DTA discovery, table/column accessors, pulse detection, and low-risk utilities.
 - Reorganized Markdown documentation so README, roadmap, migration notes, AI instructions, and detailed docs have separate responsibilities.
 
@@ -49,7 +49,7 @@ This project is still in an unreleased behavior-preserving refactor stage.
 ### Known Gaps
 
 - CIC analysis has not been fully extracted into package functions.
-- VT resistance analysis has not been fully extracted into package functions.
+- VT resistance analysis extraction has started, but plotting, result-table display, and CSV export formatting remain GUI-local.
 - CV/CSC analysis has not been fully extracted into package functions.
 - EIS overlay/export logic has not been fully extracted into package functions.
 - New thin apps under `apps/` have not been implemented.
