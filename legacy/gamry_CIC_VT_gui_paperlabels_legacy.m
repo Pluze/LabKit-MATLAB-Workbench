@@ -429,147 +429,21 @@ function gamry_CIC_VT_gui_paperlabels_legacy
     end
 
     function item = analyzeItem(item)
-        A = struct();
-        A.ok = false;
-        A.message = '';
-        A.delay_s = edDelayUs.Value * 1e-6;
-        A.cathLimit = edCathLim.Value;
-        A.anodLimit = edAnodLim.Value;
-        A.area_cm2 = chooseArea(item.meta, edArea.Value);
-        A.usedMeasuredCurrent = cbUseMeasuredCurrent.Value;
+        opts = struct();
+        opts.delay_s = edDelayUs.Value * 1e-6;
+        opts.cathLimit = edCathLim.Value;
+        opts.anodLimit = edAnodLim.Value;
+        opts.areaOverride = edArea.Value;
+        opts.pulseMode = ddPulseMode.Value;
+        opts.usedMeasuredCurrent = cbUseMeasuredCurrent.Value;
 
-        [curve, okCurve, msgCurve] = gamrywb.data.getMainCurve(item.tables);
-        if ~okCurve
-            A.message = msgCurve;
-            item.analysis = A;
-            addLog(sprintf('%s: %s', item.name, msgCurve));
-            return;
-        end
-
-        t = gamrywb.data.getColumn(curve,'T');
-        Vf = gamrywb.data.getColumn(curve,'Vf');
-        Im = gamrywb.data.getColumn(curve,'Im');
-        pt = gamrywb.data.getColumn(curve,'Pt');
-        if isempty(pt)
-            pt = (0:numel(t)-1).';
-        end
-
-        valid = ~(isnan(t) | isnan(Vf) | isnan(Im));
-        t = t(valid); Vf = Vf(valid); Im = Im(valid); pt = pt(valid);
-        if numel(t) < 5
-            A.message = 'Not enough valid T/Vf/Im points.';
-            item.analysis = A;
-            return;
-        end
-
-        A.t = t;
-        A.Vf = Vf;
-        A.Im = Im;
-        A.pt = pt;
-        A.sample_dt = median(diff(t));
-        A.sample_dt_report = A.sample_dt;
-        A.ampEstimate_A = max(abs(Im));
-
-        [pulse, pulseMsg] = gamrywb.analysis.detectPulses(t, Im, item.meta, ddPulseMode.Value);
-        A.pulse = pulse;
-        A.detectMode = pulse.method;
-        A.detectMsg = pulseMsg;
-
-        if ~pulse.ok
-            A.message = pulseMsg;
-            item.analysis = A;
-            addLog(sprintf('%s: %s', item.name, pulseMsg));
-            return;
-        end
-
-        % Voltage evaluation times
-        A.t_emc = pulse.cath_end + A.delay_s;
-        A.t_ema = pulse.anod_end + A.delay_s;
-        A.emc_idx = gamrywb.util.nearestIndex(t, A.t_emc);
-        A.ema_idx = gamrywb.util.nearestIndex(t, A.t_ema);
-        A.Emc = interp1_safe(t, Vf, A.t_emc);
-        A.Ema = interp1_safe(t, Vf, A.t_ema);
-
-        % Optional supporting baseline values
-        A.Epre = gamrywb.util.medianInWindow(t, Vf, pulse.pre_start, pulse.pre_end);
-        A.Ebetween = gamrywb.util.medianInWindow(t, Vf, pulse.gap_start, pulse.gap_end);
-        A.Epost = gamrywb.util.medianInWindow(t, Vf, pulse.post_start, pulse.post_end);
-        [A.Eipp, A.baselineCathSource, A.baselineCathWindow] = chooseBaselineCandidate( ...
-            [A.Epre, A.Ebetween, A.Epost, 0], ...
-            {'pre-pulse median','interpulse median','post-pulse median','zero fallback'}, ...
-            [pulse.pre_start pulse.pre_end; pulse.gap_start pulse.gap_end; pulse.post_start pulse.post_end; NaN NaN]);
-        [A.Eipp_gap, A.baselineAnodSource, A.baselineAnodWindow] = chooseBaselineCandidate( ...
-            [A.Ebetween, A.Epre, A.Epost, A.Eipp], ...
-            {'interpulse median','pre-pulse median','post-pulse median','cathodic baseline fallback'}, ...
-            [pulse.gap_start pulse.gap_end; pulse.pre_start pulse.pre_end; pulse.post_start pulse.post_end; A.baselineCathWindow]);
-
-        % Time points used for paper-style annotations
-        A.tc_s = max(0, pulse.cath_end - pulse.cath_start);
-        A.ta_s = max(0, pulse.anod_end - pulse.anod_start);
-        A.tip_s = max(0, pulse.anod_start - pulse.cath_end);
-        A.t_conset = pulse.cath_start + A.delay_s;
-        A.t_aonset = pulse.anod_start + A.delay_s;
-        A.Vc_on = interp1_safe(t, Vf, A.t_conset);
-        A.Va_on = interp1_safe(t, Vf, A.t_aonset);
-        A.Va_cath_mag = abs(A.Eipp - A.Vc_on);
-        A.Va_anod_mag = abs(A.Eipp_gap - A.Va_on);
-
-        % Charges from pulse windows
-        cathMask = (t >= pulse.cath_start) & (t <= pulse.cath_end);
-        anodMask = (t >= pulse.anod_start) & (t <= pulse.anod_end);
-        A.cathMask = cathMask;
-        A.anodMask = anodMask;
-
-        if sum(cathMask) < 2 || sum(anodMask) < 2
-            A.message = 'Pulse windows too short after detection.';
-            item.analysis = A;
-            return;
-        end
-
-        A.Ic_est_A = median(Im(cathMask), 'omitnan');
-        A.Ia_est_A = median(Im(anodMask), 'omitnan');
-        if ~isfinite(A.Ic_est_A), A.Ic_est_A = pulse.Ic_nominal; end
-        if ~isfinite(A.Ia_est_A), A.Ia_est_A = pulse.Ia_nominal; end
-
-        if A.usedMeasuredCurrent
-            Qc = abs(trapz(t(cathMask), Im(cathMask)));
-            Qa = abs(trapz(t(anodMask), Im(anodMask)));
-        else
-            Qc = abs(pulse.Ic_nominal * (pulse.cath_end - pulse.cath_start));
-            Qa = abs(pulse.Ia_nominal * (pulse.anod_end - pulse.anod_start));
-        end
-        A.Qc_C = Qc;
-        A.Qa_C = Qa;
-        A.Qt_C = Qc + Qa;
-
-        if isfinite(A.area_cm2) && A.area_cm2 > 0
-            A.CICc_mCcm2 = 1e3 * A.Qc_C / A.area_cm2;
-            A.CICa_mCcm2 = 1e3 * A.Qa_C / A.area_cm2;
-            A.CICt_mCcm2 = 1e3 * A.Qt_C / A.area_cm2;
-        else
-            A.CICc_mCcm2 = NaN;
-            A.CICa_mCcm2 = NaN;
-            A.CICt_mCcm2 = NaN;
-        end
-
-        A.cathOK = A.Emc >= A.cathLimit;
-        A.anodOK = A.Ema <= A.anodLimit;
-        A.safe = A.cathOK && A.anodOK;
-
-        if A.safe
-            A.limitSide = 'safe';
-        elseif ~A.cathOK && ~A.anodOK
-            A.limitSide = 'both exceeded';
-        elseif ~A.cathOK
-            A.limitSide = 'cathodic exceeded';
-        else
-            A.limitSide = 'anodic exceeded';
-        end
-
-        A.ok = true;
-        A.message = 'OK';
+        A = gamrywb.analysis.computeCIC(item, opts);
         item.analysis = A;
-        addLog(sprintf('%s: Emc=%.6f V, Ema=%.6f V, safe=%d', item.name, A.Emc, A.Ema, A.safe));
+        if A.ok
+            addLog(sprintf('%s: Emc=%.6f V, Ema=%.6f V, safe=%d', item.name, A.Emc, A.Ema, A.safe));
+        elseif isfield(A, 'logOnFailure') && A.logOnFailure
+            addLog(sprintf('%s: %s', item.name, A.message));
+        end
     end
 
     function onSelectFile()
@@ -1002,17 +876,6 @@ end
 %% ========================================================================
 %% =============================== Utilities ===============================
 %% ========================================================================
-function v = chooseArea(meta, txtOverride)
-    v = gamrywb.util.parsePositiveScalar(txtOverride);
-    if ~isfinite(v)
-        if isfield(meta,'area_cm2') && isfinite(meta.area_cm2) && meta.area_cm2 > 0
-            v = meta.area_cm2;
-        else
-            v = NaN;
-        end
-    end
-end
-
 function v = interp1_safe(x, y, xq)
     if numel(x) < 2 || any(~isfinite([x(:); y(:)]))
         v = NaN;
@@ -1217,22 +1080,6 @@ function v = chooseFinite(varargin)
     for k = 1:nargin
         if isfinite(varargin{k})
             v = varargin{k};
-            return;
-        end
-    end
-end
-
-function [v, sourceLabel, window] = chooseBaselineCandidate(candidates, sourceLabels, windows)
-    v = NaN;
-    sourceLabel = 'unavailable';
-    window = [NaN NaN];
-    for k = 1:numel(candidates)
-        if isfinite(candidates(k))
-            v = candidates(k);
-            sourceLabel = sourceLabels{k};
-            if size(windows,1) >= k
-                window = windows(k,:);
-            end
             return;
         end
     end

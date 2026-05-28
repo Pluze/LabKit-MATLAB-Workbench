@@ -187,7 +187,35 @@ Behavior preserved:
 Still local after current Phase 5 progress:
 
 - VT resistance plotting and CSV export formatting.
-- CIC/voltage-transient scientific analysis.
+- CV/CSC scientific analysis.
+- EIS overlay/export logic.
+
+## Phase 6 — CIC / Voltage Transient Analysis Extraction
+
+Phase 6 has started.
+
+Completed work:
+
+- Added `gamrywb.analysis.computeCIC`.
+- Added `gamrywb.analysis.computeVoltageTransientMetrics`.
+- Added `gamrywb.analysis.computeInjectedCharge`.
+- Added `gamrywb.analysis.checkWaterWindowSafety`.
+- Updated `legacy/gamry_CIC_VT_gui_paperlabels_legacy.m` to call the shared CIC analysis function.
+
+Behavior preserved:
+
+- 10 us default delay after pulse end.
+- Emc/Ema sampling by interpolation.
+- Baseline candidate selection for paper-style annotations.
+- Measured-current integration and nominal-current fallback mode.
+- Area metadata and text override behavior.
+- mC/cm^2 charge density values used by existing summary/export code.
+- Water-window safe/unsafe classification and legacy status text.
+- Legacy result fields used by summary tables, plots, and CSV export.
+
+Still local after current Phase 6 progress:
+
+- CIC plotting and CSV export formatting.
 - CV/CSC scientific analysis.
 - EIS overlay/export logic.
 
@@ -212,6 +240,7 @@ Still local after current Phase 5 progress:
 | pulse-gap alignment | multi-DTA overlay | `+gamrywb/+analysis/alignChronoByPulseGap.m` | Extracted for blank-gap-centered alignment with first-sample fallback. Multi-DTA overlay uses shared implementation. |
 | `buildExportTable` | multi-DTA overlay, EIS overlay | `+gamrywb/+io/buildChronoOverlayExportTable.m`, future EIS export builder | Chrono overlay export extracted. EIS export remains deferred to Phase 8. Preserve CSV headers and interpolation behavior. |
 | VT resistance analysis | VT resistance GUI | `+gamrywb/+analysis/computeVTResistance.m` | Started Phase 5. Preserve median windows, baselines, dV/I mode, raw Vf/I mode, and legacy result fields. |
+| CIC / voltage-transient analysis | CIC GUI | `+gamrywb/+analysis/computeCIC.m` and related helpers | Started Phase 6. Preserve Emc/Ema, injected charge, CIC normalization, safety classification, and legacy result fields. |
 | `valuesForAxis` | EIS overlay | future `+gamrywb/+analysis/valuesForEISAxis.m` | Deferred to Phase 8. Preserve all axis labels and log-axis behavior. |
 | CV/CSC integration helpers | CV/CSC GUI | future `+gamrywb/+analysis/computeCSC.m` family | Deferred to Phase 7. Preserve sign-split and scan-rate-derived time behavior. |
 

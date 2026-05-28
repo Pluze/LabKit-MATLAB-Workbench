@@ -194,7 +194,7 @@ Current known scope:
 
 ## 8. CIC Validation
 
-When CIC extraction begins, verify:
+CIC extraction has started. Verify:
 
 ```text
 Emc

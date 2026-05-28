@@ -90,7 +90,8 @@ Phase 2: mostly complete
 Phase 3: mostly complete
 Phase 4: started
 Phase 5: started
-Phase 6+: not started
+Phase 6: started
+Phase 7+: not started
 ```
 
 Summary:
@@ -102,6 +103,7 @@ Summary:
 - Shared pulse detection is used by the multi-DTA overlay/export, VT resistance, and CIC legacy GUIs.
 - Chrono overlay plotting and CSV export table construction have started moving into package helpers.
 - VT resistance analysis extraction has started.
+- CIC / voltage-transient analysis extraction has started.
 - VT resistance and CIC still retain local pulse detection until later Phase 3 work.
 - Full CIC, VT resistance, CV/CSC, and EIS analysis extraction has not started.
 
@@ -411,7 +413,12 @@ window limit lines
 pulse window shading
 ```
 
-Status: not started.
+Status: started.
+
+Current implementation note:
+
+- `legacy/gamry_CIC_VT_gui_paperlabels_legacy.m` now calls `gamrywb.analysis.computeCIC`.
+- `computeCIC` currently returns legacy-compatible fields so existing summary tables, plots, and CSV export remain unchanged.
 
 ---
 
