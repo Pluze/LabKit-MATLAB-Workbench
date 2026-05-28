@@ -81,7 +81,7 @@ Operational instructions for AI agents live in `AGENTS.md`.
 
 ## 4. Current Status
 
-Current status at the time of this documentation cleanup:
+Current status:
 
 ```text
 Phase 0: complete
@@ -101,9 +101,8 @@ Summary:
 - Data accessors such as `getMainCurve`, `getZCurve`, and `getColumn` have been extracted.
 - Shared pulse detection is used by the multi-DTA overlay/export, VT resistance, and CIC legacy GUIs.
 - Chrono overlay plotting and CSV export table construction have started moving into package helpers.
-- VT resistance analysis extraction has started.
-- VT resistance and CIC still retain local pulse detection until later Phase 3 work.
-- Full CIC, VT resistance, CV/CSC, and EIS analysis extraction has not started.
+- VT resistance analysis extraction has started; plotting, result-table display, and CSV export formatting remain GUI-local.
+- Full CIC, CV/CSC, and EIS analysis extraction has not started.
 
 Completed migration details live in `MIGRATION_NOTES.md`.
 
@@ -273,6 +272,7 @@ Current implementation note:
 
 - Shared pulse detection keeps legacy flat fields such as `cath_start` and `gap_end` while adding normalized nested fields such as `pulse.cath.start_s` and `pulse.gap.center_s`.
 - Shared pulse detection is now used by the multi-DTA overlay/export GUI, VT resistance GUI, and CIC GUI.
+- VT resistance and CIC still keep their local GUI display, plotting, result-table, and export code.
 
 Required behavior to preserve:
 
@@ -285,15 +285,15 @@ blank-gap-centered alignment
 fallback-to-first-sample alignment
 ```
 
-Migration order:
+Migration status:
 
-1. `legacy/gamry_multiDTA_plot_export_gui_legacy.m` — started.
+1. `legacy/gamry_multiDTA_plot_export_gui_legacy.m` — pulse detection migrated.
 2. `legacy/gamry_VT_resistance_gui_legacy.m` — pulse detection migrated.
 3. `legacy/gamry_CIC_VT_gui_paperlabels_legacy.m` — pulse detection migrated.
 
 ---
 
-### Phase 4 — VT Overlay / Export Logic
+### Phase 4 — Chrono Overlay / Export Logic
 
 Goal:
 
@@ -328,6 +328,7 @@ Current implementation note:
 
 - `legacy/gamry_multiDTA_plot_export_gui_legacy.m` now uses `gamrywb.plot.plotChronoVTIT` for overlay plotting.
 - `legacy/gamry_multiDTA_plot_export_gui_legacy.m` now uses `gamrywb.io.buildChronoOverlayExportTable` and `gamrywb.io.exportTableCSV` for CSV export.
+- Multi-DTA file selection, duplicate skipping, UI callbacks, and log display remain GUI-local.
 
 ---
 
@@ -369,6 +370,7 @@ Current implementation note:
 
 - `legacy/gamry_VT_resistance_gui_legacy.m` now calls `gamrywb.analysis.computeVTResistance`.
 - `computeVTResistance` currently returns legacy-compatible fields so existing summary tables, plots, and CSV export remain unchanged.
+- VT resistance plotting, result-table display, and CSV export formatting remain GUI-local.
 
 ---
 
