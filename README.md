@@ -15,14 +15,15 @@ Completed or started work:
 - Phase 0 complete: legacy functions inventoried and migration notes started.
 - Phase 1 complete: package skeleton and low-risk utilities added.
 - Phase 2 mostly complete: chrono, EIS, and CV/CT parser modules extracted.
-- Phase 3 started: shared pulse detection extracted and first legacy GUI migrated to it.
+- Phase 3 mostly complete: shared pulse detection is used by the multi-DTA overlay/export, VT resistance, and CIC legacy GUIs.
+- Phase 4 started: chrono overlay plotting and CSV export table construction are package-backed.
+- Phase 5 started: VT resistance analysis is package-backed.
+- Phase 6 started: CIC / voltage-transient analysis is package-backed.
 - Legacy GUI entry points remain available through root-level compatibility wrappers.
 - Demo DTA fixtures and MATLAB pure-function tests are available.
 
 Not started yet:
 
-- Full CIC analysis extraction.
-- Full VT resistance analysis extraction.
 - Full CV/CSC analysis extraction.
 - Full EIS overlay/export extraction.
 - New thin apps under `apps/`.

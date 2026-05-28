@@ -104,8 +104,8 @@ Summary:
 - Chrono overlay plotting and CSV export table construction have started moving into package helpers.
 - VT resistance analysis extraction has started.
 - CIC / voltage-transient analysis extraction has started.
-- VT resistance and CIC still retain local pulse detection until later Phase 3 work.
-- Full CIC, VT resistance, CV/CSC, and EIS analysis extraction has not started.
+- VT resistance and CIC now call package-backed analysis functions while preserving legacy GUI display/export behavior.
+- CV/CSC analysis and EIS overlay/export extraction have not started.
 
 Completed migration details live in `MIGRATION_NOTES.md`.
 

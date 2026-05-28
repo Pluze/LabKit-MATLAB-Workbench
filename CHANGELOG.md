@@ -50,10 +50,10 @@ This project is still in an unreleased behavior-preserving refactor stage.
 
 ### Known Gaps
 
-- CIC analysis has not been fully extracted into package functions.
-- VT resistance analysis has not been fully extracted into package functions.
 - CV/CSC analysis has not been fully extracted into package functions.
 - EIS overlay/export logic has not been fully extracted into package functions.
+- CIC plotting/export formatting remains in the legacy GUI.
+- VT resistance plotting/export formatting remains in the legacy GUI.
 - New thin apps under `apps/` have not been implemented.
 - Unified workbench GUI has not been started.
 - Golden reference tests for every major analysis output are not complete yet.

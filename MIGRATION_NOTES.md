@@ -12,8 +12,11 @@ It is not a roadmap. Planned future phases live in `REFACTOR_ROADMAP.md`.
 Phase 0: complete
 Phase 1: complete
 Phase 2: mostly complete
-Phase 3: started
-Phase 4+: not started
+Phase 3: mostly complete
+Phase 4: started
+Phase 5: started
+Phase 6: started
+Phase 7+: not started
 ```
 
 Current summary:
@@ -21,10 +24,12 @@ Current summary:
 - Legacy GUI implementations are preserved under `legacy/`.
 - Root-level compatibility wrappers keep original GUI command names available.
 - Shared utilities have been added under `+gamrywb/+util`.
-- Chrono, EIS, and CV/CT parser extraction has started and is mostly complete.
-- Shared pulse detection has started and has been wired into the multi-DTA overlay/export legacy GUI.
-- VT resistance and CIC still use their local pulse detection until later Phase 3 work.
-- Full scientific analysis extraction has not started.
+- Chrono, EIS, and CV/CT parser extraction is mostly complete.
+- Shared pulse detection is used by the multi-DTA overlay/export, VT resistance, and CIC legacy GUIs.
+- Chrono overlay plotting and CSV export table construction have started moving into package helpers.
+- VT resistance analysis is package-backed.
+- CIC / voltage-transient analysis is package-backed.
+- CV/CSC analysis and EIS overlay/export extraction have not started.
 
 ---
 
@@ -232,7 +237,7 @@ Still local after current Phase 6 progress:
 | `getZCurve` | EIS overlay | `+gamrywb/+data/getZCurve.m` | Extracted. Preserve `ZCURVE` first, then Freq/Zreal/Zimag header fallback. |
 | `getColByName` | all GUI families | `+gamrywb/+data/getColumn.m` | Extracted as case-insensitive column lookup. |
 | `findDTAFilesRecursive` | CIC, VT resistance, EIS overlay, multi-DTA overlay | `+gamrywb/+io/findDTAFilesRecursive.m` | Extracted. Preserve recursive `.DTA`/`.dta` scan behavior. |
-| chrono item construction | multi-DTA overlay, VT resistance, CIC | `+gamrywb/+data/makeChronoItem.m` | Partially migrated. Multi-DTA overlay uses shared implementation; VT resistance and CIC still preserve their legacy analysis/failure-handling paths. |
+| chrono item construction | multi-DTA overlay, VT resistance, CIC | `+gamrywb/+data/makeChronoItem.m` | Multi-DTA overlay uses shared implementation. VT resistance and CIC use shared parsing/pulse helpers while preserving GUI failure handling. |
 | `detectPulses` | CIC, VT resistance, multi-DTA overlay | `+gamrywb/+analysis/detectPulses.m` | Migrated for multi-DTA overlay, VT resistance, and CIC. |
 | `pulsesFromMetadata` | CIC, VT resistance, multi-DTA overlay | `+gamrywb/+analysis/pulsesFromMetadata.m` | Extracted. Preserve ISTEP/TSTEP and VSTEP/TSTEP interpretation. |
 | `pulsesFromCurrent` | CIC, VT resistance, multi-DTA overlay | `+gamrywb/+analysis/pulsesFromCurrent.m` | Extracted. Preserve threshold and longest-segment behavior. |
@@ -345,7 +350,7 @@ Multi-DTA overlay/export must preserve:
 1. Parser implementations still duplicate some table-reading internals. This is acceptable during behavior-preserving extraction; deeper parser unification should wait until downstream behavior is verified.
 2. Shared pulse detection currently targets the legacy single cathodic-first biphasic use case. General protocol support should be treated as a future feature, not a refactor requirement.
 3. Existing tests validate extracted pure functions with demo fixtures, but not every legacy GUI output has a golden reference yet.
-4. Full analysis extraction for CIC, VT resistance, CV/CSC, and EIS remains future work.
+4. CV/CSC analysis and EIS overlay/export extraction remain future work.
 5. Interactive GUI behavior is not covered by the default batch test runner.
 
 ---
