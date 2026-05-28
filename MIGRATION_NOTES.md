@@ -12,8 +12,10 @@ It is not a roadmap. Planned future phases live in `REFACTOR_ROADMAP.md`.
 Phase 0: complete
 Phase 1: complete
 Phase 2: mostly complete
-Phase 3: started
-Phase 4+: not started
+Phase 3: mostly complete
+Phase 4: started
+Phase 5: started
+Phase 6+: not started
 ```
 
 Current summary:
@@ -21,10 +23,11 @@ Current summary:
 - Legacy GUI implementations are preserved under `legacy/`.
 - Root-level compatibility wrappers keep original GUI command names available.
 - Shared utilities have been added under `+gamrywb/+util`.
-- Chrono, EIS, and CV/CT parser extraction has started and is mostly complete.
-- Shared pulse detection has started and has been wired into the multi-DTA overlay/export legacy GUI.
-- VT resistance and CIC still use their local pulse detection until later Phase 3 work.
-- Full scientific analysis extraction has not started.
+- Chrono, EIS, and CV/CT parser extraction is mostly complete.
+- Shared pulse detection has been wired into the multi-DTA overlay/export, VT resistance, and CIC legacy GUIs.
+- Chrono overlay plotting and aligned CSV export table construction have package helpers.
+- VT resistance analysis extraction has started; the legacy VT resistance GUI now calls `gamrywb.analysis.computeVTResistance`.
+- CIC, CV/CSC, and EIS scientific analysis extraction has not started.
 
 ---
 
@@ -89,26 +92,24 @@ Completed work:
 - Added `gamrywb.io.findDTAFilesRecursive`.
 - Added `gamrywb.data.getMainCurve`.
 - Added `gamrywb.data.getColumn`.
-- Updated only `legacy/gamry_multiDTA_plot_export_gui_legacy.m` to use the extracted chrono parser and data accessors.
+- Updated `legacy/gamry_multiDTA_plot_export_gui_legacy.m` to use the extracted chrono parser and data accessors.
 - Added `gamrywb.io.parseEISDTA`.
 - Added `gamrywb.data.getZCurve`.
-- Updated only `legacy/gamry_EIS_multiDTA_plot_gui_legacy.m` to use the extracted EIS parser, shared DTA discovery, shared struct append, shared short file names, and shared column access.
+- Updated `legacy/gamry_EIS_multiDTA_plot_gui_legacy.m` to use the extracted EIS parser, shared DTA discovery, shared struct append, shared short file names, and shared column access.
 - Added `gamrywb.io.parseCVCTDTA`.
-- Updated only `legacy/gamry_CV_CSC_dta_gui_legacy.m` to use the extracted CV/CT parser.
+- Updated `legacy/gamry_CV_CSC_dta_gui_legacy.m` to use the extracted CV/CT parser.
 
 Still local after Phase 2:
 
-- Pulse detection.
-- Pulse-gap alignment.
-- Plotting.
-- CSV export.
+- Most plotting.
+- Most CSV export.
 - Scientific analysis formulas.
 
 Parser behavior details live in `docs/file_format_notes.md`.
 
 ---
 
-## Phase 3 — Pulse Detection Extraction
+## Phase 3 — ChronoItem and Pulse Detection Extraction
 
 Phase 3 is mostly complete for shared parser/data/pulse migration.
 
@@ -121,8 +122,7 @@ Completed work:
 - Added `gamrywb.analysis.emptyPulse`.
 - Added `gamrywb.data.makeChronoItem`.
 - Added `gamrywb.analysis.alignChronoByPulseGap`.
-- Updated only `legacy/gamry_multiDTA_plot_export_gui_legacy.m` to use the extracted pulse detection.
-- Updated `legacy/gamry_multiDTA_plot_export_gui_legacy.m` to use the shared chrono item constructor and pulse-gap alignment helper.
+- Updated `legacy/gamry_multiDTA_plot_export_gui_legacy.m` to use the shared chrono item constructor, pulse detection, and pulse-gap alignment helper.
 - Updated `legacy/gamry_VT_resistance_gui_legacy.m` to use shared chrono parsing, DTA discovery, table/column accessors, pulse detection, median-window utility, and CSV escaping.
 - Updated `legacy/gamry_CIC_VT_gui_paperlabels_legacy.m` to use shared chrono parsing, DTA discovery, table/column accessors, pulse detection, area parsing utility, nearest-index utility, median-window utility, short-name helper, and struct append helper.
 
@@ -131,15 +131,17 @@ Current pulse struct note:
 - The shared pulse struct currently preserves legacy flat fields such as `cath_start`, `cath_end`, `anod_start`, `anod_end`, `gap_start`, and `gap_end`.
 - It also adds normalized nested fields such as `pulse.cath.start_s`, `pulse.anod.start_s`, and `pulse.gap.center_s` for future package-backed analysis work.
 
-Still local after current Phase 3 progress:
+Still local after Phase 3 progress:
 
-- VT resistance still owns resistance analysis, plotting, CSV export structure, and UI callbacks.
-- CIC still owns CIC/voltage-transient analysis, plotting, batch summaries, and UI callbacks.
+- VT resistance kept plotting, result-table display, CSV export formatting, and UI callbacks local.
+- CIC still owns CIC/voltage-transient analysis, plotting, batch summaries, export formatting, and UI callbacks.
 
 Known scope limitation:
 
 - Current pulse detection is legacy-compatible for single cathodic-first biphasic pulse protocols used by the existing GUIs.
 - More general multi-cycle, anodic-first, or arbitrary protocol support is not part of the current behavior-preserving refactor.
+
+---
 
 ## Phase 4 — Chrono Overlay / Export Extraction
 
@@ -163,7 +165,9 @@ Still local after current Phase 4 progress:
 
 - Multi-DTA GUI file selection, duplicate skipping, UI callbacks, and log display.
 - EIS overlay/export table construction.
-- CIC, VT resistance, and CV/CSC scientific analysis extraction.
+- CIC, CV/CSC, and EIS scientific analysis extraction.
+
+---
 
 ## Phase 5 — VT Resistance Analysis Extraction
 
@@ -186,7 +190,7 @@ Behavior preserved:
 
 Still local after current Phase 5 progress:
 
-- VT resistance plotting and CSV export formatting.
+- VT resistance plotting, result-table display, and CSV export formatting.
 - CIC/voltage-transient scientific analysis.
 - CV/CSC scientific analysis.
 - EIS overlay/export logic.
@@ -204,13 +208,14 @@ Still local after current Phase 5 progress:
 | `getZCurve` | EIS overlay | `+gamrywb/+data/getZCurve.m` | Extracted. Preserve `ZCURVE` first, then Freq/Zreal/Zimag header fallback. |
 | `getColByName` | all GUI families | `+gamrywb/+data/getColumn.m` | Extracted as case-insensitive column lookup. |
 | `findDTAFilesRecursive` | CIC, VT resistance, EIS overlay, multi-DTA overlay | `+gamrywb/+io/findDTAFilesRecursive.m` | Extracted. Preserve recursive `.DTA`/`.dta` scan behavior. |
-| chrono item construction | multi-DTA overlay, VT resistance, CIC | `+gamrywb/+data/makeChronoItem.m` | Partially migrated. Multi-DTA overlay uses shared implementation; VT resistance and CIC still preserve their legacy analysis/failure-handling paths. |
+| chrono item construction | multi-DTA overlay, VT resistance, CIC | `+gamrywb/+data/makeChronoItem.m` | Partially migrated. Multi-DTA overlay uses shared implementation; VT resistance and CIC still preserve selected legacy loading/failure-handling paths. |
 | `detectPulses` | CIC, VT resistance, multi-DTA overlay | `+gamrywb/+analysis/detectPulses.m` | Migrated for multi-DTA overlay, VT resistance, and CIC. |
 | `pulsesFromMetadata` | CIC, VT resistance, multi-DTA overlay | `+gamrywb/+analysis/pulsesFromMetadata.m` | Extracted. Preserve ISTEP/TSTEP and VSTEP/TSTEP interpretation. |
 | `pulsesFromCurrent` | CIC, VT resistance, multi-DTA overlay | `+gamrywb/+analysis/pulsesFromCurrent.m` | Extracted. Preserve threshold and longest-segment behavior. |
 | `emptyPulse` | CIC, VT resistance, multi-DTA overlay | `+gamrywb/+analysis/emptyPulse.m` | Extracted. Includes legacy and normalized fields. |
 | pulse-gap alignment | multi-DTA overlay | `+gamrywb/+analysis/alignChronoByPulseGap.m` | Extracted for blank-gap-centered alignment with first-sample fallback. Multi-DTA overlay uses shared implementation. |
-| `buildExportTable` | multi-DTA overlay, EIS overlay | `+gamrywb/+io/buildChronoOverlayExportTable.m`, future EIS export builder | Chrono overlay export extracted. EIS export remains deferred to Phase 8. Preserve CSV headers and interpolation behavior. |
+| chrono overlay export | multi-DTA overlay | `+gamrywb/+io/buildChronoOverlayExportTable.m` | Extracted for aligned VT/IT export. Preserve CSV headers and interpolation behavior. |
+| chrono overlay plotting | multi-DTA overlay | `+gamrywb/+plot/plotChronoVTIT.m` | Extracted for paired VT/IT overlay axes. |
 | VT resistance analysis | VT resistance GUI | `+gamrywb/+analysis/computeVTResistance.m` | Started Phase 5. Preserve median windows, baselines, dV/I mode, raw Vf/I mode, and legacy result fields. |
 | `valuesForAxis` | EIS overlay | future `+gamrywb/+analysis/valuesForEISAxis.m` | Deferred to Phase 8. Preserve all axis labels and log-axis behavior. |
 | CV/CSC integration helpers | CV/CSC GUI | future `+gamrywb/+analysis/computeCSC.m` family | Deferred to Phase 7. Preserve sign-split and scan-rate-derived time behavior. |
@@ -316,7 +321,7 @@ Multi-DTA overlay/export must preserve:
 1. Parser implementations still duplicate some table-reading internals. This is acceptable during behavior-preserving extraction; deeper parser unification should wait until downstream behavior is verified.
 2. Shared pulse detection currently targets the legacy single cathodic-first biphasic use case. General protocol support should be treated as a future feature, not a refactor requirement.
 3. Existing tests validate extracted pure functions with demo fixtures, but not every legacy GUI output has a golden reference yet.
-4. Full analysis extraction for CIC, VT resistance, CV/CSC, and EIS remains future work.
+4. CIC, CV/CSC, and EIS analysis extraction remains future work; VT resistance extraction has started but still needs reference-output validation.
 5. Interactive GUI behavior is not covered by the default batch test runner.
 
 ---
