@@ -71,8 +71,46 @@ small utilities
 8. Avoid global path pollution.
 9. Every analysis function must be callable from scripts, tests, and GUIs.
 10. Every behavior-preserving refactor should have a reference check.
+11. Preserve a clear local git history throughout the refactor.
+12. Commit regularly at stable checkpoints instead of leaving large mixed working-tree changes.
+13. Keep commits logically scoped: inventory/docs, package skeleton, utility extraction, parser extraction, analysis extraction, tests, and compatibility fixes should be separate when practical.
+14. Run the available MATLAB test command before commits that change executable code; if tests cannot run, record the reason in the commit summary or migration notes.
+15. Do not mix unrelated user edits or generated artifacts into refactor commits.
 
-### 1.3 What counts as success
+### 1.3 Git workflow requirements
+
+Use the local git history as part of the refactor safety process.
+
+Recommended workflow for each phase:
+
+```text
+1. Inspect git status before editing.
+2. Make one small logical change set.
+3. Run the relevant MATLAB tests or static checks.
+4. Review git diff for unrelated changes.
+5. Commit with a concise behavior-oriented message.
+6. Start the next change set from a clean or intentionally understood working tree.
+```
+
+Commit message style:
+
+```text
+refactor: create phase 1 package skeleton
+test: add MATLAB utility smoke tests
+docs: record migration inventory
+fix: preserve legacy GUI entrypoint resolution
+```
+
+Avoid committing:
+
+```text
+matlab_test.log
+.DS_Store
+temporary exports
+experiment output data
+```
+
+### 1.4 What counts as success
 
 A phase is successful only if:
 
