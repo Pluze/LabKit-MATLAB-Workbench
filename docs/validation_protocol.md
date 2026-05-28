@@ -34,7 +34,7 @@ Default tests should cover:
 - parser functions
 - data accessors
 - pulse detection
-- future analysis functions
+- analysis functions that do not require GUI interaction
 - export table builders
 
 Default tests should not cover:
@@ -192,7 +192,50 @@ Current known scope:
 
 ---
 
-## 8. CIC Validation
+## 8. Chrono Overlay / Export Validation
+
+Chrono overlay/export extraction has started. Verify:
+
+```text
+selected X-axis behavior
+blank-gap-centered aligned time
+merged aligned-time export axis
+linear interpolation onto merged axis
+NaN outside each source range
+V_* and I_* CSV column names
+plot title behavior
+legend behavior
+grid behavior
+line width behavior
+```
+
+Synthetic table tests are useful, but fixture-based checks against representative DTA files should be added before deeper GUI changes.
+
+---
+
+## 9. VT Resistance Validation
+
+VT resistance extraction has started. Verify:
+
+```text
+phase current median
+steady voltage median
+baseline estimate
+baseline-corrected resistance
+raw voltage resistance mode
+cathodic resistance
+anodic resistance
+average resistance
+batch result table values
+```
+
+Before extracting VT resistance plotting, result-table formatting, or CSV export, compare the package-backed `computeVTResistance` output against the legacy GUI output for at least one representative fixture and option set.
+
+The current package helper should preserve legacy-compatible analysis fields so the existing GUI summary table, plots, and CSV export can remain unchanged.
+
+---
+
+## 10. CIC Validation
 
 When CIC extraction begins, verify:
 
@@ -214,25 +257,7 @@ Do not start CIC extraction without either golden references or a clearly docume
 
 ---
 
-## 9. VT Resistance Validation
-
-VT resistance extraction has started. Verify:
-
-```text
-phase current median
-steady voltage median
-baseline estimate
-baseline-corrected resistance
-raw voltage resistance mode
-cathodic resistance
-anodic resistance
-average resistance
-batch result table values
-```
-
----
-
-## 10. CV/CSC Validation
+## 11. CV/CSC Validation
 
 When CV/CSC extraction begins, verify:
 
@@ -263,7 +288,7 @@ Qcv = integral I * dt
 
 ---
 
-## 11. EIS Validation
+## 12. EIS Validation
 
 When EIS overlay/export extraction begins, verify:
 
@@ -284,7 +309,7 @@ CSV numeric values
 
 ---
 
-## 12. GUI Validation
+## 13. GUI Validation
 
 GUI validation is not part of the default batch test runner.
 
@@ -303,7 +328,7 @@ If a future noninteractive GUI smoke test is added, keep it separate from the de
 
 ---
 
-## 13. Handoff Requirements After Validation
+## 14. Handoff Requirements After Validation
 
 After a refactor phase, report:
 
