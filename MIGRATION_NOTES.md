@@ -18,7 +18,9 @@ Started Phase 2 with the lowest-risk chrono parser migration:
 - Added `gamrywb.io.parseEISDTA`.
 - Added `gamrywb.data.getZCurve`.
 - Updated only `legacy/gamry_EIS_multiDTA_plot_gui_legacy.m` to use the extracted EIS parser, shared DTA discovery, shared struct append, shared short file names, and shared column access.
-- Left pulse detection, alignment, plotting, CSV export, and CV/CT parsing local for later Phase 2/3+ commits.
+- Added `gamrywb.io.parseCVCTDTA`.
+- Updated only `legacy/gamry_CV_CSC_dta_gui_legacy.m` to use the extracted CV/CT parser.
+- Left pulse detection, alignment, plotting, CSV export, and analysis logic local for later Phase 3+ commits.
 
 ## Git History Requirements
 

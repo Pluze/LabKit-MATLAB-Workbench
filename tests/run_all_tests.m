@@ -6,7 +6,7 @@ function results = run_all_tests()
     addpath(fullfile(root, 'tests'));
     startup_gamrywb();
 
-    tests = {@test_util_functions, @test_phase1_smoke, @test_parseChronoDTA, @test_parseEISDTA};
+    tests = {@test_util_functions, @test_phase1_smoke, @test_parseChronoDTA, @test_parseEISDTA, @test_parseCVCTDTA};
     results = struct('name', {}, 'passed', {}, 'message', {});
 
     for k = 1:numel(tests)
