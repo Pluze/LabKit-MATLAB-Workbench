@@ -76,6 +76,7 @@ small utilities
 13. Keep commits logically scoped: inventory/docs, package skeleton, utility extraction, parser extraction, analysis extraction, tests, and compatibility fixes should be separate when practical.
 14. Run the available MATLAB test command before commits that change executable code; if tests cannot run, record the reason in the commit summary or migration notes.
 15. Do not mix unrelated user edits or generated artifacts into refactor commits.
+16. Sync with the remote repository regularly after stable local commits.
 
 ### 1.3 Git workflow requirements
 
@@ -89,7 +90,10 @@ Recommended workflow for each phase:
 3. Run the relevant MATLAB tests or static checks.
 4. Review git diff for unrelated changes.
 5. Commit with a concise behavior-oriented message.
-6. Start the next change set from a clean or intentionally understood working tree.
+6. Fetch remote state before pushing.
+7. Reconcile remote changes with rebase or another explicit non-destructive strategy.
+8. Push completed, tested phase commits to the remote repository.
+9. Start the next change set from a clean or intentionally understood working tree.
 ```
 
 Commit message style:
@@ -108,6 +112,16 @@ matlab_test.log
 .DS_Store
 temporary exports
 experiment output data
+```
+
+Remote sync cadence:
+
+```text
+- Push after each completed phase or meaningful subphase commit.
+- Fetch before starting a new phase if the local branch may be stale.
+- Do not force-push refactor history unless explicitly approved.
+- If origin has new work, inspect it before rebasing or merging.
+- Keep local and remote branch divergence visible in handoffs.
 ```
 
 ### 1.4 What counts as success

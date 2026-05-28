@@ -45,9 +45,18 @@ Required habits:
 - Split work into logical commits whenever practical.
 - Keep behavior-preserving moves, documentation updates, test harness changes, and executable refactors separate when the diff is large enough to review independently.
 - Run `scripts/run_matlab_tests.sh` before committing executable MATLAB changes.
+- Fetch and push the remote repository regularly after tested local commits.
 - If MATLAB cannot run, document the blocker in the migration notes or final handoff.
 - Do not commit generated logs such as `matlab_test.log`, `.DS_Store`, exported CSVs, or unrelated user changes.
 - Prefer commit messages that state the purpose of the change, such as `refactor: add phase 1 utility package` or `test: add MATLAB smoke test runner`.
+
+Remote sync rules:
+
+- Run `git fetch origin` before pushing local phase commits.
+- If the branch is only ahead of `origin/main`, push after tests pass.
+- If the branch is behind or diverged, inspect incoming commits before rebasing or merging.
+- Do not force-push unless the user explicitly approves it.
+- Mention local-vs-remote status in handoffs when commits are not yet pushed.
 
 Current local MATLAB test command:
 
