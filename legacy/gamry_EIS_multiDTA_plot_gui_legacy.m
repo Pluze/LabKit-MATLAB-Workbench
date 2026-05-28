@@ -212,7 +212,7 @@ function gamry_EIS_multiDTA_plot_gui_legacy
             return;
         end
 
-        filepaths = findDTAFilesRecursive(folder);
+        filepaths = gamrywb.io.findDTAFilesRecursive(folder);
         if isempty(filepaths)
             addLog(sprintf('No DTA files found under: %s', folder));
             uialert(fig, sprintf('No .DTA files found under:\n%s', folder), 'No files found');
@@ -249,7 +249,7 @@ function gamry_EIS_multiDTA_plot_gui_legacy
             filepath = filepaths{k};
             try
                 item = loadOneDTA(filepath);
-                S.items = appendStruct(S.items, item);
+                S.items = gamrywb.util.appendStruct(S.items, item);
                 addLog(sprintf('Loaded: %s', filepath));
             catch ME
                 addLog(sprintf('Failed: %s | %s', filepath, ME.message));
@@ -270,10 +270,10 @@ function gamry_EIS_multiDTA_plot_gui_legacy
     function item = loadOneDTA(filepath)
         item = struct();
         item.filepath = filepath;
-        item.name = shortName(filepath);
-        [item.meta, item.tables, item.logmsg] = parseGamryDTA(filepath);
+        item.name = gamrywb.util.shortName(filepath);
+        [item.meta, item.tables, item.logmsg] = gamrywb.io.parseEISDTA(filepath);
 
-        [curve, ok, msg] = getZCurve(item.tables);
+        [curve, ok, msg] = gamrywb.data.getZCurve(item.tables);
         if ~ok
             error('%s', msg);
         end
@@ -522,169 +522,12 @@ function gamry_EIS_multiDTA_plot_gui_legacy
     end
 end
 
-function [meta, tables, logmsg] = parseGamryDTA(filepath)
-    txt = fileread(filepath);
-    txt = erase(txt, char(13));
-    lines = splitlines(string(txt));
-    lines = cellstr(lines);
-
-    meta = struct();
-    meta.filepath = filepath;
-    meta.tag = '';
-    meta.title = '';
-    meta.area_cm2 = NaN;
-    tables = struct('name', {}, 'headers', {}, 'units', {}, 'data', {}, 'numericMask', {});
-    logmsg = {};
-
-    nLines = numel(lines);
-    logmsg{end+1} = sprintf('Parsing DTA: %s', filepath);
-
-    for i = 1:nLines
-        tok = splitTabs(lines{i});
-        if numel(tok) < 3
-            continue;
-        end
-
-        key = upper(strtrim(tok{1}));
-        val = tok{3};
-        valNum = str2double(val);
-
-        switch key
-            case 'TAG'
-                meta.tag = val;
-            case 'TITLE'
-                meta.title = val;
-            case 'AREA'
-                if isfinite(valNum)
-                    meta.area_cm2 = valNum;
-                end
-        end
-    end
-
-    i = 1;
-    while i <= nLines
-        tok = splitTabs(lines{i});
-        if numel(tok) >= 2 && strcmpi(tok{2}, 'TABLE')
-            name = tok{1};
-            iHeader = nextNonEmpty(lines, i + 1);
-            iUnits = nextNonEmpty(lines, iHeader + 1);
-            if isnan(iHeader) || isnan(iUnits)
-                i = i + 1;
-                continue;
-            end
-
-            headers = splitTabs(lines{iHeader});
-            units = splitTabs(lines{iUnits});
-            if isDataLike(units)
-                dataStart = iUnits;
-                units = repmat({''}, size(headers));
-            else
-                dataStart = nextNonEmpty(lines, iUnits + 1);
-            end
-
-            raw = [];
-            j = dataStart;
-            while j <= nLines
-                tokj = splitTabs(lines{j});
-                if isempty(tokj)
-                    j = j + 1;
-                    continue;
-                end
-                if numel(tokj) >= 2 && strcmpi(tokj{2}, 'TABLE')
-                    break;
-                end
-
-                row = nan(1, numel(headers));
-                nKeep = min(numel(tokj), numel(headers));
-                anyNumeric = false;
-                for c = 1:nKeep
-                    v = str2double(tokj{c});
-                    if ~isnan(v)
-                        row(c) = v;
-                        anyNumeric = true;
-                    end
-                end
-
-                if anyNumeric
-                    raw(end+1, :) = row; %#ok<AGROW>
-                end
-                j = j + 1;
-            end
-
-            if ~isempty(raw)
-                numericMask = any(~isnan(raw), 1);
-                tables(end+1).name = name; %#ok<AGROW>
-                tables(end).headers = headers;
-                tables(end).units = units;
-                tables(end).data = raw;
-                tables(end).numericMask = numericMask;
-                logmsg{end+1} = sprintf('Table %s parsed: %d rows x %d cols.', name, size(raw, 1), size(raw, 2));
-            else
-                logmsg{end+1} = sprintf('Table %s found but no numeric rows.', name);
-            end
-
-            i = j;
-        else
-            i = i + 1;
-        end
-    end
-
-    if isempty(tables)
-        error('No numeric TABLE section was parsed from this DTA file.');
-    end
-end
-
-function [curve, ok, msg] = getZCurve(tables)
-    curve = struct();
-    ok = false;
-    msg = 'ZCURVE table not found.';
-
-    if isempty(tables)
-        return;
-    end
-
-    idx = [];
-    for i = 1:numel(tables)
-        if strcmpi(strtrim(tables(i).name), 'ZCURVE')
-            idx = i;
-            break;
-        end
-    end
-
-    if isempty(idx)
-        for i = 1:numel(tables)
-            h = lower(string(tables(i).headers));
-            if any(h == "freq") && any(h == "zreal") && any(h == "zimag")
-                idx = i;
-                break;
-            end
-        end
-    end
-
-    if isempty(idx)
-        return;
-    end
-
-    curve = tables(idx);
-    ok = true;
-    msg = sprintf('Using table: %s', curve.name);
-end
-
 function col = defaultColumn(tbl, name)
-    col = getColByName(tbl, name);
+    col = gamrywb.data.getColumn(tbl, name);
     if isempty(col)
         col = NaN(size(tbl.data, 1), 1);
     end
     col = col(:);
-end
-
-function col = getColByName(tbl, name)
-    idx = find(strcmpi(tbl.headers, name), 1);
-    if isempty(idx)
-        col = [];
-    else
-        col = tbl.data(:, idx);
-    end
 end
 
 function values = valuesForAxis(item, axisName)
@@ -736,44 +579,6 @@ function summary = buildSummary(items)
     end
 end
 
-function filepaths = findDTAFilesRecursive(rootDir)
-    entries = dir(rootDir);
-    filepaths = {};
-
-    for i = 1:numel(entries)
-        name = entries(i).name;
-        if strcmp(name, '.') || strcmp(name, '..')
-            continue;
-        end
-
-        fullpath = fullfile(entries(i).folder, name);
-        if entries(i).isdir
-            subpaths = findDTAFilesRecursive(fullpath);
-            if ~isempty(subpaths)
-                filepaths = [filepaths, subpaths]; %#ok<AGROW>
-            end
-        else
-            [~, ~, ext] = fileparts(name);
-            if strcmpi(ext, '.dta')
-                filepaths{end+1} = fullpath; %#ok<AGROW>
-            end
-        end
-    end
-end
-
-function out = appendStruct(S, item)
-    if isempty(S)
-        out = item;
-    else
-        out = [S, item];
-    end
-end
-
-function name = shortName(filepath)
-    [~, name, ext] = fileparts(filepath);
-    name = [name ext];
-end
-
 function padded = padWithNaN(v, n)
     padded = NaN(n, 1);
     if isempty(v)
@@ -811,31 +616,4 @@ function txt = pluralS(n)
     else
         txt = 's';
     end
-end
-
-function tok = splitTabs(line)
-    tok = regexp(char(line), '\t+', 'split');
-    tok = tok(~cellfun(@isempty, tok));
-end
-
-function idx = nextNonEmpty(lines, startIdx)
-    idx = NaN;
-    for i = startIdx:numel(lines)
-        if ~isempty(strtrim(lines{i}))
-            idx = i;
-            return;
-        end
-    end
-end
-
-function tf = isDataLike(tok)
-    if isempty(tok)
-        tf = false;
-        return;
-    end
-    vals = nan(size(tok));
-    for i = 1:numel(tok)
-        vals(i) = str2double(tok{i});
-    end
-    tf = any(~isnan(vals));
 end
