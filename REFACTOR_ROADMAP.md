@@ -263,12 +263,12 @@ Package areas:
 +gamrywb/+data/makeChronoItem.m
 ```
 
-Status: started.
+Status: mostly complete.
 
 Current implementation note:
 
 - Shared pulse detection keeps legacy flat fields such as `cath_start` and `gap_end` while adding normalized nested fields such as `pulse.cath.start_s` and `pulse.gap.center_s`.
-- Shared pulse detection is now used by the multi-DTA overlay/export GUI and VT resistance GUI.
+- Shared pulse detection is now used by the multi-DTA overlay/export GUI, VT resistance GUI, and CIC GUI.
 
 Required behavior to preserve:
 
@@ -285,7 +285,7 @@ Migration order:
 
 1. `legacy/gamry_multiDTA_plot_export_gui_legacy.m` — started.
 2. `legacy/gamry_VT_resistance_gui_legacy.m` — pulse detection migrated.
-3. `legacy/gamry_CIC_VT_gui_paperlabels_legacy.m`.
+3. `legacy/gamry_CIC_VT_gui_paperlabels_legacy.m` — pulse detection migrated.
 
 ---
 
