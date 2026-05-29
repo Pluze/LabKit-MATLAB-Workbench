@@ -22,6 +22,16 @@ Also read these only when relevant:
 
 Preserve behavior unless the user explicitly asks for a behavior change.
 
+The desired architecture is:
+
+```text
+apps/ experiment apps
+    call reusable +gamrywb GUI and DTA APIs
+    own experiment-specific scientific logic, parameters, plots, and exports
+```
+
+Do not add new experiment-specific app logic to the reusable `+gamrywb` library. Existing `+gamrywb/+analysis`, `+gamrywb/+plot`, and app-specific export helpers are transitional unless they are genuinely broad, low-level utilities. When touching them, consider whether the logic should move into the relevant app instead of becoming a deeper abstraction.
+
 Do not change:
 
 - scientific formulas, thresholds, integration rules, or result definitions
@@ -40,6 +50,7 @@ same results, cleaner code, clearer boundaries
 
 - Move duplicated helper logic into `+gamrywb` package functions.
 - Update app entry points to call package helpers when behavior is preserved.
+- Move app-specific implementations and experiment-specific scientific workflow code out of `+gamrywb` when doing so preserves behavior.
 - Add or update tests for pure functions and app entry points.
 - Update documentation to reflect current behavior.
 - Improve app entrypoint clarity without reintroducing root-level legacy command wrappers.

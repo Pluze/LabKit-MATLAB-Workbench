@@ -12,6 +12,8 @@ experiment-specific apps
 
 Future work should let a developer add a new experiment, a new GUI shell, or a new DTA format with minimal changes to the other two parts. The modules should also remain reusable outside this repository when a downstream project only needs the GUI framework or only needs DTA loading/parsing.
 
+Experiment-specific scientific workflow belongs with the app, not in the reusable library. This includes formulas, analysis options, result schemas, plot choices, annotations, summaries, and export formats. Keep only genuinely broad, parameter-light math/data utilities in `+gamrywb`.
+
 The previous refactor successfully moved the project from legacy GUI scripts to package-backed apps with reusable GUI helpers. The project is now already reasonably convenient for building apps that resemble the existing Chrono, EIS, VT, CIC, and CSC tools.
 
 The next goal is not to keep extracting small GUI helpers. The next goal is to make new app creation predictable:
@@ -25,6 +27,7 @@ A future developer should be able to:
 - reuse the GUI framework without using Gamry-specific scientific analysis
 - reuse the DTA loading/parsing/normalization system without launching a GUI
 - create a new scientific app by defining file requirements, analysis options, plot behavior, result fields, and export format
+- keep each experiment's scientific workflow local to that app
 - add support for a new DTA family without rewriting existing app GUIs
 - redesign or add a GUI shell without changing parser behavior or scientific formulas
 - avoid copying large existing app files
@@ -61,7 +64,7 @@ completely new app type: about 6/10 convenient
 Why similar apps are now easier:
 
 - public app entry points are thin wrappers under `apps/`
-- app bodies live under `+gamrywb/+app`
+- app bodies should live under `apps/private`; EIS is the first reference migration
 - common GUI shells and panels live under `+gamrywb/+ui`
 - scientific calculations live under `+gamrywb/+analysis`
 - plotting helpers live under `+gamrywb/+plot`
@@ -70,7 +73,7 @@ Why similar apps are now easier:
 Main remaining bottleneck:
 
 ```text
-existing app bodies still need to adopt the DTA facade before parser/item details are consistently hidden
+existing app bodies still need to move out of the reusable `+gamrywb` package and adopt the DTA facade before parser/item details are consistently hidden
 ```
 
 Therefore, the next high-value step is adopting the DTA-facing API in one existing app, not more GUI-helper extraction.
@@ -102,7 +105,7 @@ DTA processing API:
 
 Experiment app design:
   accepted DTA family, analysis options, calculations, plots, result summaries, and export format
-  may compose GUI and DTA helpers, but keeps scientific decisions visible in the app layer
+  lives outside the reusable +gamrywb library, may compose GUI and DTA helpers, and keeps scientific decisions visible in the app layer
 ```
 
 The architecture should remain MATLAB-friendly. Prefer plain functions and structs until a repeated, proven need justifies a heavier abstraction.
@@ -296,6 +299,8 @@ It owns:
 
 The app layer may call GUI and DTA helpers, but GUI and DTA helpers should not call app-specific science.
 
+The app layer also owns experiment-specific scientific calculations. Do not move those calculations into `+gamrywb/+analysis` just because two apps have similarly shaped callbacks. Extract only low-level math utilities when they are truly independent of experiment parameters, result definitions, labels, export columns, and validation assumptions.
+
 A new app should be describable with three contracts.
 
 The app layer is intentionally not a generic engine yet. Experiment logic should stay readable and close to the app that owns it. If an abstraction makes it harder to see the scientific assumptions, keep that code explicit.
@@ -417,9 +422,9 @@ feat: add gui-free dta loading facade
 
 Do not expand this into a schema framework until an app migration proves the missing contract.
 
-### Phase C: Use the DTA facade in one existing app
+### Phase C: Move app implementations out of `+gamrywb` while using the DTA facade
 
-Status: started with EIS and Chrono overlay as reference migrations.
+Status: started with EIS as the reference app-structure migration, and EIS/Chrono overlay as DTA facade migrations.
 
 Recommended candidates:
 
@@ -436,7 +441,7 @@ Goal:
 - tests prove no behavior change
 - the migrated app demonstrates the intended split between GUI shell, DTA loading, and experiment-specific analysis/export
 
-The EIS app now uses `gamrywb.dta.loadFile(filepath, "eis")` for file loading.
+The EIS app implementation now lives under `apps/private`, not under `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "eis")` for file loading.
 
 The Chrono overlay app now uses `gamrywb.dta.loadFile(filepath, "chrono")` for file loading, while keeping pulse-gap alignment, plotting, and export choices in the app-specific workflow layer.
 
@@ -445,9 +450,11 @@ These are the reference paths for adopting the DTA facade in the remaining apps.
 Remaining migration candidates:
 
 ```text
+Chrono overlay: move implementation from +gamrywb/+app to apps/private
 VT resistance: replace direct chrono parsing in the app loader
 CIC: replace direct chrono parsing in the app loader
 CSC: replace direct CV/CT parsing in the app loader
+VT/CIC/CSC: move experiment-specific calculations, plots, and export formatting toward apps/private when each app is migrated
 ```
 
 Suggested commit:
@@ -455,6 +462,7 @@ Suggested commit:
 ```text
 refactor: use dta facade in EIS app
 refactor: use dta facade in chrono overlay app
+refactor: move EIS app implementation out of gamrywb package
 ```
 
 ### Phase D: Define lightweight extension contracts
@@ -549,6 +557,8 @@ plugin systems
 reflection-heavy dispatch
 opaque callback registries
 ```
+
+Also avoid expanding `+gamrywb/+analysis`, `+gamrywb/+plot`, or app-specific export helpers with new experiment decisions. Those packages currently contain transitional behavior-preserving code, not the desired final home for experiment design.
 
 Do not make the app body read like an opaque list of helper calls.
 

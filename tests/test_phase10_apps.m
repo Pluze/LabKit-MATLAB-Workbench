@@ -32,10 +32,15 @@ function test_phase10_apps()
 
     eisAppFile = fullfile(root, 'apps', 'gamrywb_EIS_app.m');
     eisSource = fileread(eisAppFile);
-    eisLaunchFile = fullfile(root, '+gamrywb', '+app', 'launchEISApp.m');
-    assert(exist(eisLaunchFile, 'file') == 2, 'Missing package launch function for EIS app.');
-    assert(contains(eisSource, 'gamrywb.app.launchEISApp'), ...
-        'gamrywb_EIS_app should delegate to the package launch function.');
+    eisLaunchFile = fullfile(root, 'apps', 'private', 'launchEISApp.m');
+    oldEisLaunchFile = fullfile(root, '+gamrywb', '+app', 'launchEISApp.m');
+    assert(exist(eisLaunchFile, 'file') == 2, 'Missing apps/private launch function for EIS app.');
+    assert(exist(oldEisLaunchFile, 'file') ~= 2, ...
+        'gamrywb_EIS_app implementation should not live in the reusable +gamrywb package.');
+    assert(contains(eisSource, 'launchEISApp'), ...
+        'gamrywb_EIS_app should delegate to the apps/private launch function.');
+    assert(~contains(eisSource, 'gamrywb.app.launchEISApp'), ...
+        'gamrywb_EIS_app should not route app implementation through the reusable package.');
     assert(~contains(eisSource, '_legacy'), 'gamrywb_EIS_app should not call legacy implementations.');
     assert(~contains(eisSource, 'gamry_EIS_multiDTA_plot_gui('), ...
         'gamrywb_EIS_app should not delegate to the root legacy-compatible EIS wrapper.');

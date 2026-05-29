@@ -1,6 +1,6 @@
 function varargout = launchEISApp(varargin)
-%LAUNCHEISAPP Launch the package-backed EIS app.
-% Uses +gamrywb parser, data, plotting, and export helpers without delegating to legacy.
+%LAUNCHEISAPP Launch the EIS app from apps/private.
+% Composes +gamrywb GUI, DTA, plotting, and export APIs without delegating to legacy.
 
     if nargin > 0
         error('gamrywb_EIS_app:UnsupportedInput', 'gamrywb_EIS_app does not accept input arguments.');

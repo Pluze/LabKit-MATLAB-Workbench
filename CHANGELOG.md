@@ -16,6 +16,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 
 ### Changed
 
+- Moved the EIS app implementation under `apps/private` so app-specific workflow code no longer lives in the reusable `+gamrywb` package.
 - Routed the EIS app's file loading through the GUI-free DTA facade instead of constructing EIS items directly in the app layer.
 - Routed the Chrono overlay app's file loading through the GUI-free DTA facade while keeping pulse-gap alignment in the app workflow.
 - Extracted shared batch-result table panel construction for VT/CIC-style apps into `+gamrywb/+ui`.
@@ -31,7 +32,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Moved CSC app assembly behind `gamrywb.app.launchCSCApp` while keeping the public `apps/` entry point.
 - Moved CIC app assembly behind `gamrywb.app.launchCICApp` while keeping the public `apps/` entry point.
 - Moved VT resistance app assembly behind `gamrywb.app.launchVTResistanceApp` while keeping the public `apps/` entry point.
-- Moved EIS app assembly behind `gamrywb.app.launchEISApp` while keeping the public `apps/` entry point.
+- Moved EIS app assembly behind the public `apps/` entry point, then relocated it under `apps/private` as the reference independent-app pattern.
 - Moved Chrono overlay app assembly behind `gamrywb.app.launchChronoOverlayApp` while keeping the public `apps/` entry point.
 - Extracted shared initial axes creation for Chrono/EIS overlay apps into `+gamrywb/+ui`.
 - Extracted the shared Chrono/EIS plot-options panel shell into `+gamrywb/+ui`.

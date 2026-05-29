@@ -1,6 +1,6 @@
 # Gamry Electrochemistry Workbench
 
-MATLAB tools for analyzing Gamry electrochemistry DTA files. The project preserves the original analysis workflows through package-backed app entry points and a reusable `+gamrywb` package for parsers, data helpers, analysis functions, plotting helpers, export helpers, sessions, and tests.
+MATLAB tools for analyzing Gamry electrochemistry DTA files. The project preserves the original analysis workflows through app entry points under `apps/` and a reusable `+gamrywb` package for GUI, DTA loading/parsing, data, session, and utility APIs.
 
 ## Current Status
 
@@ -12,6 +12,7 @@ What that means:
 - The old `legacy/` GUI reference directory has been removed after app entry points became package-backed.
 - CIC, VT resistance, CV/CSC, chrono overlay, and EIS overlay/export workflows have package-backed parser, analysis, plotting, export, or UI helper coverage where v1.0 required it.
 - App entry points are package-backed and live under `apps/`.
+- The EIS app implementation now lives under `apps/private` as the reference direction: app-specific workflow code should sit with the app and compose `+gamrywb` GUI/DTA APIs.
 
 Deferred beyond v1.0:
 
@@ -54,8 +55,8 @@ The default runner covers pure functions. The optional GUI mode checks launch/la
 ## Repository Layout
 
 ```text
-+gamrywb/             Reusable MATLAB package modules
-apps/                 Package-backed app entry points
++gamrywb/             Reusable MATLAB GUI, DTA, data, session, and utility APIs
+apps/                 App entry points and app-specific implementations
 demo/                 Named DTA fixtures
 tests/                MATLAB tests
 scripts/              Test runner scripts

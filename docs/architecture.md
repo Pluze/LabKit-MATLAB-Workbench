@@ -5,16 +5,16 @@ This document describes the current package boundaries and compatibility layers.
 ## Core Shape
 
 ```text
-app entry points
+apps/ entry points and apps/private implementations
     ↓
-package-backed app internals
++gamrywb GUI and DTA APIs
     ↓
 struct-based item/session models
     ↓
 +gamrywb package functions
 ```
 
-The package owns reusable app/session orchestration, parsing, data access, analysis, plotting helpers, export helpers, session helpers, and small utilities. Public files under `apps/` stay as entry points; app assembly can live under `+gamrywb/+app`.
+The reusable `+gamrywb` package should provide GUI and DTA APIs that apps compose. Experiment app implementations should live under `apps/` rather than being absorbed into the reusable library package. The EIS app is the first reference app moved to `apps/private`.
 
 ## Entrypoints
 
@@ -35,7 +35,6 @@ The app files are package-backed and do not delegate to legacy GUI files.
 ## Package Responsibilities
 
 ```text
-+gamrywb/+app       app/session orchestration helpers
 +gamrywb/+dta       GUI-free DTA type detection and loading facade
 +gamrywb/+io        DTA parsers, folder discovery, export table construction, session IO
 +gamrywb/+data      item/session construction and table/column access
@@ -60,13 +59,13 @@ Layer 2: DTA parsing/loading driver
   +gamrywb/+data item/session construction and table/column access
 
 Layer 3: experiment-specific app design
-  +gamrywb/+app launch functions
-  +gamrywb/+analysis
-  +gamrywb/+plot
-  export builders in +gamrywb/+io
+  apps/ entry points and apps/private app implementations
+  experiment-specific analysis, plotting, result summaries, and exports
 ```
 
 This map is a design boundary, not a reason to force every function into exactly three folders. Keep granular packages when they make code easier to inspect. Refactor or remove helpers when they obscure which layer owns a decision.
+
+`+gamrywb/+analysis`, `+gamrywb/+plot`, and app-specific export helpers in `+gamrywb/+io` are transitional when they encode experiment-specific decisions. Move those decisions toward `apps/private` when touching the related app. Keep only broadly reusable, parameter-light math and data utilities in the library.
 
 Analysis, data, and IO package functions should not depend on GUI state or call `uialert`. Plot/UI helpers may accept explicit graphics handles and should keep side effects limited to those handles.
 
@@ -81,12 +80,13 @@ The GUI decides how to display that status.
 
 ## Current Package Surface
 
-- `+app`: Chrono/EIS/VT resistance/CIC/CSC app launch assembly and shared app/session orchestration helpers such as duplicate-aware file loading, selected-item lookup, selected-item removal, single-file selection refresh, and single-file clear-all reset.
+- `apps/`: user-facing app entry points. EIS has moved its implementation to `apps/private` as the reference pattern for app code living outside the reusable `+gamrywb` library.
+- `+app`: transitional shared app/session orchestration helpers and remaining app launch implementations. New app-specific science should not be added here; existing launch implementations should migrate toward `apps/private` when touched.
 - `+dta`: GUI-free facade for supported DTA family detection, single-file loading, and batch loading with status/report structs. It delegates to existing `+io` parser and `+data` item-construction helpers.
-- `+io`: chrono, EIS, and CV/CT parsers; chrono/EIS/VT/CIC/CV-CSC result table builders; VT/CIC legacy-format CSV writers; session save/load.
+- `+io`: DTA parsers, folder discovery, session save/load, and transitional app-specific export helpers. Export helpers that encode experiment-specific formats should migrate toward app implementations when the owning app is moved.
 - `+data`: table/column accessors, CV/CT selected-column access, chrono item construction, EIS item construction, session add/remove helpers.
-- `+analysis`: pulse detection, pulse-gap alignment, VT resistance, CIC, CV/CSC, EIS axis-value generation, batch summaries.
-- `+plot`: chrono VT/IT overlay, CV/CT selected-column plotting, EIS overlay plotting.
+- `+analysis`: transitional experiment calculations plus broad numerical helpers. Experiment-specific calculations should migrate toward app implementations unless they are clearly general, parameter-light math utilities.
+- `+plot`: transitional experiment plots. Plot choices tied to a specific experiment should migrate toward app implementations; reusable GUI/axes primitives belong in `+ui`.
 - `+ui`: VT resistance and CIC batch table display data; shared app axes creation/reset, log append and log panel, multi-select and single-select file-listbox refresh, multi-file and single-select file-panel, summary row, result table panel, info/log text-area, plot-options panel, simple labeled-control, two-pane shell, tabbed dual-plot shell, and top/bottom plot-control construction/state helpers.
 - `+util`: low-risk helpers used by parser, data, analysis, and export code.
 
