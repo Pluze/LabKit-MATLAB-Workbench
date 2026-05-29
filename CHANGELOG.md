@@ -31,6 +31,7 @@ This project is still in an unreleased behavior-preserving refactor stage.
 - Added shared EIS item construction, axis-value, overlay plotting, and export-table helpers.
 - Added shared session creation, file add/remove, save/load, and batch summary helpers.
 - Added shared chrono VT/IT overlay plot helper.
+- Added Phase 10 app entry points under `apps/` for CIC, VT resistance, CV/CSC, and EIS workflows.
 - Added named demo DTA fixtures for parser and pulse-detection tests.
 - Added MATLAB pure-function test runner under `scripts/run_matlab_tests.sh`.
 - Added optional noninteractive GUI compatibility-contract checks under `scripts/run_matlab_tests.sh --gui`.
@@ -58,6 +59,7 @@ This project is still in an unreleased behavior-preserving refactor stage.
 - Updated `legacy/gamry_CV_CSC_dta_gui_legacy.m` to use shared session storage while preserving its existing single-file display/analysis state path.
 - Updated `legacy/gamry_EIS_multiDTA_plot_gui_legacy.m` to use shared EIS item construction, plotting, and export table helpers.
 - Updated `legacy/gamry_EIS_multiDTA_plot_gui_legacy.m` to use shared session add/remove helpers while preserving its existing `S.items` display/export path.
+- Phase 10 app entry points currently delegate to behavior-preserved legacy GUI entry points.
 - Reorganized Markdown documentation so README, roadmap, migration notes, AI instructions, and detailed docs have separate responsibilities.
 
 ### Preserved

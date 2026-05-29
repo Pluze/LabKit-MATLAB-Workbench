@@ -19,7 +19,8 @@ Phase 6: started
 Phase 7: started
 Phase 8: complete
 Phase 9: complete for current legacy-compatible scope
-Phase 10+: not started
+Phase 10: started
+Phase 11+: not started
 ```
 
 Current summary:
@@ -38,6 +39,7 @@ Current summary:
 - CV/CT selected-column access and plotting are package-backed.
 - EIS item construction, axis-value generation, overlay plotting, and current-plot export table construction are package-backed for the legacy EIS overlay GUI.
 - Shared session creation, file add/remove, save/load, batch summary helpers, VT/CIC/CV-CSC result table helpers, and legacy GUI session-state wiring are available.
+- Phase 10 app entry points are available under `apps/` and currently delegate to behavior-preserved legacy GUIs.
 
 ---
 
@@ -348,6 +350,30 @@ Deferred after current Phase 9 progress:
 
 ---
 
+## Phase 10 — New Thin Apps
+
+Phase 10 has started with compatibility-preserving app entry points.
+
+Completed work:
+
+- Added `apps/gamrywb_CIC_app.m`.
+- Added `apps/gamrywb_VTResistance_app.m`.
+- Added `apps/gamrywb_CSC_app.m`.
+- Added `apps/gamrywb_EIS_app.m`.
+- Added tests that verify app entry points resolve after `startup_gamrywb`.
+- Extended optional GUI smoke tests to verify app entry points launch the expected legacy GUI windows.
+
+Behavior preserved:
+
+- The new app entry points currently delegate to the behavior-preserved legacy GUI entry points.
+- No GUI layout, callback behavior, parser behavior, analysis formula, plotting behavior, or export format was intentionally changed.
+
+Still local after current Phase 10 progress:
+
+- Package-backed thin app internals are not yet implemented.
+
+---
+
 ## Legacy Function Inventory
 
 | Function / behavior | Found in files | Package location or plan | Notes |
@@ -488,7 +514,7 @@ Multi-DTA overlay/export must preserve:
 1. Parser implementations still duplicate some table-reading internals. This is acceptable during behavior-preserving extraction; deeper parser unification should wait until downstream behavior is verified.
 2. Shared pulse detection currently targets the legacy single cathodic-first biphasic use case. General protocol support should be treated as a future feature, not a refactor requirement.
 3. Existing tests validate extracted pure functions with demo fixtures, but not every legacy GUI output has a golden reference yet.
-4. CV/CSC export helper extraction, GUI migration to shared sessions, and app-specific export system work remain future work.
+4. Package-backed thin app internals remain future work; current Phase 10 app entry points delegate to preserved legacy GUIs.
 5. Interactive GUI behavior is not covered by the default batch test runner. Optional GUI tests cover launch, initialized layout/control compatibility, complete dropdown groups, result-table columns, axes titles/labels, callback bindings, and safe empty-session callbacks only.
 
 ---

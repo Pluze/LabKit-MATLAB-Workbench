@@ -94,7 +94,8 @@ Phase 6: started
 Phase 7: started
 Phase 8: complete
 Phase 9: complete for current legacy-compatible scope
-Phase 10+: not started
+Phase 10: started
+Phase 11+: not started
 ```
 
 Summary:
@@ -111,6 +112,7 @@ Summary:
 - CV/CT charge, CSC analysis, selected-column access, and plotting extraction has started.
 - EIS item construction, axis-value generation, overlay plotting, and current-plot export table extraction is complete for the legacy EIS overlay GUI.
 - Shared session creation, file add/remove, save/load, batch summary helper extraction, CV/CSC result table construction, and legacy GUI session-state migration are complete for the current legacy-compatible scope.
+- Phase 10 app entry points exist under `apps/` and currently delegate to behavior-preserved legacy GUIs.
 
 Completed migration details live in `MIGRATION_NOTES.md`.
 
@@ -583,7 +585,15 @@ UI controls → read options → call gamrywb package → update UI
 
 No parser, scientific formula, CSV formatting, or pulse-detection logic should live inside the apps.
 
-Status: not started.
+Status: started.
+
+Current implementation note:
+
+- `apps/gamrywb_CIC_app.m` delegates to `gamry_CIC_VT_gui_paperlabels`.
+- `apps/gamrywb_VTResistance_app.m` delegates to `gamry_VT_resistance_gui`.
+- `apps/gamrywb_CSC_app.m` delegates to `gamry_CV_CSC_dta_gui`.
+- `apps/gamrywb_EIS_app.m` delegates to `gamry_EIS_multiDTA_plot_gui`.
+- These app entry points preserve legacy GUI behavior while package-backed thin app internals mature.
 
 ---
 

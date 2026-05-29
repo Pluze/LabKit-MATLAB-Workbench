@@ -22,12 +22,12 @@ Completed or started work:
 - Phase 7 started: CV/CT charge, CSC analysis, selected-column access, and plotting are package-backed.
 - Phase 8 complete: EIS item construction, axis values, overlay plotting, and current-plot export tables are package-backed.
 - Phase 9 complete for the current legacy-compatible scope: shared session creation, file add/remove, save/load, batch summary helpers, VT/CIC/CV-CSC result table helpers, and legacy GUI session-state wiring are available.
+- Phase 10 started: app entry points are available under `apps/` and currently delegate to behavior-preserved legacy GUIs.
 - Legacy GUI entry points remain available through root-level compatibility wrappers.
 - Demo DTA fixtures and MATLAB pure-function tests are available.
 
 Not started yet:
 
-- New thin apps under `apps/`.
 - Unified workbench GUI.
 
 The current goal is **same behavior, less duplicate code, clearer boundaries**.
@@ -53,6 +53,17 @@ gamry_CIC_VT_gui_paperlabels
 ```
 
 The root-level entry points forward to preserved implementations under `legacy/`.
+
+Phase 10 app entry points are also available:
+
+```matlab
+gamrywb_CIC_app
+gamrywb_VTResistance_app
+gamrywb_CSC_app
+gamrywb_EIS_app
+```
+
+These currently delegate to the behavior-preserved legacy GUIs while package-backed thin app internals continue to mature.
 
 ---
 

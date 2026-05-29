@@ -359,6 +359,8 @@ The optional `--gui` tests verify that the five root compatibility GUI entry poi
 
 This GUI compatibility contract is the primary automated guard against future behavior-preserving refactors accidentally removing legacy GUI functionality, changing the initialized layout surface, or altering user-visible result table and plot scaffolding. When a GUI change is intentional, update the contract and document the reason in `MIGRATION_NOTES.md` and `CHANGELOG.md`.
 
+The optional GUI smoke tests also launch the Phase 10 app entry points and verify that they create the expected legacy GUI windows while they remain compatibility delegates.
+
 The optional GUI tests do not validate file dialogs, callbacks that require user input, visual layout quality, exported files, manual plot interaction, or workflows that require loaded user data.
 
 Manual GUI checks should confirm:

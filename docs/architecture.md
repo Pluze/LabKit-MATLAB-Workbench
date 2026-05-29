@@ -212,7 +212,8 @@ Current implementation status:
 - `+gamrywb/+plot` contains the initial chrono VT/IT overlay plot helper, CV/CT selected-column plot helper, and EIS overlay plot helper.
 - `+gamrywb/+ui` contains initial VT resistance and CIC batch table display-data helpers.
 - The legacy multi-DTA overlay, EIS overlay, VT resistance, CIC, and CV/CSC GUIs have started using shared session helpers while preserving their legacy display/export or display/analysis state surfaces.
-- New thin apps and unified workbench GUI have not started.
+- Phase 10 app entry points exist under `apps/` and currently delegate to the behavior-preserved legacy GUIs.
+- Unified workbench GUI has not started.
 
 ---
 
