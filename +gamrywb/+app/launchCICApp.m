@@ -163,14 +163,10 @@ function varargout = launchCICApp(varargin)
     cbShowShading.Layout.Row = 2; cbShowShading.Layout.Column = 3;
 
     %% ===================== Results table =====================
-    pTab = uipanel(laySR,'Title','Batch Results');
-    pTab.Layout.Row = 2;
-    gt = uigridlayout(pTab,[1 1]);
-    gt.Padding = [8 8 8 8];
-
-    tbl = uitable(gt);
-    tbl.ColumnName = {'File','Amp(A)','Emc(V)','Ema(V)','Qc(mC/cm^2)','Qa(mC/cm^2)','Qtot(mC/cm^2)','Safe'};
-    tbl.Data = cell(0,8);
+    tableUi = gamrywb.ui.createResultTablePanel(laySR, 'Batch Results', 2, ...
+        {'File','Amp(A)','Emc(V)','Ema(V)','Qc(mC/cm^2)','Qa(mC/cm^2)','Qtot(mC/cm^2)','Safe'}, ...
+        cell(0,8));
+    tbl = tableUi.table;
 
     %% ===================== Log =====================
     logUi = gamrywb.ui.createLogPanel(layLog, 1);

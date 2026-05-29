@@ -76,6 +76,7 @@ Current shared UI helpers:
 +gamrywb/+ui/createInfoArea.m
 +gamrywb/+ui/createLogArea.m
 +gamrywb/+ui/createLogPanel.m
++gamrywb/+ui/createResultTablePanel.m
 +gamrywb/+ui/createPlotOptionsPanel.m
 +gamrywb/+ui/buildCICBatchTableData.m
 +gamrywb/+ui/buildVTResistanceBatchTableData.m
@@ -487,6 +488,7 @@ Preferred split:
 +gamrywb/+ui/setTopBottomPlotSelections.m    done for VT resistance and CIC apps
 +gamrywb/+ui/swapTopBottomPlotSelections.m    done for VT resistance and CIC apps
 +gamrywb/+ui/resetTopBottomAxes.m    done for VT resistance and CIC apps
++gamrywb/+ui/createResultTablePanel.m    done for VT resistance and CIC apps
 ```
 
 Keep dialogs in app/UI code. Keep `gamrywb.data.addFilesToSession` free of UI dialogs.
@@ -738,6 +740,7 @@ Use this section to record meaningful changes in strategy.
 - refreshSingleSelectFileListbox shares VT/CIC single-file listbox refresh and loaded-count text while returning the app-owned current index
 - createReadOnlyInfoRow shares VT/CIC summary-row label/read-only-field construction while keeping app-specific labels and state fields in app code
 - setTopBottomPlotSelections, swapTopBottomPlotSelections, and resetTopBottomAxes share VT/CIC top/bottom plot-control state behavior while preserving app-owned refresh calls
+- createResultTablePanel shares VT/CIC batch-result table panel construction while keeping app-specific column names and table data in app code
 - createLogPanel shares VT/CIC log-tab panel construction while preserving app-owned appendLog calls and message text
 ```
 

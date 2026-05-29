@@ -118,13 +118,10 @@ function varargout = launchVTResistanceApp(varargin)
     S.txtAvgR = gamrywb.ui.createReadOnlyInfoRow(gi,11,'Average R:');
     S.txtStatus = gamrywb.ui.createReadOnlyInfoRow(gi,12,'Status:');
 
-    pTab = uipanel(laySR,'Title','Batch Results');
-    pTab.Layout.Row = 2;
-    gt = uigridlayout(pTab,[1 1]);
-    gt.Padding = [8 8 8 8];
-    tbl = uitable(gt);
-    tbl.ColumnName = {'File','Ic(A)','Ia(A)','Vc_ss(V)','Va_ss(V)','R_cath(ohm)','R_anod(ohm)','R_avg(ohm)','Detection'};
-    tbl.Data = cell(0,9);
+    tableUi = gamrywb.ui.createResultTablePanel(laySR, 'Batch Results', 2, ...
+        {'File','Ic(A)','Ia(A)','Vc_ss(V)','Va_ss(V)','R_cath(ohm)','R_anod(ohm)','R_avg(ohm)','Detection'}, ...
+        cell(0,9));
+    tbl = tableUi.table;
 
     logUi = gamrywb.ui.createLogPanel(layLog, 1);
     txtLog = logUi.textArea;

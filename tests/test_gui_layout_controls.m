@@ -14,6 +14,7 @@ function test_gui_layout_controls()
     checkInfoLogAreaHelpers();
     checkLogPanelHelper();
     checkReadOnlyInfoRowHelper();
+    checkResultTablePanelHelper();
     checkPlotOptionsPanelHelper();
     checkCreateAxesHelper();
     checkTabbedDualPlotShellHelper();
@@ -241,6 +242,25 @@ function checkReadOnlyInfoRowHelper()
         'Read-only info row should create a read-only field.');
     assert(strcmp(field.Value, '-'), ...
         'Read-only info row should preserve the default empty summary value.');
+end
+
+function checkResultTablePanelHelper()
+    fig = uifigure('Visible', 'off', 'Name', 'gamrywb_result_table_panel_probe');
+    cleaner = onCleanup(@() delete(fig));
+    grid = uigridlayout(fig, [2 1]);
+
+    ui = gamrywb.ui.createResultTablePanel(grid, 'Batch Results', 2, ...
+        {'File', 'Value'}, cell(0, 2));
+    assert(strcmp(ui.panel.Title, 'Batch Results'), ...
+        'Result table panel helper should preserve the panel title.');
+    assert(ui.panel.Layout.Row == 2, ...
+        'Result table panel helper should place the panel in the requested row.');
+    assert(isequal(ui.grid.Padding, [8 8 8 8]), ...
+        'Result table panel helper should preserve grid padding.');
+    assert(sameStringCell(ui.table.ColumnName, {'File', 'Value'}), ...
+        'Result table panel helper should preserve supplied column names.');
+    assert(isequal(size(ui.table.Data), [0 2]), ...
+        'Result table panel helper should preserve supplied empty table width.');
 end
 
 function checkPlotOptionsPanelHelper()
