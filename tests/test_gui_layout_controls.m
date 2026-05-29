@@ -341,13 +341,14 @@ function checkTopBottomPlotStateHelpers()
 
     shell.topAxes.XScale = 'log';
     shell.bottomAxes.YScale = 'log';
-    gamrywb.ui.resetTopBottomAxes(shell.topAxes, shell.bottomAxes, true);
+    gamrywb.ui.hardResetAxis(shell.topAxes, 'Top Plot', true);
+    gamrywb.ui.hardResetAxis(shell.bottomAxes, 'Bottom Plot', true);
     assert(strcmp(char(shell.topAxes.Title.String), 'Top Plot'), ...
-        'Top/bottom axes reset should preserve the top axes title.');
+        'Hard axis reset should preserve the supplied top axes title.');
     assert(strcmp(char(shell.bottomAxes.Title.String), 'Bottom Plot'), ...
-        'Top/bottom axes reset should preserve the bottom axes title.');
+        'Hard axis reset should preserve the supplied bottom axes title.');
     assert(strcmp(shell.topAxes.XScale, 'linear') && strcmp(shell.bottomAxes.YScale, 'linear'), ...
-        'Top/bottom axes reset should optionally reset axis scales.');
+        'Hard axis reset should optionally reset axis scales.');
 end
 
 function checkSingleSelectFilePanelHelper()

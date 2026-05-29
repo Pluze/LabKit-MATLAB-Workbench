@@ -457,7 +457,8 @@ function varargout = gamrywb_VTResistance_app(varargin)
     end
 
     function resetAxesToDefaultState()
-        gamrywb.ui.resetTopBottomAxes(axTop, axBottom);
+        gamrywb.ui.hardResetAxis(axTop, 'Top Plot');
+        gamrywb.ui.hardResetAxis(axBottom, 'Bottom Plot');
     end
 
     function exportResultsCSV()

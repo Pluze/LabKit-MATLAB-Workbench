@@ -612,7 +612,8 @@ function varargout = gamrywb_CIC_app(varargin)
     end
 
     function resetAxesToDefaultState()
-        gamrywb.ui.resetTopBottomAxes(axTop, axBottom, true);
+        gamrywb.ui.hardResetAxis(axTop, 'Top Plot', true);
+        gamrywb.ui.hardResetAxis(axBottom, 'Bottom Plot', true);
     end
 
     function exportResultsCSV()
