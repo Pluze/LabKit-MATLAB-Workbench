@@ -51,6 +51,8 @@ Supported expected kinds:
 "cvct"
 ```
 
+Invalid expected kinds are programmer errors and raise `gamrywb:dta:InvalidKind` before loading starts, including empty batch and empty-folder loads.
+
 Batch loading:
 
 ```matlab

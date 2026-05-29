@@ -101,6 +101,7 @@ chrono, eis, cvct, unknown
 
 Batch `items` are returned as a cell array because `"auto"` loading can mix different DTA item schemas.
 Empty batch inputs are no-ops that return no items and an empty report with zero counts.
+Invalid `expectedKind` values are programmer errors and raise `gamrywb:dta:InvalidKind` before batch or folder loading starts, even when the input file list or discovered folder contents are empty.
 
 `loadFiles` report fields:
 

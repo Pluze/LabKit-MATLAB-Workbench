@@ -72,6 +72,7 @@ function test_dtaFacade()
         'Empty DTA batch report counts should be zero.');
     assert(isempty(emptyReport.loaded) && isempty(emptyReport.failed) && isempty(emptyReport.statuses), ...
         'Empty DTA batch report should have no loaded, failed, or status entries.');
+    assertInvalidExpectedKind(@() gamrywb.dta.loadFiles([], "bad"));
 
     [folderItems, folderReport] = gamrywb.dta.loadFolder(demoDir, "auto");
     assertLoadFolderReportFields(folderReport);
@@ -95,6 +96,7 @@ function test_dtaFacade()
     assert(emptyFolderReport.nLoaded == 0 && emptyFolderReport.nFailed == 0, ...
         'Empty DTA folder report should have zero loaded and failed files.');
     assert(isempty(emptyFolderReport.filepaths), 'Empty DTA folder report should preserve an empty filepath list.');
+    assertInvalidExpectedKind(@() gamrywb.dta.loadFolder(emptyDir, "bad"));
 end
 
 function assertStatusFields(status)
@@ -130,6 +132,18 @@ function assertInvalidFolderInput(folder)
     end
 
     error('DTA discovery should reject invalid folder input.');
+end
+
+function assertInvalidExpectedKind(callFcn)
+    try
+        callFcn();
+    catch ME
+        assert(strcmp(ME.identifier, 'gamrywb:dta:InvalidKind'), ...
+            'Invalid expected DTA kind should use the documented error identifier.');
+        return;
+    end
+
+    error('DTA facade should reject invalid expected DTA kind.');
 end
 
 function removeFolderIfExists(folder)
