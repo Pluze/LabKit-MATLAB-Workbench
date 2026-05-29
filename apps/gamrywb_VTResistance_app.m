@@ -238,31 +238,38 @@ function varargout = gamrywb_VTResistance_app(varargin)
     end
 
     function onSelectFile()
-        selectionCallbacks = struct();
-        selectionCallbacks.restoreDefaultPlotSelections = @restoreDefaultPlotSelections;
-        selectionCallbacks.resetAxesToDefaultState = @resetAxesToDefaultState;
-        selectionCallbacks.refreshResultsSummary = @refreshResultsSummary;
-        selectionCallbacks.refreshPlots = @refreshPlots;
-        S.current = gamrywb.ui.handleSingleFileSelection(lbFiles, selectionCallbacks);
+        if isempty(lbFiles.Items)
+            S.current = [];
+            resetAxesToDefaultState();
+            refreshResultsSummary();
+            refreshPlots();
+            return;
+        end
+
+        idx = find(strcmp(lbFiles.Items, lbFiles.Value), 1);
+        if isempty(idx)
+            S.current = [];
+        else
+            S.current = idx;
+        end
+
+        restoreDefaultPlotSelections();
+        resetAxesToDefaultState();
+        refreshResultsSummary();
+        refreshPlots();
     end
 
     function clearAllFiles()
-        clearCallbacks = struct();
-        clearCallbacks.applyState = @applyClearState;
-        clearCallbacks.restoreDefaultPlotSelections = @restoreDefaultPlotSelections;
-        clearCallbacks.resetAxesToDefaultState = @resetAxesToDefaultState;
-        clearCallbacks.refreshFileList = @refreshFileList;
-        clearCallbacks.refreshBatchTable = @refreshBatchTable;
-        clearCallbacks.refreshResultsSummary = @refreshResultsSummary;
-        clearCallbacks.refreshPlots = @refreshPlots;
-        clearCallbacks.addLog = @addLog;
-        gamrywb.ui.handleClearSingleFileSession('vt_resistance', clearCallbacks);
-    end
-
-    function applyClearState(session, items, current)
-        S.session = session;
-        S.items = items;
-        S.current = current;
+        S.session = gamrywb.data.makeSession('vt_resistance');
+        S.items = S.session.items;
+        S.current = [];
+        restoreDefaultPlotSelections();
+        resetAxesToDefaultState();
+        refreshFileList();
+        refreshBatchTable();
+        refreshResultsSummary();
+        refreshPlots();
+        addLog('Cleared all files.');
     end
 
     function refreshFileList()

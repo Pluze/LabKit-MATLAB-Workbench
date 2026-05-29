@@ -1,5 +1,5 @@
 function test_appSessionHelpers()
-%TEST_APPSESSIONHELPERS Verify reusable app/session loading helpers.
+%TEST_APPSESSIONHELPERS Verify reusable data/session loading helpers.
 
     session = gamrywb.data.makeSession('overlay');
     events = {};
@@ -59,64 +59,12 @@ function test_appSessionHelpers()
     assert(isempty(noItems), 'Missing selected name should return no items.');
     assert(isempty(noIdx), 'Missing selected name should return no indices.');
 
-    events = {};
-    selectionCallbacks = struct();
-    selectionCallbacks.restoreDefaultPlotSelections = @() recordSelectionEvent('restore');
-    selectionCallbacks.resetAxesToDefaultState = @() recordSelectionEvent('reset');
-    selectionCallbacks.refreshResultsSummary = @() recordSelectionEvent('summary');
-    selectionCallbacks.refreshPlots = @() recordSelectionEvent('plots');
-
-    lb = struct('Items', {{'a.DTA', 'b.DTA'}}, 'Value', 'b.DTA');
-    selectedIdx = gamrywb.ui.handleSingleFileSelection(lb, selectionCallbacks);
-    assert(selectedIdx == 2, 'Single-file selection helper should return the selected listbox index.');
-    assert(isequal(events.', {'restore', 'reset', 'summary', 'plots'}), ...
-        'Single-file selection helper should preserve the nonempty callback order.');
-
-    events = {};
-    lb = struct('Items', {{}}, 'Value', {{}});
-    selectedIdx = gamrywb.ui.handleSingleFileSelection(lb, selectionCallbacks);
-    assert(isempty(selectedIdx), 'Single-file selection helper should clear current index for empty lists.');
-    assert(isequal(events.', {'reset', 'summary', 'plots'}), ...
-        'Single-file selection helper should preserve the empty-list callback order.');
-
-    events = {};
-    appliedState = struct();
-    clearCallbacks = struct();
-    clearCallbacks.applyState = @recordAppliedState;
-    clearCallbacks.restoreDefaultPlotSelections = @() recordSelectionEvent('restore');
-    clearCallbacks.resetAxesToDefaultState = @() recordSelectionEvent('reset');
-    clearCallbacks.refreshFileList = @() recordSelectionEvent('files');
-    clearCallbacks.refreshBatchTable = @() recordSelectionEvent('table');
-    clearCallbacks.refreshResultsSummary = @() recordSelectionEvent('summary');
-    clearCallbacks.refreshPlots = @() recordSelectionEvent('plots');
-    clearCallbacks.addLog = @(msg) recordSelectionEvent(['log:' msg]);
-    clearState = gamrywb.ui.handleClearSingleFileSession('cic_vt', clearCallbacks);
-    assert(strcmp(clearState.session.kind, 'cic_vt'), ...
-        'Clear helper should create a replacement session with the requested kind.');
-    assert(isempty(clearState.items) && isempty(clearState.current), ...
-        'Clear helper should return empty items and current selection.');
-    assert(strcmp(appliedState.session.kind, 'cic_vt') && isempty(appliedState.items) && isempty(appliedState.current), ...
-        'Clear helper should apply the replacement state before refreshing UI callbacks.');
-    assert(isequal(events.', {'apply', 'restore', 'reset', 'files', 'table', 'summary', 'plots', 'log:Cleared all files.'}), ...
-        'Clear helper should preserve the clear-all callback order.');
-
     function recordEvent(kind, filepath, detail)
         events(end+1, :) = {kind, filepath, detail}; %#ok<AGROW>
     end
 
     function recordRemoved(name, filepath)
         removed(end+1, :) = {name, filepath}; %#ok<AGROW>
-    end
-
-    function recordSelectionEvent(kind)
-        events{end+1, 1} = kind; %#ok<AGROW>
-    end
-
-    function recordAppliedState(sessionArg, itemsArg, currentArg)
-        appliedState.session = sessionArg;
-        appliedState.items = itemsArg;
-        appliedState.current = currentArg;
-        recordSelectionEvent('apply');
     end
 end
 
