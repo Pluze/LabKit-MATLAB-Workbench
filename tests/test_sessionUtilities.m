@@ -29,6 +29,13 @@ function test_sessionUtilities()
     assert(isequal(report2.skipped, {'/tmp/a.DTA'}), 'Duplicate add should report skipped filepath.');
     assert(strcmp(events{end, 1}, 'skipped'), 'Session add callback should report skipped duplicates.');
 
+    eventCount = size(events, 1);
+    [session, emptyReport] = gamrywb.data.addFilesToSession(session, {}, @loader, callbacks);
+    assert(numel(session.items) == 2, 'Empty file add should leave session items unchanged.');
+    assert(isempty(emptyReport.added) && isempty(emptyReport.skipped) && isempty(emptyReport.failed), ...
+        'Empty file add should return an empty report.');
+    assert(size(events, 1) == eventCount, 'Empty file add should not fire callbacks.');
+
     T = gamrywb.data.summarizeBatchResults(session.items);
     assert(isequal(T.Properties.VariableNames, {'Name', 'Filepath', 'Ok', 'Message'}), ...
         'Summary columns should be stable.');

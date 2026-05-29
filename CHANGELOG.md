@@ -10,6 +10,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Public single-file app implementations for EIS, Chrono overlay, CSC, VT resistance, and CIC under `apps/`.
 - Reusable API usage guide and single-file app templates covering DTA loading, session-backed file panels, GUI label structs, and future app checklists.
 - Focused app-boundary tests guarding single-file app ownership, DTA facade usage, removed migration namespaces, and reusable `+gamrywb/+io` export boundaries.
+- Session helper coverage for empty file-list no-op behavior.
 
 ### Changed
 
@@ -21,6 +22,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Generic selected-curve plotting lives in `gamrywb.ui.plotCurveXY`; app-specific plotting packages and empty reusable plot packages are not kept.
 - Test organization now separates default and GUI groups, shares repeated numeric assertion helpers, and keeps architecture guardrails in `test_phase10_apps`.
 - Current architecture, API, data-model, validation, and roadmap docs describe the three reusable library surfaces plus single-file app ownership.
+- `gamrywb.data.addFilesToSession` now treats empty file lists as no-ops with empty reports, matching `loadFilesIntoSession`.
 
 ### Removed
 

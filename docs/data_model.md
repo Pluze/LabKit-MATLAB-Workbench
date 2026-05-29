@@ -222,6 +222,6 @@ gamrywb.io.saveSession
 gamrywb.io.loadSession
 ```
 
-`addFilesToSession` supports `onAdded`, `onSkipped`, and `onFailed` callbacks so apps can preserve log timing while sharing add/duplicate/failure logic. `loadFilesIntoSession`, `removeSelectedItemsFromSession`, and `selectItemsByNames` are GUI-free session/item orchestration helpers; UI code passes listbox values into them but they do not own controls.
+`addFilesToSession` supports `onAdded`, `onSkipped`, and `onFailed` callbacks so apps can preserve log timing while sharing add/duplicate/failure logic. Empty file lists are no-ops that return empty reports without firing callbacks. `loadFilesIntoSession`, `removeSelectedItemsFromSession`, and `selectItemsByNames` are GUI-free session/item orchestration helpers; UI code passes listbox values into them but they do not own controls.
 
 Session files should keep parsed data, selected analysis mode, options, results, notes, and file provenance explicit. Avoid opaque object dumps for scientific exchange.

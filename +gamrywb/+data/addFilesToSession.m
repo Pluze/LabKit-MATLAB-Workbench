@@ -8,11 +8,15 @@ function [session, report] = addFilesToSession(session, filepaths, loader, callb
         callbacks = struct();
     end
 
-    filepaths = normalizeFilepaths(filepaths);
     report = struct();
     report.added = {};
     report.skipped = {};
     report.failed = struct('filepath', {}, 'message', {});
+
+    filepaths = normalizeFilepaths(filepaths);
+    if isempty(filepaths)
+        return;
+    end
 
     for k = 1:numel(filepaths)
         filepath = filepaths{k};
@@ -57,7 +61,9 @@ function tf = hasFilepath(items, filepath)
 end
 
 function out = normalizeFilepaths(filepaths)
-    if ischar(filepaths)
+    if isempty(filepaths)
+        out = {};
+    elseif ischar(filepaths)
         out = {filepaths};
     elseif isstring(filepaths)
         out = cellstr(filepaths(:));
