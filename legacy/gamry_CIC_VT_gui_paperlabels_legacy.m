@@ -495,36 +495,12 @@ function gamry_CIC_VT_gui_paperlabels_legacy
     end
 
     function refreshBatchTable()
-        [scale, unitLabel] = cicDisplayUnit();
-        tbl.ColumnName = {'File','Amp(A)','Emc(V)','Ema(V)', ...
-            ['Qc(' unitLabel ')'], ['Qa(' unitLabel ')'], ['Qtot(' unitLabel ')'], 'Safe'};
+        [~, unitLabel] = cicDisplayUnit();
+        [C, columnNames] = gamrywb.ui.buildCICBatchTableData(S.items, unitLabel);
+        tbl.ColumnName = columnNames;
         if isempty(S.items)
             tbl.Data = cell(0,8);
             return;
-        end
-        C = cell(numel(S.items),8);
-        for i = 1:numel(S.items)
-            it = S.items(i);
-            if isempty(it.analysis) || ~isfield(it.analysis,'ok') || ~it.analysis.ok
-                C{i,1} = it.name;
-                C{i,2} = NaN;
-                C{i,3} = NaN;
-                C{i,4} = NaN;
-                C{i,5} = NaN;
-                C{i,6} = NaN;
-                C{i,7} = NaN;
-                C{i,8} = 'parse/analyze failed';
-            else
-                A = it.analysis;
-                C{i,1} = it.name;
-                C{i,2} = A.ampEstimate_A;
-                C{i,3} = A.Emc;
-                C{i,4} = A.Ema;
-                C{i,5} = scale * A.CICc_mCcm2;
-                C{i,6} = scale * A.CICa_mCcm2;
-                C{i,7} = scale * A.CICt_mCcm2;
-                C{i,8} = ternary(A.safe,'safe',A.limitSide);
-            end
         end
         tbl.Data = C;
     end
@@ -798,27 +774,12 @@ function gamry_CIC_VT_gui_paperlabels_legacy
             return;
         end
         out = fullfile(p,f);
-        fid = fopen(out,'w');
-        if fid < 0
-            uialert(fig,'Could not open file for writing.','Export');
+        [~, unitLabel] = cicDisplayUnit();
+        [ok, msg] = gamrywb.io.writeCICResultsCSV(S.items, out, unitLabel);
+        if ~ok
+            uialert(fig,msg,'Export');
             return;
         end
-        [scale, unitLabel] = cicDisplayUnit();
-        unitSuffix = regexprep(unitLabel, '[\^/]', '');
-        fprintf(fid,'File,Amp_A,Emc_V,Ema_V,Qc_C,Qa_C,Qt_C,CICc_%s,CICa_%s,CICt_%s,Safe,Detection\n', ...
-            unitSuffix, unitSuffix, unitSuffix);
-        for i = 1:numel(S.items)
-            it = S.items(i);
-            if isempty(it.analysis) || ~it.analysis.ok
-                fprintf(fid,'"%s",,,,,,,,,,0,"failed"\n', it.name);
-            else
-                A = it.analysis;
-                fprintf(fid,'"%s",%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,%d,"%s"\n', ...
-                    it.name, A.ampEstimate_A, A.Emc, A.Ema, A.Qc_C, A.Qa_C, A.Qt_C, ...
-                    scale * A.CICc_mCcm2, scale * A.CICa_mCcm2, scale * A.CICt_mCcm2, A.safe, A.detectMode);
-            end
-        end
-        fclose(fid);
         addLog(['Exported CSV: ' out]);
     end
 

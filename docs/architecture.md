@@ -206,11 +206,11 @@ Current implementation status:
 - Root-level compatibility wrappers exist.
 - Legacy GUI implementations are preserved under `legacy/`.
 - `+gamrywb/+util` exists and contains shared low-risk helpers.
-- `+gamrywb/+io` contains initial chrono, EIS, and CV/CT parsers, chrono/EIS/VT result export table builders, the VT legacy-format CSV writer, and session save/load helpers.
+- `+gamrywb/+io` contains initial chrono, EIS, and CV/CT parsers, chrono/EIS/VT/CIC result export table builders, VT/CIC legacy-format CSV writers, and session save/load helpers.
 - `+gamrywb/+data` contains initial table/column accessors, CV/CT selected-column access, chrono item construction, EIS item construction, and shared session helpers.
 - `+gamrywb/+analysis` contains initial pulse detection helpers, pulse-gap alignment, VT resistance analysis, CIC analysis, CV/CSC analysis, EIS axis-value generation, and batch summary helpers.
 - `+gamrywb/+plot` contains the initial chrono VT/IT overlay plot helper, CV/CT selected-column plot helper, and EIS overlay plot helper.
-- `+gamrywb/+ui` contains the initial VT resistance batch table display-data helper.
+- `+gamrywb/+ui` contains initial VT resistance and CIC batch table display-data helpers.
 - New thin apps and unified workbench GUI have not started.
 
 ---

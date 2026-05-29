@@ -216,6 +216,19 @@ batch result table values
 CSV export values
 ```
 
+Current default tests include CIC checks for:
+
+```text
+analysis values for measured and nominal charge modes
+metadata area and area override behavior
+water-window safe/unsafe status
+CSV result table variable names for mC/cm^2 and uC/cm^2
+legacy 8-column batch table data and dynamic unit labels
+legacy CSV header spelling/order
+legacy CSV failed-row empty-field formatting
+legacy CSV quoted text behavior
+```
+
 Do not start CIC extraction without either golden references or a clearly documented legacy comparison script.
 
 ---

@@ -399,6 +399,8 @@ Package areas:
 +gamrywb/+analysis/checkWaterWindowSafety.m
 +gamrywb/+plot/plotCICDebug.m
 +gamrywb/+io/buildCICResultsTable.m
++gamrywb/+io/writeCICResultsCSV.m
++gamrywb/+ui/buildCICBatchTableData.m
 ```
 
 Required behavior to preserve:
@@ -429,6 +431,9 @@ Current implementation note:
 
 - `legacy/gamry_CIC_VT_gui_paperlabels_legacy.m` now calls `gamrywb.analysis.computeCIC`.
 - `computeCIC` currently returns legacy-compatible fields so existing summary tables, plots, and CSV export remain unchanged.
+- CIC CSV result table construction and legacy-format CSV writing are provided by `gamrywb.io`.
+- The legacy CIC batch `uitable` data is provided by `gamrywb.ui.buildCICBatchTableData`.
+- Legacy GUI file-list management, selected-file handling, `uigetfile`/`uiputfile`, summary text, plotting, and logging remain local.
 
 ---
 
@@ -532,6 +537,7 @@ Package areas:
 +gamrywb/+io/exportTableCSV.m
 +gamrywb/+analysis/summarizeBatchResults.m
 +gamrywb/+ui/buildVTResistanceBatchTableData.m
++gamrywb/+ui/buildCICBatchTableData.m
 ```
 
 Status: started.
@@ -543,6 +549,7 @@ Current implementation note:
 - `gamrywb.io.saveSession` and `gamrywb.io.loadSession` persist session structs to MAT files.
 - `gamrywb.analysis.summarizeBatchResults` creates a common result status table.
 - VT resistance result/export table helpers are package-backed while preserving the legacy GUI table shape and CSV format.
+- CIC result/export table helpers are package-backed while preserving the legacy GUI table shape, dynamic units, and CSV format.
 - Legacy GUIs have not yet been migrated to shared session state.
 
 ---

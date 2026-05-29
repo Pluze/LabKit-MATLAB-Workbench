@@ -179,7 +179,34 @@ The GUI batch table remains a 9-column cell array matching the legacy `uitable` 
 
 ---
 
-## 6. CVCTItem
+## 6. CIC Results
+
+`gamrywb.analysis.computeCIC` returns a legacy-compatible CIC / voltage-transient result struct. Result/export helpers currently preserve the legacy GUI's app-specific table and CSV contracts.
+
+Current package-backed CIC result helpers:
+
+```text
++gamrywb/+io/buildCICResultsTable.m
++gamrywb/+io/writeCICResultsCSV.m
++gamrywb/+ui/buildCICBatchTableData.m
+```
+
+The CSV result table preserves the legacy column order and dynamic unit suffix:
+
+```text
+File,Amp_A,Emc_V,Ema_V,Qc_C,Qa_C,Qt_C,CICc_mCcm2,CICa_mCcm2,CICt_mCcm2,Safe,Detection
+File,Amp_A,Emc_V,Ema_V,Qc_C,Qa_C,Qt_C,CICc_uCcm2,CICa_uCcm2,CICt_uCcm2,Safe,Detection
+```
+
+The GUI batch table remains an 8-column cell array with dynamic `mC/cm^2` or `uC/cm^2` display labels.
+
+Legacy compatibility note:
+
+The current CIC CSV writer intentionally preserves the legacy writer's quoted-text behavior, including the lack of double-quote escaping in file names and detection strings.
+
+---
+
+## 7. CVCTItem
 
 Used for CV / CT charge integration and CSC analysis.
 
@@ -214,7 +241,7 @@ Plot note:
 
 ---
 
-## 7. Pulse Struct
+## 8. Pulse Struct
 
 Pulse detection currently returns a struct with both legacy-compatible flat fields and future normalized nested fields.
 
@@ -258,7 +285,7 @@ Do not remove legacy flat fields until all legacy GUI call sites and analysis mo
 
 ---
 
-## 8. Session Struct
+## 9. Session Struct
 
 A shared session model has started in `gamrywb.data.makeSession`.
 
@@ -302,7 +329,7 @@ Do not use opaque object dumps for long-term scientific data exchange.
 
 ---
 
-## 9. Option Structs
+## 10. Option Structs
 
 Analysis functions should use option structs.
 
@@ -324,7 +351,7 @@ computeCIC(t, Vf, Im, area, delay, cathLimit, anodLimit, mode)
 
 ---
 
-## 10. Data Model Stability Rule
+## 11. Data Model Stability Rule
 
 Before converting any struct model into a MATLAB class, the project should have:
 

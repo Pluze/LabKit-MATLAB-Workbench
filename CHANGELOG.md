@@ -24,6 +24,7 @@ This project is still in an unreleased behavior-preserving refactor stage.
 - Added shared VT resistance analysis helpers under `+gamrywb/+analysis`.
 - Added shared VT resistance result/export table helpers under `+gamrywb/+io` and batch display data under `+gamrywb/+ui`.
 - Added shared CIC / voltage-transient analysis helpers under `+gamrywb/+analysis`.
+- Added shared CIC result/export table helpers under `+gamrywb/+io` and batch display data under `+gamrywb/+ui`.
 - Added shared CV/CT charge and CSC analysis helpers under `+gamrywb/+analysis`.
 - Added shared CV/CT selected-column access and plotting helpers.
 - Added shared EIS item construction, axis-value, overlay plotting, and export-table helpers.
@@ -46,6 +47,7 @@ This project is still in an unreleased behavior-preserving refactor stage.
 - Updated `legacy/gamry_VT_resistance_gui_legacy.m` to use shared VT resistance batch table and legacy-format CSV writer helpers.
 - Updated `legacy/gamry_CIC_VT_gui_paperlabels_legacy.m` to use shared chrono parsing, DTA discovery, table/column accessors, pulse detection, and low-risk utilities.
 - Updated `legacy/gamry_CIC_VT_gui_paperlabels_legacy.m` to call shared CIC / voltage-transient analysis.
+- Updated `legacy/gamry_CIC_VT_gui_paperlabels_legacy.m` to use shared CIC batch table and legacy-format CSV writer helpers.
 - Updated `legacy/gamry_CV_CSC_dta_gui_legacy.m` to call shared CV/CT charge and CSC analysis.
 - Updated `legacy/gamry_CV_CSC_dta_gui_legacy.m` to use shared CV/CT selected-column plotting.
 - Updated `legacy/gamry_EIS_multiDTA_plot_gui_legacy.m` to use shared EIS item construction, plotting, and export table helpers.
@@ -60,7 +62,7 @@ This project is still in an unreleased behavior-preserving refactor stage.
 
 ### Known Gaps
 
-- CIC plotting/export formatting remains in the legacy GUI.
+- CIC plotting remains in the legacy GUI.
 - VT resistance plotting remains in the legacy GUI.
 - CV/CSC export formatting remains deferred until a batch/session export workflow exists.
 - Legacy GUIs have not yet been migrated to shared batch/session utilities.

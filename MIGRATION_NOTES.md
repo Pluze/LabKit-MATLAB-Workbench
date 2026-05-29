@@ -33,6 +33,7 @@ Current summary:
 - VT resistance analysis is package-backed.
 - VT resistance result/export table construction and legacy-format CSV writing are package-backed.
 - CIC / voltage-transient analysis is package-backed.
+- CIC result/export table construction and legacy-format CSV writing are package-backed.
 - CV/CT charge and CSC analysis are package-backed.
 - CV/CT selected-column access and plotting are package-backed.
 - EIS item construction, axis-value generation, overlay plotting, and current-plot export table construction are package-backed for the legacy EIS overlay GUI.
@@ -219,7 +220,11 @@ Completed work:
 - Added `gamrywb.analysis.computeVoltageTransientMetrics`.
 - Added `gamrywb.analysis.computeInjectedCharge`.
 - Added `gamrywb.analysis.checkWaterWindowSafety`.
+- Added `gamrywb.io.buildCICResultsTable`.
+- Added `gamrywb.io.writeCICResultsCSV`.
+- Added `gamrywb.ui.buildCICBatchTableData`.
 - Updated `legacy/gamry_CIC_VT_gui_paperlabels_legacy.m` to call the shared CIC analysis function.
+- Updated `legacy/gamry_CIC_VT_gui_paperlabels_legacy.m` to call the shared CIC batch table and CSV writer helpers.
 
 Behavior preserved:
 
@@ -231,10 +236,12 @@ Behavior preserved:
 - mC/cm^2 charge density values used by existing summary/export code.
 - Water-window safe/unsafe classification and legacy status text.
 - Legacy result fields used by summary tables, plots, and CSV export.
+- Legacy batch results `uitable` 8-column shape and dynamic unit labels.
+- Legacy CSV column names, dynamic unit suffixes, failed-row empty fields, and quoted-text behavior.
 
 Still local after current Phase 6 progress:
 
-- CIC plotting and CSV export formatting.
+- CIC plotting and current-file summary text formatting.
 - CV/CSC extraction, which was handled in later Phase 7 work.
 - EIS overlay/export logic.
 
@@ -311,6 +318,7 @@ Completed work:
 - Added `gamrywb.io.loadSession`.
 - Added `gamrywb.analysis.summarizeBatchResults`.
 - Added VT resistance result/export table helpers and a VT batch display-data helper as the first app-specific Phase 9 table extraction.
+- Added CIC result/export table helpers and a CIC batch display-data helper as the next app-specific Phase 9 table extraction.
 
 Behavior preserved:
 
@@ -320,11 +328,12 @@ Behavior preserved:
 - Session persistence stores the explicit `gamrywb_session` struct.
 - Batch summaries use common `name`, `filepath`, `analysis.ok`, and `analysis.message` fields without changing existing app-specific tables.
 - VT resistance result/export helpers preserve the existing app-specific table and CSV contract.
+- CIC result/export helpers preserve the existing app-specific table and CSV contract, including dynamic mC/uC units.
 
 Still local after current Phase 9 progress:
 
 - Migration of legacy GUI state containers to shared session helpers.
-- CIC and CV/CSC result/export table builders not already extracted.
+- CV/CSC result/export table builders not already extracted.
 
 ---
 
@@ -350,6 +359,7 @@ Still local after current Phase 9 progress:
 | VT resistance analysis | VT resistance GUI | `+gamrywb/+analysis/computeVTResistance.m` | Started Phase 5. Preserve median windows, baselines, dV/I mode, raw Vf/I mode, and legacy result fields. |
 | VT resistance results/export table | VT resistance GUI | `+gamrywb/+io/buildVTResistanceResultsTable.m`, `writeVTResistanceResultsCSV.m`, `+gamrywb/+ui/buildVTResistanceBatchTableData.m` | Started Phase 9 app-specific table extraction. Preserve legacy 9-column GUI table data and CSV header/formatting. |
 | CIC / voltage-transient analysis | CIC GUI | `+gamrywb/+analysis/computeCIC.m` and related helpers | Started Phase 6. Preserve Emc/Ema, injected charge, CIC normalization, safety classification, and legacy result fields. |
+| CIC results/export table | CIC GUI | `+gamrywb/+io/buildCICResultsTable.m`, `writeCICResultsCSV.m`, `+gamrywb/+ui/buildCICBatchTableData.m` | Started Phase 9 app-specific table extraction. Preserve legacy 8-column GUI table data, dynamic units, and CSV header/formatting. |
 | `valuesForAxis` | EIS overlay | `+gamrywb/+analysis/valuesForEISAxis.m` | Started Phase 8. Preserve all axis labels and log-axis behavior. |
 | EIS item construction | EIS overlay | `+gamrywb/+data/makeEISItem.m` | Started Phase 8. Preserve ZCURVE choice, filtering, point fallback, and frequency order flag. |
 | EIS overlay plotting | EIS overlay | `+gamrywb/+plot/plotEISOverlay.m` | Started Phase 8. Preserve markers, line widths, log filters, labels, legends, grid, and Nyquist equal-axis behavior. |
