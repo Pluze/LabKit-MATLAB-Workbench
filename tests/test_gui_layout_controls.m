@@ -12,6 +12,7 @@ function test_gui_layout_controls()
     checkFileListboxRefreshHelper();
     checkSingleSelectFileListboxRefreshHelper();
     checkInfoLogAreaHelpers();
+    checkReadOnlyInfoRowHelper();
     checkPlotOptionsPanelHelper();
     checkCreateAxesHelper();
     checkTabbedDualPlotShellHelper();
@@ -205,6 +206,25 @@ function checkInfoLogAreaHelpers()
     assert(strcmp(txtLog.Editable, 'off'), 'Log area helper should create a read-only text area.');
     assert(sameStringCell(txtLog.Value, {'GUI started.'}), ...
         'Log area helper should preserve the default initial log line.');
+end
+
+function checkReadOnlyInfoRowHelper()
+    fig = uifigure('Visible', 'off', 'Name', 'gamrywb_read_only_info_row_probe');
+    cleaner = onCleanup(@() delete(fig));
+    grid = uigridlayout(fig, [2 2]);
+
+    [field, lbl] = gamrywb.ui.createReadOnlyInfoRow(grid, 2, 'Probe:');
+    assert(strcmp(lbl.Text, 'Probe:'), 'Read-only info row should preserve label text.');
+    assert(strcmp(lbl.HorizontalAlignment, 'right'), ...
+        'Read-only info row should preserve right-aligned labels.');
+    assert(lbl.Layout.Row == 2 && lbl.Layout.Column == 1, ...
+        'Read-only info row should place the label in the requested row and first column.');
+    assert(field.Layout.Row == 2 && field.Layout.Column == 2, ...
+        'Read-only info row should place the field in the requested row and second column.');
+    assert(strcmp(field.Editable, 'off'), ...
+        'Read-only info row should create a read-only field.');
+    assert(strcmp(field.Value, '-'), ...
+        'Read-only info row should preserve the default empty summary value.');
 end
 
 function checkPlotOptionsPanelHelper()

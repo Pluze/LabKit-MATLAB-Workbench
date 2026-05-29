@@ -105,18 +105,18 @@ function varargout = launchVTResistanceApp(varargin)
     gi.Padding = [8 8 8 8];
     gi.ColumnSpacing = 8;
 
-    addInfoRow(gi,1,'Detection:', 'txtDetect');
-    addInfoRow(gi,2,'Window:', 'txtWindow');
-    addInfoRow(gi,3,'Cathodic I / Vss:', 'txtCathIV');
-    addInfoRow(gi,4,'Anodic I / Vss:', 'txtAnodIV');
-    addInfoRow(gi,5,'Cathodic baseline:', 'txtCathBase');
-    addInfoRow(gi,6,'Anodic baseline:', 'txtAnodBase');
-    addInfoRow(gi,7,'Cath baseline window:', 'txtCathBaseWin');
-    addInfoRow(gi,8,'Anod baseline window:', 'txtAnodBaseWin');
-    addInfoRow(gi,9,'Cathodic R:', 'txtCathR');
-    addInfoRow(gi,10,'Anodic R:', 'txtAnodR');
-    addInfoRow(gi,11,'Average R:', 'txtAvgR');
-    addInfoRow(gi,12,'Status:', 'txtStatus');
+    S.txtDetect = gamrywb.ui.createReadOnlyInfoRow(gi,1,'Detection:');
+    S.txtWindow = gamrywb.ui.createReadOnlyInfoRow(gi,2,'Window:');
+    S.txtCathIV = gamrywb.ui.createReadOnlyInfoRow(gi,3,'Cathodic I / Vss:');
+    S.txtAnodIV = gamrywb.ui.createReadOnlyInfoRow(gi,4,'Anodic I / Vss:');
+    S.txtCathBase = gamrywb.ui.createReadOnlyInfoRow(gi,5,'Cathodic baseline:');
+    S.txtAnodBase = gamrywb.ui.createReadOnlyInfoRow(gi,6,'Anodic baseline:');
+    S.txtCathBaseWin = gamrywb.ui.createReadOnlyInfoRow(gi,7,'Cath baseline window:');
+    S.txtAnodBaseWin = gamrywb.ui.createReadOnlyInfoRow(gi,8,'Anod baseline window:');
+    S.txtCathR = gamrywb.ui.createReadOnlyInfoRow(gi,9,'Cathodic R:');
+    S.txtAnodR = gamrywb.ui.createReadOnlyInfoRow(gi,10,'Anodic R:');
+    S.txtAvgR = gamrywb.ui.createReadOnlyInfoRow(gi,11,'Average R:');
+    S.txtStatus = gamrywb.ui.createReadOnlyInfoRow(gi,12,'Status:');
 
     pTab = uipanel(laySR,'Title','Batch Results');
     pTab.Layout.Row = 2;
@@ -153,16 +153,6 @@ function varargout = launchVTResistanceApp(varargin)
     axBottom = ui.bottomAxes;
     if nargout == 1
         varargout{1} = fig;
-    end
-
-    function addInfoRow(parent,row,labelText,fieldName)
-        lbl = uilabel(parent,'Text',labelText,'HorizontalAlignment','right');
-        lbl.Layout.Row = row;
-        lbl.Layout.Column = 1;
-        h = uieditfield(parent,'text','Editable','off','Value','-');
-        h.Layout.Row = row;
-        h.Layout.Column = 2;
-        S.(fieldName) = h;
     end
 
     function onOpenFiles(~,~)

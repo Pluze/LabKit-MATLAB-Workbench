@@ -128,16 +128,16 @@ function varargout = launchCICApp(varargin)
     gi.Padding = [8 8 8 8];
     gi.ColumnSpacing = 8;
 
-    addInfoRow(gi,1,'Detection:', 'txtDetect');
-    addInfoRow(gi,2,'Delay used:', 'txtDelay');
-    addInfoRow(gi,3,'Area:', 'txtArea');
-    addInfoRow(gi,4,'Emc:', 'txtEmc');
-    addInfoRow(gi,5,'Ema:', 'txtEma');
-    addInfoRow(gi,6,'Cathodic Q/CIC:', 'txtQc');
-    addInfoRow(gi,7,'Anodic Q/CIC:', 'txtQa');
-    addInfoRow(gi,8,'Total Q/CIC:', 'txtQt');
-    addInfoRow(gi,9,'Safety:', 'txtSafe');
-    addInfoRow(gi,10,'Best safe among loaded:', 'txtBest');
+    S.txtDetect = gamrywb.ui.createReadOnlyInfoRow(gi,1,'Detection:');
+    S.txtDelay = gamrywb.ui.createReadOnlyInfoRow(gi,2,'Delay used:');
+    S.txtArea = gamrywb.ui.createReadOnlyInfoRow(gi,3,'Area:');
+    S.txtEmc = gamrywb.ui.createReadOnlyInfoRow(gi,4,'Emc:');
+    S.txtEma = gamrywb.ui.createReadOnlyInfoRow(gi,5,'Ema:');
+    S.txtQc = gamrywb.ui.createReadOnlyInfoRow(gi,6,'Cathodic Q/CIC:');
+    S.txtQa = gamrywb.ui.createReadOnlyInfoRow(gi,7,'Anodic Q/CIC:');
+    S.txtQt = gamrywb.ui.createReadOnlyInfoRow(gi,8,'Total Q/CIC:');
+    S.txtSafe = gamrywb.ui.createReadOnlyInfoRow(gi,9,'Safety:');
+    S.txtBest = gamrywb.ui.createReadOnlyInfoRow(gi,10,'Best safe among loaded:');
 
     %% ===================== Actions =====================
     pAct = uipanel(layFA,'Title','Plot / Debug');
@@ -206,20 +206,6 @@ function varargout = launchCICApp(varargin)
     onPresetChanged();
 
     %% ===================== Nested helpers =====================
-    function addInfoRow(parent,row,labelText,fieldName)
-        lbl = uilabel(parent,'Text',labelText,'HorizontalAlignment','right');
-        lbl.Layout.Row = row;
-        lbl.Layout.Column = 1;
-        h = uieditfield(parent,'text','Editable','off','Value','-');
-        h.Layout.Row = row;
-        h.Layout.Column = 2;
-        assigninStruct(fieldName,h);
-    end
-
-    function assigninStruct(name,val)
-        S.(name) = val;
-    end
-
     function onPresetChanged()
         switch ddPreset.Value
             case 'Pt (-0.6 to 0.8 V)'
