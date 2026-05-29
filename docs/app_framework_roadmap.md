@@ -57,6 +57,7 @@ Current shared UI helpers:
 +gamrywb/+ui/clearAxisObjects.m
 +gamrywb/+ui/disableAxesInteractivity.m
 +gamrywb/+ui/hardResetAxis.m
++gamrywb/+ui/resetTopBottomAxes.m
 +gamrywb/+ui/appendLog.m
 +gamrywb/+ui/refreshListboxItems.m
 +gamrywb/+ui/refreshFileListbox.m
@@ -68,6 +69,8 @@ Current shared UI helpers:
 +gamrywb/+ui/createTwoPaneShell.m
 +gamrywb/+ui/createTabbedDualPlotShell.m
 +gamrywb/+ui/createTopBottomPlotControls.m
++gamrywb/+ui/setTopBottomPlotSelections.m
++gamrywb/+ui/swapTopBottomPlotSelections.m
 +gamrywb/+ui/createFilePanel.m
 +gamrywb/+ui/createSingleSelectFilePanel.m
 +gamrywb/+ui/createInfoArea.m
@@ -481,6 +484,9 @@ Preferred split:
 +gamrywb/+ui/createSingleSelectFilePanel.m    done for VT resistance and CIC apps
 +gamrywb/+ui/createReadOnlyInfoRow.m    done for VT resistance and CIC summary rows
 +gamrywb/+ui/createLogPanel.m    done for VT resistance and CIC log tabs
++gamrywb/+ui/setTopBottomPlotSelections.m    done for VT resistance and CIC apps
++gamrywb/+ui/swapTopBottomPlotSelections.m    done for VT resistance and CIC apps
++gamrywb/+ui/resetTopBottomAxes.m    done for VT resistance and CIC apps
 ```
 
 Keep dialogs in app/UI code. Keep `gamrywb.data.addFilesToSession` free of UI dialogs.
@@ -731,6 +737,7 @@ Use this section to record meaningful changes in strategy.
 - createSingleSelectFilePanel shares the VT/CIC files panel while preserving app-owned dialogs, selection refresh, and export behavior
 - refreshSingleSelectFileListbox shares VT/CIC single-file listbox refresh and loaded-count text while returning the app-owned current index
 - createReadOnlyInfoRow shares VT/CIC summary-row label/read-only-field construction while keeping app-specific labels and state fields in app code
+- setTopBottomPlotSelections, swapTopBottomPlotSelections, and resetTopBottomAxes share VT/CIC top/bottom plot-control state behavior while preserving app-owned refresh calls
 - createLogPanel shares VT/CIC log-tab panel construction while preserving app-owned appendLog calls and message text
 ```
 

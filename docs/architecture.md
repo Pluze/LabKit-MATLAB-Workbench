@@ -62,7 +62,7 @@ The GUI decides how to display that status.
 - `+data`: table/column accessors, CV/CT selected-column access, chrono item construction, EIS item construction, session add/remove helpers.
 - `+analysis`: pulse detection, pulse-gap alignment, VT resistance, CIC, CV/CSC, EIS axis-value generation, batch summaries.
 - `+plot`: chrono VT/IT overlay, CV/CT selected-column plotting, EIS overlay plotting.
-- `+ui`: VT resistance and CIC batch table display data; shared app axes creation/reset, log append and log panel, multi-select and single-select file-listbox refresh, multi-file and single-select file-panel, summary row, info/log text-area, plot-options panel, simple labeled-control, two-pane shell, tabbed dual-plot shell, and top/bottom plot-control helpers.
+- `+ui`: VT resistance and CIC batch table display data; shared app axes creation/reset, log append and log panel, multi-select and single-select file-listbox refresh, multi-file and single-select file-panel, summary row, info/log text-area, plot-options panel, simple labeled-control, two-pane shell, tabbed dual-plot shell, and top/bottom plot-control construction/state helpers.
 - `+util`: low-risk helpers used by parser, data, analysis, and export code.
 
 ## Boundaries To Preserve

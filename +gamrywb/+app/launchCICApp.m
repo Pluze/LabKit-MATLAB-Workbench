@@ -574,10 +574,7 @@ function varargout = launchCICApp(varargin)
     end
 
     function swapPlots()
-        topX = ddTopX.Value; topY = ddTopY.Value;
-        botX = ddBotX.Value; botY = ddBotY.Value;
-        ddTopX.Value = botX; ddTopY.Value = botY;
-        ddBotX.Value = topX; ddBotY.Value = topY;
+        gamrywb.ui.swapTopBottomPlotSelections(ddTopX, ddTopY, ddBotX, ddBotY);
         refreshPlots();
     end
 
@@ -587,15 +584,12 @@ function varargout = launchCICApp(varargin)
     end
 
     function restoreDefaultPlotSelections()
-        ddTopX.Value = 'Time (s)';
-        ddTopY.Value = 'VT: Vf vs time';
-        ddBotX.Value = 'Time (s)';
-        ddBotY.Value = 'IT: Im vs time';
+        gamrywb.ui.setTopBottomPlotSelections(ddTopX, ddTopY, ddBotX, ddBotY, ...
+            topPlotDefaults, bottomPlotDefaults);
     end
 
     function resetAxesToDefaultState()
-        gamrywb.ui.hardResetAxis(axTop, 'Top Plot', true);
-        gamrywb.ui.hardResetAxis(axBottom, 'Bottom Plot', true);
+        gamrywb.ui.resetTopBottomAxes(axTop, axBottom, true);
     end
 
     function exportResultsCSV()
