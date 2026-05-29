@@ -81,7 +81,7 @@ Not library code: experiment-specific app design
 
 This map is a design boundary, not a reason to force every function into exactly three folders. Keep granular packages when they make code easier to inspect. Refactor or remove helpers when they obscure which layer owns a decision.
 
-For concrete calling examples and a future app template, see `docs/api_usage.md`.
+For concrete calling examples, see `docs/api_usage.md`. For the practical checklist used before adding a new experiment app, see `docs/new_app_playbook.md`.
 
 `+gamrywb/+analysis` is intentionally narrow: it currently owns reusable pulse detection. App-specific analysis, export-table construction, CSV schemas, and plot annotations now belong in the owning public app file. Do not reintroduce those experiment decisions into `+gamrywb/+analysis`, `+gamrywb/+io`, or a helper package unless a future repeated use case proves a lower-level utility is clearer.
 

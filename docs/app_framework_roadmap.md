@@ -503,7 +503,7 @@ Generic GUI/session helpers now live in +gamrywb/+ui; do not recreate +gamrywb/+
 
 Do not implement a heavy generic app engine yet.
 
-Start with documentation or a small example file. The goal is to make extension boundaries clear, not to create a schema framework.
+Start with documentation or a small example file. The goal is to make extension boundaries clear, not to create a schema framework. The practical app-authoring checklist now lives in `docs/new_app_playbook.md`.
 
 A future experiment app should be defined by:
 

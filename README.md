@@ -72,6 +72,7 @@ docs/                 Architecture, data model, parser, validation, and history 
 - `CHANGELOG.md`: release-style change history.
 - `docs/architecture.md`: current architecture and boundaries.
 - `docs/api_usage.md`: current reusable API usage and single-file app template.
+- `docs/new_app_playbook.md`: practical contract checklist for adding a new experiment app.
 - `docs/app_framework_roadmap.md`: planned app framework extraction route.
 - `docs/data_model.md`: current item/result/session schemas.
 - `docs/file_format_notes.md`: DTA parser assumptions.
