@@ -112,6 +112,16 @@ small numeric/string ops: gamrywb.util.*
 
 Avoid using lower-level `gamrywb.io.parse*` functions from app code unless the app is specifically validating or developing parser behavior.
 
+For parsed-curve plotting, keep data selection and GUI drawing separate:
+
+```matlab
+[x, y, xName, yName] = gamrywb.data.getCurveXY(curve, xChoice, yChoice);
+labels = struct('title', curve.name, 'x', xName, 'y', yName);
+info = gamrywb.ui.plotXY(ax, x, y, labels, opts);
+```
+
+Do not make GUI helpers call `gamrywb.data`, `gamrywb.dta`, parser, session, or analysis APIs. Apps should prepare values and labels before calling GUI helpers.
+
 ## Extraction Rules
 
 Keep code local when it contains:

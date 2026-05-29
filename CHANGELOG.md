@@ -29,6 +29,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Agent/developer rules now describe app-specific helper packages as removed boundaries that should not be reintroduced and limit new package helpers to genuinely cross-cutting code.
 - Reusable GUI helpers are kept domain-neutral: DTA-specific labels, shell tab titles, app callback choreography, and app reset/default behavior stay in the apps.
 - Generic prepared-X/Y plotting lives in `gamrywb.ui.plotXY`; parsed-curve column selection stays in `gamrywb.data.getCurveXY` so the GUI layer does not depend on the data layer.
+- New app playbook now shows the `getCurveXY` to `plotXY` pattern for keeping data selection out of GUI helpers.
 - Test organization now separates default and GUI groups, shares repeated numeric assertion helpers, and keeps architecture guardrails in `test_architecture_boundaries`.
 - Startup/root-entry smoke coverage now uses the responsibility-focused `test_startup_boundaries` name instead of a historical phase name.
 - Architecture boundary tests now share common forbidden GUI, app-entrypoint, and experiment-workflow word lists.
