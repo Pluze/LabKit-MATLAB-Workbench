@@ -53,6 +53,10 @@ function test_phase10_apps()
 
     cicAppFile = fullfile(root, 'apps', 'gamrywb_CIC_app.m');
     cicSource = fileread(cicAppFile);
+    cicLaunchFile = fullfile(root, '+gamrywb', '+app', 'launchCICApp.m');
+    assert(exist(cicLaunchFile, 'file') == 2, 'Missing package launch function for CIC app.');
+    assert(contains(cicSource, 'gamrywb.app.launchCICApp'), ...
+        'gamrywb_CIC_app should delegate to the package launch function.');
     assert(~contains(cicSource, '_legacy'), 'gamrywb_CIC_app should not call legacy implementations.');
     assert(~contains(cicSource, 'gamry_CIC_VT_gui_paperlabels('), ...
         'gamrywb_CIC_app should not delegate to a removed root legacy-compatible CIC wrapper.');

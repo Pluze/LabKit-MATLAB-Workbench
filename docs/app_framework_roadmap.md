@@ -219,6 +219,7 @@ gamrywb/+app/selectItemsByNames.m
 gamrywb/+app/launchChronoOverlayApp.m
 gamrywb/+app/launchEISApp.m
 gamrywb/+app/launchVTResistanceApp.m
+gamrywb/+app/launchCICApp.m
 ```
 
 Candidate files:
@@ -594,7 +595,7 @@ Commit sequence:
 refactor: move chrono overlay app assembly into gamrywb.app    done
 refactor: move EIS app assembly into gamrywb.app    done
 refactor: move VT resistance app assembly into gamrywb.app    done
-refactor: move CIC app assembly into gamrywb.app
+refactor: move CIC app assembly into gamrywb.app    done
 refactor: move CSC app assembly into gamrywb.app
 ```
 
@@ -665,13 +666,13 @@ This app-framework stage is successful when:
 The next best task is:
 
 ```text
-move CIC app assembly into gamrywb.app
+move CSC app assembly into gamrywb.app
 ```
 
 Suggested sequence:
 
-1. Move `apps/gamrywb_CIC_app.m` body into `+gamrywb/+app/launchCICApp.m`.
-2. Keep `apps/gamrywb_CIC_app.m` as the public wrapper.
+1. Move `apps/gamrywb_CSC_app.m` body into `+gamrywb/+app/launchCSCApp.m`.
+2. Keep `apps/gamrywb_CSC_app.m` as the public wrapper.
 3. Update entrypoint tests and run default plus GUI MATLAB tests.
 
 ---
@@ -698,6 +699,7 @@ Use this section to record meaningful changes in strategy.
 - launchChronoOverlayApp moves the first app body under +gamrywb/+app while keeping apps/gamrywb_ChronoOverlay_app.m as the public wrapper
 - launchEISApp moves the EIS app body under +gamrywb/+app while keeping apps/gamrywb_EIS_app.m as the public wrapper
 - launchVTResistanceApp moves the VT resistance app body under +gamrywb/+app while keeping apps/gamrywb_VTResistance_app.m as the public wrapper
+- launchCICApp moves the CIC app body under +gamrywb/+app while keeping apps/gamrywb_CIC_app.m as the public wrapper
 - loadFilesIntoSession starts the +gamrywb/+app layer for duplicate-aware file/session loading in Chrono/EIS
 - removeSelectedItemsFromSession shares selected-file removal for Chrono/EIS while preserving app-owned refresh and plotting
 - selectItemsByNames shares empty-selection-as-all item lookup for Chrono/EIS plot and export paths
