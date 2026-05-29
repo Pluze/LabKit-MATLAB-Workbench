@@ -51,6 +51,7 @@ This project is still in an unreleased behavior-preserving refactor stage.
 - Updated `legacy/gamry_CIC_VT_gui_paperlabels_legacy.m` to use shared chrono parsing, DTA discovery, table/column accessors, pulse detection, and low-risk utilities.
 - Updated `legacy/gamry_CIC_VT_gui_paperlabels_legacy.m` to call shared CIC / voltage-transient analysis.
 - Updated `legacy/gamry_CIC_VT_gui_paperlabels_legacy.m` to use shared CIC batch table and legacy-format CSV writer helpers.
+- Updated `legacy/gamry_CIC_VT_gui_paperlabels_legacy.m` to use shared session add/reset helpers while preserving its existing `S.items` display/export path.
 - Updated `legacy/gamry_CV_CSC_dta_gui_legacy.m` to call shared CV/CT charge and CSC analysis.
 - Updated `legacy/gamry_CV_CSC_dta_gui_legacy.m` to use shared CV/CT selected-column plotting.
 - Updated `legacy/gamry_EIS_multiDTA_plot_gui_legacy.m` to use shared EIS item construction, plotting, and export table helpers.
@@ -69,7 +70,7 @@ This project is still in an unreleased behavior-preserving refactor stage.
 - CIC plotting remains in the legacy GUI.
 - VT resistance plotting remains in the legacy GUI.
 - CV/CSC export formatting remains deferred until a batch/session export workflow exists.
-- Most legacy GUIs have not yet been migrated to shared batch/session utilities.
+- CV/CSC GUI state has not yet been migrated to shared batch/session utilities.
 - New thin apps under `apps/` have not been implemented.
 - Unified workbench GUI has not been started.
 - Golden reference tests for every major analysis output are not complete yet.

@@ -27,7 +27,8 @@ function gamry_CIC_VT_gui_paperlabels_legacy
 %   >> gamry_CIC_VT_gui
 
     S = struct();
-    S.items = struct([]);      % loaded files + parsed content + analysis
+    S.session = gamrywb.data.makeSession('cic_vt');
+    S.items = S.session.items; % loaded files + parsed content + analysis
     S.current = [];
     S.isDragging = false;
 
@@ -349,46 +350,12 @@ function gamry_CIC_VT_gui_paperlabels_legacy
         end
 
         filepaths = unique(filepaths, 'stable');
-        if isempty(S.items) || ~isfield(S.items, 'filepath')
-            existing = strings(0,1);
-        else
-            existing = string({S.items.filepath});
-        end
-
-        queued = string(filepaths);
-        if ~isempty(existing)
-            isNew = ~ismember(queued, existing);
-            skipped = filepaths(~isNew);
-            filepaths = filepaths(isNew);
-            for j = 1:numel(skipped)
-                addLog(sprintf('Skipped already loaded: %s', skipped{j}));
-            end
-        end
-
-        if isempty(filepaths)
-            refreshFileList();
-            restoreDefaultPlotSelections();
-            resetAxesToDefaultState();
-            refreshBatchTable();
-            refreshResultsSummary();
-            refreshPlots();
-            return;
-        end
-
-        firstError = [];
-        for i = 1:numel(filepaths)
-            filepath = filepaths{i};
-            try
-                item = loadOneDTA(filepath);
-                S.items = gamrywb.util.appendStruct(S.items, item);
-                addLog(sprintf('Loaded: %s', filepath));
-            catch ME
-                addLog(sprintf('Failed: %s | %s', filepath, ME.message));
-                if isempty(firstError)
-                    firstError = struct('filepath', filepath, 'message', ME.message);
-                end
-            end
-        end
+        callbacks = struct();
+        callbacks.onAdded = @(filepath, item) addLog(sprintf('Loaded: %s', filepath)); %#ok<INUSD>
+        callbacks.onSkipped = @(filepath) addLog(sprintf('Skipped already loaded: %s', filepath));
+        callbacks.onFailed = @(filepath, message) addLog(sprintf('Failed: %s | %s', filepath, message));
+        [S.session, report] = gamrywb.data.addFilesToSession(S.session, filepaths, @loadOneDTA, callbacks);
+        S.items = S.session.items;
 
         refreshFileList();
         restoreDefaultPlotSelections();
@@ -397,7 +364,8 @@ function gamry_CIC_VT_gui_paperlabels_legacy
         refreshResultsSummary();
         refreshPlots();
 
-        if ~isempty(firstError)
+        if ~isempty(report.failed)
+            firstError = report.failed(1);
             uialert(fig, sprintf('Failed to load:\n%s\n\n%s', firstError.filepath, firstError.message), 'Load error');
         end
     end
@@ -423,6 +391,7 @@ function gamry_CIC_VT_gui_paperlabels_legacy
             return;
         end
         S.items(S.current) = analyzeItem(S.items(S.current));
+        S.session.items = S.items;
         refreshBatchTable();
         refreshResultsSummary();
         refreshPlots();
@@ -467,7 +436,8 @@ function gamry_CIC_VT_gui_paperlabels_legacy
     end
 
     function clearAllFiles()
-        S.items = struct([]);
+        S.session = gamrywb.data.makeSession('cic_vt');
+        S.items = S.session.items;
         S.current = [];
         restoreDefaultPlotSelections();
         resetAxesToDefaultState();
