@@ -85,6 +85,8 @@ For concrete calling examples, see `docs/api_usage.md`. For the practical checkl
 
 `+gamrywb/+analysis` is intentionally narrow: it currently owns reusable pulse detection. App-specific analysis, export-table construction, CSV schemas, and plot annotations now belong in the owning public app file. Do not reintroduce those experiment decisions into `+gamrywb/+analysis`, `+gamrywb/+io`, or a helper package unless a future repeated use case proves a lower-level utility is clearer.
 
+The analysis layer is guarded as pulse-focused, GUI-free, and app-free. It should not call parser/session/data APIs, MATLAB UI constructors, file dialogs, alerts, `gamrywb.ui`, app entry points, or `apps/` helpers, and it should not regain CIC, VT resistance, CSC, EIS, result-table, or CSV-writing workflow code.
+
 Analysis, data, and IO package functions should not depend on GUI state or call `uialert`. Plot/UI helpers may accept explicit graphics handles and should keep side effects limited to those handles.
 
 The DTA facade is also guarded as a GUI-free and app-free layer: it should not call MATLAB UI constructors, file dialogs, alerts, app entry points, or `apps/` helpers. App code may call `gamrywb.dta.*`; DTA code must not call back into app code.
