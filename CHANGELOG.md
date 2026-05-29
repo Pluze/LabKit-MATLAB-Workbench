@@ -16,14 +16,14 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Named demo DTA fixtures for parser, pulse detection, analysis, plotting, export, and session tests.
 - MATLAB pure-function test runner under `scripts/run_matlab_tests.sh`.
 - Optional noninteractive GUI compatibility-contract checks under `scripts/run_matlab_tests.sh --gui`.
-- Current documentation under `docs/` for architecture, data models, file formats, validation, refactor history, and backlog.
+- Current documentation under `docs/` for architecture, data models, file formats, validation, and refactor history.
 
 ### Changed
 
 - Moved preserved legacy GUI implementations under `legacy/`.
 - Updated selected legacy GUI implementations to call package-backed helpers while preserving behavior.
 - Reorganized root documentation so README and CHANGELOG describe current usage and release status, while phase history lives in `docs/refactor_history.md`.
-- Phase 10 app entry points delegate to behavior-preserved legacy GUI entry points for the v1.0 compatibility scope.
+- App entry points delegate to behavior-preserved legacy GUI entry points for the v1.0 compatibility scope.
 
 ### Preserved
 
@@ -37,7 +37,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 
 ### Deferred
 
-- Package-backed replacements for the Phase 10 app delegates.
+- Package-backed replacements for the app delegates.
 - Unified workbench GUI.
 - Complete stored golden MAT reference outputs for every major analysis output.
 - Broader parser unification and support for additional Gamry experiment types.

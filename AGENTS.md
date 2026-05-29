@@ -1,175 +1,102 @@
 # Agent Instructions
 
-This repository is a MATLAB refactor of legacy Gamry electrochemistry analysis GUIs into a package-backed workbench.
+This repository preserves legacy Gamry electrochemistry MATLAB GUIs while extracting reusable package-backed analysis code.
 
-These instructions are written for Codex or any AI coding agent working in this repository.
+## Read Order
 
----
-
-## 1. Read Order
-
-Before editing files, read these documents in order:
+Before editing:
 
 1. `README.md`
 2. `AGENTS.md`
-3. The specific legacy, package, test, or documentation files involved in the requested task
+3. The source, test, or doc files directly involved in the task
 
-For parser, data model, or validation work, also read:
+Also read these only when relevant:
 
-- `docs/architecture.md`
-- `docs/data_model.md`
-- `docs/file_format_notes.md`
-- `docs/validation_protocol.md`
+- `docs/architecture.md` for package boundaries or entrypoint work
+- `docs/data_model.md` for item/result/session schema work
+- `docs/file_format_notes.md` for parser work
+- `docs/validation_protocol.md` for test or validation work
+- `docs/refactor_history.md` for historical migration context
 
-For nonessential future enhancements, read:
+## Core Rule
 
-- `docs/backlog.md`
+Preserve behavior unless the user explicitly asks for a behavior change.
 
-For historical phase context, read:
+Do not change:
 
-- `docs/refactor_history.md`
+- scientific formulas, thresholds, integration rules, or result definitions
+- parser behavior or pulse detection behavior
+- CSV column names or exported table structure
+- GUI layout, plot labels, markers, axes, or visual behavior
+- original legacy GUI command compatibility
 
----
-
-## 2. Current Refactor Principle
-
-The current priority is behavior-preserving refactoring.
-
-The existing single-file GUIs are working research tools. The refactor should make the code easier to maintain without changing scientific outputs, GUI behavior, export formats, or plotting behavior unless explicitly requested.
-
-Default rule:
+Default principle:
 
 ```text
-same results, less duplicate code, clearer boundaries
+same results, cleaner code, clearer boundaries
 ```
 
----
+## Allowed Work
 
-## 3. Allowed Work
+- Move duplicated helper logic into `+gamrywb` package functions.
+- Update legacy GUIs to call package helpers when behavior is preserved.
+- Add or update tests for pure functions and compatibility wrappers.
+- Update documentation to reflect current behavior.
+- Add compatibility wrappers when needed to keep original commands runnable.
 
-Allowed work includes:
-
-- Moving duplicated helper functions into `+gamrywb` packages.
-- Creating package-backed parser, data, analysis, plotting, and export helpers.
-- Updating legacy GUI files to call extracted functions when behavior is preserved.
-- Adding tests for pure functions.
-- Updating documentation to reflect completed work.
-- Adding compatibility wrappers when needed to keep original command names runnable.
-
----
-
-## 4. Forbidden Work Unless Explicitly Requested
-
-Do not do any of the following without explicit user approval:
+## Forbidden Without Explicit Approval
 
 - Do not rewrite all GUIs in one pass.
-- Do not start the unified workbench GUI before the package library is stable.
-- Do not change scientific formulas, thresholds, integration rules, or result definitions.
-- Do not change CSV column names or exported table structure.
-- Do not change GUI layout, plot labels, markers, or visual behavior during behavior-preserving phases.
-- Do not remove legacy GUIs.
+- Do not start or redesign the unified workbench GUI.
+- Do not remove legacy GUI implementations or original command names.
 - Do not convert struct models to MATLAB classes prematurely.
 - Do not migrate code to Python or another language.
-- Do not commit generated logs, local experiment output, `.DS_Store`, temporary exports, or unrelated files.
+- Do not commit generated logs, `.DS_Store`, local experiment output, temporary exports, or unrelated files.
 
----
+## Tests
 
-## 5. MATLAB Test Command
-
-Use the repository test runner after executable MATLAB changes:
+Run after executable MATLAB changes:
 
 ```bash
 scripts/run_matlab_tests.sh
 ```
 
-Use the optional noninteractive GUI tests when GUI entry points, wrappers, layout initialization, safe callback wiring, or test runner GUI support changes:
+Run optional GUI checks when GUI entry points, wrappers, layout initialization, callback wiring, or GUI test support changes:
 
 ```bash
 scripts/run_matlab_tests.sh --gui
 ```
 
-The script attempts to find MATLAB through:
-
-1. `MATLAB_CMD` environment variable
-2. `matlab` on PATH
-3. macOS applications matching `/Applications/MATLAB_*.app/bin/matlab`
-
-If MATLAB cannot be executed, report the blocker and perform static checks only. Do not claim tests passed if they were not run.
-
----
-
-## 6. GUI Testing Warning
+If MATLAB cannot run, report the blocker and do not claim tests passed.
 
 Do not run interactive GUI workflows in MATLAB `-batch` mode.
 
-The default test runner is for pure functions only, such as:
+## Git Workflow
 
-- parser functions
-- utility functions
-- data accessors
-- pulse detection
-- future analysis functions
-- export table builders
+1. Inspect status before editing.
+2. Keep each commit small and logical.
+3. Do not mix unrelated functional, documentation, formatting, or test changes.
+4. Run relevant tests or explain why they were not run.
+5. Review the diff for unrelated changes.
+6. Commit with a concise message.
+7. Do not force-push unless explicitly approved.
 
-Interactive GUI behavior should still be checked manually. The non-default `--gui` tests are the main automated guard that future refactors do not remove legacy GUI functionality or unintentionally change the initialized layout surface. They may launch and close GUI entry points, enforce the current legacy GUI compatibility contract for initialized controls/layout structure, complete dropdown groups, result-table columns, axes titles/labels, and callbacks that are safe on an empty session. They must not open file dialogs, write exports, depend on manual input, or exercise destructive workflows.
+When MATLAB source, tests, fixtures, or package structure change, update the matching current docs:
 
----
+- `README.md` for user-facing commands or current status
+- `CHANGELOG.md` for release-facing changes
+- `docs/architecture.md` for package boundaries or entrypoint roles
+- `docs/data_model.md` for schemas
+- `docs/file_format_notes.md` for parser assumptions
+- `docs/validation_protocol.md` for validation coverage
+- `docs/refactor_history.md` only for historical context
 
-## 7. Git Workflow
+## Handoff
 
-For each task:
-
-1. Inspect current status before editing.
-2. Make a small, logical change set.
-3. Avoid mixing documentation cleanup, functional refactors, tests, and formatting-only changes in the same commit when possible.
-4. Run the relevant MATLAB tests when executable code changes.
-5. Check and update the relevant docs whenever code changes alter refactor status, package APIs, test coverage, fixtures, validation evidence, or remaining gaps.
-6. Review the diff for unrelated changes.
-7. Commit with a concise message.
-8. Do not force-push unless explicitly approved.
-
-Preferred commit message examples:
-
-```text
-docs: reorganize refactor documentation
-refactor: extract chrono parser helpers
-test: add pulse detection regression tests
-fix: preserve legacy GUI entrypoint behavior
-```
-
----
-
-## 8. Phase Discipline
-
-Work on one scoped change at a time.
-
-Do not move to a broader follow-up until the current change has:
-
-- documented changes in the relevant current doc, or `docs/refactor_history.md` when updating historical notes
-- tests or static checks where possible
-- no intentional scientific behavior change
-- legacy GUI compatibility preserved
-
-If a requested task is documentation-only, do not edit MATLAB source files.
-
-When a task changes MATLAB source, tests, fixtures, or package structure, inspect and update the matching documentation before committing. At minimum, consider:
-
-- `README.md` for current status and user-facing commands.
-- `docs/refactor_history.md` for completed migration details and preserved behavior.
-- `docs/backlog.md` for deferred work and future ideas.
-- `CHANGELOG.md` for maintainer-facing changes.
-- `docs/architecture.md`, `docs/data_model.md`, `docs/file_format_notes.md`, and `docs/validation_protocol.md` when architecture, data models, parsers, or validation coverage changes.
-
----
-
-## 9. Handoff Requirements
-
-At the end of a task, report:
+Report:
 
 - changed files
 - what was intentionally not changed
-- test command run and result
-- any blockers or unverified behavior
-- next recommended step
-
-If tests were not run, state why.
+- test commands and results
+- blockers or unverified behavior
+- recommended next step

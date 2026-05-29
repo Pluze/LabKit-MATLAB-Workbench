@@ -182,16 +182,7 @@ Current parser implementations are intentionally conservative.
 
 The chrono, EIS, and CV/CT parsers still share similar table-reading logic. This duplication is acceptable during behavior-preserving extraction because the first priority is legacy compatibility.
 
-Future parser unification may extract lower-level helper responsibilities such as:
-
-```text
-readDTAFileLines
-parseDTAMetadata
-parseNumericTableSections
-parseCurveSections
-```
-
-These names are candidate implementation breadcrumbs, not stable API commitments. Do not perform deep parser unification until downstream tests show equivalent behavior across chrono, EIS, and CV/CT workflows, and add fixtures before broadening support to new Gamry experiment types.
+Do not perform deep parser unification until downstream tests show equivalent behavior across chrono, EIS, and CV/CT workflows. Add fixtures before broadening support to new Gamry experiment types.
 
 ---
 

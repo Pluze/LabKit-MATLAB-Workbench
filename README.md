@@ -11,7 +11,7 @@ What that means:
 - Original GUI commands still run through compatibility wrappers.
 - Preserved GUI implementations remain under `legacy/`.
 - CIC, VT resistance, CV/CSC, chrono overlay, and EIS overlay/export workflows have package-backed parser, analysis, plotting, export, or UI helper coverage where v1.0 required it.
-- Phase 10 app entry points under `apps/` are compatibility delegates to the preserved legacy GUIs.
+- App entry points under `apps/` are compatibility delegates to the preserved legacy GUIs.
 
 Deferred beyond v1.0:
 
@@ -67,7 +67,7 @@ legacy/               Preserved legacy GUI implementations and shims
 demo/                 Named DTA fixtures
 tests/                MATLAB tests
 scripts/              Test runner scripts
-docs/                 Architecture, data model, parser, validation, history, and backlog docs
+docs/                 Architecture, data model, parser, validation, and history docs
 ```
 
 ## Documentation
@@ -78,8 +78,7 @@ docs/                 Architecture, data model, parser, validation, history, and
 - `docs/data_model.md`: current item/result/session schemas.
 - `docs/file_format_notes.md`: DTA parser assumptions.
 - `docs/validation_protocol.md`: behavior-preservation validation.
-- `docs/refactor_history.md`: archived Phase 0-10 migration history.
-- `docs/backlog.md`: future ideas and deferred work.
+- `docs/refactor_history.md`: concise archived migration history.
 
 ## Preservation Rule
 
