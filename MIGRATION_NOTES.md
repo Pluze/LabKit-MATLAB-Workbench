@@ -18,7 +18,7 @@ Phase 5: started
 Phase 6: started
 Phase 7: started
 Phase 8: complete
-Phase 9: started
+Phase 9: complete for current legacy-compatible scope
 Phase 10+: not started
 ```
 
@@ -37,7 +37,7 @@ Current summary:
 - CV/CT charge and CSC analysis are package-backed.
 - CV/CT selected-column access and plotting are package-backed.
 - EIS item construction, axis-value generation, overlay plotting, and current-plot export table construction are package-backed for the legacy EIS overlay GUI.
-- Shared session creation, file add/remove, save/load, batch summary helpers, and legacy GUI session-state wiring are available.
+- Shared session creation, file add/remove, save/load, batch summary helpers, VT/CIC/CV-CSC result table helpers, and legacy GUI session-state wiring are available.
 
 ---
 
@@ -307,7 +307,7 @@ Still local after Phase 8:
 
 ## Phase 9 — Batch Session and Shared Export System
 
-Phase 9 has started.
+Phase 9 is complete for the current legacy-compatible scope.
 
 Completed work:
 
@@ -319,6 +319,7 @@ Completed work:
 - Added `gamrywb.analysis.summarizeBatchResults`.
 - Added VT resistance result/export table helpers and a VT batch display-data helper as the first app-specific Phase 9 table extraction.
 - Added CIC result/export table helpers and a CIC batch display-data helper as the next app-specific Phase 9 table extraction.
+- Added a CV/CSC result table helper for computed CSC results without adding a legacy GUI export workflow.
 - Added optional `addFilesToSession` callbacks for preserving legacy GUI log ordering.
 - Updated `legacy/gamry_multiDTA_plot_export_gui_legacy.m` to use shared session add/remove helpers while preserving its existing `S.items` display/export path.
 - Updated `legacy/gamry_EIS_multiDTA_plot_gui_legacy.m` to use shared session add/remove helpers while preserving its existing `S.items` display/export path.
@@ -339,10 +340,11 @@ Behavior preserved:
 - Batch summaries use common `name`, `filepath`, `analysis.ok`, and `analysis.message` fields without changing existing app-specific tables.
 - VT resistance result/export helpers preserve the existing app-specific table and CSV contract.
 - CIC result/export helpers preserve the existing app-specific table and CSV contract, including dynamic mC/uC units.
+- CV/CSC result table helpers preserve computed `computeCSC` result fields without changing the legacy GUI, which has no CSV export workflow.
 
-Still local after current Phase 9 progress:
+Deferred after current Phase 9 progress:
 
-- CV/CSC result/export table builders not already extracted.
+- CV/CSC CSV writing and GUI export remain deferred until an explicit batch/export workflow exists.
 
 ---
 
@@ -369,6 +371,7 @@ Still local after current Phase 9 progress:
 | VT resistance results/export table | VT resistance GUI | `+gamrywb/+io/buildVTResistanceResultsTable.m`, `writeVTResistanceResultsCSV.m`, `+gamrywb/+ui/buildVTResistanceBatchTableData.m` | Started Phase 9 app-specific table extraction. Preserve legacy 9-column GUI table data and CSV header/formatting. |
 | CIC / voltage-transient analysis | CIC GUI | `+gamrywb/+analysis/computeCIC.m` and related helpers | Started Phase 6. Preserve Emc/Ema, injected charge, CIC normalization, safety classification, and legacy result fields. |
 | CIC results/export table | CIC GUI | `+gamrywb/+io/buildCICResultsTable.m`, `writeCICResultsCSV.m`, `+gamrywb/+ui/buildCICBatchTableData.m` | Started Phase 9 app-specific table extraction. Preserve legacy 8-column GUI table data, dynamic units, and CSV header/formatting. |
+| CV/CSC results table | CV/CSC GUI | `+gamrywb/+io/buildCSCResultsTable.m` | Added Phase 9 table construction for computed CSC results. CSV writing and GUI export remain deferred because there is no legacy export workflow. |
 | `valuesForAxis` | EIS overlay | `+gamrywb/+analysis/valuesForEISAxis.m` | Started Phase 8. Preserve all axis labels and log-axis behavior. |
 | EIS item construction | EIS overlay | `+gamrywb/+data/makeEISItem.m` | Started Phase 8. Preserve ZCURVE choice, filtering, point fallback, and frequency order flag. |
 | EIS overlay plotting | EIS overlay | `+gamrywb/+plot/plotEISOverlay.m` | Started Phase 8. Preserve markers, line widths, log filters, labels, legends, grid, and Nyquist equal-axis behavior. |

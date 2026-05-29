@@ -64,6 +64,31 @@ function test_computeCSC()
     F = gamrywb.analysis.computeCSC(shortCurve, struct('scanRate', scanRate));
     assert(~F.ok, 'Single-point curve should fail.');
     assert(strcmp(F.message, 'Not enough points'), 'Single-point message should match legacy UI text.');
+
+    item = struct();
+    item.name = 'cv_cyclic_voltammetry_pt_reference.DTA';
+    item.curveName = curve.name;
+    item.analysis = A;
+    failedItem = struct();
+    failedItem.name = 'failed.DTA';
+    failedItem.curveName = curve.name;
+    failedItem.analysis = D;
+    T = gamrywb.io.buildCSCResultsTable([item, failedItem]);
+    expectedNames = {'File', 'Curve', 'Mode', 'ScanRate_V_s', 'Area_cm2', ...
+        'Qct_C', 'Qcv_C', 'Diff_C', 'RelDiff_pct', 'DtErr_s', ...
+        'Qct_mC_cm2', 'Qcv_mC_cm2', 'Diff_mC_cm2', 'Status'};
+    assert(isequal(T.Properties.VariableNames, expectedNames), ...
+        'CSC result table variable names should remain stable.');
+    assert(height(T) == 2, 'CSC result table should include one row per item.');
+    assert(strcmp(T.File{1}, item.name), 'CSC result table should preserve file names.');
+    assert(strcmp(T.Curve{1}, curve.name), 'CSC result table should preserve curve names.');
+    assert(strcmp(T.Mode{1}, 'Full'), 'CSC result table should preserve mode text.');
+    assertClose(T.Qct_C(1), A.Qct, 1e-18, 'CSC result table CT charge');
+    assertClose(T.Qcv_C(1), A.Qcv, 1e-18, 'CSC result table CV charge');
+    assertClose(T.Qct_mC_cm2(1), A.Qct_mC_cm2, 1e-13, 'CSC result table CT CSC');
+    assert(strcmp(T.Status{1}, 'OK'), 'CSC successful table row should preserve OK status.');
+    assert(isnan(T.Qct_C(2)), 'CSC failed table row should use NaN numeric outputs.');
+    assert(strcmp(T.Status{2}, 'scan rate missing'), 'CSC failed table row should preserve failure message.');
 end
 
 function assertClose(actual, expected, tol, label)

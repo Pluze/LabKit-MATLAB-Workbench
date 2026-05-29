@@ -26,6 +26,7 @@ This project is still in an unreleased behavior-preserving refactor stage.
 - Added shared CIC / voltage-transient analysis helpers under `+gamrywb/+analysis`.
 - Added shared CIC result/export table helpers under `+gamrywb/+io` and batch display data under `+gamrywb/+ui`.
 - Added shared CV/CT charge and CSC analysis helpers under `+gamrywb/+analysis`.
+- Added shared CV/CSC result table helper under `+gamrywb/+io`.
 - Added shared CV/CT selected-column access and plotting helpers.
 - Added shared EIS item construction, axis-value, overlay plotting, and export-table helpers.
 - Added shared session creation, file add/remove, save/load, and batch summary helpers.
@@ -70,7 +71,7 @@ This project is still in an unreleased behavior-preserving refactor stage.
 
 - CIC plotting remains in the legacy GUI.
 - VT resistance plotting remains in the legacy GUI.
-- CV/CSC export formatting remains deferred until a batch/session export workflow exists.
+- CV/CSC CSV writing and GUI export remain deferred until a batch/session export workflow exists.
 - New thin apps under `apps/` have not been implemented.
 - Unified workbench GUI has not been started.
 - Golden reference tests for every major analysis output are not complete yet.

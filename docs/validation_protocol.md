@@ -281,6 +281,9 @@ CSC normalization
 relative difference
 max |dt - |dV|/v|
 plot trim behavior
+result table variable names
+successful result table values
+failed-row status and NaN numeric formatting
 ```
 
 Important rule:

@@ -235,6 +235,10 @@ Analysis note:
 
 `gamrywb.analysis.computeCSC` currently accepts a parsed curve struct plus an option struct containing `scanRate`, `mode`, and `area_cm2`. It returns legacy-compatible charge, CSC, relative-difference, and trim-vector fields. A full CVCT item wrapper can later normalize this call shape without changing the analysis rules.
 
+Result table note:
+
+`gamrywb.io.buildCSCResultsTable` builds a package-backed result table from items containing `analysis = gamrywb.analysis.computeCSC(...)`. It preserves the computed CT/CV charge, difference, relative difference, dt-error, CSC-normalized fields, and status message without adding a legacy GUI CSV export workflow.
+
 Plot note:
 
 `gamrywb.data.getCurveXY` and `gamrywb.plot.plotCVCT` currently operate on the same parsed curve struct. They preserve the legacy GUI's exact-case column matching and NaN row filtering.
