@@ -1,5 +1,5 @@
-function test_phase1_smoke()
-%TEST_PHASE1_SMOKE Check startup path and root entrypoint boundaries.
+function test_startup_boundaries()
+%TEST_STARTUP_BOUNDARIES Check startup path and root entrypoint boundaries.
 
     root = fileparts(fileparts(mfilename('fullpath')));
 
