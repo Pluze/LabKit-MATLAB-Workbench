@@ -446,7 +446,7 @@ Goal:
 
 The EIS app implementation now lives directly in `apps/gamrywb_EIS_app.m`, not under `apps/private` or `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "eis")` for file loading. This is the reference direction for the remaining apps: a public app file with clear local sections that calls the DTA and GUI APIs.
 
-EIS overlay axis selection, overlay plotting, and plot-export table construction now live under `apps/+gamrywb_apps/+eis`, not in reusable `+gamrywb/+analysis`, `+gamrywb/+plot`, or `+gamrywb/+io`.
+EIS overlay axis selection, overlay plotting, and plot-export table construction now live as local functions in `apps/gamrywb_EIS_app.m`, not in reusable `+gamrywb/+analysis`, `+gamrywb/+plot`, `+gamrywb/+io`, or the transitional `apps/+gamrywb_apps` namespace.
 
 The Chrono overlay app implementation now lives directly in `apps/gamrywb_ChronoOverlay_app.m`, not under `apps/private`, `apps/+gamrywb_apps`, or `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "chrono")` for file loading. Pulse-gap alignment, VT/IT overlay plotting, and overlay export table construction are local functions in the app file, not reusable library APIs.
 

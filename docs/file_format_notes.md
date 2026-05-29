@@ -135,13 +135,11 @@ Idc (A)
 Vdc (V)
 ```
 
-EIS item construction remains in the reusable DTA/data library. EIS overlay axis selection, plotting, and plot-export helpers are app-side workflow code:
+EIS item construction remains in the reusable DTA/data library. EIS overlay axis selection, plotting, and plot-export helpers are app-side workflow code local to the EIS app:
 
 ```text
 +gamrywb/+data/makeEISItem.m
-apps/+gamrywb_apps/+eis/valuesForAxis.m
-apps/+gamrywb_apps/+eis/plotOverlay.m
-apps/+gamrywb_apps/+eis/buildExportTable.m
+apps/gamrywb_EIS_app.m
 ```
 
 ---
