@@ -55,8 +55,8 @@ same results, cleaner code, clearer boundaries
 
 ## Allowed Work
 
-- Move duplicated helper logic into `+gamrywb` package functions.
-- Update app entry points to call package helpers when behavior is preserved.
+- Move duplicated helper logic into `+gamrywb` package functions only when the helper is genuinely cross-cutting and makes the caller easier to understand.
+- Update app entry points to call package helpers when behavior is preserved and the helper boundary matches the GUI, DTA, or utility library responsibilities above.
 - Move app-specific implementations and experiment-specific scientific workflow code out of `+gamrywb` when doing so preserves behavior.
 - Add or update tests for pure functions and app entry points.
 - Update documentation to reflect current behavior.
