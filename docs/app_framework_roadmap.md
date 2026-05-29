@@ -272,9 +272,8 @@ hardResetAxis
 Next candidates:
 
 ```text
-createTabbedDualPlotShell
+createTopBottomPlotControls
 createResultTable
-createTopBottomPlotPanel
 ```
 
 Helpers should return handle structs:
@@ -532,7 +531,7 @@ Acceptance criteria:
 
 ### Phase E: Extract tabbed dual-plot shell
 
-Status: started.
+Status: complete.
 
 Target apps:
 
@@ -542,7 +541,7 @@ Target apps:
 Candidate helper:
 
 ```text
-+gamrywb/+ui/createTabbedDualPlotShell.m    done for VT resistance app
++gamrywb/+ui/createTabbedDualPlotShell.m    done for VT resistance and CIC apps
 ```
 
 Expected return struct:
@@ -563,7 +562,7 @@ ui.bottomAxes
 ```
 
 Keep app-specific analysis settings, summary rows, and result tables in app code for the first extraction.
-VT resistance now uses the shared shell first. CIC should adopt it only after the VT-only change passes default and GUI tests.
+VT resistance and CIC now use the shared shell while keeping app-specific controls, defaults, and callbacks in app code.
 
 Acceptance criteria:
 
@@ -671,14 +670,14 @@ This app-framework stage is successful when:
 The next best task is:
 
 ```text
-adopt tabbed dual-plot shell in CIC
+extract top/bottom plot controls for CIC and VT
 ```
 
 Suggested sequence:
 
-1. Replace CIC's duplicated outer shell with `gamrywb.ui.createTabbedDualPlotShell`.
-2. Keep CIC-specific analysis settings, summary rows, tables, plot dropdown values, callbacks, labels, and draggable behavior unchanged.
-3. Run default plus GUI MATLAB tests before considering Phase E complete.
+1. Add a conservative `+gamrywb/+ui/createTopBottomPlotControls.m` helper.
+2. Use it in one app first, preserving app-specific dropdown item lists, defaults, callbacks, and labels.
+3. Apply it to the second app only after default and GUI MATLAB tests pass.
 
 ---
 
@@ -701,7 +700,7 @@ Use this section to record meaningful changes in strategy.
 - createInfoArea and createLogArea share Chrono/EIS read-only text-area placement while preserving app-specific info copy
 - createPlotOptionsPanel shares the Chrono/EIS plot-options panel shell while preserving app-specific controls and callbacks
 - createAxes shares Chrono/EIS initial axes construction while preserving labels
-- createTabbedDualPlotShell starts Phase E by sharing the VT/CIC outer tabbed dual-plot shell; VT resistance uses it first
+- createTabbedDualPlotShell shares the VT/CIC outer tabbed dual-plot shell; VT resistance and CIC both use it
 - launchChronoOverlayApp moves the first app body under +gamrywb/+app while keeping apps/gamrywb_ChronoOverlay_app.m as the public wrapper
 - launchEISApp moves the EIS app body under +gamrywb/+app while keeping apps/gamrywb_EIS_app.m as the public wrapper
 - launchVTResistanceApp moves the VT resistance app body under +gamrywb/+app while keeping apps/gamrywb_VTResistance_app.m as the public wrapper

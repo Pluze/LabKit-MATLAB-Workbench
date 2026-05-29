@@ -36,49 +36,16 @@ function varargout = launchCICApp(varargin)
     S.isDragging = false;
 
     %% ===================== Figure & Layout =====================
-    fig = uifigure('Name','Gamry CIC GUI (Voltage Transient)','Position',[40 30 1680 980]);
-
-    main = uigridlayout(fig,[1 3]);
-    main.ColumnWidth = {430,6,'1x'};
-    main.RowHeight = {'1x'};
-    main.Padding = [10 10 10 10];
-    main.ColumnSpacing = 0;
-
-    sep = uipanel(main,'BackgroundColor',[0.75 0.75 0.75],'BorderType','none');
-    sep.Layout.Row = 1;
-    sep.Layout.Column = 2;
-    sep.ButtonDownFcn = @startDrag;
-
-    leftPanel = uipanel(main,'Title','Controls');
-    leftPanel.Layout.Row = 1;
-    leftPanel.Layout.Column = 1;
-
-    leftHost = uigridlayout(leftPanel,[1 1]);
-    leftHost.RowHeight = {'1x'};
-    leftHost.ColumnWidth = {'1x'};
-    leftHost.Padding = [8 8 8 8];
-
-    tabs = uitabgroup(leftHost);
-    tabs.Layout.Row = 1;
-    tabs.Layout.Column = 1;
-
-    tabFA = uitab(tabs,'Title','Files + Analysis');
-    layFA = uigridlayout(tabFA,[3 1]);
-    % Keep large file batches from expanding the file list into the controls below.
-    layFA.RowHeight = {260,'fit','fit'};
-    layFA.RowSpacing = 10;
-    layFA.Padding = [8 8 8 8];
-
-    tabSR = uitab(tabs,'Title','Summary + Results');
-    laySR = uigridlayout(tabSR,[2 1]);
-    laySR.RowHeight = {'fit','1x'};
-    laySR.RowSpacing = 10;
-    laySR.Padding = [8 8 8 8];
-
-    tabLog = uitab(tabs,'Title','Log');
-    layLog = uigridlayout(tabLog,[1 1]);
-    layLog.RowHeight = {'1x'};
-    layLog.Padding = [8 8 8 8];
+    ui = gamrywb.ui.createTabbedDualPlotShell( ...
+        'Gamry CIC GUI (Voltage Transient)', ...
+        [40 30 1680 980], ...
+        430, ...
+        @startDrag);
+    fig = ui.fig;
+    main = ui.main;
+    layFA = ui.filesAnalysisGrid;
+    laySR = ui.summaryResultsGrid;
+    layLog = ui.logGrid;
 
     %% ===================== File panel =====================
     pFile = uipanel(layFA,'Title','Files');
@@ -237,17 +204,7 @@ function varargout = launchCICApp(varargin)
     txtLog.Value = {'GUI started.'};
 
     %% ===================== Right: plots =====================
-    rightPanel = uipanel(main,'Title','Plots');
-    rightPanel.Layout.Row = 1;
-    rightPanel.Layout.Column = 3;
-
-    right = uigridlayout(rightPanel,[4 1]);
-    right.RowHeight = {'fit','1x','fit','1x'};
-    right.RowSpacing = 10;
-    right.Padding = [8 8 8 8];
-
-    pTopCtl = uipanel(right,'Title','Top Plot');
-    pTopCtl.Layout.Row = 1;
+    pTopCtl = ui.topControlsPanel;
     gtCtl = uigridlayout(pTopCtl,[1 5]);
     gtCtl.ColumnWidth = {'fit','1x','fit','1x','1x'};
     gtCtl.Padding = [8 6 8 6];
@@ -259,13 +216,9 @@ function varargout = launchCICApp(varargin)
     ddTopY = uidropdown(gtCtl,'Items',{'VT: Vf vs time','IT: Im vs time'},'Value','VT: Vf vs time','ValueChangedFcn',@(~,~) refreshPlots());
     cbTopGrid = uicheckbox(gtCtl,'Text','Grid','Value',true,'ValueChangedFcn',@(~,~) refreshPlots());
 
-    axTop = uiaxes(right);
-    axTop.Layout.Row = 2;
-    title(axTop,'Top Plot');
-    gamrywb.ui.disableAxesInteractivity(axTop);
+    axTop = ui.topAxes;
 
-    pBotCtl = uipanel(right,'Title','Bottom Plot');
-    pBotCtl.Layout.Row = 3;
+    pBotCtl = ui.bottomControlsPanel;
     gbCtl = uigridlayout(pBotCtl,[1 5]);
     gbCtl.ColumnWidth = {'fit','1x','fit','1x','1x'};
     gbCtl.Padding = [8 6 8 6];
@@ -277,10 +230,7 @@ function varargout = launchCICApp(varargin)
     ddBotY = uidropdown(gbCtl,'Items',{'VT: Vf vs time','IT: Im vs time'},'Value','IT: Im vs time','ValueChangedFcn',@(~,~) refreshPlots());
     cbBotGrid = uicheckbox(gbCtl,'Text','Grid','Value',true,'ValueChangedFcn',@(~,~) refreshPlots());
 
-    axBottom = uiaxes(right);
-    axBottom.Layout.Row = 4;
-    title(axBottom,'Bottom Plot');
-    gamrywb.ui.disableAxesInteractivity(axBottom);
+    axBottom = ui.bottomAxes;
     if nargout == 1
         varargout{1} = fig;
     end
