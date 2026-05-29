@@ -32,6 +32,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Collapsed the CIC app implementation from `apps/private` into the public `apps/gamrywb_CIC_app.m` single-file app entry and removed the now-empty `apps/private` launcher directory.
 - Folded Chrono overlay alignment, plotting, and export helpers into local functions in `apps/gamrywb_ChronoOverlay_app.m` and removed the temporary `apps/+gamrywb_apps/+chrono` package.
 - Folded EIS overlay axis selection, plotting, and export helpers into local functions in `apps/gamrywb_EIS_app.m` and removed the temporary `apps/+gamrywb_apps/+eis` package.
+- Streamlined app boundary tests by sharing single-file entrypoint assertions while keeping app-specific architecture checks explicit.
 - Clarified the roadmap around reusable GUI, Gamry/DTA, and utility library surfaces plus single-file experiment apps.
 - Routed the EIS app's file loading through the GUI-free DTA facade instead of constructing EIS items directly in the app layer.
 - Routed the Chrono overlay app's file loading through the GUI-free DTA facade while keeping pulse-gap alignment in the app workflow.
