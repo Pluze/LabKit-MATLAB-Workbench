@@ -436,7 +436,9 @@ function varargout = gamrywb_CSC_app(varargin)
         if isempty(S.curves), return; end
         c = S.curves(S.currentCurve);
         opts = struct('holdPlot', cbTopHold.Value, 'showGrid', cbTopGrid.Value, 'lineWidth', 1.2);
-        info = gamrywb.ui.plotCurveXY(axTop, c, ddTopX.Value, ddTopY.Value, opts);
+        [x, y, xName, yName] = gamrywb.data.getCurveXY(c, ddTopX.Value, ddTopY.Value);
+        labels = struct('title', c.name, 'x', xName, 'y', yName);
+        info = gamrywb.ui.plotXY(axTop, x, y, labels, opts);
         if ~info.ok
             addLog('Top plot skipped: invalid X/Y.');
             return;
@@ -448,7 +450,9 @@ function varargout = gamrywb_CSC_app(varargin)
         if isempty(S.curves), return; end
         c = S.curves(S.currentCurve);
         opts = struct('holdPlot', cbBotHold.Value, 'showGrid', cbBotGrid.Value, 'lineWidth', 1.2);
-        info = gamrywb.ui.plotCurveXY(axBottom, c, ddBotX.Value, ddBotY.Value, opts);
+        [x, y, xName, yName] = gamrywb.data.getCurveXY(c, ddBotX.Value, ddBotY.Value);
+        labels = struct('title', c.name, 'x', xName, 'y', yName);
+        info = gamrywb.ui.plotXY(axBottom, x, y, labels, opts);
         if ~info.ok
             addLog('Bottom plot skipped: invalid X/Y.');
             return;

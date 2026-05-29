@@ -277,10 +277,13 @@ Common state helpers:
 ```matlab
 gamrywb.ui.appendLog(txtLog, message);
 gamrywb.ui.refreshListboxItems(lbFiles, names);
-info = gamrywb.ui.plotCurveXY(ax, curve, 'T', 'Im', opts);
+[x, y, xName, yName] = gamrywb.data.getCurveXY(curve, 'T', 'Im');
+labels = struct('title', curve.name, 'x', xName, 'y', yName);
+info = gamrywb.ui.plotXY(ax, x, y, labels, opts);
 ```
 
 GUI helpers should not contain experiment names, formulas, thresholds, result columns, or export formats.
+They should also receive prepared values from the app or data layer rather than calling parser, DTA, session, or analysis APIs themselves.
 
 ## Utility API
 

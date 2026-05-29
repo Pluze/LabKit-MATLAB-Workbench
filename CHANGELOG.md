@@ -28,7 +28,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - App header comments now consistently describe single-file app ownership without implying reusable-library ownership of experiment-specific analysis.
 - Agent/developer rules now describe app-specific helper packages as removed boundaries that should not be reintroduced and limit new package helpers to genuinely cross-cutting code.
 - Reusable GUI helpers are kept domain-neutral: DTA-specific labels, shell tab titles, app callback choreography, and app reset/default behavior stay in the apps.
-- Generic selected-curve plotting lives in `gamrywb.ui.plotCurveXY`; app-specific plotting packages and empty reusable plot packages are not kept.
+- Generic prepared-X/Y plotting lives in `gamrywb.ui.plotXY`; parsed-curve column selection stays in `gamrywb.data.getCurveXY` so the GUI layer does not depend on the data layer.
 - Test organization now separates default and GUI groups, shares repeated numeric assertion helpers, and keeps architecture guardrails in `test_architecture_boundaries`.
 - Startup/root-entry smoke coverage now uses the responsibility-focused `test_startup_boundaries` name instead of a historical phase name.
 - Current architecture, API, data-model, validation, and roadmap docs describe the three reusable library surfaces plus single-file app ownership.
@@ -44,6 +44,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Transitional `apps/private`, `apps/+gamrywb_apps`, `+gamrywb/+app`, and `+gamrywb/+plot` migration layers.
 - App-specific reusable analysis/export helpers that hid experiment decisions outside the owning app file.
 - The one-line `gamrywb.io.exportTableCSV` wrapper; apps that need MATLAB's default table writer call `writetable` directly.
+- The data-coupled `gamrywb.ui.plotCurveXY` helper; apps now call `gamrywb.data.getCurveXY` before `gamrywb.ui.plotXY`.
 
 ## v1.0.0 - 2026-05-28
 

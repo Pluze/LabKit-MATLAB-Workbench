@@ -1,9 +1,13 @@
-function info = plotCurveXY(ax, curve, xsel, ysel, opts)
-%PLOTCURVEXY Plot one selected X/Y pair from a parsed curve.
+function info = plotXY(ax, x, y, labels, opts)
+%PLOTXY Plot one prepared X/Y numeric series.
 
+    if nargin < 4
+        labels = struct();
+    end
     if nargin < 5
         opts = struct();
     end
+    labels = fillLabels(labels);
     opts = fillOptions(opts);
 
     info = struct();
@@ -11,14 +15,16 @@ function info = plotCurveXY(ax, curve, xsel, ysel, opts)
     info.message = '';
     info.x = [];
     info.y = [];
-    info.xName = '';
-    info.yName = '';
+    info.xName = labels.x;
+    info.yName = labels.y;
 
-    [x, y, xname, yname] = gamrywb.data.getCurveXY(curve, xsel, ysel);
-    if isempty(x) || isempty(y)
+    if isempty(x) || isempty(y) || numel(x) ~= numel(y)
         info.message = 'invalid X/Y';
         return;
     end
+
+    x = x(:);
+    y = y(:);
 
     if ~opts.holdPlot
         cla(ax);
@@ -26,16 +32,26 @@ function info = plotCurveXY(ax, curve, xsel, ysel, opts)
 
     plot(ax, x, y, 'LineWidth', opts.lineWidth);
     grid(ax, opts.showGrid);
-    title(ax, curve.name, 'Interpreter', 'none');
-    xlabel(ax, xname, 'Interpreter', 'none');
-    ylabel(ax, yname, 'Interpreter', 'none');
+    title(ax, labels.title, 'Interpreter', 'none');
+    xlabel(ax, labels.x, 'Interpreter', 'none');
+    ylabel(ax, labels.y, 'Interpreter', 'none');
 
     info.ok = true;
     info.message = 'OK';
     info.x = x;
     info.y = y;
-    info.xName = xname;
-    info.yName = yname;
+end
+
+function labels = fillLabels(labels)
+    if ~isfield(labels, 'title')
+        labels.title = '';
+    end
+    if ~isfield(labels, 'x')
+        labels.x = '';
+    end
+    if ~isfield(labels, 'y')
+        labels.y = '';
+    end
 end
 
 function opts = fillOptions(opts)

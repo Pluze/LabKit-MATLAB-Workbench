@@ -97,7 +97,7 @@ The IO layer is guarded as GUI-free and app-free parser/session IO code. It may 
 
 The utility layer is guarded as the lowest shared layer: utility functions should not call GUI constructors, app entry points, `apps/` helpers, or higher-level `gamrywb.dta`, `gamrywb.io`, `gamrywb.data`, `gamrywb.ui`, or `gamrywb.analysis` APIs. Higher layers may call utilities; utilities should not call back up into those layers.
 
-Reusable UI helpers should build or update generic controls. App-specific callback choreography, such as clearing a session, restoring app-specific plot defaults, refreshing experiment summaries, and writing app logs, should stay in the owning app file even when two apps have similar callback order. Domain labels such as DTA-specific open/export button text and app shell tab/panel titles should be passed in from apps rather than hardcoded in the GUI library.
+Reusable UI helpers should build or update generic controls and draw prepared data. Data extraction, parser/session calls, and analysis calls should stay in the app or data layers; for example, apps should call `gamrywb.data.getCurveXY` before passing prepared vectors and labels to `gamrywb.ui.plotXY`. App-specific callback choreography, such as clearing a session, restoring app-specific plot defaults, refreshing experiment summaries, and writing app logs, should stay in the owning app file even when two apps have similar callback order. Domain labels such as DTA-specific open/export button text and app shell tab/panel titles should be passed in from apps rather than hardcoded in the GUI library.
 
 Analysis functions should return status through result structs, for example:
 
@@ -115,7 +115,7 @@ The GUI decides how to display that status.
 - `+io`: DTA parsers, folder discovery, and session save/load. It should not contain app-specific export helpers or scientific result schemas.
 - `+data`: table/column accessors, CV/CT selected-column access, chrono item construction, EIS item construction, session add/remove/select/load helpers, and generic item/result summaries.
 - `+analysis`: pulse detection helpers. Experiment-specific calculations should migrate toward app-side code unless they are clearly general, parameter-light math utilities.
-- `+ui`: reusable GUI framework helpers, including generic axes creation/reset, selected-curve plotting, log append and log panel, generic listbox item refresh, multi-file and single-select file-panel, summary row, result table panel, plot-options panel, simple labeled-control, two-pane shell, tabbed dual-plot shell, and top/bottom plot-control construction/state helpers.
+- `+ui`: reusable GUI framework helpers, including generic axes creation/reset, prepared-X/Y plotting, log append and log panel, generic listbox item refresh, multi-file and single-select file-panel, summary row, result table panel, plot-options panel, simple labeled-control, two-pane shell, tabbed dual-plot shell, and top/bottom plot-control construction/state helpers.
 - `+util`: low-risk generic helpers used by parser, data, analysis, UI, and app code, including string cleanup, simple struct operations, numeric window/index helpers, and safe interpolation. It should not contain GUI state, DTA-family dispatch, scientific result definitions, plot labels, or export schemas.
 
 ## Boundaries To Preserve

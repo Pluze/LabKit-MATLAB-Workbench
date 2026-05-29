@@ -139,7 +139,7 @@ scanRate, mode, area_cm2
 
 CSC CT/CV charge integration is a local detail of `apps/gamrywb_CSC_app.m`; it is not a separate reusable library API.
 
-`gamrywb.data.getCurveXY` operates on the parsed curve struct and preserves exact-case column matching and NaN filtering. Apps can plot selected parsed-curve columns through the reusable GUI helper `gamrywb.ui.plotCurveXY`.
+`gamrywb.data.getCurveXY` operates on the parsed curve struct and preserves exact-case column matching and NaN filtering. Apps can pass those prepared X/Y vectors and labels to the reusable GUI helper `gamrywb.ui.plotXY`.
 
 ## Pulse Struct
 

@@ -106,7 +106,7 @@ mixed batch load:         gamrywb.dta.loadFiles
 GUI session add/remove:   gamrywb.data.addFilesToSession and removeSelectedItemsFromSession
 table column access:      gamrywb.data.getColumn and getCurveXY
 generic GUI shell:        gamrywb.ui.createTwoPaneShell or createTabbedDualPlotShell
-generic plot primitive:   gamrywb.ui.plotCurveXY
+generic plot primitive:   gamrywb.ui.plotXY with app/data-prepared X/Y vectors
 small numeric/string ops: gamrywb.util.*
 ```
 
