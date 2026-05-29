@@ -1,38 +1,79 @@
 # App Framework Roadmap
 
-This roadmap replaces the previous extraction log.
+This roadmap defines the next stable architecture direction for Gamry Electrochemistry Workbench.
 
-The previous roadmap tracked many small helper extractions. That stage is now mature enough. The next goal is not to keep extracting every repeated UI block. The next goal is to stabilize the project around a clean, reusable three-layer architecture.
+The previous refactor successfully moved the project from legacy GUI scripts to package-backed apps with reusable GUI helpers. The project is now already reasonably convenient for building apps that resemble the existing Chrono, EIS, VT, CIC, and CSC tools.
 
-Target outcome:
+The next goal is not to keep extracting small GUI helpers. The next goal is to make new app creation predictable:
 
 ```text
-new app = GUI framework + DTA processing system + app-specific scientific requirements
+new app = GUI framework + DTA processing API + app-specific scientific workflow
 ```
 
 A future developer should be able to:
 
-- reuse the GUI framework without using Gamry-specific analysis code
-- reuse the DTA parsing/processing system without launching a GUI
-- add a new scientific app by defining its data requirements, analysis function, plots, controls, and export behavior
-- avoid copying large app files
+- reuse the GUI framework without using Gamry-specific scientific analysis
+- reuse the DTA loading/parsing/normalization system without launching a GUI
+- create a new scientific app by defining file requirements, analysis options, plot behavior, result fields, and export format
+- avoid copying large existing app files
 - avoid adding one-off helpers for every small UI pattern
 
 ---
 
-## 1. Design Principle
+## 1. Current App-Building Convenience
 
-The project should be organized around three layers:
+Current status:
+
+```text
+building an app similar to existing tools: good
+building a completely new DTA-driven app: possible but still glue-heavy
+reusing the GUI framework alone: mostly possible
+reusing the DTA system alone: not yet convenient enough
+```
+
+Practical assessment:
+
+```text
+similar Chrono/EIS/VT/CIC-style app: about 8/10 convenient
+GUI framework reuse: about 7.5/10 convenient
+DTA processing reuse: about 6/10 convenient
+completely new app type: about 6/10 convenient
+```
+
+Why similar apps are now easier:
+
+- public app entry points are thin wrappers under `apps/`
+- app bodies live under `+gamrywb/+app`
+- common GUI shells and panels live under `+gamrywb/+ui`
+- scientific calculations live under `+gamrywb/+analysis`
+- plotting helpers live under `+gamrywb/+plot`
+- parser/export/session helpers live under `+gamrywb/+io` and `+gamrywb/+data`
+
+Main remaining bottleneck:
+
+```text
+new apps still need to know too much about low-level parser and item-construction details
+```
+
+Therefore, the next high-value step is a DTA-facing API, not more GUI-helper extraction.
+
+---
+
+## 2. Three-Layer Architecture
+
+The project should stabilize around three reusable layers:
 
 ```text
 Layer 1: GUI framework
-Layer 2: DTA processing system
+Layer 2: DTA processing API
 Layer 3: App-specific scientific workflow
 ```
 
 Each layer should be independently useful.
 
-### 1.1 GUI framework
+---
+
+## 3. Layer 1 — GUI Framework
 
 The GUI framework owns reusable interface structure only.
 
@@ -46,8 +87,8 @@ It may provide:
 - result tables
 - axes panels
 - dropdown rows
-- generic callback wiring surfaces
 - layout helpers
+- small generic UI state helpers
 
 It must not know:
 
@@ -84,23 +125,56 @@ createWaterWindowTable
 
 Those belong in app-specific code.
 
-### 1.2 DTA processing system
+### Current GUI framework guidance
 
-The DTA layer owns file discovery, parsing, normalization, item construction, session storage, and export-table construction.
+The current GUI helper layer is mature enough for now.
 
-It should be reusable without GUI.
+Do not keep extracting helpers just because code repeats.
 
-It may provide:
+Add a new GUI helper only if all are true:
 
-- recursive DTA discovery
+1. the same pattern appears in at least two real apps
+2. the helper name is domain-neutral
+3. the helper contains no scientific labels, formulas, units, or export columns
+4. the helper reduces conceptual duplication, not just line count
+5. the app remains easier to read after the extraction
+6. a layout/helper test can lock expected behavior
+
+When unsure, leave code in the app layer.
+
+---
+
+## 4. Layer 2 — DTA Processing API
+
+This is the next priority.
+
+The DTA layer should provide a clean, GUI-free way to discover, parse, normalize, and load DTA files.
+
+It should eventually allow code like this:
+
+```matlab
+files = gamrywb.io.findDTAFilesRecursive(folder);
+items = gamrywb.dta.loadFiles(files, "chrono");
+results = myAnalysis(items, options);
+T = myExportTable(results);
+```
+
+or:
+
+```matlab
+item = gamrywb.dta.loadFile(filepath);
+kind = gamrywb.dta.detectType(filepath);
+```
+
+The DTA layer may provide:
+
 - DTA type detection
 - parser dispatch
-- normalized parsed structs
-- item factories
-- session add/remove helpers
-- result table builders
-- CSV writers
-- validation fixtures
+- recursive file loading wrappers
+- normalized item construction
+- status/error reporting
+- batch loading without GUI dialogs
+- validation of required arrays/metadata
 
 It must not know:
 
@@ -110,21 +184,65 @@ It must not know:
 - listbox state
 - dropdown state
 - button callbacks
+- app plot controls
 
-The DTA system should eventually make this possible:
+### Candidate package
 
-```matlab
-files = gamrywb.io.findDTAFilesRecursive(folder);
-items = gamrywb.dta.loadFiles(files, "chrono");
-results = myAnalysis(items, options);
-T = myExportTable(results);
+Add a future package:
+
+```text
++gamrywb/+dta/
+  detectType.m
+  loadFile.m
+  loadFiles.m
+  makeItem.m
+  validateItem.m
 ```
 
-No GUI should be required for that flow.
+This package should be a facade over existing lower-level code.
 
-### 1.3 App-specific scientific workflow
+Do not rewrite parsers just to create this package.
 
-The app layer connects a scientific use case to the GUI framework and the DTA processing system.
+Initial implementation should delegate to existing functions in:
+
+```text
++gamrywb/+io
++gamrywb/+data
+```
+
+### Minimal first version
+
+A useful first version could be:
+
+```matlab
+[item, status] = gamrywb.dta.loadFile(filepath, expectedKind);
+[items, report] = gamrywb.dta.loadFiles(filepaths, expectedKind);
+kind = gamrywb.dta.detectType(filepath);
+```
+
+Where:
+
+```text
+expectedKind: "chrono", "eis", "cvct", or "auto"
+status.ok: true/false
+status.message: readable error or warning
+status.kind: detected/loaded type
+```
+
+Rules:
+
+- preserve current parser behavior
+- preserve current item fields
+- do not show GUI alerts from this layer
+- return status information instead of throwing for normal file-mismatch cases
+- throw only for programmer errors
+- keep tests fixture-driven
+
+---
+
+## 5. Layer 3 — App-Specific Scientific Workflow
+
+The app layer connects a scientific use case to the GUI framework and DTA processing API.
 
 It owns:
 
@@ -141,106 +259,11 @@ It owns:
 
 The app layer may call GUI and DTA helpers, but GUI and DTA helpers should not call app-specific science.
 
----
-
-## 2. Current State
-
-The project has already completed major structural work:
-
-- public entry points are thin files under `apps/`
-- app bodies live under `+gamrywb/+app`
-- scientific analysis lives under `+gamrywb/+analysis`
-- file parsing and export helpers live under `+gamrywb/+io`
-- item/session helpers live under `+gamrywb/+data`
-- plotting helpers live under `+gamrywb/+plot`
-- common GUI pieces live under `+gamrywb/+ui`
-
-The app framework extraction has already gone far enough that further abstraction should be treated carefully.
-
-Current risk:
-
-```text
-helper proliferation can make the code harder to read even if repeated lines decrease
-```
-
-Therefore, future work must prioritize stable boundaries, reusable contracts, and simple app authoring over further mechanical extraction.
-
----
-
-## 3. Stop Rules Against Over-Abstraction
-
-Do not add a new helper unless all of these are true:
-
-1. The same pattern appears in at least two real apps.
-2. The helper name can be domain-neutral.
-3. The helper does not contain scientific labels, formulas, units, or export columns.
-4. The helper reduces conceptual duplication, not just line count.
-5. The calling app remains easier to read after the extraction.
-6. A layout or helper test can lock the expected behavior.
-
-Do not extract:
-
-- one-off controls
-- app-specific summaries
-- app-specific result fields
-- app-specific export columns
-- scientific callback order unless it is truly shared
-- anything that makes the app body read like a list of opaque helper calls
-
-When unsure, leave the code in the app layer.
-
----
-
-## 4. Desired Final Architecture
-
-Preferred long-term shape:
-
-```text
-apps/
-  gamrywb_CIC_app.m
-  gamrywb_VTResistance_app.m
-  gamrywb_CSC_app.m
-  gamrywb_EIS_app.m
-  gamrywb_ChronoOverlay_app.m
-
-+gamrywb/+app/
-  launchCICApp.m
-  launchVTResistanceApp.m
-  launchCSCApp.m
-  launchEISApp.m
-  launchChronoOverlayApp.m
-  shared app orchestration helpers
-
-+gamrywb/+ui/
-  reusable GUI shells, panels, controls, and UI state helpers
-
-+gamrywb/+dta/
-  DTA type detection, parser dispatch, file loading, and normalized item construction
-
-+gamrywb/+io/
-  low-level parsers, CSV writers, session save/load, export table utilities
-
-+gamrywb/+data/
-  normalized item/session structures and access helpers
-
-+gamrywb/+analysis/
-  scientific computations independent of GUI
-
-+gamrywb/+plot/
-  plotting functions that draw into supplied axes
-```
-
-`+gamrywb/+dta` does not need to appear immediately, but the design should move toward a clear DTA-facing API instead of making every app manually know parser details.
-
----
-
-## 5. Three-Layer App Contract
-
-A new app should be describable with three separate blocks.
+A new app should be describable with three contracts.
 
 ### 5.1 GUI contract
 
-The app declares what interface structure it needs:
+The app declares interface structure:
 
 ```text
 shell type
@@ -264,7 +287,7 @@ results: batch result table
 
 ### 5.2 DTA contract
 
-The app declares what file types and parsed fields it needs:
+The app declares file and parsed-data requirements:
 
 ```text
 accepted DTA family
@@ -287,7 +310,7 @@ session kind: cic_vt
 
 ### 5.3 Scientific contract
 
-The app declares its own science:
+The app declares its science:
 
 ```text
 options
@@ -308,69 +331,88 @@ plots: VT/IT with markers and pulse shading
 export: File, Amp, Emc, Ema, Qc, Qa, Qtot, Safe
 ```
 
-This separation should make it possible to build a new app by writing a small app-specific layer rather than copying an old GUI.
-
 ---
 
 ## 6. Recommended Next Phase
 
-### Phase A: Stabilize and audit current framework
+### Phase A: Freeze GUI helper growth
 
-Do this before adding more helpers.
+Do this before adding more UI helpers.
 
 Tasks:
 
 - run the default MATLAB test suite
 - run the GUI test suite if available
-- review the current `+gamrywb/+ui` helper list
-- remove or merge helpers that are too narrow or confusing
-- confirm that GUI helpers contain no scientific domain semantics
-- confirm that app bodies are still readable
-- update tests if GUI contracts changed intentionally
+- review current `+gamrywb/+ui` helper names
+- confirm helpers are domain-neutral
+- confirm app bodies remain readable
+- remove or merge helpers only if they are clearly confusing
 
-Deliverable:
+Do not add more GUI helpers unless justified by the stop rules above.
 
-```text
-short audit update in this file or CHANGELOG only if something meaningful changes
-```
+### Phase B: Build the minimal DTA facade
 
-Do not add a new roadmap file.
+This is the main next development task.
 
-### Phase B: Define the DTA-facing API
-
-The DTA system should become easier to call independently of any app.
-
-Candidate future package:
+Add:
 
 ```text
-+gamrywb/+dta/
-  detectType.m
-  loadFile.m
-  loadFiles.m
-  makeItem.m
-  validateItem.m
++gamrywb/+dta/detectType.m
++gamrywb/+dta/loadFile.m
++gamrywb/+dta/loadFiles.m
 ```
 
-Possible usage:
+Keep it conservative:
 
-```matlab
-item = gamrywb.dta.loadFile(filepath);
-items = gamrywb.dta.loadFiles(filepaths, "chrono");
+- wrap existing parser/item functions
+- do not rewrite parser internals
+- do not change item fields
+- return status/report structs
+- keep it usable from scripts without GUI
+
+Suggested first commit:
+
+```text
+feat: add gui-free dta loading facade
 ```
 
-Rules:
+### Phase C: Use the DTA facade in one existing app
 
-- keep low-level parser code in `+io` unless moving it clearly improves the API
-- keep GUI dialogs out of `+dta`
-- return status/error information instead of showing alerts
-- preserve existing parser behavior
-- preserve existing item fields until tests prove a safe migration path
+Pick one app as a reference migration.
 
-### Phase C: Define a minimal app-definition template
+Recommended candidates:
 
-Do not build a heavy generic app engine yet.
+```text
+EIS app: simpler plotting/export flow
+VT resistance app: representative chrono single-file analysis flow
+```
 
-First define a lightweight template for future apps:
+Goal:
+
+- app behavior unchanged
+- app no longer manually knows as much parser/item construction detail
+- DTA loading can also be used independently in scripts
+- tests prove no behavior change
+
+Suggested commit:
+
+```text
+refactor: use dta facade in EIS app
+```
+
+or:
+
+```text
+refactor: use dta facade in VT resistance app
+```
+
+### Phase D: Define a lightweight new-app template
+
+Do not implement a heavy generic app engine yet.
+
+Start with documentation or a small example file.
+
+A future app should be defined by:
 
 ```matlab
 spec = struct();
@@ -378,37 +420,19 @@ spec.name = "New App Name";
 spec.sessionKind = "new_session_kind";
 spec.fileMode = "single";      % or "multi"
 spec.shell = "tabbedDualPlot"; % or "twoPane"
-spec.loader = @myLoader;
+spec.dtaKind = "chrono";
 spec.analyzer = @myAnalyzer;
 spec.plotter = @myPlotter;
 spec.exporter = @myExporter;
 ```
 
-This template is documentation first. Only implement a generic runner if at least two future apps can use it cleanly.
+This template is documentation first.
 
-### Phase D: Make one new or existing app follow the template
+Only implement a generic runner if two future apps can use it cleanly without hiding scientific logic.
 
-Pick one app as the reference implementation.
+### Phase E: New-app checklist
 
-Recommended candidate:
-
-```text
-EIS app if testing simple GUI/DTA/plot integration
-VT resistance app if testing chrono single-file analysis integration
-```
-
-Goal:
-
-- app-specific science remains visible
-- framework handles only generic GUI and session behavior
-- DTA loading is callable outside GUI
-- tests prove behavior did not change
-
-### Phase E: Create a new-app checklist
-
-Add a short checklist for future app creation.
-
-A future app should define:
+A future app should define these ten items before coding:
 
 ```text
 1. DTA family and parser requirements
@@ -423,13 +447,13 @@ A future app should define:
 10. GUI shell type
 ```
 
-If these ten items are clear, the GUI framework and DTA system should provide most of the remaining scaffolding.
+If these are clear, the GUI framework and DTA facade should provide most remaining scaffolding.
 
 ---
 
 ## 7. What Not To Do Next
 
-Do not continue blindly extracting helpers.
+Do not continue blindly extracting GUI helpers.
 
 Avoid adding helpers such as:
 
@@ -452,6 +476,8 @@ reflection-heavy dispatch
 opaque callback registries
 ```
 
+Do not make the app body read like an opaque list of helper calls.
+
 The project should stay MATLAB-friendly, easy to inspect, and easy to debug.
 
 ---
@@ -472,6 +498,8 @@ When GUI construction changes, also run:
 scripts/run_matlab_tests.sh --gui
 ```
 
+For the DTA facade, add tests that prove it can be used without GUI.
+
 Test priorities:
 
 - parser outputs remain stable
@@ -480,7 +508,8 @@ Test priorities:
 - app entry points still launch
 - GUI control labels remain stable
 - helper tests cover reusable UI behavior
-- DTA layer can be called without GUI
+- DTA facade can be called without GUI
+- DTA facade returns useful status/report structs
 
 Do not claim tests passed unless they actually ran.
 
@@ -490,9 +519,10 @@ Do not claim tests passed unless they actually ran.
 
 This roadmap succeeds when:
 
+- similar new apps can be built quickly without copying old app files
 - the GUI framework can be reused without scientific code
-- the DTA processing system can be reused without GUI
-- a new app can be created by defining app-specific requirements rather than copying an existing app
+- the DTA processing API can be reused without GUI
+- a new app can be created by defining app-specific requirements rather than rewriting scaffolding
 - app scientific logic remains readable and visible
 - UI helpers remain domain-neutral
 - DTA helpers remain GUI-free
