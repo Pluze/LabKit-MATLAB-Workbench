@@ -24,9 +24,9 @@ Optional noninteractive GUI compatibility suite:
 scripts/run_matlab_tests.sh --gui
 ```
 
-The default suite covers parsers, utilities, data accessors, DTA facade discovery/detection/loading, pulse detection, analysis functions, plotting helpers, export table builders, session helpers, UI-table helpers, and app-entry resolution.
+The default suite is listed in `tests/run_all_tests.m` under `defaultTests()` and covers parsers, utilities, data accessors, DTA facade discovery/detection/loading, pulse detection, analysis functions, plotting helpers, export table builders, session helpers, UI-table helpers, and app-entry resolution.
 
-The GUI suite checks launch/layout/callback compatibility without file dialogs, exports, destructive workflows, or manual input.
+The GUI suite is listed in `tests/run_all_tests.m` under `guiTests()` and checks launch/layout/callback compatibility without file dialogs, exports, destructive workflows, or manual input.
 
 Do not run interactive GUI workflows in MATLAB `-batch` mode.
 
