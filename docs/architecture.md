@@ -14,7 +14,7 @@ struct-based item/session models
 +gamrywb package functions
 ```
 
-The package owns reusable app/session orchestration, parsing, data access, analysis, plotting helpers, export helpers, session helpers, and small utilities. GUI files own layout, callbacks, user prompts, alerts, and display wiring.
+The package owns reusable app/session orchestration, parsing, data access, analysis, plotting helpers, export helpers, session helpers, and small utilities. Public files under `apps/` stay as entry points; app assembly can live under `+gamrywb/+app`.
 
 ## Entrypoints
 
@@ -57,7 +57,7 @@ The GUI decides how to display that status.
 
 ## Current Package Surface
 
-- `+app`: shared app/session orchestration helpers such as duplicate-aware file loading, selected-item lookup, and selected-item removal.
+- `+app`: app launch assembly and shared app/session orchestration helpers such as duplicate-aware file loading, selected-item lookup, and selected-item removal.
 - `+io`: chrono, EIS, and CV/CT parsers; chrono/EIS/VT/CIC/CV-CSC result table builders; VT/CIC legacy-format CSV writers; session save/load.
 - `+data`: table/column accessors, CV/CT selected-column access, chrono item construction, EIS item construction, session add/remove helpers.
 - `+analysis`: pulse detection, pulse-gap alignment, VT resistance, CIC, CV/CSC, EIS axis-value generation, batch summaries.

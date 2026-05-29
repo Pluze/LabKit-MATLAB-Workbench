@@ -11,6 +11,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 
 ### Changed
 
+- Moved Chrono overlay app assembly behind `gamrywb.app.launchChronoOverlayApp` while keeping the public `apps/` entry point.
 - Extracted shared initial axes creation for Chrono/EIS overlay apps into `+gamrywb/+ui`.
 - Extracted the shared Chrono/EIS plot-options panel shell into `+gamrywb/+ui`.
 - Extracted shared Chrono/EIS info and log text-area helpers into `+gamrywb/+ui`.

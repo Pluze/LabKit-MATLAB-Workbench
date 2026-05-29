@@ -17,6 +17,10 @@ function test_phase10_apps()
 
     chronoAppFile = fullfile(root, 'apps', 'gamrywb_ChronoOverlay_app.m');
     chronoSource = fileread(chronoAppFile);
+    chronoLaunchFile = fullfile(root, '+gamrywb', '+app', 'launchChronoOverlayApp.m');
+    assert(exist(chronoLaunchFile, 'file') == 2, 'Missing package launch function for chrono overlay app.');
+    assert(contains(chronoSource, 'gamrywb.app.launchChronoOverlayApp'), ...
+        'gamrywb_ChronoOverlay_app should delegate to the package launch function.');
     assert(~contains(chronoSource, '_legacy'), 'gamrywb_ChronoOverlay_app should not call legacy implementations.');
     assert(~contains(chronoSource, 'gamry_multiDTA_plot_export_gui('), ...
         'gamrywb_ChronoOverlay_app should not delegate to a removed root legacy-compatible chrono overlay wrapper.');
