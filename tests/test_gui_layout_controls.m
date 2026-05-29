@@ -12,6 +12,7 @@ function test_gui_layout_controls()
     checkFileListboxRefreshHelper();
     checkSingleSelectFileListboxRefreshHelper();
     checkInfoLogAreaHelpers();
+    checkLogPanelHelper();
     checkReadOnlyInfoRowHelper();
     checkPlotOptionsPanelHelper();
     checkCreateAxesHelper();
@@ -206,6 +207,20 @@ function checkInfoLogAreaHelpers()
     assert(strcmp(txtLog.Editable, 'off'), 'Log area helper should create a read-only text area.');
     assert(sameStringCell(txtLog.Value, {'GUI started.'}), ...
         'Log area helper should preserve the default initial log line.');
+end
+
+function checkLogPanelHelper()
+    fig = uifigure('Visible', 'off', 'Name', 'gamrywb_log_panel_probe');
+    cleaner = onCleanup(@() delete(fig));
+    grid = uigridlayout(fig, [2 1]);
+
+    ui = gamrywb.ui.createLogPanel(grid, 2, {'Started.'});
+    assert(strcmp(ui.panel.Title, 'Log'), 'Log panel helper should preserve the panel title.');
+    assert(ui.panel.Layout.Row == 2, 'Log panel helper should place the panel in the requested row.');
+    assert(isequal(ui.grid.Padding, [8 8 8 8]), 'Log panel helper should preserve grid padding.');
+    assert(strcmp(ui.textArea.Editable, 'off'), 'Log panel helper should create a read-only text area.');
+    assert(sameStringCell(ui.textArea.Value, {'Started.'}), ...
+        'Log panel helper should preserve supplied initial log text.');
 end
 
 function checkReadOnlyInfoRowHelper()

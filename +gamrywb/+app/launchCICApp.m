@@ -173,12 +173,8 @@ function varargout = launchCICApp(varargin)
     tbl.Data = cell(0,8);
 
     %% ===================== Log =====================
-    pLog = uipanel(layLog,'Title','Log');
-    pLog.Layout.Row = 1;
-    gl = uigridlayout(pLog,[1 1]);
-    gl.Padding = [8 8 8 8];
-    txtLog = uitextarea(gl,'Editable','off');
-    txtLog.Value = {'GUI started.'};
+    logUi = gamrywb.ui.createLogPanel(layLog, 1);
+    txtLog = logUi.textArea;
 
     %% ===================== Right: plots =====================
     topPlotDefaults = struct('x', 'Time (s)', 'y', 'VT: Vf vs time', 'grid', true);

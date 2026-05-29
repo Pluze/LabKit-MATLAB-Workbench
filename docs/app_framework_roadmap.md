@@ -72,6 +72,7 @@ Current shared UI helpers:
 +gamrywb/+ui/createSingleSelectFilePanel.m
 +gamrywb/+ui/createInfoArea.m
 +gamrywb/+ui/createLogArea.m
++gamrywb/+ui/createLogPanel.m
 +gamrywb/+ui/createPlotOptionsPanel.m
 +gamrywb/+ui/buildCICBatchTableData.m
 +gamrywb/+ui/buildVTResistanceBatchTableData.m
@@ -475,6 +476,7 @@ Preferred split:
 +gamrywb/+ui/refreshSingleSelectFileListbox.m    done for VT resistance and CIC apps
 +gamrywb/+ui/createSingleSelectFilePanel.m    done for VT resistance and CIC apps
 +gamrywb/+ui/createReadOnlyInfoRow.m    done for VT resistance and CIC summary rows
++gamrywb/+ui/createLogPanel.m    done for VT resistance and CIC log tabs
 ```
 
 Keep dialogs in app/UI code. Keep `gamrywb.data.addFilesToSession` free of UI dialogs.
@@ -723,6 +725,7 @@ Use this section to record meaningful changes in strategy.
 - createSingleSelectFilePanel shares the VT/CIC files panel while preserving app-owned dialogs, selection refresh, and export behavior
 - refreshSingleSelectFileListbox shares VT/CIC single-file listbox refresh and loaded-count text while returning the app-owned current index
 - createReadOnlyInfoRow shares VT/CIC summary-row label/read-only-field construction while keeping app-specific labels and state fields in app code
+- createLogPanel shares VT/CIC log-tab panel construction while preserving app-owned appendLog calls and message text
 ```
 
 ---

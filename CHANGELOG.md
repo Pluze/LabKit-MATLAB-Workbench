@@ -11,6 +11,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 
 ### Changed
 
+- Extracted shared log-tab panel construction for VT/CIC-style apps into `+gamrywb/+ui`.
 - Extracted shared read-only summary-row construction for VT/CIC-style apps into `+gamrywb/+ui`.
 - Extracted shared single-select file-list refresh behavior for VT/CIC-style apps into `+gamrywb/+ui`.
 - Extracted the shared single-select files panel for VT/CIC-style apps into `+gamrywb/+ui` and adopted it in the VT resistance and CIC apps.

@@ -126,12 +126,8 @@ function varargout = launchVTResistanceApp(varargin)
     tbl.ColumnName = {'File','Ic(A)','Ia(A)','Vc_ss(V)','Va_ss(V)','R_cath(ohm)','R_anod(ohm)','R_avg(ohm)','Detection'};
     tbl.Data = cell(0,9);
 
-    pLog = uipanel(layLog,'Title','Log');
-    pLog.Layout.Row = 1;
-    gl = uigridlayout(pLog,[1 1]);
-    gl.Padding = [8 8 8 8];
-    txtLog = uitextarea(gl,'Editable','off');
-    txtLog.Value = {'GUI started.'};
+    logUi = gamrywb.ui.createLogPanel(layLog, 1);
+    txtLog = logUi.textArea;
 
     topPlotDefaults = struct('x', 'Time (s)', 'y', 'VT: Vf vs time', 'grid', true);
     bottomPlotDefaults = struct('x', 'Time (s)', 'y', 'IT: Im vs time', 'grid', true);
