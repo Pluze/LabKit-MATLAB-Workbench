@@ -36,6 +36,7 @@ The app files are package-backed and do not delegate to legacy GUI files.
 
 ```text
 +gamrywb/+app       app/session orchestration helpers
++gamrywb/+dta       GUI-free DTA type detection and loading facade
 +gamrywb/+io        DTA parsers, folder discovery, export table construction, session IO
 +gamrywb/+data      item/session construction and table/column access
 +gamrywb/+analysis  pulse detection and scientific analysis
@@ -58,6 +59,7 @@ The GUI decides how to display that status.
 ## Current Package Surface
 
 - `+app`: Chrono/EIS/VT resistance/CIC/CSC app launch assembly and shared app/session orchestration helpers such as duplicate-aware file loading, selected-item lookup, selected-item removal, single-file selection refresh, and single-file clear-all reset.
+- `+dta`: GUI-free facade for supported DTA family detection, single-file loading, and batch loading with status/report structs. It delegates to existing `+io` parser and `+data` item-construction helpers.
 - `+io`: chrono, EIS, and CV/CT parsers; chrono/EIS/VT/CIC/CV-CSC result table builders; VT/CIC legacy-format CSV writers; session save/load.
 - `+data`: table/column accessors, CV/CT selected-column access, chrono item construction, EIS item construction, session add/remove helpers.
 - `+analysis`: pulse detection, pulse-gap alignment, VT resistance, CIC, CV/CSC, EIS axis-value generation, batch summaries.

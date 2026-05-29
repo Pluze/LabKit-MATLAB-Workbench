@@ -4,6 +4,11 @@ All notable user-facing and maintainer-facing changes are recorded here.
 
 ## Unreleased
 
+### Added
+
+- Added a GUI-free `+gamrywb/+dta` facade for supported DTA type detection, single-file loading, and batch loading with status/report structs.
+- Added fixture-driven tests covering DTA facade detection, auto-loading, expected-kind mismatch handling, missing-file status, and mixed-family batch loading.
+
 ### Removed
 
 - Root-level wrappers for the original legacy GUI command names.

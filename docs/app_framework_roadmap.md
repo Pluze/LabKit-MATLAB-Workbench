@@ -2,6 +2,16 @@
 
 This roadmap defines the next stable architecture direction for Gamry Electrochemistry Workbench.
 
+The core design goal is a codebase with three reusable, independently understandable parts:
+
+```text
+GUI reuse framework
+DTA parsing/loading driver
+experiment-specific apps
+```
+
+Future work should let a developer add a new experiment, a new GUI shell, or a new DTA format with minimal changes to the other two parts. The modules should also remain reusable outside this repository when a downstream project only needs the GUI framework or only needs DTA loading/parsing.
+
 The previous refactor successfully moved the project from legacy GUI scripts to package-backed apps with reusable GUI helpers. The project is now already reasonably convenient for building apps that resemble the existing Chrono, EIS, VT, CIC, and CSC tools.
 
 The next goal is not to keep extracting small GUI helpers. The next goal is to make new app creation predictable:
@@ -15,8 +25,16 @@ A future developer should be able to:
 - reuse the GUI framework without using Gamry-specific scientific analysis
 - reuse the DTA loading/parsing/normalization system without launching a GUI
 - create a new scientific app by defining file requirements, analysis options, plot behavior, result fields, and export format
+- add support for a new DTA family without rewriting existing app GUIs
+- redesign or add a GUI shell without changing parser behavior or scientific formulas
 - avoid copying large existing app files
 - avoid adding one-off helpers for every small UI pattern
+
+Every roadmap item should be judged by this rule:
+
+```text
+Does this make GUI, DTA loading, and experiment logic more independently reusable without hiding domain logic or adding abstraction burden?
+```
 
 ---
 
@@ -26,9 +44,9 @@ Current status:
 
 ```text
 building an app similar to existing tools: good
-building a completely new DTA-driven app: possible but still glue-heavy
+building a completely new DTA-driven app: possible with a first DTA facade, still app-glue-heavy
 reusing the GUI framework alone: mostly possible
-reusing the DTA system alone: not yet convenient enough
+reusing the DTA system alone: minimally supported for supported fixture families
 ```
 
 Practical assessment:
@@ -52,10 +70,10 @@ Why similar apps are now easier:
 Main remaining bottleneck:
 
 ```text
-new apps still need to know too much about low-level parser and item-construction details
+existing app bodies still need to adopt the DTA facade before parser/item details are consistently hidden
 ```
 
-Therefore, the next high-value step is a DTA-facing API, not more GUI-helper extraction.
+Therefore, the next high-value step is adopting the DTA-facing API in one existing app, not more GUI-helper extraction.
 
 ---
 
@@ -70,6 +88,24 @@ Layer 3: App-specific scientific workflow
 ```
 
 Each layer should be independently useful.
+
+Layer independence targets:
+
+```text
+GUI framework:
+  reusable controls, shells, layout, and state-display helpers
+  no parser calls, scientific equations, export columns, or Gamry-only assumptions
+
+DTA processing API:
+  DTA discovery, type detection, parser dispatch, item normalization, and status/reporting
+  no figures, controls, callbacks, app plot choices, or experiment-specific calculations
+
+Experiment app design:
+  accepted DTA family, analysis options, calculations, plots, result summaries, and export format
+  may compose GUI and DTA helpers, but keeps scientific decisions visible in the app layer
+```
+
+The architecture should remain MATLAB-friendly. Prefer plain functions and structs until a repeated, proven need justifies a heavier abstraction.
 
 ---
 
@@ -170,6 +206,7 @@ The DTA layer may provide:
 
 - DTA type detection
 - parser dispatch
+- parser-family extension points when a new DTA format is added
 - recursive file loading wrappers
 - normalized item construction
 - status/error reporting
@@ -186,17 +223,15 @@ It must not know:
 - button callbacks
 - app plot controls
 
-### Candidate package
+### Current package
 
-Add a future package:
+The first DTA facade lives in:
 
 ```text
 +gamrywb/+dta/
   detectType.m
   loadFile.m
   loadFiles.m
-  makeItem.m
-  validateItem.m
 ```
 
 This package should be a facade over existing lower-level code.
@@ -212,7 +247,7 @@ Initial implementation should delegate to existing functions in:
 
 ### Minimal first version
 
-A useful first version could be:
+The minimal first version is:
 
 ```matlab
 [item, status] = gamrywb.dta.loadFile(filepath, expectedKind);
@@ -228,6 +263,8 @@ status.ok: true/false
 status.message: readable error or warning
 status.kind: detected/loaded type
 ```
+
+Batch `items` are a cell array so `"auto"` loads can mix supported DTA schemas without forcing an opaque common superclass or padded struct.
 
 Rules:
 
@@ -260,6 +297,8 @@ It owns:
 The app layer may call GUI and DTA helpers, but GUI and DTA helpers should not call app-specific science.
 
 A new app should be describable with three contracts.
+
+The app layer is intentionally not a generic engine yet. Experiment logic should stay readable and close to the app that owns it. If an abstraction makes it harder to see the scientific assumptions, keep that code explicit.
 
 ### 5.1 GUI contract
 
@@ -352,9 +391,9 @@ Do not add more GUI helpers unless justified by the stop rules above.
 
 ### Phase B: Build the minimal DTA facade
 
-This is the main next development task.
+Status: complete for the conservative first version.
 
-Add:
+Added:
 
 ```text
 +gamrywb/+dta/detectType.m
@@ -376,9 +415,11 @@ Suggested first commit:
 feat: add gui-free dta loading facade
 ```
 
+Do not expand this into a schema framework until an app migration proves the missing contract.
+
 ### Phase C: Use the DTA facade in one existing app
 
-Pick one app as a reference migration.
+This is the current next development task. Pick one app as a reference migration.
 
 Recommended candidates:
 
@@ -393,6 +434,7 @@ Goal:
 - app no longer manually knows as much parser/item construction detail
 - DTA loading can also be used independently in scripts
 - tests prove no behavior change
+- the migrated app demonstrates the intended split between GUI shell, DTA loading, and experiment-specific analysis/export
 
 Suggested commit:
 
@@ -406,13 +448,13 @@ or:
 refactor: use dta facade in VT resistance app
 ```
 
-### Phase D: Define a lightweight new-app template
+### Phase D: Define lightweight extension contracts
 
 Do not implement a heavy generic app engine yet.
 
-Start with documentation or a small example file.
+Start with documentation or a small example file. The goal is to make extension boundaries clear, not to create a schema framework.
 
-A future app should be defined by:
+A future experiment app should be defined by:
 
 ```matlab
 spec = struct();
@@ -429,6 +471,29 @@ spec.exporter = @myExporter;
 This template is documentation first.
 
 Only implement a generic runner if two future apps can use it cleanly without hiding scientific logic.
+
+A future DTA family should be defined by:
+
+```matlab
+dtaSpec = struct();
+dtaSpec.kind = "new_kind";
+dtaSpec.detector = @myDetector;
+dtaSpec.loader = @myLoader;
+dtaSpec.requiredFields = ["T", "Vf", "Im"];
+dtaSpec.fixture = "demo/new_kind_reference.DTA";
+```
+
+A future GUI shell should be defined by:
+
+```matlab
+guiSpec = struct();
+guiSpec.shell = "twoPane";
+guiSpec.fileMode = "multi";
+guiSpec.plotLayout = "singleAxes";
+guiSpec.resultSurface = "table";
+```
+
+Keep these as contracts first. Add runtime machinery only after real app migrations show repeated structure that is clearer as code than as explicit app logic.
 
 ### Phase E: New-app checklist
 
@@ -479,6 +544,16 @@ opaque callback registries
 Do not make the app body read like an opaque list of helper calls.
 
 The project should stay MATLAB-friendly, easy to inspect, and easy to debug.
+
+Also avoid coupling reversals:
+
+```text
+GUI helpers calling DTA parsers
+DTA helpers importing app-specific analysis
+experiment apps duplicating low-level parser dispatch
+new format support changing GUI layout code
+new GUI shells changing scientific/export contracts
+```
 
 ---
 

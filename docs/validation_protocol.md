@@ -24,7 +24,7 @@ Optional noninteractive GUI compatibility suite:
 scripts/run_matlab_tests.sh --gui
 ```
 
-The default suite covers parsers, utilities, data accessors, pulse detection, analysis functions, plotting helpers, export table builders, session helpers, UI-table helpers, and app-entry resolution.
+The default suite covers parsers, utilities, data accessors, DTA facade detection/loading, pulse detection, analysis functions, plotting helpers, export table builders, session helpers, UI-table helpers, and app-entry resolution.
 
 The GUI suite checks launch/layout/callback compatibility without file dialogs, exports, destructive workflows, or manual input.
 
@@ -64,6 +64,7 @@ Parser changes:
 - chrono T/Vf/Im/Pt interpretation, AREA, SAMPLETIME, ISTEP/VSTEP/TSTEP metadata
 - EIS ZCURVE extraction and all supported axis values
 - CV/CT SCANRATE conversion, CURVE discovery, headers, units, and numeric parsing
+- DTA facade type detection, expected-kind mismatch status, missing-file status, and GUI-free batch loading reports
 
 Pulse changes:
 

@@ -73,12 +73,36 @@ Freq, Time, Pt, Zreal, Zimag, negZimag, Zmod, Zphz, Idc, Vdc
 
 Axis-value generation lives in `gamrywb.analysis.valuesForEISAxis`.
 
+## DTA Facade Status
+
+`gamrywb.dta.loadFile` and `gamrywb.dta.loadFiles` return status/report structs instead of GUI alerts for normal file mismatch and load failures.
+
+Status fields:
+
+```text
+ok, message, kind, expectedKind, filepath
+```
+
+`kind` is one of:
+
+```text
+chrono, eis, cvct, unknown
+```
+
+Batch `items` are returned as a cell array because `"auto"` loading can mix different DTA item schemas.
+
 ## CV/CT Data
 
 `gamrywb.io.parseCVCTDTA` returns:
 
 ```matlab
 [scanRate, curves, logmsg] = gamrywb.io.parseCVCTDTA(filepath)
+```
+
+`gamrywb.dta.loadFile(filepath, "cvct")` wraps this parser into a lightweight CV/CT item with:
+
+```text
+type, filepath, name, scanRate, scanRate_V_per_s, curves, logmsg, analysis
 ```
 
 `gamrywb.analysis.computeCSC` accepts a parsed curve and options containing:
