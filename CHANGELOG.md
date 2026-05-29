@@ -39,6 +39,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Added reusable API usage documentation and a single-file app template for future experiments.
 - Expanded reusable API usage guidance with loading API choices and a new-app design checklist.
 - Refreshed architecture notes so app-specific export schemas are documented as app-owned rather than transitional `+io` helpers.
+- Documented the session-backed file-panel callback pattern for future single-file apps.
 - Documented DTA facade discovery, status, and folder-load report schemas in the data model notes.
 - Folded CSC CT/CV charge subcalculations into `apps/+gamrywb_apps/+csc/computeCSC.m` and removed redundant public/private helper files.
 - Folded the remaining CSC charge/CSC calculation into local functions in `apps/gamrywb_CSC_app.m` and removed the transitional CSC helper package file.

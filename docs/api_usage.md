@@ -110,6 +110,53 @@ summary = gamrywb.data.summarizeBatchResults(session.items);
 
 Session structs are plain structs. Do not convert them to MATLAB classes without an explicit design change and tests.
 
+For a GUI app that owns a loaded-file list, keep the callback choreography local and use the data/session helpers for the GUI-free parts:
+
+```matlab
+S.session = gamrywb.data.makeSession('new_experiment');
+S.items = S.session.items;
+
+function loadFiles(filepaths)
+    callbacks = struct();
+    callbacks.onAdded = @(filepath, ~) addLog(sprintf('Loaded: %s', filepath));
+    callbacks.onSkipped = @(filepath) addLog(sprintf('Skipped already loaded: %s', filepath));
+    callbacks.onFailed = @(filepath, message) addLog(sprintf('Failed: %s | %s', filepath, message));
+
+    [S.session, report] = gamrywb.data.loadFilesIntoSession( ...
+        S.session, filepaths, @loadOne, callbacks);
+    S.items = S.session.items;
+
+    refreshFileList();
+    refreshPlots();
+
+    if ~isempty(report.failed)
+        firstError = report.failed(1);
+        uialert(fig, sprintf('Failed to load:\n%s\n\n%s', ...
+            firstError.filepath, firstError.message), 'Load error');
+    end
+end
+
+function refreshFileList()
+    if isempty(S.items)
+        gamrywb.ui.refreshListboxItems(lbFiles, {});
+    else
+        gamrywb.ui.refreshListboxItems(lbFiles, {S.items.name});
+    end
+end
+
+function onRemoveSelected(~, ~)
+    callbacks = struct();
+    callbacks.onRemoved = @(name, ~) addLog(sprintf('Removed: %s', name));
+    [S.session, ~] = gamrywb.data.removeSelectedItemsFromSession( ...
+        S.session, lbFiles.Value, callbacks);
+    S.items = S.session.items;
+    refreshFileList();
+    refreshPlots();
+end
+```
+
+The app still owns `refreshPlots`, `addLog`, export behavior, alerts, and any app-specific reset/default-selection behavior. Do not move that choreography into `+gamrywb/+ui` unless multiple real apps prove that a generic helper is clearer.
+
 ## GUI API
 
 Use `+gamrywb/+ui` for reusable interface structure. GUI helpers should be domain-neutral.
