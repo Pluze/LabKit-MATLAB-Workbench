@@ -359,7 +359,21 @@ function varargout = gamrywb_CIC_app(varargin)
     end
 
     function refreshFileList()
-        S.current = gamrywb.ui.refreshSingleSelectFileListbox(lbFiles, txtLoaded, S.items, S.current);
+        if isempty(S.items)
+            lbFiles.Items = {};
+            lbFiles.Value = {};
+            txtLoaded.Value = 'No files loaded';
+            S.current = [];
+            return;
+        end
+
+        names = {S.items.name};
+        lbFiles.Items = names;
+        if isempty(S.current) || S.current < 1 || S.current > numel(S.items)
+            S.current = 1;
+        end
+        lbFiles.Value = names{S.current};
+        txtLoaded.Value = sprintf('%d file(s) loaded', numel(S.items));
     end
 
     function refreshBatchTable()

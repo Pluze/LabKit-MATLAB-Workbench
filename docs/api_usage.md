@@ -137,7 +137,6 @@ Common state helpers:
 ```matlab
 gamrywb.ui.appendLog(txtLog, message);
 gamrywb.ui.refreshListboxItems(lbFiles, names);
-selectedIndex = gamrywb.ui.refreshSingleSelectFileListbox(lbFiles, loadedText, items, selectedIndex);
 info = gamrywb.ui.plotCurveXY(ax, curve, 'T', 'Im', opts);
 ```
 

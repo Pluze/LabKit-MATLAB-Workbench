@@ -56,6 +56,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Folded VT/CIC single-file selection and clear-all callback choreography back into the owning app files so reusable UI helpers do not own app session workflow.
 - Folded Chrono/EIS info and log text-area construction back into the owning app files and removed the row-hardcoded reusable wrappers.
 - Replaced the item-schema-specific `refreshFileListbox` UI helper with app-local name extraction plus generic `refreshListboxItems`.
+- Folded VT/CIC single-select file-list refresh state back into the owning app files and removed the item-schema-specific UI helper.
 - Routed the EIS app's file loading through the GUI-free DTA facade instead of constructing EIS items directly in the app layer.
 - Routed the Chrono overlay app's file loading through the GUI-free DTA facade while keeping pulse-gap alignment in the app workflow.
 - Routed the CSC app's CV/CT file loading through the GUI-free DTA facade instead of parsing CV/CT files directly in the app layer.

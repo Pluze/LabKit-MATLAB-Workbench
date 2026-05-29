@@ -10,7 +10,6 @@ function test_gui_layout_controls()
     checkVTResistance();
     checkCIC();
     checkListboxItemsRefreshHelper();
-    checkSingleSelectFileListboxRefreshHelper();
     checkLogPanelHelper();
     checkReadOnlyInfoRowHelper();
     checkResultTablePanelHelper();
@@ -153,41 +152,6 @@ function checkListboxItemsRefreshHelper()
     gamrywb.ui.refreshListboxItems(lb, {});
     assert(isempty(lb.Items) && isempty(lb.Value), ...
         'File listbox helper should clear listbox items and values for empty sessions.');
-end
-
-function checkSingleSelectFileListboxRefreshHelper()
-    fig = uifigure('Visible', 'off', 'Name', 'gamrywb_single_select_file_listbox_refresh_probe');
-    cleaner = onCleanup(@() delete(fig));
-    grid = uigridlayout(fig, [2 1]);
-    lb = uilistbox(grid, 'Items', {}, 'Multiselect', 'off');
-    loadedText = uieditfield(grid, 'text', 'Editable', 'off');
-
-    items = struct('name', {'a.DTA', 'b.DTA'});
-    currentIndex = gamrywb.ui.refreshSingleSelectFileListbox(lb, loadedText, items, []);
-    assert(currentIndex == 1, ...
-        'Single-select file listbox helper should default an empty current index to the first item.');
-    assert(sameStringCell(lb.Items, {'a.DTA', 'b.DTA'}), ...
-        'Single-select file listbox helper should populate item display names.');
-    assert(strcmp(lb.Value, 'a.DTA'), ...
-        'Single-select file listbox helper should select the first item by default.');
-    assert(strcmp(loadedText.Value, '2 file(s) loaded'), ...
-        'Single-select file listbox helper should update the loaded-count field.');
-
-    currentIndex = gamrywb.ui.refreshSingleSelectFileListbox(lb, loadedText, items, 2);
-    assert(currentIndex == 2 && strcmp(lb.Value, 'b.DTA'), ...
-        'Single-select file listbox helper should preserve a valid current index.');
-
-    currentIndex = gamrywb.ui.refreshSingleSelectFileListbox(lb, loadedText, items, 99);
-    assert(currentIndex == 1 && strcmp(lb.Value, 'a.DTA'), ...
-        'Single-select file listbox helper should reset an out-of-range current index.');
-
-    currentIndex = gamrywb.ui.refreshSingleSelectFileListbox(lb, loadedText, struct([]), 1);
-    assert(isempty(currentIndex), ...
-        'Single-select file listbox helper should clear the current index for empty sessions.');
-    assert(isempty(lb.Items) && isempty(lb.Value), ...
-        'Single-select file listbox helper should clear listbox items and value for empty sessions.');
-    assert(strcmp(loadedText.Value, 'No files loaded'), ...
-        'Single-select file listbox helper should reset the loaded-count field for empty sessions.');
 end
 
 function checkLogPanelHelper()
