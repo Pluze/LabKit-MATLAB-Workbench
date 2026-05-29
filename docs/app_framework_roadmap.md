@@ -151,6 +151,8 @@ It must not know:
 
 A GUI helper is acceptable only if it can be explained without scientific domain words.
 
+Apps should pass workflow-specific labels into GUI helpers instead of letting the GUI layer own them. This includes file-format wording, export button text, tab names, panel titles, and default axes titles. Keeping those labels app-local makes the GUI helpers reusable in non-Gamry projects and keeps app workflow semantics visible in the single-file app.
+
 Good examples:
 
 ```text

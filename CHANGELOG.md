@@ -60,6 +60,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Replaced the title-specific `resetTopBottomAxes` wrapper with direct app calls to the generic `hardResetAxis` helper.
 - Moved DTA-specific file-panel button labels out of reusable GUI helpers and into the owning apps.
 - Moved tabbed dual-plot shell tab and panel labels out of the reusable GUI helper and into the owning apps.
+- Documented the required GUI label structs for file panels and tabbed dual-plot shells.
 - Routed the EIS app's file loading through the GUI-free DTA facade instead of constructing EIS items directly in the app layer.
 - Routed the Chrono overlay app's file loading through the GUI-free DTA facade while keeping pulse-gap alignment in the app workflow.
 - Routed the CSC app's CV/CT file loading through the GUI-free DTA facade instead of parsing CV/CT files directly in the app layer.
