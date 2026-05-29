@@ -82,16 +82,18 @@ function test_phase10_apps()
         'gamrywb_CSC_app should load DTA files through the GUI-free DTA facade.');
     assert(~contains(cscSource, 'gamrywb.io.parseCVCTDTA(filepath)'), ...
         'gamrywb_CSC_app should not parse CV/CT files directly in the app layer.');
-    assert(contains(cscSource, 'gamrywb_apps.csc.computeCSC'), ...
-        'gamrywb_CSC_app should keep CSC analysis in the app-side namespace.');
+    assert(~contains(cscSource, 'gamrywb_apps.csc'), ...
+        'gamrywb_CSC_app should not depend on the transitional CSC helper namespace.');
     assert(~contains(cscSource, 'gamrywb.analysis.computeCSC'), ...
         'gamrywb_CSC_app should not call CSC analysis through the reusable +gamrywb package.');
     assert(contains(cscSource, 'gamrywb.ui.plotCurveXY'), ...
         'CSC plotting should use the reusable selected-curve GUI helper.');
     assert(~contains(cscSource, 'gamrywb.plot.plotCVCT'), ...
         'CSC plotting should not live in reusable +gamrywb plot.');
-    assertPackageMFiles(fullfile(root, 'apps', '+gamrywb_apps', '+csc'), ...
-        {'computeCSC.m'}, 'CSC transitional app-side');
+    assert(contains(cscSource, 'function A = computeCSC'), ...
+        'CSC analysis should be local to the public CSC app file.');
+    assertNoPackageMFiles(fullfile(root, 'apps', '+gamrywb_apps', '+csc'), ...
+        'CSC transitional app-side');
     assert(exist(fullfile(root, '+gamrywb', '+ui', 'plotCurveXY.m'), 'file') == 2, ...
         'Reusable selected-curve plotting should live in +gamrywb/+ui.');
     assert(exist(fullfile(root, '+gamrywb', '+analysis', 'computeCSC.m'), 'file') ~= 2, ...
@@ -185,6 +187,23 @@ function assertPackageMFiles(packageDir, expectedFiles, label)
     expectedFiles = sort(expectedFiles);
     assert(isequal(actualFiles, expectedFiles), ...
         [label ' package .m files should be exactly: ' strjoin(expectedFiles, ', ')]);
+
+    dirEntries = dir(packageDir);
+    childDirs = {dirEntries([dirEntries.isdir]).name};
+    childDirs = childDirs(~ismember(childDirs, {'.', '..'}));
+    assert(isempty(childDirs), ...
+        [label ' package should not keep child directories: ' strjoin(childDirs, ', ')]);
+end
+
+function assertNoPackageMFiles(packageDir, label)
+    if exist(packageDir, 'dir') ~= 7
+        return;
+    end
+
+    fileEntries = dir(fullfile(packageDir, '*.m'));
+    actualFiles = sort({fileEntries.name});
+    assert(isempty(actualFiles), ...
+        [label ' package should not keep .m files: ' strjoin(actualFiles, ', ')]);
 
     dirEntries = dir(packageDir);
     childDirs = {dirEntries([dirEntries.isdir]).name};

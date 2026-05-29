@@ -9,7 +9,7 @@ function test_computeCSC()
     curve = curves(1);
 
     opts = struct('scanRate', scanRate, 'mode', 'Full', 'area_cm2', '2');
-    A = gamrywb_apps.csc.computeCSC(curve, opts);
+    A = computeCSC(curve, opts);
     assert(A.ok, A.message);
     assert(strcmp(A.message, 'OK'), 'Successful CSC result should preserve OK status.');
     assert(strcmp(A.mode, 'Full'), 'Full mode should be echoed in the result.');
@@ -24,7 +24,7 @@ function test_computeCSC()
     assert(numel(A.IanodDisp) == numel(A.Im), 'Anodic trim vector should match filtered data length.');
 
     opts.mode = 'Cathodic';
-    B = gamrywb_apps.csc.computeCSC(curve, opts);
+    B = computeCSC(curve, opts);
     assert(B.ok, B.message);
     assertClose(B.Qct, 0.00029431203584906772, 1e-16, 'Cathodic CT charge');
     assertClose(B.Qcv, 0.00029428822423684342, 1e-16, 'Cathodic CV charge');
@@ -32,7 +32,7 @@ function test_computeCSC()
     assertClose(B.Qct_mC_cm2, 0.14715601792453387, 1e-13, 'Cathodic CSC');
 
     opts.mode = 'Anodic';
-    C = gamrywb_apps.csc.computeCSC(curve, opts);
+    C = computeCSC(curve, opts);
     assert(C.ok, C.message);
     assertClose(C.Qct, 9.8474307829067581e-05, 1e-16, 'Anodic CT charge');
     assertClose(C.Qcv, 9.8475803741079329e-05, 1e-16, 'Anodic CV charge');
@@ -42,7 +42,7 @@ function test_computeCSC()
     synthetic = struct();
     synthetic.headers = {'T', 'Vf', 'Im'};
     synthetic.data = [0 0 -1; 1 1 1; 2 2 1];
-    Z = gamrywb_apps.csc.computeCSC(synthetic, struct('scanRate', 2, 'mode', 'Full'));
+    Z = computeCSC(synthetic, struct('scanRate', 2, 'mode', 'Full'));
     assert(Z.ok, 'Synthetic zero-crossing case should compute.');
     assertClose(Z.QctCath, 0.25, 1e-15, 'Synthetic CT cathodic charge');
     assertClose(Z.QctAnod, 1.25, 1e-15, 'Synthetic CT anodic charge');
@@ -52,18 +52,18 @@ function test_computeCSC()
     assertClose(Z.QcvFull, 0.75, 1e-15, 'Synthetic CV full charge');
     assertClose(Z.dtErr, 0.5, 1e-15, 'Synthetic CV dt error');
 
-    D = gamrywb_apps.csc.computeCSC(curve, struct('scanRate', NaN));
+    D = computeCSC(curve, struct('scanRate', NaN));
     assert(~D.ok, 'Missing scan rate should fail.');
     assert(strcmp(D.message, 'scan rate missing'), 'Missing scan-rate message should match legacy UI text.');
 
     missingCurve = rmfield(curve, 'headers');
-    E = gamrywb_apps.csc.computeCSC(missingCurve, struct('scanRate', scanRate));
+    E = computeCSC(missingCurve, struct('scanRate', scanRate));
     assert(~E.ok, 'Missing required columns should fail.');
     assert(strcmp(E.message, 'Need T, Vf, Im'), 'Missing-column message should match legacy UI text.');
 
     shortCurve = curve;
     shortCurve.data = shortCurve.data(1, :);
-    F = gamrywb_apps.csc.computeCSC(shortCurve, struct('scanRate', scanRate));
+    F = computeCSC(shortCurve, struct('scanRate', scanRate));
     assert(~F.ok, 'Single-point curve should fail.');
     assert(strcmp(F.message, 'Not enough points'), 'Single-point message should match legacy UI text.');
 
@@ -77,12 +77,18 @@ function test_computeCSC()
 
     assert(exist(fullfile(root, 'apps', '+gamrywb_apps', '+csc', 'buildResultsTable.m'), 'file') ~= 2, ...
         'CSC should not keep an unused app-side result-table helper without an export workflow.');
+    assert(exist(fullfile(root, 'apps', '+gamrywb_apps', '+csc', 'computeCSC.m'), 'file') ~= 2, ...
+        'CSC analysis should live in the public CSC app file, not a transitional helper package.');
     assert(exist(fullfile(root, 'apps', '+gamrywb_apps', '+csc', 'computeCTCharge.m'), 'file') ~= 2, ...
         'CSC CT charge calculation should not remain a separate public helper.');
     assert(exist(fullfile(root, 'apps', '+gamrywb_apps', '+csc', 'computeCVCharge.m'), 'file') ~= 2, ...
         'CSC CV charge calculation should not remain a separate public helper.');
     assert(exist(fullfile(root, 'apps', '+gamrywb_apps', '+csc', 'private'), 'dir') ~= 7, ...
         'CSC app-side package should not keep a private helper directory for one integrator.');
+end
+
+function A = computeCSC(curve, opts)
+    A = gamrywb_CSC_app('__test_computeCSC__', curve, opts);
 end
 
 function assertClose(actual, expected, tol, label)

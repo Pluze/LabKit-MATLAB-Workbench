@@ -36,6 +36,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Clarified the roadmap around reusable GUI, Gamry/DTA, and utility library surfaces plus single-file experiment apps.
 - Added reusable API usage documentation and a single-file app template for future experiments.
 - Folded CSC CT/CV charge subcalculations into `apps/+gamrywb_apps/+csc/computeCSC.m` and removed redundant public/private helper files.
+- Folded the remaining CSC charge/CSC calculation into local functions in `apps/gamrywb_CSC_app.m` and removed the transitional CSC helper package file.
 - Folded VT steady-window and baseline subcalculations into `apps/+gamrywb_apps/+vt/computeResistance.m` and removed redundant public helper files.
 - Promoted generic selected-curve plotting to `gamrywb.ui.plotCurveXY` and removed the CSC-specific plotting helper.
 - Removed the unused CSC result-table helper because the current CSC app has no CSV/export workflow.

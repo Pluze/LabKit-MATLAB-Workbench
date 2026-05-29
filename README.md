@@ -13,7 +13,7 @@ What that means:
 - CIC, VT resistance, CV/CSC, chrono overlay, and EIS overlay/export workflows have package-backed parser, analysis, plotting, export, or UI helper coverage where v1.0 required it.
 - App entry points are package-backed and live under `apps/`.
 - EIS, Chrono overlay, CSC, VT resistance, and CIC are now public single-file app implementations.
-- CSC-specific charge/CSC calculations now live on the app side instead of the reusable `+gamrywb` library; the long-term ideal is one experiment app file owning its scientific workflow.
+- CSC-specific charge/CSC calculations now live as local functions in the public CSC app file instead of the reusable `+gamrywb` library.
 - VT-specific resistance calculations, export formatting, and batch-table display data now live on the app side instead of the reusable `+gamrywb` library.
 - CIC-specific voltage-transient calculations, export formatting, and batch-table display data now live on the app side instead of the reusable `+gamrywb` library.
 
