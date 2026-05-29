@@ -1,8 +1,8 @@
-function ui = createSingleSelectFilePanel(parent, exportText, callbacks)
+function ui = createSingleSelectFilePanel(parent, labels, callbacks)
 %CREATESINGLESELECTFILEPANEL Create the shared single-select files panel.
 
     ui = struct();
-    ui.panel = uipanel(parent, 'Title', 'Files');
+    ui.panel = uipanel(parent, 'Title', labels.panelTitle);
     ui.panel.Layout.Row = 1;
 
     ui.grid = uigridlayout(ui.panel, [3 1]);
@@ -22,25 +22,25 @@ function ui = createSingleSelectFilePanel(parent, exportText, callbacks)
     ui.buttonGrid.Padding = [0 0 0 0];
 
     ui.openButton = uibutton(ui.buttonGrid, ...
-        'Text', 'Open DTA file(s)', ...
+        'Text', labels.openFiles, ...
         'ButtonPushedFcn', callbacks.onOpenFiles);
     ui.openButton.Layout.Row = 1;
     ui.openButton.Layout.Column = 1;
 
     ui.openFolderButton = uibutton(ui.buttonGrid, ...
-        'Text', 'Open folder recursively', ...
+        'Text', labels.openFolder, ...
         'ButtonPushedFcn', callbacks.onOpenFolder);
     ui.openFolderButton.Layout.Row = 1;
     ui.openFolderButton.Layout.Column = 2;
 
     ui.clearButton = uibutton(ui.buttonGrid, ...
-        'Text', 'Clear all', ...
+        'Text', labels.clearAll, ...
         'ButtonPushedFcn', callbacks.onClearAll);
     ui.clearButton.Layout.Row = 2;
     ui.clearButton.Layout.Column = 1;
 
     ui.exportButton = uibutton(ui.buttonGrid, ...
-        'Text', exportText, ...
+        'Text', labels.export, ...
         'ButtonPushedFcn', callbacks.onExport);
     ui.exportButton.Layout.Row = 2;
     ui.exportButton.Layout.Column = 2;
@@ -54,7 +54,7 @@ function ui = createSingleSelectFilePanel(parent, exportText, callbacks)
 
     ui.loadedText = uieditfield(ui.grid, 'text', ...
         'Editable', 'off', ...
-        'Value', 'No files loaded');
+        'Value', labels.loadedText);
     ui.loadedText.Layout.Row = 3;
     ui.loadedText.Layout.Column = 1;
 end

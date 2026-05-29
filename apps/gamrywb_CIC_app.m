@@ -60,7 +60,14 @@ function varargout = gamrywb_CIC_app(varargin)
     fileCallbacks.onClearAll = @(~,~) clearAllFiles();
     fileCallbacks.onExport = @(~,~) exportResultsCSV();
     fileCallbacks.onSelectFile = @(~,~) onSelectFile();
-    fileUi = gamrywb.ui.createSingleSelectFilePanel(layFA, 'Export results CSV', fileCallbacks);
+    fileLabels = struct( ...
+        'panelTitle', 'Files', ...
+        'openFiles', 'Open DTA file(s)', ...
+        'openFolder', 'Open folder recursively', ...
+        'clearAll', 'Clear all', ...
+        'export', 'Export results CSV', ...
+        'loadedText', 'No files loaded');
+    fileUi = gamrywb.ui.createSingleSelectFilePanel(layFA, fileLabels, fileCallbacks);
     lbFiles = fileUi.listbox;
     txtLoaded = fileUi.loadedText;
 
@@ -362,7 +369,7 @@ function varargout = gamrywb_CIC_app(varargin)
         if isempty(S.items)
             lbFiles.Items = {};
             lbFiles.Value = {};
-            txtLoaded.Value = 'No files loaded';
+            txtLoaded.Value = fileLabels.loadedText;
             S.current = [];
             return;
         end

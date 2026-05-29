@@ -10,6 +10,9 @@ function test_phase10_apps()
         {'defaultPulseOptions.m', 'detectPulses.m', 'emptyPulse.m', ...
         'pulsesFromCurrent.m', 'pulsesFromMetadata.m'}, ...
         'Reusable +gamrywb analysis');
+    assertPackageSourcesDoNotContain(fullfile(root, '+gamrywb', '+ui'), ...
+        {'DTA', 'Gamry'}, ...
+        'Reusable +gamrywb UI');
     assert(exist(fullfile(root, '+gamrywb', '+ui', 'loadFilesIntoSession.m'), 'file') ~= 2, ...
         'GUI-free session loading should live in +gamrywb/+data, not +ui.');
     assert(exist(fullfile(root, '+gamrywb', '+ui', 'removeSelectedItemsFromSession.m'), 'file') ~= 2, ...
@@ -226,6 +229,21 @@ function assertPackageMFiles(packageDir, expectedFiles, label)
     childDirs = childDirs(~ismember(childDirs, {'.', '..'}));
     assert(isempty(childDirs), ...
         [label ' package should not keep child directories: ' strjoin(childDirs, ', ')]);
+end
+
+function assertPackageSourcesDoNotContain(packageDir, forbiddenWords, label)
+    assert(exist(packageDir, 'dir') == 7, [label ' package directory should exist.']);
+
+    fileEntries = dir(fullfile(packageDir, '*.m'));
+    for iFile = 1:numel(fileEntries)
+        source = fileread(fullfile(packageDir, fileEntries(iFile).name));
+        for iWord = 1:numel(forbiddenWords)
+            word = forbiddenWords{iWord};
+            assert(~contains(source, word), ...
+                sprintf('%s package file %s should not contain app-domain word "%s".', ...
+                label, fileEntries(iFile).name, word));
+        end
+    end
 end
 
 function assertNoPackageMFiles(packageDir, label)

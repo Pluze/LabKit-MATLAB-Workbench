@@ -124,13 +124,15 @@ ui = gamrywb.ui.createTabbedDualPlotShell(titleText, position, leftWidth, startD
 Common controls and panels:
 
 ```matlab
-gamrywb.ui.createFilePanel(parent, exportButtonText, callbacks);
-gamrywb.ui.createSingleSelectFilePanel(parent, exportButtonText, callbacks);
+gamrywb.ui.createFilePanel(parent, labels, callbacks);
+gamrywb.ui.createSingleSelectFilePanel(parent, labels, callbacks);
 gamrywb.ui.createPlotOptionsPanel(parent, numRows);
 gamrywb.ui.createTopBottomPlotControls(topPanel, bottomPanel, xItems, yItems, topDefaults, bottomDefaults, onChange);
 gamrywb.ui.createResultTablePanel(parent, titleText, row, columnNames, initialData);
 gamrywb.ui.createLogPanel(parent, row, initialValue);
 ```
+
+Apps own domain-specific labels such as "Open DTA file(s)" or export-button text and pass them through `labels`; reusable GUI helpers should not encode Gamry/DTA wording.
 
 Common state helpers:
 
