@@ -451,7 +451,7 @@ The Chrono overlay app implementation now lives under `apps/private`, not under 
 
 The CSC app implementation now lives under `apps/private`, not under `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "cvct")` for file loading. CSC-specific charge and result-table calculations live under `apps/+gamrywb_apps/+csc`, not in reusable `+gamrywb/+analysis` or `+gamrywb/+io`. This app-side package is a migration step for testability, not a new reusable app abstraction; collapse it into the CSC app file if/when tests can still verify behavior cleanly.
 
-The CIC app implementation now lives under `apps/private`, not under `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "chrono")` for file loading. CIC-specific voltage-transient analysis, result-table, CSV, and batch-table helpers live under `apps/+gamrywb_apps/+cic`, not in reusable `+gamrywb/+analysis`, `+gamrywb/+io`, or `+gamrywb/+ui`.
+The CIC app implementation now lives under `apps/private`, not under `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "chrono")` for file loading. CIC-specific voltage-transient analysis, injected-charge calculation, water-window checks, result-table, CSV, and batch-table helpers live under `apps/+gamrywb_apps/+cic`, not in reusable `+gamrywb/+analysis`, `+gamrywb/+io`, or `+gamrywb/+ui`.
 
 The VT resistance and CIC app implementations now live under `apps/private`, not under `+gamrywb/+app`, and use `gamrywb.dta.loadFile(filepath, "chrono")` for file loading. VT-specific resistance helpers and CIC-specific voltage-transient/export/table helpers live under `apps/+gamrywb_apps`, not in reusable `+gamrywb/+analysis`, `+gamrywb/+io`, or `+gamrywb/+ui`.
 
@@ -461,7 +461,7 @@ Remaining migration candidates:
 
 ```text
 App-side helper packages: keep only as temporary testable waypoints; do not grow them into a framework
-Remaining +analysis functions: classify broad chrono primitives versus experiment-specific calculations before moving anything else
+Remaining +analysis functions: keep pulse detection broad; classify any other helper before adding new behavior there
 Generic GUI/session helpers now live in +gamrywb/+ui; do not recreate +gamrywb/+app for app-specific workflow code
 ```
 

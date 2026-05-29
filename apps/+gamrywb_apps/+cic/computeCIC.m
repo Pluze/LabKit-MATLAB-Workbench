@@ -64,10 +64,10 @@ function A = computeCIC(item, opts)
         return;
     end
 
-    V = gamrywb.analysis.computeVoltageTransientMetrics(t, Vf, pulse, A.delay_s);
+    V = computeVoltageTransientMetrics(t, Vf, pulse, A.delay_s);
     A = mergeStructs(A, V);
 
-    Q = gamrywb.analysis.computeInjectedCharge(t, Im, pulse, A.usedMeasuredCurrent);
+    Q = computeInjectedCharge(t, Im, pulse, A.usedMeasuredCurrent);
     A = mergeStructs(A, Q);
     if ~Q.ok
         A.message = Q.message;
@@ -84,7 +84,7 @@ function A = computeCIC(item, opts)
         A.CICt_mCcm2 = NaN;
     end
 
-    safety = gamrywb.analysis.checkWaterWindowSafety(A.Emc, A.Ema, A.cathLimit, A.anodLimit);
+    safety = checkWaterWindowSafety(A.Emc, A.Ema, A.cathLimit, A.anodLimit);
     A = mergeStructs(A, safety);
 
     A.ok = true;
@@ -147,5 +147,124 @@ function out = mergeStructs(out, in)
     names = fieldnames(in);
     for i = 1:numel(names)
         out.(names{i}) = in.(names{i});
+    end
+end
+
+function V = computeVoltageTransientMetrics(t, Vf, pulse, delay_s)
+    V = struct();
+    V.t_emc = pulse.cath_end + delay_s;
+    V.t_ema = pulse.anod_end + delay_s;
+    V.emc_idx = gamrywb.util.nearestIndex(t, V.t_emc);
+    V.ema_idx = gamrywb.util.nearestIndex(t, V.t_ema);
+    V.Emc = interp1Safe(t, Vf, V.t_emc);
+    V.Ema = interp1Safe(t, Vf, V.t_ema);
+
+    V.Epre = gamrywb.util.medianInWindow(t, Vf, pulse.pre_start, pulse.pre_end);
+    V.Ebetween = gamrywb.util.medianInWindow(t, Vf, pulse.gap_start, pulse.gap_end);
+    V.Epost = gamrywb.util.medianInWindow(t, Vf, pulse.post_start, pulse.post_end);
+    [V.Eipp, V.baselineCathSource, V.baselineCathWindow] = chooseBaselineCandidate( ...
+        [V.Epre, V.Ebetween, V.Epost, 0], ...
+        {'pre-pulse median', 'interpulse median', 'post-pulse median', 'zero fallback'}, ...
+        [pulse.pre_start pulse.pre_end; pulse.gap_start pulse.gap_end; pulse.post_start pulse.post_end; NaN NaN]);
+    [V.Eipp_gap, V.baselineAnodSource, V.baselineAnodWindow] = chooseBaselineCandidate( ...
+        [V.Ebetween, V.Epre, V.Epost, V.Eipp], ...
+        {'interpulse median', 'pre-pulse median', 'post-pulse median', 'cathodic baseline fallback'}, ...
+        [pulse.gap_start pulse.gap_end; pulse.pre_start pulse.pre_end; pulse.post_start pulse.post_end; V.baselineCathWindow]);
+
+    V.tc_s = max(0, pulse.cath_end - pulse.cath_start);
+    V.ta_s = max(0, pulse.anod_end - pulse.anod_start);
+    V.tip_s = max(0, pulse.anod_start - pulse.cath_end);
+    V.t_conset = pulse.cath_start + delay_s;
+    V.t_aonset = pulse.anod_start + delay_s;
+    V.Vc_on = interp1Safe(t, Vf, V.t_conset);
+    V.Va_on = interp1Safe(t, Vf, V.t_aonset);
+    V.Va_cath_mag = abs(V.Eipp - V.Vc_on);
+    V.Va_anod_mag = abs(V.Eipp_gap - V.Va_on);
+end
+
+function Q = computeInjectedCharge(t, Im, pulse, useMeasuredCurrent)
+    if nargin < 4
+        useMeasuredCurrent = true;
+    end
+
+    Q = struct();
+    cathMask = (t >= pulse.cath_start) & (t <= pulse.cath_end);
+    anodMask = (t >= pulse.anod_start) & (t <= pulse.anod_end);
+    Q.cathMask = cathMask;
+    Q.anodMask = anodMask;
+
+    if sum(cathMask) < 2 || sum(anodMask) < 2
+        Q.ok = false;
+        Q.message = 'Pulse windows too short after detection.';
+        return;
+    end
+
+    Q.Ic_est_A = median(Im(cathMask), 'omitnan');
+    Q.Ia_est_A = median(Im(anodMask), 'omitnan');
+    if ~isfinite(Q.Ic_est_A)
+        Q.Ic_est_A = pulse.Ic_nominal;
+    end
+    if ~isfinite(Q.Ia_est_A)
+        Q.Ia_est_A = pulse.Ia_nominal;
+    end
+
+    if useMeasuredCurrent
+        Qc = abs(trapz(t(cathMask), Im(cathMask)));
+        Qa = abs(trapz(t(anodMask), Im(anodMask)));
+    else
+        Qc = abs(pulse.Ic_nominal * (pulse.cath_end - pulse.cath_start));
+        Qa = abs(pulse.Ia_nominal * (pulse.anod_end - pulse.anod_start));
+    end
+
+    Q.Qc_C = Qc;
+    Q.Qa_C = Qa;
+    Q.Qt_C = Qc + Qa;
+    Q.ok = true;
+    Q.message = 'OK';
+end
+
+function safety = checkWaterWindowSafety(Emc, Ema, cathLimit, anodLimit)
+    safety = struct();
+    safety.cathOK = Emc >= cathLimit;
+    safety.anodOK = Ema <= anodLimit;
+    safety.safe = safety.cathOK && safety.anodOK;
+
+    if safety.safe
+        safety.limitSide = 'safe';
+    elseif ~safety.cathOK && ~safety.anodOK
+        safety.limitSide = 'both exceeded';
+    elseif ~safety.cathOK
+        safety.limitSide = 'cathodic exceeded';
+    else
+        safety.limitSide = 'anodic exceeded';
+    end
+end
+
+function v = interp1Safe(x, y, xq)
+    if numel(x) < 2 || any(~isfinite([x(:); y(:)]))
+        v = NaN;
+        return;
+    end
+    try
+        v = interp1(x, y, xq, 'linear', 'extrap');
+    catch
+        idx = gamrywb.util.nearestIndex(x, xq);
+        v = y(idx);
+    end
+end
+
+function [v, sourceLabel, window] = chooseBaselineCandidate(candidates, sourceLabels, windows)
+    v = NaN;
+    sourceLabel = 'unavailable';
+    window = [NaN NaN];
+    for k = 1:numel(candidates)
+        if isfinite(candidates(k))
+            v = candidates(k);
+            sourceLabel = sourceLabels{k};
+            if size(windows, 1) >= k
+                window = windows(k, :);
+            end
+            return;
+        end
     end
 end

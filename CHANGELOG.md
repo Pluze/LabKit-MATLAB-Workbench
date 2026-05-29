@@ -21,6 +21,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Moved the CSC app implementation and CSC-specific charge/CSC calculations into the app-side namespace outside the reusable `+gamrywb` package.
 - Moved the VT resistance app implementation and VT-specific resistance/export/table logic into the app-side namespace outside the reusable `+gamrywb` package.
 - Moved the CIC app implementation and CIC-specific voltage-transient/export/table logic into the app-side namespace outside the reusable `+gamrywb` package.
+- Moved CIC-specific injected-charge, voltage-transient metric, and water-window helper calculations into the app-side namespace.
 - Moved Chrono overlay pulse-gap alignment, VT/IT overlay plotting, and overlay CSV table construction into the app-side namespace outside the reusable `+gamrywb` package.
 - Moved EIS overlay axis selection, overlay plotting, and plot CSV table construction into the app-side namespace outside the reusable `+gamrywb` package.
 - Moved CSC CV/CT plotting into the app-side namespace and removed the empty reusable `+gamrywb/+plot` package.
