@@ -65,7 +65,7 @@ completely new app type: about 6/10 convenient
 Why similar apps are now easier:
 
 - public app entry points are thin wrappers under `apps/`
-- app bodies should be collapsed into public `apps/*.m` files; EIS and Chrono overlay are the first single-file references, while CSC, VT resistance, and CIC still have transitional `apps/private` launch bodies
+- app bodies should be collapsed into public `apps/*.m` files; EIS, Chrono overlay, and CSC are single-file references, while VT resistance and CIC still have transitional `apps/private` launch bodies
 - `apps/+gamrywb_apps` is a temporary migration namespace, not the final app design; remove it by folding experiment-specific helpers into the owning app files or promoting only truly reusable, parameter-light code into `+gamrywb`
 - common GUI shells and panels live under `+gamrywb/+ui`
 - broad scientific calculations live under `+gamrywb/+analysis`; experiment-specific workflow calculations live with the owning app
@@ -450,7 +450,7 @@ EIS overlay axis selection, overlay plotting, and plot-export table construction
 
 The Chrono overlay app implementation now lives directly in `apps/gamrywb_ChronoOverlay_app.m`, not under `apps/private`, `apps/+gamrywb_apps`, or `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "chrono")` for file loading. Pulse-gap alignment, VT/IT overlay plotting, and overlay export table construction are local functions in the app file, not reusable library APIs.
 
-The CSC app implementation now lives under `apps/private`, not under `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "cvct")` for file loading. CSC-specific charge and result-table calculations live under `apps/+gamrywb_apps/+csc`, not in reusable `+gamrywb/+analysis` or `+gamrywb/+io`. This app-side package is a migration step for testability, not a new reusable app abstraction; collapse it into the CSC app file if/when tests can still verify behavior cleanly.
+The CSC app implementation now lives directly in `apps/gamrywb_CSC_app.m`, not under `apps/private` or `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "cvct")` for file loading. CSC-specific charge and result-table calculations live under `apps/+gamrywb_apps/+csc`, not in reusable `+gamrywb/+analysis` or `+gamrywb/+io`. This app-side package is a migration step for testability, not a new reusable app abstraction; collapse it into the CSC app file if/when tests can still verify behavior cleanly.
 
 The CIC app implementation now lives under `apps/private`, not under `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "chrono")` for file loading. CIC-specific voltage-transient analysis, injected-charge calculation, water-window checks, result-table, CSV, and batch-table helpers live under `apps/+gamrywb_apps/+cic`, not in reusable `+gamrywb/+analysis`, `+gamrywb/+io`, or `+gamrywb/+ui`.
 

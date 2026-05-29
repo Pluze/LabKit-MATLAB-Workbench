@@ -27,6 +27,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Moved CSC CV/CT plotting into the app-side namespace and removed the empty reusable `+gamrywb/+plot` package.
 - Collapsed the EIS app implementation from `apps/private` into the public `apps/gamrywb_EIS_app.m` single-file app entry.
 - Collapsed the Chrono overlay app implementation from `apps/private` into the public `apps/gamrywb_ChronoOverlay_app.m` single-file app entry.
+- Collapsed the CSC app implementation from `apps/private` into the public `apps/gamrywb_CSC_app.m` single-file app entry.
 - Folded Chrono overlay alignment, plotting, and export helpers into local functions in `apps/gamrywb_ChronoOverlay_app.m` and removed the temporary `apps/+gamrywb_apps/+chrono` package.
 - Folded EIS overlay axis selection, plotting, and export helpers into local functions in `apps/gamrywb_EIS_app.m` and removed the temporary `apps/+gamrywb_apps/+eis` package.
 - Routed the EIS app's file loading through the GUI-free DTA facade instead of constructing EIS items directly in the app layer.
