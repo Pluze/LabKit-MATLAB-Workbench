@@ -141,6 +141,14 @@ plot/export data
   ↓ GUI display or CSV export
 ```
 
+```text
+loaded item structs
+  ↓ makeSession / addFilesToSession / removeFilesFromSession
+session struct
+  ↓ saveSession / loadSession / summarizeBatchResults
+GUI state, saved MAT session, or batch summary table
+```
+
 ---
 
 ## 4. What Belongs in GUI Code
@@ -198,9 +206,9 @@ Current implementation status:
 - Root-level compatibility wrappers exist.
 - Legacy GUI implementations are preserved under `legacy/`.
 - `+gamrywb/+util` exists and contains shared low-risk helpers.
-- `+gamrywb/+io` contains initial chrono, EIS, and CV/CT parsers plus chrono/EIS export table builders.
-- `+gamrywb/+data` contains initial table/column accessors, CV/CT selected-column access, chrono item construction, and EIS item construction.
-- `+gamrywb/+analysis` contains initial pulse detection helpers, pulse-gap alignment, VT resistance analysis, CIC analysis, CV/CSC analysis, and EIS axis-value generation.
+- `+gamrywb/+io` contains initial chrono, EIS, and CV/CT parsers, chrono/EIS export table builders, and session save/load helpers.
+- `+gamrywb/+data` contains initial table/column accessors, CV/CT selected-column access, chrono item construction, EIS item construction, and shared session helpers.
+- `+gamrywb/+analysis` contains initial pulse detection helpers, pulse-gap alignment, VT resistance analysis, CIC analysis, CV/CSC analysis, EIS axis-value generation, and batch summary helpers.
 - `+gamrywb/+plot` contains the initial chrono VT/IT overlay plot helper, CV/CT selected-column plot helper, and EIS overlay plot helper.
 - `+gamrywb/+ui` is a future package area.
 - New thin apps and unified workbench GUI have not started.

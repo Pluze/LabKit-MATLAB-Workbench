@@ -18,7 +18,8 @@ Phase 5: started
 Phase 6: started
 Phase 7: started
 Phase 8: complete
-Phase 9+: not started
+Phase 9: started
+Phase 10+: not started
 ```
 
 Current summary:
@@ -34,6 +35,7 @@ Current summary:
 - CV/CT charge and CSC analysis are package-backed.
 - CV/CT selected-column access and plotting are package-backed.
 - EIS item construction, axis-value generation, overlay plotting, and current-plot export table construction are package-backed for the legacy EIS overlay GUI.
+- Shared session creation, file add/remove, save/load, and batch summary helpers are available.
 
 ---
 
@@ -288,6 +290,32 @@ Still local after Phase 8:
 - EIS GUI file selection, selected-file list management, summary text, logging, and alert behavior.
 - EIS saved-session behavior, which is deferred to Phase 9.
 
+## Phase 9 — Batch Session and Shared Export System
+
+Phase 9 has started.
+
+Completed work:
+
+- Added `gamrywb.data.makeSession`.
+- Added `gamrywb.data.addFilesToSession`.
+- Added `gamrywb.data.removeFilesFromSession`.
+- Added `gamrywb.io.saveSession`.
+- Added `gamrywb.io.loadSession`.
+- Added `gamrywb.analysis.summarizeBatchResults`.
+
+Behavior preserved:
+
+- No legacy GUI session state was changed in this step.
+- File loading remains caller-provided through a loader function handle.
+- Duplicate skipping is based on existing item `filepath` values.
+- Session persistence stores the explicit `gamrywb_session` struct.
+- Batch summaries use common `name`, `filepath`, `analysis.ok`, and `analysis.message` fields without changing existing app-specific tables.
+
+Still local after current Phase 9 progress:
+
+- Migration of legacy GUI state containers to shared session helpers.
+- App-specific result/export table builders not already extracted.
+
 ---
 
 ## Legacy Function Inventory
@@ -314,6 +342,10 @@ Still local after Phase 8:
 | `valuesForAxis` | EIS overlay | `+gamrywb/+analysis/valuesForEISAxis.m` | Started Phase 8. Preserve all axis labels and log-axis behavior. |
 | EIS item construction | EIS overlay | `+gamrywb/+data/makeEISItem.m` | Started Phase 8. Preserve ZCURVE choice, filtering, point fallback, and frequency order flag. |
 | EIS overlay plotting | EIS overlay | `+gamrywb/+plot/plotEISOverlay.m` | Started Phase 8. Preserve markers, line widths, log filters, labels, legends, grid, and Nyquist equal-axis behavior. |
+| session construction | all apps | `+gamrywb/+data/makeSession.m` | Started Phase 9. Create explicit `gamrywb_session` structs for future shared state. |
+| session file add/remove | all apps | `+gamrywb/+data/addFilesToSession.m`, `removeFilesFromSession.m` | Started Phase 9. Preserve caller-owned loader behavior and duplicate skipping by filepath. |
+| session save/load | all apps | `+gamrywb/+io/saveSession.m`, `loadSession.m` | Started Phase 9. Store and load explicit session structs from MAT files. |
+| batch summary | all apps | `+gamrywb/+analysis/summarizeBatchResults.m` | Started Phase 9. Provide a common minimal name/filepath/ok/message summary table. |
 | CV/CSC integration helpers | CV/CSC GUI | `+gamrywb/+analysis/computeCTCharge.m`, `computeCVCharge.m`, `computeCSC.m` | Started Phase 7. Preserve sign-split, zero-crossing handling, and scan-rate-derived time behavior. |
 | CV/CT selected-column plotting | CV/CSC GUI | `+gamrywb/+plot/plotCVCT.m` | Extracted. Preserve title, labels, grid, hold, and line width behavior. |
 
@@ -418,7 +450,7 @@ Multi-DTA overlay/export must preserve:
 1. Parser implementations still duplicate some table-reading internals. This is acceptable during behavior-preserving extraction; deeper parser unification should wait until downstream behavior is verified.
 2. Shared pulse detection currently targets the legacy single cathodic-first biphasic use case. General protocol support should be treated as a future feature, not a refactor requirement.
 3. Existing tests validate extracted pure functions with demo fixtures, but not every legacy GUI output has a golden reference yet.
-4. CV/CSC export helper extraction, EIS GUI/session cleanup, and shared session/export system work remain future work.
+4. CV/CSC export helper extraction, GUI migration to shared sessions, and app-specific export system work remain future work.
 5. Interactive GUI behavior is not covered by the default batch test runner.
 
 ---

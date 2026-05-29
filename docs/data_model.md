@@ -238,22 +238,36 @@ Do not remove legacy flat fields until all legacy GUI call sites and analysis mo
 
 ## 7. Session Struct
 
-A shared session model is planned for a later phase.
+A shared session model has started in `gamrywb.data.makeSession`.
 
-Target structure:
+Current structure:
 
 ```matlab
 session = struct();
-session.type = "gamrywb_session";
-session.createdAt = datetime("now");
-session.modifiedAt = datetime("now");
+session.type = 'gamrywb_session';
+session.version = 1;
+session.kind = 'generic';
+session.createdAt = datestr(now);
+session.modifiedAt = datestr(now);
 session.items = struct([]);
 session.results = struct([]);
 session.options = struct();
-session.notes = "";
+session.notes = '';
+session.logmsg = {};
 ```
 
-Session files should eventually include:
+Session helpers currently include:
+
+```text
++gamrywb/+data/makeSession.m
++gamrywb/+data/addFilesToSession.m
++gamrywb/+data/removeFilesFromSession.m
++gamrywb/+io/saveSession.m
++gamrywb/+io/loadSession.m
++gamrywb/+analysis/summarizeBatchResults.m
+```
+
+Session files should include:
 
 - raw parsed data
 - selected analysis mode

@@ -93,7 +93,8 @@ Phase 5: started
 Phase 6: started
 Phase 7: started
 Phase 8: complete
-Phase 9+: not started
+Phase 9: started
+Phase 10+: not started
 ```
 
 Summary:
@@ -109,6 +110,7 @@ Summary:
 - VT resistance and CIC now call package-backed analysis functions while preserving legacy GUI display/export behavior.
 - CV/CT charge, CSC analysis, selected-column access, and plotting extraction has started.
 - EIS item construction, axis-value generation, overlay plotting, and current-plot export table extraction is complete for the legacy EIS overlay GUI.
+- Shared session creation, file add/remove, save/load, and batch summary helper extraction has started.
 
 Completed migration details live in `MIGRATION_NOTES.md`.
 
@@ -526,7 +528,15 @@ Package areas:
 +gamrywb/+analysis/summarizeBatchResults.m
 ```
 
-Status: not started.
+Status: started.
+
+Current implementation note:
+
+- `gamrywb.data.makeSession` creates the common session struct.
+- `gamrywb.data.addFilesToSession` and `gamrywb.data.removeFilesFromSession` provide loader-driven add/remove helpers.
+- `gamrywb.io.saveSession` and `gamrywb.io.loadSession` persist session structs to MAT files.
+- `gamrywb.analysis.summarizeBatchResults` creates a common result status table.
+- Legacy GUIs have not yet been migrated to shared session state.
 
 ---
 

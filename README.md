@@ -21,13 +21,14 @@ Completed or started work:
 - Phase 6 started: CIC / voltage-transient analysis is package-backed.
 - Phase 7 started: CV/CT charge, CSC analysis, selected-column access, and plotting are package-backed.
 - Phase 8 complete: EIS item construction, axis values, overlay plotting, and current-plot export tables are package-backed.
+- Phase 9 started: shared session creation, file add/remove, save/load, and batch summary helpers are available.
 - Legacy GUI entry points remain available through root-level compatibility wrappers.
 - Demo DTA fixtures and MATLAB pure-function tests are available.
 
 Not started yet:
 
 - CV/CSC export helper extraction once a batch/session export workflow exists.
-- Shared batch/session utilities.
+- GUI migration to shared batch/session utilities.
 - New thin apps under `apps/`.
 - Unified workbench GUI.
 

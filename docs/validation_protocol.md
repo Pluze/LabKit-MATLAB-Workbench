@@ -326,6 +326,23 @@ Manual GUI checks should confirm:
 - plot controls still work
 - export buttons still produce expected files
 - result tables still populate
+
+---
+
+## 13. Session Validation
+
+Phase 9 session extraction has started. Verify:
+
+```text
+session struct type/version/kind
+empty item/result defaults
+loader-driven file add behavior
+duplicate filepath skipping
+loader failure reporting
+remove by filepath or item name
+MAT save/load round trip
+batch summary name/filepath/ok/message columns
+```
 - log panels still show meaningful messages
 
 If a future noninteractive GUI smoke test is added, keep it separate from the default pure-function test runner.
