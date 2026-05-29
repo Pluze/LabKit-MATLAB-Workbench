@@ -29,6 +29,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Collapsed the Chrono overlay app implementation from `apps/private` into the public `apps/gamrywb_ChronoOverlay_app.m` single-file app entry.
 - Collapsed the CSC app implementation from `apps/private` into the public `apps/gamrywb_CSC_app.m` single-file app entry.
 - Collapsed the VT resistance app implementation from `apps/private` into the public `apps/gamrywb_VTResistance_app.m` single-file app entry.
+- Collapsed the CIC app implementation from `apps/private` into the public `apps/gamrywb_CIC_app.m` single-file app entry and removed the now-empty `apps/private` launcher directory.
 - Folded Chrono overlay alignment, plotting, and export helpers into local functions in `apps/gamrywb_ChronoOverlay_app.m` and removed the temporary `apps/+gamrywb_apps/+chrono` package.
 - Folded EIS overlay axis selection, plotting, and export helpers into local functions in `apps/gamrywb_EIS_app.m` and removed the temporary `apps/+gamrywb_apps/+eis` package.
 - Clarified the roadmap around reusable GUI, Gamry/DTA, and utility library surfaces plus single-file experiment apps.

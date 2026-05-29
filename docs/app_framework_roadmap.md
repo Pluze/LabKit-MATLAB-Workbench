@@ -65,8 +65,8 @@ completely new app type: about 6/10 convenient
 
 Why similar apps are now easier:
 
-- public app entry points are thin wrappers under `apps/`
-- app bodies should be collapsed into public `apps/*.m` files; EIS, Chrono overlay, CSC, and VT resistance are single-file references, while CIC still has a transitional `apps/private` launch body
+- public app entry points and app bodies now live under `apps/`
+- app bodies are now collapsed into public `apps/*.m` files; the next cleanup is the remaining transitional `apps/+gamrywb_apps` helper namespaces
 - `apps/+gamrywb_apps` is a temporary migration namespace, not the final app design; remove it by folding experiment-specific helpers into the owning app files or promoting only truly reusable, parameter-light code into `+gamrywb`
 - common GUI shells and panels live under `+gamrywb/+ui`
 - low-level pulse detection and broadly reusable math/data helpers may live under `+gamrywb/+analysis`; experiment-specific workflow calculations live with the owning app
@@ -77,10 +77,10 @@ Why similar apps are now easier:
 Main remaining bottleneck:
 
 ```text
-remaining app bodies still need to move out of transitional `apps/private` launchers, and remaining `apps/+gamrywb_apps` helpers need to collapse into owning app files unless they prove broadly reusable
+remaining `apps/+gamrywb_apps` helpers need to collapse into owning app files unless they prove broadly reusable
 ```
 
-Therefore, the next high-value step is reducing transitional app structure, not more GUI-helper extraction.
+Therefore, the next high-value step is reducing transitional app helper namespaces and keeping tests focused on behavior and boundaries, not more GUI-helper extraction.
 
 ---
 
@@ -476,7 +476,7 @@ Goal:
 - tests prove no behavior change
 - the migrated app demonstrates the intended split between GUI shell, DTA loading, and experiment-specific analysis/export
 
-The EIS app implementation now lives directly in `apps/gamrywb_EIS_app.m`, not under `apps/private` or `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "eis")` for file loading. This is the reference direction for the remaining apps: a public app file with clear local sections that calls the DTA and GUI APIs.
+The EIS app implementation now lives directly in `apps/gamrywb_EIS_app.m`, not under `apps/private` or `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "eis")` for file loading. This is the reference direction for future apps: a public app file with clear local sections that calls the DTA and GUI APIs.
 
 EIS overlay axis selection, overlay plotting, and plot-export table construction now live as local functions in `apps/gamrywb_EIS_app.m`, not in reusable `+gamrywb/+analysis`, `+gamrywb/+plot`, `+gamrywb/+io`, or the transitional `apps/+gamrywb_apps` namespace.
 
@@ -484,13 +484,11 @@ The Chrono overlay app implementation now lives directly in `apps/gamrywb_Chrono
 
 The CSC app implementation now lives directly in `apps/gamrywb_CSC_app.m`, not under `apps/private` or `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "cvct")` for file loading. CSC-specific charge and result-table calculations live under `apps/+gamrywb_apps/+csc`, not in reusable `+gamrywb/+analysis` or `+gamrywb/+io`. This app-side package is a migration step for testability, not a new reusable app abstraction; collapse it into the CSC app file if/when tests can still verify behavior cleanly.
 
-The CIC app implementation now lives under `apps/private`, not under `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "chrono")` for file loading. CIC-specific voltage-transient analysis, injected-charge calculation, water-window checks, result-table, CSV, and batch-table helpers live under `apps/+gamrywb_apps/+cic`, not in reusable `+gamrywb/+analysis`, `+gamrywb/+io`, or `+gamrywb/+ui`.
+The CIC app implementation now lives directly in `apps/gamrywb_CIC_app.m`, not under `apps/private` or `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "chrono")` for file loading. CIC-specific voltage-transient analysis, injected-charge calculation, water-window checks, result-table, CSV, and batch-table helpers live under `apps/+gamrywb_apps/+cic`, not in reusable `+gamrywb/+analysis`, `+gamrywb/+io`, or `+gamrywb/+ui`; this helper package is transitional testable app-side code.
 
 The VT resistance app implementation now lives directly in `apps/gamrywb_VTResistance_app.m`, not under `apps/private` or `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "chrono")` for file loading. VT-specific resistance helpers still live under `apps/+gamrywb_apps/+vt`, not in reusable `+gamrywb/+analysis`, `+gamrywb/+io`, or `+gamrywb/+ui`; this helper package is transitional testable app-side code.
 
-The CIC app implementation now lives under `apps/private`, not under `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "chrono")` for file loading. CIC-specific voltage-transient analysis, injected-charge calculation, water-window checks, result-table, CSV, and batch-table helpers live under `apps/+gamrywb_apps/+cic`, not in reusable `+gamrywb/+analysis`, `+gamrywb/+io`, or `+gamrywb/+ui`.
-
-These are the reference paths for adopting the DTA facade and app-side workflow ownership in the remaining apps.
+These are the reference paths for adopting the DTA facade and app-side workflow ownership in future apps.
 
 Remaining migration candidates:
 
@@ -503,12 +501,10 @@ Generic GUI/session helpers now live in +gamrywb/+ui; do not recreate +gamrywb/+
 Suggested commit:
 
 ```text
-refactor: use dta facade in EIS app
-refactor: use dta facade in chrono overlay app
-refactor: move EIS app implementation out of gamrywb package
-refactor: move chrono overlay app implementation out of gamrywb package
-refactor: move CSC app workflow out of gamrywb package
-refactor: move VT resistance workflow out of gamrywb package
+refactor: fold CSC helpers into app file
+refactor: fold VT helpers into app file
+refactor: fold CIC helpers into app file
+test: streamline app boundary tests
 ```
 
 ### Phase D: Define lightweight extension contracts
