@@ -9,7 +9,7 @@ function test_gui_layout_controls()
     checkCVCSC();
     checkVTResistance();
     checkCIC();
-    checkFileListboxRefreshHelper();
+    checkListboxItemsRefreshHelper();
     checkSingleSelectFileListboxRefreshHelper();
     checkLogPanelHelper();
     checkReadOnlyInfoRowHelper();
@@ -132,27 +132,25 @@ function checkCIC()
     invokeButton(fig, 'Clear all');
 end
 
-function checkFileListboxRefreshHelper()
+function checkListboxItemsRefreshHelper()
     fig = uifigure('Visible', 'off', 'Name', 'gamrywb_file_listbox_refresh_probe');
     cleaner = onCleanup(@() delete(fig));
     lb = uilistbox(fig, 'Items', {}, 'Multiselect', 'on');
 
-    items = struct('name', {'a.DTA', 'b.DTA'});
-    gamrywb.ui.refreshFileListbox(lb, items);
+    gamrywb.ui.refreshListboxItems(lb, {'a.DTA', 'b.DTA'});
     assert(sameStringCell(lb.Items, {'a.DTA', 'b.DTA'}), ...
         'File listbox helper should populate item display names.');
     assert(sameStringCell(lb.Value, {'a.DTA', 'b.DTA'}), ...
         'File listbox helper should select all items when there is no prior selection.');
 
     lb.Value = {'b.DTA'};
-    items = struct('name', {'b.DTA', 'c.DTA'});
-    gamrywb.ui.refreshFileListbox(lb, items);
+    gamrywb.ui.refreshListboxItems(lb, {'b.DTA', 'c.DTA'});
     assert(sameStringCell(lb.Items, {'b.DTA', 'c.DTA'}), ...
         'File listbox helper should update item display names.');
     assert(sameStringCell(lb.Value, {'b.DTA'}), ...
         'File listbox helper should preserve valid prior selections.');
 
-    gamrywb.ui.refreshFileListbox(lb, struct([]));
+    gamrywb.ui.refreshListboxItems(lb, {});
     assert(isempty(lb.Items) && isempty(lb.Value), ...
         'File listbox helper should clear listbox items and values for empty sessions.');
 end
