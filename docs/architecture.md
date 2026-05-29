@@ -89,6 +89,8 @@ Analysis, data, and IO package functions should not depend on GUI state or call 
 
 The DTA facade is also guarded as a GUI-free and app-free layer: it should not call MATLAB UI constructors, file dialogs, alerts, app entry points, or `apps/` helpers. App code may call `gamrywb.dta.*`; DTA code must not call back into app code.
 
+The data layer is guarded as GUI-free and app-free model/orchestration code. It may call parser, pulse-detection, and utility helpers that are part of the Gamry/DTA library, but it should not call MATLAB UI constructors, file dialogs, alerts, `gamrywb.ui`, app entry points, or `apps/` helpers.
+
 The utility layer is guarded as the lowest shared layer: utility functions should not call GUI constructors, app entry points, `apps/` helpers, or higher-level `gamrywb.dta`, `gamrywb.io`, `gamrywb.data`, `gamrywb.ui`, or `gamrywb.analysis` APIs. Higher layers may call utilities; utilities should not call back up into those layers.
 
 Reusable UI helpers should build or update generic controls. App-specific callback choreography, such as clearing a session, restoring app-specific plot defaults, refreshing experiment summaries, and writing app logs, should stay in the owning app file even when two apps have similar callback order. Domain labels such as DTA-specific open/export button text and app shell tab/panel titles should be passed in from apps rather than hardcoded in the GUI library.

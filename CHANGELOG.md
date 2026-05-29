@@ -12,6 +12,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - New app playbook documenting GUI, DTA, and scientific contracts for future single-file experiment apps.
 - Focused app-boundary tests guarding single-file app ownership, DTA facade usage, removed migration namespaces, and reusable `+gamrywb/+io` export boundaries.
 - DTA facade boundary coverage guarding `+gamrywb/+dta` against GUI and app-layer dependencies.
+- Data-layer boundary coverage guarding `+gamrywb/+data` against GUI and app-layer dependencies.
 - Utility-layer boundary coverage guarding `+gamrywb/+util` against GUI, app-layer, and higher-level package dependencies.
 - Session helper coverage for empty file-list no-op behavior.
 - `gamrywb.util.interp1Safe` for shared finite-vector interpolation with nearest-point fallback.

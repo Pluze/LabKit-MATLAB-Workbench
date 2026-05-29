@@ -89,6 +89,7 @@ App-boundary changes:
 - app-specific helper packages and private launcher directories are not reintroduced for workflow code that belongs to one app
 - reusable `+gamrywb/+io` does not regain app-specific export-table or CSV writer helpers
 - reusable `+gamrywb/+dta` stays GUI-free and app-free: no MATLAB UI constructors, file dialogs, alerts, app entry points, or `apps/` helper calls
+- reusable `+gamrywb/+data` stays GUI-free and app-free: no MATLAB UI constructors, file dialogs, alerts, `gamrywb.ui`, app entry points, or `apps/` helper calls
 - reusable `+gamrywb/+util` stays the lowest shared layer: no GUI constructors, app entry points, `apps/` helper calls, or calls back up into `gamrywb.dta`, `gamrywb.io`, `gamrywb.data`, `gamrywb.ui`, or `gamrywb.analysis`
 - keep these architecture guardrails in `tests/test_architecture_boundaries.m` rather than duplicating them in numerical analysis tests
 
