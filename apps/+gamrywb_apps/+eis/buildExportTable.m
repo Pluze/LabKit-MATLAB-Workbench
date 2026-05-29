@@ -1,5 +1,5 @@
-function T = buildEISExportTable(items, xName, yName, useLogX, useLogY)
-%BUILDEISEXPORTTABLE Build legacy-compatible EIS current-plot export table.
+function T = buildExportTable(items, xName, yName, useLogX, useLogY)
+%BUILDEXPORTTABLE Build legacy-compatible EIS current-plot export table.
 
     if nargin < 4
         useLogX = false;
@@ -30,8 +30,8 @@ function T = buildEISExportTable(items, xName, yName, useLogX, useLogY)
 end
 
 function [x, y] = filteredXY(item, xName, yName, useLogX, useLogY)
-    x = gamrywb.analysis.valuesForEISAxis(item, xName);
-    y = gamrywb.analysis.valuesForEISAxis(item, yName);
+    x = gamrywb_apps.eis.valuesForAxis(item, xName);
+    y = gamrywb_apps.eis.valuesForAxis(item, yName);
     valid = isfinite(x) & isfinite(y);
     x = x(valid);
     y = y(valid);

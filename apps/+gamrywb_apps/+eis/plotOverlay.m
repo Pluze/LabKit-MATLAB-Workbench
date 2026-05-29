@@ -1,5 +1,5 @@
-function labels = plotEISOverlay(ax, items, opts)
-%PLOTEISOVERLAY Plot legacy-compatible EIS overlays for selected axes.
+function labels = plotOverlay(ax, items, opts)
+%PLOTOVERLAY Plot legacy-compatible EIS overlays for selected axes.
 
     if nargin < 3
         opts = struct();
@@ -83,8 +83,8 @@ function opts = fillOptions(opts)
 end
 
 function [x, y] = filteredXY(item, xName, yName, useLogX, useLogY)
-    x = gamrywb.analysis.valuesForEISAxis(item, xName);
-    y = gamrywb.analysis.valuesForEISAxis(item, yName);
+    x = gamrywb_apps.eis.valuesForAxis(item, xName);
+    y = gamrywb_apps.eis.valuesForAxis(item, yName);
     valid = isfinite(x) & isfinite(y);
     x = x(valid);
     y = y(valid);

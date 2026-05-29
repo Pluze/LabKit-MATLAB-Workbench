@@ -73,7 +73,7 @@ Compatibility bridge fields include:
 Freq, Time, Pt, Zreal, Zimag, negZimag, Zmod, Zphz, Idc, Vdc
 ```
 
-Axis-value generation lives in `gamrywb.analysis.valuesForEISAxis`.
+EIS overlay axis-value generation, plotting, and plot-export table construction live under `gamrywb_apps.eis` because they are app workflow decisions rather than reusable DTA item schema.
 
 ## DTA Facade Status
 

@@ -22,6 +22,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Moved the VT resistance app implementation and VT-specific resistance/export/table logic into the app-side namespace outside the reusable `+gamrywb` package.
 - Moved the CIC app implementation and CIC-specific voltage-transient/export/table logic into the app-side namespace outside the reusable `+gamrywb` package.
 - Moved Chrono overlay pulse-gap alignment, VT/IT overlay plotting, and overlay CSV table construction into the app-side namespace outside the reusable `+gamrywb` package.
+- Moved EIS overlay axis selection, overlay plotting, and plot CSV table construction into the app-side namespace outside the reusable `+gamrywb` package.
 - Routed the EIS app's file loading through the GUI-free DTA facade instead of constructing EIS items directly in the app layer.
 - Routed the Chrono overlay app's file loading through the GUI-free DTA facade while keeping pulse-gap alignment in the app workflow.
 - Routed the CSC app's CV/CT file loading through the GUI-free DTA facade instead of parsing CV/CT files directly in the app layer.

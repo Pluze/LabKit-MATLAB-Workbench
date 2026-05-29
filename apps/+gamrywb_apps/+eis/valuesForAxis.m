@@ -1,5 +1,5 @@
-function values = valuesForEISAxis(item, axisName)
-%VALUESFOREISAXIS Return legacy EIS values for a selected axis label.
+function values = valuesForAxis(item, axisName)
+%VALUESFORAXIS Return legacy EIS values for a selected axis label.
 
     switch axisName
         case 'Freq (Hz)'

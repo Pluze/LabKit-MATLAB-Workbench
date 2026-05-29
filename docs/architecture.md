@@ -97,7 +97,7 @@ The GUI decides how to display that status.
 
 ## Current Package Surface
 
-- `apps/`: user-facing app entry points and app-specific implementations. EIS, Chrono overlay, CSC, VT resistance, and CIC have moved their implementations to `apps/private` as the reference pattern for app code living outside the reusable `+gamrywb` library. Chrono overlay, CSC, VT, and CIC-specific analysis/export/plot helpers currently live under `apps/+gamrywb_apps` as app-side transitional code so numerical tests remain direct.
+- `apps/`: user-facing app entry points and app-specific implementations. EIS, Chrono overlay, CSC, VT resistance, and CIC have moved their implementations to `apps/private` as the reference pattern for app code living outside the reusable `+gamrywb` library. EIS, Chrono overlay, CSC, VT, and CIC-specific analysis/export/plot helpers currently live under `apps/+gamrywb_apps` as app-side transitional code so numerical tests remain direct.
 - `+dta`: GUI-free facade for supported DTA family detection, single-file loading, and batch loading with status/report structs. It delegates to existing `+io` parser and `+data` item-construction helpers.
 - `+io`: DTA parsers, folder discovery, and session save/load. Export helpers that encode experiment-specific formats should stay with the owning app rather than in reusable `+gamrywb`.
 - `+data`: table/column accessors, CV/CT selected-column access, chrono item construction, EIS item construction, session add/remove helpers.

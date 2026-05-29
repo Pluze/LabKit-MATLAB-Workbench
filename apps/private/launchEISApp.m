@@ -255,7 +255,7 @@ function varargout = launchEISApp(varargin)
         plotOpts.showMarkers = cbMarkers.Value;
         plotOpts.showLegend = cbLegend.Value;
         plotOpts.showGrid = cbGrid.Value;
-        gamrywb.plot.plotEISOverlay(ax, items, plotOpts);
+        gamrywb_apps.eis.plotOverlay(ax, items, plotOpts);
 
         txtSummary.Value = buildSummary(items);
     end
@@ -272,7 +272,7 @@ function varargout = launchEISApp(varargin)
             return;
         end
 
-        T = gamrywb.io.buildEISExportTable(items, ddX.Value, ddY.Value, cbLogX.Value, cbLogY.Value);
+        T = gamrywb_apps.eis.buildExportTable(items, ddX.Value, ddY.Value, cbLogX.Value, cbLogY.Value);
         out = fullfile(p, f);
         writetable(T, out);
         addLog(sprintf('Exported CSV: %s', out));

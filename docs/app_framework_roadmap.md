@@ -445,6 +445,8 @@ Goal:
 
 The EIS app implementation now lives under `apps/private`, not under `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "eis")` for file loading.
 
+EIS overlay axis selection, overlay plotting, and plot-export table construction now live under `apps/+gamrywb_apps/+eis`, not in reusable `+gamrywb/+analysis`, `+gamrywb/+plot`, or `+gamrywb/+io`.
+
 The Chrono overlay app implementation now lives under `apps/private`, not under `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "chrono")` for file loading. Pulse-gap alignment, VT/IT overlay plotting, and overlay export table construction now live under `apps/+gamrywb_apps/+chrono`, not in reusable `+gamrywb/+analysis`, `+gamrywb/+plot`, or `+gamrywb/+io`.
 
 The CSC app implementation now lives under `apps/private`, not under `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "cvct")` for file loading. CSC-specific charge and result-table calculations live under `apps/+gamrywb_apps/+csc`, not in reusable `+gamrywb/+analysis` or `+gamrywb/+io`. This app-side package is a migration step for testability, not a new reusable app abstraction; collapse it into the CSC app file if/when tests can still verify behavior cleanly.

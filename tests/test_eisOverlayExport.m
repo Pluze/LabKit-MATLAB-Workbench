@@ -1,5 +1,5 @@
 function test_eisOverlayExport()
-%TEST_EISOVERLAYEXPORT Verify package-backed EIS overlay/export helpers.
+%TEST_EISOVERLAYEXPORT Verify app-side EIS overlay/export helpers.
 
     root = fileparts(fileparts(mfilename('fullpath')));
     fixture = fullfile(root, 'demo', 'eis_potentiostatic_zcurve.DTA');
@@ -27,17 +27,17 @@ function test_eisOverlayExport()
     assertClose(item.Idc_A, item.Idc, 'EIS normalized Idc alias');
     assertClose(item.Vdc_V, item.Vdc, 'EIS normalized Vdc alias');
 
-    assertClose(gamrywb.analysis.valuesForEISAxis(item, 'Freq (Hz)'), item.Freq, 'Freq axis');
-    assertClose(gamrywb.analysis.valuesForEISAxis(item, 'log10(Freq)'), log10(item.Freq), 'log Freq axis');
-    assertClose(gamrywb.analysis.valuesForEISAxis(item, 'Time (s)'), item.Time, 'Time axis');
-    assertClose(gamrywb.analysis.valuesForEISAxis(item, 'Point #'), item.Pt, 'Point axis');
-    assertClose(gamrywb.analysis.valuesForEISAxis(item, 'Zreal (ohm)'), item.Zreal, 'Zreal axis');
-    assertClose(gamrywb.analysis.valuesForEISAxis(item, 'Zimag (ohm)'), item.Zimag, 'Zimag axis');
-    assertClose(gamrywb.analysis.valuesForEISAxis(item, '-Zimag (ohm)'), item.negZimag, 'Negative Zimag axis');
-    assertClose(gamrywb.analysis.valuesForEISAxis(item, 'Zmod (ohm)'), item.Zmod, 'Zmod axis');
-    assertClose(gamrywb.analysis.valuesForEISAxis(item, 'Zphz (deg)'), item.Zphz, 'Zphz axis');
-    assertClose(gamrywb.analysis.valuesForEISAxis(item, 'Idc (A)'), item.Idc, 'Idc axis');
-    assertClose(gamrywb.analysis.valuesForEISAxis(item, 'Vdc (V)'), item.Vdc, 'Vdc axis');
+    assertClose(gamrywb_apps.eis.valuesForAxis(item, 'Freq (Hz)'), item.Freq, 'Freq axis');
+    assertClose(gamrywb_apps.eis.valuesForAxis(item, 'log10(Freq)'), log10(item.Freq), 'log Freq axis');
+    assertClose(gamrywb_apps.eis.valuesForAxis(item, 'Time (s)'), item.Time, 'Time axis');
+    assertClose(gamrywb_apps.eis.valuesForAxis(item, 'Point #'), item.Pt, 'Point axis');
+    assertClose(gamrywb_apps.eis.valuesForAxis(item, 'Zreal (ohm)'), item.Zreal, 'Zreal axis');
+    assertClose(gamrywb_apps.eis.valuesForAxis(item, 'Zimag (ohm)'), item.Zimag, 'Zimag axis');
+    assertClose(gamrywb_apps.eis.valuesForAxis(item, '-Zimag (ohm)'), item.negZimag, 'Negative Zimag axis');
+    assertClose(gamrywb_apps.eis.valuesForAxis(item, 'Zmod (ohm)'), item.Zmod, 'Zmod axis');
+    assertClose(gamrywb_apps.eis.valuesForAxis(item, 'Zphz (deg)'), item.Zphz, 'Zphz axis');
+    assertClose(gamrywb_apps.eis.valuesForAxis(item, 'Idc (A)'), item.Idc, 'Idc axis');
+    assertClose(gamrywb_apps.eis.valuesForAxis(item, 'Vdc (V)'), item.Vdc, 'Vdc axis');
 
     synthetic = item;
     synthetic.name = 'A.DTA';
@@ -53,14 +53,14 @@ function test_eisOverlayExport()
     synthetic.Vdc = [0.4; 0.5; 0.6];
     synthetic.n = 3;
 
-    T = gamrywb.io.buildEISExportTable(synthetic, 'Freq (Hz)', 'Zreal (ohm)', false, false);
+    T = gamrywb_apps.eis.buildExportTable(synthetic, 'Freq (Hz)', 'Zreal (ohm)', false, false);
     assert(isequal(T.Properties.VariableNames, {'RowIndex', 'X_freq_hz_A_DTA', 'Y_zreal_ohm_A_DTA'}), ...
         'EIS export column names should preserve legacy naming.');
     assert(isequal(T.RowIndex, [1; 2]), 'EIS export should use row index up to max filtered length.');
     assert(isequal(T.X_freq_hz_A_DTA, [-10; 10]), 'EIS export should keep finite X/Y rows.');
     assert(isequal(T.Y_zreal_ohm_A_DTA, [1; 3]), 'EIS export should keep paired finite Y rows.');
 
-    Tlog = gamrywb.io.buildEISExportTable(synthetic, 'Freq (Hz)', 'Zreal (ohm)', true, false);
+    Tlog = gamrywb_apps.eis.buildExportTable(synthetic, 'Freq (Hz)', 'Zreal (ohm)', true, false);
     assert(isequal(Tlog.RowIndex, 1), 'Log-X export should remove nonpositive X values.');
     assert(isequal(Tlog.X_freq_hz_A_DTA, 10), 'Log-X export should keep positive X values only.');
     assert(isequal(Tlog.Y_zreal_ohm_A_DTA, 3), 'Log-X export should keep paired Y values only.');
@@ -71,7 +71,7 @@ function test_eisOverlayExport()
     opts = struct('xName', 'Zreal (ohm)', 'yName', '-Zimag (ohm)', ...
         'logX', false, 'logY', false, 'lineWidth', 1.4, 'markerSize', 6, ...
         'showMarkers', true, 'showLegend', true, 'showGrid', true);
-    labels = gamrywb.plot.plotEISOverlay(ax, synthetic, opts);
+    labels = gamrywb_apps.eis.plotOverlay(ax, synthetic, opts);
     assert(isequal(labels, {'A.DTA'}), 'EIS plot labels should use item names.');
     assert(strcmp(ax.XLabel.String, 'Zreal (ohm)'), 'EIS X label should match selected axis.');
     assert(strcmp(ax.YLabel.String, '-Zimag (ohm)'), 'EIS Y label should match selected axis.');
@@ -83,7 +83,7 @@ function test_eisOverlayExport()
     opts.logX = true;
     opts.logY = true;
     opts.yName = 'Zmod (ohm)';
-    gamrywb.plot.plotEISOverlay(ax, synthetic, opts);
+    gamrywb_apps.eis.plotOverlay(ax, synthetic, opts);
     assert(strcmp(ax.XScale, 'log') && strcmp(ax.YScale, 'log'), 'Log checkboxes should set log scales.');
 end
 

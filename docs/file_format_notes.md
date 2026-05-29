@@ -135,13 +135,13 @@ Idc (A)
 Vdc (V)
 ```
 
-Axis-value generation and the first package-backed EIS overlay/export helpers live in:
+EIS item construction remains in the reusable DTA/data library. EIS overlay axis selection, plotting, and plot-export helpers are app-side workflow code:
 
 ```text
-+gamrywb/+analysis/valuesForEISAxis.m
 +gamrywb/+data/makeEISItem.m
-+gamrywb/+plot/plotEISOverlay.m
-+gamrywb/+io/buildEISExportTable.m
+apps/+gamrywb_apps/+eis/valuesForAxis.m
+apps/+gamrywb_apps/+eis/plotOverlay.m
+apps/+gamrywb_apps/+eis/buildExportTable.m
 ```
 
 ---
