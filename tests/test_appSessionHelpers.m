@@ -59,12 +59,36 @@ function test_appSessionHelpers()
     assert(isempty(noItems), 'Missing selected name should return no items.');
     assert(isempty(noIdx), 'Missing selected name should return no indices.');
 
+    events = {};
+    selectionCallbacks = struct();
+    selectionCallbacks.restoreDefaultPlotSelections = @() recordSelectionEvent('restore');
+    selectionCallbacks.resetAxesToDefaultState = @() recordSelectionEvent('reset');
+    selectionCallbacks.refreshResultsSummary = @() recordSelectionEvent('summary');
+    selectionCallbacks.refreshPlots = @() recordSelectionEvent('plots');
+
+    lb = struct('Items', {{'a.DTA', 'b.DTA'}}, 'Value', 'b.DTA');
+    selectedIdx = gamrywb.app.handleSingleFileSelection(lb, selectionCallbacks);
+    assert(selectedIdx == 2, 'Single-file selection helper should return the selected listbox index.');
+    assert(isequal(events.', {'restore', 'reset', 'summary', 'plots'}), ...
+        'Single-file selection helper should preserve the nonempty callback order.');
+
+    events = {};
+    lb = struct('Items', {{}}, 'Value', {{}});
+    selectedIdx = gamrywb.app.handleSingleFileSelection(lb, selectionCallbacks);
+    assert(isempty(selectedIdx), 'Single-file selection helper should clear current index for empty lists.');
+    assert(isequal(events.', {'reset', 'summary', 'plots'}), ...
+        'Single-file selection helper should preserve the empty-list callback order.');
+
     function recordEvent(kind, filepath, detail)
         events(end+1, :) = {kind, filepath, detail}; %#ok<AGROW>
     end
 
     function recordRemoved(name, filepath)
         removed(end+1, :) = {name, filepath}; %#ok<AGROW>
+    end
+
+    function recordSelectionEvent(kind)
+        events{end+1, 1} = kind; %#ok<AGROW>
     end
 end
 

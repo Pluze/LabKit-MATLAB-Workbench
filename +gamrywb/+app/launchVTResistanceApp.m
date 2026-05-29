@@ -240,23 +240,12 @@ function varargout = launchVTResistanceApp(varargin)
     end
 
     function onSelectFile()
-        if isempty(lbFiles.Items)
-            S.current = [];
-            resetAxesToDefaultState();
-            refreshResultsSummary();
-            refreshPlots();
-            return;
-        end
-        idx = find(strcmp(lbFiles.Items, lbFiles.Value),1);
-        if isempty(idx)
-            S.current = [];
-        else
-            S.current = idx;
-        end
-        restoreDefaultPlotSelections();
-        resetAxesToDefaultState();
-        refreshResultsSummary();
-        refreshPlots();
+        selectionCallbacks = struct();
+        selectionCallbacks.restoreDefaultPlotSelections = @restoreDefaultPlotSelections;
+        selectionCallbacks.resetAxesToDefaultState = @resetAxesToDefaultState;
+        selectionCallbacks.refreshResultsSummary = @refreshResultsSummary;
+        selectionCallbacks.refreshPlots = @refreshPlots;
+        S.current = gamrywb.app.handleSingleFileSelection(lbFiles, selectionCallbacks);
     end
 
     function clearAllFiles()
