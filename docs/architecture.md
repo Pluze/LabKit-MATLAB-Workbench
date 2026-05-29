@@ -57,7 +57,7 @@ The GUI decides how to display that status.
 
 ## Current Package Surface
 
-- `+app`: app launch assembly and shared app/session orchestration helpers such as duplicate-aware file loading, selected-item lookup, and selected-item removal.
+- `+app`: Chrono/EIS app launch assembly and shared app/session orchestration helpers such as duplicate-aware file loading, selected-item lookup, and selected-item removal.
 - `+io`: chrono, EIS, and CV/CT parsers; chrono/EIS/VT/CIC/CV-CSC result table builders; VT/CIC legacy-format CSV writers; session save/load.
 - `+data`: table/column accessors, CV/CT selected-column access, chrono item construction, EIS item construction, session add/remove helpers.
 - `+analysis`: pulse detection, pulse-gap alignment, VT resistance, CIC, CV/CSC, EIS axis-value generation, batch summaries.

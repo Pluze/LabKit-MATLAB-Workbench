@@ -27,6 +27,10 @@ function test_phase10_apps()
 
     eisAppFile = fullfile(root, 'apps', 'gamrywb_EIS_app.m');
     eisSource = fileread(eisAppFile);
+    eisLaunchFile = fullfile(root, '+gamrywb', '+app', 'launchEISApp.m');
+    assert(exist(eisLaunchFile, 'file') == 2, 'Missing package launch function for EIS app.');
+    assert(contains(eisSource, 'gamrywb.app.launchEISApp'), ...
+        'gamrywb_EIS_app should delegate to the package launch function.');
     assert(~contains(eisSource, '_legacy'), 'gamrywb_EIS_app should not call legacy implementations.');
     assert(~contains(eisSource, 'gamry_EIS_multiDTA_plot_gui('), ...
         'gamrywb_EIS_app should not delegate to the root legacy-compatible EIS wrapper.');

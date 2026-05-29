@@ -217,6 +217,7 @@ gamrywb/+app/loadFilesIntoSession.m
 gamrywb/+app/removeSelectedItemsFromSession.m
 gamrywb/+app/selectItemsByNames.m
 gamrywb/+app/launchChronoOverlayApp.m
+gamrywb/+app/launchEISApp.m
 ```
 
 Candidate files:
@@ -590,7 +591,7 @@ Commit sequence:
 
 ```text
 refactor: move chrono overlay app assembly into gamrywb.app    done
-refactor: move EIS app assembly into gamrywb.app
+refactor: move EIS app assembly into gamrywb.app    done
 refactor: move VT resistance app assembly into gamrywb.app
 refactor: move CIC app assembly into gamrywb.app
 refactor: move CSC app assembly into gamrywb.app
@@ -695,6 +696,7 @@ Use this section to record meaningful changes in strategy.
 - createPlotOptionsPanel shares the Chrono/EIS plot-options panel shell while preserving app-specific controls and callbacks
 - createAxes shares Chrono/EIS initial axes construction while preserving labels
 - launchChronoOverlayApp moves the first app body under +gamrywb/+app while keeping apps/gamrywb_ChronoOverlay_app.m as the public wrapper
+- launchEISApp moves the EIS app body under +gamrywb/+app while keeping apps/gamrywb_EIS_app.m as the public wrapper
 - loadFilesIntoSession starts the +gamrywb/+app layer for duplicate-aware file/session loading in Chrono/EIS
 - removeSelectedItemsFromSession shares selected-file removal for Chrono/EIS while preserving app-owned refresh and plotting
 - selectItemsByNames shares empty-selection-as-all item lookup for Chrono/EIS plot and export paths
