@@ -69,7 +69,3 @@ end
 function A = computeVTResistance(item, opts)
     A = gamrywb_VTResistance_app('__test_computeResistance__', item, opts);
 end
-
-function assertClose(actual, expected, tol, label)
-    assert(abs(actual - expected) < tol, '%s should match expected value.', label);
-end

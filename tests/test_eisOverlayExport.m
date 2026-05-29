@@ -37,7 +37,3 @@ function test_eisOverlayExport()
     assert(contains(source, 'axis(ax, ''equal'')'), ...
         'EIS app should preserve equal-axis Nyquist plot behavior.');
 end
-
-function assertClose(actual, expected, label)
-    assert(isequaln(actual, expected), '%s should match expected values.', label);
-end

@@ -51,6 +51,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Tightened DTA facade tests around documented status and report schemas.
 - Split the MATLAB test runner manifest into default and GUI groups so future tests have clearer placement.
 - Removed duplicate app-boundary assertions from overlay export tests now that `test_phase10_apps` owns those architecture checks.
+- Replaced repeated per-file numeric assertion helpers in tests with a shared test helper.
 - Updated the app framework roadmap so completed app migrations are marked complete and the next-phase guidance focuses on extension contracts and guardrails.
 - Corrected the documented single-select file-list refresh API signature to include the loaded-count text field.
 - Folded VT/CIC single-file selection and clear-all callback choreography back into the owning app files so reusable UI helpers do not own app session workflow.

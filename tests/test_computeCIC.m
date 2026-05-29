@@ -77,7 +77,3 @@ end
 function A = computeCIC(item, opts)
     A = gamrywb_CIC_app('__test_computeCIC__', item, opts);
 end
-
-function assertClose(actual, expected, tol, label)
-    assert(abs(actual - expected) < tol, '%s should match expected value.', label);
-end

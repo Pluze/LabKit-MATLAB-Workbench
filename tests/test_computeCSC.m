@@ -90,7 +90,3 @@ end
 function A = computeCSC(curve, opts)
     A = gamrywb_CSC_app('__test_computeCSC__', curve, opts);
 end
-
-function assertClose(actual, expected, tol, label)
-    assert(abs(actual - expected) < tol, '%s should match expected value.', label);
-end

@@ -40,6 +40,8 @@ abs(oldValue - newValue) < 1e-9
 
 Use looser tolerances only when justified by interpolation, plotting-only alignment, or format conversion. Document any looser tolerance in the test.
 
+Use `tests/assertClose.m` for repeated exact or tolerance-based numeric checks instead of redefining local assertion helpers in each test file.
+
 ## Fixture Expectations
 
 Named demo fixtures live under `demo/`:

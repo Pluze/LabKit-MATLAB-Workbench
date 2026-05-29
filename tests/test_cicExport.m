@@ -66,10 +66,6 @@ function test_cicExport()
         'CIC CSV failed rows should preserve legacy empty fields and failed marker.');
 end
 
-function assertClose(actual, expected, tol, label)
-    assert(abs(actual - expected) < tol, '%s should match expected value.', label);
-end
-
 function deleteIfExists(filepath)
     if exist(filepath, 'file') == 2
         delete(filepath);
