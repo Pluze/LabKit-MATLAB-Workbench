@@ -419,7 +419,7 @@ Do not expand this into a schema framework until an app migration proves the mis
 
 ### Phase C: Use the DTA facade in one existing app
 
-Status: started with EIS as the reference migration.
+Status: started with EIS and Chrono overlay as reference migrations.
 
 Recommended candidates:
 
@@ -436,12 +436,15 @@ Goal:
 - tests prove no behavior change
 - the migrated app demonstrates the intended split between GUI shell, DTA loading, and experiment-specific analysis/export
 
-The EIS app now uses `gamrywb.dta.loadFile(filepath, "eis")` for file loading. This is the reference path for adopting the DTA facade in the remaining apps.
+The EIS app now uses `gamrywb.dta.loadFile(filepath, "eis")` for file loading.
+
+The Chrono overlay app now uses `gamrywb.dta.loadFile(filepath, "chrono")` for file loading, while keeping pulse-gap alignment, plotting, and export choices in the app-specific workflow layer.
+
+These are the reference paths for adopting the DTA facade in the remaining apps.
 
 Remaining migration candidates:
 
 ```text
-Chrono overlay: switch from direct chrono item construction to DTA facade
 VT resistance: replace direct chrono parsing in the app loader
 CIC: replace direct chrono parsing in the app loader
 CSC: replace direct CV/CT parsing in the app loader
@@ -451,6 +454,7 @@ Suggested commit:
 
 ```text
 refactor: use dta facade in EIS app
+refactor: use dta facade in chrono overlay app
 ```
 
 ### Phase D: Define lightweight extension contracts

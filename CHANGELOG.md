@@ -17,6 +17,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 ### Changed
 
 - Routed the EIS app's file loading through the GUI-free DTA facade instead of constructing EIS items directly in the app layer.
+- Routed the Chrono overlay app's file loading through the GUI-free DTA facade while keeping pulse-gap alignment in the app workflow.
 - Extracted shared batch-result table panel construction for VT/CIC-style apps into `+gamrywb/+ui`.
 - Extracted shared top/bottom plot selection and axes reset helpers for VT/CIC-style apps into `+gamrywb/+ui`.
 - Shared the VT/CIC clear-all session reset sequence through `+gamrywb/+app`.

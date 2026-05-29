@@ -24,6 +24,11 @@ function test_phase10_apps()
     assert(~contains(chronoSource, '_legacy'), 'gamrywb_ChronoOverlay_app should not call legacy implementations.');
     assert(~contains(chronoSource, 'gamry_multiDTA_plot_export_gui('), ...
         'gamrywb_ChronoOverlay_app should not delegate to a removed root legacy-compatible chrono overlay wrapper.');
+    chronoLaunchSource = fileread(chronoLaunchFile);
+    assert(contains(chronoLaunchSource, 'gamrywb.dta.loadFile(filepath, "chrono")'), ...
+        'gamrywb_ChronoOverlay_app should load DTA files through the GUI-free DTA facade.');
+    assert(~contains(chronoLaunchSource, 'gamrywb.data.makeChronoItem(filepath)'), ...
+        'gamrywb_ChronoOverlay_app should not construct chrono items directly in the app layer.');
 
     eisAppFile = fullfile(root, 'apps', 'gamrywb_EIS_app.m');
     eisSource = fileread(eisAppFile);

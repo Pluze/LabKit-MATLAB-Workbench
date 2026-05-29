@@ -143,7 +143,11 @@ function varargout = launchChronoOverlayApp(varargin)
     end
 
     function item = loadOneDTA(filepath)
-        item = gamrywb.data.makeChronoItem(filepath);
+        [item, status] = gamrywb.dta.loadFile(filepath, "chrono");
+        if ~status.ok
+            error('%s', char(status.message));
+        end
+
         [item, alignMsg] = gamrywb.analysis.alignChronoByPulseGap(item);
         addLog(alignMsg);
 
