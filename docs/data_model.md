@@ -77,7 +77,13 @@ EIS overlay axis-value generation, plotting, and plot-export table construction 
 
 ## DTA Facade Status
 
-`gamrywb.dta.loadFile` and `gamrywb.dta.loadFiles` return status/report structs instead of GUI alerts for normal file mismatch and load failures.
+`gamrywb.dta.findFiles`, `gamrywb.dta.loadFile`, `gamrywb.dta.loadFiles`, and `gamrywb.dta.loadFolder` are GUI-free helpers. They return paths, status structs, or report structs instead of GUI alerts for normal file mismatch and load failures.
+
+`findFiles` returns a cell array of recursively discovered `.DTA`/`.dta` file paths:
+
+```matlab
+filepaths = gamrywb.dta.findFiles(folder)
+```
 
 Status fields:
 
@@ -92,6 +98,18 @@ chrono, eis, cvct, unknown
 ```
 
 Batch `items` are returned as a cell array because `"auto"` loading can mix different DTA item schemas.
+
+`loadFiles` report fields:
+
+```text
+loaded, failed, statuses, nRequested, nLoaded, nFailed
+```
+
+`loadFolder` adds folder-discovery provenance to the same report shape:
+
+```text
+folder, filepaths, nDiscovered
+```
 
 ## CV/CT Data
 
