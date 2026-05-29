@@ -85,7 +85,7 @@ EIS overlay axis-value generation, plotting, and plot-export table construction 
 filepaths = gamrywb.dta.findFiles(folder)
 ```
 
-`folder` must be a character vector or scalar string. Non-path inputs are programmer errors and raise `gamrywb:dta:InvalidFolder`.
+`folder` must be a character vector or scalar string naming an existing folder. Non-path or missing-folder inputs are programmer errors and raise `gamrywb:dta:InvalidFolder`.
 
 Status fields:
 

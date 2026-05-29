@@ -33,7 +33,7 @@ Recursive DTA discovery:
 filepaths = gamrywb.dta.findFiles(folder);
 ```
 
-`folder` may be a character vector or scalar string.
+`folder` may be a character vector or scalar string and must name an existing folder.
 
 ```matlab
 [item, status] = gamrywb.dta.loadFile(filepath, "chrono");

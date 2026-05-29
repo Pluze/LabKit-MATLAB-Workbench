@@ -11,4 +11,7 @@ function rootDir = normalizeRootDir(rootDir)
     end
 
     rootDir = char(rootDir);
+    if exist(rootDir, 'dir') ~= 7
+        error('gamrywb:dta:InvalidFolder', 'Root folder must be an existing folder.');
+    end
 end
