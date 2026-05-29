@@ -1,5 +1,5 @@
-function T = buildChronoOverlayExportTable(items)
-%BUILDCHRONOOVERLAYEXPORTTABLE Build aligned VT/IT overlay export table.
+function T = buildOverlayExportTable(items)
+%BUILDOVERLAYEXPORTTABLE Build aligned VT/IT overlay export table.
 
     timeUnion = [];
     for i = 1:numel(items)

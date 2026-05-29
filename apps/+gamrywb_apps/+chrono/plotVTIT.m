@@ -1,5 +1,5 @@
-function plotChronoVTIT(axV, axI, items, opts)
-%PLOTCHRONOVTIT Plot voltage/current chrono overlays on paired axes.
+function plotVTIT(axV, axI, items, opts)
+%PLOTVTIT Plot voltage/current chrono overlays on paired axes.
 
     if nargin < 4
         opts = struct();

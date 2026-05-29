@@ -148,7 +148,7 @@ function varargout = launchChronoOverlayApp(varargin)
             error('%s', char(status.message));
         end
 
-        [item, alignMsg] = gamrywb.analysis.alignChronoByPulseGap(item);
+        [item, alignMsg] = gamrywb_apps.chrono.alignByPulseGap(item);
         addLog(alignMsg);
 
         for ii = 1:numel(item.logmsg)
@@ -183,7 +183,7 @@ function varargout = launchChronoOverlayApp(varargin)
 
     function refreshPlots()
         if isempty(S.items)
-            gamrywb.plot.plotChronoVTIT(axV, axI, struct([]), plotOptions());
+            gamrywb_apps.chrono.plotVTIT(axV, axI, struct([]), plotOptions());
             return;
         end
 
@@ -194,7 +194,7 @@ function varargout = launchChronoOverlayApp(varargin)
             return;
         end
 
-        gamrywb.plot.plotChronoVTIT(axV, axI, items, plotOptions());
+        gamrywb_apps.chrono.plotVTIT(axV, axI, items, plotOptions());
     end
 
     function onExportCSV(~, ~)
@@ -214,7 +214,7 @@ function varargout = launchChronoOverlayApp(varargin)
             return;
         end
 
-        T = gamrywb.io.buildChronoOverlayExportTable(items);
+        T = gamrywb_apps.chrono.buildOverlayExportTable(items);
         out = fullfile(p, f);
         gamrywb.io.exportTableCSV(T, out);
         addLog(sprintf('Exported CSV: %s', out));

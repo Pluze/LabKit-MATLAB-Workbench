@@ -17,7 +17,7 @@ function test_makeChronoItem()
     assert(strcmp(item.message, 'Using table: Curve'), 'Main-curve message should preserve legacy wording.');
     assert(item.pulse.ok, item.pulseMessage);
 
-    [aligned, msg] = gamrywb.analysis.alignChronoByPulseGap(item);
+    [aligned, msg] = gamrywb_apps.chrono.alignByPulseGap(item);
     assert(abs(aligned.alignTime - 1.22e-3) < 1e-12, 'Alignment should use blank-gap center.');
     assert(isequal(aligned.tAligned, aligned.tAligned_s), 'Normalized aligned time should mirror legacy field.');
     assert(abs(aligned.tAligned(1) - (aligned.t(1) - 1.22e-3)) < 1e-15, ...
@@ -29,7 +29,7 @@ function test_makeChronoItem()
     fallback.t = [0.1; 0.2; 0.3];
     fallback.pulse = gamrywb.analysis.emptyPulse();
     fallback.pulseMessage = 'no pulse';
-    [fallback, fallbackMsg] = gamrywb.analysis.alignChronoByPulseGap(fallback);
+    [fallback, fallbackMsg] = gamrywb_apps.chrono.alignByPulseGap(fallback);
     assert(abs(fallback.alignTime - 0.1) < 1e-15, 'Missing pulse gap should align to first sample.');
     assert(all(abs(fallback.tAligned - [0; 0.1; 0.2]) < 1e-12), ...
         'Fallback aligned time should subtract the first sample.');

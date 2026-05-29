@@ -13,7 +13,7 @@ function test_chronoOverlayExport()
     item2.Vf = [100; 300];
     item2.Im = [-1; -3];
 
-    T = gamrywb.io.buildChronoOverlayExportTable([item1 item2]);
+    T = gamrywb_apps.chrono.buildOverlayExportTable([item1 item2]);
     safe1 = gamrywb.util.sanitizeFieldName(item1.name);
     safe2 = gamrywb.util.sanitizeFieldName(item2.name);
     v1 = ['V_' safe1];
@@ -37,7 +37,7 @@ function test_chronoOverlayExport()
     item3.tAligned_s = [2; 3];
     item3.Vf_V = [5; 7];
     item3.Im_A = [0.1; 0.3];
-    T2 = gamrywb.io.buildChronoOverlayExportTable(item3);
+    T2 = gamrywb_apps.chrono.buildOverlayExportTable(item3);
     safe3 = gamrywb.util.sanitizeFieldName(item3.name);
     assert(isequal(T2.TimeGapCenterAligned_s, [2; 3]), ...
         'Export table should accept normalized aligned time fields.');

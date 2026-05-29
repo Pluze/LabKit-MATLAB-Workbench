@@ -1,5 +1,5 @@
-function [item, msg] = alignChronoByPulseGap(item)
-%ALIGNCHRONOBYPULSEGAP Align chrono item time to the blank pulse gap center.
+function [item, msg] = alignByPulseGap(item)
+%ALIGNBYPULSEGAP Align chrono item time to the blank pulse gap center.
 
     t = chronoTime(item);
     if isempty(t)
