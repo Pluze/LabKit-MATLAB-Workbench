@@ -158,30 +158,23 @@ function varargout = launchVTResistanceApp(varargin)
     txtLog = uitextarea(gl,'Editable','off');
     txtLog.Value = {'GUI started.'};
 
-    pTopCtl = ui.topControlsPanel;
-    gtCtl = uigridlayout(pTopCtl,[1 5]);
-    gtCtl.ColumnWidth = {'fit','1x','fit','1x','1x'};
-    gtCtl.Padding = [8 6 8 6];
-    gtCtl.ColumnSpacing = 8;
-    uilabel(gtCtl,'Text','X:','HorizontalAlignment','right');
-    ddTopX = uidropdown(gtCtl,'Items',{'Time (s)','Sample #'},'Value','Time (s)','ValueChangedFcn',@(~,~) refreshPlots());
-    uilabel(gtCtl,'Text','Y:','HorizontalAlignment','right');
-    ddTopY = uidropdown(gtCtl,'Items',{'VT: Vf vs time','IT: Im vs time'},'Value','VT: Vf vs time','ValueChangedFcn',@(~,~) refreshPlots());
-    cbTopGrid = uicheckbox(gtCtl,'Text','Grid','Value',true,'ValueChangedFcn',@(~,~) refreshPlots());
-
+    topPlotDefaults = struct('x', 'Time (s)', 'y', 'VT: Vf vs time', 'grid', true);
+    bottomPlotDefaults = struct('x', 'Time (s)', 'y', 'IT: Im vs time', 'grid', true);
+    plotControls = gamrywb.ui.createTopBottomPlotControls( ...
+        ui.topControlsPanel, ...
+        ui.bottomControlsPanel, ...
+        {'Time (s)', 'Sample #'}, ...
+        {'VT: Vf vs time', 'IT: Im vs time'}, ...
+        topPlotDefaults, ...
+        bottomPlotDefaults, ...
+        @(~,~) refreshPlots());
+    ddTopX = plotControls.topX;
+    ddTopY = plotControls.topY;
+    cbTopGrid = plotControls.topGridCheckbox;
     axTop = ui.topAxes;
-
-    pBotCtl = ui.bottomControlsPanel;
-    gbCtl = uigridlayout(pBotCtl,[1 5]);
-    gbCtl.ColumnWidth = {'fit','1x','fit','1x','1x'};
-    gbCtl.Padding = [8 6 8 6];
-    gbCtl.ColumnSpacing = 8;
-    uilabel(gbCtl,'Text','X:','HorizontalAlignment','right');
-    ddBotX = uidropdown(gbCtl,'Items',{'Time (s)','Sample #'},'Value','Time (s)','ValueChangedFcn',@(~,~) refreshPlots());
-    uilabel(gbCtl,'Text','Y:','HorizontalAlignment','right');
-    ddBotY = uidropdown(gbCtl,'Items',{'VT: Vf vs time','IT: Im vs time'},'Value','IT: Im vs time','ValueChangedFcn',@(~,~) refreshPlots());
-    cbBotGrid = uicheckbox(gbCtl,'Text','Grid','Value',true,'ValueChangedFcn',@(~,~) refreshPlots());
-
+    ddBotX = plotControls.bottomX;
+    ddBotY = plotControls.bottomY;
+    cbBotGrid = plotControls.bottomGridCheckbox;
     axBottom = ui.bottomAxes;
     if nargout == 1
         varargout{1} = fig;

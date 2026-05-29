@@ -65,6 +65,7 @@ Current shared UI helpers:
 +gamrywb/+ui/createLabeledEditField.m
 +gamrywb/+ui/createTwoPaneShell.m
 +gamrywb/+ui/createTabbedDualPlotShell.m
++gamrywb/+ui/createTopBottomPlotControls.m
 +gamrywb/+ui/createFilePanel.m
 +gamrywb/+ui/createInfoArea.m
 +gamrywb/+ui/createLogArea.m
@@ -272,7 +273,6 @@ hardResetAxis
 Next candidates:
 
 ```text
-createTopBottomPlotControls
 createResultTable
 ```
 
@@ -573,6 +573,8 @@ Acceptance criteria:
 
 ### Phase F: Extract top/bottom plot controls
 
+Status: started.
+
 Target apps:
 
 - CIC
@@ -582,10 +584,11 @@ Target apps:
 Candidate helper:
 
 ```text
-+gamrywb/+ui/createTopBottomPlotControls.m
++gamrywb/+ui/createTopBottomPlotControls.m    done for VT resistance app
 ```
 
 Keep dropdown item lists app-specific.
+VT resistance now uses the shared control helper first. CIC should adopt it only after the VT-only change passes default and GUI tests.
 
 ### Phase G: Move app bodies into `+gamrywb/+app`
 
@@ -670,14 +673,14 @@ This app-framework stage is successful when:
 The next best task is:
 
 ```text
-extract top/bottom plot controls for CIC and VT
+adopt top/bottom plot controls in CIC
 ```
 
 Suggested sequence:
 
-1. Add a conservative `+gamrywb/+ui/createTopBottomPlotControls.m` helper.
-2. Use it in one app first, preserving app-specific dropdown item lists, defaults, callbacks, and labels.
-3. Apply it to the second app only after default and GUI MATLAB tests pass.
+1. Replace CIC's duplicated top/bottom plot controls with `gamrywb.ui.createTopBottomPlotControls`.
+2. Keep CIC-specific dropdown item lists, defaults, callbacks, labels, and plot behavior unchanged.
+3. Run default plus GUI MATLAB tests before considering Phase F complete.
 
 ---
 
@@ -701,6 +704,7 @@ Use this section to record meaningful changes in strategy.
 - createPlotOptionsPanel shares the Chrono/EIS plot-options panel shell while preserving app-specific controls and callbacks
 - createAxes shares Chrono/EIS initial axes construction while preserving labels
 - createTabbedDualPlotShell shares the VT/CIC outer tabbed dual-plot shell; VT resistance and CIC both use it
+- createTopBottomPlotControls starts Phase F by sharing the VT/CIC top/bottom plot control rows; VT resistance uses it first
 - launchChronoOverlayApp moves the first app body under +gamrywb/+app while keeping apps/gamrywb_ChronoOverlay_app.m as the public wrapper
 - launchEISApp moves the EIS app body under +gamrywb/+app while keeping apps/gamrywb_EIS_app.m as the public wrapper
 - launchVTResistanceApp moves the VT resistance app body under +gamrywb/+app while keeping apps/gamrywb_VTResistance_app.m as the public wrapper
