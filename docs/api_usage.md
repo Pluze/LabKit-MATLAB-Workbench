@@ -117,6 +117,10 @@ S.session = gamrywb.data.makeSession('new_experiment');
 S.items = S.session.items;
 
 function loadFiles(filepaths)
+    if isempty(filepaths)
+        return;
+    end
+
     callbacks = struct();
     callbacks.onAdded = @(filepath, ~) addLog(sprintf('Loaded: %s', filepath));
     callbacks.onSkipped = @(filepath) addLog(sprintf('Skipped already loaded: %s', filepath));
@@ -144,6 +148,40 @@ function refreshFileList()
     end
 end
 
+function onOpenFiles(~, ~)
+    [names, folder] = uigetfile( ...
+        {'*.DTA;*.dta', 'Gamry DTA (*.DTA)'; '*.*', 'All files'}, ...
+        'Select one or more DTA files', ...
+        'MultiSelect', 'on');
+    if isequal(names, 0)
+        addLog('Open cancelled.');
+        return;
+    end
+
+    if ischar(names) || isstring(names)
+        names = {char(names)};
+    end
+    loadFiles(cellfun(@(name) fullfile(folder, name), names, 'UniformOutput', false));
+end
+
+function onOpenFolder(~, ~)
+    folder = uigetdir(pwd, 'Select a folder to recursively scan for .DTA files');
+    if isequal(folder, 0)
+        addLog('Folder selection cancelled.');
+        return;
+    end
+
+    filepaths = gamrywb.dta.findFiles(folder);
+    if isempty(filepaths)
+        addLog(sprintf('No DTA files found under: %s', folder));
+        uialert(fig, sprintf('No .DTA files found under:\n%s', folder), 'No files found');
+        return;
+    end
+
+    addLog(sprintf('Found %d DTA file(s) under %s', numel(filepaths), folder));
+    loadFiles(filepaths);
+end
+
 function onRemoveSelected(~, ~)
     callbacks = struct();
     callbacks.onRemoved = @(name, ~) addLog(sprintf('Removed: %s', name));
@@ -152,6 +190,14 @@ function onRemoveSelected(~, ~)
     S.items = S.session.items;
     refreshFileList();
     refreshPlots();
+end
+
+function onClearAll(~, ~)
+    S.session = gamrywb.data.makeSession('new_experiment');
+    S.items = S.session.items;
+    refreshFileList();
+    refreshPlots();
+    addLog('Cleared all files.');
 end
 ```
 
