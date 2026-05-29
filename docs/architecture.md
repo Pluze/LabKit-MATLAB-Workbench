@@ -7,7 +7,7 @@ This document describes the current package boundaries and compatibility layers.
 ```text
 app entry points
     ↓
-package-backed app internals or preserved legacy GUI implementations
+package-backed app internals
     ↓
 struct-based item/session models
     ↓
@@ -25,24 +25,12 @@ gamrywb_CIC_app
 gamrywb_VTResistance_app
 gamrywb_CSC_app
 gamrywb_EIS_app
+gamrywb_ChronoOverlay_app
 ```
 
-`apps/gamrywb_EIS_app.m`, `apps/gamrywb_CSC_app.m`, and `apps/gamrywb_VTResistance_app.m` are package-backed and do not delegate to legacy. The CIC `apps/gamrywb_*_app.m` file is a compatibility entry point that still delegates to the preserved legacy GUI.
+The app files are package-backed and do not delegate to legacy GUI files.
 
-`startup_gamrywb` does not add `legacy/` to the default path. Root-level original command wrappers have been removed, so the old command names no longer resolve by default.
-
-## Legacy GUI Layer
-
-Files under `legacy/` are preserved behavior references. They may call package helpers, but they still own:
-
-- layout construction
-- UI controls and callbacks
-- file dialogs and user alerts
-- log-panel text
-- result display wiring
-- GUI-specific annotations
-
-Do not add new scientific formulas, parser variants, or CSV formatting logic there unless preserving an existing GUI behavior requires it.
+`startup_gamrywb` adds the repository root and `apps/` to the MATLAB path. Root-level original command wrappers and the old `legacy/` GUI directory have been removed, so the old command names no longer resolve by default.
 
 ## Package Responsibilities
 
@@ -84,5 +72,4 @@ Avoid:
 - new parser copies in GUI files
 - duplicated CSV formatting in GUI files
 - MATLAB classes before struct schemas stabilize
-- replacing the remaining CIC compatibility app delegate before schemas and validation are ready
 - starting a unified GUI before package-backed app internals are stable

@@ -1,6 +1,6 @@
 # Agent Instructions
 
-This repository preserves legacy Gamry electrochemistry MATLAB GUIs while extracting reusable package-backed analysis code.
+This repository provides package-backed MATLAB app entry points for Gamry electrochemistry analysis workflows.
 
 ## Read Order
 
@@ -28,7 +28,7 @@ Do not change:
 - parser behavior or pulse detection behavior
 - CSV column names or exported table structure
 - GUI layout, plot labels, markers, axes, or visual behavior
-- original legacy GUI command compatibility
+- current app entrypoint compatibility
 
 Default principle:
 
@@ -39,16 +39,16 @@ same results, cleaner code, clearer boundaries
 ## Allowed Work
 
 - Move duplicated helper logic into `+gamrywb` package functions.
-- Update legacy GUIs to call package helpers when behavior is preserved.
-- Add or update tests for pure functions and compatibility wrappers.
+- Update app entry points to call package helpers when behavior is preserved.
+- Add or update tests for pure functions and app entry points.
 - Update documentation to reflect current behavior.
-- Add compatibility wrappers when needed to keep original commands runnable.
+- Improve app entrypoint clarity without reintroducing root-level legacy command wrappers.
 
 ## Forbidden Without Explicit Approval
 
 - Do not rewrite all GUIs in one pass.
 - Do not start or redesign the unified workbench GUI.
-- Do not remove legacy GUI implementations or original command names.
+- Do not reintroduce root-level legacy command wrappers.
 - Do not convert struct models to MATLAB classes prematurely.
 - Do not migrate code to Python or another language.
 - Do not commit generated logs, `.DS_Store`, local experiment output, temporary exports, or unrelated files.

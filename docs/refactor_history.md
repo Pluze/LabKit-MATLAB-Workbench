@@ -15,13 +15,13 @@ Completed package areas:
 - table-display helpers in `+gamrywb/+ui`
 - low-risk generic helpers in `+gamrywb/+util`
 
-Compatibility retained:
+Compatibility retained through the v1.0 checkpoint:
 
-- preserved GUI implementations remain under `legacy/`
-- `gamrywb_EIS_app`, `gamrywb_CSC_app`, and `gamrywb_VTResistance_app` are package-backed; the CIC app entry point delegates to a preserved legacy GUI
+- preserved GUI implementations were moved under `legacy/`
+- `gamrywb_EIS_app`, `gamrywb_CSC_app`, and `gamrywb_VTResistance_app` were package-backed; the CIC app entry point delegated to a preserved legacy GUI
 - `startup_gamrywb` keeps `legacy/` off the default runtime path
 
-Later cleanup removed the root-level original command wrappers. The old command names are now reference history rather than default runtime entry points.
+Later cleanup removed the root-level original command wrappers, added package-backed app entry points for chrono overlay/export and CIC, and removed the old `legacy/` GUI directory. The old command names are now reference history rather than runtime entry points.
 
 ## Migration Highlights
 
@@ -101,6 +101,5 @@ Default tests cover parser, data accessor, pulse detection, analysis, plotting h
 - Parser table-reading internals are still duplicated across parser families.
 - Shared pulse detection targets the legacy single cathodic-first biphasic use case.
 - Tests use demo fixtures and fixed reference values, but not every legacy GUI output has a stored golden MAT reference.
-- The CIC app entry point remains a compatibility delegate; replacing it should wait for stable schemas and validation fixtures.
 - Interactive GUI behavior beyond the optional noninteractive contract still needs manual checks.
 - Normalized item/result/option schemas remain provisional bridges for future app internals.

@@ -12,7 +12,7 @@ function test_gui_layout_controls()
 end
 
 function checkMultiDTA()
-    fig = launchLegacyFigure('gamry_multiDTA_plot_export_gui_legacy', 'Gamry Multi-DTA Plot Export GUI');
+    fig = launchFigure('gamrywb_ChronoOverlay_app', 'Gamry Multi-DTA Plot Export GUI');
     assertFigureMinimumSize(fig, 1400, 850);
     assertComponentCounts(fig, struct('Button', 5, 'CheckBox', 2, 'DropDown', 1, ...
         'ListBox', 1, 'TextArea', 2, 'Axes', 2));
@@ -119,14 +119,6 @@ function checkCIC()
     invokeButton(fig, 'Refresh plots');
     invokeButton(fig, 'Reset axes');
     invokeButton(fig, 'Clear all');
-end
-
-function fig = launchLegacyFigure(entryName, expectedTitle)
-    root = fileparts(fileparts(mfilename('fullpath')));
-    legacyDir = fullfile(root, 'legacy');
-    addpath(legacyDir, '-end');
-    cleanupLegacyPath = onCleanup(@() rmpath(legacyDir)); %#ok<NASGU>
-    fig = launchFigure(entryName, expectedTitle);
 end
 
 function fig = launchFigure(entryName, expectedTitle)

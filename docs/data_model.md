@@ -11,7 +11,7 @@ t_s, Vf_V, Im_A, area_cm2, charge_C, resistance_ohm,
 freq_Hz, Zreal_ohm, Zimag_ohm, Zphz_deg
 ```
 
-Legacy GUI bridge fields such as `t`, `Vf`, `Im`, `Freq`, and `Zreal` remain available where existing GUIs still use them.
+Compatibility bridge fields such as `t`, `Vf`, `Im`, `Freq`, and `Zreal` remain available where app code and tests still use them.
 
 ## Result Pattern
 
@@ -43,13 +43,13 @@ t_s, Vf_V, Im_A, pt, n, pulse,
 alignTime_s, tAligned_s, message, logmsg, analysis
 ```
 
-Legacy bridge fields include:
+Compatibility bridge fields include:
 
 ```text
 t, Vf, Im, alignTime, tAligned
 ```
 
-Keep bridge fields until all legacy GUI call sites stop using them.
+Keep bridge fields until app, export, and test call sites no longer need them.
 
 ## EIS Items
 
@@ -65,7 +65,7 @@ Zmod_ohm, Zphz_deg, Idc_A, Vdc_V,
 message, logmsg, analysis
 ```
 
-Legacy bridge fields include:
+Compatibility bridge fields include:
 
 ```text
 Freq, Time, Pt, Zreal, Zimag, negZimag, Zmod, Zphz, Idc, Vdc
@@ -91,9 +91,9 @@ scanRate, mode, area_cm2
 
 ## Pulse Struct
 
-Pulse detection returns both legacy flat fields and normalized nested fields.
+Pulse detection returns both compatibility flat fields and normalized nested fields.
 
-Legacy flat fields:
+Compatibility flat fields:
 
 ```text
 ok, method, message,
@@ -110,11 +110,11 @@ anod.start_s, anod.end_s, anod.current_A,
 gap.start_s, gap.end_s, gap.center_s
 ```
 
-Do not remove flat fields until legacy GUI and analysis call sites no longer need them.
+Do not remove flat fields until app, export, and analysis call sites no longer need them.
 
 ## Analysis Results
 
-Current analysis result structs intentionally preserve legacy fields used by GUI display and CSV/export helpers.
+Current analysis result structs intentionally preserve compatibility fields used by GUI display and CSV/export helpers.
 
 VT result/export helpers:
 
@@ -147,7 +147,7 @@ File,Amp_A,Emc_V,Ema_V,Qc_C,Qa_C,Qt_C,CICc_mCcm2,CICa_mCcm2,CICt_mCcm2,Safe,Dete
 File,Amp_A,Emc_V,Ema_V,Qc_C,Qa_C,Qt_C,CICc_uCcm2,CICa_uCcm2,CICt_uCcm2,Safe,Detection
 ```
 
-CSC result table construction lives in `gamrywb.io.buildCSCResultsTable`. The legacy CV/CSC GUI has no CSV export workflow.
+CSC result table construction lives in `gamrywb.io.buildCSCResultsTable`. The current CV/CSC app has no CSV export workflow.
 
 ## Session Struct
 
@@ -171,6 +171,6 @@ gamrywb.io.loadSession
 gamrywb.analysis.summarizeBatchResults
 ```
 
-`addFilesToSession` supports `onAdded`, `onSkipped`, and `onFailed` callbacks so legacy GUIs can preserve log timing while sharing add/duplicate/failure logic.
+`addFilesToSession` supports `onAdded`, `onSkipped`, and `onFailed` callbacks so apps can preserve log timing while sharing add/duplicate/failure logic.
 
 Session files should keep parsed data, selected analysis mode, options, results, notes, and file provenance explicit. Avoid opaque object dumps for scientific exchange.

@@ -5,7 +5,7 @@ Use this document to choose checks for behavior-preserving changes.
 Core rule:
 
 ```text
-old legacy behavior == new package-backed behavior
+previous validated behavior == current package-backed behavior
 ```
 
 Do not claim behavior is preserved unless tests, fixtures, or manual checks support that claim.
@@ -70,7 +70,7 @@ Pulse changes:
 - metadata-first, metadata-only, and current-only modes
 - ISTEP/TSTEP and VSTEP/TSTEP timing
 - cathodic/anodic/gap start and end fields
-- legacy flat fields and normalized nested fields
+- compatibility flat fields and normalized nested fields
 
 Analysis changes:
 
@@ -88,8 +88,7 @@ Session/export changes:
 
 GUI or entrypoint changes:
 
-- original root commands launch
-- app entry points launch the expected legacy GUI while they remain delegates
+- app entry points launch the expected GUI
 - initialized controls, dropdown items, result-table columns, axes titles/labels, callbacks, and window size still satisfy the GUI contract
 
 Manual GUI checks are still needed for file dialogs, export buttons, loaded-data workflows, plot interactions, and user alerts.
@@ -104,7 +103,7 @@ Stored golden MAT references are not complete yet. If added, they should record:
 - expected table column names
 - tolerance
 - creation date
-- legacy source used to generate the reference
+- source revision used to generate the reference
 
 Do not overwrite reference outputs silently.
 

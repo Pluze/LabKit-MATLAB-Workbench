@@ -82,7 +82,7 @@ Chrono parser behavior to preserve:
 Downstream behavior to preserve:
 
 - `getMainCurve` should prefer `CURVE`/`CURVE1`-style tables when available.
-- T/Vf/Im/Pt interpretation should remain compatible with the legacy GUIs.
+- T/Vf/Im/Pt interpretation should remain compatible with validated app behavior.
 - Invalid T/Vf/Im row removal and stable unique-time handling remain downstream behavior for item creation or GUI loading.
 
 ---
@@ -194,7 +194,7 @@ Current assumptions:
 - Tab-separated fields are expected.
 - Numeric rows are detected by attempting numeric conversion of row values.
 - Metadata lines usually have at least three tab-separated tokens.
-- Current supported workflows are based on the legacy GUI files.
+- Current supported workflows are based on the package-backed app entry points and demo fixtures.
 
 Current limitations:
 

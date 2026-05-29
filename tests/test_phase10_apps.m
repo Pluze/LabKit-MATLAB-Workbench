@@ -3,6 +3,7 @@ function test_phase10_apps()
 
     root = fileparts(fileparts(mfilename('fullpath')));
     apps = { ...
+        'gamrywb_ChronoOverlay_app', ...
         'gamrywb_CIC_app', ...
         'gamrywb_VTResistance_app', ...
         'gamrywb_CSC_app', ...
@@ -13,6 +14,12 @@ function test_phase10_apps()
         assert(exist(appFile, 'file') == 2, ['Missing app entry point: ' apps{i}]);
         assert(~isempty(which(apps{i})), ['App entry point does not resolve: ' apps{i}]);
     end
+
+    chronoAppFile = fullfile(root, 'apps', 'gamrywb_ChronoOverlay_app.m');
+    chronoSource = fileread(chronoAppFile);
+    assert(~contains(chronoSource, '_legacy'), 'gamrywb_ChronoOverlay_app should not call legacy implementations.');
+    assert(~contains(chronoSource, 'gamry_multiDTA_plot_export_gui('), ...
+        'gamrywb_ChronoOverlay_app should not delegate to a removed root legacy-compatible chrono overlay wrapper.');
 
     eisAppFile = fullfile(root, 'apps', 'gamrywb_EIS_app.m');
     eisSource = fileread(eisAppFile);
@@ -34,6 +41,7 @@ function test_phase10_apps()
 
     cicAppFile = fullfile(root, 'apps', 'gamrywb_CIC_app.m');
     cicSource = fileread(cicAppFile);
+    assert(~contains(cicSource, '_legacy'), 'gamrywb_CIC_app should not call legacy implementations.');
     assert(~contains(cicSource, 'gamry_CIC_VT_gui_paperlabels('), ...
         'gamrywb_CIC_app should not delegate to a removed root legacy-compatible CIC wrapper.');
 end

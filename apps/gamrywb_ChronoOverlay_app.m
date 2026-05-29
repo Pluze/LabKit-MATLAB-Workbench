@@ -1,7 +1,14 @@
-function gamry_multiDTA_plot_export_gui_legacy
-% GAMRY_MULTIDTA_PLOT_EXPORT_GUI
+function varargout = gamrywb_ChronoOverlay_app(varargin)
+%GAMRYWB_CHRONOOVERLAY_APP Package-backed chrono overlay/export app entry point.
 % Load multiple Gamry .DTA files, overlay voltage/current curves, and
 % export aligned curves to CSV.
+
+    if nargin > 0
+        error('gamrywb_ChronoOverlay_app:UnsupportedInput', 'gamrywb_ChronoOverlay_app does not accept input arguments.');
+    end
+    if nargout > 1
+        error('gamrywb_ChronoOverlay_app:TooManyOutputs', 'gamrywb_ChronoOverlay_app returns at most the app figure handle.');
+    end
 
     S = struct();
     S.session = gamrywb.data.makeSession('chrono_overlay');
@@ -138,6 +145,9 @@ function gamry_multiDTA_plot_export_gui_legacy
     title(axI, 'Current');
     xlabel(axI, 'Time (s)');
     ylabel(axI, 'Im (A)');
+    if nargout == 1
+        varargout{1} = fig;
+    end
 
     function onOpenFiles(~, ~)
         [f, p] = uigetfile( ...
