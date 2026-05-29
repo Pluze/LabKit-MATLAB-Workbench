@@ -4,7 +4,8 @@ function gamry_EIS_multiDTA_plot_gui_legacy
 % ZCURVE columns, overlay curves, and export the currently selected data.
 
     S = struct();
-    S.items = struct([]);
+    S.session = gamrywb.data.makeSession('eis_overlay');
+    S.items = S.session.items;
 
     axisItems = { ...
         'Freq (Hz)', ...
@@ -244,25 +245,17 @@ function gamry_EIS_multiDTA_plot_gui_legacy
             end
         end
 
-        firstError = [];
-        for k = 1:numel(filepaths)
-            filepath = filepaths{k};
-            try
-                item = loadOneDTA(filepath);
-                S.items = gamrywb.util.appendStruct(S.items, item);
-                addLog(sprintf('Loaded: %s', filepath));
-            catch ME
-                addLog(sprintf('Failed: %s | %s', filepath, ME.message));
-                if isempty(firstError)
-                    firstError = struct('filepath', filepath, 'message', ME.message);
-                end
-            end
-        end
+        callbacks = struct();
+        callbacks.onAdded = @(filepath, ~) addLog(sprintf('Loaded: %s', filepath));
+        callbacks.onFailed = @(filepath, message) addLog(sprintf('Failed: %s | %s', filepath, message));
+        [S.session, report] = gamrywb.data.addFilesToSession(S.session, filepaths, @loadOneDTA, callbacks);
+        S.items = S.session.items;
 
         refreshFileList();
         refreshPlot();
 
-        if ~isempty(firstError)
+        if ~isempty(report.failed)
+            firstError = report.failed(1);
             uialert(fig, sprintf('Failed to load:\n%s\n\n%s', firstError.filepath, firstError.message), 'Load error');
         end
     end
@@ -280,20 +273,22 @@ function gamry_EIS_multiDTA_plot_gui_legacy
             return;
         end
         names = string(lbFiles.Value);
-        keep = true(1, numel(S.items));
+        removeNames = {};
         for i = 1:numel(S.items)
             if any(names == string(S.items(i).name))
-                keep(i) = false;
+                removeNames{end+1} = S.items(i).name; %#ok<AGROW>
                 addLog(sprintf('Removed: %s', S.items(i).name));
             end
         end
-        S.items = S.items(keep);
+        [S.session, ~] = gamrywb.data.removeFilesFromSession(S.session, removeNames);
+        S.items = S.session.items;
         refreshFileList();
         refreshPlot();
     end
 
     function onClearAll(~, ~)
-        S.items = struct([]);
+        S.session = gamrywb.data.makeSession('eis_overlay');
+        S.items = S.session.items;
         refreshFileList();
         refreshPlot();
         addLog('Cleared all files.');

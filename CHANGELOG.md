@@ -52,6 +52,7 @@ This project is still in an unreleased behavior-preserving refactor stage.
 - Updated `legacy/gamry_CV_CSC_dta_gui_legacy.m` to call shared CV/CT charge and CSC analysis.
 - Updated `legacy/gamry_CV_CSC_dta_gui_legacy.m` to use shared CV/CT selected-column plotting.
 - Updated `legacy/gamry_EIS_multiDTA_plot_gui_legacy.m` to use shared EIS item construction, plotting, and export table helpers.
+- Updated `legacy/gamry_EIS_multiDTA_plot_gui_legacy.m` to use shared session add/remove helpers while preserving its existing `S.items` display/export path.
 - Reorganized Markdown documentation so README, roadmap, migration notes, AI instructions, and detailed docs have separate responsibilities.
 
 ### Preserved
