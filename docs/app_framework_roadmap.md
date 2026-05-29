@@ -349,7 +349,7 @@ A new app should be describable with three contracts.
 
 The app layer is intentionally not a generic engine yet. Experiment logic should stay readable and close to the app that owns it. If an abstraction makes it harder to see the scientific assumptions, keep that code explicit.
 
-### 5.1 GUI contract
+### 6.1 GUI contract
 
 The app declares interface structure:
 
@@ -373,7 +373,7 @@ summary: read-only rows
 results: batch result table
 ```
 
-### 5.2 DTA contract
+### 6.2 DTA contract
 
 The app declares file and parsed-data requirements:
 
@@ -396,7 +396,7 @@ item factory: chrono item
 session kind: cic_vt
 ```
 
-### 5.3 Scientific contract
+### 6.3 Scientific contract
 
 The app declares its science:
 
@@ -421,7 +421,7 @@ export: File, Amp, Emc, Ema, Qc, Qa, Qtot, Safe
 
 ---
 
-## 6. Recommended Next Phase
+## 7. Recommended Next Phase
 
 ### Phase A: Freeze GUI helper growth
 
@@ -460,33 +460,19 @@ Keep it conservative:
 - return status/report structs
 - keep it usable from scripts without GUI
 
-Suggested first commit:
-
-```text
-feat: add gui-free dta loading facade
-```
-
 Do not expand this into a schema framework until an app migration proves the missing contract.
 
 ### Phase C: Move app implementations out of `+gamrywb` while using the DTA facade
 
-Status: started with EIS, Chrono overlay, CSC, VT resistance, and CIC as reference app-structure migrations. EIS, Chrono overlay, CSC, VT resistance, and CIC now use the DTA facade for file loading.
-
-Recommended candidates:
-
-```text
-EIS app: simpler plotting/export flow
-VT resistance app: representative chrono single-file analysis flow
-CIC app: representative chrono single-file analysis/export flow
-```
+Status: complete for the current app set. EIS, Chrono overlay, CSC, VT resistance, and CIC are public single-file app implementations that use the DTA facade for file loading.
 
 Goal:
 
-- EIS app behavior unchanged
-- EIS app no longer manually knows EIS item-construction details
+- app behavior unchanged
+- apps no longer manually know parser/item-construction details when the DTA facade can provide them
 - DTA loading can also be used independently in scripts
 - tests prove no behavior change
-- the migrated app demonstrates the intended split between GUI shell, DTA loading, and experiment-specific analysis/export
+- current apps demonstrate the intended split between GUI shell, DTA loading, and experiment-specific analysis/export
 
 The EIS app implementation now lives directly in `apps/gamrywb_EIS_app.m`, not under `apps/private` or `+gamrywb/+app`, and uses `gamrywb.dta.findFiles(folder)` plus `gamrywb.dta.loadFile(filepath, "eis")` for DTA discovery/loading. This is the reference direction for future apps: a public app file with clear local sections that calls the DTA and GUI APIs.
 
@@ -502,21 +488,12 @@ The VT resistance app implementation now lives directly in `apps/gamrywb_VTResis
 
 These are the reference paths for adopting the DTA facade and app-side workflow ownership in future apps.
 
-Remaining migration candidates:
+Current guardrails:
 
 ```text
 App-side helper packages: removed as a migration layer; do not reintroduce them as a framework
 Remaining +analysis functions: keep the package pulse-detection focused; classify any other helper before adding new behavior there
 Generic GUI/session helpers now live in +gamrywb/+ui; do not recreate +gamrywb/+app for app-specific workflow code
-```
-
-Suggested commit:
-
-```text
-refactor: fold CSC helpers into app file
-refactor: fold VT helpers into app file
-refactor: fold CIC helpers into app file
-test: streamline app boundary tests
 ```
 
 ### Phase D: Define lightweight extension contracts
@@ -587,7 +564,7 @@ If these are clear, the GUI framework and DTA facade should provide most remaini
 
 ---
 
-## 7. What Not To Do Next
+## 8. What Not To Do Next
 
 Do not continue blindly extracting GUI helpers.
 
@@ -612,7 +589,7 @@ reflection-heavy dispatch
 opaque callback registries
 ```
 
-Also avoid expanding `+gamrywb/+analysis` or app-specific export helpers with new experiment decisions. Those packages currently contain transitional behavior-preserving code, not the desired final home for experiment design.
+Also avoid expanding `+gamrywb/+analysis` with new experiment decisions or reintroducing reusable app-specific export helpers. Export schemas and scientific result definitions belong with the owning app unless a future repeated use case proves a lower-level utility is clearer.
 
 Do not make the app body read like an opaque list of helper calls.
 
@@ -630,7 +607,7 @@ new GUI shells changing scientific/export contracts
 
 ---
 
-## 8. Testing Requirements
+## 9. Testing Requirements
 
 Every framework-level change should preserve both scientific and GUI behavior.
 
@@ -663,7 +640,7 @@ Do not claim tests passed unless they actually ran.
 
 ---
 
-## 9. Success Criteria
+## 10. Success Criteria
 
 This roadmap succeeds when:
 
