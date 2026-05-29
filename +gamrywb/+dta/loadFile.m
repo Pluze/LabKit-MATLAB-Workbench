@@ -13,40 +13,25 @@ function [item, status] = loadFile(filepath, expectedKind, opts)
     item = struct([]);
     status = makeStatus(filepath, "unknown", expectedKind, "");
 
-    [detectedKind, detectStatus] = gamrywb.dta.detectType(filepath);
-    if ~detectStatus.ok
-        status = withExpectedKind(detectStatus, expectedKind);
-        return;
-    end
-
     if expectedKind == "auto"
+        [detectedKind, detectStatus] = gamrywb.dta.detectType(filepath);
+        if ~detectStatus.ok
+            status = withExpectedKind(detectStatus, expectedKind);
+            return;
+        end
         kind = detectedKind;
-    elseif detectedKind ~= expectedKind
-        status.kind = detectedKind;
-        status.message = sprintf('Expected %s DTA, detected %s.', expectedKind, detectedKind);
-        return;
     else
         kind = expectedKind;
     end
 
     try
-        switch kind
-            case "chrono"
-                item = gamrywb.data.makeChronoItem(filepath, opts);
-            case "eis"
-                item = gamrywb.data.makeEISItem(filepath);
-            case "cvct"
-                item = makeCVCTItem(filepath);
-            otherwise
-                error('gamrywb:dta:UnsupportedKind', 'Unsupported DTA type: %s.', kind);
-        end
+        item = loadByKind(filepath, kind, opts);
 
         status.ok = true;
         status.kind = kind;
         status.message = "";
     catch ME
-        status.kind = kind;
-        status.message = string(ME.message);
+        status = statusForLoadFailure(filepath, kind, expectedKind, ME);
     end
 end
 
@@ -81,6 +66,35 @@ end
 
 function status = withExpectedKind(status, expectedKind)
     status = makeStatus(status.filepath, status.kind, expectedKind, status.message);
+end
+
+function status = statusForLoadFailure(filepath, kind, expectedKind, loadError)
+    status = makeStatus(filepath, kind, expectedKind, loadError.message);
+    if expectedKind == "auto"
+        return;
+    end
+
+    [detectedKind, detectStatus] = gamrywb.dta.detectType(filepath);
+    if detectStatus.ok && detectedKind ~= expectedKind
+        status.kind = detectedKind;
+        status.message = sprintf('Expected %s DTA, detected %s.', expectedKind, detectedKind);
+    elseif ~detectStatus.ok && contains(detectStatus.message, 'File not found')
+        status.kind = detectStatus.kind;
+        status.message = detectStatus.message;
+    end
+end
+
+function item = loadByKind(filepath, kind, opts)
+    switch kind
+        case "chrono"
+            item = gamrywb.data.makeChronoItem(filepath, opts);
+        case "eis"
+            item = gamrywb.data.makeEISItem(filepath);
+        case "cvct"
+            item = makeCVCTItem(filepath);
+        otherwise
+            error('gamrywb:dta:UnsupportedKind', 'Unsupported DTA type: %s.', kind);
+    end
 end
 
 function item = makeCVCTItem(filepath)

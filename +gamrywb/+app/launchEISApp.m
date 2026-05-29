@@ -190,7 +190,11 @@ function varargout = launchEISApp(varargin)
     end
 
     function item = loadOneDTA(filepath)
-        item = gamrywb.data.makeEISItem(filepath);
+        [item, status] = gamrywb.dta.loadFile(filepath, "eis");
+        if ~status.ok
+            error('%s', char(status.message));
+        end
+
         for ii = 1:numel(item.logmsg)
             addLog(item.logmsg{ii});
         end

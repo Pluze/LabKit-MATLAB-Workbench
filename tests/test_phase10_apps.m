@@ -34,6 +34,11 @@ function test_phase10_apps()
     assert(~contains(eisSource, '_legacy'), 'gamrywb_EIS_app should not call legacy implementations.');
     assert(~contains(eisSource, 'gamry_EIS_multiDTA_plot_gui('), ...
         'gamrywb_EIS_app should not delegate to the root legacy-compatible EIS wrapper.');
+    eisLaunchSource = fileread(eisLaunchFile);
+    assert(contains(eisLaunchSource, 'gamrywb.dta.loadFile(filepath, "eis")'), ...
+        'gamrywb_EIS_app should load DTA files through the GUI-free DTA facade.');
+    assert(~contains(eisLaunchSource, 'gamrywb.data.makeEISItem(filepath)'), ...
+        'gamrywb_EIS_app should not construct EIS items directly in the app layer.');
 
     cscAppFile = fullfile(root, 'apps', 'gamrywb_CSC_app.m');
     cscSource = fileread(cscAppFile);

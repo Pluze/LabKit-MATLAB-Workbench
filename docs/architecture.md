@@ -45,6 +45,29 @@ The app files are package-backed and do not delegate to legacy GUI files.
 +gamrywb/+util      small generic helpers
 ```
 
+## Three-Layer Map
+
+The reusable library should be understandable as three layers, even though MATLAB package folders remain practical and granular:
+
+```text
+Layer 1: GUI reuse framework
+  +gamrywb/+ui
+  reusable shells, panels, controls, display-data helpers, and handle-scoped UI utilities
+
+Layer 2: DTA parsing/loading driver
+  +gamrywb/+dta
+  +gamrywb/+io parser functions
+  +gamrywb/+data item/session construction and table/column access
+
+Layer 3: experiment-specific app design
+  +gamrywb/+app launch functions
+  +gamrywb/+analysis
+  +gamrywb/+plot
+  export builders in +gamrywb/+io
+```
+
+This map is a design boundary, not a reason to force every function into exactly three folders. Keep granular packages when they make code easier to inspect. Refactor or remove helpers when they obscure which layer owns a decision.
+
 Analysis, data, and IO package functions should not depend on GUI state or call `uialert`. Plot/UI helpers may accept explicit graphics handles and should keep side effects limited to those handles.
 
 Analysis functions should return status through result structs, for example:

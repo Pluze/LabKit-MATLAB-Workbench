@@ -419,7 +419,7 @@ Do not expand this into a schema framework until an app migration proves the mis
 
 ### Phase C: Use the DTA facade in one existing app
 
-This is the current next development task. Pick one app as a reference migration.
+Status: started with EIS as the reference migration.
 
 Recommended candidates:
 
@@ -430,22 +430,27 @@ VT resistance app: representative chrono single-file analysis flow
 
 Goal:
 
-- app behavior unchanged
-- app no longer manually knows as much parser/item construction detail
+- EIS app behavior unchanged
+- EIS app no longer manually knows EIS item-construction details
 - DTA loading can also be used independently in scripts
 - tests prove no behavior change
 - the migrated app demonstrates the intended split between GUI shell, DTA loading, and experiment-specific analysis/export
+
+The EIS app now uses `gamrywb.dta.loadFile(filepath, "eis")` for file loading. This is the reference path for adopting the DTA facade in the remaining apps.
+
+Remaining migration candidates:
+
+```text
+Chrono overlay: switch from direct chrono item construction to DTA facade
+VT resistance: replace direct chrono parsing in the app loader
+CIC: replace direct chrono parsing in the app loader
+CSC: replace direct CV/CT parsing in the app loader
+```
 
 Suggested commit:
 
 ```text
 refactor: use dta facade in EIS app
-```
-
-or:
-
-```text
-refactor: use dta facade in VT resistance app
 ```
 
 ### Phase D: Define lightweight extension contracts
