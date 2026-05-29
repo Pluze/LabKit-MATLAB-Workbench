@@ -11,6 +11,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Reusable API usage guide and single-file app templates covering DTA loading, session-backed file panels, GUI label structs, and future app checklists.
 - New app playbook documenting GUI, DTA, and scientific contracts for future single-file experiment apps.
 - Focused app-boundary tests guarding single-file app ownership, DTA facade usage, removed migration namespaces, and reusable `+gamrywb/+io` export boundaries.
+- IO-layer boundary coverage guarding `+gamrywb/+io` against GUI and app-layer dependencies.
 - DTA facade boundary coverage guarding `+gamrywb/+dta` against GUI and app-layer dependencies.
 - Data-layer boundary coverage guarding `+gamrywb/+data` against GUI and app-layer dependencies.
 - Utility-layer boundary coverage guarding `+gamrywb/+util` against GUI, app-layer, and higher-level package dependencies.
