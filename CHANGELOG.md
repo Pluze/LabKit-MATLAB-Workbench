@@ -31,6 +31,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Generic prepared-X/Y plotting lives in `gamrywb.ui.plotXY`; parsed-curve column selection stays in `gamrywb.data.getCurveXY` so the GUI layer does not depend on the data layer.
 - Test organization now separates default and GUI groups, shares repeated numeric assertion helpers, and keeps architecture guardrails in `test_architecture_boundaries`.
 - Startup/root-entry smoke coverage now uses the responsibility-focused `test_startup_boundaries` name instead of a historical phase name.
+- Architecture boundary tests now share common forbidden GUI, app-entrypoint, and experiment-workflow word lists.
 - Current architecture, API, data-model, validation, and roadmap docs describe the three reusable library surfaces plus single-file app ownership.
 - `gamrywb.data.addFilesToSession` now treats empty file lists as no-ops with empty reports, matching `loadFilesIntoSession`.
 - CIC and VT resistance apps now call the shared interpolation utility instead of keeping duplicated local fallback helpers.
