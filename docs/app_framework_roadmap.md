@@ -2,300 +2,94 @@
 
 This roadmap describes the next refactor stage for Gamry Electrochemistry Workbench.
 
-The v1.0 package-backed refactor moved runtime entry points into `apps/` and removed the old `legacy/` runtime layer. The current apps now call `+gamrywb` parser, data, analysis, plotting, export, session, and UI helpers directly. The next design problem is not legacy replacement. The next design problem is that the GUI apps still repeat a lot of layout, session, file-loading, logging, table, and plot scaffolding.
+The project has already passed the legacy-removal checkpoint:
+
+- Runtime entry points live in `apps/`.
+- Root-level original GUI command wrappers are removed.
+- The old `legacy/` GUI directory is removed.
+- App files call `+gamrywb` parser, data, analysis, plotting, export, session, and UI helpers directly.
+- Current GUI contracts are covered by default tests plus optional noninteractive GUI tests.
+
+The next design problem is therefore not legacy replacement. The next design problem is app framework extraction: the app files still repeat layout, callback, logging, file/session, table, and plot scaffolding.
 
 Goal:
 
 ```text
 make future apps easier to build by extracting reusable GUI/application components
-without changing scientific behavior or exported results
+without changing scientific behavior, GUI contracts, or exported results
 ```
 
-Non-goal:
+Non-goals:
 
 ```text
 do not build a unified workbench GUI yet
+do not convert structs to MATLAB classes
+do not introduce a generic app engine before repeated patterns are proven
 ```
 
 ---
 
-## 1. Current Code Design Assessment
+## 1. Current State
 
-### 1.1 What is good now
+### 1.1 What is already complete
 
-The current architecture is much healthier than the original single-file GUI state.
+Completed app-entrypoint work:
 
-Good patterns already present:
+- `apps/gamrywb_ChronoOverlay_app.m`
+- `apps/gamrywb_EIS_app.m`
+- `apps/gamrywb_CSC_app.m`
+- `apps/gamrywb_VTResistance_app.m`
+- `apps/gamrywb_CIC_app.m`
 
-- App entry points live in `apps/`.
-- Core scientific logic lives in `+gamrywb/+analysis`.
-- File parsing and export helpers live in `+gamrywb/+io`.
-- Item/session helpers live in `+gamrywb/+data`.
-- Plot helpers live in `+gamrywb/+plot`.
-- Some UI display helpers live in `+gamrywb/+ui`.
-- Tests cover pure functions and noninteractive GUI layout contracts.
-- App entry points generally reject unsupported inputs and optionally return the figure handle.
-- Runtime no longer depends on the old `legacy/` directory.
+Completed package areas:
+
+- `+gamrywb/+analysis`: pulse detection and scientific analysis.
+- `+gamrywb/+io`: parsers, result/export table builders, CSV writers, session IO.
+- `+gamrywb/+data`: item/session construction and access helpers.
+- `+gamrywb/+plot`: reusable plot helpers.
+- `+gamrywb/+ui`: batch table display helpers and small axes helpers.
+- `+gamrywb/+util`: low-risk utility helpers.
+
+Current shared UI helpers:
+
+```text
++gamrywb/+ui/clearAxisObjects.m
++gamrywb/+ui/disableAxesInteractivity.m
++gamrywb/+ui/hardResetAxis.m
++gamrywb/+ui/buildCICBatchTableData.m
++gamrywb/+ui/buildVTResistanceBatchTableData.m
+```
 
 This means the project has moved from:
 
 ```text
-monolithic GUI scripts
+monolithic legacy GUI scripts
 ```
 
 to:
 
 ```text
-package-backed apps with repeated GUI scaffolding
+package-backed apps with repeated app scaffolding
 ```
 
-That is the right intermediate state.
+That is a good intermediate state. The remaining work is to reduce repetition without weakening behavior preservation.
 
-### 1.2 Current design pattern
+### 1.2 Current app patterns
 
 The current apps mostly follow this implicit pattern:
 
 ```text
 app entry point
+  -> validate unsupported inputs/outputs
   -> initialize S state struct
   -> create uifigure
-  -> create left controls
-  -> create right plot area
+  -> create controls, tables, logs, and axes
   -> define nested callbacks
   -> callbacks call +gamrywb package helpers
-  -> update UI widgets directly
+  -> callbacks update UI widgets directly
 ```
 
-This pattern is acceptable for v1.0, but it is becoming repetitive.
-
-Common repeated elements include:
-
-- input/output argument checks
-- `S = struct()` state initialization
-- `gamrywb.data.makeSession(...)`
-- `uifigure` creation
-- main `uigridlayout` with left controls and right plots
-- optional draggable separator between left and right panels
-- file-open and folder-open buttons
-- file listbox handling
-- duplicate file skipping
-- `gamrywb.data.addFilesToSession(...)`
-- clear-all behavior
-- log text area and timestamped log append
-- result table setup
-- top/bottom plot controls
-- axes initialization
-- reset/swap/refresh plot buttons
-- safe callbacks that work with empty sessions
-
-These are application-framework concerns, not scientific analysis concerns.
-
-### 1.3 Current weakness
-
-The main weakness is that each app owns too much UI infrastructure directly.
-
-Examples of current duplication:
-
-- `gamrywb_CIC_app` and `gamrywb_VTResistance_app` both use a three-column layout with left tabs, a separator, a right dual-plot panel, file controls, result table, log tab, and top/bottom plot controls.
-- `gamrywb_ChronoOverlay_app` and `gamrywb_EIS_app` both use a simpler two-pane layout with a left file/options/log area and a right plot area.
-- `gamrywb_CSC_app`, `gamrywb_CIC_app`, and `gamrywb_VTResistance_app` all contain similar top/bottom axes controls.
-- File loading, folder scanning, duplicate skipping, clearing, file-list refresh, and log append logic are repeated across apps.
-- GUI layout contract tests assert the resulting surface, but the construction code itself is still app-local and verbose.
-
-This makes future app development slower because every new app must copy and modify a large layout scaffold.
-
----
-
-## 2. Design Direction
-
-The next stage should introduce a small app framework layer.
-
-The framework should be lightweight, functional, and MATLAB-struct based.
-
-Do not introduce MATLAB classes yet.
-
-Preferred dependency direction:
-
-```text
-apps/
-  -> +gamrywb/+app
-      -> +gamrywb/+ui
-      -> +gamrywb/+data
-      -> +gamrywb/+io
-      -> +gamrywb/+analysis
-      -> +gamrywb/+plot
-      -> +gamrywb/+util
-```
-
-`apps/` should become thin launchers.
-
-`+gamrywb/+app` should own app orchestration.
-
-`+gamrywb/+ui` should own reusable UI component construction and small UI utilities.
-
-`+gamrywb/+analysis`, `+gamrywb/+io`, and `+gamrywb/+plot` should remain independent of GUI state.
-
----
-
-## 3. Proposed Package Areas
-
-### 3.1 Add `+gamrywb/+app`
-
-Create a new package folder:
-
-```text
-+gamrywb/+app/
-```
-
-Purpose:
-
-- app launchers
-- app-specific orchestration
-- wiring UI callbacks to package functions
-- small app-specific controller helpers
-
-Candidate files:
-
-```text
-+gamrywb/+app/launchChronoOverlayApp.m
-+gamrywb/+app/launchEISApp.m
-+gamrywb/+app/launchVTResistanceApp.m
-+gamrywb/+app/launchCICApp.m
-+gamrywb/+app/launchCSCApp.m
-```
-
-Each `apps/gamrywb_*_app.m` file should eventually become a thin wrapper:
-
-```matlab
-function varargout = gamrywb_EIS_app(varargin)
-    [varargout{1:nargout}] = gamrywb.app.launchEISApp(varargin{:});
-end
-```
-
-The first step does not need to move all code at once. Move one app at a time.
-
-### 3.2 Expand `+gamrywb/+ui`
-
-Current `+ui` contains result-table helpers and small UI utilities. It should grow into a component library.
-
-Candidate reusable UI builders:
-
-```text
-+gamrywb/+ui/createTwoPaneShell.m
-+gamrywb/+ui/createTabbedDualPlotShell.m
-+gamrywb/+ui/createFilePanel.m
-+gamrywb/+ui/createFolderFileButtons.m
-+gamrywb/+ui/createLogArea.m
-+gamrywb/+ui/createResultTable.m
-+gamrywb/+ui/createInfoGrid.m
-+gamrywb/+ui/createTopBottomPlotPanel.m
-+gamrywb/+ui/createPlotOptionRow.m
-+gamrywb/+ui/appendLog.m
-+gamrywb/+ui/refreshListboxItems.m
-+gamrywb/+ui/showLoadError.m
-```
-
-These helpers should return handles in a struct, not rely on globals.
-
-Example style:
-
-```matlab
-ui = gamrywb.ui.createTwoPaneShell(fig, opts);
-ui.filePanel = gamrywb.ui.createFilePanel(parent, opts);
-ui.log = gamrywb.ui.createLogArea(parent, "GUI started.");
-```
-
-Avoid a heavy generic framework. Start with small builders that remove obvious duplication.
-
----
-
-## 4. Recommended Abstraction Levels
-
-### Level 1: UI primitives
-
-Small, low-risk helpers:
-
-- create labeled edit field row
-- create dropdown row
-- create checkbox row
-- create timestamped log append
-- create axes with title/xlabel/ylabel
-- disable axes interactivity
-- normalize listbox selection
-
-These are safest and should be extracted first.
-
-### Level 2: Shared panels
-
-Moderate helpers:
-
-- file loading panel
-- log panel
-- result table panel
-- info-summary panel
-- top/bottom plot control panel
-- left tab group with Files + Analysis / Summary + Results / Log
-
-These should be extracted after at least two apps prove the same pattern.
-
-### Level 3: App shells
-
-High-value layout skeletons:
-
-```text
-TwoPaneShell
-  left controls
-  right plot area
-```
-
-Used by:
-
-- Chrono overlay
-- EIS overlay
-
-```text
-TabbedDualPlotShell
-  left tabbed controls/results/log
-  separator
-  right top/bottom plot area
-```
-
-Used by:
-
-- CIC
-- VT resistance
-- possibly CSC after alignment
-
-This is the best abstraction target.
-
-### Level 4: App specs
-
-Optional future layer.
-
-Do not start here.
-
-A future app spec might look like:
-
-```matlab
-spec = struct();
-spec.name = "Gamry EIS Multi-DTA Plot GUI";
-spec.sessionKind = "eis_overlay";
-spec.loader = @gamrywb.data.makeEISItem;
-spec.plotter = @gamrywb.plot.plotEISOverlay;
-spec.exporter = @gamrywb.io.buildEISExportTable;
-```
-
-This may become useful later, but forcing a spec-driven framework too early would over-abstract the code.
-
----
-
-## 5. Recommended Refactor Order
-
-### Phase A: Document current shared layout patterns
-
-Create a small internal audit in this file or in code comments before moving code.
-
-Group apps by layout pattern:
+Current layout groups:
 
 ```text
 Two-pane multi-file overlay apps:
@@ -310,80 +104,360 @@ Single-file dual-plot analysis app:
 - gamrywb_CSC_app
 ```
 
-Do not change runtime behavior in this phase.
+### 1.3 Current weakness
 
-### Phase B: Extract low-risk UI primitives
+Each app still owns too much framework code directly.
 
-Extract helpers that cannot change scientific behavior:
+Repeated areas:
+
+- input/output argument checks
+- timestamped log append
+- file-open and folder-open callbacks
+- duplicate file handling
+- `gamrywb.data.addFilesToSession(...)` wiring
+- listbox refresh and selection restoration
+- clear-all behavior
+- common result-table setup
+- top/bottom plot controls
+- axes initialization and reset
+- safe empty-session callbacks
+- left/right or tabbed layout shells
+
+These are framework concerns, not scientific analysis concerns.
+
+---
+
+## 2. Design Direction
+
+Introduce a small functional app framework layer.
+
+Preferred dependency direction:
+
+```text
+apps/
+  -> +gamrywb/+app
+      -> +gamrywb/+ui
+      -> +gamrywb/+data
+      -> +gamrywb/+io
+      -> +gamrywb/+analysis
+      -> +gamrywb/+plot
+      -> +gamrywb/+util
+```
+
+Target shape:
+
+```text
+apps/gamrywb_EIS_app.m              thin entry wrapper
++gamrywb/+app/launchEISApp.m       app assembly and callback wiring
++gamrywb/+ui/...                   reusable UI components and small UI utilities
+```
+
+Keep the framework:
+
+- function-based
+- struct-based
+- explicit about handles
+- conservative about UI side effects
+- compatible with current GUI layout tests
+
+Do not introduce classes yet.
+
+---
+
+## 3. Dynamic Adjustment Rules
+
+This roadmap should be adjusted as extraction work reveals better boundaries.
+
+Use these rules:
+
+1. Extract only after at least two call sites prove the pattern, unless the helper is trivial and behavior-neutral.
+2. Prefer small helpers before shells.
+3. Keep scientific functions independent from UI state.
+4. Keep UI builders handle-based and return structs of handles.
+5. Preserve GUI contract tests by default.
+6. If a helper makes an app harder to read, stop and revert or narrow the helper.
+7. If a planned phase requires broad edits across three or more apps, split it.
+8. If GUI tests need updates, document whether the changed surface is intentional.
+9. Keep app-specific scientific wording, labels, table columns, and export names out of generic helpers.
+10. Reorder phases when a lower-risk repeated pattern becomes obvious.
+
+When expectations change, update this roadmap in the same commit or a nearby documentation commit.
+
+---
+
+## 4. Package Areas
+
+### 4.1 `+gamrywb/+app`
+
+Create this package when the first app body is moved out of `apps/`.
+
+Purpose:
+
+- app launch orchestration
+- app-specific state setup
+- callback wiring
+- app-specific controller helpers
+
+Candidate files:
+
+```text
++gamrywb/+app/launchChronoOverlayApp.m
++gamrywb/+app/launchEISApp.m
++gamrywb/+app/launchVTResistanceApp.m
++gamrywb/+app/launchCICApp.m
++gamrywb/+app/launchCSCApp.m
+```
+
+Final wrapper style:
+
+```matlab
+function varargout = gamrywb_EIS_app(varargin)
+    [varargout{1:nargout}] = gamrywb.app.launchEISApp(varargin{:});
+end
+```
+
+Do one app at a time.
+
+### 4.2 `+gamrywb/+ui`
+
+`+ui` should contain reusable UI helpers and layout components.
+
+Already present:
+
+```text
+buildCICBatchTableData
+buildVTResistanceBatchTableData
+clearAxisObjects
+disableAxesInteractivity
+hardResetAxis
+```
+
+Next candidates:
 
 ```text
 appendLog
-createLabeledEditField
 createLabeledDropdown
+createLabeledEditField
 createAxes
 refreshListboxItems
+createTwoPaneShell
+createTabbedDualPlotShell
+createFilePanel
+createLogArea
+createResultTable
+createInfoGrid
+createTopBottomPlotPanel
 ```
 
-Acceptance criteria:
+Helpers should return handle structs:
 
-- no user-visible layout changes except code being cleaner
-- GUI layout tests still pass
-- default tests pass
+```matlab
+ui = struct();
+ui.panel = panel;
+ui.grid = grid;
+ui.controls = controls;
+```
 
-Suggested commit:
+Avoid hidden globals or persistent app state.
+
+---
+
+## 5. Refactor Levels
+
+### Level 1: UI primitives
+
+Low risk. Extract first.
+
+Examples:
+
+- append a timestamped log line
+- create labeled edit-field rows
+- create labeled dropdown rows
+- create axes with title/xlabel/ylabel
+- refresh listbox items and preserve selection when possible
+- clear/reset axes
+- disable axes interactivity
+
+Status:
 
 ```text
-refactor: extract low-risk ui primitives
+partial: axes clear/reset/interactivity helpers are extracted
+remaining: log append, labeled controls, listbox refresh
 ```
 
-### Phase C: Extract common file/session panel behavior
+### Level 2: Shared panels
 
-Target repeated behavior in Chrono, EIS, CIC, and VT apps:
+Moderate risk. Extract after primitives.
 
-- open DTA files
-- open folder recursively
-- duplicate skipping
-- add files through `gamrywb.data.addFilesToSession`
-- clear all
-- refresh listbox
-- log add/skip/failure
+Examples:
 
-Possible helper:
+- file loading panel
+- log panel
+- result table panel
+- info-summary panel
+- top/bottom plot control panel
+- left tab group with Files + Analysis / Summary + Results / Log
+
+Rule:
 
 ```text
-+gamrywb/+ui/createFileSessionPanel.m
+extract a panel only when at least two apps use the same panel shape
 ```
 
-or split into:
+### Level 3: App shells
+
+High value. Extract after app panel shapes are stable.
+
+Two-pane shell:
 
 ```text
-+gamrywb/+app/loadFilesIntoSession.m
-+gamrywb/+ui/createFilePanel.m
+left controls
+right plot area
 ```
 
-Keep file dialogs in app/UI code, not in analysis/data code.
-
-Acceptance criteria:
-
-- Chrono and EIS still load and list files the same way
-- duplicate skip behavior remains
-- log wording remains stable unless intentionally updated
-- GUI tests pass
-
-Suggested commit:
-
-```text
-refactor: extract shared file session ui helpers
-```
-
-### Phase D: Extract TwoPaneShell
-
-Start with the simpler apps:
+Target apps:
 
 - Chrono overlay
 - EIS overlay
 
-Extract their shared shell:
+Tabbed dual-plot shell:
+
+```text
+left tabbed controls/results/log
+separator
+right top/bottom plot area
+```
+
+Target apps:
+
+- CIC
+- VT resistance
+
+CSC should remain separate until its single-file curve/column behavior is better isolated.
+
+### Level 4: App launchers
+
+Move app bodies into `+gamrywb/+app` after enough UI extraction makes launchers readable.
+
+Target order:
+
+1. EIS
+2. Chrono overlay
+3. VT resistance
+4. CIC
+5. CSC
+
+Reason:
+
+- EIS and Chrono have simpler two-pane structure.
+- VT and CIC share the complex tabbed dual-plot structure.
+- CSC has special single-file curve/column behavior.
+
+### Level 5: Optional app specs
+
+Do not start here.
+
+A future spec may become useful:
+
+```matlab
+spec = struct();
+spec.name = "Gamry EIS Multi-DTA Plot GUI";
+spec.sessionKind = "eis_overlay";
+spec.loader = @gamrywb.data.makeEISItem;
+spec.plotter = @gamrywb.plot.plotEISOverlay;
+spec.exporter = @gamrywb.io.buildEISExportTable;
+```
+
+Only introduce this if shell/helper extraction leaves clear repeated app metadata.
+
+---
+
+## 6. Recommended Phase Plan
+
+### Phase A: Baseline audit
+
+Status: complete enough to proceed.
+
+Evidence:
+
+- all runtime apps are under `apps/`
+- `legacy/` is absent
+- GUI tests cover launch/layout contracts
+- this roadmap now groups current app layout patterns
+
+### Phase B: Finish low-risk UI primitives
+
+Status: in progress.
+
+Already done:
+
+- `clearAxisObjects`
+- `disableAxesInteractivity`
+- `hardResetAxis`
+
+Next helpers:
+
+```text
++gamrywb/+ui/appendLog.m
++gamrywb/+ui/createLabeledDropdown.m
++gamrywb/+ui/createLabeledEditField.m
++gamrywb/+ui/refreshListboxItems.m
+```
+
+Recommended commit:
+
+```text
+refactor: extract ui primitive helpers
+```
+
+Acceptance criteria:
+
+- no visible GUI layout changes
+- log wording remains stable
+- dropdown values and callbacks remain stable
+- default tests pass
+- GUI tests pass
+
+### Phase C: Extract file/session behavior
+
+Target repeated behavior:
+
+- open files
+- open folder recursively
+- skip duplicates
+- add files through `gamrywb.data.addFilesToSession`
+- clear session
+- refresh file listbox
+- log add/skip/failure
+
+Preferred split:
+
+```text
++gamrywb/+app/loadFilesIntoSession.m
++gamrywb/+ui/refreshListboxItems.m
+```
+
+Keep dialogs in app/UI code. Keep `gamrywb.data.addFilesToSession` free of UI dialogs.
+
+Recommended first targets:
+
+1. Chrono overlay
+2. EIS
+
+Reason:
+
+- both are multi-file overlay apps
+- both have similar listbox/file workflows
+- lower risk than CIC/VT analysis apps
+
+### Phase D: Extract two-pane shell
+
+Target apps:
+
+- Chrono overlay
+- EIS
+
+Candidate helper:
 
 ```text
 +gamrywb/+ui/createTwoPaneShell.m
@@ -400,38 +474,24 @@ ui.rightPanel
 ui.rightGrid
 ```
 
-Do not hide too much. The app should still decide which controls and axes to place inside the shell.
+Keep app-specific controls and axes outside the shell.
 
 Acceptance criteria:
 
-- Chrono overlay and EIS app still launch
-- component counts in GUI tests remain correct
-- initial axes titles/labels remain correct
+- figure titles unchanged
+- minimum sizes unchanged
+- component counts unchanged unless intentionally documented
+- initial axes labels unchanged
 - export behavior unchanged
 
-Suggested commit:
+### Phase E: Extract tabbed dual-plot shell
 
-```text
-refactor: extract two-pane app shell
-```
-
-### Phase E: Extract TabbedDualPlotShell
-
-Target:
+Target apps:
 
 - CIC
 - VT resistance
 
-Both have the same broad structure:
-
-```text
-main 1x3 grid
-left controls tab group
-thin separator
-right top/bottom plot area
-```
-
-Extract:
+Candidate helper:
 
 ```text
 +gamrywb/+ui/createTabbedDualPlotShell.m
@@ -454,78 +514,36 @@ ui.bottomControlsPanel
 ui.bottomAxes
 ```
 
-Keep app-specific settings and summary rows in the app for now.
+Keep app-specific analysis settings, summary rows, and result tables in app code for the first extraction.
 
 Acceptance criteria:
 
 - CIC and VT GUI contract tests pass
-- draggable separator behavior is preserved if kept
+- draggable separator behavior is preserved if included
 - top/bottom plot controls still work
 - reset/swap/refresh behavior unchanged
 
-Suggested commit:
+### Phase F: Extract top/bottom plot controls
 
-```text
-refactor: extract tabbed dual-plot app shell
-```
+Target apps:
 
-### Phase F: Extract top/bottom plot control helpers
-
-CIC, VT, and CSC all create top/bottom plot selectors.
+- CIC
+- VT resistance
+- possibly CSC
 
 Candidate helper:
-
-```text
-+gamrywb/+ui/createXYPlotControlPanel.m
-```
-
-or:
 
 ```text
 +gamrywb/+ui/createTopBottomPlotControls.m
 ```
 
-Keep the item lists app-specific:
-
-- chrono apps use Time/Sample and VT/IT
-- CSC uses parsed curve column names
-- EIS uses arbitrary EIS axis dropdowns and does not need dual plot controls
-
-Suggested commit:
-
-```text
-refactor: extract shared dual-plot controls
-```
+Keep dropdown item lists app-specific.
 
 ### Phase G: Move app bodies into `+gamrywb/+app`
 
-After UI shells exist, move app bodies out of `apps/`.
+Only after shell/helper extraction improves readability.
 
-Target final shape:
-
-```text
-apps/gamrywb_CIC_app.m                 thin entry wrapper
-+gamrywb/+app/launchCICApp.m           real app assembly
-+gamrywb/+ui/...                       reusable components
-```
-
-Do one app at a time.
-
-Recommended order:
-
-1. EIS
-2. Chrono overlay
-3. VT resistance
-4. CIC
-5. CSC
-
-Reason:
-
-- EIS and Chrono are simpler two-pane apps.
-- VT and CIC share more complex tabbed dual-plot scaffolding.
-- CSC is single-file and has special curve/column behavior.
-
-Suggested commit pattern:
+Commit sequence:
 
 ```text
 refactor: move EIS app assembly into gamrywb.app
@@ -535,188 +553,114 @@ refactor: move CIC app assembly into gamrywb.app
 refactor: move CSC app assembly into gamrywb.app
 ```
 
----
-
-## 6. Design Rules For The Framework
-
-### 6.1 Keep framework functions handle-based
-
-Return structs of handles:
-
-```matlab
-ui = struct();
-ui.fig = fig;
-ui.leftPanel = leftPanel;
-ui.axTop = axTop;
-```
-
-Do not introduce classes yet.
-
-### 6.2 Keep scientific behavior out of UI builders
-
-UI builders may create controls and panels.
-
-They must not compute:
-
-- CIC
-- CSC
-- VT resistance
-- pulse detection
-- EIS values
-- parser outputs
-
-### 6.3 Keep file IO boundaries explicit
-
-Allowed in app/UI layer:
-
-- `uigetfile`
-- `uigetdir`
-- `uiputfile`
-- `uialert`
-
-Not allowed in analysis functions:
-
-- UI dialogs
-- alerts
-- direct control reads
-- direct control writes
-
-### 6.4 Avoid over-generalization
-
-Do not create a universal generic app engine yet.
-
-Prefer:
-
-```text
-small repeated helper extracted after two or more apps prove the pattern
-```
-
-over:
-
-```text
-large abstract framework designed before use
-```
-
-### 6.5 Preserve GUI test contracts
-
-The GUI layout tests currently encode important compatibility expectations.
-
-When extracting a shell or component, the resulting GUI should still satisfy:
-
-- figure title
-- minimum size
-- button texts
-- dropdown items
-- checkbox texts
-- result table columns
-- axes titles and labels
-- safe callbacks on empty state
-
-If a layout change is intentional, update tests and document why.
+Each commit should keep the public `apps/gamrywb_*_app.m` entry point intact.
 
 ---
 
 ## 7. Testing Strategy
 
-After each extraction run:
+After documentation-only roadmap edits:
+
+```text
+no MATLAB test required unless source or tests changed
+```
+
+After MATLAB source changes:
 
 ```bash
 scripts/run_matlab_tests.sh
 ```
 
-When GUI construction changes, also run:
+When GUI construction or app entry points change:
 
 ```bash
 scripts/run_matlab_tests.sh --gui
 ```
 
-Add new unit-level tests for UI helpers only when practical. For most MATLAB UI builder functions, the existing noninteractive GUI tests may be the main regression guard.
-
-Recommended new tests:
+Add focused tests when practical:
 
 ```text
 test_ui_primitives.m
 test_ui_shells.m
+test_app_entrypoints.m
 ```
 
 Possible checks:
 
-- shell functions return required handle fields
+- helper returns expected fields
 - panels and axes are created with expected titles
 - log append preserves previous lines and adds timestamp prefix
 - listbox refresh preserves valid selections
 - empty file/session states are safe
 
-Do not make tests too brittle about exact internal grid object counts unless that is an intentional compatibility contract.
+Do not make tests brittle about internal grid object counts unless that surface is an intentional compatibility contract.
 
 ---
 
 ## 8. Acceptance Criteria For This Stage
 
-This stage is successful when:
+This app-framework stage is successful when:
 
-- `apps/` files become thin wrappers or much smaller entry points.
-- Large repeated layout scaffolds move into `+gamrywb/+ui` shell/component helpers.
-- App-specific orchestration moves into `+gamrywb/+app`.
+- `apps/` files are thin wrappers or much smaller entry points.
+- App-specific orchestration lives under `+gamrywb/+app`.
+- Large repeated layout scaffolds live under `+gamrywb/+ui`.
 - CIC and VT share a tabbed dual-plot shell.
 - Chrono and EIS share a two-pane shell.
-- File/session/log/listbox behavior is not copy-pasted across every app.
-- GUI layout contract tests still pass.
-- Scientific tests still pass.
-- No parser, analysis, plotting result, or export format changes occur unless explicitly requested.
+- File/session/log/listbox behavior is not copied across every app.
+- GUI layout contract tests pass.
+- Scientific tests pass.
+- CSV/export formats remain unchanged.
+- Parser, analysis, plotting result, and GUI label behavior remain unchanged unless explicitly requested.
 
 ---
 
-## 9. Recommended First Agent Task
+## 9. Current Next Best Task
 
-Start with a small, low-risk task:
-
-```text
-Extract shared UI primitives used by multiple apps.
-```
-
-Suggested first helpers:
+The next best task is:
 
 ```text
-+gamrywb/+ui/appendLog.m
-+gamrywb/+ui/createLabeledDropdown.m
-+gamrywb/+ui/createLabeledEditField.m
-+gamrywb/+ui/refreshListboxItems.m
+finish low-risk UI primitives
 ```
 
-Then apply only `appendLog` and simple labeled-row helpers to one or two apps first.
+Suggested sequence:
 
-Do not attempt to extract the full shell in the first commit.
+1. Extract `gamrywb.ui.appendLog`.
+2. Apply it to Chrono overlay and EIS first.
+3. Run default and GUI tests.
+4. If stable, apply it to CIC, VT, and CSC.
+5. Extract `refreshListboxItems` for Chrono and EIS.
+6. Reassess whether file/session behavior should move into `+gamrywb/+app` or remain split between app and UI.
 
-Suggested first commit:
-
-```text
-refactor: extract shared ui primitives
-```
-
-Then run:
-
-```bash
-scripts/run_matlab_tests.sh
-scripts/run_matlab_tests.sh --gui
-```
-
-If MATLAB GUI support is unavailable, report that GUI tests were not run.
+Do not start `createTwoPaneShell` until `appendLog` and listbox refresh are stable.
 
 ---
 
-## 10. Summary
+## 10. Route Adjustment Log
+
+Use this section to record meaningful changes in strategy.
+
+```text
+2026-05-29:
+- legacy replacement is no longer the main problem; legacy is removed
+- all app entry points are package-backed
+- axes clear/reset/interactivity helpers are already extracted into +gamrywb/+ui
+- next route changed from "extract first primitives" to "finish remaining low-risk primitives, then file/session behavior"
+```
+
+---
+
+## 11. Summary
 
 Current state:
 
 ```text
-package-backed apps exist, but app GUI construction is still monolithic and repetitive
+package-backed apps exist, legacy is removed, but app GUI construction is still monolithic and repetitive
 ```
 
 Next desired state:
 
 ```text
-thin app entry points + reusable app shells + small UI components + package-backed analysis
+thin app entry points + gamrywb.app launchers + reusable UI shells + small UI components
 ```
 
-Do not jump to a unified workbench GUI. First build the reusable pieces that would make a future unified workbench safe and maintainable.
+Do not jump to a unified workbench GUI. First build the reusable pieces that make future app consolidation safe and maintainable.
