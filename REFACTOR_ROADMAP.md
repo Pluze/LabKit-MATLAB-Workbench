@@ -92,7 +92,7 @@ Phase 4: started
 Phase 5: started
 Phase 6: started
 Phase 7: started
-Phase 8: started
+Phase 8: complete
 Phase 9+: not started
 ```
 
@@ -108,7 +108,7 @@ Summary:
 - CIC / voltage-transient analysis extraction has started.
 - VT resistance and CIC now call package-backed analysis functions while preserving legacy GUI display/export behavior.
 - CV/CT charge, CSC analysis, selected-column access, and plotting extraction has started.
-- EIS item construction, axis-value generation, overlay plotting, and current-plot export table extraction has started.
+- EIS item construction, axis-value generation, overlay plotting, and current-plot export table extraction is complete for the legacy EIS overlay GUI.
 
 Completed migration details live in `MIGRATION_NOTES.md`.
 
@@ -496,7 +496,7 @@ Idc (A)
 Vdc (V)
 ```
 
-Status: started.
+Status: complete.
 
 Current implementation note:
 

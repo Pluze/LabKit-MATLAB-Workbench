@@ -17,7 +17,7 @@ Phase 4: started
 Phase 5: started
 Phase 6: started
 Phase 7: started
-Phase 8: started
+Phase 8: complete
 Phase 9+: not started
 ```
 
@@ -33,7 +33,7 @@ Current summary:
 - CIC / voltage-transient analysis is package-backed.
 - CV/CT charge and CSC analysis are package-backed.
 - CV/CT selected-column access and plotting are package-backed.
-- EIS item construction, axis-value generation, overlay plotting, and current-plot export table construction are package-backed.
+- EIS item construction, axis-value generation, overlay plotting, and current-plot export table construction are package-backed for the legacy EIS overlay GUI.
 
 ---
 
@@ -262,7 +262,7 @@ Still local after current Phase 7 progress:
 
 ## Phase 8 — EIS Overlay / Export Extraction
 
-Phase 8 has started.
+Phase 8 is complete for the legacy EIS overlay/export scope.
 
 Completed work:
 
@@ -283,7 +283,7 @@ Behavior preserved:
 - Marker, line width, marker size, legend, grid, labels, title, and Nyquist equal-axis behavior.
 - Current-plot CSV table column names and RowIndex behavior.
 
-Still local after current Phase 8 progress:
+Still local after Phase 8:
 
 - EIS GUI file selection, selected-file list management, summary text, logging, and alert behavior.
 - EIS saved-session behavior, which is deferred to Phase 9.

@@ -59,7 +59,7 @@ This project is still in an unreleased behavior-preserving refactor stage.
 - CIC plotting/export formatting remains in the legacy GUI.
 - VT resistance plotting/export formatting remains in the legacy GUI.
 - CV/CSC export formatting remains deferred until a batch/session export workflow exists.
-- EIS GUI file-list management and summary text remain in the legacy GUI.
+- Shared batch/session utilities have not been implemented.
 - New thin apps under `apps/` have not been implemented.
 - Unified workbench GUI has not been started.
 - Golden reference tests for every major analysis output are not complete yet.
