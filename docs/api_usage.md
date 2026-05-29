@@ -63,6 +63,8 @@ Folder loading:
 [items, report] = gamrywb.dta.loadFolder(folder, "auto");
 ```
 
+Folders with no DTA files return no items and a zero-count report.
+
 Type detection:
 
 ```matlab

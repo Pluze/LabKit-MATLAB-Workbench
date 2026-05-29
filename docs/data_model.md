@@ -112,6 +112,8 @@ loaded, failed, statuses, nRequested, nLoaded, nFailed
 folder, filepaths, nDiscovered
 ```
 
+Folders with no `.DTA` files return no items, empty `filepaths`, `nDiscovered == 0`, and the same zero-count batch report fields.
+
 ## CV/CT Data
 
 `gamrywb.io.parseCVCTDTA` returns:

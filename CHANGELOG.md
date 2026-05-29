@@ -14,7 +14,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Session helper coverage for empty file-list no-op behavior.
 - `gamrywb.util.interp1Safe` for shared finite-vector interpolation with nearest-point fallback.
 - Shared test fixture helpers for repeated demo fixture paths and chrono app-analysis setup.
-- DTA facade coverage for empty batch-load inputs.
+- DTA facade coverage for empty batch-load inputs and empty folders.
 
 ### Changed
 

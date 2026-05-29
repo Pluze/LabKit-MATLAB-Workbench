@@ -79,6 +79,18 @@ function test_dtaFacade()
         'Folder load should request every discovered DTA file.');
     assert(strcmp(folderReport.folder, demoDir), ...
         'Folder load report should preserve the requested folder.');
+
+    emptyDir = tempname;
+    mkdir(emptyDir);
+    cleaner = onCleanup(@() removeFolderIfExists(emptyDir));
+    [emptyFolderItems, emptyFolderReport] = gamrywb.dta.loadFolder(emptyDir, "auto");
+    assertLoadFolderReportFields(emptyFolderReport);
+    assert(isempty(emptyFolderItems), 'Empty DTA folder load should return no items.');
+    assert(emptyFolderReport.nDiscovered == 0 && emptyFolderReport.nRequested == 0, ...
+        'Empty DTA folder report should have zero discovered and requested files.');
+    assert(emptyFolderReport.nLoaded == 0 && emptyFolderReport.nFailed == 0, ...
+        'Empty DTA folder report should have zero loaded and failed files.');
+    assert(isempty(emptyFolderReport.filepaths), 'Empty DTA folder report should preserve an empty filepath list.');
 end
 
 function assertStatusFields(status)
@@ -102,4 +114,10 @@ function assertLoadFolderReportFields(report)
     assert(isequal(fieldnames(report), expectedFields(:)), ...
         'DTA folder-load report fields should match the documented schema.');
     assertLoadFilesReportFields(rmfield(report, {'folder', 'filepaths', 'nDiscovered'}));
+end
+
+function removeFolderIfExists(folder)
+    if exist(folder, 'dir') == 7
+        rmdir(folder);
+    end
 end
