@@ -67,7 +67,7 @@ Use looser tolerance only when justified, for example:
 - plotting-only data alignment
 - format conversion that preserves scientific meaning
 
-Any looser tolerance should be documented in the test or migration notes.
+Any looser tolerance should be documented in the test or validation notes.
 
 ---
 

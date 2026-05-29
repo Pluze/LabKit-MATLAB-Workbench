@@ -4,7 +4,7 @@ This document records useful future directions and deferred work for Gamry Elect
 
 These are **not active refactor requirements**.
 
-Do not start these features before the behavior-preserving MATLAB package refactor reaches v1.0 unless explicitly requested.
+Future features remain separate from repository hygiene and behavior-preserving maintenance unless explicitly requested.
 
 ---
 

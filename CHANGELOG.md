@@ -2,80 +2,42 @@
 
 All notable user-facing and maintainer-facing changes are recorded here.
 
-This project is still in an unreleased behavior-preserving refactor stage.
-
----
-
 ## Unreleased
+
+- No unreleased changes yet.
+
+## v1.0.0 - 2026-05-28
 
 ### Added
 
-- Added `AGENTS.md` as the canonical AI/Codex operating instruction file.
-- Added `startup_gamrywb.m` for MATLAB path setup.
-- Added initial `+gamrywb` package structure.
-- Added low-risk shared utility helpers under `+gamrywb/+util`.
-- Added shared chrono DTA parser under `+gamrywb/+io/parseChronoDTA.m`.
-- Added shared EIS DTA parser under `+gamrywb/+io/parseEISDTA.m`.
-- Added shared CV/CT DTA parser under `+gamrywb/+io/parseCVCTDTA.m`.
-- Added shared DTA discovery and data accessor helpers.
-- Added shared chrono overlay export table and CSV writer helpers.
-- Added initial shared pulse detection helpers under `+gamrywb/+analysis`.
-- Added shared chrono item construction and pulse-gap alignment helpers.
-- Added shared VT resistance analysis helpers under `+gamrywb/+analysis`.
-- Added shared VT resistance result/export table helpers under `+gamrywb/+io` and batch display data under `+gamrywb/+ui`.
-- Added shared CIC / voltage-transient analysis helpers under `+gamrywb/+analysis`.
-- Added shared CIC result/export table helpers under `+gamrywb/+io` and batch display data under `+gamrywb/+ui`.
-- Added shared CV/CT charge and CSC analysis helpers under `+gamrywb/+analysis`.
-- Added shared CV/CSC result table helper under `+gamrywb/+io`.
-- Added shared CV/CT selected-column access and plotting helpers.
-- Added shared EIS item construction, axis-value, overlay plotting, and export-table helpers.
-- Added normalized EIS item aliases alongside legacy EIS item fields.
-- Added shared session creation, file add/remove, save/load, and batch summary helpers.
-- Added shared chrono VT/IT overlay plot helper.
-- Added Phase 10 app entry points under `apps/` for CIC, VT resistance, CV/CSC, and EIS workflows.
-- Added named demo DTA fixtures for parser and pulse-detection tests.
-- Added MATLAB pure-function test runner under `scripts/run_matlab_tests.sh`.
-- Added optional noninteractive GUI compatibility-contract checks under `scripts/run_matlab_tests.sh --gui`.
-- Strengthened GUI compatibility-contract checks to enforce complete dropdown groups, result-table columns, and initialized axes titles/labels.
-- Added documentation pages under `docs/` for architecture, data models, file formats, validation, and future features.
+- Package-backed parser, data, analysis, plotting, export, session, and UI helper modules under `+gamrywb`.
+- Compatibility app entry points under `apps/` for CIC, VT resistance, CV/CSC, and EIS workflows.
+- Root-level compatibility wrappers for the original legacy GUI command names.
+- Named demo DTA fixtures for parser, pulse detection, analysis, plotting, export, and session tests.
+- MATLAB pure-function test runner under `scripts/run_matlab_tests.sh`.
+- Optional noninteractive GUI compatibility-contract checks under `scripts/run_matlab_tests.sh --gui`.
+- Current documentation under `docs/` for architecture, data models, file formats, validation, refactor history, and backlog.
 
 ### Changed
 
-- Marked the roadmap v1.0 behavior-preserving package refactor complete.
 - Moved preserved legacy GUI implementations under `legacy/`.
-- Replaced root-level legacy GUI files with compatibility wrappers that preserve original command names.
-- Updated selected legacy GUI implementations to call extracted parser and utility functions where behavior is intended to remain identical.
-- Updated `legacy/gamry_multiDTA_plot_export_gui_legacy.m` to use shared pulse detection, chrono item construction, and pulse-gap alignment.
-- Updated `legacy/gamry_multiDTA_plot_export_gui_legacy.m` to use shared chrono overlay plotting and CSV export table construction.
-- Updated `legacy/gamry_multiDTA_plot_export_gui_legacy.m` to use shared session add/remove helpers while preserving its existing `S.items` display/export path.
-- Updated `legacy/gamry_VT_resistance_gui_legacy.m` to use shared chrono parsing, DTA discovery, table/column accessors, pulse detection, and low-risk utilities.
-- Updated `legacy/gamry_VT_resistance_gui_legacy.m` to call shared VT resistance analysis.
-- Updated `legacy/gamry_VT_resistance_gui_legacy.m` to use shared VT resistance batch table and legacy-format CSV writer helpers.
-- Updated `legacy/gamry_VT_resistance_gui_legacy.m` to use shared session add/reset helpers while preserving its existing `S.items` display/export path.
-- Updated `legacy/gamry_CIC_VT_gui_paperlabels_legacy.m` to use shared chrono parsing, DTA discovery, table/column accessors, pulse detection, and low-risk utilities.
-- Updated `legacy/gamry_CIC_VT_gui_paperlabels_legacy.m` to call shared CIC / voltage-transient analysis.
-- Updated `legacy/gamry_CIC_VT_gui_paperlabels_legacy.m` to use shared CIC batch table and legacy-format CSV writer helpers.
-- Updated `legacy/gamry_CIC_VT_gui_paperlabels_legacy.m` to use shared session add/reset helpers while preserving its existing `S.items` display/export path.
-- Updated `legacy/gamry_CV_CSC_dta_gui_legacy.m` to call shared CV/CT charge and CSC analysis.
-- Updated `legacy/gamry_CV_CSC_dta_gui_legacy.m` to use shared CV/CT selected-column plotting.
-- Updated `legacy/gamry_CV_CSC_dta_gui_legacy.m` to use shared session storage while preserving its existing single-file display/analysis state path.
-- Updated `legacy/gamry_EIS_multiDTA_plot_gui_legacy.m` to use shared EIS item construction, plotting, and export table helpers.
-- Updated `legacy/gamry_EIS_multiDTA_plot_gui_legacy.m` to use shared session add/remove helpers while preserving its existing `S.items` display/export path.
+- Updated selected legacy GUI implementations to call package-backed helpers while preserving behavior.
+- Reorganized root documentation so README and CHANGELOG describe current usage and release status, while phase history lives in `docs/refactor_history.md`.
 - Phase 10 app entry points delegate to behavior-preserved legacy GUI entry points for the v1.0 compatibility scope.
-- Reorganized Markdown documentation so README, roadmap, migration notes, AI instructions, and detailed docs have separate responsibilities.
 
 ### Preserved
 
-- Scientific analysis formulas are not intentionally changed.
-- Legacy GUI command names remain available.
-- GUI behavior remains intended to match the preserved legacy scripts.
-- CSV export formats are not intentionally changed.
+- Legacy GUI command names.
+- Scientific calculations and result definitions.
+- Parser behavior for legacy-supported DTA file families.
+- Pulse detection behavior.
+- GUI layout and callback behavior.
+- Plot labels, markers, axes, and visual behavior.
+- CSV/export formats and column names.
 
-### Known Gaps
+### Deferred
 
-- CIC plotting remains in the legacy GUI beyond the package-backed analysis/export helpers.
-- VT resistance plotting remains in the legacy GUI beyond the package-backed analysis/export helpers.
-- CV/CSC CSV writing and GUI export remain deferred because the legacy GUI has no batch CSV export workflow.
-- Package-backed replacements for the Phase 10 app delegates are deferred beyond v1.0.
-- Unified workbench GUI has not been started.
-- Stored golden MAT references for every major analysis output are not complete yet; default tests cover fixed reference values with demo fixtures.
+- Package-backed replacements for the Phase 10 app delegates.
+- Unified workbench GUI.
+- Complete stored golden MAT reference outputs for every major analysis output.
+- Broader parser unification and support for additional Gamry experiment types.

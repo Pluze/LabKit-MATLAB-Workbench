@@ -1,6 +1,6 @@
 # Architecture Notes
 
-This document describes the intended architecture for Gamry Electrochemistry Workbench.
+This document describes the current architecture and intended boundaries for Gamry Electrochemistry Workbench.
 
 The current refactor is behavior-preserving. Architecture cleanup should reduce duplication while keeping legacy outputs, GUI behavior, plot behavior, and CSV export behavior unchanged.
 
@@ -18,7 +18,7 @@ struct-based item/session models
 reusable +gamrywb package functions
 ```
 
-The project should move away from the legacy pattern:
+The project moved away from the legacy pattern:
 
 ```text
 Each GUI = parser + data cleaning + analysis + plotting + export + UI state
@@ -72,7 +72,7 @@ Avoid adding new scientific formulas or new parser variants inside legacy GUI fi
 
 Reusable functions live under `+gamrywb`.
 
-Planned package responsibilities:
+Package responsibilities:
 
 ```text
 +gamrywb/+io        file parsing, folder discovery, export table construction, session IO
@@ -206,13 +206,13 @@ Current implementation status:
 - Root-level compatibility wrappers exist.
 - Legacy GUI implementations are preserved under `legacy/`.
 - `+gamrywb/+util` exists and contains shared low-risk helpers.
-- `+gamrywb/+io` contains initial chrono, EIS, and CV/CT parsers, chrono/EIS/VT/CIC/CV-CSC result table builders, VT/CIC legacy-format CSV writers, and session save/load helpers.
-- `+gamrywb/+data` contains initial table/column accessors, CV/CT selected-column access, chrono item construction, EIS item construction, and shared session helpers.
-- `+gamrywb/+analysis` contains initial pulse detection helpers, pulse-gap alignment, VT resistance analysis, CIC analysis, CV/CSC analysis, EIS axis-value generation, and batch summary helpers.
-- `+gamrywb/+plot` contains the initial chrono VT/IT overlay plot helper, CV/CT selected-column plot helper, and EIS overlay plot helper.
-- `+gamrywb/+ui` contains initial VT resistance and CIC batch table display-data helpers.
-- The legacy multi-DTA overlay, EIS overlay, VT resistance, CIC, and CV/CSC GUIs have started using shared session helpers while preserving their legacy display/export or display/analysis state surfaces.
-- Phase 10 app entry points exist under `apps/` and currently delegate to the behavior-preserved legacy GUIs.
+- `+gamrywb/+io` contains chrono, EIS, and CV/CT parsers, chrono/EIS/VT/CIC/CV-CSC result table builders, VT/CIC legacy-format CSV writers, and session save/load helpers.
+- `+gamrywb/+data` contains table/column accessors, CV/CT selected-column access, chrono item construction, EIS item construction, and shared session helpers.
+- `+gamrywb/+analysis` contains pulse detection helpers, pulse-gap alignment, VT resistance analysis, CIC analysis, CV/CSC analysis, EIS axis-value generation, and batch summary helpers.
+- `+gamrywb/+plot` contains the chrono VT/IT overlay plot helper, CV/CT selected-column plot helper, and EIS overlay plot helper.
+- `+gamrywb/+ui` contains VT resistance and CIC batch table display-data helpers.
+- The legacy multi-DTA overlay, EIS overlay, VT resistance, CIC, and CV/CSC GUIs use shared session helpers while preserving their legacy display/export or display/analysis state surfaces.
+- Phase 10 app entry points exist under `apps/` and delegate to the behavior-preserved legacy GUIs.
 - Replacing those delegates with package-backed thin app internals is blocked until the DTA parser layer, normalized item/result/option schemas, session/export workflow, and fixture-driven validation are stable.
 - Unified workbench GUI has not started.
 
@@ -261,7 +261,7 @@ Near-term design need:
 
 ## 9. Future Architecture Direction
 
-After v1.0, the project may add:
+Future work may add:
 
 - MATLAB Project `.prj` support.
 - New App Designer wrapper around the stable package library.
@@ -269,4 +269,4 @@ After v1.0, the project may add:
 - Batch report generation.
 - Optional MATLAB Compiler packaging for internal lab distribution.
 
-These should not be prioritized before the behavior-preserving package refactor is complete and the DTA core schemas, parser responsibilities, session/export conventions, and validation fixtures are stable.
+These should not be prioritized until the DTA core schemas, parser responsibilities, session/export conventions, and validation fixtures are stable enough for new app internals.

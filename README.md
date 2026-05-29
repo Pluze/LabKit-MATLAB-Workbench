@@ -1,126 +1,86 @@
 # Gamry Electrochemistry Workbench
 
-MATLAB workbench for refactoring and maintaining Gamry electrochemistry DTA analysis GUIs.
-
-This repository migrated several standalone MATLAB GUI scripts into a reusable `+gamrywb` package while preserving legacy behavior.
-
----
+MATLAB tools for analyzing Gamry electrochemistry DTA files. The project preserves the original research GUIs while providing a reusable `+gamrywb` package for parsers, data helpers, analysis functions, plotting helpers, export helpers, sessions, and tests.
 
 ## Current Status
 
-The project has reached the roadmap v1.0 behavior-preserving package refactor.
+The v1.0 behavior-preserving package refactor is complete.
 
-Completed v1.0 work:
+What that means:
 
-- Phase 0 complete: legacy functions inventoried and migration notes started.
-- Phase 1 complete: package skeleton and low-risk utilities added.
-- Phase 2 complete for v1.0: chrono, EIS, and CV/CT parser modules extracted.
-- Phase 3 complete for v1.0: shared pulse detection is used by the multi-DTA overlay/export, VT resistance, and CIC legacy GUIs.
-- Phase 4 complete for v1.0: chrono overlay plotting and CSV export table construction are package-backed.
-- Phase 5 complete for v1.0: VT resistance analysis and result/export table construction are package-backed.
-- Phase 6 complete for v1.0: CIC / voltage-transient analysis and result/export table construction are package-backed.
-- Phase 7 complete for v1.0: CV/CT charge, CSC analysis, selected-column access, plotting, and result table construction are package-backed.
-- Phase 8 complete: EIS item construction, axis values, overlay plotting, and current-plot export tables are package-backed.
-- Phase 9 complete for the current legacy-compatible scope: shared session creation, file add/remove, save/load, batch summary helpers, VT/CIC/CV-CSC result table helpers, and legacy GUI session-state wiring are available.
-- Phase 10 complete for v1.0: app entry points are available under `apps/` and delegate to behavior-preserved legacy GUIs until package-backed thin app internals are intentionally started.
-- Legacy GUI entry points remain available through root-level compatibility wrappers.
-- Demo DTA fixtures and MATLAB pure-function tests are available.
+- Original GUI commands still run through compatibility wrappers.
+- Preserved GUI implementations remain under `legacy/`.
+- CIC, VT resistance, CV/CSC, chrono overlay, and EIS overlay/export workflows have package-backed parser, analysis, plotting, export, or UI helper coverage where v1.0 required it.
+- Phase 10 app entry points under `apps/` are compatibility delegates to the preserved legacy GUIs.
 
 Deferred beyond v1.0:
 
-- Package-backed replacements for the Phase 10 app delegates.
+- Replacing app delegates with new package-backed app internals.
 - Unified workbench GUI.
-
-The current goal is **same behavior, less duplicate code, clearer boundaries**.
-
----
+- Stored golden MAT references for every major analysis output.
 
 ## Getting Started
 
-From the repository root in MATLAB, run:
+From the repository root in MATLAB:
 
 ```matlab
 startup_gamrywb
-```
 
-Then launch one of the compatibility entry points:
-
-```matlab
-gamry_multiDTA_plot_export_gui
-gamry_EIS_multiDTA_plot_gui
-gamry_CV_CSC_dta_gui
-gamry_VT_resistance_gui
-gamry_CIC_VT_gui_paperlabels
-```
-
-The root-level entry points forward to preserved implementations under `legacy/`.
-
-Phase 10 app entry points are also available:
-
-```matlab
+% Recommended compatibility app entry points
 gamrywb_CIC_app
 gamrywb_VTResistance_app
 gamrywb_CSC_app
 gamrywb_EIS_app
+
+% Legacy-compatible original commands
+gamry_CIC_VT_gui_paperlabels
+gamry_VT_resistance_gui
+gamry_CV_CSC_dta_gui
+gamry_EIS_multiDTA_plot_gui
+gamry_multiDTA_plot_export_gui
 ```
 
-These currently delegate to the behavior-preserved legacy GUIs. Package-backed thin app internals are deferred beyond v1.0 until the DTA core schemas and validation fixtures are stable enough for new app work.
-
----
+The `gamrywb_*_app` entry points currently delegate to the behavior-preserved legacy GUIs. They are named app entry points for compatibility and onboarding, not completed rewrites.
 
 ## Running Tests
 
-From a macOS shell, run:
+From a macOS shell:
 
 ```bash
 scripts/run_matlab_tests.sh
 ```
 
-To include optional noninteractive GUI checks, run:
+Optional noninteractive GUI compatibility checks:
 
 ```bash
 scripts/run_matlab_tests.sh --gui
 ```
 
-The test runner attempts to find MATLAB through:
-
-1. `MATLAB_CMD`
-2. `matlab` on PATH
-3. `/Applications/MATLAB_*.app/bin/matlab`
-
-The default tests are intended for pure functions only. The optional `--gui` mode is the regression guard for preserving legacy GUI functionality during refactors: it checks that the legacy GUI entry points can create and close their main `uifigure` windows, verifies exact initialized component counts, required controls, complete dropdown item groups, tab titles, result-table columns, initial axes titles/labels, and window-size floors, then invokes safe callbacks that do not open dialogs. It does not open file dialogs, write exports, or validate manual interactions.
-
----
+The default runner covers pure functions. The optional GUI mode checks launch/layout/callback compatibility without file dialogs, exports, or manual interaction.
 
 ## Repository Layout
 
 ```text
 +gamrywb/             Reusable MATLAB package modules
-legacy/               Preserved legacy GUI implementations and compatibility shims
-apps/                 Future thin app entry points
-demo/                 Named DTA fixtures for tests and examples
-tests/                MATLAB pure-function tests
-scripts/              Local test runner scripts
-docs/                 Architecture, data model, parser, validation, and future notes
+apps/                 Compatibility app entry points
+legacy/               Preserved legacy GUI implementations and shims
+demo/                 Named DTA fixtures
+tests/                MATLAB tests
+scripts/              Test runner scripts
+docs/                 Architecture, data model, parser, validation, history, and backlog docs
 ```
 
----
+## Documentation
 
-## Documentation Map
+- `AGENTS.md`: agent and developer operating rules.
+- `CHANGELOG.md`: release-style change history.
+- `docs/architecture.md`: current architecture and boundaries.
+- `docs/data_model.md`: current item/result/session schemas.
+- `docs/file_format_notes.md`: DTA parser assumptions.
+- `docs/validation_protocol.md`: behavior-preservation validation.
+- `docs/refactor_history.md`: archived Phase 0-10 migration history.
+- `docs/backlog.md`: future ideas and deferred work.
 
-- `AGENTS.md`: AI/Codex operating instructions.
-- `CHANGELOG.md`: concise user-facing change record.
-- `docs/architecture.md`: target layering and module boundaries.
-- `docs/data_model.md`: planned struct models and naming conventions.
-- `docs/file_format_notes.md`: Gamry DTA parser assumptions.
-- `docs/validation_protocol.md`: test and reference-output strategy.
-- `docs/refactor_history.md`: archived Phase 0-10 migration history, behavior notes, and open risks.
-- `docs/backlog.md`: future features and deferred work.
+## Preservation Rule
 
----
-
-## Important Refactor Rule
-
-Do not change scientific algorithms during structural refactoring unless explicitly requested.
-
-Legacy behavior should remain the reference for parser outputs, pulse timing, CIC/CSC/resistance calculations, plotting behavior, and CSV export formats.
+Do not change scientific formulas, parser behavior, pulse detection behavior, GUI behavior, plot labels, or CSV/export formats during repository hygiene work.
