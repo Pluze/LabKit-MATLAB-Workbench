@@ -10,7 +10,8 @@ All notable user-facing and maintainer-facing changes are recorded here.
 
 ### Changed
 
-- CIC and VT resistance app delegates now call the preserved legacy reference implementations directly instead of routing through removed root wrappers.
+- Replaced `gamrywb_VTResistance_app`'s legacy delegate with a package-backed VT resistance app implementation.
+- The remaining CIC app delegate calls the preserved legacy reference implementation directly instead of routing through removed root wrappers.
 - GUI compatibility tests now treat `apps/` as the runtime entrypoint surface and `legacy/` as explicit reference code.
 
 ## v1.0.0 - 2026-05-28
@@ -48,7 +49,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 
 ### Deferred
 
-- Package-backed replacements for the remaining app delegates.
+- Package-backed replacement for the remaining CIC app delegate.
 - Unified workbench GUI.
 - Complete stored golden MAT reference outputs for every major analysis output.
 - Broader parser unification and support for additional Gamry experiment types.

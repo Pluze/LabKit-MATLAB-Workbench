@@ -11,11 +11,11 @@ What that means:
 - Current runtime entry points live under `apps/`.
 - Preserved GUI implementations remain under `legacy/` as behavior references, not default-path commands.
 - CIC, VT resistance, CV/CSC, chrono overlay, and EIS overlay/export workflows have package-backed parser, analysis, plotting, export, or UI helper coverage where v1.0 required it.
-- `gamrywb_EIS_app` and `gamrywb_CSC_app` are package-backed; CIC and VT resistance app entry points currently delegate to preserved legacy GUIs.
+- `gamrywb_EIS_app`, `gamrywb_CSC_app`, and `gamrywb_VTResistance_app` are package-backed; the CIC app entry point currently delegates to the preserved legacy GUI.
 
 Deferred beyond v1.0:
 
-- Replacing app delegates with new package-backed app internals.
+- Replacing the remaining CIC app delegate with package-backed app internals.
 - Unified workbench GUI.
 - Stored golden MAT references for every major analysis output.
 
@@ -33,7 +33,7 @@ gamrywb_CSC_app
 gamrywb_EIS_app
 ```
 
-`gamrywb_EIS_app` and `gamrywb_CSC_app` are package-backed app entry points. CIC and VT resistance `gamrywb_*_app` entry points currently delegate to behavior-preserved legacy GUIs and remain compatibility entry points.
+`gamrywb_EIS_app`, `gamrywb_CSC_app`, and `gamrywb_VTResistance_app` are package-backed app entry points. The CIC `gamrywb_*_app` entry point currently delegates to a behavior-preserved legacy GUI and remains a compatibility entry point.
 
 ## Running Tests
 

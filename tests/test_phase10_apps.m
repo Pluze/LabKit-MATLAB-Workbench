@@ -28,6 +28,7 @@ function test_phase10_apps()
 
     vtAppFile = fullfile(root, 'apps', 'gamrywb_VTResistance_app.m');
     vtSource = fileread(vtAppFile);
+    assert(~contains(vtSource, '_legacy'), 'gamrywb_VTResistance_app should not call legacy implementations.');
     assert(~contains(vtSource, 'gamry_VT_resistance_gui('), ...
         'gamrywb_VTResistance_app should not delegate to a removed root legacy-compatible VT wrapper.');
 

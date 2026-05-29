@@ -27,7 +27,7 @@ gamrywb_CSC_app
 gamrywb_EIS_app
 ```
 
-`apps/gamrywb_EIS_app.m` and `apps/gamrywb_CSC_app.m` are package-backed and do not delegate to legacy. The CIC and VT resistance `apps/gamrywb_*_app.m` files are compatibility entry points that still delegate to the preserved legacy GUIs.
+`apps/gamrywb_EIS_app.m`, `apps/gamrywb_CSC_app.m`, and `apps/gamrywb_VTResistance_app.m` are package-backed and do not delegate to legacy. The CIC `apps/gamrywb_*_app.m` file is a compatibility entry point that still delegates to the preserved legacy GUI.
 
 `startup_gamrywb` does not add `legacy/` to the default path. Root-level original command wrappers have been removed, so the old command names no longer resolve by default.
 
@@ -84,5 +84,5 @@ Avoid:
 - new parser copies in GUI files
 - duplicated CSV formatting in GUI files
 - MATLAB classes before struct schemas stabilize
-- replacing remaining CIC and VT resistance compatibility app delegates before schemas and validation are ready
+- replacing the remaining CIC compatibility app delegate before schemas and validation are ready
 - starting a unified GUI before package-backed app internals are stable
