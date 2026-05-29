@@ -395,13 +395,13 @@ Already done:
 - `disableAxesInteractivity`
 - `hardResetAxis`
 - `appendLog`
+- `refreshListboxItems` for multiselect file listboxes
 
 Next helpers:
 
 ```text
 +gamrywb/+ui/createLabeledDropdown.m
 +gamrywb/+ui/createLabeledEditField.m
-+gamrywb/+ui/refreshListboxItems.m
 ```
 
 Recommended commit:
@@ -624,11 +624,10 @@ finish low-risk UI primitives
 
 Suggested sequence:
 
-1. Extract `refreshListboxItems` for Chrono and EIS.
-2. Extract simple labeled dropdown/edit-field helpers where they reduce repeated row boilerplate.
-3. Reassess whether file/session behavior should move into `+gamrywb/+app` or remain split between app and UI.
+1. Extract simple labeled dropdown/edit-field helpers where they reduce repeated row boilerplate.
+2. Reassess whether file/session behavior should move into `+gamrywb/+app` or remain split between app and UI.
 
-Do not start `createTwoPaneShell` until listbox refresh and simple labeled controls are stable.
+Do not start `createTwoPaneShell` until simple labeled controls are stable.
 
 ---
 
@@ -643,6 +642,7 @@ Use this section to record meaningful changes in strategy.
 - axes clear/reset/interactivity helpers are already extracted into +gamrywb/+ui
 - next route changed from "extract first primitives" to "finish remaining low-risk primitives, then file/session behavior"
 - appendLog is now extracted and used by all app entry points
+- refreshListboxItems is extracted for Chrono/EIS multiselect file listboxes
 ```
 
 ---

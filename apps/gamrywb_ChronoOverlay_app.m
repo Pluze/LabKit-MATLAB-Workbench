@@ -266,24 +266,11 @@ function varargout = gamrywb_ChronoOverlay_app(varargin)
 
     function refreshFileList()
         if isempty(S.items)
-            lbFiles.Items = {};
-            lbFiles.Value = {};
+            gamrywb.ui.refreshListboxItems(lbFiles, {});
             return;
         end
         names = {S.items.name};
-        lbFiles.Items = names;
-        if isempty(lbFiles.Value)
-            lbFiles.Value = names;
-        else
-            existing = string(lbFiles.Value);
-            valid = ismember(existing, string(names));
-            selected = cellstr(existing(valid));
-            if isempty(selected)
-                lbFiles.Value = names;
-            else
-                lbFiles.Value = selected;
-            end
-        end
+        gamrywb.ui.refreshListboxItems(lbFiles, names);
     end
 
     function refreshPlots()

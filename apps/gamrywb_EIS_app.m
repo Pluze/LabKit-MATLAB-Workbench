@@ -305,26 +305,12 @@ function varargout = gamrywb_EIS_app(varargin)
 
     function refreshFileList()
         if isempty(S.items)
-            lbFiles.Items = {};
-            lbFiles.Value = {};
+            gamrywb.ui.refreshListboxItems(lbFiles, {});
             return;
         end
 
         names = {S.items.name};
-        lbFiles.Items = names;
-        if isempty(lbFiles.Value)
-            lbFiles.Value = names;
-            return;
-        end
-
-        current = string(lbFiles.Value);
-        valid = ismember(current, string(names));
-        selected = cellstr(current(valid));
-        if isempty(selected)
-            lbFiles.Value = names;
-        else
-            lbFiles.Value = selected;
-        end
+        gamrywb.ui.refreshListboxItems(lbFiles, names);
     end
 
     function refreshPlot()
