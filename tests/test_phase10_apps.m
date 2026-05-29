@@ -43,6 +43,10 @@ function test_phase10_apps()
 
     vtAppFile = fullfile(root, 'apps', 'gamrywb_VTResistance_app.m');
     vtSource = fileread(vtAppFile);
+    vtLaunchFile = fullfile(root, '+gamrywb', '+app', 'launchVTResistanceApp.m');
+    assert(exist(vtLaunchFile, 'file') == 2, 'Missing package launch function for VT resistance app.');
+    assert(contains(vtSource, 'gamrywb.app.launchVTResistanceApp'), ...
+        'gamrywb_VTResistance_app should delegate to the package launch function.');
     assert(~contains(vtSource, '_legacy'), 'gamrywb_VTResistance_app should not call legacy implementations.');
     assert(~contains(vtSource, 'gamry_VT_resistance_gui('), ...
         'gamrywb_VTResistance_app should not delegate to a removed root legacy-compatible VT wrapper.');

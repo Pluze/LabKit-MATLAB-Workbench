@@ -11,6 +11,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 
 ### Changed
 
+- Moved VT resistance app assembly behind `gamrywb.app.launchVTResistanceApp` while keeping the public `apps/` entry point.
 - Moved EIS app assembly behind `gamrywb.app.launchEISApp` while keeping the public `apps/` entry point.
 - Moved Chrono overlay app assembly behind `gamrywb.app.launchChronoOverlayApp` while keeping the public `apps/` entry point.
 - Extracted shared initial axes creation for Chrono/EIS overlay apps into `+gamrywb/+ui`.
