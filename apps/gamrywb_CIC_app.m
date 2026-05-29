@@ -762,11 +762,7 @@ function varargout = gamrywb_CIC_app(varargin)
 
     %% ===================== Logging =====================
     function addLog(msg)
-        ts = datestr(now,'HH:MM:SS');
-        old = txtLog.Value;
-        old{end+1} = sprintf('[%s] %s', ts, char(msg));
-        txtLog.Value = old;
-        drawnow limitrate
+        gamrywb.ui.appendLog(txtLog, msg);
     end
 
 end

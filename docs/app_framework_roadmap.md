@@ -394,11 +394,11 @@ Already done:
 - `clearAxisObjects`
 - `disableAxesInteractivity`
 - `hardResetAxis`
+- `appendLog`
 
 Next helpers:
 
 ```text
-+gamrywb/+ui/appendLog.m
 +gamrywb/+ui/createLabeledDropdown.m
 +gamrywb/+ui/createLabeledEditField.m
 +gamrywb/+ui/refreshListboxItems.m
@@ -624,14 +624,11 @@ finish low-risk UI primitives
 
 Suggested sequence:
 
-1. Extract `gamrywb.ui.appendLog`.
-2. Apply it to Chrono overlay and EIS first.
-3. Run default and GUI tests.
-4. If stable, apply it to CIC, VT, and CSC.
-5. Extract `refreshListboxItems` for Chrono and EIS.
-6. Reassess whether file/session behavior should move into `+gamrywb/+app` or remain split between app and UI.
+1. Extract `refreshListboxItems` for Chrono and EIS.
+2. Extract simple labeled dropdown/edit-field helpers where they reduce repeated row boilerplate.
+3. Reassess whether file/session behavior should move into `+gamrywb/+app` or remain split between app and UI.
 
-Do not start `createTwoPaneShell` until `appendLog` and listbox refresh are stable.
+Do not start `createTwoPaneShell` until listbox refresh and simple labeled controls are stable.
 
 ---
 
@@ -645,6 +642,7 @@ Use this section to record meaningful changes in strategy.
 - all app entry points are package-backed
 - axes clear/reset/interactivity helpers are already extracted into +gamrywb/+ui
 - next route changed from "extract first primitives" to "finish remaining low-risk primitives, then file/session behavior"
+- appendLog is now extracted and used by all app entry points
 ```
 
 ---
