@@ -54,6 +54,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Updated the app framework roadmap so completed app migrations are marked complete and the next-phase guidance focuses on extension contracts and guardrails.
 - Corrected the documented single-select file-list refresh API signature to include the loaded-count text field.
 - Folded VT/CIC single-file selection and clear-all callback choreography back into the owning app files so reusable UI helpers do not own app session workflow.
+- Folded Chrono/EIS info and log text-area construction back into the owning app files and removed the row-hardcoded reusable wrappers.
 - Routed the EIS app's file loading through the GUI-free DTA facade instead of constructing EIS items directly in the app layer.
 - Routed the Chrono overlay app's file loading through the GUI-free DTA facade while keeping pulse-gap alignment in the app workflow.
 - Routed the CSC app's CV/CT file loading through the GUI-free DTA facade instead of parsing CV/CT files directly in the app layer.
