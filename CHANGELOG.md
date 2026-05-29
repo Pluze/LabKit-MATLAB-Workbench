@@ -11,6 +11,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 
 ### Changed
 
+- Extracted shared app axes reset and interactivity helpers into `+gamrywb/+ui`.
 - Replaced `gamrywb_VTResistance_app`'s legacy delegate with a package-backed VT resistance app implementation.
 - Replaced `gamrywb_CIC_app`'s legacy delegate with a package-backed CIC voltage-transient app implementation.
 - Added `gamrywb_ChronoOverlay_app` as the package-backed app entry point for chrono overlay/export.

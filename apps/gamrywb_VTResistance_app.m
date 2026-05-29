@@ -215,7 +215,7 @@ function varargout = gamrywb_VTResistance_app(varargin)
     axTop = uiaxes(right);
     axTop.Layout.Row = 2;
     title(axTop,'Top Plot');
-    disableAxesInteractivity(axTop);
+    gamrywb.ui.disableAxesInteractivity(axTop);
 
     pBotCtl = uipanel(right,'Title','Bottom Plot');
     pBotCtl.Layout.Row = 3;
@@ -232,7 +232,7 @@ function varargout = gamrywb_VTResistance_app(varargin)
     axBottom = uiaxes(right);
     axBottom.Layout.Row = 4;
     title(axBottom,'Bottom Plot');
-    disableAxesInteractivity(axBottom);
+    gamrywb.ui.disableAxesInteractivity(axBottom);
     if nargout == 1
         varargout{1} = fig;
     end
@@ -435,8 +435,8 @@ function varargout = gamrywb_VTResistance_app(varargin)
     end
 
     function refreshPlots()
-        clearAxisObjects(axTop);
-        clearAxisObjects(axBottom);
+        gamrywb.ui.clearAxisObjects(axTop);
+        gamrywb.ui.clearAxisObjects(axBottom);
         if isempty(S.items) || isempty(S.current) || S.current < 1 || S.current > numel(S.items)
             title(axTop,'Top Plot');
             title(axBottom,'Bottom Plot');
@@ -560,29 +560,8 @@ function varargout = gamrywb_VTResistance_app(varargin)
     end
 
     function resetAxesToDefaultState()
-        hardResetAxis(axTop, 'Top Plot');
-        hardResetAxis(axBottom, 'Bottom Plot');
-    end
-
-    function hardResetAxis(ax, ttl)
-        cla(ax, 'reset');
-        ax.NextPlot = 'replace';
-        ax.XLimMode = 'auto';
-        ax.YLimMode = 'auto';
-        title(ax, ttl);
-        xlabel(ax, '');
-        ylabel(ax, '');
-        grid(ax, 'off');
-        box(ax, 'on');
-    end
-
-    function clearAxisObjects(ax)
-        if ~isempty(ax.Children)
-            delete(ax.Children);
-        end
-        hold(ax, 'off');
-        ax.XLimMode = 'auto';
-        ax.YLimMode = 'auto';
+        gamrywb.ui.hardResetAxis(axTop, 'Top Plot');
+        gamrywb.ui.hardResetAxis(axBottom, 'Bottom Plot');
     end
 
     function exportResultsCSV()
@@ -638,20 +617,6 @@ function varargout = gamrywb_VTResistance_app(varargin)
         drawnow limitrate
     end
 
-    function disableAxesInteractivity(ax)
-        try
-            disableDefaultInteractivity(ax);
-        catch
-        end
-        try
-            ax.Interactions = [];
-        catch
-        end
-        try
-            ax.Toolbar.Visible = 'off';
-        catch
-        end
-    end
 end
 
 function idx = nearestIndex(x, xq)

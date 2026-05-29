@@ -43,7 +43,7 @@ The app files are package-backed and do not delegate to legacy GUI files.
 +gamrywb/+util      small generic helpers
 ```
 
-Package functions should not depend on GUI state or call `uialert`.
+Analysis, data, and IO package functions should not depend on GUI state or call `uialert`. Plot/UI helpers may accept explicit graphics handles and should keep side effects limited to those handles.
 
 Analysis functions should return status through result structs, for example:
 
@@ -60,7 +60,7 @@ The GUI decides how to display that status.
 - `+data`: table/column accessors, CV/CT selected-column access, chrono item construction, EIS item construction, session add/remove helpers.
 - `+analysis`: pulse detection, pulse-gap alignment, VT resistance, CIC, CV/CSC, EIS axis-value generation, batch summaries.
 - `+plot`: chrono VT/IT overlay, CV/CT selected-column plotting, EIS overlay plotting.
-- `+ui`: VT resistance and CIC batch table display data.
+- `+ui`: VT resistance and CIC batch table display data; shared app axes reset/interactivity helpers.
 - `+util`: low-risk helpers used by parser, data, analysis, and export code.
 
 ## Boundaries To Preserve
