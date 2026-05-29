@@ -2,15 +2,15 @@
 
 This roadmap defines the next stable architecture direction for Gamry Electrochemistry Workbench.
 
-The core design goal is a codebase with three reusable, independently understandable parts:
+The core design goal is a codebase with two reusable library parts plus independent apps:
 
 ```text
-GUI reuse framework
-DTA parsing/loading driver
-experiment-specific apps
+Gamry/DTA parsing-loading library
+scientific-app base GUI library
+experiment-specific apps outside the reusable library
 ```
 
-Future work should let a developer add a new experiment, a new GUI shell, or a new DTA format with minimal changes to the other two parts. The modules should also remain reusable outside this repository when a downstream project only needs the GUI framework or only needs DTA loading/parsing.
+If utilities are needed by both reusable libraries, keep them in a smaller shared utility base. Future work should let a developer add a new experiment, a new GUI shell, or a new DTA format with minimal changes to the other two parts. The modules should also remain reusable outside this repository when a downstream project only needs the GUI framework or only needs DTA loading/parsing.
 
 Experiment-specific scientific workflow belongs with the app, not in the reusable library. This includes formulas, analysis options, result schemas, plot choices, annotations, summaries, and export formats. Keep only genuinely broad, parameter-light math/data utilities in `+gamrywb`.
 
@@ -64,7 +64,7 @@ completely new app type: about 6/10 convenient
 Why similar apps are now easier:
 
 - public app entry points are thin wrappers under `apps/`
-- app bodies should live under `apps/private`; EIS is the first reference migration
+- app bodies should live under `apps/private`; EIS and Chrono overlay are the first reference migrations
 - common GUI shells and panels live under `+gamrywb/+ui`
 - scientific calculations live under `+gamrywb/+analysis`
 - plotting helpers live under `+gamrywb/+plot`
@@ -82,24 +82,24 @@ Therefore, the next high-value step is adopting the DTA-facing API in one existi
 
 ## 2. Three-Layer Architecture
 
-The project should stabilize around three reusable layers:
+The project should stabilize around two reusable libraries and one non-library app layer:
 
 ```text
-Layer 1: GUI framework
-Layer 2: DTA processing API
-Layer 3: App-specific scientific workflow
+Library 1: scientific-app GUI framework
+Library 2: Gamry/DTA processing API
+App layer: app-specific scientific workflow
 ```
 
-Each layer should be independently useful.
+Each reusable library should be independently useful.
 
 Layer independence targets:
 
 ```text
-GUI framework:
+Scientific-app GUI framework:
   reusable controls, shells, layout, and state-display helpers
   no parser calls, scientific equations, export columns, or Gamry-only assumptions
 
-DTA processing API:
+Gamry/DTA processing API:
   DTA discovery, type detection, parser dispatch, item normalization, and status/reporting
   no figures, controls, callbacks, app plot choices, or experiment-specific calculations
 
@@ -424,7 +424,7 @@ Do not expand this into a schema framework until an app migration proves the mis
 
 ### Phase C: Move app implementations out of `+gamrywb` while using the DTA facade
 
-Status: started with EIS as the reference app-structure migration, and EIS/Chrono overlay as DTA facade migrations.
+Status: started with EIS and Chrono overlay as reference app-structure and DTA facade migrations.
 
 Recommended candidates:
 
@@ -443,18 +443,18 @@ Goal:
 
 The EIS app implementation now lives under `apps/private`, not under `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "eis")` for file loading.
 
-The Chrono overlay app now uses `gamrywb.dta.loadFile(filepath, "chrono")` for file loading, while keeping pulse-gap alignment, plotting, and export choices in the app-specific workflow layer.
+The Chrono overlay app implementation now lives under `apps/private`, not under `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "chrono")` for file loading, while keeping pulse-gap alignment, plotting, and export choices in the app-specific workflow layer.
 
 These are the reference paths for adopting the DTA facade in the remaining apps.
 
 Remaining migration candidates:
 
 ```text
-Chrono overlay: move implementation from +gamrywb/+app to apps/private
 VT resistance: replace direct chrono parsing in the app loader
 CIC: replace direct chrono parsing in the app loader
 CSC: replace direct CV/CT parsing in the app loader
 VT/CIC/CSC: move experiment-specific calculations, plots, and export formatting toward apps/private when each app is migrated
+Generic helpers still in +gamrywb/+app: move toward the GUI base library if they remain useful after app migrations
 ```
 
 Suggested commit:
@@ -463,6 +463,7 @@ Suggested commit:
 refactor: use dta facade in EIS app
 refactor: use dta facade in chrono overlay app
 refactor: move EIS app implementation out of gamrywb package
+refactor: move chrono overlay app implementation out of gamrywb package
 ```
 
 ### Phase D: Define lightweight extension contracts

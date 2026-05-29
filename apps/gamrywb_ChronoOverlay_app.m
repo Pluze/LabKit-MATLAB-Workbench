@@ -1,7 +1,7 @@
 function varargout = gamrywb_ChronoOverlay_app(varargin)
-%GAMRYWB_CHRONOOVERLAY_APP Package-backed chrono overlay/export app entry point.
-% Load multiple Gamry .DTA files, overlay voltage/current curves, and
-% export aligned curves to CSV.
+%GAMRYWB_CHRONOOVERLAY_APP Chrono overlay/export app entry point.
+% The app implementation lives under apps/private and composes +gamrywb GUI
+% and DTA APIs while keeping overlay workflow behavior in the app layer.
 
-    [varargout{1:nargout}] = gamrywb.app.launchChronoOverlayApp(varargin{:});
+    [varargout{1:nargout}] = launchChronoOverlayApp(varargin{:});
 end

@@ -14,7 +14,20 @@ struct-based item/session models
 +gamrywb package functions
 ```
 
-The reusable `+gamrywb` package should provide GUI and DTA APIs that apps compose. Experiment app implementations should live under `apps/` rather than being absorbed into the reusable library package. The EIS app is the first reference app moved to `apps/private`.
+The reusable `+gamrywb` package should provide two library surfaces that apps compose:
+
+```text
+Gamry/DTA library:
+  DTA discovery, parser dispatch, normalized file loading, table/data access, sessions
+
+Scientific-app GUI base library:
+  generic shells, controls, panels, list refresh, logs, result surfaces, and UI state helpers
+
+Shared utility base:
+  only small cross-cutting utilities that are not experiment-specific
+```
+
+Experiment app implementations should live under `apps/` rather than being absorbed into the reusable library package. The EIS and Chrono overlay apps are the first reference apps moved to `apps/private`.
 
 ## Entrypoints
 
@@ -49,18 +62,21 @@ The app files are package-backed and do not delegate to legacy GUI files.
 The reusable library should be understandable as three layers, even though MATLAB package folders remain practical and granular:
 
 ```text
-Layer 1: GUI reuse framework
+Library 1: scientific-app GUI base
   +gamrywb/+ui
   reusable shells, panels, controls, display-data helpers, and handle-scoped UI utilities
 
-Layer 2: DTA parsing/loading driver
+Library 2: Gamry/DTA parsing and loading
   +gamrywb/+dta
   +gamrywb/+io parser functions
   +gamrywb/+data item/session construction and table/column access
 
-Layer 3: experiment-specific app design
+Not library code: experiment-specific app design
   apps/ entry points and apps/private app implementations
   experiment-specific analysis, plotting, result summaries, and exports
+
+Shared utility base:
+  +gamrywb/+util
 ```
 
 This map is a design boundary, not a reason to force every function into exactly three folders. Keep granular packages when they make code easier to inspect. Refactor or remove helpers when they obscure which layer owns a decision.
@@ -80,8 +96,8 @@ The GUI decides how to display that status.
 
 ## Current Package Surface
 
-- `apps/`: user-facing app entry points. EIS has moved its implementation to `apps/private` as the reference pattern for app code living outside the reusable `+gamrywb` library.
-- `+app`: transitional shared app/session orchestration helpers and remaining app launch implementations. New app-specific science should not be added here; existing launch implementations should migrate toward `apps/private` when touched.
+- `apps/`: user-facing app entry points and app-specific implementations. EIS and Chrono overlay have moved their implementations to `apps/private` as the reference pattern for app code living outside the reusable `+gamrywb` library.
+- `+app`: transitional shared app/session orchestration helpers and remaining app launch implementations. This package is not part of the desired final structure; generic helpers should migrate toward the GUI base library, and app implementations should migrate toward `apps/private` when touched.
 - `+dta`: GUI-free facade for supported DTA family detection, single-file loading, and batch loading with status/report structs. It delegates to existing `+io` parser and `+data` item-construction helpers.
 - `+io`: DTA parsers, folder discovery, session save/load, and transitional app-specific export helpers. Export helpers that encode experiment-specific formats should migrate toward app implementations when the owning app is moved.
 - `+data`: table/column accessors, CV/CT selected-column access, chrono item construction, EIS item construction, session add/remove helpers.

@@ -1,5 +1,5 @@
 function varargout = launchChronoOverlayApp(varargin)
-%LAUNCHCHRONOOVERLAYAPP Launch the package-backed chrono overlay/export app.
+%LAUNCHCHRONOOVERLAYAPP Launch the chrono overlay/export app from apps/private.
 % Load multiple Gamry .DTA files, overlay voltage/current curves, and
 % export aligned curves to CSV.
 
