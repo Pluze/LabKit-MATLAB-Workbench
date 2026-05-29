@@ -215,15 +215,9 @@ function varargout = gamrywb_ChronoOverlay_app(varargin)
         if isempty(S.items) || isempty(lbFiles.Value)
             return;
         end
-        names = string(lbFiles.Value);
-        removeNames = {};
-        for i = 1:numel(S.items)
-            if any(names == string(S.items(i).name))
-                removeNames{end+1} = S.items(i).name; %#ok<AGROW>
-                addLog(sprintf('Removed: %s', S.items(i).name));
-            end
-        end
-        [S.session, ~] = gamrywb.data.removeFilesFromSession(S.session, removeNames);
+        callbacks = struct();
+        callbacks.onRemoved = @(name, ~) addLog(sprintf('Removed: %s', name));
+        [S.session, ~] = gamrywb.app.removeSelectedItemsFromSession(S.session, lbFiles.Value, callbacks);
         S.items = S.session.items;
         refreshFileList();
         refreshPlots();

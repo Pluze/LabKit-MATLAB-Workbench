@@ -29,8 +29,28 @@ function test_appSessionHelpers()
     assert(isempty(report3.added), 'Existing char filepath should not report added files.');
     assert(isequal(report3.skipped, {'/tmp/a.DTA'}), 'Existing char filepath should report a skipped file.');
 
+    removed = {};
+    removeCallbacks = struct();
+    removeCallbacks.onRemoved = @(name, item) recordRemoved(name, item.filepath);
+    [session, removeReport] = gamrywb.app.removeSelectedItemsFromSession( ...
+        session, {'c.DTA', 'a.DTA'}, removeCallbacks);
+    assert(numel(session.items) == 1, 'Selected names should be removed from the session.');
+    assert(strcmp(session.items(1).name, 'b.DTA'), 'Unselected item should remain.');
+    assert(isequal(removed(:,1).', {'a.DTA', 'c.DTA'}), ...
+        'Remove callbacks should follow session item order, not selection order.');
+    assert(isequal(removeReport.removed, {'/tmp/a.DTA', '/tmp/c.DTA'}), ...
+        'Remove report should preserve underlying data helper labels.');
+
+    [session, removeReport2] = gamrywb.app.removeSelectedItemsFromSession(session, string.empty(0, 1), removeCallbacks);
+    assert(numel(session.items) == 1, 'Empty selection should not remove items.');
+    assert(isempty(removeReport2.removed), 'Empty selection should not report removed files.');
+
     function recordEvent(kind, filepath, detail)
         events(end+1, :) = {kind, filepath, detail}; %#ok<AGROW>
+    end
+
+    function recordRemoved(name, filepath)
+        removed(end+1, :) = {name, filepath}; %#ok<AGROW>
     end
 end
 
