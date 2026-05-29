@@ -12,7 +12,7 @@ function test_gui_layout_controls()
 end
 
 function checkMultiDTA()
-    fig = launchFigure('gamry_multiDTA_plot_export_gui', 'Gamry Multi-DTA Plot Export GUI');
+    fig = launchLegacyFigure('gamry_multiDTA_plot_export_gui_legacy', 'Gamry Multi-DTA Plot Export GUI');
     assertFigureMinimumSize(fig, 1400, 850);
     assertComponentCounts(fig, struct('Button', 5, 'CheckBox', 2, 'DropDown', 1, ...
         'ListBox', 1, 'TextArea', 2, 'Axes', 2));
@@ -30,7 +30,7 @@ function checkMultiDTA()
 end
 
 function checkEIS()
-    fig = launchFigure('gamry_EIS_multiDTA_plot_gui', 'Gamry EIS Multi-DTA Plot GUI');
+    fig = launchFigure('gamrywb_EIS_app', 'Gamry EIS Multi-DTA Plot GUI');
     assertFigureMinimumSize(fig, 1400, 850);
     assertComponentCounts(fig, struct('Button', 5, 'CheckBox', 5, 'DropDown', 2, ...
         'ListBox', 1, 'TextArea', 3, 'Axes', 1));
@@ -46,7 +46,7 @@ function checkEIS()
 end
 
 function checkCVCSC()
-    fig = launchFigure('gamry_CV_CSC_dta_gui', 'Gamry DTA GUI (literature CSC)');
+    fig = launchFigure('gamrywb_CSC_app', 'Gamry DTA GUI (literature CSC)');
     assertFigureMinimumSize(fig, 1500, 900);
     assertComponentCounts(fig, struct('Button', 7, 'CheckBox', 6, 'DropDown', 6, ...
         'TextArea', 1, 'Axes', 2));
@@ -66,7 +66,7 @@ function checkCVCSC()
 end
 
 function checkVTResistance()
-    fig = launchFigure('gamry_VT_resistance_gui', 'Gamry VT Steady Resistance GUI');
+    fig = launchFigure('gamrywb_VTResistance_app', 'Gamry VT Steady Resistance GUI');
     assertFigureMinimumSize(fig, 1600, 900);
     assertComponentCounts(fig, struct('Button', 8, 'CheckBox', 4, 'DropDown', 7, ...
         'ListBox', 1, 'Table', 1, 'TextArea', 1, 'Axes', 2));
@@ -93,7 +93,7 @@ function checkVTResistance()
 end
 
 function checkCIC()
-    fig = launchFigure('gamry_CIC_VT_gui_paperlabels', 'Gamry CIC GUI (Voltage Transient)');
+    fig = launchFigure('gamrywb_CIC_app', 'Gamry CIC GUI (Voltage Transient)');
     assertFigureMinimumSize(fig, 1600, 900);
     assertComponentCounts(fig, struct('Button', 7, 'CheckBox', 6, 'DropDown', 8, ...
         'ListBox', 1, 'Table', 1, 'TextArea', 1, 'Axes', 2));
@@ -119,6 +119,14 @@ function checkCIC()
     invokeButton(fig, 'Refresh plots');
     invokeButton(fig, 'Reset axes');
     invokeButton(fig, 'Clear all');
+end
+
+function fig = launchLegacyFigure(entryName, expectedTitle)
+    root = fileparts(fileparts(mfilename('fullpath')));
+    legacyDir = fullfile(root, 'legacy');
+    addpath(legacyDir, '-end');
+    cleanupLegacyPath = onCleanup(@() rmpath(legacyDir)); %#ok<NASGU>
+    fig = launchFigure(entryName, expectedTitle);
 end
 
 function fig = launchFigure(entryName, expectedTitle)

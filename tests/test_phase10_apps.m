@@ -25,4 +25,14 @@ function test_phase10_apps()
     assert(~contains(cscSource, '_legacy'), 'gamrywb_CSC_app should not call legacy implementations.');
     assert(~contains(cscSource, 'gamry_CV_CSC_dta_gui('), ...
         'gamrywb_CSC_app should not delegate to the root legacy-compatible CSC wrapper.');
+
+    vtAppFile = fullfile(root, 'apps', 'gamrywb_VTResistance_app.m');
+    vtSource = fileread(vtAppFile);
+    assert(~contains(vtSource, 'gamry_VT_resistance_gui('), ...
+        'gamrywb_VTResistance_app should not delegate to a removed root legacy-compatible VT wrapper.');
+
+    cicAppFile = fullfile(root, 'apps', 'gamrywb_CIC_app.m');
+    cicSource = fileread(cicAppFile);
+    assert(~contains(cicSource, 'gamry_CIC_VT_gui_paperlabels('), ...
+        'gamrywb_CIC_app should not delegate to a removed root legacy-compatible CIC wrapper.');
 end

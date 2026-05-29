@@ -8,8 +8,8 @@ The v1.0 behavior-preserving package refactor is complete.
 
 What that means:
 
-- Original GUI commands still run through compatibility wrappers.
-- Preserved GUI implementations remain under `legacy/` as behavior references and compatibility targets.
+- Current runtime entry points live under `apps/`.
+- Preserved GUI implementations remain under `legacy/` as behavior references, not default-path commands.
 - CIC, VT resistance, CV/CSC, chrono overlay, and EIS overlay/export workflows have package-backed parser, analysis, plotting, export, or UI helper coverage where v1.0 required it.
 - `gamrywb_EIS_app` and `gamrywb_CSC_app` are package-backed; CIC and VT resistance app entry points currently delegate to preserved legacy GUIs.
 
@@ -26,18 +26,11 @@ From the repository root in MATLAB:
 ```matlab
 startup_gamrywb
 
-% Recommended compatibility app entry points
+% App entry points
 gamrywb_CIC_app
 gamrywb_VTResistance_app
 gamrywb_CSC_app
 gamrywb_EIS_app
-
-% Legacy-compatible original commands
-gamry_CIC_VT_gui_paperlabels
-gamry_VT_resistance_gui
-gamry_CV_CSC_dta_gui
-gamry_EIS_multiDTA_plot_gui
-gamry_multiDTA_plot_export_gui
 ```
 
 `gamrywb_EIS_app` and `gamrywb_CSC_app` are package-backed app entry points. CIC and VT resistance `gamrywb_*_app` entry points currently delegate to behavior-preserved legacy GUIs and remain compatibility entry points.
@@ -63,7 +56,7 @@ The default runner covers pure functions. The optional GUI mode checks launch/la
 ```text
 +gamrywb/             Reusable MATLAB package modules
 apps/                 App entry points and compatibility delegates
-legacy/               Preserved legacy GUI implementations used as behavior references
+legacy/               Preserved legacy GUI implementations used as reference code
 demo/                 Named DTA fixtures
 tests/                MATLAB tests
 scripts/              Test runner scripts

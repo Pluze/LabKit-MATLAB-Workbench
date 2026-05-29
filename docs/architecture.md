@@ -5,7 +5,7 @@ This document describes the current package boundaries and compatibility layers.
 ## Core Shape
 
 ```text
-app entry points / legacy-compatible GUI entry points
+app entry points
     ↓
 package-backed app internals or preserved legacy GUI implementations
     ↓
@@ -16,27 +16,24 @@ struct-based item/session models
 
 The package owns reusable parsing, data access, analysis, plotting helpers, export helpers, session helpers, and small utilities. GUI files own layout, callbacks, user prompts, alerts, and display wiring.
 
-## Compatibility Entrypoints
+## Entrypoints
 
-Root-level commands preserve the original MATLAB names:
+The supported runtime entry points are:
 
 ```text
-gamry_CIC_VT_gui_paperlabels
-gamry_VT_resistance_gui
-gamry_CV_CSC_dta_gui
-gamry_EIS_multiDTA_plot_gui
-gamry_multiDTA_plot_export_gui
+gamrywb_CIC_app
+gamrywb_VTResistance_app
+gamrywb_CSC_app
+gamrywb_EIS_app
 ```
-
-They are thin wrappers that add `legacy/` to the path only when needed and call the matching `_legacy.m` implementation.
 
 `apps/gamrywb_EIS_app.m` and `apps/gamrywb_CSC_app.m` are package-backed and do not delegate to legacy. The CIC and VT resistance `apps/gamrywb_*_app.m` files are compatibility entry points that still delegate to the preserved legacy GUIs.
 
-`startup_gamrywb` does not add `legacy/` to the default path. This keeps legacy code out of the normal runtime path while preserving original command compatibility through root wrappers.
+`startup_gamrywb` does not add `legacy/` to the default path. Root-level original command wrappers have been removed, so the old command names no longer resolve by default.
 
 ## Legacy GUI Layer
 
-Files under `legacy/` are preserved behavior references and compatibility targets. They may call package helpers, but they still own:
+Files under `legacy/` are preserved behavior references. They may call package helpers, but they still own:
 
 - layout construction
 - UI controls and callbacks

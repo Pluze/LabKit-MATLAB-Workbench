@@ -17,10 +17,11 @@ Completed package areas:
 
 Compatibility retained:
 
-- root-level original GUI command names remain runnable
 - preserved GUI implementations remain under `legacy/`
 - `gamrywb_EIS_app` and `gamrywb_CSC_app` are package-backed; CIC and VT resistance app entry points delegate to preserved legacy GUIs
-- `startup_gamrywb` keeps `legacy/` off the default runtime path; root wrappers add it only when original command compatibility is used
+- `startup_gamrywb` keeps `legacy/` off the default runtime path
+
+Later cleanup removed the root-level original command wrappers. The old command names are now reference history rather than default runtime entry points.
 
 ## Migration Highlights
 

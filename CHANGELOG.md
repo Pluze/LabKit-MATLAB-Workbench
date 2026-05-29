@@ -4,7 +4,14 @@ All notable user-facing and maintainer-facing changes are recorded here.
 
 ## Unreleased
 
-- No unreleased changes yet.
+### Removed
+
+- Root-level wrappers for the original legacy GUI command names.
+
+### Changed
+
+- CIC and VT resistance app delegates now call the preserved legacy reference implementations directly instead of routing through removed root wrappers.
+- GUI compatibility tests now treat `apps/` as the runtime entrypoint surface and `legacy/` as explicit reference code.
 
 ## v1.0.0 - 2026-05-28
 
