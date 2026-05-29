@@ -83,7 +83,7 @@ This map is a design boundary, not a reason to force every function into exactly
 
 For concrete calling examples and a future app template, see `docs/api_usage.md`.
 
-`+gamrywb/+analysis` is intentionally narrow: it currently owns reusable pulse detection. App-specific export helpers in `+gamrywb/+io` are transitional when they encode experiment-specific decisions. Move those decisions toward app-side code when touching the related app. Keep only broadly reusable, parameter-light math and data utilities in the library.
+`+gamrywb/+analysis` is intentionally narrow: it currently owns reusable pulse detection. App-specific analysis, export-table construction, CSV schemas, and plot annotations now belong in the owning public app file. Do not reintroduce those experiment decisions into `+gamrywb/+analysis`, `+gamrywb/+io`, or a helper package unless a future repeated use case proves a lower-level utility is clearer.
 
 Analysis, data, and IO package functions should not depend on GUI state or call `uialert`. Plot/UI helpers may accept explicit graphics handles and should keep side effects limited to those handles.
 
@@ -102,7 +102,7 @@ The GUI decides how to display that status.
 
 - `apps/`: user-facing app entry points and app-specific implementations. All current app bodies are single public app source files, and app-specific workflow helpers are local functions in those files rather than reusable `+gamrywb` APIs or transitional app-helper packages.
 - `+dta`: GUI-free facade for supported DTA file discovery, family detection, single-file loading, batch loading, and folder loading with status/report structs. It delegates to existing `+io` parser and `+data` item-construction helpers.
-- `+io`: DTA parsers, folder discovery, and session save/load. Export helpers that encode experiment-specific formats should stay with the owning app rather than in reusable `+gamrywb`.
+- `+io`: DTA parsers, folder discovery, and session save/load. It should not contain app-specific export helpers or scientific result schemas.
 - `+data`: table/column accessors, CV/CT selected-column access, chrono item construction, EIS item construction, session add/remove/select/load helpers, and generic item/result summaries.
 - `+analysis`: pulse detection helpers. Experiment-specific calculations should migrate toward app-side code unless they are clearly general, parameter-light math utilities.
 - `+ui`: reusable GUI framework helpers, including generic axes creation/reset, selected-curve plotting, log append and log panel, generic listbox item refresh, multi-file and single-select file-panel, summary row, result table panel, plot-options panel, simple labeled-control, two-pane shell, tabbed dual-plot shell, and top/bottom plot-control construction/state helpers.
@@ -115,6 +115,6 @@ Avoid:
 - analysis functions reading UI controls
 - package functions writing directly to GUI text areas
 - new parser copies in GUI files
-- duplicated CSV formatting in GUI files
+- reusable package functions owning app-specific CSV schemas
 - MATLAB classes before struct schemas stabilize
 - starting a unified GUI before package-backed app internals are stable
