@@ -62,6 +62,7 @@ Current shared UI helpers:
 +gamrywb/+ui/refreshFileListbox.m
 +gamrywb/+ui/createLabeledDropdown.m
 +gamrywb/+ui/createLabeledEditField.m
++gamrywb/+ui/createTwoPaneShell.m
 +gamrywb/+ui/buildCICBatchTableData.m
 +gamrywb/+ui/buildVTResistanceBatchTableData.m
 ```
@@ -246,6 +247,7 @@ refreshListboxItems
 refreshFileListbox
 createLabeledDropdown
 createLabeledEditField
+createTwoPaneShell
 clearAxisObjects
 disableAxesInteractivity
 hardResetAxis
@@ -474,15 +476,17 @@ Reason:
 
 ### Phase D: Extract two-pane shell
 
+Status: started.
+
 Target apps:
 
 - Chrono overlay
 - EIS
 
-Candidate helper:
+Helper:
 
 ```text
-+gamrywb/+ui/createTwoPaneShell.m
++gamrywb/+ui/createTwoPaneShell.m    done for Chrono/EIS overlay apps
 ```
 
 Expected return struct:
@@ -667,6 +671,7 @@ Use this section to record meaningful changes in strategy.
 - refreshListboxItems is extracted for Chrono/EIS multiselect file listboxes
 - refreshFileListbox shares session-item-to-listbox refresh for Chrono/EIS
 - createLabeledDropdown and createLabeledEditField are extracted for Chrono/EIS plot option rows
+- createTwoPaneShell starts Phase D by sharing the Chrono/EIS outer two-pane shell while keeping app-specific controls and axes in app files
 - loadFilesIntoSession starts the +gamrywb/+app layer for duplicate-aware file/session loading in Chrono/EIS
 - removeSelectedItemsFromSession shares selected-file removal for Chrono/EIS while preserving app-owned refresh and plotting
 - selectItemsByNames shares empty-selection-as-all item lookup for Chrono/EIS plot and export paths

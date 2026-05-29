@@ -14,25 +14,17 @@ function varargout = gamrywb_ChronoOverlay_app(varargin)
     S.session = gamrywb.data.makeSession('chrono_overlay');
     S.items = S.session.items;
 
-    fig = uifigure( ...
-        'Name', 'Gamry Multi-DTA Plot Export GUI', ...
-        'Position', [80 60 1480 900]);
-
-    main = uigridlayout(fig, [1 2]);
-    main.ColumnWidth = {340, '1x'};
-    main.RowHeight = {'1x'};
-    main.Padding = [10 10 10 10];
-    main.ColumnSpacing = 10;
-
-    leftPanel = uipanel(main, 'Title', 'Controls');
-    leftPanel.Layout.Row = 1;
-    leftPanel.Layout.Column = 1;
-
-    left = uigridlayout(leftPanel, [5 1]);
-    left.RowHeight = {'fit', '1x', 'fit', 'fit', '1x'};
-    left.ColumnWidth = {'1x'};
-    left.Padding = [8 8 8 8];
-    left.RowSpacing = 10;
+    ui = gamrywb.ui.createTwoPaneShell( ...
+        'Gamry Multi-DTA Plot Export GUI', ...
+        [80 60 1480 900], ...
+        340, ...
+        'Overlay Plots', ...
+        [2 1], ...
+        {'1x', '1x'}, ...
+        10);
+    fig = ui.fig;
+    left = ui.leftGrid;
+    right = ui.rightGrid;
 
     pButtons = uipanel(left, 'Title', 'Files');
     pButtons.Layout.Row = 1;
@@ -117,16 +109,6 @@ function varargout = gamrywb_ChronoOverlay_app(varargin)
     txtLog = uitextarea(left, 'Editable', 'off');
     txtLog.Layout.Row = 5;
     txtLog.Value = {'GUI started.'};
-
-    rightPanel = uipanel(main, 'Title', 'Overlay Plots');
-    rightPanel.Layout.Row = 1;
-    rightPanel.Layout.Column = 2;
-
-    right = uigridlayout(rightPanel, [2 1]);
-    right.RowHeight = {'1x', '1x'};
-    right.ColumnWidth = {'1x'};
-    right.Padding = [8 8 8 8];
-    right.RowSpacing = 10;
 
     axV = uiaxes(right);
     axV.Layout.Row = 1;

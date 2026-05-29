@@ -26,25 +26,17 @@ function varargout = gamrywb_EIS_app(varargin)
         'Idc (A)', ...
         'Vdc (V)'};
 
-    fig = uifigure( ...
-        'Name', 'Gamry EIS Multi-DTA Plot GUI', ...
-        'Position', [80 60 1500 900]);
-
-    main = uigridlayout(fig, [1 2]);
-    main.ColumnWidth = {360, '1x'};
-    main.RowHeight = {'1x'};
-    main.Padding = [10 10 10 10];
-    main.ColumnSpacing = 10;
-
-    leftPanel = uipanel(main, 'Title', 'Controls');
-    leftPanel.Layout.Row = 1;
-    leftPanel.Layout.Column = 1;
-
-    left = uigridlayout(leftPanel, [5 1]);
-    left.RowHeight = {'fit', '1x', 'fit', 'fit', '1x'};
-    left.ColumnWidth = {'1x'};
-    left.Padding = [8 8 8 8];
-    left.RowSpacing = 10;
+    ui = gamrywb.ui.createTwoPaneShell( ...
+        'Gamry EIS Multi-DTA Plot GUI', ...
+        [80 60 1500 900], ...
+        360, ...
+        'Plot', ...
+        [2 1], ...
+        {'1x', 'fit'}, ...
+        8);
+    fig = ui.fig;
+    left = ui.leftGrid;
+    right = ui.rightGrid;
 
     pFiles = uipanel(left, 'Title', 'Files');
     pFiles.Layout.Row = 1;
@@ -161,16 +153,6 @@ function varargout = gamrywb_EIS_app(varargin)
     txtLog = uitextarea(left, 'Editable', 'off');
     txtLog.Layout.Row = 5;
     txtLog.Value = {'GUI started.'};
-
-    rightPanel = uipanel(main, 'Title', 'Plot');
-    rightPanel.Layout.Row = 1;
-    rightPanel.Layout.Column = 2;
-
-    right = uigridlayout(rightPanel, [2 1]);
-    right.RowHeight = {'1x', 'fit'};
-    right.ColumnWidth = {'1x'};
-    right.Padding = [8 8 8 8];
-    right.RowSpacing = 8;
 
     ax = uiaxes(right);
     ax.Layout.Row = 1;
