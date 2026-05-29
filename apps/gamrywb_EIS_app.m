@@ -226,26 +226,11 @@ function varargout = gamrywb_EIS_app(varargin)
             return;
         end
 
-        filepaths = unique(filepaths, 'stable');
-        existing = strings(0, 1);
-        if ~isempty(S.items) && isfield(S.items, 'filepath')
-            existing = string({S.items.filepath});
-        end
-
-        queued = string(filepaths);
-        if ~isempty(existing)
-            isNew = ~ismember(queued, existing);
-            skipped = filepaths(~isNew);
-            filepaths = filepaths(isNew);
-            for i = 1:numel(skipped)
-                addLog(sprintf('Skipped already loaded: %s', skipped{i}));
-            end
-        end
-
         callbacks = struct();
         callbacks.onAdded = @(filepath, ~) addLog(sprintf('Loaded: %s', filepath));
+        callbacks.onSkipped = @(filepath) addLog(sprintf('Skipped already loaded: %s', filepath));
         callbacks.onFailed = @(filepath, message) addLog(sprintf('Failed: %s | %s', filepath, message));
-        [S.session, report] = gamrywb.data.addFilesToSession(S.session, filepaths, @loadOneDTA, callbacks);
+        [S.session, report] = gamrywb.app.loadFilesIntoSession(S.session, filepaths, @loadOneDTA, callbacks);
         S.items = S.session.items;
 
         refreshFileList();

@@ -1,0 +1,45 @@
+function test_appSessionHelpers()
+%TEST_APPSESSIONHELPERS Verify reusable app/session loading helpers.
+
+    session = gamrywb.data.makeSession('overlay');
+    events = {};
+    callbacks = struct();
+    callbacks.onAdded = @(filepath, item) recordEvent('added', filepath, item.name);
+    callbacks.onSkipped = @(filepath) recordEvent('skipped', filepath, '');
+    callbacks.onFailed = @(filepath, message) recordEvent('failed', filepath, message);
+
+    files = {'/tmp/a.DTA', '/tmp/b.DTA', '/tmp/a.DTA', '/tmp/bad.DTA'};
+    [session, report] = gamrywb.app.loadFilesIntoSession(session, files, @loader, callbacks);
+    assert(numel(session.items) == 2, 'Two unique valid files should load.');
+    assert(isequal(report.added, {'/tmp/a.DTA', '/tmp/b.DTA'}), 'Added report should preserve first-seen order.');
+    assert(isempty(report.skipped), 'Queued duplicates should be collapsed before load callbacks.');
+    assert(numel(report.failed) == 1, 'One file should fail through the loader.');
+    assert(isequal(events(:,1).', {'added', 'added', 'failed'}), ...
+        'Load helper should report added and failed events in load order.');
+
+    [session, report2] = gamrywb.app.loadFilesIntoSession(session, {'/tmp/a.DTA', '/tmp/c.DTA'}, @loader, callbacks);
+    assert(numel(session.items) == 3, 'One new file should be appended after skipping an existing file.');
+    assert(isequal(report2.skipped, {'/tmp/a.DTA'}), 'Existing file should be reported as skipped.');
+    assert(isequal(report2.added, {'/tmp/c.DTA'}), 'New file should still be added after a skip.');
+    assert(isequal(events(end-1:end,1).', {'skipped', 'added'}), ...
+        'Existing-file skip should be reported before later new-file add.');
+
+    [session, report3] = gamrywb.app.loadFilesIntoSession(session, '/tmp/a.DTA', @loader, callbacks);
+    assert(numel(session.items) == 3, 'Existing char filepath should not change item count.');
+    assert(isempty(report3.added), 'Existing char filepath should not report added files.');
+    assert(isequal(report3.skipped, {'/tmp/a.DTA'}), 'Existing char filepath should report a skipped file.');
+
+    function recordEvent(kind, filepath, detail)
+        events(end+1, :) = {kind, filepath, detail}; %#ok<AGROW>
+    end
+end
+
+function item = loader(filepath)
+    if contains(filepath, 'bad')
+        error('loader:badFile', 'Synthetic load failure.');
+    end
+
+    item = struct();
+    item.filepath = filepath;
+    item.name = gamrywb.util.shortName(filepath);
+end

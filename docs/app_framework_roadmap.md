@@ -43,6 +43,7 @@ Completed app-entrypoint work:
 
 Completed package areas:
 
+- `+gamrywb/+app`: initial app/session orchestration helper for duplicate-aware file loading.
 - `+gamrywb/+analysis`: pulse detection and scientific analysis.
 - `+gamrywb/+io`: parsers, result/export table builders, CSV writers, session IO.
 - `+gamrywb/+data`: item/session construction and access helpers.
@@ -193,7 +194,7 @@ When expectations change, update this roadmap in the same commit or a nearby doc
 
 ### 4.1 `+gamrywb/+app`
 
-Create this package when the first app body is moved out of `apps/`.
+This package now exists for reusable app/session orchestration helpers.
 
 Purpose:
 
@@ -201,6 +202,12 @@ Purpose:
 - app-specific state setup
 - callback wiring
 - app-specific controller helpers
+
+Already present:
+
+```text
+gamrywb/+app/loadFilesIntoSession.m
+```
 
 Candidate files:
 
@@ -424,12 +431,14 @@ Acceptance criteria:
 
 ### Phase C: Extract file/session behavior
 
+Status: started.
+
 Target repeated behavior:
 
 - open files
 - open folder recursively
-- skip duplicates
-- add files through `gamrywb.data.addFilesToSession`
+- skip duplicates: started with `gamrywb.app.loadFilesIntoSession`
+- add files through `gamrywb.data.addFilesToSession`: started with `gamrywb.app.loadFilesIntoSession`
 - clear session
 - refresh file listbox
 - log add/skip/failure
@@ -437,7 +446,7 @@ Target repeated behavior:
 Preferred split:
 
 ```text
-+gamrywb/+app/loadFilesIntoSession.m
++gamrywb/+app/loadFilesIntoSession.m    done for Chrono/EIS overlay apps
 +gamrywb/+ui/refreshListboxItems.m
 ```
 
@@ -648,6 +657,7 @@ Use this section to record meaningful changes in strategy.
 - appendLog is now extracted and used by all app entry points
 - refreshListboxItems is extracted for Chrono/EIS multiselect file listboxes
 - createLabeledDropdown and createLabeledEditField are extracted for Chrono/EIS plot option rows
+- loadFilesIntoSession starts the +gamrywb/+app layer for duplicate-aware file/session loading in Chrono/EIS
 ```
 
 ---

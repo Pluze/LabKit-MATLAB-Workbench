@@ -11,6 +11,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 
 ### Changed
 
+- Started the `+gamrywb/+app` layer with duplicate-aware file/session loading shared by Chrono/EIS overlay apps.
 - Extracted simple labeled dropdown/edit-field row helpers for Chrono/EIS plot options into `+gamrywb/+ui`.
 - Extracted shared app log append behavior into `+gamrywb/+ui`.
 - Extracted shared multiselect file-list refresh behavior for overlay apps into `+gamrywb/+ui`.
