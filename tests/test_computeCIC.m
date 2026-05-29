@@ -70,8 +70,6 @@ function test_computeCIC()
     assert(~E.ok, 'Missing curve should fail.');
     assert(strcmp(E.message, 'Main transient table not found.'), 'Missing curve message should match legacy wording.');
 
-    assert(exist(fullfile(root, 'apps', '+gamrywb_apps', '+cic', 'computeCIC.m'), 'file') ~= 2, ...
-        'CIC analysis should live in the public CIC app file, not a transitional helper package.');
 end
 
 function A = computeCIC(item, opts)

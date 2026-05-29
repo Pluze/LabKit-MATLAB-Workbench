@@ -53,6 +53,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Split the MATLAB test runner manifest into default and GUI groups so future tests have clearer placement.
 - Removed duplicate app-boundary assertions from overlay export tests now that `test_phase10_apps` owns those architecture checks.
 - Replaced repeated per-file numeric assertion helpers in tests with a shared test helper.
+- Removed duplicated app-boundary assertions from numerical analysis tests so they focus on behavior while `test_phase10_apps` owns architecture guardrails.
 - Updated the app framework roadmap so completed app migrations are marked complete and the next-phase guidance focuses on extension contracts and guardrails.
 - Corrected the documented single-select file-list refresh API signature to include the loaded-count text field.
 - Folded VT/CIC single-file selection and clear-all callback choreography back into the owning app files so reusable UI helpers do not own app session workflow.

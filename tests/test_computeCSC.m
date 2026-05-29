@@ -75,16 +75,6 @@ function test_computeCSC()
         assert(isfield(A, expectedFields{k}), ['CSC result should include field: ' expectedFields{k}]);
     end
 
-    assert(exist(fullfile(root, 'apps', '+gamrywb_apps', '+csc', 'buildResultsTable.m'), 'file') ~= 2, ...
-        'CSC should not keep an unused app-side result-table helper without an export workflow.');
-    assert(exist(fullfile(root, 'apps', '+gamrywb_apps', '+csc', 'computeCSC.m'), 'file') ~= 2, ...
-        'CSC analysis should live in the public CSC app file, not a transitional helper package.');
-    assert(exist(fullfile(root, 'apps', '+gamrywb_apps', '+csc', 'computeCTCharge.m'), 'file') ~= 2, ...
-        'CSC CT charge calculation should not remain a separate public helper.');
-    assert(exist(fullfile(root, 'apps', '+gamrywb_apps', '+csc', 'computeCVCharge.m'), 'file') ~= 2, ...
-        'CSC CV charge calculation should not remain a separate public helper.');
-    assert(exist(fullfile(root, 'apps', '+gamrywb_apps', '+csc', 'private'), 'dir') ~= 7, ...
-        'CSC app-side package should not keep a private helper directory for one integrator.');
 end
 
 function A = computeCSC(curve, opts)

@@ -58,12 +58,6 @@ function test_computeVTResistance()
     assert(~D.ok, 'Missing curve should fail.');
     assert(strcmp(D.message, 'Main transient table not found.'), 'Missing curve message should match legacy wording.');
 
-    assert(exist(fullfile(root, 'apps', '+gamrywb_apps', '+vt', 'selectSteadyWindow.m'), 'file') ~= 2, ...
-        'VT steady-window selection should not remain a separate public helper.');
-    assert(exist(fullfile(root, 'apps', '+gamrywb_apps', '+vt', 'estimateBaseline.m'), 'file') ~= 2, ...
-        'VT baseline estimation should not remain a separate public helper.');
-    assert(exist(fullfile(root, 'apps', '+gamrywb_apps', '+vt', 'computeResistance.m'), 'file') ~= 2, ...
-        'VT analysis should live in the public VT app file, not a transitional helper package.');
 end
 
 function A = computeVTResistance(item, opts)
