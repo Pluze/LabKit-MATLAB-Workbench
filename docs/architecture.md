@@ -87,6 +87,8 @@ For concrete calling examples, see `docs/api_usage.md`. For the practical checkl
 
 Analysis, data, and IO package functions should not depend on GUI state or call `uialert`. Plot/UI helpers may accept explicit graphics handles and should keep side effects limited to those handles.
 
+The DTA facade is also guarded as a GUI-free and app-free layer: it should not call MATLAB UI constructors, file dialogs, alerts, app entry points, or `apps/` helpers. App code may call `gamrywb.dta.*`; DTA code must not call back into app code.
+
 Reusable UI helpers should build or update generic controls. App-specific callback choreography, such as clearing a session, restoring app-specific plot defaults, refreshing experiment summaries, and writing app logs, should stay in the owning app file even when two apps have similar callback order. Domain labels such as DTA-specific open/export button text and app shell tab/panel titles should be passed in from apps rather than hardcoded in the GUI library.
 
 Analysis functions should return status through result structs, for example:
