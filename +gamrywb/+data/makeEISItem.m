@@ -2,6 +2,7 @@ function item = makeEISItem(filepath)
 %MAKEEISITEM Build a legacy-compatible EIS item from a Gamry DTA file.
 
     item = struct();
+    item.type = "eis";
     item.filepath = filepath;
     item.name = gamrywb.util.shortName(filepath);
     [item.meta, item.tables, item.logmsg] = gamrywb.io.parseEISDTA(filepath);
@@ -12,6 +13,7 @@ function item = makeEISItem(filepath)
     end
 
     item.curve = curve;
+    item.zcurve = curve;
     item.Pt = defaultColumn(curve, 'Pt');
     item.Time = defaultColumn(curve, 'Time');
     item.Freq = defaultColumn(curve, 'Freq');
@@ -41,6 +43,20 @@ function item = makeEISItem(filepath)
     item.n = numel(item.Pt);
     item.freqDesc = isMostlyDescending(item.Freq);
     item.message = msg;
+
+    % Unit-explicit aliases are the long-term data model; legacy fields stay
+    % for behavior-preserving GUI compatibility.
+    item.point = item.Pt;
+    item.time_s = item.Time;
+    item.freq_Hz = item.Freq;
+    item.Zreal_ohm = item.Zreal;
+    item.Zimag_ohm = item.Zimag;
+    item.negZimag_ohm = item.negZimag;
+    item.Zmod_ohm = item.Zmod;
+    item.Zphz_deg = item.Zphz;
+    item.Idc_A = item.Idc;
+    item.Vdc_V = item.Vdc;
+    item.analysis = struct();
 end
 
 function col = defaultColumn(tbl, name)

@@ -29,6 +29,7 @@ This project is still in an unreleased behavior-preserving refactor stage.
 - Added shared CV/CSC result table helper under `+gamrywb/+io`.
 - Added shared CV/CT selected-column access and plotting helpers.
 - Added shared EIS item construction, axis-value, overlay plotting, and export-table helpers.
+- Added normalized EIS item aliases alongside legacy EIS item fields.
 - Added shared session creation, file add/remove, save/load, and batch summary helpers.
 - Added shared chrono VT/IT overlay plot helper.
 - Added Phase 10 app entry points under `apps/` for CIC, VT resistance, CV/CSC, and EIS workflows.

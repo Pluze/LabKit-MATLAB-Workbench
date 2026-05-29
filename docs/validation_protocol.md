@@ -340,6 +340,7 @@ Current default tests include EIS checks for:
 
 ```text
 makeEISItem fixture fields
+normalized makeEISItem aliases matching legacy fields
 all legacy axis-value labels
 current-plot export table variable names
 finite-value filtering

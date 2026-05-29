@@ -289,6 +289,7 @@ Completed work:
 - Added `gamrywb.analysis.valuesForEISAxis`.
 - Added `gamrywb.plot.plotEISOverlay`.
 - Added `gamrywb.io.buildEISExportTable`.
+- Added normalized EIS item aliases in `gamrywb.data.makeEISItem` while preserving legacy field names.
 - Updated `legacy/gamry_EIS_multiDTA_plot_gui_legacy.m` to call the shared EIS item, plotting, and export table helpers.
 
 Behavior preserved:
@@ -297,6 +298,7 @@ Behavior preserved:
 - EIS point filtering using Freq/Zreal/Zimag/Zmod/Zphz validity.
 - Point-number fallback when Pt is absent or invalid.
 - Frequency order summary flag.
+- Legacy EIS item fields remain available for existing GUI, plotting, and export call sites.
 - Axis values for Freq, log10(Freq), Time, Point #, Zreal, Zimag, -Zimag, Zmod, Zphz, Idc, and Vdc.
 - Log-X/log-Y positive-value filtering.
 - Marker, line width, marker size, legend, grid, labels, title, and Nyquist equal-axis behavior.
@@ -401,7 +403,7 @@ Still local after current Phase 10 progress:
 | CIC results/export table | CIC GUI | `+gamrywb/+io/buildCICResultsTable.m`, `writeCICResultsCSV.m`, `+gamrywb/+ui/buildCICBatchTableData.m` | Started Phase 9 app-specific table extraction. Preserve legacy 8-column GUI table data, dynamic units, and CSV header/formatting. |
 | CV/CSC results table | CV/CSC GUI | `+gamrywb/+io/buildCSCResultsTable.m` | Added Phase 9 table construction for computed CSC results. CSV writing and GUI export remain deferred because there is no legacy export workflow. |
 | `valuesForAxis` | EIS overlay | `+gamrywb/+analysis/valuesForEISAxis.m` | Started Phase 8. Preserve all axis labels and log-axis behavior. |
-| EIS item construction | EIS overlay | `+gamrywb/+data/makeEISItem.m` | Started Phase 8. Preserve ZCURVE choice, filtering, point fallback, and frequency order flag. |
+| EIS item construction | EIS overlay | `+gamrywb/+data/makeEISItem.m` | Started Phase 8. Preserve ZCURVE choice, filtering, point fallback, frequency order flag, and legacy fields while adding normalized aliases for future schema stabilization. |
 | EIS overlay plotting | EIS overlay | `+gamrywb/+plot/plotEISOverlay.m` | Started Phase 8. Preserve markers, line widths, log filters, labels, legends, grid, and Nyquist equal-axis behavior. |
 | session construction | all apps | `+gamrywb/+data/makeSession.m` | Started Phase 9. Create explicit `gamrywb_session` structs for future shared state. |
 | session file add/remove | all apps | `+gamrywb/+data/addFilesToSession.m`, `removeFilesFromSession.m` | Started Phase 9. Preserve caller-owned loader behavior and duplicate skipping by filepath. |

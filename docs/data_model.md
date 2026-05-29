@@ -132,6 +132,7 @@ item.time_s = time(:);
 item.point = point(:);
 item.Zreal_ohm = zreal(:);
 item.Zimag_ohm = zimag(:);
+item.negZimag_ohm = -zimag(:);
 item.Zmod_ohm = zmod(:);
 item.Zphz_deg = zphz(:);
 item.Idc_A = idc(:);
@@ -147,7 +148,7 @@ Current package-backed EIS item construction lives in:
 +gamrywb/+data/makeEISItem.m
 ```
 
-It currently returns legacy field names such as `Freq`, `Zreal`, `Zimag`, and `negZimag` so the legacy GUI can migrate without changing behavior. Normalized unit-suffixed aliases can be added later after GUI callers have migrated.
+It currently returns legacy field names such as `Freq`, `Zreal`, `Zimag`, and `negZimag` so the legacy GUI can migrate without changing behavior. It also returns unit-suffixed aliases such as `freq_Hz`, `time_s`, `Zreal_ohm`, `Zimag_ohm`, `negZimag_ohm`, `Zmod_ohm`, `Zphz_deg`, `Idc_A`, and `Vdc_V` for future schema stabilization.
 
 Axis-value generation for EIS is centralized in:
 

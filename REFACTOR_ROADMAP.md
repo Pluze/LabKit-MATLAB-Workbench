@@ -562,6 +562,7 @@ Status: complete.
 Current implementation note:
 
 - `legacy/gamry_EIS_multiDTA_plot_gui_legacy.m` now calls `gamrywb.data.makeEISItem`.
+- `gamrywb.data.makeEISItem` now returns normalized EIS item aliases such as `freq_Hz`, `Zreal_ohm`, and `time_s` while preserving legacy fields such as `Freq`, `Zreal`, and `Time`.
 - EIS axis values are provided by `gamrywb.analysis.valuesForEISAxis`.
 - EIS overlay plotting is provided by `gamrywb.plot.plotEISOverlay`.
 - Current X/Y plot export tables are provided by `gamrywb.io.buildEISExportTable`.
