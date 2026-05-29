@@ -48,38 +48,15 @@ function varargout = launchCICApp(varargin)
     layLog = ui.logGrid;
 
     %% ===================== File panel =====================
-    pFile = uipanel(layFA,'Title','Files');
-    pFile.Layout.Row = 1;
-    gf = uigridlayout(pFile,[3 1]);
-    gf.RowHeight = {'fit','1x','fit'};
-    gf.ColumnWidth = {'1x'};
-    gf.Padding = [8 8 8 8];
-    gf.RowSpacing = 8;
-    gf.ColumnSpacing = 0;
-
-    gbtn = uigridlayout(gf,[2 2]);
-    gbtn.Layout.Row = 1; gbtn.Layout.Column = 1;
-    gbtn.RowHeight = {'fit','fit'};
-    gbtn.ColumnWidth = {'1x','1x'};
-    gbtn.RowSpacing = 8;
-    gbtn.ColumnSpacing = 8;
-    gbtn.Padding = [0 0 0 0];
-
-    btnOpen = uibutton(gbtn,'Text','Open DTA file(s)','ButtonPushedFcn',@onOpenFiles);
-    btnOpen.Layout.Row = 1; btnOpen.Layout.Column = 1;
-    btnOpenFolder = uibutton(gbtn,'Text','Open folder recursively','ButtonPushedFcn',@onOpenFolder);
-    btnOpenFolder.Layout.Row = 1; btnOpenFolder.Layout.Column = 2;
-    btnClearFiles = uibutton(gbtn,'Text','Clear all','ButtonPushedFcn',@(~,~) clearAllFiles());
-    btnClearFiles.Layout.Row = 2; btnClearFiles.Layout.Column = 1;
-    btnExport = uibutton(gbtn,'Text','Export results CSV','ButtonPushedFcn',@(~,~) exportResultsCSV());
-    btnExport.Layout.Row = 2; btnExport.Layout.Column = 2;
-
-    lbFiles = uilistbox(gf,'Items',{},'Multiselect','off','ValueChangedFcn',@(~,~) onSelectFile());
-    lbFiles.Layout.Row = 2;
-    lbFiles.Layout.Column = 1;
-
-    txtLoaded = uieditfield(gf,'text','Editable','off','Value','No files loaded');
-    txtLoaded.Layout.Row = 3; txtLoaded.Layout.Column = 1;
+    fileCallbacks = struct();
+    fileCallbacks.onOpenFiles = @onOpenFiles;
+    fileCallbacks.onOpenFolder = @onOpenFolder;
+    fileCallbacks.onClearAll = @(~,~) clearAllFiles();
+    fileCallbacks.onExport = @(~,~) exportResultsCSV();
+    fileCallbacks.onSelectFile = @(~,~) onSelectFile();
+    fileUi = gamrywb.ui.createSingleSelectFilePanel(layFA, 'Export results CSV', fileCallbacks);
+    lbFiles = fileUi.listbox;
+    txtLoaded = fileUi.loadedText;
 
     %% ===================== Analysis settings =====================
     pSet = uipanel(layFA,'Title','Analysis Settings');

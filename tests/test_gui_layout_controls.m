@@ -15,6 +15,7 @@ function test_gui_layout_controls()
     checkCreateAxesHelper();
     checkTabbedDualPlotShellHelper();
     checkTopBottomPlotControlsHelper();
+    checkSingleSelectFilePanelHelper();
 end
 
 function checkMultiDTA()
@@ -269,6 +270,52 @@ function checkTopBottomPlotControlsHelper()
         'Bottom Y dropdown should preserve the supplied default value.');
     assert(ui.bottomGridCheckbox.Value == false, ...
         'Bottom grid checkbox should preserve the supplied default value.');
+end
+
+function checkSingleSelectFilePanelHelper()
+    fig = uifigure('Visible', 'off', 'Name', 'gamrywb_single_select_file_panel_probe');
+    cleaner = onCleanup(@() delete(fig));
+    grid = uigridlayout(fig, [3 1]);
+
+    callbacks = struct();
+    callbacks.onOpenFiles = @(~,~) [];
+    callbacks.onOpenFolder = @(~,~) [];
+    callbacks.onClearAll = @(~,~) [];
+    callbacks.onExport = @(~,~) [];
+    callbacks.onSelectFile = @(~,~) [];
+
+    ui = gamrywb.ui.createSingleSelectFilePanel(grid, 'Export results CSV', callbacks);
+    assert(strcmp(ui.panel.Title, 'Files'), 'Single-select file panel should preserve the panel title.');
+    assert(ui.panel.Layout.Row == 1, 'Single-select file panel should place the panel in row 1.');
+    assert(sameStringCell(ui.grid.RowHeight, {'fit', '1x', 'fit'}), ...
+        'Single-select file panel should preserve row heights.');
+    assert(sameStringCell(ui.grid.ColumnWidth, {'1x'}), ...
+        'Single-select file panel should preserve column widths.');
+    assert(isequal(ui.grid.Padding, [8 8 8 8]), ...
+        'Single-select file panel should preserve padding.');
+    assert(ui.grid.RowSpacing == 8 && ui.grid.ColumnSpacing == 0, ...
+        'Single-select file panel should preserve row and column spacing.');
+    assert(isequal(ui.buttonGrid.ColumnWidth, {'1x', '1x'}), ...
+        'Single-select file panel should preserve button-grid columns.');
+    assert(strcmp(ui.openButton.Text, 'Open DTA file(s)'), ...
+        'Single-select file panel should preserve the open-file button text.');
+    assert(strcmp(ui.openFolderButton.Text, 'Open folder recursively'), ...
+        'Single-select file panel should preserve the open-folder button text.');
+    assert(strcmp(ui.clearButton.Text, 'Clear all'), ...
+        'Single-select file panel should preserve the clear button text.');
+    assert(strcmp(ui.exportButton.Text, 'Export results CSV'), ...
+        'Single-select file panel should preserve the export button text.');
+    assert(strcmp(ui.listbox.Multiselect, 'off'), ...
+        'Single-select file panel should create a single-select listbox.');
+    assert(strcmp(ui.loadedText.Editable, 'off'), ...
+        'Single-select file panel should create a read-only loaded-count field.');
+    assert(strcmp(ui.loadedText.Value, 'No files loaded'), ...
+        'Single-select file panel should preserve the default loaded-count text.');
+    assertCallbackPresent(ui.openButton, 'ButtonPushedFcn', 'Open DTA file(s)');
+    assertCallbackPresent(ui.openFolderButton, 'ButtonPushedFcn', 'Open folder recursively');
+    assertCallbackPresent(ui.clearButton, 'ButtonPushedFcn', 'Clear all');
+    assertCallbackPresent(ui.exportButton, 'ButtonPushedFcn', 'Export results CSV');
+    assertCallbackPresent(ui.listbox, 'ValueChangedFcn', 'file listbox');
 end
 
 function fig = launchFigure(entryName, expectedTitle)

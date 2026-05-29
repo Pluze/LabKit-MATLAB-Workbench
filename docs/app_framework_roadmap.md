@@ -67,6 +67,7 @@ Current shared UI helpers:
 +gamrywb/+ui/createTabbedDualPlotShell.m
 +gamrywb/+ui/createTopBottomPlotControls.m
 +gamrywb/+ui/createFilePanel.m
++gamrywb/+ui/createSingleSelectFilePanel.m
 +gamrywb/+ui/createInfoArea.m
 +gamrywb/+ui/createLogArea.m
 +gamrywb/+ui/createPlotOptionsPanel.m
@@ -469,6 +470,7 @@ Preferred split:
 +gamrywb/+app/selectItemsByNames.m    done for Chrono/EIS overlay apps
 +gamrywb/+ui/refreshListboxItems.m
 +gamrywb/+ui/refreshFileListbox.m    done for Chrono/EIS overlay apps
++gamrywb/+ui/createSingleSelectFilePanel.m    done for VT resistance and CIC apps
 ```
 
 Keep dialogs in app/UI code. Keep `gamrywb.data.addFilesToSession` free of UI dialogs.
@@ -659,6 +661,7 @@ This app-framework stage is successful when:
 - App-specific orchestration lives under `+gamrywb/+app`.
 - Large repeated layout scaffolds live under `+gamrywb/+ui`.
 - CIC and VT share a tabbed dual-plot shell.
+- CIC and VT share the single-select files panel.
 - Chrono and EIS share a two-pane shell.
 - File/session/log/listbox behavior is not copied across every app.
 - GUI layout contract tests pass.
@@ -673,14 +676,14 @@ This app-framework stage is successful when:
 The next best task is:
 
 ```text
-reassess remaining repeated app panels
+reassess remaining repeated CIC/VT callbacks and summary panels
 ```
 
 Suggested sequence:
 
-1. Compare remaining CIC/VT and Chrono/EIS panel-level duplication after Phases D-F.
-2. Pick the lowest-risk repeated panel or behavior with at least two call sites.
-3. Update this roadmap before extracting another helper.
+1. Compare the remaining CIC/VT single-file selection, clear-all, log, and summary-row helpers.
+2. Pick the lowest-risk repeated behavior with at least two call sites.
+3. Keep app-specific scientific labels, result columns, and export names outside generic helpers.
 
 ---
 
@@ -713,6 +716,7 @@ Use this section to record meaningful changes in strategy.
 - loadFilesIntoSession starts the +gamrywb/+app layer for duplicate-aware file/session loading in Chrono/EIS
 - removeSelectedItemsFromSession shares selected-file removal for Chrono/EIS while preserving app-owned refresh and plotting
 - selectItemsByNames shares empty-selection-as-all item lookup for Chrono/EIS plot and export paths
+- createSingleSelectFilePanel shares the VT/CIC files panel while preserving app-owned dialogs, selection refresh, and export behavior
 ```
 
 ---
