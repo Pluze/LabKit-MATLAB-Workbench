@@ -65,7 +65,7 @@ completely new app type: about 6/10 convenient
 Why similar apps are now easier:
 
 - public app entry points are thin wrappers under `apps/`
-- app bodies should live under `apps/private`; EIS, Chrono overlay, CSC, VT resistance, and CIC are the first reference migrations
+- app bodies should be collapsed into public `apps/*.m` files; EIS is the first single-file reference, while Chrono overlay, CSC, VT resistance, and CIC still have transitional `apps/private` launch bodies
 - common GUI shells and panels live under `+gamrywb/+ui`
 - broad scientific calculations live under `+gamrywb/+analysis`; experiment-specific workflow calculations live with the owning app
 - app-specific plotting helpers live with the owning app; reusable GUI/axes primitives live under `+gamrywb/+ui`
@@ -443,7 +443,7 @@ Goal:
 - tests prove no behavior change
 - the migrated app demonstrates the intended split between GUI shell, DTA loading, and experiment-specific analysis/export
 
-The EIS app implementation now lives under `apps/private`, not under `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "eis")` for file loading.
+The EIS app implementation now lives directly in `apps/gamrywb_EIS_app.m`, not under `apps/private` or `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "eis")` for file loading. This is the reference direction for the remaining apps: a public app file with clear local sections that calls the DTA and GUI APIs.
 
 EIS overlay axis selection, overlay plotting, and plot-export table construction now live under `apps/+gamrywb_apps/+eis`, not in reusable `+gamrywb/+analysis`, `+gamrywb/+plot`, or `+gamrywb/+io`.
 
