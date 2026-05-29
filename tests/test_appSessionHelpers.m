@@ -9,7 +9,7 @@ function test_appSessionHelpers()
     callbacks.onFailed = @(filepath, message) recordEvent('failed', filepath, message);
 
     files = {'/tmp/a.DTA', '/tmp/b.DTA', '/tmp/a.DTA', '/tmp/bad.DTA'};
-    [session, report] = gamrywb.app.loadFilesIntoSession(session, files, @loader, callbacks);
+    [session, report] = gamrywb.ui.loadFilesIntoSession(session, files, @loader, callbacks);
     assert(numel(session.items) == 2, 'Two unique valid files should load.');
     assert(isequal(report.added, {'/tmp/a.DTA', '/tmp/b.DTA'}), 'Added report should preserve first-seen order.');
     assert(isempty(report.skipped), 'Queued duplicates should be collapsed before load callbacks.');
@@ -17,14 +17,14 @@ function test_appSessionHelpers()
     assert(isequal(events(:,1).', {'added', 'added', 'failed'}), ...
         'Load helper should report added and failed events in load order.');
 
-    [session, report2] = gamrywb.app.loadFilesIntoSession(session, {'/tmp/a.DTA', '/tmp/c.DTA'}, @loader, callbacks);
+    [session, report2] = gamrywb.ui.loadFilesIntoSession(session, {'/tmp/a.DTA', '/tmp/c.DTA'}, @loader, callbacks);
     assert(numel(session.items) == 3, 'One new file should be appended after skipping an existing file.');
     assert(isequal(report2.skipped, {'/tmp/a.DTA'}), 'Existing file should be reported as skipped.');
     assert(isequal(report2.added, {'/tmp/c.DTA'}), 'New file should still be added after a skip.');
     assert(isequal(events(end-1:end,1).', {'skipped', 'added'}), ...
         'Existing-file skip should be reported before later new-file add.');
 
-    [session, report3] = gamrywb.app.loadFilesIntoSession(session, '/tmp/a.DTA', @loader, callbacks);
+    [session, report3] = gamrywb.ui.loadFilesIntoSession(session, '/tmp/a.DTA', @loader, callbacks);
     assert(numel(session.items) == 3, 'Existing char filepath should not change item count.');
     assert(isempty(report3.added), 'Existing char filepath should not report added files.');
     assert(isequal(report3.skipped, {'/tmp/a.DTA'}), 'Existing char filepath should report a skipped file.');
@@ -32,7 +32,7 @@ function test_appSessionHelpers()
     removed = {};
     removeCallbacks = struct();
     removeCallbacks.onRemoved = @(name, item) recordRemoved(name, item.filepath);
-    [session, removeReport] = gamrywb.app.removeSelectedItemsFromSession( ...
+    [session, removeReport] = gamrywb.ui.removeSelectedItemsFromSession( ...
         session, {'c.DTA', 'a.DTA'}, removeCallbacks);
     assert(numel(session.items) == 1, 'Selected names should be removed from the session.');
     assert(strcmp(session.items(1).name, 'b.DTA'), 'Unselected item should remain.');
@@ -41,21 +41,21 @@ function test_appSessionHelpers()
     assert(isequal(removeReport.removed, {'/tmp/a.DTA', '/tmp/c.DTA'}), ...
         'Remove report should preserve underlying data helper labels.');
 
-    [session, removeReport2] = gamrywb.app.removeSelectedItemsFromSession(session, string.empty(0, 1), removeCallbacks);
+    [session, removeReport2] = gamrywb.ui.removeSelectedItemsFromSession(session, string.empty(0, 1), removeCallbacks);
     assert(numel(session.items) == 1, 'Empty selection should not remove items.');
     assert(isempty(removeReport2.removed), 'Empty selection should not report removed files.');
 
-    [allItems, allIdx] = gamrywb.app.selectItemsByNames(session.items, {});
+    [allItems, allIdx] = gamrywb.ui.selectItemsByNames(session.items, {});
     assert(numel(allItems) == 1 && strcmp(allItems(1).name, 'b.DTA'), ...
         'Empty selected-name list should select all remaining items.');
     assert(isequal(allIdx, 1), 'Empty selected-name list should return all item indices.');
 
-    [oneItem, oneIdx] = gamrywb.app.selectItemsByNames(session.items, "b.DTA");
+    [oneItem, oneIdx] = gamrywb.ui.selectItemsByNames(session.items, "b.DTA");
     assert(numel(oneItem) == 1 && strcmp(oneItem(1).name, 'b.DTA'), ...
         'Matching selected name should return that item.');
     assert(isequal(oneIdx, 1), 'Matching selected name should return matching index.');
 
-    [noItems, noIdx] = gamrywb.app.selectItemsByNames(session.items, "missing.DTA");
+    [noItems, noIdx] = gamrywb.ui.selectItemsByNames(session.items, "missing.DTA");
     assert(isempty(noItems), 'Missing selected name should return no items.');
     assert(isempty(noIdx), 'Missing selected name should return no indices.');
 
@@ -67,14 +67,14 @@ function test_appSessionHelpers()
     selectionCallbacks.refreshPlots = @() recordSelectionEvent('plots');
 
     lb = struct('Items', {{'a.DTA', 'b.DTA'}}, 'Value', 'b.DTA');
-    selectedIdx = gamrywb.app.handleSingleFileSelection(lb, selectionCallbacks);
+    selectedIdx = gamrywb.ui.handleSingleFileSelection(lb, selectionCallbacks);
     assert(selectedIdx == 2, 'Single-file selection helper should return the selected listbox index.');
     assert(isequal(events.', {'restore', 'reset', 'summary', 'plots'}), ...
         'Single-file selection helper should preserve the nonempty callback order.');
 
     events = {};
     lb = struct('Items', {{}}, 'Value', {{}});
-    selectedIdx = gamrywb.app.handleSingleFileSelection(lb, selectionCallbacks);
+    selectedIdx = gamrywb.ui.handleSingleFileSelection(lb, selectionCallbacks);
     assert(isempty(selectedIdx), 'Single-file selection helper should clear current index for empty lists.');
     assert(isequal(events.', {'reset', 'summary', 'plots'}), ...
         'Single-file selection helper should preserve the empty-list callback order.');
@@ -90,7 +90,7 @@ function test_appSessionHelpers()
     clearCallbacks.refreshResultsSummary = @() recordSelectionEvent('summary');
     clearCallbacks.refreshPlots = @() recordSelectionEvent('plots');
     clearCallbacks.addLog = @(msg) recordSelectionEvent(['log:' msg]);
-    clearState = gamrywb.app.handleClearSingleFileSession('cic_vt', clearCallbacks);
+    clearState = gamrywb.ui.handleClearSingleFileSession('cic_vt', clearCallbacks);
     assert(strcmp(clearState.session.kind, 'cic_vt'), ...
         'Clear helper should create a replacement session with the requested kind.');
     assert(isempty(clearState.items) && isempty(clearState.current), ...

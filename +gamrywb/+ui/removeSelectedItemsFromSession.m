@@ -39,7 +39,7 @@ function names = normalizeSelectedNames(selectedNames)
     elseif iscell(selectedNames)
         names = string(selectedNames(:));
     else
-        error('gamrywb:app:removeSelectedItemsFromSession:InvalidSelectedNames', ...
+        error('gamrywb:ui:removeSelectedItemsFromSession:InvalidSelectedNames', ...
             'selectedNames must be a char, string, or cell array.');
     end
 end

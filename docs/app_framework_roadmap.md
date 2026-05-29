@@ -458,9 +458,9 @@ These are the reference paths for adopting the DTA facade and app-side workflow 
 Remaining migration candidates:
 
 ```text
-Generic helpers still in +gamrywb/+app: move toward the GUI base library if they remain useful after app migrations
 App-side helper packages: keep only as temporary testable waypoints; do not grow them into a framework
 Remaining +analysis functions: classify broad chrono primitives versus experiment-specific calculations before moving anything else
+Generic GUI/session helpers now live in +gamrywb/+ui; do not recreate +gamrywb/+app for app-specific workflow code
 ```
 
 Suggested commit:

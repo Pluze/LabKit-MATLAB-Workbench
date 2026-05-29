@@ -98,13 +98,12 @@ The GUI decides how to display that status.
 ## Current Package Surface
 
 - `apps/`: user-facing app entry points and app-specific implementations. EIS, Chrono overlay, CSC, VT resistance, and CIC have moved their implementations to `apps/private` as the reference pattern for app code living outside the reusable `+gamrywb` library. CSC, VT, and CIC-specific analysis/export helpers currently live under `apps/+gamrywb_apps` as app-side transitional code so numerical tests remain direct.
-- `+app`: transitional shared app/session orchestration helpers. This package is not part of the desired final structure; generic helpers should migrate toward the GUI base library if they remain useful after app migrations.
 - `+dta`: GUI-free facade for supported DTA family detection, single-file loading, and batch loading with status/report structs. It delegates to existing `+io` parser and `+data` item-construction helpers.
 - `+io`: DTA parsers, folder discovery, and session save/load. Export helpers that encode experiment-specific formats should stay with the owning app rather than in reusable `+gamrywb`.
 - `+data`: table/column accessors, CV/CT selected-column access, chrono item construction, EIS item construction, session add/remove helpers.
 - `+analysis`: broad chrono/EIS numerical helpers and remaining transitional experiment calculations. Experiment-specific calculations should migrate toward app implementations unless they are clearly general, parameter-light math utilities.
 - `+plot`: transitional experiment plots. Plot choices tied to a specific experiment should migrate toward app implementations; reusable GUI/axes primitives belong in `+ui`.
-- `+ui`: shared app axes creation/reset, log append and log panel, multi-select and single-select file-listbox refresh, multi-file and single-select file-panel, summary row, result table panel, info/log text-area, plot-options panel, simple labeled-control, two-pane shell, tabbed dual-plot shell, and top/bottom plot-control construction/state helpers.
+- `+ui`: reusable GUI framework helpers, including app axes creation/reset, log append and log panel, multi-select and single-select file-listbox refresh, multi-file and single-select file-panel, summary row, result table panel, info/log text-area, plot-options panel, simple labeled-control, two-pane shell, tabbed dual-plot shell, top/bottom plot-control construction/state helpers, and generic session/listbox orchestration used by apps.
 - `+util`: low-risk helpers used by parser, data, analysis, and export code.
 
 ## Boundaries To Preserve

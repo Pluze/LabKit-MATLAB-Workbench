@@ -177,7 +177,7 @@ function varargout = launchEISApp(varargin)
         callbacks.onAdded = @(filepath, ~) addLog(sprintf('Loaded: %s', filepath));
         callbacks.onSkipped = @(filepath) addLog(sprintf('Skipped already loaded: %s', filepath));
         callbacks.onFailed = @(filepath, message) addLog(sprintf('Failed: %s | %s', filepath, message));
-        [S.session, report] = gamrywb.app.loadFilesIntoSession(S.session, filepaths, @loadOneDTA, callbacks);
+        [S.session, report] = gamrywb.ui.loadFilesIntoSession(S.session, filepaths, @loadOneDTA, callbacks);
         S.items = S.session.items;
 
         refreshFileList();
@@ -207,7 +207,7 @@ function varargout = launchEISApp(varargin)
         end
         callbacks = struct();
         callbacks.onRemoved = @(name, ~) addLog(sprintf('Removed: %s', name));
-        [S.session, ~] = gamrywb.app.removeSelectedItemsFromSession(S.session, lbFiles.Value, callbacks);
+        [S.session, ~] = gamrywb.ui.removeSelectedItemsFromSession(S.session, lbFiles.Value, callbacks);
         S.items = S.session.items;
         refreshFileList();
         refreshPlot();
@@ -239,7 +239,7 @@ function varargout = launchEISApp(varargin)
             return;
         end
 
-        items = gamrywb.app.selectItemsByNames(S.items, lbFiles.Value);
+        items = gamrywb.ui.selectItemsByNames(S.items, lbFiles.Value);
         if isempty(items)
             txtSummary.Value = {'No files selected.'};
             return;
@@ -261,7 +261,7 @@ function varargout = launchEISApp(varargin)
     end
 
     function onExportCSV(~, ~)
-        items = gamrywb.app.selectItemsByNames(S.items, lbFiles.Value);
+        items = gamrywb.ui.selectItemsByNames(S.items, lbFiles.Value);
         if isempty(items)
             uialert(fig, 'No files selected for export.', 'Export');
             return;

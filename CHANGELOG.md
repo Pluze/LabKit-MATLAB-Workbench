@@ -28,8 +28,8 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Routed the CIC app's chrono file loading through the GUI-free DTA facade instead of parsing chrono files directly in the app layer.
 - Extracted shared batch-result table panel construction for VT/CIC-style apps into `+gamrywb/+ui`.
 - Extracted shared top/bottom plot selection and axes reset helpers for VT/CIC-style apps into `+gamrywb/+ui`.
-- Shared the VT/CIC clear-all session reset sequence through `+gamrywb/+app`.
-- Shared the VT/CIC single-file selection callback sequence through `+gamrywb/+app`.
+- Shared the VT/CIC clear-all session reset sequence through `+gamrywb/+ui`.
+- Shared the VT/CIC single-file selection callback sequence through `+gamrywb/+ui`.
 - Extracted shared log-tab panel construction for VT/CIC-style apps into `+gamrywb/+ui`.
 - Extracted shared read-only summary-row construction for VT/CIC-style apps into `+gamrywb/+ui`.
 - Extracted shared single-select file-list refresh behavior for VT/CIC-style apps into `+gamrywb/+ui`.
@@ -47,9 +47,10 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Extracted the shared Chrono/EIS files button panel into `+gamrywb/+ui`.
 - Extracted the shared Chrono/EIS two-pane outer shell into `+gamrywb/+ui`.
 - Extracted session item file-listbox refresh for Chrono/EIS overlay apps into `+gamrywb/+ui`.
-- Shared selected-item lookup for Chrono/EIS overlay plot and export paths through `+gamrywb/+app`.
-- Shared selected-item session removal for Chrono/EIS overlay apps through `+gamrywb/+app`.
-- Started the `+gamrywb/+app` layer with duplicate-aware file/session loading shared by Chrono/EIS overlay apps.
+- Shared selected-item lookup for Chrono/EIS overlay plot and export paths through `+gamrywb/+ui`.
+- Shared selected-item session removal for Chrono/EIS overlay apps through `+gamrywb/+ui`.
+- Shared duplicate-aware file/session loading for Chrono/EIS overlay apps through `+gamrywb/+ui`.
+- Removed the transitional `+gamrywb/+app` package after app launchers moved under `apps/private` and remaining generic GUI/session helpers moved to `+gamrywb/+ui`.
 - Extracted simple labeled dropdown/edit-field row helpers for Chrono/EIS plot options into `+gamrywb/+ui`.
 - Extracted shared app log append behavior into `+gamrywb/+ui`.
 - Extracted shared multiselect file-list refresh behavior for overlay apps into `+gamrywb/+ui`.

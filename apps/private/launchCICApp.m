@@ -323,7 +323,7 @@ function varargout = launchCICApp(varargin)
         selectionCallbacks.resetAxesToDefaultState = @resetAxesToDefaultState;
         selectionCallbacks.refreshResultsSummary = @refreshResultsSummary;
         selectionCallbacks.refreshPlots = @refreshPlots;
-        S.current = gamrywb.app.handleSingleFileSelection(lbFiles, selectionCallbacks);
+        S.current = gamrywb.ui.handleSingleFileSelection(lbFiles, selectionCallbacks);
     end
 
     function clearAllFiles()
@@ -336,7 +336,7 @@ function varargout = launchCICApp(varargin)
         clearCallbacks.refreshResultsSummary = @refreshResultsSummary;
         clearCallbacks.refreshPlots = @refreshPlots;
         clearCallbacks.addLog = @addLog;
-        gamrywb.app.handleClearSingleFileSession('cic_vt', clearCallbacks);
+        gamrywb.ui.handleClearSingleFileSession('cic_vt', clearCallbacks);
     end
 
     function applyClearState(session, items, current)
