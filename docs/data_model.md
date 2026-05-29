@@ -98,6 +98,7 @@ chrono, eis, cvct, unknown
 ```
 
 Batch `items` are returned as a cell array because `"auto"` loading can mix different DTA item schemas.
+Empty batch inputs are no-ops that return no items and an empty report with zero counts.
 
 `loadFiles` report fields:
 

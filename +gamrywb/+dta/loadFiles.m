@@ -33,6 +33,11 @@ function [items, report] = loadFiles(filepaths, expectedKind, opts)
 end
 
 function filepaths = normalizeFilepaths(filepaths)
+    if isempty(filepaths)
+        filepaths = {};
+        return;
+    end
+
     if ischar(filepaths) || (isstring(filepaths) && isscalar(filepaths))
         filepaths = {char(filepaths)};
         return;

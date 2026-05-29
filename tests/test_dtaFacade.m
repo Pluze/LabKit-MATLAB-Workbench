@@ -61,6 +61,14 @@ function test_dtaFacade()
         'Batch report counts should match successful loads.');
     assert(all([report.statuses.ok]), 'Batch statuses should be successful.');
 
+    [emptyItems, emptyReport] = gamrywb.dta.loadFiles([], "auto");
+    assertLoadFilesReportFields(emptyReport);
+    assert(isempty(emptyItems), 'Empty DTA batch load should return no items.');
+    assert(emptyReport.nRequested == 0 && emptyReport.nLoaded == 0 && emptyReport.nFailed == 0, ...
+        'Empty DTA batch report counts should be zero.');
+    assert(isempty(emptyReport.loaded) && isempty(emptyReport.failed) && isempty(emptyReport.statuses), ...
+        'Empty DTA batch report should have no loaded, failed, or status entries.');
+
     [folderItems, folderReport] = gamrywb.dta.loadFolder(demoDir, "auto");
     assertLoadFolderReportFields(folderReport);
     assert(numel(folderItems) == folderReport.nLoaded, ...

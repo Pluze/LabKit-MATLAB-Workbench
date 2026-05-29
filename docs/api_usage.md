@@ -55,6 +55,8 @@ Batch loading:
 [items, report] = gamrywb.dta.loadFiles(filepaths, "auto");
 ```
 
+Empty file lists are valid and return no items plus a zero-count report.
+
 Folder loading:
 
 ```matlab
