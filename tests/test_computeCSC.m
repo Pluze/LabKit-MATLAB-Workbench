@@ -39,16 +39,18 @@ function test_computeCSC()
     assertClose(C.diff_C, -1.4959120117478183e-09, 1e-18, 'Anodic charge difference');
     assertClose(C.rel_pct, 0.0015190655520629138, 1e-12, 'Anodic relative difference');
 
-    CT = gamrywb_apps.csc.computeCTCharge([0; 1; 2], [0; 1; 2], [-1; 1; 1]);
-    CV = gamrywb_apps.csc.computeCVCharge([0; 1; 2], [0; 1; 2], [-1; 1; 1], 2);
-    assert(CT.ok && CV.ok, 'Synthetic zero-crossing case should compute.');
-    assertClose(CT.QctCath, 0.25, 1e-15, 'Synthetic CT cathodic charge');
-    assertClose(CT.QctAnod, 1.25, 1e-15, 'Synthetic CT anodic charge');
-    assertClose(CT.QctFull, 1.5, 1e-15, 'Synthetic CT full charge');
-    assertClose(CV.QcvCath, 0.125, 1e-15, 'Synthetic CV cathodic charge');
-    assertClose(CV.QcvAnod, 0.625, 1e-15, 'Synthetic CV anodic charge');
-    assertClose(CV.QcvFull, 0.75, 1e-15, 'Synthetic CV full charge');
-    assertClose(CV.dtErr, 0.5, 1e-15, 'Synthetic CV dt error');
+    synthetic = struct();
+    synthetic.headers = {'T', 'Vf', 'Im'};
+    synthetic.data = [0 0 -1; 1 1 1; 2 2 1];
+    Z = gamrywb_apps.csc.computeCSC(synthetic, struct('scanRate', 2, 'mode', 'Full'));
+    assert(Z.ok, 'Synthetic zero-crossing case should compute.');
+    assertClose(Z.QctCath, 0.25, 1e-15, 'Synthetic CT cathodic charge');
+    assertClose(Z.QctAnod, 1.25, 1e-15, 'Synthetic CT anodic charge');
+    assertClose(Z.QctFull, 1.5, 1e-15, 'Synthetic CT full charge');
+    assertClose(Z.QcvCath, 0.125, 1e-15, 'Synthetic CV cathodic charge');
+    assertClose(Z.QcvAnod, 0.625, 1e-15, 'Synthetic CV anodic charge');
+    assertClose(Z.QcvFull, 0.75, 1e-15, 'Synthetic CV full charge');
+    assertClose(Z.dtErr, 0.5, 1e-15, 'Synthetic CV dt error');
 
     D = gamrywb_apps.csc.computeCSC(curve, struct('scanRate', NaN));
     assert(~D.ok, 'Missing scan rate should fail.');
@@ -89,6 +91,13 @@ function test_computeCSC()
     assert(strcmp(T.Status{1}, 'OK'), 'CSC successful table row should preserve OK status.');
     assert(isnan(T.Qct_C(2)), 'CSC failed table row should use NaN numeric outputs.');
     assert(strcmp(T.Status{2}, 'scan rate missing'), 'CSC failed table row should preserve failure message.');
+
+    assert(exist(fullfile(root, 'apps', '+gamrywb_apps', '+csc', 'computeCTCharge.m'), 'file') ~= 2, ...
+        'CSC CT charge calculation should not remain a separate public helper.');
+    assert(exist(fullfile(root, 'apps', '+gamrywb_apps', '+csc', 'computeCVCharge.m'), 'file') ~= 2, ...
+        'CSC CV charge calculation should not remain a separate public helper.');
+    assert(exist(fullfile(root, 'apps', '+gamrywb_apps', '+csc', 'private'), 'dir') ~= 7, ...
+        'CSC app-side package should not keep a private helper directory for one integrator.');
 end
 
 function assertClose(actual, expected, tol, label)

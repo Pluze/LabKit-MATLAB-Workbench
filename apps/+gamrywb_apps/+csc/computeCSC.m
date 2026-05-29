@@ -41,8 +41,8 @@ function A = computeCSC(curve, opts)
         return;
     end
 
-    CT = gamrywb_apps.csc.computeCTCharge(t, V, I);
-    CV = gamrywb_apps.csc.computeCVCharge(t, V, I, A.scanRate);
+    CT = computeCTCharge(t, V, I);
+    CV = computeCVCharge(t, V, I, A.scanRate);
     if ~CT.ok
         A.message = CT.message;
         A.logMessage = 'Compare skipped: not enough valid points.';
@@ -133,5 +133,161 @@ function col = exactColumn(curve, name)
         col = [];
     else
         col = curve.data(:, idx);
+    end
+end
+
+function R = computeCTCharge(t, V, I)
+    R = struct();
+    R.ok = false;
+    R.message = '';
+
+    if nargin < 3 || numel(t) < 2 || numel(V) < 2 || numel(I) < 2
+        R.message = 'Not enough points';
+        R = fillEmptyCT(R);
+        return;
+    end
+
+    S = integrateCVCTSignSplit(t, V, I, NaN);
+    R = copyFields(R, S, {'QctCath', 'QctAnod', 'IcathDisp', 'IanodDisp'});
+    R.QctFull = R.QctCath + R.QctAnod;
+    R.ok = true;
+    R.message = 'OK';
+end
+
+function R = computeCVCharge(t, V, I, scanRate)
+    R = struct();
+    R.ok = false;
+    R.message = '';
+
+    if nargin < 4 || ~(isscalar(scanRate) && isfinite(scanRate) && scanRate > 0)
+        R.message = 'scan rate missing';
+        R = fillEmptyCV(R);
+        return;
+    end
+    if numel(t) < 2 || numel(V) < 2 || numel(I) < 2
+        R.message = 'Not enough points';
+        R = fillEmptyCV(R);
+        return;
+    end
+
+    S = integrateCVCTSignSplit(t, V, I, scanRate);
+    R = copyFields(R, S, {'QcvCath', 'QcvAnod', 'dtErr', 'IcathDisp', 'IanodDisp'});
+    R.QcvFull = R.QcvCath + R.QcvAnod;
+    R.ok = true;
+    R.message = 'OK';
+end
+
+function R = integrateCVCTSignSplit(t, V, I, scanRate)
+    if nargin < 4
+        scanRate = NaN;
+    end
+
+    t = t(:);
+    V = V(:);
+    I = I(:);
+
+    R = struct();
+    R.QctCath = 0;
+    R.QctAnod = 0;
+    R.QcvCath = 0;
+    R.QcvAnod = 0;
+    R.dtErr = NaN;
+
+    R.IcathDisp = I;
+    R.IanodDisp = I;
+    R.IcathDisp(I >= 0) = NaN;
+    R.IanodDisp(I <= 0) = NaN;
+
+    dtErrList = [];
+    useCV = isscalar(scanRate) && isfinite(scanRate) && scanRate > 0;
+
+    for k = 1:numel(t)-1
+        t1 = t(k);   t2 = t(k+1);
+        V1 = V(k);   V2 = V(k+1);
+        I1 = I(k);   I2 = I(k+1);
+
+        if any(~isfinite([t1 t2 V1 V2 I1 I2]))
+            continue;
+        end
+
+        bp = [0, 1];
+        s0 = crossingFraction(I1, I2, 0);
+        if ~isempty(s0)
+            bp(end+1) = s0; %#ok<AGROW>
+        end
+        bp = unique(sort(bp));
+
+        for j = 1:numel(bp)-1
+            sa = bp(j);
+            sb = bp(j+1);
+
+            ta = lerp(t1, t2, sa);
+            tb = lerp(t1, t2, sb);
+            Va = lerp(V1, V2, sa);
+            Vb = lerp(V1, V2, sb);
+            Ia = lerp(I1, I2, sa);
+            Ib = lerp(I1, I2, sb);
+
+            Imid = 0.5 * (Ia + Ib);
+            if Imid < 0
+                R.QctCath = R.QctCath + abs(trapz([ta tb], [Ia Ib]));
+            elseif Imid > 0
+                R.QctAnod = R.QctAnod + trapz([ta tb], [Ia Ib]);
+            end
+
+            if useCV
+                dt_act = tb - ta;
+                dt_cv = abs(Vb - Va) / scanRate;
+                dtErrList(end+1) = abs(dt_act - dt_cv); %#ok<AGROW>
+
+                if Imid < 0
+                    R.QcvCath = R.QcvCath + abs(trapz([0 dt_cv], [Ia Ib]));
+                elseif Imid > 0
+                    R.QcvAnod = R.QcvAnod + trapz([0 dt_cv], [Ia Ib]);
+                end
+            end
+        end
+    end
+
+    if ~isempty(dtErrList)
+        R.dtErr = max(dtErrList);
+    end
+end
+
+function R = fillEmptyCT(R)
+    R.QctCath = 0;
+    R.QctAnod = 0;
+    R.QctFull = 0;
+    R.IcathDisp = [];
+    R.IanodDisp = [];
+end
+
+function R = fillEmptyCV(R)
+    R.QcvCath = 0;
+    R.QcvAnod = 0;
+    R.QcvFull = 0;
+    R.dtErr = NaN;
+    R.IcathDisp = [];
+    R.IanodDisp = [];
+end
+
+function out = copyFields(out, in, names)
+    for k = 1:numel(names)
+        out.(names{k}) = in.(names{k});
+    end
+end
+
+function y = lerp(a, b, s)
+    y = a + s * (b - a);
+end
+
+function s = crossingFraction(y1, y2, y0)
+    if ~isfinite(y1) || ~isfinite(y2) || y1 == y2
+        s = [];
+        return;
+    end
+    s = (y0 - y1) / (y2 - y1);
+    if ~(s > 0 && s < 1)
+        s = [];
     end
 end

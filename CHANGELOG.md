@@ -34,6 +34,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Folded EIS overlay axis selection, plotting, and export helpers into local functions in `apps/gamrywb_EIS_app.m` and removed the temporary `apps/+gamrywb_apps/+eis` package.
 - Streamlined app boundary tests by sharing single-file entrypoint assertions while keeping app-specific architecture checks explicit.
 - Clarified the roadmap around reusable GUI, Gamry/DTA, and utility library surfaces plus single-file experiment apps.
+- Folded CSC CT/CV charge subcalculations into `apps/+gamrywb_apps/+csc/computeCSC.m` and removed redundant public/private helper files.
 - Routed the EIS app's file loading through the GUI-free DTA facade instead of constructing EIS items directly in the app layer.
 - Routed the Chrono overlay app's file loading through the GUI-free DTA facade while keeping pulse-gap alignment in the app workflow.
 - Routed the CSC app's CV/CT file loading through the GUI-free DTA facade instead of parsing CV/CT files directly in the app layer.
