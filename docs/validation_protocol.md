@@ -41,6 +41,7 @@ abs(oldValue - newValue) < 1e-9
 Use looser tolerances only when justified by interpolation, plotting-only alignment, or format conversion. Document any looser tolerance in the test.
 
 Use `tests/assertClose.m` for repeated exact or tolerance-based numeric checks instead of redefining local assertion helpers in each test file.
+Use `tests/demoFixturePath.m` and focused fixture builders such as `tests/makeChronoFixtureItem.m` when multiple tests need the same demo fixture setup. Keep those helpers limited to test setup; do not move app-specific analysis, export schemas, or expected values into shared test helpers.
 
 ## Fixture Expectations
 

@@ -1,13 +1,7 @@
 function test_vtResistanceExport()
 %TEST_VTRESISTANCEEXPORT Verify VT resistance result/export table helpers.
 
-    root = fileparts(fileparts(mfilename('fullpath')));
-    fixture = fullfile(root, 'demo', 'chrono_chronopot_current_pulse_0p2ms.DTA');
-
-    item = struct();
-    item.filepath = fixture;
-    item.name = 'chrono "vt".DTA';
-    [item.meta, item.tables] = gamrywb.io.parseChronoDTA(fixture);
+    item = makeChronoFixtureItem('', 'chrono "vt".DTA');
     item.analysis = computeVTResistance(item, struct());
     assert(item.analysis.ok, item.analysis.message);
 

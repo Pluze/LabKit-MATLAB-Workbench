@@ -1,13 +1,7 @@
 function test_cicExport()
 %TEST_CICEXPORT Verify app-side CIC result/export table helpers.
 
-    root = fileparts(fileparts(mfilename('fullpath')));
-    fixture = fullfile(root, 'demo', 'chrono_chronopot_current_pulse_0p2ms.DTA');
-
-    item = struct();
-    item.filepath = fixture;
-    item.name = 'chrono "cic".DTA';
-    [item.meta, item.tables] = gamrywb.io.parseChronoDTA(fixture);
+    item = makeChronoFixtureItem('', 'chrono "cic".DTA');
 
     opts = struct();
     opts.delay_s = 10e-6;

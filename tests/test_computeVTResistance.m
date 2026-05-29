@@ -1,13 +1,7 @@
 function test_computeVTResistance()
 %TEST_COMPUTEVTRESISTANCE Verify VT resistance app analysis.
 
-    root = fileparts(fileparts(mfilename('fullpath')));
-    fixture = fullfile(root, 'demo', 'chrono_chronopot_current_pulse_0p2ms.DTA');
-
-    item = struct();
-    item.filepath = fixture;
-    item.name = 'chrono_chronopot_current_pulse_0p2ms.DTA';
-    [item.meta, item.tables] = gamrywb.io.parseChronoDTA(fixture);
+    item = makeChronoFixtureItem();
 
     opts = struct();
     opts.windowMode = 'Full pulse median';
