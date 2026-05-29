@@ -60,6 +60,7 @@ Current shared UI helpers:
 +gamrywb/+ui/appendLog.m
 +gamrywb/+ui/refreshListboxItems.m
 +gamrywb/+ui/refreshFileListbox.m
++gamrywb/+ui/refreshSingleSelectFileListbox.m
 +gamrywb/+ui/createAxes.m
 +gamrywb/+ui/createLabeledDropdown.m
 +gamrywb/+ui/createLabeledEditField.m
@@ -470,6 +471,7 @@ Preferred split:
 +gamrywb/+app/selectItemsByNames.m    done for Chrono/EIS overlay apps
 +gamrywb/+ui/refreshListboxItems.m
 +gamrywb/+ui/refreshFileListbox.m    done for Chrono/EIS overlay apps
++gamrywb/+ui/refreshSingleSelectFileListbox.m    done for VT resistance and CIC apps
 +gamrywb/+ui/createSingleSelectFilePanel.m    done for VT resistance and CIC apps
 ```
 
@@ -717,6 +719,7 @@ Use this section to record meaningful changes in strategy.
 - removeSelectedItemsFromSession shares selected-file removal for Chrono/EIS while preserving app-owned refresh and plotting
 - selectItemsByNames shares empty-selection-as-all item lookup for Chrono/EIS plot and export paths
 - createSingleSelectFilePanel shares the VT/CIC files panel while preserving app-owned dialogs, selection refresh, and export behavior
+- refreshSingleSelectFileListbox shares VT/CIC single-file listbox refresh and loaded-count text while returning the app-owned current index
 ```
 
 ---

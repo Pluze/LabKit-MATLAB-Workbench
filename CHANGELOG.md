@@ -11,6 +11,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 
 ### Changed
 
+- Extracted shared single-select file-list refresh behavior for VT/CIC-style apps into `+gamrywb/+ui`.
 - Extracted the shared single-select files panel for VT/CIC-style apps into `+gamrywb/+ui` and adopted it in the VT resistance and CIC apps.
 - Extracted shared top/bottom plot-control rows for VT/CIC-style apps into `+gamrywb/+ui` and adopted them in the VT resistance and CIC apps.
 - Extracted the shared tabbed dual-plot shell for VT/CIC-style apps into `+gamrywb/+ui` and adopted it in the VT resistance and CIC apps.

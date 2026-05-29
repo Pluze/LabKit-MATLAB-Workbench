@@ -287,19 +287,7 @@ function varargout = launchVTResistanceApp(varargin)
     end
 
     function refreshFileList()
-        if isempty(S.items)
-            lbFiles.Items = {};
-            lbFiles.Value = {};
-            txtLoaded.Value = 'No files loaded';
-            return;
-        end
-        names = arrayfun(@(x) x.name, S.items, 'UniformOutput', false);
-        lbFiles.Items = names;
-        if isempty(S.current) || S.current < 1 || S.current > numel(S.items)
-            S.current = 1;
-        end
-        lbFiles.Value = names{S.current};
-        txtLoaded.Value = sprintf('%d file(s) loaded', numel(S.items));
+        S.current = gamrywb.ui.refreshSingleSelectFileListbox(lbFiles, txtLoaded, S.items, S.current);
     end
 
     function refreshBatchTable()
