@@ -86,6 +86,7 @@ App-boundary changes:
 
 - public app files do not depend on transitional app-specific helper packages
 - app-specific helper packages and private launcher directories are not reintroduced for workflow code that belongs to one app
+- reusable `+gamrywb/+io` does not regain app-specific export-table or CSV writer helpers
 - keep these architecture guardrails in `tests/test_phase10_apps.m` rather than duplicating them in numerical analysis tests
 
 Session/export changes:

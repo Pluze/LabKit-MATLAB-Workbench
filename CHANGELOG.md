@@ -50,6 +50,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Promoted generic selected-curve plotting to `gamrywb.ui.plotCurveXY` and removed the CSC-specific plotting helper.
 - Removed the unused CSC result-table helper because the current CSC app has no CSV/export workflow.
 - Streamlined app-boundary tests to prevent transitional helper packages, unused helper files, or private launcher directories from returning.
+- Added an app-boundary guard so reusable `+gamrywb/+io` does not regain app-specific export-table or CSV writer helpers.
 - Streamlined app-boundary DTA facade assertions so future facade API changes do not duplicate test boilerplate across every app.
 - Tightened DTA facade tests around documented status and report schemas.
 - Split the MATLAB test runner manifest into default and GUI groups so future tests have clearer placement.
