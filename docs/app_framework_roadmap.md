@@ -47,7 +47,7 @@ Completed package areas:
 - `+gamrywb/+io`: parsers, result/export table builders, CSV writers, session IO.
 - `+gamrywb/+data`: item/session construction and access helpers.
 - `+gamrywb/+plot`: reusable plot helpers.
-- `+gamrywb/+ui`: batch table display helpers and small axes helpers.
+- `+gamrywb/+ui`: batch table display helpers, small axes helpers, log/listbox helpers, and simple labeled control helpers.
 - `+gamrywb/+util`: low-risk utility helpers.
 
 Current shared UI helpers:
@@ -56,6 +56,10 @@ Current shared UI helpers:
 +gamrywb/+ui/clearAxisObjects.m
 +gamrywb/+ui/disableAxesInteractivity.m
 +gamrywb/+ui/hardResetAxis.m
++gamrywb/+ui/appendLog.m
++gamrywb/+ui/refreshListboxItems.m
++gamrywb/+ui/createLabeledDropdown.m
++gamrywb/+ui/createLabeledEditField.m
 +gamrywb/+ui/buildCICBatchTableData.m
 +gamrywb/+ui/buildVTResistanceBatchTableData.m
 ```
@@ -227,6 +231,10 @@ Already present:
 ```text
 buildCICBatchTableData
 buildVTResistanceBatchTableData
+appendLog
+refreshListboxItems
+createLabeledDropdown
+createLabeledEditField
 clearAxisObjects
 disableAxesInteractivity
 hardResetAxis
@@ -235,11 +243,7 @@ hardResetAxis
 Next candidates:
 
 ```text
-appendLog
-createLabeledDropdown
-createLabeledEditField
 createAxes
-refreshListboxItems
 createTwoPaneShell
 createTabbedDualPlotShell
 createFilePanel
@@ -281,8 +285,8 @@ Examples:
 Status:
 
 ```text
-partial: axes clear/reset/interactivity helpers are extracted
-remaining: log append, labeled controls, listbox refresh
+partial: axes clear/reset/interactivity, log append, listbox refresh, and simple labeled controls are extracted
+remaining: create axes helpers and larger shared panels/shells
 ```
 
 ### Level 2: Shared panels
@@ -396,12 +400,12 @@ Already done:
 - `hardResetAxis`
 - `appendLog`
 - `refreshListboxItems` for multiselect file listboxes
+- `createLabeledDropdown` and `createLabeledEditField` for Chrono/EIS plot option rows
 
 Next helpers:
 
 ```text
-+gamrywb/+ui/createLabeledDropdown.m
-+gamrywb/+ui/createLabeledEditField.m
++gamrywb/+ui/createAxes.m
 ```
 
 Recommended commit:
@@ -624,10 +628,10 @@ finish low-risk UI primitives
 
 Suggested sequence:
 
-1. Extract simple labeled dropdown/edit-field helpers where they reduce repeated row boilerplate.
-2. Reassess whether file/session behavior should move into `+gamrywb/+app` or remain split between app and UI.
+1. Reassess whether file/session behavior should move into `+gamrywb/+app` or remain split between app and UI.
+2. Extract the next repeated primitive only when it has at least two straightforward call sites.
 
-Do not start `createTwoPaneShell` until simple labeled controls are stable.
+Do not start `createTwoPaneShell` until file/session behavior has a clearer boundary.
 
 ---
 
@@ -643,6 +647,7 @@ Use this section to record meaningful changes in strategy.
 - next route changed from "extract first primitives" to "finish remaining low-risk primitives, then file/session behavior"
 - appendLog is now extracted and used by all app entry points
 - refreshListboxItems is extracted for Chrono/EIS multiselect file listboxes
+- createLabeledDropdown and createLabeledEditField are extracted for Chrono/EIS plot option rows
 ```
 
 ---
