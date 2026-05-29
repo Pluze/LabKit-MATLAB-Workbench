@@ -66,8 +66,8 @@ completely new app type: about 6/10 convenient
 Why similar apps are now easier:
 
 - public app entry points and app bodies now live under `apps/`
-- app bodies are now collapsed into public `apps/*.m` files; the next cleanup is the remaining transitional `apps/+gamrywb_apps` helper namespaces
-- `apps/+gamrywb_apps` is a temporary migration namespace, not the final app design; remove it by folding experiment-specific helpers into the owning app files or promoting only truly reusable, parameter-light code into `+gamrywb`
+- app bodies and app-specific workflow helpers are now collapsed into public `apps/*.m` files
+- the temporary `apps/+gamrywb_apps` migration namespace has been removed; do not recreate it unless there is a short-lived, test-driven migration reason
 - common GUI shells and panels live under `+gamrywb/+ui`
 - low-level pulse detection and broadly reusable math/data helpers may live under `+gamrywb/+analysis`; experiment-specific workflow calculations live with the owning app
 - app-specific plotting helpers live with the owning app; reusable GUI/axes primitives live under `+gamrywb/+ui`
@@ -77,10 +77,10 @@ Why similar apps are now easier:
 Main remaining bottleneck:
 
 ```text
-remaining `apps/+gamrywb_apps` helpers need to collapse into owning app files unless they prove broadly reusable
+future apps still need clearer reusable GUI/DTA API examples and more golden behavior references
 ```
 
-Therefore, the next high-value step is reducing transitional app helper namespaces and keeping tests focused on behavior and boundaries, not more GUI-helper extraction.
+Therefore, the next high-value step is improving reusable API examples and golden validation coverage while keeping tests focused on behavior and boundaries, not more GUI-helper extraction.
 
 ---
 
@@ -484,7 +484,7 @@ The Chrono overlay app implementation now lives directly in `apps/gamrywb_Chrono
 
 The CSC app implementation now lives directly in `apps/gamrywb_CSC_app.m`, not under `apps/private`, `+gamrywb/+app`, or `apps/+gamrywb_apps`, and uses `gamrywb.dta.loadFile(filepath, "cvct")` for file loading. CSC-specific charge calculations, CT/CV charge subcalculations, and sign-split integration are local functions in the public app file, not reusable `+gamrywb/+analysis` APIs or transitional app-helper package APIs. Generic selected-curve plotting lives in `gamrywb.ui.plotCurveXY`. Because the CSC app has no CSV export workflow, it does not keep standalone result-table/export helpers.
 
-The CIC app implementation now lives directly in `apps/gamrywb_CIC_app.m`, not under `apps/private` or `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "chrono")` for file loading. CIC-specific voltage-transient analysis, injected-charge calculation, water-window checks, result-table, CSV, and batch-table helpers live under `apps/+gamrywb_apps/+cic`, not in reusable `+gamrywb/+analysis`, `+gamrywb/+io`, or `+gamrywb/+ui`; this helper package is transitional testable app-side code.
+The CIC app implementation now lives directly in `apps/gamrywb_CIC_app.m`, not under `apps/private`, `apps/+gamrywb_apps`, or `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "chrono")` for file loading. CIC-specific voltage-transient analysis, injected-charge calculation, water-window checks, result-table, CSV, and batch-table helpers are local functions in the public app file, not reusable `+gamrywb/+analysis`, `+gamrywb/+io`, or `+gamrywb/+ui` APIs.
 
 The VT resistance app implementation now lives directly in `apps/gamrywb_VTResistance_app.m`, not under `apps/private`, `+gamrywb/+app`, or `apps/+gamrywb_apps`, and uses `gamrywb.dta.loadFile(filepath, "chrono")` for file loading. VT-specific resistance analysis, steady-window and baseline subcalculations, result-table construction, batch-table display data, and CSV writing are local functions in the public app file, not reusable `+gamrywb/+analysis`, `+gamrywb/+io`, or `+gamrywb/+ui` APIs.
 
@@ -493,7 +493,7 @@ These are the reference paths for adopting the DTA facade and app-side workflow 
 Remaining migration candidates:
 
 ```text
-App-side helper packages: keep only as temporary testable waypoints; do not grow them into a framework
+App-side helper packages: removed as a migration layer; do not reintroduce them as a framework
 Remaining +analysis functions: keep the package pulse-detection focused; classify any other helper before adding new behavior there
 Generic GUI/session helpers now live in +gamrywb/+ui; do not recreate +gamrywb/+app for app-specific workflow code
 ```

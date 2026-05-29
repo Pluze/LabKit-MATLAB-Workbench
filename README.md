@@ -15,7 +15,7 @@ What that means:
 - EIS, Chrono overlay, CSC, VT resistance, and CIC are now public single-file app implementations.
 - CSC-specific charge/CSC calculations now live as local functions in the public CSC app file instead of the reusable `+gamrywb` library.
 - VT-specific resistance calculations, export formatting, and batch-table display data now live as local functions in the public VT app file instead of the reusable `+gamrywb` library.
-- CIC-specific voltage-transient calculations, export formatting, and batch-table display data now live on the app side instead of the reusable `+gamrywb` library.
+- CIC-specific voltage-transient calculations, export formatting, and batch-table display data now live as local functions in the public CIC app file instead of the reusable `+gamrywb` library.
 
 Deferred beyond v1.0:
 

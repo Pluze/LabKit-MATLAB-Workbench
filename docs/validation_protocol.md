@@ -82,8 +82,8 @@ Analysis changes:
 
 App-boundary changes:
 
-- `apps/+gamrywb_apps` transitional helper packages contain only the explicitly allowed `.m` files needed for direct pure-function coverage
-- app-specific helper packages do not accumulate private subdirectories or unused public helpers
+- public app files do not depend on transitional app-specific helper packages
+- app-specific helper packages and private launcher directories are not reintroduced for workflow code that belongs to one app
 
 Session/export changes:
 

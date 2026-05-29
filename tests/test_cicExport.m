@@ -16,7 +16,7 @@ function test_cicExport()
     opts.areaOverride = '';
     opts.pulseMode = 'Metadata first, then auto';
     opts.usedMeasuredCurrent = true;
-    item.analysis = gamrywb_apps.cic.computeCIC(item, opts);
+    item.analysis = computeCIC(item, opts);
     assert(item.analysis.ok, item.analysis.message);
 
     failed = struct();
@@ -28,7 +28,7 @@ function test_cicExport()
 
     items = [item failed];
 
-    T = gamrywb_apps.cic.buildResultsTable(items, 'mC/cm^2');
+    T = buildCICResultsTable(items, 'mC/cm^2');
     expectedNames = {'File', 'Amp_A', 'Emc_V', 'Ema_V', 'Qc_C', 'Qa_C', 'Qt_C', ...
         'CICc_mCcm2', 'CICa_mCcm2', 'CICt_mCcm2', 'Safe', 'Detection'};
     assert(isequal(T.Properties.VariableNames, expectedNames), ...
@@ -41,12 +41,12 @@ function test_cicExport()
     assert(T.Safe(2) == 0, 'Failed CIC rows should preserve legacy Safe=0.');
     assert(strcmp(T.Detection{2}, 'failed'), 'Failed CIC rows should preserve legacy failed detection label.');
 
-    Tu = gamrywb_apps.cic.buildResultsTable(item, 'uC/cm^2');
+    Tu = buildCICResultsTable(item, 'uC/cm^2');
     assert(isequal(Tu.Properties.VariableNames(8:10), {'CICc_uCcm2', 'CICa_uCcm2', 'CICt_uCcm2'}), ...
         'CIC export table headers should preserve legacy uC CSV names.');
     assertClose(Tu.CICc_uCcm2(1), 1e3 * item.analysis.CICc_mCcm2, 1e-12, 'CIC uC cathodic value');
 
-    [C, cols] = gamrywb_apps.cic.buildBatchTableData(items, 'uC/cm^2');
+    [C, cols] = buildCICBatchTableData(items, 'uC/cm^2');
     assert(isequal(cols, {'File','Amp(A)','Emc(V)','Ema(V)','Qc(uC/cm^2)','Qa(uC/cm^2)','Qtot(uC/cm^2)','Safe'}), ...
         'CIC batch UI table headers should preserve legacy unit labels.');
     assert(isequal(size(C), [2 8]), 'CIC batch UI table should preserve legacy 8-column shape.');
@@ -56,7 +56,7 @@ function test_cicExport()
 
     tmp = [tempname '.csv'];
     cleaner = onCleanup(@() deleteIfExists(tmp));
-    gamrywb_apps.cic.writeResultsCSV(items, tmp, 'mC/cm^2');
+    writeCICResultsCSV(items, tmp, 'mC/cm^2');
     txt = fileread(tmp);
     header = 'File,Amp_A,Emc_V,Ema_V,Qc_C,Qa_C,Qt_C,CICc_mCcm2,CICa_mCcm2,CICt_mCcm2,Safe,Detection';
     assert(startsWith(string(txt), header), 'CIC CSV header should preserve legacy spelling and order.');
@@ -74,4 +74,20 @@ function deleteIfExists(filepath)
     if exist(filepath, 'file') == 2
         delete(filepath);
     end
+end
+
+function A = computeCIC(item, opts)
+    A = gamrywb_CIC_app('__test_computeCIC__', item, opts);
+end
+
+function T = buildCICResultsTable(items, unitLabel)
+    T = gamrywb_CIC_app('__test_buildResultsTable__', items, unitLabel);
+end
+
+function [C, cols] = buildCICBatchTableData(items, unitLabel)
+    [C, cols] = gamrywb_CIC_app('__test_buildBatchTableData__', items, unitLabel);
+end
+
+function writeCICResultsCSV(items, filepath, unitLabel)
+    gamrywb_CIC_app('__test_writeResultsCSV__', items, filepath, unitLabel);
 end

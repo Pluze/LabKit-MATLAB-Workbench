@@ -18,13 +18,13 @@ All notable user-facing and maintainer-facing changes are recorded here.
 
 - Moved the EIS app implementation under `apps/private` so app-specific workflow code no longer lives in the reusable `+gamrywb` package.
 - Moved the Chrono overlay app implementation under `apps/private` so overlay workflow code no longer lives in the reusable `+gamrywb` package.
-- Moved the CSC app implementation and CSC-specific charge/CSC calculations into the app-side namespace outside the reusable `+gamrywb` package.
-- Moved the VT resistance app implementation and VT-specific resistance/export/table logic into the app-side namespace outside the reusable `+gamrywb` package.
-- Moved the CIC app implementation and CIC-specific voltage-transient/export/table logic into the app-side namespace outside the reusable `+gamrywb` package.
-- Moved CIC-specific injected-charge, voltage-transient metric, and water-window helper calculations into the app-side namespace.
+- Moved the CSC app implementation and CSC-specific charge/CSC calculations to the app side outside the reusable `+gamrywb` package.
+- Moved the VT resistance app implementation and VT-specific resistance/export/table logic to the app side outside the reusable `+gamrywb` package.
+- Moved the CIC app implementation and CIC-specific voltage-transient/export/table logic to the app side outside the reusable `+gamrywb` package.
+- Moved CIC-specific injected-charge, voltage-transient metric, and water-window helper calculations to the app side.
 - Moved Chrono overlay pulse-gap alignment, VT/IT overlay plotting, and overlay CSV table construction out of the reusable `+gamrywb` package.
-- Moved EIS overlay axis selection, overlay plotting, and plot CSV table construction into the app-side namespace outside the reusable `+gamrywb` package.
-- Moved CSC CV/CT plotting into the app-side namespace and removed the empty reusable `+gamrywb/+plot` package.
+- Moved EIS overlay axis selection, overlay plotting, and plot CSV table construction to the app side outside the reusable `+gamrywb` package.
+- Moved CSC CV/CT plotting to the app side and removed the empty reusable `+gamrywb/+plot` package.
 - Collapsed the EIS app implementation from `apps/private` into the public `apps/gamrywb_EIS_app.m` single-file app entry.
 - Collapsed the Chrono overlay app implementation from `apps/private` into the public `apps/gamrywb_ChronoOverlay_app.m` single-file app entry.
 - Collapsed the CSC app implementation from `apps/private` into the public `apps/gamrywb_CSC_app.m` single-file app entry.
@@ -39,9 +39,10 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Folded the remaining CSC charge/CSC calculation into local functions in `apps/gamrywb_CSC_app.m` and removed the transitional CSC helper package file.
 - Folded VT steady-window and baseline subcalculations into the VT app-side resistance workflow and removed redundant public helper files.
 - Folded the remaining VT resistance analysis, result-table, batch-table, and CSV helpers into local functions in `apps/gamrywb_VTResistance_app.m` and removed the transitional VT helper package files.
+- Folded the remaining CIC analysis, result-table, batch-table, and CSV helpers into local functions in `apps/gamrywb_CIC_app.m` and removed the transitional CIC helper package files.
 - Promoted generic selected-curve plotting to `gamrywb.ui.plotCurveXY` and removed the CSC-specific plotting helper.
 - Removed the unused CSC result-table helper because the current CSC app has no CSV/export workflow.
-- Streamlined transitional app-helper boundary tests to whitelist the remaining allowed `.m` files and prevent new unused helper packages or private subdirectories.
+- Streamlined app-boundary tests to prevent transitional helper packages, unused helper files, or private launcher directories from returning.
 - Routed the EIS app's file loading through the GUI-free DTA facade instead of constructing EIS items directly in the app layer.
 - Routed the Chrono overlay app's file loading through the GUI-free DTA facade while keeping pulse-gap alignment in the app workflow.
 - Routed the CSC app's CV/CT file loading through the GUI-free DTA facade instead of parsing CV/CT files directly in the app layer.

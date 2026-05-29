@@ -23,6 +23,12 @@ function varargout = gamrywb_CIC_app(varargin)
 %   - By default, the evaluation point is 10 us after the end of each phase,
 %     matching the convention commonly used in the literature the user shared.
     if nargin > 0
+        % Keep CIC numerical/export tests direct while the app owns the local workflow code.
+        [handled, testOutputs] = handleCICTestRequest(varargin, nargout);
+        if handled
+            varargout = testOutputs;
+            return;
+        end
         error('gamrywb_CIC_app:UnsupportedInput', 'gamrywb_CIC_app does not accept input arguments.');
     end
     if nargout > 1
@@ -308,7 +314,7 @@ function varargout = gamrywb_CIC_app(varargin)
         opts.pulseMode = ddPulseMode.Value;
         opts.usedMeasuredCurrent = cbUseMeasuredCurrent.Value;
 
-        A = gamrywb_apps.cic.computeCIC(item, opts);
+        A = computeCIC(item, opts);
         item.analysis = A;
         if A.ok
             addLog(sprintf('%s: Emc=%.6f V, Ema=%.6f V, safe=%d', item.name, A.Emc, A.Ema, A.safe));
@@ -351,7 +357,7 @@ function varargout = gamrywb_CIC_app(varargin)
 
     function refreshBatchTable()
         [~, unitLabel] = cicDisplayUnit();
-        [C, columnNames] = gamrywb_apps.cic.buildBatchTableData(S.items, unitLabel);
+        [C, columnNames] = buildBatchTableData(S.items, unitLabel);
         tbl.ColumnName = columnNames;
         if isempty(S.items)
             tbl.Data = cell(0,8);
@@ -599,7 +605,7 @@ function varargout = gamrywb_CIC_app(varargin)
         end
         out = fullfile(p,f);
         [~, unitLabel] = cicDisplayUnit();
-        [ok, msg] = gamrywb_apps.cic.writeResultsCSV(S.items, out, unitLabel);
+        [ok, msg] = writeResultsCSV(S.items, out, unitLabel);
         if ~ok
             uialert(fig,msg,'Export');
             return;
@@ -638,6 +644,490 @@ function varargout = gamrywb_CIC_app(varargin)
         gamrywb.ui.appendLog(txtLog, msg);
     end
 
+end
+
+function [handled, outputs] = handleCICTestRequest(args, nargoutRequested)
+    handled = false;
+    outputs = {};
+    if isempty(args) || ~(ischar(args{1}) || (isstring(args{1}) && isscalar(args{1})))
+        return;
+    end
+
+    handled = true;
+    command = char(args{1});
+    switch command
+        case '__test_computeCIC__'
+            assertCICTestArgCount(args, 3, command);
+            if nargoutRequested > 1
+                error('gamrywb_CIC_app:TooManyOutputs', 'CIC compute test request returns one result struct.');
+            end
+            outputs = {computeCIC(args{2}, args{3})};
+        case '__test_buildBatchTableData__'
+            assertCICTestArgCount(args, 3, command);
+            if nargoutRequested > 2
+                error('gamrywb_CIC_app:TooManyOutputs', 'CIC batch-table test request returns data and column names.');
+            end
+            [C, columnNames] = buildBatchTableData(args{2}, args{3});
+            outputs = {C, columnNames};
+            outputs = outputs(1:nargoutRequested);
+        case '__test_buildResultsTable__'
+            assertCICTestArgCount(args, 3, command);
+            if nargoutRequested > 1
+                error('gamrywb_CIC_app:TooManyOutputs', 'CIC result-table test request returns one table.');
+            end
+            outputs = {buildResultsTable(args{2}, args{3})};
+        case '__test_writeResultsCSV__'
+            assertCICTestArgCount(args, 4, command);
+            if nargoutRequested > 2
+                error('gamrywb_CIC_app:TooManyOutputs', 'CIC CSV test request returns at most ok and message.');
+            end
+            if nargoutRequested == 0
+                writeResultsCSV(args{2}, args{3}, args{4});
+            else
+                [ok, msg] = writeResultsCSV(args{2}, args{3}, args{4});
+                outputs = {ok, msg};
+                outputs = outputs(1:nargoutRequested);
+            end
+        otherwise
+            handled = false;
+    end
+end
+
+function assertCICTestArgCount(args, expectedCount, command)
+    if numel(args) ~= expectedCount
+        error('gamrywb_CIC_app:InvalidTestRequest', ...
+            '%s expects %d total input arguments.', command, expectedCount);
+    end
+end
+
+function A = computeCIC(item, opts)
+%COMPUTECIC Compute legacy-compatible CIC / voltage-transient metrics.
+
+    if nargin < 2
+        opts = struct();
+    end
+    opts = fillCICOptions(opts);
+
+    A = struct();
+    A.ok = false;
+    A.message = '';
+    A.delay_s = opts.delay_s;
+    A.cathLimit = opts.cathLimit;
+    A.anodLimit = opts.anodLimit;
+    A.area_cm2 = chooseArea(item, opts);
+    A.usedMeasuredCurrent = opts.usedMeasuredCurrent;
+    A.logOnFailure = false;
+
+    [curve, okCurve, msgCurve] = mainCurve(item);
+    if ~okCurve
+        A.message = msgCurve;
+        A.logOnFailure = true;
+        return;
+    end
+
+    t = gamrywb.data.getColumn(curve, 'T');
+    Vf = gamrywb.data.getColumn(curve, 'Vf');
+    Im = gamrywb.data.getColumn(curve, 'Im');
+    pt = gamrywb.data.getColumn(curve, 'Pt');
+    if isempty(pt)
+        pt = (0:numel(t)-1).';
+    end
+
+    valid = ~(isnan(t) | isnan(Vf) | isnan(Im));
+    t = t(valid);
+    Vf = Vf(valid);
+    Im = Im(valid);
+    pt = pt(valid);
+    if numel(t) < 5
+        A.message = 'Not enough valid T/Vf/Im points.';
+        return;
+    end
+
+    A.t = t;
+    A.Vf = Vf;
+    A.Im = Im;
+    A.pt = pt;
+    A.sample_dt = median(diff(t));
+    A.sample_dt_report = A.sample_dt;
+    A.ampEstimate_A = max(abs(Im));
+
+    meta = struct();
+    if isfield(item, 'meta')
+        meta = item.meta;
+    end
+    [pulse, pulseMsg] = gamrywb.analysis.detectPulses(t, Im, meta, opts.pulseMode);
+    A.pulse = pulse;
+    A.detectMode = pulse.method;
+    A.detectMsg = pulseMsg;
+
+    if ~pulse.ok
+        A.message = pulseMsg;
+        A.logOnFailure = true;
+        return;
+    end
+
+    V = computeVoltageTransientMetrics(t, Vf, pulse, A.delay_s);
+    A = mergeStructs(A, V);
+
+    Q = computeInjectedCharge(t, Im, pulse, A.usedMeasuredCurrent);
+    A = mergeStructs(A, Q);
+    if ~Q.ok
+        A.message = Q.message;
+        return;
+    end
+
+    if isfinite(A.area_cm2) && A.area_cm2 > 0
+        A.CICc_mCcm2 = 1e3 * A.Qc_C / A.area_cm2;
+        A.CICa_mCcm2 = 1e3 * A.Qa_C / A.area_cm2;
+        A.CICt_mCcm2 = 1e3 * A.Qt_C / A.area_cm2;
+    else
+        A.CICc_mCcm2 = NaN;
+        A.CICa_mCcm2 = NaN;
+        A.CICt_mCcm2 = NaN;
+    end
+
+    safety = checkWaterWindowSafety(A.Emc, A.Ema, A.cathLimit, A.anodLimit);
+    A = mergeStructs(A, safety);
+
+    A.ok = true;
+    A.message = 'OK';
+end
+
+function opts = fillCICOptions(opts)
+    if ~isfield(opts, 'delay_s')
+        opts.delay_s = 10e-6;
+    end
+    if ~isfield(opts, 'cathLimit')
+        opts.cathLimit = -0.6;
+    end
+    if ~isfield(opts, 'anodLimit')
+        opts.anodLimit = 0.8;
+    end
+    if ~isfield(opts, 'areaOverride')
+        opts.areaOverride = '';
+    end
+    if ~isfield(opts, 'area_cm2')
+        opts.area_cm2 = NaN;
+    end
+    if ~isfield(opts, 'pulseMode')
+        opts.pulseMode = 'Metadata first, then auto';
+    end
+    if ~isfield(opts, 'usedMeasuredCurrent')
+        opts.usedMeasuredCurrent = true;
+    end
+end
+
+function area = chooseArea(item, opts)
+    area = NaN;
+    if isfield(opts, 'areaOverride')
+        area = gamrywb.util.parsePositiveScalar(opts.areaOverride);
+    end
+    if ~isfinite(area) && isfield(opts, 'area_cm2')
+        area = gamrywb.util.parsePositiveScalar(opts.area_cm2);
+    end
+    if ~isfinite(area) && isfield(item, 'meta') && isfield(item.meta, 'area_cm2') ...
+            && isfinite(item.meta.area_cm2) && item.meta.area_cm2 > 0
+        area = item.meta.area_cm2;
+    end
+end
+
+function [curve, ok, msg] = mainCurve(item)
+    if isfield(item, 'curve') && ~isempty(item.curve)
+        curve = item.curve;
+        ok = true;
+        msg = sprintf('Using table: %s', curve.name);
+    elseif isfield(item, 'tables')
+        [curve, ok, msg] = gamrywb.data.getMainCurve(item.tables);
+    else
+        curve = struct();
+        ok = false;
+        msg = 'Main transient table not found.';
+    end
+end
+
+function out = mergeStructs(out, in)
+    names = fieldnames(in);
+    for i = 1:numel(names)
+        out.(names{i}) = in.(names{i});
+    end
+end
+
+function V = computeVoltageTransientMetrics(t, Vf, pulse, delay_s)
+    V = struct();
+    V.t_emc = pulse.cath_end + delay_s;
+    V.t_ema = pulse.anod_end + delay_s;
+    V.emc_idx = gamrywb.util.nearestIndex(t, V.t_emc);
+    V.ema_idx = gamrywb.util.nearestIndex(t, V.t_ema);
+    V.Emc = interp1Safe(t, Vf, V.t_emc);
+    V.Ema = interp1Safe(t, Vf, V.t_ema);
+
+    V.Epre = gamrywb.util.medianInWindow(t, Vf, pulse.pre_start, pulse.pre_end);
+    V.Ebetween = gamrywb.util.medianInWindow(t, Vf, pulse.gap_start, pulse.gap_end);
+    V.Epost = gamrywb.util.medianInWindow(t, Vf, pulse.post_start, pulse.post_end);
+    [V.Eipp, V.baselineCathSource, V.baselineCathWindow] = chooseBaselineCandidate( ...
+        [V.Epre, V.Ebetween, V.Epost, 0], ...
+        {'pre-pulse median', 'interpulse median', 'post-pulse median', 'zero fallback'}, ...
+        [pulse.pre_start pulse.pre_end; pulse.gap_start pulse.gap_end; pulse.post_start pulse.post_end; NaN NaN]);
+    [V.Eipp_gap, V.baselineAnodSource, V.baselineAnodWindow] = chooseBaselineCandidate( ...
+        [V.Ebetween, V.Epre, V.Epost, V.Eipp], ...
+        {'interpulse median', 'pre-pulse median', 'post-pulse median', 'cathodic baseline fallback'}, ...
+        [pulse.gap_start pulse.gap_end; pulse.pre_start pulse.pre_end; pulse.post_start pulse.post_end; V.baselineCathWindow]);
+
+    V.tc_s = max(0, pulse.cath_end - pulse.cath_start);
+    V.ta_s = max(0, pulse.anod_end - pulse.anod_start);
+    V.tip_s = max(0, pulse.anod_start - pulse.cath_end);
+    V.t_conset = pulse.cath_start + delay_s;
+    V.t_aonset = pulse.anod_start + delay_s;
+    V.Vc_on = interp1Safe(t, Vf, V.t_conset);
+    V.Va_on = interp1Safe(t, Vf, V.t_aonset);
+    V.Va_cath_mag = abs(V.Eipp - V.Vc_on);
+    V.Va_anod_mag = abs(V.Eipp_gap - V.Va_on);
+end
+
+function Q = computeInjectedCharge(t, Im, pulse, useMeasuredCurrent)
+    if nargin < 4
+        useMeasuredCurrent = true;
+    end
+
+    Q = struct();
+    cathMask = (t >= pulse.cath_start) & (t <= pulse.cath_end);
+    anodMask = (t >= pulse.anod_start) & (t <= pulse.anod_end);
+    Q.cathMask = cathMask;
+    Q.anodMask = anodMask;
+
+    if sum(cathMask) < 2 || sum(anodMask) < 2
+        Q.ok = false;
+        Q.message = 'Pulse windows too short after detection.';
+        return;
+    end
+
+    Q.Ic_est_A = median(Im(cathMask), 'omitnan');
+    Q.Ia_est_A = median(Im(anodMask), 'omitnan');
+    if ~isfinite(Q.Ic_est_A)
+        Q.Ic_est_A = pulse.Ic_nominal;
+    end
+    if ~isfinite(Q.Ia_est_A)
+        Q.Ia_est_A = pulse.Ia_nominal;
+    end
+
+    if useMeasuredCurrent
+        Qc = abs(trapz(t(cathMask), Im(cathMask)));
+        Qa = abs(trapz(t(anodMask), Im(anodMask)));
+    else
+        Qc = abs(pulse.Ic_nominal * (pulse.cath_end - pulse.cath_start));
+        Qa = abs(pulse.Ia_nominal * (pulse.anod_end - pulse.anod_start));
+    end
+
+    Q.Qc_C = Qc;
+    Q.Qa_C = Qa;
+    Q.Qt_C = Qc + Qa;
+    Q.ok = true;
+    Q.message = 'OK';
+end
+
+function safety = checkWaterWindowSafety(Emc, Ema, cathLimit, anodLimit)
+    safety = struct();
+    safety.cathOK = Emc >= cathLimit;
+    safety.anodOK = Ema <= anodLimit;
+    safety.safe = safety.cathOK && safety.anodOK;
+
+    if safety.safe
+        safety.limitSide = 'safe';
+    elseif ~safety.cathOK && ~safety.anodOK
+        safety.limitSide = 'both exceeded';
+    elseif ~safety.cathOK
+        safety.limitSide = 'cathodic exceeded';
+    else
+        safety.limitSide = 'anodic exceeded';
+    end
+end
+
+function [C, columnNames] = buildBatchTableData(items, unitLabel)
+%BUILDBATCHTABLEDATA Build legacy CIC batch uitable data.
+
+    if nargin < 2
+        unitLabel = 'mC/cm^2';
+    end
+    [scale, unitLabel] = displayScale(unitLabel);
+    columnNames = {'File', 'Amp(A)', 'Emc(V)', 'Ema(V)', ...
+        ['Qc(' unitLabel ')'], ['Qa(' unitLabel ')'], ['Qtot(' unitLabel ')'], 'Safe'};
+
+    C = cell(numel(items), 8);
+    for i = 1:numel(items)
+        item = items(i);
+        C{i, 1} = itemName(item);
+        A = itemAnalysis(item);
+        if isempty(A) || ~isfield(A, 'ok') || ~A.ok
+            C{i, 2} = NaN;
+            C{i, 3} = NaN;
+            C{i, 4} = NaN;
+            C{i, 5} = NaN;
+            C{i, 6} = NaN;
+            C{i, 7} = NaN;
+            C{i, 8} = 'parse/analyze failed';
+            continue;
+        end
+
+        C{i, 2} = A.ampEstimate_A;
+        C{i, 3} = A.Emc;
+        C{i, 4} = A.Ema;
+        C{i, 5} = scale * A.CICc_mCcm2;
+        C{i, 6} = scale * A.CICa_mCcm2;
+        C{i, 7} = scale * A.CICt_mCcm2;
+        C{i, 8} = ternary(A.safe, 'safe', A.limitSide);
+    end
+end
+
+function T = buildResultsTable(items, unitLabel)
+%BUILDRESULTSTABLE Build legacy CIC CSV result table.
+
+    if nargin < 2
+        unitLabel = 'mC/cm^2';
+    end
+    [scale, unitSuffix] = displayScaleSuffix(unitLabel);
+
+    file = cell(numel(items), 1);
+    amp_A = NaN(numel(items), 1);
+    Emc_V = NaN(numel(items), 1);
+    Ema_V = NaN(numel(items), 1);
+    Qc_C = NaN(numel(items), 1);
+    Qa_C = NaN(numel(items), 1);
+    Qt_C = NaN(numel(items), 1);
+    CICc = NaN(numel(items), 1);
+    CICa = NaN(numel(items), 1);
+    CICt = NaN(numel(items), 1);
+    safe = zeros(numel(items), 1);
+    detection = cell(numel(items), 1);
+
+    for i = 1:numel(items)
+        item = items(i);
+        file{i} = itemName(item);
+        A = itemAnalysis(item);
+        if isempty(A) || ~isfield(A, 'ok') || ~A.ok
+            detection{i} = 'failed';
+            continue;
+        end
+
+        amp_A(i) = A.ampEstimate_A;
+        Emc_V(i) = A.Emc;
+        Ema_V(i) = A.Ema;
+        Qc_C(i) = A.Qc_C;
+        Qa_C(i) = A.Qa_C;
+        Qt_C(i) = A.Qt_C;
+        CICc(i) = scale * A.CICc_mCcm2;
+        CICa(i) = scale * A.CICa_mCcm2;
+        CICt(i) = scale * A.CICt_mCcm2;
+        safe(i) = A.safe;
+        detection{i} = A.detectMode;
+    end
+
+    T = table(file, amp_A, Emc_V, Ema_V, Qc_C, Qa_C, Qt_C, CICc, CICa, CICt, safe, detection, ...
+        'VariableNames', {'File', 'Amp_A', 'Emc_V', 'Ema_V', 'Qc_C', 'Qa_C', 'Qt_C', ...
+        ['CICc_' unitSuffix], ['CICa_' unitSuffix], ['CICt_' unitSuffix], 'Safe', 'Detection'});
+end
+
+function [ok, msg] = writeResultsCSV(items, filepath, unitLabel)
+%WRITERESULTSCSV Write CIC results in legacy CSV format.
+
+    if nargin < 3
+        unitLabel = 'mC/cm^2';
+    end
+
+    ok = true;
+    msg = '';
+
+    fid = fopen(filepath, 'w');
+    if fid < 0
+        ok = false;
+        msg = 'Could not open file for writing.';
+        if nargout == 0
+            error(msg);
+        end
+        return;
+    end
+    cleaner = onCleanup(@() fclose(fid));
+
+    try
+        T = buildResultsTable(items, unitLabel);
+        names = T.Properties.VariableNames;
+        fprintf(fid, 'File,Amp_A,Emc_V,Ema_V,Qc_C,Qa_C,Qt_C,%s,%s,%s,Safe,Detection\n', ...
+            names{8}, names{9}, names{10});
+        for i = 1:height(T)
+            if strcmp(T.Detection{i}, 'failed')
+                fprintf(fid, '"%s",,,,,,,,,,0,"failed"\n', T.File{i});
+            else
+                fprintf(fid, '"%s",%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,%d,"%s"\n', ...
+                    T.File{i}, T.Amp_A(i), T.Emc_V(i), T.Ema_V(i), T.Qc_C(i), T.Qa_C(i), T.Qt_C(i), ...
+                    T.(names{8})(i), T.(names{9})(i), T.(names{10})(i), T.Safe(i), T.Detection{i});
+            end
+        end
+    catch ME
+        ok = false;
+        msg = ME.message;
+        if nargout == 0
+            rethrow(ME);
+        end
+    end
+end
+
+function v = interp1Safe(x, y, xq)
+    if numel(x) < 2 || any(~isfinite([x(:); y(:)]))
+        v = NaN;
+        return;
+    end
+    try
+        v = interp1(x, y, xq, 'linear', 'extrap');
+    catch
+        idx = gamrywb.util.nearestIndex(x, xq);
+        v = y(idx);
+    end
+end
+
+function [v, sourceLabel, window] = chooseBaselineCandidate(candidates, sourceLabels, windows)
+    v = NaN;
+    sourceLabel = 'unavailable';
+    window = [NaN NaN];
+    for k = 1:numel(candidates)
+        if isfinite(candidates(k))
+            v = candidates(k);
+            sourceLabel = sourceLabels{k};
+            if size(windows, 1) >= k
+                window = windows(k, :);
+            end
+            return;
+        end
+    end
+end
+
+function [scale, unitLabel] = displayScale(unitLabel)
+    switch unitLabel
+        case 'uC/cm^2'
+            scale = 1e3;
+        otherwise
+            scale = 1;
+            unitLabel = 'mC/cm^2';
+    end
+end
+
+function [scale, unitSuffix] = displayScaleSuffix(unitLabel)
+    [scale, unitLabel] = displayScale(unitLabel);
+    unitSuffix = regexprep(unitLabel, '[\^/]', '');
+end
+
+function name = itemName(item)
+    if isfield(item, 'name')
+        name = item.name;
+    else
+        name = '';
+    end
+end
+
+function A = itemAnalysis(item)
+    if isfield(item, 'analysis')
+        A = item.analysis;
+    else
+        A = [];
+    end
 end
 
 %% ========================================================================
