@@ -5,9 +5,9 @@ This document describes the current package boundaries and compatibility layers.
 ## Core Shape
 
 ```text
-legacy-compatible GUI entry points
+app entry points / legacy-compatible GUI entry points
     ↓
-preserved legacy GUI implementations
+package-backed app internals or preserved legacy GUI implementations
     ↓
 struct-based item/session models
     ↓
@@ -30,7 +30,7 @@ gamry_multiDTA_plot_export_gui
 
 They are thin wrappers that add `legacy/` to the path only when needed and call the matching `_legacy.m` implementation.
 
-`apps/gamrywb_EIS_app.m` is package-backed and does not delegate to legacy. The other `apps/gamrywb_*_app.m` files are compatibility entry points that still delegate to the preserved legacy GUIs.
+`apps/gamrywb_EIS_app.m` and `apps/gamrywb_CSC_app.m` are package-backed and do not delegate to legacy. The CIC and VT resistance `apps/gamrywb_*_app.m` files are compatibility entry points that still delegate to the preserved legacy GUIs.
 
 `startup_gamrywb` does not add `legacy/` to the default path. This keeps legacy code out of the normal runtime path while preserving original command compatibility through root wrappers.
 
@@ -87,5 +87,5 @@ Avoid:
 - new parser copies in GUI files
 - duplicated CSV formatting in GUI files
 - MATLAB classes before struct schemas stabilize
-- replacing remaining compatibility app delegates before schemas and validation are ready
+- replacing remaining CIC and VT resistance compatibility app delegates before schemas and validation are ready
 - starting a unified GUI before package-backed app internals are stable

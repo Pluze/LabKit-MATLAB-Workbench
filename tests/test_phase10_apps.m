@@ -19,4 +19,10 @@ function test_phase10_apps()
     assert(~contains(eisSource, '_legacy'), 'gamrywb_EIS_app should not call legacy implementations.');
     assert(~contains(eisSource, 'gamry_EIS_multiDTA_plot_gui('), ...
         'gamrywb_EIS_app should not delegate to the root legacy-compatible EIS wrapper.');
+
+    cscAppFile = fullfile(root, 'apps', 'gamrywb_CSC_app.m');
+    cscSource = fileread(cscAppFile);
+    assert(~contains(cscSource, '_legacy'), 'gamrywb_CSC_app should not call legacy implementations.');
+    assert(~contains(cscSource, 'gamry_CV_CSC_dta_gui('), ...
+        'gamrywb_CSC_app should not delegate to the root legacy-compatible CSC wrapper.');
 end

@@ -19,7 +19,7 @@ Compatibility retained:
 
 - root-level original GUI command names remain runnable
 - preserved GUI implementations remain under `legacy/`
-- `gamrywb_EIS_app` is package-backed; the remaining app entry points delegate to preserved legacy GUIs
+- `gamrywb_EIS_app` and `gamrywb_CSC_app` are package-backed; CIC and VT resistance app entry points delegate to preserved legacy GUIs
 - `startup_gamrywb` keeps `legacy/` off the default runtime path; root wrappers add it only when original command compatibility is used
 
 ## Migration Highlights
@@ -100,6 +100,6 @@ Default tests cover parser, data accessor, pulse detection, analysis, plotting h
 - Parser table-reading internals are still duplicated across parser families.
 - Shared pulse detection targets the legacy single cathodic-first biphasic use case.
 - Tests use demo fixtures and fixed reference values, but not every legacy GUI output has a stored golden MAT reference.
-- App entry points remain compatibility delegates; replacing them should wait for stable schemas and validation fixtures.
+- CIC and VT resistance app entry points remain compatibility delegates; replacing them should wait for stable schemas and validation fixtures.
 - Interactive GUI behavior beyond the optional noninteractive contract still needs manual checks.
 - Normalized item/result/option schemas remain provisional bridges for future app internals.

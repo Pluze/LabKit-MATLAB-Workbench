@@ -11,7 +11,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 ### Added
 
 - Package-backed parser, data, analysis, plotting, export, session, and UI helper modules under `+gamrywb`.
-- Compatibility app entry points under `apps/` for CIC, VT resistance, CV/CSC, and EIS workflows.
+- App entry points under `apps/` for CIC, VT resistance, CV/CSC, and EIS workflows.
 - Root-level compatibility wrappers for the original legacy GUI command names.
 - Named demo DTA fixtures for parser, pulse detection, analysis, plotting, export, and session tests.
 - MATLAB pure-function test runner under `scripts/run_matlab_tests.sh`.
@@ -25,8 +25,9 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Removed legacy-directory same-name shims and kept original command compatibility through root wrappers.
 - `startup_gamrywb` no longer adds `legacy/` to the default path.
 - Replaced `gamrywb_EIS_app`'s legacy delegate with a package-backed EIS app implementation.
+- Replaced `gamrywb_CSC_app`'s legacy delegate with a package-backed CV/CSC app implementation.
 - Reorganized root documentation so README and CHANGELOG describe current usage and release status, while phase history lives in `docs/refactor_history.md`.
-- Remaining compatibility app entry points delegate to behavior-preserved legacy GUI entry points for the v1.0 compatibility scope.
+- Remaining CIC and VT resistance compatibility app entry points delegate to behavior-preserved legacy GUI entry points for the v1.0 compatibility scope.
 
 ### Preserved
 
@@ -40,7 +41,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 
 ### Deferred
 
-- Package-backed replacements for the app delegates.
+- Package-backed replacements for the remaining app delegates.
 - Unified workbench GUI.
 - Complete stored golden MAT reference outputs for every major analysis output.
 - Broader parser unification and support for additional Gamry experiment types.
