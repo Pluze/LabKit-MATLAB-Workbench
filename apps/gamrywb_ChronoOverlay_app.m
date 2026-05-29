@@ -232,12 +232,7 @@ function varargout = gamrywb_ChronoOverlay_app(varargin)
     end
 
     function refreshFileList()
-        if isempty(S.items)
-            gamrywb.ui.refreshListboxItems(lbFiles, {});
-            return;
-        end
-        names = {S.items.name};
-        gamrywb.ui.refreshListboxItems(lbFiles, names);
+        gamrywb.ui.refreshFileListbox(lbFiles, S.items);
     end
 
     function refreshPlots()

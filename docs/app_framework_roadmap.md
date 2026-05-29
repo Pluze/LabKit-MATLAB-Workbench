@@ -59,6 +59,7 @@ Current shared UI helpers:
 +gamrywb/+ui/hardResetAxis.m
 +gamrywb/+ui/appendLog.m
 +gamrywb/+ui/refreshListboxItems.m
++gamrywb/+ui/refreshFileListbox.m
 +gamrywb/+ui/createLabeledDropdown.m
 +gamrywb/+ui/createLabeledEditField.m
 +gamrywb/+ui/buildCICBatchTableData.m
@@ -242,6 +243,7 @@ buildCICBatchTableData
 buildVTResistanceBatchTableData
 appendLog
 refreshListboxItems
+refreshFileListbox
 createLabeledDropdown
 createLabeledEditField
 clearAxisObjects
@@ -444,7 +446,7 @@ Target repeated behavior:
 - remove selected files: started with `gamrywb.app.removeSelectedItemsFromSession`
 - selected item lookup: started with `gamrywb.app.selectItemsByNames`
 - clear session
-- refresh file listbox
+- refresh file listbox: done for Chrono/EIS with `gamrywb.ui.refreshFileListbox`
 - log add/skip/failure
 
 Preferred split:
@@ -454,6 +456,7 @@ Preferred split:
 +gamrywb/+app/removeSelectedItemsFromSession.m    done for Chrono/EIS overlay apps
 +gamrywb/+app/selectItemsByNames.m    done for Chrono/EIS overlay apps
 +gamrywb/+ui/refreshListboxItems.m
++gamrywb/+ui/refreshFileListbox.m    done for Chrono/EIS overlay apps
 ```
 
 Keep dialogs in app/UI code. Keep `gamrywb.data.addFilesToSession` free of UI dialogs.
@@ -662,6 +665,7 @@ Use this section to record meaningful changes in strategy.
 - next route changed from "extract first primitives" to "finish remaining low-risk primitives, then file/session behavior"
 - appendLog is now extracted and used by all app entry points
 - refreshListboxItems is extracted for Chrono/EIS multiselect file listboxes
+- refreshFileListbox shares session-item-to-listbox refresh for Chrono/EIS
 - createLabeledDropdown and createLabeledEditField are extracted for Chrono/EIS plot option rows
 - loadFilesIntoSession starts the +gamrywb/+app layer for duplicate-aware file/session loading in Chrono/EIS
 - removeSelectedItemsFromSession shares selected-file removal for Chrono/EIS while preserving app-owned refresh and plotting
