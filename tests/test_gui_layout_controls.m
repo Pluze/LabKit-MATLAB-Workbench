@@ -13,6 +13,7 @@ function test_gui_layout_controls()
     checkInfoLogAreaHelpers();
     checkPlotOptionsPanelHelper();
     checkCreateAxesHelper();
+    checkTabbedDualPlotShellHelper();
 end
 
 function checkMultiDTA()
@@ -195,6 +196,35 @@ function checkCreateAxesHelper()
     assert(strcmp(char(ax.Title.String), 'Probe Title'), 'Axes helper should preserve the title.');
     assert(strcmp(char(ax.XLabel.String), 'Probe X'), 'Axes helper should preserve the x label.');
     assert(strcmp(char(ax.YLabel.String), 'Probe Y'), 'Axes helper should preserve the y label.');
+end
+
+function checkTabbedDualPlotShellHelper()
+    ui = gamrywb.ui.createTabbedDualPlotShell( ...
+        'gamrywb_tabbed_dual_plot_shell_probe', ...
+        [40 30 1680 980], ...
+        430, ...
+        []);
+    cleaner = onCleanup(@() delete(ui.fig));
+
+    assert(isequal(ui.main.ColumnWidth, {430, 6, '1x'}), ...
+        'Tabbed dual-plot shell should preserve the main column widths.');
+    assert(isequal(ui.main.Padding, [10 10 10 10]), ...
+        'Tabbed dual-plot shell should preserve main padding.');
+    assert(ui.main.ColumnSpacing == 0, ...
+        'Tabbed dual-plot shell should preserve zero column spacing around the separator.');
+    assert(strcmp(ui.leftPanel.Title, 'Controls'), ...
+        'Tabbed dual-plot shell should preserve the controls panel title.');
+    assertTabTitles(ui.fig, {'Files + Analysis', 'Summary + Results', 'Log'});
+    assert(isequal(ui.filesAnalysisGrid.RowHeight, {260, 'fit', 'fit'}), ...
+        'Files + Analysis grid should preserve row heights.');
+    assert(sameStringCell(ui.summaryResultsGrid.RowHeight, {'fit', '1x'}), ...
+        'Summary + Results grid should preserve row heights.');
+    assert(sameStringCell(ui.rightGrid.RowHeight, {'fit', '1x', 'fit', '1x'}), ...
+        'Right plot grid should preserve top/bottom row heights.');
+    assert(strcmp(char(ui.topAxes.Title.String), 'Top Plot'), ...
+        'Tabbed dual-plot shell should create the top axes with the expected title.');
+    assert(strcmp(char(ui.bottomAxes.Title.String), 'Bottom Plot'), ...
+        'Tabbed dual-plot shell should create the bottom axes with the expected title.');
 end
 
 function fig = launchFigure(entryName, expectedTitle)

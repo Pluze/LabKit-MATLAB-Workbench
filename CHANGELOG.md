@@ -11,6 +11,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 
 ### Changed
 
+- Extracted the shared tabbed dual-plot shell for VT/CIC-style apps into `+gamrywb/+ui` and adopted it in the VT resistance app.
 - Moved CSC app assembly behind `gamrywb.app.launchCSCApp` while keeping the public `apps/` entry point.
 - Moved CIC app assembly behind `gamrywb.app.launchCICApp` while keeping the public `apps/` entry point.
 - Moved VT resistance app assembly behind `gamrywb.app.launchVTResistanceApp` while keeping the public `apps/` entry point.
