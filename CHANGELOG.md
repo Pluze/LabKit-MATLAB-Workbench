@@ -20,10 +20,12 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Moved the Chrono overlay app implementation under `apps/private` so overlay workflow code no longer lives in the reusable `+gamrywb` package.
 - Moved the CSC app implementation and CSC-specific charge/CSC calculations into the app-side namespace outside the reusable `+gamrywb` package.
 - Moved the VT resistance app implementation and VT-specific resistance/export/table logic into the app-side namespace outside the reusable `+gamrywb` package.
+- Moved the CIC app implementation and CIC-specific voltage-transient/export/table logic into the app-side namespace outside the reusable `+gamrywb` package.
 - Routed the EIS app's file loading through the GUI-free DTA facade instead of constructing EIS items directly in the app layer.
 - Routed the Chrono overlay app's file loading through the GUI-free DTA facade while keeping pulse-gap alignment in the app workflow.
 - Routed the CSC app's CV/CT file loading through the GUI-free DTA facade instead of parsing CV/CT files directly in the app layer.
 - Routed the VT resistance app's chrono file loading through the GUI-free DTA facade instead of parsing chrono files directly in the app layer.
+- Routed the CIC app's chrono file loading through the GUI-free DTA facade instead of parsing chrono files directly in the app layer.
 - Extracted shared batch-result table panel construction for VT/CIC-style apps into `+gamrywb/+ui`.
 - Extracted shared top/bottom plot selection and axes reset helpers for VT/CIC-style apps into `+gamrywb/+ui`.
 - Shared the VT/CIC clear-all session reset sequence through `+gamrywb/+app`.
@@ -35,7 +37,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Extracted shared top/bottom plot-control rows for VT/CIC-style apps into `+gamrywb/+ui` and adopted them in the VT resistance and CIC apps.
 - Extracted the shared tabbed dual-plot shell for VT/CIC-style apps into `+gamrywb/+ui` and adopted it in the VT resistance and CIC apps.
 - Moved CSC app assembly behind the public `apps/` entry point, then relocated it under `apps/private` as an independent-app pattern.
-- Moved CIC app assembly behind `gamrywb.app.launchCICApp` while keeping the public `apps/` entry point.
+- Moved CIC app assembly behind the public `apps/` entry point, then relocated it under `apps/private` as an independent-app pattern.
 - Moved VT resistance app assembly behind the public `apps/` entry point, then relocated it under `apps/private` as an independent-app pattern.
 - Moved EIS app assembly behind the public `apps/` entry point, then relocated it under `apps/private` as the reference independent-app pattern.
 - Moved Chrono overlay app assembly behind the public `apps/` entry point, then relocated it under `apps/private` as an independent-app pattern.
@@ -79,7 +81,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Replaced `gamrywb_EIS_app`'s legacy delegate with a package-backed EIS app implementation.
 - Replaced `gamrywb_CSC_app`'s legacy delegate with a package-backed CV/CSC app implementation.
 - Reorganized root documentation so README and CHANGELOG describe current usage and release status, while phase history lives in `docs/refactor_history.md`.
-- Remaining CIC and VT resistance compatibility app entry points delegate to behavior-preserved legacy GUI entry points for the v1.0 compatibility scope.
+- CIC and VT resistance app delegates were still deferred during the v1.0 compatibility checkpoint and have since been replaced in `Unreleased`.
 
 ### Preserved
 

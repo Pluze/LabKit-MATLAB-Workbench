@@ -1,5 +1,5 @@
-function [ok, msg] = writeCICResultsCSV(items, filepath, unitLabel)
-%WRITECICRESULTSCSV Write CIC results in legacy CSV format.
+function [ok, msg] = writeResultsCSV(items, filepath, unitLabel)
+%WRITERESULTSCSV Write CIC results in legacy CSV format.
 
     if nargin < 3
         unitLabel = 'mC/cm^2';
@@ -20,7 +20,7 @@ function [ok, msg] = writeCICResultsCSV(items, filepath, unitLabel)
     cleaner = onCleanup(@() fclose(fid));
 
     try
-        T = gamrywb.io.buildCICResultsTable(items, unitLabel);
+        T = gamrywb_apps.cic.buildResultsTable(items, unitLabel);
         names = T.Properties.VariableNames;
         fprintf(fid, 'File,Amp_A,Emc_V,Ema_V,Qc_C,Qa_C,Qt_C,%s,%s,%s,Safe,Detection\n', ...
             names{8}, names{9}, names{10});

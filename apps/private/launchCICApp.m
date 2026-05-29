@@ -1,5 +1,5 @@
 function varargout = launchCICApp(varargin)
-%LAUNCHCICAPP Launch the package-backed CIC voltage-transient app.
+%LAUNCHCICAPP Launch the CIC voltage-transient app from apps/private.
 % GUI for calculating CIC from Gamry MULTI_STEP_CHRONOPOT .DTA files.
 % Layout updated to 3 left-side tabs with vertical file actions.
 %
@@ -273,10 +273,10 @@ function varargout = launchCICApp(varargin)
     end
 
     function item = loadOneDTA(filepath)
-        item = struct();
-        item.filepath = filepath;
-        item.name = gamrywb.util.shortName(filepath);
-        [item.meta, item.tables, item.logmsg] = gamrywb.io.parseChronoDTA(filepath);
+        [item, status] = gamrywb.dta.loadFile(filepath, "chrono");
+        if ~status.ok
+            error('gamrywb_CIC_app:LoadFailed', '%s', status.message);
+        end
         item.analysis = [];
 
         for ii = 1:numel(item.logmsg)
@@ -308,7 +308,7 @@ function varargout = launchCICApp(varargin)
         opts.pulseMode = ddPulseMode.Value;
         opts.usedMeasuredCurrent = cbUseMeasuredCurrent.Value;
 
-        A = gamrywb.analysis.computeCIC(item, opts);
+        A = gamrywb_apps.cic.computeCIC(item, opts);
         item.analysis = A;
         if A.ok
             addLog(sprintf('%s: Emc=%.6f V, Ema=%.6f V, safe=%d', item.name, A.Emc, A.Ema, A.safe));
@@ -351,7 +351,7 @@ function varargout = launchCICApp(varargin)
 
     function refreshBatchTable()
         [~, unitLabel] = cicDisplayUnit();
-        [C, columnNames] = gamrywb.ui.buildCICBatchTableData(S.items, unitLabel);
+        [C, columnNames] = gamrywb_apps.cic.buildBatchTableData(S.items, unitLabel);
         tbl.ColumnName = columnNames;
         if isempty(S.items)
             tbl.Data = cell(0,8);
@@ -599,7 +599,7 @@ function varargout = launchCICApp(varargin)
         end
         out = fullfile(p,f);
         [~, unitLabel] = cicDisplayUnit();
-        [ok, msg] = gamrywb.io.writeCICResultsCSV(S.items, out, unitLabel);
+        [ok, msg] = gamrywb_apps.cic.writeResultsCSV(S.items, out, unitLabel);
         if ~ok
             uialert(fig,msg,'Export');
             return;

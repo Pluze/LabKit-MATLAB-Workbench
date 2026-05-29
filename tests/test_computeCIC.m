@@ -1,5 +1,5 @@
 function test_computeCIC()
-%TEST_COMPUTECIC Verify package-backed CIC / voltage-transient analysis.
+%TEST_COMPUTECIC Verify app-side CIC / voltage-transient analysis.
 
     root = fileparts(fileparts(mfilename('fullpath')));
     fixture = fullfile(root, 'demo', 'chrono_chronopot_current_pulse_0p2ms.DTA');
@@ -17,7 +17,7 @@ function test_computeCIC()
     opts.pulseMode = 'Metadata first, then auto';
     opts.usedMeasuredCurrent = true;
 
-    A = gamrywb.analysis.computeCIC(item, opts);
+    A = gamrywb_apps.cic.computeCIC(item, opts);
     assert(A.ok, A.message);
     assert(strcmp(A.message, 'OK'), 'Successful CIC result should preserve legacy OK status.');
     assert(strcmp(A.detectMode, 'metadata-current'), 'Default fixture should use metadata-current detection.');
@@ -45,7 +45,7 @@ function test_computeCIC()
     assert(strcmp(A.limitSide, 'cathodic exceeded'), 'Default safety side should match legacy wording.');
 
     opts.usedMeasuredCurrent = false;
-    B = gamrywb.analysis.computeCIC(item, opts);
+    B = gamrywb_apps.cic.computeCIC(item, opts);
     assert(B.ok, B.message);
     assertClose(B.Qc_C, 2.4400000000000012e-06, 1e-18, 'Nominal cathodic charge');
     assertClose(B.Qa_C, 2.4400000000000012e-06, 1e-18, 'Nominal anodic charge');
@@ -53,7 +53,7 @@ function test_computeCIC()
 
     opts.usedMeasuredCurrent = true;
     opts.areaOverride = '2';
-    C = gamrywb.analysis.computeCIC(item, opts);
+    C = gamrywb_apps.cic.computeCIC(item, opts);
     assert(C.ok, C.message);
     assertClose(C.area_cm2, 2, 1e-15, 'Area override');
     assertClose(C.CICc_mCcm2, 0.0011350077474999991, 1e-15, 'Area-normalized cathodic CIC');
@@ -61,12 +61,12 @@ function test_computeCIC()
 
     opts.cathLimit = -2;
     opts.anodLimit = 2;
-    D = gamrywb.analysis.computeCIC(item, opts);
+    D = gamrywb_apps.cic.computeCIC(item, opts);
     assert(D.cathOK && D.anodOK && D.safe, 'Relaxed water window should be safe.');
     assert(strcmp(D.limitSide, 'safe'), 'Safe status text should match legacy wording.');
 
     bad = struct('meta', struct(), 'tables', struct([]));
-    E = gamrywb.analysis.computeCIC(bad, struct());
+    E = gamrywb_apps.cic.computeCIC(bad, struct());
     assert(~E.ok, 'Missing curve should fail.');
     assert(strcmp(E.message, 'Main transient table not found.'), 'Missing curve message should match legacy wording.');
 end

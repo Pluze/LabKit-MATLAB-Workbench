@@ -158,10 +158,10 @@ File,Ic_A,Ia_A,Vc_ss_V,Va_ss_V,Vc_baseline_V,Va_baseline_V,dVc_V,dVa_V,Rc_bc_ohm
 CIC result/export helpers:
 
 ```text
-gamrywb.analysis.computeCIC
-gamrywb.io.buildCICResultsTable
-gamrywb.io.writeCICResultsCSV
-gamrywb.ui.buildCICBatchTableData
+gamrywb_apps.cic.computeCIC
+gamrywb_apps.cic.buildResultsTable
+gamrywb_apps.cic.writeResultsCSV
+gamrywb_apps.cic.buildBatchTableData
 ```
 
 CIC CSV column order uses one of:

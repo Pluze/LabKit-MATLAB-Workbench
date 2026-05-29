@@ -65,9 +65,9 @@ completely new app type: about 6/10 convenient
 Why similar apps are now easier:
 
 - public app entry points are thin wrappers under `apps/`
-- app bodies should live under `apps/private`; EIS, Chrono overlay, CSC, and VT resistance are the first reference migrations
+- app bodies should live under `apps/private`; EIS, Chrono overlay, CSC, VT resistance, and CIC are the first reference migrations
 - common GUI shells and panels live under `+gamrywb/+ui`
-- scientific calculations live under `+gamrywb/+analysis`
+- broad scientific calculations live under `+gamrywb/+analysis`; experiment-specific workflow calculations live with the owning app
 - plotting helpers live under `+gamrywb/+plot`
 - parser/export/session helpers live under `+gamrywb/+io` and `+gamrywb/+data`
 
@@ -425,13 +425,14 @@ Do not expand this into a schema framework until an app migration proves the mis
 
 ### Phase C: Move app implementations out of `+gamrywb` while using the DTA facade
 
-Status: started with EIS, Chrono overlay, CSC, and VT resistance as reference app-structure migrations. EIS, Chrono overlay, CSC, and VT resistance now use the DTA facade for file loading.
+Status: started with EIS, Chrono overlay, CSC, VT resistance, and CIC as reference app-structure migrations. EIS, Chrono overlay, CSC, VT resistance, and CIC now use the DTA facade for file loading.
 
 Recommended candidates:
 
 ```text
 EIS app: simpler plotting/export flow
 VT resistance app: representative chrono single-file analysis flow
+CIC app: representative chrono single-file analysis/export flow
 ```
 
 Goal:
@@ -448,18 +449,18 @@ The Chrono overlay app implementation now lives under `apps/private`, not under 
 
 The CSC app implementation now lives under `apps/private`, not under `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "cvct")` for file loading. CSC-specific charge and result-table calculations live under `apps/+gamrywb_apps/+csc`, not in reusable `+gamrywb/+analysis` or `+gamrywb/+io`. This app-side package is a migration step for testability, not a new reusable app abstraction; collapse it into the CSC app file if/when tests can still verify behavior cleanly.
 
-The VT resistance app implementation now lives under `apps/private`, not under `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "chrono")` for file loading. VT-specific resistance, export, and table-display helpers live under `apps/+gamrywb_apps/+vt`, not in reusable `+gamrywb/+analysis`, `+gamrywb/+io`, or `+gamrywb/+ui`.
+The CIC app implementation now lives under `apps/private`, not under `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "chrono")` for file loading. CIC-specific voltage-transient analysis, result-table, CSV, and batch-table helpers live under `apps/+gamrywb_apps/+cic`, not in reusable `+gamrywb/+analysis`, `+gamrywb/+io`, or `+gamrywb/+ui`.
 
-These are the reference paths for adopting the DTA facade in the remaining apps.
+The VT resistance and CIC app implementations now live under `apps/private`, not under `+gamrywb/+app`, and use `gamrywb.dta.loadFile(filepath, "chrono")` for file loading. VT-specific resistance helpers and CIC-specific voltage-transient/export/table helpers live under `apps/+gamrywb_apps`, not in reusable `+gamrywb/+analysis`, `+gamrywb/+io`, or `+gamrywb/+ui`.
+
+These are the reference paths for adopting the DTA facade and app-side workflow ownership in the remaining apps.
 
 Remaining migration candidates:
 
 ```text
-CIC: replace direct chrono parsing in the app loader
-CSC: replace direct CV/CT parsing in the app loader
-CIC: move experiment-specific calculations, plots, and export formatting toward apps/private when migrated
 Generic helpers still in +gamrywb/+app: move toward the GUI base library if they remain useful after app migrations
 App-side helper packages: keep only as temporary testable waypoints; do not grow them into a framework
+Remaining +analysis functions: classify broad chrono primitives versus experiment-specific calculations before moving anything else
 ```
 
 Suggested commit:

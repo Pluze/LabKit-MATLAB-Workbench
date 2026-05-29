@@ -1,5 +1,5 @@
-function [C, columnNames] = buildCICBatchTableData(items, unitLabel)
-%BUILDCICBATCHTABLEDATA Build legacy CIC batch uitable data.
+function [C, columnNames] = buildBatchTableData(items, unitLabel)
+%BUILDBATCHTABLEDATA Build legacy CIC batch uitable data.
 
     if nargin < 2
         unitLabel = 'mC/cm^2';
