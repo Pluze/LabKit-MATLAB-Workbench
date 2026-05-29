@@ -109,14 +109,13 @@ docs/                 Architecture, data model, parser, validation, and future n
 ## Documentation Map
 
 - `AGENTS.md`: AI/Codex operating instructions.
-- `REFACTOR_ROADMAP.md`: active phase plan and definition of done.
-- `MIGRATION_NOTES.md`: completed migration history, behavior notes, and open risks.
 - `CHANGELOG.md`: concise user-facing change record.
 - `docs/architecture.md`: target layering and module boundaries.
 - `docs/data_model.md`: planned struct models and naming conventions.
 - `docs/file_format_notes.md`: Gamry DTA parser assumptions.
 - `docs/validation_protocol.md`: test and reference-output strategy.
-- `docs/future_features.md`: future features that should not be started before v1.0.
+- `docs/refactor_history.md`: archived Phase 0-10 migration history, behavior notes, and open risks.
+- `docs/backlog.md`: future features and deferred work.
 
 ---
 

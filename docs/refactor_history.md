@@ -1,8 +1,8 @@
-# Migration Notes
+# Refactor History
 
-This file records completed migration work, behavior-preservation notes, and known risks.
+This archived document records the completed v1.0 behavior-preserving package refactor, behavior-preservation notes, and known risks.
 
-It is not a roadmap. Planned future phases live in `REFACTOR_ROADMAP.md`.
+Current usage, architecture, data model, parser, validation, and backlog notes live in the other docs under `docs/`. This file is historical context, not the active project plan.
 
 ---
 
@@ -46,6 +46,27 @@ v1.0 checkpoint:
 - The roadmap v1.0 Definition of Done is satisfied for the behavior-preserving package refactor.
 - Package-backed thin app internals and the unified workbench GUI remain deferred follow-on work, not unfinished v1.0 requirements.
 - `scripts/run_matlab_tests.sh` passes the default pure-function package suite.
+
+v1.0 Definition of Done:
+
+```text
+[x] Legacy GUIs are preserved in legacy/.
+[x] Common parser functions live in +gamrywb/+io.
+[x] Common data accessors live in +gamrywb/+data.
+[x] Common analysis functions live in +gamrywb/+analysis.
+[x] Common plotting helpers live in +gamrywb/+plot.
+[x] Common UI helpers live in +gamrywb/+ui.
+[x] Common utility functions live in +gamrywb/+util.
+[x] CIC analysis can run without GUI.
+[x] VT resistance analysis can run without GUI.
+[x] CV/CSC analysis can run without GUI.
+[x] EIS overlay/export can run without GUI.
+[x] At least one reference test exists for each major analysis module.
+[x] Compatibility app entry points are available in apps/.
+[x] Package-backed thin app internals are deferred until DTA core schemas, session/export conventions, and validation are stable.
+[x] README explains how to run startup_gamrywb and each app.
+[x] Historical notes document behavior differences and open risks.
+```
 
 ---
 

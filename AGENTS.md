@@ -10,11 +10,9 @@ These instructions are written for Codex or any AI coding agent working in this 
 
 Before editing files, read these documents in order:
 
-1. `AGENTS.md`
-2. `README.md`
-3. `REFACTOR_ROADMAP.md`
-4. `MIGRATION_NOTES.md`
-5. The specific legacy or package files involved in the requested task
+1. `README.md`
+2. `AGENTS.md`
+3. The specific legacy, package, test, or documentation files involved in the requested task
 
 For parser, data model, or validation work, also read:
 
@@ -25,7 +23,11 @@ For parser, data model, or validation work, also read:
 
 For nonessential future enhancements, read:
 
-- `docs/future_features.md`
+- `docs/backlog.md`
+
+For historical phase context, read:
+
+- `docs/refactor_history.md`
 
 ---
 
@@ -139,11 +141,11 @@ fix: preserve legacy GUI entrypoint behavior
 
 ## 8. Phase Discipline
 
-Work on one roadmap phase at a time.
+Work on one scoped change at a time.
 
-Do not move to the next phase until the current phase has:
+Do not move to a broader follow-up until the current change has:
 
-- documented changes in `MIGRATION_NOTES.md`
+- documented changes in the relevant current doc, or `docs/refactor_history.md` when updating historical notes
 - tests or static checks where possible
 - no intentional scientific behavior change
 - legacy GUI compatibility preserved
@@ -153,8 +155,8 @@ If a requested task is documentation-only, do not edit MATLAB source files.
 When a task changes MATLAB source, tests, fixtures, or package structure, inspect and update the matching documentation before committing. At minimum, consider:
 
 - `README.md` for current status and user-facing commands.
-- `REFACTOR_ROADMAP.md` for phase status and remaining work.
-- `MIGRATION_NOTES.md` for completed migration details and preserved behavior.
+- `docs/refactor_history.md` for completed migration details and preserved behavior.
+- `docs/backlog.md` for deferred work and future ideas.
 - `CHANGELOG.md` for maintainer-facing changes.
 - `docs/architecture.md`, `docs/data_model.md`, `docs/file_format_notes.md`, and `docs/validation_protocol.md` when architecture, data models, parsers, or validation coverage changes.
 

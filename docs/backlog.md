@@ -1,6 +1,6 @@
-# Future Features
+# Backlog
 
-This document records useful future directions for Gamry Electrochemistry Workbench.
+This document records useful future directions and deferred work for Gamry Electrochemistry Workbench.
 
 These are **not active refactor requirements**.
 
@@ -244,3 +244,15 @@ commercial packaging
 ```
 
 These may be reconsidered after v1.0.
+
+---
+
+## 12. Entrypoint Cleanup Candidates
+
+The root-level compatibility wrappers and preserved legacy GUI implementations must remain in place until a separate entrypoint-removal task performs GUI smoke tests and manual MATLAB launch checks.
+
+Possible future cleanup:
+
+- Audit legacy-directory compatibility shims for redundancy.
+- Decide whether any shim can be removed without breaking documented command names.
+- Keep the original root-level legacy command names runnable unless a future release explicitly deprecates them.
