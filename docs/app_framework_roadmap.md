@@ -65,7 +65,8 @@ completely new app type: about 6/10 convenient
 Why similar apps are now easier:
 
 - public app entry points are thin wrappers under `apps/`
-- app bodies should be collapsed into public `apps/*.m` files; EIS is the first single-file reference, while Chrono overlay, CSC, VT resistance, and CIC still have transitional `apps/private` launch bodies
+- app bodies should be collapsed into public `apps/*.m` files; EIS and Chrono overlay are the first single-file references, while CSC, VT resistance, and CIC still have transitional `apps/private` launch bodies
+- `apps/+gamrywb_apps` is a temporary migration namespace, not the final app design; remove it by folding experiment-specific helpers into the owning app files or promoting only truly reusable, parameter-light code into `+gamrywb`
 - common GUI shells and panels live under `+gamrywb/+ui`
 - broad scientific calculations live under `+gamrywb/+analysis`; experiment-specific workflow calculations live with the owning app
 - app-specific plotting helpers live with the owning app; reusable GUI/axes primitives live under `+gamrywb/+ui`
@@ -447,7 +448,7 @@ The EIS app implementation now lives directly in `apps/gamrywb_EIS_app.m`, not u
 
 EIS overlay axis selection, overlay plotting, and plot-export table construction now live under `apps/+gamrywb_apps/+eis`, not in reusable `+gamrywb/+analysis`, `+gamrywb/+plot`, or `+gamrywb/+io`.
 
-The Chrono overlay app implementation now lives under `apps/private`, not under `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "chrono")` for file loading. Pulse-gap alignment, VT/IT overlay plotting, and overlay export table construction now live under `apps/+gamrywb_apps/+chrono`, not in reusable `+gamrywb/+analysis`, `+gamrywb/+plot`, or `+gamrywb/+io`.
+The Chrono overlay app implementation now lives directly in `apps/gamrywb_ChronoOverlay_app.m`, not under `apps/private` or `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "chrono")` for file loading. Pulse-gap alignment, VT/IT overlay plotting, and overlay export table construction now live under `apps/+gamrywb_apps/+chrono`, not in reusable `+gamrywb/+analysis`, `+gamrywb/+plot`, or `+gamrywb/+io`.
 
 The CSC app implementation now lives under `apps/private`, not under `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "cvct")` for file loading. CSC-specific charge and result-table calculations live under `apps/+gamrywb_apps/+csc`, not in reusable `+gamrywb/+analysis` or `+gamrywb/+io`. This app-side package is a migration step for testability, not a new reusable app abstraction; collapse it into the CSC app file if/when tests can still verify behavior cleanly.
 
