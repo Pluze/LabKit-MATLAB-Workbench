@@ -220,6 +220,7 @@ gamrywb/+app/launchChronoOverlayApp.m
 gamrywb/+app/launchEISApp.m
 gamrywb/+app/launchVTResistanceApp.m
 gamrywb/+app/launchCICApp.m
+gamrywb/+app/launchCSCApp.m
 ```
 
 Candidate files:
@@ -363,15 +364,15 @@ CSC should remain separate until its single-file curve/column behavior is better
 
 ### Level 4: App launchers
 
-Move app bodies into `+gamrywb/+app` after enough UI extraction makes launchers readable.
+App bodies now live in `+gamrywb/+app`, leaving `apps/` as public entry wrappers.
 
 Target order:
 
-1. EIS
-2. Chrono overlay
-3. VT resistance
-4. CIC
-5. CSC
+1. EIS: done
+2. Chrono overlay: done
+3. VT resistance: done
+4. CIC: done
+5. CSC: done
 
 Reason:
 
@@ -585,7 +586,7 @@ Keep dropdown item lists app-specific.
 
 ### Phase G: Move app bodies into `+gamrywb/+app`
 
-Status: started.
+Status: complete.
 
 Shell/helper extraction has improved the Chrono/EIS overlay app bodies enough to start moving app assembly one app at a time.
 
@@ -596,7 +597,7 @@ refactor: move chrono overlay app assembly into gamrywb.app    done
 refactor: move EIS app assembly into gamrywb.app    done
 refactor: move VT resistance app assembly into gamrywb.app    done
 refactor: move CIC app assembly into gamrywb.app    done
-refactor: move CSC app assembly into gamrywb.app
+refactor: move CSC app assembly into gamrywb.app    done
 ```
 
 Each commit should keep the public `apps/gamrywb_*_app.m` entry point intact.
@@ -666,14 +667,15 @@ This app-framework stage is successful when:
 The next best task is:
 
 ```text
-move CSC app assembly into gamrywb.app
+extract tabbed dual-plot shell for CIC and VT
 ```
 
 Suggested sequence:
 
-1. Move `apps/gamrywb_CSC_app.m` body into `+gamrywb/+app/launchCSCApp.m`.
-2. Keep `apps/gamrywb_CSC_app.m` as the public wrapper.
-3. Update entrypoint tests and run default plus GUI MATLAB tests.
+1. Add a conservative `+gamrywb/+ui/createTabbedDualPlotShell.m` helper.
+2. Use it in one app first, preferably VT resistance because it is smaller than CIC.
+3. Only then apply it to CIC if GUI contract tests remain stable.
+4. Keep app-specific analysis settings, summary rows, tables, plot dropdown values, callbacks, labels, and draggable behavior unchanged.
 
 ---
 
@@ -700,6 +702,7 @@ Use this section to record meaningful changes in strategy.
 - launchEISApp moves the EIS app body under +gamrywb/+app while keeping apps/gamrywb_EIS_app.m as the public wrapper
 - launchVTResistanceApp moves the VT resistance app body under +gamrywb/+app while keeping apps/gamrywb_VTResistance_app.m as the public wrapper
 - launchCICApp moves the CIC app body under +gamrywb/+app while keeping apps/gamrywb_CIC_app.m as the public wrapper
+- launchCSCApp moves the CSC app body under +gamrywb/+app while keeping apps/gamrywb_CSC_app.m as the public wrapper; Phase G is complete
 - loadFilesIntoSession starts the +gamrywb/+app layer for duplicate-aware file/session loading in Chrono/EIS
 - removeSelectedItemsFromSession shares selected-file removal for Chrono/EIS while preserving app-owned refresh and plotting
 - selectItemsByNames shares empty-selection-as-all item lookup for Chrono/EIS plot and export paths

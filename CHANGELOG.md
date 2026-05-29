@@ -11,6 +11,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 
 ### Changed
 
+- Moved CSC app assembly behind `gamrywb.app.launchCSCApp` while keeping the public `apps/` entry point.
 - Moved CIC app assembly behind `gamrywb.app.launchCICApp` while keeping the public `apps/` entry point.
 - Moved VT resistance app assembly behind `gamrywb.app.launchVTResistanceApp` while keeping the public `apps/` entry point.
 - Moved EIS app assembly behind `gamrywb.app.launchEISApp` while keeping the public `apps/` entry point.

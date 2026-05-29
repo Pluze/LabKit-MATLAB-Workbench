@@ -37,6 +37,10 @@ function test_phase10_apps()
 
     cscAppFile = fullfile(root, 'apps', 'gamrywb_CSC_app.m');
     cscSource = fileread(cscAppFile);
+    cscLaunchFile = fullfile(root, '+gamrywb', '+app', 'launchCSCApp.m');
+    assert(exist(cscLaunchFile, 'file') == 2, 'Missing package launch function for CSC app.');
+    assert(contains(cscSource, 'gamrywb.app.launchCSCApp'), ...
+        'gamrywb_CSC_app should delegate to the package launch function.');
     assert(~contains(cscSource, '_legacy'), 'gamrywb_CSC_app should not call legacy implementations.');
     assert(~contains(cscSource, 'gamry_CV_CSC_dta_gui('), ...
         'gamrywb_CSC_app should not delegate to the root legacy-compatible CSC wrapper.');
