@@ -110,7 +110,7 @@ Summary:
 - VT resistance and CIC now call package-backed analysis functions while preserving legacy GUI display/export behavior.
 - CV/CT charge, CSC analysis, selected-column access, and plotting extraction has started.
 - EIS item construction, axis-value generation, overlay plotting, and current-plot export table extraction is complete for the legacy EIS overlay GUI.
-- Shared session creation, file add/remove, save/load, and batch summary helper extraction has started.
+- Shared session creation, file add/remove, save/load, batch summary helper extraction, and multi-DTA overlay session add/remove migration have started.
 
 Completed migration details live in `MIGRATION_NOTES.md`.
 
@@ -546,11 +546,13 @@ Current implementation note:
 
 - `gamrywb.data.makeSession` creates the common session struct.
 - `gamrywb.data.addFilesToSession` and `gamrywb.data.removeFilesFromSession` provide loader-driven add/remove helpers.
+- `gamrywb.data.addFilesToSession` supports optional load-event callbacks so legacy GUI log ordering can be preserved during migration.
 - `gamrywb.io.saveSession` and `gamrywb.io.loadSession` persist session structs to MAT files.
 - `gamrywb.analysis.summarizeBatchResults` creates a common result status table.
 - VT resistance result/export table helpers are package-backed while preserving the legacy GUI table shape and CSV format.
 - CIC result/export table helpers are package-backed while preserving the legacy GUI table shape, dynamic units, and CSV format.
-- Legacy GUIs have not yet been migrated to shared session state.
+- The legacy multi-DTA overlay GUI now uses shared session add/remove helpers while preserving its legacy `S.items` display/export path.
+- The remaining legacy GUIs have not yet been migrated to shared session state.
 
 ---
 

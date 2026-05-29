@@ -381,6 +381,7 @@ empty item/result defaults
 loader-driven file add behavior
 duplicate filepath skipping
 loader failure reporting
+loader callback ordering
 remove by filepath or item name
 MAT save/load round trip
 batch summary name/filepath/ok/message columns

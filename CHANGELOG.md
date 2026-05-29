@@ -42,6 +42,7 @@ This project is still in an unreleased behavior-preserving refactor stage.
 - Updated selected legacy GUI implementations to call extracted parser and utility functions where behavior is intended to remain identical.
 - Updated `legacy/gamry_multiDTA_plot_export_gui_legacy.m` to use shared pulse detection, chrono item construction, and pulse-gap alignment.
 - Updated `legacy/gamry_multiDTA_plot_export_gui_legacy.m` to use shared chrono overlay plotting and CSV export table construction.
+- Updated `legacy/gamry_multiDTA_plot_export_gui_legacy.m` to use shared session add/remove helpers while preserving its existing `S.items` display/export path.
 - Updated `legacy/gamry_VT_resistance_gui_legacy.m` to use shared chrono parsing, DTA discovery, table/column accessors, pulse detection, and low-risk utilities.
 - Updated `legacy/gamry_VT_resistance_gui_legacy.m` to call shared VT resistance analysis.
 - Updated `legacy/gamry_VT_resistance_gui_legacy.m` to use shared VT resistance batch table and legacy-format CSV writer helpers.
@@ -65,7 +66,7 @@ This project is still in an unreleased behavior-preserving refactor stage.
 - CIC plotting remains in the legacy GUI.
 - VT resistance plotting remains in the legacy GUI.
 - CV/CSC export formatting remains deferred until a batch/session export workflow exists.
-- Legacy GUIs have not yet been migrated to shared batch/session utilities.
+- Most legacy GUIs have not yet been migrated to shared batch/session utilities.
 - New thin apps under `apps/` have not been implemented.
 - Unified workbench GUI has not been started.
 - Golden reference tests for every major analysis output are not complete yet.

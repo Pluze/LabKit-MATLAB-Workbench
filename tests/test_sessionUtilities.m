@@ -8,17 +8,26 @@ function test_sessionUtilities()
     assert(isempty(session.items), 'New session should start with no items.');
 
     files = {'/tmp/a.DTA', '/tmp/b.DTA', '/tmp/bad.DTA'};
-    [session, report] = gamrywb.data.addFilesToSession(session, files, @loader);
+    events = {};
+    callbacks = struct();
+    callbacks.onAdded = @(filepath, item) recordEvent('added', filepath, item.name);
+    callbacks.onSkipped = @(filepath) recordEvent('skipped', filepath, '');
+    callbacks.onFailed = @(filepath, message) recordEvent('failed', filepath, message);
+
+    [session, report] = gamrywb.data.addFilesToSession(session, files, @loader, callbacks);
     assert(numel(session.items) == 2, 'Two files should load successfully.');
     assert(isequal(report.added, files(1:2)), 'Added report should preserve load order.');
     assert(isempty(report.skipped), 'No duplicates should be skipped on first add.');
     assert(numel(report.failed) == 1, 'One file should fail through the loader.');
     assert(strcmp(report.failed(1).filepath, '/tmp/bad.DTA'), 'Failed report should preserve filepath.');
+    assert(isequal(events(:,1).', {'added', 'added', 'failed'}), ...
+        'Session add callbacks should preserve load-order event reporting.');
 
-    [session, report2] = gamrywb.data.addFilesToSession(session, {'/tmp/a.DTA'}, @loader);
+    [session, report2] = gamrywb.data.addFilesToSession(session, {'/tmp/a.DTA'}, @loader, callbacks);
     assert(numel(session.items) == 2, 'Duplicate add should not change item count.');
     assert(isempty(report2.added), 'Duplicate add should not report added files.');
     assert(isequal(report2.skipped, {'/tmp/a.DTA'}), 'Duplicate add should report skipped filepath.');
+    assert(strcmp(events{end, 1}, 'skipped'), 'Session add callback should report skipped duplicates.');
 
     T = gamrywb.analysis.summarizeBatchResults(session.items);
     assert(isequal(T.Properties.VariableNames, {'Name', 'Filepath', 'Ok', 'Message'}), ...
@@ -40,6 +49,10 @@ function test_sessionUtilities()
     assert(strcmp(loaded.kind, session.kind), 'Loaded session kind should be preserved.');
     assert(numel(loaded.items) == 1 && strcmp(loaded.items(1).name, 'a.DTA'), ...
         'Loaded session items should be preserved.');
+
+    function recordEvent(kind, filepath, detail)
+        events(end+1, :) = {kind, filepath, detail}; %#ok<AGROW>
+    end
 end
 
 function item = loader(filepath)

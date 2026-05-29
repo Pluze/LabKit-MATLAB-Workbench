@@ -1,8 +1,11 @@
-function [session, report] = addFilesToSession(session, filepaths, loader)
+function [session, report] = addFilesToSession(session, filepaths, loader, callbacks)
 %ADDFILESTOSESSION Add files to a session using a caller-provided loader.
 
     if nargin < 3 || isempty(loader)
         loader = @defaultLoader;
+    end
+    if nargin < 4
+        callbacks = struct();
     end
 
     filepaths = normalizeFilepaths(filepaths);
@@ -15,6 +18,7 @@ function [session, report] = addFilesToSession(session, filepaths, loader)
         filepath = filepaths{k};
         if hasFilepath(session.items, filepath)
             report.skipped{end+1} = filepath; %#ok<AGROW>
+            callCallback(callbacks, 'onSkipped', filepath);
             continue;
         end
 
@@ -28,8 +32,10 @@ function [session, report] = addFilesToSession(session, filepaths, loader)
             end
             session.items = gamrywb.util.appendStruct(session.items, item);
             report.added{end+1} = filepath; %#ok<AGROW>
+            callCallback(callbacks, 'onAdded', filepath, item);
         catch ME
             report.failed(end+1) = struct('filepath', filepath, 'message', ME.message); %#ok<AGROW>
+            callCallback(callbacks, 'onFailed', filepath, ME.message);
         end
     end
 
@@ -59,5 +65,11 @@ function out = normalizeFilepaths(filepaths)
         out = filepaths(:).';
     else
         error('filepaths must be a char, string, or cell array.');
+    end
+end
+
+function callCallback(callbacks, name, varargin)
+    if isfield(callbacks, name) && isa(callbacks.(name), 'function_handle')
+        callbacks.(name)(varargin{:});
     end
 end

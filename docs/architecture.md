@@ -211,6 +211,7 @@ Current implementation status:
 - `+gamrywb/+analysis` contains initial pulse detection helpers, pulse-gap alignment, VT resistance analysis, CIC analysis, CV/CSC analysis, EIS axis-value generation, and batch summary helpers.
 - `+gamrywb/+plot` contains the initial chrono VT/IT overlay plot helper, CV/CT selected-column plot helper, and EIS overlay plot helper.
 - `+gamrywb/+ui` contains initial VT resistance and CIC batch table display-data helpers.
+- The legacy multi-DTA overlay GUI has started using shared session add/remove helpers while preserving its legacy `S.items` display/export surface.
 - New thin apps and unified workbench GUI have not started.
 
 ---

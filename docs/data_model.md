@@ -316,6 +316,8 @@ Session helpers currently include:
 +gamrywb/+analysis/summarizeBatchResults.m
 ```
 
+`addFilesToSession` accepts optional callback hooks for `onAdded`, `onSkipped`, and `onFailed` so legacy GUIs can preserve existing log timing while using the shared add/duplicate/failure logic.
+
 Session files should include:
 
 - raw parsed data
