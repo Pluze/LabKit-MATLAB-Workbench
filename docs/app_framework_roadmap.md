@@ -68,7 +68,7 @@ Why similar apps are now easier:
 - app bodies should live under `apps/private`; EIS, Chrono overlay, CSC, VT resistance, and CIC are the first reference migrations
 - common GUI shells and panels live under `+gamrywb/+ui`
 - broad scientific calculations live under `+gamrywb/+analysis`; experiment-specific workflow calculations live with the owning app
-- plotting helpers live under `+gamrywb/+plot`
+- app-specific plotting helpers live with the owning app; reusable GUI/axes primitives live under `+gamrywb/+ui`
 - parser/export/session helpers live under `+gamrywb/+io` and `+gamrywb/+data`
 
 Main remaining bottleneck:
@@ -569,7 +569,7 @@ reflection-heavy dispatch
 opaque callback registries
 ```
 
-Also avoid expanding `+gamrywb/+analysis`, `+gamrywb/+plot`, or app-specific export helpers with new experiment decisions. Those packages currently contain transitional behavior-preserving code, not the desired final home for experiment design.
+Also avoid expanding `+gamrywb/+analysis` or app-specific export helpers with new experiment decisions. Those packages currently contain transitional behavior-preserving code, not the desired final home for experiment design.
 
 Do not make the app body read like an opaque list of helper calls.
 

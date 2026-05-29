@@ -113,7 +113,7 @@ type, filepath, name, scanRate, scanRate_V_per_s, curves, logmsg, analysis
 scanRate, mode, area_cm2
 ```
 
-`gamrywb.data.getCurveXY` and `gamrywb.plot.plotCVCT` operate on the parsed curve struct and preserve exact-case column matching and NaN filtering.
+`gamrywb.data.getCurveXY` operates on the parsed curve struct and preserves exact-case column matching and NaN filtering. CSC app plotting currently lives in `gamrywb_apps.csc.plotCVCT`.
 
 ## Pulse Struct
 

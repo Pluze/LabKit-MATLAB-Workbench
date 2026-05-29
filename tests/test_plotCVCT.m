@@ -21,7 +21,7 @@ function test_plotCVCT()
     ax = axes(fig);
 
     opts = struct('holdPlot', false, 'showGrid', true, 'lineWidth', 1.2);
-    info = gamrywb.plot.plotCVCT(ax, curve, 'T', 'Vf', opts);
+    info = gamrywb_apps.csc.plotCVCT(ax, curve, 'T', 'Vf', opts);
     assert(info.ok, info.message);
     assert(isequal(info.x, x), 'plotCVCT should plot filtered X values.');
     assert(isequal(info.y, y), 'plotCVCT should plot filtered Y values.');
@@ -34,7 +34,7 @@ function test_plotCVCT()
     assert(strcmp(ax.XLabel.String, 'T'), 'X label should use selected header.');
     assert(strcmp(ax.YLabel.String, 'Vf'), 'Y label should use selected header.');
 
-    info2 = gamrywb.plot.plotCVCT(ax, curve, 'bad', 'Vf', opts);
+    info2 = gamrywb_apps.csc.plotCVCT(ax, curve, 'bad', 'Vf', opts);
     assert(~info2.ok, 'Invalid X/Y selection should fail without throwing.');
     assert(strcmp(info2.message, 'invalid X/Y'), 'Invalid selection message should be stable.');
 end
