@@ -573,7 +573,7 @@ Acceptance criteria:
 
 ### Phase F: Extract top/bottom plot controls
 
-Status: started.
+Status: complete.
 
 Target apps:
 
@@ -584,11 +584,11 @@ Target apps:
 Candidate helper:
 
 ```text
-+gamrywb/+ui/createTopBottomPlotControls.m    done for VT resistance app
++gamrywb/+ui/createTopBottomPlotControls.m    done for VT resistance and CIC apps
 ```
 
 Keep dropdown item lists app-specific.
-VT resistance now uses the shared control helper first. CIC should adopt it only after the VT-only change passes default and GUI tests.
+VT resistance and CIC now use the shared control helper while keeping app-specific dropdown item lists, defaults, callbacks, and labels in app code.
 
 ### Phase G: Move app bodies into `+gamrywb/+app`
 
@@ -673,14 +673,14 @@ This app-framework stage is successful when:
 The next best task is:
 
 ```text
-adopt top/bottom plot controls in CIC
+reassess remaining repeated app panels
 ```
 
 Suggested sequence:
 
-1. Replace CIC's duplicated top/bottom plot controls with `gamrywb.ui.createTopBottomPlotControls`.
-2. Keep CIC-specific dropdown item lists, defaults, callbacks, labels, and plot behavior unchanged.
-3. Run default plus GUI MATLAB tests before considering Phase F complete.
+1. Compare remaining CIC/VT and Chrono/EIS panel-level duplication after Phases D-F.
+2. Pick the lowest-risk repeated panel or behavior with at least two call sites.
+3. Update this roadmap before extracting another helper.
 
 ---
 
@@ -704,7 +704,7 @@ Use this section to record meaningful changes in strategy.
 - createPlotOptionsPanel shares the Chrono/EIS plot-options panel shell while preserving app-specific controls and callbacks
 - createAxes shares Chrono/EIS initial axes construction while preserving labels
 - createTabbedDualPlotShell shares the VT/CIC outer tabbed dual-plot shell; VT resistance and CIC both use it
-- createTopBottomPlotControls starts Phase F by sharing the VT/CIC top/bottom plot control rows; VT resistance uses it first
+- createTopBottomPlotControls shares the VT/CIC top/bottom plot control rows; VT resistance and CIC both use it
 - launchChronoOverlayApp moves the first app body under +gamrywb/+app while keeping apps/gamrywb_ChronoOverlay_app.m as the public wrapper
 - launchEISApp moves the EIS app body under +gamrywb/+app while keeping apps/gamrywb_EIS_app.m as the public wrapper
 - launchVTResistanceApp moves the VT resistance app body under +gamrywb/+app while keeping apps/gamrywb_VTResistance_app.m as the public wrapper
