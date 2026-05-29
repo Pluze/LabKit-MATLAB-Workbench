@@ -213,6 +213,7 @@ Current implementation status:
 - `+gamrywb/+ui` contains initial VT resistance and CIC batch table display-data helpers.
 - The legacy multi-DTA overlay, EIS overlay, VT resistance, CIC, and CV/CSC GUIs have started using shared session helpers while preserving their legacy display/export or display/analysis state surfaces.
 - Phase 10 app entry points exist under `apps/` and currently delegate to the behavior-preserved legacy GUIs.
+- Replacing those delegates with package-backed thin app internals is blocked until the DTA parser layer, normalized item/result/option schemas, session/export workflow, and fixture-driven validation are stable.
 - Unified workbench GUI has not started.
 
 ---
@@ -233,14 +234,39 @@ MATLAB classes before struct models stabilize
 
 ---
 
-## 8. Future Architecture Direction
+## 8. Current Abstraction Audit
+
+The current package extraction is intentionally conservative. Most helpers are small function-level extractions, and the project has not introduced a new class hierarchy, controller framework, plugin framework, or generic GUI framework. That is appropriate for the current behavior-preserving phase.
+
+Current abstractions that fit the project:
+
+- low-risk utilities in `+gamrywb/+util` are narrow and stable enough to share.
+- parser entry points are experiment-family specific, which preserves legacy behavior while fixtures are still limited.
+- analysis helpers such as VT resistance, CIC, CV/CSC, and EIS axis-value generation are pure enough for tests and non-GUI workflows.
+- app-specific result table, CSV, UI-table, and plot helpers are acceptable because their job is to preserve legacy-visible formats and layout behavior.
+- Phase 10 app entry points are compatibility delegates; this is a safe compatibility layer, not a claim that thin app internals are complete.
+
+Current abstractions that should stay provisional:
+
+- chrono and EIS item structs currently carry both legacy field names and unit-explicit package fields. This is useful during migration, but future apps should depend on a documented normalized item schema rather than both field families.
+- analysis result structs currently expose legacy-compatible fields. Before building new app internals, define which result fields are stable schema and which are legacy bridge fields.
+- local helper duplication inside export/UI builders, such as item-name and analysis-message accessors, is acceptable for now. Do not extract a generic table-builder layer until the legacy output contracts and future export conventions are both clear.
+- parser table-reading code is duplicated across chrono, EIS, and CV/CT parsers. This is under-abstracted by design; deeper parser unification should wait for a generic DTA document model and fixture coverage across additional file types.
+
+Near-term design need:
+
+- stabilize a DTA document layer, normalized item/result/option schemas, and session/export workflow conventions before replacing Phase 10 delegates or starting Phase 11.
+
+---
+
+## 9. Future Architecture Direction
 
 After v1.0, the project may add:
 
 - MATLAB Project `.prj` support.
 - New App Designer wrapper around the stable package library.
-- Session save/load support.
+- Expanded session workflow and reporting support.
 - Batch report generation.
 - Optional MATLAB Compiler packaging for internal lab distribution.
 
-These should not be prioritized before the behavior-preserving package refactor is complete.
+These should not be prioritized before the behavior-preserving package refactor is complete and the DTA core schemas, parser responsibilities, session/export conventions, and validation fixtures are stable.

@@ -229,11 +229,11 @@ item.analysis = struct();
 
 Parser note:
 
-`gamrywb.io.parseCVCTDTA` currently returns scan rate, curves, and log messages. A full `makeCVItem` wrapper is planned for a later phase.
+`gamrywb.io.parseCVCTDTA` currently returns scan rate, curves, and log messages. A future CV/CT item-construction helper may normalize this into a complete item struct, but the exact helper name is not yet an API commitment.
 
 Analysis note:
 
-`gamrywb.analysis.computeCSC` currently accepts a parsed curve struct plus an option struct containing `scanRate`, `mode`, and `area_cm2`. It returns legacy-compatible charge, CSC, relative-difference, and trim-vector fields. A full CVCT item wrapper can later normalize this call shape without changing the analysis rules.
+`gamrywb.analysis.computeCSC` currently accepts a parsed curve struct plus an option struct containing `scanRate`, `mode`, and `area_cm2`. It returns legacy-compatible charge, CSC, relative-difference, and trim-vector fields. A future CV/CT item wrapper can later normalize this call shape without changing the analysis rules.
 
 Result table note:
 

@@ -16,6 +16,9 @@ Future features should wait until:
 [ ] legacy GUIs are preserved and verified
 [ ] common parser functions are stable
 [ ] common analysis functions are stable
+[ ] normalized item/result/option schemas are stable enough for new app work
+[ ] session and export workflow conventions are stable
+[ ] fixture coverage exists for any additional Gamry DTA experiment type before support is added
 [ ] CIC can run without GUI
 [ ] VT resistance can run without GUI
 [ ] CV/CSC can run without GUI
@@ -38,12 +41,12 @@ safer future changes
 
 Future idea:
 
-- Add explicit session save/load support.
+- Extend the current explicit session save/load support.
 - Store raw parsed data, selected analysis mode, options, results, and notes.
 - Allow rerunning analysis after changing options.
 - Preserve file provenance and analysis settings.
 
-Possible files:
+Current implemented helpers include:
 
 ```text
 +gamrywb/+data/makeSession.m
@@ -67,7 +70,7 @@ Future idea:
 - Export standardized summary tables.
 - Reuse the same package functions as GUI apps.
 
-Possible entry points:
+Candidate entry points:
 
 ```text
 scripts/run_batch_chrono_analysis.m
@@ -75,7 +78,7 @@ scripts/run_batch_eis_export.m
 scripts/run_batch_csc_analysis.m
 ```
 
-This should be implemented only after analysis functions are decoupled from GUI state.
+These names may change. Batch entry points should be implemented only after analysis functions are decoupled from GUI state and session/export conventions are stable.
 
 ---
 
@@ -128,6 +131,8 @@ Gamry Workbench
 Important rule:
 
 - Do not start this before parser, data, analysis, plotting, and export helpers are stable.
+- Do not start this before the generic DTA document parsing layer, normalized item/result/option schemas, session/export workflow, and fixture-driven validation are stable.
+- Phase 10 app entry points are compatibility delegates today; a unified GUI remains blocked until package-backed thin app internals are stable.
 - A premature unified GUI would create a larger monolithic GUI and make the project worse.
 
 ---
@@ -217,6 +222,8 @@ parseDTA dispatches by TAG/TITLE/table structure
 specific parsers handle specific experiment families
 analysis modules consume normalized item structs
 ```
+
+Treat names in this pattern as candidate design vocabulary, not API commitments. Add representative DTA fixtures and schema expectations before adding support for a new experiment family.
 
 ---
 

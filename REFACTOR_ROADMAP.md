@@ -79,7 +79,40 @@ Operational instructions for AI agents live in `AGENTS.md`.
 
 ---
 
-## 4. Current Status
+## 4. API Stability and DTA Core Notes
+
+This roadmap defines stable responsibilities and acceptance criteria, not permanent names for every future helper.
+
+API stability / extensibility note:
+
+- legacy GUI behavior, scientific results, parser behavior, plotting behavior, and CSV formats stay preserved unless an explicit phase approves a change.
+- package responsibilities stay clear: `+io` parses and exports, `+data` normalizes item/session access, `+analysis` computes results, `+plot` renders plots, `+ui` adapts data for UI display, and `+util` holds small generic helpers.
+- behavior-preserving migrations must be covered by tests, fixture checks, or documented manual validation.
+- currently implemented package functions listed below describe the present migration surface.
+
+Future helper names are implementation breadcrumbs. Candidate names may change as long as the responsibility, behavior contract, and validation coverage remain stable.
+
+DTA core stabilization before thin apps:
+
+Before converting Phase 10 app delegates into package-backed thin apps, or starting Phase 11 unified GUI work, the DTA infrastructure must be stable enough to support growth:
+
+- generic DTA document parsing responsibilities are clear and fixture-tested across existing chrono, EIS, and CV/CT families.
+- normalized item, result, and option schemas are documented and exercised by tests.
+- session and export conventions are stable enough that apps do not invent their own formats.
+- additional Gamry DTA experiment types are introduced fixture-first, with explicit parser/schema expectations.
+
+Until those conditions hold, Phase 10 is limited to compatibility-preserving entry points and Phase 11 remains blocked.
+
+Current abstraction audit:
+
+- Current package helpers are intentionally function-level and legacy-compatible; this is preferable to introducing classes, controllers, or a generic GUI framework before behavior is locked down.
+- App-specific export, UI-table, and plotting helpers are acceptable where they preserve legacy-visible contracts.
+- Duplicated parser internals and duplicated small local accessors are known transition costs, not immediate refactor targets.
+- Transitional legacy field names in item/result structs should not become the only long-term schema for future apps.
+
+---
+
+## 5. Current Status
 
 Current status at the time of this documentation cleanup:
 
@@ -118,7 +151,7 @@ Completed migration details live in `MIGRATION_NOTES.md`.
 
 ---
 
-## 5. Target Project Structure
+## 6. Target Project Structure
 
 The target structure is:
 
@@ -144,7 +177,7 @@ GamryElectrochemWorkbench/
 │   └── gamry_multiDTA_plot_export_gui_legacy.m
 │
 ├── apps/
-│   └── future thin app entry points
+│   └── compatibility app entry points and future thin app internals
 │
 ├── +gamrywb/
 │   ├── +io/
@@ -169,7 +202,7 @@ Detailed architecture and data model notes live in:
 
 ---
 
-## 6. Phase Plan
+## 7. Phase Plan
 
 ### Phase 0 — Inventory and Safety Baseline
 
@@ -230,7 +263,7 @@ Goal:
 
 - Extract shared DTA parsing and table/column accessors.
 
-Package areas:
+Current implemented helpers:
 
 ```text
 +gamrywb/+io/parseChronoDTA.m
@@ -264,7 +297,7 @@ Goal:
 
 - Unify chronopotentiometry file loading, current/voltage cleaning, pulse detection, and pulse-gap alignment.
 
-Package areas:
+Current implemented helpers:
 
 ```text
 +gamrywb/+analysis/defaultPulseOptions.m
@@ -308,7 +341,7 @@ Goal:
 
 - Make the multi-DTA chronopotentiometry overlay/export GUI a thin wrapper around shared library functions.
 
-Package areas:
+Current implemented helpers:
 
 ```text
 +gamrywb/+plot/plotChronoVTIT.m
@@ -346,7 +379,7 @@ Goal:
 
 - Extract steady-state voltage transient resistance analysis from GUI callbacks.
 
-Package areas:
+Current implemented helpers:
 
 ```text
 +gamrywb/+analysis/computeVTResistance.m
@@ -355,8 +388,12 @@ Package areas:
 +gamrywb/+io/buildVTResistanceResultsTable.m
 +gamrywb/+io/writeVTResistanceResultsCSV.m
 +gamrywb/+ui/buildVTResistanceBatchTableData.m
-+gamrywb/+plot/plotVTResistanceDebug.m
 ```
+
+Remaining responsibilities and candidate helpers:
+
+- Move VT resistance debug plotting out of GUI callbacks when there is fixture-backed evidence that markers, labels, axes, and display behavior are unchanged.
+- A future helper may live under `+gamrywb/+plot`, but its exact name is not part of the current API contract.
 
 Required behavior to preserve:
 
@@ -392,18 +429,22 @@ Goal:
 
 - Extract CIC computation and voltage-transient metrics from `gamry_CIC_VT_gui_paperlabels_legacy.m`.
 
-Package areas:
+Current implemented helpers:
 
 ```text
 +gamrywb/+analysis/computeCIC.m
 +gamrywb/+analysis/computeVoltageTransientMetrics.m
 +gamrywb/+analysis/computeInjectedCharge.m
 +gamrywb/+analysis/checkWaterWindowSafety.m
-+gamrywb/+plot/plotCICDebug.m
 +gamrywb/+io/buildCICResultsTable.m
 +gamrywb/+io/writeCICResultsCSV.m
 +gamrywb/+ui/buildCICBatchTableData.m
 ```
+
+Remaining responsibilities and candidate helpers:
+
+- Move CIC debug plotting out of GUI callbacks when there is fixture-backed evidence that pulse shading, water-window lines, markers, labels, and display behavior are unchanged.
+- A future helper may live under `+gamrywb/+plot`, but its exact name is not part of the current API contract.
 
 Required behavior to preserve:
 
@@ -445,16 +486,21 @@ Goal:
 
 - Extract CV/CT integration and CSC calculation from `gamry_CV_CSC_dta_gui_legacy.m`.
 
-Package areas:
+Current implemented helpers:
 
 ```text
 +gamrywb/+analysis/computeCTCharge.m
 +gamrywb/+analysis/computeCVCharge.m
 +gamrywb/+analysis/computeCSC.m
-+gamrywb/+analysis/selectCVCTCurves.m
++gamrywb/+data/getCurveXY.m
 +gamrywb/+plot/plotCVCT.m
 +gamrywb/+io/buildCSCResultsTable.m
 ```
+
+Remaining responsibilities and candidate helpers:
+
+- Normalize CV/CT item construction and selected-curve handling once the item/result schema is stable.
+- A future curve-selection helper may live under `+gamrywb/+analysis` or `+gamrywb/+data`, but its exact name is not part of the current API contract.
 
 Required scientific rules:
 
@@ -475,7 +521,8 @@ Current implementation note:
 - `legacy/gamry_CV_CSC_dta_gui_legacy.m` now calls `gamrywb.analysis.computeCSC`.
 - `computeCSC` uses `computeCTCharge` and `computeCVCharge` to preserve the legacy sign-split integration behavior.
 - `legacy/gamry_CV_CSC_dta_gui_legacy.m` now uses `gamrywb.data.getCurveXY` and `gamrywb.plot.plotCVCT`.
-- The legacy CV/CSC GUI currently has no CSV export path; `buildCSCResultsTable` remains deferred until a batch/session export workflow exists.
+- `gamrywb.io.buildCSCResultsTable` is package-backed for computed CSC result structs/items.
+- The legacy CV/CSC GUI still has no CSV export path; do not add one without an explicit workflow decision and validation plan.
 
 ---
 
@@ -485,7 +532,7 @@ Goal:
 
 - Extract EIS axis-value generation, overlay plotting, and CSV export.
 
-Package areas:
+Current implemented helpers:
 
 ```text
 +gamrywb/+data/makeEISItem.m
@@ -528,7 +575,7 @@ Goal:
 
 - Create common session and export utilities used by all apps.
 
-Package areas:
+Current implemented helpers:
 
 ```text
 +gamrywb/+data/makeSession.m
@@ -566,9 +613,10 @@ Current implementation note:
 
 Goal:
 
-- Create new app entry points in `apps/` only after the reusable library is stable.
+- Keep compatibility app entry points in `apps/`.
+- Replace delegate internals with package-backed thin apps only after the reusable library and DTA core are stable.
 
-Planned apps:
+Current implemented entry points:
 
 ```text
 apps/gamrywb_CIC_app.m
@@ -593,7 +641,12 @@ Current implementation note:
 - `apps/gamrywb_VTResistance_app.m` delegates to `gamry_VT_resistance_gui`.
 - `apps/gamrywb_CSC_app.m` delegates to `gamry_CV_CSC_dta_gui`.
 - `apps/gamrywb_EIS_app.m` delegates to `gamry_EIS_multiDTA_plot_gui`.
-- These app entry points preserve legacy GUI behavior while package-backed thin app internals mature.
+- These app entry points preserve legacy GUI behavior while package-backed thin app internals remain deferred.
+
+Blocked next work:
+
+- Do not replace these delegates with new thin app internals until the DTA parser layer, normalized item/result/option schemas, session/export conventions, and fixture-driven validation are stable.
+- Future thin app internals should keep the responsibility split as `UI controls -> read options -> call gamrywb package -> update UI`; controller or view-model helper names are candidates, not API commitments.
 
 ---
 
@@ -616,13 +669,18 @@ log panel
 
 Important rule:
 
-Do not start this phase until Phases 1–10 pass their acceptance criteria.
+Do not start this phase until Phases 1–10 pass their acceptance criteria and the DTA core, package APIs, session/export workflow, and validation fixtures are stable.
 
 Status: not started.
 
+Blocked status:
+
+- Phase 11 is explicitly blocked while Phase 10 app entry points are compatibility delegates.
+- Starting a unified GUI before package-backed thin apps and DTA infrastructure are stable would create a larger monolith instead of reducing risk.
+
 ---
 
-## 7. Migration Order Recommendation
+## 8. Migration Order Recommendation
 
 Use this order:
 
@@ -649,7 +707,7 @@ Unified GUI should be last.
 
 ---
 
-## 8. Definition of Done for v1.0
+## 9. Definition of Done for v1.0
 
 The refactor reaches v1.0 when:
 
@@ -666,14 +724,15 @@ The refactor reaches v1.0 when:
 [ ] CV/CSC analysis can run without GUI.
 [ ] EIS overlay/export can run without GUI.
 [ ] At least one reference test exists for each major analysis module.
-[ ] New thin apps are available in apps/.
+[ ] New thin app entry points are available in apps/.
+[ ] Package-backed thin app internals are started only after DTA core schemas, session/export conventions, and validation are stable.
 [ ] README explains how to run startup_gamrywb and each app.
 [ ] MIGRATION_NOTES.md documents behavior differences and open risks.
 ```
 
 ---
 
-## 9. Future Features
+## 10. Future Features
 
 Future feature ideas are intentionally separated from the active behavior-preserving refactor.
 
@@ -687,7 +746,7 @@ Do not start future-feature work before the reusable MATLAB package reaches v1.0
 
 ---
 
-## 10. Final Reminder
+## 11. Final Reminder
 
 This refactor should protect the scientific value of the existing scripts.
 

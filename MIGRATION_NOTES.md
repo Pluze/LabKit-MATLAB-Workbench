@@ -371,6 +371,8 @@ Behavior preserved:
 Still local after current Phase 10 progress:
 
 - Package-backed thin app internals are not yet implemented.
+- Replacing the delegates is blocked until the DTA parser layer, normalized item/result/option schemas, session/export conventions, and fixture-driven validation are stable.
+- Future helper/controller names for thin apps are provisional design breadcrumbs, not API commitments.
 
 ---
 
@@ -514,8 +516,9 @@ Multi-DTA overlay/export must preserve:
 1. Parser implementations still duplicate some table-reading internals. This is acceptable during behavior-preserving extraction; deeper parser unification should wait until downstream behavior is verified.
 2. Shared pulse detection currently targets the legacy single cathodic-first biphasic use case. General protocol support should be treated as a future feature, not a refactor requirement.
 3. Existing tests validate extracted pure functions with demo fixtures, but not every legacy GUI output has a golden reference yet.
-4. Package-backed thin app internals remain future work; current Phase 10 app entry points delegate to preserved legacy GUIs.
+4. Package-backed thin app internals remain future work; current Phase 10 app entry points delegate to preserved legacy GUIs and should not replace those delegates until the DTA core, schemas, session/export workflow, and validation fixtures are stable.
 5. Interactive GUI behavior is not covered by the default batch test runner. Optional GUI tests cover launch, initialized layout/control compatibility, complete dropdown groups, result-table columns, axes titles/labels, callback bindings, and safe empty-session callbacks only.
+6. Some current package structs and result fields are transitional bridges for legacy GUIs. Treat normalized item/result/option schemas as a future stabilization step before new app internals depend on them.
 
 ---
 
