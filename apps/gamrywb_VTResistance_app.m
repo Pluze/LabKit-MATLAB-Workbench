@@ -10,6 +10,12 @@ function varargout = gamrywb_VTResistance_app(varargin)
 %   - Compute baseline-corrected resistance as abs((Vss - Vbaseline) / Iss).
 
     if nargin > 0
+        % Keep VT numerical/export tests direct while the app owns the local workflow code.
+        [handled, testOutputs] = handleVTTestRequest(varargin, nargout);
+        if handled
+            varargout = testOutputs;
+            return;
+        end
         error('gamrywb_VTResistance_app:UnsupportedInput', 'gamrywb_VTResistance_app does not accept input arguments.');
     end
     if nargout > 1
@@ -221,7 +227,7 @@ function varargout = gamrywb_VTResistance_app(varargin)
         opts.voltageMode = ddVoltageMode.Value;
         opts.pulseMode = ddPulseMode.Value;
 
-        A = gamrywb_apps.vt.computeResistance(item, opts);
+        A = computeResistance(item, opts);
         if A.ok
             addLog(sprintf('%s: Rc=%.6g ohm, Ra=%.6g ohm, Ravg=%.6g ohm', ...
                 item.name, A.Rc_abs_ohm, A.Ra_abs_ohm, A.Ravg_abs_ohm));
@@ -268,7 +274,7 @@ function varargout = gamrywb_VTResistance_app(varargin)
             tbl.Data = cell(0,9);
             return;
         end
-            tbl.Data = gamrywb_apps.vt.buildBatchTableData(S.items);
+            tbl.Data = buildBatchTableData(S.items);
     end
 
     function refreshResultsSummary()
@@ -443,7 +449,7 @@ function varargout = gamrywb_VTResistance_app(varargin)
             return;
         end
         out = fullfile(p,f);
-        [ok, msg] = gamrywb_apps.vt.writeResultsCSV(S.items, out);
+        [ok, msg] = writeResultsCSV(S.items, out);
         if ~ok
             uialert(fig,msg,'Export');
             return;
@@ -482,6 +488,387 @@ function varargout = gamrywb_VTResistance_app(varargin)
         gamrywb.ui.appendLog(txtLog, msg);
     end
 
+end
+
+function [handled, outputs] = handleVTTestRequest(args, nargoutRequested)
+    handled = false;
+    outputs = {};
+    if isempty(args) || ~(ischar(args{1}) || (isstring(args{1}) && isscalar(args{1})))
+        return;
+    end
+
+    handled = true;
+    command = char(args{1});
+    switch command
+        case '__test_computeResistance__'
+            assertVTTestArgCount(args, 3, command);
+            if nargoutRequested > 1
+                error('gamrywb_VTResistance_app:TooManyOutputs', 'VT compute test request returns one result struct.');
+            end
+            outputs = {computeResistance(args{2}, args{3})};
+        case '__test_buildBatchTableData__'
+            assertVTTestArgCount(args, 2, command);
+            if nargoutRequested > 1
+                error('gamrywb_VTResistance_app:TooManyOutputs', 'VT batch-table test request returns one cell array.');
+            end
+            outputs = {buildBatchTableData(args{2})};
+        case '__test_buildResultsTable__'
+            assertVTTestArgCount(args, 2, command);
+            if nargoutRequested > 1
+                error('gamrywb_VTResistance_app:TooManyOutputs', 'VT result-table test request returns one table.');
+            end
+            outputs = {buildResultsTable(args{2})};
+        case '__test_writeResultsCSV__'
+            assertVTTestArgCount(args, 3, command);
+            if nargoutRequested > 2
+                error('gamrywb_VTResistance_app:TooManyOutputs', 'VT CSV test request returns at most ok and message.');
+            end
+            if nargoutRequested == 0
+                writeResultsCSV(args{2}, args{3});
+            else
+                [ok, msg] = writeResultsCSV(args{2}, args{3});
+                outputs = {ok, msg};
+                outputs = outputs(1:nargoutRequested);
+            end
+        otherwise
+            handled = false;
+    end
+end
+
+function assertVTTestArgCount(args, expectedCount, command)
+    if numel(args) ~= expectedCount
+        error('gamrywb_VTResistance_app:InvalidTestRequest', ...
+            '%s expects %d total input arguments.', command, expectedCount);
+    end
+end
+
+function A = computeResistance(item, opts)
+%COMPUTERESISTANCE Compute VT resistance metrics for the VT app.
+
+    if nargin < 2
+        opts = struct();
+    end
+    opts = fillResistanceOptions(opts);
+
+    A = struct();
+    A.ok = false;
+    A.message = '';
+    A.windowMode = opts.windowMode;
+    A.voltageMode = opts.voltageMode;
+    A.logOnFailure = false;
+
+    [curve, okCurve, msgCurve] = mainCurve(item);
+    if ~okCurve
+        A.message = msgCurve;
+        A.logOnFailure = true;
+        return;
+    end
+
+    t = gamrywb.data.getColumn(curve, 'T');
+    Vf = gamrywb.data.getColumn(curve, 'Vf');
+    Im = gamrywb.data.getColumn(curve, 'Im');
+    pt = gamrywb.data.getColumn(curve, 'Pt');
+    if isempty(pt)
+        pt = (0:numel(t)-1).';
+    end
+
+    valid = ~(isnan(t) | isnan(Vf) | isnan(Im));
+    t = t(valid);
+    Vf = Vf(valid);
+    Im = Im(valid);
+    pt = pt(valid);
+    if numel(t) < 5
+        A.message = 'Not enough valid T/Vf/Im points.';
+        return;
+    end
+
+    A.t = t;
+    A.Vf = Vf;
+    A.Im = Im;
+    A.pt = pt;
+
+    meta = struct();
+    if isfield(item, 'meta')
+        meta = item.meta;
+    end
+    [pulse, pulseMsg] = gamrywb.analysis.detectPulses(t, Im, meta, opts.pulseMode);
+    A.pulse = pulse;
+    A.detectMode = pulse.method;
+    A.detectMsg = pulseMsg;
+    if ~pulse.ok
+        A.message = pulseMsg;
+        A.logOnFailure = true;
+        return;
+    end
+
+    [cStart, cEnd] = selectSteadyWindow(pulse.cath_start, pulse.cath_end, A.windowMode);
+    [aStart, aEnd] = selectSteadyWindow(pulse.anod_start, pulse.anod_end, A.windowMode);
+    cathMask = t >= cStart & t <= cEnd;
+    anodMask = t >= aStart & t <= aEnd;
+    if nnz(cathMask) < 2 || nnz(anodMask) < 2
+        A.message = 'Steady windows are too short after pulse detection.';
+        return;
+    end
+
+    A.cathMask = cathMask;
+    A.anodMask = anodMask;
+    A.cathSteadyStart = cStart;
+    A.cathSteadyEnd = cEnd;
+    A.anodSteadyStart = aStart;
+    A.anodSteadyEnd = aEnd;
+
+    A.Ic_est_A = median(Im(cathMask), 'omitnan');
+    A.Ia_est_A = median(Im(anodMask), 'omitnan');
+    A.Vc_ss_V = median(Vf(cathMask), 'omitnan');
+    A.Va_ss_V = median(Vf(anodMask), 'omitnan');
+
+    A.cathBaselineStart = pulse.pre_start;
+    A.cathBaselineEnd = pulse.pre_end;
+    A.anodBaselineStart = pulse.post_start;
+    A.anodBaselineEnd = pulse.post_end;
+    [A.Vc_baseline_V, A.cathBaselineWindow_s] = estimateBaseline( ...
+        t, Vf, pulse.pre_start, pulse.pre_end, 0);
+    [A.Va_baseline_V, A.anodBaselineWindow_s] = estimateBaseline( ...
+        t, Vf, pulse.post_start, pulse.post_end, chooseFinite(A.Vc_baseline_V, 0));
+
+    A.dVc_V = A.Vc_ss_V - A.Vc_baseline_V;
+    A.dVa_V = A.Va_ss_V - A.Va_baseline_V;
+    A.Rc_raw_ohm = safeDivide(A.Vc_ss_V, A.Ic_est_A);
+    A.Ra_raw_ohm = safeDivide(A.Va_ss_V, A.Ia_est_A);
+    A.Rc_dV_ohm = safeDivide(A.dVc_V, A.Ic_est_A);
+    A.Ra_dV_ohm = safeDivide(A.dVa_V, A.Ia_est_A);
+
+    if strcmp(A.voltageMode, 'Raw Vf/I')
+        A.Rc_ohm = A.Rc_raw_ohm;
+        A.Ra_ohm = A.Ra_raw_ohm;
+    else
+        A.Rc_ohm = A.Rc_dV_ohm;
+        A.Ra_ohm = A.Ra_dV_ohm;
+    end
+    A.Rc_abs_ohm = abs(A.Rc_ohm);
+    A.Ra_abs_ohm = abs(A.Ra_ohm);
+    A.Ravg_abs_ohm = mean([A.Rc_abs_ohm, A.Ra_abs_ohm], 'omitnan');
+
+    A.ok = isfinite(A.Ravg_abs_ohm);
+    if A.ok
+        A.message = 'OK';
+    else
+        A.message = 'Resistance could not be computed; check current and pulse detection.';
+        A.logOnFailure = true;
+    end
+end
+
+function opts = fillResistanceOptions(opts)
+    if ~isfield(opts, 'windowMode')
+        opts.windowMode = 'Full pulse median';
+    end
+    if ~isfield(opts, 'voltageMode')
+        opts.voltageMode = 'Baseline-corrected dV/I';
+    end
+    if ~isfield(opts, 'pulseMode')
+        opts.pulseMode = 'Metadata first, then auto';
+    end
+end
+
+function C = buildBatchTableData(items)
+%BUILDBATCHTABLEDATA Build VT resistance uitable data.
+
+    C = cell(numel(items), 9);
+    for i = 1:numel(items)
+        item = items(i);
+        C{i, 1} = itemName(item);
+        A = itemAnalysis(item);
+        if isempty(A) || ~isfield(A, 'ok') || ~A.ok
+            C{i, 2} = NaN;
+            C{i, 3} = NaN;
+            C{i, 4} = NaN;
+            C{i, 5} = NaN;
+            C{i, 6} = NaN;
+            C{i, 7} = NaN;
+            C{i, 8} = NaN;
+            C{i, 9} = 'parse/analyze failed';
+            continue;
+        end
+
+        C{i, 2} = A.Ic_est_A;
+        C{i, 3} = A.Ia_est_A;
+        C{i, 4} = A.Vc_ss_V;
+        C{i, 5} = A.Va_ss_V;
+        C{i, 6} = A.Rc_abs_ohm;
+        C{i, 7} = A.Ra_abs_ohm;
+        C{i, 8} = A.Ravg_abs_ohm;
+        C{i, 9} = A.detectMode;
+    end
+end
+
+function T = buildResultsTable(items)
+%BUILDRESULTSTABLE Build VT resistance CSV result table.
+
+    file = cell(numel(items), 1);
+    Ic_A = NaN(numel(items), 1);
+    Ia_A = NaN(numel(items), 1);
+    Vc_ss_V = NaN(numel(items), 1);
+    Va_ss_V = NaN(numel(items), 1);
+    Vc_baseline_V = NaN(numel(items), 1);
+    Va_baseline_V = NaN(numel(items), 1);
+    dVc_V = NaN(numel(items), 1);
+    dVa_V = NaN(numel(items), 1);
+    Rc_bc_ohm = NaN(numel(items), 1);
+    Ra_bc_ohm = NaN(numel(items), 1);
+    Ravg_bc_ohm = NaN(numel(items), 1);
+    windowMode = cell(numel(items), 1);
+    detection = cell(numel(items), 1);
+    status = cell(numel(items), 1);
+
+    for i = 1:numel(items)
+        item = items(i);
+        file{i} = itemName(item);
+        A = itemAnalysis(item);
+        if isempty(A) || ~isfield(A, 'ok') || ~A.ok
+            windowMode{i} = '';
+            detection{i} = 'failed';
+            status{i} = analysisMessage(A);
+            continue;
+        end
+
+        Ic_A(i) = A.Ic_est_A;
+        Ia_A(i) = A.Ia_est_A;
+        Vc_ss_V(i) = A.Vc_ss_V;
+        Va_ss_V(i) = A.Va_ss_V;
+        Vc_baseline_V(i) = A.Vc_baseline_V;
+        Va_baseline_V(i) = A.Va_baseline_V;
+        dVc_V(i) = A.dVc_V;
+        dVa_V(i) = A.dVa_V;
+        Rc_bc_ohm(i) = abs(A.Rc_dV_ohm);
+        Ra_bc_ohm(i) = abs(A.Ra_dV_ohm);
+        Ravg_bc_ohm(i) = mean([Rc_bc_ohm(i), Ra_bc_ohm(i)], 'omitnan');
+        windowMode{i} = A.windowMode;
+        detection{i} = A.detectMode;
+        status{i} = A.message;
+    end
+
+    T = table(file, Ic_A, Ia_A, Vc_ss_V, Va_ss_V, Vc_baseline_V, Va_baseline_V, ...
+        dVc_V, dVa_V, Rc_bc_ohm, Ra_bc_ohm, Ravg_bc_ohm, windowMode, detection, status, ...
+        'VariableNames', {'File', 'Ic_A', 'Ia_A', 'Vc_ss_V', 'Va_ss_V', ...
+        'Vc_baseline_V', 'Va_baseline_V', 'dVc_V', 'dVa_V', 'Rc_bc_ohm', ...
+        'Ra_bc_ohm', 'Ravg_bc_ohm', 'WindowMode', 'Detection', 'Status'});
+end
+
+function [ok, msg] = writeResultsCSV(items, filepath)
+%WRITERESULTSCSV Write VT resistance results in legacy CSV format.
+
+    ok = true;
+    msg = '';
+
+    fid = fopen(filepath, 'w');
+    if fid < 0
+        ok = false;
+        msg = 'Could not open file for writing.';
+        if nargout == 0
+            error(msg);
+        end
+        return;
+    end
+    cleaner = onCleanup(@() fclose(fid));
+
+    try
+        T = buildResultsTable(items);
+        fprintf(fid, 'File,Ic_A,Ia_A,Vc_ss_V,Va_ss_V,Vc_baseline_V,Va_baseline_V,dVc_V,dVa_V,Rc_bc_ohm,Ra_bc_ohm,Ravg_bc_ohm,WindowMode,Detection,Status\n');
+        for i = 1:height(T)
+            fprintf(fid, '"%s",%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,"%s","%s","%s"\n', ...
+                gamrywb.util.csvEscape(T.File{i}), ...
+                T.Ic_A(i), T.Ia_A(i), T.Vc_ss_V(i), T.Va_ss_V(i), ...
+                T.Vc_baseline_V(i), T.Va_baseline_V(i), T.dVc_V(i), T.dVa_V(i), ...
+                T.Rc_bc_ohm(i), T.Ra_bc_ohm(i), T.Ravg_bc_ohm(i), ...
+                gamrywb.util.csvEscape(T.WindowMode{i}), ...
+                gamrywb.util.csvEscape(T.Detection{i}), ...
+                gamrywb.util.csvEscape(T.Status{i}));
+        end
+    catch ME
+        ok = false;
+        msg = ME.message;
+        if nargout == 0
+            rethrow(ME);
+        end
+    end
+end
+
+function [curve, ok, msg] = mainCurve(item)
+    if isfield(item, 'curve') && ~isempty(item.curve)
+        curve = item.curve;
+        ok = true;
+        msg = sprintf('Using table: %s', curve.name);
+    elseif isfield(item, 'tables')
+        [curve, ok, msg] = gamrywb.data.getMainCurve(item.tables);
+    else
+        curve = struct();
+        ok = false;
+        msg = 'Main transient table not found.';
+    end
+end
+
+function q = safeDivide(a, b)
+    if ~isscalar(a) || ~isscalar(b) || ~isfinite(a) || ~isfinite(b) || abs(b) < eps
+        q = NaN;
+    else
+        q = a / b;
+    end
+end
+
+function v = chooseFinite(varargin)
+    v = NaN;
+    for k = 1:nargin
+        x = varargin{k};
+        if isscalar(x) && isfinite(x)
+            v = x;
+            return;
+        end
+    end
+end
+
+function [t1, t2] = selectSteadyWindow(p1, p2, modeText)
+    t1 = p1;
+    t2 = p2;
+    if strcmp(modeText, 'Center 60% median') && isfinite(p1) && isfinite(p2) && p2 > p1
+        dt = p2 - p1;
+        t1 = p1 + 0.20 * dt;
+        t2 = p1 + 0.80 * dt;
+    end
+end
+
+function [v, window_s] = estimateBaseline(t, y, t1, t2, fallbackValue)
+    if nargin < 5
+        fallbackValue = NaN;
+    end
+
+    v = gamrywb.util.medianInWindow(t, y, t1, t2);
+    if ~isfinite(v)
+        v = fallbackValue;
+    end
+    window_s = max(0, t2 - t1);
+end
+
+function name = itemName(item)
+    if isfield(item, 'name')
+        name = item.name;
+    else
+        name = '';
+    end
+end
+
+function A = itemAnalysis(item)
+    if isfield(item, 'analysis')
+        A = item.analysis;
+    else
+        A = [];
+    end
+end
+
+function msg = analysisMessage(A)
+    msg = '';
+    if ~isempty(A) && isfield(A, 'message')
+        msg = A.message;
+    end
 end
 
 function idx = nearestIndex(x, xq)

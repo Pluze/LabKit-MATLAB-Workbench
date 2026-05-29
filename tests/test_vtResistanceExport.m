@@ -8,7 +8,7 @@ function test_vtResistanceExport()
     item.filepath = fixture;
     item.name = 'chrono "vt".DTA';
     [item.meta, item.tables] = gamrywb.io.parseChronoDTA(fixture);
-    item.analysis = gamrywb_apps.vt.computeResistance(item, struct());
+    item.analysis = computeVTResistance(item, struct());
     assert(item.analysis.ok, item.analysis.message);
 
     failed = struct();
@@ -19,7 +19,7 @@ function test_vtResistanceExport()
     failed.analysis = struct('ok', false, 'message', 'bad "msg"');
 
     items = [item failed];
-    T = gamrywb_apps.vt.buildResultsTable(items);
+    T = buildVTResultsTable(items);
     expectedNames = {'File', 'Ic_A', 'Ia_A', 'Vc_ss_V', 'Va_ss_V', ...
         'Vc_baseline_V', 'Va_baseline_V', 'dVc_V', 'dVa_V', 'Rc_bc_ohm', ...
         'Ra_bc_ohm', 'Ravg_bc_ohm', 'WindowMode', 'Detection', 'Status'};
@@ -37,7 +37,7 @@ function test_vtResistanceExport()
     assert(strcmp(T.Detection{2}, 'failed'), 'Failed rows should preserve legacy failed detection label.');
     assert(strcmp(T.Status{2}, failed.analysis.message), 'Failed row status should preserve analysis message.');
 
-    C = gamrywb_apps.vt.buildBatchTableData(items);
+    C = buildVTBatchTableData(items);
     assert(isequal(size(C), [2 9]), 'VT batch UI table should preserve legacy 9-column shape.');
     assert(strcmp(C{1, 1}, item.name), 'VT batch UI table should preserve item name.');
     assertClose(C{1, 6}, item.analysis.Rc_abs_ohm, 1e-12, 'VT batch UI table Rc value');
@@ -46,7 +46,7 @@ function test_vtResistanceExport()
 
     tmp = [tempname '.csv'];
     cleaner = onCleanup(@() deleteIfExists(tmp));
-    gamrywb_apps.vt.writeResultsCSV(items, tmp);
+    writeVTResultsCSV(items, tmp);
     txt = fileread(tmp);
     header = 'File,Ic_A,Ia_A,Vc_ss_V,Va_ss_V,Vc_baseline_V,Va_baseline_V,dVc_V,dVa_V,Rc_bc_ohm,Ra_bc_ohm,Ravg_bc_ohm,WindowMode,Detection,Status';
     assert(startsWith(string(txt), header), 'VT CSV header should preserve legacy spelling and order.');
@@ -64,4 +64,20 @@ function deleteIfExists(filepath)
     if exist(filepath, 'file') == 2
         delete(filepath);
     end
+end
+
+function A = computeVTResistance(item, opts)
+    A = gamrywb_VTResistance_app('__test_computeResistance__', item, opts);
+end
+
+function T = buildVTResultsTable(items)
+    T = gamrywb_VTResistance_app('__test_buildResultsTable__', items);
+end
+
+function C = buildVTBatchTableData(items)
+    C = gamrywb_VTResistance_app('__test_buildBatchTableData__', items);
+end
+
+function writeVTResultsCSV(items, filepath)
+    gamrywb_VTResistance_app('__test_writeResultsCSV__', items, filepath);
 end

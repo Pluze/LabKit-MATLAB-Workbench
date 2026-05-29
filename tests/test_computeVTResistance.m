@@ -14,7 +14,7 @@ function test_computeVTResistance()
     opts.voltageMode = 'Baseline-corrected dV/I';
     opts.pulseMode = 'Metadata first, then auto';
 
-    A = gamrywb_apps.vt.computeResistance(item, opts);
+    A = computeVTResistance(item, opts);
     assert(A.ok, A.message);
     assert(strcmp(A.message, 'OK'), 'Successful VT resistance result should preserve legacy OK status.');
     assert(strcmp(A.windowMode, opts.windowMode), 'Window mode should be echoed in the result.');
@@ -36,7 +36,7 @@ function test_computeVTResistance()
     assertClose(A.cathBaselineWindow_s, 0.001, 1e-15, 'Cathodic baseline window');
 
     opts.windowMode = 'Center 60% median';
-    B = gamrywb_apps.vt.computeResistance(item, opts);
+    B = computeVTResistance(item, opts);
     assert(B.ok, B.message);
     assertClose(B.cathSteadyStart, A.pulse.cath_start + 0.20 * (A.pulse.cath_end - A.pulse.cath_start), ...
         1e-15, 'Center-window cathodic start');
@@ -47,14 +47,14 @@ function test_computeVTResistance()
 
     opts.windowMode = 'Full pulse median';
     opts.voltageMode = 'Raw Vf/I';
-    C = gamrywb_apps.vt.computeResistance(item, opts);
+    C = computeVTResistance(item, opts);
     assert(C.ok, C.message);
     assertClose(C.Rc_abs_ohm, 99.967849900252247, 1e-10, 'Raw-mode cathodic resistance');
     assertClose(C.Ra_abs_ohm, 98.93628425123481, 1e-10, 'Raw-mode anodic resistance');
     assertClose(C.Ravg_abs_ohm, 99.452067075743528, 1e-10, 'Raw-mode average resistance');
 
     bad = struct('meta', struct(), 'tables', struct([]));
-    D = gamrywb_apps.vt.computeResistance(bad, struct());
+    D = computeVTResistance(bad, struct());
     assert(~D.ok, 'Missing curve should fail.');
     assert(strcmp(D.message, 'Main transient table not found.'), 'Missing curve message should match legacy wording.');
 
@@ -62,6 +62,12 @@ function test_computeVTResistance()
         'VT steady-window selection should not remain a separate public helper.');
     assert(exist(fullfile(root, 'apps', '+gamrywb_apps', '+vt', 'estimateBaseline.m'), 'file') ~= 2, ...
         'VT baseline estimation should not remain a separate public helper.');
+    assert(exist(fullfile(root, 'apps', '+gamrywb_apps', '+vt', 'computeResistance.m'), 'file') ~= 2, ...
+        'VT analysis should live in the public VT app file, not a transitional helper package.');
+end
+
+function A = computeVTResistance(item, opts)
+    A = gamrywb_VTResistance_app('__test_computeResistance__', item, opts);
 end
 
 function assertClose(actual, expected, tol, label)

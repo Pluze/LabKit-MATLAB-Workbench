@@ -144,16 +144,16 @@ Do not remove flat fields until app, export, and analysis call sites no longer n
 
 Current analysis result structs intentionally preserve compatibility fields used by GUI display and CSV/export helpers.
 
-VT result/export helpers:
+VT result/export workflow:
 
 ```text
-gamrywb_apps.vt.computeResistance
-gamrywb_apps.vt.buildResultsTable
-gamrywb_apps.vt.writeResultsCSV
-gamrywb_apps.vt.buildBatchTableData
+apps/gamrywb_VTResistance_app.m local computeResistance
+apps/gamrywb_VTResistance_app.m local buildResultsTable
+apps/gamrywb_VTResistance_app.m local writeResultsCSV
+apps/gamrywb_VTResistance_app.m local buildBatchTableData
 ```
 
-VT steady-window selection and baseline estimation are local details of `gamrywb_apps.vt.computeResistance`; they are not separate reusable APIs.
+VT steady-window selection and baseline estimation are local details of `apps/gamrywb_VTResistance_app.m`; they are not separate reusable APIs.
 
 VT CSV column order:
 
