@@ -25,6 +25,7 @@ function gamry_CV_CSC_dta_gui_legacy
 
     % Application state container
     S = struct();
+    S.session = gamrywb.data.makeSession('cv_csc');
     S.filepath = '';
     S.curves = struct('name',{},'headers',{},'units',{},'data',{},'numericMask',{});
     S.scanRate = NaN; % V/s
@@ -251,6 +252,7 @@ function gamry_CV_CSC_dta_gui_legacy
         idx = find(strcmp(ddCurve.Items, ddCurve.Value),1);
         if isempty(idx), idx = 1; end
         S.currentCurve = idx;
+        syncSessionCurrentCurve();
         addLog(sprintf('Selected curve %d', idx));
         updateDropdowns();
         autoSetDefaults();
@@ -287,30 +289,35 @@ function gamry_CV_CSC_dta_gui_legacy
     function loadFile(filepath)
         addLog(['Loading file: ' filepath]);
 
-        try
-            [scanRate, curves, parserLog] = gamrywb.io.parseCVCTDTA(filepath);
-        catch ME
-            addLog(['Parse failed: ' ME.message]);
+        callbacks = struct();
+        callbacks.onFailed = @(~, message) addLog(['Parse failed: ' message]);
+        [loadedSession, report] = gamrywb.data.addFilesToSession( ...
+            gamrywb.data.makeSession('cv_csc'), {filepath}, @loadOneCVCT, callbacks);
+        if ~isempty(report.failed)
+            ME = report.failed(1);
             uialert(fig, ME.message, 'Parse Error');
             return;
         end
+        item = loadedSession.items(1);
 
-        for i = 1:numel(parserLog)
-            addLog(parserLog{i});
+        for i = 1:numel(item.logmsg)
+            addLog(item.logmsg{i});
         end
 
-        S.scanRate = scanRate;
-        S.curves = curves;
+        S.session = loadedSession;
+        S.filepath = item.filepath;
+        S.scanRate = item.scanRate;
+        S.curves = item.curves;
         S.currentCurve = 1;
         txtFile.Value = filepath;
 
-        if isnan(scanRate)
+        if isnan(S.scanRate)
             txtScan.Value = 'Not found';
         else
-            txtScan.Value = sprintf('%.6f V/s (%.3f mV/s)', scanRate, scanRate*1000);
+            txtScan.Value = sprintf('%.6f V/s (%.3f mV/s)', S.scanRate, S.scanRate*1000);
         end
 
-        if isempty(curves)
+        if isempty(S.curves)
             ddCurve.Items = {'(none)'};
             ddCurve.Value = '(none)';
             lblStatus.Text = 'No curve found';
@@ -318,19 +325,37 @@ function gamry_CV_CSC_dta_gui_legacy
             return;
         end
 
-        items = cell(1,numel(curves));
-        for k = 1:numel(curves)
-            items{k} = sprintf('%s (%d rows)', curves(k).name, size(curves(k).data,1));
+        items = cell(1,numel(S.curves));
+        for k = 1:numel(S.curves)
+            items{k} = sprintf('%s (%d rows)', S.curves(k).name, size(S.curves(k).data,1));
         end
         ddCurve.Items = items;
         ddCurve.Value = items{1};
 
-        lblStatus.Text = sprintf('Loaded %d curve(s)', numel(curves));
-        addLog(sprintf('Loaded %d curve(s).', numel(curves)));
+        lblStatus.Text = sprintf('Loaded %d curve(s)', numel(S.curves));
+        addLog(sprintf('Loaded %d curve(s).', numel(S.curves)));
 
         updateDropdowns();
         autoSetDefaults();
         refreshAll();
+    end
+
+    function item = loadOneCVCT(filepath)
+        [scanRate, curves, parserLog] = gamrywb.io.parseCVCTDTA(filepath);
+        item = struct();
+        item.filepath = filepath;
+        item.name = gamrywb.util.shortName(filepath);
+        item.scanRate = scanRate;
+        item.curves = curves;
+        item.logmsg = parserLog;
+        item.currentCurve = 1;
+        item.analysis = [];
+    end
+
+    function syncSessionCurrentCurve()
+        if ~isempty(S.session.items)
+            S.session.items(1).currentCurve = S.currentCurve;
+        end
     end
 
     function updateDropdowns()

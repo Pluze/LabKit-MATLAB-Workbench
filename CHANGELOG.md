@@ -54,6 +54,7 @@ This project is still in an unreleased behavior-preserving refactor stage.
 - Updated `legacy/gamry_CIC_VT_gui_paperlabels_legacy.m` to use shared session add/reset helpers while preserving its existing `S.items` display/export path.
 - Updated `legacy/gamry_CV_CSC_dta_gui_legacy.m` to call shared CV/CT charge and CSC analysis.
 - Updated `legacy/gamry_CV_CSC_dta_gui_legacy.m` to use shared CV/CT selected-column plotting.
+- Updated `legacy/gamry_CV_CSC_dta_gui_legacy.m` to use shared session storage while preserving its existing single-file display/analysis state path.
 - Updated `legacy/gamry_EIS_multiDTA_plot_gui_legacy.m` to use shared EIS item construction, plotting, and export table helpers.
 - Updated `legacy/gamry_EIS_multiDTA_plot_gui_legacy.m` to use shared session add/remove helpers while preserving its existing `S.items` display/export path.
 - Reorganized Markdown documentation so README, roadmap, migration notes, AI instructions, and detailed docs have separate responsibilities.
@@ -70,7 +71,6 @@ This project is still in an unreleased behavior-preserving refactor stage.
 - CIC plotting remains in the legacy GUI.
 - VT resistance plotting remains in the legacy GUI.
 - CV/CSC export formatting remains deferred until a batch/session export workflow exists.
-- CV/CSC GUI state has not yet been migrated to shared batch/session utilities.
 - New thin apps under `apps/` have not been implemented.
 - Unified workbench GUI has not been started.
 - Golden reference tests for every major analysis output are not complete yet.

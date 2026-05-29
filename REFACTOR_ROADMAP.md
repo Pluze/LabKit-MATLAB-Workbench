@@ -110,7 +110,7 @@ Summary:
 - VT resistance and CIC now call package-backed analysis functions while preserving legacy GUI display/export behavior.
 - CV/CT charge, CSC analysis, selected-column access, and plotting extraction has started.
 - EIS item construction, axis-value generation, overlay plotting, and current-plot export table extraction is complete for the legacy EIS overlay GUI.
-- Shared session creation, file add/remove, save/load, batch summary helper extraction, and multi-DTA/EIS/VT resistance/CIC session migration have started.
+- Shared session creation, file add/remove, save/load, batch summary helper extraction, and legacy GUI session-state migration have started.
 
 Completed migration details live in `MIGRATION_NOTES.md`.
 
@@ -554,7 +554,8 @@ Current implementation note:
 - The legacy multi-DTA overlay and EIS overlay GUIs now use shared session add/remove helpers while preserving their legacy `S.items` display/export paths.
 - The legacy VT resistance GUI now uses shared session add helpers and shared session reset on clear-all while preserving its legacy `S.items` display/export path.
 - The legacy CIC GUI now uses shared session add helpers and shared session reset on clear-all while preserving its legacy `S.items` display/export path.
-- The remaining CV/CSC legacy GUI has not yet been migrated to shared session state.
+- The legacy CV/CSC GUI now stores its current parsed file and selected curve in a shared session while preserving its legacy `S.filepath`, `S.curves`, `S.scanRate`, and `S.currentCurve` display/analysis path.
+- CV/CSC result/export table builders remain deferred because the legacy CV/CSC GUI has no batch CSV export workflow yet.
 
 ---
 

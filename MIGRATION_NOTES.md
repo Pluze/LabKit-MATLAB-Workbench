@@ -37,7 +37,7 @@ Current summary:
 - CV/CT charge and CSC analysis are package-backed.
 - CV/CT selected-column access and plotting are package-backed.
 - EIS item construction, axis-value generation, overlay plotting, and current-plot export table construction are package-backed for the legacy EIS overlay GUI.
-- Shared session creation, file add/remove, save/load, batch summary helpers, and multi-DTA/EIS/VT resistance/CIC session wiring are available.
+- Shared session creation, file add/remove, save/load, batch summary helpers, and legacy GUI session-state wiring are available.
 
 ---
 
@@ -324,6 +324,7 @@ Completed work:
 - Updated `legacy/gamry_EIS_multiDTA_plot_gui_legacy.m` to use shared session add/remove helpers while preserving its existing `S.items` display/export path.
 - Updated `legacy/gamry_VT_resistance_gui_legacy.m` to use shared session add helpers and shared session reset on clear-all while preserving its existing `S.items` display/export path.
 - Updated `legacy/gamry_CIC_VT_gui_paperlabels_legacy.m` to use shared session add helpers and shared session reset on clear-all while preserving its existing `S.items` display/export path.
+- Updated `legacy/gamry_CV_CSC_dta_gui_legacy.m` to store the current parsed file and selected curve in a shared session while preserving its existing `S.filepath`, `S.curves`, `S.scanRate`, and `S.currentCurve` display/analysis path.
 
 Behavior preserved:
 
@@ -333,6 +334,7 @@ Behavior preserved:
 - EIS overlay duplicate skip, load/failure log text, remove log text, clear-all behavior, plotting, summary text, and export selection behavior remain unchanged.
 - VT resistance duplicate skip, load/failure log text, clear-all behavior, current-file selection, re-analysis, plotting, table display, and export behavior remain unchanged.
 - CIC same-call duplicate de-duplication, duplicate skip log text, load/failure log text, first-failure alert behavior, clear-all behavior, current-file selection, re-analysis, plotting, table display, and export behavior remain unchanged.
+- CV/CSC open/reload behavior, parse failure log text and alert behavior, parser log ordering, no-curve handling, selected-curve behavior, plotting, comparison output, and trim overlay behavior remain unchanged.
 - Session persistence stores the explicit `gamrywb_session` struct.
 - Batch summaries use common `name`, `filepath`, `analysis.ok`, and `analysis.message` fields without changing existing app-specific tables.
 - VT resistance result/export helpers preserve the existing app-specific table and CSV contract.
@@ -340,7 +342,6 @@ Behavior preserved:
 
 Still local after current Phase 9 progress:
 
-- Migration of the CV/CSC GUI state container to shared session helpers.
 - CV/CSC result/export table builders not already extracted.
 
 ---
@@ -377,6 +378,7 @@ Still local after current Phase 9 progress:
 | EIS overlay session state | EIS overlay | `+gamrywb/+data/makeSession.m`, `addFilesToSession.m`, `removeFilesFromSession.m` | Started Phase 9 GUI state migration. Preserve legacy `S.items` display/export path, summary text, and log text. |
 | VT resistance session state | VT resistance GUI | `+gamrywb/+data/makeSession.m`, `addFilesToSession.m` | Started Phase 9 GUI state migration. Preserve legacy `S.items` display/export path, current selection, re-analysis behavior, and log text. |
 | CIC session state | CIC GUI | `+gamrywb/+data/makeSession.m`, `addFilesToSession.m` | Started Phase 9 GUI state migration. Preserve legacy `S.items` display/export path, same-call duplicate de-duplication, current selection, first-failure alert behavior, re-analysis behavior, and log text. |
+| CV/CSC session state | CV/CSC GUI | `+gamrywb/+data/makeSession.m`, `addFilesToSession.m` | Started Phase 9 GUI state migration. Preserve legacy single-file `S.filepath`, `S.curves`, `S.scanRate`, and `S.currentCurve` behavior. |
 | session save/load | all apps | `+gamrywb/+io/saveSession.m`, `loadSession.m` | Started Phase 9. Store and load explicit session structs from MAT files. |
 | batch summary | all apps | `+gamrywb/+analysis/summarizeBatchResults.m` | Started Phase 9. Provide a common minimal name/filepath/ok/message summary table. |
 | CV/CSC integration helpers | CV/CSC GUI | `+gamrywb/+analysis/computeCTCharge.m`, `computeCVCharge.m`, `computeCSC.m` | Started Phase 7. Preserve sign-split, zero-crossing handling, and scan-rate-derived time behavior. |
