@@ -33,6 +33,7 @@ This project is still in an unreleased behavior-preserving refactor stage.
 - Added named demo DTA fixtures for parser and pulse-detection tests.
 - Added MATLAB pure-function test runner under `scripts/run_matlab_tests.sh`.
 - Added optional noninteractive GUI compatibility-contract checks under `scripts/run_matlab_tests.sh --gui`.
+- Strengthened GUI compatibility-contract checks to enforce complete dropdown groups, result-table columns, and initialized axes titles/labels.
 - Added documentation pages under `docs/` for architecture, data models, file formats, validation, and future features.
 
 ### Changed

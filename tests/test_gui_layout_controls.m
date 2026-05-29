@@ -19,7 +19,10 @@ function checkMultiDTA()
     assertButtonContract(fig, {'Open DTA file(s)', 'Open folder recursively', 'Remove selected', ...
         'Clear all', 'Export curves CSV'});
     assertCheckboxContract(fig, {'Show file-name legend', 'Show grid'});
-    assertDropdownItems(fig, {'Time (s)', 'Time (ms)', 'Sample #'});
+    assertDropdownGroups(fig, dropdownGroup({'Time (s)', 'Time (ms)', 'Sample #'}, 1));
+    assertAxesContract(fig, { ...
+        axesSpec('Voltage', 'Time (s)', 'Vf (V)'), ...
+        axesSpec('Current', 'Time (s)', 'Im (A)')});
     assertDropdownCallbacksPresent(fig);
     invokeDropdownValue(fig, 'Time (ms)');
     invokeCheckbox(fig, 'Show file-name legend', false);
@@ -34,8 +37,8 @@ function checkEIS()
     assertButtonContract(fig, {'Open DTA file(s)', 'Open folder recursively', 'Remove selected', ...
         'Clear all', 'Export current plot CSV'});
     assertCheckboxContract(fig, {'Show markers', 'Log X', 'Log Y', 'Legend', 'Grid'});
-    assertDropdownItems(fig, {'Freq (Hz)', 'log10(Freq)', 'Time (s)', 'Point #', ...
-        'Zreal (ohm)', 'Zimag (ohm)', '-Zimag (ohm)', 'Zmod (ohm)', 'Zphz (deg)', 'Idc (A)', 'Vdc (V)'});
+    assertDropdownGroups(fig, dropdownGroup(eisAxisItems(), 2));
+    assertAxesContract(fig, {axesSpec('EIS Overlay', 'Zreal (ohm)', '-Zimag (ohm)')});
     assertDropdownCallbacksPresent(fig);
     invokeDropdownValue(fig, 'Freq (Hz)');
     invokeCheckbox(fig, 'Log X', true);
@@ -50,7 +53,12 @@ function checkCVCSC()
     assertButtonContract(fig, {'Open DTA', 'Reload', 'Auto CV + CT', 'Swap Top/Bottom', ...
         'Compare Q / CSC', 'Refresh Plots', 'Clear Both'});
     assertCheckboxContract(fig, {'Grid', 'Hold', 'Show Trim'});
-    assertDropdownItems(fig, {'(none)', 'Full', 'Cathodic', 'Anodic'});
+    assertDropdownGroups(fig, [ ...
+        dropdownGroup({'(none)'}, 5), ...
+        dropdownGroup({'Full', 'Cathodic', 'Anodic'}, 1)]);
+    assertAxesContract(fig, { ...
+        axesSpec('Top Plot', 'X', 'Y'), ...
+        axesSpec('Bottom Plot', 'X', 'Y')});
     assertDropdownCallbacksPresent(fig);
     invokeDropdownValue(fig, 'Cathodic');
     invokeButton(fig, 'Refresh Plots');
@@ -67,9 +75,17 @@ function checkVTResistance()
         'Reset axes'});
     assertCheckboxContract(fig, {'Show markers', 'Shade windows', 'Grid'});
     assertTabTitles(fig, {'Files + Analysis', 'Summary + Results', 'Log'});
-    assertDropdownItems(fig, {'Metadata first, then auto', 'Metadata only', 'Auto from Im only', ...
-        'Time (s)', 'Sample #', 'VT: Vf vs time', 'IT: Im vs time', ...
-        'Full pulse median', 'Center 60% median', 'Baseline-corrected dV/I', 'Raw Vf/I'});
+    assertDropdownGroups(fig, [ ...
+        dropdownGroup({'Metadata first, then auto', 'Metadata only', 'Auto from Im only'}, 1), ...
+        dropdownGroup({'Full pulse median', 'Center 60% median'}, 1), ...
+        dropdownGroup({'Baseline-corrected dV/I', 'Raw Vf/I'}, 1), ...
+        dropdownGroup({'Time (s)', 'Sample #'}, 2), ...
+        dropdownGroup({'VT: Vf vs time', 'IT: Im vs time'}, 2)]);
+    assertTableColumns(fig, {'File','Ic(A)','Ia(A)','Vc_ss(V)','Va_ss(V)', ...
+        'R_cath(ohm)','R_anod(ohm)','R_avg(ohm)','Detection'});
+    assertAxesContract(fig, { ...
+        axesSpec('Top Plot', '', ''), ...
+        axesSpec('Bottom Plot', '', '')});
     assertDropdownCallbacksPresent(fig);
     invokeButton(fig, 'Refresh plots');
     invokeButton(fig, 'Reset axes');
@@ -87,11 +103,18 @@ function checkCIC()
         'Show debug markers', 'Show window limits', 'Shade pulse windows', ...
         'Use measured Im integration for charge (recommended)'});
     assertTabTitles(fig, {'Files + Analysis', 'Summary + Results', 'Log'});
-    assertDropdownItems(fig, {'Pt (-0.6 to 0.8 V)', 'PEDOT:PSS (-0.9 to 0.6 V)', 'Custom', ...
-        'Metadata first, then auto', 'Metadata only', 'Auto from Im only', ...
-        'mC/cm^2', 'uC/cm^2', ...
-        'Time (s)', 'Sample #', 'VT: Vf vs time', 'IT: Im vs time', ...
-        'Cathodic phase', 'Anodic phase', 'Total biphasic'});
+    assertDropdownGroups(fig, [ ...
+        dropdownGroup({'Pt (-0.6 to 0.8 V)', 'PEDOT:PSS (-0.9 to 0.6 V)', 'Custom'}, 1), ...
+        dropdownGroup({'Metadata first, then auto', 'Metadata only', 'Auto from Im only'}, 1), ...
+        dropdownGroup({'Cathodic phase', 'Anodic phase', 'Total biphasic'}, 1), ...
+        dropdownGroup({'mC/cm^2', 'uC/cm^2'}, 1), ...
+        dropdownGroup({'Time (s)', 'Sample #'}, 2), ...
+        dropdownGroup({'VT: Vf vs time', 'IT: Im vs time'}, 2)]);
+    assertTableColumns(fig, {'File','Amp(A)','Emc(V)','Ema(V)', ...
+        'Qc(mC/cm^2)','Qa(mC/cm^2)','Qtot(mC/cm^2)','Safe'});
+    assertAxesContract(fig, { ...
+        axesSpec('Top Plot', '', ''), ...
+        axesSpec('Bottom Plot', '', '')});
     assertDropdownCallbacksPresent(fig);
     invokeButton(fig, 'Refresh plots');
     invokeButton(fig, 'Reset axes');
@@ -135,11 +158,66 @@ function assertTabTitles(fig, expectedTitles)
     end
 end
 
-function assertDropdownItems(fig, expectedItems)
-    items = string(getAllDropdownItems(fig));
-    for k = 1:numel(expectedItems)
-        assert(any(items == string(expectedItems{k})), 'Missing dropdown item: %s', expectedItems{k});
+function group = dropdownGroup(items, count)
+    group = struct('items', {items}, 'count', count);
+end
+
+function items = eisAxisItems()
+    items = {'Freq (Hz)', 'log10(Freq)', 'Time (s)', 'Point #', ...
+        'Zreal (ohm)', 'Zimag (ohm)', '-Zimag (ohm)', 'Zmod (ohm)', ...
+        'Zphz (deg)', 'Idc (A)', 'Vdc (V)'};
+end
+
+function assertDropdownGroups(fig, expectedGroups)
+    dropdowns = findControlsByClass(fig, 'DropDown');
+    for k = 1:numel(expectedGroups)
+        expectedItems = expectedGroups(k).items;
+        expectedCount = expectedGroups(k).count;
+        actualCount = 0;
+        for j = 1:numel(dropdowns)
+            if sameStringCell(dropdowns{j}.Items, expectedItems)
+                actualCount = actualCount + 1;
+            end
+        end
+        assert(actualCount == expectedCount, ...
+            'Expected %d dropdown(s) with items [%s], found %d.', ...
+            expectedCount, strjoin(expectedItems, ', '), actualCount);
     end
+end
+
+function spec = axesSpec(titleText, xLabel, yLabel)
+    spec = struct('title', titleText, 'xLabel', xLabel, 'yLabel', yLabel);
+end
+
+function assertAxesContract(fig, expectedAxes)
+    axesHandles = findControlsByClass(fig, 'Axes');
+    assert(numel(axesHandles) == numel(expectedAxes), ...
+        'Expected %d axes contract entry/entries, found %d axes.', numel(expectedAxes), numel(axesHandles));
+    for k = 1:numel(expectedAxes)
+        found = false;
+        for j = 1:numel(axesHandles)
+            if axesMatches(axesHandles{j}, expectedAxes{k})
+                found = true;
+                break;
+            end
+        end
+        assert(found, 'Missing axes contract: title="%s", xlabel="%s", ylabel="%s".', ...
+            expectedAxes{k}.title, expectedAxes{k}.xLabel, expectedAxes{k}.yLabel);
+    end
+end
+
+function tf = axesMatches(ax, spec)
+    tf = strcmp(char(ax.Title.String), spec.title) && ...
+        strcmp(char(ax.XLabel.String), spec.xLabel) && ...
+        strcmp(char(ax.YLabel.String), spec.yLabel);
+end
+
+function assertTableColumns(fig, expectedColumns)
+    tables = findControlsByClass(fig, 'Table');
+    assert(numel(tables) == 1, 'Expected exactly one result table, found %d.', numel(tables));
+    assert(sameStringCell(tables{1}.ColumnName, expectedColumns), ...
+        'Result table columns changed. Expected [%s], found [%s].', ...
+        strjoin(expectedColumns, ', '), strjoin(toCellstr(tables{1}.ColumnName), ', '));
 end
 
 function assertFigureMinimumSize(fig, minWidth, minHeight)
@@ -164,6 +242,16 @@ function count = countComponents(fig, classNamePart)
     for k = 1:numel(controls)
         if contains(class(controls{k}), classNamePart)
             count = count + 1;
+        end
+    end
+end
+
+function controls = findControlsByClass(fig, classNamePart)
+    allControls = allGuiObjects(fig);
+    controls = {};
+    for k = 1:numel(allControls)
+        if contains(class(allControls{k}), classNamePart)
+            controls{end+1} = allControls{k}; %#ok<AGROW>
         end
     end
 end
@@ -267,20 +355,21 @@ function values = getPropertyValues(fig, propertyName)
     end
 end
 
-function items = getAllDropdownItems(fig)
-    controls = allGuiObjects(fig);
-    items = {};
-    for k = 1:numel(controls)
-        h = controls{k};
-        if isprop(h, 'Items')
-            current = h.Items;
-            if isstring(current)
-                current = cellstr(current);
-            end
-            if iscell(current)
-                items = [items, current(:).']; %#ok<AGROW>
-            end
-        end
+function tf = sameStringCell(actual, expected)
+    actual = reshape(string(toCellstr(actual)), 1, []);
+    expected = reshape(string(toCellstr(expected)), 1, []);
+    tf = isequal(actual, expected);
+end
+
+function values = toCellstr(values)
+    if isstring(values)
+        values = cellstr(values);
+    elseif ischar(values)
+        values = {values};
+    elseif iscell(values)
+        values = cellfun(@char, values, 'UniformOutput', false);
+    else
+        values = cellstr(string(values));
     end
 end
 

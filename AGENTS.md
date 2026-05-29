@@ -109,7 +109,7 @@ The default test runner is for pure functions only, such as:
 - future analysis functions
 - export table builders
 
-Interactive GUI behavior should still be checked manually. The non-default `--gui` tests may launch and close GUI entry points, enforce the current legacy GUI compatibility contract for initialized controls/layout structure, and invoke callbacks that are safe on an empty session. They must not open file dialogs, write exports, depend on manual input, or exercise destructive workflows.
+Interactive GUI behavior should still be checked manually. The non-default `--gui` tests are the main automated guard that future refactors do not remove legacy GUI functionality or unintentionally change the initialized layout surface. They may launch and close GUI entry points, enforce the current legacy GUI compatibility contract for initialized controls/layout structure, complete dropdown groups, result-table columns, axes titles/labels, and callbacks that are safe on an empty session. They must not open file dialogs, write exports, depend on manual input, or exercise destructive workflows.
 
 ---
 

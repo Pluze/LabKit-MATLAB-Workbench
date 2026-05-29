@@ -78,7 +78,7 @@ The test runner attempts to find MATLAB through:
 2. `matlab` on PATH
 3. `/Applications/MATLAB_*.app/bin/matlab`
 
-The default tests are intended for pure functions only. The optional `--gui` mode checks that the legacy GUI entry points can create and close their main `uifigure` windows, verifies the current GUI compatibility contract for controls/tabs/axes/tables/dropdown items/window sizes, and invokes safe callbacks that do not open dialogs. It does not open file dialogs, write exports, or validate manual interactions.
+The default tests are intended for pure functions only. The optional `--gui` mode is the regression guard for preserving legacy GUI functionality during refactors: it checks that the legacy GUI entry points can create and close their main `uifigure` windows, verifies exact initialized component counts, required controls, complete dropdown item groups, tab titles, result-table columns, initial axes titles/labels, and window-size floors, then invokes safe callbacks that do not open dialogs. It does not open file dialogs, write exports, or validate manual interactions.
 
 ---
 

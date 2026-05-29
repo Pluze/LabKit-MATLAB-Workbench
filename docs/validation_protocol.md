@@ -352,7 +352,9 @@ Nyquist equal-axis behavior
 
 GUI validation is not part of the default batch test runner.
 
-The optional `--gui` tests verify that the five root compatibility GUI entry points can create and close their main `uifigure` windows. They also enforce the current legacy GUI compatibility contract, including exact initialized component counts, required buttons, checkboxes, dropdown items, tab titles, axes, result tables, text areas, list boxes, window-size floors, and callback bindings for buttons/dropdowns. Safe callbacks such as refresh, reset, clear, dropdown changes, and checkbox changes are invoked on an empty session.
+The optional `--gui` tests verify that the five root compatibility GUI entry points can create and close their main `uifigure` windows. They also enforce the current legacy GUI compatibility contract, including exact initialized component counts, required buttons, checkboxes, complete dropdown item groups with expected occurrence counts, tab titles, result-table column names, initial axes titles/labels, text areas, list boxes, window-size floors, and callback bindings for buttons/dropdowns. Safe callbacks such as refresh, reset, clear, dropdown changes, and checkbox changes are invoked on an empty session.
+
+This GUI compatibility contract is the primary automated guard against future behavior-preserving refactors accidentally removing legacy GUI functionality, changing the initialized layout surface, or altering user-visible result table and plot scaffolding. When a GUI change is intentional, update the contract and document the reason in `MIGRATION_NOTES.md` and `CHANGELOG.md`.
 
 The optional GUI tests do not validate file dialogs, callbacks that require user input, visual layout quality, exported files, manual plot interaction, or workflows that require loaded user data.
 
