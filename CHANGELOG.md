@@ -52,6 +52,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Split the MATLAB test runner manifest into default and GUI groups so future tests have clearer placement.
 - Removed duplicate app-boundary assertions from overlay export tests now that `test_phase10_apps` owns those architecture checks.
 - Updated the app framework roadmap so completed app migrations are marked complete and the next-phase guidance focuses on extension contracts and guardrails.
+- Corrected the documented single-select file-list refresh API signature to include the loaded-count text field.
 - Routed the EIS app's file loading through the GUI-free DTA facade instead of constructing EIS items directly in the app layer.
 - Routed the Chrono overlay app's file loading through the GUI-free DTA facade while keeping pulse-gap alignment in the app workflow.
 - Routed the CSC app's CV/CT file loading through the GUI-free DTA facade instead of parsing CV/CT files directly in the app layer.
