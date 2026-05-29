@@ -11,15 +11,15 @@ It is not a roadmap. Planned future phases live in `REFACTOR_ROADMAP.md`.
 ```text
 Phase 0: complete
 Phase 1: complete
-Phase 2: mostly complete
-Phase 3: mostly complete
-Phase 4: started
-Phase 5: started
-Phase 6: started
-Phase 7: started
+Phase 2: complete for v1.0
+Phase 3: complete for v1.0
+Phase 4: complete for v1.0
+Phase 5: complete for v1.0
+Phase 6: complete for v1.0
+Phase 7: complete for v1.0
 Phase 8: complete
 Phase 9: complete for current legacy-compatible scope
-Phase 10: started
+Phase 10: complete for v1.0 compatibility entry-point scope
 Phase 11+: not started
 ```
 
@@ -28,9 +28,9 @@ Current summary:
 - Legacy GUI implementations are preserved under `legacy/`.
 - Root-level compatibility wrappers keep original GUI command names available.
 - Shared utilities have been added under `+gamrywb/+util`.
-- Chrono, EIS, and CV/CT parser extraction is mostly complete.
+- Chrono, EIS, and CV/CT parser extraction is complete for the legacy-supported file families.
 - Shared pulse detection is used by the multi-DTA overlay/export, VT resistance, and CIC legacy GUIs.
-- Chrono overlay plotting and CSV export table construction have started moving into package helpers.
+- Chrono overlay plotting and CSV export table construction are package-backed.
 - VT resistance analysis is package-backed.
 - VT resistance result/export table construction and legacy-format CSV writing are package-backed.
 - CIC / voltage-transient analysis is package-backed.
@@ -39,7 +39,13 @@ Current summary:
 - CV/CT selected-column access and plotting are package-backed.
 - EIS item construction, axis-value generation, overlay plotting, and current-plot export table construction are package-backed for the legacy EIS overlay GUI.
 - Shared session creation, file add/remove, save/load, batch summary helpers, VT/CIC/CV-CSC result table helpers, and legacy GUI session-state wiring are available.
-- Phase 10 app entry points are available under `apps/` and currently delegate to behavior-preserved legacy GUIs.
+- Phase 10 app entry points are available under `apps/` and currently delegate to behavior-preserved legacy GUIs by design.
+
+v1.0 checkpoint:
+
+- The roadmap v1.0 Definition of Done is satisfied for the behavior-preserving package refactor.
+- Package-backed thin app internals and the unified workbench GUI remain deferred follow-on work, not unfinished v1.0 requirements.
+- `scripts/run_matlab_tests.sh` passes the default pure-function package suite.
 
 ---
 
@@ -126,7 +132,7 @@ Parser behavior details live in `docs/file_format_notes.md`.
 
 ## Phase 3 — Pulse Detection Extraction
 
-Phase 3 is mostly complete for shared parser/data/pulse migration.
+Phase 3 is complete for the v1.0 shared parser/data/pulse migration scope.
 
 Completed work:
 
@@ -159,7 +165,7 @@ Known scope limitation:
 
 ## Phase 4 — Chrono Overlay / Export Extraction
 
-Phase 4 has started.
+Phase 4 is complete for v1.0.
 
 Completed work:
 
@@ -175,7 +181,7 @@ Behavior preserved:
 - CSV column names beginning with `TimeGapCenterAligned_s`, `V_*`, and `I_*`.
 - Merged aligned-time export axis and interpolation with `NaN` outside each source range.
 
-Still local at the Phase 4 checkpoint:
+Still local by design after the Phase 4 v1.0 checkpoint:
 
 - Multi-DTA GUI file selection, duplicate skipping, UI callbacks, and log display.
 - EIS overlay/export table construction.
@@ -183,7 +189,7 @@ Still local at the Phase 4 checkpoint:
 
 ## Phase 5 — VT Resistance Analysis Extraction
 
-Phase 5 has started.
+Phase 5 is complete for v1.0.
 
 Completed work:
 
@@ -206,7 +212,7 @@ Behavior preserved:
 - Legacy batch results `uitable` 9-column shape.
 - Legacy CSV column names, numeric formatting, failed-row `NaN` values, and quoted text escaping.
 
-Still local after current Phase 5 progress:
+Still local by design after the Phase 5 v1.0 checkpoint:
 
 - VT resistance plotting and current-file summary text formatting.
 - CV/CSC extraction, which was handled in later Phase 7 work.
@@ -214,7 +220,7 @@ Still local after current Phase 5 progress:
 
 ## Phase 6 — CIC / Voltage Transient Analysis Extraction
 
-Phase 6 has started.
+Phase 6 is complete for v1.0.
 
 Completed work:
 
@@ -241,7 +247,7 @@ Behavior preserved:
 - Legacy batch results `uitable` 8-column shape and dynamic unit labels.
 - Legacy CSV column names, dynamic unit suffixes, failed-row empty fields, and quoted-text behavior.
 
-Still local after current Phase 6 progress:
+Still local by design after the Phase 6 v1.0 checkpoint:
 
 - CIC plotting and current-file summary text formatting.
 - CV/CSC extraction, which was handled in later Phase 7 work.
@@ -249,7 +255,7 @@ Still local after current Phase 6 progress:
 
 ## Phase 7 — CV / CSC Analysis Extraction
 
-Phase 7 has started.
+Phase 7 is complete for v1.0.
 
 Completed work:
 
@@ -274,7 +280,7 @@ Behavior preserved:
 - Legacy GUI status text, result formatting, and trim overlay timing/color behavior remain owned by the GUI.
 - Selected-column plotting preserves exact-case column selection, NaN row filtering, titles, labels, grid setting, hold behavior, and line width.
 
-Still local after current Phase 7 progress:
+Still local by design after the Phase 7 v1.0 checkpoint:
 
 - CV/CSC export table construction, once a batch/session export workflow exists.
 - EIS GUI/session cleanup, which is handled in later Phase 8+ work.
@@ -354,7 +360,7 @@ Deferred after current Phase 9 progress:
 
 ## Phase 10 — New Thin Apps
 
-Phase 10 has started with compatibility-preserving app entry points.
+Phase 10 is complete for the v1.0 compatibility entry-point scope.
 
 Completed work:
 
@@ -370,7 +376,7 @@ Behavior preserved:
 - The new app entry points currently delegate to the behavior-preserved legacy GUI entry points.
 - No GUI layout, callback behavior, parser behavior, analysis formula, plotting behavior, or export format was intentionally changed.
 
-Still local after current Phase 10 progress:
+Deferred beyond the Phase 10 v1.0 compatibility scope:
 
 - Package-backed thin app internals are not yet implemented.
 - Replacing the delegates is blocked until the DTA parser layer, normalized item/result/option schemas, session/export conventions, and fixture-driven validation are stable.
@@ -517,8 +523,8 @@ Multi-DTA overlay/export must preserve:
 
 1. Parser implementations still duplicate some table-reading internals. This is acceptable during behavior-preserving extraction; deeper parser unification should wait until downstream behavior is verified.
 2. Shared pulse detection currently targets the legacy single cathodic-first biphasic use case. General protocol support should be treated as a future feature, not a refactor requirement.
-3. Existing tests validate extracted pure functions with demo fixtures, but not every legacy GUI output has a golden reference yet.
-4. Package-backed thin app internals remain future work; current Phase 10 app entry points delegate to preserved legacy GUIs and should not replace those delegates until the DTA core, schemas, session/export workflow, and validation fixtures are stable.
+3. Existing tests validate extracted pure functions with demo fixtures and fixed reference values, but not every legacy GUI output has a stored golden MAT reference yet.
+4. Package-backed thin app internals remain post-v1.0 work; current Phase 10 app entry points delegate to preserved legacy GUIs and should not replace those delegates until the DTA core, schemas, session/export workflow, and validation fixtures are stable.
 5. Interactive GUI behavior is not covered by the default batch test runner. Optional GUI tests cover launch, initialized layout/control compatibility, complete dropdown groups, result-table columns, axes titles/labels, callback bindings, and safe empty-session callbacks only.
 6. Some current package structs and result fields are transitional bridges for legacy GUIs. Treat normalized item/result/option schemas as a future stabilization step before new app internals depend on them.
 

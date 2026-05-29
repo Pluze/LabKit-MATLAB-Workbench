@@ -180,7 +180,7 @@ CV/CSC scientific rules are not parser behavior. The current package-backed anal
 
 Current parser implementations are intentionally conservative.
 
-The chrono, EIS, and CV/CT parsers still share similar table-reading logic. This duplication is acceptable during early behavior-preserving extraction because the first priority is legacy compatibility.
+The chrono, EIS, and CV/CT parsers still share similar table-reading logic. This duplication is acceptable during behavior-preserving extraction because the first priority is legacy compatibility.
 
 Future parser unification may extract lower-level helper responsibilities such as:
 

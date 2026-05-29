@@ -200,7 +200,7 @@ Current known scope:
 
 ## 8. CIC Validation
 
-CIC extraction has started. Verify:
+CIC extraction is package-backed for v1.0. Verify:
 
 ```text
 Emc
@@ -235,7 +235,7 @@ Do not start CIC extraction without either golden references or a clearly docume
 
 ## 9. VT Resistance Validation
 
-VT resistance extraction has started. Verify:
+VT resistance extraction is package-backed for v1.0. Verify:
 
 ```text
 phase current median
@@ -269,7 +269,7 @@ legacy CSV quoted text escaping
 
 ## 10. CV/CSC Validation
 
-CV/CSC extraction has started. Verify:
+CV/CSC extraction is package-backed for v1.0. Verify:
 
 ```text
 negative-current integration
@@ -319,7 +319,7 @@ plot title, labels, line width, and invalid-selection handling
 
 ## 11. EIS Validation
 
-EIS overlay/export extraction has started. Verify:
+EIS overlay/export extraction is package-backed for v1.0. Verify:
 
 ```text
 Nyquist plot behavior
@@ -381,7 +381,7 @@ Keep noninteractive GUI tests separate from the default pure-function test runne
 
 ## 13. Session Validation
 
-Phase 9 session extraction has started. Verify:
+Phase 9 session extraction is package-backed for the current legacy-compatible scope. Verify:
 
 ```text
 session struct type/version/kind

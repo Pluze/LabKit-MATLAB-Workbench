@@ -10,20 +10,20 @@ Do not start these features before the behavior-preserving MATLAB package refact
 
 ## 1. Before Starting Future Features
 
-Future features should wait until:
+Future features should confirm the v1.0 package-refactor gate remains true:
 
 ```text
-[ ] legacy GUIs are preserved and verified
-[ ] common parser functions are stable
-[ ] common analysis functions are stable
+[x] legacy GUIs are preserved and verified
+[x] common parser functions are stable for legacy-supported file families
+[x] common analysis functions are stable for current v1.0 workflows
 [ ] normalized item/result/option schemas are stable enough for new app work
-[ ] session and export workflow conventions are stable
-[ ] fixture coverage exists for any additional Gamry DTA experiment type before support is added
-[ ] CIC can run without GUI
-[ ] VT resistance can run without GUI
-[ ] CV/CSC can run without GUI
-[ ] EIS overlay/export can run without GUI
-[ ] reference tests exist for major outputs
+[x] session and export workflow conventions are stable for current legacy-compatible workflows
+[x] fixture coverage exists for current legacy-supported Gamry DTA experiment types
+[x] CIC can run without GUI
+[x] VT resistance can run without GUI
+[x] CV/CSC can run without GUI
+[x] EIS overlay/export can run without GUI
+[x] reference tests exist for major outputs
 ```
 
 The active refactor goal remains:

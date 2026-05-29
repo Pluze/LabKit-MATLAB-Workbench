@@ -114,20 +114,20 @@ Current abstraction audit:
 
 ## 5. Current Status
 
-Current status at the time of this documentation cleanup:
+Current status at the roadmap v1.0 checkpoint:
 
 ```text
 Phase 0: complete
 Phase 1: complete
-Phase 2: mostly complete
-Phase 3: mostly complete
-Phase 4: started
-Phase 5: started
-Phase 6: started
-Phase 7: started
+Phase 2: complete for v1.0
+Phase 3: complete for v1.0
+Phase 4: complete for v1.0
+Phase 5: complete for v1.0
+Phase 6: complete for v1.0
+Phase 7: complete for v1.0
 Phase 8: complete
 Phase 9: complete for current legacy-compatible scope
-Phase 10: started
+Phase 10: complete for v1.0 compatibility entry-point scope
 Phase 11+: not started
 ```
 
@@ -135,17 +135,17 @@ Summary:
 
 - Package skeleton exists under `+gamrywb`.
 - Low-risk utilities have been extracted into `+gamrywb/+util`.
-- Chrono, EIS, and CV/CT DTA parsers have been extracted.
+- Chrono, EIS, and CV/CT DTA parsers have been extracted for the legacy-supported file families.
 - Data accessors such as `getMainCurve`, `getZCurve`, and `getColumn` have been extracted.
 - Shared pulse detection is used by the multi-DTA overlay/export, VT resistance, and CIC legacy GUIs.
-- Chrono overlay plotting and CSV export table construction have started moving into package helpers.
-- VT resistance analysis extraction has started.
-- CIC / voltage-transient analysis extraction has started.
+- Chrono overlay plotting and CSV export table construction are package-backed.
+- VT resistance analysis and result/export table construction are package-backed.
+- CIC / voltage-transient analysis and result/export table construction are package-backed.
 - VT resistance and CIC now call package-backed analysis functions while preserving legacy GUI display/export behavior.
-- CV/CT charge, CSC analysis, selected-column access, and plotting extraction has started.
+- CV/CT charge, CSC analysis, selected-column access, plotting, and result table construction are package-backed.
 - EIS item construction, axis-value generation, overlay plotting, and current-plot export table extraction is complete for the legacy EIS overlay GUI.
 - Shared session creation, file add/remove, save/load, batch summary helper extraction, CV/CSC result table construction, and legacy GUI session-state migration are complete for the current legacy-compatible scope.
-- Phase 10 app entry points exist under `apps/` and currently delegate to behavior-preserved legacy GUIs.
+- Phase 10 app entry points exist under `apps/` and currently delegate to behavior-preserved legacy GUIs by design.
 
 Completed migration details live in `MIGRATION_NOTES.md`.
 
@@ -275,9 +275,9 @@ Current implemented helpers:
 +gamrywb/+data/getColumn.m
 ```
 
-Status: mostly complete.
+Status: complete for v1.0.
 
-Remaining caution:
+Post-v1.0 caution:
 
 - Parser internals are still intentionally conservative and legacy-compatible.
 - Do not over-generalize the DTA parser until downstream behavior is verified.
@@ -309,7 +309,7 @@ Current implemented helpers:
 +gamrywb/+data/makeChronoItem.m
 ```
 
-Status: mostly complete.
+Status: complete for v1.0.
 
 Current implementation note:
 
@@ -364,7 +364,7 @@ interpolation for files with different time grids
 CSV column naming
 ```
 
-Status: started.
+Status: complete for v1.0.
 
 Current implementation note:
 
@@ -390,7 +390,7 @@ Current implemented helpers:
 +gamrywb/+ui/buildVTResistanceBatchTableData.m
 ```
 
-Remaining responsibilities and candidate helpers:
+Post-v1.0 responsibilities and candidate helpers:
 
 - Move VT resistance debug plotting out of GUI callbacks when there is fixture-backed evidence that markers, labels, axes, and display behavior are unchanged.
 - A future helper may live under `+gamrywb/+plot`, but its exact name is not part of the current API contract.
@@ -412,7 +412,7 @@ average resistance
 batch result table columns
 ```
 
-Status: started.
+Status: complete for v1.0.
 
 Current implementation note:
 
@@ -441,7 +441,7 @@ Current implemented helpers:
 +gamrywb/+ui/buildCICBatchTableData.m
 ```
 
-Remaining responsibilities and candidate helpers:
+Post-v1.0 responsibilities and candidate helpers:
 
 - Move CIC debug plotting out of GUI callbacks when there is fixture-backed evidence that pulse shading, water-window lines, markers, labels, and display behavior are unchanged.
 - A future helper may live under `+gamrywb/+plot`, but its exact name is not part of the current API contract.
@@ -468,7 +468,7 @@ window limit lines
 pulse window shading
 ```
 
-Status: started.
+Status: complete for v1.0.
 
 Current implementation note:
 
@@ -497,7 +497,7 @@ Current implemented helpers:
 +gamrywb/+io/buildCSCResultsTable.m
 ```
 
-Remaining responsibilities and candidate helpers:
+Post-v1.0 responsibilities and candidate helpers:
 
 - Normalize CV/CT item construction and selected-curve handling once the item/result schema is stable.
 - A future curve-selection helper may live under `+gamrywb/+analysis` or `+gamrywb/+data`, but its exact name is not part of the current API contract.
@@ -514,7 +514,7 @@ Do not compute CV charge as trapz(V, I) directly.
 CSC = Q / area_cm2 when area is provided.
 ```
 
-Status: started.
+Status: complete for v1.0.
 
 Current implementation note:
 
@@ -634,7 +634,7 @@ UI controls → read options → call gamrywb package → update UI
 
 No parser, scientific formula, CSV formatting, or pulse-detection logic should live inside the apps.
 
-Status: started.
+Status: complete for v1.0 compatibility entry-point scope.
 
 Current implementation note:
 
@@ -644,7 +644,7 @@ Current implementation note:
 - `apps/gamrywb_EIS_app.m` delegates to `gamry_EIS_multiDTA_plot_gui`.
 - These app entry points preserve legacy GUI behavior while package-backed thin app internals remain deferred.
 
-Blocked next work:
+Deferred next work:
 
 - Do not replace these delegates with new thin app internals until the DTA parser layer, normalized item/result/option schemas, session/export conventions, and fixture-driven validation are stable.
 - Future thin app internals should keep the responsibility split as `UI controls -> read options -> call gamrywb package -> update UI`; controller or view-model helper names are candidates, not API commitments.
@@ -710,26 +710,34 @@ Unified GUI should be last.
 
 ## 9. Definition of Done for v1.0
 
-The refactor reaches v1.0 when:
+The refactor reached v1.0 when:
 
 ```text
-[ ] Legacy GUIs are preserved in legacy/.
-[ ] Common parser functions live in +gamrywb/+io.
-[ ] Common data accessors live in +gamrywb/+data.
-[ ] Common analysis functions live in +gamrywb/+analysis.
-[ ] Common plotting helpers live in +gamrywb/+plot.
-[ ] Common UI helpers live in +gamrywb/+ui.
-[ ] Common utility functions live in +gamrywb/+util.
-[ ] CIC analysis can run without GUI.
-[ ] VT resistance analysis can run without GUI.
-[ ] CV/CSC analysis can run without GUI.
-[ ] EIS overlay/export can run without GUI.
-[ ] At least one reference test exists for each major analysis module.
-[ ] New thin app entry points are available in apps/.
-[ ] Package-backed thin app internals are started only after DTA core schemas, session/export conventions, and validation are stable.
-[ ] README explains how to run startup_gamrywb and each app.
-[ ] MIGRATION_NOTES.md documents behavior differences and open risks.
+[x] Legacy GUIs are preserved in legacy/.
+[x] Common parser functions live in +gamrywb/+io.
+[x] Common data accessors live in +gamrywb/+data.
+[x] Common analysis functions live in +gamrywb/+analysis.
+[x] Common plotting helpers live in +gamrywb/+plot.
+[x] Common UI helpers live in +gamrywb/+ui.
+[x] Common utility functions live in +gamrywb/+util.
+[x] CIC analysis can run without GUI.
+[x] VT resistance analysis can run without GUI.
+[x] CV/CSC analysis can run without GUI.
+[x] EIS overlay/export can run without GUI.
+[x] At least one reference test exists for each major analysis module.
+[x] New thin app entry points are available in apps/.
+[x] Package-backed thin app internals are deferred until DTA core schemas, session/export conventions, and validation are stable.
+[x] README explains how to run startup_gamrywb and each app.
+[x] MIGRATION_NOTES.md documents behavior differences and open risks.
 ```
+
+v1.0 validation status:
+
+```text
+scripts/run_matlab_tests.sh
+```
+
+passes the pure-function package test suite covering parser, data accessor, pulse detection, chrono overlay export, VT resistance, CIC, CV/CSC, EIS overlay/export, session, UI-table helper, and app-entry resolution checks.
 
 ---
 

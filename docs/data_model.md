@@ -292,7 +292,7 @@ Do not remove legacy flat fields until all legacy GUI call sites and analysis mo
 
 ## 9. Session Struct
 
-A shared session model has started in `gamrywb.data.makeSession`.
+A shared session model is available in `gamrywb.data.makeSession`.
 
 Current structure:
 

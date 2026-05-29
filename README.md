@@ -2,32 +2,33 @@
 
 MATLAB workbench for refactoring and maintaining Gamry electrochemistry DTA analysis GUIs.
 
-This repository is being migrated from several standalone MATLAB GUI scripts into a reusable `+gamrywb` package while preserving legacy behavior.
+This repository migrated several standalone MATLAB GUI scripts into a reusable `+gamrywb` package while preserving legacy behavior.
 
 ---
 
 ## Current Status
 
-The project is in an early behavior-preserving refactor stage.
+The project has reached the roadmap v1.0 behavior-preserving package refactor.
 
-Completed or started work:
+Completed v1.0 work:
 
 - Phase 0 complete: legacy functions inventoried and migration notes started.
 - Phase 1 complete: package skeleton and low-risk utilities added.
-- Phase 2 mostly complete: chrono, EIS, and CV/CT parser modules extracted.
-- Phase 3 mostly complete: shared pulse detection is used by the multi-DTA overlay/export, VT resistance, and CIC legacy GUIs.
-- Phase 4 started: chrono overlay plotting and CSV export table construction are package-backed.
-- Phase 5 started: VT resistance analysis and result/export table construction are package-backed.
-- Phase 6 started: CIC / voltage-transient analysis and result/export table construction are package-backed.
-- Phase 7 started: CV/CT charge, CSC analysis, selected-column access, and plotting are package-backed.
+- Phase 2 complete for v1.0: chrono, EIS, and CV/CT parser modules extracted.
+- Phase 3 complete for v1.0: shared pulse detection is used by the multi-DTA overlay/export, VT resistance, and CIC legacy GUIs.
+- Phase 4 complete for v1.0: chrono overlay plotting and CSV export table construction are package-backed.
+- Phase 5 complete for v1.0: VT resistance analysis and result/export table construction are package-backed.
+- Phase 6 complete for v1.0: CIC / voltage-transient analysis and result/export table construction are package-backed.
+- Phase 7 complete for v1.0: CV/CT charge, CSC analysis, selected-column access, plotting, and result table construction are package-backed.
 - Phase 8 complete: EIS item construction, axis values, overlay plotting, and current-plot export tables are package-backed.
 - Phase 9 complete for the current legacy-compatible scope: shared session creation, file add/remove, save/load, batch summary helpers, VT/CIC/CV-CSC result table helpers, and legacy GUI session-state wiring are available.
-- Phase 10 started: app entry points are available under `apps/` and currently delegate to behavior-preserved legacy GUIs.
+- Phase 10 complete for v1.0: app entry points are available under `apps/` and delegate to behavior-preserved legacy GUIs until package-backed thin app internals are intentionally started.
 - Legacy GUI entry points remain available through root-level compatibility wrappers.
 - Demo DTA fixtures and MATLAB pure-function tests are available.
 
-Not started yet:
+Deferred beyond v1.0:
 
+- Package-backed replacements for the Phase 10 app delegates.
 - Unified workbench GUI.
 
 The current goal is **same behavior, less duplicate code, clearer boundaries**.
@@ -63,7 +64,7 @@ gamrywb_CSC_app
 gamrywb_EIS_app
 ```
 
-These currently delegate to the behavior-preserved legacy GUIs while package-backed thin app internals continue to mature.
+These currently delegate to the behavior-preserved legacy GUIs. Package-backed thin app internals are deferred beyond v1.0 until the DTA core schemas and validation fixtures are stable enough for new app work.
 
 ---
 

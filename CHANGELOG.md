@@ -41,6 +41,7 @@ This project is still in an unreleased behavior-preserving refactor stage.
 
 ### Changed
 
+- Marked the roadmap v1.0 behavior-preserving package refactor complete.
 - Moved preserved legacy GUI implementations under `legacy/`.
 - Replaced root-level legacy GUI files with compatibility wrappers that preserve original command names.
 - Updated selected legacy GUI implementations to call extracted parser and utility functions where behavior is intended to remain identical.
@@ -60,7 +61,7 @@ This project is still in an unreleased behavior-preserving refactor stage.
 - Updated `legacy/gamry_CV_CSC_dta_gui_legacy.m` to use shared session storage while preserving its existing single-file display/analysis state path.
 - Updated `legacy/gamry_EIS_multiDTA_plot_gui_legacy.m` to use shared EIS item construction, plotting, and export table helpers.
 - Updated `legacy/gamry_EIS_multiDTA_plot_gui_legacy.m` to use shared session add/remove helpers while preserving its existing `S.items` display/export path.
-- Phase 10 app entry points currently delegate to behavior-preserved legacy GUI entry points.
+- Phase 10 app entry points delegate to behavior-preserved legacy GUI entry points for the v1.0 compatibility scope.
 - Reorganized Markdown documentation so README, roadmap, migration notes, AI instructions, and detailed docs have separate responsibilities.
 
 ### Preserved
@@ -72,9 +73,9 @@ This project is still in an unreleased behavior-preserving refactor stage.
 
 ### Known Gaps
 
-- CIC plotting remains in the legacy GUI.
-- VT resistance plotting remains in the legacy GUI.
-- CV/CSC CSV writing and GUI export remain deferred until a batch/session export workflow exists.
-- New thin apps under `apps/` have not been implemented.
+- CIC plotting remains in the legacy GUI beyond the package-backed analysis/export helpers.
+- VT resistance plotting remains in the legacy GUI beyond the package-backed analysis/export helpers.
+- CV/CSC CSV writing and GUI export remain deferred because the legacy GUI has no batch CSV export workflow.
+- Package-backed replacements for the Phase 10 app delegates are deferred beyond v1.0.
 - Unified workbench GUI has not been started.
-- Golden reference tests for every major analysis output are not complete yet.
+- Stored golden MAT references for every major analysis output are not complete yet; default tests cover fixed reference values with demo fixtures.
