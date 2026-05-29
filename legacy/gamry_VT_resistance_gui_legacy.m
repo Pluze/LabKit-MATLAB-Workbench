@@ -10,7 +10,8 @@ function gamry_VT_resistance_gui_legacy
 %   - Compute baseline-corrected resistance as abs((Vss - Vbaseline) / Iss).
 
     S = struct();
-    S.items = struct([]);
+    S.session = gamrywb.data.makeSession('vt_resistance');
+    S.items = S.session.items;
     S.current = [];
     S.isDragging = false;
 
@@ -263,24 +264,12 @@ function gamry_VT_resistance_gui_legacy
     end
 
     function addFiles(filepaths)
-        for k = 1:numel(filepaths)
-            fp = filepaths{k};
-            if any(arrayfun(@(x) strcmp(x.filepath, fp), S.items))
-                addLog(['Skipped duplicate: ' fp]);
-                continue;
-            end
-            try
-                item = loadAndAnalyzeFile(fp);
-                if isempty(S.items)
-                    S.items = item;
-                else
-                    S.items(end+1) = item; %#ok<AGROW>
-                end
-                addLog(['Loaded: ' fp]);
-            catch ME
-                addLog(sprintf('Failed to load %s: %s', fp, ME.message));
-            end
-        end
+        callbacks = struct();
+        callbacks.onAdded = @(fp, item) addLog(['Loaded: ' fp]); %#ok<INUSD>
+        callbacks.onSkipped = @(fp) addLog(['Skipped duplicate: ' fp]);
+        callbacks.onFailed = @(fp, msg) addLog(sprintf('Failed to load %s: %s', fp, msg));
+        [S.session, ~] = gamrywb.data.addFilesToSession(S.session, filepaths, @loadAndAnalyzeFile, callbacks);
+        S.items = S.session.items;
         if ~isempty(S.items) && isempty(S.current)
             S.current = 1;
         end
@@ -314,6 +303,7 @@ function gamry_VT_resistance_gui_legacy
             return;
         end
         S.items(S.current) = analyzeItem(S.items(S.current));
+        S.session.items = S.items;
         refreshBatchTable();
         refreshResultsSummary();
         refreshPlots();
@@ -356,7 +346,8 @@ function gamry_VT_resistance_gui_legacy
     end
 
     function clearAllFiles()
-        S.items = struct([]);
+        S.session = gamrywb.data.makeSession('vt_resistance');
+        S.items = S.session.items;
         S.current = [];
         restoreDefaultPlotSelections();
         resetAxesToDefaultState();

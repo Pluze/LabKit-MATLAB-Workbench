@@ -47,6 +47,7 @@ This project is still in an unreleased behavior-preserving refactor stage.
 - Updated `legacy/gamry_VT_resistance_gui_legacy.m` to use shared chrono parsing, DTA discovery, table/column accessors, pulse detection, and low-risk utilities.
 - Updated `legacy/gamry_VT_resistance_gui_legacy.m` to call shared VT resistance analysis.
 - Updated `legacy/gamry_VT_resistance_gui_legacy.m` to use shared VT resistance batch table and legacy-format CSV writer helpers.
+- Updated `legacy/gamry_VT_resistance_gui_legacy.m` to use shared session add/reset helpers while preserving its existing `S.items` display/export path.
 - Updated `legacy/gamry_CIC_VT_gui_paperlabels_legacy.m` to use shared chrono parsing, DTA discovery, table/column accessors, pulse detection, and low-risk utilities.
 - Updated `legacy/gamry_CIC_VT_gui_paperlabels_legacy.m` to call shared CIC / voltage-transient analysis.
 - Updated `legacy/gamry_CIC_VT_gui_paperlabels_legacy.m` to use shared CIC batch table and legacy-format CSV writer helpers.

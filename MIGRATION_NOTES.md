@@ -37,7 +37,7 @@ Current summary:
 - CV/CT charge and CSC analysis are package-backed.
 - CV/CT selected-column access and plotting are package-backed.
 - EIS item construction, axis-value generation, overlay plotting, and current-plot export table construction are package-backed for the legacy EIS overlay GUI.
-- Shared session creation, file add/remove, save/load, batch summary helpers, and multi-DTA/EIS overlay session add/remove wiring are available.
+- Shared session creation, file add/remove, save/load, batch summary helpers, and multi-DTA/EIS/VT resistance session wiring are available.
 
 ---
 
@@ -322,6 +322,7 @@ Completed work:
 - Added optional `addFilesToSession` callbacks for preserving legacy GUI log ordering.
 - Updated `legacy/gamry_multiDTA_plot_export_gui_legacy.m` to use shared session add/remove helpers while preserving its existing `S.items` display/export path.
 - Updated `legacy/gamry_EIS_multiDTA_plot_gui_legacy.m` to use shared session add/remove helpers while preserving its existing `S.items` display/export path.
+- Updated `legacy/gamry_VT_resistance_gui_legacy.m` to use shared session add helpers and shared session reset on clear-all while preserving its existing `S.items` display/export path.
 
 Behavior preserved:
 
@@ -329,6 +330,7 @@ Behavior preserved:
 - Duplicate skipping is based on existing item `filepath` values.
 - Multi-DTA overlay duplicate skip, load/failure log text, remove log text, clear-all behavior, plotting, and export selection behavior remain unchanged.
 - EIS overlay duplicate skip, load/failure log text, remove log text, clear-all behavior, plotting, summary text, and export selection behavior remain unchanged.
+- VT resistance duplicate skip, load/failure log text, clear-all behavior, current-file selection, re-analysis, plotting, table display, and export behavior remain unchanged.
 - Session persistence stores the explicit `gamrywb_session` struct.
 - Batch summaries use common `name`, `filepath`, `analysis.ok`, and `analysis.message` fields without changing existing app-specific tables.
 - VT resistance result/export helpers preserve the existing app-specific table and CSV contract.
@@ -336,7 +338,7 @@ Behavior preserved:
 
 Still local after current Phase 9 progress:
 
-- Migration of VT resistance, CIC, and CV/CSC GUI state containers to shared session helpers.
+- Migration of CIC and CV/CSC GUI state containers to shared session helpers.
 - CV/CSC result/export table builders not already extracted.
 
 ---
@@ -371,6 +373,7 @@ Still local after current Phase 9 progress:
 | session file add/remove | all apps | `+gamrywb/+data/addFilesToSession.m`, `removeFilesFromSession.m` | Started Phase 9. Preserve caller-owned loader behavior and duplicate skipping by filepath. |
 | multi-DTA overlay session state | multi-DTA overlay | `+gamrywb/+data/makeSession.m`, `addFilesToSession.m`, `removeFilesFromSession.m` | Started Phase 9 GUI state migration. Preserve legacy `S.items` display/export path and log text. |
 | EIS overlay session state | EIS overlay | `+gamrywb/+data/makeSession.m`, `addFilesToSession.m`, `removeFilesFromSession.m` | Started Phase 9 GUI state migration. Preserve legacy `S.items` display/export path, summary text, and log text. |
+| VT resistance session state | VT resistance GUI | `+gamrywb/+data/makeSession.m`, `addFilesToSession.m` | Started Phase 9 GUI state migration. Preserve legacy `S.items` display/export path, current selection, re-analysis behavior, and log text. |
 | session save/load | all apps | `+gamrywb/+io/saveSession.m`, `loadSession.m` | Started Phase 9. Store and load explicit session structs from MAT files. |
 | batch summary | all apps | `+gamrywb/+analysis/summarizeBatchResults.m` | Started Phase 9. Provide a common minimal name/filepath/ok/message summary table. |
 | CV/CSC integration helpers | CV/CSC GUI | `+gamrywb/+analysis/computeCTCharge.m`, `computeCVCharge.m`, `computeCSC.m` | Started Phase 7. Preserve sign-split, zero-crossing handling, and scan-rate-derived time behavior. |
