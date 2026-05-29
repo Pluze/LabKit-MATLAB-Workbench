@@ -1,5 +1,6 @@
 function varargout = gamrywb_CIC_app(varargin)
 %GAMRYWB_CIC_APP Launch the CIC voltage-transient app.
+% Single-file app that composes +gamrywb GUI/DTA APIs and owns CIC workflow choices.
 % GUI for calculating CIC from Gamry MULTI_STEP_CHRONOPOT .DTA files.
 % Layout updated to 3 left-side tabs with vertical file actions.
 %

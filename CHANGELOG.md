@@ -15,6 +15,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 
 - App-specific scientific workflow now lives in the owning app files: analysis formulas, plot annotations, result tables, export schemas, and CSV writing are not reusable `+gamrywb` APIs.
 - Current apps load files through the GUI-free DTA facade where supported, while retaining app-local behavior such as Chrono pulse-gap alignment and EIS axis/export choices.
+- App header comments now consistently describe single-file app ownership without implying reusable-library ownership of experiment-specific analysis.
 - Reusable GUI helpers are kept domain-neutral: DTA-specific labels, shell tab titles, app callback choreography, and app reset/default behavior stay in the apps.
 - Generic selected-curve plotting lives in `gamrywb.ui.plotCurveXY`; app-specific plotting packages and empty reusable plot packages are not kept.
 - Test organization now separates default and GUI groups, shares repeated numeric assertion helpers, and keeps architecture guardrails in `test_phase10_apps`.

@@ -1,5 +1,6 @@
 function varargout = gamrywb_VTResistance_app(varargin)
 %GAMRYWB_VTRESISTANCE_APP Launch the VT resistance app.
+% Single-file app that composes +gamrywb GUI/DTA APIs and owns VT resistance workflow choices.
 % GUI for estimating cathodic/anodic steady-state resistance from Gamry
 % MULTI_STEP_CHRONOPOT .DTA files.
 %

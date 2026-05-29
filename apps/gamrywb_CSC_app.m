@@ -1,6 +1,6 @@
 function varargout = gamrywb_CSC_app(varargin)
 %GAMRYWB_CSC_APP Launch the CV/CSC app.
-% Composes +gamrywb GUI, DTA, plotting, and analysis APIs without delegating to legacy.
+% Single-file app that composes +gamrywb GUI/DTA APIs and owns CV/CSC workflow choices.
 %
 % Assumptions
 %   - CV data is already constrained to the intended water window during acquisition.
