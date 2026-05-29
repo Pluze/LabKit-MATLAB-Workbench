@@ -6,6 +6,7 @@ function varargout = gamry_CIC_VT_gui_paperlabels(varargin)
     paths = strsplit(path, pathsep);
     if ~any(strcmp(paths, legacyDir))
         addpath(legacyDir, '-end');
+        cleanupLegacyPath = onCleanup(@() rmpath(legacyDir)); %#ok<NASGU>
     end
 
     if nargout > 0

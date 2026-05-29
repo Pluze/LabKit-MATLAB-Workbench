@@ -28,15 +28,15 @@ gamry_EIS_multiDTA_plot_gui
 gamry_multiDTA_plot_export_gui
 ```
 
-They are thin wrappers that add `legacy/` to the path when needed and call the matching `_legacy.m` implementation.
+They are thin wrappers that add `legacy/` to the path only when needed and call the matching `_legacy.m` implementation.
 
 The `apps/gamrywb_*_app.m` files are also compatibility entry points. They currently delegate to the preserved legacy GUIs and are not package-backed app rewrites.
 
-Legacy-directory shims such as `legacy/gamry_CIC_VT_gui_paperlabels.m` are compatibility helpers for users who are already in or pointing at `legacy/`. They are candidates for a separate cleanup only after explicit approval and GUI launch validation.
+`startup_gamrywb` does not add `legacy/` to the default path. This keeps legacy code out of the normal runtime path while preserving original command compatibility through root wrappers.
 
 ## Legacy GUI Layer
 
-Files under `legacy/` are preserved behavior references. They may call package helpers, but they still own:
+Files under `legacy/` are preserved behavior references and compatibility targets. They may call package helpers, but they still own:
 
 - layout construction
 - UI controls and callbacks

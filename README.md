@@ -9,7 +9,7 @@ The v1.0 behavior-preserving package refactor is complete.
 What that means:
 
 - Original GUI commands still run through compatibility wrappers.
-- Preserved GUI implementations remain under `legacy/`.
+- Preserved GUI implementations remain under `legacy/` as behavior references and compatibility targets.
 - CIC, VT resistance, CV/CSC, chrono overlay, and EIS overlay/export workflows have package-backed parser, analysis, plotting, export, or UI helper coverage where v1.0 required it.
 - App entry points under `apps/` are compatibility delegates to the preserved legacy GUIs.
 
@@ -63,7 +63,7 @@ The default runner covers pure functions. The optional GUI mode checks launch/la
 ```text
 +gamrywb/             Reusable MATLAB package modules
 apps/                 Compatibility app entry points
-legacy/               Preserved legacy GUI implementations and shims
+legacy/               Preserved legacy GUI implementations used as behavior references
 demo/                 Named DTA fixtures
 tests/                MATLAB tests
 scripts/              Test runner scripts

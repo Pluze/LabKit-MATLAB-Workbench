@@ -2,6 +2,8 @@ function test_gui_smoke()
 %TEST_GUI_SMOKE Verify GUI entry points can launch.
 
     assertUifigureAvailable();
+    root = fileparts(fileparts(mfilename('fullpath')));
+    legacyDir = fullfile(root, 'legacy');
 
     entries = { ...
         'gamry_multiDTA_plot_export_gui', 'Gamry Multi-DTA Plot Export GUI'; ...
@@ -22,12 +24,18 @@ function test_gui_smoke()
 
         feval(entryName);
         drawnow;
+        assert(~pathContains(legacyDir), 'Entry point %s should not leave legacy/ on the MATLAB path.', entryName);
 
         figs = findall(groot, 'Type', 'figure');
         names = getFigureNames(figs);
         assert(any(strcmp(names, expectedTitle)), ...
             'GUI entry point %s did not create expected figure "%s".', entryName, expectedTitle);
     end
+end
+
+function tf = pathContains(folder)
+    paths = strsplit(path, pathsep);
+    tf = any(strcmp(paths, folder));
 end
 
 function assertUifigureAvailable()

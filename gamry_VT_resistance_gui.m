@@ -6,6 +6,7 @@ function varargout = gamry_VT_resistance_gui(varargin)
     paths = strsplit(path, pathsep);
     if ~any(strcmp(paths, legacyDir))
         addpath(legacyDir, '-end');
+        cleanupLegacyPath = onCleanup(@() rmpath(legacyDir)); %#ok<NASGU>
     end
 
     if nargout > 0

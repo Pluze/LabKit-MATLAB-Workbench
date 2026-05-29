@@ -20,11 +20,12 @@ Compatibility retained:
 - root-level original GUI command names remain runnable
 - preserved GUI implementations remain under `legacy/`
 - app entry points under `apps/` delegate to preserved legacy GUIs
-- legacy-directory shims remain for compatibility
+- `startup_gamrywb` keeps `legacy/` off the default runtime path; root wrappers add it only when original command compatibility is used
 
 ## Migration Highlights
 
 - Moved preserved legacy GUI implementations into `legacy/` and added root-level wrappers.
+- Removed legacy-directory same-name shims so `legacy/` contains only `_legacy.m` preserved implementations.
 - Added `startup_gamrywb.m`.
 - Extracted chrono, EIS, and CV/CT DTA parsers.
 - Extracted common chrono item construction, pulse detection, and pulse-gap alignment.
