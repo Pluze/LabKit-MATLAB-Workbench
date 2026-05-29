@@ -48,7 +48,7 @@ The app files are package-backed and do not delegate to legacy GUI files.
 ## Package Responsibilities
 
 ```text
-+gamrywb/+dta       GUI-free DTA discovery, type detection, and loading facade
++gamrywb/+dta       GUI-free DTA discovery, type detection, file loading, and folder loading facade
 +gamrywb/+io        DTA parsers, folder discovery, session IO
 +gamrywb/+data      item/session construction, table/column access, session orchestration
 +gamrywb/+analysis  broad pulse detection helpers
@@ -99,7 +99,7 @@ The GUI decides how to display that status.
 ## Current Package Surface
 
 - `apps/`: user-facing app entry points and app-specific implementations. All current app bodies are single public app source files, and app-specific workflow helpers are local functions in those files rather than reusable `+gamrywb` APIs or transitional app-helper packages.
-- `+dta`: GUI-free facade for supported DTA file discovery, family detection, single-file loading, and batch loading with status/report structs. It delegates to existing `+io` parser and `+data` item-construction helpers.
+- `+dta`: GUI-free facade for supported DTA file discovery, family detection, single-file loading, batch loading, and folder loading with status/report structs. It delegates to existing `+io` parser and `+data` item-construction helpers.
 - `+io`: DTA parsers, folder discovery, and session save/load. Export helpers that encode experiment-specific formats should stay with the owning app rather than in reusable `+gamrywb`.
 - `+data`: table/column accessors, CV/CT selected-column access, chrono item construction, EIS item construction, session add/remove/select/load helpers, and generic item/result summaries.
 - `+analysis`: pulse detection helpers. Experiment-specific calculations should migrate toward app-side code unless they are clearly general, parameter-light math utilities.

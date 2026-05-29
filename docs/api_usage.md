@@ -55,6 +55,12 @@ Batch loading:
 [items, report] = gamrywb.dta.loadFiles(filepaths, "auto");
 ```
 
+Folder loading:
+
+```matlab
+[items, report] = gamrywb.dta.loadFolder(folder, "auto");
+```
+
 Type detection:
 
 ```matlab

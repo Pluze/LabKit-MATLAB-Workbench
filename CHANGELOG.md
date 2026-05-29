@@ -8,6 +8,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 
 - Added a GUI-free `+gamrywb/+dta` facade for supported DTA discovery, type detection, single-file loading, and batch loading with status/report structs.
 - Added `gamrywb.dta.findFiles` as the GUI-free DTA discovery facade for recursive folder scans.
+- Added `gamrywb.dta.loadFolder` for GUI-free recursive folder discovery and loading in scripts or app prototypes.
 - Added fixture-driven tests covering DTA facade detection, auto-loading, expected-kind mismatch handling, missing-file status, and mixed-family batch loading.
 
 ### Removed

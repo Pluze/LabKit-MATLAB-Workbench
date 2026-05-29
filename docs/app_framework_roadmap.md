@@ -207,6 +207,12 @@ results = myAnalysis(items, options);
 T = myExportTable(results);
 ```
 
+For scripts or prototypes that do not need session duplicate handling:
+
+```matlab
+items = gamrywb.dta.loadFolder(folder, "chrono");
+```
+
 or:
 
 ```matlab
@@ -245,6 +251,7 @@ The first DTA facade lives in:
   detectType.m
   loadFile.m
   loadFiles.m
+  loadFolder.m
 ```
 
 This package should be a facade over existing lower-level code.
@@ -267,6 +274,7 @@ filepaths = gamrywb.dta.findFiles(folder);
 kind = gamrywb.dta.detectType(filepath);
 [item, status] = gamrywb.dta.loadFile(filepath, expectedKind);
 [items, report] = gamrywb.dta.loadFiles(filepaths, expectedKind);
+[items, report] = gamrywb.dta.loadFolder(folder, expectedKind);
 ```
 
 Where:
@@ -441,6 +449,7 @@ Added:
 +gamrywb/+dta/findFiles.m
 +gamrywb/+dta/loadFile.m
 +gamrywb/+dta/loadFiles.m
++gamrywb/+dta/loadFolder.m
 ```
 
 Keep it conservative:
