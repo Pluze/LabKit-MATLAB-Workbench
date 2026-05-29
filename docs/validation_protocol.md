@@ -20,9 +20,15 @@ Default local test command:
 scripts/run_matlab_tests.sh
 ```
 
+Optional GUI launch smoke command:
+
+```bash
+scripts/run_matlab_tests.sh --gui
+```
+
 The default test runner is for pure functions only.
 
-Do not run interactive GUI apps in MATLAB `-batch` mode.
+Do not run interactive GUI workflows in MATLAB `-batch` mode.
 
 ---
 
@@ -317,6 +323,8 @@ Nyquist equal-axis behavior
 
 GUI validation is not part of the default batch test runner.
 
+The optional `--gui` smoke test verifies only that the five root compatibility GUI entry points can create and close their main `uifigure` windows. It does not validate user interaction, file dialogs, callbacks that require user input, visual layout quality, or exported files.
+
 Manual GUI checks should confirm:
 
 - original command names still launch
@@ -326,6 +334,9 @@ Manual GUI checks should confirm:
 - plot controls still work
 - export buttons still produce expected files
 - result tables still populate
+- log panels still show meaningful messages
+
+Keep noninteractive GUI smoke tests separate from the default pure-function test runner.
 
 ---
 
@@ -343,13 +354,10 @@ remove by filepath or item name
 MAT save/load round trip
 batch summary name/filepath/ok/message columns
 ```
-- log panels still show meaningful messages
-
-If a future noninteractive GUI smoke test is added, keep it separate from the default pure-function test runner.
 
 ---
 
-## 13. Handoff Requirements After Validation
+## 14. Handoff Requirements After Validation
 
 After a refactor phase, report:
 

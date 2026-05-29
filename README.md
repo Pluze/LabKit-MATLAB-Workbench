@@ -66,13 +66,19 @@ From a macOS shell, run:
 scripts/run_matlab_tests.sh
 ```
 
+To include the optional noninteractive GUI launch smoke test, run:
+
+```bash
+scripts/run_matlab_tests.sh --gui
+```
+
 The test runner attempts to find MATLAB through:
 
 1. `MATLAB_CMD`
 2. `matlab` on PATH
 3. `/Applications/MATLAB_*.app/bin/matlab`
 
-The default tests are intended for pure functions only. Do not run interactive GUI apps in MATLAB `-batch` mode.
+The default tests are intended for pure functions only. The optional `--gui` mode checks that the legacy GUI entry points can create and close their main `uifigure` windows; it does not click controls, open file dialogs, or validate manual interactions.
 
 ---
 

@@ -80,6 +80,12 @@ Use the repository test runner after executable MATLAB changes:
 scripts/run_matlab_tests.sh
 ```
 
+Use the optional GUI smoke test only when GUI entry points, wrappers, layout initialization, or test runner GUI support changes:
+
+```bash
+scripts/run_matlab_tests.sh --gui
+```
+
 The script attempts to find MATLAB through:
 
 1. `MATLAB_CMD` environment variable
@@ -92,7 +98,7 @@ If MATLAB cannot be executed, report the blocker and perform static checks only.
 
 ## 6. GUI Testing Warning
 
-Do not run interactive GUI apps in MATLAB `-batch` mode.
+Do not run interactive GUI workflows in MATLAB `-batch` mode.
 
 The default test runner is for pure functions only, such as:
 
@@ -103,7 +109,7 @@ The default test runner is for pure functions only, such as:
 - future analysis functions
 - export table builders
 
-Interactive GUI behavior should be checked manually or through a separate non-default smoke test.
+Interactive GUI behavior should be checked manually. The non-default `--gui` smoke test may launch and immediately close GUI entry points to verify that wrappers and initial figure construction still work; it must not click controls, open file dialogs, or depend on manual input.
 
 ---
 

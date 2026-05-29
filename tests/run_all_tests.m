@@ -1,5 +1,9 @@
-function results = run_all_tests()
+function results = run_all_tests(includeGui)
 %RUN_ALL_TESTS Run the current MATLAB test suite.
+
+    if nargin < 1
+        includeGui = false;
+    end
 
     root = fileparts(fileparts(mfilename('fullpath')));
     addpath(root);
@@ -10,6 +14,9 @@ function results = run_all_tests()
         @test_parseCVCTDTA, @test_detectPulses, @test_makeChronoItem, @test_chronoOverlayExport, ...
         @test_computeVTResistance, @test_computeCIC, @test_computeCSC, @test_plotCVCT, ...
         @test_eisOverlayExport, @test_sessionUtilities};
+    if includeGui
+        tests{end+1} = @test_gui_smoke;
+    end
     results = struct('name', {}, 'passed', {}, 'message', {});
 
     for k = 1:numel(tests)
