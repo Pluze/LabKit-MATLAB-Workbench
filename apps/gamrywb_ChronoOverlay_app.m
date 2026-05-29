@@ -26,34 +26,13 @@ function varargout = gamrywb_ChronoOverlay_app(varargin)
     left = ui.leftGrid;
     right = ui.rightGrid;
 
-    pButtons = uipanel(left, 'Title', 'Files');
-    pButtons.Layout.Row = 1;
-    gb = uigridlayout(pButtons, [4 2]);
-    gb.RowHeight = {'fit', 'fit', 'fit', 'fit'};
-    gb.ColumnWidth = {'1x', '1x'};
-    gb.Padding = [8 8 8 8];
-    gb.RowSpacing = 8;
-    gb.ColumnSpacing = 8;
-
-    btnOpen = uibutton(gb, 'Text', 'Open DTA file(s)', 'ButtonPushedFcn', @onOpenFiles);
-    btnOpen.Layout.Row = 1;
-    btnOpen.Layout.Column = [1 2];
-
-    btnOpenFolder = uibutton(gb, 'Text', 'Open folder recursively', 'ButtonPushedFcn', @onOpenFolder);
-    btnOpenFolder.Layout.Row = 2;
-    btnOpenFolder.Layout.Column = [1 2];
-
-    btnRemove = uibutton(gb, 'Text', 'Remove selected', 'ButtonPushedFcn', @onRemoveSelected);
-    btnRemove.Layout.Row = 3;
-    btnRemove.Layout.Column = 1;
-
-    btnClear = uibutton(gb, 'Text', 'Clear all', 'ButtonPushedFcn', @onClearAll);
-    btnClear.Layout.Row = 3;
-    btnClear.Layout.Column = 2;
-
-    btnExport = uibutton(gb, 'Text', 'Export curves CSV', 'ButtonPushedFcn', @onExportCSV);
-    btnExport.Layout.Row = 4;
-    btnExport.Layout.Column = [1 2];
+    fileCallbacks = struct();
+    fileCallbacks.onOpenFiles = @onOpenFiles;
+    fileCallbacks.onOpenFolder = @onOpenFolder;
+    fileCallbacks.onRemoveSelected = @onRemoveSelected;
+    fileCallbacks.onClearAll = @onClearAll;
+    fileCallbacks.onExport = @onExportCSV;
+    gamrywb.ui.createFilePanel(left, 'Export curves CSV', fileCallbacks);
 
     lbFiles = uilistbox(left, ...
         'Items', {}, ...

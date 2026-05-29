@@ -63,6 +63,7 @@ Current shared UI helpers:
 +gamrywb/+ui/createLabeledDropdown.m
 +gamrywb/+ui/createLabeledEditField.m
 +gamrywb/+ui/createTwoPaneShell.m
++gamrywb/+ui/createFilePanel.m
 +gamrywb/+ui/buildCICBatchTableData.m
 +gamrywb/+ui/buildVTResistanceBatchTableData.m
 ```
@@ -248,6 +249,7 @@ refreshFileListbox
 createLabeledDropdown
 createLabeledEditField
 createTwoPaneShell
+createFilePanel
 clearAxisObjects
 disableAxesInteractivity
 hardResetAxis
@@ -257,9 +259,7 @@ Next candidates:
 
 ```text
 createAxes
-createTwoPaneShell
 createTabbedDualPlotShell
-createFilePanel
 createLogArea
 createResultTable
 createInfoGrid
@@ -487,6 +487,7 @@ Helper:
 
 ```text
 +gamrywb/+ui/createTwoPaneShell.m    done for Chrono/EIS overlay apps
++gamrywb/+ui/createFilePanel.m    done for Chrono/EIS overlay apps
 ```
 
 Expected return struct:
@@ -501,6 +502,7 @@ ui.rightGrid
 ```
 
 Keep app-specific controls and axes outside the shell.
+The shared files panel owns only the common button layout and callback wiring surface; dialogs and load/export behavior stay in app code.
 
 Acceptance criteria:
 
@@ -672,6 +674,7 @@ Use this section to record meaningful changes in strategy.
 - refreshFileListbox shares session-item-to-listbox refresh for Chrono/EIS
 - createLabeledDropdown and createLabeledEditField are extracted for Chrono/EIS plot option rows
 - createTwoPaneShell starts Phase D by sharing the Chrono/EIS outer two-pane shell while keeping app-specific controls and axes in app files
+- createFilePanel shares the Chrono/EIS files button panel while keeping dialogs and export behavior in app files
 - loadFilesIntoSession starts the +gamrywb/+app layer for duplicate-aware file/session loading in Chrono/EIS
 - removeSelectedItemsFromSession shares selected-file removal for Chrono/EIS while preserving app-owned refresh and plotting
 - selectItemsByNames shares empty-selection-as-all item lookup for Chrono/EIS plot and export paths

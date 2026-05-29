@@ -38,34 +38,13 @@ function varargout = gamrywb_EIS_app(varargin)
     left = ui.leftGrid;
     right = ui.rightGrid;
 
-    pFiles = uipanel(left, 'Title', 'Files');
-    pFiles.Layout.Row = 1;
-    gf = uigridlayout(pFiles, [4 2]);
-    gf.RowHeight = {'fit', 'fit', 'fit', 'fit'};
-    gf.ColumnWidth = {'1x', '1x'};
-    gf.Padding = [8 8 8 8];
-    gf.RowSpacing = 8;
-    gf.ColumnSpacing = 8;
-
-    btnOpen = uibutton(gf, 'Text', 'Open DTA file(s)', 'ButtonPushedFcn', @onOpenFiles);
-    btnOpen.Layout.Row = 1;
-    btnOpen.Layout.Column = [1 2];
-
-    btnOpenFolder = uibutton(gf, 'Text', 'Open folder recursively', 'ButtonPushedFcn', @onOpenFolder);
-    btnOpenFolder.Layout.Row = 2;
-    btnOpenFolder.Layout.Column = [1 2];
-
-    btnRemove = uibutton(gf, 'Text', 'Remove selected', 'ButtonPushedFcn', @onRemoveSelected);
-    btnRemove.Layout.Row = 3;
-    btnRemove.Layout.Column = 1;
-
-    btnClear = uibutton(gf, 'Text', 'Clear all', 'ButtonPushedFcn', @onClearAll);
-    btnClear.Layout.Row = 3;
-    btnClear.Layout.Column = 2;
-
-    btnExport = uibutton(gf, 'Text', 'Export current plot CSV', 'ButtonPushedFcn', @onExportCSV);
-    btnExport.Layout.Row = 4;
-    btnExport.Layout.Column = [1 2];
+    fileCallbacks = struct();
+    fileCallbacks.onOpenFiles = @onOpenFiles;
+    fileCallbacks.onOpenFolder = @onOpenFolder;
+    fileCallbacks.onRemoveSelected = @onRemoveSelected;
+    fileCallbacks.onClearAll = @onClearAll;
+    fileCallbacks.onExport = @onExportCSV;
+    gamrywb.ui.createFilePanel(left, 'Export current plot CSV', fileCallbacks);
 
     lbFiles = uilistbox(left, ...
         'Items', {}, ...
