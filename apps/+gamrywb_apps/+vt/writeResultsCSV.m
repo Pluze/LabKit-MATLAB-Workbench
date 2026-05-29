@@ -1,5 +1,5 @@
-function [ok, msg] = writeVTResistanceResultsCSV(items, filepath)
-%WRITEVTRESISTANCERESULTSCSV Write VT resistance results in legacy CSV format.
+function [ok, msg] = writeResultsCSV(items, filepath)
+%WRITERESULTSCSV Write VT resistance results in legacy CSV format.
 
     ok = true;
     msg = '';
@@ -16,7 +16,7 @@ function [ok, msg] = writeVTResistanceResultsCSV(items, filepath)
     cleaner = onCleanup(@() fclose(fid));
 
     try
-        T = gamrywb.io.buildVTResistanceResultsTable(items);
+        T = gamrywb_apps.vt.buildResultsTable(items);
         fprintf(fid, 'File,Ic_A,Ia_A,Vc_ss_V,Va_ss_V,Vc_baseline_V,Va_baseline_V,dVc_V,dVa_V,Rc_bc_ohm,Ra_bc_ohm,Ravg_bc_ohm,WindowMode,Detection,Status\n');
         for i = 1:height(T)
             fprintf(fid, '"%s",%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,"%s","%s","%s"\n', ...

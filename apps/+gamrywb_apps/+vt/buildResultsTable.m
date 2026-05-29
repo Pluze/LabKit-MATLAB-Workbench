@@ -1,5 +1,5 @@
-function T = buildVTResistanceResultsTable(items)
-%BUILDVTRESISTANCERESULTSTABLE Build legacy VT resistance CSV result table.
+function T = buildResultsTable(items)
+%BUILDRESULTSTABLE Build VT resistance CSV result table.
 
     file = cell(numel(items), 1);
     Ic_A = NaN(numel(items), 1);

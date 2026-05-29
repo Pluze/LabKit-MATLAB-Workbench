@@ -1,5 +1,5 @@
 function varargout = launchVTResistanceApp(varargin)
-%LAUNCHVTRESISTANCEAPP Launch the package-backed VT resistance app.
+%LAUNCHVTRESISTANCEAPP Launch the VT resistance app from apps/private.
 % GUI for estimating cathodic/anodic steady-state resistance from Gamry
 % MULTI_STEP_CHRONOPOT .DTA files.
 %
@@ -191,16 +191,11 @@ function varargout = launchVTResistanceApp(varargin)
     end
 
     function item = loadAndAnalyzeFile(filepath)
-        [~,name,ext] = fileparts(filepath);
-        item = struct();
-        item.filepath = filepath;
-        item.name = [name ext];
-        item.meta = [];
-        item.tables = [];
-        item.logmsg = {};
-        item.analysis = [];
+        [item, status] = gamrywb.dta.loadFile(filepath, "chrono");
+        if ~status.ok
+            error('%s', char(status.message));
+        end
 
-        [item.meta, item.tables, item.logmsg] = gamrywb.io.parseChronoDTA(filepath);
         for ii = 1:numel(item.logmsg)
             addLog(item.logmsg{ii});
         end
@@ -226,7 +221,7 @@ function varargout = launchVTResistanceApp(varargin)
         opts.voltageMode = ddVoltageMode.Value;
         opts.pulseMode = ddPulseMode.Value;
 
-        A = gamrywb.analysis.computeVTResistance(item, opts);
+        A = gamrywb_apps.vt.computeResistance(item, opts);
         if A.ok
             addLog(sprintf('%s: Rc=%.6g ohm, Ra=%.6g ohm, Ravg=%.6g ohm', ...
                 item.name, A.Rc_abs_ohm, A.Ra_abs_ohm, A.Ravg_abs_ohm));
@@ -273,7 +268,7 @@ function varargout = launchVTResistanceApp(varargin)
             tbl.Data = cell(0,9);
             return;
         end
-        tbl.Data = gamrywb.ui.buildVTResistanceBatchTableData(S.items);
+            tbl.Data = gamrywb_apps.vt.buildBatchTableData(S.items);
     end
 
     function refreshResultsSummary()
@@ -448,7 +443,7 @@ function varargout = launchVTResistanceApp(varargin)
             return;
         end
         out = fullfile(p,f);
-        [ok, msg] = gamrywb.io.writeVTResistanceResultsCSV(S.items, out);
+        [ok, msg] = gamrywb_apps.vt.writeResultsCSV(S.items, out);
         if ~ok
             uialert(fig,msg,'Export');
             return;

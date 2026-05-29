@@ -143,10 +143,10 @@ Current analysis result structs intentionally preserve compatibility fields used
 VT result/export helpers:
 
 ```text
-gamrywb.analysis.computeVTResistance
-gamrywb.io.buildVTResistanceResultsTable
-gamrywb.io.writeVTResistanceResultsCSV
-gamrywb.ui.buildVTResistanceBatchTableData
+gamrywb_apps.vt.computeResistance
+gamrywb_apps.vt.buildResultsTable
+gamrywb_apps.vt.writeResultsCSV
+gamrywb_apps.vt.buildBatchTableData
 ```
 
 VT CSV column order:

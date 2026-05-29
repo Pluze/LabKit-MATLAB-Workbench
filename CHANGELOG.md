@@ -19,9 +19,11 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Moved the EIS app implementation under `apps/private` so app-specific workflow code no longer lives in the reusable `+gamrywb` package.
 - Moved the Chrono overlay app implementation under `apps/private` so overlay workflow code no longer lives in the reusable `+gamrywb` package.
 - Moved the CSC app implementation and CSC-specific charge/CSC calculations into the app-side namespace outside the reusable `+gamrywb` package.
+- Moved the VT resistance app implementation and VT-specific resistance/export/table logic into the app-side namespace outside the reusable `+gamrywb` package.
 - Routed the EIS app's file loading through the GUI-free DTA facade instead of constructing EIS items directly in the app layer.
 - Routed the Chrono overlay app's file loading through the GUI-free DTA facade while keeping pulse-gap alignment in the app workflow.
 - Routed the CSC app's CV/CT file loading through the GUI-free DTA facade instead of parsing CV/CT files directly in the app layer.
+- Routed the VT resistance app's chrono file loading through the GUI-free DTA facade instead of parsing chrono files directly in the app layer.
 - Extracted shared batch-result table panel construction for VT/CIC-style apps into `+gamrywb/+ui`.
 - Extracted shared top/bottom plot selection and axes reset helpers for VT/CIC-style apps into `+gamrywb/+ui`.
 - Shared the VT/CIC clear-all session reset sequence through `+gamrywb/+app`.
@@ -34,7 +36,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Extracted the shared tabbed dual-plot shell for VT/CIC-style apps into `+gamrywb/+ui` and adopted it in the VT resistance and CIC apps.
 - Moved CSC app assembly behind the public `apps/` entry point, then relocated it under `apps/private` as an independent-app pattern.
 - Moved CIC app assembly behind `gamrywb.app.launchCICApp` while keeping the public `apps/` entry point.
-- Moved VT resistance app assembly behind `gamrywb.app.launchVTResistanceApp` while keeping the public `apps/` entry point.
+- Moved VT resistance app assembly behind the public `apps/` entry point, then relocated it under `apps/private` as an independent-app pattern.
 - Moved EIS app assembly behind the public `apps/` entry point, then relocated it under `apps/private` as the reference independent-app pattern.
 - Moved Chrono overlay app assembly behind the public `apps/` entry point, then relocated it under `apps/private` as an independent-app pattern.
 - Extracted shared initial axes creation for Chrono/EIS overlay apps into `+gamrywb/+ui`.

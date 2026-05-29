@@ -1,5 +1,5 @@
-function A = computeVTResistance(item, opts)
-%COMPUTEVTRESISTANCE Compute legacy-compatible VT resistance metrics.
+function A = computeResistance(item, opts)
+%COMPUTERESISTANCE Compute VT resistance metrics for the VT app.
 
     if nargin < 2
         opts = struct();
@@ -57,8 +57,8 @@ function A = computeVTResistance(item, opts)
         return;
     end
 
-    [cStart, cEnd] = gamrywb.analysis.selectSteadyWindow(pulse.cath_start, pulse.cath_end, A.windowMode);
-    [aStart, aEnd] = gamrywb.analysis.selectSteadyWindow(pulse.anod_start, pulse.anod_end, A.windowMode);
+    [cStart, cEnd] = gamrywb_apps.vt.selectSteadyWindow(pulse.cath_start, pulse.cath_end, A.windowMode);
+    [aStart, aEnd] = gamrywb_apps.vt.selectSteadyWindow(pulse.anod_start, pulse.anod_end, A.windowMode);
     cathMask = t >= cStart & t <= cEnd;
     anodMask = t >= aStart & t <= aEnd;
     if nnz(cathMask) < 2 || nnz(anodMask) < 2
@@ -82,9 +82,9 @@ function A = computeVTResistance(item, opts)
     A.cathBaselineEnd = pulse.pre_end;
     A.anodBaselineStart = pulse.post_start;
     A.anodBaselineEnd = pulse.post_end;
-    [A.Vc_baseline_V, A.cathBaselineWindow_s] = gamrywb.analysis.estimateBaseline( ...
+    [A.Vc_baseline_V, A.cathBaselineWindow_s] = gamrywb_apps.vt.estimateBaseline( ...
         t, Vf, pulse.pre_start, pulse.pre_end, 0);
-    [A.Va_baseline_V, A.anodBaselineWindow_s] = gamrywb.analysis.estimateBaseline( ...
+    [A.Va_baseline_V, A.anodBaselineWindow_s] = gamrywb_apps.vt.estimateBaseline( ...
         t, Vf, pulse.post_start, pulse.post_end, chooseFinite(A.Vc_baseline_V, 0));
 
     A.dVc_V = A.Vc_ss_V - A.Vc_baseline_V;

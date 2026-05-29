@@ -65,7 +65,7 @@ completely new app type: about 6/10 convenient
 Why similar apps are now easier:
 
 - public app entry points are thin wrappers under `apps/`
-- app bodies should live under `apps/private`; EIS, Chrono overlay, and CSC are the first reference migrations
+- app bodies should live under `apps/private`; EIS, Chrono overlay, CSC, and VT resistance are the first reference migrations
 - common GUI shells and panels live under `+gamrywb/+ui`
 - scientific calculations live under `+gamrywb/+analysis`
 - plotting helpers live under `+gamrywb/+plot`
@@ -425,7 +425,7 @@ Do not expand this into a schema framework until an app migration proves the mis
 
 ### Phase C: Move app implementations out of `+gamrywb` while using the DTA facade
 
-Status: started with EIS, Chrono overlay, and CSC as reference app-structure migrations. EIS, Chrono overlay, and CSC now use the DTA facade for file loading.
+Status: started with EIS, Chrono overlay, CSC, and VT resistance as reference app-structure migrations. EIS, Chrono overlay, CSC, and VT resistance now use the DTA facade for file loading.
 
 Recommended candidates:
 
@@ -448,15 +448,16 @@ The Chrono overlay app implementation now lives under `apps/private`, not under 
 
 The CSC app implementation now lives under `apps/private`, not under `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "cvct")` for file loading. CSC-specific charge and result-table calculations live under `apps/+gamrywb_apps/+csc`, not in reusable `+gamrywb/+analysis` or `+gamrywb/+io`. This app-side package is a migration step for testability, not a new reusable app abstraction; collapse it into the CSC app file if/when tests can still verify behavior cleanly.
 
+The VT resistance app implementation now lives under `apps/private`, not under `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "chrono")` for file loading. VT-specific resistance, export, and table-display helpers live under `apps/+gamrywb_apps/+vt`, not in reusable `+gamrywb/+analysis`, `+gamrywb/+io`, or `+gamrywb/+ui`.
+
 These are the reference paths for adopting the DTA facade in the remaining apps.
 
 Remaining migration candidates:
 
 ```text
-VT resistance: replace direct chrono parsing in the app loader
 CIC: replace direct chrono parsing in the app loader
 CSC: replace direct CV/CT parsing in the app loader
-VT/CIC: move experiment-specific calculations, plots, and export formatting toward apps/private when each app is migrated
+CIC: move experiment-specific calculations, plots, and export formatting toward apps/private when migrated
 Generic helpers still in +gamrywb/+app: move toward the GUI base library if they remain useful after app migrations
 App-side helper packages: keep only as temporary testable waypoints; do not grow them into a framework
 ```
@@ -469,6 +470,7 @@ refactor: use dta facade in chrono overlay app
 refactor: move EIS app implementation out of gamrywb package
 refactor: move chrono overlay app implementation out of gamrywb package
 refactor: move CSC app workflow out of gamrywb package
+refactor: move VT resistance workflow out of gamrywb package
 ```
 
 ### Phase D: Define lightweight extension contracts

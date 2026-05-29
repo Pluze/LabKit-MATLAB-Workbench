@@ -1,5 +1,5 @@
 function test_computeVTResistance()
-%TEST_COMPUTEVTRESISTANCE Verify package-backed VT resistance analysis.
+%TEST_COMPUTEVTRESISTANCE Verify VT resistance app analysis.
 
     root = fileparts(fileparts(mfilename('fullpath')));
     fixture = fullfile(root, 'demo', 'chrono_chronopot_current_pulse_0p2ms.DTA');
@@ -14,7 +14,7 @@ function test_computeVTResistance()
     opts.voltageMode = 'Baseline-corrected dV/I';
     opts.pulseMode = 'Metadata first, then auto';
 
-    A = gamrywb.analysis.computeVTResistance(item, opts);
+    A = gamrywb_apps.vt.computeResistance(item, opts);
     assert(A.ok, A.message);
     assert(strcmp(A.message, 'OK'), 'Successful VT resistance result should preserve legacy OK status.');
     assert(strcmp(A.windowMode, opts.windowMode), 'Window mode should be echoed in the result.');
@@ -36,29 +36,29 @@ function test_computeVTResistance()
     assertClose(A.cathBaselineWindow_s, 0.001, 1e-15, 'Cathodic baseline window');
 
     opts.windowMode = 'Center 60% median';
-    B = gamrywb.analysis.computeVTResistance(item, opts);
+    B = gamrywb_apps.vt.computeResistance(item, opts);
     assert(B.ok, B.message);
     assertClose(B.Vc_ss_V, -1.21322, 1e-12, 'Center-window cathodic steady voltage');
     assertClose(B.Ravg_abs_ohm, 99.417071968208802, 1e-10, 'Center-window average resistance');
 
     opts.windowMode = 'Full pulse median';
     opts.voltageMode = 'Raw Vf/I';
-    C = gamrywb.analysis.computeVTResistance(item, opts);
+    C = gamrywb_apps.vt.computeResistance(item, opts);
     assert(C.ok, C.message);
     assertClose(C.Rc_abs_ohm, 99.967849900252247, 1e-10, 'Raw-mode cathodic resistance');
     assertClose(C.Ra_abs_ohm, 98.93628425123481, 1e-10, 'Raw-mode anodic resistance');
     assertClose(C.Ravg_abs_ohm, 99.452067075743528, 1e-10, 'Raw-mode average resistance');
 
-    [c1, c2] = gamrywb.analysis.selectSteadyWindow(1, 2, 'Center 60% median');
+    [c1, c2] = gamrywb_apps.vt.selectSteadyWindow(1, 2, 'Center 60% median');
     assertClose(c1, 1.2, 1e-15, 'Center-window start');
     assertClose(c2, 1.8, 1e-15, 'Center-window end');
 
-    [baseline, window] = gamrywb.analysis.estimateBaseline([0; 1], [NaN; NaN], 0, 1, 5);
+    [baseline, window] = gamrywb_apps.vt.estimateBaseline([0; 1], [NaN; NaN], 0, 1, 5);
     assertClose(baseline, 5, 1e-15, 'Baseline fallback');
     assertClose(window, 1, 1e-15, 'Baseline window duration');
 
     bad = struct('meta', struct(), 'tables', struct([]));
-    D = gamrywb.analysis.computeVTResistance(bad, struct());
+    D = gamrywb_apps.vt.computeResistance(bad, struct());
     assert(~D.ok, 'Missing curve should fail.');
     assert(strcmp(D.message, 'Main transient table not found.'), 'Missing curve message should match legacy wording.');
 end

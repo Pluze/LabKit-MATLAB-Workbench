@@ -1,5 +1,5 @@
-function C = buildVTResistanceBatchTableData(items)
-%BUILDVTRESISTANCEBATCHTABLEDATA Build legacy VT resistance uitable data.
+function C = buildBatchTableData(items)
+%BUILDBATCHTABLEDATA Build VT resistance uitable data.
 
     C = cell(numel(items), 9);
     for i = 1:numel(items)
