@@ -37,7 +37,7 @@ apps/ experiment apps
     utility library: small shared helpers only when they are genuinely cross-cutting
 ```
 
-Do not add new experiment-specific app logic to the reusable `+gamrywb` library. Existing `+gamrywb/+analysis`, `+gamrywb/+plot`, app-specific export helpers, and app-side helper namespaces are transitional unless they are genuinely broad, low-level utilities. When touching them, consider whether the logic should move into the relevant app file instead of becoming a deeper abstraction.
+Do not add new experiment-specific app logic to the reusable `+gamrywb` library. Keep `+gamrywb/+analysis` pulse-focused. App-specific export helpers and app-side helper namespaces are transitional unless they are genuinely broad, low-level utilities. When touching them, consider whether the logic should move into the relevant app file instead of becoming a deeper abstraction.
 
 Do not change:
 

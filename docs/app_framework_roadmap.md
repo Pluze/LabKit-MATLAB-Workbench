@@ -494,7 +494,7 @@ Remaining migration candidates:
 
 ```text
 App-side helper packages: keep only as temporary testable waypoints; do not grow them into a framework
-Remaining +analysis functions: keep pulse detection broad; classify any other helper before adding new behavior there
+Remaining +analysis functions: keep the package pulse-detection focused; classify any other helper before adding new behavior there
 Generic GUI/session helpers now live in +gamrywb/+ui; do not recreate +gamrywb/+app for app-specific workflow code
 ```
 

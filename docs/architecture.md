@@ -50,8 +50,8 @@ The app files are package-backed and do not delegate to legacy GUI files.
 ```text
 +gamrywb/+dta       GUI-free DTA type detection and loading facade
 +gamrywb/+io        DTA parsers, folder discovery, generic table CSV writing, session IO
-+gamrywb/+data      item/session construction and table/column access
-+gamrywb/+analysis  broad pulse detection helpers and remaining low-level utilities
++gamrywb/+data      item/session construction, table/column access, result summaries
++gamrywb/+analysis  broad pulse detection helpers
 +gamrywb/+ui        reusable GUI framework helpers and small UI construction helpers
 +gamrywb/+util      small generic helpers
 ```
@@ -68,7 +68,7 @@ Library 1: scientific-app GUI base
 Library 2: Gamry/DTA parsing and loading
   +gamrywb/+dta
   +gamrywb/+io parser functions
-  +gamrywb/+data item/session construction and table/column access
+  +gamrywb/+data item/session construction, table/column access, and result summaries
 
 Library 3: utility base
   +gamrywb/+util
@@ -84,7 +84,7 @@ This map is a design boundary, not a reason to force every function into exactly
 
 For concrete calling examples and a future app template, see `docs/api_usage.md`.
 
-`+gamrywb/+analysis` and app-specific export helpers in `+gamrywb/+io` are transitional when they encode experiment-specific decisions. Move those decisions toward app-side code when touching the related app. Keep only broadly reusable, parameter-light math and data utilities in the library.
+`+gamrywb/+analysis` is intentionally narrow: it currently owns reusable pulse detection. App-specific export helpers in `+gamrywb/+io` are transitional when they encode experiment-specific decisions. Move those decisions toward app-side code when touching the related app. Keep only broadly reusable, parameter-light math and data utilities in the library.
 
 Analysis, data, and IO package functions should not depend on GUI state or call `uialert`. Plot/UI helpers may accept explicit graphics handles and should keep side effects limited to those handles.
 
@@ -102,8 +102,8 @@ The GUI decides how to display that status.
 - `apps/`: user-facing app entry points and app-specific implementations. All current app bodies are single public app source files. EIS and Chrono overlay have their app-specific workflow helpers folded into local functions. CSC, VT, and CIC-specific analysis/export/plot helpers currently live under `apps/+gamrywb_apps` as app-side transitional code so numerical tests remain direct.
 - `+dta`: GUI-free facade for supported DTA family detection, single-file loading, and batch loading with status/report structs. It delegates to existing `+io` parser and `+data` item-construction helpers.
 - `+io`: DTA parsers, folder discovery, and session save/load. Export helpers that encode experiment-specific formats should stay with the owning app rather than in reusable `+gamrywb`.
-- `+data`: table/column accessors, CV/CT selected-column access, chrono item construction, EIS item construction, session add/remove helpers.
-- `+analysis`: pulse detection helpers and remaining low-level math utilities. Experiment-specific calculations should migrate toward app-side code unless they are clearly general, parameter-light math utilities.
+- `+data`: table/column accessors, CV/CT selected-column access, chrono item construction, EIS item construction, session add/remove helpers, and generic item/result summaries.
+- `+analysis`: pulse detection helpers. Experiment-specific calculations should migrate toward app-side code unless they are clearly general, parameter-light math utilities.
 - `+ui`: reusable GUI framework helpers, including app axes creation/reset, selected-curve plotting, log append and log panel, multi-select and single-select file-listbox refresh, multi-file and single-select file-panel, summary row, result table panel, info/log text-area, plot-options panel, simple labeled-control, two-pane shell, tabbed dual-plot shell, top/bottom plot-control construction/state helpers, and generic session/listbox orchestration used by apps.
 - `+util`: low-risk generic helpers used by parser, data, analysis, UI, and export code. It should not contain GUI state, DTA-family dispatch, scientific result definitions, plot labels, or export schemas.
 

@@ -77,6 +77,7 @@ session = gamrywb.data.makeSession('new_experiment');
 [zcurve, ok, msg] = gamrywb.data.getZCurve(item.tables);
 values = gamrywb.data.getColumn(curve, 'Vf');
 [x, y] = gamrywb.data.getCurveXY(curve, 'T', 'Im');
+summary = gamrywb.data.summarizeBatchResults(session.items);
 ```
 
 Session structs are plain structs. Do not convert them to MATLAB classes without an explicit design change and tests.

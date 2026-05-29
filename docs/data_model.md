@@ -196,9 +196,9 @@ Helpers:
 gamrywb.data.makeSession
 gamrywb.data.addFilesToSession
 gamrywb.data.removeFilesFromSession
+gamrywb.data.summarizeBatchResults
 gamrywb.io.saveSession
 gamrywb.io.loadSession
-gamrywb.analysis.summarizeBatchResults
 ```
 
 `addFilesToSession` supports `onAdded`, `onSkipped`, and `onFailed` callbacks so apps can preserve log timing while sharing add/duplicate/failure logic.

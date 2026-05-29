@@ -29,7 +29,7 @@ function test_sessionUtilities()
     assert(isequal(report2.skipped, {'/tmp/a.DTA'}), 'Duplicate add should report skipped filepath.');
     assert(strcmp(events{end, 1}, 'skipped'), 'Session add callback should report skipped duplicates.');
 
-    T = gamrywb.analysis.summarizeBatchResults(session.items);
+    T = gamrywb.data.summarizeBatchResults(session.items);
     assert(isequal(T.Properties.VariableNames, {'Name', 'Filepath', 'Ok', 'Message'}), ...
         'Summary columns should be stable.');
     assert(isequal(T.Name, {'a.DTA'; 'b.DTA'}), 'Summary names should use item names.');
