@@ -68,6 +68,7 @@ Completed work:
 - Added legacy-directory compatibility shims.
 - Added low-risk utility helpers under `+gamrywb/+util`.
 - Added initial local MATLAB test runner.
+- Added optional noninteractive GUI compatibility-contract checks for entry-point launch, initialized layout/control state, component counts, callback bindings, and safe empty-session callbacks.
 
 Extracted utility helpers include:
 
@@ -451,7 +452,7 @@ Multi-DTA overlay/export must preserve:
 2. Shared pulse detection currently targets the legacy single cathodic-first biphasic use case. General protocol support should be treated as a future feature, not a refactor requirement.
 3. Existing tests validate extracted pure functions with demo fixtures, but not every legacy GUI output has a golden reference yet.
 4. CV/CSC export helper extraction, GUI migration to shared sessions, and app-specific export system work remain future work.
-5. Interactive GUI behavior is not covered by the default batch test runner.
+5. Interactive GUI behavior is not covered by the default batch test runner. Optional GUI tests cover launch, initialized layout/control compatibility, callback bindings, and safe empty-session callbacks only.
 
 ---
 

@@ -66,7 +66,7 @@ From a macOS shell, run:
 scripts/run_matlab_tests.sh
 ```
 
-To include the optional noninteractive GUI launch smoke test, run:
+To include optional noninteractive GUI checks, run:
 
 ```bash
 scripts/run_matlab_tests.sh --gui
@@ -78,7 +78,7 @@ The test runner attempts to find MATLAB through:
 2. `matlab` on PATH
 3. `/Applications/MATLAB_*.app/bin/matlab`
 
-The default tests are intended for pure functions only. The optional `--gui` mode checks that the legacy GUI entry points can create and close their main `uifigure` windows; it does not click controls, open file dialogs, or validate manual interactions.
+The default tests are intended for pure functions only. The optional `--gui` mode checks that the legacy GUI entry points can create and close their main `uifigure` windows, verifies the current GUI compatibility contract for controls/tabs/axes/tables/dropdown items/window sizes, and invokes safe callbacks that do not open dialogs. It does not open file dialogs, write exports, or validate manual interactions.
 
 ---
 

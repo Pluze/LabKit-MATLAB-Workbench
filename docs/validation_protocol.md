@@ -20,7 +20,7 @@ Default local test command:
 scripts/run_matlab_tests.sh
 ```
 
-Optional GUI launch smoke command:
+Optional noninteractive GUI command:
 
 ```bash
 scripts/run_matlab_tests.sh --gui
@@ -323,7 +323,9 @@ Nyquist equal-axis behavior
 
 GUI validation is not part of the default batch test runner.
 
-The optional `--gui` smoke test verifies only that the five root compatibility GUI entry points can create and close their main `uifigure` windows. It does not validate user interaction, file dialogs, callbacks that require user input, visual layout quality, or exported files.
+The optional `--gui` tests verify that the five root compatibility GUI entry points can create and close their main `uifigure` windows. They also enforce the current legacy GUI compatibility contract, including exact initialized component counts, required buttons, checkboxes, dropdown items, tab titles, axes, result tables, text areas, list boxes, window-size floors, and callback bindings for buttons/dropdowns. Safe callbacks such as refresh, reset, clear, dropdown changes, and checkbox changes are invoked on an empty session.
+
+The optional GUI tests do not validate file dialogs, callbacks that require user input, visual layout quality, exported files, manual plot interaction, or workflows that require loaded user data.
 
 Manual GUI checks should confirm:
 
@@ -336,7 +338,7 @@ Manual GUI checks should confirm:
 - result tables still populate
 - log panels still show meaningful messages
 
-Keep noninteractive GUI smoke tests separate from the default pure-function test runner.
+Keep noninteractive GUI tests separate from the default pure-function test runner.
 
 ---
 

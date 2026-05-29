@@ -16,6 +16,7 @@ function results = run_all_tests(includeGui)
         @test_eisOverlayExport, @test_sessionUtilities};
     if includeGui
         tests{end+1} = @test_gui_smoke;
+        tests{end+1} = @test_gui_layout_controls;
     end
     results = struct('name', {}, 'passed', {}, 'message', {});
 

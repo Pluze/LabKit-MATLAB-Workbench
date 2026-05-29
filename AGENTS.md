@@ -80,7 +80,7 @@ Use the repository test runner after executable MATLAB changes:
 scripts/run_matlab_tests.sh
 ```
 
-Use the optional GUI smoke test only when GUI entry points, wrappers, layout initialization, or test runner GUI support changes:
+Use the optional noninteractive GUI tests when GUI entry points, wrappers, layout initialization, safe callback wiring, or test runner GUI support changes:
 
 ```bash
 scripts/run_matlab_tests.sh --gui
@@ -109,7 +109,7 @@ The default test runner is for pure functions only, such as:
 - future analysis functions
 - export table builders
 
-Interactive GUI behavior should be checked manually. The non-default `--gui` smoke test may launch and immediately close GUI entry points to verify that wrappers and initial figure construction still work; it must not click controls, open file dialogs, or depend on manual input.
+Interactive GUI behavior should still be checked manually. The non-default `--gui` tests may launch and close GUI entry points, enforce the current legacy GUI compatibility contract for initialized controls/layout structure, and invoke callbacks that are safe on an empty session. They must not open file dialogs, write exports, depend on manual input, or exercise destructive workflows.
 
 ---
 
