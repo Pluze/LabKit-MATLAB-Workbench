@@ -51,7 +51,7 @@ t, Vf, Im, alignTime, tAligned
 
 Keep bridge fields until app, export, and test call sites no longer need them.
 
-Chrono overlay pulse-gap alignment, overlay plotting, and overlay export table construction live under `gamrywb_apps.chrono` because they are app workflow decisions rather than reusable DTA item schema.
+Chrono overlay pulse-gap alignment, overlay plotting, and overlay export table construction live as local functions in `apps/gamrywb_ChronoOverlay_app.m` because they are app workflow decisions rather than reusable DTA item schema.
 
 ## EIS Items
 

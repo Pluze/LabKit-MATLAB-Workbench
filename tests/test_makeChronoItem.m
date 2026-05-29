@@ -1,5 +1,5 @@
 function test_makeChronoItem()
-%TEST_MAKECHRONOITEM Verify chrono item construction and gap alignment.
+%TEST_MAKECHRONOITEM Verify reusable chrono item construction.
 
     root = fileparts(fileparts(mfilename('fullpath')));
     fixture = fullfile(root, 'demo', 'chrono_chronopot_current_pulse_0p2ms.DTA');
@@ -17,22 +17,8 @@ function test_makeChronoItem()
     assert(strcmp(item.message, 'Using table: Curve'), 'Main-curve message should preserve legacy wording.');
     assert(item.pulse.ok, item.pulseMessage);
 
-    [aligned, msg] = gamrywb_apps.chrono.alignByPulseGap(item);
-    assert(abs(aligned.alignTime - 1.22e-3) < 1e-12, 'Alignment should use blank-gap center.');
-    assert(isequal(aligned.tAligned, aligned.tAligned_s), 'Normalized aligned time should mirror legacy field.');
-    assert(abs(aligned.tAligned(1) - (aligned.t(1) - 1.22e-3)) < 1e-15, ...
-        'Aligned time vector should subtract the gap center.');
-    assert(contains(msg, 'aligned to cathodic/anodic blank center'), 'Alignment message should match legacy wording.');
-
-    fallback = struct();
-    fallback.name = 'synthetic';
-    fallback.t = [0.1; 0.2; 0.3];
-    fallback.pulse = gamrywb.analysis.emptyPulse();
-    fallback.pulseMessage = 'no pulse';
-    [fallback, fallbackMsg] = gamrywb_apps.chrono.alignByPulseGap(fallback);
-    assert(abs(fallback.alignTime - 0.1) < 1e-15, 'Missing pulse gap should align to first sample.');
-    assert(all(abs(fallback.tAligned - [0; 0.1; 0.2]) < 1e-12), ...
-        'Fallback aligned time should subtract the first sample.');
-    assert(strcmp(fallbackMsg, 'synthetic: pulse gap not found, fallback to first sample (no pulse).'), ...
-        'Fallback message should preserve legacy wording.');
+    assert(isfield(item, 'alignTime_s') && isnan(item.alignTime_s), ...
+        'Reusable chrono item construction should not perform app-specific alignment.');
+    assert(isfield(item, 'tAligned_s') && isempty(item.tAligned_s), ...
+        'Reusable chrono item construction should leave aligned time for app workflow code.');
 end

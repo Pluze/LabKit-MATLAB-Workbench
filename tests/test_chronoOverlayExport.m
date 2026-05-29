@@ -1,59 +1,21 @@
 function test_chronoOverlayExport()
-%TEST_CHRONOOVERLAYEXPORT Verify chrono overlay export table behavior.
+%TEST_CHRONOOVERLAYEXPORT Verify chrono overlay workflow stays app-local.
 
-    item1 = struct();
-    item1.name = 'A.DTA';
-    item1.tAligned = [0; 1];
-    item1.Vf = [10; 20];
-    item1.Im = [1; 2];
+    root = fileparts(fileparts(mfilename('fullpath')));
+    appFile = fullfile(root, 'apps', 'gamrywb_ChronoOverlay_app.m');
+    source = fileread(appFile);
 
-    item2 = struct();
-    item2.name = 'B 1.DTA';
-    item2.tAligned = [0.5; 1.5];
-    item2.Vf = [100; 300];
-    item2.Im = [-1; -3];
+    assert(~contains(source, 'gamrywb_apps.chrono'), ...
+        'Chrono overlay app should not depend on the transitional gamrywb_apps.chrono package.');
+    assert(contains(source, 'function [item, msg] = alignByPulseGap'), ...
+        'Pulse-gap alignment should be local to the Chrono overlay app file.');
+    assert(contains(source, 'function T = buildOverlayExportTable'), ...
+        'Overlay export table construction should be local to the Chrono overlay app file.');
+    assert(contains(source, 'function plotVTIT'), ...
+        'Overlay plotting should be local to the Chrono overlay app file.');
+    assert(contains(source, 'TimeGapCenterAligned_s'), ...
+        'Chrono overlay export column naming should remain visible in the app source.');
 
-    T = gamrywb_apps.chrono.buildOverlayExportTable([item1 item2]);
-    safe1 = gamrywb.util.sanitizeFieldName(item1.name);
-    safe2 = gamrywb.util.sanitizeFieldName(item2.name);
-    v1 = ['V_' safe1];
-    i1 = ['I_' safe1];
-    v2 = ['V_' safe2];
-    i2 = ['I_' safe2];
-
-    assert(isequal(T.Properties.VariableNames, [{'TimeGapCenterAligned_s'}, {v1}, {i1}, {v2}, {i2}]), ...
-        'Export table variable names should preserve legacy column naming.');
-    assert(isequal(T.TimeGapCenterAligned_s, [0; 0.5; 1; 1.5]), ...
-        'Export table should use the sorted union of aligned time vectors.');
-    assert(abs(T.(v1)(2) - 15) < 1e-12, 'First voltage column should be linearly interpolated.');
-    assert(abs(T.(i1)(2) - 1.5) < 1e-12, 'First current column should be linearly interpolated.');
-    assert(isnan(T.(v1)(4)) && isnan(T.(i1)(4)), 'First item should be NaN outside its time range.');
-    assert(abs(T.(v2)(3) - 200) < 1e-12, 'Second voltage column should be linearly interpolated.');
-    assert(abs(T.(i2)(3) + 2) < 1e-12, 'Second current column should be linearly interpolated.');
-    assert(isnan(T.(v2)(1)) && isnan(T.(i2)(1)), 'Second item should be NaN outside its time range.');
-
-    item3 = struct();
-    item3.name = 'C.DTA';
-    item3.tAligned_s = [2; 3];
-    item3.Vf_V = [5; 7];
-    item3.Im_A = [0.1; 0.3];
-    T2 = gamrywb_apps.chrono.buildOverlayExportTable(item3);
-    safe3 = gamrywb.util.sanitizeFieldName(item3.name);
-    assert(isequal(T2.TimeGapCenterAligned_s, [2; 3]), ...
-        'Export table should accept normalized aligned time fields.');
-    assert(isequal(T2.(['V_' safe3]), [5; 7]), ...
-        'Export table should accept normalized voltage fields.');
-
-    tmp = [tempname '.csv'];
-    cleaner = onCleanup(@() deleteIfExists(tmp));
-    gamrywb.io.exportTableCSV(T, tmp);
-    txt = fileread(tmp);
-    assert(startsWith(string(txt), strjoin(T.Properties.VariableNames, ',')), ...
-        'CSV header should match table variable names.');
-end
-
-function deleteIfExists(filepath)
-    if exist(filepath, 'file') == 2
-        delete(filepath);
-    end
+    assert(exist(fullfile(root, 'apps', '+gamrywb_apps', '+chrono'), 'dir') ~= 7, ...
+        'The transitional gamrywb_apps.chrono package should be removed.');
 end
