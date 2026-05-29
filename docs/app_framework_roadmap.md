@@ -64,6 +64,8 @@ Current shared UI helpers:
 +gamrywb/+ui/createLabeledEditField.m
 +gamrywb/+ui/createTwoPaneShell.m
 +gamrywb/+ui/createFilePanel.m
++gamrywb/+ui/createInfoArea.m
++gamrywb/+ui/createLogArea.m
 +gamrywb/+ui/buildCICBatchTableData.m
 +gamrywb/+ui/buildVTResistanceBatchTableData.m
 ```
@@ -250,6 +252,8 @@ createLabeledDropdown
 createLabeledEditField
 createTwoPaneShell
 createFilePanel
+createInfoArea
+createLogArea
 clearAxisObjects
 disableAxesInteractivity
 hardResetAxis
@@ -260,9 +264,7 @@ Next candidates:
 ```text
 createAxes
 createTabbedDualPlotShell
-createLogArea
 createResultTable
-createInfoGrid
 createTopBottomPlotPanel
 ```
 
@@ -488,6 +490,8 @@ Helper:
 ```text
 +gamrywb/+ui/createTwoPaneShell.m    done for Chrono/EIS overlay apps
 +gamrywb/+ui/createFilePanel.m    done for Chrono/EIS overlay apps
++gamrywb/+ui/createInfoArea.m    done for Chrono/EIS overlay apps
++gamrywb/+ui/createLogArea.m    done for Chrono/EIS overlay apps
 ```
 
 Expected return struct:
@@ -503,6 +507,7 @@ ui.rightGrid
 
 Keep app-specific controls and axes outside the shell.
 The shared files panel owns only the common button layout and callback wiring surface; dialogs and load/export behavior stay in app code.
+The shared info/log helpers own only the common read-only text-area placement and initial values.
 
 Acceptance criteria:
 
@@ -675,6 +680,7 @@ Use this section to record meaningful changes in strategy.
 - createLabeledDropdown and createLabeledEditField are extracted for Chrono/EIS plot option rows
 - createTwoPaneShell starts Phase D by sharing the Chrono/EIS outer two-pane shell while keeping app-specific controls and axes in app files
 - createFilePanel shares the Chrono/EIS files button panel while keeping dialogs and export behavior in app files
+- createInfoArea and createLogArea share Chrono/EIS read-only text-area placement while preserving app-specific info copy
 - loadFilesIntoSession starts the +gamrywb/+app layer for duplicate-aware file/session loading in Chrono/EIS
 - removeSelectedItemsFromSession shares selected-file removal for Chrono/EIS while preserving app-owned refresh and plotting
 - selectItemsByNames shares empty-selection-as-all item lookup for Chrono/EIS plot and export paths

@@ -11,6 +11,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 
 ### Changed
 
+- Extracted shared Chrono/EIS info and log text-area helpers into `+gamrywb/+ui`.
 - Extracted the shared Chrono/EIS files button panel into `+gamrywb/+ui`.
 - Extracted the shared Chrono/EIS two-pane outer shell into `+gamrywb/+ui`.
 - Extracted session item file-listbox refresh for Chrono/EIS overlay apps into `+gamrywb/+ui`.

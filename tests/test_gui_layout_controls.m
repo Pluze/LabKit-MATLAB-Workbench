@@ -10,6 +10,7 @@ function test_gui_layout_controls()
     checkVTResistance();
     checkCIC();
     checkFileListboxRefreshHelper();
+    checkInfoLogAreaHelpers();
 end
 
 function checkMultiDTA()
@@ -145,6 +146,24 @@ function checkFileListboxRefreshHelper()
     gamrywb.ui.refreshFileListbox(lb, struct([]));
     assert(isempty(lb.Items) && isempty(lb.Value), ...
         'File listbox helper should clear listbox items and values for empty sessions.');
+end
+
+function checkInfoLogAreaHelpers()
+    fig = uifigure('Visible', 'off', 'Name', 'gamrywb_info_log_area_probe');
+    cleaner = onCleanup(@() delete(fig));
+    grid = uigridlayout(fig, [5 1]);
+
+    txtInfo = gamrywb.ui.createInfoArea(grid, {'Usage:', 'Line 1'});
+    assert(txtInfo.Layout.Row == 4, 'Info area helper should place text area in row 4.');
+    assert(strcmp(txtInfo.Editable, 'off'), 'Info area helper should create a read-only text area.');
+    assert(sameStringCell(txtInfo.Value, {'Usage:', 'Line 1'}), ...
+        'Info area helper should preserve supplied text.');
+
+    txtLog = gamrywb.ui.createLogArea(grid);
+    assert(txtLog.Layout.Row == 5, 'Log area helper should place text area in row 5.');
+    assert(strcmp(txtLog.Editable, 'off'), 'Log area helper should create a read-only text area.');
+    assert(sameStringCell(txtLog.Value, {'GUI started.'}), ...
+        'Log area helper should preserve the default initial log line.');
 end
 
 function fig = launchFigure(entryName, expectedTitle)
