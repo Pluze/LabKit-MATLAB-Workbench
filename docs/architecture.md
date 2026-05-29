@@ -106,7 +106,7 @@ The GUI decides how to display that status.
 - `+data`: table/column accessors, CV/CT selected-column access, chrono item construction, EIS item construction, session add/remove/select/load helpers, and generic item/result summaries.
 - `+analysis`: pulse detection helpers. Experiment-specific calculations should migrate toward app-side code unless they are clearly general, parameter-light math utilities.
 - `+ui`: reusable GUI framework helpers, including generic axes creation/reset, selected-curve plotting, log append and log panel, generic listbox item refresh, multi-file and single-select file-panel, summary row, result table panel, plot-options panel, simple labeled-control, two-pane shell, tabbed dual-plot shell, and top/bottom plot-control construction/state helpers.
-- `+util`: low-risk generic helpers used by parser, data, analysis, UI, and export code. It should not contain GUI state, DTA-family dispatch, scientific result definitions, plot labels, or export schemas.
+- `+util`: low-risk generic helpers used by parser, data, analysis, UI, and app code, including string cleanup, simple struct operations, numeric window/index helpers, and safe interpolation. It should not contain GUI state, DTA-family dispatch, scientific result definitions, plot labels, or export schemas.
 
 ## Boundaries To Preserve
 

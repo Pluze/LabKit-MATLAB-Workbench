@@ -25,6 +25,11 @@ function test_util_functions()
 
     assert(gamrywb.util.nearestIndex([1 5 8], 6) == 2, 'nearestIndex should return nearest element index.');
 
+    assert(gamrywb.util.interp1Safe([0 2], [10 14], 1) == 12, ...
+        'interp1Safe should interpolate finite vectors.');
+    assert(isnan(gamrywb.util.interp1Safe([0 2], [10 NaN], 1)), ...
+        'interp1Safe should return NaN when source vectors contain NaN.');
+
     m = gamrywb.util.medianInWindow([1 2 3], [1 NaN 5], 1, 3);
     assert(m == 3, 'medianInWindow should omit NaN values.');
 

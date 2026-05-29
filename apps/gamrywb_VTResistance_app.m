@@ -382,18 +382,18 @@ function varargout = gamrywb_VTResistance_app(varargin)
         if strcmp(xChoice,'Sample #')
             x = A.pt;
             xlab = 'Sample #';
-            cathStartX = interp1_safe(A.t, A.pt, A.pulse.cath_start);
-            cathEndX = interp1_safe(A.t, A.pt, A.pulse.cath_end);
-            anodStartX = interp1_safe(A.t, A.pt, A.pulse.anod_start);
-            anodEndX = interp1_safe(A.t, A.pt, A.pulse.anod_end);
-            cathBaseStartX = interp1_safe(A.t, A.pt, A.pulse.pre_start);
-            cathBaseEndX = interp1_safe(A.t, A.pt, A.pulse.pre_end);
-            anodBaseStartX = interp1_safe(A.t, A.pt, A.anodBaselineStart);
-            anodBaseEndX = interp1_safe(A.t, A.pt, A.anodBaselineEnd);
-            cSteadyStartX = interp1_safe(A.t, A.pt, A.cathSteadyStart);
-            cSteadyEndX = interp1_safe(A.t, A.pt, A.cathSteadyEnd);
-            aSteadyStartX = interp1_safe(A.t, A.pt, A.anodSteadyStart);
-            aSteadyEndX = interp1_safe(A.t, A.pt, A.anodSteadyEnd);
+            cathStartX = gamrywb.util.interp1Safe(A.t, A.pt, A.pulse.cath_start);
+            cathEndX = gamrywb.util.interp1Safe(A.t, A.pt, A.pulse.cath_end);
+            anodStartX = gamrywb.util.interp1Safe(A.t, A.pt, A.pulse.anod_start);
+            anodEndX = gamrywb.util.interp1Safe(A.t, A.pt, A.pulse.anod_end);
+            cathBaseStartX = gamrywb.util.interp1Safe(A.t, A.pt, A.pulse.pre_start);
+            cathBaseEndX = gamrywb.util.interp1Safe(A.t, A.pt, A.pulse.pre_end);
+            anodBaseStartX = gamrywb.util.interp1Safe(A.t, A.pt, A.anodBaselineStart);
+            anodBaseEndX = gamrywb.util.interp1Safe(A.t, A.pt, A.anodBaselineEnd);
+            cSteadyStartX = gamrywb.util.interp1Safe(A.t, A.pt, A.cathSteadyStart);
+            cSteadyEndX = gamrywb.util.interp1Safe(A.t, A.pt, A.cathSteadyEnd);
+            aSteadyStartX = gamrywb.util.interp1Safe(A.t, A.pt, A.anodSteadyStart);
+            aSteadyEndX = gamrywb.util.interp1Safe(A.t, A.pt, A.anodSteadyEnd);
         else
             x = A.t;
             xlab = 'Time (s)';
@@ -907,23 +907,6 @@ function msg = analysisMessage(A)
     msg = '';
     if ~isempty(A) && isfield(A, 'message')
         msg = A.message;
-    end
-end
-
-function idx = nearestIndex(x, xq)
-    [~, idx] = min(abs(x - xq));
-end
-
-function v = interp1_safe(x, y, xq)
-    if numel(x) < 2 || any(~isfinite([x(:); y(:)]))
-        v = NaN;
-        return;
-    end
-    try
-        v = interp1(x, y, xq, 'linear', 'extrap');
-    catch
-        idx = nearestIndex(x, xq);
-        v = y(idx);
     end
 end
 

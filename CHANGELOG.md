@@ -11,6 +11,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Reusable API usage guide and single-file app templates covering DTA loading, session-backed file panels, GUI label structs, and future app checklists.
 - Focused app-boundary tests guarding single-file app ownership, DTA facade usage, removed migration namespaces, and reusable `+gamrywb/+io` export boundaries.
 - Session helper coverage for empty file-list no-op behavior.
+- `gamrywb.util.interp1Safe` for shared finite-vector interpolation with nearest-point fallback.
 
 ### Changed
 
@@ -23,6 +24,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Test organization now separates default and GUI groups, shares repeated numeric assertion helpers, and keeps architecture guardrails in `test_phase10_apps`.
 - Current architecture, API, data-model, validation, and roadmap docs describe the three reusable library surfaces plus single-file app ownership.
 - `gamrywb.data.addFilesToSession` now treats empty file lists as no-ops with empty reports, matching `loadFilesIntoSession`.
+- CIC and VT resistance apps now call the shared interpolation utility instead of keeping duplicated local fallback helpers.
 
 ### Removed
 

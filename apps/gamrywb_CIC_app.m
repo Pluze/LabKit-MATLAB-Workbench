@@ -533,12 +533,12 @@ function varargout = gamrywb_CIC_app(varargin)
         if strcmp(xChoice,'Sample #')
             x = A.pt;
             xlab = 'Sample #';
-            cathStartX = interp1_safe(A.t, A.pt, A.pulse.cath_start);
-            cathEndX   = interp1_safe(A.t, A.pt, A.pulse.cath_end);
-            anodStartX = interp1_safe(A.t, A.pt, A.pulse.anod_start);
-            anodEndX   = interp1_safe(A.t, A.pt, A.pulse.anod_end);
-            emcX       = interp1_safe(A.t, A.pt, A.t_emc);
-            emaX       = interp1_safe(A.t, A.pt, A.t_ema);
+            cathStartX = gamrywb.util.interp1Safe(A.t, A.pt, A.pulse.cath_start);
+            cathEndX   = gamrywb.util.interp1Safe(A.t, A.pt, A.pulse.cath_end);
+            anodStartX = gamrywb.util.interp1Safe(A.t, A.pt, A.pulse.anod_start);
+            anodEndX   = gamrywb.util.interp1Safe(A.t, A.pt, A.pulse.anod_end);
+            emcX       = gamrywb.util.interp1Safe(A.t, A.pt, A.t_emc);
+            emaX       = gamrywb.util.interp1Safe(A.t, A.pt, A.t_ema);
         else
             x = A.t;
             xlab = 'Time (s)';
@@ -897,8 +897,8 @@ function V = computeVoltageTransientMetrics(t, Vf, pulse, delay_s)
     V.t_ema = pulse.anod_end + delay_s;
     V.emc_idx = gamrywb.util.nearestIndex(t, V.t_emc);
     V.ema_idx = gamrywb.util.nearestIndex(t, V.t_ema);
-    V.Emc = interp1Safe(t, Vf, V.t_emc);
-    V.Ema = interp1Safe(t, Vf, V.t_ema);
+    V.Emc = gamrywb.util.interp1Safe(t, Vf, V.t_emc);
+    V.Ema = gamrywb.util.interp1Safe(t, Vf, V.t_ema);
 
     V.Epre = gamrywb.util.medianInWindow(t, Vf, pulse.pre_start, pulse.pre_end);
     V.Ebetween = gamrywb.util.medianInWindow(t, Vf, pulse.gap_start, pulse.gap_end);
@@ -917,8 +917,8 @@ function V = computeVoltageTransientMetrics(t, Vf, pulse, delay_s)
     V.tip_s = max(0, pulse.anod_start - pulse.cath_end);
     V.t_conset = pulse.cath_start + delay_s;
     V.t_aonset = pulse.anod_start + delay_s;
-    V.Vc_on = interp1Safe(t, Vf, V.t_conset);
-    V.Va_on = interp1Safe(t, Vf, V.t_aonset);
+    V.Vc_on = gamrywb.util.interp1Safe(t, Vf, V.t_conset);
+    V.Va_on = gamrywb.util.interp1Safe(t, Vf, V.t_aonset);
     V.Va_cath_mag = abs(V.Eipp - V.Vc_on);
     V.Va_anod_mag = abs(V.Eipp_gap - V.Va_on);
 end
@@ -1109,19 +1109,6 @@ function [ok, msg] = writeResultsCSV(items, filepath, unitLabel)
     end
 end
 
-function v = interp1Safe(x, y, xq)
-    if numel(x) < 2 || any(~isfinite([x(:); y(:)]))
-        v = NaN;
-        return;
-    end
-    try
-        v = interp1(x, y, xq, 'linear', 'extrap');
-    catch
-        idx = gamrywb.util.nearestIndex(x, xq);
-        v = y(idx);
-    end
-end
-
 function [v, sourceLabel, window] = chooseBaselineCandidate(candidates, sourceLabels, windows)
     v = NaN;
     sourceLabel = 'unavailable';
@@ -1166,22 +1153,6 @@ function A = itemAnalysis(item)
         A = item.analysis;
     else
         A = [];
-    end
-end
-
-%% ========================================================================
-%% =============================== Utilities ===============================
-%% ========================================================================
-function v = interp1_safe(x, y, xq)
-    if numel(x) < 2 || any(~isfinite([x(:); y(:)]))
-        v = NaN;
-        return;
-    end
-    try
-        v = interp1(x, y, xq, 'linear', 'extrap');
-    catch
-        idx = gamrywb.util.nearestIndex(x, xq);
-        v = y(idx);
     end
 end
 
@@ -1246,12 +1217,12 @@ function addPaperStyleVTAnnotations(ax, A, xChoice, cathStartX, cathEndX, anodSt
     yLow = yl(1) + 0.18*dy;
 
     if strcmp(xChoice,'Sample #')
-        cOnX = interp1_safe(A.t, A.pt, A.t_conset);
-        aOnX = interp1_safe(A.t, A.pt, A.t_aonset);
-        cathBase1 = interp1_safe(A.t, A.pt, A.baselineCathWindow(1));
-        cathBase2 = interp1_safe(A.t, A.pt, A.baselineCathWindow(2));
-        anodBase1 = interp1_safe(A.t, A.pt, A.baselineAnodWindow(1));
-        anodBase2 = interp1_safe(A.t, A.pt, A.baselineAnodWindow(2));
+        cOnX = gamrywb.util.interp1Safe(A.t, A.pt, A.t_conset);
+        aOnX = gamrywb.util.interp1Safe(A.t, A.pt, A.t_aonset);
+        cathBase1 = gamrywb.util.interp1Safe(A.t, A.pt, A.baselineCathWindow(1));
+        cathBase2 = gamrywb.util.interp1Safe(A.t, A.pt, A.baselineCathWindow(2));
+        anodBase1 = gamrywb.util.interp1Safe(A.t, A.pt, A.baselineAnodWindow(1));
+        anodBase2 = gamrywb.util.interp1Safe(A.t, A.pt, A.baselineAnodWindow(2));
     else
         cOnX = A.t_conset;
         aOnX = A.t_aonset;
@@ -1298,8 +1269,8 @@ function addPaperStyleVTAnnotations(ax, A, xChoice, cathStartX, cathEndX, anodSt
 end
 
 function addPaperStyleITAnnotations(ax, A, xChoice, cathStartX, cathEndX, anodStartX, anodEndX, emcX, emaX)
-    plot(ax, emcX, interp1_safe(chooseX(A,xChoice), A.Im, emcX), 'o', 'MarkerFaceColor',[0.1 0.7 0.1], 'MarkerEdgeColor','k', 'MarkerSize',6);
-    plot(ax, emaX, interp1_safe(chooseX(A,xChoice), A.Im, emaX), 'o', 'MarkerFaceColor',[0.95 0.8 0.1], 'MarkerEdgeColor','k', 'MarkerSize',6);
+    plot(ax, emcX, gamrywb.util.interp1Safe(chooseX(A,xChoice), A.Im, emcX), 'o', 'MarkerFaceColor',[0.1 0.7 0.1], 'MarkerEdgeColor','k', 'MarkerSize',6);
+    plot(ax, emaX, gamrywb.util.interp1Safe(chooseX(A,xChoice), A.Im, emaX), 'o', 'MarkerFaceColor',[0.95 0.8 0.1], 'MarkerEdgeColor','k', 'MarkerSize',6);
 
     plot(ax, [cathStartX cathEndX], [A.Ic_est_A A.Ic_est_A], '--', 'Color',[0.1 0.45 0.8], 'LineWidth',1.3);
     plot(ax, [anodStartX anodEndX], [A.Ia_est_A A.Ia_est_A], '--', 'Color',[0.85 0.45 0.1], 'LineWidth',1.3);

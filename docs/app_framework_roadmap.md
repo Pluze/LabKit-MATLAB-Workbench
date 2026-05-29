@@ -311,6 +311,7 @@ It may provide:
 - CSV escaping
 - struct append/merge helpers
 - simple numeric index/window utilities
+- safe interpolation wrappers when reused across apps
 - positive scalar parsing
 - data-like value checks
 

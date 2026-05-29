@@ -284,6 +284,7 @@ escaped = gamrywb.util.csvEscape(textValue);
 fieldName = gamrywb.util.sanitizeFieldName(rawName);
 value = gamrywb.util.parsePositiveScalar(textValue);
 idx = gamrywb.util.nearestIndex(t, targetTime);
+value = gamrywb.util.interp1Safe(t, y, targetTime);
 ```
 
 Do not move code into `+util` just because it is short. It must be useful across layers and explainable without experiment vocabulary.
