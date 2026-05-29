@@ -1,5 +1,5 @@
-function test_phase10_apps()
-%TEST_PHASE10_APPS Verify Phase 10 app entry points resolve.
+function test_architecture_boundaries()
+%TEST_ARCHITECTURE_BOUNDARIES Verify app and reusable-library boundaries.
 
     root = fileparts(fileparts(mfilename('fullpath')));
     assert(exist(fullfile(root, '+gamrywb', '+app'), 'dir') ~= 7, ...

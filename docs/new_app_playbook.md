@@ -141,7 +141,7 @@ DTA facade or parser behavior for the accepted fixture
 analysis result fields and key numeric values
 plot/export column naming or table shape
 failed-row and failed-analysis behavior
-app boundary checks in tests/test_phase10_apps.m
+app boundary checks in tests/test_architecture_boundaries.m
 GUI smoke/layout checks only when entrypoint, layout, or callback wiring changes
 ```
 

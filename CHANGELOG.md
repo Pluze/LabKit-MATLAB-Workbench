@@ -25,7 +25,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Agent/developer rules now describe app-specific helper packages as removed boundaries that should not be reintroduced and limit new package helpers to genuinely cross-cutting code.
 - Reusable GUI helpers are kept domain-neutral: DTA-specific labels, shell tab titles, app callback choreography, and app reset/default behavior stay in the apps.
 - Generic selected-curve plotting lives in `gamrywb.ui.plotCurveXY`; app-specific plotting packages and empty reusable plot packages are not kept.
-- Test organization now separates default and GUI groups, shares repeated numeric assertion helpers, and keeps architecture guardrails in `test_phase10_apps`.
+- Test organization now separates default and GUI groups, shares repeated numeric assertion helpers, and keeps architecture guardrails in `test_architecture_boundaries`.
 - Current architecture, API, data-model, validation, and roadmap docs describe the three reusable library surfaces plus single-file app ownership.
 - `gamrywb.data.addFilesToSession` now treats empty file lists as no-ops with empty reports, matching `loadFilesIntoSession`.
 - CIC and VT resistance apps now call the shared interpolation utility instead of keeping duplicated local fallback helpers.
