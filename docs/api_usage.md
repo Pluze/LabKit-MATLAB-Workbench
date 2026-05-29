@@ -78,6 +78,18 @@ filepaths = gamrywb.io.findDTAFilesRecursive(folder);
 
 Prefer the DTA facade in apps. Use direct IO discovery or parsers only when changing parser behavior, adding a DTA family, or writing parser-level tests.
 
+Choose the smallest loading API that matches the workflow:
+
+```text
+One explicit file:        gamrywb.dta.loadFile
+Known list of files:      gamrywb.dta.loadFiles
+Script/prototype folder:  gamrywb.dta.loadFolder
+GUI session app:          gamrywb.data.loadFilesIntoSession or addFilesToSession
+Parser development:       gamrywb.io.parse* and gamrywb.io.findDTAFilesRecursive
+```
+
+Use `loadFolder` for scripts and prototypes that do not need duplicate handling or GUI callback timing. Use the session helpers in apps that maintain loaded-file state, listboxes, logs, or remove/clear workflows.
+
 ## Data And Session API
 
 Use `+gamrywb/+data` for struct construction and table/curve access:
@@ -191,6 +203,13 @@ function varargout = gamrywb_NewExperiment_app(varargin)
 end
 ```
 
+For a folder-processing script or an early analysis prototype, the app shell is unnecessary:
+
+```matlab
+[items, report] = gamrywb.dta.loadFolder(folder, "chrono");
+results = cellfun(@(item) analyzeItem(item, opts), items, 'UniformOutput', false);
+```
+
 The app owns:
 
 - accepted DTA kind
@@ -199,6 +218,25 @@ The app owns:
 - plot labels and annotations
 - export column names and formatting
 - summary text
+
+## New App Checklist
+
+Define these before adding controls or helpers:
+
+```text
+1. Accepted DTA kind and parser requirements
+2. Session kind and loaded item shape
+3. Scientific options and defaults
+4. Analysis result struct fields
+5. Plot axes, labels, and annotations
+6. Summary fields shown in the GUI
+7. Result table columns and units
+8. Export format and failed-row behavior
+9. Validation fixture or synthetic test case
+10. GUI shell type and file-selection mode
+```
+
+Keep those decisions local to the app file. Move code into `+gamrywb` only when it is reusable without experiment vocabulary.
 
 ## Testing Expectations
 
