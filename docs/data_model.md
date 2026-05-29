@@ -195,12 +195,15 @@ Helpers:
 ```text
 gamrywb.data.makeSession
 gamrywb.data.addFilesToSession
+gamrywb.data.loadFilesIntoSession
 gamrywb.data.removeFilesFromSession
+gamrywb.data.removeSelectedItemsFromSession
+gamrywb.data.selectItemsByNames
 gamrywb.data.summarizeBatchResults
 gamrywb.io.saveSession
 gamrywb.io.loadSession
 ```
 
-`addFilesToSession` supports `onAdded`, `onSkipped`, and `onFailed` callbacks so apps can preserve log timing while sharing add/duplicate/failure logic.
+`addFilesToSession` supports `onAdded`, `onSkipped`, and `onFailed` callbacks so apps can preserve log timing while sharing add/duplicate/failure logic. `loadFilesIntoSession`, `removeSelectedItemsFromSession`, and `selectItemsByNames` are GUI-free session/item orchestration helpers; UI code passes listbox values into them but they do not own controls.
 
 Session files should keep parsed data, selected analysis mode, options, results, notes, and file provenance explicit. Avoid opaque object dumps for scientific exchange.

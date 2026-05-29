@@ -47,6 +47,8 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Routed the CIC app's chrono file loading through the GUI-free DTA facade instead of parsing chrono files directly in the app layer.
 - Extracted shared batch-result table panel construction for VT/CIC-style apps into `+gamrywb/+ui`.
 - Moved generic batch result summaries from `+gamrywb/+analysis` to `+gamrywb/+data` so the reusable analysis surface stays pulse-focused.
+- Moved GUI-free session loading, selected-item removal, and selected-item lookup helpers from `+gamrywb/+ui` to `+gamrywb/+data`.
+- Removed the one-line `gamrywb.io.exportTableCSV` wrapper; apps that need MATLAB's default table writer call `writetable` directly.
 - Extracted shared top/bottom plot selection and axes reset helpers for VT/CIC-style apps into `+gamrywb/+ui`.
 - Shared the VT/CIC clear-all session reset sequence through `+gamrywb/+ui`.
 - Shared the VT/CIC single-file selection callback sequence through `+gamrywb/+ui`.

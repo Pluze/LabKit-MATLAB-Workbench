@@ -72,11 +72,14 @@ Use `+gamrywb/+data` for struct construction and table/curve access:
 ```matlab
 session = gamrywb.data.makeSession('new_experiment');
 [session, report] = gamrywb.data.addFilesToSession(session, files, @loader);
+[session, report] = gamrywb.data.loadFilesIntoSession(session, files, @loader, callbacks);
+[session, report] = gamrywb.data.removeSelectedItemsFromSession(session, selectedNames, callbacks);
 
 [curve, ok, msg] = gamrywb.data.getMainCurve(item.tables);
 [zcurve, ok, msg] = gamrywb.data.getZCurve(item.tables);
 values = gamrywb.data.getColumn(curve, 'Vf');
 [x, y] = gamrywb.data.getCurveXY(curve, 'T', 'Im');
+items = gamrywb.data.selectItemsByNames(session.items, selectedNames);
 summary = gamrywb.data.summarizeBatchResults(session.items);
 ```
 
@@ -110,7 +113,6 @@ Common state helpers:
 gamrywb.ui.appendLog(txtLog, message);
 gamrywb.ui.refreshFileListbox(lbFiles, items);
 gamrywb.ui.refreshSingleSelectFileListbox(lbFiles, items, selectedIndex);
-items = gamrywb.ui.selectItemsByNames(session.items, selectedNames);
 info = gamrywb.ui.plotCurveXY(ax, curve, 'T', 'Im', opts);
 ```
 
