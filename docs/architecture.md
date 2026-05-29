@@ -82,6 +82,8 @@ Not library code: experiment-specific app design
 
 This map is a design boundary, not a reason to force every function into exactly three folders. Keep granular packages when they make code easier to inspect. Refactor or remove helpers when they obscure which layer owns a decision.
 
+For concrete calling examples and a future app template, see `docs/api_usage.md`.
+
 `+gamrywb/+analysis` and app-specific export helpers in `+gamrywb/+io` are transitional when they encode experiment-specific decisions. Move those decisions toward app-side code when touching the related app. Keep only broadly reusable, parameter-light math and data utilities in the library.
 
 Analysis, data, and IO package functions should not depend on GUI state or call `uialert`. Plot/UI helpers may accept explicit graphics handles and should keep side effects limited to those handles.

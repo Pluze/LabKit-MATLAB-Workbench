@@ -71,6 +71,7 @@ docs/                 Architecture, data model, parser, validation, and history 
 - `AGENTS.md`: agent and developer operating rules.
 - `CHANGELOG.md`: release-style change history.
 - `docs/architecture.md`: current architecture and boundaries.
+- `docs/api_usage.md`: current reusable API usage and single-file app template.
 - `docs/app_framework_roadmap.md`: planned app framework extraction route.
 - `docs/data_model.md`: current item/result/session schemas.
 - `docs/file_format_notes.md`: DTA parser assumptions.

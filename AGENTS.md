@@ -13,6 +13,7 @@ Before editing:
 Also read these only when relevant:
 
 - `docs/architecture.md` for package boundaries or entrypoint work
+- `docs/api_usage.md` for reusable API usage or new app work
 - `docs/data_model.md` for item/result/session schema work
 - `docs/file_format_notes.md` for parser work
 - `docs/validation_protocol.md` for test or validation work
@@ -103,6 +104,7 @@ When MATLAB source, tests, fixtures, or package structure change, update the mat
 - `README.md` for user-facing commands or current status
 - `CHANGELOG.md` for release-facing changes
 - `docs/architecture.md` for package boundaries or entrypoint roles
+- `docs/api_usage.md` for reusable API examples or new app guidance
 - `docs/data_model.md` for schemas
 - `docs/file_format_notes.md` for parser assumptions
 - `docs/validation_protocol.md` for validation coverage
