@@ -1,5 +1,5 @@
 function A = computeCSC(curve, opts)
-%COMPUTECSC Compute legacy-compatible CV/CT charge comparison and CSC.
+%COMPUTECSC Compute CV/CT charge comparison and CSC for the CSC app.
 
     if nargin < 2
         opts = struct();
@@ -41,8 +41,8 @@ function A = computeCSC(curve, opts)
         return;
     end
 
-    CT = gamrywb.analysis.computeCTCharge(t, V, I);
-    CV = gamrywb.analysis.computeCVCharge(t, V, I, A.scanRate);
+    CT = gamrywb_apps.csc.computeCTCharge(t, V, I);
+    CV = gamrywb_apps.csc.computeCVCharge(t, V, I, A.scanRate);
     if ~CT.ok
         A.message = CT.message;
         A.logMessage = 'Compare skipped: not enough valid points.';

@@ -12,7 +12,7 @@ experiment-specific apps outside the reusable library
 
 If utilities are needed by both reusable libraries, keep them in a smaller shared utility base. Future work should let a developer add a new experiment, a new GUI shell, or a new DTA format with minimal changes to the other two parts. The modules should also remain reusable outside this repository when a downstream project only needs the GUI framework or only needs DTA loading/parsing.
 
-Experiment-specific scientific workflow belongs with the app, not in the reusable library. This includes formulas, analysis options, result schemas, plot choices, annotations, summaries, and export formats. Keep only genuinely broad, parameter-light math/data utilities in `+gamrywb`.
+Experiment-specific scientific workflow belongs with the app, not in the reusable library. This includes formulas, analysis options, result schemas, plot choices, annotations, summaries, and export formats. The long-term ideal is one experiment app `.m` file that calls the DTA and GUI libraries and contains its own scientific workflow. Keep only genuinely broad, parameter-light math/data utilities in `+gamrywb`.
 
 The previous refactor successfully moved the project from legacy GUI scripts to package-backed apps with reusable GUI helpers. The project is now already reasonably convenient for building apps that resemble the existing Chrono, EIS, VT, CIC, and CSC tools.
 
@@ -28,6 +28,7 @@ A future developer should be able to:
 - reuse the DTA loading/parsing/normalization system without launching a GUI
 - create a new scientific app by defining file requirements, analysis options, plot behavior, result fields, and export format
 - keep each experiment's scientific workflow local to that app
+- prefer one app `.m` file per experiment instead of creating an app framework or app-science library
 - add support for a new DTA family without rewriting existing app GUIs
 - redesign or add a GUI shell without changing parser behavior or scientific formulas
 - avoid copying large existing app files
@@ -64,7 +65,7 @@ completely new app type: about 6/10 convenient
 Why similar apps are now easier:
 
 - public app entry points are thin wrappers under `apps/`
-- app bodies should live under `apps/private`; EIS and Chrono overlay are the first reference migrations
+- app bodies should live under `apps/private`; EIS, Chrono overlay, and CSC are the first reference migrations
 - common GUI shells and panels live under `+gamrywb/+ui`
 - scientific calculations live under `+gamrywb/+analysis`
 - plotting helpers live under `+gamrywb/+plot`
@@ -299,7 +300,7 @@ It owns:
 
 The app layer may call GUI and DTA helpers, but GUI and DTA helpers should not call app-specific science.
 
-The app layer also owns experiment-specific scientific calculations. Do not move those calculations into `+gamrywb/+analysis` just because two apps have similarly shaped callbacks. Extract only low-level math utilities when they are truly independent of experiment parameters, result definitions, labels, export columns, and validation assumptions.
+The app layer also owns experiment-specific scientific calculations. Do not move those calculations into `+gamrywb/+analysis` or an app framework just because two apps have similarly shaped callbacks. Extract only low-level math utilities when they are truly independent of experiment parameters, result definitions, labels, export columns, and validation assumptions.
 
 A new app should be describable with three contracts.
 
@@ -424,7 +425,7 @@ Do not expand this into a schema framework until an app migration proves the mis
 
 ### Phase C: Move app implementations out of `+gamrywb` while using the DTA facade
 
-Status: started with EIS and Chrono overlay as reference app-structure and DTA facade migrations.
+Status: started with EIS, Chrono overlay, and CSC as reference app-structure migrations. EIS, Chrono overlay, and CSC now use the DTA facade for file loading.
 
 Recommended candidates:
 
@@ -445,6 +446,8 @@ The EIS app implementation now lives under `apps/private`, not under `+gamrywb/+
 
 The Chrono overlay app implementation now lives under `apps/private`, not under `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "chrono")` for file loading, while keeping pulse-gap alignment, plotting, and export choices in the app-specific workflow layer.
 
+The CSC app implementation now lives under `apps/private`, not under `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "cvct")` for file loading. CSC-specific charge and result-table calculations live under `apps/+gamrywb_apps/+csc`, not in reusable `+gamrywb/+analysis` or `+gamrywb/+io`. This app-side package is a migration step for testability, not a new reusable app abstraction; collapse it into the CSC app file if/when tests can still verify behavior cleanly.
+
 These are the reference paths for adopting the DTA facade in the remaining apps.
 
 Remaining migration candidates:
@@ -453,8 +456,9 @@ Remaining migration candidates:
 VT resistance: replace direct chrono parsing in the app loader
 CIC: replace direct chrono parsing in the app loader
 CSC: replace direct CV/CT parsing in the app loader
-VT/CIC/CSC: move experiment-specific calculations, plots, and export formatting toward apps/private when each app is migrated
+VT/CIC: move experiment-specific calculations, plots, and export formatting toward apps/private when each app is migrated
 Generic helpers still in +gamrywb/+app: move toward the GUI base library if they remain useful after app migrations
+App-side helper packages: keep only as temporary testable waypoints; do not grow them into a framework
 ```
 
 Suggested commit:
@@ -464,6 +468,7 @@ refactor: use dta facade in EIS app
 refactor: use dta facade in chrono overlay app
 refactor: move EIS app implementation out of gamrywb package
 refactor: move chrono overlay app implementation out of gamrywb package
+refactor: move CSC app workflow out of gamrywb package
 ```
 
 ### Phase D: Define lightweight extension contracts

@@ -172,7 +172,7 @@ CV/CT parser behavior to preserve:
 - Headers, units, data, and numeric masks are preserved for each curve.
 - Numeric rows are parsed conservatively to preserve legacy behavior.
 
-CV/CSC scientific rules are not parser behavior. The current package-backed analysis entry point is `gamrywb.analysis.computeCSC`, with CT and CV charge helpers under `+gamrywb/+analysis`.
+CV/CSC scientific rules are not parser behavior. The current app-side analysis entry point is `gamrywb_apps.csc.computeCSC`, with CT and CV charge helpers under `apps/+gamrywb_apps/+csc`.
 
 ---
 

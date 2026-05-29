@@ -1,5 +1,5 @@
-function T = buildCSCResultsTable(items)
-%BUILDCSCRESULTSTABLE Build a package-backed CSC result table.
+function T = buildResultsTable(items)
+%BUILDRESULTSTABLE Build a CSC app result table.
 
     file = cell(numel(items), 1);
     curve = cell(numel(items), 1);

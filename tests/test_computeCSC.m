@@ -1,5 +1,5 @@
 function test_computeCSC()
-%TEST_COMPUTECSC Verify package-backed CV/CT charge and CSC analysis.
+%TEST_COMPUTECSC Verify CV/CT charge and CSC app analysis.
 
     root = fileparts(fileparts(mfilename('fullpath')));
     fixture = fullfile(root, 'demo', 'cv_cyclic_voltammetry_pt_reference.DTA');
@@ -9,7 +9,7 @@ function test_computeCSC()
     curve = curves(1);
 
     opts = struct('scanRate', scanRate, 'mode', 'Full', 'area_cm2', '2');
-    A = gamrywb.analysis.computeCSC(curve, opts);
+    A = gamrywb_apps.csc.computeCSC(curve, opts);
     assert(A.ok, A.message);
     assert(strcmp(A.message, 'OK'), 'Successful CSC result should preserve OK status.');
     assert(strcmp(A.mode, 'Full'), 'Full mode should be echoed in the result.');
@@ -24,7 +24,7 @@ function test_computeCSC()
     assert(numel(A.IanodDisp) == numel(A.Im), 'Anodic trim vector should match filtered data length.');
 
     opts.mode = 'Cathodic';
-    B = gamrywb.analysis.computeCSC(curve, opts);
+    B = gamrywb_apps.csc.computeCSC(curve, opts);
     assert(B.ok, B.message);
     assertClose(B.Qct, 0.00029431203584906772, 1e-16, 'Cathodic CT charge');
     assertClose(B.Qcv, 0.00029428822423684342, 1e-16, 'Cathodic CV charge');
@@ -32,15 +32,15 @@ function test_computeCSC()
     assertClose(B.Qct_mC_cm2, 0.14715601792453387, 1e-13, 'Cathodic CSC');
 
     opts.mode = 'Anodic';
-    C = gamrywb.analysis.computeCSC(curve, opts);
+    C = gamrywb_apps.csc.computeCSC(curve, opts);
     assert(C.ok, C.message);
     assertClose(C.Qct, 9.8474307829067581e-05, 1e-16, 'Anodic CT charge');
     assertClose(C.Qcv, 9.8475803741079329e-05, 1e-16, 'Anodic CV charge');
     assertClose(C.diff_C, -1.4959120117478183e-09, 1e-18, 'Anodic charge difference');
     assertClose(C.rel_pct, 0.0015190655520629138, 1e-12, 'Anodic relative difference');
 
-    CT = gamrywb.analysis.computeCTCharge([0; 1; 2], [0; 1; 2], [-1; 1; 1]);
-    CV = gamrywb.analysis.computeCVCharge([0; 1; 2], [0; 1; 2], [-1; 1; 1], 2);
+    CT = gamrywb_apps.csc.computeCTCharge([0; 1; 2], [0; 1; 2], [-1; 1; 1]);
+    CV = gamrywb_apps.csc.computeCVCharge([0; 1; 2], [0; 1; 2], [-1; 1; 1], 2);
     assert(CT.ok && CV.ok, 'Synthetic zero-crossing case should compute.');
     assertClose(CT.QctCath, 0.25, 1e-15, 'Synthetic CT cathodic charge');
     assertClose(CT.QctAnod, 1.25, 1e-15, 'Synthetic CT anodic charge');
@@ -50,18 +50,18 @@ function test_computeCSC()
     assertClose(CV.QcvFull, 0.75, 1e-15, 'Synthetic CV full charge');
     assertClose(CV.dtErr, 0.5, 1e-15, 'Synthetic CV dt error');
 
-    D = gamrywb.analysis.computeCSC(curve, struct('scanRate', NaN));
+    D = gamrywb_apps.csc.computeCSC(curve, struct('scanRate', NaN));
     assert(~D.ok, 'Missing scan rate should fail.');
     assert(strcmp(D.message, 'scan rate missing'), 'Missing scan-rate message should match legacy UI text.');
 
     missingCurve = rmfield(curve, 'headers');
-    E = gamrywb.analysis.computeCSC(missingCurve, struct('scanRate', scanRate));
+    E = gamrywb_apps.csc.computeCSC(missingCurve, struct('scanRate', scanRate));
     assert(~E.ok, 'Missing required columns should fail.');
     assert(strcmp(E.message, 'Need T, Vf, Im'), 'Missing-column message should match legacy UI text.');
 
     shortCurve = curve;
     shortCurve.data = shortCurve.data(1, :);
-    F = gamrywb.analysis.computeCSC(shortCurve, struct('scanRate', scanRate));
+    F = gamrywb_apps.csc.computeCSC(shortCurve, struct('scanRate', scanRate));
     assert(~F.ok, 'Single-point curve should fail.');
     assert(strcmp(F.message, 'Not enough points'), 'Single-point message should match legacy UI text.');
 
@@ -73,7 +73,7 @@ function test_computeCSC()
     failedItem.name = 'failed.DTA';
     failedItem.curveName = curve.name;
     failedItem.analysis = D;
-    T = gamrywb.io.buildCSCResultsTable([item, failedItem]);
+    T = gamrywb_apps.csc.buildResultsTable([item, failedItem]);
     expectedNames = {'File', 'Curve', 'Mode', 'ScanRate_V_s', 'Area_cm2', ...
         'Qct_C', 'Qcv_C', 'Diff_C', 'RelDiff_pct', 'DtErr_s', ...
         'Qct_mC_cm2', 'Qcv_mC_cm2', 'Diff_mC_cm2', 'Status'};

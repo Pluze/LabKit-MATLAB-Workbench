@@ -1,6 +1,6 @@
 function varargout = launchCSCApp(varargin)
-%LAUNCHCSCAPP Launch the package-backed CV/CSC app.
-% Uses +gamrywb parser, data, plotting, and analysis helpers without delegating to legacy.
+%LAUNCHCSCAPP Launch the CV/CSC app from apps/private.
+% Composes +gamrywb GUI, DTA, plotting, and analysis APIs without delegating to legacy.
 %
 % Assumptions
 %   - CV data is already constrained to the intended water window during acquisition.
@@ -348,13 +348,10 @@ function varargout = launchCSCApp(varargin)
     end
 
     function item = loadOneCVCT(filepath)
-        [scanRate, curves, parserLog] = gamrywb.io.parseCVCTDTA(filepath);
-        item = struct();
-        item.filepath = filepath;
-        item.name = gamrywb.util.shortName(filepath);
-        item.scanRate = scanRate;
-        item.curves = curves;
-        item.logmsg = parserLog;
+        [item, status] = gamrywb.dta.loadFile(filepath, "cvct");
+        if ~status.ok
+            error('%s', char(status.message));
+        end
         item.currentCurve = 1;
         item.analysis = [];
     end
@@ -466,7 +463,7 @@ function varargout = launchCSCApp(varargin)
         opts.mode = ddMode.Value;
         opts.scanRate = S.scanRate;
         opts.area_cm2 = edArea.Value;
-        R = gamrywb.analysis.computeCSC(c, opts);
+        R = gamrywb_apps.csc.computeCSC(c, opts);
 
         if ~R.ok
             txtQct.Value = R.message;

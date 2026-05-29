@@ -27,7 +27,7 @@ Shared utility base:
   only small cross-cutting utilities that are not experiment-specific
 ```
 
-Experiment app implementations should live under `apps/` rather than being absorbed into the reusable library package. The EIS and Chrono overlay apps are the first reference apps moved to `apps/private`.
+Experiment app implementations should live under `apps/` rather than being absorbed into the reusable library package. The EIS, Chrono overlay, and CSC apps are the first reference apps moved to `apps/private`. The long-term ideal is one experiment app `.m` file owning its scientific workflow. App-specific helper packages under `apps/+gamrywb_apps` are transitional only when they preserve direct tests during migration; they are not a reusable app framework.
 
 ## Entrypoints
 
@@ -73,6 +73,7 @@ Library 2: Gamry/DTA parsing and loading
 
 Not library code: experiment-specific app design
   apps/ entry points and apps/private app implementations
+  apps/+gamrywb_apps app-specific helper packages only as transitional/testable app-side code
   experiment-specific analysis, plotting, result summaries, and exports
 
 Shared utility base:
@@ -96,7 +97,7 @@ The GUI decides how to display that status.
 
 ## Current Package Surface
 
-- `apps/`: user-facing app entry points and app-specific implementations. EIS and Chrono overlay have moved their implementations to `apps/private` as the reference pattern for app code living outside the reusable `+gamrywb` library.
+- `apps/`: user-facing app entry points and app-specific implementations. EIS, Chrono overlay, and CSC have moved their implementations to `apps/private` as the reference pattern for app code living outside the reusable `+gamrywb` library. CSC-specific analysis currently lives under `apps/+gamrywb_apps/+csc` as app-side transitional code so numerical tests remain direct.
 - `+app`: transitional shared app/session orchestration helpers and remaining app launch implementations. This package is not part of the desired final structure; generic helpers should migrate toward the GUI base library, and app implementations should migrate toward `apps/private` when touched.
 - `+dta`: GUI-free facade for supported DTA family detection, single-file loading, and batch loading with status/report structs. It delegates to existing `+io` parser and `+data` item-construction helpers.
 - `+io`: DTA parsers, folder discovery, session save/load, and transitional app-specific export helpers. Export helpers that encode experiment-specific formats should migrate toward app implementations when the owning app is moved.
