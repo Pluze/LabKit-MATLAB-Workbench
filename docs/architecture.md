@@ -14,7 +14,7 @@ struct-based item/session models
 +gamrywb package functions
 ```
 
-The reusable `+gamrywb` package should provide two library surfaces that apps compose:
+The reusable `+gamrywb` package should provide three library surfaces that apps compose:
 
 ```text
 Gamry/DTA library:
@@ -70,13 +70,14 @@ Library 2: Gamry/DTA parsing and loading
   +gamrywb/+io parser functions
   +gamrywb/+data item/session construction and table/column access
 
+Library 3: utility base
+  +gamrywb/+util
+  small string, struct, numeric, CSV, and parsing helpers with no GUI, DTA-family, or experiment assumptions
+
 Not library code: experiment-specific app design
   apps/ public app files
   apps/+gamrywb_apps app-specific helper packages only as transitional/testable app-side code
   experiment-specific analysis, plotting, result summaries, and exports
-
-Shared utility base:
-  +gamrywb/+util
 ```
 
 This map is a design boundary, not a reason to force every function into exactly three folders. Keep granular packages when they make code easier to inspect. Refactor or remove helpers when they obscure which layer owns a decision.
@@ -100,9 +101,9 @@ The GUI decides how to display that status.
 - `+dta`: GUI-free facade for supported DTA family detection, single-file loading, and batch loading with status/report structs. It delegates to existing `+io` parser and `+data` item-construction helpers.
 - `+io`: DTA parsers, folder discovery, and session save/load. Export helpers that encode experiment-specific formats should stay with the owning app rather than in reusable `+gamrywb`.
 - `+data`: table/column accessors, CV/CT selected-column access, chrono item construction, EIS item construction, session add/remove helpers.
-- `+analysis`: broad pulse detection helpers and remaining low-level utilities. Experiment-specific calculations should migrate toward app-side code unless they are clearly general, parameter-light math utilities.
+- `+analysis`: pulse detection helpers and remaining low-level math utilities. Experiment-specific calculations should migrate toward app-side code unless they are clearly general, parameter-light math utilities.
 - `+ui`: reusable GUI framework helpers, including app axes creation/reset, log append and log panel, multi-select and single-select file-listbox refresh, multi-file and single-select file-panel, summary row, result table panel, info/log text-area, plot-options panel, simple labeled-control, two-pane shell, tabbed dual-plot shell, top/bottom plot-control construction/state helpers, and generic session/listbox orchestration used by apps.
-- `+util`: low-risk helpers used by parser, data, analysis, and export code.
+- `+util`: low-risk generic helpers used by parser, data, analysis, UI, and export code. It should not contain GUI state, DTA-family dispatch, scientific result definitions, plot labels, or export schemas.
 
 ## Boundaries To Preserve
 

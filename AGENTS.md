@@ -31,9 +31,9 @@ apps/ experiment apps
     ideally one experiment corresponds to one app .m file
 
 +gamrywb reusable library
-    Gamry/DTA loading and data APIs
-    scientific-app base GUI APIs
-    small shared utilities only when they are genuinely cross-cutting
+    GUI library: scientific-app shells, controls, panels, logs, and UI state helpers
+    Gamry/DTA library: DTA discovery, parsing, loading, item/session data APIs
+    utility library: small shared helpers only when they are genuinely cross-cutting
 ```
 
 Do not add new experiment-specific app logic to the reusable `+gamrywb` library. Existing `+gamrywb/+analysis`, `+gamrywb/+plot`, app-specific export helpers, and app-side helper namespaces are transitional unless they are genuinely broad, low-level utilities. When touching them, consider whether the logic should move into the relevant app file instead of becoming a deeper abstraction.

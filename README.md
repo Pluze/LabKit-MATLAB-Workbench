@@ -58,7 +58,7 @@ The default runner covers pure functions. The optional GUI mode checks launch/la
 ## Repository Layout
 
 ```text
-+gamrywb/             Reusable Gamry/DTA APIs, scientific-app GUI APIs, and utilities
++gamrywb/             Reusable GUI, Gamry/DTA, and utility APIs
 apps/                 App entry points and app-specific implementations
 demo/                 Named DTA fixtures
 tests/                MATLAB tests

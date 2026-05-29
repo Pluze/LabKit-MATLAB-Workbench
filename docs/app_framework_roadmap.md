@@ -2,15 +2,16 @@
 
 This roadmap defines the next stable architecture direction for Gamry Electrochemistry Workbench.
 
-The core design goal is a codebase with two reusable library parts plus independent apps:
+The core design goal is a codebase with three reusable library surfaces plus independent apps:
 
 ```text
-Gamry/DTA parsing-loading library
-scientific-app base GUI library
+GUI library: scientific-app shells, panels, controls, logs, and reusable UI state helpers
+Gamry/DTA library: DTA discovery, parsing, type detection, loading, item/session data APIs
+utility library: small generic helpers shared by GUI and Gamry/DTA code
 experiment-specific apps outside the reusable library
 ```
 
-If utilities are needed by both reusable libraries, keep them in a smaller shared utility base. Future work should let a developer add a new experiment, a new GUI shell, or a new DTA format with minimal changes to the other two parts. The modules should also remain reusable outside this repository when a downstream project only needs the GUI framework or only needs DTA loading/parsing.
+Future work should let a developer add a new experiment, a new GUI shell, or a new DTA format with minimal changes to the other parts. The modules should also remain reusable outside this repository when a downstream project only needs the GUI framework, only needs DTA loading/parsing, or only needs a small utility.
 
 Experiment-specific scientific workflow belongs with the app, not in the reusable library. This includes formulas, analysis options, result schemas, plot choices, annotations, summaries, and export formats. The long-term ideal is one experiment app `.m` file that calls the DTA and GUI libraries and contains its own scientific workflow. Keep only genuinely broad, parameter-light math/data utilities in `+gamrywb`.
 
@@ -68,31 +69,33 @@ Why similar apps are now easier:
 - app bodies should be collapsed into public `apps/*.m` files; EIS, Chrono overlay, and CSC are single-file references, while VT resistance and CIC still have transitional `apps/private` launch bodies
 - `apps/+gamrywb_apps` is a temporary migration namespace, not the final app design; remove it by folding experiment-specific helpers into the owning app files or promoting only truly reusable, parameter-light code into `+gamrywb`
 - common GUI shells and panels live under `+gamrywb/+ui`
-- broad scientific calculations live under `+gamrywb/+analysis`; experiment-specific workflow calculations live with the owning app
+- low-level pulse detection and broadly reusable math/data helpers may live under `+gamrywb/+analysis`; experiment-specific workflow calculations live with the owning app
 - app-specific plotting helpers live with the owning app; reusable GUI/axes primitives live under `+gamrywb/+ui`
-- parser/export/session helpers live under `+gamrywb/+io` and `+gamrywb/+data`
+- parser/session/data helpers live under `+gamrywb/+dta`, `+gamrywb/+io`, and `+gamrywb/+data`
+- cross-cutting string, struct, numeric, and CSV escaping helpers live under `+gamrywb/+util`
 
 Main remaining bottleneck:
 
 ```text
-existing app bodies still need to move out of the reusable `+gamrywb` package and adopt the DTA facade before parser/item details are consistently hidden
+remaining app bodies still need to move out of transitional `apps/private` launchers, and remaining `apps/+gamrywb_apps` helpers need to collapse into owning app files unless they prove broadly reusable
 ```
 
-Therefore, the next high-value step is adopting the DTA-facing API in one existing app, not more GUI-helper extraction.
+Therefore, the next high-value step is reducing transitional app structure, not more GUI-helper extraction.
 
 ---
 
-## 2. Three-Layer Architecture
+## 2. Library Layers And App Layer
 
-The project should stabilize around two reusable libraries and one non-library app layer:
+The project should stabilize around three reusable library surfaces and one non-library app layer:
 
 ```text
 Library 1: scientific-app GUI framework
 Library 2: Gamry/DTA processing API
+Library 3: utility base
 App layer: app-specific scientific workflow
 ```
 
-Each reusable library should be independently useful.
+Each reusable library surface should be independently useful. MATLAB package folders can remain granular; the point is ownership clarity, not forcing everything into exactly three folders.
 
 Layer independence targets:
 
@@ -104,6 +107,10 @@ Scientific-app GUI framework:
 Gamry/DTA processing API:
   DTA discovery, type detection, parser dispatch, item normalization, and status/reporting
   no figures, controls, callbacks, app plot choices, or experiment-specific calculations
+
+Utility base:
+  small string, struct, numeric, file-name, CSV-escaping, and parsing helpers with no GUI, parser-family, or experiment assumptions
+  no scientific result definitions, plot labels, DTA table schemas, or app workflow state
 
 Experiment app design:
   accepted DTA family, analysis options, calculations, plots, result summaries, and export format
@@ -185,7 +192,7 @@ When unsure, leave code in the app layer.
 
 ---
 
-## 4. Layer 2 — DTA Processing API
+## 4. Layer 2 — Gamry/DTA Processing API
 
 This is the next priority.
 
@@ -282,7 +289,32 @@ Rules:
 
 ---
 
-## 5. Layer 3 — App-Specific Scientific Workflow
+## 5. Layer 3 — Utility Base
+
+The utility base owns only small helpers that are useful across GUI, DTA, data, analysis, and app code without importing any of their domain assumptions.
+
+It may provide:
+
+- string and field-name sanitization
+- CSV escaping
+- struct append/merge helpers
+- simple numeric index/window utilities
+- positive scalar parsing
+- data-like value checks
+
+It must not know:
+
+- DTA table names or parser family choices
+- GUI handles, controls, or layout state
+- CIC, CSC, VT, EIS, or chrono result definitions
+- export column schemas
+- scientific thresholds or units
+
+Do not move code into `+gamrywb/+util` just because it is short. A utility helper is justified only when at least two layers need it and its name can be explained without project-specific vocabulary.
+
+---
+
+## 6. App-Specific Scientific Workflow
 
 The app layer connects a scientific use case to the GUI framework and DTA processing API.
 
