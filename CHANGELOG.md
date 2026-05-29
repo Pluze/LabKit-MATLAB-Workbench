@@ -11,6 +11,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 
 ### Changed
 
+- Shared the VT/CIC clear-all session reset sequence through `+gamrywb/+app`.
 - Shared the VT/CIC single-file selection callback sequence through `+gamrywb/+app`.
 - Extracted shared log-tab panel construction for VT/CIC-style apps into `+gamrywb/+ui`.
 - Extracted shared read-only summary-row construction for VT/CIC-style apps into `+gamrywb/+ui`.

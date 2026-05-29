@@ -223,6 +223,7 @@ gamrywb/+app/loadFilesIntoSession.m
 gamrywb/+app/removeSelectedItemsFromSession.m
 gamrywb/+app/selectItemsByNames.m
 gamrywb/+app/handleSingleFileSelection.m
+gamrywb/+app/handleClearSingleFileSession.m
 gamrywb/+app/launchChronoOverlayApp.m
 gamrywb/+app/launchEISApp.m
 gamrywb/+app/launchVTResistanceApp.m
@@ -473,6 +474,7 @@ Preferred split:
 +gamrywb/+app/removeSelectedItemsFromSession.m    done for Chrono/EIS overlay apps
 +gamrywb/+app/selectItemsByNames.m    done for Chrono/EIS overlay apps
 +gamrywb/+app/handleSingleFileSelection.m    done for VT resistance and CIC apps
++gamrywb/+app/handleClearSingleFileSession.m    done for VT resistance and CIC apps
 +gamrywb/+ui/refreshListboxItems.m
 +gamrywb/+ui/refreshFileListbox.m    done for Chrono/EIS overlay apps
 +gamrywb/+ui/refreshSingleSelectFileListbox.m    done for VT resistance and CIC apps
@@ -725,6 +727,7 @@ Use this section to record meaningful changes in strategy.
 - removeSelectedItemsFromSession shares selected-file removal for Chrono/EIS while preserving app-owned refresh and plotting
 - selectItemsByNames shares empty-selection-as-all item lookup for Chrono/EIS plot and export paths
 - handleSingleFileSelection shares the VT/CIC single-file selection callback sequence while keeping reset, summary, and plot behavior app-owned
+- handleClearSingleFileSession shares the VT/CIC clear-all session reset sequence while applying app state before app-owned refresh callbacks
 - createSingleSelectFilePanel shares the VT/CIC files panel while preserving app-owned dialogs, selection refresh, and export behavior
 - refreshSingleSelectFileListbox shares VT/CIC single-file listbox refresh and loaded-count text while returning the app-owned current index
 - createReadOnlyInfoRow shares VT/CIC summary-row label/read-only-field construction while keeping app-specific labels and state fields in app code

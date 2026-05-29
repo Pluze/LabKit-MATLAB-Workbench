@@ -79,6 +79,27 @@ function test_appSessionHelpers()
     assert(isequal(events.', {'reset', 'summary', 'plots'}), ...
         'Single-file selection helper should preserve the empty-list callback order.');
 
+    events = {};
+    appliedState = struct();
+    clearCallbacks = struct();
+    clearCallbacks.applyState = @recordAppliedState;
+    clearCallbacks.restoreDefaultPlotSelections = @() recordSelectionEvent('restore');
+    clearCallbacks.resetAxesToDefaultState = @() recordSelectionEvent('reset');
+    clearCallbacks.refreshFileList = @() recordSelectionEvent('files');
+    clearCallbacks.refreshBatchTable = @() recordSelectionEvent('table');
+    clearCallbacks.refreshResultsSummary = @() recordSelectionEvent('summary');
+    clearCallbacks.refreshPlots = @() recordSelectionEvent('plots');
+    clearCallbacks.addLog = @(msg) recordSelectionEvent(['log:' msg]);
+    clearState = gamrywb.app.handleClearSingleFileSession('cic_vt', clearCallbacks);
+    assert(strcmp(clearState.session.kind, 'cic_vt'), ...
+        'Clear helper should create a replacement session with the requested kind.');
+    assert(isempty(clearState.items) && isempty(clearState.current), ...
+        'Clear helper should return empty items and current selection.');
+    assert(strcmp(appliedState.session.kind, 'cic_vt') && isempty(appliedState.items) && isempty(appliedState.current), ...
+        'Clear helper should apply the replacement state before refreshing UI callbacks.');
+    assert(isequal(events.', {'apply', 'restore', 'reset', 'files', 'table', 'summary', 'plots', 'log:Cleared all files.'}), ...
+        'Clear helper should preserve the clear-all callback order.');
+
     function recordEvent(kind, filepath, detail)
         events(end+1, :) = {kind, filepath, detail}; %#ok<AGROW>
     end
@@ -89,6 +110,13 @@ function test_appSessionHelpers()
 
     function recordSelectionEvent(kind)
         events{end+1, 1} = kind; %#ok<AGROW>
+    end
+
+    function recordAppliedState(sessionArg, itemsArg, currentArg)
+        appliedState.session = sessionArg;
+        appliedState.items = itemsArg;
+        appliedState.current = currentArg;
+        recordSelectionEvent('apply');
     end
 end
 

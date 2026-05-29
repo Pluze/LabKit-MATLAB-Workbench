@@ -249,16 +249,22 @@ function varargout = launchVTResistanceApp(varargin)
     end
 
     function clearAllFiles()
-        S.session = gamrywb.data.makeSession('vt_resistance');
-        S.items = S.session.items;
-        S.current = [];
-        restoreDefaultPlotSelections();
-        resetAxesToDefaultState();
-        refreshFileList();
-        refreshBatchTable();
-        refreshResultsSummary();
-        refreshPlots();
-        addLog('Cleared all files.');
+        clearCallbacks = struct();
+        clearCallbacks.applyState = @applyClearState;
+        clearCallbacks.restoreDefaultPlotSelections = @restoreDefaultPlotSelections;
+        clearCallbacks.resetAxesToDefaultState = @resetAxesToDefaultState;
+        clearCallbacks.refreshFileList = @refreshFileList;
+        clearCallbacks.refreshBatchTable = @refreshBatchTable;
+        clearCallbacks.refreshResultsSummary = @refreshResultsSummary;
+        clearCallbacks.refreshPlots = @refreshPlots;
+        clearCallbacks.addLog = @addLog;
+        gamrywb.app.handleClearSingleFileSession('vt_resistance', clearCallbacks);
+    end
+
+    function applyClearState(session, items, current)
+        S.session = session;
+        S.items = items;
+        S.current = current;
     end
 
     function refreshFileList()
