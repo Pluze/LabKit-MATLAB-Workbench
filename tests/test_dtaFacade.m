@@ -12,6 +12,9 @@ function test_dtaFacade()
         'DTA facade discovery should return only DTA files.');
     assert(any(strcmp(discoveredFiles, chronoFile)), ...
         'DTA facade discovery should include the current-controlled chrono fixture.');
+    assert(isequal(gamrywb.dta.findFiles(string(demoDir)), discoveredFiles), ...
+        'DTA facade discovery should accept scalar string folders.');
+    assertInvalidFolderInput();
 
     assert(gamrywb.dta.detectType(chronoFile) == "chrono", 'Chrono fixture should detect as chrono.');
     assert(gamrywb.dta.detectType(eisFile) == "eis", 'EIS fixture should detect as eis.');
@@ -114,6 +117,18 @@ function assertLoadFolderReportFields(report)
     assert(isequal(fieldnames(report), expectedFields(:)), ...
         'DTA folder-load report fields should match the documented schema.');
     assertLoadFilesReportFields(rmfield(report, {'folder', 'filepaths', 'nDiscovered'}));
+end
+
+function assertInvalidFolderInput()
+    try
+        gamrywb.dta.findFiles(42);
+    catch ME
+        assert(strcmp(ME.identifier, 'gamrywb:dta:InvalidFolder'), ...
+            'Invalid DTA discovery folder input should use the documented error identifier.');
+        return;
+    end
+
+    error('DTA discovery should reject non-path folder input.');
 end
 
 function removeFolderIfExists(folder)

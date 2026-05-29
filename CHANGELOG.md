@@ -14,7 +14,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Session helper coverage for empty file-list no-op behavior.
 - `gamrywb.util.interp1Safe` for shared finite-vector interpolation with nearest-point fallback.
 - Shared test fixture helpers for repeated demo fixture paths and chrono app-analysis setup.
-- DTA facade coverage for empty batch-load inputs and empty folders.
+- DTA facade coverage for empty batch-load inputs, empty folders, and folder input validation.
 
 ### Changed
 
@@ -29,6 +29,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - `gamrywb.data.addFilesToSession` now treats empty file lists as no-ops with empty reports, matching `loadFilesIntoSession`.
 - CIC and VT resistance apps now call the shared interpolation utility instead of keeping duplicated local fallback helpers.
 - `gamrywb.dta.loadFiles` now treats empty file lists as no-ops with zero-count reports.
+- `gamrywb.dta.findFiles` now normalizes scalar string folders and rejects non-path folder inputs with `gamrywb:dta:InvalidFolder`.
 
 ### Removed
 
