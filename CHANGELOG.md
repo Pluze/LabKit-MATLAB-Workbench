@@ -12,7 +12,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Focused app-boundary tests guarding single-file app ownership, DTA facade usage, removed migration namespaces, and reusable `+gamrywb/+io` export boundaries.
 - Session helper coverage for empty file-list no-op behavior.
 - `gamrywb.util.interp1Safe` for shared finite-vector interpolation with nearest-point fallback.
-- Shared test fixture helpers for repeated chrono app-analysis setup.
+- Shared test fixture helpers for repeated demo fixture paths and chrono app-analysis setup.
 
 ### Changed
 

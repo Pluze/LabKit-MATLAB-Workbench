@@ -21,6 +21,6 @@ function test_phase1_smoke()
         assert(isempty(which(removedRootNames{i})), ['Original legacy command should not resolve by default: ' removedRootNames{i}]);
     end
 
-    assert(exist(fullfile(root, 'demo', 'cv_cyclic_voltammetry_pt_reference.DTA'), 'file') == 2, ...
+    assert(exist(demoFixturePath('cv_cyclic_voltammetry_pt_reference.DTA'), 'file') == 2, ...
         'Demo fixture cv_cyclic_voltammetry_pt_reference.DTA is missing.');
 end

@@ -1,8 +1,7 @@
 function test_parseEISDTA()
 %TEST_PARSEEISDTA Verify extracted EIS parser and ZCURVE accessors.
 
-    root = fileparts(fileparts(mfilename('fullpath')));
-    fixture = fullfile(root, 'demo', 'eis_potentiostatic_zcurve.DTA');
+    fixture = demoFixturePath('eis_potentiostatic_zcurve.DTA');
 
     [meta, tables, logmsg] = gamrywb.io.parseEISDTA(fixture);
 

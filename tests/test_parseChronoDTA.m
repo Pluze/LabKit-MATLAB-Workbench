@@ -1,9 +1,7 @@
 function test_parseChronoDTA()
 %TEST_PARSECHRONODTA Verify extracted chrono DTA parser and accessors.
 
-    root = fileparts(fileparts(mfilename('fullpath')));
-
-    filepaths = gamrywb.io.findDTAFilesRecursive(fullfile(root, 'demo'));
+    filepaths = gamrywb.io.findDTAFilesRecursive(demoFixtureDir());
     assert(numel(filepaths) >= 8, 'findDTAFilesRecursive should find the demo DTA fixtures.');
     assert(all(endsWith(lower(string(filepaths)), '.dta')), 'findDTAFilesRecursive should return only DTA files.');
     assert(any(endsWith(string(filepaths), fullfile('demo', 'chrono_chronopot_current_pulse_0p2ms.DTA'))), ...
@@ -11,8 +9,8 @@ function test_parseChronoDTA()
     assert(any(endsWith(string(filepaths), fullfile('demo', 'chrono_chronoamp_voltage_pulse_0p2ms.DTA'))), ...
         'findDTAFilesRecursive should include the voltage-controlled chrono fixture.');
 
-    currentFile = fullfile(root, 'demo', 'chrono_chronopot_current_pulse_0p2ms.DTA');
-    voltageFile = fullfile(root, 'demo', 'chrono_chronoamp_voltage_pulse_0p2ms.DTA');
+    currentFile = demoFixturePath('chrono_chronopot_current_pulse_0p2ms.DTA');
+    voltageFile = demoFixturePath('chrono_chronoamp_voltage_pulse_0p2ms.DTA');
 
     [meta, tables, logmsg] = gamrywb.io.parseChronoDTA(currentFile);
 

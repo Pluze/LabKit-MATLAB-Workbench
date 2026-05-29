@@ -1,12 +1,12 @@
 function test_dtaFacade()
 %TEST_DTAFACADE Verify GUI-free DTA type detection and loading facade.
 
-    root = fileparts(fileparts(mfilename('fullpath')));
-    chronoFile = fullfile(root, 'demo', 'chrono_chronopot_current_pulse_0p2ms.DTA');
-    eisFile = fullfile(root, 'demo', 'eis_potentiostatic_zcurve.DTA');
-    cvctFile = fullfile(root, 'demo', 'cv_cyclic_voltammetry_pt_reference.DTA');
+    demoDir = demoFixtureDir();
+    chronoFile = demoFixturePath('chrono_chronopot_current_pulse_0p2ms.DTA');
+    eisFile = demoFixturePath('eis_potentiostatic_zcurve.DTA');
+    cvctFile = demoFixturePath('cv_cyclic_voltammetry_pt_reference.DTA');
 
-    discoveredFiles = gamrywb.dta.findFiles(fullfile(root, 'demo'));
+    discoveredFiles = gamrywb.dta.findFiles(demoDir);
     assert(numel(discoveredFiles) >= 8, 'DTA facade should recursively discover demo DTA fixtures.');
     assert(all(endsWith(lower(string(discoveredFiles)), '.dta')), ...
         'DTA facade discovery should return only DTA files.');
@@ -48,7 +48,7 @@ function test_dtaFacade()
     assert(contains(mismatchStatus.message, 'Expected chrono DTA'), ...
         'Mismatch status should explain expected kind.');
 
-    [missingItem, missingStatus] = gamrywb.dta.loadFile(fullfile(root, 'demo', 'missing_file.DTA'), "auto");
+    [missingItem, missingStatus] = gamrywb.dta.loadFile(demoFixturePath('missing_file.DTA'), "auto");
     assertStatusFields(missingStatus);
     assert(isempty(missingItem), 'Missing file load should not return an item.');
     assert(~missingStatus.ok, 'Missing file load should return failed status.');
@@ -61,7 +61,7 @@ function test_dtaFacade()
         'Batch report counts should match successful loads.');
     assert(all([report.statuses.ok]), 'Batch statuses should be successful.');
 
-    [folderItems, folderReport] = gamrywb.dta.loadFolder(fullfile(root, 'demo'), "auto");
+    [folderItems, folderReport] = gamrywb.dta.loadFolder(demoDir, "auto");
     assertLoadFolderReportFields(folderReport);
     assert(numel(folderItems) == folderReport.nLoaded, ...
         'Folder load should return one item per successful load.');
@@ -69,7 +69,7 @@ function test_dtaFacade()
         'Folder load report should expose discovered file count.');
     assert(folderReport.nRequested == folderReport.nDiscovered, ...
         'Folder load should request every discovered DTA file.');
-    assert(strcmp(folderReport.folder, fullfile(root, 'demo')), ...
+    assert(strcmp(folderReport.folder, demoDir), ...
         'Folder load report should preserve the requested folder.');
 end
 

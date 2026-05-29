@@ -1,8 +1,7 @@
 function test_computeCSC()
 %TEST_COMPUTECSC Verify CV/CT charge and CSC app analysis.
 
-    root = fileparts(fileparts(mfilename('fullpath')));
-    fixture = fullfile(root, 'demo', 'cv_cyclic_voltammetry_pt_reference.DTA');
+    fixture = demoFixturePath('cv_cyclic_voltammetry_pt_reference.DTA');
 
     [scanRate, curves] = gamrywb.io.parseCVCTDTA(fixture);
     assert(~isempty(curves), 'CV/CT fixture should contain at least one curve.');

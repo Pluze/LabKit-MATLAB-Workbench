@@ -1,8 +1,7 @@
 function test_makeChronoItem()
 %TEST_MAKECHRONOITEM Verify reusable chrono item construction.
 
-    root = fileparts(fileparts(mfilename('fullpath')));
-    fixture = fullfile(root, 'demo', 'chrono_chronopot_current_pulse_0p2ms.DTA');
+    fixture = demoFixturePath('chrono_chronopot_current_pulse_0p2ms.DTA');
 
     item = gamrywb.data.makeChronoItem(fixture);
 

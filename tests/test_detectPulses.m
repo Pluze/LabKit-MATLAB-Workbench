@@ -1,9 +1,8 @@
 function test_detectPulses()
 %TEST_DETECTPULSES Verify extracted pulse detection behavior.
 
-    root = fileparts(fileparts(mfilename('fullpath')));
-    currentFixture = fullfile(root, 'demo', 'chrono_chronopot_current_pulse_0p2ms.DTA');
-    voltageFixture = fullfile(root, 'demo', 'chrono_chronoamp_voltage_pulse_0p2ms.DTA');
+    currentFixture = demoFixturePath('chrono_chronopot_current_pulse_0p2ms.DTA');
+    voltageFixture = demoFixturePath('chrono_chronoamp_voltage_pulse_0p2ms.DTA');
 
     [currentMeta, currentTables] = gamrywb.io.parseChronoDTA(currentFixture);
     [currentCurve, currentOk, currentMsg] = gamrywb.data.getMainCurve(currentTables);

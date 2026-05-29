@@ -2,7 +2,7 @@ function test_eisOverlayExport()
 %TEST_EISOVERLAYEXPORT Verify EIS item schema and export/plot contracts.
 
     root = fileparts(fileparts(mfilename('fullpath')));
-    fixture = fullfile(root, 'demo', 'eis_potentiostatic_zcurve.DTA');
+    fixture = demoFixturePath('eis_potentiostatic_zcurve.DTA');
 
     item = gamrywb.data.makeEISItem(fixture);
     assert(strcmp(item.type, "eis"), 'EIS item type should be normalized.');
