@@ -5,7 +5,7 @@ This document describes the current package boundaries and compatibility layers.
 ## Core Shape
 
 ```text
-apps/ public app entry points; EIS, Chrono overlay, and CSC are single-file app implementations
+apps/ public app entry points; EIS, Chrono overlay, CSC, and VT resistance are single-file app implementations
     ↓
 +gamrywb GUI and DTA APIs
     ↓
@@ -27,7 +27,7 @@ Shared utility base:
   only small cross-cutting utilities that are not experiment-specific
 ```
 
-Experiment app implementations should live under public `apps/*.m` files rather than being absorbed into the reusable library package. The EIS, Chrono overlay, and CSC apps are single-file app implementations. VT resistance and CIC still have transitional `apps/private` launch bodies to collapse. The long-term ideal is one experiment app `.m` file owning its scientific workflow. App-specific helper packages under `apps/+gamrywb_apps` are transitional only when they preserve direct tests during migration; they are not a reusable app framework and should be eliminated.
+Experiment app implementations should live under public `apps/*.m` files rather than being absorbed into the reusable library package. The EIS, Chrono overlay, CSC, and VT resistance apps are single-file app implementations. CIC still has a transitional `apps/private` launch body to collapse. The long-term ideal is one experiment app `.m` file owning its scientific workflow. App-specific helper packages under `apps/+gamrywb_apps` are transitional only when they preserve direct tests during migration; they are not a reusable app framework and should be eliminated.
 
 ## Entrypoints
 
@@ -97,7 +97,7 @@ The GUI decides how to display that status.
 
 ## Current Package Surface
 
-- `apps/`: user-facing app entry points and app-specific implementations. EIS, Chrono overlay, and CSC are currently single public app source files. EIS and Chrono overlay have their app-specific workflow helpers folded into local functions. VT resistance and CIC still use transitional `apps/private` launch bodies. CSC, VT, and CIC-specific analysis/export/plot helpers currently live under `apps/+gamrywb_apps` as app-side transitional code so numerical tests remain direct.
+- `apps/`: user-facing app entry points and app-specific implementations. EIS, Chrono overlay, CSC, and VT resistance are currently single public app source files. EIS and Chrono overlay have their app-specific workflow helpers folded into local functions. CIC still uses a transitional `apps/private` launch body. CSC, VT, and CIC-specific analysis/export/plot helpers currently live under `apps/+gamrywb_apps` as app-side transitional code so numerical tests remain direct.
 - `+dta`: GUI-free facade for supported DTA family detection, single-file loading, and batch loading with status/report structs. It delegates to existing `+io` parser and `+data` item-construction helpers.
 - `+io`: DTA parsers, folder discovery, and session save/load. Export helpers that encode experiment-specific formats should stay with the owning app rather than in reusable `+gamrywb`.
 - `+data`: table/column accessors, CV/CT selected-column access, chrono item construction, EIS item construction, session add/remove helpers.

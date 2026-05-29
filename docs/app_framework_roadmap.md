@@ -66,7 +66,7 @@ completely new app type: about 6/10 convenient
 Why similar apps are now easier:
 
 - public app entry points are thin wrappers under `apps/`
-- app bodies should be collapsed into public `apps/*.m` files; EIS, Chrono overlay, and CSC are single-file references, while VT resistance and CIC still have transitional `apps/private` launch bodies
+- app bodies should be collapsed into public `apps/*.m` files; EIS, Chrono overlay, CSC, and VT resistance are single-file references, while CIC still has a transitional `apps/private` launch body
 - `apps/+gamrywb_apps` is a temporary migration namespace, not the final app design; remove it by folding experiment-specific helpers into the owning app files or promoting only truly reusable, parameter-light code into `+gamrywb`
 - common GUI shells and panels live under `+gamrywb/+ui`
 - low-level pulse detection and broadly reusable math/data helpers may live under `+gamrywb/+analysis`; experiment-specific workflow calculations live with the owning app
@@ -486,7 +486,9 @@ The CSC app implementation now lives directly in `apps/gamrywb_CSC_app.m`, not u
 
 The CIC app implementation now lives under `apps/private`, not under `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "chrono")` for file loading. CIC-specific voltage-transient analysis, injected-charge calculation, water-window checks, result-table, CSV, and batch-table helpers live under `apps/+gamrywb_apps/+cic`, not in reusable `+gamrywb/+analysis`, `+gamrywb/+io`, or `+gamrywb/+ui`.
 
-The VT resistance and CIC app implementations now live under `apps/private`, not under `+gamrywb/+app`, and use `gamrywb.dta.loadFile(filepath, "chrono")` for file loading. VT-specific resistance helpers and CIC-specific voltage-transient/export/table helpers live under `apps/+gamrywb_apps`, not in reusable `+gamrywb/+analysis`, `+gamrywb/+io`, or `+gamrywb/+ui`.
+The VT resistance app implementation now lives directly in `apps/gamrywb_VTResistance_app.m`, not under `apps/private` or `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "chrono")` for file loading. VT-specific resistance helpers still live under `apps/+gamrywb_apps/+vt`, not in reusable `+gamrywb/+analysis`, `+gamrywb/+io`, or `+gamrywb/+ui`; this helper package is transitional testable app-side code.
+
+The CIC app implementation now lives under `apps/private`, not under `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "chrono")` for file loading. CIC-specific voltage-transient analysis, injected-charge calculation, water-window checks, result-table, CSV, and batch-table helpers live under `apps/+gamrywb_apps/+cic`, not in reusable `+gamrywb/+analysis`, `+gamrywb/+io`, or `+gamrywb/+ui`.
 
 These are the reference paths for adopting the DTA facade and app-side workflow ownership in the remaining apps.
 
