@@ -177,7 +177,7 @@ File,Amp_A,Emc_V,Ema_V,Qc_C,Qa_C,Qt_C,CICc_mCcm2,CICa_mCcm2,CICt_mCcm2,Safe,Dete
 File,Amp_A,Emc_V,Ema_V,Qc_C,Qa_C,Qt_C,CICc_uCcm2,CICa_uCcm2,CICt_uCcm2,Safe,Detection
 ```
 
-CSC result table construction lives in `gamrywb_apps.csc.buildResultsTable`. The current CV/CSC app has no CSV export workflow.
+The current CV/CSC app has no CSV export workflow, so it does not keep a standalone result-table/export helper.
 
 ## Session Struct
 
