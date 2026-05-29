@@ -57,8 +57,8 @@ function A = computeResistance(item, opts)
         return;
     end
 
-    [cStart, cEnd] = gamrywb_apps.vt.selectSteadyWindow(pulse.cath_start, pulse.cath_end, A.windowMode);
-    [aStart, aEnd] = gamrywb_apps.vt.selectSteadyWindow(pulse.anod_start, pulse.anod_end, A.windowMode);
+    [cStart, cEnd] = selectSteadyWindow(pulse.cath_start, pulse.cath_end, A.windowMode);
+    [aStart, aEnd] = selectSteadyWindow(pulse.anod_start, pulse.anod_end, A.windowMode);
     cathMask = t >= cStart & t <= cEnd;
     anodMask = t >= aStart & t <= aEnd;
     if nnz(cathMask) < 2 || nnz(anodMask) < 2
@@ -82,9 +82,9 @@ function A = computeResistance(item, opts)
     A.cathBaselineEnd = pulse.pre_end;
     A.anodBaselineStart = pulse.post_start;
     A.anodBaselineEnd = pulse.post_end;
-    [A.Vc_baseline_V, A.cathBaselineWindow_s] = gamrywb_apps.vt.estimateBaseline( ...
+    [A.Vc_baseline_V, A.cathBaselineWindow_s] = estimateBaseline( ...
         t, Vf, pulse.pre_start, pulse.pre_end, 0);
-    [A.Va_baseline_V, A.anodBaselineWindow_s] = gamrywb_apps.vt.estimateBaseline( ...
+    [A.Va_baseline_V, A.anodBaselineWindow_s] = estimateBaseline( ...
         t, Vf, pulse.post_start, pulse.post_end, chooseFinite(A.Vc_baseline_V, 0));
 
     A.dVc_V = A.Vc_ss_V - A.Vc_baseline_V;
@@ -157,4 +157,26 @@ function v = chooseFinite(varargin)
             return;
         end
     end
+end
+
+function [t1, t2] = selectSteadyWindow(p1, p2, modeText)
+    t1 = p1;
+    t2 = p2;
+    if strcmp(modeText, 'Center 60% median') && isfinite(p1) && isfinite(p2) && p2 > p1
+        dt = p2 - p1;
+        t1 = p1 + 0.20 * dt;
+        t2 = p1 + 0.80 * dt;
+    end
+end
+
+function [v, window_s] = estimateBaseline(t, y, t1, t2, fallbackValue)
+    if nargin < 5
+        fallbackValue = NaN;
+    end
+
+    v = gamrywb.util.medianInWindow(t, y, t1, t2);
+    if ~isfinite(v)
+        v = fallbackValue;
+    end
+    window_s = max(0, t2 - t1);
 end

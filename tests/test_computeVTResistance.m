@@ -38,6 +38,10 @@ function test_computeVTResistance()
     opts.windowMode = 'Center 60% median';
     B = gamrywb_apps.vt.computeResistance(item, opts);
     assert(B.ok, B.message);
+    assertClose(B.cathSteadyStart, A.pulse.cath_start + 0.20 * (A.pulse.cath_end - A.pulse.cath_start), ...
+        1e-15, 'Center-window cathodic start');
+    assertClose(B.cathSteadyEnd, A.pulse.cath_start + 0.80 * (A.pulse.cath_end - A.pulse.cath_start), ...
+        1e-15, 'Center-window cathodic end');
     assertClose(B.Vc_ss_V, -1.21322, 1e-12, 'Center-window cathodic steady voltage');
     assertClose(B.Ravg_abs_ohm, 99.417071968208802, 1e-10, 'Center-window average resistance');
 
@@ -49,18 +53,15 @@ function test_computeVTResistance()
     assertClose(C.Ra_abs_ohm, 98.93628425123481, 1e-10, 'Raw-mode anodic resistance');
     assertClose(C.Ravg_abs_ohm, 99.452067075743528, 1e-10, 'Raw-mode average resistance');
 
-    [c1, c2] = gamrywb_apps.vt.selectSteadyWindow(1, 2, 'Center 60% median');
-    assertClose(c1, 1.2, 1e-15, 'Center-window start');
-    assertClose(c2, 1.8, 1e-15, 'Center-window end');
-
-    [baseline, window] = gamrywb_apps.vt.estimateBaseline([0; 1], [NaN; NaN], 0, 1, 5);
-    assertClose(baseline, 5, 1e-15, 'Baseline fallback');
-    assertClose(window, 1, 1e-15, 'Baseline window duration');
-
     bad = struct('meta', struct(), 'tables', struct([]));
     D = gamrywb_apps.vt.computeResistance(bad, struct());
     assert(~D.ok, 'Missing curve should fail.');
     assert(strcmp(D.message, 'Main transient table not found.'), 'Missing curve message should match legacy wording.');
+
+    assert(exist(fullfile(root, 'apps', '+gamrywb_apps', '+vt', 'selectSteadyWindow.m'), 'file') ~= 2, ...
+        'VT steady-window selection should not remain a separate public helper.');
+    assert(exist(fullfile(root, 'apps', '+gamrywb_apps', '+vt', 'estimateBaseline.m'), 'file') ~= 2, ...
+        'VT baseline estimation should not remain a separate public helper.');
 end
 
 function assertClose(actual, expected, tol, label)

@@ -486,7 +486,7 @@ The CSC app implementation now lives directly in `apps/gamrywb_CSC_app.m`, not u
 
 The CIC app implementation now lives directly in `apps/gamrywb_CIC_app.m`, not under `apps/private` or `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "chrono")` for file loading. CIC-specific voltage-transient analysis, injected-charge calculation, water-window checks, result-table, CSV, and batch-table helpers live under `apps/+gamrywb_apps/+cic`, not in reusable `+gamrywb/+analysis`, `+gamrywb/+io`, or `+gamrywb/+ui`; this helper package is transitional testable app-side code.
 
-The VT resistance app implementation now lives directly in `apps/gamrywb_VTResistance_app.m`, not under `apps/private` or `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "chrono")` for file loading. VT-specific resistance helpers still live under `apps/+gamrywb_apps/+vt`, not in reusable `+gamrywb/+analysis`, `+gamrywb/+io`, or `+gamrywb/+ui`; this helper package is transitional testable app-side code.
+The VT resistance app implementation now lives directly in `apps/gamrywb_VTResistance_app.m`, not under `apps/private` or `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "chrono")` for file loading. VT-specific resistance helpers still live under `apps/+gamrywb_apps/+vt`, not in reusable `+gamrywb/+analysis`, `+gamrywb/+io`, or `+gamrywb/+ui`; steady-window and baseline subcalculations are local to `computeResistance.m` rather than separate app helper APIs. This helper package is transitional testable app-side code.
 
 These are the reference paths for adopting the DTA facade and app-side workflow ownership in future apps.
 

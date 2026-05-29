@@ -153,6 +153,8 @@ gamrywb_apps.vt.writeResultsCSV
 gamrywb_apps.vt.buildBatchTableData
 ```
 
+VT steady-window selection and baseline estimation are local details of `gamrywb_apps.vt.computeResistance`; they are not separate reusable APIs.
+
 VT CSV column order:
 
 ```text
