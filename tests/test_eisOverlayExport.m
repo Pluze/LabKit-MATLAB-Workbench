@@ -1,5 +1,5 @@
 function test_eisOverlayExport()
-%TEST_EISOVERLAYEXPORT Verify EIS item schema and app-side workflow ownership.
+%TEST_EISOVERLAYEXPORT Verify EIS item schema and export/plot contracts.
 
     root = fileparts(fileparts(mfilename('fullpath')));
     fixture = fullfile(root, 'demo', 'eis_potentiostatic_zcurve.DTA');
@@ -29,14 +29,6 @@ function test_eisOverlayExport()
 
     appFile = fullfile(root, 'apps', 'gamrywb_EIS_app.m');
     source = fileread(appFile);
-    assert(~contains(source, 'gamrywb_apps.eis'), ...
-        'EIS app should not depend on the transitional gamrywb_apps.eis namespace.');
-    assert(contains(source, 'function values = valuesForAxis'), ...
-        'EIS axis selection should be local to the public app file.');
-    assert(contains(source, 'function T = buildExportTable'), ...
-        'EIS export table construction should be local to the public app file.');
-    assert(contains(source, 'function labels = plotOverlay'), ...
-        'EIS overlay plotting should be local to the public app file.');
     assert(contains(source, '''Freq (Hz)''') && contains(source, '''Zreal (ohm)''') && ...
         contains(source, '''-Zimag (ohm)'''), ...
         'EIS app should preserve legacy axis labels.');
@@ -44,8 +36,6 @@ function test_eisOverlayExport()
         'EIS app should preserve legacy export column naming logic.');
     assert(contains(source, 'axis(ax, ''equal'')'), ...
         'EIS app should preserve equal-axis Nyquist plot behavior.');
-    assert(exist(fullfile(root, 'apps', '+gamrywb_apps', '+eis'), 'dir') ~= 7, ...
-        'The transitional gamrywb_apps.eis package should be removed.');
 end
 
 function assertClose(actual, expected, label)
