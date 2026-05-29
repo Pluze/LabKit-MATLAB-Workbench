@@ -234,6 +234,22 @@ cathodic resistance
 anodic resistance
 average resistance
 batch result table values
+CSV export headers
+CSV export values
+legacy failed-row formatting
+```
+
+Current default tests include VT resistance checks for:
+
+```text
+analysis values for full and center-60% windows
+baseline-corrected and raw resistance modes
+legacy failure messages
+CSV result table variable names
+legacy 9-column batch table data
+legacy CSV header spelling/order
+legacy CSV NaN failed-row formatting
+legacy CSV quoted text escaping
 ```
 
 ---

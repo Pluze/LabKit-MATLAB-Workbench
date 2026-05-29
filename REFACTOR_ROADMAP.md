@@ -350,6 +350,9 @@ Package areas:
 +gamrywb/+analysis/computeVTResistance.m
 +gamrywb/+analysis/estimateBaseline.m
 +gamrywb/+analysis/selectSteadyWindow.m
++gamrywb/+io/buildVTResistanceResultsTable.m
++gamrywb/+io/writeVTResistanceResultsCSV.m
++gamrywb/+ui/buildVTResistanceBatchTableData.m
 +gamrywb/+plot/plotVTResistanceDebug.m
 ```
 
@@ -376,6 +379,8 @@ Current implementation note:
 
 - `legacy/gamry_VT_resistance_gui_legacy.m` now calls `gamrywb.analysis.computeVTResistance`.
 - `computeVTResistance` currently returns legacy-compatible fields so existing summary tables, plots, and CSV export remain unchanged.
+- VT resistance CSV result table construction and legacy-format CSV writing are provided by `gamrywb.io`.
+- The legacy VT batch `uitable` data is provided by `gamrywb.ui.buildVTResistanceBatchTableData`.
 
 ---
 
@@ -526,6 +531,7 @@ Package areas:
 +gamrywb/+io/loadSession.m
 +gamrywb/+io/exportTableCSV.m
 +gamrywb/+analysis/summarizeBatchResults.m
++gamrywb/+ui/buildVTResistanceBatchTableData.m
 ```
 
 Status: started.
@@ -536,6 +542,7 @@ Current implementation note:
 - `gamrywb.data.addFilesToSession` and `gamrywb.data.removeFilesFromSession` provide loader-driven add/remove helpers.
 - `gamrywb.io.saveSession` and `gamrywb.io.loadSession` persist session structs to MAT files.
 - `gamrywb.analysis.summarizeBatchResults` creates a common result status table.
+- VT resistance result/export table helpers are package-backed while preserving the legacy GUI table shape and CSV format.
 - Legacy GUIs have not yet been migrated to shared session state.
 
 ---

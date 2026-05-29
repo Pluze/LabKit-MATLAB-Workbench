@@ -157,7 +157,29 @@ Axis-value generation for EIS is centralized in:
 
 ---
 
-## 5. CVCTItem
+## 5. VT Resistance Results
+
+`gamrywb.analysis.computeVTResistance` returns a legacy-compatible result struct. Result/export helpers currently preserve the legacy GUI's field names and table columns rather than introducing a new normalized result model.
+
+Current package-backed VT result helpers:
+
+```text
++gamrywb/+io/buildVTResistanceResultsTable.m
++gamrywb/+io/writeVTResistanceResultsCSV.m
++gamrywb/+ui/buildVTResistanceBatchTableData.m
+```
+
+The CSV result table preserves the legacy column order:
+
+```text
+File,Ic_A,Ia_A,Vc_ss_V,Va_ss_V,Vc_baseline_V,Va_baseline_V,dVc_V,dVa_V,Rc_bc_ohm,Ra_bc_ohm,Ravg_bc_ohm,WindowMode,Detection,Status
+```
+
+The GUI batch table remains a 9-column cell array matching the legacy `uitable` display.
+
+---
+
+## 6. CVCTItem
 
 Used for CV / CT charge integration and CSC analysis.
 
@@ -192,7 +214,7 @@ Plot note:
 
 ---
 
-## 6. Pulse Struct
+## 7. Pulse Struct
 
 Pulse detection currently returns a struct with both legacy-compatible flat fields and future normalized nested fields.
 
@@ -236,7 +258,7 @@ Do not remove legacy flat fields until all legacy GUI call sites and analysis mo
 
 ---
 
-## 7. Session Struct
+## 8. Session Struct
 
 A shared session model has started in `gamrywb.data.makeSession`.
 
@@ -280,7 +302,7 @@ Do not use opaque object dumps for long-term scientific data exchange.
 
 ---
 
-## 8. Option Structs
+## 9. Option Structs
 
 Analysis functions should use option structs.
 
@@ -302,7 +324,7 @@ computeCIC(t, Vf, Im, area, delay, cathLimit, anodLimit, mode)
 
 ---
 
-## 9. Data Model Stability Rule
+## 10. Data Model Stability Rule
 
 Before converting any struct model into a MATLAB class, the project should have:
 

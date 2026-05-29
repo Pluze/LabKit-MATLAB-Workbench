@@ -388,32 +388,7 @@ function gamry_VT_resistance_gui_legacy
             tbl.Data = cell(0,9);
             return;
         end
-        C = cell(numel(S.items),9);
-        for i = 1:numel(S.items)
-            it = S.items(i);
-            C{i,1} = it.name;
-            if isempty(it.analysis) || ~isfield(it.analysis,'ok') || ~it.analysis.ok
-                C{i,2} = NaN;
-                C{i,3} = NaN;
-                C{i,4} = NaN;
-                C{i,5} = NaN;
-                C{i,6} = NaN;
-                C{i,7} = NaN;
-                C{i,8} = NaN;
-                C{i,9} = 'parse/analyze failed';
-            else
-                A = it.analysis;
-                C{i,2} = A.Ic_est_A;
-                C{i,3} = A.Ia_est_A;
-                C{i,4} = A.Vc_ss_V;
-                C{i,5} = A.Va_ss_V;
-                C{i,6} = A.Rc_abs_ohm;
-                C{i,7} = A.Ra_abs_ohm;
-                C{i,8} = A.Ravg_abs_ohm;
-                C{i,9} = A.detectMode;
-            end
-        end
-        tbl.Data = C;
+        tbl.Data = gamrywb.ui.buildVTResistanceBatchTableData(S.items);
     end
 
     function refreshResultsSummary()
@@ -619,35 +594,11 @@ function gamry_VT_resistance_gui_legacy
             return;
         end
         out = fullfile(p,f);
-        fid = fopen(out,'w');
-        if fid < 0
-            uialert(fig,'Could not open file for writing.','Export');
+        [ok, msg] = gamrywb.io.writeVTResistanceResultsCSV(S.items, out);
+        if ~ok
+            uialert(fig,msg,'Export');
             return;
         end
-        fprintf(fid,'File,Ic_A,Ia_A,Vc_ss_V,Va_ss_V,Vc_baseline_V,Va_baseline_V,dVc_V,dVa_V,Rc_bc_ohm,Ra_bc_ohm,Ravg_bc_ohm,WindowMode,Detection,Status\n');
-        for i = 1:numel(S.items)
-            it = S.items(i);
-            if isempty(it.analysis) || ~it.analysis.ok
-                msg = '';
-                if ~isempty(it.analysis) && isfield(it.analysis,'message')
-                    msg = it.analysis.message;
-                end
-                nanv = NaN;
-                fprintf(fid,'"%s",%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,"%s","%s","%s"\n', ...
-                    gamrywb.util.csvEscape(it.name), nanv, nanv, nanv, nanv, nanv, nanv, nanv, nanv, ...
-                    nanv, nanv, nanv, '', 'failed', gamrywb.util.csvEscape(msg));
-            else
-                A = it.analysis;
-                Rc_bc = abs(A.Rc_dV_ohm);
-                Ra_bc = abs(A.Ra_dV_ohm);
-                Ravg_bc = mean([Rc_bc, Ra_bc], 'omitnan');
-                fprintf(fid,'"%s",%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,"%s","%s","%s"\n', ...
-                    gamrywb.util.csvEscape(it.name), A.Ic_est_A, A.Ia_est_A, A.Vc_ss_V, A.Va_ss_V, ...
-                    A.Vc_baseline_V, A.Va_baseline_V, A.dVc_V, A.dVa_V, Rc_bc, Ra_bc, Ravg_bc, ...
-                    gamrywb.util.csvEscape(A.windowMode), gamrywb.util.csvEscape(A.detectMode), gamrywb.util.csvEscape(A.message));
-            end
-        end
-        fclose(fid);
         addLog(['Exported CSV: ' out]);
     end
 

@@ -31,6 +31,7 @@ Current summary:
 - Shared pulse detection is used by the multi-DTA overlay/export, VT resistance, and CIC legacy GUIs.
 - Chrono overlay plotting and CSV export table construction have started moving into package helpers.
 - VT resistance analysis is package-backed.
+- VT resistance result/export table construction and legacy-format CSV writing are package-backed.
 - CIC / voltage-transient analysis is package-backed.
 - CV/CT charge and CSC analysis are package-backed.
 - CV/CT selected-column access and plotting are package-backed.
@@ -143,10 +144,10 @@ Current pulse struct note:
 - The shared pulse struct currently preserves legacy flat fields such as `cath_start`, `cath_end`, `anod_start`, `anod_end`, `gap_start`, and `gap_end`.
 - It also adds normalized nested fields such as `pulse.cath.start_s`, `pulse.anod.start_s`, and `pulse.gap.center_s` for future package-backed analysis work.
 
-Still local after current Phase 3 progress:
+Still local at the Phase 3 checkpoint:
 
-- VT resistance still owns resistance analysis, plotting, CSV export structure, and UI callbacks.
-- CIC still owns CIC/voltage-transient analysis, plotting, batch summaries, and UI callbacks.
+- VT resistance still owned resistance analysis, plotting, CSV export structure, and UI callbacks. Resistance analysis was extracted later in Phase 5, and result/export table helpers were extracted later in Phase 9.
+- CIC still owned CIC/voltage-transient analysis, plotting, batch summaries, and UI callbacks. CIC analysis was extracted later in Phase 6.
 
 Known scope limitation:
 
@@ -171,7 +172,7 @@ Behavior preserved:
 - CSV column names beginning with `TimeGapCenterAligned_s`, `V_*`, and `I_*`.
 - Merged aligned-time export axis and interpolation with `NaN` outside each source range.
 
-Still local after current Phase 4 progress:
+Still local at the Phase 4 checkpoint:
 
 - Multi-DTA GUI file selection, duplicate skipping, UI callbacks, and log display.
 - EIS overlay/export table construction.
@@ -186,7 +187,11 @@ Completed work:
 - Added `gamrywb.analysis.computeVTResistance`.
 - Added `gamrywb.analysis.selectSteadyWindow`.
 - Added `gamrywb.analysis.estimateBaseline`.
+- Added `gamrywb.io.buildVTResistanceResultsTable`.
+- Added `gamrywb.io.writeVTResistanceResultsCSV`.
+- Added `gamrywb.ui.buildVTResistanceBatchTableData`.
 - Updated `legacy/gamry_VT_resistance_gui_legacy.m` to call the shared VT resistance analysis function.
+- Updated `legacy/gamry_VT_resistance_gui_legacy.m` to call the shared VT resistance batch table and CSV writer helpers.
 
 Behavior preserved:
 
@@ -195,10 +200,12 @@ Behavior preserved:
 - Median current and voltage estimates.
 - Baseline-corrected dV/I and raw Vf/I modes.
 - Legacy result fields used by summary tables, plots, and CSV export.
+- Legacy batch results `uitable` 9-column shape.
+- Legacy CSV column names, numeric formatting, failed-row `NaN` values, and quoted text escaping.
 
 Still local after current Phase 5 progress:
 
-- VT resistance plotting and CSV export formatting.
+- VT resistance plotting and current-file summary text formatting.
 - CV/CSC extraction, which was handled in later Phase 7 work.
 - EIS overlay/export logic.
 
@@ -303,6 +310,7 @@ Completed work:
 - Added `gamrywb.io.saveSession`.
 - Added `gamrywb.io.loadSession`.
 - Added `gamrywb.analysis.summarizeBatchResults`.
+- Added VT resistance result/export table helpers and a VT batch display-data helper as the first app-specific Phase 9 table extraction.
 
 Behavior preserved:
 
@@ -311,11 +319,12 @@ Behavior preserved:
 - Duplicate skipping is based on existing item `filepath` values.
 - Session persistence stores the explicit `gamrywb_session` struct.
 - Batch summaries use common `name`, `filepath`, `analysis.ok`, and `analysis.message` fields without changing existing app-specific tables.
+- VT resistance result/export helpers preserve the existing app-specific table and CSV contract.
 
 Still local after current Phase 9 progress:
 
 - Migration of legacy GUI state containers to shared session helpers.
-- App-specific result/export table builders not already extracted.
+- CIC and CV/CSC result/export table builders not already extracted.
 
 ---
 
@@ -339,6 +348,7 @@ Still local after current Phase 9 progress:
 | pulse-gap alignment | multi-DTA overlay | `+gamrywb/+analysis/alignChronoByPulseGap.m` | Extracted for blank-gap-centered alignment with first-sample fallback. Multi-DTA overlay uses shared implementation. |
 | `buildExportTable` | multi-DTA overlay, EIS overlay | `+gamrywb/+io/buildChronoOverlayExportTable.m`, `+gamrywb/+io/buildEISExportTable.m` | Chrono overlay and EIS current-plot export tables extracted. Preserve CSV headers, row index behavior, and interpolation behavior where applicable. |
 | VT resistance analysis | VT resistance GUI | `+gamrywb/+analysis/computeVTResistance.m` | Started Phase 5. Preserve median windows, baselines, dV/I mode, raw Vf/I mode, and legacy result fields. |
+| VT resistance results/export table | VT resistance GUI | `+gamrywb/+io/buildVTResistanceResultsTable.m`, `writeVTResistanceResultsCSV.m`, `+gamrywb/+ui/buildVTResistanceBatchTableData.m` | Started Phase 9 app-specific table extraction. Preserve legacy 9-column GUI table data and CSV header/formatting. |
 | CIC / voltage-transient analysis | CIC GUI | `+gamrywb/+analysis/computeCIC.m` and related helpers | Started Phase 6. Preserve Emc/Ema, injected charge, CIC normalization, safety classification, and legacy result fields. |
 | `valuesForAxis` | EIS overlay | `+gamrywb/+analysis/valuesForEISAxis.m` | Started Phase 8. Preserve all axis labels and log-axis behavior. |
 | EIS item construction | EIS overlay | `+gamrywb/+data/makeEISItem.m` | Started Phase 8. Preserve ZCURVE choice, filtering, point fallback, and frequency order flag. |
