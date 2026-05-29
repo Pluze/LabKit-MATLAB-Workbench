@@ -19,7 +19,7 @@ Compatibility retained:
 
 - root-level original GUI command names remain runnable
 - preserved GUI implementations remain under `legacy/`
-- app entry points under `apps/` delegate to preserved legacy GUIs
+- `gamrywb_EIS_app` is package-backed; the remaining app entry points delegate to preserved legacy GUIs
 - `startup_gamrywb` keeps `legacy/` off the default runtime path; root wrappers add it only when original command compatibility is used
 
 ## Migration Highlights

@@ -13,4 +13,10 @@ function test_phase10_apps()
         assert(exist(appFile, 'file') == 2, ['Missing app entry point: ' apps{i}]);
         assert(~isempty(which(apps{i})), ['App entry point does not resolve: ' apps{i}]);
     end
+
+    eisAppFile = fullfile(root, 'apps', 'gamrywb_EIS_app.m');
+    eisSource = fileread(eisAppFile);
+    assert(~contains(eisSource, '_legacy'), 'gamrywb_EIS_app should not call legacy implementations.');
+    assert(~contains(eisSource, 'gamry_EIS_multiDTA_plot_gui('), ...
+        'gamrywb_EIS_app should not delegate to the root legacy-compatible EIS wrapper.');
 end

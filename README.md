@@ -11,7 +11,7 @@ What that means:
 - Original GUI commands still run through compatibility wrappers.
 - Preserved GUI implementations remain under `legacy/` as behavior references and compatibility targets.
 - CIC, VT resistance, CV/CSC, chrono overlay, and EIS overlay/export workflows have package-backed parser, analysis, plotting, export, or UI helper coverage where v1.0 required it.
-- App entry points under `apps/` are compatibility delegates to the preserved legacy GUIs.
+- `gamrywb_EIS_app` is package-backed; the other app entry points currently delegate to preserved legacy GUIs.
 
 Deferred beyond v1.0:
 
@@ -40,7 +40,7 @@ gamry_EIS_multiDTA_plot_gui
 gamry_multiDTA_plot_export_gui
 ```
 
-The `gamrywb_*_app` entry points currently delegate to the behavior-preserved legacy GUIs. They are named app entry points for compatibility and onboarding, not completed rewrites.
+`gamrywb_EIS_app` is the first package-backed app entry point. The other `gamrywb_*_app` entry points currently delegate to behavior-preserved legacy GUIs and remain compatibility entry points.
 
 ## Running Tests
 
