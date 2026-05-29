@@ -11,6 +11,7 @@ function test_gui_layout_controls()
     checkCIC();
     checkFileListboxRefreshHelper();
     checkInfoLogAreaHelpers();
+    checkPlotOptionsPanelHelper();
 end
 
 function checkMultiDTA()
@@ -164,6 +165,23 @@ function checkInfoLogAreaHelpers()
     assert(strcmp(txtLog.Editable, 'off'), 'Log area helper should create a read-only text area.');
     assert(sameStringCell(txtLog.Value, {'GUI started.'}), ...
         'Log area helper should preserve the default initial log line.');
+end
+
+function checkPlotOptionsPanelHelper()
+    fig = uifigure('Visible', 'off', 'Name', 'gamrywb_plot_options_panel_probe');
+    cleaner = onCleanup(@() delete(fig));
+    grid = uigridlayout(fig, [3 1]);
+
+    ui = gamrywb.ui.createPlotOptionsPanel(grid, 3);
+    assert(strcmp(ui.panel.Title, 'Plot Options'), 'Plot-options helper should preserve the panel title.');
+    assert(ui.panel.Layout.Row == 3, 'Plot-options helper should place the panel in row 3.');
+    assert(sameStringCell(ui.grid.RowHeight, {'fit', 'fit', 'fit'}), ...
+        'Plot-options helper should create fit-height rows.');
+    assert(sameStringCell(ui.grid.ColumnWidth, {'fit', '1x'}), ...
+        'Plot-options helper should preserve column widths.');
+    assert(isequal(ui.grid.Padding, [8 8 8 8]), 'Plot-options helper should preserve padding.');
+    assert(ui.grid.RowSpacing == 8 && ui.grid.ColumnSpacing == 8, ...
+        'Plot-options helper should preserve row and column spacing.');
 end
 
 function fig = launchFigure(entryName, expectedTitle)

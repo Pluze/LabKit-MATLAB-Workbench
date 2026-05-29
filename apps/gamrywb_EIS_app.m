@@ -52,14 +52,8 @@ function varargout = gamrywb_EIS_app(varargin)
         'ValueChangedFcn', @(~,~) refreshPlot());
     lbFiles.Layout.Row = 2;
 
-    pPlot = uipanel(left, 'Title', 'Plot Options');
-    pPlot.Layout.Row = 3;
-    gp = uigridlayout(pPlot, [8 2]);
-    gp.RowHeight = {'fit', 'fit', 'fit', 'fit', 'fit', 'fit', 'fit', 'fit'};
-    gp.ColumnWidth = {'fit', '1x'};
-    gp.Padding = [8 8 8 8];
-    gp.RowSpacing = 8;
-    gp.ColumnSpacing = 8;
+    plotOptionsUi = gamrywb.ui.createPlotOptionsPanel(left, 8);
+    gp = plotOptionsUi.grid;
 
     [~, ddX] = gamrywb.ui.createLabeledDropdown(gp, 'X axis:', ...
         'Items', axisItems, ...

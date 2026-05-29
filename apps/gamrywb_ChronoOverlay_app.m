@@ -40,14 +40,8 @@ function varargout = gamrywb_ChronoOverlay_app(varargin)
         'ValueChangedFcn', @(~,~) refreshPlots());
     lbFiles.Layout.Row = 2;
 
-    pPlot = uipanel(left, 'Title', 'Plot Options');
-    pPlot.Layout.Row = 3;
-    gp = uigridlayout(pPlot, [4 2]);
-    gp.RowHeight = {'fit', 'fit', 'fit', 'fit'};
-    gp.ColumnWidth = {'fit', '1x'};
-    gp.Padding = [8 8 8 8];
-    gp.RowSpacing = 8;
-    gp.ColumnSpacing = 8;
+    plotOptionsUi = gamrywb.ui.createPlotOptionsPanel(left, 4);
+    gp = plotOptionsUi.grid;
 
     [~, ddXAxis] = gamrywb.ui.createLabeledDropdown(gp, 'X axis:', ...
         'Items', {'Time (s)', 'Time (ms)', 'Sample #'}, ...

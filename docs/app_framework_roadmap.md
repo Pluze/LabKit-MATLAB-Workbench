@@ -66,6 +66,7 @@ Current shared UI helpers:
 +gamrywb/+ui/createFilePanel.m
 +gamrywb/+ui/createInfoArea.m
 +gamrywb/+ui/createLogArea.m
++gamrywb/+ui/createPlotOptionsPanel.m
 +gamrywb/+ui/buildCICBatchTableData.m
 +gamrywb/+ui/buildVTResistanceBatchTableData.m
 ```
@@ -254,6 +255,7 @@ createTwoPaneShell
 createFilePanel
 createInfoArea
 createLogArea
+createPlotOptionsPanel
 clearAxisObjects
 disableAxesInteractivity
 hardResetAxis
@@ -492,6 +494,7 @@ Helper:
 +gamrywb/+ui/createFilePanel.m    done for Chrono/EIS overlay apps
 +gamrywb/+ui/createInfoArea.m    done for Chrono/EIS overlay apps
 +gamrywb/+ui/createLogArea.m    done for Chrono/EIS overlay apps
++gamrywb/+ui/createPlotOptionsPanel.m    done for Chrono/EIS overlay apps
 ```
 
 Expected return struct:
@@ -508,6 +511,7 @@ ui.rightGrid
 Keep app-specific controls and axes outside the shell.
 The shared files panel owns only the common button layout and callback wiring surface; dialogs and load/export behavior stay in app code.
 The shared info/log helpers own only the common read-only text-area placement and initial values.
+The shared plot-options panel owns only the common panel/grid shell; app-specific controls, defaults, and callbacks stay in app code.
 
 Acceptance criteria:
 
@@ -681,6 +685,7 @@ Use this section to record meaningful changes in strategy.
 - createTwoPaneShell starts Phase D by sharing the Chrono/EIS outer two-pane shell while keeping app-specific controls and axes in app files
 - createFilePanel shares the Chrono/EIS files button panel while keeping dialogs and export behavior in app files
 - createInfoArea and createLogArea share Chrono/EIS read-only text-area placement while preserving app-specific info copy
+- createPlotOptionsPanel shares the Chrono/EIS plot-options panel shell while preserving app-specific controls and callbacks
 - loadFilesIntoSession starts the +gamrywb/+app layer for duplicate-aware file/session loading in Chrono/EIS
 - removeSelectedItemsFromSession shares selected-file removal for Chrono/EIS while preserving app-owned refresh and plotting
 - selectItemsByNames shares empty-selection-as-all item lookup for Chrono/EIS plot and export paths
