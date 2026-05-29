@@ -157,7 +157,7 @@ function varargout = gamrywb_EIS_app(varargin)
             return;
         end
 
-        filepaths = gamrywb.io.findDTAFilesRecursive(folder);
+        filepaths = gamrywb.dta.findFiles(folder);
         if isempty(filepaths)
             addLog(sprintf('No DTA files found under: %s', folder));
             uialert(fig, sprintf('No .DTA files found under:\n%s', folder), 'No files found');

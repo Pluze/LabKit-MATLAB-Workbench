@@ -6,7 +6,8 @@ All notable user-facing and maintainer-facing changes are recorded here.
 
 ### Added
 
-- Added a GUI-free `+gamrywb/+dta` facade for supported DTA type detection, single-file loading, and batch loading with status/report structs.
+- Added a GUI-free `+gamrywb/+dta` facade for supported DTA discovery, type detection, single-file loading, and batch loading with status/report structs.
+- Added `gamrywb.dta.findFiles` as the GUI-free DTA discovery facade for recursive folder scans.
 - Added fixture-driven tests covering DTA facade detection, auto-loading, expected-kind mismatch handling, missing-file status, and mixed-family batch loading.
 
 ### Removed
@@ -48,6 +49,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Routed the CSC app's CV/CT file loading through the GUI-free DTA facade instead of parsing CV/CT files directly in the app layer.
 - Routed the VT resistance app's chrono file loading through the GUI-free DTA facade instead of parsing chrono files directly in the app layer.
 - Routed the CIC app's chrono file loading through the GUI-free DTA facade instead of parsing chrono files directly in the app layer.
+- Routed folder-based DTA discovery in folder-capable apps through the GUI-free DTA facade instead of the lower-level IO helper.
 - Extracted shared batch-result table panel construction for VT/CIC-style apps into `+gamrywb/+ui`.
 - Moved generic batch result summaries from `+gamrywb/+analysis` to `+gamrywb/+data` so the reusable analysis surface stays pulse-focused.
 - Moved GUI-free session loading, selected-item removal, and selected-item lookup helpers from `+gamrywb/+ui` to `+gamrywb/+data`.

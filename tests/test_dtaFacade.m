@@ -6,6 +6,13 @@ function test_dtaFacade()
     eisFile = fullfile(root, 'demo', 'eis_potentiostatic_zcurve.DTA');
     cvctFile = fullfile(root, 'demo', 'cv_cyclic_voltammetry_pt_reference.DTA');
 
+    discoveredFiles = gamrywb.dta.findFiles(fullfile(root, 'demo'));
+    assert(numel(discoveredFiles) >= 8, 'DTA facade should recursively discover demo DTA fixtures.');
+    assert(all(endsWith(lower(string(discoveredFiles)), '.dta')), ...
+        'DTA facade discovery should return only DTA files.');
+    assert(any(strcmp(discoveredFiles, chronoFile)), ...
+        'DTA facade discovery should include the current-controlled chrono fixture.');
+
     assert(gamrywb.dta.detectType(chronoFile) == "chrono", 'Chrono fixture should detect as chrono.');
     assert(gamrywb.dta.detectType(eisFile) == "eis", 'EIS fixture should detect as eis.');
     assert(gamrywb.dta.detectType(cvctFile) == "cvct", 'CV/CT fixture should detect as cvct.');

@@ -201,7 +201,7 @@ The DTA layer should provide a clean, GUI-free way to discover, parse, normalize
 It should eventually allow code like this:
 
 ```matlab
-files = gamrywb.io.findDTAFilesRecursive(folder);
+files = gamrywb.dta.findFiles(folder);
 items = gamrywb.dta.loadFiles(files, "chrono");
 results = myAnalysis(items, options);
 T = myExportTable(results);
@@ -241,6 +241,7 @@ The first DTA facade lives in:
 
 ```text
 +gamrywb/+dta/
+  findFiles.m
   detectType.m
   loadFile.m
   loadFiles.m
@@ -262,9 +263,10 @@ Initial implementation should delegate to existing functions in:
 The minimal first version is:
 
 ```matlab
+filepaths = gamrywb.dta.findFiles(folder);
+kind = gamrywb.dta.detectType(filepath);
 [item, status] = gamrywb.dta.loadFile(filepath, expectedKind);
 [items, report] = gamrywb.dta.loadFiles(filepaths, expectedKind);
-kind = gamrywb.dta.detectType(filepath);
 ```
 
 Where:
@@ -436,6 +438,7 @@ Added:
 
 ```text
 +gamrywb/+dta/detectType.m
++gamrywb/+dta/findFiles.m
 +gamrywb/+dta/loadFile.m
 +gamrywb/+dta/loadFiles.m
 ```
@@ -476,17 +479,17 @@ Goal:
 - tests prove no behavior change
 - the migrated app demonstrates the intended split between GUI shell, DTA loading, and experiment-specific analysis/export
 
-The EIS app implementation now lives directly in `apps/gamrywb_EIS_app.m`, not under `apps/private` or `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "eis")` for file loading. This is the reference direction for future apps: a public app file with clear local sections that calls the DTA and GUI APIs.
+The EIS app implementation now lives directly in `apps/gamrywb_EIS_app.m`, not under `apps/private` or `+gamrywb/+app`, and uses `gamrywb.dta.findFiles(folder)` plus `gamrywb.dta.loadFile(filepath, "eis")` for DTA discovery/loading. This is the reference direction for future apps: a public app file with clear local sections that calls the DTA and GUI APIs.
 
 EIS overlay axis selection, overlay plotting, and plot-export table construction now live as local functions in `apps/gamrywb_EIS_app.m`, not in reusable `+gamrywb/+analysis`, `+gamrywb/+plot`, `+gamrywb/+io`, or the transitional `apps/+gamrywb_apps` namespace.
 
-The Chrono overlay app implementation now lives directly in `apps/gamrywb_ChronoOverlay_app.m`, not under `apps/private`, `apps/+gamrywb_apps`, or `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "chrono")` for file loading. Pulse-gap alignment, VT/IT overlay plotting, and overlay export table construction are local functions in the app file, not reusable library APIs.
+The Chrono overlay app implementation now lives directly in `apps/gamrywb_ChronoOverlay_app.m`, not under `apps/private`, `apps/+gamrywb_apps`, or `+gamrywb/+app`, and uses `gamrywb.dta.findFiles(folder)` plus `gamrywb.dta.loadFile(filepath, "chrono")` for DTA discovery/loading. Pulse-gap alignment, VT/IT overlay plotting, and overlay export table construction are local functions in the app file, not reusable library APIs.
 
 The CSC app implementation now lives directly in `apps/gamrywb_CSC_app.m`, not under `apps/private`, `+gamrywb/+app`, or `apps/+gamrywb_apps`, and uses `gamrywb.dta.loadFile(filepath, "cvct")` for file loading. CSC-specific charge calculations, CT/CV charge subcalculations, and sign-split integration are local functions in the public app file, not reusable `+gamrywb/+analysis` APIs or transitional app-helper package APIs. Generic selected-curve plotting lives in `gamrywb.ui.plotCurveXY`. Because the CSC app has no CSV export workflow, it does not keep standalone result-table/export helpers.
 
-The CIC app implementation now lives directly in `apps/gamrywb_CIC_app.m`, not under `apps/private`, `apps/+gamrywb_apps`, or `+gamrywb/+app`, and uses `gamrywb.dta.loadFile(filepath, "chrono")` for file loading. CIC-specific voltage-transient analysis, injected-charge calculation, water-window checks, result-table, CSV, and batch-table helpers are local functions in the public app file, not reusable `+gamrywb/+analysis`, `+gamrywb/+io`, or `+gamrywb/+ui` APIs.
+The CIC app implementation now lives directly in `apps/gamrywb_CIC_app.m`, not under `apps/private`, `apps/+gamrywb_apps`, or `+gamrywb/+app`, and uses `gamrywb.dta.findFiles(folder)` plus `gamrywb.dta.loadFile(filepath, "chrono")` for DTA discovery/loading. CIC-specific voltage-transient analysis, injected-charge calculation, water-window checks, result-table, CSV, and batch-table helpers are local functions in the public app file, not reusable `+gamrywb/+analysis`, `+gamrywb/+io`, or `+gamrywb/+ui` APIs.
 
-The VT resistance app implementation now lives directly in `apps/gamrywb_VTResistance_app.m`, not under `apps/private`, `+gamrywb/+app`, or `apps/+gamrywb_apps`, and uses `gamrywb.dta.loadFile(filepath, "chrono")` for file loading. VT-specific resistance analysis, steady-window and baseline subcalculations, result-table construction, batch-table display data, and CSV writing are local functions in the public app file, not reusable `+gamrywb/+analysis`, `+gamrywb/+io`, or `+gamrywb/+ui` APIs.
+The VT resistance app implementation now lives directly in `apps/gamrywb_VTResistance_app.m`, not under `apps/private`, `+gamrywb/+app`, or `apps/+gamrywb_apps`, and uses `gamrywb.dta.findFiles(folder)` plus `gamrywb.dta.loadFile(filepath, "chrono")` for DTA discovery/loading. VT-specific resistance analysis, steady-window and baseline subcalculations, result-table construction, batch-table display data, and CSV writing are local functions in the public app file, not reusable `+gamrywb/+analysis`, `+gamrywb/+io`, or `+gamrywb/+ui` APIs.
 
 These are the reference paths for adopting the DTA facade and app-side workflow ownership in future apps.
 

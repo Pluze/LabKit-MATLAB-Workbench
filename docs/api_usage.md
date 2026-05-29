@@ -25,7 +25,13 @@ This adds the repository root and `apps/` to the MATLAB path.
 
 ## Gamry/DTA API
 
-Use `+gamrywb/+dta` when app code needs a GUI-free loader.
+Use `+gamrywb/+dta` when app code needs GUI-free DTA discovery or loading.
+
+Recursive DTA discovery:
+
+```matlab
+filepaths = gamrywb.dta.findFiles(folder);
+```
 
 ```matlab
 [item, status] = gamrywb.dta.loadFile(filepath, "chrono");
@@ -55,15 +61,16 @@ Type detection:
 kind = gamrywb.dta.detectType(filepath);
 ```
 
-Lower-level parser functions remain available for parser tests and format work:
+Lower-level discovery and parser functions remain available for parser tests and format work:
 
 ```matlab
+filepaths = gamrywb.io.findDTAFilesRecursive(folder);
 [meta, tables] = gamrywb.io.parseChronoDTA(filepath);
 [meta, tables] = gamrywb.io.parseEISDTA(filepath);
 [scanRate, curves] = gamrywb.io.parseCVCTDTA(filepath);
 ```
 
-Prefer the DTA facade in apps. Use direct parsers only when changing parser behavior, adding a DTA family, or writing parser-level tests.
+Prefer the DTA facade in apps. Use direct IO discovery or parsers only when changing parser behavior, adding a DTA family, or writing parser-level tests.
 
 ## Data And Session API
 

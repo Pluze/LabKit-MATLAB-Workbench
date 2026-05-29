@@ -172,7 +172,7 @@ function varargout = gamrywb_VTResistance_app(varargin)
         if isequal(folder,0)
             return;
         end
-        filepaths = gamrywb.io.findDTAFilesRecursive(folder);
+        filepaths = gamrywb.dta.findFiles(folder);
         if isempty(filepaths)
             uialert(fig,'No .DTA files found in the selected folder.','Open folder');
             return;
