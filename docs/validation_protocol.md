@@ -77,8 +77,13 @@ Analysis changes:
 
 - VT resistance median windows, baseline estimate, baseline-corrected mode, raw mode, result/export tables
 - CIC Emc/Ema, injected charge, area handling, mC/uC conversions, water-window safety, result/export tables
-- CV/CSC sign-split integration, zero-crossing handling, CT recorded-time charge, CV scan-rate-derived charge, result table
+- CV/CSC sign-split integration, zero-crossing handling, CT recorded-time charge, CV scan-rate-derived charge, and displayed result fields
 - EIS axis values, log filtering, Nyquist equal-axis behavior, current-plot export table
+
+App-boundary changes:
+
+- `apps/+gamrywb_apps` transitional helper packages contain only the explicitly allowed `.m` files needed for direct pure-function coverage
+- app-specific helper packages do not accumulate private subdirectories or unused public helpers
 
 Session/export changes:
 

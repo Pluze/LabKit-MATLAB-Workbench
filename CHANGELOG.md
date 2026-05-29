@@ -39,6 +39,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Folded VT steady-window and baseline subcalculations into `apps/+gamrywb_apps/+vt/computeResistance.m` and removed redundant public helper files.
 - Promoted generic selected-curve plotting to `gamrywb.ui.plotCurveXY` and removed the CSC-specific plotting helper.
 - Removed the unused CSC result-table helper because the current CSC app has no CSV/export workflow.
+- Streamlined transitional app-helper boundary tests to whitelist the remaining allowed `.m` files and prevent new unused helper packages or private subdirectories.
 - Routed the EIS app's file loading through the GUI-free DTA facade instead of constructing EIS items directly in the app layer.
 - Routed the Chrono overlay app's file loading through the GUI-free DTA facade while keeping pulse-gap alignment in the app workflow.
 - Routed the CSC app's CV/CT file loading through the GUI-free DTA facade instead of parsing CV/CT files directly in the app layer.

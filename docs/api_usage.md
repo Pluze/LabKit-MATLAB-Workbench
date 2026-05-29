@@ -194,6 +194,8 @@ For a new app or DTA family, add focused tests for:
 - export table or CSV format
 - app entrypoint boundary checks
 
+When an app-specific helper package is kept only so pure functions remain directly testable, whitelist its `.m` files in the app-boundary tests. Do not let `apps/+gamrywb_apps` grow into a reusable framework. Once an app can keep its workflow local without losing meaningful tests, remove the helper package.
+
 Run:
 
 ```bash
