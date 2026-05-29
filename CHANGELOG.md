@@ -48,6 +48,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Removed the unused CSC result-table helper because the current CSC app has no CSV/export workflow.
 - Streamlined app-boundary tests to prevent transitional helper packages, unused helper files, or private launcher directories from returning.
 - Streamlined app-boundary DTA facade assertions so future facade API changes do not duplicate test boilerplate across every app.
+- Tightened DTA facade tests around documented status and report schemas.
 - Routed the EIS app's file loading through the GUI-free DTA facade instead of constructing EIS items directly in the app layer.
 - Routed the Chrono overlay app's file loading through the GUI-free DTA facade while keeping pulse-gap alignment in the app workflow.
 - Routed the CSC app's CV/CT file loading through the GUI-free DTA facade instead of parsing CV/CT files directly in the app layer.

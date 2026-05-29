@@ -18,6 +18,7 @@ function test_dtaFacade()
     assert(gamrywb.dta.detectType(cvctFile) == "cvct", 'CV/CT fixture should detect as cvct.');
 
     [chronoItem, chronoStatus] = gamrywb.dta.loadFile(chronoFile, "chrono");
+    assertStatusFields(chronoStatus);
     assert(chronoStatus.ok, chronoStatus.message);
     assert(chronoStatus.kind == "chrono", 'Chrono status kind should be chrono.');
     assert(chronoItem.type == "chrono", 'Chrono item type should be preserved.');
@@ -40,6 +41,7 @@ function test_dtaFacade()
         'CV/CT item should expose scan rate fields.');
 
     [mismatchItem, mismatchStatus] = gamrywb.dta.loadFile(eisFile, "chrono");
+    assertStatusFields(mismatchStatus);
     assert(isempty(mismatchItem), 'Mismatched DTA load should not return an item.');
     assert(~mismatchStatus.ok, 'Mismatched DTA load should return failed status.');
     assert(mismatchStatus.kind == "eis", 'Mismatch status should report detected kind.');
@@ -47,17 +49,20 @@ function test_dtaFacade()
         'Mismatch status should explain expected kind.');
 
     [missingItem, missingStatus] = gamrywb.dta.loadFile(fullfile(root, 'demo', 'missing_file.DTA'), "auto");
+    assertStatusFields(missingStatus);
     assert(isempty(missingItem), 'Missing file load should not return an item.');
     assert(~missingStatus.ok, 'Missing file load should return failed status.');
     assert(contains(missingStatus.message, 'File not found'), 'Missing file status should be readable.');
 
     [items, report] = gamrywb.dta.loadFiles({chronoFile, eisFile, cvctFile}, "auto");
+    assertLoadFilesReportFields(report);
     assert(numel(items) == 3, 'Batch auto-load should return all valid items.');
     assert(report.nRequested == 3 && report.nLoaded == 3 && report.nFailed == 0, ...
         'Batch report counts should match successful loads.');
     assert(all([report.statuses.ok]), 'Batch statuses should be successful.');
 
     [folderItems, folderReport] = gamrywb.dta.loadFolder(fullfile(root, 'demo'), "auto");
+    assertLoadFolderReportFields(folderReport);
     assert(numel(folderItems) == folderReport.nLoaded, ...
         'Folder load should return one item per successful load.');
     assert(folderReport.nDiscovered == numel(folderReport.filepaths), ...
@@ -66,4 +71,27 @@ function test_dtaFacade()
         'Folder load should request every discovered DTA file.');
     assert(strcmp(folderReport.folder, fullfile(root, 'demo')), ...
         'Folder load report should preserve the requested folder.');
+end
+
+function assertStatusFields(status)
+    expectedFields = {'ok', 'message', 'kind', 'expectedKind', 'filepath'};
+    assert(isequal(fieldnames(status), expectedFields(:)), ...
+        'DTA load status fields should match the documented schema.');
+end
+
+function assertLoadFilesReportFields(report)
+    expectedFields = {'loaded', 'failed', 'statuses', 'nRequested', 'nLoaded', 'nFailed'};
+    assert(isequal(fieldnames(report), expectedFields(:)), ...
+        'DTA batch-load report fields should match the documented schema.');
+    if ~isempty(report.statuses)
+        assertStatusFields(report.statuses(1));
+    end
+end
+
+function assertLoadFolderReportFields(report)
+    expectedFields = {'loaded', 'failed', 'statuses', 'nRequested', 'nLoaded', ...
+        'nFailed', 'folder', 'filepaths', 'nDiscovered'};
+    assert(isequal(fieldnames(report), expectedFields(:)), ...
+        'DTA folder-load report fields should match the documented schema.');
+    assertLoadFilesReportFields(rmfield(report, {'folder', 'filepaths', 'nDiscovered'}));
 end
