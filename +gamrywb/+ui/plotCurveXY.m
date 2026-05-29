@@ -1,5 +1,5 @@
-function info = plotCVCT(ax, curve, xsel, ysel, opts)
-%PLOTCVCT Plot one selected X/Y pair from a parsed CV/CT curve.
+function info = plotCurveXY(ax, curve, xsel, ysel, opts)
+%PLOTCURVEXY Plot one selected X/Y pair from a parsed curve.
 
     if nargin < 5
         opts = struct();

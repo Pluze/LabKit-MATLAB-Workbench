@@ -110,6 +110,7 @@ gamrywb.ui.appendLog(txtLog, message);
 gamrywb.ui.refreshFileListbox(lbFiles, items);
 gamrywb.ui.refreshSingleSelectFileListbox(lbFiles, items, selectedIndex);
 items = gamrywb.ui.selectItemsByNames(session.items, selectedNames);
+info = gamrywb.ui.plotCurveXY(ax, curve, 'T', 'Im', opts);
 ```
 
 GUI helpers should not contain experiment names, formulas, thresholds, result columns, or export formats.

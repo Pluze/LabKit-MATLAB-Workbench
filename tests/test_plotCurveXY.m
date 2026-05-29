@@ -1,5 +1,5 @@
-function test_plotCVCT()
-%TEST_PLOTCVCT Verify CV/CT selected-column plotting helper behavior.
+function test_plotCurveXY()
+%TEST_PLOTCURVEXY Verify selected-column curve plotting helper behavior.
 
     curve = struct();
     curve.name = 'CURVE1';
@@ -21,20 +21,20 @@ function test_plotCVCT()
     ax = axes(fig);
 
     opts = struct('holdPlot', false, 'showGrid', true, 'lineWidth', 1.2);
-    info = gamrywb_apps.csc.plotCVCT(ax, curve, 'T', 'Vf', opts);
+    info = gamrywb.ui.plotCurveXY(ax, curve, 'T', 'Vf', opts);
     assert(info.ok, info.message);
-    assert(isequal(info.x, x), 'plotCVCT should plot filtered X values.');
-    assert(isequal(info.y, y), 'plotCVCT should plot filtered Y values.');
-    assert(strcmp(info.xName, 'T') && strcmp(info.yName, 'Vf'), 'plotCVCT should report axis names.');
+    assert(isequal(info.x, x), 'plotCurveXY should plot filtered X values.');
+    assert(isequal(info.y, y), 'plotCurveXY should plot filtered Y values.');
+    assert(strcmp(info.xName, 'T') && strcmp(info.yName, 'Vf'), 'plotCurveXY should report axis names.');
 
     lines = findobj(ax, 'Type', 'line');
-    assert(numel(lines) == 1, 'plotCVCT should add one data line.');
+    assert(numel(lines) == 1, 'plotCurveXY should add one data line.');
     assert(abs(lines(1).LineWidth - 1.2) < 1e-12, 'Line width should match legacy default.');
     assert(strcmp(ax.Title.String, 'CURVE1'), 'Plot title should use curve name.');
     assert(strcmp(ax.XLabel.String, 'T'), 'X label should use selected header.');
     assert(strcmp(ax.YLabel.String, 'Vf'), 'Y label should use selected header.');
 
-    info2 = gamrywb_apps.csc.plotCVCT(ax, curve, 'bad', 'Vf', opts);
+    info2 = gamrywb.ui.plotCurveXY(ax, curve, 'bad', 'Vf', opts);
     assert(~info2.ok, 'Invalid X/Y selection should fail without throwing.');
     assert(strcmp(info2.message, 'invalid X/Y'), 'Invalid selection message should be stable.');
 end

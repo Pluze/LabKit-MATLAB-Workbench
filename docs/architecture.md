@@ -104,7 +104,7 @@ The GUI decides how to display that status.
 - `+io`: DTA parsers, folder discovery, and session save/load. Export helpers that encode experiment-specific formats should stay with the owning app rather than in reusable `+gamrywb`.
 - `+data`: table/column accessors, CV/CT selected-column access, chrono item construction, EIS item construction, session add/remove helpers.
 - `+analysis`: pulse detection helpers and remaining low-level math utilities. Experiment-specific calculations should migrate toward app-side code unless they are clearly general, parameter-light math utilities.
-- `+ui`: reusable GUI framework helpers, including app axes creation/reset, log append and log panel, multi-select and single-select file-listbox refresh, multi-file and single-select file-panel, summary row, result table panel, info/log text-area, plot-options panel, simple labeled-control, two-pane shell, tabbed dual-plot shell, top/bottom plot-control construction/state helpers, and generic session/listbox orchestration used by apps.
+- `+ui`: reusable GUI framework helpers, including app axes creation/reset, selected-curve plotting, log append and log panel, multi-select and single-select file-listbox refresh, multi-file and single-select file-panel, summary row, result table panel, info/log text-area, plot-options panel, simple labeled-control, two-pane shell, tabbed dual-plot shell, top/bottom plot-control construction/state helpers, and generic session/listbox orchestration used by apps.
 - `+util`: low-risk generic helpers used by parser, data, analysis, UI, and export code. It should not contain GUI state, DTA-family dispatch, scientific result definitions, plot labels, or export schemas.
 
 ## Boundaries To Preserve
