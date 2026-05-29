@@ -118,7 +118,7 @@ Common shell helpers:
 
 ```matlab
 ui = gamrywb.ui.createTwoPaneShell(titleText, position, leftWidth, rightTitle, rowCount, rowHeights, spacing);
-ui = gamrywb.ui.createTabbedDualPlotShell(titleText, position, leftWidth, startDragFcn);
+ui = gamrywb.ui.createTabbedDualPlotShell(titleText, position, leftWidth, startDragFcn, labels);
 ```
 
 Common controls and panels:
