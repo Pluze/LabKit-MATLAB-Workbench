@@ -60,6 +60,7 @@ Current shared UI helpers:
 +gamrywb/+ui/appendLog.m
 +gamrywb/+ui/refreshListboxItems.m
 +gamrywb/+ui/refreshFileListbox.m
++gamrywb/+ui/createAxes.m
 +gamrywb/+ui/createLabeledDropdown.m
 +gamrywb/+ui/createLabeledEditField.m
 +gamrywb/+ui/createTwoPaneShell.m
@@ -249,6 +250,7 @@ buildVTResistanceBatchTableData
 appendLog
 refreshListboxItems
 refreshFileListbox
+createAxes
 createLabeledDropdown
 createLabeledEditField
 createTwoPaneShell
@@ -264,7 +266,6 @@ hardResetAxis
 Next candidates:
 
 ```text
-createAxes
 createTabbedDualPlotShell
 createResultTable
 createTopBottomPlotPanel
@@ -495,6 +496,7 @@ Helper:
 +gamrywb/+ui/createInfoArea.m    done for Chrono/EIS overlay apps
 +gamrywb/+ui/createLogArea.m    done for Chrono/EIS overlay apps
 +gamrywb/+ui/createPlotOptionsPanel.m    done for Chrono/EIS overlay apps
++gamrywb/+ui/createAxes.m    done for Chrono/EIS overlay apps
 ```
 
 Expected return struct:
@@ -512,6 +514,7 @@ Keep app-specific controls and axes outside the shell.
 The shared files panel owns only the common button layout and callback wiring surface; dialogs and load/export behavior stay in app code.
 The shared info/log helpers own only the common read-only text-area placement and initial values.
 The shared plot-options panel owns only the common panel/grid shell; app-specific controls, defaults, and callbacks stay in app code.
+The shared axes helper owns only initial axes creation, layout row, and labels.
 
 Acceptance criteria:
 
@@ -686,6 +689,7 @@ Use this section to record meaningful changes in strategy.
 - createFilePanel shares the Chrono/EIS files button panel while keeping dialogs and export behavior in app files
 - createInfoArea and createLogArea share Chrono/EIS read-only text-area placement while preserving app-specific info copy
 - createPlotOptionsPanel shares the Chrono/EIS plot-options panel shell while preserving app-specific controls and callbacks
+- createAxes shares Chrono/EIS initial axes construction while preserving labels
 - loadFilesIntoSession starts the +gamrywb/+app layer for duplicate-aware file/session loading in Chrono/EIS
 - removeSelectedItemsFromSession shares selected-file removal for Chrono/EIS while preserving app-owned refresh and plotting
 - selectItemsByNames shares empty-selection-as-all item lookup for Chrono/EIS plot and export paths

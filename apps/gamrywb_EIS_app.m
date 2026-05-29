@@ -123,11 +123,7 @@ function varargout = gamrywb_EIS_app(varargin)
 
     txtLog = gamrywb.ui.createLogArea(left);
 
-    ax = uiaxes(right);
-    ax.Layout.Row = 1;
-    title(ax, 'EIS Overlay');
-    xlabel(ax, 'Zreal (ohm)');
-    ylabel(ax, '-Zimag (ohm)');
+    ax = gamrywb.ui.createAxes(right, 1, 'EIS Overlay', 'Zreal (ohm)', '-Zimag (ohm)');
 
     txtSummary = uitextarea(right, 'Editable', 'off');
     txtSummary.Layout.Row = 2;

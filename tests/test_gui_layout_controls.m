@@ -12,6 +12,7 @@ function test_gui_layout_controls()
     checkFileListboxRefreshHelper();
     checkInfoLogAreaHelpers();
     checkPlotOptionsPanelHelper();
+    checkCreateAxesHelper();
 end
 
 function checkMultiDTA()
@@ -182,6 +183,18 @@ function checkPlotOptionsPanelHelper()
     assert(isequal(ui.grid.Padding, [8 8 8 8]), 'Plot-options helper should preserve padding.');
     assert(ui.grid.RowSpacing == 8 && ui.grid.ColumnSpacing == 8, ...
         'Plot-options helper should preserve row and column spacing.');
+end
+
+function checkCreateAxesHelper()
+    fig = uifigure('Visible', 'off', 'Name', 'gamrywb_create_axes_probe');
+    cleaner = onCleanup(@() delete(fig));
+    grid = uigridlayout(fig, [2 1]);
+
+    ax = gamrywb.ui.createAxes(grid, 2, 'Probe Title', 'Probe X', 'Probe Y');
+    assert(ax.Layout.Row == 2, 'Axes helper should set the requested layout row.');
+    assert(strcmp(char(ax.Title.String), 'Probe Title'), 'Axes helper should preserve the title.');
+    assert(strcmp(char(ax.XLabel.String), 'Probe X'), 'Axes helper should preserve the x label.');
+    assert(strcmp(char(ax.YLabel.String), 'Probe Y'), 'Axes helper should preserve the y label.');
 end
 
 function fig = launchFigure(entryName, expectedTitle)

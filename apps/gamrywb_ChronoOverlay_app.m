@@ -79,17 +79,8 @@ function varargout = gamrywb_ChronoOverlay_app(varargin)
 
     txtLog = gamrywb.ui.createLogArea(left);
 
-    axV = uiaxes(right);
-    axV.Layout.Row = 1;
-    title(axV, 'Voltage');
-    xlabel(axV, 'Time (s)');
-    ylabel(axV, 'Vf (V)');
-
-    axI = uiaxes(right);
-    axI.Layout.Row = 2;
-    title(axI, 'Current');
-    xlabel(axI, 'Time (s)');
-    ylabel(axI, 'Im (A)');
+    axV = gamrywb.ui.createAxes(right, 1, 'Voltage', 'Time (s)', 'Vf (V)');
+    axI = gamrywb.ui.createAxes(right, 2, 'Current', 'Time (s)', 'Im (A)');
     if nargout == 1
         varargout{1} = fig;
     end
