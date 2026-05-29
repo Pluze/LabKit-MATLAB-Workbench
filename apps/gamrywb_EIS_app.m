@@ -294,7 +294,7 @@ function varargout = gamrywb_EIS_app(varargin)
             return;
         end
 
-        items = getSelectedItems();
+        items = gamrywb.app.selectItemsByNames(S.items, lbFiles.Value);
         if isempty(items)
             txtSummary.Value = {'No files selected.'};
             return;
@@ -315,24 +315,8 @@ function varargout = gamrywb_EIS_app(varargin)
         txtSummary.Value = buildSummary(items);
     end
 
-    function items = getSelectedItems()
-        if isempty(S.items)
-            items = struct([]);
-            return;
-        end
-
-        names = string(lbFiles.Value);
-        if isempty(names)
-            items = S.items;
-            return;
-        end
-
-        mask = ismember(string({S.items.name}), names);
-        items = S.items(mask);
-    end
-
     function onExportCSV(~, ~)
-        items = getSelectedItems();
+        items = gamrywb.app.selectItemsByNames(S.items, lbFiles.Value);
         if isempty(items)
             uialert(fig, 'No files selected for export.', 'Export');
             return;

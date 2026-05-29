@@ -45,6 +45,20 @@ function test_appSessionHelpers()
     assert(numel(session.items) == 1, 'Empty selection should not remove items.');
     assert(isempty(removeReport2.removed), 'Empty selection should not report removed files.');
 
+    [allItems, allIdx] = gamrywb.app.selectItemsByNames(session.items, {});
+    assert(numel(allItems) == 1 && strcmp(allItems(1).name, 'b.DTA'), ...
+        'Empty selected-name list should select all remaining items.');
+    assert(isequal(allIdx, 1), 'Empty selected-name list should return all item indices.');
+
+    [oneItem, oneIdx] = gamrywb.app.selectItemsByNames(session.items, "b.DTA");
+    assert(numel(oneItem) == 1 && strcmp(oneItem(1).name, 'b.DTA'), ...
+        'Matching selected name should return that item.');
+    assert(isequal(oneIdx, 1), 'Matching selected name should return matching index.');
+
+    [noItems, noIdx] = gamrywb.app.selectItemsByNames(session.items, "missing.DTA");
+    assert(isempty(noItems), 'Missing selected name should return no items.');
+    assert(isempty(noIdx), 'Missing selected name should return no indices.');
+
     function recordEvent(kind, filepath, detail)
         events(end+1, :) = {kind, filepath, detail}; %#ok<AGROW>
     end

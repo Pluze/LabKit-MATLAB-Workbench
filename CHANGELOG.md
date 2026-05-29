@@ -11,6 +11,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 
 ### Changed
 
+- Shared selected-item lookup for Chrono/EIS overlay plot and export paths through `+gamrywb/+app`.
 - Shared selected-item session removal for Chrono/EIS overlay apps through `+gamrywb/+app`.
 - Started the `+gamrywb/+app` layer with duplicate-aware file/session loading shared by Chrono/EIS overlay apps.
 - Extracted simple labeled dropdown/edit-field row helpers for Chrono/EIS plot options into `+gamrywb/+ui`.

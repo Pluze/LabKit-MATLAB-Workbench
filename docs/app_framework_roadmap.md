@@ -208,6 +208,7 @@ Already present:
 ```text
 gamrywb/+app/loadFilesIntoSession.m
 gamrywb/+app/removeSelectedItemsFromSession.m
+gamrywb/+app/selectItemsByNames.m
 ```
 
 Candidate files:
@@ -441,6 +442,7 @@ Target repeated behavior:
 - skip duplicates: started with `gamrywb.app.loadFilesIntoSession`
 - add files through `gamrywb.data.addFilesToSession`: started with `gamrywb.app.loadFilesIntoSession`
 - remove selected files: started with `gamrywb.app.removeSelectedItemsFromSession`
+- selected item lookup: started with `gamrywb.app.selectItemsByNames`
 - clear session
 - refresh file listbox
 - log add/skip/failure
@@ -450,6 +452,7 @@ Preferred split:
 ```text
 +gamrywb/+app/loadFilesIntoSession.m    done for Chrono/EIS overlay apps
 +gamrywb/+app/removeSelectedItemsFromSession.m    done for Chrono/EIS overlay apps
++gamrywb/+app/selectItemsByNames.m    done for Chrono/EIS overlay apps
 +gamrywb/+ui/refreshListboxItems.m
 ```
 
@@ -662,6 +665,7 @@ Use this section to record meaningful changes in strategy.
 - createLabeledDropdown and createLabeledEditField are extracted for Chrono/EIS plot option rows
 - loadFilesIntoSession starts the +gamrywb/+app layer for duplicate-aware file/session loading in Chrono/EIS
 - removeSelectedItemsFromSession shares selected-file removal for Chrono/EIS while preserving app-owned refresh and plotting
+- selectItemsByNames shares empty-selection-as-all item lookup for Chrono/EIS plot and export paths
 ```
 
 ---

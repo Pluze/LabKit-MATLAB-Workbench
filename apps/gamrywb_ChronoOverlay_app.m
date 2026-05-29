@@ -246,24 +246,14 @@ function varargout = gamrywb_ChronoOverlay_app(varargin)
             return;
         end
 
-        selectedNames = string(lbFiles.Value);
-        if isempty(selectedNames)
-            selectedMask = true(1, numel(S.items));
-        else
-            selectedMask = false(1, numel(S.items));
-            for i = 1:numel(S.items)
-                selectedMask(i) = any(selectedNames == string(S.items(i).name));
-            end
-        end
-
-        idx = find(selectedMask);
-        if isempty(idx)
+        items = gamrywb.app.selectItemsByNames(S.items, lbFiles.Value);
+        if isempty(items)
             cla(axV);
             cla(axI);
             return;
         end
 
-        gamrywb.plot.plotChronoVTIT(axV, axI, S.items(idx), plotOptions());
+        gamrywb.plot.plotChronoVTIT(axV, axI, items, plotOptions());
     end
 
     function onExportCSV(~, ~)
@@ -272,14 +262,8 @@ function varargout = gamrywb_ChronoOverlay_app(varargin)
             return;
         end
 
-        selectedNames = string(lbFiles.Value);
-        if isempty(selectedNames)
-            idx = 1:numel(S.items);
-        else
-            idx = find(ismember(string({S.items.name}), selectedNames));
-        end
-
-        if isempty(idx)
+        items = gamrywb.app.selectItemsByNames(S.items, lbFiles.Value);
+        if isempty(items)
             uialert(fig, 'No files selected for export.', 'Export');
             return;
         end
@@ -289,7 +273,6 @@ function varargout = gamrywb_ChronoOverlay_app(varargin)
             return;
         end
 
-        items = S.items(idx);
         T = gamrywb.io.buildChronoOverlayExportTable(items);
         out = fullfile(p, f);
         gamrywb.io.exportTableCSV(T, out);
