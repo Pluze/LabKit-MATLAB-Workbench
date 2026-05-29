@@ -20,13 +20,14 @@ Completed or started work:
 - Phase 5 started: VT resistance analysis is package-backed.
 - Phase 6 started: CIC / voltage-transient analysis is package-backed.
 - Phase 7 started: CV/CT charge, CSC analysis, selected-column access, and plotting are package-backed.
+- Phase 8 started: EIS item construction, axis values, overlay plotting, and current-plot export tables are package-backed.
 - Legacy GUI entry points remain available through root-level compatibility wrappers.
 - Demo DTA fixtures and MATLAB pure-function tests are available.
 
 Not started yet:
 
-- Full EIS overlay/export extraction.
 - CV/CSC export helper extraction once a batch/session export workflow exists.
+- Remaining EIS GUI/session cleanup after the first package-backed overlay/export extraction.
 - New thin apps under `apps/`.
 - Unified workbench GUI.
 

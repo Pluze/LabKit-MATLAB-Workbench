@@ -135,10 +135,13 @@ Idc (A)
 Vdc (V)
 ```
 
-Axis-value generation is planned for:
+Axis-value generation and the first package-backed EIS overlay/export helpers live in:
 
 ```text
 +gamrywb/+analysis/valuesForEISAxis.m
++gamrywb/+data/makeEISItem.m
++gamrywb/+plot/plotEISOverlay.m
++gamrywb/+io/buildEISExportTable.m
 ```
 
 ---

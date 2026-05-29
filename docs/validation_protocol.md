@@ -281,7 +281,7 @@ plot title, labels, line width, and invalid-selection handling
 
 ## 11. EIS Validation
 
-When EIS overlay/export extraction begins, verify:
+EIS overlay/export extraction has started. Verify:
 
 ```text
 Nyquist plot behavior
@@ -296,6 +296,19 @@ legend behavior
 grid behavior
 CSV column names
 CSV numeric values
+```
+
+Current default tests include EIS checks for:
+
+```text
+makeEISItem fixture fields
+all legacy axis-value labels
+current-plot export table variable names
+finite-value filtering
+log-X/log-Y positive-value filtering
+plot labels and titles
+log axis scale settings
+Nyquist equal-axis behavior
 ```
 
 ---

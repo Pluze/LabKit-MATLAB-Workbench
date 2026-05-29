@@ -92,7 +92,8 @@ Phase 4: started
 Phase 5: started
 Phase 6: started
 Phase 7: started
-Phase 8+: not started
+Phase 8: started
+Phase 9+: not started
 ```
 
 Summary:
@@ -107,7 +108,7 @@ Summary:
 - CIC / voltage-transient analysis extraction has started.
 - VT resistance and CIC now call package-backed analysis functions while preserving legacy GUI display/export behavior.
 - CV/CT charge, CSC analysis, selected-column access, and plotting extraction has started.
-- EIS overlay/export extraction has not started.
+- EIS item construction, axis-value generation, overlay plotting, and current-plot export table extraction has started.
 
 Completed migration details live in `MIGRATION_NOTES.md`.
 
@@ -495,7 +496,15 @@ Idc (A)
 Vdc (V)
 ```
 
-Status: not started.
+Status: started.
+
+Current implementation note:
+
+- `legacy/gamry_EIS_multiDTA_plot_gui_legacy.m` now calls `gamrywb.data.makeEISItem`.
+- EIS axis values are provided by `gamrywb.analysis.valuesForEISAxis`.
+- EIS overlay plotting is provided by `gamrywb.plot.plotEISOverlay`.
+- Current X/Y plot export tables are provided by `gamrywb.io.buildEISExportTable`.
+- Legacy GUI file-list management, selected-file handling, `uigetfile`/`uiputfile`, summary text, and logging remain local.
 
 ---
 

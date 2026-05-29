@@ -132,6 +132,15 @@ result struct
   ↓ plotCVCT / GUI fields and trim overlays
 ```
 
+```text
+EIS DTA
+  ↓ parseEISDTA
+EIS item
+  ↓ valuesForEISAxis / plotEISOverlay / buildEISExportTable
+plot/export data
+  ↓ GUI display or CSV export
+```
+
 ---
 
 ## 4. What Belongs in GUI Code
@@ -189,10 +198,10 @@ Current implementation status:
 - Root-level compatibility wrappers exist.
 - Legacy GUI implementations are preserved under `legacy/`.
 - `+gamrywb/+util` exists and contains shared low-risk helpers.
-- `+gamrywb/+io` contains initial chrono, EIS, and CV/CT parsers.
-- `+gamrywb/+data` contains initial table/column accessors, CV/CT selected-column access, and chrono item construction.
-- `+gamrywb/+analysis` contains initial pulse detection helpers, pulse-gap alignment, VT resistance analysis, CIC analysis, and CV/CSC analysis.
-- `+gamrywb/+plot` contains the initial chrono VT/IT overlay plot helper and CV/CT selected-column plot helper.
+- `+gamrywb/+io` contains initial chrono, EIS, and CV/CT parsers plus chrono/EIS export table builders.
+- `+gamrywb/+data` contains initial table/column accessors, CV/CT selected-column access, chrono item construction, and EIS item construction.
+- `+gamrywb/+analysis` contains initial pulse detection helpers, pulse-gap alignment, VT resistance analysis, CIC analysis, CV/CSC analysis, and EIS axis-value generation.
+- `+gamrywb/+plot` contains the initial chrono VT/IT overlay plot helper, CV/CT selected-column plot helper, and EIS overlay plot helper.
 - `+gamrywb/+ui` is a future package area.
 - New thin apps and unified workbench GUI have not started.
 

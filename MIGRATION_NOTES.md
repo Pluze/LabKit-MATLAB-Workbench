@@ -17,7 +17,8 @@ Phase 4: started
 Phase 5: started
 Phase 6: started
 Phase 7: started
-Phase 8+: not started
+Phase 8: started
+Phase 9+: not started
 ```
 
 Current summary:
@@ -32,7 +33,7 @@ Current summary:
 - CIC / voltage-transient analysis is package-backed.
 - CV/CT charge and CSC analysis are package-backed.
 - CV/CT selected-column access and plotting are package-backed.
-- EIS overlay/export extraction has not started.
+- EIS item construction, axis-value generation, overlay plotting, and current-plot export table construction are package-backed.
 
 ---
 
@@ -257,7 +258,35 @@ Behavior preserved:
 Still local after current Phase 7 progress:
 
 - CV/CSC export table construction, once a batch/session export workflow exists.
-- EIS overlay/export logic.
+- EIS GUI/session cleanup, which is handled in later Phase 8+ work.
+
+## Phase 8 — EIS Overlay / Export Extraction
+
+Phase 8 has started.
+
+Completed work:
+
+- Added `gamrywb.data.makeEISItem`.
+- Added `gamrywb.analysis.valuesForEISAxis`.
+- Added `gamrywb.plot.plotEISOverlay`.
+- Added `gamrywb.io.buildEISExportTable`.
+- Updated `legacy/gamry_EIS_multiDTA_plot_gui_legacy.m` to call the shared EIS item, plotting, and export table helpers.
+
+Behavior preserved:
+
+- ZCURVE selection and fallback handling.
+- EIS point filtering using Freq/Zreal/Zimag/Zmod/Zphz validity.
+- Point-number fallback when Pt is absent or invalid.
+- Frequency order summary flag.
+- Axis values for Freq, log10(Freq), Time, Point #, Zreal, Zimag, -Zimag, Zmod, Zphz, Idc, and Vdc.
+- Log-X/log-Y positive-value filtering.
+- Marker, line width, marker size, legend, grid, labels, title, and Nyquist equal-axis behavior.
+- Current-plot CSV table column names and RowIndex behavior.
+
+Still local after current Phase 8 progress:
+
+- EIS GUI file selection, selected-file list management, summary text, logging, and alert behavior.
+- EIS saved-session behavior, which is deferred to Phase 9.
 
 ---
 
@@ -279,10 +308,12 @@ Still local after current Phase 7 progress:
 | `pulsesFromCurrent` | CIC, VT resistance, multi-DTA overlay | `+gamrywb/+analysis/pulsesFromCurrent.m` | Extracted. Preserve threshold and longest-segment behavior. |
 | `emptyPulse` | CIC, VT resistance, multi-DTA overlay | `+gamrywb/+analysis/emptyPulse.m` | Extracted. Includes legacy and normalized fields. |
 | pulse-gap alignment | multi-DTA overlay | `+gamrywb/+analysis/alignChronoByPulseGap.m` | Extracted for blank-gap-centered alignment with first-sample fallback. Multi-DTA overlay uses shared implementation. |
-| `buildExportTable` | multi-DTA overlay, EIS overlay | `+gamrywb/+io/buildChronoOverlayExportTable.m`, future EIS export builder | Chrono overlay export extracted. EIS export remains deferred to Phase 8. Preserve CSV headers and interpolation behavior. |
+| `buildExportTable` | multi-DTA overlay, EIS overlay | `+gamrywb/+io/buildChronoOverlayExportTable.m`, `+gamrywb/+io/buildEISExportTable.m` | Chrono overlay and EIS current-plot export tables extracted. Preserve CSV headers, row index behavior, and interpolation behavior where applicable. |
 | VT resistance analysis | VT resistance GUI | `+gamrywb/+analysis/computeVTResistance.m` | Started Phase 5. Preserve median windows, baselines, dV/I mode, raw Vf/I mode, and legacy result fields. |
 | CIC / voltage-transient analysis | CIC GUI | `+gamrywb/+analysis/computeCIC.m` and related helpers | Started Phase 6. Preserve Emc/Ema, injected charge, CIC normalization, safety classification, and legacy result fields. |
-| `valuesForAxis` | EIS overlay | future `+gamrywb/+analysis/valuesForEISAxis.m` | Deferred to Phase 8. Preserve all axis labels and log-axis behavior. |
+| `valuesForAxis` | EIS overlay | `+gamrywb/+analysis/valuesForEISAxis.m` | Started Phase 8. Preserve all axis labels and log-axis behavior. |
+| EIS item construction | EIS overlay | `+gamrywb/+data/makeEISItem.m` | Started Phase 8. Preserve ZCURVE choice, filtering, point fallback, and frequency order flag. |
+| EIS overlay plotting | EIS overlay | `+gamrywb/+plot/plotEISOverlay.m` | Started Phase 8. Preserve markers, line widths, log filters, labels, legends, grid, and Nyquist equal-axis behavior. |
 | CV/CSC integration helpers | CV/CSC GUI | `+gamrywb/+analysis/computeCTCharge.m`, `computeCVCharge.m`, `computeCSC.m` | Started Phase 7. Preserve sign-split, zero-crossing handling, and scan-rate-derived time behavior. |
 | CV/CT selected-column plotting | CV/CSC GUI | `+gamrywb/+plot/plotCVCT.m` | Extracted. Preserve title, labels, grid, hold, and line width behavior. |
 
@@ -387,7 +418,7 @@ Multi-DTA overlay/export must preserve:
 1. Parser implementations still duplicate some table-reading internals. This is acceptable during behavior-preserving extraction; deeper parser unification should wait until downstream behavior is verified.
 2. Shared pulse detection currently targets the legacy single cathodic-first biphasic use case. General protocol support should be treated as a future feature, not a refactor requirement.
 3. Existing tests validate extracted pure functions with demo fixtures, but not every legacy GUI output has a golden reference yet.
-4. CV/CSC export helper extraction and EIS overlay/export extraction remain future work.
+4. CV/CSC export helper extraction, EIS GUI/session cleanup, and shared session/export system work remain future work.
 5. Interactive GUI behavior is not covered by the default batch test runner.
 
 ---

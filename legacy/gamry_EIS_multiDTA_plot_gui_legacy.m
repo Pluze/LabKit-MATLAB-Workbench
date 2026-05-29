@@ -268,50 +268,11 @@ function gamry_EIS_multiDTA_plot_gui_legacy
     end
 
     function item = loadOneDTA(filepath)
-        item = struct();
-        item.filepath = filepath;
-        item.name = gamrywb.util.shortName(filepath);
-        [item.meta, item.tables, item.logmsg] = gamrywb.io.parseEISDTA(filepath);
-
-        [curve, ok, msg] = gamrywb.data.getZCurve(item.tables);
-        if ~ok
-            error('%s', msg);
-        end
-
-        item.curve = curve;
-        item.Pt = defaultColumn(curve, 'Pt');
-        item.Time = defaultColumn(curve, 'Time');
-        item.Freq = defaultColumn(curve, 'Freq');
-        item.Zreal = defaultColumn(curve, 'Zreal');
-        item.Zimag = defaultColumn(curve, 'Zimag');
-        item.Zmod = defaultColumn(curve, 'Zmod');
-        item.Zphz = defaultColumn(curve, 'Zphz');
-        item.Idc = defaultColumn(curve, 'Idc');
-        item.Vdc = defaultColumn(curve, 'Vdc');
-        item.negZimag = -item.Zimag;
-
-        valid = isfinite(item.Freq) | isfinite(item.Zreal) | isfinite(item.Zimag) | isfinite(item.Zmod) | isfinite(item.Zphz);
-        fields = {'Pt', 'Time', 'Freq', 'Zreal', 'Zimag', 'negZimag', 'Zmod', 'Zphz', 'Idc', 'Vdc'};
-        for ii = 1:numel(fields)
-            item.(fields{ii}) = item.(fields{ii})(valid);
-        end
-
-        if numel(item.Pt) < 2
-            error('Not enough valid ZCURVE points.');
-        end
-
-        if isempty(item.Pt) || all(~isfinite(item.Pt))
-            item.Pt = (0:numel(item.Freq)-1).';
-        end
-
-        item.n = numel(item.Pt);
-        item.freqDesc = isMostlyDescending(item.Freq);
-        item.message = msg;
-
+        item = gamrywb.data.makeEISItem(filepath);
         for ii = 1:numel(item.logmsg)
             addLog(item.logmsg{ii});
         end
-        addLog(sprintf('%s: %s', item.name, msg));
+        addLog(sprintf('%s: %s', item.name, item.message));
     end
 
     function onRemoveSelected(~, ~)
@@ -382,61 +343,17 @@ function gamry_EIS_multiDTA_plot_gui_legacy
             return;
         end
 
-        cmap = lines(numel(items));
-        labels = cell(1, numel(items));
-        marker = 'none';
-        if cbMarkers.Value
-            marker = 'o';
-        end
-
-        hold(ax, 'on');
-        for k = 1:numel(items)
-            x = valuesForAxis(items(k), ddX.Value);
-            y = valuesForAxis(items(k), ddY.Value);
-            valid = isfinite(x) & isfinite(y);
-            x = x(valid);
-            y = y(valid);
-
-            if cbLogX.Value
-                validX = x > 0;
-                x = x(validX);
-                y = y(validX);
-            end
-            if cbLogY.Value
-                validY = y > 0;
-                x = x(validY);
-                y = y(validY);
-            end
-
-            plot(ax, x, y, ...
-                'LineWidth', edLineWidth.Value, ...
-                'Marker', marker, ...
-                'MarkerSize', edMarkerSize.Value, ...
-                'Color', cmap(k, :));
-            labels{k} = items(k).name;
-        end
-        hold(ax, 'off');
-
-        xlabel(ax, labelForAxis(ddX.Value));
-        ylabel(ax, labelForAxis(ddY.Value));
-        title(ax, sprintf('%s vs %s (%d file%s)', ...
-            labelForAxis(ddY.Value), labelForAxis(ddX.Value), numel(items), pluralS(numel(items))));
-
-        if cbGrid.Value
-            grid(ax, 'on');
-        else
-            grid(ax, 'off');
-        end
-
-        if cbLegend.Value
-            legend(ax, labels, 'Interpreter', 'none', 'Location', 'best');
-        else
-            legend(ax, 'off');
-        end
-
-        if isNyquistSelection(ddX.Value, ddY.Value)
-            axis(ax, 'equal');
-        end
+        plotOpts = struct();
+        plotOpts.xName = ddX.Value;
+        plotOpts.yName = ddY.Value;
+        plotOpts.logX = cbLogX.Value;
+        plotOpts.logY = cbLogY.Value;
+        plotOpts.lineWidth = edLineWidth.Value;
+        plotOpts.markerSize = edMarkerSize.Value;
+        plotOpts.showMarkers = cbMarkers.Value;
+        plotOpts.showLegend = cbLegend.Value;
+        plotOpts.showGrid = cbGrid.Value;
+        gamrywb.plot.plotEISOverlay(ax, items, plotOpts);
 
         txtSummary.Value = buildSummary(items);
     end
@@ -469,48 +386,10 @@ function gamry_EIS_multiDTA_plot_gui_legacy
             return;
         end
 
-        T = buildExportTable(items, ddX.Value, ddY.Value, cbLogX.Value, cbLogY.Value);
+        T = gamrywb.io.buildEISExportTable(items, ddX.Value, ddY.Value, cbLogX.Value, cbLogY.Value);
         out = fullfile(p, f);
         writetable(T, out);
         addLog(sprintf('Exported CSV: %s', out));
-    end
-
-    function T = buildExportTable(items, xName, yName, useLogX, useLogY)
-        maxLen = 0;
-        xCell = cell(1, numel(items));
-        yCell = cell(1, numel(items));
-
-        for i = 1:numel(items)
-            x = valuesForAxis(items(i), xName);
-            y = valuesForAxis(items(i), yName);
-            valid = isfinite(x) & isfinite(y);
-            x = x(valid);
-            y = y(valid);
-            if useLogX
-                validX = x > 0;
-                x = x(validX);
-                y = y(validX);
-            end
-            if useLogY
-                validY = y > 0;
-                x = x(validY);
-                y = y(validY);
-            end
-            xCell{i} = x(:);
-            yCell{i} = y(:);
-            maxLen = max(maxLen, numel(x));
-        end
-
-        T = table((1:maxLen).', 'VariableNames', {'RowIndex'});
-        for i = 1:numel(items)
-            safeName = matlab.lang.makeValidName(items(i).name);
-            xVar = matlab.lang.makeValidName(sprintf('X_%s_%s', sanitizeAxisName(xName), safeName));
-            yVar = matlab.lang.makeValidName(sprintf('Y_%s_%s', sanitizeAxisName(yName), safeName));
-            xData = padWithNaN(xCell{i}, maxLen);
-            yData = padWithNaN(yCell{i}, maxLen);
-            T.(xVar) = xData;
-            T.(yVar) = yData;
-        end
     end
 
     function addLog(msg)
@@ -522,50 +401,8 @@ function gamry_EIS_multiDTA_plot_gui_legacy
     end
 end
 
-function col = defaultColumn(tbl, name)
-    col = gamrywb.data.getColumn(tbl, name);
-    if isempty(col)
-        col = NaN(size(tbl.data, 1), 1);
-    end
-    col = col(:);
-end
-
-function values = valuesForAxis(item, axisName)
-    switch axisName
-        case 'Freq (Hz)'
-            values = item.Freq;
-        case 'log10(Freq)'
-            values = log10(item.Freq);
-        case 'Time (s)'
-            values = item.Time;
-        case 'Point #'
-            values = item.Pt;
-        case 'Zreal (ohm)'
-            values = item.Zreal;
-        case 'Zimag (ohm)'
-            values = item.Zimag;
-        case '-Zimag (ohm)'
-            values = item.negZimag;
-        case 'Zmod (ohm)'
-            values = item.Zmod;
-        case 'Zphz (deg)'
-            values = item.Zphz;
-        case 'Idc (A)'
-            values = item.Idc;
-        case 'Vdc (V)'
-            values = item.Vdc;
-        otherwise
-            error('Unsupported axis selection: %s', axisName);
-    end
-end
-
 function txt = labelForAxis(axisName)
     txt = axisName;
-end
-
-function tf = isNyquistSelection(xName, yName)
-    tf = strcmp(xName, 'Zreal (ohm)') && ...
-        (strcmp(yName, '-Zimag (ohm)') || strcmp(yName, 'Zimag (ohm)'));
 end
 
 function summary = buildSummary(items)
@@ -579,41 +416,10 @@ function summary = buildSummary(items)
     end
 end
 
-function padded = padWithNaN(v, n)
-    padded = NaN(n, 1);
-    if isempty(v)
-        return;
-    end
-    padded(1:numel(v)) = v(:);
-end
-
-function tf = isMostlyDescending(x)
-    x = x(isfinite(x));
-    if numel(x) < 2
-        tf = false;
-        return;
-    end
-    dx = diff(x);
-    tf = sum(dx < 0) >= sum(dx > 0);
-end
-
-function out = sanitizeAxisName(txt)
-    out = regexprep(lower(txt), '[^a-z0-9]+', '_');
-    out = regexprep(out, '^_+|_+$', '');
-end
-
 function txt = ternary(cond, a, b)
     if cond
         txt = a;
     else
         txt = b;
-    end
-end
-
-function txt = pluralS(n)
-    if n == 1
-        txt = '';
-    else
-        txt = 's';
     end
 end

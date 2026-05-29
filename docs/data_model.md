@@ -141,7 +141,15 @@ item.logmsg = {};
 item.analysis = struct();
 ```
 
-Axis-value generation for EIS should be centralized later in:
+Current package-backed EIS item construction lives in:
+
+```text
++gamrywb/+data/makeEISItem.m
+```
+
+It currently returns legacy field names such as `Freq`, `Zreal`, `Zimag`, and `negZimag` so the legacy GUI can migrate without changing behavior. Normalized unit-suffixed aliases can be added later after GUI callers have migrated.
+
+Axis-value generation for EIS is centralized in:
 
 ```text
 +gamrywb/+analysis/valuesForEISAxis.m
