@@ -18,6 +18,16 @@ Default pure-function suite:
 scripts/run_matlab_tests.sh
 ```
 
+Focused iteration commands:
+
+```bash
+scripts/run_matlab_tests.sh --suite core
+scripts/run_matlab_tests.sh --suite gui
+scripts/run_matlab_tests.sh --test test_gui_layout_controls
+```
+
+Use `--suite` for one or more suite keys: `core`, `dta`, `apps`, or `gui`. Use `--test` for one or more specific test functions. Selecting the `gui` suite or a `test_gui_*` function automatically uses GUI-capable MATLAB flags.
+
 The default suite is grouped in `tests/run_all_tests.m` and organized on disk under `tests/suites/`:
 
 ```text

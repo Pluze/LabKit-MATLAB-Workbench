@@ -10,8 +10,14 @@ function ui = createWorkbench(figName, figPosition, leftWidth, opts)
     rightRowHeight = optionValue(opts, 'rightRowHeight', {'1x'});
     rightRowSpacing = optionValue(opts, 'rightRowSpacing', 8);
     if strcmp(rightKind, 'dualPlot')
-        rightGridSize = [4 1];
-        rightRowHeight = {'fit', '1x', 'fit', '1x'};
+        showPlotControls = optionValue(opts, 'showPlotControls', true);
+        if showPlotControls
+            rightGridSize = [4 1];
+            rightRowHeight = {'fit', '1x', 'fit', '1x'};
+        else
+            rightGridSize = [2 1];
+            rightRowHeight = {'1x', '1x'};
+        end
         rightRowSpacing = optionValue(opts, 'rightRowSpacing', 10);
     end
 
@@ -39,20 +45,34 @@ end
 function ui = addDualPlotRegion(ui, opts)
     topTitle = optionValue(opts, 'topPlotTitle', 'Top Plot');
     bottomTitle = optionValue(opts, 'bottomPlotTitle', 'Bottom Plot');
+    showPlotControls = optionValue(opts, 'showPlotControls', true);
 
-    ui.topControlsPanel = uipanel(ui.rightGrid, 'Title', topTitle);
-    ui.topControlsPanel.Layout.Row = 1;
+    if showPlotControls
+        ui.topControlsPanel = uipanel(ui.rightGrid, 'Title', topTitle);
+        ui.topControlsPanel.Layout.Row = 1;
 
-    ui.topAxes = uiaxes(ui.rightGrid);
-    ui.topAxes.Layout.Row = 2;
-    title(ui.topAxes, topTitle);
-    disableAxesInteractivity(ui.topAxes);
+        ui.topAxes = uiaxes(ui.rightGrid);
+        ui.topAxes.Layout.Row = 2;
+        title(ui.topAxes, topTitle);
+        disableAxesInteractivity(ui.topAxes);
 
-    ui.bottomControlsPanel = uipanel(ui.rightGrid, 'Title', bottomTitle);
-    ui.bottomControlsPanel.Layout.Row = 3;
+        ui.bottomControlsPanel = uipanel(ui.rightGrid, 'Title', bottomTitle);
+        ui.bottomControlsPanel.Layout.Row = 3;
 
-    ui.bottomAxes = uiaxes(ui.rightGrid);
-    ui.bottomAxes.Layout.Row = 4;
+        ui.bottomAxes = uiaxes(ui.rightGrid);
+        ui.bottomAxes.Layout.Row = 4;
+    else
+        ui.topControlsPanel = [];
+        ui.bottomControlsPanel = [];
+
+        ui.topAxes = uiaxes(ui.rightGrid);
+        ui.topAxes.Layout.Row = 1;
+        title(ui.topAxes, topTitle);
+        disableAxesInteractivity(ui.topAxes);
+
+        ui.bottomAxes = uiaxes(ui.rightGrid);
+        ui.bottomAxes.Layout.Row = 2;
+    end
     title(ui.bottomAxes, bottomTitle);
     disableAxesInteractivity(ui.bottomAxes);
 end

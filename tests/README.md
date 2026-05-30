@@ -19,3 +19,10 @@ scripts/run_matlab_tests.sh
 ```
 
 Optional noninteractive GUI smoke checks can use `scripts/run_matlab_tests.sh --gui` when launch or layout coverage is relevant.
+
+Focused checks can use suite or test filters:
+
+```bash
+scripts/run_matlab_tests.sh --suite core
+scripts/run_matlab_tests.sh --test test_gui_layout_controls
+```

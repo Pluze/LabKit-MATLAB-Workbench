@@ -34,9 +34,14 @@ ui = labkit.ui.createWorkbench(titleText, position, leftWidth, opts);
 
 dualOpts = struct('rightKind', 'dualPlot');
 ui = labkit.ui.createWorkbench(titleText, position, leftWidth, dualOpts);
+
+imageOpts = struct('rightKind', 'dualPlot', 'showPlotControls', false);
+ui = labkit.ui.createWorkbench(titleText, position, leftWidth, imageOpts);
 ```
 
-Use `opts.rightKind = 'dualPlot'` for the common top/bottom live-plot layout. For custom right-side arrangements, pass `rightGridSize`, `rightRowHeight`, and `rightRowSpacing`.
+Use `opts.rightKind = 'dualPlot'` for the common top/bottom live-plot layout. By default it includes small top/bottom control panels for axis selectors and plot options. Set `opts.showPlotControls = false` for image/overlay apps that only need the two output axes; this avoids empty control rows compressing the plot area.
+
+For custom right-side arrangements, pass `rightGridSize`, `rightRowHeight`, and `rightRowSpacing`.
 
 App files should not rebuild split-pane layout plumbing or own their own separator-drag behavior.
 
@@ -51,6 +56,7 @@ labkit.ui.createPlotOptionsPanel(parent, numRows, row);
 labkit.ui.createTopBottomPlotControls(topPanel, bottomPanel, xItems, yItems, topDefaults, bottomDefaults, onChange);
 labkit.ui.createResultTablePanel(parent, titleText, row, columnNames, initialData);
 labkit.ui.createLogPanel(parent, row, initialValue);
+labkit.ui.addRowResizeHandle(fig, grid, handleRow, opts);
 ```
 
 State and rendering helpers:
@@ -63,6 +69,8 @@ info = labkit.ui.plotXY(ax, x, y, labels, opts);
 
 Use `createPanelGrid` for app-defined sections that only need the standard panel/grid styling. Use `refreshListboxSelection` for generic single- or multi-select listbox state updates.
 
+Use `addRowResizeHandle` when a tab contains several stacked app-defined sections that may need manual height adjustment. The app owns the row heights and section content; the helper only adds the draggable handle and row-height update behavior.
+
 ## Ownership Boundary
 
 `labkit.ui.*` may provide:
@@ -72,6 +80,7 @@ Use `createPanelGrid` for app-defined sections that only need the standard panel
 - file-selection panels
 - log panels and log append helpers
 - panel/grid construction
+- row-resize handles for stacked app-defined sections
 - plot axes creation, reset, and prepared-X/Y plotting
 - result table panels
 - listbox selection refresh

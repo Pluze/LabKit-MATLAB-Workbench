@@ -72,7 +72,14 @@ same results, cleaner code, clearer boundaries
 
 ## Tests
 
-Run after executable MATLAB changes:
+Run relevant automated checks after executable MATLAB changes. Use focused checks during scoped iteration:
+
+```bash
+scripts/run_matlab_tests.sh --suite core
+scripts/run_matlab_tests.sh --test test_gui_layout_controls
+```
+
+Use the default pure-function suite for broader changes:
 
 ```bash
 scripts/run_matlab_tests.sh

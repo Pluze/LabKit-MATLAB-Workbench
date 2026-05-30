@@ -3,17 +3,22 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 INCLUDE_GUI=0
+SUITES=()
+TESTS=()
 
 usage() {
     cat <<'USAGE'
-Usage: scripts/run_matlab_tests.sh [--gui]
+Usage: scripts/run_matlab_tests.sh [--gui] [--suite NAME] [--test NAME]
 
 Runs the default pure-function MATLAB tests.
 
 Options:
-  --gui   Also run optional noninteractive GUI launch smoke tests.
-          This mode requires MATLAB graphics/uifigure support and does not use
-          the default headless -nojvm/-nodisplay/-noFigureWindows flags.
+  --gui         Also include optional noninteractive GUI launch/layout tests.
+                This mode requires MATLAB graphics/uifigure support and does not
+                use the default headless -nojvm/-nodisplay/-noFigureWindows flags.
+  --suite NAME  Run only a suite key: core, dta, apps, or gui. Repeatable.
+  --test NAME   Run only a test function, for example test_gui_layout_controls.
+                Repeatable. test_gui_* automatically uses GUI MATLAB flags.
 USAGE
 }
 
@@ -22,6 +27,30 @@ while [[ $# -gt 0 ]]; do
         --gui)
             INCLUDE_GUI=1
             shift
+            ;;
+        --suite)
+            if [[ $# -lt 2 ]]; then
+                echo "--suite requires a value." >&2
+                usage >&2
+                exit 2
+            fi
+            SUITES+=("$2")
+            if [[ "$2" == "gui" ]]; then
+                INCLUDE_GUI=1
+            fi
+            shift 2
+            ;;
+        --test)
+            if [[ $# -lt 2 ]]; then
+                echo "--test requires a value." >&2
+                usage >&2
+                exit 2
+            fi
+            TESTS+=("$2")
+            if [[ "$2" == test_gui_* ]]; then
+                INCLUDE_GUI=1
+            fi
+            shift 2
             ;;
         -h|--help)
             usage
@@ -66,13 +95,39 @@ fi
 echo "Using MATLAB: $MATLAB_BIN"
 echo "Project root: $ROOT_DIR"
 
+matlab_cell() {
+    if [[ $# -eq 0 ]]; then
+        printf '{}'
+        return 0
+    fi
+
+    local out="{"
+    local value
+    for value in "$@"; do
+        value="${value//\'/\'\'}"
+        out+="'$value',"
+    done
+    out="${out%,}}"
+    printf '%s' "$out"
+}
+
 LOG_FILE="${MATLAB_TEST_LOG:-$ROOT_DIR/matlab_test.log}"
+if [[ ${#SUITES[@]} -gt 0 ]]; then
+    SUITE_CELL="$(matlab_cell "${SUITES[@]}")"
+else
+    SUITE_CELL="$(matlab_cell)"
+fi
+if [[ ${#TESTS[@]} -gt 0 ]]; then
+    TEST_CELL="$(matlab_cell "${TESTS[@]}")"
+else
+    TEST_CELL="$(matlab_cell)"
+fi
 if [[ "$INCLUDE_GUI" -eq 1 ]]; then
     MATLAB_FLAGS="${MATLAB_GUI_FLAGS:-}"
-    TEST_EXPR="run_all_tests(true);"
+    TEST_EXPR="run_all_tests(true, struct('suites', {$SUITE_CELL}, 'tests', {$TEST_CELL}));"
 else
     MATLAB_FLAGS="${MATLAB_FLAGS:--nojvm -nodisplay -noFigureWindows}"
-    TEST_EXPR="run_all_tests(false);"
+    TEST_EXPR="run_all_tests(false, struct('suites', {$SUITE_CELL}, 'tests', {$TEST_CELL}));"
 fi
 MATLAB_FLAG_ARGS=()
 if [[ -n "$MATLAB_FLAGS" ]]; then

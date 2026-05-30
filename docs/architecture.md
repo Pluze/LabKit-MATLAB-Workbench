@@ -50,6 +50,8 @@ labkit_VTResistance_app
 labkit_CSC_app
 labkit_EIS_app
 labkit_ChronoOverlay_app
+labkit_DICPreprocess_app
+labkit_DICPostprocess_app
 ```
 
 `startup_labkit` adds the repository root, `apps/`, and normal nested app category folders to the MATLAB path.
@@ -117,9 +119,9 @@ The GUI decides how to display that status.
 
 ## Current Package Surface
 
-- `apps/`: user-facing app category folders and app-specific implementations. Current electrochemistry app bodies live under `apps/electrochem/` as single public app source files, and app-specific workflow helpers are local functions in those files rather than reusable `+labkit` APIs or transitional app-helper packages.
+- `apps/`: user-facing app category folders and app-specific implementations. Current electrochemistry app bodies live under `apps/electrochem/`, and current DIC app bodies live under `apps/dic/`, as single public app source files. App-specific workflow helpers are local functions in those files rather than reusable `+labkit` APIs or transitional app-helper packages.
 - `+dta`: GUI-free facade for supported DTA file discovery, family detection, single-file loading, batch loading, folder loading, pulse detection, item construction, parsed table/curve access, session save/load, and app-facing DTA session operations with status/report structs. It keeps parser and DTA-specific implementation helpers private.
-- `+ui`: reusable GUI framework helpers, centered on the unified `createWorkbench` shell plus domain-neutral components: file-selection panel, log panel, generic panel-grid creation, axes creation/reset, prepared-X/Y plotting, listbox selection refresh, summary rows, result table panel, plot-options panel, simple labeled controls, and top/bottom plot-control construction/state helpers.
+- `+ui`: reusable GUI framework helpers, centered on the unified `createWorkbench` shell plus domain-neutral components: file-selection panel, log panel, generic panel-grid creation, row-resize handles, axes creation/reset, prepared-X/Y plotting, listbox selection refresh, summary rows, result table panel, plot-options panel, simple labeled controls, and top/bottom plot-control construction/state helpers.
 - Internal helpers: package-private parser helpers and app-local helper functions. Public `+io`, `+data`, and `+util` packages should not be reintroduced as new-app entry surfaces.
 
 ## Boundaries To Preserve

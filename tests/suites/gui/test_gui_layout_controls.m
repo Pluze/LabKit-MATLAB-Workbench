@@ -10,6 +10,8 @@ function test_gui_layout_controls()
     checkCVCSCFixtureLoad();
     checkVTResistance();
     checkCIC();
+    checkDICPreprocess();
+    checkDICPostprocess();
     checkListboxItemsRefreshHelper();
     checkListboxSelectionHelper();
     checkLogPanelHelper();
@@ -18,12 +20,47 @@ function test_gui_layout_controls()
     checkPanelGridHelper();
     checkPlotOptionsPanelHelper();
     checkCreateAxesHelper();
+    checkRowResizeHandleHelper();
     checkCreateWorkbenchHelper();
     checkStandardWorkbenchShellHelper();
     checkTabbedDualPlotShellHelper();
     checkTopBottomPlotControlsHelper();
     checkTopBottomPlotStateHelpers();
     checkFileSelectionPanelHelper();
+end
+
+function checkDICPreprocess()
+    fig = launchFigure('labkit_DICPreprocess_app', 'DIC Image Preprocess');
+    assertFigureMinimumSize(fig, 1400, 860);
+    assertComponentCounts(fig, struct('Button', 11, 'DropDown', 1, ...
+        'TextArea', 4, 'Axes', 2));
+    assertButtonContract(fig, {'Open reference image', 'Open moving image', ...
+        'Select points + align', 'Save aligned image', ...
+        'Start/reset crop ROI', 'Apply ROI crop', 'Cancel ROI', ...
+        'Save crop images', 'Draw mask ROI', 'Finish mask ROI', 'Save ROI mask'});
+    assertDropdownGroups(fig, dropdownGroup({'Moving image', 'Aligned image', ...
+        'False-color overlay', 'Crop pair', 'ROI mask'}, 1));
+    assertTabTitles(fig, {'Files + Analysis', 'Summary + Results', 'Log'});
+    assertAxesContract(fig, { ...
+        axesSpec('Reference', '', ''), ...
+        axesSpec('Current Preview', '', '')});
+    assertDropdownCallbacksPresent(fig);
+end
+
+function checkDICPostprocess()
+    fig = launchFigure('labkit_DICPostprocess_app', 'DIC Strain Postprocess');
+    assertFigureMinimumSize(fig, 1450, 880);
+    assertComponentCounts(fig, struct('Button', 7, 'Table', 1, ...
+        'TextArea', 2, 'Axes', 2));
+    assertButtonContract(fig, {'Open DIC MAT', 'Open reference image', ...
+        'Open mask image', 'Generate overlays + summary', ...
+        'Save overlay PNGs', 'Export summary CSV', ...
+        'Export strain colorbar + levels'});
+    assertTabTitles(fig, {'Files + Analysis', 'Summary + Results', 'Log'});
+    assertTableColumns(fig, {'Metric','EXX','EYY'});
+    assertAxesContract(fig, { ...
+        axesSpec('EXX Overlay', '', ''), ...
+        axesSpec('EYY Overlay', '', '')});
 end
 
 function checkMultiDTA()
@@ -314,6 +351,31 @@ function checkCreateAxesHelper()
     assert(strcmp(char(ax.YLabel.String), 'Probe Y'), 'Axes helper should preserve the y label.');
 end
 
+function checkRowResizeHandleHelper()
+    fig = uifigure('Visible', 'off', 'Name', 'labkit_row_resize_probe');
+    cleaner = onCleanup(@() delete(fig));
+    grid = uigridlayout(fig, [3 1]);
+    grid.RowHeight = {120, 6, 140};
+
+    top = uipanel(grid, 'Title', 'Top');
+    top.Layout.Row = 1;
+    bottom = uipanel(grid, 'Title', 'Bottom');
+    bottom.Layout.Row = 3;
+
+    handle = labkit.ui.addRowResizeHandle(fig, grid, 2, ...
+        struct('minTopHeight', 80, 'minBottomHeight', 90));
+    assert(handle.Layout.Row == 2, 'Row-resize handle should live in the requested row.');
+    assert(isequal(grid.RowHeight, {120, 6, 140}), ...
+        'Row-resize handle should preserve existing adjacent row heights before dragging.');
+    assertCallbackPresent(handle, 'ButtonDownFcn', 'row-resize handle');
+    invokeCallback(handle, 'ButtonDownFcn');
+    assert(~isempty(fig.WindowButtonMotionFcn) && ~isempty(fig.WindowButtonUpFcn), ...
+        'Row-resize drag should install temporary figure motion callbacks.');
+    invokeCallback(fig, 'WindowButtonUpFcn');
+    assert(isempty(fig.WindowButtonMotionFcn) && isempty(fig.WindowButtonUpFcn), ...
+        'Row-resize drag should clear temporary figure callbacks after release.');
+end
+
 function checkCreateWorkbenchHelper()
     opts = struct();
     opts.rightTitle = 'Preview';
@@ -363,6 +425,19 @@ function checkCreateWorkbenchHelper()
         'Workbench helper should create a titled top axes for dual-plot apps.');
     assert(strcmp(char(dual.bottomAxes.Title.String), 'Bottom Plot'), ...
         'Workbench helper should create a titled bottom axes for dual-plot apps.');
+
+    dualNoControls = labkit.ui.createWorkbench( ...
+        'labkit_create_dual_plot_no_controls_probe', ...
+        [40 30 1200 760], ...
+        330, ...
+        struct('rightKind', 'dualPlot', 'showPlotControls', false));
+    cleaner4 = onCleanup(@() delete(dualNoControls.fig)); %#ok<NASGU>
+    assert(sameStringCell(dualNoControls.rightGrid.RowHeight, {'1x', '1x'}), ...
+        'Workbench helper should support dual-plot output without empty control rows.');
+    assert(isempty(dualNoControls.topControlsPanel) && isempty(dualNoControls.bottomControlsPanel), ...
+        'Dual-plot output without controls should not create empty plot-control panels.');
+    assert(dualNoControls.topAxes.Layout.Row == 1 && dualNoControls.bottomAxes.Layout.Row == 2, ...
+        'Dual-plot output without controls should place axes directly in the output grid.');
 end
 
 function labels = tabbedShellLabels()

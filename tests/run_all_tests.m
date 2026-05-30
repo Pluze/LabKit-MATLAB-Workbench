@@ -1,8 +1,11 @@
-function results = run_all_tests(includeGui)
+function results = run_all_tests(includeGui, selection)
 %RUN_ALL_TESTS Run the current MATLAB test suite.
 
     if nargin < 1
         includeGui = false;
+    end
+    if nargin < 2
+        selection = struct();
     end
 
     root = fileparts(fileparts(mfilename('fullpath')));
@@ -11,7 +14,8 @@ function results = run_all_tests(includeGui)
     addpath(genpath(testsRoot));
     startup_labkit();
 
-    groups = testGroups(includeGui);
+    groups = filterGroups(testGroups(includeGui), selection);
+    assert(~isempty(groups), 'No test groups matched the requested selection.');
     results = struct('group', {}, 'name', {}, 'passed', {}, 'message', {});
 
     for g = 1:numel(groups)
@@ -51,14 +55,14 @@ function groups = testGroups(includeGui)
 end
 
 function group = coreTests()
-    group = makeGroup('core boundaries and templates', { ...
+    group = makeGroup('core', 'core boundaries and templates', { ...
         @test_startup_boundaries, ...
         @test_architecture_boundaries, ...
         @test_appTemplates});
 end
 
 function group = dtaTests()
-    group = makeGroup('DTA facade and schemas', { ...
+    group = makeGroup('dta', 'DTA facade and schemas', { ...
         @test_parseChronoDTA, ...
         @test_parseEISDTA, ...
         @test_parseCVCTDTA, ...
@@ -70,7 +74,7 @@ function group = dtaTests()
 end
 
 function group = appTests()
-    group = makeGroup('app analysis and exports', { ...
+    group = makeGroup('apps', 'app analysis and exports', { ...
         @test_chronoOverlayExport, ...
         @test_computeVTResistance, ...
         @test_vtResistanceExport, ...
@@ -82,11 +86,62 @@ function group = appTests()
 end
 
 function group = guiTests()
-    group = makeGroup('GUI launch and layout', { ...
+    group = makeGroup('gui', 'GUI launch and layout', { ...
         @test_gui_smoke, ...
         @test_gui_layout_controls});
 end
 
-function group = makeGroup(name, tests)
-    group = struct('name', name, 'tests', {tests});
+function groups = filterGroups(groups, selection)
+    suiteFilter = normalizedCellField(selection, 'suites');
+    testFilter = normalizedCellField(selection, 'tests');
+
+    if ~isempty(suiteFilter)
+        keep = false(size(groups));
+        for k = 1:numel(groups)
+            keep(k) = any(strcmp(suiteFilter, lower(groups(k).key))) || ...
+                any(strcmp(suiteFilter, lower(groups(k).name)));
+        end
+        groups = groups(keep);
+    end
+
+    if ~isempty(testFilter)
+        matchedCount = 0;
+        keepGroup = false(size(groups));
+        for g = 1:numel(groups)
+            tests = groups(g).tests;
+            keepTest = false(size(tests));
+            for k = 1:numel(tests)
+                keepTest(k) = any(strcmp(testFilter, lower(func2str(tests{k}))));
+            end
+            groups(g).tests = tests(keepTest);
+            keepGroup(g) = any(keepTest);
+            matchedCount = matchedCount + nnz(keepTest);
+        end
+        groups = groups(keepGroup);
+        assert(matchedCount > 0, 'No tests matched the requested --test selection.');
+    end
+end
+
+function values = normalizedCellField(s, fieldName)
+    values = {};
+    if ~isfield(s, fieldName)
+        return;
+    end
+
+    raw = s.(fieldName);
+    if isempty(raw)
+        return;
+    elseif ischar(raw) || isstring(raw)
+        values = cellstr(raw);
+    elseif iscell(raw)
+        values = raw;
+    else
+        error('Test selection field "%s" must be a string or cell array.', fieldName);
+    end
+    values = lower(string(values));
+    values = cellstr(values(:).');
+end
+
+function group = makeGroup(key, name, tests)
+    group = struct('key', key, 'name', name, 'tests', {tests});
 end

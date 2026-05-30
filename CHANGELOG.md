@@ -7,6 +7,11 @@ All notable user-facing and maintainer-facing changes are recorded here.
 ### Changed
 
 - Reusable package, startup, and app entrypoint names now use the generic `labkit` namespace.
+- Added DIC preprocess and postprocess apps built on the shared UI foundation, with image registration, paired crop, Ncorr strain overlay, and ROI summary logic kept app-local.
+- DIC image/overlay apps now use a pure dual-output right pane without empty plot-control rows, left-side DIC section heights can be resized manually, DIC preprocess crop ROI selection happens inline on the right preview with synchronized crop-pair display, and DIC strain summaries include min/max values.
+- DIC postprocess overlays now extend strain maps from valid ROI data before smoothing/resizing and clip the display back to the ROI/mask to avoid zero-filled edge leakage; optical reference-image enhancement controls were added for brightness, contrast, gamma, saturation, and RGB channel gains.
+- DIC postprocess can export a standalone strain colorbar PNG plus a CSV mapping strain levels to RGB values, and DIC preprocess can draw point-by-point closed ROI boundaries and save white-inside/black-outside ROI masks.
+- MATLAB test runner now supports `--suite` and `--test` filters for focused validation without running the full default suite.
 - Chrono DTA loading now exposes `item.controlMode` / `meta.controlMode` for current-controlled, voltage-controlled, or unknown chrono files, and CIC/VT summary panels display that mode for the selected file.
 - Public app-facing package surface is now `labkit.ui.*` plus `labkit.dta.*`.
 - DTA parser helpers, session save/load, item/session construction, pulse internals, and parsed table/curve access now live behind the DTA facade or under `+labkit/+dta/private`.
