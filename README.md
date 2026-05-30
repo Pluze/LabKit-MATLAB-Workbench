@@ -1,17 +1,19 @@
-# LabKit Electrochemistry Workbench
+# LabKit MATLAB Workbench
 
-LabKit Electrochemistry Workbench is a MATLAB workspace for analyzing Gamry electrochemistry DTA data with small, task-focused GUI apps.
+LabKit MATLAB Workbench is a reusable MATLAB GUI foundation for lab-internal software tools. It is intended to make small MATLAB GUI apps easier to build, maintain, and keep consistent across different workflows.
 
-The current app set covers chrono, CV/CT, and EIS workflows for charge, resistance, capacitance, impedance, and overlay analysis. Each app provides a consistent left-side control area and right-side live plot area while keeping the scientific calculations visible in the app source.
+The core idea is a shared app shell: configurable tabs and controls on the left, live plots or primary outputs on the right, and app-specific behavior kept in the owning app file. Small utilities and larger tools start from the same GUI structure instead of each rebuilding its own MATLAB interface.
+
+The current implementation includes an electrochemistry application set built on this GUI foundation. Those apps add Gamry DTA file handling and cover chrono, CV/CT, and EIS workflows for charge, resistance, capacitance, impedance, and overlay analysis.
 
 ## What It Provides
 
-- GUI apps for common electrochemistry analysis tasks.
-- Gamry DTA loading, session handling, pulse detection, and parsed table/curve access.
-- Reusable MATLAB UI infrastructure for tabbed controls, file panels, logs, plots, and result tables.
-- App-local scientific calculations and exports so experiment-specific behavior stays easy to inspect.
+- A reusable MATLAB GUI workbench structure for lab tools.
+- Shared UI building blocks for tabs, control panels, file panels, logs, plots, and result tables.
+- A pattern where each app owns its domain logic, plotting choices, and exports.
+- A current electrochemistry implementation with Gamry DTA loading, sessions, pulse detection, and parsed table/curve access.
 
-## Apps
+## Current Electrochemistry Apps
 
 | Command | Use | Input | Typical output |
 | --- | --- | --- | --- |
@@ -40,12 +42,12 @@ Then use the app window to add DTA files, review the plots/results, and export w
 
 ## Development Notes
 
-The repository is organized around two reusable MATLAB surfaces:
+The repository currently has two reusable MATLAB surfaces:
 
 - `labkit.ui.*` for shared GUI structure and rendering helpers.
-- `labkit.dta.*` for DTA file discovery, loading, sessions, pulse detection, and parsed table/curve access.
+- `labkit.dta.*` for the current electrochemistry/Gamry DTA file support.
 
-Experiment-specific calculations, plots, result fields, and export schemas live in the app files under `apps/`.
+Domain-specific logic, plot definitions, result fields, and export schemas live in the app files under `apps/`.
 
 Automated tests can be run from a macOS shell:
 
@@ -58,7 +60,7 @@ Interactive GUI workflows are checked manually during app work.
 ## Repository Layout
 
 ```text
-+labkit/             App-facing GUI and DTA APIs
++labkit/             App-facing GUI and current DTA APIs
 apps/                 App entry points and app-specific implementations
 apps/electrochem/     Current electrochemistry app entry points
 templates/            Copy-only GUI, DTA, and GUI+DTA starter programs
