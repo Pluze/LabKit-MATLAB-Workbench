@@ -1,10 +1,10 @@
 # Gamry Electrochemistry Workbench
 
-MATLAB tools for analyzing Gamry electrochemistry DTA files. The project preserves the original analysis workflows through app entry points under `apps/` and reusable `+gamrywb` APIs for Gamry/DTA loading plus scientific-app GUI scaffolding.
+MATLAB tools for Gamry electrochemistry DTA workflows. Current apps live under `apps/`; reusable infrastructure lives under `gamrywb.ui.*` and `gamrywb.dta.*`.
 
 ## Current Status
 
-The v1.0 behavior-preserving package refactor is complete.
+The v1.0 behavior-preserving refactor is complete, and later cleanup narrowed the public package surface.
 
 What that means:
 
@@ -69,7 +69,7 @@ docs/                 Architecture, data model, parser, validation, and history 
 - `AGENTS.md`: agent and developer operating rules.
 - `CHANGELOG.md`: release-style change history.
 - `docs/architecture.md`: current architecture and boundaries.
-- `docs/api_usage.md`: reusable API usage, single-file app template, and new-app checklist.
+- `docs/api_usage.md`: reusable API usage, app layout, and new-app checklist.
 - `docs/data_model.md`: current item/result/session schemas.
 - `docs/file_format_notes.md`: DTA parser assumptions.
 - `docs/validation_protocol.md`: behavior-preservation validation.

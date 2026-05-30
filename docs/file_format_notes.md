@@ -1,8 +1,8 @@
 # File Format Notes
 
-This document records Gamry DTA parsing assumptions used by the refactor.
+This document records current Gamry DTA parsing assumptions.
 
-Parser behavior should remain legacy-compatible unless a behavior change is explicitly requested and validated.
+Parser behavior should remain compatible with validated fixtures unless a behavior change is explicitly requested and validated.
 
 ---
 
@@ -168,7 +168,7 @@ CV/CT parser behavior to preserve:
 - `SCANRATE` is converted from mV/s to V/s by dividing by 1000.
 - `CURVE` sections are discovered and parsed in order.
 - Headers, units, data, and numeric masks are preserved for each curve.
-- Numeric rows are parsed conservatively to preserve legacy behavior.
+- Numeric rows are parsed conservatively to preserve validated behavior.
 
 CV/CSC scientific rules are not parser behavior. The CSC app owns those rules as local functions in `apps/gamrywb_CSC_app.m`; CT and CV charge integration are local details of that app, not parser behavior or reusable `+gamrywb` analysis.
 
@@ -178,7 +178,7 @@ CV/CSC scientific rules are not parser behavior. The CSC app owns those rules as
 
 Current parser implementations are intentionally conservative.
 
-The chrono, EIS, and CV/CT parsers still share similar table-reading logic. This duplication is acceptable during behavior-preserving extraction because the first priority is legacy compatibility.
+The chrono, EIS, and CV/CT parsers still share similar table-reading logic. This duplication is acceptable because fixture-compatible behavior is more important than reducing parser code at this stage.
 
 Do not perform deep parser unification until downstream tests show equivalent behavior across chrono, EIS, and CV/CT workflows. Add fixtures before broadening support to new Gamry experiment types.
 

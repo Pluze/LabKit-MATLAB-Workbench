@@ -1,6 +1,6 @@
 # Architecture Notes
 
-This document describes the current package boundaries and compatibility layers. It is not a roadmap.
+This document describes the current package boundaries. It is not a roadmap.
 
 ## Core Shape
 
@@ -36,7 +36,7 @@ gamrywb.ui    = reusable GUI structure and rendering helpers
 
 Future data or device families can be added beside `gamrywb.dta` as peer modules. They should expose one coherent app-facing facade each rather than leaking parser or low-level IO packages into app code.
 
-Experiment app implementations should live under public `apps/*.m` files rather than being absorbed into the reusable library package. All current app bodies are now single-file public app implementations. The long-term ideal is one experiment app `.m` file owning its scientific workflow. The previous `apps/+gamrywb_apps` helper namespaces were migration waypoints, not a reusable app framework, and should not be reintroduced for app-specific logic.
+Experiment app implementations live under public `apps/*.m` files rather than being absorbed into the reusable library package. The intended app shape is one experiment app `.m` file owning its scientific workflow. App-specific helper packages should not be reintroduced just to make local code public.
 
 ## Entrypoints
 
@@ -84,7 +84,7 @@ Not library code: experiment-specific app design
   experiment-specific analysis, plotting, result summaries, and exports
 ```
 
-This map is a design boundary, not a reason to force every function into exactly three folders. Keep granular packages when they make code easier to inspect. Refactor or remove helpers when they obscure which layer owns a decision.
+This map is a design boundary, not a reason to force every function into exactly three folders. Refactor or remove helpers when they obscure which layer owns a decision.
 
 For concrete calling examples and the practical checklist used before adding a new experiment app, see `docs/api_usage.md`.
 
