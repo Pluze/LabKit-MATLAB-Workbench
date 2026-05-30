@@ -57,6 +57,7 @@ The default runner covers pure functions. The optional GUI mode checks launch/la
 ```text
 +gamrywb/             Reusable GUI, Gamry/DTA, and utility APIs
 apps/                 App entry points and app-specific implementations
+templates/            Copy-only GUI, DTA, and GUI+DTA starter programs
 demo/                 Named DTA fixtures
 tests/                MATLAB tests
 scripts/              Test runner scripts

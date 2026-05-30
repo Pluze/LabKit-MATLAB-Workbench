@@ -18,7 +18,7 @@ The reusable `+gamrywb` package should provide three library surfaces that apps 
 
 ```text
 Gamry/DTA library:
-  DTA discovery, parser dispatch, normalized file loading, table/data access, sessions
+  app-facing DTA discovery/loading/session facade plus lower-level parser and data APIs
 
 Scientific-app GUI base library:
   generic shells, controls, panels, list refresh, logs, result surfaces, and UI state helpers
@@ -48,9 +48,9 @@ The app files are package-backed and do not delegate to legacy GUI files.
 ## Package Responsibilities
 
 ```text
-+gamrywb/+dta       GUI-free DTA discovery, type detection, file loading, and folder loading facade
++gamrywb/+dta       GUI-free app-facing DTA discovery, loading, and session facade
 +gamrywb/+io        DTA parsers, folder discovery, session IO
-+gamrywb/+data      item/session construction, table/column access, session orchestration
++gamrywb/+data      lower-level item/session construction, table/column access, session orchestration
 +gamrywb/+analysis  broad pulse detection helpers
 +gamrywb/+ui        reusable GUI framework helpers and small UI construction helpers
 +gamrywb/+util      small generic helpers
@@ -66,7 +66,7 @@ Library 1: scientific-app GUI base
   reusable shells, panels, controls, display-data helpers, and handle-scoped UI utilities
 
 Library 2: Gamry/DTA parsing and loading
-  +gamrywb/+dta discovery and loading facade
+  +gamrywb/+dta discovery, loading, and session facade for app code
   +gamrywb/+io parser functions
   +gamrywb/+data item/session construction, table/column access, selection, loading orchestration, and result summaries
 
@@ -89,7 +89,7 @@ The analysis layer is guarded as pulse-focused, GUI-free, and app-free. It shoul
 
 Analysis, data, and IO package functions should not depend on GUI state or call `uialert`. Plot/UI helpers may accept explicit graphics handles and should keep side effects limited to those handles.
 
-The DTA facade is also guarded as a GUI-free and app-free layer: it should not call MATLAB UI constructors, file dialogs, alerts, app entry points, or `apps/` helpers. App code may call `gamrywb.dta.*`; DTA code must not call back into app code.
+The DTA facade is also guarded as a GUI-free and app-free layer: it should not call MATLAB UI constructors, file dialogs, alerts, app entry points, or `apps/` helpers. New DTA-backed app code should prefer `gamrywb.dta.*` for loading and session operations; DTA code must not call back into app code.
 
 The data layer is guarded as GUI-free and app-free model/orchestration code. It may call parser, pulse-detection, and utility helpers that are part of the Gamry/DTA library, but it should not call MATLAB UI constructors, file dialogs, alerts, `gamrywb.ui`, app entry points, or `apps/` helpers.
 
@@ -111,7 +111,7 @@ The GUI decides how to display that status.
 ## Current Package Surface
 
 - `apps/`: user-facing app entry points and app-specific implementations. All current app bodies are single public app source files, and app-specific workflow helpers are local functions in those files rather than reusable `+gamrywb` APIs or transitional app-helper packages.
-- `+dta`: GUI-free facade for supported DTA file discovery, family detection, single-file loading, batch loading, and folder loading with status/report structs. It delegates to existing `+io` parser and `+data` item-construction helpers.
+- `+dta`: GUI-free facade for supported DTA file discovery, family detection, single-file loading, batch loading, folder loading, and app-facing DTA session operations with status/report structs. It delegates to existing `+io` parser and `+data` item/session helpers.
 - `+io`: DTA parsers, folder discovery, and session save/load. It should not contain app-specific export helpers or scientific result schemas.
 - `+data`: table/column accessors, CV/CT selected-column access, chrono item construction, EIS item construction, session add/remove/select/load helpers, and generic item/result summaries.
 - `+analysis`: pulse detection helpers. Experiment-specific calculations should migrate toward app-side code unless they are clearly general, parameter-light math utilities.

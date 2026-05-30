@@ -118,6 +118,21 @@ folder, filepaths, nDiscovered
 
 Folders with no `.DTA` files return no items, empty `filepaths`, `nDiscovered == 0`, and the same zero-count batch report fields.
 
+DTA app session helpers wrap the lower-level session model for common app workflows:
+
+```matlab
+session = gamrywb.dta.makeSession(kind)
+[session, report] = gamrywb.dta.addFilesToSession(session, filepaths, expectedKind, callbacks)
+[items, idx] = gamrywb.dta.selectSessionItems(session, selectedNames)
+[session, report] = gamrywb.dta.removeSelectedItemsFromSession(session, selectedNames, callbacks)
+```
+
+`addFilesToSession` report fields:
+
+```text
+added, skipped, failed, nAdded, nSkipped, nFailed
+```
+
 ## CV/CT Data
 
 `gamrywb.io.parseCVCTDTA` returns:

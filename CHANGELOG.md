@@ -9,6 +9,8 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - GUI-free `+gamrywb/+dta` facade for recursive discovery, type detection, single-file loading, batch loading, and folder loading with status/report structs.
 - Public single-file app implementations for EIS, Chrono overlay, CSC, VT resistance, and CIC under `apps/`.
 - Reusable API usage guide with the single-file app template and new-app checklist.
+- Copy-only GUI, DTA-only, and GUI+DTA template programs under `templates/`.
+- App-facing DTA session facade helpers for session creation, DTA loading, selection, and removal.
 - Architecture boundary tests for app ownership and reusable `+gamrywb` layer dependencies.
 - `gamrywb.util.interp1Safe` for shared finite-vector interpolation with nearest-point fallback.
 - Shared test fixture helpers and DTA facade edge-case coverage.

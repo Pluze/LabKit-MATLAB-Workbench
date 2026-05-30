@@ -93,124 +93,46 @@ Choose the smallest loading API that matches the workflow:
 One explicit file:        gamrywb.dta.loadFile
 Known list of files:      gamrywb.dta.loadFiles
 Script/prototype folder:  gamrywb.dta.loadFolder
-GUI session app:          gamrywb.data.loadFilesIntoSession or addFilesToSession
+GUI session app:          gamrywb.dta.addFilesToSession
 Parser development:       gamrywb.io.parse* and gamrywb.io.findDTAFilesRecursive
 ```
 
-Use `loadFolder` for scripts and prototypes that do not need duplicate handling or GUI callback timing. Use the session helpers in apps that maintain loaded-file state, listboxes, logs, or remove/clear workflows.
+Use `loadFolder` for scripts and prototypes that do not need duplicate handling or GUI callback timing. Use the DTA session helpers in apps that maintain loaded-file state, listboxes, logs, or remove/clear workflows.
 
-## Data And Session API
+## DTA Session Facade
 
-Use `+gamrywb/+data` for struct construction and table/curve access:
+New DTA-backed apps should normally start with these app-facing helpers:
 
 ```matlab
-session = gamrywb.data.makeSession('new_experiment');
-[session, report] = gamrywb.data.addFilesToSession(session, files, @loader);
-[session, report] = gamrywb.data.loadFilesIntoSession(session, files, @loader, callbacks);
-[session, report] = gamrywb.data.removeSelectedItemsFromSession(session, selectedNames, callbacks);
+session = gamrywb.dta.makeSession('new_experiment');
+[session, report] = gamrywb.dta.addFilesToSession(session, files, "chrono", callbacks);
+[selectedItems, idx] = gamrywb.dta.selectSessionItems(session, selectedNames);
+[session, report] = gamrywb.dta.removeSelectedItemsFromSession(session, selectedNames, callbacks);
+```
 
+This keeps normal app code on the DTA surface instead of exposing the lower-level loader callback used by `+gamrywb/+data`.
+
+`addFilesToSession` reports:
+
+```text
+added, skipped, failed, nAdded, nSkipped, nFailed
+```
+
+The app still owns `refreshPlots`, `addLog`, export behavior, alerts, and any app-specific reset/default-selection behavior. Do not move that choreography into `+gamrywb/+ui` unless multiple real apps prove that a generic helper is clearer.
+
+## Lower-Level Data API
+
+Use `+gamrywb/+data` only when app code genuinely needs table/curve access or generic non-DTA session orchestration:
+
+```matlab
 [curve, ok, msg] = gamrywb.data.getMainCurve(item.tables);
 [zcurve, ok, msg] = gamrywb.data.getZCurve(item.tables);
 values = gamrywb.data.getColumn(curve, 'Vf');
 [x, y] = gamrywb.data.getCurveXY(curve, 'T', 'Im');
-items = gamrywb.data.selectItemsByNames(session.items, selectedNames);
 summary = gamrywb.data.summarizeBatchResults(session.items);
 ```
 
 Session structs are plain structs. Do not convert them to MATLAB classes without an explicit design change and tests.
-
-For a GUI app that owns a loaded-file list, keep the callback choreography local and use the data/session helpers for the GUI-free parts:
-
-```matlab
-S.session = gamrywb.data.makeSession('new_experiment');
-S.items = S.session.items;
-
-function loadFiles(filepaths)
-    if isempty(filepaths)
-        return;
-    end
-
-    callbacks = struct();
-    callbacks.onAdded = @(filepath, ~) addLog(sprintf('Loaded: %s', filepath));
-    callbacks.onSkipped = @(filepath) addLog(sprintf('Skipped already loaded: %s', filepath));
-    callbacks.onFailed = @(filepath, message) addLog(sprintf('Failed: %s | %s', filepath, message));
-
-    [S.session, report] = gamrywb.data.loadFilesIntoSession( ...
-        S.session, filepaths, @loadOne, callbacks);
-    S.items = S.session.items;
-
-    refreshFileList();
-    refreshPlots();
-
-    if ~isempty(report.failed)
-        firstError = report.failed(1);
-        uialert(fig, sprintf('Failed to load:\n%s\n\n%s', ...
-            firstError.filepath, firstError.message), 'Load error');
-    end
-end
-
-function refreshFileList()
-    if isempty(S.items)
-        gamrywb.ui.refreshListboxItems(lbFiles, {});
-    else
-        gamrywb.ui.refreshListboxItems(lbFiles, {S.items.name});
-    end
-end
-
-function onOpenFiles(~, ~)
-    [names, folder] = uigetfile( ...
-        {'*.DTA;*.dta', 'Gamry DTA (*.DTA)'; '*.*', 'All files'}, ...
-        'Select one or more DTA files', ...
-        'MultiSelect', 'on');
-    if isequal(names, 0)
-        addLog('Open cancelled.');
-        return;
-    end
-
-    if ischar(names) || isstring(names)
-        names = {char(names)};
-    end
-    loadFiles(cellfun(@(name) fullfile(folder, name), names, 'UniformOutput', false));
-end
-
-function onOpenFolder(~, ~)
-    folder = uigetdir(pwd, 'Select a folder to recursively scan for .DTA files');
-    if isequal(folder, 0)
-        addLog('Folder selection cancelled.');
-        return;
-    end
-
-    filepaths = gamrywb.dta.findFiles(folder);
-    if isempty(filepaths)
-        addLog(sprintf('No DTA files found under: %s', folder));
-        uialert(fig, sprintf('No .DTA files found under:\n%s', folder), 'No files found');
-        return;
-    end
-
-    addLog(sprintf('Found %d DTA file(s) under %s', numel(filepaths), folder));
-    loadFiles(filepaths);
-end
-
-function onRemoveSelected(~, ~)
-    callbacks = struct();
-    callbacks.onRemoved = @(name, ~) addLog(sprintf('Removed: %s', name));
-    [S.session, ~] = gamrywb.data.removeSelectedItemsFromSession( ...
-        S.session, lbFiles.Value, callbacks);
-    S.items = S.session.items;
-    refreshFileList();
-    refreshPlots();
-end
-
-function onClearAll(~, ~)
-    S.session = gamrywb.data.makeSession('new_experiment');
-    S.items = S.session.items;
-    refreshFileList();
-    refreshPlots();
-    addLog('Cleared all files.');
-end
-```
-
-The app still owns `refreshPlots`, `addLog`, export behavior, alerts, and any app-specific reset/default-selection behavior. Do not move that choreography into `+gamrywb/+ui` unless multiple real apps prove that a generic helper is clearer.
 
 ## GUI API
 
@@ -301,6 +223,18 @@ value = gamrywb.util.interp1Safe(t, y, targetTime);
 
 Do not move code into `+util` just because it is short. It must be useful across layers and explainable without experiment vocabulary.
 
+## Template Programs
+
+Template source files live under `templates/` and are not runtime app entry points:
+
+```text
+templates/gui_only_app_template.m       GUI helpers only
+templates/dta_only_script_template.m    DTA facade only
+templates/gui_dta_app_template.m        GUI helpers plus DTA facade
+```
+
+Copy one into `apps/` only when starting a real experiment app. Keep the copied app explicit and local; do not create a helper package just because the template has repeated callback shape.
+
 ## Single-File App Template
 
 Use this as a starting shape, not as a framework contract:
@@ -319,8 +253,7 @@ function varargout = gamrywb_NewExperiment_app(varargin)
     end
 
     S = struct();
-    S.session = gamrywb.data.makeSession('new_experiment');
-    S.items = S.session.items;
+    S.session = gamrywb.dta.makeSession('new_experiment');
 
     ui = gamrywb.ui.createTwoPaneShell( ...
         'New Experiment', [80 60 1400 850], 360, ...
