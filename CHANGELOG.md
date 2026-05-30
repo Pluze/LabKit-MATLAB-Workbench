@@ -11,13 +11,14 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Reusable API usage guide with the single-file app template and new-app checklist.
 - Copy-only GUI, DTA-only, and GUI+DTA template programs under `templates/`.
 - App-facing DTA session facade helpers for session creation, DTA loading, selection, and removal.
+- App-facing DTA pulse-detection facade so apps do not call internal analysis APIs directly.
 - Architecture boundary tests for app ownership and reusable `+gamrywb` layer dependencies.
-- `gamrywb.util.interp1Safe` for shared finite-vector interpolation with nearest-point fallback.
 - Shared test fixture helpers and DTA facade edge-case coverage.
 
 ### Changed
 
 - Parser-only tab-splitting and table-scanning helpers now live under `+gamrywb/+io/private` instead of the public `+gamrywb/+util` package.
+- App-specific utility helpers now live in the owning app or lower-level implementation file instead of a public `+gamrywb/+util` package.
 - App-specific scientific workflow now lives in the owning app files: analysis formulas, plot annotations, result tables, export schemas, and CSV writing are not reusable `+gamrywb` APIs.
 - Current apps load files through the GUI-free DTA facade where supported, while retaining app-local behavior such as Chrono pulse-gap alignment and EIS axis/export choices.
 - App header comments now consistently describe single-file app ownership without implying reusable-library ownership of experiment-specific analysis.
@@ -26,7 +27,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Generic prepared-X/Y plotting lives in `gamrywb.ui.plotXY`; parsed-curve column selection stays in `gamrywb.data.getCurveXY` so the GUI layer does not depend on the data layer.
 - Tests now separate default and GUI groups, share repeated fixture/assertion helpers, and keep architecture guardrails in `test_architecture_boundaries`.
 - Session and DTA facade helpers now handle empty inputs, invalid expected kinds, and invalid folders consistently.
-- CIC and VT resistance apps now call the shared interpolation utility instead of keeping duplicated local fallback helpers.
+- CIC and VT resistance apps keep their interpolation/window helpers local to avoid exposing an app-facing utility package.
 - Current docs now describe the stable three-surface library shape without keeping separate roadmap/playbook files.
 
 ### Removed

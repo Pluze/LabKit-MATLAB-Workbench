@@ -53,7 +53,7 @@ The app files are package-backed and do not delegate to legacy GUI files.
 +gamrywb/+data      lower-level item/session construction, table/column access, session orchestration
 +gamrywb/+analysis  broad pulse detection helpers
 +gamrywb/+ui        reusable GUI framework helpers and small UI construction helpers
-+gamrywb/+util      transitional internal helpers, not a new-app entry surface
+private helpers     implementation helpers inside the owning package or app file
 ```
 
 ## Three-Layer Map
@@ -71,7 +71,7 @@ Library 2: Gamry/DTA parsing and loading
   +gamrywb/+data item/session construction, table/column access, selection, loading orchestration, and result summaries
 
 Internal helper base
-  +gamrywb/+util and package-private helpers
+  package-private helpers and app-local functions
   internal string, struct, numeric, CSV, and parser helpers used behind GUI/DTA/data APIs
 
 Not library code: experiment-specific app design
@@ -95,7 +95,7 @@ The data layer is guarded as GUI-free and app-free model/orchestration code. It 
 
 The IO layer is guarded as GUI-free and app-free parser/session IO code. It may call lower-level utility helpers and itself recursively for discovery, but it should not call MATLAB UI constructors, file dialogs, alerts, `gamrywb.ui`, app entry points, `apps/` helpers, or app-specific export writers.
 
-The utility layer is guarded as the lowest internal layer, not an app-facing surface. Utility functions should not call GUI constructors, app entry points, `apps/` helpers, or higher-level `gamrywb.dta`, `gamrywb.io`, `gamrywb.data`, `gamrywb.ui`, or `gamrywb.analysis` APIs. Higher layers may call utilities while they are being retired or internalized; new app code should not call them directly.
+Shared implementation helpers are not app-facing API. Parser-only helpers belong under package-private parser helpers. App-specific formatting, parsing, interpolation, and export helpers belong in the owning app file unless a repeated use case proves a clearer `gamrywb.dta`, `gamrywb.ui`, or selected `gamrywb.data` API.
 
 Reusable UI helpers should build or update generic controls and draw prepared data. Data extraction, parser/session calls, and analysis calls should stay in the app or data layers; for example, apps should call `gamrywb.data.getCurveXY` before passing prepared vectors and labels to `gamrywb.ui.plotXY`. App-specific callback choreography, such as clearing a session, restoring app-specific plot defaults, refreshing experiment summaries, and writing app logs, should stay in the owning app file even when two apps have similar callback order. Domain labels such as DTA-specific open/export button text and app shell tab/panel titles should be passed in from apps rather than hardcoded in the GUI library.
 
@@ -116,7 +116,7 @@ The GUI decides how to display that status.
 - `+data`: table/column accessors, CV/CT selected-column access, chrono item construction, EIS item construction, session add/remove/select/load helpers, and generic item/result summaries.
 - `+analysis`: pulse detection helpers. Experiment-specific calculations should migrate toward app-side code unless they are clearly general, parameter-light math utilities.
 - `+ui`: reusable GUI framework helpers, including generic axes creation/reset, prepared-X/Y plotting, log append and log panel, generic listbox item refresh, multi-file and single-select file-panel, summary row, result table panel, plot-options panel, simple labeled-control, two-pane shell, tabbed dual-plot shell, and top/bottom plot-control construction/state helpers.
-- `+util`: transitional internal helper package used by existing implementation code. Parser-only helpers belong under package-private parser helpers; new app code should not call `gamrywb.util.*` directly.
+- Internal helpers: package-private parser helpers and app-local helper functions. The public `+util` package should not be reintroduced as a new-app entry surface.
 
 ## Boundaries To Preserve
 

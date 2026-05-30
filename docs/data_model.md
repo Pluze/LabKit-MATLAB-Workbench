@@ -133,6 +133,14 @@ session = gamrywb.dta.makeSession(kind)
 added, skipped, failed, nAdded, nSkipped, nFailed
 ```
 
+Chrono pulse detection is app-facing through:
+
+```matlab
+[pulse, message] = gamrywb.dta.detectPulses(t, Im, meta, mode)
+```
+
+Apps should prefer this DTA facade instead of calling `gamrywb.analysis.*` directly.
+
 ## CV/CT Data
 
 `gamrywb.io.parseCVCTDTA` returns:

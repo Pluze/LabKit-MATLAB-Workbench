@@ -69,6 +69,7 @@ Parser changes:
 - CV/CT SCANRATE conversion, CURVE discovery, headers, units, and numeric parsing
 - DTA facade recursive discovery, type detection, expected-kind normalization, expected-kind mismatch status, missing-file status, and GUI-free batch/folder loading reports
 - app-facing DTA session helpers for adding, skipping duplicate, selecting, and removing loaded items
+- app-facing DTA pulse detection facade so apps do not call internal analysis APIs directly
 
 Pulse changes:
 
@@ -88,12 +89,13 @@ App-boundary changes:
 
 - public app files do not depend on transitional app-specific helper packages
 - app-specific helper packages and private launcher directories are not reintroduced for workflow code that belongs to one app
+- public app files and templates do not call `gamrywb.io.*`, `gamrywb.analysis.*`, or `gamrywb.util.*` directly
 - reusable `+gamrywb/+analysis` stays pulse-focused, GUI-free, and app-free and does not regain experiment-specific CIC, VT, CSC, EIS, result-table, or CSV-writing workflow code
 - reusable `+gamrywb/+io` stays GUI-free and app-free and does not regain app-specific export-table or CSV writer helpers
 - reusable `+gamrywb/+dta` stays GUI-free and app-free: no MATLAB UI constructors, file dialogs, alerts, app entry points, or `apps/` helper calls
 - reusable `+gamrywb/+data` stays GUI-free and app-free: no MATLAB UI constructors, file dialogs, alerts, `gamrywb.ui`, app entry points, or `apps/` helper calls
 - reusable `+gamrywb/+ui` stays parser/data/analysis-free: apps pass prepared values and labels into GUI helpers rather than letting GUI helpers call DTA, IO, data, or analysis APIs
-- reusable `+gamrywb/+util` stays the lowest shared layer: no GUI constructors, app entry points, `apps/` helper calls, or calls back up into `gamrywb.dta`, `gamrywb.io`, `gamrywb.data`, `gamrywb.ui`, or `gamrywb.analysis`
+- helper code stays internal: parser-only helpers remain package-private, app-specific helpers remain app-local, and no public `+gamrywb/+util` app-facing surface is reintroduced
 - keep these architecture guardrails in `tests/test_architecture_boundaries.m` rather than duplicating them in numerical analysis tests
 
 Session/export changes:

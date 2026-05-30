@@ -28,6 +28,11 @@ function test_dtaFacade()
     assert(chronoItem.type == "chrono", 'Chrono item type should be preserved.');
     assert(isfield(chronoItem, 't') && isfield(chronoItem, 'Vf') && isfield(chronoItem, 'Im'), ...
         'Chrono facade should preserve legacy-compatible vectors.');
+    [pulse, pulseMsg] = gamrywb.dta.detectPulses( ...
+        chronoItem.t, chronoItem.Im, chronoItem.meta, "Metadata first, then auto");
+    assert(pulse.ok, pulseMsg);
+    assert(isfield(pulse, 'gap_start') && isfinite(pulse.gap_start), ...
+        'DTA facade should expose chrono pulse detection without app code calling analysis directly.');
 
     [spacedKindItem, spacedKindStatus] = gamrywb.dta.loadFile(chronoFile, " Chrono ");
     assert(spacedKindStatus.ok, spacedKindStatus.message);

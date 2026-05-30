@@ -4,7 +4,7 @@ function item = makeEISItem(filepath)
     item = struct();
     item.type = "eis";
     item.filepath = filepath;
-    item.name = gamrywb.util.shortName(filepath);
+    item.name = shortName(filepath);
     [item.meta, item.tables, item.logmsg] = gamrywb.io.parseEISDTA(filepath);
 
     [curve, ok, msg] = gamrywb.data.getZCurve(item.tables);
@@ -75,4 +75,9 @@ function tf = isMostlyDescending(x)
     end
     dx = diff(x);
     tf = sum(dx < 0) >= sum(dx > 0);
+end
+
+function name = shortName(filepath)
+    [~, name, ext] = fileparts(filepath);
+    name = [name ext];
 end

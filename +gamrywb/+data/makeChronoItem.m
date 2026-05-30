@@ -8,7 +8,7 @@ function item = makeChronoItem(filepath, opts)
     item = struct();
     item.type = "chrono";
     item.filepath = filepath;
-    item.name = gamrywb.util.shortName(filepath);
+    item.name = shortName(filepath);
     [item.meta, item.tables, item.logmsg] = gamrywb.io.parseChronoDTA(filepath);
 
     [curve, ok, msg] = gamrywb.data.getMainCurve(item.tables);
@@ -69,4 +69,9 @@ function item = makeChronoItem(filepath, opts)
 
     [item.pulse, pulseMsg] = gamrywb.analysis.detectPulses(item.t, item.Im, item.meta, pulseOptions);
     item.pulseMessage = pulseMsg;
+end
+
+function name = shortName(filepath)
+    [~, name, ext] = fileparts(filepath);
+    name = [name ext];
 end

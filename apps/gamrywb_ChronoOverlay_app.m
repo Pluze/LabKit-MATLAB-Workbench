@@ -260,7 +260,7 @@ function [item, msg] = alignByPulseGap(item)
         pulseMsg = item.pulse.message;
     end
 
-    pulse = gamrywb.analysis.emptyPulse();
+    pulse = emptyPulse();
     if isfield(item, 'pulse')
         pulse = item.pulse;
     end
@@ -308,7 +308,7 @@ function T = buildOverlayExportTable(items)
 
     T = table(timeUnion, 'VariableNames', {'TimeGapCenterAligned_s'});
     for i = 1:numel(items)
-        safeName = gamrywb.util.sanitizeFieldName(items(i).name);
+        safeName = sanitizeFieldName(items(i).name);
         vName = ['V_' safeName];
         iName = ['I_' safeName];
 
@@ -476,4 +476,31 @@ function s = pluralS(n)
     else
         s = 's';
     end
+end
+
+function out = sanitizeFieldName(txt)
+    out = matlab.lang.makeValidName(txt);
+end
+
+function pulse = emptyPulse()
+    pulse = struct( ...
+        'ok', false, ...
+        'method', '-', ...
+        'message', '', ...
+        'cath_start', NaN, ...
+        'cath_end', NaN, ...
+        'anod_start', NaN, ...
+        'anod_end', NaN, ...
+        'Ic_nominal', NaN, ...
+        'Ia_nominal', NaN, ...
+        'pre_start', NaN, ...
+        'pre_end', NaN, ...
+        'gap_start', NaN, ...
+        'gap_end', NaN, ...
+        'post_start', NaN, ...
+        'post_end', NaN);
+
+    pulse.cath = struct('start_s', NaN, 'end_s', NaN, 'current_A', NaN);
+    pulse.anod = struct('start_s', NaN, 'end_s', NaN, 'current_A', NaN);
+    pulse.gap = struct('start_s', NaN, 'end_s', NaN, 'center_s', NaN);
 end

@@ -75,5 +75,6 @@ function item = loader(filepath)
 
     item = struct();
     item.filepath = filepath;
-    item.name = gamrywb.util.shortName(filepath);
+    [~, name, ext] = fileparts(filepath);
+    item.name = [name ext];
 end

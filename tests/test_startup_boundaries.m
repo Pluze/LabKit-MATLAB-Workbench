@@ -4,7 +4,7 @@ function test_startup_boundaries()
     root = fileparts(fileparts(mfilename('fullpath')));
 
     assert(exist(fullfile(root, 'startup_gamrywb.m'), 'file') == 2, 'startup_gamrywb.m is missing.');
-    assert(exist(fullfile(root, '+gamrywb', '+util', 'shortName.m'), 'file') == 2, 'Utility package is missing.');
+    assert(exist(fullfile(root, '+gamrywb', '+dta', 'loadFile.m'), 'file') == 2, 'DTA facade is missing.');
     assert(exist(fullfile(root, 'legacy'), 'dir') == 0, 'legacy/ should be removed after app entry points are package-backed.');
 
     removedRootNames = { ...

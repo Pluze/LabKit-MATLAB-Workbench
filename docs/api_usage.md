@@ -76,6 +76,12 @@ Type detection:
 kind = gamrywb.dta.detectType(filepath);
 ```
 
+Chrono pulse detection:
+
+```matlab
+[pulse, message] = gamrywb.dta.detectPulses(t, Im, meta, "Metadata first, then auto");
+```
+
 Lower-level discovery and parser functions remain available for parser tests and format work:
 
 ```matlab

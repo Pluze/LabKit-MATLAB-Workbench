@@ -382,18 +382,18 @@ function varargout = gamrywb_VTResistance_app(varargin)
         if strcmp(xChoice,'Sample #')
             x = A.pt;
             xlab = 'Sample #';
-            cathStartX = gamrywb.util.interp1Safe(A.t, A.pt, A.pulse.cath_start);
-            cathEndX = gamrywb.util.interp1Safe(A.t, A.pt, A.pulse.cath_end);
-            anodStartX = gamrywb.util.interp1Safe(A.t, A.pt, A.pulse.anod_start);
-            anodEndX = gamrywb.util.interp1Safe(A.t, A.pt, A.pulse.anod_end);
-            cathBaseStartX = gamrywb.util.interp1Safe(A.t, A.pt, A.pulse.pre_start);
-            cathBaseEndX = gamrywb.util.interp1Safe(A.t, A.pt, A.pulse.pre_end);
-            anodBaseStartX = gamrywb.util.interp1Safe(A.t, A.pt, A.anodBaselineStart);
-            anodBaseEndX = gamrywb.util.interp1Safe(A.t, A.pt, A.anodBaselineEnd);
-            cSteadyStartX = gamrywb.util.interp1Safe(A.t, A.pt, A.cathSteadyStart);
-            cSteadyEndX = gamrywb.util.interp1Safe(A.t, A.pt, A.cathSteadyEnd);
-            aSteadyStartX = gamrywb.util.interp1Safe(A.t, A.pt, A.anodSteadyStart);
-            aSteadyEndX = gamrywb.util.interp1Safe(A.t, A.pt, A.anodSteadyEnd);
+            cathStartX = interp1Safe(A.t, A.pt, A.pulse.cath_start);
+            cathEndX = interp1Safe(A.t, A.pt, A.pulse.cath_end);
+            anodStartX = interp1Safe(A.t, A.pt, A.pulse.anod_start);
+            anodEndX = interp1Safe(A.t, A.pt, A.pulse.anod_end);
+            cathBaseStartX = interp1Safe(A.t, A.pt, A.pulse.pre_start);
+            cathBaseEndX = interp1Safe(A.t, A.pt, A.pulse.pre_end);
+            anodBaseStartX = interp1Safe(A.t, A.pt, A.anodBaselineStart);
+            anodBaseEndX = interp1Safe(A.t, A.pt, A.anodBaselineEnd);
+            cSteadyStartX = interp1Safe(A.t, A.pt, A.cathSteadyStart);
+            cSteadyEndX = interp1Safe(A.t, A.pt, A.cathSteadyEnd);
+            aSteadyStartX = interp1Safe(A.t, A.pt, A.anodSteadyStart);
+            aSteadyEndX = interp1Safe(A.t, A.pt, A.anodSteadyEnd);
         else
             x = A.t;
             xlab = 'Time (s)';
@@ -630,7 +630,7 @@ function A = computeResistance(item, opts)
     if isfield(item, 'meta')
         meta = item.meta;
     end
-    [pulse, pulseMsg] = gamrywb.analysis.detectPulses(t, Im, meta, opts.pulseMode);
+    [pulse, pulseMsg] = gamrywb.dta.detectPulses(t, Im, meta, opts.pulseMode);
     A.pulse = pulse;
     A.detectMode = pulse.method;
     A.detectMsg = pulseMsg;
@@ -815,13 +815,13 @@ function [ok, msg] = writeResultsCSV(items, filepath)
         fprintf(fid, 'File,Ic_A,Ia_A,Vc_ss_V,Va_ss_V,Vc_baseline_V,Va_baseline_V,dVc_V,dVa_V,Rc_bc_ohm,Ra_bc_ohm,Ravg_bc_ohm,WindowMode,Detection,Status\n');
         for i = 1:height(T)
             fprintf(fid, '"%s",%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,%.12g,"%s","%s","%s"\n', ...
-                gamrywb.util.csvEscape(T.File{i}), ...
+                csvEscape(T.File{i}), ...
                 T.Ic_A(i), T.Ia_A(i), T.Vc_ss_V(i), T.Va_ss_V(i), ...
                 T.Vc_baseline_V(i), T.Va_baseline_V(i), T.dVc_V(i), T.dVa_V(i), ...
                 T.Rc_bc_ohm(i), T.Ra_bc_ohm(i), T.Ravg_bc_ohm(i), ...
-                gamrywb.util.csvEscape(T.WindowMode{i}), ...
-                gamrywb.util.csvEscape(T.Detection{i}), ...
-                gamrywb.util.csvEscape(T.Status{i}));
+                csvEscape(T.WindowMode{i}), ...
+                csvEscape(T.Detection{i}), ...
+                csvEscape(T.Status{i}));
         end
     catch ME
         ok = false;
@@ -880,7 +880,7 @@ function [v, window_s] = estimateBaseline(t, y, t1, t2, fallbackValue)
         fallbackValue = NaN;
     end
 
-    v = gamrywb.util.medianInWindow(t, y, t1, t2);
+    v = medianInWindow(t, y, t1, t2);
     if ~isfinite(v)
         v = fallbackValue;
     end
@@ -1048,5 +1048,41 @@ function txt = formatDurationUs(dt_s)
         txt = '-';
     else
         txt = sprintf('%.3f us', 1e6 * dt_s);
+    end
+end
+
+function s = csvEscape(x)
+    s = strrep(char(x), '"', '""');
+end
+
+function v = interp1Safe(x, y, xq)
+    if numel(x) < 2 || any(~isfinite([x(:); y(:)]))
+        v = NaN;
+        return;
+    end
+
+    try
+        v = interp1(x, y, xq, 'linear', 'extrap');
+    catch
+        idx = nearestIndex(x, xq);
+        v = y(idx);
+    end
+end
+
+function idx = nearestIndex(x, xq)
+    [~, idx] = min(abs(x - xq));
+end
+
+function m = medianInWindow(t, y, t1, t2)
+    if ~isfinite(t1) || ~isfinite(t2) || t2 < t1
+        m = NaN;
+        return;
+    end
+
+    mask = t >= t1 & t <= t2;
+    if ~any(mask)
+        m = NaN;
+    else
+        m = median(y(mask), 'omitnan');
     end
 end

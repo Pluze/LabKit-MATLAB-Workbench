@@ -32,9 +32,9 @@ function [session, report] = addFilesToSession(session, filepaths, loader, callb
                 item.filepath = filepath;
             end
             if ~isfield(item, 'name') || isempty(item.name)
-                item.name = gamrywb.util.shortName(filepath);
+                item.name = shortName(filepath);
             end
-            session.items = gamrywb.util.appendStruct(session.items, item);
+            session.items = appendStruct(session.items, item);
             report.added{end+1} = filepath; %#ok<AGROW>
             callCallback(callbacks, 'onAdded', filepath, item);
         catch ME
@@ -49,7 +49,20 @@ end
 function item = defaultLoader(filepath)
     item = struct();
     item.filepath = filepath;
-    item.name = gamrywb.util.shortName(filepath);
+    item.name = shortName(filepath);
+end
+
+function out = appendStruct(S, item)
+    if isempty(S)
+        out = item;
+    else
+        out = [S, item];
+    end
+end
+
+function name = shortName(filepath)
+    [~, name, ext] = fileparts(filepath);
+    name = [name ext];
 end
 
 function tf = hasFilepath(items, filepath)

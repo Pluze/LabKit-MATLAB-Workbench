@@ -13,7 +13,7 @@ Completed package areas:
 - pulse detection and analysis functions in `+gamrywb/+analysis`
 - reusable plot helpers in `+gamrywb/+plot`
 - table-display helpers in `+gamrywb/+ui`
-- low-risk generic helpers in `+gamrywb/+util`
+- low-risk generic helpers that were later internalized into package-private or app-local helpers
 
 Compatibility retained through the v1.0 checkpoint:
 

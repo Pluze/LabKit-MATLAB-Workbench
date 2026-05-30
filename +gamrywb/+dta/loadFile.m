@@ -93,10 +93,15 @@ function item = makeCVCTItem(filepath)
     item = struct();
     item.type = "cvct";
     item.filepath = filepath;
-    item.name = gamrywb.util.shortName(filepath);
+    item.name = shortName(filepath);
     item.scanRate = scanRate;
     item.scanRate_V_per_s = scanRate;
     item.curves = curves;
     item.logmsg = logmsg;
     item.analysis = struct();
+end
+
+function name = shortName(filepath)
+    [~, name, ext] = fileparts(filepath);
+    name = [name ext];
 end

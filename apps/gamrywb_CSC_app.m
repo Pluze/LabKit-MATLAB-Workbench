@@ -582,7 +582,7 @@ function A = computeCSC(curve, opts)
     A.logMessage = '';
     A.mode = opts.mode;
     A.scanRate = opts.scanRate;
-    A.area_cm2 = gamrywb.util.parsePositiveScalar(opts.area_cm2);
+    A.area_cm2 = parsePositiveScalar(opts.area_cm2);
 
     if ~(isscalar(A.scanRate) && isfinite(A.scanRate) && A.scanRate > 0)
         A.message = 'scan rate missing';
@@ -859,5 +859,22 @@ function s = crossingFraction(y1, y2, y0)
     s = (y0 - y1) / (y2 - y1);
     if ~(s > 0 && s < 1)
         s = [];
+    end
+end
+
+function q = parsePositiveScalar(x)
+    if isnumeric(x)
+        q = x;
+    else
+        x = strtrim(char(x));
+        if isempty(x)
+            q = NaN;
+            return;
+        end
+        q = str2double(x);
+    end
+
+    if ~isscalar(q) || ~isfinite(q) || q <= 0
+        q = NaN;
     end
 end
