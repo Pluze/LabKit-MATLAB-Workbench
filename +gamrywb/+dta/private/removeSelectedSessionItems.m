@@ -1,5 +1,5 @@
-function [session, report] = removeSelectedItemsFromSession(session, selectedNames, callbacks)
-%REMOVESELECTEDITEMSFROMSESSION Remove session items by selected display names.
+function [session, report] = removeSelectedSessionItems(session, selectedNames, callbacks)
+%REMOVESELECTEDSESSIONITEMS Remove session items by selected display names.
 
     if nargin < 3
         callbacks = struct();
@@ -20,7 +20,7 @@ function [session, report] = removeSelectedItemsFromSession(session, selectedNam
         end
     end
 
-    [session, report] = gamrywb.data.removeFilesFromSession(session, removeNames);
+    [session, report] = removeFilesFromSession(session, removeNames);
 end
 
 function report = emptyReport()
@@ -39,7 +39,7 @@ function names = normalizeSelectedNames(selectedNames)
     elseif iscell(selectedNames)
         names = string(selectedNames(:));
     else
-        error('gamrywb:data:removeSelectedItemsFromSession:InvalidSelectedNames', ...
+        error('gamrywb:dta:InvalidSelectedNames', ...
             'selectedNames must be a char, string, or cell array.');
     end
 end

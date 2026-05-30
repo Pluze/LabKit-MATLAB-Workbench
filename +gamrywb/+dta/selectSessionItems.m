@@ -8,5 +8,5 @@ function [items, idx] = selectSessionItems(session, selectedNames)
         error('gamrywb:dta:InvalidSession', 'Session must contain an items field.');
     end
 
-    [items, idx] = gamrywb.data.selectItemsByNames(session.items, selectedNames);
+    [items, idx] = selectItemsByNames(session.items, selectedNames);
 end

@@ -20,6 +20,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Parser-only tab-splitting and table-scanning helpers now live under `+gamrywb/+io/private` instead of the public `+gamrywb/+util` package.
 - App-specific utility helpers now live in the owning app or lower-level implementation file instead of a public `+gamrywb/+util` package.
 - App session creation, DTA loading, removal, and selection now go through `gamrywb.dta.*` instead of lower-level `gamrywb.data.*` helpers.
+- Chrono/EIS item construction and session orchestration helpers moved behind the DTA facade, leaving public `+gamrywb/+data` for selected parsed table/curve access.
 - Pulse detection implementation moved behind the `gamrywb.dta.detectPulses` facade instead of a public `+gamrywb/+analysis` package.
 - App-specific scientific workflow now lives in the owning app files: analysis formulas, plot annotations, result tables, export schemas, and CSV writing are not reusable `+gamrywb` APIs.
 - Current apps load files through the GUI-free DTA facade where supported, while retaining app-local behavior such as Chrono pulse-gap alignment and EIS axis/export choices.
@@ -38,6 +39,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Transitional `apps/private`, `apps/+gamrywb_apps`, `+gamrywb/+app`, and `+gamrywb/+plot` migration layers.
 - App-specific reusable analysis/export helpers that hid experiment decisions outside the owning app file.
 - The public `+gamrywb/+analysis` package; pulse detection remains available through `gamrywb.dta.detectPulses`.
+- Public lower-level `+gamrywb/+data` session and item-construction entry points that apps should not call directly.
 - The one-line `gamrywb.io.exportTableCSV` wrapper; apps that need MATLAB's default table writer call `writetable` directly.
 - The data-coupled `gamrywb.ui.plotCurveXY` helper; apps now call `gamrywb.data.getCurveXY` before `gamrywb.ui.plotXY`.
 

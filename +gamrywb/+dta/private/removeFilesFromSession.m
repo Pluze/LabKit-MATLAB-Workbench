@@ -56,6 +56,7 @@ function out = normalizeSelectors(selectors)
     elseif iscell(selectors)
         out = selectors(:).';
     else
-        error('selectors must be a char, string, or cell array.');
+        error('gamrywb:dta:InvalidSessionSelectors', ...
+            'selectors must be a char, string, or cell array.');
     end
 end

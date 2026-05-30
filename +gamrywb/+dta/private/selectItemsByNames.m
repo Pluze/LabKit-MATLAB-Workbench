@@ -34,7 +34,7 @@ function names = normalizeSelectedNames(selectedNames)
     elseif iscell(selectedNames)
         names = string(selectedNames(:));
     else
-        error('gamrywb:data:selectItemsByNames:InvalidSelectedNames', ...
+        error('gamrywb:dta:InvalidSelectedNames', ...
             'selectedNames must be a char, string, or cell array.');
     end
 end

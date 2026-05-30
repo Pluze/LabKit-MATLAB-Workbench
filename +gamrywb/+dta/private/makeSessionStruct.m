@@ -1,5 +1,5 @@
-function session = makeSession(kind, opts)
-%MAKESESSION Create a shared Gamry workbench session struct.
+function session = makeSessionStruct(kind, opts)
+%MAKESESSIONSTRUCT Create a shared Gamry workbench session struct.
 
     if nargin < 1 || isempty(kind)
         kind = 'generic';

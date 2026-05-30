@@ -60,11 +60,11 @@ function item = makeChronoItem(filepath, opts)
     item.analysis = struct();
 
     if isfield(opts, 'pulseOptions')
-        [item.pulse, pulseMsg] = gamrywb.dta.detectPulses(item.t, item.Im, item.meta, opts.pulseOptions);
+        [item.pulse, pulseMsg] = detectPulseCore(item.t, item.Im, item.meta, opts.pulseOptions);
     elseif isfield(opts, 'pulseMode')
-        [item.pulse, pulseMsg] = gamrywb.dta.detectPulses(item.t, item.Im, item.meta, opts.pulseMode);
+        [item.pulse, pulseMsg] = detectPulseCore(item.t, item.Im, item.meta, opts.pulseMode);
     else
-        [item.pulse, pulseMsg] = gamrywb.dta.detectPulses(item.t, item.Im, item.meta);
+        [item.pulse, pulseMsg] = detectPulseCore(item.t, item.Im, item.meta);
     end
     item.pulseMessage = pulseMsg;
 end

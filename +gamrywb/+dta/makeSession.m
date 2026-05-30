@@ -8,5 +8,5 @@ function session = makeSession(kind, opts)
         opts = struct();
     end
 
-    session = gamrywb.data.makeSession(kind, opts);
+    session = makeSessionStruct(kind, opts);
 end

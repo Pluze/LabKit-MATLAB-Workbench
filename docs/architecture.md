@@ -50,7 +50,7 @@ The app files are package-backed and do not delegate to legacy GUI files.
 ```text
 +gamrywb/+dta       GUI-free app-facing DTA discovery, loading, and session facade
 +gamrywb/+io        DTA parsers, folder discovery, session IO
-+gamrywb/+data      lower-level item/session construction, table/column access, session orchestration
++gamrywb/+data      selected lower-level table/column access
 +gamrywb/+ui        reusable GUI framework helpers and small UI construction helpers
 private helpers     implementation helpers inside the owning package or app file
 ```
@@ -67,7 +67,7 @@ Library 1: scientific-app GUI base
 Library 2: Gamry/DTA parsing and loading
   +gamrywb/+dta discovery, loading, and session facade for app code
   +gamrywb/+io parser functions
-  +gamrywb/+data item/session construction, table/column access, selection, loading orchestration, and result summaries
+  +gamrywb/+data selected table/column access
 
 Internal helper base
   package-private helpers and app-local functions
@@ -88,7 +88,7 @@ Data, DTA, and IO package functions should not depend on GUI state or call `uial
 
 The DTA facade is also guarded as a GUI-free and app-free layer: it should not call MATLAB UI constructors, file dialogs, alerts, app entry points, or `apps/` helpers. New DTA-backed app code should prefer `gamrywb.dta.*` for loading and session operations; DTA code must not call back into app code.
 
-The data layer is guarded as GUI-free and app-free model/orchestration code. It may call parser and DTA facade helpers that are part of the Gamry/DTA library, but it should not call MATLAB UI constructors, file dialogs, alerts, `gamrywb.ui`, app entry points, or `apps/` helpers.
+The data layer is guarded as GUI-free and app-free table/curve access code. It should not call parser, DTA facade helpers, MATLAB UI constructors, file dialogs, alerts, `gamrywb.ui`, app entry points, or `apps/` helpers.
 
 The IO layer is guarded as GUI-free and app-free parser/session IO code. It may call lower-level utility helpers and itself recursively for discovery, but it should not call MATLAB UI constructors, file dialogs, alerts, `gamrywb.ui`, app entry points, `apps/` helpers, or app-specific export writers.
 
@@ -112,7 +112,7 @@ The GUI decides how to display that status.
 - `apps/`: user-facing app entry points and app-specific implementations. All current app bodies are single public app source files, and app-specific workflow helpers are local functions in those files rather than reusable `+gamrywb` APIs or transitional app-helper packages.
 - `+dta`: GUI-free facade for supported DTA file discovery, family detection, single-file loading, batch loading, folder loading, pulse detection, and app-facing DTA session operations with status/report structs. It delegates to existing `+io` parser and `+data` item/session helpers, with DTA-specific implementation helpers kept private.
 - `+io`: DTA parsers, folder discovery, and session save/load. It should not contain app-specific export helpers or scientific result schemas.
-- `+data`: table/column accessors, CV/CT selected-column access, chrono item construction, EIS item construction, session add/remove/select/load helpers, and generic item/result summaries.
+- `+data`: selected table/column accessors: main chrono curve lookup, EIS ZCURVE lookup, exact-case column access, and prepared X/Y extraction.
 - `+ui`: reusable GUI framework helpers, including generic axes creation/reset, prepared-X/Y plotting, log append and log panel, generic listbox item refresh, multi-file and single-select file-panel, summary row, result table panel, plot-options panel, simple labeled-control, two-pane shell, tabbed dual-plot shell, and top/bottom plot-control construction/state helpers.
 - Internal helpers: package-private parser helpers and app-local helper functions. The public `+util` package should not be reintroduced as a new-app entry surface.
 

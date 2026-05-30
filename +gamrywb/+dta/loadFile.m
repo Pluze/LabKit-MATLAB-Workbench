@@ -74,9 +74,9 @@ end
 function item = loadByKind(filepath, kind, opts)
     switch kind
         case "chrono"
-            item = gamrywb.data.makeChronoItem(filepath, opts);
+            item = makeChronoItem(filepath, opts);
         case "eis"
-            item = gamrywb.data.makeEISItem(filepath);
+            item = makeEISItem(filepath);
         case "cvct"
             item = makeCVCTItem(filepath);
         otherwise

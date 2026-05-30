@@ -34,11 +34,11 @@ apps/ experiment apps
 +gamrywb reusable library
     GUI library: scientific-app shells, controls, panels, logs, and UI state helpers
     Gamry/DTA library: app-facing DTA discovery, loading, and session APIs
-    data library: lower-level item/session/table APIs used only when app code genuinely needs them
+    data library: selected lower-level table/curve APIs used only when app code genuinely needs them
     internal helpers: parser, analysis, utility, and private helpers hidden behind GUI/DTA/data APIs
 ```
 
-Do not add new experiment-specific app logic to the reusable `+gamrywb` library. New app code should not call `gamrywb.io.*`, `gamrywb.analysis.*`, or `gamrywb.util.*` directly; put those needs behind `gamrywb.dta.*`, `gamrywb.ui.*`, selected `gamrywb.data.*`, or an app-local helper. Keep `+gamrywb/+analysis` pulse-focused and internal-facing. Keep app-specific analysis, plotting, export schemas, and CSV writing in the owning public app file unless a repeated use case proves a lower-level utility is clearer. Do not reintroduce app-specific helper packages or namespaces just to make local app functions public.
+Do not add new experiment-specific app logic to the reusable `+gamrywb` library. New app code should not call `gamrywb.io.*`, `gamrywb.analysis.*`, or `gamrywb.util.*` directly; put those needs behind `gamrywb.dta.*`, `gamrywb.ui.*`, selected `gamrywb.data.*`, or an app-local helper. Keep pulse detection private behind `gamrywb.dta.detectPulses`. Keep app-specific analysis, plotting, export schemas, and CSV writing in the owning public app file unless a repeated use case proves a lower-level utility is clearer. Do not reintroduce app-specific helper packages or namespaces just to make local app functions public.
 
 Do not change:
 

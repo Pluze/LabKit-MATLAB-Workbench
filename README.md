@@ -55,7 +55,7 @@ The default runner covers pure functions. The optional GUI mode checks launch/la
 ## Repository Layout
 
 ```text
-+gamrywb/             App-facing GUI/DTA APIs plus lower-level data/internal helpers
++gamrywb/             App-facing GUI/DTA APIs plus selected data/internal helpers
 apps/                 App entry points and app-specific implementations
 templates/            Copy-only GUI, DTA, and GUI+DTA starter programs
 demo/                 Named DTA fixtures

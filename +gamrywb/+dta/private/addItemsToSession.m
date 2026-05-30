@@ -1,5 +1,5 @@
-function [session, report] = addFilesToSession(session, filepaths, loader, callbacks)
-%ADDFILESTOSESSION Add files to a session using a caller-provided loader.
+function [session, report] = addItemsToSession(session, filepaths, loader, callbacks)
+%ADDITEMSTOSESSION Add files to a session using a caller-provided loader.
 
     if nargin < 3 || isempty(loader)
         loader = @defaultLoader;
@@ -83,7 +83,7 @@ function out = normalizeFilepaths(filepaths)
     elseif iscell(filepaths)
         out = filepaths(:).';
     else
-        error('filepaths must be a char, string, or cell array.');
+        error('gamrywb:dta:InvalidFilepaths', 'filepaths must be a char, string, or cell array.');
     end
 end
 

@@ -128,19 +128,16 @@ The app still owns `refreshPlots`, `addLog`, export behavior, alerts, and any ap
 
 ## Lower-Level Data API
 
-Use `+gamrywb/+data` only when app code genuinely needs table/curve access or generic non-DTA session orchestration:
+Use `+gamrywb/+data` only when app code genuinely needs parsed table/curve access:
 
 ```matlab
 [curve, ok, msg] = gamrywb.data.getMainCurve(item.tables);
 [zcurve, ok, msg] = gamrywb.data.getZCurve(item.tables);
 values = gamrywb.data.getColumn(curve, 'Vf');
 [x, y] = gamrywb.data.getCurveXY(curve, 'T', 'Im');
-summary = gamrywb.data.summarizeBatchResults(session.items);
 ```
 
-Apps should not call lower-level data session helpers such as `gamrywb.data.makeSession`,
-`gamrywb.data.addFilesToSession`, `gamrywb.data.loadFilesIntoSession`,
-`gamrywb.data.removeSelectedItemsFromSession`, or `gamrywb.data.selectItemsByNames`.
+Apps should not call lower-level session or item-construction helpers.
 Use the DTA session facade for those workflows.
 
 Session structs are plain structs. Do not convert them to MATLAB classes without an explicit design change and tests.

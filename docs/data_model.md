@@ -33,7 +33,7 @@ Package functions should not call GUI alert functions.
 
 ## Chrono Items
 
-Created by `gamrywb.data.makeChronoItem`.
+Created by `gamrywb.dta.loadFile(filepath, "chrono")`.
 
 Current fields include:
 
@@ -55,7 +55,7 @@ Chrono overlay pulse-gap alignment, overlay plotting, and overlay export table c
 
 ## EIS Items
 
-Created by `gamrywb.data.makeEISItem`.
+Created by `gamrywb.dta.loadFile(filepath, "eis")`.
 
 Current fields include:
 
@@ -230,7 +230,7 @@ The current CV/CSC app has no CSV export workflow, so it does not keep a standal
 
 ## Session Struct
 
-Created by `gamrywb.data.makeSession`.
+Created by `gamrywb.dta.makeSession`.
 
 Current fields:
 
@@ -242,17 +242,14 @@ items, results, options, notes, logmsg
 Helpers:
 
 ```text
-gamrywb.data.makeSession
-gamrywb.data.addFilesToSession
-gamrywb.data.loadFilesIntoSession
-gamrywb.data.removeFilesFromSession
-gamrywb.data.removeSelectedItemsFromSession
-gamrywb.data.selectItemsByNames
-gamrywb.data.summarizeBatchResults
+gamrywb.dta.makeSession
+gamrywb.dta.addFilesToSession
+gamrywb.dta.removeSelectedItemsFromSession
+gamrywb.dta.selectSessionItems
 gamrywb.io.saveSession
 gamrywb.io.loadSession
 ```
 
-`addFilesToSession` supports `onAdded`, `onSkipped`, and `onFailed` callbacks so apps can preserve log timing while sharing add/duplicate/failure logic. Empty file lists are no-ops that return empty reports without firing callbacks. `loadFilesIntoSession`, `removeSelectedItemsFromSession`, and `selectItemsByNames` are GUI-free session/item orchestration helpers; UI code passes listbox values into them but they do not own controls.
+`gamrywb.dta.addFilesToSession` supports `onAdded`, `onSkipped`, and `onFailed` callbacks so apps can preserve log timing while sharing DTA add/duplicate/failure logic. Empty file lists are no-ops that return empty reports without firing callbacks. Session item construction and session orchestration helpers are private to the DTA facade, not public `gamrywb.data.*` app APIs.
 
 Session files should keep parsed data, selected analysis mode, options, results, notes, and file provenance explicit. Avoid opaque object dumps for scientific exchange.

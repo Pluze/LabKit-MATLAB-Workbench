@@ -13,7 +13,7 @@ function [session, report] = addFilesToSession(session, filepaths, expectedKind,
 
     expectedKind = gamrywb.dta.normalizeExpectedKind(expectedKind);
     loader = @(filepath) loadOne(filepath, expectedKind, opts);
-    [session, report] = gamrywb.data.addFilesToSession(session, filepaths, loader, callbacks);
+    [session, report] = addItemsToSession(session, filepaths, loader, callbacks);
     report.nAdded = numel(report.added);
     report.nSkipped = numel(report.skipped);
     report.nFailed = numel(report.failed);

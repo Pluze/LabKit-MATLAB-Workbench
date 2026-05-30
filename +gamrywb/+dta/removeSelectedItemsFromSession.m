@@ -5,5 +5,5 @@ function [session, report] = removeSelectedItemsFromSession(session, selectedNam
         callbacks = struct();
     end
 
-    [session, report] = gamrywb.data.removeSelectedItemsFromSession(session, selectedNames, callbacks);
+    [session, report] = removeSelectedSessionItems(session, selectedNames, callbacks);
 end

@@ -1,9 +1,10 @@
 function test_makeChronoItem()
-%TEST_MAKECHRONOITEM Verify reusable chrono item construction.
+%TEST_MAKECHRONOITEM Verify chrono item construction through the DTA facade.
 
     fixture = demoFixturePath('chrono_chronopot_current_pulse_0p2ms.DTA');
 
-    item = gamrywb.data.makeChronoItem(fixture);
+    [item, status] = gamrywb.dta.loadFile(fixture, "chrono");
+    assert(status.ok, status.message);
 
     assert(strcmp(item.type, "chrono"), 'Chrono item type should be set.');
     assert(strcmp(item.name, 'chrono_chronopot_current_pulse_0p2ms.DTA'), 'Chrono item name should use the file name.');

@@ -4,7 +4,8 @@ function test_eisOverlayExport()
     root = fileparts(fileparts(mfilename('fullpath')));
     fixture = demoFixturePath('eis_potentiostatic_zcurve.DTA');
 
-    item = gamrywb.data.makeEISItem(fixture);
+    [item, status] = gamrywb.dta.loadFile(fixture, "eis");
+    assert(status.ok, status.message);
     assert(strcmp(item.type, "eis"), 'EIS item type should be normalized.');
     assert(strcmp(item.name, 'eis_potentiostatic_zcurve.DTA'), 'EIS item name should use fixture file name.');
     assert(strcmp(item.message, 'Using table: ZCURVE'), 'EIS item message should preserve ZCURVE selection wording.');
