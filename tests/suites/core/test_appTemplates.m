@@ -6,6 +6,8 @@ function test_appTemplates()
 
     guiOnly = fileread(fullfile(templateDir, 'gui_only_app_template.m'));
     assert(contains(guiOnly, 'labkit.ui.'), 'GUI-only template should use the GUI facade.');
+    assert(contains(guiOnly, 'labkit.ui.createWorkbench'), ...
+        'GUI-only template should model the unified workbench shell entry point.');
     assert(~contains(guiOnly, 'labkit.dta.'), 'GUI-only template should not use the DTA facade.');
     assert(~contains(guiOnly, 'labkit.data.'), 'GUI-only template should not expose removed data helpers.');
 
@@ -16,6 +18,8 @@ function test_appTemplates()
 
     guiDta = fileread(fullfile(templateDir, 'gui_dta_app_template.m'));
     assert(contains(guiDta, 'labkit.ui.'), 'GUI+DTA template should use the GUI facade.');
+    assert(contains(guiDta, 'labkit.ui.createWorkbench'), ...
+        'GUI+DTA template should model the unified workbench shell entry point.');
     assert(contains(guiDta, 'labkit.dta.'), 'GUI+DTA template should use the DTA facade.');
     assert(~contains(guiDta, 'labkit.data.'), 'GUI+DTA template should not expose removed data helpers.');
     assert(~contains(guiDta, 'labkit.io.'), 'GUI+DTA template should not call parser IO directly.');

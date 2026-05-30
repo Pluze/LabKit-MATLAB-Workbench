@@ -57,10 +57,11 @@ function varargout = labkit_CSC_app(varargin)
     S.currentCurve = 1;
 
     %% ===================== Figure & Layout =====================
-    ui = labkit.ui.createTabbedDualPlotShell( ...
+    ui = labkit.ui.createWorkbench( ...
         'Gamry DTA GUI (literature CSC)', ...
         [50 30 1580 950], ...
-        390);
+        390, ...
+        struct('rightKind', 'dualPlot'));
     fig = ui.fig;
     layFA = ui.filesAnalysisGrid;
     laySR = ui.summaryResultsGrid;
@@ -85,13 +86,8 @@ function varargout = labkit_CSC_app(varargin)
     txtLoaded = fileUi.loadedText;
 
     % -------- Curve --------
-    pCurve = uipanel(layFA,'Title','Curve');
-    pCurve.Layout.Row = 2;
-    gf = uigridlayout(pCurve,[4 2]);
-    gf.RowHeight = {'fit','fit','fit','fit'};
-    gf.ColumnWidth = {'fit','1x'};
-    gf.Padding = [8 8 8 8];
-    gf.ColumnSpacing = 8;
+    curveUi = labkit.ui.createPanelGrid(layFA, 'Curve', 2, [4 2]);
+    gf = curveUi.grid;
 
     uilabel(gf,'Text','File:','HorizontalAlignment','right');
     txtFile = uieditfield(gf,'text','Editable','off');
@@ -109,13 +105,9 @@ function varargout = labkit_CSC_app(varargin)
     btnAuto.Layout.Row = 4; btnAuto.Layout.Column = [1 2];
 
     % -------- Actions --------
-    pActions = uipanel(layFA,'Title','Actions');
-    pActions.Layout.Row = 3;
-    ga = uigridlayout(pActions,[2 2]);
-    ga.RowHeight = {'fit','fit'};
-    ga.ColumnWidth = {'1x','1x'};
-    ga.Padding = [8 8 8 8];
-    ga.ColumnSpacing = 8;
+    actionOpts = struct('columnWidth', {{'1x', '1x'}});
+    actionUi = labkit.ui.createPanelGrid(layFA, 'Actions', 3, [2 2], actionOpts);
+    ga = actionUi.grid;
 
     btnSwap = uibutton(ga,'Text','Swap Top/Bottom','ButtonPushedFcn',@(~,~) onSwapPlots());
     btnSwap.Layout.Row = 1; btnSwap.Layout.Column = 1;
@@ -127,13 +119,8 @@ function varargout = labkit_CSC_app(varargin)
     btnClear.Layout.Row = 2; btnClear.Layout.Column = 2;
 
     % -------- Comparison / CSC --------
-    pComp = uipanel(laySR,'Title','CSC / Comparison');
-    pComp.Layout.Row = 1;
-    gc = uigridlayout(pComp,[8 2]);
-    gc.RowHeight = repmat({'fit'},1,8);
-    gc.ColumnWidth = {'fit','1x'};
-    gc.Padding = [8 8 8 8];
-    gc.ColumnSpacing = 8;
+    compUi = labkit.ui.createPanelGrid(laySR, 'CSC / Comparison', 1, [8 2]);
+    gc = compUi.grid;
 
     uilabel(gc,'Text','Mode:','HorizontalAlignment','right');
     ddMode = uidropdown(gc, ...
@@ -324,11 +311,12 @@ function varargout = labkit_CSC_app(varargin)
 
     function refreshFileList()
         if isempty(S.items)
-            labkit.ui.refreshListboxItems(lbFiles, {});
+            labkit.ui.refreshListboxSelection(lbFiles, {});
             txtLoaded.Value = 'No files loaded';
             return;
         end
-        labkit.ui.refreshListboxItems(lbFiles, {S.items.name});
+        [~, idx] = labkit.ui.refreshListboxSelection(lbFiles, {S.items.name}, S.current);
+        S.current = idx(1);
         txtLoaded.Value = sprintf('%d file(s) loaded', numel(S.items));
     end
 

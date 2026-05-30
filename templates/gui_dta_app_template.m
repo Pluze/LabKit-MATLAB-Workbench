@@ -13,9 +13,13 @@ function varargout = gui_dta_app_template(varargin)
     S = struct();
     S.session = labkit.dta.makeSession('template');
 
-    ui = labkit.ui.createStandardWorkbenchShell( ...
-        'GUI + DTA Template', [80 80 1200 760], 340, ...
-        'Selected File', [1 1], {'1x'}, 8);
+    workbenchOpts = struct();
+    workbenchOpts.rightTitle = 'Selected File';
+    workbenchOpts.rightGridSize = [1 1];
+    workbenchOpts.rightRowHeight = {'1x'};
+    workbenchOpts.rightRowSpacing = 8;
+    ui = labkit.ui.createWorkbench( ...
+        'GUI + DTA Template', [80 80 1200 760], 340, workbenchOpts);
     fig = ui.fig;
     right = ui.rightGrid;
 

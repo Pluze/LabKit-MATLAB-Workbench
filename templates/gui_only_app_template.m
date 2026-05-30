@@ -10,18 +10,21 @@ function varargout = gui_only_app_template(varargin)
             'gui_only_app_template returns at most the figure handle.');
     end
 
-    ui = labkit.ui.createStandardWorkbenchShell( ...
-        'GUI Only Template', [80 80 1100 700], 300, ...
-        'Preview', [1 1], {'1x'}, 8);
+    workbenchOpts = struct();
+    workbenchOpts.rightTitle = 'Preview';
+    workbenchOpts.rightGridSize = [1 1];
+    workbenchOpts.rightRowHeight = {'1x'};
+    workbenchOpts.rightRowSpacing = 8;
+    ui = labkit.ui.createWorkbench( ...
+        'GUI Only Template', [80 80 1100 700], 300, workbenchOpts);
     fig = ui.fig;
 
-    controls = uigridlayout(ui.filesAnalysisGrid, [3 2]);
-    controls.Layout.Row = [1 3];
-    controls.RowHeight = {'fit', 'fit', '1x'};
-    controls.ColumnWidth = {'fit', '1x'};
-    controls.Padding = [0 0 0 0];
-    controls.RowSpacing = 8;
-    controls.ColumnSpacing = 8;
+    controlOpts = struct( ...
+        'rowHeight', {{'fit', 'fit', '1x'}}, ...
+        'padding', [0 0 0 0]);
+    controlsUi = labkit.ui.createPanelGrid( ...
+        ui.filesAnalysisGrid, 'Controls', [1 3], [3 2], controlOpts);
+    controls = controlsUi.grid;
 
     [~, modeDropDown] = labkit.ui.createLabeledDropdown( ...
         controls, 'Mode:', ...

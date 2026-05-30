@@ -118,7 +118,7 @@ Session/export changes:
 GUI or entrypoint changes:
 
 - app entry points launch the expected GUI
-- app shells use the shared resizable left/right workbench layout, with controls in scrollable left tabs
+- app shells use `labkit.ui.createWorkbench` for the shared resizable left/right workbench layout, with controls in scrollable left tabs
 - initialized controls, dropdown items, result-table columns, axes titles/labels, callbacks, and window size still satisfy the GUI contract
 
 Manual GUI checks are still needed for file dialogs, export buttons, loaded-data workflows, plot interactions, and user alerts.

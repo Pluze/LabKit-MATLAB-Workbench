@@ -42,10 +42,11 @@ function varargout = labkit_CIC_app(varargin)
     S.current = [];
 
     %% ===================== Figure & Layout =====================
-    ui = labkit.ui.createTabbedDualPlotShell( ...
+    ui = labkit.ui.createWorkbench( ...
         'Gamry CIC GUI (Voltage Transient)', ...
         [40 30 1680 980], ...
-        430);
+        430, ...
+        struct('rightKind', 'dualPlot'));
     fig = ui.fig;
     layFA = ui.filesAnalysisGrid;
     laySR = ui.summaryResultsGrid;
@@ -70,13 +71,8 @@ function varargout = labkit_CIC_app(varargin)
     txtLoaded = fileUi.loadedText;
 
     %% ===================== Analysis settings =====================
-    pSet = uipanel(layFA,'Title','Analysis Settings');
-    pSet.Layout.Row = 2;
-    gs = uigridlayout(pSet,[9 2]);
-    gs.RowHeight = repmat({'fit'},1,9);
-    gs.ColumnWidth = {'fit','1x'};
-    gs.Padding = [8 8 8 8];
-    gs.ColumnSpacing = 8;
+    settingsUi = labkit.ui.createPanelGrid(layFA, 'Analysis Settings', 2, [9 2]);
+    gs = settingsUi.grid;
 
     uilabel(gs,'Text','Window preset:','HorizontalAlignment','right');
     ddPreset = uidropdown(gs, ...
@@ -131,13 +127,8 @@ function varargout = labkit_CIC_app(varargin)
     cbUseMeasuredCurrent.Layout.Row = 9; cbUseMeasuredCurrent.Layout.Column = [1 2];
 
     %% ===================== Quick info =====================
-    pInfo = uipanel(laySR,'Title','Current File Summary');
-    pInfo.Layout.Row = 1;
-    gi = uigridlayout(pInfo,[11 2]);
-    gi.RowHeight = repmat({'fit'},1,11);
-    gi.ColumnWidth = {'fit','1x'};
-    gi.Padding = [8 8 8 8];
-    gi.ColumnSpacing = 8;
+    infoUi = labkit.ui.createPanelGrid(laySR, 'Current File Summary', 1, [11 2]);
+    gi = infoUi.grid;
 
     S.txtControlMode = labkit.ui.createReadOnlyInfoRow(gi,1,'Control mode:');
     S.txtDetect = labkit.ui.createReadOnlyInfoRow(gi,2,'Detection:');
@@ -152,13 +143,8 @@ function varargout = labkit_CIC_app(varargin)
     S.txtBest = labkit.ui.createReadOnlyInfoRow(gi,11,'Best safe among loaded:');
 
     %% ===================== Actions =====================
-    pAct = uipanel(layFA,'Title','Plot / Debug');
-    pAct.Layout.Row = 3;
-    ga = uigridlayout(pAct,[2 3]);
-    ga.RowHeight = {'fit','fit'};
-    ga.ColumnWidth = {'1x','1x','1x'};
-    ga.Padding = [8 8 8 8];
-    ga.ColumnSpacing = 8;
+    actionUi = labkit.ui.createPanelGrid(layFA, 'Plot / Debug', 3, [2 3]);
+    ga = actionUi.grid;
 
     btnRefresh = uibutton(ga,'Text','Refresh plots','ButtonPushedFcn',@(~,~) refreshPlots());
     btnRefresh.Layout.Row = 1; btnRefresh.Layout.Column = 1;
@@ -372,19 +358,15 @@ function varargout = labkit_CIC_app(varargin)
 
     function refreshFileList()
         if isempty(S.items)
-            lbFiles.Items = {};
-            lbFiles.Value = {};
+            labkit.ui.refreshListboxSelection(lbFiles, {});
             txtLoaded.Value = fileLabels.loadedText;
             S.current = [];
             return;
         end
 
         names = {S.items.name};
-        lbFiles.Items = names;
-        if isempty(S.current) || S.current < 1 || S.current > numel(S.items)
-            S.current = 1;
-        end
-        lbFiles.Value = names{S.current};
+        [~, idx] = labkit.ui.refreshListboxSelection(lbFiles, names, S.current);
+        S.current = idx(1);
         txtLoaded.Value = sprintf('%d file(s) loaded', numel(S.items));
     end
 

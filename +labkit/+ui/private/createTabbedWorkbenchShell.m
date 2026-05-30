@@ -58,7 +58,7 @@ function ui = createTabbedWorkbenchShell(figName, figPosition, leftWidth, labels
     ui.rightGrid.RowSpacing = rightRowSpacing;
     ui.rightGrid.Padding = [8 8 8 8];
 
-    labkit.ui.attachColumnResize(ui.fig, ui.main, 1, 2, ...
+    attachColumnResize(ui.fig, ui.main, 1, 2, ...
         struct('minWidth', 260, 'rightReserve', 360, 'separatorWidth', 6));
 end
 

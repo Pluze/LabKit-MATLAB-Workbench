@@ -28,10 +28,11 @@ function varargout = labkit_VTResistance_app(varargin)
     S.items = S.session.items;
     S.current = [];
 
-    ui = labkit.ui.createTabbedDualPlotShell( ...
+    ui = labkit.ui.createWorkbench( ...
         'Gamry VT Steady Resistance GUI', ...
         [40 30 1680 980], ...
-        430);
+        430, ...
+        struct('rightKind', 'dualPlot'));
     fig = ui.fig;
     layFA = ui.filesAnalysisGrid;
     laySR = ui.summaryResultsGrid;
@@ -54,13 +55,8 @@ function varargout = labkit_VTResistance_app(varargin)
     lbFiles = fileUi.listbox;
     txtLoaded = fileUi.loadedText;
 
-    pSet = uipanel(layFA,'Title','Analysis Settings');
-    pSet.Layout.Row = 2;
-    gs = uigridlayout(pSet,[3 2]);
-    gs.RowHeight = repmat({'fit'},1,3);
-    gs.ColumnWidth = {'fit','1x'};
-    gs.Padding = [8 8 8 8];
-    gs.ColumnSpacing = 8;
+    settingsUi = labkit.ui.createPanelGrid(layFA, 'Analysis Settings', 2, [3 2]);
+    gs = settingsUi.grid;
 
     uilabel(gs,'Text','Pulse detection:','HorizontalAlignment','right');
     ddPulseMode = uidropdown(gs, ...
@@ -86,13 +82,8 @@ function varargout = labkit_VTResistance_app(varargin)
     ddVoltageMode.Layout.Row = 3;
     ddVoltageMode.Layout.Column = 2;
 
-    pAct = uipanel(layFA,'Title','Plot / Debug');
-    pAct.Layout.Row = 3;
-    ga = uigridlayout(pAct,[2 3]);
-    ga.RowHeight = {'fit','fit'};
-    ga.ColumnWidth = {'1x','1x','1x'};
-    ga.Padding = [8 8 8 8];
-    ga.ColumnSpacing = 8;
+    actionUi = labkit.ui.createPanelGrid(layFA, 'Plot / Debug', 3, [2 3]);
+    ga = actionUi.grid;
 
     btnReanalyze = uibutton(ga,'Text','Re-analyze file','ButtonPushedFcn',@(~,~) analyzeCurrentFile());
     btnReanalyze.Layout.Row = 1; btnReanalyze.Layout.Column = 1;
@@ -108,13 +99,8 @@ function varargout = labkit_VTResistance_app(varargin)
     cbShowShading = uicheckbox(ga,'Text','Shade windows','Value',true,'ValueChangedFcn',@(~,~) refreshPlots());
     cbShowShading.Layout.Row = 2; cbShowShading.Layout.Column = 3;
 
-    pInfo = uipanel(laySR,'Title','Current File Summary');
-    pInfo.Layout.Row = 1;
-    gi = uigridlayout(pInfo,[13 2]);
-    gi.RowHeight = repmat({'fit'},1,13);
-    gi.ColumnWidth = {'fit','1x'};
-    gi.Padding = [8 8 8 8];
-    gi.ColumnSpacing = 8;
+    infoUi = labkit.ui.createPanelGrid(laySR, 'Current File Summary', 1, [13 2]);
+    gi = infoUi.grid;
 
     S.txtControlMode = labkit.ui.createReadOnlyInfoRow(gi,1,'Control mode:');
     S.txtDetect = labkit.ui.createReadOnlyInfoRow(gi,2,'Detection:');
@@ -286,19 +272,15 @@ function varargout = labkit_VTResistance_app(varargin)
 
     function refreshFileList()
         if isempty(S.items)
-            lbFiles.Items = {};
-            lbFiles.Value = {};
+            labkit.ui.refreshListboxSelection(lbFiles, {});
             txtLoaded.Value = fileLabels.loadedText;
             S.current = [];
             return;
         end
 
         names = {S.items.name};
-        lbFiles.Items = names;
-        if isempty(S.current) || S.current < 1 || S.current > numel(S.items)
-            S.current = 1;
-        end
-        lbFiles.Value = names{S.current};
+        [~, idx] = labkit.ui.refreshListboxSelection(lbFiles, names, S.current);
+        S.current = idx(1);
         txtLoaded.Value = sprintf('%d file(s) loaded', numel(S.items));
     end
 

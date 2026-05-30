@@ -8,12 +8,8 @@ function ui = createLogPanel(parent, row, initialValue)
         initialValue = {'GUI started.'};
     end
 
-    ui = struct();
-    ui.panel = uipanel(parent, 'Title', 'Log');
-    ui.panel.Layout.Row = row;
-
-    ui.grid = uigridlayout(ui.panel, [1 1]);
-    ui.grid.Padding = [8 8 8 8];
+    opts = struct('rowHeight', {{'1x'}}, 'columnWidth', {{'1x'}});
+    ui = labkit.ui.createPanelGrid(parent, 'Log', row, [1 1], opts);
 
     ui.textArea = uitextarea(ui.grid, ...
         'Editable', 'off', ...

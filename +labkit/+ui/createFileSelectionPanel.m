@@ -10,16 +10,12 @@ function ui = createFileSelectionPanel(parent, labels, callbacks, opts)
     multiselect = optionValue(opts, 'multiselect', 'off');
     row = optionValue(opts, 'row', 1);
 
-    ui = struct();
-    ui.panel = uipanel(parent, 'Title', labelValue(labels, 'panelTitle', 'Files'));
-    ui.panel.Layout.Row = row;
-
-    ui.grid = uigridlayout(ui.panel, [3 1]);
-    ui.grid.RowHeight = {'fit', '1x', 'fit'};
-    ui.grid.ColumnWidth = {'1x'};
-    ui.grid.Padding = [8 8 8 8];
-    ui.grid.RowSpacing = 8;
-    ui.grid.ColumnSpacing = 0;
+    gridOpts = struct( ...
+        'rowHeight', {{'fit', '1x', 'fit'}}, ...
+        'columnWidth', {{'1x'}}, ...
+        'columnSpacing', 0);
+    ui = labkit.ui.createPanelGrid( ...
+        parent, labelValue(labels, 'panelTitle', 'Files'), row, [3 1], gridOpts);
 
     if showRemoveSelected
         ui.buttonGrid = uigridlayout(ui.grid, [3 2]);

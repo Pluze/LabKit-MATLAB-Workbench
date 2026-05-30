@@ -5,25 +5,13 @@ function ui = createTabbedDualPlotShell(figName, figPosition, leftWidth, labels)
         labels = defaultLabels();
     end
 
-    ui = labkit.ui.createStandardWorkbenchShell( ...
-        figName, figPosition, leftWidth, labels.plotsPanel, ...
-        [4 1], {'fit', '1x', 'fit', '1x'}, 10);
-
-    ui.topControlsPanel = uipanel(ui.rightGrid, 'Title', labels.topPlot);
-    ui.topControlsPanel.Layout.Row = 1;
-
-    ui.topAxes = uiaxes(ui.rightGrid);
-    ui.topAxes.Layout.Row = 2;
-    title(ui.topAxes, labels.topPlot);
-    labkit.ui.disableAxesInteractivity(ui.topAxes);
-
-    ui.bottomControlsPanel = uipanel(ui.rightGrid, 'Title', labels.bottomPlot);
-    ui.bottomControlsPanel.Layout.Row = 3;
-
-    ui.bottomAxes = uiaxes(ui.rightGrid);
-    ui.bottomAxes.Layout.Row = 4;
-    title(ui.bottomAxes, labels.bottomPlot);
-    labkit.ui.disableAxesInteractivity(ui.bottomAxes);
+    opts = struct();
+    opts.rightKind = 'dualPlot';
+    opts.controlsTitle = labels.controlsPanel;
+    opts.rightTitle = labels.plotsPanel;
+    opts.topPlotTitle = labels.topPlot;
+    opts.bottomPlotTitle = labels.bottomPlot;
+    ui = labkit.ui.createWorkbench(figName, figPosition, leftWidth, opts);
 end
 
 function labels = defaultLabels()

@@ -88,10 +88,17 @@ Use `labkit.ui.*` for domain-neutral GUI structure and rendering helpers. Apps p
 Common shell and control helpers:
 
 ```matlab
-ui = labkit.ui.createStandardWorkbenchShell(titleText, position, leftWidth, rightTitle, rightGridSize, rightRowHeights, spacing);
-ui = labkit.ui.createTabbedDualPlotShell(titleText, position, leftWidth);
+opts = struct();
+opts.rightTitle = 'Plots';
+opts.rightGridSize = [1 1];
+opts.rightRowHeight = {'1x'};
+ui = labkit.ui.createWorkbench(titleText, position, leftWidth, opts);
+
+dualOpts = struct('rightKind', 'dualPlot');
+ui = labkit.ui.createWorkbench(titleText, position, leftWidth, dualOpts);
 
 labkit.ui.createFileSelectionPanel(parent, labels, callbacks, opts);
+labkit.ui.createPanelGrid(parent, titleText, row, gridSize, opts);
 labkit.ui.createPlotOptionsPanel(parent, numRows, row);
 labkit.ui.createTopBottomPlotControls(topPanel, bottomPanel, xItems, yItems, topDefaults, bottomDefaults, onChange);
 labkit.ui.createResultTablePanel(parent, titleText, row, columnNames, initialData);
@@ -103,12 +110,17 @@ Common state/render helpers:
 ```matlab
 labkit.ui.appendLog(txtLog, message);
 labkit.ui.refreshListboxItems(lbFiles, names);
+[value, idx] = labkit.ui.refreshListboxSelection(lbFiles, names, preferredSelection, opts);
 info = labkit.ui.plotXY(ax, x, y, labels, opts);
 ```
 
-The default app shell is a resizable left/right workbench layout: left controls live in the standard `Files + Analysis`, `Summary + Results`, and `Log` tabs, and the right side is reserved for plots, curves, images, or other primary outputs. Use `createStandardWorkbenchShell` when the right side needs a custom layout, and use `createTabbedDualPlotShell` for the common top/bottom-plot layout. Apps should not provide their own separator drag callbacks or rebuild the same shell layout locally.
+The default app shell is a resizable left/right workbench layout: left controls live in tabbed pages and the right side is reserved for live plots, curves, images, or other primary outputs. Use `createWorkbench` for both small and large apps. The default tabs are `Files + Analysis`, `Summary + Results`, and `Log`; apps may pass custom tab specs when a workflow needs different tab pages.
+
+Use `opts.rightKind = 'dualPlot'` for the common top/bottom live-plot layout. For custom right-side arrangements, pass `rightGridSize`, `rightRowHeight`, and `rightRowSpacing`. Compatibility wrappers such as `createStandardWorkbenchShell` and `createTabbedDualPlotShell` remain available for older code, but new app entry points should call `createWorkbench` directly.
 
 All DTA-facing apps should use `createFileSelectionPanel` for file actions. Use `opts.multiselect = 'on'` and `opts.showRemoveSelected = true` for overlay apps that operate on selected subsets; omit those options for single-current-file apps such as CIC and VT.
+
+Use `createPanelGrid` for app-defined scientific sections that only need the standard panel/grid styling. The panel title and all controls remain app-owned. Use `refreshListboxSelection` for generic single- or multi-select listbox state updates; loading, analysis, refresh ordering, alerts, and log wording remain app-owned.
 
 GUI helpers should not contain experiment names, formulas, thresholds, result columns, parser calls, or export formats.
 
@@ -171,6 +183,6 @@ Define these before adding controls or helpers:
 10. GUI shell type and file-selection mode
 ```
 
-Prefer the shared tabbed workbench shell even when the app has only one small control page. This keeps daily app interaction consistent as `apps/<category>/` grows.
+Prefer `labkit.ui.createWorkbench` even when the app has only one small control page. This keeps daily app interaction consistent as `apps/<category>/` grows while leaving scientific tab content under app ownership.
 
 Add focused tests for parser/DTA facade behavior, item/result fields, analysis values, export tables, and app entrypoint boundaries. Run `scripts/run_matlab_tests.sh`; add `--gui` when entrypoints, layout construction, callbacks, or GUI helpers change.
