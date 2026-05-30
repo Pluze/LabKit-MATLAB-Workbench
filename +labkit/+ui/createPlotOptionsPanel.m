@@ -1,9 +1,13 @@
-function ui = createPlotOptionsPanel(parent, rowCount)
+function ui = createPlotOptionsPanel(parent, rowCount, row)
 %CREATEPLOTOPTIONSPANEL Create the shared plot-options panel grid.
+
+    if nargin < 3 || isempty(row)
+        row = 3;
+    end
 
     ui = struct();
     ui.panel = uipanel(parent, 'Title', 'Plot Options');
-    ui.panel.Layout.Row = 3;
+    ui.panel.Layout.Row = row;
 
     ui.grid = uigridlayout(ui.panel, [rowCount 2]);
     ui.grid.RowHeight = repmat({'fit'}, 1, rowCount);

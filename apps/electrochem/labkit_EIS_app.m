@@ -26,16 +26,18 @@ function varargout = labkit_EIS_app(varargin)
         'Idc (A)', ...
         'Vdc (V)'};
 
-    ui = labkit.ui.createSingleTabWorkbenchShell( ...
+    ui = labkit.ui.createStandardWorkbenchShell( ...
         'Gamry EIS Multi-DTA Plot GUI', ...
         [80 60 1500 900], ...
         360, ...
         'Plot', ...
-        [2 1], ...
-        {'1x', 'fit'}, ...
+        [1 1], ...
+        {'1x'}, ...
         8);
     fig = ui.fig;
-    left = ui.leftGrid;
+    layFA = ui.filesAnalysisGrid;
+    laySR = ui.summaryResultsGrid;
+    layLog = ui.logGrid;
     right = ui.rightGrid;
 
     fileCallbacks = struct();
@@ -44,22 +46,21 @@ function varargout = labkit_EIS_app(varargin)
     fileCallbacks.onRemoveSelected = @onRemoveSelected;
     fileCallbacks.onClearAll = @onClearAll;
     fileCallbacks.onExport = @onExportCSV;
+    fileCallbacks.onSelectFile = @(~,~) refreshPlot();
     fileLabels = struct( ...
         'panelTitle', 'Files', ...
         'openFiles', 'Open DTA file(s)', ...
         'openFolder', 'Open folder recursively', ...
         'removeSelected', 'Remove selected', ...
         'clearAll', 'Clear all', ...
-        'export', 'Export current plot CSV');
-    labkit.ui.createFilePanel(left, fileLabels, fileCallbacks);
+        'export', 'Export current plot CSV', ...
+        'loadedText', 'No files loaded');
+    fileUi = labkit.ui.createFileSelectionPanel(layFA, fileLabels, fileCallbacks, ...
+        struct('showRemoveSelected', true, 'multiselect', 'on'));
+    lbFiles = fileUi.listbox;
+    txtLoaded = fileUi.loadedText;
 
-    lbFiles = uilistbox(left, ...
-        'Items', {}, ...
-        'Multiselect', 'on', ...
-        'ValueChangedFcn', @(~,~) refreshPlot());
-    lbFiles.Layout.Row = 2;
-
-    plotOptionsUi = labkit.ui.createPlotOptionsPanel(left, 8);
+    plotOptionsUi = labkit.ui.createPlotOptionsPanel(layFA, 8, 2);
     gp = plotOptionsUi.grid;
 
     [~, ddX] = labkit.ui.createLabeledDropdown(gp, 'X axis:', ...
@@ -120,8 +121,8 @@ function varargout = labkit_EIS_app(varargin)
         'Value', true, ...
         'ValueChangedFcn', @(~,~) refreshPlot());
 
-    txtInfo = uitextarea(left, 'Editable', 'off');
-    txtInfo.Layout.Row = 4;
+    txtInfo = uitextarea(laySR, 'Editable', 'off');
+    txtInfo.Layout.Row = 1;
     txtInfo.Value = { ...
         'Usage:', ...
         '1. Open one or more EIS .DTA files containing ZCURVE.', ...
@@ -130,13 +131,12 @@ function varargout = labkit_EIS_app(varargin)
         '4. Use Freq vs Zmod or Zphz for Bode-style plots.', ...
         '5. CSV export writes one shared row index with X/Y pairs per file.'};
 
-    txtLog = uitextarea(left, 'Editable', 'off');
-    txtLog.Layout.Row = 5;
-    txtLog.Value = {'GUI started.'};
+    logUi = labkit.ui.createLogPanel(layLog, 1);
+    txtLog = logUi.textArea;
 
     ax = labkit.ui.createAxes(right, 1, 'EIS Overlay', 'Zreal (ohm)', '-Zimag (ohm)');
 
-    txtSummary = uitextarea(right, 'Editable', 'off');
+    txtSummary = uitextarea(laySR, 'Editable', 'off');
     txtSummary.Layout.Row = 2;
     txtSummary.Value = {'No files loaded.'};
     if nargout == 1
@@ -232,9 +232,11 @@ function varargout = labkit_EIS_app(varargin)
     function refreshFileList()
         if isempty(S.items)
             labkit.ui.refreshListboxItems(lbFiles, {});
+            txtLoaded.Value = 'No files loaded';
             return;
         end
         labkit.ui.refreshListboxItems(lbFiles, {S.items.name});
+        txtLoaded.Value = sprintf('%d file(s) loaded', numel(S.items));
     end
 
     function refreshPlot()

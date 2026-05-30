@@ -50,7 +50,7 @@ function varargout = labkit_VTResistance_app(varargin)
         'clearAll', 'Clear all', ...
         'export', 'Export results CSV', ...
         'loadedText', 'No files loaded');
-    fileUi = labkit.ui.createSingleSelectFilePanel(layFA, fileLabels, fileCallbacks);
+    fileUi = labkit.ui.createFileSelectionPanel(layFA, fileLabels, fileCallbacks);
     lbFiles = fileUi.listbox;
     txtLoaded = fileUi.loadedText;
 

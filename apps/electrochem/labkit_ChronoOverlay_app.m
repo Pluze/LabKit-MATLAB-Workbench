@@ -13,7 +13,7 @@ function varargout = labkit_ChronoOverlay_app(varargin)
     S.session = labkit.dta.makeSession('chrono_overlay');
     S.items = S.session.items;
 
-    ui = labkit.ui.createSingleTabWorkbenchShell( ...
+    ui = labkit.ui.createStandardWorkbenchShell( ...
         'Gamry Multi-DTA Plot Export GUI', ...
         [80 60 1480 900], ...
         340, ...
@@ -22,7 +22,9 @@ function varargout = labkit_ChronoOverlay_app(varargin)
         {'1x', '1x'}, ...
         10);
     fig = ui.fig;
-    left = ui.leftGrid;
+    layFA = ui.filesAnalysisGrid;
+    laySR = ui.summaryResultsGrid;
+    layLog = ui.logGrid;
     right = ui.rightGrid;
 
     fileCallbacks = struct();
@@ -31,22 +33,21 @@ function varargout = labkit_ChronoOverlay_app(varargin)
     fileCallbacks.onRemoveSelected = @onRemoveSelected;
     fileCallbacks.onClearAll = @onClearAll;
     fileCallbacks.onExport = @onExportCSV;
+    fileCallbacks.onSelectFile = @(~,~) refreshPlots();
     fileLabels = struct( ...
         'panelTitle', 'Files', ...
         'openFiles', 'Open DTA file(s)', ...
         'openFolder', 'Open folder recursively', ...
         'removeSelected', 'Remove selected', ...
         'clearAll', 'Clear all', ...
-        'export', 'Export curves CSV');
-    labkit.ui.createFilePanel(left, fileLabels, fileCallbacks);
+        'export', 'Export curves CSV', ...
+        'loadedText', 'No files loaded');
+    fileUi = labkit.ui.createFileSelectionPanel(layFA, fileLabels, fileCallbacks, ...
+        struct('showRemoveSelected', true, 'multiselect', 'on'));
+    lbFiles = fileUi.listbox;
+    txtLoaded = fileUi.loadedText;
 
-    lbFiles = uilistbox(left, ...
-        'Items', {}, ...
-        'Multiselect', 'on', ...
-        'ValueChangedFcn', @(~,~) refreshPlots());
-    lbFiles.Layout.Row = 2;
-
-    plotOptionsUi = labkit.ui.createPlotOptionsPanel(left, 4);
+    plotOptionsUi = labkit.ui.createPlotOptionsPanel(layFA, 4, 2);
     gp = plotOptionsUi.grid;
 
     [~, ddXAxis] = labkit.ui.createLabeledDropdown(gp, 'X axis:', ...
@@ -74,8 +75,8 @@ function varargout = labkit_ChronoOverlay_app(varargin)
     cbGrid.Layout.Row = 4;
     cbGrid.Layout.Column = [1 2];
 
-    txtInfo = uitextarea(left, 'Editable', 'off');
-    txtInfo.Layout.Row = 4;
+    txtInfo = uitextarea(laySR, 'Editable', 'off');
+    txtInfo.Layout.Row = 1;
     txtInfo.Value = { ...
         'Usage:', ...
         '1. Open multiple .DTA files.', ...
@@ -85,9 +86,8 @@ function varargout = labkit_ChronoOverlay_app(varargin)
         '5. If files have different time grids, export uses a merged aligned-time axis with interpolation.' ...
         };
 
-    txtLog = uitextarea(left, 'Editable', 'off');
-    txtLog.Layout.Row = 5;
-    txtLog.Value = {'GUI started.'};
+    logUi = labkit.ui.createLogPanel(layLog, 1);
+    txtLog = logUi.textArea;
 
     axV = labkit.ui.createAxes(right, 1, 'Voltage', 'Time (s)', 'Vf (V)');
     axI = labkit.ui.createAxes(right, 2, 'Current', 'Time (s)', 'Im (A)');
@@ -197,9 +197,11 @@ function varargout = labkit_ChronoOverlay_app(varargin)
     function refreshFileList()
         if isempty(S.items)
             labkit.ui.refreshListboxItems(lbFiles, {});
+            txtLoaded.Value = 'No files loaded';
             return;
         end
         labkit.ui.refreshListboxItems(lbFiles, {S.items.name});
+        txtLoaded.Value = sprintf('%d file(s) loaded', numel(S.items));
     end
 
     function refreshPlots()

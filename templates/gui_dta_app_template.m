@@ -13,11 +13,10 @@ function varargout = gui_dta_app_template(varargin)
     S = struct();
     S.session = labkit.dta.makeSession('template');
 
-    ui = labkit.ui.createSingleTabWorkbenchShell( ...
+    ui = labkit.ui.createStandardWorkbenchShell( ...
         'GUI + DTA Template', [80 80 1200 760], 340, ...
         'Selected File', [1 1], {'1x'}, 8);
     fig = ui.fig;
-    left = ui.leftGrid;
     right = ui.rightGrid;
 
     fileCallbacks = struct();
@@ -26,6 +25,7 @@ function varargout = gui_dta_app_template(varargin)
     fileCallbacks.onRemoveSelected = @onRemoveSelected;
     fileCallbacks.onClearAll = @onClearAll;
     fileCallbacks.onExport = @onExport;
+    fileCallbacks.onSelectFile = @(~,~) refreshView();
 
     fileLabels = struct( ...
         'panelTitle', 'Files', ...
@@ -33,16 +33,14 @@ function varargout = gui_dta_app_template(varargin)
         'openFolder', 'Open folder recursively', ...
         'removeSelected', 'Remove selected', ...
         'clearAll', 'Clear all', ...
-        'export', 'Export names CSV');
-    labkit.ui.createFilePanel(left, fileLabels, fileCallbacks);
+        'export', 'Export names CSV', ...
+        'loadedText', 'No files loaded');
+    fileUi = labkit.ui.createFileSelectionPanel(ui.filesAnalysisGrid, fileLabels, fileCallbacks, ...
+        struct('showRemoveSelected', true, 'multiselect', 'on'));
+    lbFiles = fileUi.listbox;
+    txtLoaded = fileUi.loadedText;
 
-    lbFiles = uilistbox(left, ...
-        'Items', {}, ...
-        'Multiselect', 'on', ...
-        'ValueChangedFcn', @(~, ~) refreshView());
-    lbFiles.Layout.Row = 2;
-
-    logUi = labkit.ui.createLogPanel(left, 5, {'Ready.'});
+    logUi = labkit.ui.createLogPanel(ui.logGrid, 1, {'Ready.'});
     ax = labkit.ui.createAxes(right, 1, 'Selected File', 'Point', 'Value');
 
     refreshView();
@@ -132,11 +130,13 @@ function varargout = gui_dta_app_template(varargin)
     function refreshView()
         if isempty(S.session.items)
             labkit.ui.refreshListboxItems(lbFiles, {});
+            txtLoaded.Value = 'No files loaded';
             labkit.ui.hardResetAxis(ax, 'Selected File');
             return;
         end
 
         labkit.ui.refreshListboxItems(lbFiles, {S.session.items.name});
+        txtLoaded.Value = sprintf('%d file(s) loaded', numel(S.session.items));
         selectedItems = labkit.dta.selectSessionItems(S.session, lbFiles.Value);
         if isempty(selectedItems)
             selectedItems = S.session.items(1);

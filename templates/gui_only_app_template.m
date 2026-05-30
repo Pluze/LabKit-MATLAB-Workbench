@@ -10,13 +10,13 @@ function varargout = gui_only_app_template(varargin)
             'gui_only_app_template returns at most the figure handle.');
     end
 
-    ui = labkit.ui.createSingleTabWorkbenchShell( ...
+    ui = labkit.ui.createStandardWorkbenchShell( ...
         'GUI Only Template', [80 80 1100 700], 300, ...
         'Preview', [1 1], {'1x'}, 8);
     fig = ui.fig;
 
-    controls = uigridlayout(ui.leftGrid, [3 2]);
-    controls.Layout.Row = [1 5];
+    controls = uigridlayout(ui.filesAnalysisGrid, [3 2]);
+    controls.Layout.Row = [1 3];
     controls.RowHeight = {'fit', 'fit', '1x'};
     controls.ColumnWidth = {'fit', '1x'};
     controls.Padding = [0 0 0 0];
@@ -31,8 +31,7 @@ function varargout = gui_only_app_template(varargin)
         controls, 'Value:', 'numeric', ...
         'Value', 1);
 
-    logUi = labkit.ui.createLogPanel(controls, 3, {'Ready.'});
-    logUi.panel.Layout.Column = [1 2];
+    logUi = labkit.ui.createLogPanel(ui.logGrid, 1, {'Ready.'});
     ax = labkit.ui.createAxes(ui.rightGrid, 1, 'Preview', 'X', 'Y');
 
     modeDropDown.ValueChangedFcn = @refreshPreview;

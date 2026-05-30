@@ -1,0 +1,115 @@
+function ui = createFileSelectionPanel(parent, labels, callbacks, opts)
+%CREATEFILESELECTIONPANEL Create a shared file-action panel with a listbox.
+
+    if nargin < 4
+        opts = struct();
+    end
+
+    showRemoveSelected = optionValue(opts, 'showRemoveSelected', ...
+        isfield(callbacks, 'onRemoveSelected'));
+    multiselect = optionValue(opts, 'multiselect', 'off');
+    row = optionValue(opts, 'row', 1);
+
+    ui = struct();
+    ui.panel = uipanel(parent, 'Title', labelValue(labels, 'panelTitle', 'Files'));
+    ui.panel.Layout.Row = row;
+
+    ui.grid = uigridlayout(ui.panel, [3 1]);
+    ui.grid.RowHeight = {'fit', '1x', 'fit'};
+    ui.grid.ColumnWidth = {'1x'};
+    ui.grid.Padding = [8 8 8 8];
+    ui.grid.RowSpacing = 8;
+    ui.grid.ColumnSpacing = 0;
+
+    if showRemoveSelected
+        ui.buttonGrid = uigridlayout(ui.grid, [3 2]);
+        ui.buttonGrid.RowHeight = {'fit', 'fit', 'fit'};
+    else
+        ui.buttonGrid = uigridlayout(ui.grid, [2 2]);
+        ui.buttonGrid.RowHeight = {'fit', 'fit'};
+    end
+    ui.buttonGrid.Layout.Row = 1;
+    ui.buttonGrid.Layout.Column = 1;
+    ui.buttonGrid.ColumnWidth = {'1x', '1x'};
+    ui.buttonGrid.RowSpacing = 8;
+    ui.buttonGrid.ColumnSpacing = 8;
+    ui.buttonGrid.Padding = [0 0 0 0];
+
+    ui.openButton = uibutton(ui.buttonGrid, ...
+        'Text', labelValue(labels, 'openFiles', 'Open file(s)'), ...
+        'ButtonPushedFcn', callbackValue(callbacks, 'onOpenFiles'));
+    ui.openButton.Layout.Row = 1;
+    ui.openButton.Layout.Column = 1;
+
+    ui.openFolderButton = uibutton(ui.buttonGrid, ...
+        'Text', labelValue(labels, 'openFolder', 'Open folder'), ...
+        'ButtonPushedFcn', callbackValue(callbacks, 'onOpenFolder'));
+    ui.openFolderButton.Layout.Row = 1;
+    ui.openFolderButton.Layout.Column = 2;
+
+    if showRemoveSelected
+        ui.removeButton = uibutton(ui.buttonGrid, ...
+            'Text', labelValue(labels, 'removeSelected', 'Remove selected'), ...
+            'ButtonPushedFcn', callbackValue(callbacks, 'onRemoveSelected'));
+        ui.removeButton.Layout.Row = 2;
+        ui.removeButton.Layout.Column = 1;
+
+        ui.clearButton = uibutton(ui.buttonGrid, ...
+            'Text', labelValue(labels, 'clearAll', 'Clear all'), ...
+            'ButtonPushedFcn', callbackValue(callbacks, 'onClearAll'));
+        ui.clearButton.Layout.Row = 2;
+        ui.clearButton.Layout.Column = 2;
+
+        ui.exportButton = uibutton(ui.buttonGrid, ...
+            'Text', labelValue(labels, 'export', 'Export'), ...
+            'ButtonPushedFcn', callbackValue(callbacks, 'onExport'));
+        ui.exportButton.Layout.Row = 3;
+        ui.exportButton.Layout.Column = [1 2];
+    else
+        ui.clearButton = uibutton(ui.buttonGrid, ...
+            'Text', labelValue(labels, 'clearAll', 'Clear all'), ...
+            'ButtonPushedFcn', callbackValue(callbacks, 'onClearAll'));
+        ui.clearButton.Layout.Row = 2;
+        ui.clearButton.Layout.Column = 1;
+
+        ui.exportButton = uibutton(ui.buttonGrid, ...
+            'Text', labelValue(labels, 'export', 'Export'), ...
+            'ButtonPushedFcn', callbackValue(callbacks, 'onExport'));
+        ui.exportButton.Layout.Row = 2;
+        ui.exportButton.Layout.Column = 2;
+    end
+
+    ui.listbox = uilistbox(ui.grid, ...
+        'Items', {}, ...
+        'Multiselect', multiselect, ...
+        'ValueChangedFcn', callbackValue(callbacks, 'onSelectFile'));
+    ui.listbox.Layout.Row = 2;
+    ui.listbox.Layout.Column = 1;
+
+    ui.loadedText = uieditfield(ui.grid, 'text', ...
+        'Editable', 'off', ...
+        'Value', labelValue(labels, 'loadedText', 'No files loaded'));
+    ui.loadedText.Layout.Row = 3;
+    ui.loadedText.Layout.Column = 1;
+end
+
+function value = optionValue(opts, name, defaultValue)
+    value = defaultValue;
+    if isfield(opts, name)
+        value = opts.(name);
+    end
+end
+
+function value = labelValue(labels, name, defaultValue)
+    value = defaultValue;
+    if isfield(labels, name)
+        value = labels.(name);
+    end
+end
+
+function cb = callbackValue(callbacks, name)
+    cb = [];
+    if isfield(callbacks, name)
+        cb = callbacks.(name);
+    end
+end

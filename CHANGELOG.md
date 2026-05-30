@@ -15,7 +15,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Template programs now model the intended split: GUI-only, DTA-only, or GUI plus DTA, without exposing internal helper packages.
 - `startup_labkit` now adds nested app category folders so app entry points resolve without changing into app directories.
 - Current app GUIs now share the same resizable tabbed workbench shell: scrollable control tabs on the left and plot/output content on the right.
-- The older `createTwoPaneShell` UI helper has been replaced by the clearer `createSingleTabWorkbenchShell`, and dual-plot apps now use standard shell labels by default.
+- App shells now use the standard three-tab workbench framework, and DTA-facing apps share the same file-selection panel structure.
 
 ### Fixed
 

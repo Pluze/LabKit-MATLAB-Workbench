@@ -50,6 +50,8 @@ function varargout = labkit_CSC_app(varargin)
     S = struct();
     S.session = labkit.dta.makeSession('cv_csc');
     S.filepath = '';
+    S.items = S.session.items;
+    S.current = [];
     S.curves = struct('name',{},'headers',{},'units',{},'data',{},'numericMask',{});
     S.scanRate = NaN; % V/s
     S.currentCurve = 1;
@@ -64,38 +66,51 @@ function varargout = labkit_CSC_app(varargin)
     laySR = ui.summaryResultsGrid;
     layLog = ui.logGrid;
 
-    % -------- File / Curve --------
-    pFile = uipanel(layFA,'Title','File / Curve');
-    pFile.Layout.Row = 1;
-    gf = uigridlayout(pFile,[5 2]);
-    gf.RowHeight = {'fit','fit','fit','fit','fit'};
+    % -------- File panel --------
+    fileCallbacks = struct();
+    fileCallbacks.onOpenFiles = @onOpenFiles;
+    fileCallbacks.onOpenFolder = @onOpenFolder;
+    fileCallbacks.onClearAll = @(~,~) clearAllFiles();
+    fileCallbacks.onExport = @(~,~) reloadSelectedFile();
+    fileCallbacks.onSelectFile = @(~,~) onSelectFile();
+    fileLabels = struct( ...
+        'panelTitle', 'Files', ...
+        'openFiles', 'Open DTA file(s)', ...
+        'openFolder', 'Open folder recursively', ...
+        'clearAll', 'Clear all', ...
+        'export', 'Reload selected', ...
+        'loadedText', 'No files loaded');
+    fileUi = labkit.ui.createFileSelectionPanel(layFA, fileLabels, fileCallbacks);
+    lbFiles = fileUi.listbox;
+    txtLoaded = fileUi.loadedText;
+
+    % -------- Curve --------
+    pCurve = uipanel(layFA,'Title','Curve');
+    pCurve.Layout.Row = 2;
+    gf = uigridlayout(pCurve,[4 2]);
+    gf.RowHeight = {'fit','fit','fit','fit'};
     gf.ColumnWidth = {'fit','1x'};
     gf.Padding = [8 8 8 8];
     gf.ColumnSpacing = 8;
 
-    btnOpen = uibutton(gf,'Text','Open DTA','ButtonPushedFcn',@onOpenFile);
-    btnOpen.Layout.Row = 1; btnOpen.Layout.Column = 1;
-    btnReload = uibutton(gf,'Text','Reload','ButtonPushedFcn',@(~,~) onReloadFile());
-    btnReload.Layout.Row = 1; btnReload.Layout.Column = 2;
-
     uilabel(gf,'Text','File:','HorizontalAlignment','right');
     txtFile = uieditfield(gf,'text','Editable','off');
-    txtFile.Layout.Row = 2; txtFile.Layout.Column = 2;
+    txtFile.Layout.Row = 1; txtFile.Layout.Column = 2;
 
     uilabel(gf,'Text','Scan rate:','HorizontalAlignment','right');
     txtScan = uieditfield(gf,'text','Editable','off');
-    txtScan.Layout.Row = 3; txtScan.Layout.Column = 2;
+    txtScan.Layout.Row = 2; txtScan.Layout.Column = 2;
 
     uilabel(gf,'Text','Curve:','HorizontalAlignment','right');
     ddCurve = uidropdown(gf,'Items',{'(none)'},'ValueChangedFcn',@(~,~) onCurveChanged());
-    ddCurve.Layout.Row = 4; ddCurve.Layout.Column = 2;
+    ddCurve.Layout.Row = 3; ddCurve.Layout.Column = 2;
 
     btnAuto = uibutton(gf,'Text','Auto CV + CT','ButtonPushedFcn',@(~,~) autoPresetAndRefresh());
-    btnAuto.Layout.Row = 5; btnAuto.Layout.Column = [1 2];
+    btnAuto.Layout.Row = 4; btnAuto.Layout.Column = [1 2];
 
     % -------- Actions --------
     pActions = uipanel(layFA,'Title','Actions');
-    pActions.Layout.Row = 2;
+    pActions.Layout.Row = 3;
     ga = uigridlayout(pActions,[2 2]);
     ga.RowHeight = {'fit','fit'};
     ga.ColumnWidth = {'1x','1x'};
@@ -202,7 +217,7 @@ function varargout = labkit_CSC_app(varargin)
     cbBotTrim.Layout.Row = 1; cbBotTrim.Layout.Column = 7;
     if ~isempty(testLoadFile)
         cleanup = onCleanup(@() delete(fig));
-        loadFile(testLoadFile);
+        addFiles({testLoadFile});
         drawnow;
         varargout{1} = collectLoadDiagnostics();
         return;
@@ -212,24 +227,173 @@ function varargout = labkit_CSC_app(varargin)
     end
 
     %% App callbacks, loading, refresh, and plotting
-    function onOpenFile(~,~)
-        [f,p] = uigetfile({'*.DTA;*.dta','Gamry DTA (*.DTA)';'*.*','All Files'}, ...
-            'Select Gamry DTA file');
-        if isequal(f,0)
+    function onOpenFiles(~,~)
+        [files,path] = uigetfile({'*.DTA;*.dta','Gamry DTA files (*.DTA)'}, ...
+            'Select Gamry DTA file(s)','MultiSelect','on');
+        if isequal(files,0)
             addLog('Open file canceled.');
             return;
         end
-        S.filepath = fullfile(p,f);
-        loadFile(S.filepath);
+        if ischar(files) || isstring(files)
+            files = {char(files)};
+        end
+        filepaths = cellfun(@(f) fullfile(path,f), files, 'UniformOutput', false);
+        addFiles(filepaths);
     end
 
-    function onReloadFile()
-        if isempty(S.filepath) || ~isfile(S.filepath)
-            uialert(fig,'No valid file loaded.','Reload Error');
-            addLog('Reload failed: no valid file loaded.');
+    function onOpenFolder(~,~)
+        folder = uigetdir(pwd,'Select folder containing DTA files');
+        if isequal(folder,0)
+            addLog('Folder selection canceled.');
             return;
         end
-        loadFile(S.filepath);
+        filepaths = labkit.dta.findFiles(folder);
+        if isempty(filepaths)
+            uialert(fig,'No .DTA files found in the selected folder.','Open folder');
+            addLog(['No .DTA files found under: ' folder]);
+            return;
+        end
+        addFiles(filepaths);
+    end
+
+    function addFiles(filepaths)
+        if isempty(filepaths)
+            return;
+        end
+
+        callbacks = struct();
+        callbacks.onAdded = @(~, item) onAddedItem(item);
+        callbacks.onSkipped = @(filepath) addLog(['Skipped duplicate: ' filepath]);
+        callbacks.onFailed = @(filepath, message) addLog(sprintf('Failed to load %s: %s', filepath, message));
+        [S.session, report] = labkit.dta.addFilesToSession(S.session, filepaths, "cvct", callbacks);
+        S.items = S.session.items;
+        if ~isempty(S.items) && isempty(S.current)
+            S.current = 1;
+        end
+        refreshFileList();
+        loadCurrentItem();
+
+        if ~isempty(report.failed)
+            firstError = report.failed(1);
+            uialert(fig, sprintf('Failed to load:\n%s\n\n%s', ...
+                firstError.filepath, firstError.message), 'Load error');
+        end
+    end
+
+    function onAddedItem(item)
+        for i = 1:numel(item.logmsg)
+            addLog(item.logmsg{i});
+        end
+        addLog(['Loaded: ' item.filepath]);
+    end
+
+    function onSelectFile()
+        if isempty(S.items) || isempty(lbFiles.Value)
+            return;
+        end
+        idx = find(strcmp({S.items.name}, lbFiles.Value), 1);
+        if isempty(idx)
+            idx = 1;
+        end
+        S.current = idx;
+        loadCurrentItem();
+    end
+
+    function clearAllFiles()
+        S.session = labkit.dta.makeSession('cv_csc');
+        S.items = S.session.items;
+        S.current = [];
+        clearCurrentItem();
+        refreshFileList();
+        clearBothAxes();
+        addLog('Cleared all files.');
+    end
+
+    function reloadSelectedFile()
+        if isempty(S.items) || isempty(S.current)
+            uialert(fig,'No file selected.','Reload');
+            addLog('Reload failed: no file selected.');
+            return;
+        end
+        filepath = S.items(S.current).filepath;
+        [S.session, ~] = labkit.dta.removeSelectedItemsFromSession(S.session, {S.items(S.current).name}, struct());
+        S.items = S.session.items;
+        S.current = [];
+        addFiles({filepath});
+    end
+
+    function refreshFileList()
+        if isempty(S.items)
+            labkit.ui.refreshListboxItems(lbFiles, {});
+            txtLoaded.Value = 'No files loaded';
+            return;
+        end
+        labkit.ui.refreshListboxItems(lbFiles, {S.items.name});
+        txtLoaded.Value = sprintf('%d file(s) loaded', numel(S.items));
+    end
+
+    function loadCurrentItem()
+        if isempty(S.items)
+            clearCurrentItem();
+            return;
+        end
+        if isempty(S.current) || S.current < 1 || S.current > numel(S.items)
+            S.current = 1;
+        end
+        S.session.items(S.current).currentCurve = 1;
+        S.session.items(S.current).analysis = [];
+        S.items = S.session.items;
+        item = S.items(S.current);
+        S.filepath = item.filepath;
+        S.scanRate = item.scanRate;
+        S.curves = item.curves;
+        S.currentCurve = 1;
+        txtFile.Value = item.filepath;
+
+        if isnan(S.scanRate)
+            txtScan.Value = 'Not found';
+        else
+            txtScan.Value = sprintf('%.6f V/s (%.3f mV/s)', S.scanRate, S.scanRate*1000);
+        end
+
+        if isempty(S.curves)
+            ddCurve.Items = {'(none)'};
+            ddCurve.Value = '(none)';
+            lblStatus.Text = 'No curve found';
+            addLog('No curve parsed.');
+            return;
+        end
+
+        items = cell(1,numel(S.curves));
+        for k = 1:numel(S.curves)
+            items{k} = sprintf('%s (%d rows)', S.curves(k).name, size(S.curves(k).data,1));
+        end
+        ddCurve.Items = items;
+        ddCurve.Value = items{1};
+
+        lblStatus.Text = sprintf('Loaded %d curve(s)', numel(S.curves));
+        addLog(sprintf('Loaded %d curve(s) from %s.', numel(S.curves), item.name));
+
+        updateDropdowns();
+        autoSetDefaults();
+        refreshAll();
+    end
+
+    function clearCurrentItem()
+        S.filepath = '';
+        S.scanRate = NaN;
+        S.curves = struct('name',{},'headers',{},'units',{},'data',{},'numericMask',{});
+        S.currentCurve = 1;
+        txtFile.Value = '';
+        txtScan.Value = '';
+        ddCurve.Items = {'(none)'};
+        ddCurve.Value = '(none)';
+        lblStatus.Text = 'Ready';
+        txtQct.Value = '';
+        txtQcv.Value = '';
+        txtDiff.Value = '';
+        txtRel.Value = '';
+        txtDtErr.Value = '';
     end
 
     function onCurveChanged()
@@ -273,65 +437,10 @@ function varargout = labkit_CSC_app(varargin)
         addLog('Cleared both axes.');
     end
 
-    function loadFile(filepath)
-        addLog(['Loading file: ' filepath]);
-
-        callbacks = struct();
-        callbacks.onFailed = @(~, message) addLog(['Parse failed: ' message]);
-        [loadedSession, report] = labkit.dta.addFilesToSession( ...
-            labkit.dta.makeSession('cv_csc'), {filepath}, "cvct", callbacks);
-        if ~isempty(report.failed)
-            ME = report.failed(1);
-            uialert(fig, ME.message, 'Parse Error');
-            return;
-        end
-        loadedSession.items(1).currentCurve = 1;
-        loadedSession.items(1).analysis = [];
-        item = loadedSession.items(1);
-
-        for i = 1:numel(item.logmsg)
-            addLog(item.logmsg{i});
-        end
-
-        S.session = loadedSession;
-        S.filepath = item.filepath;
-        S.scanRate = item.scanRate;
-        S.curves = item.curves;
-        S.currentCurve = 1;
-        txtFile.Value = filepath;
-
-        if isnan(S.scanRate)
-            txtScan.Value = 'Not found';
-        else
-            txtScan.Value = sprintf('%.6f V/s (%.3f mV/s)', S.scanRate, S.scanRate*1000);
-        end
-
-        if isempty(S.curves)
-            ddCurve.Items = {'(none)'};
-            ddCurve.Value = '(none)';
-            lblStatus.Text = 'No curve found';
-            addLog('No curve parsed.');
-            return;
-        end
-
-        items = cell(1,numel(S.curves));
-        for k = 1:numel(S.curves)
-            items{k} = sprintf('%s (%d rows)', S.curves(k).name, size(S.curves(k).data,1));
-        end
-        ddCurve.Items = items;
-        ddCurve.Value = items{1};
-
-        lblStatus.Text = sprintf('Loaded %d curve(s)', numel(S.curves));
-        addLog(sprintf('Loaded %d curve(s).', numel(S.curves)));
-
-        updateDropdowns();
-        autoSetDefaults();
-        refreshAll();
-    end
-
     function syncSessionCurrentCurve()
-        if ~isempty(S.session.items)
-            S.session.items(1).currentCurve = S.currentCurve;
+        if ~isempty(S.session.items) && ~isempty(S.current)
+            S.session.items(S.current).currentCurve = S.currentCurve;
+            S.items = S.session.items;
         end
     end
 

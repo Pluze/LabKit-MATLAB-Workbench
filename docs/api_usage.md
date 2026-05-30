@@ -88,12 +88,11 @@ Use `labkit.ui.*` for domain-neutral GUI structure and rendering helpers. Apps p
 Common shell and control helpers:
 
 ```matlab
-ui = labkit.ui.createSingleTabWorkbenchShell(titleText, position, leftWidth, rightTitle, rightGridSize, rightRowHeights, spacing);
+ui = labkit.ui.createStandardWorkbenchShell(titleText, position, leftWidth, rightTitle, rightGridSize, rightRowHeights, spacing);
 ui = labkit.ui.createTabbedDualPlotShell(titleText, position, leftWidth);
 
-labkit.ui.createFilePanel(parent, labels, callbacks);
-labkit.ui.createSingleSelectFilePanel(parent, labels, callbacks);
-labkit.ui.createPlotOptionsPanel(parent, numRows);
+labkit.ui.createFileSelectionPanel(parent, labels, callbacks, opts);
+labkit.ui.createPlotOptionsPanel(parent, numRows, row);
 labkit.ui.createTopBottomPlotControls(topPanel, bottomPanel, xItems, yItems, topDefaults, bottomDefaults, onChange);
 labkit.ui.createResultTablePanel(parent, titleText, row, columnNames, initialData);
 labkit.ui.createLogPanel(parent, row, initialValue);
@@ -107,7 +106,9 @@ labkit.ui.refreshListboxItems(lbFiles, names);
 info = labkit.ui.plotXY(ax, x, y, labels, opts);
 ```
 
-The default app shell is a resizable left/right workbench layout: left controls live in scrollable tabs, and the right side is reserved for plots, curves, images, or other primary outputs. `createSingleTabWorkbenchShell` is the one-tab variant for simple apps; `createTabbedDualPlotShell` is the CIC/VT-style three-tab plus top/bottom-plot variant with standard shell labels. Apps should not provide their own separator drag callbacks or rebuild the same shell layout locally.
+The default app shell is a resizable left/right workbench layout: left controls live in the standard `Files + Analysis`, `Summary + Results`, and `Log` tabs, and the right side is reserved for plots, curves, images, or other primary outputs. Use `createStandardWorkbenchShell` when the right side needs a custom layout, and use `createTabbedDualPlotShell` for the common top/bottom-plot layout. Apps should not provide their own separator drag callbacks or rebuild the same shell layout locally.
+
+All DTA-facing apps should use `createFileSelectionPanel` for file actions. Use `opts.multiselect = 'on'` and `opts.showRemoveSelected = true` for overlay apps that operate on selected subsets; omit those options for single-current-file apps such as CIC and VT.
 
 GUI helpers should not contain experiment names, formulas, thresholds, result columns, parser calls, or export formats.
 

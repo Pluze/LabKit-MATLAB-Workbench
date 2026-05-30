@@ -17,11 +17,11 @@ function test_gui_layout_controls()
     checkPlotOptionsPanelHelper();
     checkCreateAxesHelper();
     checkTabbedWorkbenchShellHelper();
-    checkSingleTabWorkbenchShellHelper();
+    checkStandardWorkbenchShellHelper();
     checkTabbedDualPlotShellHelper();
     checkTopBottomPlotControlsHelper();
     checkTopBottomPlotStateHelpers();
-    checkSingleSelectFilePanelHelper();
+    checkFileSelectionPanelHelper();
 end
 
 function checkMultiDTA()
@@ -33,7 +33,7 @@ function checkMultiDTA()
         'Clear all', 'Export curves CSV'});
     assertCheckboxContract(fig, {'Show file-name legend', 'Show grid'});
     assertDropdownGroups(fig, dropdownGroup({'Time (s)', 'Time (ms)', 'Sample #'}, 1));
-    assertTabTitles(fig, {'Controls'});
+    assertTabTitles(fig, {'Files + Analysis', 'Summary + Results', 'Log'});
     assertAxesContract(fig, { ...
         axesSpec('Voltage', 'Time (s)', 'Vf (V)'), ...
         axesSpec('Current', 'Time (s)', 'Im (A)')});
@@ -52,7 +52,7 @@ function checkEIS()
         'Clear all', 'Export current plot CSV'});
     assertCheckboxContract(fig, {'Show markers', 'Log X', 'Log Y', 'Legend', 'Grid'});
     assertDropdownGroups(fig, dropdownGroup(eisAxisItems(), 2));
-    assertTabTitles(fig, {'Controls'});
+    assertTabTitles(fig, {'Files + Analysis', 'Summary + Results', 'Log'});
     assertAxesContract(fig, {axesSpec('EIS Overlay', 'Zreal (ohm)', '-Zimag (ohm)')});
     assertDropdownCallbacksPresent(fig);
     invokeDropdownValue(fig, 'Freq (Hz)');
@@ -63,10 +63,11 @@ end
 function checkCVCSC()
     fig = launchFigure('labkit_CSC_app', 'Gamry DTA GUI (literature CSC)');
     assertFigureMinimumSize(fig, 1500, 900);
-    assertComponentCounts(fig, struct('Button', 7, 'CheckBox', 6, 'DropDown', 6, ...
-        'TextArea', 1, 'Axes', 2));
-    assertButtonContract(fig, {'Open DTA', 'Reload', 'Auto CV + CT', 'Swap Top/Bottom', ...
-        'Compare Q / CSC', 'Refresh Plots', 'Clear Both'});
+    assertComponentCounts(fig, struct('Button', 9, 'CheckBox', 6, 'DropDown', 6, ...
+        'ListBox', 1, 'TextArea', 1, 'Axes', 2));
+    assertButtonContract(fig, {'Open DTA file(s)', 'Open folder recursively', 'Clear all', ...
+        'Reload selected', 'Auto CV + CT', 'Swap Top/Bottom', 'Compare Q / CSC', ...
+        'Refresh Plots', 'Clear Both'});
     assertCheckboxContract(fig, {'Grid', 'Hold', 'Show Trim'});
     assertDropdownGroups(fig, [ ...
         dropdownGroup({'(none)'}, 5), ...
@@ -241,6 +242,10 @@ function checkPlotOptionsPanelHelper()
     assert(isequal(ui.grid.Padding, [8 8 8 8]), 'Plot-options helper should preserve padding.');
     assert(ui.grid.RowSpacing == 8 && ui.grid.ColumnSpacing == 8, ...
         'Plot-options helper should preserve row and column spacing.');
+
+    ui2 = labkit.ui.createPlotOptionsPanel(grid, 2, 2);
+    assert(ui2.panel.Layout.Row == 2, ...
+        'Plot-options helper should support an explicit parent-grid row.');
 end
 
 function checkCreateAxesHelper()
@@ -301,9 +306,9 @@ function checkTabbedWorkbenchShellHelper()
         'Tabbed workbench shell should attach separator resize behavior.');
 end
 
-function checkSingleTabWorkbenchShellHelper()
-    ui = labkit.ui.createSingleTabWorkbenchShell( ...
-        'labkit_single_tab_workbench_shell_probe', ...
+function checkStandardWorkbenchShellHelper()
+    ui = labkit.ui.createStandardWorkbenchShell( ...
+        'labkit_standard_workbench_shell_probe', ...
         [40 30 1200 760], ...
         340, ...
         'Preview', ...
@@ -313,11 +318,13 @@ function checkSingleTabWorkbenchShellHelper()
     cleaner = onCleanup(@() delete(ui.fig));
 
     assert(isequal(ui.main.ColumnWidth, {340, 6, '1x'}), ...
-        'Single-tab workbench shell should preserve the main column widths.');
-    assertTabTitles(ui.fig, {'Controls'});
-    assertScrollablePanel(ui.controlsScrollPanel, 'Controls tab');
+        'Standard workbench shell should preserve the main column widths.');
+    assertTabTitles(ui.fig, {'Files + Analysis', 'Summary + Results', 'Log'});
+    assertScrollablePanel(ui.filesAnalysisScrollPanel, 'Files + Analysis tab');
+    assertScrollablePanel(ui.summaryResultsScrollPanel, 'Summary + Results tab');
+    assertScrollablePanel(ui.logScrollPanel, 'Log tab');
     assert(isequal(ui.rightGrid.RowHeight, {'1x', 'fit'}), ...
-        'Single-tab workbench shell should preserve right-grid row heights.');
+        'Standard workbench shell should preserve right-grid row heights.');
 end
 
 function checkTabbedDualPlotShellHelper()
@@ -442,8 +449,8 @@ function checkTopBottomPlotStateHelpers()
         'Hard axis reset should optionally reset axis scales.');
 end
 
-function checkSingleSelectFilePanelHelper()
-    fig = uifigure('Visible', 'off', 'Name', 'labkit_single_select_file_panel_probe');
+function checkFileSelectionPanelHelper()
+    fig = uifigure('Visible', 'off', 'Name', 'labkit_file_selection_panel_probe');
     cleaner = onCleanup(@() delete(fig));
     grid = uigridlayout(fig, [3 1]);
 
@@ -461,38 +468,51 @@ function checkSingleSelectFilePanelHelper()
         'clearAll', 'Clear all', ...
         'export', 'Export results CSV', ...
         'loadedText', 'No files loaded');
-    ui = labkit.ui.createSingleSelectFilePanel(grid, labels, callbacks);
-    assert(strcmp(ui.panel.Title, 'Files'), 'Single-select file panel should preserve the panel title.');
-    assert(ui.panel.Layout.Row == 1, 'Single-select file panel should place the panel in row 1.');
+    ui = labkit.ui.createFileSelectionPanel(grid, labels, callbacks);
+    assert(strcmp(ui.panel.Title, 'Files'), 'File-selection panel should preserve the panel title.');
+    assert(ui.panel.Layout.Row == 1, 'File-selection panel should place the panel in row 1.');
     assert(sameStringCell(ui.grid.RowHeight, {'fit', '1x', 'fit'}), ...
-        'Single-select file panel should preserve row heights.');
+        'File-selection panel should preserve row heights.');
     assert(sameStringCell(ui.grid.ColumnWidth, {'1x'}), ...
-        'Single-select file panel should preserve column widths.');
+        'File-selection panel should preserve column widths.');
     assert(isequal(ui.grid.Padding, [8 8 8 8]), ...
-        'Single-select file panel should preserve padding.');
+        'File-selection panel should preserve padding.');
     assert(ui.grid.RowSpacing == 8 && ui.grid.ColumnSpacing == 0, ...
-        'Single-select file panel should preserve row and column spacing.');
+        'File-selection panel should preserve row and column spacing.');
     assert(isequal(ui.buttonGrid.ColumnWidth, {'1x', '1x'}), ...
-        'Single-select file panel should preserve button-grid columns.');
+        'File-selection panel should preserve button-grid columns.');
     assert(strcmp(ui.openButton.Text, 'Open DTA file(s)'), ...
-        'Single-select file panel should preserve the open-file button text.');
+        'File-selection panel should preserve the open-file button text.');
     assert(strcmp(ui.openFolderButton.Text, 'Open folder recursively'), ...
-        'Single-select file panel should preserve the open-folder button text.');
+        'File-selection panel should preserve the open-folder button text.');
     assert(strcmp(ui.clearButton.Text, 'Clear all'), ...
-        'Single-select file panel should preserve the clear button text.');
+        'File-selection panel should preserve the clear button text.');
     assert(strcmp(ui.exportButton.Text, 'Export results CSV'), ...
-        'Single-select file panel should preserve the export button text.');
+        'File-selection panel should preserve the export button text.');
     assert(strcmp(ui.listbox.Multiselect, 'off'), ...
-        'Single-select file panel should create a single-select listbox.');
+        'File-selection panel should default to a single-select listbox.');
     assert(strcmp(ui.loadedText.Editable, 'off'), ...
-        'Single-select file panel should create a read-only loaded-count field.');
+        'File-selection panel should create a read-only loaded-count field.');
     assert(strcmp(ui.loadedText.Value, 'No files loaded'), ...
-        'Single-select file panel should preserve the default loaded-count text.');
+        'File-selection panel should preserve the default loaded-count text.');
     assertCallbackPresent(ui.openButton, 'ButtonPushedFcn', 'Open DTA file(s)');
     assertCallbackPresent(ui.openFolderButton, 'ButtonPushedFcn', 'Open folder recursively');
     assertCallbackPresent(ui.clearButton, 'ButtonPushedFcn', 'Clear all');
     assertCallbackPresent(ui.exportButton, 'ButtonPushedFcn', 'Export results CSV');
     assertCallbackPresent(ui.listbox, 'ValueChangedFcn', 'file listbox');
+
+    multiCallbacks = callbacks;
+    multiCallbacks.onRemoveSelected = @(~,~) [];
+    multiLabels = labels;
+    multiLabels.removeSelected = 'Remove selected';
+    multiUi = labkit.ui.createFileSelectionPanel(grid, multiLabels, multiCallbacks, ...
+        struct('showRemoveSelected', true, 'multiselect', 'on', 'row', 2));
+    assert(strcmp(multiUi.listbox.Multiselect, 'on'), ...
+        'File-selection panel should support multi-select listboxes.');
+    assert(strcmp(multiUi.removeButton.Text, 'Remove selected'), ...
+        'File-selection panel should create remove-selected controls when requested.');
+    assert(multiUi.exportButton.Layout.Row == 3, ...
+        'File-selection panel should place export below remove/clear when remove is enabled.');
 end
 
 function fig = launchFigure(entryName, expectedTitle)
