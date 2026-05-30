@@ -2,7 +2,11 @@ function test_parseCVCTDTA()
 %TEST_PARSECVCTDTA Verify extracted CV/CT parser behavior.
 
     demoFile = demoFixturePath('cv_cyclic_voltammetry_pt_reference.DTA');
-    [demoScanRate, demoCurves, demoLog] = gamrywb.io.parseCVCTDTA(demoFile);
+    [demoItem, demoStatus] = gamrywb.dta.loadFile(demoFile, "cvct");
+    assert(demoStatus.ok, demoStatus.message);
+    demoScanRate = demoItem.scanRate;
+    demoCurves = demoItem.curves;
+    demoLog = demoItem.logmsg;
     assert(abs(demoScanRate - 9.99998e-2) < 1e-12, 'Demo SCANRATE should convert from mV/s to V/s.');
     assert(~isempty(demoCurves), 'Demo CV file should contain at least one curve.');
     assert(any(contains(string(demoLog), 'Detected')), 'Demo parser log should report detected curves.');
@@ -25,7 +29,11 @@ function test_parseCVCTDTA()
     fprintf(fid, '1\t1.00000E+000\t2.00000E-001\t4.00000E-006\n');
     fclose(fid);
 
-    [scanRate, curves, logmsg] = gamrywb.io.parseCVCTDTA(tmp);
+    [item, status] = gamrywb.dta.loadFile(tmp, "cvct");
+    assert(status.ok, status.message);
+    scanRate = item.scanRate;
+    curves = item.curves;
+    logmsg = item.logmsg;
 
     assert(abs(scanRate - 0.2) < 1e-12, 'SCANRATE should convert from mV/s to V/s.');
     assert(numel(curves) == 2, 'Parser should discover both CURVE sections.');

@@ -2,7 +2,7 @@ function filepaths = findFiles(rootDir)
 %FINDFILES Recursively collect Gamry DTA files without GUI side effects.
 
     rootDir = normalizeRootDir(rootDir);
-    filepaths = gamrywb.io.findDTAFilesRecursive(rootDir);
+    filepaths = findDTAFilesRecursive(rootDir);
 end
 
 function rootDir = normalizeRootDir(rootDir)

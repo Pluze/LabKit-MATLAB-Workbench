@@ -17,11 +17,11 @@ All notable user-facing and maintainer-facing changes are recorded here.
 
 ### Changed
 
-- Parser-only tab-splitting and table-scanning helpers now live under `+gamrywb/+io/private` instead of the public `+gamrywb/+util` package.
+- Parser-only tab-splitting and table-scanning helpers now live under `+gamrywb/+dta/private` instead of the public `+gamrywb/+util` package.
 - App-specific utility helpers now live in the owning app or lower-level implementation file instead of a public `+gamrywb/+util` package.
-- App session creation, DTA loading, removal, and selection now go through `gamrywb.dta.*` instead of lower-level `gamrywb.data.*` helpers.
-- Chrono/EIS item construction and session orchestration helpers moved behind the DTA facade, leaving public `+gamrywb/+data` for selected parsed table/curve access.
-- Documentation now states the practical API boundary: `gamrywb.dta` for DTA file/session workflows, `gamrywb.ui` for GUI helpers, and `gamrywb.data` for parsed table/curve access.
+- App session creation, DTA loading, removal, and selection now go through `gamrywb.dta.*` instead of lower-level `gamrywb.dta.*` helpers.
+- Chrono/EIS item construction, session orchestration, parser/session IO, and parsed table/curve access moved behind the DTA facade.
+- Documentation now states the practical API boundary: `gamrywb.dta` for DTA file/session/table workflows and `gamrywb.ui` for GUI helpers.
 - New-app guidance now recommends a single-file layout that separates GUI callbacks from app-local analysis, export, plotting, and utility functions without introducing helper packages.
 - Pulse detection implementation moved behind the `gamrywb.dta.detectPulses` facade instead of a public `+gamrywb/+analysis` package.
 - App-specific scientific workflow now lives in the owning app files: analysis formulas, plot annotations, result tables, export schemas, and CSV writing are not reusable `+gamrywb` APIs.
@@ -29,7 +29,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - App header comments now consistently describe single-file app ownership without implying reusable-library ownership of experiment-specific analysis.
 - Agent/developer rules now describe app-specific helper packages as removed boundaries that should not be reintroduced and limit new package helpers to genuinely cross-cutting code.
 - Reusable GUI helpers are kept domain-neutral: DTA-specific labels, shell tab titles, app callback choreography, and app reset/default behavior stay in the apps.
-- Generic prepared-X/Y plotting lives in `gamrywb.ui.plotXY`; parsed-curve column selection stays in `gamrywb.data.getCurveXY` so the GUI layer does not depend on the data layer.
+- Generic prepared-X/Y plotting lives in `gamrywb.ui.plotXY`; parsed-curve column selection stays in `gamrywb.dta.getCurveXY` so the GUI layer does not depend on the DTA layer.
 - Tests now separate default and GUI groups, share repeated fixture/assertion helpers, and keep architecture guardrails in `test_architecture_boundaries`.
 - Session and DTA facade helpers now handle empty inputs, invalid expected kinds, and invalid folders consistently.
 - CIC and VT resistance apps keep their interpolation/window helpers local to avoid exposing an app-facing utility package.
@@ -42,8 +42,10 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - App-specific reusable analysis/export helpers that hid experiment decisions outside the owning app file.
 - The public `+gamrywb/+analysis` package; pulse detection remains available through `gamrywb.dta.detectPulses`.
 - Public lower-level `+gamrywb/+data` session and item-construction entry points that apps should not call directly.
+- The remaining public `+gamrywb/+data` table/curve helper package; those helpers now live under `gamrywb.dta.*`.
+- The public `+gamrywb/+io` parser/session IO package; parser and session IO helpers are now DTA-private or DTA facade functions.
 - The one-line `gamrywb.io.exportTableCSV` wrapper; apps that need MATLAB's default table writer call `writetable` directly.
-- The data-coupled `gamrywb.ui.plotCurveXY` helper; apps now call `gamrywb.data.getCurveXY` before `gamrywb.ui.plotXY`.
+- The data-coupled `gamrywb.ui.plotCurveXY` helper; apps now call `gamrywb.dta.getCurveXY` before `gamrywb.ui.plotXY`.
 
 ## v1.0.0 - 2026-05-28
 

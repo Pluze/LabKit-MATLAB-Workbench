@@ -144,13 +144,7 @@ The pulse detector implementation is private to the DTA facade.
 
 ## CV/CT Data
 
-`gamrywb.io.parseCVCTDTA` returns:
-
-```matlab
-[scanRate, curves, logmsg] = gamrywb.io.parseCVCTDTA(filepath)
-```
-
-`gamrywb.dta.loadFile(filepath, "cvct")` wraps this parser into a lightweight CV/CT item with:
+`gamrywb.dta.loadFile(filepath, "cvct")` wraps the private CV/CT parser into a lightweight CV/CT item with:
 
 ```text
 type, filepath, name, scanRate, scanRate_V_per_s, curves, logmsg, analysis
@@ -164,7 +158,7 @@ scanRate, mode, area_cm2
 
 CSC CT/CV charge integration is a local detail of `apps/gamrywb_CSC_app.m`; it is not a separate reusable library API.
 
-`gamrywb.data.getCurveXY` operates on the parsed curve struct and preserves exact-case column matching and NaN filtering. Apps can pass those prepared X/Y vectors and labels to the reusable GUI helper `gamrywb.ui.plotXY`.
+`gamrywb.dta.getCurveXY` operates on the parsed curve struct and preserves exact-case column matching and NaN filtering. Apps can pass those prepared X/Y vectors and labels to the reusable GUI helper `gamrywb.ui.plotXY`.
 
 ## Pulse Struct
 
@@ -246,10 +240,10 @@ gamrywb.dta.makeSession
 gamrywb.dta.addFilesToSession
 gamrywb.dta.removeSelectedItemsFromSession
 gamrywb.dta.selectSessionItems
-gamrywb.io.saveSession
-gamrywb.io.loadSession
+gamrywb.dta.saveSession
+gamrywb.dta.loadSession
 ```
 
-`gamrywb.dta.addFilesToSession` supports `onAdded`, `onSkipped`, and `onFailed` callbacks so apps can preserve log timing while sharing DTA add/duplicate/failure logic. Empty file lists are no-ops that return empty reports without firing callbacks. Session item construction and session orchestration helpers are private to the DTA facade, not public `gamrywb.data.*` app APIs. Public `gamrywb.data.*` is limited to parsed table/curve access helpers.
+`gamrywb.dta.addFilesToSession` supports `onAdded`, `onSkipped`, and `onFailed` callbacks so apps can preserve log timing while sharing DTA add/duplicate/failure logic. Empty file lists are no-ops that return empty reports without firing callbacks. Session item construction and session orchestration helpers are private to the DTA facade, not public `gamrywb.dta.*` app APIs. Public `gamrywb.dta.*` is limited to parsed table/curve access helpers.
 
 Session files should keep parsed data, selected analysis mode, options, results, notes, and file provenance explicit. Avoid opaque object dumps for scientific exchange.

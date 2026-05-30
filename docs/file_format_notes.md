@@ -26,10 +26,10 @@ parse numeric rows into MATLAB arrays
 Shared helpers used by parser code include:
 
 ```text
-splitTabs in +gamrywb/+io/private
-nextNonEmpty in +gamrywb/+io/private
-isDataLike in +gamrywb/+io/private
-gamrywb.data.getColumn
+splitTabs in +gamrywb/+dta/private
+nextNonEmpty in +gamrywb/+dta/private
+isDataLike in +gamrywb/+dta/private
+gamrywb.dta.getColumn
 ```
 
 ---
@@ -39,7 +39,7 @@ gamrywb.data.getColumn
 Current parser:
 
 ```text
-+gamrywb/+io/parseChronoDTA.m
++gamrywb/+dta/private/parseChronoDTA.m
 ```
 
 Purpose:
@@ -59,7 +59,7 @@ TSTEPn
 Output style:
 
 ```matlab
-[meta, tables, logmsg] = gamrywb.io.parseChronoDTA(filepath)
+[item, status] = gamrywb.dta.loadFile(filepath, "chrono")
 ```
 
 `meta.steps` stores step entries with fields:
@@ -92,7 +92,7 @@ Downstream behavior to preserve:
 Current parser:
 
 ```text
-+gamrywb/+io/parseEISDTA.m
++gamrywb/+dta/private/parseEISDTA.m
 ```
 
 Purpose:
@@ -110,13 +110,13 @@ AREA
 Output style:
 
 ```matlab
-[meta, tables, logmsg] = gamrywb.io.parseEISDTA(filepath)
+[item, status] = gamrywb.dta.loadFile(filepath, "eis")
 ```
 
 EIS parser behavior to preserve:
 
 - Numeric tables are parsed with headers, units, data, and numeric masks.
-- `ZCURVE` table selection is handled by `gamrywb.data.getZCurve`; DTA loading and item construction stay behind `gamrywb.dta.loadFile`.
+- `ZCURVE` table selection is handled by `gamrywb.dta.getZCurve`; DTA loading and item construction stay behind `gamrywb.dta.loadFile`.
 - If table name matching fails, fallback behavior may identify a table by headers such as Freq/Zreal/Zimag.
 
 Axis values that must remain supported:
@@ -149,7 +149,7 @@ apps/gamrywb_EIS_app.m
 Current parser:
 
 ```text
-+gamrywb/+io/parseCVCTDTA.m
++gamrywb/+dta/private/parseCVCTDTA.m
 ```
 
 Purpose:
@@ -159,7 +159,7 @@ Purpose:
 Output style:
 
 ```matlab
-[scanRate, curves, logmsg] = gamrywb.io.parseCVCTDTA(filepath)
+[item, status] = gamrywb.dta.loadFile(filepath, "cvct")
 ```
 
 CV/CT parser behavior to preserve:

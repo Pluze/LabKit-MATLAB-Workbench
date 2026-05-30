@@ -8,12 +8,12 @@ function test_plotXY()
     curve.numericMask = [true true true];
     curve.data = [0 0.1 NaN; 1 0.2 -1; 2 NaN 2; 3 0.4 3];
 
-    [x, y, xname, yname] = gamrywb.data.getCurveXY(curve, 'T', 'Vf');
+    [x, y, xname, yname] = gamrywb.dta.getCurveXY(curve, 'T', 'Vf');
     assert(isequal(x, [0; 1; 3]), 'getCurveXY should remove rows with NaN X/Y.');
     assert(isequal(y, [0.1; 0.2; 0.4]), 'getCurveXY should preserve selected Y values.');
     assert(strcmp(xname, 'T') && strcmp(yname, 'Vf'), 'getCurveXY should return selected header names.');
 
-    [badX, badY] = gamrywb.data.getCurveXY(curve, 't', 'Vf');
+    [badX, badY] = gamrywb.dta.getCurveXY(curve, 't', 'Vf');
     assert(isempty(badX) && isempty(badY), 'getCurveXY should preserve legacy exact-case column selection.');
 
     fig = figure('Visible', 'off');

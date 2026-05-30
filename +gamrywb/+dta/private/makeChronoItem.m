@@ -9,17 +9,17 @@ function item = makeChronoItem(filepath, opts)
     item.type = "chrono";
     item.filepath = filepath;
     item.name = shortName(filepath);
-    [item.meta, item.tables, item.logmsg] = gamrywb.io.parseChronoDTA(filepath);
+    [item.meta, item.tables, item.logmsg] = parseChronoDTA(filepath);
 
-    [curve, ok, msg] = gamrywb.data.getMainCurve(item.tables);
+    [curve, ok, msg] = gamrywb.dta.getMainCurve(item.tables);
     if ~ok
         error('%s', msg);
     end
 
-    t = gamrywb.data.getColumn(curve, 'T');
-    Vf = gamrywb.data.getColumn(curve, 'Vf');
-    Im = gamrywb.data.getColumn(curve, 'Im');
-    pt = gamrywb.data.getColumn(curve, 'Pt');
+    t = gamrywb.dta.getColumn(curve, 'T');
+    Vf = gamrywb.dta.getColumn(curve, 'Vf');
+    Im = gamrywb.dta.getColumn(curve, 'Im');
+    pt = gamrywb.dta.getColumn(curve, 'Pt');
     if isempty(pt)
         pt = (0:numel(t)-1).';
     end

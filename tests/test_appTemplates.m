@@ -7,17 +7,17 @@ function test_appTemplates()
     guiOnly = fileread(fullfile(templateDir, 'gui_only_app_template.m'));
     assert(contains(guiOnly, 'gamrywb.ui.'), 'GUI-only template should use the GUI facade.');
     assert(~contains(guiOnly, 'gamrywb.dta.'), 'GUI-only template should not use the DTA facade.');
-    assert(~contains(guiOnly, 'gamrywb.data.'), 'GUI-only template should not expose data helpers.');
+    assert(~contains(guiOnly, 'gamrywb.data.'), 'GUI-only template should not expose removed data helpers.');
 
     dtaOnly = fileread(fullfile(templateDir, 'dta_only_script_template.m'));
     assert(contains(dtaOnly, 'gamrywb.dta.'), 'DTA-only template should use the DTA facade.');
     assert(~contains(dtaOnly, 'gamrywb.ui.'), 'DTA-only template should not use GUI helpers.');
-    assert(~contains(dtaOnly, 'gamrywb.data.'), 'DTA-only template should not expose data helpers.');
+    assert(~contains(dtaOnly, 'gamrywb.data.'), 'DTA-only template should not expose removed data helpers.');
 
     guiDta = fileread(fullfile(templateDir, 'gui_dta_app_template.m'));
     assert(contains(guiDta, 'gamrywb.ui.'), 'GUI+DTA template should use the GUI facade.');
     assert(contains(guiDta, 'gamrywb.dta.'), 'GUI+DTA template should use the DTA facade.');
-    assert(~contains(guiDta, 'gamrywb.data.'), 'GUI+DTA template should not expose data helpers.');
+    assert(~contains(guiDta, 'gamrywb.data.'), 'GUI+DTA template should not expose removed data helpers.');
     assert(~contains(guiDta, 'gamrywb.io.'), 'GUI+DTA template should not call parser IO directly.');
 
     addpath(templateDir);

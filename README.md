@@ -12,7 +12,7 @@ What that means:
 - The old root-level GUI command wrappers and `legacy/` reference directory have been removed.
 - EIS, Chrono overlay, CSC, VT resistance, and CIC are public single-file app implementations.
 - Experiment-specific analysis, plots, result tables, and exports belong to the owning app file.
-- Reusable app-facing `+gamrywb` code is limited to GUI base helpers, Gamry/DTA loading/session APIs, and selected lower-level data APIs.
+- Reusable app-facing `+gamrywb` code is limited to GUI base helpers and the current Gamry/DTA data-family API.
 
 Deferred beyond v1.0:
 
@@ -55,7 +55,7 @@ The default runner covers pure functions. The optional GUI mode checks launch/la
 ## Repository Layout
 
 ```text
-+gamrywb/             App-facing GUI/DTA APIs plus selected parsed-table data helpers
++gamrywb/             App-facing GUI and DTA APIs
 apps/                 App entry points and app-specific implementations
 templates/            Copy-only GUI, DTA, and GUI+DTA starter programs
 demo/                 Named DTA fixtures
@@ -77,7 +77,7 @@ docs/                 Architecture, data model, parser, validation, and history 
 
 ## API Boundary
 
-For new app work, use `gamrywb.dta.*` for DTA file/session workflows, `gamrywb.ui.*` for reusable GUI structure, and `gamrywb.data.*` only for parsed table/curve access. Parser IO and DTA-private helpers are implementation details, not app-facing APIs.
+For new app work, use `gamrywb.ui.*` for reusable GUI structure and `gamrywb.dta.*` for DTA discovery, loading, session, pulse, and parsed table/curve access. Parser IO, item construction, and session implementation helpers are DTA-private details, not app-facing APIs.
 
 ## Preservation Rule
 

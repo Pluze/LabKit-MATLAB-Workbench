@@ -89,15 +89,13 @@ App-boundary changes:
 
 - public app files do not depend on transitional app-specific helper packages
 - app-specific helper packages and private launcher directories are not reintroduced for workflow code that belongs to one app
-- public app files and templates do not call `gamrywb.io.*`, `gamrywb.analysis.*`, or `gamrywb.util.*` directly
-- public app files use `gamrywb.dta.*` rather than lower-level `gamrywb.data.*` for DTA session creation, loading, removal, and selection
-- public `+gamrywb/+data` stays limited to selected table/curve access helpers; DTA item construction and session orchestration stay behind the DTA facade
+- public app files and templates do not call `gamrywb.io.*`, `gamrywb.data.*`, `gamrywb.analysis.*`, or `gamrywb.util.*` directly
+- public app files use `gamrywb.dta.*` for DTA discovery, loading, session creation, removal, selection, pulse detection, and parsed table/curve access
+- public `+gamrywb/+data` and `+gamrywb/+io` packages are not reintroduced; parser, session IO, item construction, and table/curve access stay behind the DTA facade
 - app-local files keep the recommended single-file layout: entry/test hook, GUI construction, nested callbacks, app-local analysis, export/table helpers, plotting helpers, and small utilities
 - pulse detection remains behind `gamrywb.dta.detectPulses` with implementation helpers kept private, and experiment-specific CIC, VT, CSC, EIS, result-table, or CSV-writing workflow code does not return to a public reusable analysis package
-- reusable `+gamrywb/+io` stays GUI-free and app-free and does not regain app-specific export-table or CSV writer helpers
 - reusable `+gamrywb/+dta` stays GUI-free and app-free: no MATLAB UI constructors, file dialogs, alerts, app entry points, or `apps/` helper calls
-- reusable `+gamrywb/+data` stays GUI-free and app-free: no MATLAB UI constructors, file dialogs, alerts, `gamrywb.ui`, app entry points, or `apps/` helper calls
-- reusable `+gamrywb/+ui` stays parser/data/analysis-free: apps pass prepared values and labels into GUI helpers rather than letting GUI helpers call DTA, IO, data, or analysis APIs
+- reusable `+gamrywb/+ui` stays parser/data/analysis-free: apps pass prepared values and labels into GUI helpers rather than letting GUI helpers call DTA, parser, data, or analysis APIs
 - helper code stays internal: parser-only helpers remain package-private, app-specific helpers remain app-local, and no public `+gamrywb/+util` app-facing surface is reintroduced
 - keep these architecture guardrails in `tests/test_architecture_boundaries.m` rather than duplicating them in numerical analysis tests
 

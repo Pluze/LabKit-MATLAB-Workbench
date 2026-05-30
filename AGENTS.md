@@ -27,18 +27,17 @@ The desired architecture is:
 
 ```text
 apps/ experiment apps
-    call reusable +gamrywb DTA and GUI APIs, and data APIs only when needed
+    call reusable +gamrywb DTA and GUI APIs
     own experiment-specific scientific logic, parameters, plots, and exports
     ideally one experiment corresponds to one app .m file
 
 +gamrywb reusable library
     GUI library: scientific-app shells, controls, panels, logs, and UI state helpers
-    Gamry/DTA library: app-facing DTA discovery, loading, and session APIs
-    data library: selected lower-level table/curve APIs used only when app code genuinely needs them
-    internal helpers: parser, analysis, utility, item/session construction, and private helpers hidden behind GUI/DTA/data APIs
+    DTA library: app-facing DTA discovery, loading, session, pulse, and parsed table/curve APIs
+    internal helpers: parser, analysis, utility, item/session construction, and private helpers hidden behind GUI/DTA APIs
 ```
 
-Do not add new experiment-specific app logic to the reusable `+gamrywb` library. New app code should not call `gamrywb.io.*`, `gamrywb.analysis.*`, or `gamrywb.util.*` directly; put those needs behind `gamrywb.dta.*`, `gamrywb.ui.*`, selected `gamrywb.data.*`, or an app-local helper. Keep DTA item/session construction and pulse detection private behind the DTA facade. Keep app-specific analysis, plotting, export schemas, and CSV writing in the owning public app file unless a repeated use case proves a lower-level utility is clearer. Do not reintroduce app-specific helper packages or namespaces just to make local app functions public.
+Do not add new experiment-specific app logic to the reusable `+gamrywb` library. New app code should not call `gamrywb.io.*`, `gamrywb.data.*`, `gamrywb.analysis.*`, or `gamrywb.util.*` directly; put those needs behind `gamrywb.dta.*`, `gamrywb.ui.*`, or an app-local helper. Keep DTA parsers, item/session construction, session IO, and pulse internals private behind the DTA facade. Keep app-specific analysis, plotting, export schemas, and CSV writing in the owning public app file unless a repeated use case proves a lower-level utility is clearer. Do not reintroduce app-specific helper packages or namespaces just to make local app functions public.
 
 Do not change:
 

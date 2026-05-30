@@ -3,7 +3,10 @@ function test_computeCSC()
 
     fixture = demoFixturePath('cv_cyclic_voltammetry_pt_reference.DTA');
 
-    [scanRate, curves] = gamrywb.io.parseCVCTDTA(fixture);
+    [item, status] = gamrywb.dta.loadFile(fixture, "cvct");
+    assert(status.ok, status.message);
+    scanRate = item.scanRate;
+    curves = item.curves;
     assert(~isempty(curves), 'CV/CT fixture should contain at least one curve.');
     curve = curves(1);
 

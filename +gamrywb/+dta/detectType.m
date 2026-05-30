@@ -48,8 +48,8 @@ function [ok, msg] = isEIS(filepath)
     ok = false;
     msg = "";
     try
-        [~, tables] = gamrywb.io.parseEISDTA(filepath);
-        [~, ok, msg] = gamrywb.data.getZCurve(tables);
+        [~, tables] = parseEISDTA(filepath);
+        [~, ok, msg] = gamrywb.dta.getZCurve(tables);
     catch ME
         msg = string(ME.message);
     end
@@ -59,15 +59,15 @@ function [ok, msg] = isChrono(filepath)
     ok = false;
     msg = "";
     try
-        [~, tables] = gamrywb.io.parseChronoDTA(filepath);
-        [curve, tableOk, msg] = gamrywb.data.getMainCurve(tables);
+        [~, tables] = parseChronoDTA(filepath);
+        [curve, tableOk, msg] = gamrywb.dta.getMainCurve(tables);
         if ~tableOk
             return;
         end
 
-        t = gamrywb.data.getColumn(curve, 'T');
-        vf = gamrywb.data.getColumn(curve, 'Vf');
-        im = gamrywb.data.getColumn(curve, 'Im');
+        t = gamrywb.dta.getColumn(curve, 'T');
+        vf = gamrywb.dta.getColumn(curve, 'Vf');
+        im = gamrywb.dta.getColumn(curve, 'Im');
         valid = isfinite(t) & isfinite(vf) & isfinite(im);
         ok = sum(valid) >= 2;
         if ~ok
@@ -82,7 +82,7 @@ function [ok, msg] = isCVCT(filepath)
     ok = false;
     msg = "";
     try
-        [~, curves, logmsg] = gamrywb.io.parseCVCTDTA(filepath);
+        [~, curves, logmsg] = parseCVCTDTA(filepath);
         ok = ~isempty(curves);
         if ok
             msg = "Detected CV/CT curve section.";

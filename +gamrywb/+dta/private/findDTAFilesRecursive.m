@@ -12,7 +12,7 @@ function filepaths = findDTAFilesRecursive(rootDir)
 
         fullpath = fullfile(entries(i).folder, name);
         if entries(i).isdir
-            subpaths = gamrywb.io.findDTAFilesRecursive(fullpath);
+            subpaths = findDTAFilesRecursive(fullpath);
             if ~isempty(subpaths)
                 filepaths = [filepaths, subpaths]; %#ok<AGROW>
             end

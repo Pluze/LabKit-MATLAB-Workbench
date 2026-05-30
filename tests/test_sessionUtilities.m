@@ -10,8 +10,8 @@ function test_sessionUtilities()
 
     tmp = [tempname '.mat'];
     cleaner = onCleanup(@() deleteIfExists(tmp));
-    gamrywb.io.saveSession(session, tmp);
-    loaded = gamrywb.io.loadSession(tmp);
+    gamrywb.dta.saveSession(session, tmp);
+    loaded = gamrywb.dta.loadSession(tmp);
     assert(strcmp(loaded.type, 'gamrywb_session'), 'Loaded session type should be preserved.');
     assert(strcmp(loaded.kind, session.kind), 'Loaded session kind should be preserved.');
     assert(numel(loaded.items) == 1 && strcmp(loaded.items(1).name, 'a.DTA'), ...

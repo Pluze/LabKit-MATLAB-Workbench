@@ -82,16 +82,7 @@ Chrono pulse detection:
 [pulse, message] = gamrywb.dta.detectPulses(t, Im, meta, "Metadata first, then auto");
 ```
 
-Lower-level discovery and parser functions remain available for parser tests and format work:
-
-```matlab
-filepaths = gamrywb.io.findDTAFilesRecursive(folder);
-[meta, tables] = gamrywb.io.parseChronoDTA(filepath);
-[meta, tables] = gamrywb.io.parseEISDTA(filepath);
-[scanRate, curves] = gamrywb.io.parseCVCTDTA(filepath);
-```
-
-Prefer the DTA facade in apps. Use direct IO discovery or parsers only when changing parser behavior, adding a DTA family, or writing parser-level tests.
+Lower-level recursive discovery and parser functions are private DTA implementation details. Parser tests and format work should still exercise behavior through `gamrywb.dta.loadFile`, `gamrywb.dta.loadFiles`, `gamrywb.dta.loadFolder`, and focused fixtures unless a private parser test is explicitly needed.
 
 Choose the smallest loading API that matches the workflow:
 
@@ -100,7 +91,7 @@ One explicit file:        gamrywb.dta.loadFile
 Known list of files:      gamrywb.dta.loadFiles
 Script/prototype folder:  gamrywb.dta.loadFolder
 GUI session app:          gamrywb.dta.addFilesToSession
-Parser development:       gamrywb.io.parse* and gamrywb.io.findDTAFilesRecursive
+Parser development:       DTA facade plus fixtures; private parsers only for focused parser work
 ```
 
 Use `loadFolder` for scripts and prototypes that do not need duplicate handling or GUI callback timing. Use the DTA session helpers in apps that maintain loaded-file state, listboxes, logs, or remove/clear workflows.
@@ -126,15 +117,15 @@ added, skipped, failed, nAdded, nSkipped, nFailed
 
 The app still owns `refreshPlots`, `addLog`, export behavior, alerts, and any app-specific reset/default-selection behavior. Do not move that choreography into `+gamrywb/+ui` unless multiple real apps prove that a generic helper is clearer.
 
-## Lower-Level Data API
+## Parsed Table And Curve Access
 
-Use `+gamrywb/+data` only when app code genuinely needs parsed table/curve access:
+Use these `+gamrywb/+dta` helpers when app code genuinely needs parsed table/curve access:
 
 ```matlab
-[curve, ok, msg] = gamrywb.data.getMainCurve(item.tables);
-[zcurve, ok, msg] = gamrywb.data.getZCurve(item.tables);
-values = gamrywb.data.getColumn(curve, 'Vf');
-[x, y] = gamrywb.data.getCurveXY(curve, 'T', 'Im');
+[curve, ok, msg] = gamrywb.dta.getMainCurve(item.tables);
+[zcurve, ok, msg] = gamrywb.dta.getZCurve(item.tables);
+values = gamrywb.dta.getColumn(curve, 'Vf');
+[x, y] = gamrywb.dta.getCurveXY(curve, 'T', 'Im');
 ```
 
 Apps should not call lower-level session or item-construction helpers.
@@ -208,18 +199,18 @@ Common state helpers:
 ```matlab
 gamrywb.ui.appendLog(txtLog, message);
 gamrywb.ui.refreshListboxItems(lbFiles, names);
-[x, y, xName, yName] = gamrywb.data.getCurveXY(curve, 'T', 'Im');
+[x, y, xName, yName] = gamrywb.dta.getCurveXY(curve, 'T', 'Im');
 labels = struct('title', curve.name, 'x', xName, 'y', yName);
 info = gamrywb.ui.plotXY(ax, x, y, labels, opts);
 ```
 
 GUI helpers should not contain experiment names, formulas, thresholds, result columns, or export formats.
-They should also receive prepared values from the app or data layer rather than calling parser, DTA, session, or analysis APIs themselves.
+They should also receive prepared values from the app or DTA layer rather than calling parser, DTA, session, or analysis APIs themselves.
 
 ## Internal Helpers
 
-New apps should not call `+gamrywb/+util`, `+gamrywb/+io`, or any internal helper package directly.
-Those functions are lower-level implementation surfaces for the GUI, DTA, and data APIs.
+New apps should not call `+gamrywb/+util`, `+gamrywb/+io`, `+gamrywb/+data`, or any internal helper package directly.
+Those functions are removed or private implementation surfaces behind the GUI and DTA APIs.
 If a new app seems to need one of them, first check whether the behavior belongs behind `gamrywb.dta.*`, `gamrywb.ui.*`, or a small app-local helper.
 
 ## Template Programs

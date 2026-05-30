@@ -85,7 +85,7 @@ function item = loadByKind(filepath, kind, opts)
 end
 
 function item = makeCVCTItem(filepath)
-    [scanRate, curves, logmsg] = gamrywb.io.parseCVCTDTA(filepath);
+    [scanRate, curves, logmsg] = parseCVCTDTA(filepath);
     if isempty(curves)
         error('No CV/CT curve section was parsed from this DTA file.');
     end

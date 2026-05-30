@@ -430,7 +430,7 @@ function varargout = gamrywb_CSC_app(varargin)
         if isempty(S.curves), return; end
         c = S.curves(S.currentCurve);
         opts = struct('holdPlot', cbTopHold.Value, 'showGrid', cbTopGrid.Value, 'lineWidth', 1.2);
-        [x, y, xName, yName] = gamrywb.data.getCurveXY(c, ddTopX.Value, ddTopY.Value);
+        [x, y, xName, yName] = gamrywb.dta.getCurveXY(c, ddTopX.Value, ddTopY.Value);
         labels = struct('title', c.name, 'x', xName, 'y', yName);
         info = gamrywb.ui.plotXY(axTop, x, y, labels, opts);
         if ~info.ok
@@ -444,7 +444,7 @@ function varargout = gamrywb_CSC_app(varargin)
         if isempty(S.curves), return; end
         c = S.curves(S.currentCurve);
         opts = struct('holdPlot', cbBotHold.Value, 'showGrid', cbBotGrid.Value, 'lineWidth', 1.2);
-        [x, y, xName, yName] = gamrywb.data.getCurveXY(c, ddBotX.Value, ddBotY.Value);
+        [x, y, xName, yName] = gamrywb.dta.getCurveXY(c, ddBotX.Value, ddBotY.Value);
         labels = struct('title', c.name, 'x', xName, 'y', yName);
         info = gamrywb.ui.plotXY(axBottom, x, y, labels, opts);
         if ~info.ok
@@ -493,7 +493,7 @@ function varargout = gamrywb_CSC_app(varargin)
         clearTrim(axBottom);
 
         if cbTopTrim.Value && strcmp(ddTopY.Value,'Im')
-            [xTop, ~, ~, ~] = gamrywb.data.getCurveXY(c, ddTopX.Value, ddTopY.Value);
+            [xTop, ~, ~, ~] = gamrywb.dta.getCurveXY(c, ddTopX.Value, ddTopY.Value);
             if numel(xTop) == numel(R.IcathDisp)
                 hold(axTop,'on');
                 plot(axTop, xTop, R.IcathDisp, 'Color',[0.1 0.6 0.1], ...
@@ -505,7 +505,7 @@ function varargout = gamrywb_CSC_app(varargin)
         end
 
         if cbBotTrim.Value && strcmp(ddBotY.Value,'Im')
-            [xBot, ~, ~, ~] = gamrywb.data.getCurveXY(c, ddBotX.Value, ddBotY.Value);
+            [xBot, ~, ~, ~] = gamrywb.dta.getCurveXY(c, ddBotX.Value, ddBotY.Value);
             if numel(xBot) == numel(R.IcathDisp)
                 hold(axBottom,'on');
                 plot(axBottom, xBot, R.IcathDisp, 'Color',[0.1 0.6 0.1], ...

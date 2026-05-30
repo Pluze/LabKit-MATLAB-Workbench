@@ -1,9 +1,9 @@
 function test_parseChronoDTA()
 %TEST_PARSECHRONODTA Verify extracted chrono DTA parser and accessors.
 
-    filepaths = gamrywb.io.findDTAFilesRecursive(demoFixtureDir());
-    assert(numel(filepaths) >= 8, 'findDTAFilesRecursive should find the demo DTA fixtures.');
-    assert(all(endsWith(lower(string(filepaths)), '.dta')), 'findDTAFilesRecursive should return only DTA files.');
+    filepaths = gamrywb.dta.findFiles(demoFixtureDir());
+    assert(numel(filepaths) >= 8, 'findFiles should find the demo DTA fixtures.');
+    assert(all(endsWith(lower(string(filepaths)), '.dta')), 'findFiles should return only DTA files.');
     assert(any(endsWith(string(filepaths), fullfile('demo', 'chrono_chronopot_current_pulse_0p2ms.DTA'))), ...
         'findDTAFilesRecursive should include the current-controlled chrono fixture.');
     assert(any(endsWith(string(filepaths), fullfile('demo', 'chrono_chronoamp_voltage_pulse_0p2ms.DTA'))), ...
@@ -12,7 +12,11 @@ function test_parseChronoDTA()
     currentFile = demoFixturePath('chrono_chronopot_current_pulse_0p2ms.DTA');
     voltageFile = demoFixturePath('chrono_chronoamp_voltage_pulse_0p2ms.DTA');
 
-    [meta, tables, logmsg] = gamrywb.io.parseChronoDTA(currentFile);
+    [currentItem, currentStatus] = gamrywb.dta.loadFile(currentFile, "chrono");
+    assert(currentStatus.ok, currentStatus.message);
+    meta = currentItem.meta;
+    tables = currentItem.tables;
+    logmsg = currentItem.logmsg;
 
     assert(abs(meta.area_cm2 - 1) < 1e-12, 'AREA metadata should be parsed from current chrono fixture.');
     assert(abs(meta.sampleTime_s - 1.00002e-5) < 1e-12, 'SAMPLETIME metadata should be parsed from current chrono fixture.');
@@ -23,14 +27,14 @@ function test_parseChronoDTA()
     assert(any(contains(string(logmsg), 'Table Curve parsed: 244 rows x 10 cols.')), ...
         'Parser log should include current chrono table dimensions.');
 
-    [curve, ok, msg] = gamrywb.data.getMainCurve(tables);
+    [curve, ok, msg] = gamrywb.dta.getMainCurve(tables);
     assert(ok, msg);
     assert(strcmp(msg, 'Using table: Curve'), 'Main curve message should match legacy wording.');
 
-    t = gamrywb.data.getColumn(curve, 'T');
-    vf = gamrywb.data.getColumn(curve, 'Vf');
-    im = gamrywb.data.getColumn(curve, 'im');
-    missing = gamrywb.data.getColumn(curve, 'MissingColumn');
+    t = gamrywb.dta.getColumn(curve, 'T');
+    vf = gamrywb.dta.getColumn(curve, 'Vf');
+    im = gamrywb.dta.getColumn(curve, 'im');
+    missing = gamrywb.dta.getColumn(curve, 'MissingColumn');
 
     assert(numel(t) == 244 && numel(vf) == 244 && numel(im) == 244, 'Main chrono columns should use the Curve table.');
     assert(t(1) > 0 && t(1) < 2e-5 && t(end) > 0.0024 && t(end) < 0.0025, ...
@@ -38,11 +42,14 @@ function test_parseChronoDTA()
     assert(any(im < 0) && any(im > 0), 'Current-controlled chrono fixture should contain cathodic and anodic current.');
     assert(isempty(missing), 'Missing columns should return empty.');
 
-    [vMeta, vTables] = gamrywb.io.parseChronoDTA(voltageFile);
+    [voltageItem, voltageStatus] = gamrywb.dta.loadFile(voltageFile, "chrono");
+    assert(voltageStatus.ok, voltageStatus.message);
+    vMeta = voltageItem.meta;
+    vTables = voltageItem.tables;
     assert(numel(vMeta.steps) == 6, 'Voltage-controlled fixture should produce six VSTEP/TSTEP steps.');
     assert(abs(vMeta.steps(2).V + 1.5) < 1e-15 && abs(vMeta.steps(5).V - 1.5) < 1e-15, ...
         'Voltage-controlled step values should be preserved.');
-    [vCurve, vOk, vMsg] = gamrywb.data.getMainCurve(vTables);
+    [vCurve, vOk, vMsg] = gamrywb.dta.getMainCurve(vTables);
     assert(vOk, vMsg);
-    assert(numel(gamrywb.data.getColumn(vCurve, 'Im')) == 244, 'Voltage-controlled fixture should expose the Im column.');
+    assert(numel(gamrywb.dta.getColumn(vCurve, 'Im')) == 244, 'Voltage-controlled fixture should expose the Im column.');
 end

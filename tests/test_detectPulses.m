@@ -4,11 +4,14 @@ function test_detectPulses()
     currentFixture = demoFixturePath('chrono_chronopot_current_pulse_0p2ms.DTA');
     voltageFixture = demoFixturePath('chrono_chronoamp_voltage_pulse_0p2ms.DTA');
 
-    [currentMeta, currentTables] = gamrywb.io.parseChronoDTA(currentFixture);
-    [currentCurve, currentOk, currentMsg] = gamrywb.data.getMainCurve(currentTables);
+    [currentItem, currentStatus] = gamrywb.dta.loadFile(currentFixture, "chrono");
+    assert(currentStatus.ok, currentStatus.message);
+    currentMeta = currentItem.meta;
+    currentTables = currentItem.tables;
+    [currentCurve, currentOk, currentMsg] = gamrywb.dta.getMainCurve(currentTables);
     assert(currentOk, currentMsg);
-    currentT = gamrywb.data.getColumn(currentCurve, 'T');
-    currentIm = gamrywb.data.getColumn(currentCurve, 'Im');
+    currentT = gamrywb.dta.getColumn(currentCurve, 'T');
+    currentIm = gamrywb.dta.getColumn(currentCurve, 'Im');
 
     [currentPulse, currentPulseMsg] = gamrywb.dta.detectPulses(currentT, currentIm, currentMeta);
     assert(currentPulse.ok, currentPulseMsg);
@@ -19,11 +22,14 @@ function test_detectPulses()
         'Current fixture blank gap should include both 20 us zero-current steps.');
     assert(abs(currentPulse.gap.center_s - 1.22e-3) < 1e-12, 'Current fixture normalized gap center should be populated.');
 
-    [voltageMeta, voltageTables] = gamrywb.io.parseChronoDTA(voltageFixture);
-    [voltageCurve, voltageOk, voltageMsg] = gamrywb.data.getMainCurve(voltageTables);
+    [voltageItem, voltageStatus] = gamrywb.dta.loadFile(voltageFixture, "chrono");
+    assert(voltageStatus.ok, voltageStatus.message);
+    voltageMeta = voltageItem.meta;
+    voltageTables = voltageItem.tables;
+    [voltageCurve, voltageOk, voltageMsg] = gamrywb.dta.getMainCurve(voltageTables);
     assert(voltageOk, voltageMsg);
-    voltageT = gamrywb.data.getColumn(voltageCurve, 'T');
-    voltageIm = gamrywb.data.getColumn(voltageCurve, 'Im');
+    voltageT = gamrywb.dta.getColumn(voltageCurve, 'T');
+    voltageIm = gamrywb.dta.getColumn(voltageCurve, 'Im');
     [voltagePulse, voltagePulseMsg] = gamrywb.dta.detectPulses(voltageT, voltageIm, voltageMeta);
     assert(voltagePulse.ok, voltagePulseMsg);
     assert(strcmp(voltagePulse.method, 'metadata-voltage'), 'Voltage-controlled fixture should use metadata-voltage detection.');

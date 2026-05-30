@@ -13,5 +13,8 @@ function item = makeChronoFixtureItem(filename, itemName)
     item = struct();
     item.filepath = fixture;
     item.name = itemName;
-    [item.meta, item.tables] = gamrywb.io.parseChronoDTA(fixture);
+    [loadedItem, status] = gamrywb.dta.loadFile(fixture, "chrono");
+    assert(status.ok, status.message);
+    item.meta = loadedItem.meta;
+    item.tables = loadedItem.tables;
 end

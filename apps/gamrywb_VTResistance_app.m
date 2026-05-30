@@ -611,10 +611,10 @@ function A = computeResistance(item, opts)
         return;
     end
 
-    t = gamrywb.data.getColumn(curve, 'T');
-    Vf = gamrywb.data.getColumn(curve, 'Vf');
-    Im = gamrywb.data.getColumn(curve, 'Im');
-    pt = gamrywb.data.getColumn(curve, 'Pt');
+    t = gamrywb.dta.getColumn(curve, 'T');
+    Vf = gamrywb.dta.getColumn(curve, 'Vf');
+    Im = gamrywb.dta.getColumn(curve, 'Im');
+    pt = gamrywb.dta.getColumn(curve, 'Pt');
     if isempty(pt)
         pt = (0:numel(t)-1).';
     end
@@ -848,7 +848,7 @@ function [curve, ok, msg] = mainCurve(item)
         ok = true;
         msg = sprintf('Using table: %s', curve.name);
     elseif isfield(item, 'tables')
-        [curve, ok, msg] = gamrywb.data.getMainCurve(item.tables);
+        [curve, ok, msg] = gamrywb.dta.getMainCurve(item.tables);
     else
         curve = struct();
         ok = false;
