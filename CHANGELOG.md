@@ -36,6 +36,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Current architecture, API, data-model, validation, and roadmap docs describe the three reusable library surfaces plus single-file app ownership.
 - `gamrywb.data.addFilesToSession` now treats empty file lists as no-ops with empty reports, matching `loadFilesIntoSession`.
 - CIC and VT resistance apps now call the shared interpolation utility instead of keeping duplicated local fallback helpers.
+- DTA facade entry points now share one `expectedKind` normalization helper across single-file, batch, and folder loading.
 - `gamrywb.dta.loadFiles` now treats empty file lists as no-ops with zero-count reports.
 - `gamrywb.dta.loadFiles` now validates `expectedKind` before iterating, so invalid kinds are rejected even for empty batch or empty-folder loads.
 - `gamrywb.dta.findFiles` now normalizes scalar string folders and rejects non-path or missing-folder inputs with `gamrywb:dta:InvalidFolder`.

@@ -29,6 +29,12 @@ function test_dtaFacade()
     assert(isfield(chronoItem, 't') && isfield(chronoItem, 'Vf') && isfield(chronoItem, 'Im'), ...
         'Chrono facade should preserve legacy-compatible vectors.');
 
+    [spacedKindItem, spacedKindStatus] = gamrywb.dta.loadFile(chronoFile, " Chrono ");
+    assert(spacedKindStatus.ok, spacedKindStatus.message);
+    assert(spacedKindStatus.expectedKind == "chrono" && spacedKindStatus.kind == "chrono", ...
+        'DTA facade should normalize expected kind case and whitespace consistently.');
+    assert(spacedKindItem.type == "chrono", 'Normalized expected kind should load the chrono item.');
+
     [eisItem, eisStatus] = gamrywb.dta.loadFile(eisFile);
     assert(eisStatus.ok, eisStatus.message);
     assert(eisStatus.kind == "eis", 'Auto-loaded EIS status kind should be eis.');
@@ -72,6 +78,10 @@ function test_dtaFacade()
         'Empty DTA batch report counts should be zero.');
     assert(isempty(emptyReport.loaded) && isempty(emptyReport.failed) && isempty(emptyReport.statuses), ...
         'Empty DTA batch report should have no loaded, failed, or status entries.');
+    [blankKindItems, blankKindReport] = gamrywb.dta.loadFiles([], "");
+    assert(isempty(blankKindItems), 'Blank expected kind should default to auto for empty DTA batch loads.');
+    assert(blankKindReport.nRequested == 0 && blankKindReport.nLoaded == 0 && blankKindReport.nFailed == 0, ...
+        'Blank expected kind should preserve empty DTA batch no-op report counts.');
     assertInvalidExpectedKind(@() gamrywb.dta.loadFiles([], "bad"));
 
     [folderItems, folderReport] = gamrywb.dta.loadFolder(demoDir, "auto");

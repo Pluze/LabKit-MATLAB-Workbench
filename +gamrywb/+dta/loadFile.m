@@ -1,7 +1,7 @@
 function [item, status] = loadFile(filepath, expectedKind, opts)
 %LOADFILE Load one supported DTA file without GUI side effects.
 
-    if nargin < 2 || strlength(string(expectedKind)) == 0
+    if nargin < 2
         expectedKind = "auto";
     end
     if nargin < 3
@@ -9,7 +9,7 @@ function [item, status] = loadFile(filepath, expectedKind, opts)
     end
 
     filepath = normalizeFilepath(filepath);
-    expectedKind = normalizeKind(expectedKind);
+    expectedKind = gamrywb.dta.normalizeExpectedKind(expectedKind);
     item = struct([]);
     status = makeStatus(filepath, "unknown", expectedKind, "");
 
@@ -40,19 +40,6 @@ function filepath = normalizeFilepath(filepath)
         error('gamrywb:dta:InvalidFilepath', 'Filepath must be a character vector or scalar string.');
     end
     filepath = char(filepath);
-end
-
-function kind = normalizeKind(kind)
-    if ~(ischar(kind) || (isstring(kind) && isscalar(kind)))
-        error('gamrywb:dta:InvalidKind', 'Expected kind must be a character vector or scalar string.');
-    end
-
-    kind = lower(strtrim(string(kind)));
-    allowed = ["auto", "chrono", "eis", "cvct"];
-    if ~any(kind == allowed)
-        error('gamrywb:dta:InvalidKind', ...
-            'Expected kind must be one of: auto, chrono, eis, cvct.');
-    end
 end
 
 function status = makeStatus(filepath, kind, expectedKind, message)

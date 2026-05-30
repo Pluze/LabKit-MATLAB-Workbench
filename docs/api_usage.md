@@ -51,6 +51,7 @@ Supported expected kinds:
 "cvct"
 ```
 
+Expected kinds are normalized consistently across `loadFile`, `loadFiles`, and `loadFolder`: surrounding whitespace is trimmed, case is ignored, and a blank string defaults to `"auto"`.
 Invalid expected kinds are programmer errors and raise `gamrywb:dta:InvalidKind` before loading starts, including empty batch and empty-folder loads.
 
 Batch loading:

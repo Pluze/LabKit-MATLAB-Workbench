@@ -67,7 +67,7 @@ Parser changes:
 - chrono T/Vf/Im/Pt interpretation, AREA, SAMPLETIME, ISTEP/VSTEP/TSTEP metadata
 - EIS ZCURVE extraction and all supported axis values
 - CV/CT SCANRATE conversion, CURVE discovery, headers, units, and numeric parsing
-- DTA facade recursive discovery, type detection, expected-kind mismatch status, missing-file status, and GUI-free batch/folder loading reports
+- DTA facade recursive discovery, type detection, expected-kind normalization, expected-kind mismatch status, missing-file status, and GUI-free batch/folder loading reports
 
 Pulse changes:
 
