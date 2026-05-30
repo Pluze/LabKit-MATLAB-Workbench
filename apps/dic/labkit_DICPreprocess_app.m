@@ -29,7 +29,9 @@ function varargout = labkit_DICPreprocess_app(varargin)
     S.maskCurveLine = [];
     S.maskAnchorLine = [];
     S.maskDragIndex = [];
-    S.maskMode = "Add anchors";
+    S.maskBoundaryStyle = "Curve";
+    S.maskEditActive = false;
+    S.maskHistory = struct('maskImage', {}, 'maskPoints', {}, 'description', {});
     S.history = struct('reference', {}, 'moving', {}, 'aligned', {}, ...
         'cropReference', {}, 'cropMoving', {}, 'maskImage', {}, ...
         'maskPoints', {}, 'description', {});
@@ -47,7 +49,7 @@ function varargout = labkit_DICPreprocess_app(varargin)
     layFA = ui.filesAnalysisGrid;
     laySR = ui.summaryResultsGrid;
     layLog = ui.logGrid;
-    layFA.RowHeight = {240, 6, 210, 6, 210, 6, 170};
+    layFA.RowHeight = {240, 6, 210, 6, 330, 6, 170};
     laySR.RowHeight = {150, 6, '1x'};
 
     filePanel = labkit.ui.createPanelGrid(layFA, 'Images', 1, [4 2], ...
@@ -122,8 +124,8 @@ function varargout = labkit_DICPreprocess_app(varargin)
         'ButtonPushedFcn', @onResetToOriginals);
     btnResetCurrent.Layout.Row = 6;
     btnResetCurrent.Layout.Column = [1 2];
-    maskPanel = labkit.ui.createPanelGrid(layFA, 'Mask ROI', 5, [5 2], ...
-        struct('rowHeight', {{'fit', 'fit', 'fit', 'fit', 'fit'}}, ...
+    maskPanel = labkit.ui.createPanelGrid(layFA, 'Mask ROI', 5, [7 2], ...
+        struct('rowHeight', {{'fit', 'fit', 'fit', 'fit', 'fit', 'fit', 'fit'}}, ...
         'columnWidth', {{'1x', '1x'}}));
     maskGrid = maskPanel.grid;
 
@@ -131,39 +133,53 @@ function varargout = labkit_DICPreprocess_app(varargin)
         'ButtonPushedFcn', @onStartMaskEdit);
     btnStartMask.Layout.Row = 1;
     btnStartMask.Layout.Column = [1 2];
-    btnAddMask = uibutton(maskGrid, 'Text', 'Add point', ...
-        'Enable', 'off', ...
-        'ButtonPushedFcn', @(~,~) setMaskMode('Add anchors'));
-    btnAddMask.Layout.Row = 2;
-    btnAddMask.Layout.Column = 1;
-    btnMoveMask = uibutton(maskGrid, 'Text', 'Move point', ...
-        'Enable', 'off', ...
-        'ButtonPushedFcn', @(~,~) setMaskMode('Move anchors'));
-    btnMoveMask.Layout.Row = 2;
-    btnMoveMask.Layout.Column = 2;
-    btnDeleteMask = uibutton(maskGrid, 'Text', 'Delete point', ...
-        'Enable', 'off', ...
-        'ButtonPushedFcn', @(~,~) setMaskMode('Delete anchors'));
-    btnDeleteMask.Layout.Row = 3;
-    btnDeleteMask.Layout.Column = 1;
+    [lblBoundaryStyle, ddBoundaryStyle] = labkit.ui.createLabeledDropdown(maskGrid, 'Boundary:', ...
+        'Items', {'Curve', 'Straight lines'}, ...
+        'Value', 'Curve', ...
+        'ValueChangedFcn', @onBoundaryStyleChanged);
+    lblBoundaryStyle.Layout.Row = 2;
+    lblBoundaryStyle.Layout.Column = 1;
+    ddBoundaryStyle.Layout.Row = 2;
+    ddBoundaryStyle.Layout.Column = 2;
+    ddBoundaryStyle.Enable = 'off';
     btnPreviewMask = uibutton(maskGrid, 'Text', 'Preview ROI mask', ...
         'Enable', 'off', ...
         'ButtonPushedFcn', @onPreviewMaskRoi);
     btnPreviewMask.Layout.Row = 3;
-    btnPreviewMask.Layout.Column = 2;
+    btnPreviewMask.Layout.Column = 1;
+    btnUnionMask = uibutton(maskGrid, 'Text', 'Add to mask', ...
+        'Enable', 'off', ...
+        'ButtonPushedFcn', @onAddBoundaryToMask);
+    btnUnionMask.Layout.Row = 3;
+    btnUnionMask.Layout.Column = 2;
+    btnSubtractMask = uibutton(maskGrid, 'Text', 'Subtract from mask', ...
+        'Enable', 'off', ...
+        'ButtonPushedFcn', @onSubtractBoundaryFromMask);
+    btnSubtractMask.Layout.Row = 4;
+    btnSubtractMask.Layout.Column = 1;
     btnUndoMask = uibutton(maskGrid, 'Text', 'Undo point', ...
         'Enable', 'off', ...
         'ButtonPushedFcn', @onUndoMaskAnchor);
     btnUndoMask.Layout.Row = 4;
-    btnUndoMask.Layout.Column = 1;
-    btnClearMask = uibutton(maskGrid, 'Text', 'Clear ROI', ...
+    btnUndoMask.Layout.Column = 2;
+    btnUndoMaskEdit = uibutton(maskGrid, 'Text', 'Undo mask edit', ...
         'Enable', 'off', ...
-        'ButtonPushedFcn', @onClearMaskRoi);
-    btnClearMask.Layout.Row = 4;
-    btnClearMask.Layout.Column = 2;
+        'ButtonPushedFcn', @onUndoMaskEdit);
+    btnUndoMaskEdit.Layout.Row = 5;
+    btnUndoMaskEdit.Layout.Column = 1;
+    btnClearBoundary = uibutton(maskGrid, 'Text', 'Clear boundary', ...
+        'Enable', 'off', ...
+        'ButtonPushedFcn', @onClearMaskBoundary);
+    btnClearBoundary.Layout.Row = 5;
+    btnClearBoundary.Layout.Column = 2;
+    btnClearMask = uibutton(maskGrid, 'Text', 'Clear mask', ...
+        'Enable', 'off', ...
+        'ButtonPushedFcn', @onClearMaskCanvas);
+    btnClearMask.Layout.Row = 6;
+    btnClearMask.Layout.Column = [1 2];
     btnSaveMask = uibutton(maskGrid, 'Text', 'Save ROI mask', ...
         'ButtonPushedFcn', @onSaveMask);
-    btnSaveMask.Layout.Row = 5;
+    btnSaveMask.Layout.Row = 7;
     btnSaveMask.Layout.Column = [1 2];
 
     notePanel = labkit.ui.createPanelGrid(layFA, 'Workflow Notes', 7, [1 1], ...
@@ -173,7 +189,7 @@ function varargout = labkit_DICPreprocess_app(varargin)
         '1. Load a reference image and a moving image.', ...
         '2. Align or crop the current working pair in any order; each apply step can be undone.', ...
         '3. False-color preview compares the current pair even before alignment.', ...
-        '4. Draw a mask ROI with editable anchors and spline fitting, then save a white-inside / black-outside mask.'};
+        '4. Draw curve or straight-line ROI boundaries, add/subtract them on the mask canvas, then save the mask.'};
 
     txtSummary = uitextarea(laySR, 'Editable', 'off');
     txtSummary.Layout.Row = 1;
@@ -440,6 +456,8 @@ function varargout = labkit_DICPreprocess_app(varargin)
         S.maskImage = [];
         S.maskPoints = [];
         S.maskDragIndex = [];
+        S.maskHistory = S.maskHistory([]);
+        S.maskBoundaryStyle = string(ddBoundaryStyle.Value);
         S.maskCurveLine = line(ui.topAxes, NaN, NaN, ...
             'Color', [0 0.45 0.95], ...
             'LineWidth', 1.5, ...
@@ -451,23 +469,18 @@ function varargout = labkit_DICPreprocess_app(varargin)
             'Color', [1 0.85 0], ...
             'MarkerFaceColor', [0 0.45 0.95], ...
             'HitTest', 'off');
-        setMaskMode('Add anchors');
-        setMaskEditControls(true);
-        addLog('Started spline mask ROI. Add, move, or delete anchors; scroll wheel zoom remains available on the preview.');
-        txtDetails.Value = {'ROI edit started. Use Add point, Move point, Delete point, then Preview ROI mask. Scroll wheel zoom remains available.'};
-    end
-
-    function setMaskMode(mode)
-        S.maskMode = string(mode);
-        fig.WindowButtonMotionFcn = '';
-        fig.WindowButtonUpFcn = '';
-        S.maskDragIndex = [];
-
         enableImageNavigation(ui.topAxes);
         ui.topAxes.ButtonDownFcn = @onMaskAxesClicked;
-        txtDetails.Value = {sprintf('Mask mode: %s. Current anchors: %d. Scroll wheel zoom remains enabled.', ...
-            char(S.maskMode), size(S.maskPoints, 1))};
-        updateMaskModeButtons();
+        setMaskEditControls(true);
+        addLog('Started mask ROI canvas. Add/insert, move, or delete anchors; add/subtract boundaries on the mask canvas.');
+        txtDetails.Value = {'ROI edit started. Double-click blank space to add/insert points, drag points to move them, double-click points to delete them.'};
+        updateMaskEditControls();
+    end
+
+    function onBoundaryStyleChanged(~, ~)
+        S.maskBoundaryStyle = string(ddBoundaryStyle.Value);
+        updateMaskCurveGraphics();
+        txtDetails.Value = {sprintf('Boundary style: %s.', char(S.maskBoundaryStyle))};
     end
 
     function onMaskAxesClicked(~, ~)
@@ -478,24 +491,22 @@ function varargout = labkit_DICPreprocess_app(varargin)
             return;
         end
 
-        switch S.maskMode
-            case "Add anchors"
-                S.maskPoints(end+1, :) = [x y];
-                updateMaskDraft();
-            case "Move anchors"
-                idx = nearestMaskAnchor(x, y);
-                if ~isempty(idx)
-                    S.maskDragIndex = idx;
-                    updateDraggedMaskAnchor();
-                    fig.WindowButtonMotionFcn = @onMaskAnchorDragged;
-                    fig.WindowButtonUpFcn = @onMaskAnchorReleased;
-                end
-            case "Delete anchors"
-                idx = nearestMaskAnchor(x, y);
-                if ~isempty(idx)
-                    S.maskPoints(idx, :) = [];
-                    updateMaskDraft();
-                end
+        idx = nearestMaskAnchor(x, y);
+        if strcmp(fig.SelectionType, 'open')
+            if ~isempty(idx)
+                S.maskPoints(idx, :) = [];
+            else
+                S.maskPoints = addOrInsertMaskAnchor(S.maskPoints, [x y], ui.topAxes);
+            end
+            updateMaskDraft();
+            return;
+        end
+
+        if ~isempty(idx)
+            S.maskDragIndex = idx;
+            updateDraggedMaskAnchor();
+            fig.WindowButtonMotionFcn = @onMaskAnchorDragged;
+            fig.WindowButtonUpFcn = @onMaskAnchorReleased;
         end
     end
 
@@ -529,21 +540,30 @@ function varargout = labkit_DICPreprocess_app(varargin)
         updateMaskDraft();
     end
 
-    function onClearMaskRoi(~, ~)
-        S.maskImage = [];
+    function onClearMaskBoundary(~, ~)
         S.maskPoints = [];
         updateMaskDraft();
-        showImage(ui.bottomAxes, zeros(size(S.currentReferenceImage, 1), size(S.currentReferenceImage, 2), 3, 'uint8'), 'ROI mask preview');
-        addLog('Cleared mask ROI anchors.');
+        addLog('Cleared mask ROI boundary anchors.');
+    end
+
+    function onClearMaskCanvas(~, ~)
+        if isempty(S.maskImage)
+            return;
+        end
+        pushMaskHistory('clear mask canvas');
+        S.maskImage = [];
+        showMaskCanvas('ROI mask canvas');
+        addLog('Cleared ROI mask canvas.');
+        refreshSummary();
     end
 
     function updateMaskDraft()
         updateMaskCurveGraphics();
-        S.maskImage = [];
+        updateMaskEditControls();
         if size(S.maskPoints, 1) >= 3
-            txtDetails.Value = {sprintf('Mask ROI anchors: %d. Click Preview ROI mask to update the fitted mask.', size(S.maskPoints, 1))};
+            txtDetails.Value = {sprintf('Mask ROI anchors: %d. Preview, Add to mask, or Subtract from mask.', size(S.maskPoints, 1))};
         else
-            txtDetails.Value = {sprintf('Mask ROI anchors: %d. Need at least 3 anchors to form a closed spline mask.', size(S.maskPoints, 1))};
+            txtDetails.Value = {sprintf('Mask ROI anchors: %d. Need at least 3 anchors to form a closed ROI boundary.', size(S.maskPoints, 1))};
         end
         refreshSummary();
     end
@@ -556,7 +576,7 @@ function varargout = labkit_DICPreprocess_app(varargin)
         if isempty(S.maskCurveLine) || ~isvalid(S.maskCurveLine)
             return;
         end
-        curve = fittedClosedCurve(S.maskPoints, size(S.currentReferenceImage));
+        curve = maskBoundaryCurve(S.maskPoints, size(S.currentReferenceImage), S.maskBoundaryStyle);
         if isempty(curve)
             S.maskCurveLine.XData = NaN;
             S.maskCurveLine.YData = NaN;
@@ -583,40 +603,69 @@ function varargout = labkit_DICPreprocess_app(varargin)
     end
 
     function setMaskEditControls(enabled)
+        S.maskEditActive = enabled;
         state = ternary(enabled, 'on', 'off');
-        btnAddMask.Enable = state;
-        btnMoveMask.Enable = state;
-        btnDeleteMask.Enable = state;
-        btnPreviewMask.Enable = state;
-        btnUndoMask.Enable = state;
-        btnClearMask.Enable = state;
-        if ~enabled
-            clearMaskModeButtonHighlights();
-        end
+        ddBoundaryStyle.Enable = state;
+        updateMaskEditControls();
     end
 
-    function updateMaskModeButtons()
-        clearMaskModeButtonHighlights();
-        activeColor = [0.82 0.91 1.00];
-        switch S.maskMode
-            case "Add anchors"
-                btnAddMask.BackgroundColor = activeColor;
-            case "Move anchors"
-                btnMoveMask.BackgroundColor = activeColor;
-            case "Delete anchors"
-                btnDeleteMask.BackgroundColor = activeColor;
-        end
-    end
-
-    function clearMaskModeButtonHighlights()
-        defaultColor = [0.94 0.94 0.94];
-        btnAddMask.BackgroundColor = defaultColor;
-        btnMoveMask.BackgroundColor = defaultColor;
-        btnDeleteMask.BackgroundColor = defaultColor;
+    function updateMaskEditControls()
+        editActive = S.maskEditActive;
+        hasPoints = ~isempty(S.maskPoints);
+        canBoundary = size(S.maskPoints, 1) >= 3;
+        canUndoCanvas = ~isempty(S.maskHistory);
+        canClearCanvas = ~isempty(S.maskImage);
+        btnPreviewMask.Enable = ternary(editActive && (canBoundary || canClearCanvas), 'on', 'off');
+        btnUnionMask.Enable = ternary(editActive && canBoundary, 'on', 'off');
+        btnSubtractMask.Enable = ternary(editActive && canBoundary, 'on', 'off');
+        btnUndoMask.Enable = ternary(editActive && hasPoints, 'on', 'off');
+        btnClearBoundary.Enable = ternary(editActive && hasPoints, 'on', 'off');
+        btnUndoMaskEdit.Enable = ternary(editActive && canUndoCanvas, 'on', 'off');
+        btnClearMask.Enable = ternary(editActive && canClearCanvas, 'on', 'off');
     end
 
     function onPreviewMaskRoi(~, ~)
         previewMaskImage(true);
+    end
+
+    function onAddBoundaryToMask(~, ~)
+        [boundaryMask, ok] = currentBoundaryMask(true);
+        if ~ok
+            return;
+        end
+        pushMaskHistory('add boundary to mask');
+        S.maskImage = max(maskCanvas(), boundaryMask);
+        showMaskCanvas('ROI mask canvas');
+        addLog(sprintf('Added %s boundary to ROI mask canvas.', char(S.maskBoundaryStyle)));
+        refreshSummary();
+    end
+
+    function onSubtractBoundaryFromMask(~, ~)
+        [boundaryMask, ok] = currentBoundaryMask(true);
+        if ~ok
+            return;
+        end
+        pushMaskHistory('subtract boundary from mask');
+        canvas = maskCanvas();
+        canvas(boundaryMask > 0) = 0;
+        S.maskImage = canvas;
+        showMaskCanvas('ROI mask canvas');
+        addLog(sprintf('Subtracted %s boundary from ROI mask canvas.', char(S.maskBoundaryStyle)));
+        refreshSummary();
+    end
+
+    function onUndoMaskEdit(~, ~)
+        if isempty(S.maskHistory)
+            return;
+        end
+        snapshot = S.maskHistory(end);
+        S.maskHistory(end) = [];
+        S.maskImage = snapshot.maskImage;
+        S.maskPoints = snapshot.maskPoints;
+        updateMaskCurveGraphics();
+        showMaskCanvas('ROI mask canvas');
+        addLog(sprintf('Undid mask edit: %s.', snapshot.description));
+        refreshSummary();
     end
 
     function onPreviewScrollZoom(~, evt)
@@ -650,9 +699,13 @@ function varargout = labkit_DICPreprocess_app(varargin)
     end
 
     function onSaveMask(~, ~)
-        if isempty(S.maskImage) && ~previewMaskImage(false)
-            uialert(fig, 'Draw a mask ROI before saving the binary mask.', 'Save ROI mask');
-            return;
+        if isempty(S.maskImage)
+            [boundaryMask, ok] = currentBoundaryMask(false);
+            if ~ok
+                uialert(fig, 'Draw a mask ROI or add a boundary to the mask canvas before saving.', 'Save ROI mask');
+                return;
+            end
+            S.maskImage = boundaryMask;
         end
 
         [folder, name] = fileparts(char(S.referencePath));
@@ -672,21 +725,67 @@ function varargout = labkit_DICPreprocess_app(varargin)
     end
 
     function ok = previewMaskImage(showAlert)
+        [boundaryMask, ok] = currentBoundaryMask(showAlert);
+        if ok
+            ddPreview.Value = 'ROI mask';
+            showImage(ui.bottomAxes, maskRgb(boundaryMask), 'ROI boundary preview');
+            updateMaskCurveGraphics();
+            addLog(sprintf('Previewed %s ROI boundary with %d anchors.', ...
+                char(S.maskBoundaryStyle), size(S.maskPoints, 1)));
+            txtDetails.Value = {'Boundary preview updated. Add it to the mask canvas, subtract it, or keep editing anchors.'};
+            refreshSummary();
+            return;
+        end
+        if ~isempty(S.maskImage)
+            ddPreview.Value = 'ROI mask';
+            showMaskCanvas('ROI mask canvas');
+            ok = true;
+        end
+    end
+
+    function [boundaryMask, ok] = currentBoundaryMask(showAlert)
         ok = false;
+        boundaryMask = [];
         if size(S.maskPoints, 1) < 3
             if showAlert
                 uialert(fig, 'Mask ROI needs at least three anchors.', 'Not enough anchors');
             end
             return;
         end
-        S.maskImage = fittedMaskImage(S.maskPoints, size(S.currentReferenceImage));
-        ddPreview.Value = 'ROI mask';
-        showImage(ui.bottomAxes, maskRgb(S.maskImage), 'ROI mask');
-        updateMaskCurveGraphics();
-        addLog(sprintf('Previewed spline ROI mask with %d anchors.', size(S.maskPoints, 1)));
-        txtDetails.Value = {'ROI mask preview updated. You can still move/delete anchors and preview again before saving.'};
-        refreshSummary();
+        boundaryMask = boundaryMaskImage(S.maskPoints, size(S.currentReferenceImage), S.maskBoundaryStyle);
         ok = true;
+    end
+
+    function canvas = maskCanvas()
+        if isempty(S.maskImage)
+            canvas = zeros(size(S.currentReferenceImage, 1), size(S.currentReferenceImage, 2), 'uint8');
+        else
+            canvas = S.maskImage;
+        end
+    end
+
+    function showMaskCanvas(titleText)
+        if isempty(S.maskImage)
+            mask = zeros(size(S.currentReferenceImage, 1), size(S.currentReferenceImage, 2), 'uint8');
+        else
+            mask = S.maskImage;
+        end
+        ddPreview.Value = 'ROI mask';
+        showImage(ui.bottomAxes, maskRgb(mask), titleText);
+        updateMaskEditControls();
+    end
+
+    function pushMaskHistory(description)
+        snapshot = struct( ...
+            'maskImage', S.maskImage, ...
+            'maskPoints', S.maskPoints, ...
+            'description', description);
+        S.maskHistory(end+1) = snapshot;
+        maxUndoSteps = 20;
+        if numel(S.maskHistory) > maxUndoSteps
+            S.maskHistory = S.maskHistory((end - maxUndoSteps + 1):end);
+        end
+        updateMaskEditControls();
     end
 
     function refreshPreview()
@@ -816,6 +915,7 @@ function varargout = labkit_DICPreprocess_app(varargin)
         S.cropRect = [];
         S.maskImage = [];
         S.maskPoints = [];
+        S.maskHistory = S.maskHistory([]);
         S.history = S.history([]);
         clearCropRoi();
         clearMaskRoi();
@@ -854,6 +954,7 @@ function varargout = labkit_DICPreprocess_app(varargin)
     function clearOperationDerivedState()
         S.maskImage = [];
         S.maskPoints = [];
+        S.maskHistory = S.maskHistory([]);
         clearMaskRoi();
     end
 
@@ -960,10 +1061,10 @@ function rect = squareRectInsideImage(roi, imageSize)
     rect = [xSq, ySq, side, side];
 end
 
-function mask = fittedMaskImage(points, imageSize)
+function mask = boundaryMaskImage(points, imageSize, boundaryStyle)
     H = imageSize(1);
     W = imageSize(2);
-    curve = fittedClosedCurve(points, imageSize);
+    curve = maskBoundaryCurve(points, imageSize, boundaryStyle);
     if isempty(curve)
         mask = uint8(false(H, W));
         return;
@@ -971,9 +1072,15 @@ function mask = fittedMaskImage(points, imageSize)
     mask = uint8(poly2mask(curve(:, 1), curve(:, 2), H, W)) .* uint8(255);
 end
 
-function curve = fittedClosedCurve(points, imageSize)
+function curve = maskBoundaryCurve(points, imageSize, boundaryStyle)
     if size(points, 1) < 3
         curve = [];
+        return;
+    end
+    if strcmp(string(boundaryStyle), "Straight lines")
+        curve = [points; points(1, :)];
+        curve(:, 1) = min(max(curve(:, 1), 0.5), imageSize(2) + 0.5);
+        curve(:, 2) = min(max(curve(:, 2), 0.5), imageSize(1) + 0.5);
         return;
     end
 
@@ -1007,6 +1114,61 @@ end
 
 function idx = wrapIndex(idx, n)
     idx = mod(idx - 1, n) + 1;
+end
+
+function points = addOrInsertMaskAnchor(points, newPoint, ax)
+    n = size(points, 1);
+    if n < 2
+        points(end+1, :) = newPoint;
+        return;
+    end
+
+    [segmentIdx, distance] = nearestMaskSegment(points, newPoint);
+    xSpan = max(1, diff(ax.XLim));
+    ySpan = max(1, diff(ax.YLim));
+    threshold = 0.035 * max(xSpan, ySpan);
+    if isempty(segmentIdx) || distance > threshold
+        points(end+1, :) = newPoint;
+        return;
+    end
+
+    insertAfter = segmentIdx;
+    points = [points(1:insertAfter, :); newPoint; points((insertAfter + 1):end, :)];
+end
+
+function [segmentIdx, bestDistance] = nearestMaskSegment(points, point)
+    segmentIdx = [];
+    bestDistance = inf;
+    n = size(points, 1);
+    if n < 2
+        return;
+    end
+    segmentCount = n - 1;
+    if n >= 3
+        segmentCount = n;
+    end
+    for k = 1:segmentCount
+        a = points(k, :);
+        b = points(wrapIndex(k + 1, n), :);
+        distance = pointSegmentDistance(point, a, b);
+        if distance < bestDistance
+            bestDistance = distance;
+            segmentIdx = k;
+        end
+    end
+end
+
+function distance = pointSegmentDistance(point, a, b)
+    ab = b - a;
+    denom = dot(ab, ab);
+    if denom <= eps
+        distance = hypot(point(1) - a(1), point(2) - a(2));
+        return;
+    end
+    t = dot(point - a, ab) / denom;
+    t = min(max(t, 0), 1);
+    projection = a + t .* ab;
+    distance = hypot(point(1) - projection(1), point(2) - projection(2));
 end
 
 function tf = insideImageBounds(x, y, imageSize)
