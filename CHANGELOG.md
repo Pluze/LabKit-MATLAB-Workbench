@@ -14,6 +14,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Documentation and architecture tests now guard against reintroducing public `+io`, `+data`, `+analysis`, `+util`, app-helper packages, or legacy wrapper entry points as app-facing APIs.
 - Template programs now model the intended split: GUI-only, DTA-only, or GUI plus DTA, without exposing internal helper packages.
 - `startup_labkit` now adds nested app category folders so app entry points resolve without changing into app directories.
+- Current app GUIs now share the same resizable tabbed workbench shell: scrollable control tabs on the left and plot/output content on the right.
 
 ### Removed
 

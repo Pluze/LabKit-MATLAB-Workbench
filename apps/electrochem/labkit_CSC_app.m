@@ -42,34 +42,28 @@ function varargout = labkit_CSC_app(varargin)
     S.curves = struct('name',{},'headers',{},'units',{},'data',{},'numericMask',{});
     S.scanRate = NaN; % V/s
     S.currentCurve = 1;
-    S.isDragging = false;
 
     %% ===================== Figure & Layout =====================
-    fig = uifigure('Name','Gamry DTA GUI (literature CSC)','Position',[50 30 1580 950]);
-
-    main = uigridlayout(fig,[1 3]);
-    main.ColumnWidth = {390,6,'1x'};
-    main.RowHeight = {'1x'};
-    main.Padding = [10 10 10 10];
-    main.ColumnSpacing = 0;
-
-    sep = uipanel(main,'BackgroundColor',[0.75 0.75 0.75],'BorderType','none');
-    sep.Layout.Row = 1;
-    sep.Layout.Column = 2;
-    sep.ButtonDownFcn = @startDrag;
-
-    %% LEFT: controls
-    leftPanel = uipanel(main,'Title','Controls','Scrollable','on');
-    leftPanel.Layout.Row = 1;
-    leftPanel.Layout.Column = 1;
-
-    left = uigridlayout(leftPanel,[4 1]);
-    left.RowHeight = {'fit','fit','fit','1x'};
-    left.RowSpacing = 10;
-    left.Padding = [8 8 8 8];
+    shellLabels = struct( ...
+        'controlsPanel', 'Controls', ...
+        'filesAnalysisTab', 'Files + Analysis', ...
+        'summaryResultsTab', 'Summary + Results', ...
+        'logTab', 'Log', ...
+        'plotsPanel', 'Plots', ...
+        'topPlot', 'Top Plot', ...
+        'bottomPlot', 'Bottom Plot');
+    ui = labkit.ui.createTabbedDualPlotShell( ...
+        'Gamry DTA GUI (literature CSC)', ...
+        [50 30 1580 950], ...
+        390, ...
+        shellLabels);
+    fig = ui.fig;
+    layFA = ui.filesAnalysisGrid;
+    laySR = ui.summaryResultsGrid;
+    layLog = ui.logGrid;
 
     % -------- File / Curve --------
-    pFile = uipanel(left,'Title','File / Curve');
+    pFile = uipanel(layFA,'Title','File / Curve');
     pFile.Layout.Row = 1;
     gf = uigridlayout(pFile,[5 2]);
     gf.RowHeight = {'fit','fit','fit','fit','fit'};
@@ -98,7 +92,7 @@ function varargout = labkit_CSC_app(varargin)
     btnAuto.Layout.Row = 5; btnAuto.Layout.Column = [1 2];
 
     % -------- Actions --------
-    pActions = uipanel(left,'Title','Actions');
+    pActions = uipanel(layFA,'Title','Actions');
     pActions.Layout.Row = 2;
     ga = uigridlayout(pActions,[2 2]);
     ga.RowHeight = {'fit','fit'};
@@ -116,8 +110,8 @@ function varargout = labkit_CSC_app(varargin)
     btnClear.Layout.Row = 2; btnClear.Layout.Column = 2;
 
     % -------- Comparison / CSC --------
-    pComp = uipanel(left,'Title','CSC / Comparison');
-    pComp.Layout.Row = 3;
+    pComp = uipanel(laySR,'Title','CSC / Comparison');
+    pComp.Layout.Row = 1;
     gc = uigridlayout(pComp,[8 2]);
     gc.RowHeight = repmat({'fit'},1,8);
     gc.ColumnWidth = {'fit','1x'};
@@ -161,26 +155,12 @@ function varargout = labkit_CSC_app(varargin)
     lblStatus.FontWeight = 'bold';
 
     % -------- Log --------
-    pLog = uipanel(left,'Title','Log Output');
-    pLog.Layout.Row = 4;
-    glog = uigridlayout(pLog,[1 1]);
-    glog.Padding = [8 8 8 8];
-    txtLog = uitextarea(glog,'Editable','off');
+    logUi = labkit.ui.createLogPanel(layLog, 1, {'GUI started.'});
+    txtLog = logUi.textArea;
     txtLog.Value = {'GUI started.'};
 
-    %% RIGHT: plots
-    rightPanel = uipanel(main,'Title','Plots');
-    rightPanel.Layout.Row = 1;
-    rightPanel.Layout.Column = 3;
-
-    right = uigridlayout(rightPanel,[4 1]);
-    right.RowHeight = {'fit','1x','fit','1x'};
-    right.RowSpacing = 10;
-    right.Padding = [8 8 8 8];
-
     % -------- Top controls --------
-    pTopCtl = uipanel(right,'Title','Top Plot');
-    pTopCtl.Layout.Row = 1;
+    pTopCtl = ui.topControlsPanel;
     gt = uigridlayout(pTopCtl,[1 6]);
     gt.ColumnWidth = {'fit','1x','fit','1x','fit','fit'};
     gt.RowHeight = {'fit'};
@@ -201,15 +181,13 @@ function varargout = labkit_CSC_app(varargin)
     cbTopHold = uicheckbox(topOptions,'Text','Hold','Value',false);
     cbTopTrim = uicheckbox(topOptions,'Text','Show Trim','Value',true,'ValueChangedFcn',@(~,~) refreshCompare());
 
-    axTop = uiaxes(right);
-    axTop.Layout.Row = 2;
+    axTop = ui.topAxes;
     title(axTop,'Top Plot');
     xlabel(axTop,'X');
     ylabel(axTop,'Y');
 
     % -------- Bottom controls --------
-    pBotCtl = uipanel(right,'Title','Bottom Plot');
-    pBotCtl.Layout.Row = 3;
+    pBotCtl = ui.bottomControlsPanel;
     gb = uigridlayout(pBotCtl,[1 6]);
     gb.ColumnWidth = {'fit','1x','fit','1x','fit','fit'};
     gb.RowHeight = {'fit'};
@@ -230,8 +208,7 @@ function varargout = labkit_CSC_app(varargin)
     cbBotHold = uicheckbox(botOptions,'Text','Hold','Value',false);
     cbBotTrim = uicheckbox(botOptions,'Text','Show Trim','Value',true,'ValueChangedFcn',@(~,~) refreshCompare());
 
-    axBottom = uiaxes(right);
-    axBottom.Layout.Row = 4;
+    axBottom = ui.bottomAxes;
     title(axBottom,'Bottom Plot');
     xlabel(axBottom,'X');
     ylabel(axBottom,'Y');
@@ -395,35 +372,6 @@ function varargout = labkit_CSC_app(varargin)
     function refreshAll()
         refreshPlotsOnly();
         refreshCompare();
-    end
-
-    % -------- Draggable divider --------
-    function startDrag(~,~)
-        % Begin tracking horizontal drag on the separator bar
-        S.isDragging = true;
-        fig.WindowButtonMotionFcn = @doDrag;
-        fig.WindowButtonUpFcn = @stopDrag;
-        fig.Pointer = 'leftarrow';
-    end
-
-    function doDrag(~,~)
-        % Resize left panel while dragging; clamp to sensible bounds
-        if ~S.isDragging, return; end
-        cp = fig.CurrentPoint;
-        pad = main.Padding;
-        newW = cp(1) - pad(1);
-        minW = 220;
-        maxW = max(320, fig.Position(3) - 320);
-        newW = min(maxW, max(minW, newW));
-        main.ColumnWidth = {newW,6,'1x'};
-    end
-
-    function stopDrag(~,~)
-        % Stop drag tracking and reset cursor
-        S.isDragging = false;
-        fig.WindowButtonMotionFcn = '';
-        fig.WindowButtonUpFcn = '';
-        fig.Pointer = 'arrow';
     end
 
     function plotTop()

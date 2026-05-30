@@ -40,7 +40,6 @@ function varargout = labkit_CIC_app(varargin)
     S.session = labkit.dta.makeSession('cic_vt');
     S.items = S.session.items; % loaded files + parsed content + analysis
     S.current = [];
-    S.isDragging = false;
 
     %% ===================== Figure & Layout =====================
     shellLabels = struct( ...
@@ -55,10 +54,8 @@ function varargout = labkit_CIC_app(varargin)
         'Gamry CIC GUI (Voltage Transient)', ...
         [40 30 1680 980], ...
         430, ...
-        @startDrag, ...
         shellLabels);
     fig = ui.fig;
-    main = ui.main;
     layFA = ui.filesAnalysisGrid;
     laySR = ui.summaryResultsGrid;
     layLog = ui.logGrid;
@@ -675,32 +672,6 @@ function varargout = labkit_CIC_app(varargin)
             return;
         end
         addLog(['Exported CSV: ' out]);
-    end
-
-    %% ===================== Drag separator =====================
-    function startDrag(~,~)
-        S.isDragging = true;
-        fig.WindowButtonMotionFcn = @doDrag;
-        fig.WindowButtonUpFcn = @stopDrag;
-        fig.Pointer = 'left';
-    end
-
-    function doDrag(~,~)
-        if ~S.isDragging, return; end
-        cp = fig.CurrentPoint;
-        pad = main.Padding;
-        newW = cp(1) - pad(1);
-        minW = 260;
-        maxW = max(420, fig.Position(3) - 380);
-        newW = min(maxW, max(minW, newW));
-        main.ColumnWidth = {newW,6,'1x'};
-    end
-
-    function stopDrag(~,~)
-        S.isDragging = false;
-        fig.WindowButtonMotionFcn = '';
-        fig.WindowButtonUpFcn = '';
-        fig.Pointer = 'arrow';
     end
 
     %% ===================== Logging =====================

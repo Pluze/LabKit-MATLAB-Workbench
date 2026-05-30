@@ -21,7 +21,7 @@ DTA/electrochemistry library:
   app-facing DTA discovery, loading, session, pulse, and parsed table/curve APIs
 
 Scientific-app GUI base library:
-  generic shells, controls, panels, list refresh, logs, result surfaces, and UI state helpers
+  resizable tabbed workbench shells, controls, panels, list refresh, logs, result surfaces, and UI state helpers
 
 Internal helper base:
   parser, item/session, pulse, and other helpers that are not app-facing API
@@ -71,7 +71,7 @@ The reusable library should be understandable as three layers, even though MATLA
 ```text
 Library 1: scientific-app GUI base
   +labkit/+ui
-  reusable shells, panels, controls, display-data helpers, and handle-scoped UI utilities
+  reusable tabbed shells, panels, controls, display-data helpers, and handle-scoped UI utilities
 
 Library 2: Gamry/DTA parsing and loading
   +labkit/+dta discovery, loading, session, pulse, and parsed table/curve facade for app code
@@ -102,6 +102,8 @@ Shared implementation helpers are not app-facing API. Parser-only helpers belong
 
 Reusable UI helpers should build or update generic controls and draw prepared data. Data extraction, parser/session calls, and analysis decisions should stay in the app or DTA layer; for example, apps should call `labkit.dta.getCurveXY` before passing prepared vectors and labels to `labkit.ui.plotXY`. App-specific callback choreography, such as clearing a session, restoring app-specific plot defaults, refreshing experiment summaries, and writing app logs, should stay in the owning app file even when two apps have similar callback order. Domain labels such as DTA-specific open/export button text and app shell tab/panel titles should be passed in from apps rather than hardcoded in the GUI library.
 
+Current apps share the same workbench layout contract: a resizable left control region with scrollable tabs and a right output region for plots or primary content. Simple apps use the one-tab `createTwoPaneShell` variant; CIC, VT resistance, and CSC use the shared tabbed dual-plot variant. App files should not rebuild split-pane layout plumbing or own custom separator drag code.
+
 App code may use selected `labkit.dta.*` helpers for parsed table and curve access, such as `getColumn`, `getMainCurve`, and `getCurveXY`. DTA session operations should go through `labkit.dta.*` so apps do not need to understand lower-level loader callbacks or session internals.
 
 DTA and app-local analysis functions should return status through result structs, for example:
@@ -117,7 +119,7 @@ The GUI decides how to display that status.
 
 - `apps/`: user-facing app category folders and app-specific implementations. Current electrochemistry app bodies live under `apps/electrochem/` as single public app source files, and app-specific workflow helpers are local functions in those files rather than reusable `+labkit` APIs or transitional app-helper packages.
 - `+dta`: GUI-free facade for supported DTA file discovery, family detection, single-file loading, batch loading, folder loading, pulse detection, item construction, parsed table/curve access, session save/load, and app-facing DTA session operations with status/report structs. It keeps parser and DTA-specific implementation helpers private.
-- `+ui`: reusable GUI framework helpers, including generic axes creation/reset, prepared-X/Y plotting, log append and log panel, generic listbox item refresh, multi-file and single-select file-panel, summary row, result table panel, plot-options panel, simple labeled-control, two-pane shell, tabbed dual-plot shell, and top/bottom plot-control construction/state helpers.
+- `+ui`: reusable GUI framework helpers, including the shared resizable tabbed workbench shell, generic axes creation/reset, prepared-X/Y plotting, log append and log panel, generic listbox item refresh, multi-file and single-select file-panel, summary row, result table panel, plot-options panel, simple labeled-control, one-tab two-pane shell, tabbed dual-plot shell, and top/bottom plot-control construction/state helpers.
 - Internal helpers: package-private parser helpers and app-local helper functions. Public `+io`, `+data`, and `+util` packages should not be reintroduced as new-app entry surfaces.
 
 ## Boundaries To Preserve

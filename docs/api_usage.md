@@ -88,8 +88,8 @@ Use `labkit.ui.*` for domain-neutral GUI structure and rendering helpers. Apps p
 Common shell and control helpers:
 
 ```matlab
-ui = labkit.ui.createTwoPaneShell(titleText, position, leftWidth, rightTitle, rowCount, rowHeights, spacing);
-ui = labkit.ui.createTabbedDualPlotShell(titleText, position, leftWidth, startDragFcn, labels);
+ui = labkit.ui.createTwoPaneShell(titleText, position, leftWidth, rightTitle, rightGridSize, rightRowHeights, spacing);
+ui = labkit.ui.createTabbedDualPlotShell(titleText, position, leftWidth, labels);
 
 labkit.ui.createFilePanel(parent, labels, callbacks);
 labkit.ui.createSingleSelectFilePanel(parent, labels, callbacks);
@@ -106,6 +106,8 @@ labkit.ui.appendLog(txtLog, message);
 labkit.ui.refreshListboxItems(lbFiles, names);
 info = labkit.ui.plotXY(ax, x, y, labels, opts);
 ```
+
+The default app shell is a resizable left/right workbench layout: left controls live in scrollable tabs, and the right side is reserved for plots, curves, images, or other primary outputs. `createTwoPaneShell` is the one-tab variant for simple apps; `createTabbedDualPlotShell` is the CIC/VT-style three-tab plus top/bottom-plot variant. Apps should not provide their own separator drag callbacks or rebuild the same shell layout locally.
 
 GUI helpers should not contain experiment names, formulas, thresholds, result columns, parser calls, or export formats.
 
@@ -167,5 +169,7 @@ Define these before adding controls or helpers:
 9. Validation fixture or synthetic test case
 10. GUI shell type and file-selection mode
 ```
+
+Prefer the shared tabbed workbench shell even when the app has only one small control page. This keeps daily app interaction consistent as `apps/<category>/` grows.
 
 Add focused tests for parser/DTA facade behavior, item/result fields, analysis values, export tables, and app entrypoint boundaries. Run `scripts/run_matlab_tests.sh`; add `--gui` when entrypoints, layout construction, callbacks, or GUI helpers change.
