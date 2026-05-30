@@ -2,23 +2,24 @@
 
 MATLAB tools for electrochemistry workflows. Current apps process Gamry DTA files, live under `apps/`, and compose reusable infrastructure under `labkit.ui.*` and `labkit.dta.*`.
 
-## Current Status
+## Current Design
 
-The v1.0 behavior-preserving refactor is complete, and later cleanup narrowed the public package surface.
+The current architecture is the intended direction:
 
-What that means:
+- Scientific analysis, plotting choices, result tables, and exports live in the owning app file.
+- `labkit.ui.*` provides reusable GUI structure: a standard resizable workbench shell, tabs, file/log panels, plot helpers, and generic controls.
+- `labkit.dta.*` provides electrochemistry file-processing utilities: DTA discovery, loading, sessions, pulse detection, and parsed table/curve access.
+- Parser internals, session construction, and pulse implementation details stay private behind the DTA facade.
 
-- Current runtime entry points live under category folders in `apps/`.
-- The old root-level GUI command wrappers and `legacy/` reference directory have been removed.
-- EIS, Chrono overlay, CSC, VT resistance, and CIC are public single-file app implementations.
-- Experiment-specific analysis, plots, result tables, and exports belong to the owning app file.
-- Reusable app-facing `+labkit` code is limited to GUI base helpers and the current DTA data-family API.
-- `labkit` is the generic infrastructure name; Gamry DTA support is the first data/device family under that library.
+## Apps
 
-Deferred beyond v1.0:
-
-- Unified workbench GUI.
-- Stored golden MAT references for every major analysis output.
+| App | Purpose | Input | Output |
+| --- | --- | --- | --- |
+| `labkit_CIC_app` | CIC / voltage-transient metrics | Chrono DTA | Results table and CSV |
+| `labkit_VTResistance_app` | Steady resistance estimate | Chrono DTA | Resistance table and CSV |
+| `labkit_CSC_app` | CV/CT charge and CSC comparison | CV/CT DTA | Plots and comparison fields |
+| `labkit_EIS_app` | EIS overlay and export | EIS ZCURVE DTA | Plot and CSV |
+| `labkit_ChronoOverlay_app` | Chrono voltage/current overlay | Chrono DTA | Overlay plots and CSV |
 
 ## Getting Started
 
@@ -35,8 +36,6 @@ labkit_CSC_app
 labkit_EIS_app
 ```
 
-The old root-level GUI command names are no longer runtime entry points.
-
 ## Running Tests
 
 From a macOS shell:
@@ -45,13 +44,7 @@ From a macOS shell:
 scripts/run_matlab_tests.sh
 ```
 
-Optional noninteractive GUI compatibility checks:
-
-```bash
-scripts/run_matlab_tests.sh --gui
-```
-
-The default runner covers pure functions. The optional GUI mode checks launch/layout/callback compatibility without file dialogs, exports, or manual interaction.
+Interactive GUI workflows are checked manually during app work.
 
 ## Repository Layout
 
@@ -63,7 +56,7 @@ templates/            Copy-only GUI, DTA, and GUI+DTA starter programs
 demo/                 Named DTA fixtures
 tests/                MATLAB tests
 scripts/              Test runner scripts
-docs/                 Architecture, data model, parser, validation, and history docs
+docs/                 Architecture, API, data model, parser, and validation docs
 ```
 
 ## Documentation
@@ -75,7 +68,6 @@ docs/                 Architecture, data model, parser, validation, and history 
 - `docs/data_model.md`: current item/result/session schemas.
 - `docs/file_format_notes.md`: DTA parser assumptions.
 - `docs/validation_protocol.md`: behavior-preservation validation.
-- `docs/refactor_history.md`: concise archived migration history.
 
 ## API Boundary
 

@@ -18,8 +18,4 @@ Default command:
 scripts/run_matlab_tests.sh
 ```
 
-GUI command:
-
-```bash
-scripts/run_matlab_tests.sh --gui
-```
+Optional noninteractive GUI smoke checks can use `scripts/run_matlab_tests.sh --gui` when launch or layout coverage is relevant.

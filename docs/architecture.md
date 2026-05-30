@@ -52,9 +52,7 @@ labkit_EIS_app
 labkit_ChronoOverlay_app
 ```
 
-The app files are package-backed and do not delegate to legacy GUI files.
-
-`startup_labkit` adds the repository root, `apps/`, and normal nested app category folders to the MATLAB path. Root-level original command wrappers and the old `legacy/` GUI directory have been removed, so the old command names no longer resolve by default.
+`startup_labkit` adds the repository root, `apps/`, and normal nested app category folders to the MATLAB path.
 
 ## Package Responsibilities
 
@@ -102,7 +100,7 @@ Shared implementation helpers are not app-facing API. Parser-only helpers belong
 
 Reusable UI helpers should build or update generic controls and draw prepared data. Data extraction, parser/session calls, and analysis decisions should stay in the app or DTA layer; for example, apps should call `labkit.dta.getCurveXY` before passing prepared vectors and labels to `labkit.ui.plotXY`. App-specific callback choreography, such as clearing a session, restoring app-specific plot defaults, refreshing experiment summaries, and writing app logs, should stay in the owning app file even when two apps have similar callback order. Domain labels such as DTA-specific open/export button text and app shell tab/panel titles should be passed in from apps rather than hardcoded in the GUI library.
 
-Current apps share the same workbench layout contract: a resizable left control region with tabbed pages, plus a right output region for live plots or primary content. The preferred app-facing shell entry point is `labkit.ui.createWorkbench`; apps configure the right side as a custom plot/output grid or as the standard dual-plot region. Compatibility shell wrappers may exist, but app entry points should build from `createWorkbench` so small and large apps start from the same architecture. App files should not rebuild split-pane layout plumbing or own custom separator drag code.
+Current apps share the same workbench layout contract: a resizable left control region with tabbed pages, plus a right output region for live plots or primary content. The app-facing shell entry point is `labkit.ui.createWorkbench`; apps configure the right side as a custom plot/output grid or as the standard dual-plot region. App files should not rebuild split-pane layout plumbing or own custom separator drag code.
 
 The default left-side tabs are `Files + Analysis`, `Summary + Results`, and `Log`. The file panel and log panel may use shared structure, but app-specific tab sections, scientific controls, result summaries, callback ordering, and plot behavior remain owned by the app. Generic helpers such as panel-grid creation and listbox selection refresh can live in `labkit.ui` only when they are domain-neutral.
 
@@ -121,7 +119,7 @@ The GUI decides how to display that status.
 
 - `apps/`: user-facing app category folders and app-specific implementations. Current electrochemistry app bodies live under `apps/electrochem/` as single public app source files, and app-specific workflow helpers are local functions in those files rather than reusable `+labkit` APIs or transitional app-helper packages.
 - `+dta`: GUI-free facade for supported DTA file discovery, family detection, single-file loading, batch loading, folder loading, pulse detection, item construction, parsed table/curve access, session save/load, and app-facing DTA session operations with status/report structs. It keeps parser and DTA-specific implementation helpers private.
-- `+ui`: reusable GUI framework helpers, centered on the unified `createWorkbench` shell plus domain-neutral components: file-selection panel, log panel, generic panel-grid creation, axes creation/reset, prepared-X/Y plotting, listbox selection refresh, summary rows, result table panel, plot-options panel, simple labeled controls, and top/bottom plot-control construction/state helpers. Older shell wrappers remain compatibility/convenience layers over the unified workbench shell rather than separate app architectures.
+- `+ui`: reusable GUI framework helpers, centered on the unified `createWorkbench` shell plus domain-neutral components: file-selection panel, log panel, generic panel-grid creation, axes creation/reset, prepared-X/Y plotting, listbox selection refresh, summary rows, result table panel, plot-options panel, simple labeled controls, and top/bottom plot-control construction/state helpers.
 - Internal helpers: package-private parser helpers and app-local helper functions. Public `+io`, `+data`, and `+util` packages should not be reintroduced as new-app entry surfaces.
 
 ## Boundaries To Preserve
@@ -133,4 +131,4 @@ Avoid:
 - new parser copies in GUI files
 - reusable package functions owning app-specific CSV schemas
 - MATLAB classes before struct schemas stabilize
-- starting a unified GUI before package-backed app internals are stable
+- replacing separate app entry points with a single all-in-one launcher without explicit approval

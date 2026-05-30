@@ -18,6 +18,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - App shells now use the standard three-tab workbench framework, and DTA-facing apps share the same file-selection panel structure.
 - GUI app entry points now build from the unified `labkit.ui.createWorkbench` shell, with compatibility shell wrappers layered over that entry point.
 - Reusable UI components now include generic panel-grid creation and single/multi listbox selection refresh so app files can define scientific sections with less layout boilerplate.
+- README and docs now describe the current app/UI/DTA architecture directly instead of framing the project as an active refactor.
 
 ### Fixed
 
@@ -29,6 +30,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Transitional `apps/private` and `apps/+labkit_apps` helper namespaces.
 - Root-level wrappers for the original legacy GUI command names and the old `legacy/` reference directory.
 - One-line or app-specific reusable wrappers that only hid MATLAB built-ins or experiment decisions.
+- The archived refactor-history document.
 
 ## v1.0.0 - 2026-05-28
 
@@ -38,7 +40,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - App entry points under `apps/` for CIC, VT resistance, CV/CSC, and EIS workflows.
 - Root-level compatibility wrappers for the original legacy GUI command names.
 - Named demo DTA fixtures and MATLAB test runners.
-- Current documentation under `docs/` for architecture, data models, file formats, validation, and refactor history.
+- Current documentation under `docs/` for architecture, data models, file formats, and validation.
 
 ### Preserved
 
@@ -48,9 +50,3 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - GUI layout and callback behavior.
 - Plot labels, markers, axes, and visual behavior.
 - CSV/export formats and column names.
-
-### Deferred
-
-- Unified workbench GUI.
-- Complete stored golden MAT reference outputs for every major analysis output.
-- Broader parser unification and support for additional Gamry experiment types.

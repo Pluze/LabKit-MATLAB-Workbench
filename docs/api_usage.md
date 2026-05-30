@@ -109,14 +109,13 @@ Common state/render helpers:
 
 ```matlab
 labkit.ui.appendLog(txtLog, message);
-labkit.ui.refreshListboxItems(lbFiles, names);
 [value, idx] = labkit.ui.refreshListboxSelection(lbFiles, names, preferredSelection, opts);
 info = labkit.ui.plotXY(ax, x, y, labels, opts);
 ```
 
 The default app shell is a resizable left/right workbench layout: left controls live in tabbed pages and the right side is reserved for live plots, curves, images, or other primary outputs. Use `createWorkbench` for both small and large apps. The default tabs are `Files + Analysis`, `Summary + Results`, and `Log`; apps may pass custom tab specs when a workflow needs different tab pages.
 
-Use `opts.rightKind = 'dualPlot'` for the common top/bottom live-plot layout. For custom right-side arrangements, pass `rightGridSize`, `rightRowHeight`, and `rightRowSpacing`. Compatibility wrappers such as `createStandardWorkbenchShell` and `createTabbedDualPlotShell` remain available for older code, but new app entry points should call `createWorkbench` directly.
+Use `opts.rightKind = 'dualPlot'` for the common top/bottom live-plot layout. For custom right-side arrangements, pass `rightGridSize`, `rightRowHeight`, and `rightRowSpacing`.
 
 All DTA-facing apps should use `createFileSelectionPanel` for file actions. Use `opts.multiselect = 'on'` and `opts.showRemoveSelected = true` for overlay apps that operate on selected subsets; omit those options for single-current-file apps such as CIC and VT.
 

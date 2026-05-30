@@ -17,7 +17,6 @@ Also read these only when relevant:
 - `docs/data_model.md` for item/result/session schema work
 - `docs/file_format_notes.md` for parser work
 - `docs/validation_protocol.md` for test or validation work
-- `docs/refactor_history.md` for historical migration context
 
 ## Core Rule
 
@@ -65,7 +64,7 @@ same results, cleaner code, clearer boundaries
 ## Forbidden Without Explicit Approval
 
 - Do not rewrite all GUIs in one pass.
-- Do not start or redesign the unified workbench GUI.
+- Do not replace the current separate app entry points with a single all-in-one launcher without explicit approval.
 - Do not reintroduce root-level legacy command wrappers.
 - Do not convert struct models to MATLAB classes prematurely.
 - Do not migrate code to Python or another language.
@@ -79,7 +78,7 @@ Run after executable MATLAB changes:
 scripts/run_matlab_tests.sh
 ```
 
-Run optional GUI checks when GUI entry points, wrappers, layout initialization, callback wiring, or GUI test support changes:
+Interactive GUI workflows are checked manually by the user. Use optional noninteractive GUI checks only when GUI launch, layout initialization, callback wiring, or GUI test support changes:
 
 ```bash
 scripts/run_matlab_tests.sh --gui
@@ -110,7 +109,6 @@ When MATLAB source, tests, fixtures, or package structure change, update the mat
 - `docs/data_model.md` for schemas
 - `docs/file_format_notes.md` for parser assumptions
 - `docs/validation_protocol.md` for validation coverage
-- `docs/refactor_history.md` only for historical context
 
 ## Handoff
 

@@ -1,14 +1,14 @@
 # Validation Protocol
 
-Use this document to choose checks for behavior-preserving changes.
+Use this document to choose automated checks for behavior-preserving changes.
 
 Core rule:
 
 ```text
-previous validated behavior == current package-backed behavior
+validated behavior stays stable
 ```
 
-Do not claim behavior is preserved unless tests, fixtures, or manual checks support that claim.
+Do not claim behavior is preserved unless tests or fixtures support that claim.
 
 ## Test Commands
 
@@ -18,24 +18,18 @@ Default pure-function suite:
 scripts/run_matlab_tests.sh
 ```
 
-Optional noninteractive GUI compatibility suite:
-
-```bash
-scripts/run_matlab_tests.sh --gui
-```
-
 The default suite is grouped in `tests/run_all_tests.m` and organized on disk under `tests/suites/`:
 
 ```text
 core    startup/root-entry boundaries, architecture guardrails, templates
 dta     parsers through the DTA facade, DTA discovery/detection/loading/session helpers, pulse detection, and item schemas
 apps    app-local analysis values, plotting helpers, export table builders, and CSV writers
-gui     optional launch/layout/callback compatibility checks
+gui     optional noninteractive launch/layout/callback checks
 ```
 
 Shared setup and assertions live under `tests/helpers/`. Keep helpers limited to setup and assertions; app-specific formulas, result schemas, export formats, and expected scientific values should remain in focused suite tests.
 
-The optional GUI suite checks launch/layout/callback compatibility without file dialogs, exports, destructive workflows, or manual input.
+GUI workflows are checked manually outside this protocol. Use `scripts/run_matlab_tests.sh --gui` only when noninteractive launch/layout/callback coverage is relevant.
 
 Do not run interactive GUI workflows in MATLAB `-batch` mode.
 
@@ -117,25 +111,7 @@ Session/export changes:
 
 GUI or entrypoint changes:
 
-- app entry points launch the expected GUI
-- app shells use `labkit.ui.createWorkbench` for the shared resizable left/right workbench layout, with controls in scrollable left tabs
-- initialized controls, dropdown items, result-table columns, axes titles/labels, callbacks, and window size still satisfy the GUI contract
-
-Manual GUI checks are still needed for file dialogs, export buttons, loaded-data workflows, plot interactions, and user alerts.
-
-## Golden References
-
-Stored golden MAT references are not complete yet. If added, they should record:
-
-- fixture name
-- options
-- key output values
-- expected table column names
-- tolerance
-- creation date
-- source revision used to generate the reference
-
-Do not overwrite reference outputs silently.
+- app entry points still launch, use `labkit.ui.createWorkbench`, and initialize expected controls/callbacks; interactive GUI workflows are checked manually
 
 ## Handoff After Validation
 
@@ -145,5 +121,3 @@ Report:
 - MATLAB availability
 - files changed
 - behavior intentionally preserved
-- unverified manual behavior
-- reference outputs added or changed
