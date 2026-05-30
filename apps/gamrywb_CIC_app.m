@@ -220,7 +220,7 @@ function varargout = gamrywb_CIC_app(varargin)
 
     onPresetChanged();
 
-    %% ===================== Nested helpers =====================
+    %% App callbacks, session actions, refresh, plotting, and export
     function onPresetChanged()
         switch ddPreset.Value
             case 'Pt (-0.6 to 0.8 V)'
@@ -691,6 +691,7 @@ function varargout = gamrywb_CIC_app(varargin)
 
 end
 
+%% App test hook
 function [handled, outputs] = handleCICTestRequest(args, nargoutRequested)
     handled = false;
     outputs = {};
@@ -745,6 +746,7 @@ function assertCICTestArgCount(args, expectedCount, command)
     end
 end
 
+%% App-local analysis
 function A = computeCIC(item, opts)
 %COMPUTECIC Compute legacy-compatible CIC / voltage-transient metrics.
 
@@ -987,6 +989,7 @@ function safety = checkWaterWindowSafety(Emc, Ema, cathLimit, anodLimit)
     end
 end
 
+%% App-local table/export helpers
 function [C, columnNames] = buildBatchTableData(items, unitLabel)
 %BUILDBATCHTABLEDATA Build legacy CIC batch uitable data.
 
@@ -1115,6 +1118,7 @@ function [ok, msg] = writeResultsCSV(items, filepath, unitLabel)
     end
 end
 
+%% App-local plotting helpers
 function [v, sourceLabel, window] = chooseBaselineCandidate(candidates, sourceLabels, windows)
     v = NaN;
     sourceLabel = 'unavailable';

@@ -95,6 +95,7 @@ function varargout = gamrywb_ChronoOverlay_app(varargin)
         varargout{1} = fig;
     end
 
+    %% App callbacks, session actions, refresh, and export
     function onOpenFiles(~, ~)
         [f, p] = uigetfile( ...
             {'*.DTA;*.dta', 'Gamry DTA (*.DTA)'; '*.*', 'All files'}, ...
@@ -253,6 +254,7 @@ function varargout = gamrywb_ChronoOverlay_app(varargin)
     end
 end
 
+%% App-local analysis
 function [item, msg] = alignByPulseGap(item)
     t = chronoTime(item);
     if isempty(t)
@@ -304,6 +306,7 @@ function [item, msg] = alignByPulseGap(item)
     msg = sprintf('%s: pulse gap not found, fallback to first sample (%s).', itemName, pulseMsg);
 end
 
+%% App-local export
 function T = buildOverlayExportTable(items)
     timeUnion = [];
     for i = 1:numel(items)
@@ -334,6 +337,7 @@ function T = buildOverlayExportTable(items)
     end
 end
 
+%% App-local plotting
 function plotVTIT(axV, axI, items, opts)
     if nargin < 4
         opts = struct();
@@ -405,6 +409,7 @@ function plotVTIT(axV, axI, items, opts)
     end
 end
 
+%% Small app-local utilities
 function t = chronoTime(item)
     if isfield(item, 't') && ~isempty(item.t)
         t = item.t;

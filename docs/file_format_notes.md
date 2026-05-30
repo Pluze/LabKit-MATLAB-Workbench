@@ -116,7 +116,7 @@ Output style:
 EIS parser behavior to preserve:
 
 - Numeric tables are parsed with headers, units, data, and numeric masks.
-- `ZCURVE` detection is handled by `gamrywb.data.getZCurve`.
+- `ZCURVE` table selection is handled by `gamrywb.data.getZCurve`; DTA loading and item construction stay behind `gamrywb.dta.loadFile`.
 - If table name matching fails, fallback behavior may identify a table by headers such as Freq/Zreal/Zimag.
 
 Axis values that must remain supported:

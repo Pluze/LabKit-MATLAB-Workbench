@@ -55,7 +55,7 @@ The default runner covers pure functions. The optional GUI mode checks launch/la
 ## Repository Layout
 
 ```text
-+gamrywb/             App-facing GUI/DTA APIs plus selected data/internal helpers
++gamrywb/             App-facing GUI/DTA APIs plus selected parsed-table data helpers
 apps/                 App entry points and app-specific implementations
 templates/            Copy-only GUI, DTA, and GUI+DTA starter programs
 demo/                 Named DTA fixtures
@@ -74,6 +74,10 @@ docs/                 Architecture, data model, parser, validation, and history 
 - `docs/file_format_notes.md`: DTA parser assumptions.
 - `docs/validation_protocol.md`: behavior-preservation validation.
 - `docs/refactor_history.md`: concise archived migration history.
+
+## API Boundary
+
+For new app work, use `gamrywb.dta.*` for DTA file/session workflows, `gamrywb.ui.*` for reusable GUI structure, and `gamrywb.data.*` only for parsed table/curve access. Parser IO and DTA-private helpers are implementation details, not app-facing APIs.
 
 ## Preservation Rule
 

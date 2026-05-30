@@ -21,7 +21,7 @@ Compatibility retained through the v1.0 checkpoint:
 - `gamrywb_EIS_app`, `gamrywb_CSC_app`, and `gamrywb_VTResistance_app` were package-backed; the CIC app entry point delegated to a preserved legacy GUI
 - `startup_gamrywb` keeps `legacy/` off the default runtime path
 
-Later cleanup removed the root-level original command wrappers, added package-backed app entry points for chrono overlay/export and CIC, and removed the old `legacy/` GUI directory. The old command names are now reference history rather than runtime entry points.
+Later cleanup removed the root-level original command wrappers, added package-backed app entry points for chrono overlay/export and CIC, and removed the old `legacy/` GUI directory. Subsequent boundary cleanup moved DTA item/session construction and pulse detection behind `gamrywb.dta.*`, leaving public `gamrywb.data.*` limited to parsed table/curve access. The old command names are now reference history rather than runtime entry points.
 
 ## Migration Highlights
 

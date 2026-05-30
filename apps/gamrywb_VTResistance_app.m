@@ -171,6 +171,7 @@ function varargout = gamrywb_VTResistance_app(varargin)
         varargout{1} = fig;
     end
 
+    %% App callbacks, session actions, refresh, plotting, and export
     function onOpenFiles(~,~)
         [files,path] = uigetfile({'*.DTA;*.dta','Gamry DTA files (*.DTA)'}, ...
             'Select Gamry DTA file(s)','MultiSelect','on');
@@ -534,6 +535,7 @@ function varargout = gamrywb_VTResistance_app(varargin)
 
 end
 
+%% App test hook
 function [handled, outputs] = handleVTTestRequest(args, nargoutRequested)
     handled = false;
     outputs = {};
@@ -586,6 +588,7 @@ function assertVTTestArgCount(args, expectedCount, command)
     end
 end
 
+%% App-local analysis
 function A = computeResistance(item, opts)
 %COMPUTERESISTANCE Compute VT resistance metrics for the VT app.
 
@@ -714,6 +717,7 @@ function opts = fillResistanceOptions(opts)
     end
 end
 
+%% App-local table/export helpers
 function C = buildBatchTableData(items)
 %BUILDBATCHTABLEDATA Build VT resistance uitable data.
 
@@ -837,6 +841,7 @@ function [ok, msg] = writeResultsCSV(items, filepath)
     end
 end
 
+%% App-local plotting helpers
 function [curve, ok, msg] = mainCurve(item)
     if isfield(item, 'curve') && ~isempty(item.curve)
         curve = item.curve;

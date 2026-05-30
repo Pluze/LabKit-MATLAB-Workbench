@@ -250,6 +250,6 @@ gamrywb.io.saveSession
 gamrywb.io.loadSession
 ```
 
-`gamrywb.dta.addFilesToSession` supports `onAdded`, `onSkipped`, and `onFailed` callbacks so apps can preserve log timing while sharing DTA add/duplicate/failure logic. Empty file lists are no-ops that return empty reports without firing callbacks. Session item construction and session orchestration helpers are private to the DTA facade, not public `gamrywb.data.*` app APIs.
+`gamrywb.dta.addFilesToSession` supports `onAdded`, `onSkipped`, and `onFailed` callbacks so apps can preserve log timing while sharing DTA add/duplicate/failure logic. Empty file lists are no-ops that return empty reports without firing callbacks. Session item construction and session orchestration helpers are private to the DTA facade, not public `gamrywb.data.*` app APIs. Public `gamrywb.data.*` is limited to parsed table/curve access helpers.
 
 Session files should keep parsed data, selected analysis mode, options, results, notes, and file provenance explicit. Avoid opaque object dumps for scientific exchange.

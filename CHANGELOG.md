@@ -21,6 +21,8 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - App-specific utility helpers now live in the owning app or lower-level implementation file instead of a public `+gamrywb/+util` package.
 - App session creation, DTA loading, removal, and selection now go through `gamrywb.dta.*` instead of lower-level `gamrywb.data.*` helpers.
 - Chrono/EIS item construction and session orchestration helpers moved behind the DTA facade, leaving public `+gamrywb/+data` for selected parsed table/curve access.
+- Documentation now states the practical API boundary: `gamrywb.dta` for DTA file/session workflows, `gamrywb.ui` for GUI helpers, and `gamrywb.data` for parsed table/curve access.
+- New-app guidance now recommends a single-file layout that separates GUI callbacks from app-local analysis, export, plotting, and utility functions without introducing helper packages.
 - Pulse detection implementation moved behind the `gamrywb.dta.detectPulses` facade instead of a public `+gamrywb/+analysis` package.
 - App-specific scientific workflow now lives in the owning app files: analysis formulas, plot annotations, result tables, export schemas, and CSV writing are not reusable `+gamrywb` APIs.
 - Current apps load files through the GUI-free DTA facade where supported, while retaining app-local behavior such as Chrono pulse-gap alignment and EIS axis/export choices.

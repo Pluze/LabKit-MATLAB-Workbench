@@ -143,6 +143,7 @@ function varargout = gamrywb_EIS_app(varargin)
         varargout{1} = fig;
     end
 
+    %% App callbacks, session actions, refresh, and export
     function onOpenFiles(~, ~)
         [f, p] = uigetfile( ...
             {'*.DTA;*.dta', 'Gamry DTA (*.DTA)'; '*.*', 'All files'}, ...
@@ -294,6 +295,7 @@ function varargout = gamrywb_EIS_app(varargin)
     end
 end
 
+%% App-local plotting and summary helpers
 function txt = labelForAxis(axisName)
     txt = axisName;
 end
@@ -391,6 +393,7 @@ function opts = fillPlotOptions(opts)
     end
 end
 
+%% App-local export
 function T = buildExportTable(items, xName, yName, useLogX, useLogY)
     if nargin < 4
         useLogX = false;
@@ -420,6 +423,7 @@ function T = buildExportTable(items, xName, yName, useLogX, useLogY)
     end
 end
 
+%% Small app-local utilities
 function [x, y] = filteredXY(item, xName, yName, useLogX, useLogY)
     x = valuesForAxis(item, xName);
     y = valuesForAxis(item, yName);

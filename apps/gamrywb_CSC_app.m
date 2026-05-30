@@ -239,7 +239,7 @@ function varargout = gamrywb_CSC_app(varargin)
         varargout{1} = fig;
     end
 
-    %% ===================== Callbacks =====================
+    %% App callbacks, loading, refresh, and plotting
     function onOpenFile(~,~)
         [f,p] = uigetfile({'*.DTA;*.dta','Gamry DTA (*.DTA)';'*.*','All Files'}, ...
             'Select Gamry DTA file');
@@ -532,7 +532,7 @@ function varargout = gamrywb_CSC_app(varargin)
     end
 end
 
-%% ===================== Charge / CSC helpers =====================
+%% App-local formatting and plot cleanup
 
 function s = formatChargeAndCSC(Q, area_cm2)
     if isnan(area_cm2) || area_cm2 <= 0
@@ -562,6 +562,7 @@ function tf = isCSCAnalysisTestRequest(args)
         && strcmp(char(args{1}), '__test_computeCSC__');
 end
 
+%% App-local analysis
 function A = computeCSC(curve, opts)
 %COMPUTECSC Compute CV/CT charge comparison and CSC for the CSC app.
 
@@ -666,6 +667,7 @@ function A = computeCSC(curve, opts)
     A.message = 'OK';
 end
 
+%% Small app-local utilities
 function opts = fillOptions(opts)
     if ~isfield(opts, 'mode')
         opts.mode = 'Full';

@@ -116,7 +116,7 @@ session = gamrywb.dta.makeSession('new_experiment');
 [session, report] = gamrywb.dta.removeSelectedItemsFromSession(session, selectedNames, callbacks);
 ```
 
-This keeps normal app code on the DTA surface instead of exposing the lower-level loader callback used by `+gamrywb/+data`.
+This keeps normal app code on the DTA surface instead of exposing lower-level loader callbacks or item/session construction helpers.
 
 `addFilesToSession` reports:
 
@@ -278,6 +278,24 @@ function varargout = gamrywb_NewExperiment_app(varargin)
     end
 end
 ```
+
+## Recommended App Layout
+
+Keep new experiment apps as explicit single files, organized in this order:
+
+```text
+1. Entry validation and test hook, if the app has pure-function tests
+2. App state struct and GUI construction
+3. Nested callbacks for file/session actions
+4. Nested refresh/render/export callbacks that touch UI handles
+5. End of the public app function
+6. App-local analysis functions
+7. App-local table/export functions
+8. App-local plotting annotation helpers
+9. Small formatting, parsing, interpolation, and numeric utilities
+```
+
+Nested functions may read and update GUI handles or app state. Local functions after the app `end` should be GUI-free whenever practical so tests can call them through narrow app test hooks. Do not move app-local formulas, result columns, CSV writers, or plot annotations into `+gamrywb` unless multiple real apps prove the helper is reusable without experiment vocabulary.
 
 For a folder-processing script or an early analysis prototype, the app shell is unnecessary:
 

@@ -27,6 +27,14 @@ Internal helper base:
   implementation helpers that are not app-facing API
 ```
 
+Short version:
+
+```text
+gamrywb.dta   = DTA file/session facade
+gamrywb.ui    = reusable GUI structure and rendering helpers
+gamrywb.data  = parsed table/curve access only
+```
+
 Experiment app implementations should live under public `apps/*.m` files rather than being absorbed into the reusable library package. All current app bodies are now single-file public app implementations. The long-term ideal is one experiment app `.m` file owning its scientific workflow. The previous `apps/+gamrywb_apps` helper namespaces were migration waypoints, not a reusable app framework, and should not be reintroduced for app-specific logic.
 
 ## Entrypoints
@@ -110,7 +118,7 @@ The GUI decides how to display that status.
 ## Current Package Surface
 
 - `apps/`: user-facing app entry points and app-specific implementations. All current app bodies are single public app source files, and app-specific workflow helpers are local functions in those files rather than reusable `+gamrywb` APIs or transitional app-helper packages.
-- `+dta`: GUI-free facade for supported DTA file discovery, family detection, single-file loading, batch loading, folder loading, pulse detection, and app-facing DTA session operations with status/report structs. It delegates to existing `+io` parser and `+data` item/session helpers, with DTA-specific implementation helpers kept private.
+- `+dta`: GUI-free facade for supported DTA file discovery, family detection, single-file loading, batch loading, folder loading, pulse detection, item construction, and app-facing DTA session operations with status/report structs. It delegates to existing `+io` parsers and keeps DTA-specific implementation helpers private.
 - `+io`: DTA parsers, folder discovery, and session save/load. It should not contain app-specific export helpers or scientific result schemas.
 - `+data`: selected table/column accessors: main chrono curve lookup, EIS ZCURVE lookup, exact-case column access, and prepared X/Y extraction.
 - `+ui`: reusable GUI framework helpers, including generic axes creation/reset, prepared-X/Y plotting, log append and log panel, generic listbox item refresh, multi-file and single-select file-panel, summary row, result table panel, plot-options panel, simple labeled-control, two-pane shell, tabbed dual-plot shell, and top/bottom plot-control construction/state helpers.
