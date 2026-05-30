@@ -8,7 +8,7 @@ function ui = createPanelGrid(parent, titleText, row, gridSize, opts)
     ui = struct();
     ui.panel = uipanel(parent, 'Title', titleText);
     if nargin >= 3 && ~isempty(row)
-        ui.panel.Layout.Row = row;
+        ui.panel.Layout.Row = labkit.ui.layoutRow(parent, row);
     end
 
     ui.grid = uigridlayout(ui.panel, gridSize);

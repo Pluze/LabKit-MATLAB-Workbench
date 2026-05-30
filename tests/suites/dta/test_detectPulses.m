@@ -1,8 +1,8 @@
 function test_detectPulses()
 %TEST_DETECTPULSES Verify extracted pulse detection behavior.
 
-    currentFixture = demoFixturePath('chrono_chronopot_current_pulse_0p2ms.DTA');
-    voltageFixture = demoFixturePath('chrono_chronoamp_voltage_pulse_0p2ms.DTA');
+    currentFixture = dtaFixturePath('chrono_chronopot_current_pulse_0p2ms.DTA');
+    voltageFixture = dtaFixturePath('chrono_chronoamp_voltage_pulse_0p2ms.DTA');
 
     [currentItem, currentStatus] = labkit.dta.loadFile(currentFixture, "chrono");
     assert(currentStatus.ok, currentStatus.message);

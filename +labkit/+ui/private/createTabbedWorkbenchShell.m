@@ -32,11 +32,13 @@ function ui = createTabbedWorkbenchShell(figName, figPosition, leftWidth, labels
     for k = 1:numel(tabSpecs)
         spec = tabSpecs(k);
         [tab, panel] = createScrollableTab(ui.tabs, spec.title);
-        grid = uigridlayout(panel, spec.gridSize);
+        [gridSize, rowHeight, rowMap] = expandedTabGridSpec(spec);
+        grid = uigridlayout(panel, gridSize);
         enableScrollableGrid(grid);
-        grid.RowHeight = spec.rowHeight;
+        grid.RowHeight = rowHeight;
         grid.RowSpacing = optionValue(spec, 'rowSpacing', 10);
         grid.Padding = optionValue(spec, 'padding', [8 8 8 8]);
+        grid.UserData = struct('LabKitLogicalRowMap', rowMap);
         if isfield(spec, 'columnWidth')
             grid.ColumnWidth = spec.columnWidth;
         end
@@ -47,6 +49,7 @@ function ui = createTabbedWorkbenchShell(figName, figPosition, leftWidth, labels
         ui.([spec.key 'Tab']) = tab;
         ui.([spec.key 'ScrollPanel']) = panel;
         ui.([spec.key 'Grid']) = grid;
+        ui.([spec.key 'ResizeHandles']) = attachTabRowResizeHandles(ui.fig, grid, spec, rowMap);
     end
 
     ui.rightPanel = uipanel(ui.main, 'Title', labels.rightPanel);
@@ -88,5 +91,61 @@ function enableScrollableGrid(grid)
     try
         grid.Scrollable = 'on';
     catch
+    end
+end
+
+function [gridSize, rowHeight, rowMap] = expandedTabGridSpec(spec)
+    logicalRows = spec.gridSize(1);
+    resizeRows = validResizeRows(spec, logicalRows);
+    rowMap = zeros(1, logicalRows);
+    rowHeight = {};
+    handleHeight = 6;
+    if isfield(spec, 'resizeOptions') && isfield(spec.resizeOptions, 'handleHeight')
+        handleHeight = spec.resizeOptions.handleHeight;
+    end
+
+    for row = 1:logicalRows
+        rowMap(row) = numel(rowHeight) + 1;
+        rowHeight{end+1} = spec.rowHeight{row}; %#ok<AGROW>
+        if any(resizeRows == row)
+            rowHeight{end+1} = handleHeight; %#ok<AGROW>
+        end
+    end
+    gridSize = [numel(rowHeight), spec.gridSize(2)];
+end
+
+function rows = validResizeRows(spec, logicalRows)
+    rows = [];
+    if ~isfield(spec, 'resizeRows') || isempty(spec.resizeRows)
+        return;
+    end
+    rows = unique(spec.resizeRows(:).');
+    rows = rows(rows >= 1 & rows < logicalRows & isfinite(rows));
+end
+
+function handles = attachTabRowResizeHandles(fig, grid, spec, rowMap)
+    handles = gobjects(0);
+    resizeRows = validResizeRows(spec, spec.gridSize(1));
+    if isempty(resizeRows)
+        return;
+    end
+
+    handles = gobjects(1, numel(resizeRows));
+    for k = 1:numel(resizeRows)
+        topRow = resizeRows(k);
+        opts = struct('minTopHeight', 80, 'minBottomHeight', 80);
+        if isfield(spec, 'resizeOptions')
+            opts = mergeStruct(opts, spec.resizeOptions);
+        end
+        opts.topRow = rowMap(topRow);
+        opts.bottomRow = rowMap(topRow + 1);
+        handles(k) = labkit.ui.addRowResizeHandle(fig, grid, rowMap(topRow) + 1, opts);
+    end
+end
+
+function out = mergeStruct(out, in)
+    fields = fieldnames(in);
+    for k = 1:numel(fields)
+        out.(fields{k}) = in.(fields{k});
     end
 end

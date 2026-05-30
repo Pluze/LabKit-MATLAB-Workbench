@@ -1,7 +1,7 @@
 function test_parseEISDTA()
 %TEST_PARSEEISDTA Verify extracted EIS parser and ZCURVE accessors.
 
-    fixture = demoFixturePath('eis_potentiostatic_zcurve.DTA');
+    fixture = dtaFixturePath('eis_potentiostatic_zcurve.DTA');
 
     [item, status] = labkit.dta.loadFile(fixture, "eis");
     assert(status.ok, status.message);

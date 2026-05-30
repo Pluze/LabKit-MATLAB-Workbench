@@ -5,7 +5,7 @@ function item = makeChronoFixtureItem(filename, itemName)
         filename = 'chrono_chronopot_current_pulse_0p2ms.DTA';
     end
 
-    fixture = demoFixturePath(filename);
+    fixture = dtaFixturePath(filename);
     if nargin < 2 || isempty(itemName)
         itemName = filename;
     end

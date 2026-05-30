@@ -214,9 +214,9 @@ items, results, options, notes, logmsg
 
 `labkit.dta.addFilesToSession` supports `onAdded`, `onSkipped`, and `onFailed` callbacks so apps can preserve log timing while sharing DTA add/duplicate/failure logic. Empty file lists are no-ops that return empty reports without firing callbacks.
 
-## Demo Fixtures
+## Test Fixtures
 
-Named fixtures live under `demo/`:
+Named DTA fixtures live under `tests/fixtures/dta/`:
 
 ```text
 chrono_chronopot_current_pulse_0p2ms.DTA
@@ -229,4 +229,4 @@ cv_cyclic_voltammetry_pt_replicate.DTA
 eis_potentiostatic_zcurve.DTA
 ```
 
-Tests may require specific named fixtures but should not fail only because additional DTA files are added to `demo/`.
+Tests may require specific named fixtures but should not fail only because additional DTA files are added to `tests/fixtures/dta/`.

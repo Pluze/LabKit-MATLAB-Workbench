@@ -1,32 +1,45 @@
-function test_gui_layout_controls()
+function test_gui_layout_controls(scope)
 %TEST_GUI_LAYOUT_CONTROLS Verify noninteractive GUI layout and safe callbacks.
+
+    if nargin < 1 || isempty(scope)
+        scope = 'all';
+    end
+    scope = lower(string(scope));
 
     assertUifigureAvailable();
     cleanup = onCleanup(@closeAllFigures);
 
-    checkMultiDTA();
-    checkEIS();
-    checkCVCSC();
-    checkCVCSCFixtureLoad();
-    checkVTResistance();
-    checkCIC();
-    checkDICPreprocess();
-    checkDICPostprocess();
-    checkListboxItemsRefreshHelper();
-    checkListboxSelectionHelper();
-    checkLogPanelHelper();
-    checkReadOnlyInfoRowHelper();
-    checkResultTablePanelHelper();
-    checkPanelGridHelper();
-    checkPlotOptionsPanelHelper();
-    checkCreateAxesHelper();
-    checkRowResizeHandleHelper();
-    checkCreateWorkbenchHelper();
-    checkStandardWorkbenchShellHelper();
-    checkTabbedDualPlotShellHelper();
-    checkTopBottomPlotControlsHelper();
-    checkTopBottomPlotStateHelpers();
-    checkFileSelectionPanelHelper();
+    if scope == "all" || scope == "electrochem"
+        checkMultiDTA();
+        checkEIS();
+        checkCVCSC();
+        checkCVCSCFixtureLoad();
+        checkVTResistance();
+        checkCIC();
+    end
+    if scope == "all" || scope == "dic"
+        checkDICPreprocess();
+        checkDICPostprocess();
+    end
+    if scope == "all" || scope == "ui"
+        checkListboxItemsRefreshHelper();
+        checkListboxSelectionHelper();
+        checkLogPanelHelper();
+        checkReadOnlyInfoRowHelper();
+        checkResultTablePanelHelper();
+        checkPanelGridHelper();
+        checkPlotOptionsPanelHelper();
+        checkCreateAxesHelper();
+        checkRowResizeHandleHelper();
+        checkCreateWorkbenchHelper();
+        checkStandardWorkbenchShellHelper();
+        checkTabbedDualPlotShellHelper();
+        checkTopBottomPlotControlsHelper();
+        checkTopBottomPlotStateHelpers();
+        checkFileSelectionPanelHelper();
+    end
+    assert(any(scope == ["all", "electrochem", "dic", "ui"]), ...
+        'Unknown GUI layout test scope: %s.', scope);
 end
 
 function checkDICPreprocess()
@@ -129,7 +142,7 @@ function checkCVCSC()
 end
 
 function checkCVCSCFixtureLoad()
-    fixture = demoFixturePath('cv_cyclic_voltammetry_pt_reference.DTA');
+    fixture = dtaFixturePath('cv_cyclic_voltammetry_pt_reference.DTA');
     diagnostics = labkit_CSC_app('__test_loadFile__', fixture);
 
     assert(strcmp(diagnostics.file, fixture), 'CSC load should update the selected file field.');
@@ -401,6 +414,12 @@ function checkCreateWorkbenchHelper()
     assertTabTitles(ui.fig, {'Files + Analysis', 'Summary + Results', 'Log'});
     assertScrollablePanel(ui.filesAnalysisScrollPanel, 'Files + Analysis tab');
     assertScrollableGrid(ui.filesAnalysisGrid, 'Files + Analysis grid');
+    assert(numel(ui.filesAnalysisResizeHandles) == 2, ...
+        'Standard Files + Analysis tab should expose two row-resize handles.');
+    assert(numel(ui.summaryResultsResizeHandles) == 1, ...
+        'Standard Summary + Results tab should expose one row-resize handle.');
+    assert(isequal(ui.filesAnalysisGrid.UserData.LabKitLogicalRowMap, [1 3 5]), ...
+        'Workbench should keep standard app rows mapped behind the shell.');
     assert(strcmp(ui.rightPanel.Title, 'Preview'), ...
         'Workbench helper should preserve the requested right panel title.');
     assert(isequal(ui.rightGrid.RowHeight, {'1x', 'fit'}), ...
@@ -421,6 +440,8 @@ function checkCreateWorkbenchHelper()
     assertScrollableGrid(custom.probeGrid, 'Probe Controls grid');
     assert(sameStringCell(custom.probeGrid.RowHeight, {'fit', '1x'}), ...
         'Workbench helper should preserve custom tab specs.');
+    assert(isempty(custom.probeResizeHandles), ...
+        'Custom tabs without resizeRows should not create resize handles.');
 
     dual = labkit.ui.createWorkbench( ...
         'labkit_create_dual_plot_workbench_probe', ...
@@ -480,6 +501,10 @@ function checkStandardWorkbenchShellHelper()
     assertScrollableGrid(ui.filesAnalysisGrid, 'Files + Analysis grid');
     assertScrollableGrid(ui.summaryResultsGrid, 'Summary + Results grid');
     assertScrollableGrid(ui.logGrid, 'Log grid');
+    assert(numel(ui.filesAnalysisResizeHandles) == 2, ...
+        'Standard workbench shell should attach standard Files + Analysis row-resize handles.');
+    assert(numel(ui.summaryResultsResizeHandles) == 1, ...
+        'Standard workbench shell should attach standard Summary + Results row-resize handles.');
     assert(isequal(ui.rightGrid.RowHeight, {'1x', 'fit'}), ...
         'Standard workbench shell should preserve right-grid row heights.');
 end
@@ -508,10 +533,18 @@ function checkTabbedDualPlotShellHelper()
     assertScrollableGrid(ui.filesAnalysisGrid, 'Files + Analysis grid');
     assertScrollableGrid(ui.summaryResultsGrid, 'Summary + Results grid');
     assertScrollableGrid(ui.logGrid, 'Log grid');
-    assert(isequal(ui.filesAnalysisGrid.RowHeight, {260, 'fit', 'fit'}), ...
+    assert(isequal(ui.filesAnalysisGrid.RowHeight, {260, 6, 'fit', 6, 'fit'}), ...
         'Files + Analysis grid should preserve row heights.');
-    assert(sameStringCell(ui.summaryResultsGrid.RowHeight, {'fit', '1x'}), ...
+    assert(isequal(ui.summaryResultsGrid.RowHeight, {'fit', 6, '1x'}), ...
         'Summary + Results grid should preserve row heights.');
+    assert(isequal(ui.filesAnalysisGrid.UserData.LabKitLogicalRowMap, [1 3 5]), ...
+        'Files + Analysis grid should map logical rows to physical resize rows.');
+    assert(isequal(ui.summaryResultsGrid.UserData.LabKitLogicalRowMap, [1 3]), ...
+        'Summary + Results grid should map logical rows to physical resize rows.');
+    assert(numel(ui.filesAnalysisResizeHandles) == 2, ...
+        'Tabbed dual-plot shell should attach standard Files + Analysis row-resize handles.');
+    assert(numel(ui.summaryResultsResizeHandles) == 1, ...
+        'Tabbed dual-plot shell should attach standard Summary + Results row-resize handles.');
     assert(sameStringCell(ui.rightGrid.RowHeight, {'fit', '1x', 'fit', '1x'}), ...
         'Right plot grid should preserve top/bottom row heights.');
     assert(strcmp(char(ui.topAxes.Title.String), 'Top Plot'), ...

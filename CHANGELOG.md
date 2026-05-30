@@ -15,7 +15,8 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - DIC preprocess ROI editing now handles preview scroll-wheel zoom directly during direct point editing and no longer needs a separate pan/zoom mode button.
 - DIC preprocess ROI masks now have a canvas workflow for unioning a boundary into the mask, subtracting a boundary from the mask, undoing canvas edits, previewing, and saving the resulting binary mask.
 - Left-side workbench tabs now make their content grids scrollable, so app-specific control sections can extend below the visible window without clipping inaccessible panels.
-- MATLAB test runner now supports `--suite` and `--test` filters for focused validation without running the full default suite.
+- Left-side workbench tab sections can now declare draggable row boundaries at the UI framework level without exposing spacer rows or changed `Layout.Row` numbering to apps.
+- MATLAB test runner now supports `--profile`, `--suite`, and `--test` filters for focused validation without running unrelated app families; GUI layout checks are split into UI, DIC, and electrochemistry scopes.
 - Chrono DTA loading now exposes `item.controlMode` / `meta.controlMode` for current-controlled, voltage-controlled, or unknown chrono files, and CIC/VT summary panels display that mode for the selected file.
 - Public app-facing package surface is now `labkit.ui.*` plus `labkit.dta.*`.
 - DTA parser helpers, session save/load, item/session construction, pulse internals, and parsed table/curve access now live behind the DTA facade or under `+labkit/+dta/private`.
@@ -29,6 +30,8 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Reusable UI components now include generic panel-grid creation and single/multi listbox selection refresh so app files can define domain-specific sections with less layout boilerplate.
 - README and docs now describe the current app/UI/DTA architecture directly instead of framing the project as an active refactor.
 - Docs are now organized around the reusable UI library, current DTA library, app-owned workflow details, testing, and architecture.
+- Copy-only MATLAB template files were removed; their app-starting guidance now lives in the app documentation.
+- DTA fixture files moved from `demo/` to `tests/fixtures/dta/` to make their role as test/example fixtures explicit.
 
 ### Fixed
 
@@ -49,7 +52,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Package-backed parser, data, analysis, plotting, export, session, and UI helper modules under `+labkit`.
 - App entry points under `apps/` for CIC, VT resistance, CV/CSC, and EIS workflows.
 - Root-level compatibility wrappers for the original legacy GUI command names.
-- Named demo DTA fixtures and MATLAB test runners.
+- Named DTA fixtures and MATLAB test runners.
 - Current documentation under `docs/` for architecture, data models, file formats, and validation.
 
 ### Preserved

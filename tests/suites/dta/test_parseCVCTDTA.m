@@ -1,12 +1,12 @@
 function test_parseCVCTDTA()
 %TEST_PARSECVCTDTA Verify extracted CV/CT parser behavior.
 
-    demoFile = demoFixturePath('cv_cyclic_voltammetry_pt_reference.DTA');
-    [demoItem, demoStatus] = labkit.dta.loadFile(demoFile, "cvct");
-    assert(demoStatus.ok, demoStatus.message);
-    demoScanRate = demoItem.scanRate;
-    demoCurves = demoItem.curves;
-    demoLog = demoItem.logmsg;
+    fixtureFile = dtaFixturePath('cv_cyclic_voltammetry_pt_reference.DTA');
+    [fixtureItem, fixtureStatus] = labkit.dta.loadFile(fixtureFile, "cvct");
+    assert(fixtureStatus.ok, fixtureStatus.message);
+    demoScanRate = fixtureItem.scanRate;
+    demoCurves = fixtureItem.curves;
+    demoLog = fixtureItem.logmsg;
     assert(abs(demoScanRate - 9.99998e-2) < 1e-12, 'Demo SCANRATE should convert from mV/s to V/s.');
     assert(~isempty(demoCurves), 'Demo CV file should contain at least one curve.');
     assert(any(contains(string(demoLog), 'Detected')), 'Demo parser log should report detected curves.');

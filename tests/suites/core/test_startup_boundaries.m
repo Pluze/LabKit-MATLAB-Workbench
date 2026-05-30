@@ -26,8 +26,8 @@ function test_startup_boundaries()
         assert(isempty(which(removedRootNames{i})), ['Original legacy command should not resolve by default: ' removedRootNames{i}]);
     end
 
-    assert(exist(demoFixturePath('cv_cyclic_voltammetry_pt_reference.DTA'), 'file') == 2, ...
-        'Demo fixture cv_cyclic_voltammetry_pt_reference.DTA is missing.');
+    assert(exist(dtaFixturePath('cv_cyclic_voltammetry_pt_reference.DTA'), 'file') == 2, ...
+        'DTA fixture cv_cyclic_voltammetry_pt_reference.DTA is missing.');
 
     previousDir = pwd;
     cleaner = onCleanup(@() cd(previousDir));

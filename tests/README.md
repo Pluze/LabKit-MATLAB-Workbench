@@ -4,7 +4,7 @@
 
 ```text
 helpers/        shared test setup and assertions
-suites/core/    startup, architecture boundaries, and templates
+suites/core/    startup and architecture boundaries
 suites/dta/     DTA parsing, loading, sessions, pulse detection, and schemas
 suites/apps/    app-local analysis, plotting helpers, and exports
 suites/gui/     noninteractive GUI launch and layout checks

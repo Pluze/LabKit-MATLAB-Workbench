@@ -7,7 +7,7 @@ This directory is organized around the repository's main component boundaries: U
 - `architecture.md`: package boundaries and ownership rules.
 - `ui.md`: reusable MATLAB GUI shell, layout contract, and UI helper responsibilities.
 - `dta.md`: current electrochemistry/Gamry DTA API, parser assumptions, and DTA structs.
-- `apps.md`: app entry points, app-owned workflow rules, templates, and current app-specific notes.
+- `apps.md`: app entry points, app-owned workflow rules, new-app starting patterns, and current app-specific notes.
 - `testing.md`: automated checks and behavior-preservation coverage.
 
 ## Repository-Level Docs

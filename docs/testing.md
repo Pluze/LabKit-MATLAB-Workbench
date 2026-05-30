@@ -21,17 +21,32 @@ scripts/run_matlab_tests.sh
 Focused iteration commands:
 
 ```bash
+scripts/run_matlab_tests.sh --profile ui
+scripts/run_matlab_tests.sh --profile dic
+scripts/run_matlab_tests.sh --profile electrochem
+scripts/run_matlab_tests.sh --profile dta
 scripts/run_matlab_tests.sh --suite core
 scripts/run_matlab_tests.sh --suite gui
 scripts/run_matlab_tests.sh --test test_gui_layout_controls
 ```
 
-Use `--suite` for one or more suite keys: `core`, `dta`, `apps`, or `gui`. Use `--test` for one or more specific test functions. Selecting the `gui` suite or a `test_gui_*` function automatically uses GUI-capable MATLAB flags.
+Use `--profile` first for common change scopes:
+
+- `core`: startup and architecture guardrails
+- `dta`: `core` plus parser/session/DTA facade checks
+- `apps`: app-local pure analysis/export checks
+- `electrochem`: electrochem app pure checks plus electrochem GUI layout
+- `dic`: DIC GUI layout
+- `ui`: reusable UI helper and shell layout
+- `gui`: all noninteractive GUI checks
+- `all`: default pure suite plus all GUI checks
+
+Use `--suite` for one or more suite keys: `core`, `dta`, `apps`, or `gui`. Use `--test` for one or more specific test functions. Selecting the `gui` suite, a GUI profile, or a `test_gui_*` function automatically uses GUI-capable MATLAB flags.
 
 The default suite is grouped in `tests/run_all_tests.m` and organized on disk under `tests/suites/`:
 
 ```text
-core    startup/root-entry boundaries, architecture guardrails, templates
+core    startup/root-entry boundaries and architecture guardrails
 dta     parsers through the DTA facade, DTA discovery/detection/loading/session helpers, pulse detection, and item schemas
 apps    app-local analysis values, plotting helpers, export table builders, and CSV writers
 gui     optional noninteractive launch/layout/callback checks
@@ -39,7 +54,7 @@ gui     optional noninteractive launch/layout/callback checks
 
 Shared setup and assertions live under `tests/helpers/`. Keep helpers limited to setup and assertions; app-specific formulas, result schemas, export formats, and expected scientific values should remain in focused suite tests.
 
-GUI workflows are checked manually outside this protocol. Use `scripts/run_matlab_tests.sh --gui` only when noninteractive launch/layout/callback coverage is relevant.
+GUI workflows are checked manually outside this protocol. Use focused GUI profiles or `scripts/run_matlab_tests.sh --gui` only when noninteractive launch/layout/callback coverage is relevant.
 
 Do not run interactive GUI workflows in MATLAB `-batch` mode.
 
@@ -54,11 +69,11 @@ abs(oldValue - newValue) < 1e-9
 Use looser tolerances only when justified by interpolation, plotting-only alignment, or format conversion. Document any looser tolerance in the test.
 
 Use `tests/helpers/assertClose.m` for repeated exact or tolerance-based numeric checks instead of redefining local assertion helpers in each test file.
-Use `tests/helpers/demoFixtureDir.m`, `tests/helpers/demoFixturePath.m`, and focused fixture builders such as `tests/helpers/makeChronoFixtureItem.m` when multiple tests need the same demo fixture setup. Keep those helpers limited to test setup; do not move app-specific analysis, export schemas, or expected values into shared test helpers.
+Use `tests/helpers/dtaFixtureDir.m`, `tests/helpers/dtaFixturePath.m`, and focused fixture builders such as `tests/helpers/makeChronoFixtureItem.m` when multiple tests need the same DTA fixture setup. Keep those helpers limited to test setup; do not move app-specific analysis, export schemas, or expected values into shared test helpers.
 
 ## Fixture Expectations
 
-Named demo fixtures live under `demo/`:
+Named DTA fixtures live under `tests/fixtures/dta/`:
 
 ```text
 chrono_chronopot_current_pulse_0p2ms.DTA
@@ -71,7 +86,7 @@ cv_cyclic_voltammetry_pt_replicate.DTA
 eis_potentiostatic_zcurve.DTA
 ```
 
-Tests may require these named fixtures. They should not fail only because extra DTA files are added to `demo/`.
+Tests may require these named fixtures. They should not fail only because extra DTA files are added to `tests/fixtures/dta/`.
 
 ## Coverage Areas
 
@@ -102,7 +117,7 @@ App-boundary changes:
 
 - public app files do not depend on transitional app-specific helper packages
 - app-specific helper packages and private launcher directories are not reintroduced for workflow code that belongs to one app
-- public app files and templates do not call `labkit.io.*`, `labkit.data.*`, `labkit.analysis.*`, or `labkit.util.*` directly
+- public app files do not call `labkit.io.*`, `labkit.data.*`, `labkit.analysis.*`, or `labkit.util.*` directly
 - public app files use `labkit.dta.*` for DTA discovery, loading, session creation, removal, selection, pulse detection, and parsed table/curve access
 - public `+labkit/+data` and `+labkit/+io` packages are not reintroduced; parser, session IO, item construction, and table/curve access stay behind the DTA facade
 - app-local files keep the recommended single-file layout: entry/test hook, GUI construction, nested callbacks, app-local analysis, export/table helpers, plotting helpers, and small utilities

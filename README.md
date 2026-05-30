@@ -69,11 +69,14 @@ scripts/run_matlab_tests.sh
 Focused checks can run a single suite or test:
 
 ```bash
+scripts/run_matlab_tests.sh --profile ui
+scripts/run_matlab_tests.sh --profile dic
+scripts/run_matlab_tests.sh --profile electrochem
 scripts/run_matlab_tests.sh --suite core
 scripts/run_matlab_tests.sh --test test_gui_layout_controls
 ```
 
-Interactive GUI workflows are checked manually during app work.
+Profiles are the preferred path during iteration because they avoid running unrelated app families. Interactive GUI workflows are checked manually during app work.
 
 ## Repository Layout
 
@@ -82,9 +85,8 @@ Interactive GUI workflows are checked manually during app work.
 apps/                 App entry points and app-specific implementations
 apps/electrochem/     Current electrochemistry app entry points
 apps/dic/             Current DIC image workflow app entry points
-templates/            Copy-only GUI, DTA, and GUI+DTA starter programs
-demo/                 Named DTA fixtures
 tests/                MATLAB tests
+tests/fixtures/dta/   Named DTA test fixtures
 scripts/              Test runner scripts
 docs/                 UI, DTA, app, architecture, and testing docs
 ```

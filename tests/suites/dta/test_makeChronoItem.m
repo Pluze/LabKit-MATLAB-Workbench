@@ -1,7 +1,7 @@
 function test_makeChronoItem()
 %TEST_MAKECHRONOITEM Verify chrono item construction through the DTA facade.
 
-    fixture = demoFixturePath('chrono_chronopot_current_pulse_0p2ms.DTA');
+    fixture = dtaFixturePath('chrono_chronopot_current_pulse_0p2ms.DTA');
 
     [item, status] = labkit.dta.loadFile(fixture, "chrono");
     assert(status.ok, status.message);

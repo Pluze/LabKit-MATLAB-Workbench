@@ -1,18 +1,18 @@
 function test_dtaFacade()
 %TEST_DTAFACADE Verify GUI-free DTA type detection and loading facade.
 
-    demoDir = demoFixtureDir();
-    chronoFile = demoFixturePath('chrono_chronopot_current_pulse_0p2ms.DTA');
-    eisFile = demoFixturePath('eis_potentiostatic_zcurve.DTA');
-    cvctFile = demoFixturePath('cv_cyclic_voltammetry_pt_reference.DTA');
+    fixtureDir = dtaFixtureDir();
+    chronoFile = dtaFixturePath('chrono_chronopot_current_pulse_0p2ms.DTA');
+    eisFile = dtaFixturePath('eis_potentiostatic_zcurve.DTA');
+    cvctFile = dtaFixturePath('cv_cyclic_voltammetry_pt_reference.DTA');
 
-    discoveredFiles = labkit.dta.findFiles(demoDir);
-    assert(numel(discoveredFiles) >= 8, 'DTA facade should recursively discover demo DTA fixtures.');
+    discoveredFiles = labkit.dta.findFiles(fixtureDir);
+    assert(numel(discoveredFiles) >= 8, 'DTA facade should recursively discover DTA test fixtures.');
     assert(all(endsWith(lower(string(discoveredFiles)), '.dta')), ...
         'DTA facade discovery should return only DTA files.');
     assert(any(strcmp(discoveredFiles, chronoFile)), ...
         'DTA facade discovery should include the current-controlled chrono fixture.');
-    assert(isequal(labkit.dta.findFiles(string(demoDir)), discoveredFiles), ...
+    assert(isequal(labkit.dta.findFiles(string(fixtureDir)), discoveredFiles), ...
         'DTA facade discovery should accept scalar string folders.');
     assertInvalidFolderInput(42);
     assertInvalidFolderInput(fullfile(tempdir, 'labkit_missing_dta_folder'));
@@ -72,7 +72,7 @@ function test_dtaFacade()
     assert(contains(cvctMismatchStatus.message, 'Expected chrono DTA'), ...
         'CV/CT mismatch status should explain expected kind.');
 
-    [missingItem, missingStatus] = labkit.dta.loadFile(demoFixturePath('missing_file.DTA'), "auto");
+    [missingItem, missingStatus] = labkit.dta.loadFile(dtaFixturePath('missing_file.DTA'), "auto");
     assertStatusFields(missingStatus);
     assert(isempty(missingItem), 'Missing file load should not return an item.');
     assert(~missingStatus.ok, 'Missing file load should return failed status.');
@@ -98,7 +98,7 @@ function test_dtaFacade()
         'Blank expected kind should preserve empty DTA batch no-op report counts.');
     assertInvalidExpectedKind(@() labkit.dta.loadFiles([], "bad"));
 
-    [folderItems, folderReport] = labkit.dta.loadFolder(demoDir, "auto");
+    [folderItems, folderReport] = labkit.dta.loadFolder(fixtureDir, "auto");
     assertLoadFolderReportFields(folderReport);
     assert(numel(folderItems) == folderReport.nLoaded, ...
         'Folder load should return one item per successful load.');
@@ -106,7 +106,7 @@ function test_dtaFacade()
         'Folder load report should expose discovered file count.');
     assert(folderReport.nRequested == folderReport.nDiscovered, ...
         'Folder load should request every discovered DTA file.');
-    assert(strcmp(folderReport.folder, demoDir), ...
+    assert(strcmp(folderReport.folder, fixtureDir), ...
         'Folder load report should preserve the requested folder.');
 
     emptyDir = tempname;

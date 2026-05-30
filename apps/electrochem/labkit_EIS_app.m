@@ -139,7 +139,7 @@ function varargout = labkit_EIS_app(varargin)
     ax = labkit.ui.createAxes(right, 1, 'EIS Overlay', 'Zreal (ohm)', '-Zimag (ohm)');
 
     txtSummary = uitextarea(laySR, 'Editable', 'off');
-    txtSummary.Layout.Row = 2;
+    txtSummary.Layout.Row = labkit.ui.layoutRow(laySR, 2);
     txtSummary.Value = {'No files loaded.'};
     if nargout == 1
         varargout{1} = fig;

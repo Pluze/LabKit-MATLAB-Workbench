@@ -66,17 +66,14 @@ Keep new lab apps as explicit single files, organized roughly in this order:
 
 Nested functions may read and update GUI handles or app state. Local functions after the app `end` should be GUI-free when practical so tests can call them through narrow app test hooks.
 
-## Templates
+## New App Starting Pattern
 
-Template source files live under `templates/` and are copy-only starting points, not runtime app entry points:
+Do not start new apps from long copy-only template files. Start from the current app that is closest in scope, then reduce it to the needed workflow while preserving these boundaries:
 
-```text
-templates/gui_only_app_template.m       GUI helpers only
-templates/dta_only_script_template.m    DTA facade only
-templates/gui_dta_app_template.m        GUI helpers plus DTA facade
-```
-
-Copy one into an `apps/<category>/` folder only when starting a real app. Keep the copied app explicit and local; do not create a helper package just because two callbacks look similar.
+- GUI-only apps call `labkit.ui.createWorkbench`, define app-specific controls inside left tabs, and render prepared data on the right.
+- DTA-backed apps keep file discovery/loading/session operations behind `labkit.dta.*` and keep analysis, plotting, result tables, and exports app-local.
+- Apps should declare custom left tabs with `labkit.ui.tabSpec` when the standard three-section tab is not enough; use `resizeRows` in the tab spec for user-adjustable section heights.
+- New app files belong under `apps/<category>/` and should remain explicit single files until real duplication proves a reusable UI or DTA helper is justified.
 
 ## New App Checklist
 

@@ -21,6 +21,7 @@ Log
 
 Apps may pass custom tab specs when a workflow needs different pages. The app still owns the controls inside each tab.
 The left tab host and each tab content grid are scrollable, so app-specific sections can extend below the visible window without hiding controls.
+Tabs can also declare draggable row boundaries through `resizeRows`; this is a shell-level behavior, and app code should continue to use logical grid row numbers.
 
 ## Core Entry Point
 
@@ -46,6 +47,17 @@ For custom right-side arrangements, pass `rightGridSize`, `rightRowHeight`, and 
 
 App files should not rebuild split-pane layout plumbing or own their own separator-drag behavior.
 
+Custom left-tab sizing is declared in the tab spec:
+
+```matlab
+opts.tabs = labkit.ui.tabSpec( ...
+    'filesAnalysis', 'Files + Analysis', [4 1], ...
+    {240, 210, 330, 170}, ...
+    struct('resizeRows', [1 2 3]));
+```
+
+Here `resizeRows = [1 2 3]` means the user can drag the boundaries after logical rows 1, 2, and 3. The framework may create internal handle rows, but app code still places sections in rows 1 through 4 through LabKit layout helpers.
+
 ## Common Helpers
 
 Construction helpers:
@@ -57,7 +69,6 @@ labkit.ui.createPlotOptionsPanel(parent, numRows, row);
 labkit.ui.createTopBottomPlotControls(topPanel, bottomPanel, xItems, yItems, topDefaults, bottomDefaults, onChange);
 labkit.ui.createResultTablePanel(parent, titleText, row, columnNames, initialData);
 labkit.ui.createLogPanel(parent, row, initialValue);
-labkit.ui.addRowResizeHandle(fig, grid, handleRow, opts);
 ```
 
 State and rendering helpers:
@@ -70,7 +81,7 @@ info = labkit.ui.plotXY(ax, x, y, labels, opts);
 
 Use `createPanelGrid` for app-defined sections that only need the standard panel/grid styling. Use `refreshListboxSelection` for generic single- or multi-select listbox state updates.
 
-Use `addRowResizeHandle` when a tab contains several stacked app-defined sections that may need manual height adjustment. The app owns the row heights and section content; the helper only adds the draggable handle and row-height update behavior.
+Use `tabSpec(..., struct('resizeRows', ...))` when a left tab contains several stacked app-defined sections that may need manual height adjustment. When manually placing a component directly into a workbench tab grid, map the logical row through `labkit.ui.layoutRow(parentGrid, row)`. Most app code should use helpers such as `createPanelGrid`, `createResultTablePanel`, `createLogPanel`, and `createAxes`, which apply that mapping for their parent row. `labkit.ui.addRowResizeHandle` remains a lower-level helper for unusual app-local grids that intentionally reserve a physical handle row.
 
 ## Ownership Boundary
 

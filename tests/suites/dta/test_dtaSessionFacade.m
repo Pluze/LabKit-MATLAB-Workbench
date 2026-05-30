@@ -1,7 +1,7 @@
 function test_dtaSessionFacade()
 %TEST_DTASESSIONFACADE Verify app-facing DTA session helpers.
 
-    fixture = demoFixturePath('chrono_chronopot_current_pulse_0p2ms.DTA');
+    fixture = dtaFixturePath('chrono_chronopot_current_pulse_0p2ms.DTA');
 
     session = labkit.dta.makeSession('template', struct('notes', 'demo'));
     assert(strcmp(session.kind, 'template'), 'DTA facade should create sessions with the requested kind.');

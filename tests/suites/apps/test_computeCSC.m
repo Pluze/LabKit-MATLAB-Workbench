@@ -1,7 +1,7 @@
 function test_computeCSC()
 %TEST_COMPUTECSC Verify CV/CT charge and CSC app analysis.
 
-    fixture = demoFixturePath('cv_cyclic_voltammetry_pt_reference.DTA');
+    fixture = dtaFixturePath('cv_cyclic_voltammetry_pt_reference.DTA');
 
     [item, status] = labkit.dta.loadFile(fixture, "cvct");
     assert(status.ok, status.message);

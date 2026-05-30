@@ -1,16 +1,16 @@
 function test_parseChronoDTA()
 %TEST_PARSECHRONODTA Verify extracted chrono DTA parser and accessors.
 
-    filepaths = labkit.dta.findFiles(demoFixtureDir());
-    assert(numel(filepaths) >= 8, 'findFiles should find the demo DTA fixtures.');
+    filepaths = labkit.dta.findFiles(dtaFixtureDir());
+    assert(numel(filepaths) >= 8, 'findFiles should find the DTA test fixtures.');
     assert(all(endsWith(lower(string(filepaths)), '.dta')), 'findFiles should return only DTA files.');
-    assert(any(endsWith(string(filepaths), fullfile('demo', 'chrono_chronopot_current_pulse_0p2ms.DTA'))), ...
+    assert(any(endsWith(string(filepaths), fullfile('tests', 'fixtures', 'dta', 'chrono_chronopot_current_pulse_0p2ms.DTA'))), ...
         'findDTAFilesRecursive should include the current-controlled chrono fixture.');
-    assert(any(endsWith(string(filepaths), fullfile('demo', 'chrono_chronoamp_voltage_pulse_0p2ms.DTA'))), ...
+    assert(any(endsWith(string(filepaths), fullfile('tests', 'fixtures', 'dta', 'chrono_chronoamp_voltage_pulse_0p2ms.DTA'))), ...
         'findDTAFilesRecursive should include the voltage-controlled chrono fixture.');
 
-    currentFile = demoFixturePath('chrono_chronopot_current_pulse_0p2ms.DTA');
-    voltageFile = demoFixturePath('chrono_chronoamp_voltage_pulse_0p2ms.DTA');
+    currentFile = dtaFixturePath('chrono_chronopot_current_pulse_0p2ms.DTA');
+    voltageFile = dtaFixturePath('chrono_chronoamp_voltage_pulse_0p2ms.DTA');
 
     [currentItem, currentStatus] = labkit.dta.loadFile(currentFile, "chrono");
     assert(currentStatus.ok, currentStatus.message);

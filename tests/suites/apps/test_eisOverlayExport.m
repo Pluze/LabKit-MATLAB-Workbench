@@ -2,7 +2,7 @@ function test_eisOverlayExport()
 %TEST_EISOVERLAYEXPORT Verify EIS item schema and export/plot contracts.
 
     root = testRepoRoot();
-    fixture = demoFixturePath('eis_potentiostatic_zcurve.DTA');
+    fixture = dtaFixturePath('eis_potentiostatic_zcurve.DTA');
 
     [item, status] = labkit.dta.loadFile(fixture, "eis");
     assert(status.ok, status.message);

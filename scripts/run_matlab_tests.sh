@@ -5,10 +5,11 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 INCLUDE_GUI=0
 SUITES=()
 TESTS=()
+PROFILES=()
 
 usage() {
     cat <<'USAGE'
-Usage: scripts/run_matlab_tests.sh [--gui] [--suite NAME] [--test NAME]
+Usage: scripts/run_matlab_tests.sh [--gui] [--profile NAME] [--suite NAME] [--test NAME]
 
 Runs the default pure-function MATLAB tests.
 
@@ -16,6 +17,9 @@ Options:
   --gui         Also include optional noninteractive GUI launch/layout tests.
                 This mode requires MATLAB graphics/uifigure support and does not
                 use the default headless -nojvm/-nodisplay/-noFigureWindows flags.
+  --profile NAME
+                Run a focused profile. Repeatable.
+                Profiles: core, dta, apps, electrochem, dic, ui, gui, all.
   --suite NAME  Run only a suite key: core, dta, apps, or gui. Repeatable.
   --test NAME   Run only a test function, for example test_gui_layout_controls.
                 Repeatable. test_gui_* automatically uses GUI MATLAB flags.
@@ -38,6 +42,15 @@ while [[ $# -gt 0 ]]; do
             if [[ "$2" == "gui" ]]; then
                 INCLUDE_GUI=1
             fi
+            shift 2
+            ;;
+        --profile)
+            if [[ $# -lt 2 ]]; then
+                echo "--profile requires a value." >&2
+                usage >&2
+                exit 2
+            fi
+            PROFILES+=("$2")
             shift 2
             ;;
         --test)
@@ -63,6 +76,67 @@ while [[ $# -gt 0 ]]; do
             ;;
     esac
 done
+
+append_suite() {
+    SUITES+=("$1")
+}
+
+append_test() {
+    TESTS+=("$1")
+}
+
+apply_profile() {
+    case "$1" in
+        core)
+            append_suite core
+            ;;
+        dta)
+            append_suite core
+            append_suite dta
+            ;;
+        apps)
+            append_suite apps
+            ;;
+        electrochem)
+            INCLUDE_GUI=1
+            append_test test_chronoOverlayExport
+            append_test test_computeVTResistance
+            append_test test_vtResistanceExport
+            append_test test_computeCIC
+            append_test test_cicExport
+            append_test test_computeCSC
+            append_test test_plotXY
+            append_test test_eisOverlayExport
+            append_test test_gui_layout_electrochem
+            ;;
+        dic)
+            INCLUDE_GUI=1
+            append_test test_gui_layout_dic
+            ;;
+        ui)
+            INCLUDE_GUI=1
+            append_test test_gui_layout_ui_helpers
+            ;;
+        gui)
+            INCLUDE_GUI=1
+            append_suite gui
+            ;;
+        all)
+            INCLUDE_GUI=1
+            ;;
+        *)
+            echo "Unknown profile: $1" >&2
+            usage >&2
+            exit 2
+            ;;
+    esac
+}
+
+if [[ ${#PROFILES[@]} -gt 0 ]]; then
+    for profile in "${PROFILES[@]}"; do
+        apply_profile "$profile"
+    done
+fi
 
 find_matlab() {
     if [[ -n "${MATLAB_CMD:-}" ]]; then
