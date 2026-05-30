@@ -26,9 +26,9 @@ parse numeric rows into MATLAB arrays
 Shared helpers used by parser code include:
 
 ```text
-gamrywb.util.splitTabs
-gamrywb.util.nextNonEmpty
-gamrywb.util.isDataLike
+splitTabs in +gamrywb/+io/private
+nextNonEmpty in +gamrywb/+io/private
+isDataLike in +gamrywb/+io/private
 gamrywb.data.getColumn
 ```
 

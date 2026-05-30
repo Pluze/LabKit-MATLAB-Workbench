@@ -27,17 +27,18 @@ The desired architecture is:
 
 ```text
 apps/ experiment apps
-    call reusable +gamrywb DTA and GUI APIs
+    call reusable +gamrywb DTA and GUI APIs, and data APIs only when needed
     own experiment-specific scientific logic, parameters, plots, and exports
     ideally one experiment corresponds to one app .m file
 
 +gamrywb reusable library
     GUI library: scientific-app shells, controls, panels, logs, and UI state helpers
-    Gamry/DTA library: DTA discovery, parsing, loading, item/session data APIs
-    utility library: small shared helpers only when they are genuinely cross-cutting
+    Gamry/DTA library: app-facing DTA discovery, loading, and session APIs
+    data library: lower-level item/session/table APIs used only when app code genuinely needs them
+    internal helpers: parser, analysis, utility, and private helpers hidden behind GUI/DTA/data APIs
 ```
 
-Do not add new experiment-specific app logic to the reusable `+gamrywb` library. Keep `+gamrywb/+analysis` pulse-focused. Keep app-specific analysis, plotting, export schemas, and CSV writing in the owning public app file unless a repeated use case proves a lower-level utility is clearer. Do not reintroduce app-specific helper packages or namespaces just to make local app functions public.
+Do not add new experiment-specific app logic to the reusable `+gamrywb` library. New app code should not call `gamrywb.io.*`, `gamrywb.analysis.*`, or `gamrywb.util.*` directly; put those needs behind `gamrywb.dta.*`, `gamrywb.ui.*`, selected `gamrywb.data.*`, or an app-local helper. Keep `+gamrywb/+analysis` pulse-focused and internal-facing. Keep app-specific analysis, plotting, export schemas, and CSV writing in the owning public app file unless a repeated use case proves a lower-level utility is clearer. Do not reintroduce app-specific helper packages or namespaces just to make local app functions public.
 
 Do not change:
 
@@ -56,7 +57,7 @@ same results, cleaner code, clearer boundaries
 ## Allowed Work
 
 - Move duplicated helper logic into `+gamrywb` package functions only when the helper is genuinely cross-cutting and makes the caller easier to understand.
-- Update app entry points to call package helpers when behavior is preserved and the helper boundary matches the GUI, DTA, or utility library responsibilities above.
+- Update app entry points to call package helpers when behavior is preserved and the helper boundary matches the GUI, DTA, or selected data responsibilities above.
 - Move app-specific implementations and experiment-specific scientific workflow code out of `+gamrywb` when doing so preserves behavior.
 - Add or update tests for pure functions and app entry points.
 - Update documentation to reflect current behavior.

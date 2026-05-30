@@ -14,7 +14,7 @@ function [scanRate, curves, logmsg] = parseCVCTDTA(filepath)
     logmsg{end+1} = sprintf('Total lines in file: %d', nLines);
 
     for i = 1:nLines
-        tok = gamrywb.util.splitTabs(lines{i});
+        tok = splitTabs(lines{i});
         if numel(tok) >= 3 && strcmpi(tok{1}, 'SCANRATE')
             val = str2double(tok{3});
             if ~isnan(val)
@@ -28,7 +28,7 @@ function [scanRate, curves, logmsg] = parseCVCTDTA(filepath)
     curveLines = [];
     curveNames = {};
     for i = 1:nLines
-        tok = gamrywb.util.splitTabs(lines{i});
+        tok = splitTabs(lines{i});
         if ~isempty(tok) && startsWith(tok{1}, 'CURVE', 'IgnoreCase', true)
             curveLines(end+1) = i; %#ok<AGROW>
             curveNames{end+1} = tok{1}; %#ok<AGROW>
@@ -46,33 +46,33 @@ function [scanRate, curves, logmsg] = parseCVCTDTA(filepath)
         name = curveNames{k};
         logmsg{end+1} = sprintf('Parsing %s at line %d', name, i0);
 
-        iHeader = gamrywb.util.nextNonEmpty(lines, i0 + 1);
+        iHeader = nextNonEmpty(lines, i0 + 1);
         if isnan(iHeader)
             logmsg{end+1} = sprintf('  %s skipped: no header.', name);
             continue;
         end
 
-        headers = gamrywb.util.splitTabs(lines{iHeader});
+        headers = splitTabs(lines{iHeader});
         if isempty(headers)
             logmsg{end+1} = sprintf('  %s skipped: empty header.', name);
             continue;
         end
         logmsg{end+1} = sprintf('  Header: %s', strjoin(headers, ', '));
 
-        iUnits = gamrywb.util.nextNonEmpty(lines, iHeader + 1);
+        iUnits = nextNonEmpty(lines, iHeader + 1);
         if isnan(iUnits)
             logmsg{end+1} = sprintf('  %s skipped: no unit/data line.', name);
             continue;
         end
 
-        units = gamrywb.util.splitTabs(lines{iUnits});
-        iDataStart = gamrywb.util.nextNonEmpty(lines, iUnits + 1);
+        units = splitTabs(lines{iUnits});
+        iDataStart = nextNonEmpty(lines, iUnits + 1);
         if isnan(iDataStart)
             logmsg{end+1} = sprintf('  %s skipped: no data lines.', name);
             continue;
         end
 
-        if gamrywb.util.isDataLike(units)
+        if isDataLike(units)
             logmsg{end+1} = sprintf('  No separate unit line detected; data starts at line %d.', iUnits);
             iDataStart = iUnits;
             units = repmat({''}, size(headers));
@@ -82,7 +82,7 @@ function [scanRate, curves, logmsg] = parseCVCTDTA(filepath)
 
         raw = [];
         for j = iDataStart:nLines
-            tok = gamrywb.util.splitTabs(lines{j});
+            tok = splitTabs(lines{j});
             if isempty(tok)
                 continue;
             end

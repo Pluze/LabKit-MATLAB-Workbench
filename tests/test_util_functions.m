@@ -1,16 +1,6 @@
 function test_util_functions()
 %TEST_UTIL_FUNCTIONS Focused checks for extracted low-risk utilities.
 
-    tok = gamrywb.util.splitTabs(sprintf('A\t\tB\t'));
-    assert(isequal(tok, {'A', 'B'}), 'splitTabs should split tab runs and remove empty tokens.');
-
-    lines = {'', '   ', 'value'};
-    assert(gamrywb.util.nextNonEmpty(lines, 1) == 3, 'nextNonEmpty should find the first non-blank line.');
-    assert(isnan(gamrywb.util.nextNonEmpty(lines, 4)), 'nextNonEmpty should return NaN past the end.');
-
-    assert(gamrywb.util.isDataLike({'label', '1.25'}), 'isDataLike should detect numeric tokens.');
-    assert(~gamrywb.util.isDataLike({'label', 'units'}), 'isDataLike should reject nonnumeric rows.');
-
     item = struct('a', 1);
     out = gamrywb.util.appendStruct(struct([]), item);
     assert(isequal(out, item), 'appendStruct should return item for empty input.');

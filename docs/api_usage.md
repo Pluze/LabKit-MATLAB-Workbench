@@ -208,20 +208,11 @@ info = gamrywb.ui.plotXY(ax, x, y, labels, opts);
 GUI helpers should not contain experiment names, formulas, thresholds, result columns, or export formats.
 They should also receive prepared values from the app or data layer rather than calling parser, DTA, session, or analysis APIs themselves.
 
-## Utility API
+## Internal Helpers
 
-Use `+gamrywb/+util` only for small cross-cutting helpers:
-
-```matlab
-name = gamrywb.util.shortName(filepath);
-escaped = gamrywb.util.csvEscape(textValue);
-fieldName = gamrywb.util.sanitizeFieldName(rawName);
-value = gamrywb.util.parsePositiveScalar(textValue);
-idx = gamrywb.util.nearestIndex(t, targetTime);
-value = gamrywb.util.interp1Safe(t, y, targetTime);
-```
-
-Do not move code into `+util` just because it is short. It must be useful across layers and explainable without experiment vocabulary.
+New apps should not call `+gamrywb/+util`, `+gamrywb/+io`, or `+gamrywb/+analysis` directly.
+Those packages are lower-level implementation surfaces for the GUI, DTA, and data APIs.
+If a new app seems to need one of them, first check whether the behavior belongs behind `gamrywb.dta.*`, `gamrywb.ui.*`, or a small app-local helper.
 
 ## Template Programs
 

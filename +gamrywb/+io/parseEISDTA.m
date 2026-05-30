@@ -18,7 +18,7 @@ function [meta, tables, logmsg] = parseEISDTA(filepath)
     logmsg{end+1} = sprintf('Parsing DTA: %s', filepath);
 
     for i = 1:nLines
-        tok = gamrywb.util.splitTabs(lines{i});
+        tok = splitTabs(lines{i});
         if numel(tok) < 3
             continue;
         end
@@ -41,29 +41,29 @@ function [meta, tables, logmsg] = parseEISDTA(filepath)
 
     i = 1;
     while i <= nLines
-        tok = gamrywb.util.splitTabs(lines{i});
+        tok = splitTabs(lines{i});
         if numel(tok) >= 2 && strcmpi(tok{2}, 'TABLE')
             name = tok{1};
-            iHeader = gamrywb.util.nextNonEmpty(lines, i + 1);
-            iUnits = gamrywb.util.nextNonEmpty(lines, iHeader + 1);
+            iHeader = nextNonEmpty(lines, i + 1);
+            iUnits = nextNonEmpty(lines, iHeader + 1);
             if isnan(iHeader) || isnan(iUnits)
                 i = i + 1;
                 continue;
             end
 
-            headers = gamrywb.util.splitTabs(lines{iHeader});
-            units = gamrywb.util.splitTabs(lines{iUnits});
-            if gamrywb.util.isDataLike(units)
+            headers = splitTabs(lines{iHeader});
+            units = splitTabs(lines{iUnits});
+            if isDataLike(units)
                 dataStart = iUnits;
                 units = repmat({''}, size(headers));
             else
-                dataStart = gamrywb.util.nextNonEmpty(lines, iUnits + 1);
+                dataStart = nextNonEmpty(lines, iUnits + 1);
             end
 
             raw = [];
             j = dataStart;
             while j <= nLines
-                tokj = gamrywb.util.splitTabs(lines{j});
+                tokj = splitTabs(lines{j});
                 if isempty(tokj)
                     j = j + 1;
                     continue;
