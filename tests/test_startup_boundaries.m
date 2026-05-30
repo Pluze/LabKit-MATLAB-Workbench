@@ -5,7 +5,12 @@ function test_startup_boundaries()
 
     assert(exist(fullfile(root, 'startup_gamrywb.m'), 'file') == 2, 'startup_gamrywb.m is missing.');
     assert(exist(fullfile(root, '+gamrywb', '+dta', 'loadFile.m'), 'file') == 2, 'DTA facade is missing.');
+    assert(exist(fullfile(root, 'apps', 'electrochem'), 'dir') == 7, ...
+        'Electrochem app folder should exist under apps/.');
     assert(exist(fullfile(root, 'legacy'), 'dir') == 0, 'legacy/ should be removed after app entry points are package-backed.');
+    assert(pathContains(fullfile(root, 'apps')), 'startup_gamrywb should add apps/ to the path.');
+    assert(pathContains(fullfile(root, 'apps', 'electrochem')), ...
+        'startup_gamrywb should add nested app category folders to the path.');
 
     removedRootNames = { ...
         'gamry_CIC_VT_gui_paperlabels', ...
@@ -23,4 +28,18 @@ function test_startup_boundaries()
 
     assert(exist(demoFixturePath('cv_cyclic_voltammetry_pt_reference.DTA'), 'file') == 2, ...
         'Demo fixture cv_cyclic_voltammetry_pt_reference.DTA is missing.');
+
+    previousDir = pwd;
+    cleaner = onCleanup(@() cd(previousDir));
+    cd(tempdir);
+    entries = appEntryManifest();
+    for i = 1:size(entries, 1)
+        assert(~isempty(which(entries{i, 1})), ...
+            ['App entry point should resolve without cd into apps/: ' entries{i, 1}]);
+    end
+end
+
+function tf = pathContains(folder)
+    paths = strsplit(path, pathsep);
+    tf = any(strcmp(paths, folder));
 end

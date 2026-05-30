@@ -28,7 +28,7 @@ function test_eisOverlayExport()
     assertClose(item.Idc_A, item.Idc, 'EIS normalized Idc alias');
     assertClose(item.Vdc_V, item.Vdc, 'EIS normalized Vdc alias');
 
-    appFile = fullfile(root, 'apps', 'gamrywb_EIS_app.m');
+    appFile = appEntryFile(root, 'gamrywb_EIS_app');
     source = fileread(appFile);
     assert(contains(source, '''Freq (Hz)''') && contains(source, '''Zreal (ohm)''') && ...
         contains(source, '''-Zimag (ohm)'''), ...

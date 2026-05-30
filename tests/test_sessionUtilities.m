@@ -16,6 +16,15 @@ function test_sessionUtilities()
     assert(strcmp(loaded.kind, session.kind), 'Loaded session kind should be preserved.');
     assert(numel(loaded.items) == 1 && strcmp(loaded.items(1).name, 'a.DTA'), ...
         'Loaded session items should be preserved.');
+
+    missingPath = [tempname '.mat'];
+    assertLoadSessionFails(missingPath, 'Missing session files should fail clearly.');
+
+    badPath = [tempname '.mat'];
+    badCleaner = onCleanup(@() deleteIfExists(badPath));
+    notSession = struct('type', 'not_a_session'); %#ok<NASGU>
+    save(badPath, 'notSession');
+    assertLoadSessionFails(badPath, 'MAT files without gamrywb_session should fail clearly.');
 end
 
 function item = makeItem(filepath)
@@ -29,4 +38,14 @@ function deleteIfExists(filepath)
     if exist(filepath, 'file') == 2
         delete(filepath);
     end
+end
+
+function assertLoadSessionFails(filepath, message)
+    try
+        gamrywb.dta.loadSession(filepath);
+    catch
+        return;
+    end
+
+    error(message);
 end

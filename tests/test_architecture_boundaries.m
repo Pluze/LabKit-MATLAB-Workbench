@@ -77,6 +77,8 @@ function test_architecture_boundaries()
 
     assert(exist(fullfile(root, 'apps', 'private'), 'dir') ~= 7, ...
         'The transitional apps/private launcher directory should be removed after all app bodies move public.');
+    assert(exist(fullfile(root, 'apps', 'electrochem'), 'dir') == 7, ...
+        'Electrochem apps should live under apps/electrochem.');
 
     chronoSource = assertSingleFileApp(root, ...
         'gamrywb_ChronoOverlay_app', ...
@@ -220,12 +222,15 @@ function test_architecture_boundaries()
 end
 
 function source = assertSingleFileApp(root, appName, launchName, legacyCall)
-    appFile = fullfile(root, 'apps', [appName '.m']);
+    appFile = appEntryFile(root, appName);
     privateLaunchFile = fullfile(root, 'apps', 'private', [launchName '.m']);
     packageLaunchFile = fullfile(root, '+gamrywb', '+app', [launchName '.m']);
+    rootLevelAppFile = fullfile(root, 'apps', [appName '.m']);
 
     assert(exist(appFile, 'file') == 2, ['Missing app entry point: ' appName]);
     assert(~isempty(which(appName)), ['App entry point does not resolve: ' appName]);
+    assert(exist(rootLevelAppFile, 'file') ~= 2, ...
+        [appName ' should live under an apps category folder, not apps/ root.']);
     assert(exist(privateLaunchFile, 'file') ~= 2, ...
         [appName ' should not keep a separate apps/private launcher.']);
     assert(exist(packageLaunchFile, 'file') ~= 2, ...

@@ -8,7 +8,7 @@ The v1.0 behavior-preserving refactor is complete, and later cleanup narrowed th
 
 What that means:
 
-- Current runtime entry points live under `apps/`.
+- Current runtime entry points live under category folders in `apps/`.
 - The old root-level GUI command wrappers and `legacy/` reference directory have been removed.
 - EIS, Chrono overlay, CSC, VT resistance, and CIC are public single-file app implementations.
 - Experiment-specific analysis, plots, result tables, and exports belong to the owning app file.
@@ -57,6 +57,7 @@ The default runner covers pure functions. The optional GUI mode checks launch/la
 ```text
 +gamrywb/             App-facing GUI and DTA APIs
 apps/                 App entry points and app-specific implementations
+apps/electrochem/     Current electrochemistry app entry points
 templates/            Copy-only GUI, DTA, and GUI+DTA starter programs
 demo/                 Named DTA fixtures
 tests/                MATLAB tests

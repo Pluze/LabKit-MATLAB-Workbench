@@ -26,7 +26,7 @@ Preserve behavior unless the user explicitly asks for a behavior change.
 The desired architecture is:
 
 ```text
-apps/ experiment apps
+apps/ experiment app category folders
     call reusable +gamrywb DTA and GUI APIs
     own experiment-specific scientific logic, parameters, plots, and exports
     ideally one experiment corresponds to one app .m file

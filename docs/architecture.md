@@ -5,7 +5,7 @@ This document describes the current package boundaries. It is not a roadmap.
 ## Core Shape
 
 ```text
-apps/ public app entry points; all current apps are single-file app implementations
+apps/ category folders containing public app entry points
     ↓
 +gamrywb GUI and DTA APIs
     ↓
@@ -36,7 +36,7 @@ gamrywb.ui    = reusable GUI structure and rendering helpers
 
 Future data or device families can be added beside `gamrywb.dta` as peer modules. They should expose one coherent app-facing facade each rather than leaking parser or low-level IO packages into app code.
 
-Experiment app implementations live under public `apps/*.m` files rather than being absorbed into the reusable library package. The intended app shape is one experiment app `.m` file owning its scientific workflow. App-specific helper packages should not be reintroduced just to make local code public.
+Experiment app implementations live under category folders such as `apps/electrochem/` rather than being absorbed into the reusable library package. The intended app shape is one experiment app `.m` file owning its scientific workflow. App-specific helper packages should not be reintroduced just to make local code public.
 
 ## Entrypoints
 
@@ -52,7 +52,7 @@ gamrywb_ChronoOverlay_app
 
 The app files are package-backed and do not delegate to legacy GUI files.
 
-`startup_gamrywb` adds the repository root and `apps/` to the MATLAB path. Root-level original command wrappers and the old `legacy/` GUI directory have been removed, so the old command names no longer resolve by default.
+`startup_gamrywb` adds the repository root, `apps/`, and normal nested app category folders to the MATLAB path. Root-level original command wrappers and the old `legacy/` GUI directory have been removed, so the old command names no longer resolve by default.
 
 ## Package Responsibilities
 
@@ -80,7 +80,7 @@ Internal helper base
   internal string, struct, numeric, CSV, pulse-detection, and parser helpers used behind GUI/DTA APIs
 
 Not library code: experiment-specific app design
-  apps/ public app files
+  apps/<category>/ public app files
   experiment-specific analysis, plotting, result summaries, and exports
 ```
 
@@ -113,7 +113,7 @@ The GUI decides how to display that status.
 
 ## Current Package Surface
 
-- `apps/`: user-facing app entry points and app-specific implementations. All current app bodies are single public app source files, and app-specific workflow helpers are local functions in those files rather than reusable `+gamrywb` APIs or transitional app-helper packages.
+- `apps/`: user-facing app category folders and app-specific implementations. Current electrochemistry app bodies live under `apps/electrochem/` as single public app source files, and app-specific workflow helpers are local functions in those files rather than reusable `+gamrywb` APIs or transitional app-helper packages.
 - `+dta`: GUI-free facade for supported DTA file discovery, family detection, single-file loading, batch loading, folder loading, pulse detection, item construction, parsed table/curve access, session save/load, and app-facing DTA session operations with status/report structs. It keeps parser and DTA-specific implementation helpers private.
 - `+ui`: reusable GUI framework helpers, including generic axes creation/reset, prepared-X/Y plotting, log append and log panel, generic listbox item refresh, multi-file and single-select file-panel, summary row, result table panel, plot-options panel, simple labeled-control, two-pane shell, tabbed dual-plot shell, and top/bottom plot-control construction/state helpers.
 - Internal helpers: package-private parser helpers and app-local helper functions. Public `+io`, `+data`, and `+util` packages should not be reintroduced as new-app entry surfaces.

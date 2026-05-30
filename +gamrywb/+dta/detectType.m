@@ -10,8 +10,8 @@ function [kind, status] = detectType(filepath)
         return;
     end
 
-    probes = {@isEIS, @isChrono, @isCVCT};
-    kinds = ["eis", "chrono", "cvct"];
+    probes = {@isEIS, @isCVCT, @isChrono};
+    kinds = ["eis", "cvct", "chrono"];
     messages = strings(size(kinds));
 
     for k = 1:numel(probes)
@@ -82,10 +82,12 @@ function [ok, msg] = isCVCT(filepath)
     ok = false;
     msg = "";
     try
-        [~, curves, logmsg] = parseCVCTDTA(filepath);
-        ok = ~isempty(curves);
+        [scanRate, curves, logmsg] = parseCVCTDTA(filepath);
+        ok = ~isempty(curves) && isfinite(scanRate);
         if ok
             msg = "Detected CV/CT curve section.";
+        elseif ~isfinite(scanRate)
+            msg = "No CV/CT scan rate found.";
         elseif ~isempty(logmsg)
             msg = string(logmsg{end});
         else

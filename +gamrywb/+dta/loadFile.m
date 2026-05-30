@@ -21,6 +21,15 @@ function [item, status] = loadFile(filepath, expectedKind, opts)
         end
         kind = detectedKind;
     else
+        [detectedKind, detectStatus] = gamrywb.dta.detectType(filepath);
+        if detectStatus.ok && detectedKind ~= expectedKind
+            status.kind = detectedKind;
+            status.message = sprintf('Expected %s DTA, detected %s.', expectedKind, detectedKind);
+            return;
+        elseif ~detectStatus.ok && contains(detectStatus.message, 'File not found')
+            status = withExpectedKind(detectStatus, expectedKind);
+            return;
+        end
         kind = expectedKind;
     end
 

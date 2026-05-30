@@ -20,7 +20,7 @@ Those were useful migration scaffolds, not the final architecture.
 
 Post-v1.0 cleanup removed the legacy runtime dependency and narrowed the app-facing package surface:
 
-- current runtime entry points are the `apps/gamrywb_*_app.m` files
+- current runtime entry points are the `apps/<category>/gamrywb_*_app.m` files
 - app-specific analysis, plotting, result-table, and CSV/export behavior lives in the owning app file
 - reusable GUI infrastructure lives under `gamrywb.ui.*`
 - DTA discovery, loading, sessions, pulse detection, parser/session IO, and parsed table/curve access live behind `gamrywb.dta.*`

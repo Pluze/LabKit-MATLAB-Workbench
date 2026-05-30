@@ -10,7 +10,7 @@ From MATLAB:
 startup_gamrywb
 ```
 
-This adds the repository root and `apps/` to the MATLAB path.
+This adds the repository root, `apps/`, and normal nested app category folders to the MATLAB path.
 
 ## DTA API
 
@@ -112,7 +112,7 @@ templates/dta_only_script_template.m    DTA facade only
 templates/gui_dta_app_template.m        GUI helpers plus DTA facade
 ```
 
-Copy one into `apps/` only when starting a real experiment app. Keep the copied app explicit and local; do not create a helper package just because two callbacks look similar.
+Copy one into an `apps/<category>/` folder only when starting a real experiment app. Keep the copied app explicit and local; do not create a helper package just because two callbacks look similar.
 
 ## App Layout
 

@@ -139,7 +139,7 @@ EIS item construction remains behind the reusable DTA facade. EIS overlay axis s
 
 ```text
 +gamrywb/+dta/loadFile.m
-apps/gamrywb_EIS_app.m
+apps/electrochem/gamrywb_EIS_app.m
 ```
 
 ---
@@ -170,7 +170,7 @@ CV/CT parser behavior to preserve:
 - Headers, units, data, and numeric masks are preserved for each curve.
 - Numeric rows are parsed conservatively to preserve validated behavior.
 
-CV/CSC scientific rules are not parser behavior. The CSC app owns those rules as local functions in `apps/gamrywb_CSC_app.m`; CT and CV charge integration are local details of that app, not parser behavior or reusable `+gamrywb` analysis.
+CV/CSC scientific rules are not parser behavior. The CSC app owns those rules as local functions in `apps/electrochem/gamrywb_CSC_app.m`; CT and CV charge integration are local details of that app, not parser behavior or reusable `+gamrywb` analysis.
 
 ---
 

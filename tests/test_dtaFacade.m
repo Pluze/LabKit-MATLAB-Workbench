@@ -63,6 +63,15 @@ function test_dtaFacade()
     assert(contains(mismatchStatus.message, 'Expected chrono DTA'), ...
         'Mismatch status should explain expected kind.');
 
+    [cvctMismatchItem, cvctMismatchStatus] = gamrywb.dta.loadFile(cvctFile, "chrono");
+    assertStatusFields(cvctMismatchStatus);
+    assert(isempty(cvctMismatchItem), 'CV/CT mismatch load should not return an item.');
+    assert(~cvctMismatchStatus.ok, 'CV/CT mismatch load should return failed status.');
+    assert(cvctMismatchStatus.kind == "cvct", ...
+        'CV/CT mismatch status should report the detected CV/CT kind.');
+    assert(contains(cvctMismatchStatus.message, 'Expected chrono DTA'), ...
+        'CV/CT mismatch status should explain expected kind.');
+
     [missingItem, missingStatus] = gamrywb.dta.loadFile(demoFixturePath('missing_file.DTA'), "auto");
     assertStatusFields(missingStatus);
     assert(isempty(missingItem), 'Missing file load should not return an item.');

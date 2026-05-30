@@ -51,7 +51,7 @@ t, Vf, Im, alignTime, tAligned
 
 Keep bridge fields until app, export, and test call sites no longer need them.
 
-Chrono overlay pulse-gap alignment, overlay plotting, and overlay export table construction live as local functions in `apps/gamrywb_ChronoOverlay_app.m` because they are app workflow decisions rather than reusable DTA item schema.
+Chrono overlay pulse-gap alignment, overlay plotting, and overlay export table construction live as local functions in `apps/electrochem/gamrywb_ChronoOverlay_app.m` because they are app workflow decisions rather than reusable DTA item schema.
 
 ## EIS Items
 
@@ -73,7 +73,7 @@ Compatibility bridge fields include:
 Freq, Time, Pt, Zreal, Zimag, negZimag, Zmod, Zphz, Idc, Vdc
 ```
 
-EIS overlay axis-value generation, plotting, and plot-export table construction are local functions in `apps/gamrywb_EIS_app.m` because they are app workflow decisions rather than reusable DTA item schema.
+EIS overlay axis-value generation, plotting, and plot-export table construction are local functions in `apps/electrochem/gamrywb_EIS_app.m` because they are app workflow decisions rather than reusable DTA item schema.
 
 ## DTA Facade Status
 
@@ -156,7 +156,7 @@ The CSC app's local analysis accepts a parsed curve and options containing:
 scanRate, mode, area_cm2
 ```
 
-CSC CT/CV charge integration is a local detail of `apps/gamrywb_CSC_app.m`; it is not a separate reusable library API.
+CSC CT/CV charge integration is a local detail of `apps/electrochem/gamrywb_CSC_app.m`; it is not a separate reusable library API.
 
 `gamrywb.dta.getCurveXY` operates on the parsed curve struct and preserves exact-case column matching and NaN filtering. Apps can pass those prepared X/Y vectors and labels to the reusable GUI helper `gamrywb.ui.plotXY`.
 
@@ -190,13 +190,13 @@ Current analysis result structs intentionally preserve compatibility fields used
 VT result/export workflow:
 
 ```text
-apps/gamrywb_VTResistance_app.m local computeResistance
-apps/gamrywb_VTResistance_app.m local buildResultsTable
-apps/gamrywb_VTResistance_app.m local writeResultsCSV
-apps/gamrywb_VTResistance_app.m local buildBatchTableData
+apps/electrochem/gamrywb_VTResistance_app.m local computeResistance
+apps/electrochem/gamrywb_VTResistance_app.m local buildResultsTable
+apps/electrochem/gamrywb_VTResistance_app.m local writeResultsCSV
+apps/electrochem/gamrywb_VTResistance_app.m local buildBatchTableData
 ```
 
-VT steady-window selection and baseline estimation are local details of `apps/gamrywb_VTResistance_app.m`; they are not separate reusable APIs.
+VT steady-window selection and baseline estimation are local details of `apps/electrochem/gamrywb_VTResistance_app.m`; they are not separate reusable APIs.
 
 VT CSV column order:
 
@@ -207,10 +207,10 @@ File,Ic_A,Ia_A,Vc_ss_V,Va_ss_V,Vc_baseline_V,Va_baseline_V,dVc_V,dVa_V,Rc_bc_ohm
 CIC result/export helpers:
 
 ```text
-apps/gamrywb_CIC_app.m local computeCIC
-apps/gamrywb_CIC_app.m local buildResultsTable
-apps/gamrywb_CIC_app.m local writeResultsCSV
-apps/gamrywb_CIC_app.m local buildBatchTableData
+apps/electrochem/gamrywb_CIC_app.m local computeCIC
+apps/electrochem/gamrywb_CIC_app.m local buildResultsTable
+apps/electrochem/gamrywb_CIC_app.m local writeResultsCSV
+apps/electrochem/gamrywb_CIC_app.m local buildBatchTableData
 ```
 
 CIC CSV column order uses one of:
