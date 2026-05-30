@@ -22,22 +22,20 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
     S.yPix = [];
     S.rawpx = NaN;
     S.scaleLine = [];
-    S.curveLine = [];
-    S.anchorLine = [];
-    S.dragIndex = [];
+    S.curveEditor = [];
+    S.scaleEditor = [];
+    S.scaleEditActive = false;
     S.curveEditActive = false;
     S.curveStyle = "Curve";
     S.fit = emptyFitResult();
 
     workbenchOpts = struct( ...
-        'rightKind', 'dualPlot', ...
         'rightTitle', 'Measurement Preview', ...
-        'topPlotTitle', 'Image + Circle Fit', ...
-        'bottomPlotTitle', 'Radial Residuals', ...
-        'showPlotControls', false);
+        'rightGridSize', [1 1], ...
+        'rightRowHeight', {{'1x'}});
     workbenchOpts.tabs = [ ...
         labkit.ui.tabSpec('filesAnalysis', 'Files + Analysis', [4 1], ...
-            {250, 330, 140, 175}, ...
+            {140, 365, 205, 175}, ...
             struct('resizeRows', [1 2 3], ...
             'resizeOptions', struct('minTopHeight', 140, 'minBottomHeight', 90))), ...
         labkit.ui.tabSpec('summaryResults', 'Summary + Results', [2 1], ...
@@ -52,9 +50,9 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
     laySR = ui.summaryResultsGrid;
     layLog = ui.logGrid;
 
-    imagePanel = labkit.ui.createPanelGrid(layFA, 'Image + Curve Points', 1, [6 2], ...
-        struct('rowHeight', {{'fit', 'fit', 'fit', 'fit', 'fit', 'fit'}}, ...
-        'columnWidth', {{150, '1x'}}));
+    imagePanel = labkit.ui.createPanelGrid(layFA, 'Image', 1, [3 2], ...
+        struct('rowHeight', {{'fit', 'fit', 'fit'}}, ...
+        'columnWidth', {{145, '1x'}}));
     imageGrid = imagePanel.grid;
 
     btnOpenImage = uibutton(imageGrid, 'Text', 'Open image', ...
@@ -67,102 +65,112 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
     txtImage.Layout.Row = 2;
     txtImage.Layout.Column = [1 2];
 
-    btnStartCurve = uibutton(imageGrid, 'Text', 'Start curve edit', ...
+    txtPointCount = uieditfield(imageGrid, 'text', 'Editable', 'off', ...
+        'Value', 'Points: 0');
+    txtPointCount.Layout.Row = 3;
+    txtPointCount.Layout.Column = [1 2];
+
+    editPanel = labkit.ui.createPanelGrid(layFA, 'Curve + Scale Editing', 2, [8 2], ...
+        struct('rowHeight', {{'fit', 'fit', 'fit', 'fit', 'fit', 'fit', 'fit', 'fit'}}, ...
+        'columnWidth', {{145, '1x'}}));
+    editGrid = editPanel.grid;
+
+    btnStartCurve = uibutton(editGrid, 'Text', 'Start curve edit', ...
         'ButtonPushedFcn', @onStartCurveEdit);
-    btnStartCurve.Layout.Row = 3;
+    btnStartCurve.Layout.Row = 1;
     btnStartCurve.Layout.Column = [1 2];
 
-    [lblCurveStyle, ddCurveStyle] = labkit.ui.createLabeledDropdown(imageGrid, ...
+    [lblCurveStyle, ddCurveStyle] = labkit.ui.createLabeledDropdown(editGrid, ...
         'Display:', ...
         'Items', {'Curve', 'Straight lines'}, ...
         'Value', 'Curve', ...
         'ValueChangedFcn', @onCurveStyleChanged);
-    lblCurveStyle.Layout.Row = 4;
+    lblCurveStyle.Layout.Row = 2;
     lblCurveStyle.Layout.Column = 1;
-    ddCurveStyle.Layout.Row = 4;
+    ddCurveStyle.Layout.Row = 2;
     ddCurveStyle.Layout.Column = 2;
 
-    btnUndoPoint = uibutton(imageGrid, 'Text', 'Undo last point', ...
+    btnUndoPoint = uibutton(editGrid, 'Text', 'Undo last point', ...
         'Enable', 'off', ...
         'ButtonPushedFcn', @onUndoCurvePoint);
-    btnUndoPoint.Layout.Row = 5;
+    btnUndoPoint.Layout.Row = 3;
     btnUndoPoint.Layout.Column = 1;
-    btnClearCurve = uibutton(imageGrid, 'Text', 'Clear curve', ...
+    btnClearCurve = uibutton(editGrid, 'Text', 'Clear curve', ...
         'Enable', 'off', ...
         'ButtonPushedFcn', @onClearCurve);
-    btnClearCurve.Layout.Row = 5;
+    btnClearCurve.Layout.Row = 3;
     btnClearCurve.Layout.Column = 2;
 
-    txtPointCount = uieditfield(imageGrid, 'text', 'Editable', 'off', ...
-        'Value', 'Points: 0');
-    txtPointCount.Layout.Row = 6;
-    txtPointCount.Layout.Column = [1 2];
-
-    fitPanel = labkit.ui.createPanelGrid(layFA, 'Scale + Circle Fit', 2, [8 2], ...
-        struct('rowHeight', {{'fit', 'fit', 'fit', 'fit', 'fit', 'fit', 'fit', 'fit'}}, ...
-        'columnWidth', {{150, '1x'}}));
-    fitGrid = fitPanel.grid;
-
-    [lblScaleLen, edtScaleLen] = labkit.ui.createLabeledEditField(fitGrid, ...
-        'Scale bar length (mm):', 'numeric', 'Value', 5, 'Limits', [0 Inf], ...
-        'ValueChangedFcn', @(~,~) refreshScaleReadout());
-    lblScaleLen.Layout.Row = 1;
-    lblScaleLen.Layout.Column = 1;
-    edtScaleLen.Layout.Row = 1;
-    edtScaleLen.Layout.Column = 2;
-
-    [lblManualScale, edtManualScale] = labkit.ui.createLabeledEditField(fitGrid, ...
-        'Manual px/mm:', 'numeric', 'Value', 0, 'Limits', [0 Inf], ...
-        'ValueChangedFcn', @(~,~) refreshScaleReadout());
-    lblManualScale.Layout.Row = 2;
-    lblManualScale.Layout.Column = 1;
-    edtManualScale.Layout.Row = 2;
-    edtManualScale.Layout.Column = 2;
-
-    btnMeasureScale = uibutton(fitGrid, 'Text', 'Measure scale bar', ...
+    btnMeasureScale = uibutton(editGrid, 'Text', 'Measure scale bar', ...
         'ButtonPushedFcn', @onMeasureScale);
-    btnMeasureScale.Layout.Row = 3;
+    btnMeasureScale.Layout.Row = 4;
     btnMeasureScale.Layout.Column = [1 2];
 
-    [txtRawPx, lblRawPx] = labkit.ui.createReadOnlyInfoRow(fitGrid, 4, 'Raw scale px:');
-    [txtPxPerMm, lblPxPerMm] = labkit.ui.createReadOnlyInfoRow(fitGrid, 5, 'Computed px/mm:');
+    [lblScaleLen, edtScaleLen] = labkit.ui.createLabeledEditField(editGrid, ...
+        'Scale bar length (mm):', 'numeric', 'Value', 5, 'Limits', [0 Inf], ...
+        'ValueChangedFcn', @(~,~) refreshScaleReadout());
+    lblScaleLen.Layout.Row = 5;
+    lblScaleLen.Layout.Column = 1;
+    edtScaleLen.Layout.Row = 5;
+    edtScaleLen.Layout.Column = 2;
+
+    [lblManualScale, edtManualScale] = labkit.ui.createLabeledEditField(editGrid, ...
+        'Manual px/mm:', 'numeric', 'Value', 0, 'Limits', [0 Inf], ...
+        'ValueChangedFcn', @(~,~) refreshScaleReadout());
+    lblManualScale.Layout.Row = 6;
+    lblManualScale.Layout.Column = 1;
+    edtManualScale.Layout.Row = 6;
+    edtManualScale.Layout.Column = 2;
+
+    [txtRawPx, lblRawPx] = labkit.ui.createReadOnlyInfoRow(editGrid, 7, 'Raw scale px:');
+    [txtPxPerMm, lblPxPerMm] = labkit.ui.createReadOnlyInfoRow(editGrid, 8, 'Computed px/mm:');
     lblRawPx.HorizontalAlignment = 'right';
     lblPxPerMm.HorizontalAlignment = 'right';
 
+    fitPanel = labkit.ui.createPanelGrid(layFA, 'Fit + Export', 3, [6 2], ...
+        struct('rowHeight', {{'fit', 'fit', 'fit', 'fit', 'fit', 'fit'}}, ...
+        'columnWidth', {{145, '1x'}}));
+    fitGrid = fitPanel.grid;
+
     chkDensify = uicheckbox(fitGrid, 'Text', 'Densify before circle fit', 'Value', true);
-    chkDensify.Layout.Row = 6;
+    chkDensify.Layout.Row = 1;
     chkDensify.Layout.Column = [1 2];
 
     [lblDenseN, edtDenseN] = labkit.ui.createLabeledEditField(fitGrid, ...
         'Dense point count:', 'numeric', 'Value', 300, 'Limits', [3 Inf]);
-    lblDenseN.Layout.Row = 7;
+    lblDenseN.Layout.Row = 2;
     lblDenseN.Layout.Column = 1;
-    edtDenseN.Layout.Row = 7;
+    edtDenseN.Layout.Row = 2;
     edtDenseN.Layout.Column = 2;
+
+    chkShowDense = uicheckbox(fitGrid, 'Text', 'Show dense fit points', ...
+        'Value', true, ...
+        'ValueChangedFcn', @(~,~) refreshImageOverlay());
+    chkShowDense.Layout.Row = 3;
+    chkShowDense.Layout.Column = [1 2];
 
     btnFit = uibutton(fitGrid, 'Text', 'Fit circle + curvature', ...
         'ButtonPushedFcn', @onFitCurvature);
-    btnFit.Layout.Row = 8;
+    btnFit.Layout.Row = 4;
     btnFit.Layout.Column = [1 2];
 
-    exportPanel = labkit.ui.createPanelGrid(layFA, 'Exports', 3, [2 1], ...
-        struct('rowHeight', {{'fit', 'fit'}}));
-    exportGrid = exportPanel.grid;
-    btnExportCSV = uibutton(exportGrid, 'Text', 'Export result CSV', ...
+    btnExportCSV = uibutton(fitGrid, 'Text', 'Export result CSV', ...
         'ButtonPushedFcn', @onExportCSV);
-    btnExportCSV.Layout.Row = 1;
-    btnExportOverlay = uibutton(exportGrid, 'Text', 'Export overlay PNG', ...
+    btnExportCSV.Layout.Row = 5;
+    btnExportCSV.Layout.Column = [1 2];
+    btnExportOverlay = uibutton(fitGrid, 'Text', 'Export overlay PNG', ...
         'ButtonPushedFcn', @onExportOverlay);
-    btnExportOverlay.Layout.Row = 2;
+    btnExportOverlay.Layout.Row = 6;
+    btnExportOverlay.Layout.Column = [1 2];
 
     notePanel = labkit.ui.createPanelGrid(layFA, 'Workflow Notes', 4, [1 1], ...
         struct('rowHeight', {{'1x'}}, 'columnWidth', {{'1x'}}));
     txtNotes = uitextarea(notePanel.grid, 'Editable', 'off');
     txtNotes.Value = { ...
         '1. Open an image and start curve editing.', ...
-        '2. Double-click blank space to add/insert points; drag points to move; double-click a point to delete it.', ...
+        '2. Double-click blank image space to add/insert points; drag points to move; double-click a point to delete it.', ...
         '3. Measure the scale bar or enter a manual px/mm value.', ...
-        '4. Fit the circle, inspect residuals, then export the result CSV or overlay PNG.'};
+        '4. Finish active edit modes before fitting or exporting.'};
 
     resultTable = uitable(laySR, ...
         'ColumnName', {'Metric', 'Value'}, ...
@@ -175,6 +183,8 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
 
     logUi = labkit.ui.createLogPanel(layLog, 1, {'Ready.'});
     txtLog = logUi.textArea;
+    ui.topAxes = uiaxes(ui.rightGrid);
+    ui.topAxes.Layout.Row = 1;
 
     resetAxes();
     refreshScaleReadout();
@@ -206,8 +216,16 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
         S.yPix = [];
         S.rawpx = NaN;
         S.scaleLine = [];
-        S.dragIndex = [];
+        S.scaleEditActive = false;
         S.curveEditActive = false;
+        if ~isempty(S.curveEditor)
+            S.curveEditor.delete();
+        end
+        S.curveEditor = [];
+        if ~isempty(S.scaleEditor)
+            S.scaleEditor.delete();
+        end
+        S.scaleEditor = [];
         S.fit = emptyFitResult();
         txtImage.Value = char(filepath);
         addLog(sprintf('Loaded image: %s', filepath));
@@ -220,98 +238,64 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
             return;
         end
 
+        if S.curveEditActive
+            S.curveEditActive = false;
+            if ~isempty(S.curveEditor)
+                S.curveEditor.setActive(false);
+            end
+            addLog('Finished curve edit.');
+            refreshAll();
+            return;
+        end
+
+        S.scaleEditActive = false;
+        if ~isempty(S.scaleEditor)
+            S.scaleEditor.setActive(false);
+        end
         S.curveEditActive = true;
         S.curveStyle = string(ddCurveStyle.Value);
+        ensureCurveEditor();
+        S.curveEditor.start([S.xPix(:), S.yPix(:)]);
         S.fit = emptyFitResult();
-        addLog('Started curve edit. Double-click blank space to add/insert points; drag points to move; double-click a point to delete it.');
+        addLog('Started curve edit. Double-click blank image space to add/insert points; drag points to move; double-click a point to delete it.');
         refreshAll();
     end
 
     function onCurveStyleChanged(~, ~)
         S.curveStyle = string(ddCurveStyle.Value);
+        if ~isempty(S.curveEditor)
+            S.curveEditor.setStyle(S.curveStyle);
+        end
         S.fit = emptyFitResult();
         refreshAll();
     end
 
-    function onCurveAxesClicked(~, ~)
-        if ~S.curveEditActive || isempty(S.image)
-            return;
-        end
-
-        point = ui.topAxes.CurrentPoint;
-        x = point(1, 1);
-        y = point(1, 2);
-        if ~insideImageBounds(x, y, size(S.image))
-            return;
-        end
-
-        idx = nearestCurveAnchor(x, y);
-        if strcmp(fig.SelectionType, 'open')
-            if ~isempty(idx)
-                removeCurveAnchor(idx);
-                addLog(sprintf('Deleted curve point %d.', idx));
-            else
-                addOrInsertCurveAnchor([x y]);
-                addLog(sprintf('Added curve point. Points: %d.', numel(S.xPix)));
-            end
-            S.fit = emptyFitResult();
-            refreshAll();
-            return;
-        end
-
-        if ~isempty(idx)
-            S.dragIndex = idx;
-            updateDraggedCurveAnchor();
-            fig.WindowButtonMotionFcn = @onCurveAnchorDragged;
-            fig.WindowButtonUpFcn = @onCurveAnchorReleased;
-        end
-    end
-
-    function onCurveAnchorDragged(~, ~)
-        updateDraggedCurveAnchor();
-    end
-
-    function onCurveAnchorReleased(~, ~)
-        updateDraggedCurveAnchor();
-        fig.WindowButtonMotionFcn = '';
-        fig.WindowButtonUpFcn = '';
-        S.dragIndex = [];
+    function onCurveEditorChanged(points, reason)
+        S.xPix = points(:, 1);
+        S.yPix = points(:, 2);
         S.fit = emptyFitResult();
-        refreshAll();
-    end
-
-    function updateDraggedCurveAnchor()
-        if isempty(S.dragIndex) || S.dragIndex > numel(S.xPix)
-            return;
-        end
-        point = ui.topAxes.CurrentPoint;
-        x = min(max(point(1, 1), 0.5), size(S.image, 2) + 0.5);
-        y = min(max(point(1, 2), 0.5), size(S.image, 1) + 0.5);
-        S.xPix(S.dragIndex) = x;
-        S.yPix(S.dragIndex) = y;
-        S.fit = emptyFitResult();
-        updateCurveGraphics();
         refreshSummary();
+        if any(strcmp(reason, {'add point', 'delete point', 'move point'}))
+            addLog(sprintf('Curve edit updated: %d point(s).', numel(S.xPix)));
+        end
     end
 
     function onUndoCurvePoint(~, ~)
-        if isempty(S.xPix)
-            return;
+        if ~isempty(S.curveEditor)
+            S.curveEditor.undoLast();
         end
-        S.xPix(end) = [];
-        S.yPix(end) = [];
-        S.fit = emptyFitResult();
-        addLog('Removed the last curve point.');
-        refreshAll();
     end
 
     function onClearCurve(~, ~)
-        S.xPix = [];
-        S.yPix = [];
-        S.dragIndex = [];
-        S.fit = emptyFitResult();
+        if ~isempty(S.curveEditor)
+            S.curveEditor.clearPoints();
+        else
+            S.xPix = [];
+            S.yPix = [];
+            S.fit = emptyFitResult();
+            refreshAll();
+        end
         addLog('Cleared curve points.');
-        refreshAll();
     end
 
     function onMeasureScale(~, ~)
@@ -320,39 +304,29 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
             return;
         end
 
-        refreshImageOverlay();
-        addLog('Drawing scale bar. Drag endpoints, then double-click to finish.');
-        previousButtonDown = ui.topAxes.ButtonDownFcn;
-        ui.topAxes.ButtonDownFcn = [];
-        try
-            roi = drawline(ui.topAxes, 'Color', 'c', 'LineWidth', 2);
-            wait(roi);
-            pos = roi.Position;
-            delete(roi);
-            ui.topAxes.ButtonDownFcn = previousButtonDown;
-        catch ME
-            ui.topAxes.ButtonDownFcn = previousButtonDown;
-            showError('Scale-bar drawing failed', ME.message);
+        if S.scaleEditActive
+            S.scaleEditActive = false;
+            if ~isempty(S.scaleEditor)
+                S.scaleEditor.setActive(false);
+            end
+            addLog('Finished scale-bar edit.');
+            refreshAll();
             return;
         end
 
-        if size(pos, 1) < 2
-            addLog('Scale measurement cancelled.');
-            refreshImageOverlay();
-            return;
+        S.curveEditActive = false;
+        if ~isempty(S.curveEditor)
+            S.curveEditor.setActive(false);
         end
-
-        rawpx = abs(pos(2, 1) - pos(1, 1));
-        if rawpx <= 0
-            showError('Invalid scale bar', 'The scale bar must have nonzero horizontal pixel length.');
-            return;
+        S.scaleEditActive = true;
+        ensureScaleEditor();
+        if isempty(S.scaleLine)
+            S.scaleEditor.start(zeros(0, 2));
+        else
+            S.scaleEditor.start(S.scaleLine);
         end
-
-        y0 = mean(pos(:, 2));
-        S.scaleLine = [pos(1, 1), y0; pos(2, 1), y0];
-        S.rawpx = rawpx;
         S.fit = emptyFitResult();
-        addLog(sprintf('Measured scale bar: %.3f px horizontal length.', rawpx));
+        addLog('Started scale-bar edit. Double-click two endpoints, then drag endpoints to refine.');
         refreshAll();
     end
 
@@ -430,40 +404,64 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
     function refreshAll()
         refreshScaleReadout();
         refreshImageOverlay();
-        refreshResidualPlot();
         refreshSummary();
     end
 
-    function addOrInsertCurveAnchor(newPoint)
-        points = [S.xPix(:), S.yPix(:)];
-        points = addOrInsertOpenCurveAnchor(points, newPoint, ui.topAxes);
-        S.xPix = points(:, 1);
-        S.yPix = points(:, 2);
-    end
-
-    function removeCurveAnchor(idx)
-        S.xPix(idx) = [];
-        S.yPix(idx) = [];
-    end
-
-    function idx = nearestCurveAnchor(x, y)
-        idx = [];
-        if isempty(S.xPix)
+    function ensureCurveEditor()
+        if isempty(S.image)
             return;
         end
-        dx = S.xPix(:) - x;
-        dy = S.yPix(:) - y;
-        [dist, bestIdx] = min(hypot(dx, dy));
-        xSpan = max(1, diff(ui.topAxes.XLim));
-        ySpan = max(1, diff(ui.topAxes.YLim));
-        threshold = 0.025 * max(xSpan, ySpan);
-        if dist <= threshold
-            idx = bestIdx;
+        if isempty(S.curveEditor)
+            S.curveEditor = labkit.ui.createAnchorCurveEditor(ui.topAxes, size(S.image), ...
+                struct('figure', fig, ...
+                'closed', false, ...
+                'style', S.curveStyle, ...
+                'onChanged', @onCurveEditorChanged));
+        else
+            S.curveEditor.setImageSize(size(S.image));
+            S.curveEditor.setStyle(S.curveStyle);
         end
+    end
+
+    function ensureScaleEditor()
+        if isempty(S.image)
+            return;
+        end
+        if isempty(S.scaleEditor)
+            S.scaleEditor = labkit.ui.createAnchorCurveEditor(ui.topAxes, size(S.image), ...
+                struct('figure', fig, ...
+                'closed', false, ...
+                'style', 'Straight lines', ...
+                'maxPoints', 2, ...
+                'onChanged', @onScaleEditorChanged));
+        else
+            S.scaleEditor.setImageSize(size(S.image));
+            S.scaleEditor.setStyle('Straight lines');
+        end
+    end
+
+    function onScaleEditorChanged(points, ~)
+        S.scaleLine = points;
+        if size(points, 1) == 2
+            rawpx = hypot(points(2, 1) - points(1, 1), ...
+                points(2, 2) - points(1, 2));
+            if rawpx > 0
+                S.rawpx = rawpx;
+            else
+                S.rawpx = NaN;
+            end
+        else
+            S.rawpx = NaN;
+        end
+        S.fit = emptyFitResult();
+        refreshScaleReadout();
+        refreshSummary();
     end
 
     function updateCurveGraphics()
-        refreshImageOverlay();
+        if ~isempty(S.curveEditor)
+            S.curveEditor.refresh();
+        end
     end
 
     function refreshScaleReadout()
@@ -481,6 +479,32 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
         end
     end
 
+    function updateModeControls()
+        hasImage = ~isempty(S.image);
+        hasCurve = ~isempty(S.xPix);
+        editActive = S.curveEditActive || S.scaleEditActive;
+
+        btnStartCurve.Enable = ternary(hasImage, 'on', 'off');
+        btnMeasureScale.Enable = ternary(hasImage, 'on', 'off');
+        btnStartCurve.Text = ternary(S.curveEditActive, ...
+            'Finish curve edit', 'Start curve edit');
+        btnMeasureScale.Text = ternary(S.scaleEditActive, ...
+            'Finish scale-bar edit', 'Measure scale bar');
+
+        ddCurveStyle.Enable = ternary(hasImage && ~S.scaleEditActive, 'on', 'off');
+        edtScaleLen.Enable = ternary(hasImage && ~S.curveEditActive, 'on', 'off');
+        edtManualScale.Enable = ternary(hasImage && ~S.curveEditActive, 'on', 'off');
+
+        btnUndoPoint.Enable = ternary(hasCurve && ~S.scaleEditActive, 'on', 'off');
+        btnClearCurve.Enable = ternary(hasCurve && ~S.scaleEditActive, 'on', 'off');
+        chkDensify.Enable = ternary(~editActive, 'on', 'off');
+        edtDenseN.Enable = ternary(~editActive, 'on', 'off');
+        chkShowDense.Enable = ternary(S.fit.ok && ~editActive, 'on', 'off');
+        btnFit.Enable = ternary(numel(S.xPix) >= 3 && ~editActive, 'on', 'off');
+        btnExportCSV.Enable = ternary(S.fit.ok && ~editActive, 'on', 'off');
+        btnExportOverlay.Enable = ternary(hasImage && ~editActive, 'on', 'off');
+    end
+
     function refreshImageOverlay()
         ax = ui.topAxes;
         cla(ax);
@@ -495,7 +519,6 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
         end
 
         hImage = image(ax, S.image);
-        hImage.HitTest = 'off';
         axis(ax, 'image');
         ax.XLim = [0.5, size(S.image, 2) + 0.5];
         ax.YLim = [0.5, size(S.image, 1) + 0.5];
@@ -503,41 +526,8 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
         ax.XTick = [];
         ax.YTick = [];
         enableImageNavigation(ax);
-        if S.curveEditActive
-            ax.ButtonDownFcn = @onCurveAxesClicked;
-        else
-            ax.ButtonDownFcn = [];
-        end
+        fig.WindowScrollWheelFcn = @onPreviewScroll;
         hold(ax, 'on');
-
-        if ~isempty(S.xPix)
-            curve = curveDisplayPoints([S.xPix(:), S.yPix(:)], size(S.image), S.curveStyle);
-            if ~isempty(curve)
-                plot(ax, curve(:, 1), curve(:, 2), '-', ...
-                    'Color', [1 0.9 0], ...
-                    'LineWidth', 1.5, ...
-                    'HitTest', 'off', ...
-                    'DisplayName', 'curve');
-            end
-            plot(ax, S.xPix, S.yPix, 'o', ...
-                'Color', [0 0.45 0.95], ...
-                'MarkerFaceColor', [1 0.9 0], ...
-                'LineWidth', 1.4, 'MarkerSize', 12, ...
-                'HitTest', 'off', ...
-                'DisplayName', 'curve points');
-        end
-
-        if ~isempty(S.scaleLine)
-            plot(ax, S.scaleLine(:, 1), S.scaleLine(:, 2), 'c-', ...
-                'LineWidth', 3, ...
-                'HitTest', 'off', ...
-                'DisplayName', 'scale bar');
-            text(ax, mean(S.scaleLine(:, 1)), mean(S.scaleLine(:, 2)) - 12, ...
-                sprintf('%.3g px', S.rawpx), ...
-                'Color', 'c', 'FontWeight', 'bold', ...
-                'HorizontalAlignment', 'center', ...
-                'VerticalAlignment', 'bottom');
-        end
 
         if S.fit.ok
             t = linspace(-pi, pi, 600);
@@ -556,31 +546,86 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
         else
             title(ax, 'Image + Circle Fit');
         end
+
+        if S.curveEditActive
+            ensureCurveEditor();
+            S.curveEditor.setBackground(hImage);
+            S.curveEditor.refresh();
+        elseif S.scaleEditActive
+            ensureScaleEditor();
+            S.scaleEditor.setBackground(hImage);
+            S.scaleEditor.refresh();
+        else
+            ax.ButtonDownFcn = [];
+            hImage.HitTest = 'off';
+            hImage.PickableParts = 'none';
+            plotStaticCurveAnchors(ax);
+            if ~isempty(S.scaleLine)
+                plot(ax, S.scaleLine(:, 1), S.scaleLine(:, 2), 'c-', ...
+                    'LineWidth', 3, ...
+                    'HitTest', 'off', ...
+                    'DisplayName', 'scale bar');
+            end
+        end
+
+        if ~isempty(S.scaleLine) && isfinite(S.rawpx)
+            text(ax, mean(S.scaleLine(:, 1)), mean(S.scaleLine(:, 2)) - 12, ...
+                sprintf('%.3g px', S.rawpx), ...
+                'Color', 'c', 'FontWeight', 'bold', ...
+                'HorizontalAlignment', 'center', ...
+                'VerticalAlignment', 'bottom');
+        end
         hold(ax, 'off');
     end
 
-    function refreshResidualPlot()
-        ax = ui.bottomAxes;
-        cla(ax);
-        if ~S.fit.ok
-            title(ax, 'Radial Residuals');
-            xlim(ax, [0 1]);
-            ylim(ax, [0 1]);
+    function plotStaticCurveAnchors(ax)
+        points = [S.xPix(:), S.yPix(:)];
+        if isempty(points)
             return;
         end
 
-        n = numel(S.fit.residuals_show);
-        plot(ax, 1:n, S.fit.residuals_show, 'o-', 'LineWidth', 1.2);
-        grid(ax, 'on');
-        xlabel(ax, 'Point index');
-        ylabel(ax, sprintf('Residual (%s)', S.fit.unitLen));
-        title(ax, 'Radial residual from fitted circle');
+        curve = points;
+        if strcmp(S.curveStyle, "Curve") && ~isempty(S.curveEditor)
+            curve = S.curveEditor.curvePoints();
+        end
+        if ~isempty(curve)
+            plot(ax, curve(:, 1), curve(:, 2), '-', ...
+                'Color', [0 0.45 0.95], ...
+                'LineWidth', 1.5, ...
+                'HitTest', 'off', ...
+                'DisplayName', 'curve');
+        end
+        if S.fit.ok
+            if chkShowDense.Value
+                plotDenseFitPoints(ax, S.fit);
+            end
+            plotAnchorResiduals(ax, points, S.fit);
+        end
+        plot(ax, points(:, 1), points(:, 2), 'o', ...
+            'LineStyle', 'none', ...
+            'Color', [1 0.85 0], ...
+            'MarkerFaceColor', [0 0.45 0.95], ...
+            'LineWidth', 1.2, ...
+            'MarkerSize', 7, ...
+            'HitTest', 'off', ...
+            'DisplayName', 'anchors');
+    end
+
+    function onPreviewScroll(~, event)
+        if isempty(S.image)
+            return;
+        end
+        point = ui.topAxes.CurrentPoint;
+        x = point(1, 1);
+        y = point(1, 2);
+        if ~insideImageBounds(x, y, size(S.image))
+            return;
+        end
+        zoomAxesAtPoint(ui.topAxes, x, y, event.VerticalScrollCount, size(S.image));
     end
 
     function refreshSummary()
         txtPointCount.Value = sprintf('Points: %d', numel(S.xPix));
-        btnUndoPoint.Enable = ternary(~isempty(S.xPix), 'on', 'off');
-        btnClearCurve.Enable = ternary(~isempty(S.xPix), 'on', 'off');
         if S.fit.ok
             resultTable.Data = fitResultTableData(S.fit);
             txtDetails.Value = { ...
@@ -592,19 +637,21 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
                 sprintf('rawpx = %s; px/mm = %.6g', mat2str(S.fit.rawpx), S.fit.px_per_mm)};
         else
             resultTable.Data = initialResultTable();
-            if numel(S.xPix) >= 3
+            if S.curveEditActive
+                txtDetails.Value = {'Curve edit active. Double-click blank image space to add/insert points, drag points to move them, double-click a point to delete it. Use the scroll wheel over the image to zoom.'};
+            elseif S.scaleEditActive
+                txtDetails.Value = {'Scale-bar edit active. Double-click two scale-bar endpoints or drag existing endpoints; the scroll wheel remains available for zoom.'};
+            elseif numel(S.xPix) >= 3
                 txtDetails.Value = {'Curve points are ready. Fit curvature to compute radius and curvature.'};
-            elseif S.curveEditActive
-                txtDetails.Value = {'Curve edit active. Double-click blank space to add/insert points, drag points to move them, double-click a point to delete it.'};
             else
                 txtDetails.Value = {'Load an image and start curve editing.'};
             end
         end
+        updateModeControls();
     end
 
     function resetAxes()
         refreshImageOverlay();
-        refreshResidualPlot();
         refreshSummary();
     end
 
@@ -813,6 +860,39 @@ function residuals = radialResiduals(x, y, xc, yc, R)
     residuals = sqrt((x(:) - xc).^2 + (y(:) - yc).^2) - R;
 end
 
+function plotDenseFitPoints(ax, fit)
+    if numel(fit.xFit) <= numel(fit.xPix)
+        return;
+    end
+    plot(ax, fit.xFit, fit.yFit, '.', ...
+        'Color', [0.95 0.2 0.95], ...
+        'MarkerSize', 7, ...
+        'HitTest', 'off', ...
+        'DisplayName', 'dense fit points');
+end
+
+function plotAnchorResiduals(ax, points, fit)
+    dx = points(:, 1) - fit.xc_px;
+    dy = points(:, 2) - fit.yc_px;
+    radii = hypot(dx, dy);
+    valid = isfinite(radii) & radii > eps;
+    if ~any(valid)
+        return;
+    end
+
+    circleX = fit.xc_px + fit.R_px .* dx(valid) ./ radii(valid);
+    circleY = fit.yc_px + fit.R_px .* dy(valid) ./ radii(valid);
+    anchorX = points(valid, 1);
+    anchorY = points(valid, 2);
+    xSegments = [anchorX.'; circleX.'; NaN(1, numel(circleX))];
+    ySegments = [anchorY.'; circleY.'; NaN(1, numel(circleY))];
+    plot(ax, xSegments(:), ySegments(:), '--', ...
+        'Color', [1 0.9 0], ...
+        'LineWidth', 1.2, ...
+        'HitTest', 'off', ...
+        'DisplayName', 'anchor residuals');
+end
+
 function T = buildCurvatureResultTable(fit, imagePath)
     T = table( ...
         string(imagePath), ...
@@ -843,6 +923,57 @@ function data = initialResultTable()
         'Center X', '-'; ...
         'Center Y', '-'; ...
         'Pixels/mm', '-'};
+end
+
+function tf = insideImageBounds(x, y, imageSize)
+    tf = isfinite(x) && isfinite(y) && ...
+        x >= 0.5 && y >= 0.5 && ...
+        x <= imageSize(2) + 0.5 && y <= imageSize(1) + 0.5;
+end
+
+function zoomAxesAtPoint(ax, x, y, scrollCount, imageSize)
+    if scrollCount == 0
+        return;
+    end
+
+    fullX = [0.5, imageSize(2) + 0.5];
+    fullY = [0.5, imageSize(1) + 0.5];
+    zoomFactor = 1.20 ^ scrollCount;
+
+    currentX = ax.XLim;
+    currentY = ax.YLim;
+    newWidth = diff(currentX) * zoomFactor;
+    newHeight = diff(currentY) * zoomFactor;
+
+    minSpan = 10;
+    newWidth = min(max(newWidth, minSpan), diff(fullX));
+    newHeight = min(max(newHeight, minSpan), diff(fullY));
+
+    xFrac = (x - currentX(1)) / max(eps, diff(currentX));
+    yFrac = (y - currentY(1)) / max(eps, diff(currentY));
+    xFrac = min(max(xFrac, 0), 1);
+    yFrac = min(max(yFrac, 0), 1);
+
+    newX = [x - xFrac * newWidth, x + (1 - xFrac) * newWidth];
+    newY = [y - yFrac * newHeight, y + (1 - yFrac) * newHeight];
+
+    ax.XLim = clampLimits(newX, fullX);
+    ax.YLim = clampLimits(newY, fullY);
+end
+
+function limits = clampLimits(limits, fullLimits)
+    span = diff(limits);
+    fullSpan = diff(fullLimits);
+    if span >= fullSpan
+        limits = fullLimits;
+        return;
+    end
+    if limits(1) < fullLimits(1)
+        limits = [fullLimits(1), fullLimits(1) + span];
+    end
+    if limits(2) > fullLimits(2)
+        limits = [fullLimits(2) - span, fullLimits(2)];
+    end
 end
 
 function data = fitResultTableData(fit)
@@ -878,97 +1009,6 @@ function fit = emptyFitResult()
         'yPix', [], ...
         'xFit', [], ...
         'yFit', []);
-end
-
-function curve = curveDisplayPoints(points, imageSize, curveStyle)
-    if isempty(points)
-        curve = [];
-        return;
-    end
-    if size(points, 1) < 3 || strcmp(string(curveStyle), "Straight lines")
-        curve = points;
-    else
-        n = size(points, 1);
-        samplesPerSegment = max(12, ceil(240 / max(1, n - 1)));
-        curve = zeros((n - 1) * samplesPerSegment + 1, 2);
-        out = 1;
-        for i = 1:(n - 1)
-            p0 = points(max(1, i - 1), :);
-            p1 = points(i, :);
-            p2 = points(i + 1, :);
-            p3 = points(min(n, i + 2), :);
-            for k = 0:(samplesPerSegment - 1)
-                t = k / samplesPerSegment;
-                curve(out, :) = catmullRomPoint(p0, p1, p2, p3, t);
-                out = out + 1;
-            end
-        end
-        curve(out, :) = points(end, :);
-        curve = curve(1:out, :);
-    end
-    curve(:, 1) = min(max(curve(:, 1), 0.5), imageSize(2) + 0.5);
-    curve(:, 2) = min(max(curve(:, 2), 0.5), imageSize(1) + 0.5);
-end
-
-function p = catmullRomPoint(p0, p1, p2, p3, t)
-    p = 0.5 .* ((2 .* p1) + ...
-        (-p0 + p2) .* t + ...
-        (2 .* p0 - 5 .* p1 + 4 .* p2 - p3) .* t.^2 + ...
-        (-p0 + 3 .* p1 - 3 .* p2 + p3) .* t.^3);
-end
-
-function points = addOrInsertOpenCurveAnchor(points, newPoint, ax)
-    n = size(points, 1);
-    if n < 2
-        points(end+1, :) = newPoint;
-        return;
-    end
-
-    [segmentIdx, distance] = nearestOpenCurveSegment(points, newPoint);
-    xSpan = max(1, diff(ax.XLim));
-    ySpan = max(1, diff(ax.YLim));
-    threshold = 0.035 * max(xSpan, ySpan);
-    if isempty(segmentIdx) || distance > threshold
-        points(end+1, :) = newPoint;
-        return;
-    end
-
-    points = [points(1:segmentIdx, :); newPoint; points((segmentIdx + 1):end, :)];
-end
-
-function [segmentIdx, bestDistance] = nearestOpenCurveSegment(points, point)
-    segmentIdx = [];
-    bestDistance = inf;
-    n = size(points, 1);
-    if n < 2
-        return;
-    end
-    for k = 1:(n - 1)
-        distance = pointSegmentDistance(point, points(k, :), points(k + 1, :));
-        if distance < bestDistance
-            bestDistance = distance;
-            segmentIdx = k;
-        end
-    end
-end
-
-function distance = pointSegmentDistance(point, a, b)
-    ab = b - a;
-    denom = dot(ab, ab);
-    if denom <= eps
-        distance = hypot(point(1) - a(1), point(2) - a(2));
-        return;
-    end
-    t = dot(point - a, ab) / denom;
-    t = min(max(t, 0), 1);
-    projection = a + t .* ab;
-    distance = hypot(point(1) - projection(1), point(2) - projection(2));
-end
-
-function tf = insideImageBounds(x, y, imageSize)
-    tf = isfinite(x) && isfinite(y) && ...
-        x >= 0.5 && y >= 0.5 && ...
-        x <= imageSize(2) + 0.5 && y <= imageSize(1) + 0.5;
 end
 
 function enableImageNavigation(ax)

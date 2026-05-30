@@ -105,7 +105,7 @@ Reusable UI helpers should build or update generic controls and draw prepared da
 
 Current apps share the workbench layout contract described in `docs/ui.md`: a resizable left control region with tabbed pages, plus a right output region for live plots or primary content. The app-facing shell entry point is `labkit.ui.createWorkbench`; apps configure the right side as a custom plot/output grid or as the standard dual-plot region.
 
-The file panel and log panel may use shared structure, but app-specific tab sections, controls, result summaries, callback ordering, and plot behavior remain owned by the app. Generic helpers such as panel-grid creation and listbox selection refresh can live in `labkit.ui` only when they are domain-neutral.
+The file panel and log panel may use shared structure, but app-specific tab sections, controls, result summaries, callback ordering, and plot behavior remain owned by the app. Generic helpers such as panel-grid creation, listbox selection refresh, and image-axis anchor curve editing can live in `labkit.ui` only when they are domain-neutral.
 
 App code may use selected `labkit.dta.*` helpers for parsed table and curve access, such as `getColumn`, `getMainCurve`, and `getCurveXY`. DTA session operations should go through `labkit.dta.*` so apps do not need to understand lower-level loader callbacks or session internals.
 
@@ -128,7 +128,7 @@ GUI launch/layout checks are available as focused local profiles, but interactiv
 
 - `apps/`: user-facing app category folders and app-specific implementations. Current electrochemistry app bodies live under `apps/electrochem/`, current DIC app bodies live under `apps/dic/`, and current general image-measurement app bodies live under `apps/image_measurement/`, as single public app source files. App-specific workflow helpers are local functions in those files rather than reusable `+labkit` APIs or transitional app-helper packages.
 - `labkit.dta`: GUI-free facade for supported DTA file discovery, family detection, single-file loading, batch loading, folder loading, pulse detection, item construction, parsed table/curve access, session save/load, and app-facing DTA session operations with status/report structs. It keeps parser and DTA-specific implementation helpers private.
-- `labkit.ui`: reusable GUI framework helpers, centered on the unified `createWorkbench` shell plus domain-neutral components: file-selection panel, log panel, generic panel-grid creation, row-resize handles, axes creation/reset, prepared-X/Y plotting, listbox selection refresh, summary rows, result table panel, plot-options panel, simple labeled controls, and top/bottom plot-control construction/state helpers.
+- `labkit.ui`: reusable GUI framework helpers, centered on the unified `createWorkbench` shell plus domain-neutral components: file-selection panel, log panel, generic panel-grid creation, row-resize handles, axes creation/reset, image-axis anchor curve editing, prepared-X/Y plotting, listbox selection refresh, summary rows, result table panel, plot-options panel, simple labeled controls, and top/bottom plot-control construction/state helpers.
 - Internal helpers: package-private parser helpers and app-local helper functions. Public `+io`, `+data`, and `+util` packages should not be reintroduced as new-app entry surfaces.
 
 ## Boundaries To Preserve

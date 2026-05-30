@@ -33,6 +33,7 @@ function test_gui_layout_controls(scope)
         checkPanelGridHelper();
         checkPlotOptionsPanelHelper();
         checkCreateAxesHelper();
+        checkAnchorCurveEditorHelper();
         checkRowResizeHandleHelper();
         checkCreateWorkbenchHelper();
         checkStandardWorkbenchShellHelper();
@@ -48,19 +49,18 @@ end
 function checkImageCurvatureMeasurement()
     fig = launchFigure('labkit_CurvatureMeasurement_app', 'Image Curvature Measurement');
     assertFigureMinimumSize(fig, 1420, 860);
-    assertComponentCounts(fig, struct('Button', 8, 'CheckBox', 1, ...
-        'DropDown', 1, 'Table', 1, 'TextArea', 3, 'Axes', 2));
+    assertComponentCounts(fig, struct('Button', 8, 'CheckBox', 2, ...
+        'DropDown', 1, 'Table', 1, 'TextArea', 3, 'Axes', 1));
     assertButtonContract(fig, {'Open image', 'Start curve edit', ...
         'Undo last point', 'Clear curve', ...
         'Measure scale bar', 'Fit circle + curvature', ...
         'Export result CSV', 'Export overlay PNG'});
-    assertCheckboxContract(fig, {'Densify before circle fit'});
+    assertCheckboxContract(fig, {'Densify before circle fit', ...
+        'Show dense fit points'});
     assertDropdownGroups(fig, dropdownGroup({'Curve', 'Straight lines'}, 1));
     assertTabTitles(fig, {'Files + Analysis', 'Summary + Results', 'Log'});
     assertTableColumns(fig, {'Metric', 'Value'});
-    assertAxesContract(fig, { ...
-        axesSpec('Image + Circle Fit', '', ''), ...
-        axesSpec('Radial Residuals', '', '')});
+    assertAxesContract(fig, {axesSpec('Image + Circle Fit', '', '')});
 end
 
 function checkDICPreprocess()
@@ -390,6 +390,59 @@ function checkCreateAxesHelper()
     assert(strcmp(char(ax.Title.String), 'Probe Title'), 'Axes helper should preserve the title.');
     assert(strcmp(char(ax.XLabel.String), 'Probe X'), 'Axes helper should preserve the x label.');
     assert(strcmp(char(ax.YLabel.String), 'Probe Y'), 'Axes helper should preserve the y label.');
+end
+
+function checkAnchorCurveEditorHelper()
+    fig = uifigure('Visible', 'off', 'Name', 'labkit_anchor_curve_editor_probe');
+    cleaner = onCleanup(@() delete(fig));
+    ax = uiaxes(fig);
+    image(ax, zeros(40, 60, 3, 'uint8'));
+    axis(ax, 'image');
+
+    changed = false;
+    editor = labkit.ui.createAnchorCurveEditor(ax, [40 60 3], ...
+        struct('figure', fig, ...
+        'closed', true, ...
+        'style', 'Curve', ...
+        'onChanged', @(~,~) markChanged()));
+    editor.start([10 10; 30 12; 28 30]);
+    assert(changed, 'Anchor curve editor should fire the change callback when started.');
+    points = editor.getPoints();
+    assert(isequal(size(points), [3 2]), 'Anchor curve editor should preserve anchor points.');
+    curve = editor.curvePoints();
+    assert(~isempty(curve), 'Anchor curve editor should generate display curve points.');
+    editor.setStyle('Straight lines');
+    curve = editor.curvePoints();
+    assert(isequal(curve(1, :), curve(end, :)), ...
+        'Closed straight-line editor curves should end at the first point.');
+    editor.setStyle('Curve');
+    editor.setPoints([10 10; 40 10; 40 30; 10 30]);
+    editor.insertPoint([25 10]);
+    points = editor.getPoints();
+    assert(isequal(size(points), [5 2]) && isequal(points(2, :), [25 10]), ...
+        'Anchor curve editor should insert new anchors into the nearest displayed curve segment.');
+    twoPointEditor = labkit.ui.createAnchorCurveEditor(ax, [40 60 3], ...
+        struct('figure', fig, 'closed', false, 'style', 'Straight lines', 'maxPoints', 2));
+    twoPointEditor.start([5 5; 20 5]);
+    twoPointEditor.insertPoint([30 5]);
+    assert(isequal(size(twoPointEditor.getPoints()), [2 2]), ...
+        'Anchor curve editor should enforce maxPoints for two-anchor tools.');
+    openEditor = labkit.ui.createAnchorCurveEditor(ax, [40 60 3], ...
+        struct('figure', fig, 'closed', false, 'style', 'Straight lines'));
+    openEditor.start([10 10; 40 30]);
+    openEditor.insertPoint([25 20]);
+    points = openEditor.getPoints();
+    assert(isequal(points(2, :), [25 20]), ...
+        'Open anchor editor should insert points by shortest path order instead of always appending.');
+    editor.undoLast();
+    assert(isequal(size(editor.getPoints()), [4 2]), ...
+        'Anchor curve editor should remove the last anchor.');
+    editor.clearPoints();
+    assert(isempty(editor.getPoints()), 'Anchor curve editor should clear anchors.');
+
+    function markChanged()
+        changed = true;
+    end
 end
 
 function checkRowResizeHandleHelper()

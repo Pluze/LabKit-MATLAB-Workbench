@@ -26,9 +26,7 @@ function varargout = labkit_DICPreprocess_app(varargin)
     S.cropRoiListeners = {};
     S.maskImage = [];
     S.maskPoints = [];
-    S.maskCurveLine = [];
-    S.maskAnchorLine = [];
-    S.maskDragIndex = [];
+    S.maskEditor = [];
     S.maskBoundaryStyle = "Curve";
     S.maskEditActive = false;
     S.maskHistory = struct('maskImage', {}, 'maskPoints', {}, 'description', {});
@@ -449,98 +447,53 @@ function varargout = labkit_DICPreprocess_app(varargin)
         clearCropRoi();
         clearMaskRoi();
         resetPreviewAxes();
-        showImage(ui.topAxes, S.currentReferenceImage, 'Current reference');
+        hTopImage = showImage(ui.topAxes, S.currentReferenceImage, 'Current reference');
         showImage(ui.bottomAxes, zeros(size(S.currentReferenceImage, 1), size(S.currentReferenceImage, 2), 3, 'uint8'), 'ROI mask preview');
         S.maskImage = [];
         S.maskPoints = [];
-        S.maskDragIndex = [];
         S.maskHistory = S.maskHistory([]);
         S.maskBoundaryStyle = string(ddBoundaryStyle.Value);
-        S.maskCurveLine = line(ui.topAxes, NaN, NaN, ...
-            'Color', [0 0.45 0.95], ...
-            'LineWidth', 1.5, ...
-            'HitTest', 'off');
-        S.maskAnchorLine = line(ui.topAxes, NaN, NaN, ...
-            'LineStyle', 'none', ...
-            'Marker', 'o', ...
-            'MarkerSize', 7, ...
-            'Color', [1 0.85 0], ...
-            'MarkerFaceColor', [0 0.45 0.95], ...
-            'HitTest', 'off');
-        enableImageNavigation(ui.topAxes);
-        ui.topAxes.ButtonDownFcn = @onMaskAxesClicked;
+        S.maskEditor = labkit.ui.createAnchorCurveEditor(ui.topAxes, size(S.currentReferenceImage), ...
+            struct('figure', fig, ...
+            'closed', true, ...
+            'style', S.maskBoundaryStyle, ...
+            'installScrollWheel', false, ...
+            'onChanged', @onMaskEditorChanged));
+        S.maskEditor.setBackground(hTopImage);
+        S.maskEditor.start(S.maskPoints);
         setMaskEditControls(true);
         addLog('Started mask ROI canvas. Add/insert, move, or delete anchors; add/subtract boundaries on the mask canvas.');
         txtDetails.Value = {'ROI edit started. Double-click blank space to add/insert points, drag points to move them, double-click points to delete them.'};
         updateMaskEditControls();
     end
 
+    function onMaskEditorChanged(points, ~)
+        S.maskPoints = points;
+        updateMaskDraft();
+    end
+
     function onBoundaryStyleChanged(~, ~)
         S.maskBoundaryStyle = string(ddBoundaryStyle.Value);
+        if ~isempty(S.maskEditor)
+            S.maskEditor.setStyle(S.maskBoundaryStyle);
+        end
         updateMaskCurveGraphics();
         txtDetails.Value = {sprintf('Boundary style: %s.', char(S.maskBoundaryStyle))};
     end
 
-    function onMaskAxesClicked(~, ~)
-        point = ui.topAxes.CurrentPoint;
-        x = point(1, 1);
-        y = point(1, 2);
-        if ~insideImageBounds(x, y, size(S.currentReferenceImage))
-            return;
-        end
-
-        idx = nearestMaskAnchor(x, y);
-        if strcmp(fig.SelectionType, 'open')
-            if ~isempty(idx)
-                S.maskPoints(idx, :) = [];
-            else
-                S.maskPoints = addOrInsertMaskAnchor(S.maskPoints, [x y], ui.topAxes);
-            end
-            updateMaskDraft();
-            return;
-        end
-
-        if ~isempty(idx)
-            S.maskDragIndex = idx;
-            updateDraggedMaskAnchor();
-            fig.WindowButtonMotionFcn = @onMaskAnchorDragged;
-            fig.WindowButtonUpFcn = @onMaskAnchorReleased;
-        end
-    end
-
-    function onMaskAnchorDragged(~, ~)
-        updateDraggedMaskAnchor();
-    end
-
-    function onMaskAnchorReleased(~, ~)
-        updateDraggedMaskAnchor();
-        fig.WindowButtonMotionFcn = '';
-        fig.WindowButtonUpFcn = '';
-        S.maskDragIndex = [];
-    end
-
-    function updateDraggedMaskAnchor()
-        if isempty(S.maskDragIndex) || S.maskDragIndex > size(S.maskPoints, 1)
-            return;
-        end
-        point = ui.topAxes.CurrentPoint;
-        x = min(max(point(1, 1), 0.5), size(S.currentReferenceImage, 2) + 0.5);
-        y = min(max(point(1, 2), 0.5), size(S.currentReferenceImage, 1) + 0.5);
-        S.maskPoints(S.maskDragIndex, :) = [x y];
-        updateMaskDraft();
-    end
-
     function onUndoMaskAnchor(~, ~)
-        if isempty(S.maskPoints)
-            return;
+        if ~isempty(S.maskEditor)
+            S.maskEditor.undoLast();
         end
-        S.maskPoints(end, :) = [];
-        updateMaskDraft();
     end
 
     function onClearMaskBoundary(~, ~)
-        S.maskPoints = [];
-        updateMaskDraft();
+        if ~isempty(S.maskEditor)
+            S.maskEditor.clearPoints();
+        else
+            S.maskPoints = [];
+            updateMaskDraft();
+        end
         addLog('Cleared mask ROI boundary anchors.');
     end
 
@@ -567,36 +520,8 @@ function varargout = labkit_DICPreprocess_app(varargin)
     end
 
     function updateMaskCurveGraphics()
-        if ~isempty(S.maskAnchorLine) && isvalid(S.maskAnchorLine)
-            S.maskAnchorLine.XData = S.maskPoints(:, 1);
-            S.maskAnchorLine.YData = S.maskPoints(:, 2);
-        end
-        if isempty(S.maskCurveLine) || ~isvalid(S.maskCurveLine)
-            return;
-        end
-        curve = maskBoundaryCurve(S.maskPoints, size(S.currentReferenceImage), S.maskBoundaryStyle);
-        if isempty(curve)
-            S.maskCurveLine.XData = NaN;
-            S.maskCurveLine.YData = NaN;
-        else
-            S.maskCurveLine.XData = curve(:, 1);
-            S.maskCurveLine.YData = curve(:, 2);
-        end
-    end
-
-    function idx = nearestMaskAnchor(x, y)
-        idx = [];
-        if isempty(S.maskPoints)
-            return;
-        end
-        dx = S.maskPoints(:, 1) - x;
-        dy = S.maskPoints(:, 2) - y;
-        [dist, bestIdx] = min(hypot(dx, dy));
-        xSpan = max(1, diff(ui.topAxes.XLim));
-        ySpan = max(1, diff(ui.topAxes.YLim));
-        threshold = 0.025 * max(xSpan, ySpan);
-        if dist <= threshold
-            idx = bestIdx;
+        if ~isempty(S.maskEditor)
+            S.maskEditor.refresh();
         end
     end
 
@@ -660,6 +585,9 @@ function varargout = labkit_DICPreprocess_app(varargin)
         S.maskHistory(end) = [];
         S.maskImage = snapshot.maskImage;
         S.maskPoints = snapshot.maskPoints;
+        if ~isempty(S.maskEditor)
+            S.maskEditor.setPoints(S.maskPoints);
+        end
         updateMaskCurveGraphics();
         showMaskCanvas('ROI mask canvas');
         addLog(sprintf('Undid mask edit: %s.', snapshot.description));
@@ -750,7 +678,12 @@ function varargout = labkit_DICPreprocess_app(varargin)
             end
             return;
         end
-        boundaryMask = boundaryMaskImage(S.maskPoints, size(S.currentReferenceImage), S.maskBoundaryStyle);
+        if ~isempty(S.maskEditor)
+            curve = S.maskEditor.curvePoints();
+            boundaryMask = maskFromCurve(curve, size(S.currentReferenceImage));
+        else
+            boundaryMask = boundaryMaskImage(S.maskPoints, size(S.currentReferenceImage), S.maskBoundaryStyle);
+        end
         ok = true;
     end
 
@@ -891,11 +824,10 @@ function varargout = labkit_DICPreprocess_app(varargin)
         ui.topAxes.ButtonDownFcn = [];
         fig.WindowButtonMotionFcn = '';
         fig.WindowButtonUpFcn = '';
-        S.maskDragIndex = [];
-        deleteIfValid(S.maskCurveLine);
-        deleteIfValid(S.maskAnchorLine);
-        S.maskCurveLine = [];
-        S.maskAnchorLine = [];
+        if ~isempty(S.maskEditor)
+            S.maskEditor.delete();
+        end
+        S.maskEditor = [];
         S.maskPoints = [];
         setMaskEditControls(false);
     end
@@ -1060,9 +992,13 @@ function rect = squareRectInsideImage(roi, imageSize)
 end
 
 function mask = boundaryMaskImage(points, imageSize, boundaryStyle)
+    curve = maskBoundaryCurve(points, imageSize, boundaryStyle);
+    mask = maskFromCurve(curve, imageSize);
+end
+
+function mask = maskFromCurve(curve, imageSize)
     H = imageSize(1);
     W = imageSize(2);
-    curve = maskBoundaryCurve(points, imageSize, boundaryStyle);
     if isempty(curve)
         mask = uint8(false(H, W));
         return;
@@ -1114,61 +1050,6 @@ function idx = wrapIndex(idx, n)
     idx = mod(idx - 1, n) + 1;
 end
 
-function points = addOrInsertMaskAnchor(points, newPoint, ax)
-    n = size(points, 1);
-    if n < 2
-        points(end+1, :) = newPoint;
-        return;
-    end
-
-    [segmentIdx, distance] = nearestMaskSegment(points, newPoint);
-    xSpan = max(1, diff(ax.XLim));
-    ySpan = max(1, diff(ax.YLim));
-    threshold = 0.035 * max(xSpan, ySpan);
-    if isempty(segmentIdx) || distance > threshold
-        points(end+1, :) = newPoint;
-        return;
-    end
-
-    insertAfter = segmentIdx;
-    points = [points(1:insertAfter, :); newPoint; points((insertAfter + 1):end, :)];
-end
-
-function [segmentIdx, bestDistance] = nearestMaskSegment(points, point)
-    segmentIdx = [];
-    bestDistance = inf;
-    n = size(points, 1);
-    if n < 2
-        return;
-    end
-    segmentCount = n - 1;
-    if n >= 3
-        segmentCount = n;
-    end
-    for k = 1:segmentCount
-        a = points(k, :);
-        b = points(wrapIndex(k + 1, n), :);
-        distance = pointSegmentDistance(point, a, b);
-        if distance < bestDistance
-            bestDistance = distance;
-            segmentIdx = k;
-        end
-    end
-end
-
-function distance = pointSegmentDistance(point, a, b)
-    ab = b - a;
-    denom = dot(ab, ab);
-    if denom <= eps
-        distance = hypot(point(1) - a(1), point(2) - a(2));
-        return;
-    end
-    t = dot(point - a, ab) / denom;
-    t = min(max(t, 0), 1);
-    projection = a + t .* ab;
-    distance = hypot(point(1) - projection(1), point(2) - projection(2));
-end
-
 function tf = insideImageBounds(x, y, imageSize)
     tf = isfinite(x) && isfinite(y) && ...
         x >= 0.5 && y >= 0.5 && ...
@@ -1187,7 +1068,7 @@ function lines = cropSelectionSummary(rect)
         round(rect(1)), round(rect(2)), round(rect(3)))};
 end
 
-function showImage(ax, imageData, titleText)
+function hImage = showImage(ax, imageData, titleText)
     cla(ax);
     hImage = image(ax, imageData);
     hImage.HitTest = 'off';

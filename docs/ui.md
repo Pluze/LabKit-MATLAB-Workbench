@@ -69,6 +69,7 @@ labkit.ui.createPlotOptionsPanel(parent, numRows, row);
 labkit.ui.createTopBottomPlotControls(topPanel, bottomPanel, xItems, yItems, topDefaults, bottomDefaults, onChange);
 labkit.ui.createResultTablePanel(parent, titleText, row, columnNames, initialData);
 labkit.ui.createLogPanel(parent, row, initialValue);
+labkit.ui.createAnchorCurveEditor(ax, imageSize, opts);
 ```
 
 State and rendering helpers:
@@ -83,6 +84,8 @@ Use `createPanelGrid` for app-defined sections that only need the standard panel
 
 Use `tabSpec(..., struct('resizeRows', ...))` when a left tab contains several stacked app-defined sections that may need manual height adjustment. When manually placing a component directly into a workbench tab grid, map the logical row through `labkit.ui.layoutRow(parentGrid, row)`. Most app code should use helpers such as `createPanelGrid`, `createResultTablePanel`, `createLogPanel`, and `createAxes`, which apply that mapping for their parent row. `labkit.ui.addRowResizeHandle` remains a lower-level helper for unusual app-local grids that intentionally reserve a physical handle row.
 
+Use `createAnchorCurveEditor` when an app needs DIC-style image anchor editing: double-click blank image space to add or insert anchors, drag anchors to move them, double-click anchors to delete them, switch between curve and straight-line preview, constrain the maximum point count for tools such as two-endpoint scale bars, and optionally install scroll-wheel zoom on the image axes. The helper owns generic interaction and preview graphics only; apps still own mask construction, scale bars, fitting, analysis, and exports.
+
 ## Ownership Boundary
 
 `labkit.ui.*` may provide:
@@ -93,6 +96,7 @@ Use `tabSpec(..., struct('resizeRows', ...))` when a left tab contains several s
 - log panels and log append helpers
 - panel/grid construction
 - row-resize handles for stacked app-defined sections
+- anchor-curve editing on image axes
 - plot axes creation, reset, and prepared-X/Y plotting
 - result table panels
 - listbox selection refresh
