@@ -1,4 +1,4 @@
-# Validation Protocol
+# Testing
 
 Use this document to choose automated checks for behavior-preserving changes.
 
@@ -63,7 +63,7 @@ eis_potentiostatic_zcurve.DTA
 
 Tests may require these named fixtures. They should not fail only because extra DTA files are added to `demo/`.
 
-## What To Validate
+## Coverage Areas
 
 Parser changes:
 

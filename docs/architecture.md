@@ -1,4 +1,4 @@
-# Architecture Notes
+# Architecture
 
 This document describes the current package boundaries. It is not a roadmap.
 
@@ -7,21 +7,21 @@ This document describes the current package boundaries. It is not a roadmap.
 ```text
 apps/ category folders containing public app entry points
     ↓
-+labkit GUI and DTA APIs
++labkit GUI foundation and current DTA APIs
     ↓
 struct-based item/session models
     ↓
 +labkit package functions
 ```
 
-The reusable `+labkit` package should provide two app-facing library surfaces that apps compose:
+The reusable `+labkit` package currently provides one general GUI foundation plus one electrochemistry implementation surface:
 
 ```text
-DTA/electrochemistry library:
-  app-facing DTA discovery, loading, session, pulse, and parsed table/curve APIs
-
-Scientific-app GUI base library:
+GUI foundation:
   resizable tabbed workbench shells, controls, panels, list refresh, logs, result surfaces, and UI state helpers
+
+Current DTA/electrochemistry implementation:
+  app-facing DTA discovery, loading, session, pulse, and parsed table/curve APIs
 
 Internal helper base:
   parser, item/session, pulse, and other helpers that are not app-facing API
@@ -30,15 +30,15 @@ Internal helper base:
 Short version:
 
 ```text
-labkit.dta   = DTA file/session facade
 labkit.ui    = reusable GUI structure and rendering helpers
+labkit.dta   = current electrochemistry DTA file/session facade
 ```
 
 `labkit` is the generic reusable MATLAB infrastructure namespace. The current `dta` module is the first concrete data/device family and is still Gamry DTA focused.
 
 Future data or device families can be added beside `labkit.dta` as peer modules. They should expose one coherent app-facing facade each rather than leaking parser or low-level IO packages into app code.
 
-Experiment app implementations live under category folders such as `apps/electrochem/` rather than being absorbed into the reusable library package. The intended app shape is one experiment app `.m` file owning its scientific workflow. App-specific helper packages should not be reintroduced just to make local code public.
+Experiment app implementations live under category folders such as `apps/electrochem/` rather than being absorbed into the reusable library package. The intended app shape is one experiment app `.m` file owning its domain workflow. App-specific helper packages should not be reintroduced just to make local code public.
 
 ## Entrypoints
 
@@ -67,7 +67,7 @@ private helpers     parser, item/session, pulse, and other implementation helper
 The reusable library should be understandable as three layers, even though MATLAB package folders remain practical and granular:
 
 ```text
-Library 1: scientific-app GUI base
+Library 1: lab-app GUI base
   +labkit/+ui
   reusable tabbed shells, panels, controls, display-data helpers, and handle-scoped UI utilities
 
@@ -81,12 +81,12 @@ Internal helper base
 
 Not library code: experiment-specific app design
   apps/<category>/ public app files
-  experiment-specific analysis, plotting, result summaries, and exports
+  experiment-specific domain logic, plotting, result summaries, and exports
 ```
 
 This map is a design boundary, not a reason to force every function into exactly three folders. Refactor or remove helpers when they obscure which layer owns a decision.
 
-For concrete calling examples and the practical checklist used before adding a new experiment app, see `docs/api_usage.md`.
+For the shared GUI layout contract, see `docs/ui.md`. For DTA facade details, see `docs/dta.md`. For app-owned workflow details and the practical checklist used before adding a new app, see `docs/apps.md`.
 
 Pulse detection is app-facing only through `labkit.dta.detectPulses`; its implementation lives in `+labkit/+dta/private`. App-specific analysis, export-table construction, CSV schemas, and plot annotations belong in the owning public app file. Do not reintroduce those experiment decisions into a public analysis package, IO/data package, or helper package unless a future repeated use case proves a lower-level utility is clearer.
 
@@ -100,9 +100,9 @@ Shared implementation helpers are not app-facing API. Parser-only helpers belong
 
 Reusable UI helpers should build or update generic controls and draw prepared data. Data extraction, parser/session calls, and analysis decisions should stay in the app or DTA layer; for example, apps should call `labkit.dta.getCurveXY` before passing prepared vectors and labels to `labkit.ui.plotXY`. App-specific callback choreography, such as clearing a session, restoring app-specific plot defaults, refreshing experiment summaries, and writing app logs, should stay in the owning app file even when two apps have similar callback order. Domain labels such as DTA-specific open/export button text and app shell tab/panel titles should be passed in from apps rather than hardcoded in the GUI library.
 
-Current apps share the same workbench layout contract: a resizable left control region with tabbed pages, plus a right output region for live plots or primary content. The app-facing shell entry point is `labkit.ui.createWorkbench`; apps configure the right side as a custom plot/output grid or as the standard dual-plot region. App files should not rebuild split-pane layout plumbing or own custom separator drag code.
+Current apps share the workbench layout contract described in `docs/ui.md`: a resizable left control region with tabbed pages, plus a right output region for live plots or primary content. The app-facing shell entry point is `labkit.ui.createWorkbench`; apps configure the right side as a custom plot/output grid or as the standard dual-plot region.
 
-The default left-side tabs are `Files + Analysis`, `Summary + Results`, and `Log`. The file panel and log panel may use shared structure, but app-specific tab sections, scientific controls, result summaries, callback ordering, and plot behavior remain owned by the app. Generic helpers such as panel-grid creation and listbox selection refresh can live in `labkit.ui` only when they are domain-neutral.
+The file panel and log panel may use shared structure, but app-specific tab sections, controls, result summaries, callback ordering, and plot behavior remain owned by the app. Generic helpers such as panel-grid creation and listbox selection refresh can live in `labkit.ui` only when they are domain-neutral.
 
 App code may use selected `labkit.dta.*` helpers for parsed table and curve access, such as `getColumn`, `getMainCurve`, and `getCurveXY`. DTA session operations should go through `labkit.dta.*` so apps do not need to understand lower-level loader callbacks or session internals.
 

@@ -13,10 +13,10 @@ Before editing:
 Also read these only when relevant:
 
 - `docs/architecture.md` for package boundaries or entrypoint work
-- `docs/api_usage.md` for reusable API usage or new app work
-- `docs/data_model.md` for item/result/session schema work
-- `docs/file_format_notes.md` for parser work
-- `docs/validation_protocol.md` for test or validation work
+- `docs/ui.md` for reusable GUI shell, components, or layout work
+- `docs/dta.md` for DTA API, parser, item, pulse, or session work
+- `docs/apps.md` for app entrypoints, app-owned workflow, or new app work
+- `docs/testing.md` for test or validation work
 
 ## Core Rule
 
@@ -27,11 +27,11 @@ The desired architecture is:
 ```text
 apps/ experiment app category folders
     call reusable +labkit DTA and GUI APIs
-    own experiment-specific scientific logic, parameters, plots, and exports
+    own experiment-specific domain/scientific logic, parameters, plots, and exports
     ideally one experiment corresponds to one app .m file
 
 +labkit reusable library
-    GUI library: scientific-app shells, controls, panels, logs, and UI state helpers
+    GUI library: lab-app shells, controls, panels, logs, and UI state helpers
     DTA library: app-facing DTA discovery, loading, session, pulse, and parsed table/curve APIs
     internal helpers: parser, analysis, utility, item/session construction, and private helpers hidden behind GUI/DTA APIs
 ```
@@ -56,7 +56,7 @@ same results, cleaner code, clearer boundaries
 
 - Move duplicated helper logic into `+labkit` package functions only when the helper is genuinely cross-cutting and makes the caller easier to understand.
 - Update app entry points to call package helpers when behavior is preserved and the helper boundary matches the GUI or DTA responsibilities above.
-- Move app-specific implementations and experiment-specific scientific workflow code out of `+labkit` when doing so preserves behavior.
+- Move app-specific implementations and experiment-specific domain/scientific workflow code out of `+labkit` when doing so preserves behavior.
 - Add or update tests for pure functions and app entry points.
 - Update documentation to reflect current behavior.
 - Improve app entrypoint clarity without reintroducing root-level legacy command wrappers.
@@ -105,10 +105,10 @@ When MATLAB source, tests, fixtures, or package structure change, update the mat
 - `README.md` for user-facing commands or current status
 - `CHANGELOG.md` for release-facing changes
 - `docs/architecture.md` for package boundaries or entrypoint roles
-- `docs/api_usage.md` for reusable API examples or new app guidance
-- `docs/data_model.md` for schemas
-- `docs/file_format_notes.md` for parser assumptions
-- `docs/validation_protocol.md` for validation coverage
+- `docs/ui.md` for reusable GUI shell, components, or layout contracts
+- `docs/dta.md` for DTA API, parser assumptions, schemas, or sessions
+- `docs/apps.md` for app entrypoints, app-owned workflow, or new app guidance
+- `docs/testing.md` for validation coverage
 
 ## Handoff
 

@@ -17,8 +17,9 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Current app GUIs now share the same resizable tabbed workbench shell: scrollable control tabs on the left and plot/output content on the right.
 - App shells now use the standard three-tab workbench framework, and DTA-facing apps share the same file-selection panel structure.
 - GUI app entry points now build from the unified `labkit.ui.createWorkbench` shell, with compatibility shell wrappers layered over that entry point.
-- Reusable UI components now include generic panel-grid creation and single/multi listbox selection refresh so app files can define scientific sections with less layout boilerplate.
+- Reusable UI components now include generic panel-grid creation and single/multi listbox selection refresh so app files can define domain-specific sections with less layout boilerplate.
 - README and docs now describe the current app/UI/DTA architecture directly instead of framing the project as an active refactor.
+- Docs are now organized around the reusable UI library, current DTA library, app-owned workflow details, testing, and architecture.
 
 ### Fixed
 

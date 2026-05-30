@@ -67,15 +67,16 @@ templates/            Copy-only GUI, DTA, and GUI+DTA starter programs
 demo/                 Named DTA fixtures
 tests/                MATLAB tests
 scripts/              Test runner scripts
-docs/                 Architecture, API, data model, parser, and validation docs
+docs/                 UI, DTA, app, architecture, and testing docs
 ```
 
 ## More Documentation
 
+- `docs/README.md`: documentation map.
 - `docs/architecture.md`: current architecture and boundaries.
-- `docs/api_usage.md`: reusable API examples, app layout, and new-app checklist.
-- `docs/data_model.md`: current item/result/session schemas.
-- `docs/file_format_notes.md`: DTA parser assumptions.
-- `docs/validation_protocol.md`: automated validation guidance.
+- `docs/ui.md`: reusable GUI shell, layout contract, and UI helpers.
+- `docs/dta.md`: current Gamry DTA API, parser assumptions, and DTA structs.
+- `docs/apps.md`: app entry points, app-owned workflow rules, and current app-specific notes.
+- `docs/testing.md`: automated validation guidance.
 - `CHANGELOG.md`: release-style change history.
 - `AGENTS.md`: agent and maintainer operating rules.
