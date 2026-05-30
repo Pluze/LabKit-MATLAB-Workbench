@@ -20,6 +20,7 @@ function varargout = labkit_CSC_app(varargin)
 % Optional normalization
 %   CSC = Q / area (cm²); both charge and normalized CSC are shown.
 %
+    testLoadFile = '';
     if nargin > 0
         % Keep CSC numerical tests direct while the app owns the local analysis code.
         if isCSCAnalysisTestRequest(varargin)
@@ -29,10 +30,20 @@ function varargout = labkit_CSC_app(varargin)
             varargout{1} = computeCSC(varargin{2}, varargin{3});
             return;
         end
-        error('labkit_CSC_app:UnsupportedInput', 'labkit_CSC_app does not accept input arguments.');
+        if isCSCLoadTestRequest(varargin)
+            if nargout > 1
+                error('labkit_CSC_app:TooManyOutputs', 'CSC load test request returns one diagnostics struct.');
+            end
+            testLoadFile = char(varargin{2});
+        else
+            error('labkit_CSC_app:UnsupportedInput', 'labkit_CSC_app does not accept input arguments.');
+        end
     end
     if nargout > 1
         error('labkit_CSC_app:TooManyOutputs', 'labkit_CSC_app returns at most the app figure handle.');
+    end
+    if ~isempty(testLoadFile) && nargout == 0
+        error('labkit_CSC_app:MissingOutput', 'CSC load test request requires one output diagnostics struct.');
     end
 
     % Application state container
@@ -212,6 +223,13 @@ function varargout = labkit_CSC_app(varargin)
     title(axBottom,'Bottom Plot');
     xlabel(axBottom,'X');
     ylabel(axBottom,'Y');
+    if ~isempty(testLoadFile)
+        cleanup = onCleanup(@() delete(fig));
+        loadFile(testLoadFile);
+        drawnow;
+        varargout{1} = collectLoadDiagnostics();
+        return;
+    end
     if nargout == 1
         varargout{1} = fig;
     end
@@ -290,10 +308,9 @@ function varargout = labkit_CSC_app(varargin)
             uialert(fig, ME.message, 'Parse Error');
             return;
         end
+        loadedSession.items(1).currentCurve = 1;
+        loadedSession.items(1).analysis = [];
         item = loadedSession.items(1);
-        item.currentCurve = 1;
-        item.analysis = [];
-        loadedSession.items(1) = item;
 
         for i = 1:numel(item.logmsg)
             addLog(item.logmsg{i});
@@ -478,6 +495,19 @@ function varargout = labkit_CSC_app(varargin)
     function addLog(msg)
         labkit.ui.appendLog(txtLog, msg);
     end
+
+    function diagnostics = collectLoadDiagnostics()
+        diagnostics = struct();
+        diagnostics.file = txtFile.Value;
+        diagnostics.scanRate = txtScan.Value;
+        diagnostics.curveItems = ddCurve.Items;
+        diagnostics.topLineCount = numel(findobj(axTop, 'Type', 'Line'));
+        diagnostics.bottomLineCount = numel(findobj(axBottom, 'Type', 'Line'));
+        diagnostics.qct = txtQct.Value;
+        diagnostics.qcv = txtQcv.Value;
+        diagnostics.status = lblStatus.Text;
+        diagnostics.log = txtLog.Value;
+    end
 end
 
 %% App-local formatting and plot cleanup
@@ -508,6 +538,12 @@ function tf = isCSCAnalysisTestRequest(args)
     tf = numel(args) == 3 ...
         && (ischar(args{1}) || (isstring(args{1}) && isscalar(args{1}))) ...
         && strcmp(char(args{1}), '__test_computeCSC__');
+end
+
+function tf = isCSCLoadTestRequest(args)
+    tf = numel(args) == 2 ...
+        && (ischar(args{1}) || (isstring(args{1}) && isscalar(args{1}))) ...
+        && strcmp(char(args{1}), '__test_loadFile__');
 end
 
 %% App-local analysis

@@ -16,6 +16,10 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - `startup_labkit` now adds nested app category folders so app entry points resolve without changing into app directories.
 - Current app GUIs now share the same resizable tabbed workbench shell: scrollable control tabs on the left and plot/output content on the right.
 
+### Fixed
+
+- CSC app file loading now preserves the loaded session item struct shape while updating app state, and GUI tests cover loading a CV/CT fixture through the CSC app refresh path.
+
 ### Removed
 
 - Public `+labkit/+io`, `+labkit/+data`, `+labkit/+analysis`, `+labkit/+util`, `+labkit/+plot`, and `+labkit/+app` app-facing surfaces.
