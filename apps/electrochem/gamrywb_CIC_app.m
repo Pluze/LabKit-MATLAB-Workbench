@@ -145,22 +145,23 @@ function varargout = gamrywb_CIC_app(varargin)
     %% ===================== Quick info =====================
     pInfo = uipanel(laySR,'Title','Current File Summary');
     pInfo.Layout.Row = 1;
-    gi = uigridlayout(pInfo,[10 2]);
-    gi.RowHeight = repmat({'fit'},1,10);
+    gi = uigridlayout(pInfo,[11 2]);
+    gi.RowHeight = repmat({'fit'},1,11);
     gi.ColumnWidth = {'fit','1x'};
     gi.Padding = [8 8 8 8];
     gi.ColumnSpacing = 8;
 
-    S.txtDetect = gamrywb.ui.createReadOnlyInfoRow(gi,1,'Detection:');
-    S.txtDelay = gamrywb.ui.createReadOnlyInfoRow(gi,2,'Delay used:');
-    S.txtArea = gamrywb.ui.createReadOnlyInfoRow(gi,3,'Area:');
-    S.txtEmc = gamrywb.ui.createReadOnlyInfoRow(gi,4,'Emc:');
-    S.txtEma = gamrywb.ui.createReadOnlyInfoRow(gi,5,'Ema:');
-    S.txtQc = gamrywb.ui.createReadOnlyInfoRow(gi,6,'Cathodic Q/CIC:');
-    S.txtQa = gamrywb.ui.createReadOnlyInfoRow(gi,7,'Anodic Q/CIC:');
-    S.txtQt = gamrywb.ui.createReadOnlyInfoRow(gi,8,'Total Q/CIC:');
-    S.txtSafe = gamrywb.ui.createReadOnlyInfoRow(gi,9,'Safety:');
-    S.txtBest = gamrywb.ui.createReadOnlyInfoRow(gi,10,'Best safe among loaded:');
+    S.txtControlMode = gamrywb.ui.createReadOnlyInfoRow(gi,1,'Control mode:');
+    S.txtDetect = gamrywb.ui.createReadOnlyInfoRow(gi,2,'Detection:');
+    S.txtDelay = gamrywb.ui.createReadOnlyInfoRow(gi,3,'Delay used:');
+    S.txtArea = gamrywb.ui.createReadOnlyInfoRow(gi,4,'Area:');
+    S.txtEmc = gamrywb.ui.createReadOnlyInfoRow(gi,5,'Emc:');
+    S.txtEma = gamrywb.ui.createReadOnlyInfoRow(gi,6,'Ema:');
+    S.txtQc = gamrywb.ui.createReadOnlyInfoRow(gi,7,'Cathodic Q/CIC:');
+    S.txtQa = gamrywb.ui.createReadOnlyInfoRow(gi,8,'Anodic Q/CIC:');
+    S.txtQt = gamrywb.ui.createReadOnlyInfoRow(gi,9,'Total Q/CIC:');
+    S.txtSafe = gamrywb.ui.createReadOnlyInfoRow(gi,10,'Safety:');
+    S.txtBest = gamrywb.ui.createReadOnlyInfoRow(gi,11,'Best safe among loaded:');
 
     %% ===================== Actions =====================
     pAct = uipanel(layFA,'Title','Plot / Debug');
@@ -412,6 +413,7 @@ function varargout = gamrywb_CIC_app(varargin)
 
     function refreshResultsSummary()
         % clear first
+        S.txtControlMode.Value = '-';
         S.txtDetect.Value = '-';
         S.txtDelay.Value = '-';
         S.txtArea.Value = '-';
@@ -428,6 +430,7 @@ function varargout = gamrywb_CIC_app(varargin)
         end
 
         it = S.items(S.current);
+        S.txtControlMode.Value = chronoControlModeText(it);
         if isempty(it.analysis) || ~it.analysis.ok
             if ~isempty(it.analysis) && isfield(it.analysis,'message')
                 S.txtSafe.Value = it.analysis.message;
@@ -450,6 +453,22 @@ function varargout = gamrywb_CIC_app(varargin)
         S.txtSafe.Value = sprintf('%s | Emc>=%.3f? %d | Ema<=%.3f? %d', ...
             ternary(A.safe,'SAFE','UNSAFE'), A.cathLimit, A.cathOK, A.anodLimit, A.anodOK);
         S.txtBest.Value = bestSafeString();
+    end
+
+    function out = chronoControlModeText(item)
+        out = 'Unknown chrono control mode';
+        if ~isfield(item, 'controlMode')
+            return;
+        end
+
+        switch string(item.controlMode)
+            case "current"
+                out = 'Current-controlled chrono';
+            case "voltage"
+                out = 'Voltage-controlled chrono';
+            otherwise
+                out = 'Unknown chrono control mode';
+        end
     end
 
     function out = bestSafeString()

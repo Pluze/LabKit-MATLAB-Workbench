@@ -72,6 +72,13 @@ Pulse detection:
 [pulse, message] = gamrywb.dta.detectPulses(t, Im, meta, "Metadata first, then auto");
 ```
 
+Chrono loading also exposes the experiment control mode inferred from DTA step metadata:
+
+```matlab
+[item, status] = gamrywb.dta.loadFile(filepath, "chrono");
+item.controlMode   % "current", "voltage", or "unknown"
+```
+
 Lower-level recursive discovery, parser functions, item construction, session mutation, and pulse internals are private DTA implementation details. Apps should not call `gamrywb.io.*`, `gamrywb.data.*`, `gamrywb.analysis.*`, or `gamrywb.util.*`.
 
 ## GUI API

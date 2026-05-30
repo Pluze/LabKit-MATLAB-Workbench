@@ -10,6 +10,7 @@ function [meta, tables, logmsg] = parseChronoDTA(filepath)
     meta.filepath = filepath;
     meta.area_cm2 = NaN;
     meta.sampleTime_s = NaN;
+    meta.controlMode = "unknown";
     meta.steps = struct('idx', {}, 'I', {}, 'V', {}, 'T', {});
     tables = struct('name', {}, 'headers', {}, 'units', {}, 'data', {}, 'numericMask', {});
     logmsg = {};
@@ -84,6 +85,7 @@ function [meta, tables, logmsg] = parseChronoDTA(filepath)
         end
         meta.steps(end+1) = struct('idx', double(idx), 'I', I, 'V', V, 'T', T); %#ok<AGROW>
     end
+    meta.controlMode = inferControlMode(meta.steps);
 
     if ~isempty(meta.steps)
         if any(isfinite([meta.steps.I]))
@@ -165,5 +167,20 @@ function [meta, tables, logmsg] = parseChronoDTA(filepath)
 
     if isempty(tables)
         error('No numeric TABLE section was parsed from this DTA file.');
+    end
+end
+
+function mode = inferControlMode(steps)
+    mode = "unknown";
+    if isempty(steps)
+        return;
+    end
+
+    Ivals = [steps.I];
+    Vvals = [steps.V];
+    if any(isfinite(Ivals))
+        mode = "current";
+    elseif any(isfinite(Vvals))
+        mode = "voltage";
     end
 end

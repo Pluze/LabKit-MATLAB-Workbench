@@ -10,6 +10,7 @@ function item = makeChronoItem(filepath, opts)
     item.filepath = filepath;
     item.name = shortName(filepath);
     [item.meta, item.tables, item.logmsg] = parseChronoDTA(filepath);
+    item.controlMode = item.meta.controlMode;
 
     [curve, ok, msg] = gamrywb.dta.getMainCurve(item.tables);
     if ~ok

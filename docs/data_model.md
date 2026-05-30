@@ -39,9 +39,17 @@ Current fields include:
 
 ```text
 type, filepath, name, meta, tables, curve,
-t_s, Vf_V, Im_A, pt, n, pulse,
+controlMode, t_s, Vf_V, Im_A, pt, n, pulse,
 alignTime_s, tAligned_s, message, logmsg, analysis
 ```
+
+`controlMode` is a DTA semantic field inferred from chrono step metadata:
+
+```text
+current, voltage, unknown
+```
+
+Current-controlled chrono files are identified from `ISTEP/TSTEP` metadata. Voltage-controlled chrono files are identified from `VSTEP/TSTEP` metadata. If neither controlled step family is present, the item keeps `controlMode == "unknown"` and pulse detection may still fall back to current-waveform detection.
 
 Compatibility bridge fields include:
 

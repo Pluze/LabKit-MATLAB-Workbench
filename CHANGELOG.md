@@ -6,6 +6,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 
 ### Changed
 
+- Chrono DTA loading now exposes `item.controlMode` / `meta.controlMode` for current-controlled, voltage-controlled, or unknown chrono files, and CIC/VT summary panels display that mode for the selected file.
 - Public app-facing package surface is now `gamrywb.ui.*` plus `gamrywb.dta.*`.
 - DTA parser helpers, session save/load, item/session construction, pulse internals, and parsed table/curve access now live behind the DTA facade or under `+gamrywb/+dta/private`.
 - Current app implementations are single public files under `apps/`; experiment-specific analysis, plotting, result tables, and CSV/export schemas stay app-local.

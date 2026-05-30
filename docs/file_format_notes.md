@@ -71,11 +71,20 @@ V
 T
 ```
 
+`meta.controlMode` and chrono `item.controlMode` expose the controlled step family:
+
+```text
+current   ISTEP/TSTEP metadata
+voltage   VSTEP/TSTEP metadata
+unknown   no controlled step family detected
+```
+
 Chrono parser behavior to preserve:
 
 - `AREA` is stored as `meta.area_cm2` when numeric.
 - `SAMPLETIME` is stored as `meta.sampleTime_s` when numeric.
 - `ISTEPn/TSTEPn` and `VSTEPn/TSTEPn` sequences are preserved in step order.
+- Control mode inference follows the same priority as metadata pulse detection: current metadata first, then voltage metadata.
 - Numeric table sections are kept with headers, units, data, and numeric masks.
 - Log messages include parsed table dimensions.
 

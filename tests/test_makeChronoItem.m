@@ -8,6 +8,7 @@ function test_makeChronoItem()
 
     assert(strcmp(item.type, "chrono"), 'Chrono item type should be set.');
     assert(strcmp(item.name, 'chrono_chronopot_current_pulse_0p2ms.DTA'), 'Chrono item name should use the file name.');
+    assert(item.controlMode == "current", 'Chrono item should expose current-controlled metadata.');
     assert(numel(item.t) == 244 && numel(item.Vf) == 244 && numel(item.Im) == 244, ...
         'Legacy-compatible chrono vectors should be populated.');
     assert(isequal(item.t, item.t_s), 'Unit-explicit t_s should mirror legacy t.');

@@ -122,24 +122,25 @@ function varargout = gamrywb_VTResistance_app(varargin)
 
     pInfo = uipanel(laySR,'Title','Current File Summary');
     pInfo.Layout.Row = 1;
-    gi = uigridlayout(pInfo,[12 2]);
-    gi.RowHeight = repmat({'fit'},1,12);
+    gi = uigridlayout(pInfo,[13 2]);
+    gi.RowHeight = repmat({'fit'},1,13);
     gi.ColumnWidth = {'fit','1x'};
     gi.Padding = [8 8 8 8];
     gi.ColumnSpacing = 8;
 
-    S.txtDetect = gamrywb.ui.createReadOnlyInfoRow(gi,1,'Detection:');
-    S.txtWindow = gamrywb.ui.createReadOnlyInfoRow(gi,2,'Window:');
-    S.txtCathIV = gamrywb.ui.createReadOnlyInfoRow(gi,3,'Cathodic I / Vss:');
-    S.txtAnodIV = gamrywb.ui.createReadOnlyInfoRow(gi,4,'Anodic I / Vss:');
-    S.txtCathBase = gamrywb.ui.createReadOnlyInfoRow(gi,5,'Cathodic baseline:');
-    S.txtAnodBase = gamrywb.ui.createReadOnlyInfoRow(gi,6,'Anodic baseline:');
-    S.txtCathBaseWin = gamrywb.ui.createReadOnlyInfoRow(gi,7,'Cath baseline window:');
-    S.txtAnodBaseWin = gamrywb.ui.createReadOnlyInfoRow(gi,8,'Anod baseline window:');
-    S.txtCathR = gamrywb.ui.createReadOnlyInfoRow(gi,9,'Cathodic R:');
-    S.txtAnodR = gamrywb.ui.createReadOnlyInfoRow(gi,10,'Anodic R:');
-    S.txtAvgR = gamrywb.ui.createReadOnlyInfoRow(gi,11,'Average R:');
-    S.txtStatus = gamrywb.ui.createReadOnlyInfoRow(gi,12,'Status:');
+    S.txtControlMode = gamrywb.ui.createReadOnlyInfoRow(gi,1,'Control mode:');
+    S.txtDetect = gamrywb.ui.createReadOnlyInfoRow(gi,2,'Detection:');
+    S.txtWindow = gamrywb.ui.createReadOnlyInfoRow(gi,3,'Window:');
+    S.txtCathIV = gamrywb.ui.createReadOnlyInfoRow(gi,4,'Cathodic I / Vss:');
+    S.txtAnodIV = gamrywb.ui.createReadOnlyInfoRow(gi,5,'Anodic I / Vss:');
+    S.txtCathBase = gamrywb.ui.createReadOnlyInfoRow(gi,6,'Cathodic baseline:');
+    S.txtAnodBase = gamrywb.ui.createReadOnlyInfoRow(gi,7,'Anodic baseline:');
+    S.txtCathBaseWin = gamrywb.ui.createReadOnlyInfoRow(gi,8,'Cath baseline window:');
+    S.txtAnodBaseWin = gamrywb.ui.createReadOnlyInfoRow(gi,9,'Anod baseline window:');
+    S.txtCathR = gamrywb.ui.createReadOnlyInfoRow(gi,10,'Cathodic R:');
+    S.txtAnodR = gamrywb.ui.createReadOnlyInfoRow(gi,11,'Anodic R:');
+    S.txtAvgR = gamrywb.ui.createReadOnlyInfoRow(gi,12,'Average R:');
+    S.txtStatus = gamrywb.ui.createReadOnlyInfoRow(gi,13,'Status:');
 
     tableUi = gamrywb.ui.createResultTablePanel(laySR, 'Batch Results', 2, ...
         {'File','Ic(A)','Ia(A)','Vc_ss(V)','Va_ss(V)','R_cath(ohm)','R_anod(ohm)','R_avg(ohm)','Detection'}, ...
@@ -322,6 +323,7 @@ function varargout = gamrywb_VTResistance_app(varargin)
     end
 
     function refreshResultsSummary()
+        S.txtControlMode.Value = '-';
         S.txtDetect.Value = '-';
         S.txtWindow.Value = '-';
         S.txtCathIV.Value = '-';
@@ -339,6 +341,7 @@ function varargout = gamrywb_VTResistance_app(varargin)
             return;
         end
         it = S.items(S.current);
+        S.txtControlMode.Value = chronoControlModeText(it);
         if isempty(it.analysis) || ~it.analysis.ok
             if ~isempty(it.analysis) && isfield(it.analysis,'message')
                 S.txtStatus.Value = it.analysis.message;
@@ -361,6 +364,22 @@ function varargout = gamrywb_VTResistance_app(varargin)
         S.txtAnodR.Value = sprintf('%.6g ohm (signed %.6g)', A.Ra_abs_ohm, A.Ra_ohm);
         S.txtAvgR.Value = sprintf('%.6g ohm', A.Ravg_abs_ohm);
         S.txtStatus.Value = A.message;
+    end
+
+    function out = chronoControlModeText(item)
+        out = 'Unknown chrono control mode';
+        if ~isfield(item, 'controlMode')
+            return;
+        end
+
+        switch string(item.controlMode)
+            case "current"
+                out = 'Current-controlled chrono';
+            case "voltage"
+                out = 'Voltage-controlled chrono';
+            otherwise
+                out = 'Unknown chrono control mode';
+        end
     end
 
     function refreshPlots()

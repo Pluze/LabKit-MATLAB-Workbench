@@ -20,6 +20,8 @@ function test_parseChronoDTA()
 
     assert(abs(meta.area_cm2 - 1) < 1e-12, 'AREA metadata should be parsed from current chrono fixture.');
     assert(abs(meta.sampleTime_s - 1.00002e-5) < 1e-12, 'SAMPLETIME metadata should be parsed from current chrono fixture.');
+    assert(meta.controlMode == "current", 'Current chrono fixture should expose current control mode.');
+    assert(currentItem.controlMode == "current", 'Current chrono item should expose current control mode.');
     assert(numel(meta.steps) == 6, 'Current-controlled fixture should produce six ISTEP/TSTEP steps.');
     assert(abs(meta.steps(2).I + 1.22e-2) < 1e-15 && abs(meta.steps(5).I - 1.22e-2) < 1e-15, ...
         'Current-controlled step values should be preserved.');
@@ -46,6 +48,8 @@ function test_parseChronoDTA()
     assert(voltageStatus.ok, voltageStatus.message);
     vMeta = voltageItem.meta;
     vTables = voltageItem.tables;
+    assert(vMeta.controlMode == "voltage", 'Voltage chrono fixture should expose voltage control mode.');
+    assert(voltageItem.controlMode == "voltage", 'Voltage chrono item should expose voltage control mode.');
     assert(numel(vMeta.steps) == 6, 'Voltage-controlled fixture should produce six VSTEP/TSTEP steps.');
     assert(abs(vMeta.steps(2).V + 1.5) < 1e-15 && abs(vMeta.steps(5).V - 1.5) < 1e-15, ...
         'Voltage-controlled step values should be preserved.');
