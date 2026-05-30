@@ -1,8 +1,8 @@
-function [pulse, msg] = detectPulses(t, Im, meta, opts)
-%DETECTPULSES Detect cathodic/anodic pulses from metadata or current.
+function [pulse, msg] = detectPulseCore(t, Im, meta, opts)
+%DETECTPULSECORE Internal chrono pulse detector for the DTA facade.
 
     if nargin < 4 || isempty(opts)
-        opts = gamrywb.analysis.defaultPulseOptions();
+        opts = defaultPulseOptions();
     elseif ischar(opts) || isstring(opts)
         opts = struct('mode', normalizeMode(opts));
     elseif ~isfield(opts, 'mode')
@@ -11,23 +11,23 @@ function [pulse, msg] = detectPulses(t, Im, meta, opts)
         opts.mode = normalizeMode(opts.mode);
     end
 
-    pulse = gamrywb.analysis.emptyPulse();
+    pulse = emptyPulse();
     msg = 'Pulse detection failed.';
 
     switch string(opts.mode)
         case "metadata_only"
-            [pulse, ~, msg] = gamrywb.analysis.pulsesFromMetadata(meta, t);
+            [pulse, ~, msg] = pulsesFromMetadata(meta, t);
         case "current_only"
-            [pulse, ~, msg] = gamrywb.analysis.pulsesFromCurrent(t, Im);
+            [pulse, ~, msg] = pulsesFromCurrent(t, Im);
         otherwise
-            [pulse, okM, msgM] = gamrywb.analysis.pulsesFromMetadata(meta, t);
+            [pulse, okM, msgM] = pulsesFromMetadata(meta, t);
             if okM
                 msg = msgM;
                 pulse.message = msg;
                 return;
             end
 
-            [pulse, okA, msgA] = gamrywb.analysis.pulsesFromCurrent(t, Im);
+            [pulse, okA, msgA] = pulsesFromCurrent(t, Im);
             if okA
                 msg = sprintf('%s | fallback success: %s', msgM, msgA);
             else

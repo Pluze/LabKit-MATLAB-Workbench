@@ -10,7 +10,7 @@ function varargout = gamrywb_ChronoOverlay_app(varargin)
     end
 
     S = struct();
-    S.session = gamrywb.data.makeSession('chrono_overlay');
+    S.session = gamrywb.dta.makeSession('chrono_overlay');
     S.items = S.session.items;
 
     ui = gamrywb.ui.createTwoPaneShell( ...
@@ -137,10 +137,11 @@ function varargout = gamrywb_ChronoOverlay_app(varargin)
         end
 
         callbacks = struct();
-        callbacks.onAdded = @(filepath, ~) addLog(sprintf('Loaded: %s', filepath));
+        callbacks.onAdded = @(~, ~) [];
         callbacks.onSkipped = @(filepath) addLog(sprintf('Skipped already loaded: %s', filepath));
         callbacks.onFailed = @(filepath, message) addLog(sprintf('Failed: %s | %s', filepath, message));
-        [S.session, report] = gamrywb.data.loadFilesIntoSession(S.session, filepaths, @loadOneDTA, callbacks);
+        [S.session, report] = gamrywb.dta.addFilesToSession(S.session, filepaths, "chrono", callbacks);
+        postProcessAddedItems(report.added);
         S.items = S.session.items;
 
         refreshFileList();
@@ -152,19 +153,24 @@ function varargout = gamrywb_ChronoOverlay_app(varargin)
         end
     end
 
-    function item = loadOneDTA(filepath)
-        [item, status] = gamrywb.dta.loadFile(filepath, "chrono");
-        if ~status.ok
-            error('%s', char(status.message));
-        end
+    function postProcessAddedItems(filepaths)
+        for iFile = 1:numel(filepaths)
+            idx = find(strcmp(string({S.session.items.filepath}), string(filepaths{iFile})), 1, 'first');
+            if isempty(idx)
+                continue;
+            end
 
-        [item, alignMsg] = alignByPulseGap(item);
-        addLog(alignMsg);
+            item = S.session.items(idx);
+            [item, alignMsg] = alignByPulseGap(item);
+            S.session.items(idx) = item;
+            addLog(alignMsg);
 
-        for ii = 1:numel(item.logmsg)
-            addLog(item.logmsg{ii});
+            for ii = 1:numel(item.logmsg)
+                addLog(item.logmsg{ii});
+            end
+            addLog(sprintf('%s: %s', item.name, item.message));
+            addLog(sprintf('Loaded: %s', filepaths{iFile}));
         end
-        addLog(sprintf('%s: %s', item.name, item.message));
     end
 
     function onRemoveSelected(~, ~)
@@ -173,14 +179,14 @@ function varargout = gamrywb_ChronoOverlay_app(varargin)
         end
         callbacks = struct();
         callbacks.onRemoved = @(name, ~) addLog(sprintf('Removed: %s', name));
-        [S.session, ~] = gamrywb.data.removeSelectedItemsFromSession(S.session, lbFiles.Value, callbacks);
+        [S.session, ~] = gamrywb.dta.removeSelectedItemsFromSession(S.session, lbFiles.Value, callbacks);
         S.items = S.session.items;
         refreshFileList();
         refreshPlots();
     end
 
     function onClearAll(~, ~)
-        S.session = gamrywb.data.makeSession('chrono_overlay');
+        S.session = gamrywb.dta.makeSession('chrono_overlay');
         S.items = S.session.items;
         refreshFileList();
         refreshPlots();
@@ -201,7 +207,7 @@ function varargout = gamrywb_ChronoOverlay_app(varargin)
             return;
         end
 
-        items = gamrywb.data.selectItemsByNames(S.items, lbFiles.Value);
+        items = gamrywb.dta.selectSessionItems(S.session, lbFiles.Value);
         if isempty(items)
             cla(axV);
             cla(axI);
@@ -217,7 +223,7 @@ function varargout = gamrywb_ChronoOverlay_app(varargin)
             return;
         end
 
-        items = gamrywb.data.selectItemsByNames(S.items, lbFiles.Value);
+        items = gamrywb.dta.selectSessionItems(S.session, lbFiles.Value);
         if isempty(items)
             uialert(fig, 'No files selected for export.', 'Export');
             return;

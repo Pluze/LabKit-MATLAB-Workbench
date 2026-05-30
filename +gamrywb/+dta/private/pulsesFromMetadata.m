@@ -1,7 +1,7 @@
 function [pulse, ok, msg] = pulsesFromMetadata(meta, t)
 %PULSESFROMMETADATA Detect pulses from ISTEP/TSTEP or VSTEP/TSTEP metadata.
 
-    pulse = gamrywb.analysis.emptyPulse();
+    pulse = emptyPulse();
     ok = false;
 
     if isempty(meta) || ~isfield(meta, 'steps') || isempty(meta.steps)

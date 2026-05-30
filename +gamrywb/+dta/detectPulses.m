@@ -8,5 +8,5 @@ function [pulse, message] = detectPulses(t, Im, meta, mode)
         mode = "Metadata first, then auto";
     end
 
-    [pulse, message] = gamrywb.analysis.detectPulses(t, Im, meta, mode);
+    [pulse, message] = detectPulseCore(t, Im, meta, mode);
 end

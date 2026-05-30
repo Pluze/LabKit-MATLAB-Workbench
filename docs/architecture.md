@@ -51,7 +51,6 @@ The app files are package-backed and do not delegate to legacy GUI files.
 +gamrywb/+dta       GUI-free app-facing DTA discovery, loading, and session facade
 +gamrywb/+io        DTA parsers, folder discovery, session IO
 +gamrywb/+data      lower-level item/session construction, table/column access, session orchestration
-+gamrywb/+analysis  broad pulse detection helpers
 +gamrywb/+ui        reusable GUI framework helpers and small UI construction helpers
 private helpers     implementation helpers inside the owning package or app file
 ```
@@ -72,7 +71,7 @@ Library 2: Gamry/DTA parsing and loading
 
 Internal helper base
   package-private helpers and app-local functions
-  internal string, struct, numeric, CSV, and parser helpers used behind GUI/DTA/data APIs
+  internal string, struct, numeric, CSV, pulse-detection, and parser helpers used behind GUI/DTA/data APIs
 
 Not library code: experiment-specific app design
   apps/ public app files
@@ -83,23 +82,23 @@ This map is a design boundary, not a reason to force every function into exactly
 
 For concrete calling examples and the practical checklist used before adding a new experiment app, see `docs/api_usage.md`.
 
-`+gamrywb/+analysis` is intentionally narrow: it currently owns reusable pulse detection. App-specific analysis, export-table construction, CSV schemas, and plot annotations now belong in the owning public app file. Do not reintroduce those experiment decisions into `+gamrywb/+analysis`, `+gamrywb/+io`, or a helper package unless a future repeated use case proves a lower-level utility is clearer.
+Pulse detection is app-facing only through `gamrywb.dta.detectPulses`; its implementation lives in `+gamrywb/+dta/private`. App-specific analysis, export-table construction, CSV schemas, and plot annotations belong in the owning public app file. Do not reintroduce those experiment decisions into a public analysis package, `+gamrywb/+io`, or a helper package unless a future repeated use case proves a lower-level utility is clearer.
 
-The analysis layer is guarded as pulse-focused, GUI-free, and app-free. It should not call parser/session/data APIs, MATLAB UI constructors, file dialogs, alerts, `gamrywb.ui`, app entry points, or `apps/` helpers, and it should not regain CIC, VT resistance, CSC, EIS, result-table, or CSV-writing workflow code.
-
-Analysis, data, and IO package functions should not depend on GUI state or call `uialert`. Plot/UI helpers may accept explicit graphics handles and should keep side effects limited to those handles.
+Data, DTA, and IO package functions should not depend on GUI state or call `uialert`. Plot/UI helpers may accept explicit graphics handles and should keep side effects limited to those handles.
 
 The DTA facade is also guarded as a GUI-free and app-free layer: it should not call MATLAB UI constructors, file dialogs, alerts, app entry points, or `apps/` helpers. New DTA-backed app code should prefer `gamrywb.dta.*` for loading and session operations; DTA code must not call back into app code.
 
-The data layer is guarded as GUI-free and app-free model/orchestration code. It may call parser, pulse-detection, and utility helpers that are part of the Gamry/DTA library, but it should not call MATLAB UI constructors, file dialogs, alerts, `gamrywb.ui`, app entry points, or `apps/` helpers.
+The data layer is guarded as GUI-free and app-free model/orchestration code. It may call parser and DTA facade helpers that are part of the Gamry/DTA library, but it should not call MATLAB UI constructors, file dialogs, alerts, `gamrywb.ui`, app entry points, or `apps/` helpers.
 
 The IO layer is guarded as GUI-free and app-free parser/session IO code. It may call lower-level utility helpers and itself recursively for discovery, but it should not call MATLAB UI constructors, file dialogs, alerts, `gamrywb.ui`, app entry points, `apps/` helpers, or app-specific export writers.
 
 Shared implementation helpers are not app-facing API. Parser-only helpers belong under package-private parser helpers. App-specific formatting, parsing, interpolation, and export helpers belong in the owning app file unless a repeated use case proves a clearer `gamrywb.dta`, `gamrywb.ui`, or selected `gamrywb.data` API.
 
-Reusable UI helpers should build or update generic controls and draw prepared data. Data extraction, parser/session calls, and analysis calls should stay in the app or data layers; for example, apps should call `gamrywb.data.getCurveXY` before passing prepared vectors and labels to `gamrywb.ui.plotXY`. App-specific callback choreography, such as clearing a session, restoring app-specific plot defaults, refreshing experiment summaries, and writing app logs, should stay in the owning app file even when two apps have similar callback order. Domain labels such as DTA-specific open/export button text and app shell tab/panel titles should be passed in from apps rather than hardcoded in the GUI library.
+Reusable UI helpers should build or update generic controls and draw prepared data. Data extraction, parser/session calls, and analysis decisions should stay in the app, DTA, or data layers; for example, apps should call `gamrywb.data.getCurveXY` before passing prepared vectors and labels to `gamrywb.ui.plotXY`. App-specific callback choreography, such as clearing a session, restoring app-specific plot defaults, refreshing experiment summaries, and writing app logs, should stay in the owning app file even when two apps have similar callback order. Domain labels such as DTA-specific open/export button text and app shell tab/panel titles should be passed in from apps rather than hardcoded in the GUI library.
 
-Analysis functions should return status through result structs, for example:
+App code may use selected `gamrywb.data.*` helpers for parsed table and curve access, such as `getColumn`, `getMainCurve`, and `getCurveXY`. DTA session operations should go through `gamrywb.dta.*` so apps do not need to understand lower-level loader callbacks or session internals.
+
+DTA and app-local analysis functions should return status through result structs, for example:
 
 ```matlab
 result.ok = false;
@@ -111,10 +110,9 @@ The GUI decides how to display that status.
 ## Current Package Surface
 
 - `apps/`: user-facing app entry points and app-specific implementations. All current app bodies are single public app source files, and app-specific workflow helpers are local functions in those files rather than reusable `+gamrywb` APIs or transitional app-helper packages.
-- `+dta`: GUI-free facade for supported DTA file discovery, family detection, single-file loading, batch loading, folder loading, and app-facing DTA session operations with status/report structs. It delegates to existing `+io` parser and `+data` item/session helpers.
+- `+dta`: GUI-free facade for supported DTA file discovery, family detection, single-file loading, batch loading, folder loading, pulse detection, and app-facing DTA session operations with status/report structs. It delegates to existing `+io` parser and `+data` item/session helpers, with DTA-specific implementation helpers kept private.
 - `+io`: DTA parsers, folder discovery, and session save/load. It should not contain app-specific export helpers or scientific result schemas.
 - `+data`: table/column accessors, CV/CT selected-column access, chrono item construction, EIS item construction, session add/remove/select/load helpers, and generic item/result summaries.
-- `+analysis`: pulse detection helpers. Experiment-specific calculations should migrate toward app-side code unless they are clearly general, parameter-light math utilities.
 - `+ui`: reusable GUI framework helpers, including generic axes creation/reset, prepared-X/Y plotting, log append and log panel, generic listbox item refresh, multi-file and single-select file-panel, summary row, result table panel, plot-options panel, simple labeled-control, two-pane shell, tabbed dual-plot shell, and top/bottom plot-control construction/state helpers.
 - Internal helpers: package-private parser helpers and app-local helper functions. The public `+util` package should not be reintroduced as a new-app entry surface.
 

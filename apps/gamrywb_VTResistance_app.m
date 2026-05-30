@@ -24,7 +24,7 @@ function varargout = gamrywb_VTResistance_app(varargin)
     end
 
     S = struct();
-    S.session = gamrywb.data.makeSession('vt_resistance');
+    S.session = gamrywb.dta.makeSession('vt_resistance');
     S.items = S.session.items;
     S.current = [];
     S.isDragging = false;
@@ -199,10 +199,11 @@ function varargout = gamrywb_VTResistance_app(varargin)
 
     function addFiles(filepaths)
         callbacks = struct();
-        callbacks.onAdded = @(fp, item) addLog(['Loaded: ' fp]); %#ok<INUSD>
+        callbacks.onAdded = @(~, ~) [];
         callbacks.onSkipped = @(fp) addLog(['Skipped duplicate: ' fp]);
         callbacks.onFailed = @(fp, msg) addLog(sprintf('Failed to load %s: %s', fp, msg));
-        [S.session, ~] = gamrywb.data.addFilesToSession(S.session, filepaths, @loadAndAnalyzeFile, callbacks);
+        [S.session, report] = gamrywb.dta.addFilesToSession(S.session, filepaths, "chrono", callbacks);
+        postProcessAddedItems(report.added);
         S.items = S.session.items;
         if ~isempty(S.items) && isempty(S.current)
             S.current = 1;
@@ -213,16 +214,20 @@ function varargout = gamrywb_VTResistance_app(varargin)
         refreshPlots();
     end
 
-    function item = loadAndAnalyzeFile(filepath)
-        [item, status] = gamrywb.dta.loadFile(filepath, "chrono");
-        if ~status.ok
-            error('%s', char(status.message));
+    function postProcessAddedItems(filepaths)
+        for iFile = 1:numel(filepaths)
+            idx = find(strcmp(string({S.session.items.filepath}), string(filepaths{iFile})), 1, 'first');
+            if isempty(idx)
+                continue;
+            end
+            item = S.session.items(idx);
+            for ii = 1:numel(item.logmsg)
+                addLog(item.logmsg{ii});
+            end
+            item = analyzeItem(item);
+            S.session.items(idx) = item;
+            addLog(['Loaded: ' filepaths{iFile}]);
         end
-
-        for ii = 1:numel(item.logmsg)
-            addLog(item.logmsg{ii});
-        end
-        item = analyzeItem(item);
     end
 
     function analyzeCurrentFile()
@@ -277,7 +282,7 @@ function varargout = gamrywb_VTResistance_app(varargin)
     end
 
     function clearAllFiles()
-        S.session = gamrywb.data.makeSession('vt_resistance');
+        S.session = gamrywb.dta.makeSession('vt_resistance');
         S.items = S.session.items;
         S.current = [];
         restoreDefaultPlotSelections();

@@ -37,7 +37,7 @@ function varargout = gamrywb_CSC_app(varargin)
 
     % Application state container
     S = struct();
-    S.session = gamrywb.data.makeSession('cv_csc');
+    S.session = gamrywb.dta.makeSession('cv_csc');
     S.filepath = '';
     S.curves = struct('name',{},'headers',{},'units',{},'data',{},'numericMask',{});
     S.scanRate = NaN; % V/s
@@ -306,14 +306,17 @@ function varargout = gamrywb_CSC_app(varargin)
 
         callbacks = struct();
         callbacks.onFailed = @(~, message) addLog(['Parse failed: ' message]);
-        [loadedSession, report] = gamrywb.data.addFilesToSession( ...
-            gamrywb.data.makeSession('cv_csc'), {filepath}, @loadOneCVCT, callbacks);
+        [loadedSession, report] = gamrywb.dta.addFilesToSession( ...
+            gamrywb.dta.makeSession('cv_csc'), {filepath}, "cvct", callbacks);
         if ~isempty(report.failed)
             ME = report.failed(1);
             uialert(fig, ME.message, 'Parse Error');
             return;
         end
         item = loadedSession.items(1);
+        item.currentCurve = 1;
+        item.analysis = [];
+        loadedSession.items(1) = item;
 
         for i = 1:numel(item.logmsg)
             addLog(item.logmsg{i});
@@ -353,15 +356,6 @@ function varargout = gamrywb_CSC_app(varargin)
         updateDropdowns();
         autoSetDefaults();
         refreshAll();
-    end
-
-    function item = loadOneCVCT(filepath)
-        [item, status] = gamrywb.dta.loadFile(filepath, "cvct");
-        if ~status.ok
-            error('%s', char(status.message));
-        end
-        item.currentCurve = 1;
-        item.analysis = [];
     end
 
     function syncSessionCurrentCurve()

@@ -37,7 +37,7 @@ function varargout = gamrywb_CIC_app(varargin)
     end
 
     S = struct();
-    S.session = gamrywb.data.makeSession('cic_vt');
+    S.session = gamrywb.dta.makeSession('cic_vt');
     S.items = S.session.items; % loaded files + parsed content + analysis
     S.current = [];
     S.isDragging = false;
@@ -276,10 +276,11 @@ function varargout = gamrywb_CIC_app(varargin)
 
         filepaths = unique(filepaths, 'stable');
         callbacks = struct();
-        callbacks.onAdded = @(filepath, item) addLog(sprintf('Loaded: %s', filepath)); %#ok<INUSD>
+        callbacks.onAdded = @(~, ~) [];
         callbacks.onSkipped = @(filepath) addLog(sprintf('Skipped already loaded: %s', filepath));
         callbacks.onFailed = @(filepath, message) addLog(sprintf('Failed: %s | %s', filepath, message));
-        [S.session, report] = gamrywb.data.addFilesToSession(S.session, filepaths, @loadOneDTA, callbacks);
+        [S.session, report] = gamrywb.dta.addFilesToSession(S.session, filepaths, "chrono", callbacks);
+        postProcessAddedItems(report.added);
         S.items = S.session.items;
 
         refreshFileList();
@@ -295,18 +296,23 @@ function varargout = gamrywb_CIC_app(varargin)
         end
     end
 
-    function item = loadOneDTA(filepath)
-        [item, status] = gamrywb.dta.loadFile(filepath, "chrono");
-        if ~status.ok
-            error('gamrywb_CIC_app:LoadFailed', '%s', status.message);
-        end
-        item.analysis = [];
+    function postProcessAddedItems(filepaths)
+        for iFile = 1:numel(filepaths)
+            idx = find(strcmp(string({S.session.items.filepath}), string(filepaths{iFile})), 1, 'first');
+            if isempty(idx)
+                continue;
+            end
+            item = S.session.items(idx);
+            item.analysis = [];
 
-        for ii = 1:numel(item.logmsg)
-            addLog(item.logmsg{ii});
-        end
+            for ii = 1:numel(item.logmsg)
+                addLog(item.logmsg{ii});
+            end
 
-        item = analyzeItem(item);
+            item = analyzeItem(item);
+            S.session.items(idx) = item;
+            addLog(sprintf('Loaded: %s', filepaths{iFile}));
+        end
     end
 
     function analyzeCurrentFile()
@@ -363,7 +369,7 @@ function varargout = gamrywb_CIC_app(varargin)
     end
 
     function clearAllFiles()
-        S.session = gamrywb.data.makeSession('cic_vt');
+        S.session = gamrywb.dta.makeSession('cic_vt');
         S.items = S.session.items;
         S.current = [];
         restoreDefaultPlotSelections();

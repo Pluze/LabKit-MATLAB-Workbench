@@ -138,6 +138,11 @@ values = gamrywb.data.getColumn(curve, 'Vf');
 summary = gamrywb.data.summarizeBatchResults(session.items);
 ```
 
+Apps should not call lower-level data session helpers such as `gamrywb.data.makeSession`,
+`gamrywb.data.addFilesToSession`, `gamrywb.data.loadFilesIntoSession`,
+`gamrywb.data.removeSelectedItemsFromSession`, or `gamrywb.data.selectItemsByNames`.
+Use the DTA session facade for those workflows.
+
 Session structs are plain structs. Do not convert them to MATLAB classes without an explicit design change and tests.
 
 ## GUI API
@@ -216,8 +221,8 @@ They should also receive prepared values from the app or data layer rather than 
 
 ## Internal Helpers
 
-New apps should not call `+gamrywb/+util`, `+gamrywb/+io`, or `+gamrywb/+analysis` directly.
-Those packages are lower-level implementation surfaces for the GUI, DTA, and data APIs.
+New apps should not call `+gamrywb/+util`, `+gamrywb/+io`, or any internal helper package directly.
+Those functions are lower-level implementation surfaces for the GUI, DTA, and data APIs.
 If a new app seems to need one of them, first check whether the behavior belongs behind `gamrywb.dta.*`, `gamrywb.ui.*`, or a small app-local helper.
 
 ## Template Programs

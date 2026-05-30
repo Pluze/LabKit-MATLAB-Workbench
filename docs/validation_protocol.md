@@ -90,7 +90,8 @@ App-boundary changes:
 - public app files do not depend on transitional app-specific helper packages
 - app-specific helper packages and private launcher directories are not reintroduced for workflow code that belongs to one app
 - public app files and templates do not call `gamrywb.io.*`, `gamrywb.analysis.*`, or `gamrywb.util.*` directly
-- reusable `+gamrywb/+analysis` stays pulse-focused, GUI-free, and app-free and does not regain experiment-specific CIC, VT, CSC, EIS, result-table, or CSV-writing workflow code
+- public app files use `gamrywb.dta.*` rather than lower-level `gamrywb.data.*` for DTA session creation, loading, removal, and selection
+- pulse detection remains behind `gamrywb.dta.detectPulses` with implementation helpers kept private, and experiment-specific CIC, VT, CSC, EIS, result-table, or CSV-writing workflow code does not return to a public reusable analysis package
 - reusable `+gamrywb/+io` stays GUI-free and app-free and does not regain app-specific export-table or CSV writer helpers
 - reusable `+gamrywb/+dta` stays GUI-free and app-free: no MATLAB UI constructors, file dialogs, alerts, app entry points, or `apps/` helper calls
 - reusable `+gamrywb/+data` stays GUI-free and app-free: no MATLAB UI constructors, file dialogs, alerts, `gamrywb.ui`, app entry points, or `apps/` helper calls

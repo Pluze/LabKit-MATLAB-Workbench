@@ -139,7 +139,8 @@ Chrono pulse detection is app-facing through:
 [pulse, message] = gamrywb.dta.detectPulses(t, Im, meta, mode)
 ```
 
-Apps should prefer this DTA facade instead of calling `gamrywb.analysis.*` directly.
+Apps should prefer this DTA facade instead of any lower-level pulse detector implementation.
+The pulse detector implementation is private to the DTA facade.
 
 ## CV/CT Data
 

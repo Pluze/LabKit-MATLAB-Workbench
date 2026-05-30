@@ -10,7 +10,7 @@ function varargout = gamrywb_EIS_app(varargin)
     end
 
     S = struct();
-    S.session = gamrywb.data.makeSession('eis_overlay');
+    S.session = gamrywb.dta.makeSession('eis_overlay');
     S.items = S.session.items;
 
     axisItems = { ...
@@ -185,10 +185,10 @@ function varargout = gamrywb_EIS_app(varargin)
         end
 
         callbacks = struct();
-        callbacks.onAdded = @(filepath, ~) addLog(sprintf('Loaded: %s', filepath));
+        callbacks.onAdded = @onAddedDTA;
         callbacks.onSkipped = @(filepath) addLog(sprintf('Skipped already loaded: %s', filepath));
         callbacks.onFailed = @(filepath, message) addLog(sprintf('Failed: %s | %s', filepath, message));
-        [S.session, report] = gamrywb.data.loadFilesIntoSession(S.session, filepaths, @loadOneDTA, callbacks);
+        [S.session, report] = gamrywb.dta.addFilesToSession(S.session, filepaths, "eis", callbacks);
         S.items = S.session.items;
 
         refreshFileList();
@@ -200,16 +200,12 @@ function varargout = gamrywb_EIS_app(varargin)
         end
     end
 
-    function item = loadOneDTA(filepath)
-        [item, status] = gamrywb.dta.loadFile(filepath, "eis");
-        if ~status.ok
-            error('%s', char(status.message));
-        end
-
+    function onAddedDTA(filepath, item)
         for ii = 1:numel(item.logmsg)
             addLog(item.logmsg{ii});
         end
         addLog(sprintf('%s: %s', item.name, item.message));
+        addLog(sprintf('Loaded: %s', filepath));
     end
 
     function onRemoveSelected(~, ~)
@@ -218,14 +214,14 @@ function varargout = gamrywb_EIS_app(varargin)
         end
         callbacks = struct();
         callbacks.onRemoved = @(name, ~) addLog(sprintf('Removed: %s', name));
-        [S.session, ~] = gamrywb.data.removeSelectedItemsFromSession(S.session, lbFiles.Value, callbacks);
+        [S.session, ~] = gamrywb.dta.removeSelectedItemsFromSession(S.session, lbFiles.Value, callbacks);
         S.items = S.session.items;
         refreshFileList();
         refreshPlot();
     end
 
     function onClearAll(~, ~)
-        S.session = gamrywb.data.makeSession('eis_overlay');
+        S.session = gamrywb.dta.makeSession('eis_overlay');
         S.items = S.session.items;
         refreshFileList();
         refreshPlot();
@@ -254,7 +250,7 @@ function varargout = gamrywb_EIS_app(varargin)
             return;
         end
 
-        items = gamrywb.data.selectItemsByNames(S.items, lbFiles.Value);
+        items = gamrywb.dta.selectSessionItems(S.session, lbFiles.Value);
         if isempty(items)
             txtSummary.Value = {'No files selected.'};
             return;
@@ -276,7 +272,7 @@ function varargout = gamrywb_EIS_app(varargin)
     end
 
     function onExportCSV(~, ~)
-        items = gamrywb.data.selectItemsByNames(S.items, lbFiles.Value);
+        items = gamrywb.dta.selectSessionItems(S.session, lbFiles.Value);
         if isempty(items)
             uialert(fig, 'No files selected for export.', 'Export');
             return;

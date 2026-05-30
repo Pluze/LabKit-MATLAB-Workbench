@@ -1,7 +1,7 @@
 function [pulse, ok, msg] = pulsesFromCurrent(t, Im)
 %PULSESFROMCURRENT Detect pulses from measured current segments.
 
-    pulse = gamrywb.analysis.emptyPulse();
+    pulse = emptyPulse();
     ok = false;
 
     Iabs = abs(Im);

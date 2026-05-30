@@ -10,7 +10,7 @@ function test_detectPulses()
     currentT = gamrywb.data.getColumn(currentCurve, 'T');
     currentIm = gamrywb.data.getColumn(currentCurve, 'Im');
 
-    [currentPulse, currentPulseMsg] = gamrywb.analysis.detectPulses(currentT, currentIm, currentMeta);
+    [currentPulse, currentPulseMsg] = gamrywb.dta.detectPulses(currentT, currentIm, currentMeta);
     assert(currentPulse.ok, currentPulseMsg);
     assert(strcmp(currentPulse.method, 'metadata-current'), 'Current-controlled fixture should use metadata-current detection.');
     assert(abs(currentPulse.cath_start - 1e-3) < 1e-12, 'Current fixture cathodic start should match TSTEP accumulation.');
@@ -24,7 +24,7 @@ function test_detectPulses()
     assert(voltageOk, voltageMsg);
     voltageT = gamrywb.data.getColumn(voltageCurve, 'T');
     voltageIm = gamrywb.data.getColumn(voltageCurve, 'Im');
-    [voltagePulse, voltagePulseMsg] = gamrywb.analysis.detectPulses(voltageT, voltageIm, voltageMeta);
+    [voltagePulse, voltagePulseMsg] = gamrywb.dta.detectPulses(voltageT, voltageIm, voltageMeta);
     assert(voltagePulse.ok, voltagePulseMsg);
     assert(strcmp(voltagePulse.method, 'metadata-voltage'), 'Voltage-controlled fixture should use metadata-voltage detection.');
     assert(abs(voltagePulse.anod_start - 1.24e-3) < 1e-12, 'Voltage fixture anodic start should match VSTEP timing.');
@@ -41,7 +41,7 @@ function test_detectPulses()
         'V', {NaN, NaN, NaN}, ...
         'T', {0.10, 0.04, 0.06});
 
-    [pulse, msg] = gamrywb.analysis.detectPulses(t, Im, meta);
+    [pulse, msg] = gamrywb.dta.detectPulses(t, Im, meta);
     assert(pulse.ok, msg);
     assert(strcmp(pulse.method, 'metadata-current'), 'Default mode should prefer metadata.');
     assert(strcmp(msg, 'Metadata pulse detection OK (current-controlled): cath step 1, anod step 3.'), ...
@@ -53,30 +53,29 @@ function test_detectPulses()
     assert(abs(pulse.gap.center_s - 0.12) < 1e-12, 'Normalized gap center should be populated.');
     assert(abs(pulse.cath.current_A + 1e-3) < 1e-15, 'Normalized cathodic current should be populated.');
 
-    [uiDefaultPulse, uiDefaultMsg] = gamrywb.analysis.detectPulses(t, Im, meta, "Metadata first, then auto");
+    [uiDefaultPulse, uiDefaultMsg] = gamrywb.dta.detectPulses(t, Im, meta, "Metadata first, then auto");
     assert(uiDefaultPulse.ok, uiDefaultMsg);
     assert(strcmp(uiDefaultPulse.method, 'metadata-current'), ...
         'Legacy GUI default pulse mode text should map to metadata-first detection.');
 
-    opts = gamrywb.analysis.defaultPulseOptions();
-    opts.mode = "current_only";
-    [autoPulse, autoMsg] = gamrywb.analysis.detectPulses(t, Im, meta, opts);
+    opts = struct('mode', "current_only");
+    [autoPulse, autoMsg] = gamrywb.dta.detectPulses(t, Im, meta, opts);
     assert(autoPulse.ok, autoMsg);
     assert(strcmp(autoPulse.method, 'auto-from-Im'), 'current_only mode should use current detection.');
     assert(abs(autoPulse.cath_start - 0.03) < 1e-12, 'Auto cathodic start should use first threshold sample.');
     assert(abs(autoPulse.anod_start - 0.14) < 1e-12, 'Auto anodic start should use first later positive segment.');
 
-    [uiAutoPulse, uiAutoMsg] = gamrywb.analysis.detectPulses(t, Im, meta, "Auto from Im only");
+    [uiAutoPulse, uiAutoMsg] = gamrywb.dta.detectPulses(t, Im, meta, "Auto from Im only");
     assert(uiAutoPulse.ok, uiAutoMsg);
     assert(strcmp(uiAutoPulse.method, 'auto-from-Im'), ...
         'Legacy GUI auto pulse mode text should map to current-only detection.');
 
     badMeta = struct('steps', struct('idx', {}, 'I', {}, 'V', {}, 'T', {}));
-    [fallbackPulse, fallbackMsg] = gamrywb.analysis.detectPulses(t, Im, badMeta);
+    [fallbackPulse, fallbackMsg] = gamrywb.dta.detectPulses(t, Im, badMeta);
     assert(fallbackPulse.ok, fallbackMsg);
     assert(contains(fallbackMsg, 'fallback success'), 'metadata_first should report current fallback success.');
 
-    [metadataOnlyPulse, metadataOnlyMsg] = gamrywb.analysis.detectPulses(t, Im, badMeta, "Metadata only");
+    [metadataOnlyPulse, metadataOnlyMsg] = gamrywb.dta.detectPulses(t, Im, badMeta, "Metadata only");
     assert(~metadataOnlyPulse.ok, 'Metadata-only mode should fail without metadata steps.');
     assert(strcmp(metadataOnlyMsg, 'Metadata pulse detection: no ISTEP/TSTEP or VSTEP/TSTEP steps found.'), ...
         'Metadata-only failure message should match legacy wording.');
