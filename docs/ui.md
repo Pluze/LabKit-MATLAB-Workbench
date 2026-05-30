@@ -20,6 +20,7 @@ Log
 ```
 
 Apps may pass custom tab specs when a workflow needs different pages. The app still owns the controls inside each tab.
+The left tab host and each tab content grid are scrollable, so app-specific sections can extend below the visible window without hiding controls.
 
 ## Core Entry Point
 

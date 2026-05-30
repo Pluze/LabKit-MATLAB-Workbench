@@ -33,6 +33,7 @@ function ui = createTabbedWorkbenchShell(figName, figPosition, leftWidth, labels
         spec = tabSpecs(k);
         [tab, panel] = createScrollableTab(ui.tabs, spec.title);
         grid = uigridlayout(panel, spec.gridSize);
+        enableScrollableGrid(grid);
         grid.RowHeight = spec.rowHeight;
         grid.RowSpacing = optionValue(spec, 'rowSpacing', 10);
         grid.Padding = optionValue(spec, 'padding', [8 8 8 8]);
@@ -80,5 +81,12 @@ function value = optionValue(s, name, defaultValue)
     value = defaultValue;
     if isfield(s, name)
         value = s.(name);
+    end
+end
+
+function enableScrollableGrid(grid)
+    try
+        grid.Scrollable = 'on';
+    catch
     end
 end

@@ -32,12 +32,14 @@ end
 function checkDICPreprocess()
     fig = launchFigure('labkit_DICPreprocess_app', 'DIC Image Preprocess');
     assertFigureMinimumSize(fig, 1400, 860);
-    assertComponentCounts(fig, struct('Button', 11, 'DropDown', 1, ...
+    assertComponentCounts(fig, struct('Button', 17, 'DropDown', 1, ...
         'TextArea', 4, 'Axes', 2));
     assertButtonContract(fig, {'Open reference image', 'Open moving image', ...
         'Select points + align', 'Save aligned image', ...
         'Start/reset crop ROI', 'Apply ROI crop', 'Cancel ROI', ...
-        'Save crop images', 'Draw mask ROI', 'Finish mask ROI', 'Save ROI mask'});
+        'Save crop images', 'Start ROI edit', 'Add point', 'Move point', ...
+        'Delete point', 'Pan / zoom', 'Preview ROI mask', ...
+        'Undo point', 'Clear ROI', 'Save ROI mask'});
     assertDropdownGroups(fig, dropdownGroup({'Moving image', 'Aligned image', ...
         'False-color overlay', 'Crop pair', 'ROI mask'}, 1));
     assertTabTitles(fig, {'Files + Analysis', 'Summary + Results', 'Log'});
@@ -393,6 +395,7 @@ function checkCreateWorkbenchHelper()
         'Workbench helper should create the standard resizable left/separator/right layout.');
     assertTabTitles(ui.fig, {'Files + Analysis', 'Summary + Results', 'Log'});
     assertScrollablePanel(ui.filesAnalysisScrollPanel, 'Files + Analysis tab');
+    assertScrollableGrid(ui.filesAnalysisGrid, 'Files + Analysis grid');
     assert(strcmp(ui.rightPanel.Title, 'Preview'), ...
         'Workbench helper should preserve the requested right panel title.');
     assert(isequal(ui.rightGrid.RowHeight, {'1x', 'fit'}), ...
@@ -410,6 +413,7 @@ function checkCreateWorkbenchHelper()
     cleaner3 = onCleanup(@() delete(custom.fig)); %#ok<NASGU>
     assertTabTitles(custom.fig, {'Probe Controls'});
     assertScrollablePanel(custom.probeScrollPanel, 'Probe Controls tab');
+    assertScrollableGrid(custom.probeGrid, 'Probe Controls grid');
     assert(sameStringCell(custom.probeGrid.RowHeight, {'fit', '1x'}), ...
         'Workbench helper should preserve custom tab specs.');
 
@@ -468,6 +472,9 @@ function checkStandardWorkbenchShellHelper()
     assertScrollablePanel(ui.filesAnalysisScrollPanel, 'Files + Analysis tab');
     assertScrollablePanel(ui.summaryResultsScrollPanel, 'Summary + Results tab');
     assertScrollablePanel(ui.logScrollPanel, 'Log tab');
+    assertScrollableGrid(ui.filesAnalysisGrid, 'Files + Analysis grid');
+    assertScrollableGrid(ui.summaryResultsGrid, 'Summary + Results grid');
+    assertScrollableGrid(ui.logGrid, 'Log grid');
     assert(isequal(ui.rightGrid.RowHeight, {'1x', 'fit'}), ...
         'Standard workbench shell should preserve right-grid row heights.');
 end
@@ -493,6 +500,9 @@ function checkTabbedDualPlotShellHelper()
     assertScrollablePanel(ui.filesAnalysisScrollPanel, 'Files + Analysis tab');
     assertScrollablePanel(ui.summaryResultsScrollPanel, 'Summary + Results tab');
     assertScrollablePanel(ui.logScrollPanel, 'Log tab');
+    assertScrollableGrid(ui.filesAnalysisGrid, 'Files + Analysis grid');
+    assertScrollableGrid(ui.summaryResultsGrid, 'Summary + Results grid');
+    assertScrollableGrid(ui.logGrid, 'Log grid');
     assert(isequal(ui.filesAnalysisGrid.RowHeight, {260, 'fit', 'fit'}), ...
         'Files + Analysis grid should preserve row heights.');
     assert(sameStringCell(ui.summaryResultsGrid.RowHeight, {'fit', '1x'}), ...
@@ -700,6 +710,11 @@ end
 function assertScrollablePanel(panel, label)
     assert(isprop(panel, 'Scrollable'), '%s should expose a Scrollable property.', label);
     assert(strcmp(char(panel.Scrollable), 'on'), '%s should be scrollable.', label);
+end
+
+function assertScrollableGrid(grid, label)
+    assert(isprop(grid, 'Scrollable'), '%s should expose a Scrollable property.', label);
+    assert(strcmp(char(grid.Scrollable), 'on'), '%s should be scrollable.', label);
 end
 
 function group = dropdownGroup(items, count)

@@ -25,7 +25,10 @@ function varargout = labkit_DICPreprocess_app(varargin)
     S.cropSourceLabel = "";
     S.maskImage = [];
     S.maskPoints = [];
-    S.maskLine = [];
+    S.maskCurveLine = [];
+    S.maskAnchorLine = [];
+    S.maskDragIndex = [];
+    S.maskMode = "Add anchors";
 
     workbenchOpts = struct('rightKind', 'dualPlot', ...
         'rightTitle', 'Image Preview', ...
@@ -39,7 +42,7 @@ function varargout = labkit_DICPreprocess_app(varargin)
     layFA = ui.filesAnalysisGrid;
     laySR = ui.summaryResultsGrid;
     layLog = ui.logGrid;
-    layFA.RowHeight = {260, 6, 240, 6, 120};
+    layFA.RowHeight = {240, 6, 180, 6, 230, 6, 110};
     laySR.RowHeight = {150, 6, '1x'};
 
     filePanel = labkit.ui.createPanelGrid(layFA, 'Images', 1, [4 2], ...
@@ -74,8 +77,8 @@ function varargout = labkit_DICPreprocess_app(varargin)
     ddPreview.Layout.Row = 4;
     ddPreview.Layout.Column = 2;
 
-    actionPanel = labkit.ui.createPanelGrid(layFA, 'Registration + Crop', 3, [8 2], ...
-        struct('rowHeight', {{'fit', 'fit', 'fit', 'fit', 'fit', 'fit', 'fit', 'fit'}}, ...
+    actionPanel = labkit.ui.createPanelGrid(layFA, 'Registration + Crop', 3, [5 2], ...
+        struct('rowHeight', {{'fit', 'fit', 'fit', 'fit', 'fit'}}, ...
         'columnWidth', {{'1x', '1x'}}));
     actionGrid = actionPanel.grid;
 
@@ -105,28 +108,63 @@ function varargout = labkit_DICPreprocess_app(varargin)
         'ButtonPushedFcn', @onSaveCrops);
     btnSaveCrops.Layout.Row = 5;
     btnSaveCrops.Layout.Column = [1 2];
-    btnDrawMask = uibutton(actionGrid, 'Text', 'Draw mask ROI', ...
-        'ButtonPushedFcn', @onDrawMaskRoi);
-    btnDrawMask.Layout.Row = 6;
-    btnDrawMask.Layout.Column = 1;
-    btnFinishMask = uibutton(actionGrid, 'Text', 'Finish mask ROI', ...
+    maskPanel = labkit.ui.createPanelGrid(layFA, 'Mask ROI', 5, [6 2], ...
+        struct('rowHeight', {{'fit', 'fit', 'fit', 'fit', 'fit', 'fit'}}, ...
+        'columnWidth', {{'1x', '1x'}}));
+    maskGrid = maskPanel.grid;
+
+    btnStartMask = uibutton(maskGrid, 'Text', 'Start ROI edit', ...
+        'ButtonPushedFcn', @onStartMaskEdit);
+    btnStartMask.Layout.Row = 1;
+    btnStartMask.Layout.Column = [1 2];
+    btnAddMask = uibutton(maskGrid, 'Text', 'Add point', ...
         'Enable', 'off', ...
-        'ButtonPushedFcn', @onFinishMaskRoi);
-    btnFinishMask.Layout.Row = 6;
-    btnFinishMask.Layout.Column = 2;
-    btnSaveMask = uibutton(actionGrid, 'Text', 'Save ROI mask', ...
+        'ButtonPushedFcn', @(~,~) setMaskMode('Add anchors'));
+    btnAddMask.Layout.Row = 2;
+    btnAddMask.Layout.Column = 1;
+    btnMoveMask = uibutton(maskGrid, 'Text', 'Move point', ...
+        'Enable', 'off', ...
+        'ButtonPushedFcn', @(~,~) setMaskMode('Move anchors'));
+    btnMoveMask.Layout.Row = 2;
+    btnMoveMask.Layout.Column = 2;
+    btnDeleteMask = uibutton(maskGrid, 'Text', 'Delete point', ...
+        'Enable', 'off', ...
+        'ButtonPushedFcn', @(~,~) setMaskMode('Delete anchors'));
+    btnDeleteMask.Layout.Row = 3;
+    btnDeleteMask.Layout.Column = 1;
+    btnPanMask = uibutton(maskGrid, 'Text', 'Pan / zoom', ...
+        'Enable', 'off', ...
+        'ButtonPushedFcn', @(~,~) setMaskMode('Pan / zoom'));
+    btnPanMask.Layout.Row = 3;
+    btnPanMask.Layout.Column = 2;
+    btnPreviewMask = uibutton(maskGrid, 'Text', 'Preview ROI mask', ...
+        'Enable', 'off', ...
+        'ButtonPushedFcn', @onPreviewMaskRoi);
+    btnPreviewMask.Layout.Row = 4;
+    btnPreviewMask.Layout.Column = [1 2];
+    btnUndoMask = uibutton(maskGrid, 'Text', 'Undo point', ...
+        'Enable', 'off', ...
+        'ButtonPushedFcn', @onUndoMaskAnchor);
+    btnUndoMask.Layout.Row = 5;
+    btnUndoMask.Layout.Column = 1;
+    btnClearMask = uibutton(maskGrid, 'Text', 'Clear ROI', ...
+        'Enable', 'off', ...
+        'ButtonPushedFcn', @onClearMaskRoi);
+    btnClearMask.Layout.Row = 5;
+    btnClearMask.Layout.Column = 2;
+    btnSaveMask = uibutton(maskGrid, 'Text', 'Save ROI mask', ...
         'ButtonPushedFcn', @onSaveMask);
-    btnSaveMask.Layout.Row = 7;
+    btnSaveMask.Layout.Row = 6;
     btnSaveMask.Layout.Column = [1 2];
 
-    notePanel = labkit.ui.createPanelGrid(layFA, 'Workflow Notes', 5, [1 1], ...
+    notePanel = labkit.ui.createPanelGrid(layFA, 'Workflow Notes', 7, [1 1], ...
         struct('rowHeight', {{'1x'}}, 'columnWidth', {{'1x'}}));
     txtNotes = uitextarea(notePanel.grid, 'Editable', 'off');
     txtNotes.Value = { ...
         '1. Load a reference image and a moving image.', ...
         '2. Use point selection to rigidly align the moving image to the reference image.', ...
         '3. Start a square crop ROI on the right preview, adjust it, then apply the crop.', ...
-        '4. Draw a mask ROI by clicking boundary points, finish it, then save a white-inside / black-outside mask.'};
+        '4. Draw a mask ROI with editable anchors and spline fitting, then save a white-inside / black-outside mask.'};
 
     txtSummary = uitextarea(laySR, 'Editable', 'off');
     txtSummary.Layout.Row = 1;
@@ -140,6 +178,8 @@ function varargout = labkit_DICPreprocess_app(varargin)
         struct('minTopHeight', 150, 'minBottomHeight', 120));
     labkit.ui.addRowResizeHandle(fig, layFA, 4, ...
         struct('minTopHeight', 120, 'minBottomHeight', 90));
+    labkit.ui.addRowResizeHandle(fig, layFA, 6, ...
+        struct('minTopHeight', 120, 'minBottomHeight', 80));
     labkit.ui.addRowResizeHandle(fig, laySR, 2, ...
         struct('minTopHeight', 90, 'minBottomHeight', 90));
 
@@ -324,7 +364,7 @@ function varargout = labkit_DICPreprocess_app(varargin)
         addLog(sprintf('Saved crop images: %s and %s', refOut, curOut));
     end
 
-    function onDrawMaskRoi(~, ~)
+    function onStartMaskEdit(~, ~)
         if isempty(S.referenceImage)
             uialert(fig, 'Load a reference image before drawing an ROI mask.', 'Missing image');
             return;
@@ -337,59 +377,228 @@ function varargout = labkit_DICPreprocess_app(varargin)
         showImage(ui.bottomAxes, zeros(size(S.referenceImage, 1), size(S.referenceImage, 2), 3, 'uint8'), 'ROI mask preview');
         S.maskImage = [];
         S.maskPoints = [];
-        S.maskLine = line(ui.topAxes, NaN, NaN, ...
+        S.maskDragIndex = [];
+        S.maskCurveLine = line(ui.topAxes, NaN, NaN, ...
             'Color', [0 0.45 0.95], ...
             'LineWidth', 1.5, ...
+            'HitTest', 'off');
+        S.maskAnchorLine = line(ui.topAxes, NaN, NaN, ...
+            'LineStyle', 'none', ...
             'Marker', 'o', ...
+            'MarkerSize', 7, ...
+            'Color', [1 0.85 0], ...
             'MarkerFaceColor', [0 0.45 0.95], ...
             'HitTest', 'off');
-        ui.topAxes.ButtonDownFcn = @onMaskPointClicked;
-        btnFinishMask.Enable = 'on';
-        addLog('Started point-by-point mask ROI. Click boundary points, then Finish mask ROI.');
-        txtDetails.Value = {'Click boundary points on the reference preview. Use at least 3 points, then click Finish mask ROI.'};
+        setMaskMode('Add anchors');
+        setMaskEditControls(true);
+        addLog('Started spline mask ROI. Add, move, or delete anchors; use Pan / zoom mode to navigate.');
+        txtDetails.Value = {'ROI edit started. Use Add point, Move point, Delete point, Pan / zoom, then Preview ROI mask.'};
     end
 
-    function onMaskPointClicked(~, ~)
+    function setMaskMode(mode)
+        S.maskMode = string(mode);
+        fig.WindowButtonMotionFcn = '';
+        fig.WindowButtonUpFcn = '';
+        S.maskDragIndex = [];
+
+        if S.maskMode == "Pan / zoom"
+            ui.topAxes.ButtonDownFcn = [];
+            setMaskNavigation(true);
+            txtDetails.Value = {'Pan/zoom mode enabled. Use the axes toolbar or mouse interactions, then switch back to edit anchors.'};
+        else
+            setMaskNavigation(false);
+            ui.topAxes.ButtonDownFcn = @onMaskAxesClicked;
+            txtDetails.Value = {sprintf('Mask mode: %s. Current anchors: %d.', ...
+                char(S.maskMode), size(S.maskPoints, 1))};
+        end
+        updateMaskModeButtons();
+    end
+
+    function onMaskAxesClicked(~, ~)
         point = ui.topAxes.CurrentPoint;
         x = point(1, 1);
         y = point(1, 2);
         if ~insideImageBounds(x, y, size(S.referenceImage))
             return;
         end
-        S.maskPoints(end+1, :) = [x y];
-        updateMaskLine();
-        txtDetails.Value = {sprintf('Mask ROI points: %d. Finish requires at least 3 points.', size(S.maskPoints, 1))};
+
+        switch S.maskMode
+            case "Add anchors"
+                S.maskPoints(end+1, :) = [x y];
+                updateMaskDraft();
+            case "Move anchors"
+                idx = nearestMaskAnchor(x, y);
+                if ~isempty(idx)
+                    S.maskDragIndex = idx;
+                    updateDraggedMaskAnchor();
+                    fig.WindowButtonMotionFcn = @onMaskAnchorDragged;
+                    fig.WindowButtonUpFcn = @onMaskAnchorReleased;
+                end
+            case "Delete anchors"
+                idx = nearestMaskAnchor(x, y);
+                if ~isempty(idx)
+                    S.maskPoints(idx, :) = [];
+                    updateMaskDraft();
+                end
+        end
     end
 
-    function updateMaskLine()
-        if isempty(S.maskLine) || ~isvalid(S.maskLine)
-            return;
-        end
-        points = S.maskPoints;
-        if size(points, 1) >= 3
-            points = [points; points(1, :)];
-        end
-        S.maskLine.XData = points(:, 1);
-        S.maskLine.YData = points(:, 2);
+    function onMaskAnchorDragged(~, ~)
+        updateDraggedMaskAnchor();
     end
 
-    function onFinishMaskRoi(~, ~)
-        if size(S.maskPoints, 1) < 3
-            uialert(fig, 'Mask ROI needs at least three boundary points.', 'Not enough points');
+    function onMaskAnchorReleased(~, ~)
+        updateDraggedMaskAnchor();
+        fig.WindowButtonMotionFcn = '';
+        fig.WindowButtonUpFcn = '';
+        S.maskDragIndex = [];
+    end
+
+    function updateDraggedMaskAnchor()
+        if isempty(S.maskDragIndex) || S.maskDragIndex > size(S.maskPoints, 1)
             return;
         end
-        S.maskImage = freehandMaskImage(S.maskPoints, size(S.referenceImage));
-        ui.topAxes.ButtonDownFcn = [];
-        btnFinishMask.Enable = 'off';
-        ddPreview.Value = 'ROI mask';
-        showImage(ui.bottomAxes, maskRgb(S.maskImage), 'ROI mask');
-        addLog(sprintf('Finished ROI mask with %d boundary points.', size(S.maskPoints, 1)));
-        txtDetails.Value = {'ROI mask ready. The bottom preview shows white inside and black outside.'};
+        point = ui.topAxes.CurrentPoint;
+        x = min(max(point(1, 1), 0.5), size(S.referenceImage, 2) + 0.5);
+        y = min(max(point(1, 2), 0.5), size(S.referenceImage, 1) + 0.5);
+        S.maskPoints(S.maskDragIndex, :) = [x y];
+        updateMaskDraft();
+    end
+
+    function onUndoMaskAnchor(~, ~)
+        if isempty(S.maskPoints)
+            return;
+        end
+        S.maskPoints(end, :) = [];
+        updateMaskDraft();
+    end
+
+    function onClearMaskRoi(~, ~)
+        S.maskImage = [];
+        S.maskPoints = [];
+        updateMaskDraft();
+        showImage(ui.bottomAxes, zeros(size(S.referenceImage, 1), size(S.referenceImage, 2), 3, 'uint8'), 'ROI mask preview');
+        addLog('Cleared mask ROI anchors.');
+    end
+
+    function updateMaskDraft()
+        updateMaskCurveGraphics();
+        S.maskImage = [];
+        if size(S.maskPoints, 1) >= 3
+            txtDetails.Value = {sprintf('Mask ROI anchors: %d. Click Preview ROI mask to update the fitted mask.', size(S.maskPoints, 1))};
+        else
+            txtDetails.Value = {sprintf('Mask ROI anchors: %d. Need at least 3 anchors to form a closed spline mask.', size(S.maskPoints, 1))};
+        end
         refreshSummary();
     end
 
+    function updateMaskCurveGraphics()
+        if ~isempty(S.maskAnchorLine) && isvalid(S.maskAnchorLine)
+            S.maskAnchorLine.XData = S.maskPoints(:, 1);
+            S.maskAnchorLine.YData = S.maskPoints(:, 2);
+        end
+        if isempty(S.maskCurveLine) || ~isvalid(S.maskCurveLine)
+            return;
+        end
+        curve = fittedClosedCurve(S.maskPoints, size(S.referenceImage));
+        if isempty(curve)
+            S.maskCurveLine.XData = NaN;
+            S.maskCurveLine.YData = NaN;
+        else
+            S.maskCurveLine.XData = curve(:, 1);
+            S.maskCurveLine.YData = curve(:, 2);
+        end
+    end
+
+    function idx = nearestMaskAnchor(x, y)
+        idx = [];
+        if isempty(S.maskPoints)
+            return;
+        end
+        dx = S.maskPoints(:, 1) - x;
+        dy = S.maskPoints(:, 2) - y;
+        [dist, bestIdx] = min(hypot(dx, dy));
+        xSpan = max(1, diff(ui.topAxes.XLim));
+        ySpan = max(1, diff(ui.topAxes.YLim));
+        threshold = 0.025 * max(xSpan, ySpan);
+        if dist <= threshold
+            idx = bestIdx;
+        end
+    end
+
+    function setMaskEditControls(enabled)
+        state = ternary(enabled, 'on', 'off');
+        btnAddMask.Enable = state;
+        btnMoveMask.Enable = state;
+        btnDeleteMask.Enable = state;
+        btnPanMask.Enable = state;
+        btnPreviewMask.Enable = state;
+        btnUndoMask.Enable = state;
+        btnClearMask.Enable = state;
+        if ~enabled
+            clearMaskModeButtonHighlights();
+        end
+    end
+
+    function updateMaskModeButtons()
+        clearMaskModeButtonHighlights();
+        activeColor = [0.82 0.91 1.00];
+        switch S.maskMode
+            case "Add anchors"
+                btnAddMask.BackgroundColor = activeColor;
+            case "Move anchors"
+                btnMoveMask.BackgroundColor = activeColor;
+            case "Delete anchors"
+                btnDeleteMask.BackgroundColor = activeColor;
+            case "Pan / zoom"
+                btnPanMask.BackgroundColor = activeColor;
+        end
+    end
+
+    function clearMaskModeButtonHighlights()
+        defaultColor = [0.94 0.94 0.94];
+        btnAddMask.BackgroundColor = defaultColor;
+        btnMoveMask.BackgroundColor = defaultColor;
+        btnDeleteMask.BackgroundColor = defaultColor;
+        btnPanMask.BackgroundColor = defaultColor;
+    end
+
+    function setMaskNavigation(enabled)
+        if enabled
+            try
+                enableDefaultInteractivity(ui.topAxes);
+            catch
+            end
+            try
+                ui.topAxes.Interactions = [panInteraction zoomInteraction];
+            catch
+            end
+            try
+                ui.topAxes.Toolbar.Visible = 'on';
+            catch
+            end
+        else
+            try
+                disableDefaultInteractivity(ui.topAxes);
+            catch
+            end
+            try
+                ui.topAxes.Interactions = [];
+            catch
+            end
+            try
+                ui.topAxes.Toolbar.Visible = 'off';
+            catch
+            end
+        end
+    end
+
+    function onPreviewMaskRoi(~, ~)
+        previewMaskImage(true);
+    end
+
     function onSaveMask(~, ~)
-        if isempty(S.maskImage)
+        if isempty(S.maskImage) && ~previewMaskImage(false)
             uialert(fig, 'Draw a mask ROI before saving the binary mask.', 'Save ROI mask');
             return;
         end
@@ -408,6 +617,24 @@ function varargout = labkit_DICPreprocess_app(varargin)
         out = fullfile(p, f);
         imwrite(S.maskImage, out);
         addLog(sprintf('Saved ROI mask: %s', out));
+    end
+
+    function ok = previewMaskImage(showAlert)
+        ok = false;
+        if size(S.maskPoints, 1) < 3
+            if showAlert
+                uialert(fig, 'Mask ROI needs at least three anchors.', 'Not enough anchors');
+            end
+            return;
+        end
+        S.maskImage = fittedMaskImage(S.maskPoints, size(S.referenceImage));
+        ddPreview.Value = 'ROI mask';
+        showImage(ui.bottomAxes, maskRgb(S.maskImage), 'ROI mask');
+        updateMaskCurveGraphics();
+        addLog(sprintf('Previewed spline ROI mask with %d anchors.', size(S.maskPoints, 1)));
+        txtDetails.Value = {'ROI mask preview updated. You can still move/delete anchors and preview again before saving.'};
+        refreshSummary();
+        ok = true;
     end
 
     function refreshPreview()
@@ -503,10 +730,16 @@ function varargout = labkit_DICPreprocess_app(varargin)
 
     function clearMaskRoi()
         ui.topAxes.ButtonDownFcn = [];
-        deleteIfValid(S.maskLine);
-        S.maskLine = [];
+        fig.WindowButtonMotionFcn = '';
+        fig.WindowButtonUpFcn = '';
+        S.maskDragIndex = [];
+        setMaskNavigation(false);
+        deleteIfValid(S.maskCurveLine);
+        deleteIfValid(S.maskAnchorLine);
+        S.maskCurveLine = [];
+        S.maskAnchorLine = [];
         S.maskPoints = [];
-        btnFinishMask.Enable = 'off';
+        setMaskEditControls(false);
     end
 
     function resetPreviewAxes()
@@ -579,14 +812,53 @@ function rect = squareRectInsideImage(roi, imageSize)
     rect = [xSq, ySq, side, side];
 end
 
-function mask = freehandMaskImage(points, imageSize)
+function mask = fittedMaskImage(points, imageSize)
     H = imageSize(1);
     W = imageSize(2);
-    if size(points, 1) < 3
+    curve = fittedClosedCurve(points, imageSize);
+    if isempty(curve)
         mask = uint8(false(H, W));
         return;
     end
-    mask = uint8(poly2mask(points(:, 1), points(:, 2), H, W)) .* uint8(255);
+    mask = uint8(poly2mask(curve(:, 1), curve(:, 2), H, W)) .* uint8(255);
+end
+
+function curve = fittedClosedCurve(points, imageSize)
+    if size(points, 1) < 3
+        curve = [];
+        return;
+    end
+
+    n = size(points, 1);
+    samplesPerSegment = max(12, ceil(240 / n));
+    curve = zeros(n * samplesPerSegment + 1, 2);
+    out = 1;
+    for i = 1:n
+        p0 = points(wrapIndex(i - 1, n), :);
+        p1 = points(i, :);
+        p2 = points(wrapIndex(i + 1, n), :);
+        p3 = points(wrapIndex(i + 2, n), :);
+        for k = 0:(samplesPerSegment - 1)
+            t = k / samplesPerSegment;
+            curve(out, :) = catmullRomPoint(p0, p1, p2, p3, t);
+            out = out + 1;
+        end
+    end
+    curve(out, :) = curve(1, :);
+    curve = curve(1:out, :);
+    curve(:, 1) = min(max(curve(:, 1), 0.5), imageSize(2) + 0.5);
+    curve(:, 2) = min(max(curve(:, 2), 0.5), imageSize(1) + 0.5);
+end
+
+function p = catmullRomPoint(p0, p1, p2, p3, t)
+    p = 0.5 .* ((2 .* p1) + ...
+        (-p0 + p2) .* t + ...
+        (2 .* p0 - 5 .* p1 + 4 .* p2 - p3) .* t.^2 + ...
+        (-p0 + 3 .* p1 - 3 .* p2 + p3) .* t.^3);
+end
+
+function idx = wrapIndex(idx, n)
+    idx = mod(idx - 1, n) + 1;
 end
 
 function tf = insideImageBounds(x, y, imageSize)
