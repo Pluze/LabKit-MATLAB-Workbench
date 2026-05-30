@@ -1,5 +1,5 @@
-function ui = createTwoPaneShell(figName, figPosition, leftWidth, rightTitle, rightGridSize, rightRowHeight, rightRowSpacing)
-%CREATETWOPANESHELL Create a one-tab workbench shell with a plot/content pane.
+function ui = createSingleTabWorkbenchShell(figName, figPosition, leftWidth, rightTitle, rightGridSize, rightRowHeight, rightRowSpacing)
+%CREATESINGLETABWORKBENCHSHELL Create a one-tab workbench shell with a content pane.
 
     labels = struct( ...
         'controlsPanel', 'Controls', ...

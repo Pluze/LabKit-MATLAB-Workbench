@@ -88,8 +88,8 @@ Use `labkit.ui.*` for domain-neutral GUI structure and rendering helpers. Apps p
 Common shell and control helpers:
 
 ```matlab
-ui = labkit.ui.createTwoPaneShell(titleText, position, leftWidth, rightTitle, rightGridSize, rightRowHeights, spacing);
-ui = labkit.ui.createTabbedDualPlotShell(titleText, position, leftWidth, labels);
+ui = labkit.ui.createSingleTabWorkbenchShell(titleText, position, leftWidth, rightTitle, rightGridSize, rightRowHeights, spacing);
+ui = labkit.ui.createTabbedDualPlotShell(titleText, position, leftWidth);
 
 labkit.ui.createFilePanel(parent, labels, callbacks);
 labkit.ui.createSingleSelectFilePanel(parent, labels, callbacks);
@@ -107,7 +107,7 @@ labkit.ui.refreshListboxItems(lbFiles, names);
 info = labkit.ui.plotXY(ax, x, y, labels, opts);
 ```
 
-The default app shell is a resizable left/right workbench layout: left controls live in scrollable tabs, and the right side is reserved for plots, curves, images, or other primary outputs. `createTwoPaneShell` is the one-tab variant for simple apps; `createTabbedDualPlotShell` is the CIC/VT-style three-tab plus top/bottom-plot variant. Apps should not provide their own separator drag callbacks or rebuild the same shell layout locally.
+The default app shell is a resizable left/right workbench layout: left controls live in scrollable tabs, and the right side is reserved for plots, curves, images, or other primary outputs. `createSingleTabWorkbenchShell` is the one-tab variant for simple apps; `createTabbedDualPlotShell` is the CIC/VT-style three-tab plus top/bottom-plot variant with standard shell labels. Apps should not provide their own separator drag callbacks or rebuild the same shell layout locally.
 
 GUI helpers should not contain experiment names, formulas, thresholds, result columns, parser calls, or export formats.
 

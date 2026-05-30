@@ -17,6 +17,7 @@ function test_gui_layout_controls()
     checkPlotOptionsPanelHelper();
     checkCreateAxesHelper();
     checkTabbedWorkbenchShellHelper();
+    checkSingleTabWorkbenchShellHelper();
     checkTabbedDualPlotShellHelper();
     checkTopBottomPlotControlsHelper();
     checkTopBottomPlotStateHelpers();
@@ -298,6 +299,25 @@ function checkTabbedWorkbenchShellHelper()
         'Tabbed workbench shell should preserve tab grid row heights.');
     assert(~isempty(ui.separator.ButtonDownFcn), ...
         'Tabbed workbench shell should attach separator resize behavior.');
+end
+
+function checkSingleTabWorkbenchShellHelper()
+    ui = labkit.ui.createSingleTabWorkbenchShell( ...
+        'labkit_single_tab_workbench_shell_probe', ...
+        [40 30 1200 760], ...
+        340, ...
+        'Preview', ...
+        [2 1], ...
+        {'1x', 'fit'}, ...
+        8);
+    cleaner = onCleanup(@() delete(ui.fig));
+
+    assert(isequal(ui.main.ColumnWidth, {340, 6, '1x'}), ...
+        'Single-tab workbench shell should preserve the main column widths.');
+    assertTabTitles(ui.fig, {'Controls'});
+    assertScrollablePanel(ui.controlsScrollPanel, 'Controls tab');
+    assert(isequal(ui.rightGrid.RowHeight, {'1x', 'fit'}), ...
+        'Single-tab workbench shell should preserve right-grid row heights.');
 end
 
 function checkTabbedDualPlotShellHelper()

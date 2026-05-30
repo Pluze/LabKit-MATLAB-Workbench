@@ -55,19 +55,10 @@ function varargout = labkit_CSC_app(varargin)
     S.currentCurve = 1;
 
     %% ===================== Figure & Layout =====================
-    shellLabels = struct( ...
-        'controlsPanel', 'Controls', ...
-        'filesAnalysisTab', 'Files + Analysis', ...
-        'summaryResultsTab', 'Summary + Results', ...
-        'logTab', 'Log', ...
-        'plotsPanel', 'Plots', ...
-        'topPlot', 'Top Plot', ...
-        'bottomPlot', 'Bottom Plot');
     ui = labkit.ui.createTabbedDualPlotShell( ...
         'Gamry DTA GUI (literature CSC)', ...
         [50 30 1580 950], ...
-        390, ...
-        shellLabels);
+        390);
     fig = ui.fig;
     layFA = ui.filesAnalysisGrid;
     laySR = ui.summaryResultsGrid;
@@ -170,59 +161,45 @@ function varargout = labkit_CSC_app(varargin)
     txtLog = logUi.textArea;
     txtLog.Value = {'GUI started.'};
 
-    % -------- Top controls --------
-    pTopCtl = ui.topControlsPanel;
-    gt = uigridlayout(pTopCtl,[1 6]);
-    gt.ColumnWidth = {'fit','1x','fit','1x','fit','fit'};
-    gt.RowHeight = {'fit'};
-    gt.Padding = [8 6 8 6];
-    gt.ColumnSpacing = 8;
-
-    uilabel(gt,'Text','X:','HorizontalAlignment','right');
-    ddTopX = uidropdown(gt,'Items',{'(none)'},'ValueChangedFcn',@(~,~) plotTop());
-    uilabel(gt,'Text','Y:','HorizontalAlignment','right');
-    ddTopY = uidropdown(gt,'Items',{'(none)'},'ValueChangedFcn',@(~,~) plotTop());
-
-    topOptions = uigridlayout(gt,[1 3]);
-    topOptions.ColumnWidth = {'fit','fit','fit'};
-    topOptions.RowHeight = {'fit'};
-    topOptions.Padding = [0 0 0 0];
-    topOptions.ColumnSpacing = 10;
-    cbTopGrid = uicheckbox(topOptions,'Text','Grid','Value',true,'ValueChangedFcn',@(~,~) plotTop());
-    cbTopHold = uicheckbox(topOptions,'Text','Hold','Value',false);
-    cbTopTrim = uicheckbox(topOptions,'Text','Show Trim','Value',true,'ValueChangedFcn',@(~,~) refreshCompare());
-
+    % -------- Top/bottom controls --------
+    topPlotDefaults = struct('x', '(none)', 'y', '(none)', 'grid', true);
+    bottomPlotDefaults = struct('x', '(none)', 'y', '(none)', 'grid', true);
+    plotControls = labkit.ui.createTopBottomPlotControls( ...
+        ui.topControlsPanel, ...
+        ui.bottomControlsPanel, ...
+        {'(none)'}, ...
+        {'(none)'}, ...
+        topPlotDefaults, ...
+        bottomPlotDefaults, ...
+        @(~,~) refreshPlotsOnly());
+    ddTopX = plotControls.topX;
+    ddTopY = plotControls.topY;
+    cbTopGrid = plotControls.topGridCheckbox;
+    ddBotX = plotControls.bottomX;
+    ddBotY = plotControls.bottomY;
+    cbBotGrid = plotControls.bottomGridCheckbox;
     axTop = ui.topAxes;
+    axBottom = ui.bottomAxes;
     title(axTop,'Top Plot');
     xlabel(axTop,'X');
     ylabel(axTop,'Y');
-
-    % -------- Bottom controls --------
-    pBotCtl = ui.bottomControlsPanel;
-    gb = uigridlayout(pBotCtl,[1 6]);
-    gb.ColumnWidth = {'fit','1x','fit','1x','fit','fit'};
-    gb.RowHeight = {'fit'};
-    gb.Padding = [8 6 8 6];
-    gb.ColumnSpacing = 8;
-
-    uilabel(gb,'Text','X:','HorizontalAlignment','right');
-    ddBotX = uidropdown(gb,'Items',{'(none)'},'ValueChangedFcn',@(~,~) plotBottom());
-    uilabel(gb,'Text','Y:','HorizontalAlignment','right');
-    ddBotY = uidropdown(gb,'Items',{'(none)'},'ValueChangedFcn',@(~,~) plotBottom());
-
-    botOptions = uigridlayout(gb,[1 3]);
-    botOptions.ColumnWidth = {'fit','fit','fit'};
-    botOptions.RowHeight = {'fit'};
-    botOptions.Padding = [0 0 0 0];
-    botOptions.ColumnSpacing = 10;
-    cbBotGrid = uicheckbox(botOptions,'Text','Grid','Value',true,'ValueChangedFcn',@(~,~) plotBottom());
-    cbBotHold = uicheckbox(botOptions,'Text','Hold','Value',false);
-    cbBotTrim = uicheckbox(botOptions,'Text','Show Trim','Value',true,'ValueChangedFcn',@(~,~) refreshCompare());
-
-    axBottom = ui.bottomAxes;
     title(axBottom,'Bottom Plot');
     xlabel(axBottom,'X');
     ylabel(axBottom,'Y');
+
+    plotControls.topGrid.ColumnWidth = {'fit','1x','fit','1x','fit','fit','fit'};
+    cbTopHold = uicheckbox(plotControls.topGrid,'Text','Hold','Value',false);
+    cbTopHold.Layout.Row = 1; cbTopHold.Layout.Column = 6;
+    cbTopTrim = uicheckbox(plotControls.topGrid,'Text','Show Trim','Value',true, ...
+        'ValueChangedFcn',@(~,~) refreshCompare());
+    cbTopTrim.Layout.Row = 1; cbTopTrim.Layout.Column = 7;
+
+    plotControls.bottomGrid.ColumnWidth = {'fit','1x','fit','1x','fit','fit','fit'};
+    cbBotHold = uicheckbox(plotControls.bottomGrid,'Text','Hold','Value',false);
+    cbBotHold.Layout.Row = 1; cbBotHold.Layout.Column = 6;
+    cbBotTrim = uicheckbox(plotControls.bottomGrid,'Text','Show Trim','Value',true, ...
+        'ValueChangedFcn',@(~,~) refreshCompare());
+    cbBotTrim.Layout.Row = 1; cbBotTrim.Layout.Column = 7;
     if ~isempty(testLoadFile)
         cleanup = onCleanup(@() delete(fig));
         loadFile(testLoadFile);
