@@ -384,7 +384,7 @@ Keep those decisions local to the app file. Move code into `+gamrywb` only when 
 
 ## Testing Expectations
 
-For a step-by-step app authoring checklist, use `docs/new_app_playbook.md` before copying an existing app file. For a new app or DTA family, add focused tests for:
+For a new app or DTA family, add focused tests for:
 
 - parser or DTA facade behavior
 - item/result struct fields

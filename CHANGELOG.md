@@ -8,18 +8,10 @@ All notable user-facing and maintainer-facing changes are recorded here.
 
 - GUI-free `+gamrywb/+dta` facade for recursive discovery, type detection, single-file loading, batch loading, and folder loading with status/report structs.
 - Public single-file app implementations for EIS, Chrono overlay, CSC, VT resistance, and CIC under `apps/`.
-- Reusable API usage guide and single-file app templates covering DTA loading, session-backed file panels, GUI label structs, and future app checklists.
-- New app playbook documenting GUI, DTA, and scientific contracts for future single-file experiment apps.
-- Focused app-boundary tests guarding single-file app ownership, DTA facade usage, removed migration namespaces, and reusable `+gamrywb/+io` export boundaries.
-- Analysis-layer boundary coverage guarding `+gamrywb/+analysis` as pulse-focused and free of GUI, app-layer, and experiment-specific workflow dependencies.
-- IO-layer boundary coverage guarding `+gamrywb/+io` against GUI and app-layer dependencies.
-- DTA facade boundary coverage guarding `+gamrywb/+dta` against GUI and app-layer dependencies.
-- Data-layer boundary coverage guarding `+gamrywb/+data` against GUI and app-layer dependencies.
-- Utility-layer boundary coverage guarding `+gamrywb/+util` against GUI, app-layer, and higher-level package dependencies.
-- Session helper coverage for empty file-list no-op behavior.
+- Reusable API usage guide with the single-file app template and new-app checklist.
+- Architecture boundary tests for app ownership and reusable `+gamrywb` layer dependencies.
 - `gamrywb.util.interp1Safe` for shared finite-vector interpolation with nearest-point fallback.
-- Shared test fixture helpers for repeated demo fixture paths and chrono app-analysis setup.
-- DTA facade coverage for empty batch-load inputs, empty folders, and folder input validation.
+- Shared test fixture helpers and DTA facade edge-case coverage.
 
 ### Changed
 
@@ -29,17 +21,10 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Agent/developer rules now describe app-specific helper packages as removed boundaries that should not be reintroduced and limit new package helpers to genuinely cross-cutting code.
 - Reusable GUI helpers are kept domain-neutral: DTA-specific labels, shell tab titles, app callback choreography, and app reset/default behavior stay in the apps.
 - Generic prepared-X/Y plotting lives in `gamrywb.ui.plotXY`; parsed-curve column selection stays in `gamrywb.data.getCurveXY` so the GUI layer does not depend on the data layer.
-- New app playbook now shows the `getCurveXY` to `plotXY` pattern for keeping data selection out of GUI helpers.
-- Test organization now separates default and GUI groups, shares repeated numeric assertion helpers, and keeps architecture guardrails in `test_architecture_boundaries`.
-- Startup/root-entry smoke coverage now uses the responsibility-focused `test_startup_boundaries` name instead of a historical phase name.
-- Architecture boundary tests now share common forbidden GUI, app-entrypoint, and experiment-workflow word lists.
-- Current architecture, API, data-model, validation, and roadmap docs describe the three reusable library surfaces plus single-file app ownership.
-- `gamrywb.data.addFilesToSession` now treats empty file lists as no-ops with empty reports, matching `loadFilesIntoSession`.
+- Tests now separate default and GUI groups, share repeated fixture/assertion helpers, and keep architecture guardrails in `test_architecture_boundaries`.
+- Session and DTA facade helpers now handle empty inputs, invalid expected kinds, and invalid folders consistently.
 - CIC and VT resistance apps now call the shared interpolation utility instead of keeping duplicated local fallback helpers.
-- DTA facade entry points now share one `expectedKind` normalization helper across single-file, batch, and folder loading.
-- `gamrywb.dta.loadFiles` now treats empty file lists as no-ops with zero-count reports.
-- `gamrywb.dta.loadFiles` now validates `expectedKind` before iterating, so invalid kinds are rejected even for empty batch or empty-folder loads.
-- `gamrywb.dta.findFiles` now normalizes scalar string folders and rejects non-path or missing-folder inputs with `gamrywb:dta:InvalidFolder`.
+- Current docs now describe the stable three-surface library shape without keeping separate roadmap/playbook files.
 
 ### Removed
 

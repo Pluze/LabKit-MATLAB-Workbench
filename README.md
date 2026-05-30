@@ -9,13 +9,10 @@ The v1.0 behavior-preserving package refactor is complete.
 What that means:
 
 - Current runtime entry points live under `apps/`.
-- The old `legacy/` GUI reference directory has been removed after app entry points became package-backed.
-- CIC, VT resistance, CV/CSC, chrono overlay, and EIS overlay/export workflows have package-backed DTA discovery/loading, parser, analysis, plotting, export, or UI helper coverage where v1.0 required it.
-- App entry points are package-backed and live under `apps/`.
-- EIS, Chrono overlay, CSC, VT resistance, and CIC are now public single-file app implementations.
-- CSC-specific charge/CSC calculations now live as local functions in the public CSC app file instead of the reusable `+gamrywb` library.
-- VT-specific resistance calculations, export formatting, and batch-table display data now live as local functions in the public VT app file instead of the reusable `+gamrywb` library.
-- CIC-specific voltage-transient calculations, export formatting, and batch-table display data now live as local functions in the public CIC app file instead of the reusable `+gamrywb` library.
+- The old root-level GUI command wrappers and `legacy/` reference directory have been removed.
+- EIS, Chrono overlay, CSC, VT resistance, and CIC are public single-file app implementations.
+- Experiment-specific analysis, plots, result tables, and exports belong to the owning app file.
+- Reusable `+gamrywb` code is limited to GUI base helpers, Gamry/DTA loading/data APIs, and small utilities.
 
 Deferred beyond v1.0:
 
@@ -71,9 +68,7 @@ docs/                 Architecture, data model, parser, validation, and history 
 - `AGENTS.md`: agent and developer operating rules.
 - `CHANGELOG.md`: release-style change history.
 - `docs/architecture.md`: current architecture and boundaries.
-- `docs/api_usage.md`: current reusable API usage and single-file app template.
-- `docs/new_app_playbook.md`: practical contract checklist for adding a new experiment app.
-- `docs/app_framework_roadmap.md`: planned app framework extraction route.
+- `docs/api_usage.md`: reusable API usage, single-file app template, and new-app checklist.
 - `docs/data_model.md`: current item/result/session schemas.
 - `docs/file_format_notes.md`: DTA parser assumptions.
 - `docs/validation_protocol.md`: behavior-preservation validation.
