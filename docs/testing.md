@@ -29,6 +29,7 @@ scripts/run_matlab_tests.sh --profile ui
 scripts/run_matlab_tests.sh --profile dic
 scripts/run_matlab_tests.sh --profile electrochem
 scripts/run_matlab_tests.sh --profile dta
+scripts/run_matlab_tests.sh --profile image_measurement
 scripts/run_matlab_tests.sh --suite core
 scripts/run_matlab_tests.sh --suite gui
 scripts/run_matlab_tests.sh --test test_gui_layout_controls
@@ -41,6 +42,7 @@ Use `--profile` first for common change scopes:
 - `apps`: app-local pure analysis/export checks
 - `electrochem`: electrochem app pure checks plus electrochem GUI layout
 - `dic`: DIC GUI layout
+- `image_measurement`: image measurement app pure checks plus image measurement GUI layout
 - `ui`: reusable UI helper and shell layout
 - `gui`: all noninteractive GUI checks
 - `all`: default pure suite plus all GUI checks

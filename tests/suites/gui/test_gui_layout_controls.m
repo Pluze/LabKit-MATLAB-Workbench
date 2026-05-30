@@ -21,6 +21,9 @@ function test_gui_layout_controls(scope)
         checkDICPreprocess();
         checkDICPostprocess();
     end
+    if scope == "all" || scope == "image_measurement"
+        checkImageCurvatureMeasurement();
+    end
     if scope == "all" || scope == "ui"
         checkListboxItemsRefreshHelper();
         checkListboxSelectionHelper();
@@ -38,8 +41,26 @@ function test_gui_layout_controls(scope)
         checkTopBottomPlotStateHelpers();
         checkFileSelectionPanelHelper();
     end
-    assert(any(scope == ["all", "electrochem", "dic", "ui"]), ...
+    assert(any(scope == ["all", "electrochem", "dic", "image_measurement", "ui"]), ...
         'Unknown GUI layout test scope: %s.', scope);
+end
+
+function checkImageCurvatureMeasurement()
+    fig = launchFigure('labkit_CurvatureMeasurement_app', 'Image Curvature Measurement');
+    assertFigureMinimumSize(fig, 1420, 860);
+    assertComponentCounts(fig, struct('Button', 8, 'CheckBox', 1, ...
+        'DropDown', 1, 'Table', 1, 'TextArea', 3, 'Axes', 2));
+    assertButtonContract(fig, {'Open image', 'Start curve edit', ...
+        'Undo last point', 'Clear curve', ...
+        'Measure scale bar', 'Fit circle + curvature', ...
+        'Export result CSV', 'Export overlay PNG'});
+    assertCheckboxContract(fig, {'Densify before circle fit'});
+    assertDropdownGroups(fig, dropdownGroup({'Curve', 'Straight lines'}, 1));
+    assertTabTitles(fig, {'Files + Analysis', 'Summary + Results', 'Log'});
+    assertTableColumns(fig, {'Metric', 'Value'});
+    assertAxesContract(fig, { ...
+        axesSpec('Image + Circle Fit', '', ''), ...
+        axesSpec('Radial Residuals', '', '')});
 end
 
 function checkDICPreprocess()

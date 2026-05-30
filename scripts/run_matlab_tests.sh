@@ -19,7 +19,7 @@ Options:
                 use the default headless -nojvm/-nodisplay/-noFigureWindows flags.
   --profile NAME
                 Run a focused profile. Repeatable.
-                Profiles: core, dta, apps, electrochem, dic, ui, gui, all.
+                Profiles: core, dta, apps, electrochem, dic, image_measurement, ui, gui, all.
   --suite NAME  Run only a suite key: core, dta, apps, or gui. Repeatable.
   --test NAME   Run only a test function, for example test_gui_layout_controls.
                 Repeatable. test_gui_* automatically uses GUI MATLAB flags.
@@ -112,6 +112,11 @@ apply_profile() {
         dic)
             INCLUDE_GUI=1
             append_test test_gui_layout_dic
+            ;;
+        image_measurement)
+            INCLUDE_GUI=1
+            append_test test_imageCurvatureMeasurement
+            append_test test_gui_layout_image_measurement
             ;;
         ui)
             INCLUDE_GUI=1

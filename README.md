@@ -6,14 +6,14 @@ LabKit MATLAB Workbench is a reusable MATLAB GUI foundation for lab-internal sof
 
 The core idea is a shared app shell: configurable tabs and controls on the left, live plots or primary outputs on the right, and app-specific behavior kept in the owning app file. Small utilities and larger tools start from the same GUI structure instead of each rebuilding its own MATLAB interface.
 
-The current app implementations include Gamry electrochemistry workflows and DIC image workflows built on this GUI foundation. Electrochemistry support uses the reusable DTA facade; DIC registration, crop, Ncorr strain extraction, overlays, summaries, and exports stay in the DIC app files.
+The current app implementations include Gamry electrochemistry workflows, DIC image workflows, and image measurement tools built on this GUI foundation. Electrochemistry support uses the reusable DTA facade; DIC registration, crop, Ncorr strain extraction, overlays, summaries, and exports stay in the DIC app files. Image measurement apps are separate from DIC and keep measurement-specific logic app-local.
 
 ## What It Provides
 
 - A reusable MATLAB GUI workbench structure for lab tools.
 - Shared UI building blocks for tabs, control panels, file panels, logs, plots, and result tables.
 - A pattern where each app owns its domain logic, plotting choices, and exports.
-- Current app implementations for Gamry electrochemistry workflows and DIC image workflows.
+- Current app implementations for Gamry electrochemistry workflows, DIC image workflows, and image measurement tools.
 
 ## Current Electrochemistry Apps
 
@@ -32,6 +32,12 @@ The current app implementations include Gamry electrochemistry workflows and DIC
 | `labkit_DICPreprocess_app` | Image registration, paired crop preparation, and ROI mask drawing | Reference/current images | Aligned image, crop PNGs, and binary ROI mask |
 | `labkit_DICPostprocess_app` | Ncorr strain overlay, ROI summary, and colorbar export | Ncorr MAT, reference image, mask | EXX/EYY overlays, summary CSV, and colorbar/level table |
 
+## Current Image Measurement Apps
+
+| Command | Use | Input | Typical output |
+| --- | --- | --- | --- |
+| `labkit_CurvatureMeasurement_app` | Editable curve-point circle fit for radius and curvature measurement | Image | Overlay PNG and curvature CSV |
+
 ## Quick Start
 
 From the repository root in MATLAB:
@@ -49,6 +55,9 @@ labkit_EIS_app
 % DIC app entry points
 labkit_DICPreprocess_app
 labkit_DICPostprocess_app
+
+% Image measurement app entry points
+labkit_CurvatureMeasurement_app
 ```
 
 Then use the app window to load the relevant files, review the plots/results, and export when the app supports export.
@@ -75,6 +84,7 @@ Focused checks can run a single suite or test:
 ```bash
 scripts/run_matlab_tests.sh --profile ui
 scripts/run_matlab_tests.sh --profile dic
+scripts/run_matlab_tests.sh --profile image_measurement
 scripts/run_matlab_tests.sh --profile electrochem
 scripts/run_matlab_tests.sh --suite core
 scripts/run_matlab_tests.sh --test test_gui_layout_controls
@@ -89,6 +99,7 @@ Profiles are the preferred path during iteration because they avoid running unre
 apps/                 App entry points and app-specific implementations
 apps/electrochem/     Current electrochemistry app entry points
 apps/dic/             Current DIC image workflow app entry points
+apps/image_measurement/ Current image measurement app entry points
 tests/                MATLAB tests
 tests/fixtures/dta/   Named DTA test fixtures
 scripts/              Test runner scripts

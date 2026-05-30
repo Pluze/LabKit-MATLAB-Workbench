@@ -8,6 +8,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 
 - Reusable package, startup, and app entrypoint names now use the generic `labkit` namespace.
 - Added DIC preprocess and postprocess apps built on the shared UI foundation, with image registration, paired crop, Ncorr strain overlay, and ROI summary logic kept app-local.
+- Added an image measurement app category with a curvature measurement app that loads images or existing curve-point MAT files, measures scale bars, fits a circle, reports curvature, and exports points, overlays, and result CSV files without adding the workflow to DIC.
 - DIC image/overlay apps now use a pure dual-output right pane without empty plot-control rows, left-side DIC section heights can be resized manually, DIC preprocess crop ROI selection happens inline on the right preview with synchronized crop-pair display, and DIC strain summaries include min/max values.
 - DIC postprocess overlays now extend strain maps from valid ROI data before smoothing/resizing and clip the display back to the ROI/mask to avoid zero-filled edge leakage; optical reference-image enhancement controls were added for brightness, contrast, gamma, saturation, and RGB channel gains.
 - DIC postprocess can export a standalone strain colorbar PNG plus a CSV mapping strain levels to RGB values, and DIC preprocess can draw editable curve or straight-line ROI boundaries with double-click add/insert/delete, drag-to-move, and preview controls before saving white-inside/black-outside ROI masks.

@@ -79,6 +79,7 @@ scripts/run_matlab_tests.sh --suite core
 scripts/run_matlab_tests.sh --test test_gui_layout_controls
 scripts/run_matlab_tests.sh --profile ui
 scripts/run_matlab_tests.sh --profile dic
+scripts/run_matlab_tests.sh --profile image_measurement
 scripts/run_matlab_tests.sh --profile electrochem
 ```
 

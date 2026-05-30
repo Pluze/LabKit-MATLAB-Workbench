@@ -33,6 +33,14 @@ labkit_DICPostprocess_app
 
 The current DIC app bodies live under `apps/dic/`. They use `labkit.ui.*` for the shared GUI shell and keep image registration, crop geometry, Ncorr MAT extraction, strain overlays, summaries, and exports local to the owning app files.
 
+## Current Image Measurement Apps
+
+```text
+labkit_CurvatureMeasurement_app
+```
+
+The current image measurement app bodies live under `apps/image_measurement/`. They use `labkit.ui.*` for the shared GUI shell and keep image-point picking, scale measurement, curvature fitting, overlays, summaries, and exports local to the owning app files. These apps are separate from DIC because their workflows are general image measurements rather than DIC preprocessing or strain postprocessing.
+
 ## App Ownership
 
 The app owns:
@@ -101,6 +109,7 @@ Pure app calculations, export table construction, and plotting helpers belong in
 ```bash
 scripts/run_matlab_tests.sh --profile electrochem
 scripts/run_matlab_tests.sh --profile dic
+scripts/run_matlab_tests.sh --profile image_measurement
 ```
 
 Interactive GUI workflows, including manual file selection and visual inspection, are intentionally validated manually during app work.
@@ -133,3 +142,5 @@ The current CV/CSC app has no CSV export workflow.
 DIC preprocess image registration, inline right-preview ROI selection, paired-crop geometry, and editable ROI mask drawing are local details of `apps/dic/labkit_DICPreprocess_app.m`. The app keeps original loaded images plus a current working pair, so manual/automatic alignment and crop operations can be applied repeatedly in either order and undone. False-color preview compares the current pair even before alignment, and one save action exports the current reference/current moving images. The mask workflow supports curve or straight-line boundaries, double-click add/insert point ordering, drag-to-move anchors, double-click anchor deletion, boundary preview, add/subtract operations on a white/black mask canvas, and separate undo for canvas edits, with app-handled scroll-wheel zoom available on the image preview. ROI masks are saved as white-inside / black-outside binary PNG images.
 
 DIC postprocess Ncorr MAT extraction, EXX/EYY overlay generation, ROI summary statistics, optical reference-image enhancement, strain colorbar/level export, and PNG/CSV export are local details of `apps/dic/labkit_DICPostprocess_app.m`. The current overlay path extends valid strain values from the ROI before smoothing/resizing, then clips display back to the ROI/mask to avoid zero-filled edge leakage. The current ROI summary reports mean, standard deviation, median, minimum, and maximum for EXX and EYY.
+
+Image curvature measurement point editing, scale-bar measurement, Kasa initialization, geometric circle fitting, curvature conversion, residual plotting, and result/overlay export are local details of `apps/image_measurement/labkit_CurvatureMeasurement_app.m`. The app replaces the old script-style point MAT handoff with an in-window curve editor: double-click blank image space to add or insert anchors, drag anchors to move them, double-click anchors to delete them, then fit and export directly.
