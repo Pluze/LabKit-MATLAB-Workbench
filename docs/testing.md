@@ -18,6 +18,10 @@ Default pure-function suite:
 scripts/run_matlab_tests.sh
 ```
 
+The same non-GUI suite runs in GitHub Actions on pushes and pull requests to `main` through `.github/workflows/matlab-tests.yml`. The CI workflow uses MathWorks MATLAB Actions and calls `run_all_tests(false)`, so it covers `core`, `dta`, and pure `apps` checks without opening GUI windows.
+
+For public repositories, MathWorks MATLAB Actions can license MATLAB automatically. For private repositories, configure a GitHub secret named `MLM_LICENSE_TOKEN` with a MATLAB batch licensing token.
+
 Focused iteration commands:
 
 ```bash
@@ -54,7 +58,7 @@ gui     optional noninteractive launch/layout/callback checks
 
 Shared setup and assertions live under `tests/helpers/`. Keep helpers limited to setup and assertions; app-specific formulas, result schemas, export formats, and expected scientific values should remain in focused suite tests.
 
-GUI workflows are checked manually outside this protocol. Use focused GUI profiles or `scripts/run_matlab_tests.sh --gui` only when noninteractive launch/layout/callback coverage is relevant.
+GUI workflows are checked manually outside this protocol. Use focused GUI profiles or `scripts/run_matlab_tests.sh --gui` locally only when noninteractive launch/layout/callback coverage is relevant; GUI/uifigure checks are intentionally not part of the default GitHub-hosted CI job.
 
 Do not run interactive GUI workflows in MATLAB `-batch` mode.
 

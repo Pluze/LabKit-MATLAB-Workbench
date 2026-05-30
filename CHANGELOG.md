@@ -32,6 +32,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Docs are now organized around the reusable UI library, current DTA library, app-owned workflow details, testing, and architecture.
 - Copy-only MATLAB template files were removed; their app-starting guidance now lives in the app documentation.
 - DTA fixture files moved from `demo/` to `tests/fixtures/dta/` to make their role as test/example fixtures explicit.
+- GitHub Actions now runs the default non-GUI MATLAB test suite on pushes and pull requests to `main`.
 
 ### Fixed
 

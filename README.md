@@ -66,6 +66,8 @@ Automated tests can be run from a macOS shell:
 scripts/run_matlab_tests.sh
 ```
 
+GitHub Actions runs the default non-GUI MATLAB suite on pushes and pull requests to `main`.
+
 Focused checks can run a single suite or test:
 
 ```bash
