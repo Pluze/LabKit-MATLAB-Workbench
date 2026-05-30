@@ -42,6 +42,7 @@ function varargout = labkit_DICPreprocess_app(varargin)
     ui = labkit.ui.createWorkbench( ...
         'DIC Image Preprocess', [80 60 1400 860], 370, workbenchOpts);
     fig = ui.fig;
+    fig.WindowScrollWheelFcn = @onPreviewScrollZoom;
 
     layFA = ui.filesAnalysisGrid;
     laySR = ui.summaryResultsGrid;
@@ -618,6 +619,36 @@ function varargout = labkit_DICPreprocess_app(varargin)
         previewMaskImage(true);
     end
 
+    function onPreviewScrollZoom(~, evt)
+        ax = previewAxesUnderPointer();
+        if isempty(ax)
+            return;
+        end
+
+        point = ax.CurrentPoint;
+        x = point(1, 1);
+        y = point(1, 2);
+        imageSize = axesImageSize(ax);
+        if isempty(imageSize) || ~insideImageBounds(x, y, imageSize)
+            return;
+        end
+        zoomAxesAtPoint(ax, x, y, evt.VerticalScrollCount, imageSize);
+    end
+
+    function ax = previewAxesUnderPointer()
+        ax = [];
+        try
+            hit = hittest(fig);
+            ax = ancestor(hit, 'matlab.ui.control.UIAxes');
+        catch
+            ax = [];
+        end
+        if isequal(ax, ui.topAxes) || isequal(ax, ui.bottomAxes)
+            return;
+        end
+        ax = [];
+    end
+
     function onSaveMask(~, ~)
         if isempty(S.maskImage) && ~previewMaskImage(false)
             uialert(fig, 'Draw a mask ROI before saving the binary mask.', 'Save ROI mask');
@@ -1022,6 +1053,61 @@ function enableImageNavigation(ax)
     try
         ax.Toolbar.Visible = 'on';
     catch
+    end
+end
+
+function imageSize = axesImageSize(ax)
+    imageSize = [];
+    images = findobj(ax, 'Type', 'Image');
+    if isempty(images)
+        return;
+    end
+    data = images(1).CData;
+    imageSize = size(data);
+end
+
+function zoomAxesAtPoint(ax, x, y, scrollCount, imageSize)
+    if scrollCount == 0
+        return;
+    end
+
+    fullX = [0.5, imageSize(2) + 0.5];
+    fullY = [0.5, imageSize(1) + 0.5];
+    zoomFactor = 1.20 ^ scrollCount;
+
+    currentX = ax.XLim;
+    currentY = ax.YLim;
+    newWidth = diff(currentX) * zoomFactor;
+    newHeight = diff(currentY) * zoomFactor;
+
+    minSpan = 10;
+    newWidth = min(max(newWidth, minSpan), diff(fullX));
+    newHeight = min(max(newHeight, minSpan), diff(fullY));
+
+    xFrac = (x - currentX(1)) / max(eps, diff(currentX));
+    yFrac = (y - currentY(1)) / max(eps, diff(currentY));
+    xFrac = min(max(xFrac, 0), 1);
+    yFrac = min(max(yFrac, 0), 1);
+
+    newX = [x - xFrac * newWidth, x + (1 - xFrac) * newWidth];
+    newY = [y - yFrac * newHeight, y + (1 - yFrac) * newHeight];
+
+    ax.XLim = clampLimits(newX, fullX);
+    ax.YLim = clampLimits(newY, fullY);
+end
+
+function limits = clampLimits(limits, fullLimits)
+    span = diff(limits);
+    fullSpan = diff(fullLimits);
+    if span >= fullSpan
+        limits = fullLimits;
+        return;
+    end
+    if limits(1) < fullLimits(1)
+        limits = [fullLimits(1), fullLimits(1) + span];
+    end
+    if limits(2) > fullLimits(2)
+        limits = [fullLimits(2) - span, fullLimits(2)];
     end
 end
 

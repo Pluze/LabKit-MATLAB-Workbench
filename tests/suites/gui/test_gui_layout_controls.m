@@ -48,6 +48,8 @@ function checkDICPreprocess()
         axesSpec('Reference', '', ''), ...
         axesSpec('Current Preview', '', '')});
     assertDropdownCallbacksPresent(fig);
+    assert(~isempty(fig.WindowScrollWheelFcn), ...
+        'DIC preprocess should install a preview scroll-wheel zoom callback.');
 end
 
 function checkDICPostprocess()
