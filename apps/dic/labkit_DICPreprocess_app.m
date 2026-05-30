@@ -15,6 +15,8 @@ function varargout = labkit_DICPreprocess_app(varargin)
     S.movingPath = "";
     S.referenceImage = [];
     S.movingImage = [];
+    S.currentReferenceImage = [];
+    S.currentMovingImage = [];
     S.alignedImage = [];
     S.cropReference = [];
     S.cropMoving = [];
@@ -22,13 +24,15 @@ function varargout = labkit_DICPreprocess_app(varargin)
     S.cropRoiTop = [];
     S.cropRoiBottom = [];
     S.cropRoiListeners = {};
-    S.cropSourceLabel = "";
     S.maskImage = [];
     S.maskPoints = [];
     S.maskCurveLine = [];
     S.maskAnchorLine = [];
     S.maskDragIndex = [];
     S.maskMode = "Add anchors";
+    S.history = struct('reference', {}, 'moving', {}, 'aligned', {}, ...
+        'cropReference', {}, 'cropMoving', {}, 'maskImage', {}, ...
+        'maskPoints', {}, 'description', {});
 
     workbenchOpts = struct('rightKind', 'dualPlot', ...
         'rightTitle', 'Image Preview', ...
@@ -42,7 +46,7 @@ function varargout = labkit_DICPreprocess_app(varargin)
     layFA = ui.filesAnalysisGrid;
     laySR = ui.summaryResultsGrid;
     layLog = ui.logGrid;
-    layFA.RowHeight = {240, 6, 180, 6, 230, 6, 110};
+    layFA.RowHeight = {240, 6, 210, 6, 210, 6, 170};
     laySR.RowHeight = {150, 6, '1x'};
 
     filePanel = labkit.ui.createPanelGrid(layFA, 'Images', 1, [4 2], ...
@@ -69,16 +73,16 @@ function varargout = labkit_DICPreprocess_app(varargin)
     txtMoving.Layout.Column = [1 2];
 
     [lblPreview, ddPreview] = labkit.ui.createLabeledDropdown(fileGrid, 'Preview:', ...
-        'Items', {'Moving image', 'Aligned image', 'False-color overlay', 'Crop pair', 'ROI mask'}, ...
-        'Value', 'Moving image', ...
+        'Items', {'Current pair', 'Current moving image', 'False-color overlay', 'Original pair', 'ROI mask'}, ...
+        'Value', 'Current pair', ...
         'ValueChangedFcn', @(~,~) refreshPreview());
     lblPreview.Layout.Row = 4;
     lblPreview.Layout.Column = 1;
     ddPreview.Layout.Row = 4;
     ddPreview.Layout.Column = 2;
 
-    actionPanel = labkit.ui.createPanelGrid(layFA, 'Registration + Crop', 3, [5 2], ...
-        struct('rowHeight', {{'fit', 'fit', 'fit', 'fit', 'fit'}}, ...
+    actionPanel = labkit.ui.createPanelGrid(layFA, 'Registration + Crop', 3, [6 2], ...
+        struct('rowHeight', {{'fit', 'fit', 'fit', 'fit', 'fit', 'fit'}}, ...
         'columnWidth', {{'1x', '1x'}}));
     actionGrid = actionPanel.grid;
 
@@ -86,10 +90,10 @@ function varargout = labkit_DICPreprocess_app(varargin)
         'ButtonPushedFcn', @onAlign);
     btnAlign.Layout.Row = 1;
     btnAlign.Layout.Column = [1 2];
-    btnSaveAligned = uibutton(actionGrid, 'Text', 'Save aligned image', ...
-        'ButtonPushedFcn', @onSaveAligned);
-    btnSaveAligned.Layout.Row = 2;
-    btnSaveAligned.Layout.Column = [1 2];
+    btnAutoAlign = uibutton(actionGrid, 'Text', 'Auto align current pair', ...
+        'ButtonPushedFcn', @onAutoAlign);
+    btnAutoAlign.Layout.Row = 2;
+    btnAutoAlign.Layout.Column = [1 2];
     btnCrop = uibutton(actionGrid, 'Text', 'Start/reset crop ROI', ...
         'ButtonPushedFcn', @onStartCropRoi);
     btnCrop.Layout.Row = 3;
@@ -104,12 +108,21 @@ function varargout = labkit_DICPreprocess_app(varargin)
         'ButtonPushedFcn', @onCancelCropRoi);
     btnCancelCrop.Layout.Row = 4;
     btnCancelCrop.Layout.Column = 2;
-    btnSaveCrops = uibutton(actionGrid, 'Text', 'Save crop images', ...
-        'ButtonPushedFcn', @onSaveCrops);
-    btnSaveCrops.Layout.Row = 5;
-    btnSaveCrops.Layout.Column = [1 2];
-    maskPanel = labkit.ui.createPanelGrid(layFA, 'Mask ROI', 5, [6 2], ...
-        struct('rowHeight', {{'fit', 'fit', 'fit', 'fit', 'fit', 'fit'}}, ...
+    btnUndoEdit = uibutton(actionGrid, 'Text', 'Undo align/crop', ...
+        'Enable', 'off', ...
+        'ButtonPushedFcn', @onUndoEdit);
+    btnUndoEdit.Layout.Row = 5;
+    btnUndoEdit.Layout.Column = 1;
+    btnSaveCurrent = uibutton(actionGrid, 'Text', 'Save current images', ...
+        'ButtonPushedFcn', @onSaveCurrentImages);
+    btnSaveCurrent.Layout.Row = 5;
+    btnSaveCurrent.Layout.Column = 2;
+    btnResetCurrent = uibutton(actionGrid, 'Text', 'Reset to originals', ...
+        'ButtonPushedFcn', @onResetToOriginals);
+    btnResetCurrent.Layout.Row = 6;
+    btnResetCurrent.Layout.Column = [1 2];
+    maskPanel = labkit.ui.createPanelGrid(layFA, 'Mask ROI', 5, [5 2], ...
+        struct('rowHeight', {{'fit', 'fit', 'fit', 'fit', 'fit'}}, ...
         'columnWidth', {{'1x', '1x'}}));
     maskGrid = maskPanel.grid;
 
@@ -132,29 +145,24 @@ function varargout = labkit_DICPreprocess_app(varargin)
         'ButtonPushedFcn', @(~,~) setMaskMode('Delete anchors'));
     btnDeleteMask.Layout.Row = 3;
     btnDeleteMask.Layout.Column = 1;
-    btnPanMask = uibutton(maskGrid, 'Text', 'Pan / zoom', ...
-        'Enable', 'off', ...
-        'ButtonPushedFcn', @(~,~) setMaskMode('Pan / zoom'));
-    btnPanMask.Layout.Row = 3;
-    btnPanMask.Layout.Column = 2;
     btnPreviewMask = uibutton(maskGrid, 'Text', 'Preview ROI mask', ...
         'Enable', 'off', ...
         'ButtonPushedFcn', @onPreviewMaskRoi);
-    btnPreviewMask.Layout.Row = 4;
-    btnPreviewMask.Layout.Column = [1 2];
+    btnPreviewMask.Layout.Row = 3;
+    btnPreviewMask.Layout.Column = 2;
     btnUndoMask = uibutton(maskGrid, 'Text', 'Undo point', ...
         'Enable', 'off', ...
         'ButtonPushedFcn', @onUndoMaskAnchor);
-    btnUndoMask.Layout.Row = 5;
+    btnUndoMask.Layout.Row = 4;
     btnUndoMask.Layout.Column = 1;
     btnClearMask = uibutton(maskGrid, 'Text', 'Clear ROI', ...
         'Enable', 'off', ...
         'ButtonPushedFcn', @onClearMaskRoi);
-    btnClearMask.Layout.Row = 5;
+    btnClearMask.Layout.Row = 4;
     btnClearMask.Layout.Column = 2;
     btnSaveMask = uibutton(maskGrid, 'Text', 'Save ROI mask', ...
         'ButtonPushedFcn', @onSaveMask);
-    btnSaveMask.Layout.Row = 6;
+    btnSaveMask.Layout.Row = 5;
     btnSaveMask.Layout.Column = [1 2];
 
     notePanel = labkit.ui.createPanelGrid(layFA, 'Workflow Notes', 7, [1 1], ...
@@ -162,8 +170,8 @@ function varargout = labkit_DICPreprocess_app(varargin)
     txtNotes = uitextarea(notePanel.grid, 'Editable', 'off');
     txtNotes.Value = { ...
         '1. Load a reference image and a moving image.', ...
-        '2. Use point selection to rigidly align the moving image to the reference image.', ...
-        '3. Start a square crop ROI on the right preview, adjust it, then apply the crop.', ...
+        '2. Align or crop the current working pair in any order; each apply step can be undone.', ...
+        '3. False-color preview compares the current pair even before alignment.', ...
         '4. Draw a mask ROI with editable anchors and spline fitting, then save a white-inside / black-outside mask.'};
 
     txtSummary = uitextarea(laySR, 'Editable', 'off');
@@ -200,12 +208,11 @@ function varargout = labkit_DICPreprocess_app(varargin)
         end
         S.referencePath = filepath;
         S.referenceImage = imread(filepath);
-        S.alignedImage = [];
-        S.cropReference = [];
-        S.cropMoving = [];
-        S.maskImage = [];
+        S.currentReferenceImage = S.referenceImage;
+        resetWorkflowStateForNewInput();
         txtReference.Value = char(filepath);
         addLog(sprintf('Loaded reference image: %s', filepath));
+        chooseDefaultPreviewAfterLoad();
         refreshPreview();
     end
 
@@ -217,10 +224,11 @@ function varargout = labkit_DICPreprocess_app(varargin)
         end
         S.movingPath = filepath;
         S.movingImage = imread(filepath);
-        S.alignedImage = [];
-        S.cropMoving = [];
+        S.currentMovingImage = S.movingImage;
+        resetWorkflowStateForNewInput();
         txtMoving.Value = char(filepath);
         addLog(sprintf('Loaded moving image: %s', filepath));
+        chooseDefaultPreviewAfterLoad();
         refreshPreview();
     end
 
@@ -231,39 +239,48 @@ function varargout = labkit_DICPreprocess_app(varargin)
         end
 
         addLog('Opening point selector. Choose matching points, then accept.');
-        [movingPoints, fixedPoints] = cpselect(S.movingImage, S.referenceImage, 'Wait', true);
+        [movingPoints, fixedPoints] = cpselect(S.currentMovingImage, S.currentReferenceImage, 'Wait', true);
         if size(movingPoints, 1) < 2
             uialert(fig, 'Rigid registration requires at least two point pairs.', 'Not enough points');
             addLog('Alignment cancelled: fewer than two point pairs.');
             return;
         end
 
-        [S.alignedImage, tform] = alignMovingToReference( ...
-            S.referenceImage, S.movingImage, fixedPoints, movingPoints);
+        pushHistory('manual alignment');
+        [alignedImage, tform] = alignMovingToReference( ...
+            S.currentReferenceImage, S.currentMovingImage, fixedPoints, movingPoints);
+        S.currentMovingImage = alignedImage;
+        S.alignedImage = alignedImage;
+        clearOperationDerivedState();
         ddPreview.Value = 'False-color overlay';
         addLog(sprintf('Aligned image using %d point pair(s).', size(movingPoints, 1)));
-        txtDetails.Value = transformSummary(tform, size(S.referenceImage), size(S.movingImage));
+        txtDetails.Value = transformSummary(tform, size(S.currentReferenceImage), size(S.currentMovingImage));
         refreshPreview();
     end
 
-    function onSaveAligned(~, ~)
-        if isempty(S.alignedImage)
-            uialert(fig, 'No aligned image is available. Run alignment first.', 'Save aligned image');
+    function onAutoAlign(~, ~)
+        if ~hasImagePair()
+            uialert(fig, 'Load both reference and moving images before automatic alignment.', 'Missing images');
             return;
         end
 
-        [folder, name, ext] = fileparts(char(S.movingPath));
-        defaultName = [name '_aligned' ext];
-        [f, p] = uiputfile({'*.png;*.jpg;*.jpeg;*.tif;*.tiff', 'Images'}, ...
-            'Save aligned image', fullfile(folder, defaultName));
-        if isequal(f, 0)
-            addLog('Save aligned image cancelled.');
+        try
+            [alignedImage, tform, method] = autoAlignMovingToReference( ...
+                S.currentReferenceImage, S.currentMovingImage);
+        catch err
+            uialert(fig, sprintf('Automatic alignment failed:\n%s', err.message), 'Auto align failed');
+            addLog(sprintf('Automatic alignment failed: %s', err.message));
             return;
         end
 
-        out = fullfile(p, f);
-        imwrite(S.alignedImage, out);
-        addLog(sprintf('Saved aligned image: %s', out));
+        pushHistory('automatic alignment');
+        S.currentMovingImage = alignedImage;
+        S.alignedImage = alignedImage;
+        clearOperationDerivedState();
+        ddPreview.Value = 'False-color overlay';
+        addLog(sprintf('Automatically aligned current pair using %s.', method));
+        txtDetails.Value = transformSummary(tform, size(S.currentReferenceImage), size(S.currentMovingImage));
+        refreshPreview();
     end
 
     function onStartCropRoi(~, ~)
@@ -272,17 +289,15 @@ function varargout = labkit_DICPreprocess_app(varargin)
             return;
         end
 
-        [currentImage, currentLabel] = currentCropImage();
         clearCropRoi();
         clearMaskRoi();
         resetPreviewAxes();
-        showImage(ui.topAxes, S.referenceImage, 'Reference image');
-        showImage(ui.bottomAxes, currentImage, sprintf('%s image', capitalizeText(currentLabel)));
+        showImage(ui.topAxes, S.currentReferenceImage, 'Current reference');
+        showImage(ui.bottomAxes, S.currentMovingImage, 'Current moving');
 
         S.cropReference = [];
         S.cropMoving = [];
-        S.cropSourceLabel = currentLabel;
-        rect = defaultSquareRect(size(S.referenceImage));
+        rect = defaultSquareRect(size(S.currentReferenceImage));
         S.cropRect = rect;
         S.cropRoiTop = drawrectangle(ui.topAxes, ...
             'Position', rect, ...
@@ -299,8 +314,8 @@ function varargout = labkit_DICPreprocess_app(varargin)
             addlistener(S.cropRoiTop, 'ROIMoved', @onCropRoiMoved)};
         btnApplyCrop.Enable = 'on';
         btnCancelCrop.Enable = 'on';
-        txtDetails.Value = cropSelectionSummary(rect, currentLabel);
-        addLog(sprintf('Started crop ROI on the preview using the %s image.', currentLabel));
+        txtDetails.Value = cropSelectionSummary(rect);
+        addLog('Started crop ROI on the current pair preview.');
         refreshSummary();
     end
 
@@ -310,18 +325,20 @@ function varargout = labkit_DICPreprocess_app(varargin)
             return;
         end
 
-        [currentImage, currentLabel] = currentCropImage();
-        rect = squareRectInsideImage(S.cropRoiTop.Position, size(S.referenceImage));
+        rect = squareRectInsideImage(S.cropRoiTop.Position, size(S.currentReferenceImage));
+        pushHistory('crop');
         S.cropRect = rect;
-        S.cropReference = imcrop(S.referenceImage, rect);
-        S.cropMoving = imcrop(currentImage, rect);
-        S.cropSourceLabel = currentLabel;
+        S.currentReferenceImage = imcrop(S.currentReferenceImage, rect);
+        S.currentMovingImage = imcrop(S.currentMovingImage, rect);
+        S.cropReference = S.currentReferenceImage;
+        S.cropMoving = S.currentMovingImage;
+        clearOperationDerivedState();
         clearCropRoi();
-        ddPreview.Value = 'Crop pair';
-        showCropPair();
-        addLog(sprintf('Cropped reference and %s image with [%g %g %g %g].', ...
-            currentLabel, rect(1), rect(2), rect(3), rect(4)));
-        txtDetails.Value = cropSummary(rect, currentLabel);
+        ddPreview.Value = 'Current pair';
+        showCurrentPair();
+        addLog(sprintf('Cropped current pair with [%g %g %g %g].', ...
+            rect(1), rect(2), rect(3), rect(4)));
+        txtDetails.Value = cropSummary(rect);
         refreshSummary();
     end
 
@@ -337,35 +354,79 @@ function varargout = labkit_DICPreprocess_app(varargin)
         else
             pos = S.cropRoiTop.Position;
         end
-        rect = squareRectInsideImage(pos, size(S.referenceImage));
+        rect = squareRectInsideImage(pos, size(S.currentReferenceImage));
         S.cropRect = rect;
         if ~isempty(S.cropRoiBottom) && isvalid(S.cropRoiBottom)
             S.cropRoiBottom.Position = rect;
         end
-        txtDetails.Value = cropSelectionSummary(rect, S.cropSourceLabel);
+        txtDetails.Value = cropSelectionSummary(rect);
     end
 
-    function onSaveCrops(~, ~)
-        if isempty(S.cropReference) || isempty(S.cropMoving)
-            uialert(fig, 'No crop images are available. Draw a crop first.', 'Save crops');
+    function onUndoEdit(~, ~)
+        if isempty(S.history)
+            uialert(fig, 'No align or crop operation is available to undo.', 'Undo');
             return;
         end
 
-        folder = uigetdir(pwd, 'Select folder for crop images');
+        snapshot = S.history(end);
+        S.history(end) = [];
+        clearCropRoi();
+        clearMaskRoi();
+        S.currentReferenceImage = snapshot.reference;
+        S.currentMovingImage = snapshot.moving;
+        S.alignedImage = snapshot.aligned;
+        S.cropReference = snapshot.cropReference;
+        S.cropMoving = snapshot.cropMoving;
+        S.maskImage = snapshot.maskImage;
+        S.maskPoints = snapshot.maskPoints;
+        ddPreview.Value = 'Current pair';
+        addLog(sprintf('Undid %s.', snapshot.description));
+        txtDetails.Value = {sprintf('Restored state before %s.', snapshot.description)};
+        refreshPreview();
+        updateUndoButton();
+    end
+
+    function onResetToOriginals(~, ~)
+        if isempty(S.referenceImage) || isempty(S.movingImage)
+            uialert(fig, 'Load both images before resetting the working pair.', 'Reset');
+            return;
+        end
+        pushHistory('reset to originals');
+        S.currentReferenceImage = S.referenceImage;
+        S.currentMovingImage = S.movingImage;
+        S.alignedImage = [];
+        S.cropReference = [];
+        S.cropMoving = [];
+        clearCropRoi();
+        clearMaskRoi();
+        clearOperationDerivedState();
+        ddPreview.Value = 'Current pair';
+        addLog('Reset current working pair to the original loaded images.');
+        txtDetails.Value = {'Current working pair reset to originals.'};
+        refreshPreview();
+    end
+
+    function onSaveCurrentImages(~, ~)
+        if ~hasImagePair()
+            uialert(fig, 'Load both images before saving the current pair.', 'Save current images');
+            return;
+        end
+
+        folder = uigetdir(defaultSaveFolder(), 'Select folder for current images');
         if isequal(folder, 0)
-            addLog('Save crop images cancelled.');
+            addLog('Save current images cancelled.');
             return;
         end
 
-        refOut = fullfile(folder, 'crop_reference.png');
-        curOut = fullfile(folder, 'crop_current.png');
-        imwrite(S.cropReference, refOut);
-        imwrite(S.cropMoving, curOut);
-        addLog(sprintf('Saved crop images: %s and %s', refOut, curOut));
+        refOut = fullfile(folder, 'current_reference.png');
+        curOut = fullfile(folder, 'current_moving.png');
+        imwrite(S.currentReferenceImage, refOut);
+        imwrite(S.currentMovingImage, curOut);
+        addLog(sprintf('Saved current images: %s and %s', refOut, curOut));
     end
 
     function onStartMaskEdit(~, ~)
-        if isempty(S.referenceImage)
+        if isempty(S.currentReferenceImage)
             uialert(fig, 'Load a reference image before drawing an ROI mask.', 'Missing image');
             return;
         end
@@ -373,8 +434,8 @@ function varargout = labkit_DICPreprocess_app(varargin)
         clearCropRoi();
         clearMaskRoi();
         resetPreviewAxes();
-        showImage(ui.topAxes, S.referenceImage, 'Reference image');
-        showImage(ui.bottomAxes, zeros(size(S.referenceImage, 1), size(S.referenceImage, 2), 3, 'uint8'), 'ROI mask preview');
+        showImage(ui.topAxes, S.currentReferenceImage, 'Current reference');
+        showImage(ui.bottomAxes, zeros(size(S.currentReferenceImage, 1), size(S.currentReferenceImage, 2), 3, 'uint8'), 'ROI mask preview');
         S.maskImage = [];
         S.maskPoints = [];
         S.maskDragIndex = [];
@@ -391,8 +452,8 @@ function varargout = labkit_DICPreprocess_app(varargin)
             'HitTest', 'off');
         setMaskMode('Add anchors');
         setMaskEditControls(true);
-        addLog('Started spline mask ROI. Add, move, or delete anchors; use Pan / zoom mode to navigate.');
-        txtDetails.Value = {'ROI edit started. Use Add point, Move point, Delete point, Pan / zoom, then Preview ROI mask.'};
+        addLog('Started spline mask ROI. Add, move, or delete anchors; scroll wheel zoom remains available on the preview.');
+        txtDetails.Value = {'ROI edit started. Use Add point, Move point, Delete point, then Preview ROI mask. Scroll wheel zoom remains available.'};
     end
 
     function setMaskMode(mode)
@@ -401,16 +462,10 @@ function varargout = labkit_DICPreprocess_app(varargin)
         fig.WindowButtonUpFcn = '';
         S.maskDragIndex = [];
 
-        if S.maskMode == "Pan / zoom"
-            ui.topAxes.ButtonDownFcn = [];
-            setMaskNavigation(true);
-            txtDetails.Value = {'Pan/zoom mode enabled. Use the axes toolbar or mouse interactions, then switch back to edit anchors.'};
-        else
-            setMaskNavigation(false);
-            ui.topAxes.ButtonDownFcn = @onMaskAxesClicked;
-            txtDetails.Value = {sprintf('Mask mode: %s. Current anchors: %d.', ...
-                char(S.maskMode), size(S.maskPoints, 1))};
-        end
+        enableImageNavigation(ui.topAxes);
+        ui.topAxes.ButtonDownFcn = @onMaskAxesClicked;
+        txtDetails.Value = {sprintf('Mask mode: %s. Current anchors: %d. Scroll wheel zoom remains enabled.', ...
+            char(S.maskMode), size(S.maskPoints, 1))};
         updateMaskModeButtons();
     end
 
@@ -418,7 +473,7 @@ function varargout = labkit_DICPreprocess_app(varargin)
         point = ui.topAxes.CurrentPoint;
         x = point(1, 1);
         y = point(1, 2);
-        if ~insideImageBounds(x, y, size(S.referenceImage))
+        if ~insideImageBounds(x, y, size(S.currentReferenceImage))
             return;
         end
 
@@ -459,8 +514,8 @@ function varargout = labkit_DICPreprocess_app(varargin)
             return;
         end
         point = ui.topAxes.CurrentPoint;
-        x = min(max(point(1, 1), 0.5), size(S.referenceImage, 2) + 0.5);
-        y = min(max(point(1, 2), 0.5), size(S.referenceImage, 1) + 0.5);
+        x = min(max(point(1, 1), 0.5), size(S.currentReferenceImage, 2) + 0.5);
+        y = min(max(point(1, 2), 0.5), size(S.currentReferenceImage, 1) + 0.5);
         S.maskPoints(S.maskDragIndex, :) = [x y];
         updateMaskDraft();
     end
@@ -477,7 +532,7 @@ function varargout = labkit_DICPreprocess_app(varargin)
         S.maskImage = [];
         S.maskPoints = [];
         updateMaskDraft();
-        showImage(ui.bottomAxes, zeros(size(S.referenceImage, 1), size(S.referenceImage, 2), 3, 'uint8'), 'ROI mask preview');
+        showImage(ui.bottomAxes, zeros(size(S.currentReferenceImage, 1), size(S.currentReferenceImage, 2), 3, 'uint8'), 'ROI mask preview');
         addLog('Cleared mask ROI anchors.');
     end
 
@@ -500,7 +555,7 @@ function varargout = labkit_DICPreprocess_app(varargin)
         if isempty(S.maskCurveLine) || ~isvalid(S.maskCurveLine)
             return;
         end
-        curve = fittedClosedCurve(S.maskPoints, size(S.referenceImage));
+        curve = fittedClosedCurve(S.maskPoints, size(S.currentReferenceImage));
         if isempty(curve)
             S.maskCurveLine.XData = NaN;
             S.maskCurveLine.YData = NaN;
@@ -531,7 +586,6 @@ function varargout = labkit_DICPreprocess_app(varargin)
         btnAddMask.Enable = state;
         btnMoveMask.Enable = state;
         btnDeleteMask.Enable = state;
-        btnPanMask.Enable = state;
         btnPreviewMask.Enable = state;
         btnUndoMask.Enable = state;
         btnClearMask.Enable = state;
@@ -550,8 +604,6 @@ function varargout = labkit_DICPreprocess_app(varargin)
                 btnMoveMask.BackgroundColor = activeColor;
             case "Delete anchors"
                 btnDeleteMask.BackgroundColor = activeColor;
-            case "Pan / zoom"
-                btnPanMask.BackgroundColor = activeColor;
         end
     end
 
@@ -560,37 +612,6 @@ function varargout = labkit_DICPreprocess_app(varargin)
         btnAddMask.BackgroundColor = defaultColor;
         btnMoveMask.BackgroundColor = defaultColor;
         btnDeleteMask.BackgroundColor = defaultColor;
-        btnPanMask.BackgroundColor = defaultColor;
-    end
-
-    function setMaskNavigation(enabled)
-        if enabled
-            try
-                enableDefaultInteractivity(ui.topAxes);
-            catch
-            end
-            try
-                ui.topAxes.Interactions = [panInteraction zoomInteraction];
-            catch
-            end
-            try
-                ui.topAxes.Toolbar.Visible = 'on';
-            catch
-            end
-        else
-            try
-                disableDefaultInteractivity(ui.topAxes);
-            catch
-            end
-            try
-                ui.topAxes.Interactions = [];
-            catch
-            end
-            try
-                ui.topAxes.Toolbar.Visible = 'off';
-            catch
-            end
-        end
     end
 
     function onPreviewMaskRoi(~, ~)
@@ -627,7 +648,7 @@ function varargout = labkit_DICPreprocess_app(varargin)
             end
             return;
         end
-        S.maskImage = fittedMaskImage(S.maskPoints, size(S.referenceImage));
+        S.maskImage = fittedMaskImage(S.maskPoints, size(S.currentReferenceImage));
         ddPreview.Value = 'ROI mask';
         showImage(ui.bottomAxes, maskRgb(S.maskImage), 'ROI mask');
         updateMaskCurveGraphics();
@@ -641,33 +662,35 @@ function varargout = labkit_DICPreprocess_app(varargin)
         clearCropRoi();
         clearMaskRoi();
         resetPreviewAxes();
-        if strcmp(ddPreview.Value, 'Crop pair')
-            showCropPair();
+        if strcmp(ddPreview.Value, 'Current pair')
+            showCurrentPair();
+            refreshSummary();
+            return;
+        elseif strcmp(ddPreview.Value, 'Original pair')
+            showOriginalPair();
             refreshSummary();
             return;
         elseif strcmp(ddPreview.Value, 'ROI mask')
-            if ~isempty(S.referenceImage)
-                showImage(ui.topAxes, S.referenceImage, 'Reference image');
+            if ~isempty(S.currentReferenceImage)
+                showImage(ui.topAxes, S.currentReferenceImage, 'Current reference');
             end
             if ~isempty(S.maskImage)
                 showImage(ui.bottomAxes, maskRgb(S.maskImage), 'ROI mask');
             end
             refreshSummary();
             return;
-        elseif ~isempty(S.referenceImage)
-            showImage(ui.topAxes, S.referenceImage, 'Reference image');
+        elseif ~isempty(S.currentReferenceImage)
+            showImage(ui.topAxes, S.currentReferenceImage, 'Current reference');
         end
 
         previewImage = [];
         previewTitle = ddPreview.Value;
         switch ddPreview.Value
-            case 'Moving image'
-                previewImage = S.movingImage;
-            case 'Aligned image'
-                previewImage = S.alignedImage;
+            case 'Current moving image'
+                previewImage = S.currentMovingImage;
             case 'False-color overlay'
-                if ~isempty(S.referenceImage) && ~isempty(S.alignedImage)
-                    previewImage = makeFalseColorOverlay(S.referenceImage, S.alignedImage);
+                if hasImagePair()
+                    previewImage = makeFalseColorOverlay(S.currentReferenceImage, S.currentMovingImage);
                 end
         end
 
@@ -681,37 +704,45 @@ function varargout = labkit_DICPreprocess_app(varargin)
         lines = {};
         lines{end+1} = sprintf('Reference: %s', displayPath(S.referencePath));
         lines{end+1} = sprintf('Moving: %s', displayPath(S.movingPath));
-        lines{end+1} = sprintf('Aligned image: %s', ternary(~isempty(S.alignedImage), 'available', 'not generated'));
-        lines{end+1} = sprintf('Crop images: %s', ternary(~isempty(S.cropReference), 'available', 'not generated'));
+        lines{end+1} = sprintf('Current pair: %s', ternary(hasImagePair(), currentPairSizeText(), 'not loaded'));
+        lines{end+1} = sprintf('Undo steps: %d', numel(S.history));
+        lines{end+1} = sprintf('Last aligned image: %s', ternary(~isempty(S.alignedImage), 'available', 'not generated'));
         lines{end+1} = sprintf('ROI mask: %s', ternary(~isempty(S.maskImage), 'available', 'not drawn'));
         txtSummary.Value = lines;
+        updateUndoButton();
     end
 
     function tf = hasImagePair()
-        tf = ~isempty(S.referenceImage) && ~isempty(S.movingImage);
+        tf = ~isempty(S.currentReferenceImage) && ~isempty(S.currentMovingImage);
     end
 
-    function [currentImage, currentLabel] = currentCropImage()
-        if ~isempty(S.alignedImage)
-            currentImage = S.alignedImage;
-            currentLabel = 'aligned';
-        else
-            currentImage = S.movingImage;
-            currentLabel = 'moving';
+    function txt = currentPairSizeText()
+        if ~hasImagePair()
+            txt = 'not loaded';
+            return;
         end
+        txt = sprintf('reference %d x %d, moving %d x %d', ...
+            size(S.currentReferenceImage, 1), size(S.currentReferenceImage, 2), ...
+            size(S.currentMovingImage, 1), size(S.currentMovingImage, 2));
     end
 
-    function showCropPair()
+    function showCurrentPair()
         resetPreviewAxes();
-        if ~isempty(S.cropReference)
-            showImage(ui.topAxes, S.cropReference, 'Reference crop');
+        if ~isempty(S.currentReferenceImage)
+            showImage(ui.topAxes, S.currentReferenceImage, 'Current reference');
         end
-        if ~isempty(S.cropMoving)
-            label = char(S.cropSourceLabel);
-            if strlength(S.cropSourceLabel) == 0
-                label = 'current';
-            end
-            showImage(ui.bottomAxes, S.cropMoving, sprintf('%s crop', capitalizeText(label)));
+        if ~isempty(S.currentMovingImage)
+            showImage(ui.bottomAxes, S.currentMovingImage, 'Current moving');
+        end
+    end
+
+    function showOriginalPair()
+        resetPreviewAxes();
+        if ~isempty(S.referenceImage)
+            showImage(ui.topAxes, S.referenceImage, 'Original reference');
+        end
+        if ~isempty(S.movingImage)
+            showImage(ui.bottomAxes, S.movingImage, 'Original moving');
         end
     end
 
@@ -733,13 +764,80 @@ function varargout = labkit_DICPreprocess_app(varargin)
         fig.WindowButtonMotionFcn = '';
         fig.WindowButtonUpFcn = '';
         S.maskDragIndex = [];
-        setMaskNavigation(false);
         deleteIfValid(S.maskCurveLine);
         deleteIfValid(S.maskAnchorLine);
         S.maskCurveLine = [];
         S.maskAnchorLine = [];
         S.maskPoints = [];
         setMaskEditControls(false);
+    end
+
+    function resetWorkflowStateForNewInput()
+        if ~isempty(S.referenceImage)
+            S.currentReferenceImage = S.referenceImage;
+        end
+        if ~isempty(S.movingImage)
+            S.currentMovingImage = S.movingImage;
+        end
+        S.alignedImage = [];
+        S.cropReference = [];
+        S.cropMoving = [];
+        S.cropRect = [];
+        S.maskImage = [];
+        S.maskPoints = [];
+        S.history = S.history([]);
+        clearCropRoi();
+        clearMaskRoi();
+        updateUndoButton();
+    end
+
+    function chooseDefaultPreviewAfterLoad()
+        if hasImagePair()
+            ddPreview.Value = 'False-color overlay';
+        else
+            ddPreview.Value = 'Current pair';
+        end
+    end
+
+    function pushHistory(description)
+        if ~hasImagePair()
+            return;
+        end
+        snapshot = struct( ...
+            'reference', S.currentReferenceImage, ...
+            'moving', S.currentMovingImage, ...
+            'aligned', S.alignedImage, ...
+            'cropReference', S.cropReference, ...
+            'cropMoving', S.cropMoving, ...
+            'maskImage', S.maskImage, ...
+            'maskPoints', S.maskPoints, ...
+            'description', description);
+        S.history(end+1) = snapshot;
+        maxUndoSteps = 12;
+        if numel(S.history) > maxUndoSteps
+            S.history = S.history((end - maxUndoSteps + 1):end);
+        end
+        updateUndoButton();
+    end
+
+    function clearOperationDerivedState()
+        S.maskImage = [];
+        S.maskPoints = [];
+        clearMaskRoi();
+    end
+
+    function updateUndoButton()
+        btnUndoEdit.Enable = ternary(~isempty(S.history), 'on', 'off');
+    end
+
+    function folder = defaultSaveFolder()
+        [folder, ~] = fileparts(char(S.referencePath));
+        if isempty(folder)
+            [folder, ~] = fileparts(char(S.movingPath));
+        end
+        if isempty(folder)
+            folder = pwd;
+        end
     end
 
     function resetPreviewAxes()
@@ -776,6 +874,25 @@ function [alignedImage, tformRigid] = alignMovingToReference(referenceImage, mov
     tformRigid = affine2d(T);
 
     Rfixed = imref2d(size(referenceImage(:, :, 1)));
+    alignedImage = imwarp(movingImage, tformRigid, ...
+        'OutputView', Rfixed, 'FillValues', 0);
+    alignedImage = cast(alignedImage, origClass);
+end
+
+function [alignedImage, tformRigid, method] = autoAlignMovingToReference(referenceImage, movingImage)
+    origClass = class(movingImage);
+    fixedGray = normalizeGray(referenceImage);
+    movingGray = normalizeGray(movingImage);
+
+    try
+        tformRigid = imregcorr(movingGray, fixedGray, 'rigid');
+        method = 'phase-correlation rigid registration';
+    catch
+        tformRigid = imregcorr(movingGray, fixedGray, 'translation');
+        method = 'phase-correlation translation registration';
+    end
+
+    Rfixed = imref2d(size(fixedGray));
     alignedImage = imwarp(movingImage, tformRigid, ...
         'OutputView', Rfixed, 'FillValues', 0);
     alignedImage = cast(alignedImage, origClass);
@@ -871,10 +988,10 @@ function rgb = maskRgb(maskImage)
     rgb = repmat(maskImage, [1 1 3]);
 end
 
-function lines = cropSelectionSummary(rect, sourceLabel)
+function lines = cropSelectionSummary(rect)
     lines = { ...
-        sprintf('Active crop source: reference and %s image', sourceLabel), ...
-        sprintf('Move or resize the ROI on the reference preview, then click Apply ROI crop.'), ...
+        sprintf('Active crop source: current reference and current moving images'), ...
+        sprintf('Move or resize the ROI on the current reference preview, then click Apply ROI crop.'), ...
         sprintf('Current square ROI: x=%d, y=%d, size=%d px', ...
         round(rect(1)), round(rect(2)), round(rect(3)))};
 end
@@ -890,6 +1007,22 @@ function showImage(ax, imageData, titleText)
     ax.XTick = [];
     ax.YTick = [];
     title(ax, titleText);
+    enableImageNavigation(ax);
+end
+
+function enableImageNavigation(ax)
+    try
+        enableDefaultInteractivity(ax);
+    catch
+    end
+    try
+        ax.Interactions = zoomInteraction;
+    catch
+    end
+    try
+        ax.Toolbar.Visible = 'on';
+    catch
+    end
 end
 
 function overlay = makeFalseColorOverlay(referenceImage, alignedImage)
@@ -923,7 +1056,7 @@ function gray = normalizeGray(imageData)
 end
 
 function lines = transformSummary(tform, referenceSize, movingSize)
-    T = tform.T;
+    T = transformMatrix(tform);
     lines = { ...
         sprintf('Reference size: %d x %d', referenceSize(1), referenceSize(2)), ...
         sprintf('Moving size: %d x %d', movingSize(1), movingSize(2)), ...
@@ -933,9 +1066,19 @@ function lines = transformSummary(tform, referenceSize, movingSize)
         sprintf('[%.6g %.6g %.6g]', T(3, 1), T(3, 2), T(3, 3))};
 end
 
-function lines = cropSummary(rect, sourceLabel)
+function T = transformMatrix(tform)
+    if isprop(tform, 'T')
+        T = tform.T;
+    elseif isprop(tform, 'A')
+        T = tform.A;
+    else
+        T = eye(3);
+    end
+end
+
+function lines = cropSummary(rect)
     lines = { ...
-        sprintf('Crop source: reference and %s image', sourceLabel), ...
+        sprintf('Crop source: current reference and current moving images'), ...
         sprintf('Crop rectangle: x=%g, y=%g, width=%g, height=%g', ...
         rect(1), rect(2), rect(3), rect(4))};
 end
@@ -954,14 +1097,6 @@ function txt = ternary(cond, trueText, falseText)
     else
         txt = falseText;
     end
-end
-
-function txt = capitalizeText(txt)
-    txt = char(txt);
-    if isempty(txt)
-        return;
-    end
-    txt(1) = upper(txt(1));
 end
 
 function deleteIfValid(h)
