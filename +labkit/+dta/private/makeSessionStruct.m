@@ -1,5 +1,5 @@
 function session = makeSessionStruct(kind, opts)
-%MAKESESSIONSTRUCT Create a shared Gamry workbench session struct.
+%MAKESESSIONSTRUCT Create a shared LabKit session struct.
 
     if nargin < 1 || isempty(kind)
         kind = 'generic';
@@ -11,7 +11,7 @@ function session = makeSessionStruct(kind, opts)
     timestamp = datestr(now, 'yyyy-mm-ddTHH:MM:SS');
 
     session = struct();
-    session.type = 'gamrywb_session';
+    session.type = 'labkit_session';
     session.version = 1;
     session.kind = char(kind);
     session.createdAt = timestamp;

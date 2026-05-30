@@ -10,9 +10,9 @@ function summary = dta_only_script_template(inputPath, expectedKind)
     end
 
     if isfolder(inputPath)
-        [items, report] = gamrywb.dta.loadFolder(inputPath, expectedKind);
+        [items, report] = labkit.dta.loadFolder(inputPath, expectedKind);
     else
-        [item, status] = gamrywb.dta.loadFile(inputPath, expectedKind);
+        [item, status] = labkit.dta.loadFile(inputPath, expectedKind);
         if status.ok
             items = {item};
             loaded = {status.filepath};

@@ -66,7 +66,7 @@ function ui = createTabbedDualPlotShell(figName, figPosition, leftWidth, separat
     ui.topAxes = uiaxes(ui.rightGrid);
     ui.topAxes.Layout.Row = 2;
     title(ui.topAxes, labels.topPlot);
-    gamrywb.ui.disableAxesInteractivity(ui.topAxes);
+    labkit.ui.disableAxesInteractivity(ui.topAxes);
 
     ui.bottomControlsPanel = uipanel(ui.rightGrid, 'Title', labels.bottomPlot);
     ui.bottomControlsPanel.Layout.Row = 3;
@@ -74,5 +74,5 @@ function ui = createTabbedDualPlotShell(figName, figPosition, leftWidth, separat
     ui.bottomAxes = uiaxes(ui.rightGrid);
     ui.bottomAxes.Layout.Row = 4;
     title(ui.bottomAxes, labels.bottomPlot);
-    gamrywb.ui.disableAxesInteractivity(ui.bottomAxes);
+    labkit.ui.disableAxesInteractivity(ui.bottomAxes);
 end

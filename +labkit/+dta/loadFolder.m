@@ -8,9 +8,9 @@ function [items, report] = loadFolder(rootDir, expectedKind, opts)
         opts = struct();
     end
 
-    expectedKind = gamrywb.dta.normalizeExpectedKind(expectedKind);
-    filepaths = gamrywb.dta.findFiles(rootDir);
-    [items, report] = gamrywb.dta.loadFiles(filepaths, expectedKind, opts);
+    expectedKind = labkit.dta.normalizeExpectedKind(expectedKind);
+    filepaths = labkit.dta.findFiles(rootDir);
+    [items, report] = labkit.dta.loadFiles(filepaths, expectedKind, opts);
     report.folder = char(rootDir);
     report.filepaths = filepaths;
     report.nDiscovered = numel(filepaths);

@@ -22,7 +22,7 @@ function test_gui_layout_controls()
 end
 
 function checkMultiDTA()
-    fig = launchFigure('gamrywb_ChronoOverlay_app', 'Gamry Multi-DTA Plot Export GUI');
+    fig = launchFigure('labkit_ChronoOverlay_app', 'Gamry Multi-DTA Plot Export GUI');
     assertFigureMinimumSize(fig, 1400, 850);
     assertComponentCounts(fig, struct('Button', 5, 'CheckBox', 2, 'DropDown', 1, ...
         'ListBox', 1, 'TextArea', 2, 'Axes', 2));
@@ -40,7 +40,7 @@ function checkMultiDTA()
 end
 
 function checkEIS()
-    fig = launchFigure('gamrywb_EIS_app', 'Gamry EIS Multi-DTA Plot GUI');
+    fig = launchFigure('labkit_EIS_app', 'Gamry EIS Multi-DTA Plot GUI');
     assertFigureMinimumSize(fig, 1400, 850);
     assertComponentCounts(fig, struct('Button', 5, 'CheckBox', 5, 'DropDown', 2, ...
         'ListBox', 1, 'TextArea', 3, 'Axes', 1));
@@ -56,7 +56,7 @@ function checkEIS()
 end
 
 function checkCVCSC()
-    fig = launchFigure('gamrywb_CSC_app', 'Gamry DTA GUI (literature CSC)');
+    fig = launchFigure('labkit_CSC_app', 'Gamry DTA GUI (literature CSC)');
     assertFigureMinimumSize(fig, 1500, 900);
     assertComponentCounts(fig, struct('Button', 7, 'CheckBox', 6, 'DropDown', 6, ...
         'TextArea', 1, 'Axes', 2));
@@ -76,7 +76,7 @@ function checkCVCSC()
 end
 
 function checkVTResistance()
-    fig = launchFigure('gamrywb_VTResistance_app', 'Gamry VT Steady Resistance GUI');
+    fig = launchFigure('labkit_VTResistance_app', 'Gamry VT Steady Resistance GUI');
     assertFigureMinimumSize(fig, 1600, 900);
     assertComponentCounts(fig, struct('Button', 8, 'CheckBox', 4, 'DropDown', 7, ...
         'ListBox', 1, 'Table', 1, 'TextArea', 1, 'Axes', 2));
@@ -103,7 +103,7 @@ function checkVTResistance()
 end
 
 function checkCIC()
-    fig = launchFigure('gamrywb_CIC_app', 'Gamry CIC GUI (Voltage Transient)');
+    fig = launchFigure('labkit_CIC_app', 'Gamry CIC GUI (Voltage Transient)');
     assertFigureMinimumSize(fig, 1600, 900);
     assertComponentCounts(fig, struct('Button', 7, 'CheckBox', 6, 'DropDown', 8, ...
         'ListBox', 1, 'Table', 1, 'TextArea', 1, 'Axes', 2));
@@ -132,34 +132,34 @@ function checkCIC()
 end
 
 function checkListboxItemsRefreshHelper()
-    fig = uifigure('Visible', 'off', 'Name', 'gamrywb_file_listbox_refresh_probe');
+    fig = uifigure('Visible', 'off', 'Name', 'labkit_file_listbox_refresh_probe');
     cleaner = onCleanup(@() delete(fig));
     lb = uilistbox(fig, 'Items', {}, 'Multiselect', 'on');
 
-    gamrywb.ui.refreshListboxItems(lb, {'a.DTA', 'b.DTA'});
+    labkit.ui.refreshListboxItems(lb, {'a.DTA', 'b.DTA'});
     assert(sameStringCell(lb.Items, {'a.DTA', 'b.DTA'}), ...
         'File listbox helper should populate item display names.');
     assert(sameStringCell(lb.Value, {'a.DTA', 'b.DTA'}), ...
         'File listbox helper should select all items when there is no prior selection.');
 
     lb.Value = {'b.DTA'};
-    gamrywb.ui.refreshListboxItems(lb, {'b.DTA', 'c.DTA'});
+    labkit.ui.refreshListboxItems(lb, {'b.DTA', 'c.DTA'});
     assert(sameStringCell(lb.Items, {'b.DTA', 'c.DTA'}), ...
         'File listbox helper should update item display names.');
     assert(sameStringCell(lb.Value, {'b.DTA'}), ...
         'File listbox helper should preserve valid prior selections.');
 
-    gamrywb.ui.refreshListboxItems(lb, {});
+    labkit.ui.refreshListboxItems(lb, {});
     assert(isempty(lb.Items) && isempty(lb.Value), ...
         'File listbox helper should clear listbox items and values for empty sessions.');
 end
 
 function checkLogPanelHelper()
-    fig = uifigure('Visible', 'off', 'Name', 'gamrywb_log_panel_probe');
+    fig = uifigure('Visible', 'off', 'Name', 'labkit_log_panel_probe');
     cleaner = onCleanup(@() delete(fig));
     grid = uigridlayout(fig, [2 1]);
 
-    ui = gamrywb.ui.createLogPanel(grid, 2, {'Started.'});
+    ui = labkit.ui.createLogPanel(grid, 2, {'Started.'});
     assert(strcmp(ui.panel.Title, 'Log'), 'Log panel helper should preserve the panel title.');
     assert(ui.panel.Layout.Row == 2, 'Log panel helper should place the panel in the requested row.');
     assert(isequal(ui.grid.Padding, [8 8 8 8]), 'Log panel helper should preserve grid padding.');
@@ -169,11 +169,11 @@ function checkLogPanelHelper()
 end
 
 function checkReadOnlyInfoRowHelper()
-    fig = uifigure('Visible', 'off', 'Name', 'gamrywb_read_only_info_row_probe');
+    fig = uifigure('Visible', 'off', 'Name', 'labkit_read_only_info_row_probe');
     cleaner = onCleanup(@() delete(fig));
     grid = uigridlayout(fig, [2 2]);
 
-    [field, lbl] = gamrywb.ui.createReadOnlyInfoRow(grid, 2, 'Probe:');
+    [field, lbl] = labkit.ui.createReadOnlyInfoRow(grid, 2, 'Probe:');
     assert(strcmp(lbl.Text, 'Probe:'), 'Read-only info row should preserve label text.');
     assert(strcmp(lbl.HorizontalAlignment, 'right'), ...
         'Read-only info row should preserve right-aligned labels.');
@@ -188,11 +188,11 @@ function checkReadOnlyInfoRowHelper()
 end
 
 function checkResultTablePanelHelper()
-    fig = uifigure('Visible', 'off', 'Name', 'gamrywb_result_table_panel_probe');
+    fig = uifigure('Visible', 'off', 'Name', 'labkit_result_table_panel_probe');
     cleaner = onCleanup(@() delete(fig));
     grid = uigridlayout(fig, [2 1]);
 
-    ui = gamrywb.ui.createResultTablePanel(grid, 'Batch Results', 2, ...
+    ui = labkit.ui.createResultTablePanel(grid, 'Batch Results', 2, ...
         {'File', 'Value'}, cell(0, 2));
     assert(strcmp(ui.panel.Title, 'Batch Results'), ...
         'Result table panel helper should preserve the panel title.');
@@ -207,11 +207,11 @@ function checkResultTablePanelHelper()
 end
 
 function checkPlotOptionsPanelHelper()
-    fig = uifigure('Visible', 'off', 'Name', 'gamrywb_plot_options_panel_probe');
+    fig = uifigure('Visible', 'off', 'Name', 'labkit_plot_options_panel_probe');
     cleaner = onCleanup(@() delete(fig));
     grid = uigridlayout(fig, [3 1]);
 
-    ui = gamrywb.ui.createPlotOptionsPanel(grid, 3);
+    ui = labkit.ui.createPlotOptionsPanel(grid, 3);
     assert(strcmp(ui.panel.Title, 'Plot Options'), 'Plot-options helper should preserve the panel title.');
     assert(ui.panel.Layout.Row == 3, 'Plot-options helper should place the panel in row 3.');
     assert(sameStringCell(ui.grid.RowHeight, {'fit', 'fit', 'fit'}), ...
@@ -224,11 +224,11 @@ function checkPlotOptionsPanelHelper()
 end
 
 function checkCreateAxesHelper()
-    fig = uifigure('Visible', 'off', 'Name', 'gamrywb_create_axes_probe');
+    fig = uifigure('Visible', 'off', 'Name', 'labkit_create_axes_probe');
     cleaner = onCleanup(@() delete(fig));
     grid = uigridlayout(fig, [2 1]);
 
-    ax = gamrywb.ui.createAxes(grid, 2, 'Probe Title', 'Probe X', 'Probe Y');
+    ax = labkit.ui.createAxes(grid, 2, 'Probe Title', 'Probe X', 'Probe Y');
     assert(ax.Layout.Row == 2, 'Axes helper should set the requested layout row.');
     assert(strcmp(char(ax.Title.String), 'Probe Title'), 'Axes helper should preserve the title.');
     assert(strcmp(char(ax.XLabel.String), 'Probe X'), 'Axes helper should preserve the x label.');
@@ -248,8 +248,8 @@ end
 
 function checkTabbedDualPlotShellHelper()
     labels = tabbedShellLabels();
-    ui = gamrywb.ui.createTabbedDualPlotShell( ...
-        'gamrywb_tabbed_dual_plot_shell_probe', ...
+    ui = labkit.ui.createTabbedDualPlotShell( ...
+        'labkit_tabbed_dual_plot_shell_probe', ...
         [40 30 1680 980], ...
         430, ...
         [], ...
@@ -279,8 +279,8 @@ end
 
 function checkTopBottomPlotControlsHelper()
     labels = tabbedShellLabels();
-    shell = gamrywb.ui.createTabbedDualPlotShell( ...
-        'gamrywb_top_bottom_plot_controls_probe', ...
+    shell = labkit.ui.createTabbedDualPlotShell( ...
+        'labkit_top_bottom_plot_controls_probe', ...
         [40 30 1680 980], ...
         430, ...
         [], ...
@@ -289,7 +289,7 @@ function checkTopBottomPlotControlsHelper()
 
     topDefaults = struct('x', 'Time (s)', 'y', 'VT: Vf vs time', 'grid', true);
     bottomDefaults = struct('x', 'Sample #', 'y', 'IT: Im vs time', 'grid', false);
-    ui = gamrywb.ui.createTopBottomPlotControls( ...
+    ui = labkit.ui.createTopBottomPlotControls( ...
         shell.topControlsPanel, ...
         shell.bottomControlsPanel, ...
         {'Time (s)', 'Sample #'}, ...
@@ -324,8 +324,8 @@ end
 
 function checkTopBottomPlotStateHelpers()
     labels = tabbedShellLabels();
-    shell = gamrywb.ui.createTabbedDualPlotShell( ...
-        'gamrywb_top_bottom_plot_state_probe', ...
+    shell = labkit.ui.createTabbedDualPlotShell( ...
+        'labkit_top_bottom_plot_state_probe', ...
         [40 30 1680 980], ...
         430, ...
         [], ...
@@ -334,7 +334,7 @@ function checkTopBottomPlotStateHelpers()
 
     topDefaults = struct('x', 'Time (s)', 'y', 'VT: Vf vs time', 'grid', true);
     bottomDefaults = struct('x', 'Sample #', 'y', 'IT: Im vs time', 'grid', false);
-    ui = gamrywb.ui.createTopBottomPlotControls( ...
+    ui = labkit.ui.createTopBottomPlotControls( ...
         shell.topControlsPanel, ...
         shell.bottomControlsPanel, ...
         {'Time (s)', 'Sample #'}, ...
@@ -343,14 +343,14 @@ function checkTopBottomPlotStateHelpers()
         bottomDefaults, ...
         []);
 
-    gamrywb.ui.setTopBottomPlotSelections(ui.topX, ui.topY, ui.bottomX, ui.bottomY, ...
+    labkit.ui.setTopBottomPlotSelections(ui.topX, ui.topY, ui.bottomX, ui.bottomY, ...
         bottomDefaults, topDefaults);
     assert(strcmp(ui.topX.Value, 'Sample #') && strcmp(ui.bottomX.Value, 'Time (s)'), ...
         'Top/bottom selection setter should apply supplied X defaults.');
     assert(strcmp(ui.topY.Value, 'IT: Im vs time') && strcmp(ui.bottomY.Value, 'VT: Vf vs time'), ...
         'Top/bottom selection setter should apply supplied Y defaults.');
 
-    gamrywb.ui.swapTopBottomPlotSelections(ui.topX, ui.topY, ui.bottomX, ui.bottomY);
+    labkit.ui.swapTopBottomPlotSelections(ui.topX, ui.topY, ui.bottomX, ui.bottomY);
     assert(strcmp(ui.topX.Value, 'Time (s)') && strcmp(ui.topY.Value, 'VT: Vf vs time'), ...
         'Top/bottom selection swap should move bottom selections to the top.');
     assert(strcmp(ui.bottomX.Value, 'Sample #') && strcmp(ui.bottomY.Value, 'IT: Im vs time'), ...
@@ -358,8 +358,8 @@ function checkTopBottomPlotStateHelpers()
 
     shell.topAxes.XScale = 'log';
     shell.bottomAxes.YScale = 'log';
-    gamrywb.ui.hardResetAxis(shell.topAxes, 'Top Plot', true);
-    gamrywb.ui.hardResetAxis(shell.bottomAxes, 'Bottom Plot', true);
+    labkit.ui.hardResetAxis(shell.topAxes, 'Top Plot', true);
+    labkit.ui.hardResetAxis(shell.bottomAxes, 'Bottom Plot', true);
     assert(strcmp(char(shell.topAxes.Title.String), 'Top Plot'), ...
         'Hard axis reset should preserve the supplied top axes title.');
     assert(strcmp(char(shell.bottomAxes.Title.String), 'Bottom Plot'), ...
@@ -369,7 +369,7 @@ function checkTopBottomPlotStateHelpers()
 end
 
 function checkSingleSelectFilePanelHelper()
-    fig = uifigure('Visible', 'off', 'Name', 'gamrywb_single_select_file_panel_probe');
+    fig = uifigure('Visible', 'off', 'Name', 'labkit_single_select_file_panel_probe');
     cleaner = onCleanup(@() delete(fig));
     grid = uigridlayout(fig, [3 1]);
 
@@ -387,7 +387,7 @@ function checkSingleSelectFilePanelHelper()
         'clearAll', 'Clear all', ...
         'export', 'Export results CSV', ...
         'loadedText', 'No files loaded');
-    ui = gamrywb.ui.createSingleSelectFilePanel(grid, labels, callbacks);
+    ui = labkit.ui.createSingleSelectFilePanel(grid, labels, callbacks);
     assert(strcmp(ui.panel.Title, 'Files'), 'Single-select file panel should preserve the panel title.');
     assert(ui.panel.Layout.Row == 1, 'Single-select file panel should place the panel in row 1.');
     assert(sameStringCell(ui.grid.RowHeight, {'fit', '1x', 'fit'}), ...
@@ -686,7 +686,7 @@ end
 
 function assertUifigureAvailable()
     try
-        f = uifigure('Visible', 'off', 'Name', 'gamrywb_gui_layout_probe');
+        f = uifigure('Visible', 'off', 'Name', 'labkit_gui_layout_probe');
         delete(f);
     catch ME
         error('GUI layout tests require MATLAB uifigure support: %s', ME.message);

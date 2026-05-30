@@ -10,7 +10,7 @@ function varargout = gui_only_app_template(varargin)
             'gui_only_app_template returns at most the figure handle.');
     end
 
-    ui = gamrywb.ui.createTwoPaneShell( ...
+    ui = labkit.ui.createTwoPaneShell( ...
         'GUI Only Template', [80 80 1100 700], 300, ...
         'Preview', [1 1], {'1x'}, 8);
     fig = ui.fig;
@@ -20,13 +20,13 @@ function varargout = gui_only_app_template(varargin)
     controls.RowHeight = {'fit', 'fit', '1x'};
     controls.ColumnWidth = {'1x'};
 
-    [~, modeDropDown] = gamrywb.ui.createLabeledDropdown( ...
+    [~, modeDropDown] = labkit.ui.createLabeledDropdown( ...
         controls, 'Mode:', {'Default', 'Alternate'}, 'Default', 1);
-    [~, valueField] = gamrywb.ui.createLabeledEditField( ...
+    [~, valueField] = labkit.ui.createLabeledEditField( ...
         controls, 'Value:', 'numeric', 1, 2);
 
-    logUi = gamrywb.ui.createLogPanel(controls, 3, {'Ready.'});
-    ax = gamrywb.ui.createAxes(ui.rightGrid, 1, 'Preview', 'X', 'Y');
+    logUi = labkit.ui.createLogPanel(controls, 3, {'Ready.'});
+    ax = labkit.ui.createAxes(ui.rightGrid, 1, 'Preview', 'X', 'Y');
 
     modeDropDown.ValueChangedFcn = @refreshPreview;
     valueField.ValueChangedFcn = @refreshPreview;
@@ -46,7 +46,7 @@ function varargout = gui_only_app_template(varargin)
         end
         labels = struct('title', 'Preview', 'x', 'X', 'y', 'Y');
         opts = struct('lineWidth', 1.5, 'markerSize', 4, 'marker', 'none');
-        gamrywb.ui.plotXY(ax, x, y, labels, opts);
-        gamrywb.ui.appendLog(logUi.textArea, sprintf('Updated: %s', modeDropDown.Value));
+        labkit.ui.plotXY(ax, x, y, labels, opts);
+        labkit.ui.appendLog(logUi.textArea, sprintf('Updated: %s', modeDropDown.Value));
     end
 end

@@ -3,7 +3,7 @@ function test_makeChronoItem()
 
     fixture = demoFixturePath('chrono_chronopot_current_pulse_0p2ms.DTA');
 
-    [item, status] = gamrywb.dta.loadFile(fixture, "chrono");
+    [item, status] = labkit.dta.loadFile(fixture, "chrono");
     assert(status.ok, status.message);
 
     assert(strcmp(item.type, "chrono"), 'Chrono item type should be set.');

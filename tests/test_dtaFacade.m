@@ -6,48 +6,48 @@ function test_dtaFacade()
     eisFile = demoFixturePath('eis_potentiostatic_zcurve.DTA');
     cvctFile = demoFixturePath('cv_cyclic_voltammetry_pt_reference.DTA');
 
-    discoveredFiles = gamrywb.dta.findFiles(demoDir);
+    discoveredFiles = labkit.dta.findFiles(demoDir);
     assert(numel(discoveredFiles) >= 8, 'DTA facade should recursively discover demo DTA fixtures.');
     assert(all(endsWith(lower(string(discoveredFiles)), '.dta')), ...
         'DTA facade discovery should return only DTA files.');
     assert(any(strcmp(discoveredFiles, chronoFile)), ...
         'DTA facade discovery should include the current-controlled chrono fixture.');
-    assert(isequal(gamrywb.dta.findFiles(string(demoDir)), discoveredFiles), ...
+    assert(isequal(labkit.dta.findFiles(string(demoDir)), discoveredFiles), ...
         'DTA facade discovery should accept scalar string folders.');
     assertInvalidFolderInput(42);
-    assertInvalidFolderInput(fullfile(tempdir, 'gamrywb_missing_dta_folder'));
+    assertInvalidFolderInput(fullfile(tempdir, 'labkit_missing_dta_folder'));
 
-    assert(gamrywb.dta.detectType(chronoFile) == "chrono", 'Chrono fixture should detect as chrono.');
-    assert(gamrywb.dta.detectType(eisFile) == "eis", 'EIS fixture should detect as eis.');
-    assert(gamrywb.dta.detectType(cvctFile) == "cvct", 'CV/CT fixture should detect as cvct.');
+    assert(labkit.dta.detectType(chronoFile) == "chrono", 'Chrono fixture should detect as chrono.');
+    assert(labkit.dta.detectType(eisFile) == "eis", 'EIS fixture should detect as eis.');
+    assert(labkit.dta.detectType(cvctFile) == "cvct", 'CV/CT fixture should detect as cvct.');
 
-    [chronoItem, chronoStatus] = gamrywb.dta.loadFile(chronoFile, "chrono");
+    [chronoItem, chronoStatus] = labkit.dta.loadFile(chronoFile, "chrono");
     assertStatusFields(chronoStatus);
     assert(chronoStatus.ok, chronoStatus.message);
     assert(chronoStatus.kind == "chrono", 'Chrono status kind should be chrono.');
     assert(chronoItem.type == "chrono", 'Chrono item type should be preserved.');
     assert(isfield(chronoItem, 't') && isfield(chronoItem, 'Vf') && isfield(chronoItem, 'Im'), ...
         'Chrono facade should preserve legacy-compatible vectors.');
-    [pulse, pulseMsg] = gamrywb.dta.detectPulses( ...
+    [pulse, pulseMsg] = labkit.dta.detectPulses( ...
         chronoItem.t, chronoItem.Im, chronoItem.meta, "Metadata first, then auto");
     assert(pulse.ok, pulseMsg);
     assert(isfield(pulse, 'gap_start') && isfinite(pulse.gap_start), ...
         'DTA facade should expose chrono pulse detection without app code calling analysis directly.');
 
-    [spacedKindItem, spacedKindStatus] = gamrywb.dta.loadFile(chronoFile, " Chrono ");
+    [spacedKindItem, spacedKindStatus] = labkit.dta.loadFile(chronoFile, " Chrono ");
     assert(spacedKindStatus.ok, spacedKindStatus.message);
     assert(spacedKindStatus.expectedKind == "chrono" && spacedKindStatus.kind == "chrono", ...
         'DTA facade should normalize expected kind case and whitespace consistently.');
     assert(spacedKindItem.type == "chrono", 'Normalized expected kind should load the chrono item.');
 
-    [eisItem, eisStatus] = gamrywb.dta.loadFile(eisFile);
+    [eisItem, eisStatus] = labkit.dta.loadFile(eisFile);
     assert(eisStatus.ok, eisStatus.message);
     assert(eisStatus.kind == "eis", 'Auto-loaded EIS status kind should be eis.');
     assert(eisItem.type == "eis", 'EIS item type should be preserved.');
     assert(isfield(eisItem, 'Freq') && isfield(eisItem, 'Zreal') && isfield(eisItem, 'Zimag'), ...
         'EIS facade should preserve legacy-compatible impedance vectors.');
 
-    [cvctItem, cvctStatus] = gamrywb.dta.loadFile(cvctFile, "cvct");
+    [cvctItem, cvctStatus] = labkit.dta.loadFile(cvctFile, "cvct");
     assert(cvctStatus.ok, cvctStatus.message);
     assert(cvctStatus.kind == "cvct", 'CV/CT status kind should be cvct.');
     assert(cvctItem.type == "cvct", 'CV/CT item type should be set.');
@@ -55,7 +55,7 @@ function test_dtaFacade()
     assert(isfield(cvctItem, 'scanRate') && isfield(cvctItem, 'scanRate_V_per_s'), ...
         'CV/CT item should expose scan rate fields.');
 
-    [mismatchItem, mismatchStatus] = gamrywb.dta.loadFile(eisFile, "chrono");
+    [mismatchItem, mismatchStatus] = labkit.dta.loadFile(eisFile, "chrono");
     assertStatusFields(mismatchStatus);
     assert(isempty(mismatchItem), 'Mismatched DTA load should not return an item.');
     assert(~mismatchStatus.ok, 'Mismatched DTA load should return failed status.');
@@ -63,7 +63,7 @@ function test_dtaFacade()
     assert(contains(mismatchStatus.message, 'Expected chrono DTA'), ...
         'Mismatch status should explain expected kind.');
 
-    [cvctMismatchItem, cvctMismatchStatus] = gamrywb.dta.loadFile(cvctFile, "chrono");
+    [cvctMismatchItem, cvctMismatchStatus] = labkit.dta.loadFile(cvctFile, "chrono");
     assertStatusFields(cvctMismatchStatus);
     assert(isempty(cvctMismatchItem), 'CV/CT mismatch load should not return an item.');
     assert(~cvctMismatchStatus.ok, 'CV/CT mismatch load should return failed status.');
@@ -72,33 +72,33 @@ function test_dtaFacade()
     assert(contains(cvctMismatchStatus.message, 'Expected chrono DTA'), ...
         'CV/CT mismatch status should explain expected kind.');
 
-    [missingItem, missingStatus] = gamrywb.dta.loadFile(demoFixturePath('missing_file.DTA'), "auto");
+    [missingItem, missingStatus] = labkit.dta.loadFile(demoFixturePath('missing_file.DTA'), "auto");
     assertStatusFields(missingStatus);
     assert(isempty(missingItem), 'Missing file load should not return an item.');
     assert(~missingStatus.ok, 'Missing file load should return failed status.');
     assert(contains(missingStatus.message, 'File not found'), 'Missing file status should be readable.');
 
-    [items, report] = gamrywb.dta.loadFiles({chronoFile, eisFile, cvctFile}, "auto");
+    [items, report] = labkit.dta.loadFiles({chronoFile, eisFile, cvctFile}, "auto");
     assertLoadFilesReportFields(report);
     assert(numel(items) == 3, 'Batch auto-load should return all valid items.');
     assert(report.nRequested == 3 && report.nLoaded == 3 && report.nFailed == 0, ...
         'Batch report counts should match successful loads.');
     assert(all([report.statuses.ok]), 'Batch statuses should be successful.');
 
-    [emptyItems, emptyReport] = gamrywb.dta.loadFiles([], "auto");
+    [emptyItems, emptyReport] = labkit.dta.loadFiles([], "auto");
     assertLoadFilesReportFields(emptyReport);
     assert(isempty(emptyItems), 'Empty DTA batch load should return no items.');
     assert(emptyReport.nRequested == 0 && emptyReport.nLoaded == 0 && emptyReport.nFailed == 0, ...
         'Empty DTA batch report counts should be zero.');
     assert(isempty(emptyReport.loaded) && isempty(emptyReport.failed) && isempty(emptyReport.statuses), ...
         'Empty DTA batch report should have no loaded, failed, or status entries.');
-    [blankKindItems, blankKindReport] = gamrywb.dta.loadFiles([], "");
+    [blankKindItems, blankKindReport] = labkit.dta.loadFiles([], "");
     assert(isempty(blankKindItems), 'Blank expected kind should default to auto for empty DTA batch loads.');
     assert(blankKindReport.nRequested == 0 && blankKindReport.nLoaded == 0 && blankKindReport.nFailed == 0, ...
         'Blank expected kind should preserve empty DTA batch no-op report counts.');
-    assertInvalidExpectedKind(@() gamrywb.dta.loadFiles([], "bad"));
+    assertInvalidExpectedKind(@() labkit.dta.loadFiles([], "bad"));
 
-    [folderItems, folderReport] = gamrywb.dta.loadFolder(demoDir, "auto");
+    [folderItems, folderReport] = labkit.dta.loadFolder(demoDir, "auto");
     assertLoadFolderReportFields(folderReport);
     assert(numel(folderItems) == folderReport.nLoaded, ...
         'Folder load should return one item per successful load.');
@@ -112,7 +112,7 @@ function test_dtaFacade()
     emptyDir = tempname;
     mkdir(emptyDir);
     cleaner = onCleanup(@() removeFolderIfExists(emptyDir));
-    [emptyFolderItems, emptyFolderReport] = gamrywb.dta.loadFolder(emptyDir, "auto");
+    [emptyFolderItems, emptyFolderReport] = labkit.dta.loadFolder(emptyDir, "auto");
     assertLoadFolderReportFields(emptyFolderReport);
     assert(isempty(emptyFolderItems), 'Empty DTA folder load should return no items.');
     assert(emptyFolderReport.nDiscovered == 0 && emptyFolderReport.nRequested == 0, ...
@@ -120,7 +120,7 @@ function test_dtaFacade()
     assert(emptyFolderReport.nLoaded == 0 && emptyFolderReport.nFailed == 0, ...
         'Empty DTA folder report should have zero loaded and failed files.');
     assert(isempty(emptyFolderReport.filepaths), 'Empty DTA folder report should preserve an empty filepath list.');
-    assertInvalidExpectedKind(@() gamrywb.dta.loadFolder(emptyDir, "bad"));
+    assertInvalidExpectedKind(@() labkit.dta.loadFolder(emptyDir, "bad"));
 end
 
 function assertStatusFields(status)
@@ -148,9 +148,9 @@ end
 
 function assertInvalidFolderInput(folder)
     try
-        gamrywb.dta.findFiles(folder);
+        labkit.dta.findFiles(folder);
     catch ME
-        assert(strcmp(ME.identifier, 'gamrywb:dta:InvalidFolder'), ...
+        assert(strcmp(ME.identifier, 'labkit:dta:InvalidFolder'), ...
             'Invalid DTA discovery folder input should use the documented error identifier.');
         return;
     end
@@ -162,7 +162,7 @@ function assertInvalidExpectedKind(callFcn)
     try
         callFcn();
     catch ME
-        assert(strcmp(ME.identifier, 'gamrywb:dta:InvalidKind'), ...
+        assert(strcmp(ME.identifier, 'labkit:dta:InvalidKind'), ...
             'Invalid expected DTA kind should use the documented error identifier.');
         return;
     end

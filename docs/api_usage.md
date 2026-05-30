@@ -1,29 +1,29 @@
 # API Usage Guide
 
-This guide describes the app-facing API surface. New app code should compose `gamrywb.ui.*` and `gamrywb.dta.*`; parser, item/session, analysis, utility, and app-helper internals should stay hidden.
+This guide describes the app-facing API surface. New app code should compose `labkit.ui.*` and `labkit.dta.*`; parser, item/session, analysis, utility, and app-helper internals should stay hidden.
 
 ## Startup
 
 From MATLAB:
 
 ```matlab
-startup_gamrywb
+startup_labkit
 ```
 
 This adds the repository root, `apps/`, and normal nested app category folders to the MATLAB path.
 
 ## DTA API
 
-Use `gamrywb.dta.*` for GUI-free DTA discovery, loading, sessions, pulse detection, and parsed table/curve access.
+Use `labkit.dta.*` for GUI-free DTA discovery, loading, sessions, pulse detection, and parsed table/curve access.
 
 Common loading calls:
 
 ```matlab
-filepaths = gamrywb.dta.findFiles(folder);
-[item, status] = gamrywb.dta.loadFile(filepath, "chrono");
-[items, report] = gamrywb.dta.loadFiles(filepaths, "auto");
-[items, report] = gamrywb.dta.loadFolder(folder, "auto");
-kind = gamrywb.dta.detectType(filepath);
+filepaths = labkit.dta.findFiles(folder);
+[item, status] = labkit.dta.loadFile(filepath, "chrono");
+[items, report] = labkit.dta.loadFiles(filepaths, "auto");
+[items, report] = labkit.dta.loadFolder(folder, "auto");
+kind = labkit.dta.detectType(filepath);
 ```
 
 Supported expected kinds:
@@ -35,76 +35,76 @@ Supported expected kinds:
 "cvct"
 ```
 
-Expected kinds are trimmed, case-insensitive, and blank strings default to `"auto"`. Invalid expected kinds raise `gamrywb:dta:InvalidKind` before loading starts.
+Expected kinds are trimmed, case-insensitive, and blank strings default to `"auto"`. Invalid expected kinds raise `labkit:dta:InvalidKind` before loading starts.
 
 Use the smallest loading API that matches the workflow:
 
 ```text
-One explicit file:        gamrywb.dta.loadFile
-Known list of files:      gamrywb.dta.loadFiles
-Script/prototype folder:  gamrywb.dta.loadFolder
-GUI session app:          gamrywb.dta.addFilesToSession
+One explicit file:        labkit.dta.loadFile
+Known list of files:      labkit.dta.loadFiles
+Script/prototype folder:  labkit.dta.loadFolder
+GUI session app:          labkit.dta.addFilesToSession
 ```
 
 Session helpers:
 
 ```matlab
-session = gamrywb.dta.makeSession('new_experiment');
-[session, report] = gamrywb.dta.addFilesToSession(session, files, "chrono", callbacks);
-[selectedItems, idx] = gamrywb.dta.selectSessionItems(session, selectedNames);
-[session, report] = gamrywb.dta.removeSelectedItemsFromSession(session, selectedNames, callbacks);
-gamrywb.dta.saveSession(session, filepath);
-session = gamrywb.dta.loadSession(filepath);
+session = labkit.dta.makeSession('new_experiment');
+[session, report] = labkit.dta.addFilesToSession(session, files, "chrono", callbacks);
+[selectedItems, idx] = labkit.dta.selectSessionItems(session, selectedNames);
+[session, report] = labkit.dta.removeSelectedItemsFromSession(session, selectedNames, callbacks);
+labkit.dta.saveSession(session, filepath);
+session = labkit.dta.loadSession(filepath);
 ```
 
 Parsed table and curve helpers:
 
 ```matlab
-[curve, ok, msg] = gamrywb.dta.getMainCurve(item.tables);
-[zcurve, ok, msg] = gamrywb.dta.getZCurve(item.tables);
-values = gamrywb.dta.getColumn(curve, 'Vf');
-[x, y, xName, yName] = gamrywb.dta.getCurveXY(curve, 'T', 'Im');
+[curve, ok, msg] = labkit.dta.getMainCurve(item.tables);
+[zcurve, ok, msg] = labkit.dta.getZCurve(item.tables);
+values = labkit.dta.getColumn(curve, 'Vf');
+[x, y, xName, yName] = labkit.dta.getCurveXY(curve, 'T', 'Im');
 ```
 
 Pulse detection:
 
 ```matlab
-[pulse, message] = gamrywb.dta.detectPulses(t, Im, meta, "Metadata first, then auto");
+[pulse, message] = labkit.dta.detectPulses(t, Im, meta, "Metadata first, then auto");
 ```
 
 Chrono loading also exposes the experiment control mode inferred from DTA step metadata:
 
 ```matlab
-[item, status] = gamrywb.dta.loadFile(filepath, "chrono");
+[item, status] = labkit.dta.loadFile(filepath, "chrono");
 item.controlMode   % "current", "voltage", or "unknown"
 ```
 
-Lower-level recursive discovery, parser functions, item construction, session mutation, and pulse internals are private DTA implementation details. Apps should not call `gamrywb.io.*`, `gamrywb.data.*`, `gamrywb.analysis.*`, or `gamrywb.util.*`.
+Lower-level recursive discovery, parser functions, item construction, session mutation, and pulse internals are private DTA implementation details. Apps should not call `labkit.io.*`, `labkit.data.*`, `labkit.analysis.*`, or `labkit.util.*`.
 
 ## GUI API
 
-Use `gamrywb.ui.*` for domain-neutral GUI structure and rendering helpers. Apps provide labels, callbacks, prepared values, and experiment-specific behavior.
+Use `labkit.ui.*` for domain-neutral GUI structure and rendering helpers. Apps provide labels, callbacks, prepared values, and experiment-specific behavior.
 
 Common shell and control helpers:
 
 ```matlab
-ui = gamrywb.ui.createTwoPaneShell(titleText, position, leftWidth, rightTitle, rowCount, rowHeights, spacing);
-ui = gamrywb.ui.createTabbedDualPlotShell(titleText, position, leftWidth, startDragFcn, labels);
+ui = labkit.ui.createTwoPaneShell(titleText, position, leftWidth, rightTitle, rowCount, rowHeights, spacing);
+ui = labkit.ui.createTabbedDualPlotShell(titleText, position, leftWidth, startDragFcn, labels);
 
-gamrywb.ui.createFilePanel(parent, labels, callbacks);
-gamrywb.ui.createSingleSelectFilePanel(parent, labels, callbacks);
-gamrywb.ui.createPlotOptionsPanel(parent, numRows);
-gamrywb.ui.createTopBottomPlotControls(topPanel, bottomPanel, xItems, yItems, topDefaults, bottomDefaults, onChange);
-gamrywb.ui.createResultTablePanel(parent, titleText, row, columnNames, initialData);
-gamrywb.ui.createLogPanel(parent, row, initialValue);
+labkit.ui.createFilePanel(parent, labels, callbacks);
+labkit.ui.createSingleSelectFilePanel(parent, labels, callbacks);
+labkit.ui.createPlotOptionsPanel(parent, numRows);
+labkit.ui.createTopBottomPlotControls(topPanel, bottomPanel, xItems, yItems, topDefaults, bottomDefaults, onChange);
+labkit.ui.createResultTablePanel(parent, titleText, row, columnNames, initialData);
+labkit.ui.createLogPanel(parent, row, initialValue);
 ```
 
 Common state/render helpers:
 
 ```matlab
-gamrywb.ui.appendLog(txtLog, message);
-gamrywb.ui.refreshListboxItems(lbFiles, names);
-info = gamrywb.ui.plotXY(ax, x, y, labels, opts);
+labkit.ui.appendLog(txtLog, message);
+labkit.ui.refreshListboxItems(lbFiles, names);
+info = labkit.ui.plotXY(ax, x, y, labels, opts);
 ```
 
 GUI helpers should not contain experiment names, formulas, thresholds, result columns, parser calls, or export formats.
@@ -149,7 +149,7 @@ The app owns:
 - result table columns and export formatting
 - failed-row behavior
 
-Move code into `+gamrywb` only when it is reusable without experiment vocabulary.
+Move code into `+labkit` only when it is reusable without experiment vocabulary.
 
 ## New App Checklist
 

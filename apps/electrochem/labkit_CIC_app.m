@@ -1,6 +1,6 @@
-function varargout = gamrywb_CIC_app(varargin)
-%GAMRYWB_CIC_APP Launch the CIC voltage-transient app.
-% Single-file app that composes +gamrywb GUI/DTA APIs and owns CIC workflow choices.
+function varargout = labkit_CIC_app(varargin)
+%LABKIT_CIC_APP Launch the CIC voltage-transient app.
+% Single-file app that composes +labkit GUI/DTA APIs and owns CIC workflow choices.
 % GUI for calculating CIC from Gamry MULTI_STEP_CHRONOPOT .DTA files.
 % Layout updated to 3 left-side tabs with vertical file actions.
 %
@@ -30,14 +30,14 @@ function varargout = gamrywb_CIC_app(varargin)
             varargout = testOutputs;
             return;
         end
-        error('gamrywb_CIC_app:UnsupportedInput', 'gamrywb_CIC_app does not accept input arguments.');
+        error('labkit_CIC_app:UnsupportedInput', 'labkit_CIC_app does not accept input arguments.');
     end
     if nargout > 1
-        error('gamrywb_CIC_app:TooManyOutputs', 'gamrywb_CIC_app returns at most the app figure handle.');
+        error('labkit_CIC_app:TooManyOutputs', 'labkit_CIC_app returns at most the app figure handle.');
     end
 
     S = struct();
-    S.session = gamrywb.dta.makeSession('cic_vt');
+    S.session = labkit.dta.makeSession('cic_vt');
     S.items = S.session.items; % loaded files + parsed content + analysis
     S.current = [];
     S.isDragging = false;
@@ -51,7 +51,7 @@ function varargout = gamrywb_CIC_app(varargin)
         'plotsPanel', 'Plots', ...
         'topPlot', 'Top Plot', ...
         'bottomPlot', 'Bottom Plot');
-    ui = gamrywb.ui.createTabbedDualPlotShell( ...
+    ui = labkit.ui.createTabbedDualPlotShell( ...
         'Gamry CIC GUI (Voltage Transient)', ...
         [40 30 1680 980], ...
         430, ...
@@ -77,7 +77,7 @@ function varargout = gamrywb_CIC_app(varargin)
         'clearAll', 'Clear all', ...
         'export', 'Export results CSV', ...
         'loadedText', 'No files loaded');
-    fileUi = gamrywb.ui.createSingleSelectFilePanel(layFA, fileLabels, fileCallbacks);
+    fileUi = labkit.ui.createSingleSelectFilePanel(layFA, fileLabels, fileCallbacks);
     lbFiles = fileUi.listbox;
     txtLoaded = fileUi.loadedText;
 
@@ -151,17 +151,17 @@ function varargout = gamrywb_CIC_app(varargin)
     gi.Padding = [8 8 8 8];
     gi.ColumnSpacing = 8;
 
-    S.txtControlMode = gamrywb.ui.createReadOnlyInfoRow(gi,1,'Control mode:');
-    S.txtDetect = gamrywb.ui.createReadOnlyInfoRow(gi,2,'Detection:');
-    S.txtDelay = gamrywb.ui.createReadOnlyInfoRow(gi,3,'Delay used:');
-    S.txtArea = gamrywb.ui.createReadOnlyInfoRow(gi,4,'Area:');
-    S.txtEmc = gamrywb.ui.createReadOnlyInfoRow(gi,5,'Emc:');
-    S.txtEma = gamrywb.ui.createReadOnlyInfoRow(gi,6,'Ema:');
-    S.txtQc = gamrywb.ui.createReadOnlyInfoRow(gi,7,'Cathodic Q/CIC:');
-    S.txtQa = gamrywb.ui.createReadOnlyInfoRow(gi,8,'Anodic Q/CIC:');
-    S.txtQt = gamrywb.ui.createReadOnlyInfoRow(gi,9,'Total Q/CIC:');
-    S.txtSafe = gamrywb.ui.createReadOnlyInfoRow(gi,10,'Safety:');
-    S.txtBest = gamrywb.ui.createReadOnlyInfoRow(gi,11,'Best safe among loaded:');
+    S.txtControlMode = labkit.ui.createReadOnlyInfoRow(gi,1,'Control mode:');
+    S.txtDetect = labkit.ui.createReadOnlyInfoRow(gi,2,'Detection:');
+    S.txtDelay = labkit.ui.createReadOnlyInfoRow(gi,3,'Delay used:');
+    S.txtArea = labkit.ui.createReadOnlyInfoRow(gi,4,'Area:');
+    S.txtEmc = labkit.ui.createReadOnlyInfoRow(gi,5,'Emc:');
+    S.txtEma = labkit.ui.createReadOnlyInfoRow(gi,6,'Ema:');
+    S.txtQc = labkit.ui.createReadOnlyInfoRow(gi,7,'Cathodic Q/CIC:');
+    S.txtQa = labkit.ui.createReadOnlyInfoRow(gi,8,'Anodic Q/CIC:');
+    S.txtQt = labkit.ui.createReadOnlyInfoRow(gi,9,'Total Q/CIC:');
+    S.txtSafe = labkit.ui.createReadOnlyInfoRow(gi,10,'Safety:');
+    S.txtBest = labkit.ui.createReadOnlyInfoRow(gi,11,'Best safe among loaded:');
 
     %% ===================== Actions =====================
     pAct = uipanel(layFA,'Title','Plot / Debug');
@@ -187,19 +187,19 @@ function varargout = gamrywb_CIC_app(varargin)
     cbShowShading.Layout.Row = 2; cbShowShading.Layout.Column = 3;
 
     %% ===================== Results table =====================
-    tableUi = gamrywb.ui.createResultTablePanel(laySR, 'Batch Results', 2, ...
+    tableUi = labkit.ui.createResultTablePanel(laySR, 'Batch Results', 2, ...
         {'File','Amp(A)','Emc(V)','Ema(V)','Qc(mC/cm^2)','Qa(mC/cm^2)','Qtot(mC/cm^2)','Safe'}, ...
         cell(0,8));
     tbl = tableUi.table;
 
     %% ===================== Log =====================
-    logUi = gamrywb.ui.createLogPanel(layLog, 1);
+    logUi = labkit.ui.createLogPanel(layLog, 1);
     txtLog = logUi.textArea;
 
     %% ===================== Right: plots =====================
     topPlotDefaults = struct('x', 'Time (s)', 'y', 'VT: Vf vs time', 'grid', true);
     bottomPlotDefaults = struct('x', 'Time (s)', 'y', 'IT: Im vs time', 'grid', true);
-    plotControls = gamrywb.ui.createTopBottomPlotControls( ...
+    plotControls = labkit.ui.createTopBottomPlotControls( ...
         ui.topControlsPanel, ...
         ui.bottomControlsPanel, ...
         {'Time (s)', 'Sample #'}, ...
@@ -259,7 +259,7 @@ function varargout = gamrywb_CIC_app(varargin)
             return;
         end
 
-        filepaths = gamrywb.dta.findFiles(folder);
+        filepaths = labkit.dta.findFiles(folder);
         if isempty(filepaths)
             addLog(sprintf('No DTA files found under: %s', folder));
             uialert(fig, sprintf('No .DTA files found under:\n%s', folder), 'No files found');
@@ -280,7 +280,7 @@ function varargout = gamrywb_CIC_app(varargin)
         callbacks.onAdded = @(~, ~) [];
         callbacks.onSkipped = @(filepath) addLog(sprintf('Skipped already loaded: %s', filepath));
         callbacks.onFailed = @(filepath, message) addLog(sprintf('Failed: %s | %s', filepath, message));
-        [S.session, report] = gamrywb.dta.addFilesToSession(S.session, filepaths, "chrono", callbacks);
+        [S.session, report] = labkit.dta.addFilesToSession(S.session, filepaths, "chrono", callbacks);
         postProcessAddedItems(report.added);
         S.items = S.session.items;
 
@@ -370,7 +370,7 @@ function varargout = gamrywb_CIC_app(varargin)
     end
 
     function clearAllFiles()
-        S.session = gamrywb.dta.makeSession('cic_vt');
+        S.session = labkit.dta.makeSession('cic_vt');
         S.items = S.session.items;
         S.current = [];
         restoreDefaultPlotSelections();
@@ -533,8 +533,8 @@ function varargout = gamrywb_CIC_app(varargin)
     end
 
     function refreshPlots()
-        gamrywb.ui.clearAxisObjects(axTop);
-        gamrywb.ui.clearAxisObjects(axBottom);
+        labkit.ui.clearAxisObjects(axTop);
+        labkit.ui.clearAxisObjects(axBottom);
         if isempty(S.items) || isempty(S.current) || S.current < 1 || S.current > numel(S.items)
             title(axTop,'Top Plot');
             title(axBottom,'Bottom Plot');
@@ -639,7 +639,7 @@ function varargout = gamrywb_CIC_app(varargin)
     end
 
     function swapPlots()
-        gamrywb.ui.swapTopBottomPlotSelections(ddTopX, ddTopY, ddBotX, ddBotY);
+        labkit.ui.swapTopBottomPlotSelections(ddTopX, ddTopY, ddBotX, ddBotY);
         refreshPlots();
     end
 
@@ -649,13 +649,13 @@ function varargout = gamrywb_CIC_app(varargin)
     end
 
     function restoreDefaultPlotSelections()
-        gamrywb.ui.setTopBottomPlotSelections(ddTopX, ddTopY, ddBotX, ddBotY, ...
+        labkit.ui.setTopBottomPlotSelections(ddTopX, ddTopY, ddBotX, ddBotY, ...
             topPlotDefaults, bottomPlotDefaults);
     end
 
     function resetAxesToDefaultState()
-        gamrywb.ui.hardResetAxis(axTop, 'Top Plot', true);
-        gamrywb.ui.hardResetAxis(axBottom, 'Bottom Plot', true);
+        labkit.ui.hardResetAxis(axTop, 'Top Plot', true);
+        labkit.ui.hardResetAxis(axBottom, 'Bottom Plot', true);
     end
 
     function exportResultsCSV()
@@ -705,7 +705,7 @@ function varargout = gamrywb_CIC_app(varargin)
 
     %% ===================== Logging =====================
     function addLog(msg)
-        gamrywb.ui.appendLog(txtLog, msg);
+        labkit.ui.appendLog(txtLog, msg);
     end
 
 end
@@ -724,13 +724,13 @@ function [handled, outputs] = handleCICTestRequest(args, nargoutRequested)
         case '__test_computeCIC__'
             assertCICTestArgCount(args, 3, command);
             if nargoutRequested > 1
-                error('gamrywb_CIC_app:TooManyOutputs', 'CIC compute test request returns one result struct.');
+                error('labkit_CIC_app:TooManyOutputs', 'CIC compute test request returns one result struct.');
             end
             outputs = {computeCIC(args{2}, args{3})};
         case '__test_buildBatchTableData__'
             assertCICTestArgCount(args, 3, command);
             if nargoutRequested > 2
-                error('gamrywb_CIC_app:TooManyOutputs', 'CIC batch-table test request returns data and column names.');
+                error('labkit_CIC_app:TooManyOutputs', 'CIC batch-table test request returns data and column names.');
             end
             [C, columnNames] = buildBatchTableData(args{2}, args{3});
             outputs = {C, columnNames};
@@ -738,13 +738,13 @@ function [handled, outputs] = handleCICTestRequest(args, nargoutRequested)
         case '__test_buildResultsTable__'
             assertCICTestArgCount(args, 3, command);
             if nargoutRequested > 1
-                error('gamrywb_CIC_app:TooManyOutputs', 'CIC result-table test request returns one table.');
+                error('labkit_CIC_app:TooManyOutputs', 'CIC result-table test request returns one table.');
             end
             outputs = {buildResultsTable(args{2}, args{3})};
         case '__test_writeResultsCSV__'
             assertCICTestArgCount(args, 4, command);
             if nargoutRequested > 2
-                error('gamrywb_CIC_app:TooManyOutputs', 'CIC CSV test request returns at most ok and message.');
+                error('labkit_CIC_app:TooManyOutputs', 'CIC CSV test request returns at most ok and message.');
             end
             if nargoutRequested == 0
                 writeResultsCSV(args{2}, args{3}, args{4});
@@ -760,7 +760,7 @@ end
 
 function assertCICTestArgCount(args, expectedCount, command)
     if numel(args) ~= expectedCount
-        error('gamrywb_CIC_app:InvalidTestRequest', ...
+        error('labkit_CIC_app:InvalidTestRequest', ...
             '%s expects %d total input arguments.', command, expectedCount);
     end
 end
@@ -791,10 +791,10 @@ function A = computeCIC(item, opts)
         return;
     end
 
-    t = gamrywb.dta.getColumn(curve, 'T');
-    Vf = gamrywb.dta.getColumn(curve, 'Vf');
-    Im = gamrywb.dta.getColumn(curve, 'Im');
-    pt = gamrywb.dta.getColumn(curve, 'Pt');
+    t = labkit.dta.getColumn(curve, 'T');
+    Vf = labkit.dta.getColumn(curve, 'Vf');
+    Im = labkit.dta.getColumn(curve, 'Im');
+    pt = labkit.dta.getColumn(curve, 'Pt');
     if isempty(pt)
         pt = (0:numel(t)-1).';
     end
@@ -821,7 +821,7 @@ function A = computeCIC(item, opts)
     if isfield(item, 'meta')
         meta = item.meta;
     end
-    [pulse, pulseMsg] = gamrywb.dta.detectPulses(t, Im, meta, opts.pulseMode);
+    [pulse, pulseMsg] = labkit.dta.detectPulses(t, Im, meta, opts.pulseMode);
     A.pulse = pulse;
     A.detectMode = pulse.method;
     A.detectMsg = pulseMsg;
@@ -903,7 +903,7 @@ function [curve, ok, msg] = mainCurve(item)
         ok = true;
         msg = sprintf('Using table: %s', curve.name);
     elseif isfield(item, 'tables')
-        [curve, ok, msg] = gamrywb.dta.getMainCurve(item.tables);
+        [curve, ok, msg] = labkit.dta.getMainCurve(item.tables);
     else
         curve = struct();
         ok = false;

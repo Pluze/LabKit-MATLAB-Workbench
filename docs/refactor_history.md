@@ -8,8 +8,8 @@ The v1.0 behavior-preserving refactor extracted the original MATLAB GUI workflow
 
 At that checkpoint, several migration surfaces still existed:
 
-- public parser/file IO under `+gamrywb/+io`
-- item/session/data access helpers under `+gamrywb/+data`
+- public parser/file IO under `+labkit/+io`
+- item/session/data access helpers under `+labkit/+data`
 - public analysis and plotting helper packages
 - root-level compatibility wrappers for original GUI command names
 - a preserved `legacy/` reference directory
@@ -20,10 +20,10 @@ Those were useful migration scaffolds, not the final architecture.
 
 Post-v1.0 cleanup removed the legacy runtime dependency and narrowed the app-facing package surface:
 
-- current runtime entry points are the `apps/<category>/gamrywb_*_app.m` files
+- current runtime entry points are the `apps/<category>/labkit_*_app.m` files
 - app-specific analysis, plotting, result-table, and CSV/export behavior lives in the owning app file
-- reusable GUI infrastructure lives under `gamrywb.ui.*`
-- DTA discovery, loading, sessions, pulse detection, parser/session IO, and parsed table/curve access live behind `gamrywb.dta.*`
+- reusable GUI infrastructure lives under `labkit.ui.*`
+- DTA discovery, loading, sessions, pulse detection, parser/session IO, and parsed table/curve access live behind `labkit.dta.*`
 - parser, item/session, pulse, and table-scanning helpers are private DTA implementation details
 - public `+io`, `+data`, `+analysis`, `+plot`, `+util`, `+app`, and app-helper namespaces were removed
 

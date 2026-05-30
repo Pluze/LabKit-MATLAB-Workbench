@@ -3,14 +3,14 @@ function test_startup_boundaries()
 
     root = fileparts(fileparts(mfilename('fullpath')));
 
-    assert(exist(fullfile(root, 'startup_gamrywb.m'), 'file') == 2, 'startup_gamrywb.m is missing.');
-    assert(exist(fullfile(root, '+gamrywb', '+dta', 'loadFile.m'), 'file') == 2, 'DTA facade is missing.');
+    assert(exist(fullfile(root, 'startup_labkit.m'), 'file') == 2, 'startup_labkit.m is missing.');
+    assert(exist(fullfile(root, '+labkit', '+dta', 'loadFile.m'), 'file') == 2, 'DTA facade is missing.');
     assert(exist(fullfile(root, 'apps', 'electrochem'), 'dir') == 7, ...
         'Electrochem app folder should exist under apps/.');
     assert(exist(fullfile(root, 'legacy'), 'dir') == 0, 'legacy/ should be removed after app entry points are package-backed.');
-    assert(pathContains(fullfile(root, 'apps')), 'startup_gamrywb should add apps/ to the path.');
+    assert(pathContains(fullfile(root, 'apps')), 'startup_labkit should add apps/ to the path.');
     assert(pathContains(fullfile(root, 'apps', 'electrochem')), ...
-        'startup_gamrywb should add nested app category folders to the path.');
+        'startup_labkit should add nested app category folders to the path.');
 
     removedRootNames = { ...
         'gamry_CIC_VT_gui_paperlabels', ...

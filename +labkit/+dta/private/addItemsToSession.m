@@ -83,7 +83,7 @@ function out = normalizeFilepaths(filepaths)
     elseif iscell(filepaths)
         out = filepaths(:).';
     else
-        error('gamrywb:dta:InvalidFilepaths', 'filepaths must be a char, string, or cell array.');
+        error('labkit:dta:InvalidFilepaths', 'filepaths must be a char, string, or cell array.');
     end
 end
 

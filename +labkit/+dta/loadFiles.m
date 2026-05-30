@@ -8,13 +8,13 @@ function [items, report] = loadFiles(filepaths, expectedKind, opts)
         opts = struct();
     end
 
-    expectedKind = gamrywb.dta.normalizeExpectedKind(expectedKind);
+    expectedKind = labkit.dta.normalizeExpectedKind(expectedKind);
     filepaths = normalizeFilepaths(filepaths);
     items = {};
     report = emptyReport();
 
     for k = 1:numel(filepaths)
-        [item, status] = gamrywb.dta.loadFile(filepaths{k}, expectedKind, opts);
+        [item, status] = labkit.dta.loadFile(filepaths{k}, expectedKind, opts);
         report.statuses(end+1) = status; %#ok<AGROW>
 
         if status.ok
@@ -53,14 +53,14 @@ function filepaths = normalizeFilepaths(filepaths)
         filepaths = filepaths(:).';
         for k = 1:numel(filepaths)
             if ~(ischar(filepaths{k}) || (isstring(filepaths{k}) && isscalar(filepaths{k})))
-                error('gamrywb:dta:InvalidFilepath', 'Each filepath must be a character vector or scalar string.');
+                error('labkit:dta:InvalidFilepath', 'Each filepath must be a character vector or scalar string.');
             end
             filepaths{k} = char(filepaths{k});
         end
         return;
     end
 
-    error('gamrywb:dta:InvalidFilepaths', 'Filepaths must be a path, string array, or cell array of paths.');
+    error('labkit:dta:InvalidFilepaths', 'Filepaths must be a path, string array, or cell array of paths.');
 end
 
 function report = emptyReport()

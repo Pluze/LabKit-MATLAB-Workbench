@@ -4,7 +4,7 @@ function test_eisOverlayExport()
     root = fileparts(fileparts(mfilename('fullpath')));
     fixture = demoFixturePath('eis_potentiostatic_zcurve.DTA');
 
-    [item, status] = gamrywb.dta.loadFile(fixture, "eis");
+    [item, status] = labkit.dta.loadFile(fixture, "eis");
     assert(status.ok, status.message);
     assert(strcmp(item.type, "eis"), 'EIS item type should be normalized.');
     assert(strcmp(item.name, 'eis_potentiostatic_zcurve.DTA'), 'EIS item name should use fixture file name.');
@@ -28,7 +28,7 @@ function test_eisOverlayExport()
     assertClose(item.Idc_A, item.Idc, 'EIS normalized Idc alias');
     assertClose(item.Vdc_V, item.Vdc, 'EIS normalized Vdc alias');
 
-    appFile = appEntryFile(root, 'gamrywb_EIS_app');
+    appFile = appEntryFile(root, 'labkit_EIS_app');
     source = fileread(appFile);
     assert(contains(source, '''Freq (Hz)''') && contains(source, '''Zreal (ohm)''') && ...
         contains(source, '''-Zimag (ohm)'''), ...

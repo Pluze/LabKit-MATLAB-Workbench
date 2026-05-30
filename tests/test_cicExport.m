@@ -67,17 +67,17 @@ function deleteIfExists(filepath)
 end
 
 function A = computeCIC(item, opts)
-    A = gamrywb_CIC_app('__test_computeCIC__', item, opts);
+    A = labkit_CIC_app('__test_computeCIC__', item, opts);
 end
 
 function T = buildCICResultsTable(items, unitLabel)
-    T = gamrywb_CIC_app('__test_buildResultsTable__', items, unitLabel);
+    T = labkit_CIC_app('__test_buildResultsTable__', items, unitLabel);
 end
 
 function [C, cols] = buildCICBatchTableData(items, unitLabel)
-    [C, cols] = gamrywb_CIC_app('__test_buildBatchTableData__', items, unitLabel);
+    [C, cols] = labkit_CIC_app('__test_buildBatchTableData__', items, unitLabel);
 end
 
 function writeCICResultsCSV(items, filepath, unitLabel)
-    gamrywb_CIC_app('__test_writeResultsCSV__', items, filepath, unitLabel);
+    labkit_CIC_app('__test_writeResultsCSV__', items, filepath, unitLabel);
 end

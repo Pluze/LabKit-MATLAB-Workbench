@@ -9,19 +9,19 @@ function [item, status] = loadFile(filepath, expectedKind, opts)
     end
 
     filepath = normalizeFilepath(filepath);
-    expectedKind = gamrywb.dta.normalizeExpectedKind(expectedKind);
+    expectedKind = labkit.dta.normalizeExpectedKind(expectedKind);
     item = struct([]);
     status = makeStatus(filepath, "unknown", expectedKind, "");
 
     if expectedKind == "auto"
-        [detectedKind, detectStatus] = gamrywb.dta.detectType(filepath);
+        [detectedKind, detectStatus] = labkit.dta.detectType(filepath);
         if ~detectStatus.ok
             status = withExpectedKind(detectStatus, expectedKind);
             return;
         end
         kind = detectedKind;
     else
-        [detectedKind, detectStatus] = gamrywb.dta.detectType(filepath);
+        [detectedKind, detectStatus] = labkit.dta.detectType(filepath);
         if detectStatus.ok && detectedKind ~= expectedKind
             status.kind = detectedKind;
             status.message = sprintf('Expected %s DTA, detected %s.', expectedKind, detectedKind);
@@ -46,7 +46,7 @@ end
 
 function filepath = normalizeFilepath(filepath)
     if ~(ischar(filepath) || (isstring(filepath) && isscalar(filepath)))
-        error('gamrywb:dta:InvalidFilepath', 'Filepath must be a character vector or scalar string.');
+        error('labkit:dta:InvalidFilepath', 'Filepath must be a character vector or scalar string.');
     end
     filepath = char(filepath);
 end
@@ -70,7 +70,7 @@ function status = statusForLoadFailure(filepath, kind, expectedKind, loadError)
         return;
     end
 
-    [detectedKind, detectStatus] = gamrywb.dta.detectType(filepath);
+    [detectedKind, detectStatus] = labkit.dta.detectType(filepath);
     if detectStatus.ok && detectedKind ~= expectedKind
         status.kind = detectedKind;
         status.message = sprintf('Expected %s DTA, detected %s.', expectedKind, detectedKind);
@@ -89,7 +89,7 @@ function item = loadByKind(filepath, kind, opts)
         case "cvct"
             item = makeCVCTItem(filepath);
         otherwise
-            error('gamrywb:dta:UnsupportedKind', 'Unsupported DTA type: %s.', kind);
+            error('labkit:dta:UnsupportedKind', 'Unsupported DTA type: %s.', kind);
     end
 end
 

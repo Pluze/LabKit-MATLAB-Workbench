@@ -39,7 +39,7 @@ function names = normalizeSelectedNames(selectedNames)
     elseif iscell(selectedNames)
         names = string(selectedNames(:));
     else
-        error('gamrywb:dta:InvalidSelectedNames', ...
+        error('labkit:dta:InvalidSelectedNames', ...
             'selectedNames must be a char, string, or cell array.');
     end
 end

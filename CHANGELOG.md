@@ -6,18 +6,19 @@ All notable user-facing and maintainer-facing changes are recorded here.
 
 ### Changed
 
+- Reusable package, startup, and app entrypoint names now use the generic `labkit` namespace.
 - Chrono DTA loading now exposes `item.controlMode` / `meta.controlMode` for current-controlled, voltage-controlled, or unknown chrono files, and CIC/VT summary panels display that mode for the selected file.
-- Public app-facing package surface is now `gamrywb.ui.*` plus `gamrywb.dta.*`.
-- DTA parser helpers, session save/load, item/session construction, pulse internals, and parsed table/curve access now live behind the DTA facade or under `+gamrywb/+dta/private`.
+- Public app-facing package surface is now `labkit.ui.*` plus `labkit.dta.*`.
+- DTA parser helpers, session save/load, item/session construction, pulse internals, and parsed table/curve access now live behind the DTA facade or under `+labkit/+dta/private`.
 - Current app implementations are single public files under `apps/`; experiment-specific analysis, plotting, result tables, and CSV/export schemas stay app-local.
 - Documentation and architecture tests now guard against reintroducing public `+io`, `+data`, `+analysis`, `+util`, app-helper packages, or legacy wrapper entry points as app-facing APIs.
 - Template programs now model the intended split: GUI-only, DTA-only, or GUI plus DTA, without exposing internal helper packages.
-- `startup_gamrywb` now adds nested app category folders so app entry points resolve without changing into app directories.
+- `startup_labkit` now adds nested app category folders so app entry points resolve without changing into app directories.
 
 ### Removed
 
-- Public `+gamrywb/+io`, `+gamrywb/+data`, `+gamrywb/+analysis`, `+gamrywb/+util`, `+gamrywb/+plot`, and `+gamrywb/+app` app-facing surfaces.
-- Transitional `apps/private` and `apps/+gamrywb_apps` helper namespaces.
+- Public `+labkit/+io`, `+labkit/+data`, `+labkit/+analysis`, `+labkit/+util`, `+labkit/+plot`, and `+labkit/+app` app-facing surfaces.
+- Transitional `apps/private` and `apps/+labkit_apps` helper namespaces.
 - Root-level wrappers for the original legacy GUI command names and the old `legacy/` reference directory.
 - One-line or app-specific reusable wrappers that only hid MATLAB built-ins or experiment decisions.
 
@@ -25,7 +26,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 
 ### Added
 
-- Package-backed parser, data, analysis, plotting, export, session, and UI helper modules under `+gamrywb`.
+- Package-backed parser, data, analysis, plotting, export, session, and UI helper modules under `+labkit`.
 - App entry points under `apps/` for CIC, VT resistance, CV/CSC, and EIS workflows.
 - Root-level compatibility wrappers for the original legacy GUI command names.
 - Named demo DTA fixtures and MATLAB test runners.

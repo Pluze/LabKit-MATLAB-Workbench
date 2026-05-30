@@ -31,7 +31,7 @@ end
 
 function assertUifigureAvailable()
     try
-        f = uifigure('Visible', 'off', 'Name', 'gamrywb_gui_smoke_probe');
+        f = uifigure('Visible', 'off', 'Name', 'labkit_gui_smoke_probe');
         delete(f);
     catch ME
         error('GUI smoke tests require MATLAB uifigure support: %s', ME.message);

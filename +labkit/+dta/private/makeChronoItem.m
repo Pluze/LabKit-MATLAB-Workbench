@@ -12,15 +12,15 @@ function item = makeChronoItem(filepath, opts)
     [item.meta, item.tables, item.logmsg] = parseChronoDTA(filepath);
     item.controlMode = item.meta.controlMode;
 
-    [curve, ok, msg] = gamrywb.dta.getMainCurve(item.tables);
+    [curve, ok, msg] = labkit.dta.getMainCurve(item.tables);
     if ~ok
         error('%s', msg);
     end
 
-    t = gamrywb.dta.getColumn(curve, 'T');
-    Vf = gamrywb.dta.getColumn(curve, 'Vf');
-    Im = gamrywb.dta.getColumn(curve, 'Im');
-    pt = gamrywb.dta.getColumn(curve, 'Pt');
+    t = labkit.dta.getColumn(curve, 'T');
+    Vf = labkit.dta.getColumn(curve, 'Vf');
+    Im = labkit.dta.getColumn(curve, 'Im');
+    pt = labkit.dta.getColumn(curve, 'Pt');
     if isempty(pt)
         pt = (0:numel(t)-1).';
     end

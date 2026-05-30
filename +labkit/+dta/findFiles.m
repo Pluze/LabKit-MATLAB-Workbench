@@ -7,11 +7,11 @@ end
 
 function rootDir = normalizeRootDir(rootDir)
     if ~(ischar(rootDir) || (isstring(rootDir) && isscalar(rootDir)))
-        error('gamrywb:dta:InvalidFolder', 'Root folder must be a character vector or scalar string.');
+        error('labkit:dta:InvalidFolder', 'Root folder must be a character vector or scalar string.');
     end
 
     rootDir = char(rootDir);
     if exist(rootDir, 'dir') ~= 7
-        error('gamrywb:dta:InvalidFolder', 'Root folder must be an existing folder.');
+        error('labkit:dta:InvalidFolder', 'Root folder must be an existing folder.');
     end
 end

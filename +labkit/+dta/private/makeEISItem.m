@@ -7,7 +7,7 @@ function item = makeEISItem(filepath)
     item.name = shortName(filepath);
     [item.meta, item.tables, item.logmsg] = parseEISDTA(filepath);
 
-    [curve, ok, msg] = gamrywb.dta.getZCurve(item.tables);
+    [curve, ok, msg] = labkit.dta.getZCurve(item.tables);
     if ~ok
         error('%s', msg);
     end
@@ -60,7 +60,7 @@ function item = makeEISItem(filepath)
 end
 
 function col = defaultColumn(tbl, name)
-    col = gamrywb.dta.getColumn(tbl, name);
+    col = labkit.dta.getColumn(tbl, name);
     if isempty(col)
         col = NaN(size(tbl.data, 1), 1);
     end

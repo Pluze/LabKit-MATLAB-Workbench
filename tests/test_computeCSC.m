@@ -3,7 +3,7 @@ function test_computeCSC()
 
     fixture = demoFixturePath('cv_cyclic_voltammetry_pt_reference.DTA');
 
-    [item, status] = gamrywb.dta.loadFile(fixture, "cvct");
+    [item, status] = labkit.dta.loadFile(fixture, "cvct");
     assert(status.ok, status.message);
     scanRate = item.scanRate;
     curves = item.curves;
@@ -80,5 +80,5 @@ function test_computeCSC()
 end
 
 function A = computeCSC(curve, opts)
-    A = gamrywb_CSC_app('__test_computeCSC__', curve, opts);
+    A = labkit_CSC_app('__test_computeCSC__', curve, opts);
 end

@@ -2,7 +2,7 @@ function test_chronoOverlayExport()
 %TEST_CHRONOOVERLAYEXPORT Verify chrono overlay export naming stays visible.
 
     root = fileparts(fileparts(mfilename('fullpath')));
-    appFile = appEntryFile(root, 'gamrywb_ChronoOverlay_app');
+    appFile = appEntryFile(root, 'labkit_ChronoOverlay_app');
     source = fileread(appFile);
 
     assert(contains(source, 'TimeGapCenterAligned_s'), ...

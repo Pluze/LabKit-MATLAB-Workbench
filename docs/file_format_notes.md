@@ -26,10 +26,10 @@ parse numeric rows into MATLAB arrays
 Shared helpers used by parser code include:
 
 ```text
-splitTabs in +gamrywb/+dta/private
-nextNonEmpty in +gamrywb/+dta/private
-isDataLike in +gamrywb/+dta/private
-gamrywb.dta.getColumn
+splitTabs in +labkit/+dta/private
+nextNonEmpty in +labkit/+dta/private
+isDataLike in +labkit/+dta/private
+labkit.dta.getColumn
 ```
 
 ---
@@ -39,7 +39,7 @@ gamrywb.dta.getColumn
 Current parser:
 
 ```text
-+gamrywb/+dta/private/parseChronoDTA.m
++labkit/+dta/private/parseChronoDTA.m
 ```
 
 Purpose:
@@ -59,7 +59,7 @@ TSTEPn
 Output style:
 
 ```matlab
-[item, status] = gamrywb.dta.loadFile(filepath, "chrono")
+[item, status] = labkit.dta.loadFile(filepath, "chrono")
 ```
 
 `meta.steps` stores step entries with fields:
@@ -101,7 +101,7 @@ Downstream behavior to preserve:
 Current parser:
 
 ```text
-+gamrywb/+dta/private/parseEISDTA.m
++labkit/+dta/private/parseEISDTA.m
 ```
 
 Purpose:
@@ -119,13 +119,13 @@ AREA
 Output style:
 
 ```matlab
-[item, status] = gamrywb.dta.loadFile(filepath, "eis")
+[item, status] = labkit.dta.loadFile(filepath, "eis")
 ```
 
 EIS parser behavior to preserve:
 
 - Numeric tables are parsed with headers, units, data, and numeric masks.
-- `ZCURVE` table selection is handled by `gamrywb.dta.getZCurve`; DTA loading and item construction stay behind `gamrywb.dta.loadFile`.
+- `ZCURVE` table selection is handled by `labkit.dta.getZCurve`; DTA loading and item construction stay behind `labkit.dta.loadFile`.
 - If table name matching fails, fallback behavior may identify a table by headers such as Freq/Zreal/Zimag.
 
 Axis values that must remain supported:
@@ -147,8 +147,8 @@ Vdc (V)
 EIS item construction remains behind the reusable DTA facade. EIS overlay axis selection, plotting, and plot-export helpers are app-side workflow code local to the EIS app:
 
 ```text
-+gamrywb/+dta/loadFile.m
-apps/electrochem/gamrywb_EIS_app.m
++labkit/+dta/loadFile.m
+apps/electrochem/labkit_EIS_app.m
 ```
 
 ---
@@ -158,7 +158,7 @@ apps/electrochem/gamrywb_EIS_app.m
 Current parser:
 
 ```text
-+gamrywb/+dta/private/parseCVCTDTA.m
++labkit/+dta/private/parseCVCTDTA.m
 ```
 
 Purpose:
@@ -168,7 +168,7 @@ Purpose:
 Output style:
 
 ```matlab
-[item, status] = gamrywb.dta.loadFile(filepath, "cvct")
+[item, status] = labkit.dta.loadFile(filepath, "cvct")
 ```
 
 CV/CT parser behavior to preserve:
@@ -179,7 +179,7 @@ CV/CT parser behavior to preserve:
 - Headers, units, data, and numeric masks are preserved for each curve.
 - Numeric rows are parsed conservatively to preserve validated behavior.
 
-CV/CSC scientific rules are not parser behavior. The CSC app owns those rules as local functions in `apps/electrochem/gamrywb_CSC_app.m`; CT and CV charge integration are local details of that app, not parser behavior or reusable `+gamrywb` analysis.
+CV/CSC scientific rules are not parser behavior. The CSC app owns those rules as local functions in `apps/electrochem/labkit_CSC_app.m`; CT and CV charge integration are local details of that app, not parser behavior or reusable `+labkit` analysis.
 
 ---
 

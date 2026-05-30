@@ -2,7 +2,7 @@ function test_parseCVCTDTA()
 %TEST_PARSECVCTDTA Verify extracted CV/CT parser behavior.
 
     demoFile = demoFixturePath('cv_cyclic_voltammetry_pt_reference.DTA');
-    [demoItem, demoStatus] = gamrywb.dta.loadFile(demoFile, "cvct");
+    [demoItem, demoStatus] = labkit.dta.loadFile(demoFile, "cvct");
     assert(demoStatus.ok, demoStatus.message);
     demoScanRate = demoItem.scanRate;
     demoCurves = demoItem.curves;
@@ -29,7 +29,7 @@ function test_parseCVCTDTA()
     fprintf(fid, '1\t1.00000E+000\t2.00000E-001\t4.00000E-006\n');
     fclose(fid);
 
-    [item, status] = gamrywb.dta.loadFile(tmp, "cvct");
+    [item, status] = labkit.dta.loadFile(tmp, "cvct");
     assert(status.ok, status.message);
     scanRate = item.scanRate;
     curves = item.curves;

@@ -1,6 +1,6 @@
-# Gamry Electrochemistry Workbench
+# LabKit Electrochemistry Workbench
 
-MATLAB tools for Gamry electrochemistry DTA workflows. Current apps live under `apps/`; reusable infrastructure lives under `gamrywb.ui.*` and `gamrywb.dta.*`.
+MATLAB tools for electrochemistry workflows. Current apps process Gamry DTA files, live under `apps/`, and compose reusable infrastructure under `labkit.ui.*` and `labkit.dta.*`.
 
 ## Current Status
 
@@ -12,7 +12,8 @@ What that means:
 - The old root-level GUI command wrappers and `legacy/` reference directory have been removed.
 - EIS, Chrono overlay, CSC, VT resistance, and CIC are public single-file app implementations.
 - Experiment-specific analysis, plots, result tables, and exports belong to the owning app file.
-- Reusable app-facing `+gamrywb` code is limited to GUI base helpers and the current Gamry/DTA data-family API.
+- Reusable app-facing `+labkit` code is limited to GUI base helpers and the current DTA data-family API.
+- `labkit` is the generic infrastructure name; Gamry DTA support is the first data/device family under that library.
 
 Deferred beyond v1.0:
 
@@ -24,14 +25,14 @@ Deferred beyond v1.0:
 From the repository root in MATLAB:
 
 ```matlab
-startup_gamrywb
+startup_labkit
 
 % App entry points
-gamrywb_ChronoOverlay_app
-gamrywb_CIC_app
-gamrywb_VTResistance_app
-gamrywb_CSC_app
-gamrywb_EIS_app
+labkit_ChronoOverlay_app
+labkit_CIC_app
+labkit_VTResistance_app
+labkit_CSC_app
+labkit_EIS_app
 ```
 
 The old root-level GUI command names are no longer runtime entry points.
@@ -55,7 +56,7 @@ The default runner covers pure functions. The optional GUI mode checks launch/la
 ## Repository Layout
 
 ```text
-+gamrywb/             App-facing GUI and DTA APIs
++labkit/             App-facing GUI and DTA APIs
 apps/                 App entry points and app-specific implementations
 apps/electrochem/     Current electrochemistry app entry points
 templates/            Copy-only GUI, DTA, and GUI+DTA starter programs
@@ -78,7 +79,7 @@ docs/                 Architecture, data model, parser, validation, and history 
 
 ## API Boundary
 
-For new app work, use `gamrywb.ui.*` for reusable GUI structure and `gamrywb.dta.*` for DTA discovery, loading, session, pulse, and parsed table/curve access. Parser IO, item construction, and session implementation helpers are DTA-private details, not app-facing APIs.
+For new app work, use `labkit.ui.*` for reusable GUI structure and `labkit.dta.*` for DTA discovery, loading, session, pulse, and parsed table/curve access. Parser IO, item construction, and session implementation helpers are DTA-private details, not app-facing APIs.
 
 ## Preservation Rule
 

@@ -1,5 +1,5 @@
-function startup_gamrywb()
-%STARTUP_GAMRYWB Configure MATLAB path for GamryElectrochemWorkbench.
+function startup_labkit()
+%STARTUP_LABKIT Configure MATLAB path for LabKit workbench apps.
 
     root = fileparts(mfilename('fullpath'));
 
@@ -10,7 +10,7 @@ function startup_gamrywb()
         addpath(appDirs{k}, '-end');
     end
 
-    fprintf('GamryElectrochemWorkbench loaded from:\n  %s\n', root);
+    fprintf('LabKit workbench loaded from:\n  %s\n', root);
 end
 
 function dirs = appPathDirs(appRoot)

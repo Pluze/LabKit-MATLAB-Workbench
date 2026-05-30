@@ -57,17 +57,17 @@ function deleteIfExists(filepath)
 end
 
 function A = computeVTResistance(item, opts)
-    A = gamrywb_VTResistance_app('__test_computeResistance__', item, opts);
+    A = labkit_VTResistance_app('__test_computeResistance__', item, opts);
 end
 
 function T = buildVTResultsTable(items)
-    T = gamrywb_VTResistance_app('__test_buildResultsTable__', items);
+    T = labkit_VTResistance_app('__test_buildResultsTable__', items);
 end
 
 function C = buildVTBatchTableData(items)
-    C = gamrywb_VTResistance_app('__test_buildBatchTableData__', items);
+    C = labkit_VTResistance_app('__test_buildBatchTableData__', items);
 end
 
 function writeVTResultsCSV(items, filepath)
-    gamrywb_VTResistance_app('__test_writeResultsCSV__', items, filepath);
+    labkit_VTResistance_app('__test_writeResultsCSV__', items, filepath);
 end

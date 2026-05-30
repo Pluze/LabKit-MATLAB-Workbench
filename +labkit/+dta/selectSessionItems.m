@@ -5,7 +5,7 @@ function [items, idx] = selectSessionItems(session, selectedNames)
         selectedNames = {};
     end
     if ~isfield(session, 'items')
-        error('gamrywb:dta:InvalidSession', 'Session must contain an items field.');
+        error('labkit:dta:InvalidSession', 'Session must contain an items field.');
     end
 
     [items, idx] = selectItemsByNames(session.items, selectedNames);

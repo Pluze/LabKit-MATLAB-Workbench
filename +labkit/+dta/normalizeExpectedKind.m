@@ -7,7 +7,7 @@ function kind = normalizeExpectedKind(kind)
     end
 
     if ~(ischar(kind) || (isstring(kind) && isscalar(kind)))
-        error('gamrywb:dta:InvalidKind', 'Expected kind must be a character vector or scalar string.');
+        error('labkit:dta:InvalidKind', 'Expected kind must be a character vector or scalar string.');
     end
 
     kind = lower(strtrim(string(kind)));
@@ -18,7 +18,7 @@ function kind = normalizeExpectedKind(kind)
 
     allowed = ["auto", "chrono", "eis", "cvct"];
     if ~any(kind == allowed)
-        error('gamrywb:dta:InvalidKind', ...
+        error('labkit:dta:InvalidKind', ...
             'Expected kind must be one of: auto, chrono, eis, cvct.');
     end
 end

@@ -89,14 +89,14 @@ App-boundary changes:
 
 - public app files do not depend on transitional app-specific helper packages
 - app-specific helper packages and private launcher directories are not reintroduced for workflow code that belongs to one app
-- public app files and templates do not call `gamrywb.io.*`, `gamrywb.data.*`, `gamrywb.analysis.*`, or `gamrywb.util.*` directly
-- public app files use `gamrywb.dta.*` for DTA discovery, loading, session creation, removal, selection, pulse detection, and parsed table/curve access
-- public `+gamrywb/+data` and `+gamrywb/+io` packages are not reintroduced; parser, session IO, item construction, and table/curve access stay behind the DTA facade
+- public app files and templates do not call `labkit.io.*`, `labkit.data.*`, `labkit.analysis.*`, or `labkit.util.*` directly
+- public app files use `labkit.dta.*` for DTA discovery, loading, session creation, removal, selection, pulse detection, and parsed table/curve access
+- public `+labkit/+data` and `+labkit/+io` packages are not reintroduced; parser, session IO, item construction, and table/curve access stay behind the DTA facade
 - app-local files keep the recommended single-file layout: entry/test hook, GUI construction, nested callbacks, app-local analysis, export/table helpers, plotting helpers, and small utilities
-- pulse detection remains behind `gamrywb.dta.detectPulses` with implementation helpers kept private, and experiment-specific CIC, VT, CSC, EIS, result-table, or CSV-writing workflow code does not return to a public reusable analysis package
-- reusable `+gamrywb/+dta` stays GUI-free and app-free: no MATLAB UI constructors, file dialogs, alerts, app entry points, or `apps/` helper calls
-- reusable `+gamrywb/+ui` stays parser/data/analysis-free: apps pass prepared values and labels into GUI helpers rather than letting GUI helpers call DTA, parser, data, or analysis APIs
-- helper code stays internal: parser-only helpers remain package-private, app-specific helpers remain app-local, and no public `+gamrywb/+util` app-facing surface is reintroduced
+- pulse detection remains behind `labkit.dta.detectPulses` with implementation helpers kept private, and experiment-specific CIC, VT, CSC, EIS, result-table, or CSV-writing workflow code does not return to a public reusable analysis package
+- reusable `+labkit/+dta` stays GUI-free and app-free: no MATLAB UI constructors, file dialogs, alerts, app entry points, or `apps/` helper calls
+- reusable `+labkit/+ui` stays parser/data/analysis-free: apps pass prepared values and labels into GUI helpers rather than letting GUI helpers call DTA, parser, data, or analysis APIs
+- helper code stays internal: parser-only helpers remain package-private, app-specific helpers remain app-local, and no public `+labkit/+util` app-facing surface is reintroduced
 - keep these architecture guardrails in `tests/test_architecture_boundaries.m` rather than duplicating them in numerical analysis tests
 
 Session/export changes:

@@ -31,7 +31,7 @@ end
 
 function filepath = normalizeFilepath(filepath)
     if ~(ischar(filepath) || (isstring(filepath) && isscalar(filepath)))
-        error('gamrywb:dta:InvalidFilepath', 'Filepath must be a character vector or scalar string.');
+        error('labkit:dta:InvalidFilepath', 'Filepath must be a character vector or scalar string.');
     end
     filepath = char(filepath);
 end
@@ -49,7 +49,7 @@ function [ok, msg] = isEIS(filepath)
     msg = "";
     try
         [~, tables] = parseEISDTA(filepath);
-        [~, ok, msg] = gamrywb.dta.getZCurve(tables);
+        [~, ok, msg] = labkit.dta.getZCurve(tables);
     catch ME
         msg = string(ME.message);
     end
@@ -60,14 +60,14 @@ function [ok, msg] = isChrono(filepath)
     msg = "";
     try
         [~, tables] = parseChronoDTA(filepath);
-        [curve, tableOk, msg] = gamrywb.dta.getMainCurve(tables);
+        [curve, tableOk, msg] = labkit.dta.getMainCurve(tables);
         if ~tableOk
             return;
         end
 
-        t = gamrywb.dta.getColumn(curve, 'T');
-        vf = gamrywb.dta.getColumn(curve, 'Vf');
-        im = gamrywb.dta.getColumn(curve, 'Im');
+        t = labkit.dta.getColumn(curve, 'T');
+        vf = labkit.dta.getColumn(curve, 'Vf');
+        im = labkit.dta.getColumn(curve, 'Im');
         valid = isfinite(t) & isfinite(vf) & isfinite(im);
         ok = sum(valid) >= 2;
         if ~ok

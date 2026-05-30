@@ -33,7 +33,7 @@ Package functions should not call GUI alert functions.
 
 ## Chrono Items
 
-Created by `gamrywb.dta.loadFile(filepath, "chrono")`.
+Created by `labkit.dta.loadFile(filepath, "chrono")`.
 
 Current fields include:
 
@@ -59,11 +59,11 @@ t, Vf, Im, alignTime, tAligned
 
 Keep bridge fields until app, export, and test call sites no longer need them.
 
-Chrono overlay pulse-gap alignment, overlay plotting, and overlay export table construction live as local functions in `apps/electrochem/gamrywb_ChronoOverlay_app.m` because they are app workflow decisions rather than reusable DTA item schema.
+Chrono overlay pulse-gap alignment, overlay plotting, and overlay export table construction live as local functions in `apps/electrochem/labkit_ChronoOverlay_app.m` because they are app workflow decisions rather than reusable DTA item schema.
 
 ## EIS Items
 
-Created by `gamrywb.dta.loadFile(filepath, "eis")`.
+Created by `labkit.dta.loadFile(filepath, "eis")`.
 
 Current fields include:
 
@@ -81,19 +81,19 @@ Compatibility bridge fields include:
 Freq, Time, Pt, Zreal, Zimag, negZimag, Zmod, Zphz, Idc, Vdc
 ```
 
-EIS overlay axis-value generation, plotting, and plot-export table construction are local functions in `apps/electrochem/gamrywb_EIS_app.m` because they are app workflow decisions rather than reusable DTA item schema.
+EIS overlay axis-value generation, plotting, and plot-export table construction are local functions in `apps/electrochem/labkit_EIS_app.m` because they are app workflow decisions rather than reusable DTA item schema.
 
 ## DTA Facade Status
 
-`gamrywb.dta.findFiles`, `gamrywb.dta.loadFile`, `gamrywb.dta.loadFiles`, and `gamrywb.dta.loadFolder` are GUI-free helpers. They return paths, status structs, or report structs instead of GUI alerts for normal file mismatch and load failures.
+`labkit.dta.findFiles`, `labkit.dta.loadFile`, `labkit.dta.loadFiles`, and `labkit.dta.loadFolder` are GUI-free helpers. They return paths, status structs, or report structs instead of GUI alerts for normal file mismatch and load failures.
 
 `findFiles` returns a cell array of recursively discovered `.DTA`/`.dta` file paths:
 
 ```matlab
-filepaths = gamrywb.dta.findFiles(folder)
+filepaths = labkit.dta.findFiles(folder)
 ```
 
-`folder` must be a character vector or scalar string naming an existing folder. Non-path or missing-folder inputs are programmer errors and raise `gamrywb:dta:InvalidFolder`.
+`folder` must be a character vector or scalar string naming an existing folder. Non-path or missing-folder inputs are programmer errors and raise `labkit:dta:InvalidFolder`.
 
 Status fields:
 
@@ -110,7 +110,7 @@ chrono, eis, cvct, unknown
 Batch `items` are returned as a cell array because `"auto"` loading can mix different DTA item schemas.
 Empty batch inputs are no-ops that return no items and an empty report with zero counts.
 `loadFile`, `loadFiles`, and `loadFolder` share the same `expectedKind` normalization: trim whitespace, ignore case, and treat blank strings as `"auto"`.
-Invalid `expectedKind` values are programmer errors and raise `gamrywb:dta:InvalidKind` before batch or folder loading starts, even when the input file list or discovered folder contents are empty.
+Invalid `expectedKind` values are programmer errors and raise `labkit:dta:InvalidKind` before batch or folder loading starts, even when the input file list or discovered folder contents are empty.
 
 `loadFiles` report fields:
 
@@ -129,10 +129,10 @@ Folders with no `.DTA` files return no items, empty `filepaths`, `nDiscovered ==
 DTA app session helpers wrap the lower-level session model for common app workflows:
 
 ```matlab
-session = gamrywb.dta.makeSession(kind)
-[session, report] = gamrywb.dta.addFilesToSession(session, filepaths, expectedKind, callbacks)
-[items, idx] = gamrywb.dta.selectSessionItems(session, selectedNames)
-[session, report] = gamrywb.dta.removeSelectedItemsFromSession(session, selectedNames, callbacks)
+session = labkit.dta.makeSession(kind)
+[session, report] = labkit.dta.addFilesToSession(session, filepaths, expectedKind, callbacks)
+[items, idx] = labkit.dta.selectSessionItems(session, selectedNames)
+[session, report] = labkit.dta.removeSelectedItemsFromSession(session, selectedNames, callbacks)
 ```
 
 `addFilesToSession` report fields:
@@ -144,7 +144,7 @@ added, skipped, failed, nAdded, nSkipped, nFailed
 Chrono pulse detection is app-facing through:
 
 ```matlab
-[pulse, message] = gamrywb.dta.detectPulses(t, Im, meta, mode)
+[pulse, message] = labkit.dta.detectPulses(t, Im, meta, mode)
 ```
 
 Apps should prefer this DTA facade instead of any lower-level pulse detector implementation.
@@ -152,7 +152,7 @@ The pulse detector implementation is private to the DTA facade.
 
 ## CV/CT Data
 
-`gamrywb.dta.loadFile(filepath, "cvct")` wraps the private CV/CT parser into a lightweight CV/CT item with:
+`labkit.dta.loadFile(filepath, "cvct")` wraps the private CV/CT parser into a lightweight CV/CT item with:
 
 ```text
 type, filepath, name, scanRate, scanRate_V_per_s, curves, logmsg, analysis
@@ -164,9 +164,9 @@ The CSC app's local analysis accepts a parsed curve and options containing:
 scanRate, mode, area_cm2
 ```
 
-CSC CT/CV charge integration is a local detail of `apps/electrochem/gamrywb_CSC_app.m`; it is not a separate reusable library API.
+CSC CT/CV charge integration is a local detail of `apps/electrochem/labkit_CSC_app.m`; it is not a separate reusable library API.
 
-`gamrywb.dta.getCurveXY` operates on the parsed curve struct and preserves exact-case column matching and NaN filtering. Apps can pass those prepared X/Y vectors and labels to the reusable GUI helper `gamrywb.ui.plotXY`.
+`labkit.dta.getCurveXY` operates on the parsed curve struct and preserves exact-case column matching and NaN filtering. Apps can pass those prepared X/Y vectors and labels to the reusable GUI helper `labkit.ui.plotXY`.
 
 ## Pulse Struct
 
@@ -198,13 +198,13 @@ Current analysis result structs intentionally preserve compatibility fields used
 VT result/export workflow:
 
 ```text
-apps/electrochem/gamrywb_VTResistance_app.m local computeResistance
-apps/electrochem/gamrywb_VTResistance_app.m local buildResultsTable
-apps/electrochem/gamrywb_VTResistance_app.m local writeResultsCSV
-apps/electrochem/gamrywb_VTResistance_app.m local buildBatchTableData
+apps/electrochem/labkit_VTResistance_app.m local computeResistance
+apps/electrochem/labkit_VTResistance_app.m local buildResultsTable
+apps/electrochem/labkit_VTResistance_app.m local writeResultsCSV
+apps/electrochem/labkit_VTResistance_app.m local buildBatchTableData
 ```
 
-VT steady-window selection and baseline estimation are local details of `apps/electrochem/gamrywb_VTResistance_app.m`; they are not separate reusable APIs.
+VT steady-window selection and baseline estimation are local details of `apps/electrochem/labkit_VTResistance_app.m`; they are not separate reusable APIs.
 
 VT CSV column order:
 
@@ -215,10 +215,10 @@ File,Ic_A,Ia_A,Vc_ss_V,Va_ss_V,Vc_baseline_V,Va_baseline_V,dVc_V,dVa_V,Rc_bc_ohm
 CIC result/export helpers:
 
 ```text
-apps/electrochem/gamrywb_CIC_app.m local computeCIC
-apps/electrochem/gamrywb_CIC_app.m local buildResultsTable
-apps/electrochem/gamrywb_CIC_app.m local writeResultsCSV
-apps/electrochem/gamrywb_CIC_app.m local buildBatchTableData
+apps/electrochem/labkit_CIC_app.m local computeCIC
+apps/electrochem/labkit_CIC_app.m local buildResultsTable
+apps/electrochem/labkit_CIC_app.m local writeResultsCSV
+apps/electrochem/labkit_CIC_app.m local buildBatchTableData
 ```
 
 CIC CSV column order uses one of:
@@ -232,7 +232,7 @@ The current CV/CSC app has no CSV export workflow, so it does not keep a standal
 
 ## Session Struct
 
-Created by `gamrywb.dta.makeSession`.
+Created by `labkit.dta.makeSession`.
 
 Current fields:
 
@@ -241,17 +241,23 @@ type, version, kind, createdAt, modifiedAt,
 items, results, options, notes, logmsg
 ```
 
+`type` is currently:
+
+```text
+labkit_session
+```
+
 Helpers:
 
 ```text
-gamrywb.dta.makeSession
-gamrywb.dta.addFilesToSession
-gamrywb.dta.removeSelectedItemsFromSession
-gamrywb.dta.selectSessionItems
-gamrywb.dta.saveSession
-gamrywb.dta.loadSession
+labkit.dta.makeSession
+labkit.dta.addFilesToSession
+labkit.dta.removeSelectedItemsFromSession
+labkit.dta.selectSessionItems
+labkit.dta.saveSession
+labkit.dta.loadSession
 ```
 
-`gamrywb.dta.addFilesToSession` supports `onAdded`, `onSkipped`, and `onFailed` callbacks so apps can preserve log timing while sharing DTA add/duplicate/failure logic. Empty file lists are no-ops that return empty reports without firing callbacks. Low-level item construction and session mutation helpers are private to the DTA facade; app code should use the public `gamrywb.dta.*` facade functions listed above.
+`labkit.dta.addFilesToSession` supports `onAdded`, `onSkipped`, and `onFailed` callbacks so apps can preserve log timing while sharing DTA add/duplicate/failure logic. Empty file lists are no-ops that return empty reports without firing callbacks. Low-level item construction and session mutation helpers are private to the DTA facade; app code should use the public `labkit.dta.*` facade functions listed above.
 
 Session files should keep parsed data, selected analysis mode, options, results, notes, and file provenance explicit. Avoid opaque object dumps for scientific exchange.

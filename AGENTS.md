@@ -1,6 +1,6 @@
 # Agent Instructions
 
-This repository provides package-backed MATLAB app entry points for Gamry electrochemistry analysis workflows.
+This repository provides package-backed MATLAB app entry points and reusable LabKit MATLAB infrastructure for electrochemistry analysis workflows.
 
 ## Read Order
 
@@ -27,17 +27,17 @@ The desired architecture is:
 
 ```text
 apps/ experiment app category folders
-    call reusable +gamrywb DTA and GUI APIs
+    call reusable +labkit DTA and GUI APIs
     own experiment-specific scientific logic, parameters, plots, and exports
     ideally one experiment corresponds to one app .m file
 
-+gamrywb reusable library
++labkit reusable library
     GUI library: scientific-app shells, controls, panels, logs, and UI state helpers
     DTA library: app-facing DTA discovery, loading, session, pulse, and parsed table/curve APIs
     internal helpers: parser, analysis, utility, item/session construction, and private helpers hidden behind GUI/DTA APIs
 ```
 
-Do not add new experiment-specific app logic to the reusable `+gamrywb` library. New app code should not call `gamrywb.io.*`, `gamrywb.data.*`, `gamrywb.analysis.*`, or `gamrywb.util.*` directly; put those needs behind `gamrywb.dta.*`, `gamrywb.ui.*`, or an app-local helper. Keep DTA parsers, item/session construction, session IO, and pulse internals private behind the DTA facade. Keep app-specific analysis, plotting, export schemas, and CSV writing in the owning public app file unless a repeated use case proves a lower-level utility is clearer. Do not reintroduce app-specific helper packages or namespaces just to make local app functions public.
+Do not add new experiment-specific app logic to the reusable `+labkit` library. New app code should not call `labkit.io.*`, `labkit.data.*`, `labkit.analysis.*`, or `labkit.util.*` directly; put those needs behind `labkit.dta.*`, `labkit.ui.*`, or an app-local helper. Keep DTA parsers, item/session construction, session IO, and pulse internals private behind the DTA facade. Keep app-specific analysis, plotting, export schemas, and CSV writing in the owning public app file unless a repeated use case proves a lower-level utility is clearer. Do not reintroduce app-specific helper packages or namespaces just to make local app functions public.
 
 Do not change:
 
@@ -55,9 +55,9 @@ same results, cleaner code, clearer boundaries
 
 ## Allowed Work
 
-- Move duplicated helper logic into `+gamrywb` package functions only when the helper is genuinely cross-cutting and makes the caller easier to understand.
+- Move duplicated helper logic into `+labkit` package functions only when the helper is genuinely cross-cutting and makes the caller easier to understand.
 - Update app entry points to call package helpers when behavior is preserved and the helper boundary matches the GUI or DTA responsibilities above.
-- Move app-specific implementations and experiment-specific scientific workflow code out of `+gamrywb` when doing so preserves behavior.
+- Move app-specific implementations and experiment-specific scientific workflow code out of `+labkit` when doing so preserves behavior.
 - Add or update tests for pure functions and app entry points.
 - Update documentation to reflect current behavior.
 - Improve app entrypoint clarity without reintroducing root-level legacy command wrappers.

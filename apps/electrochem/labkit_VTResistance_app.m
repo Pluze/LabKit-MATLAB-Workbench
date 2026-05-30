@@ -1,6 +1,6 @@
-function varargout = gamrywb_VTResistance_app(varargin)
-%GAMRYWB_VTRESISTANCE_APP Launch the VT resistance app.
-% Single-file app that composes +gamrywb GUI/DTA APIs and owns VT resistance workflow choices.
+function varargout = labkit_VTResistance_app(varargin)
+%LABKIT_VTRESISTANCE_APP Launch the VT resistance app.
+% Single-file app that composes +labkit GUI/DTA APIs and owns VT resistance workflow choices.
 % GUI for estimating cathodic/anodic steady-state resistance from Gamry
 % MULTI_STEP_CHRONOPOT .DTA files.
 %
@@ -17,14 +17,14 @@ function varargout = gamrywb_VTResistance_app(varargin)
             varargout = testOutputs;
             return;
         end
-        error('gamrywb_VTResistance_app:UnsupportedInput', 'gamrywb_VTResistance_app does not accept input arguments.');
+        error('labkit_VTResistance_app:UnsupportedInput', 'labkit_VTResistance_app does not accept input arguments.');
     end
     if nargout > 1
-        error('gamrywb_VTResistance_app:TooManyOutputs', 'gamrywb_VTResistance_app returns at most the app figure handle.');
+        error('labkit_VTResistance_app:TooManyOutputs', 'labkit_VTResistance_app returns at most the app figure handle.');
     end
 
     S = struct();
-    S.session = gamrywb.dta.makeSession('vt_resistance');
+    S.session = labkit.dta.makeSession('vt_resistance');
     S.items = S.session.items;
     S.current = [];
     S.isDragging = false;
@@ -37,7 +37,7 @@ function varargout = gamrywb_VTResistance_app(varargin)
         'plotsPanel', 'Plots', ...
         'topPlot', 'Top Plot', ...
         'bottomPlot', 'Bottom Plot');
-    ui = gamrywb.ui.createTabbedDualPlotShell( ...
+    ui = labkit.ui.createTabbedDualPlotShell( ...
         'Gamry VT Steady Resistance GUI', ...
         [40 30 1680 980], ...
         430, ...
@@ -62,7 +62,7 @@ function varargout = gamrywb_VTResistance_app(varargin)
         'clearAll', 'Clear all', ...
         'export', 'Export results CSV', ...
         'loadedText', 'No files loaded');
-    fileUi = gamrywb.ui.createSingleSelectFilePanel(layFA, fileLabels, fileCallbacks);
+    fileUi = labkit.ui.createSingleSelectFilePanel(layFA, fileLabels, fileCallbacks);
     lbFiles = fileUi.listbox;
     txtLoaded = fileUi.loadedText;
 
@@ -128,31 +128,31 @@ function varargout = gamrywb_VTResistance_app(varargin)
     gi.Padding = [8 8 8 8];
     gi.ColumnSpacing = 8;
 
-    S.txtControlMode = gamrywb.ui.createReadOnlyInfoRow(gi,1,'Control mode:');
-    S.txtDetect = gamrywb.ui.createReadOnlyInfoRow(gi,2,'Detection:');
-    S.txtWindow = gamrywb.ui.createReadOnlyInfoRow(gi,3,'Window:');
-    S.txtCathIV = gamrywb.ui.createReadOnlyInfoRow(gi,4,'Cathodic I / Vss:');
-    S.txtAnodIV = gamrywb.ui.createReadOnlyInfoRow(gi,5,'Anodic I / Vss:');
-    S.txtCathBase = gamrywb.ui.createReadOnlyInfoRow(gi,6,'Cathodic baseline:');
-    S.txtAnodBase = gamrywb.ui.createReadOnlyInfoRow(gi,7,'Anodic baseline:');
-    S.txtCathBaseWin = gamrywb.ui.createReadOnlyInfoRow(gi,8,'Cath baseline window:');
-    S.txtAnodBaseWin = gamrywb.ui.createReadOnlyInfoRow(gi,9,'Anod baseline window:');
-    S.txtCathR = gamrywb.ui.createReadOnlyInfoRow(gi,10,'Cathodic R:');
-    S.txtAnodR = gamrywb.ui.createReadOnlyInfoRow(gi,11,'Anodic R:');
-    S.txtAvgR = gamrywb.ui.createReadOnlyInfoRow(gi,12,'Average R:');
-    S.txtStatus = gamrywb.ui.createReadOnlyInfoRow(gi,13,'Status:');
+    S.txtControlMode = labkit.ui.createReadOnlyInfoRow(gi,1,'Control mode:');
+    S.txtDetect = labkit.ui.createReadOnlyInfoRow(gi,2,'Detection:');
+    S.txtWindow = labkit.ui.createReadOnlyInfoRow(gi,3,'Window:');
+    S.txtCathIV = labkit.ui.createReadOnlyInfoRow(gi,4,'Cathodic I / Vss:');
+    S.txtAnodIV = labkit.ui.createReadOnlyInfoRow(gi,5,'Anodic I / Vss:');
+    S.txtCathBase = labkit.ui.createReadOnlyInfoRow(gi,6,'Cathodic baseline:');
+    S.txtAnodBase = labkit.ui.createReadOnlyInfoRow(gi,7,'Anodic baseline:');
+    S.txtCathBaseWin = labkit.ui.createReadOnlyInfoRow(gi,8,'Cath baseline window:');
+    S.txtAnodBaseWin = labkit.ui.createReadOnlyInfoRow(gi,9,'Anod baseline window:');
+    S.txtCathR = labkit.ui.createReadOnlyInfoRow(gi,10,'Cathodic R:');
+    S.txtAnodR = labkit.ui.createReadOnlyInfoRow(gi,11,'Anodic R:');
+    S.txtAvgR = labkit.ui.createReadOnlyInfoRow(gi,12,'Average R:');
+    S.txtStatus = labkit.ui.createReadOnlyInfoRow(gi,13,'Status:');
 
-    tableUi = gamrywb.ui.createResultTablePanel(laySR, 'Batch Results', 2, ...
+    tableUi = labkit.ui.createResultTablePanel(laySR, 'Batch Results', 2, ...
         {'File','Ic(A)','Ia(A)','Vc_ss(V)','Va_ss(V)','R_cath(ohm)','R_anod(ohm)','R_avg(ohm)','Detection'}, ...
         cell(0,9));
     tbl = tableUi.table;
 
-    logUi = gamrywb.ui.createLogPanel(layLog, 1);
+    logUi = labkit.ui.createLogPanel(layLog, 1);
     txtLog = logUi.textArea;
 
     topPlotDefaults = struct('x', 'Time (s)', 'y', 'VT: Vf vs time', 'grid', true);
     bottomPlotDefaults = struct('x', 'Time (s)', 'y', 'IT: Im vs time', 'grid', true);
-    plotControls = gamrywb.ui.createTopBottomPlotControls( ...
+    plotControls = labkit.ui.createTopBottomPlotControls( ...
         ui.topControlsPanel, ...
         ui.bottomControlsPanel, ...
         {'Time (s)', 'Sample #'}, ...
@@ -191,7 +191,7 @@ function varargout = gamrywb_VTResistance_app(varargin)
         if isequal(folder,0)
             return;
         end
-        filepaths = gamrywb.dta.findFiles(folder);
+        filepaths = labkit.dta.findFiles(folder);
         if isempty(filepaths)
             uialert(fig,'No .DTA files found in the selected folder.','Open folder');
             return;
@@ -204,7 +204,7 @@ function varargout = gamrywb_VTResistance_app(varargin)
         callbacks.onAdded = @(~, ~) [];
         callbacks.onSkipped = @(fp) addLog(['Skipped duplicate: ' fp]);
         callbacks.onFailed = @(fp, msg) addLog(sprintf('Failed to load %s: %s', fp, msg));
-        [S.session, report] = gamrywb.dta.addFilesToSession(S.session, filepaths, "chrono", callbacks);
+        [S.session, report] = labkit.dta.addFilesToSession(S.session, filepaths, "chrono", callbacks);
         postProcessAddedItems(report.added);
         S.items = S.session.items;
         if ~isempty(S.items) && isempty(S.current)
@@ -284,7 +284,7 @@ function varargout = gamrywb_VTResistance_app(varargin)
     end
 
     function clearAllFiles()
-        S.session = gamrywb.dta.makeSession('vt_resistance');
+        S.session = labkit.dta.makeSession('vt_resistance');
         S.items = S.session.items;
         S.current = [];
         restoreDefaultPlotSelections();
@@ -383,8 +383,8 @@ function varargout = gamrywb_VTResistance_app(varargin)
     end
 
     function refreshPlots()
-        gamrywb.ui.clearAxisObjects(axTop);
-        gamrywb.ui.clearAxisObjects(axBottom);
+        labkit.ui.clearAxisObjects(axTop);
+        labkit.ui.clearAxisObjects(axBottom);
         if isempty(S.items) || isempty(S.current) || S.current < 1 || S.current > numel(S.items)
             title(axTop,'Top Plot');
             title(axBottom,'Bottom Plot');
@@ -484,7 +484,7 @@ function varargout = gamrywb_VTResistance_app(varargin)
     end
 
     function swapPlots()
-        gamrywb.ui.swapTopBottomPlotSelections(ddTopX, ddTopY, ddBotX, ddBotY);
+        labkit.ui.swapTopBottomPlotSelections(ddTopX, ddTopY, ddBotX, ddBotY);
         refreshPlots();
     end
 
@@ -494,13 +494,13 @@ function varargout = gamrywb_VTResistance_app(varargin)
     end
 
     function restoreDefaultPlotSelections()
-        gamrywb.ui.setTopBottomPlotSelections(ddTopX, ddTopY, ddBotX, ddBotY, ...
+        labkit.ui.setTopBottomPlotSelections(ddTopX, ddTopY, ddBotX, ddBotY, ...
             topPlotDefaults, bottomPlotDefaults);
     end
 
     function resetAxesToDefaultState()
-        gamrywb.ui.hardResetAxis(axTop, 'Top Plot');
-        gamrywb.ui.hardResetAxis(axBottom, 'Bottom Plot');
+        labkit.ui.hardResetAxis(axTop, 'Top Plot');
+        labkit.ui.hardResetAxis(axBottom, 'Bottom Plot');
     end
 
     function exportResultsCSV()
@@ -549,7 +549,7 @@ function varargout = gamrywb_VTResistance_app(varargin)
     end
 
     function addLog(msg)
-        gamrywb.ui.appendLog(txtLog, msg);
+        labkit.ui.appendLog(txtLog, msg);
     end
 
 end
@@ -568,25 +568,25 @@ function [handled, outputs] = handleVTTestRequest(args, nargoutRequested)
         case '__test_computeResistance__'
             assertVTTestArgCount(args, 3, command);
             if nargoutRequested > 1
-                error('gamrywb_VTResistance_app:TooManyOutputs', 'VT compute test request returns one result struct.');
+                error('labkit_VTResistance_app:TooManyOutputs', 'VT compute test request returns one result struct.');
             end
             outputs = {computeResistance(args{2}, args{3})};
         case '__test_buildBatchTableData__'
             assertVTTestArgCount(args, 2, command);
             if nargoutRequested > 1
-                error('gamrywb_VTResistance_app:TooManyOutputs', 'VT batch-table test request returns one cell array.');
+                error('labkit_VTResistance_app:TooManyOutputs', 'VT batch-table test request returns one cell array.');
             end
             outputs = {buildBatchTableData(args{2})};
         case '__test_buildResultsTable__'
             assertVTTestArgCount(args, 2, command);
             if nargoutRequested > 1
-                error('gamrywb_VTResistance_app:TooManyOutputs', 'VT result-table test request returns one table.');
+                error('labkit_VTResistance_app:TooManyOutputs', 'VT result-table test request returns one table.');
             end
             outputs = {buildResultsTable(args{2})};
         case '__test_writeResultsCSV__'
             assertVTTestArgCount(args, 3, command);
             if nargoutRequested > 2
-                error('gamrywb_VTResistance_app:TooManyOutputs', 'VT CSV test request returns at most ok and message.');
+                error('labkit_VTResistance_app:TooManyOutputs', 'VT CSV test request returns at most ok and message.');
             end
             if nargoutRequested == 0
                 writeResultsCSV(args{2}, args{3});
@@ -602,7 +602,7 @@ end
 
 function assertVTTestArgCount(args, expectedCount, command)
     if numel(args) ~= expectedCount
-        error('gamrywb_VTResistance_app:InvalidTestRequest', ...
+        error('labkit_VTResistance_app:InvalidTestRequest', ...
             '%s expects %d total input arguments.', command, expectedCount);
     end
 end
@@ -630,10 +630,10 @@ function A = computeResistance(item, opts)
         return;
     end
 
-    t = gamrywb.dta.getColumn(curve, 'T');
-    Vf = gamrywb.dta.getColumn(curve, 'Vf');
-    Im = gamrywb.dta.getColumn(curve, 'Im');
-    pt = gamrywb.dta.getColumn(curve, 'Pt');
+    t = labkit.dta.getColumn(curve, 'T');
+    Vf = labkit.dta.getColumn(curve, 'Vf');
+    Im = labkit.dta.getColumn(curve, 'Im');
+    pt = labkit.dta.getColumn(curve, 'Pt');
     if isempty(pt)
         pt = (0:numel(t)-1).';
     end
@@ -657,7 +657,7 @@ function A = computeResistance(item, opts)
     if isfield(item, 'meta')
         meta = item.meta;
     end
-    [pulse, pulseMsg] = gamrywb.dta.detectPulses(t, Im, meta, opts.pulseMode);
+    [pulse, pulseMsg] = labkit.dta.detectPulses(t, Im, meta, opts.pulseMode);
     A.pulse = pulse;
     A.detectMode = pulse.method;
     A.detectMsg = pulseMsg;
@@ -867,7 +867,7 @@ function [curve, ok, msg] = mainCurve(item)
         ok = true;
         msg = sprintf('Using table: %s', curve.name);
     elseif isfield(item, 'tables')
-        [curve, ok, msg] = gamrywb.dta.getMainCurve(item.tables);
+        [curve, ok, msg] = labkit.dta.getMainCurve(item.tables);
     else
         curve = struct();
         ok = false;

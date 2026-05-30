@@ -1,19 +1,19 @@
-function varargout = gamrywb_ChronoOverlay_app(varargin)
-%GAMRYWB_CHRONOOVERLAY_APP Chrono voltage/current overlay and export app.
-% Single-file app that composes +gamrywb GUI/DTA APIs and owns overlay workflow choices.
+function varargout = labkit_ChronoOverlay_app(varargin)
+%LABKIT_CHRONOOVERLAY_APP Chrono voltage/current overlay and export app.
+% Single-file app that composes +labkit GUI/DTA APIs and owns overlay workflow choices.
 
     if nargin > 0
-        error('gamrywb_ChronoOverlay_app:UnsupportedInput', 'gamrywb_ChronoOverlay_app does not accept input arguments.');
+        error('labkit_ChronoOverlay_app:UnsupportedInput', 'labkit_ChronoOverlay_app does not accept input arguments.');
     end
     if nargout > 1
-        error('gamrywb_ChronoOverlay_app:TooManyOutputs', 'gamrywb_ChronoOverlay_app returns at most the app figure handle.');
+        error('labkit_ChronoOverlay_app:TooManyOutputs', 'labkit_ChronoOverlay_app returns at most the app figure handle.');
     end
 
     S = struct();
-    S.session = gamrywb.dta.makeSession('chrono_overlay');
+    S.session = labkit.dta.makeSession('chrono_overlay');
     S.items = S.session.items;
 
-    ui = gamrywb.ui.createTwoPaneShell( ...
+    ui = labkit.ui.createTwoPaneShell( ...
         'Gamry Multi-DTA Plot Export GUI', ...
         [80 60 1480 900], ...
         340, ...
@@ -38,7 +38,7 @@ function varargout = gamrywb_ChronoOverlay_app(varargin)
         'removeSelected', 'Remove selected', ...
         'clearAll', 'Clear all', ...
         'export', 'Export curves CSV');
-    gamrywb.ui.createFilePanel(left, fileLabels, fileCallbacks);
+    labkit.ui.createFilePanel(left, fileLabels, fileCallbacks);
 
     lbFiles = uilistbox(left, ...
         'Items', {}, ...
@@ -46,15 +46,15 @@ function varargout = gamrywb_ChronoOverlay_app(varargin)
         'ValueChangedFcn', @(~,~) refreshPlots());
     lbFiles.Layout.Row = 2;
 
-    plotOptionsUi = gamrywb.ui.createPlotOptionsPanel(left, 4);
+    plotOptionsUi = labkit.ui.createPlotOptionsPanel(left, 4);
     gp = plotOptionsUi.grid;
 
-    [~, ddXAxis] = gamrywb.ui.createLabeledDropdown(gp, 'X axis:', ...
+    [~, ddXAxis] = labkit.ui.createLabeledDropdown(gp, 'X axis:', ...
         'Items', {'Time (s)', 'Time (ms)', 'Sample #'}, ...
         'Value', 'Time (s)', ...
         'ValueChangedFcn', @(~,~) refreshPlots());
 
-    [~, edLineWidth] = gamrywb.ui.createLabeledEditField(gp, 'Line width:', 'numeric', ...
+    [~, edLineWidth] = labkit.ui.createLabeledEditField(gp, 'Line width:', 'numeric', ...
         'Value', 1.3, ...
         'Limits', [0.1 10], ...
         'LowerLimitInclusive', 'on', ...
@@ -89,8 +89,8 @@ function varargout = gamrywb_ChronoOverlay_app(varargin)
     txtLog.Layout.Row = 5;
     txtLog.Value = {'GUI started.'};
 
-    axV = gamrywb.ui.createAxes(right, 1, 'Voltage', 'Time (s)', 'Vf (V)');
-    axI = gamrywb.ui.createAxes(right, 2, 'Current', 'Time (s)', 'Im (A)');
+    axV = labkit.ui.createAxes(right, 1, 'Voltage', 'Time (s)', 'Vf (V)');
+    axI = labkit.ui.createAxes(right, 2, 'Current', 'Time (s)', 'Im (A)');
     if nargout == 1
         varargout{1} = fig;
     end
@@ -121,7 +121,7 @@ function varargout = gamrywb_ChronoOverlay_app(varargin)
             return;
         end
 
-        filepaths = gamrywb.dta.findFiles(folder);
+        filepaths = labkit.dta.findFiles(folder);
         if isempty(filepaths)
             addLog(sprintf('No DTA files found under: %s', folder));
             uialert(fig, sprintf('No .DTA files found under:\n%s', folder), 'No files found');
@@ -141,7 +141,7 @@ function varargout = gamrywb_ChronoOverlay_app(varargin)
         callbacks.onAdded = @(~, ~) [];
         callbacks.onSkipped = @(filepath) addLog(sprintf('Skipped already loaded: %s', filepath));
         callbacks.onFailed = @(filepath, message) addLog(sprintf('Failed: %s | %s', filepath, message));
-        [S.session, report] = gamrywb.dta.addFilesToSession(S.session, filepaths, "chrono", callbacks);
+        [S.session, report] = labkit.dta.addFilesToSession(S.session, filepaths, "chrono", callbacks);
         postProcessAddedItems(report.added);
         S.items = S.session.items;
 
@@ -180,14 +180,14 @@ function varargout = gamrywb_ChronoOverlay_app(varargin)
         end
         callbacks = struct();
         callbacks.onRemoved = @(name, ~) addLog(sprintf('Removed: %s', name));
-        [S.session, ~] = gamrywb.dta.removeSelectedItemsFromSession(S.session, lbFiles.Value, callbacks);
+        [S.session, ~] = labkit.dta.removeSelectedItemsFromSession(S.session, lbFiles.Value, callbacks);
         S.items = S.session.items;
         refreshFileList();
         refreshPlots();
     end
 
     function onClearAll(~, ~)
-        S.session = gamrywb.dta.makeSession('chrono_overlay');
+        S.session = labkit.dta.makeSession('chrono_overlay');
         S.items = S.session.items;
         refreshFileList();
         refreshPlots();
@@ -196,10 +196,10 @@ function varargout = gamrywb_ChronoOverlay_app(varargin)
 
     function refreshFileList()
         if isempty(S.items)
-            gamrywb.ui.refreshListboxItems(lbFiles, {});
+            labkit.ui.refreshListboxItems(lbFiles, {});
             return;
         end
-        gamrywb.ui.refreshListboxItems(lbFiles, {S.items.name});
+        labkit.ui.refreshListboxItems(lbFiles, {S.items.name});
     end
 
     function refreshPlots()
@@ -208,7 +208,7 @@ function varargout = gamrywb_ChronoOverlay_app(varargin)
             return;
         end
 
-        items = gamrywb.dta.selectSessionItems(S.session, lbFiles.Value);
+        items = labkit.dta.selectSessionItems(S.session, lbFiles.Value);
         if isempty(items)
             cla(axV);
             cla(axI);
@@ -224,7 +224,7 @@ function varargout = gamrywb_ChronoOverlay_app(varargin)
             return;
         end
 
-        items = gamrywb.dta.selectSessionItems(S.session, lbFiles.Value);
+        items = labkit.dta.selectSessionItems(S.session, lbFiles.Value);
         if isempty(items)
             uialert(fig, 'No files selected for export.', 'Export');
             return;
@@ -250,7 +250,7 @@ function varargout = gamrywb_ChronoOverlay_app(varargin)
     end
 
     function addLog(msg)
-        gamrywb.ui.appendLog(txtLog, msg);
+        labkit.ui.appendLog(txtLog, msg);
     end
 end
 

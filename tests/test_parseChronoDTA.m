@@ -1,7 +1,7 @@
 function test_parseChronoDTA()
 %TEST_PARSECHRONODTA Verify extracted chrono DTA parser and accessors.
 
-    filepaths = gamrywb.dta.findFiles(demoFixtureDir());
+    filepaths = labkit.dta.findFiles(demoFixtureDir());
     assert(numel(filepaths) >= 8, 'findFiles should find the demo DTA fixtures.');
     assert(all(endsWith(lower(string(filepaths)), '.dta')), 'findFiles should return only DTA files.');
     assert(any(endsWith(string(filepaths), fullfile('demo', 'chrono_chronopot_current_pulse_0p2ms.DTA'))), ...
@@ -12,7 +12,7 @@ function test_parseChronoDTA()
     currentFile = demoFixturePath('chrono_chronopot_current_pulse_0p2ms.DTA');
     voltageFile = demoFixturePath('chrono_chronoamp_voltage_pulse_0p2ms.DTA');
 
-    [currentItem, currentStatus] = gamrywb.dta.loadFile(currentFile, "chrono");
+    [currentItem, currentStatus] = labkit.dta.loadFile(currentFile, "chrono");
     assert(currentStatus.ok, currentStatus.message);
     meta = currentItem.meta;
     tables = currentItem.tables;
@@ -29,14 +29,14 @@ function test_parseChronoDTA()
     assert(any(contains(string(logmsg), 'Table Curve parsed: 244 rows x 10 cols.')), ...
         'Parser log should include current chrono table dimensions.');
 
-    [curve, ok, msg] = gamrywb.dta.getMainCurve(tables);
+    [curve, ok, msg] = labkit.dta.getMainCurve(tables);
     assert(ok, msg);
     assert(strcmp(msg, 'Using table: Curve'), 'Main curve message should match legacy wording.');
 
-    t = gamrywb.dta.getColumn(curve, 'T');
-    vf = gamrywb.dta.getColumn(curve, 'Vf');
-    im = gamrywb.dta.getColumn(curve, 'im');
-    missing = gamrywb.dta.getColumn(curve, 'MissingColumn');
+    t = labkit.dta.getColumn(curve, 'T');
+    vf = labkit.dta.getColumn(curve, 'Vf');
+    im = labkit.dta.getColumn(curve, 'im');
+    missing = labkit.dta.getColumn(curve, 'MissingColumn');
 
     assert(numel(t) == 244 && numel(vf) == 244 && numel(im) == 244, 'Main chrono columns should use the Curve table.');
     assert(t(1) > 0 && t(1) < 2e-5 && t(end) > 0.0024 && t(end) < 0.0025, ...
@@ -44,7 +44,7 @@ function test_parseChronoDTA()
     assert(any(im < 0) && any(im > 0), 'Current-controlled chrono fixture should contain cathodic and anodic current.');
     assert(isempty(missing), 'Missing columns should return empty.');
 
-    [voltageItem, voltageStatus] = gamrywb.dta.loadFile(voltageFile, "chrono");
+    [voltageItem, voltageStatus] = labkit.dta.loadFile(voltageFile, "chrono");
     assert(voltageStatus.ok, voltageStatus.message);
     vMeta = voltageItem.meta;
     vTables = voltageItem.tables;
@@ -53,7 +53,7 @@ function test_parseChronoDTA()
     assert(numel(vMeta.steps) == 6, 'Voltage-controlled fixture should produce six VSTEP/TSTEP steps.');
     assert(abs(vMeta.steps(2).V + 1.5) < 1e-15 && abs(vMeta.steps(5).V - 1.5) < 1e-15, ...
         'Voltage-controlled step values should be preserved.');
-    [vCurve, vOk, vMsg] = gamrywb.dta.getMainCurve(vTables);
+    [vCurve, vOk, vMsg] = labkit.dta.getMainCurve(vTables);
     assert(vOk, vMsg);
-    assert(numel(gamrywb.dta.getColumn(vCurve, 'Im')) == 244, 'Voltage-controlled fixture should expose the Im column.');
+    assert(numel(labkit.dta.getColumn(vCurve, 'Im')) == 244, 'Voltage-controlled fixture should expose the Im column.');
 end

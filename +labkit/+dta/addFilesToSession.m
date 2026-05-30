@@ -11,7 +11,7 @@ function [session, report] = addFilesToSession(session, filepaths, expectedKind,
         opts = struct();
     end
 
-    expectedKind = gamrywb.dta.normalizeExpectedKind(expectedKind);
+    expectedKind = labkit.dta.normalizeExpectedKind(expectedKind);
     loader = @(filepath) loadOne(filepath, expectedKind, opts);
     [session, report] = addItemsToSession(session, filepaths, loader, callbacks);
     report.nAdded = numel(report.added);
@@ -20,8 +20,8 @@ function [session, report] = addFilesToSession(session, filepaths, expectedKind,
 end
 
 function item = loadOne(filepath, expectedKind, opts)
-    [item, status] = gamrywb.dta.loadFile(filepath, expectedKind, opts);
+    [item, status] = labkit.dta.loadFile(filepath, expectedKind, opts);
     if ~status.ok
-        error('gamrywb:dta:LoadFailed', '%s', char(status.message));
+        error('labkit:dta:LoadFailed', '%s', char(status.message));
     end
 end

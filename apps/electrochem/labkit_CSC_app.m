@@ -1,6 +1,6 @@
-function varargout = gamrywb_CSC_app(varargin)
-%GAMRYWB_CSC_APP Launch the CV/CSC app.
-% Single-file app that composes +gamrywb GUI/DTA APIs and owns CV/CSC workflow choices.
+function varargout = labkit_CSC_app(varargin)
+%LABKIT_CSC_APP Launch the CV/CSC app.
+% Single-file app that composes +labkit GUI/DTA APIs and owns CV/CSC workflow choices.
 %
 % Assumptions
 %   - CV data is already constrained to the intended water window during acquisition.
@@ -24,20 +24,20 @@ function varargout = gamrywb_CSC_app(varargin)
         % Keep CSC numerical tests direct while the app owns the local analysis code.
         if isCSCAnalysisTestRequest(varargin)
             if nargout > 1
-                error('gamrywb_CSC_app:TooManyOutputs', 'CSC analysis test request returns one result struct.');
+                error('labkit_CSC_app:TooManyOutputs', 'CSC analysis test request returns one result struct.');
             end
             varargout{1} = computeCSC(varargin{2}, varargin{3});
             return;
         end
-        error('gamrywb_CSC_app:UnsupportedInput', 'gamrywb_CSC_app does not accept input arguments.');
+        error('labkit_CSC_app:UnsupportedInput', 'labkit_CSC_app does not accept input arguments.');
     end
     if nargout > 1
-        error('gamrywb_CSC_app:TooManyOutputs', 'gamrywb_CSC_app returns at most the app figure handle.');
+        error('labkit_CSC_app:TooManyOutputs', 'labkit_CSC_app returns at most the app figure handle.');
     end
 
     % Application state container
     S = struct();
-    S.session = gamrywb.dta.makeSession('cv_csc');
+    S.session = labkit.dta.makeSession('cv_csc');
     S.filepath = '';
     S.curves = struct('name',{},'headers',{},'units',{},'data',{},'numericMask',{});
     S.scanRate = NaN; % V/s
@@ -306,8 +306,8 @@ function varargout = gamrywb_CSC_app(varargin)
 
         callbacks = struct();
         callbacks.onFailed = @(~, message) addLog(['Parse failed: ' message]);
-        [loadedSession, report] = gamrywb.dta.addFilesToSession( ...
-            gamrywb.dta.makeSession('cv_csc'), {filepath}, "cvct", callbacks);
+        [loadedSession, report] = labkit.dta.addFilesToSession( ...
+            labkit.dta.makeSession('cv_csc'), {filepath}, "cvct", callbacks);
         if ~isempty(report.failed)
             ME = report.failed(1);
             uialert(fig, ME.message, 'Parse Error');
@@ -430,9 +430,9 @@ function varargout = gamrywb_CSC_app(varargin)
         if isempty(S.curves), return; end
         c = S.curves(S.currentCurve);
         opts = struct('holdPlot', cbTopHold.Value, 'showGrid', cbTopGrid.Value, 'lineWidth', 1.2);
-        [x, y, xName, yName] = gamrywb.dta.getCurveXY(c, ddTopX.Value, ddTopY.Value);
+        [x, y, xName, yName] = labkit.dta.getCurveXY(c, ddTopX.Value, ddTopY.Value);
         labels = struct('title', c.name, 'x', xName, 'y', yName);
-        info = gamrywb.ui.plotXY(axTop, x, y, labels, opts);
+        info = labkit.ui.plotXY(axTop, x, y, labels, opts);
         if ~info.ok
             addLog('Top plot skipped: invalid X/Y.');
             return;
@@ -444,9 +444,9 @@ function varargout = gamrywb_CSC_app(varargin)
         if isempty(S.curves), return; end
         c = S.curves(S.currentCurve);
         opts = struct('holdPlot', cbBotHold.Value, 'showGrid', cbBotGrid.Value, 'lineWidth', 1.2);
-        [x, y, xName, yName] = gamrywb.dta.getCurveXY(c, ddBotX.Value, ddBotY.Value);
+        [x, y, xName, yName] = labkit.dta.getCurveXY(c, ddBotX.Value, ddBotY.Value);
         labels = struct('title', c.name, 'x', xName, 'y', yName);
-        info = gamrywb.ui.plotXY(axBottom, x, y, labels, opts);
+        info = labkit.ui.plotXY(axBottom, x, y, labels, opts);
         if ~info.ok
             addLog('Bottom plot skipped: invalid X/Y.');
             return;
@@ -493,7 +493,7 @@ function varargout = gamrywb_CSC_app(varargin)
         clearTrim(axBottom);
 
         if cbTopTrim.Value && strcmp(ddTopY.Value,'Im')
-            [xTop, ~, ~, ~] = gamrywb.dta.getCurveXY(c, ddTopX.Value, ddTopY.Value);
+            [xTop, ~, ~, ~] = labkit.dta.getCurveXY(c, ddTopX.Value, ddTopY.Value);
             if numel(xTop) == numel(R.IcathDisp)
                 hold(axTop,'on');
                 plot(axTop, xTop, R.IcathDisp, 'Color',[0.1 0.6 0.1], ...
@@ -505,7 +505,7 @@ function varargout = gamrywb_CSC_app(varargin)
         end
 
         if cbBotTrim.Value && strcmp(ddBotY.Value,'Im')
-            [xBot, ~, ~, ~] = gamrywb.dta.getCurveXY(c, ddBotX.Value, ddBotY.Value);
+            [xBot, ~, ~, ~] = labkit.dta.getCurveXY(c, ddBotX.Value, ddBotY.Value);
             if numel(xBot) == numel(R.IcathDisp)
                 hold(axBottom,'on');
                 plot(axBottom, xBot, R.IcathDisp, 'Color',[0.1 0.6 0.1], ...
@@ -528,7 +528,7 @@ function varargout = gamrywb_CSC_app(varargin)
     end
 
     function addLog(msg)
-        gamrywb.ui.appendLog(txtLog, msg);
+        labkit.ui.appendLog(txtLog, msg);
     end
 end
 

@@ -8,7 +8,7 @@ function results = run_all_tests(includeGui)
     root = fileparts(fileparts(mfilename('fullpath')));
     addpath(root);
     addpath(fullfile(root, 'tests'));
-    startup_gamrywb();
+    startup_labkit();
 
     tests = defaultTests();
     if includeGui

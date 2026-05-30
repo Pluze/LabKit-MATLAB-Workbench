@@ -11,9 +11,9 @@ function varargout = gui_dta_app_template(varargin)
     end
 
     S = struct();
-    S.session = gamrywb.dta.makeSession('template');
+    S.session = labkit.dta.makeSession('template');
 
-    ui = gamrywb.ui.createTwoPaneShell( ...
+    ui = labkit.ui.createTwoPaneShell( ...
         'GUI + DTA Template', [80 80 1200 760], 340, ...
         'Selected File', [1 1], {'1x'}, 8);
     fig = ui.fig;
@@ -34,7 +34,7 @@ function varargout = gui_dta_app_template(varargin)
         'removeSelected', 'Remove selected', ...
         'clearAll', 'Clear all', ...
         'export', 'Export names CSV');
-    gamrywb.ui.createFilePanel(left, fileLabels, fileCallbacks);
+    labkit.ui.createFilePanel(left, fileLabels, fileCallbacks);
 
     lbFiles = uilistbox(left, ...
         'Items', {}, ...
@@ -42,8 +42,8 @@ function varargout = gui_dta_app_template(varargin)
         'ValueChangedFcn', @(~, ~) refreshView());
     lbFiles.Layout.Row = 2;
 
-    logUi = gamrywb.ui.createLogPanel(left, 5, {'Ready.'});
-    ax = gamrywb.ui.createAxes(right, 1, 'Selected File', 'Point', 'Value');
+    logUi = labkit.ui.createLogPanel(left, 5, {'Ready.'});
+    ax = labkit.ui.createAxes(right, 1, 'Selected File', 'Point', 'Value');
 
     refreshView();
 
@@ -73,7 +73,7 @@ function varargout = gui_dta_app_template(varargin)
             addLog('Folder selection cancelled.');
             return;
         end
-        addFiles(gamrywb.dta.findFiles(folder));
+        addFiles(labkit.dta.findFiles(folder));
     end
 
     function addFiles(filepaths)
@@ -82,7 +82,7 @@ function varargout = gui_dta_app_template(varargin)
         callbacks.onSkipped = @(filepath) addLog(sprintf('Skipped duplicate: %s', filepath));
         callbacks.onFailed = @(filepath, message) addLog(sprintf('Failed: %s | %s', filepath, message));
 
-        [S.session, report] = gamrywb.dta.addFilesToSession( ...
+        [S.session, report] = labkit.dta.addFilesToSession( ...
             S.session, filepaths, "auto", callbacks);
         refreshView();
 
@@ -96,13 +96,13 @@ function varargout = gui_dta_app_template(varargin)
     function onRemoveSelected(~, ~)
         callbacks = struct();
         callbacks.onRemoved = @(name, ~) addLog(sprintf('Removed: %s', name));
-        [S.session, ~] = gamrywb.dta.removeSelectedItemsFromSession( ...
+        [S.session, ~] = labkit.dta.removeSelectedItemsFromSession( ...
             S.session, lbFiles.Value, callbacks);
         refreshView();
     end
 
     function onClearAll(~, ~)
-        S.session = gamrywb.dta.makeSession('template');
+        S.session = labkit.dta.makeSession('template');
         addLog('Cleared all files.');
         refreshView();
     end
@@ -131,13 +131,13 @@ function varargout = gui_dta_app_template(varargin)
 
     function refreshView()
         if isempty(S.session.items)
-            gamrywb.ui.refreshListboxItems(lbFiles, {});
-            gamrywb.ui.hardResetAxis(ax, 'Selected File');
+            labkit.ui.refreshListboxItems(lbFiles, {});
+            labkit.ui.hardResetAxis(ax, 'Selected File');
             return;
         end
 
-        gamrywb.ui.refreshListboxItems(lbFiles, {S.session.items.name});
-        selectedItems = gamrywb.dta.selectSessionItems(S.session, lbFiles.Value);
+        labkit.ui.refreshListboxItems(lbFiles, {S.session.items.name});
+        selectedItems = labkit.dta.selectSessionItems(S.session, lbFiles.Value);
         if isempty(selectedItems)
             selectedItems = S.session.items(1);
         end
@@ -149,11 +149,11 @@ function varargout = gui_dta_app_template(varargin)
         x = 1:numel(y);
         labels = struct('title', item.name, 'x', 'Point', 'y', 'Value');
         opts = struct('lineWidth', 1.2, 'markerSize', 4, 'marker', '.');
-        gamrywb.ui.plotXY(ax, x, y, labels, opts);
+        labkit.ui.plotXY(ax, x, y, labels, opts);
     end
 
     function addLog(message)
-        gamrywb.ui.appendLog(logUi.textArea, message);
+        labkit.ui.appendLog(logUi.textArea, message);
     end
 end
 
