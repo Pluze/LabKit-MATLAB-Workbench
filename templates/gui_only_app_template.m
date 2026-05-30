@@ -15,17 +15,24 @@ function varargout = gui_only_app_template(varargin)
         'Preview', [1 1], {'1x'}, 8);
     fig = ui.fig;
 
-    controls = uigridlayout(ui.leftGrid, [3 1]);
+    controls = uigridlayout(ui.leftGrid, [3 2]);
     controls.Layout.Row = [1 5];
     controls.RowHeight = {'fit', 'fit', '1x'};
-    controls.ColumnWidth = {'1x'};
+    controls.ColumnWidth = {'fit', '1x'};
+    controls.Padding = [0 0 0 0];
+    controls.RowSpacing = 8;
+    controls.ColumnSpacing = 8;
 
     [~, modeDropDown] = labkit.ui.createLabeledDropdown( ...
-        controls, 'Mode:', {'Default', 'Alternate'}, 'Default', 1);
+        controls, 'Mode:', ...
+        'Items', {'Default', 'Alternate'}, ...
+        'Value', 'Default');
     [~, valueField] = labkit.ui.createLabeledEditField( ...
-        controls, 'Value:', 'numeric', 1, 2);
+        controls, 'Value:', 'numeric', ...
+        'Value', 1);
 
     logUi = labkit.ui.createLogPanel(controls, 3, {'Ready.'});
+    logUi.panel.Layout.Column = [1 2];
     ax = labkit.ui.createAxes(ui.rightGrid, 1, 'Preview', 'X', 'Y');
 
     modeDropDown.ValueChangedFcn = @refreshPreview;

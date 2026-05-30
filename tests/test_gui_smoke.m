@@ -22,6 +22,12 @@ function test_gui_smoke()
         assert(any(strcmp(names, expectedTitle)), ...
             'GUI entry point %s did not create expected figure "%s".', entryName, expectedTitle);
     end
+
+    templateDir = fullfile(root, 'templates');
+    addpath(templateDir);
+    templateCleanup = onCleanup(@() rmpath(templateDir)); %#ok<NASGU>
+    assertTemplateLaunches('gui_only_app_template', 'GUI Only Template');
+    assertTemplateLaunches('gui_dta_app_template', 'GUI + DTA Template');
 end
 
 function tf = pathContains(folder)
@@ -51,4 +57,14 @@ function closeAllFigures()
         delete(figs);
     end
     drawnow;
+end
+
+function assertTemplateLaunches(entryName, expectedTitle)
+    closeAllFigures();
+    feval(entryName);
+    drawnow;
+    figs = findall(groot, 'Type', 'figure');
+    names = getFigureNames(figs);
+    assert(any(strcmp(names, expectedTitle)), ...
+        'GUI template %s did not create expected figure "%s".', entryName, expectedTitle);
 end
