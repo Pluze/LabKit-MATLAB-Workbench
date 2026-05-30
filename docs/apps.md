@@ -94,6 +94,17 @@ Define these before adding controls or helpers:
 
 Prefer `labkit.ui.createWorkbench` even when the app has only one small control page. This keeps daily app interaction consistent as `apps/<category>/` grows while leaving domain-specific tab content under app ownership.
 
+## App Validation
+
+Pure app calculations, export table construction, and plotting helpers belong in the automated `apps` suite and run in the default GitHub Actions workflow. GUI launch/layout contracts are checked by focused local GUI profiles:
+
+```bash
+scripts/run_matlab_tests.sh --profile electrochem
+scripts/run_matlab_tests.sh --profile dic
+```
+
+Interactive GUI workflows, including manual file selection and visual inspection, are intentionally validated manually during app work.
+
 ## Current App-Specific Notes
 
 Chrono overlay pulse-gap alignment, overlay plotting, and overlay export table construction live as local functions in `apps/electrochem/labkit_ChronoOverlay_app.m`.

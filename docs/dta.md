@@ -62,6 +62,8 @@ Pulse detection:
 
 Lower-level recursive discovery, parser functions, item construction, session mutation, and pulse internals are private DTA implementation details.
 
+The DTA facade and parser fixture checks run in the default GitHub Actions workflow as part of the non-GUI MATLAB suite.
+
 ## Parser Assumptions
 
 Gamry DTA files are treated as tab-delimited text files. Current parser steps generally:

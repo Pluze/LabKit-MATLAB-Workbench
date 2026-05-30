@@ -22,7 +22,6 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - DTA parser helpers, session save/load, item/session construction, pulse internals, and parsed table/curve access now live behind the DTA facade or under `+labkit/+dta/private`.
 - Current app implementations are single public files under `apps/`; experiment-specific analysis, plotting, result tables, and CSV/export schemas stay app-local.
 - Documentation and architecture tests now guard against reintroducing public `+io`, `+data`, `+analysis`, `+util`, app-helper packages, or legacy wrapper entry points as app-facing APIs.
-- Template programs now model the intended split: GUI-only, DTA-only, or GUI plus DTA, without exposing internal helper packages.
 - `startup_labkit` now adds nested app category folders so app entry points resolve without changing into app directories.
 - Current app GUIs now share the same resizable tabbed workbench shell: scrollable control tabs on the left and plot/output content on the right.
 - App shells now use the standard three-tab workbench framework, and DTA-facing apps share the same file-selection panel structure.
@@ -33,6 +32,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Copy-only MATLAB template files were removed; their app-starting guidance now lives in the app documentation.
 - DTA fixture files moved from `demo/` to `tests/fixtures/dta/` to make their role as test/example fixtures explicit.
 - GitHub Actions now runs the default non-GUI MATLAB test suite on pushes and pull requests to `main`.
+- README now displays the MATLAB Tests workflow badge, and docs describe CI coverage versus local GUI/manual validation.
 
 ### Fixed
 

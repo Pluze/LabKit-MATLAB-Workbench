@@ -117,11 +117,17 @@ result.message = "Not enough valid T/Vf/Im points.";
 
 The GUI decides how to display that status.
 
+## Validation Boundary
+
+The default automated validation boundary is the non-GUI MATLAB suite: core architecture checks, DTA facade/parser checks, and pure app analysis/export checks. GitHub Actions runs that suite on pushes and pull requests to `main`.
+
+GUI launch/layout checks are available as focused local profiles, but interactive GUI workflows are user-validated outside CI. This keeps the reusable UI shell tested without requiring GitHub-hosted runners to provide stable MATLAB graphics behavior.
+
 ## Current Package Surface
 
 - `apps/`: user-facing app category folders and app-specific implementations. Current electrochemistry app bodies live under `apps/electrochem/`, and current DIC app bodies live under `apps/dic/`, as single public app source files. App-specific workflow helpers are local functions in those files rather than reusable `+labkit` APIs or transitional app-helper packages.
-- `+dta`: GUI-free facade for supported DTA file discovery, family detection, single-file loading, batch loading, folder loading, pulse detection, item construction, parsed table/curve access, session save/load, and app-facing DTA session operations with status/report structs. It keeps parser and DTA-specific implementation helpers private.
-- `+ui`: reusable GUI framework helpers, centered on the unified `createWorkbench` shell plus domain-neutral components: file-selection panel, log panel, generic panel-grid creation, row-resize handles, axes creation/reset, prepared-X/Y plotting, listbox selection refresh, summary rows, result table panel, plot-options panel, simple labeled controls, and top/bottom plot-control construction/state helpers.
+- `labkit.dta`: GUI-free facade for supported DTA file discovery, family detection, single-file loading, batch loading, folder loading, pulse detection, item construction, parsed table/curve access, session save/load, and app-facing DTA session operations with status/report structs. It keeps parser and DTA-specific implementation helpers private.
+- `labkit.ui`: reusable GUI framework helpers, centered on the unified `createWorkbench` shell plus domain-neutral components: file-selection panel, log panel, generic panel-grid creation, row-resize handles, axes creation/reset, prepared-X/Y plotting, listbox selection refresh, summary rows, result table panel, plot-options panel, simple labeled controls, and top/bottom plot-control construction/state helpers.
 - Internal helpers: package-private parser helpers and app-local helper functions. Public `+io`, `+data`, and `+util` packages should not be reintroduced as new-app entry surfaces.
 
 ## Boundaries To Preserve

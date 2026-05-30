@@ -108,3 +108,14 @@ Use `tabSpec(..., struct('resizeRows', ...))` when a left tab contains several s
 - app-specific callback choreography
 
 Apps pass labels, callbacks, prepared vectors, table data, and option values into the GUI helpers. Reusable GUI helpers exist to remove MATLAB UI boilerplate, not to hide the domain workflow.
+
+## UI Validation
+
+Reusable UI helper and shell contracts are covered by local noninteractive GUI profiles:
+
+```bash
+scripts/run_matlab_tests.sh --profile ui
+scripts/run_matlab_tests.sh --suite gui
+```
+
+These checks require MATLAB graphics/uifigure support and are not part of the default GitHub Actions job. The CI job runs the non-GUI suite; final interactive behavior is validated manually in the app windows.

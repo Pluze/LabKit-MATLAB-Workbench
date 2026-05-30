@@ -1,6 +1,6 @@
 # Agent Instructions
 
-This repository provides package-backed MATLAB app entry points and reusable LabKit MATLAB infrastructure for electrochemistry analysis workflows.
+This repository provides package-backed MATLAB app entry points and reusable LabKit MATLAB infrastructure for lab GUI workflows. The reusable core is a GUI foundation plus the current Gamry DTA/electrochemistry facade; DIC image apps are app-level implementations built on the same GUI foundation.
 
 ## Read Order
 
@@ -27,12 +27,12 @@ The desired architecture is:
 ```text
 apps/ experiment app category folders
     call reusable +labkit DTA and GUI APIs
-    own experiment-specific domain/scientific logic, parameters, plots, and exports
+    own experiment-specific domain logic, parameters, plots, and exports
     ideally one experiment corresponds to one app .m file
 
 +labkit reusable library
-    GUI library: lab-app shells, controls, panels, logs, and UI state helpers
-    DTA library: app-facing DTA discovery, loading, session, pulse, and parsed table/curve APIs
+    GUI library: lab-app shells, scrollable/resizable tabs, controls, panels, logs, and UI state helpers
+    DTA library: app-facing Gamry DTA discovery, loading, session, pulse, and parsed table/curve APIs
     internal helpers: parser, analysis, utility, item/session construction, and private helpers hidden behind GUI/DTA APIs
 ```
 
@@ -40,7 +40,7 @@ Do not add new experiment-specific app logic to the reusable `+labkit` library. 
 
 Do not change:
 
-- scientific formulas, thresholds, integration rules, or result definitions
+- domain formulas, thresholds, integration rules, or result definitions
 - parser behavior or pulse detection behavior
 - CSV column names or exported table structure
 - GUI layout, plot labels, markers, axes, or visual behavior
@@ -72,11 +72,14 @@ same results, cleaner code, clearer boundaries
 
 ## Tests
 
-Run relevant automated checks after executable MATLAB changes. Use focused checks during scoped iteration:
+Run relevant automated checks after executable MATLAB changes. Use focused checks during scoped iteration instead of defaulting to unrelated app families:
 
 ```bash
 scripts/run_matlab_tests.sh --suite core
 scripts/run_matlab_tests.sh --test test_gui_layout_controls
+scripts/run_matlab_tests.sh --profile ui
+scripts/run_matlab_tests.sh --profile dic
+scripts/run_matlab_tests.sh --profile electrochem
 ```
 
 Use the default pure-function suite for broader changes:

@@ -1,5 +1,7 @@
 # LabKit MATLAB Workbench
 
+[![MATLAB Tests](https://github.com/Pluze/LabKit-MATLAB-Workbench/actions/workflows/matlab-tests.yml/badge.svg)](https://github.com/Pluze/LabKit-MATLAB-Workbench/actions/workflows/matlab-tests.yml)
+
 LabKit MATLAB Workbench is a reusable MATLAB GUI foundation for lab-internal software tools. It is intended to make small MATLAB GUI apps easier to build, maintain, and keep consistent across different workflows.
 
 The core idea is a shared app shell: configurable tabs and controls on the left, live plots or primary outputs on the right, and app-specific behavior kept in the owning app file. Small utilities and larger tools start from the same GUI structure instead of each rebuilding its own MATLAB interface.
@@ -66,7 +68,7 @@ Automated tests can be run from a macOS shell:
 scripts/run_matlab_tests.sh
 ```
 
-GitHub Actions runs the default non-GUI MATLAB suite on pushes and pull requests to `main`.
+GitHub Actions runs the default non-GUI MATLAB suite on pushes and pull requests to `main`. Private repositories need a GitHub secret named `MLM_LICENSE_TOKEN` for MATLAB licensing; public repositories can use MathWorks automatic licensing for supported MATLAB Actions.
 
 Focused checks can run a single suite or test:
 

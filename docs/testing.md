@@ -18,7 +18,7 @@ Default pure-function suite:
 scripts/run_matlab_tests.sh
 ```
 
-The same non-GUI suite runs in GitHub Actions on pushes and pull requests to `main` through `.github/workflows/matlab-tests.yml`. The CI workflow uses MathWorks MATLAB Actions and calls `run_all_tests(false)`, so it covers `core`, `dta`, and pure `apps` checks without opening GUI windows.
+The same non-GUI suite runs in GitHub Actions on pushes and pull requests to `main` through `.github/workflows/matlab-tests.yml`. The README badge points to this workflow. The CI workflow uses MathWorks MATLAB Actions and calls `run_all_tests(false)`, so it covers `core`, `dta`, and pure `apps` checks without opening GUI windows.
 
 For public repositories, MathWorks MATLAB Actions can license MATLAB automatically. For private repositories, configure a GitHub secret named `MLM_LICENSE_TOKEN` with a MATLAB batch licensing token.
 
