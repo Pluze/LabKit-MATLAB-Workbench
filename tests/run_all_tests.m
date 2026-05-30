@@ -6,25 +6,35 @@ function results = run_all_tests(includeGui)
     end
 
     root = fileparts(fileparts(mfilename('fullpath')));
+    testsRoot = fullfile(root, 'tests');
     addpath(root);
-    addpath(fullfile(root, 'tests'));
+    addpath(genpath(testsRoot));
     startup_labkit();
 
-    tests = defaultTests();
-    if includeGui
-        tests = [tests guiTests()];
-    end
-    results = struct('name', {}, 'passed', {}, 'message', {});
+    groups = testGroups(includeGui);
+    results = struct('group', {}, 'name', {}, 'passed', {}, 'message', {});
 
-    for k = 1:numel(tests)
-        name = func2str(tests{k});
-        try
-            tests{k}();
-            results(end+1) = struct('name', name, 'passed', true, 'message', ''); %#ok<AGROW>
-            fprintf('PASS %s\n', name);
-        catch ME
-            results(end+1) = struct('name', name, 'passed', false, 'message', ME.message); %#ok<AGROW>
-            fprintf(2, 'FAIL %s: %s\n', name, ME.message);
+    for g = 1:numel(groups)
+        fprintf('\n[%s]\n', groups(g).name);
+        tests = groups(g).tests;
+        for k = 1:numel(tests)
+            name = func2str(tests{k});
+            try
+                tests{k}();
+                results(end+1) = struct( ...
+                    'group', groups(g).name, ...
+                    'name', name, ...
+                    'passed', true, ...
+                    'message', ''); %#ok<AGROW>
+                fprintf('PASS %s\n', name);
+            catch ME
+                results(end+1) = struct( ...
+                    'group', groups(g).name, ...
+                    'name', name, ...
+                    'passed', false, ...
+                    'message', ME.message); %#ok<AGROW>
+                fprintf(2, 'FAIL %s: %s\n', name, ME.message);
+            end
         end
     end
 
@@ -33,10 +43,22 @@ function results = run_all_tests(includeGui)
     end
 end
 
-function tests = defaultTests()
-    tests = { ...
+function groups = testGroups(includeGui)
+    groups = [coreTests(), dtaTests(), appTests()];
+    if includeGui
+        groups = [groups, guiTests()];
+    end
+end
+
+function group = coreTests()
+    group = makeGroup('core boundaries and templates', { ...
         @test_startup_boundaries, ...
         @test_architecture_boundaries, ...
+        @test_appTemplates});
+end
+
+function group = dtaTests()
+    group = makeGroup('DTA facade and schemas', { ...
         @test_parseChronoDTA, ...
         @test_parseEISDTA, ...
         @test_parseCVCTDTA, ...
@@ -44,6 +66,11 @@ function tests = defaultTests()
         @test_dtaSessionFacade, ...
         @test_detectPulses, ...
         @test_makeChronoItem, ...
+        @test_sessionUtilities});
+end
+
+function group = appTests()
+    group = makeGroup('app analysis and exports', { ...
         @test_chronoOverlayExport, ...
         @test_computeVTResistance, ...
         @test_vtResistanceExport, ...
@@ -51,13 +78,15 @@ function tests = defaultTests()
         @test_cicExport, ...
         @test_computeCSC, ...
         @test_plotXY, ...
-        @test_eisOverlayExport, ...
-        @test_sessionUtilities, ...
-        @test_appTemplates};
+        @test_eisOverlayExport});
 end
 
-function tests = guiTests()
-    tests = { ...
+function group = guiTests()
+    group = makeGroup('GUI launch and layout', { ...
         @test_gui_smoke, ...
-        @test_gui_layout_controls};
+        @test_gui_layout_controls});
+end
+
+function group = makeGroup(name, tests)
+    group = struct('name', name, 'tests', {tests});
 end

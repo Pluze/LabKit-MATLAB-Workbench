@@ -24,9 +24,18 @@ Optional noninteractive GUI compatibility suite:
 scripts/run_matlab_tests.sh --gui
 ```
 
-The default suite is listed in `tests/run_all_tests.m` under `defaultTests()` and covers startup/root-entry boundaries, parsers through the DTA facade, DTA discovery/detection/loading/session helpers, parsed table/curve access, template source boundaries, pulse detection, analysis values, plotting helpers, export table builders, session helpers, UI-table helpers, and app-entry resolution.
+The default suite is grouped in `tests/run_all_tests.m` and organized on disk under `tests/suites/`:
 
-The GUI suite is listed in `tests/run_all_tests.m` under `guiTests()` and checks launch/layout/callback compatibility without file dialogs, exports, destructive workflows, or manual input.
+```text
+core    startup/root-entry boundaries, architecture guardrails, templates
+dta     parsers through the DTA facade, DTA discovery/detection/loading/session helpers, pulse detection, and item schemas
+apps    app-local analysis values, plotting helpers, export table builders, and CSV writers
+gui     optional launch/layout/callback compatibility checks
+```
+
+Shared setup and assertions live under `tests/helpers/`. Keep helpers limited to setup and assertions; app-specific formulas, result schemas, export formats, and expected scientific values should remain in focused suite tests.
+
+The optional GUI suite checks launch/layout/callback compatibility without file dialogs, exports, destructive workflows, or manual input.
 
 Do not run interactive GUI workflows in MATLAB `-batch` mode.
 
@@ -40,8 +49,8 @@ abs(oldValue - newValue) < 1e-9
 
 Use looser tolerances only when justified by interpolation, plotting-only alignment, or format conversion. Document any looser tolerance in the test.
 
-Use `tests/assertClose.m` for repeated exact or tolerance-based numeric checks instead of redefining local assertion helpers in each test file.
-Use `tests/demoFixtureDir.m`, `tests/demoFixturePath.m`, and focused fixture builders such as `tests/makeChronoFixtureItem.m` when multiple tests need the same demo fixture setup. Keep those helpers limited to test setup; do not move app-specific analysis, export schemas, or expected values into shared test helpers.
+Use `tests/helpers/assertClose.m` for repeated exact or tolerance-based numeric checks instead of redefining local assertion helpers in each test file.
+Use `tests/helpers/demoFixtureDir.m`, `tests/helpers/demoFixturePath.m`, and focused fixture builders such as `tests/helpers/makeChronoFixtureItem.m` when multiple tests need the same demo fixture setup. Keep those helpers limited to test setup; do not move app-specific analysis, export schemas, or expected values into shared test helpers.
 
 ## Fixture Expectations
 
@@ -97,7 +106,7 @@ App-boundary changes:
 - reusable `+labkit/+dta` stays GUI-free and app-free: no MATLAB UI constructors, file dialogs, alerts, app entry points, or `apps/` helper calls
 - reusable `+labkit/+ui` stays parser/data/analysis-free: apps pass prepared values and labels into GUI helpers rather than letting GUI helpers call DTA, parser, data, or analysis APIs
 - helper code stays internal: parser-only helpers remain package-private, app-specific helpers remain app-local, and no public `+labkit/+util` app-facing surface is reintroduced
-- keep these architecture guardrails in `tests/test_architecture_boundaries.m` rather than duplicating them in numerical analysis tests
+- keep these architecture guardrails in `tests/suites/core/test_architecture_boundaries.m` rather than duplicating them in numerical analysis tests
 
 Session/export changes:
 

@@ -1,7 +1,7 @@
 function test_appTemplates()
 %TEST_APPTEMPLATES Verify the standard template programs keep narrow surfaces.
 
-    root = fileparts(fileparts(mfilename('fullpath')));
+    root = testRepoRoot();
     templateDir = fullfile(root, 'templates');
 
     guiOnly = fileread(fullfile(templateDir, 'gui_only_app_template.m'));

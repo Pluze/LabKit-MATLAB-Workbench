@@ -1,6 +1,6 @@
 function folder = demoFixtureDir()
 %DEMOFIXTUREDIR Return the absolute path for the demo fixture directory.
 
-    root = fileparts(fileparts(mfilename('fullpath')));
+    root = testRepoRoot();
     folder = fullfile(root, 'demo');
 end

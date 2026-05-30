@@ -1,7 +1,7 @@
 function test_startup_boundaries()
 %TEST_STARTUP_BOUNDARIES Check startup path and root entrypoint boundaries.
 
-    root = fileparts(fileparts(mfilename('fullpath')));
+    root = testRepoRoot();
 
     assert(exist(fullfile(root, 'startup_labkit.m'), 'file') == 2, 'startup_labkit.m is missing.');
     assert(exist(fullfile(root, '+labkit', '+dta', 'loadFile.m'), 'file') == 2, 'DTA facade is missing.');

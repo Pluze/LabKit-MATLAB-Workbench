@@ -2,7 +2,7 @@ function test_gui_smoke()
 %TEST_GUI_SMOKE Verify GUI entry points can launch.
 
     assertUifigureAvailable();
-    root = fileparts(fileparts(mfilename('fullpath')));
+    root = testRepoRoot();
     legacyDir = fullfile(root, 'legacy');
 
     entries = appEntryManifest();

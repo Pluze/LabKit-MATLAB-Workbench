@@ -1,7 +1,7 @@
 function test_architecture_boundaries()
 %TEST_ARCHITECTURE_BOUNDARIES Verify app and reusable-library boundaries.
 
-    root = fileparts(fileparts(mfilename('fullpath')));
+    root = testRepoRoot();
     assert(exist(fullfile(root, '+labkit', '+app'), 'dir') ~= 7, ...
         'Reusable +labkit should not keep the transitional +app package.');
     assert(exist(fullfile(root, '+labkit', '+plot'), 'dir') ~= 7, ...
