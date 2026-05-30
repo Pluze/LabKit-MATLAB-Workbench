@@ -97,7 +97,9 @@ Do not run interactive GUI workflows in MATLAB `-batch` mode.
 4. Run relevant tests or explain why they were not run.
 5. Review the diff for unrelated changes.
 6. Commit with a concise message.
-7. Do not force-push unless explicitly approved.
+7. Push the completed commit so the remote branch is up to date before handoff.
+8. If no files changed, still confirm the local branch is synchronized with its remote before handoff.
+9. Do not force-push unless explicitly approved.
 
 When MATLAB source, tests, fixtures, or package structure change, update the matching current docs:
 
