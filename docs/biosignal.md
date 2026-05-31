@@ -23,6 +23,19 @@ comparison = labkit.biosignal.compareGroups(values, groups);
 
 `readRecording` currently accepts MAT files containing timetable variables and delimited text tables such as CSV/TSV. Low-level format normalization lives under `+labkit/+biosignal/private`.
 
+For delimited text tables, time handling is deliberately conservative. The reader does not treat an arbitrary monotonic numeric column as seconds. It uses a table column as time only when the column is `datetime`/`duration`, when the column name is time-like such as `time_s` or `time_ms`, or when the caller explicitly passes `timeColumn` and optionally `timeUnit`. Otherwise the recording uses a synthetic sample-index time axis and keeps numeric columns as signal channels.
+
+CSV files from wearable workflows can contain preamble rows, headerless numeric data, `I0/I1`-style Arduino columns, epoch timestamps, gaps, duplicated rows, or time axes that jump backward. The table reader tries to handle the common cases automatically and records import choices in `recording.metadata`. Backward or duplicate time steps are stitched forward with a nominal sample interval; large positive gaps are preserved and counted in `metadata.timeRepair`. If auto-detection is ambiguous, the app or caller should pass explicit import options rather than relying on inference.
+
+Example explicit text-table time options:
+
+```matlab
+opts = struct('timeColumn', 'timestamp', 'timeUnit', 'milliseconds');
+[recording, status] = labkit.biosignal.readRecording(filepath, opts);
+```
+
+Useful delimited-table options include `headerLine`, `hasHeader`, `timeColumn`, `timeUnit`, `signalColumns`, `fallbackFs`, and `timeRepair`.
+
 ## Data Shape
 
 The first version uses structs rather than MATLAB classes:

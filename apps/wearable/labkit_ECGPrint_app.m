@@ -19,21 +19,20 @@ function varargout = labkit_ECGPrint_app(varargin)
     S.segments = [];
     S.template = [];
     S.measurements = [];
-    S.groupRows = table();
+    S.filepath = "";
 
     opts = struct( ...
         'rightTitle', 'ECG Preview', ...
-        'rightKind', 'dualPlot', ...
-        'showPlotControls', false, ...
-        'topPlotTitle', 'Waveform + Peaks', ...
-        'bottomPlotTitle', 'SNR Over Time');
+        'rightGridSize', [4 1], ...
+        'rightRowHeight', {{'1.2x', '1x', '1x', '1x'}}, ...
+        'rightRowSpacing', 8);
     opts.tabs = [ ...
         labkit.ui.tabSpec('filesAnalysis', 'Files + Analysis', [4 1], ...
-            {210, 255, 250, 175}, ...
+            {370, 235, 100, 125}, ...
             struct('resizeRows', [1 2 3])), ...
-        labkit.ui.tabSpec('summaryResults', 'Summary + Results', [3 1], ...
-            {185, 185, '1x'}, ...
-            struct('resizeRows', [1 2])), ...
+        labkit.ui.tabSpec('summaryResults', 'Summary + Results', [2 1], ...
+            {210, '1x'}, ...
+            struct('resizeRows', 1)), ...
         labkit.ui.tabSpec('log', 'Log', [1 1], {'1x'})];
 
     ui = labkit.ui.createWorkbench( ...
@@ -43,8 +42,8 @@ function varargout = labkit_ECGPrint_app(varargin)
     laySR = ui.summaryResultsGrid;
     layLog = ui.logGrid;
 
-    dataPanel = labkit.ui.createPanelGrid(layFA, 'Recording + Channel', 1, [6 2], ...
-        struct('rowHeight', {{'fit','fit','fit','fit','fit','fit'}}, ...
+    dataPanel = labkit.ui.createPanelGrid(layFA, 'Recording + Import', 1, [13 2], ...
+        struct('rowHeight', {repmat({'fit'}, 1, 13)}, ...
         'columnWidth', {{135, '1x'}}));
     dataGrid = dataPanel.grid;
 
@@ -56,32 +55,92 @@ function varargout = labkit_ECGPrint_app(varargin)
     txtFile.Layout.Row = 2;
     txtFile.Layout.Column = [1 2];
 
+    btnPreviewHeader = uibutton(dataGrid, 'Text', 'Preview file header', ...
+        'ButtonPushedFcn', @onPreviewHeader);
+    btnPreviewHeader.Layout.Row = 3;
+    btnPreviewHeader.Layout.Column = 1;
+
+    btnRefreshImport = uibutton(dataGrid, 'Text', 'Refresh import parsing', ...
+        'ButtonPushedFcn', @onRefreshImport);
+    btnRefreshImport.Layout.Row = 3;
+    btnRefreshImport.Layout.Column = 2;
+
+    txtImportStatus = uieditfield(dataGrid, 'text', 'Editable', 'off', ...
+        'Value', 'Open a recording to inspect import settings.');
+    txtImportStatus.Layout.Row = 4;
+    txtImportStatus.Layout.Column = [1 2];
+
+    [lblHeaderLine, edtHeaderLine] = labkit.ui.createLabeledEditField(dataGrid, ...
+        'CSV header line:', 'numeric', 'Value', 0, 'Limits', [0 Inf], ...
+        'ValueChangedFcn', @onImportOptionChanged);
+    lblHeaderLine.Layout.Row = 5;
+    lblHeaderLine.Layout.Column = 1;
+    edtHeaderLine.Layout.Row = 5;
+    edtHeaderLine.Layout.Column = 2;
+
+    [lblHasHeader, ddHasHeader] = labkit.ui.createLabeledDropdown(dataGrid, ...
+        'CSV header:', ...
+        'Items', {'Auto', 'Yes', 'No'}, ...
+        'Value', 'Auto', ...
+        'ValueChangedFcn', @onImportOptionChanged);
+    lblHasHeader.Layout.Row = 6;
+    lblHasHeader.Layout.Column = 1;
+    ddHasHeader.Layout.Row = 6;
+    ddHasHeader.Layout.Column = 2;
+
+    [lblTimeColumn, edtTimeColumn] = labkit.ui.createLabeledEditField(dataGrid, ...
+        'Time column:', 'text', 'Value', '', ...
+        'ValueChangedFcn', @onImportOptionChanged);
+    lblTimeColumn.Layout.Row = 7;
+    lblTimeColumn.Layout.Column = 1;
+    edtTimeColumn.Layout.Row = 7;
+    edtTimeColumn.Layout.Column = 2;
+
+    [lblTimeUnit, ddTimeUnit] = labkit.ui.createLabeledDropdown(dataGrid, ...
+        'Time unit:', ...
+        'Items', {'Auto', 'seconds', 'milliseconds', 'microseconds', 'nanoseconds'}, ...
+        'Value', 'Auto', ...
+        'ValueChangedFcn', @onImportOptionChanged);
+    lblTimeUnit.Layout.Row = 8;
+    lblTimeUnit.Layout.Column = 1;
+    ddTimeUnit.Layout.Row = 8;
+    ddTimeUnit.Layout.Column = 2;
+
+    [lblSignalColumns, edtSignalColumns] = labkit.ui.createLabeledEditField(dataGrid, ...
+        'Signal columns:', 'text', 'Value', '', ...
+        'ValueChangedFcn', @onImportOptionChanged);
+    lblSignalColumns.Layout.Row = 9;
+    lblSignalColumns.Layout.Column = 1;
+    edtSignalColumns.Layout.Row = 9;
+    edtSignalColumns.Layout.Column = 2;
+
+    [lblFallbackFs, edtFallbackFs] = labkit.ui.createLabeledEditField(dataGrid, ...
+        'Fallback Fs:', 'numeric', 'Value', 2000, 'Limits', [0 Inf], ...
+        'ValueChangedFcn', @onImportOptionChanged);
+    lblFallbackFs.Layout.Row = 10;
+    lblFallbackFs.Layout.Column = 1;
+    edtFallbackFs.Layout.Row = 10;
+    edtFallbackFs.Layout.Column = 2;
+
     [lblChannel, ddChannel] = labkit.ui.createLabeledDropdown(dataGrid, 'Channel:', ...
         'Items', {'(none)'}, 'Value', '(none)', 'ValueChangedFcn', @onChannelChanged);
-    lblChannel.Layout.Row = 3;
+    lblChannel.Layout.Row = 11;
     lblChannel.Layout.Column = 1;
-    ddChannel.Layout.Row = 3;
+    ddChannel.Layout.Row = 11;
     ddChannel.Layout.Column = 2;
-
-    [lblClass, edtClass] = labkit.ui.createLabeledEditField(dataGrid, ...
-        'Class label:', 'text', 'Value', 'sample');
-    lblClass.Layout.Row = 4;
-    lblClass.Layout.Column = 1;
-    edtClass.Layout.Row = 4;
-    edtClass.Layout.Column = 2;
 
     [lblStart, edtStart] = labkit.ui.createLabeledEditField(dataGrid, ...
         'ROI start (s):', 'numeric', 'Value', 0, 'Limits', [0 Inf]);
-    lblStart.Layout.Row = 5;
+    lblStart.Layout.Row = 12;
     lblStart.Layout.Column = 1;
-    edtStart.Layout.Row = 5;
+    edtStart.Layout.Row = 12;
     edtStart.Layout.Column = 2;
 
     [lblEnd, edtEnd] = labkit.ui.createLabeledEditField(dataGrid, ...
         'ROI end (s):', 'numeric', 'Value', 0, 'Limits', [0 Inf]);
-    lblEnd.Layout.Row = 6;
+    lblEnd.Layout.Row = 13;
     lblEnd.Layout.Column = 1;
-    edtEnd.Layout.Row = 6;
+    edtEnd.Layout.Row = 13;
     edtEnd.Layout.Column = 2;
 
     procPanel = labkit.ui.createPanelGrid(layFA, 'Signal Processing + SNR', 2, [8 2], ...
@@ -89,76 +148,67 @@ function varargout = labkit_ECGPrint_app(varargin)
         'columnWidth', {{135, '1x'}}));
     procGrid = procPanel.grid;
 
-    [lblLow, edtLow] = labkit.ui.createLabeledEditField(procGrid, ...
-        'Bandpass low Hz:', 'numeric', 'Value', 0.5, 'Limits', [0 Inf]);
+    [lblLow, edtLow] = createLabeledSpinner(procGrid, 'Bandpass low Hz:', 0.5, [0 Inf], 0.1);
     lblLow.Layout.Row = 1;
     lblLow.Layout.Column = 1;
     edtLow.Layout.Row = 1;
     edtLow.Layout.Column = 2;
 
-    [lblHigh, edtHigh] = labkit.ui.createLabeledEditField(procGrid, ...
-        'Bandpass high Hz:', 'numeric', 'Value', 40, 'Limits', [0 Inf]);
+    [lblHigh, edtHigh] = createLabeledSpinner(procGrid, 'Bandpass high Hz:', 40, [0 Inf], 1);
     lblHigh.Layout.Row = 2;
     lblHigh.Layout.Column = 1;
     edtHigh.Layout.Row = 2;
     edtHigh.Layout.Column = 2;
 
-    [lblPeakDist, edtPeakDist] = labkit.ui.createLabeledEditField(procGrid, ...
-        'Peak distance (s):', 'numeric', 'Value', 0.28, 'Limits', [0.01 Inf]);
+    [lblPeakDist, edtPeakDist] = createLabeledSpinner(procGrid, 'Peak distance (s):', 0.28, [0.01 Inf], 0.01);
     lblPeakDist.Layout.Row = 3;
     lblPeakDist.Layout.Column = 1;
     edtPeakDist.Layout.Row = 3;
     edtPeakDist.Layout.Column = 2;
 
-    [lblWin, edtWin] = labkit.ui.createLabeledEditField(procGrid, ...
-        'Segment half win (s):', 'numeric', 'Value', 0.7, 'Limits', [0.01 Inf]);
+    [lblWin, edtWin] = createLabeledSpinner(procGrid, 'Segment half win (s):', 0.7, [0.01 Inf], 0.05);
     lblWin.Layout.Row = 4;
     lblWin.Layout.Column = 1;
     edtWin.Layout.Row = 4;
     edtWin.Layout.Column = 2;
 
-    [lblTopN, edtTopN] = labkit.ui.createLabeledEditField(procGrid, ...
-        'Template top N:', 'numeric', 'Value', 30, 'Limits', [1 Inf]);
+    [lblTopN, edtTopN] = createLabeledSpinner(procGrid, 'Template top N:', 30, [1 Inf], 1);
     lblTopN.Layout.Row = 5;
     lblTopN.Layout.Column = 1;
     edtTopN.Layout.Row = 5;
     edtTopN.Layout.Column = 2;
 
-    [lblView, ddBottomView] = labkit.ui.createLabeledDropdown(procGrid, ...
-        'Bottom plot:', ...
-        'Items', {'SNR over time', 'Template + segments'}, ...
-        'Value', 'SNR over time', ...
+    [lblSmooth, edtSmooth] = createLabeledSpinner(procGrid, 'Smooth beats:', 15, [1 Inf], 1, ...
+        @(~,~) refreshPlots());
+    lblSmooth.Layout.Row = 6;
+    lblSmooth.Layout.Column = 1;
+    edtSmooth.Layout.Row = 6;
+    edtSmooth.Layout.Column = 2;
+
+    [lblView, ddTemplateView] = labkit.ui.createLabeledDropdown(procGrid, ...
+        'Template plot:', ...
+        'Items', {'Template + residual band', 'Template + segments'}, ...
+        'Value', 'Template + residual band', ...
         'ValueChangedFcn', @(~,~) refreshPlots());
-    lblView.Layout.Row = 6;
+    lblView.Layout.Row = 7;
     lblView.Layout.Column = 1;
-    ddBottomView.Layout.Row = 6;
-    ddBottomView.Layout.Column = 2;
+    ddTemplateView.Layout.Row = 7;
+    ddTemplateView.Layout.Column = 2;
 
     btnAnalyze = uibutton(procGrid, 'Text', 'Analyze current ROI', ...
         'ButtonPushedFcn', @onAnalyze);
-    btnAnalyze.Layout.Row = 7;
+    btnAnalyze.Layout.Row = 8;
     btnAnalyze.Layout.Column = [1 2];
 
-    btnAddGroup = uibutton(procGrid, 'Text', 'Add current SNR to class comparison', ...
-        'ButtonPushedFcn', @onAddToComparison);
-    btnAddGroup.Layout.Row = 8;
-    btnAddGroup.Layout.Column = [1 2];
-
-    exportPanel = labkit.ui.createPanelGrid(layFA, 'Exports', 3, [4 1], ...
-        struct('rowHeight', {{'fit','fit','fit','fit'}}));
+    exportPanel = labkit.ui.createPanelGrid(layFA, 'Exports', 3, [2 1], ...
+        struct('rowHeight', {{'fit','fit'}}));
     exportGrid = exportPanel.grid;
     btnExportSegments = uibutton(exportGrid, 'Text', 'Export segment SNR CSV', ...
         'ButtonPushedFcn', @onExportSegments);
     btnExportSegments.Layout.Row = 1;
-    btnExportStats = uibutton(exportGrid, 'Text', 'Export class stats CSV', ...
-        'ButtonPushedFcn', @onExportStats);
-    btnExportStats.Layout.Row = 2;
     btnExportOverlay = uibutton(exportGrid, 'Text', 'Export waveform PNG', ...
         'ButtonPushedFcn', @onExportWaveform);
-    btnExportOverlay.Layout.Row = 3;
-    btnClearGroups = uibutton(exportGrid, 'Text', 'Clear class comparison', ...
-        'ButtonPushedFcn', @onClearGroups);
-    btnClearGroups.Layout.Row = 4;
+    btnExportOverlay.Layout.Row = 2;
 
     notePanel = labkit.ui.createPanelGrid(layFA, 'Workflow Notes', 4, [1 1], ...
         struct('rowHeight', {{'1x'}}));
@@ -166,22 +216,28 @@ function varargout = labkit_ECGPrint_app(varargin)
     txtNotes.Value = { ...
         '1. Open MAT/CSV data, select a numeric channel, and optionally set a time ROI.', ...
         '2. Analyze current ROI to filter, detect peaks, segment beats, build a template, and compute SNR.', ...
-        '3. Add analyses to class comparison with class labels, then export segment SNR or group statistics.'};
+        '3. Use import refresh after changing CSV parsing options; use the header preview to inspect ambiguous files.'};
 
     summaryTable = uitable(laySR, 'ColumnName', {'Metric','Value'}, ...
         'Data', initialSummaryRows());
     summaryTable.Layout.Row = labkit.ui.layoutRow(laySR, 1);
 
-    classTable = uitable(laySR, 'ColumnName', {'Group','N','Mean','Std','Median','Min','Max'}, ...
-        'Data', cell(0, 7));
-    classTable.Layout.Row = labkit.ui.layoutRow(laySR, 2);
-
-    pairTable = uitable(laySR, 'ColumnName', {'GroupA','GroupB','MeanDiff','T','DF','P'}, ...
-        'Data', cell(0, 6));
-    pairTable.Layout.Row = labkit.ui.layoutRow(laySR, 3);
+    previewPanel = labkit.ui.createPanelGrid(laySR, 'File Header Preview', 2, [1 1], ...
+        struct('rowHeight', {{'1x'}}));
+    txtFilePreview = uitextarea(previewPanel.grid, 'Editable', 'off', ...
+        'Value', {'Open a CSV/text file, then use Preview file header.'});
 
     logUi = labkit.ui.createLogPanel(layLog, 1, {'Ready.'});
     txtLog = logUi.textArea;
+
+    ui.waveAxes = uiaxes(ui.rightGrid);
+    ui.waveAxes.Layout.Row = 1;
+    ui.noiseAxes = uiaxes(ui.rightGrid);
+    ui.noiseAxes.Layout.Row = 2;
+    ui.snrAxes = uiaxes(ui.rightGrid);
+    ui.snrAxes.Layout.Row = 3;
+    ui.templateAxes = uiaxes(ui.rightGrid);
+    ui.templateAxes.Layout.Row = 4;
 
     resetAxes();
     if nargout == 1
@@ -198,23 +254,93 @@ function varargout = labkit_ECGPrint_app(varargin)
             return;
         end
 
-        filepath = fullfile(fp, fn);
-        [recording, status] = labkit.biosignal.readRecording(filepath, struct('fallbackFs', 2000));
+        S.filepath = string(fullfile(fp, fn));
+        txtFile.Value = char(S.filepath);
+        updateFilePreview();
+        refreshImportParsing();
+    end
+
+    function onRefreshImport(~, ~)
+        refreshImportParsing();
+    end
+
+    function refreshImportParsing()
+        if strlength(S.filepath) == 0
+            showError('No recording selected', 'Open a recording before refreshing import parsing.');
+            return;
+        end
+
+        selectedChannel = "";
+        if ~isempty(ddChannel.Items) && ~strcmp(ddChannel.Value, '(none)')
+            selectedChannel = string(ddChannel.Value);
+        end
+
+        importOpts = currentImportOptions();
+        [recording, status] = labkit.biosignal.readRecording(char(S.filepath), importOpts);
         if ~status.ok
+            txtImportStatus.Value = char("Import failed: " + status.message);
             showError('Could not read recording', status.message);
             return;
         end
 
         S.recording = recording;
-        txtFile.Value = filepath;
         channels = labkit.biosignal.listChannels(recording);
         ddChannel.Items = channels;
-        ddChannel.Value = channels{1};
-        setCurrentChannel(channels{1});
-        addLog(sprintf('Loaded %d channel(s) from %s', numel(channels), filepath));
+        if any(strcmp(channels, selectedChannel))
+            ddChannel.Value = char(selectedChannel);
+        else
+            ddChannel.Value = channels{1};
+        end
+        setCurrentChannel(ddChannel.Value);
+        txtImportStatus.Value = importStatusText(recording, numel(channels));
+        addLog(sprintf('Parsed %d channel(s) from %s', numel(channels), char(S.filepath)));
+    end
+
+    function onPreviewHeader(~, ~)
+        updateFilePreview();
+    end
+
+    function updateFilePreview()
+        if strlength(S.filepath) == 0
+            txtFilePreview.Value = {'Open a CSV/text file, then use Preview file header.'};
+            return;
+        end
+        txtFilePreview.Value = previewFileHeader(char(S.filepath), 18);
+        addLog(sprintf('Previewed file header: %s', char(S.filepath)));
+    end
+
+    function onImportOptionChanged(~, ~)
+        if strlength(S.filepath) > 0
+            txtImportStatus.Value = 'Import settings changed. Click Refresh import parsing.';
+        end
+    end
+
+    function optsOut = currentImportOptions()
+        optsOut = struct('fallbackFs', edtFallbackFs.Value);
+        if edtHeaderLine.Value > 0
+            optsOut.headerLine = round(edtHeaderLine.Value);
+        end
+        switch string(ddHasHeader.Value)
+            case "Yes"
+                optsOut.hasHeader = true;
+            case "No"
+                optsOut.hasHeader = false;
+        end
+        if strlength(strtrim(string(edtTimeColumn.Value))) > 0
+            optsOut.timeColumn = parseColumnSpec(edtTimeColumn.Value);
+        end
+        if string(ddTimeUnit.Value) ~= "Auto"
+            optsOut.timeUnit = ddTimeUnit.Value;
+        end
+        if strlength(strtrim(string(edtSignalColumns.Value))) > 0
+            optsOut.signalColumns = parseColumnList(edtSignalColumns.Value);
+        end
     end
 
     function onChannelChanged(~, ~)
+        if isempty(S.recording) || strcmp(ddChannel.Value, '(none)')
+            return;
+        end
         setCurrentChannel(ddChannel.Value);
     end
 
@@ -269,36 +395,6 @@ function varargout = labkit_ECGPrint_app(varargin)
         end
     end
 
-    function onAddToComparison(~, ~)
-        if isempty(S.measurements) || isempty(S.measurements.perSegment)
-            showError('No SNR result', 'Analyze a signal before adding it to class comparison.');
-            return;
-        end
-        label = string(strtrim(edtClass.Value));
-        if strlength(label) == 0
-            showError('Missing class label', 'Enter a class label before adding SNR values.');
-            return;
-        end
-
-        T = S.measurements.perSegment;
-        rows = table(repmat(label, height(T), 1), T.EventTime, T.SNRdB, ...
-            repmat(string(S.filteredSignal.displayName), height(T), 1), ...
-            'VariableNames', {'Group','EventTime','SNRdB','Channel'});
-        if isempty(S.groupRows)
-            S.groupRows = rows;
-        else
-            S.groupRows = [S.groupRows; rows];
-        end
-        addLog(sprintf('Added %d SNR values to class "%s".', height(rows), label));
-        refreshGroupStats();
-    end
-
-    function onClearGroups(~, ~)
-        S.groupRows = table();
-        refreshGroupStats();
-        addLog('Cleared class comparison data.');
-    end
-
     function onExportSegments(~, ~)
         if isempty(S.measurements) || isempty(S.measurements.perSegment)
             showError('No segment SNR', 'Analyze a signal before exporting segment SNR.');
@@ -309,26 +405,8 @@ function varargout = labkit_ECGPrint_app(varargin)
             addLog('Segment SNR export cancelled.');
             return;
         end
-        writetable(S.measurements.perSegment, fullfile(fp, fn));
+        writetable(analysisTable(), fullfile(fp, fn));
         addLog(sprintf('Exported segment SNR CSV: %s', fullfile(fp, fn)));
-    end
-
-    function onExportStats(~, ~)
-        if isempty(S.groupRows)
-            showError('No class comparison', 'Add one or more analyzed classes before exporting stats.');
-            return;
-        end
-        [fn, fp] = uiputfile('ecg_class_snr_stats.csv', 'Export class stats CSV');
-        if isequal(fn, 0)
-            addLog('Class stats export cancelled.');
-            return;
-        end
-        stats = labkit.biosignal.compareGroups(S.groupRows.SNRdB, S.groupRows.Group);
-        writetable(stats.summary, fullfile(fp, fn));
-        [stemPath, stemName] = fileparts(fullfile(fp, fn));
-        pairPath = fullfile(stemPath, [stemName '_pairwise.csv']);
-        writetable(stats.pairwise, pairPath);
-        addLog(sprintf('Exported class stats CSV: %s', fullfile(fp, fn)));
     end
 
     function onExportWaveform(~, ~)
@@ -337,7 +415,7 @@ function varargout = labkit_ECGPrint_app(varargin)
             addLog('Waveform export cancelled.');
             return;
         end
-        exportgraphics(ui.topAxes, fullfile(fp, fn), 'Resolution', 300);
+        exportgraphics(ui.waveAxes, fullfile(fp, fn), 'Resolution', 300);
         addLog(sprintf('Exported waveform PNG: %s', fullfile(fp, fn)));
     end
 
@@ -352,7 +430,7 @@ function varargout = labkit_ECGPrint_app(varargin)
             sig = S.filteredSignal;
         end
 
-        ax = ui.topAxes;
+        ax = ui.waveAxes;
         plot(ax, sig.time, sig.values, 'Color', [0.15 0.38 0.72], 'LineWidth', 1);
         hold(ax, 'on');
         if ~isempty(S.events) && ~isempty(S.events.index)
@@ -365,37 +443,103 @@ function varargout = labkit_ECGPrint_app(varargin)
         ylabel(ax, char(sig.name));
         grid(ax, 'on');
 
-        bottom = ui.bottomAxes;
         if isempty(S.measurements)
             return;
         end
 
-        if strcmp(ddBottomView.Value, 'Template + segments')
-            X = S.segments.values;
-            t = S.segments.timeOffset;
-            if ~isempty(X)
-                plot(bottom, t, X, 'Color', [0.78 0.84 0.92], 'LineWidth', 0.5);
-                hold(bottom, 'on');
-                plot(bottom, S.template.timeOffset, S.template.values, ...
-                    'k-', 'LineWidth', 2);
-                hold(bottom, 'off');
-            end
-            title(bottom, 'Template + Segments');
-            xlabel(bottom, 'Time from peak (s)');
-            ylabel(bottom, char(sig.name));
-        else
-            T = S.measurements.perSegment;
-            plot(bottom, T.EventTime, T.SNRdB, 'o-', ...
-                'Color', [0.18 0.55 0.32], 'MarkerFaceColor', [0.18 0.55 0.32]);
-            title(bottom, 'SNR Over Time');
-            xlabel(bottom, 'Time (s)');
-            ylabel(bottom, 'SNR (dB)');
-        end
-        grid(bottom, 'on');
+        T = analysisTable();
+        smoothBeats = max(1, round(edtSmooth.Value));
+
+        noiseAx = ui.noiseAxes;
+        plot(noiseAx, T.EventTime, T.NoiseRMS, '.', 'MarkerSize', 12, ...
+            'Color', [0.20 0.45 0.72]);
+        hold(noiseAx, 'on');
+        plot(noiseAx, T.EventTime, movingMedian(T.NoiseRMS, smoothBeats), '-', ...
+            'LineWidth', 1.5, 'Color', [0.05 0.20 0.45]);
+        hold(noiseAx, 'off');
+        title(noiseAx, sprintf('Template Noise RMS Over Time | Smooth=%d beats', smoothBeats));
+        xlabel(noiseAx, 'Time (s)');
+        ylabel(noiseAx, 'Noise RMS');
+        grid(noiseAx, 'on');
+
+        snrAx = ui.snrAxes;
+        plot(snrAx, T.EventTime, T.SNRdB, '.', 'MarkerSize', 12, ...
+            'Color', [0.18 0.55 0.32]);
+        hold(snrAx, 'on');
+        plot(snrAx, T.EventTime, movingMedian(T.SNRdB, smoothBeats), '-', ...
+            'LineWidth', 1.5, 'Color', [0.05 0.32 0.16]);
+        hold(snrAx, 'off');
+        title(snrAx, sprintf('Template SNR Over Time | Smooth=%d beats', smoothBeats));
+        xlabel(snrAx, 'Time (s)');
+        ylabel(snrAx, 'SNR (dB)');
+        grid(snrAx, 'on');
+
+        refreshTemplatePlot();
     end
 
     function updateSummary()
         summaryTable.Data = buildSummaryRows();
+    end
+
+    function refreshTemplatePlot()
+        ax = ui.templateAxes;
+        labkit.ui.hardResetAxis(ax, 'Template + Residual Band');
+        xlabel(ax, 'Time from peak (s)');
+        ylabel(ax, 'Amplitude');
+        if isempty(S.segments) || isempty(S.template) || isempty(S.segments.values)
+            return;
+        end
+
+        X = double(S.segments.values);
+        t = double(S.segments.timeOffset(:));
+        template = double(S.template.values(:));
+        if isempty(X) || isempty(template)
+            return;
+        end
+
+        hold(ax, 'on');
+        if strcmp(ddTemplateView.Value, 'Template + segments')
+            maxShow = min(40, size(X, 2));
+            showIdx = unique(round(linspace(1, size(X, 2), maxShow)));
+            plot(ax, t, X(:, showIdx), 'Color', [0.78 0.84 0.92], 'LineWidth', 0.5);
+            title(ax, 'Template + Segments');
+        else
+            residStd = std(X - template, 0, 2, 'omitnan');
+            upper = template + residStd;
+            lower = template - residStd;
+            fill(ax, [t; flipud(t)], [upper; flipud(lower)], [0.20 0.20 0.20], ...
+                'FaceAlpha', 0.15, 'EdgeColor', 'none');
+            shadeMeasurementWindows(ax);
+            title(ax, 'Template + Residual Band');
+        end
+        plot(ax, t, template, 'k-', 'LineWidth', 2);
+        xline(ax, 0, '--r', 'R');
+        hold(ax, 'off');
+        grid(ax, 'on');
+    end
+
+    function shadeMeasurementWindows(ax)
+        if isempty(S.measurements) || ~isfield(S.measurements, 'metadata')
+            return;
+        end
+        meta = S.measurements.metadata;
+        if ~isfield(meta, 'signalWindowSec') || ~isfield(meta, 'noiseWindowsSec')
+            return;
+        end
+        yl = axisDataYLim(S.template.values);
+        drawWindow(ax, meta.signalWindowSec, yl, [1.00 0.20 0.20], 0.08);
+        noiseWindows = meta.noiseWindowsSec;
+        for k = 1:size(noiseWindows, 1)
+            drawWindow(ax, noiseWindows(k, :), yl, [0.00 0.45 1.00], 0.08);
+        end
+    end
+
+    function T = analysisTable()
+        T = S.measurements.perSegment;
+        smoothBeats = max(1, round(edtSmooth.Value));
+        T.SignalP2P_smooth = movingMedian(T.SignalP2P, smoothBeats);
+        T.NoiseRMS_smooth = movingMedian(T.NoiseRMS, smoothBeats);
+        T.SNRdB_smooth = movingMedian(T.SNRdB, smoothBeats);
     end
 
     function rows = buildSummaryRows()
@@ -422,24 +566,70 @@ function varargout = labkit_ECGPrint_app(varargin)
         end
     end
 
-    function refreshGroupStats()
-        if isempty(S.groupRows)
-            classTable.Data = cell(0, 7);
-            pairTable.Data = cell(0, 6);
+    function y = movingMedian(x, width)
+        x = double(x(:));
+        width = max(1, round(width));
+        y = nan(size(x));
+        for i = 1:numel(x)
+            i1 = max(1, i - floor((width - 1) / 2));
+            i2 = min(numel(x), i + ceil((width - 1) / 2));
+            y(i) = median(x(i1:i2), 'omitnan');
+        end
+    end
+
+    function value = parseColumnSpec(textValue)
+        textValue = strtrim(string(textValue));
+        numericValue = str2double(textValue);
+        if isfinite(numericValue) && numericValue == floor(numericValue)
+            value = numericValue;
+        else
+            value = char(textValue);
+        end
+    end
+
+    function values = parseColumnList(textValue)
+        parts = split(string(textValue), {',', ';'});
+        parts = strtrim(parts);
+        parts = parts(strlength(parts) > 0);
+        numericValues = str2double(parts);
+        if all(isfinite(numericValues)) && all(numericValues == floor(numericValues))
+            values = numericValues(:).';
+        else
+            values = cellstr(parts);
+        end
+    end
+
+    function yl = axisDataYLim(values)
+        values = double(values(:));
+        values = values(isfinite(values));
+        if isempty(values)
+            yl = [-1 1];
             return;
         end
-        stats = labkit.biosignal.compareGroups(S.groupRows.SNRdB, S.groupRows.Group);
-        classTable.Data = tableToCell(stats.summary);
-        pairTable.Data = tableToCell(stats.pairwise);
+        span = max(values) - min(values);
+        pad = max(0.1 * span, eps);
+        yl = [min(values) - pad, max(values) + pad];
+    end
+
+    function drawWindow(ax, windowSec, yl, color, alpha)
+        fill(ax, [windowSec(1) windowSec(2) windowSec(2) windowSec(1)], ...
+            [yl(1) yl(1) yl(2) yl(2)], color, ...
+            'FaceAlpha', alpha, 'EdgeColor', 'none');
     end
 
     function resetAxes()
-        labkit.ui.hardResetAxis(ui.topAxes, 'Waveform + Peaks');
-        xlabel(ui.topAxes, 'Time (s)');
-        ylabel(ui.topAxes, 'Amplitude');
-        labkit.ui.hardResetAxis(ui.bottomAxes, 'SNR Over Time');
-        xlabel(ui.bottomAxes, 'Time (s)');
-        ylabel(ui.bottomAxes, 'SNR (dB)');
+        labkit.ui.hardResetAxis(ui.waveAxes, 'Waveform + Peaks');
+        xlabel(ui.waveAxes, 'Time (s)');
+        ylabel(ui.waveAxes, 'Amplitude');
+        labkit.ui.hardResetAxis(ui.noiseAxes, 'Template Noise RMS Over Time');
+        xlabel(ui.noiseAxes, 'Time (s)');
+        ylabel(ui.noiseAxes, 'Noise RMS');
+        labkit.ui.hardResetAxis(ui.snrAxes, 'Template SNR Over Time');
+        xlabel(ui.snrAxes, 'Time (s)');
+        ylabel(ui.snrAxes, 'SNR (dB)');
+        labkit.ui.hardResetAxis(ui.templateAxes, 'Template + Residual Band');
+        xlabel(ui.templateAxes, 'Time from peak (s)');
+        ylabel(ui.templateAxes, 'Amplitude');
     end
 
     function addLog(message)
@@ -456,11 +646,58 @@ function rows = initialSummaryRows()
     rows = {'Status', 'No signal analyzed'};
 end
 
-function C = tableToCell(T)
-    C = table2cell(T);
-    for k = 1:numel(C)
-        if isstring(C{k})
-            C{k} = char(C{k});
+function [label, spinner] = createLabeledSpinner(parent, text, value, limits, step, callback)
+    if nargin < 6
+        callback = [];
+    end
+    label = uilabel(parent, 'Text', text, 'HorizontalAlignment', 'right');
+    spinner = uispinner(parent, 'Value', value, 'Limits', limits, 'Step', step);
+    if ~isempty(callback)
+        spinner.ValueChangedFcn = callback;
+    end
+end
+
+function text = importStatusText(recording, channelCount)
+    meta = recording.metadata;
+    pieces = strings(1, 0);
+    pieces(end+1) = sprintf('%d channel(s)', channelCount);
+    if isfield(meta, 'timeColumn') && strlength(string(meta.timeColumn)) > 0
+        pieces(end+1) = "time: " + string(meta.timeColumn);
+    end
+    if isfield(meta, 'timeUnit')
+        pieces(end+1) = "unit: " + string(meta.timeUnit);
+    end
+    if isfield(meta, 'timeSource')
+        pieces(end+1) = "source: " + string(meta.timeSource);
+    end
+    if isfield(meta, 'timeRepair')
+        repair = meta.timeRepair;
+        if isfield(repair, 'repairedBackwardCount') && repair.repairedBackwardCount > 0
+            pieces(end+1) = sprintf('repaired backward: %d', repair.repairedBackwardCount);
         end
+        if isfield(repair, 'largeGapCount') && repair.largeGapCount > 0
+            pieces(end+1) = sprintf('large gaps: %d', repair.largeGapCount);
+        end
+    end
+    text = char(strjoin(pieces, ' | '));
+end
+
+function lines = previewFileHeader(filepath, maxLines)
+    lines = {};
+    fid = fopen(filepath, 'r');
+    if fid < 0
+        lines = {'Could not open file preview.'};
+        return;
+    end
+    cleaner = onCleanup(@() fclose(fid));
+    for k = 1:maxLines
+        line = fgetl(fid);
+        if ~ischar(line)
+            break;
+        end
+        lines{end+1, 1} = sprintf('%02d: %s', k, line); %#ok<AGROW>
+    end
+    if isempty(lines)
+        lines = {'File is empty or could not be previewed.'};
     end
 end
