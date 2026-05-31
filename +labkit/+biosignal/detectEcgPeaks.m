@@ -17,9 +17,11 @@ function events = detectEcgPeaks(signal, opts)
 %   polarity - "auto" (default), "positive", "negative", or "absolute".
 %   minDistanceSec - minimum accepted peak spacing in seconds.
 %   thresholdStd, smoothSec - local method options.
-%   integrationWindowSec, refineSearchSec - Pan-Tompkins method options.
+%   integrationWindowSec, refineSearchSec, rawRefineSearchSec -
+%       Pan-Tompkins method options.
 %   baselineWindowSec, envelopeWindowSec, lookaheadSec, refineSearchSec,
-%       minTemplateScore - qrs-streaming method options.
+%       rawRefineSearchSec, minTemplateScore, medianPolarityCorrection,
+%       medianReviewPeakCount - qrs-streaming method options.
 %
 % Output:
 %   events - struct with index, time, amplitude, score, label, threshold,

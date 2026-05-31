@@ -100,11 +100,14 @@ events = labkit.biosignal.detectEcgPeaks(signal, opts);
 | `thresholdStd` | scalar | `3` | Local method robust-threshold multiplier. |
 | `smoothSec` | positive scalar | `0.01` | Local method score smoothing window. |
 | `integrationWindowSec` | positive scalar | `0.150` | Pan-Tompkins moving-integration window. |
-| `refineSearchSec` | positive scalar | `0.120` Pan-Tompkins, `0.090` streaming | Peak snap search half-window. |
+| `refineSearchSec` | positive scalar | `0.120` Pan-Tompkins, `0.090` streaming | Detector-trace peak snap search half-window. |
+| `rawRefineSearchSec` | positive scalar | `0.020` | Final raw-signal peak snap half-window for Pan-Tompkins and streaming. |
 | `baselineWindowSec` | positive scalar | `0.600` | Streaming causal baseline window. |
 | `envelopeWindowSec` | positive scalar | `0.080` | Streaming slope-envelope window. |
 | `lookaheadSec` | positive scalar | `0.080` | Streaming local-maximum lookahead. |
 | `minTemplateScore` | scalar | `0.45` | Streaming rolling-template QC threshold. |
+| `medianPolarityCorrection` | logical | `true` | Streaming post-pass for `auto`/`positive` polarity: reviews recent anchors against the signal median and re-snaps inverted anchors. |
+| `medianReviewPeakCount` | positive integer | `3` | Number of latest streaming peaks considered by the median polarity review. |
 
 ### Other Processing Options
 

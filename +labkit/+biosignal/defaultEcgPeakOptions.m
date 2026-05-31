@@ -18,12 +18,16 @@ function opts = defaultEcgPeakOptions(method)
 %   thresholdStd - local method only, robust-threshold multiplier; default 3.
 %   smoothSec - local method only, moving-average score smoothing; default 0.01.
 %   integrationWindowSec - Pan-Tompkins method only; default 0.150.
-%   refineSearchSec - Pan-Tompkins/streaming peak snap half-window; defaults
-%                     0.120 and 0.090 respectively.
+%   refineSearchSec - Pan-Tompkins/streaming detector-trace snap half-window;
+%                     defaults 0.120 and 0.090 respectively.
+%   rawRefineSearchSec - Pan-Tompkins/streaming final raw-signal snap
+%                        half-window; default 0.020.
 %   baselineWindowSec - streaming method only, causal baseline window; default 0.600.
 %   envelopeWindowSec - streaming method only, causal slope-envelope window; default 0.080.
 %   lookaheadSec - streaming method only, local maximum lookahead; default 0.080.
 %   minTemplateScore - streaming method only, rolling template QC threshold; default 0.45.
+%   medianPolarityCorrection - streaming method only, logical; default true.
+%   medianReviewPeakCount - streaming method only, positive integer; default 3.
 
     if nargin < 1 || isempty(method)
         method = "qrs-streaming";
@@ -43,13 +47,17 @@ function opts = defaultEcgPeakOptions(method)
             opts.minDistanceSec = 0.25;
             opts.integrationWindowSec = 0.150;
             opts.refineSearchSec = 0.120;
+            opts.rawRefineSearchSec = 0.020;
         otherwise
             opts.minDistanceSec = 0.25;
             opts.baselineWindowSec = 0.600;
             opts.envelopeWindowSec = 0.080;
             opts.lookaheadSec = 0.080;
             opts.refineSearchSec = 0.090;
+            opts.rawRefineSearchSec = 0.020;
             opts.minTemplateScore = 0.45;
+            opts.medianPolarityCorrection = true;
+            opts.medianReviewPeakCount = 3;
     end
 end
 

@@ -113,6 +113,7 @@ function events = detectPanTompkins(signal, x, fs, opts)
     end
 
     idx = cleanupPeaks(acceptedIdx, x, minDistance, polarity);
+    idx = snapPeaksToRaw(idx, x, fs, opts, polarity, minDistance);
     metadata = struct('method', "pan_tompkins", ...
         'polarity', polarity, ...
         'minDistanceSec', minDistanceSec, ...
@@ -196,6 +197,8 @@ function events = detectQrsStreaming(signal, x, fs, opts)
     end
 
     idx = cleanupPeaks(acceptedIdx, x, minDistance, polarity);
+    idx = snapPeaksToRaw(idx, x, fs, opts, polarity, minDistance);
+    idx = correctStreamingMedianPolarity(idx, x, fs, opts, polarity, minDistance);
     metadata = struct('method', "qrs_streaming", ...
         'polarity', polarity, ...
         'minDistanceSec', minDistanceSec, ...
@@ -394,6 +397,86 @@ function idx = snapPeak(trace, centerIdx, radius, polarity)
             [~, local] = min(window);
         otherwise
             [~, local] = max(abs(window));
+    end
+    idx = i1 + local - 1;
+end
+
+function idx = snapPeaksToRaw(idx, x, fs, opts, polarity, minDistance)
+    idx = idx(:);
+    if isempty(idx)
+        return;
+    end
+    radiusSec = double(optionValue(opts, 'rawRefineSearchSec', 0.020));
+    if ~isfinite(radiusSec) || radiusSec <= 0
+        return;
+    end
+    radius = max(1, round(radiusSec * fs));
+    for k = 1:numel(idx)
+        idx(k) = snapRawPeak(x, idx(k), radius, polarity);
+    end
+    idx = cleanupPeaks(idx, x, minDistance, polarity);
+end
+
+function idx = correctStreamingMedianPolarity(idx, x, fs, opts, polarity, minDistance)
+    idx = idx(:);
+    if isempty(idx) || polarity == "negative" || polarity == "absolute"
+        return;
+    end
+    enabled = logical(optionValue(opts, 'medianPolarityCorrection', true));
+    if ~enabled
+        return;
+    end
+
+    med = median(x, 'omitnan');
+    if ~isfinite(med)
+        return;
+    end
+    reviewCount = max(1, round(double(optionValue(opts, 'medianReviewPeakCount', 3))));
+    radiusSec = double(optionValue(opts, 'rawRefineSearchSec', 0.020));
+    radius = max(1, round(max(radiusSec, 0.020) * fs));
+
+    for k = 1:numel(idx)
+        first = max(1, k - reviewCount + 1);
+        review = first:k;
+        lowMask = x(idx(review)) <= med;
+        if ~any(lowMask)
+            continue;
+        end
+        lowPositions = review(lowMask);
+        for p = lowPositions(:).'
+            idx(p) = snapRawPeakAboveMedian(x, idx(p), radius, med);
+        end
+    end
+    idx = cleanupPeaks(idx, x, minDistance, "positive");
+end
+
+function idx = snapRawPeak(x, centerIdx, radius, polarity)
+    i1 = max(1, centerIdx - radius);
+    i2 = min(numel(x), centerIdx + radius);
+    window = x(i1:i2);
+    switch polarity
+        case "negative"
+            [~, local] = min(window);
+        case "positive"
+            [~, local] = max(window);
+        otherwise
+            med = median(x, 'omitnan');
+            [~, local] = max(abs(window - med));
+    end
+    idx = i1 + local - 1;
+end
+
+function idx = snapRawPeakAboveMedian(x, centerIdx, radius, med)
+    i1 = max(1, centerIdx - radius);
+    i2 = min(numel(x), centerIdx + radius);
+    window = x(i1:i2);
+    above = window > med;
+    if any(above)
+        candidates = find(above);
+        [~, best] = max(window(above));
+        local = candidates(best);
+    else
+        [~, local] = max(window);
     end
     idx = i1 + local - 1;
 end
