@@ -1,5 +1,13 @@
 function pulse = emptyPulse()
-%EMPTYPULSE Return an empty pulse struct with legacy and normalized fields.
+%EMPTYPULSE Return the canonical empty chrono pulse struct.
+%
+% Output:
+%   pulse - struct with ok=false, legacy flat fields used by existing apps,
+%           and normalized cath/anod/gap nested fields used by newer code.
+%
+% Notes:
+%   All private pulse detectors start from this shape so public DTA item and
+%   pulse outputs remain stable when detection fails.
 
     pulse = struct( ...
         'ok', false, ...

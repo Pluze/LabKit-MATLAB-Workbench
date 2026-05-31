@@ -1,5 +1,21 @@
 function [meta, tables, logmsg] = parseChronoDTA(filepath)
-%PARSECHRONODTA Parse Gamry chronopotentiometry-style DTA tables.
+%PARSECHRONODTA Parse Gamry chrono DTA metadata and TABLE sections.
+%
+% Called by:
+%   makeChronoItem
+%
+% Inputs:
+%   filepath - Gamry chrono DTA text file path.
+%
+% Outputs:
+%   meta - struct with filepath, area_cm2, sampleTime_s, controlMode, and
+%          steps parsed from AREA, SAMPLETIME, ISTEP/VSTEP, and TSTEP lines.
+%   tables - struct array with name, headers, units, data, and numericMask.
+%   logmsg - cell array of parser status messages.
+%
+% Notes:
+%   The parser is tab-oriented and intentionally conservative; behavior is
+%   guarded by DTA fixture tests and should not change without validation.
 
     txt = fileread(filepath);
     txt = erase(txt, char(13));

@@ -69,6 +69,8 @@ same results, cleaner code, clearer boundaries
 
 Every public library function under `+labkit/+ui`, `+labkit/+dta`, and `+labkit/+biosignal` must document its app-facing call contract in the function comment immediately after the function declaration. Include usage examples when useful, input types, accepted option/spec/label/callback struct fields with defaults and legal values, and output struct/table fields intended for app code. Public facade comments must be sufficient for app authors to call the function without reading private implementations. When options become numerous, provide a default-options helper and recommend starting from it rather than hand-writing hidden struct fields.
 
+Private package functions must also have useful top-of-file comments, but they should describe implementation contracts rather than public API. For every `.m` file under a package `private/` folder, document the expected caller, input and output shapes, important side effects or errors, and any assumptions that are not obvious from the function name. Keep this concise and do not duplicate full public option tables in private helpers.
+
 ## Documentation Hygiene
 
 Keep documentation current and concise:

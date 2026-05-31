@@ -1,5 +1,20 @@
 function [scanRate, curves, logmsg] = parseCVCTDTA(filepath)
-%PARSECVCTDTA Parse Gamry CV/CT DTA scan rate and curve tables.
+%PARSECVCTDTA Parse Gamry CV/CT DTA scan rate and CURVE sections.
+%
+% Called by:
+%   labkit.dta.loadFile through its private CV/CT item builder.
+%
+% Inputs:
+%   filepath - Gamry CV/CT DTA text file path.
+%
+% Outputs:
+%   scanRate - SCANRATE converted from mV/s to V/s, or NaN if absent.
+%   curves - struct array with name, headers, units, data, and numericMask.
+%   logmsg - cell array of parser status messages.
+%
+% Notes:
+%   This parser preserves section order and keeps numeric masks so the public
+%   facade can expose parsed curve data without app code reading raw text.
 
     txt = fileread(filepath);
     txt = erase(txt, char(13));

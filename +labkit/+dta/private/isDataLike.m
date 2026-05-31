@@ -1,5 +1,15 @@
 function tf = isDataLike(tok)
-%ISDATALIKE True when a token row contains at least one numeric value.
+%ISDATALIKE Test whether a split DTA row contains any numeric token.
+%
+% Inputs:
+%   tok - cell array of strings/chars from splitTabs.
+%
+% Output:
+%   tf - true when at least one token converts to a finite numeric value.
+%
+% Notes:
+%   Parser section scanners use this as a permissive data-row check; it does
+%   not require every token in the row to be numeric.
 
     if isempty(tok)
         tf = false;

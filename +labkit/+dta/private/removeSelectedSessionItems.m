@@ -1,5 +1,21 @@
 function [session, report] = removeSelectedSessionItems(session, selectedNames, callbacks)
-%REMOVESELECTEDSESSIONITEMS Remove session items by selected display names.
+%REMOVESELECTEDSESSIONITEMS Remove session items selected by display name.
+%
+% Called by:
+%   labkit.dta.removeSelectedItemsFromSession
+%
+% Inputs:
+%   session - labkit_session struct.
+%   selectedNames - char/string/cell/string array of item display names.
+%   callbacks - optional struct with onRemoved(name,item).
+%
+% Outputs:
+%   session - updated session.
+%   report - struct with removed and missing cell arrays.
+%
+% Notes:
+%   Empty selections are no-ops. Callback execution happens before the lower
+%   level removal so apps can log the original item.
 
     if nargin < 3
         callbacks = struct();

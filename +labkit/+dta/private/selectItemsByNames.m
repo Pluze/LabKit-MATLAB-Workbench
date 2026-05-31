@@ -1,5 +1,21 @@
 function [selectedItems, idx] = selectItemsByNames(items, selectedNames)
 %SELECTITEMSBYNAMES Select session items by display names.
+%
+% Called by:
+%   labkit.dta.selectSessionItems
+%
+% Inputs:
+%   items - session item struct array.
+%   selectedNames - char/string/cell/string array of item names. Empty means
+%                   select all items.
+%
+% Outputs:
+%   selectedItems - subset of items in original order.
+%   idx - numeric indices of selected items.
+%
+% Notes:
+%   This helper matches only the item.name field; UI display conventions are
+%   normalized before reaching this private layer.
 
     if isempty(items)
         selectedItems = struct([]);

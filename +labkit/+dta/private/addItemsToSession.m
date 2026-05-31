@@ -1,5 +1,24 @@
 function [session, report] = addItemsToSession(session, filepaths, loader, callbacks)
 %ADDITEMSTOSESSION Add files to a session using a caller-provided loader.
+%
+% Called by:
+%   labkit.dta.addFilesToSession
+%
+% Inputs:
+%   session - labkit_session struct with an items field.
+%   filepaths - char/string path, string array, or cell array of paths.
+%   loader - function handle item = loader(filepath). The loaded item may
+%            omit filepath/name; this helper fills them from the source path.
+%   callbacks - optional struct with onAdded(filepath,item),
+%               onSkipped(filepath), and onFailed(filepath,message).
+%
+% Output:
+%   session - updated session with unique filepaths appended.
+%   report - struct with added, skipped, and failed fields.
+%
+% Notes:
+%   Duplicate detection is filepath-based. Loader errors are converted to
+%   report.failed rows so GUI apps can show status without catching here.
 
     if nargin < 3 || isempty(loader)
         loader = @defaultLoader;

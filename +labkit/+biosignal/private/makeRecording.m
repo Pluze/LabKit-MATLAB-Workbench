@@ -1,5 +1,18 @@
 function recording = makeRecording(filepath, sourceKind, signals)
-%MAKERECORDING Build a standard biosignal recording struct.
+%MAKERECORDING Build the private standard biosignal recording struct.
+%
+% Inputs:
+%   filepath - source file path shown in recording.sourcePath/name.
+%   sourceKind - short source label such as "mat" or "table".
+%   signals - struct array created by makeSignalStruct.
+%
+% Output:
+%   recording - struct with type, version, sourcePath, name, signals, and
+%               metadata.sourceKind. Signal displayName fields are assigned
+%               here and made unique when channel names collide.
+%
+% Notes:
+%   App code should receive this only through labkit.biosignal.readRecording.
 
     [~, name, ext] = fileparts(filepath);
     signals = assignDisplayNames(signals);

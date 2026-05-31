@@ -1,5 +1,21 @@
 function [pulse, ok, msg] = pulsesFromCurrent(t, Im)
-%PULSESFROMCURRENT Detect pulses from measured current segments.
+%PULSESFROMCURRENT Detect cathodic/anodic pulse windows from current data.
+%
+% Called by:
+%   detectPulseCore when metadata is absent or current-only mode is selected.
+%
+% Inputs:
+%   t - time vector in seconds.
+%   Im - measured current vector in ampere, same length/order as t.
+%
+% Outputs:
+%   pulse - pulse struct with legacy and normalized fields populated when ok.
+%   ok - true when both cathodic and later anodic segments are found.
+%   msg - detection status for DTA item logs.
+%
+% Notes:
+%   The segment threshold is 25 percent of max(abs(Im)) with a small floor.
+%   This is a fallback detector, not an app-facing analysis API.
 
     pulse = emptyPulse();
     ok = false;

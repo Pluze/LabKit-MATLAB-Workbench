@@ -1,5 +1,28 @@
 function recording = readCsvRecording(filepath, opts)
-%READCSVRECORDING Read numeric columns from a delimited text table.
+%READCSVRECORDING Read a CSV/TSV-style table into a biosignal recording.
+%
+% Called by:
+%   labkit.biosignal.readRecording
+%
+% Inputs:
+%   filepath - delimited text file path.
+%   opts - readRecording options. Supported fields include headerLine,
+%          hasHeader, timeColumn, timeUnit, signalColumns, fallbackFs,
+%          timeRepair, gapFactor, and useFirstNumericColumnAsTime.
+%
+% Output:
+%   recording - biosignal recording struct with one signal per selected
+%               numeric non-time column and metadata describing header,
+%               time-source, unit, and repair decisions.
+%
+% Errors:
+%   labkit:biosignal:EmptyTable, NoSignals, InvalidTimeColumn, or
+%   InvalidSignalColumns when the parsed file cannot become a recording.
+%
+% Notes:
+%   Time inference is conservative: explicit options win, time-like names
+%   and datetime/duration columns are accepted, and otherwise a synthetic
+%   sample-index axis is used unless a specific opt-in rule applies.
 
     [T, importInfo] = readDelimitedTable(filepath, opts);
     if isempty(T)

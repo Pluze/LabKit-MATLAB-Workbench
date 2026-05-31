@@ -140,7 +140,7 @@ Every public library function under `+labkit/+ui`, `+labkit/+dta`, and `+labkit/
 - returned struct/table fields when those outputs are intended for app code
 - a short calling recommendation when a default-options helper should be used instead of hand-written structs
 
-Private helpers may keep shorter comments, but public facade files should not require users to inspect private implementations to discover valid parameters.
+Private helpers may keep shorter comments, but their top-of-file comments should still identify the expected caller, input/output shapes, important side effects or errors, and non-obvious assumptions. Public facade files should not require users to inspect private implementations to discover valid parameters.
 
 Reusable UI helpers should build or update generic controls and draw prepared data. Data extraction, parser/session calls, and analysis decisions should stay in the app or DTA layer; for example, apps should call `labkit.dta.getCurveXY` before passing prepared vectors and labels to `labkit.ui.plotXY`. App-specific callback choreography, such as clearing a session, restoring app-specific plot defaults, refreshing experiment summaries, and writing app logs, should stay in the owning app file even when two apps have similar callback order. Domain labels such as DTA-specific open/export button text and app shell tab/panel titles should be passed in from apps rather than hardcoded in the GUI library.
 

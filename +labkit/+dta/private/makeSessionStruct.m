@@ -1,5 +1,17 @@
 function session = makeSessionStruct(kind, opts)
-%MAKESESSIONSTRUCT Create a shared LabKit session struct.
+%MAKESESSIONSTRUCT Create the canonical private LabKit session struct.
+%
+% Called by:
+%   labkit.dta.makeSession and session-loading helpers.
+%
+% Inputs:
+%   kind - optional session family label; defaults to "generic".
+%   opts - optional struct. opts.options seeds session.options and opts.notes
+%          seeds session.notes.
+%
+% Output:
+%   session - labkit_session struct with type, version, kind, timestamps,
+%             items, results, options, notes, and logmsg fields.
 
     if nargin < 1 || isempty(kind)
         kind = 'generic';

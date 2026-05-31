@@ -1,5 +1,19 @@
 function filepaths = findDTAFilesRecursive(rootDir)
-%FINDDTAFILESRECURSIVE Recursively collect .DTA/.dta files.
+%FINDDTAFILESRECURSIVE Recursively collect .DTA/.dta files below a folder.
+%
+% Called by:
+%   labkit.dta.findFiles
+%
+% Inputs:
+%   rootDir - existing folder path.
+%
+% Output:
+%   filepaths - cell row of absolute or dir-returned full paths in traversal
+%               order. Files are accepted by case-insensitive .dta extension.
+%
+% Notes:
+%   The public facade is responsible for folder validation and sorting policy
+%   changes; this helper only walks the tree.
 
     entries = dir(rootDir);
     filepaths = {};

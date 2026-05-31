@@ -1,5 +1,27 @@
 function ui = createTabbedWorkbenchShell(figName, figPosition, leftWidth, labels, tabSpecs, rightGridSize, rightRowHeight, rightRowSpacing)
-%CREATETABBEDWORKBENCHSHELL Create the shared resizable tabbed workbench shell.
+%CREATETABBEDWORKBENCHSHELL Build the private tabbed workbench skeleton.
+%
+% Called by:
+%   labkit.ui.createWorkbench
+%
+% Inputs:
+%   figName - figure name/title.
+%   figPosition - uifigure Position vector.
+%   leftWidth - initial fixed width of the left control panel.
+%   labels - struct with controlsPanel and rightPanel text.
+%   tabSpecs - struct array from labkit.ui.tabSpec/default shell specs.
+%   rightGridSize - right-side uigridlayout size.
+%   rightRowHeight - right-side grid RowHeight cell array.
+%   rightRowSpacing - right-side grid RowSpacing scalar.
+%
+% Output:
+%   ui - workbench handle struct containing fig, main grid, left/right
+%        panels, tabs, scroll panels, tab grids, resize handles, and rightGrid.
+%
+% Notes:
+%   Logical tab rows are expanded with physical resize-handle rows here.
+%   App code should place controls through public helpers that call
+%   labkit.ui.layoutRow rather than depending on physical row indices.
 
     ui = struct();
     ui.fig = uifigure('Name', figName, 'Position', figPosition);

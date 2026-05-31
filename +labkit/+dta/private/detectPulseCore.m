@@ -1,5 +1,25 @@
 function [pulse, msg] = detectPulseCore(t, Im, meta, opts)
 %DETECTPULSECORE Internal chrono pulse detector for the DTA facade.
+%
+% Called by:
+%   labkit.dta.detectPulses and chrono item construction.
+%
+% Inputs:
+%   t - time vector in seconds.
+%   Im - measured current vector in ampere, same length as t.
+%   meta - parsed chrono metadata struct with optional steps field.
+%   opts - string mode or struct with mode. Accepted private modes are
+%          "metadata_first", "metadata_only", and "current_only"; legacy
+%          display labels are normalized here.
+%
+% Output:
+%   pulse - pulse struct from emptyPulse with ok/method/message and
+%           compatibility plus normalized pulse windows.
+%   msg - human-readable detection status.
+%
+% Notes:
+%   The metadata-first path prefers ISTEP/TSTEP or VSTEP/TSTEP timing and
+%   falls back to measured-current segmentation only when needed.
 
     if nargin < 4 || isempty(opts)
         opts = defaultPulseOptions();

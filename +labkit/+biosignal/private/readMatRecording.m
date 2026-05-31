@@ -1,5 +1,21 @@
 function recording = readMatRecording(filepath, opts)
-%READMATRECORDING Read numeric timetable channels from a MAT file.
+%READMATRECORDING Read timetable channels from a MAT file recording.
+%
+% Called by:
+%   labkit.biosignal.readRecording
+%
+% Inputs:
+%   filepath - MAT file path.
+%   opts - readRecording options passed to makeSignalStruct. fallbackFs may
+%          be used if a timetable time vector cannot infer fs.
+%
+% Output:
+%   recording - biosignal recording struct containing numeric/logical vector
+%               variables from every timetable variable found in the MAT
+%               file. Timetable variable names become channel names.
+%
+% Errors:
+%   labkit:biosignal:NoSignals when no numeric timetable channels are found.
 
     data = load(filepath);
     names = fieldnames(data);

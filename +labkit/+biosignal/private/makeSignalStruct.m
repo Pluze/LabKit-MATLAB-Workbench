@@ -1,5 +1,19 @@
 function signal = makeSignalStruct(name, sourceName, timeSec, values, metadata, opts)
-%MAKESIGNALSTRUCT Build a standard biosignal signal struct.
+%MAKESIGNALSTRUCT Build a normalized private biosignal signal struct.
+%
+% Inputs:
+%   name - channel name shown to app code.
+%   sourceName - table/timetable source label.
+%   timeSec - numeric seconds vector.
+%   values - numeric/logical vector; non-finite values are repaired.
+%   metadata - source metadata copied into signal.metadata.
+%   opts - optional struct. fallbackFs supplies fs when timeSec cannot
+%          produce a finite positive sample-rate estimate.
+%
+% Output:
+%   signal - struct with type, name, displayName, sourceName, time, values,
+%            fs, unit, and metadata fields. time/values are trimmed to a
+%            shared length.
 
     if nargin < 6
         opts = struct();

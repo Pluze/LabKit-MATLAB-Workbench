@@ -1,5 +1,20 @@
 function [meta, tables, logmsg] = parseEISDTA(filepath)
-%PARSEEISDTA Parse Gamry EIS DTA metadata and numeric tables.
+%PARSEEISDTA Parse Gamry EIS DTA metadata and ZCURVE/TABLE sections.
+%
+% Called by:
+%   makeEISItem
+%
+% Inputs:
+%   filepath - Gamry EIS DTA text file path.
+%
+% Outputs:
+%   meta - struct with filepath, tag, title, and area_cm2.
+%   tables - struct array with name, headers, units, data, and numericMask.
+%   logmsg - cell array of parser status messages.
+%
+% Notes:
+%   This private parser owns raw DTA text interpretation. Apps should access
+%   parsed EIS values through labkit.dta.getZCurve/getCurveXY.
 
     txt = fileread(filepath);
     txt = erase(txt, char(13));

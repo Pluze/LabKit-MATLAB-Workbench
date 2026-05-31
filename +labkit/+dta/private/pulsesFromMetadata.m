@@ -1,5 +1,21 @@
 function [pulse, ok, msg] = pulsesFromMetadata(meta, t)
-%PULSESFROMMETADATA Detect pulses from ISTEP/TSTEP or VSTEP/TSTEP metadata.
+%PULSESFROMMETADATA Detect pulse windows from chrono step metadata.
+%
+% Called by:
+%   detectPulseCore in metadata-first or metadata-only modes.
+%
+% Inputs:
+%   meta - chrono parser metadata with steps containing I, V, and T fields.
+%   t - measured time vector used to clamp derived windows to available data.
+%
+% Outputs:
+%   pulse - pulse struct with cathodic/anodic/gap windows when ok.
+%   ok - true when negative and positive current/voltage steps are usable.
+%   msg - detection status for logs and item.message.
+%
+% Notes:
+%   Current-step metadata is preferred when present; otherwise voltage-step
+%   metadata is used with NaN nominal currents in the pulse struct.
 
     pulse = emptyPulse();
     ok = false;

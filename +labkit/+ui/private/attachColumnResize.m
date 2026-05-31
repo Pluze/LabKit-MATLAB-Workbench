@@ -1,5 +1,23 @@
 function attachColumnResize(fig, grid, leftColumn, separatorColumn, opts)
 %ATTACHCOLUMNRESIZE Attach drag-to-resize behavior to a grid separator.
+%
+% Called by:
+%   createTabbedWorkbenchShell and other UI shell internals.
+%
+% Inputs:
+%   fig - owning uifigure whose pointer and window callbacks are used.
+%   grid - uigridlayout with a separator panel in separatorColumn.
+%   leftColumn - column index whose width should be resized.
+%   separatorColumn - column index containing the drag handle panel.
+%   opts - optional struct with minWidth, rightReserve, and separatorWidth.
+%
+% Side effects:
+%   Installs ButtonDownFcn on the separator and temporary figure
+%   WindowButtonMotionFcn/WindowButtonUpFcn callbacks while dragging.
+%
+% Notes:
+%   This helper mutates layout handles only; apps should normally request
+%   resizable shells through labkit.ui.createWorkbench.
 
     if nargin < 5
         opts = struct();

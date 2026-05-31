@@ -1,5 +1,18 @@
 function item = makeEISItem(filepath)
-%MAKEEISITEM Build a legacy-compatible EIS item from a Gamry DTA file.
+%MAKEEISITEM Build an EIS DTA item struct from a Gamry DTA file.
+%
+% Called by:
+%   labkit.dta.loadFile when detected/expected kind is "eis".
+%
+% Inputs:
+%   filepath - Gamry EIS DTA file path containing a ZCURVE table.
+%
+% Output:
+%   item - EIS item with parser outputs, zcurve, normalized field aliases,
+%          legacy bridge fields, frequency-order metadata, and analysis struct.
+%
+% Errors:
+%   Throws when no usable ZCURVE data remains.
 
     item = struct();
     item.type = "eis";

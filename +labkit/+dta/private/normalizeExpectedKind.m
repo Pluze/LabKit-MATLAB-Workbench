@@ -1,5 +1,18 @@
 function kind = normalizeExpectedKind(kind)
-%NORMALIZEEXPECTEDKIND Validate and normalize an expected DTA kind.
+%NORMALIZEEXPECTEDKIND Validate and normalize a private DTA kind argument.
+%
+% Called by:
+%   loadFile, loadFiles, loadFolder, and addFilesToSession.
+%
+% Inputs:
+%   kind - char vector or scalar string. Missing or blank means "auto".
+%
+% Output:
+%   kind - lowercase string scalar: "auto", "chrono", "eis", or "cvct".
+%
+% Errors:
+%   labkit:dta:InvalidKind for non-scalar/non-text input or unsupported
+%   expected kinds.
 
     if nargin < 1
         kind = "auto";

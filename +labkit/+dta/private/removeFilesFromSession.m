@@ -1,5 +1,20 @@
 function [session, report] = removeFilesFromSession(session, selectors)
 %REMOVEFILESFROMSESSION Remove session items by filepath or display name.
+%
+% Called by:
+%   removeSelectedSessionItems and DTA session facade helpers.
+%
+% Inputs:
+%   session - labkit_session struct.
+%   selectors - char/string/cell/string array of item filepath or name values.
+%
+% Outputs:
+%   session - session with matching items removed and modifiedAt refreshed.
+%   report - struct with removed and missing cell arrays.
+%
+% Notes:
+%   Matching is exact against filepath and name fields. This helper does not
+%   call GUI callbacks; higher-level helpers own callback timing.
 
     selectors = normalizeSelectors(selectors);
     report = struct();

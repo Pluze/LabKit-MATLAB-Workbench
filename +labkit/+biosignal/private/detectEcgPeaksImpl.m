@@ -1,5 +1,25 @@
 function events = detectEcgPeaksImpl(signal, opts)
-%DETECTECGPEAKSIMPL Detect ECG/QRS peaks using selectable private methods.
+%DETECTECGPEAKSIMPL Dispatch the ECG peak detector behind detectEcgPeaks.
+%
+% Called by:
+%   labkit.biosignal.detectEcgPeaks
+%
+% Inputs:
+%   signal - biosignal signal struct with time, values, and fs fields.
+%   opts - options struct normalized by the public facade. Important fields
+%          are method, polarity, minDistanceSec, integrationWindowSec,
+%          baselineWindowSec, envelopeWindowSec, refineSearchSec,
+%          rawRefineSearchSec, medianPolarityCorrection, and
+%          medianReviewPeakCount.
+%
+% Output:
+%   events - biosignalEvents struct with index, time, amplitude, score,
+%            label, threshold, and metadata fields.
+%
+% Notes:
+%   This file owns private algorithm implementations only. Keep public
+%   option documentation in detectEcgPeaks/defaultEcgPeakOptions and
+%   docs/biosignal.md.
 
     if nargin < 2
         opts = struct();

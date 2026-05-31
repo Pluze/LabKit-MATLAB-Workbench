@@ -1,5 +1,20 @@
 function item = makeChronoItem(filepath, opts)
-%MAKECHRONOITEM Load a chrono DTA file into a package-backed item struct.
+%MAKECHRONOITEM Load a chrono DTA file into a DTA item struct.
+%
+% Called by:
+%   labkit.dta.loadFile when detected/expected kind is "chrono".
+%
+% Inputs:
+%   filepath - Gamry chrono DTA file path.
+%   opts - optional pulse-detection options forwarded to detectPulseCore.
+%
+% Output:
+%   item - chrono item with parser outputs, normalized arrays, legacy bridge
+%          fields, pulse info, alignment fields, message, and analysis struct.
+%
+% Errors:
+%   Throws when the main curve is missing or fewer than two valid T/Vf/Im
+%   samples remain after filtering.
 
     if nargin < 2
         opts = struct();
