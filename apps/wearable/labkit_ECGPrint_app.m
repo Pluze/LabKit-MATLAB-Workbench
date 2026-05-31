@@ -238,7 +238,7 @@ function varargout = labkit_ECGPrint_app(varargin)
     labkit.ui.createReadOnlyTextPanel(layFA, 'Workflow Notes', 6, { ...
         '1. Open MAT/CSV data, select a numeric channel, and optionally set a time ROI.', ...
         '2. Use File Header Preview and Import Parsing only when CSV/text auto-detection needs correction.', ...
-        '3. Analyze current ROI to filter, detect peaks, segment beats, build a template, and compute SNR.'});
+        '3. Analysis filters the selected channel with edge padding, then crops the filtered signal to the ROI for peak/SNR measurement.'});
 
     summaryTable = uitable(laySR, 'ColumnName', {'Metric','Value'}, ...
         'Data', initialSummaryRows());
@@ -428,15 +428,16 @@ function varargout = labkit_ECGPrint_app(varargin)
 
         try
             timeRange = [edtStart.Value edtEnd.Value];
+            highCut = min(edtHigh.Value, max(edtLow.Value + eps, 0.45 * S.signal.fs));
+            filterSpec = struct('type', 'bandpass', 'cutoffHz', [edtLow.Value highCut]);
+            fullFiltered = labkit.biosignal.filterSignal(S.signal, filterSpec);
             if timeRange(2) > timeRange(1)
                 S.workingSignal = labkit.biosignal.cropSignal(S.signal, timeRange);
+                S.filteredSignal = labkit.biosignal.cropSignal(fullFiltered, timeRange);
             else
                 S.workingSignal = S.signal;
+                S.filteredSignal = fullFiltered;
             end
-
-            highCut = min(edtHigh.Value, max(edtLow.Value + eps, 0.45 * S.workingSignal.fs));
-            filterSpec = struct('type', 'bandpass', 'cutoffHz', [edtLow.Value highCut]);
-            S.filteredSignal = labkit.biosignal.filterSignal(S.workingSignal, filterSpec);
             peakOpts = struct('polarity', 'auto', ...
                 'method', peakMethodValue(ddPeakMethod.Value), ...
                 'minDistanceSec', edtPeakDist.Value, ...
@@ -447,7 +448,7 @@ function varargout = labkit_ECGPrint_app(varargin)
             S.template = labkit.biosignal.buildTemplate(S.segments, struct('topN', edtTopN.Value));
             S.measurements = labkit.biosignal.measureSegments(S.segments, S.template);
 
-            addLog(sprintf('Analyzed ROI with %s: %d peaks, %d valid segments.', ...
+            addLog(sprintf('Filtered channel, then analyzed ROI with %s: %d peaks, %d valid segments.', ...
                 ddPeakMethod.Value, numel(S.events.index), size(S.segments.values, 2)));
             updateSummary();
             refreshPlots();

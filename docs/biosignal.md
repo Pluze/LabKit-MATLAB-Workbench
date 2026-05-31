@@ -113,7 +113,7 @@ events = labkit.biosignal.detectEcgPeaks(signal, opts);
 
 | Function | Options / parameters |
 | --- | --- |
-| `filterSignal(signal, spec)` | `spec.type`: `bandpass`, `lowpass`, `highpass`, `none`, `off`; `spec.cutoffHz`: scalar or `[low high]`. |
+| `filterSignal(signal, spec)` | `spec.type`: `bandpass`, `lowpass`, `highpass`, `none`, `off`; `spec.cutoffHz`: scalar or `[low high]`; `spec.edgeMode`: `reflect` default or `none`; `spec.edgePadSec`: padding seconds, auto by default; `spec.edgeTaperSec`: padded-edge taper seconds, default `1`. |
 | `segmentByEvents(signal, events, windowSec)` | `windowSec`: `[start end]` seconds relative to event, default `[-0.35 0.35]`. |
 | `buildTemplate(segments, opts)` | `opts.topN`: positive integer, default `min(30, segmentCount)`. |
 | `measureSegments(segments, template, opts)` | `opts.signalWindowSec`: `[start end]`, default `[-0.06 0.06]`; `opts.noiseWindowsSec`: N-by-2 matrix, default `[-0.30 -0.20; 0.40 0.50]`. |

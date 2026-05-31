@@ -14,6 +14,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Pan-Tompkins and streaming ECG peak detection now perform a final raw-signal peak snap; streaming detection also reviews recent anchors against the signal median to correct accidental inverted peak anchors.
 - Added `labkit.biosignal.defaultEcgPeakOptions` and expanded public library function comments/docs so app authors can discover option fields, defaults, and legal values without reading private implementations.
 - ECG import controls are now split into separate recording, import parsing, and channel/ROI sections, with a clearer `Parse / refresh file` action and nonblocking automatic parse failure status after opening a file.
+- ECG filtering now uses reflected edge padding/tapering in the biosignal facade, and the ECG app crops the ROI after filtering so ROI boundaries are not treated as FFT filter boundaries.
 - ECG template measurement-window shading now spans the full template plot height.
 - Reusable package, startup, and app entrypoint names now use the generic `labkit` namespace.
 - Added DIC preprocess and postprocess apps built on the shared UI foundation, with image registration, paired crop, Ncorr strain overlay, and ROI summary logic kept app-local.

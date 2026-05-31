@@ -28,6 +28,7 @@ function test_biosignalFacade()
 
     filtered = labkit.biosignal.filterSignal(cropped, ...
         struct('type', 'bandpass', 'cutoffHz', [0.5 40]));
+    checkFilterEdgeProtection(cropped);
     defaults = labkit.biosignal.defaultEcgPeakOptions("local");
     assert(defaults.method == "local", 'Default ECG peak options should preserve requested method.');
     assert(isfield(defaults, 'minDistanceSec'), ...
@@ -67,6 +68,26 @@ function out = mergeStruct(a, b)
     for k = 1:numel(fields)
         out.(fields{k}) = b.(fields{k});
     end
+end
+
+function checkFilterEdgeProtection(signal)
+    edgeSignal = signal;
+    n = numel(edgeSignal.values);
+    drift = linspace(-1, 1, n).';
+    edgeSignal.values = edgeSignal.values(:) + drift;
+    edgeSignal.values(end) = edgeSignal.values(end) + 5;
+
+    protected = labkit.biosignal.filterSignal(edgeSignal, ...
+        struct('type', 'bandpass', 'cutoffHz', [0.5 40]));
+    unprotected = labkit.biosignal.filterSignal(edgeSignal, ...
+        struct('type', 'bandpass', 'cutoffHz', [0.5 40], 'edgeMode', 'none'));
+
+    assert(numel(protected.values) == n, ...
+        'Edge-padded filtering should preserve signal length.');
+    assert(all(isfinite(protected.values)), ...
+        'Edge-padded filtering should return finite values.');
+    assert(norm(protected.values - unprotected.values) > eps, ...
+        'Reflect edge mode should use a different path than unpadded FFT filtering.');
 end
 
 function checkEcgPeakMethods(signal)
