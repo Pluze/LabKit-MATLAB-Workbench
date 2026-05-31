@@ -1,5 +1,5 @@
-function test_gui_layout_controls(scope)
-%TEST_GUI_LAYOUT_CONTROLS Verify noninteractive GUI layout and safe callbacks.
+function guiLayoutControls(scope)
+%GUILAYOUTCONTROLS Verify noninteractive GUI layout and safe callbacks.
 
     if nargin < 1 || isempty(scope)
         scope = 'all';

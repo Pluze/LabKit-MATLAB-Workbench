@@ -183,10 +183,10 @@ Do not add a UI helper only because one app got large. Extract UI code when the 
 
 ## UI Validation
 
-Reusable UI helper and shell contracts are covered by local noninteractive GUI profiles:
+Reusable UI helper and shell contracts are covered by the `labkit/ui` suite. Add `--gui` when checking noninteractive layout and callback wiring:
 
 ```bash
-scripts/run_matlab_tests.sh --profile ui
+scripts/run_matlab_tests.sh --suite labkit/ui --gui
 scripts/run_matlab_tests.sh --suite gui
 ```
 

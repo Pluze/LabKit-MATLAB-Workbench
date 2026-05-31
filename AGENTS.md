@@ -97,14 +97,16 @@ Keep documentation current and concise:
 Run relevant automated checks after executable MATLAB changes. Use focused checks during scoped iteration instead of defaulting to unrelated app families:
 
 ```bash
-scripts/run_matlab_tests.sh --suite core
-scripts/run_matlab_tests.sh --profile biosignal
-scripts/run_matlab_tests.sh --test test_gui_layout_controls
-scripts/run_matlab_tests.sh --profile ui
-scripts/run_matlab_tests.sh --profile dic
-scripts/run_matlab_tests.sh --profile image_measurement
-scripts/run_matlab_tests.sh --profile wearable
-scripts/run_matlab_tests.sh --profile electrochem
+scripts/run_matlab_tests.sh --suite project
+scripts/run_matlab_tests.sh --suite labkit/dta
+scripts/run_matlab_tests.sh --suite labkit/dta --suite apps/electrochem
+scripts/run_matlab_tests.sh --suite labkit/biosignal
+scripts/run_matlab_tests.sh --test test_gui_layout_ui_helpers
+scripts/run_matlab_tests.sh --suite labkit/ui --suite apps --gui
+scripts/run_matlab_tests.sh --suite apps/dic --gui
+scripts/run_matlab_tests.sh --suite apps/image_measurement --gui
+scripts/run_matlab_tests.sh --suite apps/wearable --gui
+scripts/run_matlab_tests.sh --suite apps/electrochem --gui
 ```
 
 Use the default pure-function suite for broader changes:

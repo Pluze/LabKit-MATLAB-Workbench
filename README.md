@@ -72,10 +72,10 @@ scripts/run_matlab_tests.sh
 Focused checks are available during development:
 
 ```bash
-scripts/run_matlab_tests.sh --profile dta
-scripts/run_matlab_tests.sh --profile biosignal
-scripts/run_matlab_tests.sh --profile wearable
-scripts/run_matlab_tests.sh --profile ui
+scripts/run_matlab_tests.sh --suite labkit/dta
+scripts/run_matlab_tests.sh --suite labkit/biosignal
+scripts/run_matlab_tests.sh --suite apps/wearable --gui
+scripts/run_matlab_tests.sh --suite labkit/ui --suite apps --gui
 ```
 
 GitHub Actions runs the default non-GUI suite on pushes and pull requests to `main`. Public repositories can use MathWorks automatic licensing for supported MATLAB Actions; private repositories need a GitHub secret named `MLM_LICENSE_TOKEN`.

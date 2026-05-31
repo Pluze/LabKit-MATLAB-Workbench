@@ -150,13 +150,13 @@ If those conditions are not met, keep the code app-local. Adding apps is expecte
 
 ## App Validation
 
-Pure app calculations, export table construction, and plotting helpers belong in the automated `apps` suite and run in the default GitHub Actions workflow. GUI launch/layout contracts are checked by focused local GUI profiles:
+Pure app calculations, export table construction, and plotting helpers belong in the app-family suites and run in the default GitHub Actions workflow when they do not require GUI graphics. Add `--gui` to the same suite when checking noninteractive launch/layout contracts:
 
 ```bash
-scripts/run_matlab_tests.sh --profile electrochem
-scripts/run_matlab_tests.sh --profile dic
-scripts/run_matlab_tests.sh --profile image_measurement
-scripts/run_matlab_tests.sh --profile wearable
+scripts/run_matlab_tests.sh --suite apps/electrochem --gui
+scripts/run_matlab_tests.sh --suite apps/dic --gui
+scripts/run_matlab_tests.sh --suite apps/image_measurement --gui
+scripts/run_matlab_tests.sh --suite apps/wearable --gui
 ```
 
 Interactive GUI workflows, including manual file selection and visual inspection, are intentionally validated manually during app work.

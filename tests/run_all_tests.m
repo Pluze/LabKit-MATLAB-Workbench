@@ -1,5 +1,9 @@
 function results = run_all_tests(includeGui, selection)
 %RUN_ALL_TESTS Run the current MATLAB test suite.
+%
+% Tests live under tests/suites/<target>/test_*.m. Targets mirror source
+% ownership: project guardrails, labkit libraries, and app family folders.
+% The runner discovers targets recursively and filters by directory name.
 
     if nargin < 1
         includeGui = false;
@@ -14,121 +18,203 @@ function results = run_all_tests(includeGui, selection)
     addpath(genpath(testsRoot));
     startup_labkit();
 
-    groups = filterGroups(testGroups(includeGui), selection);
-    assert(~isempty(groups), 'No test groups matched the requested selection.');
-    results = struct('group', {}, 'name', {}, 'passed', {}, 'message', {});
+    results = runLabkitTests(testsRoot, includeGui, selection);
+end
+
+function results = runLabkitTests(testsRoot, includeGui, selection)
+    suiteRoot = fullfile(testsRoot, 'suites');
+    groups = discoverTestGroups(suiteRoot);
+    assertUniqueTestNames(groups);
+
+    [groups, guiOnly] = filterGroupsBySuite(groups, selection);
+    groups = filterTestsByGuiMode(groups, includeGui, guiOnly);
+    groups = filterGroupsByTests(groups, selection);
+    groups = removeEmptyGroups(groups);
+    assert(~isempty(groups), 'No tests matched the requested selection.');
+
+    results = struct('group', {}, 'name', {}, 'passed', {}, 'message', {}, 'duration_s', {});
+    suiteStart = tic;
 
     for g = 1:numel(groups)
-        fprintf('\n[%s]\n', groups(g).name);
+        fprintf('\n[%s]\n', groups(g).key);
         tests = groups(g).tests;
+        groupStart = tic;
         for k = 1:numel(tests)
-            name = func2str(tests{k});
+            name = tests(k).name;
+            testStart = tic;
             try
-                tests{k}();
+                tests(k).handle();
+                duration = toc(testStart);
                 results(end+1) = struct( ...
-                    'group', groups(g).name, ...
+                    'group', groups(g).key, ...
                     'name', name, ...
                     'passed', true, ...
-                    'message', ''); %#ok<AGROW>
-                fprintf('PASS %s\n', name);
+                    'message', '', ...
+                    'duration_s', duration); %#ok<AGROW>
+                fprintf('PASS %s (%.2fs)\n', name, duration);
             catch ME
+                duration = toc(testStart);
                 results(end+1) = struct( ...
-                    'group', groups(g).name, ...
+                    'group', groups(g).key, ...
                     'name', name, ...
                     'passed', false, ...
-                    'message', ME.message); %#ok<AGROW>
-                fprintf(2, 'FAIL %s: %s\n', name, ME.message);
+                    'message', ME.message, ...
+                    'duration_s', duration); %#ok<AGROW>
+                fprintf(2, 'FAIL %s (%.2fs): %s\n', name, duration, ME.message);
             end
         end
+        fprintf('[%s completed in %.2fs]\n', groups(g).key, toc(groupStart));
     end
 
     if any(~[results.passed])
         error('One or more tests failed.');
     end
+
+    fprintf('\nAll selected tests passed in %.2fs.\n', toc(suiteStart));
 end
 
-function groups = testGroups(includeGui)
-    groups = [coreTests(), dtaTests(), biosignalTests(), appTests()];
-    if includeGui
-        groups = [groups, guiTests()];
+function groups = discoverTestGroups(suiteRoot)
+    files = discoverTestFiles(suiteRoot, suiteRoot);
+    groups = struct('key', {}, 'tests', {});
+    if isempty(files)
+        return;
     end
-end
 
-function group = coreTests()
-    group = makeGroup('core', 'core boundaries', { ...
-        @test_startup_boundaries, ...
-        @test_architecture_boundaries});
-end
+    keys = unique({files.groupKey});
+    for g = 1:numel(keys)
+        key = keys{g};
+        groupFiles = files(strcmp({files.groupKey}, key));
+        [~, order] = sort({groupFiles.name});
+        groupFiles = groupFiles(order);
 
-function group = dtaTests()
-    group = makeGroup('dta', 'DTA facade and schemas', { ...
-        @test_parseChronoDTA, ...
-        @test_parseEISDTA, ...
-        @test_parseCVCTDTA, ...
-        @test_dtaFacade, ...
-        @test_dtaSessionFacade, ...
-        @test_detectPulses, ...
-        @test_makeChronoItem, ...
-        @test_sessionUtilities});
-end
-
-function group = biosignalTests()
-    group = makeGroup('biosignal', 'biosignal facade and processing', { ...
-        @test_biosignalFacade});
-end
-
-function group = appTests()
-    group = makeGroup('apps', 'app analysis and exports', { ...
-        @test_chronoOverlayExport, ...
-        @test_computeVTResistance, ...
-        @test_vtResistanceExport, ...
-        @test_computeCIC, ...
-        @test_cicExport, ...
-        @test_computeCSC, ...
-        @test_plotXY, ...
-        @test_eisOverlayExport, ...
-        @test_imageCurvatureMeasurement});
-end
-
-function group = guiTests()
-    group = makeGroup('gui', 'GUI launch and layout', { ...
-        @test_gui_smoke, ...
-        @test_gui_layout_electrochem, ...
-        @test_gui_layout_dic, ...
-        @test_gui_layout_image_measurement, ...
-        @test_gui_layout_wearable, ...
-        @test_gui_layout_ui_helpers});
-end
-
-function groups = filterGroups(groups, selection)
-    suiteFilter = normalizedCellField(selection, 'suites');
-    testFilter = normalizedCellField(selection, 'tests');
-
-    if ~isempty(suiteFilter)
-        keep = false(size(groups));
-        for k = 1:numel(groups)
-            keep(k) = any(strcmp(suiteFilter, lower(groups(k).key))) || ...
-                any(strcmp(suiteFilter, lower(groups(k).name)));
+        tests = struct('name', {}, 'handle', {}, 'isGui', {});
+        for k = 1:numel(groupFiles)
+            functionName = groupFiles(k).functionName;
+            tests(end+1) = struct( ...
+                'name', functionName, ...
+                'handle', str2func(functionName), ...
+                'isGui', startsWith(functionName, 'test_gui_')); %#ok<AGROW>
         end
-        groups = groups(keep);
+        groups(end+1) = struct('key', key, 'tests', {tests}); %#ok<AGROW>
     end
+end
 
-    if ~isempty(testFilter)
-        matchedCount = 0;
-        keepGroup = false(size(groups));
-        for g = 1:numel(groups)
-            tests = groups(g).tests;
-            keepTest = false(size(tests));
-            for k = 1:numel(tests)
-                keepTest(k) = any(strcmp(testFilter, lower(func2str(tests{k}))));
+function files = discoverTestFiles(folder, suiteRoot)
+    files = struct('name', {}, 'functionName', {}, 'groupKey', {});
+    entries = dir(folder);
+    [~, order] = sort({entries.name});
+    entries = entries(order);
+
+    for k = 1:numel(entries)
+        entry = entries(k);
+        if entry.isdir
+            if strcmp(entry.name, '.') || strcmp(entry.name, '..')
+                continue;
             end
-            groups(g).tests = tests(keepTest);
-            keepGroup(g) = any(keepTest);
-            matchedCount = matchedCount + nnz(keepTest);
+            childFiles = discoverTestFiles(fullfile(folder, entry.name), suiteRoot);
+            files = [files, childFiles]; %#ok<AGROW>
+        elseif startsWith(entry.name, 'test_') && endsWith(entry.name, '.m')
+            [~, functionName] = fileparts(entry.name);
+            files(end+1) = struct( ...
+                'name', entry.name, ...
+                'functionName', functionName, ...
+                'groupKey', suiteGroupKey(folder, suiteRoot)); %#ok<AGROW>
         end
-        groups = groups(keepGroup);
-        assert(matchedCount > 0, 'No tests matched the requested --test selection.');
     end
+end
+
+function key = suiteGroupKey(folder, suiteRoot)
+    if strcmp(folder, suiteRoot)
+        key = '.';
+        return;
+    end
+    key = folder(numel(suiteRoot) + 2:end);
+    key = strrep(key, filesep, '/');
+end
+
+function [groups, guiOnly] = filterGroupsBySuite(groups, selection)
+    suiteFilter = normalizedCellField(selection, 'suites');
+    guiOnly = any(strcmp(suiteFilter, 'gui'));
+    suiteFilter(strcmp(suiteFilter, 'gui')) = [];
+    suiteFilter = normalizeSuiteTargets(suiteFilter);
+
+    if isempty(suiteFilter)
+        return;
+    end
+
+    keep = false(size(groups));
+    for g = 1:numel(groups)
+        for k = 1:numel(suiteFilter)
+            keep(g) = keep(g) || groupMatchesTarget(groups(g).key, suiteFilter{k});
+        end
+    end
+    groups = groups(keep);
+end
+
+function targets = normalizeSuiteTargets(targets)
+    for k = 1:numel(targets)
+        targets{k} = normalizeSuiteTarget(targets{k});
+    end
+end
+
+function target = normalizeSuiteTarget(target)
+    target = strrep(target, '\', '/');
+    prefix = 'tests/suites/';
+    if startsWith(target, prefix)
+        target = target(numel(prefix) + 1:end);
+    end
+    while startsWith(target, '/')
+        target = target(2:end);
+    end
+    while endsWith(target, '/')
+        target = target(1:end-1);
+    end
+
+end
+
+function tf = groupMatchesTarget(groupKey, target)
+    tf = strcmp(groupKey, target) || startsWith(groupKey, [target '/']);
+end
+
+function groups = filterTestsByGuiMode(groups, includeGui, guiOnly)
+    for g = 1:numel(groups)
+        tests = groups(g).tests;
+        if isempty(tests)
+            continue;
+        end
+        if guiOnly
+            groups(g).tests = tests([tests.isGui]);
+        elseif ~includeGui
+            groups(g).tests = tests(~[tests.isGui]);
+        end
+    end
+end
+
+function groups = filterGroupsByTests(groups, selection)
+    testFilter = normalizedCellField(selection, 'tests');
+    if isempty(testFilter)
+        return;
+    end
+
+    matchedCount = 0;
+    for g = 1:numel(groups)
+        tests = groups(g).tests;
+        keepTest = false(size(tests));
+        for k = 1:numel(tests)
+            keepTest(k) = any(strcmp(testFilter, lower(tests(k).name)));
+        end
+        groups(g).tests = tests(keepTest);
+        matchedCount = matchedCount + nnz(keepTest);
+    end
+    assert(matchedCount > 0, 'No tests matched the requested --test selection.');
+end
+
+function groups = removeEmptyGroups(groups)
+    keep = false(size(groups));
+    for g = 1:numel(groups)
+        keep(g) = ~isempty(groups(g).tests);
+    end
+    groups = groups(keep);
 end
 
 function values = normalizedCellField(s, fieldName)
@@ -151,6 +237,20 @@ function values = normalizedCellField(s, fieldName)
     values = cellstr(values(:).');
 end
 
-function group = makeGroup(key, name, tests)
-    group = struct('key', key, 'name', name, 'tests', {tests});
+function assertUniqueTestNames(groups)
+    names = {};
+    for g = 1:numel(groups)
+        for k = 1:numel(groups(g).tests)
+            names{end+1} = groups(g).tests(k).name; %#ok<AGROW>
+        end
+    end
+    [uniqueNames, ia] = unique(names);
+    if numel(uniqueNames) == numel(names)
+        return;
+    end
+
+    duplicateMask = true(size(names));
+    duplicateMask(ia) = false;
+    duplicateNames = unique(names(duplicateMask));
+    error('Duplicate test function names discovered: %s.', strjoin(duplicateNames, ', '));
 end

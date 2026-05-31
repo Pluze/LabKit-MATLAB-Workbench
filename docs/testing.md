@@ -18,14 +18,14 @@ Default pure-function suite:
 scripts/run_matlab_tests.sh
 ```
 
-The same non-GUI suite runs in GitHub Actions on pushes and pull requests to `main` through `.github/workflows/matlab-tests.yml`. The README badge points to this workflow. The CI workflow uses MathWorks MATLAB Actions and calls `run_all_tests(false)`, so it covers `core`, `dta`, `biosignal`, and pure `apps` checks without opening GUI windows.
+The same non-GUI suite runs in GitHub Actions on pushes and pull requests to `main` through `.github/workflows/matlab-tests.yml`. The README badge points to this workflow. The CI workflow uses MathWorks MATLAB Actions and calls `run_all_tests(false)`, so it covers project guardrails, `labkit` library tests, and non-GUI app checks without opening GUI windows.
 
 Validation levels:
 
 | Level | Where | Purpose |
 | --- | --- | --- |
-| Default non-GUI suite | CI and local shell | Core boundaries, DTA facade/parser behavior, biosignal facade behavior, and pure app analysis/export helpers. |
-| Focused GUI profiles | Local MATLAB with graphics support | Noninteractive app launch, layout, and callback wiring checks for selected app families. |
+| Default non-GUI suite | CI and local shell | Project boundaries, `labkit` facade behavior, reusable UI helper checks that do not need graphics interaction, and pure app analysis/export helpers. |
+| Focused GUI suite runs | Local MATLAB with graphics support | Noninteractive app launch, layout, and callback wiring checks for selected app families. |
 | Manual GUI validation | User-run app windows | Interactive file selection, drawing, visual inspection, and full workflow feel. |
 
 CI should not be described as full GUI workflow validation. It verifies the non-GUI behavior that can run reliably on GitHub-hosted MATLAB Actions.
@@ -35,47 +35,56 @@ For public repositories, MathWorks MATLAB Actions can license MATLAB automatical
 Focused iteration commands:
 
 ```bash
-scripts/run_matlab_tests.sh --profile ui
-scripts/run_matlab_tests.sh --profile dic
-scripts/run_matlab_tests.sh --profile electrochem
-scripts/run_matlab_tests.sh --profile dta
-scripts/run_matlab_tests.sh --profile biosignal
-scripts/run_matlab_tests.sh --profile image_measurement
-scripts/run_matlab_tests.sh --profile wearable
-scripts/run_matlab_tests.sh --suite core
+scripts/run_matlab_tests.sh --suite project
+scripts/run_matlab_tests.sh --suite labkit/dta
+scripts/run_matlab_tests.sh --suite labkit/dta --suite apps/electrochem
+scripts/run_matlab_tests.sh --suite labkit/biosignal
+scripts/run_matlab_tests.sh --suite labkit/biosignal --suite apps/wearable --gui
+scripts/run_matlab_tests.sh --suite labkit/ui --gui
+scripts/run_matlab_tests.sh --suite labkit/ui --suite apps --gui
+scripts/run_matlab_tests.sh --suite apps/electrochem
+scripts/run_matlab_tests.sh --suite apps/dic --gui
+scripts/run_matlab_tests.sh --suite apps/image_measurement --gui
+scripts/run_matlab_tests.sh --suite apps/wearable --gui
 scripts/run_matlab_tests.sh --suite gui
-scripts/run_matlab_tests.sh --test test_gui_layout_controls
+scripts/run_matlab_tests.sh --test test_gui_layout_ui_helpers
 ```
 
-Use `--profile` first for common change scopes:
+Use `--suite` for the source boundary touched by the change:
 
-- `core`: startup and architecture guardrails
-- `dta`: `core` plus parser/session/DTA facade checks
-- `biosignal`: `core` plus biosignal loading, processing, SNR, and group-comparison checks
-- `apps`: app-local pure analysis/export checks
-- `electrochem`: electrochem app pure checks plus electrochem GUI layout
-- `dic`: DIC GUI layout
-- `image_measurement`: image measurement app pure checks plus image measurement GUI layout
-- `wearable`: biosignal facade checks plus wearable GUI layout
-- `ui`: reusable UI helper and shell layout
-- `gui`: all noninteractive GUI checks
-- `all`: default pure suite plus all GUI checks
+- `project`: startup and architecture guardrails
+- `labkit/dta`: `labkit.dta` parser/session/facade checks
+- `labkit/biosignal`: `labkit.biosignal` loading, processing, SNR, and group-comparison checks
+- `labkit/ui`: reusable `labkit.ui` helper checks; add `--gui` for UI helper layout checks
+- `apps/electrochem`: electrochem app-owned calculations, exports, and layout contracts
+- `apps/dic`: DIC app layout contracts; usually run with `--gui`
+- `apps/image_measurement`: image-measurement app-owned calculations, exports, and layout contracts
+- `apps/wearable`: wearable app layout contracts; usually run with `--gui`
+- `gui`: all noninteractive GUI checks across every target
 
-Use `--suite` for one or more suite keys: `core`, `dta`, `biosignal`, `apps`, or `gui`. Use `--test` for one or more specific test functions. Selecting the `gui` suite, a GUI profile, or a `test_gui_*` function automatically uses GUI-capable MATLAB flags.
+For reusable library changes, explicitly add downstream app suites when the app-facing contract could be affected. For example, pair `labkit/dta` with `apps/electrochem`, `labkit/biosignal` with `apps/wearable`, and `labkit/ui` with `apps` plus `--gui` when layout or callback behavior changed. The runner intentionally does not infer dependencies; explicit suite lists keep the selected validation scope visible in the command and commit record.
 
-The default suite is grouped in `tests/run_all_tests.m` and organized on disk under `tests/suites/`:
+Use `--suite` for one or more test targets. The primary targets mirror source ownership: `project`, `labkit/dta`, `labkit/biosignal`, `labkit/ui`, `apps/electrochem`, `apps/dic`, `apps/image_measurement`, `apps/wearable`, and `apps/smoke`. Parent targets such as `labkit` and `apps` include their child suites. Use `--test` for one or more specific test functions. Selecting the `gui` suite or a `test_gui_*` function automatically uses GUI-capable MATLAB flags.
+
+The stable entry point is `tests/run_all_tests.m`. It discovers test files directly from `tests/suites/<target>/test_*.m`, so adding a focused test normally only requires placing it in the appropriate target folder. There is no separate runner framework directory; runner logic stays local to the stable entry point until it grows enough to justify extraction.
+
+The suite layout is:
 
 ```text
-core      startup/root-entry boundaries and architecture guardrails
-dta       parsers through the DTA facade, DTA discovery/detection/loading/session helpers, pulse detection, and item schemas
-biosignal biosignal recording loading, channel extraction, waveform processing, segments, SNR, and group comparison
-apps      app-local analysis values, plotting helpers, export table builders, and CSV writers
-gui       optional noninteractive launch/layout/callback checks
+project                    startup/root-entry boundaries and architecture guardrails
+labkit/dta                 DTA parser/facade/session/pulse/item-schema checks
+labkit/biosignal           biosignal loading, channel extraction, processing, segments, SNR, and group comparison
+labkit/ui                  reusable UI helpers and noninteractive UI layout contracts
+apps/electrochem           electrochem app-owned calculations, exports, and layout contracts
+apps/dic                   DIC app layout contracts
+apps/image_measurement     image-measurement app-owned calculations, exports, and layout contracts
+apps/wearable              wearable app layout contracts
+apps/smoke                 cross-app launch smoke checks
 ```
 
-Shared setup and assertions live under `tests/helpers/`. Keep helpers limited to setup and assertions; app-specific formulas, result schemas, export formats, and expected scientific values should remain in focused suite tests.
+Shared setup, structural GUI assertions, and focused support routines live under `tests/helpers/`. Keep helpers limited to setup and assertions; app-specific formulas, result schemas, export formats, and expected scientific values should remain in focused suite tests. The custom runner reports per-test and per-suite durations so slow checks can be identified without running a profiler.
 
-GUI workflows are checked manually outside this protocol. Use focused GUI profiles or `scripts/run_matlab_tests.sh --gui` locally only when noninteractive launch/layout/callback coverage is relevant; GUI/uifigure checks are intentionally not part of the default GitHub-hosted CI job.
+GUI workflows are checked manually outside this protocol. The automated GUI checks are structural assertion tests: they launch app windows, inspect component contracts, verify callback wiring, and check reusable layout/helper handles. They do not validate visual pixel quality, actual drag/draw gestures, or full user workflow feel. Use `--suite <target> --gui` or `scripts/run_matlab_tests.sh --gui` locally only when noninteractive launch/layout/callback coverage is relevant; GUI/uifigure checks are intentionally not part of the default GitHub-hosted CI job.
 
 Do not run interactive GUI workflows in MATLAB `-batch` mode.
 
@@ -147,7 +156,7 @@ App-boundary changes:
 - reusable `+labkit/+dta` stays GUI-free and app-free: no MATLAB UI constructors, file dialogs, alerts, app entry points, or `apps/` helper calls
 - reusable `+labkit/+ui` stays parser/data/analysis-free: apps pass prepared values and labels into GUI helpers rather than letting GUI helpers call DTA, parser, data, or analysis APIs
 - helper code stays internal: parser-only helpers remain package-private, app-specific helpers remain app-local, and no public `+labkit/+util` app-facing surface is reintroduced
-- keep these architecture guardrails in `tests/suites/core/test_architecture_boundaries.m` rather than duplicating them in numerical analysis tests
+- keep these architecture guardrails in `tests/suites/project/test_architecture_boundaries.m` rather than duplicating them in numerical analysis tests
 
 Session/export changes:
 

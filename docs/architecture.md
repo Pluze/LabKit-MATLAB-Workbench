@@ -161,9 +161,9 @@ The GUI decides how to display that status.
 
 ## Validation Boundary
 
-The default automated validation boundary is the non-GUI MATLAB suite: core architecture checks, DTA facade/parser checks, and pure app analysis/export checks. GitHub Actions runs that suite on pushes and pull requests to `main`.
+The default automated validation boundary is the non-GUI MATLAB suite: project architecture checks, `labkit` facade/parser checks, and pure app analysis/export checks. GitHub Actions runs that suite on pushes and pull requests to `main`.
 
-GUI launch/layout checks are available as focused local profiles, but interactive GUI workflows are user-validated outside CI. This keeps the reusable UI shell tested without requiring GitHub-hosted runners to provide stable MATLAB graphics behavior.
+GUI launch/layout checks live in the same source-aligned suites and are enabled with `--gui`; interactive GUI workflows are user-validated outside CI. This keeps the reusable UI shell tested without requiring GitHub-hosted runners to provide stable MATLAB graphics behavior.
 
 ## Current Package Surface
 
