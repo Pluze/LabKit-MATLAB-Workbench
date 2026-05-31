@@ -14,7 +14,7 @@ names = labkit.biosignal.listChannels(recording);
 signal = labkit.biosignal.getChannel(recording, channel);
 cropped = labkit.biosignal.cropSignal(signal, [startSec endSec]);
 filtered = labkit.biosignal.filterSignal(signal, filterSpec);
-events = labkit.biosignal.detectPeaks(signal, peakOptions);
+events = labkit.biosignal.detectEcgPeaks(signal, ecgPeakOptions);
 segments = labkit.biosignal.segmentByEvents(signal, events, windowSec);
 template = labkit.biosignal.buildTemplate(segments, templateOptions);
 measurements = labkit.biosignal.measureSegments(segments, template, measureOptions);
@@ -59,10 +59,12 @@ The biosignal facade may own:
 - channel listing and extraction
 - time ROI cropping
 - generic filtering
-- generic peak/event detection
+- ECG/QRS peak detection through a public facade with private algorithm implementations
 - event-centered segmentation
 - template building and template-residual SNR-style segment measurements
 - generic group summaries and pairwise Welch-style comparisons
+
+`detectEcgPeaks` is intentionally ECG-specific. It exposes a stable app-facing facade while keeping the concrete peak detectors private. Supported methods are `qrs-streaming`, `pan-tompkins`, and `local`; apps can switch methods for visual/performance comparison without calling the private implementations directly.
 
 Apps own:
 

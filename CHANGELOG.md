@@ -8,8 +8,9 @@ All notable user-facing and maintainer-facing changes are recorded here.
 
 - Documentation now frames LabKit as an internal lab app workbench with independent workflow apps, conservative public library growth, and app-owned domain logic.
 - Project licensing is now explicit: LabKit MATLAB Workbench is released under the MIT License.
-- Added a `labkit.biosignal` facade for GUI-free MAT/table recording loading, channel extraction, time ROI cropping, filtering, generic peak detection, event-centered segmentation, template-residual SNR-style measurements, and group comparisons.
+- Added a `labkit.biosignal` facade for GUI-free MAT/table recording loading, channel extraction, time ROI cropping, filtering, ECG/QRS peak detection, event-centered segmentation, template-residual SNR-style measurements, and group comparisons.
 - Added an experimental wearable ECG print/SNR explorer app with waveform preview, explicit CSV import parsing controls, file-header preview, time ROI, peak/segment SNR analysis, SNR-over-time plotting, and CSV/PNG exports.
+- ECG/QRS peak detection now uses the explicit `labkit.biosignal.detectEcgPeaks` facade with selectable local, Pan-Tompkins-style, and streaming-style private detectors; the ECG app exposes the method choice for comparison.
 - ECG import controls are now split into separate recording, import parsing, and channel/ROI sections, with a clearer `Parse / refresh file` action and nonblocking automatic parse failure status after opening a file.
 - ECG template measurement-window shading now spans the full template plot height.
 - Reusable package, startup, and app entrypoint names now use the generic `labkit` namespace.

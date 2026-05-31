@@ -153,8 +153,8 @@ function varargout = labkit_ECGPrint_app(varargin)
     edtEnd.Layout.Row = 3;
     edtEnd.Layout.Column = 2;
 
-    procPanel = labkit.ui.createPanelGrid(layFA, 'Signal Processing + SNR', 4, [8 2], ...
-        struct('rowHeight', {repmat({'fit'}, 1, 8)}, ...
+    procPanel = labkit.ui.createPanelGrid(layFA, 'Signal Processing + SNR', 4, [9 2], ...
+        struct('rowHeight', {repmat({'fit'}, 1, 9)}, ...
         'columnWidth', {{135, '1x'}}));
     procGrid = procPanel.grid;
 
@@ -172,33 +172,42 @@ function varargout = labkit_ECGPrint_app(varargin)
     edtHigh.Layout.Row = 2;
     edtHigh.Layout.Column = 2;
 
+    [lblPeakMethod, ddPeakMethod] = labkit.ui.createLabeledDropdown(procGrid, ...
+        'Peak method:', ...
+        'Items', {'QRS streaming', 'Pan-Tompkins', 'Local peaks'}, ...
+        'Value', 'QRS streaming');
+    lblPeakMethod.Layout.Row = 3;
+    lblPeakMethod.Layout.Column = 1;
+    ddPeakMethod.Layout.Row = 3;
+    ddPeakMethod.Layout.Column = 2;
+
     [lblPeakDist, edtPeakDist] = labkit.ui.createLabeledSpinner(procGrid, ...
         'Peak distance (s):', 'Value', 0.28, 'Limits', [0.01 Inf], 'Step', 0.01);
-    lblPeakDist.Layout.Row = 3;
+    lblPeakDist.Layout.Row = 4;
     lblPeakDist.Layout.Column = 1;
-    edtPeakDist.Layout.Row = 3;
+    edtPeakDist.Layout.Row = 4;
     edtPeakDist.Layout.Column = 2;
 
     [lblWin, edtWin] = labkit.ui.createLabeledSpinner(procGrid, ...
         'Segment half win (s):', 'Value', 0.7, 'Limits', [0.01 Inf], 'Step', 0.05);
-    lblWin.Layout.Row = 4;
+    lblWin.Layout.Row = 5;
     lblWin.Layout.Column = 1;
-    edtWin.Layout.Row = 4;
+    edtWin.Layout.Row = 5;
     edtWin.Layout.Column = 2;
 
     [lblTopN, edtTopN] = labkit.ui.createLabeledSpinner(procGrid, ...
         'Template top N:', 'Value', 30, 'Limits', [1 Inf], 'Step', 1);
-    lblTopN.Layout.Row = 5;
+    lblTopN.Layout.Row = 6;
     lblTopN.Layout.Column = 1;
-    edtTopN.Layout.Row = 5;
+    edtTopN.Layout.Row = 6;
     edtTopN.Layout.Column = 2;
 
     [lblSmooth, edtSmooth] = labkit.ui.createLabeledSpinner(procGrid, ...
         'Smooth beats:', 'Value', 15, 'Limits', [1 Inf], 'Step', 1, ...
         'ValueChangedFcn', @(~,~) refreshPlots());
-    lblSmooth.Layout.Row = 6;
+    lblSmooth.Layout.Row = 7;
     lblSmooth.Layout.Column = 1;
-    edtSmooth.Layout.Row = 6;
+    edtSmooth.Layout.Row = 7;
     edtSmooth.Layout.Column = 2;
 
     [lblView, ddTemplateView] = labkit.ui.createLabeledDropdown(procGrid, ...
@@ -206,14 +215,14 @@ function varargout = labkit_ECGPrint_app(varargin)
         'Items', {'Template + residual band', 'Template + segments'}, ...
         'Value', 'Template + residual band', ...
         'ValueChangedFcn', @(~,~) refreshPlots());
-    lblView.Layout.Row = 7;
+    lblView.Layout.Row = 8;
     lblView.Layout.Column = 1;
-    ddTemplateView.Layout.Row = 7;
+    ddTemplateView.Layout.Row = 8;
     ddTemplateView.Layout.Column = 2;
 
     btnAnalyze = uibutton(procGrid, 'Text', 'Analyze current ROI', ...
         'ButtonPushedFcn', @onAnalyze);
-    btnAnalyze.Layout.Row = 8;
+    btnAnalyze.Layout.Row = 9;
     btnAnalyze.Layout.Column = [1 2];
 
     exportPanel = labkit.ui.createPanelGrid(layFA, 'Exports', 5, [2 1], ...
@@ -429,16 +438,17 @@ function varargout = labkit_ECGPrint_app(varargin)
             filterSpec = struct('type', 'bandpass', 'cutoffHz', [edtLow.Value highCut]);
             S.filteredSignal = labkit.biosignal.filterSignal(S.workingSignal, filterSpec);
             peakOpts = struct('polarity', 'auto', ...
+                'method', peakMethodValue(ddPeakMethod.Value), ...
                 'minDistanceSec', edtPeakDist.Value, ...
                 'thresholdStd', 2.8);
-            S.events = labkit.biosignal.detectPeaks(S.filteredSignal, peakOpts);
+            S.events = labkit.biosignal.detectEcgPeaks(S.filteredSignal, peakOpts);
             halfWin = edtWin.Value;
             S.segments = labkit.biosignal.segmentByEvents(S.filteredSignal, S.events, [-halfWin halfWin]);
             S.template = labkit.biosignal.buildTemplate(S.segments, struct('topN', edtTopN.Value));
             S.measurements = labkit.biosignal.measureSegments(S.segments, S.template);
 
-            addLog(sprintf('Analyzed ROI: %d peaks, %d valid segments.', ...
-                numel(S.events.index), size(S.segments.values, 2)));
+            addLog(sprintf('Analyzed ROI with %s: %d peaks, %d valid segments.', ...
+                ddPeakMethod.Value, numel(S.events.index), size(S.segments.values, 2)));
             updateSummary();
             refreshPlots();
         catch ME
@@ -610,7 +620,11 @@ function varargout = labkit_ECGPrint_app(varargin)
                 'Duration (s)', sprintf('%.3g', max(S.signal.time) - min(S.signal.time))}];
         end
         if ~isempty(S.events)
-            rows = [rows; {'Detected peaks', sprintf('%d', numel(S.events.index))}];
+            methodLabel = '';
+            if isfield(S.events, 'metadata') && isfield(S.events.metadata, 'method')
+                methodLabel = sprintf(' (%s)', char(S.events.metadata.method));
+            end
+            rows = [rows; {'Detected peaks', sprintf('%d%s', numel(S.events.index), methodLabel)}];
         end
         if ~isempty(S.segments)
             rows = [rows; {'Valid segments', sprintf('%d', size(S.segments.values, 2))}];
@@ -654,6 +668,17 @@ function varargout = labkit_ECGPrint_app(varargin)
             values = numericValues(:).';
         else
             values = cellstr(parts);
+        end
+    end
+
+    function method = peakMethodValue(label)
+        switch string(label)
+            case "Pan-Tompkins"
+                method = "pan-tompkins";
+            case "Local peaks"
+                method = "local";
+            otherwise
+                method = "qrs-streaming";
         end
     end
 

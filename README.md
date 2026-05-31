@@ -94,7 +94,7 @@ The repository currently has three reusable MATLAB surfaces:
 
 - `labkit.ui.*` for shared GUI structure and rendering helpers.
 - `labkit.dta.*` for the current electrochemistry/Gamry DTA file support.
-- `labkit.biosignal.*` for GUI-free biosignal recording loading, waveform processing, event/segment handling, SNR-style segment measurements, and group comparison.
+- `labkit.biosignal.*` for GUI-free biosignal recording loading, waveform processing, ECG/QRS peak detection, event/segment handling, SNR-style segment measurements, and group comparison.
 
 Domain-specific logic, plot definitions, result fields, and export schemas live in the app files under `apps/`. Adding more independent apps is expected; adding new public library API should be conservative.
 

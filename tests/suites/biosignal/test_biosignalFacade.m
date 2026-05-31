@@ -28,9 +28,11 @@ function test_biosignalFacade()
 
     filtered = labkit.biosignal.filterSignal(cropped, ...
         struct('type', 'bandpass', 'cutoffHz', [0.5 40]));
-    events = labkit.biosignal.detectPeaks(filtered, ...
-        struct('polarity', 'positive', 'minDistanceSec', 0.5, 'thresholdStd', 2));
+    events = labkit.biosignal.detectEcgPeaks(filtered, ...
+        struct('method', 'local', 'polarity', 'positive', ...
+        'minDistanceSec', 0.5, 'thresholdStd', 2));
     assert(numel(events.index) >= 7, 'Peak detection should find repeated synthetic beats.');
+    checkEcgPeakMethods(filtered);
 
     segments = labkit.biosignal.segmentByEvents(filtered, events, [-0.7 0.7]);
     assert(size(segments.values, 2) >= 5, 'Segmentation should keep interior beats.');
@@ -52,6 +54,19 @@ function test_biosignalFacade()
         'Pairwise comparison p-value should be bounded.');
 
     checkDelimitedTimeInference();
+end
+
+function checkEcgPeakMethods(signal)
+    methods = {'local', 'pan-tompkins', 'qrs-streaming'};
+    for k = 1:numel(methods)
+        events = labkit.biosignal.detectEcgPeaks(signal, ...
+            struct('method', methods{k}, 'polarity', 'positive', ...
+            'minDistanceSec', 0.5, 'thresholdStd', 2));
+        assert(numel(events.index) >= 6, ...
+            'ECG peak method %s should find repeated synthetic beats.', methods{k});
+        assert(isfield(events.metadata, 'method'), ...
+            'ECG peak method %s should report metadata.method.', methods{k});
+    end
 end
 
 function cleanupFile(filepath)
