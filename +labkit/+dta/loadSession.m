@@ -1,5 +1,11 @@
 function session = loadSession(filepath)
 %LOADSESSION Load a LabKit session struct from a MAT file.
+%
+% Inputs:
+%   filepath - MAT file containing a variable named session.
+%
+% Output:
+%   session - validated labkit_session struct.
 
     if nargin < 1 || isempty(filepath)
         error('A session filepath is required.');

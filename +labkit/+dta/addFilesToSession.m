@@ -1,5 +1,22 @@
 function [session, report] = addFilesToSession(session, filepaths, expectedKind, callbacks, opts)
 %ADDFILESTOSESSION Load DTA files into a session through the DTA facade.
+%
+% Usage:
+%   [session, report] = labkit.dta.addFilesToSession(session, files, "chrono");
+%   callbacks = struct('onAdded', @onAdded, 'onSkipped', @onSkipped, ...
+%       'onFailed', @onFailed);
+%
+% Inputs:
+%   session - labkit_session struct from makeSession.
+%   filepaths - path, string array, or cell array of paths.
+%   expectedKind - "auto" (default), "chrono", "eis", or "cvct".
+%   callbacks - optional struct with onAdded(item), onSkipped(filepath),
+%               and onFailed(filepath,message).
+%   opts - optional struct forwarded to loadFile.
+%
+% Output:
+%   session - updated session.
+%   report - struct with added, skipped, failed, and count fields.
 
     if nargin < 3
         expectedKind = "auto";

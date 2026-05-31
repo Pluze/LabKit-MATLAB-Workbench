@@ -1,5 +1,16 @@
 function result = compareGroups(values, groups)
 %COMPAREGROUPS Summarize groups and compute pairwise Welch comparisons.
+%
+% Usage:
+%   result = labkit.biosignal.compareGroups(values, groups);
+%
+% Inputs:
+%   values - numeric vector of measurements.
+%   groups - string/cellstr/categorical-compatible vector of group labels.
+%
+% Output:
+%   result - struct with summary table and pairwise Welch-comparison table.
+%            Missing values and blank group labels are ignored.
 
     values = double(values(:));
     groups = string(groups(:));

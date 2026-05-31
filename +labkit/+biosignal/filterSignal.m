@@ -1,5 +1,21 @@
 function filtered = filterSignal(signal, spec)
 %FILTERSIGNAL Apply a zero-phase FFT-domain filter to a biosignal.
+%
+% Usage:
+%   filtered = labkit.biosignal.filterSignal(signal);
+%   filtered = labkit.biosignal.filterSignal(signal, ...
+%       struct('type', 'bandpass', 'cutoffHz', [0.5 40]));
+%
+% Inputs:
+%   signal - biosignal signal struct with values and fs fields.
+%   spec - optional struct.
+%
+% Options:
+%   type - "bandpass" (default), "lowpass", "highpass", "none", or "off".
+%   cutoffHz - scalar for low/high pass or [low high] for bandpass.
+%
+% Output:
+%   filtered - signal struct preserving metadata and replacing values.
 
     if nargin < 2
         spec = struct();

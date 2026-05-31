@@ -1,5 +1,11 @@
 function enableAxesPopout(ax)
 %ENABLEAXESPOPOUT Add a context-menu action to copy an axes to a figure.
+%
+% Inputs:
+%   ax - UI axes to receive the "Open axes in new figure" context action.
+%
+% Output:
+%   Mutates ax and graphics children in place. Safe to call after redraws.
 
     if isempty(ax) || ~isvalid(ax)
         return;

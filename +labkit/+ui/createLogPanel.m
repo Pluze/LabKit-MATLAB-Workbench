@@ -1,5 +1,13 @@
 function ui = createLogPanel(parent, row, initialValue)
 %CREATELOGPANEL Create a log panel with a read-only text area.
+%
+% Inputs:
+%   parent - parent grid.
+%   row - optional logical parent row, default 1.
+%   initialValue - optional cellstr/string log lines, default {'GUI started.'}.
+%
+% Output:
+%   ui - struct with panel, grid, and textArea fields.
 
     if nargin < 2 || isempty(row)
         row = 1;

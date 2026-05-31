@@ -1,5 +1,18 @@
 function ui = createReadOnlyTextPanel(parent, titleText, row, lines, opts)
 %CREATEREADONLYTEXTPANEL Create a titled read-only multi-line text panel.
+%
+% Inputs:
+%   parent - parent grid.
+%   titleText - panel title.
+%   row - logical parent row.
+%   lines - cellstr/string lines, default empty.
+%   opts - optional struct.
+%
+% Options:
+%   panelOptions - struct forwarded to createPanelGrid.
+%
+% Output:
+%   ui - struct with panel, grid, and textArea fields.
 
     if nargin < 4 || isempty(lines)
         lines = {};

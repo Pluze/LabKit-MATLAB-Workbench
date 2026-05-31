@@ -1,5 +1,13 @@
 function ax = createAxes(parent, row, titleText, xLabelText, yLabelText)
 %CREATEAXES Create an axes and apply its initial layout and labels.
+%
+% Inputs:
+%   parent - parent grid.
+%   row - logical parent row, mapped through layoutRow.
+%   titleText, xLabelText, yLabelText - initial axes labels.
+%
+% Output:
+%   ax - UI axes with standard popout context action enabled.
 
     ax = uiaxes(parent);
     ax.Layout.Row = labkit.ui.layoutRow(parent, row);

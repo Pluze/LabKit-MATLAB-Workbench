@@ -1,5 +1,22 @@
 function info = plotXY(ax, x, y, labels, opts)
 %PLOTXY Plot one prepared X/Y numeric series.
+%
+% Usage:
+%   info = labkit.ui.plotXY(ax, x, y, struct('x','Time','y','Voltage'));
+%
+% Inputs:
+%   ax - target axes.
+%   x, y - numeric vectors of equal length.
+%   labels - optional struct with title, x, and y fields; defaults blank.
+%   opts - optional struct.
+%
+% Options:
+%   holdPlot - logical, default false; false clears axes before plotting.
+%   showGrid - logical or MATLAB grid value, default true.
+%   lineWidth - positive scalar, default 1.2.
+%
+% Output:
+%   info - status struct with ok, message, x/y vectors, and x/y names.
 
     if nargin < 4
         labels = struct();

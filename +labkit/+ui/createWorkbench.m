@@ -1,5 +1,29 @@
 function ui = createWorkbench(figName, figPosition, leftWidth, opts)
 %CREATEWORKBENCH Create the standard resizable tabbed scientific-app shell.
+%
+% Usage:
+%   ui = labkit.ui.createWorkbench(titleText, position, leftWidth);
+%   ui = labkit.ui.createWorkbench(titleText, position, leftWidth, opts);
+%
+% Inputs:
+%   figName - figure title.
+%   figPosition - MATLAB figure position [x y width height].
+%   leftWidth - initial left controls width in pixels.
+%   opts - optional struct.
+%
+% Options:
+%   rightKind - "custom" (default) or "dualPlot".
+%   rightGridSize - [rows columns], default [1 1] for custom right side.
+%   rightRowHeight - cell row of grid row heights, default {'1x'}.
+%   rightRowSpacing - scalar pixels, default 8 or 10 for dualPlot.
+%   showPlotControls - logical, dualPlot only, default true.
+%   controlsTitle - left panel title, default "Controls".
+%   rightTitle - right panel title, default "Plots".
+%   topPlotTitle, bottomPlotTitle - dualPlot titles.
+%   tabs - tabSpec array. Omit for Files + Analysis / Summary + Results / Log.
+%
+% Output:
+%   ui - struct of figure, layout, tab grids, and right-side handles.
 
     if nargin < 4
         opts = struct();

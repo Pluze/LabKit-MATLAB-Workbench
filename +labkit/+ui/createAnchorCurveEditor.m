@@ -1,5 +1,33 @@
 function editor = createAnchorCurveEditor(ax, imageSize, opts)
 %CREATEANCHORCURVEEDITOR Create reusable editable anchor-curve interaction.
+%
+% Usage:
+%   editor = labkit.ui.createAnchorCurveEditor(ax, size(image), ...
+%       struct('closed', true, 'style', 'Curve', 'onChanged', @onChanged));
+%   editor.start(points);
+%
+% Inputs:
+%   ax - UI axes containing the image/plot surface.
+%   imageSize - [height width] or image size used for zoom/limit clamping.
+%   opts - optional struct.
+%
+% Options:
+%   figure - owning uifigure/figure, default ancestor(ax,'figure').
+%   closed - logical, default false; close preview path for ROI boundaries.
+%   style - "Curve" (default) or "Straight lines".
+%   installScrollWheel - logical, default true; install scroll zoom handler.
+%   maxPoints - positive integer/Inf, default Inf.
+%   onChanged - function handle called after point edits.
+%
+% Returned editor API:
+%   start(points), setActive(tf), setPoints(points), getPoints(),
+%   clearPoints(), undoLast(), insertPoint(x,y), setStyle(style),
+%   setImageSize(imageSize), setBackground(handle), refresh(),
+%   curvePoints(), delete().
+%
+% Interaction:
+%   Double-click blank space to add/insert anchors, drag anchors to move,
+%   double-click anchors to delete, and use scroll wheel to zoom when enabled.
 
     if nargin < 3
         opts = struct();

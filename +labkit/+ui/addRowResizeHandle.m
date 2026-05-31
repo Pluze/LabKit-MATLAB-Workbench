@@ -1,5 +1,25 @@
 function handle = addRowResizeHandle(fig, grid, handleRow, opts)
 %ADDROWRESIZEHANDLE Add a draggable horizontal resize handle between grid rows.
+%
+% Usage:
+%   handle = labkit.ui.addRowResizeHandle(fig, grid, 2, ...
+%       struct('topRow', 1, 'bottomRow', 3));
+%
+% Inputs:
+%   fig - owning figure.
+%   grid - parent uigridlayout.
+%   handleRow - physical row reserved for the drag handle.
+%   opts - optional struct.
+%
+% Options:
+%   topRow - physical row above handle, default handleRow-1.
+%   bottomRow - physical row below handle, default handleRow+1.
+%   minTopHeight - pixels, default 80.
+%   minBottomHeight - pixels, default 80.
+%   handleHeight - pixels, default 6.
+%
+% Output:
+%   handle - uipanel used as the draggable separator.
 
     if nargin < 4
         opts = struct();

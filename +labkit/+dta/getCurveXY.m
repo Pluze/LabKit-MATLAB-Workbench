@@ -1,5 +1,13 @@
 function [x, y, xname, yname] = getCurveXY(curve, xsel, ysel)
 %GETCURVEXY Return exact-name X/Y vectors from a parsed CV/CT curve.
+%
+% Inputs:
+%   curve - parsed curve struct with headers and data fields.
+%   xsel, ysel - exact header names to extract.
+%
+% Output:
+%   x, y - numeric vectors, or [] when either header is absent.
+%   xname, yname - returned header names, or '' when absent.
 
     x = [];
     y = [];

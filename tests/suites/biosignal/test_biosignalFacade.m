@@ -28,9 +28,13 @@ function test_biosignalFacade()
 
     filtered = labkit.biosignal.filterSignal(cropped, ...
         struct('type', 'bandpass', 'cutoffHz', [0.5 40]));
+    defaults = labkit.biosignal.defaultEcgPeakOptions("local");
+    assert(defaults.method == "local", 'Default ECG peak options should preserve requested method.');
+    assert(isfield(defaults, 'minDistanceSec'), ...
+        'Default ECG peak options should expose minDistanceSec.');
     events = labkit.biosignal.detectEcgPeaks(filtered, ...
-        struct('method', 'local', 'polarity', 'positive', ...
-        'minDistanceSec', 0.5, 'thresholdStd', 2));
+        mergeStruct(defaults, struct('polarity', 'positive', ...
+        'minDistanceSec', 0.5, 'thresholdStd', 2)));
     assert(numel(events.index) >= 7, 'Peak detection should find repeated synthetic beats.');
     checkEcgPeakMethods(filtered);
 
@@ -54,6 +58,14 @@ function test_biosignalFacade()
         'Pairwise comparison p-value should be bounded.');
 
     checkDelimitedTimeInference();
+end
+
+function out = mergeStruct(a, b)
+    out = a;
+    fields = fieldnames(b);
+    for k = 1:numel(fields)
+        out.(fields{k}) = b.(fields{k});
+    end
 end
 
 function checkEcgPeakMethods(signal)

@@ -1,5 +1,17 @@
 function signal = getChannel(recording, channel)
 %GETCHANNEL Return one signal from a recording by display name or index.
+%
+% Usage:
+%   signal = labkit.biosignal.getChannel(recording, 1);
+%   signal = labkit.biosignal.getChannel(recording, 'ECG');
+%
+% Inputs:
+%   recording - struct returned by readRecording.
+%   channel - 1-based numeric index, channel name, or display name.
+%
+% Output:
+%   signal - one signal struct with time, values, fs, name, displayName,
+%            and metadata.
 
     if ~isstruct(recording) || ~isfield(recording, 'signals')
         error('labkit:biosignal:InvalidRecording', ...

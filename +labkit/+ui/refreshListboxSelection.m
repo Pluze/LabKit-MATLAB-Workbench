@@ -1,5 +1,23 @@
 function [value, index] = refreshListboxSelection(lb, names, preferredSelection, opts)
 %REFRESHLISTBOXSELECTION Refresh listbox items while preserving valid selection.
+%
+% Usage:
+%   [value, idx] = labkit.ui.refreshListboxSelection(lb, names, oldValue);
+%   [value, idx] = labkit.ui.refreshListboxSelection(lb, names, [], ...
+%       struct('defaultSelection', 'all'));
+%
+% Inputs:
+%   lb - MATLAB listbox handle.
+%   names - char/string/cellstr listbox items.
+%   preferredSelection - optional previous value, item names, or indices.
+%   opts - optional struct.
+%
+% Options:
+%   defaultSelection - "first" (default) or "all" for multiselect listboxes.
+%
+% Output:
+%   value - selected listbox value after refresh.
+%   index - numeric selected indices in names.
 
     if nargin < 3
         preferredSelection = lb.Value;

@@ -1,5 +1,16 @@
 function ui = createTabbedDualPlotShell(figName, figPosition, leftWidth, labels)
 %CREATETABBEDDUALPLOTSHELL Create the shared tabbed dual-plot app shell.
+%
+% Inputs:
+%   figName, figPosition, leftWidth - forwarded to createWorkbench.
+%   labels - optional struct with controlsPanel, plotsPanel, topPlot,
+%            and bottomPlot fields.
+%
+% Output:
+%   ui - workbench struct with dual-plot handles.
+%
+% Calling guidance:
+%   Prefer createWorkbench(..., struct('rightKind','dualPlot')) for new apps.
 
     if nargin < 4 || isempty(labels)
         labels = defaultLabels();

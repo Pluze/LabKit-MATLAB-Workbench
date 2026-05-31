@@ -130,6 +130,18 @@ A helper may move into `+labkit` only when it satisfies the practical extraction
 
 `+labkit` should not become a miscellaneous helper dump. Future broad data or device families may become peer facades beside `labkit.dta`, but only when a real class of workflows needs that surface.
 
+## Public API Documentation Rule
+
+Every public library function under `+labkit/+ui`, `+labkit/+dta`, and `+labkit/+biosignal` must document its app-facing call contract in the function comment immediately after the function declaration. At minimum, include:
+
+- a short `Usage` example when the function is normally called by app code
+- input parameter meanings and accepted types
+- every public `opts`, `spec`, `labels`, or `callbacks` struct field, including defaults and legal values
+- returned struct/table fields when those outputs are intended for app code
+- a short calling recommendation when a default-options helper should be used instead of hand-written structs
+
+Private helpers may keep shorter comments, but public facade files should not require users to inspect private implementations to discover valid parameters.
+
 Reusable UI helpers should build or update generic controls and draw prepared data. Data extraction, parser/session calls, and analysis decisions should stay in the app or DTA layer; for example, apps should call `labkit.dta.getCurveXY` before passing prepared vectors and labels to `labkit.ui.plotXY`. App-specific callback choreography, such as clearing a session, restoring app-specific plot defaults, refreshing experiment summaries, and writing app logs, should stay in the owning app file even when two apps have similar callback order. Domain labels such as DTA-specific open/export button text and app shell tab/panel titles should be passed in from apps rather than hardcoded in the GUI library.
 
 Current apps share the workbench layout contract described in `docs/ui.md`: a resizable left control region with tabbed pages, plus a right output region for live plots or primary content. The app-facing shell entry point is `labkit.ui.createWorkbench`; apps configure the right side as a custom plot/output grid or as the standard dual-plot region.

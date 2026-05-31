@@ -1,5 +1,13 @@
 function [curve, ok, msg] = getMainCurve(tables)
 %GETMAINCURVE Return the transient table containing T/Vf/Im data.
+%
+% Inputs:
+%   tables - parsed DTA table struct array.
+%
+% Output:
+%   curve - selected curve/table struct, or empty struct.
+%   ok - logical success flag.
+%   msg - status text for logs or UI summaries.
 
     ok = false;
     msg = 'Main transient table not found.';

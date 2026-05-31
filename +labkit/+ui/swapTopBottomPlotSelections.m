@@ -1,5 +1,11 @@
 function swapTopBottomPlotSelections(topX, topY, bottomX, bottomY)
 %SWAPTOPBOTTOMPLOTSELECTIONS Swap top and bottom plot dropdown values.
+%
+% Inputs:
+%   topX, topY, bottomX, bottomY - dropdown handles.
+%
+% Output:
+%   Mutates dropdown Value properties in place.
 
     topXValue = topX.Value;
     topYValue = topY.Value;

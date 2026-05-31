@@ -1,5 +1,33 @@
 function [recording, status] = readRecording(filepath, opts)
 %READRECORDING Read a biosignal file into a standard recording struct.
+%
+% Usage:
+%   [recording, status] = labkit.biosignal.readRecording(filepath);
+%   opts = struct('timeColumn', 'timestamp', 'timeUnit', 'milliseconds');
+%   [recording, status] = labkit.biosignal.readRecording(filepath, opts);
+%
+% Inputs:
+%   filepath - char/string path to a MAT, CSV, TSV, or TXT recording file.
+%   opts - optional struct for delimited text and MAT timetable import.
+%
+% Options:
+%   headerLine - positive integer header/data start line for CSV/TSV/TXT.
+%   hasHeader - logical scalar; []/missing means auto-detect.
+%   timeColumn - column name or 1-based index to use as time.
+%   timeUnit - "seconds", "milliseconds", "microseconds", "nanoseconds",
+%              or sample/index aliases. Missing means infer from name.
+%   signalColumns - names or 1-based indices to import as signal channels.
+%   fallbackFs - positive scalar Hz for synthetic time or timestamp repair.
+%   timeRepair - "auto" (default) to stitch backward/duplicate timestamps,
+%                or "none"/"off" to leave converted relative time.
+%   gapFactor - positive scalar, default 20; flags large positive gaps.
+%   useFirstNumericColumnAsTime - logical, default false; opt-in fallback
+%                                 for ambiguous tables.
+%
+% Output:
+%   recording - struct with sourcePath, name, signals, and metadata.
+%   status - struct with ok, message, kind, and filepath. Failed imports do
+%            not throw unless filepath itself is invalid.
 
     if nargin < 2
         opts = struct();

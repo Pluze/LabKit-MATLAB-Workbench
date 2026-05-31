@@ -1,5 +1,11 @@
 function filepaths = findFiles(rootDir)
 %FINDFILES Recursively collect Gamry DTA files without GUI side effects.
+%
+% Inputs:
+%   rootDir - existing folder path.
+%
+% Output:
+%   filepaths - cell array of discovered *.DTA/*.dta file paths.
 
     rootDir = normalizeRootDir(rootDir);
     filepaths = findDTAFilesRecursive(rootDir);

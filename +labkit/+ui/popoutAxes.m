@@ -1,5 +1,12 @@
 function newFig = popoutAxes(srcAx)
 %POPOUTAXES Copy a UI axes into an editable MATLAB figure.
+%
+% Inputs:
+%   srcAx - source UI axes.
+%
+% Output:
+%   newFig - standalone MATLAB figure containing copied axes content.
+%            Aspect ratio modes are set to auto for manual resizing.
 
     if isempty(srcAx) || ~isvalid(srcAx)
         error('labkit:ui:InvalidAxes', 'Source axes is not valid.');

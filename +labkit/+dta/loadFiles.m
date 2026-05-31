@@ -1,5 +1,17 @@
 function [items, report] = loadFiles(filepaths, expectedKind, opts)
 %LOADFILES Load multiple supported DTA files without GUI side effects.
+%
+% Usage:
+%   [items, report] = labkit.dta.loadFiles(filepaths, "auto");
+%
+% Inputs:
+%   filepaths - char/string path, string array, or cell array of paths.
+%   expectedKind - "auto" (default), "chrono", "eis", or "cvct".
+%   opts - optional struct forwarded to loadFile for each file.
+%
+% Output:
+%   items - cell array of successfully loaded DTA item structs.
+%   report - struct with loaded, failed, statuses, and count fields.
 
     if nargin < 2
         expectedKind = "auto";

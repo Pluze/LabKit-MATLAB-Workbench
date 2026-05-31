@@ -1,5 +1,12 @@
 function row = layoutRow(parent, logicalRow)
 %LAYOUTROW Map a workbench tab's logical row to its physical grid row.
+%
+% Inputs:
+%   parent - workbench tab grid or ordinary grid.
+%   logicalRow - row index used by app code.
+%
+% Output:
+%   row - physical grid row. Ordinary grids return logicalRow unchanged.
 
     row = logicalRow;
     if isempty(logicalRow) || ~isprop(parent, 'UserData')

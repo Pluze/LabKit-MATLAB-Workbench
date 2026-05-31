@@ -1,5 +1,29 @@
 function ui = createPanelGrid(parent, titleText, row, gridSize, opts)
 %CREATEPANELGRID Create a standard titled panel containing a grid layout.
+%
+% Usage:
+%   ui = labkit.ui.createPanelGrid(parent, 'Inputs', 1, [3 2]);
+%   ui = labkit.ui.createPanelGrid(parent, 'Inputs', 1, [3 2], ...
+%       struct('rowHeight', {{'fit','fit','1x'}}, 'columnWidth', {{120,'1x'}}));
+%
+% Inputs:
+%   parent - uigridlayout or compatible MATLAB UI parent.
+%   titleText - panel title.
+%   row - logical parent row. Use [] when caller assigns Layout manually.
+%   gridSize - child grid size [rows columns].
+%   opts - optional struct.
+%
+% Options:
+%   rowHeight - child grid RowHeight, default all {'fit'}.
+%   columnWidth - child grid ColumnWidth, default all {'1x'}.
+%   padding - child grid Padding, default [8 8 8 8].
+%   rowSpacing - child grid RowSpacing, default 8.
+%   columnSpacing - child grid ColumnSpacing, default 8.
+%   autoGrowParentRow - logical, default true.
+%   minPanelHeight - scalar minimum parent row height when auto-growing.
+%
+% Output:
+%   ui - struct with panel and grid fields.
 
     if nargin < 5
         opts = struct();

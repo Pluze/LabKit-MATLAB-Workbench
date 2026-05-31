@@ -1,5 +1,32 @@
 function ui = createFileSelectionPanel(parent, labels, callbacks, opts)
 %CREATEFILESELECTIONPANEL Create a shared file-action panel with a listbox.
+%
+% Usage:
+%   labels = struct('panelTitle','Files','openFiles','Open file(s)');
+%   callbacks = struct('onOpenFiles',@onOpen,'onExport',@onExport);
+%   ui = labkit.ui.createFileSelectionPanel(parent, labels, callbacks);
+%
+% Inputs:
+%   parent - parent grid.
+%   labels - optional struct of visible text labels.
+%   callbacks - optional struct of button/listbox callbacks.
+%   opts - optional struct.
+%
+% Label fields:
+%   panelTitle, openFiles, openFolder, removeSelected, clearAll, export,
+%   loadedText.
+%
+% Callback fields:
+%   onOpenFiles, onOpenFolder, onRemoveSelected, onClearAll, onExport,
+%   onSelectFile.
+%
+% Options:
+%   showRemoveSelected - logical, default true when onRemoveSelected exists.
+%   multiselect - "off" (default) or "on" for the listbox.
+%   row - logical parent row, default 1.
+%
+% Output:
+%   ui - struct with panel, grid, buttons, listbox, and loadedText fields.
 
     if nargin < 4
         opts = struct();

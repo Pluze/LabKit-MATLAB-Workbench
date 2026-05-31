@@ -1,5 +1,15 @@
 function ui = createResultTablePanel(parent, titleText, row, columnNames, initialData)
 %CREATERESULTTABLEPANEL Create a titled result-table panel.
+%
+% Inputs:
+%   parent - parent grid.
+%   titleText - panel title.
+%   row - logical parent row.
+%   columnNames - cellstr/string column names.
+%   initialData - optional initial table Data, default empty cell array.
+%
+% Output:
+%   ui - struct with panel, grid, and table fields.
 
     if nargin < 5
         initialData = cell(0, numel(columnNames));

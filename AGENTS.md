@@ -65,6 +65,10 @@ same results, cleaner code, clearer boundaries
 - Update documentation to reflect current behavior.
 - Improve app entrypoint clarity without reintroducing root-level legacy command wrappers.
 
+## Public API Documentation
+
+Every public library function under `+labkit/+ui`, `+labkit/+dta`, and `+labkit/+biosignal` must document its app-facing call contract in the function comment immediately after the function declaration. Include usage examples when useful, input types, accepted option/spec/label/callback struct fields with defaults and legal values, and output struct/table fields intended for app code. Public facade comments must be sufficient for app authors to call the function without reading private implementations. When options become numerous, provide a default-options helper and recommend starting from it rather than hand-writing hidden struct fields.
+
 ## Forbidden Without Explicit Approval
 
 - Do not rewrite all GUIs in one pass.

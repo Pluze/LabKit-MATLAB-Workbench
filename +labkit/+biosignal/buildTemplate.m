@@ -1,5 +1,22 @@
 function template = buildTemplate(segments, opts)
 %BUILDTEMPLATE Build a representative segment template.
+%
+% Usage:
+%   template = labkit.biosignal.buildTemplate(segments);
+%   template = labkit.biosignal.buildTemplate(segments, struct('topN', 20));
+%
+% Inputs:
+%   segments - struct returned by segmentByEvents.
+%   opts - optional struct.
+%
+% Options:
+%   topN - positive integer, default min(30, segment count). The template
+%          is the mean of the top-N segments by correlation to a first-pass
+%          mean template.
+%
+% Output:
+%   template - struct with values, timeOffset, keptSegmentIndex, score,
+%              and metadata.topN.
 
     if nargin < 2
         opts = struct();

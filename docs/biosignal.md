@@ -14,6 +14,7 @@ names = labkit.biosignal.listChannels(recording);
 signal = labkit.biosignal.getChannel(recording, channel);
 cropped = labkit.biosignal.cropSignal(signal, [startSec endSec]);
 filtered = labkit.biosignal.filterSignal(signal, filterSpec);
+ecgPeakOptions = labkit.biosignal.defaultEcgPeakOptions("qrs-streaming");
 events = labkit.biosignal.detectEcgPeaks(signal, ecgPeakOptions);
 segments = labkit.biosignal.segmentByEvents(signal, events, windowSec);
 template = labkit.biosignal.buildTemplate(segments, templateOptions);
@@ -35,6 +36,20 @@ opts = struct('timeColumn', 'timestamp', 'timeUnit', 'milliseconds');
 ```
 
 Useful delimited-table options include `headerLine`, `hasHeader`, `timeColumn`, `timeUnit`, `signalColumns`, `fallbackFs`, and `timeRepair`.
+
+### `readRecording` Options
+
+| Option | Type | Default | Valid values / meaning |
+| --- | --- | --- | --- |
+| `headerLine` | positive integer | auto | Header line for text tables, or first data line when `hasHeader=false`. |
+| `hasHeader` | logical | auto | Whether the detected/explicit line contains column names. |
+| `timeColumn` | name or 1-based index | auto | Explicit time column. Use this when auto-detection is ambiguous. |
+| `timeUnit` | string | infer | `seconds`, `milliseconds`, `microseconds`, `nanoseconds`, or sample/index aliases. |
+| `signalColumns` | names or 1-based indices | all numeric non-time columns | Restricts imported signal channels. |
+| `fallbackFs` | positive scalar Hz | none | Used for synthetic sample-index time or timestamp repair fallback. |
+| `timeRepair` | string | `auto` | `auto` stitches duplicate/backward time steps; `none`/`off` disables repair. |
+| `gapFactor` | positive scalar | `20` | Positive gaps larger than this multiple of nominal `dt` are counted as large gaps. |
+| `useFirstNumericColumnAsTime` | logical | `false` | Opt-in fallback for ambiguous text tables. |
 
 ## Data Shape
 
@@ -65,6 +80,40 @@ The biosignal facade may own:
 - generic group summaries and pairwise Welch-style comparisons
 
 `detectEcgPeaks` is intentionally ECG-specific. It exposes a stable app-facing facade while keeping the concrete peak detectors private. Supported methods are `qrs-streaming`, `pan-tompkins`, and `local`; apps can switch methods for visual/performance comparison without calling the private implementations directly.
+
+### `detectEcgPeaks` Options
+
+Start from `labkit.biosignal.defaultEcgPeakOptions(method)` and override only the fields the app exposes:
+
+```matlab
+opts = labkit.biosignal.defaultEcgPeakOptions("pan-tompkins");
+opts.polarity = "positive";
+opts.minDistanceSec = 0.35;
+events = labkit.biosignal.detectEcgPeaks(signal, opts);
+```
+
+| Option | Type | Default | Valid values / meaning |
+| --- | --- | --- | --- |
+| `method` | string | `qrs-streaming` | `qrs-streaming`, `pan-tompkins`, or `local`. |
+| `polarity` | string | `auto` | `auto`, `positive`, `negative`, or `absolute`. |
+| `minDistanceSec` | positive scalar | `0.25` for ECG methods, `0.05` for local | Minimum accepted peak spacing. |
+| `thresholdStd` | scalar | `3` | Local method robust-threshold multiplier. |
+| `smoothSec` | positive scalar | `0.01` | Local method score smoothing window. |
+| `integrationWindowSec` | positive scalar | `0.150` | Pan-Tompkins moving-integration window. |
+| `refineSearchSec` | positive scalar | `0.120` Pan-Tompkins, `0.090` streaming | Peak snap search half-window. |
+| `baselineWindowSec` | positive scalar | `0.600` | Streaming causal baseline window. |
+| `envelopeWindowSec` | positive scalar | `0.080` | Streaming slope-envelope window. |
+| `lookaheadSec` | positive scalar | `0.080` | Streaming local-maximum lookahead. |
+| `minTemplateScore` | scalar | `0.45` | Streaming rolling-template QC threshold. |
+
+### Other Processing Options
+
+| Function | Options / parameters |
+| --- | --- |
+| `filterSignal(signal, spec)` | `spec.type`: `bandpass`, `lowpass`, `highpass`, `none`, `off`; `spec.cutoffHz`: scalar or `[low high]`. |
+| `segmentByEvents(signal, events, windowSec)` | `windowSec`: `[start end]` seconds relative to event, default `[-0.35 0.35]`. |
+| `buildTemplate(segments, opts)` | `opts.topN`: positive integer, default `min(30, segmentCount)`. |
+| `measureSegments(segments, template, opts)` | `opts.signalWindowSec`: `[start end]`, default `[-0.06 0.06]`; `opts.noiseWindowsSec`: N-by-2 matrix, default `[-0.30 -0.20; 0.40 0.50]`. |
 
 Apps own:
 

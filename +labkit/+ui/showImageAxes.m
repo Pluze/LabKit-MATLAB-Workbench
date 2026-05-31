@@ -1,5 +1,25 @@
 function hImage = showImageAxes(ax, imageData, titleText, opts)
 %SHOWIMAGEAXES Render an image in a UI axes with LabKit defaults.
+%
+% Usage:
+%   hImage = labkit.ui.showImageAxes(ax, rgbImage, 'Reference');
+%   hImage = labkit.ui.showImageAxes(ax, img, 'Mask', ...
+%       struct('hitTest', 'on', 'pickableParts', 'all'));
+%
+% Inputs:
+%   ax - target UI axes.
+%   imageData - image array accepted by MATLAB image().
+%   titleText - axes title.
+%   opts - optional struct.
+%
+% Options:
+%   clearAxes - logical, default true.
+%   hitTest - image HitTest value, default "off".
+%   pickableParts - image PickableParts value, default "none".
+%   enableNavigation - logical, default true; enables image-style zoom tools.
+%
+% Output:
+%   hImage - image graphics object. Axes popout is refreshed automatically.
 
     if nargin < 4
         opts = struct();

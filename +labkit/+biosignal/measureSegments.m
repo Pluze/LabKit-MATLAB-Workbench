@@ -1,5 +1,25 @@
 function result = measureSegments(segments, template, opts)
 %MEASURESEGMENTS Measure generic template-residual segment quality.
+%
+% Usage:
+%   measurements = labkit.biosignal.measureSegments(segments, template);
+%   opts = struct('signalWindowSec', [-0.05 0.05], ...
+%       'noiseWindowsSec', [-0.30 -0.20; 0.30 0.40]);
+%   measurements = labkit.biosignal.measureSegments(segments, template, opts);
+%
+% Inputs:
+%   segments - struct returned by segmentByEvents.
+%   template - struct returned by buildTemplate.
+%   opts - optional struct.
+%
+% Options:
+%   signalWindowSec - [start end] seconds relative to event, default
+%                     [-0.06 0.06].
+%   noiseWindowsSec - N-by-2 seconds relative to event, default
+%                     [-0.30 -0.20; 0.40 0.50].
+%
+% Output:
+%   result - struct with perSegment table, summary table, and metadata.
 
     if nargin < 3
         opts = struct();

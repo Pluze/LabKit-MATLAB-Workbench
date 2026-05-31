@@ -1,5 +1,12 @@
 function [kind, status] = detectType(filepath)
 %DETECTTYPE Detect the supported Gamry DTA family for one file.
+%
+% Inputs:
+%   filepath - char/string path to one DTA file.
+%
+% Output:
+%   kind - "chrono", "eis", "cvct", or "unknown".
+%   status - struct with ok, message, kind, expectedKind, and filepath.
 
     filepath = normalizeFilepath(filepath);
     kind = "unknown";

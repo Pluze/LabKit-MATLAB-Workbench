@@ -1,5 +1,19 @@
 function segments = segmentByEvents(signal, events, windowSec)
 %SEGMENTBYEVENTS Extract fixed windows around event anchors.
+%
+% Usage:
+%   segments = labkit.biosignal.segmentByEvents(signal, events);
+%   segments = labkit.biosignal.segmentByEvents(signal, events, [-0.7 0.7]);
+%
+% Inputs:
+%   signal - biosignal signal struct with values and fs fields.
+%   events - event struct from detectEcgPeaks with index and time fields.
+%   windowSec - optional [start end] seconds around each event, default
+%               [-0.35 0.35].
+%
+% Output:
+%   segments - struct with values matrix, timeOffset, eventIndex,
+%              eventTime, fs, sourceName, and metadata.windowSec.
 
     if nargin < 3 || isempty(windowSec)
         windowSec = [-0.35 0.35];

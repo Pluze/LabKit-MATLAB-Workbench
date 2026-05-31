@@ -1,5 +1,22 @@
 function [item, status] = loadFile(filepath, expectedKind, opts)
 %LOADFILE Load one supported DTA file without GUI side effects.
+%
+% Usage:
+%   [item, status] = labkit.dta.loadFile(filepath);
+%   [item, status] = labkit.dta.loadFile(filepath, "chrono");
+%
+% Inputs:
+%   filepath - char/string path to one Gamry DTA file.
+%   expectedKind - "auto" (default), "chrono", "eis", or "cvct".
+%   opts - optional struct passed to kind-specific item construction.
+%
+% Options:
+%   For chrono files, opts may contain pulse-detection options accepted by
+%   labkit.dta.detectPulses through the private chrono item builder.
+%
+% Output:
+%   item - parsed DTA item struct when status.ok is true.
+%   status - struct with ok, message, kind, expectedKind, and filepath.
 
     if nargin < 2
         expectedKind = "auto";

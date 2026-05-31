@@ -1,5 +1,14 @@
 function ui = createTopBottomPlotControls(topPanel, bottomPanel, xItems, yItems, topDefaults, bottomDefaults, valueChangedFcn)
 %CREATETOPBOTTOMPLOTCONTROLS Create shared top/bottom plot controls.
+%
+% Inputs:
+%   topPanel, bottomPanel - parent panels for control rows.
+%   xItems, yItems - dropdown items for X and Y axes.
+%   topDefaults, bottomDefaults - structs with x and y default values.
+%   valueChangedFcn - optional callback for dropdowns/grid checkboxes.
+%
+% Output:
+%   ui - struct with top/bottom grids, X/Y dropdowns, and grid checkboxes.
 
     if nargin < 7
         valueChangedFcn = [];

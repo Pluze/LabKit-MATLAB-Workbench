@@ -49,6 +49,21 @@ For custom right-side arrangements, pass `rightGridSize`, `rightRowHeight`, and 
 
 App files should not rebuild split-pane layout plumbing or own their own separator-drag behavior.
 
+### `createWorkbench` Options
+
+| Option | Type | Default | Valid values / meaning |
+| --- | --- | --- | --- |
+| `rightKind` | string | `custom` | `custom` or `dualPlot`. |
+| `rightGridSize` | numeric row vector | `[1 1]` | Right output grid size for custom right panes. |
+| `rightRowHeight` | cell row | `{'1x'}` | Right output grid row heights for custom right panes. |
+| `rightRowSpacing` | scalar | `8`, or `10` for `dualPlot` | Right output grid row spacing. |
+| `showPlotControls` | logical | `true` | `dualPlot` only; false uses two plot rows without option panels. |
+| `controlsTitle` | char/string | `Controls` | Left panel title. |
+| `rightTitle` | char/string | `Plots` | Right panel title. |
+| `topPlotTitle` | char/string | `Top Plot` | `dualPlot` top controls/axes title. |
+| `bottomPlotTitle` | char/string | `Bottom Plot` | `dualPlot` bottom controls/axes title. |
+| `tabs` | tabSpec array | standard three tabs | Custom left-tab definitions. |
+
 Custom left-tab sizing is declared in the tab spec:
 
 ```matlab
@@ -59,6 +74,17 @@ opts.tabs = labkit.ui.tabSpec( ...
 ```
 
 Here `resizeRows = [1 2 3]` means the user can drag the boundaries after logical rows 1, 2, and 3. The framework may create internal handle rows, but app code still places sections in rows 1 through 4 through LabKit layout helpers.
+
+### `tabSpec` Options
+
+| Option | Type | Default | Valid values / meaning |
+| --- | --- | --- | --- |
+| `columnWidth` | cell row | all `{'1x'}` | Column widths for the tab content grid. |
+| `resizeRows` | numeric row vector | `[]` | Logical rows after which draggable height handles are inserted. |
+| `resizeOptions` | struct | empty | Passed to row resize handle creation. |
+| `padding` | numeric 1-by-4 | `[8 8 8 8]` | Tab content grid padding. |
+| `rowSpacing` | scalar | `10` | Tab content grid row spacing. |
+| `columnSpacing` | scalar | MATLAB default | Tab content grid column spacing. |
 
 ## Common Helpers
 
@@ -92,6 +118,18 @@ hImage = labkit.ui.showImageAxes(ax, imageData, titleText);
 
 Use `createPanelGrid` for app-defined sections that only need the standard panel/grid styling. Fixed-height parent tab rows are automatically grown when the declared height is smaller than the section's estimated control height, so default app startup layouts should avoid clipping controls while still allowing user row resizing and scrolling. Use `createLabeledSpinner` for numeric settings that should support click/step adjustment, `createReadOnlyTextField` for single-line status or path display, and `createReadOnlyTextPanel` for app-owned usage notes, file previews, or other read-only multiline text. Use `refreshListboxSelection` for generic single- or multi-select listbox state updates.
 
+### `createPanelGrid` Options
+
+| Option | Type | Default | Valid values / meaning |
+| --- | --- | --- | --- |
+| `rowHeight` | cell row | all `{'fit'}` | Child grid row heights. |
+| `columnWidth` | cell row | all `{'1x'}` | Child grid column widths. |
+| `padding` | numeric 1-by-4 | `[8 8 8 8]` | Child grid padding. |
+| `rowSpacing` | scalar | `8` | Child grid row spacing. |
+| `columnSpacing` | scalar | `8` | Child grid column spacing. |
+| `autoGrowParentRow` | logical | `true` | Grows undersized fixed parent tab rows. |
+| `minPanelHeight` | scalar | estimated from child grid | Minimum height used by parent-row auto growth. |
+
 Axes created through `labkit.ui.createAxes`, workbench dual-plot shells, or reset with `labkit.ui.hardResetAxis` get a standard right-click context action named `Open axes in new figure`. The same context menu is attached to plotted child objects such as images, lines, overlays, and ROI previews so image-heavy apps do not block the action. MATLAB does not reliably propagate axes context menus to graphics children created later, so app-local renderers that create new image or overlay objects should call `labkit.ui.enableAxesPopout(ax)` after drawing. It copies the current axes contents, labels, scales, grid state, and basic styling into a separate MATLAB figure for manual editing or export. The copied axes use automatic data and plot-box aspect-ratio modes so the standalone figure can be freely resized. Apps should not implement their own plot-popout behavior unless they need a domain-specific export workflow.
 
 Use `showImageAxes` for app-neutral image display boilerplate: it draws an image, uses image-style axes limits, hides ticks, enables standard image navigation, and refreshes the axes popout menu onto the image object. Apps still own how image arrays, overlays, masks, and annotations are computed.
@@ -99,6 +137,19 @@ Use `showImageAxes` for app-neutral image display boilerplate: it draws an image
 Use `tabSpec(..., struct('resizeRows', ...))` when a left tab contains several stacked app-defined sections that may need manual height adjustment. When manually placing a component directly into a workbench tab grid, map the logical row through `labkit.ui.layoutRow(parentGrid, row)`. Most app code should use helpers such as `createPanelGrid`, `createResultTablePanel`, `createLogPanel`, and `createAxes`, which apply that mapping for their parent row. `labkit.ui.addRowResizeHandle` remains a lower-level helper for unusual app-local grids that intentionally reserve a physical handle row.
 
 Use `createAnchorCurveEditor` when an app needs DIC-style image anchor editing: double-click blank image space to add or insert anchors, drag anchors to move them, double-click anchors to delete them, switch between curve and straight-line preview, constrain the maximum point count for tools such as two-endpoint scale bars, and optionally install scroll-wheel zoom on the image axes. The helper owns generic interaction and preview graphics only; apps still own mask construction, scale bars, fitting, analysis, and exports.
+
+### `createAnchorCurveEditor` Options
+
+| Option | Type | Default | Valid values / meaning |
+| --- | --- | --- | --- |
+| `figure` | figure handle | `ancestor(ax,'figure')` | Owning figure for mouse/scroll callbacks. |
+| `closed` | logical | `false` | True for closed ROI boundaries. |
+| `style` | string | `Curve` | `Curve` or `Straight lines`. |
+| `installScrollWheel` | logical | `true` | Installs scroll-wheel zoom while editor is active. |
+| `maxPoints` | positive integer or `Inf` | `Inf` | Maximum number of anchors. |
+| `onChanged` | function handle | `[]` | Called after point edits. |
+
+The returned editor struct exposes `start`, `setActive`, `setPoints`, `getPoints`, `clearPoints`, `undoLast`, `insertPoint`, `setStyle`, `setImageSize`, `setBackground`, `refresh`, `curvePoints`, and `delete`.
 
 ## Ownership Boundary
 

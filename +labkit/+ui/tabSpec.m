@@ -1,5 +1,25 @@
 function spec = tabSpec(key, titleText, gridSize, rowHeight, opts)
 %TABSPEC Build a tab specification for the shared workbench shell.
+%
+% Usage:
+%   spec = labkit.ui.tabSpec('filesAnalysis', 'Files + Analysis', ...
+%       [4 1], {240, 220, 280, 160}, struct('resizeRows', [1 2 3]));
+%
+% Inputs:
+%   key - valid field-name style identifier used in the returned ui struct.
+%   titleText - visible tab title.
+%   gridSize - [rows columns] for the tab content grid.
+%   rowHeight - optional row-height cell/numeric/string row; default all fit.
+%   opts - optional struct copied onto the spec.
+%
+% Options:
+%   columnWidth - cell row of column widths, default all {'1x'}.
+%   resizeRows - logical row boundaries after which drag handles are added.
+%   resizeOptions - struct passed to row-resize handle creation.
+%   padding, rowSpacing, columnSpacing - grid layout properties.
+%
+% Output:
+%   spec - struct consumed by createWorkbench(opts.tabs).
 
     if nargin < 4 || isempty(rowHeight)
         rowHeight = repmat({'fit'}, 1, gridSize(1));

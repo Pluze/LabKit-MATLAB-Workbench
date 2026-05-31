@@ -1,5 +1,13 @@
 function [curve, ok, msg] = getZCurve(tables)
 %GETZCURVE Return the EIS ZCURVE table, or a compatible impedance table.
+%
+% Inputs:
+%   tables - parsed DTA table struct array.
+%
+% Output:
+%   curve - selected impedance curve/table struct, or empty struct.
+%   ok - logical success flag.
+%   msg - status text for logs or UI summaries.
 
     curve = struct();
     ok = false;

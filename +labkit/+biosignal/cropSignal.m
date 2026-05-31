@@ -1,5 +1,16 @@
 function cropped = cropSignal(signal, timeRangeSec)
 %CROPSIGNAL Return a signal clipped to a time range in seconds.
+%
+% Usage:
+%   cropped = labkit.biosignal.cropSignal(signal, [10 40]);
+%
+% Inputs:
+%   signal - biosignal signal struct with time and values fields.
+%   timeRangeSec - [startSec endSec], start < end. Empty/missing returns
+%                  the original signal.
+%
+% Output:
+%   cropped - signal struct with time restarted at zero when non-empty.
 
     validateSignal(signal);
     if nargin < 2 || isempty(timeRangeSec)
