@@ -426,6 +426,9 @@ function checkCreateAxesHelper()
         'Axes popout should preserve the source title.');
     assert(~isempty(popoutAxes(1).Children), ...
         'Axes popout should copy plotted children.');
+    assert(strcmp(popoutAxes(1).DataAspectRatioMode, 'auto') && ...
+        strcmp(popoutAxes(1).PlotBoxAspectRatioMode, 'auto'), ...
+        'Axes popout should leave the copied plot with freely adjustable aspect ratio.');
 end
 
 function checkAnchorCurveEditorHelper()

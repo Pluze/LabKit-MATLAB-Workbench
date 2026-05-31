@@ -23,7 +23,7 @@ end
 
 function copyAxesState(srcAx, dstAx)
     props = {'XScale','YScale','ZScale','XDir','YDir','ZDir', ...
-        'XLim','YLim','ZLim','CLim','DataAspectRatio','PlotBoxAspectRatio', ...
+        'XLim','YLim','ZLim','CLim', ...
         'View','Box','XGrid','YGrid','ZGrid','Color','XColor','YColor','ZColor', ...
         'LineWidth','FontName','FontSize','FontWeight','FontAngle'};
     for k = 1:numel(props)
@@ -36,6 +36,7 @@ function copyAxesState(srcAx, dstAx)
         colormap(dstAx, colormap(srcAx));
     catch
     end
+    unlockAspectRatio(dstAx);
 end
 
 function applyAxesState(srcAx, dstAx)
@@ -51,8 +52,18 @@ function applyAxesState(srcAx, dstAx)
         dstAx.CLimMode = srcAx.CLimMode;
     catch
     end
+    unlockAspectRatio(dstAx);
 
     addLegendIfNeeded(dstAx);
+end
+
+function unlockAspectRatio(ax)
+    try
+        ax.DataAspectRatioMode = 'auto';
+        ax.PlotBoxAspectRatioMode = 'auto';
+        ax.ActivePositionProperty = 'outerposition';
+    catch
+    end
 end
 
 function text = axisLabelText(labelHandle)
