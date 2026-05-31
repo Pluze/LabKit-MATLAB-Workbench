@@ -69,6 +69,11 @@ labkit.ui.createFileSelectionPanel(parent, labels, callbacks, opts);
 labkit.ui.createPanelGrid(parent, titleText, row, gridSize, opts);
 labkit.ui.createPlotOptionsPanel(parent, numRows, row);
 labkit.ui.createTopBottomPlotControls(topPanel, bottomPanel, xItems, yItems, topDefaults, bottomDefaults, onChange);
+labkit.ui.createLabeledDropdown(parent, labelText, ...);
+labkit.ui.createLabeledEditField(parent, labelText, style, ...);
+labkit.ui.createLabeledSpinner(parent, labelText, ...);
+labkit.ui.createReadOnlyTextField(parent, ...);
+labkit.ui.createReadOnlyTextPanel(parent, titleText, row, lines, opts);
 labkit.ui.createResultTablePanel(parent, titleText, row, columnNames, initialData);
 labkit.ui.createLogPanel(parent, row, initialValue);
 labkit.ui.createAnchorCurveEditor(ax, imageSize, opts);
@@ -85,7 +90,7 @@ fig = labkit.ui.popoutAxes(ax);
 hImage = labkit.ui.showImageAxes(ax, imageData, titleText);
 ```
 
-Use `createPanelGrid` for app-defined sections that only need the standard panel/grid styling. Use `refreshListboxSelection` for generic single- or multi-select listbox state updates.
+Use `createPanelGrid` for app-defined sections that only need the standard panel/grid styling. Fixed-height parent tab rows are automatically grown when the declared height is smaller than the section's estimated control height, so default app startup layouts should avoid clipping controls while still allowing user row resizing and scrolling. Use `createLabeledSpinner` for numeric settings that should support click/step adjustment, `createReadOnlyTextField` for single-line status or path display, and `createReadOnlyTextPanel` for app-owned usage notes, file previews, or other read-only multiline text. Use `refreshListboxSelection` for generic single- or multi-select listbox state updates.
 
 Axes created through `labkit.ui.createAxes`, workbench dual-plot shells, or reset with `labkit.ui.hardResetAxis` get a standard right-click context action named `Open axes in new figure`. The same context menu is attached to plotted child objects such as images, lines, overlays, and ROI previews so image-heavy apps do not block the action. MATLAB does not reliably propagate axes context menus to graphics children created later, so app-local renderers that create new image or overlay objects should call `labkit.ui.enableAxesPopout(ax)` after drawing. It copies the current axes contents, labels, scales, grid state, and basic styling into a separate MATLAB figure for manual editing or export. The copied axes use automatic data and plot-box aspect-ratio modes so the standalone figure can be freely resized. Apps should not implement their own plot-popout behavior unless they need a domain-specific export workflow.
 
@@ -110,7 +115,7 @@ Use `createAnchorCurveEditor` when an app needs DIC-style image anchor editing: 
 - app-neutral image display boilerplate for prepared image arrays
 - result table panels
 - listbox selection refresh
-- small labeled controls and domain-neutral state helpers
+- small labeled controls, read-only text surfaces, and domain-neutral state helpers
 
 `labkit.ui.*` should not own:
 

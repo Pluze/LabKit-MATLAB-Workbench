@@ -90,11 +90,11 @@ function varargout = labkit_CSC_app(varargin)
     gf = curveUi.grid;
 
     uilabel(gf,'Text','File:','HorizontalAlignment','right');
-    txtFile = uieditfield(gf,'text','Editable','off');
+    txtFile = labkit.ui.createReadOnlyTextField(gf);
     txtFile.Layout.Row = 1; txtFile.Layout.Column = 2;
 
     uilabel(gf,'Text','Scan rate:','HorizontalAlignment','right');
-    txtScan = uieditfield(gf,'text','Editable','off');
+    txtScan = labkit.ui.createReadOnlyTextField(gf);
     txtScan.Layout.Row = 2; txtScan.Layout.Column = 2;
 
     uilabel(gf,'Text','Curve:','HorizontalAlignment','right');
@@ -135,23 +135,23 @@ function varargout = labkit_CSC_app(varargin)
     edArea.Layout.Row = 2; edArea.Layout.Column = 2;
 
     uilabel(gc,'Text','CT charge / CSC:','HorizontalAlignment','right');
-    txtQct = uieditfield(gc,'text','Editable','off');
+    txtQct = labkit.ui.createReadOnlyTextField(gc);
     txtQct.Layout.Row = 3; txtQct.Layout.Column = 2;
 
     uilabel(gc,'Text','CV charge / CSC:','HorizontalAlignment','right');
-    txtQcv = uieditfield(gc,'text','Editable','off');
+    txtQcv = labkit.ui.createReadOnlyTextField(gc);
     txtQcv.Layout.Row = 4; txtQcv.Layout.Column = 2;
 
     uilabel(gc,'Text','Difference:','HorizontalAlignment','right');
-    txtDiff = uieditfield(gc,'text','Editable','off');
+    txtDiff = labkit.ui.createReadOnlyTextField(gc);
     txtDiff.Layout.Row = 5; txtDiff.Layout.Column = 2;
 
     uilabel(gc,'Text','Relative diff:','HorizontalAlignment','right');
-    txtRel = uieditfield(gc,'text','Editable','off');
+    txtRel = labkit.ui.createReadOnlyTextField(gc);
     txtRel.Layout.Row = 6; txtRel.Layout.Column = 2;
 
     uilabel(gc,'Text','max|dt-|dV|/v|:','HorizontalAlignment','right');
-    txtDtErr = uieditfield(gc,'text','Editable','off');
+    txtDtErr = labkit.ui.createReadOnlyTextField(gc);
     txtDtErr.Layout.Row = 7; txtDtErr.Layout.Column = 2;
 
     lblStatus = uilabel(gc,'Text','Ready');

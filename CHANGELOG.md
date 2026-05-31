@@ -34,6 +34,8 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Copied popout axes now use automatic aspect-ratio modes so standalone plot windows can be freely resized.
 - Axes popout context menus now refresh onto plotted child objects used by DIC and image-measurement renderers and avoid intercepting DIC ROI right-clicks.
 - Reusable UI now includes an app-neutral `showImageAxes` helper for prepared image arrays with image-style axes, navigation, and popout support.
+- Reusable UI now includes labeled spinner, read-only text field, and read-only text panel helpers; app numeric settings use spinners for click/step adjustment.
+- Workbench control sections now auto-grow undersized fixed startup rows based on their estimated control height, reducing default clipped controls while keeping scrolling and row resizing available.
 - App shells now use the standard three-tab workbench framework, and DTA-facing apps share the same file-selection panel structure.
 - GUI app entry points now build from the unified `labkit.ui.createWorkbench` shell, with compatibility shell wrappers layered over that entry point.
 - Reusable UI components now include generic panel-grid creation and single/multi listbox selection refresh so app files can define domain-specific sections with less layout boilerplate.

@@ -30,7 +30,9 @@ function test_gui_layout_controls(scope)
     if scope == "all" || scope == "ui"
         checkListboxItemsRefreshHelper();
         checkListboxSelectionHelper();
+        checkLabeledSpinnerHelper();
         checkLogPanelHelper();
+        checkReadOnlyTextHelpers();
         checkReadOnlyInfoRowHelper();
         checkResultTablePanelHelper();
         checkPanelGridHelper();
@@ -53,7 +55,7 @@ function checkECGPrint()
     fig = launchFigure('labkit_ECGPrint_app', 'ECG Signal Print + SNR Explorer');
     assertFigureMinimumSize(fig, 1480, 880);
     assertComponentCounts(fig, struct('Button', 6, 'DropDown', 4, ...
-        'Table', 1, 'TextArea', 3, 'Axes', 4, 'Spinner', 6));
+        'Table', 1, 'TextArea', 3, 'Axes', 4, 'Spinner', 10));
     assertButtonContract(fig, {'Open recording', 'Analyze current ROI', ...
         'Preview file header', 'Refresh import parsing', ...
         'Export segment SNR CSV', 'Export waveform PNG'});
@@ -321,6 +323,39 @@ function checkLogPanelHelper()
         'Log panel helper should preserve supplied initial log text.');
 end
 
+function checkLabeledSpinnerHelper()
+    fig = uifigure('Visible', 'off', 'Name', 'labkit_labeled_spinner_probe');
+    cleaner = onCleanup(@() delete(fig));
+    grid = uigridlayout(fig, [1 2]);
+
+    [lbl, spinner] = labkit.ui.createLabeledSpinner(grid, 'Probe value:', ...
+        'Value', 2, 'Limits', [0 10], 'Step', 0.5);
+    assert(strcmp(lbl.Text, 'Probe value:'), ...
+        'Labeled spinner helper should preserve label text.');
+    assert(strcmp(lbl.HorizontalAlignment, 'right'), ...
+        'Labeled spinner helper should right-align labels.');
+    assert(spinner.Value == 2 && isequal(spinner.Limits, [0 10]) && spinner.Step == 0.5, ...
+        'Labeled spinner helper should pass spinner options through.');
+end
+
+function checkReadOnlyTextHelpers()
+    fig = uifigure('Visible', 'off', 'Name', 'labkit_read_only_text_probe');
+    cleaner = onCleanup(@() delete(fig));
+    grid = uigridlayout(fig, [2 1]);
+
+    field = labkit.ui.createReadOnlyTextField(grid, 'Value', 'Status');
+    field.Layout.Row = 1;
+    assert(strcmp(field.Editable, 'off') && strcmp(field.Value, 'Status'), ...
+        'Read-only text field helper should create a non-editable text field.');
+
+    panelUi = labkit.ui.createReadOnlyTextPanel(grid, 'Notes', 2, {'one', 'two'});
+    assert(strcmp(panelUi.panel.Title, 'Notes'), ...
+        'Read-only text panel helper should preserve the panel title.');
+    assert(strcmp(panelUi.textArea.Editable, 'off') && ...
+        sameStringCell(panelUi.textArea.Value, {'one', 'two'}), ...
+        'Read-only text panel helper should preserve read-only text lines.');
+end
+
 function checkReadOnlyInfoRowHelper()
     fig = uifigure('Visible', 'off', 'Name', 'labkit_read_only_info_row_probe');
     cleaner = onCleanup(@() delete(fig));
@@ -382,6 +417,12 @@ function checkPanelGridHelper()
         'Panel-grid helper should support explicit action-column widths.');
     assert(isequal(ui2.grid.Padding, [0 0 0 0]), ...
         'Panel-grid helper should support explicit padding.');
+
+    growGrid = uigridlayout(fig, [1 1]);
+    growGrid.RowHeight = {50};
+    labkit.ui.createPanelGrid(growGrid, 'Tall Controls', 1, [5 2]);
+    assert(growGrid.RowHeight{1} > 50, ...
+        'Panel-grid helper should grow undersized fixed parent rows to avoid clipped controls.');
 end
 
 function checkPlotOptionsPanelHelper()

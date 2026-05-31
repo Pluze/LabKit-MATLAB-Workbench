@@ -51,7 +51,7 @@ function varargout = labkit_ECGPrint_app(varargin)
     btnOpen.Layout.Row = 1;
     btnOpen.Layout.Column = [1 2];
 
-    txtFile = uieditfield(dataGrid, 'text', 'Editable', 'off', 'Value', 'No file loaded');
+    txtFile = labkit.ui.createReadOnlyTextField(dataGrid, 'Value', 'No file loaded');
     txtFile.Layout.Row = 2;
     txtFile.Layout.Column = [1 2];
 
@@ -65,13 +65,13 @@ function varargout = labkit_ECGPrint_app(varargin)
     btnRefreshImport.Layout.Row = 3;
     btnRefreshImport.Layout.Column = 2;
 
-    txtImportStatus = uieditfield(dataGrid, 'text', 'Editable', 'off', ...
+    txtImportStatus = labkit.ui.createReadOnlyTextField(dataGrid, ...
         'Value', 'Open a recording to inspect import settings.');
     txtImportStatus.Layout.Row = 4;
     txtImportStatus.Layout.Column = [1 2];
 
-    [lblHeaderLine, edtHeaderLine] = labkit.ui.createLabeledEditField(dataGrid, ...
-        'CSV header line:', 'numeric', 'Value', 0, 'Limits', [0 Inf], ...
+    [lblHeaderLine, edtHeaderLine] = labkit.ui.createLabeledSpinner(dataGrid, ...
+        'CSV header line:', 'Value', 0, 'Limits', [0 Inf], 'Step', 1, ...
         'ValueChangedFcn', @onImportOptionChanged);
     lblHeaderLine.Layout.Row = 5;
     lblHeaderLine.Layout.Column = 1;
@@ -114,8 +114,8 @@ function varargout = labkit_ECGPrint_app(varargin)
     edtSignalColumns.Layout.Row = 9;
     edtSignalColumns.Layout.Column = 2;
 
-    [lblFallbackFs, edtFallbackFs] = labkit.ui.createLabeledEditField(dataGrid, ...
-        'Fallback Fs:', 'numeric', 'Value', 2000, 'Limits', [0 Inf], ...
+    [lblFallbackFs, edtFallbackFs] = labkit.ui.createLabeledSpinner(dataGrid, ...
+        'Fallback Fs:', 'Value', 2000, 'Limits', [0 Inf], 'Step', 100, ...
         'ValueChangedFcn', @onImportOptionChanged);
     lblFallbackFs.Layout.Row = 10;
     lblFallbackFs.Layout.Column = 1;
@@ -129,15 +129,15 @@ function varargout = labkit_ECGPrint_app(varargin)
     ddChannel.Layout.Row = 11;
     ddChannel.Layout.Column = 2;
 
-    [lblStart, edtStart] = labkit.ui.createLabeledEditField(dataGrid, ...
-        'ROI start (s):', 'numeric', 'Value', 0, 'Limits', [0 Inf]);
+    [lblStart, edtStart] = labkit.ui.createLabeledSpinner(dataGrid, ...
+        'ROI start (s):', 'Value', 0, 'Limits', [0 Inf], 'Step', 1);
     lblStart.Layout.Row = 12;
     lblStart.Layout.Column = 1;
     edtStart.Layout.Row = 12;
     edtStart.Layout.Column = 2;
 
-    [lblEnd, edtEnd] = labkit.ui.createLabeledEditField(dataGrid, ...
-        'ROI end (s):', 'numeric', 'Value', 0, 'Limits', [0 Inf]);
+    [lblEnd, edtEnd] = labkit.ui.createLabeledSpinner(dataGrid, ...
+        'ROI end (s):', 'Value', 0, 'Limits', [0 Inf], 'Step', 1);
     lblEnd.Layout.Row = 13;
     lblEnd.Layout.Column = 1;
     edtEnd.Layout.Row = 13;
@@ -148,38 +148,44 @@ function varargout = labkit_ECGPrint_app(varargin)
         'columnWidth', {{135, '1x'}}));
     procGrid = procPanel.grid;
 
-    [lblLow, edtLow] = createLabeledSpinner(procGrid, 'Bandpass low Hz:', 0.5, [0 Inf], 0.1);
+    [lblLow, edtLow] = labkit.ui.createLabeledSpinner(procGrid, ...
+        'Bandpass low Hz:', 'Value', 0.5, 'Limits', [0 Inf], 'Step', 0.1);
     lblLow.Layout.Row = 1;
     lblLow.Layout.Column = 1;
     edtLow.Layout.Row = 1;
     edtLow.Layout.Column = 2;
 
-    [lblHigh, edtHigh] = createLabeledSpinner(procGrid, 'Bandpass high Hz:', 40, [0 Inf], 1);
+    [lblHigh, edtHigh] = labkit.ui.createLabeledSpinner(procGrid, ...
+        'Bandpass high Hz:', 'Value', 40, 'Limits', [0 Inf], 'Step', 1);
     lblHigh.Layout.Row = 2;
     lblHigh.Layout.Column = 1;
     edtHigh.Layout.Row = 2;
     edtHigh.Layout.Column = 2;
 
-    [lblPeakDist, edtPeakDist] = createLabeledSpinner(procGrid, 'Peak distance (s):', 0.28, [0.01 Inf], 0.01);
+    [lblPeakDist, edtPeakDist] = labkit.ui.createLabeledSpinner(procGrid, ...
+        'Peak distance (s):', 'Value', 0.28, 'Limits', [0.01 Inf], 'Step', 0.01);
     lblPeakDist.Layout.Row = 3;
     lblPeakDist.Layout.Column = 1;
     edtPeakDist.Layout.Row = 3;
     edtPeakDist.Layout.Column = 2;
 
-    [lblWin, edtWin] = createLabeledSpinner(procGrid, 'Segment half win (s):', 0.7, [0.01 Inf], 0.05);
+    [lblWin, edtWin] = labkit.ui.createLabeledSpinner(procGrid, ...
+        'Segment half win (s):', 'Value', 0.7, 'Limits', [0.01 Inf], 'Step', 0.05);
     lblWin.Layout.Row = 4;
     lblWin.Layout.Column = 1;
     edtWin.Layout.Row = 4;
     edtWin.Layout.Column = 2;
 
-    [lblTopN, edtTopN] = createLabeledSpinner(procGrid, 'Template top N:', 30, [1 Inf], 1);
+    [lblTopN, edtTopN] = labkit.ui.createLabeledSpinner(procGrid, ...
+        'Template top N:', 'Value', 30, 'Limits', [1 Inf], 'Step', 1);
     lblTopN.Layout.Row = 5;
     lblTopN.Layout.Column = 1;
     edtTopN.Layout.Row = 5;
     edtTopN.Layout.Column = 2;
 
-    [lblSmooth, edtSmooth] = createLabeledSpinner(procGrid, 'Smooth beats:', 15, [1 Inf], 1, ...
-        @(~,~) refreshPlots());
+    [lblSmooth, edtSmooth] = labkit.ui.createLabeledSpinner(procGrid, ...
+        'Smooth beats:', 'Value', 15, 'Limits', [1 Inf], 'Step', 1, ...
+        'ValueChangedFcn', @(~,~) refreshPlots());
     lblSmooth.Layout.Row = 6;
     lblSmooth.Layout.Column = 1;
     edtSmooth.Layout.Row = 6;
@@ -210,22 +216,18 @@ function varargout = labkit_ECGPrint_app(varargin)
         'ButtonPushedFcn', @onExportWaveform);
     btnExportOverlay.Layout.Row = 2;
 
-    notePanel = labkit.ui.createPanelGrid(layFA, 'Workflow Notes', 4, [1 1], ...
-        struct('rowHeight', {{'1x'}}));
-    txtNotes = uitextarea(notePanel.grid, 'Editable', 'off');
-    txtNotes.Value = { ...
+    labkit.ui.createReadOnlyTextPanel(layFA, 'Workflow Notes', 4, { ...
         '1. Open MAT/CSV data, select a numeric channel, and optionally set a time ROI.', ...
         '2. Analyze current ROI to filter, detect peaks, segment beats, build a template, and compute SNR.', ...
-        '3. Use import refresh after changing CSV parsing options; use the header preview to inspect ambiguous files.'};
+        '3. Use import refresh after changing CSV parsing options; use the header preview to inspect ambiguous files.'});
 
     summaryTable = uitable(laySR, 'ColumnName', {'Metric','Value'}, ...
         'Data', initialSummaryRows());
     summaryTable.Layout.Row = labkit.ui.layoutRow(laySR, 1);
 
-    previewPanel = labkit.ui.createPanelGrid(laySR, 'File Header Preview', 2, [1 1], ...
-        struct('rowHeight', {{'1x'}}));
-    txtFilePreview = uitextarea(previewPanel.grid, 'Editable', 'off', ...
-        'Value', {'Open a CSV/text file, then use Preview file header.'});
+    previewUi = labkit.ui.createReadOnlyTextPanel(laySR, 'File Header Preview', 2, ...
+        {'Open a CSV/text file, then use Preview file header.'});
+    txtFilePreview = previewUi.textArea;
 
     logUi = labkit.ui.createLogPanel(layLog, 1, {'Ready.'});
     txtLog = logUi.textArea;
@@ -644,17 +646,6 @@ end
 
 function rows = initialSummaryRows()
     rows = {'Status', 'No signal analyzed'};
-end
-
-function [label, spinner] = createLabeledSpinner(parent, text, value, limits, step, callback)
-    if nargin < 6
-        callback = [];
-    end
-    label = uilabel(parent, 'Text', text, 'HorizontalAlignment', 'right');
-    spinner = uispinner(parent, 'Value', value, 'Limits', limits, 'Step', step);
-    if ~isempty(callback)
-        spinner.ValueChangedFcn = callback;
-    end
 end
 
 function text = importStatusText(recording, channelCount)
