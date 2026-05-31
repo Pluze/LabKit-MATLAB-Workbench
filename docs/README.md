@@ -1,6 +1,8 @@
 # Documentation Guide
 
-This directory is organized around the repository's main component boundaries: UI library, DTA library, and app-owned workflow details.
+This directory is organized around the repository's main component boundaries: independent workflow apps, the small reusable UI library, and the current DTA library.
+
+LabKit is documented as an internal lab app workbench. The docs should help users find and run the app they need without understanding the whole repository, and should help maintainers decide what belongs in the reusable library versus an app.
 
 ## Component Docs
 

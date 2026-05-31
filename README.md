@@ -2,11 +2,19 @@
 
 [![MATLAB Tests](https://github.com/Pluze/LabKit-MATLAB-Workbench/actions/workflows/matlab-tests.yml/badge.svg)](https://github.com/Pluze/LabKit-MATLAB-Workbench/actions/workflows/matlab-tests.yml)
 
-LabKit MATLAB Workbench is a reusable MATLAB GUI foundation for lab-internal software tools. It is intended to make small MATLAB GUI apps easier to build, maintain, and keep consistent across different workflows.
+LabKit MATLAB Workbench is an internal MATLAB lab app workbench for daily research utilities. It is intended to make small MATLAB GUI apps easier to build, maintain, and keep consistent across different workflows without turning the repository into a monolithic analysis platform.
 
 The core idea is a shared app shell: configurable tabs and controls on the left, live plots or primary outputs on the right, and app-specific behavior kept in the owning app file. Small utilities and larger tools start from the same GUI structure instead of each rebuilding its own MATLAB interface.
 
 The current app implementations include Gamry electrochemistry workflows, DIC image workflows, and image measurement tools built on this GUI foundation. Electrochemistry support uses the reusable DTA facade; DIC registration, crop, Ncorr strain extraction, overlays, summaries, and exports stay in the DIC app files. Image measurement apps are separate from DIC and keep measurement-specific logic app-local.
+
+## Project Philosophy
+
+- Apps are independent workflow components for specific experimental needs.
+- Apps may evolve quickly as lab workflows change.
+- The reusable `labkit` library should remain small, stable, and domain-neutral.
+- Shared code is extracted only after repeated real app use proves the pattern.
+- App-specific analysis, result fields, plot labels, export schemas, callbacks, alerts, and logs stay in the owning app.
 
 ## What It Provides
 
@@ -15,28 +23,37 @@ The current app implementations include Gamry electrochemistry workflows, DIC im
 - A pattern where each app owns its domain logic, plotting choices, and exports.
 - Current app implementations for Gamry electrochemistry workflows, DIC image workflows, and image measurement tools.
 
+App status is intentionally lightweight:
+
+| Status | Meaning |
+| --- | --- |
+| `routine` | Current daily-use workflow with established behavior. |
+| `active` | Current workflow still being refined through real use. |
+| `experimental` | Newer utility or workflow under evaluation. |
+| `archived` | Kept for reference, not part of normal use. |
+
 ## Current Electrochemistry Apps
 
-| Command | Use | Input | Typical output |
-| --- | --- | --- | --- |
-| `labkit_CIC_app` | Charge injection capacity / voltage-transient metrics | Chrono DTA | Results table and CSV |
-| `labkit_VTResistance_app` | Steady resistance estimates from voltage transients | Chrono DTA | Resistance table and CSV |
-| `labkit_CSC_app` | CV/CT charge and CSC comparison | CV/CT DTA | Plots and comparison values |
-| `labkit_EIS_app` | EIS curve overlay and export | EIS ZCURVE DTA | Plot and CSV |
-| `labkit_ChronoOverlay_app` | Chrono voltage/current overlay | Chrono DTA | Overlay plots and CSV |
+| Command | Status | Use | Input | Typical output |
+| --- | --- | --- | --- | --- |
+| `labkit_CIC_app` | routine | Charge injection capacity / voltage-transient metrics | Chrono DTA | Results table and CSV |
+| `labkit_VTResistance_app` | routine | Steady resistance estimates from voltage transients | Chrono DTA | Resistance table and CSV |
+| `labkit_CSC_app` | routine | CV/CT charge and CSC comparison | CV/CT DTA | Plots and comparison values |
+| `labkit_EIS_app` | routine | EIS curve overlay and export | EIS ZCURVE DTA | Plot and CSV |
+| `labkit_ChronoOverlay_app` | routine | Chrono voltage/current overlay | Chrono DTA | Overlay plots and CSV |
 
 ## Current DIC Apps
 
-| Command | Use | Input | Typical output |
-| --- | --- | --- | --- |
-| `labkit_DICPreprocess_app` | Image registration, paired crop preparation, and ROI mask drawing | Reference/current images | Aligned image, crop PNGs, and binary ROI mask |
-| `labkit_DICPostprocess_app` | Ncorr strain overlay, ROI summary, and colorbar export | Ncorr MAT, reference image, mask | EXX/EYY overlays, summary CSV, and colorbar/level table |
+| Command | Status | Use | Input | Typical output |
+| --- | --- | --- | --- | --- |
+| `labkit_DICPreprocess_app` | active | Image registration, paired crop preparation, and ROI mask drawing | Reference/current images | Aligned image, crop PNGs, and binary ROI mask |
+| `labkit_DICPostprocess_app` | active | Ncorr strain overlay, ROI summary, and colorbar export | Ncorr MAT, reference image, mask | EXX/EYY overlays, summary CSV, and colorbar/level table |
 
 ## Current Image Measurement Apps
 
-| Command | Use | Input | Typical output |
-| --- | --- | --- | --- |
-| `labkit_CurvatureMeasurement_app` | Editable curve-point circle fit for radius and curvature measurement | Image | Overlay PNG and curvature CSV |
+| Command | Status | Use | Input | Typical output |
+| --- | --- | --- | --- | --- |
+| `labkit_CurvatureMeasurement_app` | experimental | Editable curve-point circle fit for radius and curvature measurement | Image | Overlay PNG and curvature CSV |
 
 ## Quick Start
 
@@ -69,7 +86,7 @@ The repository currently has two reusable MATLAB surfaces:
 - `labkit.ui.*` for shared GUI structure and rendering helpers.
 - `labkit.dta.*` for the current electrochemistry/Gamry DTA file support.
 
-Domain-specific logic, plot definitions, result fields, and export schemas live in the app files under `apps/`.
+Domain-specific logic, plot definitions, result fields, and export schemas live in the app files under `apps/`. Adding more independent apps is expected; adding new public library API should be conservative.
 
 Automated tests can be run from a macOS shell:
 

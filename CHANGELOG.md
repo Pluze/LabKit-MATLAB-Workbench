@@ -6,6 +6,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 
 ### Changed
 
+- Documentation now frames LabKit as an internal lab app workbench with independent workflow apps, conservative public library growth, and app-owned domain logic.
 - Reusable package, startup, and app entrypoint names now use the generic `labkit` namespace.
 - Added DIC preprocess and postprocess apps built on the shared UI foundation, with image registration, paired crop, Ncorr strain overlay, and ROI summary logic kept app-local.
 - Added an image measurement app category with a curvature measurement app that edits curve anchors directly on a single large image preview, measures scale bars with a two-anchor edit mode, fits a circle, optionally shows densified fit points, keeps anchors plus radial residual distances visible after fitting, reports curvature, and exports overlays and result CSV files without adding the workflow to DIC.

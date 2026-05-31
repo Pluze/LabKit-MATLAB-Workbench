@@ -20,6 +20,16 @@ scripts/run_matlab_tests.sh
 
 The same non-GUI suite runs in GitHub Actions on pushes and pull requests to `main` through `.github/workflows/matlab-tests.yml`. The README badge points to this workflow. The CI workflow uses MathWorks MATLAB Actions and calls `run_all_tests(false)`, so it covers `core`, `dta`, and pure `apps` checks without opening GUI windows.
 
+Validation levels:
+
+| Level | Where | Purpose |
+| --- | --- | --- |
+| Default non-GUI suite | CI and local shell | Core boundaries, DTA facade/parser behavior, and pure app analysis/export helpers. |
+| Focused GUI profiles | Local MATLAB with graphics support | Noninteractive app launch, layout, and callback wiring checks for selected app families. |
+| Manual GUI validation | User-run app windows | Interactive file selection, drawing, visual inspection, and full workflow feel. |
+
+CI should not be described as full GUI workflow validation. It verifies the non-GUI behavior that can run reliably on GitHub-hosted MATLAB Actions.
+
 For public repositories, MathWorks MATLAB Actions can license MATLAB automatically. For private repositories, configure a GitHub secret named `MLM_LICENSE_TOKEN` with a MATLAB batch licensing token.
 
 Focused iteration commands:

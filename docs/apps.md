@@ -1,6 +1,8 @@
 # Apps
 
-Apps are the owning layer for domain-specific workflows. They compose `labkit.ui.*` and, when needed, `labkit.dta.*`, while keeping calculations, plotting decisions, displayed result fields, and export schemas local to the app file.
+Apps are the owning layer for domain-specific workflows. They are first-class deliverables, not examples for a hidden platform. Each app should remain independently launchable and useful for a concrete experimental task.
+
+Apps compose `labkit.ui.*` and, when needed, `labkit.dta.*`, while keeping calculations, plotting decisions, displayed result fields, and export schemas local to the app file. Apps may evolve faster than the reusable library because they track real lab needs.
 
 ## Startup
 
@@ -41,6 +43,25 @@ labkit_CurvatureMeasurement_app
 
 The current image measurement app bodies live under `apps/image_measurement/`. They use `labkit.ui.*` for the shared GUI shell and keep image-point picking, scale measurement, curvature fitting, overlays, summaries, and exports local to the owning app files. These apps are separate from DIC because their workflows are general image measurements rather than DIC preprocessing or strain postprocessing.
 
+## App Status
+
+Status labels are intentionally lightweight and should not overclaim maturity:
+
+| Status | Meaning |
+| --- | --- |
+| `routine` | Current daily-use workflow with established behavior. |
+| `active` | Current workflow still being refined through real use. |
+| `experimental` | Newer utility or workflow under evaluation. |
+| `archived` | Kept for reference, not part of normal use. |
+
+Current app-family status:
+
+| App family | Status | Notes |
+| --- | --- | --- |
+| Electrochemistry | routine | Current DTA-backed workflows used through the DTA facade. |
+| DIC | active | Current image workflows under direct manual GUI validation. |
+| Image measurement | experimental | Newer general measurement utilities separated from DIC. |
+
 ## App Ownership
 
 The app owns:
@@ -54,7 +75,7 @@ The app owns:
 - failed-row behavior
 - callback ordering, alerts, and log wording
 
-Move code into `+labkit` only when it is reusable without app vocabulary.
+Move code into `+labkit` only when it is reusable without app vocabulary, testable independently, and useful beyond one workflow.
 
 ## App File Layout
 
@@ -74,6 +95,8 @@ Keep new lab apps as explicit single files, organized roughly in this order:
 
 Nested functions may read and update GUI handles or app state. Local functions after the app `end` should be GUI-free when practical so tests can call them through narrow app test hooks.
 
+The preferred public shape is one launchable app entry point per workflow. That does not require every implementation detail to stay in one giant function forever. If an app becomes too large, app-owned private helpers are acceptable when they stay under the app family, are not public reusable APIs, and do not reintroduce experiment-specific helper packages as a library surface.
+
 ## New App Starting Pattern
 
 Do not start new apps from long copy-only template files. Start from the current app that is closest in scope, then reduce it to the needed workflow while preserving these boundaries:
@@ -81,7 +104,7 @@ Do not start new apps from long copy-only template files. Start from the current
 - GUI-only apps call `labkit.ui.createWorkbench`, define app-specific controls inside left tabs, and render prepared data on the right.
 - DTA-backed apps keep file discovery/loading/session operations behind `labkit.dta.*` and keep analysis, plotting, result tables, and exports app-local.
 - Apps should declare custom left tabs with `labkit.ui.tabSpec` when the standard three-section tab is not enough; use `resizeRows` in the tab spec for user-adjustable section heights.
-- New app files belong under `apps/<category>/` and should remain explicit single files until real duplication proves a reusable UI or DTA helper is justified.
+- New app files belong under `apps/<category>/` and should remain explicit public entry points. Split app-owned private helpers only when that improves maintainability without making app-specific decisions look reusable.
 
 ## New App Checklist
 
@@ -101,6 +124,19 @@ Define these before adding controls or helpers:
 ```
 
 Prefer `labkit.ui.createWorkbench` even when the app has only one small control page. This keeps daily app interaction consistent as `apps/<category>/` grows while leaving domain-specific tab content under app ownership.
+
+## Extraction Checklist
+
+Before moving app code into `+labkit`, check that the helper:
+
+- can be named without experiment-specific vocabulary
+- does not encode domain units, thresholds, result columns, or paper-specific logic
+- does not read or mutate app state directly
+- can be tested independently
+- is used by at least two real apps, or clearly belongs to a broad app family facade
+- reduces duplication without making the public API harder to understand
+
+If those conditions are not met, keep the code app-local. Adding apps is expected; expanding public library API should be conservative.
 
 ## App Validation
 

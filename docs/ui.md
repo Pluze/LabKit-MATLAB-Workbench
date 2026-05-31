@@ -2,6 +2,8 @@
 
 `labkit.ui.*` is the reusable MATLAB GUI foundation. It provides a standard workbench shape and domain-neutral UI helpers for lab-internal tools.
 
+The UI library should stay small and app-neutral. It owns reusable layout and interaction mechanics; apps own scientific workflow, wording, result definitions, plotting choices, and exports.
+
 ## Standard App Shell
 
 Every app should start from the same basic shell:
@@ -112,6 +114,8 @@ Use `createAnchorCurveEditor` when an app needs DIC-style image anchor editing: 
 - app-specific callback choreography
 
 Apps pass labels, callbacks, prepared vectors, table data, and option values into the GUI helpers. Reusable GUI helpers exist to remove MATLAB UI boilerplate, not to hide the domain workflow.
+
+Do not add a UI helper only because one app got large. Extract UI code when the behavior is generic, stable across real apps, and easier to test as a domain-neutral helper than as app-local code.
 
 ## UI Validation
 

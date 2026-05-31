@@ -1,6 +1,8 @@
 # DTA Library
 
-`labkit.dta.*` is the current electrochemistry data/file implementation. It provides GUI-free Gamry DTA discovery, loading, sessions, pulse detection, parser access, and parsed table/curve helpers.
+`labkit.dta.*` is the current electrochemistry/Gamry DTA facade. It provides GUI-free DTA discovery, loading, sessions, pulse detection, parser access, and parsed table/curve helpers for DTA-backed apps.
+
+This facade exists because several electrochemistry workflows share the same file family. Other data or device families should become peer facades only after real apps need them; DTA-specific parser behavior should not leak into `labkit.ui` or unrelated apps.
 
 ## Public DTA API
 

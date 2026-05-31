@@ -1,6 +1,6 @@
 # Agent Instructions
 
-This repository provides package-backed MATLAB app entry points and reusable LabKit MATLAB infrastructure for lab GUI workflows. The reusable core is a GUI foundation plus the current Gamry DTA/electrochemistry facade; DIC image apps are app-level implementations built on the same GUI foundation.
+This repository provides package-backed MATLAB app entry points and reusable LabKit MATLAB infrastructure for internal lab GUI workflows. It is an app workbench, not a monolithic analysis platform. The reusable core is a small GUI foundation plus the current Gamry DTA/electrochemistry facade; DIC and image-measurement apps are app-level implementations built on the same GUI foundation.
 
 ## Read Order
 
@@ -37,6 +37,8 @@ apps/ experiment app category folders
 ```
 
 Do not add new experiment-specific app logic to the reusable `+labkit` library. New app code should not call `labkit.io.*`, `labkit.data.*`, `labkit.analysis.*`, or `labkit.util.*` directly; put those needs behind `labkit.dta.*`, `labkit.ui.*`, or an app-local helper. Keep DTA parsers, item/session construction, session IO, and pulse internals private behind the DTA facade. Keep app-specific analysis, plotting, export schemas, and CSV writing in the owning public app file unless a repeated use case proves a lower-level utility is clearer. Do not reintroduce app-specific helper packages or namespaces just to make local app functions public.
+
+Apps are first-class deliverables and may evolve quickly with real experimental needs. Public `+labkit` API growth should be conservative: extract only domain-neutral, independently testable helpers that are useful beyond one workflow and reduce duplication without increasing API confusion.
 
 Do not change:
 

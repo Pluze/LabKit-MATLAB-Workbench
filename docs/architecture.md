@@ -2,6 +2,12 @@
 
 This document describes the current package boundaries. It is not a roadmap.
 
+## Project Philosophy
+
+LabKit is an internal lab app workbench for daily research utilities, not a monolithic analysis platform. The apps are first-class deliverables: each app targets a specific experimental workflow and should remain independently launchable and usable.
+
+The reusable library should stay small and stable. Shared infrastructure belongs in `+labkit` only after repeated real app use shows that a pattern is domain-neutral, testable, and clearer as an API than as app-local code. App growth is acceptable; public library growth should be conservative.
+
 ## Core Shape
 
 ```text
@@ -38,7 +44,7 @@ labkit.dta   = current electrochemistry DTA file/session facade
 
 Future data or device families can be added beside `labkit.dta` as peer modules. They should expose one coherent app-facing facade each rather than leaking parser or low-level IO packages into app code.
 
-Experiment app implementations live under category folders such as `apps/electrochem/` rather than being absorbed into the reusable library package. The intended app shape is one experiment app `.m` file owning its domain workflow. App-specific helper packages should not be reintroduced just to make local code public.
+Experiment app implementations live under category folders such as `apps/electrochem/` rather than being absorbed into the reusable library package. The intended app shape is one public entry point per experiment workflow, with that app owning its domain behavior. App-local helper functions are fine; app-specific helper packages should not be reintroduced just to make local code public.
 
 ## Entrypoints
 
@@ -101,6 +107,19 @@ There is no public `+labkit/+io` or `+labkit/+data` app-facing surface. Parser/s
 
 Shared implementation helpers are not app-facing API. Parser-only helpers belong under package-private parser helpers. App-specific formatting, parsing, interpolation, and export helpers belong in the owning app file unless a repeated use case proves a clearer `labkit.dta` or `labkit.ui` API.
 
+## Library Extraction Rule
+
+A helper may move into `+labkit` only when it satisfies the practical extraction checklist:
+
+- It can be named without experiment-specific vocabulary.
+- It does not encode domain units, thresholds, result columns, or paper-specific logic.
+- It does not read or mutate app state directly.
+- It can be tested independently.
+- At least two real apps use it, or a broad workflow family clearly needs it.
+- Moving it into the library reduces duplication without increasing API confusion.
+
+`+labkit` should not become a miscellaneous helper dump. Future broad data or device families may become peer facades beside `labkit.dta`, but only when a real class of workflows needs that surface.
+
 Reusable UI helpers should build or update generic controls and draw prepared data. Data extraction, parser/session calls, and analysis decisions should stay in the app or DTA layer; for example, apps should call `labkit.dta.getCurveXY` before passing prepared vectors and labels to `labkit.ui.plotXY`. App-specific callback choreography, such as clearing a session, restoring app-specific plot defaults, refreshing experiment summaries, and writing app logs, should stay in the owning app file even when two apps have similar callback order. Domain labels such as DTA-specific open/export button text and app shell tab/panel titles should be passed in from apps rather than hardcoded in the GUI library.
 
 Current apps share the workbench layout contract described in `docs/ui.md`: a resizable left control region with tabbed pages, plus a right output region for live plots or primary content. The app-facing shell entry point is `labkit.ui.createWorkbench`; apps configure the right side as a custom plot/output grid or as the standard dual-plot region.
@@ -126,7 +145,7 @@ GUI launch/layout checks are available as focused local profiles, but interactiv
 
 ## Current Package Surface
 
-- `apps/`: user-facing app category folders and app-specific implementations. Current electrochemistry app bodies live under `apps/electrochem/`, current DIC app bodies live under `apps/dic/`, and current general image-measurement app bodies live under `apps/image_measurement/`, as single public app source files. App-specific workflow helpers are local functions in those files rather than reusable `+labkit` APIs or transitional app-helper packages.
+- `apps/`: user-facing app category folders and app-specific implementations. Current electrochemistry app bodies live under `apps/electrochem/`, current DIC app bodies live under `apps/dic/`, and current general image-measurement app bodies live under `apps/image_measurement/`. Each workflow should keep one public launchable entry point; app-owned helpers may stay local or private to the app family rather than becoming reusable `+labkit` APIs or transitional app-helper packages.
 - `labkit.dta`: GUI-free facade for supported DTA file discovery, family detection, single-file loading, batch loading, folder loading, pulse detection, item construction, parsed table/curve access, session save/load, and app-facing DTA session operations with status/report structs. It keeps parser and DTA-specific implementation helpers private.
 - `labkit.ui`: reusable GUI framework helpers, centered on the unified `createWorkbench` shell plus domain-neutral components: file-selection panel, log panel, generic panel-grid creation, row-resize handles, axes creation/reset, image-axis anchor curve editing, prepared-X/Y plotting, listbox selection refresh, summary rows, result table panel, plot-options panel, simple labeled controls, and top/bottom plot-control construction/state helpers.
 - Internal helpers: package-private parser helpers and app-local helper functions. Public `+io`, `+data`, and `+util` packages should not be reintroduced as new-app entry surfaces.
