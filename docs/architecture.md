@@ -13,7 +13,7 @@ The reusable library should stay small and stable. Shared infrastructure belongs
 ```text
 apps/ category folders containing public app entry points
     ↓
-+labkit GUI foundation and current DTA APIs
++labkit GUI foundation plus current DTA and biosignal facades
     ↓
 struct-based item/session models
     ↓

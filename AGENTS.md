@@ -69,6 +69,18 @@ same results, cleaner code, clearer boundaries
 
 Every public library function under `+labkit/+ui`, `+labkit/+dta`, and `+labkit/+biosignal` must document its app-facing call contract in the function comment immediately after the function declaration. Include usage examples when useful, input types, accepted option/spec/label/callback struct fields with defaults and legal values, and output struct/table fields intended for app code. Public facade comments must be sufficient for app authors to call the function without reading private implementations. When options become numerous, provide a default-options helper and recommend starting from it rather than hand-writing hidden struct fields.
 
+## Documentation Hygiene
+
+Keep documentation current and concise:
+
+- `README.md` is the human user entry point. Keep it focused on what the project is, how to start apps, current app capabilities, tests, and where to read more. Do not put agent-only rules or historical refactor narration in the README.
+- `docs/README.md` is only a documentation map.
+- `docs/apps.md` describes current app behavior and ownership boundaries. Do not turn it into a changelog; use compact tables for app-specific notes when possible.
+- `CHANGELOG.md` is release-facing. Keep it thematic and concise; detailed refactor history belongs in git history, not a long Unreleased narrative.
+- `tests/README.md` should stay a short pointer to `docs/testing.md` so test guidance does not drift.
+- When app controls, exports, or advertised capabilities change, update the README app table and the relevant docs in the same change.
+- Avoid duplicating full option schemas in multiple prose docs unless there is a clear user benefit. Prefer one detailed component doc plus public function comments.
+
 ## Forbidden Without Explicit Approval
 
 - Do not rewrite all GUIs in one pass.

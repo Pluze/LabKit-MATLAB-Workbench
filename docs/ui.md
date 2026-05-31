@@ -49,6 +49,8 @@ For custom right-side arrangements, pass `rightGridSize`, `rightRowHeight`, and 
 
 App files should not rebuild split-pane layout plumbing or own their own separator-drag behavior.
 
+`createStandardWorkbenchShell` and `createTabbedDualPlotShell` are compatibility wrappers for older call shapes. New apps should call `createWorkbench` directly so the public UI surface stays small and option behavior stays discoverable in one place.
+
 ### `createWorkbench` Options
 
 | Option | Type | Default | Valid values / meaning |

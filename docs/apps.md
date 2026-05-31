@@ -161,35 +161,18 @@ scripts/run_matlab_tests.sh --profile wearable
 
 Interactive GUI workflows, including manual file selection and visual inspection, are intentionally validated manually during app work.
 
-## Current App-Specific Notes
+## Current App Notes
 
-Chrono overlay pulse-gap alignment, overlay plotting, and overlay export table construction live as local functions in `apps/electrochem/labkit_ChronoOverlay_app.m`.
+Keep current app behavior summarized here instead of turning this document into a historical changelog. Use source tests for exact numeric schemas when possible.
 
-EIS overlay axis-value generation, plotting, and plot-export table construction are local functions in `apps/electrochem/labkit_EIS_app.m`.
-
-CSC CT/CV charge integration is a local detail of `apps/electrochem/labkit_CSC_app.m`; it is not a separate reusable library API.
-
-VT steady-window selection and baseline estimation are local details of `apps/electrochem/labkit_VTResistance_app.m`.
-
-Current VT CSV column order:
-
-```text
-File,Ic_A,Ia_A,Vc_ss_V,Va_ss_V,Vc_baseline_V,Va_baseline_V,dVc_V,dVa_V,Rc_bc_ohm,Ra_bc_ohm,Ravg_bc_ohm,WindowMode,Detection,Status
-```
-
-Current CIC CSV column order uses one of:
-
-```text
-File,Amp_A,Emc_V,Ema_V,Qc_C,Qa_C,Qt_C,CICc_mCcm2,CICa_mCcm2,CICt_mCcm2,Safe,Detection
-File,Amp_A,Emc_V,Ema_V,Qc_C,Qa_C,Qt_C,CICc_uCcm2,CICa_uCcm2,CICt_uCcm2,Safe,Detection
-```
-
-The current CV/CSC app has no CSV export workflow.
-
-DIC preprocess image registration, inline right-preview ROI selection, paired-crop geometry, and editable ROI mask drawing are local details of `apps/dic/labkit_DICPreprocess_app.m`. The app keeps original loaded images plus a current working pair, so manual/automatic alignment and crop operations can be applied repeatedly in either order and undone. False-color preview compares the current pair even before alignment, and one save action exports the current reference/current moving images. The mask workflow uses the reusable UI anchor-curve editor for curve or straight-line boundaries, double-click add/insert point ordering, drag-to-move anchors, double-click anchor deletion, and preview zoom; app-local logic still owns boundary preview, add/subtract operations on a white/black mask canvas, and separate undo for canvas edits. ROI masks are saved as white-inside / black-outside binary PNG images.
-
-DIC postprocess Ncorr MAT extraction, EXX/EYY overlay generation, ROI summary statistics, optical reference-image enhancement, strain colorbar/level export, and PNG/CSV export are local details of `apps/dic/labkit_DICPostprocess_app.m`. The current overlay path extends valid strain values from the ROI before smoothing/resizing, then clips display back to the ROI/mask to avoid zero-filled edge leakage. The current ROI summary reports mean, standard deviation, median, minimum, and maximum for EXX and EYY.
-
-Image curvature measurement point editing, scale-bar measurement, Kasa initialization, geometric circle fitting, curvature conversion, and result/overlay export are local details of `apps/image_measurement/labkit_CurvatureMeasurement_app.m`. The app replaces the old script-style point MAT handoff with the same reusable UI anchor-curve editor used by DIC ROI: double-click blank image space to add or insert anchors, drag anchors to move them, double-click anchors to delete them, then fit and export directly. Scale-bar measurement reuses the same anchor editor constrained to two endpoints, and the app uses a single large image preview instead of a separate residual plot. After fitting, the preview keeps the curve anchors visible, optionally shows the densified points used for fitting, and draws each anchor's radial residual distance to the fitted circle.
-
-ECG print and SNR exploration lives in `apps/wearable/labkit_ECGPrint_app.m`. The app separates file selection, import parsing, and channel/ROI controls so ambiguous CSV/text files can be inspected and reparsed without mixing those steps with signal analysis. It loads MAT timetable or delimited table recordings through `labkit.biosignal.readRecording`, previews text-file headers for ambiguous CSV imports, lets the user explicitly parse or refresh after changing header/time/signal-column options, chooses a numeric channel and time ROI, filters the selected channel with biosignal edge padding before cropping the filtered result to the ROI, runs ECG/QRS peak detection, segmentation, template, and SNR helpers, and plots waveform peaks, noise RMS over time, SNR over time, and template residual views. The peak-method control calls `labkit.biosignal.detectEcgPeaks` and can compare QRS streaming, Pan-Tompkins, and local peak methods without exposing private detectors to the app. It exports per-segment SNR CSV files plus a waveform PNG. Multi-file or multi-class SNR statistics are intentionally left for a separate wearable statistics app rather than being mixed into the single-signal viewer.
+| App | App-owned behavior | Export notes |
+| --- | --- | --- |
+| `labkit_ChronoOverlay_app` | Pulse-gap alignment, overlay plotting, and overlay export table construction. | Overlay CSV/plot exports stay app-local. |
+| `labkit_EIS_app` | Axis-value generation, overlay plotting, and plot-export table construction. | Export table construction stays app-local. |
+| `labkit_CSC_app` | CT/CV charge integration and comparison display. | No CSV export workflow currently. |
+| `labkit_VTResistance_app` | Steady-window selection, baseline estimation, and resistance result tables. | VT CSV columns are guarded by app tests. |
+| `labkit_CIC_app` | CIC, voltage-transient metrics, water-window status, and batch display tables. | CIC CSV columns are guarded by app tests. |
+| `labkit_DICPreprocess_app` | Registration, repeated crop/align workflow, false-color preview, inline crop ROI, and binary ROI mask drawing. | Exports current image pair, crop PNGs, and white-inside/black-outside ROI masks. |
+| `labkit_DICPostprocess_app` | Ncorr MAT extraction, EXX/EYY overlays, ROI summary, optical enhancement controls, and strain colorbar levels. | Exports overlays, summary CSV, and colorbar/level files. |
+| `labkit_CurvatureMeasurement_app` | Image anchor editing, scale-bar measurement, circle fitting, curvature conversion, dense-point display, and residual annotations. | Exports overlay PNG and curvature CSV. |
+| `labkit_ECGPrint_app` | CSV/MAT import parsing, channel/ROI selection, padded filtering before ROI crop, ECG peak detection, segments, template, and SNR-over-time plots. | Exports per-segment SNR CSV and waveform PNG. Multi-file/class statistics belong in a separate wearable stats app. |

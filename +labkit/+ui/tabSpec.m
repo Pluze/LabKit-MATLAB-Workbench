@@ -14,7 +14,7 @@ function spec = tabSpec(key, titleText, gridSize, rowHeight, opts)
 %
 % Options:
 %   columnWidth - cell row of column widths, default all {'1x'}.
-%   resizeRows - logical row boundaries after which drag handles are added.
+%   resizeRows - numeric logical-row boundaries after which drag handles are added.
 %   resizeOptions - struct passed to row-resize handle creation.
 %   padding, rowSpacing, columnSpacing - grid layout properties.
 %
