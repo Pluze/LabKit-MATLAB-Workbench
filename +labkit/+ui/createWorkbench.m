@@ -58,6 +58,7 @@ function ui = addDualPlotRegion(ui, opts)
         ui.topAxes = uiaxes(ui.rightGrid);
         ui.topAxes.Layout.Row = 2;
         title(ui.topAxes, topTitle);
+        labkit.ui.enableAxesPopout(ui.topAxes);
         disableAxesInteractivity(ui.topAxes);
 
         ui.bottomControlsPanel = uipanel(ui.rightGrid, 'Title', bottomTitle);
@@ -72,12 +73,14 @@ function ui = addDualPlotRegion(ui, opts)
         ui.topAxes = uiaxes(ui.rightGrid);
         ui.topAxes.Layout.Row = 1;
         title(ui.topAxes, topTitle);
+        labkit.ui.enableAxesPopout(ui.topAxes);
         disableAxesInteractivity(ui.topAxes);
 
         ui.bottomAxes = uiaxes(ui.rightGrid);
         ui.bottomAxes.Layout.Row = 2;
     end
     title(ui.bottomAxes, bottomTitle);
+    labkit.ui.enableAxesPopout(ui.bottomAxes);
     disableAxesInteractivity(ui.bottomAxes);
 end
 

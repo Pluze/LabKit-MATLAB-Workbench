@@ -411,10 +411,21 @@ function checkCreateAxesHelper()
     grid = uigridlayout(fig, [2 1]);
 
     ax = labkit.ui.createAxes(grid, 2, 'Probe Title', 'Probe X', 'Probe Y');
+    plot(ax, 1:3, [1 4 2], 'DisplayName', 'probe');
     assert(ax.Layout.Row == 2, 'Axes helper should set the requested layout row.');
     assert(strcmp(char(ax.Title.String), 'Probe Title'), 'Axes helper should preserve the title.');
     assert(strcmp(char(ax.XLabel.String), 'Probe X'), 'Axes helper should preserve the x label.');
     assert(strcmp(char(ax.YLabel.String), 'Probe Y'), 'Axes helper should preserve the y label.');
+    assertAxesPopoutEnabled(ax, 'Axes helper should install the LabKit popout context action.');
+
+    popoutFig = labkit.ui.popoutAxes(ax);
+    popoutCleaner = onCleanup(@() delete(popoutFig));
+    popoutAxes = findobj(popoutFig, 'Type', 'axes');
+    assert(numel(popoutAxes) >= 1, 'Axes popout should create an editable figure axes.');
+    assert(strcmp(char(popoutAxes(1).Title.String), 'Probe Title'), ...
+        'Axes popout should preserve the source title.');
+    assert(~isempty(popoutAxes(1).Children), ...
+        'Axes popout should copy plotted children.');
 end
 
 function checkAnchorCurveEditorHelper()
@@ -739,6 +750,8 @@ function checkTopBottomPlotStateHelpers()
         'Hard axis reset should preserve the supplied bottom axes title.');
     assert(strcmp(shell.topAxes.XScale, 'linear') && strcmp(shell.bottomAxes.YScale, 'linear'), ...
         'Hard axis reset should optionally reset axis scales.');
+    assertAxesPopoutEnabled(shell.topAxes, 'Hard axis reset should install top-axis popout.');
+    assertAxesPopoutEnabled(shell.bottomAxes, 'Hard axis reset should install bottom-axis popout.');
 end
 
 function checkFileSelectionPanelHelper()
@@ -900,6 +913,14 @@ function assertAxesContract(fig, expectedAxes)
         assert(found, 'Missing axes contract: title="%s", xlabel="%s", ylabel="%s".', ...
             expectedAxes{k}.title, expectedAxes{k}.xLabel, expectedAxes{k}.yLabel);
     end
+end
+
+function assertAxesPopoutEnabled(ax, message)
+    menu = ax.ContextMenu;
+    assert(~isempty(menu) && isvalid(menu), message);
+    item = findall(menu, 'Type', 'uimenu', 'Tag', 'labkitAxesPopoutMenu');
+    assert(numel(item) == 1, message);
+    assert(strcmp(item.Text, 'Open axes in new figure'), message);
 end
 
 function tf = axesMatches(ax, spec)

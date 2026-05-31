@@ -6,4 +6,5 @@ function ax = createAxes(parent, row, titleText, xLabelText, yLabelText)
     title(ax, titleText);
     xlabel(ax, xLabelText);
     ylabel(ax, yLabelText);
+    labkit.ui.enableAxesPopout(ax);
 end

@@ -30,6 +30,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - Documentation and architecture tests now guard against reintroducing public `+io`, `+data`, `+analysis`, `+util`, app-helper packages, or legacy wrapper entry points as app-facing APIs.
 - `startup_labkit` now adds nested app category folders so app entry points resolve without changing into app directories.
 - Current app GUIs now share the same resizable tabbed workbench shell: scrollable control tabs on the left and plot/output content on the right.
+- App plot axes now get a reusable LabKit context action to open the current axes contents in a separate editable MATLAB figure.
 - App shells now use the standard three-tab workbench framework, and DTA-facing apps share the same file-selection panel structure.
 - GUI app entry points now build from the unified `labkit.ui.createWorkbench` shell, with compatibility shell wrappers layered over that entry point.
 - Reusable UI components now include generic panel-grid creation and single/multi listbox selection refresh so app files can define domain-specific sections with less layout boilerplate.

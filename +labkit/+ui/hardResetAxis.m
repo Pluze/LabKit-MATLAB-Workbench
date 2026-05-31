@@ -20,4 +20,5 @@ function hardResetAxis(ax, ttl, resetScaleAndTicks)
     ylabel(ax, '');
     grid(ax, 'off');
     box(ax, 'on');
+    labkit.ui.enableAxesPopout(ax);
 end
