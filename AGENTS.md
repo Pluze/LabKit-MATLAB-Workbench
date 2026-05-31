@@ -117,6 +117,20 @@ Do not run interactive GUI workflows in MATLAB `-batch` mode.
 8. If no files changed, still confirm the local branch is synchronized with its remote before handoff.
 9. Do not force-push unless explicitly approved.
 
+Commit messages use a concise Conventional Commits style:
+
+```text
+feat: add or change user-facing capability
+fix: correct a bug or broken workflow
+docs: update documentation only
+test: add or update tests only
+ci: update GitHub Actions or automation
+refactor: restructure code without intended behavior change
+chore: maintenance that does not fit the above
+```
+
+Use lowercase type prefixes, one imperative summary line, and no trailing period. Prefer one logical concern per commit; if a change mixes source, tests, and docs because they validate the same behavior, keep the summary focused on the behavior.
+
 When MATLAB source, tests, fixtures, or package structure change, update the matching current docs:
 
 - `README.md` for user-facing commands or current status

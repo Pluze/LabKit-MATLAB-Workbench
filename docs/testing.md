@@ -168,3 +168,19 @@ Report:
 - MATLAB availability
 - files changed
 - behavior intentionally preserved
+
+## Commit Messages
+
+Use the same concise Conventional Commits style described in `AGENTS.md`:
+
+```text
+feat: add or change user-facing capability
+fix: correct a bug or broken workflow
+docs: update documentation only
+test: add or update tests only
+ci: update GitHub Actions or automation
+refactor: restructure code without intended behavior change
+chore: maintenance that does not fit the above
+```
+
+Keep commits small and logical. Do not mix unrelated functional, documentation, formatting, and test changes in one commit. When source, tests, and docs are changed together to support one behavior, keep the summary focused on that behavior.

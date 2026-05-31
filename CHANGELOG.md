@@ -39,6 +39,7 @@ All notable user-facing and maintainer-facing changes are recorded here.
 - DTA fixture files moved from `demo/` to `tests/fixtures/dta/` to make their role as test/example fixtures explicit.
 - GitHub Actions now runs the default non-GUI MATLAB test suite on pushes and pull requests to `main`.
 - README now displays the MATLAB Tests workflow badge, and docs describe CI coverage versus local GUI/manual validation.
+- Agent/testing docs now require concise Conventional Commit-style messages for future commits.
 
 ### Fixed
 
