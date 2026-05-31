@@ -155,7 +155,9 @@ function idx = resolveSignalColumns(names, columns)
         idx = columns(:).';
         if any(idx < 1) || any(idx > numel(names)) || any(idx ~= floor(idx))
             error('labkit:biosignal:InvalidSignalColumns', ...
-                'Signal column index is out of range.');
+                ['Signal column index is out of range. Parsed table has %d column(s): %s. ' ...
+                'Use blank for auto-detection, parsed column names, or 1-based indices after header detection.'], ...
+                numel(names), strjoin(string(names), ', '));
         end
         return;
     end
@@ -178,7 +180,8 @@ function idx = resolveSignalColumns(names, columns)
         end
         if isempty(found)
             error('labkit:biosignal:InvalidSignalColumns', ...
-                'Signal column was not found: %s.', wanted);
+                'Signal column was not found: %s. Parsed columns: %s.', ...
+                wanted, strjoin(string(names), ', '));
         end
         idx(k) = found;
     end
