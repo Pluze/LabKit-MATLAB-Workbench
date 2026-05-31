@@ -133,3 +133,7 @@ docs/                 UI, DTA, app, architecture, and testing docs
 - `docs/testing.md`: automated validation guidance.
 - `CHANGELOG.md`: release-style change history.
 - `AGENTS.md`: agent and maintainer operating rules.
+
+## License
+
+This project is open source under the MIT License. See `LICENSE`.
