@@ -26,7 +26,7 @@ function [item, status] = loadFile(filepath, expectedKind, opts)
     end
 
     filepath = normalizeFilepath(filepath);
-    expectedKind = labkit.dta.normalizeExpectedKind(expectedKind);
+    expectedKind = normalizeExpectedKind(expectedKind);
     item = struct([]);
     status = makeStatus(filepath, "unknown", expectedKind, "");
 

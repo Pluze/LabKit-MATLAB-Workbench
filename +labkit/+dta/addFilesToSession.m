@@ -28,7 +28,7 @@ function [session, report] = addFilesToSession(session, filepaths, expectedKind,
         opts = struct();
     end
 
-    expectedKind = labkit.dta.normalizeExpectedKind(expectedKind);
+    expectedKind = normalizeExpectedKind(expectedKind);
     loader = @(filepath) loadOne(filepath, expectedKind, opts);
     [session, report] = addItemsToSession(session, filepaths, loader, callbacks);
     report.nAdded = numel(report.added);

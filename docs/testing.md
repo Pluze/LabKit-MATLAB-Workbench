@@ -183,4 +183,4 @@ refactor: restructure code without intended behavior change
 chore: maintenance that does not fit the above
 ```
 
-Keep commits small and logical. Do not mix unrelated functional, documentation, formatting, and test changes in one commit. When source, tests, and docs are changed together to support one behavior, keep the summary focused on that behavior.
+Keep commits small and logical. Do not mix unrelated functional, documentation, formatting, and test changes in one commit. When source, tests, and docs are changed together to support one behavior, keep the summary focused on that behavior. Because this repository uses git history instead of a changelog, include a compact body for nontrivial commits with the intent, public API or boundary impact, and validation command.

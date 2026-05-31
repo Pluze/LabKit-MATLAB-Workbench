@@ -21,4 +21,3 @@ GitHub Actions runs the default non-GUI MATLAB suite for pushes and pull request
 
 - `../README.md`: project introduction and user-facing app entry points.
 - `../AGENTS.md`: agent and maintainer operating rules.
-- `../CHANGELOG.md`: release-facing change history.

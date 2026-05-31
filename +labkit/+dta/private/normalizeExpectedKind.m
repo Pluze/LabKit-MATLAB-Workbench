@@ -1,14 +1,5 @@
 function kind = normalizeExpectedKind(kind)
 %NORMALIZEEXPECTEDKIND Validate and normalize an expected DTA kind.
-%
-% Inputs:
-%   kind - char/string. Blank or missing becomes "auto".
-%
-% Valid values:
-%   "auto", "chrono", "eis", "cvct" (case-insensitive).
-%
-% Output:
-%   kind - normalized lowercase string scalar.
 
     if nargin < 1
         kind = "auto";

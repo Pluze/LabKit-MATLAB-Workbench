@@ -20,7 +20,7 @@ function [items, report] = loadFiles(filepaths, expectedKind, opts)
         opts = struct();
     end
 
-    expectedKind = labkit.dta.normalizeExpectedKind(expectedKind);
+    expectedKind = normalizeExpectedKind(expectedKind);
     filepaths = normalizeFilepaths(filepaths);
     items = {};
     report = emptyReport();

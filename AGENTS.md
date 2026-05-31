@@ -76,8 +76,8 @@ Keep documentation current and concise:
 - `README.md` is the human user entry point. Keep it focused on what the project is, how to start apps, current app capabilities, tests, and where to read more. Do not put agent-only rules or historical refactor narration in the README.
 - `docs/README.md` is only a documentation map.
 - `docs/apps.md` describes current app behavior and ownership boundaries. Do not turn it into a changelog; use compact tables for app-specific notes when possible.
-- `CHANGELOG.md` is release-facing. Keep it thematic and concise; detailed refactor history belongs in git history, not a long Unreleased narrative.
-- `tests/README.md` should stay a short pointer to `docs/testing.md` so test guidance does not drift.
+- The repository does not maintain a changelog. Use git history as the durable change record.
+- Keep test guidance in `docs/testing.md`; do not add a parallel `tests/README.md`.
 - When app controls, exports, or advertised capabilities change, update the README app table and the relevant docs in the same change.
 - Avoid duplicating full option schemas in multiple prose docs unless there is a clear user benefit. Prefer one detailed component doc plus public function comments.
 
@@ -128,7 +128,7 @@ Do not run interactive GUI workflows in MATLAB `-batch` mode.
 3. Do not mix unrelated functional, documentation, formatting, or test changes.
 4. Run relevant tests or explain why they were not run.
 5. Review the diff for unrelated changes.
-6. Commit with a concise message.
+6. Commit with a concise message and, for nontrivial changes, a short body that records intent, API/boundary impact, and validation.
 7. Push the completed commit so the remote branch is up to date before handoff.
 8. If no files changed, still confirm the local branch is synchronized with its remote before handoff.
 9. Do not force-push unless explicitly approved.
@@ -145,12 +145,11 @@ refactor: restructure code without intended behavior change
 chore: maintenance that does not fit the above
 ```
 
-Use lowercase type prefixes, one imperative summary line, and no trailing period. Prefer one logical concern per commit; if a change mixes source, tests, and docs because they validate the same behavior, keep the summary focused on the behavior.
+Use lowercase type prefixes, one imperative summary line, and no trailing period. Prefer one logical concern per commit; if a change mixes source, tests, and docs because they validate the same behavior, keep the summary focused on the behavior. Since git history is the change log, include a compact commit body when the summary alone would not explain why the change was made or how it was verified.
 
 When MATLAB source, tests, fixtures, or package structure change, update the matching current docs:
 
 - `README.md` for user-facing commands or current status
-- `CHANGELOG.md` for release-facing changes
 - `docs/architecture.md` for package boundaries or entrypoint roles
 - `docs/ui.md` for reusable GUI shell, components, or layout contracts
 - `docs/dta.md` for DTA API, parser assumptions, schemas, or sessions

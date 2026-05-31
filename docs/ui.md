@@ -47,9 +47,7 @@ Use `opts.rightKind = 'dualPlot'` for the common top/bottom live-plot layout. By
 
 For custom right-side arrangements, pass `rightGridSize`, `rightRowHeight`, and `rightRowSpacing`.
 
-App files should not rebuild split-pane layout plumbing or own their own separator-drag behavior.
-
-`createStandardWorkbenchShell` and `createTabbedDualPlotShell` are compatibility wrappers for older call shapes. New apps should call `createWorkbench` directly so the public UI surface stays small and option behavior stays discoverable in one place.
+App files should not rebuild split-pane layout plumbing, own their own separator-drag behavior, or introduce compatibility shell wrappers around `createWorkbench`.
 
 ### `createWorkbench` Options
 
