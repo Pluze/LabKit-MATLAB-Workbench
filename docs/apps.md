@@ -2,7 +2,7 @@
 
 Apps are the owning layer for domain-specific workflows. They are first-class deliverables, not examples for a hidden platform. Each app should remain independently launchable and useful for a concrete experimental task.
 
-Apps compose `labkit.ui.*` and, when needed, `labkit.dta.*`, while keeping calculations, plotting decisions, displayed result fields, and export schemas local to the app file. Apps may evolve faster than the reusable library because they track real lab needs.
+Apps compose `labkit.ui.*` and, when needed, data facades such as `labkit.dta.*` or `labkit.biosignal.*`, while keeping calculations, plotting decisions, displayed result fields, and export schemas local to the app file. Apps may evolve faster than the reusable library because they track real lab needs.
 
 ## Startup
 
@@ -43,6 +43,14 @@ labkit_CurvatureMeasurement_app
 
 The current image measurement app bodies live under `apps/image_measurement/`. They use `labkit.ui.*` for the shared GUI shell and keep image-point picking, scale measurement, curvature fitting, overlays, summaries, and exports local to the owning app files. These apps are separate from DIC because their workflows are general image measurements rather than DIC preprocessing or strain postprocessing.
 
+## Current Wearable Biosignal Apps
+
+```text
+labkit_ECGPrint_app
+```
+
+The current wearable app bodies live under `apps/wearable/`. They use `labkit.ui.*` for the shared GUI shell and `labkit.biosignal.*` for GUI-free recording loading, channel extraction, time ROI, filtering, event/segment handling, template-residual SNR measurements, and group comparisons. The app owns ECG-specific workflow wording, SNR-over-time display, class labels, plot layout, and export choices.
+
 ## App Status
 
 Status labels are intentionally lightweight and should not overclaim maturity:
@@ -61,6 +69,7 @@ Current app-family status:
 | Electrochemistry | routine | Current DTA-backed workflows used through the DTA facade. |
 | DIC | active | Current image workflows under direct manual GUI validation. |
 | Image measurement | experimental | Newer general measurement utilities separated from DIC. |
+| Wearable biosignal | experimental | Exploratory ECG signal quality, SNR, and print/export workflow built on the biosignal facade. |
 
 ## App Ownership
 
@@ -103,6 +112,7 @@ Do not start new apps from long copy-only template files. Start from the current
 
 - GUI-only apps call `labkit.ui.createWorkbench`, define app-specific controls inside left tabs, and render prepared data on the right.
 - DTA-backed apps keep file discovery/loading/session operations behind `labkit.dta.*` and keep analysis, plotting, result tables, and exports app-local.
+- Biosignal-backed apps keep recording loading, channel extraction, signal processing, events, segments, and generic measurements behind `labkit.biosignal.*` while keeping workflow interpretation, plots, labels, and exports app-local.
 - Apps should declare custom left tabs with `labkit.ui.tabSpec` when the standard three-section tab is not enough; use `resizeRows` in the tab spec for user-adjustable section heights.
 - New app files belong under `apps/<category>/` and should remain explicit public entry points. Split app-owned private helpers only when that improves maintainability without making app-specific decisions look reusable.
 
@@ -146,6 +156,7 @@ Pure app calculations, export table construction, and plotting helpers belong in
 scripts/run_matlab_tests.sh --profile electrochem
 scripts/run_matlab_tests.sh --profile dic
 scripts/run_matlab_tests.sh --profile image_measurement
+scripts/run_matlab_tests.sh --profile wearable
 ```
 
 Interactive GUI workflows, including manual file selection and visual inspection, are intentionally validated manually during app work.
@@ -180,3 +191,5 @@ DIC preprocess image registration, inline right-preview ROI selection, paired-cr
 DIC postprocess Ncorr MAT extraction, EXX/EYY overlay generation, ROI summary statistics, optical reference-image enhancement, strain colorbar/level export, and PNG/CSV export are local details of `apps/dic/labkit_DICPostprocess_app.m`. The current overlay path extends valid strain values from the ROI before smoothing/resizing, then clips display back to the ROI/mask to avoid zero-filled edge leakage. The current ROI summary reports mean, standard deviation, median, minimum, and maximum for EXX and EYY.
 
 Image curvature measurement point editing, scale-bar measurement, Kasa initialization, geometric circle fitting, curvature conversion, and result/overlay export are local details of `apps/image_measurement/labkit_CurvatureMeasurement_app.m`. The app replaces the old script-style point MAT handoff with the same reusable UI anchor-curve editor used by DIC ROI: double-click blank image space to add or insert anchors, drag anchors to move them, double-click anchors to delete them, then fit and export directly. Scale-bar measurement reuses the same anchor editor constrained to two endpoints, and the app uses a single large image preview instead of a separate residual plot. After fitting, the preview keeps the curve anchors visible, optionally shows the densified points used for fitting, and draws each anchor's radial residual distance to the fitted circle.
+
+ECG print and SNR exploration lives in `apps/wearable/labkit_ECGPrint_app.m`. The app loads MAT timetable or delimited table recordings through `labkit.biosignal.readRecording`, lets the user choose a numeric channel and time ROI, runs generic filtering/peak detection/segmentation/template/SNR helpers, plots waveform peaks and SNR over time, accumulates per-segment SNR values into user-labeled classes, and exports segment or class-level CSV files plus a waveform PNG. The app intentionally replaces script-style file IO and plotting handoff with GUI controls and live previews.

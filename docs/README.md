@@ -1,6 +1,6 @@
 # Documentation Guide
 
-This directory is organized around the repository's main component boundaries: independent workflow apps, the small reusable UI library, and the current DTA library.
+This directory is organized around the repository's main component boundaries: independent workflow apps, the small reusable UI library, the current DTA library, and the biosignal facade.
 
 LabKit is documented as an internal lab app workbench. The docs should help users find and run the app they need without understanding the whole repository, and should help maintainers decide what belongs in the reusable library versus an app.
 
@@ -9,6 +9,7 @@ LabKit is documented as an internal lab app workbench. The docs should help user
 - `architecture.md`: package boundaries and ownership rules.
 - `ui.md`: reusable MATLAB GUI shell, layout contract, and UI helper responsibilities.
 - `dta.md`: current electrochemistry/Gamry DTA API, parser assumptions, and DTA structs.
+- `biosignal.md`: current wearable/biosignal API, data shape, and app boundary.
 - `apps.md`: app entry points, app-owned workflow rules, new-app starting patterns, and current app-specific notes.
 - `testing.md`: automated checks and behavior-preservation coverage.
 

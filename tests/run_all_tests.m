@@ -48,7 +48,7 @@ function results = run_all_tests(includeGui, selection)
 end
 
 function groups = testGroups(includeGui)
-    groups = [coreTests(), dtaTests(), appTests()];
+    groups = [coreTests(), dtaTests(), biosignalTests(), appTests()];
     if includeGui
         groups = [groups, guiTests()];
     end
@@ -72,6 +72,11 @@ function group = dtaTests()
         @test_sessionUtilities});
 end
 
+function group = biosignalTests()
+    group = makeGroup('biosignal', 'biosignal facade and processing', { ...
+        @test_biosignalFacade});
+end
+
 function group = appTests()
     group = makeGroup('apps', 'app analysis and exports', { ...
         @test_chronoOverlayExport, ...
@@ -91,6 +96,7 @@ function group = guiTests()
         @test_gui_layout_electrochem, ...
         @test_gui_layout_dic, ...
         @test_gui_layout_image_measurement, ...
+        @test_gui_layout_wearable, ...
         @test_gui_layout_ui_helpers});
 end
 

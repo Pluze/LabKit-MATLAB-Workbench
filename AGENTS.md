@@ -1,6 +1,6 @@
 # Agent Instructions
 
-This repository provides package-backed MATLAB app entry points and reusable LabKit MATLAB infrastructure for internal lab GUI workflows. It is an app workbench, not a monolithic analysis platform. The reusable core is a small GUI foundation plus the current Gamry DTA/electrochemistry facade; DIC and image-measurement apps are app-level implementations built on the same GUI foundation.
+This repository provides package-backed MATLAB app entry points and reusable LabKit MATLAB infrastructure for internal lab GUI workflows. It is an app workbench, not a monolithic analysis platform. The reusable core is a small GUI foundation plus current DTA/electrochemistry and biosignal facades; DIC and image-measurement apps are app-level implementations built on the same GUI foundation.
 
 ## Read Order
 
@@ -15,6 +15,7 @@ Also read these only when relevant:
 - `docs/architecture.md` for package boundaries or entrypoint work
 - `docs/ui.md` for reusable GUI shell, components, or layout work
 - `docs/dta.md` for DTA API, parser, item, pulse, or session work
+- `docs/biosignal.md` for biosignal recording, waveform processing, event/segment, or wearable app work
 - `docs/apps.md` for app entrypoints, app-owned workflow, or new app work
 - `docs/testing.md` for test or validation work
 
@@ -33,10 +34,11 @@ apps/ experiment app category folders
 +labkit reusable library
     GUI library: lab-app shells, scrollable/resizable tabs, controls, panels, logs, and UI state helpers
     DTA library: app-facing Gamry DTA discovery, loading, session, pulse, and parsed table/curve APIs
+    biosignal library: app-facing physiological/wearable recording loading, waveform processing, event/segment, SNR-style measurement, and group comparison APIs
     internal helpers: parser, analysis, utility, item/session construction, and private helpers hidden behind GUI/DTA APIs
 ```
 
-Do not add new experiment-specific app logic to the reusable `+labkit` library. New app code should not call `labkit.io.*`, `labkit.data.*`, `labkit.analysis.*`, or `labkit.util.*` directly; put those needs behind `labkit.dta.*`, `labkit.ui.*`, or an app-local helper. Keep DTA parsers, item/session construction, session IO, and pulse internals private behind the DTA facade. Keep app-specific analysis, plotting, export schemas, and CSV writing in the owning public app file unless a repeated use case proves a lower-level utility is clearer. Do not reintroduce app-specific helper packages or namespaces just to make local app functions public.
+Do not add new experiment-specific app logic to the reusable `+labkit` library. New app code should not call `labkit.io.*`, `labkit.data.*`, `labkit.analysis.*`, or `labkit.util.*` directly; put those needs behind `labkit.dta.*`, `labkit.biosignal.*`, `labkit.ui.*`, or an app-local helper. Keep DTA parsers, item/session construction, session IO, and pulse internals private behind the DTA facade. Keep biosignal file normalization private behind the biosignal facade. Keep app-specific analysis, plotting, export schemas, and CSV writing in the owning public app file unless a repeated use case proves a lower-level utility is clearer. Do not reintroduce app-specific helper packages or namespaces just to make local app functions public.
 
 Apps are first-class deliverables and may evolve quickly with real experimental needs. Public `+labkit` API growth should be conservative: extract only domain-neutral, independently testable helpers that are useful beyond one workflow and reduce duplication without increasing API confusion.
 
@@ -78,10 +80,12 @@ Run relevant automated checks after executable MATLAB changes. Use focused check
 
 ```bash
 scripts/run_matlab_tests.sh --suite core
+scripts/run_matlab_tests.sh --profile biosignal
 scripts/run_matlab_tests.sh --test test_gui_layout_controls
 scripts/run_matlab_tests.sh --profile ui
 scripts/run_matlab_tests.sh --profile dic
 scripts/run_matlab_tests.sh --profile image_measurement
+scripts/run_matlab_tests.sh --profile wearable
 scripts/run_matlab_tests.sh --profile electrochem
 ```
 
@@ -120,6 +124,7 @@ When MATLAB source, tests, fixtures, or package structure change, update the mat
 - `docs/architecture.md` for package boundaries or entrypoint roles
 - `docs/ui.md` for reusable GUI shell, components, or layout contracts
 - `docs/dta.md` for DTA API, parser assumptions, schemas, or sessions
+- `docs/biosignal.md` for biosignal facade, signal schemas, event/segment helpers, or wearable boundaries
 - `docs/apps.md` for app entrypoints, app-owned workflow, or new app guidance
 - `docs/testing.md` for validation coverage
 

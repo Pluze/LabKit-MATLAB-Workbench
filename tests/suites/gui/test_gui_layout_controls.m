@@ -24,6 +24,9 @@ function test_gui_layout_controls(scope)
     if scope == "all" || scope == "image_measurement"
         checkImageCurvatureMeasurement();
     end
+    if scope == "all" || scope == "wearable"
+        checkECGPrint();
+    end
     if scope == "all" || scope == "ui"
         checkListboxItemsRefreshHelper();
         checkListboxSelectionHelper();
@@ -42,8 +45,29 @@ function test_gui_layout_controls(scope)
         checkTopBottomPlotStateHelpers();
         checkFileSelectionPanelHelper();
     end
-    assert(any(scope == ["all", "electrochem", "dic", "image_measurement", "ui"]), ...
+    assert(any(scope == ["all", "electrochem", "dic", "image_measurement", "wearable", "ui"]), ...
         'Unknown GUI layout test scope: %s.', scope);
+end
+
+function checkECGPrint()
+    fig = launchFigure('labkit_ECGPrint_app', 'ECG Signal Print + SNR Explorer');
+    assertFigureMinimumSize(fig, 1480, 880);
+    assertComponentCounts(fig, struct('Button', 7, 'DropDown', 2, ...
+        'Table', 3, 'TextArea', 2, 'Axes', 2));
+    assertButtonContract(fig, {'Open recording', 'Analyze current ROI', ...
+        'Add current SNR to class comparison', ...
+        'Export segment SNR CSV', 'Export class stats CSV', ...
+        'Export waveform PNG', 'Clear class comparison'});
+    assertDropdownGroups(fig, [ ...
+        dropdownGroup({'(none)'}, 1), ...
+        dropdownGroup({'SNR over time', 'Template + segments'}, 1)]);
+    assertTabTitles(fig, {'Files + Analysis', 'Summary + Results', 'Log'});
+    assertAnyTableColumns(fig, {'Metric','Value'});
+    assertAnyTableColumns(fig, {'Group','N','Mean','Std','Median','Min','Max'});
+    assertAnyTableColumns(fig, {'GroupA','GroupB','MeanDiff','T','DF','P'});
+    assertAxesContract(fig, { ...
+        axesSpec('Waveform + Peaks', 'Time (s)', 'Amplitude'), ...
+        axesSpec('SNR Over Time', 'Time (s)', 'SNR (dB)')});
 end
 
 function checkImageCurvatureMeasurement()
@@ -889,6 +913,21 @@ function assertTableColumns(fig, expectedColumns)
     assert(sameStringCell(tables{1}.ColumnName, expectedColumns), ...
         'Result table columns changed. Expected [%s], found [%s].', ...
         strjoin(expectedColumns, ', '), strjoin(toCellstr(tables{1}.ColumnName), ', '));
+end
+
+function assertAnyTableColumns(fig, expectedColumns)
+    tables = findControlsByClass(fig, 'Table');
+    for k = 1:numel(tables)
+        if sameStringCell(tables{k}.ColumnName, expectedColumns)
+            return;
+        end
+    end
+    found = cell(1, numel(tables));
+    for k = 1:numel(tables)
+        found{k} = ['[' strjoin(toCellstr(tables{k}.ColumnName), ', ') ']'];
+    end
+    assert(false, 'Missing table columns [%s]. Found %s.', ...
+        strjoin(expectedColumns, ', '), strjoin(found, '; '));
 end
 
 function assertFigureMinimumSize(fig, minWidth, minHeight)

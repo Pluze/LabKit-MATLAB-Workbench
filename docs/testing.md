@@ -18,13 +18,13 @@ Default pure-function suite:
 scripts/run_matlab_tests.sh
 ```
 
-The same non-GUI suite runs in GitHub Actions on pushes and pull requests to `main` through `.github/workflows/matlab-tests.yml`. The README badge points to this workflow. The CI workflow uses MathWorks MATLAB Actions and calls `run_all_tests(false)`, so it covers `core`, `dta`, and pure `apps` checks without opening GUI windows.
+The same non-GUI suite runs in GitHub Actions on pushes and pull requests to `main` through `.github/workflows/matlab-tests.yml`. The README badge points to this workflow. The CI workflow uses MathWorks MATLAB Actions and calls `run_all_tests(false)`, so it covers `core`, `dta`, `biosignal`, and pure `apps` checks without opening GUI windows.
 
 Validation levels:
 
 | Level | Where | Purpose |
 | --- | --- | --- |
-| Default non-GUI suite | CI and local shell | Core boundaries, DTA facade/parser behavior, and pure app analysis/export helpers. |
+| Default non-GUI suite | CI and local shell | Core boundaries, DTA facade/parser behavior, biosignal facade behavior, and pure app analysis/export helpers. |
 | Focused GUI profiles | Local MATLAB with graphics support | Noninteractive app launch, layout, and callback wiring checks for selected app families. |
 | Manual GUI validation | User-run app windows | Interactive file selection, drawing, visual inspection, and full workflow feel. |
 
@@ -39,7 +39,9 @@ scripts/run_matlab_tests.sh --profile ui
 scripts/run_matlab_tests.sh --profile dic
 scripts/run_matlab_tests.sh --profile electrochem
 scripts/run_matlab_tests.sh --profile dta
+scripts/run_matlab_tests.sh --profile biosignal
 scripts/run_matlab_tests.sh --profile image_measurement
+scripts/run_matlab_tests.sh --profile wearable
 scripts/run_matlab_tests.sh --suite core
 scripts/run_matlab_tests.sh --suite gui
 scripts/run_matlab_tests.sh --test test_gui_layout_controls
@@ -49,23 +51,26 @@ Use `--profile` first for common change scopes:
 
 - `core`: startup and architecture guardrails
 - `dta`: `core` plus parser/session/DTA facade checks
+- `biosignal`: `core` plus biosignal loading, processing, SNR, and group-comparison checks
 - `apps`: app-local pure analysis/export checks
 - `electrochem`: electrochem app pure checks plus electrochem GUI layout
 - `dic`: DIC GUI layout
 - `image_measurement`: image measurement app pure checks plus image measurement GUI layout
+- `wearable`: biosignal facade checks plus wearable GUI layout
 - `ui`: reusable UI helper and shell layout
 - `gui`: all noninteractive GUI checks
 - `all`: default pure suite plus all GUI checks
 
-Use `--suite` for one or more suite keys: `core`, `dta`, `apps`, or `gui`. Use `--test` for one or more specific test functions. Selecting the `gui` suite, a GUI profile, or a `test_gui_*` function automatically uses GUI-capable MATLAB flags.
+Use `--suite` for one or more suite keys: `core`, `dta`, `biosignal`, `apps`, or `gui`. Use `--test` for one or more specific test functions. Selecting the `gui` suite, a GUI profile, or a `test_gui_*` function automatically uses GUI-capable MATLAB flags.
 
 The default suite is grouped in `tests/run_all_tests.m` and organized on disk under `tests/suites/`:
 
 ```text
-core    startup/root-entry boundaries and architecture guardrails
-dta     parsers through the DTA facade, DTA discovery/detection/loading/session helpers, pulse detection, and item schemas
-apps    app-local analysis values, plotting helpers, export table builders, and CSV writers
-gui     optional noninteractive launch/layout/callback checks
+core      startup/root-entry boundaries and architecture guardrails
+dta       parsers through the DTA facade, DTA discovery/detection/loading/session helpers, pulse detection, and item schemas
+biosignal biosignal recording loading, channel extraction, waveform processing, segments, SNR, and group comparison
+apps      app-local analysis values, plotting helpers, export table builders, and CSV writers
+gui       optional noninteractive launch/layout/callback checks
 ```
 
 Shared setup and assertions live under `tests/helpers/`. Keep helpers limited to setup and assertions; app-specific formulas, result schemas, export formats, and expected scientific values should remain in focused suite tests.
@@ -135,6 +140,7 @@ App-boundary changes:
 - app-specific helper packages and private launcher directories are not reintroduced for workflow code that belongs to one app
 - public app files do not call `labkit.io.*`, `labkit.data.*`, `labkit.analysis.*`, or `labkit.util.*` directly
 - public app files use `labkit.dta.*` for DTA discovery, loading, session creation, removal, selection, pulse detection, and parsed table/curve access
+- wearable/biosignal app files use `labkit.biosignal.*` for recording loading, channel extraction, waveform processing, events, segments, measurements, and group comparisons
 - public `+labkit/+data` and `+labkit/+io` packages are not reintroduced; parser, session IO, item construction, and table/curve access stay behind the DTA facade
 - app-local files keep the recommended single-file layout: entry/test hook, GUI construction, nested callbacks, app-local analysis, export/table helpers, plotting helpers, and small utilities
 - pulse detection remains behind `labkit.dta.detectPulses` with implementation helpers kept private, and experiment-specific CIC, VT, CSC, EIS, result-table, or CSV-writing workflow code does not return to a public reusable analysis package
