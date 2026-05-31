@@ -518,14 +518,8 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
             return;
         end
 
-        hImage = image(ax, S.image);
-        axis(ax, 'image');
-        ax.XLim = [0.5, size(S.image, 2) + 0.5];
-        ax.YLim = [0.5, size(S.image, 1) + 0.5];
-        ax.YDir = 'reverse';
-        ax.XTick = [];
-        ax.YTick = [];
-        enableImageNavigation(ax);
+        hImage = labkit.ui.showImageAxes(ax, S.image, 'Image + Circle Fit', ...
+            struct('clearAxes', false));
         fig.WindowScrollWheelFcn = @onPreviewScroll;
         hold(ax, 'on');
 
@@ -576,6 +570,7 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
                 'VerticalAlignment', 'bottom');
         end
         hold(ax, 'off');
+        labkit.ui.enableAxesPopout(ax);
     end
 
     function plotStaticCurveAnchors(ax)
@@ -1009,21 +1004,6 @@ function fit = emptyFitResult()
         'yPix', [], ...
         'xFit', [], ...
         'yFit', []);
-end
-
-function enableImageNavigation(ax)
-    try
-        enableDefaultInteractivity(ax);
-    catch
-    end
-    try
-        ax.Interactions = zoomInteraction;
-    catch
-    end
-    try
-        ax.Toolbar.Visible = 'on';
-    catch
-    end
 end
 
 function s = emptyDash(value)

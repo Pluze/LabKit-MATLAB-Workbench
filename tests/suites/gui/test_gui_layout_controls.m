@@ -412,6 +412,7 @@ function checkCreateAxesHelper()
 
     ax = labkit.ui.createAxes(grid, 2, 'Probe Title', 'Probe X', 'Probe Y');
     plot(ax, 1:3, [1 4 2], 'DisplayName', 'probe');
+    labkit.ui.enableAxesPopout(ax);
     assert(ax.Layout.Row == 2, 'Axes helper should set the requested layout row.');
     assert(strcmp(char(ax.Title.String), 'Probe Title'), 'Axes helper should preserve the title.');
     assert(strcmp(char(ax.XLabel.String), 'Probe X'), 'Axes helper should preserve the x label.');
@@ -429,6 +430,15 @@ function checkCreateAxesHelper()
     assert(strcmp(popoutAxes(1).DataAspectRatioMode, 'auto') && ...
         strcmp(popoutAxes(1).PlotBoxAspectRatioMode, 'auto'), ...
         'Axes popout should leave the copied plot with freely adjustable aspect ratio.');
+    assertAxesChildrenUsePopoutMenu(ax, ...
+        'Axes helper should attach the popout menu to plotted child objects.');
+
+    imgAx = labkit.ui.createAxes(grid, 1, 'Image Probe', '', '');
+    hImage = labkit.ui.showImageAxes(imgAx, zeros(12, 16, 3, 'uint8'), 'Image Probe');
+    assert(strcmp(char(imgAx.Title.String), 'Image Probe'), ...
+        'Image axes helper should preserve the supplied title.');
+    assert(isequal(hImage.ContextMenu, imgAx.ContextMenu), ...
+        'Image axes helper should attach the popout menu to the image object.');
 end
 
 function checkAnchorCurveEditorHelper()
@@ -924,6 +934,17 @@ function assertAxesPopoutEnabled(ax, message)
     item = findall(menu, 'Type', 'uimenu', 'Tag', 'labkitAxesPopoutMenu');
     assert(numel(item) == 1, message);
     assert(strcmp(item.Text, 'Open axes in new figure'), message);
+end
+
+function assertAxesChildrenUsePopoutMenu(ax, message)
+    menu = ax.ContextMenu;
+    children = ax.Children;
+    assert(~isempty(children), message);
+    for k = 1:numel(children)
+        if isprop(children(k), 'ContextMenu')
+            assert(isequal(children(k).ContextMenu, menu), message);
+        end
+    end
 end
 
 function tf = axesMatches(ax, spec)

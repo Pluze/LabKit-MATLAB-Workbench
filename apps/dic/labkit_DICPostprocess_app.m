@@ -498,15 +498,7 @@ function data = summaryTableData(T)
 end
 
 function showImage(ax, imageData, titleText)
-    cla(ax);
-    image(ax, imageData);
-    axis(ax, 'image');
-    ax.XLim = [0.5, size(imageData, 2) + 0.5];
-    ax.YLim = [0.5, size(imageData, 1) + 0.5];
-    ax.YDir = 'reverse';
-    ax.XTick = [];
-    ax.YTick = [];
-    title(ax, titleText);
+    labkit.ui.showImageAxes(ax, imageData, titleText);
 end
 
 function exportOverlayFigure(overlayImage, componentName, colorRange, resolution, outfile)

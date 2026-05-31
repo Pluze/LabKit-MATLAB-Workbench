@@ -1069,32 +1069,7 @@ function lines = cropSelectionSummary(rect)
 end
 
 function hImage = showImage(ax, imageData, titleText)
-    cla(ax);
-    hImage = image(ax, imageData);
-    hImage.HitTest = 'off';
-    axis(ax, 'image');
-    ax.XLim = [0.5, size(imageData, 2) + 0.5];
-    ax.YLim = [0.5, size(imageData, 1) + 0.5];
-    ax.YDir = 'reverse';
-    ax.XTick = [];
-    ax.YTick = [];
-    title(ax, titleText);
-    enableImageNavigation(ax);
-end
-
-function enableImageNavigation(ax)
-    try
-        enableDefaultInteractivity(ax);
-    catch
-    end
-    try
-        ax.Interactions = zoomInteraction;
-    catch
-    end
-    try
-        ax.Toolbar.Visible = 'on';
-    catch
-    end
+    hImage = labkit.ui.showImageAxes(ax, imageData, titleText);
 end
 
 function imageSize = axesImageSize(ax)

@@ -9,6 +9,7 @@ function enableAxesPopout(ax)
             getappdata(ax, 'labkitAxesPopoutEnabled') && ...
             ~isempty(menu) && isvalid(menu) && ...
             ~isempty(findall(menu, 'Type', 'uimenu', 'Tag', 'labkitAxesPopoutMenu'))
+        attachMenuToAxesChildren(ax, menu);
         return;
     end
 
@@ -29,5 +30,41 @@ function enableAxesPopout(ax)
             'Tag', 'labkitAxesPopoutMenu', ...
             'MenuSelectedFcn', @(~,~) labkit.ui.popoutAxes(ax));
     end
+    attachMenuToAxesChildren(ax, menu);
+    installChildrenListener(ax, menu);
     setappdata(ax, 'labkitAxesPopoutEnabled', true);
+end
+
+function installChildrenListener(ax, menu)
+    if isappdata(ax, 'labkitAxesPopoutChildrenListener')
+        listener = getappdata(ax, 'labkitAxesPopoutChildrenListener');
+        if ~isempty(listener)
+            return;
+        end
+    end
+    try
+        listener = addlistener(ax, 'Children', 'PostSet', ...
+            @(~,~) attachMenuToAxesChildren(ax, menu));
+        setappdata(ax, 'labkitAxesPopoutChildrenListener', listener);
+    catch
+    end
+end
+
+function attachMenuToAxesChildren(ax, menu)
+    if isempty(ax) || ~isvalid(ax) || isempty(menu) || ~isvalid(menu)
+        return;
+    end
+    children = ax.Children;
+    for k = 1:numel(children)
+        child = children(k);
+        if ~isvalid(child) || ~isprop(child, 'ContextMenu')
+            continue;
+        end
+        if isempty(child.ContextMenu) || ~isvalid(child.ContextMenu)
+            try
+                child.ContextMenu = menu;
+            catch
+            end
+        end
+    end
 end

@@ -82,11 +82,14 @@ labkit.ui.appendLog(txtLog, message);
 info = labkit.ui.plotXY(ax, x, y, labels, opts);
 labkit.ui.enableAxesPopout(ax);
 fig = labkit.ui.popoutAxes(ax);
+hImage = labkit.ui.showImageAxes(ax, imageData, titleText);
 ```
 
 Use `createPanelGrid` for app-defined sections that only need the standard panel/grid styling. Use `refreshListboxSelection` for generic single- or multi-select listbox state updates.
 
-Axes created through `labkit.ui.createAxes`, workbench dual-plot shells, or reset with `labkit.ui.hardResetAxis` get a standard right-click context action named `Open axes in new figure`. It copies the current axes contents, labels, scales, grid state, and basic styling into a separate MATLAB figure for manual editing or export. The copied axes use automatic data and plot-box aspect-ratio modes so the standalone figure can be freely resized. Apps should not implement their own plot-popout behavior unless they need a domain-specific export workflow.
+Axes created through `labkit.ui.createAxes`, workbench dual-plot shells, or reset with `labkit.ui.hardResetAxis` get a standard right-click context action named `Open axes in new figure`. The same context menu is attached to plotted child objects such as images, lines, overlays, and ROI previews so image-heavy apps do not block the action. MATLAB does not reliably propagate axes context menus to graphics children created later, so app-local renderers that create new image or overlay objects should call `labkit.ui.enableAxesPopout(ax)` after drawing. It copies the current axes contents, labels, scales, grid state, and basic styling into a separate MATLAB figure for manual editing or export. The copied axes use automatic data and plot-box aspect-ratio modes so the standalone figure can be freely resized. Apps should not implement their own plot-popout behavior unless they need a domain-specific export workflow.
+
+Use `showImageAxes` for app-neutral image display boilerplate: it draws an image, uses image-style axes limits, hides ticks, enables standard image navigation, and refreshes the axes popout menu onto the image object. Apps still own how image arrays, overlays, masks, and annotations are computed.
 
 Use `tabSpec(..., struct('resizeRows', ...))` when a left tab contains several stacked app-defined sections that may need manual height adjustment. When manually placing a component directly into a workbench tab grid, map the logical row through `labkit.ui.layoutRow(parentGrid, row)`. Most app code should use helpers such as `createPanelGrid`, `createResultTablePanel`, `createLogPanel`, and `createAxes`, which apply that mapping for their parent row. `labkit.ui.addRowResizeHandle` remains a lower-level helper for unusual app-local grids that intentionally reserve a physical handle row.
 
@@ -104,6 +107,7 @@ Use `createAnchorCurveEditor` when an app needs DIC-style image anchor editing: 
 - row-resize handles for stacked app-defined sections
 - anchor-curve editing on image axes
 - plot axes creation, reset, prepared-X/Y plotting, and app-neutral axes popout
+- app-neutral image display boilerplate for prepared image arrays
 - result table panels
 - listbox selection refresh
 - small labeled controls and domain-neutral state helpers

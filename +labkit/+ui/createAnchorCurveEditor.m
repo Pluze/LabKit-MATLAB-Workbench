@@ -156,10 +156,14 @@ function editor = createAnchorCurveEditor(ax, imageSize, opts)
         if state.installScrollWheel && ~isempty(state.fig) && isvalid(state.fig)
             state.fig.WindowScrollWheelFcn = [];
         end
+        labkit.ui.enableAxesPopout(state.ax);
     end
 
     function onAxesClicked(~, ~)
         if ~state.active || isempty(state.imageSize)
+            return;
+        end
+        if strcmp(state.fig.SelectionType, 'alt') || strcmp(state.fig.SelectionType, 'extend')
             return;
         end
 
@@ -252,6 +256,7 @@ function editor = createAnchorCurveEditor(ax, imageSize, opts)
                 'HitTest', 'on', ...
                 'PickableParts', 'visible');
         end
+        labkit.ui.enableAxesPopout(state.ax);
     end
 
     function updateBackgroundHitTest()
