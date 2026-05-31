@@ -27,9 +27,9 @@ function varargout = labkit_ECGPrint_app(varargin)
         'rightRowHeight', {{'1.2x', '1x', '1x', '1x'}}, ...
         'rightRowSpacing', 8);
     opts.tabs = [ ...
-        labkit.ui.tabSpec('filesAnalysis', 'Files + Analysis', [4 1], ...
-            {370, 235, 100, 125}, ...
-            struct('resizeRows', [1 2 3])), ...
+        labkit.ui.tabSpec('filesAnalysis', 'Files + Analysis', [6 1], ...
+            {140, 255, 120, 235, 100, 125}, ...
+            struct('resizeRows', [1 2 3 4 5])), ...
         labkit.ui.tabSpec('summaryResults', 'Summary + Results', [2 1], ...
             {210, '1x'}, ...
             struct('resizeRows', 1)), ...
@@ -42,108 +42,118 @@ function varargout = labkit_ECGPrint_app(varargin)
     laySR = ui.summaryResultsGrid;
     layLog = ui.logGrid;
 
-    dataPanel = labkit.ui.createPanelGrid(layFA, 'Recording + Import', 1, [13 2], ...
-        struct('rowHeight', {repmat({'fit'}, 1, 13)}, ...
+    recordingPanel = labkit.ui.createPanelGrid(layFA, 'Recording', 1, [3 2], ...
+        struct('rowHeight', {repmat({'fit'}, 1, 3)}, ...
         'columnWidth', {{135, '1x'}}));
-    dataGrid = dataPanel.grid;
+    recordingGrid = recordingPanel.grid;
 
-    btnOpen = uibutton(dataGrid, 'Text', 'Open recording', 'ButtonPushedFcn', @onOpenRecording);
+    btnOpen = uibutton(recordingGrid, 'Text', 'Open recording', 'ButtonPushedFcn', @onOpenRecording);
     btnOpen.Layout.Row = 1;
     btnOpen.Layout.Column = [1 2];
 
-    txtFile = labkit.ui.createReadOnlyTextField(dataGrid, 'Value', 'No file loaded');
+    txtFile = labkit.ui.createReadOnlyTextField(recordingGrid, 'Value', 'No file loaded');
     txtFile.Layout.Row = 2;
     txtFile.Layout.Column = [1 2];
 
-    btnPreviewHeader = uibutton(dataGrid, 'Text', 'Preview file header', ...
+    btnPreviewHeader = uibutton(recordingGrid, 'Text', 'Preview file header', ...
         'ButtonPushedFcn', @onPreviewHeader);
     btnPreviewHeader.Layout.Row = 3;
-    btnPreviewHeader.Layout.Column = 1;
+    btnPreviewHeader.Layout.Column = [1 2];
 
-    btnRefreshImport = uibutton(dataGrid, 'Text', 'Refresh import parsing', ...
-        'ButtonPushedFcn', @onRefreshImport);
-    btnRefreshImport.Layout.Row = 3;
-    btnRefreshImport.Layout.Column = 2;
+    importPanel = labkit.ui.createPanelGrid(layFA, 'Import Parsing', 2, [8 2], ...
+        struct('rowHeight', {repmat({'fit'}, 1, 8)}, ...
+        'columnWidth', {{135, '1x'}}));
+    importGrid = importPanel.grid;
 
-    txtImportStatus = labkit.ui.createReadOnlyTextField(dataGrid, ...
+    txtImportStatus = labkit.ui.createReadOnlyTextField(importGrid, ...
         'Value', 'Open a recording to inspect import settings.');
-    txtImportStatus.Layout.Row = 4;
+    txtImportStatus.Layout.Row = 1;
     txtImportStatus.Layout.Column = [1 2];
 
-    [lblHeaderLine, edtHeaderLine] = labkit.ui.createLabeledSpinner(dataGrid, ...
+    [lblHeaderLine, edtHeaderLine] = labkit.ui.createLabeledSpinner(importGrid, ...
         'CSV header line:', 'Value', 0, 'Limits', [0 Inf], 'Step', 1, ...
         'ValueChangedFcn', @onImportOptionChanged);
-    lblHeaderLine.Layout.Row = 5;
+    lblHeaderLine.Layout.Row = 2;
     lblHeaderLine.Layout.Column = 1;
-    edtHeaderLine.Layout.Row = 5;
+    edtHeaderLine.Layout.Row = 2;
     edtHeaderLine.Layout.Column = 2;
 
-    [lblHasHeader, ddHasHeader] = labkit.ui.createLabeledDropdown(dataGrid, ...
+    [lblHasHeader, ddHasHeader] = labkit.ui.createLabeledDropdown(importGrid, ...
         'CSV header:', ...
         'Items', {'Auto', 'Yes', 'No'}, ...
         'Value', 'Auto', ...
         'ValueChangedFcn', @onImportOptionChanged);
-    lblHasHeader.Layout.Row = 6;
+    lblHasHeader.Layout.Row = 3;
     lblHasHeader.Layout.Column = 1;
-    ddHasHeader.Layout.Row = 6;
+    ddHasHeader.Layout.Row = 3;
     ddHasHeader.Layout.Column = 2;
 
-    [lblTimeColumn, edtTimeColumn] = labkit.ui.createLabeledEditField(dataGrid, ...
+    [lblTimeColumn, edtTimeColumn] = labkit.ui.createLabeledEditField(importGrid, ...
         'Time column:', 'text', 'Value', '', ...
         'ValueChangedFcn', @onImportOptionChanged);
-    lblTimeColumn.Layout.Row = 7;
+    lblTimeColumn.Layout.Row = 4;
     lblTimeColumn.Layout.Column = 1;
-    edtTimeColumn.Layout.Row = 7;
+    edtTimeColumn.Layout.Row = 4;
     edtTimeColumn.Layout.Column = 2;
 
-    [lblTimeUnit, ddTimeUnit] = labkit.ui.createLabeledDropdown(dataGrid, ...
+    [lblTimeUnit, ddTimeUnit] = labkit.ui.createLabeledDropdown(importGrid, ...
         'Time unit:', ...
         'Items', {'Auto', 'seconds', 'milliseconds', 'microseconds', 'nanoseconds'}, ...
         'Value', 'Auto', ...
         'ValueChangedFcn', @onImportOptionChanged);
-    lblTimeUnit.Layout.Row = 8;
+    lblTimeUnit.Layout.Row = 5;
     lblTimeUnit.Layout.Column = 1;
-    ddTimeUnit.Layout.Row = 8;
+    ddTimeUnit.Layout.Row = 5;
     ddTimeUnit.Layout.Column = 2;
 
-    [lblSignalColumns, edtSignalColumns] = labkit.ui.createLabeledEditField(dataGrid, ...
+    [lblSignalColumns, edtSignalColumns] = labkit.ui.createLabeledEditField(importGrid, ...
         'Signal columns:', 'text', 'Value', '', ...
         'ValueChangedFcn', @onImportOptionChanged);
-    lblSignalColumns.Layout.Row = 9;
+    lblSignalColumns.Layout.Row = 6;
     lblSignalColumns.Layout.Column = 1;
-    edtSignalColumns.Layout.Row = 9;
+    edtSignalColumns.Layout.Row = 6;
     edtSignalColumns.Layout.Column = 2;
 
-    [lblFallbackFs, edtFallbackFs] = labkit.ui.createLabeledSpinner(dataGrid, ...
+    [lblFallbackFs, edtFallbackFs] = labkit.ui.createLabeledSpinner(importGrid, ...
         'Fallback Fs:', 'Value', 2000, 'Limits', [0 Inf], 'Step', 100, ...
         'ValueChangedFcn', @onImportOptionChanged);
-    lblFallbackFs.Layout.Row = 10;
+    lblFallbackFs.Layout.Row = 7;
     lblFallbackFs.Layout.Column = 1;
-    edtFallbackFs.Layout.Row = 10;
+    edtFallbackFs.Layout.Row = 7;
     edtFallbackFs.Layout.Column = 2;
 
-    [lblChannel, ddChannel] = labkit.ui.createLabeledDropdown(dataGrid, 'Channel:', ...
+    btnRefreshImport = uibutton(importGrid, 'Text', 'Parse / refresh file', ...
+        'ButtonPushedFcn', @onRefreshImport);
+    btnRefreshImport.Layout.Row = 8;
+    btnRefreshImport.Layout.Column = [1 2];
+
+    channelPanel = labkit.ui.createPanelGrid(layFA, 'Channel + ROI', 3, [3 2], ...
+        struct('rowHeight', {repmat({'fit'}, 1, 3)}, ...
+        'columnWidth', {{135, '1x'}}));
+    channelGrid = channelPanel.grid;
+
+    [lblChannel, ddChannel] = labkit.ui.createLabeledDropdown(channelGrid, 'Channel:', ...
         'Items', {'(none)'}, 'Value', '(none)', 'ValueChangedFcn', @onChannelChanged);
-    lblChannel.Layout.Row = 11;
+    lblChannel.Layout.Row = 1;
     lblChannel.Layout.Column = 1;
-    ddChannel.Layout.Row = 11;
+    ddChannel.Layout.Row = 1;
     ddChannel.Layout.Column = 2;
 
-    [lblStart, edtStart] = labkit.ui.createLabeledSpinner(dataGrid, ...
+    [lblStart, edtStart] = labkit.ui.createLabeledSpinner(channelGrid, ...
         'ROI start (s):', 'Value', 0, 'Limits', [0 Inf], 'Step', 1);
-    lblStart.Layout.Row = 12;
+    lblStart.Layout.Row = 2;
     lblStart.Layout.Column = 1;
-    edtStart.Layout.Row = 12;
+    edtStart.Layout.Row = 2;
     edtStart.Layout.Column = 2;
 
-    [lblEnd, edtEnd] = labkit.ui.createLabeledSpinner(dataGrid, ...
+    [lblEnd, edtEnd] = labkit.ui.createLabeledSpinner(channelGrid, ...
         'ROI end (s):', 'Value', 0, 'Limits', [0 Inf], 'Step', 1);
-    lblEnd.Layout.Row = 13;
+    lblEnd.Layout.Row = 3;
     lblEnd.Layout.Column = 1;
-    edtEnd.Layout.Row = 13;
+    edtEnd.Layout.Row = 3;
     edtEnd.Layout.Column = 2;
 
-    procPanel = labkit.ui.createPanelGrid(layFA, 'Signal Processing + SNR', 2, [8 2], ...
+    procPanel = labkit.ui.createPanelGrid(layFA, 'Signal Processing + SNR', 4, [8 2], ...
         struct('rowHeight', {repmat({'fit'}, 1, 8)}, ...
         'columnWidth', {{135, '1x'}}));
     procGrid = procPanel.grid;
@@ -206,7 +216,7 @@ function varargout = labkit_ECGPrint_app(varargin)
     btnAnalyze.Layout.Row = 8;
     btnAnalyze.Layout.Column = [1 2];
 
-    exportPanel = labkit.ui.createPanelGrid(layFA, 'Exports', 3, [2 1], ...
+    exportPanel = labkit.ui.createPanelGrid(layFA, 'Exports', 5, [2 1], ...
         struct('rowHeight', {{'fit','fit'}}));
     exportGrid = exportPanel.grid;
     btnExportSegments = uibutton(exportGrid, 'Text', 'Export segment SNR CSV', ...
@@ -216,10 +226,10 @@ function varargout = labkit_ECGPrint_app(varargin)
         'ButtonPushedFcn', @onExportWaveform);
     btnExportOverlay.Layout.Row = 2;
 
-    labkit.ui.createReadOnlyTextPanel(layFA, 'Workflow Notes', 4, { ...
+    labkit.ui.createReadOnlyTextPanel(layFA, 'Workflow Notes', 6, { ...
         '1. Open MAT/CSV data, select a numeric channel, and optionally set a time ROI.', ...
-        '2. Analyze current ROI to filter, detect peaks, segment beats, build a template, and compute SNR.', ...
-        '3. Use import refresh after changing CSV parsing options; use the header preview to inspect ambiguous files.'});
+        '2. Use File Header Preview and Import Parsing only when CSV/text auto-detection needs correction.', ...
+        '3. Analyze current ROI to filter, detect peaks, segment beats, build a template, and compute SNR.'});
 
     summaryTable = uitable(laySR, 'ColumnName', {'Metric','Value'}, ...
         'Data', initialSummaryRows());
@@ -258,20 +268,29 @@ function varargout = labkit_ECGPrint_app(varargin)
 
         S.filepath = string(fullfile(fp, fn));
         txtFile.Value = char(S.filepath);
+        clearParsedRecording();
         updateFilePreview();
-        refreshImportParsing();
+        refreshImportParsing(false);
     end
 
     function onRefreshImport(~, ~)
-        refreshImportParsing();
+        refreshImportParsing(true);
     end
 
-    function refreshImportParsing()
+    function refreshImportParsing(showAlertOnFailure)
+        if nargin < 1
+            showAlertOnFailure = true;
+        end
         if strlength(S.filepath) == 0
-            showError('No recording selected', 'Open a recording before refreshing import parsing.');
+            if showAlertOnFailure
+                showError('No recording selected', 'Open a recording before parsing.');
+            else
+                txtImportStatus.Value = 'Open a recording before parsing.';
+            end
             return;
         end
 
+        txtImportStatus.Value = 'Parsing file...';
         selectedChannel = "";
         if ~isempty(ddChannel.Items) && ~strcmp(ddChannel.Value, '(none)')
             selectedChannel = string(ddChannel.Value);
@@ -280,13 +299,26 @@ function varargout = labkit_ECGPrint_app(varargin)
         importOpts = currentImportOptions();
         [recording, status] = labkit.biosignal.readRecording(char(S.filepath), importOpts);
         if ~status.ok
-            txtImportStatus.Value = char("Import failed: " + status.message);
-            showError('Could not read recording', status.message);
+            clearParsedRecording();
+            txtImportStatus.Value = char("Parse failed. Inspect header/settings, then refresh: " + status.message);
+            if showAlertOnFailure
+                showError('Could not parse recording', status.message);
+            else
+                addLog(sprintf('Automatic parse failed: %s', status.message));
+            end
             return;
         end
 
         S.recording = recording;
         channels = labkit.biosignal.listChannels(recording);
+        if isempty(channels)
+            clearParsedRecording();
+            txtImportStatus.Value = 'Parse failed: no numeric signal channels were found.';
+            if showAlertOnFailure
+                showError('Could not parse recording', 'No numeric signal channels were found.');
+            end
+            return;
+        end
         ddChannel.Items = channels;
         if any(strcmp(channels, selectedChannel))
             ddChannel.Value = char(selectedChannel);
@@ -313,8 +345,25 @@ function varargout = labkit_ECGPrint_app(varargin)
 
     function onImportOptionChanged(~, ~)
         if strlength(S.filepath) > 0
-            txtImportStatus.Value = 'Import settings changed. Click Refresh import parsing.';
+            txtImportStatus.Value = 'Import settings changed. Click Parse / refresh file.';
         end
+    end
+
+    function clearParsedRecording()
+        S.recording = [];
+        S.signal = [];
+        S.workingSignal = [];
+        S.filteredSignal = [];
+        S.events = [];
+        S.segments = [];
+        S.template = [];
+        S.measurements = [];
+        ddChannel.Items = {'(none)'};
+        ddChannel.Value = '(none)';
+        edtStart.Value = 0;
+        edtEnd.Value = 0;
+        updateSummary();
+        refreshPlots();
     end
 
     function optsOut = currentImportOptions()
