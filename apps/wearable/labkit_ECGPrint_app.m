@@ -560,11 +560,13 @@ function varargout = labkit_ECGPrint_app(varargin)
             lower = template - residStd;
             fill(ax, [t; flipud(t)], [upper; flipud(lower)], [0.20 0.20 0.20], ...
                 'FaceAlpha', 0.15, 'EdgeColor', 'none');
-            shadeMeasurementWindows(ax);
             title(ax, 'Template + Residual Band');
         end
         plot(ax, t, template, 'k-', 'LineWidth', 2);
         xline(ax, 0, '--r', 'R');
+        if strcmp(ddTemplateView.Value, 'Template + residual band')
+            shadeMeasurementWindows(ax);
+        end
         hold(ax, 'off');
         grid(ax, 'on');
     end
@@ -577,11 +579,16 @@ function varargout = labkit_ECGPrint_app(varargin)
         if ~isfield(meta, 'signalWindowSec') || ~isfield(meta, 'noiseWindowsSec')
             return;
         end
-        yl = axisDataYLim(S.template.values);
-        drawWindow(ax, meta.signalWindowSec, yl, [1.00 0.20 0.20], 0.08);
+        yl = ax.YLim;
+        windowHandles = gobjects(0);
+        windowHandles(end+1) = drawWindow(ax, meta.signalWindowSec, yl, [1.00 0.20 0.20], 0.08);
         noiseWindows = meta.noiseWindowsSec;
         for k = 1:size(noiseWindows, 1)
-            drawWindow(ax, noiseWindows(k, :), yl, [0.00 0.45 1.00], 0.08);
+            windowHandles(end+1) = drawWindow(ax, noiseWindows(k, :), yl, [0.00 0.45 1.00], 0.08);
+        end
+        try
+            uistack(windowHandles, 'bottom');
+        catch
         end
     end
 
@@ -650,22 +657,11 @@ function varargout = labkit_ECGPrint_app(varargin)
         end
     end
 
-    function yl = axisDataYLim(values)
-        values = double(values(:));
-        values = values(isfinite(values));
-        if isempty(values)
-            yl = [-1 1];
-            return;
-        end
-        span = max(values) - min(values);
-        pad = max(0.1 * span, eps);
-        yl = [min(values) - pad, max(values) + pad];
-    end
-
-    function drawWindow(ax, windowSec, yl, color, alpha)
-        fill(ax, [windowSec(1) windowSec(2) windowSec(2) windowSec(1)], ...
+    function h = drawWindow(ax, windowSec, yl, color, alpha)
+        h = fill(ax, [windowSec(1) windowSec(2) windowSec(2) windowSec(1)], ...
             [yl(1) yl(1) yl(2) yl(2)], color, ...
-            'FaceAlpha', alpha, 'EdgeColor', 'none');
+            'FaceAlpha', alpha, 'EdgeColor', 'none', ...
+            'HitTest', 'off', 'PickableParts', 'none');
     end
 
     function resetAxes()
