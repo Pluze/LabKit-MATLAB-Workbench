@@ -83,6 +83,18 @@ Keep documentation current and concise:
 - When app controls, exports, or advertised capabilities change, update the README app table and the relevant docs in the same change.
 - Avoid duplicating full option schemas in multiple prose docs unless there is a clear user benefit. Prefer one detailed component doc plus public function comments.
 
+## Sensitive Sample Data
+
+Do not introduce sensitive or identifying sample-data details into the repository. This applies to source, tests, docs, comments, commit messages, and generated artifacts.
+
+When using local lab files to reproduce a bug:
+
+- Do not copy raw sample files, local absolute paths, shared-drive paths, filenames, subject/user names, device serials, experiment labels, timestamps, parser-version strings, or other identifying metadata into tracked files.
+- Do not preserve proprietary or personally identifying row values merely because they appeared in an example file.
+- Use synthetic, minimal fixtures that preserve only the structural format needed for regression coverage, such as preamble rows, header shape, delimiter style, count rows, footer rows, missing values, or time-column behavior.
+- Use generic labels such as `DEVICE`, `PrimaryChannel`, `capture start`, and `footer metadata row` instead of real labels from source files.
+- Before committing sample-format fixes, search the diff for local paths, original filenames, names, device IDs, timestamps, and other recognizable source-file strings.
+
 ## Forbidden Without Explicit Approval
 
 - Do not rewrite all GUIs in one pass.

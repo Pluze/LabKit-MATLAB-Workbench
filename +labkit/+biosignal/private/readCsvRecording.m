@@ -217,6 +217,8 @@ function T = readTextDelimitedTable(filepath, info)
     header = trimTrailingEmptyTokens(splitDelimitedLine(headerLine));
     names = matlab.lang.makeValidName(cellstr(header));
     names = matlab.lang.makeUniqueStrings(names);
+    skipNonDataRows = isLikelySignalHeader(headerLine) || ...
+        isTimeLikeName(firstToken(header));
 
     rows = {};
     for k = info.headerLine + 1:numel(lines)
@@ -225,6 +227,9 @@ function T = readTextDelimitedTable(filepath, info)
             continue;
         end
         tokens = splitDelimitedLine(line);
+        if skipNonDataRows && ~isDecimalDataToken(firstToken(tokens))
+            continue;
+        end
         row = repmat({''}, 1, numel(names));
         n = min(numel(tokens), numel(names));
         for j = 1:n
@@ -368,6 +373,27 @@ function tf = isNumericDelimitedLine(line)
         values(k) = str2double(tokens(k));
     end
     tf = nnz(isfinite(values)) >= max(2, ceil(0.7 * numel(tokens)));
+end
+
+function token = firstToken(tokens)
+    token = "";
+    if ~isempty(tokens)
+        token = strip(tokens(1));
+    end
+end
+
+function tf = isDecimalDataToken(token)
+    token = char(strip(string(token)));
+    if isempty(token)
+        tf = false;
+        return;
+    end
+    if ~isempty(regexp(token, '^\s*[+-]?0x[0-9a-fA-F]+\s*$', 'once'))
+        tf = false;
+        return;
+    end
+    value = str2double(token);
+    tf = isfinite(value);
 end
 
 function tf = hasMultipleDelimitedFields(line)
