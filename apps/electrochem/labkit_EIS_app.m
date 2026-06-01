@@ -2,10 +2,18 @@ function varargout = labkit_EIS_app(varargin)
 %LABKIT_EIS_APP EIS overlay/export app.
 % Single-file app that composes +labkit GUI/DTA APIs and owns EIS workflow choices.
 
-    if nargin > 0
-        error('labkit_EIS_app:UnsupportedInput', 'labkit_EIS_app does not accept input arguments.');
+    [requestHandled, requestOutputs, debugLog] = labkit.ui.handleAppRequest( ...
+        'labkit_EIS_app', varargin, nargout, eisAppTestHandlers());
+    if requestHandled
+        varargout = requestOutputs;
+        return;
     end
-    if nargout > 1
+    if debugLog.enabled
+        if nargout > 2
+            error('labkit_EIS_app:TooManyOutputs', ...
+                'labkit_EIS_app debug mode returns at most the app figure and debug log.');
+        end
+    elseif nargout > 1
         error('labkit_EIS_app:TooManyOutputs', 'labkit_EIS_app returns at most the app figure handle.');
     end
 
@@ -142,8 +150,11 @@ function varargout = labkit_EIS_app(varargin)
     txtSummary = uitextarea(laySR, 'Editable', 'off');
     txtSummary.Layout.Row = labkit.ui.layoutRow(laySR, 2);
     txtSummary.Value = {'No files loaded.'};
-    if nargout == 1
+    if nargout >= 1
         varargout{1} = fig;
+    end
+    if nargout >= 2
+        varargout{2} = debugLog;
     end
 
     %% App callbacks, session actions, refresh, and export
@@ -297,10 +308,28 @@ function varargout = labkit_EIS_app(varargin)
 
     function addLog(msg)
         labkit.ui.appendLog(txtLog, msg);
+        debugLog.append(msg);
     end
 end
 
 %% App-local plotting and summary helpers
+function handlers = eisAppTestHandlers()
+    handlers = struct( ...
+        'command', {'buildExportTable', 'valuesForAxis'}, ...
+        'minArgs', {5, 2}, ...
+        'maxArgs', {5, 2}, ...
+        'maxOutputs', {1, 1}, ...
+        'run', {@runBuildExportTable, @runValuesForAxis});
+end
+
+function outputs = runBuildExportTable(args)
+    outputs = {buildExportTable(args{1}, args{2}, args{3}, args{4}, args{5})};
+end
+
+function outputs = runValuesForAxis(args)
+    outputs = {valuesForAxis(args{1}, args{2})};
+end
+
 function txt = labelForAxis(axisName)
     txt = axisName;
 end

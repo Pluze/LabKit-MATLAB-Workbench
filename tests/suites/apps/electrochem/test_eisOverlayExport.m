@@ -37,4 +37,11 @@ function test_eisOverlayExport()
         'EIS app should preserve legacy export column naming logic.');
     assert(contains(source, 'axis(ax, ''equal'')'), ...
         'EIS app should preserve equal-axis Nyquist plot behavior.');
+
+    zreal = labkit_EIS_app('__labkit_test__', 'valuesForAxis', item, 'Zreal (ohm)');
+    assertClose(zreal, item.Zreal, 'EIS app axis-value hook should preserve Zreal values');
+    T = labkit_EIS_app('__labkit_test__', 'buildExportTable', item, ...
+        'Zreal (ohm)', '-Zimag (ohm)', false, false);
+    assert(isequal(T.Properties.VariableNames(1), {'RowIndex'}), ...
+        'EIS export table hook should preserve RowIndex as the first column.');
 end

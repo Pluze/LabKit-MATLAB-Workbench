@@ -1,16 +1,18 @@
 function varargout = labkit_CurvatureMeasurement_app(varargin)
 %LABKIT_CURVATUREMEASUREMENT_APP Measure curve radius and curvature from images.
 
-    if nargin > 0
-        [handled, outputs] = handleCurvatureTestRequest(varargin, nargout);
-        if handled
-            varargout = outputs;
-            return;
-        end
-        error('labkit_CurvatureMeasurement_app:UnsupportedInput', ...
-            'labkit_CurvatureMeasurement_app does not accept input arguments.');
+    [requestHandled, requestOutputs, debugLog] = labkit.ui.handleAppRequest( ...
+        'labkit_CurvatureMeasurement_app', varargin, nargout, curvatureAppTestHandlers());
+    if requestHandled
+        varargout = requestOutputs;
+        return;
     end
-    if nargout > 1
+    if debugLog.enabled
+        if nargout > 2
+            error('labkit_CurvatureMeasurement_app:TooManyOutputs', ...
+                'labkit_CurvatureMeasurement_app debug mode returns at most the app figure and debug log.');
+        end
+    elseif nargout > 1
         error('labkit_CurvatureMeasurement_app:TooManyOutputs', ...
             'labkit_CurvatureMeasurement_app returns at most the app figure handle.');
     end
@@ -186,8 +188,11 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
     resetAxes();
     refreshScaleReadout();
 
-    if nargout == 1
+    if nargout >= 1
         varargout{1} = fig;
+    end
+    if nargout >= 2
+        varargout{2} = debugLog;
     end
 
     function onOpenImage(~, ~)
@@ -649,6 +654,7 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
 
     function addLog(message)
         labkit.ui.appendLog(txtLog, message);
+        debugLog.append(message);
     end
 
     function showError(titleText, message)
@@ -657,36 +663,28 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
     end
 end
 
-function [handled, outputs] = handleCurvatureTestRequest(args, nout)
-    handled = false;
-    outputs = {};
-    if isempty(args) || ~(ischar(args{1}) || isstring(args{1}))
-        return;
-    end
+function handlers = curvatureAppTestHandlers()
+    handlers = struct( ...
+        'command', {'computeCurvatureFit', 'buildCurvatureResultTable'}, ...
+        'minArgs', {3, 2}, ...
+        'maxArgs', {3, 2}, ...
+        'maxOutputs', {1, 1}, ...
+        'run', {@runComputeCurvatureFit, @runBuildCurvatureResultTable});
+end
 
-    handled = true;
-    request = char(args{1});
-    switch request
-        case '__test_computeCurvatureFit__'
-            requireNargout(nout, 1, request);
-            opts = struct();
-            if numel(args) >= 4
-                opts = args{4};
-            end
-            rawpx = optionValue(opts, 'rawpx', NaN);
-            scaleLenMm = optionValue(opts, 'scaleLengthMm', 0);
-            manualPxPerMm = optionValue(opts, 'manualPxPerMm', 0);
-            doDensify = optionValue(opts, 'doDensify', true);
-            denseN = optionValue(opts, 'denseN', 300);
-            outputs = {computeCurvatureFit(args{2}, args{3}, rawpx, ...
-                scaleLenMm, manualPxPerMm, doDensify, denseN)};
-        case '__test_buildCurvatureResultTable__'
-            requireNargout(nout, 1, request);
-            outputs = {buildCurvatureResultTable(args{2}, string(args{3}))};
-        otherwise
-            error('labkit_CurvatureMeasurement_app:UnknownTestRequest', ...
-                'Unknown test request: %s', request);
-    end
+function outputs = runComputeCurvatureFit(args)
+    opts = args{3};
+    rawpx = optionValue(opts, 'rawpx', NaN);
+    scaleLenMm = optionValue(opts, 'scaleLengthMm', 0);
+    manualPxPerMm = optionValue(opts, 'manualPxPerMm', 0);
+    doDensify = optionValue(opts, 'doDensify', true);
+    denseN = optionValue(opts, 'denseN', 300);
+    outputs = {computeCurvatureFit(args{1}, args{2}, rawpx, ...
+        scaleLenMm, manualPxPerMm, doDensify, denseN)};
+end
+
+function outputs = runBuildCurvatureResultTable(args)
+    outputs = {buildCurvatureResultTable(args{1}, string(args{2}))};
 end
 
 function fit = computeCurvatureFit(xPix, yPix, rawpx, scaleLengthMm, manualPxPerMm, doDensify, denseN)
@@ -1016,13 +1014,6 @@ function value = ternary(condition, trueValue, falseValue)
         value = trueValue;
     else
         value = falseValue;
-    end
-end
-
-function requireNargout(actual, maxAllowed, request)
-    if actual > maxAllowed
-        error('labkit_CurvatureMeasurement_app:TooManyOutputs', ...
-            '%s returns at most %d output(s).', request, maxAllowed);
     end
 end
 

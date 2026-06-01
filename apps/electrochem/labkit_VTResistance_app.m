@@ -10,16 +10,18 @@ function varargout = labkit_VTResistance_app(varargin)
 %   - Estimate steady phase voltage by median(Vf) in the same selected window.
 %   - Compute baseline-corrected resistance as abs((Vss - Vbaseline) / Iss).
 
-    if nargin > 0
-        % Keep VT numerical/export tests direct while the app owns the local workflow code.
-        [handled, testOutputs] = handleVTTestRequest(varargin, nargout);
-        if handled
-            varargout = testOutputs;
-            return;
-        end
-        error('labkit_VTResistance_app:UnsupportedInput', 'labkit_VTResistance_app does not accept input arguments.');
+    [requestHandled, requestOutputs, debugLog] = labkit.ui.handleAppRequest( ...
+        'labkit_VTResistance_app', varargin, nargout, vtAppTestHandlers());
+    if requestHandled
+        varargout = requestOutputs;
+        return;
     end
-    if nargout > 1
+    if debugLog.enabled
+        if nargout > 2
+            error('labkit_VTResistance_app:TooManyOutputs', ...
+                'labkit_VTResistance_app debug mode returns at most the app figure and debug log.');
+        end
+    elseif nargout > 1
         error('labkit_VTResistance_app:TooManyOutputs', 'labkit_VTResistance_app returns at most the app figure handle.');
     end
 
@@ -142,8 +144,11 @@ function varargout = labkit_VTResistance_app(varargin)
     ddBotY = plotControls.bottomY;
     cbBotGrid = plotControls.bottomGridCheckbox;
     axBottom = ui.bottomAxes;
-    if nargout == 1
+    if nargout >= 1
         varargout{1} = fig;
+    end
+    if nargout >= 2
+        varargout{2} = debugLog;
     end
 
     %% App callbacks, session actions, refresh, plotting, and export
@@ -493,61 +498,38 @@ function varargout = labkit_VTResistance_app(varargin)
 
     function addLog(msg)
         labkit.ui.appendLog(txtLog, msg);
+        debugLog.append(msg);
     end
 
 end
 
 %% App test hook
-function [handled, outputs] = handleVTTestRequest(args, nargoutRequested)
-    handled = false;
-    outputs = {};
-    if isempty(args) || ~(ischar(args{1}) || (isstring(args{1}) && isscalar(args{1})))
-        return;
-    end
-
-    handled = true;
-    command = char(args{1});
-    switch command
-        case '__test_computeResistance__'
-            assertVTTestArgCount(args, 3, command);
-            if nargoutRequested > 1
-                error('labkit_VTResistance_app:TooManyOutputs', 'VT compute test request returns one result struct.');
-            end
-            outputs = {computeResistance(args{2}, args{3})};
-        case '__test_buildBatchTableData__'
-            assertVTTestArgCount(args, 2, command);
-            if nargoutRequested > 1
-                error('labkit_VTResistance_app:TooManyOutputs', 'VT batch-table test request returns one cell array.');
-            end
-            outputs = {buildBatchTableData(args{2})};
-        case '__test_buildResultsTable__'
-            assertVTTestArgCount(args, 2, command);
-            if nargoutRequested > 1
-                error('labkit_VTResistance_app:TooManyOutputs', 'VT result-table test request returns one table.');
-            end
-            outputs = {buildResultsTable(args{2})};
-        case '__test_writeResultsCSV__'
-            assertVTTestArgCount(args, 3, command);
-            if nargoutRequested > 2
-                error('labkit_VTResistance_app:TooManyOutputs', 'VT CSV test request returns at most ok and message.');
-            end
-            if nargoutRequested == 0
-                writeResultsCSV(args{2}, args{3});
-            else
-                [ok, msg] = writeResultsCSV(args{2}, args{3});
-                outputs = {ok, msg};
-                outputs = outputs(1:nargoutRequested);
-            end
-        otherwise
-            handled = false;
-    end
+function handlers = vtAppTestHandlers()
+    handlers = struct( ...
+        'command', {'computeResistance', 'buildBatchTableData', ...
+            'buildResultsTable', 'writeResultsCSV'}, ...
+        'minArgs', {2, 1, 1, 2}, ...
+        'maxArgs', {2, 1, 1, 2}, ...
+        'maxOutputs', {1, 1, 1, 2}, ...
+        'run', {@runComputeResistance, @runBuildBatchTableData, ...
+            @runBuildResultsTable, @runWriteResultsCSV});
 end
 
-function assertVTTestArgCount(args, expectedCount, command)
-    if numel(args) ~= expectedCount
-        error('labkit_VTResistance_app:InvalidTestRequest', ...
-            '%s expects %d total input arguments.', command, expectedCount);
-    end
+function outputs = runComputeResistance(args)
+    outputs = {computeResistance(args{1}, args{2})};
+end
+
+function outputs = runBuildBatchTableData(args)
+    outputs = {buildBatchTableData(args{1})};
+end
+
+function outputs = runBuildResultsTable(args)
+    outputs = {buildResultsTable(args{1})};
+end
+
+function outputs = runWriteResultsCSV(args)
+    [ok, msg] = writeResultsCSV(args{1}, args{2});
+    outputs = {ok, msg};
 end
 
 %% App-local analysis

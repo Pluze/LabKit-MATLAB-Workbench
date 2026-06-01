@@ -103,6 +103,8 @@ labkit.ui.createReadOnlyTextPanel(parent, titleText, row, lines, opts);
 labkit.ui.createResultTablePanel(parent, titleText, row, columnNames, initialData);
 labkit.ui.createLogPanel(parent, row, initialValue);
 labkit.ui.createAnchorCurveEditor(ax, imageSize, opts);
+labkit.ui.handleAppRequest(appName, args, nout, handlers);
+labkit.ui.createAppDebugLog(appName, opts);
 ```
 
 State and rendering helpers:
@@ -151,6 +153,26 @@ Use `createAnchorCurveEditor` when an app needs DIC-style image anchor editing: 
 
 The returned editor struct exposes `start`, `setActive`, `setPoints`, `getPoints`, `clearPoints`, `undoLast`, `insertPoint`, `setStyle`, `setImageSize`, `setBackground`, `refresh`, `curvePoints`, and `delete`.
 
+## Internal App Hooks
+
+Apps may use the shared internal hook helpers for tests and maintenance debug logging. These hooks are not user-facing launch APIs.
+
+Canonical test calls use:
+
+```matlab
+appName("__labkit_test__", "commandName", arg1, arg2, ...)
+```
+
+Apps pass a handler struct array to `labkit.ui.handleAppRequest(appName, varargin, nargout, handlers)`. Each handler has `command`, `minArgs`, `maxArgs`, `maxOutputs`, and `run`. The `run` function receives command arguments as a cell array and returns outputs as a cell array. Unsupported commands and invalid requests use app-scoped error IDs such as `<appName>:UnknownTestCommand` and `<appName>:InvalidTestArguments`.
+
+Debug calls use:
+
+```matlab
+[fig, debug] = appName("__labkit_debug__", opts);
+```
+
+`opts.logFile` optionally mirrors appended log lines to a text file, and `opts.logCallback` optionally receives each appended line. App-local `addLog` functions should append to the visible UI log and then call `debug.append(message)`. Normal `appName()` launches receive a disabled debug log internally and keep existing behavior.
+
 ## Ownership Boundary
 
 `labkit.ui.*` may provide:
@@ -159,6 +181,7 @@ The returned editor struct exposes `start`, `setActive`, `setPoints`, `getPoints
 - tab specification helpers
 - file-selection panels
 - log panels and log append helpers
+- internal app test/debug hook dispatch
 - panel/grid construction
 - row-resize handles for stacked app-defined sections
 - anchor-curve editing on image axes

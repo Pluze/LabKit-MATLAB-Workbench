@@ -1,11 +1,18 @@
 function varargout = labkit_DICPostprocess_app(varargin)
 %LABKIT_DICPOSTPROCESS_APP Ncorr strain summary and overlay export app.
 
-    if nargin > 0
-        error('labkit_DICPostprocess_app:UnsupportedInput', ...
-            'labkit_DICPostprocess_app does not accept input arguments.');
+    [requestHandled, requestOutputs, debugLog] = labkit.ui.handleAppRequest( ...
+        'labkit_DICPostprocess_app', varargin, nargout);
+    if requestHandled
+        varargout = requestOutputs;
+        return;
     end
-    if nargout > 1
+    if debugLog.enabled
+        if nargout > 2
+            error('labkit_DICPostprocess_app:TooManyOutputs', ...
+                'labkit_DICPostprocess_app debug mode returns at most the app figure and debug log.');
+        end
+    elseif nargout > 1
         error('labkit_DICPostprocess_app:TooManyOutputs', ...
             'labkit_DICPostprocess_app returns at most the app figure handle.');
     end
@@ -140,8 +147,11 @@ function varargout = labkit_DICPostprocess_app(varargin)
     labkit.ui.hardResetAxis(ui.topAxes, 'EXX Overlay', true);
     labkit.ui.hardResetAxis(ui.bottomAxes, 'EYY Overlay', true);
 
-    if nargout == 1
+    if nargout >= 1
         varargout{1} = fig;
+    end
+    if nargout >= 2
+        varargout{2} = debugLog;
     end
 
     function onOpenMat(~, ~)
@@ -332,6 +342,7 @@ function varargout = labkit_DICPostprocess_app(varargin)
 
     function addLog(msg)
         labkit.ui.appendLog(txtLog, msg);
+        debugLog.append(msg);
     end
 end
 

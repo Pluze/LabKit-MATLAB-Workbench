@@ -21,6 +21,16 @@ function test_gui_smoke()
         names = getFigureNames(figs);
         assert(any(strcmp(names, expectedTitle)), ...
             'GUI entry point %s did not create expected figure "%s".', entryName, expectedTitle);
+
+        closeAllFigures();
+        [~, debug] = feval(entryName, "__labkit_debug__", struct());
+        drawnow;
+        assert(isstruct(debug) && debug.enabled, ...
+            'Debug launch for %s should return an enabled debug log struct.', entryName);
+        assert(debug.appName == string(entryName), ...
+            'Debug launch for %s should preserve the app name.', entryName);
+        assert(isfield(debug, 'getLog') && isa(debug.getLog, 'function_handle'), ...
+            'Debug launch for %s should return a getLog function.', entryName);
     end
 end
 

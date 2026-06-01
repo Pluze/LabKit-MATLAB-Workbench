@@ -104,6 +104,15 @@ Keep new lab apps as explicit single files, organized roughly in this order:
 
 Nested functions may read and update GUI handles or app state. Local functions after the app `end` should be GUI-free when practical so tests can call them through narrow app test hooks.
 
+Use the shared internal hook convention for app-local pure functions:
+
+```matlab
+appName("__labkit_test__", "commandName", arg1, arg2, ...)
+[fig, debug] = appName("__labkit_debug__", opts)
+```
+
+Test handlers stay in the owning app file and expose only app-owned, GUI-free helpers unless a command explicitly exists to verify GUI state such as a load/layout diagnostic. Debug mode should launch the normal app, return the figure plus a debug log struct, and mirror each app-local `addLog` message to `debug.append`. These hooks are maintainer/test contracts, not user-facing app APIs.
+
 The preferred public shape is one launchable app entry point per workflow. That does not require every implementation detail to stay in one giant function forever. If an app becomes too large, app-owned private helpers are acceptable when they stay under the app family, are not public reusable APIs, and do not reintroduce experiment-specific helper packages as a library surface.
 
 ## New App Starting Pattern

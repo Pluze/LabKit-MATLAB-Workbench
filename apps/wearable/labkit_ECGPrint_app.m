@@ -1,11 +1,18 @@
 function varargout = labkit_ECGPrint_app(varargin)
 %LABKIT_ECGPRINT_APP Explore ECG quality, SNR, and printable waveforms.
 
-    if nargin > 0
-        error('labkit_ECGPrint_app:UnsupportedInput', ...
-            'labkit_ECGPrint_app does not accept input arguments.');
+    [requestHandled, requestOutputs, debugLog] = labkit.ui.handleAppRequest( ...
+        'labkit_ECGPrint_app', varargin, nargout);
+    if requestHandled
+        varargout = requestOutputs;
+        return;
     end
-    if nargout > 1
+    if debugLog.enabled
+        if nargout > 2
+            error('labkit_ECGPrint_app:TooManyOutputs', ...
+                'labkit_ECGPrint_app debug mode returns at most the app figure and debug log.');
+        end
+    elseif nargout > 1
         error('labkit_ECGPrint_app:TooManyOutputs', ...
             'labkit_ECGPrint_app returns at most the app figure handle.');
     end
@@ -261,8 +268,11 @@ function varargout = labkit_ECGPrint_app(varargin)
     ui.templateAxes.Layout.Row = 4;
 
     resetAxes();
-    if nargout == 1
+    if nargout >= 1
         varargout{1} = fig;
+    end
+    if nargout >= 2
+        varargout{2} = debugLog;
     end
 
     function onOpenRecording(~, ~)
@@ -707,6 +717,7 @@ function varargout = labkit_ECGPrint_app(varargin)
 
     function addLog(message)
         labkit.ui.appendLog(txtLog, message);
+        debugLog.append(message);
     end
 
     function showError(titleText, message)

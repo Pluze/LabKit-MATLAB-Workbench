@@ -23,16 +23,18 @@ function varargout = labkit_CIC_app(varargin)
 %     reports the highest safe file among all loaded files.
 %   - By default, the evaluation point is 10 us after the end of each phase,
 %     matching the convention commonly used in the literature the user shared.
-    if nargin > 0
-        % Keep CIC numerical/export tests direct while the app owns the local workflow code.
-        [handled, testOutputs] = handleCICTestRequest(varargin, nargout);
-        if handled
-            varargout = testOutputs;
-            return;
-        end
-        error('labkit_CIC_app:UnsupportedInput', 'labkit_CIC_app does not accept input arguments.');
+    [requestHandled, requestOutputs, debugLog] = labkit.ui.handleAppRequest( ...
+        'labkit_CIC_app', varargin, nargout, cicAppTestHandlers());
+    if requestHandled
+        varargout = requestOutputs;
+        return;
     end
-    if nargout > 1
+    if debugLog.enabled
+        if nargout > 2
+            error('labkit_CIC_app:TooManyOutputs', ...
+                'labkit_CIC_app debug mode returns at most the app figure and debug log.');
+        end
+    elseif nargout > 1
         error('labkit_CIC_app:TooManyOutputs', 'labkit_CIC_app returns at most the app figure handle.');
     end
 
@@ -192,8 +194,11 @@ function varargout = labkit_CIC_app(varargin)
     ddBotY = plotControls.bottomY;
     cbBotGrid = plotControls.bottomGridCheckbox;
     axBottom = ui.bottomAxes;
-    if nargout == 1
+    if nargout >= 1
         varargout{1} = fig;
+    end
+    if nargout >= 2
+        varargout{2} = debugLog;
     end
 
     onPresetChanged();
@@ -653,63 +658,39 @@ function varargout = labkit_CIC_app(varargin)
     %% ===================== Logging =====================
     function addLog(msg)
         labkit.ui.appendLog(txtLog, msg);
+        debugLog.append(msg);
     end
 
 end
 
 %% App test hook
-function [handled, outputs] = handleCICTestRequest(args, nargoutRequested)
-    handled = false;
-    outputs = {};
-    if isempty(args) || ~(ischar(args{1}) || (isstring(args{1}) && isscalar(args{1})))
-        return;
-    end
-
-    handled = true;
-    command = char(args{1});
-    switch command
-        case '__test_computeCIC__'
-            assertCICTestArgCount(args, 3, command);
-            if nargoutRequested > 1
-                error('labkit_CIC_app:TooManyOutputs', 'CIC compute test request returns one result struct.');
-            end
-            outputs = {computeCIC(args{2}, args{3})};
-        case '__test_buildBatchTableData__'
-            assertCICTestArgCount(args, 3, command);
-            if nargoutRequested > 2
-                error('labkit_CIC_app:TooManyOutputs', 'CIC batch-table test request returns data and column names.');
-            end
-            [C, columnNames] = buildBatchTableData(args{2}, args{3});
-            outputs = {C, columnNames};
-            outputs = outputs(1:nargoutRequested);
-        case '__test_buildResultsTable__'
-            assertCICTestArgCount(args, 3, command);
-            if nargoutRequested > 1
-                error('labkit_CIC_app:TooManyOutputs', 'CIC result-table test request returns one table.');
-            end
-            outputs = {buildResultsTable(args{2}, args{3})};
-        case '__test_writeResultsCSV__'
-            assertCICTestArgCount(args, 4, command);
-            if nargoutRequested > 2
-                error('labkit_CIC_app:TooManyOutputs', 'CIC CSV test request returns at most ok and message.');
-            end
-            if nargoutRequested == 0
-                writeResultsCSV(args{2}, args{3}, args{4});
-            else
-                [ok, msg] = writeResultsCSV(args{2}, args{3}, args{4});
-                outputs = {ok, msg};
-                outputs = outputs(1:nargoutRequested);
-            end
-        otherwise
-            handled = false;
-    end
+function handlers = cicAppTestHandlers()
+    handlers = struct( ...
+        'command', {'computeCIC', 'buildBatchTableData', ...
+            'buildResultsTable', 'writeResultsCSV'}, ...
+        'minArgs', {2, 2, 2, 3}, ...
+        'maxArgs', {2, 2, 2, 3}, ...
+        'maxOutputs', {1, 2, 1, 2}, ...
+        'run', {@runComputeCIC, @runBuildBatchTableData, ...
+            @runBuildResultsTable, @runWriteResultsCSV});
 end
 
-function assertCICTestArgCount(args, expectedCount, command)
-    if numel(args) ~= expectedCount
-        error('labkit_CIC_app:InvalidTestRequest', ...
-            '%s expects %d total input arguments.', command, expectedCount);
-    end
+function outputs = runComputeCIC(args)
+    outputs = {computeCIC(args{1}, args{2})};
+end
+
+function outputs = runBuildBatchTableData(args)
+    [C, columnNames] = buildBatchTableData(args{1}, args{2});
+    outputs = {C, columnNames};
+end
+
+function outputs = runBuildResultsTable(args)
+    outputs = {buildResultsTable(args{1}, args{2})};
+end
+
+function outputs = runWriteResultsCSV(args)
+    [ok, msg] = writeResultsCSV(args{1}, args{2}, args{3});
+    outputs = {ok, msg};
 end
 
 %% App-local analysis

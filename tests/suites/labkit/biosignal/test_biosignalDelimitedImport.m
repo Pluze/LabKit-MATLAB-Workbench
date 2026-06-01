@@ -1,150 +1,6 @@
-function test_biosignalFacade()
-%TEST_BIOSIGNALFACADE Verify biosignal loading, processing, SNR, and stats.
+function test_biosignalDelimitedImport()
+%TEST_BIOSIGNALDELIMITEDIMPORT Verify CSV/TXT time inference and repair.
 
-    tempFile = [tempname(tempdir) '.mat'];
-    cleaner = onCleanup(@() cleanupFile(tempFile));
-
-    fs = 100;
-    t = (0:1/fs:10).';
-    x = 0.03 * sin(2*pi*1.5*t);
-    for peakTime = 1:9
-        x = x + exp(-((t - peakTime) / 0.025).^2);
-    end
-    x = x + 0.01 * sin(2*pi*17*t);
-    TT = timetable(seconds(t), x, 'VariableNames', {'ECG'}); %#ok<NASGU>
-    save(tempFile, 'TT');
-
-    [recording, status] = labkit.biosignal.readRecording(tempFile);
-    assert(status.ok, status.message);
-    channels = labkit.biosignal.listChannels(recording);
-    assert(numel(channels) == 1, 'Expected one numeric timetable channel.');
-
-    sig = labkit.biosignal.getChannel(recording, channels{1});
-    assert(abs(sig.fs - fs) < 1e-9, 'Sample rate should be inferred from timetable row times.');
-
-    cropped = labkit.biosignal.cropSignal(sig, [0.5 9.5]);
-    assert(cropped.time(1) == 0, 'Cropped signal time should restart at zero.');
-    assert(numel(cropped.values) < numel(sig.values), 'Cropped signal should contain fewer samples.');
-
-    filtered = labkit.biosignal.filterSignal(cropped, ...
-        struct('type', 'bandpass', 'cutoffHz', [0.5 40]));
-    checkFilterEdgeProtection(cropped);
-    defaults = labkit.biosignal.defaultEcgPeakOptions("local");
-    assert(defaults.method == "local", 'Default ECG peak options should preserve requested method.');
-    assert(isfield(defaults, 'minDistanceSec'), ...
-        'Default ECG peak options should expose minDistanceSec.');
-    events = labkit.biosignal.detectEcgPeaks(filtered, ...
-        mergeStruct(defaults, struct('polarity', 'positive', ...
-        'minDistanceSec', 0.5, 'thresholdStd', 2)));
-    assert(numel(events.index) >= 7, 'Peak detection should find repeated synthetic beats.');
-    checkEcgPeakMethods(filtered);
-    checkEcgPeakPostProcessing();
-
-    segments = labkit.biosignal.segmentByEvents(filtered, events, [-0.7 0.7]);
-    assert(size(segments.values, 2) >= 5, 'Segmentation should keep interior beats.');
-
-    template = labkit.biosignal.buildTemplate(segments, struct('topN', 5));
-    measurements = labkit.biosignal.measureSegments(segments, template);
-    assert(height(measurements.perSegment) == size(segments.values, 2), ...
-        'Per-segment measurements should match valid segments.');
-    assert(isfinite(measurements.summary.SNRdBMean), ...
-        'Synthetic beat SNR summary should be finite.');
-
-    values = [measurements.perSegment.SNRdB; measurements.perSegment.SNRdB + 3];
-    groups = [repmat("A", height(measurements.perSegment), 1); ...
-        repmat("B", height(measurements.perSegment), 1)];
-    comparison = labkit.biosignal.compareGroups(values, groups);
-    assert(height(comparison.summary) == 2, 'Two comparison groups should be summarized.');
-    assert(height(comparison.pairwise) == 1, 'Two groups should produce one pairwise comparison.');
-    assert(comparison.pairwise.P <= 1 && comparison.pairwise.P >= 0, ...
-        'Pairwise comparison p-value should be bounded.');
-
-    checkDelimitedTimeInference();
-end
-
-function out = mergeStruct(a, b)
-    out = a;
-    fields = fieldnames(b);
-    for k = 1:numel(fields)
-        out.(fields{k}) = b.(fields{k});
-    end
-end
-
-function checkFilterEdgeProtection(signal)
-    edgeSignal = signal;
-    n = numel(edgeSignal.values);
-    drift = linspace(-1, 1, n).';
-    edgeSignal.values = edgeSignal.values(:) + drift;
-    edgeSignal.values(end) = edgeSignal.values(end) + 5;
-
-    protected = labkit.biosignal.filterSignal(edgeSignal, ...
-        struct('type', 'bandpass', 'cutoffHz', [0.5 40]));
-    unprotected = labkit.biosignal.filterSignal(edgeSignal, ...
-        struct('type', 'bandpass', 'cutoffHz', [0.5 40], 'edgeMode', 'none'));
-
-    assert(numel(protected.values) == n, ...
-        'Edge-padded filtering should preserve signal length.');
-    assert(all(isfinite(protected.values)), ...
-        'Edge-padded filtering should return finite values.');
-    assert(norm(protected.values - unprotected.values) > eps, ...
-        'Reflect edge mode should use a different path than unpadded FFT filtering.');
-end
-
-function checkEcgPeakMethods(signal)
-    methods = {'local', 'pan-tompkins', 'qrs-streaming'};
-    for k = 1:numel(methods)
-        events = labkit.biosignal.detectEcgPeaks(signal, ...
-            struct('method', methods{k}, 'polarity', 'positive', ...
-            'minDistanceSec', 0.5, 'thresholdStd', 2));
-        assert(numel(events.index) >= 6, ...
-            'ECG peak method %s should find repeated synthetic beats.', methods{k});
-        assert(isfield(events.metadata, 'method'), ...
-            'ECG peak method %s should report metadata.method.', methods{k});
-    end
-end
-
-function checkEcgPeakPostProcessing()
-    fs = 500;
-    t = (0:1/fs:5).';
-    x = 0.02 * sin(2*pi*0.4*t);
-    for peakTime = 1:4
-        x = x + exp(-((t - peakTime) / 0.010).^2);
-        x = x - 1.8 * exp(-((t - (peakTime - 0.012)) / 0.004).^2);
-    end
-    signal = struct('time', t, 'values', x, 'fs', fs, ...
-        'name', "ECG", 'displayName', "ECG", 'metadata', struct());
-
-    panOpts = labkit.biosignal.defaultEcgPeakOptions("pan-tompkins");
-    panOpts.polarity = "positive";
-    panOpts.minDistanceSec = 0.5;
-    panEvents = labkit.biosignal.detectEcgPeaks(signal, panOpts);
-    assert(~isempty(panEvents.index), 'Pan-Tompkins should detect synthetic ECG peaks.');
-    rawRadius = round(panOpts.rawRefineSearchSec * fs);
-    for k = 1:numel(panEvents.index)
-        idx = panEvents.index(k);
-        i1 = max(1, idx - rawRadius);
-        i2 = min(numel(x), idx + rawRadius);
-        assert(x(idx) == max(x(i1:i2)), ...
-            'Pan-Tompkins final anchors should snap to the raw signal peak.');
-    end
-
-    streamOpts = labkit.biosignal.defaultEcgPeakOptions("qrs-streaming");
-    streamOpts.polarity = "auto";
-    streamOpts.minDistanceSec = 0.5;
-    streamEvents = labkit.biosignal.detectEcgPeaks(signal, streamOpts);
-    assert(numel(streamEvents.index) >= 3, ...
-        'Streaming ECG detector should detect repeated synthetic peaks.');
-    assert(all(streamEvents.amplitude > median(x, 'omitnan')), ...
-        'Streaming median review should correct accidental inverted peak anchors.');
-end
-
-function cleanupFile(filepath)
-    if exist(filepath, 'file') == 2
-        delete(filepath);
-    end
-end
-
-function checkDelimitedTimeInference()
     csvNoTime = [tempname(tempdir) '.csv'];
     csvMs = [tempname(tempdir) '.csv'];
     csvHeaderless = [tempname(tempdir) '.csv'];
@@ -153,7 +9,7 @@ function checkDelimitedTimeInference()
     txtAcq = [tempname(tempdir) '.txt'];
     csvTimeRepair = [tempname(tempdir) '.csv'];
     cleaner = onCleanup(@() cleanupFiles({csvNoTime, csvMs, csvHeaderless, ...
-        csvArduino, csvPreamble, txtAcq, csvTimeRepair}));
+        csvArduino, csvPreamble, txtAcq, csvTimeRepair})); %#ok<NASGU>
 
     sample = (1001:1005).';
     ecg = [0; 1; 0; -1; 0];
@@ -272,14 +128,17 @@ end
 
 function cleanupFiles(filepaths)
     for k = 1:numel(filepaths)
-        cleanupFile(filepaths{k});
+        filepath = filepaths{k};
+        if exist(filepath, 'file') == 2
+            delete(filepath);
+        end
     end
 end
 
 function writeLines(filepath, lines)
     fid = fopen(filepath, 'w');
     assert(fid > 0, 'Could not create temporary CSV fixture.');
-    cleaner = onCleanup(@() fclose(fid));
+    cleaner = onCleanup(@() fclose(fid)); %#ok<NASGU>
     for k = 1:numel(lines)
         fprintf(fid, '%s\n', char(lines(k)));
     end

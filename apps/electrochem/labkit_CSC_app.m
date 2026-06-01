@@ -20,30 +20,29 @@ function varargout = labkit_CSC_app(varargin)
 % Optional normalization
 %   CSC = Q / area (cm²); both charge and normalized CSC are shown.
 %
-    testLoadFile = '';
-    if nargin > 0
-        % Keep CSC numerical tests direct while the app owns the local analysis code.
-        if isCSCAnalysisTestRequest(varargin)
-            if nargout > 1
-                error('labkit_CSC_app:TooManyOutputs', 'CSC analysis test request returns one result struct.');
-            end
-            varargout{1} = computeCSC(varargin{2}, varargin{3});
+    [testLoadFile, isLoadDiagnostics] = parseCSCLoadDiagnosticsRequest(varargin);
+    if isLoadDiagnostics
+        debugLog = labkit.ui.createAppDebugLog('labkit_CSC_app', struct('enabled', false));
+    else
+        [requestHandled, requestOutputs, debugLog] = labkit.ui.handleAppRequest( ...
+            'labkit_CSC_app', varargin, nargout, cscAppTestHandlers());
+        if requestHandled
+            varargout = requestOutputs;
             return;
         end
-        if isCSCLoadTestRequest(varargin)
-            if nargout > 1
-                error('labkit_CSC_app:TooManyOutputs', 'CSC load test request returns one diagnostics struct.');
-            end
-            testLoadFile = char(varargin{2});
-        else
-            error('labkit_CSC_app:UnsupportedInput', 'labkit_CSC_app does not accept input arguments.');
-        end
     end
-    if nargout > 1
+    if debugLog.enabled
+        if nargout > 2
+            error('labkit_CSC_app:TooManyOutputs', ...
+                'labkit_CSC_app debug mode returns at most the app figure and debug log.');
+        end
+    elseif ~isLoadDiagnostics && nargout > 1
         error('labkit_CSC_app:TooManyOutputs', 'labkit_CSC_app returns at most the app figure handle.');
     end
-    if ~isempty(testLoadFile) && nargout == 0
-        error('labkit_CSC_app:MissingOutput', 'CSC load test request requires one output diagnostics struct.');
+    if isLoadDiagnostics && nargout == 0
+        error('labkit_CSC_app:InvalidTestRequest', 'CSC load test request requires one output diagnostics struct.');
+    elseif isLoadDiagnostics && nargout > 1
+        error('labkit_CSC_app:TooManyOutputs', 'CSC load test request returns one diagnostics struct.');
     end
 
     % Application state container
@@ -202,15 +201,18 @@ function varargout = labkit_CSC_app(varargin)
     cbBotTrim = uicheckbox(plotControls.bottomGrid,'Text','Show Trim','Value',true, ...
         'ValueChangedFcn',@(~,~) refreshCompare());
     cbBotTrim.Layout.Row = 1; cbBotTrim.Layout.Column = 7;
-    if ~isempty(testLoadFile)
+    if isLoadDiagnostics
         cleanup = onCleanup(@() delete(fig));
         addFiles({testLoadFile});
         drawnow;
         varargout{1} = collectLoadDiagnostics();
         return;
     end
-    if nargout == 1
+    if nargout >= 1
         varargout{1} = fig;
+    end
+    if nargout >= 2
+        varargout{2} = debugLog;
     end
 
     %% App callbacks, loading, refresh, and plotting
@@ -568,6 +570,7 @@ function varargout = labkit_CSC_app(varargin)
 
     function addLog(msg)
         labkit.ui.appendLog(txtLog, msg);
+        debugLog.append(msg);
     end
 
     function diagnostics = collectLoadDiagnostics()
@@ -608,16 +611,35 @@ function setDropdownValueIfExists(dd, valueText)
     end
 end
 
-function tf = isCSCAnalysisTestRequest(args)
-    tf = numel(args) == 3 ...
-        && (ischar(args{1}) || (isstring(args{1}) && isscalar(args{1}))) ...
-        && strcmp(char(args{1}), '__test_computeCSC__');
+function handlers = cscAppTestHandlers()
+    handlers = struct( ...
+        'command', {'computeCSC'}, ...
+        'minArgs', {2}, ...
+        'maxArgs', {2}, ...
+        'maxOutputs', {1}, ...
+        'run', {@runComputeCSC});
 end
 
-function tf = isCSCLoadTestRequest(args)
-    tf = numel(args) == 2 ...
-        && (ischar(args{1}) || (isstring(args{1}) && isscalar(args{1}))) ...
-        && strcmp(char(args{1}), '__test_loadFile__');
+function outputs = runComputeCSC(args)
+    outputs = {computeCSC(args{1}, args{2})};
+end
+
+function [filepath, tf] = parseCSCLoadDiagnosticsRequest(args)
+    filepath = '';
+    tf = false;
+    if numel(args) < 2 ...
+            || ~(ischar(args{1}) || (isstring(args{1}) && isscalar(args{1}))) ...
+            || ~strcmp(string(args{1}), "__labkit_test__") ...
+            || ~(ischar(args{2}) || (isstring(args{2}) && isscalar(args{2}))) ...
+            || ~strcmp(string(args{2}), "loadFileDiagnostics")
+        return;
+    end
+    if numel(args) ~= 3 || ~(ischar(args{3}) || (isstring(args{3}) && isscalar(args{3})))
+        error('labkit_CSC_app:InvalidTestArguments', ...
+            'Command loadFileDiagnostics expects one filepath argument.');
+    end
+    filepath = char(args{3});
+    tf = true;
 end
 
 %% App-local analysis

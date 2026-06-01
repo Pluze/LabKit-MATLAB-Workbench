@@ -1,11 +1,18 @@
 function varargout = labkit_DICPreprocess_app(varargin)
 %LABKIT_DICPREPROCESS_APP Image registration and paired-crop app for DIC workflows.
 
-    if nargin > 0
-        error('labkit_DICPreprocess_app:UnsupportedInput', ...
-            'labkit_DICPreprocess_app does not accept input arguments.');
+    [requestHandled, requestOutputs, debugLog] = labkit.ui.handleAppRequest( ...
+        'labkit_DICPreprocess_app', varargin, nargout);
+    if requestHandled
+        varargout = requestOutputs;
+        return;
     end
-    if nargout > 1
+    if debugLog.enabled
+        if nargout > 2
+            error('labkit_DICPreprocess_app:TooManyOutputs', ...
+                'labkit_DICPreprocess_app debug mode returns at most the app figure and debug log.');
+        end
+    elseif nargout > 1
         error('labkit_DICPreprocess_app:TooManyOutputs', ...
             'labkit_DICPreprocess_app returns at most the app figure handle.');
     end
@@ -206,8 +213,11 @@ function varargout = labkit_DICPreprocess_app(varargin)
 
     resetPreviewAxes();
 
-    if nargout == 1
+    if nargout >= 1
         varargout{1} = fig;
+    end
+    if nargout >= 2
+        varargout{2} = debugLog;
     end
 
     function onOpenReference(~, ~)
@@ -906,6 +916,7 @@ function varargout = labkit_DICPreprocess_app(varargin)
 
     function addLog(msg)
         labkit.ui.appendLog(txtLog, msg);
+        debugLog.append(msg);
     end
 end
 

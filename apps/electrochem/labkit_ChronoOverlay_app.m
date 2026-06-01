@@ -2,15 +2,18 @@ function varargout = labkit_ChronoOverlay_app(varargin)
 %LABKIT_CHRONOOVERLAY_APP Chrono voltage/current overlay and export app.
 % Single-file app that composes +labkit GUI/DTA APIs and owns overlay workflow choices.
 
-    if nargin > 0
-        [handled, outputs] = handleChronoOverlayTestRequest(varargin, nargout);
-        if handled
-            varargout = outputs;
-            return;
-        end
-        error('labkit_ChronoOverlay_app:UnsupportedInput', 'labkit_ChronoOverlay_app does not accept input arguments.');
+    [requestHandled, requestOutputs, debugLog] = labkit.ui.handleAppRequest( ...
+        'labkit_ChronoOverlay_app', varargin, nargout, chronoOverlayAppTestHandlers());
+    if requestHandled
+        varargout = requestOutputs;
+        return;
     end
-    if nargout > 1
+    if debugLog.enabled
+        if nargout > 2
+            error('labkit_ChronoOverlay_app:TooManyOutputs', ...
+                'labkit_ChronoOverlay_app debug mode returns at most the app figure and debug log.');
+        end
+    elseif nargout > 1
         error('labkit_ChronoOverlay_app:TooManyOutputs', 'labkit_ChronoOverlay_app returns at most the app figure handle.');
     end
 
@@ -97,8 +100,11 @@ function varargout = labkit_ChronoOverlay_app(varargin)
 
     axV = labkit.ui.createAxes(right, 1, 'Voltage', 'Time (s)', 'Vf (V)');
     axI = labkit.ui.createAxes(right, 2, 'Current', 'Time (s)', 'Im (A)');
-    if nargout == 1
+    if nargout >= 1
         varargout{1} = fig;
+    end
+    if nargout >= 2
+        varargout{2} = debugLog;
     end
 
     %% App callbacks, session actions, refresh, and export
@@ -259,41 +265,26 @@ function varargout = labkit_ChronoOverlay_app(varargin)
 
     function addLog(msg)
         labkit.ui.appendLog(txtLog, msg);
+        debugLog.append(msg);
     end
 end
 
-function [handled, outputs] = handleChronoOverlayTestRequest(args, nout)
-    handled = false;
-    outputs = {};
-    if isempty(args) || ~(ischar(args{1}) || isstring(args{1}))
-        return;
-    end
-
-    request = char(args{1});
-    switch request
-        case '__test_alignByPulseGap__'
-            handled = true;
-            requireNargout(nout, 2, request);
-            [item, msg] = alignByPulseGap(args{2});
-            if nout >= 2
-                outputs = {item, msg};
-            elseif nout == 1
-                outputs = {item};
-            end
-        case '__test_buildOverlayExportTable__'
-            handled = true;
-            requireNargout(nout, 1, request);
-            if nout == 1
-                outputs = {buildOverlayExportTable(args{2})};
-            end
-    end
+function handlers = chronoOverlayAppTestHandlers()
+    handlers = struct( ...
+        'command', {'alignByPulseGap', 'buildOverlayExportTable'}, ...
+        'minArgs', {1, 1}, ...
+        'maxArgs', {1, 1}, ...
+        'maxOutputs', {2, 1}, ...
+        'run', {@runAlignByPulseGap, @runBuildOverlayExportTable});
 end
 
-function requireNargout(actual, maxAllowed, request)
-    if actual > maxAllowed
-        error('labkit_ChronoOverlay_app:TooManyOutputs', ...
-            '%s returns at most %d output(s).', request, maxAllowed);
-    end
+function outputs = runAlignByPulseGap(args)
+    [item, msg] = alignByPulseGap(args{1});
+    outputs = {item, msg};
+end
+
+function outputs = runBuildOverlayExportTable(args)
+    outputs = {buildOverlayExportTable(args{1})};
 end
 
 %% App-local analysis
