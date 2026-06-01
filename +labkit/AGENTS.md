@@ -26,6 +26,7 @@
 - Public functions under `+labkit/+ui`, `+labkit/+dta`, and `+labkit/+biosignal` must document app-facing call contracts immediately after the function declaration.
 - Private helpers must document expected caller, input/output shapes, side effects, and assumptions.
 - Reusable API or package-boundary changes update the relevant human component doc and this file if agent rules change.
+- Do not update this file for package implementation changes that preserve public contracts and boundary rules; state that docs/AGENTS were unchanged because contracts were preserved when the change is nontrivial.
 
 ## Validation Routing
 

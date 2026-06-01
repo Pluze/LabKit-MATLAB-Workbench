@@ -39,10 +39,22 @@ same results, cleaner code, clearer boundaries
 
 Human-facing docs are for human users and maintainers. Keep `README.md` and `docs/*.md` readable, task-oriented, and free of agent-only workflow mandates, Codex-specific rules, git handoff instructions, or hidden governance process.
 
-Agent-facing rules belong in the nearest relevant `AGENTS.md` file or repo-scoped skill. When behavior, package boundaries, validation strategy, or workflow rules change, update both:
+Agent-facing rules belong in the nearest relevant `AGENTS.md` file or repo-scoped skill. Sync documentation by contract impact, not by file count. Do not treat every code change as requiring README, human docs, scoped `AGENTS.md`, skills, and tests all at once.
+
+When behavior, package boundaries, validation strategy, or workflow rules change, update both:
 
 - the affected human docs that explain the current project behavior or contract
 - the affected scoped `AGENTS.md` files that govern future agent work
+
+Use this decision rule:
+
+- Internal refactors that preserve user-facing behavior and governance rules usually need source/tests only.
+- User-facing app behavior changes update the human app docs that advertise or explain that behavior.
+- Public facade or package-boundary changes update the relevant component docs and package guardrails.
+- Test layout, validation, fixture, or hygiene-policy changes update `docs/testing.md` and test agent rules when agent routing changes.
+- Agent workflow or ownership-rule changes update the nearest scoped `AGENTS.md` or repo skill; update human docs only when the human-facing contract also changes.
+
+If a nontrivial change does not update human docs or scoped agent docs, say why in the handoff, for example: `Docs/AGENTS unchanged; behavior and governance contracts were preserved.`
 
 Do not duplicate long policy text across human docs. Human docs may explain architecture, app behavior, public APIs, and test commands; agent docs own execution rules.
 

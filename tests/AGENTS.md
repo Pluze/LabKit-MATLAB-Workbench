@@ -27,3 +27,4 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
 
 - Test layout, validation strategy, CI scope, or fixture policy changes update `docs/testing.md`.
 - Agent-specific validation routing or fixture-handling rule changes update this file.
+- Do not update this file for ordinary test additions that follow the existing layout and policies; state that docs/AGENTS were unchanged because contracts were preserved when the change is nontrivial.

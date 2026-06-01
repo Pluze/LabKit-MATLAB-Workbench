@@ -24,6 +24,7 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
 - User-facing app behavior changes update `README.md` when advertised there and `docs/apps.md` for current app behavior.
 - App ownership, entrypoint, or workflow-boundary rule changes update this file.
 - Keep internal test/debug hook details out of README.
+- Do not update this file for app implementation changes that preserve the app ownership and workflow-boundary rules; state that docs/AGENTS were unchanged because contracts were preserved when the change is nontrivial.
 
 ## Validation Routing
 
