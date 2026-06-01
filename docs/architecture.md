@@ -2,57 +2,35 @@
 
 This document describes the current package boundaries. It is not a roadmap.
 
-## Project Philosophy
+## Project Shape
 
-LabKit is an internal lab app workbench for daily research utilities, not a monolithic analysis platform. The apps are first-class deliverables: each app targets a specific experimental workflow and should remain independently launchable and usable.
+LabKit is an internal lab app workbench for daily research utilities. Apps are first-class deliverables: each app targets a specific experimental workflow and should remain independently launchable and usable.
 
-The reusable library should stay small and stable. Shared infrastructure belongs in `+labkit` only after repeated real app use shows that a pattern is domain-neutral, testable, and clearer as an API than as app-local code. App growth is acceptable; public library growth should be conservative.
-
-## Core Shape
+The reusable library stays small and stable. Shared infrastructure belongs in `+labkit` only after repeated real app use shows that a pattern is domain-neutral, testable, and clearer as an API than as app-local code.
 
 ```text
 apps/ category folders containing public app entry points
-    ↓
-+labkit GUI foundation plus current DTA and biosignal facades
-    ↓
-struct-based item/session models
-    ↓
-+labkit package functions
-```
-
-The reusable `+labkit` package currently provides one general GUI foundation plus two data/signal implementation surfaces:
-
-```text
-GUI foundation:
-  resizable tabbed workbench shells, controls, panels, list refresh, logs, result surfaces, and UI state helpers
-
-Current DTA/electrochemistry implementation:
-  app-facing DTA discovery, loading, session, pulse, and parsed table/curve APIs
-
-Current biosignal implementation:
-  app-facing recording loading, channel extraction, waveform processing, event/segment handling, SNR-style measurements, and group comparisons
-
-Internal helper base:
-  parser, item/session, pulse, and other helpers that are not app-facing API
+    -> compose shared facades
++labkit GUI foundation plus DTA and biosignal facades
+    -> use struct-based item/session/signal models
++labkit private helpers
+    -> hide parser, normalization, pulse, and implementation details
 ```
 
 Short version:
 
 ```text
-labkit.ui    = reusable GUI structure and rendering helpers
-labkit.dta   = current electrochemistry DTA file/session facade
-labkit.biosignal = current wearable/physiological time-series facade
+labkit.ui        reusable GUI structure and rendering helpers
+labkit.dta       current electrochemistry/Gamry DTA file and session facade
+labkit.biosignal current wearable/physiological time-series facade
+apps/            experiment-specific workflow apps
 ```
 
-`labkit` is the generic reusable MATLAB infrastructure namespace. The current `dta` module is the first concrete data/device family and is still Gamry DTA focused.
-
-Future data or device families can be added beside `labkit.dta` and `labkit.biosignal` as peer modules. They should expose one coherent app-facing facade each rather than leaking parser or low-level IO packages into app code.
-
-Experiment app implementations live under category folders such as `apps/electrochem/` rather than being absorbed into the reusable library package. The intended app shape is one public entry point per experiment workflow, with that app owning its domain behavior. App-local helper functions are fine; app-specific helper packages should not be reintroduced just to make local code public.
+Future data or device families can become peer facades beside `labkit.dta` and `labkit.biosignal` when real workflows need them. They should expose coherent app-facing APIs rather than leaking parser or low-level IO packages into app code.
 
 ## Entrypoints
 
-The supported runtime entry points are:
+Supported runtime entry points:
 
 ```text
 labkit_CIC_app
@@ -70,56 +48,29 @@ labkit_ECGPrint_app
 
 ## Package Responsibilities
 
-```text
-+labkit/+dta       GUI-free app-facing DTA discovery, loading, and session facade
-+labkit/+biosignal GUI-free app-facing biosignal recording and processing facade
-+labkit/+ui        reusable GUI framework helpers and small UI construction helpers
-private helpers     parser, item/session, pulse, and other implementation helpers inside the owning package or app file
-```
+| Area | Responsibility |
+| --- | --- |
+| `apps/` | Public app entry points and app-specific workflow code. |
+| `+labkit/+ui` | Reusable GUI shell, panels, controls, axes, logs, and app-neutral UI helpers. |
+| `+labkit/+dta` | GUI-free DTA discovery, loading, session, pulse, and parsed curve/table facade. |
+| `+labkit/+biosignal` | GUI-free recording loading, channel extraction, waveform processing, events, segments, templates, measurements, and group comparisons. |
+| `private/` helpers | Parser, normalization, item/session construction, pulse, and implementation details hidden behind the owning facade. |
 
-## Three-Layer Map
+Apps may use selected DTA helpers such as `getColumn`, `getMainCurve`, `getZCurve`, and `getCurveXY`. DTA session operations should go through `labkit.dta.*` so apps do not need lower-level loader callbacks or session internals.
 
-The reusable library should be understandable as three layers, even though MATLAB package folders remain practical and granular:
+## Boundaries
 
-```text
-Library 1: lab-app GUI base
-  +labkit/+ui
-  reusable tabbed shells, panels, controls, display-data helpers, and handle-scoped UI utilities
+DTA code should not depend on GUI state, call UI constructors, open file dialogs, show alerts, or call app entry points. New DTA-backed app code should prefer `labkit.dta.*` for loading, session operations, pulse detection, and parsed table/curve access.
 
-Library 2: Gamry/DTA parsing and loading
-  +labkit/+dta discovery, loading, session, pulse, and parsed table/curve facade for app code
-  +labkit/+dta/private parser, item/session, and implementation helpers
+Biosignal code should not depend on GUI state, DTA, or app entry points. Low-level MAT/table normalization stays behind the biosignal facade.
 
-Library 3: biosignal loading and processing
-  +labkit/+biosignal recording loading, channel extraction, time ROI, filters, peak events, segments, templates, SNR-style measurements, and group comparisons
-  +labkit/+biosignal/private table/MAT readers and normalization helpers
+UI helpers should build or update generic controls and draw prepared data. Apps pass labels, callbacks, prepared vectors, tables, and option values into UI helpers. UI helpers should not call DTA parsers, own formulas, define result fields, or decide export schemas.
 
-Internal helper base
-  package-private helpers and app-local functions
-  internal string, struct, numeric, CSV, pulse-detection, and parser helpers used behind GUI/DTA APIs
-
-Not library code: experiment-specific app design
-  apps/<category>/ public app files
-  experiment-specific domain logic, plotting, result summaries, and exports
-```
-
-This map is a design boundary, not a reason to force every function into exactly three folders. Refactor or remove helpers when they obscure which layer owns a decision.
-
-For the shared GUI layout contract, see `docs/ui.md`. For DTA facade details, see `docs/dta.md`. For biosignal facade details, see `docs/biosignal.md`. For app-owned workflow details and the practical checklist used before adding a new app, see `docs/apps.md`.
-
-Pulse detection is app-facing only through `labkit.dta.detectPulses`; its implementation lives in `+labkit/+dta/private`. App-specific analysis, export-table construction, CSV schemas, and plot annotations belong in the owning public app file. Do not reintroduce those experiment decisions into a public analysis package, IO/data package, or helper package unless a future repeated use case proves a lower-level utility is clearer.
-
-DTA package functions should not depend on GUI state or call `uialert`. Plot/UI helpers may accept explicit graphics handles and should keep side effects limited to those handles.
-
-The DTA facade is guarded as a GUI-free and app-free layer: it should not call MATLAB UI constructors, file dialogs, alerts, app entry points, or `apps/` helpers. New DTA-backed app code should prefer `labkit.dta.*` for loading, session operations, pulse detection, and parsed table/curve access; DTA code must not call back into app code.
-
-There is no public `+labkit/+io` or `+labkit/+data` app-facing surface. Parser/session IO and low-level table/curve helpers live behind `labkit.dta.*`, with parser-only helpers kept under `+labkit/+dta/private`.
-
-Shared implementation helpers are not app-facing API. Parser-only helpers belong under package-private parser helpers. App-specific formatting, parsing, interpolation, and export helpers belong in the owning app file unless a repeated use case proves a clearer `labkit.dta` or `labkit.ui` API.
+App-specific analysis, plotting annotations, result summaries, CSV schemas, failed-row behavior, and workflow wording belong in the owning app file or app-family private helpers.
 
 ## Library Extraction Rule
 
-A helper may move into `+labkit` only when it satisfies the practical extraction checklist:
+A helper may move into `+labkit` only when it satisfies all of these:
 
 - It can be named without experiment-specific vocabulary.
 - It does not encode domain units, thresholds, result columns, or paper-specific logic.
@@ -128,58 +79,30 @@ A helper may move into `+labkit` only when it satisfies the practical extraction
 - At least two real apps use it, or a broad workflow family clearly needs it.
 - Moving it into the library reduces duplication without increasing API confusion.
 
-`+labkit` should not become a miscellaneous helper dump. Future broad data or device families may become peer facades beside `labkit.dta`, but only when a real class of workflows needs that surface.
+If those conditions are not met, keep the helper app-local. App growth is acceptable; public library growth should be conservative.
 
-## Public API Documentation Rule
+## Public API Documentation
 
-Every public library function under `+labkit/+ui`, `+labkit/+dta`, and `+labkit/+biosignal` must document its app-facing call contract in the function comment immediately after the function declaration. At minimum, include:
+Every public library function under `+labkit/+ui`, `+labkit/+dta`, and `+labkit/+biosignal` should document its app-facing call contract immediately after the function declaration:
 
-- a short `Usage` example when the function is normally called by app code
+- usage example when helpful
 - input parameter meanings and accepted types
-- every public `opts`, `spec`, `labels`, or `callbacks` struct field, including defaults and legal values
-- returned struct/table fields when those outputs are intended for app code
-- a short calling recommendation when a default-options helper should be used instead of hand-written structs
+- public `opts`, `spec`, `labels`, or `callbacks` fields with defaults and legal values
+- returned struct/table fields intended for app code
+- recommendation to start from a default-options helper when one exists
 
-Private helpers may keep shorter comments, but their top-of-file comments should still identify the expected caller, input/output shapes, important side effects or errors, and non-obvious assumptions. Public facade files should not require users to inspect private implementations to discover valid parameters.
-
-Reusable UI helpers should build or update generic controls and draw prepared data. Data extraction, parser/session calls, and analysis decisions should stay in the app or DTA layer; for example, apps should call `labkit.dta.getCurveXY` before passing prepared vectors and labels to `labkit.ui.plotXY`. App-specific callback choreography, such as clearing a session, restoring app-specific plot defaults, refreshing experiment summaries, and writing app logs, should stay in the owning app file even when two apps have similar callback order. Domain labels such as DTA-specific open/export button text and app shell tab/panel titles should be passed in from apps rather than hardcoded in the GUI library.
-
-Current apps share the workbench layout contract described in `docs/ui.md`: a resizable left control region with tabbed pages, plus a right output region for live plots or primary content. The app-facing shell entry point is `labkit.ui.createWorkbench`; apps configure the right side as a custom plot/output grid or as the standard dual-plot region. Internal app test and debug hooks are coordinated through `labkit.ui.handleAppRequest` and `labkit.ui.createAppDebugLog` so apps can expose app-local test commands without adding a new reusable app package.
-
-The file panel and log panel may use shared structure, but app-specific tab sections, controls, result summaries, callback ordering, and plot behavior remain owned by the app. Generic helpers such as panel-grid creation, listbox selection refresh, and image-axis anchor curve editing can live in `labkit.ui` only when they are domain-neutral.
-
-App code may use selected `labkit.dta.*` helpers for parsed table and curve access, such as `getColumn`, `getMainCurve`, and `getCurveXY`. DTA session operations should go through `labkit.dta.*` so apps do not need to understand lower-level loader callbacks or session internals.
-
-DTA and app-local analysis functions should return status through result structs, for example:
-
-```matlab
-result.ok = false;
-result.message = "Not enough valid T/Vf/Im points.";
-```
-
-The GUI decides how to display that status.
+Private helpers may keep shorter comments, but should still identify expected caller, input/output shapes, important side effects or errors, and non-obvious assumptions.
 
 ## Validation Boundary
 
 The default automated validation boundary is the non-GUI MATLAB suite: project architecture checks, `labkit` facade/parser checks, and pure app analysis/export checks. GitHub Actions runs that suite on pushes and pull requests to `main`.
 
-GUI launch/layout checks live in the same source-aligned suites and are enabled with `--gui`; interactive GUI workflows are user-validated outside CI. This keeps the reusable UI shell tested without requiring GitHub-hosted runners to provide stable MATLAB graphics behavior.
+GUI launch/layout checks live in source-aligned suites and are enabled with `--gui`. Interactive GUI workflows are validated manually in MATLAB app windows.
 
 ## Current Package Surface
 
-- `apps/`: user-facing app category folders and app-specific implementations. Current electrochemistry app bodies live under `apps/electrochem/`, current DIC app bodies live under `apps/dic/`, current general image-measurement app bodies live under `apps/image_measurement/`, and current wearable biosignal app bodies live under `apps/wearable/`. Each workflow should keep one public launchable entry point; app-owned helpers may stay local or private to the app family rather than becoming reusable `+labkit` APIs or transitional app-helper packages.
-- `labkit.dta`: GUI-free facade for supported DTA file discovery, family detection, single-file loading, batch loading, folder loading, pulse detection, item construction, parsed table/curve access, session save/load, and app-facing DTA session operations with status/report structs. It keeps parser and DTA-specific implementation helpers private.
-- `labkit.biosignal`: GUI-free facade for MAT timetable and table recording loading, channel extraction, time ROI cropping, filtering, ECG/QRS peak detection, event-centered segmentation, template construction, template-residual SNR-style measurements, and group comparisons. It keeps low-level file normalization and ECG peak-detector implementations private while avoiding ECG-specific GUI wording.
-- `labkit.ui`: reusable GUI framework helpers, centered on the unified `createWorkbench` shell plus domain-neutral components: file-selection panel, log panel, internal app hook/debug helpers, generic panel-grid creation, row-resize handles, axes creation/reset, image-axis anchor curve editing, prepared-X/Y plotting, listbox selection refresh, summary rows, result table panel, plot-options panel, simple labeled controls, and top/bottom plot-control construction/state helpers.
-- Internal helpers: package-private parser helpers and app-local helper functions. Public `+io`, `+data`, and `+util` packages should not be reintroduced as new-app entry surfaces.
+- `labkit.ui`: `createWorkbench`, tab specs, file-selection panel, log panel, panel grids, row resizing, axes creation/reset, axes popout, image display, anchor curve editing, prepared-X/Y plotting, result tables, plot controls, listbox state, labeled controls, read-only fields, and internal test/debug support for app maintainers.
+- `labkit.dta`: DTA file discovery, type detection, single/batch/folder loading, pulse detection, item construction behind the facade, parsed table/curve access, session save/load, and session add/remove/select operations.
+- `labkit.biosignal`: MAT timetable and delimited table recording loading, channel extraction, time ROI cropping, filtering, ECG/QRS peak detection, event-centered segmentation, template construction, template-residual SNR-style measurements, and group comparisons.
 
-## Boundaries To Preserve
-
-Avoid:
-
-- analysis functions reading UI controls
-- package functions writing directly to GUI text areas
-- new parser copies in GUI files
-- reusable package functions owning app-specific CSV schemas
-- MATLAB classes before struct schemas stabilize
-- replacing separate app entry points with a single all-in-one launcher without explicit approval
+Public `+io`, `+data`, `+analysis`, and `+util` package surfaces should not be reintroduced as app-facing APIs.

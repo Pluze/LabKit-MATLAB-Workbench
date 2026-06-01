@@ -1,8 +1,6 @@
 # Apps
 
-Apps are the owning layer for domain-specific workflows. They are first-class deliverables, not examples for a hidden platform. Each app should remain independently launchable and useful for a concrete experimental task.
-
-Apps compose `labkit.ui.*` and, when needed, data facades such as `labkit.dta.*` or `labkit.biosignal.*`, while keeping calculations, plotting decisions, displayed result fields, and export schemas local to the app file. Apps may evolve faster than the reusable library because they track real lab needs.
+LabKit apps are independent MATLAB GUI tools for concrete lab workflows. Each app should remain directly launchable and useful on its own. Shared UI, DTA, and biosignal helpers reduce boilerplate, but the scientific workflow belongs to the app that presents it.
 
 ## Startup
 
@@ -12,48 +10,23 @@ From MATLAB:
 startup_labkit
 ```
 
-This adds the repository root, `apps/`, and normal nested app category folders to the MATLAB path.
+This adds the repository root, `apps/`, and nested app category folders to the MATLAB path.
 
-## Current Electrochemistry Apps
+## Current Apps
 
-```text
-labkit_CIC_app
-labkit_VTResistance_app
-labkit_CSC_app
-labkit_EIS_app
-labkit_ChronoOverlay_app
-```
+| App | Status | Purpose | Input | Typical output |
+| --- | --- | --- | --- | --- |
+| `labkit_CIC_app` | routine | CIC and voltage-transient metrics. | Chrono DTA | Results table and CSV. |
+| `labkit_VTResistance_app` | routine | Steady resistance estimates from voltage transients. | Chrono DTA | Resistance table and CSV. |
+| `labkit_CSC_app` | routine | CV/CT charge integration and CSC comparison. | CV/CT DTA | Plots and comparison values. |
+| `labkit_EIS_app` | routine | EIS curve overlay and export. | EIS ZCURVE DTA | Plot and CSV. |
+| `labkit_ChronoOverlay_app` | routine | Chrono voltage/current overlay. | Chrono DTA | Overlay plots and CSV. |
+| `labkit_DICPreprocess_app` | active | Image registration, paired crop preparation, and ROI mask drawing. | Reference/current images | Aligned images, crop PNGs, ROI mask. |
+| `labkit_DICPostprocess_app` | active | Ncorr strain overlay, ROI summary, and colorbar export. | Ncorr MAT, reference image, mask | EXX/EYY overlays, summary CSV, colorbar/level table. |
+| `labkit_CurvatureMeasurement_app` | experimental | Editable image-curve circle fit for radius and curvature. | Image | Overlay PNG and curvature CSV. |
+| `labkit_ECGPrint_app` | experimental | ECG waveform preview, ROI filtering, peak/segment SNR, and SNR-over-time display. | MAT timetable or CSV/TSV table | Segment SNR CSV and waveform PNG. |
 
-The current electrochemistry app bodies live under `apps/electrochem/`.
-
-## Current DIC Apps
-
-```text
-labkit_DICPreprocess_app
-labkit_DICPostprocess_app
-```
-
-The current DIC app bodies live under `apps/dic/`. They use `labkit.ui.*` for the shared GUI shell and keep image registration, crop geometry, Ncorr MAT extraction, strain overlays, summaries, and exports local to the owning app files.
-
-## Current Image Measurement Apps
-
-```text
-labkit_CurvatureMeasurement_app
-```
-
-The current image measurement app bodies live under `apps/image_measurement/`. They use `labkit.ui.*` for the shared GUI shell and keep image-point picking, scale measurement, curvature fitting, overlays, summaries, and exports local to the owning app files. These apps are separate from DIC because their workflows are general image measurements rather than DIC preprocessing or strain postprocessing.
-
-## Current Wearable Biosignal Apps
-
-```text
-labkit_ECGPrint_app
-```
-
-The current wearable app bodies live under `apps/wearable/`. They use `labkit.ui.*` for the shared GUI shell and `labkit.biosignal.*` for GUI-free recording loading, channel extraction, time ROI, filtering, event/segment handling, and template-residual SNR measurements. Wearable apps own workflow wording, plot layout, import controls, and export choices.
-
-## App Status
-
-Status labels are intentionally lightweight and should not overclaim maturity:
+Status labels:
 
 | Status | Meaning |
 | --- | --- |
@@ -62,14 +35,15 @@ Status labels are intentionally lightweight and should not overclaim maturity:
 | `experimental` | Newer utility or workflow under evaluation. |
 | `archived` | Kept for reference, not part of normal use. |
 
-Current app-family status:
+## App Families
 
-| App family | Status | Notes |
-| --- | --- | --- |
-| Electrochemistry | routine | Current DTA-backed workflows used through the DTA facade. |
-| DIC | active | Current image workflows under direct manual GUI validation. |
-| Image measurement | experimental | Newer general measurement utilities separated from DIC. |
-| Wearable biosignal | experimental | Exploratory ECG signal quality, SNR, and print/export workflow built on the biosignal facade. |
+Electrochemistry apps live under `apps/electrochem/` and use the DTA facade for Gamry file discovery, loading, sessions, parsed curve access, and pulse detection.
+
+DIC apps live under `apps/dic/`. They use the shared GUI shell while keeping registration, crop geometry, Ncorr MAT extraction, strain overlays, summaries, and exports in the owning app files.
+
+Image measurement apps live under `apps/image_measurement/`. They are separate from DIC because their workflows are general image measurements rather than DIC preprocessing or strain postprocessing.
+
+Wearable biosignal apps live under `apps/wearable/`. They use the biosignal facade for recording loading, channel extraction, time ROI, filtering, events, segments, templates, and measurements, while the app owns workflow wording, plot layout, import controls, and export choices.
 
 ## App Ownership
 
@@ -86,12 +60,12 @@ The app owns:
 
 Move code into `+labkit` only when it is reusable without app vocabulary, testable independently, and useful beyond one workflow.
 
-## App File Layout
+## App File Shape
 
-Keep new lab apps as explicit single files, organized roughly in this order:
+New lab apps should start as explicit public entry points under `apps/<category>/`. A typical file order is:
 
 ```text
-1. Entry validation and optional test hook
+1. Entry validation and optional internal test/debug hook
 2. App state and GUI construction
 3. Nested callbacks for file/session actions
 4. Nested refresh/render/export callbacks that touch UI handles
@@ -102,28 +76,9 @@ Keep new lab apps as explicit single files, organized roughly in this order:
 9. Small formatting, parsing, interpolation, and numeric utilities
 ```
 
-Nested functions may read and update GUI handles or app state. Local functions after the app `end` should be GUI-free when practical so tests can call them through narrow app test hooks.
+Nested functions may read and update GUI handles or app state. Local functions after the app `end` should be GUI-free when practical so focused tests can exercise them through narrow internal app hooks.
 
-Use the shared internal hook convention for app-local pure functions:
-
-```matlab
-appName("__labkit_test__", "commandName", arg1, arg2, ...)
-[fig, debug] = appName("__labkit_debug__", opts)
-```
-
-Test handlers stay in the owning app file and expose only app-owned, GUI-free helpers unless a command explicitly exists to verify GUI state such as a load/layout diagnostic. Debug mode should launch the normal app, return the figure plus a debug log struct, and mirror each app-local `addLog` message to `debug.append`. These hooks are maintainer/test contracts, not user-facing app APIs.
-
-The preferred public shape is one launchable app entry point per workflow. That does not require every implementation detail to stay in one giant function forever. If an app becomes too large, app-owned private helpers are acceptable when they stay under the app family, are not public reusable APIs, and do not reintroduce experiment-specific helper packages as a library surface.
-
-## New App Starting Pattern
-
-Do not start new apps from long copy-only template files. Start from the current app that is closest in scope, then reduce it to the needed workflow while preserving these boundaries:
-
-- GUI-only apps call `labkit.ui.createWorkbench`, define app-specific controls inside left tabs, and render prepared data on the right.
-- DTA-backed apps keep file discovery/loading/session operations behind `labkit.dta.*` and keep analysis, plotting, result tables, and exports app-local.
-- Biosignal-backed apps keep recording loading, channel extraction, signal processing, events, segments, and generic measurements behind `labkit.biosignal.*` while keeping workflow interpretation, plots, labels, and exports app-local.
-- Apps should declare custom left tabs with `labkit.ui.tabSpec` when the standard three-section tab is not enough; use `resizeRows` in the tab spec for user-adjustable section heights.
-- New app files belong under `apps/<category>/` and should remain explicit public entry points. Split app-owned private helpers only when that improves maintainability without making app-specific decisions look reusable.
+The preferred public shape is one launchable app entry point per workflow. If an app becomes too large, app-owned private helpers are acceptable when they stay under the app family and do not become public reusable APIs.
 
 ## New App Checklist
 
@@ -142,24 +97,11 @@ Define these before adding controls or helpers:
 10. GUI shell type and file-selection mode
 ```
 
-Prefer `labkit.ui.createWorkbench` even when the app has only one small control page. This keeps daily app interaction consistent as `apps/<category>/` grows while leaving domain-specific tab content under app ownership.
+Start from the closest existing app, reduce it to the needed workflow, and preserve ownership boundaries. Prefer `labkit.ui.createWorkbench` even for small apps so daily interaction stays consistent across app families.
 
-## Extraction Checklist
+## Validation
 
-Before moving app code into `+labkit`, check that the helper:
-
-- can be named without experiment-specific vocabulary
-- does not encode domain units, thresholds, result columns, or paper-specific logic
-- does not read or mutate app state directly
-- can be tested independently
-- is used by at least two real apps, or clearly belongs to a broad app family facade
-- reduces duplication without making the public API harder to understand
-
-If those conditions are not met, keep the code app-local. Adding apps is expected; expanding public library API should be conservative.
-
-## App Validation
-
-Pure app calculations, export table construction, and plotting helpers belong in the app-family suites and run in the default GitHub Actions workflow when they do not require GUI graphics. Add `--gui` to the same suite when checking noninteractive launch/layout contracts:
+Pure app calculations, export table construction, and plotting helpers belong in the app-family suites and run in the default non-GUI workflow when they do not require graphics. Add `--gui` for noninteractive launch/layout checks:
 
 ```bash
 scripts/run_matlab_tests.sh --suite apps/electrochem --gui
@@ -168,11 +110,9 @@ scripts/run_matlab_tests.sh --suite apps/image_measurement --gui
 scripts/run_matlab_tests.sh --suite apps/wearable --gui
 ```
 
-Interactive GUI workflows, including manual file selection and visual inspection, are intentionally validated manually during app work.
+Interactive file selection, drawing, visual inspection, and full workflow feel are validated manually in MATLAB app windows.
 
 ## Current App Notes
-
-Keep current app behavior summarized here instead of turning this document into a historical changelog. Use source tests for exact numeric schemas when possible.
 
 | App | App-owned behavior | Export notes |
 | --- | --- | --- |

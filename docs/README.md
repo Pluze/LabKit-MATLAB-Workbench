@@ -1,23 +1,36 @@
 # Documentation Guide
 
-This directory is organized around the repository's main component boundaries: independent workflow apps, the small reusable UI library, the current DTA library, and the biosignal facade.
+These docs are written for people who run, maintain, or extend LabKit. Start with the page that matches the work in front of you; you do not need to read the whole documentation set for everyday app use.
 
-LabKit is documented as an internal lab app workbench. The docs should help users find and run the app they need without understanding the whole repository, and should help maintainers decide what belongs in the reusable library versus an app.
+## I Want To Run An App
 
-## Component Docs
+- `../README.md`: project overview, startup command, app list, and basic test commands.
+- `apps.md`: current app families, what each app does, expected inputs, and typical outputs.
 
-- `architecture.md`: package boundaries and ownership rules.
-- `ui.md`: reusable MATLAB GUI shell, layout contract, and UI helper responsibilities.
-- `dta.md`: current electrochemistry/Gamry DTA API, parser assumptions, and DTA structs.
-- `biosignal.md`: current wearable/biosignal API, data shape, and app boundary.
-- `apps.md`: app entry points, app-owned workflow rules, new-app starting patterns, and current app-specific notes.
-- `testing.md`: automated checks and behavior-preservation coverage.
+## I Maintain An App
 
-## Validation Docs
+- `apps.md`: app ownership, current app notes, new-app checklist, and validation guidance.
+- `ui.md`: shared GUI shell, tabs, panels, axes, and reusable UI helper contracts.
+- `testing.md`: focused app-suite and GUI structural test commands.
 
-GitHub Actions runs the default non-GUI MATLAB suite for pushes and pull requests to `main`. Local GUI launch/layout checks remain documented in `testing.md` because interactive GUI workflows are intentionally validated by manual app use.
+## I Work On Reusable APIs
 
-## Repository-Level Docs
+- `architecture.md`: package boundaries and the extraction rule for moving code into `+labkit`.
+- `ui.md`: reusable GUI foundation.
+- `dta.md`: Gamry DTA loading, parsing, session, pulse, and curve facade.
+- `biosignal.md`: recording loading, signal processing, ECG detection, segments, templates, and measurements.
 
-- `../README.md`: project introduction and user-facing app entry points.
-- `../AGENTS.md`: agent and maintainer operating rules.
+## I Need Validation Guidance
+
+- `testing.md`: default suite, focused suites, GUI versus non-GUI checks, fixture expectations, and CI scope.
+
+## Component Reference
+
+| Doc | Use it for |
+| --- | --- |
+| `architecture.md` | Package boundaries, ownership rules, and extraction decisions. |
+| `apps.md` | App entry points, app-family notes, and app-owned workflow guidance. |
+| `ui.md` | MATLAB GUI shell and reusable UI helpers. |
+| `dta.md` | DTA facade, parser assumptions, and data shapes. |
+| `biosignal.md` | Biosignal facade, data shapes, and ECG workflow boundary. |
+| `testing.md` | Test commands, suite layout, GUI validation limits, and fixture expectations. |
