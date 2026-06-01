@@ -3,6 +3,11 @@ function varargout = labkit_ChronoOverlay_app(varargin)
 % Single-file app that composes +labkit GUI/DTA APIs and owns overlay workflow choices.
 
     if nargin > 0
+        [handled, outputs] = handleChronoOverlayTestRequest(varargin, nargout);
+        if handled
+            varargout = outputs;
+            return;
+        end
         error('labkit_ChronoOverlay_app:UnsupportedInput', 'labkit_ChronoOverlay_app does not accept input arguments.');
     end
     if nargout > 1
@@ -254,6 +259,40 @@ function varargout = labkit_ChronoOverlay_app(varargin)
 
     function addLog(msg)
         labkit.ui.appendLog(txtLog, msg);
+    end
+end
+
+function [handled, outputs] = handleChronoOverlayTestRequest(args, nout)
+    handled = false;
+    outputs = {};
+    if isempty(args) || ~(ischar(args{1}) || isstring(args{1}))
+        return;
+    end
+
+    request = char(args{1});
+    switch request
+        case '__test_alignByPulseGap__'
+            handled = true;
+            requireNargout(nout, 2, request);
+            [item, msg] = alignByPulseGap(args{2});
+            if nout >= 2
+                outputs = {item, msg};
+            elseif nout == 1
+                outputs = {item};
+            end
+        case '__test_buildOverlayExportTable__'
+            handled = true;
+            requireNargout(nout, 1, request);
+            if nout == 1
+                outputs = {buildOverlayExportTable(args{2})};
+            end
+    end
+end
+
+function requireNargout(actual, maxAllowed, request)
+    if actual > maxAllowed
+        error('labkit_ChronoOverlay_app:TooManyOutputs', ...
+            '%s returns at most %d output(s).', request, maxAllowed);
     end
 end
 

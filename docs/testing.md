@@ -74,7 +74,7 @@ Use the same option names from Windows PowerShell:
 
 Use `--suite` for the source boundary touched by the change:
 
-- `project`: startup and architecture guardrails
+- `project`: startup, architecture, and sample-data hygiene guardrails
 - `labkit/dta`: `labkit.dta` parser/session/facade checks
 - `labkit/biosignal`: `labkit.biosignal` loading, processing, SNR, and group-comparison checks
 - `labkit/ui`: reusable `labkit.ui` helper checks; add `--gui` for UI helper layout checks
@@ -93,7 +93,7 @@ The stable entry point is `tests/run_all_tests.m`. It discovers test files direc
 The suite layout is:
 
 ```text
-project                    startup/root-entry boundaries and architecture guardrails
+project                    startup/root-entry boundaries, architecture guardrails, and sample-data hygiene
 labkit/dta                 DTA parser/facade/session/pulse/item-schema checks
 labkit/biosignal           biosignal loading, channel extraction, processing, segments, SNR, and group comparison
 labkit/ui                  reusable UI helpers and noninteractive UI layout contracts
@@ -190,6 +190,16 @@ Session/export changes:
 GUI or entrypoint changes:
 
 - app entry points still launch, use `labkit.ui.createWorkbench`, and initialize expected controls/callbacks; interactive GUI workflows are checked manually
+
+Sample-data hygiene changes:
+
+- tracked source, tests, scripts, and docs should not contain local absolute paths, current-user home paths, or timestamp-shaped sample file tokens
+- parser regressions should use synthetic fixtures that preserve structure without carrying identifying sample metadata
+
+Chrono overlay changes:
+
+- gap-center alignment and first-sample fallback behavior
+- merged aligned-time export axis, interpolated voltage/current columns, sanitized field names, and single-sample NaN export behavior
 
 ## Handoff After Validation
 
