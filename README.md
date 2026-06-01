@@ -1,8 +1,12 @@
 # LabKit MATLAB Workbench
 
 [![MATLAB Tests](https://github.com/Pluze/LabKit-MATLAB-Workbench/actions/workflows/matlab-tests.yml/badge.svg)](https://github.com/Pluze/LabKit-MATLAB-Workbench/actions/workflows/matlab-tests.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![MATLAB](https://img.shields.io/badge/MATLAB-apps-orange.svg)](https://www.mathworks.com/products/matlab.html)
 
-LabKit MATLAB Workbench is an internal MATLAB app workbench for lab GUI tools. It provides a shared GUI foundation so independent scientific workflow apps can use a consistent left-control/right-output layout without becoming one monolithic analysis program.
+MATLAB GUI workbench for lab workflows in electrochemistry, wearable biosignals, DIC, and image measurement.
+
+LabKit MATLAB Workbench is an internal app workbench for scientific GUI tools. It gives each experiment workflow its own focused MATLAB app while sharing a small reusable foundation for layout, loading, parsing, signal processing, and testable infrastructure.
 
 Current app families cover electrochemistry, DIC image workflows, image measurement, and wearable biosignal review. Reusable code is organized behind three app-facing facades:
 
@@ -11,6 +15,17 @@ Current app families cover electrochemistry, DIC image workflows, image measurem
 - `labkit.biosignal.*`: GUI-free recording loading, filtering, ECG peak detection, segments, templates, and SNR-style measurements.
 
 Workflow-specific calculations, plot choices, summaries, and exports stay in the owning app under `apps/`.
+
+## At A Glance
+
+| Area | Current scope |
+| --- | --- |
+| Electrochemistry | Gamry DTA review, chrono overlays, CIC, CSC, VT resistance, and EIS export workflows |
+| DIC | Image registration, paired crop preparation, ROI masks, Ncorr strain overlays, and summary export |
+| Image measurement | Interactive curve tracing and curvature/radius measurement from image data |
+| Wearable biosignals | ECG preview, filtering, peak detection, segments, templates, and SNR-style measurements |
+| Reusable foundation | MATLAB UI helpers plus DTA and biosignal facades for app-facing workflows |
+| Validation | Focused MATLAB suites, architecture guardrails, synthetic fixtures, and GitHub Actions CI |
 
 ## Quick Start
 
