@@ -69,6 +69,12 @@ Run the default non-GUI MATLAB suite:
 scripts/run_matlab_tests.sh
 ```
 
+On Windows PowerShell:
+
+```powershell
+.\scripts\run_matlab_tests.ps1
+```
+
 Focused checks are available during development:
 
 ```bash
@@ -77,6 +83,8 @@ scripts/run_matlab_tests.sh --suite labkit/biosignal
 scripts/run_matlab_tests.sh --suite apps/wearable --gui
 scripts/run_matlab_tests.sh --suite labkit/ui --suite apps --gui
 ```
+
+The Windows script accepts the same `--suite`, `--test`, and `--gui` options.
 
 GitHub Actions runs the default non-GUI suite on pushes and pull requests to `main`. Public repositories can use MathWorks automatic licensing for supported MATLAB Actions; private repositories need a GitHub secret named `MLM_LICENSE_TOKEN`.
 

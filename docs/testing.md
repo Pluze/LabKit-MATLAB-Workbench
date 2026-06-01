@@ -18,6 +18,20 @@ Default pure-function suite:
 scripts/run_matlab_tests.sh
 ```
 
+On Windows PowerShell:
+
+```powershell
+.\scripts\run_matlab_tests.ps1
+```
+
+If local execution policy blocks direct `.ps1` execution, run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1
+```
+
+Both wrappers are thin launchers around `tests/run_all_tests.m`. They accept the same `--suite`, `--test`, and `--gui` options. Set `MATLAB_CMD` when MATLAB is not on `PATH`, and set `MATLAB_TEST_LOG` to override the default `matlab_test.log` location.
+
 The same non-GUI suite runs in GitHub Actions on pushes and pull requests to `main` through `.github/workflows/matlab-tests.yml`. The README badge points to this workflow. The CI workflow uses MathWorks MATLAB Actions and calls `run_all_tests(false)`, so it covers project guardrails, `labkit` library tests, and non-GUI app checks without opening GUI windows.
 
 Validation levels:
@@ -48,6 +62,14 @@ scripts/run_matlab_tests.sh --suite apps/image_measurement --gui
 scripts/run_matlab_tests.sh --suite apps/wearable --gui
 scripts/run_matlab_tests.sh --suite gui
 scripts/run_matlab_tests.sh --test test_gui_layout_ui_helpers
+```
+
+Use the same option names from Windows PowerShell:
+
+```powershell
+.\scripts\run_matlab_tests.ps1 --suite labkit/dta
+.\scripts\run_matlab_tests.ps1 --suite apps/electrochem
+.\scripts\run_matlab_tests.ps1 --test test_gui_layout_ui_helpers
 ```
 
 Use `--suite` for the source boundary touched by the change:
@@ -84,7 +106,7 @@ apps/smoke                 cross-app launch smoke checks
 
 Shared setup, structural GUI assertions, and focused support routines live under `tests/helpers/`. Keep helpers limited to setup and assertions; app-specific formulas, result schemas, export formats, and expected scientific values should remain in focused suite tests. The custom runner reports per-test and per-suite durations so slow checks can be identified without running a profiler.
 
-GUI workflows are checked manually outside this protocol. The automated GUI checks are structural assertion tests: they launch app windows, inspect component contracts, verify callback wiring, and check reusable layout/helper handles. They do not validate visual pixel quality, actual drag/draw gestures, or full user workflow feel. Use `--suite <target> --gui` or `scripts/run_matlab_tests.sh --gui` locally only when noninteractive launch/layout/callback coverage is relevant; GUI/uifigure checks are intentionally not part of the default GitHub-hosted CI job.
+GUI workflows are checked manually outside this protocol. The automated GUI checks are structural assertion tests: they launch app windows, inspect component contracts, verify callback wiring, and check reusable layout/helper handles. They do not validate visual pixel quality, actual drag/draw gestures, or full user workflow feel. Use `--suite <target> --gui`, `scripts/run_matlab_tests.sh --gui`, or `.\scripts\run_matlab_tests.ps1 --gui` locally only when noninteractive launch/layout/callback coverage is relevant; GUI/uifigure checks are intentionally not part of the default GitHub-hosted CI job.
 
 Do not run interactive GUI workflows in MATLAB `-batch` mode.
 
