@@ -26,7 +26,7 @@ Options:
                 This mode requires MATLAB graphics/uifigure support.
   --suite NAME  Run only a suite target, for example labkit/dta or apps/electrochem.
                 Repeatable. The special gui target selects all GUI tests.
-  --test NAME   Run only a test function, for example test_gui_layout_ui_helpers.
+  --test NAME   Run only a test function, for example test_gui_layout_ui_anchor_curve_editor.
                 Repeatable. test_gui_* automatically uses GUI MATLAB flags.
   -h, --help    Show this help text.
 

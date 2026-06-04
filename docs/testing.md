@@ -57,7 +57,7 @@ scripts/run_matlab_tests.sh --suite apps/dic --gui
 scripts/run_matlab_tests.sh --suite apps/image_measurement --gui
 scripts/run_matlab_tests.sh --suite apps/wearable --gui
 scripts/run_matlab_tests.sh --suite gui
-scripts/run_matlab_tests.sh --test test_gui_layout_ui_helpers
+scripts/run_matlab_tests.sh --test test_gui_layout_ui_anchor_curve_editor
 scripts/run_matlab_tests.sh --test test_package_public_surface
 ```
 
@@ -66,7 +66,7 @@ Use the same option names from Windows PowerShell:
 ```powershell
 .\scripts\run_matlab_tests.ps1 --suite labkit/dta
 .\scripts\run_matlab_tests.ps1 --suite apps/electrochem
-.\scripts\run_matlab_tests.ps1 --test test_gui_layout_ui_helpers
+.\scripts\run_matlab_tests.ps1 --test test_gui_layout_ui_anchor_curve_editor
 ```
 
 Suite targets mirror source ownership:
