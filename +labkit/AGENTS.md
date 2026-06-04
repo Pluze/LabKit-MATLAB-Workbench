@@ -19,6 +19,7 @@
 - `labkit.dta` stays GUI-free and app-free.
 - `labkit.biosignal` stays GUI-free and independent from DTA/app code.
 - `labkit.ui` stays parser/data/analysis-free; apps pass prepared values, labels, tables, callbacks, and handles into UI helpers.
+- Reusable UI tools may own domain-neutral interaction workflows such as image scale-bar controls, reference editing, unit normalization, and overlay placement. Keep those tools independent from app result schemas, scientific formulas, file formats, and workflow wording.
 - Do not introduce MATLAB classes unless explicitly approved.
 
 ## Comments and Docs

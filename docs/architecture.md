@@ -67,6 +67,8 @@ Biosignal code should not depend on GUI state, DTA, or app entry points. Low-lev
 
 UI helpers should build or update generic controls and draw prepared data. Apps pass labels, callbacks, prepared vectors, tables, and option values into UI helpers. UI helpers should not call DTA parsers, own formulas, define result fields, or decide export schemas.
 
+Reusable image-interaction tools may own app-neutral UI state when the interaction itself is generic. The current example is `labkit.ui.createScaleBarTool`: UI owns scale-bar controls, unit normalization, reference endpoint editing, calibration structs, and overlay placement, while apps own image loading/redrawing, edit-mode coordination, scientific calculations, summaries, and exports.
+
 App-specific analysis, plotting annotations, result summaries, CSV schemas, failed-row behavior, and workflow wording belong in the owning app file or app-owned private helpers. The default private-helper location for a large app is `apps/<family>/<app_slug>/private/`; `apps/<family>/private/` should be reserved for helpers shared by multiple apps in that family.
 
 ## Library Extraction Rule

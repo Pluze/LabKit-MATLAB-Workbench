@@ -13,6 +13,7 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
 ## App Ownership
 
 - Keep domain formulas, thresholds, integration rules, option defaults, plot labels, result fields, export columns, failed-row behavior, alerts, and log wording app-local unless the user explicitly approves a boundary change.
+- When a reusable UI tool has been explicitly approved to own app-neutral controls, apps should consume that tool instead of reimplementing its widget state, normalization, or interaction mechanics. Current example: `labkit.ui.createScaleBarTool` owns scale-bar controls, units, reference-pixel editing, and overlay placement; image apps own redraw timing, edit-mode conflicts, calculations, summaries, and exports around it.
 - Use `labkit.ui.createWorkbench` for app GUIs.
 - DTA-backed apps use `labkit.dta.*` for discovery, loading, sessions, pulse detection, and parsed curve/table access.
 - Biosignal-backed apps use `labkit.biosignal.*` for recording loading, channel extraction, waveform processing, events, segments, measurements, and group comparisons.
