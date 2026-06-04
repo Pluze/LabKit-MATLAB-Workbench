@@ -103,6 +103,7 @@ labkit.ui.createReadOnlyTextPanel(parent, titleText, row, lines, opts);
 labkit.ui.createResultTablePanel(parent, titleText, row, columnNames, initialData);
 labkit.ui.createLogPanel(parent, row, initialValue);
 labkit.ui.createAnchorCurveEditor(ax, imageSize, opts);
+labkit.ui.runWithBusyState(fig, workFcn, opts);
 labkit.ui.handleAppRequest(appName, args, nout, handlers);
 labkit.ui.createAppDebugLog(appName, opts);
 ```
@@ -135,6 +136,8 @@ Use `createPanelGrid` for app-defined sections that only need the standard panel
 Axes created through `labkit.ui.createAxes`, workbench dual-plot shells, or reset with `labkit.ui.hardResetAxis` get a standard right-click context action named `Open axes in new figure`. The same context menu is attached to plotted child objects such as images, lines, overlays, and ROI previews so image-heavy apps do not block the action. MATLAB does not reliably propagate axes context menus to graphics children created later, so app-local renderers that create new image or overlay objects should call `labkit.ui.enableAxesPopout(ax)` after drawing. It copies the current axes contents, labels, scales, grid state, and basic styling into a separate MATLAB figure for manual editing or export. The copied axes use automatic data and plot-box aspect-ratio modes so the standalone figure can be freely resized. Apps should not implement their own plot-popout behavior unless they need a domain-specific export workflow.
 
 Use `showImageAxes` for app-neutral image display boilerplate: it draws an image, uses image-style axes limits, hides ticks, enables standard image navigation, and refreshes the axes popout menu onto the image object. Apps still own how image arrays, overlays, masks, and annotations are computed.
+
+Use `runWithBusyState` around long synchronous callbacks that should give immediate feedback and prevent repeat button clicks. The helper sets a busy pointer, optionally shows an indeterminate progress dialog, disables the controls supplied in `opts.controls`, runs the callback, then restores the prior control states even if the callback errors. Apps still own which controls are passed in and should refresh any final enable/disable state after the helper returns when a computation changes available actions.
 
 Use `tabSpec(..., struct('resizeRows', ...))` when a left tab contains several stacked app-defined sections that may need manual height adjustment. When manually placing a component directly into a workbench tab grid, map the logical row through `labkit.ui.layoutRow(parentGrid, row)`. Most app code should use helpers such as `createPanelGrid`, `createResultTablePanel`, `createLogPanel`, and `createAxes`, which apply that mapping for their parent row. `labkit.ui.addRowResizeHandle` remains a lower-level helper for unusual app-local grids that intentionally reserve a physical handle row.
 
@@ -189,6 +192,7 @@ Debug calls use:
 - app-neutral image display boilerplate for prepared image arrays
 - result table panels
 - listbox selection refresh
+- busy-state feedback for long synchronous callbacks
 - small labeled controls, read-only text surfaces, and domain-neutral state helpers
 
 `labkit.ui.*` should not own:

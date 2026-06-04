@@ -231,19 +231,22 @@ function varargout = labkit_FocusStack_app(varargin)
         end
 
         opts = currentFusionOptions();
+        registerStack = chkRegister.Value;
+        busyOpts = struct();
+        busyOpts.title = 'Focus stacking';
+        busyOpts.message = 'Fusing selected microscope images...';
+        busyOpts.controls = focusStackBusyControls();
         try
-            imagesForFusion = S.images;
-            S.registrationLines = {};
-            if chkRegister.Value
-                [imagesForFusion, S.registrationLines] = alignFocusStackImages(S.images);
-            end
-            S.alignedImages = imagesForFusion;
-            S.result = computeFocusStack(imagesForFusion, opts);
+            payload = labkit.ui.runWithBusyState(fig, ...
+                @() runFocusStackComputation(opts, registerStack), busyOpts);
         catch ME
             showError('Focus stacking failed', ME.message);
             return;
         end
 
+        S.alignedImages = payload.imagesForFusion;
+        S.registrationLines = payload.registrationLines;
+        S.result = payload.result;
         addLog(sprintf('Focus stack complete: %d images fused with %s.', ...
             S.result.inputCount, S.result.method));
         for k = 1:numel(S.registrationLines)
@@ -258,6 +261,25 @@ function varargout = labkit_FocusStack_app(varargin)
         opts.focusWindow = round(edtFocusWindow.Value);
         opts.smoothRadius = round(edtSmoothRadius.Value);
         opts.minConfidence = edtMinConfidence.Value;
+    end
+
+    function payload = runFocusStackComputation(opts, registerStack)
+        imagesForFusion = S.images;
+        registrationLines = {};
+        if registerStack
+            [imagesForFusion, registrationLines] = alignFocusStackImages(S.images);
+        end
+
+        payload = struct();
+        payload.imagesForFusion = imagesForFusion;
+        payload.registrationLines = registrationLines;
+        payload.result = computeFocusStack(imagesForFusion, opts);
+    end
+
+    function controls = focusStackBusyControls()
+        controls = {btnOpenFolder, btnOpenFiles, lbImages, chkRegister, ...
+            edtFocusWindow, edtSmoothRadius, edtMinConfidence, btnRun, ...
+            btnExportFused, btnExportMap, btnExportSummary};
     end
 
     function onExportFused(~, ~)
