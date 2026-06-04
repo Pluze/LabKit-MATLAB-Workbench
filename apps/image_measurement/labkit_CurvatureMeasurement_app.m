@@ -22,14 +22,16 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
     S.image = [];
     S.xPix = [];
     S.yPix = [];
-    S.rawpx = NaN;
-    S.scaleLine = [];
+    S.referencePx = NaN;
+    S.referenceLine = [];
+    S.scaleBarLine = [];
     S.curveEditor = [];
-    S.scaleEditor = [];
-    S.scaleEditActive = false;
+    S.referenceEditor = [];
+    S.referenceEditActive = false;
     S.curveEditActive = false;
     S.curveStyle = "Curve";
     S.fit = emptyFitResult();
+    S.length = emptyLengthResult();
 
     workbenchOpts = struct( ...
         'rightTitle', 'Measurement Preview', ...
@@ -37,7 +39,7 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
         'rightRowHeight', {{'1x'}});
     workbenchOpts.tabs = [ ...
         labkit.ui.tabSpec('filesAnalysis', 'Files + Analysis', [4 1], ...
-            {140, 365, 205, 175}, ...
+            {140, 455, 225, 170}, ...
             struct('resizeRows', [1 2 3], ...
             'resizeOptions', struct('minTopHeight', 140, 'minBottomHeight', 90))), ...
         labkit.ui.tabSpec('summaryResults', 'Summary + Results', [2 1], ...
@@ -72,8 +74,9 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
     txtPointCount.Layout.Row = 3;
     txtPointCount.Layout.Column = [1 2];
 
-    editPanel = labkit.ui.createPanelGrid(layFA, 'Curve + Scale Editing', 2, [8 2], ...
-        struct('rowHeight', {{'fit', 'fit', 'fit', 'fit', 'fit', 'fit', 'fit', 'fit'}}, ...
+    editPanel = labkit.ui.createPanelGrid(layFA, 'Curve + Scale Editing', 2, [12 2], ...
+        struct('rowHeight', {{'fit', 'fit', 'fit', 'fit', 'fit', 'fit', ...
+        'fit', 'fit', 'fit', 'fit', 'fit', 'fit'}}, ...
         'columnWidth', {{145, '1x'}}));
     editGrid = editPanel.grid;
 
@@ -103,34 +106,68 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
     btnClearCurve.Layout.Row = 3;
     btnClearCurve.Layout.Column = 2;
 
-    btnMeasureScale = uibutton(editGrid, 'Text', 'Measure scale bar', ...
-        'ButtonPushedFcn', @onMeasureScale);
+    btnMeasureScale = uibutton(editGrid, 'Text', 'Measure reference pixels', ...
+        'ButtonPushedFcn', @onMeasureReferencePixels);
     btnMeasureScale.Layout.Row = 4;
     btnMeasureScale.Layout.Column = [1 2];
 
-    [lblScaleLen, edtScaleLen] = labkit.ui.createLabeledSpinner(editGrid, ...
-        'Scale bar length (mm):', 'Value', 5, 'Limits', [0 Inf], 'Step', 0.5, ...
-        'ValueChangedFcn', @(~,~) refreshScaleReadout());
-    lblScaleLen.Layout.Row = 5;
-    lblScaleLen.Layout.Column = 1;
-    edtScaleLen.Layout.Row = 5;
-    edtScaleLen.Layout.Column = 2;
+    [lblReferencePx, edtReferencePx] = labkit.ui.createLabeledSpinner(editGrid, ...
+        'Reference pixels:', 'Value', 0, 'Limits', [0 Inf], 'Step', 1, ...
+        'ValueChangedFcn', @onCalibrationSettingsChanged);
+    lblReferencePx.Layout.Row = 5;
+    lblReferencePx.Layout.Column = 1;
+    edtReferencePx.Layout.Row = 5;
+    edtReferencePx.Layout.Column = 2;
 
-    [lblManualScale, edtManualScale] = labkit.ui.createLabeledSpinner(editGrid, ...
-        'Manual px/mm:', 'Value', 0, 'Limits', [0 Inf], 'Step', 1, ...
-        'ValueChangedFcn', @(~,~) refreshScaleReadout());
-    lblManualScale.Layout.Row = 6;
-    lblManualScale.Layout.Column = 1;
-    edtManualScale.Layout.Row = 6;
-    edtManualScale.Layout.Column = 2;
+    [lblReferenceLen, edtReferenceLen] = labkit.ui.createLabeledSpinner(editGrid, ...
+        'Reference length:', 'Value', 100, 'Limits', [0 Inf], 'Step', 10, ...
+        'ValueChangedFcn', @onCalibrationSettingsChanged);
+    lblReferenceLen.Layout.Row = 6;
+    lblReferenceLen.Layout.Column = 1;
+    edtReferenceLen.Layout.Row = 6;
+    edtReferenceLen.Layout.Column = 2;
 
-    [txtRawPx, lblRawPx] = labkit.ui.createReadOnlyInfoRow(editGrid, 7, 'Raw scale px:');
-    [txtPxPerMm, lblPxPerMm] = labkit.ui.createReadOnlyInfoRow(editGrid, 8, 'Computed px/mm:');
-    lblRawPx.HorizontalAlignment = 'right';
-    lblPxPerMm.HorizontalAlignment = 'right';
+    [lblScaleUnit, ddScaleUnit] = labkit.ui.createLabeledDropdown(editGrid, ...
+        'Scale unit:', ...
+        'Items', {'um', 'mm', 'nm', 'cm'}, ...
+        'Value', 'um', ...
+        'ValueChangedFcn', @onCalibrationSettingsChanged);
+    lblScaleUnit.Layout.Row = 7;
+    lblScaleUnit.Layout.Column = 1;
+    ddScaleUnit.Layout.Row = 7;
+    ddScaleUnit.Layout.Column = 2;
 
-    fitPanel = labkit.ui.createPanelGrid(layFA, 'Fit + Export', 3, [6 2], ...
-        struct('rowHeight', {{'fit', 'fit', 'fit', 'fit', 'fit', 'fit'}}, ...
+    [lblScaleBarLen, edtScaleBarLen] = labkit.ui.createLabeledSpinner(editGrid, ...
+        'Scale bar length:', 'Value', 100, 'Limits', [0 Inf], 'Step', 10, ...
+        'ValueChangedFcn', @onScaleBarSettingsChanged);
+    lblScaleBarLen.Layout.Row = 8;
+    lblScaleBarLen.Layout.Column = 1;
+    edtScaleBarLen.Layout.Row = 8;
+    edtScaleBarLen.Layout.Column = 2;
+
+    [lblScalePosition, ddScalePosition] = labkit.ui.createLabeledDropdown(editGrid, ...
+        'Scale position:', ...
+        'Items', {'Bottom center', 'Bottom left', 'Bottom right', ...
+        'Top center', 'Top left', 'Top right'}, ...
+        'Value', 'Bottom center', ...
+        'ValueChangedFcn', @onScaleBarSettingsChanged);
+    lblScalePosition.Layout.Row = 9;
+    lblScalePosition.Layout.Column = 1;
+    ddScalePosition.Layout.Row = 9;
+    ddScalePosition.Layout.Column = 2;
+
+    btnPlaceScaleBar = uibutton(editGrid, 'Text', 'Place scale bar', ...
+        'ButtonPushedFcn', @onPlaceScaleBar);
+    btnPlaceScaleBar.Layout.Row = 10;
+    btnPlaceScaleBar.Layout.Column = [1 2];
+
+    [txtReferencePx, lblReferencePxReadout] = labkit.ui.createReadOnlyInfoRow(editGrid, 11, 'Reference px:');
+    [txtPxPerUnit, lblPxPerUnit] = labkit.ui.createReadOnlyInfoRow(editGrid, 12, 'Pixels/unit:');
+    lblReferencePxReadout.HorizontalAlignment = 'right';
+    lblPxPerUnit.HorizontalAlignment = 'right';
+
+    fitPanel = labkit.ui.createPanelGrid(layFA, 'Fit + Export', 3, [7 2], ...
+        struct('rowHeight', {{'fit', 'fit', 'fit', 'fit', 'fit', 'fit', 'fit'}}, ...
         'columnWidth', {{145, '1x'}}));
     fitGrid = fitPanel.grid;
 
@@ -156,20 +193,25 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
     btnFit.Layout.Row = 4;
     btnFit.Layout.Column = [1 2];
 
+    btnMeasureLength = uibutton(fitGrid, 'Text', 'Measure curve length', ...
+        'ButtonPushedFcn', @onMeasureCurveLength);
+    btnMeasureLength.Layout.Row = 5;
+    btnMeasureLength.Layout.Column = [1 2];
+
     btnExportCSV = uibutton(fitGrid, 'Text', 'Export result CSV', ...
         'ButtonPushedFcn', @onExportCSV);
-    btnExportCSV.Layout.Row = 5;
+    btnExportCSV.Layout.Row = 6;
     btnExportCSV.Layout.Column = [1 2];
     btnExportOverlay = uibutton(fitGrid, 'Text', 'Export overlay PNG', ...
         'ButtonPushedFcn', @onExportOverlay);
-    btnExportOverlay.Layout.Row = 6;
+    btnExportOverlay.Layout.Row = 7;
     btnExportOverlay.Layout.Column = [1 2];
 
     labkit.ui.createReadOnlyTextPanel(layFA, 'Workflow Notes', 4, { ...
         '1. Open an image and start curve editing.', ...
         '2. Double-click blank image space to add/insert points; drag points to move; double-click a point to delete it.', ...
-        '3. Measure the scale bar or enter a manual px/mm value.', ...
-        '4. Finish active edit modes before fitting or exporting.'});
+        '3. Calibrate with measured or typed reference pixels, a real reference length, and a unit.', ...
+        '4. Place the final scale bar, then fit curvature or measure curve length.'});
 
     resultTable = uitable(laySR, ...
         'ColumnName', {'Metric', 'Value'}, ...
@@ -216,19 +258,22 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
         S.image = img;
         S.xPix = [];
         S.yPix = [];
-        S.rawpx = NaN;
-        S.scaleLine = [];
-        S.scaleEditActive = false;
+        S.referencePx = NaN;
+        S.referenceLine = [];
+        S.scaleBarLine = [];
+        edtReferencePx.Value = 0;
+        S.referenceEditActive = false;
         S.curveEditActive = false;
         if ~isempty(S.curveEditor)
             S.curveEditor.delete();
         end
         S.curveEditor = [];
-        if ~isempty(S.scaleEditor)
-            S.scaleEditor.delete();
+        if ~isempty(S.referenceEditor)
+            S.referenceEditor.delete();
         end
-        S.scaleEditor = [];
+        S.referenceEditor = [];
         S.fit = emptyFitResult();
+        S.length = emptyLengthResult();
         txtImage.Value = char(filepath);
         addLog(sprintf('Loaded image: %s', filepath));
         refreshAll();
@@ -250,9 +295,9 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
             return;
         end
 
-        S.scaleEditActive = false;
-        if ~isempty(S.scaleEditor)
-            S.scaleEditor.setActive(false);
+        S.referenceEditActive = false;
+        if ~isempty(S.referenceEditor)
+            S.referenceEditor.setActive(false);
         end
         S.curveEditActive = true;
         S.curveStyle = string(ddCurveStyle.Value);
@@ -269,6 +314,7 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
             S.curveEditor.setStyle(S.curveStyle);
         end
         S.fit = emptyFitResult();
+        S.length = emptyLengthResult();
         refreshAll();
     end
 
@@ -276,6 +322,7 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
         S.xPix = points(:, 1);
         S.yPix = points(:, 2);
         S.fit = emptyFitResult();
+        S.length = emptyLengthResult();
         refreshSummary();
         if any(strcmp(reason, {'add point', 'delete point', 'move point'}))
             addLog(sprintf('Curve edit updated: %d point(s).', numel(S.xPix)));
@@ -295,23 +342,24 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
             S.xPix = [];
             S.yPix = [];
             S.fit = emptyFitResult();
+            S.length = emptyLengthResult();
             refreshAll();
         end
         addLog('Cleared curve points.');
     end
 
-    function onMeasureScale(~, ~)
+    function onMeasureReferencePixels(~, ~)
         if isempty(S.image)
-            showError('No image loaded', 'Open an image before measuring a scale bar.');
+            showError('No image loaded', 'Open an image before measuring reference pixels.');
             return;
         end
 
-        if S.scaleEditActive
-            S.scaleEditActive = false;
-            if ~isempty(S.scaleEditor)
-                S.scaleEditor.setActive(false);
+        if S.referenceEditActive
+            S.referenceEditActive = false;
+            if ~isempty(S.referenceEditor)
+                S.referenceEditor.setActive(false);
             end
-            addLog('Finished scale-bar edit.');
+            addLog('Finished reference-pixel edit.');
             refreshAll();
             return;
         end
@@ -320,15 +368,55 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
         if ~isempty(S.curveEditor)
             S.curveEditor.setActive(false);
         end
-        S.scaleEditActive = true;
-        ensureScaleEditor();
-        if isempty(S.scaleLine)
-            S.scaleEditor.start(zeros(0, 2));
+        S.referenceEditActive = true;
+        ensureReferenceEditor();
+        if isempty(S.referenceLine)
+            S.referenceEditor.setPoints(zeros(0, 2));
+            S.referenceEditor.setActive(true);
         else
-            S.scaleEditor.start(S.scaleLine);
+            S.referenceEditor.start(S.referenceLine);
         end
         S.fit = emptyFitResult();
-        addLog('Started scale-bar edit. Double-click two endpoints, then drag endpoints to refine.');
+        S.length = emptyLengthResult();
+        S.scaleBarLine = [];
+        addLog('Started reference-pixel edit. Double-click two endpoints, then drag endpoints to refine.');
+        refreshAll();
+    end
+
+    function onPlaceScaleBar(~, ~)
+        if isempty(S.image)
+            showError('No image loaded', 'Open an image before placing a scale bar.');
+            return;
+        end
+        [pxPerUnit, scaleUnit] = currentPixelsPerUnit();
+        if pxPerUnit <= 0
+            showError('Calibration required', ...
+                'Measure or enter reference pixels, then enter a positive real reference length and unit.');
+            return;
+        end
+        if edtScaleBarLen.Value <= 0
+            showError('Scale bar length required', ...
+                'Set a positive scale bar length before placing the scale bar.');
+            return;
+        end
+
+        try
+            S.scaleBarLine = defaultScaleBarLine(size(S.image), ...
+                edtScaleBarLen.Value * pxPerUnit, ddScalePosition.Value);
+        catch ME
+            showError('Could not place scale bar', ME.message);
+            return;
+        end
+        S.curveEditActive = false;
+        if ~isempty(S.curveEditor)
+            S.curveEditor.setActive(false);
+        end
+        S.referenceEditActive = false;
+        if ~isempty(S.referenceEditor)
+            S.referenceEditor.setActive(false);
+        end
+        addLog(sprintf('Placed scale bar: %.6g %s (%.6g px).', ...
+            edtScaleBarLen.Value, scaleUnit, edtScaleBarLen.Value * pxPerUnit));
         refreshAll();
     end
 
@@ -339,9 +427,10 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
         end
 
         try
-            S.fit = computeCurvatureFit(S.xPix, S.yPix, S.rawpx, ...
-                edtScaleLen.Value, edtManualScale.Value, ...
+            S.fit = computeCurvatureFit(S.xPix, S.yPix, S.referencePx, ...
+                edtReferenceLen.Value, ddScaleUnit.Value, ...
                 chkDensify.Value, round(edtDenseN.Value));
+            S.length = lengthResultFromFit(S.fit);
         catch ME
             showError('Circle fit failed', ME.message);
             return;
@@ -356,9 +445,29 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
         refreshAll();
     end
 
+    function onMeasureCurveLength(~, ~)
+        if numel(S.xPix) < 2
+            showError('Not enough points', 'At least 2 curve points are required to measure curve length.');
+            return;
+        end
+
+        points = currentCurveLengthPoints();
+        try
+            S.length = computeCurveLength(points(:, 1), points(:, 2), ...
+                S.referencePx, edtReferenceLen.Value, ddScaleUnit.Value);
+        catch ME
+            showError('Curve length failed', ME.message);
+            return;
+        end
+        addLog(sprintf('Curve length measured: %.6g %s.', ...
+            S.length.length_show, S.length.unitLen));
+        refreshAll();
+    end
+
     function onExportCSV(~, ~)
-        if ~S.fit.ok
-            showError('No fit result', 'Fit curvature before exporting a result CSV.');
+        if ~S.fit.ok && ~S.length.ok
+            showError('No measurement result', ...
+                'Fit curvature or measure curve length before exporting a result CSV.');
             return;
         end
 
@@ -371,7 +480,7 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
 
         filepath = string(fullfile(fp, fn));
         try
-            T = buildCurvatureResultTable(S.fit, S.imagePath);
+            T = buildCurvatureResultTable(S.fit, S.imagePath, S.length);
             writetable(T, filepath);
         catch ME
             showError('Could not export result CSV', ME.message);
@@ -425,39 +534,87 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
         end
     end
 
-    function ensureScaleEditor()
+    function ensureReferenceEditor()
         if isempty(S.image)
             return;
         end
-        if isempty(S.scaleEditor)
-            S.scaleEditor = labkit.ui.createAnchorCurveEditor(ui.topAxes, size(S.image), ...
+        if isempty(S.referenceEditor)
+            S.referenceEditor = labkit.ui.createAnchorCurveEditor(ui.topAxes, size(S.image), ...
                 struct('figure', fig, ...
                 'closed', false, ...
                 'style', 'Straight lines', ...
                 'maxPoints', 2, ...
-                'onChanged', @onScaleEditorChanged));
+                'onChanged', @onReferenceEditorChanged));
         else
-            S.scaleEditor.setImageSize(size(S.image));
-            S.scaleEditor.setStyle('Straight lines');
+            S.referenceEditor.setImageSize(size(S.image));
+            S.referenceEditor.setStyle('Straight lines');
         end
     end
 
-    function onScaleEditorChanged(points, ~)
-        S.scaleLine = points;
+    function onReferenceEditorChanged(points, ~)
+        S.referenceLine = points;
         if size(points, 1) == 2
-            rawpx = hypot(points(2, 1) - points(1, 1), ...
+            referencePx = hypot(points(2, 1) - points(1, 1), ...
                 points(2, 2) - points(1, 2));
-            if rawpx > 0
-                S.rawpx = rawpx;
+            if referencePx > 0
+                S.referencePx = referencePx;
+                edtReferencePx.Value = referencePx;
             else
-                S.rawpx = NaN;
+                S.referencePx = NaN;
+                edtReferencePx.Value = 0;
             end
         else
-            S.rawpx = NaN;
+            S.referencePx = NaN;
+            edtReferencePx.Value = 0;
         end
         S.fit = emptyFitResult();
+        S.length = emptyLengthResult();
+        S.scaleBarLine = [];
         refreshScaleReadout();
         refreshSummary();
+    end
+
+    function onCalibrationSettingsChanged(~, ~)
+        S.referencePx = positiveOrNaN(edtReferencePx.Value);
+        S.fit = emptyFitResult();
+        S.length = emptyLengthResult();
+        S.scaleBarLine = [];
+        refreshAll();
+    end
+
+    function onScaleBarSettingsChanged(~, ~)
+        if isempty(S.image) || isempty(S.scaleBarLine)
+            refreshAll();
+            return;
+        end
+        [pxPerUnit, ~] = currentPixelsPerUnit();
+        if pxPerUnit <= 0 || edtScaleBarLen.Value <= 0
+            S.scaleBarLine = [];
+            refreshAll();
+            return;
+        end
+        try
+            S.scaleBarLine = defaultScaleBarLine(size(S.image), ...
+                edtScaleBarLen.Value * pxPerUnit, ddScalePosition.Value);
+        catch
+            S.scaleBarLine = [];
+        end
+        refreshAll();
+    end
+
+    function [pxPerUnit, scaleUnit] = currentPixelsPerUnit()
+        scaleUnit = char(normalizeScaleUnit(ddScaleUnit.Value));
+        pxPerUnit = scalePixelsPerUnit(S.referencePx, edtReferenceLen.Value);
+    end
+
+    function points = currentCurveLengthPoints()
+        points = [S.xPix(:), S.yPix(:)];
+        if strcmp(S.curveStyle, "Curve") && ~isempty(S.curveEditor)
+            curvePoints = S.curveEditor.curvePoints();
+            if size(curvePoints, 1) >= 2
+                points = curvePoints;
+            end
+        end
     end
 
     function updateCurveGraphics()
@@ -467,43 +624,49 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
     end
 
     function refreshScaleReadout()
-        if isfinite(S.rawpx)
-            txtRawPx.Value = sprintf('%.6g', S.rawpx);
+        if isfinite(S.referencePx)
+            txtReferencePx.Value = sprintf('%.6g', S.referencePx);
         else
-            txtRawPx.Value = '-';
+            txtReferencePx.Value = '-';
         end
 
-        pxPerMm = scalePixelsPerMm(S.rawpx, edtScaleLen.Value, edtManualScale.Value);
-        if pxPerMm > 0
-            txtPxPerMm.Value = sprintf('%.6g', pxPerMm);
+        [pxPerUnit, scaleUnit] = currentPixelsPerUnit();
+        if pxPerUnit > 0
+            txtPxPerUnit.Value = sprintf('%.6g px/%s', pxPerUnit, scaleUnit);
         else
-            txtPxPerMm.Value = '-';
+            txtPxPerUnit.Value = '-';
         end
     end
 
     function updateModeControls()
         hasImage = ~isempty(S.image);
         hasCurve = ~isempty(S.xPix);
-        editActive = S.curveEditActive || S.scaleEditActive;
+        editActive = S.curveEditActive || S.referenceEditActive;
+        [pxPerUnit, ~] = currentPixelsPerUnit();
 
         btnStartCurve.Enable = ternary(hasImage, 'on', 'off');
         btnMeasureScale.Enable = ternary(hasImage, 'on', 'off');
+        btnPlaceScaleBar.Enable = ternary(hasImage && pxPerUnit > 0 && ~editActive, 'on', 'off');
         btnStartCurve.Text = ternary(S.curveEditActive, ...
             'Finish curve edit', 'Start curve edit');
-        btnMeasureScale.Text = ternary(S.scaleEditActive, ...
-            'Finish scale-bar edit', 'Measure scale bar');
+        btnMeasureScale.Text = ternary(S.referenceEditActive, ...
+            'Finish reference edit', 'Measure reference pixels');
 
-        ddCurveStyle.Enable = ternary(hasImage && ~S.scaleEditActive, 'on', 'off');
-        edtScaleLen.Enable = ternary(hasImage && ~S.curveEditActive, 'on', 'off');
-        edtManualScale.Enable = ternary(hasImage && ~S.curveEditActive, 'on', 'off');
+        ddCurveStyle.Enable = ternary(hasImage && ~S.referenceEditActive, 'on', 'off');
+        edtReferencePx.Enable = ternary(hasImage && ~S.curveEditActive && ~S.referenceEditActive, 'on', 'off');
+        edtReferenceLen.Enable = ternary(hasImage && ~S.curveEditActive, 'on', 'off');
+        ddScaleUnit.Enable = ternary(hasImage && ~S.curveEditActive, 'on', 'off');
+        edtScaleBarLen.Enable = ternary(hasImage && ~S.curveEditActive, 'on', 'off');
+        ddScalePosition.Enable = ternary(hasImage && ~S.curveEditActive, 'on', 'off');
 
-        btnUndoPoint.Enable = ternary(hasCurve && ~S.scaleEditActive, 'on', 'off');
-        btnClearCurve.Enable = ternary(hasCurve && ~S.scaleEditActive, 'on', 'off');
+        btnUndoPoint.Enable = ternary(hasCurve && ~S.referenceEditActive, 'on', 'off');
+        btnClearCurve.Enable = ternary(hasCurve && ~S.referenceEditActive, 'on', 'off');
         chkDensify.Enable = ternary(~editActive, 'on', 'off');
         edtDenseN.Enable = ternary(~editActive, 'on', 'off');
         chkShowDense.Enable = ternary(S.fit.ok && ~editActive, 'on', 'off');
         btnFit.Enable = ternary(numel(S.xPix) >= 3 && ~editActive, 'on', 'off');
-        btnExportCSV.Enable = ternary(S.fit.ok && ~editActive, 'on', 'off');
+        btnMeasureLength.Enable = ternary(numel(S.xPix) >= 2 && ~editActive, 'on', 'off');
+        btnExportCSV.Enable = ternary((S.fit.ok || S.length.ok) && ~editActive, 'on', 'off');
         btnExportOverlay.Enable = ternary(hasImage && ~editActive, 'on', 'off');
     end
 
@@ -547,29 +710,30 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
             ensureCurveEditor();
             S.curveEditor.setBackground(hImage);
             S.curveEditor.refresh();
-        elseif S.scaleEditActive
-            ensureScaleEditor();
-            S.scaleEditor.setBackground(hImage);
-            S.scaleEditor.refresh();
+        elseif S.referenceEditActive
+            ensureReferenceEditor();
+            S.referenceEditor.setBackground(hImage);
+            S.referenceEditor.refresh();
         else
             ax.ButtonDownFcn = [];
             hImage.HitTest = 'off';
             hImage.PickableParts = 'none';
             plotStaticCurveAnchors(ax);
-            if ~isempty(S.scaleLine)
-                plot(ax, S.scaleLine(:, 1), S.scaleLine(:, 2), 'c-', ...
+            if ~isempty(S.scaleBarLine)
+                plot(ax, S.scaleBarLine(:, 1), S.scaleBarLine(:, 2), 'c-', ...
                     'LineWidth', 3, ...
                     'HitTest', 'off', ...
                     'DisplayName', 'scale bar');
             end
         end
 
-        if ~isempty(S.scaleLine) && isfinite(S.rawpx)
-            text(ax, mean(S.scaleLine(:, 1)), mean(S.scaleLine(:, 2)) - 12, ...
-                sprintf('%.3g px', S.rawpx), ...
+        if ~isempty(S.scaleBarLine)
+            [labelY, verticalAlignment] = scaleBarLabelPosition(S.scaleBarLine, ddScalePosition.Value);
+            text(ax, mean(S.scaleBarLine(:, 1)), labelY, ...
+                scaleBarLabel(edtScaleBarLen.Value, ddScaleUnit.Value), ...
                 'Color', 'c', 'FontWeight', 'bold', ...
                 'HorizontalAlignment', 'center', ...
-                'VerticalAlignment', 'bottom');
+                'VerticalAlignment', verticalAlignment);
         end
         hold(ax, 'off');
         labkit.ui.enableAxesPopout(ax);
@@ -624,22 +788,35 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
     function refreshSummary()
         txtPointCount.Value = sprintf('Points: %d', numel(S.xPix));
         if S.fit.ok
-            resultTable.Data = fitResultTableData(S.fit);
+            resultTable.Data = fitResultTableData(S.fit, S.length);
             txtDetails.Value = { ...
                 sprintf('Image: %s', emptyDash(S.imagePath)), ...
                 sprintf('Center: xc = %.6f px, yc = %.6f px', S.fit.xc_px, S.fit.yc_px), ...
                 sprintf('Radius: %.6f %s', S.fit.R_show, S.fit.unitLen), ...
                 sprintf('Curvature: %.6f %s', S.fit.kappa_show, S.fit.unitK), ...
+                sprintf('Curve length: %.6f %s', S.length.length_show, S.length.unitLen), ...
                 sprintf('RMSE: %.6f %s', S.fit.rmse_show, S.fit.unitLen), ...
-                sprintf('rawpx = %s; px/mm = %.6g', mat2str(S.fit.rawpx), S.fit.px_per_mm)};
+                sprintf('reference = %.6g px / %.6g %s; px/%s = %.6g', ...
+                S.fit.referencePx, S.fit.referenceLength, S.fit.scaleUnit, ...
+                S.fit.scaleUnit, S.fit.px_per_unit)};
+        elseif S.length.ok
+            resultTable.Data = lengthResultTableData(S.length);
+            txtDetails.Value = { ...
+                sprintf('Image: %s', emptyDash(S.imagePath)), ...
+                sprintf('Curve length: %.6f %s', S.length.length_show, S.length.unitLen), ...
+                sprintf('Curve length: %.6f px', S.length.length_px), ...
+                sprintf('Points used: %d; px/%s = %.6g', ...
+                S.length.pointCount, S.length.scaleUnit, S.length.px_per_unit)};
         else
             resultTable.Data = initialResultTable();
             if S.curveEditActive
                 txtDetails.Value = {'Curve edit active. Double-click blank image space to add/insert points, drag points to move them, double-click a point to delete it. Use the scroll wheel over the image to zoom.'};
-            elseif S.scaleEditActive
-                txtDetails.Value = {'Scale-bar edit active. Double-click two scale-bar endpoints or drag existing endpoints; the scroll wheel remains available for zoom.'};
+            elseif S.referenceEditActive
+                txtDetails.Value = {'Reference-pixel edit active. Double-click two endpoints or drag existing endpoints; this sets the calibration pixel length only.'};
             elseif numel(S.xPix) >= 3
-                txtDetails.Value = {'Curve points are ready. Fit curvature to compute radius and curvature.'};
+                txtDetails.Value = {'Curve points are ready. Fit curvature or measure curve length.'};
+            elseif numel(S.xPix) >= 2
+                txtDetails.Value = {'Curve points are ready. Measure curve length, or add more points before fitting curvature.'};
             else
                 txtDetails.Value = {'Load an image and start curve editing.'};
             end
@@ -665,29 +842,39 @@ end
 
 function handlers = curvatureAppTestHandlers()
     handlers = struct( ...
-        'command', {'computeCurvatureFit', 'buildCurvatureResultTable'}, ...
-        'minArgs', {3, 2}, ...
-        'maxArgs', {3, 2}, ...
-        'maxOutputs', {1, 1}, ...
-        'run', {@runComputeCurvatureFit, @runBuildCurvatureResultTable});
+        'command', {'computeCurvatureFit', 'computeCurveLength', 'buildCurvatureResultTable'}, ...
+        'minArgs', {3, 3, 2}, ...
+        'maxArgs', {3, 3, 3}, ...
+        'maxOutputs', {1, 1, 1}, ...
+        'run', {@runComputeCurvatureFit, @runComputeCurveLength, @runBuildCurvatureResultTable});
 end
 
 function outputs = runComputeCurvatureFit(args)
     opts = args{3};
-    rawpx = optionValue(opts, 'rawpx', NaN);
-    scaleLenMm = optionValue(opts, 'scaleLengthMm', 0);
-    manualPxPerMm = optionValue(opts, 'manualPxPerMm', 0);
+    [referencePx, referenceLength, scaleUnit] = scaleOptionsFromStruct(opts);
     doDensify = optionValue(opts, 'doDensify', true);
     denseN = optionValue(opts, 'denseN', 300);
-    outputs = {computeCurvatureFit(args{1}, args{2}, rawpx, ...
-        scaleLenMm, manualPxPerMm, doDensify, denseN)};
+    outputs = {computeCurvatureFit(args{1}, args{2}, referencePx, ...
+        referenceLength, scaleUnit, doDensify, denseN)};
 end
 
 function outputs = runBuildCurvatureResultTable(args)
-    outputs = {buildCurvatureResultTable(args{1}, string(args{2}))};
+    if numel(args) >= 3
+        lengthResult = args{3};
+    else
+        lengthResult = lengthResultFromFit(args{1});
+    end
+    outputs = {buildCurvatureResultTable(args{1}, string(args{2}), lengthResult)};
 end
 
-function fit = computeCurvatureFit(xPix, yPix, rawpx, scaleLengthMm, manualPxPerMm, doDensify, denseN)
+function outputs = runComputeCurveLength(args)
+    opts = args{3};
+    [referencePx, referenceLength, scaleUnit] = scaleOptionsFromStruct(opts);
+    outputs = {computeCurveLength(args{1}, args{2}, referencePx, ...
+        referenceLength, scaleUnit)};
+end
+
+function fit = computeCurvatureFit(xPix, yPix, referencePx, referenceLength, scaleUnit, doDensify, denseN)
     fit = emptyFitResult();
     xPix = xPix(:);
     yPix = yPix(:);
@@ -719,17 +906,19 @@ function fit = computeCurvatureFit(xPix, yPix, rawpx, scaleLengthMm, manualPxPer
             'Circle fit produced an invalid radius.');
     end
 
-    pxPerMm = scalePixelsPerMm(rawpx, scaleLengthMm, manualPxPerMm);
-    useMM = pxPerMm > 0;
+    scaleUnit = char(normalizeScaleUnit(scaleUnit));
+    pxPerUnit = scalePixelsPerUnit(referencePx, referenceLength);
+    usePhysicalScale = pxPerUnit > 0;
     kappa_px = 1 / R_px;
+    lengthResult = computeCurveLength(xPix, yPix, referencePx, referenceLength, scaleUnit);
 
-    if useMM
-        unitLen = 'mm';
-        unitK = '1/mm';
-        R_show = R_px / pxPerMm;
-        rmse_show = rmse_px / pxPerMm;
+    if usePhysicalScale
+        unitLen = scaleUnit;
+        unitK = sprintf('1/%s', scaleUnit);
+        R_show = R_px / pxPerUnit;
+        rmse_show = rmse_px / pxPerUnit;
         kappa_show = 1 / R_show;
-        residuals_show = radialResiduals(xPix, yPix, xc, yc, R_px) / pxPerMm;
+        residuals_show = radialResiduals(xPix, yPix, xc, yc, R_px) / pxPerUnit;
     else
         unitLen = 'px';
         unitK = '1/px';
@@ -746,10 +935,11 @@ function fit = computeCurvatureFit(xPix, yPix, rawpx, scaleLengthMm, manualPxPer
     fit.R_px = R_px;
     fit.kappa_per_px = kappa_px;
     fit.rmse_px = rmse_px;
-    fit.rawpx = rawpx;
-    fit.scaleLength_mm = scaleLengthMm;
-    fit.px_per_mm = pxPerMm;
-    fit.useMM = useMM;
+    fit.referencePx = referencePx;
+    fit.referenceLength = referenceLength;
+    fit.scaleUnit = scaleUnit;
+    fit.px_per_unit = pxPerUnit;
+    fit.usePhysicalScale = usePhysicalScale;
     fit.R_show = R_show;
     fit.kappa_show = kappa_show;
     fit.rmse_show = rmse_show;
@@ -760,24 +950,60 @@ function fit = computeCurvatureFit(xPix, yPix, rawpx, scaleLengthMm, manualPxPer
     fit.yPix = yPix;
     fit.xFit = xFit;
     fit.yFit = yFit;
+    fit.curveLength_px = lengthResult.length_px;
+    fit.curveLength_show = lengthResult.length_show;
+    fit.curveLengthUnit = lengthResult.unitLen;
+    fit.curvePointCount = lengthResult.pointCount;
 end
 
-function pxPerMm = scalePixelsPerMm(rawpx, scaleLengthMm, manualPxPerMm)
-    pxPerMm = 0;
-    if nargin < 2 || isempty(scaleLengthMm)
-        scaleLengthMm = 0;
-    end
-    if nargin < 3 || isempty(manualPxPerMm)
-        manualPxPerMm = 0;
+function lengthResult = computeCurveLength(xPix, yPix, referencePx, referenceLength, scaleUnit)
+    lengthResult = emptyLengthResult();
+    xPix = xPix(:);
+    yPix = yPix(:);
+    [xPix, yPix] = removeDuplicateNeighbors(xPix, yPix, 1e-9);
+
+    if numel(xPix) < 2
+        error('labkit_CurvatureMeasurement_app:NotEnoughLengthPoints', ...
+            'At least 2 unique points are required to measure curve length.');
     end
 
-    validateattributes(scaleLengthMm, {'numeric'}, {'scalar', 'finite', 'nonnegative'});
-    validateattributes(manualPxPerMm, {'numeric'}, {'scalar', 'finite', 'nonnegative'});
+    lengthPx = sum(hypot(diff(xPix), diff(yPix)));
+    scaleUnit = char(normalizeScaleUnit(scaleUnit));
+    pxPerUnit = scalePixelsPerUnit(referencePx, referenceLength);
+    usePhysicalScale = pxPerUnit > 0;
+    if usePhysicalScale
+        lengthShow = lengthPx / pxPerUnit;
+        unitLen = scaleUnit;
+    else
+        lengthShow = lengthPx;
+        unitLen = 'px';
+    end
 
-    if scaleLengthMm > 0 && isfinite(rawpx) && rawpx > 0
-        pxPerMm = rawpx / scaleLengthMm;
-    elseif manualPxPerMm > 0
-        pxPerMm = manualPxPerMm;
+    lengthResult.ok = true;
+    lengthResult.message = '';
+    lengthResult.length_px = lengthPx;
+    lengthResult.length_show = lengthShow;
+    lengthResult.unitLen = unitLen;
+    lengthResult.referencePx = referencePx;
+    lengthResult.referenceLength = referenceLength;
+    lengthResult.scaleUnit = scaleUnit;
+    lengthResult.px_per_unit = pxPerUnit;
+    lengthResult.usePhysicalScale = usePhysicalScale;
+    lengthResult.pointCount = numel(xPix);
+end
+
+function pxPerUnit = scalePixelsPerUnit(referencePx, referenceLength)
+    pxPerUnit = 0;
+    if nargin < 1 || isempty(referencePx)
+        referencePx = NaN;
+    end
+    if nargin < 2 || isempty(referenceLength)
+        referenceLength = 0;
+    end
+
+    validateattributes(referenceLength, {'numeric'}, {'scalar', 'finite', 'nonnegative'});
+    if isfinite(referencePx) && referencePx > 0 && referenceLength > 0
+        pxPerUnit = referencePx / referenceLength;
     end
 end
 
@@ -883,7 +1109,11 @@ function plotAnchorResiduals(ax, points, fit)
         'DisplayName', 'anchor residuals');
 end
 
-function T = buildCurvatureResultTable(fit, imagePath)
+function T = buildCurvatureResultTable(fit, imagePath, lengthResult)
+    if nargin < 3 || isempty(lengthResult)
+        lengthResult = lengthResultFromFit(fit);
+    end
+    scaleInfo = resultScaleInfo(fit, lengthResult);
     T = table( ...
         string(imagePath), ...
         fit.xc_px, ...
@@ -891,28 +1121,35 @@ function T = buildCurvatureResultTable(fit, imagePath)
         fit.R_px, ...
         fit.kappa_per_px, ...
         fit.rmse_px, ...
-        fit.rawpx, ...
-        fit.scaleLength_mm, ...
-        fit.px_per_mm, ...
+        scaleInfo.referencePx, ...
+        scaleInfo.referenceLength, ...
+        string(scaleInfo.scaleUnit), ...
+        scaleInfo.pxPerUnit, ...
         fit.R_show, ...
         string(fit.unitLen), ...
         fit.kappa_show, ...
         string(fit.unitK), ...
         fit.rmse_show, ...
+        lengthResult.length_px, ...
+        lengthResult.length_show, ...
+        string(lengthResult.unitLen), ...
+        lengthResult.pointCount, ...
         'VariableNames', {'Image', 'CenterX_px', 'CenterY_px', ...
-        'Radius_px', 'Curvature_1_per_px', 'RMSE_px', 'RawScale_px', ...
-        'ScaleLength_mm', 'PixelsPerMm', 'Radius', 'RadiusUnit', ...
-        'Curvature', 'CurvatureUnit', 'RMSE'});
+        'Radius_px', 'Curvature_1_per_px', 'RMSE_px', 'ReferencePixels_px', ...
+        'ReferenceLength', 'ReferenceUnit', 'PixelsPerUnit', 'Radius', 'RadiusUnit', ...
+        'Curvature', 'CurvatureUnit', 'RMSE', ...
+        'CurveLength_px', 'CurveLength', 'CurveLengthUnit', 'CurvePointCount'});
 end
 
 function data = initialResultTable()
     data = { ...
+        'Curve length', '-'; ...
         'Radius', '-'; ...
         'Curvature', '-'; ...
         'RMSE', '-'; ...
         'Center X', '-'; ...
         'Center Y', '-'; ...
-        'Pixels/mm', '-'};
+        'Pixels/unit', '-'};
 end
 
 function tf = insideImageBounds(x, y, imageSize)
@@ -966,14 +1203,29 @@ function limits = clampLimits(limits, fullLimits)
     end
 end
 
-function data = fitResultTableData(fit)
+function data = fitResultTableData(fit, lengthResult)
+    if nargin < 2 || isempty(lengthResult)
+        lengthResult = lengthResultFromFit(fit);
+    end
     data = { ...
+        'Curve length', sprintf('%.6g %s', lengthResult.length_show, lengthResult.unitLen); ...
         'Radius', sprintf('%.6g %s', fit.R_show, fit.unitLen); ...
         'Curvature', sprintf('%.6g %s', fit.kappa_show, fit.unitK); ...
         'RMSE', sprintf('%.6g %s', fit.rmse_show, fit.unitLen); ...
         'Center X', sprintf('%.6f px', fit.xc_px); ...
         'Center Y', sprintf('%.6f px', fit.yc_px); ...
-        'Pixels/mm', sprintf('%.6g', fit.px_per_mm)};
+        sprintf('Pixels/%s', fit.scaleUnit), sprintf('%.6g', fit.px_per_unit)};
+end
+
+function data = lengthResultTableData(lengthResult)
+    data = { ...
+        'Curve length', sprintf('%.6g %s', lengthResult.length_show, lengthResult.unitLen); ...
+        'Curve length px', sprintf('%.6g px', lengthResult.length_px); ...
+        'Length points', sprintf('%d', lengthResult.pointCount); ...
+        sprintf('Pixels/%s', lengthResult.scaleUnit), sprintf('%.6g', lengthResult.px_per_unit); ...
+        'Radius', '-'; ...
+        'Curvature', '-'; ...
+        'RMSE', '-'};
 end
 
 function fit = emptyFitResult()
@@ -985,10 +1237,11 @@ function fit = emptyFitResult()
         'R_px', NaN, ...
         'kappa_per_px', NaN, ...
         'rmse_px', NaN, ...
-        'rawpx', NaN, ...
-        'scaleLength_mm', 0, ...
-        'px_per_mm', 0, ...
-        'useMM', false, ...
+        'referencePx', NaN, ...
+        'referenceLength', 0, ...
+        'scaleUnit', 'um', ...
+        'px_per_unit', 0, ...
+        'usePhysicalScale', false, ...
         'R_show', NaN, ...
         'kappa_show', NaN, ...
         'rmse_show', NaN, ...
@@ -998,7 +1251,142 @@ function fit = emptyFitResult()
         'xPix', [], ...
         'yPix', [], ...
         'xFit', [], ...
-        'yFit', []);
+        'yFit', [], ...
+        'curveLength_px', NaN, ...
+        'curveLength_show', NaN, ...
+        'curveLengthUnit', 'px', ...
+        'curvePointCount', 0);
+end
+
+function lengthResult = lengthResultFromFit(fit)
+    lengthResult = emptyLengthResult();
+    if isstruct(fit) && isfield(fit, 'curveLength_px') && ...
+            isfinite(fit.curveLength_px) && fit.curveLength_px >= 0
+        lengthResult.ok = true;
+        lengthResult.message = '';
+        lengthResult.length_px = fit.curveLength_px;
+        lengthResult.length_show = fit.curveLength_show;
+        lengthResult.unitLen = fit.curveLengthUnit;
+        lengthResult.referencePx = fit.referencePx;
+        lengthResult.referenceLength = fit.referenceLength;
+        lengthResult.scaleUnit = fit.scaleUnit;
+        lengthResult.px_per_unit = fit.px_per_unit;
+        lengthResult.usePhysicalScale = fit.usePhysicalScale;
+        lengthResult.pointCount = fit.curvePointCount;
+    end
+end
+
+function lengthResult = emptyLengthResult()
+    lengthResult = struct( ...
+        'ok', false, ...
+        'message', 'No curve length result.', ...
+        'length_px', NaN, ...
+        'length_show', NaN, ...
+        'unitLen', 'px', ...
+        'referencePx', NaN, ...
+        'referenceLength', 0, ...
+        'scaleUnit', 'um', ...
+        'px_per_unit', 0, ...
+        'usePhysicalScale', false, ...
+        'pointCount', 0);
+end
+
+function line = defaultScaleBarLine(imageSize, scaleBarPx, position)
+    validateattributes(scaleBarPx, {'numeric'}, {'scalar', 'finite', 'positive'});
+    widthPx = imageSize(2);
+    heightPx = imageSize(1);
+    margin = max(5, min(widthPx, heightPx) * 0.08);
+    usableWidth = widthPx - 2 * margin;
+    if scaleBarPx > usableWidth
+        error('labkit_CurvatureMeasurement_app:ScaleBarTooLong', ...
+            'Scale bar is %.6g px, but the image only has %.6g px available horizontally. Reduce the display scale-bar length.', ...
+            scaleBarPx, usableWidth);
+    end
+
+    position = string(position);
+    if contains(position, "left", 'IgnoreCase', true)
+        x1 = margin + 0.5;
+    elseif contains(position, "right", 'IgnoreCase', true)
+        x1 = widthPx - margin - scaleBarPx + 0.5;
+    else
+        x1 = (widthPx - scaleBarPx) / 2 + 0.5;
+    end
+    x2 = x1 + scaleBarPx;
+
+    if contains(position, "top", 'IgnoreCase', true)
+        y = margin + 0.5;
+    else
+        y = heightPx - margin + 0.5;
+    end
+    y = max(1, min(heightPx, y));
+    line = [x1 y; x2 y];
+end
+
+function [labelY, verticalAlignment] = scaleBarLabelPosition(line, position)
+    lineY = mean(line(:, 2));
+    if contains(string(position), "top", 'IgnoreCase', true)
+        labelY = lineY + 12;
+        verticalAlignment = 'top';
+    else
+        labelY = lineY - 12;
+        verticalAlignment = 'bottom';
+    end
+end
+
+function label = scaleBarLabel(scaleBarLength, scaleUnit)
+    label = sprintf('%.6g %s', scaleBarLength, char(normalizeScaleUnit(scaleUnit)));
+end
+
+function scaleInfo = resultScaleInfo(fit, lengthResult)
+    scaleInfo = struct('referencePx', NaN, 'referenceLength', 0, ...
+        'scaleUnit', 'um', 'pxPerUnit', 0);
+    if isstruct(lengthResult) && isfield(lengthResult, 'px_per_unit') && ...
+            lengthResult.px_per_unit > 0
+        scaleInfo.referencePx = lengthResult.referencePx;
+        scaleInfo.referenceLength = lengthResult.referenceLength;
+        scaleInfo.scaleUnit = lengthResult.scaleUnit;
+        scaleInfo.pxPerUnit = lengthResult.px_per_unit;
+    elseif isstruct(fit) && isfield(fit, 'px_per_unit')
+        scaleInfo.referencePx = fit.referencePx;
+        scaleInfo.referenceLength = fit.referenceLength;
+        scaleInfo.scaleUnit = fit.scaleUnit;
+        scaleInfo.pxPerUnit = fit.px_per_unit;
+    end
+end
+
+function [referencePx, referenceLength, scaleUnit] = scaleOptionsFromStruct(opts)
+    referencePx = optionValue(opts, 'referencePx', optionValue(opts, 'rawpx', NaN));
+    referenceLength = optionValue(opts, 'referenceLength', optionValue(opts, 'scaleLengthMm', 0));
+    scaleUnit = optionValue(opts, 'scaleUnit', 'um');
+    referencePx = positiveOrNaN(referencePx);
+    if isempty(referenceLength) || ~isfinite(referenceLength) || referenceLength < 0
+        referenceLength = 0;
+    end
+
+    manualPxPerMm = optionValue(opts, 'manualPxPerMm', 0);
+    if isempty(manualPxPerMm) || ~isfinite(manualPxPerMm) || manualPxPerMm < 0
+        manualPxPerMm = 0;
+    end
+    if ~(isfinite(referencePx) && referencePx > 0 && referenceLength > 0) && manualPxPerMm > 0
+        referencePx = manualPxPerMm;
+        referenceLength = 1;
+        scaleUnit = 'mm';
+    end
+    scaleUnit = char(normalizeScaleUnit(scaleUnit));
+end
+
+function scaleUnit = normalizeScaleUnit(scaleUnit)
+    scaleUnit = string(scaleUnit);
+    validUnits = ["nm", "um", "mm", "cm"];
+    if ~any(scaleUnit == validUnits)
+        scaleUnit = "um";
+    end
+end
+
+function value = positiveOrNaN(value)
+    if isempty(value) || ~isfinite(value) || value <= 0
+        value = NaN;
+    end
 end
 
 function s = emptyDash(value)

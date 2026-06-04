@@ -23,7 +23,7 @@ This adds the repository root, `apps/`, and nested app category folders to the M
 | `labkit_ChronoOverlay_app` | routine | Chrono voltage/current overlay. | Chrono DTA | Overlay plots and CSV. |
 | `labkit_DICPreprocess_app` | active | Image registration, paired crop preparation, and ROI mask drawing. | Reference/current images | Aligned images, crop PNGs, ROI mask. |
 | `labkit_DICPostprocess_app` | active | Ncorr strain overlay, ROI summary, and colorbar export. | Ncorr MAT, reference image, mask | EXX/EYY overlays, summary CSV, colorbar/level table. |
-| `labkit_CurvatureMeasurement_app` | experimental | Editable image-curve circle fit for radius and curvature. | Image | Overlay PNG and curvature CSV. |
+| `labkit_CurvatureMeasurement_app` | experimental | Editable image-curve circle fit, calibrated real-unit scale-bar placement, and curve length measurement. | Image | Overlay PNG and curvature/length CSV. |
 | `labkit_FocusStack_app` | experimental | Microscope focus-stack fusion into one all-in-focus image. | Focus image folder or selected image files | Fused PNG, focus map PNG, summary CSV. |
 | `labkit_ECGPrint_app` | experimental | ECG waveform preview, ROI filtering, peak/segment SNR, and SNR-over-time display. | MAT timetable or CSV/TSV table | Segment SNR CSV and waveform PNG. |
 
@@ -124,6 +124,6 @@ Interactive file selection, drawing, visual inspection, and full workflow feel a
 | `labkit_CIC_app` | CIC, voltage-transient metrics, water-window status, and batch display tables. | CIC CSV columns are guarded by app tests. |
 | `labkit_DICPreprocess_app` | Registration, repeated crop/align workflow, false-color preview, inline crop ROI, and binary ROI mask drawing. | Exports current image pair, crop PNGs, and white-inside/black-outside ROI masks. |
 | `labkit_DICPostprocess_app` | Ncorr MAT extraction, EXX/EYY overlays, ROI summary, optical enhancement controls, and strain colorbar levels. | Exports overlays, summary CSV, and colorbar/level files. |
-| `labkit_CurvatureMeasurement_app` | Image anchor editing, scale-bar measurement, circle fitting, curvature conversion, dense-point display, and residual annotations. | Exports overlay PNG and curvature CSV. |
-| `labkit_FocusStack_app` | Folder or selected-file focus sequence loading, optional registration to the middle image, Laplacian-pyramid focus fusion, smoothed detail-level decision weights, and focus-depth preview. | Exports fused PNG, colorized focus map PNG, and per-source focus coverage CSV. |
+| `labkit_CurvatureMeasurement_app` | Image anchor editing, measured or typed reference-pixel calibration, selectable scale units, placed real-unit scale bars, circle fitting, curvature conversion, curve length measurement, dense-point display, and residual annotations. | Exports overlay PNG and curvature/length CSV. |
+| `labkit_FocusStack_app` | Folder or selected-file focus sequence loading, optional registration to the middle image, preset-guided Laplacian-pyramid focus fusion, user-facing detail/blend controls, and focus-depth preview. | Exports fused PNG, colorized focus map PNG, and per-source focus coverage CSV. |
 | `labkit_ECGPrint_app` | CSV/MAT import parsing, channel/ROI selection, padded filtering before ROI crop, ECG peak detection, segments, template, and SNR-over-time plots. | Exports per-segment SNR CSV and waveform PNG. Multi-file/class statistics belong in a separate wearable stats app. |
