@@ -54,6 +54,25 @@ function test_gui_layout_ui_scale_bar_tool()
     assert(~tool.isReferenceEditActive(), ...
         'Measure reference button should finish reference edit mode when active.');
 
+    fig2 = uifigure('Visible', 'off', 'Name', 'labkit_scale_bar_tool_background_probe');
+    cleaner2 = onCleanup(@() delete(fig2)); %#ok<NASGU>
+    grid2 = uigridlayout(fig2, [2 1]);
+    ax2 = uiaxes(grid2);
+    ax2.Layout.Row = 1;
+    bg2 = imagesc(ax2, rand(40, 80));
+    tool2 = labkit.ui.createScaleBarTool(grid2, 2, ax2, ...
+        struct('onError', @onError));
+    tool2.setImageSize([40 80 1]);
+    h.invokeCallback(tool2.controls.measureReferenceButton, 'ButtonPushedFcn');
+    assert(tool2.isReferenceEditActive(), ...
+        'Scale-bar tool should enter reference edit mode without app-owned background wiring.');
+    assert(strcmp(bg2.HitTest, 'on') && strcmp(bg2.PickableParts, 'visible'), ...
+        'Scale-bar tool should bind the current axes image as the editable background.');
+    h.invokeCallback(tool2.controls.measureReferenceButton, 'ButtonPushedFcn');
+    assert(strcmp(bg2.HitTest, 'off') && strcmp(bg2.PickableParts, 'none'), ...
+        'Scale-bar tool should release background hit testing when reference edit finishes.');
+    tool2.delete();
+
     tool.delete();
 
     function onBeforeEdit(~, ~)

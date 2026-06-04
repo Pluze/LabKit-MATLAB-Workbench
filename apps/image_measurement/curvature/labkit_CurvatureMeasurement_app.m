@@ -268,9 +268,10 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
     function onReferenceEditChanged(~, reason)
         S.fit = emptyFitResult();
         S.length = emptyLengthResult();
-        if strcmp(char(string(reason)), 'start')
+        reasonText = char(string(reason));
+        if strcmp(reasonText, 'start')
             addLog('Started reference-pixel edit. Double-click two endpoints, then drag endpoints to refine.');
-        elseif strcmp(char(string(reason)), 'finish')
+        elseif strcmp(reasonText, 'finish')
             addLog('Finished reference-pixel edit.');
         end
         refreshScaleReadout();

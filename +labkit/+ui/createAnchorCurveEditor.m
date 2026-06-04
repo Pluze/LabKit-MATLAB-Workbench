@@ -31,6 +31,10 @@ function editor = createAnchorCurveEditor(ax, imageSize, opts)
 %   Open paths extend endpoints for natural tracing, but clicks close to an
 %   existing visible segment insert correction anchors. Endpoint extensions
 %   that would self-intersect the visible path are treated as insertions.
+%   Only one anchor editor owns a given axes at a time. Activating an editor
+%   deactivates the previous editor on that axes, temporarily owns pointer
+%   hit-testing and scroll-wheel zoom, and restores the prior scroll callback
+%   when deactivated.
 
     if nargin < 3
         opts = struct();
@@ -40,6 +44,7 @@ function editor = createAnchorCurveEditor(ax, imageSize, opts)
     state.ax = ax;
     state.fig = optionValue(opts, 'figure', ancestor(ax, 'figure'));
     state.imageSize = imageSize;
+    state.token = nextEditorToken();
     state.closed = optionValue(opts, 'closed', false);
     state.style = string(optionValue(opts, 'style', 'Curve'));
     state.installScrollWheel = optionValue(opts, 'installScrollWheel', true);
@@ -52,6 +57,8 @@ function editor = createAnchorCurveEditor(ax, imageSize, opts)
     state.background = [];
     state.viewXLim = [];
     state.viewYLim = [];
+    state.ownsScrollWheel = false;
+    state.previousScrollWheelFcn = [];
     state.onChanged = optionValue(opts, 'onChanged', []);
 
     editor = struct();
@@ -83,14 +90,17 @@ function editor = createAnchorCurveEditor(ax, imageSize, opts)
     function setActive(enabled)
         state.active = logical(enabled);
         if state.active
+            registerActiveEditor();
             state.ax.ButtonDownFcn = @onAxesClicked;
-            if state.installScrollWheel && ~isempty(state.fig) && isvalid(state.fig)
-                state.fig.WindowScrollWheelFcn = @onScrollZoom;
-            end
+            installScrollWheelCallback();
         else
+            unregisterActiveEditor();
             state.ax.ButtonDownFcn = [];
+            releaseDragCallbacks();
+            clearOwnedScrollWheel();
         end
         updateBackgroundHitTest();
+        updateEditorHitTest();
     end
 
     function setPoints(points)
@@ -145,12 +155,11 @@ function editor = createAnchorCurveEditor(ax, imageSize, opts)
     function refresh()
         if state.active
             state.ax.ButtonDownFcn = @onAxesClicked;
-            if state.installScrollWheel && ~isempty(state.fig) && isvalid(state.fig)
-                state.fig.WindowScrollWheelFcn = @onScrollZoom;
-            end
+            installScrollWheelCallback();
         end
         updateBackgroundHitTest();
         ensureGraphics();
+        updateEditorHitTest();
         if ~isempty(state.anchorLine) && isvalid(state.anchorLine)
             state.anchorLine.XData = state.points(:, 1);
             state.anchorLine.YData = state.points(:, 2);
@@ -184,9 +193,9 @@ function editor = createAnchorCurveEditor(ax, imageSize, opts)
         if isvalid(state.ax)
             state.ax.ButtonDownFcn = [];
         end
-        if state.installScrollWheel && ~isempty(state.fig) && isvalid(state.fig)
-            state.fig.WindowScrollWheelFcn = [];
-        end
+        unregisterActiveEditor();
+        releaseDragCallbacks();
+        clearOwnedScrollWheel();
         labkit.ui.enableAxesPopout(state.ax);
     end
 
@@ -234,9 +243,7 @@ function editor = createAnchorCurveEditor(ax, imageSize, opts)
 
     function onAnchorReleased(~, ~)
         updateDraggedAnchor();
-        state.fig.WindowButtonMotionFcn = '';
-        state.fig.WindowButtonUpFcn = '';
-        state.dragIndex = [];
+        releaseDragCallbacks();
         notifyChanged('move point');
     end
 
@@ -267,6 +274,7 @@ function editor = createAnchorCurveEditor(ax, imageSize, opts)
     end
 
     function ensureGraphics()
+        created = false;
         if isempty(state.curveLine) || ~isvalid(state.curveLine)
             state.curveLine = line(state.ax, NaN, NaN, ...
                 'Color', [0 0.45 0.95], ...
@@ -274,6 +282,7 @@ function editor = createAnchorCurveEditor(ax, imageSize, opts)
                 'ButtonDownFcn', @onAxesClicked, ...
                 'HitTest', 'on', ...
                 'PickableParts', 'visible');
+            created = true;
         end
 
         if isempty(state.anchorLine) || ~isvalid(state.anchorLine)
@@ -286,8 +295,100 @@ function editor = createAnchorCurveEditor(ax, imageSize, opts)
                 'ButtonDownFcn', @onAxesClicked, ...
                 'HitTest', 'on', ...
                 'PickableParts', 'visible');
+            created = true;
         end
-        labkit.ui.enableAxesPopout(state.ax);
+        if created
+            labkit.ui.enableAxesPopout(state.ax);
+        end
+    end
+
+    function updateEditorHitTest()
+        if state.active
+            hitTest = 'on';
+            pickableParts = 'visible';
+        else
+            hitTest = 'off';
+            pickableParts = 'none';
+        end
+        setGraphicHitTest(state.curveLine, hitTest, pickableParts);
+        setGraphicHitTest(state.anchorLine, hitTest, pickableParts);
+    end
+
+    function setGraphicHitTest(h, hitTest, pickableParts)
+        if isempty(h) || ~isvalid(h)
+            return;
+        end
+        h.HitTest = hitTest;
+        h.PickableParts = pickableParts;
+    end
+
+    function releaseDragCallbacks()
+        if isempty(state.fig) || ~isvalid(state.fig)
+            state.dragIndex = [];
+            return;
+        end
+        state.fig.WindowButtonMotionFcn = '';
+        state.fig.WindowButtonUpFcn = '';
+        state.dragIndex = [];
+    end
+
+    function clearOwnedScrollWheel()
+        if ~state.ownsScrollWheel
+            return;
+        end
+        if state.installScrollWheel && ~isempty(state.fig) && isvalid(state.fig)
+            state.fig.WindowScrollWheelFcn = state.previousScrollWheelFcn;
+        end
+        state.previousScrollWheelFcn = [];
+        state.ownsScrollWheel = false;
+    end
+
+    function installScrollWheelCallback()
+        if ~state.installScrollWheel || isempty(state.fig) || ~isvalid(state.fig)
+            return;
+        end
+        if ~state.ownsScrollWheel
+            state.previousScrollWheelFcn = state.fig.WindowScrollWheelFcn;
+        end
+        state.fig.WindowScrollWheelFcn = @onScrollZoom;
+        state.ownsScrollWheel = true;
+    end
+
+    function registerActiveEditor()
+        if isempty(state.ax) || ~isvalid(state.ax)
+            return;
+        end
+        key = activeEditorAppdataKey();
+        if isappdata(state.ax, key)
+            activeEditor = getappdata(state.ax, key);
+            if isstruct(activeEditor) && isfield(activeEditor, 'token') && ...
+                    activeEditor.token ~= state.token && ...
+                    isfield(activeEditor, 'deactivate') && isa(activeEditor.deactivate, 'function_handle')
+                activeEditor.deactivate();
+            end
+        end
+        setappdata(state.ax, key, struct( ...
+            'token', state.token, ...
+            'deactivate', @deactivateFromPeer));
+    end
+
+    function unregisterActiveEditor()
+        if isempty(state.ax) || ~isvalid(state.ax)
+            return;
+        end
+        key = activeEditorAppdataKey();
+        if ~isappdata(state.ax, key)
+            return;
+        end
+        activeEditor = getappdata(state.ax, key);
+        if isstruct(activeEditor) && isfield(activeEditor, 'token') && ...
+                activeEditor.token == state.token
+            rmappdata(state.ax, key);
+        end
+    end
+
+    function deactivateFromPeer()
+        setActive(false);
     end
 
     function updateBackgroundHitTest()
@@ -412,4 +513,17 @@ function value = optionValue(opts, name, defaultValue)
     if isfield(opts, name)
         value = opts.(name);
     end
+end
+
+function token = nextEditorToken()
+    persistent nextToken
+    if isempty(nextToken)
+        nextToken = 0;
+    end
+    nextToken = nextToken + 1;
+    token = nextToken;
+end
+
+function key = activeEditorAppdataKey()
+    key = 'labkit_ui_activeAnchorCurveEditor';
 end

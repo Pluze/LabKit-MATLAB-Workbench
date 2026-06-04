@@ -38,7 +38,9 @@ function tool = createScaleBarTool(parent, row, ax, opts)
 %
 % The tool owns generic reference-pixel editing, scale-bar state, calibration
 % normalization, and overlay drawing. Apps still own scientific calculations,
-% result summaries, alerts/log wording, and exports.
+% result summaries, alerts/log wording, and exports. When reference editing
+% starts, the tool uses the current axes image as the editable background if
+% the app has not already supplied one with setBackground().
 
     if nargin < 4
         opts = struct();
@@ -54,6 +56,7 @@ function tool = createScaleBarTool(parent, row, ax, opts)
     state.referenceEditActive = false;
     state.scaleBar = [];
     state.enabledState = struct();
+    state.suppressReferenceEditorCallback = false;
 
     panelOpts = opts;
     panelOpts.onMeasureReference = @onMeasureReferenceButton;
@@ -218,12 +221,7 @@ function tool = createScaleBarTool(parent, row, ax, opts)
         invokeCallback('onBeforeReferenceEdit', scalePanel.panel, []);
         state.referenceEditActive = true;
         ensureReferenceEditor();
-        if isempty(state.referenceLine)
-            state.referenceEditor.setPoints(zeros(0, 2));
-            state.referenceEditor.setActive(true);
-        else
-            state.referenceEditor.start(state.referenceLine);
-        end
+        activateReferenceEditor();
         state.scaleBar = [];
         refreshEnabled();
         invokeCallback('onReferenceEditChanged', scalePanel.panel, 'start');
@@ -270,6 +268,7 @@ function tool = createScaleBarTool(parent, row, ax, opts)
     end
 
     function ensureReferenceEditor()
+        refreshBackgroundFromAxes();
         if isempty(state.referenceEditor)
             state.referenceEditor = labkit.ui.createAnchorCurveEditor(state.ax, state.imageSize, ...
                 struct('figure', state.fig, ...
@@ -286,8 +285,24 @@ function tool = createScaleBarTool(parent, row, ax, opts)
         end
     end
 
+    function refreshBackgroundFromAxes()
+        if ~isempty(state.background) && isvalid(state.background)
+            return;
+        end
+        if isempty(state.ax) || ~isvalid(state.ax)
+            return;
+        end
+        images = findobj(state.ax, 'Type', 'image');
+        if ~isempty(images)
+            state.background = images(1);
+        end
+    end
+
     function onReferenceEditorChanged(points, reason)
         state.referenceLine = points;
+        if state.suppressReferenceEditorCallback
+            return;
+        end
         if size(points, 1) == 2
             referencePx = hypot(points(2, 1) - points(1, 1), ...
                 points(2, 2) - points(1, 2));
@@ -299,6 +314,22 @@ function tool = createScaleBarTool(parent, row, ax, opts)
         refreshEnabled();
         invokeCallback('onCalibrationChanged', scalePanel.panel, reason);
         invokeCallback('onReferenceEditChanged', scalePanel.panel, reason);
+    end
+
+    function activateReferenceEditor()
+        points = state.referenceLine;
+        if isempty(points)
+            points = zeros(0, 2);
+        end
+
+        state.suppressReferenceEditorCallback = true;
+        cleanupObj = onCleanup(@() clearReferenceEditorSuppression()); %#ok<NASGU>
+        state.referenceEditor.setPoints(points);
+        state.referenceEditor.setActive(true);
+    end
+
+    function clearReferenceEditorSuppression()
+        state.suppressReferenceEditorCallback = false;
     end
 
     function refreshEnabled()

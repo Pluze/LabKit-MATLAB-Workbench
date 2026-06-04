@@ -67,6 +67,48 @@ function test_gui_layout_ui_anchor_curve_editor()
         'Anchor curve editor should remove the last anchor.');
     editor.clearPoints();
     assert(isempty(editor.getPoints()), 'Anchor curve editor should clear anchors.');
+    fig2 = uifigure('Visible', 'off', 'Name', 'labkit_anchor_curve_editor_callback_probe');
+    cleaner2 = onCleanup(@() delete(fig2)); %#ok<NASGU>
+    ax2 = uiaxes(fig2);
+    image(ax2, zeros(40, 60, 3, 'uint8'));
+    axis(ax2, 'image');
+    baseScroll2 = @(~,~) setappdata(fig2, 'baseScrollCalled', true);
+    fig2.WindowScrollWheelFcn = baseScroll2;
+    scrollEditor = labkit.ui.createAnchorCurveEditor(ax2, [40 60 3], ...
+        struct('figure', fig2, 'closed', false, 'style', 'Straight lines'));
+    scrollEditor.start([5 5; 20 20]);
+    assert(~isempty(fig2.WindowScrollWheelFcn), ...
+        'Active anchor editor should install scroll-wheel zoom.');
+    editorLines = findobj(ax2, 'Type', 'Line');
+    assert(~isempty(editorLines) && all(strcmp({editorLines.HitTest}, 'on')), ...
+        'Active anchor editor graphics should receive pointer events.');
+    scrollEditor.setActive(false);
+    assert(isequal(fig2.WindowScrollWheelFcn, baseScroll2), ...
+        'Inactive anchor editor should restore the prior scroll-wheel callback.');
+    editorLines = findobj(ax2, 'Type', 'Line');
+    assert(~isempty(editorLines) && all(strcmp({editorLines.HitTest}, 'off')), ...
+        'Inactive anchor editor graphics should not intercept pointer events.');
+    fig3 = uifigure('Visible', 'off', 'Name', 'labkit_anchor_curve_editor_mutex_probe');
+    cleaner3 = onCleanup(@() delete(fig3)); %#ok<NASGU>
+    ax3 = uiaxes(fig3);
+    image(ax3, zeros(40, 60, 3, 'uint8'));
+    axis(ax3, 'image');
+    baseScroll3 = @(~,~) setappdata(fig3, 'baseScrollCalled', true);
+    fig3.WindowScrollWheelFcn = baseScroll3;
+    firstEditor = labkit.ui.createAnchorCurveEditor(ax3, [40 60 3], ...
+        struct('figure', fig3, 'closed', false, 'style', 'Straight lines'));
+    secondEditor = labkit.ui.createAnchorCurveEditor(ax3, [40 60 3], ...
+        struct('figure', fig3, 'closed', false, 'style', 'Straight lines'));
+    firstEditor.start([5 5; 20 20]);
+    secondEditor.start([8 8; 24 24]);
+    assert(~isempty(fig3.WindowScrollWheelFcn), ...
+        'A later active anchor editor should own the axes scroll callback.');
+    firstEditor.setActive(false);
+    assert(~isempty(fig3.WindowScrollWheelFcn), ...
+        'A deactivated peer editor should not clear the active editor callback.');
+    secondEditor.setActive(false);
+    assert(isequal(fig3.WindowScrollWheelFcn, baseScroll3), ...
+        'The active editor should restore the prior scroll callback when stopped.');
 
     function markChanged()
         changed = true;
