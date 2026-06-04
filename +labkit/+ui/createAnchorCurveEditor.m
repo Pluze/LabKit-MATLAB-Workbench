@@ -28,6 +28,8 @@ function editor = createAnchorCurveEditor(ax, imageSize, opts)
 % Interaction:
 %   Double-click blank space to add/insert anchors, drag anchors to move,
 %   double-click anchors to delete, and use scroll wheel to zoom when enabled.
+%   Open paths prefer extending the nearest endpoint; they insert into the
+%   middle only when the click is close to an existing visible segment.
 
     if nargin < 3
         opts = struct();
@@ -447,26 +449,12 @@ function points = addOrInsertAnchor(points, newPoint, ax, imageSize, curveStyle,
     end
 
     if ~closed
-        insertIdx = selfIntersectionAwareOpenPathInsertion(points, newPoint);
-        points = [points(1:insertIdx, :); newPoint; points((insertIdx + 1):end, :)];
+        points = addOrInsertOpenAnchor(points, newPoint, ax, imageSize, curveStyle);
         return;
     end
 
-    [segmentIdx, distance] = nearestVisibleSegment(points, newPoint, imageSize, curveStyle, closed);
-    xSpan = max(1, diff(ax.XLim));
-    ySpan = max(1, diff(ax.YLim));
-    threshold = 0.10 * max(xSpan, ySpan);
+    [segmentIdx, ~] = nearestVisibleSegment(points, newPoint, imageSize, curveStyle, closed);
     if isempty(segmentIdx)
-        points(end+1, :) = newPoint;
-        return;
-    end
-
-    if closed
-        points = [points(1:segmentIdx, :); newPoint; points((segmentIdx + 1):end, :)];
-        return;
-    end
-
-    if distance > threshold
         points(end+1, :) = newPoint;
         return;
     end
@@ -478,61 +466,33 @@ function idx = nearestPointIndex(points, point)
     [~, idx] = min(hypot(points(:, 1) - point(1), points(:, 2) - point(2)));
 end
 
-function insertIdx = selfIntersectionAwareOpenPathInsertion(points, point)
-    n = size(points, 1);
-    bestIntersections = inf;
-    bestLength = inf;
-    insertIdx = n;
-    for k = 0:n
-        candidate = [points(1:k, :); point; points((k + 1):end, :)];
-        intersections = polylineSelfIntersectionCount(candidate);
-        pathLength = openPathLength(candidate);
-        if intersections < bestIntersections || ...
-                (intersections == bestIntersections && pathLength < bestLength)
-            bestIntersections = intersections;
-            bestLength = pathLength;
-            insertIdx = k;
+function points = addOrInsertOpenAnchor(points, newPoint, ax, imageSize, curveStyle)
+    firstDistance = hypot(newPoint(1) - points(1, 1), newPoint(2) - points(1, 2));
+    lastDistance = hypot(newPoint(1) - points(end, 1), newPoint(2) - points(end, 2));
+    endpointThreshold = anchorInsertionThreshold(ax, 0.08, 12, 80);
+    if min(firstDistance, lastDistance) <= endpointThreshold
+        if firstDistance < lastDistance
+            points = [newPoint; points];
+        else
+            points(end+1, :) = newPoint;
         end
-    end
-end
-
-function total = openPathLength(points)
-    total = sum(hypot(diff(points(:, 1)), diff(points(:, 2))));
-end
-
-function count = polylineSelfIntersectionCount(points)
-    count = 0;
-    n = size(points, 1);
-    if n < 4
-        return;
-    end
-    for i = 1:(n - 2)
-        for j = (i + 2):(n - 1)
-            if segmentsIntersect(points(i, :), points(i + 1, :), ...
-                    points(j, :), points(j + 1, :))
-                count = count + 1;
-            end
-        end
-    end
-end
-
-function tf = segmentsIntersect(a, b, c, d)
-    epsTol = 1e-9;
-    if min(norm(a - c), min(norm(a - d), min(norm(b - c), norm(b - d)))) <= epsTol
-        tf = false;
         return;
     end
 
-    o1 = segmentOrientation(a, b, c);
-    o2 = segmentOrientation(a, b, d);
-    o3 = segmentOrientation(c, d, a);
-    o4 = segmentOrientation(c, d, b);
-    tf = (o1 * o2 < -epsTol) && (o3 * o4 < -epsTol);
+    [segmentIdx, distance] = nearestVisibleSegment(points, newPoint, imageSize, curveStyle, false);
+    segmentThreshold = anchorInsertionThreshold(ax, 0.025, 6, 30);
+    if ~isempty(segmentIdx) && distance <= segmentThreshold
+        points = [points(1:segmentIdx, :); newPoint; points((segmentIdx + 1):end, :)];
+        return;
+    end
+
+    points(end+1, :) = newPoint;
 end
 
-function value = segmentOrientation(a, b, c)
-    value = (b(1) - a(1)) * (c(2) - a(2)) - ...
-        (b(2) - a(2)) * (c(1) - a(1));
+function threshold = anchorInsertionThreshold(ax, fraction, minPixels, maxPixels)
+    xSpan = max(1, diff(ax.XLim));
+    ySpan = max(1, diff(ax.YLim));
+    threshold = min(maxPixels, max(minPixels, fraction * max(xSpan, ySpan)));
 end
 
 function [segmentIdx, bestDistance] = nearestVisibleSegment(points, point, imageSize, curveStyle, closed)

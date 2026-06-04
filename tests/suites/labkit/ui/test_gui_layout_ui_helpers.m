@@ -288,7 +288,14 @@ function checkAnchorCurveEditorHelper()
     openEditor.insertPoint([25 20]);
     points = openEditor.getPoints();
     assert(isequal(points(2, :), [25 20]), ...
-        'Open anchor editor should insert points by shortest path order instead of always appending.');
+        'Open anchor editor should insert points that are close to an existing segment.');
+    spiralEditor = labkit.ui.createAnchorCurveEditor(ax, [60 70 3], ...
+        struct('figure', fig, 'closed', false, 'style', 'Straight lines'));
+    spiralEditor.start([20 20; 55 20; 55 55; 35 55; 35 35; 48 35]);
+    spiralEditor.insertPoint([48 45]);
+    points = spiralEditor.getPoints();
+    assert(isequal(points(end, :), [48 45]), ...
+        'Open anchor editor should extend nearby endpoints instead of inserting into an inner spiral segment.');
     editor.undoLast();
     assert(isequal(size(editor.getPoints()), [4 2]), ...
         'Anchor curve editor should remove the last anchor.');
