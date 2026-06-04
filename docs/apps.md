@@ -79,7 +79,7 @@ New lab apps should start as explicit public entry points under `apps/<category>
 
 Nested functions may read and update GUI handles or app state. Local functions after the app `end` should be GUI-free when practical so focused tests can exercise them through narrow internal app hooks.
 
-The preferred public shape is one launchable app entry point per workflow. If an app becomes too large, app-owned private helpers are acceptable when they stay under the app family and do not become public reusable APIs.
+The preferred public shape is one launchable app entry point per workflow. If an app becomes too large, app-owned private helpers are acceptable when they stay under the app family and do not become public reusable APIs. Move GUI-free calculations, export builders, deterministic image/signal transforms, and formatting utilities to `apps/<family>/private/` when that makes the public app file easier to scan. Keep GUI state, callbacks, user alerts, workflow ordering, and internal test-command routing in the public app file.
 
 ## New App Checklist
 

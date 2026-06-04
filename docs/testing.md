@@ -106,7 +106,9 @@ The stable entry point is `tests/run_all_tests.m`. It discovers `test_*.m` files
 
 Shared setup, structural GUI assertions, and focused support routines live under `tests/helpers/`. Keep helpers limited to setup and assertions; app-specific formulas, result schemas, export formats, and expected scientific values should remain in focused suite tests.
 
-Architecture guardrails are split by concern under `tests/suites/project/`: public package surface, reusable package dependency boundaries, app entrypoint boundaries, and app-owned workflow boundaries.
+Architecture guardrails are split by concern under `tests/suites/project/`: public package surface, reusable package dependency boundaries, app entrypoint boundaries, and app-owned workflow boundaries. These guardrails may require workflow code to remain under the owning app family, but they should not require GUI-free helpers to stay in the public app entry-point file.
+
+When a suite file becomes broad enough that unrelated changes must read hundreds of lines, add a narrower `test_*.m` file in the same suite instead of appending more coverage to the broad file.
 
 ## GUI Validation
 
