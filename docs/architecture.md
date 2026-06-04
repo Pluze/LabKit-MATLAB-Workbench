@@ -9,7 +9,7 @@ LabKit is an internal lab app workbench for daily research utilities. Apps are f
 The reusable library stays small and stable. Shared infrastructure belongs in `+labkit` only after repeated real app use shows that a pattern is domain-neutral, testable, and clearer as an API than as app-local code.
 
 ```text
-apps/ category folders containing public app entry points
+apps/ category folders containing public app entry points or app subfolders
     -> compose shared facades
 +labkit GUI foundation plus DTA and biosignal facades
     -> use struct-based item/session/signal models
@@ -51,7 +51,7 @@ labkit_ECGPrint_app
 
 | Area | Responsibility |
 | --- | --- |
-| `apps/` | Public app entry points and app-specific workflow code. |
+| `apps/` | Public app entry points and app-specific workflow code, including app-owned private helpers. |
 | `+labkit/+ui` | Reusable GUI shell, panels, controls, axes, logs, and app-neutral UI helpers. |
 | `+labkit/+dta` | GUI-free DTA discovery, loading, session, pulse, and parsed curve/table facade. |
 | `+labkit/+biosignal` | GUI-free recording loading, channel extraction, waveform processing, events, segments, templates, measurements, and group comparisons. |
@@ -67,7 +67,7 @@ Biosignal code should not depend on GUI state, DTA, or app entry points. Low-lev
 
 UI helpers should build or update generic controls and draw prepared data. Apps pass labels, callbacks, prepared vectors, tables, and option values into UI helpers. UI helpers should not call DTA parsers, own formulas, define result fields, or decide export schemas.
 
-App-specific analysis, plotting annotations, result summaries, CSV schemas, failed-row behavior, and workflow wording belong in the owning app file or app-family private helpers.
+App-specific analysis, plotting annotations, result summaries, CSV schemas, failed-row behavior, and workflow wording belong in the owning app file or app-owned private helpers. The default private-helper location for a large app is `apps/<family>/<app_slug>/private/`; `apps/<family>/private/` should be reserved for helpers shared by multiple apps in that family.
 
 ## Library Extraction Rule
 

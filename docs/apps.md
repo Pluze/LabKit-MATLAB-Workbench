@@ -63,7 +63,7 @@ Move code into `+labkit` only when it is reusable without app vocabulary, testab
 
 ## App File Shape
 
-New lab apps should start as explicit public entry points under `apps/<category>/`. A typical file order is:
+New lab apps should start as explicit public entry points under `apps/<category>/` or `apps/<category>/<app_slug>/` when the app needs private helpers. A typical single-file order is:
 
 ```text
 1. Entry validation and optional internal test/debug hook
@@ -79,7 +79,7 @@ New lab apps should start as explicit public entry points under `apps/<category>
 
 Nested functions may read and update GUI handles or app state. Local functions after the app `end` should be GUI-free when practical so focused tests can exercise them through narrow internal app hooks.
 
-The preferred public shape is one launchable app entry point per workflow. If an app becomes too large, app-owned private helpers are acceptable when they stay under the app family and do not become public reusable APIs. Move GUI-free calculations, export builders, deterministic image/signal transforms, and formatting utilities to `apps/<family>/private/` when that makes the public app file easier to scan. Keep GUI state, callbacks, user alerts, workflow ordering, and internal test-command routing in the public app file.
+The preferred public shape is one launchable app entry point per workflow. If an app becomes too large, app-owned private helpers are acceptable when they stay under the owning app tree and do not become public reusable APIs. Move GUI-free calculations, export builders, deterministic image/signal transforms, and formatting utilities to `apps/<family>/<app_slug>/private/` when that makes the public app file easier to scan. Use `apps/<family>/private/` only for helpers that are genuinely shared by multiple apps in that family. Keep GUI state, callbacks, user alerts, workflow ordering, and internal test-command routing in the public app file.
 
 ## New App Checklist
 
