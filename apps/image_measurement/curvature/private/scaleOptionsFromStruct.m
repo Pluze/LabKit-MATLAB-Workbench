@@ -1,19 +1,24 @@
-function [referencePx, referenceLength, scaleUnit] = scaleOptionsFromStruct(opts)
+function calibration = scaleOptionsFromStruct(opts)
 %SCALEOPTIONSFROMSTRUCT Normalize test and app scale options.
 %
 % Expected caller:
 %   labkit_CurvatureMeasurement_app __labkit_test__ handlers.
 %
 % Inputs/outputs:
-%   Option struct with current and legacy scale fields. Returns normalized
-%   reference pixels, reference length, and display unit.
+%   Option struct with current and legacy scale fields. Returns a
+%   labkit.ui scale-bar calibration struct.
 %
 % Side effects:
 %   None.
 
+    if isstruct(opts) && isfield(opts, 'calibration') && isstruct(opts.calibration)
+        calibration = opts.calibration;
+        return;
+    end
+
     referencePx = optionValue(opts, 'referencePx', optionValue(opts, 'rawpx', NaN));
     referenceLength = optionValue(opts, 'referenceLength', optionValue(opts, 'scaleLengthMm', 0));
-    scaleUnit = optionValue(opts, 'scaleUnit', 'um');
+    scaleUnit = optionValue(opts, 'scaleUnit', '');
     referencePx = positiveOrNaN(referencePx);
     if isempty(referenceLength) || ~isfinite(referenceLength) || referenceLength < 0
         referenceLength = 0;
@@ -28,7 +33,7 @@ function [referencePx, referenceLength, scaleUnit] = scaleOptionsFromStruct(opts
         referenceLength = 1;
         scaleUnit = 'mm';
     end
-    scaleUnit = char(normalizeScaleUnit(scaleUnit));
+    calibration = labkit.ui.scaleBarCalibration(referencePx, referenceLength, scaleUnit);
 end
 
 function value = positiveOrNaN(value)

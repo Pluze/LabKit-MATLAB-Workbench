@@ -4,6 +4,7 @@ function ui = createScaleBarPanel(parent, row, opts)
 % Usage:
 %   ui = labkit.ui.createScaleBarPanel(parentGrid, 2, opts);
 %   ui.setReferencePixels(125);
+%   cal = ui.calibration();
 %   [pxPerUnit, unitName] = ui.pixelsPerUnit();
 %   spec = ui.scaleBarSpec(size(imageData));
 %
@@ -14,13 +15,13 @@ function ui = createScaleBarPanel(parent, row, opts)
 %
 % Options:
 %   title - panel title, default 'Scale Bar'.
-%   units - cellstr/string array of unit labels, default {'um','mm','nm','cm'}.
+%   units - cellstr/string array of unit labels, default {'m','cm','mm','um','nm'}.
 %   positions - cellstr/string array of display positions, default common corners/centers.
 %   colors - cellstr/string array of color names, default {'Black','White'}.
 %            Black and White are the supported drawing colors.
 %   defaultUnit - default unit label, default first unit.
-%   defaultReferenceLength - positive reference length value, default 100.
-%   defaultScaleBarLength - positive display scale-bar length, default 100.
+%   defaultReferenceLength - positive reference length value, default 1.
+%   defaultScaleBarLength - positive display scale-bar length, default 1.
 %   defaultPosition - default position label, default 'Bottom right'.
 %   defaultColor - default color label, default 'Black'.
 %   onMeasureReference - callback for the reference-pixel edit button.
@@ -31,8 +32,9 @@ function ui = createScaleBarPanel(parent, row, opts)
 % Output:
 %   ui - struct containing panel/grid handles, controls, and methods:
 %        setReferencePixels(px), clearReferencePixels(), referencePixels(),
-%        referenceLength(), scaleUnit(), scaleBarLength(), pixelsPerUnit(),
-%        scaleBarSpec(imageSize), updateReadout(), setEnabled(state).
+%        referenceLength(), scaleUnit(), scaleBarLength(), calibration(),
+%        pixelsPerUnit(), scaleBarSpec(imageSize), updateReadout(),
+%        setEnabled(state).
 %
 %   scaleBarSpec(imageSize) returns a struct with fields line, label, color,
 %   labelPosition, verticalAlignment, pixelsPerUnit, unit, barLength,
@@ -45,7 +47,7 @@ function ui = createScaleBarPanel(parent, row, opts)
         opts = struct();
     end
 
-    units = cellstr(string(optionValue(opts, 'units', {'um', 'mm', 'nm', 'cm'})));
+    units = cellstr(string(optionValue(opts, 'units', defaultScaleBarUnits())));
     positions = cellstr(string(optionValue(opts, 'positions', { ...
         'Bottom center', 'Bottom left', 'Bottom right', ...
         'Top center', 'Top left', 'Top right'})));
@@ -54,8 +56,8 @@ function ui = createScaleBarPanel(parent, row, opts)
     defaultUnit = char(string(optionValue(opts, 'defaultUnit', units{1})));
     defaultPosition = char(string(optionValue(opts, 'defaultPosition', 'Bottom right')));
     defaultColor = char(string(optionValue(opts, 'defaultColor', colors{1})));
-    defaultReferenceLength = optionValue(opts, 'defaultReferenceLength', 100);
-    defaultScaleBarLength = optionValue(opts, 'defaultScaleBarLength', 100);
+    defaultReferenceLength = optionValue(opts, 'defaultReferenceLength', 1);
+    defaultScaleBarLength = optionValue(opts, 'defaultScaleBarLength', 1);
 
     panelTitle = char(string(optionValue(opts, 'title', 'Scale Bar')));
     panelUi = labkit.ui.createPanelGrid(parent, panelTitle, row, [10 2], ...
@@ -153,6 +155,7 @@ function ui = createScaleBarPanel(parent, row, opts)
     ui.referenceLength = @referenceLength;
     ui.scaleUnit = @scaleUnit;
     ui.scaleBarLength = @scaleBarLength;
+    ui.calibration = @calibration;
     ui.pixelsPerUnit = @pixelsPerUnit;
     ui.scaleBarSpec = @scaleBarSpec;
     ui.updateReadout = @updateReadout;
@@ -198,7 +201,7 @@ function ui = createScaleBarPanel(parent, row, opts)
     end
 
     function unitName = scaleUnit()
-        unitName = char(string(ddUnit.Value));
+        unitName = char(normalizeScaleBarUnit(ddUnit.Value, units, defaultUnit));
     end
 
     function value = scaleBarLength()
@@ -209,18 +212,20 @@ function ui = createScaleBarPanel(parent, row, opts)
     end
 
     function [pxPerUnit, unitName] = pixelsPerUnit()
-        unitName = scaleUnit();
-        px = referencePixels();
-        len = referenceLength();
-        if isfinite(px) && px > 0 && len > 0
-            pxPerUnit = px / len;
-        else
-            pxPerUnit = 0;
-        end
+        cal = calibration();
+        pxPerUnit = cal.pixelsPerUnit;
+        unitName = cal.unit;
+    end
+
+    function cal = calibration()
+        cal = labkit.ui.scaleBarCalibration(referencePixels(), referenceLength(), ...
+            ddUnit.Value, struct('units', {units}, 'defaultUnit', defaultUnit));
     end
 
     function spec = scaleBarSpec(imageSize)
-        [pxPerUnit, unitName] = pixelsPerUnit();
+        cal = calibration();
+        pxPerUnit = cal.pixelsPerUnit;
+        unitName = cal.unit;
         barLen = scaleBarLength();
         if pxPerUnit <= 0 || barLen <= 0
             error('labkit_ui:createScaleBarPanel:InvalidScaleBar', ...

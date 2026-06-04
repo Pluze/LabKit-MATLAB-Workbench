@@ -104,6 +104,7 @@ labkit.ui.createResultTablePanel(parent, titleText, row, columnNames, initialDat
 labkit.ui.createLogPanel(parent, row, initialValue);
 labkit.ui.createAnchorCurveEditor(ax, imageSize, opts);
 labkit.ui.createScaleBarPanel(parent, row, opts);
+labkit.ui.createScaleBarTool(parent, row, ax, opts);
 labkit.ui.runWithBusyState(fig, workFcn, opts);
 labkit.ui.handleAppRequest(appName, args, nout, handlers);
 labkit.ui.createAppDebugLog(appName, opts);
@@ -115,6 +116,7 @@ State and rendering helpers:
 labkit.ui.appendLog(txtLog, message);
 [value, idx] = labkit.ui.refreshListboxSelection(lbFiles, names, preferredSelection, opts);
 info = labkit.ui.plotXY(ax, x, y, labels, opts);
+cal = labkit.ui.scaleBarCalibration(referencePixels, referenceLength, unitName);
 labkit.ui.enableAxesPopout(ax);
 fig = labkit.ui.popoutAxes(ax);
 hImage = labkit.ui.showImageAxes(ax, imageData, titleText);
@@ -142,11 +144,13 @@ Use `runWithBusyState` around long synchronous callbacks that should give immedi
 
 Use `tabSpec(..., struct('resizeRows', ...))` when a left tab contains several stacked app-defined sections that may need manual height adjustment. When manually placing a component directly into a workbench tab grid, map the logical row through `labkit.ui.layoutRow(parentGrid, row)`. Most app code should use helpers such as `createPanelGrid`, `createResultTablePanel`, `createLogPanel`, and `createAxes`, which apply that mapping for their parent row. `labkit.ui.addRowResizeHandle` remains a lower-level helper for unusual app-local grids that intentionally reserve a physical handle row.
 
-Use `createAnchorCurveEditor` when an app needs DIC-style image anchor editing: double-click blank image space to add or insert anchors, drag anchors to move them, double-click anchors to delete them, switch between curve and straight-line preview, constrain the maximum point count for tools such as two-endpoint scale bars, and optionally install scroll-wheel zoom on the image axes. For open paths, new anchors near either endpoint usually extend that endpoint for sequential tracing, while clicks close to an existing visible segment insert correction anchors into the middle. Endpoint extensions that would self-intersect the visible path also become insertions when there is a nearby visible segment; this keeps spiral-like paths stable without making correction clicks fight the endpoint rule. The helper owns generic interaction and preview graphics only; apps still own mask construction, scale bars, fitting, analysis, and exports.
+Use `createAnchorCurveEditor` when an app needs DIC-style image anchor editing: double-click blank image space to add or insert anchors, drag anchors to move them, double-click anchors to delete them, switch between curve and straight-line preview, constrain the maximum point count for tools such as two-endpoint scale bars, and optionally install scroll-wheel zoom on the image axes. For open paths, new anchors near either endpoint usually extend that endpoint for sequential tracing, while clicks close to an existing visible segment insert correction anchors into the middle. Endpoint extensions that would self-intersect the visible path also become insertions when there is a nearby visible segment; this keeps spiral-like paths stable without making correction clicks fight the endpoint rule. The helper owns generic interaction and preview graphics only; higher-level tools or apps still own masks, scale-bar workflows, fitting, analysis, and exports.
 
-Use `createScaleBarPanel` when an image app needs the common calibration workflow: obtain a reference pixel length by app-owned drawing or typed input, set the real reference length and unit, choose a final scale-bar display length, position, and black/white color, then ask the helper for a scale-bar spec. The helper owns generic controls, pixels-per-unit readouts, default geometry, label placement, and black/white color mapping. Apps still own any reference drawing interaction, overlay rendering, calibrated measurements, result fields, and exports.
+Use `createScaleBarTool` when an image app needs the common scale-bar workflow. The tool owns the fixed controls, unit normalization, typed or two-endpoint reference-pixel calibration, pixels-per-unit readout, final scale-bar placement, black/white overlay drawing, and reference-edit mode state. The default units are `m`, `cm`, `mm`, `um`, and `nm`; the default position is `Bottom right`; the default color is `Black`; the default reference length and scale-bar length are both `1`.
 
-The returned scale-bar spec includes a two-point `line`, `label`, RGB `color`, `labelPosition`, `verticalAlignment`, `pixelsPerUnit`, `unit`, `barLength`, `position`, and `colorName`. Apps should draw the prepared spec onto their axes and keep scientific calculations app-local.
+Apps should pass the image axes into the tool, call `setImageSize` after loading a new image, call `setBackground` with the image graphics handle after redrawing, call `renderOverlay` from the app-local image renderer, and read `calibration()` before app-owned measurements. The calibration struct has `referencePixels`, `referenceLength`, `unit`, `pixelsPerUnit`, `isCalibrated`, and `referenceLine`. Apps still own scientific calculations, result summaries, alerts/log wording, exports, and CSV/table schemas.
+
+`createScaleBarPanel` remains the lower-level reusable control panel for callers that need to own reference drawing or overlay rendering themselves. The returned scale-bar spec includes a two-point `line`, `label`, RGB `color`, `labelPosition`, `verticalAlignment`, `pixelsPerUnit`, `unit`, `barLength`, `position`, and `colorName`.
 
 ### `createAnchorCurveEditor` Options
 
@@ -193,6 +197,7 @@ Debug calls use:
 - panel/grid construction
 - row-resize handles for stacked app-defined sections
 - anchor-curve editing on image axes
+- image scale-bar calibration, reference editing, and overlay placement
 - plot axes creation, reset, prepared-X/Y plotting, and app-neutral axes popout
 - app-neutral image display boilerplate for prepared image arrays
 - result table panels

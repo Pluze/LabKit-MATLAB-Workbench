@@ -1,12 +1,13 @@
-function fit = computeCurvatureFit(xPix, yPix, referencePx, referenceLength, scaleUnit, doDensify, denseN, fitPathX, fitPathY)
+function fit = computeCurvatureFit(xPix, yPix, calibration, doDensify, denseN, fitPathX, fitPathY)
 %COMPUTECURVATUREFIT Fit image-curve curvature for labkit_CurvatureMeasurement_app.
 %
 % Expected caller:
 %   labkit_CurvatureMeasurement_app callbacks and __labkit_test__ handlers.
 %
 % Inputs/outputs:
-%   Pixel anchor vectors plus optional displayed fit-path vectors. Returns the
-%   same fit-result struct previously built inside the app file.
+%   Pixel anchor vectors, a labkit.ui scale-bar calibration struct, and
+%   optional displayed fit-path vectors. Returns the same fit-result struct
+%   previously built inside the app file.
 %
 % Side effects:
 %   None. This helper performs GUI-free numeric fitting only.
@@ -21,17 +22,21 @@ function fit = computeCurvatureFit(xPix, yPix, referencePx, referenceLength, sca
             'At least 3 unique points are required to fit a circle.');
     end
 
-    if nargin < 6 || isempty(doDensify)
+    if nargin < 3 || isempty(calibration)
+        calibration = labkit.ui.scaleBarCalibration();
+    end
+
+    if nargin < 4 || isempty(doDensify)
         doDensify = true;
     end
-    if nargin < 7 || isempty(denseN)
+    if nargin < 5 || isempty(denseN)
         denseN = 300;
     end
     denseN = max(3, round(denseN));
 
     fitSourceX = xPix;
     fitSourceY = yPix;
-    hasFitPath = nargin >= 9 && ~isempty(fitPathX) && ~isempty(fitPathY);
+    hasFitPath = nargin >= 7 && ~isempty(fitPathX) && ~isempty(fitPathY);
     if hasFitPath
         fitPathX = fitPathX(:);
         fitPathY = fitPathY(:);
@@ -57,11 +62,11 @@ function fit = computeCurvatureFit(xPix, yPix, referencePx, referenceLength, sca
             'Circle fit produced an invalid radius.');
     end
 
-    scaleUnit = char(normalizeScaleUnit(scaleUnit));
-    pxPerUnit = scalePixelsPerUnit(referencePx, referenceLength);
-    usePhysicalScale = pxPerUnit > 0;
+    scaleUnit = char(calibration.unit);
+    pxPerUnit = calibration.pixelsPerUnit;
+    usePhysicalScale = calibration.isCalibrated;
     kappa_px = 1 / R_px;
-    lengthResult = computeCurveLength(fitSourceX, fitSourceY, referencePx, referenceLength, scaleUnit);
+    lengthResult = computeCurveLength(fitSourceX, fitSourceY, calibration);
 
     if usePhysicalScale
         unitLen = scaleUnit;
@@ -86,8 +91,8 @@ function fit = computeCurvatureFit(xPix, yPix, referencePx, referenceLength, sca
     fit.R_px = R_px;
     fit.kappa_per_px = kappa_px;
     fit.rmse_px = rmse_px;
-    fit.referencePx = referencePx;
-    fit.referenceLength = referenceLength;
+    fit.referencePx = calibration.referencePixels;
+    fit.referenceLength = calibration.referenceLength;
     fit.scaleUnit = scaleUnit;
     fit.px_per_unit = pxPerUnit;
     fit.usePhysicalScale = usePhysicalScale;

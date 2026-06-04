@@ -1,4 +1,4 @@
-function lengthResult = computeCurveLength(xPix, yPix, referencePx, referenceLength, scaleUnit)
+function lengthResult = computeCurveLength(xPix, yPix, calibration)
 %COMPUTECURVELENGTH Measure traced curve length for labkit_CurvatureMeasurement_app.
 %
 % Expected caller:
@@ -6,8 +6,8 @@ function lengthResult = computeCurveLength(xPix, yPix, referencePx, referenceLen
 %   curvature fit helpers.
 %
 % Inputs/outputs:
-%   Pixel vectors plus optional reference scale fields. Returns the same
-%   length-result struct previously built inside the app file.
+%   Pixel vectors plus a labkit.ui scale-bar calibration struct. Returns the
+%   same length-result struct previously built inside the app file.
 %
 % Side effects:
 %   None. This helper performs GUI-free numeric length measurement only.
@@ -22,10 +22,14 @@ function lengthResult = computeCurveLength(xPix, yPix, referencePx, referenceLen
             'At least 2 unique points are required to measure curve length.');
     end
 
+    if nargin < 3 || isempty(calibration)
+        calibration = labkit.ui.scaleBarCalibration();
+    end
+
     lengthPx = sum(hypot(diff(xPix), diff(yPix)));
-    scaleUnit = char(normalizeScaleUnit(scaleUnit));
-    pxPerUnit = scalePixelsPerUnit(referencePx, referenceLength);
-    usePhysicalScale = pxPerUnit > 0;
+    scaleUnit = char(calibration.unit);
+    pxPerUnit = calibration.pixelsPerUnit;
+    usePhysicalScale = calibration.isCalibrated;
     if usePhysicalScale
         lengthShow = lengthPx / pxPerUnit;
         unitLen = scaleUnit;
@@ -39,8 +43,8 @@ function lengthResult = computeCurveLength(xPix, yPix, referencePx, referenceLen
     lengthResult.length_px = lengthPx;
     lengthResult.length_show = lengthShow;
     lengthResult.unitLen = unitLen;
-    lengthResult.referencePx = referencePx;
-    lengthResult.referenceLength = referenceLength;
+    lengthResult.referencePx = calibration.referencePixels;
+    lengthResult.referenceLength = calibration.referenceLength;
     lengthResult.scaleUnit = scaleUnit;
     lengthResult.px_per_unit = pxPerUnit;
     lengthResult.usePhysicalScale = usePhysicalScale;
