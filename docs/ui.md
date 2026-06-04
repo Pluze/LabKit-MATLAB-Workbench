@@ -103,6 +103,7 @@ labkit.ui.createReadOnlyTextPanel(parent, titleText, row, lines, opts);
 labkit.ui.createResultTablePanel(parent, titleText, row, columnNames, initialData);
 labkit.ui.createLogPanel(parent, row, initialValue);
 labkit.ui.createAnchorCurveEditor(ax, imageSize, opts);
+labkit.ui.createScaleBarPanel(parent, row, opts);
 labkit.ui.runWithBusyState(fig, workFcn, opts);
 labkit.ui.handleAppRequest(appName, args, nout, handlers);
 labkit.ui.createAppDebugLog(appName, opts);
@@ -142,6 +143,10 @@ Use `runWithBusyState` around long synchronous callbacks that should give immedi
 Use `tabSpec(..., struct('resizeRows', ...))` when a left tab contains several stacked app-defined sections that may need manual height adjustment. When manually placing a component directly into a workbench tab grid, map the logical row through `labkit.ui.layoutRow(parentGrid, row)`. Most app code should use helpers such as `createPanelGrid`, `createResultTablePanel`, `createLogPanel`, and `createAxes`, which apply that mapping for their parent row. `labkit.ui.addRowResizeHandle` remains a lower-level helper for unusual app-local grids that intentionally reserve a physical handle row.
 
 Use `createAnchorCurveEditor` when an app needs DIC-style image anchor editing: double-click blank image space to add or insert anchors, drag anchors to move them, double-click anchors to delete them, switch between curve and straight-line preview, constrain the maximum point count for tools such as two-endpoint scale bars, and optionally install scroll-wheel zoom on the image axes. For open paths, new anchors near either endpoint extend that endpoint, while clicks close to an existing visible segment insert into the middle; this keeps sequential tracing stable for spiral-like paths whose neighboring turns may be close together. The helper owns generic interaction and preview graphics only; apps still own mask construction, scale bars, fitting, analysis, and exports.
+
+Use `createScaleBarPanel` when an image app needs the common calibration workflow: obtain a reference pixel length by app-owned drawing or typed input, set the real reference length and unit, choose a final scale-bar display length, position, and black/white color, then ask the helper for a scale-bar spec. The helper owns generic controls, pixels-per-unit readouts, default geometry, label placement, and black/white color mapping. Apps still own any reference drawing interaction, overlay rendering, calibrated measurements, result fields, and exports.
+
+The returned scale-bar spec includes a two-point `line`, `label`, RGB `color`, `labelPosition`, `verticalAlignment`, `pixelsPerUnit`, `unit`, `barLength`, `position`, and `colorName`. Apps should draw the prepared spec onto their axes and keep scientific calculations app-local.
 
 ### `createAnchorCurveEditor` Options
 

@@ -102,7 +102,7 @@ GUI launch/layout checks live in source-aligned suites and are enabled with `--g
 
 ## Current Package Surface
 
-- `labkit.ui`: `createWorkbench`, tab specs, file-selection panel, log panel, panel grids, row resizing, axes creation/reset, axes popout, image display, anchor curve editing, prepared-X/Y plotting, result tables, plot controls, listbox state, busy-state feedback, labeled controls, read-only fields, and internal test/debug support for app maintainers.
+- `labkit.ui`: `createWorkbench`, tab specs, file-selection panel, scale-bar panel, log panel, panel grids, row resizing, axes creation/reset, axes popout, image display, anchor curve editing, prepared-X/Y plotting, result tables, plot controls, listbox state, busy-state feedback, labeled controls, read-only fields, and internal test/debug support for app maintainers.
 - `labkit.dta`: DTA file discovery, type detection, single/batch/folder loading, pulse detection, item construction behind the facade, parsed table/curve access, session save/load, and session add/remove/select operations.
 - `labkit.biosignal`: MAT timetable and delimited table recording loading, channel extraction, time ROI cropping, filtering, ECG/QRS peak detection, event-centered segmentation, template construction, template-residual SNR-style measurements, and group comparisons.
 

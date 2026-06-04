@@ -4,6 +4,7 @@ function test_imageCurvatureMeasurement()
     checkCircularFitWithMeasuredScale();
     checkPixelAndTypedScaleModes();
     checkCurveLengthMeasurement();
+    checkDensifyUsesCurvePath();
     checkInvalidCurvePoints();
 end
 
@@ -99,6 +100,27 @@ function checkCurveLengthMeasurement()
         'Typed reference scale curve length unit changed.');
     assert(mmLength.pointCount == 3, ...
         'Curve length should report the number of points used.');
+end
+
+function checkDensifyUsesCurvePath()
+    anchorX = [0; 10; 20];
+    anchorY = [0; 0; 0];
+    curveX = [0; 10; 20];
+    curveY = [0; 10; 0];
+
+    fit = labkit_CurvatureMeasurement_app('__labkit_test__', ...
+        'computeCurvatureFit', anchorX, anchorY, ...
+        struct('referencePx', NaN, 'referenceLength', 0, ...
+        'scaleUnit', 'um', 'doDensify', true, 'denseN', 5, ...
+        'fitPathX', curveX, 'fitPathY', curveY));
+
+    assert(fit.ok, 'Curve-path densified fit should succeed.');
+    assert(numel(fit.xFit) == 5, ...
+        'Densified fit should use the requested dense point count.');
+    assert(max(fit.yFit) > 0, ...
+        'Densified fit points should follow the displayed curve path, not the anchor chord.');
+    assertClose(fit.curveLength_px, 2 * hypot(10, 10), 1e-9, ...
+        'Curve-path fit should measure length along the displayed curve path.');
 end
 
 function checkInvalidCurvePoints()

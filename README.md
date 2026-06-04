@@ -66,7 +66,7 @@ Then use the app window to load files, inspect plots or results, and export outp
 | `labkit_ChronoOverlay_app` | routine | Chrono voltage/current overlay | Chrono DTA | Overlay plots and CSV |
 | `labkit_DICPreprocess_app` | active | Image registration, paired crop preparation, and ROI mask drawing | Reference/current images | Aligned images, crop PNGs, ROI mask |
 | `labkit_DICPostprocess_app` | active | Ncorr strain overlay, ROI summary, and colorbar export | Ncorr MAT, reference image, mask | EXX/EYY overlays, summary CSV, colorbar/level table |
-| `labkit_CurvatureMeasurement_app` | experimental | Editable image-curve circle fit, calibrated real-unit scale-bar placement, and curve length measurement | Image | Overlay PNG and curvature/length CSV |
+| `labkit_CurvatureMeasurement_app` | experimental | Editable image-curve circle fit, calibrated color-selectable real-unit scale-bar placement, and curve length measurement | Image | Overlay PNG and curvature/length CSV |
 | `labkit_FocusStack_app` | experimental | Microscope focus-stack fusion into one all-in-focus image | Focus image folder or selected image files | Fused PNG, focus map PNG, summary CSV |
 | `labkit_ECGPrint_app` | experimental | ECG waveform preview, ROI filtering, peak/segment SNR, and SNR-over-time display | MAT timetable or CSV/TSV table | Segment SNR CSV and waveform PNG |
 
