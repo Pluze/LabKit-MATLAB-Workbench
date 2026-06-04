@@ -4,6 +4,7 @@ function test_focusStackFusion()
     checkSyntheticFocusSelection();
     checkSummaryTableContract();
     checkFolderDiscovery();
+    checkSelectedFileSelection();
     checkRegistrationImprovesSyntheticDrift();
     checkInvalidInputs();
 end
@@ -80,9 +81,31 @@ function checkFolderDiscovery()
         'Image folder discovery should filter image files and sort by name.');
 end
 
+function checkSelectedFileSelection()
+    folder = tempname;
+    mkdir(folder);
+    cleanup = onCleanup(@() removeTempFolder(folder)); %#ok<NASGU>
+
+    paths = labkit_FocusStack_app('__labkit_test__', ...
+        'selectedFocusImagePaths', {'frame_b.png', 'frame_a.tif'}, folder);
+    names = fileNames(paths);
+    assert(isequal(names, {'frame_a.tif'; 'frame_b.png'}), ...
+        'Selected image files should be normalized and sorted by name.');
+
+    onePath = labkit_FocusStack_app('__labkit_test__', ...
+        'selectedFocusImagePaths', 'frame_c.jpg', folder);
+    assert(numel(onePath) == 1 && endsWith(onePath, "frame_c.jpg"), ...
+        'Single-file selection should be accepted for preview before stacking.');
+
+    assertThrows(@() labkit_FocusStack_app('__labkit_test__', ...
+        'selectedFocusImagePaths', 'notes.txt', folder), ...
+        'labkit_FocusStack_app:UnsupportedImageFile', ...
+        'Manual selection should reject unsupported file types.');
+end
+
 function checkRegistrationImprovesSyntheticDrift()
     reference = syntheticRegistrationImage();
-    moving = imtranslate(reference, [4 -3], 'FillValues', median(reference(:)));
+    moving = integerTranslateImage(reference, -3, 4, median(reference(:)));
 
     [aligned, lines] = labkit_FocusStack_app('__labkit_test__', ...
         'alignFocusStackImages', {moving, reference});
@@ -93,6 +116,15 @@ function checkRegistrationImprovesSyntheticDrift()
         'Automatic registration should reduce synthetic alignment error.');
     assert(contains(strjoin(string(lines), " "), "reference image: 2"), ...
         'Registration should use the middle stack image as reference.');
+end
+
+function names = fileNames(paths)
+    paths = string(paths(:));
+    names = cell(numel(paths), 1);
+    for k = 1:numel(paths)
+        [~, base, ext] = fileparts(char(paths(k)));
+        names{k} = [base ext];
+    end
 end
 
 function checkInvalidInputs()
@@ -142,6 +174,22 @@ end
 function out = boxBlur(in, windowSize)
     kernel = ones(windowSize, windowSize);
     out = conv2(in, kernel, 'same') ./ conv2(ones(size(in)), kernel, 'same');
+end
+
+function out = integerTranslateImage(in, rowShift, colShift, fillValue)
+    out = zeros(size(in), class(in));
+    out(:) = cast(fillValue, class(in));
+
+    rows = size(in, 1);
+    cols = size(in, 2);
+    dstRows = max(1, 1 + rowShift):min(rows, rows + rowShift);
+    dstCols = max(1, 1 + colShift):min(cols, cols + colShift);
+    srcRows = max(1, 1 - rowShift):min(rows, rows - rowShift);
+    srcCols = max(1, 1 - colShift):min(cols, cols - colShift);
+    if isempty(dstRows) || isempty(dstCols) || isempty(srcRows) || isempty(srcCols)
+        return;
+    end
+    out(dstRows, dstCols, :) = in(srcRows, srcCols, :);
 end
 
 function columns = expectedSummaryColumns()

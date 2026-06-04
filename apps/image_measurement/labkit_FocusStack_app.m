@@ -47,9 +47,9 @@ function varargout = labkit_FocusStack_app(varargin)
     laySR = ui.summaryResultsGrid;
     layLog = ui.logGrid;
 
-    filePanel = labkit.ui.createPanelGrid(layFA, 'Images', 1, [4 1], ...
+    filePanel = labkit.ui.createPanelGrid(layFA, 'Images', 1, [4 2], ...
         struct('rowHeight', {{'fit', 'fit', 105, 'fit'}}, ...
-        'columnWidth', {{'1x'}}));
+        'columnWidth', {{'1x', '1x'}}));
     fileGrid = filePanel.grid;
 
     btnOpenFolder = uibutton(fileGrid, 'Text', 'Open image folder', ...
@@ -57,8 +57,13 @@ function varargout = labkit_FocusStack_app(varargin)
     btnOpenFolder.Layout.Row = 1;
     btnOpenFolder.Layout.Column = 1;
 
+    btnOpenFiles = uibutton(fileGrid, 'Text', 'Open image files', ...
+        'ButtonPushedFcn', @onOpenFiles);
+    btnOpenFiles.Layout.Row = 1;
+    btnOpenFiles.Layout.Column = 2;
+
     txtFolder = labkit.ui.createReadOnlyTextField(fileGrid, ...
-        'Value', 'No folder loaded');
+        'Value', 'No images loaded');
     txtFolder.Layout.Row = 2;
     txtFolder.Layout.Column = [1 2];
 
@@ -127,9 +132,9 @@ function varargout = labkit_FocusStack_app(varargin)
     btnExportSummary.Layout.Row = 3;
 
     labkit.ui.createReadOnlyTextPanel(layFA, 'Workflow Notes', 4, { ...
-        '1. Load a folder containing one focus sequence for the same microscope field of view.', ...
-        '2. Run focus stack to fuse sharp details across the image pyramid.', ...
-        '3. Inspect the fused image and focus-depth map before exporting.', ...
+        '1. Load a folder or select one or more image files from the same microscope field of view.', ...
+        '2. Use file selection when a folder contains bad frames that should be excluded.', ...
+        '3. Run focus stack to fuse sharp details across the image pyramid.', ...
         '4. Enable registration only when the stack has whole-image drift and no strong focus breathing.'});
 
     resultTable = uitable(laySR, ...
@@ -139,7 +144,7 @@ function varargout = labkit_FocusStack_app(varargin)
 
     txtDetails = uitextarea(laySR, 'Editable', 'off');
     txtDetails.Layout.Row = labkit.ui.layoutRow(laySR, 2);
-    txtDetails.Value = {'Load a focus image folder to begin.'};
+    txtDetails.Value = {'Load a focus image folder or select image files to begin.'};
 
     logUi = labkit.ui.createLogPanel(layLog, 1, {'Ready.'});
     txtLog = logUi.textArea;
@@ -163,28 +168,58 @@ function varargout = labkit_FocusStack_app(varargin)
         loadImageFolder(string(folder));
     end
 
+    function onOpenFiles(~, ~)
+        [files, folder] = uigetfile(focusImageDialogFilter(), ...
+            'Select focus image files', pwd, 'MultiSelect', 'on');
+        if isequal(files, 0)
+            addLog('Image file selection cancelled.');
+            return;
+        end
+
+        try
+            paths = selectedFocusImagePaths(files, folder);
+        catch ME
+            showError('Could not select focus images', ME.message);
+            return;
+        end
+        loadImagePaths(paths, string(folder), ...
+            sprintf('Selected image files from %s', char(folder)), ...
+            sprintf('Loaded %d selected image file(s).', numel(paths)));
+    end
+
     function loadImageFolder(folder)
         try
             paths = findFocusStackImages(folder);
+        catch ME
+            showError('Could not load focus stack', ME.message);
+            return;
+        end
+        loadImagePaths(paths, folder, char(folder), ...
+            sprintf('Loaded %d image(s) from folder.', numel(paths)));
+    end
+
+    function loadImagePaths(paths, sourceFolder, sourceDescription, logMessage)
+        try
             images = readFocusStackImages(paths);
         catch ME
             showError('Could not load focus stack', ME.message);
             return;
         end
 
-        S.folder = folder;
+        sourceDescription = string(sourceDescription);
         S.paths = paths;
         S.images = images;
         S.alignedImages = {};
         S.registrationLines = {};
         S.result = emptyFocusStackResult();
+        S.folder = string(sourceFolder);
 
-        txtFolder.Value = char(folder);
+        txtFolder.Value = char(sourceDescription);
         lbImages.Items = displayImageNames(paths);
         if ~isempty(lbImages.Items)
             lbImages.Value = lbImages.Items{1};
         end
-        addLog(sprintf('Loaded %d image(s) from folder.', numel(S.images)));
+        addLog(logMessage);
         refreshPreview();
         refreshSummary();
     end
@@ -327,9 +362,14 @@ function varargout = labkit_FocusStack_app(varargin)
             txtDetails.Value = { ...
                 sprintf('Loaded images: %d', numel(S.images)), ...
                 'Run focus stack to compute the fused image and focus-depth map.'};
+        elseif ~isempty(S.images)
+            resultTable.Data = initialResultTable();
+            txtDetails.Value = { ...
+                sprintf('Loaded images: %d', numel(S.images)), ...
+                'Load at least two images before running focus stack.'};
         else
             resultTable.Data = initialResultTable();
-            txtDetails.Value = {'Load a focus image folder to begin.'};
+            txtDetails.Value = {'Load a focus image folder or select image files to begin.'};
         end
         updateControls();
     end
@@ -361,11 +401,11 @@ end
 
 function handlers = focusStackAppTestHandlers()
     handlers = struct( ...
-        'command', {'computeFocusStack', 'buildFocusStackSummaryTable', 'findFocusStackImages', 'alignFocusStackImages'}, ...
-        'minArgs', {2, 2, 1, 1}, ...
-        'maxArgs', {2, 2, 1, 1}, ...
-        'maxOutputs', {1, 1, 1, 2}, ...
-        'run', {@runComputeFocusStack, @runBuildFocusStackSummaryTable, @runFindFocusStackImages, @runAlignFocusStackImages});
+        'command', {'computeFocusStack', 'buildFocusStackSummaryTable', 'findFocusStackImages', 'alignFocusStackImages', 'selectedFocusImagePaths'}, ...
+        'minArgs', {2, 2, 1, 1, 2}, ...
+        'maxArgs', {2, 2, 1, 1, 2}, ...
+        'maxOutputs', {1, 1, 1, 2, 1}, ...
+        'run', {@runComputeFocusStack, @runBuildFocusStackSummaryTable, @runFindFocusStackImages, @runAlignFocusStackImages, @runSelectedFocusImagePaths});
 end
 
 function outputs = runComputeFocusStack(args)
@@ -385,47 +425,78 @@ function outputs = runAlignFocusStackImages(args)
     outputs = {alignedImages, lines};
 end
 
+function outputs = runSelectedFocusImagePaths(args)
+    outputs = {selectedFocusImagePaths(args{1}, args{2})};
+end
+
+function filter = focusImageDialogFilter()
+    filter = {'*.png;*.jpg;*.jpeg;*.tif;*.tiff;*.bmp', ...
+        'Image files (*.png, *.jpg, *.jpeg, *.tif, *.tiff, *.bmp)'};
+end
+
 function paths = findFocusStackImages(folder)
     if strlength(string(folder)) == 0 || exist(folder, 'dir') ~= 7
         error('labkit_FocusStack_app:FolderNotFound', ...
             'Focus image folder does not exist.');
     end
 
-    allowedExt = {'.png', '.jpg', '.jpeg', '.tif', '.tiff', '.bmp'};
     entries = dir(folder);
     keep = false(numel(entries), 1);
-    names = cell(numel(entries), 1);
     for k = 1:numel(entries)
         entry = entries(k);
-        names{k} = entry.name;
         if entry.isdir
             continue;
         end
-        [~, ~, ext] = fileparts(entry.name);
-        keep(k) = any(strcmpi(ext, allowedExt));
+        keep(k) = isSupportedFocusImagePath(entry.name);
     end
 
     entries = entries(keep);
-    names = names(keep);
-    [~, order] = sort(lower(names));
-    entries = entries(order);
 
     paths = strings(numel(entries), 1);
     for k = 1:numel(entries)
         paths(k) = string(fullfile(folder, entries(k).name));
     end
+    paths = sortFocusStackPathsByName(paths);
     if numel(paths) < 2
         error('labkit_FocusStack_app:NotEnoughImages', ...
             'Focus stacking requires at least two image files in the selected folder.');
     end
 end
 
+function paths = selectedFocusImagePaths(files, folder)
+    if isequal(files, 0) || isequal(folder, 0)
+        paths = strings(0, 1);
+        return;
+    end
+
+    if iscell(files)
+        names = string(files(:));
+    else
+        names = string(files);
+        names = names(:);
+    end
+    names = names(strlength(names) > 0);
+    if isempty(names)
+        error('labkit_FocusStack_app:NoImagesSelected', ...
+            'Select at least one image file.');
+    end
+
+    folder = string(folder);
+    paths = strings(numel(names), 1);
+    for k = 1:numel(names)
+        paths(k) = string(fullfile(folder, names(k)));
+    end
+    paths = sortFocusStackPathsByName(paths);
+    assertSupportedFocusImagePaths(paths);
+end
+
 function images = readFocusStackImages(paths)
     paths = string(paths(:));
-    if numel(paths) < 2
-        error('labkit_FocusStack_app:NotEnoughImages', ...
-            'Focus stacking requires at least two image files.');
+    if isempty(paths)
+        error('labkit_FocusStack_app:NoImagesSelected', ...
+            'Select at least one image file.');
     end
+    assertSupportedFocusImagePaths(paths);
 
     images = cell(numel(paths), 1);
     for k = 1:numel(paths)
@@ -435,6 +506,35 @@ function images = readFocusStackImages(paths)
         end
         images{k} = imread(paths(k));
     end
+end
+
+function assertSupportedFocusImagePaths(paths)
+    for k = 1:numel(paths)
+        if ~isSupportedFocusImagePath(paths(k))
+            error('labkit_FocusStack_app:UnsupportedImageFile', ...
+                'Unsupported image file type: %s', char(paths(k)));
+        end
+    end
+end
+
+function tf = isSupportedFocusImagePath(pathValue)
+    [~, ~, ext] = fileparts(char(pathValue));
+    tf = any(strcmpi(ext, supportedFocusImageExtensions()));
+end
+
+function extensions = supportedFocusImageExtensions()
+    extensions = {'.png', '.jpg', '.jpeg', '.tif', '.tiff', '.bmp'};
+end
+
+function paths = sortFocusStackPathsByName(paths)
+    paths = string(paths(:));
+    names = strings(numel(paths), 1);
+    for k = 1:numel(paths)
+        [~, base, ext] = fileparts(char(paths(k)));
+        names(k) = lower(string([base ext]));
+    end
+    [~, order] = sort(names);
+    paths = paths(order);
 end
 
 function [alignedImages, lines] = alignFocusStackImages(images)
@@ -469,6 +569,30 @@ function [alignedImage, method] = alignImageToReference(referenceImage, movingIm
     movingGray = alignmentGray(movingImage);
 
     try
+        [alignedImage, method] = alignImageWithImregcorr( ...
+            movingImage, movingGray, fixedGray);
+        alignedImage = cast(alignedImage, origClass);
+        return;
+    catch registrationErr
+        try
+            [rowShift, colShift] = estimateTranslationByPhaseCorrelation( ...
+                fixedGray, movingGray);
+            alignedImage = translateImageByIntegerShift( ...
+                movingImage, rowShift, colShift, backgroundFillValues(movingImage));
+            alignedImage = cast(alignedImage, origClass);
+            method = sprintf('FFT translation fallback (row %+d, col %+d)', ...
+                rowShift, colShift);
+            return;
+        catch fallbackErr
+            error('labkit_FocusStack_app:RegistrationFailed', ...
+                'Image registration failed: %s Fallback failed: %s', ...
+                registrationErr.message, fallbackErr.message);
+        end
+    end
+end
+
+function [alignedImage, method] = alignImageWithImregcorr(movingImage, movingGray, fixedGray)
+    try
         tform = imregcorr(movingGray, fixedGray, 'similarity');
         method = 'phase-correlation similarity registration';
     catch similarityErr
@@ -490,7 +614,6 @@ function [alignedImage, method] = alignImageToReference(referenceImage, movingIm
     fixedRef = imref2d(size(fixedGray));
     alignedImage = imwarp(movingImage, tform, ...
         'OutputView', fixedRef, 'FillValues', backgroundFillValues(movingImage));
-    alignedImage = cast(alignedImage, origClass);
 end
 
 function gray = alignmentGray(imageData)
@@ -515,6 +638,66 @@ function fillValues = backgroundFillValues(imageData)
         channel = imageData(:, :, c);
         border = [channel(1, :), channel(end, :), channel(:, 1).', channel(:, end).'];
         fillValues(c) = median(double(border(:)));
+    end
+end
+
+function [rowShift, colShift] = estimateTranslationByPhaseCorrelation(fixedGray, movingGray)
+    fixedGray = double(fixedGray);
+    movingGray = double(movingGray);
+    fixedGray = fixedGray - mean(fixedGray(:), 'omitnan');
+    movingGray = movingGray - mean(movingGray(:), 'omitnan');
+    fixedGray(~isfinite(fixedGray)) = 0;
+    movingGray(~isfinite(movingGray)) = 0;
+
+    crossPower = fft2(fixedGray) .* conj(fft2(movingGray));
+    magnitude = abs(crossPower);
+    normalized = crossPower ./ max(magnitude, eps);
+    corrMap = real(ifft2(normalized));
+    [~, peakIdx] = max(corrMap(:));
+    [peakRow, peakCol] = ind2sub(size(corrMap), peakIdx);
+
+    [rows, cols] = size(corrMap);
+    rowShift = peakRow - 1;
+    colShift = peakCol - 1;
+    if rowShift > rows / 2
+        rowShift = rowShift - rows;
+    end
+    if colShift > cols / 2
+        colShift = colShift - cols;
+    end
+end
+
+function imageOut = translateImageByIntegerShift(imageIn, rowShift, colShift, fillValues)
+    rowShift = round(rowShift);
+    colShift = round(colShift);
+    imageOut = filledImageLike(imageIn, fillValues);
+
+    rows = size(imageIn, 1);
+    cols = size(imageIn, 2);
+    dstRows = max(1, 1 + rowShift):min(rows, rows + rowShift);
+    dstCols = max(1, 1 + colShift):min(cols, cols + colShift);
+    srcRows = max(1, 1 - rowShift):min(rows, rows - rowShift);
+    srcCols = max(1, 1 - colShift):min(cols, cols - colShift);
+    if isempty(dstRows) || isempty(dstCols) || isempty(srcRows) || isempty(srcCols)
+        return;
+    end
+
+    if ndims(imageIn) == 2
+        imageOut(dstRows, dstCols) = imageIn(srcRows, srcCols);
+    else
+        imageOut(dstRows, dstCols, :) = imageIn(srcRows, srcCols, :);
+    end
+end
+
+function imageOut = filledImageLike(imageIn, fillValues)
+    imageOut = zeros(size(imageIn), class(imageIn));
+    if ndims(imageIn) == 2
+        imageOut(:) = cast(fillValues(1), class(imageIn));
+        return;
+    end
+
+    for c = 1:size(imageIn, 3)
+        imageOut(:, :, c) = cast(fillValues(min(c, numel(fillValues))), class(imageIn));
     end
 end
 

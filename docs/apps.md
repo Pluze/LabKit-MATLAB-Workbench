@@ -24,7 +24,7 @@ This adds the repository root, `apps/`, and nested app category folders to the M
 | `labkit_DICPreprocess_app` | active | Image registration, paired crop preparation, and ROI mask drawing. | Reference/current images | Aligned images, crop PNGs, ROI mask. |
 | `labkit_DICPostprocess_app` | active | Ncorr strain overlay, ROI summary, and colorbar export. | Ncorr MAT, reference image, mask | EXX/EYY overlays, summary CSV, colorbar/level table. |
 | `labkit_CurvatureMeasurement_app` | experimental | Editable image-curve circle fit for radius and curvature. | Image | Overlay PNG and curvature CSV. |
-| `labkit_FocusStack_app` | experimental | Microscope focus-stack fusion into one all-in-focus image. | Focus image folder | Fused PNG, focus map PNG, summary CSV. |
+| `labkit_FocusStack_app` | experimental | Microscope focus-stack fusion into one all-in-focus image. | Focus image folder or selected image files | Fused PNG, focus map PNG, summary CSV. |
 | `labkit_ECGPrint_app` | experimental | ECG waveform preview, ROI filtering, peak/segment SNR, and SNR-over-time display. | MAT timetable or CSV/TSV table | Segment SNR CSV and waveform PNG. |
 
 Status labels:
@@ -125,5 +125,5 @@ Interactive file selection, drawing, visual inspection, and full workflow feel a
 | `labkit_DICPreprocess_app` | Registration, repeated crop/align workflow, false-color preview, inline crop ROI, and binary ROI mask drawing. | Exports current image pair, crop PNGs, and white-inside/black-outside ROI masks. |
 | `labkit_DICPostprocess_app` | Ncorr MAT extraction, EXX/EYY overlays, ROI summary, optical enhancement controls, and strain colorbar levels. | Exports overlays, summary CSV, and colorbar/level files. |
 | `labkit_CurvatureMeasurement_app` | Image anchor editing, scale-bar measurement, circle fitting, curvature conversion, dense-point display, and residual annotations. | Exports overlay PNG and curvature CSV. |
-| `labkit_FocusStack_app` | Folder-based focus sequence loading, optional registration to the middle image, Laplacian-pyramid focus fusion, smoothed detail-level decision weights, and focus-depth preview. | Exports fused PNG, colorized focus map PNG, and per-source focus coverage CSV. |
+| `labkit_FocusStack_app` | Folder or selected-file focus sequence loading, optional registration to the middle image, Laplacian-pyramid focus fusion, smoothed detail-level decision weights, and focus-depth preview. | Exports fused PNG, colorized focus map PNG, and per-source focus coverage CSV. |
 | `labkit_ECGPrint_app` | CSV/MAT import parsing, channel/ROI selection, padded filtering before ROI crop, ECG peak detection, segments, template, and SNR-over-time plots. | Exports per-segment SNR CSV and waveform PNG. Multi-file/class statistics belong in a separate wearable stats app. |

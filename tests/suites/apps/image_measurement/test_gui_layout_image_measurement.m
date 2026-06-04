@@ -29,10 +29,10 @@ end
 function checkFocusStackLayout(h)
     fig = h.launchFigure('labkit_FocusStack_app', 'Microscope Focus Stack Fusion');
     h.assertFigureMinimumSize(fig, 1440, 860);
-    h.assertComponentCounts(fig, struct('Button', 5, 'CheckBox', 1, ...
+    h.assertComponentCounts(fig, struct('Button', 6, 'CheckBox', 1, ...
         'Spinner', 3, 'ListBox', 1, 'Table', 1, 'TextArea', 3, 'Axes', 2));
-    h.assertButtonContract(fig, {'Open image folder', 'Run focus stack', 'Export fused PNG', ...
-        'Export focus map PNG', 'Export summary CSV'});
+    h.assertButtonContract(fig, {'Open image folder', 'Open image files', ...
+        'Run focus stack', 'Export fused PNG', 'Export focus map PNG', 'Export summary CSV'});
     h.assertCheckboxContract(fig, {'Auto-register stack to middle image'});
     h.assertTabTitles(fig, {'Files + Analysis', 'Summary + Results', 'Log'});
     h.assertTableColumns(fig, {'Metric', 'Value'});
