@@ -59,11 +59,7 @@ The app owns:
 - failed-row behavior
 - callback ordering, alerts, and log wording
 
-Move code into `+labkit` only when it is reusable without app vocabulary, testable independently, and useful beyond one workflow.
-
-Reusable UI tools may own app-neutral controls and defaults when that boundary is explicitly approved and documented in `docs/ui.md`. In that case the app should consume the tool's public methods instead of duplicating normalization, widget state, or low-level interaction logic. The app still owns the scientific meaning of the values, result tables, export schemas, alert wording, and workflow order around the tool.
-
-For image scale bars, `labkit.ui.createScaleBarTool` owns the fixed controls, supported units, typed or measured reference-pixel calibration, pixels-per-unit readout, reference endpoint edit mode, and overlay placement. An image app using it owns image loading/redrawing, when the tool is enabled, conflict management with other edit modes, calculations that consume `tool.calibration()`, summaries, and exports.
+Move code into `+labkit` only when it is reusable without app vocabulary, testable independently, and useful beyond one workflow. When a documented UI tool owns app-neutral interaction mechanics, the app should consume that tool and keep workflow meaning, summaries, and exports app-local.
 
 ## App File Shape
 
@@ -128,6 +124,6 @@ Interactive file selection, drawing, visual inspection, and full workflow feel a
 | `labkit_CIC_app` | CIC, voltage-transient metrics, water-window status, and batch display tables. | CIC CSV columns are guarded by app tests. |
 | `labkit_DICPreprocess_app` | Registration, repeated crop/align workflow, false-color preview, inline crop ROI, and binary ROI mask drawing. | Exports current image pair, crop PNGs, and white-inside/black-outside ROI masks. |
 | `labkit_DICPostprocess_app` | Ncorr MAT extraction, EXX/EYY overlays, ROI summary, optical enhancement controls, and strain colorbar levels. | Exports overlays, summary CSV, and colorbar/level files. |
-| `labkit_CurvatureMeasurement_app` | Curve-point workflow, circle fitting, curvature conversion, curve length measurement, dense-point display, residual annotations, result summaries, and CSV/overlay export schemas. It uses `labkit.ui.createAnchorCurveEditor` for generic anchor editing mechanics and `labkit.ui.createScaleBarTool` for reference-pixel calibration, units, scale-bar controls, and overlay placement. | Exports overlay PNG and curvature/length CSV. |
+| `labkit_CurvatureMeasurement_app` | Curve-point workflow, circle fitting, curvature conversion, curve length measurement, dense-point display, residual annotations, result summaries, and CSV/overlay export schemas. It consumes reusable UI tools for generic anchor editing and scale-bar mechanics. | Exports overlay PNG and curvature/length CSV. |
 | `labkit_FocusStack_app` | Folder or selected-file focus sequence loading, optional registration to the middle image, preset-guided Laplacian-pyramid focus fusion, user-facing detail/blend controls, and focus-depth preview. | Exports fused PNG, colorized focus map PNG, and per-source focus coverage CSV. |
 | `labkit_ECGPrint_app` | CSV/MAT import parsing, channel/ROI selection, padded filtering before ROI crop, ECG peak detection, segments, template, and SNR-over-time plots. | Exports per-segment SNR CSV and waveform PNG. Multi-file/class statistics belong in a separate wearable stats app. |

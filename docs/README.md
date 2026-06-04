@@ -10,7 +10,7 @@ These docs are written for people who run, maintain, or extend LabKit. Start wit
 ## I Maintain An App
 
 - `apps.md`: app ownership, current app notes, new-app checklist, and validation guidance.
-- `ui.md`: shared GUI shell, tabs, panels, axes, scale-bar tools, and reusable UI helper contracts.
+- `ui.md`: shared GUI shell, tabs, panels, axes, and reusable UI helper contracts.
 - `testing.md`: focused app-suite and GUI structural test commands.
 
 ## I Work On Reusable APIs
@@ -30,7 +30,7 @@ These docs are written for people who run, maintain, or extend LabKit. Start wit
 | --- | --- |
 | `architecture.md` | Package boundaries, ownership rules, and extraction decisions. |
 | `apps.md` | App entry points, app-family notes, and app-owned workflow guidance. |
-| `ui.md` | MATLAB GUI shell, image scale-bar tools, and reusable UI helpers. |
+| `ui.md` | MATLAB GUI shell and reusable UI helpers. |
 | `dta.md` | DTA facade, parser assumptions, and data shapes. |
 | `biosignal.md` | Biosignal facade, data shapes, and ECG workflow boundary. |
 | `testing.md` | Test commands, suite layout, GUI validation limits, and fixture expectations. |
