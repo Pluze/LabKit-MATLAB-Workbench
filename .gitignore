@@ -1,2 +1,4 @@
 .DS_Store
 matlab_test.log
+matlab_test*.log
+photos/

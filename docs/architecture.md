@@ -41,6 +41,7 @@ labkit_ChronoOverlay_app
 labkit_DICPreprocess_app
 labkit_DICPostprocess_app
 labkit_CurvatureMeasurement_app
+labkit_FocusStack_app
 labkit_ECGPrint_app
 ```
 
