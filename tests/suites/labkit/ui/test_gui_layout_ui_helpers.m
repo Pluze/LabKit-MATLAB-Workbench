@@ -297,6 +297,15 @@ function checkAnchorCurveEditorHelper()
     points = spiralEditor.getPoints();
     assert(isequal(points(end, :), [48 45]), ...
         'Open anchor editor should extend nearby endpoints instead of inserting into an inner spiral segment.');
+    crossingEditor = labkit.ui.createAnchorCurveEditor(ax, [100 120 3], ...
+        struct('figure', fig, 'closed', false, 'style', 'Straight lines'));
+    crossingEditor.start([10 10; 60 10; 60 80; 80 80; 80 70]);
+    ax.XLim = [0.5 500.5];
+    ax.YLim = [0.5 120.5];
+    crossingEditor.insertPoint([45 65]);
+    points = crossingEditor.getPoints();
+    assert(isequal(points(3, :), [45 65]) && isequal(size(points), [6 2]), ...
+        'Open anchor editor should insert correction points when endpoint extension would self-intersect.');
     editor.undoLast();
     assert(isequal(size(editor.getPoints()), [4 2]), ...
         'Anchor curve editor should remove the last anchor.');
