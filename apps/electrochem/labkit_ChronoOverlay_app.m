@@ -2,7 +2,7 @@ function varargout = labkit_ChronoOverlay_app(varargin)
 %LABKIT_CHRONOOVERLAY_APP Chrono voltage/current overlay and export app.
 % Single-file app that composes +labkit GUI/DTA APIs and owns overlay workflow choices.
 
-    [requestHandled, requestOutputs, debugLog] = labkit.ui.dispatchAppRequest( ...
+    [requestHandled, requestOutputs, debugLog] = labkit.ui.app.dispatchRequest( ...
         'labkit_ChronoOverlay_app', varargin, nargout, chronoOverlayAppTestHandlers());
     if requestHandled
         varargout = requestOutputs;
@@ -26,7 +26,7 @@ function varargout = labkit_ChronoOverlay_app(varargin)
     workbenchOpts.rightGridSize = [2 1];
     workbenchOpts.rightRowHeight = {'1x', '1x'};
     workbenchOpts.rightRowSpacing = 10;
-    ui = labkit.ui.createAppShell(struct( ...
+    ui = labkit.ui.app.createShell(struct( ...
         'title', 'Gamry Multi-DTA Plot Export GUI', ...
         'position', [80 60 1480 900], ...
         'leftWidth', 340, ...
@@ -52,20 +52,20 @@ function varargout = labkit_ChronoOverlay_app(varargin)
         'clearAll', 'Clear all', ...
         'export', 'Export curves CSV', ...
         'loadedText', 'No files loaded');
-    fileUi = labkit.ui.createFileSelectionPanel(layFA, fileLabels, fileCallbacks, ...
+    fileUi = labkit.ui.view.panel(layFA, 'files', fileLabels, fileCallbacks, ...
         struct('showRemoveSelected', true, 'multiselect', 'on'));
     lbFiles = fileUi.listbox;
     txtLoaded = fileUi.loadedText;
 
-    plotOptionsUi = labkit.ui.createPlotOptionsPanel(layFA, 4, 2);
+    plotOptionsUi = labkit.ui.view.panel(layFA, 'plotOptions', 4, 2);
     gp = plotOptionsUi.grid;
 
-    [~, ddXAxis] = labkit.ui.createLabeledDropdown(gp, 'X axis:', ...
+    [~, ddXAxis] = labkit.ui.view.form(gp, 'dropdown', 'X axis:', ...
         'Items', {'Time (s)', 'Time (ms)', 'Sample #'}, ...
         'Value', 'Time (s)', ...
         'ValueChangedFcn', @(~,~) refreshPlots());
 
-    [~, edLineWidth] = labkit.ui.createLabeledSpinner(gp, 'Line width:', ...
+    [~, edLineWidth] = labkit.ui.view.form(gp, 'spinner', 'Line width:', ...
         'Value', 1.3, ...
         'Limits', [0.1 10], ...
         'Step', 0.1, ...
@@ -85,7 +85,7 @@ function varargout = labkit_ChronoOverlay_app(varargin)
     cbGrid.Layout.Row = 4;
     cbGrid.Layout.Column = [1 2];
 
-    infoUi = labkit.ui.createReadOnlyTextPanel(laySR, 'Usage', 1, { ...
+    infoUi = labkit.ui.view.panel(laySR, 'text', 'Usage', 1, { ...
         'Usage:', ...
         '1. Open multiple .DTA files.', ...
         '2. Curves are aligned to the center of the blank time between cathodic and anodic phases.', ...
@@ -95,7 +95,7 @@ function varargout = labkit_ChronoOverlay_app(varargin)
         });
     txtInfo = infoUi.textArea;
 
-    logUi = labkit.ui.createLogPanel(layLog, 1);
+    logUi = labkit.ui.view.panel(layLog, 'log', 1);
     txtLog = logUi.textArea;
     if debugLog.enabled
         debugLog.attachTextLog(txtLog);
@@ -103,8 +103,8 @@ function varargout = labkit_ChronoOverlay_app(varargin)
         debugLog.instrumentFigure(fig);
     end
 
-    axV = labkit.ui.createAxes(right, 1, 'Voltage', 'Time (s)', 'Vf (V)');
-    axI = labkit.ui.createAxes(right, 2, 'Current', 'Time (s)', 'Im (A)');
+    axV = labkit.ui.view.axes(right, 1, 'Voltage', 'Time (s)', 'Vf (V)');
+    axI = labkit.ui.view.axes(right, 2, 'Current', 'Time (s)', 'Im (A)');
     if nargout >= 1
         varargout{1} = fig;
     end
@@ -213,11 +213,11 @@ function varargout = labkit_ChronoOverlay_app(varargin)
 
     function refreshFileList()
         if isempty(S.items)
-            labkit.ui.refreshListboxItems(lbFiles, {});
+            labkit.ui.view.update(lbFiles, 'listItems', {});
             txtLoaded.Value = 'No files loaded';
             return;
         end
-        labkit.ui.refreshListboxItems(lbFiles, {S.items.name});
+        labkit.ui.view.update(lbFiles, 'listItems', {S.items.name});
         txtLoaded.Value = sprintf('%d file(s) loaded', numel(S.items));
     end
 
@@ -269,7 +269,7 @@ function varargout = labkit_ChronoOverlay_app(varargin)
     end
 
     function addLog(msg)
-        labkit.ui.appendLog(txtLog, msg);
+        labkit.ui.view.update(txtLog, 'appendLog', msg);
         debugLog.append(msg);
     end
 end

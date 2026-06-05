@@ -23,7 +23,7 @@ function fit = computeCurvatureFit(xPix, yPix, calibration, doDensify, denseN, f
     end
 
     if nargin < 3 || isempty(calibration)
-        calibration = labkit.ui.scaleBarCalibration();
+        calibration = labkit.ui.tool.scaleBarCalibration();
     end
 
     if nargin < 4 || isempty(doDensify)

@@ -59,7 +59,7 @@ The app owns:
 - failed-row behavior
 - callback ordering, alerts, and log wording
 
-Every public app entry point should preserve its launch name, route internal test/debug requests through `labkit.ui.dispatchAppRequest`, build the GUI with `labkit.ui.createAppShell`, and keep visible debug trace wired into the Log tab during debug launches. Image apps with drawing, scale bars, ROI, or preview scroll should pass a `labkit.ui.createInteractionRuntime` result into reusable tools instead of owning figure pointer callbacks directly.
+Every public app entry point should preserve its launch name, route internal test/debug requests through `labkit.ui.app.dispatchRequest`, build the GUI with `labkit.ui.app.createShell`, and keep visible debug trace wired into the Log tab during debug launches. Image apps with drawing, scale bars, ROI, or preview scroll should pass a `labkit.ui.tool.createRuntime` result into reusable tools instead of owning figure pointer callbacks directly.
 
 Move code into `+labkit` only when it is reusable without app vocabulary, testable independently, and useful beyond one workflow. When a documented UI tool owns app-neutral interaction mechanics, the app should consume that tool and keep workflow meaning, summaries, and exports app-local.
 
@@ -100,7 +100,7 @@ Define these before adding controls or helpers:
 10. GUI shell spec, debug trace behavior, and file-selection mode
 ```
 
-Start from the closest existing app, reduce it to the needed workflow, and preserve ownership boundaries. Prefer `labkit.ui.createAppShell` even for small apps so daily interaction stays consistent across app families.
+Start from the closest existing app, reduce it to the needed workflow, and preserve ownership boundaries. Prefer `labkit.ui.app.createShell` even for small apps so daily interaction stays consistent across app families.
 
 ## Validation
 

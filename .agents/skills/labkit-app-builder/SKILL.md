@@ -104,7 +104,7 @@ Use the closest existing app as the starting pattern, then reduce it to the actu
 
 Build the app in this order:
 
-1. Add or update the app entry point with `labkit.ui.createAppShell`.
+1. Add or update the app entry point with `labkit.ui.app.createShell`.
 2. Wire file loading through the appropriate facade or app-local reader.
 3. Store state in one app struct; avoid globals, base workspace state, and hidden local paths.
 4. Rebuild the user workflow around stable controls, previews, summaries, and exports; do not reproduce command-line debug staging.

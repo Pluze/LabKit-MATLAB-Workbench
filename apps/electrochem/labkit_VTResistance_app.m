@@ -10,7 +10,7 @@ function varargout = labkit_VTResistance_app(varargin)
 %   - Estimate steady phase voltage by median(Vf) in the same selected window.
 %   - Compute baseline-corrected resistance as abs((Vss - Vbaseline) / Iss).
 
-    [requestHandled, requestOutputs, debugLog] = labkit.ui.dispatchAppRequest( ...
+    [requestHandled, requestOutputs, debugLog] = labkit.ui.app.dispatchRequest( ...
         'labkit_VTResistance_app', varargin, nargout, vtAppTestHandlers());
     if requestHandled
         varargout = requestOutputs;
@@ -30,7 +30,7 @@ function varargout = labkit_VTResistance_app(varargin)
     S.items = S.session.items;
     S.current = [];
 
-    ui = labkit.ui.createAppShell(struct( ...
+    ui = labkit.ui.app.createShell(struct( ...
         'title', 'Gamry VT Steady Resistance GUI', ...
         'position', [40 30 1680 980], ...
         'leftWidth', 430, ...
@@ -53,11 +53,11 @@ function varargout = labkit_VTResistance_app(varargin)
         'clearAll', 'Clear all', ...
         'export', 'Export results CSV', ...
         'loadedText', 'No files loaded');
-    fileUi = labkit.ui.createFileSelectionPanel(layFA, fileLabels, fileCallbacks);
+    fileUi = labkit.ui.view.panel(layFA, 'files', fileLabels, fileCallbacks);
     lbFiles = fileUi.listbox;
     txtLoaded = fileUi.loadedText;
 
-    settingsUi = labkit.ui.createPanelGrid(layFA, 'Analysis Settings', 2, [3 2]);
+    settingsUi = labkit.ui.view.section(layFA, 'Analysis Settings', 2, [3 2]);
     gs = settingsUi.grid;
 
     uilabel(gs,'Text','Pulse detection:','HorizontalAlignment','right');
@@ -84,7 +84,7 @@ function varargout = labkit_VTResistance_app(varargin)
     ddVoltageMode.Layout.Row = 3;
     ddVoltageMode.Layout.Column = 2;
 
-    actionUi = labkit.ui.createPanelGrid(layFA, 'Plot / Debug', 3, [2 3]);
+    actionUi = labkit.ui.view.section(layFA, 'Plot / Debug', 3, [2 3]);
     ga = actionUi.grid;
 
     btnReanalyze = uibutton(ga,'Text','Re-analyze file','ButtonPushedFcn',@(~,~) analyzeCurrentFile());
@@ -101,35 +101,36 @@ function varargout = labkit_VTResistance_app(varargin)
     cbShowShading = uicheckbox(ga,'Text','Shade windows','Value',true,'ValueChangedFcn',@(~,~) refreshPlots());
     cbShowShading.Layout.Row = 2; cbShowShading.Layout.Column = 3;
 
-    infoUi = labkit.ui.createPanelGrid(laySR, 'Current File Summary', 1, [13 2]);
+    infoUi = labkit.ui.view.section(laySR, 'Current File Summary', 1, [13 2]);
     gi = infoUi.grid;
 
-    S.txtControlMode = labkit.ui.createReadOnlyInfoRow(gi,1,'Control mode:');
-    S.txtDetect = labkit.ui.createReadOnlyInfoRow(gi,2,'Detection:');
-    S.txtWindow = labkit.ui.createReadOnlyInfoRow(gi,3,'Window:');
-    S.txtCathIV = labkit.ui.createReadOnlyInfoRow(gi,4,'Cathodic I / Vss:');
-    S.txtAnodIV = labkit.ui.createReadOnlyInfoRow(gi,5,'Anodic I / Vss:');
-    S.txtCathBase = labkit.ui.createReadOnlyInfoRow(gi,6,'Cathodic baseline:');
-    S.txtAnodBase = labkit.ui.createReadOnlyInfoRow(gi,7,'Anodic baseline:');
-    S.txtCathBaseWin = labkit.ui.createReadOnlyInfoRow(gi,8,'Cath baseline window:');
-    S.txtAnodBaseWin = labkit.ui.createReadOnlyInfoRow(gi,9,'Anod baseline window:');
-    S.txtCathR = labkit.ui.createReadOnlyInfoRow(gi,10,'Cathodic R:');
-    S.txtAnodR = labkit.ui.createReadOnlyInfoRow(gi,11,'Anodic R:');
-    S.txtAvgR = labkit.ui.createReadOnlyInfoRow(gi,12,'Average R:');
-    S.txtStatus = labkit.ui.createReadOnlyInfoRow(gi,13,'Status:');
+    S.txtControlMode = labkit.ui.view.form(gi, 'info', 1, 'Control mode:');
+    S.txtDetect = labkit.ui.view.form(gi, 'info', 2, 'Detection:');
+    S.txtWindow = labkit.ui.view.form(gi, 'info', 3, 'Window:');
+    S.txtCathIV = labkit.ui.view.form(gi, 'info', 4, 'Cathodic I / Vss:');
+    S.txtAnodIV = labkit.ui.view.form(gi, 'info', 5, 'Anodic I / Vss:');
+    S.txtCathBase = labkit.ui.view.form(gi, 'info', 6, 'Cathodic baseline:');
+    S.txtAnodBase = labkit.ui.view.form(gi, 'info', 7, 'Anodic baseline:');
+    S.txtCathBaseWin = labkit.ui.view.form(gi, 'info', 8, 'Cath baseline window:');
+    S.txtAnodBaseWin = labkit.ui.view.form(gi, 'info', 9, 'Anod baseline window:');
+    S.txtCathR = labkit.ui.view.form(gi, 'info', 10, 'Cathodic R:');
+    S.txtAnodR = labkit.ui.view.form(gi, 'info', 11, 'Anodic R:');
+    S.txtAvgR = labkit.ui.view.form(gi, 'info', 12, 'Average R:');
+    S.txtStatus = labkit.ui.view.form(gi, 'info', 13, 'Status:');
 
-    tableUi = labkit.ui.createResultTablePanel(laySR, 'Batch Results', 2, ...
+    tableUi = labkit.ui.view.panel(laySR, 'table', 'Batch Results', 2, ...
         {'File','Ic(A)','Ia(A)','Vc_ss(V)','Va_ss(V)','R_cath(ohm)','R_anod(ohm)','R_avg(ohm)','Detection'}, ...
         cell(0,9));
     tbl = tableUi.table;
 
-    logUi = labkit.ui.createLogPanel(layLog, 1);
+    logUi = labkit.ui.view.panel(layLog, 'log', 1);
     txtLog = logUi.textArea;
 
     topPlotDefaults = struct('x', 'Time (s)', 'y', 'VT: Vf vs time', 'grid', true);
     bottomPlotDefaults = struct('x', 'Time (s)', 'y', 'IT: Im vs time', 'grid', true);
-    plotControls = labkit.ui.createTopBottomPlotControls( ...
+    plotControls = labkit.ui.view.panel( ...
         ui.topControlsPanel, ...
+        'topBottomPlotControls', ...
         ui.bottomControlsPanel, ...
         {'Time (s)', 'Sample #'}, ...
         {'VT: Vf vs time', 'IT: Im vs time'}, ...
@@ -282,14 +283,14 @@ function varargout = labkit_VTResistance_app(varargin)
 
     function refreshFileList()
         if isempty(S.items)
-            labkit.ui.refreshListboxSelection(lbFiles, {});
+            labkit.ui.view.update(lbFiles, 'listSelection', {});
             txtLoaded.Value = fileLabels.loadedText;
             S.current = [];
             return;
         end
 
         names = {S.items.name};
-        [~, idx] = labkit.ui.refreshListboxSelection(lbFiles, names, S.current);
+        [~, idx] = labkit.ui.view.update(lbFiles, 'listSelection', names, S.current);
         S.current = idx(1);
         txtLoaded.Value = sprintf('%d file(s) loaded', numel(S.items));
     end
@@ -363,8 +364,8 @@ function varargout = labkit_VTResistance_app(varargin)
     end
 
     function refreshPlots()
-        labkit.ui.clearAxisObjects(axTop);
-        labkit.ui.clearAxisObjects(axBottom);
+        labkit.ui.view.draw(axTop, 'clear');
+        labkit.ui.view.draw(axBottom, 'clear');
         if isempty(S.items) || isempty(S.current) || S.current < 1 || S.current > numel(S.items)
             title(axTop,'Top Plot');
             title(axBottom,'Bottom Plot');
@@ -464,7 +465,7 @@ function varargout = labkit_VTResistance_app(varargin)
     end
 
     function swapPlots()
-        labkit.ui.swapTopBottomPlotSelections(ddTopX, ddTopY, ddBotX, ddBotY);
+        labkit.ui.view.update(plotControls, 'swapPlotSelections');
         refreshPlots();
     end
 
@@ -474,13 +475,13 @@ function varargout = labkit_VTResistance_app(varargin)
     end
 
     function restoreDefaultPlotSelections()
-        labkit.ui.setTopBottomPlotSelections(ddTopX, ddTopY, ddBotX, ddBotY, ...
+        labkit.ui.view.update(plotControls, 'setPlotSelections', ...
             topPlotDefaults, bottomPlotDefaults);
     end
 
     function resetAxesToDefaultState()
-        labkit.ui.hardResetAxis(axTop, 'Top Plot');
-        labkit.ui.hardResetAxis(axBottom, 'Bottom Plot');
+        labkit.ui.view.draw(axTop, 'reset', 'Top Plot');
+        labkit.ui.view.draw(axBottom, 'reset', 'Bottom Plot');
     end
 
     function exportResultsCSV()
@@ -502,7 +503,7 @@ function varargout = labkit_VTResistance_app(varargin)
     end
 
     function addLog(msg)
-        labkit.ui.appendLog(txtLog, msg);
+        labkit.ui.view.update(txtLog, 'appendLog', msg);
         debugLog.append(msg);
     end
 
