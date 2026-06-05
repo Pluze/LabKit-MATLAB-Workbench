@@ -18,7 +18,7 @@ function varargout = labkit_BatchImageCrop_app(varargin)
     end
 
     S = struct();
-    S.items = repmat(emptyBatchCropItem(), 0, 1);
+    S.items = repmat(batch_crop.state.emptyItem(), 0, 1);
     S.currentIndex = 0;
     S.outputFolder = string(pwd);
     S.lastExport = [];
@@ -73,7 +73,7 @@ function varargout = labkit_BatchImageCrop_app(varargin)
         'onExportSettingChanged', @onExportSettingChanged, ...
         'onChooseOutputFolder', @onChooseOutputFolder, ...
         'onExportCrops', @onExportCrops);
-    controls = createBatchCropControls(layFA, laySR, layLog, ...
+    controls = batch_crop.ui.createControls(layFA, laySR, layLog, ...
         S.outputFolder, callbacks);
     btnOpenFiles = controls.btnOpenFiles;
     btnClearImages = controls.btnClearImages;
@@ -113,7 +113,7 @@ function varargout = labkit_BatchImageCrop_app(varargin)
     end
 
     function onOpenFiles(~, ~)
-        [files, folder] = uigetfile(batchCropImageDialogFilter(), ...
+        [files, folder] = uigetfile(batch_crop.io.imageDialogFilter(), ...
             'Select microscope images', pwd, 'MultiSelect', 'on');
         if isequal(files, 0)
             addLog('Image file selection cancelled.');
@@ -121,7 +121,7 @@ function varargout = labkit_BatchImageCrop_app(varargin)
         end
 
         try
-            paths = selectedBatchCropImagePaths(files, folder);
+            paths = batch_crop.io.selectedImagePaths(files, folder);
             items = readCropItems(paths);
         catch ME
             showError('Could not load images', ME.message);
@@ -136,7 +136,7 @@ function varargout = labkit_BatchImageCrop_app(varargin)
     end
 
     function onClearImages(~, ~)
-        S.items = repmat(emptyBatchCropItem(), 0, 1);
+        S.items = repmat(batch_crop.state.emptyItem(), 0, 1);
         S.currentIndex = 0;
         S.lastExport = [];
         addLog('Cleared loaded images.');
@@ -147,7 +147,7 @@ function varargout = labkit_BatchImageCrop_app(varargin)
         if isempty(S.items)
             return;
         end
-        items = batchCropListboxItems(S.items);
+        items = batch_crop.view.listboxItems(S.items);
         idx = find(strcmp(items, lbImages.Value), 1);
         if isempty(idx)
             return;
@@ -268,7 +268,7 @@ function varargout = labkit_BatchImageCrop_app(varargin)
             btnChooseOutput, btnPrevious, btnNext, btnUseCanvasCenter];
         try
             payload = labkit.ui.app.runBusy(fig, ...
-                @() writeBatchCropOutputs(S.items, opts), busyOpts);
+                @() batch_crop.export.writeOutputs(S.items, opts), busyOpts);
         catch ME
             showError('Export failed', ME.message);
             return;
@@ -303,7 +303,7 @@ function varargout = labkit_BatchImageCrop_app(varargin)
             return;
         end
 
-        items = batchCropListboxItems(S.items);
+        items = batch_crop.view.listboxItems(S.items);
         lbImages.Items = items;
         S.currentIndex = min(max(S.currentIndex, 1), numel(S.items));
         lbImages.Value = items{S.currentIndex};
@@ -359,7 +359,7 @@ function varargout = labkit_BatchImageCrop_app(varargin)
         item = S.items(S.currentIndex);
         cropWidth = currentCropWidth();
         cropHeight = currentCropHeight();
-        position = batchCropRectanglePosition(item.centerXY, cropWidth, cropHeight);
+        position = batch_crop.view.rectanglePosition(item.centerXY, cropWidth, cropHeight);
         hRect = rectangle(ui.previewAxes, 'Position', position, ...
             'EdgeColor', [1 0.84 0], ...
             'LineWidth', 1.5, ...
@@ -388,9 +388,9 @@ function varargout = labkit_BatchImageCrop_app(varargin)
         else
             canvasSize = [0, 0];
         end
-        resultTable.Data = batchCropSummaryTableData(S, S.currentIndex, ...
+        resultTable.Data = batch_crop.view.summaryTableData(S, S.currentIndex, ...
             canvasSize, currentCropWidth(), currentCropHeight(), ddFormat.Value);
-        txtDetails.Value = batchCropDetailLines(S, S.currentIndex, ...
+        txtDetails.Value = batch_crop.view.detailLines(S, S.currentIndex, ...
             currentCropWidth(), currentCropHeight(), ddFillMode.Value);
     end
 
@@ -418,8 +418,8 @@ function varargout = labkit_BatchImageCrop_app(varargin)
 
     function [canvas, mask] = currentCanvas()
         item = S.items(S.currentIndex);
-        fillValue = batchCropPreviewFillValue(item.image, ddFillMode.Value);
-        [canvas, mask] = rotateImageCanvas(item.image, item.angleDeg, fillValue);
+        fillValue = batch_crop.view.previewFillValue(item.image, ddFillMode.Value);
+        [canvas, mask] = batch_crop.ops.rotateCanvas(item.image, item.angleDeg, fillValue);
     end
 
     function ensureCurrentCenter()
@@ -449,7 +449,7 @@ function varargout = labkit_BatchImageCrop_app(varargin)
     end
 
     function items = readCropItems(paths)
-        items = readBatchCropItems(paths);
+        items = batch_crop.state.readItems(paths);
     end
 
     function addLog(message)

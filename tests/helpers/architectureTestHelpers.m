@@ -100,15 +100,35 @@ end
 function source = readAppOwnedSource(appFile)
     appDir = fileparts(appFile);
     sourceParts = {fileread(appFile)};
+
     privateDir = fullfile(appDir, 'private');
     if exist(privateDir, 'dir') == 7
-        fileEntries = dir(fullfile(privateDir, '*.m'));
-        fileNames = sort({fileEntries.name});
-        for iFile = 1:numel(fileNames)
-            sourceParts{end+1} = fileread(fullfile(privateDir, fileNames{iFile})); %#ok<AGROW>
-        end
+        sourceParts = appendSourceFiles(sourceParts, collectMFiles(privateDir));
     end
+
+    packageEntries = dir(fullfile(appDir, '+*'));
+    packageDirs = packageEntries([packageEntries.isdir]);
+    for iDir = 1:numel(packageDirs)
+        packageDir = fullfile(packageDirs(iDir).folder, packageDirs(iDir).name);
+        sourceParts = appendSourceFiles(sourceParts, collectMFiles(packageDir));
+    end
+
     source = strjoin(sourceParts, newline);
+end
+
+function sourceParts = appendSourceFiles(sourceParts, files)
+    for iFile = 1:numel(files)
+        sourceParts{end+1} = fileread(files{iFile}); %#ok<AGROW>
+    end
+end
+
+function files = collectMFiles(folder)
+    fileEntries = dir(fullfile(folder, '**', '*.m'));
+    files = cell(numel(fileEntries), 1);
+    for iFile = 1:numel(fileEntries)
+        files{iFile} = fullfile(fileEntries(iFile).folder, fileEntries(iFile).name);
+    end
+    files = sort(files);
 end
 
 function assertDTAFacadeUsage(source, appName, expectedKind, expectsFolderDiscovery)
@@ -145,7 +165,34 @@ function assertImageMeasurementAppBoundary(source, appName)
         [appName ' should not depend on DIC implementation packages.']);
     assert(~contains(source, '+labkit/+image_measurement'), ...
         [appName ' should keep image-measurement workflow code app-local.']);
+    packageName = imageMeasurementPackageForApp(appName);
+    assert(contains(source, [packageName '.']), ...
+        [appName ' should use its app-owned package namespace.']);
+    allPackageNames = {'batch_crop', 'curvature', 'focus_stack'};
+    otherPackageNames = setdiff(allPackageNames, {packageName});
+    for iPackage = 1:numel(otherPackageNames)
+        assert(~contains(source, [otherPackageNames{iPackage} '.']), ...
+            [appName ' should not call sibling image-measurement app package ' ...
+            otherPackageNames{iPackage} '.']);
+    end
+    assert(~contains(source, 'batchImageCropWorkflow') && ...
+        ~contains(source, 'focusStackWorkflow') && ...
+        ~contains(source, 'curvatureMeasurementWorkflow'), ...
+        [appName ' should not use string-dispatch workflow adapters.']);
     assertAppUsesManagedImageInteractions(source, appName);
+end
+
+function packageName = imageMeasurementPackageForApp(appName)
+    switch appName
+        case 'labkit_BatchImageCrop_app'
+            packageName = 'batch_crop';
+        case 'labkit_CurvatureMeasurement_app'
+            packageName = 'curvature';
+        case 'labkit_FocusStack_app'
+            packageName = 'focus_stack';
+        otherwise
+            error('Unknown image-measurement app entrypoint: %s', appName);
+    end
 end
 
 function assertWearableAppBoundary(source, appName)

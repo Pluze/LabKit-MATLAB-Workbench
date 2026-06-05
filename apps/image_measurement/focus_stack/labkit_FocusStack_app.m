@@ -23,7 +23,7 @@ function varargout = labkit_FocusStack_app(varargin)
     S.images = {};
     S.alignedImages = {};
     S.registrationLines = {};
-    S.result = emptyFocusStackResult();
+    S.result = focus_stack.state.emptyResult();
 
     workbenchOpts = struct('rightKind', 'dualPlot', ...
         'rightTitle', 'Focus Stack Preview', ...
@@ -152,7 +152,7 @@ function varargout = labkit_FocusStack_app(varargin)
 
     resultTable = uitable(laySR, ...
         'ColumnName', {'Metric', 'Value'}, ...
-        'Data', initialResultTable());
+        'Data', focus_stack.view.initialResultTable());
     resultTable.Layout.Row = 1;
 
     txtDetails = uitextarea(laySR, 'Editable', 'off');
@@ -187,7 +187,7 @@ function varargout = labkit_FocusStack_app(varargin)
     end
 
     function onOpenFiles(~, ~)
-        [files, folder] = uigetfile(focusImageDialogFilter(), ...
+        [files, folder] = uigetfile(focus_stack.io.imageDialogFilter(), ...
             'Select focus image files', pwd, 'MultiSelect', 'on');
         if isequal(files, 0)
             addLog('Image file selection cancelled.');
@@ -195,7 +195,7 @@ function varargout = labkit_FocusStack_app(varargin)
         end
 
         try
-            paths = selectedFocusImagePaths(files, folder);
+            paths = focus_stack.io.selectedImagePaths(files, folder);
         catch ME
             showError('Could not select focus images', ME.message);
             return;
@@ -207,7 +207,7 @@ function varargout = labkit_FocusStack_app(varargin)
 
     function loadImageFolder(folder)
         try
-            paths = findFocusStackImages(folder);
+            paths = focus_stack.io.findImages(folder);
         catch ME
             showError('Could not load focus stack', ME.message);
             return;
@@ -218,7 +218,7 @@ function varargout = labkit_FocusStack_app(varargin)
 
     function loadImagePaths(paths, sourceFolder, sourceDescription, logMessage)
         try
-            images = readFocusStackImages(paths);
+            images = focus_stack.io.readImages(paths);
         catch ME
             showError('Could not load focus stack', ME.message);
             return;
@@ -229,11 +229,11 @@ function varargout = labkit_FocusStack_app(varargin)
         S.images = images;
         S.alignedImages = {};
         S.registrationLines = {};
-        S.result = emptyFocusStackResult();
+        S.result = focus_stack.state.emptyResult();
         S.folder = string(sourceFolder);
 
         txtFolder.Value = char(sourceDescription);
-        lbImages.Items = displayImageNames(paths);
+        lbImages.Items = focus_stack.view.displayImageNames(paths);
         if ~isempty(lbImages.Items)
             lbImages.Value = lbImages.Items{1};
         end
@@ -282,7 +282,7 @@ function varargout = labkit_FocusStack_app(varargin)
     end
 
     function onFusionPresetChanged(~, ~)
-        settings = focusFusionPresetSettings(ddFusionPreset.Value);
+        settings = focus_stack.state.fusionPresetSettings(ddFusionPreset.Value);
         edtFocusWindow.Value = settings.focusWindow;
         edtSmoothRadius.Value = settings.smoothRadius;
         edtUncertainBlend.Value = settings.minConfidencePercent;
@@ -293,13 +293,13 @@ function varargout = labkit_FocusStack_app(varargin)
         imagesForFusion = S.images;
         registrationLines = {};
         if registerStack
-            [imagesForFusion, registrationLines] = alignFocusStackImages(S.images);
+            [imagesForFusion, registrationLines] = focus_stack.ops.alignImages(S.images);
         end
 
         payload = struct();
         payload.imagesForFusion = imagesForFusion;
         payload.registrationLines = registrationLines;
-        payload.result = computeFocusStack(imagesForFusion, opts);
+        payload.result = focus_stack.ops.computeFocusStack(imagesForFusion, opts);
     end
 
     function controls = focusStackBusyControls()
@@ -338,7 +338,7 @@ function varargout = labkit_FocusStack_app(varargin)
             return;
         end
         try
-            imwrite(focusIndexRgb(S.result.focusIndex, S.result.inputCount), filepath);
+            imwrite(focus_stack.view.focusIndexRgb(S.result.focusIndex, S.result.inputCount), filepath);
         catch ME
             showError('Could not export focus map PNG', ME.message);
             return;
@@ -357,7 +357,7 @@ function varargout = labkit_FocusStack_app(varargin)
             return;
         end
         try
-            T = buildFocusStackSummaryTable(S.result, S.paths);
+            T = focus_stack.export.buildSummaryTable(S.result, S.paths);
             writetable(T, filepath);
         catch ME
             showError('Could not export summary CSV', ME.message);
@@ -388,10 +388,10 @@ function varargout = labkit_FocusStack_app(varargin)
             labkit.ui.view.draw(ui.topAxes, 'image', S.result.fused, ...
                 'Fused all-in-focus image');
             labkit.ui.view.draw(ui.bottomAxes, 'image', ...
-                focusIndexRgb(S.result.focusIndex, S.result.inputCount), ...
+                focus_stack.view.focusIndexRgb(S.result.focusIndex, S.result.inputCount), ...
                 'Focus-depth index map');
         elseif ~isempty(S.images)
-            labkit.ui.view.draw(ui.topAxes, 'image', previewImage(S.images{1}), ...
+            labkit.ui.view.draw(ui.topAxes, 'image', focus_stack.view.previewImage(S.images{1}), ...
                 'First source image');
             labkit.ui.view.draw(ui.bottomAxes, 'reset', 'Focus-depth index map', true);
         else
@@ -403,20 +403,20 @@ function varargout = labkit_FocusStack_app(varargin)
     function refreshSummary()
         txtStackStatus.Value = sprintf('Images: %d', numel(S.images));
         if S.result.ok
-            resultTable.Data = focusStackResultTableData(S.result);
-            txtDetails.Value = focusStackDetails(S.result, S.paths, S.registrationLines);
+            resultTable.Data = focus_stack.view.resultTableData(S.result);
+            txtDetails.Value = focus_stack.view.details(S.result, S.paths, S.registrationLines);
         elseif numel(S.images) >= 2
-            resultTable.Data = initialResultTable();
+            resultTable.Data = focus_stack.view.initialResultTable();
             txtDetails.Value = { ...
                 sprintf('Loaded images: %d', numel(S.images)), ...
                 'Run focus stack to compute the fused image and focus-depth map.'};
         elseif ~isempty(S.images)
-            resultTable.Data = initialResultTable();
+            resultTable.Data = focus_stack.view.initialResultTable();
             txtDetails.Value = { ...
                 sprintf('Loaded images: %d', numel(S.images)), ...
                 'Load at least two images before running focus stack.'};
         else
-            resultTable.Data = initialResultTable();
+            resultTable.Data = focus_stack.view.initialResultTable();
             txtDetails.Value = {'Load a focus image folder or select image files to begin.'};
         end
         updateControls();
@@ -425,10 +425,10 @@ function varargout = labkit_FocusStack_app(varargin)
     function updateControls()
         hasStack = numel(S.images) >= 2;
         hasResult = S.result.ok;
-        btnRun.Enable = ternary(hasStack, 'on', 'off');
-        btnExportFused.Enable = ternary(hasResult, 'on', 'off');
-        btnExportMap.Enable = ternary(hasResult, 'on', 'off');
-        btnExportSummary.Enable = ternary(hasResult, 'on', 'off');
+        btnRun.Enable = focus_stack.view.ternary(hasStack, 'on', 'off');
+        btnExportFused.Enable = focus_stack.view.ternary(hasResult, 'on', 'off');
+        btnExportMap.Enable = focus_stack.view.ternary(hasResult, 'on', 'off');
+        btnExportSummary.Enable = focus_stack.view.ternary(hasResult, 'on', 'off');
     end
 
     function resetPreviewAxes()

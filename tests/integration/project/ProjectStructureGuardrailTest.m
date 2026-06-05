@@ -132,6 +132,20 @@ classdef ProjectStructureGuardrailTest < matlab.unittest.TestCase
             end
         end
 
+        function imageMeasurementAppsUseOwnedPackageNamespaces(testCase)
+            root = setupLabKitTestPath();
+
+            assertImageMeasurementPackageLayout(testCase, root, ...
+                'batch_crop', 'batch_crop', ...
+                {'+export', '+io', '+ops', '+state', '+ui', '+view'});
+            assertImageMeasurementPackageLayout(testCase, root, ...
+                'curvature', 'curvature', ...
+                {'+export', '+ops', '+state', '+ui', '+view'});
+            assertImageMeasurementPackageLayout(testCase, root, ...
+                'focus_stack', 'focus_stack', ...
+                {'+export', '+io', '+ops', '+state', '+view'});
+        end
+
         function sensitiveSampleHygieneScansTrackedText(testCase)
             root = setupLabKitTestPath();
             files = collectTrackedTextScope(root);
@@ -163,7 +177,35 @@ classdef ProjectStructureGuardrailTest < matlab.unittest.TestCase
                 'startup_labkit should add nested image measurement app folders.');
             testCase.verifyFalse(pathContains(fullfile(root, 'apps', 'image_measurement', 'curvature', 'private')), ...
                 'startup_labkit should not expose app-private helper folders.');
+            testCase.verifyFalse(pathContains(fullfile(root, 'apps', 'image_measurement', 'curvature', '+curvature')), ...
+                'startup_labkit should not expose app-owned package folders directly.');
         end
+    end
+end
+
+function assertImageMeasurementPackageLayout(testCase, root, appFolder, packageName, componentDirs)
+    appDir = fullfile(root, 'apps', 'image_measurement', appFolder);
+    packageDir = fullfile(appDir, ['+' packageName]);
+
+    testCase.verifyTrue(isfolder(appDir), ...
+        ['Missing image-measurement app folder: apps/image_measurement/' appFolder]);
+    testCase.verifyFalse(isfolder(fullfile(appDir, 'private')), ...
+        ['Image-measurement app should use an app-owned package, not private/: ' appFolder]);
+    testCase.verifyFalse(isfolder(fullfile(appDir, '+app')), ...
+        ['Image-measurement app should not use a fixed +app namespace: ' appFolder]);
+    workflowFiles = dir(fullfile(appDir, '*Workflow.m'));
+    testCase.verifyTrue(isempty(workflowFiles), ...
+        ['Image-measurement app should not keep workflow dispatch adapters: ' appFolder]);
+    testCase.verifyTrue(isfolder(packageDir), ...
+        ['Missing app-owned package namespace: ' relativePath(root, packageDir)]);
+
+    packageFiles = dir(fullfile(packageDir, '**', '*.m'));
+    testCase.verifyFalse(isempty(packageFiles), ...
+        ['App-owned package should contain helper files: ' relativePath(root, packageDir)]);
+    for iDir = 1:numel(componentDirs)
+        testCase.verifyTrue(isfolder(fullfile(packageDir, componentDirs{iDir})), ...
+            ['Missing app-owned component package ' componentDirs{iDir} ...
+            ' under ' relativePath(root, packageDir)]);
     end
 end
 
