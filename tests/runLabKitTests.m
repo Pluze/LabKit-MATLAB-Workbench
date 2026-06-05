@@ -14,6 +14,7 @@ function output = runLabKitTests(varargin)
 %   FailIfNoTests   Error when no official tests match.
 %   ArtifactsRoot   Root artifact directory.
 %   RunName         Name used in artifact titles and console output.
+%   ListOnly        List matched tests without executing or writing artifacts.
 
     root = fileparts(fileparts(mfilename("fullpath")));
     addpath(fullfile(root, "tests", "support"));
@@ -21,10 +22,6 @@ function output = runLabKitTests(varargin)
 
     opts = parseOptions(root, varargin{:});
     restoreRunName = setRunNameEnvironment(opts.RunName);
-    paths = labkitArtifactPaths( ...
-        "Root", opts.ArtifactsRoot, ...
-        "RunName", opts.RunName, ...
-        "Create", true);
     suite = discoverOfficialSuite(root, opts);
 
     fprintf("LabKit official test run: %s\n", opts.RunName);
@@ -35,6 +32,24 @@ function output = runLabKitTests(varargin)
             "No official matlab.unittest tests matched the requested selection.");
     end
 
+    if opts.ListOnly
+        listing = suiteListingTable(suite);
+        printSuiteListing(listing);
+        output = struct( ...
+            "official", matlab.unittest.Test.empty(1, 0), ...
+            "artifacts", struct(), ...
+            "runName", opts.RunName, ...
+            "listOnly", true, ...
+            "count", height(listing), ...
+            "tests", listing);
+        clear restoreRunName
+        return;
+    end
+
+    paths = labkitArtifactPaths( ...
+        "Root", opts.ArtifactsRoot, ...
+        "RunName", opts.RunName, ...
+        "Create", true);
     runner = matlab.unittest.TestRunner.withTextOutput( ...
         "OutputDetail", opts.OutputDetail, ...
         "LoggingLevel", opts.LoggingLevel);
@@ -91,6 +106,7 @@ function opts = parseOptions(root, varargin)
     p.addParameter("FailIfNoTests", true, @isLogicalScalar);
     p.addParameter("ArtifactsRoot", fullfile(root, "artifacts"), @isTextScalar);
     p.addParameter("RunName", "local", @isTextScalar);
+    p.addParameter("ListOnly", false, @isLogicalScalar);
     p.addParameter("OutputDetail", "Concise", @isTextScalar);
     p.addParameter("LoggingLevel", "Concise", @isTextScalar);
     p.parse(varargin{:});
@@ -99,6 +115,7 @@ function opts = parseOptions(root, varargin)
     opts.IncludeGui = logical(opts.IncludeGui);
     opts.IncludeCoverage = logical(opts.IncludeCoverage);
     opts.FailIfNoTests = logical(opts.FailIfNoTests);
+    opts.ListOnly = logical(opts.ListOnly);
     opts.Suites = normalizeTextList(opts.Suites);
     opts.Tests = normalizeTextList(opts.Tests);
     opts.Tags = normalizeTextList(opts.Tags);
@@ -119,6 +136,33 @@ function suite = discoverOfficialSuite(root, opts)
 
     suite = filterSuiteByName(suite, opts.Tests);
     suite = filterSuiteByTags(suite, opts.Tags, opts.ExcludeTags);
+end
+
+function listing = suiteListingTable(suite)
+    names = strings(numel(suite), 1);
+    tags = strings(numel(suite), 1);
+    for k = 1:numel(suite)
+        names(k) = string(suite(k).Name);
+        suiteTags = string(suite(k).Tags);
+        if isempty(suiteTags)
+            tags(k) = "";
+        else
+            tags(k) = strjoin(suiteTags, ",");
+        end
+    end
+    listing = table(names, tags, 'VariableNames', {'Name', 'Tags'});
+end
+
+function printSuiteListing(listing)
+    if isempty(listing)
+        fprintf("No tests matched.\n");
+        return;
+    end
+
+    fprintf("Matched official tests:\n");
+    for k = 1:height(listing)
+        fprintf("  %s [%s]\n", char(listing.Name(k)), char(listing.Tags(k)));
+    end
 end
 
 function groups = discoverOfficialGroups(testsRoot)
