@@ -12,6 +12,26 @@ Do not claim behavior is preserved unless tests or fixtures support that claim.
 
 ## Test Commands
 
+Phase 1 of the app/test platform migration adds MATLAB build tasks and an
+official `matlab.unittest` entry point while the old suite is still being
+ported. During this transition:
+
+```bash
+buildtool checkStyle
+buildtool test
+buildtool testUnit
+buildtool coverage
+```
+
+- `buildtool test` is the transitional full non-GUI entry point: it runs the
+  official seed/migrated tests and then the legacy non-GUI suite.
+- `buildtool checkStyle` runs official style-tag tests and the legacy project
+  guardrails until those guardrails are rewritten.
+- `buildtool coverage` generates official JUnit, HTML test result, Cobertura,
+  and HTML coverage artifacts for official tests. Coverage is report-only.
+- `buildtool testGuiGesture` exists as the future gesture entry point and may
+  pass with no selected tests until gesture coverage is ported.
+
 Default non-GUI suite:
 
 ```bash
@@ -30,7 +50,12 @@ If local execution policy blocks direct `.ps1` execution, run:
 powershell -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1
 ```
 
-Both wrappers call `tests/run_all_tests.m` and accept the same `--suite`, `--test`, and `--gui` options. Set `MATLAB_CMD` when MATLAB is not on `PATH`, and set `MATLAB_TEST_LOG` to override the default `matlab_test.log` location.
+Both wrappers call `tests/runLabKitTests.m` with legacy compatibility enabled
+and accept the same `--suite`, `--test`, and `--gui` options. The old
+`tests/run_all_tests.m` runner remains available until equivalent coverage is
+ported and the old suite is removed. Set `MATLAB_CMD` when MATLAB is not on
+`PATH`, and set `MATLAB_TEST_LOG` to override the default `matlab_test.log`
+location.
 
 ## Validation Levels
 
@@ -101,6 +126,9 @@ UI framework changes should cover the affected layer rather than only the change
 Tests live under:
 
 ```text
+tests/unit/
+tests/integration/
+tests/gui/
 tests/suites/project
 tests/suites/labkit/dta
 tests/suites/labkit/biosignal
@@ -112,7 +140,11 @@ tests/suites/apps/wearable
 tests/suites/apps/smoke
 ```
 
-The stable entry point is `tests/run_all_tests.m`. It discovers `test_*.m` files directly from `tests/suites/<target>/`, so adding a focused test normally only requires placing it in the appropriate target folder.
+Official `matlab.unittest` tests are added under `tests/unit`,
+`tests/integration`, and `tests/gui` as coverage is ported. The legacy runner
+still discovers `test_*.m` files directly from `tests/suites/<target>/`; keep
+old-suite tests there until their replacement is recorded in the coverage
+migration map.
 
 Shared setup, structural GUI assertions, and focused support routines live under `tests/helpers/`. Keep helpers limited to setup and assertions; app-specific formulas, result schemas, export formats, and expected scientific values should remain in focused suite tests.
 

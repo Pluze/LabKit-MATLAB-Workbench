@@ -264,7 +264,7 @@ state ownership, callbacks, or tests clearer. The stable contract is:
 ## Phase Checklist
 
 - [x] Phase 0: Safety baseline.
-- [ ] Phase 1: New test platform skeleton.
+- [x] Phase 1: New test platform skeleton.
 - [ ] Phase 2: Project and style guardrails rewrite.
 - [ ] Phase 3: App helper extraction before test hook removal.
 - [ ] Phase 4: Delete app test backdoors.
@@ -278,13 +278,17 @@ state ownership, callbacks, or tests clearer. The stable contract is:
 
 ## Current Phase
 
-Phase: 1
+Phase: 2
 Status: not started
 Owner notes:
 
-- Phase 0 baseline completed on `codex/app-test-platform-rewrite`.
-- Next phase starts with the official MATLAB test/build skeleton while keeping
-  the old runner available until Phase 6.
+- Phase 1 skeleton completed on `codex/app-test-platform-rewrite`.
+- `buildfile.m` and `tests/runLabKitTests.m` are available. Transitional
+  `buildtool test`, `buildtool checkStyle`, and wrappers run official tests
+  plus the legacy runner where needed so old coverage stays active until
+  Phase 6.
+- Next phase rewrites project/style guardrails into the new official layout and
+  starts legacy-debt checks in inventory or expected-debt mode.
 
 ## Phase 0 Baseline
 
@@ -606,6 +610,17 @@ Acceptance:
 | 2026-06-05 | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 --suite project` | pass | MATLAB R2025b; 6 project guardrail tests passed in 1.56s. |
 | 2026-06-05 | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1` | pass | MATLAB R2025b; default non-GUI suite passed in 64.42s. |
 | 2026-06-05 | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 --suite gui` | pass | MATLAB R2025b; existing GUI suite passed in 250.49s. |
+| 2026-06-05 | `matlab -batch "... runLabKitTests('IncludeLegacy', false, 'RunName', 'phase1-seed')"` | pass | Official runner discovered 2 seed tests and generated JUnit plus HTML result artifacts. |
+| 2026-06-05 | `matlab -batch "... buildtool testUnit"` | pass | Official unit task discovered and passed 2 seed tests. |
+| 2026-06-05 | `matlab -batch "... buildtool coverage"` | pass | Generated `artifacts/coverage/cobertura.xml` and HTML coverage report for official tests. |
+| 2026-06-05 | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 --suite project` | pass | Wrapper bridge ran 2 official seed tests plus 6 legacy project guardrails. |
+| 2026-06-05 | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1` | pass | Wrapper bridge ran 2 official seed tests plus legacy default non-GUI suite. |
+| 2026-06-05 | `matlab -batch "... buildtool checkStyle"` | pass | Ran official style-tag seed tests plus legacy project guardrails. |
+| 2026-06-05 | `matlab -batch "... buildtool test"` | pass | Ran official seed tests plus legacy default non-GUI suite. |
+| 2026-06-05 | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 --suite gui` | pass | Wrapper bridge ran existing legacy GUI suite; official GUI test count is 0 until Phase 7. |
+| 2026-06-05 | `matlab -batch "... buildtool testGuiGesture"` | pass | Task is valid and currently selects 0 official gesture tests. |
+| 2026-06-05 | `bash -n scripts/run_matlab_tests.sh` | blocked | Local Bash/WSL launch failed with access denied before syntax execution; PowerShell wrapper was validated. |
+| 2026-06-05 | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 --suite project` | pass | Post-doc/AGENTS/roadmap update guardrail passed with official seed plus legacy project suite. |
 
 ## Deviation Log
 

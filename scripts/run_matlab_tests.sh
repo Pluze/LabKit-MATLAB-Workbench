@@ -127,10 +127,10 @@ else
 fi
 if [[ "$INCLUDE_GUI" -eq 1 ]]; then
     MATLAB_FLAGS="${MATLAB_GUI_FLAGS:-}"
-    TEST_EXPR="run_all_tests(true, struct('suites', {$SUITE_CELL}, 'tests', {$TEST_CELL}));"
+    TEST_EXPR="runLabKitTests('IncludeGui', true, 'Suites', $SUITE_CELL, 'Tests', $TEST_CELL, 'IncludeLegacy', true, 'FailIfNoTests', false);"
 else
     MATLAB_FLAGS="${MATLAB_FLAGS:--nojvm -nodisplay -noFigureWindows}"
-    TEST_EXPR="run_all_tests(false, struct('suites', {$SUITE_CELL}, 'tests', {$TEST_CELL}));"
+    TEST_EXPR="runLabKitTests('IncludeGui', false, 'Suites', $SUITE_CELL, 'Tests', $TEST_CELL, 'IncludeLegacy', true, 'FailIfNoTests', false);"
 fi
 MATLAB_FLAG_ARGS=()
 if [[ -n "$MATLAB_FLAGS" ]]; then

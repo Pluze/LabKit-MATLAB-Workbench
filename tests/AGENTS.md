@@ -10,9 +10,18 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
 
 ## Test Layout
 
-- Add focused tests under `tests/suites/<target>/test_*.m`.
+- During the app/test platform migration, add newly ported official tests under
+  `tests/unit/`, `tests/integration/`, or `tests/gui/` using
+  `matlab.unittest` or `matlab.uitest` styles.
+- Keep legacy coverage under `tests/suites/<target>/test_*.m` until the
+  coverage migration map marks that area `ported`, `dual-running`, or
+  `deferred`.
+- Do not delete `tests/suites/` tests or `tests/run_all_tests.m` until Phase 6
+  removes old-runner dependencies.
 - Keep architecture guardrails in the narrowest project-suite file that matches the concern.
 - Use `tests/helpers/` only for setup, lookup, assertion, cleanup, and fixture-building helpers.
+- Use `tests/support/` for official-runner setup, artifact paths, structured
+  trace capture, GUI fixture setup, and component snapshots.
 - Do not move app-specific formulas, expected scientific values, result schemas, or export columns into shared test helpers.
 - Boundary tests may require app-owned logic to stay under the owning app tree, but should not require GUI-free helpers to remain inside the public app entry-point file or assert exact app-private helper file lists.
 - UI public-surface tests should assert the layered `labkit.ui.app/view/tool/diag` facade and keep low-level controls, row resize, panel internals, and popout implementation private.
