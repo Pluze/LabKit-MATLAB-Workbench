@@ -30,8 +30,7 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
   package components instead of adding new `private/` runners or string-dispatch
   workflow adapters.
 - Do not add new `*Workflow.m` files or app-owned `+core/dispatch.m` string
-  routers. The existing electrochemistry dispatch files are temporary migration
-  debt documented in `docs/architecture.md`.
+  routers.
 - When a public app file grows large, prefer moving GUI-free app-owned calculations, export builders, formatting utilities, deterministic image/signal transforms, and focused control construction into `apps/<family>/<app_slug>/+<app_slug>/...`.
 - Do not add new `apps/<family>/private/` helpers unless the helper is genuinely shared by multiple apps in that family and the user approves that family-level boundary.
 - Keep the public app entry point responsible for GUI state, callbacks, user alerts, app workflow order, debug launch routing, and user-facing log wording.
