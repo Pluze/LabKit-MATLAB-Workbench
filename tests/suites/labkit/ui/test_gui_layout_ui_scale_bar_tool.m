@@ -87,6 +87,7 @@ function test_gui_layout_ui_scale_bar_tool()
     tool2.delete();
 
     tool.delete();
+    checkReferenceEditRestartDoesNotReenterRefresh(h);
 
     function onBeforeEdit(~, ~)
         calls.beforeEdit = calls.beforeEdit + 1;
@@ -114,5 +115,56 @@ function test_gui_layout_ui_scale_bar_tool()
 
     function captureTrace(message)
         traceMessages{end+1, 1} = message; %#ok<AGROW>
+    end
+end
+
+function checkReferenceEditRestartDoesNotReenterRefresh(h)
+    fig = uifigure('Visible', 'off', 'Name', 'labkit_scale_bar_tool_restart_probe');
+    cleaner = onCleanup(@() delete(fig)); %#ok<NASGU>
+    grid = uigridlayout(fig, [2 1]);
+    ax = uiaxes(grid);
+    ax.Layout.Row = 1;
+    tool = [];
+    calibrationCalls = 0;
+    refreshCalls = 0;
+
+    runtime = labkit.ui.createImageAxesRuntime(ax, struct('figure', fig));
+    tool = labkit.ui.createScaleBarTool(grid, 2, runtime, ...
+        struct('onCalibrationChanged', @onCalibration, ...
+        'onError', @onError));
+    tool.setImageSize([60 80 1]);
+    bg = imagesc(ax, rand(60, 80));
+    tool.setBackground(bg);
+
+    h.invokeCallback(tool.controls.measureReferenceButton, 'ButtonPushedFcn');
+    assert(tool.isReferenceEditActive(), ...
+        'Scale-bar tool should enter reference edit mode before restart coverage.');
+    h.invokeCallback(tool.controls.measureReferenceButton, 'ButtonPushedFcn');
+    assert(~tool.isReferenceEditActive(), ...
+        'Scale-bar tool should finish reference edit before restart coverage.');
+
+    calibrationCalls = 0;
+    refreshCalls = 0;
+    h.invokeCallback(tool.controls.measureReferenceButton, 'ButtonPushedFcn');
+    assert(tool.isReferenceEditActive(), ...
+        'Scale-bar tool should re-enter reference edit mode.');
+    assert(calibrationCalls == 0 && refreshCalls == 0, ...
+        'Restarting reference edit should not emit calibration changes from internal editor sync.');
+    h.invokeCallback(tool.controls.measureReferenceButton, 'ButtonPushedFcn');
+    tool.delete();
+
+    function onCalibration(~, ~)
+        calibrationCalls = calibrationCalls + 1;
+        if calibrationCalls > 1
+            error('labkit_test:ScaleBarRefreshReentry', ...
+                'Scale-bar reference restart reentered calibration refresh.');
+        end
+        if ~isempty(tool) && tool.isReferenceEditActive()
+            refreshCalls = refreshCalls + 1;
+            tool.refresh();
+        end
+    end
+
+    function onError(~, ~)
     end
 end

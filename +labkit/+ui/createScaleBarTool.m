@@ -316,6 +316,8 @@ function tool = createScaleBarTool(parent, row, runtime, opts)
                 'onChanged', @onReferenceEditorChanged));
         else
             trace('ensureReferenceEditor reuse editor');
+            state.suppressReferenceEditorCallback = true;
+            cleanupObj = onCleanup(@() clearReferenceEditorSuppression()); %#ok<NASGU>
             state.referenceEditor.setImageSize(state.imageSize);
             state.referenceEditor.setStyle('Straight lines');
         end

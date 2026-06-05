@@ -146,8 +146,13 @@ function editor = createAnchorCurveEditor(runtime, imageSize, opts)
     end
 
     function setStyle(style)
-        trace(sprintf('setStyle %s', char(string(style))));
-        state.style = string(style);
+        style = string(style);
+        trace(sprintf('setStyle %s', char(style)));
+        if state.style == style
+            trace('setStyle skipped unchanged');
+            return;
+        end
+        state.style = style;
         refresh();
         notifyChanged('style changed');
     end
