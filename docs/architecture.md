@@ -110,20 +110,10 @@ Exit condition: migrate the remaining DIC and wearable app bodies/helpers into
 app-owned packages under their owning app folders, with public entry points
 owning GUI state, callbacks, debug launch routing, and user-facing log wording.
 
-Allowed electrochemistry string-dispatch debt:
-
-```text
-apps/electrochem/chrono_overlay/+chrono_overlay/+core/dispatch.m
-apps/electrochem/cic/+cic/+core/dispatch.m
-apps/electrochem/csc/+csc/+core/dispatch.m
-apps/electrochem/eis/+eis/+core/dispatch.m
-apps/electrochem/vt_resistance/+vt_resistance/+core/dispatch.m
-```
-
-Exit condition: replace these app-owned `+core/dispatch.m` string routers with
-direct package functions or component-local implementation helpers. New apps
-and new migrations should not add `private` runners, `*Workflow.m` adapters, or
-additional `+core/dispatch.m` routing layers.
+Allowed electrochemistry string-dispatch debt: none. The former app-owned
+`+core/dispatch.m` routers have been replaced by component-local package
+functions. New apps and new migrations should not add `private` runners,
+`*Workflow.m` adapters, or `+core/dispatch.m` routing layers.
 
 ## Library Extraction Rule
 
