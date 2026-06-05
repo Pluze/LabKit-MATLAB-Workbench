@@ -305,7 +305,7 @@ function varargout = labkit_EIS_app(varargin)
             return;
         end
 
-        T = buildExportTable(items, ddX.Value, ddY.Value, cbLogX.Value, cbLogY.Value);
+        T = eisWorkflow("buildExportTable", items, ddX.Value, ddY.Value, cbLogX.Value, cbLogY.Value);
         out = fullfile(p, f);
         writetable(T, out);
         addLog(sprintf('Exported CSV: %s', out));
@@ -328,11 +328,11 @@ function handlers = eisAppTestHandlers()
 end
 
 function outputs = runBuildExportTable(args)
-    outputs = {buildExportTable(args{1}, args{2}, args{3}, args{4}, args{5})};
+    outputs = {eisWorkflow("buildExportTable", args{1}, args{2}, args{3}, args{4}, args{5})};
 end
 
 function outputs = runValuesForAxis(args)
-    outputs = {valuesForAxis(args{1}, args{2})};
+    outputs = {eisWorkflow("valuesForAxis", args{1}, args{2})};
 end
 
 function txt = labelForAxis(axisName)

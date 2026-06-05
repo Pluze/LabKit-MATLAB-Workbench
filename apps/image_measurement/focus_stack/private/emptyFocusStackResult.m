@@ -1,3 +1,6 @@
+% App-private image measurement helper. Expected caller: owning app callbacks
+% and temporary compatibility tests. Inputs, outputs, and side effects are
+% documented with the helper function below.
 function result = emptyFocusStackResult()
 %EMPTYFOCUSSTACKRESULT Return default result for labkit_FocusStack_app.
 %

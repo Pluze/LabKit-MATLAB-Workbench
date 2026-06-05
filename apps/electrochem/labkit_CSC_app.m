@@ -516,7 +516,7 @@ function varargout = labkit_CSC_app(varargin)
         opts.mode = ddMode.Value;
         opts.scanRate = S.scanRate;
         opts.area_cm2 = edArea.Value;
-        R = computeCSC(c, opts);
+        R = cscWorkflow("computeCSC", c, opts);
 
         if ~R.ok
             txtQct.Value = R.message;
@@ -627,7 +627,7 @@ function handlers = cscAppTestHandlers()
 end
 
 function outputs = runComputeCSC(args)
-    outputs = {computeCSC(args{1}, args{2})};
+    outputs = {cscWorkflow("computeCSC", args{1}, args{2})};
 end
 
 function [filepath, tf] = parseCSCLoadDiagnosticsRequest(args)

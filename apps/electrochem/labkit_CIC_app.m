@@ -326,7 +326,7 @@ function varargout = labkit_CIC_app(varargin)
         opts.pulseMode = ddPulseMode.Value;
         opts.usedMeasuredCurrent = cbUseMeasuredCurrent.Value;
 
-        A = computeCIC(item, opts);
+        A = cicWorkflow("computeCIC", item, opts);
         item.analysis = A;
         if A.ok
             addLog(sprintf('%s: Emc=%.6f V, Ema=%.6f V, safe=%d', item.name, A.Emc, A.Ema, A.safe));
@@ -386,7 +386,7 @@ function varargout = labkit_CIC_app(varargin)
 
     function refreshBatchTable()
         [~, unitLabel] = cicDisplayUnit();
-        [C, columnNames] = buildBatchTableData(S.items, unitLabel);
+        [C, columnNames] = cicWorkflow("buildBatchTableData", S.items, unitLabel);
         tbl.ColumnName = columnNames;
         if isempty(S.items)
             tbl.Data = cell(0,8);
@@ -653,7 +653,7 @@ function varargout = labkit_CIC_app(varargin)
         end
         out = fullfile(p,f);
         [~, unitLabel] = cicDisplayUnit();
-        [ok, msg] = writeResultsCSV(S.items, out, unitLabel);
+        [ok, msg] = cicWorkflow("writeResultsCSV", S.items, out, unitLabel);
         if ~ok
             uialert(fig,msg,'Export');
             return;
@@ -682,20 +682,20 @@ function handlers = cicAppTestHandlers()
 end
 
 function outputs = runComputeCIC(args)
-    outputs = {computeCIC(args{1}, args{2})};
+    outputs = {cicWorkflow("computeCIC", args{1}, args{2})};
 end
 
 function outputs = runBuildBatchTableData(args)
-    [C, columnNames] = buildBatchTableData(args{1}, args{2});
+    [C, columnNames] = cicWorkflow("buildBatchTableData", args{1}, args{2});
     outputs = {C, columnNames};
 end
 
 function outputs = runBuildResultsTable(args)
-    outputs = {buildResultsTable(args{1}, args{2})};
+    outputs = {cicWorkflow("buildResultsTable", args{1}, args{2})};
 end
 
 function outputs = runWriteResultsCSV(args)
-    [ok, msg] = writeResultsCSV(args{1}, args{2}, args{3});
+    [ok, msg] = cicWorkflow("writeResultsCSV", args{1}, args{2}, args{3});
     outputs = {ok, msg};
 end
 

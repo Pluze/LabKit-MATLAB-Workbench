@@ -179,7 +179,7 @@ function varargout = labkit_ChronoOverlay_app(varargin)
             end
 
             item = S.session.items(idx);
-            [item, alignMsg] = alignByPulseGap(item);
+            [item, alignMsg] = chronoOverlayWorkflow("alignByPulseGap", item);
             S.session.items(idx) = item;
             addLog(alignMsg);
 
@@ -254,7 +254,7 @@ function varargout = labkit_ChronoOverlay_app(varargin)
             return;
         end
 
-        T = buildOverlayExportTable(items);
+        T = chronoOverlayWorkflow("buildOverlayExportTable", items);
         out = fullfile(p, f);
         writetable(T, out);
         addLog(sprintf('Exported CSV: %s', out));
@@ -284,12 +284,12 @@ function handlers = chronoOverlayAppTestHandlers()
 end
 
 function outputs = runAlignByPulseGap(args)
-    [item, msg] = alignByPulseGap(args{1});
+    [item, msg] = chronoOverlayWorkflow("alignByPulseGap", args{1});
     outputs = {item, msg};
 end
 
 function outputs = runBuildOverlayExportTable(args)
-    outputs = {buildOverlayExportTable(args{1})};
+    outputs = {chronoOverlayWorkflow("buildOverlayExportTable", args{1})};
 end
 
 %% App-local analysis

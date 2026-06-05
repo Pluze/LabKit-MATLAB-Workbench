@@ -236,7 +236,7 @@ function varargout = labkit_VTResistance_app(varargin)
         opts.voltageMode = ddVoltageMode.Value;
         opts.pulseMode = ddPulseMode.Value;
 
-        A = computeResistance(item, opts);
+        A = vtResistanceWorkflow("computeResistance", item, opts);
         if A.ok
             addLog(sprintf('%s: Rc=%.6g ohm, Ra=%.6g ohm, Ravg=%.6g ohm', ...
                 item.name, A.Rc_abs_ohm, A.Ra_abs_ohm, A.Ravg_abs_ohm));
@@ -300,7 +300,7 @@ function varargout = labkit_VTResistance_app(varargin)
             tbl.Data = cell(0,9);
             return;
         end
-            tbl.Data = buildBatchTableData(S.items);
+            tbl.Data = vtResistanceWorkflow("buildBatchTableData", S.items);
     end
 
     function refreshResultsSummary()
@@ -494,7 +494,7 @@ function varargout = labkit_VTResistance_app(varargin)
             return;
         end
         out = fullfile(p,f);
-        [ok, msg] = writeResultsCSV(S.items, out);
+        [ok, msg] = vtResistanceWorkflow("writeResultsCSV", S.items, out);
         if ~ok
             uialert(fig,msg,'Export');
             return;
@@ -522,19 +522,19 @@ function handlers = vtAppTestHandlers()
 end
 
 function outputs = runComputeResistance(args)
-    outputs = {computeResistance(args{1}, args{2})};
+    outputs = {vtResistanceWorkflow("computeResistance", args{1}, args{2})};
 end
 
 function outputs = runBuildBatchTableData(args)
-    outputs = {buildBatchTableData(args{1})};
+    outputs = {vtResistanceWorkflow("buildBatchTableData", args{1})};
 end
 
 function outputs = runBuildResultsTable(args)
-    outputs = {buildResultsTable(args{1})};
+    outputs = {vtResistanceWorkflow("buildResultsTable", args{1})};
 end
 
 function outputs = runWriteResultsCSV(args)
-    [ok, msg] = writeResultsCSV(args{1}, args{2});
+    [ok, msg] = vtResistanceWorkflow("writeResultsCSV", args{1}, args{2});
     outputs = {ok, msg};
 end
 
