@@ -59,7 +59,8 @@ function varargout = labkit_DICPreprocess_app(varargin)
     ui = labkit.ui.createWorkbench( ...
         'DIC Image Preprocess', [80 60 1400 860], 370, workbenchOpts);
     fig = ui.fig;
-    fig.WindowScrollWheelFcn = @onPreviewScrollZoom;
+    imageRuntime = labkit.ui.createImageAxesRuntime(ui.topAxes, ...
+        struct('figure', fig, 'defaultScrollFcn', @onPreviewScrollZoom));
 
     layFA = ui.filesAnalysisGrid;
     laySR = ui.summaryResultsGrid;
@@ -460,9 +461,8 @@ function varargout = labkit_DICPreprocess_app(varargin)
         S.maskPoints = [];
         S.maskHistory = S.maskHistory([]);
         S.maskBoundaryStyle = string(ddBoundaryStyle.Value);
-        S.maskEditor = labkit.ui.createAnchorCurveEditor(ui.topAxes, size(S.currentReferenceImage), ...
-            struct('figure', fig, ...
-            'closed', true, ...
+        S.maskEditor = labkit.ui.createAnchorCurveEditor(imageRuntime, size(S.currentReferenceImage), ...
+            struct('closed', true, ...
             'style', S.maskBoundaryStyle, ...
             'installScrollWheel', false, ...
             'onChanged', @onMaskEditorChanged));
@@ -828,9 +828,6 @@ function varargout = labkit_DICPreprocess_app(varargin)
     end
 
     function clearMaskRoi()
-        ui.topAxes.ButtonDownFcn = [];
-        fig.WindowButtonMotionFcn = '';
-        fig.WindowButtonUpFcn = '';
         if ~isempty(S.maskEditor)
             S.maskEditor.delete();
         end

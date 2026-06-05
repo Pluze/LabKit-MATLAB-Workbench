@@ -67,7 +67,7 @@ Biosignal code should not depend on GUI state, DTA, or app entry points. Low-lev
 
 UI helpers should build or update generic controls and draw prepared data. Apps pass labels, callbacks, prepared vectors, tables, and option values into UI helpers. UI helpers should not call DTA parsers, own formulas, define result fields, or decide export schemas.
 
-Reusable image-interaction tools may own app-neutral UI state when the interaction itself is generic. Apps remain responsible for image loading/redrawing, edit-mode coordination, scientific calculations, summaries, and exports.
+Reusable image-interaction tools may own app-neutral UI state when the interaction itself is generic. Image apps with custom axes behavior should register default scroll or interaction hooks through `labkit.ui.createImageAxesRuntime`; direct app ownership of image-tool figure/axes pointer callbacks is outside the app boundary. Apps remain responsible for image loading/redrawing, edit-mode coordination, scientific calculations, summaries, and exports.
 
 App-specific analysis, plotting annotations, result summaries, CSV schemas, failed-row behavior, and workflow wording belong in the owning app file or app-owned private helpers. The default private-helper location for a large app is `apps/<family>/<app_slug>/private/`; `apps/<family>/private/` should be reserved for helpers shared by multiple apps in that family.
 
@@ -104,7 +104,7 @@ GUI launch/layout checks live in source-aligned suites and are enabled with `--g
 
 ## Current Package Surface
 
-- `labkit.ui`: `createWorkbench`, tab specs, file-selection panel, scale-bar panel/tool, scale-bar calibration, log panel, panel grids, row resizing, axes creation/reset, axes popout, image display, anchor curve editing, prepared-X/Y plotting, result tables, plot controls, listbox state, busy-state feedback, labeled controls, read-only fields, and internal test/debug support for app maintainers.
+- `labkit.ui`: `createWorkbench`, tab specs, file-selection panel, image axes runtime, scale-bar panel/tool, scale-bar calibration, log panel, panel grids, row resizing, axes creation/reset, axes popout, image display, anchor curve editing, prepared-X/Y plotting, result tables, plot controls, listbox state, busy-state feedback, labeled controls, read-only fields, and internal test/debug support for app maintainers.
 - `labkit.dta`: DTA file discovery, type detection, single/batch/folder loading, pulse detection, item construction behind the facade, parsed table/curve access, session save/load, and session add/remove/select operations.
 - `labkit.biosignal`: MAT timetable and delimited table recording loading, channel extraction, time ROI cropping, filtering, ECG/QRS peak detection, event-centered segmentation, template construction, template-residual SNR-style measurements, and group comparisons.
 

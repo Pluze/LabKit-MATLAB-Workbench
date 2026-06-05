@@ -104,6 +104,7 @@ function assertDICAppBoundary(source, appName)
         [appName ' should build from the reusable GUI foundation.']);
     assert(~contains(source, '+labkit/+dic'), ...
         [appName ' should keep DIC workflow code app-local.']);
+    assertAppUsesManagedImageInteractions(source, appName);
 end
 
 function assertImageMeasurementAppBoundary(source, appName)
@@ -115,6 +116,7 @@ function assertImageMeasurementAppBoundary(source, appName)
         [appName ' should not depend on DIC implementation packages.']);
     assert(~contains(source, '+labkit/+image_measurement'), ...
         [appName ' should keep image-measurement workflow code app-local.']);
+    assertAppUsesManagedImageInteractions(source, appName);
 end
 
 function assertWearableAppBoundary(source, appName)
@@ -167,6 +169,15 @@ function assertPackageSourcesDoNotContain(packageDir, forbiddenWords, label)
                 label, fileEntries(iFile).name, word));
         end
     end
+end
+
+function assertAppUsesManagedImageInteractions(source, appName)
+    assert(~contains(source, 'WindowScrollWheelFcn'), ...
+        [appName ' should register image scroll behavior through labkit.ui.createImageAxesRuntime.']);
+    assert(~contains(source, 'WindowButtonMotionFcn') && ~contains(source, 'WindowButtonUpFcn'), ...
+        [appName ' should not own image-tool drag callbacks directly.']);
+    assert(~contains(source, '.ButtonDownFcn'), ...
+        [appName ' should not own image axes pointer callbacks directly.']);
 end
 
 function words = guiWords()

@@ -1,8 +1,9 @@
-function tool = createScaleBarTool(parent, row, ax, opts)
+function tool = createScaleBarTool(parent, row, runtime, opts)
 %CREATESCALEBARTOOL Create a reusable image scale-bar interaction tool.
 %
 % Usage:
-%   tool = labkit.ui.createScaleBarTool(parentGrid, 3, imageAxes, opts);
+%   runtime = labkit.ui.createImageAxesRuntime(imageAxes);
+%   tool = labkit.ui.createScaleBarTool(parentGrid, 3, runtime, opts);
 %   tool.setImageSize(size(imageData));
 %   tool.setBackground(hImage);
 %   cal = tool.calibration();
@@ -11,14 +12,13 @@ function tool = createScaleBarTool(parent, row, ax, opts)
 % Inputs:
 %   parent - uigridlayout parent that will receive the scale-bar panel.
 %   row - logical parent row for the panel.
-%   ax - axes/uiaxes used for reference endpoint editing and overlay drawing.
+%   runtime - image axes runtime returned by labkit.ui.createImageAxesRuntime.
 %   opts - optional struct.
 %
 % Options:
 %   title, units, positions, colors, defaultUnit, defaultReferenceLength,
 %   defaultScaleBarLength, defaultPosition, and defaultColor are forwarded to
 %   createScaleBarPanel. Defaults are the standard scale-bar UI defaults.
-%   figure - owning figure, default ancestor(ax, 'figure').
 %   imageSize - optional initial image size.
 %   onBeforeReferenceEdit - callback before reference endpoint editing starts.
 %   onReferenceEditChanged - callback after reference edit mode or points change.
@@ -47,8 +47,14 @@ function tool = createScaleBarTool(parent, row, ax, opts)
     end
 
     state = struct();
-    state.ax = ax;
-    state.fig = optionValue(opts, 'figure', ancestor(ax, 'figure'));
+    assert(isstruct(runtime) && isfield(runtime, 'axes') && ...
+        isa(runtime.axes, 'function_handle') && ...
+        isfield(runtime, 'createSession') && ...
+        isa(runtime.createSession, 'function_handle'), ...
+        'Third input must be a labkit.ui.createImageAxesRuntime result.');
+
+    state.runtime = runtime;
+    state.ax = runtime.axes();
     state.imageSize = optionValue(opts, 'imageSize', []);
     state.background = [];
     state.referenceEditor = [];
@@ -270,9 +276,8 @@ function tool = createScaleBarTool(parent, row, ax, opts)
     function ensureReferenceEditor()
         refreshBackgroundFromAxes();
         if isempty(state.referenceEditor)
-            state.referenceEditor = labkit.ui.createAnchorCurveEditor(state.ax, state.imageSize, ...
-                struct('figure', state.fig, ...
-                'closed', false, ...
+            state.referenceEditor = labkit.ui.createAnchorCurveEditor(state.runtime, state.imageSize, ...
+                struct('closed', false, ...
                 'style', 'Straight lines', ...
                 'maxPoints', 2, ...
                 'onChanged', @onReferenceEditorChanged));

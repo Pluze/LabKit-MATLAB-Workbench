@@ -102,9 +102,10 @@ labkit.ui.createReadOnlyTextField(parent, ...);
 labkit.ui.createReadOnlyTextPanel(parent, titleText, row, lines, opts);
 labkit.ui.createResultTablePanel(parent, titleText, row, columnNames, initialData);
 labkit.ui.createLogPanel(parent, row, initialValue);
-labkit.ui.createAnchorCurveEditor(ax, imageSize, opts);
+runtime = labkit.ui.createImageAxesRuntime(ax, opts);
+labkit.ui.createAnchorCurveEditor(runtime, imageSize, opts);
 labkit.ui.createScaleBarPanel(parent, row, opts);
-labkit.ui.createScaleBarTool(parent, row, ax, opts);
+labkit.ui.createScaleBarTool(parent, row, runtime, opts);
 labkit.ui.runWithBusyState(fig, workFcn, opts);
 labkit.ui.handleAppRequest(appName, args, nout, handlers);
 labkit.ui.createAppDebugLog(appName, opts);
@@ -140,26 +141,37 @@ Axes created through `labkit.ui.createAxes`, workbench dual-plot shells, or rese
 
 Use `showImageAxes` for app-neutral image display boilerplate: it draws an image, uses image-style axes limits, hides ticks, enables standard image navigation, and refreshes the axes popout menu onto the image object. Apps still own how image arrays, overlays, masks, and annotations are computed.
 
+Use `createImageAxesRuntime` before attaching interactive image tools to an axes. The runtime owns figure/axes callback lifecycle for image tools: app-default scroll behavior, exclusive tool sessions, temporary drag callbacks, hit testing, and restoration when a tool deactivates. Apps with special preview scroll or other axes behavior register those callbacks in the runtime spec instead of setting `WindowScrollWheelFcn`, `WindowButtonMotionFcn`, `WindowButtonUpFcn`, or `ButtonDownFcn` directly.
+
 Use `runWithBusyState` around long synchronous callbacks that should give immediate feedback and prevent repeat button clicks. The helper sets a busy pointer, optionally shows an indeterminate progress dialog, disables the controls supplied in `opts.controls`, runs the callback, then restores the prior control states even if the callback errors. Apps still own which controls are passed in and should refresh any final enable/disable state after the helper returns when a computation changes available actions.
 
 Use `tabSpec(..., struct('resizeRows', ...))` when a left tab contains several stacked app-defined sections that may need manual height adjustment. When manually placing a component directly into a workbench tab grid, map the logical row through `labkit.ui.layoutRow(parentGrid, row)`. Most app code should use helpers such as `createPanelGrid`, `createResultTablePanel`, `createLogPanel`, and `createAxes`, which apply that mapping for their parent row. `labkit.ui.addRowResizeHandle` remains a lower-level helper for unusual app-local grids that intentionally reserve a physical handle row.
 
-Use `createAnchorCurveEditor` when an app or higher-level UI tool needs image anchor editing: double-click blank image space to add or insert anchors, drag anchors to move them, double-click anchors to delete them, switch between curve and straight-line preview, constrain the maximum point count for tools such as two-endpoint reference lines, and optionally install scroll-wheel zoom on the image axes. For open paths, new anchors near either endpoint usually extend that endpoint for sequential tracing, while clicks close to an existing visible segment insert correction anchors into the middle. Endpoint extensions that would self-intersect the visible path also become insertions when there is a nearby visible segment. The helper owns generic interaction, axes callbacks, scroll-wheel zoom, hit testing, and preview graphics. Callers own the higher-level workflow that consumes the edited points.
+Use `createAnchorCurveEditor` when an app or higher-level UI tool needs image anchor editing: double-click blank image space to add or insert anchors, drag anchors to move them, double-click anchors to delete them, switch between curve and straight-line preview, constrain the maximum point count for tools such as two-endpoint reference lines, and optionally install scroll-wheel zoom through the runtime while active. For open paths, new anchors near either endpoint usually extend that endpoint for sequential tracing, while clicks close to an existing visible segment insert correction anchors into the middle. Endpoint extensions that would self-intersect the visible path also become insertions when there is a nearby visible segment. The helper owns generic interaction, runtime sessions, hit testing, and preview graphics. Callers own the higher-level workflow that consumes the edited points.
 
 Use `createScaleBarTool` when an image app needs the common scale-bar workflow. The tool owns the fixed controls, unit normalization, typed or two-endpoint reference-pixel calibration, pixels-per-unit readout, final scale-bar placement, black/white overlay drawing, and reference-edit mode state. The default units are `m`, `cm`, `mm`, `um`, and `nm`; the default position is `Bottom right`; the default color is `Black`; the default reference length and scale-bar length are both `1`.
 
-Apps should pass the image axes into the tool, call `setImageSize` after loading a new image, call `setBackground` with the image graphics handle after redrawing, call `renderOverlay` from the app-local image renderer, and read `calibration()` before app-owned measurements. The calibration struct has `referencePixels`, `referenceLength`, `unit`, `pixelsPerUnit`, `isCalibrated`, and `referenceLine`. Apps still own image loading/redrawing, edit-mode coordination, scientific calculations, result summaries, alerts/log wording, exports, and CSV/table schemas.
+Apps should pass the image axes runtime into the tool, call `setImageSize` after loading a new image, call `setBackground` with the image graphics handle after redrawing, call `renderOverlay` from the app-local image renderer, and read `calibration()` before app-owned measurements. The calibration struct has `referencePixels`, `referenceLength`, `unit`, `pixelsPerUnit`, `isCalibrated`, and `referenceLine`. Apps still own image loading/redrawing, edit-mode coordination, scientific calculations, result summaries, alerts/log wording, exports, and CSV/table schemas.
 
 `createScaleBarPanel` remains the lower-level reusable control panel for callers that need to own reference drawing or overlay rendering themselves. The returned scale-bar spec includes a two-point `line`, `label`, RGB `color`, `labelPosition`, `verticalAlignment`, `pixelsPerUnit`, `unit`, `barLength`, `position`, and `colorName`.
+
+### `createImageAxesRuntime` Options
+
+| Option | Type | Default | Valid values / meaning |
+| --- | --- | --- | --- |
+| `figure` | figure handle | `ancestor(ax,'figure')` | Owning figure for scroll and drag callbacks. |
+| `defaultScrollFcn` | function handle or empty | `[]` | App-default scroll behavior restored when no scroll-owning tool session is active. |
+| `onInteractionChanged` | function handle or empty | `[]` | Called as `callback(active, name)` when a runtime session activates or deactivates. |
+
+The returned runtime struct exposes `axes`, `figure`, `setDefaultScrollFcn`, `installDefaultCallbacks`, `createSession`, `isInteractionActive`, and `delete`. App code normally passes the runtime to public tools rather than creating sessions directly.
 
 ### `createAnchorCurveEditor` Options
 
 | Option | Type | Default | Valid values / meaning |
 | --- | --- | --- | --- |
-| `figure` | figure handle | `ancestor(ax,'figure')` | Owning figure for mouse/scroll callbacks. |
 | `closed` | logical | `false` | True for closed ROI boundaries. |
 | `style` | string | `Curve` | `Curve` or `Straight lines`. |
-| `installScrollWheel` | logical | `true` | Installs scroll-wheel zoom while editor is active. |
+| `installScrollWheel` | logical | `true` | True temporarily uses editor zoom while active; false preserves runtime default scroll behavior. |
 | `maxPoints` | positive integer or `Inf` | `Inf` | Maximum number of anchors. |
 | `onChanged` | function handle | `[]` | Called after point edits. |
 
@@ -196,6 +208,7 @@ Debug calls use:
 - internal app test/debug hook dispatch
 - panel/grid construction
 - row-resize handles for stacked app-defined sections
+- image axes runtime ownership for default scroll, exclusive tool modes, drag callbacks, and hit testing
 - anchor-curve editing on image axes
 - image scale-bar calibration, reference editing, and overlay placement
 - plot axes creation, reset, prepared-X/Y plotting, and app-neutral axes popout
