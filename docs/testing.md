@@ -22,6 +22,8 @@ buildtool testIntegration
 buildtool testGuiStructural
 buildtool testGuiGesture
 buildtool coverage
+buildtool checkProject
+buildtool packageDryRun
 ```
 
 - `buildtool test` is the full non-GUI entry point.
@@ -30,6 +32,9 @@ buildtool coverage
   and HTML coverage artifacts. Coverage is report-only.
 - `buildtool testGuiGesture` runs focused noninteractive gesture coverage for
   runtime, anchor editor, and scale-bar interaction lifecycle checks.
+- `buildtool checkProject` verifies `LabKit.prj` path and startup metadata.
+- `buildtool packageDryRun` writes a package-boundary inventory under
+  `artifacts/package/` without exporting a toolbox.
 
 Default non-GUI suite:
 

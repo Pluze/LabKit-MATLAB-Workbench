@@ -45,7 +45,7 @@ labkit_FocusStack_app
 labkit_ECGPrint_app
 ```
 
-`startup_labkit` adds the repository root, `apps/`, and normal nested app category folders to the MATLAB path.
+`startup_labkit` adds the repository root, `apps/`, and normal nested app category folders to the MATLAB path. `LabKit.prj` records the same path setup and uses `startup_labkit.m` as the project startup file for users who open the repository as a MATLAB Project.
 
 ## Package Responsibilities
 

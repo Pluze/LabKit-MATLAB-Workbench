@@ -272,27 +272,28 @@ state ownership, callbacks, or tests clearer. The stable contract is:
 - [x] Phase 6: Full test rewrite and old suite deletion.
 - [x] Phase 7: GUI structural and gesture coverage.
 - [x] Phase 8: CI artifact and coverage upgrade.
-- [ ] Phase 9: MATLAB Project and packaging style.
+- [x] Phase 9: MATLAB Project and packaging style.
 - [ ] Final: delete this roadmap, prepare PR, verify CI state, merge/delete branch
   only when allowed by repo rules.
 
 ## Current Phase
 
-Phase: 9
+Phase: Final
 Status: not started
 Owner notes:
 
-- Phase 8 completed on `codex/app-test-platform-rewrite`.
-- CI now uses `matlab-actions/run-build@v3` for `checkStyle`, `testUnit
-  coverage`, `testIntegration`, `testGuiStructural`, and `testGuiGesture`.
-- Push/PR CI runs quality, unit/coverage, and integration jobs. GUI structural
-  and gesture jobs are scheduled/manual only, and gesture remains non-blocking.
-- CI uploads JUnit, HTML test results, Cobertura coverage, HTML coverage, MATLAB
-  log, structured GUI trace JSONL/text, and GUI snapshot artifacts.
+- Phase 9 completed on `codex/app-test-platform-rewrite`.
+- `LabKit.prj` records the same root/app path setup as `startup_labkit.m` and
+  registers `startup_labkit.m` as the MATLAB Project startup file.
+- `buildtool checkProject` verifies MATLAB Project name, root, project paths,
+  hidden/private path exclusions, and startup metadata.
+- `buildtool packageDryRun` verifies package candidate and validation-only
+  boundaries, writes an ignored JSON report under `artifacts/package/`, and
+  does not export a toolbox.
 - Current remaining expected debt is 73 private-helper files missing
   top-of-file implementation contracts.
-- Phase 9 should stay narrow: add project/package dry-run checks only if they do
-  not alter app launch behavior or introduce publication requirements.
+- Final work should delete this roadmap, run the final validation set, push the
+  clean branch, open a PR, and handle CI/merge/delete according to permissions.
 
 ## Phase 0 Baseline
 
@@ -675,6 +676,12 @@ Acceptance:
 | 2026-06-05 | `matlab -batch "... buildtool checkStyle"` | pass | Official quality CI task matched 19 tests; hard guardrails reported 0 old runner dependencies, 0 app test backdoors, and 0 oversized entrypoints. |
 | 2026-06-05 | `matlab -batch "... buildtool testIntegration"` | pass | Official integration CI task matched 17 tests with hard guardrails active. |
 | 2026-06-05 | `git diff --check` | pass | Phase 8 CI/docs/roadmap diff had no whitespace errors; Git reported normal Windows CRLF conversion warnings. |
+| 2026-06-05 | `matlab -batch "... buildtool checkProject"` | fail | Initial Phase 9 task exposed a MATLAB char/string mismatch in the new app path helper; helper was fixed before acceptance. |
+| 2026-06-05 | `matlab -batch "... buildtool checkProject"` | pass | Verified `LabKit.prj` name, root, startup file, expected app paths, and private/package/hidden path exclusions. |
+| 2026-06-05 | `matlab -batch "... buildtool packageDryRun"` | fail | Initial dry-run report construction used unequal cell arrays in `struct`; report fields were wrapped as scalar fields before acceptance. |
+| 2026-06-05 | `matlab -batch "... buildtool packageDryRun"` | pass | Verified package candidates and validation-only boundaries; wrote ignored `artifacts/package/package-dry-run.json` without exporting a toolbox. |
+| 2026-06-05 | `matlab -batch "... buildtool checkStyle"` | pass | Official project/style guardrails matched 19 tests with MATLAB Project metadata present. |
+| 2026-06-05 | `matlab -batch "... buildtool test"` | pass | Canonical non-GUI task matched and passed 44 official tests after adding project/package tasks. |
 
 ## Deviation Log
 
