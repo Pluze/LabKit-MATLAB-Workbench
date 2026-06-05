@@ -151,7 +151,7 @@ Use `createAnchorCurveEditor` when an app or higher-level UI tool needs image an
 
 Use `createScaleBarTool` when an image app needs the common scale-bar workflow. The tool owns the fixed controls, unit normalization, typed or two-endpoint reference-pixel calibration, pixels-per-unit readout, final scale-bar placement, black/white overlay drawing, and reference-edit mode state. The default units are `m`, `cm`, `mm`, `um`, and `nm`; the default position is `Bottom right`; the default color is `Black`; the default reference length and scale-bar length are both `1`.
 
-Apps should pass the image axes runtime into the tool, call `setImageSize` after loading a new image, call `setBackground` with the image graphics handle after redrawing, call `renderOverlay` from the app-local image renderer, and read `calibration()` before app-owned measurements. The calibration struct has `referencePixels`, `referenceLength`, `unit`, `pixelsPerUnit`, `isCalibrated`, and `referenceLine`. Apps still own image loading/redrawing, edit-mode coordination, scientific calculations, result summaries, alerts/log wording, exports, and CSV/table schemas.
+Apps should pass the image axes runtime into the tool, call `setImageSize` after loading a new image, call `setBackground` with the image graphics handle after redrawing, call `renderOverlay` from the app-local image renderer, and read `calibration()` before app-owned measurements. Pass `opts.onTrace` to capture verbose scale-bar state changes and reference-editor lifecycle messages during debug launches. The calibration struct has `referencePixels`, `referenceLength`, `unit`, `pixelsPerUnit`, `isCalibrated`, and `referenceLine`. Apps still own image loading/redrawing, edit-mode coordination, scientific calculations, result summaries, alerts/log wording, exports, and CSV/table schemas.
 
 `createScaleBarPanel` remains the lower-level reusable control panel for callers that need to own reference drawing or overlay rendering themselves. The returned scale-bar spec includes a two-point `line`, `label`, RGB `color`, `labelPosition`, `verticalAlignment`, `pixelsPerUnit`, `unit`, `barLength`, `position`, and `colorName`.
 
@@ -162,8 +162,9 @@ Apps should pass the image axes runtime into the tool, call `setImageSize` after
 | `figure` | figure handle | `ancestor(ax,'figure')` | Owning figure for scroll and drag callbacks. |
 | `defaultScrollFcn` | function handle or empty | `[]` | App-default scroll behavior restored when no scroll-owning tool session is active. |
 | `onInteractionChanged` | function handle or empty | `[]` | Called as `callback(active, name)` when a runtime session activates or deactivates. |
+| `onTrace` | function handle or empty | `[]` | Called as `callback(message)` for verbose debug messages about default scroll ownership and session lifecycle. |
 
-The returned runtime struct exposes `axes`, `figure`, `setDefaultScrollFcn`, `installDefaultCallbacks`, `createSession`, `isInteractionActive`, and `delete`. App code normally passes the runtime to public tools rather than creating sessions directly.
+The returned runtime struct exposes `axes`, `figure`, `setDefaultScrollFcn`, `setTraceCallback`, `installDefaultCallbacks`, `createSession`, `isInteractionActive`, and `delete`. App code normally passes the runtime to public tools rather than creating sessions directly.
 
 ### `createAnchorCurveEditor` Options
 
@@ -174,6 +175,7 @@ The returned runtime struct exposes `axes`, `figure`, `setDefaultScrollFcn`, `in
 | `installScrollWheel` | logical | `true` | True temporarily uses editor zoom while active; false preserves runtime default scroll behavior. |
 | `maxPoints` | positive integer or `Inf` | `Inf` | Maximum number of anchors. |
 | `onChanged` | function handle | `[]` | Called after point edits. |
+| `onTrace` | function handle or empty | `[]` | Called as `callback(message)` for verbose debug messages about editor lifecycle and pointer interactions. |
 
 The returned editor struct exposes `start`, `setActive`, `setPoints`, `getPoints`, `clearPoints`, `undoLast`, `insertPoint`, `setStyle`, `setImageSize`, `setBackground`, `refresh`, `curvePoints`, and `delete`.
 
@@ -189,13 +191,15 @@ appName("__labkit_test__", "commandName", arg1, arg2, ...)
 
 Apps pass a handler struct array to `labkit.ui.handleAppRequest(appName, varargin, nargout, handlers)`. Each handler has `command`, `minArgs`, `maxArgs`, `maxOutputs`, and `run`. The `run` function receives command arguments as a cell array and returns outputs as a cell array. Unsupported commands and invalid requests use app-scoped error IDs such as `<appName>:UnknownTestCommand` and `<appName>:InvalidTestArguments`.
 
-Debug calls use:
+Debug calls use either the compatibility hook or a maintainer-friendly debug alias:
 
 ```matlab
 [fig, debug] = appName("__labkit_debug__", opts);
+[fig, debug] = appName("debug", opts);
+[fig, debug] = appName("--debug", opts);
 ```
 
-`opts.logFile` optionally mirrors appended log lines to a text file, and `opts.logCallback` optionally receives each appended line. App-local `addLog` functions should append to the visible UI log and then call `debug.append(message)`. Normal `appName()` launches receive a disabled debug log internally and keep existing behavior.
+`opts.logFile` optionally mirrors appended and trace log lines to a text file, `opts.logCallback` optionally receives each captured line, `opts.traceCallback` optionally receives trace lines, and `opts.traceEnabled` controls verbose trace logging. App-local `addLog` functions should append to the visible UI log and then call `debug.append(message)`. Apps that want visible verbose debug output call `debug.attachTextLog(txtLog)` after creating their Log tab text area, pass `debug.trace` into reusable image-interaction tools through `onTrace`, and may call `debug.instrumentFigure(fig)` after controls are built to trace common component callbacks. The default instrumentation intentionally skips low-level pointer, drag, and scroll callbacks so reading or scrolling the Log tab does not generate more log lines; callers can pass `callbackProperties` explicitly for a narrow low-level trace. Normal `appName()` launches receive a disabled debug log internally and keep existing behavior.
 
 ## Ownership Boundary
 

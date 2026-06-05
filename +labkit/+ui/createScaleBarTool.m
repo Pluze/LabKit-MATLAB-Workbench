@@ -27,6 +27,8 @@ function tool = createScaleBarTool(parent, row, runtime, opts)
 %                       scale-bar geometry changes.
 %   onScaleBarPlaced - callback after the place action stores a scale bar.
 %   onError - callback(title, message) for user-facing tool errors.
+%   onTrace - callback(message), default []. Receives verbose debug trace
+%             messages for scale-bar interaction state changes.
 %
 % Output:
 %   tool - struct exposing the underlying panel handles plus methods:
@@ -63,6 +65,7 @@ function tool = createScaleBarTool(parent, row, runtime, opts)
     state.scaleBar = [];
     state.enabledState = struct();
     state.suppressReferenceEditorCallback = false;
+    state.onTrace = optionValue(opts, 'onTrace', []);
 
     panelOpts = opts;
     panelOpts.onMeasureReference = @onMeasureReferenceButton;
@@ -90,8 +93,10 @@ function tool = createScaleBarTool(parent, row, runtime, opts)
     tool.delete = @deleteTool;
 
     refreshEnabled();
+    trace('created scale-bar tool');
 
     function setImageSize(imageSize)
+        trace(sprintf('setImageSize %s', sizeText(imageSize)));
         state.imageSize = imageSize;
         if ~isempty(state.referenceEditor)
             state.referenceEditor.setImageSize(imageSize);
@@ -100,6 +105,7 @@ function tool = createScaleBarTool(parent, row, runtime, opts)
     end
 
     function setBackground(h)
+        trace(sprintf('setBackground valid=%d', isValidHandle(h)));
         state.background = h;
         if ~isempty(state.referenceEditor)
             state.referenceEditor.setBackground(h);
@@ -107,6 +113,7 @@ function tool = createScaleBarTool(parent, row, runtime, opts)
     end
 
     function resetForNewImage(imageSize)
+        trace('resetForNewImage begin');
         if nargin >= 1 && ~isempty(imageSize)
             setImageSize(imageSize);
         end
@@ -119,6 +126,7 @@ function tool = createScaleBarTool(parent, row, runtime, opts)
         end
         state.referenceEditor = [];
         refreshEnabled();
+        trace('resetForNewImage end');
     end
 
     function cal = calibration()
@@ -130,6 +138,7 @@ function tool = createScaleBarTool(parent, row, runtime, opts)
     end
 
     function setReferencePixels(px)
+        trace(sprintf('setReferencePixels %.6g', px));
         state.referenceLine = zeros(0, 2);
         state.scaleBar = [];
         scalePanel.setReferencePixels(px);
@@ -137,6 +146,7 @@ function tool = createScaleBarTool(parent, row, runtime, opts)
     end
 
     function clearReferencePixels()
+        trace('clearReferencePixels');
         state.referenceLine = zeros(0, 2);
         state.scaleBar = [];
         scalePanel.clearReferencePixels();
@@ -147,17 +157,22 @@ function tool = createScaleBarTool(parent, row, runtime, opts)
         if nargin < 1
             notify = true;
         end
+        trace(sprintf('finishReferenceEdit begin active=%d notify=%d', ...
+            state.referenceEditActive, notify));
         if ~state.referenceEditActive
+            trace('finishReferenceEdit skipped inactive');
             return;
         end
         state.referenceEditActive = false;
         if ~isempty(state.referenceEditor)
+            trace('finishReferenceEdit deactivate reference editor');
             state.referenceEditor.setActive(false);
         end
         refreshEnabled();
         if notify
             invokeCallback('onReferenceEditChanged', scalePanel.panel, 'finish');
         end
+        trace('finishReferenceEdit end');
     end
 
     function tf = isReferenceEditActive()
@@ -165,6 +180,7 @@ function tool = createScaleBarTool(parent, row, runtime, opts)
     end
 
     function refresh()
+        trace(sprintf('refresh active=%d', state.referenceEditActive));
         if ~state.referenceEditActive
             return;
         end
@@ -191,6 +207,7 @@ function tool = createScaleBarTool(parent, row, runtime, opts)
     end
 
     function clearScaleBar()
+        trace('clearScaleBar');
         state.scaleBar = [];
     end
 
@@ -202,17 +219,22 @@ function tool = createScaleBarTool(parent, row, runtime, opts)
         if nargin < 1
             enabledState = struct();
         end
+        trace(sprintf('setEnabled hasImage=%s referenceEditActive=%d', ...
+            fieldText(enabledState, 'hasImage'), state.referenceEditActive));
         state.enabledState = enabledState;
         refreshEnabled();
     end
 
     function deleteTool()
+        trace('deleteTool');
         if ~isempty(state.referenceEditor)
             state.referenceEditor.delete();
         end
     end
 
     function onMeasureReferenceButton(~, ~)
+        trace(sprintf('Measure reference button pressed active=%d imageSize=%s', ...
+            state.referenceEditActive, sizeText(state.imageSize)));
         if isempty(state.imageSize)
             reportError('No image loaded', ...
                 'Open an image before measuring reference pixels.');
@@ -220,10 +242,12 @@ function tool = createScaleBarTool(parent, row, runtime, opts)
         end
 
         if state.referenceEditActive
+            trace('Measure reference button finishing active edit');
             finishReferenceEdit(true);
             return;
         end
 
+        trace('Measure reference button starting edit');
         invokeCallback('onBeforeReferenceEdit', scalePanel.panel, []);
         state.referenceEditActive = true;
         ensureReferenceEditor();
@@ -231,14 +255,17 @@ function tool = createScaleBarTool(parent, row, runtime, opts)
         state.scaleBar = [];
         refreshEnabled();
         invokeCallback('onReferenceEditChanged', scalePanel.panel, 'start');
+        trace('Measure reference button start complete');
     end
 
     function onPanelCalibrationChanged(src, evt)
+        trace('panel calibration changed');
         state.scaleBar = [];
         invokeCallback('onCalibrationChanged', src, evt);
     end
 
     function onPanelScaleBarChanged(src, evt)
+        trace('panel scale-bar settings changed');
         if ~isempty(state.scaleBar)
             try
                 state.scaleBar = scaleBarSpec();
@@ -250,6 +277,7 @@ function tool = createScaleBarTool(parent, row, runtime, opts)
     end
 
     function onPlaceScaleBarButton(~, ~)
+        trace(sprintf('Place scale bar button pressed imageSize=%s', sizeText(state.imageSize)));
         if isempty(state.imageSize)
             reportError('No image loaded', ...
                 'Open an image before placing a scale bar.');
@@ -265,45 +293,59 @@ function tool = createScaleBarTool(parent, row, runtime, opts)
         try
             state.scaleBar = scaleBarSpec();
         catch ME
+            trace(sprintf('Place scale bar failed: %s %s', ME.identifier, ME.message));
             reportError('Could not place scale bar', ME.message);
             return;
         end
         finishReferenceEdit(false);
         invokeCallback('onScaleBarPlaced', scalePanel.panel, []);
         invokeCallback('onScaleBarChanged', scalePanel.panel, []);
+        trace('Place scale bar complete');
     end
 
     function ensureReferenceEditor()
+        trace('ensureReferenceEditor begin');
         refreshBackgroundFromAxes();
         if isempty(state.referenceEditor)
+            trace('ensureReferenceEditor create editor');
             state.referenceEditor = labkit.ui.createAnchorCurveEditor(state.runtime, state.imageSize, ...
                 struct('closed', false, ...
                 'style', 'Straight lines', ...
                 'maxPoints', 2, ...
+                'onTrace', state.onTrace, ...
                 'onChanged', @onReferenceEditorChanged));
         else
+            trace('ensureReferenceEditor reuse editor');
             state.referenceEditor.setImageSize(state.imageSize);
             state.referenceEditor.setStyle('Straight lines');
         end
         if ~isempty(state.background)
             state.referenceEditor.setBackground(state.background);
         end
+        trace('ensureReferenceEditor end');
     end
 
     function refreshBackgroundFromAxes()
         if ~isempty(state.background) && isvalid(state.background)
+            trace('refreshBackgroundFromAxes kept existing background');
             return;
         end
         if isempty(state.ax) || ~isvalid(state.ax)
+            trace('refreshBackgroundFromAxes skipped invalid axes');
             return;
         end
         images = findobj(state.ax, 'Type', 'image');
         if ~isempty(images)
             state.background = images(1);
+            trace(sprintf('refreshBackgroundFromAxes found %d image object(s)', numel(images)));
+        else
+            trace('refreshBackgroundFromAxes found no image object');
         end
     end
 
     function onReferenceEditorChanged(points, reason)
+        trace(sprintf('reference editor changed reason=%s points=%d suppress=%d', ...
+            char(string(reason)), size(points, 1), state.suppressReferenceEditorCallback));
         state.referenceLine = points;
         if state.suppressReferenceEditorCallback
             return;
@@ -322,6 +364,7 @@ function tool = createScaleBarTool(parent, row, runtime, opts)
     end
 
     function activateReferenceEditor()
+        trace(sprintf('activateReferenceEditor begin storedPoints=%d', size(state.referenceLine, 1)));
         points = state.referenceLine;
         if isempty(points)
             points = zeros(0, 2);
@@ -331,6 +374,7 @@ function tool = createScaleBarTool(parent, row, runtime, opts)
         cleanupObj = onCleanup(@() clearReferenceEditorSuppression()); %#ok<NASGU>
         state.referenceEditor.setPoints(points);
         state.referenceEditor.setActive(true);
+        trace('activateReferenceEditor end');
     end
 
     function clearReferenceEditorSuppression()
@@ -344,22 +388,36 @@ function tool = createScaleBarTool(parent, row, runtime, opts)
         end
         enabledState.referenceEditActive = state.referenceEditActive;
         scalePanel.setEnabled(enabledState);
+        trace(sprintf('refreshEnabled hasImage=%d referenceEditActive=%d blockInputs=%s blockPlacement=%s', ...
+            enabledState.hasImage, enabledState.referenceEditActive, ...
+            fieldText(enabledState, 'blockInputs'), fieldText(enabledState, 'blockPlacement')));
     end
 
     function invokeCallback(name, src, evt)
+        trace(sprintf('invokeCallback %s', name));
         callback = optionValue(opts, name, []);
         if isempty(callback)
+            trace(sprintf('invokeCallback %s skipped empty', name));
             return;
         end
         callback(src, evt);
+        trace(sprintf('invokeCallback %s complete', name));
     end
 
     function reportError(titleText, message)
+        trace(sprintf('reportError %s: %s', char(string(titleText)), char(string(message))));
         callback = optionValue(opts, 'onError', []);
         if isempty(callback)
             error('labkit_ui:createScaleBarTool:Error', '%s', message);
         end
         callback(titleText, message);
+    end
+
+    function trace(message)
+        if isempty(state.onTrace)
+            return;
+        end
+        state.onTrace(sprintf('scaleBarTool: %s', char(message)));
     end
 end
 
@@ -368,4 +426,33 @@ function value = optionValue(opts, name, defaultValue)
     if isstruct(opts) && isfield(opts, name)
         value = opts.(name);
     end
+end
+
+function txt = sizeText(value)
+    if isempty(value)
+        txt = '[]';
+        return;
+    end
+    dims = size(value);
+    if isvector(value) && numel(value) <= 4
+        dims = value(:).';
+    end
+    txt = strjoin(cellstr(string(dims)), 'x');
+end
+
+function txt = fieldText(s, name)
+    if isstruct(s) && isfield(s, name)
+        value = s.(name);
+        if islogical(value) || isnumeric(value)
+            txt = char(string(value));
+        else
+            txt = char(string(value));
+        end
+    else
+        txt = 'unset';
+    end
+end
+
+function tf = isValidHandle(h)
+    tf = ~isempty(h) && all(isvalid(h));
 end

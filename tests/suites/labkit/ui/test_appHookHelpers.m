@@ -2,6 +2,7 @@ function test_appHookHelpers()
 %TEST_APPHOOKHELPERS Verify internal app hook dispatch and debug log helpers.
 
     checkDebugLog();
+    checkCallbackWrapper();
     checkRequestDispatch();
     checkRequestErrors();
 end
@@ -10,27 +11,79 @@ function checkDebugLog()
     logFile = [tempname(tempdir) '.log'];
     cleaner = onCleanup(@() cleanupFile(logFile)); %#ok<NASGU>
     callbackLines = {};
+    traceLines = {};
     debug = labkit.ui.createAppDebugLog('probe_app', ...
-        struct('logFile', logFile, 'logCallback', @captureLine));
+        struct('logFile', logFile, ...
+        'logCallback', @captureLine, ...
+        'traceCallback', @captureTraceLine));
 
     assert(debug.enabled, 'Debug log should be enabled by default.');
+    assert(debug.traceEnabled, 'Debug trace should be enabled by default.');
     assert(debug.appName == "probe_app", 'Debug log should preserve the app name.');
     assert(debug.logFile == string(logFile), 'Debug log should preserve the log file path.');
     debug.append('hello');
+    debug.trace('details');
     lines = debug.getLog();
-    assert(numel(lines) == 1 && contains(lines{1}, 'hello'), ...
+    assert(numel(lines) == 2 && contains(lines{1}, 'hello'), ...
         'Debug log should capture appended messages.');
-    assert(numel(callbackLines) == 1 && contains(callbackLines{1}, 'hello'), ...
-        'Debug log should call the append callback.');
-    assert(contains(string(fileread(logFile)), 'hello'), ...
-        'Debug log should mirror appended messages to the log file.');
+    assert(contains(lines{2}, '[debug] details'), ...
+        'Debug log should capture trace messages with a debug prefix.');
+    assert(numel(callbackLines) == 2 && contains(callbackLines{1}, 'hello') && ...
+        contains(callbackLines{2}, '[debug] details'), ...
+        'Debug log should call the append callback for append and trace lines.');
+    assert(numel(traceLines) == 1 && contains(traceLines{1}, '[debug] details'), ...
+        'Debug log should call the trace-only callback for trace lines.');
+    fileText = string(fileread(logFile));
+    assert(contains(fileText, 'hello') && contains(fileText, '[debug] details'), ...
+        'Debug log should mirror appended and trace messages to the log file.');
 
     disabled = labkit.ui.createAppDebugLog('probe_app', struct('enabled', false));
     disabled.append('ignored');
+    disabled.trace('ignored trace');
     assert(isempty(disabled.getLog()), 'Disabled debug logs should ignore appended messages.');
+
+    appendOnly = labkit.ui.createAppDebugLog('probe_app', struct('traceEnabled', false));
+    appendOnly.append('kept');
+    appendOnly.trace('hidden');
+    appendOnlyLines = appendOnly.getLog();
+    assert(numel(appendOnlyLines) == 1 && contains(appendOnlyLines{1}, 'kept') && ...
+        ~contains(strjoin(appendOnlyLines, newline), 'hidden'), ...
+        'traceEnabled=false should preserve append messages and suppress trace messages.');
 
     function captureLine(line)
         callbackLines{end+1, 1} = line;
+    end
+
+    function captureTraceLine(line)
+        traceLines{end+1, 1} = line;
+    end
+end
+
+function checkCallbackWrapper()
+    callbackCalls = 0;
+    debug = labkit.ui.createAppDebugLog('probe_app', struct());
+    wrapped = debug.wrapCallback('sample callback', @sampleCallback);
+
+    wrapped('source', 'event');
+    lines = string(debug.getLog());
+    assert(callbackCalls == 1, 'Wrapped callbacks should call the original function.');
+    assert(any(contains(lines, 'BEGIN sample callback')) && ...
+        any(contains(lines, 'END sample callback')), ...
+        'Wrapped callbacks should trace BEGIN and END messages.');
+
+    failing = debug.wrapCallback('failing callback', @failingCallback);
+    assertThrows(@() failing([], []), 'probe_app:ExpectedFailure', ...
+        'Wrapped callbacks should rethrow original callback errors.');
+    lines = string(debug.getLog());
+    assert(any(contains(lines, 'ERROR failing callback')), ...
+        'Wrapped callbacks should trace ERROR messages before rethrowing.');
+
+    function sampleCallback(varargin) %#ok<INUSD>
+        callbackCalls = callbackCalls + 1;
+    end
+
+    function failingCallback(varargin) %#ok<INUSD>
+        error('probe_app:ExpectedFailure', 'Expected failure.');
     end
 end
 
@@ -53,8 +106,18 @@ function checkRequestDispatch()
 
     [handled, outputs, debug] = labkit.ui.handleAppRequest( ...
         'probe_app', {'__labkit_debug__', struct()}, 2, handlers);
-    assert(~handled && isempty(outputs) && debug.enabled, ...
+    assert(~handled && isempty(outputs) && debug.enabled && debug.traceEnabled, ...
         'Debug hook dispatch should enable debug logging without consuming app launch.');
+
+    [handled, outputs, debug] = labkit.ui.handleAppRequest( ...
+        'probe_app', {'debug'}, 2, handlers);
+    assert(~handled && isempty(outputs) && debug.enabled && debug.traceEnabled, ...
+        'Debug launch dispatch should accept the user-facing debug alias.');
+
+    [handled, outputs, debug] = labkit.ui.handleAppRequest( ...
+        'probe_app', {'--debug', struct('traceEnabled', false)}, 2, handlers);
+    assert(~handled && isempty(outputs) && debug.enabled && ~debug.traceEnabled, ...
+        'Debug launch dispatch should preserve explicit traceEnabled=false.');
 end
 
 function checkRequestErrors()
@@ -75,6 +138,12 @@ function checkRequestErrors()
         'probe_app:InvalidTestArguments', 'Invalid test argument counts should fail with the canonical id.');
     assertThrows(@() labkit.ui.handleAppRequest('probe_app', {'__labkit_test__', 'echo', 'one'}, 2, handlers), ...
         'probe_app:TooManyOutputs', 'Too many requested outputs should fail with the canonical id.');
+    assertThrows(@() labkit.ui.handleAppRequest('probe_app', {'debug'}, 3, handlers), ...
+        'probe_app:TooManyOutputs', 'Too many debug outputs should fail with the canonical id.');
+    assertThrows(@() labkit.ui.handleAppRequest('probe_app', {'debug', 42}, 0, handlers), ...
+        'probe_app:InvalidTestRequest', 'Debug options should be a struct.');
+    assertThrows(@() labkit.ui.handleAppRequest('probe_app', {'debug', struct(), struct()}, 0, handlers), ...
+        'probe_app:InvalidTestRequest', 'Debug requests should accept at most one options struct.');
 end
 
 function outputs = runEcho(args)

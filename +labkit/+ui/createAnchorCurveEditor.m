@@ -20,6 +20,8 @@ function editor = createAnchorCurveEditor(runtime, imageSize, opts)
 %                        scroll callback during editing.
 %   maxPoints - positive integer/Inf, default Inf.
 %   onChanged - function handle called after point edits.
+%   onTrace - callback(message), default []. Receives verbose debug trace
+%             messages for editor lifecycle and pointer interactions.
 %
 % Returned editor API:
 %   start(points), setActive(tf), setPoints(points), getPoints(),
@@ -62,6 +64,7 @@ function editor = createAnchorCurveEditor(runtime, imageSize, opts)
     state.viewXLim = [];
     state.viewYLim = [];
     state.onChanged = optionValue(opts, 'onChanged', []);
+    state.onTrace = optionValue(opts, 'onTrace', []);
     state.session = runtime.createSession(struct( ...
         'name', 'anchorCurveEditor', ...
         'onPointerDown', @onAxesClicked, ...
@@ -85,8 +88,10 @@ function editor = createAnchorCurveEditor(runtime, imageSize, opts)
 
     setActive(false);
     refresh();
+    trace('created anchor curve editor');
 
     function start(points)
+        trace(sprintf('start inputPoints=%d', pointCount(points)));
         if nargin >= 1 && ~isempty(points)
             state.points = normalizePoints(points);
         end
@@ -95,6 +100,7 @@ function editor = createAnchorCurveEditor(runtime, imageSize, opts)
     end
 
     function setActive(enabled)
+        trace(sprintf('setActive %d', logical(enabled)));
         if logical(enabled)
             state.session.activate();
         else
@@ -103,6 +109,7 @@ function editor = createAnchorCurveEditor(runtime, imageSize, opts)
     end
 
     function setPoints(points)
+        trace(sprintf('setPoints %d', pointCount(points)));
         state.points = normalizePoints(points);
         refresh();
         notifyChanged('set points');
@@ -113,6 +120,7 @@ function editor = createAnchorCurveEditor(runtime, imageSize, opts)
     end
 
     function clearPoints()
+        trace('clearPoints');
         state.points = zeros(0, 2);
         state.dragIndex = [];
         refresh();
@@ -120,6 +128,7 @@ function editor = createAnchorCurveEditor(runtime, imageSize, opts)
     end
 
     function undoLast()
+        trace(sprintf('undoLast currentPoints=%d', size(state.points, 1)));
         if isempty(state.points)
             return;
         end
@@ -129,6 +138,7 @@ function editor = createAnchorCurveEditor(runtime, imageSize, opts)
     end
 
     function insertPoint(point)
+        trace(sprintf('insertPoint %.6g %.6g', point(1), point(2)));
         state.points = addOrInsertAnchor(state.points, point, state.ax, ...
             state.imageSize, state.style, state.closed, state.maxPoints);
         refresh();
@@ -136,21 +146,26 @@ function editor = createAnchorCurveEditor(runtime, imageSize, opts)
     end
 
     function setStyle(style)
+        trace(sprintf('setStyle %s', char(string(style))));
         state.style = string(style);
         refresh();
         notifyChanged('style changed');
     end
 
     function setImageSize(imageSize)
+        trace(sprintf('setImageSize %s', sizeText(imageSize)));
         state.imageSize = imageSize;
         refresh();
     end
 
     function setBackground(h)
+        trace(sprintf('setBackground valid=%d', isValidHandle(h)));
         state.session.setBackground(h);
     end
 
     function refresh()
+        trace(sprintf('refresh active=%d points=%d', ...
+            state.session.isActive(), size(state.points, 1)));
         ensureGraphics();
         state.session.setGraphics([state.curveLine state.anchorLine]);
         state.session.refresh();
@@ -178,6 +193,7 @@ function editor = createAnchorCurveEditor(runtime, imageSize, opts)
     end
 
     function deleteEditor()
+        trace('deleteEditor');
         state.session.delete();
         if ~isempty(state.curveLine) && isvalid(state.curveLine)
             delete(state.curveLine);
@@ -189,10 +205,13 @@ function editor = createAnchorCurveEditor(runtime, imageSize, opts)
     end
 
     function onAxesClicked(~, ~)
+        trace(sprintf('onAxesClicked active=%d imageSizeEmpty=%d', ...
+            state.session.isActive(), isempty(state.imageSize)));
         if ~state.session.isActive() || isempty(state.imageSize)
             return;
         end
         if strcmp(state.fig.SelectionType, 'alt') || strcmp(state.fig.SelectionType, 'extend')
+            trace(sprintf('onAxesClicked ignored selection=%s', state.fig.SelectionType));
             return;
         end
 
@@ -200,16 +219,19 @@ function editor = createAnchorCurveEditor(runtime, imageSize, opts)
         x = point(1, 1);
         y = point(1, 2);
         if ~insideImageBounds(x, y, state.imageSize)
+            trace(sprintf('onAxesClicked out of bounds x=%.6g y=%.6g', x, y));
             return;
         end
 
         idx = nearestAnchor(x, y);
         if strcmp(state.fig.SelectionType, 'open')
             if ~isempty(idx)
+                trace(sprintf('onAxesClicked double-delete idx=%d', idx));
                 state.points(idx, :) = [];
                 refresh();
                 notifyChanged('delete point');
             else
+                trace(sprintf('onAxesClicked double-add x=%.6g y=%.6g', x, y));
                 state.points = addOrInsertAnchor(state.points, [x y], state.ax, ...
                     state.imageSize, state.style, state.closed, state.maxPoints);
                 refresh();
@@ -219,6 +241,7 @@ function editor = createAnchorCurveEditor(runtime, imageSize, opts)
         end
 
         if ~isempty(idx)
+            trace(sprintf('onAxesClicked drag idx=%d', idx));
             state.dragIndex = idx;
             updateDraggedAnchor();
             state.session.captureDrag(@onAnchorDragged, @onAnchorReleased);
@@ -226,10 +249,12 @@ function editor = createAnchorCurveEditor(runtime, imageSize, opts)
     end
 
     function onAnchorDragged(~, ~)
+        trace('onAnchorDragged');
         updateDraggedAnchor();
     end
 
     function onAnchorReleased(~, ~)
+        trace('onAnchorReleased');
         updateDraggedAnchor();
         notifyChanged('move point');
     end
@@ -263,6 +288,7 @@ function editor = createAnchorCurveEditor(runtime, imageSize, opts)
     function ensureGraphics()
         created = false;
         if isempty(state.curveLine) || ~isvalid(state.curveLine)
+            trace('ensureGraphics create curveLine');
             state.curveLine = line(state.ax, NaN, NaN, ...
                 'Color', [0 0.45 0.95], ...
                 'LineWidth', 1.5, ...
@@ -273,6 +299,7 @@ function editor = createAnchorCurveEditor(runtime, imageSize, opts)
         end
 
         if isempty(state.anchorLine) || ~isvalid(state.anchorLine)
+            trace('ensureGraphics create anchorLine');
             state.anchorLine = line(state.ax, NaN, NaN, ...
                 'LineStyle', 'none', ...
                 'Marker', 'o', ...
@@ -319,7 +346,16 @@ function editor = createAnchorCurveEditor(runtime, imageSize, opts)
         if isempty(state.onChanged)
             return;
         end
+        trace(sprintf('notifyChanged reason=%s points=%d', ...
+            char(string(reason)), size(state.points, 1)));
         state.onChanged(state.points, reason);
+    end
+
+    function trace(message)
+        if isempty(state.onTrace)
+            return;
+        end
+        state.onTrace(sprintf('anchorCurveEditor: %s', char(message)));
     end
 end
 
@@ -396,4 +432,30 @@ function value = optionValue(opts, name, defaultValue)
     if isstruct(opts) && isfield(opts, name)
         value = opts.(name);
     end
+end
+
+function n = pointCount(points)
+    if isempty(points)
+        n = 0;
+    elseif isnumeric(points) && ndims(points) == 2
+        n = size(points, 1);
+    else
+        n = numel(points);
+    end
+end
+
+function txt = sizeText(value)
+    if isempty(value)
+        txt = '[]';
+        return;
+    end
+    dims = size(value);
+    if isvector(value) && numel(value) <= 4
+        dims = value(:).';
+    end
+    txt = strjoin(cellstr(string(dims)), 'x');
+end
+
+function tf = isValidHandle(h)
+    tf = ~isempty(h) && all(isvalid(h));
 end

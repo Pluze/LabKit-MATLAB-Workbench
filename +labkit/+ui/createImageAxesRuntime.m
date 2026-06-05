@@ -18,10 +18,13 @@ function runtime = createImageAxesRuntime(ax, opts)
 %   figure - owning figure, default ancestor(ax, 'figure').
 %   defaultScrollFcn - app-default scroll callback, default [].
 %   onInteractionChanged - callback(active, name), default [].
+%   onTrace - callback(message), default []. Receives verbose debug trace
+%             messages for callback ownership and session lifecycle.
 %
 % Returned runtime API:
 %   axes(), figure(), setDefaultScrollFcn(fcn), installDefaultCallbacks(),
-%   createSession(spec), isInteractionActive(), and delete().
+%   setTraceCallback(fcn), createSession(spec), isInteractionActive(), and
+%   delete().
 %
 % Session spec fields:
 %   name - descriptive char/string name, default "interaction".
@@ -54,6 +57,9 @@ function runtime = createImageAxesRuntime(ax, opts)
             if isfield(opts, 'defaultScrollFcn')
                 runtime.setDefaultScrollFcn(opts.defaultScrollFcn);
             end
+            if isfield(opts, 'onTrace')
+                runtime.setTraceCallback(opts.onTrace);
+            end
             runtime.installDefaultCallbacks();
             return;
         end
@@ -69,12 +75,14 @@ function runtime = createImageAxesRuntime(ax, opts)
     state.activeDeactivate = [];
     state.activeScrollToken = [];
     state.onInteractionChanged = optionValue(opts, 'onInteractionChanged', []);
+    state.onTrace = optionValue(opts, 'onTrace', []);
 
     runtime = struct();
     runtime.axes = @runtimeAxes;
     runtime.figure = @runtimeFigure;
     runtime.setFigure = @setFigure;
     runtime.setDefaultScrollFcn = @setDefaultScrollFcn;
+    runtime.setTraceCallback = @setTraceCallback;
     runtime.installDefaultCallbacks = @installDefaultCallbacks;
     runtime.createSession = @createSession;
     runtime.isInteractionActive = @isInteractionActive;
@@ -101,7 +109,12 @@ function runtime = createImageAxesRuntime(ax, opts)
 
     function setDefaultScrollFcn(fcn)
         state.defaultScrollFcn = fcn;
+        trace('default scroll callback updated');
         installDefaultCallbacks();
+    end
+
+    function setTraceCallback(fcn)
+        state.onTrace = fcn;
     end
 
     function installDefaultCallbacks()
@@ -113,8 +126,10 @@ function runtime = createImageAxesRuntime(ax, opts)
         end
         if isempty(state.defaultScrollFcn)
             state.fig.WindowScrollWheelFcn = state.fallbackScrollFcn;
+            trace('installed fallback scroll callback');
         else
             state.fig.WindowScrollWheelFcn = state.defaultScrollFcn;
+            trace('installed runtime default scroll callback');
         end
     end
 
@@ -123,6 +138,7 @@ function runtime = createImageAxesRuntime(ax, opts)
     end
 
     function deleteRuntime()
+        trace('delete runtime');
         if ~isempty(state.activeDeactivate)
             state.activeDeactivate();
         end
@@ -174,13 +190,16 @@ function runtime = createImageAxesRuntime(ax, opts)
 
         function activateSession()
             if ~isValidHandle(state.ax)
+                trace(sprintf('skip activate invalid axes: %s', char(sessionState.name)));
                 return;
             end
             if ~isempty(state.activeDeactivate) && ...
                     ~isequal(state.activeToken, sessionState.token)
+                trace(sprintf('deactivate peer before activating %s', char(sessionState.name)));
                 state.activeDeactivate();
             end
 
+            trace(sprintf('activate session %s', char(sessionState.name)));
             state.activeToken = sessionState.token;
             state.activeName = sessionState.name;
             state.activeDeactivate = @deactivateFromPeer;
@@ -192,6 +211,7 @@ function runtime = createImageAxesRuntime(ax, opts)
                 if isequal(state.activeScrollToken, sessionState.token)
                     state.activeScrollToken = [];
                 end
+                trace(sprintf('session %s keeps runtime default scroll', char(sessionState.name)));
                 installDefaultCallbacks();
             end
             notifyInteractionChanged(true, sessionState.name);
@@ -199,6 +219,8 @@ function runtime = createImageAxesRuntime(ax, opts)
 
         function deactivateSession()
             wasActive = isSessionActive();
+            trace(sprintf('deactivate session %s active=%d', ...
+                char(sessionState.name), wasActive));
             releaseDrag();
             updateInteractiveTargets(false);
 
@@ -229,18 +251,24 @@ function runtime = createImageAxesRuntime(ax, opts)
 
         function setSessionBackground(h)
             sessionState.background = normalizeHandles(h);
+            trace(sprintf('session %s background handles=%d', ...
+                char(sessionState.name), numel(sessionState.background)));
             refreshSession();
         end
 
         function setSessionGraphics(h)
             sessionState.graphics = normalizeHandles(h);
+            trace(sprintf('session %s graphics handles=%d', ...
+                char(sessionState.name), numel(sessionState.graphics)));
             refreshSession();
         end
 
         function captureDrag(motionFcn, releaseFcn)
             if ~isSessionActive() || ~isValidHandle(state.fig)
+                trace(sprintf('skip drag capture for inactive session %s', char(sessionState.name)));
                 return;
             end
+            trace(sprintf('capture drag for session %s', char(sessionState.name)));
             sessionState.dragActive = true;
             state.fig.WindowButtonMotionFcn = @onDragMotion;
             state.fig.WindowButtonUpFcn = @onDragRelease;
@@ -263,6 +291,7 @@ function runtime = createImageAxesRuntime(ax, opts)
             if ~sessionState.dragActive
                 return;
             end
+            trace(sprintf('release drag for session %s', char(sessionState.name)));
             if isValidHandle(state.fig)
                 state.fig.WindowButtonMotionFcn = '';
                 state.fig.WindowButtonUpFcn = '';
@@ -301,10 +330,12 @@ function runtime = createImageAxesRuntime(ax, opts)
 
         function installSessionScroll()
             if ~isValidHandle(state.fig)
+                trace(sprintf('skip session scroll invalid figure: %s', char(sessionState.name)));
                 return;
             end
             state.activeScrollToken = sessionState.token;
             state.fig.WindowScrollWheelFcn = sessionState.onScroll;
+            trace(sprintf('installed session scroll callback: %s', char(sessionState.name)));
         end
 
         function updateInteractiveTargets(active)
@@ -328,6 +359,13 @@ function runtime = createImageAxesRuntime(ax, opts)
             return;
         end
         state.onInteractionChanged(active, name);
+    end
+
+    function trace(message)
+        if isempty(state.onTrace)
+            return;
+        end
+        state.onTrace(sprintf('imageAxesRuntime: %s', char(message)));
     end
 end
 

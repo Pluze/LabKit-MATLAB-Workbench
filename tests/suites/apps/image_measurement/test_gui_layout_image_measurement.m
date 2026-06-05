@@ -29,6 +29,23 @@ function checkCurvatureMeasurementLayout(h)
     h.assertTabTitles(fig, {'Files + Analysis', 'Summary + Results', 'Log'});
     h.assertTableColumns(fig, {'Metric', 'Value'});
     h.assertAxesContract(fig, {h.axesSpec('Image + Circle Fit', '', '')});
+
+    h.closeAllFigures();
+    [fig, debug] = labkit_CurvatureMeasurement_app("debug", struct());
+    drawnow;
+    assert(debug.enabled && debug.traceEnabled, ...
+        'Curvature debug launch should return an enabled trace logger.');
+    assertAnyTextAreaContains(h, fig, '[debug] Curvature measurement debug trace enabled', ...
+        'Curvature debug launch should mirror trace lines into the visible Log tab.');
+
+    h.invokeCheckbox(fig, 'Show dense fit points', false);
+    lines = string(debug.getLog());
+    assert(any(contains(lines, 'BEGIN ValueChangedFcn') & contains(lines, 'Show dense fit points')), ...
+        'Curvature debug mode should instrument GUI callbacks with control labels.');
+    assert(any(contains(lines, 'ValueChangedFcn') & contains(lines, 'refreshImageOverlay')), ...
+        'Curvature debug mode should include the original callback function name when available.');
+    assertAnyTextAreaContains(h, fig, 'BEGIN ValueChangedFcn', ...
+        'Curvature debug mode should mirror instrumented callback traces into the visible Log tab.');
 end
 
 function checkFocusStackLayout(h)
@@ -46,4 +63,15 @@ function checkFocusStackLayout(h)
     h.assertAxesContract(fig, { ...
         h.axesSpec('Fused all-in-focus image', '', ''), ...
         h.axesSpec('Focus-depth index map', '', '')});
+end
+
+function assertAnyTextAreaContains(h, fig, needle, message)
+    textAreas = h.findControlsByClass(fig, 'TextArea');
+    for k = 1:numel(textAreas)
+        values = string(textAreas{k}.Value);
+        if any(contains(values, needle))
+            return;
+        end
+    end
+    error(message);
 end
