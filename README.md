@@ -105,10 +105,10 @@ buildtool testLabkitUiGui testAppsGui
 ```
 
 Script arguments are build task names; selector flags such as `--suite`,
-`--test`, and `--gui` are not supported. GitHub Actions runs quality,
-unit/coverage, and integration jobs on pushes and pull requests to `main`;
-manual and scheduled runs also cover GUI structural and non-blocking gesture
-jobs.
+`--test`, and `--gui` are not supported. GitHub Actions runs shell-wrapper,
+quality, unit, and integration jobs on pushes and pull requests to `main`;
+manual and scheduled runs add coverage, GUI structural, and non-blocking
+gesture jobs.
 
 ## Repository Layout
 

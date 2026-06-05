@@ -55,13 +55,13 @@ jobs:
           release: ${{ env.MATLAB_RELEASE }}
 
       - name: Prepare artifact directories
-        run: mkdir -p artifacts/logs
+        run: mkdir -p artifacts/logs/checkStyle
 
       - name: Run quality guardrails
         uses: matlab-actions/run-build@v3
         with:
           tasks: checkStyle
-          startup-options: -logfile artifacts/logs/matlab.log
+          startup-options: -logfile artifacts/logs/checkStyle/matlab.log
 
       - name: Upload quality artifacts
         if: always()
@@ -75,7 +75,7 @@ jobs:
             artifacts/logs/**
 
   unit:
-    name: Unit And Coverage
+    name: Unit Tests
     runs-on: ubuntu-latest
     env:
       MLM_LICENSE_TOKEN: ${{ secrets.MLM_LICENSE_TOKEN }}
@@ -90,19 +90,55 @@ jobs:
           release: ${{ env.MATLAB_RELEASE }}
 
       - name: Prepare artifact directories
-        run: mkdir -p artifacts/logs
+        run: mkdir -p artifacts/logs/testUnit
 
-      - name: Run unit tests and coverage
+      - name: Run unit tests
         uses: matlab-actions/run-build@v3
         with:
-          tasks: testUnit coverage
-          startup-options: -logfile artifacts/logs/matlab.log
+          tasks: testUnit
+          startup-options: -logfile artifacts/logs/testUnit/matlab.log
 
-      - name: Upload unit and coverage artifacts
+      - name: Upload unit artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: matlab-unit-coverage
+          name: matlab-unit
+          if-no-files-found: warn
+          retention-days: 14
+          path: |
+            artifacts/test-results/**
+            artifacts/logs/**
+
+  coverage:
+    name: Coverage Report
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    env:
+      MLM_LICENSE_TOKEN: ${{ secrets.MLM_LICENSE_TOKEN }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up MATLAB
+        uses: matlab-actions/setup-matlab@v3
+        with:
+          release: ${{ env.MATLAB_RELEASE }}
+
+      - name: Prepare artifact directories
+        run: mkdir -p artifacts/logs/coverage
+
+      - name: Run coverage report
+        uses: matlab-actions/run-build@v3
+        with:
+          tasks: coverage
+          startup-options: -logfile artifacts/logs/coverage/matlab.log
+
+      - name: Upload coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: matlab-coverage
           if-no-files-found: warn
           retention-days: 14
           path: |
@@ -126,13 +162,13 @@ jobs:
           release: ${{ env.MATLAB_RELEASE }}
 
       - name: Prepare artifact directories
-        run: mkdir -p artifacts/logs
+        run: mkdir -p artifacts/logs/testIntegration
 
       - name: Run integration tests
         uses: matlab-actions/run-build@v3
         with:
           tasks: testIntegration
-          startup-options: -logfile artifacts/logs/matlab.log
+          startup-options: -logfile artifacts/logs/testIntegration/matlab.log
 
       - name: Upload integration artifacts
         if: always()
@@ -162,13 +198,13 @@ jobs:
           release: ${{ env.MATLAB_RELEASE }}
 
       - name: Prepare artifact directories
-        run: mkdir -p artifacts/logs
+        run: mkdir -p artifacts/logs/testGuiStructural
 
       - name: Run GUI structural tests
         uses: matlab-actions/run-build@v3
         with:
           tasks: testGuiStructural
-          startup-options: -logfile artifacts/logs/matlab.log
+          startup-options: -logfile artifacts/logs/testGuiStructural/matlab.log
 
       - name: Upload GUI structural artifacts
         if: always()
@@ -200,13 +236,13 @@ jobs:
           release: ${{ env.MATLAB_RELEASE }}
 
       - name: Prepare artifact directories
-        run: mkdir -p artifacts/logs
+        run: mkdir -p artifacts/logs/testGuiGesture
 
       - name: Run GUI gesture tests
         uses: matlab-actions/run-build@v3
         with:
           tasks: testGuiGesture
-          startup-options: -logfile artifacts/logs/matlab.log
+          startup-options: -logfile artifacts/logs/testGuiGesture/matlab.log
 
       - name: Upload GUI gesture artifacts
         if: always()

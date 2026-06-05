@@ -42,11 +42,14 @@ buildtool packageDryRun
 - `buildtool test` is the full non-GUI entry point.
 - `buildtool checkStyle` runs official project/style guardrails.
 - `buildtool coverage` generates official JUnit, HTML test result, Cobertura,
-  and HTML coverage artifacts. Coverage is report-only.
+  and HTML coverage artifacts. Coverage is report-only and runs in manual or
+  scheduled CI, not as a default PR quality gate.
 - Official runner artifacts are namespaced by build task run name under
   `artifacts/test-results/<RunName>/`, `artifacts/coverage/<RunName>/`,
   `artifacts/gui/<RunName>/`, and `artifacts/logs/<RunName>/` so combined task
-  invocations do not overwrite each other.
+  invocations do not overwrite each other. GitHub Actions writes MATLAB logs
+  to the matching run-name log directory, such as
+  `artifacts/logs/testUnit/matlab.log`.
 - `buildtool testGuiGesture` runs focused noninteractive gesture coverage for
   runtime, anchor editor, and scale-bar interaction lifecycle checks.
 - `buildtool checkProject` verifies `LabKit.prj` path and startup metadata.
@@ -82,6 +85,13 @@ Advanced targeted debugging can call the internal runner directly:
 runLabKitTests("Tests", "AppHookHelpersTest", "FailIfNoTests", true)
 ```
 
+To inspect test selection without executing tests or writing artifacts, use
+the internal list-only mode:
+
+```matlab
+runLabKitTests("Suites", "labkit/dta", "ListOnly", true)
+```
+
 Use direct `runLabKitTests(...)` calls only for local diagnosis. Build tasks
 remain the official entry points for CI, PR validation, and handoff commands.
 
@@ -93,10 +103,12 @@ remain the official entry points for CI, PR validation, and handoff commands.
 | Focused GUI build tasks | Local MATLAB with graphics support | Noninteractive launch, layout, and callback wiring checks for selected app families. |
 | Manual GUI validation | User-run app windows | Interactive file selection, drawing, visual inspection, and full workflow feel. |
 
-CI runs quality, unit/coverage, and integration jobs on pushes and pull
+CI runs shell-wrapper, quality, unit, and integration jobs on pushes and pull
 requests to `main` through `.github/workflows/matlab-tests.yml`. Manual and
-scheduled CI runs also execute GUI structural and non-blocking GUI gesture jobs.
-Do not describe CI as full interactive GUI workflow validation.
+scheduled CI runs also execute coverage, GUI structural, and non-blocking GUI
+gesture jobs. Coverage is intentionally outside the default PR gate to keep PR
+feedback focused and avoid duplicate test execution. Do not describe CI as full
+interactive GUI workflow validation.
 
 ## Focused Build Tasks
 
