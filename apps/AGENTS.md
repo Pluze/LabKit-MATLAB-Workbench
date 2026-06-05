@@ -29,6 +29,11 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
 - Callback-heavy migrated apps should move app-owned production code into these
   package components instead of adding new `private/` runners or string-dispatch
   workflow adapters.
+- Do not satisfy a private-runner migration by moving the whole runner into
+  `+ui/runApp.m`. Extract GUI-free calculations, display formatting, export
+  builders, app-local IO normalization, and default state/result structs into
+  focused app-owned packages first, and add tests that call those functions
+  directly.
 - Do not add new `*Workflow.m` files or app-owned `+core/dispatch.m` string
   routers.
 - When a public app file grows large, prefer moving GUI-free app-owned calculations, export builders, formatting utilities, deterministic image/signal transforms, and focused control construction into `apps/<family>/<app_slug>/+<app_slug>/...`.

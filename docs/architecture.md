@@ -109,6 +109,11 @@ apps/wearable/private/
 Exit condition: migrate the remaining DIC and wearable app bodies/helpers into
 app-owned packages under their owning app folders, with public entry points
 owning GUI state, callbacks, debug launch routing, and user-facing log wording.
+Moving a large `private/run*App.m` body wholesale into `+ui/runApp.m` does not
+meet this exit condition. Runner migrations should first split deterministic
+calculations, display formatting, export builders, app-local IO normalization,
+and default state/result structs into focused app-owned package functions with
+direct tests. The remaining runner should be orchestration code.
 
 Allowed electrochemistry string-dispatch debt: none. The former app-owned
 `+core/dispatch.m` routers have been replaced by component-local package
