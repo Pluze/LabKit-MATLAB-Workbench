@@ -25,6 +25,7 @@ Read component docs only when relevant:
 - Preserve behavior unless the user explicitly asks for a behavior change.
 - Keep app-specific formulas, thresholds, plots, result schemas, exports, and workflow decisions in the owning app.
 - Keep reusable `+labkit` API growth conservative and domain-neutral.
+- New app-facing UI work should use `labkit.ui.createAppShell`, `labkit.ui.createDebugContext`, `labkit.ui.createInteractionRuntime`, and `labkit.ui.dispatchAppRequest`; older UI helper names are deprecated compatibility surface.
 - New app code must not call `labkit.io.*`, `labkit.data.*`, `labkit.analysis.*`, or `labkit.util.*`; use `labkit.dta.*`, `labkit.biosignal.*`, `labkit.ui.*`, or app-local helpers.
 - Do not reintroduce root-level legacy command wrappers, app-specific public helper packages, or public helper-dump packages such as `+labkit/+analysis`, `+data`, `+io`, or `+util`.
 - Do not convert struct models to MATLAB classes, rewrite all GUIs, replace separate app entry points with one launcher, or migrate code to another language without explicit approval.

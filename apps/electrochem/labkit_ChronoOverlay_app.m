@@ -2,7 +2,7 @@ function varargout = labkit_ChronoOverlay_app(varargin)
 %LABKIT_CHRONOOVERLAY_APP Chrono voltage/current overlay and export app.
 % Single-file app that composes +labkit GUI/DTA APIs and owns overlay workflow choices.
 
-    [requestHandled, requestOutputs, debugLog] = labkit.ui.handleAppRequest( ...
+    [requestHandled, requestOutputs, debugLog] = labkit.ui.dispatchAppRequest( ...
         'labkit_ChronoOverlay_app', varargin, nargout, chronoOverlayAppTestHandlers());
     if requestHandled
         varargout = requestOutputs;
@@ -26,11 +26,11 @@ function varargout = labkit_ChronoOverlay_app(varargin)
     workbenchOpts.rightGridSize = [2 1];
     workbenchOpts.rightRowHeight = {'1x', '1x'};
     workbenchOpts.rightRowSpacing = 10;
-    ui = labkit.ui.createWorkbench( ...
-        'Gamry Multi-DTA Plot Export GUI', ...
-        [80 60 1480 900], ...
-        340, ...
-        workbenchOpts);
+    ui = labkit.ui.createAppShell(struct( ...
+        'title', 'Gamry Multi-DTA Plot Export GUI', ...
+        'position', [80 60 1480 900], ...
+        'leftWidth', 340, ...
+        'options', workbenchOpts));
     fig = ui.fig;
     layFA = ui.filesAnalysisGrid;
     laySR = ui.summaryResultsGrid;
@@ -97,6 +97,11 @@ function varargout = labkit_ChronoOverlay_app(varargin)
 
     logUi = labkit.ui.createLogPanel(layLog, 1);
     txtLog = logUi.textArea;
+    if debugLog.enabled
+        debugLog.attachTextLog(txtLog);
+        debugLog.trace('Chrono overlay debug trace enabled.');
+        debugLog.instrumentFigure(fig);
+    end
 
     axV = labkit.ui.createAxes(right, 1, 'Voltage', 'Time (s)', 'Vf (V)');
     axI = labkit.ui.createAxes(right, 2, 'Current', 'Time (s)', 'Im (A)');

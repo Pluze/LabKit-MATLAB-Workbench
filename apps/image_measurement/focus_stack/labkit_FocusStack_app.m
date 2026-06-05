@@ -1,7 +1,7 @@
 function varargout = labkit_FocusStack_app(varargin)
 %LABKIT_FOCUSSTACK_APP Fuse a focus image stack into one all-in-focus image.
 
-    [requestHandled, requestOutputs, debugLog] = labkit.ui.handleAppRequest( ...
+    [requestHandled, requestOutputs, debugLog] = labkit.ui.dispatchAppRequest( ...
         'labkit_FocusStack_app', varargin, nargout, focusStackAppTestHandlers());
     if requestHandled
         varargout = requestOutputs;
@@ -40,8 +40,11 @@ function varargout = labkit_FocusStack_app(varargin)
             struct('resizeRows', 1)), ...
         labkit.ui.tabSpec('log', 'Log', [1 1], {'1x'})];
 
-    ui = labkit.ui.createWorkbench( ...
-        'Microscope Focus Stack Fusion', [80 60 1440 860], 390, workbenchOpts);
+    ui = labkit.ui.createAppShell(struct( ...
+        'title', 'Microscope Focus Stack Fusion', ...
+        'position', [80 60 1440 860], ...
+        'leftWidth', 390, ...
+        'options', workbenchOpts));
     fig = ui.fig;
     layFA = ui.filesAnalysisGrid;
     laySR = ui.summaryResultsGrid;
@@ -158,6 +161,11 @@ function varargout = labkit_FocusStack_app(varargin)
 
     logUi = labkit.ui.createLogPanel(layLog, 1, {'Ready.'});
     txtLog = logUi.textArea;
+    if debugLog.enabled
+        debugLog.attachTextLog(txtLog);
+        debugLog.trace('Focus stack debug trace enabled.');
+        debugLog.instrumentFigure(fig);
+    end
 
     resetPreviewAxes();
     refreshSummary();

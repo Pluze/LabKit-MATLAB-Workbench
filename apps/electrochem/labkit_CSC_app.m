@@ -12,19 +12,19 @@ function varargout = labkit_CSC_app(varargin)
 %   - Full charge     : cathodic + anodic.
 %
 % CT charge
-%   Qct = ∫ I · dt using recorded time.
+%   Qct = integral(I dt) using recorded time.
 %
 % CV charge (constant scan rate v)
-%   dt = |dV| / v, so Qcv = ∫ I · (|dV| / v) (not trapz(V, I) directly).
+%   dt = |dV| / v, so Qcv = integral(I * |dV| / v) (not trapz(V, I) directly).
 %
 % Optional normalization
-%   CSC = Q / area (cm²); both charge and normalized CSC are shown.
+%   CSC = Q / area (cm^2); both charge and normalized CSC are shown.
 %
     [testLoadFile, isLoadDiagnostics] = parseCSCLoadDiagnosticsRequest(varargin);
     if isLoadDiagnostics
-        debugLog = labkit.ui.createAppDebugLog('labkit_CSC_app', struct('enabled', false));
+        debugLog = labkit.ui.createDebugContext('labkit_CSC_app', struct('enabled', false));
     else
-        [requestHandled, requestOutputs, debugLog] = labkit.ui.handleAppRequest( ...
+        [requestHandled, requestOutputs, debugLog] = labkit.ui.dispatchAppRequest( ...
             'labkit_CSC_app', varargin, nargout, cscAppTestHandlers());
         if requestHandled
             varargout = requestOutputs;
@@ -56,11 +56,11 @@ function varargout = labkit_CSC_app(varargin)
     S.currentCurve = 1;
 
     %% ===================== Figure & Layout =====================
-    ui = labkit.ui.createWorkbench( ...
-        'Gamry DTA GUI (literature CSC)', ...
-        [50 30 1580 950], ...
-        390, ...
-        struct('rightKind', 'dualPlot'));
+    ui = labkit.ui.createAppShell(struct( ...
+        'title', 'Gamry DTA GUI (literature CSC)', ...
+        'position', [50 30 1580 950], ...
+        'leftWidth', 390, ...
+        'options', struct('rightKind', 'dualPlot')));
     fig = ui.fig;
     layFA = ui.filesAnalysisGrid;
     laySR = ui.summaryResultsGrid;
@@ -201,6 +201,11 @@ function varargout = labkit_CSC_app(varargin)
     cbBotTrim = uicheckbox(plotControls.bottomGrid,'Text','Show Trim','Value',true, ...
         'ValueChangedFcn',@(~,~) refreshCompare());
     cbBotTrim.Layout.Row = 1; cbBotTrim.Layout.Column = 7;
+    if debugLog.enabled
+        debugLog.attachTextLog(txtLog);
+        debugLog.trace('CSC debug trace enabled.');
+        debugLog.instrumentFigure(fig);
+    end
     if isLoadDiagnostics
         cleanup = onCleanup(@() delete(fig));
         addFiles({testLoadFile});

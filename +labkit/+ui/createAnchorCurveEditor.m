@@ -2,13 +2,13 @@ function editor = createAnchorCurveEditor(runtime, imageSize, opts)
 %CREATEANCHORCURVEEDITOR Create reusable editable anchor-curve interaction.
 %
 % Usage:
-%   runtime = labkit.ui.createImageAxesRuntime(ax);
+%   runtime = labkit.ui.createInteractionRuntime(ax);
 %   editor = labkit.ui.createAnchorCurveEditor(runtime, size(image), ...
 %       struct('closed', true, 'style', 'Curve', 'onChanged', @onChanged));
 %   editor.start(points);
 %
 % Inputs:
-%   runtime - image axes runtime returned by labkit.ui.createImageAxesRuntime.
+%   runtime - interaction runtime returned by labkit.ui.createInteractionRuntime.
 %   imageSize - [height width] or image size used for zoom/limit clamping.
 %   opts - optional struct.
 %
@@ -47,7 +47,7 @@ function editor = createAnchorCurveEditor(runtime, imageSize, opts)
         isa(runtime.axes, 'function_handle') && ...
         isfield(runtime, 'createSession') && ...
         isa(runtime.createSession, 'function_handle'), ...
-        'First input must be a labkit.ui.createImageAxesRuntime result.');
+        'First input must be a labkit.ui.createInteractionRuntime result.');
 
     state.runtime = runtime;
     state.ax = runtime.axes();

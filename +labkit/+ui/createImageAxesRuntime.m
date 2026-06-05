@@ -1,5 +1,5 @@
 function runtime = createImageAxesRuntime(ax, opts)
-%CREATEIMAGEAXESRUNTIME Create a managed interaction runtime for image axes.
+%CREATEIMAGEAXESRUNTIME Deprecated compatibility runtime for image axes.
 %
 % Usage:
 %   runtime = labkit.ui.createImageAxesRuntime(ax, ...
@@ -9,6 +9,9 @@ function runtime = createImageAxesRuntime(ax, opts)
 %       'onPointerDown', @onPointerDown, ...
 %       'onScroll', @onScroll, ...
 %       'installScrollWheel', true));
+%
+% New app code should call labkit.ui.createInteractionRuntime. This
+% compatibility entry point is retained for one migration cycle.
 %
 % Inputs:
 %   ax - UI axes used by image tools.

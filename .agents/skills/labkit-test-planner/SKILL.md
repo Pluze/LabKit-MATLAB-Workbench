@@ -24,7 +24,7 @@ Use the smallest set that covers the touched boundary:
 project                    startup, architecture, package surface, sample-data hygiene
 labkit/dta                 DTA parser, facade, session, item, pulse behavior
 labkit/biosignal           biosignal import, processing, ECG peaks, segments, measurements
-labkit/ui                  reusable UI helpers; add --gui for layout/callback/shell checks
+labkit/ui                  reusable UI helpers; add --gui for layout/callback/shell/debug checks
 apps/electrochem           electrochem app-owned calculations, exports, layout
 apps/dic                   DIC app layout; usually --gui
 apps/image_measurement     image measurement calculations, exports, layout
@@ -56,6 +56,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.p
 
 - Default non-GUI tests do not validate interactive GUI workflow behavior.
 - Automated GUI tests are structural launch/layout/callback checks.
+- Debug GUI checks validate trace plumbing and callback instrumentation, not full user interaction quality.
 - Interactive file selection, drawing, visual inspection, and full workflow feel require manual user validation.
 - Do not run interactive GUI workflows in MATLAB `-batch` mode.
 

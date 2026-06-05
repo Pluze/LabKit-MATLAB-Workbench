@@ -12,6 +12,7 @@ Preserve LabKit's app-first architecture:
 - apps own experiment-specific workflow
 - `+labkit` owns small, stable UI/DTA/biosignal facades
 - no public helper-dump packages
+- UI apps should use the stable app-facing shell/debug/request/runtime APIs and treat older helper names as deprecated compatibility surface
 
 ## Required Read Order
 
@@ -33,6 +34,8 @@ Before moving code into `+labkit`, prove that the helper:
 - reduces duplication without increasing public API confusion
 
 If this is not proven, keep the code app-local.
+
+For UI boundary work, prefer `labkit.ui.createAppShell`, `labkit.ui.createDebugContext`, `labkit.ui.createInteractionRuntime`, and `labkit.ui.dispatchAppRequest`. Keep control micro-helpers private unless they are a deliberate public facade addition.
 
 ## Validation
 

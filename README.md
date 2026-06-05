@@ -10,7 +10,7 @@ LabKit MATLAB Workbench is an internal app workbench for scientific GUI tools. I
 
 Current app families cover electrochemistry, DIC image workflows, image measurement, and wearable biosignal review. Reusable code is organized behind three app-facing facades:
 
-- `labkit.ui.*`: shared GUI shells, panels, controls, axes, logs, and image/plot helpers.
+- `labkit.ui.*`: layered GUI foundation for app shells, controls, axes, interaction runtimes, tools, diagnostics, logs, and image/plot helpers.
 - `labkit.dta.*`: GUI-free Gamry DTA loading, sessions, parsed curve access, and pulse helpers.
 - `labkit.biosignal.*`: GUI-free recording loading, filtering, ECG peak detection, segments, templates, and SNR-style measurements.
 
@@ -24,7 +24,7 @@ Workflow-specific calculations, plot choices, summaries, and exports stay in the
 | DIC | Image registration, paired crop preparation, ROI masks, Ncorr strain overlays, and summary export |
 | Image measurement | Interactive curve tracing, calibrated scale/length measurement, curvature/radius measurement, and microscope focus stacking |
 | Wearable biosignals | ECG preview, filtering, peak detection, segments, templates, and SNR-style measurements |
-| Reusable foundation | MATLAB UI helpers plus DTA and biosignal facades for app-facing workflows |
+| Reusable foundation | Layered MATLAB UI foundation plus DTA and biosignal facades for app-facing workflows |
 | Validation | Focused MATLAB suites, architecture guardrails, synthetic fixtures, and GitHub Actions CI |
 
 ## Quick Start

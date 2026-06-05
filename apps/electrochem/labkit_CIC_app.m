@@ -23,7 +23,7 @@ function varargout = labkit_CIC_app(varargin)
 %     reports the highest safe file among all loaded files.
 %   - By default, the evaluation point is 10 us after the end of each phase,
 %     matching the convention commonly used in the literature the user shared.
-    [requestHandled, requestOutputs, debugLog] = labkit.ui.handleAppRequest( ...
+    [requestHandled, requestOutputs, debugLog] = labkit.ui.dispatchAppRequest( ...
         'labkit_CIC_app', varargin, nargout, cicAppTestHandlers());
     if requestHandled
         varargout = requestOutputs;
@@ -44,11 +44,11 @@ function varargout = labkit_CIC_app(varargin)
     S.current = [];
 
     %% ===================== Figure & Layout =====================
-    ui = labkit.ui.createWorkbench( ...
-        'Gamry CIC GUI (Voltage Transient)', ...
-        [40 30 1680 980], ...
-        430, ...
-        struct('rightKind', 'dualPlot'));
+    ui = labkit.ui.createAppShell(struct( ...
+        'title', 'Gamry CIC GUI (Voltage Transient)', ...
+        'position', [40 30 1680 980], ...
+        'leftWidth', 430, ...
+        'options', struct('rightKind', 'dualPlot')));
     fig = ui.fig;
     layFA = ui.filesAnalysisGrid;
     laySR = ui.summaryResultsGrid;
@@ -194,6 +194,11 @@ function varargout = labkit_CIC_app(varargin)
     ddBotY = plotControls.bottomY;
     cbBotGrid = plotControls.bottomGridCheckbox;
     axBottom = ui.bottomAxes;
+    if debugLog.enabled
+        debugLog.attachTextLog(txtLog);
+        debugLog.trace('CIC debug trace enabled.');
+        debugLog.instrumentFigure(fig);
+    end
     if nargout >= 1
         varargout{1} = fig;
     end

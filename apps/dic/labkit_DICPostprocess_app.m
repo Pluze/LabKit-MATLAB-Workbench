@@ -1,7 +1,7 @@
 function varargout = labkit_DICPostprocess_app(varargin)
 %LABKIT_DICPOSTPROCESS_APP Ncorr strain summary and overlay export app.
 
-    [requestHandled, requestOutputs, debugLog] = labkit.ui.handleAppRequest( ...
+    [requestHandled, requestOutputs, debugLog] = labkit.ui.dispatchAppRequest( ...
         'labkit_DICPostprocess_app', varargin, nargout);
     if requestHandled
         varargout = requestOutputs;
@@ -43,8 +43,11 @@ function varargout = labkit_DICPostprocess_app(varargin)
             struct('resizeRows', 1, ...
             'resizeOptions', struct('minTopHeight', 120, 'minBottomHeight', 90))), ...
         labkit.ui.tabSpec('log', 'Log', [1 1], {'1x'})];
-    ui = labkit.ui.createWorkbench( ...
-        'DIC Strain Postprocess', [90 70 1450 880], 390, workbenchOpts);
+    ui = labkit.ui.createAppShell(struct( ...
+        'title', 'DIC Strain Postprocess', ...
+        'position', [90 70 1450 880], ...
+        'leftWidth', 390, ...
+        'options', workbenchOpts));
     fig = ui.fig;
 
     layFA = ui.filesAnalysisGrid;
@@ -143,6 +146,11 @@ function varargout = labkit_DICPostprocess_app(varargin)
 
     logUi = labkit.ui.createLogPanel(layLog, 1, {'Ready.'});
     txtLog = logUi.textArea;
+    if debugLog.enabled
+        debugLog.attachTextLog(txtLog);
+        debugLog.trace('DIC postprocess debug trace enabled.');
+        debugLog.instrumentFigure(fig);
+    end
 
     labkit.ui.hardResetAxis(ui.topAxes, 'EXX Overlay', true);
     labkit.ui.hardResetAxis(ui.bottomAxes, 'EYY Overlay', true);

@@ -1,7 +1,7 @@
 function varargout = labkit_CurvatureMeasurement_app(varargin)
 %LABKIT_CURVATUREMEASUREMENT_APP Measure curve radius and curvature from images.
 
-    [requestHandled, requestOutputs, debugLog] = labkit.ui.handleAppRequest( ...
+    [requestHandled, requestOutputs, debugLog] = labkit.ui.dispatchAppRequest( ...
         'labkit_CurvatureMeasurement_app', varargin, nargout, curvatureAppTestHandlers());
     if requestHandled
         varargout = requestOutputs;
@@ -41,15 +41,18 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
             struct('resizeRows', 1)), ...
         labkit.ui.tabSpec('log', 'Log', [1 1], {'1x'})];
 
-    ui = labkit.ui.createWorkbench( ...
-        'Image Curvature Measurement', [90 70 1420 860], 390, workbenchOpts);
+    ui = labkit.ui.createAppShell(struct( ...
+        'title', 'Image Curvature Measurement', ...
+        'position', [90 70 1420 860], ...
+        'leftWidth', 390, ...
+        'options', workbenchOpts));
     fig = ui.fig;
     layFA = ui.filesAnalysisGrid;
     laySR = ui.summaryResultsGrid;
     layLog = ui.logGrid;
     ui.topAxes = uiaxes(ui.rightGrid);
     ui.topAxes.Layout.Row = 1;
-    imageRuntime = labkit.ui.createImageAxesRuntime(ui.topAxes, ...
+    imageRuntime = labkit.ui.createInteractionRuntime(ui.topAxes, ...
         struct('figure', fig, ...
         'defaultScrollFcn', @onPreviewScroll, ...
         'onTrace', debugLog.trace));
@@ -166,14 +169,11 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
     if debugLog.enabled
         debugLog.attachTextLog(txtLog);
         debugLog.trace('Curvature measurement debug trace enabled.');
+        debugLog.instrumentFigure(fig);
     end
 
     resetAxes();
     refreshScaleReadout();
-
-    if debugLog.enabled
-        debugLog.instrumentFigure(fig);
-    end
 
     if nargout >= 1
         varargout{1} = fig;

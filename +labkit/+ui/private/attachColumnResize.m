@@ -17,7 +17,7 @@ function attachColumnResize(fig, grid, leftColumn, separatorColumn, opts)
 %
 % Notes:
 %   This helper mutates layout handles only; apps should normally request
-%   resizable shells through labkit.ui.createWorkbench.
+%   resizable shells through labkit.ui.createAppShell.
 
     if nargin < 5
         opts = struct();

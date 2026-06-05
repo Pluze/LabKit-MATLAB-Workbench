@@ -2,7 +2,7 @@ function tool = createScaleBarTool(parent, row, runtime, opts)
 %CREATESCALEBARTOOL Create a reusable image scale-bar interaction tool.
 %
 % Usage:
-%   runtime = labkit.ui.createImageAxesRuntime(imageAxes);
+%   runtime = labkit.ui.createInteractionRuntime(imageAxes);
 %   tool = labkit.ui.createScaleBarTool(parentGrid, 3, runtime, opts);
 %   tool.setImageSize(size(imageData));
 %   tool.setBackground(hImage);
@@ -12,7 +12,7 @@ function tool = createScaleBarTool(parent, row, runtime, opts)
 % Inputs:
 %   parent - uigridlayout parent that will receive the scale-bar panel.
 %   row - logical parent row for the panel.
-%   runtime - image axes runtime returned by labkit.ui.createImageAxesRuntime.
+%   runtime - interaction runtime returned by labkit.ui.createInteractionRuntime.
 %   opts - optional struct.
 %
 % Options:
@@ -53,7 +53,7 @@ function tool = createScaleBarTool(parent, row, runtime, opts)
         isa(runtime.axes, 'function_handle') && ...
         isfield(runtime, 'createSession') && ...
         isa(runtime.createSession, 'function_handle'), ...
-        'Third input must be a labkit.ui.createImageAxesRuntime result.');
+        'Third input must be a labkit.ui.createInteractionRuntime result.');
 
     state.runtime = runtime;
     state.ax = runtime.axes();

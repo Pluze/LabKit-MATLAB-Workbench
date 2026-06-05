@@ -14,15 +14,17 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
 
 - Keep domain formulas, thresholds, integration rules, option defaults, plot labels, result fields, export columns, failed-row behavior, alerts, and log wording app-local unless the user explicitly approves a boundary change.
 - When a documented UI tool owns app-neutral controls or interaction mechanics, consume it instead of reimplementing widget state or normalization. Keep app calculations, summaries, alerts, and exports local.
-- Use `labkit.ui.createWorkbench` for app GUIs.
-- Image apps with custom preview scroll, drawing, ROI, scale-bar, or other axes interaction should create a `labkit.ui.createImageAxesRuntime` and pass that runtime into reusable tools. Do not set image-tool `WindowScrollWheelFcn`, `WindowButtonMotionFcn`, `WindowButtonUpFcn`, or axes `ButtonDownFcn` directly in app code.
+- Use `labkit.ui.createAppShell` for app GUIs.
+- Use `labkit.ui.dispatchAppRequest` for internal test/debug launch routing and `labkit.ui.createDebugContext` only when an app has an app-specific nonstandard request path.
+- Debug launches should attach the Log tab text area, emit a startup trace line, and instrument high-level component callbacks after controls are built.
+- Image apps with custom preview scroll, drawing, ROI, scale-bar, or other axes interaction should create a `labkit.ui.createInteractionRuntime` and pass that runtime into reusable tools. Do not set image-tool `WindowScrollWheelFcn`, `WindowButtonMotionFcn`, `WindowButtonUpFcn`, or axes `ButtonDownFcn` directly in app code.
 - DTA-backed apps use `labkit.dta.*` for discovery, loading, sessions, pulse detection, and parsed curve/table access.
 - Biosignal-backed apps use `labkit.biosignal.*` for recording loading, channel extraction, waveform processing, events, segments, measurements, and group comparisons.
 - Do not create app-specific public helper packages to make local workflow code look reusable.
 - App-owned private helpers are acceptable only when they stay under the owning app tree and do not become public reusable APIs.
 - When a public app file grows large, prefer moving GUI-free app-owned calculations, export builders, formatting utilities, and deterministic image/signal transforms into `apps/<family>/<app_slug>/private/`.
 - Use `apps/<family>/private/` only for helpers that are genuinely shared by multiple apps in that family.
-- Keep the public app entry point responsible for GUI state, callbacks, user alerts, app workflow order, and `__labkit_test__` command routing.
+- Keep the public app entry point responsible for GUI state, callbacks, user alerts, app workflow order, `__labkit_test__` command routing, and user-facing log wording.
 
 ## Documentation Sync
 

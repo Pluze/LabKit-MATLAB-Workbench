@@ -23,7 +23,7 @@ function test_gui_smoke()
             'GUI entry point %s did not create expected figure "%s".', entryName, expectedTitle);
 
         closeAllFigures();
-        [~, debug] = feval(entryName, "__labkit_debug__", struct());
+        [fig, debug] = feval(entryName, "__labkit_debug__", struct());
         drawnow;
         assert(isstruct(debug) && debug.enabled, ...
             'Debug launch for %s should return an enabled debug log struct.', entryName);
@@ -31,6 +31,10 @@ function test_gui_smoke()
             'Debug launch for %s should preserve the app name.', entryName);
         assert(isfield(debug, 'getLog') && isa(debug.getLog, 'function_handle'), ...
             'Debug launch for %s should return a getLog function.', entryName);
+        lines = string(debug.getLog());
+        assert(any(contains(lines, 'debug trace enabled')), ...
+            'Debug launch for %s should emit a startup trace line.', entryName);
+        assertVisibleDebugTrace(fig, entryName);
     end
 end
 
@@ -61,4 +65,19 @@ function closeAllFigures()
         delete(figs);
     end
     drawnow;
+end
+
+function assertVisibleDebugTrace(fig, entryName)
+    controls = findall(fig);
+    for iControl = 1:numel(controls)
+        control = controls(iControl);
+        if ~contains(class(control), 'TextArea')
+            continue;
+        end
+        values = string(control.Value);
+        if any(contains(values, 'debug trace enabled'))
+            return;
+        end
+    end
+    error('Debug launch for %s should mirror trace lines into the visible Log tab.', entryName);
 end

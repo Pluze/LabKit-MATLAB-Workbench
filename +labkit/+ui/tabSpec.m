@@ -19,7 +19,7 @@ function spec = tabSpec(key, titleText, gridSize, rowHeight, opts)
 %   padding, rowSpacing, columnSpacing - grid layout properties.
 %
 % Output:
-%   spec - struct consumed by createWorkbench(opts.tabs).
+%   spec - struct consumed by createAppShell spec options tabs.
 
     if nargin < 4 || isempty(rowHeight)
         rowHeight = repmat({'fit'}, 1, gridSize(1));

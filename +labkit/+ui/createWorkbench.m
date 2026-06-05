@@ -1,9 +1,12 @@
 function ui = createWorkbench(figName, figPosition, leftWidth, opts)
-%CREATEWORKBENCH Create the standard resizable tabbed scientific-app shell.
+%CREATEWORKBENCH Deprecated compatibility scientific-app shell.
 %
 % Usage:
 %   ui = labkit.ui.createWorkbench(titleText, position, leftWidth);
 %   ui = labkit.ui.createWorkbench(titleText, position, leftWidth, opts);
+%
+% New app code should call labkit.ui.createAppShell with a spec struct.
+% This compatibility entry point is retained for one migration cycle.
 %
 % Inputs:
 %   figName - figure title.

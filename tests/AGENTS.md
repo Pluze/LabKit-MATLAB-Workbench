@@ -15,6 +15,8 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
 - Use `tests/helpers/` only for setup, lookup, assertion, cleanup, and fixture-building helpers.
 - Do not move app-specific formulas, expected scientific values, result schemas, or export columns into shared test helpers.
 - Boundary tests may require app-owned logic to stay under the owning app tree, but should not require GUI-free helpers to remain inside the public app entry-point file or assert exact app-private helper file lists.
+- UI public-surface tests should distinguish stable public API, deprecated compatibility API, and private implementation candidates instead of treating every top-level helper as equally recommended.
+- GUI smoke/debug tests may assert that every app supports debug launch and visible startup trace, but should not claim full interactive workflow validation.
 - When one test file grows too broad, add new focused `test_*.m` files instead of appending unrelated coverage.
 - GUI tests are structural launch/layout/callback checks; do not claim full interactive workflow validation from automated GUI tests.
 

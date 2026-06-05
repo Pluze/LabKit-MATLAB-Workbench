@@ -2,7 +2,7 @@ function varargout = labkit_EIS_app(varargin)
 %LABKIT_EIS_APP EIS overlay/export app.
 % Single-file app that composes +labkit GUI/DTA APIs and owns EIS workflow choices.
 
-    [requestHandled, requestOutputs, debugLog] = labkit.ui.handleAppRequest( ...
+    [requestHandled, requestOutputs, debugLog] = labkit.ui.dispatchAppRequest( ...
         'labkit_EIS_app', varargin, nargout, eisAppTestHandlers());
     if requestHandled
         varargout = requestOutputs;
@@ -39,11 +39,11 @@ function varargout = labkit_EIS_app(varargin)
     workbenchOpts.rightGridSize = [1 1];
     workbenchOpts.rightRowHeight = {'1x'};
     workbenchOpts.rightRowSpacing = 8;
-    ui = labkit.ui.createWorkbench( ...
-        'Gamry EIS Multi-DTA Plot GUI', ...
-        [80 60 1500 900], ...
-        360, ...
-        workbenchOpts);
+    ui = labkit.ui.createAppShell(struct( ...
+        'title', 'Gamry EIS Multi-DTA Plot GUI', ...
+        'position', [80 60 1500 900], ...
+        'leftWidth', 360, ...
+        'options', workbenchOpts));
     fig = ui.fig;
     layFA = ui.filesAnalysisGrid;
     laySR = ui.summaryResultsGrid;
@@ -150,6 +150,11 @@ function varargout = labkit_EIS_app(varargin)
     txtSummary = uitextarea(laySR, 'Editable', 'off');
     txtSummary.Layout.Row = labkit.ui.layoutRow(laySR, 2);
     txtSummary.Value = {'No files loaded.'};
+    if debugLog.enabled
+        debugLog.attachTextLog(txtLog);
+        debugLog.trace('EIS debug trace enabled.');
+        debugLog.instrumentFigure(fig);
+    end
     if nargout >= 1
         varargout{1} = fig;
     end

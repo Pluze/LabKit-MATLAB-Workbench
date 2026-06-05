@@ -1,7 +1,7 @@
 function varargout = labkit_ECGPrint_app(varargin)
 %LABKIT_ECGPRINT_APP Explore ECG quality, SNR, and printable waveforms.
 
-    [requestHandled, requestOutputs, debugLog] = labkit.ui.handleAppRequest( ...
+    [requestHandled, requestOutputs, debugLog] = labkit.ui.dispatchAppRequest( ...
         'labkit_ECGPrint_app', varargin, nargout);
     if requestHandled
         varargout = requestOutputs;
@@ -42,8 +42,11 @@ function varargout = labkit_ECGPrint_app(varargin)
             struct('resizeRows', 1)), ...
         labkit.ui.tabSpec('log', 'Log', [1 1], {'1x'})];
 
-    ui = labkit.ui.createWorkbench( ...
-        'ECG Signal Print + SNR Explorer', [80 70 1480 880], 410, opts);
+    ui = labkit.ui.createAppShell(struct( ...
+        'title', 'ECG Signal Print + SNR Explorer', ...
+        'position', [80 70 1480 880], ...
+        'leftWidth', 410, ...
+        'options', opts));
     fig = ui.fig;
     layFA = ui.filesAnalysisGrid;
     laySR = ui.summaryResultsGrid;
@@ -266,6 +269,12 @@ function varargout = labkit_ECGPrint_app(varargin)
     ui.snrAxes.Layout.Row = 3;
     ui.templateAxes = uiaxes(ui.rightGrid);
     ui.templateAxes.Layout.Row = 4;
+
+    if debugLog.enabled
+        debugLog.attachTextLog(txtLog);
+        debugLog.trace('ECG print debug trace enabled.');
+        debugLog.instrumentFigure(fig);
+    end
 
     resetAxes();
     if nargout >= 1

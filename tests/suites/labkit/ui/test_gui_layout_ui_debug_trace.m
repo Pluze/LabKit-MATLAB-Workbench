@@ -20,7 +20,7 @@ function checkDefaultInstrumentationSkipsScroll(h)
     btnAction = uibutton(grid, 'Text', 'Default action', ...
         'ButtonPushedFcn', @onAction);
 
-    debug = labkit.ui.createAppDebugLog('probe_app', struct());
+    debug = labkit.ui.createDebugContext('probe_app', struct());
     count = debug.instrumentFigure(fig);
     assert(count >= 1, 'Default debug instrumentation should wrap component callbacks.');
     assert(isequal(fig.WindowScrollWheelFcn, scrollFcn), ...
@@ -53,7 +53,7 @@ function checkExplicitInstrumentation(h)
         'ButtonPushedFcn', {@onCellAction, 'extra'});
     btnCell.Layout.Row = 2;
 
-    debug = labkit.ui.createAppDebugLog('probe_app', struct());
+    debug = labkit.ui.createDebugContext('probe_app', struct());
     count = debug.instrumentFigure(fig, ...
         struct('callbackProperties', {{'ButtonPushedFcn'}}));
     assert(count == 2, 'Debug instrumentation should wrap both button callbacks.');
@@ -77,7 +77,7 @@ function checkExplicitInstrumentation(h)
     assert(any(contains(lines, 'END ButtonPushedFcn') & contains(lines, '"Cell action"')), ...
         'Instrumented cell callbacks should trace END messages.');
 
-    disabled = labkit.ui.createAppDebugLog('probe_app', struct('traceEnabled', false));
+    disabled = labkit.ui.createDebugContext('probe_app', struct('traceEnabled', false));
     disabledCount = disabled.instrumentFigure(fig, ...
         struct('callbackProperties', {{'ButtonPushedFcn'}}));
     assert(disabledCount == 0, 'traceEnabled=false should skip GUI instrumentation.');
@@ -86,7 +86,7 @@ function checkExplicitInstrumentation(h)
     cleaner2 = onCleanup(@() delete(fig2)); %#ok<NASGU>
     scrollCalls = 0;
     fig2.WindowScrollWheelFcn = @onScroll;
-    explicitDebug = labkit.ui.createAppDebugLog('probe_app', struct());
+    explicitDebug = labkit.ui.createDebugContext('probe_app', struct());
     scrollCount = explicitDebug.instrumentFigure(fig2, ...
         struct('callbackProperties', "WindowScrollWheelFcn"));
     assert(scrollCount == 1, ...

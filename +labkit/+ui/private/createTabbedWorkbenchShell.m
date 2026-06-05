@@ -2,7 +2,7 @@ function ui = createTabbedWorkbenchShell(figName, figPosition, leftWidth, labels
 %CREATETABBEDWORKBENCHSHELL Build the private tabbed workbench skeleton.
 %
 % Called by:
-%   labkit.ui.createWorkbench
+%   labkit.ui.createAppShell
 %
 % Inputs:
 %   figName - figure name/title.

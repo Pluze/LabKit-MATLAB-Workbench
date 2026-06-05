@@ -10,7 +10,7 @@ function varargout = labkit_VTResistance_app(varargin)
 %   - Estimate steady phase voltage by median(Vf) in the same selected window.
 %   - Compute baseline-corrected resistance as abs((Vss - Vbaseline) / Iss).
 
-    [requestHandled, requestOutputs, debugLog] = labkit.ui.handleAppRequest( ...
+    [requestHandled, requestOutputs, debugLog] = labkit.ui.dispatchAppRequest( ...
         'labkit_VTResistance_app', varargin, nargout, vtAppTestHandlers());
     if requestHandled
         varargout = requestOutputs;
@@ -30,11 +30,11 @@ function varargout = labkit_VTResistance_app(varargin)
     S.items = S.session.items;
     S.current = [];
 
-    ui = labkit.ui.createWorkbench( ...
-        'Gamry VT Steady Resistance GUI', ...
-        [40 30 1680 980], ...
-        430, ...
-        struct('rightKind', 'dualPlot'));
+    ui = labkit.ui.createAppShell(struct( ...
+        'title', 'Gamry VT Steady Resistance GUI', ...
+        'position', [40 30 1680 980], ...
+        'leftWidth', 430, ...
+        'options', struct('rightKind', 'dualPlot')));
     fig = ui.fig;
     layFA = ui.filesAnalysisGrid;
     laySR = ui.summaryResultsGrid;
@@ -144,6 +144,11 @@ function varargout = labkit_VTResistance_app(varargin)
     ddBotY = plotControls.bottomY;
     cbBotGrid = plotControls.bottomGridCheckbox;
     axBottom = ui.bottomAxes;
+    if debugLog.enabled
+        debugLog.attachTextLog(txtLog);
+        debugLog.trace('VT resistance debug trace enabled.');
+        debugLog.instrumentFigure(fig);
+    end
     if nargout >= 1
         varargout{1} = fig;
     end

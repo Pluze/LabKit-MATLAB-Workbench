@@ -1,7 +1,7 @@
 function varargout = labkit_DICPreprocess_app(varargin)
 %LABKIT_DICPREPROCESS_APP Image registration and paired-crop app for DIC workflows.
 
-    [requestHandled, requestOutputs, debugLog] = labkit.ui.handleAppRequest( ...
+    [requestHandled, requestOutputs, debugLog] = labkit.ui.dispatchAppRequest( ...
         'labkit_DICPreprocess_app', varargin, nargout);
     if requestHandled
         varargout = requestOutputs;
@@ -56,10 +56,13 @@ function varargout = labkit_DICPreprocess_app(varargin)
             struct('resizeRows', 1, ...
             'resizeOptions', struct('minTopHeight', 90, 'minBottomHeight', 90))), ...
         labkit.ui.tabSpec('log', 'Log', [1 1], {'1x'})];
-    ui = labkit.ui.createWorkbench( ...
-        'DIC Image Preprocess', [80 60 1400 860], 370, workbenchOpts);
+    ui = labkit.ui.createAppShell(struct( ...
+        'title', 'DIC Image Preprocess', ...
+        'position', [80 60 1400 860], ...
+        'leftWidth', 370, ...
+        'options', workbenchOpts));
     fig = ui.fig;
-    imageRuntime = labkit.ui.createImageAxesRuntime(ui.topAxes, ...
+    imageRuntime = labkit.ui.createInteractionRuntime(ui.topAxes, ...
         struct('figure', fig, 'defaultScrollFcn', @onPreviewScrollZoom));
 
     layFA = ui.filesAnalysisGrid;
@@ -211,6 +214,11 @@ function varargout = labkit_DICPreprocess_app(varargin)
 
     logUi = labkit.ui.createLogPanel(layLog, 1, {'Ready.'});
     txtLog = logUi.textArea;
+    if debugLog.enabled
+        debugLog.attachTextLog(txtLog);
+        debugLog.trace('DIC preprocess debug trace enabled.');
+        debugLog.instrumentFigure(fig);
+    end
 
     resetPreviewAxes();
 

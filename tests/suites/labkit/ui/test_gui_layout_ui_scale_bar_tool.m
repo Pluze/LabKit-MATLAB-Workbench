@@ -14,7 +14,7 @@ function test_gui_layout_ui_scale_bar_tool()
     calls = struct('beforeEdit', 0, 'edit', 0, 'calibration', 0, ...
         'bar', 0, 'placed', 0, 'error', 0);
     traceMessages = {};
-    runtime = labkit.ui.createImageAxesRuntime(ax, ...
+    runtime = labkit.ui.createInteractionRuntime(ax, ...
         struct('figure', fig, 'onTrace', @captureTrace));
     tool = labkit.ui.createScaleBarTool(grid, 2, runtime, ...
         struct('onBeforeReferenceEdit', @onBeforeEdit, ...
@@ -72,7 +72,7 @@ function test_gui_layout_ui_scale_bar_tool()
     ax2 = uiaxes(grid2);
     ax2.Layout.Row = 1;
     bg2 = imagesc(ax2, rand(40, 80));
-    runtime2 = labkit.ui.createImageAxesRuntime(ax2, struct('figure', fig2));
+    runtime2 = labkit.ui.createInteractionRuntime(ax2, struct('figure', fig2));
     tool2 = labkit.ui.createScaleBarTool(grid2, 2, runtime2, ...
         struct('onError', @onError));
     tool2.setImageSize([40 80 1]);
@@ -128,7 +128,7 @@ function checkReferenceEditRestartDoesNotReenterRefresh(h)
     calibrationCalls = 0;
     refreshCalls = 0;
 
-    runtime = labkit.ui.createImageAxesRuntime(ax, struct('figure', fig));
+    runtime = labkit.ui.createInteractionRuntime(ax, struct('figure', fig));
     tool = labkit.ui.createScaleBarTool(grid, 2, runtime, ...
         struct('onCalibrationChanged', @onCalibration, ...
         'onError', @onError));

@@ -86,6 +86,16 @@ Suite targets mirror source ownership:
 
 For reusable library changes, add downstream app suites when the app-facing contract could be affected. For example, pair `labkit/dta` with `apps/electrochem`, `labkit/biosignal` with `apps/wearable`, and `labkit/ui` with `apps` plus `--gui` when layout or callback behavior changed.
 
+UI framework changes should cover the affected layer rather than only the changed file:
+
+| UI layer | Automated coverage |
+| --- | --- |
+| Public surface | `project` suite checks stable public API, deprecated compatibility API, and private implementation packages. |
+| Shell/layout | `labkit/ui --gui` and affected app-family `--gui` suites. |
+| Runtime/tools | `labkit/ui --gui` runtime, anchor-editor, and scale-bar tool tests. |
+| Diagnostics | `labkit/ui --gui` debug instrumentation tests plus `apps/smoke --gui` debug launch trace checks. |
+| App migration | Affected `apps/<family> --gui` suite plus `project` entrypoint/boundary guardrails. |
+
 ## Suite Layout
 
 Tests live under:

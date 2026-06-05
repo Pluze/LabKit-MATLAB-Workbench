@@ -10,7 +10,7 @@ function test_gui_layout_ui_anchor_curve_editor()
     ax = uiaxes(fig);
     image(ax, zeros(40, 60, 3, 'uint8'));
     axis(ax, 'image');
-    runtime = labkit.ui.createImageAxesRuntime(ax, struct('figure', fig));
+    runtime = labkit.ui.createInteractionRuntime(ax, struct('figure', fig));
 
     changed = false;
     editor = labkit.ui.createAnchorCurveEditor(runtime, [40 60 3], ...
@@ -74,7 +74,7 @@ function test_gui_layout_ui_anchor_curve_editor()
     axis(ax2, 'image');
     baseScroll2 = @(~,~) setappdata(fig2, 'baseScrollCalled', true);
     fig2.WindowScrollWheelFcn = baseScroll2;
-    runtime2 = labkit.ui.createImageAxesRuntime(ax2, struct('figure', fig2));
+    runtime2 = labkit.ui.createInteractionRuntime(ax2, struct('figure', fig2));
     scrollEditor = labkit.ui.createAnchorCurveEditor(runtime2, [40 60 3], ...
         struct('closed', false, 'style', 'Straight lines'));
     scrollEditor.start([5 5; 20 20]);
@@ -96,7 +96,7 @@ function test_gui_layout_ui_anchor_curve_editor()
     axis(ax3, 'image');
     baseScroll3 = @(~,~) setappdata(fig3, 'baseScrollCalled', true);
     fig3.WindowScrollWheelFcn = baseScroll3;
-    runtime3 = labkit.ui.createImageAxesRuntime(ax3, struct('figure', fig3));
+    runtime3 = labkit.ui.createInteractionRuntime(ax3, struct('figure', fig3));
     firstEditor = labkit.ui.createAnchorCurveEditor(runtime3, [40 60 3], ...
         struct('closed', false, 'style', 'Straight lines'));
     secondEditor = labkit.ui.createAnchorCurveEditor(runtime3, [40 60 3], ...

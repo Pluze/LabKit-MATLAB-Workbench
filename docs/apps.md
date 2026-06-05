@@ -40,7 +40,7 @@ Status labels:
 
 Electrochemistry apps live under `apps/electrochem/` and use the DTA facade for Gamry file discovery, loading, sessions, parsed curve access, and pulse detection.
 
-DIC apps live under `apps/dic/`. They use the shared GUI shell while keeping registration, crop geometry, Ncorr MAT extraction, strain overlays, summaries, and exports in the owning app files.
+DIC apps live under `apps/dic/`. They use the shared GUI shell and interaction runtime while keeping registration, crop geometry, Ncorr MAT extraction, strain overlays, summaries, and exports in the owning app files.
 
 Image measurement apps live under `apps/image_measurement/`. They are separate from DIC because their workflows are general image measurements or image-processing utilities rather than DIC preprocessing or strain postprocessing.
 
@@ -58,6 +58,8 @@ The app owns:
 - result table columns and export formatting
 - failed-row behavior
 - callback ordering, alerts, and log wording
+
+Every public app entry point should preserve its launch name, route internal test/debug requests through `labkit.ui.dispatchAppRequest`, build the GUI with `labkit.ui.createAppShell`, and keep visible debug trace wired into the Log tab during debug launches. Image apps with drawing, scale bars, ROI, or preview scroll should pass a `labkit.ui.createInteractionRuntime` result into reusable tools instead of owning figure pointer callbacks directly.
 
 Move code into `+labkit` only when it is reusable without app vocabulary, testable independently, and useful beyond one workflow. When a documented UI tool owns app-neutral interaction mechanics, the app should consume that tool and keep workflow meaning, summaries, and exports app-local.
 
@@ -95,10 +97,10 @@ Define these before adding controls or helpers:
 7. Result table columns and units
 8. Export format and failed-row behavior
 9. Validation fixture or synthetic test case
-10. GUI shell type and file-selection mode
+10. GUI shell spec, debug trace behavior, and file-selection mode
 ```
 
-Start from the closest existing app, reduce it to the needed workflow, and preserve ownership boundaries. Prefer `labkit.ui.createWorkbench` even for small apps so daily interaction stays consistent across app families.
+Start from the closest existing app, reduce it to the needed workflow, and preserve ownership boundaries. Prefer `labkit.ui.createAppShell` even for small apps so daily interaction stays consistent across app families.
 
 ## Validation
 

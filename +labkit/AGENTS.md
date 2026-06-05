@@ -20,7 +20,9 @@
 - `labkit.biosignal` stays GUI-free and independent from DTA/app code.
 - `labkit.ui` stays parser/data/analysis-free; apps pass prepared values, labels, tables, callbacks, and handles into UI helpers.
 - Reusable UI tools may own domain-neutral interaction workflows such as image scale-bar controls, reference editing, unit normalization, and overlay placement. Keep those tools independent from app result schemas, scientific formulas, file formats, and workflow wording.
-- Image-axis tools that need pointer, drag, scroll, or hit-test ownership must use `labkit.ui.createImageAxesRuntime` sessions instead of each helper managing figure/axes callbacks independently.
+- App-facing UI APIs are `labkit.ui.createAppShell`, `labkit.ui.createDebugContext`, `labkit.ui.createInteractionRuntime`, and `labkit.ui.dispatchAppRequest`. Treat `createWorkbench`, `createAppDebugLog`, `createImageAxesRuntime`, and `handleAppRequest` as deprecated compatibility surface.
+- Image-axis tools that need pointer, drag, scroll, or hit-test ownership must use `labkit.ui.createInteractionRuntime` sessions instead of each helper managing figure/axes callbacks independently.
+- Tool callbacks must keep user-facing semantic callbacks separate from internal refresh/sync callbacks, no-op when a setter receives the current value, and trace callback reason/source when a tool exposes debug trace.
 - Do not introduce MATLAB classes unless explicitly approved.
 
 ## Comments and Docs
