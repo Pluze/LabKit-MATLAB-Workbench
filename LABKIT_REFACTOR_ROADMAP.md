@@ -263,7 +263,7 @@ state ownership, callbacks, or tests clearer. The stable contract is:
 
 ## Phase Checklist
 
-- [ ] Phase 0: Safety baseline.
+- [x] Phase 0: Safety baseline.
 - [ ] Phase 1: New test platform skeleton.
 - [ ] Phase 2: Project and style guardrails rewrite.
 - [ ] Phase 3: App helper extraction before test hook removal.
@@ -278,12 +278,77 @@ state ownership, callbacks, or tests clearer. The stable contract is:
 
 ## Current Phase
 
-Phase: 0
+Phase: 1
 Status: not started
 Owner notes:
 
-- Roadmap file created on `codex/app-test-platform-rewrite`.
-- No implementation phases have been executed yet.
+- Phase 0 baseline completed on `codex/app-test-platform-rewrite`.
+- Next phase starts with the official MATLAB test/build skeleton while keeping
+  the old runner available until Phase 6.
+
+## Phase 0 Baseline
+
+App entrypoint line counts:
+
+| App entrypoint | Lines | Phase 5 status |
+| --- | ---: | --- |
+| `apps/electrochem/labkit_CIC_app.m` | 1222 | oversized |
+| `apps/dic/labkit_DICPreprocess_app.m` | 1105 | oversized |
+| `apps/electrochem/labkit_VTResistance_app.m` | 933 | oversized |
+| `apps/electrochem/labkit_CSC_app.m` | 847 | oversized |
+| `apps/image_measurement/curvature/labkit_CurvatureMeasurement_app.m` | 727 | oversized |
+| `apps/wearable/labkit_ECGPrint_app.m` | 701 | oversized |
+| `apps/image_measurement/focus_stack/labkit_FocusStack_app.m` | 602 | oversized |
+| `apps/dic/labkit_DICPostprocess_app.m` | 519 | oversized |
+| `apps/electrochem/labkit_ChronoOverlay_app.m` | 484 | near limit |
+| `apps/electrochem/labkit_EIS_app.m` | 478 | near limit |
+
+Test suite distribution:
+
+| Suite | `test_*.m` files | Current role |
+| --- | ---: | --- |
+| `tests/suites/project` | 6 | non-GUI default |
+| `tests/suites/labkit/dta` | 8 | non-GUI default |
+| `tests/suites/labkit/biosignal` | 5 | non-GUI default |
+| `tests/suites/labkit/ui` | 11 | split non-GUI/GUI by file |
+| `tests/suites/apps/electrochem` | 8 | split non-GUI/GUI by file |
+| `tests/suites/apps/dic` | 1 | GUI |
+| `tests/suites/apps/image_measurement` | 3 | split non-GUI/GUI by file |
+| `tests/suites/apps/wearable` | 1 | GUI |
+| `tests/suites/apps/smoke` | 1 | GUI |
+| Total | 44 | old runner discovery |
+
+Current CI shape:
+
+- `.github/workflows/matlab-tests.yml` has one `pure-matlab-tests` job.
+- It runs on push, pull request, and manual dispatch for `main`.
+- It uses `matlab-actions/setup-matlab@v3` with R2025a and
+  `matlab-actions/run-command@v3`.
+- The MATLAB command is
+  `addpath(fullfile(pwd,'tests')); run_all_tests(false);`.
+- No JUnit, coverage, HTML, MATLAB log, or GUI trace artifacts are uploaded yet.
+
+Current public `+labkit` surface:
+
+| Facade | Public functions |
+| --- | ---: |
+| `labkit.biosignal` | 11 |
+| `labkit.dta` | 16 |
+| `labkit.ui.app` | 4 |
+| `labkit.ui.diag` | 1 |
+| `labkit.ui.tool` | 4 |
+| `labkit.ui.view` | 7 |
+| Total | 43 |
+
+Legacy debt inventory:
+
+| Debt area | Current count | Notes |
+| --- | ---: | --- |
+| `__labkit_test__` file matches | 20 | App tests, app entrypoints, private helper comments, and `labkit.ui.app.dispatchRequest`. |
+| App test handler functions | 7 | CIC, VT, CSC, EIS, ChronoOverlay, Curvature, and FocusStack. |
+| Hidden load diagnostics matches | 2 files | CSC app diagnostics and the electrochem GUI layout test. |
+| App entrypoints over 500 lines | 8 of 10 | Phase 5 migration target. |
+| Old runner dependency files | 8 | `tests/run_all_tests.m`, wrappers, CI, and current docs/agent routing. |
 
 ## Phase Details
 
@@ -537,6 +602,10 @@ Acceptance:
 | Date | Command | Result | Notes |
 | --- | --- | --- | --- |
 | 2026-06-05 | `git diff --check -- LABKIT_REFACTOR_ROADMAP.md` | pass | Roadmap-only changes; added debug/trace modernization plus safety and scope guardrails. |
+| 2026-06-05 | Phase 0 inventory | pass | Recorded app entrypoint line counts, 44 old-suite test files, current CI shape, 43 public `+labkit` functions, and legacy debt counts. |
+| 2026-06-05 | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 --suite project` | pass | MATLAB R2025b; 6 project guardrail tests passed in 1.56s. |
+| 2026-06-05 | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1` | pass | MATLAB R2025b; default non-GUI suite passed in 64.42s. |
+| 2026-06-05 | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 --suite gui` | pass | MATLAB R2025b; existing GUI suite passed in 250.49s. |
 
 ## Deviation Log
 
@@ -559,15 +628,15 @@ deferred
 
 | Old test or area | New location | Status | Notes |
 | --- | --- | --- | --- |
-| `tests/suites/project` | `tests/integration/project` | pending | Project guardrails and style checks. |
-| `tests/suites/labkit/dta` | `tests/unit/labkit/dta` | pending | Parser, facade, session, pulse behavior. |
-| `tests/suites/labkit/biosignal` | `tests/unit/labkit/biosignal` | pending | Import, filtering, peaks, segments, measurements. |
-| `tests/suites/labkit/ui` | `tests/unit/labkit/ui` and `tests/gui/*` | pending | Split non-GUI helpers from GUI behavior. |
-| `tests/suites/apps/electrochem` | `tests/unit/apps/electrochem` and `tests/integration/app_workflows` | pending | Helper tests replace app test handlers. |
-| `tests/suites/apps/dic` | `tests/unit/apps/dic` and `tests/gui/structural` | pending | Keep DIC workflow contracts app-owned. |
-| `tests/suites/apps/image_measurement` | `tests/unit/apps/image_measurement` and `tests/gui/gesture` | pending | Curvature/FocusStack plus scale-bar/anchor coverage. |
-| `tests/suites/apps/wearable` | `tests/unit/apps/wearable` and `tests/gui/structural` | pending | ECGPrint helper and launch coverage. |
-| `tests/suites/apps/smoke` | `tests/gui/structural` | pending | All-app debug launch smoke. |
+| `tests/suites/project` | `tests/integration/project` | mapped | 6 files; project guardrails and style checks. |
+| `tests/suites/labkit/dta` | `tests/unit/labkit/dta` | mapped | 8 files; parser, facade, session, pulse behavior. |
+| `tests/suites/labkit/biosignal` | `tests/unit/labkit/biosignal` | mapped | 5 files; import, filtering, peaks, segments, measurements. |
+| `tests/suites/labkit/ui` | `tests/unit/labkit/ui` and `tests/gui/*` | mapped | 11 files; split non-GUI helpers from GUI behavior. |
+| `tests/suites/apps/electrochem` | `tests/unit/apps/electrochem` and `tests/integration/app_workflows` | mapped | 8 files; helper tests replace app test handlers. |
+| `tests/suites/apps/dic` | `tests/unit/apps/dic` and `tests/gui/structural` | mapped | 1 file; keep DIC workflow contracts app-owned. |
+| `tests/suites/apps/image_measurement` | `tests/unit/apps/image_measurement` and `tests/gui/gesture` | mapped | 3 files; Curvature/FocusStack plus scale-bar/anchor coverage. |
+| `tests/suites/apps/wearable` | `tests/unit/apps/wearable` and `tests/gui/structural` | mapped | 1 file; ECGPrint helper and launch coverage. |
+| `tests/suites/apps/smoke` | `tests/gui/structural` | mapped | 1 file; all-app debug launch smoke. |
 
 ## Completion Gate
 
