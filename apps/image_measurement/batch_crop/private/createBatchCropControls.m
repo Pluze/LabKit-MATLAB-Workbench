@@ -1,0 +1,146 @@
+% App-owned GUI construction helper. Expected caller:
+% labkit_BatchImageCrop_app during startup. Inputs are shell tab grids,
+% initial output folder, and callback handles. Output is a struct of UI
+% handles. This helper creates controls only and has no file side effects.
+function controls = createBatchCropControls(layFA, laySR, layLog, initialOutputFolder, callbacks)
+%CREATEBATCHCROPCONTROLS Create controls for the batch image crop app.
+
+    filePanel = labkit.ui.view.section(layFA, 'Images', 1, [5 2], ...
+        struct('rowHeight', {{'fit', 'fit', 105, 'fit', 'fit'}}, ...
+        'columnWidth', {{'1x', '1x'}}));
+    fileGrid = filePanel.grid;
+
+    controls.btnOpenFiles = uibutton(fileGrid, 'Text', 'Open image files', ...
+        'ButtonPushedFcn', callbacks.onOpenFiles);
+    controls.btnOpenFiles.Layout.Row = 1;
+    controls.btnOpenFiles.Layout.Column = 1;
+
+    controls.btnClearImages = uibutton(fileGrid, 'Text', 'Clear images', ...
+        'Enable', 'off', ...
+        'ButtonPushedFcn', callbacks.onClearImages);
+    controls.btnClearImages.Layout.Row = 1;
+    controls.btnClearImages.Layout.Column = 2;
+
+    controls.txtImageSource = labkit.ui.view.form(fileGrid, 'readonly', ...
+        'Value', 'No images loaded');
+    controls.txtImageSource.Layout.Row = 2;
+    controls.txtImageSource.Layout.Column = [1 2];
+
+    controls.lbImages = uilistbox(fileGrid, ...
+        'Items', {'No images loaded'}, ...
+        'ValueChangedFcn', callbacks.onImageSelectionChanged);
+    controls.lbImages.Layout.Row = 3;
+    controls.lbImages.Layout.Column = [1 2];
+
+    controls.btnPrevious = uibutton(fileGrid, 'Text', 'Previous image', ...
+        'Enable', 'off', ...
+        'ButtonPushedFcn', callbacks.onPreviousImage);
+    controls.btnPrevious.Layout.Row = 4;
+    controls.btnPrevious.Layout.Column = 1;
+
+    controls.btnNext = uibutton(fileGrid, 'Text', 'Next image', ...
+        'Enable', 'off', ...
+        'ButtonPushedFcn', callbacks.onNextImage);
+    controls.btnNext.Layout.Row = 4;
+    controls.btnNext.Layout.Column = 2;
+
+    controls.txtImageStatus = labkit.ui.view.form(fileGrid, 'readonly', ...
+        'Value', 'Images: 0');
+    controls.txtImageStatus.Layout.Row = 5;
+    controls.txtImageStatus.Layout.Column = [1 2];
+
+    cropRows = repmat({'fit'}, 1, 7);
+    cropPanel = labkit.ui.view.section(layFA, 'Crop Geometry', 2, [7 2], ...
+        struct('rowHeight', {cropRows}, 'columnWidth', {{145, '1x'}}));
+    cropGrid = cropPanel.grid;
+
+    [lblWidth, controls.edtCropWidth] = labkit.ui.view.form(cropGrid, 'spinner', ...
+        'Width (px):', 'Value', 1024, 'Limits', [1 Inf], 'Step', 1, ...
+        'ValueChangedFcn', callbacks.onCropGeometryChanged);
+    placeLabeled(lblWidth, controls.edtCropWidth, 1);
+
+    [lblHeight, controls.edtCropHeight] = labkit.ui.view.form(cropGrid, 'spinner', ...
+        'Height (px):', 'Value', 1024, 'Limits', [1 Inf], 'Step', 1, ...
+        'ValueChangedFcn', callbacks.onCropGeometryChanged);
+    placeLabeled(lblHeight, controls.edtCropHeight, 2);
+
+    [lblRotation, controls.edtRotation] = labkit.ui.view.form(cropGrid, 'spinner', ...
+        'Rotation (deg):', 'Value', 0, 'Limits', [-180 180], 'Step', 0.5, ...
+        'ValueChangedFcn', callbacks.onRotationChanged);
+    placeLabeled(lblRotation, controls.edtRotation, 3);
+
+    [lblFill, controls.ddFillMode] = labkit.ui.view.form(cropGrid, 'dropdown', ...
+        'Fill:', ...
+        'Items', {'Black', 'White'}, ...
+        'Value', 'Black', ...
+        'ValueChangedFcn', callbacks.onFillModeChanged);
+    placeLabeled(lblFill, controls.ddFillMode, 4);
+
+    [lblCenterX, controls.edtCenterX] = labkit.ui.view.form(cropGrid, 'spinner', ...
+        'Center X:', 'Value', 1, 'Limits', [1 Inf], 'Step', 1, ...
+        'Enable', 'off', ...
+        'ValueChangedFcn', callbacks.onCenterChanged);
+    placeLabeled(lblCenterX, controls.edtCenterX, 5);
+
+    [lblCenterY, controls.edtCenterY] = labkit.ui.view.form(cropGrid, 'spinner', ...
+        'Center Y:', 'Value', 1, 'Limits', [1 Inf], 'Step', 1, ...
+        'Enable', 'off', ...
+        'ValueChangedFcn', callbacks.onCenterChanged);
+    placeLabeled(lblCenterY, controls.edtCenterY, 6);
+
+    controls.btnUseCanvasCenter = uibutton(cropGrid, 'Text', 'Use canvas center', ...
+        'Enable', 'off', ...
+        'ButtonPushedFcn', callbacks.onUseCanvasCenter);
+    controls.btnUseCanvasCenter.Layout.Row = 7;
+    controls.btnUseCanvasCenter.Layout.Column = [1 2];
+
+    exportRows = repmat({'fit'}, 1, 4);
+    exportPanel = labkit.ui.view.section(layFA, 'Export', 3, [4 2], ...
+        struct('rowHeight', {exportRows}, 'columnWidth', {{145, '1x'}}));
+    exportGrid = exportPanel.grid;
+
+    [lblFormat, controls.ddFormat] = labkit.ui.view.form(exportGrid, 'dropdown', ...
+        'Format:', ...
+        'Items', {'PNG', 'TIFF', 'JPEG'}, ...
+        'Value', 'PNG', ...
+        'ValueChangedFcn', callbacks.onExportSettingChanged);
+    lblFormat.Layout.Row = 1;
+    lblFormat.Layout.Column = 1;
+    controls.ddFormat.Layout.Row = 1;
+    controls.ddFormat.Layout.Column = 2;
+
+    controls.txtOutputFolder = labkit.ui.view.form(exportGrid, 'readonly', ...
+        'Value', char(initialOutputFolder));
+    controls.txtOutputFolder.Layout.Row = 2;
+    controls.txtOutputFolder.Layout.Column = [1 2];
+
+    controls.btnChooseOutput = uibutton(exportGrid, 'Text', 'Choose export folder', ...
+        'ButtonPushedFcn', callbacks.onChooseOutputFolder);
+    controls.btnChooseOutput.Layout.Row = 3;
+    controls.btnChooseOutput.Layout.Column = [1 2];
+
+    controls.btnExport = uibutton(exportGrid, 'Text', 'Export cropped images', ...
+        'Enable', 'off', ...
+        'ButtonPushedFcn', callbacks.onExportCrops);
+    controls.btnExport.Layout.Row = 4;
+    controls.btnExport.Layout.Column = [1 2];
+
+    controls.resultTable = uitable(laySR, ...
+        'ColumnName', {'Metric', 'Value'}, ...
+        'Data', {'Images loaded', '0'});
+    controls.resultTable.Layout.Row = 1;
+
+    controls.txtDetails = uitextarea(laySR, 'Editable', 'off');
+    labkit.ui.view.place(controls.txtDetails, laySR, 2);
+    controls.txtDetails.Value = {'Load microscope images to begin.'};
+
+    logUi = labkit.ui.view.panel(layLog, 'log', 1, {'Ready.'});
+    controls.txtLog = logUi.textArea;
+end
+
+function placeLabeled(labelHandle, controlHandle, row)
+    labelHandle.Layout.Row = row;
+    labelHandle.Layout.Column = 1;
+    controlHandle.Layout.Row = row;
+    controlHandle.Layout.Column = 2;
+end

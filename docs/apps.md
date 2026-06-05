@@ -25,6 +25,7 @@ This adds the repository root, `apps/`, and nested app category folders to the M
 | `labkit_DICPostprocess_app` | active | Ncorr strain overlay, ROI summary, and colorbar export. | Ncorr MAT, reference image, mask | EXX/EYY overlays, summary CSV, colorbar/level table. |
 | `labkit_CurvatureMeasurement_app` | experimental | Editable image-curve circle fit, calibrated real-unit scale-bar placement, and curve length measurement. | Image | Overlay PNG and curvature/length CSV. |
 | `labkit_FocusStack_app` | experimental | Microscope focus-stack fusion into one all-in-focus image. | Focus image folder or selected image files | Fused PNG, focus map PNG, summary CSV. |
+| `labkit_BatchImageCrop_app` | experimental | Batch fixed-size microscope image crops with per-image crop center and rotation. | Microscope image files | Cropped images and crop manifest CSV. |
 | `labkit_ECGPrint_app` | experimental | ECG waveform preview, ROI filtering, peak/segment SNR, and SNR-over-time display. | MAT timetable or CSV/TSV table | Segment SNR CSV and waveform PNG. |
 
 Status labels:
@@ -132,4 +133,5 @@ Interactive file selection, drawing, visual inspection, and full workflow feel a
 | `labkit_DICPostprocess_app` | Ncorr MAT extraction, EXX/EYY overlays, ROI summary, optical enhancement controls, and strain colorbar levels. | Exports overlays, summary CSV, and colorbar/level files. |
 | `labkit_CurvatureMeasurement_app` | Curve-point workflow, circle fitting, curvature conversion, curve length measurement, dense-point display, residual annotations, result summaries, and CSV/overlay export schemas. It consumes reusable UI tools for generic anchor editing and scale-bar mechanics. | Exports overlay PNG and curvature/length CSV. |
 | `labkit_FocusStack_app` | Folder or selected-file focus sequence loading, optional registration to the middle image, preset-guided Laplacian-pyramid focus fusion, user-facing detail/blend controls, and focus-depth preview. | Exports fused PNG, colorized focus map PNG, and per-source focus coverage CSV. |
+| `labkit_BatchImageCrop_app` | Selected-file microscope image loading, fixed global crop width/height, per-image rotation, per-image crop-center confirmation on a rotated preview canvas, and exact-pixel crop generation without resizing. | Exports unique cropped image files and a crop manifest CSV with source/output paths, rotation, center, output size, canvas size, and status. |
 | `labkit_ECGPrint_app` | CSV/MAT import parsing, channel/ROI selection, padded filtering before ROI crop, ECG peak detection, segments, template, and SNR-over-time plots. | Exports per-segment SNR CSV and waveform PNG. Multi-file/class statistics belong in a separate wearable stats app. |

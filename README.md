@@ -22,7 +22,7 @@ Workflow-specific calculations, plot choices, summaries, and exports stay in the
 | --- | --- |
 | Electrochemistry | Gamry DTA review, chrono overlays, CIC, CSC, VT resistance, and EIS export workflows |
 | DIC | Image registration, paired crop preparation, ROI masks, Ncorr strain overlays, and summary export |
-| Image measurement | Interactive curve tracing, calibrated scale/length measurement, curvature/radius measurement, and microscope focus stacking |
+| Image measurement | Interactive curve tracing, calibrated scale/length measurement, curvature/radius measurement, microscope focus stacking, and fixed-size batch image cropping |
 | Wearable biosignals | ECG preview, filtering, peak detection, segments, templates, and SNR-style measurements |
 | Reusable foundation | Layered MATLAB UI foundation plus DTA and biosignal facades for app-facing workflows |
 | Validation | Focused MATLAB build tasks, architecture guardrails, synthetic fixtures, and GitHub Actions CI |
@@ -48,6 +48,7 @@ labkit_DICPostprocess_app
 % Image measurement
 labkit_CurvatureMeasurement_app
 labkit_FocusStack_app
+labkit_BatchImageCrop_app
 
 % Wearable biosignal
 labkit_ECGPrint_app
@@ -68,6 +69,7 @@ Then use the app window to load files, inspect plots or results, and export outp
 | `labkit_DICPostprocess_app` | active | Ncorr strain overlay, ROI summary, and colorbar export | Ncorr MAT, reference image, mask | EXX/EYY overlays, summary CSV, colorbar/level table |
 | `labkit_CurvatureMeasurement_app` | experimental | Editable image-curve circle fit, calibrated real-unit scale-bar placement, and curve length measurement | Image | Overlay PNG and curvature/length CSV |
 | `labkit_FocusStack_app` | experimental | Microscope focus-stack fusion into one all-in-focus image | Focus image folder or selected image files | Fused PNG, focus map PNG, summary CSV |
+| `labkit_BatchImageCrop_app` | experimental | Batch fixed-size microscope image crops with per-image crop center and rotation | Microscope image files | Cropped images and crop manifest CSV |
 | `labkit_ECGPrint_app` | experimental | ECG waveform preview, ROI filtering, peak/segment SNR, and SNR-over-time display | MAT timetable or CSV/TSV table | Segment SNR CSV and waveform PNG |
 
 Status labels:

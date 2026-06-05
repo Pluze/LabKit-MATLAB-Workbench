@@ -178,7 +178,8 @@ function assertAppFamilyBoundary(h, source, appName)
         h.assertDTAFacadeUsage(source, appName, 'chrono', true);
     elseif contains(appName, 'DIC')
         h.assertDICAppBoundary(source, appName);
-    elseif contains(appName, 'CurvatureMeasurement') || contains(appName, 'FocusStack')
+    elseif contains(appName, 'CurvatureMeasurement') || contains(appName, 'FocusStack') || ...
+            contains(appName, 'BatchImageCrop')
         h.assertImageMeasurementAppBoundary(source, appName);
     elseif contains(appName, 'ECGPrint')
         h.assertWearableAppBoundary(source, appName);
@@ -214,6 +215,9 @@ function legacy = legacyEntrypointInfo(appName)
         case 'labkit_FocusStack_app'
             legacy = struct('launchName', 'launchFocusStackApp', ...
                 'legacyCall', 'focus_stack_gui(');
+        case 'labkit_BatchImageCrop_app'
+            legacy = struct('launchName', 'launchBatchImageCropApp', ...
+                'legacyCall', 'batch_crop_gui(');
         case 'labkit_ECGPrint_app'
             legacy = struct('launchName', 'launchECGPrintApp', ...
                 'legacyCall', 'wearable_ecg_print_gui(');
