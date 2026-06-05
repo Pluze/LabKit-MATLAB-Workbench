@@ -20,7 +20,11 @@ function output = runLabKitTests(varargin)
     setupLabKitTestPath();
 
     opts = parseOptions(root, varargin{:});
-    paths = labkitArtifactPaths("Root", opts.ArtifactsRoot, "Create", true);
+    restoreRunName = setRunNameEnvironment(opts.RunName);
+    paths = labkitArtifactPaths( ...
+        "Root", opts.ArtifactsRoot, ...
+        "RunName", opts.RunName, ...
+        "Create", true);
     suite = discoverOfficialSuite(root, opts);
 
     fprintf("LabKit official test run: %s\n", opts.RunName);
@@ -66,6 +70,13 @@ function output = runLabKitTests(varargin)
         "official", officialResults, ...
         "artifacts", paths, ...
         "runName", opts.RunName);
+    clear restoreRunName
+end
+
+function cleanup = setRunNameEnvironment(runName)
+    previousRunName = getenv("LABKIT_RUN_NAME");
+    setenv("LABKIT_RUN_NAME", char(runName));
+    cleanup = onCleanup(@() setenv("LABKIT_RUN_NAME", previousRunName));
 end
 
 function opts = parseOptions(root, varargin)

@@ -43,6 +43,10 @@ buildtool packageDryRun
 - `buildtool checkStyle` runs official project/style guardrails.
 - `buildtool coverage` generates official JUnit, HTML test result, Cobertura,
   and HTML coverage artifacts. Coverage is report-only.
+- Official runner artifacts are namespaced by build task run name under
+  `artifacts/test-results/<RunName>/`, `artifacts/coverage/<RunName>/`,
+  `artifacts/gui/<RunName>/`, and `artifacts/logs/<RunName>/` so combined task
+  invocations do not overwrite each other.
 - `buildtool testGuiGesture` runs focused noninteractive gesture coverage for
   runtime, anchor editor, and scale-bar interaction lifecycle checks.
 - `buildtool checkProject` verifies `LabKit.prj` path and startup metadata.
@@ -71,6 +75,15 @@ Both wrappers accept build task names only and call `buildtool`. Selector flags
 such as `--suite`, `--test`, and `--gui` are not supported. Set `MATLAB_CMD`
 when MATLAB is not on `PATH`, set `MATLAB_FLAGS` for MATLAB startup flags, and
 set `MATLAB_TEST_LOG` to override the default `matlab_test.log` location.
+
+Advanced targeted debugging can call the internal runner directly:
+
+```matlab
+runLabKitTests("Tests", "AppHookHelpersTest", "FailIfNoTests", true)
+```
+
+Use direct `runLabKitTests(...)` calls only for local diagnosis. Build tasks
+remain the official entry points for CI, PR validation, and handoff commands.
 
 ## Validation Levels
 

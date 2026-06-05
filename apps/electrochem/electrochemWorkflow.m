@@ -2,8 +2,8 @@ function varargout = electrochemWorkflow(appKey, command, varargin)
 %ELECTROCHEMWORKFLOW Dispatch app-owned electrochem workflow helpers.
 % Expected caller: electrochem app tests and migration-time workflow checks.
 % Inputs are an app key, a workflow command, and command-specific arguments.
-% Outputs match the selected app-owned helper. File side effects are limited to
-% CSV export commands.
+% Outputs match the selected app-owned helper. Side effects are limited to CSV
+% export commands and app-owned plot drawing commands on caller axes.
 
     switch string(appKey)
         case "chronoOverlay"

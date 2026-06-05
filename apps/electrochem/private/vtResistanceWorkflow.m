@@ -1,12 +1,14 @@
 % App-owned VT resistance workflow helper dispatch. Expected caller:
 % labkit_VTResistance_app callbacks and workflow tests.
 % Inputs are a command string plus the original helper arguments; outputs match
-% the selected helper. Side effects are limited to CSV writes.
+% the selected helper. Side effects are limited to CSV export writes and drawing
+% app-owned plot annotations on caller axes.
 function varargout = vtResistanceWorkflow(command, varargin)
 %VTRESISTANCEWORKFLOW Dispatch app-owned VT resistance helpers.
 % Expected caller: labkit_VTResistance_app callbacks and temporary compatibility
 % workflow tests. Inputs are a command string plus the original helper arguments.
-% Outputs match the selected helper. Side effects are limited to CSV writes.
+% Outputs match the selected helper. Side effects are limited to CSV export
+% writes and drawing app-owned plot annotations on caller axes.
 
     switch string(command)
         case "computeResistance"
@@ -17,6 +19,16 @@ function varargout = vtResistanceWorkflow(command, varargin)
             varargout{1} = buildResultsTable(varargin{:});
         case "writeResultsCSV"
             [varargout{1:nargout}] = writeResultsCSV(varargin{:});
+        case "formatDurationUs"
+            varargout{1} = formatDurationUs(varargin{:});
+        case "interp1Safe"
+            varargout{1} = interp1Safe(varargin{:});
+        case "shadeWindow"
+            shadeWindow(varargin{:});
+        case "addResistanceVTAnnotations"
+            addResistanceVTAnnotations(varargin{:});
+        case "addResistanceITAnnotations"
+            addResistanceITAnnotations(varargin{:});
         otherwise
             error('labkit:VTResistance:UnknownWorkflowCommand', ...
                 'Unknown VT resistance workflow helper command: %s.', command);
