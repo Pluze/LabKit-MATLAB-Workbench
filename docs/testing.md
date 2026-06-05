@@ -27,8 +27,8 @@ buildtool coverage
 - `buildtool checkStyle` runs official project/style guardrails.
 - `buildtool coverage` generates official JUnit, HTML test result, Cobertura,
   and HTML coverage artifacts. Coverage is report-only.
-- `buildtool testGuiGesture` exists as the future gesture entry point and may
-  pass with no selected tests until gesture coverage is ported.
+- `buildtool testGuiGesture` runs focused noninteractive gesture coverage for
+  runtime, anchor editor, and scale-bar interaction lifecycle checks.
 
 Default non-GUI suite:
 
@@ -115,6 +115,7 @@ UI framework changes should cover the affected layer rather than only the change
 | Runtime/tools | `labkit/ui --gui` runtime, anchor-editor, and scale-bar tool tests. |
 | Diagnostics | `labkit/ui --gui` debug instrumentation tests plus `apps/smoke --gui` debug launch trace checks. |
 | App migration | Affected `apps/<family> --gui` suite plus `project` entrypoint/boundary guardrails. |
+| Gesture tools | `buildtool testGuiGesture` for runtime, anchor-editor, and scale-bar lifecycle checks. |
 
 ## Suite Layout
 

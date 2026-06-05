@@ -114,7 +114,7 @@ runtime = labkit.ui.tool.createRuntime(ax, struct( ...
     'onTrace', debug.trace));
 ```
 
-The runtime owns exclusive sessions, pointer callbacks, drag capture, scroll ownership, and restoration. Apps should not set `WindowScrollWheelFcn`, `WindowButtonMotionFcn`, `WindowButtonUpFcn`, or image-tool `ButtonDownFcn` directly.
+The runtime owns exclusive sessions, pointer callbacks, drag capture, scroll ownership, and restoration. Temporary drag callbacks are cleared on normal release and on callback errors before errors are rethrown. Apps should not set `WindowScrollWheelFcn`, `WindowButtonMotionFcn`, `WindowButtonUpFcn`, or image-tool `ButtonDownFcn` directly.
 
 Use `labkit.ui.tool.anchorEditor(runtime, imageSize, opts)` for generic anchor editing. Use `labkit.ui.tool.scaleBar(parent, row, runtime, opts)` for calibration controls, reference-pixel editing, unit normalization, final scale-bar placement, and overlay drawing. Apps still own image loading, redraw order, scientific calculations, result summaries, alerts, logs, and exports.
 

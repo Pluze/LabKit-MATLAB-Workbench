@@ -270,7 +270,7 @@ state ownership, callbacks, or tests clearer. The stable contract is:
 - [x] Phase 4: Delete app test backdoors.
 - [x] Phase 5: App entrypoint decomposition.
 - [x] Phase 6: Full test rewrite and old suite deletion.
-- [ ] Phase 7: GUI structural and gesture coverage.
+- [x] Phase 7: GUI structural and gesture coverage.
 - [ ] Phase 8: CI artifact and coverage upgrade.
 - [ ] Phase 9: MATLAB Project and packaging style.
 - [ ] Final: delete this roadmap, prepare PR, verify CI state, merge/delete branch
@@ -278,30 +278,27 @@ state ownership, callbacks, or tests clearer. The stable contract is:
 
 ## Current Phase
 
-Phase: 7
+Phase: 8
 Status: not started
 Owner notes:
 
-- Phase 6 completed on `codex/app-test-platform-rewrite`.
-- The 44 old suite files were ported into official `matlab.unittest` or
-  `matlab.uitest` class wrappers under `tests/unit`, `tests/integration`, and
-  `tests/gui/structural`.
-- `tests/suites/` and `tests/run_all_tests.m` were deleted after official-only
-  unit, integration, and GUI structural runs passed.
-- `buildtool test` is the canonical full non-GUI entry point and now runs 44
-  official non-GUI tests without the old runner.
-- `buildtool testGuiStructural` runs 13 official GUI structural tests. Gesture
-  tests remain Phase 7 work.
-- The PowerShell/Bash wrappers and current GitHub Actions command no longer
-  pass `IncludeLegacy` or call `run_all_tests`.
-- Project guardrails hard-fail if old app test backdoors, oversized public app
-  entrypoints, `tests/suites/`, `tests/run_all_tests.m`, `IncludeLegacy`, or
-  old-runner routing references are reintroduced.
-- Coverage artifacts are generated from official unit/integration tests.
+- Phase 7 completed on `codex/app-test-platform-rewrite`.
+- `buildtool testGuiStructural` now selects 13 structural GUI tests by the
+  `Structural` tag and continues to cover app launch/layout/debug smoke.
+- `buildtool testGuiGesture` now selects 3 focused `Gesture` tests for runtime
+  callback ownership, anchor editor operations, and scale-bar reference/placement
+  lifecycle.
+- Gesture tests write structured JSONL trace artifacts, readable trace text, and
+  sanitized component snapshots through the standard GUI artifact paths.
+- Existing string-based `onTrace` callbacks remain the public UI-tool contract;
+  tests adapt those lines into structured events with `createLabKitToolTraceSink`
+  so no app-facing debug callback signature changed in this phase.
+- `labkit.ui.tool.createRuntime` now clears temporary drag callbacks on callback
+  errors before rethrowing, matching the documented runtime restoration contract.
 - Current remaining expected debt is 73 private-helper files missing
   top-of-file implementation contracts.
-- Phase 7 starts from the official GUI structural suite and adds richer
-  structural checks plus non-blocking gesture coverage and trace assertions.
+- Phase 8 upgrades CI jobs/artifact upload around the official build tasks and
+  generated JUnit, HTML, Cobertura, MATLAB log, and GUI trace artifacts.
 
 ## Phase 0 Baseline
 
@@ -673,6 +670,13 @@ Acceptance:
 | 2026-06-05 | `matlab -batch "... buildtool testGuiStructural"` | pass | Official GUI structural task matched 13 `matlab.uitest` structural tests. |
 | 2026-06-05 | `matlab -batch "... buildtool coverage"` | pass | Official coverage run matched 44 unit/integration tests and generated Cobertura plus HTML coverage artifacts. |
 | 2026-06-05 | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 --test test_gui_layout_ui_scale_bar_tool` | pass | PowerShell `--test` filter auto-selected GUI mode and matched one official GUI structural test. |
+| 2026-06-05 | `matlab -batch "... buildtool testGuiGesture"` | fail | Initial gesture run exposed snapshot helper assumptions for axes title objects and leaf controls; helper was fixed before acceptance. |
+| 2026-06-05 | `matlab -batch "... buildtool testGuiGesture"` | pass | Gesture task matched 3 runtime, anchor-editor, and scale-bar lifecycle tests with structured trace/snapshot artifacts. |
+| 2026-06-05 | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 --suite labkit/ui --gui` | pass | Focused UI GUI suite matched 14 tests including unit helpers, structural UI tests, and gesture tests. |
+| 2026-06-05 | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 --suite project` | pass | Project guardrails passed after runtime restoration and test-support changes. |
+| 2026-06-05 | `matlab -batch "... buildtool test"` | pass | Broad non-GUI suite still matched and passed 44 official tests after Phase 7 changes. |
+| 2026-06-05 | `matlab -batch "... buildtool checkStyle"` | pass | Official project/style guardrails passed after UI docs and gesture support updates. |
+| 2026-06-05 | `matlab -batch "... buildtool testGuiStructural"` | pass | Structural task matched 13 structural-tagged GUI tests after separating gesture tests by tag. |
 
 ## Deviation Log
 
@@ -684,6 +688,7 @@ Acceptance:
 | 2026-06-05 | 5 | Used an app-owned private runner for DICPreprocess instead of splitting every callback into separate public-launcher helpers. | The app is callback-heavy and GUI-stateful; moving the app body into a private runner preserves behavior and launch/debug contracts while keeping the public entrypoint below the hard-fail size target. | Codex |
 | 2026-06-05 | 5 | Extended the app-owned private-runner pattern to electrochem and ECGPrint callback-heavy entrypoints. | This completed the entrypoint hard-fail target without moving app-specific calculations, export schemas, labels, plot behavior, or log wording into `+labkit` or adding unproven public facades. | Codex |
 | 2026-06-05 | 6 | Ported old function-style tests into class-based official wrappers, including pure logic tests. | Class wrappers preserve test tags, suite filtering, and original assertion bodies during migration; this avoided a second custom tag layer for function-based tests. | Codex |
+| 2026-06-05 | 7 | Kept the public UI-tool `onTrace(message)` callback and added a test-support trace sink for structured gesture assertions. | This delivered structured JSONL/text gesture artifacts and event assertions without changing app-facing debug callback signatures during the test-platform phase. | Codex |
 
 ## Coverage Migration Map
 

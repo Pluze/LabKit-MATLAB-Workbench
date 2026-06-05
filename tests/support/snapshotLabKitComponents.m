@@ -21,7 +21,15 @@ function snapshot = snapshotLabKitComponents(rootHandle)
             "title", sanitizeText(readProp(h, "Title")), ...
             "visible", string(readProp(h, "Visible")), ...
             "enable", string(readProp(h, "Enable")), ...
-            "childCount", numel(allchild(h)));
+            "childCount", childCount(h));
+    end
+end
+
+function n = childCount(h)
+    try
+        n = numel(allchild(h));
+    catch
+        n = 0;
     end
 end
 
@@ -34,6 +42,13 @@ function value = readProp(h, propName)
 end
 
 function value = sanitizeText(value)
+    if isobject(value)
+        if isprop(value, "String")
+            value = value.String;
+        else
+            value = class(value);
+        end
+    end
     value = string(value);
     values = cellstr(value);
     driveRootPattern = "[A-Za-z]:[\\/]";

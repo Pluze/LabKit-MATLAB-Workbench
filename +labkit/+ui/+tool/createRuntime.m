@@ -277,14 +277,28 @@ function runtime = createRuntime(ax, opts)
             state.fig.WindowButtonUpFcn = @onDragRelease;
 
             function onDragMotion(src, evt)
-                if ~isempty(motionFcn)
-                    motionFcn(src, evt);
+                try
+                    if ~isempty(motionFcn)
+                        motionFcn(src, evt);
+                    end
+                catch ME
+                    trace(sprintf('drag motion error for session %s: %s', ...
+                        char(sessionState.name), ME.identifier));
+                    releaseDrag();
+                    rethrow(ME);
                 end
             end
 
             function onDragRelease(src, evt)
-                if ~isempty(releaseFcn)
-                    releaseFcn(src, evt);
+                try
+                    if ~isempty(releaseFcn)
+                        releaseFcn(src, evt);
+                    end
+                catch ME
+                    trace(sprintf('drag release error for session %s: %s', ...
+                        char(sessionState.name), ME.identifier));
+                    releaseDrag();
+                    rethrow(ME);
                 end
                 releaseDrag();
             end
