@@ -50,7 +50,11 @@ Final state:
 - App user-facing behavior, calculation outputs, export schemas, and log wording
   stay unchanged unless a later user request explicitly approves a behavior
   change.
-- Debug launch and trace are formal diagnostic surface and remain.
+- Debug launch and trace are formal diagnostic surface and remain. They should
+  be tightened, not removed.
+- Parameterized debug launch may stay, but only for launch diagnostics options;
+  it must not carry hidden file-load diagnostics, synthetic workflow commands,
+  or test-only app behavior.
 - `__labkit_test__` and app test handlers are legacy test compatibility surface
   and must be removed.
 - Coverage initially reports only; do not introduce hard coverage thresholds
@@ -108,9 +112,65 @@ artifacts/test-results/html/
 artifacts/coverage/cobertura.xml
 artifacts/coverage/html/
 artifacts/logs/matlab.log
-artifacts/gui/trace/
+artifacts/gui/trace/*.jsonl
+artifacts/gui/trace/*.txt
 artifacts/gui/snapshots/
 ```
+
+## Diagnostic Launch And Trace Direction
+
+Debug launch remains a supported app-facing diagnostic path:
+
+```matlab
+[fig, debug] = appName("debug", opts);
+[fig, debug] = appName("--debug", opts);
+[fig, debug] = appName("__labkit_debug__", opts);
+```
+
+The long-term launch contract is normal launch plus debug launch. Debug `opts`
+may configure diagnostic concerns such as `enabled`, `traceEnabled`,
+`logFile`, trace artifact path, visible trace mirroring, or instrumentation
+level. Debug launch must not expose app-private test commands, file-load
+diagnostics commands, or alternate scientific workflow paths. If the request
+API is renamed during Phase 4, keep this behavior and document the replacement
+as a launch/diagnostics dispatcher rather than a test-command dispatcher.
+
+Trace should evolve from string logging into a structured diagnostic event
+stream with human-readable rendering:
+
+```text
+timestamp, elapsedMs, seq, appName, component, event, reason, level,
+sessionId, details
+```
+
+Trace files should prefer JSONL for machine-readable CI and test artifacts,
+with a companion text rendering for quick human inspection. The visible Log tab
+may mirror trace lines only in debug mode. App user logs and diagnostic trace
+events should remain linked but separable: app logs are user/workflow messages;
+trace events are audit/debug records.
+
+Allowed `reason` values:
+
+```text
+user
+internal
+programmatic
+test
+```
+
+Reusable runtime and tool events should stop embedding component names inside
+free-form strings. Prefer structured calls such as:
+
+```matlab
+trace("scaleBar", "referenceEdit.start", "user", details)
+trace("runtime", "session.acquire", "internal", details)
+trace("anchorEditor", "drag.commit", "user", details)
+```
+
+High-volume pointer, drag, and scroll behavior should be traced through
+runtime/tool lifecycle events such as start, update, commit, cancel, restore,
+and error. Default figure instrumentation should continue to skip raw
+pointer/drag/scroll callbacks so debug mode remains usable.
 
 ## Phase Checklist
 
@@ -171,7 +231,11 @@ Tasks:
 - Add `tests/runLabKitTests.m` using MATLAB official discovery, tag filtering,
   and plugins rather than a custom pass/fail loop.
 - Add `tests/support/` helpers for repo root setup, fixture paths, GUI
-  setup/teardown, artifact writing, trace capture, and component snapshots.
+  setup/teardown, artifact writing, structured trace capture, text trace
+  rendering, and component snapshots.
+- Add a structured diagnostic trace helper that records event structs with
+  monotonic `seq`, elapsed time, reason validation, optional `sessionId`, and
+  machine-readable JSONL artifact output.
 - Update PowerShell and Bash wrappers to call the new entrypoint while preserving
   common CLI options.
 
@@ -179,6 +243,8 @@ Acceptance:
 
 - New runner discovers at least a seed test.
 - JUnit, HTML result, coverage, and MATLAB log output paths can be generated.
+- Trace JSONL and text artifact paths can be generated without sensitive sample
+  metadata.
 - Existing runner is still available until Phase 6.
 
 ### Phase 2: Project And Style Guardrails Rewrite
@@ -235,13 +301,18 @@ Tasks:
   `__labkit_test__`, `loadFileDiagnostics`, `parse*LoadDiagnosticsRequest`, and
   `collectLoadDiagnostics`.
 - Remove test-command dispatch from `labkit.ui.app.dispatchRequest`.
-- Keep or rename the launch request API so it only handles normal/debug launch.
+- Keep or rename the launch request API so it only handles normal/debug launch
+  and diagnostic options.
 - Keep debug launch returning figure plus debug context.
+- Keep parameterized debug launch for diagnostics, but reject or ignore
+  app-private test command shapes after the replacement API is introduced.
 
 Acceptance:
 
 - Guardrails find no legacy app test command surface.
 - All app entrypoints still support normal and debug launch.
+- Debug launch supports diagnostic options without exposing hidden workflow or
+  file-load test behavior.
 
 ### Phase 5: App Entrypoint Decomposition
 
@@ -298,13 +369,19 @@ Tasks:
   - anchor editor add/drag/delete/undo
   - runtime exclusive session behavior
   - pointer/drag/scroll callback restore after normal close and error
-- Failure artifacts include trace logs, component snapshots, and callback
-  ownership snapshots without sensitive sample metadata.
+- Gesture tests assert structured trace events for scale bar, anchor editor, and
+  runtime ownership transitions instead of parsing only visible text.
+- Failure artifacts include structured trace JSONL, readable trace logs,
+  component snapshots, and callback ownership snapshots without sensitive sample
+  metadata.
 
 Acceptance:
 
 - `buildtool testGuiStructural` is stable.
 - `buildtool testGuiGesture` runs as manual/scheduled non-blocking coverage.
+- Trace event assertions can identify repeated callback loops, same-value
+  no-op suppression, runtime session acquisition/release, and callback restore
+  failures.
 
 ### Phase 8: CI Artifact And Coverage Upgrade
 
@@ -320,12 +397,13 @@ Tasks:
   - `gui-structural`
   - `gui-gesture`
 - Upload JUnit, HTML test results, Cobertura coverage, HTML coverage, MATLAB log,
-  and GUI artifacts.
+  readable trace text, structured trace JSONL, and GUI artifacts.
 
 Acceptance:
 
 - CI failure can be diagnosed from uploaded artifacts without reading only the
   raw MATLAB console log.
+- GUI failures expose structured trace and readable trace artifacts.
 - GUI gesture remains non-blocking initially.
 
 ### Phase 9: MATLAB Project And Packaging Style
@@ -346,7 +424,7 @@ Acceptance:
 
 | Date | Command | Result | Notes |
 | --- | --- | --- | --- |
-| 2026-06-05 | Not run | n/a | Roadmap-only change. |
+| 2026-06-05 | Not run | n/a | Roadmap-only change; added debug launch and trace modernization direction. |
 
 ## Deviation Log
 
