@@ -268,7 +268,7 @@ state ownership, callbacks, or tests clearer. The stable contract is:
 - [x] Phase 2: Project and style guardrails rewrite.
 - [x] Phase 3: App helper extraction before test hook removal.
 - [x] Phase 4: Delete app test backdoors.
-- [ ] Phase 5: App entrypoint decomposition.
+- [x] Phase 5: App entrypoint decomposition.
 - [ ] Phase 6: Full test rewrite and old suite deletion.
 - [ ] Phase 7: GUI structural and gesture coverage.
 - [ ] Phase 8: CI artifact and coverage upgrade.
@@ -278,36 +278,34 @@ state ownership, callbacks, or tests clearer. The stable contract is:
 
 ## Current Phase
 
-Phase: 5
-Status: in progress
+Phase: 6
+Status: not started
 Owner notes:
 
-- Phase 4 completed on `codex/app-test-platform-rewrite`.
-- `labkit.ui.app.dispatchRequest` now handles debug launch requests only.
-  Non-debug string inputs are rejected by public app entrypoints.
-- Electrochem, Curvature, and FocusStack legacy bridge tests now call
-  app-owned workflow helpers directly instead of sending commands through app
-  entrypoints.
-- App-local test handler blocks and the CSC hidden file-load diagnostics path
-  were removed. DIC and ECGPrint already had no app test handler surface.
-- Guardrails are promoted to hard-fail for legacy app test command references,
-  app test handler functions, and hidden load diagnostics; the current
-  inventory is 0/0/0.
-- Current remaining expected-debt inventories are 10 app entrypoints over 500
-  MATLAB-counted lines and 73 private-helper files missing top-of-file
-  implementation contracts.
-- Next phase decomposes app entrypoints while preserving calculation results,
-  export schemas, plot/log wording, debug launch behavior, and app ownership
-  boundaries.
+- Phase 5 completed on `codex/app-test-platform-rewrite`.
+- All public app entrypoints are below the 500-line hard-fail target; the
+  project guardrail reports `0` oversized entrypoint files.
+- Final public launcher sizes after Phase 5 are Curvature `442`, FocusStack
+  `397`, DICPostprocess `317`, CIC `47`, CSC `45`, VTResistance `33`,
+  DICPreprocess `25`, ECGPrint `25`, EIS `25`, and ChronoOverlay `25`
+  PowerShell-counted lines. The enforcing MATLAB guardrail also reports zero
+  files over 500 lines.
 - Phase 5 image-measurement checkpoint: Curvature and FocusStack public
   entrypoints now contain only one public function each and are below the
-  500-line hard-fail target (`499` and `450` MATLAB-counted lines). Extracted
-  helpers stay app-owned under the existing image-measurement app trees.
+  hard-fail target. Extracted helpers stay app-owned under the existing
+  image-measurement app trees.
 - Phase 5 DIC checkpoint: DICPreprocess delegates its callback-heavy app body
-  to an app-owned private runner and DICPostprocess now uses app-owned private
-  helpers. Public entrypoints are `28` and `356` MATLAB-counted lines.
-- Current oversized app entrypoint inventory is 6 files; DIC and
-  image-measurement entrypoints are below the Phase 5 hard-fail target.
+  to an app-owned private runner and DICPostprocess uses app-owned private
+  helpers. DIC public entrypoints are below the hard-fail target.
+- Phase 5 electrochem/wearable checkpoint: CIC, VTResistance, CSC, EIS,
+  ChronoOverlay, and ECGPrint public entrypoints delegate their callback-heavy
+  GUI bodies to app-owned private runners. App-specific calculations, export
+  schemas, labels, plot behavior, and log wording remain in owning app code.
+- Legacy app backdoor inventory remains 0/0/0. Current remaining expected debt
+  is 73 private-helper files missing top-of-file implementation contracts.
+- Phase 6 starts from the coverage migration map, ports old suites to official
+  MATLAB test locations, then removes the old runner only after replacement
+  coverage is mapped and passing.
 
 ## Phase 0 Baseline
 
@@ -662,6 +660,13 @@ Acceptance:
 | 2026-06-05 | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 --suite apps/image_measurement --gui` | pass | Curvature and FocusStack GUI/layout/debug checks passed with entrypoints at 499 and 450 MATLAB-counted lines. |
 | 2026-06-05 | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 --suite apps/dic --gui` | pass | DIC GUI/layout suite passed after DICPreprocess private-runner extraction and DICPostprocess helper extraction. |
 | 2026-06-05 | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 --suite project` | pass | Project guardrails passed after private-runner boundary update; oversized entrypoint inventory is 6 files. |
+| 2026-06-05 | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 --suite apps/electrochem` | fail | Initial electrochem run caught a stale EIS preservation assertion that only inspected the public launcher after labels/export strings moved to app-owned private code. |
+| 2026-06-05 | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 --suite apps/electrochem` | pass | Electrochem helper/export tests passed after updating the EIS preservation assertion to inspect app-owned source. |
+| 2026-06-05 | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 --suite apps/electrochem --gui` | pass | Electrochem GUI/layout suite passed after CIC, VTResistance, CSC, EIS, and ChronoOverlay private-runner extraction. |
+| 2026-06-05 | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 --suite apps/wearable --gui` | pass | ECGPrint GUI/layout suite passed after private-runner extraction. |
+| 2026-06-05 | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 --suite project` | pass | Project guardrails passed; oversized entrypoint inventory is 0 files. |
+| 2026-06-05 | `matlab -batch "... buildtool checkStyle"` | pass | Official style/project guardrails passed with 0 legacy backdoor files and 0 oversized app entrypoints; private-helper contract debt remains expected at 73 files. |
+| 2026-06-05 | `matlab -batch "... buildtool test"` | pass | Broad non-GUI suite passed after Phase 5 app entrypoint decomposition. |
 
 ## Deviation Log
 
@@ -671,6 +676,7 @@ Acceptance:
 | 2026-06-05 | 3 | Used app-private `*Workflow.m` dispatch helpers for electrochem command groups instead of adding public helper packages or many one-off public facades. | MATLAB private visibility prevents external tests from directly calling app-private helpers, and grouped app-owned private helpers keep science/export logic out of `+labkit`. | Codex |
 | 2026-06-05 | 4 | Added app-owned workflow wrapper functions for tests to reach GUI-free app helpers after app-entrypoint backdoors were removed. | MATLAB private helpers are not directly callable from the test tree, and wrapper functions preserve coverage without exposing hidden commands through public app launchers or moving app-specific logic into `+labkit`. | Codex |
 | 2026-06-05 | 5 | Used an app-owned private runner for DICPreprocess instead of splitting every callback into separate public-launcher helpers. | The app is callback-heavy and GUI-stateful; moving the app body into a private runner preserves behavior and launch/debug contracts while keeping the public entrypoint below the hard-fail size target. | Codex |
+| 2026-06-05 | 5 | Extended the app-owned private-runner pattern to electrochem and ECGPrint callback-heavy entrypoints. | This completed the entrypoint hard-fail target without moving app-specific calculations, export schemas, labels, plot behavior, or log wording into `+labkit` or adding unproven public facades. | Codex |
 
 ## Coverage Migration Map
 

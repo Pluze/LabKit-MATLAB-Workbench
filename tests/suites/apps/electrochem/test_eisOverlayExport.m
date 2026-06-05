@@ -29,7 +29,7 @@ function test_eisOverlayExport()
     assertClose(item.Vdc_V, item.Vdc, 'EIS normalized Vdc alias');
 
     appFile = appEntryFile(root, 'labkit_EIS_app');
-    source = fileread(appFile);
+    source = readAppOwnedSource(appFile);
     assert(contains(source, '''Freq (Hz)''') && contains(source, '''Zreal (ohm)''') && ...
         contains(source, '''-Zimag (ohm)'''), ...
         'EIS app should preserve legacy axis labels.');
@@ -44,4 +44,18 @@ function test_eisOverlayExport()
         'Zreal (ohm)', '-Zimag (ohm)', false, false);
     assert(isequal(T.Properties.VariableNames(1), {'RowIndex'}), ...
         'EIS export table hook should preserve RowIndex as the first column.');
+end
+
+function source = readAppOwnedSource(appFile)
+    appDir = fileparts(appFile);
+    sourceParts = {fileread(appFile)};
+    privateDir = fullfile(appDir, 'private');
+    if exist(privateDir, 'dir') == 7
+        fileEntries = dir(fullfile(privateDir, '*.m'));
+        fileNames = sort({fileEntries.name});
+        for iFile = 1:numel(fileNames)
+            sourceParts{end+1} = fileread(fullfile(privateDir, fileNames{iFile})); %#ok<AGROW>
+        end
+    end
+    source = strjoin(sourceParts, newline);
 end
