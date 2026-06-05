@@ -119,6 +119,8 @@ Do not add new string-dispatch workflow adapters such as `*Workflow.m` for
 tests. Tests should call the app-owned package function that owns the behavior.
 Use `apps/<family>/private/` only for helpers that are genuinely shared by
 multiple apps in that family and are not ready for a reusable `+labkit` facade.
+Existing DIC and wearable `private/` runners are migration debt, not the
+preferred app structure.
 
 ## New App Checklist
 

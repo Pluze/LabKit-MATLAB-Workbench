@@ -68,17 +68,17 @@ function deleteIfExists(filepath)
 end
 
 function A = computeVTResistance(item, opts)
-    A = electrochemWorkflow("vtResistance", "computeResistance", item, opts);
+    A = vt_resistance.ops.computeResistance(item, opts);
 end
 
 function T = buildVTResultsTable(items)
-    T = electrochemWorkflow("vtResistance", "buildResultsTable", items);
+    T = vt_resistance.export.buildResultsTable(items);
 end
 
 function C = buildVTBatchTableData(items)
-    C = electrochemWorkflow("vtResistance", "buildBatchTableData", items);
+    C = vt_resistance.view.buildBatchTableData(items);
 end
 
 function writeVTResultsCSV(items, filepath)
-    electrochemWorkflow("vtResistance", "writeResultsCSV", items, filepath);
+    vt_resistance.export.writeResultsCSV(items, filepath);
 end

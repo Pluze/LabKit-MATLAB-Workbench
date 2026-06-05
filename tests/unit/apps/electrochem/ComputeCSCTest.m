@@ -91,5 +91,5 @@ function verify_computeCSC()
 end
 
 function A = computeCSC(curve, opts)
-    A = electrochemWorkflow("csc", "computeCSC", curve, opts);
+    A = csc.ops.computeCSC(curve, opts);
 end

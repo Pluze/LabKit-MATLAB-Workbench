@@ -28,7 +28,7 @@ function checkGapCenterAlignment()
         'gap_end', 0.5, ...
         'method', 'synthetic');
 
-    [aligned, msg] = electrochemWorkflow("chronoOverlay", "alignByPulseGap", item);
+    [aligned, msg] = chrono_overlay.ops.alignByPulseGap(item);
 
     assertClose(aligned.alignTime, 0.4, 1e-12, ...
         'Chrono overlay gap-center align time');
@@ -48,7 +48,7 @@ function checkFallbackAlignment()
     item.Im = zeros(size(item.t));
     item.pulse = struct('ok', false, 'message', 'synthetic pulse not found');
 
-    [aligned, msg] = electrochemWorkflow("chronoOverlay", "alignByPulseGap", item);
+    [aligned, msg] = chrono_overlay.ops.alignByPulseGap(item);
 
     assertClose(aligned.alignTime, 2, 1e-12, ...
         'Chrono overlay fallback align time');
@@ -65,7 +65,7 @@ function checkMergedExportInterpolation()
         [100; 200], [10; 20]);
     itemC = makeOverlayItem('single sample.DTA', 0, 42, 5);
 
-    T = electrochemWorkflow("chronoOverlay", "buildOverlayExportTable", ...
+    T = chrono_overlay.export.buildOverlayExportTable(...
         [itemA, itemB, itemC]);
 
     assertClose(T.TimeGapCenterAligned_s, [-1; -0.5; 0; 0.5; 1], 1e-12, ...
