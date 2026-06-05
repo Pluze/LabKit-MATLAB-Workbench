@@ -94,6 +94,37 @@ app-owned package shape. Older DIC and wearable apps may still contain
 `private/` runners while they are being migrated; do not copy that shape into
 new app work.
 
+## Current Temporary Debt Inventory
+
+This inventory is a narrow exception list, not a preferred design. It may
+shrink during future migrations, but it should not grow.
+
+Allowed app `private/` debt:
+
+```text
+apps/dic/private/
+apps/wearable/private/
+```
+
+Exit condition: migrate the remaining DIC and wearable app bodies/helpers into
+app-owned packages under their owning app folders, with public entry points
+owning GUI state, callbacks, debug launch routing, and user-facing log wording.
+
+Allowed electrochemistry string-dispatch debt:
+
+```text
+apps/electrochem/chrono_overlay/+chrono_overlay/+core/dispatch.m
+apps/electrochem/cic/+cic/+core/dispatch.m
+apps/electrochem/csc/+csc/+core/dispatch.m
+apps/electrochem/eis/+eis/+core/dispatch.m
+apps/electrochem/vt_resistance/+vt_resistance/+core/dispatch.m
+```
+
+Exit condition: replace these app-owned `+core/dispatch.m` string routers with
+direct package functions or component-local implementation helpers. New apps
+and new migrations should not add `private` runners, `*Workflow.m` adapters, or
+additional `+core/dispatch.m` routing layers.
+
 ## Library Extraction Rule
 
 A helper may move into `+labkit` only when it satisfies all of these:
@@ -123,7 +154,7 @@ Private helpers may keep shorter comments, but should still identify expected ca
 
 The default automated validation boundary is the non-GUI MATLAB build task: project architecture checks, `labkit` facade/parser checks, and pure app analysis/export checks. GitHub Actions runs that task on pushes and pull requests to `main`.
 
-GUI launch/layout checks live in source-aligned build tasks such as `testLabkitUiGui` and `testAppsGui`. Interactive GUI workflows are validated manually in MATLAB app windows.
+GUI launch/layout checks live in source-aligned build tasks such as `testLabkitUiGui` and `testAppsGui`. Interactive GUI workflows are validated manually in MATLAB app windows. See `docs/testing.md` for the canonical validation matrix.
 
 ## Current Package Surface
 

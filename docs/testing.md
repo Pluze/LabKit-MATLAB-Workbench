@@ -93,7 +93,8 @@ runLabKitTests("Suites", "labkit/dta", "ListOnly", true)
 ```
 
 Use direct `runLabKitTests(...)` calls only for local diagnosis. Build tasks
-remain the official entry points for CI, PR validation, and handoff commands.
+remain the official entry points for CI, PR validation, and local validation
+commands.
 
 ## Validation Levels
 

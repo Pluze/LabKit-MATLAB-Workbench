@@ -94,23 +94,8 @@ The local scripts are optional wrappers around build tasks:
 .\scripts\run_matlab_tests.ps1 test
 ```
 
-Focused checks are available during development:
-
-```bash
-buildtool checkStyle
-buildtool checkProject
-buildtool packageDryRun
-buildtool testLabkitDta
-buildtool testLabkitBiosignal
-buildtool testAppsWearableGui
-buildtool testLabkitUiGui testAppsGui
-```
-
-Script arguments are build task names; selector flags such as `--suite`,
-`--test`, and `--gui` are not supported. GitHub Actions runs shell-wrapper,
-quality, unit, and integration jobs on pushes and pull requests to `main`;
-manual and scheduled runs add coverage, GUI structural, and non-blocking
-gesture jobs.
+See `docs/testing.md` for the focused build-task matrix, wrapper details, CI
+scope, and GUI validation limits.
 
 ## Repository Layout
 

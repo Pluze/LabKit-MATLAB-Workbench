@@ -14,6 +14,8 @@ The target shape is:
 - one launchable app entry point under `apps/<category>/`
 - reusable UI/data boilerplate behind `labkit.ui`, `labkit.dta`, or `labkit.biosignal`
 - domain formulas, plot choices, result fields, export schemas, and workflow wording owned by the app
+- app-owned helper packages under `apps/<family>/<app_slug>/+<app_slug>/...`
+  when the app needs extracted production helpers
 - synthetic tests for core calculations and export contracts
 
 ## Required Read Order
@@ -109,24 +111,19 @@ Build the app in this order:
 3. Store state in one app struct; avoid globals, base workspace state, and hidden local paths.
 4. Rebuild the user workflow around stable controls, previews, summaries, and exports; do not reproduce command-line debug staging.
 5. Move GUI-free calculations below the app `end` as app-local functions.
-6. Add narrow internal test handlers only for app-owned GUI-free helpers or explicit structural diagnostics.
-7. Render prepared data through `labkit.ui` helpers; keep analysis out of UI helpers.
-8. Add export builders before CSV/PNG writing so output contracts can be tested.
-9. Add focused tests with synthetic fixtures or minimal generated data.
-10. Update human docs for user-facing behavior and scoped `AGENTS.md` only when rules change.
+6. Extract production helpers into an app-owned package when the app is too
+   large for a readable single entry point.
+7. Do not add new `private/` runners, `*Workflow.m` string-dispatch adapters,
+   fixed `+app` package names, or app-local public helper packages.
+8. Render prepared data through `labkit.ui` helpers; keep analysis out of UI helpers.
+9. Add export builders before CSV/PNG writing so output contracts can be tested.
+10. Add focused tests with synthetic fixtures or minimal generated data.
+11. Update human docs for user-facing behavior and scoped `AGENTS.md` only when rules change.
 
 ## Validation
 
-Use `labkit-test-planner` to choose build tasks. Common checks:
-
-```bash
-buildtool testProject
-buildtool testAppsElectrochem
-buildtool testAppsDicGui
-buildtool testAppsImageMeasurementGui
-buildtool testAppsWearableGui
-buildtool testLabkitUiGui testAppsGui
-```
+Use `labkit-test-planner` to choose source-aligned validation. It should route
+to `docs/testing.md` for exact build-task names and GUI/non-GUI pairings.
 
 For reusable facade changes, also use `labkit-boundary-guard`.
 

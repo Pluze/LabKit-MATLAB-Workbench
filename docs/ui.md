@@ -163,11 +163,7 @@ All `setX(value)` style APIs should no-op when the requested value is already cu
 
 ## Validation
 
-Reusable UI contracts are covered by:
-
-```bash
-buildtool testLabkitUi testLabkitUiGui
-buildtool testProject
-```
+Reusable UI contracts are covered by the source-aligned UI and project build
+tasks listed in `docs/testing.md`.
 
 Automated GUI tests validate launch, layout, callback wiring, and trace plumbing. Full interactive drawing, file selection, visual inspection, and workflow feel still require manual MATLAB GUI validation.

@@ -65,7 +65,7 @@ The app owns:
 
 Every public app entry point should preserve its launch name, route debug launch requests through `labkit.ui.app.dispatchRequest`, build the GUI with `labkit.ui.app.createShell`, and keep visible debug trace wired into the Log tab during debug launches. Image apps with drawing, scale bars, ROI, or preview scroll should pass a `labkit.ui.tool.createRuntime` result into reusable tools instead of owning figure pointer callbacks directly.
 
-Move code into `+labkit` only when it is reusable without app vocabulary, testable independently, and useful beyond one workflow. When a documented UI tool owns app-neutral interaction mechanics, the app should consume that tool and keep workflow meaning, summaries, and exports app-local.
+When a documented UI tool owns app-neutral interaction mechanics, the app should consume that tool and keep workflow meaning, summaries, and exports app-local. `docs/architecture.md` owns the reusable-library extraction rule and temporary debt inventory.
 
 ## App File Shape
 
@@ -120,7 +120,8 @@ tests. Tests should call the app-owned package function that owns the behavior.
 Use `apps/<family>/private/` only for helpers that are genuinely shared by
 multiple apps in that family and are not ready for a reusable `+labkit` facade.
 Existing DIC and wearable `private/` runners are migration debt, not the
-preferred app structure.
+preferred app structure. Electrochemistry `+core/dispatch.m` routers are also
+temporary migration debt; do not add that routing layer to new app work.
 
 ## New App Checklist
 
@@ -144,15 +145,8 @@ Start from the closest existing app, reduce it to the needed workflow, and prese
 ## Validation
 
 Pure app calculations, export table construction, and plotting helpers belong
-in app-family build tasks. Use the GUI tasks for noninteractive launch/layout
-checks:
-
-```bash
-buildtool testAppsElectrochem testAppsElectrochemGui
-buildtool testAppsDicGui
-buildtool testAppsImageMeasurement testAppsImageMeasurementGui
-buildtool testAppsWearableGui
-```
+in app-family build tasks. Use GUI tasks for noninteractive launch/layout
+checks. See `docs/testing.md` for the canonical task names and pairings.
 
 Interactive file selection, drawing, visual inspection, and full workflow feel are validated manually in MATLAB app windows.
 

@@ -39,20 +39,10 @@ For UI boundary work, prefer `labkit.ui.app.createShell`, `labkit.ui.app.dispatc
 
 ## Validation
 
-Always run or recommend:
-
-```bash
-buildtool testProject
-```
-
-Add focused tasks by touched boundary:
-
-```bash
-buildtool testLabkitDta testAppsElectrochem
-buildtool testLabkitBiosignal testAppsWearableGui
-buildtool testLabkitUiGui testAppsGui
-buildtool testAppsElectrochem
-```
+Run or recommend project guardrails for package-boundary and public-surface
+changes. Add focused DTA, biosignal, UI, or app-family validation when that
+boundary is touched, and use `docs/testing.md` for exact task names and
+pairings.
 
 If MATLAB is unavailable, report that clearly and do not claim tests passed.
 

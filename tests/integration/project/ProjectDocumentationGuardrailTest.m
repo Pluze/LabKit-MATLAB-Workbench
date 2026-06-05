@@ -1,7 +1,60 @@
 classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
-    %PROJECTDOCUMENTATIONGUARDRAILTEST Public/private helper comment checks.
+    %PROJECTDOCUMENTATIONGUARDRAILTEST Documentation ownership and contract checks.
 
     methods (Test, TestTags = {'Integration', 'Style'})
+        function humanDocsDoNotContainAgentOnlyWorkflowMandates(testCase)
+            root = setupLabKitTestPath();
+            files = collectHumanDocFiles(root);
+            forbidden = [ ...
+                "Codex", ...
+                "agent-only", ...
+                "git handoff", ...
+                "dedicated development branch", ...
+                "force-push", ...
+                "Conventional Commits", ...
+                "commit hash", ...
+                "branch deletion", ...
+                "current turn", ...
+                "final response"];
+
+            leaks = strings(1, 0);
+            for k = 1:numel(files)
+                content = lower(string(fileread(files(k))));
+                for iWord = 1:numel(forbidden)
+                    if contains(content, lower(forbidden(iWord)))
+                        leaks(end+1) = relativePath(root, files(k)) + ...
+                            " -> " + forbidden(iWord); %#ok<AGROW>
+                    end
+                end
+            end
+
+            testCase.verifyTrue(isempty(leaks), ...
+                ['Human docs should not contain agent-only workflow mandates: ' ...
+                strjoin(cellstr(leaks), ', ')]);
+        end
+
+        function testingDocOwnsBuildTaskCommandMatrix(testCase)
+            root = setupLabKitTestPath();
+            canonical = fullfile(root, "docs", "testing.md");
+            canonicalTasks = extractBuildtoolTaskNames(fileread(canonical));
+            testCase.verifyGreaterThan(numel(canonicalTasks), 5, ...
+                'docs/testing.md should remain the canonical build-task matrix.');
+
+            files = collectGuidanceFilesExceptTesting(root);
+            duplicates = strings(1, 0);
+            for k = 1:numel(files)
+                tasks = extractBuildtoolTaskNames(fileread(files(k)));
+                if numel(tasks) > 1
+                    duplicates(end+1) = relativePath(root, files(k)) + ...
+                        " -> " + strjoin(tasks, " "); %#ok<AGROW>
+                end
+            end
+
+            testCase.verifyTrue(isempty(duplicates), ...
+                ['Only docs/testing.md should maintain a build-task command matrix: ' ...
+                strjoin(cellstr(duplicates), ', ')]);
+        end
+
         function publicLibraryFunctionsDocumentAppFacingContracts(testCase)
             root = setupLabKitTestPath();
             publicFiles = collectPublicLibraryFiles(root);
@@ -71,6 +124,48 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
                 strjoin(cellstr(missing), ', ')]);
         end
     end
+end
+
+function files = collectHumanDocFiles(root)
+    files = string(fullfile(root, "README.md"));
+    entries = dir(fullfile(root, "docs", "*.md"));
+    for k = 1:numel(entries)
+        files(end+1) = string(fullfile(entries(k).folder, entries(k).name)); %#ok<AGROW>
+    end
+end
+
+function files = collectGuidanceFilesExceptTesting(root)
+    files = [ ...
+        string(fullfile(root, "README.md")), ...
+        string(fullfile(root, "AGENTS.md")), ...
+        string(fullfile(root, "apps", "AGENTS.md")), ...
+        string(fullfile(root, "tests", "AGENTS.md")), ...
+        string(fullfile(root, "+labkit", "AGENTS.md"))];
+
+    docEntries = dir(fullfile(root, "docs", "*.md"));
+    for k = 1:numel(docEntries)
+        filepath = string(fullfile(docEntries(k).folder, docEntries(k).name));
+        if endsWith(filepath, fullfile("docs", "testing.md"))
+            continue;
+        end
+        files(end+1) = filepath; %#ok<AGROW>
+    end
+
+    skillEntries = dir(fullfile(root, ".agents", "skills", "*", "SKILL.md"));
+    for k = 1:numel(skillEntries)
+        files(end+1) = string(fullfile(skillEntries(k).folder, skillEntries(k).name)); %#ok<AGROW>
+    end
+end
+
+function tasks = extractBuildtoolTaskNames(content)
+    tokens = regexp(char(content), ...
+        'buildtool[ \t]+([A-Za-z][A-Za-z0-9_]*(?:[ \t]+[A-Za-z][A-Za-z0-9_]*)*)', ...
+        'tokens');
+    tasks = strings(1, 0);
+    for k = 1:numel(tokens)
+        tasks = [tasks, split(string(tokens{k}{1})).']; %#ok<AGROW>
+    end
+    tasks = unique(tasks(strlength(tasks) > 0), 'stable');
 end
 
 function files = collectPublicLibraryFiles(root)

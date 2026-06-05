@@ -30,7 +30,8 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
 - Keep fixtures synthetic and minimal.
 - Never copy raw local lab files, real filenames, timestamps, absolute paths, subject names, device IDs, or proprietary metadata into tracked files.
 - Parser regressions should preserve only structural format details required for coverage.
-- Run `buildtool testProject` after fixture, hygiene, architecture, or test-layout changes.
+- Run the project guardrail task after fixture, hygiene, architecture, or
+  test-layout changes. Use `docs/testing.md` for the exact command.
 
 ## Documentation Sync
 

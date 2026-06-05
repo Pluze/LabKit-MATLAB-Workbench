@@ -34,11 +34,7 @@
 
 ## Validation Routing
 
-- Always run `buildtool testProject` for package boundary or public surface changes.
-- DTA changes: also run `buildtool testLabkitDta`; add
-  `buildtool testAppsElectrochem` when app-facing behavior may be affected.
-- Biosignal changes: also run `buildtool testLabkitBiosignal`; add
-  `buildtool testAppsWearableGui` when app-facing behavior may be affected.
-- UI changes: also run `buildtool testLabkitUi`; add
-  `buildtool testLabkitUiGui testAppsGui` for layout, launch, callback, or app
-  shell changes.
+Package boundary or public surface changes should include project guardrails.
+Add the focused DTA, biosignal, or UI task for the touched facade, and add
+downstream app-family tasks when the app-facing contract may be affected. Use
+`docs/testing.md` for exact task names and GUI/non-GUI pairings.

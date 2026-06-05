@@ -29,6 +29,9 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
 - Callback-heavy migrated apps should move app-owned production code into these
   package components instead of adding new `private/` runners or string-dispatch
   workflow adapters.
+- Do not add new `*Workflow.m` files or app-owned `+core/dispatch.m` string
+  routers. The existing electrochemistry dispatch files are temporary migration
+  debt documented in `docs/architecture.md`.
 - When a public app file grows large, prefer moving GUI-free app-owned calculations, export builders, formatting utilities, deterministic image/signal transforms, and focused control construction into `apps/<family>/<app_slug>/+<app_slug>/...`.
 - Do not add new `apps/<family>/private/` helpers unless the helper is genuinely shared by multiple apps in that family and the user approves that family-level boundary.
 - Keep the public app entry point responsible for GUI state, callbacks, user alerts, app workflow order, debug launch routing, and user-facing log wording.
@@ -42,12 +45,8 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
 
 ## Validation Routing
 
-- Electrochem app change: `buildtool testAppsElectrochem`; use
-  `buildtool testAppsElectrochemGui` for layout, launch, or callback wiring.
-- DIC app change: `buildtool testAppsDicGui`.
-- Image measurement app change: `buildtool testAppsImageMeasurement`; use
-  `buildtool testAppsImageMeasurementGui` for layout, launch, or callback wiring.
-- Wearable app change: `buildtool testAppsWearableGui`; add
-  `buildtool testLabkitBiosignal` when the biosignal facade contract may be
-  affected.
-- App entrypoint or boundary changes also run `buildtool testProject`.
+Route validation by the touched app family and whether the change affects pure
+logic/export behavior, layout/callback wiring, or app-entrypoint boundaries.
+Use `docs/testing.md` for exact task names and pairings. App entrypoint,
+ownership-boundary, fixture, or validation-rule changes should include the
+project guardrail task.
