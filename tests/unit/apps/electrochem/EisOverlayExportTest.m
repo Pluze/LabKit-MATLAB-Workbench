@@ -49,9 +49,9 @@ function verify_eisOverlayExport()
     assert(contains(source, 'axis(ax, ''equal'')'), ...
         'EIS app should preserve equal-axis Nyquist plot behavior.');
 
-    zreal = electrochemWorkflow("eis", "valuesForAxis", item, 'Zreal (ohm)');
+    zreal = eis.ops.valuesForAxis(item, 'Zreal (ohm)');
     assertClose(zreal, item.Zreal, 'EIS app axis-value hook should preserve Zreal values');
-    T = electrochemWorkflow("eis", "buildExportTable", item, ...
+    T = eis.export.buildExportTable(item, ...
         'Zreal (ohm)', '-Zimag (ohm)', false, false);
     assert(isequal(T.Properties.VariableNames(1), {'RowIndex'}), ...
         'EIS export table hook should preserve RowIndex as the first column.');
@@ -60,6 +60,7 @@ end
 function source = readAppOwnedSource(appFile)
     appDir = fileparts(appFile);
     sourceParts = {fileread(appFile)};
+
     privateDir = fullfile(appDir, 'private');
     if exist(privateDir, 'dir') == 7
         fileEntries = dir(fullfile(privateDir, '*.m'));
@@ -68,5 +69,17 @@ function source = readAppOwnedSource(appFile)
             sourceParts{end+1} = fileread(fullfile(privateDir, fileNames{iFile})); %#ok<AGROW>
         end
     end
+
+    packageEntries = dir(fullfile(appDir, '+*'));
+    packageDirs = packageEntries([packageEntries.isdir]);
+    for iDir = 1:numel(packageDirs)
+        packageDir = fullfile(packageDirs(iDir).folder, packageDirs(iDir).name);
+        fileEntries = dir(fullfile(packageDir, '**', '*.m'));
+        filePaths = sort(fullfile({fileEntries.folder}, {fileEntries.name}));
+        for iFile = 1:numel(filePaths)
+            sourceParts{end+1} = fileread(filePaths{iFile}); %#ok<AGROW>
+        end
+    end
+
     source = strjoin(sourceParts, newline);
 end

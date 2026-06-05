@@ -146,6 +146,32 @@ classdef ProjectStructureGuardrailTest < matlab.unittest.TestCase
                 {'+export', '+io', '+ops', '+state', '+view'});
         end
 
+        function electrochemAppsUseOwnedPackageNamespaces(testCase)
+            root = setupLabKitTestPath();
+
+            testCase.verifyFalse(isfolder(fullfile(root, 'apps', 'electrochem', 'private')), ...
+                'Electrochem apps should use app-owned packages, not apps/electrochem/private.');
+            workflowFiles = dir(fullfile(root, 'apps', 'electrochem', '**', '*Workflow.m'));
+            testCase.verifyTrue(isempty(workflowFiles), ...
+                'Electrochem apps should not keep string-dispatch workflow adapters.');
+
+            assertElectrochemPackageLayout(testCase, root, ...
+                'chrono_overlay', 'chrono_overlay', ...
+                {'+core', '+export', '+ops', '+ui', '+view'});
+            assertElectrochemPackageLayout(testCase, root, ...
+                'cic', 'cic', ...
+                {'+core', '+export', '+ops', '+ui', '+view'});
+            assertElectrochemPackageLayout(testCase, root, ...
+                'csc', 'csc', ...
+                {'+core', '+ops', '+ui'});
+            assertElectrochemPackageLayout(testCase, root, ...
+                'eis', 'eis', ...
+                {'+core', '+export', '+ops', '+ui', '+view'});
+            assertElectrochemPackageLayout(testCase, root, ...
+                'vt_resistance', 'vt_resistance', ...
+                {'+core', '+export', '+ops', '+ui', '+view'});
+        end
+
         function sensitiveSampleHygieneScansTrackedText(testCase)
             root = setupLabKitTestPath();
             files = collectTrackedTextScope(root);
@@ -173,6 +199,10 @@ classdef ProjectStructureGuardrailTest < matlab.unittest.TestCase
                 'startup_labkit should add apps/ to the path.');
             testCase.verifyTrue(pathContains(fullfile(root, 'apps', 'electrochem')), ...
                 'startup_labkit should add nested app category folders to the path.');
+            testCase.verifyTrue(pathContains(fullfile(root, 'apps', 'electrochem', 'cic')), ...
+                'startup_labkit should add nested electrochem app folders.');
+            testCase.verifyFalse(pathContains(fullfile(root, 'apps', 'electrochem', 'cic', '+cic')), ...
+                'startup_labkit should not expose electrochem app-owned package folders directly.');
             testCase.verifyTrue(pathContains(fullfile(root, 'apps', 'image_measurement', 'curvature')), ...
                 'startup_labkit should add nested image measurement app folders.');
             testCase.verifyFalse(pathContains(fullfile(root, 'apps', 'image_measurement', 'curvature', 'private')), ...
@@ -180,6 +210,51 @@ classdef ProjectStructureGuardrailTest < matlab.unittest.TestCase
             testCase.verifyFalse(pathContains(fullfile(root, 'apps', 'image_measurement', 'curvature', '+curvature')), ...
                 'startup_labkit should not expose app-owned package folders directly.');
         end
+    end
+end
+
+function assertElectrochemPackageLayout(testCase, root, appFolder, packageName, componentDirs)
+    appDir = fullfile(root, 'apps', 'electrochem', appFolder);
+    packageDir = fullfile(appDir, ['+' packageName]);
+
+    testCase.verifyTrue(isfolder(appDir), ...
+        ['Missing electrochem app folder: apps/electrochem/' appFolder]);
+    testCase.verifyTrue(isfile(fullfile(appDir, appEntrypointName(appFolder))), ...
+        ['Missing electrochem app entrypoint under ' relativePath(root, appDir)]);
+    testCase.verifyFalse(isfolder(fullfile(appDir, 'private')), ...
+        ['Electrochem app should use an app-owned package, not private/: ' appFolder]);
+    testCase.verifyFalse(isfolder(fullfile(appDir, '+app')), ...
+        ['Electrochem app should not use a fixed +app namespace: ' appFolder]);
+    workflowFiles = dir(fullfile(appDir, '*Workflow.m'));
+    testCase.verifyTrue(isempty(workflowFiles), ...
+        ['Electrochem app should not keep workflow dispatch adapters: ' appFolder]);
+    testCase.verifyTrue(isfolder(packageDir), ...
+        ['Missing electrochem app-owned package namespace: ' relativePath(root, packageDir)]);
+
+    packageFiles = dir(fullfile(packageDir, '**', '*.m'));
+    testCase.verifyFalse(isempty(packageFiles), ...
+        ['Electrochem app-owned package should contain helper files: ' relativePath(root, packageDir)]);
+    for iDir = 1:numel(componentDirs)
+        testCase.verifyTrue(isfolder(fullfile(packageDir, componentDirs{iDir})), ...
+            ['Missing electrochem component package ' componentDirs{iDir} ...
+            ' under ' relativePath(root, packageDir)]);
+    end
+end
+
+function name = appEntrypointName(appFolder)
+    switch appFolder
+        case 'chrono_overlay'
+            name = 'labkit_ChronoOverlay_app.m';
+        case 'cic'
+            name = 'labkit_CIC_app.m';
+        case 'csc'
+            name = 'labkit_CSC_app.m';
+        case 'eis'
+            name = 'labkit_EIS_app.m';
+        case 'vt_resistance'
+            name = 'labkit_VTResistance_app.m';
+        otherwise
+            error('Unknown electrochem app folder: %s', appFolder);
     end
 end
 

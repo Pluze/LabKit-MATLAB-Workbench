@@ -78,5 +78,5 @@ function verify_computeCIC()
 end
 
 function A = computeCIC(item, opts)
-    A = electrochemWorkflow("cic", "computeCIC", item, opts);
+    A = cic.ops.computeCIC(item, opts);
 end

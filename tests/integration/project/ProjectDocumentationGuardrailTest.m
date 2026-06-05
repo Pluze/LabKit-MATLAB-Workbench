@@ -52,6 +52,24 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
             fprintf('Private helper contract debt inventory: %d files missing top-of-file contracts.\n', ...
                 totalMissing);
         end
+
+        function appOwnedPackageHelpersDocumentImplementationContracts(testCase)
+            root = setupLabKitTestPath();
+            files = collectAppOwnedPackageFiles(root);
+            testCase.assertFalse(isempty(files), ...
+                'App-owned package contract guardrail should scan package helper files.');
+
+            missing = strings(1, 0);
+            for k = 1:numel(files)
+                if ~hasTopFileContract(files(k))
+                    missing(end+1) = string(relativePath(root, files(k))); %#ok<AGROW>
+                end
+            end
+
+            testCase.verifyTrue(isempty(missing), ...
+                ['App-owned package helpers need top-of-file implementation contracts: ' ...
+                strjoin(cellstr(missing), ', ')]);
+        end
     end
 end
 
@@ -104,6 +122,19 @@ function actual = collectPrivateContractDebt(root)
                 'missingCount', missing);
         end
     end
+end
+
+function files = collectAppOwnedPackageFiles(root)
+    entries = dir(fullfile(root, 'apps', '**', '+*', '**', '*.m'));
+    files = strings(1, 0);
+    for k = 1:numel(entries)
+        filepath = string(fullfile(entries(k).folder, entries(k).name));
+        if contains(filepath, [filesep 'private' filesep])
+            continue;
+        end
+        files(end+1) = filepath; %#ok<AGROW>
+    end
+    files = unique(files);
 end
 
 function folders = collectPrivateDirs(folder)
