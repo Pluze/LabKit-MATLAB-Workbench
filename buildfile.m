@@ -4,143 +4,90 @@ function plan = buildfile
     plan = buildplan(localfunctions);
     plan.DefaultTasks = "test";
 
-    plan("checkStyle").Description = "Run project/style guardrails.";
-    plan("test").Description = "Run the full non-GUI test entry point.";
-    plan("testUnit").Description = "Run official unit tests.";
-    plan("testIntegration").Description = "Run official integration tests.";
-    plan("testProject").Description = "Run project guardrails.";
-    plan("testLabkitDta").Description = "Run DTA facade/parser tests.";
-    plan("testLabkitBiosignal").Description = "Run biosignal facade tests.";
-    plan("testLabkitUi").Description = "Run reusable UI non-GUI tests.";
-    plan("testLabkitUiGui").Description = "Run reusable UI GUI tests.";
-    plan("testAppsElectrochem").Description = "Run electrochem app non-GUI tests.";
-    plan("testAppsElectrochemGui").Description = "Run electrochem app GUI tests.";
-    plan("testAppsDicGui").Description = "Run DIC app GUI tests.";
-    plan("testAppsImageMeasurement").Description = "Run image-measurement app non-GUI tests.";
-    plan("testAppsImageMeasurementGui").Description = "Run image-measurement app GUI tests.";
-    plan("testAppsWearableGui").Description = "Run wearable app GUI tests.";
-    plan("testAppsGui").Description = "Run all app GUI tests.";
-    plan("testAppsSmokeGui").Description = "Run cross-app GUI smoke tests.";
-    plan("testGuiStructural").Description = "Run noninteractive GUI structural tests.";
-    plan("testGuiGesture").Description = "Run noninteractive/manual GUI gesture tests.";
-    plan("coverage").Description = "Run official tests with coverage artifacts.";
-    plan("checkProject").Description = "Verify MATLAB Project metadata and path setup.";
-    plan("packageDryRun").Description = "Verify package boundary inventory without exporting.";
+    catalog = taskCatalog();
+    for k = 1:numel(catalog)
+        plan(catalog(k).Name).Description = catalog(k).Description;
+    end
 end
 
 function checkStyleTask(~)
-    runBuildTests("checkStyle", ...
-        "Suites", "project", ...
-        "Tags", "Style");
+    runCatalogTask("checkStyle");
 end
 
 function testTask(~)
-    runBuildTests("test", ...
-        "IncludeGui", false);
+    runCatalogTask("test");
 end
 
 function testUnitTask(~)
-    runBuildTests("testUnit", ...
-        "Tags", "Unit");
+    runCatalogTask("testUnit");
 end
 
 function testIntegrationTask(~)
-    runBuildTests("testIntegration", ...
-        "Tags", "Integration");
+    runCatalogTask("testIntegration");
 end
 
 function testProjectTask(~)
-    runBuildTests("testProject", ...
-        "Suites", "project");
+    runCatalogTask("testProject");
 end
 
 function testLabkitDtaTask(~)
-    runBuildTests("testLabkitDta", ...
-        "Suites", "labkit/dta");
+    runCatalogTask("testLabkitDta");
 end
 
 function testLabkitBiosignalTask(~)
-    runBuildTests("testLabkitBiosignal", ...
-        "Suites", "labkit/biosignal");
+    runCatalogTask("testLabkitBiosignal");
 end
 
 function testLabkitUiTask(~)
-    runBuildTests("testLabkitUi", ...
-        "Suites", "labkit/ui", ...
-        "IncludeGui", false);
+    runCatalogTask("testLabkitUi");
 end
 
 function testLabkitUiGuiTask(~)
-    runBuildTests("testLabkitUiGui", ...
-        "Suites", "labkit/ui", ...
-        "IncludeGui", true);
+    runCatalogTask("testLabkitUiGui");
 end
 
 function testAppsElectrochemTask(~)
-    runBuildTests("testAppsElectrochem", ...
-        "Suites", "apps/electrochem", ...
-        "IncludeGui", false);
+    runCatalogTask("testAppsElectrochem");
 end
 
 function testAppsElectrochemGuiTask(~)
-    runBuildTests("testAppsElectrochemGui", ...
-        "Suites", "apps/electrochem", ...
-        "IncludeGui", true);
+    runCatalogTask("testAppsElectrochemGui");
 end
 
 function testAppsDicGuiTask(~)
-    runBuildTests("testAppsDicGui", ...
-        "Suites", "apps/dic", ...
-        "IncludeGui", true);
+    runCatalogTask("testAppsDicGui");
 end
 
 function testAppsImageMeasurementTask(~)
-    runBuildTests("testAppsImageMeasurement", ...
-        "Suites", "apps/image_measurement", ...
-        "IncludeGui", false);
+    runCatalogTask("testAppsImageMeasurement");
 end
 
 function testAppsImageMeasurementGuiTask(~)
-    runBuildTests("testAppsImageMeasurementGui", ...
-        "Suites", "apps/image_measurement", ...
-        "IncludeGui", true);
+    runCatalogTask("testAppsImageMeasurementGui");
 end
 
 function testAppsWearableGuiTask(~)
-    runBuildTests("testAppsWearableGui", ...
-        "Suites", "apps/wearable", ...
-        "IncludeGui", true);
+    runCatalogTask("testAppsWearableGui");
 end
 
 function testAppsGuiTask(~)
-    runBuildTests("testAppsGui", ...
-        "Suites", "apps", ...
-        "IncludeGui", true);
+    runCatalogTask("testAppsGui");
 end
 
 function testAppsSmokeGuiTask(~)
-    runBuildTests("testAppsSmokeGui", ...
-        "Suites", "apps/smoke", ...
-        "IncludeGui", true);
+    runCatalogTask("testAppsSmokeGui");
 end
 
 function testGuiStructuralTask(~)
-    runBuildTests("testGuiStructural", ...
-        "Suites", "gui", ...
-        "Tags", "Structural", ...
-        "IncludeGui", true);
+    runCatalogTask("testGuiStructural");
 end
 
 function testGuiGestureTask(~)
-    runBuildTests("testGuiGesture", ...
-        "Tags", "Gesture", ...
-        "IncludeGui", true);
+    runCatalogTask("testGuiGesture");
 end
 
 function coverageTask(~)
-    runBuildTests("coverage", ...
-        "Tags", ["Unit", "Integration"], ...
-        "IncludeCoverage", true);
+    runCatalogTask("coverage");
 end
 
 function checkProjectTask(~)
@@ -185,6 +132,92 @@ function packageDryRunTask(~)
     fprintf("LabKit package dry run wrote:\n  %s\n", reportFile);
     fprintf("Package candidates: %d, validation-only roots/files: %d\n", ...
         numel(packageCandidates), numel(validationOnly));
+end
+
+function catalog = taskCatalog()
+    catalog = [ ...
+        taskSpec("checkStyle", "Run project/style guardrails.", "Suites", "project", "Tags", "Style"), ...
+        taskSpec("test", "Run the full non-GUI test entry point.", "IncludeGui", false), ...
+        taskSpec("testUnit", "Run official unit tests.", "Tags", "Unit"), ...
+        taskSpec("testIntegration", "Run official integration tests.", "Tags", "Integration"), ...
+        taskSpec("testProject", "Run project guardrails.", "Suites", "project"), ...
+        taskSpec("testLabkitDta", "Run DTA facade/parser tests.", "Suites", "labkit/dta"), ...
+        taskSpec("testLabkitBiosignal", "Run biosignal facade tests.", "Suites", "labkit/biosignal"), ...
+        taskSpec("testLabkitUi", "Run reusable UI non-GUI tests.", "Suites", "labkit/ui", "IncludeGui", false), ...
+        taskSpec("testLabkitUiGui", "Run reusable UI GUI tests.", "Suites", "labkit/ui", "IncludeGui", true), ...
+        taskSpec("testAppsElectrochem", "Run electrochem app non-GUI tests.", "Suites", "apps/electrochem", "IncludeGui", false), ...
+        taskSpec("testAppsElectrochemGui", "Run electrochem app GUI tests.", "Suites", "apps/electrochem", "IncludeGui", true), ...
+        taskSpec("testAppsDicGui", "Run DIC app GUI tests.", "Suites", "apps/dic", "IncludeGui", true), ...
+        taskSpec("testAppsImageMeasurement", "Run image-measurement app non-GUI tests.", "Suites", "apps/image_measurement", "IncludeGui", false), ...
+        taskSpec("testAppsImageMeasurementGui", "Run image-measurement app GUI tests.", "Suites", "apps/image_measurement", "IncludeGui", true), ...
+        taskSpec("testAppsWearableGui", "Run wearable app GUI tests.", "Suites", "apps/wearable", "IncludeGui", true), ...
+        taskSpec("testAppsGui", "Run all app GUI tests.", "Suites", "apps", "IncludeGui", true), ...
+        taskSpec("testAppsSmokeGui", "Run cross-app GUI smoke tests.", "Suites", "apps/smoke", "IncludeGui", true), ...
+        taskSpec("testGuiStructural", "Run noninteractive GUI structural tests.", "Suites", "gui", "Tags", "Structural", "IncludeGui", true), ...
+        taskSpec("testGuiGesture", "Run noninteractive/manual GUI gesture tests.", "Tags", "Gesture", "IncludeGui", true), ...
+        taskSpec("coverage", "Run official tests with coverage artifacts.", "Tags", ["Unit", "Integration"], "IncludeCoverage", true), ...
+        taskSpec("checkProject", "Verify MATLAB Project metadata and path setup.", "RunTests", false), ...
+        taskSpec("packageDryRun", "Verify package boundary inventory without exporting.", "RunTests", false)];
+end
+
+function spec = taskSpec(name, description, varargin)
+    p = inputParser;
+    p.FunctionName = "taskSpec";
+    p.addParameter("RunTests", true, @isLogicalScalar);
+    p.addParameter("Suites", strings(1, 0), @isStringLikeList);
+    p.addParameter("Tags", strings(1, 0), @isStringLikeList);
+    p.addParameter("IncludeGui", [], @isEmptyOrLogicalScalar);
+    p.addParameter("IncludeCoverage", [], @isEmptyOrLogicalScalar);
+    p.addParameter("Required", true, @isLogicalScalar);
+    p.parse(varargin{:});
+
+    runTests = logical(p.Results.RunTests);
+    spec = struct( ...
+        "Name", string(name), ...
+        "Description", string(description), ...
+        "RunTests", runTests, ...
+        "Suites", normalizeTextList(p.Results.Suites), ...
+        "Tags", normalizeTextList(p.Results.Tags), ...
+        "IncludeGui", normalizeOptionalLogical(p.Results.IncludeGui), ...
+        "IncludeCoverage", normalizeOptionalLogical(p.Results.IncludeCoverage), ...
+        "Required", runTests && logical(p.Results.Required));
+end
+
+function runCatalogTask(runName)
+    spec = findTaskSpec(runName);
+    if ~spec.RunTests
+        error("LabKit:Build:CatalogTaskNotRunnable", ...
+            "Build task %s is not a test-runner task.", runName);
+    end
+
+    args = taskRunArguments(spec);
+    runBuildTests(spec.Name, args{:});
+end
+
+function spec = findTaskSpec(runName)
+    catalog = taskCatalog();
+    matches = [catalog.Name] == string(runName);
+    if ~any(matches)
+        error("LabKit:Build:UnknownCatalogTask", ...
+            "Unknown build task catalog entry: %s.", runName);
+    end
+    spec = catalog(matches);
+end
+
+function args = taskRunArguments(spec)
+    args = {};
+    if ~isempty(spec.Suites)
+        args = [args, {"Suites", spec.Suites}]; %#ok<AGROW>
+    end
+    if ~isempty(spec.Tags)
+        args = [args, {"Tags", spec.Tags}]; %#ok<AGROW>
+    end
+    if ~isempty(spec.IncludeGui)
+        args = [args, {"IncludeGui", spec.IncludeGui}]; %#ok<AGROW>
+    end
+    if ~isempty(spec.IncludeCoverage)
+        args = [args, {"IncludeCoverage", spec.IncludeCoverage}]; %#ok<AGROW>
+    end
 end
 
 function runBuildTests(runName, varargin)
@@ -339,6 +372,39 @@ function reportFile = writePackageDryRunReport(root, report)
     cleanup = onCleanup(@() fclose(fid));
     fwrite(fid, jsonencode(report), "char");
     clear cleanup
+end
+
+function values = normalizeTextList(values)
+    if isempty(values)
+        values = strings(1, 0);
+    elseif ischar(values)
+        values = string({values});
+    elseif iscell(values)
+        values = string(values);
+    else
+        values = string(values);
+    end
+    values = values(:).';
+    values = values(strlength(values) > 0);
+end
+
+function value = normalizeOptionalLogical(value)
+    if isempty(value)
+        return;
+    end
+    value = logical(value);
+end
+
+function tf = isStringLikeList(value)
+    tf = ischar(value) || isstring(value) || iscellstr(value);
+end
+
+function tf = isLogicalScalar(value)
+    tf = (islogical(value) || isnumeric(value)) && isscalar(value);
+end
+
+function tf = isEmptyOrLogicalScalar(value)
+    tf = isempty(value) || isLogicalScalar(value);
 end
 
 function normalized = normalizePaths(paths)
