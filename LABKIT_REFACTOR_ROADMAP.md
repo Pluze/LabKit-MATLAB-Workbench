@@ -279,7 +279,7 @@ state ownership, callbacks, or tests clearer. The stable contract is:
 ## Current Phase
 
 Phase: 5
-Status: not started
+Status: in progress
 Owner notes:
 
 - Phase 4 completed on `codex/app-test-platform-rewrite`.
@@ -299,6 +299,10 @@ Owner notes:
 - Next phase decomposes app entrypoints while preserving calculation results,
   export schemas, plot/log wording, debug launch behavior, and app ownership
   boundaries.
+- Phase 5 image-measurement checkpoint: Curvature and FocusStack public
+  entrypoints now contain only one public function each and are below the
+  500-line hard-fail target (`499` and `450` MATLAB-counted lines). Extracted
+  helpers stay app-owned under the existing image-measurement app trees.
 
 ## Phase 0 Baseline
 
@@ -649,6 +653,8 @@ Acceptance:
 | 2026-06-05 | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 --suite apps/smoke --gui` | pass | All app normal/debug launch smoke tests passed after debug-only dispatch. |
 | 2026-06-05 | `matlab -batch "... buildtool checkStyle"` | pass | Official hard-fail guardrails passed: 0 legacy backdoor files; 10 oversized app entrypoints; 73 private-helper contract debt files. |
 | 2026-06-05 | `matlab -batch "... buildtool test"` | pass | Broad non-GUI suite passed after Phase 4 app backdoor removal. |
+| 2026-06-05 | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 --suite apps/image_measurement` | pass | Curvature and FocusStack helper/export tests passed after Phase 5 entrypoint decomposition. |
+| 2026-06-05 | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 --suite apps/image_measurement --gui` | pass | Curvature and FocusStack GUI/layout/debug checks passed with entrypoints at 499 and 450 MATLAB-counted lines. |
 
 ## Deviation Log
 
