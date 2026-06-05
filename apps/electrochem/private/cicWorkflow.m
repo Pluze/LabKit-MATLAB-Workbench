@@ -1,12 +1,13 @@
 % App-owned CIC workflow helper dispatch. Expected caller: labkit_CIC_app
-% callbacks and workflow tests. Inputs are a command
-% string plus the original helper arguments; outputs match the selected helper.
-% Side effects are limited to writeResultsCSV file writes.
+% callbacks and workflow tests. Inputs are a command string plus the original
+% helper arguments; outputs match the selected helper. Side effects are limited
+% to CSV export writes and drawing app-owned plot annotations on caller axes.
 function varargout = cicWorkflow(command, varargin)
 %CICWORKFLOW Dispatch app-owned CIC analysis/export helpers.
 % Expected caller: labkit_CIC_app callbacks and workflow tests.
 % Inputs are a command string plus the original helper arguments. Outputs match
-% the selected helper. Side effects are limited to writeResultsCSV file writes.
+% the selected helper. Side effects are limited to CSV export writes and drawing
+% app-owned plot annotations on caller axes.
 
     switch string(command)
         case "computeCIC"
@@ -17,6 +18,20 @@ function varargout = cicWorkflow(command, varargin)
             varargout{1} = buildResultsTable(varargin{:});
         case "writeResultsCSV"
             [varargout{1:nargout}] = writeResultsCSV(varargin{:});
+        case "formatChargeDensity"
+            varargout{1} = formatChargeDensity(varargin{:});
+        case "formatMaybeNum"
+            varargout{1} = formatMaybeNum(varargin{:});
+        case "interp1Safe"
+            varargout{1} = interp1Safe(varargin{:});
+        case "shadeWindow"
+            shadeWindow(varargin{:});
+        case "addBaselineYLines"
+            addBaselineYLines(varargin{:});
+        case "addPaperStyleVTAnnotations"
+            addPaperStyleVTAnnotations(varargin{:});
+        case "addPaperStyleITAnnotations"
+            addPaperStyleITAnnotations(varargin{:});
         otherwise
             error('labkit:CIC:UnknownWorkflowCommand', ...
                 'Unknown CIC workflow helper command: %s.', command);

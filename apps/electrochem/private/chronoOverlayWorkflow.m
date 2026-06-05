@@ -1,12 +1,14 @@
 % App-owned chrono overlay workflow helper dispatch. Expected caller:
 % labkit_ChronoOverlay_app callbacks and workflow tests.
 % Inputs are a command string plus the original helper arguments; outputs match
-% the selected helper. This helper has no file side effects.
+% the selected helper. Side effects are limited to drawing app-owned overlay
+% plots on caller axes.
 function varargout = chronoOverlayWorkflow(command, varargin)
 %CHRONOOVERLAYWORKFLOW Dispatch app-owned chrono overlay helpers.
 % Expected caller: labkit_ChronoOverlay_app callbacks and temporary compatibility
 % workflow tests. Inputs are a command string plus the original helper arguments.
-% Outputs match the selected helper. This helper has no file side effects.
+% Outputs match the selected helper. Side effects are limited to drawing
+% app-owned overlay plots on caller axes.
 
     switch string(command)
         case "alignByPulseGap"
