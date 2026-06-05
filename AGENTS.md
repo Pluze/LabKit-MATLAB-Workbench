@@ -101,13 +101,17 @@ Interactive GUI workflows are checked manually by the user. Do not run interacti
 ## Git Workflow
 
 1. Inspect status before editing.
-2. Keep each commit small and logical.
-3. Do not mix unrelated functional, documentation, formatting, or test changes.
-4. Run relevant tests or explain why they were not run.
-5. Review the diff for unrelated changes.
-6. Commit with a concise Conventional Commits message.
-7. Push the completed commit so the remote branch is up to date before handoff.
-8. Do not force-push unless explicitly approved.
+2. Work on a dedicated development branch by default. Branch names should use the `codex/` prefix unless the user requests another name.
+3. Keep commits logical and purpose-based. Commits do not need to be extremely dense; for larger efforts, prefer phase commits at stable checkpoints.
+4. Do not mix unrelated functional, documentation, formatting, or test changes in the same commit.
+5. Run relevant tests or explain why they were not run.
+6. Review the diff for unrelated changes.
+7. Commit with a concise Conventional Commits message.
+8. After a coherent series of changes is complete, check the current `main` and `origin/main` state before opening a PR. If the development branch is behind, update it only with non-destructive git operations and do not discard user work.
+9. Push the completed branch, open a PR, and include the change scope, test results, unverified behavior, and any intentional follow-up work.
+10. After required CI passes and no blocking review remains, merge the PR and delete the development branch.
+11. If permissions, CI, branch protection, review state, or tool availability prevent push, PR creation, merge, or branch deletion, stop and report the exact blocker instead of working around it.
+12. Do not force-push unless explicitly approved.
 
 Use lowercase type prefixes such as `feat:`, `fix:`, `docs:`, `test:`, `ci:`, `refactor:`, and `chore:`.
 
@@ -116,6 +120,9 @@ Use lowercase type prefixes such as `feat:`, `fix:`, `docs:`, `test:`, `ci:`, `r
 Report:
 
 - changed files
+- branch name
+- commit hash and push status
+- PR URL, CI status, merge status, and branch deletion status when remote handoff was attempted
 - what was intentionally not changed
 - test commands and results
 - blockers or unverified behavior
