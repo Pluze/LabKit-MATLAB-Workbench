@@ -94,6 +94,8 @@ On Windows PowerShell:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 --suite project
+matlab -batch "buildtool checkProject"
+matlab -batch "buildtool packageDryRun"
 ```
 
 Interactive GUI workflows are checked manually by the user. Do not run interactive GUI workflows in MATLAB `-batch` mode. If MATLAB cannot run, report the blocker and do not claim tests passed.

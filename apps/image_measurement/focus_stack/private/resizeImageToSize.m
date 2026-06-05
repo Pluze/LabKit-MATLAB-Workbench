@@ -1,3 +1,6 @@
+% App-private image measurement helper. Expected caller: owning app callbacks
+% and workflow tests. Inputs, outputs, and side effects are
+% documented with the helper function below.
 function imageOut = resizeImageToSize(imageIn, targetSize)
 %RESIZEIMAGETOSIZE Resize focus-stack image data to an explicit size.
 %

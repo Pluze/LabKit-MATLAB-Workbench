@@ -1,3 +1,6 @@
+% App-private image measurement helper. Expected caller: owning app callbacks
+% and workflow tests. Inputs, outputs, and side effects are
+% documented with the helper function below.
 function meanImage = boxMean2(imageData, windowSize)
 %BOXMEAN2 Compute a normalized box mean for focus-stack helpers.
 %

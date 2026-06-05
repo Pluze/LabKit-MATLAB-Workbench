@@ -1,3 +1,6 @@
+% App-private image measurement helper. Expected caller: owning app callbacks
+% and workflow tests. Inputs, outputs, and side effects are
+% documented with the helper function below.
 function settings = focusFusionPresetSettings(preset)
 %FOCUSFUSIONPRESETSETTINGS Return preset options for labkit_FocusStack_app.
 %

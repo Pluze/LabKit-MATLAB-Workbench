@@ -6,13 +6,18 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
 
 - `docs/testing.md`
 - affected source files
-- nearby tests under `tests/suites/<target>/`
+- nearby tests under `tests/unit/`, `tests/integration/`, or `tests/gui/`
 
 ## Test Layout
 
-- Add focused tests under `tests/suites/<target>/test_*.m`.
+- Add tests under `tests/unit/`, `tests/integration/`, or `tests/gui/` using
+  `matlab.unittest` or `matlab.uitest` styles.
+- Do not add a separate custom runner or direct pass/fail test tree; route
+  coverage through `tests/runLabKitTests.m` and build tasks.
 - Keep architecture guardrails in the narrowest project-suite file that matches the concern.
 - Use `tests/helpers/` only for setup, lookup, assertion, cleanup, and fixture-building helpers.
+- Use `tests/support/` for official-runner setup, artifact paths, structured
+  trace capture, GUI fixture setup, and component snapshots.
 - Do not move app-specific formulas, expected scientific values, result schemas, or export columns into shared test helpers.
 - Boundary tests may require app-owned logic to stay under the owning app tree, but should not require GUI-free helpers to remain inside the public app entry-point file or assert exact app-private helper file lists.
 - UI public-surface tests should assert the layered `labkit.ui.app/view/tool/diag` facade and keep low-level controls, row resize, panel internals, and popout implementation private.

@@ -1,8 +1,11 @@
+% App-private image measurement helper. Expected caller: owning app callbacks
+% and workflow tests. Inputs, outputs, and side effects are
+% documented with the helper function below.
 function fit = computeCurvatureFit(xPix, yPix, calibration, doDensify, denseN, fitPathX, fitPathY)
 %COMPUTECURVATUREFIT Fit image-curve curvature for labkit_CurvatureMeasurement_app.
 %
 % Expected caller:
-%   labkit_CurvatureMeasurement_app callbacks and __labkit_test__ handlers.
+%   labkit_CurvatureMeasurement_app callbacks and workflow tests.
 %
 % Inputs/outputs:
 %   Pixel anchor vectors, a labkit.ui scale-bar calibration struct, and

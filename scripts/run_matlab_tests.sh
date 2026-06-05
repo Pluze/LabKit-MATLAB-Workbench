@@ -17,8 +17,9 @@ Options:
                 This mode requires MATLAB graphics/uifigure support and does not
                 use the default headless -nojvm/-nodisplay/-noFigureWindows flags.
   --suite NAME  Run only a suite target, for example labkit/dta or apps/electrochem. Repeatable.
-                Suite targets are directories under tests/suites; selecting a
-                parent target such as labkit or apps includes child suites.
+                Suite targets mirror official tests/unit, tests/integration,
+                and tests/gui ownership; parent targets such as labkit or apps
+                include child suites.
                 The special gui target selects all GUI tests.
   --test NAME   Run only a test function, for example test_gui_layout_ui_anchor_curve_editor.
                 Repeatable. test_gui_* automatically uses GUI MATLAB flags.
@@ -127,10 +128,10 @@ else
 fi
 if [[ "$INCLUDE_GUI" -eq 1 ]]; then
     MATLAB_FLAGS="${MATLAB_GUI_FLAGS:-}"
-    TEST_EXPR="run_all_tests(true, struct('suites', {$SUITE_CELL}, 'tests', {$TEST_CELL}));"
+    TEST_EXPR="runLabKitTests('IncludeGui', true, 'Suites', $SUITE_CELL, 'Tests', $TEST_CELL, 'FailIfNoTests', false);"
 else
     MATLAB_FLAGS="${MATLAB_FLAGS:--nojvm -nodisplay -noFigureWindows}"
-    TEST_EXPR="run_all_tests(false, struct('suites', {$SUITE_CELL}, 'tests', {$TEST_CELL}));"
+    TEST_EXPR="runLabKitTests('IncludeGui', false, 'Suites', $SUITE_CELL, 'Tests', $TEST_CELL, 'FailIfNoTests', false);"
 fi
 MATLAB_FLAG_ARGS=()
 if [[ -n "$MATLAB_FLAGS" ]]; then

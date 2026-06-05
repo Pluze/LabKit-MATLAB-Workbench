@@ -1,3 +1,6 @@
+% App-private image measurement helper. Expected caller: owning app callbacks
+% and workflow tests. Inputs, outputs, and side effects are
+% documented with the helper function below.
 function [x, y] = removeDuplicateNeighbors(x, y, tol)
 %REMOVEDUPLICATENEIGHBORS Remove consecutive duplicate curve points.
 %

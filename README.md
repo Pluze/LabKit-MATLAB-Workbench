@@ -95,13 +95,20 @@ On Windows PowerShell:
 Focused checks are available during development:
 
 ```bash
+buildtool checkProject
+buildtool packageDryRun
 scripts/run_matlab_tests.sh --suite labkit/dta
 scripts/run_matlab_tests.sh --suite labkit/biosignal
 scripts/run_matlab_tests.sh --suite apps/wearable --gui
 scripts/run_matlab_tests.sh --suite labkit/ui --suite apps --gui
 ```
 
-The Windows script accepts the same `--suite`, `--test`, and `--gui` options. GitHub Actions runs the default non-GUI suite on pushes and pull requests to `main`.
+The Windows script accepts the same `--suite`, `--test`, and `--gui` options.
+`buildtool checkProject` verifies the MATLAB Project path/startup metadata, and
+`buildtool packageDryRun` checks package boundaries without exporting a toolbox.
+GitHub Actions runs quality, unit/coverage, and integration jobs on pushes and
+pull requests to `main`; manual and scheduled runs also cover GUI structural and
+non-blocking gesture jobs.
 
 ## Repository Layout
 

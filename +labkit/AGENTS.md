@@ -8,7 +8,7 @@
 - `docs/ui.md` for `+labkit/+ui`
 - `docs/dta.md` for `+labkit/+dta`
 - `docs/biosignal.md` for `+labkit/+biosignal`
-- affected package tests under `tests/suites/labkit/`
+- affected package tests under `tests/unit/labkit/` or `tests/gui/structural/labkit/`
 
 ## Boundary Rules
 

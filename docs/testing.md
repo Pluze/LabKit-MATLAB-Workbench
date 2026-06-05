@@ -12,6 +12,30 @@ Do not claim behavior is preserved unless tests or fixtures support that claim.
 
 ## Test Commands
 
+Use the MATLAB build tasks for the common official test entry points:
+
+```bash
+buildtool checkStyle
+buildtool test
+buildtool testUnit
+buildtool testIntegration
+buildtool testGuiStructural
+buildtool testGuiGesture
+buildtool coverage
+buildtool checkProject
+buildtool packageDryRun
+```
+
+- `buildtool test` is the full non-GUI entry point.
+- `buildtool checkStyle` runs official project/style guardrails.
+- `buildtool coverage` generates official JUnit, HTML test result, Cobertura,
+  and HTML coverage artifacts. Coverage is report-only.
+- `buildtool testGuiGesture` runs focused noninteractive gesture coverage for
+  runtime, anchor editor, and scale-bar interaction lifecycle checks.
+- `buildtool checkProject` verifies `LabKit.prj` path and startup metadata.
+- `buildtool packageDryRun` writes a package-boundary inventory under
+  `artifacts/package/` without exporting a toolbox.
+
 Default non-GUI suite:
 
 ```bash
@@ -30,7 +54,9 @@ If local execution policy blocks direct `.ps1` execution, run:
 powershell -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1
 ```
 
-Both wrappers call `tests/run_all_tests.m` and accept the same `--suite`, `--test`, and `--gui` options. Set `MATLAB_CMD` when MATLAB is not on `PATH`, and set `MATLAB_TEST_LOG` to override the default `matlab_test.log` location.
+Both wrappers call `tests/runLabKitTests.m` and accept the same `--suite`,
+`--test`, and `--gui` options. Set `MATLAB_CMD` when MATLAB is not on `PATH`,
+and set `MATLAB_TEST_LOG` to override the default `matlab_test.log` location.
 
 ## Validation Levels
 
@@ -40,7 +66,10 @@ Both wrappers call `tests/run_all_tests.m` and accept the same `--suite`, `--tes
 | Focused GUI suite runs | Local MATLAB with graphics support | Noninteractive launch, layout, and callback wiring checks for selected app families. |
 | Manual GUI validation | User-run app windows | Interactive file selection, drawing, visual inspection, and full workflow feel. |
 
-CI runs the default non-GUI suite through `.github/workflows/matlab-tests.yml`. It should not be described as full GUI workflow validation.
+CI runs quality, unit/coverage, and integration jobs on pushes and pull
+requests to `main` through `.github/workflows/matlab-tests.yml`. Manual and
+scheduled CI runs also execute GUI structural and non-blocking GUI gesture jobs.
+Do not describe CI as full interactive GUI workflow validation.
 
 ## Focused Suites
 
@@ -95,28 +124,26 @@ UI framework changes should cover the affected layer rather than only the change
 | Runtime/tools | `labkit/ui --gui` runtime, anchor-editor, and scale-bar tool tests. |
 | Diagnostics | `labkit/ui --gui` debug instrumentation tests plus `apps/smoke --gui` debug launch trace checks. |
 | App migration | Affected `apps/<family> --gui` suite plus `project` entrypoint/boundary guardrails. |
+| Gesture tools | `buildtool testGuiGesture` for runtime, anchor-editor, and scale-bar lifecycle checks. |
 
 ## Suite Layout
 
 Tests live under:
 
 ```text
-tests/suites/project
-tests/suites/labkit/dta
-tests/suites/labkit/biosignal
-tests/suites/labkit/ui
-tests/suites/apps/electrochem
-tests/suites/apps/dic
-tests/suites/apps/image_measurement
-tests/suites/apps/wearable
-tests/suites/apps/smoke
+tests/unit/
+tests/integration/
+tests/gui/
 ```
 
-The stable entry point is `tests/run_all_tests.m`. It discovers `test_*.m` files directly from `tests/suites/<target>/`, so adding a focused test normally only requires placing it in the appropriate target folder.
+Official `matlab.unittest` tests live under `tests/unit` and
+`tests/integration`. Noninteractive GUI structural and gesture tests live under
+`tests/gui` and use `matlab.uitest.TestCase` when they launch app windows or
+interact with controls.
 
 Shared setup, structural GUI assertions, and focused support routines live under `tests/helpers/`. Keep helpers limited to setup and assertions; app-specific formulas, result schemas, export formats, and expected scientific values should remain in focused suite tests.
 
-Architecture guardrails are split by concern under `tests/suites/project/`: public package surface, reusable package dependency boundaries, app entrypoint boundaries, and app-owned workflow boundaries. These guardrails may require workflow code to remain under the owning app tree, but they should not require GUI-free helpers to stay in the public app entry-point file. App-private helpers are checked by boundary rules rather than exact file-list assertions.
+Architecture guardrails are split by concern under `tests/integration/project/`: public package surface, reusable package dependency boundaries, app entrypoint boundaries, and app-owned workflow boundaries. These guardrails may require workflow code to remain under the owning app tree, but they should not require GUI-free helpers to stay in the public app entry-point file. App-private helpers are checked by boundary rules rather than exact file-list assertions.
 
 When a suite file becomes broad enough that unrelated changes must read hundreds of lines, add a narrower `test_*.m` file in the same suite instead of appending more coverage to the broad file.
 

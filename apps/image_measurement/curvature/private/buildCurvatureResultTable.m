@@ -1,9 +1,12 @@
+% App-private image measurement helper. Expected caller: owning app callbacks
+% and workflow tests. Inputs, outputs, and side effects are
+% documented with the helper function below.
 function T = buildCurvatureResultTable(fit, imagePath, lengthResult)
 %BUILDCURVATURERESULTTABLE Build export table for labkit_CurvatureMeasurement_app.
 %
 % Expected caller:
-%   labkit_CurvatureMeasurement_app export callback and __labkit_test__
-%   result-table handler.
+%   labkit_CurvatureMeasurement_app export callback and temporary compatibility
+%   result-table test handler.
 %
 % Inputs/outputs:
 %   Fit struct, image path, and optional length-result struct. Returns the
