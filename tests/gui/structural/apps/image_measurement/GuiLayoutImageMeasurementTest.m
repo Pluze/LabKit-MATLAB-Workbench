@@ -18,6 +18,7 @@ function verify_gui_layout_image_measurement()
 
     checkCurvatureMeasurementLayout(h);
     checkFocusStackLayout(h);
+    checkBatchImageCropLayout(h);
 end
 
 function checkCurvatureMeasurementLayout(h)
@@ -74,6 +75,30 @@ function checkFocusStackLayout(h)
     h.assertAxesContract(fig, { ...
         h.axesSpec('Fused all-in-focus image', '', ''), ...
         h.axesSpec('Focus-depth index map', '', '')});
+end
+
+function checkBatchImageCropLayout(h)
+    fig = h.launchFigure('labkit_BatchImageCrop_app', 'Microscope Batch Image Crop');
+    h.assertFigureMinimumSize(fig, 1440, 860);
+    h.assertComponentCounts(fig, struct('Button', 7, 'DropDown', 2, ...
+        'Spinner', 5, 'ListBox', 1, 'Table', 1, 'TextArea', 2, 'Axes', 1));
+    h.assertButtonContract(fig, {'Open image files', 'Clear images', ...
+        'Previous image', 'Next image', 'Use canvas center', ...
+        'Choose export folder', 'Export cropped images'});
+    h.assertDropdownGroups(fig, [ ...
+        h.dropdownGroup({'Black', 'White'}, 1), ...
+        h.dropdownGroup({'PNG', 'TIFF', 'JPEG'}, 1)]);
+    h.assertTabTitles(fig, {'Files + Analysis', 'Summary + Results', 'Log'});
+    h.assertTableColumns(fig, {'Metric', 'Value'});
+    h.assertAxesContract(fig, {h.axesSpec('Rotated preview + fixed crop', '', '')});
+
+    h.closeAllFigures();
+    [fig, debug] = labkit_BatchImageCrop_app("debug", struct());
+    drawnow;
+    assert(debug.enabled && debug.traceEnabled, ...
+        'Batch crop debug launch should return an enabled trace logger.');
+    assertAnyTextAreaContains(h, fig, 'Batch image crop debug trace enabled', ...
+        'Batch crop debug launch should mirror trace lines into the visible Log tab.');
 end
 
 function assertAnyTextAreaContains(h, fig, needle, message)
