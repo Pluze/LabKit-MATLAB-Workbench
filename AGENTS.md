@@ -78,22 +78,22 @@ When using local lab files to reproduce a bug:
 
 ## Validation
 
-Run relevant automated checks after executable MATLAB, test, fixture, package, or validation-rule changes. Use focused checks during iteration and the default non-GUI suite for broad changes.
+Run relevant automated checks after executable MATLAB, test, fixture, package, or validation-rule changes. Use focused checks during iteration and the default non-GUI build task for broad changes.
 
 Common commands:
 
 ```bash
-scripts/run_matlab_tests.sh --suite project
-scripts/run_matlab_tests.sh --suite labkit/dta
-scripts/run_matlab_tests.sh --suite labkit/biosignal
-scripts/run_matlab_tests.sh --suite labkit/ui --suite apps --gui
-scripts/run_matlab_tests.sh
+buildtool testProject
+buildtool testLabkitDta
+buildtool testLabkitBiosignal
+buildtool testLabkitUiGui testAppsGui
+buildtool test
 ```
 
 On Windows PowerShell:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 --suite project
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 testProject
 matlab -batch "buildtool checkProject"
 matlab -batch "buildtool packageDryRun"
 ```

@@ -1,0 +1,39 @@
+classdef GuiLayoutWearableTest < matlab.uitest.TestCase
+    %GUILAYOUTWEARABLETEST Verify LabKit behavior through official MATLAB tests.
+
+    methods (Test, TestTags = {'GUI', 'Structural'})
+        function test_gui_layout_wearable(testCase)
+            setupLabKitTestPath();
+            verify_gui_layout_wearable();
+        end
+    end
+end
+
+function verify_gui_layout_wearable()
+%TEST_GUI_LAYOUT_WEARABLE Verify wearable GUI layout contracts.
+
+    h = guiTestHelpers();
+    h.assertUifigureAvailable();
+    cleanup = onCleanup(@() h.closeAllFigures()); %#ok<NASGU>
+
+    fig = h.launchFigure('labkit_ECGPrint_app', 'ECG Signal Print + SNR Explorer');
+    h.assertFigureMinimumSize(fig, 1480, 880);
+    h.assertComponentCounts(fig, struct('Button', 6, 'DropDown', 5, ...
+        'Table', 1, 'TextArea', 3, 'Axes', 4, 'Spinner', 10));
+    h.assertButtonContract(fig, {'Open recording', 'Analyze current ROI', ...
+        'Preview file header', 'Parse / refresh file', ...
+        'Export segment SNR CSV', 'Export waveform PNG'});
+    h.assertDropdownGroups(fig, [ ...
+        h.dropdownGroup({'Auto', 'Yes', 'No'}, 1), ...
+        h.dropdownGroup({'Auto', 'seconds', 'milliseconds', 'microseconds', 'nanoseconds'}, 1), ...
+        h.dropdownGroup({'(none)'}, 1), ...
+        h.dropdownGroup({'QRS streaming', 'Pan-Tompkins', 'Local peaks'}, 1), ...
+        h.dropdownGroup({'Template + residual band', 'Template + segments'}, 1)]);
+    h.assertTabTitles(fig, {'Files + Analysis', 'Summary + Results', 'Log'});
+    h.assertAnyTableColumns(fig, {'Metric','Value'});
+    h.assertAxesContract(fig, { ...
+        h.axesSpec('Waveform + Peaks', 'Time (s)', 'Amplitude'), ...
+        h.axesSpec('Template Noise RMS Over Time', 'Time (s)', 'Noise RMS'), ...
+        h.axesSpec('Template SNR Over Time', 'Time (s)', 'SNR (dB)'), ...
+        h.axesSpec('Template + Residual Band', 'Time from peak (s)', 'Amplitude')});
+end

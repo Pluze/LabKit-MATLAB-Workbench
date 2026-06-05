@@ -19,6 +19,19 @@ buildtool checkStyle
 buildtool test
 buildtool testUnit
 buildtool testIntegration
+buildtool testProject
+buildtool testLabkitDta
+buildtool testLabkitBiosignal
+buildtool testLabkitUi
+buildtool testLabkitUiGui
+buildtool testAppsElectrochem
+buildtool testAppsElectrochemGui
+buildtool testAppsDicGui
+buildtool testAppsImageMeasurement
+buildtool testAppsImageMeasurementGui
+buildtool testAppsWearableGui
+buildtool testAppsGui
+buildtool testAppsSmokeGui
 buildtool testGuiStructural
 buildtool testGuiGesture
 buildtool coverage
@@ -36,34 +49,35 @@ buildtool packageDryRun
 - `buildtool packageDryRun` writes a package-boundary inventory under
   `artifacts/package/` without exporting a toolbox.
 
-Default non-GUI suite:
+Default non-GUI build task:
 
 ```bash
-scripts/run_matlab_tests.sh
+buildtool test
 ```
 
 On Windows PowerShell:
 
 ```powershell
-.\scripts\run_matlab_tests.ps1
+.\scripts\run_matlab_tests.ps1 test
 ```
 
 If local execution policy blocks direct `.ps1` execution, run:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1
+powershell -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 test
 ```
 
-Both wrappers call `tests/runLabKitTests.m` and accept the same `--suite`,
-`--test`, and `--gui` options. Set `MATLAB_CMD` when MATLAB is not on `PATH`,
-and set `MATLAB_TEST_LOG` to override the default `matlab_test.log` location.
+Both wrappers accept build task names only and call `buildtool`. Selector flags
+such as `--suite`, `--test`, and `--gui` are not supported. Set `MATLAB_CMD`
+when MATLAB is not on `PATH`, set `MATLAB_FLAGS` for MATLAB startup flags, and
+set `MATLAB_TEST_LOG` to override the default `matlab_test.log` location.
 
 ## Validation Levels
 
 | Level | Where | Purpose |
 | --- | --- | --- |
-| Default non-GUI suite | CI and local shell | Project guardrails, `labkit` facade behavior, non-GUI reusable UI checks, and pure app analysis/export helpers. |
-| Focused GUI suite runs | Local MATLAB with graphics support | Noninteractive launch, layout, and callback wiring checks for selected app families. |
+| Default non-GUI build task | CI and local shell | Project guardrails, `labkit` facade behavior, non-GUI reusable UI checks, and pure app analysis/export helpers. |
+| Focused GUI build tasks | Local MATLAB with graphics support | Noninteractive launch, layout, and callback wiring checks for selected app families. |
 | Manual GUI validation | User-run app windows | Interactive file selection, drawing, visual inspection, and full workflow feel. |
 
 CI runs quality, unit/coverage, and integration jobs on pushes and pull
@@ -71,59 +85,68 @@ requests to `main` through `.github/workflows/matlab-tests.yml`. Manual and
 scheduled CI runs also execute GUI structural and non-blocking GUI gesture jobs.
 Do not describe CI as full interactive GUI workflow validation.
 
-## Focused Suites
+## Focused Build Tasks
 
 ```bash
-scripts/run_matlab_tests.sh --suite project
-scripts/run_matlab_tests.sh --suite labkit/dta
-scripts/run_matlab_tests.sh --suite labkit/dta --suite apps/electrochem
-scripts/run_matlab_tests.sh --suite labkit/biosignal
-scripts/run_matlab_tests.sh --suite labkit/biosignal --suite apps/wearable --gui
-scripts/run_matlab_tests.sh --suite labkit/ui --gui
-scripts/run_matlab_tests.sh --suite labkit/ui --suite apps --gui
-scripts/run_matlab_tests.sh --suite apps/electrochem
-scripts/run_matlab_tests.sh --suite apps/dic --gui
-scripts/run_matlab_tests.sh --suite apps/image_measurement --gui
-scripts/run_matlab_tests.sh --suite apps/wearable --gui
-scripts/run_matlab_tests.sh --suite gui
-scripts/run_matlab_tests.sh --test test_gui_layout_ui_anchor_curve_editor
-scripts/run_matlab_tests.sh --test test_package_public_surface
+buildtool testProject
+buildtool testLabkitDta
+buildtool testLabkitDta testAppsElectrochem
+buildtool testLabkitBiosignal
+buildtool testLabkitBiosignal testAppsWearableGui
+buildtool testLabkitUiGui
+buildtool testLabkitUiGui testAppsGui
+buildtool testAppsElectrochem
+buildtool testAppsDicGui
+buildtool testAppsImageMeasurementGui
+buildtool testAppsWearableGui
+buildtool testAppsGui
+buildtool testAppsSmokeGui
+buildtool testGuiStructural
+buildtool testGuiGesture
 ```
 
-Use the same option names from Windows PowerShell:
+Use task names from Windows PowerShell:
 
 ```powershell
-.\scripts\run_matlab_tests.ps1 --suite labkit/dta
-.\scripts\run_matlab_tests.ps1 --suite apps/electrochem
-.\scripts\run_matlab_tests.ps1 --test test_gui_layout_ui_anchor_curve_editor
+.\scripts\run_matlab_tests.ps1 testLabkitDta
+.\scripts\run_matlab_tests.ps1 testAppsElectrochem
+.\scripts\run_matlab_tests.ps1 testGuiStructural
 ```
 
-Suite targets mirror source ownership:
+Focused build tasks mirror source ownership:
 
-| Suite | Use it for |
+| Task | Use it for |
 | --- | --- |
-| `project` | Startup, architecture, package surface, and sample-data hygiene guardrails. |
-| `labkit/dta` | DTA parser, facade, session, pulse, and item-schema checks. |
-| `labkit/biosignal` | Biosignal import, channel extraction, processing, ECG peaks, segments, SNR, and group comparison. |
-| `labkit/ui` | Reusable UI helpers; add `--gui` for layout and callback wiring checks. |
-| `apps/electrochem` | Electrochem app-owned calculations, exports, and layout contracts. |
-| `apps/dic` | DIC app layout contracts; usually run with `--gui`. |
-| `apps/image_measurement` | Image-measurement calculations, exports, and layout contracts. |
-| `apps/wearable` | Wearable app layout contracts; usually run with `--gui`. |
-| `apps/smoke` | Cross-app launch smoke checks. |
-| `gui` | All noninteractive GUI checks across every target. |
+| `testProject` | Startup, architecture, package surface, and sample-data hygiene guardrails. |
+| `testLabkitDta` | DTA parser, facade, session, pulse, and item-schema checks. |
+| `testLabkitBiosignal` | Biosignal import, channel extraction, processing, ECG peaks, segments, SNR, and group comparison. |
+| `testLabkitUi` | Reusable UI helpers that do not require app windows. |
+| `testLabkitUiGui` | Reusable UI layout, callback wiring, diagnostics, and tool GUI checks. |
+| `testAppsElectrochem` | Electrochem app-owned calculations and exports. |
+| `testAppsElectrochemGui` | Electrochem app layout contracts. |
+| `testAppsDicGui` | DIC app layout contracts. |
+| `testAppsImageMeasurement` | Image-measurement calculations and exports. |
+| `testAppsImageMeasurementGui` | Image-measurement layout contracts. |
+| `testAppsWearableGui` | Wearable app layout contracts. |
+| `testAppsGui` | All app-family noninteractive GUI checks. |
+| `testAppsSmokeGui` | Cross-app launch smoke checks. |
+| `testGuiStructural` | All structural GUI checks. |
+| `testGuiGesture` | Runtime, anchor-editor, and scale-bar gesture checks. |
 
-For reusable library changes, add downstream app suites when the app-facing contract could be affected. For example, pair `labkit/dta` with `apps/electrochem`, `labkit/biosignal` with `apps/wearable`, and `labkit/ui` with `apps` plus `--gui` when layout or callback behavior changed.
+For reusable library changes, add downstream app tasks when the app-facing
+contract could be affected. For example, pair `testLabkitDta` with
+`testAppsElectrochem`, `testLabkitBiosignal` with `testAppsWearableGui`, and
+`testLabkitUiGui` with `testAppsGui` when layout or callback behavior changed.
 
 UI framework changes should cover the affected layer rather than only the changed file:
 
 | UI layer | Automated coverage |
 | --- | --- |
-| Public surface | `project` suite checks the layered `labkit.ui.app/view/tool/diag` API and private implementation packages. |
-| Shell/layout | `labkit/ui --gui` and affected app-family `--gui` suites. |
-| Runtime/tools | `labkit/ui --gui` runtime, anchor-editor, and scale-bar tool tests. |
-| Diagnostics | `labkit/ui --gui` debug instrumentation tests plus `apps/smoke --gui` debug launch trace checks. |
-| App migration | Affected `apps/<family> --gui` suite plus `project` entrypoint/boundary guardrails. |
+| Public surface | `testProject` checks the layered `labkit.ui.app/view/tool/diag` API and private implementation packages. |
+| Shell/layout | `testLabkitUiGui` and affected app-family GUI tasks. |
+| Runtime/tools | `testLabkitUiGui` runtime, anchor-editor, and scale-bar tool tests. |
+| Diagnostics | `testLabkitUiGui` debug instrumentation tests plus `testAppsSmokeGui` debug launch trace checks. |
+| App migration | Affected app-family GUI task plus `testProject` entrypoint/boundary guardrails. |
 | Gesture tools | `buildtool testGuiGesture` for runtime, anchor-editor, and scale-bar lifecycle checks. |
 
 ## Suite Layout

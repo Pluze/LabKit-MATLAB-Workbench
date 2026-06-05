@@ -11,7 +11,7 @@ These docs are written for people who run, maintain, or extend LabKit. Start wit
 
 - `apps.md`: app ownership, current app notes, new-app checklist, and validation guidance.
 - `ui.md`: shared GUI shell, tabs, panels, axes, and reusable UI helper contracts.
-- `testing.md`: focused app-suite and GUI structural test commands.
+- `testing.md`: focused app and GUI structural build-task commands.
 
 ## I Work On Reusable APIs
 
@@ -22,7 +22,7 @@ These docs are written for people who run, maintain, or extend LabKit. Start wit
 
 ## I Need Validation Guidance
 
-- `testing.md`: default suite, focused suites, GUI versus non-GUI checks, fixture expectations, and CI scope.
+- `testing.md`: default and focused build tasks, GUI versus non-GUI checks, fixture expectations, and CI scope.
 
 ## Component Reference
 
