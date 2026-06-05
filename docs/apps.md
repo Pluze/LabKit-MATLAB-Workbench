@@ -83,6 +83,8 @@ Nested functions may read and update GUI handles or app state. Local functions a
 
 The preferred public shape is one launchable app entry point per workflow. If an app becomes too large, app-owned private helpers are acceptable when they stay under the owning app tree and do not become public reusable APIs. Move GUI-free calculations, export builders, deterministic image/signal transforms, and formatting utilities to `apps/<family>/<app_slug>/private/` when that makes the public app file easier to scan. Use `apps/<family>/private/` only for helpers that are genuinely shared by multiple apps in that family. Keep GUI state, callbacks, user alerts, workflow ordering, and debug launch routing in the public app file.
 
+For callback-heavy migrated apps, the public launcher may delegate the app body to an app-private runner under the same app tree when that is the smallest behavior-preserving way to keep the launch contract clear. The runner remains app-owned production code; it is not a reusable facade and should not move app-specific workflow decisions into `+labkit`.
+
 ## New App Checklist
 
 Define these before adding controls or helpers:

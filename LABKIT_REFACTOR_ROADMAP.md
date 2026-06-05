@@ -303,6 +303,11 @@ Owner notes:
   entrypoints now contain only one public function each and are below the
   500-line hard-fail target (`499` and `450` MATLAB-counted lines). Extracted
   helpers stay app-owned under the existing image-measurement app trees.
+- Phase 5 DIC checkpoint: DICPreprocess delegates its callback-heavy app body
+  to an app-owned private runner and DICPostprocess now uses app-owned private
+  helpers. Public entrypoints are `28` and `356` MATLAB-counted lines.
+- Current oversized app entrypoint inventory is 6 files; DIC and
+  image-measurement entrypoints are below the Phase 5 hard-fail target.
 
 ## Phase 0 Baseline
 
@@ -655,6 +660,8 @@ Acceptance:
 | 2026-06-05 | `matlab -batch "... buildtool test"` | pass | Broad non-GUI suite passed after Phase 4 app backdoor removal. |
 | 2026-06-05 | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 --suite apps/image_measurement` | pass | Curvature and FocusStack helper/export tests passed after Phase 5 entrypoint decomposition. |
 | 2026-06-05 | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 --suite apps/image_measurement --gui` | pass | Curvature and FocusStack GUI/layout/debug checks passed with entrypoints at 499 and 450 MATLAB-counted lines. |
+| 2026-06-05 | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 --suite apps/dic --gui` | pass | DIC GUI/layout suite passed after DICPreprocess private-runner extraction and DICPostprocess helper extraction. |
+| 2026-06-05 | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 --suite project` | pass | Project guardrails passed after private-runner boundary update; oversized entrypoint inventory is 6 files. |
 
 ## Deviation Log
 
@@ -663,6 +670,7 @@ Acceptance:
 | 2026-06-05 | 2 | Corrected app entrypoint size baseline from PowerShell `Measure-Object -Line` counts to MATLAB `readlines` counts. | Phase 2 guardrails run in MATLAB and include blank lines; the enforceable baseline should match the enforcing tool. | Codex |
 | 2026-06-05 | 3 | Used app-private `*Workflow.m` dispatch helpers for electrochem command groups instead of adding public helper packages or many one-off public facades. | MATLAB private visibility prevents external tests from directly calling app-private helpers, and grouped app-owned private helpers keep science/export logic out of `+labkit`. | Codex |
 | 2026-06-05 | 4 | Added app-owned workflow wrapper functions for tests to reach GUI-free app helpers after app-entrypoint backdoors were removed. | MATLAB private helpers are not directly callable from the test tree, and wrapper functions preserve coverage without exposing hidden commands through public app launchers or moving app-specific logic into `+labkit`. | Codex |
+| 2026-06-05 | 5 | Used an app-owned private runner for DICPreprocess instead of splitting every callback into separate public-launcher helpers. | The app is callback-heavy and GUI-stateful; moving the app body into a private runner preserves behavior and launch/debug contracts while keeping the public entrypoint below the hard-fail size target. | Codex |
 
 ## Coverage Migration Map
 

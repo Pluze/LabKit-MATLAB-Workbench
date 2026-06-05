@@ -22,6 +22,9 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
 - Biosignal-backed apps use `labkit.biosignal.*` for recording loading, channel extraction, waveform processing, events, segments, measurements, and group comparisons.
 - Do not create app-specific public helper packages to make local workflow code look reusable.
 - App-owned private helpers are acceptable only when they stay under the owning app tree and do not become public reusable APIs.
+- Callback-heavy migrated apps may use an app-private runner to keep the public
+  launcher small, but the runner remains app-owned production code and must not
+  become a reusable facade.
 - When a public app file grows large, prefer moving GUI-free app-owned calculations, export builders, formatting utilities, and deterministic image/signal transforms into `apps/<family>/<app_slug>/private/`.
 - Use `apps/<family>/private/` only for helpers that are genuinely shared by multiple apps in that family.
 - Keep the public app entry point responsible for GUI state, callbacks, user alerts, app workflow order, debug launch routing, and user-facing log wording.
