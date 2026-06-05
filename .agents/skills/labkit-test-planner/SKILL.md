@@ -18,39 +18,24 @@ Choose visible, source-aligned validation without overstating coverage.
 
 ## Task Routing
 
-Use the smallest set that covers the touched boundary:
+Use the smallest source-aligned validation set that covers the touched
+boundary. `docs/testing.md` owns the canonical build-task names, wrappers, and
+command examples.
 
 ```text
 project                    startup, architecture, package surface, sample-data hygiene
 labkit/dta                 DTA parser, facade, session, item, pulse behavior
 labkit/biosignal           biosignal import, processing, ECG peaks, segments, measurements
-labkit/ui                  reusable UI helpers; use testLabkitUiGui for layout/callback/shell/debug checks
+labkit/ui                  reusable UI helpers; include GUI coverage for layout/callback/shell/debug checks
 apps/electrochem           electrochem app-owned calculations, exports, layout
-apps/dic                   DIC app layout; usually testAppsDicGui
+apps/dic                   DIC app layout
 apps/image_measurement     image measurement calculations, exports, layout
-apps/wearable              wearable app layout; usually testAppsWearableGui
+apps/wearable              wearable app layout
 apps/smoke                 cross-app noninteractive launch checks
 ```
 
-Pair reusable changes with downstream apps when the app-facing contract could be affected:
-
-```bash
-buildtool testLabkitDta testAppsElectrochem
-buildtool testLabkitBiosignal testAppsWearableGui
-buildtool testLabkitUiGui testAppsGui
-```
-
-Use the default non-GUI build task for broad changes:
-
-```bash
-buildtool test
-```
-
-On Windows, use:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 testProject
-```
+Pair reusable changes with downstream apps when the app-facing contract could
+be affected. Use the default non-GUI task for broad changes.
 
 ## GUI Claims
 

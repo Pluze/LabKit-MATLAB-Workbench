@@ -80,23 +80,10 @@ When using local lab files to reproduce a bug:
 
 Run relevant automated checks after executable MATLAB, test, fixture, package, or validation-rule changes. Use focused checks during iteration and the default non-GUI build task for broad changes.
 
-Common commands:
-
-```bash
-buildtool testProject
-buildtool testLabkitDta
-buildtool testLabkitBiosignal
-buildtool testLabkitUiGui testAppsGui
-buildtool test
-```
-
-On Windows PowerShell:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 testProject
-matlab -batch "buildtool checkProject"
-matlab -batch "buildtool packageDryRun"
-```
+Use `docs/testing.md` as the canonical command matrix for build tasks, wrapper
+behavior, CI scope, fixture expectations, and GUI validation limits. Scoped
+`AGENTS.md` files should only route by ownership and should not duplicate the
+full task list.
 
 Interactive GUI workflows are checked manually by the user. Do not run interactive GUI workflows in MATLAB `-batch` mode. If MATLAB cannot run, report the blocker and do not claim tests passed.
 

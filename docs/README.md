@@ -2,14 +2,25 @@
 
 These docs are written for people who run, maintain, or extend LabKit. Start with the page that matches the work in front of you; you do not need to read the whole documentation set for everyday app use.
 
+## Documentation Responsibilities
+
+| Source | Owns |
+| --- | --- |
+| `../README.md` | Project overview, app launch list, and the default validation entry point. |
+| `*.md` component docs | Human-readable behavior, architecture, public APIs, and maintenance contracts. |
+| `testing.md` | The canonical build-task matrix, wrapper behavior, CI scope, fixture expectations, and GUI validation limits. |
+| `../AGENTS.md` and scoped `AGENTS.md` files | Future execution rules for agent work, ownership red lines, and routing rules. |
+| `../.agents/skills/` | Task procedures for boundary checks, app building, and validation planning. |
+| `../tests/integration/project/` guardrails | Automated checks that keep package boundaries, documentation ownership, debt inventory, and sample hygiene from drifting. |
+
 ## I Want To Run An App
 
-- `../README.md`: project overview, startup command, app list, and basic test commands.
+- `../README.md`: project overview, startup command, app list, and default validation entry point.
 - `apps.md`: current app families, what each app does, expected inputs, and typical outputs.
 
 ## I Maintain An App
 
-- `apps.md`: app ownership, current app notes, new-app checklist, and validation guidance.
+- `apps.md`: app ownership, current app notes, and new-app checklist.
 - `ui.md`: shared GUI shell, tabs, panels, axes, and reusable UI helper contracts.
 - `testing.md`: focused app and GUI structural build-task commands.
 
