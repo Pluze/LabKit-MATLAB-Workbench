@@ -265,7 +265,7 @@ state ownership, callbacks, or tests clearer. The stable contract is:
 
 - [x] Phase 0: Safety baseline.
 - [x] Phase 1: New test platform skeleton.
-- [ ] Phase 2: Project and style guardrails rewrite.
+- [x] Phase 2: Project and style guardrails rewrite.
 - [ ] Phase 3: App helper extraction before test hook removal.
 - [ ] Phase 4: Delete app test backdoors.
 - [ ] Phase 5: App entrypoint decomposition.
@@ -278,17 +278,20 @@ state ownership, callbacks, or tests clearer. The stable contract is:
 
 ## Current Phase
 
-Phase: 2
+Phase: 3
 Status: not started
 Owner notes:
 
-- Phase 1 skeleton completed on `codex/app-test-platform-rewrite`.
-- `buildfile.m` and `tests/runLabKitTests.m` are available. Transitional
-  `buildtool test`, `buildtool checkStyle`, and wrappers run official tests
-  plus the legacy runner where needed so old coverage stays active until
-  Phase 6.
-- Next phase rewrites project/style guardrails into the new official layout and
-  starts legacy-debt checks in inventory or expected-debt mode.
+- Phase 2 project/style guardrails completed on
+  `codex/app-test-platform-rewrite`.
+- Official project guardrails now live under `tests/integration/project/`.
+  Legacy `tests/suites/project` still runs through the compatibility bridge, so
+  project coverage is dual-running until Phase 6.
+- Legacy backdoor and entrypoint-size guardrails are expected-debt checks.
+  Current inventories are 20 `__labkit_test__` files, 7 app handler files, 2
+  hidden diagnostics files, 10 app entrypoints over 500 MATLAB-counted lines,
+  and 93 private-helper files missing top-of-file implementation contracts.
+- Next phase extracts app-owned helper coverage before deleting test backdoors.
 
 ## Phase 0 Baseline
 
@@ -296,16 +299,16 @@ App entrypoint line counts:
 
 | App entrypoint | Lines | Phase 5 status |
 | --- | ---: | --- |
-| `apps/electrochem/labkit_CIC_app.m` | 1222 | oversized |
-| `apps/dic/labkit_DICPreprocess_app.m` | 1105 | oversized |
-| `apps/electrochem/labkit_VTResistance_app.m` | 933 | oversized |
-| `apps/electrochem/labkit_CSC_app.m` | 847 | oversized |
-| `apps/image_measurement/curvature/labkit_CurvatureMeasurement_app.m` | 727 | oversized |
-| `apps/wearable/labkit_ECGPrint_app.m` | 701 | oversized |
-| `apps/image_measurement/focus_stack/labkit_FocusStack_app.m` | 602 | oversized |
-| `apps/dic/labkit_DICPostprocess_app.m` | 519 | oversized |
-| `apps/electrochem/labkit_ChronoOverlay_app.m` | 484 | near limit |
-| `apps/electrochem/labkit_EIS_app.m` | 478 | near limit |
+| `apps/electrochem/labkit_CIC_app.m` | 1383 | oversized |
+| `apps/dic/labkit_DICPreprocess_app.m` | 1225 | oversized |
+| `apps/electrochem/labkit_VTResistance_app.m` | 1049 | oversized |
+| `apps/electrochem/labkit_CSC_app.m` | 963 | oversized |
+| `apps/image_measurement/curvature/labkit_CurvatureMeasurement_app.m` | 825 | oversized |
+| `apps/wearable/labkit_ECGPrint_app.m` | 786 | oversized |
+| `apps/image_measurement/focus_stack/labkit_FocusStack_app.m` | 682 | oversized |
+| `apps/dic/labkit_DICPostprocess_app.m` | 585 | oversized |
+| `apps/electrochem/labkit_ChronoOverlay_app.m` | 556 | oversized |
+| `apps/electrochem/labkit_EIS_app.m` | 546 | oversized |
 
 Test suite distribution:
 
@@ -351,7 +354,7 @@ Legacy debt inventory:
 | `__labkit_test__` file matches | 20 | App tests, app entrypoints, private helper comments, and `labkit.ui.app.dispatchRequest`. |
 | App test handler functions | 7 | CIC, VT, CSC, EIS, ChronoOverlay, Curvature, and FocusStack. |
 | Hidden load diagnostics matches | 2 files | CSC app diagnostics and the electrochem GUI layout test. |
-| App entrypoints over 500 lines | 8 of 10 | Phase 5 migration target. |
+| App entrypoints over 500 MATLAB-counted lines | 10 of 10 | Phase 5 migration target; Phase 2 corrected the baseline to use MATLAB `readlines` counts. |
 | Old runner dependency files | 8 | `tests/run_all_tests.m`, wrappers, CI, and current docs/agent routing. |
 
 ## Phase Details
@@ -621,11 +624,15 @@ Acceptance:
 | 2026-06-05 | `matlab -batch "... buildtool testGuiGesture"` | pass | Task is valid and currently selects 0 official gesture tests. |
 | 2026-06-05 | `bash -n scripts/run_matlab_tests.sh` | blocked | Local Bash/WSL launch failed with access denied before syntax execution; PowerShell wrapper was validated. |
 | 2026-06-05 | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 --suite project` | pass | Post-doc/AGENTS/roadmap update guardrail passed with official seed plus legacy project suite. |
+| 2026-06-05 | `matlab -batch "... buildtool checkStyle"` | pass | Official project/style guardrails passed; legacy project suite also passed. |
+| 2026-06-05 | `matlab -batch "... buildtool testIntegration"` | pass | Official project integration guardrails passed. |
+| 2026-06-05 | `matlab -batch "... buildtool test"` | pass | Official seed/project guardrails plus legacy default non-GUI suite passed. |
 
 ## Deviation Log
 
 | Date | Phase | Change | Reason | Approved By |
 | --- | --- | --- | --- | --- |
+| 2026-06-05 | 2 | Corrected app entrypoint size baseline from PowerShell `Measure-Object -Line` counts to MATLAB `readlines` counts. | Phase 2 guardrails run in MATLAB and include blank lines; the enforceable baseline should match the enforcing tool. | Codex |
 
 ## Coverage Migration Map
 
@@ -643,7 +650,7 @@ deferred
 
 | Old test or area | New location | Status | Notes |
 | --- | --- | --- | --- |
-| `tests/suites/project` | `tests/integration/project` | mapped | 6 files; project guardrails and style checks. |
+| `tests/suites/project` | `tests/integration/project` | dual-running | 6 legacy files plus official project/style guardrails under `tests/integration/project`. |
 | `tests/suites/labkit/dta` | `tests/unit/labkit/dta` | mapped | 8 files; parser, facade, session, pulse behavior. |
 | `tests/suites/labkit/biosignal` | `tests/unit/labkit/biosignal` | mapped | 5 files; import, filtering, peaks, segments, measurements. |
 | `tests/suites/labkit/ui` | `tests/unit/labkit/ui` and `tests/gui/*` | mapped | 11 files; split non-GUI helpers from GUI behavior. |
