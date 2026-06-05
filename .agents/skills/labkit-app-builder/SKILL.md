@@ -113,12 +113,16 @@ Build the app in this order:
 5. Move GUI-free calculations below the app `end` as app-local functions.
 6. Extract production helpers into an app-owned package when the app is too
    large for a readable single entry point.
-7. Do not add new `private/` runners, `*Workflow.m` string-dispatch adapters,
+7. Do not treat migration as complete by moving a large `private/run*App.m`
+   body wholesale into `+ui/runApp.m`. Extract GUI-free `+ops`, `+view`,
+   `+export`, `+io`, or `+state` behavior first and add tests that call those
+   functions directly.
+8. Do not add new `private/` runners, `*Workflow.m` string-dispatch adapters,
    fixed `+app` package names, or app-local public helper packages.
-8. Render prepared data through `labkit.ui` helpers; keep analysis out of UI helpers.
-9. Add export builders before CSV/PNG writing so output contracts can be tested.
-10. Add focused tests with synthetic fixtures or minimal generated data.
-11. Update human docs for user-facing behavior and scoped `AGENTS.md` only when rules change.
+9. Render prepared data through `labkit.ui` helpers; keep analysis out of UI helpers.
+10. Add export builders before CSV/PNG writing so output contracts can be tested.
+11. Add focused tests with synthetic fixtures or minimal generated data.
+12. Update human docs for user-facing behavior and scoped `AGENTS.md` only when rules change.
 
 ## Validation
 

@@ -123,6 +123,29 @@ Existing DIC and wearable `private/` runners are migration debt, not the
 preferred app structure. Do not add app-owned `+core/dispatch.m` string routers
 to new app work.
 
+## Migration Quality Gate
+
+A runner migration is not complete when it only moves a large
+`apps/<family>/private/run*App.m` body into `+<app_slug>/+ui/runApp.m`. Move
+GUI-free responsibilities first, and keep the runner focused on orchestration:
+state setup, control construction, callback wiring, user alerts, log wording,
+refresh ordering, and app launch/debug behavior.
+
+Before deleting a private runner debt item, extract directly testable behavior
+into app-owned package functions:
+
+```text
++ops     deterministic calculations and image/signal transforms
++view    summaries, display rows, plot-data preparation, and table formatting
++export  CSV/image export builders and output contracts
++io      dialog-result normalization, app-local file readers, and path defaults
++state   app-local default result/state structs
+```
+
+Focused unit tests should call those package functions directly. GUI structural
+tests are still required for layout and callback wiring, but they are not enough
+to prove that a migration reduced complexity.
+
 ## New App Checklist
 
 Define these before adding controls or helpers:

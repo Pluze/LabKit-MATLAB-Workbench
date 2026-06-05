@@ -36,6 +36,21 @@ classdef ProjectDebtGuardrailTest < matlab.unittest.TestCase
             fprintf('Entrypoint size debt inventory: %d files over 500 lines.\n', numel(actual));
         end
 
+        function oversizedRunnerDebtDoesNotGrow(testCase)
+            root = setupLabKitTestPath();
+            expectedFiles = expectedOversizedRunnerDebtFiles();
+            actualFiles = collectOversizedAppRunners(root, 500);
+            unexpectedFiles = setdiff(actualFiles, expectedFiles);
+            testCase.verifyTrue(isempty(unexpectedFiles), ...
+                ['expected-debt: oversized app runners should not grow. ' ...
+                'Split deterministic behavior into app-owned +ops/+view/+export/+io/+state ' ...
+                'before moving runner bodies. Files: ' ...
+                strjoin(cellstr(unexpectedFiles), ', ')]);
+
+            fprintf('Oversized runner debt inventory: %d files over 500 lines.\n', ...
+                numel(actualFiles));
+        end
+
         function oldRunnerDependenciesAreRemoved(testCase)
             root = setupLabKitTestPath();
 
@@ -95,6 +110,38 @@ classdef ProjectDebtGuardrailTest < matlab.unittest.TestCase
 
             fprintf('Workflow dispatch debt inventory: %d Workflow files, %d +core dispatch files.\n', ...
                 numel(workflowFiles), numel(dispatchFiles));
+        end
+
+        function dicWearableMigrationsHaveDirectPackageTests(testCase)
+            root = setupLabKitTestPath();
+            packageRoots = collectDicWearableAppPackageRoots(root);
+            missing = strings(1, 0);
+
+            for k = 1:numel(packageRoots)
+                packageRoot = packageRoots(k);
+                nonUiComponents = collectNonUiPackageComponents(packageRoot);
+                [family, namespace] = appPackageFamilyAndNamespace(root, packageRoot);
+                if isempty(nonUiComponents)
+                    missing(end+1) = string(relativePath(root, packageRoot)) + ...
+                        " -> missing non-UI package component"; %#ok<AGROW>
+                    continue;
+                end
+
+                if ~packageNamespaceHasDirectUnitTest(root, family, namespace)
+                    missing(end+1) = string(relativePath(root, packageRoot)) + ...
+                        " -> missing direct unit test for " + namespace + ...
+                        ".(ops|view|export|io|state)"; %#ok<AGROW>
+                end
+            end
+
+            testCase.verifyTrue(isempty(missing), ...
+                ['DIC and wearable app package migrations need directly tested ' ...
+                'non-UI app-owned functions; GUI structural tests alone do not prove ' ...
+                'runner complexity was reduced. Findings: ' ...
+                strjoin(cellstr(missing), ', ')]);
+
+            fprintf('DIC/wearable migrated app package inventory: %d package roots.\n', ...
+                numel(packageRoots));
         end
     end
 end
@@ -170,6 +217,23 @@ function files = collectAppPrivateMFiles(root)
     files = collectRelativeFiles(root, fullfile(root, 'apps', '**', 'private', '*.m'));
 end
 
+function files = collectOversizedAppRunners(root, maxLines)
+    files = strings(1, 0);
+    entries = [ ...
+        dir(fullfile(root, 'apps', '**', 'private', 'run*App.m')); ...
+        dir(fullfile(root, 'apps', '**', '+ui', 'runApp.m'))];
+    for k = 1:numel(entries)
+        if entries(k).isdir
+            continue;
+        end
+        filepath = fullfile(entries(k).folder, entries(k).name);
+        if countFileLines(filepath) > maxLines
+            files(end+1) = string(relativePath(root, filepath)); %#ok<AGROW>
+        end
+    end
+    files = unique(files);
+end
+
 function files = collectRelativeFiles(root, pattern)
     entries = dir(pattern);
     files = strings(1, 0);
@@ -180,6 +244,73 @@ function files = collectRelativeFiles(root, pattern)
         end
     end
     files = unique(files);
+end
+
+function packageRoots = collectDicWearableAppPackageRoots(root)
+    packageRoots = strings(1, 0);
+    families = ["dic", "wearable"];
+    for family = families
+        familyRoot = fullfile(root, 'apps', char(family));
+        if ~isfolder(familyRoot)
+            continue;
+        end
+
+        apps = dir(familyRoot);
+        for iApp = 1:numel(apps)
+            appDir = apps(iApp);
+            if ~appDir.isdir || any(strcmp(appDir.name, {'.', '..', 'private'}))
+                continue;
+            end
+
+            packageDirs = dir(fullfile(appDir.folder, appDir.name, '+*'));
+            for iPackage = 1:numel(packageDirs)
+                packageDir = packageDirs(iPackage);
+                if packageDir.isdir && startsWith(packageDir.name, '+')
+                    packageRoots(end+1) = string(fullfile( ...
+                        packageDir.folder, packageDir.name)); %#ok<AGROW>
+                end
+            end
+        end
+    end
+    packageRoots = unique(packageRoots);
+end
+
+function components = collectNonUiPackageComponents(packageRoot)
+    components = strings(1, 0);
+    componentNames = ["+ops", "+view", "+export", "+io", "+state"];
+    for k = 1:numel(componentNames)
+        componentRoot = fullfile(packageRoot, char(componentNames(k)));
+        files = dir(fullfile(componentRoot, '*.m'));
+        if isfolder(componentRoot) && any(~[files.isdir])
+            components(end+1) = componentNames(k); %#ok<AGROW>
+        end
+    end
+end
+
+function [family, namespace] = appPackageFamilyAndNamespace(root, packageRoot)
+    rel = string(relativePath(root, packageRoot));
+    parts = split(rel, '/');
+    family = parts(2);
+    packageName = parts(end);
+    namespace = extractAfter(packageName, 1);
+end
+
+function tf = packageNamespaceHasDirectUnitTest(root, family, namespace)
+    testRoot = fullfile(root, 'tests', 'unit', 'apps', char(family));
+    if ~isfolder(testRoot)
+        tf = false;
+        return;
+    end
+
+    pattern = [char(namespace) '\.(ops|view|export|io|state)\.'];
+    testFiles = collectTextFiles(testRoot);
+    tf = false;
+    for k = 1:numel(testFiles)
+        if ~isempty(regexp(fileread(testFiles{k}), pattern, 'once'))
+            tf = true;
+            return;
+        end
+    end
 end
 
 function files = expectedAppPrivateDebtFiles()
@@ -228,6 +359,15 @@ function files = expectedAppPrivateDebtFiles()
         "apps/dic/private/transformSummary.m", ...
         "apps/dic/private/wrapIndex.m", ...
         "apps/dic/private/zoomAxesAtPoint.m", ...
+        "apps/wearable/private/runECGPrintApp.m"];
+end
+
+function files = expectedOversizedRunnerDebtFiles()
+    files = [ ...
+        "apps/dic/private/runDICPreprocessApp.m", ...
+        "apps/electrochem/cic/+cic/+ui/runApp.m", ...
+        "apps/electrochem/csc/+csc/+ui/runApp.m", ...
+        "apps/electrochem/eis/+eis/+ui/runApp.m", ...
         "apps/wearable/private/runECGPrintApp.m"];
 end
 

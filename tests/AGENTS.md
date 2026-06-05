@@ -20,6 +20,10 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
   trace capture, GUI fixture setup, and component snapshots.
 - Do not move app-specific formulas, expected scientific values, result schemas, or export columns into shared test helpers.
 - Boundary tests may require app-owned logic to stay under the owning app tree, but should not require GUI-free helpers to remain inside the public app entry-point file or assert exact app-private helper file lists.
+- Runner-migration tests should not rely only on GUI structural launches. When
+  migration creates an app-owned package for DIC or wearable apps, add unit
+  tests that call non-UI package functions such as `+ops`, `+view`, `+export`,
+  `+io`, or `+state` directly.
 - UI public-surface tests should assert the layered `labkit.ui.app/view/tool/diag` facade and keep low-level controls, row resize, panel internals, and popout implementation private.
 - GUI smoke/debug tests may assert that every app supports debug launch and visible startup trace, but should not claim full interactive workflow validation.
 - When one test file grows too broad, add new focused `test_*.m` files instead of appending unrelated coverage.
