@@ -20,13 +20,17 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
 - Image apps with custom preview scroll, drawing, ROI, scale-bar, or other axes interaction should create a `labkit.ui.tool.createRuntime` and pass that runtime into reusable tools. Do not set image-tool `WindowScrollWheelFcn`, `WindowButtonMotionFcn`, `WindowButtonUpFcn`, or axes `ButtonDownFcn` directly in app code.
 - DTA-backed apps use `labkit.dta.*` for discovery, loading, sessions, pulse detection, and parsed curve/table access.
 - Biosignal-backed apps use `labkit.biosignal.*` for recording loading, channel extraction, waveform processing, events, segments, measurements, and group comparisons.
-- Do not create app-specific public helper packages to make local workflow code look reusable.
-- App-owned private helpers are acceptable only when they stay under the owning app tree and do not become public reusable APIs.
-- Callback-heavy migrated apps may use an app-private runner to keep the public
-  launcher small, but the runner remains app-owned production code and must not
-  become a reusable facade.
-- When a public app file grows large, prefer moving GUI-free app-owned calculations, export builders, formatting utilities, and deterministic image/signal transforms into `apps/<family>/<app_slug>/private/`.
-- Use `apps/<family>/private/` only for helpers that are genuinely shared by multiple apps in that family.
+- Do not create app-specific helper packages outside the owning app tree, and do not move app-specific helper code into `+labkit`.
+- When an app needs extracted helpers, prefer an app-owned package under the app folder. The package name should match the app folder slug, such as `apps/image_measurement/batch_crop/+batch_crop/`.
+- New extracted app helper code should use component packages such as `+ui`,
+  `+state`, `+ops`, `+view`, `+export`, and `+io` as needed. Do not use a fixed
+  `+app` namespace; the app folder already provides ownership context, while a
+  shared `+app` package name creates MATLAB package-resolution ambiguity.
+- Callback-heavy migrated apps should move app-owned production code into these
+  package components instead of adding new `private/` runners or string-dispatch
+  workflow adapters.
+- When a public app file grows large, prefer moving GUI-free app-owned calculations, export builders, formatting utilities, deterministic image/signal transforms, and focused control construction into `apps/<family>/<app_slug>/+<app_slug>/...`.
+- Do not add new `apps/<family>/private/` helpers unless the helper is genuinely shared by multiple apps in that family and the user approves that family-level boundary.
 - Keep the public app entry point responsible for GUI state, callbacks, user alerts, app workflow order, debug launch routing, and user-facing log wording.
 
 ## Documentation Sync

@@ -63,7 +63,7 @@ Do not duplicate long policy text across human docs. Human docs may explain arch
 
 Every public library function under `+labkit/+ui`, `+labkit/+dta`, and `+labkit/+biosignal` must document its app-facing call contract immediately after the function declaration. Include inputs, outputs, options/spec fields, defaults, legal values, and examples where useful.
 
-Private package helpers must include concise top-of-file implementation contracts: expected caller, input/output shapes, side effects, and non-obvious assumptions.
+Private and app-owned package helpers must include concise top-of-file implementation contracts: expected caller, input/output shapes, side effects, and non-obvious assumptions.
 
 ## Sensitive Sample Data
 

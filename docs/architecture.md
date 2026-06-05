@@ -52,7 +52,7 @@ labkit_ECGPrint_app
 
 | Area | Responsibility |
 | --- | --- |
-| `apps/` | Public app entry points and app-specific workflow code, including app-owned private helpers. |
+| `apps/` | Public app entry points and app-specific workflow code, including app-owned package helpers under the owning app folder. |
 | `+labkit/+ui` | Reusable GUI app/view/tool/diagnostics facades plus private implementation helpers. |
 | `+labkit/+dta` | GUI-free DTA discovery, loading, session, pulse, and parsed curve/table facade. |
 | `+labkit/+biosignal` | GUI-free recording loading, channel extraction, waveform processing, events, segments, templates, measurements, and group comparisons. |
@@ -79,7 +79,15 @@ The app-facing UI API is intentionally layered:
 | Tool | Exclusive interaction runtime and composed tools. | `labkit.ui.tool.createRuntime`, `anchorEditor`, `scaleBar`, `scaleBarCalibration`. |
 | Diagnostics | Debug launch, visible trace, callback instrumentation. | `labkit.ui.diag.createContext`. |
 
-App-specific analysis, plotting annotations, result summaries, CSV schemas, failed-row behavior, and workflow wording belong in the owning app file or app-owned private helpers. The default private-helper location for a large app is `apps/<family>/<app_slug>/private/`; `apps/<family>/private/` should be reserved for helpers shared by multiple apps in that family.
+App-specific analysis, plotting annotations, result summaries, CSV schemas,
+failed-row behavior, and workflow wording belong in the owning app file or an
+app-owned package under the owning app folder. For large apps, the default
+helper location is `apps/<family>/<app_slug>/+<app_slug>/...`, with component
+packages such as `+ui`, `+state`, `+ops`, `+view`, `+export`, and `+io` created
+as needed. The app-owned package name should match the app folder slug; do not
+use a fixed `+app` namespace for every app. `apps/<family>/private/` should be
+reserved for helpers that are genuinely shared by multiple apps in that family
+and are not ready for a reusable `+labkit` facade.
 
 ## Library Extraction Rule
 

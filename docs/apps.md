@@ -11,6 +11,9 @@ startup_labkit
 ```
 
 This adds the repository root, `apps/`, and nested app category folders to the MATLAB path.
+MATLAB package folders below app folders, such as
+`apps/image_measurement/batch_crop/+batch_crop/`, are not added as direct path
+entries; they are resolved through their owning app folder.
 
 ## Current Apps
 
@@ -66,7 +69,26 @@ Move code into `+labkit` only when it is reusable without app vocabulary, testab
 
 ## App File Shape
 
-New lab apps should start as explicit public entry points under `apps/<category>/` or `apps/<category>/<app_slug>/` when the app needs private helpers. A typical single-file order is:
+New lab apps should start as explicit public entry points under `apps/<category>/`
+or `apps/<category>/<app_slug>/` when the app needs extracted helpers. A small
+app may remain a single file. When helper extraction is needed, use an app-owned
+package whose name matches the app folder slug:
+
+```text
+apps/<family>/<app_slug>/labkit_<AppName>_app.m
+apps/<family>/<app_slug>/+<app_slug>/+ui/
+apps/<family>/<app_slug>/+<app_slug>/+state/
+apps/<family>/<app_slug>/+<app_slug>/+ops/
+apps/<family>/<app_slug>/+<app_slug>/+view/
+apps/<family>/<app_slug>/+<app_slug>/+export/
+apps/<family>/<app_slug>/+<app_slug>/+io/
+```
+
+Create component packages only when the app has code for that responsibility.
+Use the app slug package name, not a fixed `+app` namespace, so MATLAB package
+resolution cannot mix helpers from sibling apps.
+
+A typical single-file order before extraction is:
 
 ```text
 1. Entry validation and optional debug launch hook
@@ -80,11 +102,23 @@ New lab apps should start as explicit public entry points under `apps/<category>
 9. Small formatting, parsing, interpolation, and numeric utilities
 ```
 
-Nested functions may read and update GUI handles or app state. Local functions after the app `end` should be GUI-free when practical; extracted app-owned workflow helpers can give focused tests direct access without adding reusable `+labkit` APIs.
+Nested functions may read and update GUI handles or app state. Local functions
+after the app `end` should be GUI-free when practical; extracted app-owned
+package helpers give focused tests direct access without adding reusable
+`+labkit` APIs.
 
-The preferred public shape is one launchable app entry point per workflow. If an app becomes too large, app-owned private helpers are acceptable when they stay under the owning app tree and do not become public reusable APIs. Move GUI-free calculations, export builders, deterministic image/signal transforms, and formatting utilities to `apps/<family>/<app_slug>/private/` when that makes the public app file easier to scan. Use `apps/<family>/private/` only for helpers that are genuinely shared by multiple apps in that family. Keep GUI state, callbacks, user alerts, workflow ordering, and debug launch routing in the public app file.
+The preferred public shape is one launchable app entry point per workflow. The
+entry point owns GUI state, callbacks, user alerts, workflow ordering, debug
+launch routing, and user-facing log wording. Extracted package helpers should
+own focused responsibilities: control construction in `+ui`, state/result
+defaults in `+state`, deterministic calculations and image/signal transforms in
+`+ops`, display/table formatting in `+view`, CSV/image output builders in
+`+export`, and dialog/file normalization in `+io`.
 
-For callback-heavy migrated apps, the public launcher may delegate the app body to an app-private runner under the same app tree when that is the smallest behavior-preserving way to keep the launch contract clear. The runner remains app-owned production code; it is not a reusable facade and should not move app-specific workflow decisions into `+labkit`.
+Do not add new string-dispatch workflow adapters such as `*Workflow.m` for
+tests. Tests should call the app-owned package function that owns the behavior.
+Use `apps/<family>/private/` only for helpers that are genuinely shared by
+multiple apps in that family and are not ready for a reusable `+labkit` facade.
 
 ## New App Checklist
 

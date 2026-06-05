@@ -24,14 +24,14 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
     S.yPix = [];
     S.curveEditor = [];
     S.curveEditActive = false;
-    S.fit = emptyFitResult();
-    S.length = emptyLengthResult();
+    S.fit = curvature.state.emptyFitResult();
+    S.length = curvature.state.emptyLengthResult();
 
     ui = labkit.ui.app.createShell(struct( ...
         'title', 'Image Curvature Measurement', ...
         'position', [90 70 1420 860], ...
         'leftWidth', 390, ...
-        'options', curvatureShellOptions()));
+        'options', curvature.ui.shellOptions()));
     fig = ui.fig;
     layFA = ui.filesAnalysisGrid;
     laySR = ui.summaryResultsGrid;
@@ -43,7 +43,7 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
         'defaultScrollFcn', @onPreviewScroll, ...
         'onTrace', debugLog.trace));
 
-    controls = createCurvatureControls(layFA, laySR, layLog, imageRuntime, struct( ...
+    controls = curvature.ui.createControls(layFA, laySR, layLog, imageRuntime, struct( ...
         'onOpenImage', @onOpenImage, ...
         'onStartCurveEdit', @onStartCurveEdit, ...
         'onUndoCurvePoint', @onUndoCurvePoint, ...
@@ -120,8 +120,8 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
             S.curveEditor.delete();
         end
         S.curveEditor = [];
-        S.fit = emptyFitResult();
-        S.length = emptyLengthResult();
+        S.fit = curvature.state.emptyFitResult();
+        S.length = curvature.state.emptyLengthResult();
         txtImage.Value = char(filepath);
         addLog(sprintf('Loaded image: %s', filepath));
         refreshAll();
@@ -147,7 +147,7 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
         S.curveEditActive = true;
         ensureCurveEditor();
         S.curveEditor.start([S.xPix(:), S.yPix(:)]);
-        S.fit = emptyFitResult();
+        S.fit = curvature.state.emptyFitResult();
         addLog('Started curve edit. Double-click blank image space to add/insert points; drag points to move; double-click a point to delete it.');
         refreshAll();
     end
@@ -155,8 +155,8 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
     function onCurveEditorChanged(points, reason)
         S.xPix = points(:, 1);
         S.yPix = points(:, 2);
-        S.fit = emptyFitResult();
-        S.length = emptyLengthResult();
+        S.fit = curvature.state.emptyFitResult();
+        S.length = curvature.state.emptyLengthResult();
         refreshSummary();
         if any(strcmp(reason, {'add point', 'delete point', 'move point'}))
             addLog(sprintf('Curve edit updated: %d point(s).', numel(S.xPix)));
@@ -175,8 +175,8 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
         else
             S.xPix = [];
             S.yPix = [];
-            S.fit = emptyFitResult();
-            S.length = emptyLengthResult();
+            S.fit = curvature.state.emptyFitResult();
+            S.length = curvature.state.emptyLengthResult();
             refreshAll();
         end
         addLog('Cleared curve points.');
@@ -190,8 +190,8 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
     end
 
     function onReferenceEditChanged(~, reason)
-        S.fit = emptyFitResult();
-        S.length = emptyLengthResult();
+        S.fit = curvature.state.emptyFitResult();
+        S.length = curvature.state.emptyLengthResult();
         reasonText = char(string(reason));
         if strcmp(reasonText, 'start')
             addLog('Started reference-pixel edit. Double-click two endpoints, then drag endpoints to refine.');
@@ -222,10 +222,10 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
 
         try
             fitPath = currentCurveFitPoints();
-            S.fit = computeCurvatureFit(S.xPix, S.yPix, scaleTool.calibration(), ...
+            S.fit = curvature.ops.computeCurvatureFit(S.xPix, S.yPix, scaleTool.calibration(), ...
                 chkDensify.Value, round(edtDenseN.Value), ...
                 fitPath(:, 1), fitPath(:, 2));
-            S.length = lengthResultFromFit(S.fit);
+            S.length = curvature.state.lengthResultFromFit(S.fit);
         catch ME
             showError('Circle fit failed', ME.message);
             return;
@@ -248,7 +248,7 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
 
         points = currentCurveLengthPoints();
         try
-            S.length = computeCurveLength(points(:, 1), points(:, 2), ...
+            S.length = curvature.ops.computeCurveLength(points(:, 1), points(:, 2), ...
                 scaleTool.calibration());
         catch ME
             showError('Curve length failed', ME.message);
@@ -275,7 +275,7 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
 
         filepath = string(fullfile(fp, fn));
         try
-            T = buildCurvatureResultTable(S.fit, S.imagePath, S.length);
+            T = curvature.export.buildResultTable(S.fit, S.imagePath, S.length);
             writetable(T, filepath);
         catch ME
             showError('Could not export result CSV', ME.message);
@@ -330,10 +330,10 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
     end
 
     function onCalibrationSettingsChanged(~, reason)
-        S.fit = emptyFitResult();
-        S.length = emptyLengthResult();
+        S.fit = curvature.state.emptyFitResult();
+        S.length = curvature.state.emptyLengthResult();
         scaleTool.clearScaleBar();
-        if isReferenceEditReason(reason)
+        if curvature.ui.isReferenceEditReason(reason)
             refreshScaleReadout();
             refreshSummary();
         else
@@ -379,23 +379,23 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
         referenceEditActive = scaleTool.isReferenceEditActive();
         editActive = S.curveEditActive || referenceEditActive;
 
-        btnStartCurve.Enable = ternary(hasImage, 'on', 'off');
-        btnStartCurve.Text = ternary(S.curveEditActive, ...
+        btnStartCurve.Enable = curvature.view.ternary(hasImage, 'on', 'off');
+        btnStartCurve.Text = curvature.view.ternary(S.curveEditActive, ...
             'Finish curve edit', 'Start curve edit');
         scaleTool.setEnabled(struct( ...
             'hasImage', hasImage, ...
             'blockInputs', S.curveEditActive, ...
             'blockPlacement', editActive));
 
-        btnUndoPoint.Enable = ternary(hasCurve && ~referenceEditActive, 'on', 'off');
-        btnClearCurve.Enable = ternary(hasCurve && ~referenceEditActive, 'on', 'off');
-        chkDensify.Enable = ternary(~editActive, 'on', 'off');
-        edtDenseN.Enable = ternary(~editActive, 'on', 'off');
-        chkShowDense.Enable = ternary(S.fit.ok && ~editActive, 'on', 'off');
-        btnFit.Enable = ternary(numel(S.xPix) >= 3 && ~editActive, 'on', 'off');
-        btnMeasureLength.Enable = ternary(numel(S.xPix) >= 2 && ~editActive, 'on', 'off');
-        btnExportCSV.Enable = ternary((S.fit.ok || S.length.ok) && ~editActive, 'on', 'off');
-        btnExportOverlay.Enable = ternary(hasImage && ~editActive, 'on', 'off');
+        btnUndoPoint.Enable = curvature.view.ternary(hasCurve && ~referenceEditActive, 'on', 'off');
+        btnClearCurve.Enable = curvature.view.ternary(hasCurve && ~referenceEditActive, 'on', 'off');
+        chkDensify.Enable = curvature.view.ternary(~editActive, 'on', 'off');
+        edtDenseN.Enable = curvature.view.ternary(~editActive, 'on', 'off');
+        chkShowDense.Enable = curvature.view.ternary(S.fit.ok && ~editActive, 'on', 'off');
+        btnFit.Enable = curvature.view.ternary(numel(S.xPix) >= 3 && ~editActive, 'on', 'off');
+        btnMeasureLength.Enable = curvature.view.ternary(numel(S.xPix) >= 2 && ~editActive, 'on', 'off');
+        btnExportCSV.Enable = curvature.view.ternary((S.fit.ok || S.length.ok) && ~editActive, 'on', 'off');
+        btnExportOverlay.Enable = curvature.view.ternary(hasImage && ~editActive, 'on', 'off');
     end
 
     function refreshImageOverlay()
@@ -455,7 +455,7 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
         if ~isempty(S.curveEditor)
             curve = S.curveEditor.curvePoints();
         end
-        plotStaticCurveAnchorsView(ax, points, curve, S.fit, chkShowDense.Value);
+        curvature.view.plotStaticCurveAnchors(ax, points, curve, S.fit, chkShowDense.Value);
     end
 
     function onPreviewScroll(~, event)
@@ -465,14 +465,14 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
         point = ui.topAxes.CurrentPoint;
         x = point(1, 1);
         y = point(1, 2);
-        if ~insideImageBounds(x, y, size(S.image))
+        if ~curvature.view.insideImageBounds(x, y, size(S.image))
             return;
         end
-        zoomAxesAtPoint(ui.topAxes, x, y, event.VerticalScrollCount, size(S.image));
+        curvature.view.zoomAxesAtPoint(ui.topAxes, x, y, event.VerticalScrollCount, size(S.image));
     end
 
     function refreshSummary()
-        summary = curvatureSummaryViewData(S.imagePath, S.xPix, S.fit, ...
+        summary = curvature.view.summaryViewData(S.imagePath, S.xPix, S.fit, ...
             S.length, S.curveEditActive, scaleTool.isReferenceEditActive());
         txtPointCount.Value = summary.pointCountText;
         resultTable.Data = summary.tableData;
