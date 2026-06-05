@@ -12,15 +12,29 @@ for, and the final PR handoff is ready.
 ## Operating Rules
 
 - Work in logical phase commits on the current development branch.
+- Re-read this roadmap before each phase and after each phase. Update it when
+  facts change, phase scope changes, validation reveals risk, or a simpler
+  implementation path becomes clear.
+- Keep roadmap updates operational. Add only detail that changes execution,
+  validation, risk control, or handoff; avoid turning this file into speculative
+  architecture documentation.
 - Preserve public app entrypoint names and user-visible workflows.
 - Keep app-specific formulas, thresholds, result schemas, exports, plot wording,
   and workflow decisions in the owning app tree.
+- App internals may be rewritten when that materially improves structure,
+  testability, or maintainability, but the public entrypoint and default
+  user-facing behavior remain stable.
 - Do not move app-only code into `+labkit` unless it satisfies the documented
   reusable-library extraction rule.
 - Production code remains function/struct based. MATLAB class-based code is
   allowed for tests that use `matlab.unittest` or `matlab.uitest`.
+- Prefer the smallest implementation that satisfies the phase acceptance
+  criteria. Do not add new public facades, generic frameworks, fixture formats,
+  or CI jobs only for possible future use.
 - Do not save raw sample paths, filenames, user names, timestamps, device IDs,
   or other sensitive sample metadata in tests, logs, artifacts, docs, or commits.
+- Do not delete legacy tests, launch behavior, or app helper code until the
+  replacement path is mapped, covered, and passing in the relevant phase.
 - Before opening the final PR for the completed refactor, delete this roadmap
   unless the user explicitly asks to keep it.
 
@@ -57,6 +71,10 @@ Final state:
   or test-only app behavior.
 - `__labkit_test__` and app test handlers are legacy test compatibility surface
   and must be removed.
+- Guardrails that target known legacy debt start as inventory or expected-debt
+  checks, then become hard failures in the phase that removes that debt.
+- The old and new test runners coexist until equivalent coverage is ported and
+  recorded in the coverage migration map.
 - Coverage initially reports only; do not introduce hard coverage thresholds
   until the new test architecture is stable.
 - GUI gesture CI starts as manual or scheduled and non-blocking.
@@ -139,15 +157,17 @@ Trace should evolve from string logging into a structured diagnostic event
 stream with human-readable rendering:
 
 ```text
-timestamp, elapsedMs, seq, appName, component, event, reason, level,
-sessionId, details
+schemaVersion, timestamp, elapsedMs, seq, runId, appName, testName,
+component, event, reason, level, sessionId, details
 ```
 
 Trace files should prefer JSONL for machine-readable CI and test artifacts,
 with a companion text rendering for quick human inspection. The visible Log tab
 may mirror trace lines only in debug mode. App user logs and diagnostic trace
 events should remain linked but separable: app logs are user/workflow messages;
-trace events are audit/debug records.
+trace events are audit/debug records. Trace `details` must use sanitized values
+and must not contain local paths, source filenames, timestamps from sample
+metadata, device IDs, user names, or other sensitive sample metadata.
 
 Allowed `reason` values:
 
@@ -171,6 +191,75 @@ High-volume pointer, drag, and scroll behavior should be traced through
 runtime/tool lifecycle events such as start, update, commit, cancel, restore,
 and error. Default figure instrumentation should continue to skip raw
 pointer/drag/scroll callbacks so debug mode remains usable.
+
+## Safety And Scope Guardrails
+
+Use these controls to keep the large refactor reversible and focused.
+
+### Dynamic Roadmap Review
+
+At the end of each phase:
+
+- update `Current Phase`, `Validation Log`, and `Deviation Log`;
+- update the coverage migration map when tests are mapped, ported, dual-running,
+  deleted, or deferred;
+- review whether the next phase should be narrowed, split, or reordered based on
+  validation evidence;
+- remove or defer speculative tasks that do not directly reduce current risk,
+  simplify app structure, improve coverage, or improve CI diagnosability.
+
+Do not add broad new abstractions just because several future phases might use
+them. Add the narrow contract needed now, then generalize only after two or more
+real call sites prove the shape.
+
+### Deletion Safety
+
+Before deleting old tests, runner files, app test handlers, or debug/request
+paths:
+
+- prove the replacement exists and is exercised by automated tests;
+- record the old-to-new coverage mapping;
+- run the old and new path together when feasible;
+- keep a small focused diff for each deletion phase so failures can be traced
+  back to one boundary.
+
+### Guardrail Rollout
+
+New style and architecture guardrails may be introduced in three modes:
+
+```text
+inventory     reports current state and debt counts
+expected-debt fails only for new regressions outside the known debt list
+hard-fail     fails for any violation
+```
+
+Phase 2 should prefer `inventory` or `expected-debt` for legacy test backdoors,
+oversized app entrypoints, and old runner dependencies. Phase 4 and Phase 6
+promote the relevant checks to `hard-fail` after the corresponding legacy
+surface is removed.
+
+### App Rewrite Boundary
+
+App entrypoint internals may be rewritten during decomposition when this makes
+state ownership, callbacks, or tests clearer. The stable contract is:
+
+- public app command names remain;
+- normal launch and debug launch remain;
+- scientific calculations, result schemas, export formats, and default log
+  wording remain stable unless explicitly approved;
+- app-private helpers may be reorganized freely inside the owning app family;
+- reusable `+labkit` APIs only grow when they satisfy the extraction rule.
+
+### Risk Register
+
+| Risk | Mitigation |
+| --- | --- |
+| New guardrails fail before legacy debt is removed. | Start as inventory/expected-debt; promote to hard-fail only in the removal phase. |
+| Old tests are deleted before equivalent coverage exists. | Require coverage map status to reach `ported` or `dual-running` before deletion. |
+| GUI gesture tests become flaky or block PRs. | Keep gesture CI manual/scheduled and non-blocking until stable. |
+| App rewrites change scientific behavior accidentally. | Preserve fixtures, export schema assertions, and focused helper tests before large entrypoint changes. |
+| Trace artifacts leak local or sample metadata. | Sanitize trace details and artifact writers; keep sensitive-sample guardrails active. |
+| The roadmap grows into speculative architecture work. | Add only execution-relevant details and defer unproven abstractions. |
 
 ## Phase Checklist
 
@@ -210,11 +299,16 @@ Tasks:
   - GUI available: `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 --suite gui`
 - Map each old test file to its future test intent so coverage is not lost when
   `tests/suites/` is deleted.
+- Record current legacy-debt counts for `__labkit_test__`, app test handlers,
+  hidden diagnostics commands, oversized app entrypoints, and old runner
+  dependencies.
 
 Acceptance:
 
 - Baseline facts are recorded in this file or a phase commit message.
 - Any unavailable MATLAB or GUI capability is reported explicitly.
+- Coverage migration map has at least `mapped` or `deferred` status for every
+  old test area before Phase 6 work begins.
 
 ### Phase 1: New Test Platform Skeleton
 
@@ -234,7 +328,8 @@ Tasks:
   setup/teardown, artifact writing, structured trace capture, text trace
   rendering, and component snapshots.
 - Add a structured diagnostic trace helper that records event structs with
-  monotonic `seq`, elapsed time, reason validation, optional `sessionId`, and
+  schema version, `runId`, optional `testName`, monotonic `seq`, elapsed time,
+  reason validation, optional `sessionId`, sanitized `details`, and
   machine-readable JSONL artifact output.
 - Update PowerShell and Bash wrappers to call the new entrypoint while preserving
   common CLI options.
@@ -257,8 +352,10 @@ Tasks:
   - package dependency boundaries
   - app entrypoint boundaries
   - sensitive sample hygiene
-  - absence of `__labkit_test__`, `AppTestHandlers`, and hidden load diagnostics
-  - app entrypoint hard limit of 500 lines
+  - inventory or expected-debt checks for `__labkit_test__`, `AppTestHandlers`,
+    and hidden load diagnostics until Phase 4 promotes them to hard-fail
+  - inventory or expected-debt checks for app entrypoint size until Phase 5
+    promotes the 500-line limit to hard-fail
   - public library app-facing contract comments
   - private helper implementation contract comments
   - no helper-dump packages
@@ -269,6 +366,8 @@ Acceptance:
 
 - `buildtool checkStyle` runs independently.
 - Guardrails fail with clear messages that point to the owning boundary.
+- Legacy debt guardrails clearly distinguish inventory, expected-debt, and
+  hard-fail modes.
 
 ### Phase 3: App Helper Extraction Before Test Hook Removal
 
@@ -292,6 +391,8 @@ Acceptance:
 - Every old `__labkit_test__` command has equivalent direct helper-level test
   coverage.
 - No extracted helper crosses app/library ownership boundaries.
+- Replacement helper tests are passing before the corresponding app test handler
+  is removed in Phase 4.
 
 ### Phase 4: Delete App Test Backdoors
 
@@ -313,6 +414,7 @@ Acceptance:
 - All app entrypoints still support normal and debug launch.
 - Debug launch supports diagnostic options without exposing hidden workflow or
   file-load test behavior.
+- Legacy test-backdoor guardrails are promoted to hard-fail.
 
 ### Phase 5: App Entrypoint Decomposition
 
@@ -328,6 +430,9 @@ Tasks:
   logging, and orchestration.
 - Keep pure calculation, export, formatting, deterministic transforms, and
   plot-data preparation in app-owned private helpers.
+- Internal app rewrites are allowed when they simplify state ownership or test
+  seams, but each app migration should keep a focused behavior-preservation
+  checklist for calculations, export schema, log wording, and default workflow.
 
 Acceptance:
 
@@ -335,6 +440,8 @@ Acceptance:
 - Target for major app entrypoints is near or below 350 lines.
 - App behavior, export schemas, and log wording are unchanged unless explicitly
   approved by the user.
+- App entrypoint size guardrail is promoted to hard-fail after the final app in
+  this phase is migrated.
 
 ### Phase 6: Full Test Rewrite And Old Suite Deletion
 
@@ -344,8 +451,12 @@ Tasks:
   - pure logic: function-based `matlab.unittest`
   - fixture/parameterized/integration: class-based `matlab.unittest.TestCase`
   - GUI: class-based `matlab.uitest.TestCase`
-- Delete `tests/suites/`.
-- Delete `tests/run_all_tests.m`.
+- Port old tests by coverage area and record status transitions in the coverage
+  migration map.
+- Delete `tests/suites/` only after all old test areas are `ported`,
+  `dual-running`, or explicitly `deferred` by the user.
+- Delete `tests/run_all_tests.m` only after wrappers and CI no longer depend on
+  it.
 - Replace old GUI helper callback-invocation style with `matlab.uitest` gestures
   where feasible.
 
@@ -353,6 +464,7 @@ Acceptance:
 
 - No tracked test depends on the old custom runner.
 - `buildtool test` is the full non-GUI entrypoint.
+- Old runner dependency guardrails are promoted to hard-fail.
 
 ### Phase 7: GUI Structural And Gesture Coverage
 
@@ -424,7 +536,7 @@ Acceptance:
 
 | Date | Command | Result | Notes |
 | --- | --- | --- | --- |
-| 2026-06-05 | Not run | n/a | Roadmap-only change; added debug launch and trace modernization direction. |
+| 2026-06-05 | `git diff --check -- LABKIT_REFACTOR_ROADMAP.md` | pass | Roadmap-only changes; added debug/trace modernization plus safety and scope guardrails. |
 
 ## Deviation Log
 
@@ -434,6 +546,16 @@ Acceptance:
 ## Coverage Migration Map
 
 Use this table during Phase 0 and Phase 6. Fill it before deleting old tests.
+Allowed status values:
+
+```text
+pending
+mapped
+ported
+dual-running
+old-deleted
+deferred
+```
 
 | Old test or area | New location | Status | Notes |
 | --- | --- | --- | --- |
