@@ -38,8 +38,12 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
 
 ## Validation Routing
 
-- Electrochem app change: `scripts/run_matlab_tests.sh --suite apps/electrochem`; add `--gui` for layout, launch, or callback wiring.
-- DIC app change: `scripts/run_matlab_tests.sh --suite apps/dic --gui`.
-- Image measurement app change: `scripts/run_matlab_tests.sh --suite apps/image_measurement --gui`.
-- Wearable app change: `scripts/run_matlab_tests.sh --suite apps/wearable --gui`; add `--suite labkit/biosignal` when the biosignal facade contract may be affected.
-- App entrypoint or boundary changes also run `scripts/run_matlab_tests.sh --suite project`.
+- Electrochem app change: `buildtool testAppsElectrochem`; use
+  `buildtool testAppsElectrochemGui` for layout, launch, or callback wiring.
+- DIC app change: `buildtool testAppsDicGui`.
+- Image measurement app change: `buildtool testAppsImageMeasurement`; use
+  `buildtool testAppsImageMeasurementGui` for layout, launch, or callback wiring.
+- Wearable app change: `buildtool testAppsWearableGui`; add
+  `buildtool testLabkitBiosignal` when the biosignal facade contract may be
+  affected.
+- App entrypoint or boundary changes also run `buildtool testProject`.

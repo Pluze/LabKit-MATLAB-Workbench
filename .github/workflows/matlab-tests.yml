@@ -15,6 +15,30 @@ env:
   MATLAB_RELEASE: R2025a
 
 jobs:
+  shell-wrapper:
+    name: Shell Wrapper Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Check Bash wrapper syntax
+        run: bash -n scripts/run_matlab_tests.sh
+
+      - name: Check Bash wrapper help
+        run: bash scripts/run_matlab_tests.sh --help
+
+      - name: Check Bash wrapper build task smoke
+        run: MATLAB_CMD=true bash scripts/run_matlab_tests.sh testProject
+
+      - name: Check removed selector flags are rejected
+        run: |
+          if bash scripts/run_matlab_tests.sh --suite; then
+            echo "Expected --suite to be rejected"
+            exit 1
+          fi
+
   quality:
     name: Quality Guardrails
     runs-on: ubuntu-latest
@@ -31,7 +55,7 @@ jobs:
           release: ${{ env.MATLAB_RELEASE }}
 
       - name: Prepare artifact directories
-        run: mkdir -p artifacts/logs artifacts/test-results/html
+        run: mkdir -p artifacts/logs
 
       - name: Run quality guardrails
         uses: matlab-actions/run-build@v3
@@ -47,9 +71,8 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
           path: |
-            artifacts/test-results/junit.xml
-            artifacts/test-results/html/**
-            artifacts/logs/matlab.log
+            artifacts/test-results/**
+            artifacts/logs/**
 
   unit:
     name: Unit And Coverage
@@ -67,7 +90,7 @@ jobs:
           release: ${{ env.MATLAB_RELEASE }}
 
       - name: Prepare artifact directories
-        run: mkdir -p artifacts/logs artifacts/test-results/html artifacts/coverage/html
+        run: mkdir -p artifacts/logs
 
       - name: Run unit tests and coverage
         uses: matlab-actions/run-build@v3
@@ -83,11 +106,9 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
           path: |
-            artifacts/test-results/junit.xml
-            artifacts/test-results/html/**
-            artifacts/coverage/cobertura.xml
-            artifacts/coverage/html/**
-            artifacts/logs/matlab.log
+            artifacts/test-results/**
+            artifacts/coverage/**
+            artifacts/logs/**
 
   integration:
     name: Integration Tests
@@ -105,7 +126,7 @@ jobs:
           release: ${{ env.MATLAB_RELEASE }}
 
       - name: Prepare artifact directories
-        run: mkdir -p artifacts/logs artifacts/test-results/html
+        run: mkdir -p artifacts/logs
 
       - name: Run integration tests
         uses: matlab-actions/run-build@v3
@@ -121,9 +142,8 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
           path: |
-            artifacts/test-results/junit.xml
-            artifacts/test-results/html/**
-            artifacts/logs/matlab.log
+            artifacts/test-results/**
+            artifacts/logs/**
 
   gui-structural:
     name: GUI Structural Tests
@@ -142,7 +162,7 @@ jobs:
           release: ${{ env.MATLAB_RELEASE }}
 
       - name: Prepare artifact directories
-        run: mkdir -p artifacts/logs artifacts/test-results/html artifacts/gui/trace artifacts/gui/snapshots
+        run: mkdir -p artifacts/logs
 
       - name: Run GUI structural tests
         uses: matlab-actions/run-build@v3
@@ -158,11 +178,9 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
           path: |
-            artifacts/test-results/junit.xml
-            artifacts/test-results/html/**
-            artifacts/gui/trace/**
-            artifacts/gui/snapshots/**
-            artifacts/logs/matlab.log
+            artifacts/test-results/**
+            artifacts/gui/**
+            artifacts/logs/**
 
   gui-gesture:
     name: GUI Gesture Tests
@@ -182,7 +200,7 @@ jobs:
           release: ${{ env.MATLAB_RELEASE }}
 
       - name: Prepare artifact directories
-        run: mkdir -p artifacts/logs artifacts/test-results/html artifacts/gui/trace artifacts/gui/snapshots
+        run: mkdir -p artifacts/logs
 
       - name: Run GUI gesture tests
         uses: matlab-actions/run-build@v3
@@ -198,8 +216,6 @@ jobs:
           if-no-files-found: warn
           retention-days: 14
           path: |
-            artifacts/test-results/junit.xml
-            artifacts/test-results/html/**
-            artifacts/gui/trace/**
-            artifacts/gui/snapshots/**
-            artifacts/logs/matlab.log
+            artifacts/test-results/**
+            artifacts/gui/**
+            artifacts/logs/**

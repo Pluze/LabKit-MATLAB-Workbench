@@ -127,7 +127,11 @@ fi
 rm -f "$LOG_FILE"
 
 set +e
-"$MATLAB_BIN" "${MATLAB_FLAG_ARGS[@]}" -logfile "$LOG_FILE" -batch "cd($(matlab_literal "$ROOT_DIR")); buildtool $TASK_TEXT;"
+if [[ ${#MATLAB_FLAG_ARGS[@]} -gt 0 ]]; then
+    "$MATLAB_BIN" "${MATLAB_FLAG_ARGS[@]}" -logfile "$LOG_FILE" -batch "cd($(matlab_literal "$ROOT_DIR")); buildtool $TASK_TEXT;"
+else
+    "$MATLAB_BIN" -logfile "$LOG_FILE" -batch "cd($(matlab_literal "$ROOT_DIR")); buildtool $TASK_TEXT;"
+fi
 status=$?
 set -e
 

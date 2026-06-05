@@ -34,7 +34,11 @@
 
 ## Validation Routing
 
-- Always run `scripts/run_matlab_tests.sh --suite project` for package boundary or public surface changes.
-- DTA changes: also run `scripts/run_matlab_tests.sh --suite labkit/dta`; add `--suite apps/electrochem` when app-facing behavior may be affected.
-- Biosignal changes: also run `scripts/run_matlab_tests.sh --suite labkit/biosignal`; add `--suite apps/wearable` when app-facing behavior may be affected.
-- UI changes: also run `scripts/run_matlab_tests.sh --suite labkit/ui`; add `--suite apps --gui` for layout, launch, callback, or app shell changes.
+- Always run `buildtool testProject` for package boundary or public surface changes.
+- DTA changes: also run `buildtool testLabkitDta`; add
+  `buildtool testAppsElectrochem` when app-facing behavior may be affected.
+- Biosignal changes: also run `buildtool testLabkitBiosignal`; add
+  `buildtool testAppsWearableGui` when app-facing behavior may be affected.
+- UI changes: also run `buildtool testLabkitUi`; add
+  `buildtool testLabkitUiGui testAppsGui` for layout, launch, callback, or app
+  shell changes.
