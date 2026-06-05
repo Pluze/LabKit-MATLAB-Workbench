@@ -3,9 +3,8 @@
 Runs the LabKit MATLAB test suite from Windows PowerShell.
 
 .DESCRIPTION
-This is the Windows-native wrapper for tests/runLabKitTests.m. It preserves the
-existing CLI while the legacy tests/run_all_tests.m runner remains enabled
-through the migration window.
+This is the Windows-native wrapper for tests/runLabKitTests.m. It runs the
+official matlab.unittest and matlab.uitest suites.
 #>
 
 $ErrorActionPreference = 'Stop'
@@ -183,7 +182,7 @@ $suiteCell = ConvertTo-MatlabCell $Suites
 $testCell = ConvertTo-MatlabCell $Tests
 $includeGuiText = if ($IncludeGui) { 'true' } else { 'false' }
 $selectionExpr = "struct('suites', {$suiteCell}, 'tests', {$testCell})"
-$testExpr = "runLabKitTests('IncludeGui', $includeGuiText, 'Suites', $suiteCell, 'Tests', $testCell, 'IncludeLegacy', true, 'FailIfNoTests', false);"
+$testExpr = "runLabKitTests('IncludeGui', $includeGuiText, 'Suites', $suiteCell, 'Tests', $testCell, 'FailIfNoTests', false);"
 $matlabCommand = "cd($(ConvertTo-MatlabStringLiteral $rootPath)); addpath(fullfile(pwd, 'tests')); $testExpr"
 
 $flagSource = if ($IncludeGui) { $env:MATLAB_GUI_FLAGS } else { $env:MATLAB_FLAGS }

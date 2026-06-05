@@ -269,7 +269,7 @@ state ownership, callbacks, or tests clearer. The stable contract is:
 - [x] Phase 3: App helper extraction before test hook removal.
 - [x] Phase 4: Delete app test backdoors.
 - [x] Phase 5: App entrypoint decomposition.
-- [ ] Phase 6: Full test rewrite and old suite deletion.
+- [x] Phase 6: Full test rewrite and old suite deletion.
 - [ ] Phase 7: GUI structural and gesture coverage.
 - [ ] Phase 8: CI artifact and coverage upgrade.
 - [ ] Phase 9: MATLAB Project and packaging style.
@@ -278,34 +278,30 @@ state ownership, callbacks, or tests clearer. The stable contract is:
 
 ## Current Phase
 
-Phase: 6
+Phase: 7
 Status: not started
 Owner notes:
 
-- Phase 5 completed on `codex/app-test-platform-rewrite`.
-- All public app entrypoints are below the 500-line hard-fail target; the
-  project guardrail reports `0` oversized entrypoint files.
-- Final public launcher sizes after Phase 5 are Curvature `442`, FocusStack
-  `397`, DICPostprocess `317`, CIC `47`, CSC `45`, VTResistance `33`,
-  DICPreprocess `25`, ECGPrint `25`, EIS `25`, and ChronoOverlay `25`
-  PowerShell-counted lines. The enforcing MATLAB guardrail also reports zero
-  files over 500 lines.
-- Phase 5 image-measurement checkpoint: Curvature and FocusStack public
-  entrypoints now contain only one public function each and are below the
-  hard-fail target. Extracted helpers stay app-owned under the existing
-  image-measurement app trees.
-- Phase 5 DIC checkpoint: DICPreprocess delegates its callback-heavy app body
-  to an app-owned private runner and DICPostprocess uses app-owned private
-  helpers. DIC public entrypoints are below the hard-fail target.
-- Phase 5 electrochem/wearable checkpoint: CIC, VTResistance, CSC, EIS,
-  ChronoOverlay, and ECGPrint public entrypoints delegate their callback-heavy
-  GUI bodies to app-owned private runners. App-specific calculations, export
-  schemas, labels, plot behavior, and log wording remain in owning app code.
-- Legacy app backdoor inventory remains 0/0/0. Current remaining expected debt
-  is 73 private-helper files missing top-of-file implementation contracts.
-- Phase 6 starts from the coverage migration map, ports old suites to official
-  MATLAB test locations, then removes the old runner only after replacement
-  coverage is mapped and passing.
+- Phase 6 completed on `codex/app-test-platform-rewrite`.
+- The 44 old suite files were ported into official `matlab.unittest` or
+  `matlab.uitest` class wrappers under `tests/unit`, `tests/integration`, and
+  `tests/gui/structural`.
+- `tests/suites/` and `tests/run_all_tests.m` were deleted after official-only
+  unit, integration, and GUI structural runs passed.
+- `buildtool test` is the canonical full non-GUI entry point and now runs 44
+  official non-GUI tests without the old runner.
+- `buildtool testGuiStructural` runs 13 official GUI structural tests. Gesture
+  tests remain Phase 7 work.
+- The PowerShell/Bash wrappers and current GitHub Actions command no longer
+  pass `IncludeLegacy` or call `run_all_tests`.
+- Project guardrails hard-fail if old app test backdoors, oversized public app
+  entrypoints, `tests/suites/`, `tests/run_all_tests.m`, `IncludeLegacy`, or
+  old-runner routing references are reintroduced.
+- Coverage artifacts are generated from official unit/integration tests.
+- Current remaining expected debt is 73 private-helper files missing
+  top-of-file implementation contracts.
+- Phase 7 starts from the official GUI structural suite and adds richer
+  structural checks plus non-blocking gesture coverage and trace assertions.
 
 ## Phase 0 Baseline
 
@@ -667,6 +663,16 @@ Acceptance:
 | 2026-06-05 | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 --suite project` | pass | Project guardrails passed; oversized entrypoint inventory is 0 files. |
 | 2026-06-05 | `matlab -batch "... buildtool checkStyle"` | pass | Official style/project guardrails passed with 0 legacy backdoor files and 0 oversized app entrypoints; private-helper contract debt remains expected at 73 files. |
 | 2026-06-05 | `matlab -batch "... buildtool test"` | pass | Broad non-GUI suite passed after Phase 5 app entrypoint decomposition. |
+| 2026-06-05 | `matlab -batch "... buildtool testUnit"` | pass | Official-only unit run matched 27 tests after old-suite wrappers were generated and before old-suite deletion. |
+| 2026-06-05 | `matlab -batch "... buildtool testIntegration"` | pass | Official-only integration run matched 16 tests after old project guardrails were ported. |
+| 2026-06-05 | `matlab -batch "... runLabKitTests('Suites', {'gui'}, 'IncludeGui', true, 'IncludeLegacy', false, ...)"` | pass | Official-only GUI structural migration run matched 13 tests before deleting the old suite tree. |
+| 2026-06-05 | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 --suite project` | pass | PowerShell wrapper ran official project/style coverage only; old runner dependency inventory is 0 files. |
+| 2026-06-05 | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 --suite apps/electrochem` | pass | PowerShell wrapper suite filter matched 7 official electrochem unit tests with no old runner. |
+| 2026-06-05 | `matlab -batch "... buildtool checkStyle"` | pass | Official style/project guardrails passed after removing `tests/suites/` and `tests/run_all_tests.m`. |
+| 2026-06-05 | `matlab -batch "... buildtool test"` | pass | Canonical full non-GUI entry point matched 44 official tests with no old runner. |
+| 2026-06-05 | `matlab -batch "... buildtool testGuiStructural"` | pass | Official GUI structural task matched 13 `matlab.uitest` structural tests. |
+| 2026-06-05 | `matlab -batch "... buildtool coverage"` | pass | Official coverage run matched 44 unit/integration tests and generated Cobertura plus HTML coverage artifacts. |
+| 2026-06-05 | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 --test test_gui_layout_ui_scale_bar_tool` | pass | PowerShell `--test` filter auto-selected GUI mode and matched one official GUI structural test. |
 
 ## Deviation Log
 
@@ -677,6 +683,7 @@ Acceptance:
 | 2026-06-05 | 4 | Added app-owned workflow wrapper functions for tests to reach GUI-free app helpers after app-entrypoint backdoors were removed. | MATLAB private helpers are not directly callable from the test tree, and wrapper functions preserve coverage without exposing hidden commands through public app launchers or moving app-specific logic into `+labkit`. | Codex |
 | 2026-06-05 | 5 | Used an app-owned private runner for DICPreprocess instead of splitting every callback into separate public-launcher helpers. | The app is callback-heavy and GUI-stateful; moving the app body into a private runner preserves behavior and launch/debug contracts while keeping the public entrypoint below the hard-fail size target. | Codex |
 | 2026-06-05 | 5 | Extended the app-owned private-runner pattern to electrochem and ECGPrint callback-heavy entrypoints. | This completed the entrypoint hard-fail target without moving app-specific calculations, export schemas, labels, plot behavior, or log wording into `+labkit` or adding unproven public facades. | Codex |
+| 2026-06-05 | 6 | Ported old function-style tests into class-based official wrappers, including pure logic tests. | Class wrappers preserve test tags, suite filtering, and original assertion bodies during migration; this avoided a second custom tag layer for function-based tests. | Codex |
 
 ## Coverage Migration Map
 
@@ -694,15 +701,15 @@ deferred
 
 | Old test or area | New location | Status | Notes |
 | --- | --- | --- | --- |
-| `tests/suites/project` | `tests/integration/project` | dual-running | 6 legacy files plus official project/style guardrails under `tests/integration/project`. |
-| `tests/suites/labkit/dta` | `tests/unit/labkit/dta` | mapped | 8 files; parser, facade, session, pulse behavior. |
-| `tests/suites/labkit/biosignal` | `tests/unit/labkit/biosignal` | mapped | 5 files; import, filtering, peaks, segments, measurements. |
-| `tests/suites/labkit/ui` | `tests/unit/labkit/ui` and `tests/gui/*` | mapped | 11 files; split non-GUI helpers from GUI behavior. |
-| `tests/suites/apps/electrochem` | `tests/unit/apps/electrochem` and `tests/integration/app_workflows` | mapped | 8 files; legacy bridge tests now call `electrochemWorkflow`; official port remains Phase 6. |
-| `tests/suites/apps/dic` | `tests/unit/apps/dic` and `tests/gui/structural` | mapped | 1 file; keep DIC workflow contracts app-owned. |
-| `tests/suites/apps/image_measurement` | `tests/unit/apps/image_measurement` and `tests/gui/gesture` | mapped | 3 files; legacy bridge tests now call Curvature/FocusStack workflow helpers; official port remains Phase 6. |
-| `tests/suites/apps/wearable` | `tests/unit/apps/wearable` and `tests/gui/structural` | mapped | 1 file; ECGPrint helper and launch coverage. |
-| `tests/suites/apps/smoke` | `tests/gui/structural` | mapped | 1 file; all-app debug launch smoke. |
+| `tests/suites/project` | `tests/integration/project` | old-deleted | 6 old guardrail files ported to official class wrappers plus existing project/style guardrails. |
+| `tests/suites/labkit/dta` | `tests/unit/labkit/dta` | old-deleted | 8 DTA parser, facade, session, and pulse tests ported to official class wrappers. |
+| `tests/suites/labkit/biosignal` | `tests/unit/labkit/biosignal` | old-deleted | 5 biosignal import, processing, peak, segment, and measurement tests ported to official class wrappers. |
+| `tests/suites/labkit/ui` | `tests/unit/labkit/ui` and `tests/gui/structural/labkit/ui` | old-deleted | 11 UI helper and structural GUI tests ported to official class wrappers. |
+| `tests/suites/apps/electrochem` | `tests/unit/apps/electrochem` and `tests/gui/structural/apps/electrochem` | old-deleted | 8 electrochem analysis/export and GUI layout tests ported to official class wrappers. |
+| `tests/suites/apps/dic` | `tests/gui/structural/apps/dic` | old-deleted | 1 DIC GUI layout test ported to an official `matlab.uitest` wrapper. |
+| `tests/suites/apps/image_measurement` | `tests/unit/apps/image_measurement` and `tests/gui/structural/apps/image_measurement` | old-deleted | 3 image-measurement calculation/fusion and GUI layout tests ported to official class wrappers. |
+| `tests/suites/apps/wearable` | `tests/gui/structural/apps/wearable` | old-deleted | 1 ECGPrint GUI layout test ported to an official `matlab.uitest` wrapper. |
+| `tests/suites/apps/smoke` | `tests/gui/structural/apps/smoke` | old-deleted | 1 all-app debug launch smoke test ported to an official `matlab.uitest` wrapper. |
 
 ## Completion Gate
 

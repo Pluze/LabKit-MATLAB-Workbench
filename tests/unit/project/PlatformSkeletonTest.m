@@ -1,8 +1,7 @@
 classdef PlatformSkeletonTest < matlab.unittest.TestCase
     %PLATFORMSKELETONTEST Seed official tests for the new LabKit platform.
     %
-    % This class intentionally tests only the new runner/support skeleton.
-    % Legacy behavior remains covered by tests/run_all_tests.m until Phase 6.
+    % This class tests runner/support artifact contracts used by the official suite.
 
     methods (Test, TestTags = {'Unit', 'Smoke', 'Style'})
         function artifactPathsUseRoadmapLayout(testCase)

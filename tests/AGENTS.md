@@ -6,18 +6,14 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
 
 - `docs/testing.md`
 - affected source files
-- nearby tests under `tests/suites/<target>/`
+- nearby tests under `tests/unit/`, `tests/integration/`, or `tests/gui/`
 
 ## Test Layout
 
-- During the app/test platform migration, add newly ported official tests under
-  `tests/unit/`, `tests/integration/`, or `tests/gui/` using
+- Add tests under `tests/unit/`, `tests/integration/`, or `tests/gui/` using
   `matlab.unittest` or `matlab.uitest` styles.
-- Keep legacy coverage under `tests/suites/<target>/test_*.m` until the
-  coverage migration map marks that area `ported`, `dual-running`, or
-  `deferred`.
-- Do not delete `tests/suites/` tests or `tests/run_all_tests.m` until Phase 6
-  removes old-runner dependencies.
+- Do not add a separate custom runner or direct pass/fail test tree; route
+  coverage through `tests/runLabKitTests.m` and build tasks.
 - Keep architecture guardrails in the narrowest project-suite file that matches the concern.
 - Use `tests/helpers/` only for setup, lookup, assertion, cleanup, and fixture-building helpers.
 - Use `tests/support/` for official-runner setup, artifact paths, structured

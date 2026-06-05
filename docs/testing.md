@@ -12,23 +12,21 @@ Do not claim behavior is preserved unless tests or fixtures support that claim.
 
 ## Test Commands
 
-Phase 1 of the app/test platform migration adds MATLAB build tasks and an
-official `matlab.unittest` entry point while the old suite is still being
-ported. During this transition:
+Use the MATLAB build tasks for the common official test entry points:
 
 ```bash
 buildtool checkStyle
 buildtool test
 buildtool testUnit
+buildtool testIntegration
+buildtool testGuiStructural
 buildtool coverage
 ```
 
-- `buildtool test` is the transitional full non-GUI entry point: it runs the
-  official seed/migrated tests and then the legacy non-GUI suite.
-- `buildtool checkStyle` runs official style-tag tests and the legacy project
-  guardrails until those guardrails are rewritten.
+- `buildtool test` is the full non-GUI entry point.
+- `buildtool checkStyle` runs official project/style guardrails.
 - `buildtool coverage` generates official JUnit, HTML test result, Cobertura,
-  and HTML coverage artifacts for official tests. Coverage is report-only.
+  and HTML coverage artifacts. Coverage is report-only.
 - `buildtool testGuiGesture` exists as the future gesture entry point and may
   pass with no selected tests until gesture coverage is ported.
 
@@ -50,12 +48,9 @@ If local execution policy blocks direct `.ps1` execution, run:
 powershell -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1
 ```
 
-Both wrappers call `tests/runLabKitTests.m` with legacy compatibility enabled
-and accept the same `--suite`, `--test`, and `--gui` options. The old
-`tests/run_all_tests.m` runner remains available until equivalent coverage is
-ported and the old suite is removed. Set `MATLAB_CMD` when MATLAB is not on
-`PATH`, and set `MATLAB_TEST_LOG` to override the default `matlab_test.log`
-location.
+Both wrappers call `tests/runLabKitTests.m` and accept the same `--suite`,
+`--test`, and `--gui` options. Set `MATLAB_CMD` when MATLAB is not on `PATH`,
+and set `MATLAB_TEST_LOG` to override the default `matlab_test.log` location.
 
 ## Validation Levels
 
@@ -129,26 +124,16 @@ Tests live under:
 tests/unit/
 tests/integration/
 tests/gui/
-tests/suites/project
-tests/suites/labkit/dta
-tests/suites/labkit/biosignal
-tests/suites/labkit/ui
-tests/suites/apps/electrochem
-tests/suites/apps/dic
-tests/suites/apps/image_measurement
-tests/suites/apps/wearable
-tests/suites/apps/smoke
 ```
 
-Official `matlab.unittest` tests are added under `tests/unit`,
-`tests/integration`, and `tests/gui` as coverage is ported. The legacy runner
-still discovers `test_*.m` files directly from `tests/suites/<target>/`; keep
-old-suite tests there until their replacement is recorded in the coverage
-migration map.
+Official `matlab.unittest` tests live under `tests/unit` and
+`tests/integration`. Noninteractive GUI structural and gesture tests live under
+`tests/gui` and use `matlab.uitest.TestCase` when they launch app windows or
+interact with controls.
 
 Shared setup, structural GUI assertions, and focused support routines live under `tests/helpers/`. Keep helpers limited to setup and assertions; app-specific formulas, result schemas, export formats, and expected scientific values should remain in focused suite tests.
 
-Architecture guardrails are split by concern under `tests/suites/project/`: public package surface, reusable package dependency boundaries, app entrypoint boundaries, and app-owned workflow boundaries. These guardrails may require workflow code to remain under the owning app tree, but they should not require GUI-free helpers to stay in the public app entry-point file. App-private helpers are checked by boundary rules rather than exact file-list assertions.
+Architecture guardrails are split by concern under `tests/integration/project/`: public package surface, reusable package dependency boundaries, app entrypoint boundaries, and app-owned workflow boundaries. These guardrails may require workflow code to remain under the owning app tree, but they should not require GUI-free helpers to stay in the public app entry-point file. App-private helpers are checked by boundary rules rather than exact file-list assertions.
 
 When a suite file becomes broad enough that unrelated changes must read hundreds of lines, add a narrower `test_*.m` file in the same suite instead of appending more coverage to the broad file.
 

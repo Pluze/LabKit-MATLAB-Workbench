@@ -8,7 +8,7 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
 - `docs/ui.md` for layout, controls, axes, callbacks, or app shell changes
 - `docs/dta.md` for DTA-backed apps
 - `docs/biosignal.md` for wearable or biosignal-backed apps
-- affected app tests under `tests/suites/apps/`
+- affected app tests under `tests/unit/apps/` or `tests/gui/structural/apps/`
 
 ## App Ownership
 

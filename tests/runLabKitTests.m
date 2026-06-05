@@ -2,19 +2,16 @@ function output = runLabKitTests(varargin)
 %RUNLABKITTESTS Run LabKit tests through MATLAB's official test framework.
 %
 % output = runLabKitTests(Name,Value) discovers official matlab.unittest
-% tests under tests/unit, tests/integration, and tests/gui. During the
-% migration window it can also invoke the legacy tests/run_all_tests.m runner
-% through IncludeLegacy=true so existing coverage is preserved until Phase 6.
+% tests under tests/unit, tests/integration, and tests/gui.
 %
 % Name-value options:
-%   IncludeGui      Include official tests under tests/gui and legacy GUI tests.
+%   IncludeGui      Include tests under tests/gui.
 %   Suites          Suite targets such as project, labkit/dta, or gui.
 %   Tests           Test names or substrings to include.
 %   Tags            Required official test tags. Multiple tags are ORed.
 %   ExcludeTags     Official test tags to exclude.
 %   IncludeCoverage Generate Cobertura and HTML coverage artifacts.
-%   IncludeLegacy   Run the old runner after official tests.
-%   FailIfNoTests   Error when no official tests match and legacy is disabled.
+%   FailIfNoTests   Error when no official tests match.
 %   ArtifactsRoot   Root artifact directory.
 %   RunName         Name used in artifact titles and console output.
 
@@ -29,7 +26,7 @@ function output = runLabKitTests(varargin)
     fprintf("LabKit official test run: %s\n", opts.RunName);
     fprintf("Official tests matched: %d\n", numel(suite));
 
-    if isempty(suite) && opts.FailIfNoTests && ~opts.IncludeLegacy
+    if isempty(suite) && opts.FailIfNoTests
         error("LabKit:Tests:NoOfficialTests", ...
             "No official matlab.unittest tests matched the requested selection.");
     end
@@ -65,17 +62,8 @@ function output = runLabKitTests(varargin)
             "One or more official matlab.unittest tests failed.");
     end
 
-    legacyResults = [];
-    if opts.IncludeLegacy
-        fprintf("\nRunning legacy LabKit suite through tests/run_all_tests.m.\n");
-        selection = struct("suites", {cellstr(opts.Suites)}, ...
-            "tests", {cellstr(opts.Tests)});
-        legacyResults = run_all_tests(opts.IncludeGui, selection);
-    end
-
     output = struct( ...
         "official", officialResults, ...
-        "legacy", legacyResults, ...
         "artifacts", paths, ...
         "runName", opts.RunName);
 end
@@ -89,7 +77,6 @@ function opts = parseOptions(root, varargin)
     p.addParameter("Tags", strings(1, 0), @isStringLikeList);
     p.addParameter("ExcludeTags", strings(1, 0), @isStringLikeList);
     p.addParameter("IncludeCoverage", false, @isLogicalScalar);
-    p.addParameter("IncludeLegacy", false, @isLogicalScalar);
     p.addParameter("FailIfNoTests", true, @isLogicalScalar);
     p.addParameter("ArtifactsRoot", fullfile(root, "artifacts"), @isTextScalar);
     p.addParameter("RunName", "local", @isTextScalar);
@@ -100,7 +87,6 @@ function opts = parseOptions(root, varargin)
     opts = p.Results;
     opts.IncludeGui = logical(opts.IncludeGui);
     opts.IncludeCoverage = logical(opts.IncludeCoverage);
-    opts.IncludeLegacy = logical(opts.IncludeLegacy);
     opts.FailIfNoTests = logical(opts.FailIfNoTests);
     opts.Suites = normalizeTextList(opts.Suites);
     opts.Tests = normalizeTextList(opts.Tests);
@@ -269,7 +255,6 @@ function targets = normalizeSuiteTargets(targets)
     targets = normalizeTextList(targets);
     for k = 1:numel(targets)
         target = replace(targets(k), "\", "/");
-        target = erase(target, "tests/suites/");
         target = erase(target, "tests/unit/");
         target = erase(target, "tests/integration/");
         while startsWith(target, "/")

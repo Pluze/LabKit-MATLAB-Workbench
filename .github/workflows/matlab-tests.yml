@@ -28,4 +28,4 @@ jobs:
       - name: Run pure MATLAB tests
         uses: matlab-actions/run-command@v3
         with:
-          command: addpath(fullfile(pwd,'tests')); run_all_tests(false);
+          command: addpath(fullfile(pwd,'tests')); buildtool test;
