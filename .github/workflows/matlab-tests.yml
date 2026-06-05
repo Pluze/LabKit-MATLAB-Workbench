@@ -8,10 +8,15 @@ on:
     branches:
       - main
   workflow_dispatch:
+  schedule:
+    - cron: '17 10 * * 1'
+
+env:
+  MATLAB_RELEASE: R2025a
 
 jobs:
-  pure-matlab-tests:
-    name: Pure MATLAB Test Suite
+  quality:
+    name: Quality Guardrails
     runs-on: ubuntu-latest
     env:
       MLM_LICENSE_TOKEN: ${{ secrets.MLM_LICENSE_TOKEN }}
@@ -23,9 +28,178 @@ jobs:
       - name: Set up MATLAB
         uses: matlab-actions/setup-matlab@v3
         with:
-          release: R2025a
+          release: ${{ env.MATLAB_RELEASE }}
 
-      - name: Run pure MATLAB tests
-        uses: matlab-actions/run-command@v3
+      - name: Prepare artifact directories
+        run: mkdir -p artifacts/logs artifacts/test-results/html
+
+      - name: Run quality guardrails
+        uses: matlab-actions/run-build@v3
         with:
-          command: addpath(fullfile(pwd,'tests')); buildtool test;
+          tasks: checkStyle
+          startup-options: -logfile artifacts/logs/matlab.log
+
+      - name: Upload quality artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: matlab-quality
+          if-no-files-found: warn
+          retention-days: 14
+          path: |
+            artifacts/test-results/junit.xml
+            artifacts/test-results/html/**
+            artifacts/logs/matlab.log
+
+  unit:
+    name: Unit And Coverage
+    runs-on: ubuntu-latest
+    env:
+      MLM_LICENSE_TOKEN: ${{ secrets.MLM_LICENSE_TOKEN }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up MATLAB
+        uses: matlab-actions/setup-matlab@v3
+        with:
+          release: ${{ env.MATLAB_RELEASE }}
+
+      - name: Prepare artifact directories
+        run: mkdir -p artifacts/logs artifacts/test-results/html artifacts/coverage/html
+
+      - name: Run unit tests and coverage
+        uses: matlab-actions/run-build@v3
+        with:
+          tasks: testUnit coverage
+          startup-options: -logfile artifacts/logs/matlab.log
+
+      - name: Upload unit and coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: matlab-unit-coverage
+          if-no-files-found: warn
+          retention-days: 14
+          path: |
+            artifacts/test-results/junit.xml
+            artifacts/test-results/html/**
+            artifacts/coverage/cobertura.xml
+            artifacts/coverage/html/**
+            artifacts/logs/matlab.log
+
+  integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    env:
+      MLM_LICENSE_TOKEN: ${{ secrets.MLM_LICENSE_TOKEN }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up MATLAB
+        uses: matlab-actions/setup-matlab@v3
+        with:
+          release: ${{ env.MATLAB_RELEASE }}
+
+      - name: Prepare artifact directories
+        run: mkdir -p artifacts/logs artifacts/test-results/html
+
+      - name: Run integration tests
+        uses: matlab-actions/run-build@v3
+        with:
+          tasks: testIntegration
+          startup-options: -logfile artifacts/logs/matlab.log
+
+      - name: Upload integration artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: matlab-integration
+          if-no-files-found: warn
+          retention-days: 14
+          path: |
+            artifacts/test-results/junit.xml
+            artifacts/test-results/html/**
+            artifacts/logs/matlab.log
+
+  gui-structural:
+    name: GUI Structural Tests
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    env:
+      MLM_LICENSE_TOKEN: ${{ secrets.MLM_LICENSE_TOKEN }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up MATLAB
+        uses: matlab-actions/setup-matlab@v3
+        with:
+          release: ${{ env.MATLAB_RELEASE }}
+
+      - name: Prepare artifact directories
+        run: mkdir -p artifacts/logs artifacts/test-results/html artifacts/gui/trace artifacts/gui/snapshots
+
+      - name: Run GUI structural tests
+        uses: matlab-actions/run-build@v3
+        with:
+          tasks: testGuiStructural
+          startup-options: -logfile artifacts/logs/matlab.log
+
+      - name: Upload GUI structural artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: matlab-gui-structural
+          if-no-files-found: warn
+          retention-days: 14
+          path: |
+            artifacts/test-results/junit.xml
+            artifacts/test-results/html/**
+            artifacts/gui/trace/**
+            artifacts/gui/snapshots/**
+            artifacts/logs/matlab.log
+
+  gui-gesture:
+    name: GUI Gesture Tests
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    env:
+      MLM_LICENSE_TOKEN: ${{ secrets.MLM_LICENSE_TOKEN }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Set up MATLAB
+        uses: matlab-actions/setup-matlab@v3
+        with:
+          release: ${{ env.MATLAB_RELEASE }}
+
+      - name: Prepare artifact directories
+        run: mkdir -p artifacts/logs artifacts/test-results/html artifacts/gui/trace artifacts/gui/snapshots
+
+      - name: Run GUI gesture tests
+        uses: matlab-actions/run-build@v3
+        with:
+          tasks: testGuiGesture
+          startup-options: -logfile artifacts/logs/matlab.log
+
+      - name: Upload GUI gesture artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: matlab-gui-gesture
+          if-no-files-found: warn
+          retention-days: 14
+          path: |
+            artifacts/test-results/junit.xml
+            artifacts/test-results/html/**
+            artifacts/gui/trace/**
+            artifacts/gui/snapshots/**
+            artifacts/logs/matlab.log

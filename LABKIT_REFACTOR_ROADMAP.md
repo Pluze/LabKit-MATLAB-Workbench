@@ -271,34 +271,28 @@ state ownership, callbacks, or tests clearer. The stable contract is:
 - [x] Phase 5: App entrypoint decomposition.
 - [x] Phase 6: Full test rewrite and old suite deletion.
 - [x] Phase 7: GUI structural and gesture coverage.
-- [ ] Phase 8: CI artifact and coverage upgrade.
+- [x] Phase 8: CI artifact and coverage upgrade.
 - [ ] Phase 9: MATLAB Project and packaging style.
 - [ ] Final: delete this roadmap, prepare PR, verify CI state, merge/delete branch
   only when allowed by repo rules.
 
 ## Current Phase
 
-Phase: 8
+Phase: 9
 Status: not started
 Owner notes:
 
-- Phase 7 completed on `codex/app-test-platform-rewrite`.
-- `buildtool testGuiStructural` now selects 13 structural GUI tests by the
-  `Structural` tag and continues to cover app launch/layout/debug smoke.
-- `buildtool testGuiGesture` now selects 3 focused `Gesture` tests for runtime
-  callback ownership, anchor editor operations, and scale-bar reference/placement
-  lifecycle.
-- Gesture tests write structured JSONL trace artifacts, readable trace text, and
-  sanitized component snapshots through the standard GUI artifact paths.
-- Existing string-based `onTrace` callbacks remain the public UI-tool contract;
-  tests adapt those lines into structured events with `createLabKitToolTraceSink`
-  so no app-facing debug callback signature changed in this phase.
-- `labkit.ui.tool.createRuntime` now clears temporary drag callbacks on callback
-  errors before rethrowing, matching the documented runtime restoration contract.
+- Phase 8 completed on `codex/app-test-platform-rewrite`.
+- CI now uses `matlab-actions/run-build@v3` for `checkStyle`, `testUnit
+  coverage`, `testIntegration`, `testGuiStructural`, and `testGuiGesture`.
+- Push/PR CI runs quality, unit/coverage, and integration jobs. GUI structural
+  and gesture jobs are scheduled/manual only, and gesture remains non-blocking.
+- CI uploads JUnit, HTML test results, Cobertura coverage, HTML coverage, MATLAB
+  log, structured GUI trace JSONL/text, and GUI snapshot artifacts.
 - Current remaining expected debt is 73 private-helper files missing
   top-of-file implementation contracts.
-- Phase 8 upgrades CI jobs/artifact upload around the official build tasks and
-  generated JUnit, HTML, Cobertura, MATLAB log, and GUI trace artifacts.
+- Phase 9 should stay narrow: add project/package dry-run checks only if they do
+  not alter app launch behavior or introduce publication requirements.
 
 ## Phase 0 Baseline
 
@@ -677,6 +671,10 @@ Acceptance:
 | 2026-06-05 | `matlab -batch "... buildtool test"` | pass | Broad non-GUI suite still matched and passed 44 official tests after Phase 7 changes. |
 | 2026-06-05 | `matlab -batch "... buildtool checkStyle"` | pass | Official project/style guardrails passed after UI docs and gesture support updates. |
 | 2026-06-05 | `matlab -batch "... buildtool testGuiStructural"` | pass | Structural task matched 13 structural-tagged GUI tests after separating gesture tests by tag. |
+| 2026-06-05 | `matlab -batch "... buildtool testUnit coverage"` | pass | Official unit/coverage CI task matched 27 unit tests and 44 coverage tests; generated HTML test results plus Cobertura and HTML coverage artifacts. |
+| 2026-06-05 | `matlab -batch "... buildtool checkStyle"` | pass | Official quality CI task matched 19 tests; hard guardrails reported 0 old runner dependencies, 0 app test backdoors, and 0 oversized entrypoints. |
+| 2026-06-05 | `matlab -batch "... buildtool testIntegration"` | pass | Official integration CI task matched 17 tests with hard guardrails active. |
+| 2026-06-05 | `git diff --check` | pass | Phase 8 CI/docs/roadmap diff had no whitespace errors; Git reported normal Windows CRLF conversion warnings. |
 
 ## Deviation Log
 

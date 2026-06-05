@@ -101,7 +101,7 @@ scripts/run_matlab_tests.sh --suite apps/wearable --gui
 scripts/run_matlab_tests.sh --suite labkit/ui --suite apps --gui
 ```
 
-The Windows script accepts the same `--suite`, `--test`, and `--gui` options. GitHub Actions runs the default non-GUI suite on pushes and pull requests to `main`.
+The Windows script accepts the same `--suite`, `--test`, and `--gui` options. GitHub Actions runs quality, unit/coverage, and integration jobs on pushes and pull requests to `main`; manual and scheduled runs also cover GUI structural and non-blocking gesture jobs.
 
 ## Repository Layout
 

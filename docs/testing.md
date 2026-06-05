@@ -20,6 +20,7 @@ buildtool test
 buildtool testUnit
 buildtool testIntegration
 buildtool testGuiStructural
+buildtool testGuiGesture
 buildtool coverage
 ```
 
@@ -60,7 +61,10 @@ and set `MATLAB_TEST_LOG` to override the default `matlab_test.log` location.
 | Focused GUI suite runs | Local MATLAB with graphics support | Noninteractive launch, layout, and callback wiring checks for selected app families. |
 | Manual GUI validation | User-run app windows | Interactive file selection, drawing, visual inspection, and full workflow feel. |
 
-CI runs the default non-GUI suite through `.github/workflows/matlab-tests.yml`. It should not be described as full GUI workflow validation.
+CI runs quality, unit/coverage, and integration jobs on pushes and pull
+requests to `main` through `.github/workflows/matlab-tests.yml`. Manual and
+scheduled CI runs also execute GUI structural and non-blocking GUI gesture jobs.
+Do not describe CI as full interactive GUI workflow validation.
 
 ## Focused Suites
 
