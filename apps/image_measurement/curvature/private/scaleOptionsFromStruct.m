@@ -33,7 +33,7 @@ function calibration = scaleOptionsFromStruct(opts)
         referenceLength = 1;
         scaleUnit = 'mm';
     end
-    calibration = labkit.ui.scaleBarCalibration(referencePx, referenceLength, scaleUnit);
+    calibration = labkit.ui.tool.scaleBarCalibration(referencePx, referenceLength, scaleUnit);
 end
 
 function value = positiveOrNaN(value)

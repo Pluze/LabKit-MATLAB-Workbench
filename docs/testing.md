@@ -90,7 +90,7 @@ UI framework changes should cover the affected layer rather than only the change
 
 | UI layer | Automated coverage |
 | --- | --- |
-| Public surface | `project` suite checks stable public API, deprecated compatibility API, and private implementation packages. |
+| Public surface | `project` suite checks the layered `labkit.ui.app/view/tool/diag` API and private implementation packages. |
 | Shell/layout | `labkit/ui --gui` and affected app-family `--gui` suites. |
 | Runtime/tools | `labkit/ui --gui` runtime, anchor-editor, and scale-bar tool tests. |
 | Diagnostics | `labkit/ui --gui` debug instrumentation tests plus `apps/smoke --gui` debug launch trace checks. |

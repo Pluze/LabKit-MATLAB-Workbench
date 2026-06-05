@@ -22,9 +22,9 @@ function varargout = labkit_CSC_app(varargin)
 %
     [testLoadFile, isLoadDiagnostics] = parseCSCLoadDiagnosticsRequest(varargin);
     if isLoadDiagnostics
-        debugLog = labkit.ui.createDebugContext('labkit_CSC_app', struct('enabled', false));
+        debugLog = labkit.ui.diag.createContext('labkit_CSC_app', struct('enabled', false));
     else
-        [requestHandled, requestOutputs, debugLog] = labkit.ui.dispatchAppRequest( ...
+        [requestHandled, requestOutputs, debugLog] = labkit.ui.app.dispatchRequest( ...
             'labkit_CSC_app', varargin, nargout, cscAppTestHandlers());
         if requestHandled
             varargout = requestOutputs;
@@ -56,7 +56,7 @@ function varargout = labkit_CSC_app(varargin)
     S.currentCurve = 1;
 
     %% ===================== Figure & Layout =====================
-    ui = labkit.ui.createAppShell(struct( ...
+    ui = labkit.ui.app.createShell(struct( ...
         'title', 'Gamry DTA GUI (literature CSC)', ...
         'position', [50 30 1580 950], ...
         'leftWidth', 390, ...
@@ -80,20 +80,20 @@ function varargout = labkit_CSC_app(varargin)
         'clearAll', 'Clear all', ...
         'export', 'Reload selected', ...
         'loadedText', 'No files loaded');
-    fileUi = labkit.ui.createFileSelectionPanel(layFA, fileLabels, fileCallbacks);
+    fileUi = labkit.ui.view.panel(layFA, 'files', fileLabels, fileCallbacks);
     lbFiles = fileUi.listbox;
     txtLoaded = fileUi.loadedText;
 
     % -------- Curve --------
-    curveUi = labkit.ui.createPanelGrid(layFA, 'Curve', 2, [4 2]);
+    curveUi = labkit.ui.view.section(layFA, 'Curve', 2, [4 2]);
     gf = curveUi.grid;
 
     uilabel(gf,'Text','File:','HorizontalAlignment','right');
-    txtFile = labkit.ui.createReadOnlyTextField(gf);
+    txtFile = labkit.ui.view.form(gf, 'readonly');
     txtFile.Layout.Row = 1; txtFile.Layout.Column = 2;
 
     uilabel(gf,'Text','Scan rate:','HorizontalAlignment','right');
-    txtScan = labkit.ui.createReadOnlyTextField(gf);
+    txtScan = labkit.ui.view.form(gf, 'readonly');
     txtScan.Layout.Row = 2; txtScan.Layout.Column = 2;
 
     uilabel(gf,'Text','Curve:','HorizontalAlignment','right');
@@ -105,7 +105,7 @@ function varargout = labkit_CSC_app(varargin)
 
     % -------- Actions --------
     actionOpts = struct('columnWidth', {{'1x', '1x'}});
-    actionUi = labkit.ui.createPanelGrid(layFA, 'Actions', 3, [2 2], actionOpts);
+    actionUi = labkit.ui.view.section(layFA, 'Actions', 3, [2 2], actionOpts);
     ga = actionUi.grid;
 
     btnSwap = uibutton(ga,'Text','Swap Top/Bottom','ButtonPushedFcn',@(~,~) onSwapPlots());
@@ -118,7 +118,7 @@ function varargout = labkit_CSC_app(varargin)
     btnClear.Layout.Row = 2; btnClear.Layout.Column = 2;
 
     % -------- Comparison / CSC --------
-    compUi = labkit.ui.createPanelGrid(laySR, 'CSC / Comparison', 1, [8 2]);
+    compUi = labkit.ui.view.section(laySR, 'CSC / Comparison', 1, [8 2]);
     gc = compUi.grid;
 
     uilabel(gc,'Text','Mode:','HorizontalAlignment','right');
@@ -134,23 +134,23 @@ function varargout = labkit_CSC_app(varargin)
     edArea.Layout.Row = 2; edArea.Layout.Column = 2;
 
     uilabel(gc,'Text','CT charge / CSC:','HorizontalAlignment','right');
-    txtQct = labkit.ui.createReadOnlyTextField(gc);
+    txtQct = labkit.ui.view.form(gc, 'readonly');
     txtQct.Layout.Row = 3; txtQct.Layout.Column = 2;
 
     uilabel(gc,'Text','CV charge / CSC:','HorizontalAlignment','right');
-    txtQcv = labkit.ui.createReadOnlyTextField(gc);
+    txtQcv = labkit.ui.view.form(gc, 'readonly');
     txtQcv.Layout.Row = 4; txtQcv.Layout.Column = 2;
 
     uilabel(gc,'Text','Difference:','HorizontalAlignment','right');
-    txtDiff = labkit.ui.createReadOnlyTextField(gc);
+    txtDiff = labkit.ui.view.form(gc, 'readonly');
     txtDiff.Layout.Row = 5; txtDiff.Layout.Column = 2;
 
     uilabel(gc,'Text','Relative diff:','HorizontalAlignment','right');
-    txtRel = labkit.ui.createReadOnlyTextField(gc);
+    txtRel = labkit.ui.view.form(gc, 'readonly');
     txtRel.Layout.Row = 6; txtRel.Layout.Column = 2;
 
     uilabel(gc,'Text','max|dt-|dV|/v|:','HorizontalAlignment','right');
-    txtDtErr = labkit.ui.createReadOnlyTextField(gc);
+    txtDtErr = labkit.ui.view.form(gc, 'readonly');
     txtDtErr.Layout.Row = 7; txtDtErr.Layout.Column = 2;
 
     lblStatus = uilabel(gc,'Text','Ready');
@@ -158,15 +158,16 @@ function varargout = labkit_CSC_app(varargin)
     lblStatus.FontWeight = 'bold';
 
     % -------- Log --------
-    logUi = labkit.ui.createLogPanel(layLog, 1, {'GUI started.'});
+    logUi = labkit.ui.view.panel(layLog, 'log', 1, {'GUI started.'});
     txtLog = logUi.textArea;
     txtLog.Value = {'GUI started.'};
 
     % -------- Top/bottom controls --------
     topPlotDefaults = struct('x', '(none)', 'y', '(none)', 'grid', true);
     bottomPlotDefaults = struct('x', '(none)', 'y', '(none)', 'grid', true);
-    plotControls = labkit.ui.createTopBottomPlotControls( ...
+    plotControls = labkit.ui.view.panel( ...
         ui.topControlsPanel, ...
+        'topBottomPlotControls', ...
         ui.bottomControlsPanel, ...
         {'(none)'}, ...
         {'(none)'}, ...
@@ -318,11 +319,11 @@ function varargout = labkit_CSC_app(varargin)
 
     function refreshFileList()
         if isempty(S.items)
-            labkit.ui.refreshListboxSelection(lbFiles, {});
+            labkit.ui.view.update(lbFiles, 'listSelection', {});
             txtLoaded.Value = 'No files loaded';
             return;
         end
-        [~, idx] = labkit.ui.refreshListboxSelection(lbFiles, {S.items.name}, S.current);
+        [~, idx] = labkit.ui.view.update(lbFiles, 'listSelection', {S.items.name}, S.current);
         S.current = idx(1);
         txtLoaded.Value = sprintf('%d file(s) loaded', numel(S.items));
     end
@@ -478,7 +479,7 @@ function varargout = labkit_CSC_app(varargin)
         opts = struct('holdPlot', cbTopHold.Value, 'showGrid', cbTopGrid.Value, 'lineWidth', 1.2);
         [x, y, xName, yName] = labkit.dta.getCurveXY(c, ddTopX.Value, ddTopY.Value);
         labels = struct('title', c.name, 'x', xName, 'y', yName);
-        info = labkit.ui.plotXY(axTop, x, y, labels, opts);
+        info = labkit.ui.view.draw(axTop, 'xy', x, y, labels, opts);
         if ~info.ok
             addLog('Top plot skipped: invalid X/Y.');
             return;
@@ -492,7 +493,7 @@ function varargout = labkit_CSC_app(varargin)
         opts = struct('holdPlot', cbBotHold.Value, 'showGrid', cbBotGrid.Value, 'lineWidth', 1.2);
         [x, y, xName, yName] = labkit.dta.getCurveXY(c, ddBotX.Value, ddBotY.Value);
         labels = struct('title', c.name, 'x', xName, 'y', yName);
-        info = labkit.ui.plotXY(axBottom, x, y, labels, opts);
+        info = labkit.ui.view.draw(axBottom, 'xy', x, y, labels, opts);
         if ~info.ok
             addLog('Bottom plot skipped: invalid X/Y.');
             return;
@@ -574,7 +575,7 @@ function varargout = labkit_CSC_app(varargin)
     end
 
     function addLog(msg)
-        labkit.ui.appendLog(txtLog, msg);
+        labkit.ui.view.update(txtLog, 'appendLog', msg);
         debugLog.append(msg);
     end
 

@@ -23,7 +23,7 @@ function lengthResult = computeCurveLength(xPix, yPix, calibration)
     end
 
     if nargin < 3 || isempty(calibration)
-        calibration = labkit.ui.scaleBarCalibration();
+        calibration = labkit.ui.tool.scaleBarCalibration();
     end
 
     lengthPx = sum(hypot(diff(xPix), diff(yPix)));

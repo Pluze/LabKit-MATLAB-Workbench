@@ -22,20 +22,20 @@ function checkListboxItemsRefreshHelper(h)
     cleaner = onCleanup(@() delete(fig)); %#ok<NASGU>
     lb = uilistbox(fig, 'Items', {}, 'Multiselect', 'on');
 
-    labkit.ui.refreshListboxItems(lb, {'a.DTA', 'b.DTA'});
+    labkit.ui.view.update(lb, 'listItems', {'a.DTA', 'b.DTA'});
     assert(h.sameStringCell(lb.Items, {'a.DTA', 'b.DTA'}), ...
         'File listbox helper should populate item display names.');
     assert(h.sameStringCell(lb.Value, {'a.DTA', 'b.DTA'}), ...
         'File listbox helper should select all items when there is no prior selection.');
 
     lb.Value = {'b.DTA'};
-    labkit.ui.refreshListboxItems(lb, {'b.DTA', 'c.DTA'});
+    labkit.ui.view.update(lb, 'listItems', {'b.DTA', 'c.DTA'});
     assert(h.sameStringCell(lb.Items, {'b.DTA', 'c.DTA'}), ...
         'File listbox helper should update item display names.');
     assert(h.sameStringCell(lb.Value, {'b.DTA'}), ...
         'File listbox helper should preserve valid prior selections.');
 
-    labkit.ui.refreshListboxItems(lb, {});
+    labkit.ui.view.update(lb, 'listItems', {});
     assert(isempty(lb.Items) && isempty(lb.Value), ...
         'File listbox helper should clear listbox items and values for empty sessions.');
 end
@@ -46,22 +46,23 @@ function checkListboxSelectionHelper(h)
     grid = uigridlayout(fig, [2 1]);
 
     singleList = uilistbox(grid, 'Items', {}, 'Multiselect', 'off');
-    [value, idx] = labkit.ui.refreshListboxSelection(singleList, {'a.DTA', 'b.DTA'}, []);
+    [value, idx] = labkit.ui.view.update(singleList, 'listSelection', {'a.DTA', 'b.DTA'}, []);
     assert(strcmp(value, 'a.DTA') && idx == 1, ...
         'Listbox selection helper should select the first single-select item by default.');
 
-    [value, idx] = labkit.ui.refreshListboxSelection(singleList, {'b.DTA', 'c.DTA'}, 2);
+    [value, idx] = labkit.ui.view.update(singleList, 'listSelection', {'b.DTA', 'c.DTA'}, 2);
     assert(strcmp(value, 'c.DTA') && idx == 2, ...
         'Listbox selection helper should accept a preferred single-select index.');
 
     multiList = uilistbox(grid, 'Items', {}, 'Multiselect', 'on');
-    [value, idx] = labkit.ui.refreshListboxSelection( ...
-        multiList, {'x.DTA', 'y.DTA'}, {}, struct('defaultSelection', 'all'));
+    [value, idx] = labkit.ui.view.update( ...
+        multiList, 'listSelection', {'x.DTA', 'y.DTA'}, {}, ...
+        struct('defaultSelection', 'all'));
     assert(h.sameStringCell(value, {'x.DTA', 'y.DTA'}) && isequal(idx, [1 2]), ...
         'Listbox selection helper should support selecting all multi-select items by default.');
 
-    [value, idx] = labkit.ui.refreshListboxSelection( ...
-        multiList, {'y.DTA', 'z.DTA'}, {'y.DTA', 'missing.DTA'}, ...
+    [value, idx] = labkit.ui.view.update( ...
+        multiList, 'listSelection', {'y.DTA', 'z.DTA'}, {'y.DTA', 'missing.DTA'}, ...
         struct('defaultSelection', 'all'));
     assert(h.sameStringCell(value, {'y.DTA'}) && isequal(idx, 1), ...
         'Listbox selection helper should preserve only valid multi-select choices.');
@@ -72,7 +73,7 @@ function checkLogPanelHelper(h)
     cleaner = onCleanup(@() delete(fig)); %#ok<NASGU>
     grid = uigridlayout(fig, [2 1]);
 
-    ui = labkit.ui.createLogPanel(grid, 2, {'Started.'});
+    ui = labkit.ui.view.panel(grid, 'log', 2, {'Started.'});
     assert(strcmp(ui.panel.Title, 'Log'), 'Log panel helper should preserve the panel title.');
     assert(ui.panel.Layout.Row == 2, 'Log panel helper should place the panel in the requested row.');
     assert(isequal(ui.grid.Padding, [8 8 8 8]), 'Log panel helper should preserve grid padding.');
@@ -86,7 +87,7 @@ function checkLabeledSpinnerHelper()
     cleaner = onCleanup(@() delete(fig)); %#ok<NASGU>
     grid = uigridlayout(fig, [1 2]);
 
-    [lbl, spinner] = labkit.ui.createLabeledSpinner(grid, 'Probe value:', ...
+    [lbl, spinner] = labkit.ui.view.form(grid, 'spinner', 'Probe value:', ...
         'Value', 2, 'Limits', [0 10], 'Step', 0.5);
     assert(strcmp(lbl.Text, 'Probe value:'), ...
         'Labeled spinner helper should preserve label text.');
@@ -101,12 +102,12 @@ function checkReadOnlyTextHelpers(h)
     cleaner = onCleanup(@() delete(fig)); %#ok<NASGU>
     grid = uigridlayout(fig, [2 1]);
 
-    field = labkit.ui.createReadOnlyTextField(grid, 'Value', 'Status');
+    field = labkit.ui.view.form(grid, 'readonly', 'Value', 'Status');
     field.Layout.Row = 1;
     assert(strcmp(field.Editable, 'off') && strcmp(field.Value, 'Status'), ...
         'Read-only text field helper should create a non-editable text field.');
 
-    panelUi = labkit.ui.createReadOnlyTextPanel(grid, 'Notes', 2, {'one', 'two'});
+    panelUi = labkit.ui.view.panel(grid, 'text', 'Notes', 2, {'one', 'two'});
     assert(strcmp(panelUi.panel.Title, 'Notes'), ...
         'Read-only text panel helper should preserve the panel title.');
     assert(strcmp(panelUi.textArea.Editable, 'off') && ...
@@ -119,7 +120,7 @@ function checkReadOnlyInfoRowHelper()
     cleaner = onCleanup(@() delete(fig)); %#ok<NASGU>
     grid = uigridlayout(fig, [2 2]);
 
-    [field, lbl] = labkit.ui.createReadOnlyInfoRow(grid, 2, 'Probe:');
+    [field, lbl] = labkit.ui.view.form(grid, 'info', 2, 'Probe:');
     assert(strcmp(lbl.Text, 'Probe:'), 'Read-only info row should preserve label text.');
     assert(strcmp(lbl.HorizontalAlignment, 'right'), ...
         'Read-only info row should preserve right-aligned labels.');
@@ -138,7 +139,7 @@ function checkResultTablePanelHelper(h)
     cleaner = onCleanup(@() delete(fig)); %#ok<NASGU>
     grid = uigridlayout(fig, [2 1]);
 
-    ui = labkit.ui.createResultTablePanel(grid, 'Batch Results', 2, ...
+    ui = labkit.ui.view.panel(grid, 'table', 'Batch Results', 2, ...
         {'File', 'Value'}, cell(0, 2));
     assert(strcmp(ui.panel.Title, 'Batch Results'), ...
         'Result table panel helper should preserve the panel title.');
@@ -157,7 +158,7 @@ function checkPanelGridHelper(h)
     cleaner = onCleanup(@() delete(fig)); %#ok<NASGU>
     grid = uigridlayout(fig, [2 1]);
 
-    ui = labkit.ui.createPanelGrid(grid, 'Probe Panel', 2, [3 2]);
+    ui = labkit.ui.view.section(grid, 'Probe Panel', 2, [3 2]);
     assert(strcmp(ui.panel.Title, 'Probe Panel'), ...
         'Panel-grid helper should preserve the requested panel title.');
     assert(ui.panel.Layout.Row == 2, ...
@@ -170,7 +171,7 @@ function checkPanelGridHelper(h)
         'Panel-grid helper should preserve standard padding.');
 
     opts = struct('columnWidth', {{'1x', '1x'}}, 'padding', [0 0 0 0]);
-    ui2 = labkit.ui.createPanelGrid(grid, 'Actions', 1, [2 2], opts);
+    ui2 = labkit.ui.view.section(grid, 'Actions', 1, [2 2], opts);
     assert(h.sameStringCell(ui2.grid.ColumnWidth, {'1x', '1x'}), ...
         'Panel-grid helper should support explicit action-column widths.');
     assert(isequal(ui2.grid.Padding, [0 0 0 0]), ...
@@ -178,7 +179,7 @@ function checkPanelGridHelper(h)
 
     growGrid = uigridlayout(fig, [1 1]);
     growGrid.RowHeight = {50};
-    labkit.ui.createPanelGrid(growGrid, 'Tall Controls', 1, [5 2]);
+    labkit.ui.view.section(growGrid, 'Tall Controls', 1, [5 2]);
     assert(growGrid.RowHeight{1} > 50, ...
         'Panel-grid helper should grow undersized fixed parent rows to avoid clipped controls.');
 end
@@ -188,7 +189,7 @@ function checkPlotOptionsPanelHelper(h)
     cleaner = onCleanup(@() delete(fig)); %#ok<NASGU>
     grid = uigridlayout(fig, [3 1]);
 
-    ui = labkit.ui.createPlotOptionsPanel(grid, 3);
+    ui = labkit.ui.view.panel(grid, 'plotOptions', 3);
     assert(strcmp(ui.panel.Title, 'Plot Options'), 'Plot-options helper should preserve the panel title.');
     assert(ui.panel.Layout.Row == 3, 'Plot-options helper should place the panel in row 3.');
     assert(h.sameStringCell(ui.grid.RowHeight, {'fit', 'fit', 'fit'}), ...
@@ -199,7 +200,7 @@ function checkPlotOptionsPanelHelper(h)
     assert(ui.grid.RowSpacing == 8 && ui.grid.ColumnSpacing == 8, ...
         'Plot-options helper should preserve row and column spacing.');
 
-    ui2 = labkit.ui.createPlotOptionsPanel(grid, 2, 2);
+    ui2 = labkit.ui.view.panel(grid, 'plotOptions', 2, 2);
     assert(ui2.panel.Layout.Row == 2, ...
         'Plot-options helper should support an explicit parent-grid row.');
 end
@@ -223,7 +224,7 @@ function checkFileSelectionPanelHelper(h)
         'clearAll', 'Clear all', ...
         'export', 'Export results CSV', ...
         'loadedText', 'No files loaded');
-    ui = labkit.ui.createFileSelectionPanel(grid, labels, callbacks);
+    ui = labkit.ui.view.panel(grid, 'files', labels, callbacks);
     assert(strcmp(ui.panel.Title, 'Files'), 'File-selection panel should preserve the panel title.');
     assert(ui.panel.Layout.Row == 1, 'File-selection panel should place the panel in row 1.');
     assert(h.sameStringCell(ui.grid.RowHeight, {'fit', '1x', 'fit'}), ...
@@ -260,7 +261,7 @@ function checkFileSelectionPanelHelper(h)
     multiCallbacks.onRemoveSelected = @(~,~) [];
     multiLabels = labels;
     multiLabels.removeSelected = 'Remove selected';
-    multiUi = labkit.ui.createFileSelectionPanel(grid, multiLabels, multiCallbacks, ...
+    multiUi = labkit.ui.view.panel(grid, 'files', multiLabels, multiCallbacks, ...
         struct('showRemoveSelected', true, 'multiselect', 'on', 'row', 2));
     assert(strcmp(multiUi.listbox.Multiselect, 'on'), ...
         'File-selection panel should support multi-select listboxes.');

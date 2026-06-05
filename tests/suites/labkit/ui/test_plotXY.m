@@ -22,7 +22,7 @@ function test_plotXY()
 
     opts = struct('holdPlot', false, 'showGrid', true, 'lineWidth', 1.2);
     labels = struct('title', curve.name, 'x', xname, 'y', yname);
-    info = labkit.ui.plotXY(ax, x, y, labels, opts);
+    info = labkit.ui.view.draw(ax, 'xy', x, y, labels, opts);
     assert(info.ok, info.message);
     assert(isequal(info.x, x), 'plotXY should plot prepared X values.');
     assert(isequal(info.y, y), 'plotXY should plot prepared Y values.');
@@ -35,7 +35,7 @@ function test_plotXY()
     assert(strcmp(ax.XLabel.String, 'T'), 'X label should use selected header.');
     assert(strcmp(ax.YLabel.String, 'Vf'), 'Y label should use selected header.');
 
-    info2 = labkit.ui.plotXY(ax, [], y, labels, opts);
+    info2 = labkit.ui.view.draw(ax, 'xy', [], y, labels, opts);
     assert(~info2.ok, 'Invalid X/Y selection should fail without throwing.');
     assert(strcmp(info2.message, 'invalid X/Y'), 'Invalid selection message should be stable.');
 end

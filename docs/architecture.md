@@ -20,7 +20,7 @@ apps/ category folders containing public app entry points or app subfolders
 Short version:
 
 ```text
-labkit.ui        layered GUI foundation for shells, controls, axes, runtime, tools, diagnostics
+labkit.ui        layered GUI foundation split into app/view/tool/diag facades
 labkit.dta       current electrochemistry/Gamry DTA file and session facade
 labkit.biosignal current wearable/physiological time-series facade
 apps/            experiment-specific workflow apps
@@ -52,7 +52,7 @@ labkit_ECGPrint_app
 | Area | Responsibility |
 | --- | --- |
 | `apps/` | Public app entry points and app-specific workflow code, including app-owned private helpers. |
-| `+labkit/+ui` | Reusable GUI shell, panels, controls, axes, interaction runtime, tools, diagnostics, logs, and app-neutral UI helpers. |
+| `+labkit/+ui` | Reusable GUI app/view/tool/diagnostics facades plus private implementation helpers. |
 | `+labkit/+dta` | GUI-free DTA discovery, loading, session, pulse, and parsed curve/table facade. |
 | `+labkit/+biosignal` | GUI-free recording loading, channel extraction, waveform processing, events, segments, templates, measurements, and group comparisons. |
 | `private/` helpers | Parser, normalization, item/session construction, pulse, and implementation details hidden behind the owning facade. |
@@ -67,18 +67,16 @@ Biosignal code should not depend on GUI state, DTA, or app entry points. Low-lev
 
 UI helpers should build or update generic controls and draw prepared data. Apps pass labels, callbacks, prepared vectors, tables, debug contexts, and option values into UI helpers. UI helpers should not call DTA parsers, own formulas, define result fields, or decide export schemas.
 
-Reusable image-interaction tools may own app-neutral UI state when the interaction itself is generic. Image apps with custom axes behavior should register default scroll or interaction hooks through `labkit.ui.createInteractionRuntime`; direct app ownership of image-tool figure/axes pointer callbacks is outside the app boundary. Apps remain responsible for image loading/redrawing, edit-mode coordination, scientific calculations, summaries, and exports.
+Reusable image-interaction tools may own app-neutral UI state when the interaction itself is generic. Image apps with custom axes behavior should register default scroll or interaction hooks through `labkit.ui.tool.createRuntime`; direct app ownership of image-tool figure/axes pointer callbacks is outside the app boundary. Apps remain responsible for image loading/redrawing, edit-mode coordination, scientific calculations, summaries, and exports.
 
 The app-facing UI API is intentionally layered:
 
 | Layer | Responsibility | App-facing API |
 | --- | --- | --- |
-| Shell | Figure shell, tabs, split panes, left/right layout. | `createAppShell`, `tabSpec`, layout helpers. |
-| Controls | Labeled controls, read-only fields, tables, log panels, file panels. | Control/panel helpers under `labkit.ui.*`. |
-| Axes | Axes creation/reset, image display, prepared plotting, popout. | `createAxes`, `hardResetAxis`, `showImageAxes`, `plotXY`, `enableAxesPopout`. |
-| Runtime | Exclusive image interaction sessions, callback ownership, busy state. | `createInteractionRuntime`, `runWithBusyState`. |
-| Tools | App-neutral composed tools such as anchor editing and scale bars. | `createAnchorCurveEditor`, `createScaleBarTool`, `createScaleBarPanel`. |
-| Diagnostics | Debug launch, visible trace, callback instrumentation, request dispatch. | `dispatchAppRequest`, `createDebugContext`. |
+| App | Figure shell, tabs, request dispatch, busy state. | `labkit.ui.app.createShell`, `tab`, `dispatchRequest`, `runBusy`. |
+| View | Sections, forms, reusable panels, axes, rendering actions, and UI state updates. | `labkit.ui.view.section`, `form`, `panel`, `axes`, `draw`, `update`, `place`. |
+| Tool | Exclusive interaction runtime and composed tools. | `labkit.ui.tool.createRuntime`, `anchorEditor`, `scaleBar`, `scaleBarCalibration`. |
+| Diagnostics | Debug launch, visible trace, callback instrumentation. | `labkit.ui.diag.createContext`. |
 
 App-specific analysis, plotting annotations, result summaries, CSV schemas, failed-row behavior, and workflow wording belong in the owning app file or app-owned private helpers. The default private-helper location for a large app is `apps/<family>/<app_slug>/private/`; `apps/<family>/private/` should be reserved for helpers shared by multiple apps in that family.
 
@@ -115,7 +113,10 @@ GUI launch/layout checks live in source-aligned suites and are enabled with `--g
 
 ## Current Package Surface
 
-- `labkit.ui`: app shell specs, tab specs, file-selection panel, interaction runtime, scale-bar panel/tool, scale-bar calibration, log panel, panel grids, row resizing, axes creation/reset, axes popout, image display, anchor curve editing, prepared-X/Y plotting, result tables, plot controls, listbox state, busy-state feedback, labeled controls, read-only fields, request dispatch, and debug/trace support for app maintainers.
+- `labkit.ui.app`: shell specs, tab specs, internal request dispatch, and busy-state feedback.
+- `labkit.ui.view`: sections, unified form controls, file panels, logs, tables, listbox state, axes reset/popout, image display, and prepared-X/Y plotting.
+- `labkit.ui.tool`: interaction runtime, anchor editing, scale-bar tool, and scale-bar calibration.
+- `labkit.ui.diag`: debug context, visible trace, callback instrumentation, and log mirroring.
 - `labkit.dta`: DTA file discovery, type detection, single/batch/folder loading, pulse detection, item construction behind the facade, parsed table/curve access, session save/load, and session add/remove/select operations.
 - `labkit.biosignal`: MAT timetable and delimited table recording loading, channel extraction, time ROI cropping, filtering, ECG/QRS peak detection, event-centered segmentation, template construction, template-residual SNR-style measurements, and group comparisons.
 

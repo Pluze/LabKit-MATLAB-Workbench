@@ -23,7 +23,7 @@ function varargout = labkit_CIC_app(varargin)
 %     reports the highest safe file among all loaded files.
 %   - By default, the evaluation point is 10 us after the end of each phase,
 %     matching the convention commonly used in the literature the user shared.
-    [requestHandled, requestOutputs, debugLog] = labkit.ui.dispatchAppRequest( ...
+    [requestHandled, requestOutputs, debugLog] = labkit.ui.app.dispatchRequest( ...
         'labkit_CIC_app', varargin, nargout, cicAppTestHandlers());
     if requestHandled
         varargout = requestOutputs;
@@ -44,7 +44,7 @@ function varargout = labkit_CIC_app(varargin)
     S.current = [];
 
     %% ===================== Figure & Layout =====================
-    ui = labkit.ui.createAppShell(struct( ...
+    ui = labkit.ui.app.createShell(struct( ...
         'title', 'Gamry CIC GUI (Voltage Transient)', ...
         'position', [40 30 1680 980], ...
         'leftWidth', 430, ...
@@ -68,12 +68,12 @@ function varargout = labkit_CIC_app(varargin)
         'clearAll', 'Clear all', ...
         'export', 'Export results CSV', ...
         'loadedText', 'No files loaded');
-    fileUi = labkit.ui.createFileSelectionPanel(layFA, fileLabels, fileCallbacks);
+    fileUi = labkit.ui.view.panel(layFA, 'files', fileLabels, fileCallbacks);
     lbFiles = fileUi.listbox;
     txtLoaded = fileUi.loadedText;
 
     %% ===================== Analysis settings =====================
-    settingsUi = labkit.ui.createPanelGrid(layFA, 'Analysis Settings', 2, [9 2]);
+    settingsUi = labkit.ui.view.section(layFA, 'Analysis Settings', 2, [9 2]);
     gs = settingsUi.grid;
 
     uilabel(gs,'Text','Window preset:','HorizontalAlignment','right');
@@ -83,19 +83,19 @@ function varargout = labkit_CIC_app(varargin)
         'ValueChangedFcn',@(~,~) onPresetChanged());
     ddPreset.Layout.Row = 1; ddPreset.Layout.Column = 2;
 
-    [lblCathLim, edCathLim] = labkit.ui.createLabeledSpinner(gs, 'Cathodic limit (V):', ...
+    [lblCathLim, edCathLim] = labkit.ui.view.form(gs, 'spinner', 'Cathodic limit (V):', ...
         'Value', -0.6, 'Limits', [-10 10], 'Step', 0.01, ...
         'ValueDisplayFormat','%.6g','ValueChangedFcn',@(~,~) analyzeCurrentFile());
     lblCathLim.Layout.Row = 2; lblCathLim.Layout.Column = 1;
     edCathLim.Layout.Row = 2; edCathLim.Layout.Column = 2;
 
-    [lblAnodLim, edAnodLim] = labkit.ui.createLabeledSpinner(gs, 'Anodic limit (V):', ...
+    [lblAnodLim, edAnodLim] = labkit.ui.view.form(gs, 'spinner', 'Anodic limit (V):', ...
         'Value', 0.8, 'Limits', [-10 10], 'Step', 0.01, ...
         'ValueDisplayFormat','%.6g','ValueChangedFcn',@(~,~) analyzeCurrentFile());
     lblAnodLim.Layout.Row = 3; lblAnodLim.Layout.Column = 1;
     edAnodLim.Layout.Row = 3; edAnodLim.Layout.Column = 2;
 
-    [lblDelayUs, edDelayUs] = labkit.ui.createLabeledSpinner(gs, 'Sample delay after pulse end:', ...
+    [lblDelayUs, edDelayUs] = labkit.ui.view.form(gs, 'spinner', 'Sample delay after pulse end:', ...
         'Value', 10, 'Limits', [0 inf], 'Step', 1, ...
         'ValueDisplayFormat','%.6g','ValueChangedFcn',@(~,~) analyzeCurrentFile());
     lblDelayUs.Layout.Row = 4; lblDelayUs.Layout.Column = 1;
@@ -132,23 +132,23 @@ function varargout = labkit_CIC_app(varargin)
     cbUseMeasuredCurrent.Layout.Row = 9; cbUseMeasuredCurrent.Layout.Column = [1 2];
 
     %% ===================== Quick info =====================
-    infoUi = labkit.ui.createPanelGrid(laySR, 'Current File Summary', 1, [11 2]);
+    infoUi = labkit.ui.view.section(laySR, 'Current File Summary', 1, [11 2]);
     gi = infoUi.grid;
 
-    S.txtControlMode = labkit.ui.createReadOnlyInfoRow(gi,1,'Control mode:');
-    S.txtDetect = labkit.ui.createReadOnlyInfoRow(gi,2,'Detection:');
-    S.txtDelay = labkit.ui.createReadOnlyInfoRow(gi,3,'Delay used:');
-    S.txtArea = labkit.ui.createReadOnlyInfoRow(gi,4,'Area:');
-    S.txtEmc = labkit.ui.createReadOnlyInfoRow(gi,5,'Emc:');
-    S.txtEma = labkit.ui.createReadOnlyInfoRow(gi,6,'Ema:');
-    S.txtQc = labkit.ui.createReadOnlyInfoRow(gi,7,'Cathodic Q/CIC:');
-    S.txtQa = labkit.ui.createReadOnlyInfoRow(gi,8,'Anodic Q/CIC:');
-    S.txtQt = labkit.ui.createReadOnlyInfoRow(gi,9,'Total Q/CIC:');
-    S.txtSafe = labkit.ui.createReadOnlyInfoRow(gi,10,'Safety:');
-    S.txtBest = labkit.ui.createReadOnlyInfoRow(gi,11,'Best safe among loaded:');
+    S.txtControlMode = labkit.ui.view.form(gi, 'info', 1, 'Control mode:');
+    S.txtDetect = labkit.ui.view.form(gi, 'info', 2, 'Detection:');
+    S.txtDelay = labkit.ui.view.form(gi, 'info', 3, 'Delay used:');
+    S.txtArea = labkit.ui.view.form(gi, 'info', 4, 'Area:');
+    S.txtEmc = labkit.ui.view.form(gi, 'info', 5, 'Emc:');
+    S.txtEma = labkit.ui.view.form(gi, 'info', 6, 'Ema:');
+    S.txtQc = labkit.ui.view.form(gi, 'info', 7, 'Cathodic Q/CIC:');
+    S.txtQa = labkit.ui.view.form(gi, 'info', 8, 'Anodic Q/CIC:');
+    S.txtQt = labkit.ui.view.form(gi, 'info', 9, 'Total Q/CIC:');
+    S.txtSafe = labkit.ui.view.form(gi, 'info', 10, 'Safety:');
+    S.txtBest = labkit.ui.view.form(gi, 'info', 11, 'Best safe among loaded:');
 
     %% ===================== Actions =====================
-    actionUi = labkit.ui.createPanelGrid(layFA, 'Plot / Debug', 3, [2 3]);
+    actionUi = labkit.ui.view.section(layFA, 'Plot / Debug', 3, [2 3]);
     ga = actionUi.grid;
 
     btnRefresh = uibutton(ga,'Text','Refresh plots','ButtonPushedFcn',@(~,~) refreshPlots());
@@ -166,20 +166,21 @@ function varargout = labkit_CIC_app(varargin)
     cbShowShading.Layout.Row = 2; cbShowShading.Layout.Column = 3;
 
     %% ===================== Results table =====================
-    tableUi = labkit.ui.createResultTablePanel(laySR, 'Batch Results', 2, ...
+    tableUi = labkit.ui.view.panel(laySR, 'table', 'Batch Results', 2, ...
         {'File','Amp(A)','Emc(V)','Ema(V)','Qc(mC/cm^2)','Qa(mC/cm^2)','Qtot(mC/cm^2)','Safe'}, ...
         cell(0,8));
     tbl = tableUi.table;
 
     %% ===================== Log =====================
-    logUi = labkit.ui.createLogPanel(layLog, 1);
+    logUi = labkit.ui.view.panel(layLog, 'log', 1);
     txtLog = logUi.textArea;
 
     %% ===================== Right: plots =====================
     topPlotDefaults = struct('x', 'Time (s)', 'y', 'VT: Vf vs time', 'grid', true);
     bottomPlotDefaults = struct('x', 'Time (s)', 'y', 'IT: Im vs time', 'grid', true);
-    plotControls = labkit.ui.createTopBottomPlotControls( ...
+    plotControls = labkit.ui.view.panel( ...
         ui.topControlsPanel, ...
+        'topBottomPlotControls', ...
         ui.bottomControlsPanel, ...
         {'Time (s)', 'Sample #'}, ...
         {'VT: Vf vs time', 'IT: Im vs time'}, ...
@@ -371,14 +372,14 @@ function varargout = labkit_CIC_app(varargin)
 
     function refreshFileList()
         if isempty(S.items)
-            labkit.ui.refreshListboxSelection(lbFiles, {});
+            labkit.ui.view.update(lbFiles, 'listSelection', {});
             txtLoaded.Value = fileLabels.loadedText;
             S.current = [];
             return;
         end
 
         names = {S.items.name};
-        [~, idx] = labkit.ui.refreshListboxSelection(lbFiles, names, S.current);
+        [~, idx] = labkit.ui.view.update(lbFiles, 'listSelection', names, S.current);
         S.current = idx(1);
         txtLoaded.Value = sprintf('%d file(s) loaded', numel(S.items));
     end
@@ -516,8 +517,8 @@ function varargout = labkit_CIC_app(varargin)
     end
 
     function refreshPlots()
-        labkit.ui.clearAxisObjects(axTop);
-        labkit.ui.clearAxisObjects(axBottom);
+        labkit.ui.view.draw(axTop, 'clear');
+        labkit.ui.view.draw(axBottom, 'clear');
         if isempty(S.items) || isempty(S.current) || S.current < 1 || S.current > numel(S.items)
             title(axTop,'Top Plot');
             title(axBottom,'Bottom Plot');
@@ -622,7 +623,7 @@ function varargout = labkit_CIC_app(varargin)
     end
 
     function swapPlots()
-        labkit.ui.swapTopBottomPlotSelections(ddTopX, ddTopY, ddBotX, ddBotY);
+        labkit.ui.view.update(plotControls, 'swapPlotSelections');
         refreshPlots();
     end
 
@@ -632,13 +633,13 @@ function varargout = labkit_CIC_app(varargin)
     end
 
     function restoreDefaultPlotSelections()
-        labkit.ui.setTopBottomPlotSelections(ddTopX, ddTopY, ddBotX, ddBotY, ...
+        labkit.ui.view.update(plotControls, 'setPlotSelections', ...
             topPlotDefaults, bottomPlotDefaults);
     end
 
     function resetAxesToDefaultState()
-        labkit.ui.hardResetAxis(axTop, 'Top Plot', true);
-        labkit.ui.hardResetAxis(axBottom, 'Bottom Plot', true);
+        labkit.ui.view.draw(axTop, 'reset', 'Top Plot', true);
+        labkit.ui.view.draw(axBottom, 'reset', 'Bottom Plot', true);
     end
 
     function exportResultsCSV()
@@ -662,7 +663,7 @@ function varargout = labkit_CIC_app(varargin)
 
     %% ===================== Logging =====================
     function addLog(msg)
-        labkit.ui.appendLog(txtLog, msg);
+        labkit.ui.view.update(txtLog, 'appendLog', msg);
         debugLog.append(msg);
     end
 
