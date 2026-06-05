@@ -166,8 +166,8 @@ All `setX(value)` style APIs should no-op when the requested value is already cu
 Reusable UI contracts are covered by:
 
 ```bash
-scripts/run_matlab_tests.sh --suite labkit/ui --gui
-scripts/run_matlab_tests.sh --suite project
+buildtool testLabkitUi testLabkitUiGui
+buildtool testProject
 ```
 
 Automated GUI tests validate launch, layout, callback wiring, and trace plumbing. Full interactive drawing, file selection, visual inspection, and workflow feel still require manual MATLAB GUI validation.

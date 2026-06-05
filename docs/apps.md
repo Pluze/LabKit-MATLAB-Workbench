@@ -106,13 +106,15 @@ Start from the closest existing app, reduce it to the needed workflow, and prese
 
 ## Validation
 
-Pure app calculations, export table construction, and plotting helpers belong in the app-family suites and run in the default non-GUI workflow when they do not require graphics. Add `--gui` for noninteractive launch/layout checks:
+Pure app calculations, export table construction, and plotting helpers belong
+in app-family build tasks. Use the GUI tasks for noninteractive launch/layout
+checks:
 
 ```bash
-scripts/run_matlab_tests.sh --suite apps/electrochem --gui
-scripts/run_matlab_tests.sh --suite apps/dic --gui
-scripts/run_matlab_tests.sh --suite apps/image_measurement --gui
-scripts/run_matlab_tests.sh --suite apps/wearable --gui
+buildtool testAppsElectrochem testAppsElectrochemGui
+buildtool testAppsDicGui
+buildtool testAppsImageMeasurement testAppsImageMeasurementGui
+buildtool testAppsWearableGui
 ```
 
 Interactive file selection, drawing, visual inspection, and full workflow feel are validated manually in MATLAB app windows.

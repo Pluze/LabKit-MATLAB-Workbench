@@ -117,15 +117,15 @@ Build the app in this order:
 
 ## Validation
 
-Use `labkit-test-planner` to choose suites. Common checks:
+Use `labkit-test-planner` to choose build tasks. Common checks:
 
 ```bash
-scripts/run_matlab_tests.sh --suite project
-scripts/run_matlab_tests.sh --suite apps/electrochem
-scripts/run_matlab_tests.sh --suite apps/dic --gui
-scripts/run_matlab_tests.sh --suite apps/image_measurement --gui
-scripts/run_matlab_tests.sh --suite apps/wearable --gui
-scripts/run_matlab_tests.sh --suite labkit/ui --suite apps --gui
+buildtool testProject
+buildtool testAppsElectrochem
+buildtool testAppsDicGui
+buildtool testAppsImageMeasurementGui
+buildtool testAppsWearableGui
+buildtool testLabkitUiGui testAppsGui
 ```
 
 For reusable facade changes, also use `labkit-boundary-guard`.

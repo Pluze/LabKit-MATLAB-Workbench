@@ -42,16 +42,16 @@ For UI boundary work, prefer `labkit.ui.app.createShell`, `labkit.ui.app.dispatc
 Always run or recommend:
 
 ```bash
-scripts/run_matlab_tests.sh --suite project
+buildtool testProject
 ```
 
-Add focused suites by touched boundary:
+Add focused tasks by touched boundary:
 
 ```bash
-scripts/run_matlab_tests.sh --suite labkit/dta --suite apps/electrochem
-scripts/run_matlab_tests.sh --suite labkit/biosignal --suite apps/wearable
-scripts/run_matlab_tests.sh --suite labkit/ui --suite apps --gui
-scripts/run_matlab_tests.sh --suite apps/electrochem
+buildtool testLabkitDta testAppsElectrochem
+buildtool testLabkitBiosignal testAppsWearableGui
+buildtool testLabkitUiGui testAppsGui
+buildtool testAppsElectrochem
 ```
 
 If MATLAB is unavailable, report that clearly and do not claim tests passed.

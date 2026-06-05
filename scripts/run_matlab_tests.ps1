@@ -1,39 +1,61 @@
 <#
 .SYNOPSIS
-Runs the LabKit MATLAB test suite from Windows PowerShell.
+Runs LabKit MATLAB build tasks from Windows PowerShell.
 
 .DESCRIPTION
-This is the Windows-native wrapper for tests/runLabKitTests.m. It runs the
-official matlab.unittest and matlab.uitest suites.
+This is the Windows-native wrapper for the LabKit build task entry points.
+With no task arguments it runs `buildtool test`. Positional arguments are passed
+as build task names, for example `checkStyle` or `testUnit coverage`.
 #>
 
 $ErrorActionPreference = 'Stop'
 
 $RootDir = Resolve-Path (Join-Path $PSScriptRoot '..')
-$IncludeGui = $false
-$Suites = @()
-$Tests = @()
+$Tasks = @()
 
 function Show-Usage {
     @'
-Usage: .\scripts\run_matlab_tests.ps1 [--gui] [--suite NAME] [--test NAME]
+Usage: .\scripts\run_matlab_tests.ps1 [TASK ...]
 
-Runs the default non-GUI MATLAB tests.
+Runs LabKit MATLAB build tasks. With no TASK arguments, runs `buildtool test`.
 
-Options:
-  --gui         Also include optional noninteractive GUI launch/layout tests.
-                This mode requires MATLAB graphics/uifigure support.
-  --suite NAME  Run only a suite target, for example labkit/dta or apps/electrochem.
-                Repeatable. The special gui target selects all GUI tests.
-  --test NAME   Run only a test function, for example test_gui_layout_ui_anchor_curve_editor.
-                Repeatable. test_gui_* automatically uses GUI MATLAB flags.
-  -h, --help    Show this help text.
+Examples:
+  .\scripts\run_matlab_tests.ps1
+  .\scripts\run_matlab_tests.ps1 checkStyle
+  .\scripts\run_matlab_tests.ps1 testUnit coverage
+  .\scripts\run_matlab_tests.ps1 testGuiStructural
+
+Common tasks:
+  checkStyle
+  test
+  testUnit
+  testIntegration
+  testProject
+  testLabkitDta
+  testLabkitBiosignal
+  testLabkitUi
+  testLabkitUiGui
+  testAppsElectrochem
+  testAppsElectrochemGui
+  testAppsDicGui
+  testAppsImageMeasurement
+  testAppsImageMeasurementGui
+  testAppsWearableGui
+  testAppsGui
+  testAppsSmokeGui
+  testGuiStructural
+  testGuiGesture
+  coverage
+  checkProject
+  packageDryRun
+
+Removed interface:
+  --suite, --test, and --gui are no longer supported. Use build task names.
 
 Environment:
-  MATLAB_CMD       Optional path or command name for MATLAB.
-  MATLAB_FLAGS     Optional flags for non-GUI runs. Defaults to no extra flags on Windows.
-  MATLAB_GUI_FLAGS Optional flags for GUI runs. Defaults to no extra flags.
-  MATLAB_TEST_LOG  Optional log path. Defaults to .\matlab_test.log.
+  MATLAB_CMD      Optional path or command name for MATLAB.
+  MATLAB_FLAGS    Optional MATLAB flags for every run.
+  MATLAB_TEST_LOG Optional log path. Defaults to .\matlab_test.log.
 '@
 }
 
@@ -50,43 +72,21 @@ function Fail-Usage {
 
 for ($i = 0; $i -lt $args.Count; $i++) {
     $arg = [string] $args[$i]
-    switch ($arg) {
-        { $_ -in @('--gui', '-gui') } {
-            $IncludeGui = $true
-            continue
-        }
-        { $_ -in @('--suite', '-suite') } {
-            if ($i + 1 -ge $args.Count) {
-                Fail-Usage '--suite requires a value.'
-            }
-            $i++
-            $suite = [string] $args[$i]
-            $Suites += $suite
-            if ($suite.ToLowerInvariant() -eq 'gui') {
-                $IncludeGui = $true
-            }
-            continue
-        }
-        { $_ -in @('--test', '-test') } {
-            if ($i + 1 -ge $args.Count) {
-                Fail-Usage '--test requires a value.'
-            }
-            $i++
-            $testName = [string] $args[$i]
-            $Tests += $testName
-            if ($testName.ToLowerInvariant().StartsWith('test_gui_')) {
-                $IncludeGui = $true
-            }
-            continue
-        }
-        { $_ -in @('-h', '--help') } {
-            Show-Usage
-            exit 0
-        }
-        default {
-            Fail-Usage "Unknown option: $arg"
-        }
+    if ($arg -in @('-h', '--help')) {
+        Show-Usage
+        exit 0
     }
+    if ($arg.StartsWith('-')) {
+        Fail-Usage "Unsupported option: $arg. Use build task names such as checkStyle, test, or testGuiStructural."
+    }
+    if ($arg -notmatch '^[A-Za-z][A-Za-z0-9_]*$') {
+        Fail-Usage "Invalid build task name: $arg"
+    }
+    $Tasks += $arg
+}
+
+if ($Tasks.Count -eq 0) {
+    $Tasks = @('test')
 }
 
 function Find-Matlab {
@@ -137,22 +137,6 @@ function ConvertTo-MatlabStringLiteral {
     return "'" + ($Value -replace "'", "''") + "'"
 }
 
-function ConvertTo-MatlabCell {
-    param(
-        [string[]] $Values
-    )
-
-    if ($null -eq $Values -or $Values.Count -eq 0) {
-        return '{}'
-    }
-
-    $quoted = @()
-    foreach ($value in $Values) {
-        $quoted += ConvertTo-MatlabStringLiteral $value
-    }
-    return '{' + ($quoted -join ',') + '}'
-}
-
 function Split-MatlabFlags {
     param(
         [string] $Flags
@@ -178,19 +162,14 @@ $logFile = if (-not [string]::IsNullOrWhiteSpace($env:MATLAB_TEST_LOG)) {
     Join-Path $rootPath 'matlab_test.log'
 }
 
-$suiteCell = ConvertTo-MatlabCell $Suites
-$testCell = ConvertTo-MatlabCell $Tests
-$includeGuiText = if ($IncludeGui) { 'true' } else { 'false' }
-$selectionExpr = "struct('suites', {$suiteCell}, 'tests', {$testCell})"
-$testExpr = "runLabKitTests('IncludeGui', $includeGuiText, 'Suites', $suiteCell, 'Tests', $testCell, 'FailIfNoTests', false);"
-$matlabCommand = "cd($(ConvertTo-MatlabStringLiteral $rootPath)); addpath(fullfile(pwd, 'tests')); $testExpr"
-
-$flagSource = if ($IncludeGui) { $env:MATLAB_GUI_FLAGS } else { $env:MATLAB_FLAGS }
-$matlabArgs = @(Split-MatlabFlags $flagSource)
+$taskText = $Tasks -join ' '
+$matlabCommand = "cd($(ConvertTo-MatlabStringLiteral $rootPath)); buildtool $taskText;"
+$matlabArgs = @(Split-MatlabFlags $env:MATLAB_FLAGS)
 $matlabArgs += @('-logfile', $logFile, '-batch', $matlabCommand)
 
 Write-Host "Using MATLAB: $MatlabBin"
 Write-Host "Project root: $rootPath"
+Write-Host "Build tasks: $taskText"
 Write-Host "MATLAB log: $logFile"
 
 if (Test-Path -LiteralPath $logFile) {
@@ -201,7 +180,7 @@ if (Test-Path -LiteralPath $logFile) {
 $status = $LASTEXITCODE
 
 if ($status -eq 0) {
-    Write-Host "MATLAB tests completed successfully. Log: $logFile"
+    Write-Host "MATLAB build tasks completed successfully. Log: $logFile"
 } elseif (Test-Path -LiteralPath $logFile) {
     Get-Content -LiteralPath $logFile -Raw
 } else {

@@ -25,7 +25,7 @@ Workflow-specific calculations, plot choices, summaries, and exports stay in the
 | Image measurement | Interactive curve tracing, calibrated scale/length measurement, curvature/radius measurement, and microscope focus stacking |
 | Wearable biosignals | ECG preview, filtering, peak detection, segments, templates, and SNR-style measurements |
 | Reusable foundation | Layered MATLAB UI foundation plus DTA and biosignal facades for app-facing workflows |
-| Validation | Focused MATLAB suites, architecture guardrails, synthetic fixtures, and GitHub Actions CI |
+| Validation | Focused MATLAB build tasks, architecture guardrails, synthetic fixtures, and GitHub Actions CI |
 
 ## Quick Start
 
@@ -80,35 +80,35 @@ Status labels:
 
 ## Tests
 
-Run the default non-GUI MATLAB suite:
+Run the default non-GUI MATLAB build task:
 
 ```bash
-scripts/run_matlab_tests.sh
+buildtool test
 ```
 
-On Windows PowerShell:
+The local scripts are optional wrappers around build tasks:
 
 ```powershell
-.\scripts\run_matlab_tests.ps1
+.\scripts\run_matlab_tests.ps1 test
 ```
 
 Focused checks are available during development:
 
 ```bash
+buildtool checkStyle
 buildtool checkProject
 buildtool packageDryRun
-scripts/run_matlab_tests.sh --suite labkit/dta
-scripts/run_matlab_tests.sh --suite labkit/biosignal
-scripts/run_matlab_tests.sh --suite apps/wearable --gui
-scripts/run_matlab_tests.sh --suite labkit/ui --suite apps --gui
+buildtool testLabkitDta
+buildtool testLabkitBiosignal
+buildtool testAppsWearableGui
+buildtool testLabkitUiGui testAppsGui
 ```
 
-The Windows script accepts the same `--suite`, `--test`, and `--gui` options.
-`buildtool checkProject` verifies the MATLAB Project path/startup metadata, and
-`buildtool packageDryRun` checks package boundaries without exporting a toolbox.
-GitHub Actions runs quality, unit/coverage, and integration jobs on pushes and
-pull requests to `main`; manual and scheduled runs also cover GUI structural and
-non-blocking gesture jobs.
+Script arguments are build task names; selector flags such as `--suite`,
+`--test`, and `--gui` are not supported. GitHub Actions runs quality,
+unit/coverage, and integration jobs on pushes and pull requests to `main`;
+manual and scheduled runs also cover GUI structural and non-blocking gesture
+jobs.
 
 ## Repository Layout
 

@@ -2,71 +2,80 @@
 set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-INCLUDE_GUI=0
-SUITES=()
-TESTS=()
+TASKS=()
 
 usage() {
     cat <<'USAGE'
-Usage: scripts/run_matlab_tests.sh [--gui] [--suite NAME] [--test NAME]
+Usage: scripts/run_matlab_tests.sh [TASK ...]
 
-Runs the default pure-function MATLAB tests.
+Runs LabKit MATLAB build tasks. With no TASK arguments, runs `buildtool test`.
 
-Options:
-  --gui         Also include optional noninteractive GUI launch/layout tests.
-                This mode requires MATLAB graphics/uifigure support and does not
-                use the default headless -nojvm/-nodisplay/-noFigureWindows flags.
-  --suite NAME  Run only a suite target, for example labkit/dta or apps/electrochem. Repeatable.
-                Suite targets mirror official tests/unit, tests/integration,
-                and tests/gui ownership; parent targets such as labkit or apps
-                include child suites.
-                The special gui target selects all GUI tests.
-  --test NAME   Run only a test function, for example test_gui_layout_ui_anchor_curve_editor.
-                Repeatable. test_gui_* automatically uses GUI MATLAB flags.
+Examples:
+  scripts/run_matlab_tests.sh
+  scripts/run_matlab_tests.sh checkStyle
+  scripts/run_matlab_tests.sh testUnit coverage
+  scripts/run_matlab_tests.sh testGuiStructural
+
+Common tasks:
+  checkStyle
+  test
+  testUnit
+  testIntegration
+  testProject
+  testLabkitDta
+  testLabkitBiosignal
+  testLabkitUi
+  testLabkitUiGui
+  testAppsElectrochem
+  testAppsElectrochemGui
+  testAppsDicGui
+  testAppsImageMeasurement
+  testAppsImageMeasurementGui
+  testAppsWearableGui
+  testAppsGui
+  testAppsSmokeGui
+  testGuiStructural
+  testGuiGesture
+  coverage
+  checkProject
+  packageDryRun
+
+Removed interface:
+  --suite, --test, and --gui are no longer supported. Use build task names.
+
+Environment:
+  MATLAB_CMD      Optional path or command name for MATLAB.
+  MATLAB_FLAGS    Optional MATLAB flags for every run.
+  MATLAB_TEST_LOG Optional log path. Defaults to ./matlab_test.log.
 USAGE
 }
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
-        --gui)
-            INCLUDE_GUI=1
-            shift
-            ;;
-        --suite)
-            if [[ $# -lt 2 ]]; then
-                echo "--suite requires a value." >&2
-                usage >&2
-                exit 2
-            fi
-            SUITES+=("$2")
-            if [[ "$2" == "gui" ]]; then
-                INCLUDE_GUI=1
-            fi
-            shift 2
-            ;;
-        --test)
-            if [[ $# -lt 2 ]]; then
-                echo "--test requires a value." >&2
-                usage >&2
-                exit 2
-            fi
-            TESTS+=("$2")
-            if [[ "$2" == test_gui_* ]]; then
-                INCLUDE_GUI=1
-            fi
-            shift 2
-            ;;
         -h|--help)
             usage
             exit 0
             ;;
-        *)
-            echo "Unknown option: $1" >&2
+        -*)
+            echo "Unsupported option: $1. Use build task names such as checkStyle, test, or testGuiStructural." >&2
             usage >&2
             exit 2
             ;;
+        *)
+            if [[ ! "$1" =~ ^[A-Za-z][A-Za-z0-9_]*$ ]]; then
+                echo "Invalid build task name: $1" >&2
+                usage >&2
+                exit 2
+            fi
+            TASKS+=("$1")
+            shift
+            ;;
     esac
 done
+
+if [[ ${#TASKS[@]} -eq 0 ]]; then
+    TASKS=(test)
+fi
 
 find_matlab() {
     if [[ -n "${MATLAB_CMD:-}" ]]; then
@@ -90,66 +99,40 @@ find_matlab() {
     return 1
 }
 
+matlab_literal() {
+    local value="$1"
+    value="${value//\'/\'\'}"
+    printf "'%s'" "$value"
+}
+
 MATLAB_BIN="$(find_matlab || true)"
 if [[ -z "$MATLAB_BIN" ]]; then
     echo "MATLAB executable not found. Set MATLAB_CMD=/path/to/matlab and retry." >&2
     exit 127
 fi
 
+LOG_FILE="${MATLAB_TEST_LOG:-$ROOT_DIR/matlab_test.log}"
+TASK_TEXT="${TASKS[*]}"
+
 echo "Using MATLAB: $MATLAB_BIN"
 echo "Project root: $ROOT_DIR"
+echo "Build tasks: $TASK_TEXT"
+echo "MATLAB log: $LOG_FILE"
 
-matlab_cell() {
-    if [[ $# -eq 0 ]]; then
-        printf '{}'
-        return 0
-    fi
-
-    local out="{"
-    local value
-    for value in "$@"; do
-        value="${value//\'/\'\'}"
-        out+="'$value',"
-    done
-    out="${out%,}}"
-    printf '%s' "$out"
-}
-
-LOG_FILE="${MATLAB_TEST_LOG:-$ROOT_DIR/matlab_test.log}"
-if [[ ${#SUITES[@]} -gt 0 ]]; then
-    SUITE_CELL="$(matlab_cell "${SUITES[@]}")"
-else
-    SUITE_CELL="$(matlab_cell)"
-fi
-if [[ ${#TESTS[@]} -gt 0 ]]; then
-    TEST_CELL="$(matlab_cell "${TESTS[@]}")"
-else
-    TEST_CELL="$(matlab_cell)"
-fi
-if [[ "$INCLUDE_GUI" -eq 1 ]]; then
-    MATLAB_FLAGS="${MATLAB_GUI_FLAGS:-}"
-    TEST_EXPR="runLabKitTests('IncludeGui', true, 'Suites', $SUITE_CELL, 'Tests', $TEST_CELL, 'FailIfNoTests', false);"
-else
-    MATLAB_FLAGS="${MATLAB_FLAGS:--nojvm -nodisplay -noFigureWindows}"
-    TEST_EXPR="runLabKitTests('IncludeGui', false, 'Suites', $SUITE_CELL, 'Tests', $TEST_CELL, 'FailIfNoTests', false);"
-fi
 MATLAB_FLAG_ARGS=()
-if [[ -n "$MATLAB_FLAGS" ]]; then
+if [[ -n "${MATLAB_FLAGS:-}" ]]; then
     read -r -a MATLAB_FLAG_ARGS <<< "$MATLAB_FLAGS"
 fi
+
 rm -f "$LOG_FILE"
 
 set +e
-if [[ ${#MATLAB_FLAG_ARGS[@]} -gt 0 ]]; then
-    "$MATLAB_BIN" "${MATLAB_FLAG_ARGS[@]}" -logfile "$LOG_FILE" -batch "cd('$ROOT_DIR'); addpath(fullfile(pwd, 'tests')); $TEST_EXPR"
-else
-    "$MATLAB_BIN" -logfile "$LOG_FILE" -batch "cd('$ROOT_DIR'); addpath(fullfile(pwd, 'tests')); $TEST_EXPR"
-fi
+"$MATLAB_BIN" "${MATLAB_FLAG_ARGS[@]}" -logfile "$LOG_FILE" -batch "cd($(matlab_literal "$ROOT_DIR")); buildtool $TASK_TEXT;"
 status=$?
 set -e
 
 if [[ "$status" -eq 0 ]]; then
-    echo "MATLAB tests completed successfully. Log: $LOG_FILE"
+    echo "MATLAB build tasks completed successfully. Log: $LOG_FILE"
 elif [[ -f "$LOG_FILE" ]]; then
     cat "$LOG_FILE"
 else
