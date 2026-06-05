@@ -67,17 +67,17 @@ function deleteIfExists(filepath)
 end
 
 function A = computeCIC(item, opts)
-    A = labkit_CIC_app('__labkit_test__', 'computeCIC', item, opts);
+    A = electrochemWorkflow("cic", "computeCIC", item, opts);
 end
 
 function T = buildCICResultsTable(items, unitLabel)
-    T = labkit_CIC_app('__labkit_test__', 'buildResultsTable', items, unitLabel);
+    T = electrochemWorkflow("cic", "buildResultsTable", items, unitLabel);
 end
 
 function [C, cols] = buildCICBatchTableData(items, unitLabel)
-    [C, cols] = labkit_CIC_app('__labkit_test__', 'buildBatchTableData', items, unitLabel);
+    [C, cols] = electrochemWorkflow("cic", "buildBatchTableData", items, unitLabel);
 end
 
 function writeCICResultsCSV(items, filepath, unitLabel)
-    labkit_CIC_app('__labkit_test__', 'writeResultsCSV', items, filepath, unitLabel);
+    electrochemWorkflow("cic", "writeResultsCSV", items, filepath, unitLabel);
 end

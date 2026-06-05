@@ -3,7 +3,7 @@ function varargout = labkit_EIS_app(varargin)
 % Single-file app that composes +labkit GUI/DTA APIs and owns EIS workflow choices.
 
     [requestHandled, requestOutputs, debugLog] = labkit.ui.app.dispatchRequest( ...
-        'labkit_EIS_app', varargin, nargout, eisAppTestHandlers());
+        'labkit_EIS_app', varargin, nargout);
     if requestHandled
         varargout = requestOutputs;
         return;
@@ -318,23 +318,6 @@ function varargout = labkit_EIS_app(varargin)
 end
 
 %% App-local plotting and summary helpers
-function handlers = eisAppTestHandlers()
-    handlers = struct( ...
-        'command', {'buildExportTable', 'valuesForAxis'}, ...
-        'minArgs', {5, 2}, ...
-        'maxArgs', {5, 2}, ...
-        'maxOutputs', {1, 1}, ...
-        'run', {@runBuildExportTable, @runValuesForAxis});
-end
-
-function outputs = runBuildExportTable(args)
-    outputs = {eisWorkflow("buildExportTable", args{1}, args{2}, args{3}, args{4}, args{5})};
-end
-
-function outputs = runValuesForAxis(args)
-    outputs = {eisWorkflow("valuesForAxis", args{1}, args{2})};
-end
-
 function txt = labelForAxis(axisName)
     txt = axisName;
 end

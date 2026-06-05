@@ -1,11 +1,11 @@
 % App-private image measurement helper. Expected caller: owning app callbacks
-% and temporary compatibility tests. Inputs, outputs, and side effects are
+% and workflow tests. Inputs, outputs, and side effects are
 % documented with the helper function below.
 function calibration = scaleOptionsFromStruct(opts)
 %SCALEOPTIONSFROMSTRUCT Normalize test and app scale options.
 %
 % Expected caller:
-%   labkit_CurvatureMeasurement_app temporary compatibility test handlers.
+%   labkit_CurvatureMeasurement_app workflow tests.
 %
 % Inputs/outputs:
 %   Option struct with current and legacy scale fields. Returns a

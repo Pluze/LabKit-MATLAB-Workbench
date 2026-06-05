@@ -80,5 +80,5 @@ function test_computeCSC()
 end
 
 function A = computeCSC(curve, opts)
-    A = labkit_CSC_app('__labkit_test__', 'computeCSC', curve, opts);
+    A = electrochemWorkflow("csc", "computeCSC", curve, opts);
 end

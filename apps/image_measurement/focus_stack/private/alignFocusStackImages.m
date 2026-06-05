@@ -1,11 +1,11 @@
 % App-private image measurement helper. Expected caller: owning app callbacks
-% and temporary compatibility tests. Inputs, outputs, and side effects are
+% and workflow tests. Inputs, outputs, and side effects are
 % documented with the helper function below.
 function [alignedImages, lines] = alignFocusStackImages(images)
 %ALIGNFOCUSSTACKIMAGES Align focus-stack images for labkit_FocusStack_app.
 %
 % Expected caller:
-%   labkit_FocusStack_app run callback and temporary compatibility test handlers.
+%   labkit_FocusStack_app run callback and workflow tests.
 %
 % Inputs/outputs:
 %   Cell array or numeric stack of images. Returns images aligned to the

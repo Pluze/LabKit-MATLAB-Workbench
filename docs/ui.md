@@ -122,14 +122,14 @@ Use `labkit.ui.tool.anchorEditor(runtime, imageSize, opts)` for generic anchor e
 
 ## Diagnostics
 
-Apps route internal test/debug launch through:
+Apps route debug launch requests through:
 
 ```matlab
 [handled, outputs, debug] = labkit.ui.app.dispatchRequest( ...
-    appName, varargin, nargout, handlers);
+    appName, varargin, nargout);
 ```
 
-Debug contexts are created by dispatch for normal app entry points. Apps with nonstandard request paths may call `labkit.ui.diag.createContext(appName, opts)` directly.
+Debug contexts are created by dispatch for normal app entry points. Non-debug string inputs are rejected by the public app launch path. Apps with nonstandard request paths may call `labkit.ui.diag.createContext(appName, opts)` directly.
 
 Debug launches support:
 

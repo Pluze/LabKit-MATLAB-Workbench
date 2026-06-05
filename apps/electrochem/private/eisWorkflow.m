@@ -1,11 +1,11 @@
 % App-owned EIS workflow helper dispatch. Expected caller: labkit_EIS_app
-% callbacks and temporary compatibility test handlers. Inputs are a command
+% callbacks and workflow tests. Inputs are a command
 % string plus the original helper arguments; outputs match the selected helper.
 % This helper has no file side effects.
 function varargout = eisWorkflow(command, varargin)
 %EISWORKFLOW Dispatch app-owned EIS plot/export helpers.
-% Expected caller: labkit_EIS_app callbacks and temporary compatibility test
-% handlers. Inputs are a command string plus the original helper arguments.
+% Expected caller: labkit_EIS_app callbacks and workflow tests. Inputs are a
+% command string plus the original helper arguments.
 % Outputs match the selected helper. This helper has no file side effects.
 
     switch string(command)

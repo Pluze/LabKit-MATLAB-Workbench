@@ -1,11 +1,11 @@
 % App-private image measurement helper. Expected caller: owning app callbacks
-% and temporary compatibility tests. Inputs, outputs, and side effects are
+% and workflow tests. Inputs, outputs, and side effects are
 % documented with the helper function below.
 function T = buildFocusStackSummaryTable(result, paths)
 %BUILDFOCUSSTACKSUMMARYTABLE Build summary CSV table for labkit_FocusStack_app.
 %
 % Expected caller:
-%   labkit_FocusStack_app export callback and temporary compatibility test handlers.
+%   labkit_FocusStack_app export callback and workflow tests.
 %
 % Inputs/outputs:
 %   Completed focus-stack result and source image paths. Returns the app-owned

@@ -11,7 +11,7 @@ function varargout = labkit_VTResistance_app(varargin)
 %   - Compute baseline-corrected resistance as abs((Vss - Vbaseline) / Iss).
 
     [requestHandled, requestOutputs, debugLog] = labkit.ui.app.dispatchRequest( ...
-        'labkit_VTResistance_app', varargin, nargout, vtAppTestHandlers());
+        'labkit_VTResistance_app', varargin, nargout);
     if requestHandled
         varargout = requestOutputs;
         return;
@@ -507,35 +507,6 @@ function varargout = labkit_VTResistance_app(varargin)
         debugLog.append(msg);
     end
 
-end
-
-%% App test hook
-function handlers = vtAppTestHandlers()
-    handlers = struct( ...
-        'command', {'computeResistance', 'buildBatchTableData', ...
-            'buildResultsTable', 'writeResultsCSV'}, ...
-        'minArgs', {2, 1, 1, 2}, ...
-        'maxArgs', {2, 1, 1, 2}, ...
-        'maxOutputs', {1, 1, 1, 2}, ...
-        'run', {@runComputeResistance, @runBuildBatchTableData, ...
-            @runBuildResultsTable, @runWriteResultsCSV});
-end
-
-function outputs = runComputeResistance(args)
-    outputs = {vtResistanceWorkflow("computeResistance", args{1}, args{2})};
-end
-
-function outputs = runBuildBatchTableData(args)
-    outputs = {vtResistanceWorkflow("buildBatchTableData", args{1})};
-end
-
-function outputs = runBuildResultsTable(args)
-    outputs = {vtResistanceWorkflow("buildResultsTable", args{1})};
-end
-
-function outputs = runWriteResultsCSV(args)
-    [ok, msg] = vtResistanceWorkflow("writeResultsCSV", args{1}, args{2});
-    outputs = {ok, msg};
 end
 
 %% App-local analysis

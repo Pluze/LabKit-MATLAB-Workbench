@@ -267,7 +267,7 @@ state ownership, callbacks, or tests clearer. The stable contract is:
 - [x] Phase 1: New test platform skeleton.
 - [x] Phase 2: Project and style guardrails rewrite.
 - [x] Phase 3: App helper extraction before test hook removal.
-- [ ] Phase 4: Delete app test backdoors.
+- [x] Phase 4: Delete app test backdoors.
 - [ ] Phase 5: App entrypoint decomposition.
 - [ ] Phase 6: Full test rewrite and old suite deletion.
 - [ ] Phase 7: GUI structural and gesture coverage.
@@ -278,26 +278,27 @@ state ownership, callbacks, or tests clearer. The stable contract is:
 
 ## Current Phase
 
-Phase: 4
+Phase: 5
 Status: not started
 Owner notes:
 
-- Phase 3 helper extraction completed on `codex/app-test-platform-rewrite`.
-- Electrochem app handlers and app callbacks now route exposed calculation and
-  export commands through app-owned private workflow helpers under
-  `apps/electrochem/private/`.
-- Curvature and FocusStack private helpers now have top-of-file implementation
-  contracts, and stale `__labkit_test__` wording was removed from those helper
-  comments.
-- DIC and ECGPrint have no legacy app test handlers or `__labkit_test__`
-  commands. Their broader GUI-free decomposition remains in Phase 5 to avoid
-  speculative helper extraction before entrypoint decomposition.
-- Current expected-debt inventories are 14 `__labkit_test__` files, 7 app
-  handler files, 2 hidden diagnostics files, 10 app entrypoints over 500
-  MATLAB-counted lines, and 73 private-helper files missing top-of-file
+- Phase 4 completed on `codex/app-test-platform-rewrite`.
+- `labkit.ui.app.dispatchRequest` now handles debug launch requests only.
+  Non-debug string inputs are rejected by public app entrypoints.
+- Electrochem, Curvature, and FocusStack legacy bridge tests now call
+  app-owned workflow helpers directly instead of sending commands through app
+  entrypoints.
+- App-local test handler blocks and the CSC hidden file-load diagnostics path
+  were removed. DIC and ECGPrint already had no app test handler surface.
+- Guardrails are promoted to hard-fail for legacy app test command references,
+  app test handler functions, and hidden load diagnostics; the current
+  inventory is 0/0/0.
+- Current remaining expected-debt inventories are 10 app entrypoints over 500
+  MATLAB-counted lines and 73 private-helper files missing top-of-file
   implementation contracts.
-- Next phase removes app test backdoors and promotes the legacy app test command
-  guardrails to hard-fail.
+- Next phase decomposes app entrypoints while preserving calculation results,
+  export schemas, plot/log wording, debug launch behavior, and app ownership
+  boundaries.
 
 ## Phase 0 Baseline
 
@@ -357,9 +358,9 @@ Legacy debt inventory:
 
 | Debt area | Current count | Notes |
 | --- | ---: | --- |
-| `__labkit_test__` file matches | 14 | App tests, app entrypoints, app agent rules, and `labkit.ui.app.dispatchRequest`; Phase 3 removed image-helper comment references. |
-| App test handler functions | 7 | CIC, VT, CSC, EIS, ChronoOverlay, Curvature, and FocusStack. |
-| Hidden load diagnostics matches | 2 files | CSC app diagnostics and the electrochem GUI layout test. |
+| `__labkit_test__` file matches | 0 | Phase 4 removed app entrypoint command routing and switched bridge tests to workflow helpers. |
+| App test handler functions | 0 | Phase 4 removed CIC, VT, CSC, EIS, ChronoOverlay, Curvature, and FocusStack handler blocks. |
+| Hidden load diagnostics matches | 0 files | Phase 4 removed the CSC file-load diagnostic path and its GUI layout test dependency. |
 | App entrypoints over 500 MATLAB-counted lines | 10 of 10 | Phase 5 migration target; Phase 2 corrected the baseline to use MATLAB `readlines` counts. |
 | Old runner dependency files | 8 | `tests/run_all_tests.m`, wrappers, CI, and current docs/agent routing. |
 
@@ -638,6 +639,16 @@ Acceptance:
 | 2026-06-05 | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 --suite apps/image_measurement --gui` | pass | Curvature/FocusStack helper and GUI coverage passed after private helper contract comments. |
 | 2026-06-05 | `matlab -batch "... buildtool checkStyle"` | pass | Expected-debt inventories after Phase 3: 14 `__labkit_test__` files, 7 handler files, 2 diagnostics files, 10 oversized app entrypoints, 73 private helper contract debt files. |
 | 2026-06-05 | `matlab -batch "... buildtool test"` | pass | Broad non-GUI suite passed after Phase 3 helper extraction. |
+| 2026-06-05 | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 --suite apps/electrochem` | pass | Electrochem bridge tests passed after switching from app-entrypoint command backdoors to `electrochemWorkflow`. |
+| 2026-06-05 | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 --suite apps/image_measurement` | pass | Curvature and FocusStack bridge tests passed through app-owned workflow helpers. |
+| 2026-06-05 | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 --suite labkit/ui` | pass | Debug-only `labkit.ui.app.dispatchRequest` contract passed legacy UI helper tests. |
+| 2026-06-05 | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 --suite project` | pass | Official guardrails reported 0 legacy test-command files, 0 handler files, and 0 diagnostics files. |
+| 2026-06-05 | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 --suite apps/electrochem --gui` | pass | Electrochem GUI/layout suite passed after app handler removal and CSC diagnostics removal. |
+| 2026-06-05 | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 --suite apps/image_measurement --gui` | pass | Curvature and FocusStack GUI/layout suite passed after debug-only dispatch and FocusStack helper extraction. |
+| 2026-06-05 | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 --suite labkit/ui --gui` | pass | UI GUI/debug instrumentation suite passed after dispatchRequest contract change. |
+| 2026-06-05 | `powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 --suite apps/smoke --gui` | pass | All app normal/debug launch smoke tests passed after debug-only dispatch. |
+| 2026-06-05 | `matlab -batch "... buildtool checkStyle"` | pass | Official hard-fail guardrails passed: 0 legacy backdoor files; 10 oversized app entrypoints; 73 private-helper contract debt files. |
+| 2026-06-05 | `matlab -batch "... buildtool test"` | pass | Broad non-GUI suite passed after Phase 4 app backdoor removal. |
 
 ## Deviation Log
 
@@ -645,6 +656,7 @@ Acceptance:
 | --- | --- | --- | --- | --- |
 | 2026-06-05 | 2 | Corrected app entrypoint size baseline from PowerShell `Measure-Object -Line` counts to MATLAB `readlines` counts. | Phase 2 guardrails run in MATLAB and include blank lines; the enforceable baseline should match the enforcing tool. | Codex |
 | 2026-06-05 | 3 | Used app-private `*Workflow.m` dispatch helpers for electrochem command groups instead of adding public helper packages or many one-off public facades. | MATLAB private visibility prevents external tests from directly calling app-private helpers, and grouped app-owned private helpers keep science/export logic out of `+labkit`. | Codex |
+| 2026-06-05 | 4 | Added app-owned workflow wrapper functions for tests to reach GUI-free app helpers after app-entrypoint backdoors were removed. | MATLAB private helpers are not directly callable from the test tree, and wrapper functions preserve coverage without exposing hidden commands through public app launchers or moving app-specific logic into `+labkit`. | Codex |
 
 ## Coverage Migration Map
 
@@ -666,9 +678,9 @@ deferred
 | `tests/suites/labkit/dta` | `tests/unit/labkit/dta` | mapped | 8 files; parser, facade, session, pulse behavior. |
 | `tests/suites/labkit/biosignal` | `tests/unit/labkit/biosignal` | mapped | 5 files; import, filtering, peaks, segments, measurements. |
 | `tests/suites/labkit/ui` | `tests/unit/labkit/ui` and `tests/gui/*` | mapped | 11 files; split non-GUI helpers from GUI behavior. |
-| `tests/suites/apps/electrochem` | `tests/unit/apps/electrochem` and `tests/integration/app_workflows` | mapped | 8 files; helper tests replace app test handlers. |
+| `tests/suites/apps/electrochem` | `tests/unit/apps/electrochem` and `tests/integration/app_workflows` | mapped | 8 files; legacy bridge tests now call `electrochemWorkflow`; official port remains Phase 6. |
 | `tests/suites/apps/dic` | `tests/unit/apps/dic` and `tests/gui/structural` | mapped | 1 file; keep DIC workflow contracts app-owned. |
-| `tests/suites/apps/image_measurement` | `tests/unit/apps/image_measurement` and `tests/gui/gesture` | mapped | 3 files; Curvature/FocusStack plus scale-bar/anchor coverage. |
+| `tests/suites/apps/image_measurement` | `tests/unit/apps/image_measurement` and `tests/gui/gesture` | mapped | 3 files; legacy bridge tests now call Curvature/FocusStack workflow helpers; official port remains Phase 6. |
 | `tests/suites/apps/wearable` | `tests/unit/apps/wearable` and `tests/gui/structural` | mapped | 1 file; ECGPrint helper and launch coverage. |
 | `tests/suites/apps/smoke` | `tests/gui/structural` | mapped | 1 file; all-app debug launch smoke. |
 

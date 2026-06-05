@@ -2,7 +2,7 @@ function varargout = labkit_FocusStack_app(varargin)
 %LABKIT_FOCUSSTACK_APP Fuse a focus image stack into one all-in-focus image.
 
     [requestHandled, requestOutputs, debugLog] = labkit.ui.app.dispatchRequest( ...
-        'labkit_FocusStack_app', varargin, nargout, focusStackAppTestHandlers());
+        'labkit_FocusStack_app', varargin, nargout);
     if requestHandled
         varargout = requestOutputs;
         return;
@@ -447,95 +447,9 @@ function varargout = labkit_FocusStack_app(varargin)
     end
 end
 
-function handlers = focusStackAppTestHandlers()
-    handlers = struct( ...
-        'command', {'computeFocusStack', 'buildFocusStackSummaryTable', 'findFocusStackImages', 'alignFocusStackImages', 'selectedFocusImagePaths'}, ...
-        'minArgs', {2, 2, 1, 1, 2}, ...
-        'maxArgs', {2, 2, 1, 1, 2}, ...
-        'maxOutputs', {1, 1, 1, 2, 1}, ...
-        'run', {@runComputeFocusStack, @runBuildFocusStackSummaryTable, @runFindFocusStackImages, @runAlignFocusStackImages, @runSelectedFocusImagePaths});
-end
-
-function outputs = runComputeFocusStack(args)
-    outputs = {computeFocusStack(args{1}, args{2})};
-end
-
-function outputs = runBuildFocusStackSummaryTable(args)
-    outputs = {buildFocusStackSummaryTable(args{1}, string(args{2}))};
-end
-
-function outputs = runFindFocusStackImages(args)
-    outputs = {findFocusStackImages(string(args{1}))};
-end
-
-function outputs = runAlignFocusStackImages(args)
-    [alignedImages, lines] = alignFocusStackImages(args{1});
-    outputs = {alignedImages, lines};
-end
-
-function outputs = runSelectedFocusImagePaths(args)
-    outputs = {selectedFocusImagePaths(args{1}, args{2})};
-end
-
 function filter = focusImageDialogFilter()
     filter = {'*.png;*.jpg;*.jpeg;*.tif;*.tiff;*.bmp', ...
         'Image files (*.png, *.jpg, *.jpeg, *.tif, *.tiff, *.bmp)'};
-end
-
-function paths = findFocusStackImages(folder)
-    if strlength(string(folder)) == 0 || exist(folder, 'dir') ~= 7
-        error('labkit_FocusStack_app:FolderNotFound', ...
-            'Focus image folder does not exist.');
-    end
-
-    entries = dir(folder);
-    keep = false(numel(entries), 1);
-    for k = 1:numel(entries)
-        entry = entries(k);
-        if entry.isdir
-            continue;
-        end
-        keep(k) = isSupportedFocusImagePath(entry.name);
-    end
-
-    entries = entries(keep);
-
-    paths = strings(numel(entries), 1);
-    for k = 1:numel(entries)
-        paths(k) = string(fullfile(folder, entries(k).name));
-    end
-    paths = sortFocusStackPathsByName(paths);
-    if numel(paths) < 2
-        error('labkit_FocusStack_app:NotEnoughImages', ...
-            'Focus stacking requires at least two image files in the selected folder.');
-    end
-end
-
-function paths = selectedFocusImagePaths(files, folder)
-    if isequal(files, 0) || isequal(folder, 0)
-        paths = strings(0, 1);
-        return;
-    end
-
-    if iscell(files)
-        names = string(files(:));
-    else
-        names = string(files);
-        names = names(:);
-    end
-    names = names(strlength(names) > 0);
-    if isempty(names)
-        error('labkit_FocusStack_app:NoImagesSelected', ...
-            'Select at least one image file.');
-    end
-
-    folder = string(folder);
-    paths = strings(numel(names), 1);
-    for k = 1:numel(names)
-        paths(k) = string(fullfile(folder, names(k)));
-    end
-    paths = sortFocusStackPathsByName(paths);
-    assertSupportedFocusImagePaths(paths);
 end
 
 function images = readFocusStackImages(paths)
@@ -554,35 +468,6 @@ function images = readFocusStackImages(paths)
         end
         images{k} = imread(paths(k));
     end
-end
-
-function assertSupportedFocusImagePaths(paths)
-    for k = 1:numel(paths)
-        if ~isSupportedFocusImagePath(paths(k))
-            error('labkit_FocusStack_app:UnsupportedImageFile', ...
-                'Unsupported image file type: %s', char(paths(k)));
-        end
-    end
-end
-
-function tf = isSupportedFocusImagePath(pathValue)
-    [~, ~, ext] = fileparts(char(pathValue));
-    tf = any(strcmpi(ext, supportedFocusImageExtensions()));
-end
-
-function extensions = supportedFocusImageExtensions()
-    extensions = {'.png', '.jpg', '.jpeg', '.tif', '.tiff', '.bmp'};
-end
-
-function paths = sortFocusStackPathsByName(paths)
-    paths = string(paths(:));
-    names = strings(numel(paths), 1);
-    for k = 1:numel(paths)
-        [~, base, ext] = fileparts(char(paths(k)));
-        names(k) = lower(string([base ext]));
-    end
-    [~, order] = sort(names);
-    paths = paths(order);
 end
 
 function data = initialResultTable()

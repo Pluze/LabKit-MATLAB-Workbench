@@ -1,11 +1,11 @@
 % App-private image measurement helper. Expected caller: owning app callbacks
-% and temporary compatibility tests. Inputs, outputs, and side effects are
+% and workflow tests. Inputs, outputs, and side effects are
 % documented with the helper function below.
 function lengthResult = computeCurveLength(xPix, yPix, calibration)
 %COMPUTECURVELENGTH Measure traced curve length for labkit_CurvatureMeasurement_app.
 %
 % Expected caller:
-%   labkit_CurvatureMeasurement_app callbacks, test handlers, and private
+%   labkit_CurvatureMeasurement_app callbacks, workflow tests, and private
 %   curvature fit helpers.
 %
 % Inputs/outputs:

@@ -67,5 +67,5 @@ function test_computeCIC()
 end
 
 function A = computeCIC(item, opts)
-    A = labkit_CIC_app('__labkit_test__', 'computeCIC', item, opts);
+    A = electrochemWorkflow("cic", "computeCIC", item, opts);
 end

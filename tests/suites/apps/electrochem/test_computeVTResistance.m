@@ -55,5 +55,5 @@ function test_computeVTResistance()
 end
 
 function A = computeVTResistance(item, opts)
-    A = labkit_VTResistance_app('__labkit_test__', 'computeResistance', item, opts);
+    A = electrochemWorkflow("vtResistance", "computeResistance", item, opts);
 end

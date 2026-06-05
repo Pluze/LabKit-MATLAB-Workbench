@@ -59,7 +59,7 @@ The app owns:
 - failed-row behavior
 - callback ordering, alerts, and log wording
 
-Every public app entry point should preserve its launch name, route internal test/debug requests through `labkit.ui.app.dispatchRequest`, build the GUI with `labkit.ui.app.createShell`, and keep visible debug trace wired into the Log tab during debug launches. Image apps with drawing, scale bars, ROI, or preview scroll should pass a `labkit.ui.tool.createRuntime` result into reusable tools instead of owning figure pointer callbacks directly.
+Every public app entry point should preserve its launch name, route debug launch requests through `labkit.ui.app.dispatchRequest`, build the GUI with `labkit.ui.app.createShell`, and keep visible debug trace wired into the Log tab during debug launches. Image apps with drawing, scale bars, ROI, or preview scroll should pass a `labkit.ui.tool.createRuntime` result into reusable tools instead of owning figure pointer callbacks directly.
 
 Move code into `+labkit` only when it is reusable without app vocabulary, testable independently, and useful beyond one workflow. When a documented UI tool owns app-neutral interaction mechanics, the app should consume that tool and keep workflow meaning, summaries, and exports app-local.
 
@@ -68,7 +68,7 @@ Move code into `+labkit` only when it is reusable without app vocabulary, testab
 New lab apps should start as explicit public entry points under `apps/<category>/` or `apps/<category>/<app_slug>/` when the app needs private helpers. A typical single-file order is:
 
 ```text
-1. Entry validation and optional internal test/debug hook
+1. Entry validation and optional debug launch hook
 2. App state and GUI construction
 3. Nested callbacks for file/session actions
 4. Nested refresh/render/export callbacks that touch UI handles
@@ -79,9 +79,9 @@ New lab apps should start as explicit public entry points under `apps/<category>
 9. Small formatting, parsing, interpolation, and numeric utilities
 ```
 
-Nested functions may read and update GUI handles or app state. Local functions after the app `end` should be GUI-free when practical so focused tests can exercise them through narrow internal app hooks.
+Nested functions may read and update GUI handles or app state. Local functions after the app `end` should be GUI-free when practical; extracted app-owned workflow helpers can give focused tests direct access without adding reusable `+labkit` APIs.
 
-The preferred public shape is one launchable app entry point per workflow. If an app becomes too large, app-owned private helpers are acceptable when they stay under the owning app tree and do not become public reusable APIs. Move GUI-free calculations, export builders, deterministic image/signal transforms, and formatting utilities to `apps/<family>/<app_slug>/private/` when that makes the public app file easier to scan. Use `apps/<family>/private/` only for helpers that are genuinely shared by multiple apps in that family. Keep GUI state, callbacks, user alerts, workflow ordering, and internal test-command routing in the public app file.
+The preferred public shape is one launchable app entry point per workflow. If an app becomes too large, app-owned private helpers are acceptable when they stay under the owning app tree and do not become public reusable APIs. Move GUI-free calculations, export builders, deterministic image/signal transforms, and formatting utilities to `apps/<family>/<app_slug>/private/` when that makes the public app file easier to scan. Use `apps/<family>/private/` only for helpers that are genuinely shared by multiple apps in that family. Keep GUI state, callbacks, user alerts, workflow ordering, and debug launch routing in the public app file.
 
 ## New App Checklist
 

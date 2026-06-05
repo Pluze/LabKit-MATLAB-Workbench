@@ -3,7 +3,7 @@ function varargout = labkit_ChronoOverlay_app(varargin)
 % Single-file app that composes +labkit GUI/DTA APIs and owns overlay workflow choices.
 
     [requestHandled, requestOutputs, debugLog] = labkit.ui.app.dispatchRequest( ...
-        'labkit_ChronoOverlay_app', varargin, nargout, chronoOverlayAppTestHandlers());
+        'labkit_ChronoOverlay_app', varargin, nargout);
     if requestHandled
         varargout = requestOutputs;
         return;
@@ -272,24 +272,6 @@ function varargout = labkit_ChronoOverlay_app(varargin)
         labkit.ui.view.update(txtLog, 'appendLog', msg);
         debugLog.append(msg);
     end
-end
-
-function handlers = chronoOverlayAppTestHandlers()
-    handlers = struct( ...
-        'command', {'alignByPulseGap', 'buildOverlayExportTable'}, ...
-        'minArgs', {1, 1}, ...
-        'maxArgs', {1, 1}, ...
-        'maxOutputs', {2, 1}, ...
-        'run', {@runAlignByPulseGap, @runBuildOverlayExportTable});
-end
-
-function outputs = runAlignByPulseGap(args)
-    [item, msg] = chronoOverlayWorkflow("alignByPulseGap", args{1});
-    outputs = {item, msg};
-end
-
-function outputs = runBuildOverlayExportTable(args)
-    outputs = {chronoOverlayWorkflow("buildOverlayExportTable", args{1})};
 end
 
 %% App-local analysis

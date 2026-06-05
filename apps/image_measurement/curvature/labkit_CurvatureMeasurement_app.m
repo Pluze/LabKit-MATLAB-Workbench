@@ -2,7 +2,7 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
 %LABKIT_CURVATUREMEASUREMENT_APP Measure curve radius and curvature from images.
 
     [requestHandled, requestOutputs, debugLog] = labkit.ui.app.dispatchRequest( ...
-        'labkit_CurvatureMeasurement_app', varargin, nargout, curvatureAppTestHandlers());
+        'labkit_CurvatureMeasurement_app', varargin, nargout);
     if requestHandled
         varargout = requestOutputs;
         return;
@@ -637,41 +637,6 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
         addLog(sprintf('%s: %s', titleText, message));
         uialert(fig, message, titleText);
     end
-end
-
-function handlers = curvatureAppTestHandlers()
-    handlers = struct( ...
-        'command', {'computeCurvatureFit', 'computeCurveLength', 'buildCurvatureResultTable'}, ...
-        'minArgs', {3, 3, 2}, ...
-        'maxArgs', {3, 3, 3}, ...
-        'maxOutputs', {1, 1, 1}, ...
-        'run', {@runComputeCurvatureFit, @runComputeCurveLength, @runBuildCurvatureResultTable});
-end
-
-function outputs = runComputeCurvatureFit(args)
-    opts = args{3};
-    calibration = scaleOptionsFromStruct(opts);
-    doDensify = optionValue(opts, 'doDensify', true);
-    denseN = optionValue(opts, 'denseN', 300);
-    fitPathX = optionValue(opts, 'fitPathX', []);
-    fitPathY = optionValue(opts, 'fitPathY', []);
-    outputs = {computeCurvatureFit(args{1}, args{2}, calibration, ...
-        doDensify, denseN, fitPathX, fitPathY)};
-end
-
-function outputs = runBuildCurvatureResultTable(args)
-    if numel(args) >= 3
-        lengthResult = args{3};
-    else
-        lengthResult = lengthResultFromFit(args{1});
-    end
-    outputs = {buildCurvatureResultTable(args{1}, string(args{2}), lengthResult)};
-end
-
-function outputs = runComputeCurveLength(args)
-    opts = args{3};
-    calibration = scaleOptionsFromStruct(opts);
-    outputs = {computeCurveLength(args{1}, args{2}, calibration)};
 end
 
 function plotDenseFitPoints(ax, fit)

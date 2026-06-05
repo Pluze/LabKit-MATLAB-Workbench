@@ -57,17 +57,17 @@ function deleteIfExists(filepath)
 end
 
 function A = computeVTResistance(item, opts)
-    A = labkit_VTResistance_app('__labkit_test__', 'computeResistance', item, opts);
+    A = electrochemWorkflow("vtResistance", "computeResistance", item, opts);
 end
 
 function T = buildVTResultsTable(items)
-    T = labkit_VTResistance_app('__labkit_test__', 'buildResultsTable', items);
+    T = electrochemWorkflow("vtResistance", "buildResultsTable", items);
 end
 
 function C = buildVTBatchTableData(items)
-    C = labkit_VTResistance_app('__labkit_test__', 'buildBatchTableData', items);
+    C = electrochemWorkflow("vtResistance", "buildBatchTableData", items);
 end
 
 function writeVTResultsCSV(items, filepath)
-    labkit_VTResistance_app('__labkit_test__', 'writeResultsCSV', items, filepath);
+    electrochemWorkflow("vtResistance", "writeResultsCSV", items, filepath);
 end

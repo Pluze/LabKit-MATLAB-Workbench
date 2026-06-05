@@ -1,10 +1,10 @@
 % App-owned CIC workflow helper dispatch. Expected caller: labkit_CIC_app
-% callbacks and temporary compatibility test handlers. Inputs are a command
+% callbacks and workflow tests. Inputs are a command
 % string plus the original helper arguments; outputs match the selected helper.
 % Side effects are limited to writeResultsCSV file writes.
 function varargout = cicWorkflow(command, varargin)
 %CICWORKFLOW Dispatch app-owned CIC analysis/export helpers.
-% Expected caller: labkit_CIC_app callbacks and temporary compatibility test handlers.
+% Expected caller: labkit_CIC_app callbacks and workflow tests.
 % Inputs are a command string plus the original helper arguments. Outputs match
 % the selected helper. Side effects are limited to writeResultsCSV file writes.
 

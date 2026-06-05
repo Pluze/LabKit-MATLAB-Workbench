@@ -8,7 +8,6 @@ function test_gui_layout_electrochem()
     checkMultiDTA(h);
     checkEIS(h);
     checkCVCSC(h);
-    checkCVCSCFixtureLoad();
     checkVTResistance(h);
     checkCIC(h);
 end
@@ -69,20 +68,6 @@ function checkCVCSC(h)
     h.invokeDropdownValue(fig, 'Cathodic');
     h.invokeButton(fig, 'Refresh Plots');
     h.invokeButton(fig, 'Clear Both');
-end
-
-function checkCVCSCFixtureLoad()
-    fixture = dtaFixturePath('cv_cyclic_voltammetry_pt_reference.DTA');
-    diagnostics = labkit_CSC_app('__labkit_test__', 'loadFileDiagnostics', fixture);
-
-    assert(strcmp(diagnostics.file, fixture), 'CSC load should update the selected file field.');
-    assert(~isempty(diagnostics.curveItems) && ~strcmp(diagnostics.curveItems{1}, '(none)'), ...
-        'CSC load should populate parsed curve items.');
-    assert(diagnostics.topLineCount >= 1, 'CSC load should render at least one top plot line.');
-    assert(diagnostics.bottomLineCount >= 1, 'CSC load should render at least one bottom plot line.');
-    assert(contains(diagnostics.qct, 'C'), 'CSC load should compute and display CT charge.');
-    assert(contains(diagnostics.qcv, 'C'), 'CSC load should compute and display CV charge.');
-    assert(~contains(diagnostics.status, 'Ready'), 'CSC load should update status after analysis.');
 end
 
 function checkVTResistance(h)

@@ -1,11 +1,11 @@
 % App-owned VT resistance workflow helper dispatch. Expected caller:
-% labkit_VTResistance_app callbacks and temporary compatibility test handlers.
+% labkit_VTResistance_app callbacks and workflow tests.
 % Inputs are a command string plus the original helper arguments; outputs match
 % the selected helper. Side effects are limited to CSV writes.
 function varargout = vtResistanceWorkflow(command, varargin)
 %VTRESISTANCEWORKFLOW Dispatch app-owned VT resistance helpers.
 % Expected caller: labkit_VTResistance_app callbacks and temporary compatibility
-% test handlers. Inputs are a command string plus the original helper arguments.
+% workflow tests. Inputs are a command string plus the original helper arguments.
 % Outputs match the selected helper. Side effects are limited to CSV writes.
 
     switch string(command)

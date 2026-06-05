@@ -1,5 +1,5 @@
 % App-private image measurement helper. Expected caller: owning app callbacks
-% and temporary compatibility tests. Inputs, outputs, and side effects are
+% and workflow tests. Inputs, outputs, and side effects are
 % documented with the helper function below.
 function gray = normalizeGray(imageData)
 %NORMALIZEGRAY Convert focus-stack image data to normalized grayscale.

@@ -1,5 +1,5 @@
 % App-private image measurement helper. Expected caller: owning app callbacks
-% and temporary compatibility tests. Inputs, outputs, and side effects are
+% and workflow tests. Inputs, outputs, and side effects are
 % documented with the helper function below.
 function lengthResult = lengthResultFromFit(fit)
 %LENGTHRESULTFROMFIT Derive curve-length result from a fit result.

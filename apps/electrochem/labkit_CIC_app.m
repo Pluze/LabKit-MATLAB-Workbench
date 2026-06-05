@@ -24,7 +24,7 @@ function varargout = labkit_CIC_app(varargin)
 %   - By default, the evaluation point is 10 us after the end of each phase,
 %     matching the convention commonly used in the literature the user shared.
     [requestHandled, requestOutputs, debugLog] = labkit.ui.app.dispatchRequest( ...
-        'labkit_CIC_app', varargin, nargout, cicAppTestHandlers());
+        'labkit_CIC_app', varargin, nargout);
     if requestHandled
         varargout = requestOutputs;
         return;
@@ -667,36 +667,6 @@ function varargout = labkit_CIC_app(varargin)
         debugLog.append(msg);
     end
 
-end
-
-%% App test hook
-function handlers = cicAppTestHandlers()
-    handlers = struct( ...
-        'command', {'computeCIC', 'buildBatchTableData', ...
-            'buildResultsTable', 'writeResultsCSV'}, ...
-        'minArgs', {2, 2, 2, 3}, ...
-        'maxArgs', {2, 2, 2, 3}, ...
-        'maxOutputs', {1, 2, 1, 2}, ...
-        'run', {@runComputeCIC, @runBuildBatchTableData, ...
-            @runBuildResultsTable, @runWriteResultsCSV});
-end
-
-function outputs = runComputeCIC(args)
-    outputs = {cicWorkflow("computeCIC", args{1}, args{2})};
-end
-
-function outputs = runBuildBatchTableData(args)
-    [C, columnNames] = cicWorkflow("buildBatchTableData", args{1}, args{2});
-    outputs = {C, columnNames};
-end
-
-function outputs = runBuildResultsTable(args)
-    outputs = {cicWorkflow("buildResultsTable", args{1}, args{2})};
-end
-
-function outputs = runWriteResultsCSV(args)
-    [ok, msg] = cicWorkflow("writeResultsCSV", args{1}, args{2}, args{3});
-    outputs = {ok, msg};
 end
 
 %% App-local analysis

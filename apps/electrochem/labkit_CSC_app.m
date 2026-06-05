@@ -20,29 +20,19 @@ function varargout = labkit_CSC_app(varargin)
 % Optional normalization
 %   CSC = Q / area (cm^2); both charge and normalized CSC are shown.
 %
-    [testLoadFile, isLoadDiagnostics] = parseCSCLoadDiagnosticsRequest(varargin);
-    if isLoadDiagnostics
-        debugLog = labkit.ui.diag.createContext('labkit_CSC_app', struct('enabled', false));
-    else
-        [requestHandled, requestOutputs, debugLog] = labkit.ui.app.dispatchRequest( ...
-            'labkit_CSC_app', varargin, nargout, cscAppTestHandlers());
-        if requestHandled
-            varargout = requestOutputs;
-            return;
-        end
+    [requestHandled, requestOutputs, debugLog] = labkit.ui.app.dispatchRequest( ...
+        'labkit_CSC_app', varargin, nargout);
+    if requestHandled
+        varargout = requestOutputs;
+        return;
     end
     if debugLog.enabled
         if nargout > 2
             error('labkit_CSC_app:TooManyOutputs', ...
                 'labkit_CSC_app debug mode returns at most the app figure and debug log.');
         end
-    elseif ~isLoadDiagnostics && nargout > 1
+    elseif nargout > 1
         error('labkit_CSC_app:TooManyOutputs', 'labkit_CSC_app returns at most the app figure handle.');
-    end
-    if isLoadDiagnostics && nargout == 0
-        error('labkit_CSC_app:InvalidTestRequest', 'CSC load test request requires one output diagnostics struct.');
-    elseif isLoadDiagnostics && nargout > 1
-        error('labkit_CSC_app:TooManyOutputs', 'CSC load test request returns one diagnostics struct.');
     end
 
     % Application state container
@@ -206,13 +196,6 @@ function varargout = labkit_CSC_app(varargin)
         debugLog.attachTextLog(txtLog);
         debugLog.trace('CSC debug trace enabled.');
         debugLog.instrumentFigure(fig);
-    end
-    if isLoadDiagnostics
-        cleanup = onCleanup(@() delete(fig));
-        addFiles({testLoadFile});
-        drawnow;
-        varargout{1} = collectLoadDiagnostics();
-        return;
     end
     if nargout >= 1
         varargout{1} = fig;
@@ -579,18 +562,6 @@ function varargout = labkit_CSC_app(varargin)
         debugLog.append(msg);
     end
 
-    function diagnostics = collectLoadDiagnostics()
-        diagnostics = struct();
-        diagnostics.file = txtFile.Value;
-        diagnostics.scanRate = txtScan.Value;
-        diagnostics.curveItems = ddCurve.Items;
-        diagnostics.topLineCount = numel(findobj(axTop, 'Type', 'Line'));
-        diagnostics.bottomLineCount = numel(findobj(axBottom, 'Type', 'Line'));
-        diagnostics.qct = txtQct.Value;
-        diagnostics.qcv = txtQcv.Value;
-        diagnostics.status = lblStatus.Text;
-        diagnostics.log = txtLog.Value;
-    end
 end
 
 %% App-local formatting and plot cleanup
@@ -615,37 +586,6 @@ function setDropdownValueIfExists(dd, valueText)
     elseif ~isempty(dd.Items)
         dd.Value = dd.Items{1};
     end
-end
-
-function handlers = cscAppTestHandlers()
-    handlers = struct( ...
-        'command', {'computeCSC'}, ...
-        'minArgs', {2}, ...
-        'maxArgs', {2}, ...
-        'maxOutputs', {1}, ...
-        'run', {@runComputeCSC});
-end
-
-function outputs = runComputeCSC(args)
-    outputs = {cscWorkflow("computeCSC", args{1}, args{2})};
-end
-
-function [filepath, tf] = parseCSCLoadDiagnosticsRequest(args)
-    filepath = '';
-    tf = false;
-    if numel(args) < 2 ...
-            || ~(ischar(args{1}) || (isstring(args{1}) && isscalar(args{1}))) ...
-            || ~strcmp(string(args{1}), "__labkit_test__") ...
-            || ~(ischar(args{2}) || (isstring(args{2}) && isscalar(args{2}))) ...
-            || ~strcmp(string(args{2}), "loadFileDiagnostics")
-        return;
-    end
-    if numel(args) ~= 3 || ~(ischar(args{3}) || (isstring(args{3}) && isscalar(args{3})))
-        error('labkit_CSC_app:InvalidTestArguments', ...
-            'Command loadFileDiagnostics expects one filepath argument.');
-    end
-    filepath = char(args{3});
-    tf = true;
 end
 
 %% App-local analysis
