@@ -14,6 +14,10 @@ on:
 env:
   MATLAB_RELEASE: R2025a
 
+concurrency:
+  group: matlab-tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   shell-wrapper:
     name: Shell Wrapper Checks
@@ -63,6 +67,15 @@ jobs:
           tasks: checkStyle
           startup-options: -logfile artifacts/logs/checkStyle/matlab.log
 
+      - name: Summarize quality guardrails
+        if: always()
+        run: >
+          python scripts/summarize_junit.py
+          artifacts/test-results/checkStyle/junit.xml
+          --run-name checkStyle
+          --html artifacts/test-results/checkStyle/html/index.html
+          --log artifacts/logs/checkStyle/matlab.log
+
       - name: Upload quality artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -97,6 +110,15 @@ jobs:
         with:
           tasks: testUnit
           startup-options: -logfile artifacts/logs/testUnit/matlab.log
+
+      - name: Summarize unit tests
+        if: always()
+        run: >
+          python scripts/summarize_junit.py
+          artifacts/test-results/testUnit/junit.xml
+          --run-name testUnit
+          --html artifacts/test-results/testUnit/html/index.html
+          --log artifacts/logs/testUnit/matlab.log
 
       - name: Upload unit artifacts
         if: always()
@@ -134,6 +156,15 @@ jobs:
           tasks: coverage
           startup-options: -logfile artifacts/logs/coverage/matlab.log
 
+      - name: Summarize coverage test results
+        if: always()
+        run: >
+          python scripts/summarize_junit.py
+          artifacts/test-results/coverage/junit.xml
+          --run-name coverage
+          --html artifacts/test-results/coverage/html/index.html
+          --log artifacts/logs/coverage/matlab.log
+
       - name: Upload coverage artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -170,6 +201,15 @@ jobs:
           tasks: testIntegration
           startup-options: -logfile artifacts/logs/testIntegration/matlab.log
 
+      - name: Summarize integration tests
+        if: always()
+        run: >
+          python scripts/summarize_junit.py
+          artifacts/test-results/testIntegration/junit.xml
+          --run-name testIntegration
+          --html artifacts/test-results/testIntegration/html/index.html
+          --log artifacts/logs/testIntegration/matlab.log
+
       - name: Upload integration artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -205,6 +245,15 @@ jobs:
         with:
           tasks: testGuiStructural
           startup-options: -logfile artifacts/logs/testGuiStructural/matlab.log
+
+      - name: Summarize GUI structural tests
+        if: always()
+        run: >
+          python scripts/summarize_junit.py
+          artifacts/test-results/testGuiStructural/junit.xml
+          --run-name testGuiStructural
+          --html artifacts/test-results/testGuiStructural/html/index.html
+          --log artifacts/logs/testGuiStructural/matlab.log
 
       - name: Upload GUI structural artifacts
         if: always()
@@ -243,6 +292,15 @@ jobs:
         with:
           tasks: testGuiGesture
           startup-options: -logfile artifacts/logs/testGuiGesture/matlab.log
+
+      - name: Summarize GUI gesture tests
+        if: always()
+        run: >
+          python scripts/summarize_junit.py
+          artifacts/test-results/testGuiGesture/junit.xml
+          --run-name testGuiGesture
+          --html artifacts/test-results/testGuiGesture/html/index.html
+          --log artifacts/logs/testGuiGesture/matlab.log
 
       - name: Upload GUI gesture artifacts
         if: always()
