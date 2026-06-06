@@ -1,5 +1,5 @@
-% App-owned DIC helper extracted from labkit_DICPostprocess_app.m. Expected caller: DIC app entrypoints.
-% Inputs, outputs, and side effects match the original local helper implementation.
+% DIC Postprocess view helper. Expected caller: labkit_DICPostprocess_app.
+% Input is a MAT filepath. Output is a safe export tag. Side effects: none.
 function tag = tagFromPath(filepath)
     tokens = regexp(filepath, '(\d+(?:\.\d+)?mm)', 'tokens');
     if isempty(tokens)

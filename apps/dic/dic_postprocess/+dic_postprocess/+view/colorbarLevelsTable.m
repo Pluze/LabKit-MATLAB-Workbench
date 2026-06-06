@@ -1,5 +1,6 @@
-% App-owned DIC helper extracted from labkit_DICPostprocess_app.m. Expected caller: DIC app entrypoints.
-% Inputs, outputs, and side effects match the original local helper implementation.
+% DIC Postprocess view helper. Expected caller: labkit_DICPostprocess_app.
+% Input is the overlay options struct. Output is the colorbar level table.
+% Side effects: none.
 function T = colorbarLevelsTable(opts)
     n = size(opts.colormap, 1);
     strainLevel = linspace(opts.colorRange(1), opts.colorRange(2), n).';

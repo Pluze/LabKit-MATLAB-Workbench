@@ -42,8 +42,9 @@ Current facts:
 
 - Oversized app entry points: none.
 - Oversized app runners over 500 lines: CIC and CSC only.
-- App `private/` debt: `apps/dic/private/`, currently DIC Postprocess helper
-  debt only.
+- App `private/` debt: `apps/dic/private/`, currently remaining DIC
+  Postprocess helper debt only. Initial `dic_postprocess.view` helpers have
+  moved into an app-owned package.
 - Completed app package migrations: ECG Print and DIC Preprocess.
 - String-dispatch workflow adapters and app `+core/dispatch.m` routers: none.
 - Private helper contract debt remains in parts of `+labkit`.

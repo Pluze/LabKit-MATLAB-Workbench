@@ -233,7 +233,7 @@ function varargout = labkit_DICPostprocess_app(varargin)
             return;
         end
 
-        tag = tagFromPath(char(S.matPath));
+        tag = dic_postprocess.view.tagFromPath(char(S.matPath));
         opts = overlayOptionsFromControls();
         exxFile = fullfile(folder, sprintf('overlay_exx_%s.png', tag));
         eyyFile = fullfile(folder, sprintf('overlay_eyy_%s.png', tag));
@@ -286,7 +286,7 @@ function varargout = labkit_DICPostprocess_app(varargin)
         [~, baseName] = fileparts(f);
         csvOut = fullfile(p, [baseName '_levels.csv']);
         exportStrainColorbar(opts, pngOut);
-        writetable(colorbarLevelsTable(opts), csvOut);
+        writetable(dic_postprocess.view.colorbarLevelsTable(opts), csvOut);
         addLog(sprintf('Exported strain colorbar: %s and %s', pngOut, csvOut));
     end
 
@@ -318,7 +318,7 @@ function varargout = labkit_DICPostprocess_app(varargin)
         S.summaryTable = summarizeStrain(S.strain, summaryMask);
         showImage(ui.topAxes, S.overlayExx, 'EXX Overlay');
         showImage(ui.bottomAxes, S.overlayEyy, 'EYY Overlay');
-        resultTable.Data = summaryTableData(S.summaryTable);
+        resultTable.Data = dic_postprocess.view.summaryTableData(S.summaryTable);
         refreshSummaryText();
     end
 
@@ -339,9 +339,9 @@ function varargout = labkit_DICPostprocess_app(varargin)
 
     function refreshSummaryText()
         lines = {};
-        lines{end+1} = sprintf('DIC MAT: %s', displayPath(S.matPath));
-        lines{end+1} = sprintf('Reference image: %s', displayPath(S.referencePath));
-        lines{end+1} = sprintf('Mask image: %s', displayPath(S.maskPath));
+        lines{end+1} = sprintf('DIC MAT: %s', dic_postprocess.view.displayPath(S.matPath));
+        lines{end+1} = sprintf('Reference image: %s', dic_postprocess.view.displayPath(S.referencePath));
+        lines{end+1} = sprintf('Mask image: %s', dic_postprocess.view.displayPath(S.maskPath));
         lines{end+1} = sprintf('Overlays: %s', ternary(~isempty(S.overlayExx), 'available', 'not generated'));
         lines{end+1} = sprintf('Optical image: brightness %.3g, contrast %.3g, gamma %.3g, saturation %.3g', ...
             edBrightness.Value, edContrast.Value, edGamma.Value, edSaturation.Value);
