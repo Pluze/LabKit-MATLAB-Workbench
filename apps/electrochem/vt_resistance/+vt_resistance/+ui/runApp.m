@@ -14,7 +14,12 @@ function fig = runApp(debugLog)
         'title', 'Gamry VT Steady Resistance GUI', ...
         'position', [40 30 1680 980], ...
         'leftWidth', 430, ...
-        'options', struct('rightKind', 'dualPlot')));
+        'options', struct( ...
+        'rightTitle', 'Plots', ...
+        'rightGridSize', [4 1], ...
+        'rightRowHeight', {{'fit', '1x', 'fit', '1x'}}, ...
+        'rightRowSpacing', 10)));
+    ui = vt_resistance.ui.createRightAxesPair(ui, 'Top Plot', 'Bottom Plot', true);
     fig = ui.fig;
     layFA = ui.filesAnalysisGrid;
     laySR = ui.summaryResultsGrid;
@@ -84,19 +89,19 @@ function fig = runApp(debugLog)
     infoUi = labkit.ui.view.section(laySR, 'Current File Summary', 1, [13 2]);
     gi = infoUi.grid;
 
-    S.txtControlMode = labkit.ui.view.form(gi, 'info', 1, 'Control mode:');
-    S.txtDetect = labkit.ui.view.form(gi, 'info', 2, 'Detection:');
-    S.txtWindow = labkit.ui.view.form(gi, 'info', 3, 'Window:');
-    S.txtCathIV = labkit.ui.view.form(gi, 'info', 4, 'Cathodic I / Vss:');
-    S.txtAnodIV = labkit.ui.view.form(gi, 'info', 5, 'Anodic I / Vss:');
-    S.txtCathBase = labkit.ui.view.form(gi, 'info', 6, 'Cathodic baseline:');
-    S.txtAnodBase = labkit.ui.view.form(gi, 'info', 7, 'Anodic baseline:');
-    S.txtCathBaseWin = labkit.ui.view.form(gi, 'info', 8, 'Cath baseline window:');
-    S.txtAnodBaseWin = labkit.ui.view.form(gi, 'info', 9, 'Anod baseline window:');
-    S.txtCathR = labkit.ui.view.form(gi, 'info', 10, 'Cathodic R:');
-    S.txtAnodR = labkit.ui.view.form(gi, 'info', 11, 'Anodic R:');
-    S.txtAvgR = labkit.ui.view.form(gi, 'info', 12, 'Average R:');
-    S.txtStatus = labkit.ui.view.form(gi, 'info', 13, 'Status:');
+    S.txtControlMode = labkit.ui.view.form(gi, struct('kind', 'info', 'row', 1, 'label', 'Control mode:'));
+    S.txtDetect = labkit.ui.view.form(gi, struct('kind', 'info', 'row', 2, 'label', 'Detection:'));
+    S.txtWindow = labkit.ui.view.form(gi, struct('kind', 'info', 'row', 3, 'label', 'Window:'));
+    S.txtCathIV = labkit.ui.view.form(gi, struct('kind', 'info', 'row', 4, 'label', 'Cathodic I / Vss:'));
+    S.txtAnodIV = labkit.ui.view.form(gi, struct('kind', 'info', 'row', 5, 'label', 'Anodic I / Vss:'));
+    S.txtCathBase = labkit.ui.view.form(gi, struct('kind', 'info', 'row', 6, 'label', 'Cathodic baseline:'));
+    S.txtAnodBase = labkit.ui.view.form(gi, struct('kind', 'info', 'row', 7, 'label', 'Anodic baseline:'));
+    S.txtCathBaseWin = labkit.ui.view.form(gi, struct('kind', 'info', 'row', 8, 'label', 'Cath baseline window:'));
+    S.txtAnodBaseWin = labkit.ui.view.form(gi, struct('kind', 'info', 'row', 9, 'label', 'Anod baseline window:'));
+    S.txtCathR = labkit.ui.view.form(gi, struct('kind', 'info', 'row', 10, 'label', 'Cathodic R:'));
+    S.txtAnodR = labkit.ui.view.form(gi, struct('kind', 'info', 'row', 11, 'label', 'Anodic R:'));
+    S.txtAvgR = labkit.ui.view.form(gi, struct('kind', 'info', 'row', 12, 'label', 'Average R:'));
+    S.txtStatus = labkit.ui.view.form(gi, struct('kind', 'info', 'row', 13, 'label', 'Status:'));
 
     tableUi = labkit.ui.view.panel(laySR, 'table', 'Batch Results', 2, ...
         {'File','Ic(A)','Ia(A)','Vc_ss(V)','Va_ss(V)','R_cath(ohm)','R_anod(ohm)','R_avg(ohm)','Detection'}, ...
@@ -108,9 +113,8 @@ function fig = runApp(debugLog)
 
     topPlotDefaults = struct('x', 'Time (s)', 'y', 'VT: Vf vs time', 'grid', true);
     bottomPlotDefaults = struct('x', 'Time (s)', 'y', 'IT: Im vs time', 'grid', true);
-    plotControls = labkit.ui.view.panel( ...
+    plotControls = vt_resistance.ui.topBottomPlotControls( ...
         ui.topControlsPanel, ...
-        'topBottomPlotControls', ...
         ui.bottomControlsPanel, ...
         {'Time (s)', 'Sample #'}, ...
         {'VT: Vf vs time', 'IT: Im vs time'}, ...
@@ -442,7 +446,7 @@ function fig = runApp(debugLog)
     end
 
     function swapPlots()
-        labkit.ui.view.update(plotControls, 'swapPlotSelections');
+        plotControls.swapSelections();
         refreshPlots();
     end
 
@@ -452,8 +456,7 @@ function fig = runApp(debugLog)
     end
 
     function restoreDefaultPlotSelections()
-        labkit.ui.view.update(plotControls, 'setPlotSelections', ...
-            topPlotDefaults, bottomPlotDefaults);
+        plotControls.setSelections(topPlotDefaults, bottomPlotDefaults);
     end
 
     function resetAxesToDefaultState()

@@ -319,8 +319,7 @@ function fig = runApp(debugLog)
         c = S.curves(S.currentCurve);
         opts = struct('holdPlot', cbTopHold.Value, 'showGrid', cbTopGrid.Value, 'lineWidth', 1.2);
         request = csc.view.plotRequest(c, ddTopX.Value, ddTopY.Value, 'Top');
-        info = labkit.ui.view.draw(axTop, 'xy', request.x, request.y, ...
-            request.labels, opts);
+        info = csc.ui.plotXY(axTop, request.x, request.y, request.labels, opts);
         if ~info.ok
             addLog(request.skipLog);
             return;
@@ -333,8 +332,7 @@ function fig = runApp(debugLog)
         c = S.curves(S.currentCurve);
         opts = struct('holdPlot', cbBotHold.Value, 'showGrid', cbBotGrid.Value, 'lineWidth', 1.2);
         request = csc.view.plotRequest(c, ddBotX.Value, ddBotY.Value, 'Bottom');
-        info = labkit.ui.view.draw(axBottom, 'xy', request.x, request.y, ...
-            request.labels, opts);
+        info = csc.ui.plotXY(axBottom, request.x, request.y, request.labels, opts);
         if ~info.ok
             addLog(request.skipLog);
             return;

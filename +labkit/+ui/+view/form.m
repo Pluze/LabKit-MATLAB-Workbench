@@ -1,4 +1,4 @@
-function varargout = form(parent, spec, varargin)
+function varargout = form(parent, spec)
 %FORM Create LabKit form controls from a unified control spec.
 %
 % Usage:
@@ -6,8 +6,6 @@ function varargout = form(parent, spec, varargin)
 %       'kind', 'spinner', 'label', 'Samples:', ...
 %       'value', 10, 'limits', [1 Inf], 'step', 1, ...
 %       'callback', @onChanged));
-%   [lbl, spinner] = labkit.ui.view.form(parent, 'spinner', 'Samples:', ...
-%       'Value', 10, 'Limits', [1 Inf], 'ValueChangedFcn', @onChanged);
 %
 %   ui = labkit.ui.view.form(parent, struct( ...
 %       'title', 'Settings', 'row', 2, 'layout', [2 2], ...
@@ -15,19 +13,19 @@ function varargout = form(parent, spec, varargin)
 %
 % Inputs:
 %   parent - parent grid or shell tab grid.
-%   spec - scalar struct or control kind. Single-control specs use
-%       kind/label fields. Section specs use title, row, layout, and
-%       controls fields. String kind calls are normalized into a control
-%       spec and are the preferred app-facing replacement for one-off
-%       labeled control helper calls.
+%   spec - scalar struct. Single-control specs use kind/label fields. Section
+%       specs use title, row, layout, and controls fields.
 %
 % Control fields:
 %   id - optional valid field name for returned ui.controls.(id).
 %   kind - "spinner", "dropdown", "edit", "readonly", "info", "button",
 %       or "checkbox".
 %   label - label text for labeled controls.
-%   value, items, limits, step, enabled, callback - optional common values.
-%   args - optional cell array of raw MATLAB name/value pairs.
+%   style - edit-field style, default "text".
+%   value, items, limits, step, valueDisplayFormat, enabled, callback -
+%       optional common values.
+%   text - button or checkbox label text.
+%   row, column - optional layout location.
 %
 % Outputs:
 %   Single-control call returns [labelHandle, controlHandle] for labeled
@@ -40,16 +38,12 @@ function varargout = form(parent, spec, varargin)
 
     if nargin < 2
         error('labkit:ui:view:InvalidFormSpec', ...
-            'form requires a scalar struct spec or control kind.');
-    end
-
-    if ~isstruct(spec)
-        spec = shorthandSpec(spec, varargin);
+            'form requires a scalar struct spec.');
     end
 
     if ~isstruct(spec) || ~isscalar(spec)
         error('labkit:ui:view:InvalidFormSpec', ...
-            'form requires a scalar struct spec or control kind.');
+            'form requires a scalar struct spec.');
     end
 
     if isfield(spec, 'controls')
@@ -65,36 +59,6 @@ function varargout = form(parent, spec, varargin)
         varargout = {controlHandle, labelHandle};
     else
         varargout = {labelHandle, controlHandle};
-    end
-end
-
-function spec = shorthandSpec(kind, args)
-    kind = lower(char(string(kind)));
-    switch kind
-        case {'spinner', 'dropdown'}
-            if isempty(args)
-                error('labkit:ui:view:InvalidFormSpec', ...
-                    '%s controls require label text.', kind);
-            end
-            spec = struct('kind', kind, 'label', args{1}, 'args', {args(2:end)});
-        case 'edit'
-            if numel(args) < 2
-                error('labkit:ui:view:InvalidFormSpec', ...
-                    'edit controls require label text and edit style.');
-            end
-            spec = struct('kind', 'edit', 'label', args{1}, ...
-                'style', args{2}, 'args', {args(3:end)});
-        case 'readonly'
-            spec = struct('kind', 'readonly', 'args', {args});
-        case 'info'
-            if numel(args) < 2
-                error('labkit:ui:view:InvalidFormSpec', ...
-                    'info rows require row and label text.');
-            end
-            spec = struct('kind', 'info', 'row', args{1}, 'label', args{2});
-        otherwise
-            error('labkit:ui:view:UnknownControlKind', ...
-                'Unsupported form control kind "%s".', kind);
     end
 end
 
@@ -161,8 +125,7 @@ end
 function [lbl, ctrl] = createOne(parent, spec)
     kind = lower(char(string(optionValue(spec, 'kind', 'edit'))));
     labelText = char(string(optionValue(spec, 'label', '')));
-    args = optionValue(spec, 'args', {});
-    args = [commonArgs(spec), args];
+    args = commonArgs(spec);
 
     switch kind
         case 'spinner'
@@ -222,6 +185,9 @@ function args = commonArgs(spec)
     end
     if isfield(spec, 'step')
         args = [args, {'Step', spec.step}];
+    end
+    if isfield(spec, 'valueDisplayFormat')
+        args = [args, {'ValueDisplayFormat', spec.valueDisplayFormat}];
     end
     if isfield(spec, 'enabled')
         args = [args, {'Enable', onOff(spec.enabled)}];

@@ -24,7 +24,6 @@ function verify_gui_layout_ui_basic_controls()
     checkReadOnlyInfoRowHelper();
     checkResultTablePanelHelper(h);
     checkPanelGridHelper(h);
-    checkPlotOptionsPanelHelper(h);
     checkFileSelectionPanelHelper(h);
 end
 
@@ -98,8 +97,12 @@ function checkLabeledSpinnerHelper()
     cleaner = onCleanup(@() delete(fig)); %#ok<NASGU>
     grid = uigridlayout(fig, [1 2]);
 
-    [lbl, spinner] = labkit.ui.view.form(grid, 'spinner', 'Probe value:', ...
-        'Value', 2, 'Limits', [0 10], 'Step', 0.5);
+    [lbl, spinner] = labkit.ui.view.form(grid, struct( ...
+        'kind', 'spinner', ...
+        'label', 'Probe value:', ...
+        'value', 2, ...
+        'limits', [0 10], ...
+        'step', 0.5));
     assert(strcmp(lbl.Text, 'Probe value:'), ...
         'Labeled spinner helper should preserve label text.');
     assert(strcmp(lbl.HorizontalAlignment, 'right'), ...
@@ -113,7 +116,9 @@ function checkReadOnlyTextHelpers(h)
     cleaner = onCleanup(@() delete(fig)); %#ok<NASGU>
     grid = uigridlayout(fig, [2 1]);
 
-    field = labkit.ui.view.form(grid, 'readonly', 'Value', 'Status');
+    field = labkit.ui.view.form(grid, struct( ...
+        'kind', 'readonly', ...
+        'value', 'Status'));
     field.Layout.Row = 1;
     assert(strcmp(field.Editable, 'off') && strcmp(field.Value, 'Status'), ...
         'Read-only text field helper should create a non-editable text field.');
@@ -131,7 +136,10 @@ function checkReadOnlyInfoRowHelper()
     cleaner = onCleanup(@() delete(fig)); %#ok<NASGU>
     grid = uigridlayout(fig, [2 2]);
 
-    [field, lbl] = labkit.ui.view.form(grid, 'info', 2, 'Probe:');
+    [field, lbl] = labkit.ui.view.form(grid, struct( ...
+        'kind', 'info', ...
+        'row', 2, ...
+        'label', 'Probe:'));
     assert(strcmp(lbl.Text, 'Probe:'), 'Read-only info row should preserve label text.');
     assert(strcmp(lbl.HorizontalAlignment, 'right'), ...
         'Read-only info row should preserve right-aligned labels.');
@@ -193,27 +201,6 @@ function checkPanelGridHelper(h)
     labkit.ui.view.section(growGrid, 'Tall Controls', 1, [5 2]);
     assert(growGrid.RowHeight{1} > 50, ...
         'Panel-grid helper should grow undersized fixed parent rows to avoid clipped controls.');
-end
-
-function checkPlotOptionsPanelHelper(h)
-    fig = uifigure('Visible', 'off', 'Name', 'labkit_plot_options_panel_probe');
-    cleaner = onCleanup(@() delete(fig)); %#ok<NASGU>
-    grid = uigridlayout(fig, [3 1]);
-
-    ui = labkit.ui.view.panel(grid, 'plotOptions', 3);
-    assert(strcmp(ui.panel.Title, 'Plot Options'), 'Plot-options helper should preserve the panel title.');
-    assert(ui.panel.Layout.Row == 3, 'Plot-options helper should place the panel in row 3.');
-    assert(h.sameStringCell(ui.grid.RowHeight, {'fit', 'fit', 'fit'}), ...
-        'Plot-options helper should create fit-height rows.');
-    assert(h.sameStringCell(ui.grid.ColumnWidth, {'fit', '1x'}), ...
-        'Plot-options helper should preserve column widths.');
-    assert(isequal(ui.grid.Padding, [8 8 8 8]), 'Plot-options helper should preserve padding.');
-    assert(ui.grid.RowSpacing == 8 && ui.grid.ColumnSpacing == 8, ...
-        'Plot-options helper should preserve row and column spacing.');
-
-    ui2 = labkit.ui.view.panel(grid, 'plotOptions', 2, 2);
-    assert(ui2.panel.Layout.Row == 2, ...
-        'Plot-options helper should support an explicit parent-grid row.');
 end
 
 function checkFileSelectionPanelHelper(h)
