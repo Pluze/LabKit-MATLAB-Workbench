@@ -58,6 +58,22 @@ Executable sources of truth:
 When debt shrinks, update the code, tests, and this guide in the same change.
 Do not keep stale debt entries as documentation.
 
+## Health Signals
+
+Use recent git history and current debt facts to decide whether migration work
+is helping:
+
+- Healthy: refactors remove legacy surfaces, preserve public app behavior, add
+  direct tests for extracted behavior, keep CI green, and reduce this guide.
+- Risky: refactors mostly move files, split tiny helpers without reducing
+  runner complexity, add guardrails for unstable internals, or expand
+  governance faster than debt shrinks.
+- Stop condition: once a runner mostly owns callbacks, axes side effects,
+  alerts, and refresh ordering, do not keep extracting unless a new
+  deterministic view-model or export contract appears.
+- Management signal: a red CI run must lead to a focused fix before more
+  migration work; repeated red pushes mean the migration batch is too large.
+
 ## Migration Standard
 
 A healthy runner owns orchestration only:

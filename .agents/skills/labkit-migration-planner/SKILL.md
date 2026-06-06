@@ -1,6 +1,6 @@
 ---
 name: labkit-migration-planner
-description: "Use for LabKit migration roadmap work, runner/private helper debt scans, app-owned package migration planning, migration guide updates, recent git-history reviews, or aligning guardrail inventories with current debt. Coordinate with labkit-boundary-guard for app-vs-library ownership and labkit-test-planner for validation routing."
+description: "Use for LabKit migration roadmap work, runner/private helper debt scans, app-owned package migration planning, project-health and overengineering reviews from git history, migration guide updates, or aligning guardrail inventories with current debt. Coordinate with labkit-boundary-guard for app-vs-library ownership and labkit-test-planner for validation routing."
 ---
 
 # LabKit Migration Planner
@@ -44,6 +44,25 @@ For runner size checks, count the `+ui/runApp.m` files that matter to the
 requested migration. Do not treat a line-count drop as success unless directly
 tested behavior moved out of the runner and the GUI path calls the extracted
 helper.
+
+## Health Review
+
+When asked about project health, overengineering, management quality, or
+whether migration work is useful, ground the answer in evidence:
+
+- recent commit mix: feature, fix, test, refactor, docs, CI, and merge density
+- current debt facts: oversized runners, app `private` helpers, stale expected
+  debt lists, and removed legacy surfaces
+- validation health: latest local checks, latest CI, and whether red CI was
+  fixed before more migration work
+- governance weight: size and overlap of docs, AGENTS, skills, migration guide,
+  and project guardrails
+- behavior evidence: direct tests for extracted helpers and real GUI paths that
+  call those helpers
+
+Call work healthy only when refactoring reduces real complexity or risk. Flag
+work as overengineered when it adds rules, documents, helper layers, or exact
+guardrails without reducing active debt or clarifying an app-facing contract.
 
 ## Update Rules
 

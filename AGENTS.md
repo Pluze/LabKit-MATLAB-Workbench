@@ -40,6 +40,11 @@ Default principle:
 same results, cleaner code, clearer boundaries
 ```
 
+Governance cost rule: add or expand docs, AGENTS rules, skills, or guardrails
+only when they prevent a concrete drift or clarify an active contract. Prefer
+shrinking or deleting migration guidance as debt is resolved. Do not treat more
+governance as progress by itself.
+
 ## Documentation Separation
 
 Human-facing docs are for human users and maintainers. Keep `README.md` and `docs/*.md` readable, task-oriented, and free of agent-only workflow mandates, Codex-specific rules, git handoff instructions, or hidden governance process.
