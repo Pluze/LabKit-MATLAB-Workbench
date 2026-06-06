@@ -1,13 +1,27 @@
 # Agent Migration Guide
 
-This is the agent-facing guide for LabKit app-runner migrations and debt
-burn-down. It combines the former runner migration maps and future design
+This is the agent-facing migration ledger for LabKit app-runner migrations and
+debt burn-down. It combines the former runner migration maps and future design
 handbook into one operational source for agents.
 
 Human-facing architecture and behavior contracts remain in `docs/`. This guide
 owns migration procedure, current debt status, target direction, and tactical
-runner maps. Keep it aligned with `docs/architecture.md`,
-`docs/testing.md`, and `tests/integration/project/ProjectDebtGuardrailTest.m`.
+runner maps. It is long-lived while migration debt exists, but it should shrink
+as debt is resolved rather than become a second architecture manual.
+
+Lifecycle contract:
+
+- Update this guide when migration debt is added, reduced, retired, or
+  re-prioritized.
+- Keep current facts aligned with `docs/architecture.md`,
+  `docs/testing.md`, `tests/integration/project/ProjectDebtGuardrailTest.m`,
+  and `tests/integration/project/ProjectDocumentationGuardrailTest.m`.
+- Do not copy agent execution procedure into human docs. Human docs may point
+  here when maintainers need the active migration roadmap.
+- When no active migration debt remains, replace the active roadmap with a
+  concise completed-baseline note or remove the roadmap section.
+- Use `labkit-migration-planner` for migration audits, recent-history reviews,
+  debt scans, and updates to this guide.
 
 ## North Star
 

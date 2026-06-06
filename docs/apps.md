@@ -123,33 +123,9 @@ Remaining DIC `private/` helpers are migration debt, not the preferred app
 structure. Do not add app-owned `+core/dispatch.m` string routers to new app
 work.
 
-## Migration Quality Gate
-
-A runner migration is not complete when it only moves a large
-`apps/<family>/private/run*App.m` body into `+<app_slug>/+ui/runApp.m`. Move
-GUI-free responsibilities first, and keep the runner focused on orchestration:
-state setup, control construction, callback wiring, user alerts, log wording,
-refresh ordering, and app launch/debug behavior.
-
-For the ECG Print app, use `apps/wearable/ecg_print/+ecg_print/...` as the
-app-owned package target while keeping the public command
-`labkit_ECGPrint_app`. Do not add a direct `apps/wearable/+ecg_print` package
-or a `private` runner.
-
-Before deleting a private runner debt item, extract directly testable behavior
-into app-owned package functions:
-
-```text
-+ops     deterministic calculations and image/signal transforms
-+view    summaries, display rows, plot-data preparation, and table formatting
-+export  CSV/image export builders and output contracts
-+io      dialog-result normalization, app-local file readers, and path defaults
-+state   app-local default result/state structs
-```
-
-Focused unit tests should call those package functions directly. GUI structural
-tests are still required for layout and callback wiring, but they are not enough
-to prove that a migration reduced complexity.
+For active runner and app-private debt migrations, use
+`../.agents/migration_guide.md` as the agent-facing roadmap. This document only
+describes the preferred app shape and current app behavior.
 
 ## New App Checklist
 

@@ -110,11 +110,8 @@ apps/dic/private/
 Exit condition: migrate the remaining DIC postprocess helpers into app-owned
 packages under their owning app folders, with public entry points owning GUI
 state, callbacks, debug launch routing, and user-facing log wording.
-Moving a large `private/run*App.m` body wholesale into `+ui/runApp.m` does not
-meet this exit condition. Runner migrations should first split deterministic
-calculations, display formatting, export builders, app-local IO normalization,
-and default state/result structs into focused app-owned package functions with
-direct tests. The remaining runner should be orchestration code.
+Runner migration procedure and detailed responsibility maps live in
+`.agents/migration_guide.md`.
 
 The wearable ECG Print app has moved to
 `apps/wearable/ecg_print/labkit_ECGPrint_app.m` plus

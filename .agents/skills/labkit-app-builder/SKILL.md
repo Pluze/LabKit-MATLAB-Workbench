@@ -113,10 +113,8 @@ Build the app in this order:
 5. Move GUI-free calculations below the app `end` as app-local functions.
 6. Extract production helpers into an app-owned package when the app is too
    large for a readable single entry point.
-7. Do not treat migration as complete by moving a large `private/run*App.m`
-   body wholesale into `+ui/runApp.m`. Extract GUI-free `+ops`, `+view`,
-   `+export`, `+io`, or `+state` behavior first and add tests that call those
-   functions directly.
+7. For active runner or app-private migrations, use `labkit-migration-planner`
+   to audit the current debt map and update `.agents/migration_guide.md`.
 8. Do not add new `private/` runners, `*Workflow.m` string-dispatch adapters,
    fixed `+app` package names, or app-local public helper packages.
 9. Render prepared data through `labkit.ui` helpers; keep analysis out of UI helpers.

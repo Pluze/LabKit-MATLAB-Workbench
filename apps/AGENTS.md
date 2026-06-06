@@ -27,13 +27,11 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
   `+app` namespace; the app folder already provides ownership context, while a
   shared `+app` package name creates MATLAB package-resolution ambiguity.
 - Callback-heavy migrated apps should move app-owned production code into these
-  package components instead of adding new `private/` runners or string-dispatch
+  package components instead of adding new `private` runners or string-dispatch
   workflow adapters.
-- Do not satisfy a private-runner migration by moving the whole runner into
-  `+ui/runApp.m`. Extract GUI-free calculations, display formatting, export
-  builders, app-local IO normalization, and default state/result structs into
-  focused app-owned packages first, and add tests that call those functions
-  directly.
+- Use `.agents/migration_guide.md` and the `labkit-migration-planner` skill for
+  active runner, app-private, and migration-roadmap work. This file owns app
+  boundary rules, not the full migration playbook.
 - When the wearable ECG Print app is migrated, target
   `apps/wearable/ecg_print/+ecg_print/...` with the public command still named
   `labkit_ECGPrint_app`; do not create a direct `apps/wearable/+ecg_print`
