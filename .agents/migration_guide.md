@@ -54,10 +54,9 @@ Current facts:
 
 - Oversized app entry points: none.
 - Oversized app runners over 500 lines: CIC and CSC only.
-- App `private/` debt: `apps/dic/private/`, currently remaining DIC
-  Postprocess helper debt only. Initial `dic_postprocess.view` helpers have
-  moved into an app-owned package.
-- Completed app package migrations: ECG Print and DIC Preprocess.
+- App `private/` debt: none.
+- Completed app package migrations: ECG Print, DIC Preprocess, and DIC
+  Postprocess.
 - String-dispatch workflow adapters and app `+core/dispatch.m` routers: none.
 - Private helper contract debt remains in parts of `+labkit`.
 
@@ -277,6 +276,31 @@ Preserve these invariants:
 
 - `apps/dic/private/runDICPreprocessApp.m` stays removed
 - DIC Preprocess package helpers keep direct unit coverage
+
+### DIC Postprocess
+
+Current status: complete. DIC Postprocess lives under
+`apps/dic/dic_postprocess/`, keeps the public command
+`labkit_DICPostprocess_app`, and uses
+`apps/dic/dic_postprocess/+dic_postprocess/...` for directly tested app-owned
+helpers.
+
+Current responsibilities:
+
+| Class | Destination |
+| --- | --- |
+| Ncorr MAT loading and image file selection | `+io/` |
+| Strain masks, valid-map handling, RGB conversion, overlays, and summaries | `+ops/` |
+| Display paths, export tags, summary table data, and colorbar level tables | `+view/` |
+| Overlay and colorbar PNG writers | `+export/` |
+| App-specific axes image rendering | `+ui/` |
+| GUI state, callbacks, alerts, and log wording | public app entrypoint |
+
+Preserve these invariants:
+
+- `apps/dic/private/` stays removed
+- `apps/dic/labkit_DICPostprocess_app.m` stays removed
+- DIC Postprocess package helpers keep direct unit coverage
 - interactive point selection, crop dragging, mask drawing, and visual output
   review remain manual GUI checks unless a focused noninteractive tool test is
   added
@@ -319,46 +343,14 @@ Exit criteria:
 - CIC and CSC either fall below the 500-line threshold or keep documented maps
   because remaining code is axes/callback choreography.
 
-### Phase 2: Migrate DIC Postprocess Private Helpers
+### Phase 2: Completed DIC Postprocess Private Helper Migration
 
-Goal: remove the remaining app `private/` debt without damaging Ncorr strain
-overlay behavior, ROI summaries, colorbar exports, or optical enhancement
-controls.
+Status: complete. DIC Postprocess has moved to `apps/dic/dic_postprocess/`
+with app-owned `+dic_postprocess` component packages. `apps/dic/private/` is
+no longer an allowed debt directory.
 
-Current status: active remaining app-private debt. The only allowed app
-`private/` directory is `apps/dic/private/`, and its files belong to DIC
-Postprocess.
+Preserve:
 
-Target shape:
-
-```text
-apps/dic/dic_postprocess/labkit_DICPostprocess_app.m
-apps/dic/dic_postprocess/+dic_postprocess/+ui/
-apps/dic/dic_postprocess/+dic_postprocess/+state/
-apps/dic/dic_postprocess/+dic_postprocess/+ops/
-apps/dic/dic_postprocess/+dic_postprocess/+view/
-apps/dic/dic_postprocess/+dic_postprocess/+export/
-apps/dic/dic_postprocess/+dic_postprocess/+io/
-```
-
-Recommended extraction order:
-
-1. Ncorr MAT loading and app-local normalization into `+io`.
-2. Strain mask, valid-mask, RGB conversion, and enhancement operations into
-   `+ops`.
-3. Summary table rows, colorbar-level table rows, path tags, and display text
-   into `+view`.
-4. Overlay and colorbar output writers into `+export`.
-5. Default state/result structs into `+state` when repeated state construction
-   exists.
-6. App-specific control construction into `+ui`.
-7. Public entrypoint relocation only after behavior helpers and direct tests
-   exist.
-
-Exit criteria:
-
-- `apps/dic/private/` disappears or contains only narrowly justified helpers
-  shared by multiple DIC apps with documented contracts.
 - DIC Postprocess keeps the public command `labkit_DICPostprocess_app`.
 - Direct DIC unit tests cover non-UI `dic_postprocess` package helpers.
 - GUI structural tests cover launch and layout; full visual strain review

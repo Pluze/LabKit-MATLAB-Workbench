@@ -1,5 +1,6 @@
-% App-owned DIC helper extracted from labkit_DICPostprocess_app.m. Expected caller: DIC app entrypoints.
-% Inputs, outputs, and side effects match the original local helper implementation.
+% DIC Postprocess ops helper. Expected caller: dic_postprocess.ops.strainToRgb.
+% Inputs are a strain map and valid map. Output fills invalid ROI pixels from
+% nearest valid strain samples. Side effects: none.
 function Sfilled = extendStrainMapToRoi(S, validMap)
     validMap = logical(validMap) & isfinite(S);
     Sfilled = S;

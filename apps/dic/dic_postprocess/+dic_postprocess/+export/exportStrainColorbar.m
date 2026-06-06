@@ -1,5 +1,6 @@
-% App-owned DIC helper extracted from labkit_DICPostprocess_app.m. Expected caller: DIC app entrypoints.
-% Inputs, outputs, and side effects match the original local helper implementation.
+% DIC Postprocess export helper. Expected caller: labkit_DICPostprocess_app.
+% Inputs are overlay options and output path. Side effect: writes a colorbar
+% PNG through an offscreen figure.
 function exportStrainColorbar(opts, outfile)
     fig = figure('Visible', 'off', 'Position', [100 100 420 720]);
     cleanup = onCleanup(@() close(fig));

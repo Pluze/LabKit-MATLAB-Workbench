@@ -49,5 +49,12 @@ classdef DicPostprocessViewTest < matlab.unittest.TestCase
             testCase.verifyEqual(T.Green, [0; 1; 0]);
             testCase.verifyEqual(T.Blue, [0; 0; 1]);
         end
+
+        function ternarySelectsDisplayText(testCase)
+            setupLabKitTestPath();
+
+            testCase.verifyEqual(dic_postprocess.view.ternary(true, 'yes', 'no'), 'yes');
+            testCase.verifyEqual(dic_postprocess.view.ternary(false, 'yes', 'no'), 'no');
+        end
     end
 end

@@ -175,7 +175,7 @@ function varargout = labkit_DICPostprocess_app(varargin)
     end
 
     function onOpenReference(~, ~)
-        filepath = chooseImageFile('Select reference image');
+        filepath = dic_postprocess.io.chooseImageFile('Select reference image');
         if filepath == ""
             addLog('Reference image selection cancelled.');
             return;
@@ -188,7 +188,7 @@ function varargout = labkit_DICPostprocess_app(varargin)
     end
 
     function onOpenMask(~, ~)
-        filepath = chooseImageFile('Select mask image');
+        filepath = dic_postprocess.io.chooseImageFile('Select mask image');
         if filepath == ""
             addLog('Mask image selection cancelled.');
             return;
@@ -212,7 +212,7 @@ function varargout = labkit_DICPostprocess_app(varargin)
         end
 
         try
-            S.strain = loadNcorrStrain(char(S.matPath));
+            S.strain = dic_postprocess.io.loadNcorrStrain(char(S.matPath));
             renderOverlays(true);
             addLog('Generated EXX/EYY overlays and ROI summary.');
         catch ME
@@ -237,8 +237,10 @@ function varargout = labkit_DICPostprocess_app(varargin)
         opts = overlayOptionsFromControls();
         exxFile = fullfile(folder, sprintf('overlay_exx_%s.png', tag));
         eyyFile = fullfile(folder, sprintf('overlay_eyy_%s.png', tag));
-        exportOverlayFigure(S.overlayExx, 'EXX', opts.colorRange, opts.exportResolution, exxFile);
-        exportOverlayFigure(S.overlayEyy, 'EYY', opts.colorRange, opts.exportResolution, eyyFile);
+        dic_postprocess.export.exportOverlayFigure(S.overlayExx, 'EXX', ...
+            opts.colorRange, opts.exportResolution, exxFile);
+        dic_postprocess.export.exportOverlayFigure(S.overlayEyy, 'EYY', ...
+            opts.colorRange, opts.exportResolution, eyyFile);
         addLog(sprintf('Saved overlay PNGs: %s and %s', exxFile, eyyFile));
     end
 
@@ -285,7 +287,7 @@ function varargout = labkit_DICPostprocess_app(varargin)
         pngOut = fullfile(p, f);
         [~, baseName] = fileparts(f);
         csvOut = fullfile(p, [baseName '_levels.csv']);
-        exportStrainColorbar(opts, pngOut);
+        dic_postprocess.export.exportStrainColorbar(opts, pngOut);
         writetable(dic_postprocess.view.colorbarLevelsTable(opts), csvOut);
         addLog(sprintf('Exported strain colorbar: %s and %s', pngOut, csvOut));
     end
@@ -309,15 +311,16 @@ function varargout = labkit_DICPostprocess_app(varargin)
         end
 
         opts = overlayOptionsFromControls();
-        overlayMask = imageMask(S.maskImage, imageHeightWidth(S.referenceImage));
-        S.overlayExx = makeStrainOverlay( ...
+        overlayMask = dic_postprocess.ops.imageMask(S.maskImage, ...
+            dic_postprocess.ops.imageHeightWidth(S.referenceImage));
+        S.overlayExx = dic_postprocess.ops.makeStrainOverlay( ...
             S.referenceImage, S.strain.exx, overlayMask, S.strain.roiMask, opts);
-        S.overlayEyy = makeStrainOverlay( ...
+        S.overlayEyy = dic_postprocess.ops.makeStrainOverlay( ...
             S.referenceImage, S.strain.eyy, overlayMask, S.strain.roiMask, opts);
-        summaryMask = summaryMaskForStrain(S.strain, overlayMask);
-        S.summaryTable = summarizeStrain(S.strain, summaryMask);
-        showImage(ui.topAxes, S.overlayExx, 'EXX Overlay');
-        showImage(ui.bottomAxes, S.overlayEyy, 'EYY Overlay');
+        summaryMask = dic_postprocess.ops.summaryMaskForStrain(S.strain, overlayMask);
+        S.summaryTable = dic_postprocess.ops.summarizeStrain(S.strain, summaryMask);
+        dic_postprocess.ui.showImage(ui.topAxes, S.overlayExx, 'EXX Overlay');
+        dic_postprocess.ui.showImage(ui.bottomAxes, S.overlayEyy, 'EYY Overlay');
         resultTable.Data = dic_postprocess.view.summaryTableData(S.summaryTable);
         refreshSummaryText();
     end
@@ -342,7 +345,9 @@ function varargout = labkit_DICPostprocess_app(varargin)
         lines{end+1} = sprintf('DIC MAT: %s', dic_postprocess.view.displayPath(S.matPath));
         lines{end+1} = sprintf('Reference image: %s', dic_postprocess.view.displayPath(S.referencePath));
         lines{end+1} = sprintf('Mask image: %s', dic_postprocess.view.displayPath(S.maskPath));
-        lines{end+1} = sprintf('Overlays: %s', ternary(~isempty(S.overlayExx), 'available', 'not generated'));
+        lines{end+1} = sprintf('Overlays: %s', ...
+            dic_postprocess.view.ternary(~isempty(S.overlayExx), ...
+            'available', 'not generated'));
         lines{end+1} = sprintf('Optical image: brightness %.3g, contrast %.3g, gamma %.3g, saturation %.3g', ...
             edBrightness.Value, edContrast.Value, edGamma.Value, edSaturation.Value);
         txtSummary.Value = lines;

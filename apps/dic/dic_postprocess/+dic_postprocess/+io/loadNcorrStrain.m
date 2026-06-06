@@ -1,5 +1,6 @@
-% App-owned DIC helper extracted from labkit_DICPostprocess_app.m. Expected caller: DIC app entrypoints.
-% Inputs, outputs, and side effects match the original local helper implementation.
+% DIC Postprocess IO helper. Expected caller: labkit_DICPostprocess_app.
+% Input is an Ncorr MAT file path. Output is a strain struct with exx, eyy,
+% and optional roiMask fields. Side effect: reads the MAT file.
 function strain = loadNcorrStrain(matFile)
     data = load(matFile, 'data_dic_save');
     if ~isfield(data, 'data_dic_save') || ~isfield(data.data_dic_save, 'strains')

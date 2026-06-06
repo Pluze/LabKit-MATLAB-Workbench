@@ -1,5 +1,6 @@
-% App-owned DIC helper extracted from labkit_DICPostprocess_app.m. Expected caller: DIC app entrypoints.
-% Inputs, outputs, and side effects match the original local helper implementation.
+% DIC Postprocess ops helper. Expected caller: dic_postprocess.ops.makeStrainOverlay.
+% Inputs are strain map, optional ROI mask, and display mask. Output is logical
+% valid strain map. Side effects: none.
 function validMap = strainValidMask(strainMap, roiMask, displayMask)
     validMap = isfinite(strainMap);
     if ~isempty(roiMask)

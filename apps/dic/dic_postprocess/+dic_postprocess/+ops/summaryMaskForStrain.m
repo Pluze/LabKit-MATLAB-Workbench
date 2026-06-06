@@ -1,5 +1,6 @@
-% App-owned DIC helper extracted from labkit_DICPostprocess_app.m. Expected caller: DIC app entrypoints.
-% Inputs, outputs, and side effects match the original local helper implementation.
+% DIC Postprocess ops helper. Expected caller: labkit_DICPostprocess_app.
+% Inputs are strain struct and overlay mask. Output is logical summary mask.
+% Side effects: none.
 function mask = summaryMaskForStrain(strain, overlayMask)
     if ~isempty(strain.roiMask)
         mask = logical(strain.roiMask);

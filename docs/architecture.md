@@ -89,29 +89,27 @@ use a fixed `+app` namespace for every app. `apps/<family>/private/` should be
 reserved for helpers that are genuinely shared by multiple apps in that family
 and are not ready for a reusable `+labkit` facade.
 
-Current image-measurement, electrochemistry, wearable, and DIC preprocess apps
-already follow the app-owned package shape. Older DIC postprocess helpers may
-still live under `apps/dic/private/` while they are being migrated; do not copy
-that shape into new app work.
+Current image-measurement, electrochemistry, wearable, and DIC apps already
+follow the app-owned package shape. Do not copy older family-level `private/`
+helper layouts into new app work.
 
 ## Current Temporary Debt Inventory
 
-This inventory is a narrow exception list, not a preferred design. It may
-shrink during future migrations, but it should not grow.
+This inventory is a narrow exception list, not a preferred design. It should
+stay empty unless a future migration records a specific temporary exception.
 Current oversized-runner responsibility maps live in
 `.agents/migration_guide.md`.
 
 Allowed app `private/` debt:
 
 ```text
-apps/dic/private/
+none
 ```
 
-Exit condition: migrate the remaining DIC postprocess helpers into app-owned
-packages under their owning app folders, with public entry points owning GUI
-state, callbacks, debug launch routing, and user-facing log wording.
-Runner migration procedure and detailed responsibility maps live in
-`.agents/migration_guide.md`.
+DIC Preprocess and DIC Postprocess both live under app folders with app-owned
+packages. Public entry points own GUI state, callbacks, debug launch routing,
+and user-facing log wording. Runner migration procedure and detailed
+responsibility maps live in `.agents/migration_guide.md`.
 
 The wearable ECG Print app has moved to
 `apps/wearable/ecg_print/labkit_ECGPrint_app.m` plus

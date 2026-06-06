@@ -184,6 +184,28 @@ classdef ProjectStructureGuardrailTest < matlab.unittest.TestCase
                 packageDir, 'dic', 'dic_preprocess');
         end
 
+        function dicPostprocessUsesOwnedPackageNamespace(testCase)
+            root = setupLabKitTestPath();
+            appDir = fullfile(root, 'apps', 'dic', 'dic_postprocess');
+            packageDir = fullfile(appDir, '+dic_postprocess');
+
+            testCase.verifyTrue(isfolder(appDir), ...
+                'DIC postprocess app should live under apps/dic/dic_postprocess.');
+            testCase.verifyTrue(isfile(fullfile(appDir, 'labkit_DICPostprocess_app.m')), ...
+                'DIC postprocess entrypoint should live under its app folder.');
+            testCase.verifyFalse(isfile(fullfile(root, 'apps', 'dic', ...
+                'labkit_DICPostprocess_app.m')), ...
+                'DIC postprocess should not keep its public entrypoint in apps/dic root.');
+            testCase.verifyFalse(isfolder(fullfile(root, 'apps', 'dic', 'private')), ...
+                'DIC postprocess app should use an app-owned package, not family private/.');
+            testCase.verifyFalse(isfolder(fullfile(appDir, 'private')), ...
+                'DIC postprocess app should not keep app-local private helpers.');
+            testCase.verifyFalse(isfolder(fullfile(appDir, '+app')), ...
+                'DIC postprocess app should not use a fixed +app namespace.');
+            assertAppOwnedPackageCapability(testCase, root, appDir, ...
+                packageDir, 'dic', 'dic_postprocess');
+        end
+
         function sensitiveSampleHygieneScansTrackedText(testCase)
             root = setupLabKitTestPath();
             files = collectTrackedTextScope(root);

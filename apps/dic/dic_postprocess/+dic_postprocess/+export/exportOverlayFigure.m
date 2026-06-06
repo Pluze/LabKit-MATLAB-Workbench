@@ -1,5 +1,6 @@
-% App-owned DIC helper extracted from labkit_DICPostprocess_app.m. Expected caller: DIC app entrypoints.
-% Inputs, outputs, and side effects match the original local helper implementation.
+% DIC Postprocess export helper. Expected caller: labkit_DICPostprocess_app.
+% Inputs are overlay image, component label, color range, resolution, and
+% output path. Side effect: writes a PNG through an offscreen figure.
 function exportOverlayFigure(overlayImage, componentName, colorRange, resolution, outfile)
     fig = figure('Visible', 'off');
     cleanup = onCleanup(@() close(fig));

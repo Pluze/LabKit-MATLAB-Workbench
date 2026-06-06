@@ -119,9 +119,8 @@ Do not add new string-dispatch workflow adapters such as `*Workflow.m` for
 tests. Tests should call the app-owned package function that owns the behavior.
 Use `apps/<family>/private/` only for helpers that are genuinely shared by
 multiple apps in that family and are not ready for a reusable `+labkit` facade.
-Remaining DIC `private/` helpers are migration debt, not the preferred app
-structure. Do not add app-owned `+core/dispatch.m` string routers to new app
-work.
+DIC apps now use app-owned packages rather than family-level `private/`
+helpers. Do not add app-owned `+core/dispatch.m` string routers to new app work.
 
 For active runner and app-private debt migrations, use
 `../.agents/migration_guide.md` as the agent-facing roadmap. This document only
