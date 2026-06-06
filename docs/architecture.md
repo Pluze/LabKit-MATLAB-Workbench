@@ -105,10 +105,9 @@ Allowed app `private/` debt:
 
 ```text
 apps/dic/private/
-apps/wearable/private/
 ```
 
-Exit condition: migrate the remaining DIC and wearable app bodies/helpers into
+Exit condition: migrate the remaining DIC app bodies/helpers into
 app-owned packages under their owning app folders, with public entry points
 owning GUI state, callbacks, debug launch routing, and user-facing log wording.
 Moving a large `private/run*App.m` body wholesale into `+ui/runApp.m` does not
@@ -117,11 +116,10 @@ calculations, display formatting, export builders, app-local IO normalization,
 and default state/result structs into focused app-owned package functions with
 direct tests. The remaining runner should be orchestration code.
 
-For the wearable ECG Print migration, the target shape is
+The wearable ECG Print app has moved to
 `apps/wearable/ecg_print/labkit_ECGPrint_app.m` plus
 `apps/wearable/ecg_print/+ecg_print/...`. The public launch command remains
-`labkit_ECGPrint_app`; do not create a direct `apps/wearable/+ecg_print`
-helper package.
+`labkit_ECGPrint_app`.
 
 Allowed electrochemistry string-dispatch debt: none. The former app-owned
 `+core/dispatch.m` routers have been replaced by component-local package

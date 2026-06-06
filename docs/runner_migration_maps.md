@@ -39,7 +39,7 @@ Every extraction from a runner must satisfy all of these:
 | --- | --- | --- | --- |
 | `apps/electrochem/cic/+cic/+ui/runApp.m` | electrochem | App-owned package owns CIC computation, table/export helpers, current-file summary text, and plot request preparation. Runner still owns axes drawing and annotation side effects. | Stop shrinking unless a future deterministic view-model appears; otherwise move to the next oversized runner. |
 | `apps/electrochem/csc/+csc/+ui/runApp.m` | electrochem | App-owned `+ops` and small `+view` helpers exist, including trim overlay, comparison readout, and plot request preparation. Runner still owns callback orchestration and axes drawing. | Keep shrinking only if another deterministic view-model appears; otherwise move to the next oversized runner. |
-| `apps/wearable/private/runECGPrintApp.m` | wearable | Private runner owns import options, analysis/export view models, smoothing, and plotting. | Create `apps/wearable/ecg_print/+ecg_print` and extract GUI-free import/view/export helpers first. |
+| `apps/wearable/ecg_print/+ecg_print/+ui/runApp.m` | wearable | Entrypoint and runner have moved into the ECG Print app folder. App-owned `+io`, `+view`, `+export`, and `+ops` helpers own import options, header preview, import status text, summary rows, analysis table smoothing, and peak-method mapping. Runner still owns control construction, callback orchestration, axes drawing, alerts, and export side effects. | Extract plot-data preparation and focused control construction only when it produces directly testable helpers or a smaller orchestration runner. |
 | `apps/dic/private/runDICPreprocessApp.m` | DIC | Private runner coordinates image loading, registration, crop, mask editing, preview, state history, and exports. | Create a DIC preprocess migration map before code movement; extract deterministic state/view helpers first. |
 
 ## `apps/electrochem/cic/+cic/+ui/runApp.m`
@@ -126,44 +126,43 @@ extracted.
 - Runner still owns file/session callbacks and axes handle updates.
 - No same-named local helper remains in `+ui/runApp.m` after extraction.
 
-## `apps/wearable/private/runECGPrintApp.m`
+## `apps/wearable/ecg_print/+ecg_print/+ui/runApp.m`
 
 ### Current Responsibility Map
 
 | Responsibility | Current location | Target owner |
 | --- | --- | --- |
-| Public launch command | `apps/wearable/labkit_ECGPrint_app.m` | unchanged |
-| Private app body | `apps/wearable/private/runECGPrintApp.m` | future `apps/wearable/ecg_print/labkit_ECGPrint_app.m` plus `+ecg_print` |
-| Import option parsing | runner (`currentImportOptions`, `parseColumnSpec`, `parseColumnList`) | `ecg_print.io` |
-| Import status text and header preview | runner local functions | `ecg_print.view` for status text; `ecg_print.io` for preview |
-| Analysis table construction | runner (`analysisTable`, `movingMedian`) | `ecg_print.export` or `ecg_print.view` |
-| Summary rows | runner (`buildSummaryRows`, `initialSummaryRows`) | `ecg_print.view` |
-| Peak method label mapping | runner (`peakMethodValue`) | `ecg_print.ops` or `ecg_print.state` |
+| Public launch command | `apps/wearable/ecg_print/labkit_ECGPrint_app.m` | unchanged |
+| App body | `apps/wearable/ecg_print/+ecg_print/+ui/runApp.m` | keep as orchestration runner while shrinking deterministic helpers |
+| Import option parsing | `ecg_print.io.importOptions` | done |
+| Import status text and header preview | `ecg_print.view.importStatusText`, `ecg_print.io.previewFileHeader` | done |
+| Analysis table construction | `ecg_print.export.analysisTable` | done |
+| Summary rows | `ecg_print.view.initialSummaryRows`, `ecg_print.view.summaryRows` | done |
+| Peak method label mapping | `ecg_print.ops.peakMethodValue` | done |
 | Waveform/template/noise/SNR plotting | runner | keep runner initially; later extract plot-data preparation only |
 | Alerts, file dialogs, callback ordering | runner | runner |
 
 ### Next Extraction Target
 
-Create `apps/wearable/ecg_print/+ecg_print/+io` and
-`apps/wearable/ecg_print/+ecg_print/+view` only when the first helper is
-extracted. Start with import option normalization or summary rows because both
-are GUI-free and directly testable.
-
-Do not move `runECGPrintApp` into `+ui/runApp.m` as a first step.
+Continue with GUI-free plot-data preparation or focused control construction.
+Do not split the runner merely to reduce line count. The next useful helper
+should either let the axes drawing consume a prepared request struct or remove a
+coherent control-building section from the orchestration runner.
 
 ### Direct Test Target
 
-Add `tests/unit/apps/wearable` coverage that calls the new non-UI helper
-directly. The first test should avoid real lab files and use synthetic option
-values or synthetic recording structs.
+`tests/unit/apps/wearable/EcgPrintHelpersTest.m` calls the app-owned `+io`,
+`+view`, `+export`, and `+ops` helpers directly with synthetic options,
+recordings, state structs, and tables.
 
 ### Exit Criteria
 
-- The private runner no longer owns import option normalization, summary rows,
-  or analysis/export table construction.
+- The runner no longer owns import option normalization, summary rows, or
+  analysis/export table construction.
 - The public launch command remains `labkit_ECGPrint_app`.
 - The GUI path uses the extracted helpers.
-- Only then should runner relocation begin.
+- The `+ui/runApp.m` runner falls below the oversized-runner threshold through
+  behavior-preserving extraction, not mechanical relocation.
 
 ## `apps/dic/private/runDICPreprocessApp.m`
 

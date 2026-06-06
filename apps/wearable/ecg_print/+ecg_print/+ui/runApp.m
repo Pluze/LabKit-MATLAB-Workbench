@@ -1,9 +1,9 @@
-% App-owned runner extracted from labkit_ECGPrint_app.m. Expected caller: labkit_ECGPrint_app.
+% App-owned runner for labkit_ECGPrint_app. Expected caller: labkit_ECGPrint_app.
 % Input is the debug context prepared by the public launcher. Output is the app
 % figure. Side effects are GUI creation, user-driven file I/O, exports,
 % plotting, and debug trace attachment exactly as in the original entrypoint body.
-function fig = runECGPrintApp(debugLog)
-%RUNECGPRINTAPP Build and run the app body.
+function fig = runApp(debugLog)
+%RUNAPP Build and run the ECG Print app body.
 
     S = struct();
     S.recording = [];
@@ -239,7 +239,7 @@ function fig = runECGPrintApp(debugLog)
         '3. Analysis filters the selected channel with edge padding, then crops the filtered signal to the ROI for peak/SNR measurement.'});
 
     summaryTable = uitable(laySR, 'ColumnName', {'Metric','Value'}, ...
-        'Data', initialSummaryRows());
+        'Data', ecg_print.view.initialSummaryRows());
     labkit.ui.view.place(summaryTable, laySR, 1);
 
     previewUi = labkit.ui.view.panel(laySR, 'text', 'File Header Preview', 2, ...
@@ -306,7 +306,13 @@ function fig = runECGPrintApp(debugLog)
             selectedChannel = string(ddChannel.Value);
         end
 
-        importOpts = currentImportOptions();
+        importOpts = ecg_print.io.importOptions( ...
+            edtFallbackFs.Value, ...
+            edtHeaderLine.Value, ...
+            ddHasHeader.Value, ...
+            edtTimeColumn.Value, ...
+            ddTimeUnit.Value, ...
+            edtSignalColumns.Value);
         [recording, status] = labkit.biosignal.readRecording(char(S.filepath), importOpts);
         if ~status.ok
             clearParsedRecording();
@@ -336,7 +342,7 @@ function fig = runECGPrintApp(debugLog)
             ddChannel.Value = channels{1};
         end
         setCurrentChannel(ddChannel.Value);
-        txtImportStatus.Value = importStatusText(recording, numel(channels));
+        txtImportStatus.Value = ecg_print.view.importStatusText(recording, numel(channels));
         addLog(sprintf('Parsed %d channel(s) from %s', numel(channels), char(S.filepath)));
     end
 
@@ -349,7 +355,7 @@ function fig = runECGPrintApp(debugLog)
             txtFilePreview.Value = {'Open a CSV/text file, then use Preview file header.'};
             return;
         end
-        txtFilePreview.Value = previewFileHeader(char(S.filepath), 18);
+        txtFilePreview.Value = ecg_print.io.previewFileHeader(char(S.filepath), 18);
         addLog(sprintf('Previewed file header: %s', char(S.filepath)));
     end
 
@@ -374,28 +380,6 @@ function fig = runECGPrintApp(debugLog)
         edtEnd.Value = 0;
         updateSummary();
         refreshPlots();
-    end
-
-    function optsOut = currentImportOptions()
-        optsOut = struct('fallbackFs', edtFallbackFs.Value);
-        if edtHeaderLine.Value > 0
-            optsOut.headerLine = round(edtHeaderLine.Value);
-        end
-        switch string(ddHasHeader.Value)
-            case "Yes"
-                optsOut.hasHeader = true;
-            case "No"
-                optsOut.hasHeader = false;
-        end
-        if strlength(strtrim(string(edtTimeColumn.Value))) > 0
-            optsOut.timeColumn = parseColumnSpec(edtTimeColumn.Value);
-        end
-        if string(ddTimeUnit.Value) ~= "Auto"
-            optsOut.timeUnit = ddTimeUnit.Value;
-        end
-        if strlength(strtrim(string(edtSignalColumns.Value))) > 0
-            optsOut.signalColumns = parseColumnList(edtSignalColumns.Value);
-        end
     end
 
     function onChannelChanged(~, ~)
@@ -440,7 +424,7 @@ function fig = runECGPrintApp(debugLog)
                 S.filteredSignal = fullFiltered;
             end
             peakOpts = struct('polarity', 'auto', ...
-                'method', peakMethodValue(ddPeakMethod.Value), ...
+                'method', ecg_print.ops.peakMethodValue(ddPeakMethod.Value), ...
                 'minDistanceSec', edtPeakDist.Value, ...
                 'thresholdStd', 2.8);
             S.events = labkit.biosignal.detectEcgPeaks(S.filteredSignal, peakOpts);
@@ -468,7 +452,8 @@ function fig = runECGPrintApp(debugLog)
             addLog('Segment SNR export cancelled.');
             return;
         end
-        writetable(analysisTable(), fullfile(fp, fn));
+        writetable(ecg_print.export.analysisTable(S.measurements.perSegment, ...
+            edtSmooth.Value), fullfile(fp, fn));
         addLog(sprintf('Exported segment SNR CSV: %s', fullfile(fp, fn)));
     end
 
@@ -510,14 +495,15 @@ function fig = runECGPrintApp(debugLog)
             return;
         end
 
-        T = analysisTable();
+        T = ecg_print.export.analysisTable(S.measurements.perSegment, ...
+            edtSmooth.Value);
         smoothBeats = max(1, round(edtSmooth.Value));
 
         noiseAx = ui.noiseAxes;
         plot(noiseAx, T.EventTime, T.NoiseRMS, '.', 'MarkerSize', 12, ...
             'Color', [0.20 0.45 0.72]);
         hold(noiseAx, 'on');
-        plot(noiseAx, T.EventTime, movingMedian(T.NoiseRMS, smoothBeats), '-', ...
+        plot(noiseAx, T.EventTime, T.NoiseRMS_smooth, '-', ...
             'LineWidth', 1.5, 'Color', [0.05 0.20 0.45]);
         hold(noiseAx, 'off');
         title(noiseAx, sprintf('Template Noise RMS Over Time | Smooth=%d beats', smoothBeats));
@@ -529,7 +515,7 @@ function fig = runECGPrintApp(debugLog)
         plot(snrAx, T.EventTime, T.SNRdB, '.', 'MarkerSize', 12, ...
             'Color', [0.18 0.55 0.32]);
         hold(snrAx, 'on');
-        plot(snrAx, T.EventTime, movingMedian(T.SNRdB, smoothBeats), '-', ...
+        plot(snrAx, T.EventTime, T.SNRdB_smooth, '-', ...
             'LineWidth', 1.5, 'Color', [0.05 0.32 0.16]);
         hold(snrAx, 'off');
         title(snrAx, sprintf('Template SNR Over Time | Smooth=%d beats', smoothBeats));
@@ -541,7 +527,8 @@ function fig = runECGPrintApp(debugLog)
     end
 
     function updateSummary()
-        summaryTable.Data = buildSummaryRows();
+        summaryTable.Data = ecg_print.view.summaryRows( ...
+            S.signal, S.events, S.segments, S.measurements);
     end
 
     function refreshTemplatePlot()
@@ -604,86 +591,6 @@ function fig = runECGPrintApp(debugLog)
         end
     end
 
-    function T = analysisTable()
-        T = S.measurements.perSegment;
-        smoothBeats = max(1, round(edtSmooth.Value));
-        T.SignalP2P_smooth = movingMedian(T.SignalP2P, smoothBeats);
-        T.NoiseRMS_smooth = movingMedian(T.NoiseRMS, smoothBeats);
-        T.SNRdB_smooth = movingMedian(T.SNRdB, smoothBeats);
-    end
-
-    function rows = buildSummaryRows()
-        rows = initialSummaryRows();
-        if ~isempty(S.signal)
-            rows = [rows; {
-                'Channel', char(S.signal.displayName);
-                'Samples', sprintf('%d', numel(S.signal.values));
-                'Estimated Fs (Hz)', sprintf('%.3g', S.signal.fs);
-                'Duration (s)', sprintf('%.3g', max(S.signal.time) - min(S.signal.time))}];
-        end
-        if ~isempty(S.events)
-            methodLabel = '';
-            if isfield(S.events, 'metadata') && isfield(S.events.metadata, 'method')
-                methodLabel = sprintf(' (%s)', char(S.events.metadata.method));
-            end
-            rows = [rows; {'Detected peaks', sprintf('%d%s', numel(S.events.index), methodLabel)}];
-        end
-        if ~isempty(S.segments)
-            rows = [rows; {'Valid segments', sprintf('%d', size(S.segments.values, 2))}];
-        end
-        if ~isempty(S.measurements) && ~isempty(S.measurements.summary)
-            M = S.measurements.summary;
-            rows = [rows; {
-                'Mean SNR (dB)', sprintf('%.3g', M.SNRdBMean);
-                'SNR std (dB)', sprintf('%.3g', M.SNRdBStd);
-                'Mean template corr.', sprintf('%.3g', M.TemplateCorrelationMean)}];
-        end
-    end
-
-    function y = movingMedian(x, width)
-        x = double(x(:));
-        width = max(1, round(width));
-        y = nan(size(x));
-        for i = 1:numel(x)
-            i1 = max(1, i - floor((width - 1) / 2));
-            i2 = min(numel(x), i + ceil((width - 1) / 2));
-            y(i) = median(x(i1:i2), 'omitnan');
-        end
-    end
-
-    function value = parseColumnSpec(textValue)
-        textValue = strtrim(string(textValue));
-        numericValue = str2double(textValue);
-        if isfinite(numericValue) && numericValue == floor(numericValue)
-            value = numericValue;
-        else
-            value = char(textValue);
-        end
-    end
-
-    function values = parseColumnList(textValue)
-        parts = split(string(textValue), {',', ';'});
-        parts = strtrim(parts);
-        parts = parts(strlength(parts) > 0);
-        numericValues = str2double(parts);
-        if all(isfinite(numericValues)) && all(numericValues == floor(numericValues))
-            values = numericValues(:).';
-        else
-            values = cellstr(parts);
-        end
-    end
-
-    function method = peakMethodValue(label)
-        switch string(label)
-            case "Pan-Tompkins"
-                method = "pan-tompkins";
-            case "Local peaks"
-                method = "local";
-            otherwise
-                method = "qrs-streaming";
-        end
-    end
-
     function h = drawWindow(ax, windowSec, yl, color, alpha)
         h = fill(ax, [windowSec(1) windowSec(2) windowSec(2) windowSec(1)], ...
             [yl(1) yl(1) yl(2) yl(2)], color, ...
@@ -714,54 +621,5 @@ function fig = runECGPrintApp(debugLog)
     function showError(titleText, message)
         uialert(fig, char(message), titleText);
         addLog(sprintf('%s: %s', titleText, message));
-    end
-end
-
-function rows = initialSummaryRows()
-    rows = {'Status', 'No signal analyzed'};
-end
-
-function text = importStatusText(recording, channelCount)
-    meta = recording.metadata;
-    pieces = strings(1, 0);
-    pieces(end+1) = sprintf('%d channel(s)', channelCount);
-    if isfield(meta, 'timeColumn') && strlength(string(meta.timeColumn)) > 0
-        pieces(end+1) = "time: " + string(meta.timeColumn);
-    end
-    if isfield(meta, 'timeUnit')
-        pieces(end+1) = "unit: " + string(meta.timeUnit);
-    end
-    if isfield(meta, 'timeSource')
-        pieces(end+1) = "source: " + string(meta.timeSource);
-    end
-    if isfield(meta, 'timeRepair')
-        repair = meta.timeRepair;
-        if isfield(repair, 'repairedBackwardCount') && repair.repairedBackwardCount > 0
-            pieces(end+1) = sprintf('repaired backward: %d', repair.repairedBackwardCount);
-        end
-        if isfield(repair, 'largeGapCount') && repair.largeGapCount > 0
-            pieces(end+1) = sprintf('large gaps: %d', repair.largeGapCount);
-        end
-    end
-    text = char(strjoin(pieces, ' | '));
-end
-
-function lines = previewFileHeader(filepath, maxLines)
-    lines = {};
-    fid = fopen(filepath, 'r');
-    if fid < 0
-        lines = {'Could not open file preview.'};
-        return;
-    end
-    cleaner = onCleanup(@() fclose(fid));
-    for k = 1:maxLines
-        line = fgetl(fid);
-        if ~ischar(line)
-            break;
-        end
-        lines{end+1, 1} = sprintf('%02d: %s', k, line); %#ok<AGROW>
-    end
-    if isempty(lines)
-        lines = {'File is empty or could not be previewed.'};
     end
 end

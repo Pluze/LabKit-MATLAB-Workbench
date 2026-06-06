@@ -99,8 +99,7 @@ classdef ProjectDebtGuardrailTest < matlab.unittest.TestCase
         function appPrivateRunnerDebtDoesNotGrow(testCase)
             root = setupLabKitTestPath();
             expectedDirs = [ ...
-                "apps/dic/private", ...
-                "apps/wearable/private"];
+                "apps/dic/private"];
             actualDirs = collectAppPrivateDirs(root);
             unexpectedDirs = setdiff(actualDirs, expectedDirs);
             staleDirs = setdiff(expectedDirs, actualDirs);
@@ -433,7 +432,7 @@ function components = collectNonUiPackageComponents(packageRoot)
 end
 
 function [family, namespace] = appPackageFamilyAndNamespace(root, packageRoot)
-    rel = string(relativePath(root, packageRoot));
+    rel = string(relativePath(root, char(packageRoot)));
     parts = split(rel, '/');
     family = parts(2);
     packageName = parts(end);
@@ -503,8 +502,7 @@ function files = expectedAppPrivateDebtFiles()
         "apps/dic/private/transformMatrix.m", ...
         "apps/dic/private/transformSummary.m", ...
         "apps/dic/private/wrapIndex.m", ...
-        "apps/dic/private/zoomAxesAtPoint.m", ...
-        "apps/wearable/private/runECGPrintApp.m"];
+        "apps/dic/private/zoomAxesAtPoint.m"];
 end
 
 function files = expectedOversizedRunnerDebtFiles()
@@ -512,7 +510,7 @@ function files = expectedOversizedRunnerDebtFiles()
         "apps/dic/private/runDICPreprocessApp.m", ...
         "apps/electrochem/cic/+cic/+ui/runApp.m", ...
         "apps/electrochem/csc/+csc/+ui/runApp.m", ...
-        "apps/wearable/private/runECGPrintApp.m"];
+        "apps/wearable/ecg_print/+ecg_print/+ui/runApp.m"];
 end
 
 function actual = collectOversizedEntrypoints(root, maxLines)
