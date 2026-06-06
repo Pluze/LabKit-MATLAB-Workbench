@@ -20,12 +20,19 @@ The target shape is:
 
 ## Required Read Order
 
+Start with a quick pass:
+
 1. `AGENTS.md`
 2. `apps/AGENTS.md`
-3. `+labkit/AGENTS.md` if any reusable helper or facade may change
-4. `tests/AGENTS.md` if adding tests or fixtures
-5. `docs/apps.md`, `docs/ui.md`, and the relevant facade doc
-6. The legacy source, SOP text, and closest existing LabKit app
+3. The legacy source, SOP text, and closest existing LabKit app
+
+Use a deep pass only for the boundary being touched:
+
+- read `+labkit/AGENTS.md` if any reusable helper or facade may change
+- read `tests/AGENTS.md` if adding tests or fixtures
+- read `docs/apps.md` for public app shape or entrypoint changes
+- read `docs/ui.md` for shell, layout, controls, axes, callbacks, or debug UI
+- read `docs/dta.md` or `docs/biosignal.md` only for those facade-backed apps
 
 Do not copy local paths, real filenames, sample labels, subject names, timestamps, device IDs, or proprietary row values into tracked files.
 

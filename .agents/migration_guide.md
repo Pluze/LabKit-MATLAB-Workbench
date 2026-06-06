@@ -23,6 +23,18 @@ Lifecycle contract:
 - Use `labkit-migration-planner` for migration audits, recent-history reviews,
   debt scans, and updates to this guide.
 
+Read-scope contract:
+
+- For most migration tasks, read from the top through `Migration Standard`,
+  then jump to the specific app or runner being touched.
+- Read `Current Oversized Runner Inventory` for debt selection.
+- Read a detailed runner map only when editing that runner.
+- Read `Completed Migration Baselines` only when changing those apps or their
+  guardrail invariants.
+- Do not load this entire guide just to choose validation commands; use
+  `docs/testing.md` through `labkit-test-planner` when exact task names are
+  needed.
+
 ## North Star
 
 LabKit should stay:
@@ -135,6 +147,9 @@ app-local code.
 
 ## Current Oversized Runner Inventory
 
+This inventory is a cold section for most tasks. Use it to select or verify an
+oversized runner migration, then read only the matching detailed map below.
+
 | Runner | Family | Current status | First useful reduction |
 | --- | --- | --- | --- |
 | `apps/electrochem/cic/+cic/+ui/runApp.m` | electrochem | App-owned package owns CIC computation, table/export helpers, current-file summary text, and plot request preparation. Runner still owns axes drawing and annotation side effects. | Stop shrinking unless a future deterministic view-model appears; otherwise move to the next oversized runner. |
@@ -212,6 +227,10 @@ runner edits should extend those tests only when new deterministic behavior is
 extracted.
 
 ## Completed Migration Baselines
+
+This section is a cold baseline. Read it only when changing these completed
+apps, updating their guardrails, or checking that a future migration preserves
+their invariants.
 
 ### Wearable ECG Print
 

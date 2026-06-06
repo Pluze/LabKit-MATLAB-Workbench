@@ -16,11 +16,19 @@ Preserve LabKit's app-first architecture:
 
 ## Required Read Order
 
+Start with a quick pass:
+
 1. `AGENTS.md`
 2. nearest scoped `AGENTS.md`
-3. `docs/architecture.md`
-4. relevant component doc: `docs/apps.md`, `docs/ui.md`, `docs/dta.md`, or `docs/biosignal.md`
-5. directly touched source and tests
+3. directly touched source and tests
+
+Use a deep pass only when the boundary decision is not already obvious from
+the touched files:
+
+- read `docs/architecture.md` for public package surfaces, allowed debt, or
+  app-vs-library ownership changes
+- read the relevant component doc only for the touched facade:
+  `docs/apps.md`, `docs/ui.md`, `docs/dta.md`, or `docs/biosignal.md`
 
 ## Boundary Decision
 

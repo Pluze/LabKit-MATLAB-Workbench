@@ -16,16 +16,23 @@ patterns, or the validation command matrix.
 
 ## Required Read Order
 
+Start with a quick pass:
+
 1. `AGENTS.md`
-2. `.agents/migration_guide.md`
-3. `docs/architecture.md`
-4. `docs/apps.md` when app entrypoint or app-owned package shape is involved
-5. `docs/testing.md` when validation routing or CI scope is involved
-6. Relevant scoped `AGENTS.md` files and touched source/tests
+2. `.agents/migration_guide.md` through `Current Debt Snapshot`
+3. Relevant scoped `AGENTS.md` files and touched source/tests
+
+Use a deep pass only when the task needs it:
+
+- read detailed runner maps only when touching that runner
+- read `docs/architecture.md` for package-boundary or debt-exception changes
+- read `docs/apps.md` for app entrypoint or app-owned package shape changes
+- read `docs/testing.md` only when validation routing or CI scope changes
 
 Use `labkit-boundary-guard` when deciding whether code belongs in `+labkit` or
 an app-owned package. Use `labkit-test-planner` before running or reporting
-validation.
+validation, but do not reread shared AGENTS/docs content already inspected in
+this pass.
 
 ## Audit Pass
 

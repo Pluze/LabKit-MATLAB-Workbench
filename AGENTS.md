@@ -4,12 +4,19 @@ This repository is an internal MATLAB app workbench for lab GUI workflows. It is
 
 ## Read Order
 
-Before editing:
+Use the smallest read set that can answer the task safely. For narrow,
+behavior-preserving source or test edits, use the fast path:
 
-1. `README.md`
-2. `AGENTS.md`
-3. Any nearer scoped `AGENTS.md` files under the touched path
-4. The source, test, or human docs directly involved in the task
+1. `AGENTS.md`
+2. Any nearer scoped `AGENTS.md` files under the touched path
+3. The source, test, or human docs directly involved in the task
+
+Read `README.md` only when the task affects advertised project entry points,
+app lists, user-facing setup, or default validation entry points.
+
+Use the deep pass only when the change affects public behavior, package
+boundaries, validation policy, CI handoff, app workflow rules, or migration
+roadmaps:
 
 Read component docs only when relevant:
 
@@ -20,9 +27,9 @@ Read component docs only when relevant:
 - `docs/apps.md` for app entrypoints, app-owned workflow, or new app work
 - `docs/testing.md` for validation choices or test layout changes
 
-Read `.agents/migration_guide.md` for app-runner migrations, debt burn-down
-planning, oversized-runner maps, app `private/` debt, or future migration
-sequencing.
+Read only the hot-path sections of `.agents/migration_guide.md` for app-runner
+migrations, debt burn-down planning, app `private/` debt, or future migration
+sequencing. Read detailed runner maps only when touching that runner.
 
 ## Core Rules
 
@@ -44,6 +51,10 @@ Governance cost rule: add or expand docs, AGENTS rules, skills, or guardrails
 only when they prevent a concrete drift or clarify an active contract. Prefer
 shrinking or deleting migration guidance as debt is resolved. Do not treat more
 governance as progress by itself.
+
+Token cost rule: when multiple repo skills apply, avoid rereading the same
+AGENTS or docs content for each skill. Read shared context once, then read only
+the skill-specific decision sections needed for the current edit.
 
 ## Documentation Separation
 
@@ -107,7 +118,7 @@ Interactive GUI workflows are checked manually by the user. Do not run interacti
 7. Commit with a concise Conventional Commits message.
 8. After a coherent series of changes is complete, check the current `main` and `origin/main` state before opening a PR. If the development branch is behind, update it only with non-destructive git operations and do not discard user work.
 9. Push the completed branch, open a PR, and include the change scope, test results, unverified behavior, and any intentional follow-up work.
-10. After any push that is meant to complete work, inspect the triggered CI run. If CI fails, read the failing job logs, fix the underlying issue, rerun the relevant local checks, push the fix, and repeat until required CI passes. A task is not complete while required CI is red, unless CI access or infrastructure is blocked and the blocker is reported explicitly.
+10. After any push that is meant to complete work, inspect the triggered CI run. Prefer low-output status checks such as `gh run list` or `gh run view --json status,conclusion,jobs`; use streaming `gh run watch` only when concise status polling is insufficient. If CI fails, read only the failing job logs, fix the underlying issue, rerun the relevant local checks, push the fix, and repeat until required CI passes. A task is not complete while required CI is red, unless CI access or infrastructure is blocked and the blocker is reported explicitly.
 11. After required CI passes and no blocking review remains, merge the PR and delete the development branch.
 12. If permissions, CI, branch protection, review state, or tool availability prevent push, CI inspection, PR creation, merge, or branch deletion, stop and report the exact blocker instead of working around it.
 13. Do not force-push unless explicitly approved.

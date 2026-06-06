@@ -11,10 +11,15 @@ Choose visible, source-aligned validation without overstating coverage.
 
 ## Required Read Order
 
+Start with a quick pass:
+
 1. `AGENTS.md`
 2. nearest scoped `AGENTS.md`
-3. `docs/testing.md`
-4. touched source, tests, and fixture files
+3. touched source, tests, and fixture files
+
+Read `docs/testing.md` only when exact build-task names, CI scope, fixture
+policy, GUI/non-GUI pairing, or validation-routing changes are needed. When
+another skill already read shared AGENTS context, do not reread it.
 
 ## Task Routing
 
