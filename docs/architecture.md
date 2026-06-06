@@ -89,10 +89,10 @@ use a fixed `+app` namespace for every app. `apps/<family>/private/` should be
 reserved for helpers that are genuinely shared by multiple apps in that family
 and are not ready for a reusable `+labkit` facade.
 
-Current image-measurement, electrochemistry, and wearable apps already follow
-the app-owned package shape. Older DIC apps may still contain `private/`
-runners while they are being migrated; do not copy that shape into new app
-work.
+Current image-measurement, electrochemistry, wearable, and DIC preprocess apps
+already follow the app-owned package shape. Older DIC postprocess helpers may
+still live under `apps/dic/private/` while they are being migrated; do not copy
+that shape into new app work.
 
 ## Current Temporary Debt Inventory
 
@@ -107,9 +107,9 @@ Allowed app `private/` debt:
 apps/dic/private/
 ```
 
-Exit condition: migrate the remaining DIC app bodies/helpers into
-app-owned packages under their owning app folders, with public entry points
-owning GUI state, callbacks, debug launch routing, and user-facing log wording.
+Exit condition: migrate the remaining DIC postprocess helpers into app-owned
+packages under their owning app folders, with public entry points owning GUI
+state, callbacks, debug launch routing, and user-facing log wording.
 Moving a large `private/run*App.m` body wholesale into `+ui/runApp.m` does not
 meet this exit condition. Runner migrations should first split deterministic
 calculations, display formatting, export builders, app-local IO normalization,

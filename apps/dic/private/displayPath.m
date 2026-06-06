@@ -1,5 +1,5 @@
-% App-owned DIC helper extracted from labkit_DICPreprocess_app.m. Expected caller: DIC app entrypoints.
-% Inputs, outputs, and side effects match the original local helper implementation.
+% DIC family private helper. Expected caller: remaining DIC postprocess app code.
+% Input is a string-like path. Output is display text. Side effects: none.
 function txt = displayPath(pathValue)
     if strlength(pathValue) == 0
         txt = 'none';

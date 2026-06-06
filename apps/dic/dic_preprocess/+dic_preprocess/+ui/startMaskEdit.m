@@ -1,0 +1,23 @@
+% Expected caller: DIC preprocess runner. Inputs are app UI/runtime handles,
+% reference image, existing points, boundary style, and edit callback. Outputs
+% are the anchor editor handle. Side effects: redraws mask edit axes and starts
+% the app-neutral anchor editor tool.
+
+function editor = startMaskEdit(ui, imageRuntime, referenceImage, points, boundaryStyle, changedFcn)
+%STARTMASKEDIT Start the DIC preprocess ROI mask anchor editor.
+
+    labkit.ui.view.draw(ui.topAxes, 'reset', 'Reference', true);
+    labkit.ui.view.draw(ui.bottomAxes, 'reset', 'Current Preview', true);
+    hTopImage = dic_preprocess.ui.showImage(ui.topAxes, ...
+        referenceImage, 'Current reference');
+    dic_preprocess.ui.showImage(ui.bottomAxes, ...
+        zeros(size(referenceImage, 1), size(referenceImage, 2), 3, 'uint8'), ...
+        'ROI mask preview');
+    editor = labkit.ui.tool.anchorEditor(imageRuntime, size(referenceImage), ...
+        struct('closed', true, ...
+        'style', boundaryStyle, ...
+        'installScrollWheel', false, ...
+        'onChanged', changedFcn));
+    editor.setBackground(hTopImage);
+    editor.start(points);
+end

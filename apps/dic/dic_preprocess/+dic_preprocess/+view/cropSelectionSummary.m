@@ -1,0 +1,13 @@
+% Expected caller: DIC preprocess runner and direct unit tests. Input is a
+% square crop rectangle in image coordinates. Output is the detail text shown
+% while an ROI crop is active. Side effects: none.
+
+function lines = cropSelectionSummary(rect)
+%CROPSELECTIONSUMMARY Build active crop ROI detail text.
+
+    lines = { ...
+        sprintf('Active crop source: current reference and current moving images'), ...
+        sprintf('Move or resize the ROI on the current reference preview, then click Apply ROI crop.'), ...
+        sprintf('Current square ROI: x=%d, y=%d, size=%d px', ...
+        round(rect(1)), round(rect(2)), round(rect(3)))};
+end

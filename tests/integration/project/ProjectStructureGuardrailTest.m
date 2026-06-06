@@ -164,6 +164,26 @@ classdef ProjectStructureGuardrailTest < matlab.unittest.TestCase
                 'vt_resistance', 'vt_resistance');
         end
 
+        function dicPreprocessUsesOwnedPackageNamespace(testCase)
+            root = setupLabKitTestPath();
+            appDir = fullfile(root, 'apps', 'dic', 'dic_preprocess');
+            packageDir = fullfile(appDir, '+dic_preprocess');
+
+            testCase.verifyTrue(isfolder(appDir), ...
+                'DIC preprocess app should live under apps/dic/dic_preprocess.');
+            testCase.verifyTrue(isfile(fullfile(appDir, 'labkit_DICPreprocess_app.m')), ...
+                'DIC preprocess entrypoint should live under its app folder.');
+            testCase.verifyFalse(isfile(fullfile(root, 'apps', 'dic', ...
+                'labkit_DICPreprocess_app.m')), ...
+                'DIC preprocess should not keep its public entrypoint in apps/dic root.');
+            testCase.verifyFalse(isfolder(fullfile(appDir, 'private')), ...
+                'DIC preprocess app should use an app-owned package, not private/.');
+            testCase.verifyFalse(isfolder(fullfile(appDir, '+app')), ...
+                'DIC preprocess app should not use a fixed +app namespace.');
+            assertAppOwnedPackageCapability(testCase, root, appDir, ...
+                packageDir, 'dic', 'dic_preprocess');
+        end
+
         function sensitiveSampleHygieneScansTrackedText(testCase)
             root = setupLabKitTestPath();
             files = collectTrackedTextScope(root);

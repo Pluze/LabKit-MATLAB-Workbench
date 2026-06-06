@@ -1,5 +1,6 @@
-% App-owned DIC helper extracted from labkit_DICPreprocess_app.m. Expected caller: DIC app entrypoints.
-% Inputs, outputs, and side effects match the original local helper implementation.
+% DIC family private helper. Expected caller: remaining DIC postprocess app code.
+% Inputs are a condition and display alternatives. Output is the selected text.
+% Side effects: none.
 function txt = ternary(cond, trueText, falseText)
     if cond
         txt = trueText;

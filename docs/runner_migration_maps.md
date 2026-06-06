@@ -39,7 +39,6 @@ Every extraction from a runner must satisfy all of these:
 | --- | --- | --- | --- |
 | `apps/electrochem/cic/+cic/+ui/runApp.m` | electrochem | App-owned package owns CIC computation, table/export helpers, current-file summary text, and plot request preparation. Runner still owns axes drawing and annotation side effects. | Stop shrinking unless a future deterministic view-model appears; otherwise move to the next oversized runner. |
 | `apps/electrochem/csc/+csc/+ui/runApp.m` | electrochem | App-owned `+ops` and small `+view` helpers exist, including trim overlay, comparison readout, and plot request preparation. Runner still owns callback orchestration and axes drawing. | Keep shrinking only if another deterministic view-model appears; otherwise move to the next oversized runner. |
-| `apps/dic/private/runDICPreprocessApp.m` | DIC | Private runner coordinates image loading, registration, crop, mask editing, preview, state history, and exports. App-owned `dic_preprocess.view.buildSummary` now owns summary text construction. | Continue with small deterministic state/view/export helpers; do not relocate the whole runner. |
 
 ## `apps/electrochem/cic/+cic/+ui/runApp.m`
 
@@ -143,42 +142,30 @@ Direct wearable unit tests cover the extracted non-UI `+io`, `+view`,
 structs, plot requests, and tables. GUI structural tests still cover launch and
 layout only.
 
-## `apps/dic/private/runDICPreprocessApp.m`
+## Completed DIC Preprocess Migration
 
-### Current Responsibility Map
+DIC Preprocess now lives under `apps/dic/dic_preprocess/` with the public
+command still named `labkit_DICPreprocess_app`. The remaining
+`dic_preprocess.ui.runApp` runner is below the oversized-runner threshold and
+owns orchestration: callback ordering, app state coordination, alerts,
+user-facing log wording, file-selection cancellation handling, and refresh
+ordering.
 
-| Responsibility | Current location | Target owner |
-| --- | --- | --- |
-| Public launch command | `apps/dic/labkit_DICPreprocess_app.m` | unchanged |
-| Private app body | `apps/dic/private/runDICPreprocessApp.m` | future DIC preprocess app-owned package |
-| Registration and crop geometry helpers | existing `apps/dic/private/*.m` helpers | future `dic_preprocess.ops` where app-specific |
-| Mask boundary and mask canvas transforms | existing private helpers plus runner state | future `dic_preprocess.ops` and `dic_preprocess.state` |
-| Summary text | `dic_preprocess.view.buildSummary` | already extracted |
-| Detail text | runner callbacks plus private crop/transform summary helpers | future `dic_preprocess.view` where deterministic |
-| Export filename/path defaults and image writes | runner plus private helpers | `dic_preprocess.export` or `dic_preprocess.io` |
-| ROI drawing, anchor editor coordination, scroll zoom | runner plus `labkit.ui.tool` runtime | runner for coordination; app `+ui` only for control construction |
-| Undo/history snapshots | runner | `dic_preprocess.state` only after shape is covered by tests |
-| Alerts, user log wording, callback order | runner | runner |
+App-owned helpers now carry the deterministic and mechanical responsibilities:
 
-### Next Extraction Target
+| Responsibility | Owner |
+| --- | --- |
+| Registration, crop geometry, false-color preview, and ROI mask geometry | `dic_preprocess.ops` |
+| Summary/detail text, preview requests, mask-control enable state | `dic_preprocess.view` |
+| Initial state, loaded-image assignment, undo snapshots, reset/restore transitions, mask canvas add/subtract | `dic_preprocess.state` |
+| Image-file chooser, default save paths, current-image save dialog, ROI-mask save dialog | `dic_preprocess.io` |
+| Current image-pair and mask PNG writes | `dic_preprocess.export` |
+| App-specific control construction and preview/mask/crop UI handle mechanics | `dic_preprocess.ui` |
 
-Continue with state/view helpers, not UI relocation. Good next candidates are
-history snapshot construction, mask canvas normalization, or detail text built
-from crop/transform state because they can be tested with synthetic image arrays
-and structs.
+Direct DIC unit tests cover the non-UI `+ops`, `+view`, `+state`, `+io`, and
+`+export` helpers with synthetic arrays, structs, paths, and temporary PNG
+writes. GUI structural tests still cover launch, layout, callback wiring, and
+preview runtime setup only; interactive point selection, crop dragging, mask
+drawing, and visual output review remain manual GUI checks.
 
-Do not move the whole private folder into a package. Classify each helper as
-`+ops`, `+view`, `+export`, `+io`, `+state`, or runner-only before moving it.
-
-### Direct Test Target
-
-Direct DIC unit tests now cover `dic_preprocess.view.buildSummary`. Extend
-`tests/unit/apps/dic` before changing each new non-UI runner call site. GUI
-structural DIC tests are not enough to prove runner complexity was reduced.
-
-### Exit Criteria
-
-- `runDICPreprocessApp` no longer owns deterministic state/view/export helpers.
-- Existing private helper inventory shrinks through app-owned package migration.
-- The public launch command and DIC workflow behavior remain unchanged.
-- Runner relocation happens only after directly tested helpers exist.
+The remaining `apps/dic/private/` debt now belongs to DIC Postprocess helpers.

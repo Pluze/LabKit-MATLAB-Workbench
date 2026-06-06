@@ -1,7 +1,10 @@
-% DIC family private helper. Expected caller: remaining DIC postprocess app code.
-% Input is a file-dialog title. Output is the selected path or empty string.
-% Side effect: opens MATLAB's image file chooser.
+% Expected caller: DIC preprocess runner. Input is the file-dialog title. Output
+% is the selected image path or an empty string when cancelled. Side effect:
+% opens MATLAB's image file chooser.
+
 function filepath = chooseImageFile(titleText)
+%CHOOSEIMAGEFILE Prompt for a DIC preprocess image file.
+
     [f, p] = uigetfile( ...
         {'*.png;*.jpg;*.jpeg;*.tif;*.tiff;*.bmp', 'Image files'; '*.*', 'All files'}, ...
         titleText);

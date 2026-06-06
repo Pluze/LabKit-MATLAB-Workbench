@@ -489,7 +489,7 @@ Start with a migration map, not code movement. Classify every private helper:
 
 | Class | Destination |
 | --- | --- |
-| Image geometry and masks | `apps/dic/preprocess/+dic_preprocess/+ops/` |
+| Image geometry and masks | `apps/dic/dic_preprocess/+dic_preprocess/+ops/` |
 | Preview and display data | `+view/` |
 | Export builders | `+export/` |
 | File/path defaults | `+io/` |

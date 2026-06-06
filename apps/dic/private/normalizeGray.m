@@ -1,5 +1,6 @@
-% App-owned DIC helper extracted from labkit_DICPreprocess_app.m. Expected caller: DIC app entrypoints.
-% Inputs, outputs, and side effects match the original local helper implementation.
+% DIC family private helper. Expected caller: remaining DIC postprocess image
+% helpers. Input is image data. Output is normalized grayscale data. Side
+% effects: none.
 function gray = normalizeGray(imageData)
     if ndims(imageData) == 3
         gray = rgb2gray(imageData);
