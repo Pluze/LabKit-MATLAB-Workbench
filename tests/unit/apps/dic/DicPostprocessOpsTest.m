@@ -46,7 +46,7 @@ classdef DicPostprocessOpsTest < matlab.unittest.TestCase
             setupLabKitTestPath();
 
             reference = uint8([0 64; 128 255]);
-            strainMap = [0 1; NaN 0.5];
+            strainMap = [0 1; 0.25 0.5];
             displayMask = true(2);
             opts = postprocessOverlayOptions();
 

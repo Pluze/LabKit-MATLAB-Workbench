@@ -9,7 +9,10 @@ function Sfilled = extendStrainMapToRoi(S, validMap)
         return;
     end
 
-    [~, nearestIdx] = bwdist(validMap);
     invalid = ~validMap;
+    if ~any(invalid(:))
+        return;
+    end
+    [~, nearestIdx] = bwdist(validMap);
     Sfilled(invalid) = S(nearestIdx(invalid));
 end
