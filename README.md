@@ -1,39 +1,42 @@
 # LabKit MATLAB Workbench
 
+[![Release](https://img.shields.io/github/v/release/Pluze/LabKit-MATLAB-Workbench?label=release)](https://github.com/Pluze/LabKit-MATLAB-Workbench/releases)
 [![MATLAB Tests](https://github.com/Pluze/LabKit-MATLAB-Workbench/actions/workflows/matlab-tests.yml/badge.svg)](https://github.com/Pluze/LabKit-MATLAB-Workbench/actions/workflows/matlab-tests.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![MATLAB](https://img.shields.io/badge/MATLAB-apps-orange.svg)](https://www.mathworks.com/products/matlab.html)
 
-MATLAB GUI workbench for lab workflows in electrochemistry, wearable biosignals, DIC, and image measurement.
+Focused MATLAB GUI apps for lab workflows in electrochemistry, DIC, image
+measurement, microscopy focus stacking, batch image cropping, and wearable
+biosignal review.
 
-LabKit MATLAB Workbench is an internal app workbench for scientific GUI tools. It gives each experiment workflow its own focused MATLAB app while sharing a small reusable foundation for layout, loading, parsing, signal processing, and testable infrastructure.
+LabKit MATLAB Workbench is an app-first research workbench. Each workflow keeps
+its own launch command, app-owned calculations, plots, summaries, and exports.
+Shared code stays behind a small reusable foundation for GUI layout,
+interaction tools, Gamry DTA parsing/session handling, and biosignal
+processing.
 
-Current app families cover electrochemistry, DIC image workflows, image measurement, and wearable biosignal review. Reusable code is organized behind three app-facing facades:
+## Highlights
 
-- `labkit.ui.app/view/tool/diag`: layered GUI foundation for app shells, views/forms, axes rendering, interaction runtimes, composed tools, diagnostics, logs, and image/plot helpers.
-- `labkit.dta.*`: GUI-free Gamry DTA loading, sessions, parsed curve access, and pulse helpers.
-- `labkit.biosignal.*`: GUI-free recording loading, filtering, ECG peak detection, segments, templates, and SNR-style measurements.
-
-Workflow-specific calculations, plot choices, summaries, and exports stay in the owning app under `apps/`.
-
-## At A Glance
-
-| Area | Current scope |
+| Capability | What it provides |
 | --- | --- |
-| Electrochemistry | Gamry DTA review, chrono overlays, CIC, CSC, VT resistance, and EIS export workflows |
-| DIC | Image registration, paired crop preparation, ROI masks, Ncorr strain overlays, and summary export |
-| Image measurement | Interactive curve tracing, calibrated scale/length measurement, curvature/radius measurement, microscope focus stacking, and fixed-size batch image cropping |
-| Wearable biosignals | ECG preview, filtering, peak detection, segments, templates, and SNR-style measurements |
-| Reusable foundation | Layered MATLAB UI foundation plus DTA and biosignal facades for app-facing workflows |
-| Validation | Focused MATLAB build tasks, architecture guardrails, synthetic fixtures, and GitHub Actions CI |
+| App-first workflows | Independent MATLAB GUI apps for daily lab tasks instead of one monolithic analysis launcher. |
+| Electrochemistry support | Gamry DTA loading, chrono overlays, CIC, CSC, VT resistance, EIS plotting, pulse handling, and CSV export paths. |
+| Image and DIC workflows | DIC preprocessing/postprocessing, curve measurement, calibrated scale bars, focus-stack fusion, and batch microscope image crops. |
+| Wearable biosignals | ECG/table import, filtering, peak detection, event segments, templates, and SNR-style measurement summaries. |
+| Reusable foundation | Layered `labkit.ui`, GUI-free `labkit.dta`, and GUI-free `labkit.biosignal` facades. |
+| Guarded behavior | MATLAB build tasks, synthetic fixtures, architecture guardrails, and GitHub Actions CI. |
 
 ## Quick Start
 
-From the repository root in MATLAB:
+Open MATLAB at the repository root and initialize the workbench:
 
 ```matlab
 startup_labkit
+```
 
+Launch the app that matches the workflow:
+
+```matlab
 % Electrochemistry
 labkit_ChronoOverlay_app
 labkit_CIC_app
@@ -41,46 +44,55 @@ labkit_VTResistance_app
 labkit_CSC_app
 labkit_EIS_app
 
-% DIC
+% DIC image workflows
 labkit_DICPreprocess_app
 labkit_DICPostprocess_app
 
-% Image measurement
+% Image measurement and microscopy utilities
 labkit_CurvatureMeasurement_app
 labkit_FocusStack_app
 labkit_BatchImageCrop_app
 
-% Wearable biosignal
+% Wearable biosignal review
 labkit_ECGPrint_app
 ```
 
-Then use the app window to load files, inspect plots or results, and export outputs when the app provides an export action.
+Use the app window to load files, inspect plots or measurements, tune workflow
+options, and export outputs when the selected app provides an export action.
 
-## Apps
+## App Catalog
 
-| Command | Status | Purpose | Input | Typical output |
-| --- | --- | --- | --- | --- |
-| `labkit_CIC_app` | routine | Charge injection capacity and voltage-transient metrics | Chrono DTA | Results table and CSV |
-| `labkit_VTResistance_app` | routine | Steady resistance estimates from voltage transients | Chrono DTA | Resistance table and CSV |
-| `labkit_CSC_app` | routine | CV/CT charge and CSC comparison | CV/CT DTA | Plots and comparison values |
-| `labkit_EIS_app` | routine | EIS curve overlay and export | EIS ZCURVE DTA | Plot and CSV |
-| `labkit_ChronoOverlay_app` | routine | Chrono voltage/current overlay | Chrono DTA | Overlay plots and CSV |
-| `labkit_DICPreprocess_app` | active | Image registration, paired crop preparation, and ROI mask drawing | Reference/current images | Aligned images, crop PNGs, ROI mask |
-| `labkit_DICPostprocess_app` | active | Ncorr strain overlay, ROI summary, and colorbar export | Ncorr MAT, reference image, mask | EXX/EYY overlays, summary CSV, colorbar/level table |
-| `labkit_CurvatureMeasurement_app` | experimental | Editable image-curve circle fit, calibrated real-unit scale-bar placement, and curve length measurement | Image | Overlay PNG and curvature/length CSV |
-| `labkit_FocusStack_app` | experimental | Microscope focus-stack fusion into one all-in-focus image | Focus image folder or selected image files | Fused PNG, focus map PNG, summary CSV |
-| `labkit_BatchImageCrop_app` | experimental | Batch fixed-size microscope image crops with per-image crop center and rotation | Microscope image files | Cropped images and crop manifest CSV |
-| `labkit_ECGPrint_app` | experimental | ECG waveform preview, ROI filtering, peak/segment SNR, and SNR-over-time display | MAT timetable or CSV/TSV table | Segment SNR CSV and waveform PNG |
+| Command | Workflow | Inputs | Typical outputs |
+| --- | --- | --- | --- |
+| `labkit_ChronoOverlay_app` | Chrono voltage/current overlay | Chrono Gamry DTA files | Overlay plots and CSV tables |
+| `labkit_CIC_app` | Charge injection capacity and voltage-transient metrics | Chrono Gamry DTA files | CIC result table and CSV |
+| `labkit_VTResistance_app` | Steady resistance estimates from voltage transients | Chrono Gamry DTA files | Resistance table and CSV |
+| `labkit_CSC_app` | CV/CT charge and CSC comparison | CV/CT Gamry DTA files | Plots and comparison values |
+| `labkit_EIS_app` | EIS curve overlay and export | EIS ZCURVE Gamry DTA files | EIS plots and CSV export |
+| `labkit_DICPreprocess_app` | Registration, paired crop preparation, and ROI mask drawing | Reference/current image pairs | Aligned images, crop PNGs, ROI masks |
+| `labkit_DICPostprocess_app` | Ncorr strain overlays, ROI summary, and colorbar export | Ncorr MAT, reference image, ROI mask | EXX/EYY overlays, summary CSV, colorbar files |
+| `labkit_CurvatureMeasurement_app` | Editable curve tracing, calibrated scale, length, and circle-fit curvature | Image files | Overlay PNG and curvature/length CSV |
+| `labkit_FocusStack_app` | Microscope focus-stack fusion into an all-in-focus image | Focus image folder or selected image files | Fused PNG, focus map PNG, summary CSV |
+| `labkit_BatchImageCrop_app` | Fixed-size batch microscope crops with per-image center and rotation | Microscope image files | Cropped images and crop manifest CSV |
+| `labkit_ECGPrint_app` | ECG waveform preview, filtering, peak/segment SNR, and SNR-over-time display | MAT timetable, CSV, or TSV recordings | Segment SNR CSV and waveform PNG |
 
-Status labels:
+## Reusable Foundation
 
-| Status | Meaning |
+The reusable library is intentionally small and app-facing:
+
+| Facade | Scope |
 | --- | --- |
-| `routine` | Current daily-use workflow with established behavior. |
-| `active` | Current workflow still being refined through real use. |
-| `experimental` | Newer utility or workflow under evaluation. |
+| `labkit.ui.app` | Figure shells, tabs, request dispatch, and busy-state feedback. |
+| `labkit.ui.view` | Sections, forms, panels, tables, logs, axes setup, image display, and prepared plotting. |
+| `labkit.ui.tool` | Interaction runtime, anchor editing, scale-bar placement, and calibration helpers. |
+| `labkit.ui.diag` | Debug context, trace logging, callback instrumentation, and visible log mirroring. |
+| `labkit.dta` | Gamry DTA file discovery, type detection, loading, sessions, parsed curves, and pulse helpers. |
+| `labkit.biosignal` | Recording import, channel extraction, filtering, ECG peaks, event segments, templates, and measurements. |
 
-## Tests
+Workflow-specific formulas, thresholds, result schemas, plots, and exports stay
+under the owning app in `apps/`.
+
+## Validation
 
 Run the default non-GUI MATLAB build task:
 
@@ -88,14 +100,20 @@ Run the default non-GUI MATLAB build task:
 buildtool test
 ```
 
-The local scripts are optional wrappers around build tasks:
+The wrapper scripts call the same build tasks:
+
+```bash
+scripts/run_matlab_tests.sh test
+```
 
 ```powershell
 .\scripts\run_matlab_tests.ps1 test
 ```
 
-See `docs/testing.md` for the focused build-task matrix, wrapper details, CI
-scope, and GUI validation limits.
+Focused build tasks are available for project guardrails, DTA, biosignal, UI,
+app families, GUI structural checks, gesture checks, coverage, project metadata,
+and package dry runs. See `docs/testing.md` for the complete command matrix and
+GUI validation limits.
 
 ## Repository Layout
 
@@ -104,22 +122,27 @@ scope, and GUI validation limits.
 apps/                   App entry points and app-specific workflow code
 apps/electrochem/       Electrochemistry apps
 apps/dic/               DIC image workflow apps
-apps/image_measurement/ General image measurement apps
+apps/image_measurement/ General image measurement and microscopy apps
 apps/wearable/          Wearable biosignal apps
-tests/                  MATLAB tests and fixtures
-scripts/                Test runner scripts
+tests/                  MATLAB tests, GUI structural checks, and fixtures
+scripts/                Test wrapper scripts
 docs/                   Human-readable architecture, API, app, and testing docs
 ```
 
-## More Documentation
+## Documentation
 
 - `docs/README.md`: documentation map.
-- `docs/apps.md`: app entry points, app purposes, and app ownership guidance.
-- `docs/ui.md`: reusable GUI shell and helper contracts.
-- `docs/dta.md`: Gamry DTA facade and data shapes.
+- `docs/apps.md`: app entry points, app purposes, and workflow ownership.
+- `docs/ui.md`: reusable GUI shell, view, tool, and diagnostics contracts.
+- `docs/dta.md`: Gamry DTA facade, item/session shapes, and pulse behavior.
 - `docs/biosignal.md`: biosignal facade and ECG workflow boundary.
-- `docs/architecture.md`: package boundaries and extraction rules.
-- `docs/testing.md`: validation and CI guidance.
+- `docs/architecture.md`: package boundaries and reusable-library extraction rules.
+- `docs/testing.md`: validation matrix, CI scope, fixtures, and GUI validation limits.
+
+## Release
+
+Version `v1.0` is the first stable baseline after the app-owned package
+migration and reusable LabKit UI API cleanup.
 
 ## License
 
