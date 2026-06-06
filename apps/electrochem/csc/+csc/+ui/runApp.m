@@ -463,24 +463,20 @@ function fig = runApp(debugLog)
         opts.scanRate = S.scanRate;
         opts.area_cm2 = edArea.Value;
         R = csc.ops.computeCSC(c, opts);
+        readout = csc.view.comparisonReadout(R, ddMode.Value);
 
-        if ~R.ok
-            txtQct.Value = R.message;
-            txtQcv.Value = R.message;
-            txtDiff.Value = '-';
-            txtRel.Value = '-';
-            txtDtErr.Value = '-';
-            if isfield(R, 'logMessage') && ~isempty(R.logMessage)
-                addLog(R.logMessage);
+        txtQct.Value = readout.qctText;
+        txtQcv.Value = readout.qcvText;
+        txtDiff.Value = readout.diffText;
+        txtRel.Value = readout.relText;
+        txtDtErr.Value = readout.dtErrText;
+
+        if ~readout.ok
+            if ~isempty(readout.logMessage)
+                addLog(readout.logMessage);
             end
             return;
         end
-
-        txtQct.Value = csc.view.formatChargeAndCSC(R.Qct, R.area_cm2);
-        txtQcv.Value = csc.view.formatChargeAndCSC(R.Qcv, R.area_cm2);
-        txtDiff.Value = csc.view.formatChargeAndCSC(R.diff_C, R.area_cm2);
-        txtRel.Value = sprintf('%.6f %%', R.rel_pct);
-        txtDtErr.Value = sprintf('%.6e s', R.dtErr);
 
         clearTrim(axTop);
         clearTrim(axBottom);
@@ -488,15 +484,10 @@ function fig = runApp(debugLog)
         drawTrimOverlay(axTop, cbTopTrim.Value, ddTopX.Value, ddTopY.Value, c, R);
         drawTrimOverlay(axBottom, cbBotTrim.Value, ddBotX.Value, ddBotY.Value, c, R);
 
-        addLog(sprintf(['Compare [%s]: Qct=%.6e C, Qcv=%.6e C, ', ...
-            'rel=%.6f %%, maxdt=%.3e s'], ...
-            ddMode.Value, R.Qct, R.Qcv, R.rel_pct, R.dtErr));
-
-        if isnan(R.area_cm2)
-            lblStatus.Text = 'Charge shown (area not set)';
-        else
-            lblStatus.Text = sprintf('CSC normalized by %.6g cm^2', R.area_cm2);
+        if ~isempty(readout.logMessage)
+            addLog(readout.logMessage);
         end
+        lblStatus.Text = readout.statusText;
     end
 
     function addLog(msg)

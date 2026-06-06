@@ -38,7 +38,7 @@ Every extraction from a runner must satisfy all of these:
 | Runner | Family | Current status | First useful reduction |
 | --- | --- | --- | --- |
 | `apps/electrochem/cic/+cic/+ui/runApp.m` | electrochem | App-owned package exists, but runner still owns summary and plotting decisions. | Move summary/view-model helpers before touching callback flow. |
-| `apps/electrochem/csc/+csc/+ui/runApp.m` | electrochem | App-owned `+ops` and small `+view` helpers exist, including trim overlay preparation, but runner still owns mixed comparison refresh. | Move comparison readout/status view-model helpers before changing load callbacks. |
+| `apps/electrochem/csc/+csc/+ui/runApp.m` | electrochem | App-owned `+ops` and small `+view` helpers exist, including trim overlay and comparison readout preparation, but runner still owns duplicated top/bottom plotting preparation. | Move top/bottom plot-data and log-message preparation before changing load callbacks. |
 | `apps/wearable/private/runECGPrintApp.m` | wearable | Private runner owns import options, analysis/export view models, smoothing, and plotting. | Create `apps/wearable/ecg_print/+ecg_print` and extract GUI-free import/view/export helpers first. |
 | `apps/dic/private/runDICPreprocessApp.m` | DIC | Private runner coordinates image loading, registration, crop, mask editing, preview, state history, and exports. | Create a DIC preprocess migration map before code movement; extract deterministic state/view helpers first. |
 
@@ -89,6 +89,7 @@ display unit scaling, and selected CIC mode behavior without launching the GUI.
 | CV/CT CSC computation | `csc.ops.computeCSC` | already extracted |
 | Curve dropdown population and default X/Y selection | runner (`updateDropdowns`) plus `csc.view.defaultPlotSelections` | default selection already extracted; dropdown population stays runner |
 | Charge/CSC display formatting | `csc.view.formatChargeAndCSC` | already extracted |
+| Comparison readout and status text | `csc.view.comparisonReadout` | already extracted |
 | Trim overlay preparation | `csc.view.trimOverlayData` | already extracted |
 | Trim overlay cleanup and plotting | runner local `clearTrim`, `drawTrimOverlay` axes logic | runner |
 | Top/bottom XY plotting | runner with `labkit.ui.view.draw` | runner until a clear reusable view model exists |
@@ -96,22 +97,24 @@ display unit scaling, and selected CIC mode behavior without launching the GUI.
 
 ### Next Extraction Target
 
-Extract a small comparison readout/status view-model helper from
-`refreshCompare`. It should prepare the displayed relative percentage, dt error,
-area-normalization status text, and stable log values from the `computeCSC`
-result while the runner keeps UI handle assignment and user-facing log timing.
+Extract a small top/bottom plot request helper from `plotTop` and `plotBottom`.
+It should prepare X/Y vectors, axis labels, plot title, and stable log text from
+plain selections while the runner keeps axes handles, hold/grid options,
+`labkit.ui.view.draw`, and user-facing log timing.
 
-Do not move `refreshCompare` as one block. It mixes computation, UI handle
-updates, trim drawing, status labels, and logging.
+Do not move `plotTop`, `plotBottom`, or `refreshCompare` as one block. These
+callbacks mix DTA access, axes drawing, UI handle updates, trim drawing, status
+labels, and logging.
 
 ### Direct Test Target
 
-Add or extend electrochem unit tests for comparison readout/status preparation
-with synthetic `computeCSC` result structs. Avoid launching the CSC app.
+Add or extend electrochem unit tests for CSC plot request preparation with
+synthetic curve structs and selected axis names. Avoid launching the CSC app.
 
 ### Exit Criteria
 
 - Formatting and default-selection helpers are package-owned.
+- Comparison readout and status preparation is package-owned.
 - Trim overlay preparation is package-owned.
 - Runner still owns file/session callbacks and axes handle updates.
 - No same-named local helper remains in `+ui/runApp.m` after extraction.
