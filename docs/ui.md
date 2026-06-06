@@ -72,7 +72,7 @@ txtMetric = labkit.ui.view.form(grid, 'info', 3, 'Current value:');
 
 When manually placing a component in a shell tab grid, use `labkit.ui.view.place(component, parentGrid, logicalRow)`. App code should not depend on physical row indices inserted by row-resize handles.
 
-Use `labkit.ui.view.panel` for reusable component groups such as file panels, log panels, read-only text panels, result tables, plot option panels, and top/bottom plot controls:
+Use `labkit.ui.view.panel` for reusable component groups such as file panels, log panels, read-only text panels, result tables, and top/bottom plot controls:
 
 ```matlab
 fileUi = labkit.ui.view.panel(layFA, 'files', labels, callbacks);

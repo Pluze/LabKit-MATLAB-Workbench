@@ -45,7 +45,7 @@ function fig = runApp(debugLog)
     lbFiles = fileUi.listbox;
     txtLoaded = fileUi.loadedText;
 
-    plotOptionsUi = labkit.ui.view.panel(layFA, 'plotOptions', 4, 2);
+    plotOptionsUi = labkit.ui.view.section(layFA, 'Plot Options', 2, [4 2]);
     gp = plotOptionsUi.grid;
 
     [~, ddXAxis] = labkit.ui.view.form(gp, 'dropdown', 'X axis:', ...

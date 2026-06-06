@@ -1,8 +1,8 @@
 % App-owned curvature shell options helper. Expected caller:
 % labkit_CurvatureMeasurement_app. Output is the createShell options struct.
 % Encodes only layout constants and has no side effects.
-function opts = shellOptions()
-%SHELLOPTIONS Return shell options for the curvature app.
+function opts = appShellOptions()
+%APPSHELLOPTIONS Return createShell options for the curvature app.
 
     opts = struct( ...
         'rightTitle', 'Measurement Preview', ...

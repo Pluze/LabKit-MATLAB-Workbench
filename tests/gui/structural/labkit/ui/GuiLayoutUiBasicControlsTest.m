@@ -24,7 +24,6 @@ function verify_gui_layout_ui_basic_controls()
     checkReadOnlyInfoRowHelper();
     checkResultTablePanelHelper(h);
     checkPanelGridHelper(h);
-    checkPlotOptionsPanelHelper(h);
     checkFileSelectionPanelHelper(h);
 end
 
@@ -193,27 +192,6 @@ function checkPanelGridHelper(h)
     labkit.ui.view.section(growGrid, 'Tall Controls', 1, [5 2]);
     assert(growGrid.RowHeight{1} > 50, ...
         'Panel-grid helper should grow undersized fixed parent rows to avoid clipped controls.');
-end
-
-function checkPlotOptionsPanelHelper(h)
-    fig = uifigure('Visible', 'off', 'Name', 'labkit_plot_options_panel_probe');
-    cleaner = onCleanup(@() delete(fig)); %#ok<NASGU>
-    grid = uigridlayout(fig, [3 1]);
-
-    ui = labkit.ui.view.panel(grid, 'plotOptions', 3);
-    assert(strcmp(ui.panel.Title, 'Plot Options'), 'Plot-options helper should preserve the panel title.');
-    assert(ui.panel.Layout.Row == 3, 'Plot-options helper should place the panel in row 3.');
-    assert(h.sameStringCell(ui.grid.RowHeight, {'fit', 'fit', 'fit'}), ...
-        'Plot-options helper should create fit-height rows.');
-    assert(h.sameStringCell(ui.grid.ColumnWidth, {'fit', '1x'}), ...
-        'Plot-options helper should preserve column widths.');
-    assert(isequal(ui.grid.Padding, [8 8 8 8]), 'Plot-options helper should preserve padding.');
-    assert(ui.grid.RowSpacing == 8 && ui.grid.ColumnSpacing == 8, ...
-        'Plot-options helper should preserve row and column spacing.');
-
-    ui2 = labkit.ui.view.panel(grid, 'plotOptions', 2, 2);
-    assert(ui2.panel.Layout.Row == 2, ...
-        'Plot-options helper should support an explicit parent-grid row.');
 end
 
 function checkFileSelectionPanelHelper(h)

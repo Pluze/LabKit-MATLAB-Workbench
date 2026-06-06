@@ -52,18 +52,6 @@ end
 
 function action = normalizeAction(action)
     action = lower(regexprep(char(string(action)), '[^a-zA-Z0-9]', ''));
-    switch action
-        case {'plot', 'plotxy'}
-            action = 'xy';
-        case {'imageaxes', 'showimage'}
-            action = 'image';
-        case {'resetaxes', 'hardreset'}
-            action = 'reset';
-        case {'clearaxes'}
-            action = 'clear';
-        case {'enablepopout', 'axespopout'}
-            action = 'popout';
-    end
 end
 
 function value = positional(args, index, defaultValue)

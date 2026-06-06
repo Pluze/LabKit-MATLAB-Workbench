@@ -42,9 +42,6 @@ function ui = createShell(spec)
     end
 
     opts = optionValue(spec, 'options', struct());
-    if isfield(spec, 'shellOptions')
-        opts = spec.shellOptions;
-    end
 
     rightKind = char(string(optionValue(opts, 'rightKind', 'custom')));
     rightGridSize = optionValue(opts, 'rightGridSize', [1 1]);

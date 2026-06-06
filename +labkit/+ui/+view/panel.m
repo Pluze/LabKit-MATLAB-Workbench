@@ -8,8 +8,8 @@ function ui = panel(parent, kind, varargin)
 % Inputs:
 %   parent - parent container for the component group. For top/bottom plot
 %            controls this is the top controls panel.
-%   kind - component kind: "files", "log", "text", "table",
-%          "plotOptions", or "topBottomPlotControls".
+%   kind - component kind: "files", "log", "text", "table", or
+%          "topBottomPlotControls".
 %   spec - optional struct alternative with kind plus fields matching the
 %          positional arguments described below.
 %
@@ -18,7 +18,6 @@ function ui = panel(parent, kind, varargin)
 %   panel(parent, "log", row, initialValue)
 %   panel(parent, "text", title, row, lines, opts)
 %   panel(parent, "table", title, row, columnNames, initialData)
-%   panel(parent, "plotOptions", rowCount, row)
 %   panel(topPanel, "topBottomPlotControls", bottomPanel, xItems, yItems,
 %       topDefaults, bottomDefaults, valueChangedFcn)
 %
@@ -52,10 +51,6 @@ function ui = panel(parent, kind, varargin)
             columnNames = positional(varargin, 3, {});
             initialData = positional(varargin, 4, cell(0, numel(columnNames)));
             ui = resultTable(parent, titleText, row, columnNames, initialData);
-        case 'plotoptions'
-            rowCount = positional(varargin, 1, 1);
-            row = positional(varargin, 2, 3);
-            ui = plotOptionsPanel(parent, rowCount, row);
         case 'topbottomplotcontrols'
             bottomPanel = positional(varargin, 1, []);
             xItems = positional(varargin, 2, {});
@@ -91,9 +86,6 @@ function ui = panelFromSpec(parent, spec)
             ui = resultTable(parent, fieldOr(spec, 'title', ''), ...
                 fieldOr(spec, 'row', 1), columnNames, ...
                 fieldOr(spec, 'initialData', cell(0, numel(columnNames))));
-        case 'plotoptions'
-            ui = plotOptionsPanel(parent, fieldOr(spec, 'rowCount', 1), ...
-                fieldOr(spec, 'row', 3));
         case 'topbottomplotcontrols'
             ui = topBottomPlotControls(parent, requireField(spec, 'bottomPanel'), ...
                 fieldOr(spec, 'xItems', {}), fieldOr(spec, 'yItems', {}), ...
@@ -108,18 +100,6 @@ end
 
 function key = normalizeKind(kind)
     key = lower(regexprep(char(string(kind)), '[^a-zA-Z0-9]', ''));
-    switch key
-        case {'file', 'fileselection', 'filepanel'}
-            key = 'files';
-        case {'readonlytext', 'textpanel'}
-            key = 'text';
-        case {'result', 'results', 'resulttable', 'tablepanel'}
-            key = 'table';
-        case {'plotoption', 'plotoptionspanel'}
-            key = 'plotoptions';
-        case {'topbottom', 'topbottomplots', 'topbottomplot'}
-            key = 'topbottomplotcontrols';
-    end
 end
 
 function value = positional(args, index, defaultValue)

@@ -55,18 +55,6 @@ end
 
 function action = normalizeAction(action)
     action = lower(regexprep(char(string(action)), '[^a-zA-Z0-9]', ''));
-    switch action
-        case {'log', 'logappend'}
-            action = 'appendlog';
-        case {'items', 'listboxitems', 'refreshlistboxitems'}
-            action = 'listitems';
-        case {'selection', 'listboxselection', 'refreshlistboxselection'}
-            action = 'listselection';
-        case {'settopbottomplotselections', 'settopbottomselections'}
-            action = 'setplotselections';
-        case {'swap', 'swaptopbottomplotselections', 'swaptopbottomselections'}
-            action = 'swapplotselections';
-    end
 end
 
 function value = positional(args, index, defaultValue)
