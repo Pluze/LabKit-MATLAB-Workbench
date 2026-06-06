@@ -38,16 +38,6 @@ function [C, columnNames] = buildBatchTableData(items, unitLabel)
     end
 end
 
-function [scale, unitLabel] = displayScale(unitLabel)
-    switch unitLabel
-        case 'uC/cm^2'
-            scale = 1e3;
-        otherwise
-            scale = 1;
-            unitLabel = 'mC/cm^2';
-    end
-end
-
 function name = itemName(item)
     if isfield(item, 'name')
         name = item.name;
@@ -61,6 +51,17 @@ function A = itemAnalysis(item)
         A = item.analysis;
     else
         A = [];
+    end
+end
+
+function [scale, unitLabel] = displayScale(unitLabel)
+    switch unitLabel
+        case 'uC/cm^2'
+            scale = 1e3;
+            unitLabel = 'uC/cm^2';
+        otherwise
+            scale = 1;
+            unitLabel = 'mC/cm^2';
     end
 end
 

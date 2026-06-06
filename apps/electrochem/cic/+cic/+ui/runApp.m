@@ -343,7 +343,7 @@ function fig = runApp(debugLog)
     end
 
     function refreshBatchTable()
-        [~, unitLabel] = cicDisplayUnit();
+        [~, unitLabel] = cic.view.displayUnit(ddCICUnit.Value);
         [C, columnNames] = cic.view.buildBatchTableData(S.items, unitLabel);
         tbl.ColumnName = columnNames;
         if isempty(S.items)
@@ -354,129 +354,24 @@ function fig = runApp(debugLog)
     end
 
     function refreshResultsSummary()
-        % clear first
-        S.txtControlMode.Value = '-';
-        S.txtDetect.Value = '-';
-        S.txtDelay.Value = '-';
-        S.txtArea.Value = '-';
-        S.txtEmc.Value = '-';
-        S.txtEma.Value = '-';
-        S.txtQc.Value = '-';
-        S.txtQa.Value = '-';
-        S.txtQt.Value = '-';
-        S.txtSafe.Value = '-';
-        S.txtBest.Value = bestSafeString();
-
-        if isempty(S.items) || isempty(S.current) || S.current < 1 || S.current > numel(S.items)
-            return;
-        end
-
-        it = S.items(S.current);
-        S.txtControlMode.Value = chronoControlModeText(it);
-        if isempty(it.analysis) || ~it.analysis.ok
-            if ~isempty(it.analysis) && isfield(it.analysis,'message')
-                S.txtSafe.Value = it.analysis.message;
-            else
-                S.txtSafe.Value = 'No valid analysis';
-            end
-            S.txtBest.Value = bestSafeString();
-            return;
-        end
-
-        A = it.analysis;
-        S.txtDetect.Value = sprintf('%s | %s', A.detectMode, A.detectMsg);
-        S.txtDelay.Value = sprintf('%.3f us', 1e6 * A.delay_s);
-        S.txtArea.Value = cic.view.formatMaybeNum(A.area_cm2,'%.8g cm^2');
-        S.txtEmc.Value = sprintf('%.6f V @ %.6fus', A.Emc, 1e6*A.t_emc);
-        S.txtEma.Value = sprintf('%.6f V @ %.6fus', A.Ema, 1e6*A.t_ema);
-        S.txtQc.Value = cic.view.formatChargeDensity(A.Qc_C, A.CICc_mCcm2, ddCICUnit.Value);
-        S.txtQa.Value = cic.view.formatChargeDensity(A.Qa_C, A.CICa_mCcm2, ddCICUnit.Value);
-        S.txtQt.Value = cic.view.formatChargeDensity(A.Qt_C, A.CICt_mCcm2, ddCICUnit.Value);
-        if A.safe
-            safeText = 'SAFE';
-        else
-            safeText = 'UNSAFE';
-        end
-        S.txtSafe.Value = sprintf('%s | Emc>=%.3f? %d | Ema<=%.3f? %d', ...
-            safeText, A.cathLimit, A.cathOK, A.anodLimit, A.anodOK);
-        S.txtBest.Value = bestSafeString();
-    end
-
-    function out = chronoControlModeText(item)
-        out = 'Unknown chrono control mode';
-        if ~isfield(item, 'controlMode')
-            return;
-        end
-
-        switch string(item.controlMode)
-            case "current"
-                out = 'Current-controlled chrono';
-            case "voltage"
-                out = 'Voltage-controlled chrono';
-            otherwise
-                out = 'Unknown chrono control mode';
-        end
-    end
-
-    function out = bestSafeString()
-        if isempty(S.items)
-            out = '-';
-            return;
-        end
-        safeIdx = [];
-        vals = [];
-        for i = 1:numel(S.items)
-            if ~isempty(S.items(i).analysis) && S.items(i).analysis.ok && S.items(i).analysis.safe
-                safeIdx(end+1) = i; %#ok<AGROW>
-                vals(end+1) = selectedCICValue(S.items(i).analysis); %#ok<AGROW>
-            end
-        end
-        if isempty(safeIdx)
-            out = 'No safe file in current batch';
-            return;
-        end
-        [~, imax] = max(vals);
-        ii = safeIdx(imax);
-        [scale, unitLabel] = cicDisplayUnit();
-        out = sprintf('%s | %s = %.6g %s', S.items(ii).name, shortModeName(), scale * vals(imax), unitLabel);
+        summary = cic.view.buildCurrentSummary(S.items, S.current, ...
+            ddCICMode.Value, ddCICUnit.Value);
+        S.txtControlMode.Value = summary.controlMode;
+        S.txtDetect.Value = summary.detect;
+        S.txtDelay.Value = summary.delay;
+        S.txtArea.Value = summary.area;
+        S.txtEmc.Value = summary.emc;
+        S.txtEma.Value = summary.ema;
+        S.txtQc.Value = summary.qc;
+        S.txtQa.Value = summary.qa;
+        S.txtQt.Value = summary.qt;
+        S.txtSafe.Value = summary.safe;
+        S.txtBest.Value = summary.bestSafe;
     end
 
     function refreshCICUnitDisplays()
         refreshBatchTable();
         refreshResultsSummary();
-    end
-
-    function [scale, unitLabel] = cicDisplayUnit()
-        unitLabel = ddCICUnit.Value;
-        switch unitLabel
-            case 'uC/cm^2'
-                scale = 1e3;
-            otherwise
-                scale = 1;
-                unitLabel = 'mC/cm^2';
-        end
-    end
-
-    function v = selectedCICValue(A)
-        switch ddCICMode.Value
-            case 'Cathodic phase'
-                v = A.CICc_mCcm2;
-            case 'Anodic phase'
-                v = A.CICa_mCcm2;
-            otherwise
-                v = A.CICt_mCcm2;
-        end
-    end
-
-    function s = shortModeName()
-        switch ddCICMode.Value
-            case 'Cathodic phase'
-                s = 'CICc';
-            case 'Anodic phase'
-                s = 'CICa';
-            otherwise
-                s = 'CICtotal';
-        end
     end
 
     function refreshPlots()
@@ -626,7 +521,7 @@ function fig = runApp(debugLog)
             return;
         end
         out = fullfile(p,f);
-        [~, unitLabel] = cicDisplayUnit();
+        [~, unitLabel] = cic.view.displayUnit(ddCICUnit.Value);
         [ok, msg] = cic.export.writeResultsCSV(S.items, out, unitLabel);
         if ~ok
             uialert(fig,msg,'Export');

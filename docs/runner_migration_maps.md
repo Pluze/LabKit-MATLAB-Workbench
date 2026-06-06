@@ -37,7 +37,7 @@ Every extraction from a runner must satisfy all of these:
 
 | Runner | Family | Current status | First useful reduction |
 | --- | --- | --- | --- |
-| `apps/electrochem/cic/+cic/+ui/runApp.m` | electrochem | App-owned package exists, but runner still owns summary and plotting decisions. | Move summary/view-model helpers before touching callback flow. |
+| `apps/electrochem/cic/+cic/+ui/runApp.m` | electrochem | App-owned package owns CIC computation, table/export helpers, and current-file summary text. Runner still owns plotting decisions. | Move plot-data/view-model helpers only when they can be tested without moving callback flow. |
 | `apps/electrochem/csc/+csc/+ui/runApp.m` | electrochem | App-owned `+ops` and small `+view` helpers exist, including trim overlay, comparison readout, and plot request preparation. Runner still owns callback orchestration and axes drawing. | Keep shrinking only if another deterministic view-model appears; otherwise move to the next oversized runner. |
 | `apps/wearable/private/runECGPrintApp.m` | wearable | Private runner owns import options, analysis/export view models, smoothing, and plotting. | Create `apps/wearable/ecg_print/+ecg_print` and extract GUI-free import/view/export helpers first. |
 | `apps/dic/private/runDICPreprocessApp.m` | DIC | Private runner coordinates image loading, registration, crop, mask editing, preview, state history, and exports. | Create a DIC preprocess migration map before code movement; extract deterministic state/view helpers first. |
@@ -53,25 +53,27 @@ Every extraction from a runner must satisfy all of these:
 | CIC computation | `cic.ops.computeCIC` | already extracted |
 | Batch table data | `cic.view.buildBatchTableData` | already extracted |
 | CSV export | `cic.export.writeResultsCSV` | already extracted |
-| Current-file summary strings | runner (`refreshResultsSummary`, `chronoControlModeText`, `bestSafeString`) | `cic.view` |
-| CIC display unit/mode normalization | runner (`cicDisplayUnit`, `selectedCICValue`, `shortModeName`) | `cic.view` or `cic.state` |
+| Current-file summary strings and mode selection | `cic.view.buildCurrentSummary` | already extracted |
+| Runner-facing CIC display unit normalization | `cic.view.displayUnit` | already extracted |
 | Axis data selection and title/label decisions | runner (`plotOneAxis`) plus existing `cic.view` annotations | `cic.view` |
 | UI-only axes reset, swap, refresh ordering | runner | runner |
 
 ### Next Extraction Target
 
-Extract a small `cic.view` helper for current-analysis summary rows and selected
-CIC display value. This reduces runner-owned display logic without changing
-loading, plotting, or export behavior.
+Extract a small plot request helper only if it can prepare X/Y data, labels,
+title text, and optional marker/shading metadata without touching axes handles
+or callback ordering.
 
-Do not move `refreshResultsSummary` wholesale. Keep UI handle assignment in the
-runner; move only the data/string preparation.
+Do not move `plotOneAxis` wholesale. It still mixes axes drawing, marker
+creation, window shading, title/label assignment, and checkbox-driven UI
+effects.
 
 ### Direct Test Target
 
-Add or extend electrochem unit tests to call the new `cic.view` helper with
-synthetic analysis structs. The test should verify current summary strings,
-display unit scaling, and selected CIC mode behavior without launching the GUI.
+Direct electrochem unit tests now cover current summary strings, display unit
+scaling, selected CIC mode behavior, batch table formatting, compute behavior,
+and export contracts. Future CIC runner edits should add direct tests for any
+new extracted plot-data helper before wiring the GUI path.
 
 ### Exit Criteria
 
