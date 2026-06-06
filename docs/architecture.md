@@ -89,10 +89,10 @@ use a fixed `+app` namespace for every app. `apps/<family>/private/` should be
 reserved for helpers that are genuinely shared by multiple apps in that family
 and are not ready for a reusable `+labkit` facade.
 
-Current image-measurement and electrochemistry apps already follow the
-app-owned package shape. Older DIC and wearable apps may still contain
-`private/` runners while they are being migrated; do not copy that shape into
-new app work.
+Current image-measurement, electrochemistry, and wearable apps already follow
+the app-owned package shape. Older DIC apps may still contain `private/`
+runners while they are being migrated; do not copy that shape into new app
+work.
 
 ## Current Temporary Debt Inventory
 

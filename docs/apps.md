@@ -119,9 +119,9 @@ Do not add new string-dispatch workflow adapters such as `*Workflow.m` for
 tests. Tests should call the app-owned package function that owns the behavior.
 Use `apps/<family>/private/` only for helpers that are genuinely shared by
 multiple apps in that family and are not ready for a reusable `+labkit` facade.
-Existing DIC and wearable `private/` runners are migration debt, not the
-preferred app structure. Do not add app-owned `+core/dispatch.m` string routers
-to new app work.
+Existing DIC `private/` runners are migration debt, not the preferred app
+structure. Do not add app-owned `+core/dispatch.m` string routers to new app
+work.
 
 ## Migration Quality Gate
 
@@ -132,9 +132,9 @@ state setup, control construction, callback wiring, user alerts, log wording,
 refresh ordering, and app launch/debug behavior.
 
 For the ECG Print app, use `apps/wearable/ecg_print/+ecg_print/...` as the
-future app-owned package target while keeping the public command
+app-owned package target while keeping the public command
 `labkit_ECGPrint_app`. Do not add a direct `apps/wearable/+ecg_print` package
-or a new `private` runner.
+or a `private` runner.
 
 Before deleting a private runner debt item, extract directly testable behavior
 into app-owned package functions:

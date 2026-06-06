@@ -759,29 +759,12 @@ function fig = runDICPreprocessApp(debugLog)
     end
 
     function refreshSummary()
-        lines = {};
-        lines{end+1} = sprintf('Reference: %s', displayPath(S.referencePath));
-        lines{end+1} = sprintf('Moving: %s', displayPath(S.movingPath));
-        lines{end+1} = sprintf('Current pair: %s', ternary(hasImagePair(), currentPairSizeText(), 'not loaded'));
-        lines{end+1} = sprintf('Undo steps: %d', numel(S.history));
-        lines{end+1} = sprintf('Last aligned image: %s', ternary(~isempty(S.alignedImage), 'available', 'not generated'));
-        lines{end+1} = sprintf('ROI mask: %s', ternary(~isempty(S.maskImage), 'available', 'not drawn'));
-        txtSummary.Value = lines;
+        txtSummary.Value = dic_preprocess.view.buildSummary(S);
         updateUndoButton();
     end
 
     function tf = hasImagePair()
         tf = ~isempty(S.currentReferenceImage) && ~isempty(S.currentMovingImage);
-    end
-
-    function txt = currentPairSizeText()
-        if ~hasImagePair()
-            txt = 'not loaded';
-            return;
-        end
-        txt = sprintf('reference %d x %d, moving %d x %d', ...
-            size(S.currentReferenceImage, 1), size(S.currentReferenceImage, 2), ...
-            size(S.currentMovingImage, 1), size(S.currentMovingImage, 2));
     end
 
     function showCurrentPair()
