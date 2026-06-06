@@ -67,7 +67,7 @@ classdef DicPreprocessViewTest < matlab.unittest.TestCase
         function transformSummaryFormatsMatrixRows(testCase)
             setupLabKitTestPath();
 
-            tform = affine2d([1 0 0; 0 1 0; 2.5 -3.25 1]);
+            tform = [1 0 0; 0 1 0; 2.5 -3.25 1];
 
             lines = dic_preprocess.view.transformSummary(tform, [12 20 3], [10 18]);
 
