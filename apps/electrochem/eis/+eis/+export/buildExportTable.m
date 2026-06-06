@@ -32,8 +32,8 @@ function T = buildExportTable(items, xName, yName, useLogX, useLogY)
 end
 
 function [x, y] = filteredXY(item, xName, yName, useLogX, useLogY)
-    x = valuesForAxis(item, xName);
-    y = valuesForAxis(item, yName);
+    x = eis.ops.valuesForAxis(item, xName);
+    y = eis.ops.valuesForAxis(item, yName);
     valid = isfinite(x) & isfinite(y);
     x = x(valid);
     y = y(valid);
@@ -46,35 +46,6 @@ function [x, y] = filteredXY(item, xName, yName, useLogX, useLogY)
         validY = y > 0;
         x = x(validY);
         y = y(validY);
-    end
-end
-
-function values = valuesForAxis(item, axisName)
-    switch axisName
-        case 'Freq (Hz)'
-            values = item.Freq;
-        case 'log10(Freq)'
-            values = log10(item.Freq);
-        case 'Time (s)'
-            values = item.Time;
-        case 'Point #'
-            values = item.Pt;
-        case 'Zreal (ohm)'
-            values = item.Zreal;
-        case 'Zimag (ohm)'
-            values = item.Zimag;
-        case '-Zimag (ohm)'
-            values = item.negZimag;
-        case 'Zmod (ohm)'
-            values = item.Zmod;
-        case 'Zphz (deg)'
-            values = item.Zphz;
-        case 'Idc (A)'
-            values = item.Idc;
-        case 'Vdc (V)'
-            values = item.Vdc;
-        otherwise
-            error('Unsupported axis selection: %s', axisName);
     end
 end
 

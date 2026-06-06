@@ -20,12 +20,9 @@ function verify_makeChronoItem()
     assert(strcmp(item.type, "chrono"), 'Chrono item type should be set.');
     assert(strcmp(item.name, 'chrono_chronopot_current_pulse_0p2ms.DTA'), 'Chrono item name should use the file name.');
     assert(item.controlMode == "current", 'Chrono item should expose current-controlled metadata.');
-    assert(numel(item.t) == 244 && numel(item.Vf) == 244 && numel(item.Im) == 244, ...
-        'stable-compatible chrono vectors should be populated.');
-    assert(isequal(item.t, item.t_s), 'Unit-explicit t_s should mirror legacy t.');
-    assert(isequal(item.Vf, item.Vf_V), 'Unit-explicit Vf_V should mirror legacy Vf.');
-    assert(isequal(item.Im, item.Im_A), 'Unit-explicit Im_A should mirror legacy Im.');
-    assert(item.n == numel(item.t), 'Item sample count should match the time vector.');
+    assert(numel(item.t_s) == 244 && numel(item.Vf_V) == 244 && numel(item.Im_A) == 244, ...
+        'Canonical chrono vectors should be populated.');
+    assert(item.n == numel(item.t_s), 'Item sample count should match the canonical time vector.');
     assert(strcmp(item.message, 'Using table: Curve'), 'Main-curve message should preserve stable wording.');
     assert(item.pulse.ok, item.pulseMessage);
 

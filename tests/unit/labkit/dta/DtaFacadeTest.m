@@ -37,10 +37,10 @@ function verify_dtaFacade()
     assert(chronoStatus.ok, chronoStatus.message);
     assert(chronoStatus.kind == "chrono", 'Chrono status kind should be chrono.');
     assert(chronoItem.type == "chrono", 'Chrono item type should be preserved.');
-    assert(isfield(chronoItem, 't') && isfield(chronoItem, 'Vf') && isfield(chronoItem, 'Im'), ...
-        'Chrono facade should preserve stable-compatible vectors.');
+    assert(isfield(chronoItem, 't_s') && isfield(chronoItem, 'Vf_V') && isfield(chronoItem, 'Im_A'), ...
+        'Chrono facade should expose canonical unit-explicit vectors.');
     [pulse, pulseMsg] = labkit.dta.detectPulses( ...
-        chronoItem.t, chronoItem.Im, chronoItem.meta, "Metadata first, then auto");
+        chronoItem.t_s, chronoItem.Im_A, chronoItem.meta, "Metadata first, then auto");
     assert(pulse.ok, pulseMsg);
     assert(isfield(pulse, 'gap_start') && isfinite(pulse.gap_start), ...
         'DTA facade should expose chrono pulse detection without app code calling analysis directly.');
@@ -55,8 +55,8 @@ function verify_dtaFacade()
     assert(eisStatus.ok, eisStatus.message);
     assert(eisStatus.kind == "eis", 'Auto-loaded EIS status kind should be eis.');
     assert(eisItem.type == "eis", 'EIS item type should be preserved.');
-    assert(isfield(eisItem, 'Freq') && isfield(eisItem, 'Zreal') && isfield(eisItem, 'Zimag'), ...
-        'EIS facade should preserve stable-compatible impedance vectors.');
+    assert(isfield(eisItem, 'freq_Hz') && isfield(eisItem, 'Zreal_ohm') && isfield(eisItem, 'Zimag_ohm'), ...
+        'EIS facade should expose canonical unit-explicit impedance vectors.');
 
     [cvctItem, cvctStatus] = labkit.dta.loadFile(cvctFile, "cvct");
     assert(cvctStatus.ok, cvctStatus.message);

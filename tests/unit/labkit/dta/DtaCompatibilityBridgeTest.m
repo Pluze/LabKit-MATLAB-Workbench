@@ -1,0 +1,49 @@
+classdef DtaCompatibilityBridgeTest < matlab.unittest.TestCase
+    %DTACOMPATIBILITYBRIDGETEST Verify legacy DTA item bridge fields.
+
+    methods (Test, TestTags = {'Unit'})
+        function legacyBridgeFieldsMirrorCanonicalFields(testCase)
+            setupLabKitTestPath();
+
+            chronoFixture = dtaFixturePath('chrono_chronopot_current_pulse_0p2ms.DTA');
+            [chronoItem, chronoStatus] = labkit.dta.loadFile(chronoFixture, "chrono");
+            testCase.assertTrue(chronoStatus.ok, chronoStatus.message);
+
+            assertClose(chronoItem.t, chronoItem.t_s, ...
+                'Legacy chrono t should mirror canonical t_s');
+            assertClose(chronoItem.Vf, chronoItem.Vf_V, ...
+                'Legacy chrono Vf should mirror canonical Vf_V');
+            assertClose(chronoItem.Im, chronoItem.Im_A, ...
+                'Legacy chrono Im should mirror canonical Im_A');
+            testCase.verifyTrue(isnan(chronoItem.alignTime) && isnan(chronoItem.alignTime_s), ...
+                'Legacy chrono alignTime should mirror canonical alignTime_s.');
+            assertClose(chronoItem.tAligned, chronoItem.tAligned_s, ...
+                'Legacy chrono tAligned should mirror canonical tAligned_s');
+
+            eisFixture = dtaFixturePath('eis_potentiostatic_zcurve.DTA');
+            [eisItem, eisStatus] = labkit.dta.loadFile(eisFixture, "eis");
+            testCase.assertTrue(eisStatus.ok, eisStatus.message);
+
+            assertClose(eisItem.Pt, eisItem.point, ...
+                'Legacy EIS Pt should mirror canonical point');
+            assertClose(eisItem.Time, eisItem.time_s, ...
+                'Legacy EIS Time should mirror canonical time_s');
+            assertClose(eisItem.Freq, eisItem.freq_Hz, ...
+                'Legacy EIS Freq should mirror canonical freq_Hz');
+            assertClose(eisItem.Zreal, eisItem.Zreal_ohm, ...
+                'Legacy EIS Zreal should mirror canonical Zreal_ohm');
+            assertClose(eisItem.Zimag, eisItem.Zimag_ohm, ...
+                'Legacy EIS Zimag should mirror canonical Zimag_ohm');
+            assertClose(eisItem.negZimag, eisItem.negZimag_ohm, ...
+                'Legacy EIS negZimag should mirror canonical negZimag_ohm');
+            assertClose(eisItem.Zmod, eisItem.Zmod_ohm, ...
+                'Legacy EIS Zmod should mirror canonical Zmod_ohm');
+            assertClose(eisItem.Zphz, eisItem.Zphz_deg, ...
+                'Legacy EIS Zphz should mirror canonical Zphz_deg');
+            assertClose(eisItem.Idc, eisItem.Idc_A, ...
+                'Legacy EIS Idc should mirror canonical Idc_A');
+            assertClose(eisItem.Vdc, eisItem.Vdc_V, ...
+                'Legacy EIS Vdc should mirror canonical Vdc_V');
+        end
+    end
+end
