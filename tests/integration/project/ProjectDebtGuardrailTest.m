@@ -94,6 +94,26 @@ classdef ProjectDebtGuardrailTest < matlab.unittest.TestCase
                 numel(actualFiles), numel(actualDirs));
         end
 
+        function wearableMigrationTargetUsesAppSubfolder(testCase)
+            root = setupLabKitTestPath();
+            directPackages = collectDirectPackageDirs( ...
+                fullfile(root, 'apps', 'wearable'), root);
+
+            testCase.verifyTrue(isempty(directPackages), ...
+                ['Wearable app-owned helpers should live under ' ...
+                'apps/wearable/<app_slug>/+<app_slug>, not a direct family ' ...
+                'package. Files: ' strjoin(cellstr(directPackages), ', ')]);
+
+            ecgFolder = fullfile(root, 'apps', 'wearable', 'ecg_print');
+            if isfolder(ecgFolder)
+                testCase.verifyTrue(isfile(fullfile(ecgFolder, ...
+                    'labkit_ECGPrint_app.m')), ...
+                    'ECG Print migration target should keep the public app entrypoint inside apps/wearable/ecg_print.');
+                testCase.verifyTrue(isfolder(fullfile(ecgFolder, '+ecg_print')), ...
+                    'ECG Print migration target should use apps/wearable/ecg_print/+ecg_print.');
+            end
+        end
+
         function appWorkflowDispatchDebtDoesNotGrow(testCase)
             root = setupLabKitTestPath();
             workflowFiles = collectRelativeFiles(root, ...
@@ -110,6 +130,34 @@ classdef ProjectDebtGuardrailTest < matlab.unittest.TestCase
 
             fprintf('Workflow dispatch debt inventory: %d Workflow files, %d +core dispatch files.\n', ...
                 numel(workflowFiles), numel(dispatchFiles));
+        end
+
+        function appUiRunnersDoNotShadowExtractedPackageHelpers(testCase)
+            root = setupLabKitTestPath();
+            runners = collectRelativeFiles(root, ...
+                fullfile(root, 'apps', '**', '+ui', 'runApp.m'));
+            findings = strings(1, 0);
+
+            for k = 1:numel(runners)
+                runnerPath = fullfile(root, strrep(runners(k), '/', filesep));
+                packageRoot = owningPackageRootForRunner(runnerPath);
+                if strlength(packageRoot) == 0
+                    continue;
+                end
+
+                runnerFunctions = setdiff(functionNamesInFile(runnerPath), "runApp");
+                packageFunctions = packageComponentFunctionNames(packageRoot);
+                overlap = intersect(runnerFunctions, packageFunctions);
+                if ~isempty(overlap)
+                    findings(end+1) = runners(k) + " -> " + ...
+                        strjoin(overlap, ", "); %#ok<AGROW>
+                end
+            end
+
+            testCase.verifyTrue(isempty(findings), ...
+                ['App UI runners should call extracted app-owned package helpers, ' ...
+                'not keep same-named local copies. Findings: ' ...
+                strjoin(cellstr(findings), ', ')]);
         end
 
         function dicWearableMigrationsHaveDirectPackageTests(testCase)
@@ -217,6 +265,18 @@ function files = collectAppPrivateMFiles(root)
     files = collectRelativeFiles(root, fullfile(root, 'apps', '**', 'private', '*.m'));
 end
 
+function dirs = collectDirectPackageDirs(folder, root)
+    entries = dir(fullfile(folder, '+*'));
+    dirs = strings(1, 0);
+    for k = 1:numel(entries)
+        if entries(k).isdir
+            dirs(end+1) = string(relativePath(root, ...
+                fullfile(entries(k).folder, entries(k).name))); %#ok<AGROW>
+        end
+    end
+    dirs = unique(dirs);
+end
+
 function files = collectOversizedAppRunners(root, maxLines)
     files = strings(1, 0);
     entries = [ ...
@@ -232,6 +292,47 @@ function files = collectOversizedAppRunners(root, maxLines)
         end
     end
     files = unique(files);
+end
+
+function packageRoot = owningPackageRootForRunner(runnerPath)
+    uiDir = fileparts(runnerPath);
+    packageRoot = string(fileparts(uiDir));
+    [~, packageName] = fileparts(char(packageRoot));
+    if ~startsWith(packageName, '+')
+        packageRoot = "";
+    end
+end
+
+function names = packageComponentFunctionNames(packageRoot)
+    components = ["+ops", "+view", "+export", "+io", "+state"];
+    names = strings(1, 0);
+    for k = 1:numel(components)
+        componentRoot = fullfile(packageRoot, components(k));
+        files = dir(fullfile(componentRoot, '*.m'));
+        for iFile = 1:numel(files)
+            [~, name] = fileparts(files(iFile).name);
+            names(end+1) = string(name); %#ok<AGROW>
+        end
+    end
+    names = unique(names);
+end
+
+function names = functionNamesInFile(filepath)
+    content = fileread(filepath);
+    withOutput = regexp(content, ...
+        '(?m)^\s*function\s+(?:\[[^\]]+\]|\w+)\s*=\s*(\w+)\s*\(', ...
+        'tokens');
+    withoutOutput = regexp(content, ...
+        '(?m)^\s*function\s+(\w+)\s*\(', ...
+        'tokens');
+    names = strings(1, 0);
+    for k = 1:numel(withOutput)
+        names(end+1) = string(withOutput{k}{1}); %#ok<AGROW>
+    end
+    for k = 1:numel(withoutOutput)
+        names(end+1) = string(withoutOutput{k}{1}); %#ok<AGROW>
+    end
+    names = unique(names);
 end
 
 function files = collectRelativeFiles(root, pattern)

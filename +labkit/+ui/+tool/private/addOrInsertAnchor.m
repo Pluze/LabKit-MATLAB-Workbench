@@ -1,3 +1,7 @@
+% Private anchor-editor insertion helper. Expected caller:
+% labkit.ui.tool.anchorEditor. Inputs are existing and candidate image-pixel
+% anchor coordinates plus axes/image/style constraints; output is the updated
+% N-by-2 anchor array. No graphics or app state are mutated.
 function points = addOrInsertAnchor(points, newPoint, ax, imageSize, curveStyle, closed, maxPoints)
 %ADDORINSERTANCHOR Apply anchor insertion policy for createAnchorCurveEditor.
 %

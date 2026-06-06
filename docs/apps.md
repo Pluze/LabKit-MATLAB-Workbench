@@ -131,6 +131,11 @@ GUI-free responsibilities first, and keep the runner focused on orchestration:
 state setup, control construction, callback wiring, user alerts, log wording,
 refresh ordering, and app launch/debug behavior.
 
+For the ECG Print app, use `apps/wearable/ecg_print/+ecg_print/...` as the
+future app-owned package target while keeping the public command
+`labkit_ECGPrint_app`. Do not add a direct `apps/wearable/+ecg_print` package
+or a new `private` runner.
+
 Before deleting a private runner debt item, extract directly testable behavior
 into app-owned package functions:
 

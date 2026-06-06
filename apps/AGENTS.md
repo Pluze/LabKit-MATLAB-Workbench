@@ -34,6 +34,12 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
   builders, app-local IO normalization, and default state/result structs into
   focused app-owned packages first, and add tests that call those functions
   directly.
+- When the wearable ECG Print app is migrated, target
+  `apps/wearable/ecg_print/+ecg_print/...` with the public command still named
+  `labkit_ECGPrint_app`; do not create a direct `apps/wearable/+ecg_print`
+  package.
+- After an app-owned helper is extracted, remove same-named local copies from
+  `+ui/runApp.m` so GUI paths call the tested package helper.
 - Do not add new `*Workflow.m` files or app-owned `+core/dispatch.m` string
   routers.
 - When a public app file grows large, prefer moving GUI-free app-owned calculations, export builders, formatting utilities, deterministic image/signal transforms, and focused control construction into `apps/<family>/<app_slug>/+<app_slug>/...`.

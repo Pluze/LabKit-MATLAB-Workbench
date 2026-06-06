@@ -1,3 +1,8 @@
+% Private reusable scale-bar control section. Expected caller:
+% labkit.ui.tool.scaleBar. Inputs are parent grid, target row, and options
+% struct for units, positions, colors, defaults, and callbacks; output is a UI
+% handle/method struct. Side effects are limited to creating controls in the
+% parent and invoking supplied callbacks from user control changes.
 function ui = scaleBarPanel(parent, row, opts)
 %CREATESCALEBARPANEL Create reusable scale-bar calibration controls.
 %

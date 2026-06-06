@@ -115,6 +115,12 @@ calculations, display formatting, export builders, app-local IO normalization,
 and default state/result structs into focused app-owned package functions with
 direct tests. The remaining runner should be orchestration code.
 
+For the wearable ECG Print migration, the target shape is
+`apps/wearable/ecg_print/labkit_ECGPrint_app.m` plus
+`apps/wearable/ecg_print/+ecg_print/...`. The public launch command remains
+`labkit_ECGPrint_app`; do not create a direct `apps/wearable/+ecg_print`
+helper package.
+
 Allowed electrochemistry string-dispatch debt: none. The former app-owned
 `+core/dispatch.m` routers have been replaced by component-local package
 functions. New apps and new migrations should not add `private` runners,

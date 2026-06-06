@@ -194,6 +194,12 @@ Shared setup, structural GUI assertions, and focused support routines live under
 
 Architecture guardrails are split by concern under `tests/integration/project/`: public package surface, reusable package dependency boundaries, app entrypoint boundaries, and app-owned workflow boundaries. These guardrails may require workflow code to remain under the owning app tree, but they should not require GUI-free helpers to stay in the public app entry-point file. App-owned packages are checked by boundary rules rather than exact file-list assertions.
 
+Project debt guardrails also prevent app UI runners from keeping local helper
+copies that shadow same-named functions already extracted into the app-owned
+`+ops`, `+view`, `+export`, `+io`, or `+state` packages. Tests should prove the
+package helper behavior directly, and GUI paths should call those helpers
+instead of private runner duplicates.
+
 Compatibility bridge behavior should be isolated in named compatibility tests.
 For example, DTA legacy bridge fields such as `t`, `Vf`, `Im`, `Freq`, and
 `Zreal` are covered by `DtaCompatibilityBridgeTest`; ordinary DTA and app

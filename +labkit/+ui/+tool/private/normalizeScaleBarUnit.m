@@ -1,3 +1,7 @@
+% Private scale-bar unit normalization helper. Expected caller:
+% labkit.ui.tool scale-bar panel/calibration code. Inputs are a candidate unit,
+% allowed unit labels, and fallback unit; output is a valid string scalar. No
+% side effects.
 function unitName = normalizeScaleBarUnit(unitName, units, defaultUnit)
 %NORMALIZESCALEBARUNIT Normalize a scale-bar unit against allowed UI units.
 %

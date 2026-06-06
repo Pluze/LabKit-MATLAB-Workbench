@@ -1,3 +1,7 @@
+% Private scale-bar/tool readout helper. Expected caller: labkit.ui.tool
+% private panels. Inputs are a parent grid and uieditfield name/value
+% arguments; output is a read-only text field handle. Side effects are limited
+% to creating one UI control under the parent.
 function field = createReadOnlyTextField(parent, varargin)
 %CREATEREADONLYTEXTFIELD Create a read-only single-line text field.
 %

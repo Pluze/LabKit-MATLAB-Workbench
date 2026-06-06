@@ -1,3 +1,7 @@
+% Private scale-bar/tool readout helper. Expected caller: labkit.ui.tool
+% private panels. Inputs are a parent grid, target row, and visible label;
+% outputs are a read-only text field and label handles. Side effects are
+% limited to creating and placing UI controls under the parent.
 function [field, lbl] = createReadOnlyInfoRow(parent, row, labelText)
 %CREATEREADONLYINFOROW Create a labeled read-only text field row.
 %
