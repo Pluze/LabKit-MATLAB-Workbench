@@ -140,5 +140,43 @@ classdef CscViewTest < matlab.unittest.TestCase
             testCase.verifyEqual(readout.statusText, '');
             testCase.verifyEqual(readout.logMessage, result.logMessage);
         end
+
+        function plotRequestBuildsDataLabelsAndLogText(testCase)
+            setupLabKitTestPath();
+
+            curve = struct( ...
+                'name', 'Cycle 1', ...
+                'headers', {{'T', 'Vf', 'Im'}}, ...
+                'data', [0 0.1 -1; 1 0.2 NaN; 2 0.3 2]);
+
+            request = csc.view.plotRequest(curve, 'Vf', 'Im', 'Top');
+
+            testCase.verifyEqual(request.x, [0.1; 0.3]);
+            testCase.verifyEqual(request.y, [-1; 2]);
+            testCase.verifyEqual(request.labels.title, 'Cycle 1');
+            testCase.verifyEqual(request.labels.x, 'Vf');
+            testCase.verifyEqual(request.labels.y, 'Im');
+            testCase.verifyEqual(request.skipLog, 'Top plot skipped: invalid X/Y.');
+            testCase.verifyEqual(request.successLog, 'Top plot: Im vs Vf, n=2');
+        end
+
+        function plotRequestPreservesInvalidSelectionPayload(testCase)
+            setupLabKitTestPath();
+
+            curve = struct( ...
+                'name', 'Cycle 1', ...
+                'headers', {{'T', 'Vf', 'Im'}}, ...
+                'data', [0 0.1 -1; 1 0.2 1]);
+
+            request = csc.view.plotRequest(curve, 'Missing', 'Im', 'Bottom');
+
+            testCase.verifyEmpty(request.x);
+            testCase.verifyEmpty(request.y);
+            testCase.verifyEqual(request.labels.title, 'Cycle 1');
+            testCase.verifyEqual(request.labels.x, '');
+            testCase.verifyEqual(request.labels.y, '');
+            testCase.verifyEqual(request.skipLog, 'Bottom plot skipped: invalid X/Y.');
+            testCase.verifyEqual(request.successLog, 'Bottom plot:  vs , n=0');
+        end
     end
 end

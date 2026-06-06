@@ -423,28 +423,28 @@ function fig = runApp(debugLog)
         if isempty(S.curves), return; end
         c = S.curves(S.currentCurve);
         opts = struct('holdPlot', cbTopHold.Value, 'showGrid', cbTopGrid.Value, 'lineWidth', 1.2);
-        [x, y, xName, yName] = labkit.dta.getCurveXY(c, ddTopX.Value, ddTopY.Value);
-        labels = struct('title', c.name, 'x', xName, 'y', yName);
-        info = labkit.ui.view.draw(axTop, 'xy', x, y, labels, opts);
+        request = csc.view.plotRequest(c, ddTopX.Value, ddTopY.Value, 'Top');
+        info = labkit.ui.view.draw(axTop, 'xy', request.x, request.y, ...
+            request.labels, opts);
         if ~info.ok
-            addLog('Top plot skipped: invalid X/Y.');
+            addLog(request.skipLog);
             return;
         end
-        addLog(sprintf('Top plot: %s vs %s, n=%d', info.yName, info.xName, numel(info.x)));
+        addLog(request.successLog);
     end
 
     function plotBottom()
         if isempty(S.curves), return; end
         c = S.curves(S.currentCurve);
         opts = struct('holdPlot', cbBotHold.Value, 'showGrid', cbBotGrid.Value, 'lineWidth', 1.2);
-        [x, y, xName, yName] = labkit.dta.getCurveXY(c, ddBotX.Value, ddBotY.Value);
-        labels = struct('title', c.name, 'x', xName, 'y', yName);
-        info = labkit.ui.view.draw(axBottom, 'xy', x, y, labels, opts);
+        request = csc.view.plotRequest(c, ddBotX.Value, ddBotY.Value, 'Bottom');
+        info = labkit.ui.view.draw(axBottom, 'xy', request.x, request.y, ...
+            request.labels, opts);
         if ~info.ok
-            addLog('Bottom plot skipped: invalid X/Y.');
+            addLog(request.skipLog);
             return;
         end
-        addLog(sprintf('Bottom plot: %s vs %s, n=%d', info.yName, info.xName, numel(info.x)));
+        addLog(request.successLog);
     end
 
     function refreshCompare()
