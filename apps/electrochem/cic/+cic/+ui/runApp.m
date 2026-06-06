@@ -366,7 +366,7 @@ function fig = runApp(debugLog)
     end
 
     function swapPlots()
-        labkit.ui.view.update(plotControls, 'swapPlotSelections');
+        plotControls.swapSelections();
         refreshPlots();
     end
 
@@ -376,8 +376,7 @@ function fig = runApp(debugLog)
     end
 
     function restoreDefaultPlotSelections()
-        labkit.ui.view.update(plotControls, 'setPlotSelections', ...
-            topPlotDefaults, bottomPlotDefaults);
+        plotControls.setSelections(topPlotDefaults, bottomPlotDefaults);
     end
 
     function resetAxesToDefaultState()

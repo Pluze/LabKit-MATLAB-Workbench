@@ -108,9 +108,8 @@ function fig = runApp(debugLog)
 
     topPlotDefaults = struct('x', 'Time (s)', 'y', 'VT: Vf vs time', 'grid', true);
     bottomPlotDefaults = struct('x', 'Time (s)', 'y', 'IT: Im vs time', 'grid', true);
-    plotControls = labkit.ui.view.panel( ...
+    plotControls = vt_resistance.ui.topBottomPlotControls( ...
         ui.topControlsPanel, ...
-        'topBottomPlotControls', ...
         ui.bottomControlsPanel, ...
         {'Time (s)', 'Sample #'}, ...
         {'VT: Vf vs time', 'IT: Im vs time'}, ...
@@ -442,7 +441,7 @@ function fig = runApp(debugLog)
     end
 
     function swapPlots()
-        labkit.ui.view.update(plotControls, 'swapPlotSelections');
+        plotControls.swapSelections();
         refreshPlots();
     end
 
@@ -452,8 +451,7 @@ function fig = runApp(debugLog)
     end
 
     function restoreDefaultPlotSelections()
-        labkit.ui.view.update(plotControls, 'setPlotSelections', ...
-            topPlotDefaults, bottomPlotDefaults);
+        plotControls.setSelections(topPlotDefaults, bottomPlotDefaults);
     end
 
     function resetAxesToDefaultState()

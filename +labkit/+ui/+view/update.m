@@ -5,8 +5,6 @@ function varargout = update(target, action, varargin)
 %   labkit.ui.view.update(textArea, "appendLog", message)
 %   labkit.ui.view.update(listbox, "listItems", names)
 %   [value, idx] = labkit.ui.view.update(listbox, "listSelection", names, preferred, opts)
-%   labkit.ui.view.update(plotControls, "setPlotSelections", topSelection, bottomSelection)
-%   labkit.ui.view.update(plotControls, "swapPlotSelections")
 %
 % Inputs:
 %   target - MATLAB handle or LabKit component struct returned by panel().
@@ -30,16 +28,6 @@ function varargout = update(target, action, varargin)
             opts = positional(varargin, 3, struct());
             [value, index] = refreshListboxSelection(target, names, preferredSelection, opts);
             out = {value, index};
-        case 'setplotselections'
-            topSelection = positional(varargin, 1, struct());
-            bottomSelection = positional(varargin, 2, struct());
-            setTopBottomPlotSelections(target.topX, target.topY, ...
-                target.bottomX, target.bottomY, topSelection, bottomSelection);
-            out = {[]};
-        case 'swapplotselections'
-            swapTopBottomPlotSelections(target.topX, target.topY, ...
-                target.bottomX, target.bottomY);
-            out = {[]};
         otherwise
             error('labkit_ui:update:UnknownAction', ...
                 'Unknown LabKit view update action "%s".', char(action));

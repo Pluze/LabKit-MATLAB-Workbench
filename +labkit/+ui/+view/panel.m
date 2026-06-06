@@ -6,10 +6,8 @@ function ui = panel(parent, kind, varargin)
 %   ui = labkit.ui.view.panel(parent, spec)
 %
 % Inputs:
-%   parent - parent container for the component group. For top/bottom plot
-%            controls this is the top controls panel.
-%   kind - component kind: "files", "log", "text", "table", or
-%          "topBottomPlotControls".
+%   parent - parent container for the component group.
+%   kind - component kind: "files", "log", "text", or "table".
 %   spec - optional struct alternative with kind plus fields matching the
 %          positional arguments described below.
 %
@@ -18,8 +16,6 @@ function ui = panel(parent, kind, varargin)
 %   panel(parent, "log", row, initialValue)
 %   panel(parent, "text", title, row, lines, opts)
 %   panel(parent, "table", title, row, columnNames, initialData)
-%   panel(topPanel, "topBottomPlotControls", bottomPanel, xItems, yItems,
-%       topDefaults, bottomDefaults, valueChangedFcn)
 %
 % Output:
 %   ui - struct of MATLAB component handles owned by the created component.
@@ -51,15 +47,6 @@ function ui = panel(parent, kind, varargin)
             columnNames = positional(varargin, 3, {});
             initialData = positional(varargin, 4, cell(0, numel(columnNames)));
             ui = resultTable(parent, titleText, row, columnNames, initialData);
-        case 'topbottomplotcontrols'
-            bottomPanel = positional(varargin, 1, []);
-            xItems = positional(varargin, 2, {});
-            yItems = positional(varargin, 3, {});
-            topDefaults = positional(varargin, 4, struct());
-            bottomDefaults = positional(varargin, 5, struct());
-            valueChangedFcn = positional(varargin, 6, []);
-            ui = topBottomPlotControls(parent, bottomPanel, xItems, yItems, ...
-                topDefaults, bottomDefaults, valueChangedFcn);
         otherwise
             error('labkit_ui:panel:UnknownKind', ...
                 'Unknown LabKit view panel kind "%s".', char(kind));
@@ -86,12 +73,6 @@ function ui = panelFromSpec(parent, spec)
             ui = resultTable(parent, fieldOr(spec, 'title', ''), ...
                 fieldOr(spec, 'row', 1), columnNames, ...
                 fieldOr(spec, 'initialData', cell(0, numel(columnNames))));
-        case 'topbottomplotcontrols'
-            ui = topBottomPlotControls(parent, requireField(spec, 'bottomPanel'), ...
-                fieldOr(spec, 'xItems', {}), fieldOr(spec, 'yItems', {}), ...
-                fieldOr(spec, 'topDefaults', struct()), ...
-                fieldOr(spec, 'bottomDefaults', struct()), ...
-                fieldOr(spec, 'callback', []));
         otherwise
             error('labkit_ui:panel:UnknownKind', ...
                 'Unknown LabKit view panel kind "%s".', char(kind));

@@ -1,18 +1,10 @@
-% Private UI view helper. Expected caller: labkit.ui.view panel, control,
-% plot, or text facades. Inputs and outputs are internal UI handles, labels,
-% selections, table data, or plot info. Side effects are limited to supplied UI
-% parents or axes; assumes the caller owns callbacks and app state.
+% App-owned CSC top/bottom plot controls helper. Expected caller:
+% csc.ui.buildControls. Inputs are parent panels, axis items, default
+% selections, and a value-change callback. Output is a controls struct with
+% dropdowns, grid checkboxes, and selection closures. Side effects are limited
+% to creating controls on the supplied panels.
 function ui = topBottomPlotControls(topPanel, bottomPanel, xItems, yItems, topDefaults, bottomDefaults, valueChangedFcn)
-%CREATETOPBOTTOMPLOTCONTROLS Create shared top/bottom plot controls.
-%
-% Inputs:
-%   topPanel, bottomPanel - parent panels for control rows.
-%   xItems, yItems - dropdown items for X and Y axes.
-%   topDefaults, bottomDefaults - structs with x and y default values.
-%   valueChangedFcn - optional callback for dropdowns/grid checkboxes.
-%
-% Output:
-%   ui - struct with top/bottom grids, X/Y dropdowns, and grid checkboxes.
+%TOPBOTTOMPLOTCONTROLS Create CSC top/bottom plot controls.
 
     if nargin < 7
         valueChangedFcn = [];
@@ -23,6 +15,19 @@ function ui = topBottomPlotControls(topPanel, bottomPanel, xItems, yItems, topDe
         topPanel, xItems, yItems, topDefaults, valueChangedFcn);
     [ui.bottomGrid, ui.bottomX, ui.bottomY, ui.bottomGridCheckbox] = createOneRow( ...
         bottomPanel, xItems, yItems, bottomDefaults, valueChangedFcn);
+    ui.setSelections = @setSelections;
+    ui.swapSelections = @swapSelections;
+
+    function setSelections(topSelection, bottomSelection)
+        applySelection(ui.topX, ui.topY, topSelection);
+        applySelection(ui.bottomX, ui.bottomY, bottomSelection);
+    end
+
+    function swapSelections()
+        topSelection = struct('x', ui.topX.Value, 'y', ui.topY.Value);
+        bottomSelection = struct('x', ui.bottomX.Value, 'y', ui.bottomY.Value);
+        setSelections(bottomSelection, topSelection);
+    end
 end
 
 function [grid, ddX, ddY, cbGrid] = createOneRow(parent, xItems, yItems, defaults, valueChangedFcn)
@@ -47,4 +52,13 @@ function [grid, ddX, ddY, cbGrid] = createOneRow(parent, xItems, yItems, default
         'Text', 'Grid', ...
         'Value', defaults.grid, ...
         'ValueChangedFcn', valueChangedFcn);
+end
+
+function applySelection(ddX, ddY, selection)
+    if isfield(selection, 'x') && any(strcmp(ddX.Items, selection.x))
+        ddX.Value = selection.x;
+    end
+    if isfield(selection, 'y') && any(strcmp(ddY.Items, selection.y))
+        ddY.Value = selection.y;
+    end
 end
