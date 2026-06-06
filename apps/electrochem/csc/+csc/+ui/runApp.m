@@ -485,29 +485,8 @@ function fig = runApp(debugLog)
         clearTrim(axTop);
         clearTrim(axBottom);
 
-        if cbTopTrim.Value && strcmp(ddTopY.Value,'Im')
-            [xTop, ~, ~, ~] = labkit.dta.getCurveXY(c, ddTopX.Value, ddTopY.Value);
-            if numel(xTop) == numel(R.IcathDisp)
-                hold(axTop,'on');
-                plot(axTop, xTop, R.IcathDisp, 'Color',[0.1 0.6 0.1], ...
-                    'LineWidth',1.0,'Tag','trimCath');
-                plot(axTop, xTop, R.IanodDisp, 'Color',[0.8 0.3 0.1], ...
-                    'LineWidth',1.0,'Tag','trimAnod');
-                hold(axTop,'off');
-            end
-        end
-
-        if cbBotTrim.Value && strcmp(ddBotY.Value,'Im')
-            [xBot, ~, ~, ~] = labkit.dta.getCurveXY(c, ddBotX.Value, ddBotY.Value);
-            if numel(xBot) == numel(R.IcathDisp)
-                hold(axBottom,'on');
-                plot(axBottom, xBot, R.IcathDisp, 'Color',[0.1 0.6 0.1], ...
-                    'LineWidth',1.0,'Tag','trimCath');
-                plot(axBottom, xBot, R.IanodDisp, 'Color',[0.8 0.3 0.1], ...
-                    'LineWidth',1.0,'Tag','trimAnod');
-                hold(axBottom,'off');
-            end
-        end
+        drawTrimOverlay(axTop, cbTopTrim.Value, ddTopX.Value, ddTopY.Value, c, R);
+        drawTrimOverlay(axBottom, cbBotTrim.Value, ddBotX.Value, ddBotY.Value, c, R);
 
         addLog(sprintf(['Compare [%s]: Qct=%.6e C, Qcv=%.6e C, ', ...
             'rel=%.6f %%, maxdt=%.3e s'], ...
@@ -527,7 +506,26 @@ function fig = runApp(debugLog)
 
 end
 
-%% App-local plot cleanup
+%% App-local trim overlay drawing
+
+function drawTrimOverlay(ax, enabled, xSelection, ySelection, curve, result)
+    if ~enabled || ~strcmp(ySelection, 'Im')
+        return;
+    end
+
+    [xValues, ~, ~, ~] = labkit.dta.getCurveXY(curve, xSelection, ySelection);
+    overlay = csc.view.trimOverlayData(enabled, ySelection, xValues, result);
+    if ~overlay.ok
+        return;
+    end
+
+    hold(ax,'on');
+    plot(ax, overlay.x, overlay.cathY, 'Color',[0.1 0.6 0.1], ...
+        'LineWidth',1.0,'Tag','trimCath');
+    plot(ax, overlay.x, overlay.anodY, 'Color',[0.8 0.3 0.1], ...
+        'LineWidth',1.0,'Tag','trimAnod');
+    hold(ax,'off');
+end
 
 function clearTrim(ax)
     delete(findobj(ax,'Tag','trimCath'));

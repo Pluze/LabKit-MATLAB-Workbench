@@ -40,5 +40,36 @@ classdef CscViewTest < matlab.unittest.TestCase
             testCase.verifyEqual(selections.bottomX, 'Potential');
             testCase.verifyEqual(selections.bottomY, 'Potential');
         end
+
+        function trimOverlayDataPreparesLegacyTrimVectors(testCase)
+            setupLabKitTestPath();
+
+            result = struct( ...
+                'IcathDisp', [NaN -2 -3], ...
+                'IanodDisp', [1 NaN 3]);
+
+            overlay = csc.view.trimOverlayData(true, 'Im', [0 1 2], result);
+
+            testCase.verifyTrue(overlay.ok);
+            testCase.verifyEqual(overlay.x, [0 1 2]);
+            testCase.verifyEqual(overlay.cathY, result.IcathDisp);
+            testCase.verifyEqual(overlay.anodY, result.IanodDisp);
+        end
+
+        function trimOverlayDataRejectsNonCurrentAndMismatchedVectors(testCase)
+            setupLabKitTestPath();
+
+            result = struct( ...
+                'IcathDisp', [NaN -2 -3], ...
+                'IanodDisp', [1 NaN 3]);
+
+            disabled = csc.view.trimOverlayData(false, 'Im', [0 1 2], result);
+            voltageAxis = csc.view.trimOverlayData(true, 'Vf', [0 1 2], result);
+            mismatchedX = csc.view.trimOverlayData(true, 'Im', [0 1], result);
+
+            testCase.verifyFalse(disabled.ok);
+            testCase.verifyFalse(voltageAxis.ok);
+            testCase.verifyFalse(mismatchedX.ok);
+        end
     end
 end
