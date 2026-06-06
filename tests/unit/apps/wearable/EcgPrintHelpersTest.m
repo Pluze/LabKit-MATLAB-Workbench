@@ -125,6 +125,80 @@ classdef EcgPrintHelpersTest < matlab.unittest.TestCase
             testCase.verifyEqual(T.SNRdB_smooth, [15; 20; 30; 35], ...
                 'AbsTol', 1e-12);
         end
+
+        function waveformPlotRequestPrefersFilteredSignalAndPeakCoordinates(testCase)
+            setupLabKitTestPath();
+
+            workingSignal = struct( ...
+                'time', [0 1 2 3], ...
+                'values', [10 11 12 13], ...
+                'name', 'raw');
+            filteredSignal = struct( ...
+                'time', [0 1 2 3], ...
+                'values', [1 3 2 4], ...
+                'name', 'filtered');
+            events = struct('index', [2 4]);
+
+            request = ecg_print.view.waveformPlotRequest( ...
+                workingSignal, filteredSignal, events);
+
+            testCase.verifyTrue(request.ok);
+            testCase.verifyEqual(request.x, filteredSignal.time);
+            testCase.verifyEqual(request.y, filteredSignal.values);
+            testCase.verifyEqual(request.yLabel, 'filtered');
+            testCase.verifyEqual(request.peakX, [1 3]);
+            testCase.verifyEqual(request.peakY, [3 4]);
+            testCase.verifyEqual(request.title, 'Waveform + Peaks');
+        end
+
+        function templatePlotRequestBuildsResidualBandAndWindows(testCase)
+            setupLabKitTestPath();
+
+            segments = struct( ...
+                'values', [1 2 3; 2 4 6; 3 6 9], ...
+                'timeOffset', [-0.1 0 0.1]);
+            template = struct('values', [2; 4; 6]);
+            measurements = struct('metadata', struct( ...
+                'signalWindowSec', [-0.04 0.04], ...
+                'noiseWindowsSec', [-0.2 -0.1; 0.1 0.2]));
+
+            request = ecg_print.view.templatePlotRequest(segments, template, ...
+                measurements, 'Template + residual band');
+
+            testCase.verifyTrue(request.ok);
+            testCase.verifyFalse(request.showSegments);
+            testCase.verifyEqual(request.title, 'Template + Residual Band');
+            testCase.verifyEqual(request.timeOffset, [-0.1; 0; 0.1]);
+            testCase.verifyEqual(request.template, [2; 4; 6]);
+            testCase.verifyEqual(request.signalWindowSec, [-0.04 0.04]);
+            testCase.verifyEqual(request.noiseWindowsSec, [-0.2 -0.1; 0.1 0.2]);
+            testCase.verifyEqual(request.upper - request.template, ...
+                std(segments.values - template.values, 0, 2, 'omitnan'), ...
+                'AbsTol', 1e-12);
+            testCase.verifyEqual(request.template - request.lower, ...
+                std(segments.values - template.values, 0, 2, 'omitnan'), ...
+                'AbsTol', 1e-12);
+        end
+
+        function templatePlotRequestSelectsRepresentativeSegments(testCase)
+            setupLabKitTestPath();
+
+            segments = struct( ...
+                'values', reshape(1:150, 3, 50), ...
+                'timeOffset', [-0.1 0 0.1]);
+            template = struct('values', [2; 4; 6]);
+
+            request = ecg_print.view.templatePlotRequest(segments, template, ...
+                struct(), 'Template + segments');
+
+            testCase.verifyTrue(request.ok);
+            testCase.verifyTrue(request.showSegments);
+            testCase.verifyEqual(request.title, 'Template + Segments');
+            testCase.verifyEqual(numel(request.showIndex), 40);
+            testCase.verifyEqual(request.showIndex(1), 1);
+            testCase.verifyEqual(request.showIndex(end), 50);
+            testCase.verifyEqual(request.segments, segments.values);
+        end
     end
 end
 

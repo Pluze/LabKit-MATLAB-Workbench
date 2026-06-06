@@ -36,227 +36,45 @@ function fig = runApp(debugLog)
         'leftWidth', 410, ...
         'options', opts));
     fig = ui.fig;
-    layFA = ui.filesAnalysisGrid;
-    laySR = ui.summaryResultsGrid;
-    layLog = ui.logGrid;
 
-    recordingPanel = labkit.ui.view.section(layFA, 'Recording', 1, [3 2], ...
-        struct('rowHeight', {repmat({'fit'}, 1, 3)}, ...
-        'columnWidth', {{135, '1x'}}));
-    recordingGrid = recordingPanel.grid;
+    callbacks = struct( ...
+        'onOpenRecording', @onOpenRecording, ...
+        'onPreviewHeader', @onPreviewHeader, ...
+        'onImportOptionChanged', @onImportOptionChanged, ...
+        'onRefreshImport', @onRefreshImport, ...
+        'onChannelChanged', @onChannelChanged, ...
+        'onAnalyze', @onAnalyze, ...
+        'onExportSegments', @onExportSegments, ...
+        'onExportWaveform', @onExportWaveform, ...
+        'onRefreshPlots', @(~,~) refreshPlots());
+    controls = ecg_print.ui.createControls(ui, callbacks);
 
-    btnOpen = uibutton(recordingGrid, 'Text', 'Open recording', 'ButtonPushedFcn', @onOpenRecording);
-    btnOpen.Layout.Row = 1;
-    btnOpen.Layout.Column = [1 2];
-
-    txtFile = labkit.ui.view.form(recordingGrid, 'readonly', 'Value', 'No file loaded');
-    txtFile.Layout.Row = 2;
-    txtFile.Layout.Column = [1 2];
-
-    btnPreviewHeader = uibutton(recordingGrid, 'Text', 'Preview file header', ...
-        'ButtonPushedFcn', @onPreviewHeader);
-    btnPreviewHeader.Layout.Row = 3;
-    btnPreviewHeader.Layout.Column = [1 2];
-
-    importPanel = labkit.ui.view.section(layFA, 'Import Parsing', 2, [8 2], ...
-        struct('rowHeight', {repmat({'fit'}, 1, 8)}, ...
-        'columnWidth', {{135, '1x'}}));
-    importGrid = importPanel.grid;
-
-    txtImportStatus = labkit.ui.view.form(importGrid, 'readonly', ...
-        'Value', 'Open a recording to inspect import settings.');
-    txtImportStatus.Layout.Row = 1;
-    txtImportStatus.Layout.Column = [1 2];
-
-    [lblHeaderLine, edtHeaderLine] = labkit.ui.view.form(importGrid, 'spinner', ...
-        'CSV header line:', 'Value', 0, 'Limits', [0 Inf], 'Step', 1, ...
-        'ValueChangedFcn', @onImportOptionChanged);
-    lblHeaderLine.Layout.Row = 2;
-    lblHeaderLine.Layout.Column = 1;
-    edtHeaderLine.Layout.Row = 2;
-    edtHeaderLine.Layout.Column = 2;
-
-    [lblHasHeader, ddHasHeader] = labkit.ui.view.form(importGrid, 'dropdown', ...
-        'CSV header:', ...
-        'Items', {'Auto', 'Yes', 'No'}, ...
-        'Value', 'Auto', ...
-        'ValueChangedFcn', @onImportOptionChanged);
-    lblHasHeader.Layout.Row = 3;
-    lblHasHeader.Layout.Column = 1;
-    ddHasHeader.Layout.Row = 3;
-    ddHasHeader.Layout.Column = 2;
-
-    [lblTimeColumn, edtTimeColumn] = labkit.ui.view.form(importGrid, 'edit', ...
-        'Time column:', 'text', 'Value', '', ...
-        'ValueChangedFcn', @onImportOptionChanged);
-    lblTimeColumn.Layout.Row = 4;
-    lblTimeColumn.Layout.Column = 1;
-    edtTimeColumn.Layout.Row = 4;
-    edtTimeColumn.Layout.Column = 2;
-
-    [lblTimeUnit, ddTimeUnit] = labkit.ui.view.form(importGrid, 'dropdown', ...
-        'Time unit:', ...
-        'Items', {'Auto', 'seconds', 'milliseconds', 'microseconds', 'nanoseconds'}, ...
-        'Value', 'Auto', ...
-        'ValueChangedFcn', @onImportOptionChanged);
-    lblTimeUnit.Layout.Row = 5;
-    lblTimeUnit.Layout.Column = 1;
-    ddTimeUnit.Layout.Row = 5;
-    ddTimeUnit.Layout.Column = 2;
-
-    [lblSignalColumns, edtSignalColumns] = labkit.ui.view.form(importGrid, 'edit', ...
-        'Signal columns:', 'text', 'Value', '', ...
-        'ValueChangedFcn', @onImportOptionChanged);
-    lblSignalColumns.Layout.Row = 6;
-    lblSignalColumns.Layout.Column = 1;
-    edtSignalColumns.Layout.Row = 6;
-    edtSignalColumns.Layout.Column = 2;
-
-    [lblFallbackFs, edtFallbackFs] = labkit.ui.view.form(importGrid, 'spinner', ...
-        'Fallback Fs:', 'Value', 2000, 'Limits', [0 Inf], 'Step', 100, ...
-        'ValueChangedFcn', @onImportOptionChanged);
-    lblFallbackFs.Layout.Row = 7;
-    lblFallbackFs.Layout.Column = 1;
-    edtFallbackFs.Layout.Row = 7;
-    edtFallbackFs.Layout.Column = 2;
-
-    btnRefreshImport = uibutton(importGrid, 'Text', 'Parse / refresh file', ...
-        'ButtonPushedFcn', @onRefreshImport);
-    btnRefreshImport.Layout.Row = 8;
-    btnRefreshImport.Layout.Column = [1 2];
-
-    channelPanel = labkit.ui.view.section(layFA, 'Channel + ROI', 3, [3 2], ...
-        struct('rowHeight', {repmat({'fit'}, 1, 3)}, ...
-        'columnWidth', {{135, '1x'}}));
-    channelGrid = channelPanel.grid;
-
-    [lblChannel, ddChannel] = labkit.ui.view.form(channelGrid, 'dropdown', 'Channel:', ...
-        'Items', {'(none)'}, 'Value', '(none)', 'ValueChangedFcn', @onChannelChanged);
-    lblChannel.Layout.Row = 1;
-    lblChannel.Layout.Column = 1;
-    ddChannel.Layout.Row = 1;
-    ddChannel.Layout.Column = 2;
-
-    [lblStart, edtStart] = labkit.ui.view.form(channelGrid, 'spinner', ...
-        'ROI start (s):', 'Value', 0, 'Limits', [0 Inf], 'Step', 1);
-    lblStart.Layout.Row = 2;
-    lblStart.Layout.Column = 1;
-    edtStart.Layout.Row = 2;
-    edtStart.Layout.Column = 2;
-
-    [lblEnd, edtEnd] = labkit.ui.view.form(channelGrid, 'spinner', ...
-        'ROI end (s):', 'Value', 0, 'Limits', [0 Inf], 'Step', 1);
-    lblEnd.Layout.Row = 3;
-    lblEnd.Layout.Column = 1;
-    edtEnd.Layout.Row = 3;
-    edtEnd.Layout.Column = 2;
-
-    procPanel = labkit.ui.view.section(layFA, 'Signal Processing + SNR', 4, [9 2], ...
-        struct('rowHeight', {repmat({'fit'}, 1, 9)}, ...
-        'columnWidth', {{135, '1x'}}));
-    procGrid = procPanel.grid;
-
-    [lblLow, edtLow] = labkit.ui.view.form(procGrid, 'spinner', ...
-        'Bandpass low Hz:', 'Value', 0.5, 'Limits', [0 Inf], 'Step', 0.1);
-    lblLow.Layout.Row = 1;
-    lblLow.Layout.Column = 1;
-    edtLow.Layout.Row = 1;
-    edtLow.Layout.Column = 2;
-
-    [lblHigh, edtHigh] = labkit.ui.view.form(procGrid, 'spinner', ...
-        'Bandpass high Hz:', 'Value', 40, 'Limits', [0 Inf], 'Step', 1);
-    lblHigh.Layout.Row = 2;
-    lblHigh.Layout.Column = 1;
-    edtHigh.Layout.Row = 2;
-    edtHigh.Layout.Column = 2;
-
-    [lblPeakMethod, ddPeakMethod] = labkit.ui.view.form(procGrid, 'dropdown', ...
-        'Peak method:', ...
-        'Items', {'QRS streaming', 'Pan-Tompkins', 'Local peaks'}, ...
-        'Value', 'QRS streaming');
-    lblPeakMethod.Layout.Row = 3;
-    lblPeakMethod.Layout.Column = 1;
-    ddPeakMethod.Layout.Row = 3;
-    ddPeakMethod.Layout.Column = 2;
-
-    [lblPeakDist, edtPeakDist] = labkit.ui.view.form(procGrid, 'spinner', ...
-        'Peak distance (s):', 'Value', 0.28, 'Limits', [0.01 Inf], 'Step', 0.01);
-    lblPeakDist.Layout.Row = 4;
-    lblPeakDist.Layout.Column = 1;
-    edtPeakDist.Layout.Row = 4;
-    edtPeakDist.Layout.Column = 2;
-
-    [lblWin, edtWin] = labkit.ui.view.form(procGrid, 'spinner', ...
-        'Segment half win (s):', 'Value', 0.7, 'Limits', [0.01 Inf], 'Step', 0.05);
-    lblWin.Layout.Row = 5;
-    lblWin.Layout.Column = 1;
-    edtWin.Layout.Row = 5;
-    edtWin.Layout.Column = 2;
-
-    [lblTopN, edtTopN] = labkit.ui.view.form(procGrid, 'spinner', ...
-        'Template top N:', 'Value', 30, 'Limits', [1 Inf], 'Step', 1);
-    lblTopN.Layout.Row = 6;
-    lblTopN.Layout.Column = 1;
-    edtTopN.Layout.Row = 6;
-    edtTopN.Layout.Column = 2;
-
-    [lblSmooth, edtSmooth] = labkit.ui.view.form(procGrid, 'spinner', ...
-        'Smooth beats:', 'Value', 15, 'Limits', [1 Inf], 'Step', 1, ...
-        'ValueChangedFcn', @(~,~) refreshPlots());
-    lblSmooth.Layout.Row = 7;
-    lblSmooth.Layout.Column = 1;
-    edtSmooth.Layout.Row = 7;
-    edtSmooth.Layout.Column = 2;
-
-    [lblView, ddTemplateView] = labkit.ui.view.form(procGrid, 'dropdown', ...
-        'Template plot:', ...
-        'Items', {'Template + residual band', 'Template + segments'}, ...
-        'Value', 'Template + residual band', ...
-        'ValueChangedFcn', @(~,~) refreshPlots());
-    lblView.Layout.Row = 8;
-    lblView.Layout.Column = 1;
-    ddTemplateView.Layout.Row = 8;
-    ddTemplateView.Layout.Column = 2;
-
-    btnAnalyze = uibutton(procGrid, 'Text', 'Analyze current ROI', ...
-        'ButtonPushedFcn', @onAnalyze);
-    btnAnalyze.Layout.Row = 9;
-    btnAnalyze.Layout.Column = [1 2];
-
-    exportPanel = labkit.ui.view.section(layFA, 'Exports', 5, [2 1], ...
-        struct('rowHeight', {{'fit','fit'}}));
-    exportGrid = exportPanel.grid;
-    btnExportSegments = uibutton(exportGrid, 'Text', 'Export segment SNR CSV', ...
-        'ButtonPushedFcn', @onExportSegments);
-    btnExportSegments.Layout.Row = 1;
-    btnExportOverlay = uibutton(exportGrid, 'Text', 'Export waveform PNG', ...
-        'ButtonPushedFcn', @onExportWaveform);
-    btnExportOverlay.Layout.Row = 2;
-
-    labkit.ui.view.panel(layFA, 'text', 'Workflow Notes', 6, { ...
-        '1. Open MAT/CSV data, select a numeric channel, and optionally set a time ROI.', ...
-        '2. Use File Header Preview and Import Parsing only when CSV/text auto-detection needs correction.', ...
-        '3. Analysis filters the selected channel with edge padding, then crops the filtered signal to the ROI for peak/SNR measurement.'});
-
-    summaryTable = uitable(laySR, 'ColumnName', {'Metric','Value'}, ...
-        'Data', ecg_print.view.initialSummaryRows());
-    labkit.ui.view.place(summaryTable, laySR, 1);
-
-    previewUi = labkit.ui.view.panel(laySR, 'text', 'File Header Preview', 2, ...
-        {'Open a CSV/text file, then use Preview file header.'});
-    txtFilePreview = previewUi.textArea;
-
-    logUi = labkit.ui.view.panel(layLog, 'log', 1, {'Ready.'});
-    txtLog = logUi.textArea;
-
-    ui.waveAxes = uiaxes(ui.rightGrid);
-    ui.waveAxes.Layout.Row = 1;
-    ui.noiseAxes = uiaxes(ui.rightGrid);
-    ui.noiseAxes.Layout.Row = 2;
-    ui.snrAxes = uiaxes(ui.rightGrid);
-    ui.snrAxes.Layout.Row = 3;
-    ui.templateAxes = uiaxes(ui.rightGrid);
-    ui.templateAxes.Layout.Row = 4;
+    txtFile = controls.txtFile;
+    txtImportStatus = controls.txtImportStatus;
+    edtHeaderLine = controls.edtHeaderLine;
+    ddHasHeader = controls.ddHasHeader;
+    edtTimeColumn = controls.edtTimeColumn;
+    ddTimeUnit = controls.ddTimeUnit;
+    edtSignalColumns = controls.edtSignalColumns;
+    edtFallbackFs = controls.edtFallbackFs;
+    ddChannel = controls.ddChannel;
+    edtStart = controls.edtStart;
+    edtEnd = controls.edtEnd;
+    edtLow = controls.edtLow;
+    edtHigh = controls.edtHigh;
+    ddPeakMethod = controls.ddPeakMethod;
+    edtPeakDist = controls.edtPeakDist;
+    edtWin = controls.edtWin;
+    edtTopN = controls.edtTopN;
+    edtSmooth = controls.edtSmooth;
+    ddTemplateView = controls.ddTemplateView;
+    summaryTable = controls.summaryTable;
+    txtFilePreview = controls.txtFilePreview;
+    txtLog = controls.txtLog;
+    ui.waveAxes = controls.waveAxes;
+    ui.noiseAxes = controls.noiseAxes;
+    ui.snrAxes = controls.snrAxes;
+    ui.templateAxes = controls.templateAxes;
 
     if debugLog.enabled
         debugLog.attachTextLog(txtLog);
@@ -473,22 +291,19 @@ function fig = runApp(debugLog)
             return;
         end
 
-        sig = S.workingSignal;
-        if ~isempty(S.filteredSignal)
-            sig = S.filteredSignal;
-        end
-
+        request = ecg_print.view.waveformPlotRequest( ...
+            S.workingSignal, S.filteredSignal, S.events);
         ax = ui.waveAxes;
-        plot(ax, sig.time, sig.values, 'Color', [0.15 0.38 0.72], 'LineWidth', 1);
+        plot(ax, request.x, request.y, 'Color', request.lineColor, 'LineWidth', 1);
         hold(ax, 'on');
-        if ~isempty(S.events) && ~isempty(S.events.index)
-            scatter(ax, sig.time(S.events.index), sig.values(S.events.index), ...
-                24, [0.85 0.25 0.15], 'filled');
+        if ~isempty(request.peakX)
+            scatter(ax, request.peakX, request.peakY, ...
+                24, request.peakColor, 'filled');
         end
         hold(ax, 'off');
-        title(ax, 'Waveform + Peaks');
-        xlabel(ax, 'Time (s)');
-        ylabel(ax, char(sig.name));
+        title(ax, request.title);
+        xlabel(ax, request.xLabel);
+        ylabel(ax, request.yLabel);
         grid(ax, 'on');
 
         if isempty(S.measurements)
@@ -536,52 +351,36 @@ function fig = runApp(debugLog)
         labkit.ui.view.draw(ax, 'reset', 'Template + Residual Band');
         xlabel(ax, 'Time from peak (s)');
         ylabel(ax, 'Amplitude');
-        if isempty(S.segments) || isempty(S.template) || isempty(S.segments.values)
-            return;
-        end
-
-        X = double(S.segments.values);
-        t = double(S.segments.timeOffset(:));
-        template = double(S.template.values(:));
-        if isempty(X) || isempty(template)
+        request = ecg_print.view.templatePlotRequest( ...
+            S.segments, S.template, S.measurements, ddTemplateView.Value);
+        if ~request.ok
             return;
         end
 
         hold(ax, 'on');
-        if strcmp(ddTemplateView.Value, 'Template + segments')
-            maxShow = min(40, size(X, 2));
-            showIdx = unique(round(linspace(1, size(X, 2), maxShow)));
-            plot(ax, t, X(:, showIdx), 'Color', [0.78 0.84 0.92], 'LineWidth', 0.5);
-            title(ax, 'Template + Segments');
+        if request.showSegments
+            plot(ax, request.timeOffset, request.segments(:, request.showIndex), ...
+                'Color', [0.78 0.84 0.92], 'LineWidth', 0.5);
         else
-            residStd = std(X - template, 0, 2, 'omitnan');
-            upper = template + residStd;
-            lower = template - residStd;
-            fill(ax, [t; flipud(t)], [upper; flipud(lower)], [0.20 0.20 0.20], ...
+            fill(ax, [request.timeOffset; flipud(request.timeOffset)], ...
+                [request.upper; flipud(request.lower)], [0.20 0.20 0.20], ...
                 'FaceAlpha', 0.15, 'EdgeColor', 'none');
-            title(ax, 'Template + Residual Band');
         end
-        plot(ax, t, template, 'k-', 'LineWidth', 2);
+        title(ax, request.title);
+        plot(ax, request.timeOffset, request.template, 'k-', 'LineWidth', 2);
         xline(ax, 0, '--r', 'R');
-        if strcmp(ddTemplateView.Value, 'Template + residual band')
-            shadeMeasurementWindows(ax);
+        if ~isempty(request.signalWindowSec)
+            shadeMeasurementWindows(ax, request);
         end
         hold(ax, 'off');
         grid(ax, 'on');
     end
 
-    function shadeMeasurementWindows(ax)
-        if isempty(S.measurements) || ~isfield(S.measurements, 'metadata')
-            return;
-        end
-        meta = S.measurements.metadata;
-        if ~isfield(meta, 'signalWindowSec') || ~isfield(meta, 'noiseWindowsSec')
-            return;
-        end
+    function shadeMeasurementWindows(ax, request)
         yl = ax.YLim;
         windowHandles = gobjects(0);
-        windowHandles(end+1) = drawWindow(ax, meta.signalWindowSec, yl, [1.00 0.20 0.20], 0.08);
-        noiseWindows = meta.noiseWindowsSec;
+        windowHandles(end+1) = drawWindow(ax, request.signalWindowSec, yl, [1.00 0.20 0.20], 0.08);
+        noiseWindows = request.noiseWindowsSec;
         for k = 1:size(noiseWindows, 1)
             windowHandles(end+1) = drawWindow(ax, noiseWindows(k, :), yl, [0.00 0.45 1.00], 0.08);
         end
