@@ -45,3 +45,4 @@ These docs are written for people who run, maintain, or extend LabKit. Start wit
 | `dta.md` | DTA facade, parser assumptions, and data shapes. |
 | `biosignal.md` | Biosignal facade, data shapes, and ECG workflow boundary. |
 | `testing.md` | Test commands, suite layout, GUI validation limits, and fixture expectations. |
+| `future_design_handbook.md` | Long-term design vision, target architecture, debt burn-down roadmap, and maturity model. |
