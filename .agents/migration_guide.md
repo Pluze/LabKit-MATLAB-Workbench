@@ -1,52 +1,42 @@
 # Agent Migration Guide
 
 This is the agent-facing migration ledger for LabKit app-runner migrations and
-debt burn-down. It combines the former runner migration maps and future design
-handbook into one operational source for agents.
+debt burn-down. It is not a second architecture manual.
 
-Human-facing architecture and behavior contracts remain in `docs/`. This guide
-owns migration procedure, current debt status, target direction, and tactical
-runner maps. It is long-lived while migration debt exists, but it should shrink
-as debt is resolved rather than become a second architecture manual.
+Human-facing architecture, app behavior, and validation command details live in
+`docs/`. This guide owns only active migration facts, tactical runner maps, and
+debt retirement rules for agents.
 
 Lifecycle contract:
 
 - Update this guide when migration debt is added, reduced, retired, or
-  re-prioritized.
-- Keep current facts aligned with `docs/architecture.md`,
-  `docs/testing.md`, `tests/integration/project/ProjectDebtGuardrailTest.m`,
-  and `tests/integration/project/ProjectDocumentationGuardrailTest.m`.
-- Do not copy agent execution procedure into human docs. Human docs may point
-  here when maintainers need the active migration roadmap.
-- When no active migration debt remains, replace the active roadmap with a
-  concise completed-baseline note or remove the roadmap section.
-- Use `labkit-migration-planner` for migration audits, recent-history reviews,
-  debt scans, and updates to this guide.
+  reprioritized.
+- Keep debt facts aligned with `ProjectDebtGuardrailTest`,
+  `ProjectDocumentationGuardrailTest`, `ProjectStructureGuardrailTest`,
+  `docs/architecture.md`, and `docs/testing.md`.
+- Shrink this guide when debt is resolved. Do not keep completed migrations as
+  active roadmap items.
+- Use `labkit-migration-planner` for debt scans, recent-history reviews, and
+  updates to this file.
 
 Read-scope contract:
 
-- For most migration tasks, read from the top through `Migration Standard`,
-  then jump to the specific app or runner being touched.
-- Read `Current Oversized Runner Inventory` for debt selection.
-- Read a detailed runner map only when editing that runner.
-- Read `Completed Migration Baselines` only when changing those apps or their
-  guardrail invariants.
-- Do not load this entire guide just to choose validation commands; use
-  `docs/testing.md` through `labkit-test-planner` when exact task names are
-  needed.
+- Read through `Migration Standard` for most migration tasks.
+- Read `Current Oversized Runner Inventory` to choose active runner debt.
+- Read a `## \`path\`` runner map only when touching that runner.
+- Read `Completed Migration Baselines` only when changing a completed app or
+  checking its guardrail invariants.
+- Use `docs/testing.md` through `labkit-test-planner` for exact commands.
 
 ## North Star
-
-LabKit should stay:
 
 ```text
 small stable foundation + focused apps + explicit compatibility contracts
 ```
 
-Apps are first-class products. `+labkit` is a small foundation with UI, DTA,
-and biosignal facades. App-specific workflow logic belongs under the owning
-app tree, preferably in app-owned packages once the app grows beyond a small
-single-file entry point.
+Apps are first-class products. `+labkit` stays a small foundation with UI, DTA,
+and biosignal facades. Workflow-specific calculations, summaries, plots,
+exports, and file conventions belong under the owning app tree.
 
 ## Current Debt Snapshot
 
@@ -55,10 +45,10 @@ Current facts:
 - Oversized app entry points: none.
 - Oversized app runners over 500 lines: CIC and CSC only.
 - App `private/` debt: none.
-- Completed app package migrations: ECG Print, DIC Preprocess, and DIC
-  Postprocess.
+- Completed app package migrations: ECG Print, DIC Preprocess, DIC Postprocess.
 - String-dispatch workflow adapters and app `+core/dispatch.m` routers: none.
-- Private helper contract debt remains in parts of `+labkit`.
+- Private helper contract debt remains in parts of `+labkit`; the executable
+  inventory is `ProjectDocumentationGuardrailTest.expectedPrivateContractDebtFiles`.
 
 Executable sources of truth:
 
@@ -67,24 +57,22 @@ Executable sources of truth:
 - `ProjectDocumentationGuardrailTest.expectedPrivateContractDebtFiles`
 - `ProjectStructureGuardrailTest` package and startup path checks
 
-When debt shrinks, update the code, tests, and this guide in the same change.
-Do not keep stale debt entries as documentation.
+When debt shrinks, update source, tests or guardrails, and this guide in the
+same change. Stale debt entries are defects.
 
 ## Health Signals
 
-Use recent git history and current debt facts to decide whether migration work
-is helping:
+Migration work is healthy when it removes legacy surfaces, keeps public app
+behavior stable, adds direct tests for extracted behavior, keeps CI green, and
+shrinks this guide.
 
-- Healthy: refactors remove legacy surfaces, preserve public app behavior, add
-  direct tests for extracted behavior, keep CI green, and reduce this guide.
-- Risky: refactors mostly move files, split tiny helpers without reducing
-  runner complexity, add guardrails for unstable internals, or expand
-  governance faster than debt shrinks.
-- Stop condition: once a runner mostly owns callbacks, axes side effects,
-  alerts, and refresh ordering, do not keep extracting unless a new
-  deterministic view-model or export contract appears.
-- Management signal: a red CI run must lead to a focused fix before more
-  migration work; repeated red pushes mean the migration batch is too large.
+Migration work is risky when it mostly moves files, splits tiny helpers without
+reducing runner complexity, adds exact guardrails for unstable internals, or
+expands governance faster than debt shrinks.
+
+Stop extracting once a runner mostly owns callbacks, axes side effects, alerts,
+logging text, and refresh ordering. Do not turn GUI choreography into another
+large helper.
 
 ## Migration Standard
 
@@ -111,8 +99,7 @@ Every extraction from a runner must satisfy all of these:
 - no new `private` runner, `*Workflow.m`, or string-dispatch layer is created
 
 Moving a large runner into another large helper is not progress. Progress means
-directly testable behavior leaves the runner and the real GUI path calls that
-behavior.
+directly testable behavior leaves the runner and the real GUI path calls it.
 
 ## App-Owned Package Target
 
@@ -139,277 +126,122 @@ Create only the component packages the app actually needs.
 | `+export` | CSV/image export table builders and output contracts. |
 | `+io` | App-local file option normalization and workflow-specific readers. |
 
-Keep `+labkit` growth conservative. A helper may move into `+labkit` only when
-it is domain-neutral, app-state-free, directly testable, useful to multiple
-real apps or a whole workflow family, and clearer as a public facade than as
-app-local code.
+Move a helper into `+labkit` only when it is domain-neutral, app-state-free,
+directly testable, useful to multiple real apps or a whole workflow family, and
+clearer as a public facade than as app-local code.
 
 ## Current Oversized Runner Inventory
 
-This inventory is a cold section for most tasks. Use it to select or verify an
-oversized runner migration, then read only the matching detailed map below.
+Only these runner maps are active debt. When a runner drops below the threshold,
+remove its `## \`path\`` heading and update guardrail expectations.
 
-| Runner | Family | Current status | First useful reduction |
-| --- | --- | --- | --- |
-| `apps/electrochem/cic/+cic/+ui/runApp.m` | electrochem | App-owned package owns CIC computation, table/export helpers, current-file summary text, and plot request preparation. Runner still owns axes drawing and annotation side effects. | Stop shrinking unless a future deterministic view-model appears; otherwise move to the next oversized runner. |
-| `apps/electrochem/csc/+csc/+ui/runApp.m` | electrochem | App-owned `+ops` and small `+view` helpers exist, including trim overlay, comparison readout, and plot request preparation. Runner still owns callback orchestration and axes drawing. | Keep shrinking only if another deterministic view-model appears; otherwise move to the next oversized runner. |
-
-When an oversized runner drops below the debt threshold, remove its `##`
-file-heading map from this section and update the debt snapshot and roadmap.
+| Runner | Current status | Next action |
+| --- | --- | --- |
+| `apps/electrochem/cic/+cic/+ui/runApp.m` | CIC computation, table/export helpers, summary text, display unit normalization, and plot request preparation are extracted. Runner still owns callbacks and axes effects. | Stop unless a new deterministic view-model appears. |
+| `apps/electrochem/csc/+csc/+ui/runApp.m` | CSC computation, formatting, default selections, trim overlay data, comparison readout, and plot request preparation are extracted. Runner still owns callbacks and axes effects. | Stop unless a new deterministic view-model appears. |
 
 ## `apps/electrochem/cic/+cic/+ui/runApp.m`
 
-### Current Responsibility Map
+Already extracted:
 
-| Responsibility | Current location | Target owner |
-| --- | --- | --- |
-| Window preset application and UI callback sequencing | runner callbacks | runner |
-| DTA file/folder dialogs and session mutation | runner callbacks plus `labkit.dta` facade | runner, later app `+io` only if normalization grows |
-| CIC computation | `cic.ops.computeCIC` | already extracted |
-| Batch table data | `cic.view.buildBatchTableData` | already extracted |
-| CSV export | `cic.export.writeResultsCSV` | already extracted |
-| Current-file summary strings and mode selection | `cic.view.buildCurrentSummary` | already extracted |
-| Runner-facing CIC display unit normalization | `cic.view.displayUnit` | already extracted |
-| Axis data selection and title/label decisions | `cic.view.plotRequest` | already extracted |
-| Axes drawing, shading, limits, markers, annotations, and grid | runner plus existing `cic.view` axes annotation helpers | runner |
-| UI-only axes reset, swap, refresh ordering | runner | runner |
+- `cic.ops.computeCIC`
+- `cic.view.buildBatchTableData`
+- `cic.export.writeResultsCSV`
+- `cic.view.buildCurrentSummary`
+- `cic.view.displayUnit`
+- `cic.view.plotRequest`
 
-### Next Extraction Target
+Leave in the runner:
 
-CIC now has the obvious deterministic view helpers extracted. Stop shrinking
-the CIC runner unless a future change exposes another directly testable
-view-model that is not axes or callback choreography.
+- file and folder dialogs
+- session mutation
+- callback sequencing
+- axes drawing, markers, shading, annotations, grid, and limits
+- UI-only reset, swap, and refresh ordering
 
-Do not move `plotOneAxis` wholesale. It still mixes axes drawing, marker
-creation, window shading, title/label assignment, and checkbox-driven UI
-effects.
+Do not move `plotOneAxis` wholesale. It mixes axes drawing, marker creation,
+window shading, title/label assignment, and checkbox-driven UI effects.
 
-### Direct Test Target
-
-Direct electrochem unit tests now cover current summary strings, display unit
-scaling, selected CIC mode behavior, plot request preparation, batch table
-formatting, compute behavior, and export contracts. Future CIC runner edits
-should add direct tests only when new deterministic behavior is extracted.
+Future work is justified only when a new deterministic view-model appears and
+can be called by the GUI path with direct unit coverage.
 
 ## `apps/electrochem/csc/+csc/+ui/runApp.m`
 
-### Current Responsibility Map
+Already extracted:
 
-| Responsibility | Current location | Target owner |
-| --- | --- | --- |
-| DTA file/folder dialogs and session mutation | runner callbacks plus `labkit.dta` facade | runner |
-| CV/CT CSC computation | `csc.ops.computeCSC` | already extracted |
-| Curve dropdown population and default X/Y selection | runner `updateDropdowns` plus `csc.view.defaultPlotSelections` | default selection already extracted; dropdown population stays runner |
-| Charge/CSC display formatting | `csc.view.formatChargeAndCSC` | already extracted |
-| Comparison readout and status text | `csc.view.comparisonReadout` | already extracted |
-| Trim overlay preparation | `csc.view.trimOverlayData` | already extracted |
-| Trim overlay cleanup and plotting | runner local `clearTrim`, `drawTrimOverlay` axes logic | runner |
-| Top/bottom plot-data, label, and log preparation | `csc.view.plotRequest` | already extracted |
-| Top/bottom axes drawing | runner with `labkit.ui.view.draw` | runner |
-| Reload, clear, current item selection | runner | runner |
+- `csc.ops.computeCSC`
+- `csc.view.defaultPlotSelections`
+- `csc.view.formatChargeAndCSC`
+- `csc.view.comparisonReadout`
+- `csc.view.trimOverlayData`
+- `csc.view.plotRequest`
 
-### Next Extraction Target
+Leave in the runner:
 
-CSC now has the obvious deterministic view helpers extracted. Stop shrinking
-the CSC runner unless a future change exposes another directly testable
-view-model that is not GUI callback choreography.
+- file and folder dialogs
+- session mutation
+- dropdown population
+- callback sequencing
+- trim overlay drawing and cleanup
+- top/bottom axes drawing
+- reload, clear, and current-item selection
 
-Do not move `plotTop`, `plotBottom`, or `refreshCompare` as one block. These
-callbacks still mix axes drawing, UI handle updates, trim drawing, status
-labels, and logging.
+Do not move `plotTop`, `plotBottom`, or `refreshCompare` as one block. They
+still mix axes drawing, UI handle updates, trim drawing, status labels, and
+logging.
 
-### Direct Test Target
-
-Direct electrochem unit tests now cover CSC formatting, default selections,
-trim overlay data, comparison readout, and plot request preparation. Future CSC
-runner edits should extend those tests only when new deterministic behavior is
-extracted.
+Future work is justified only when a new deterministic view-model appears and
+can be called by the GUI path with direct unit coverage.
 
 ## Completed Migration Baselines
 
-This section is a cold baseline. Read it only when changing these completed
-apps, updating their guardrails, or checking that a future migration preserves
-their invariants.
+These apps are completed baselines, not active roadmap work:
 
-### Wearable ECG Print
+| App | Location | Public command | Guardrail invariants |
+| --- | --- | --- | --- |
+| ECG Print | `apps/wearable/ecg_print/` | `labkit_ECGPrint_app` | no direct `apps/wearable/+ecg_print`; no wearable private runner; direct tests for non-UI helpers |
+| DIC Preprocess | `apps/dic/dic_preprocess/` | `labkit_DICPreprocess_app` | no `apps/dic/private/runDICPreprocessApp.m`; direct tests for non-UI helpers |
+| DIC Postprocess | `apps/dic/dic_postprocess/` | `labkit_DICPostprocess_app` | no `apps/dic/private/`; no `apps/dic/labkit_DICPostprocess_app.m`; direct tests for non-UI helpers |
 
-Current status: complete. ECG Print lives under
-`apps/wearable/ecg_print/`, keeps the public command
-`labkit_ECGPrint_app`, and uses `apps/wearable/ecg_print/+ecg_print/...` for
-directly tested app-owned helpers.
-
-Current responsibilities:
-
-- `+io`: import options and file-header preview.
-- `+ops`: peak method mapping.
-- `+view`: import status, summary rows, waveform/template plot requests.
-- `+export`: analysis table construction.
-- `+ui`: app-specific control construction and runner orchestration.
-
-Preserve these invariants:
-
-- no direct `apps/wearable/+ecg_print` package
-- no wearable private runner
-- direct wearable unit tests call non-UI `ecg_print` package helpers
-
-### DIC Preprocess
-
-Current status: complete. DIC Preprocess lives under
-`apps/dic/dic_preprocess/`, keeps the public command
-`labkit_DICPreprocess_app`, and uses
-`apps/dic/dic_preprocess/+dic_preprocess/...` for directly tested app-owned
-helpers. Its `+ui/runApp.m` runner is below the 500-line debt threshold.
-
-Current responsibilities:
-
-| Class | Destination |
-| --- | --- |
-| Image geometry, registration support, false-color preview, and masks | `+ops/` |
-| Preview and display data | `+view/` |
-| Export builders | `+export/` |
-| File/path defaults | `+io/` |
-| Default state structs | `+state/` |
-| GUI control construction | `+ui/` |
-| Callback-only coordination | runner |
-
-Preserve these invariants:
-
-- `apps/dic/private/runDICPreprocessApp.m` stays removed
-- DIC Preprocess package helpers keep direct unit coverage
-
-### DIC Postprocess
-
-Current status: complete. DIC Postprocess lives under
-`apps/dic/dic_postprocess/`, keeps the public command
-`labkit_DICPostprocess_app`, and uses
-`apps/dic/dic_postprocess/+dic_postprocess/...` for directly tested app-owned
-helpers.
-
-Current responsibilities:
-
-| Class | Destination |
-| --- | --- |
-| Ncorr MAT loading and image file selection | `+io/` |
-| Strain masks, valid-map handling, RGB conversion, overlays, and summaries | `+ops/` |
-| Display paths, export tags, summary table data, and colorbar level tables | `+view/` |
-| Overlay and colorbar PNG writers | `+export/` |
-| App-specific axes image rendering | `+ui/` |
-| GUI state, callbacks, alerts, and log wording | public app entrypoint |
-
-Preserve these invariants:
-
-- `apps/dic/private/` stays removed
-- `apps/dic/labkit_DICPostprocess_app.m` stays removed
-- DIC Postprocess package helpers keep direct unit coverage
-- interactive point selection, crop dragging, mask drawing, and visual output
-  review remain manual GUI checks unless a focused noninteractive tool test is
-  added
+Manual GUI review still applies to visual workflows such as point selection,
+crop dragging, mask drawing, strain overlay inspection, and workflow feel.
 
 ## Active Roadmap
 
-### Phase 0: Keep Governance Current
+1. Keep debt inventories exact.
+   Remove stale expected-debt entries from guardrails and this guide as soon as
+   debt is retired. Do not keep completed DIC or ECG work as active phases.
 
-Goal: keep exact debt inventories trustworthy.
+2. Finish only valuable CIC/CSC runner normalization.
+   Extract no more than directly testable deterministic behavior used by the
+   GUI path. If the remaining code is axes/callback choreography, stop and keep
+   the documented debt map until the runner falls below threshold naturally.
 
-Actions:
+3. Complete private contract hygiene.
+   Add concise top-of-file implementation contracts for remaining `+labkit`
+   private helpers: expected caller, input/output shape, side effects, and
+   non-obvious assumptions.
 
-- Remove debt inventory entries that no longer match current facts.
-- Split broad guardrail files only when new unrelated checks are needed.
-- Keep `docs/testing.md` as the only human-facing command matrix.
-- Keep this guide as the only agent-facing migration roadmap.
+4. Simplify guardrails only when failures become hard to interpret.
+   Split by concern or introduce structured inventory helpers when that lowers
+   maintenance cost. Do not add governance machinery just because migration
+   guidance exists.
 
-Exit criteria:
-
-- Oversized-runner inventory matches actual oversized runners.
-- App `private/` debt inventory matches actual helper files.
-- No human doc duplicates agent execution procedures.
-
-### Phase 1: Finish CIC And CSC Runner Normalization
-
-Goal: make oversized electrochem runners orchestration-only where further
-deterministic view-models still exist.
-
-Actions:
-
-- Do not move axes/callback blocks wholesale.
-- Extract only behavior that can be directly tested and called by the GUI path.
-- Extend focused electrochem unit tests only when new deterministic behavior is
-  extracted.
-
-Exit criteria:
-
-- No runner keeps a local copy of a package helper.
-- New deterministic behavior enters package helpers first.
-- CIC and CSC either fall below the 500-line threshold or keep documented maps
-  because remaining code is axes/callback choreography.
-
-### Phase 2: Completed DIC Postprocess Private Helper Migration
-
-Status: complete. DIC Postprocess has moved to `apps/dic/dic_postprocess/`
-with app-owned `+dic_postprocess` component packages. `apps/dic/private/` is
-no longer an allowed debt directory.
-
-Preserve:
-
-- DIC Postprocess keeps the public command `labkit_DICPostprocess_app`.
-- Direct DIC unit tests cover non-UI `dic_postprocess` package helpers.
-- GUI structural tests cover launch and layout; full visual strain review
-  remains manual.
-
-### Phase 3: Complete Private Contract Hygiene
-
-Goal: make private implementation readable enough for future refactors.
-
-Actions:
-
-- Finish top-of-file implementation contracts for remaining `+labkit` private
-  helpers.
-- Keep contracts concise: expected caller, input/output shape, side effects,
-  assumptions.
-- Remove stale comments that describe old app boundaries.
-
-Exit criteria:
-
-- No private helper contract debt inventory remains.
-- New private helpers without contracts fail project guardrails.
-
-### Phase 4: Modernize Guardrails
-
-Goal: prevent the governance layer from becoming another large runner.
-
-Actions:
-
-- Split guardrails by concern when files become broad.
-- Convert exact debt lists into structured inventory helpers when lists are
-  still needed.
-- Keep exact file-list assertions only for stable public surfaces and temporary
-  debt inventories.
-
-Exit criteria:
-
-- A guardrail failure points to one concern.
-- Debt dashboards are easy to update when debt shrinks.
-- Adding a new app does not require editing unrelated project guardrails.
-
-## Validation For Migration Work
+## Validation Routing
 
 Use `docs/testing.md` for exact commands. Default routing:
 
 | Change | Minimum validation |
 | --- | --- |
 | Debt inventory, app path, package boundary, or this guide | `testProject` |
-| Electrochem app-owned calculations/export/view helpers | `testAppsElectrochem`; add `testAppsElectrochemGui` for layout/wiring |
+| Electrochem app-owned helpers | `testAppsElectrochem`; add `testAppsElectrochemGui` for layout or wiring |
 | DIC app-owned helpers or DIC migration | `testAppsDicGui` plus `testProject` |
 | Wearable app-owned helpers or migration regression | `testAppsWearableGui` plus `testProject` |
 | Reusable UI boundary | `testLabkitUiGui`; add affected app-family GUI tasks |
 
-Automated GUI tests are structural. Interactive file selection, drawing,
-visual inspection, and full workflow feel remain manual GUI validation.
-
 After any push intended to complete work, inspect CI. If required CI fails,
-read the failing logs, fix the underlying issue, rerun relevant local checks,
-push again, and repeat until CI passes or a real infrastructure/access blocker
-is reported.
+read only failing job logs, fix the issue, rerun relevant local checks, push,
+and repeat until CI passes or an infrastructure/access blocker is explicit.
 
 ## Anti-Patterns
 
