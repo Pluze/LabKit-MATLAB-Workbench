@@ -33,11 +33,11 @@ function C = buildControls(callbacks)
     curveUi = labkit.ui.view.section(ui.filesAnalysisGrid, 'Curve', 2, [4 2]);
     gf = curveUi.grid;
     uilabel(gf, 'Text', 'File:', 'HorizontalAlignment', 'right');
-    C.txtFile = labkit.ui.view.form(gf, 'readonly');
+    C.txtFile = labkit.ui.view.form(gf, struct('kind', 'readonly'));
     C.txtFile.Layout.Row = 1; C.txtFile.Layout.Column = 2;
 
     uilabel(gf, 'Text', 'Scan rate:', 'HorizontalAlignment', 'right');
-    C.txtScan = labkit.ui.view.form(gf, 'readonly');
+    C.txtScan = labkit.ui.view.form(gf, struct('kind', 'readonly'));
     C.txtScan.Layout.Row = 2; C.txtScan.Layout.Column = 2;
 
     uilabel(gf, 'Text', 'Curve:', 'HorizontalAlignment', 'right');
@@ -82,23 +82,23 @@ function C = buildControls(callbacks)
     C.edArea.Layout.Row = 2; C.edArea.Layout.Column = 2;
 
     uilabel(gc, 'Text', 'CT charge / CSC:', 'HorizontalAlignment', 'right');
-    C.txtQct = labkit.ui.view.form(gc, 'readonly');
+    C.txtQct = labkit.ui.view.form(gc, struct('kind', 'readonly'));
     C.txtQct.Layout.Row = 3; C.txtQct.Layout.Column = 2;
 
     uilabel(gc, 'Text', 'CV charge / CSC:', 'HorizontalAlignment', 'right');
-    C.txtQcv = labkit.ui.view.form(gc, 'readonly');
+    C.txtQcv = labkit.ui.view.form(gc, struct('kind', 'readonly'));
     C.txtQcv.Layout.Row = 4; C.txtQcv.Layout.Column = 2;
 
     uilabel(gc, 'Text', 'Difference:', 'HorizontalAlignment', 'right');
-    C.txtDiff = labkit.ui.view.form(gc, 'readonly');
+    C.txtDiff = labkit.ui.view.form(gc, struct('kind', 'readonly'));
     C.txtDiff.Layout.Row = 5; C.txtDiff.Layout.Column = 2;
 
     uilabel(gc, 'Text', 'Relative diff:', 'HorizontalAlignment', 'right');
-    C.txtRel = labkit.ui.view.form(gc, 'readonly');
+    C.txtRel = labkit.ui.view.form(gc, struct('kind', 'readonly'));
     C.txtRel.Layout.Row = 6; C.txtRel.Layout.Column = 2;
 
     uilabel(gc, 'Text', 'max|dt-|dV|/v|:', 'HorizontalAlignment', 'right');
-    C.txtDtErr = labkit.ui.view.form(gc, 'readonly');
+    C.txtDtErr = labkit.ui.view.form(gc, struct('kind', 'readonly'));
     C.txtDtErr.Layout.Row = 7; C.txtDtErr.Layout.Column = 2;
 
     C.lblStatus = uilabel(gc, 'Text', 'Ready');

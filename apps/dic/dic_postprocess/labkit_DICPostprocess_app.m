@@ -71,13 +71,19 @@ function varargout = labkit_DICPostprocess_app(varargin)
     btnMask.Layout.Row = 2;
     btnMask.Layout.Column = [1 2];
 
-    txtMat = labkit.ui.view.form(fileGrid, 'readonly', 'Value', 'No MAT file loaded');
+    txtMat = labkit.ui.view.form(fileGrid, struct( ...
+        'kind', 'readonly', ...
+        'value', 'No MAT file loaded'));
     txtMat.Layout.Row = 3;
     txtMat.Layout.Column = [1 2];
-    txtReference = labkit.ui.view.form(fileGrid, 'readonly', 'Value', 'No reference image loaded');
+    txtReference = labkit.ui.view.form(fileGrid, struct( ...
+        'kind', 'readonly', ...
+        'value', 'No reference image loaded'));
     txtReference.Layout.Row = 4;
     txtReference.Layout.Column = [1 2];
-    txtMask = labkit.ui.view.form(fileGrid, 'readonly', 'Value', 'No mask image loaded');
+    txtMask = labkit.ui.view.form(fileGrid, struct( ...
+        'kind', 'readonly', ...
+        'value', 'No mask image loaded'));
     txtMask.Layout.Row = 5;
     txtMask.Layout.Column = [1 2];
 
@@ -90,37 +96,24 @@ function varargout = labkit_DICPostprocess_app(varargin)
         struct('rowHeight', {{'fit', 'fit', 'fit', 'fit', 'fit', 'fit'}}));
     optionGrid = optionPanel.grid;
 
-    [~, edAlpha] = labkit.ui.view.form(optionGrid, 'spinner', 'Alpha:', ...
-        'Value', 0.60, 'Limits', [0 1], 'Step', 0.05, 'ValueChangedFcn', @onOptionsChanged);
-    [~, edMin] = labkit.ui.view.form(optionGrid, 'spinner', 'Color min:', ...
-        'Value', -0.15, 'Step', 0.01, 'ValueChangedFcn', @onOptionsChanged);
-    [~, edMax] = labkit.ui.view.form(optionGrid, 'spinner', 'Color max:', ...
-        'Value', 0.15, 'Step', 0.01, 'ValueChangedFcn', @onOptionsChanged);
-    [~, edOversample] = labkit.ui.view.form(optionGrid, 'spinner', 'Oversample:', ...
-        'Value', 6, 'Limits', [1 20], 'Step', 1, 'ValueChangedFcn', @onOptionsChanged);
-    [~, edSigma] = labkit.ui.view.form(optionGrid, 'spinner', 'Smooth sigma:', ...
-        'Value', 0.8, 'Limits', [0 Inf], 'Step', 0.1, 'ValueChangedFcn', @onOptionsChanged);
-    [~, edResolution] = labkit.ui.view.form(optionGrid, 'spinner', 'Export DPI:', ...
-        'Value', 1000, 'Limits', [72 2400], 'Step', 50);
+    [~, edAlpha] = labkit.ui.view.form(optionGrid, struct('kind', 'spinner', 'label', 'Alpha:', 'value', 0.60, 'limits', [0 1], 'step', 0.05, 'callback', @onOptionsChanged));
+    [~, edMin] = labkit.ui.view.form(optionGrid, struct('kind', 'spinner', 'label', 'Color min:', 'value', -0.15, 'step', 0.01, 'callback', @onOptionsChanged));
+    [~, edMax] = labkit.ui.view.form(optionGrid, struct('kind', 'spinner', 'label', 'Color max:', 'value', 0.15, 'step', 0.01, 'callback', @onOptionsChanged));
+    [~, edOversample] = labkit.ui.view.form(optionGrid, struct('kind', 'spinner', 'label', 'Oversample:', 'value', 6, 'limits', [1 20], 'step', 1, 'callback', @onOptionsChanged));
+    [~, edSigma] = labkit.ui.view.form(optionGrid, struct('kind', 'spinner', 'label', 'Smooth sigma:', 'value', 0.8, 'limits', [0 Inf], 'step', 0.1, 'callback', @onOptionsChanged));
+    [~, edResolution] = labkit.ui.view.form(optionGrid, struct('kind', 'spinner', 'label', 'Export DPI:', 'value', 1000, 'limits', [72 2400], 'step', 50));
 
     imagePanel = labkit.ui.view.section(layFA, 'Optical Image Enhancement', 3, [7 2], ...
         struct('rowHeight', {{'fit', 'fit', 'fit', 'fit', 'fit', 'fit', 'fit'}}));
     imageGrid = imagePanel.grid;
 
-    [~, edBrightness] = labkit.ui.view.form(imageGrid, 'spinner', 'Brightness:', ...
-        'Value', 0, 'Limits', [-1 1], 'Step', 0.05, 'ValueChangedFcn', @onOptionsChanged);
-    [~, edContrast] = labkit.ui.view.form(imageGrid, 'spinner', 'Contrast:', ...
-        'Value', 1, 'Limits', [0.05 5], 'Step', 0.05, 'ValueChangedFcn', @onOptionsChanged);
-    [~, edGamma] = labkit.ui.view.form(imageGrid, 'spinner', 'Gamma:', ...
-        'Value', 1, 'Limits', [0.05 5], 'Step', 0.05, 'ValueChangedFcn', @onOptionsChanged);
-    [~, edSaturation] = labkit.ui.view.form(imageGrid, 'spinner', 'Saturation:', ...
-        'Value', 1, 'Limits', [0 5], 'Step', 0.05, 'ValueChangedFcn', @onOptionsChanged);
-    [~, edRedGain] = labkit.ui.view.form(imageGrid, 'spinner', 'Red gain:', ...
-        'Value', 1, 'Limits', [0 5], 'Step', 0.05, 'ValueChangedFcn', @onOptionsChanged);
-    [~, edGreenGain] = labkit.ui.view.form(imageGrid, 'spinner', 'Green gain:', ...
-        'Value', 1, 'Limits', [0 5], 'Step', 0.05, 'ValueChangedFcn', @onOptionsChanged);
-    [~, edBlueGain] = labkit.ui.view.form(imageGrid, 'spinner', 'Blue gain:', ...
-        'Value', 1, 'Limits', [0 5], 'Step', 0.05, 'ValueChangedFcn', @onOptionsChanged);
+    [~, edBrightness] = labkit.ui.view.form(imageGrid, struct('kind', 'spinner', 'label', 'Brightness:', 'value', 0, 'limits', [-1 1], 'step', 0.05, 'callback', @onOptionsChanged));
+    [~, edContrast] = labkit.ui.view.form(imageGrid, struct('kind', 'spinner', 'label', 'Contrast:', 'value', 1, 'limits', [0.05 5], 'step', 0.05, 'callback', @onOptionsChanged));
+    [~, edGamma] = labkit.ui.view.form(imageGrid, struct('kind', 'spinner', 'label', 'Gamma:', 'value', 1, 'limits', [0.05 5], 'step', 0.05, 'callback', @onOptionsChanged));
+    [~, edSaturation] = labkit.ui.view.form(imageGrid, struct('kind', 'spinner', 'label', 'Saturation:', 'value', 1, 'limits', [0 5], 'step', 0.05, 'callback', @onOptionsChanged));
+    [~, edRedGain] = labkit.ui.view.form(imageGrid, struct('kind', 'spinner', 'label', 'Red gain:', 'value', 1, 'limits', [0 5], 'step', 0.05, 'callback', @onOptionsChanged));
+    [~, edGreenGain] = labkit.ui.view.form(imageGrid, struct('kind', 'spinner', 'label', 'Green gain:', 'value', 1, 'limits', [0 5], 'step', 0.05, 'callback', @onOptionsChanged));
+    [~, edBlueGain] = labkit.ui.view.form(imageGrid, struct('kind', 'spinner', 'label', 'Blue gain:', 'value', 1, 'limits', [0 5], 'step', 0.05, 'callback', @onOptionsChanged));
 
     exportPanel = labkit.ui.view.section(layFA, 'Exports', 4, [3 2], ...
         struct('rowHeight', {{'fit', 'fit', 'fit'}}, 'columnWidth', {{'1x', '1x'}}));
