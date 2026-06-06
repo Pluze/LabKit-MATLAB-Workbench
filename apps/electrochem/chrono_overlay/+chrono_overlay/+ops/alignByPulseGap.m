@@ -54,10 +54,10 @@ function [item, msg] = alignByPulseGap(item)
 end
 
 function t = chronoTime(item)
-    if isfield(item, 't') && ~isempty(item.t)
-        t = item.t;
-    elseif isfield(item, 't_s') && ~isempty(item.t_s)
+    if isfield(item, 't_s') && ~isempty(item.t_s)
         t = item.t_s;
+    elseif isfield(item, 't') && ~isempty(item.t)
+        t = item.t;
     else
         t = [];
     end

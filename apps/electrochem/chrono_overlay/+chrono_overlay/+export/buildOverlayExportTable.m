@@ -33,30 +33,30 @@ function T = buildOverlayExportTable(items)
 end
 
 function t = chronoAlignedTime(item)
-    if isfield(item, 'tAligned') && ~isempty(item.tAligned)
-        t = item.tAligned(:);
-    elseif isfield(item, 'tAligned_s') && ~isempty(item.tAligned_s)
+    if isfield(item, 'tAligned_s') && ~isempty(item.tAligned_s)
         t = item.tAligned_s(:);
+    elseif isfield(item, 'tAligned') && ~isempty(item.tAligned)
+        t = item.tAligned(:);
     else
         t = [];
     end
 end
 
 function v = chronoVoltage(item)
-    if isfield(item, 'Vf') && ~isempty(item.Vf)
-        v = item.Vf(:);
-    elseif isfield(item, 'Vf_V') && ~isempty(item.Vf_V)
+    if isfield(item, 'Vf_V') && ~isempty(item.Vf_V)
         v = item.Vf_V(:);
+    elseif isfield(item, 'Vf') && ~isempty(item.Vf)
+        v = item.Vf(:);
     else
         v = [];
     end
 end
 
 function i = chronoCurrent(item)
-    if isfield(item, 'Im') && ~isempty(item.Im)
-        i = item.Im(:);
-    elseif isfield(item, 'Im_A') && ~isempty(item.Im_A)
+    if isfield(item, 'Im_A') && ~isempty(item.Im_A)
         i = item.Im_A(:);
+    elseif isfield(item, 'Im') && ~isempty(item.Im)
+        i = item.Im(:);
     else
         i = [];
     end

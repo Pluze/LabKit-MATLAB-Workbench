@@ -20,9 +20,9 @@ end
 function checkGapCenterAlignment()
     item = struct();
     item.name = 'synthetic chrono';
-    item.t = (0:0.1:0.8).';
-    item.Vf = zeros(size(item.t));
-    item.Im = zeros(size(item.t));
+    item.t_s = (0:0.1:0.8).';
+    item.Vf_V = zeros(size(item.t_s));
+    item.Im_A = zeros(size(item.t_s));
     item.pulse = struct('ok', true, ...
         'gap_start', 0.3, ...
         'gap_end', 0.5, ...
@@ -30,12 +30,10 @@ function checkGapCenterAlignment()
 
     [aligned, msg] = chrono_overlay.ops.alignByPulseGap(item);
 
-    assertClose(aligned.alignTime, 0.4, 1e-12, ...
+    assertClose(aligned.alignTime_s, 0.4, 1e-12, ...
         'Chrono overlay gap-center align time');
-    assertClose(aligned.tAligned, item.t - 0.4, 1e-12, ...
+    assertClose(aligned.tAligned_s, item.t_s - 0.4, 1e-12, ...
         'Chrono overlay gap-center aligned vector');
-    assertClose(aligned.tAligned_s, aligned.tAligned, ...
-        'Chrono overlay aligned-time alias');
     assert(contains(msg, 'blank center'), ...
         'Alignment message should report gap-center alignment.');
 end
@@ -43,16 +41,16 @@ end
 function checkFallbackAlignment()
     item = struct();
     item.name = 'synthetic fallback chrono';
-    item.t = (2:4).';
-    item.Vf = zeros(size(item.t));
-    item.Im = zeros(size(item.t));
+    item.t_s = (2:4).';
+    item.Vf_V = zeros(size(item.t_s));
+    item.Im_A = zeros(size(item.t_s));
     item.pulse = struct('ok', false, 'message', 'synthetic pulse not found');
 
     [aligned, msg] = chrono_overlay.ops.alignByPulseGap(item);
 
-    assertClose(aligned.alignTime, 2, 1e-12, ...
+    assertClose(aligned.alignTime_s, 2, 1e-12, ...
         'Chrono overlay fallback align time');
-    assertClose(aligned.tAligned, [0; 1; 2], 1e-12, ...
+    assertClose(aligned.tAligned_s, [0; 1; 2], 1e-12, ...
         'Chrono overlay fallback aligned vector');
     assert(contains(msg, 'fallback to first sample'), ...
         'Fallback alignment message should explain the first-sample fallback.');
@@ -99,10 +97,9 @@ end
 function item = makeOverlayItem(name, tAligned, Vf, Im)
     item = struct();
     item.name = name;
-    item.tAligned = tAligned(:);
     item.tAligned_s = tAligned(:);
-    item.Vf = Vf(:);
-    item.Im = Im(:);
+    item.Vf_V = Vf(:);
+    item.Im_A = Im(:);
 end
 
 function assertHasColumn(T, name)

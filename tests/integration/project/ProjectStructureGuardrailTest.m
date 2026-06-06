@@ -136,14 +136,11 @@ classdef ProjectStructureGuardrailTest < matlab.unittest.TestCase
             root = setupLabKitTestPath();
 
             assertImageMeasurementPackageLayout(testCase, root, ...
-                'batch_crop', 'batch_crop', ...
-                {'+export', '+io', '+ops', '+state', '+ui', '+view'});
+                'batch_crop', 'batch_crop', 'labkit_BatchImageCrop_app.m');
             assertImageMeasurementPackageLayout(testCase, root, ...
-                'curvature', 'curvature', ...
-                {'+export', '+ops', '+state', '+ui', '+view'});
+                'curvature', 'curvature', 'labkit_CurvatureMeasurement_app.m');
             assertImageMeasurementPackageLayout(testCase, root, ...
-                'focus_stack', 'focus_stack', ...
-                {'+export', '+io', '+ops', '+state', '+view'});
+                'focus_stack', 'focus_stack', 'labkit_FocusStack_app.m');
         end
 
         function electrochemAppsUseOwnedPackageNamespaces(testCase)
@@ -156,20 +153,15 @@ classdef ProjectStructureGuardrailTest < matlab.unittest.TestCase
                 'Electrochem apps should not keep string-dispatch workflow adapters.');
 
             assertElectrochemPackageLayout(testCase, root, ...
-                'chrono_overlay', 'chrono_overlay', ...
-                {'+export', '+ops', '+ui', '+view'});
+                'chrono_overlay', 'chrono_overlay');
             assertElectrochemPackageLayout(testCase, root, ...
-                'cic', 'cic', ...
-                {'+export', '+ops', '+ui', '+view'});
+                'cic', 'cic');
             assertElectrochemPackageLayout(testCase, root, ...
-                'csc', 'csc', ...
-                {'+ops', '+ui'});
+                'csc', 'csc');
             assertElectrochemPackageLayout(testCase, root, ...
-                'eis', 'eis', ...
-                {'+export', '+ops', '+ui', '+view'});
+                'eis', 'eis');
             assertElectrochemPackageLayout(testCase, root, ...
-                'vt_resistance', 'vt_resistance', ...
-                {'+export', '+ops', '+ui', '+view'});
+                'vt_resistance', 'vt_resistance');
         end
 
         function sensitiveSampleHygieneScansTrackedText(testCase)
@@ -213,7 +205,7 @@ classdef ProjectStructureGuardrailTest < matlab.unittest.TestCase
     end
 end
 
-function assertElectrochemPackageLayout(testCase, root, appFolder, packageName, componentDirs)
+function assertElectrochemPackageLayout(testCase, root, appFolder, packageName)
     appDir = fullfile(root, 'apps', 'electrochem', appFolder);
     packageDir = fullfile(appDir, ['+' packageName]);
 
@@ -228,17 +220,8 @@ function assertElectrochemPackageLayout(testCase, root, appFolder, packageName, 
     workflowFiles = dir(fullfile(appDir, '*Workflow.m'));
     testCase.verifyTrue(isempty(workflowFiles), ...
         ['Electrochem app should not keep workflow dispatch adapters: ' appFolder]);
-    testCase.verifyTrue(isfolder(packageDir), ...
-        ['Missing electrochem app-owned package namespace: ' relativePath(root, packageDir)]);
-
-    packageFiles = dir(fullfile(packageDir, '**', '*.m'));
-    testCase.verifyFalse(isempty(packageFiles), ...
-        ['Electrochem app-owned package should contain helper files: ' relativePath(root, packageDir)]);
-    for iDir = 1:numel(componentDirs)
-        testCase.verifyTrue(isfolder(fullfile(packageDir, componentDirs{iDir})), ...
-            ['Missing electrochem component package ' componentDirs{iDir} ...
-            ' under ' relativePath(root, packageDir)]);
-    end
+    assertAppOwnedPackageCapability(testCase, root, appDir, packageDir, ...
+        'electrochem', packageName);
 end
 
 function name = appEntrypointName(appFolder)
@@ -258,12 +241,14 @@ function name = appEntrypointName(appFolder)
     end
 end
 
-function assertImageMeasurementPackageLayout(testCase, root, appFolder, packageName, componentDirs)
+function assertImageMeasurementPackageLayout(testCase, root, appFolder, packageName, entrypointName)
     appDir = fullfile(root, 'apps', 'image_measurement', appFolder);
     packageDir = fullfile(appDir, ['+' packageName]);
 
     testCase.verifyTrue(isfolder(appDir), ...
         ['Missing image-measurement app folder: apps/image_measurement/' appFolder]);
+    testCase.verifyTrue(isfile(fullfile(appDir, entrypointName)), ...
+        ['Missing image-measurement app entrypoint under ' relativePath(root, appDir)]);
     testCase.verifyFalse(isfolder(fullfile(appDir, 'private')), ...
         ['Image-measurement app should use an app-owned package, not private/: ' appFolder]);
     testCase.verifyFalse(isfolder(fullfile(appDir, '+app')), ...
@@ -271,16 +256,64 @@ function assertImageMeasurementPackageLayout(testCase, root, appFolder, packageN
     workflowFiles = dir(fullfile(appDir, '*Workflow.m'));
     testCase.verifyTrue(isempty(workflowFiles), ...
         ['Image-measurement app should not keep workflow dispatch adapters: ' appFolder]);
+    assertAppOwnedPackageCapability(testCase, root, appDir, packageDir, ...
+        'image_measurement', packageName);
+end
+
+function assertAppOwnedPackageCapability(testCase, root, appDir, packageDir, family, packageName)
     testCase.verifyTrue(isfolder(packageDir), ...
         ['Missing app-owned package namespace: ' relativePath(root, packageDir)]);
+    testCase.verifyFalse(isfolder(fullfile(packageDir, '+core')), ...
+        ['App-owned package should not route through +core: ' relativePath(root, packageDir)]);
+    testCase.verifyFalse(isfile(fullfile(packageDir, '+core', 'dispatch.m')), ...
+        ['App-owned package should not keep +core/dispatch.m: ' relativePath(root, packageDir)]);
 
     packageFiles = dir(fullfile(packageDir, '**', '*.m'));
     testCase.verifyFalse(isempty(packageFiles), ...
         ['App-owned package should contain helper files: ' relativePath(root, packageDir)]);
-    for iDir = 1:numel(componentDirs)
-        testCase.verifyTrue(isfolder(fullfile(packageDir, componentDirs{iDir})), ...
-            ['Missing app-owned component package ' componentDirs{iDir} ...
-            ' under ' relativePath(root, packageDir)]);
+    testCase.verifyTrue(hasNonUiPackageComponent(packageDir), ...
+        ['App-owned package should expose directly testable non-UI behavior: ' ...
+        relativePath(root, packageDir)]);
+    testCase.verifyTrue(packageNamespaceHasDirectUnitTest(root, family, packageName), ...
+        ['App-owned non-UI package functions should have direct unit tests: ' ...
+        relativePath(root, packageDir)]);
+
+    uiRunApp = fullfile(packageDir, '+ui', 'runApp.m');
+    if isfile(uiRunApp)
+        testCase.verifyTrue(numel(packageFiles) > 1, ...
+            ['App-owned package should not be only a +ui/runApp.m wrapper: ' ...
+            relativePath(root, appDir)]);
+    end
+end
+
+function tf = hasNonUiPackageComponent(packageDir)
+    componentNames = {'+ops', '+view', '+export', '+io', '+state'};
+    tf = false;
+    for k = 1:numel(componentNames)
+        componentRoot = fullfile(packageDir, componentNames{k});
+        files = dir(fullfile(componentRoot, '*.m'));
+        if isfolder(componentRoot) && any(~[files.isdir])
+            tf = true;
+            return;
+        end
+    end
+end
+
+function tf = packageNamespaceHasDirectUnitTest(root, family, packageName)
+    testRoot = fullfile(root, 'tests', 'unit', 'apps', family);
+    if ~isfolder(testRoot)
+        tf = false;
+        return;
+    end
+
+    pattern = [packageName '\.(ops|view|export|io|state)\.'];
+    testFiles = collectTextFiles(testRoot);
+    tf = false;
+    for k = 1:numel(testFiles)
+        if ~isempty(regexp(fileread(testFiles{k}), pattern, 'once'))
+            tf = true;
+            return;
+        end
     end
 end
 

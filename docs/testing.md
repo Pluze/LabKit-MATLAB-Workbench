@@ -194,6 +194,17 @@ Shared setup, structural GUI assertions, and focused support routines live under
 
 Architecture guardrails are split by concern under `tests/integration/project/`: public package surface, reusable package dependency boundaries, app entrypoint boundaries, and app-owned workflow boundaries. These guardrails may require workflow code to remain under the owning app tree, but they should not require GUI-free helpers to stay in the public app entry-point file. App-owned packages are checked by boundary rules rather than exact file-list assertions.
 
+Compatibility bridge behavior should be isolated in named compatibility tests.
+For example, DTA legacy bridge fields such as `t`, `Vf`, `Im`, `Freq`, and
+`Zreal` are covered by `DtaCompatibilityBridgeTest`; ordinary DTA and app
+tests should use canonical unit-explicit fields and direct app-owned package
+functions.
+
+Unit app tests should not read app source text to prove behavior. Source-string
+scans belong in project guardrails; app behavior tests should call package
+functions directly or use GUI structural tests when the behavior is layout or
+callback wiring.
+
 When a suite file becomes broad enough that unrelated changes must read hundreds of lines, add a narrower `test_*.m` file in the same suite instead of appending more coverage to the broad file.
 
 ## GUI Validation

@@ -4,28 +4,38 @@
 function values = valuesForAxis(item, axisName)
     switch axisName
         case 'Freq (Hz)'
-            values = item.Freq;
+            values = itemField(item, 'freq_Hz', 'Freq');
         case 'log10(Freq)'
-            values = log10(item.Freq);
+            values = log10(itemField(item, 'freq_Hz', 'Freq'));
         case 'Time (s)'
-            values = item.Time;
+            values = itemField(item, 'time_s', 'Time');
         case 'Point #'
-            values = item.Pt;
+            values = itemField(item, 'point', 'Pt');
         case 'Zreal (ohm)'
-            values = item.Zreal;
+            values = itemField(item, 'Zreal_ohm', 'Zreal');
         case 'Zimag (ohm)'
-            values = item.Zimag;
+            values = itemField(item, 'Zimag_ohm', 'Zimag');
         case '-Zimag (ohm)'
-            values = item.negZimag;
+            values = itemField(item, 'negZimag_ohm', 'negZimag');
         case 'Zmod (ohm)'
-            values = item.Zmod;
+            values = itemField(item, 'Zmod_ohm', 'Zmod');
         case 'Zphz (deg)'
-            values = item.Zphz;
+            values = itemField(item, 'Zphz_deg', 'Zphz');
         case 'Idc (A)'
-            values = item.Idc;
+            values = itemField(item, 'Idc_A', 'Idc');
         case 'Vdc (V)'
-            values = item.Vdc;
+            values = itemField(item, 'Vdc_V', 'Vdc');
         otherwise
             error('Unsupported axis selection: %s', axisName);
+    end
+end
+
+function values = itemField(item, canonicalName, legacyName)
+    if isfield(item, canonicalName) && ~isempty(item.(canonicalName))
+        values = item.(canonicalName);
+    elseif isfield(item, legacyName) && ~isempty(item.(legacyName))
+        values = item.(legacyName);
+    else
+        values = [];
     end
 end

@@ -19,6 +19,8 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
 - Use `tests/support/` for official-runner setup, artifact paths, structured
   trace capture, GUI fixture setup, and component snapshots.
 - Do not move app-specific formulas, expected scientific values, result schemas, or export columns into shared test helpers.
+- Keep compatibility bridge assertions isolated in named compatibility tests. Ordinary app and facade tests should prefer current canonical fields and direct package functions.
+- Unit app tests should not read app source text to prove behavior. Keep source-string scans in project guardrails.
 - Boundary tests may require app-owned logic to stay under the owning app tree, but should not require GUI-free helpers to remain inside the public app entry-point file or assert exact app-private helper file lists.
 - Runner-migration tests should not rely only on GUI structural launches. When
   migration creates an app-owned package for DIC or wearable apps, add unit
