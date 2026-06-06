@@ -97,7 +97,6 @@ Use view helpers for app-neutral rendering boilerplate:
 ax = labkit.ui.view.axes(parent, 1, 'Preview', 'X', 'Y');
 labkit.ui.view.draw(ax, 'reset', 'Preview', true);
 hImage = labkit.ui.view.draw(ax, 'image', imageData, 'Reference');
-info = labkit.ui.view.draw(ax, 'xy', x, y, labels, opts);
 labkit.ui.view.draw(ax, 'popout');
 ```
 

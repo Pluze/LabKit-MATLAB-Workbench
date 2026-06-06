@@ -1,26 +1,10 @@
-% Private UI view helper. Expected caller: labkit.ui.view panel, control,
-% plot, or text facades. Inputs and outputs are internal UI handles, labels,
-% selections, table data, or plot info. Side effects are limited to supplied UI
-% parents or axes; assumes the caller owns callbacks and app state.
+% App-owned CSC plotting helper. Expected caller: csc.ui.runApp plot callbacks.
+% Inputs are a target axes, prepared X/Y vectors, label struct, and display
+% options. Output is a status struct for runner logging. Side effects are
+% limited to drawing on the supplied axes; assumes csc.view.plotRequest prepared
+% app-specific data and log text.
 function info = plotXY(ax, x, y, labels, opts)
-%PLOTXY Plot one prepared X/Y numeric series.
-%
-% Usage:
-%   info = plotXY(ax, x, y, struct('x','Time','y','Voltage'));
-%
-% Inputs:
-%   ax - target axes.
-%   x, y - numeric vectors of equal length.
-%   labels - optional struct with title, x, and y fields; defaults blank.
-%   opts - optional struct.
-%
-% Options:
-%   holdPlot - logical, default false; false clears axes before plotting.
-%   showGrid - logical or MATLAB grid value, default true.
-%   lineWidth - positive scalar, default 1.2.
-%
-% Output:
-%   info - status struct with ok, message, x/y vectors, and x/y names.
+%PLOTXY Plot one prepared CSC X/Y numeric series.
 
     if nargin < 4
         labels = struct();
