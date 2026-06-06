@@ -59,9 +59,9 @@ classdef ProjectDebtGuardrailTest < matlab.unittest.TestCase
         function oversizedRunnersHaveMigrationMaps(testCase)
             root = setupLabKitTestPath();
             actualFiles = collectOversizedAppRunners(root, 500);
-            mapFile = fullfile(root, 'docs', 'runner_migration_maps.md');
+            mapFile = fullfile(root, '.agents', 'migration_guide.md');
             testCase.assertTrue(isfile(mapFile), ...
-                'docs/runner_migration_maps.md should track every oversized runner.');
+                '.agents/migration_guide.md should track every oversized runner.');
 
             mappedFiles = collectRunnerMigrationMapFiles(mapFile);
             missingFiles = setdiff(actualFiles, mappedFiles);

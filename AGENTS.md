@@ -20,6 +20,10 @@ Read component docs only when relevant:
 - `docs/apps.md` for app entrypoints, app-owned workflow, or new app work
 - `docs/testing.md` for validation choices or test layout changes
 
+Read `.agents/migration_guide.md` for app-runner migrations, debt burn-down
+planning, oversized-runner maps, app `private/` debt, or future migration
+sequencing.
+
 ## Core Rules
 
 - Preserve behavior unless the user explicitly asks for a behavior change.
@@ -98,9 +102,10 @@ Interactive GUI workflows are checked manually by the user. Do not run interacti
 7. Commit with a concise Conventional Commits message.
 8. After a coherent series of changes is complete, check the current `main` and `origin/main` state before opening a PR. If the development branch is behind, update it only with non-destructive git operations and do not discard user work.
 9. Push the completed branch, open a PR, and include the change scope, test results, unverified behavior, and any intentional follow-up work.
-10. After required CI passes and no blocking review remains, merge the PR and delete the development branch.
-11. If permissions, CI, branch protection, review state, or tool availability prevent push, PR creation, merge, or branch deletion, stop and report the exact blocker instead of working around it.
-12. Do not force-push unless explicitly approved.
+10. After any push that is meant to complete work, inspect the triggered CI run. If CI fails, read the failing job logs, fix the underlying issue, rerun the relevant local checks, push the fix, and repeat until required CI passes. A task is not complete while required CI is red, unless CI access or infrastructure is blocked and the blocker is reported explicitly.
+11. After required CI passes and no blocking review remains, merge the PR and delete the development branch.
+12. If permissions, CI, branch protection, review state, or tool availability prevent push, CI inspection, PR creation, merge, or branch deletion, stop and report the exact blocker instead of working around it.
+13. Do not force-push unless explicitly approved.
 
 Use lowercase type prefixes such as `feat:`, `fix:`, `docs:`, `test:`, `ci:`, `refactor:`, and `chore:`.
 

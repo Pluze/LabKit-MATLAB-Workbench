@@ -10,6 +10,7 @@ These docs are written for people who run, maintain, or extend LabKit. Start wit
 | `*.md` component docs | Human-readable behavior, architecture, public APIs, and maintenance contracts. |
 | `testing.md` | The canonical build-task matrix, wrapper behavior, CI scope, fixture expectations, and GUI validation limits. |
 | `../AGENTS.md` and scoped `AGENTS.md` files | Future execution rules for agent work, ownership red lines, and routing rules. |
+| `../.agents/migration_guide.md` | Agent-facing runner migration maps, debt burn-down roadmap, and migration sequencing. |
 | `../.agents/skills/` | Task procedures for boundary checks, app building, and validation planning. |
 | `../tests/integration/project/` guardrails | Automated checks that keep package boundaries, documentation ownership, debt inventory, and sample hygiene from drifting. |
 
@@ -41,9 +42,7 @@ These docs are written for people who run, maintain, or extend LabKit. Start wit
 | --- | --- |
 | `architecture.md` | Package boundaries, ownership rules, and extraction decisions. |
 | `apps.md` | App entry points, app-family notes, and app-owned workflow guidance. |
-| `runner_migration_maps.md` | Current oversized runner responsibility maps and extraction targets. |
 | `ui.md` | MATLAB GUI shell and reusable UI helpers. |
 | `dta.md` | DTA facade, parser assumptions, and data shapes. |
 | `biosignal.md` | Biosignal facade, data shapes, and ECG workflow boundary. |
 | `testing.md` | Test commands, suite layout, GUI validation limits, and fixture expectations. |
-| `future_design_handbook.md` | Long-term design vision, target architecture, debt burn-down roadmap, and maturity model. |

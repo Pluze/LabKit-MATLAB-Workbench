@@ -99,7 +99,7 @@ that shape into new app work.
 This inventory is a narrow exception list, not a preferred design. It may
 shrink during future migrations, but it should not grow.
 Current oversized-runner responsibility maps live in
-`docs/runner_migration_maps.md`.
+`.agents/migration_guide.md`.
 
 Allowed app `private/` debt:
 
