@@ -43,9 +43,10 @@ exports, and file conventions belong under the owning app tree.
 Current facts:
 
 - Oversized app entry points: none.
-- Oversized app runners over 500 lines: CIC and CSC only.
+- Oversized app runners over 500 lines: none.
 - App `private/` debt: none.
-- Completed app package migrations: ECG Print, DIC Preprocess, DIC Postprocess.
+- Completed app package migrations: ECG Print, DIC Preprocess, DIC Postprocess,
+  CIC runner normalization, CSC runner normalization.
 - String-dispatch workflow adapters and app `+core/dispatch.m` routers: none.
 - Private helper contract debt remains in parts of `+labkit`; the executable
   inventory is `ProjectDocumentationGuardrailTest.expectedPrivateContractDebtFiles`.
@@ -132,66 +133,10 @@ clearer as a public facade than as app-local code.
 
 ## Current Oversized Runner Inventory
 
-Only these runner maps are active debt. When a runner drops below the threshold,
-remove its `## \`path\`` heading and update guardrail expectations.
-
-| Runner | Current status | Next action |
-| --- | --- | --- |
-| `apps/electrochem/cic/+cic/+ui/runApp.m` | CIC computation, table/export helpers, summary text, display unit normalization, and plot request preparation are extracted. Runner still owns callbacks and axes effects. | Stop unless a new deterministic view-model appears. |
-| `apps/electrochem/csc/+csc/+ui/runApp.m` | CSC computation, formatting, default selections, trim overlay data, comparison readout, and plot request preparation are extracted. Runner still owns callbacks and axes effects. | Stop unless a new deterministic view-model appears. |
-
-## `apps/electrochem/cic/+cic/+ui/runApp.m`
-
-Already extracted:
-
-- `cic.ops.computeCIC`
-- `cic.view.buildBatchTableData`
-- `cic.export.writeResultsCSV`
-- `cic.view.buildCurrentSummary`
-- `cic.view.displayUnit`
-- `cic.view.plotRequest`
-
-Leave in the runner:
-
-- file and folder dialogs
-- session mutation
-- callback sequencing
-- axes drawing, markers, shading, annotations, grid, and limits
-- UI-only reset, swap, and refresh ordering
-
-Do not move `plotOneAxis` wholesale. It mixes axes drawing, marker creation,
-window shading, title/label assignment, and checkbox-driven UI effects.
-
-Future work is justified only when a new deterministic view-model appears and
-can be called by the GUI path with direct unit coverage.
-
-## `apps/electrochem/csc/+csc/+ui/runApp.m`
-
-Already extracted:
-
-- `csc.ops.computeCSC`
-- `csc.view.defaultPlotSelections`
-- `csc.view.formatChargeAndCSC`
-- `csc.view.comparisonReadout`
-- `csc.view.trimOverlayData`
-- `csc.view.plotRequest`
-
-Leave in the runner:
-
-- file and folder dialogs
-- session mutation
-- dropdown population
-- callback sequencing
-- trim overlay drawing and cleanup
-- top/bottom axes drawing
-- reload, clear, and current-item selection
-
-Do not move `plotTop`, `plotBottom`, or `refreshCompare` as one block. They
-still mix axes drawing, UI handle updates, trim drawing, status labels, and
-logging.
-
-Future work is justified only when a new deterministic view-model appears and
-can be called by the GUI path with direct unit coverage.
+No active oversized runner debt remains. If a future `+ui/runApp.m` grows over
+the 500-line guardrail threshold, add a narrow map for that file and extract
+only app-owned deterministic behavior or static control construction that the
+real GUI path uses.
 
 ## Completed Migration Baselines
 
@@ -202,6 +147,8 @@ These apps are completed baselines, not active roadmap work:
 | ECG Print | `apps/wearable/ecg_print/` | `labkit_ECGPrint_app` | no direct `apps/wearable/+ecg_print`; no wearable private runner; direct tests for non-UI helpers |
 | DIC Preprocess | `apps/dic/dic_preprocess/` | `labkit_DICPreprocess_app` | no `apps/dic/private/runDICPreprocessApp.m`; direct tests for non-UI helpers |
 | DIC Postprocess | `apps/dic/dic_postprocess/` | `labkit_DICPostprocess_app` | no `apps/dic/private/`; no `apps/dic/labkit_DICPostprocess_app.m`; direct tests for non-UI helpers |
+| CIC | `apps/electrochem/cic/` | `labkit_CIC_app` | runner stays below 500 lines; static controls live in `cic.ui.buildControls`; deterministic helpers stay in `+ops`, `+view`, and `+export` |
+| CSC | `apps/electrochem/csc/` | `labkit_CSC_app` | runner stays below 500 lines; static controls live in `csc.ui.buildControls`; deterministic helpers stay in `+ops` and `+view` |
 
 Manual GUI review still applies to visual workflows such as point selection,
 crop dragging, mask drawing, strain overlay inspection, and workflow feel.
@@ -212,10 +159,10 @@ crop dragging, mask drawing, strain overlay inspection, and workflow feel.
    Remove stale expected-debt entries from guardrails and this guide as soon as
    debt is retired. Do not keep completed DIC or ECG work as active phases.
 
-2. Finish only valuable CIC/CSC runner normalization.
-   Extract no more than directly testable deterministic behavior used by the
-   GUI path. If the remaining code is axes/callback choreography, stop and keep
-   the documented debt map until the runner falls below threshold naturally.
+2. Keep runner debt at zero.
+   New `+ui/runApp.m` files should stay under the guardrail threshold by moving
+   static control construction into app-owned `+ui` helpers and deterministic
+   behavior into `+ops`, `+view`, `+export`, `+io`, or `+state` helpers.
 
 3. Complete private contract hygiene.
    Add concise top-of-file implementation contracts for remaining `+labkit`

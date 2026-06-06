@@ -10,7 +10,7 @@ These docs are written for people who run, maintain, or extend LabKit. Start wit
 | `*.md` component docs | Human-readable behavior, architecture, public APIs, and maintenance contracts. |
 | `testing.md` | The canonical build-task matrix, wrapper behavior, CI scope, fixture expectations, and GUI validation limits. |
 | `../AGENTS.md` and scoped `AGENTS.md` files | Future execution rules for agent work, ownership red lines, and routing rules. |
-| `../.agents/migration_guide.md` | Agent-facing runner migration maps, debt burn-down roadmap, and migration sequencing. |
+| `../.agents/migration_guide.md` | Agent-facing debt burn-down ledger, migration sequencing, and active runner maps when runner debt exists. |
 | `../.agents/skills/` | Task procedures for boundary checks, app building, migration planning, and validation routing. |
 | `../tests/integration/project/` guardrails | Automated checks that keep package boundaries, documentation ownership, debt inventory, and sample hygiene from drifting. |
 

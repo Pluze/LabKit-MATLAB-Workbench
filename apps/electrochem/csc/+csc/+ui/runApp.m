@@ -14,153 +14,48 @@ function fig = runApp(debugLog)
     S.scanRate = NaN; % V/s
     S.currentCurve = 1;
 
-    %% ===================== Figure & Layout =====================
-    ui = labkit.ui.app.createShell(struct( ...
-        'title', 'Gamry DTA GUI (literature CSC)', ...
-        'position', [50 30 1580 950], ...
-        'leftWidth', 390, ...
-        'options', struct('rightKind', 'dualPlot')));
-    fig = ui.fig;
-    layFA = ui.filesAnalysisGrid;
-    laySR = ui.summaryResultsGrid;
-    layLog = ui.logGrid;
+    callbacks = struct( ...
+        'onOpenFiles', @onOpenFiles, ...
+        'onOpenFolder', @onOpenFolder, ...
+        'onClearAll', @(~,~) clearAllFiles(), ...
+        'onExport', @(~,~) reloadSelectedFile(), ...
+        'onSelectFile', @(~,~) onSelectFile(), ...
+        'onCurveChanged', @(~,~) onCurveChanged(), ...
+        'onAutoPresetAndRefresh', @(~,~) autoPresetAndRefresh(), ...
+        'onSwapPlots', @(~,~) onSwapPlots(), ...
+        'onRefreshCompare', @(~,~) refreshCompare(), ...
+        'onRefreshPlotsOnly', @(~,~) refreshPlotsOnly(), ...
+        'onClearBothAxes', @(~,~) clearBothAxes());
+    C = csc.ui.buildControls(callbacks);
 
-    % -------- File panel --------
-    fileCallbacks = struct();
-    fileCallbacks.onOpenFiles = @onOpenFiles;
-    fileCallbacks.onOpenFolder = @onOpenFolder;
-    fileCallbacks.onClearAll = @(~,~) clearAllFiles();
-    fileCallbacks.onExport = @(~,~) reloadSelectedFile();
-    fileCallbacks.onSelectFile = @(~,~) onSelectFile();
-    fileLabels = struct( ...
-        'panelTitle', 'Files', ...
-        'openFiles', 'Open DTA file(s)', ...
-        'openFolder', 'Open folder recursively', ...
-        'clearAll', 'Clear all', ...
-        'export', 'Reload selected', ...
-        'loadedText', 'No files loaded');
-    fileUi = labkit.ui.view.panel(layFA, 'files', fileLabels, fileCallbacks);
-    lbFiles = fileUi.listbox;
-    txtLoaded = fileUi.loadedText;
-
-    % -------- Curve --------
-    curveUi = labkit.ui.view.section(layFA, 'Curve', 2, [4 2]);
-    gf = curveUi.grid;
-
-    uilabel(gf,'Text','File:','HorizontalAlignment','right');
-    txtFile = labkit.ui.view.form(gf, 'readonly');
-    txtFile.Layout.Row = 1; txtFile.Layout.Column = 2;
-
-    uilabel(gf,'Text','Scan rate:','HorizontalAlignment','right');
-    txtScan = labkit.ui.view.form(gf, 'readonly');
-    txtScan.Layout.Row = 2; txtScan.Layout.Column = 2;
-
-    uilabel(gf,'Text','Curve:','HorizontalAlignment','right');
-    ddCurve = uidropdown(gf,'Items',{'(none)'},'ValueChangedFcn',@(~,~) onCurveChanged());
-    ddCurve.Layout.Row = 3; ddCurve.Layout.Column = 2;
-
-    btnAuto = uibutton(gf,'Text','Auto CV + CT','ButtonPushedFcn',@(~,~) autoPresetAndRefresh());
-    btnAuto.Layout.Row = 4; btnAuto.Layout.Column = [1 2];
-
-    % -------- Actions --------
-    actionOpts = struct('columnWidth', {{'1x', '1x'}});
-    actionUi = labkit.ui.view.section(layFA, 'Actions', 3, [2 2], actionOpts);
-    ga = actionUi.grid;
-
-    btnSwap = uibutton(ga,'Text','Swap Top/Bottom','ButtonPushedFcn',@(~,~) onSwapPlots());
-    btnSwap.Layout.Row = 1; btnSwap.Layout.Column = 1;
-    btnCompare = uibutton(ga,'Text','Compare Q / CSC','ButtonPushedFcn',@(~,~) refreshCompare());
-    btnCompare.Layout.Row = 1; btnCompare.Layout.Column = 2;
-    btnRefresh = uibutton(ga,'Text','Refresh Plots','ButtonPushedFcn',@(~,~) refreshPlotsOnly());
-    btnRefresh.Layout.Row = 2; btnRefresh.Layout.Column = 1;
-    btnClear = uibutton(ga,'Text','Clear Both','ButtonPushedFcn',@(~,~) clearBothAxes());
-    btnClear.Layout.Row = 2; btnClear.Layout.Column = 2;
-
-    % -------- Comparison / CSC --------
-    compUi = labkit.ui.view.section(laySR, 'CSC / Comparison', 1, [8 2]);
-    gc = compUi.grid;
-
-    uilabel(gc,'Text','Mode:','HorizontalAlignment','right');
-    ddMode = uidropdown(gc, ...
-        'Items',{'Full','Cathodic','Anodic'}, ...
-        'Value','Full', ...
-        'ValueChangedFcn',@(~,~) refreshCompare());
-    ddMode.Layout.Row = 1; ddMode.Layout.Column = 2;
-
-    uilabel(gc,'Text','Area (cm^2):','HorizontalAlignment','right');
-    edArea = uieditfield(gc,'text','Value','');
-    edArea.ValueChangedFcn = @(~,~) refreshCompare();
-    edArea.Layout.Row = 2; edArea.Layout.Column = 2;
-
-    uilabel(gc,'Text','CT charge / CSC:','HorizontalAlignment','right');
-    txtQct = labkit.ui.view.form(gc, 'readonly');
-    txtQct.Layout.Row = 3; txtQct.Layout.Column = 2;
-
-    uilabel(gc,'Text','CV charge / CSC:','HorizontalAlignment','right');
-    txtQcv = labkit.ui.view.form(gc, 'readonly');
-    txtQcv.Layout.Row = 4; txtQcv.Layout.Column = 2;
-
-    uilabel(gc,'Text','Difference:','HorizontalAlignment','right');
-    txtDiff = labkit.ui.view.form(gc, 'readonly');
-    txtDiff.Layout.Row = 5; txtDiff.Layout.Column = 2;
-
-    uilabel(gc,'Text','Relative diff:','HorizontalAlignment','right');
-    txtRel = labkit.ui.view.form(gc, 'readonly');
-    txtRel.Layout.Row = 6; txtRel.Layout.Column = 2;
-
-    uilabel(gc,'Text','max|dt-|dV|/v|:','HorizontalAlignment','right');
-    txtDtErr = labkit.ui.view.form(gc, 'readonly');
-    txtDtErr.Layout.Row = 7; txtDtErr.Layout.Column = 2;
-
-    lblStatus = uilabel(gc,'Text','Ready');
-    lblStatus.Layout.Row = 8; lblStatus.Layout.Column = [1 2];
-    lblStatus.FontWeight = 'bold';
-
-    % -------- Log --------
-    logUi = labkit.ui.view.panel(layLog, 'log', 1, {'GUI started.'});
-    txtLog = logUi.textArea;
-    txtLog.Value = {'GUI started.'};
-
-    % -------- Top/bottom controls --------
-    topPlotDefaults = struct('x', '(none)', 'y', '(none)', 'grid', true);
-    bottomPlotDefaults = struct('x', '(none)', 'y', '(none)', 'grid', true);
-    plotControls = labkit.ui.view.panel( ...
-        ui.topControlsPanel, ...
-        'topBottomPlotControls', ...
-        ui.bottomControlsPanel, ...
-        {'(none)'}, ...
-        {'(none)'}, ...
-        topPlotDefaults, ...
-        bottomPlotDefaults, ...
-        @(~,~) refreshPlotsOnly());
-    ddTopX = plotControls.topX;
-    ddTopY = plotControls.topY;
-    cbTopGrid = plotControls.topGridCheckbox;
-    ddBotX = plotControls.bottomX;
-    ddBotY = plotControls.bottomY;
-    cbBotGrid = plotControls.bottomGridCheckbox;
-    axTop = ui.topAxes;
-    axBottom = ui.bottomAxes;
-    title(axTop,'Top Plot');
-    xlabel(axTop,'X');
-    ylabel(axTop,'Y');
-    title(axBottom,'Bottom Plot');
-    xlabel(axBottom,'X');
-    ylabel(axBottom,'Y');
-
-    plotControls.topGrid.ColumnWidth = {'fit','1x','fit','1x','fit','fit','fit'};
-    cbTopHold = uicheckbox(plotControls.topGrid,'Text','Hold','Value',false);
-    cbTopHold.Layout.Row = 1; cbTopHold.Layout.Column = 6;
-    cbTopTrim = uicheckbox(plotControls.topGrid,'Text','Show Trim','Value',true, ...
-        'ValueChangedFcn',@(~,~) refreshCompare());
-    cbTopTrim.Layout.Row = 1; cbTopTrim.Layout.Column = 7;
-
-    plotControls.bottomGrid.ColumnWidth = {'fit','1x','fit','1x','fit','fit','fit'};
-    cbBotHold = uicheckbox(plotControls.bottomGrid,'Text','Hold','Value',false);
-    cbBotHold.Layout.Row = 1; cbBotHold.Layout.Column = 6;
-    cbBotTrim = uicheckbox(plotControls.bottomGrid,'Text','Show Trim','Value',true, ...
-        'ValueChangedFcn',@(~,~) refreshCompare());
-    cbBotTrim.Layout.Row = 1; cbBotTrim.Layout.Column = 7;
+    fig = C.fig;
+    lbFiles = C.lbFiles;
+    txtLoaded = C.txtLoaded;
+    txtFile = C.txtFile;
+    txtScan = C.txtScan;
+    ddCurve = C.ddCurve;
+    ddMode = C.ddMode;
+    edArea = C.edArea;
+    txtQct = C.txtQct;
+    txtQcv = C.txtQcv;
+    txtDiff = C.txtDiff;
+    txtRel = C.txtRel;
+    txtDtErr = C.txtDtErr;
+    lblStatus = C.lblStatus;
+    txtLog = C.txtLog;
+    plotControls = C.plotControls;
+    ddTopX = C.ddTopX;
+    ddTopY = C.ddTopY;
+    cbTopGrid = C.cbTopGrid;
+    ddBotX = C.ddBotX;
+    ddBotY = C.ddBotY;
+    cbBotGrid = C.cbBotGrid;
+    axTop = C.axTop;
+    axBottom = C.axBottom;
+    cbTopHold = C.cbTopHold;
+    cbTopTrim = C.cbTopTrim;
+    cbBotHold = C.cbBotHold;
+    cbBotTrim = C.cbBotTrim;
     if debugLog.enabled
         debugLog.attachTextLog(txtLog);
         debugLog.trace('CSC debug trace enabled.');

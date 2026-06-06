@@ -461,9 +461,7 @@ function files = expectedAppPrivateDebtFiles()
 end
 
 function files = expectedOversizedRunnerDebtFiles()
-    files = [ ...
-        "apps/electrochem/cic/+cic/+ui/runApp.m", ...
-        "apps/electrochem/csc/+csc/+ui/runApp.m"];
+    files = strings(1, 0);
 end
 
 function actual = collectOversizedEntrypoints(root, maxLines)

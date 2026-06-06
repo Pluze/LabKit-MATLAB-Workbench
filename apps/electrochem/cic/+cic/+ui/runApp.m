@@ -10,158 +10,60 @@ function fig = runApp(debugLog)
     S.items = S.session.items; % loaded files + parsed content + analysis
     S.current = [];
 
-    %% ===================== Figure & Layout =====================
-    ui = labkit.ui.app.createShell(struct( ...
-        'title', 'Gamry CIC GUI (Voltage Transient)', ...
-        'position', [40 30 1680 980], ...
-        'leftWidth', 430, ...
-        'options', struct('rightKind', 'dualPlot')));
-    fig = ui.fig;
-    layFA = ui.filesAnalysisGrid;
-    laySR = ui.summaryResultsGrid;
-    layLog = ui.logGrid;
+    callbacks = struct( ...
+        'onOpenFiles', @onOpenFiles, ...
+        'onOpenFolder', @onOpenFolder, ...
+        'onClearAll', @(~,~) clearAllFiles(), ...
+        'onExport', @(~,~) exportResultsCSV(), ...
+        'onSelectFile', @(~,~) onSelectFile(), ...
+        'onPresetChanged', @(~,~) onPresetChanged(), ...
+        'onAnalyzeCurrentFile', @(~,~) analyzeCurrentFile(), ...
+        'onRefreshResultsSummary', @(~,~) refreshResultsSummary(), ...
+        'onRefreshCICUnitDisplays', @(~,~) refreshCICUnitDisplays(), ...
+        'onRefreshPlots', @(~,~) refreshPlots(), ...
+        'onSwapPlots', @(~,~) swapPlots(), ...
+        'onResetAxes', @(~,~) resetAxes());
+    C = cic.ui.buildControls(callbacks);
 
-    %% ===================== File panel =====================
-    fileCallbacks = struct();
-    fileCallbacks.onOpenFiles = @onOpenFiles;
-    fileCallbacks.onOpenFolder = @onOpenFolder;
-    fileCallbacks.onClearAll = @(~,~) clearAllFiles();
-    fileCallbacks.onExport = @(~,~) exportResultsCSV();
-    fileCallbacks.onSelectFile = @(~,~) onSelectFile();
-    fileLabels = struct( ...
-        'panelTitle', 'Files', ...
-        'openFiles', 'Open DTA file(s)', ...
-        'openFolder', 'Open folder recursively', ...
-        'clearAll', 'Clear all', ...
-        'export', 'Export results CSV', ...
-        'loadedText', 'No files loaded');
-    fileUi = labkit.ui.view.panel(layFA, 'files', fileLabels, fileCallbacks);
-    lbFiles = fileUi.listbox;
-    txtLoaded = fileUi.loadedText;
-
-    %% ===================== Analysis settings =====================
-    settingsUi = labkit.ui.view.section(layFA, 'Analysis Settings', 2, [9 2]);
-    gs = settingsUi.grid;
-
-    uilabel(gs,'Text','Window preset:','HorizontalAlignment','right');
-    ddPreset = uidropdown(gs, ...
-        'Items',{'Pt (-0.6 to 0.8 V)','PEDOT:PSS (-0.9 to 0.6 V)','Custom'}, ...
-        'Value','Pt (-0.6 to 0.8 V)', ...
-        'ValueChangedFcn',@(~,~) onPresetChanged());
-    ddPreset.Layout.Row = 1; ddPreset.Layout.Column = 2;
-
-    [lblCathLim, edCathLim] = labkit.ui.view.form(gs, 'spinner', 'Cathodic limit (V):', ...
-        'Value', -0.6, 'Limits', [-10 10], 'Step', 0.01, ...
-        'ValueDisplayFormat','%.6g','ValueChangedFcn',@(~,~) analyzeCurrentFile());
-    lblCathLim.Layout.Row = 2; lblCathLim.Layout.Column = 1;
-    edCathLim.Layout.Row = 2; edCathLim.Layout.Column = 2;
-
-    [lblAnodLim, edAnodLim] = labkit.ui.view.form(gs, 'spinner', 'Anodic limit (V):', ...
-        'Value', 0.8, 'Limits', [-10 10], 'Step', 0.01, ...
-        'ValueDisplayFormat','%.6g','ValueChangedFcn',@(~,~) analyzeCurrentFile());
-    lblAnodLim.Layout.Row = 3; lblAnodLim.Layout.Column = 1;
-    edAnodLim.Layout.Row = 3; edAnodLim.Layout.Column = 2;
-
-    [lblDelayUs, edDelayUs] = labkit.ui.view.form(gs, 'spinner', 'Sample delay after pulse end:', ...
-        'Value', 10, 'Limits', [0 inf], 'Step', 1, ...
-        'ValueDisplayFormat','%.6g','ValueChangedFcn',@(~,~) analyzeCurrentFile());
-    lblDelayUs.Layout.Row = 4; lblDelayUs.Layout.Column = 1;
-    edDelayUs.Layout.Row = 4; edDelayUs.Layout.Column = 2;
-
-    uilabel(gs,'Text','Area override (cm^2):','HorizontalAlignment','right');
-    edArea = uieditfield(gs,'text','Value','', ...
-        'ValueChangedFcn',@(~,~) analyzeCurrentFile());
-    edArea.Layout.Row = 5; edArea.Layout.Column = 2;
-
-    uilabel(gs,'Text','Pulse detection:','HorizontalAlignment','right');
-    ddPulseMode = uidropdown(gs, ...
-        'Items',{'Metadata first, then auto','Metadata only','Auto from Im only'}, ...
-        'Value','Metadata first, then auto', ...
-        'ValueChangedFcn',@(~,~) analyzeCurrentFile());
-    ddPulseMode.Layout.Row = 6; ddPulseMode.Layout.Column = 2;
-
-    uilabel(gs,'Text','CIC summary mode:','HorizontalAlignment','right');
-    ddCICMode = uidropdown(gs, ...
-        'Items',{'Cathodic phase','Anodic phase','Total biphasic'}, ...
-        'Value','Total biphasic', ...
-        'ValueChangedFcn',@(~,~) refreshResultsSummary());
-    ddCICMode.Layout.Row = 7; ddCICMode.Layout.Column = 2;
-
-    uilabel(gs,'Text','CIC unit:','HorizontalAlignment','right');
-    ddCICUnit = uidropdown(gs, ...
-        'Items',{'mC/cm^2','uC/cm^2'}, ...
-        'Value','mC/cm^2', ...
-        'ValueChangedFcn',@(~,~) refreshCICUnitDisplays());
-    ddCICUnit.Layout.Row = 8; ddCICUnit.Layout.Column = 2;
-
-    cbUseMeasuredCurrent = uicheckbox(gs,'Text','Use measured Im integration for charge (recommended)', ...
-        'Value',true,'ValueChangedFcn',@(~,~) analyzeCurrentFile());
-    cbUseMeasuredCurrent.Layout.Row = 9; cbUseMeasuredCurrent.Layout.Column = [1 2];
-
-    %% ===================== Quick info =====================
-    infoUi = labkit.ui.view.section(laySR, 'Current File Summary', 1, [11 2]);
-    gi = infoUi.grid;
-
-    S.txtControlMode = labkit.ui.view.form(gi, 'info', 1, 'Control mode:');
-    S.txtDetect = labkit.ui.view.form(gi, 'info', 2, 'Detection:');
-    S.txtDelay = labkit.ui.view.form(gi, 'info', 3, 'Delay used:');
-    S.txtArea = labkit.ui.view.form(gi, 'info', 4, 'Area:');
-    S.txtEmc = labkit.ui.view.form(gi, 'info', 5, 'Emc:');
-    S.txtEma = labkit.ui.view.form(gi, 'info', 6, 'Ema:');
-    S.txtQc = labkit.ui.view.form(gi, 'info', 7, 'Cathodic Q/CIC:');
-    S.txtQa = labkit.ui.view.form(gi, 'info', 8, 'Anodic Q/CIC:');
-    S.txtQt = labkit.ui.view.form(gi, 'info', 9, 'Total Q/CIC:');
-    S.txtSafe = labkit.ui.view.form(gi, 'info', 10, 'Safety:');
-    S.txtBest = labkit.ui.view.form(gi, 'info', 11, 'Best safe among loaded:');
-
-    %% ===================== Actions =====================
-    actionUi = labkit.ui.view.section(layFA, 'Plot / Debug', 3, [2 3]);
-    ga = actionUi.grid;
-
-    btnRefresh = uibutton(ga,'Text','Refresh plots','ButtonPushedFcn',@(~,~) refreshPlots());
-    btnRefresh.Layout.Row = 1; btnRefresh.Layout.Column = 1;
-    btnSwap = uibutton(ga,'Text','Swap top / bottom','ButtonPushedFcn',@(~,~) swapPlots());
-    btnSwap.Layout.Row = 1; btnSwap.Layout.Column = 2;
-    btnReset = uibutton(ga,'Text','Reset axes','ButtonPushedFcn',@(~,~) resetAxes());
-    btnReset.Layout.Row = 1; btnReset.Layout.Column = 3;
-
-    cbShowMarkers = uicheckbox(ga,'Text','Show debug markers','Value',true,'ValueChangedFcn',@(~,~) refreshPlots());
-    cbShowMarkers.Layout.Row = 2; cbShowMarkers.Layout.Column = 1;
-    cbShowLimits = uicheckbox(ga,'Text','Show window limits','Value',true,'ValueChangedFcn',@(~,~) refreshPlots());
-    cbShowLimits.Layout.Row = 2; cbShowLimits.Layout.Column = 2;
-    cbShowShading = uicheckbox(ga,'Text','Shade pulse windows','Value',true,'ValueChangedFcn',@(~,~) refreshPlots());
-    cbShowShading.Layout.Row = 2; cbShowShading.Layout.Column = 3;
-
-    %% ===================== Results table =====================
-    tableUi = labkit.ui.view.panel(laySR, 'table', 'Batch Results', 2, ...
-        {'File','Amp(A)','Emc(V)','Ema(V)','Qc(mC/cm^2)','Qa(mC/cm^2)','Qtot(mC/cm^2)','Safe'}, ...
-        cell(0,8));
-    tbl = tableUi.table;
-
-    %% ===================== Log =====================
-    logUi = labkit.ui.view.panel(layLog, 'log', 1);
-    txtLog = logUi.textArea;
-
-    %% ===================== Right: plots =====================
-    topPlotDefaults = struct('x', 'Time (s)', 'y', 'VT: Vf vs time', 'grid', true);
-    bottomPlotDefaults = struct('x', 'Time (s)', 'y', 'IT: Im vs time', 'grid', true);
-    plotControls = labkit.ui.view.panel( ...
-        ui.topControlsPanel, ...
-        'topBottomPlotControls', ...
-        ui.bottomControlsPanel, ...
-        {'Time (s)', 'Sample #'}, ...
-        {'VT: Vf vs time', 'IT: Im vs time'}, ...
-        topPlotDefaults, ...
-        bottomPlotDefaults, ...
-        @(~,~) refreshPlots());
-    ddTopX = plotControls.topX;
-    ddTopY = plotControls.topY;
-    cbTopGrid = plotControls.topGridCheckbox;
-    axTop = ui.topAxes;
-    ddBotX = plotControls.bottomX;
-    ddBotY = plotControls.bottomY;
-    cbBotGrid = plotControls.bottomGridCheckbox;
-    axBottom = ui.bottomAxes;
+    fig = C.fig;
+    lbFiles = C.lbFiles;
+    txtLoaded = C.txtLoaded;
+    ddPreset = C.ddPreset;
+    edCathLim = C.edCathLim;
+    edAnodLim = C.edAnodLim;
+    edDelayUs = C.edDelayUs;
+    edArea = C.edArea;
+    ddPulseMode = C.ddPulseMode;
+    ddCICMode = C.ddCICMode;
+    ddCICUnit = C.ddCICUnit;
+    cbUseMeasuredCurrent = C.cbUseMeasuredCurrent;
+    S.txtControlMode = C.txtControlMode;
+    S.txtDetect = C.txtDetect;
+    S.txtDelay = C.txtDelay;
+    S.txtArea = C.txtArea;
+    S.txtEmc = C.txtEmc;
+    S.txtEma = C.txtEma;
+    S.txtQc = C.txtQc;
+    S.txtQa = C.txtQa;
+    S.txtQt = C.txtQt;
+    S.txtSafe = C.txtSafe;
+    S.txtBest = C.txtBest;
+    cbShowMarkers = C.cbShowMarkers;
+    cbShowLimits = C.cbShowLimits;
+    cbShowShading = C.cbShowShading;
+    tbl = C.tbl;
+    txtLog = C.txtLog;
+    topPlotDefaults = C.topPlotDefaults;
+    bottomPlotDefaults = C.bottomPlotDefaults;
+    plotControls = C.plotControls;
+    ddTopX = C.ddTopX;
+    ddTopY = C.ddTopY;
+    cbTopGrid = C.cbTopGrid;
+    axTop = C.axTop;
+    ddBotX = C.ddBotX;
+    ddBotY = C.ddBotY;
+    cbBotGrid = C.cbBotGrid;
+    axBottom = C.axBottom;
     if debugLog.enabled
         debugLog.attachTextLog(txtLog);
         debugLog.trace('CIC debug trace enabled.');
@@ -331,7 +233,7 @@ function fig = runApp(debugLog)
     function refreshFileList()
         if isempty(S.items)
             labkit.ui.view.update(lbFiles, 'listSelection', {});
-            txtLoaded.Value = fileLabels.loadedText;
+            txtLoaded.Value = C.loadedText;
             S.current = [];
             return;
         end

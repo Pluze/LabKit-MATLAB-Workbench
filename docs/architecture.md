@@ -97,8 +97,12 @@ helper layouts into new app work.
 
 This inventory is a narrow exception list, not a preferred design. It should
 stay empty unless a future migration records a specific temporary exception.
-Current oversized-runner responsibility maps live in
-`.agents/migration_guide.md`.
+
+Allowed oversized app-runner debt:
+
+```text
+none
+```
 
 Allowed app `private/` debt:
 
@@ -108,8 +112,8 @@ none
 
 DIC Preprocess and DIC Postprocess both live under app folders with app-owned
 packages. Public entry points own GUI state, callbacks, debug launch routing,
-and user-facing log wording. Runner migration procedure and detailed
-responsibility maps live in `.agents/migration_guide.md`.
+and user-facing log wording. Runner migration procedure lives in
+`.agents/migration_guide.md` when active runner debt exists.
 
 The wearable ECG Print app has moved to
 `apps/wearable/ecg_print/labkit_ECGPrint_app.m` plus
