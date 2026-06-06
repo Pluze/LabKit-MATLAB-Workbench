@@ -29,7 +29,8 @@ Read component docs only when relevant:
 
 Read only the hot-path sections of `.agents/migration_guide.md` for app-runner
 migrations, debt burn-down planning, app `private/` debt, or future migration
-sequencing. Read detailed runner maps only when touching that runner.
+debt handling. Read debt-specific notes only when the ledger records active
+debt for the touched area.
 
 ## Core Rules
 

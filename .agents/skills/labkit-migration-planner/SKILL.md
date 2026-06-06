@@ -24,7 +24,8 @@ Start with a quick pass:
 
 Use a deep pass only when the task needs it:
 
-- read detailed runner maps only when touching that runner
+- read `Migration Standard` and `Future Debt Rules` before editing the guide
+- read debt-specific notes only if the guide records active debt for that area
 - read `docs/architecture.md` for package-boundary or debt-exception changes
 - read `docs/apps.md` for app entrypoint or app-owned package shape changes
 - read `docs/testing.md` only when validation routing or CI scope changes
@@ -73,12 +74,15 @@ guardrails without reducing active debt or clarifying an app-facing contract.
 
 ## Update Rules
 
-- Keep `.agents/migration_guide.md` as the only active migration roadmap.
+- Keep `.agents/migration_guide.md` as the only active migration debt ledger.
 - Human docs should describe current behavior and boundaries, not migration
   execution steps.
 - Debt inventories must match guardrail expectations and current files.
 - Remove resolved debt from the guide, guardrail expected lists, and roadmap in
   the same change.
+- When all debt inventories are empty, keep the guide as a compact zero-debt
+  ledger. Prefer shrinking roadmap prose over adding new plans, scripts, or
+  governance layers.
 - Do not add a second governance doc or standalone migration handbook.
 - Do not add scripts for v1 audits unless repeated manual scans prove the need.
 
