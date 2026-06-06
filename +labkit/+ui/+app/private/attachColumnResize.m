@@ -1,3 +1,7 @@
+% Private UI app helper. Expected caller: labkit.ui.app shell construction
+% code. Inputs and outputs are internal uifigure, grid, tab, or resize handle
+% values. Side effects are limited to UI object creation or callback wiring on
+% supplied parents; assumes the caller owns component lifecycle.
 function attachColumnResize(fig, grid, leftColumn, separatorColumn, opts)
 %ATTACHCOLUMNRESIZE Attach drag-to-resize behavior to a grid separator.
 %

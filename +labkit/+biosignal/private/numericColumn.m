@@ -1,3 +1,7 @@
+% Private biosignal helper. Expected caller: labkit.biosignal facade and
+% internal import/recording pipeline. Inputs and outputs use internal signal,
+% recording, time, or option values. Side effects: file reads only in importer
+% helpers; assumes public callers own workflow validation and user-facing errors.
 function [values, ok] = numericColumn(raw)
 %NUMERICCOLUMN Convert a parsed table column to numeric values when possible.
 %

@@ -45,11 +45,10 @@ Current facts:
 - Oversized app entry points: none.
 - Oversized app runners over 500 lines: none.
 - App `private/` debt: none.
+- Private helper contract debt: none.
 - Completed app package migrations: ECG Print, DIC Preprocess, DIC Postprocess,
   CIC runner normalization, CSC runner normalization.
 - String-dispatch workflow adapters and app `+core/dispatch.m` routers: none.
-- Private helper contract debt remains in parts of `+labkit`; the executable
-  inventory is `ProjectDocumentationGuardrailTest.expectedPrivateContractDebtFiles`.
 
 Executable sources of truth:
 
@@ -164,12 +163,7 @@ crop dragging, mask drawing, strain overlay inspection, and workflow feel.
    static control construction into app-owned `+ui` helpers and deterministic
    behavior into `+ops`, `+view`, `+export`, `+io`, or `+state` helpers.
 
-3. Complete private contract hygiene.
-   Add concise top-of-file implementation contracts for remaining `+labkit`
-   private helpers: expected caller, input/output shape, side effects, and
-   non-obvious assumptions.
-
-4. Simplify guardrails only when failures become hard to interpret.
+3. Simplify guardrails only when failures become hard to interpret.
    Split by concern or introduce structured inventory helpers when that lowers
    maintenance cost. Do not add governance machinery just because migration
    guidance exists.

@@ -110,6 +110,12 @@ Allowed app `private/` debt:
 none
 ```
 
+Private helper contract debt:
+
+```text
+none
+```
+
 DIC Preprocess and DIC Postprocess both live under app folders with app-owned
 packages. Public entry points own GUI state, callbacks, debug launch routing,
 and user-facing log wording. Runner migration procedure lives in

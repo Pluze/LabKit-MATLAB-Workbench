@@ -1,3 +1,7 @@
+% Private UI view helper. Expected caller: labkit.ui.view panel, control,
+% plot, or text facades. Inputs and outputs are internal UI handles, labels,
+% selections, table data, or plot info. Side effects are limited to supplied UI
+% parents or axes; assumes the caller owns callbacks and app state.
 function ui = logPanel(parent, row, initialValue)
 %CREATELOGPANEL Create a log panel with a read-only text area.
 %

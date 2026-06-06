@@ -1,3 +1,7 @@
+% Private DTA helper. Expected caller: labkit.dta facade and internal parser,
+% session, pulse, or item pipeline. Inputs and outputs use internal structs,
+% tables, file paths, or numeric vectors. Side effects: file discovery/parser reads
+% only where named; assumes app-specific workflow decisions stay outside +labkit.
 function opts = defaultPulseOptions()
 %DEFAULTPULSEOPTIONS Return private defaults for chrono pulse detection.
 %

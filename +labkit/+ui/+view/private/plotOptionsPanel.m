@@ -1,3 +1,7 @@
+% Private UI view helper. Expected caller: labkit.ui.view panel, control,
+% plot, or text facades. Inputs and outputs are internal UI handles, labels,
+% selections, table data, or plot info. Side effects are limited to supplied UI
+% parents or axes; assumes the caller owns callbacks and app state.
 function ui = plotOptionsPanel(parent, rowCount, row)
 %CREATEPLOTOPTIONSPANEL Create the shared plot-options panel grid.
 %

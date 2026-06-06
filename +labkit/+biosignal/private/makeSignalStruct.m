@@ -1,3 +1,7 @@
+% Private biosignal helper. Expected caller: labkit.biosignal facade and
+% internal import/recording pipeline. Inputs and outputs use internal signal,
+% recording, time, or option values. Side effects: file reads only in importer
+% helpers; assumes public callers own workflow validation and user-facing errors.
 function signal = makeSignalStruct(name, sourceName, timeSec, values, metadata, opts)
 %MAKESIGNALSTRUCT Build a normalized private biosignal signal struct.
 %
