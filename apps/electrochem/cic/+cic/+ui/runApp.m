@@ -397,36 +397,16 @@ function fig = runApp(debugLog)
     end
 
     function plotOneAxis(ax, A, xChoice, yChoice, showGrid)
-        if strcmp(xChoice,'Sample #')
-            x = A.pt;
-            xlab = 'Sample #';
-            cathStartX = cic.ops.interp1Safe(A.t, A.pt, A.pulse.cath_start);
-            cathEndX   = cic.ops.interp1Safe(A.t, A.pt, A.pulse.cath_end);
-            anodStartX = cic.ops.interp1Safe(A.t, A.pt, A.pulse.anod_start);
-            anodEndX   = cic.ops.interp1Safe(A.t, A.pt, A.pulse.anod_end);
-            emcX       = cic.ops.interp1Safe(A.t, A.pt, A.t_emc);
-            emaX       = cic.ops.interp1Safe(A.t, A.pt, A.t_ema);
-        else
-            x = A.t;
-            xlab = 'Time (s)';
-            cathStartX = A.pulse.cath_start;
-            cathEndX   = A.pulse.cath_end;
-            anodStartX = A.pulse.anod_start;
-            anodEndX   = A.pulse.anod_end;
-            emcX       = A.t_emc;
-            emaX       = A.t_ema;
-        end
+        request = cic.view.plotRequest(A, itName(), xChoice, yChoice);
+        coords = request.coords;
 
-        if startsWith(yChoice,'VT')
-            y = A.Vf;
-            ylab = 'Vf (V vs Ref.)';
-            baseColor = [0 0.4470 0.7410];
-            plot(ax, x, y, 'LineWidth',1.25, 'Color', baseColor);
+        if strcmp(request.kind, 'VT')
+            plot(ax, request.x, request.y, 'LineWidth',1.25, 'Color', request.baseColor);
             hold(ax,'on');
 
             if cbShowShading.Value
-                cic.view.shadeWindow(ax, cathStartX, cathEndX, [0.85 0.93 1.00]);
-                cic.view.shadeWindow(ax, anodStartX, anodEndX, [1.00 0.92 0.85]);
+                cic.view.shadeWindow(ax, coords.cathStartX, coords.cathEndX, [0.85 0.93 1.00]);
+                cic.view.shadeWindow(ax, coords.anodStartX, coords.anodEndX, [1.00 0.92 0.85]);
             end
 
             if cbShowLimits.Value
@@ -439,47 +419,39 @@ function fig = runApp(debugLog)
             cic.view.addBaselineYLines(ax, A);
 
             if cbShowMarkers.Value
-                xline(ax, cathStartX, ':', 'Cath start','Color',[0.2 0.4 0.8]);
-                xline(ax, cathEndX, ':', 'Cath end','Color',[0.2 0.4 0.8]);
-                xline(ax, anodStartX, ':', 'Anod start','Color',[0.8 0.4 0.2]);
-                xline(ax, anodEndX, ':', 'Anod end','Color',[0.8 0.4 0.2]);
+                xline(ax, coords.cathStartX, ':', 'Cath start','Color',[0.2 0.4 0.8]);
+                xline(ax, coords.cathEndX, ':', 'Cath end','Color',[0.2 0.4 0.8]);
+                xline(ax, coords.anodStartX, ':', 'Anod start','Color',[0.8 0.4 0.2]);
+                xline(ax, coords.anodEndX, ':', 'Anod end','Color',[0.8 0.4 0.2]);
                 cic.view.addPaperStyleVTAnnotations(ax, A, xChoice, ...
-                    cathStartX, cathEndX, anodStartX, anodEndX, emcX, emaX);
+                    coords.cathStartX, coords.cathEndX, coords.anodStartX, ...
+                    coords.anodEndX, coords.emcX, coords.emaX);
             end
             hold(ax,'off');
-            if A.safe
-                safeText = 'SAFE';
-            else
-                safeText = 'UNSAFE';
-            end
-            ttl = sprintf('%s | VT | %s', itName(), safeText);
         else
-            y = A.Im;
-            ylab = 'Im (A)';
-            baseColor = [0.8500 0.3250 0.0980];
-            plot(ax, x, y, 'LineWidth',1.25, 'Color', baseColor);
+            plot(ax, request.x, request.y, 'LineWidth',1.25, 'Color', request.baseColor);
             hold(ax,'on');
 
             if cbShowShading.Value
-                cic.view.shadeWindow(ax, cathStartX, cathEndX, [0.85 0.93 1.00]);
-                cic.view.shadeWindow(ax, anodStartX, anodEndX, [1.00 0.92 0.85]);
+                cic.view.shadeWindow(ax, coords.cathStartX, coords.cathEndX, [0.85 0.93 1.00]);
+                cic.view.shadeWindow(ax, coords.anodStartX, coords.anodEndX, [1.00 0.92 0.85]);
             end
 
             if cbShowMarkers.Value
-                xline(ax, cathStartX, ':', 'Cath start','Color',[0.2 0.4 0.8]);
-                xline(ax, cathEndX, ':', 'Cath end','Color',[0.2 0.4 0.8]);
-                xline(ax, anodStartX, ':', 'Anod start','Color',[0.8 0.4 0.2]);
-                xline(ax, anodEndX, ':', 'Anod end','Color',[0.8 0.4 0.2]);
+                xline(ax, coords.cathStartX, ':', 'Cath start','Color',[0.2 0.4 0.8]);
+                xline(ax, coords.cathEndX, ':', 'Cath end','Color',[0.2 0.4 0.8]);
+                xline(ax, coords.anodStartX, ':', 'Anod start','Color',[0.8 0.4 0.2]);
+                xline(ax, coords.anodEndX, ':', 'Anod end','Color',[0.8 0.4 0.2]);
                 cic.view.addPaperStyleITAnnotations(ax, A, xChoice, ...
-                    cathStartX, cathEndX, anodStartX, anodEndX, emcX, emaX);
+                    coords.cathStartX, coords.cathEndX, coords.anodStartX, ...
+                    coords.anodEndX, coords.emcX, coords.emaX);
             end
             hold(ax,'off');
-            ttl = sprintf('%s | IT | |I|max = %.4g A', itName(), A.ampEstimate_A);
         end
 
-        title(ax, ttl, 'Interpreter','none');
-        xlabel(ax, xlab);
-        ylabel(ax, ylab);
+        title(ax, request.title, 'Interpreter','none');
+        xlabel(ax, request.xLabel);
+        ylabel(ax, request.yLabel);
         if showGrid
             grid(ax, 'on');
         else

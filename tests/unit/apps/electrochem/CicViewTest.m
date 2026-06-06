@@ -69,6 +69,52 @@ classdef CicViewTest < matlab.unittest.TestCase
                 'Total biphasic', 'mC/cm^2');
             testCase.verifyEqual(emptySummary.bestSafe, '-');
         end
+
+        function plotRequestBuildsTimeVoltagePayload(testCase)
+            setupLabKitTestPath();
+
+            A = makeAnalysis(false, 0.0025, 0.0035, 0.0060);
+
+            request = cic.view.plotRequest(A, 'sample-file', ...
+                'Time (s)', 'VT: Vf vs time');
+
+            testCase.verifyEqual(request.kind, 'VT');
+            testCase.verifyEqual(request.x, A.t);
+            testCase.verifyEqual(request.y, A.Vf);
+            testCase.verifyEqual(request.xLabel, 'Time (s)');
+            testCase.verifyEqual(request.yLabel, 'Vf (V vs Ref.)');
+            testCase.verifyEqual(request.baseColor, [0 0.4470 0.7410]);
+            testCase.verifyEqual(request.title, 'sample-file | VT | UNSAFE');
+            testCase.verifyEqual(request.coords.cathStartX, A.pulse.cath_start);
+            testCase.verifyEqual(request.coords.cathEndX, A.pulse.cath_end);
+            testCase.verifyEqual(request.coords.anodStartX, A.pulse.anod_start);
+            testCase.verifyEqual(request.coords.anodEndX, A.pulse.anod_end);
+            testCase.verifyEqual(request.coords.emcX, A.t_emc);
+            testCase.verifyEqual(request.coords.emaX, A.t_ema);
+        end
+
+        function plotRequestBuildsSampleCurrentPayload(testCase)
+            setupLabKitTestPath();
+
+            A = makeAnalysis(true, 0.0090, 0.0040, 0.0120);
+
+            request = cic.view.plotRequest(A, 'safe-file', ...
+                'Sample #', 'IT: Im vs time');
+
+            testCase.verifyEqual(request.kind, 'IT');
+            testCase.verifyEqual(request.x, A.pt);
+            testCase.verifyEqual(request.y, A.Im);
+            testCase.verifyEqual(request.xLabel, 'Sample #');
+            testCase.verifyEqual(request.yLabel, 'Im (A)');
+            testCase.verifyEqual(request.baseColor, [0.8500 0.3250 0.0980]);
+            testCase.verifyEqual(request.title, 'safe-file | IT | |I|max = 0.0035 A');
+            testCase.verifyEqual(request.coords.cathStartX, 2);
+            testCase.verifyEqual(request.coords.cathEndX, 4);
+            testCase.verifyEqual(request.coords.anodStartX, 6);
+            testCase.verifyEqual(request.coords.anodEndX, 8);
+            testCase.verifyEqual(request.coords.emcX, 2.46, 'AbsTol', 1e-12);
+            testCase.verifyEqual(request.coords.emaX, 4.48, 'AbsTol', 1e-12);
+        end
     end
 end
 
@@ -108,5 +154,15 @@ function A = makeAnalysis(isSafe, cCath, cAnod, cTotal)
         'cathLimit', -0.6, ...
         'cathOK', false, ...
         'anodLimit', 0.8, ...
-        'anodOK', true);
+        'anodOK', true, ...
+        'ampEstimate_A', 0.0035, ...
+        't', [0 1 2 3 4] * 10e-6, ...
+        'pt', [0 2 4 6 8], ...
+        'Vf', [-0.1 -0.4 -0.8 0.2 0.6], ...
+        'Im', [0 0.001 -0.002 0.003 0], ...
+        'pulse', struct( ...
+            'cath_start', 10e-6, ...
+            'cath_end', 20e-6, ...
+            'anod_start', 30e-6, ...
+            'anod_end', 40e-6));
 end
