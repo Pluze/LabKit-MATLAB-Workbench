@@ -1,3 +1,6 @@
+% Private scale-bar unit defaults. Expected caller: labkit.ui.tool scale-bar
+% helpers. No inputs; output is the app-neutral unit label order. No side
+% effects or app-specific assumptions.
 function units = defaultScaleBarUnits()
 %DEFAULTSCALEBARUNITS Return the app-neutral scale-bar unit order.
 %

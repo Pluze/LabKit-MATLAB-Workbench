@@ -1,3 +1,7 @@
+% Private scale-bar/tool control helper. Expected caller: labkit.ui.tool
+% private panels. Inputs are a parent grid, visible label text, edit style,
+% and uieditfield name/value arguments; outputs are label and field handles.
+% Side effects are limited to creating UI controls under the parent.
 function [lbl, field] = createLabeledEditField(parent, labelText, style, varargin)
 %CREATELABELEDEDITFIELD Create a right-aligned label followed by an edit field.
 %

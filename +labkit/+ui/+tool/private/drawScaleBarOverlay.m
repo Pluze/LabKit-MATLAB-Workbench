@@ -1,3 +1,7 @@
+% Private scale-bar overlay renderer. Expected caller:
+% labkit.ui.tool.scaleBar.renderOverlay. Inputs are target axes and a prepared
+% scale-bar spec; output is line/text handles or empty. Side effects are
+% limited to adding overlay graphics to the target axes.
 function handles = drawScaleBarOverlay(ax, scaleBar)
 %DRAWSCALEBAROVERLAY Draw a prepared scale-bar spec onto image axes.
 %
