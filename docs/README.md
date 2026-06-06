@@ -41,6 +41,7 @@ These docs are written for people who run, maintain, or extend LabKit. Start wit
 | --- | --- |
 | `architecture.md` | Package boundaries, ownership rules, and extraction decisions. |
 | `apps.md` | App entry points, app-family notes, and app-owned workflow guidance. |
+| `runner_migration_maps.md` | Current oversized runner responsibility maps and extraction targets. |
 | `ui.md` | MATLAB GUI shell and reusable UI helpers. |
 | `dta.md` | DTA facade, parser assumptions, and data shapes. |
 | `biosignal.md` | Biosignal facade, data shapes, and ECG workflow boundary. |

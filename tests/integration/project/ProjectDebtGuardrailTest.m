@@ -56,6 +56,25 @@ classdef ProjectDebtGuardrailTest < matlab.unittest.TestCase
                 numel(actualFiles));
         end
 
+        function oversizedRunnersHaveMigrationMaps(testCase)
+            root = setupLabKitTestPath();
+            actualFiles = collectOversizedAppRunners(root, 500);
+            mapFile = fullfile(root, 'docs', 'runner_migration_maps.md');
+            testCase.assertTrue(isfile(mapFile), ...
+                'docs/runner_migration_maps.md should track every oversized runner.');
+
+            mappedFiles = collectRunnerMigrationMapFiles(mapFile);
+            missingFiles = setdiff(actualFiles, mappedFiles);
+            staleFiles = setdiff(mappedFiles, actualFiles);
+
+            testCase.verifyTrue(isempty(missingFiles), ...
+                ['Oversized app runners need migration maps. Files: ' ...
+                strjoin(cellstr(missingFiles), ', ')]);
+            testCase.verifyTrue(isempty(staleFiles), ...
+                ['Runner migration maps include resolved or non-oversized files. ' ...
+                'Remove or update these headings: ' strjoin(cellstr(staleFiles), ', ')]);
+        end
+
         function oldRunnerDependenciesAreRemoved(testCase)
             root = setupLabKitTestPath();
 
@@ -305,6 +324,16 @@ function files = collectOversizedAppRunners(root, maxLines)
         if countFileLines(filepath) > maxLines
             files(end+1) = string(relativePath(root, filepath)); %#ok<AGROW>
         end
+    end
+    files = unique(files);
+end
+
+function files = collectRunnerMigrationMapFiles(mapFile)
+    content = fileread(mapFile);
+    tokens = regexp(content, '(?m)^## `([^`]+)`\s*$', 'tokens');
+    files = strings(1, 0);
+    for k = 1:numel(tokens)
+        files(end+1) = string(tokens{k}{1}); %#ok<AGROW>
     end
     files = unique(files);
 end
