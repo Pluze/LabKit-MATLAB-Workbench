@@ -401,10 +401,11 @@ function fig = runApp(debugLog)
 
     function autoSetDefaults()
         if isempty(S.curves), return; end
-        setDropdownValueIfExists(ddTopX,'Vf');
-        setDropdownValueIfExists(ddTopY,'Im');
-        setDropdownValueIfExists(ddBotX,'T');
-        setDropdownValueIfExists(ddBotY,'Im');
+        defaults = csc.view.defaultPlotSelections(ddTopX.Items);
+        ddTopX.Value = defaults.topX;
+        ddTopY.Value = defaults.topY;
+        ddBotX.Value = defaults.bottomX;
+        ddBotY.Value = defaults.bottomY;
     end
 
     function refreshPlotsOnly()
@@ -475,9 +476,9 @@ function fig = runApp(debugLog)
             return;
         end
 
-        txtQct.Value = formatChargeAndCSC(R.Qct, R.area_cm2);
-        txtQcv.Value = formatChargeAndCSC(R.Qcv, R.area_cm2);
-        txtDiff.Value = formatChargeAndCSC(R.diff_C, R.area_cm2);
+        txtQct.Value = csc.view.formatChargeAndCSC(R.Qct, R.area_cm2);
+        txtQcv.Value = csc.view.formatChargeAndCSC(R.Qcv, R.area_cm2);
+        txtDiff.Value = csc.view.formatChargeAndCSC(R.diff_C, R.area_cm2);
         txtRel.Value = sprintf('%.6f %%', R.rel_pct);
         txtDtErr.Value = sprintf('%.6e s', R.dtErr);
 
@@ -526,26 +527,9 @@ function fig = runApp(debugLog)
 
 end
 
-%% App-local formatting and plot cleanup
-
-function s = formatChargeAndCSC(Q, area_cm2)
-    if isnan(area_cm2) || area_cm2 <= 0
-        s = sprintf('%.12e C', Q);
-    else
-        CSC_mC_cm2 = 1e3 * Q / area_cm2; % C -> mC/cm^2
-        s = sprintf('%.12e C | %.12e mC/cm^2', Q, CSC_mC_cm2);
-    end
-end
+%% App-local plot cleanup
 
 function clearTrim(ax)
     delete(findobj(ax,'Tag','trimCath'));
     delete(findobj(ax,'Tag','trimAnod'));
-end
-
-function setDropdownValueIfExists(dd, valueText)
-    if any(strcmp(dd.Items, valueText))
-        dd.Value = valueText;
-    elseif ~isempty(dd.Items)
-        dd.Value = dd.Items{1};
-    end
 end
