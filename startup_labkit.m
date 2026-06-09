@@ -1,16 +1,30 @@
-function startup_labkit()
+function startup_labkit(printBanner)
 %STARTUP_LABKIT Configure MATLAB path for LabKit workbench apps.
 
+    if nargin < 1 || isempty(printBanner)
+        printBanner = true;
+    end
+    printBanner = logical(printBanner);
+
+    persistent hasInitialized;
+    if isempty(hasInitialized)
+        hasInitialized = false;
+    end
     root = fileparts(mfilename('fullpath'));
 
-    addpath(root);
-    addpath(fullfile(root, 'apps'), '-end');
-    appDirs = appPathDirs(fullfile(root, 'apps'));
-    for k = 1:numel(appDirs)
-        addpath(appDirs{k}, '-end');
+    if ~hasInitialized
+        addpath(root);
+        addpath(fullfile(root, 'apps'), '-end');
+        appDirs = appPathDirs(fullfile(root, 'apps'));
+        for k = 1:numel(appDirs)
+            addpath(appDirs{k}, '-end');
+        end
+        hasInitialized = true;
     end
 
-    fprintf('LabKit workbench loaded from:\n  %s\n', root);
+    if printBanner
+        fprintf('LabKit workbench loaded from:\n  %s\n', root);
+    end
 end
 
 function dirs = appPathDirs(appRoot)

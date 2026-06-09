@@ -10,5 +10,5 @@ function root = setupLabKitTestPath()
     addpath(fullfile(root, "tests"));
     addpath(fullfile(root, "tests", "support"));
     addpath(fullfile(root, "tests", "helpers"));
-    startup_labkit();
+    startup_labkit(false);
 end
