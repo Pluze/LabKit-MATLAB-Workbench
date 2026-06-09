@@ -34,6 +34,7 @@ function dirs = appPathDirs(appRoot)
     end
 
     entries = dir(appRoot);
+    dirsByEntry = cell(numel(entries), 1);
     for k = 1:numel(entries)
         entry = entries(k);
         if ~entry.isdir || ismember(entry.name, {'.', '..'})
@@ -44,10 +45,10 @@ function dirs = appPathDirs(appRoot)
         end
 
         fullpath = fullfile(appRoot, entry.name);
-        dirs{end+1} = fullpath;
         childDirs = appPathDirs(fullpath);
-        dirs = [dirs childDirs];
+        dirsByEntry{k} = [{fullpath}, childDirs];
     end
+    dirs = [dirsByEntry{:}];
 end
 
 function tf = shouldSkipAppDir(name)

@@ -114,8 +114,9 @@ function events = detectPanTompkins(signal, x, fs, opts)
     refineRadius = max(1, round(double(optionValue(opts, 'refineSearchSec', 0.120)) * fs));
     acceptedIdx = zeros(0, 1);
     acceptedScore = zeros(0, 1);
-    rejectedIdx = zeros(0, 1);
-    rejectedScore = zeros(0, 1);
+    rejectedIdx = zeros(numel(candidateIdx), 1);
+    rejectedScore = zeros(numel(candidateIdx), 1);
+    rejectedCount = 0;
 
     for k = 1:numel(candidateIdx)
         candidate = candidateIdx(k);
@@ -126,14 +127,16 @@ function events = detectPanTompkins(signal, x, fs, opts)
                 acceptedIdx, acceptedScore, anchor, candidateScore, minDistance);
             signalLevel = 0.125 * candidateScore + 0.875 * signalLevel;
         else
-            rejectedIdx(end+1, 1) = anchor;
-            rejectedScore(end+1, 1) = candidateScore;
+            rejectedCount = rejectedCount + 1;
+            rejectedIdx(rejectedCount) = anchor;
+            rejectedScore(rejectedCount) = candidateScore;
             noiseLevel = 0.125 * candidateScore + 0.875 * noiseLevel;
         end
         threshold = noiseLevel + 0.25 * max(signalLevel - noiseLevel, eps);
 
         [acceptedIdx, acceptedScore] = searchBackIfNeeded(acceptedIdx, acceptedScore, ...
-            rejectedIdx, rejectedScore, minDistance, fs, 1.66, 0.5 * threshold);
+            rejectedIdx(1:rejectedCount), rejectedScore(1:rejectedCount), ...
+            minDistance, fs, 1.66, 0.5 * threshold);
     end
 
     idx = cleanupPeaks(acceptedIdx, x, minDistance, polarity);
@@ -173,10 +176,12 @@ function events = detectQrsStreaming(signal, x, fs, opts)
     end
     threshold = noiseLevel + 0.35 * max(signalLevel - noiseLevel, eps);
 
-    acceptedIdx = zeros(0, 1);
-    acceptedScore = zeros(0, 1);
-    templateSegments = zeros(0, 0);
+    acceptedIdx = zeros(numel(envelope), 1);
+    acceptedScore = zeros(numel(envelope), 1);
+    acceptedCount = 0;
     templateRadius = max(2, round(0.120 * fs));
+    templateSegments = zeros(2 * templateRadius + 1, numel(envelope));
+    templateCount = 0;
     minTemplateScore = double(optionValue(opts, 'minTemplateScore', 0.45));
 
     i = lookahead + 1;
@@ -192,25 +197,28 @@ function events = detectQrsStreaming(signal, x, fs, opts)
         end
 
         anchor = snapPeak(highPassed, i, snapRadius, polarity);
-        templateScore = templateSimilarity(highPassed, anchor, templateRadius, templateSegments);
-        templateReady = size(templateSegments, 2) >= 4;
+        templateScore = templateSimilarity(highPassed, anchor, templateRadius, ...
+            templateSegments(:, 1:templateCount));
+        templateReady = templateCount >= 4;
         passesTemplate = ~templateReady || templateScore >= minTemplateScore || candidateScore >= 1.5 * threshold;
 
-        if isempty(acceptedIdx) || anchor - acceptedIdx(end) >= minDistance
+        if acceptedCount == 0 || anchor - acceptedIdx(acceptedCount) >= minDistance
             if passesTemplate
-                acceptedIdx(end+1, 1) = anchor;
-                acceptedScore(end+1, 1) = candidateScore;
+                acceptedCount = acceptedCount + 1;
+                acceptedIdx(acceptedCount) = anchor;
+                acceptedScore(acceptedCount) = candidateScore;
                 segment = normalizedSegment(highPassed, anchor, templateRadius);
                 if ~isempty(segment)
-                    templateSegments(:, end+1) = segment;
+                    templateCount = templateCount + 1;
+                    templateSegments(:, templateCount) = segment;
                 end
                 signalLevel = 0.125 * candidateScore + 0.875 * signalLevel;
             else
                 noiseLevel = 0.125 * candidateScore + 0.875 * noiseLevel;
             end
-        elseif candidateScore > acceptedScore(end)
-            acceptedIdx(end) = anchor;
-            acceptedScore(end) = candidateScore;
+        elseif candidateScore > acceptedScore(acceptedCount)
+            acceptedIdx(acceptedCount) = anchor;
+            acceptedScore(acceptedCount) = candidateScore;
             signalLevel = 0.125 * candidateScore + 0.875 * signalLevel;
         else
             noiseLevel = 0.125 * candidateScore + 0.875 * noiseLevel;
@@ -220,7 +228,7 @@ function events = detectQrsStreaming(signal, x, fs, opts)
         i = i + lookahead;
     end
 
-    idx = cleanupPeaks(acceptedIdx, x, minDistance, polarity);
+    idx = cleanupPeaks(acceptedIdx(1:acceptedCount), x, minDistance, polarity);
     idx = snapPeaksToRaw(idx, x, fs, opts, polarity, minDistance);
     idx = correctStreamingMedianPolarity(idx, x, fs, opts, polarity, minDistance);
     metadata = struct('method', "qrs_streaming", ...

@@ -26,11 +26,11 @@ function [scanRate, curves, logmsg] = parseCVCTDTA(filepath)
     lines = cellstr(lines);
 
     scanRate = NaN;
-    curves = struct('name', {}, 'headers', {}, 'units', {}, 'data', {}, 'numericMask', {});
-    logmsg = {};
-
     nLines = numel(lines);
-    logmsg{end+1} = sprintf('Total lines in file: %d', nLines);
+    curves = struct('name', {}, 'headers', {}, 'units', {}, 'data', {}, 'numericMask', {});
+    logmsg = cell(max(4 * nLines + 4, 1), 1);
+    logCount = 1;
+    logmsg{logCount} = sprintf('Total lines in file: %d', nLines);
 
     for i = 1:nLines
         tok = splitTabs(lines{i});
@@ -38,68 +38,87 @@ function [scanRate, curves, logmsg] = parseCVCTDTA(filepath)
             val = str2double(tok{3});
             if ~isnan(val)
                 scanRate = val / 1000;
-                logmsg{end+1} = sprintf('Found SCANRATE at line %d: %.6f V/s', i, scanRate);
+                logCount = logCount + 1;
+                logmsg{logCount} = sprintf('Found SCANRATE at line %d: %.6f V/s', i, scanRate);
                 break;
             end
         end
     end
 
-    curveLines = [];
-    curveNames = {};
+    curveLines = zeros(nLines, 1);
+    curveNames = cell(nLines, 1);
+    curveCount = 0;
     for i = 1:nLines
         tok = splitTabs(lines{i});
         if ~isempty(tok) && startsWith(tok{1}, 'CURVE', 'IgnoreCase', true)
-            curveLines(end+1) = i;
-            curveNames{end+1} = tok{1};
+            curveCount = curveCount + 1;
+            curveLines(curveCount) = i;
+            curveNames{curveCount} = tok{1};
         end
     end
+    curveLines = curveLines(1:curveCount);
+    curveNames = curveNames(1:curveCount);
 
     if isempty(curveLines)
-        logmsg{end+1} = 'No CURVE line found.';
+        logCount = logCount + 1;
+        logmsg{logCount} = 'No CURVE line found.';
+        logmsg = logmsg(1:logCount);
         return;
     end
-    logmsg{end+1} = sprintf('Detected %d CURVE section(s).', numel(curveLines));
+    logCount = logCount + 1;
+    logmsg{logCount} = sprintf('Detected %d CURVE section(s).', numel(curveLines));
 
+    parsedCurves = repmat(curves, 1, numel(curveLines));
+    parsedCount = 0;
     for k = 1:numel(curveLines)
         i0 = curveLines(k);
         name = curveNames{k};
-        logmsg{end+1} = sprintf('Parsing %s at line %d', name, i0);
+        logCount = logCount + 1;
+        logmsg{logCount} = sprintf('Parsing %s at line %d', name, i0);
 
         iHeader = nextNonEmpty(lines, i0 + 1);
         if isnan(iHeader)
-            logmsg{end+1} = sprintf('  %s skipped: no header.', name);
+            logCount = logCount + 1;
+            logmsg{logCount} = sprintf('  %s skipped: no header.', name);
             continue;
         end
 
         headers = splitTabs(lines{iHeader});
         if isempty(headers)
-            logmsg{end+1} = sprintf('  %s skipped: empty header.', name);
+            logCount = logCount + 1;
+            logmsg{logCount} = sprintf('  %s skipped: empty header.', name);
             continue;
         end
-        logmsg{end+1} = sprintf('  Header: %s', strjoin(headers, ', '));
+        logCount = logCount + 1;
+        logmsg{logCount} = sprintf('  Header: %s', strjoin(headers, ', '));
 
         iUnits = nextNonEmpty(lines, iHeader + 1);
         if isnan(iUnits)
-            logmsg{end+1} = sprintf('  %s skipped: no unit/data line.', name);
+            logCount = logCount + 1;
+            logmsg{logCount} = sprintf('  %s skipped: no unit/data line.', name);
             continue;
         end
 
         units = splitTabs(lines{iUnits});
         iDataStart = nextNonEmpty(lines, iUnits + 1);
         if isnan(iDataStart)
-            logmsg{end+1} = sprintf('  %s skipped: no data lines.', name);
+            logCount = logCount + 1;
+            logmsg{logCount} = sprintf('  %s skipped: no data lines.', name);
             continue;
         end
 
         if isDataLike(units)
-            logmsg{end+1} = sprintf('  No separate unit line detected; data starts at line %d.', iUnits);
+            logCount = logCount + 1;
+            logmsg{logCount} = sprintf('  No separate unit line detected; data starts at line %d.', iUnits);
             iDataStart = iUnits;
             units = repmat({''}, size(headers));
         else
-            logmsg{end+1} = sprintf('  Unit line detected at %d.', iUnits);
+            logCount = logCount + 1;
+            logmsg{logCount} = sprintf('  Unit line detected at %d.', iUnits);
         end
 
-        raw = [];
+        raw = nan(nLines - iDataStart + 1, numel(headers));
+        rawCount = 0;
         for j = iDataStart:nLines
             tok = splitTabs(lines{j});
             if isempty(tok)
@@ -120,24 +139,32 @@ function [scanRate, curves, logmsg] = parseCVCTDTA(filepath)
                 end
             end
             if anyNumeric
-                raw(end+1, :) = row;
+                rawCount = rawCount + 1;
+                raw(rawCount, :) = row;
             end
         end
+        raw = raw(1:rawCount, :);
 
         if isempty(raw)
-            logmsg{end+1} = sprintf('  %s parsed 0 rows.', name);
+            logCount = logCount + 1;
+            logmsg{logCount} = sprintf('  %s parsed 0 rows.', name);
             continue;
         end
 
         numericMask = any(~isnan(raw), 1);
 
-        curves(end+1).name = name;
-        curves(end).headers = headers;
-        curves(end).units = units;
-        curves(end).data = raw;
-        curves(end).numericMask = numericMask;
+        parsedCount = parsedCount + 1;
+        parsedCurves(parsedCount).name = name;
+        parsedCurves(parsedCount).headers = headers;
+        parsedCurves(parsedCount).units = units;
+        parsedCurves(parsedCount).data = raw;
+        parsedCurves(parsedCount).numericMask = numericMask;
 
-        logmsg{end+1} = sprintf('  %s parsed %d rows x %d cols.', ...
+        logCount = logCount + 1;
+        logmsg{logCount} = sprintf('  %s parsed %d rows x %d cols.', ...
             name, size(raw, 1), size(raw, 2));
     end
+
+    curves = parsedCurves(1:parsedCount);
+    logmsg = logmsg(1:logCount);
 end

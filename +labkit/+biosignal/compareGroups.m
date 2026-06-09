@@ -42,23 +42,26 @@ function result = compareGroups(values, groups)
         minValue, maxValue, ...
         'VariableNames', {'Group','N','Mean','Std','Median','Min','Max'});
 
-    groupA = strings(0, 1);
-    groupB = strings(0, 1);
-    tStatistic = zeros(0, 1);
-    degreesFreedom = zeros(0, 1);
-    pValue = zeros(0, 1);
-    meanDifference = zeros(0, 1);
+    pairCount = n * (n - 1) / 2;
+    groupA = strings(pairCount, 1);
+    groupB = strings(pairCount, 1);
+    tStatistic = zeros(pairCount, 1);
+    degreesFreedom = zeros(pairCount, 1);
+    pValue = zeros(pairCount, 1);
+    meanDifference = zeros(pairCount, 1);
+    pairIndex = 0;
     for i = 1:n
         for j = i+1:n
             a = values(groups == labels(i));
             b = values(groups == labels(j));
             stats = welchComparison(a, b);
-            groupA(end+1, 1) = labels(i);
-            groupB(end+1, 1) = labels(j);
-            tStatistic(end+1, 1) = stats.t;
-            degreesFreedom(end+1, 1) = stats.df;
-            pValue(end+1, 1) = stats.p;
-            meanDifference(end+1, 1) = stats.meanDiff;
+            pairIndex = pairIndex + 1;
+            groupA(pairIndex) = labels(i);
+            groupB(pairIndex) = labels(j);
+            tStatistic(pairIndex) = stats.t;
+            degreesFreedom(pairIndex) = stats.df;
+            pValue(pairIndex) = stats.p;
+            meanDifference(pairIndex) = stats.meanDiff;
         end
     end
     pairwise = table(groupA, groupB, meanDifference, tStatistic, ...

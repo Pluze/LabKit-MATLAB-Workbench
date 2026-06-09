@@ -168,7 +168,8 @@ classdef ProjectDebtGuardrailTest < matlab.unittest.TestCase
             root = setupLabKitTestPath();
             runners = collectRelativeFiles(root, ...
                 fullfile(root, 'apps', '**', '+ui', 'runApp.m'));
-            findings = strings(1, 0);
+            findings = strings(numel(runners), 1);
+            findingCount = 0;
 
             for k = 1:numel(runners)
                 runnerPath = fullfile(root, strrep(runners(k), '/', filesep));
@@ -181,10 +182,12 @@ classdef ProjectDebtGuardrailTest < matlab.unittest.TestCase
                 packageFunctions = packageComponentFunctionNames(packageRoot);
                 overlap = intersect(runnerFunctions, packageFunctions);
                 if ~isempty(overlap)
-                    findings(end+1) = runners(k) + " -> " + ...
+                    findingCount = findingCount + 1;
+                    findings(findingCount) = runners(k) + " -> " + ...
                         strjoin(overlap, ", ");
                 end
             end
+            findings = findings(1:findingCount);
 
             testCase.verifyTrue(isempty(findings), ...
                 ['App UI runners should call extracted app-owned package helpers, ' ...
@@ -195,24 +198,28 @@ classdef ProjectDebtGuardrailTest < matlab.unittest.TestCase
         function dicWearableMigrationsHaveDirectPackageTests(testCase)
             root = setupLabKitTestPath();
             packageRoots = collectDicWearableAppPackageRoots(root);
-            missing = strings(1, 0);
+            missing = strings(numel(packageRoots), 1);
+            missingCount = 0;
 
             for k = 1:numel(packageRoots)
                 packageRoot = packageRoots(k);
                 nonUiComponents = collectNonUiPackageComponents(packageRoot);
                 [family, namespace] = appPackageFamilyAndNamespace(root, packageRoot);
                 if isempty(nonUiComponents)
-                    missing(end+1) = string(relativePath(root, packageRoot)) + ...
+                    missingCount = missingCount + 1;
+                    missing(missingCount) = string(relativePath(root, packageRoot)) + ...
                         " -> missing non-UI package component";
                     continue;
                 end
 
                 if ~packageNamespaceHasDirectUnitTest(root, family, namespace)
-                    missing(end+1) = string(relativePath(root, packageRoot)) + ...
+                    missingCount = missingCount + 1;
+                    missing(missingCount) = string(relativePath(root, packageRoot)) + ...
                         " -> missing direct unit test for " + namespace + ...
                         ".(ops|view|export|io|state)";
                 end
             end
+            missing = missing(1:missingCount);
 
             testCase.verifyTrue(isempty(missing), ...
                 ['DIC and wearable app package migrations need directly tested ' ...
@@ -227,7 +234,7 @@ classdef ProjectDebtGuardrailTest < matlab.unittest.TestCase
 end
 
 function files = uniqueMatchedFiles(root, scopes, pattern)
-    files = strings(1, 0);
+    matchesByScope = cell(numel(scopes), 1);
     for s = 1:numel(scopes)
         scopeRoot = fullfile(root, scopes{s});
         if isfile(scopeRoot)
@@ -237,32 +244,35 @@ function files = uniqueMatchedFiles(root, scopes, pattern)
         else
             continue;
         end
+        matches = strings(numel(textFiles), 1);
+        matchCount = 0;
         for k = 1:numel(textFiles)
             content = fileread(textFiles{k});
             if ~isempty(regexp(content, pattern, 'once'))
-                files(end+1) = string(relativePath(root, textFiles{k}));
+                matchCount = matchCount + 1;
+                matches(matchCount) = string(relativePath(root, textFiles{k}));
             end
         end
+        matchesByScope{s} = matches(1:matchCount);
     end
-    files = unique(files);
+    if isempty(matchesByScope)
+        files = strings(1, 0);
+    else
+        files = unique(vertcat(matchesByScope{:}));
+    end
 end
 
 function files = collectTextFiles(folder)
-    files = {};
-    entries = dir(folder);
-    [~, order] = sort({entries.name});
-    entries = entries(order);
-    for k = 1:numel(entries)
-        entry = entries(k);
-        if entry.isdir
-            if any(strcmp(entry.name, {'.', '..'}))
-                continue;
-            end
-            files = [files, collectTextFiles(fullfile(folder, entry.name))];
-        elseif endsWith(entry.name, {'.m', '.md', '.ps1', '.sh', '.yml', '.yaml'})
-            files{end+1} = fullfile(entry.folder, entry.name);
-        end
+    entries = dir(fullfile(folder, '**', '*'));
+    entries = entries(~[entries.isdir]);
+    if isempty(entries)
+        files = {};
+        return;
     end
+    names = {entries.name};
+    keep = endsWith(names, {'.m', '.md', '.ps1', '.sh', '.yml', '.yaml'});
+    files = fullfile({entries(keep).folder}, {entries(keep).name});
+    files = sort(files);
 end
 
 function dirs = collectAppPrivateDirs(root)
@@ -270,27 +280,19 @@ function dirs = collectAppPrivateDirs(root)
 end
 
 function dirs = collectPrivateDirs(folder, root)
-    dirs = strings(1, 0);
     if ~isfolder(folder)
+        dirs = strings(1, 0);
         return;
     end
 
-    entries = dir(folder);
-    for k = 1:numel(entries)
-        entry = entries(k);
-        if ~entry.isdir || any(strcmp(entry.name, {'.', '..'}))
-            continue;
-        end
-
-        child = fullfile(entry.folder, entry.name);
-        if strcmp(entry.name, 'private')
-            dirs(end+1) = string(relativePath(root, ...
-                child));
-        else
-            dirs = [dirs, collectPrivateDirs(child, root)];
-        end
+    entries = dir(fullfile(folder, '**', 'private'));
+    entries = entries([entries.isdir]);
+    if isempty(entries)
+        dirs = strings(1, 0);
+        return;
     end
-    dirs = unique(dirs);
+    paths = fullfile({entries.folder}, {entries.name});
+    dirs = unique(string(relativePaths(root, paths)));
 end
 
 function files = collectAppPrivateMFiles(root)
@@ -299,39 +301,43 @@ end
 
 function dirs = collectDirectPackageDirs(folder, root)
     entries = dir(fullfile(folder, '+*'));
-    dirs = strings(1, 0);
+    dirs = strings(numel(entries), 1);
+    dirCount = 0;
     for k = 1:numel(entries)
         if entries(k).isdir
-            dirs(end+1) = string(relativePath(root, ...
+            dirCount = dirCount + 1;
+            dirs(dirCount) = string(relativePath(root, ...
                 fullfile(entries(k).folder, entries(k).name)));
         end
     end
-    dirs = unique(dirs);
+    dirs = unique(dirs(1:dirCount));
 end
 
 function files = collectOversizedAppRunners(root, maxLines)
-    files = strings(1, 0);
     entries = [ ...
         dir(fullfile(root, 'apps', '**', 'private', 'run*App.m')); ...
         dir(fullfile(root, 'apps', '**', '+ui', 'runApp.m'))];
+    files = strings(numel(entries), 1);
+    fileCount = 0;
     for k = 1:numel(entries)
         if entries(k).isdir
             continue;
         end
         filepath = fullfile(entries(k).folder, entries(k).name);
         if countFileLines(filepath) > maxLines
-            files(end+1) = string(relativePath(root, filepath));
+            fileCount = fileCount + 1;
+            files(fileCount) = string(relativePath(root, filepath));
         end
     end
-    files = unique(files);
+    files = unique(files(1:fileCount));
 end
 
 function files = collectRunnerMigrationMapFiles(mapFile)
     content = fileread(mapFile);
     tokens = regexp(content, '(?m)^## `([^`]+)`\s*$', 'tokens');
-    files = strings(1, 0);
+    files = strings(numel(tokens), 1);
     for k = 1:numel(tokens)
-        files(end+1) = string(tokens{k}{1});
+        files(k) = string(tokens{k}{1});
     end
     files = unique(files);
 end
@@ -347,14 +353,17 @@ end
 
 function names = packageComponentFunctionNames(packageRoot)
     components = ["+ops", "+view", "+export", "+io", "+state"];
-    names = strings(1, 0);
+    filesByComponent = cell(numel(components), 1);
     for k = 1:numel(components)
         componentRoot = fullfile(packageRoot, components(k));
-        files = dir(fullfile(componentRoot, '*.m'));
-        for iFile = 1:numel(files)
-            [~, name] = fileparts(files(iFile).name);
-            names(end+1) = string(name);
-        end
+        filesByComponent{k} = dir(fullfile(componentRoot, '*.m'));
+    end
+
+    files = vertcat(filesByComponent{:});
+    names = strings(numel(files), 1);
+    for k = 1:numel(files)
+        [~, name] = fileparts(files(k).name);
+        names(k) = string(name);
     end
     names = unique(names);
 end
@@ -367,67 +376,72 @@ function names = functionNamesInFile(filepath)
     withoutOutput = regexp(content, ...
         '(?m)^\s*function\s+(\w+)\s*\(', ...
         'tokens');
-    names = strings(1, 0);
-    for k = 1:numel(withOutput)
-        names(end+1) = string(withOutput{k}{1});
-    end
-    for k = 1:numel(withoutOutput)
-        names(end+1) = string(withoutOutput{k}{1});
-    end
+    names = [tokenValues(withOutput); tokenValues(withoutOutput)];
     names = unique(names);
 end
 
 function files = collectRelativeFiles(root, pattern)
     entries = dir(pattern);
-    files = strings(1, 0);
+    files = strings(numel(entries), 1);
+    fileCount = 0;
     for k = 1:numel(entries)
         if ~entries(k).isdir
-            files(end+1) = string(relativePath(root, ...
+            fileCount = fileCount + 1;
+            files(fileCount) = string(relativePath(root, ...
                 fullfile(entries(k).folder, entries(k).name)));
         end
     end
-    files = unique(files);
+    files = unique(files(1:fileCount));
 end
 
 function packageRoots = collectDicWearableAppPackageRoots(root)
-    packageRoots = strings(1, 0);
     families = ["dic", "wearable"];
-    for family = families
+    packageRootsByFamily = cell(numel(families), 1);
+    for iFamily = 1:numel(families)
+        family = families(iFamily);
         familyRoot = fullfile(root, 'apps', char(family));
         if ~isfolder(familyRoot)
             continue;
         end
 
         apps = dir(familyRoot);
-        for iApp = 1:numel(apps)
-            appDir = apps(iApp);
-            if ~appDir.isdir || any(strcmp(appDir.name, {'.', '..', 'private'}))
-                continue;
-            end
-
+        appNames = {apps.name};
+        appDirs = apps([apps.isdir] & ~ismember(appNames, {'.', '..', 'private'}));
+        rootsByApp = cell(numel(appDirs), 1);
+        for iApp = 1:numel(appDirs)
+            appDir = appDirs(iApp);
             packageDirs = dir(fullfile(appDir.folder, appDir.name, '+*'));
+            roots = strings(numel(packageDirs), 1);
+            rootCount = 0;
             for iPackage = 1:numel(packageDirs)
                 packageDir = packageDirs(iPackage);
                 if packageDir.isdir && startsWith(packageDir.name, '+')
-                    packageRoots(end+1) = string(fullfile( ...
+                    rootCount = rootCount + 1;
+                    roots(rootCount) = string(fullfile( ...
                         packageDir.folder, packageDir.name));
                 end
             end
+            rootsByApp{iApp} = roots(1:rootCount);
         end
+        packageRootsByFamily{iFamily} = vertcat(rootsByApp{:});
     end
+    packageRoots = vertcat(packageRootsByFamily{:});
     packageRoots = unique(packageRoots);
 end
 
 function components = collectNonUiPackageComponents(packageRoot)
-    components = strings(1, 0);
     componentNames = ["+ops", "+view", "+export", "+io", "+state"];
+    components = strings(numel(componentNames), 1);
+    componentCount = 0;
     for k = 1:numel(componentNames)
         componentRoot = fullfile(packageRoot, char(componentNames(k)));
         files = dir(fullfile(componentRoot, '*.m'));
         if isfolder(componentRoot) && any(~[files.isdir])
-            components(end+1) = componentNames(k);
+            componentCount = componentCount + 1;
+            components(componentCount) = componentNames(k);
         end
     end
+    components = components(1:componentCount);
 end
 
 function [family, namespace] = appPackageFamilyAndNamespace(root, packageRoot)
@@ -466,14 +480,17 @@ end
 
 function actual = collectOversizedEntrypoints(root, maxLines)
     appFiles = dir(fullfile(root, 'apps', '**', 'labkit_*_app.m'));
-    actual = strings(1, 0);
+    actual = strings(numel(appFiles), 1);
+    actualCount = 0;
     for k = 1:numel(appFiles)
         filepath = fullfile(appFiles(k).folder, appFiles(k).name);
         lineCount = countFileLines(filepath);
         if lineCount > maxLines
-            actual(end+1) = string(relativePath(root, filepath));
+            actualCount = actualCount + 1;
+            actual(actualCount) = string(relativePath(root, filepath));
         end
     end
+    actual = actual(1:actualCount);
 end
 
 function n = countFileLines(filepath)
@@ -487,4 +504,18 @@ function rel = relativePath(root, filepath)
         rel = filepath(numel(prefix)+1:end);
     end
     rel = strrep(rel, filesep, '/');
+end
+
+function paths = relativePaths(root, filepaths)
+    paths = cell(size(filepaths));
+    for k = 1:numel(filepaths)
+        paths{k} = relativePath(root, filepaths{k});
+    end
+end
+
+function values = tokenValues(tokens)
+    values = strings(numel(tokens), 1);
+    for k = 1:numel(tokens)
+        values(k) = string(tokens{k}{1});
+    end
 end
