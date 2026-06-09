@@ -58,7 +58,7 @@ classdef TestCompatibilityDebtGuardrailTest < matlab.unittest.TestCase
                     'tokens');
                 for i = 1:numel(tokens)
                     inventoryFunctions(end+1) = string(relativePath(root, files(k))) + ...
-                        " -> " + string(tokens{i}{1}); %#ok<AGROW>
+                        " -> " + string(tokens{i}{1});
                 end
             end
 
@@ -94,7 +94,7 @@ function files = collectMFiles(folder)
     files = strings(1, 0);
     for k = 1:numel(entries)
         if ~entries(k).isdir
-            files(end+1) = string(fullfile(entries(k).folder, entries(k).name)); %#ok<AGROW>
+            files(end+1) = string(fullfile(entries(k).folder, entries(k).name));
         end
     end
     files = unique(files);
@@ -107,7 +107,7 @@ function findings = filesMatchingAnyPattern(root, files, patterns)
         for i = 1:numel(patterns)
             if ~isempty(regexp(content, char(patterns(i)), 'once'))
                 findings(end+1) = string(relativePath(root, files(k))) + ...
-                    " -> " + patterns(i); %#ok<AGROW>
+                    " -> " + patterns(i);
             end
         end
     end

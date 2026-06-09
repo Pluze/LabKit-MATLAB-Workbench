@@ -194,7 +194,7 @@ function R = integrateCVCTSignSplit(t, V, I, scanRate)
         bp = [0, 1];
         s0 = crossingFraction(I1, I2, 0);
         if ~isempty(s0)
-            bp(end+1) = s0; %#ok<AGROW>
+            bp(end+1) = s0;
         end
         bp = unique(sort(bp));
 
@@ -219,7 +219,7 @@ function R = integrateCVCTSignSplit(t, V, I, scanRate)
             if useCV
                 dt_act = tb - ta;
                 dt_cv = abs(Vb - Va) / scanRate;
-                dtErrList(end+1) = abs(dt_act - dt_cv); %#ok<AGROW>
+                dtErrList(end+1) = abs(dt_act - dt_cv);
 
                 if Imid < 0
                     R.QcvCath = R.QcvCath + abs(trapz([0 dt_cv], [Ia Ib]));

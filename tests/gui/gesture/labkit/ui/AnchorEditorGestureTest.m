@@ -6,10 +6,10 @@ classdef AnchorEditorGestureTest < matlab.uitest.TestCase
             setupLabKitTestPath();
             h = guiTestHelpers();
             h.assertUifigureAvailable();
-            cleanup = onCleanup(@() h.closeAllFigures()); %#ok<NASGU>
+            cleanup = onCleanup(@() h.closeAllFigures());
 
             fig = uifigure('Visible', 'off', 'Name', 'labkit_anchor_gesture_probe');
-            cleaner = onCleanup(@() delete(fig)); %#ok<NASGU>
+            cleaner = onCleanup(@() delete(fig));
             ax = uiaxes(fig);
             image(ax, zeros(50, 70, 3, 'uint8'));
             axis(ax, 'image');
@@ -64,7 +64,7 @@ classdef AnchorEditorGestureTest < matlab.uitest.TestCase
             writeGestureArtifacts(recorder, fig, "anchor_editor_gesture");
 
             function onChanged(~, reason)
-                changedReasons(end+1, 1) = string(reason); %#ok<AGROW>
+                changedReasons(end+1, 1) = string(reason);
             end
         end
     end

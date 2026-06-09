@@ -14,7 +14,7 @@ function verify_gui_layout_ui_axes_workbench()
 
     h = guiTestHelpers();
     h.assertUifigureAvailable();
-    cleanup = onCleanup(@() h.closeAllFigures()); %#ok<NASGU>
+    cleanup = onCleanup(@() h.closeAllFigures());
 
     checkCreateAxesHelper(h);
     checkCreateAppShellHelper(h);
@@ -22,7 +22,7 @@ end
 
 function checkCreateAxesHelper(h)
     fig = uifigure('Visible', 'off', 'Name', 'labkit_create_axes_probe');
-    cleaner = onCleanup(@() delete(fig)); %#ok<NASGU>
+    cleaner = onCleanup(@() delete(fig));
     grid = uigridlayout(fig, [2 1]);
 
     ax = labkit.ui.view.axes(grid, 2, 'Probe Title', 'Probe X', 'Probe Y');
@@ -40,7 +40,7 @@ function checkCreateAxesHelper(h)
     popoutFig = findall(groot, 'Type', 'figure', 'Name', 'Probe Title');
     assert(~isempty(popoutFig), 'Axes popout menu should create a standalone figure.');
     popoutFig = popoutFig(1);
-    popoutCleaner = onCleanup(@() delete(popoutFig)); %#ok<NASGU>
+    popoutCleaner = onCleanup(@() delete(popoutFig));
     popoutAxes = findobj(popoutFig, 'Type', 'axes');
     assert(numel(popoutAxes) >= 1, 'Axes popout should create an editable figure axes.');
     assert(strcmp(char(popoutAxes(1).Title.String), 'Probe Title'), ...
@@ -72,7 +72,7 @@ function checkCreateAppShellHelper(h)
         'position', [40 30 1200 760], ...
         'leftWidth', 330, ...
         'options', opts));
-    cleaner = onCleanup(@() delete(ui.fig)); %#ok<NASGU>
+    cleaner = onCleanup(@() delete(ui.fig));
 
     assert(isequal(ui.main.ColumnWidth, {330, 6, '1x'}), ...
         'App shell helper should create the standard resizable left/separator/right layout.');
@@ -107,7 +107,7 @@ function checkCreateAppShellHelper(h)
         'position', [40 30 1200 760], ...
         'leftWidth', 330, ...
         'options', customOpts));
-    cleaner3 = onCleanup(@() delete(custom.fig)); %#ok<NASGU>
+    cleaner3 = onCleanup(@() delete(custom.fig));
     h.assertTabTitles(custom.fig, {'Probe Controls'});
     h.assertScrollablePanel(custom.probeScrollPanel, 'Probe Controls tab');
     h.assertScrollableGrid(custom.probeGrid, 'Probe Controls grid');

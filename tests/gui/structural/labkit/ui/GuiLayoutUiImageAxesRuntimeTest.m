@@ -14,10 +14,10 @@ function verify_gui_layout_ui_image_axes_runtime()
 
     h = guiTestHelpers();
     h.assertUifigureAvailable();
-    cleanup = onCleanup(@() h.closeAllFigures()); %#ok<NASGU>
+    cleanup = onCleanup(@() h.closeAllFigures());
 
     fig = uifigure('Visible', 'off', 'Name', 'labkit_image_axes_runtime_probe');
-    cleaner = onCleanup(@() delete(fig)); %#ok<NASGU>
+    cleaner = onCleanup(@() delete(fig));
     ax = uiaxes(fig);
     bg = imagesc(ax, rand(30, 40));
     defaultScroll = @(~,~) setappdata(fig, 'defaultScrollCalled', true);
@@ -72,10 +72,10 @@ function verify_gui_layout_ui_image_axes_runtime()
     runtime.delete();
 
     function onInteractionChanged(active, name)
-        interactionEvents(end+1, :) = {active, char(name)}; %#ok<AGROW>
+        interactionEvents(end+1, :) = {active, char(name)};
     end
 
     function captureTrace(message)
-        traceMessages{end+1, 1} = message; %#ok<AGROW>
+        traceMessages{end+1, 1} = message;
     end
 end

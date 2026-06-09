@@ -30,9 +30,9 @@ function dirs = appPathDirs(appRoot)
         end
 
         fullpath = fullfile(appRoot, entry.name);
-        dirs{end+1} = fullpath; %#ok<AGROW>
+        dirs{end+1} = fullpath;
         childDirs = appPathDirs(fullpath);
-        dirs = [dirs childDirs]; %#ok<AGROW>
+        dirs = [dirs childDirs];
     end
 end
 

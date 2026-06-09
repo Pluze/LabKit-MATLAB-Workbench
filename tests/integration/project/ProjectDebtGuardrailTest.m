@@ -182,7 +182,7 @@ classdef ProjectDebtGuardrailTest < matlab.unittest.TestCase
                 overlap = intersect(runnerFunctions, packageFunctions);
                 if ~isempty(overlap)
                     findings(end+1) = runners(k) + " -> " + ...
-                        strjoin(overlap, ", "); %#ok<AGROW>
+                        strjoin(overlap, ", ");
                 end
             end
 
@@ -203,14 +203,14 @@ classdef ProjectDebtGuardrailTest < matlab.unittest.TestCase
                 [family, namespace] = appPackageFamilyAndNamespace(root, packageRoot);
                 if isempty(nonUiComponents)
                     missing(end+1) = string(relativePath(root, packageRoot)) + ...
-                        " -> missing non-UI package component"; %#ok<AGROW>
+                        " -> missing non-UI package component";
                     continue;
                 end
 
                 if ~packageNamespaceHasDirectUnitTest(root, family, namespace)
                     missing(end+1) = string(relativePath(root, packageRoot)) + ...
                         " -> missing direct unit test for " + namespace + ...
-                        ".(ops|view|export|io|state)"; %#ok<AGROW>
+                        ".(ops|view|export|io|state)";
                 end
             end
 
@@ -240,7 +240,7 @@ function files = uniqueMatchedFiles(root, scopes, pattern)
         for k = 1:numel(textFiles)
             content = fileread(textFiles{k});
             if ~isempty(regexp(content, pattern, 'once'))
-                files(end+1) = string(relativePath(root, textFiles{k})); %#ok<AGROW>
+                files(end+1) = string(relativePath(root, textFiles{k}));
             end
         end
     end
@@ -258,9 +258,9 @@ function files = collectTextFiles(folder)
             if any(strcmp(entry.name, {'.', '..'}))
                 continue;
             end
-            files = [files, collectTextFiles(fullfile(folder, entry.name))]; %#ok<AGROW>
+            files = [files, collectTextFiles(fullfile(folder, entry.name))];
         elseif endsWith(entry.name, {'.m', '.md', '.ps1', '.sh', '.yml', '.yaml'})
-            files{end+1} = fullfile(entry.folder, entry.name); %#ok<AGROW>
+            files{end+1} = fullfile(entry.folder, entry.name);
         end
     end
 end
@@ -285,9 +285,9 @@ function dirs = collectPrivateDirs(folder, root)
         child = fullfile(entry.folder, entry.name);
         if strcmp(entry.name, 'private')
             dirs(end+1) = string(relativePath(root, ...
-                child)); %#ok<AGROW>
+                child));
         else
-            dirs = [dirs, collectPrivateDirs(child, root)]; %#ok<AGROW>
+            dirs = [dirs, collectPrivateDirs(child, root)];
         end
     end
     dirs = unique(dirs);
@@ -303,7 +303,7 @@ function dirs = collectDirectPackageDirs(folder, root)
     for k = 1:numel(entries)
         if entries(k).isdir
             dirs(end+1) = string(relativePath(root, ...
-                fullfile(entries(k).folder, entries(k).name))); %#ok<AGROW>
+                fullfile(entries(k).folder, entries(k).name)));
         end
     end
     dirs = unique(dirs);
@@ -320,7 +320,7 @@ function files = collectOversizedAppRunners(root, maxLines)
         end
         filepath = fullfile(entries(k).folder, entries(k).name);
         if countFileLines(filepath) > maxLines
-            files(end+1) = string(relativePath(root, filepath)); %#ok<AGROW>
+            files(end+1) = string(relativePath(root, filepath));
         end
     end
     files = unique(files);
@@ -331,7 +331,7 @@ function files = collectRunnerMigrationMapFiles(mapFile)
     tokens = regexp(content, '(?m)^## `([^`]+)`\s*$', 'tokens');
     files = strings(1, 0);
     for k = 1:numel(tokens)
-        files(end+1) = string(tokens{k}{1}); %#ok<AGROW>
+        files(end+1) = string(tokens{k}{1});
     end
     files = unique(files);
 end
@@ -353,7 +353,7 @@ function names = packageComponentFunctionNames(packageRoot)
         files = dir(fullfile(componentRoot, '*.m'));
         for iFile = 1:numel(files)
             [~, name] = fileparts(files(iFile).name);
-            names(end+1) = string(name); %#ok<AGROW>
+            names(end+1) = string(name);
         end
     end
     names = unique(names);
@@ -369,10 +369,10 @@ function names = functionNamesInFile(filepath)
         'tokens');
     names = strings(1, 0);
     for k = 1:numel(withOutput)
-        names(end+1) = string(withOutput{k}{1}); %#ok<AGROW>
+        names(end+1) = string(withOutput{k}{1});
     end
     for k = 1:numel(withoutOutput)
-        names(end+1) = string(withoutOutput{k}{1}); %#ok<AGROW>
+        names(end+1) = string(withoutOutput{k}{1});
     end
     names = unique(names);
 end
@@ -383,7 +383,7 @@ function files = collectRelativeFiles(root, pattern)
     for k = 1:numel(entries)
         if ~entries(k).isdir
             files(end+1) = string(relativePath(root, ...
-                fullfile(entries(k).folder, entries(k).name))); %#ok<AGROW>
+                fullfile(entries(k).folder, entries(k).name)));
         end
     end
     files = unique(files);
@@ -410,7 +410,7 @@ function packageRoots = collectDicWearableAppPackageRoots(root)
                 packageDir = packageDirs(iPackage);
                 if packageDir.isdir && startsWith(packageDir.name, '+')
                     packageRoots(end+1) = string(fullfile( ...
-                        packageDir.folder, packageDir.name)); %#ok<AGROW>
+                        packageDir.folder, packageDir.name));
                 end
             end
         end
@@ -425,7 +425,7 @@ function components = collectNonUiPackageComponents(packageRoot)
         componentRoot = fullfile(packageRoot, char(componentNames(k)));
         files = dir(fullfile(componentRoot, '*.m'));
         if isfolder(componentRoot) && any(~[files.isdir])
-            components(end+1) = componentNames(k); %#ok<AGROW>
+            components(end+1) = componentNames(k);
         end
     end
 end
@@ -471,7 +471,7 @@ function actual = collectOversizedEntrypoints(root, maxLines)
         filepath = fullfile(appFiles(k).folder, appFiles(k).name);
         lineCount = countFileLines(filepath);
         if lineCount > maxLines
-            actual(end+1) = string(relativePath(root, filepath)); %#ok<AGROW>
+            actual(end+1) = string(relativePath(root, filepath));
         end
     end
 end

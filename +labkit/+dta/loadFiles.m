@@ -27,16 +27,16 @@ function [items, report] = loadFiles(filepaths, expectedKind, opts)
 
     for k = 1:numel(filepaths)
         [item, status] = labkit.dta.loadFile(filepaths{k}, expectedKind, opts);
-        report.statuses(end+1) = status; %#ok<AGROW>
+        report.statuses(end+1) = status;
 
         if status.ok
-            items{end+1} = item; %#ok<AGROW>
-            report.loaded{end+1} = status.filepath; %#ok<AGROW>
+            items{end+1} = item;
+            report.loaded{end+1} = status.filepath;
         else
             report.failed(end+1) = struct( ...
                 'filepath', status.filepath, ...
                 'kind', status.kind, ...
-                'message', status.message); %#ok<AGROW>
+                'message', status.message);
         end
     end
 

@@ -33,7 +33,7 @@ function verify_sessionUtilities()
 
     badPath = [tempname '.mat'];
     badCleaner = onCleanup(@() deleteIfExists(badPath));
-    notSession = struct('type', 'not_a_session'); %#ok<NASGU>
+    notSession = struct('type', 'not_a_session');
     save(badPath, 'notSession');
     assertLoadSessionFails(badPath, 'MAT files without labkit_session should fail clearly.');
 end

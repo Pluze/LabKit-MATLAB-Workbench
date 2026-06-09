@@ -14,10 +14,10 @@ function verify_gui_layout_ui_scale_bar_panel()
 
     h = guiTestHelpers();
     h.assertUifigureAvailable();
-    cleanup = onCleanup(@() h.closeAllFigures()); %#ok<NASGU>
+    cleanup = onCleanup(@() h.closeAllFigures());
 
     fig = uifigure('Visible', 'off', 'Name', 'labkit_scale_bar_panel_probe');
-    cleaner = onCleanup(@() delete(fig)); %#ok<NASGU>
+    cleaner = onCleanup(@() delete(fig));
     grid = uigridlayout(fig, [2 1]);
     ax = uiaxes(grid);
     ax.Layout.Row = 1;

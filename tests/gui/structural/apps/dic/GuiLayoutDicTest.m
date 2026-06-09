@@ -14,7 +14,7 @@ function verify_gui_layout_dic()
 
     h = guiTestHelpers();
     h.assertUifigureAvailable();
-    cleanup = onCleanup(@() h.closeAllFigures()); %#ok<NASGU>
+    cleanup = onCleanup(@() h.closeAllFigures());
 
     checkDICPreprocess(h);
     checkDICPostprocess(h);

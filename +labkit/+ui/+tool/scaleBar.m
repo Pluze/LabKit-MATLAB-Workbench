@@ -317,7 +317,7 @@ function tool = scaleBar(parent, row, runtime, opts)
         else
             trace('ensureReferenceEditor reuse editor');
             state.suppressReferenceEditorCallback = true;
-            cleanupObj = onCleanup(@() clearReferenceEditorSuppression()); %#ok<NASGU>
+            cleanupObj = onCleanup(@() clearReferenceEditorSuppression());
             state.referenceEditor.setImageSize(state.imageSize);
             state.referenceEditor.setStyle('Straight lines');
         end
@@ -373,7 +373,7 @@ function tool = scaleBar(parent, row, runtime, opts)
         end
 
         state.suppressReferenceEditorCallback = true;
-        cleanupObj = onCleanup(@() clearReferenceEditorSuppression()); %#ok<NASGU>
+        cleanupObj = onCleanup(@() clearReferenceEditorSuppression());
         state.referenceEditor.setPoints(points);
         state.referenceEditor.setActive(true);
         trace('activateReferenceEditor end');

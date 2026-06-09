@@ -175,6 +175,17 @@ UI framework changes should cover the affected layer rather than only the change
 | App migration | Affected app-family GUI task plus `testProject` entrypoint/boundary guardrails. |
 | Gesture tools | `buildtool testGuiGesture` for runtime, anchor-editor, and scale-bar lifecycle checks. |
 
+## MATLAB Code Analyzer Suppression Policy
+
+- Suppression directives such as `%#ok<...>` are prohibited in this repository.
+- Suppression comments may not be used to bypass `checkcode` findings (for example
+  `NASGU`, `AGROW`, `ISMAT`, and related diagnostics).
+- Resolve `checkcode` findings with behavior-preserving code changes (logic,
+  ownership assumptions, initialization, or API usage), not with suppression.
+- The prohibition applies to both production and test `.m` files.
+- If an issue is intentionally deferred, route it through a dedicated task or
+  backlog item instead of adding suppression.
+
 ## Suite Layout
 
 Tests live under:

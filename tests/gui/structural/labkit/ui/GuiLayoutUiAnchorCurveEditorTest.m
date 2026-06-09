@@ -14,10 +14,10 @@ function verify_gui_layout_ui_anchor_curve_editor()
 
     h = guiTestHelpers();
     h.assertUifigureAvailable();
-    cleanup = onCleanup(@() h.closeAllFigures()); %#ok<NASGU>
+    cleanup = onCleanup(@() h.closeAllFigures());
 
     fig = uifigure('Visible', 'off', 'Name', 'labkit_anchor_curve_editor_probe');
-    cleaner = onCleanup(@() delete(fig)); %#ok<NASGU>
+    cleaner = onCleanup(@() delete(fig));
     ax = uiaxes(fig);
     image(ax, zeros(40, 60, 3, 'uint8'));
     axis(ax, 'image');
@@ -79,7 +79,7 @@ function verify_gui_layout_ui_anchor_curve_editor()
     editor.clearPoints();
     assert(isempty(editor.getPoints()), 'Anchor curve editor should clear anchors.');
     fig2 = uifigure('Visible', 'off', 'Name', 'labkit_anchor_curve_editor_callback_probe');
-    cleaner2 = onCleanup(@() delete(fig2)); %#ok<NASGU>
+    cleaner2 = onCleanup(@() delete(fig2));
     ax2 = uiaxes(fig2);
     image(ax2, zeros(40, 60, 3, 'uint8'));
     axis(ax2, 'image');
@@ -101,7 +101,7 @@ function verify_gui_layout_ui_anchor_curve_editor()
     assert(~isempty(editorLines) && all(strcmp({editorLines.HitTest}, 'off')), ...
         'Inactive anchor editor graphics should not intercept pointer events.');
     fig3 = uifigure('Visible', 'off', 'Name', 'labkit_anchor_curve_editor_mutex_probe');
-    cleaner3 = onCleanup(@() delete(fig3)); %#ok<NASGU>
+    cleaner3 = onCleanup(@() delete(fig3));
     ax3 = uiaxes(fig3);
     image(ax3, zeros(40, 60, 3, 'uint8'));
     axis(ax3, 'image');

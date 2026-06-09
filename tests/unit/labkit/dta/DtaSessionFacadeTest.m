@@ -50,11 +50,11 @@ function verify_dtaSessionFacade()
         labkit.dta.makeSession('template'), {}, "bad"));
 
     function rememberAdded(filepath, ~)
-        addedEvents{end+1} = filepath; %#ok<AGROW>
+        addedEvents{end+1} = filepath;
     end
 
     function rememberSkipped(filepath)
-        addedEvents{end+1} = ['skipped:' filepath]; %#ok<AGROW>
+        addedEvents{end+1} = ['skipped:' filepath];
     end
 
     function rememberRemoved(~, ~)

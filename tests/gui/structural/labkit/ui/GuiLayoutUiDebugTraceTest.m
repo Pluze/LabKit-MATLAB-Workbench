@@ -14,7 +14,7 @@ function verify_gui_layout_ui_debug_trace()
 
     h = guiTestHelpers();
     h.assertUifigureAvailable();
-    cleanup = onCleanup(@() h.closeAllFigures()); %#ok<NASGU>
+    cleanup = onCleanup(@() h.closeAllFigures());
 
     checkDefaultInstrumentationSkipsScroll(h);
     checkExplicitInstrumentation(h);
@@ -22,7 +22,7 @@ end
 
 function checkDefaultInstrumentationSkipsScroll(h)
     fig = uifigure('Visible', 'off', 'Name', 'labkit_debug_default_trace_probe');
-    cleaner = onCleanup(@() delete(fig)); %#ok<NASGU>
+    cleaner = onCleanup(@() delete(fig));
     grid = uigridlayout(fig, [1 1]);
 
     buttonCalls = 0;
@@ -45,14 +45,14 @@ function checkDefaultInstrumentationSkipsScroll(h)
     assert(~any(contains(lines, 'WindowScrollWheelFcn')), ...
         'Default instrumentation should not add scroll traces while users read logs.');
 
-    function onAction(varargin) %#ok<INUSD>
+    function onAction(varargin)
         buttonCalls = buttonCalls + 1;
     end
 end
 
 function checkExplicitInstrumentation(h)
     fig = uifigure('Visible', 'off', 'Name', 'labkit_debug_trace_probe');
-    cleaner = onCleanup(@() delete(fig)); %#ok<NASGU>
+    cleaner = onCleanup(@() delete(fig));
     grid = uigridlayout(fig, [2 1]);
 
     buttonCalls = 0;
@@ -94,7 +94,7 @@ function checkExplicitInstrumentation(h)
     assert(disabledCount == 0, 'traceEnabled=false should skip GUI instrumentation.');
 
     fig2 = uifigure('Visible', 'off', 'Name', 'labkit_debug_explicit_scroll_probe');
-    cleaner2 = onCleanup(@() delete(fig2)); %#ok<NASGU>
+    cleaner2 = onCleanup(@() delete(fig2));
     scrollCalls = 0;
     fig2.WindowScrollWheelFcn = @onScroll;
     explicitDebug = labkit.ui.diag.createContext('probe_app', struct());
@@ -107,7 +107,7 @@ function checkExplicitInstrumentation(h)
     assert(scrollCalls == 1 && any(contains(scrollLines, 'WindowScrollWheelFcn')), ...
         'Explicit scroll instrumentation should trace and call the original scroll callback.');
 
-    function onAction(varargin) %#ok<INUSD>
+    function onAction(varargin)
         buttonCalls = buttonCalls + 1;
     end
 
@@ -115,7 +115,7 @@ function checkExplicitInstrumentation(h)
         cellCallbackArg = string(varargin{end});
     end
 
-    function onScroll(varargin) %#ok<INUSD>
+    function onScroll(varargin)
         scrollCalls = scrollCalls + 1;
     end
 end

@@ -44,7 +44,7 @@ function [session, report] = addItemsToSession(session, filepaths, loader, callb
     for k = 1:numel(filepaths)
         filepath = filepaths{k};
         if hasFilepath(session.items, filepath)
-            report.skipped{end+1} = filepath; %#ok<AGROW>
+            report.skipped{end+1} = filepath;
             callCallback(callbacks, 'onSkipped', filepath);
             continue;
         end
@@ -58,10 +58,10 @@ function [session, report] = addItemsToSession(session, filepaths, loader, callb
                 item.name = shortName(filepath);
             end
             session.items = appendStruct(session.items, item);
-            report.added{end+1} = filepath; %#ok<AGROW>
+            report.added{end+1} = filepath;
             callCallback(callbacks, 'onAdded', filepath, item);
         catch ME
-            report.failed(end+1) = struct('filepath', filepath, 'message', ME.message); %#ok<AGROW>
+            report.failed(end+1) = struct('filepath', filepath, 'message', ME.message);
             callCallback(callbacks, 'onFailed', filepath, ME.message);
         end
     end

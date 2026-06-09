@@ -27,7 +27,7 @@ function recording = readMatRecording(filepath, opts)
     for i = 1:numel(names)
         value = data.(names{i});
         if istimetable(value)
-            signals = [signals readTimetableSignals(value, names{i}, opts)]; %#ok<AGROW>
+            signals = [signals readTimetableSignals(value, names{i}, opts)];
         end
     end
 
@@ -54,6 +54,6 @@ function signals = readTimetableSignals(TT, sourceName, opts)
             double(values(:)), ...
             struct('sourceKind', "timetable", 'sourceVariable', string(sourceName)), ...
             opts);
-        signals = [signals sig]; %#ok<AGROW>
+        signals = [signals sig];
     end
 end

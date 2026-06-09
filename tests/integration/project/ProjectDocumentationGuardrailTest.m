@@ -23,7 +23,7 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
                 for iWord = 1:numel(forbidden)
                     if contains(content, lower(forbidden(iWord)))
                         leaks(end+1) = relativePath(root, files(k)) + ...
-                            " -> " + forbidden(iWord); %#ok<AGROW>
+                            " -> " + forbidden(iWord);
                     end
                 end
             end
@@ -46,7 +46,7 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
                 tasks = extractBuildtoolTaskNames(fileread(files(k)));
                 if numel(tasks) > 1
                     duplicates(end+1) = relativePath(root, files(k)) + ...
-                        " -> " + strjoin(tasks, " "); %#ok<AGROW>
+                        " -> " + strjoin(tasks, " ");
                 end
             end
 
@@ -61,7 +61,7 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
             missing = strings(1, 0);
             for k = 1:numel(publicFiles)
                 if ~hasFunctionContractComment(publicFiles(k))
-                    missing(end+1) = string(relativePath(root, publicFiles(k))); %#ok<AGROW>
+                    missing(end+1) = string(relativePath(root, publicFiles(k)));
                 end
             end
 
@@ -99,7 +99,7 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
             missing = strings(1, 0);
             for k = 1:numel(files)
                 if ~hasTopFileContract(files(k))
-                    missing(end+1) = string(relativePath(root, files(k))); %#ok<AGROW>
+                    missing(end+1) = string(relativePath(root, files(k)));
                 end
             end
 
@@ -114,7 +114,7 @@ function files = collectHumanDocFiles(root)
     files = string(fullfile(root, "README.md"));
     entries = dir(fullfile(root, "docs", "*.md"));
     for k = 1:numel(entries)
-        files(end+1) = string(fullfile(entries(k).folder, entries(k).name)); %#ok<AGROW>
+        files(end+1) = string(fullfile(entries(k).folder, entries(k).name));
     end
 end
 
@@ -132,12 +132,12 @@ function files = collectGuidanceFilesExceptTesting(root)
         if endsWith(filepath, fullfile("docs", "testing.md"))
             continue;
         end
-        files(end+1) = filepath; %#ok<AGROW>
+        files(end+1) = filepath;
     end
 
     skillEntries = dir(fullfile(root, ".agents", "skills", "*", "SKILL.md"));
     for k = 1:numel(skillEntries)
-        files(end+1) = string(fullfile(skillEntries(k).folder, skillEntries(k).name)); %#ok<AGROW>
+        files(end+1) = string(fullfile(skillEntries(k).folder, skillEntries(k).name));
     end
 end
 
@@ -147,7 +147,7 @@ function tasks = extractBuildtoolTaskNames(content)
         'tokens');
     tasks = strings(1, 0);
     for k = 1:numel(tokens)
-        tasks = [tasks, split(string(tokens{k}{1})).']; %#ok<AGROW>
+        tasks = [tasks, split(string(tokens{k}{1})).'];
     end
     tasks = unique(tasks(strlength(tasks) > 0), 'stable');
 end
@@ -158,7 +158,7 @@ function files = collectPublicLibraryFiles(root)
     for k = 1:numel(allFiles)
         filepath = fullfile(allFiles(k).folder, allFiles(k).name);
         if ~contains(filepath, [filesep 'private' filesep])
-            files(end+1) = string(filepath); %#ok<AGROW>
+            files(end+1) = string(filepath);
         end
     end
 end
@@ -191,7 +191,7 @@ function actual = collectPrivateContractDebt(root)
         for f = 1:numel(files)
             filepath = fullfile(files(f).folder, files(f).name);
             if ~hasTopFileContract(filepath)
-                actual(end+1) = string(relativePath(root, filepath)); %#ok<AGROW>
+                actual(end+1) = string(relativePath(root, filepath));
             end
         end
     end
@@ -210,7 +210,7 @@ function files = collectAppOwnedPackageFiles(root)
         if contains(filepath, [filesep 'private' filesep])
             continue;
         end
-        files(end+1) = filepath; %#ok<AGROW>
+        files(end+1) = filepath;
     end
     files = unique(files);
 end
@@ -230,9 +230,9 @@ function folders = collectPrivateDirs(folder)
         end
         child = fullfile(entry.folder, entry.name);
         if strcmp(entry.name, 'private')
-            folders(end+1) = string(child); %#ok<AGROW>
+            folders(end+1) = string(child);
         else
-            folders = [folders, collectPrivateDirs(child)]; %#ok<AGROW>
+            folders = [folders, collectPrivateDirs(child)];
         end
     end
 end

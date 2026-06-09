@@ -72,7 +72,7 @@ end
 function checkSelectedFileNormalization()
     folder = tempname;
     mkdir(folder);
-    cleanup = onCleanup(@() removeTempFolder(folder)); %#ok<NASGU>
+    cleanup = onCleanup(@() removeTempFolder(folder));
 
     paths = batch_crop.io.selectedImagePaths( ...
         {'frame_b.png', 'frame_a.tif'}, folder);
@@ -107,7 +107,7 @@ end
 function checkExportWritesUniqueOutputs()
     folder = tempname;
     mkdir(folder);
-    cleanup = onCleanup(@() removeTempFolder(folder)); %#ok<NASGU>
+    cleanup = onCleanup(@() removeTempFolder(folder));
     imwrite(uint8(zeros(4, 4)), fullfile(folder, 'sample_crop.png'));
 
     item = struct( ...

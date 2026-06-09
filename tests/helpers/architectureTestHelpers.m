@@ -117,7 +117,7 @@ end
 
 function sourceParts = appendSourceFiles(sourceParts, files)
     for iFile = 1:numel(files)
-        sourceParts{end+1} = fileread(files{iFile}); %#ok<AGROW>
+        sourceParts{end+1} = fileread(files{iFile});
     end
 end
 

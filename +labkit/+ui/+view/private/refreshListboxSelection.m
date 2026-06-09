@@ -98,7 +98,7 @@ function index = selectedIndexes(names, selected)
     for k = 1:numel(selected)
         idx = find(strcmp(names, selected{k}), 1, 'first');
         if ~isempty(idx)
-            index(end+1) = idx; %#ok<AGROW>
+            index(end+1) = idx;
         end
     end
 end

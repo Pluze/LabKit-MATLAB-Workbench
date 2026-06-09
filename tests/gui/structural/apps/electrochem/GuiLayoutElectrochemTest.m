@@ -14,7 +14,7 @@ function verify_gui_layout_electrochem()
 
     h = guiTestHelpers();
     h.assertUifigureAvailable();
-    cleanup = onCleanup(@() h.closeAllFigures()); %#ok<NASGU>
+    cleanup = onCleanup(@() h.closeAllFigures());
 
     checkMultiDTA(h);
     checkEIS(h);

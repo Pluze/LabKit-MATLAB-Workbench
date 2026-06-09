@@ -49,8 +49,8 @@ function [scanRate, curves, logmsg] = parseCVCTDTA(filepath)
     for i = 1:nLines
         tok = splitTabs(lines{i});
         if ~isempty(tok) && startsWith(tok{1}, 'CURVE', 'IgnoreCase', true)
-            curveLines(end+1) = i; %#ok<AGROW>
-            curveNames{end+1} = tok{1}; %#ok<AGROW>
+            curveLines(end+1) = i;
+            curveNames{end+1} = tok{1};
         end
     end
 
@@ -120,7 +120,7 @@ function [scanRate, curves, logmsg] = parseCVCTDTA(filepath)
                 end
             end
             if anyNumeric
-                raw(end+1, :) = row; %#ok<AGROW>
+                raw(end+1, :) = row;
             end
         end
 
@@ -131,7 +131,7 @@ function [scanRate, curves, logmsg] = parseCVCTDTA(filepath)
 
         numericMask = any(~isnan(raw), 1);
 
-        curves(end+1).name = name; %#ok<AGROW>
+        curves(end+1).name = name;
         curves(end).headers = headers;
         curves(end).units = units;
         curves(end).data = raw;

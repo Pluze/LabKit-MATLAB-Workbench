@@ -103,14 +103,14 @@ function [meta, tables, logmsg] = parseEISDTA(filepath)
                 end
 
                 if anyNumeric
-                    raw(end+1, :) = row; %#ok<AGROW>
+                    raw(end+1, :) = row;
                 end
                 j = j + 1;
             end
 
             if ~isempty(raw)
                 numericMask = any(~isnan(raw), 1);
-                tables(end+1).name = name; %#ok<AGROW>
+                tables(end+1).name = name;
                 tables(end).headers = headers;
                 tables(end).units = units;
                 tables(end).data = raw;

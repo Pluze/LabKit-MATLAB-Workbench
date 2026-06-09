@@ -14,7 +14,7 @@ function verify_gui_layout_wearable()
 
     h = guiTestHelpers();
     h.assertUifigureAvailable();
-    cleanup = onCleanup(@() h.closeAllFigures()); %#ok<NASGU>
+    cleanup = onCleanup(@() h.closeAllFigures());
 
     fig = h.launchFigure('labkit_ECGPrint_app', 'ECG Signal Print + SNR Explorer');
     h.assertFigureMinimumSize(fig, 1480, 880);

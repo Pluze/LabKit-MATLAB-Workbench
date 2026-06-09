@@ -13,12 +13,12 @@ function verify_biosignalRecordingImport()
 %TEST_BIOSIGNALRECORDINGIMPORT Verify MAT/timetable import and channel access.
 
     tempFile = [tempname(tempdir) '.mat'];
-    cleaner = onCleanup(@() cleanupFile(tempFile)); %#ok<NASGU>
+    cleaner = onCleanup(@() cleanupFile(tempFile));
 
     fs = 100;
     t = (0:1/fs:10).';
     x = syntheticEcgValues(t);
-    TT = timetable(seconds(t), x, 'VariableNames', {'ECG'}); %#ok<NASGU>
+    TT = timetable(seconds(t), x, 'VariableNames', {'ECG'});
     save(tempFile, 'TT');
 
     [recording, status] = labkit.biosignal.readRecording(tempFile);

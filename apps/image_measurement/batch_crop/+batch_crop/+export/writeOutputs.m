@@ -34,7 +34,7 @@ function payload = writeOutputs(items, opts)
             crop = batch_crop.ops.cropImage(items(k).image, cropOpts);
             outputPath = uniqueBatchCropOutputPath(outputFolder, ...
                 string(items(k).path), outputFormat.extension, reservedPaths, "_crop");
-            reservedPaths(end+1, 1) = outputPath; %#ok<AGROW>
+            reservedPaths(end+1, 1) = outputPath;
             imwrite(crop.image, char(outputPath));
 
             result = crop;

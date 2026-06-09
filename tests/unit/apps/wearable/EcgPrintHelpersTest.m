@@ -28,7 +28,7 @@ classdef EcgPrintHelpersTest < matlab.unittest.TestCase
             setupLabKitTestPath();
 
             filepath = [tempname '.csv'];
-            cleaner = onCleanup(@() deleteIfExists(filepath)); %#ok<NASGU>
+            cleaner = onCleanup(@() deleteIfExists(filepath));
             fid = fopen(filepath, 'w');
             testCase.assertGreaterThan(fid, 0);
             fprintf(fid, 'time_s,LeadI\n0,1\n1,2\n');

@@ -5,7 +5,7 @@
 function T = buildOverlayExportTable(items)
     timeUnion = [];
     for i = 1:numel(items)
-        timeUnion = [timeUnion; chronoAlignedTime(items(i))]; %#ok<AGROW>
+        timeUnion = [timeUnion; chronoAlignedTime(items(i))];
     end
     timeUnion = unique(timeUnion);
     timeUnion = sort(timeUnion);

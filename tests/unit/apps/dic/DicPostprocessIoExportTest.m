@@ -7,7 +7,7 @@ classdef DicPostprocessIoExportTest < matlab.unittest.TestCase
 
             outDir = tempname;
             mkdir(outDir);
-            cleanup = onCleanup(@() cleanupFolder(outDir)); %#ok<NASGU>
+            cleanup = onCleanup(@() cleanupFolder(outDir));
             matPath = fullfile(outDir, 'synthetic_dic.mat');
             data_dic_save = struct();
             data_dic_save.strains = struct();
@@ -29,7 +29,7 @@ classdef DicPostprocessIoExportTest < matlab.unittest.TestCase
 
             outDir = tempname;
             mkdir(outDir);
-            cleanup = onCleanup(@() cleanupFolder(outDir)); %#ok<NASGU>
+            cleanup = onCleanup(@() cleanupFolder(outDir));
             overlayPath = fullfile(outDir, 'overlay.png');
             colorbarPath = fullfile(outDir, 'colorbar.png');
             overlayImage = zeros(4, 4, 3);

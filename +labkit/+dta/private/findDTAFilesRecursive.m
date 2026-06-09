@@ -32,12 +32,12 @@ function filepaths = findDTAFilesRecursive(rootDir)
         if entries(i).isdir
             subpaths = findDTAFilesRecursive(fullpath);
             if ~isempty(subpaths)
-                filepaths = [filepaths, subpaths]; %#ok<AGROW>
+                filepaths = [filepaths, subpaths];
             end
         else
             [~, ~, ext] = fileparts(name);
             if strcmpi(ext, '.dta')
-                filepaths{end+1} = fullpath; %#ok<AGROW>
+                filepaths{end+1} = fullpath;
             end
         end
     end

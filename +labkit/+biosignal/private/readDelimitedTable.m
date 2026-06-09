@@ -58,7 +58,7 @@ function T = readTextDelimitedTable(filepath, info)
         for j = 1:n
             row{j} = char(strip(tokens(j)));
         end
-        rows(end+1, :) = row; %#ok<AGROW>
+        rows(end+1, :) = row;
     end
 
     if isempty(rows)
@@ -80,7 +80,7 @@ function T = readHeaderlessTextDelimitedTable(filepath, info)
         end
         tokens = splitDelimitedLine(line);
         maxWidth = max(maxWidth, numel(tokens));
-        rows{end+1, 1} = tokens; %#ok<AGROW>
+        rows{end+1, 1} = tokens;
     end
     if isempty(rows) || maxWidth == 0
         T = table();
@@ -115,7 +115,7 @@ function tokens = splitDelimitedLine(line)
             continue;
         end
         if ch == ',' && ~inQuotes
-            tokens(end+1, 1) = current; %#ok<AGROW>
+            tokens(end+1, 1) = current;
             current = "";
         else
             current = current + string(ch);

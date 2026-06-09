@@ -11,13 +11,13 @@ function lines = previewFileHeader(filepath, maxLines)
         lines = {'Could not open file preview.'};
         return;
     end
-    cleaner = onCleanup(@() fclose(fid)); %#ok<NASGU>
+    cleaner = onCleanup(@() fclose(fid));
     for k = 1:maxLines
         line = fgetl(fid);
         if ~ischar(line)
             break;
         end
-        lines{end+1, 1} = sprintf('%02d: %s', k, line); %#ok<AGROW>
+        lines{end+1, 1} = sprintf('%02d: %s', k, line);
     end
     if isempty(lines)
         lines = {'File is empty or could not be previewed.'};

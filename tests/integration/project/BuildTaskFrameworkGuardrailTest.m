@@ -140,7 +140,7 @@ function tasks = extractBuildtoolTasks(content)
         'tokens');
     tasks = strings(1, 0);
     for k = 1:numel(tokens)
-        tasks = [tasks, split(string(tokens{k}{1})).']; %#ok<AGROW>
+        tasks = [tasks, split(string(tokens{k}{1})).'];
     end
     tasks = unique(tasks(strlength(tasks) > 0), 'stable');
 end
@@ -204,9 +204,9 @@ function files = collectTestFiles(root)
             if strcmp(entry.name, ".") || strcmp(entry.name, "..")
                 continue;
             end
-            files = [files, collectTestFiles(fullfile(entry.folder, entry.name))]; %#ok<AGROW>
+            files = [files, collectTestFiles(fullfile(entry.folder, entry.name))];
         elseif endsWith(entry.name, "Test.m")
-            files(end+1) = string(fullfile(entry.folder, entry.name)); %#ok<AGROW>
+            files(end+1) = string(fullfile(entry.folder, entry.name));
         end
     end
 end

@@ -15,10 +15,10 @@ function lines = details(result, paths, registrationLines)
     names = focus_stack.view.displayImageNamesForDetails(paths, result.inputCount);
     for k = 1:result.inputCount
         lines{end+1} = sprintf('  %d. %s: %.2f%%', ...
-            k, names{k}, 100 * result.focusCoverage(k)); %#ok<AGROW>
+            k, names{k}, 100 * result.focusCoverage(k));
     end
     if ~isempty(registrationLines)
-        lines{end+1} = 'Registration:'; %#ok<AGROW>
-        lines = [lines, registrationLines(:).']; %#ok<AGROW>
+        lines{end+1} = 'Registration:';
+        lines = [lines, registrationLines(:).'];
     end
 end

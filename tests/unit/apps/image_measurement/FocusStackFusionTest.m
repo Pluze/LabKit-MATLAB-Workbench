@@ -71,7 +71,7 @@ end
 function checkFolderDiscovery()
     folder = tempname;
     mkdir(folder);
-    cleanup = onCleanup(@() removeTempFolder(folder)); %#ok<NASGU>
+    cleanup = onCleanup(@() removeTempFolder(folder));
 
     imwrite(uint8(255 * ones(8, 8)), fullfile(folder, 'slice_b.png'));
     imwrite(uint8(128 * ones(8, 8)), fullfile(folder, 'slice_a.jpg'));
@@ -93,7 +93,7 @@ end
 function checkSelectedFileSelection()
     folder = tempname;
     mkdir(folder);
-    cleanup = onCleanup(@() removeTempFolder(folder)); %#ok<NASGU>
+    cleanup = onCleanup(@() removeTempFolder(folder));
 
     paths = focus_stack.io.selectedImagePaths( ...
         {'frame_b.png', 'frame_a.tif'}, folder);

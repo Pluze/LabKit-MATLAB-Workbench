@@ -199,7 +199,7 @@ function controls = findControlsByClass(fig, classNamePart)
     controls = {};
     for k = 1:numel(allControls)
         if contains(class(allControls{k}), classNamePart)
-            controls{end+1} = allControls{k}; %#ok<AGROW>
+            controls{end+1} = allControls{k};
         end
     end
 end
@@ -297,7 +297,7 @@ function values = getPropertyValues(fig, propertyName)
         if isprop(control, propertyName)
             value = control.(propertyName);
             if ischar(value) || isstring(value)
-                values{end+1} = char(value); %#ok<AGROW>
+                values{end+1} = char(value);
             end
         end
     end
@@ -328,7 +328,7 @@ function objects = allGuiObjects(root)
     end
     children = root.Children;
     for k = 1:numel(children)
-        objects = [objects, allGuiObjects(children(k))]; %#ok<AGROW>
+        objects = [objects, allGuiObjects(children(k))];
     end
 end
 

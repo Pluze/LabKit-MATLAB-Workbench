@@ -20,7 +20,7 @@ function verify_biosignalDelimitedImport()
     txtAcq = [tempname(tempdir) '.txt'];
     csvTimeRepair = [tempname(tempdir) '.csv'];
     cleaner = onCleanup(@() cleanupFiles({csvNoTime, csvMs, csvHeaderless, ...
-        csvArduino, csvPreamble, txtAcq, csvTimeRepair})); %#ok<NASGU>
+        csvArduino, csvPreamble, txtAcq, csvTimeRepair}));
 
     sample = (1001:1005).';
     ecg = [0; 1; 0; -1; 0];
@@ -149,7 +149,7 @@ end
 function writeLines(filepath, lines)
     fid = fopen(filepath, 'w');
     assert(fid > 0, 'Could not create temporary CSV fixture.');
-    cleaner = onCleanup(@() fclose(fid)); %#ok<NASGU>
+    cleaner = onCleanup(@() fclose(fid));
     for k = 1:numel(lines)
         fprintf(fid, '%s\n', char(lines(k)));
     end

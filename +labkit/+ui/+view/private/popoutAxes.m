@@ -22,7 +22,7 @@ function newFig = popoutAxes(srcAx)
     end
 
     newFig = figure('Name', char(titleText), 'Color', 'w');
-    dstAx = axes('Parent', newFig); %#ok<LAXES>
+    dstAx = axes('Parent', newFig);
     copyAxesState(srcAx, dstAx);
 
     children = flipud(srcAx.Children(:));
@@ -93,7 +93,7 @@ function addLegendIfNeeded(ax)
         if isprop(children(k), 'DisplayName')
             name = string(children(k).DisplayName);
             if strlength(name) > 0 && ~startsWith(name, "_")
-                names(end+1, 1) = name; %#ok<AGROW>
+                names(end+1, 1) = name;
             end
         end
     end

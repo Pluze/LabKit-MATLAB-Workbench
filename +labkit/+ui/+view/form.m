@@ -103,7 +103,7 @@ function ui = createFormSection(parent, spec)
             return;
         end
         oldCallback = callbackProperty(ctrl);
-        cleanupObj = suppressCallback(ctrl, oldCallback, reason); %#ok<NASGU>
+        cleanupObj = suppressCallback(ctrl, oldCallback, reason);
         ctrl.Value = value;
     end
 

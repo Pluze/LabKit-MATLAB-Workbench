@@ -14,7 +14,7 @@ function verify_gui_layout_image_measurement()
 
     h = guiTestHelpers();
     h.assertUifigureAvailable();
-    cleanup = onCleanup(@() h.closeAllFigures()); %#ok<NASGU>
+    cleanup = onCleanup(@() h.closeAllFigures());
 
     checkCurvatureMeasurementLayout(h);
     checkFocusStackLayout(h);

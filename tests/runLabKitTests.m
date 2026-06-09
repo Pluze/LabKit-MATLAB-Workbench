@@ -131,7 +131,7 @@ function suite = discoverOfficialSuite(root, opts)
 
     suite = matlab.unittest.Test.empty(1, 0);
     for k = 1:numel(groups)
-        suite = [suite, groups(k).suite]; %#ok<AGROW>
+        suite = [suite, groups(k).suite];
     end
 
     suite = filterSuiteByName(suite, opts.Tests);
@@ -182,7 +182,7 @@ function groups = discoverOfficialGroups(testsRoot)
                 continue;
             end
             key = relativeTestKey(folders(f), testsRoot);
-            groups(end+1) = struct("key", key, "suite", suite); %#ok<AGROW>
+            groups(end+1) = struct("key", key, "suite", suite);
         end
     end
 end
@@ -199,7 +199,7 @@ function folders = foldersWithMFiles(root)
             if strcmp(entry.name, ".") || strcmp(entry.name, "..")
                 continue;
             end
-            folders = [folders, foldersWithMFiles(fullfile(entry.folder, entry.name))]; %#ok<AGROW>
+            folders = [folders, foldersWithMFiles(fullfile(entry.folder, entry.name))];
         elseif endsWith(entry.name, ".m")
             hasMFile = true;
         end
@@ -288,7 +288,7 @@ function tf = groupMatchesSuite(groupKey, target)
         "gui/gesture/" + target]);
     if startsWith(target, "apps/")
         family = eraseBetween(target, 1, strlength("apps/"));
-        candidates(end+1) = "integration/app_workflows/" + family; %#ok<AGROW>
+        candidates(end+1) = "integration/app_workflows/" + family;
     end
 
     tf = false;

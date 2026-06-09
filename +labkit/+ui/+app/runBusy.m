@@ -49,7 +49,7 @@ function varargout = runBusy(fig, workFcn, opts)
         fig, validFig, optionValue(opts, 'pointer', 'watch'));
     dlg = createProgressDialog(fig, validFig, opts);
     cleanupObj = onCleanup(@() restoreBusyState( ...
-        controlState, fig, validFig, oldPointer, pointerChanged, dlg)); %#ok<NASGU>
+        controlState, fig, validFig, oldPointer, pointerChanged, dlg));
 
     drawnow;
     if nargout == 0
@@ -74,7 +74,7 @@ function controlState = disableControls(controls)
         if ~isLiveHandle(h) || ~isprop(h, 'Enable')
             continue;
         end
-        controlState(end+1) = struct( ... %#ok<AGROW>
+        controlState(end+1) = struct( ...
             'handle', h, ...
             'enable', h.Enable);
         h.Enable = 'off';

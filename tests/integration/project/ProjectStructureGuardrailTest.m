@@ -425,9 +425,9 @@ function files = collectTrackedTextScope(root)
     for k = 1:numel(entries)
         path = fullfile(root, entries{k});
         if isfolder(path)
-            files = [files, collectTextFiles(path)]; %#ok<AGROW>
+            files = [files, collectTextFiles(path)];
         elseif isfile(path) && isTextFile(path)
-            files{end+1} = path; %#ok<AGROW>
+            files{end+1} = path;
         end
     end
 end
@@ -443,11 +443,11 @@ function files = collectTextFiles(folder)
             if any(strcmp(entry.name, {'.', '..'}))
                 continue;
             end
-            files = [files, collectTextFiles(fullfile(folder, entry.name))]; %#ok<AGROW>
+            files = [files, collectTextFiles(fullfile(folder, entry.name))];
         else
             filepath = fullfile(folder, entry.name);
             if isTextFile(filepath)
-                files{end+1} = filepath; %#ok<AGROW>
+                files{end+1} = filepath;
             end
         end
     end

@@ -132,9 +132,9 @@ function [gridSize, rowHeight, rowMap] = expandedTabGridSpec(spec)
 
     for row = 1:logicalRows
         rowMap(row) = numel(rowHeight) + 1;
-        rowHeight{end+1} = spec.rowHeight{row}; %#ok<AGROW>
+        rowHeight{end+1} = spec.rowHeight{row};
         if any(resizeRows == row)
-            rowHeight{end+1} = handleHeight; %#ok<AGROW>
+            rowHeight{end+1} = handleHeight;
         end
     end
     gridSize = [numel(rowHeight), spec.gridSize(2)];

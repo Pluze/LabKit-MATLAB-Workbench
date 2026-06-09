@@ -103,7 +103,7 @@ function [meta, tables, logmsg] = parseChronoDTA(filepath)
         if isKey(stepT, idx)
             T = stepT(idx);
         end
-        meta.steps(end+1) = struct('idx', double(idx), 'I', I, 'V', V, 'T', T); %#ok<AGROW>
+        meta.steps(end+1) = struct('idx', double(idx), 'I', I, 'V', V, 'T', T);
     end
     meta.controlMode = inferControlMode(meta.steps);
 
@@ -162,14 +162,14 @@ function [meta, tables, logmsg] = parseChronoDTA(filepath)
                     end
                 end
                 if anyNumeric
-                    raw(end+1, :) = row; %#ok<AGROW>
+                    raw(end+1, :) = row;
                 end
                 j = j + 1;
             end
 
             if ~isempty(raw)
                 numericMask = any(~isnan(raw), 1);
-                tables(end+1).name = name; %#ok<AGROW>
+                tables(end+1).name = name;
                 tables(end).headers = headers;
                 tables(end).units = units;
                 tables(end).data = raw;

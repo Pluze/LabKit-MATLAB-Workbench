@@ -14,7 +14,7 @@ function verify_gui_layout_ui_basic_controls()
 
     h = guiTestHelpers();
     h.assertUifigureAvailable();
-    cleanup = onCleanup(@() h.closeAllFigures()); %#ok<NASGU>
+    cleanup = onCleanup(@() h.closeAllFigures());
 
     checkListboxItemsRefreshHelper(h);
     checkListboxSelectionHelper(h);
@@ -29,7 +29,7 @@ end
 
 function checkListboxItemsRefreshHelper(h)
     fig = uifigure('Visible', 'off', 'Name', 'labkit_file_listbox_refresh_probe');
-    cleaner = onCleanup(@() delete(fig)); %#ok<NASGU>
+    cleaner = onCleanup(@() delete(fig));
     lb = uilistbox(fig, 'Items', {}, 'Multiselect', 'on');
 
     labkit.ui.view.update(lb, 'listItems', {'a.DTA', 'b.DTA'});
@@ -52,7 +52,7 @@ end
 
 function checkListboxSelectionHelper(h)
     fig = uifigure('Visible', 'off', 'Name', 'labkit_file_listbox_selection_probe');
-    cleaner = onCleanup(@() delete(fig)); %#ok<NASGU>
+    cleaner = onCleanup(@() delete(fig));
     grid = uigridlayout(fig, [2 1]);
 
     singleList = uilistbox(grid, 'Items', {}, 'Multiselect', 'off');
@@ -80,7 +80,7 @@ end
 
 function checkLogPanelHelper(h)
     fig = uifigure('Visible', 'off', 'Name', 'labkit_log_panel_probe');
-    cleaner = onCleanup(@() delete(fig)); %#ok<NASGU>
+    cleaner = onCleanup(@() delete(fig));
     grid = uigridlayout(fig, [2 1]);
 
     ui = labkit.ui.view.panel(grid, 'log', 2, {'Started.'});
@@ -94,7 +94,7 @@ end
 
 function checkLabeledSpinnerHelper()
     fig = uifigure('Visible', 'off', 'Name', 'labkit_labeled_spinner_probe');
-    cleaner = onCleanup(@() delete(fig)); %#ok<NASGU>
+    cleaner = onCleanup(@() delete(fig));
     grid = uigridlayout(fig, [1 2]);
 
     [lbl, spinner] = labkit.ui.view.form(grid, struct( ...
@@ -113,7 +113,7 @@ end
 
 function checkReadOnlyTextHelpers(h)
     fig = uifigure('Visible', 'off', 'Name', 'labkit_read_only_text_probe');
-    cleaner = onCleanup(@() delete(fig)); %#ok<NASGU>
+    cleaner = onCleanup(@() delete(fig));
     grid = uigridlayout(fig, [2 1]);
 
     field = labkit.ui.view.form(grid, struct( ...
@@ -133,7 +133,7 @@ end
 
 function checkReadOnlyInfoRowHelper()
     fig = uifigure('Visible', 'off', 'Name', 'labkit_read_only_info_row_probe');
-    cleaner = onCleanup(@() delete(fig)); %#ok<NASGU>
+    cleaner = onCleanup(@() delete(fig));
     grid = uigridlayout(fig, [2 2]);
 
     [field, lbl] = labkit.ui.view.form(grid, struct( ...
@@ -155,7 +155,7 @@ end
 
 function checkResultTablePanelHelper(h)
     fig = uifigure('Visible', 'off', 'Name', 'labkit_result_table_panel_probe');
-    cleaner = onCleanup(@() delete(fig)); %#ok<NASGU>
+    cleaner = onCleanup(@() delete(fig));
     grid = uigridlayout(fig, [2 1]);
 
     ui = labkit.ui.view.panel(grid, 'table', 'Batch Results', 2, ...
@@ -174,7 +174,7 @@ end
 
 function checkPanelGridHelper(h)
     fig = uifigure('Visible', 'off', 'Name', 'labkit_panel_grid_probe');
-    cleaner = onCleanup(@() delete(fig)); %#ok<NASGU>
+    cleaner = onCleanup(@() delete(fig));
     grid = uigridlayout(fig, [2 1]);
 
     ui = labkit.ui.view.section(grid, 'Probe Panel', 2, [3 2]);
@@ -205,7 +205,7 @@ end
 
 function checkFileSelectionPanelHelper(h)
     fig = uifigure('Visible', 'off', 'Name', 'labkit_file_selection_panel_probe');
-    cleaner = onCleanup(@() delete(fig)); %#ok<NASGU>
+    cleaner = onCleanup(@() delete(fig));
     grid = uigridlayout(fig, [3 1]);
 
     callbacks = struct();

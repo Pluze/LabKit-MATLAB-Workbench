@@ -23,17 +23,17 @@ function [alignedImages, lines] = alignImages(images)
 
     referenceIndex = round((numel(images) + 1) / 2);
     reference = images{referenceIndex};
-    lines{end+1} = sprintf('Registration reference image: %d.', referenceIndex); %#ok<AGROW>
+    lines{end+1} = sprintf('Registration reference image: %d.', referenceIndex);
     for k = 1:numel(images)
         if k == referenceIndex
             continue;
         end
         try
             [alignedImages{k}, method] = alignImageToReference(reference, images{k});
-            lines{end+1} = sprintf('Registered image %d using %s.', k, method); %#ok<AGROW>
+            lines{end+1} = sprintf('Registered image %d using %s.', k, method);
         catch ME
             alignedImages{k} = focus_stack.ops.resizeImageToReference(images{k}, size(reference));
-            lines{end+1} = sprintf('Image %d registration skipped: %s', k, ME.message); %#ok<AGROW>
+            lines{end+1} = sprintf('Image %d registration skipped: %s', k, ME.message);
         end
     end
 end

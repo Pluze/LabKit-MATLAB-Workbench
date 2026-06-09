@@ -93,8 +93,8 @@ function out = bestSafeString(items, modeLabel, unitLabel)
     for i = 1:numel(items)
         A = itemAnalysis(items(i));
         if ~isempty(A) && isfield(A, 'ok') && A.ok && isfield(A, 'safe') && A.safe
-            safeIdx(end+1) = i; %#ok<AGROW>
-            vals(end+1) = selectedCICValue(A, modeLabel); %#ok<AGROW>
+            safeIdx(end+1) = i;
+            vals(end+1) = selectedCICValue(A, modeLabel);
         end
     end
     if isempty(safeIdx)

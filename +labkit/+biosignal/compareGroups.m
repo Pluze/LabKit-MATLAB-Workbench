@@ -53,12 +53,12 @@ function result = compareGroups(values, groups)
             a = values(groups == labels(i));
             b = values(groups == labels(j));
             stats = welchComparison(a, b);
-            groupA(end+1, 1) = labels(i); %#ok<AGROW>
-            groupB(end+1, 1) = labels(j); %#ok<AGROW>
-            tStatistic(end+1, 1) = stats.t; %#ok<AGROW>
-            degreesFreedom(end+1, 1) = stats.df; %#ok<AGROW>
-            pValue(end+1, 1) = stats.p; %#ok<AGROW>
-            meanDifference(end+1, 1) = stats.meanDiff; %#ok<AGROW>
+            groupA(end+1, 1) = labels(i);
+            groupB(end+1, 1) = labels(j);
+            tStatistic(end+1, 1) = stats.t;
+            degreesFreedom(end+1, 1) = stats.df;
+            pValue(end+1, 1) = stats.p;
+            meanDifference(end+1, 1) = stats.meanDiff;
         end
     end
     pairwise = table(groupA, groupB, meanDifference, tStatistic, ...

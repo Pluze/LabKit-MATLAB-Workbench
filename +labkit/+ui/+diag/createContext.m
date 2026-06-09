@@ -298,7 +298,7 @@ function initializeLogFile(logFile, appName)
         error('labkit:ui:DebugLogFileOpenFailed', ...
             'Could not open debug log file: %s.', logFile);
     end
-    cleaner = onCleanup(@() fclose(fid)); %#ok<NASGU>
+    cleaner = onCleanup(@() fclose(fid));
     fprintf(fid, '%s debug log\n', char(appName));
 end
 
@@ -308,7 +308,7 @@ function appendLine(logFile, line)
         error('labkit:ui:DebugLogFileOpenFailed', ...
             'Could not open debug log file: %s.', logFile);
     end
-    cleaner = onCleanup(@() fclose(fid)); %#ok<NASGU>
+    cleaner = onCleanup(@() fclose(fid));
     fprintf(fid, '%s\n', char(line));
 end
 

@@ -59,7 +59,7 @@ function recording = readCsvRecording(filepath, opts)
             'timeSource', timeInfo.source, ...
             'timeRepair', timeInfo.repair), ...
             opts);
-        signals = [signals sig]; %#ok<AGROW>
+        signals = [signals sig];
     end
 
     recording = makeRecording(filepath, "table", signals);

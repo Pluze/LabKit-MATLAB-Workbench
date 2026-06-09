@@ -6,10 +6,10 @@ classdef RuntimeGestureTest < matlab.uitest.TestCase
             setupLabKitTestPath();
             h = guiTestHelpers();
             h.assertUifigureAvailable();
-            cleanup = onCleanup(@() h.closeAllFigures()); %#ok<NASGU>
+            cleanup = onCleanup(@() h.closeAllFigures());
 
             fig = uifigure('Visible', 'off', 'Name', 'labkit_runtime_gesture_probe');
-            cleaner = onCleanup(@() delete(fig)); %#ok<NASGU>
+            cleaner = onCleanup(@() delete(fig));
             ax = uiaxes(fig);
             bg = image(ax, zeros(30, 40, 3, 'uint8'));
             axis(ax, 'image');
@@ -94,7 +94,7 @@ classdef RuntimeGestureTest < matlab.uitest.TestCase
             writeGestureArtifacts(recorder, fig, "runtime_gesture");
 
             function onInteractionChanged(active, name)
-                interactionStates(end+1, 1) = string(logical(active)) + ":" + string(name); %#ok<AGROW>
+                interactionStates(end+1, 1) = string(logical(active)) + ":" + string(name);
             end
 
             function onDragMotion(~, ~)

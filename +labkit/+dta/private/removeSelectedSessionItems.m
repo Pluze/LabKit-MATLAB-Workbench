@@ -35,7 +35,7 @@ function [session, report] = removeSelectedSessionItems(session, selectedNames, 
     for i = 1:numel(session.items)
         itemName = itemDisplayName(session.items(i));
         if any(selectedNames == string(itemName))
-            removeNames{end+1} = itemName; %#ok<AGROW>
+            removeNames{end+1} = itemName;
             callCallback(callbacks, 'onRemoved', itemName, session.items(i));
         end
     end

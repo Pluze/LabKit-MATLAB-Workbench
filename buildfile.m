@@ -207,16 +207,16 @@ end
 function args = taskRunArguments(spec)
     args = {};
     if ~isempty(spec.Suites)
-        args = [args, {"Suites", spec.Suites}]; %#ok<AGROW>
+        args = [args, {"Suites", spec.Suites}];
     end
     if ~isempty(spec.Tags)
-        args = [args, {"Tags", spec.Tags}]; %#ok<AGROW>
+        args = [args, {"Tags", spec.Tags}];
     end
     if ~isempty(spec.IncludeGui)
-        args = [args, {"IncludeGui", spec.IncludeGui}]; %#ok<AGROW>
+        args = [args, {"IncludeGui", spec.IncludeGui}];
     end
     if ~isempty(spec.IncludeCoverage)
-        args = [args, {"IncludeCoverage", spec.IncludeCoverage}]; %#ok<AGROW>
+        args = [args, {"IncludeCoverage", spec.IncludeCoverage}];
     end
 end
 
@@ -285,7 +285,7 @@ function paths = expectedProjectPaths(root)
     paths = string(root);
     appsRoot = fullfile(root, "apps");
     if exist(appsRoot, "dir") == 7
-        paths = [paths, string(appsRoot), appPathDirs(appsRoot)]; %#ok<AGROW>
+        paths = [paths, string(appsRoot), appPathDirs(appsRoot)];
     end
     paths = unique(paths, "stable");
 end
@@ -306,7 +306,7 @@ function dirs = appPathDirs(appRoot)
         end
 
         child = string(fullfile(entry.folder, entry.name));
-        dirs = [dirs, child, appPathDirs(child)]; %#ok<AGROW>
+        dirs = [dirs, child, appPathDirs(child)];
     end
 end
 

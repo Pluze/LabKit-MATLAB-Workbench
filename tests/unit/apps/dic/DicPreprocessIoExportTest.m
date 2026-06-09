@@ -27,7 +27,7 @@ classdef DicPreprocessIoExportTest < matlab.unittest.TestCase
 
             outDir = tempname;
             mkdir(outDir);
-            cleanup = onCleanup(@() cleanupFolder(outDir)); %#ok<NASGU>
+            cleanup = onCleanup(@() cleanupFolder(outDir));
             reference = uint8([0 10; 20 30]);
             moving = uint8([30 20; 10 0]);
             mask = uint8([0 255; 255 0]);

@@ -126,8 +126,8 @@ function events = detectPanTompkins(signal, x, fs, opts)
                 acceptedIdx, acceptedScore, anchor, candidateScore, minDistance);
             signalLevel = 0.125 * candidateScore + 0.875 * signalLevel;
         else
-            rejectedIdx(end+1, 1) = anchor; %#ok<AGROW>
-            rejectedScore(end+1, 1) = candidateScore; %#ok<AGROW>
+            rejectedIdx(end+1, 1) = anchor;
+            rejectedScore(end+1, 1) = candidateScore;
             noiseLevel = 0.125 * candidateScore + 0.875 * noiseLevel;
         end
         threshold = noiseLevel + 0.25 * max(signalLevel - noiseLevel, eps);
@@ -198,11 +198,11 @@ function events = detectQrsStreaming(signal, x, fs, opts)
 
         if isempty(acceptedIdx) || anchor - acceptedIdx(end) >= minDistance
             if passesTemplate
-                acceptedIdx(end+1, 1) = anchor; %#ok<AGROW>
-                acceptedScore(end+1, 1) = candidateScore; %#ok<AGROW>
+                acceptedIdx(end+1, 1) = anchor;
+                acceptedScore(end+1, 1) = candidateScore;
                 segment = normalizedSegment(highPassed, anchor, templateRadius);
                 if ~isempty(segment)
-                    templateSegments(:, end+1) = segment; %#ok<AGROW>
+                    templateSegments(:, end+1) = segment;
                 end
                 signalLevel = 0.125 * candidateScore + 0.875 * signalLevel;
             else

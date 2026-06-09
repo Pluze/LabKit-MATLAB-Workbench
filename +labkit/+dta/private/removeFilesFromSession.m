@@ -45,11 +45,11 @@ function [session, report] = removeFilesFromSession(session, selectors)
         if any(match & keep)
             removedIdx = find(match & keep);
             for ii = removedIdx
-                report.removed{end+1} = itemLabel(session.items(ii)); %#ok<AGROW>
+                report.removed{end+1} = itemLabel(session.items(ii));
             end
             keep(match) = false;
         else
-            report.missing{end+1} = selector; %#ok<AGROW>
+            report.missing{end+1} = selector;
         end
     end
 

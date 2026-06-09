@@ -20,7 +20,7 @@ end
 
 function checkDebugLog()
     logFile = [tempname(tempdir) '.log'];
-    cleaner = onCleanup(@() cleanupFile(logFile)); %#ok<NASGU>
+    cleaner = onCleanup(@() cleanupFile(logFile));
     callbackLines = {};
     traceLines = {};
     debug = labkit.ui.diag.createContext('probe_app', ...
@@ -94,11 +94,11 @@ function checkCallbackWrapper()
     assert(any(contains(lines, 'ERROR failing callback')), ...
         'Wrapped callbacks should trace ERROR messages before rethrowing.');
 
-    function sampleCallback(varargin) %#ok<INUSD>
+    function sampleCallback(varargin)
         callbackCalls = callbackCalls + 1;
     end
 
-    function failingCallback(varargin) %#ok<INUSD>
+    function failingCallback(varargin)
         error('probe_app:ExpectedFailure', 'Expected failure.');
     end
 end

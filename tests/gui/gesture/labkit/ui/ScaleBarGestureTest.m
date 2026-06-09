@@ -6,10 +6,10 @@ classdef ScaleBarGestureTest < matlab.uitest.TestCase
             setupLabKitTestPath();
             h = guiTestHelpers();
             h.assertUifigureAvailable();
-            cleanup = onCleanup(@() h.closeAllFigures()); %#ok<NASGU>
+            cleanup = onCleanup(@() h.closeAllFigures());
 
             fig = uifigure('Visible', 'off', 'Name', 'labkit_scale_bar_gesture_probe');
-            cleaner = onCleanup(@() delete(fig)); %#ok<NASGU>
+            cleaner = onCleanup(@() delete(fig));
             grid = uigridlayout(fig, [2 1]);
             ax = uiaxes(grid);
             ax.Layout.Row = 1;

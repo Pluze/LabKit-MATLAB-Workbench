@@ -14,10 +14,10 @@ function verify_gui_layout_ui_scale_bar_tool()
 
     h = guiTestHelpers();
     h.assertUifigureAvailable();
-    cleanup = onCleanup(@() h.closeAllFigures()); %#ok<NASGU>
+    cleanup = onCleanup(@() h.closeAllFigures());
 
     fig = uifigure('Visible', 'off', 'Name', 'labkit_scale_bar_tool_probe');
-    cleaner = onCleanup(@() delete(fig)); %#ok<NASGU>
+    cleaner = onCleanup(@() delete(fig));
     grid = uigridlayout(fig, [2 1]);
     ax = uiaxes(grid);
     ax.Layout.Row = 1;
@@ -78,7 +78,7 @@ function verify_gui_layout_ui_scale_bar_tool()
         'Scale-bar reference editing should trace the second-click finish path.');
 
     fig2 = uifigure('Visible', 'off', 'Name', 'labkit_scale_bar_tool_background_probe');
-    cleaner2 = onCleanup(@() delete(fig2)); %#ok<NASGU>
+    cleaner2 = onCleanup(@() delete(fig2));
     grid2 = uigridlayout(fig2, [2 1]);
     ax2 = uiaxes(grid2);
     ax2.Layout.Row = 1;
@@ -125,13 +125,13 @@ function verify_gui_layout_ui_scale_bar_tool()
     end
 
     function captureTrace(message)
-        traceMessages{end+1, 1} = message; %#ok<AGROW>
+        traceMessages{end+1, 1} = message;
     end
 end
 
 function checkReferenceEditRestartDoesNotReenterRefresh(h)
     fig = uifigure('Visible', 'off', 'Name', 'labkit_scale_bar_tool_restart_probe');
-    cleaner = onCleanup(@() delete(fig)); %#ok<NASGU>
+    cleaner = onCleanup(@() delete(fig));
     grid = uigridlayout(fig, [2 1]);
     ax = uiaxes(grid);
     ax.Layout.Row = 1;
