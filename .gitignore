@@ -1,6 +1,10 @@
 .DS_Store
+LabKit.prj
 matlab_test.log
 matlab_test*.log
 matlab_code_check.json
 artifacts/
+resources/project/
+resources/.DS_Store
 photos/
+derived/

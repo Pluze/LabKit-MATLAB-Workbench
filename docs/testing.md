@@ -52,7 +52,10 @@ buildtool packageDryRun
   `artifacts/logs/testUnit/matlab.log`.
 - `buildtool testGuiGesture` runs focused noninteractive gesture coverage for
   runtime, anchor editor, and scale-bar interaction lifecycle checks.
-- `buildtool checkProject` verifies `LabKit.prj` path and startup metadata.
+- `buildtool checkProject` verifies optional local `LabKit.prj` path and
+  startup metadata when a local project file exists. A fresh clone without
+  `LabKit.prj` should still pass because MATLAB Project metadata is local IDE
+  state.
 - `buildtool packageDryRun` writes a package-boundary inventory under
   `artifacts/package/` without exporting a toolbox.
 
@@ -143,7 +146,7 @@ Focused build tasks mirror source ownership:
 
 | Task | Use it for |
 | --- | --- |
-| `testProject` | Startup, architecture, package surface, and sample-data hygiene guardrails. |
+| `testProject` | Startup, architecture, package surface, repository hygiene, and sample-data hygiene guardrails. |
 | `testLabkitDta` | DTA parser, facade, session, pulse, and item-schema checks. |
 | `testLabkitBiosignal` | Biosignal import, channel extraction, processing, ECG peaks, segments, SNR, and group comparison. |
 | `testLabkitUi` | Reusable UI helpers that do not require app windows. |

@@ -222,6 +222,15 @@ classdef ProjectStructureGuardrailTest < matlab.unittest.TestCase
             end
         end
 
+        function matlabProjectMetadataStaysLocal(testCase)
+            root = setupLabKitTestPath();
+            tracked = trackedProjectMetadata(root);
+
+            testCase.verifyTrue(isempty(tracked), ...
+                ['MATLAB Project metadata should stay local and ignored by git: ' ...
+                strjoin(cellstr(tracked), ', ')]);
+        end
+
         function startupPathKeepsPrivateHelpersPrivate(testCase)
             root = setupLabKitTestPath();
 
@@ -430,6 +439,32 @@ function files = collectTrackedTextScope(root)
             files{end+1} = path;
         end
     end
+end
+
+function files = trackedProjectMetadata(root)
+    command = sprintf('git -C "%s" ls-files -- LabKit.prj resources/project', root);
+    [status, output] = system(command);
+    if status ~= 0
+        files = strings(1, 0);
+        return;
+    end
+
+    lines = strtrim(splitlines(string(output)));
+    files = lines(strlength(lines) > 0).';
+    files = setdiff(files, stagedProjectMetadataDeletes(root), 'stable');
+end
+
+function files = stagedProjectMetadataDeletes(root)
+    command = sprintf(['git -C "%s" diff --cached --name-only ' ...
+        '--diff-filter=D -- LabKit.prj resources/project'], root);
+    [status, output] = system(command);
+    if status ~= 0
+        files = strings(1, 0);
+        return;
+    end
+
+    lines = strtrim(splitlines(string(output)));
+    files = lines(strlength(lines) > 0).';
 end
 
 function files = collectTextFiles(folder)

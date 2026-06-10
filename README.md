@@ -28,13 +28,15 @@ processing.
 
 ## Quick Start
 
-Open MATLAB at the repository root and initialize the workbench:
+Open MATLAB at the repository root and launch the app selector:
 
 ```matlab
-startup_labkit
+labkit_launcher
 ```
 
-Launch the app that matches the workflow:
+The selector initializes the workbench path, scans the current app entry points,
+and opens the selected app. Apps remain directly launchable when a workflow has
+a known command:
 
 ```matlab
 % Electrochemistry
@@ -111,9 +113,9 @@ scripts/run_matlab_tests.sh test
 ```
 
 Focused build tasks are available for project guardrails, DTA, biosignal, UI,
-app families, GUI structural checks, gesture checks, coverage, project metadata,
-and package dry runs. See `docs/testing.md` for the complete command matrix and
-GUI validation limits.
+app families, GUI structural checks, gesture checks, coverage, optional local
+MATLAB Project checks, and package dry runs. See `docs/testing.md` for the
+complete command matrix and GUI validation limits.
 
 ## Repository Layout
 
@@ -128,6 +130,20 @@ tests/                  MATLAB tests, GUI structural checks, and fixtures
 scripts/                Test wrapper scripts
 docs/                   Human-readable architecture, API, app, and testing docs
 ```
+
+## Optional MATLAB Project
+
+The repository does not track MATLAB Project metadata. Users who want MATLAB
+Project features such as dependency analysis and Project Issues can create a
+local project file:
+
+```matlab
+run("scripts/create_local_matlab_project.m")
+```
+
+The generated `LabKit.prj` and `resources/project/` files are local IDE state
+and are ignored by git. The workbench remains runnable through
+`labkit_launcher` without opening a MATLAB Project.
 
 ## Documentation
 

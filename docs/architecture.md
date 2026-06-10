@@ -46,7 +46,12 @@ labkit_BatchImageCrop_app
 labkit_ECGPrint_app
 ```
 
-`startup_labkit` adds the repository root, `apps/`, and normal nested app category folders to the MATLAB path. `LabKit.prj` records the same path setup and uses `startup_labkit.m` as the project startup file for users who open the repository as a MATLAB Project.
+`labkit_launcher` is the primary human-facing entry point for selecting apps.
+`startup_labkit` adds the repository root, `apps/`, and normal nested app
+category folders to the MATLAB path for scripts, tests, and local MATLAB
+Project startup. MATLAB Project metadata is optional local IDE state: users can
+generate `LabKit.prj` with `scripts/create_local_matlab_project.m`, but the
+repository does not track `LabKit.prj` or `resources/project/`.
 
 ## Package Responsibilities
 

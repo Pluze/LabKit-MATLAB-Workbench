@@ -7,13 +7,31 @@ LabKit apps are independent MATLAB GUI tools for concrete lab workflows. Each ap
 From MATLAB:
 
 ```matlab
+labkit_launcher
+```
+
+This opens a single-file app selector that initializes the LabKit path, scans
+`apps/**/labkit_*_app.m`, and launches the selected app. Apps remain directly
+launchable by command name. For scripted setup without opening the selector,
+run:
+
+```matlab
 startup_labkit
 ```
 
-This adds the repository root, `apps/`, and nested app category folders to the MATLAB path.
+Startup adds the repository root, `apps/`, and nested app category folders to the MATLAB path.
 MATLAB package folders below app folders, such as
 `apps/image_measurement/batch_crop/+batch_crop/`, are not added as direct path
 entries; they are resolved through their owning app folder.
+
+Users who want MATLAB Project features can create a local project file:
+
+```matlab
+run("scripts/create_local_matlab_project.m")
+```
+
+`LabKit.prj` and `resources/project/` are local IDE metadata and are not part of
+the repository contract.
 
 ## Current Apps
 
