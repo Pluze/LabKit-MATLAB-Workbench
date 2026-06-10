@@ -114,6 +114,13 @@ gesture jobs. Coverage is intentionally outside the default PR gate to keep PR
 feedback focused and avoid duplicate test execution. Do not describe CI as full
 interactive GUI workflow validation.
 
+The shell-wrapper job owns repository-level checks that are cheaper and safer
+outside MATLAB, including the rule that `LabKit.prj` and `resources/project/`
+must stay untracked local IDE metadata. MATLAB build tasks should not shell out
+to git for this repository-state check. CI jobs also use explicit job timeouts
+so a MATLAB process hang fails quickly instead of consuming the GitHub Actions
+six-hour default.
+
 ## Focused Build Tasks
 
 ```bash

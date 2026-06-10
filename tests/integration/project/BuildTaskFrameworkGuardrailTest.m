@@ -108,6 +108,38 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
             testCase.verifyTrue(contains(coverageJob, "artifacts/coverage/**"), ...
                 'Coverage job should upload coverage artifacts.');
         end
+
+        function ciRepositoryStateChecksStayOutsideMatlab(testCase)
+            root = setupLabKitTestPath();
+            workflowPath = fullfile(root, ".github", "workflows", ...
+                "matlab-tests.yml");
+            workflow = string(fileread(workflowPath));
+            shellWrapperJob = extractWorkflowJob(workflow, "shell-wrapper");
+
+            testCase.verifyTrue(contains(shellWrapperJob, ...
+                "Check MATLAB Project metadata is local"), ...
+                'Repository metadata checks should run in shell-wrapper.');
+            testCase.verifyTrue(contains(shellWrapperJob, ...
+                "git ls-files -- LabKit.prj resources/project"), ...
+                'Tracked MATLAB Project metadata should be checked by git in shell.');
+            testCase.verifyFalse(contains(workflow, "matlabProjectMetadataStaysLocal"), ...
+                'MATLAB tests should not shell out to git for repository metadata.');
+        end
+
+        function ciMatlabJobsHaveTimeouts(testCase)
+            root = setupLabKitTestPath();
+            workflowPath = fullfile(root, ".github", "workflows", ...
+                "matlab-tests.yml");
+            workflow = string(fileread(workflowPath));
+            jobNames = ["quality", "unit", "coverage", "integration", ...
+                "gui-structural", "gui-gesture"];
+
+            for k = 1:numel(jobNames)
+                job = extractWorkflowJob(workflow, jobNames(k));
+                testCase.verifyTrue(contains(job, "timeout-minutes:"), ...
+                    "CI MATLAB job should have an explicit timeout: " + jobNames(k));
+            end
+        end
     end
 end
 

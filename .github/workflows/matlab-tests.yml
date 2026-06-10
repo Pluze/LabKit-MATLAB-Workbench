@@ -22,10 +22,20 @@ jobs:
   shell-wrapper:
     name: Shell Wrapper Checks
     runs-on: ubuntu-latest
+    timeout-minutes: 5
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
+
+      - name: Check MATLAB Project metadata is local
+        run: |
+          tracked="$(git ls-files -- LabKit.prj resources/project)"
+          if [ -n "$tracked" ]; then
+            echo "MATLAB Project metadata must stay local and untracked:"
+            echo "$tracked"
+            exit 1
+          fi
 
       - name: Check Bash wrapper syntax
         run: bash -n scripts/run_matlab_tests.sh
@@ -46,6 +56,7 @@ jobs:
   quality:
     name: Quality Guardrails
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     env:
       MLM_LICENSE_TOKEN: ${{ secrets.MLM_LICENSE_TOKEN }}
 
@@ -90,6 +101,7 @@ jobs:
   unit:
     name: Unit Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     env:
       MLM_LICENSE_TOKEN: ${{ secrets.MLM_LICENSE_TOKEN }}
 
@@ -135,6 +147,7 @@ jobs:
     name: Coverage Report
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
     runs-on: ubuntu-latest
+    timeout-minutes: 35
     env:
       MLM_LICENSE_TOKEN: ${{ secrets.MLM_LICENSE_TOKEN }}
 
@@ -180,6 +193,7 @@ jobs:
   integration:
     name: Integration Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     env:
       MLM_LICENSE_TOKEN: ${{ secrets.MLM_LICENSE_TOKEN }}
 
@@ -225,6 +239,7 @@ jobs:
     name: GUI Structural Tests
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     env:
       MLM_LICENSE_TOKEN: ${{ secrets.MLM_LICENSE_TOKEN }}
 
@@ -272,6 +287,7 @@ jobs:
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
     continue-on-error: true
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     env:
       MLM_LICENSE_TOKEN: ${{ secrets.MLM_LICENSE_TOKEN }}
 
