@@ -3,7 +3,7 @@ function spec = tab(key, titleText, gridSize, rowHeight, opts)
 %
 % Usage:
 %   spec = labkit.ui.app.tab('filesAnalysis', 'Files + Analysis', ...
-%       [4 1], {240, 220, 280, 160}, struct('resizeRows', [1 2 3]));
+%       [4 1], {240, 220, 280, 160});
 %
 % Inputs:
 %   key - valid field-name style identifier used in the returned ui struct.
@@ -14,7 +14,8 @@ function spec = tab(key, titleText, gridSize, rowHeight, opts)
 %
 % Options:
 %   columnWidth - cell row of column widths, default all {'1x'}.
-%   resizeRows - numeric logical-row boundaries after which drag handles are added.
+%   resize - row-resize behavior: 'betweenRows' default, or 'none'.
+%   resizeRows - legacy numeric logical-row boundaries. Prefer resize.
 %   resizeOptions - struct passed to row-resize handle creation.
 %   padding, rowSpacing, columnSpacing - grid layout properties.
 %
@@ -27,6 +28,8 @@ function spec = tab(key, titleText, gridSize, rowHeight, opts)
     if nargin < 5
         opts = struct();
     end
+    optsHasResize = isfield(opts, 'resize');
+    optsHasResizeRows = isfield(opts, 'resizeRows');
 
     spec = struct( ...
         'key', char(key), ...
@@ -34,12 +37,17 @@ function spec = tab(key, titleText, gridSize, rowHeight, opts)
         'gridSize', gridSize, ...
         'rowHeight', {asCellRow(rowHeight)}, ...
         'columnWidth', {repmat({'1x'}, 1, gridSize(2))}, ...
+        'resize', 'betweenRows', ...
         'resizeRows', [], ...
         'resizeOptions', struct());
 
     fields = fieldnames(opts);
     for k = 1:numel(fields)
         spec.(fields{k}) = opts.(fields{k});
+    end
+
+    if optsHasResizeRows && isempty(opts.resizeRows) && ~optsHasResize
+        spec.resize = 'none';
     end
 end
 

@@ -167,7 +167,8 @@ function assertImageMeasurementAppBoundary(source, appName)
     packageName = imageMeasurementPackageForApp(appName);
     assert(contains(source, [packageName '.']), ...
         [appName ' should use its app-owned package namespace.']);
-    allPackageNames = {'batch_crop', 'curvature', 'focus_stack'};
+    allPackageNames = {'batch_crop', 'curvature', 'focus_stack', ...
+        'image_enhance', 'image_match'};
     otherPackageNames = setdiff(allPackageNames, {packageName});
     for iPackage = 1:numel(otherPackageNames)
         assert(~contains(source, [otherPackageNames{iPackage} '.']), ...
@@ -189,6 +190,10 @@ function packageName = imageMeasurementPackageForApp(appName)
             packageName = 'curvature';
         case 'labkit_FocusStack_app'
             packageName = 'focus_stack';
+        case 'labkit_ImageEnhance_app'
+            packageName = 'image_enhance';
+        case 'labkit_ImageMatch_app'
+            packageName = 'image_match';
         otherwise
             error('Unknown image-measurement app entrypoint: %s', appName);
     end
@@ -265,7 +270,9 @@ function words = appEntrypointWords()
         'labkit_EIS_app', 'labkit_ChronoOverlay_app', ...
         'labkit_DICPreprocess_app', 'labkit_DICPostprocess_app', ...
         'labkit_CurvatureMeasurement_app', 'labkit_FocusStack_app', ...
-        'labkit_BatchImageCrop_app', 'labkit_ECGPrint_app'};
+        'labkit_ImageEnhance_app', 'labkit_ImageMatch_app', ...
+        'labkit_BatchImageCrop_app', ...
+        'labkit_ECGPrint_app'};
 end
 
 function words = experimentWorkflowWords()

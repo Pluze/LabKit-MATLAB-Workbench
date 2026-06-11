@@ -142,10 +142,29 @@ end
 
 function rows = validResizeRows(spec, logicalRows)
     rows = [];
-    if ~isfield(spec, 'resizeRows') || isempty(spec.resizeRows)
+    if isfield(spec, 'resizeRows') && ~isempty(spec.resizeRows)
+        rows = unique(spec.resizeRows(:).');
+        rows = rows(rows >= 1 & rows < logicalRows & isfinite(rows));
         return;
     end
-    rows = unique(spec.resizeRows(:).');
+
+    mode = optionValue(spec, 'resize', 'betweenRows');
+    if islogical(mode)
+        if mode
+            rows = 1:max(logicalRows - 1, 0);
+        end
+        return;
+    end
+    mode = lower(char(string(mode)));
+    switch mode
+        case {'betweenrows', 'auto', 'all'}
+            rows = 1:max(logicalRows - 1, 0);
+        case {'none', 'off', 'false'}
+            rows = [];
+        otherwise
+            error('labkit:ui:InvalidTabResizeMode', ...
+                'Unsupported tab resize mode "%s".', char(string(mode)));
+    end
     rows = rows(rows >= 1 & rows < logicalRows & isfinite(rows));
 end
 

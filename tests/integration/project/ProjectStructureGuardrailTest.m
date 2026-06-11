@@ -141,6 +141,10 @@ classdef ProjectStructureGuardrailTest < matlab.unittest.TestCase
                 'curvature', 'curvature', 'labkit_CurvatureMeasurement_app.m');
             assertImageMeasurementPackageLayout(testCase, root, ...
                 'focus_stack', 'focus_stack', 'labkit_FocusStack_app.m');
+            assertImageMeasurementPackageLayout(testCase, root, ...
+                'image_enhance', 'image_enhance', 'labkit_ImageEnhance_app.m');
+            assertImageMeasurementPackageLayout(testCase, root, ...
+                'image_match', 'image_match', 'labkit_ImageMatch_app.m');
         end
 
         function electrochemAppsUseOwnedPackageNamespaces(testCase)
@@ -407,6 +411,12 @@ function legacy = legacyEntrypointInfo(appName)
         case 'labkit_FocusStack_app'
             legacy = struct('launchName', 'launchFocusStackApp', ...
                 'legacyCall', 'focus_stack_gui(');
+        case 'labkit_ImageEnhance_app'
+            legacy = struct('launchName', 'launchImageEnhanceApp', ...
+                'legacyCall', 'image_enhance_gui(');
+        case 'labkit_ImageMatch_app'
+            legacy = struct('launchName', 'launchImageMatchApp', ...
+                'legacyCall', 'image_match_gui(');
         case 'labkit_BatchImageCrop_app'
             legacy = struct('launchName', 'launchBatchImageCropApp', ...
                 'legacyCall', 'batch_crop_gui(');
