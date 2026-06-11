@@ -59,6 +59,19 @@ function checkCreateAxesHelper(h)
         'Image axes helper should preserve the supplied title.');
     assert(isequal(hImage.ContextMenu, imgAx.ContextMenu), ...
         'Image axes helper should attach the popout menu to the image object.');
+    imageMenuItem = findall(imgAx.ContextMenu, 'Type', 'uimenu', 'Tag', 'labkitAxesPopoutMenu');
+    h.invokeCallback(imageMenuItem, 'MenuSelectedFcn');
+    drawnow;
+    imagePopoutFig = findall(groot, 'Type', 'figure', 'Name', 'Image Probe');
+    assert(~isempty(imagePopoutFig), 'Image axes popout menu should create a standalone figure.');
+    imagePopoutFig = imagePopoutFig(1);
+    imagePopoutCleaner = onCleanup(@() delete(imagePopoutFig));
+    imagePopoutAxes = findobj(imagePopoutFig, 'Type', 'axes');
+    assert(numel(imagePopoutAxes) >= 1, 'Image axes popout should create copied axes.');
+    assert(strcmp(imagePopoutAxes(1).DataAspectRatioMode, 'manual'), ...
+        'Image axes popout should preserve locked data aspect ratio.');
+    assert(isequal(imagePopoutAxes(1).DataAspectRatio, imgAx.DataAspectRatio), ...
+        'Image axes popout should preserve the source image pixel aspect ratio.');
 end
 
 function checkCreateAppShellHelper(h)

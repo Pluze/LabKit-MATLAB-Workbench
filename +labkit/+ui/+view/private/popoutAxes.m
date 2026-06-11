@@ -10,7 +10,7 @@ function newFig = popoutAxes(srcAx)
 %
 % Output:
 %   newFig - standalone MATLAB figure containing copied axes content.
-%            Aspect ratio modes are set to auto for manual resizing.
+%            Plot axes are freely resizable; image axes preserve data aspect.
 
     if isempty(srcAx) || ~isvalid(srcAx)
         error('labkit:ui:InvalidAxes', 'Source axes is not valid.');
@@ -47,7 +47,6 @@ function copyAxesState(srcAx, dstAx)
         colormap(dstAx, colormap(srcAx));
     catch
     end
-    unlockAspectRatio(dstAx);
 end
 
 function applyAxesState(srcAx, dstAx)
@@ -63,9 +62,17 @@ function applyAxesState(srcAx, dstAx)
         dstAx.CLimMode = srcAx.CLimMode;
     catch
     end
-    unlockAspectRatio(dstAx);
+    applyAspectRatio(srcAx, dstAx);
 
     addLegendIfNeeded(dstAx);
+end
+
+function applyAspectRatio(srcAx, dstAx)
+    if hasImageContent(srcAx)
+        lockImageAspectRatio(srcAx, dstAx);
+    else
+        unlockAspectRatio(dstAx);
+    end
 end
 
 function unlockAspectRatio(ax)
@@ -74,6 +81,28 @@ function unlockAspectRatio(ax)
         ax.PlotBoxAspectRatioMode = 'auto';
         ax.ActivePositionProperty = 'outerposition';
     catch
+    end
+end
+
+function lockImageAspectRatio(srcAx, dstAx)
+    try
+        dstAx.DataAspectRatio = srcAx.DataAspectRatio;
+        dstAx.DataAspectRatioMode = 'manual';
+        dstAx.PlotBoxAspectRatioMode = 'auto';
+        dstAx.ActivePositionProperty = 'outerposition';
+    catch
+        axis(dstAx, 'image');
+    end
+end
+
+function tf = hasImageContent(ax)
+    children = ax.Children;
+    tf = false;
+    for k = 1:numel(children)
+        if isgraphics(children(k), 'image')
+            tf = true;
+            return;
+        end
     end
 end
 
