@@ -2,11 +2,41 @@ classdef GuiSmokeTest < matlab.uitest.TestCase
     %GUISMOKETEST Verify LabKit behavior through official MATLAB tests.
 
     methods (Test, TestTags = {'GUI', 'Structural', 'Smoke'})
+        function test_labkit_launcher_layout(testCase)
+            setupLabKitTestPath();
+            verify_labkit_launcher_layout();
+        end
+
         function test_gui_smoke(testCase)
             setupLabKitTestPath();
             verify_gui_smoke();
         end
     end
+end
+
+function verify_labkit_launcher_layout()
+%VERIFY_LABKIT_LAUNCHER_LAYOUT Verify root launcher layout and app discovery.
+
+    h = guiTestHelpers();
+    h.assertUifigureAvailable();
+    cleanup = onCleanup(@() h.closeAllFigures());
+
+    apps = labkit_launcher("list");
+    assert(istable(apps), 'labkit_launcher list mode should return a table.');
+    assert(all(ismember({'Command', 'DisplayName', 'Family'}, apps.Properties.VariableNames)), ...
+        'labkit_launcher list mode should expose Command, DisplayName, and Family columns.');
+    assert(height(apps) > 0, 'labkit_launcher list mode should find app entry points.');
+
+    fig = labkit_launcher();
+    drawnow;
+    assert(strcmp(fig.Name, 'LabKit App Launcher'), ...
+        'labkit_launcher should return the launcher figure handle.');
+    h.assertFigureMinimumSize(fig, 1320, 760);
+    h.assertTabTitles(fig, {'Find App', 'Status', 'Filter', 'Selected App', 'Actions'});
+    h.assertButtonContract(fig, {'Open Selected App', 'Refresh App List'});
+    h.assertDropdownGroups(fig, h.dropdownGroup(['All'; unique(apps.Family)], 1));
+    h.assertAnyTableColumns(fig, {'Family', 'App', 'Command'});
+    h.invokeButton(fig, 'Refresh App List');
 end
 
 function verify_gui_smoke()

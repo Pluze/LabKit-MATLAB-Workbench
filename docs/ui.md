@@ -40,11 +40,10 @@ Custom tabs use `labkit.ui.app.tab`:
 ```matlab
 opts.tabs = labkit.ui.app.tab( ...
     'filesAnalysis', 'Files + Analysis', [4 1], ...
-    {180, 220, 260, 140}, ...
-    struct('resizeRows', [1 2 3]));
+    {180, 220, 260, 140});
 ```
 
-The shell owns split panes, scrollable tab grids, row resize handles, and the right-side grid. Apps own the controls and axes placed inside returned grids.
+The shell owns split panes, scrollable tab grids, row resize handles, and the right-side grid. Multi-row tabs get resize handles between adjacent logical rows by default. Use `struct('resize','none')` only for tabs whose rows should remain fixed. Apps own the controls and axes placed inside returned grids.
 
 ## Views And Forms
 

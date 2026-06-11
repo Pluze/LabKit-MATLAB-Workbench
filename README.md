@@ -6,8 +6,8 @@
 [![MATLAB](https://img.shields.io/badge/MATLAB-apps-orange.svg)](https://www.mathworks.com/products/matlab.html)
 
 Focused MATLAB GUI apps for lab workflows in electrochemistry, DIC, image
-measurement, microscopy focus stacking, batch image cropping, and wearable
-biosignal review.
+measurement, microscopy focus stacking, image enhancement, batch image
+cropping, and wearable biosignal review.
 
 LabKit MATLAB Workbench is an app-first research workbench. Each workflow keeps
 its own launch command, app-owned calculations, plots, summaries, and exports.
@@ -21,7 +21,7 @@ processing.
 | --- | --- |
 | App-first workflows | Independent MATLAB GUI apps for daily lab tasks instead of one monolithic analysis launcher. |
 | Electrochemistry support | Gamry DTA loading, chrono overlays, CIC, CSC, VT resistance, EIS plotting, pulse handling, and CSV export paths. |
-| Image and DIC workflows | DIC preprocessing/postprocessing, curve measurement, calibrated scale bars, focus-stack fusion, and batch microscope image crops. |
+| Image and DIC workflows | DIC preprocessing/postprocessing, curve measurement, calibrated scale bars, focus-stack fusion, paper image enhancement, and batch microscope image crops. |
 | Wearable biosignals | ECG/table import, filtering, peak detection, event segments, templates, and SNR-style measurement summaries. |
 | Reusable foundation | Layered `labkit.ui`, GUI-free `labkit.dta`, and GUI-free `labkit.biosignal` facades. |
 | Guarded behavior | MATLAB build tasks, synthetic fixtures, architecture guardrails, and GitHub Actions CI. |
@@ -53,6 +53,8 @@ labkit_DICPostprocess_app
 % Image measurement and microscopy utilities
 labkit_CurvatureMeasurement_app
 labkit_FocusStack_app
+labkit_ImageEnhance_app
+labkit_ImageMatch_app
 labkit_BatchImageCrop_app
 
 % Wearable biosignal review
@@ -75,6 +77,8 @@ options, and export outputs when the selected app provides an export action.
 | `labkit_DICPostprocess_app` | Ncorr strain overlays, ROI summary, and colorbar export | Ncorr MAT, reference image, ROI mask | EXX/EYY overlays, summary CSV, colorbar files |
 | `labkit_CurvatureMeasurement_app` | Editable curve tracing, calibrated scale, length, and circle-fit curvature | Image files | Overlay PNG and curvature/length CSV |
 | `labkit_FocusStack_app` | Microscope focus-stack fusion into an all-in-focus image | Focus image folder or selected image files | Fused PNG, focus map PNG, summary CSV |
+| `labkit_ImageEnhance_app` | Stepwise brightness, contrast, clarity, color, and white-balance enhancement for figures | Image files | Enhanced images and processing manifest CSV |
+| `labkit_ImageMatch_app` | Reference-based white-balance, tone, and color-style matching for figure images | Image files | Matched images and processing manifest CSV |
 | `labkit_BatchImageCrop_app` | Fixed-size batch microscope crops with per-image center and rotation | Microscope image files | Cropped images and crop manifest CSV |
 | `labkit_ECGPrint_app` | ECG waveform preview, filtering, peak/segment SNR, and SNR-over-time display | MAT timetable, CSV, or TSV recordings | Segment SNR CSV and waveform PNG |
 

@@ -19,6 +19,8 @@ function verify_gui_layout_image_measurement()
     checkCurvatureMeasurementLayout(h);
     checkFocusStackLayout(h);
     checkBatchImageCropLayout(h);
+    checkImageEnhanceLayout(h);
+    checkImageMatchLayout(h);
 end
 
 function checkCurvatureMeasurementLayout(h)
@@ -99,6 +101,58 @@ function checkBatchImageCropLayout(h)
         'Batch crop debug launch should return an enabled trace logger.');
     assertAnyTextAreaContains(h, fig, 'Batch image crop debug trace enabled', ...
         'Batch crop debug launch should mirror trace lines into the visible Log tab.');
+end
+
+function checkImageEnhanceLayout(h)
+    fig = h.launchFigure('labkit_ImageEnhance_app', 'Paper Image Enhance');
+    h.assertFigureMinimumSize(fig, 1460, 860);
+    h.assertComponentCounts(fig, struct('Button', 7, 'DropDown', 2, ...
+        'Spinner', 2, 'ListBox', 2, 'Table', 2, 'TextArea', 2, 'Axes', 1));
+    h.assertButtonContract(fig, {'Open image files', 'Clear images', ...
+        'Apply tool', 'Undo history', 'Reset history', ...
+        'Choose folder', 'Export enhanced images'});
+    h.assertDropdownGroups(fig, [ ...
+        h.dropdownGroup({'Enhanced', 'Original', 'Before | After'}, 1), ...
+        h.dropdownGroup({'PNG', 'TIFF', 'JPEG'}, 1)]);
+    h.assertTabTitles(fig, {'Library + Export', 'Tools + History', 'Log'});
+    h.assertAnyTableColumns(fig, {'Metric', 'Value'});
+    h.assertAnyTableColumns(fig, {'#', 'Step', 'Settings'});
+    h.assertAxesContract(fig, {h.axesSpec('Enhanced Preview', '', '')});
+
+    h.closeAllFigures();
+    [fig, debug] = labkit_ImageEnhance_app("debug", struct());
+    drawnow;
+    assert(debug.enabled && debug.traceEnabled, ...
+        'Image enhance debug launch should return an enabled trace logger.');
+    assertAnyTextAreaContains(h, fig, 'Image enhance debug trace enabled', ...
+        'Image enhance debug launch should mirror trace lines into the visible Log tab.');
+end
+
+function checkImageMatchLayout(h)
+    fig = h.launchFigure('labkit_ImageMatch_app', 'Paper Image Match');
+    h.assertFigureMinimumSize(fig, 1460, 860);
+    h.assertComponentCounts(fig, struct('Button', 7, 'DropDown', 4, ...
+        'Spinner', 3, 'ListBox', 1, 'Table', 2, 'TextArea', 3, 'Axes', 1));
+    h.assertButtonContract(fig, {'Open image files', 'Clear images', ...
+        'Apply match', 'Undo history', 'Reset history', ...
+        'Choose folder', 'Export matched images'});
+    h.assertDropdownGroups(fig, [ ...
+        h.dropdownGroup({'Matched', 'Original', 'Before | After'}, 1), ...
+        h.dropdownGroup({'Balanced', 'White balance', 'Tone only', ...
+        'Lab style', 'Histogram'}, 1), ...
+        h.dropdownGroup({'PNG', 'TIFF', 'JPEG'}, 1)]);
+    h.assertTabTitles(fig, {'Library + Export', 'Match + History', 'Log'});
+    h.assertAnyTableColumns(fig, {'Metric', 'Value'});
+    h.assertAnyTableColumns(fig, {'#', 'Step', 'Settings', 'Ref'});
+    h.assertAxesContract(fig, {h.axesSpec('Matched Preview', '', '')});
+
+    h.closeAllFigures();
+    [fig, debug] = labkit_ImageMatch_app("debug", struct());
+    drawnow;
+    assert(debug.enabled && debug.traceEnabled, ...
+        'Image match debug launch should return an enabled trace logger.');
+    assertAnyTextAreaContains(h, fig, 'Image match debug trace enabled', ...
+        'Image match debug launch should mirror trace lines into the visible Log tab.');
 end
 
 function assertAnyTextAreaContains(h, fig, needle, message)
