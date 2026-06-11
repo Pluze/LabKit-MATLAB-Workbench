@@ -71,8 +71,8 @@ function whitePoint = robustWhitePoint(imageData)
 end
 
 function outputImage = labToneMatch(inputImage, referenceImage, toneStrength)
-    labImage = rgb2lab(inputImage);
-    referenceLab = rgb2lab(referenceImage);
+    labImage = rgbToLab(inputImage);
+    referenceLab = rgbToLab(referenceImage);
     matchedL = quantileMatch(labImage(:, :, 1), referenceLab(:, :, 1));
     labImage(:, :, 1) = (1 - toneStrength) .* labImage(:, :, 1) + ...
         toneStrength .* matchedL;
@@ -80,8 +80,8 @@ function outputImage = labToneMatch(inputImage, referenceImage, toneStrength)
 end
 
 function outputImage = labStyleMatch(inputImage, referenceImage, toneStrength, colorStrength)
-    labImage = rgb2lab(inputImage);
-    referenceLab = rgb2lab(referenceImage);
+    labImage = rgbToLab(inputImage);
+    referenceLab = rgbToLab(referenceImage);
     matchedL = quantileMatch(labImage(:, :, 1), referenceLab(:, :, 1));
     matchedAb = covarianceMatch(labImage(:, :, 2:3), referenceLab(:, :, 2:3));
     labImage(:, :, 1) = (1 - toneStrength) .* labImage(:, :, 1) + ...
@@ -92,8 +92,8 @@ function outputImage = labStyleMatch(inputImage, referenceImage, toneStrength, c
 end
 
 function outputImage = labHistogramMatch(inputImage, referenceImage, toneStrength, colorStrength)
-    labImage = rgb2lab(inputImage);
-    referenceLab = rgb2lab(referenceImage);
+    labImage = rgbToLab(inputImage);
+    referenceLab = rgbToLab(referenceImage);
     matchedLab = labImage;
     matchedLab(:, :, 1) = quantileMatch(labImage(:, :, 1), referenceLab(:, :, 1));
     matchedLab(:, :, 2) = quantileMatch(labImage(:, :, 2), referenceLab(:, :, 2));
@@ -156,7 +156,89 @@ function imageData = normalizeImage(imageData)
 end
 
 function outputImage = labToRgb(labImage)
-    outputImage = min(max(lab2rgb(labImage), 0), 1);
+    if exist('lab2rgb', 'file') == 2
+        outputImage = min(max(lab2rgb(labImage), 0), 1);
+        return;
+    end
+
+    xyzImage = labToXyz(labImage);
+    outputImage = xyzToRgb(xyzImage);
+end
+
+function labImage = rgbToLab(rgbImage)
+    if exist('rgb2lab', 'file') == 2
+        labImage = rgb2lab(rgbImage);
+        return;
+    end
+
+    xyzImage = rgbToXyz(rgbImage);
+    labImage = xyzToLab(xyzImage);
+end
+
+function xyzImage = rgbToXyz(rgbImage)
+    rgbImage = min(max(double(rgbImage), 0), 1);
+    linearRgb = rgbImage;
+    lowMask = linearRgb <= 0.04045;
+    linearRgb(lowMask) = linearRgb(lowMask) ./ 12.92;
+    linearRgb(~lowMask) = ((linearRgb(~lowMask) + 0.055) ./ 1.055) .^ 2.4;
+
+    transform = [ ...
+        0.4124564 0.3575761 0.1804375; ...
+        0.2126729 0.7151522 0.0721750; ...
+        0.0193339 0.1191920 0.9503041];
+    pixels = reshape(linearRgb, [], 3) * transform.';
+    xyzImage = reshape(pixels, size(linearRgb));
+end
+
+function rgbImage = xyzToRgb(xyzImage)
+    transform = [ ...
+         3.2404542 -1.5371385 -0.4985314; ...
+        -0.9692660  1.8760108  0.0415560; ...
+         0.0556434 -0.2040259  1.0572252];
+    linearPixels = reshape(double(xyzImage), [], 3) * transform.';
+    linearRgb = reshape(linearPixels, size(xyzImage));
+    linearRgb = min(max(linearRgb, 0), 1);
+
+    rgbImage = linearRgb;
+    lowMask = rgbImage <= 0.0031308;
+    rgbImage(lowMask) = 12.92 .* rgbImage(lowMask);
+    rgbImage(~lowMask) = 1.055 .* (rgbImage(~lowMask) .^ (1 / 2.4)) - 0.055;
+    rgbImage = min(max(rgbImage, 0), 1);
+end
+
+function labImage = xyzToLab(xyzImage)
+    white = reshape([0.95047 1.00000 1.08883], 1, 1, 3);
+    scaled = double(xyzImage) ./ white;
+    f = labPivotForward(scaled);
+
+    labImage = zeros(size(xyzImage));
+    labImage(:, :, 1) = 116 .* f(:, :, 2) - 16;
+    labImage(:, :, 2) = 500 .* (f(:, :, 1) - f(:, :, 2));
+    labImage(:, :, 3) = 200 .* (f(:, :, 2) - f(:, :, 3));
+end
+
+function xyzImage = labToXyz(labImage)
+    white = reshape([0.95047 1.00000 1.08883], 1, 1, 3);
+    fy = (double(labImage(:, :, 1)) + 16) ./ 116;
+    fx = fy + double(labImage(:, :, 2)) ./ 500;
+    fz = fy - double(labImage(:, :, 3)) ./ 200;
+
+    scaled = cat(3, labPivotInverse(fx), labPivotInverse(fy), labPivotInverse(fz));
+    xyzImage = scaled .* white;
+end
+
+function value = labPivotForward(value)
+    delta = 6 / 29;
+    highMask = value > delta ^ 3;
+    value(highMask) = value(highMask) .^ (1 / 3);
+    value(~highMask) = value(~highMask) ./ (3 * delta ^ 2) + 4 / 29;
+end
+
+function value = labPivotInverse(value)
+    delta = 6 / 29;
+    highMask = value > delta;
+    value(highMask) = value(highMask) .^ 3;
+    value(~highMask) = 3 * delta ^ 2 .* (value(~highMask) - 4 / 29);
 end
 
 function value = clamp01(value)
