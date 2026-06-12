@@ -7,7 +7,6 @@ function fig = runApp(debugLog)
 
     S = dic_preprocess.state.initialState();
     callbacks = struct( ...
-        'scrollZoom', @onPreviewScrollZoom, ...
         'openReference', @onOpenReference, ...
         'openMoving', @onOpenMoving, ...
         'previewChanged', @(~,~) refreshPreview(), ...
@@ -29,22 +28,25 @@ function fig = runApp(debugLog)
         'clearMaskBoundary', @onClearMaskBoundary, ...
         'clearMaskCanvas', @onClearMaskCanvas, ...
         'saveMask', @onSaveMask);
-    [ui, controls] = dic_preprocess.ui.createLayout(callbacks);
+    spec = dic_preprocess.ui.buildSpec(callbacks);
+    ui = labkit.ui.app.create(spec, "debug", debugLog);
     fig = ui.fig;
-    imageRuntime = ui.imageRuntime;
+    ui.topAxes = ui.controls.previewAxes.axesById.reference;
+    ui.bottomAxes = ui.controls.previewAxes.axesById.current;
+    imageRuntime = labkit.ui.tool.createRuntime(ui.topAxes, ...
+        struct('figure', fig, 'defaultScrollFcn', @onPreviewScrollZoom));
+    ui.imageRuntime = imageRuntime;
+    controls = dic_preprocess.ui.mapControlHandles(ui);
     txtReference = controls.txtReference;
     txtMoving = controls.txtMoving;
-    txtSummary = ui.txtSummary;
-    txtDetails = ui.txtDetails;
-    txtLog = ui.txtLog;
+    txtSummary = ui.controls.summaryText.textArea;
+    txtDetails = ui.controls.detailsText.textArea;
     ddPreview = controls.ddPreview;
     ddBoundaryStyle = controls.ddBoundaryStyle;
     btnApplyCrop = controls.btnApplyCrop;
     btnCancelCrop = controls.btnCancelCrop;
     if debugLog.enabled
-        debugLog.attachTextLog(txtLog);
         debugLog.trace('DIC preprocess debug trace enabled.');
-        debugLog.instrumentFigure(fig);
     end
 
     refreshPreview();
@@ -407,7 +409,7 @@ function fig = runApp(debugLog)
         [boundaryMask, ok] = currentBoundaryMask(showAlert);
         if ok
             ddPreview.Value = 'ROI mask';
-            dic_preprocess.ui.showImage(ui.bottomAxes, ...
+            dic_preprocess.ui.showImage(ui, 'current', ...
                 dic_preprocess.ops.maskRgb(boundaryMask), 'ROI boundary preview');
             updateMaskCurveGraphics();
             addLog(sprintf('Previewed %s ROI boundary with %d anchors.', ...
@@ -487,7 +489,7 @@ function fig = runApp(debugLog)
     end
 
     function addLog(msg)
-        labkit.ui.view.update(txtLog, 'appendLog', msg);
+        labkit.ui.view.appendLog(ui, 'appLog', msg);
         debugLog.append(msg);
     end
 
