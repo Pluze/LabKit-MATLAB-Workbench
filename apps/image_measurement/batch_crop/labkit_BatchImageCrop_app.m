@@ -23,79 +23,54 @@ function varargout = labkit_BatchImageCrop_app(varargin)
     S.outputFolder = string(pwd);
     S.lastExport = [];
 
-    workbenchOpts = struct( ...
-        'rightTitle', 'Crop Preview', ...
-        'rightGridSize', [1 1], ...
-        'rightRowHeight', {{'1x'}});
-    workbenchOpts.tabs = [ ...
-        labkit.ui.app.tab('filesAnalysis', 'Files + Analysis', [3 1], ...
-            {250, 260, 145}), ...
-        labkit.ui.app.tab('summaryResults', 'Summary + Results', [2 1], ...
-            {240, '1x'}), ...
-        labkit.ui.app.tab('log', 'Log', [1 1], {'1x'})];
+    callbacks = struct( ...
+        "imagesChosen", @onImagesChosen, ...
+        "clearImages", @(~, ~) onClearImages(), ...
+        "imageSelectionChanged", @(~, ~) onImageSelectionChanged(), ...
+        "previousImage", @(~, ~) onPreviousImage(), ...
+        "nextImage", @(~, ~) onNextImage(), ...
+        "cropGeometryChanged", @(~, ~) onCropGeometryChanged(), ...
+        "rotationChanged", @(~, ~) onRotationChanged(), ...
+        "fillModeChanged", @(~, ~) onFillModeChanged(), ...
+        "centerChanged", @(~, ~) onCenterChanged(), ...
+        "useCanvasCenter", @(~, ~) onUseCanvasCenter(), ...
+        "exportSettingChanged", @(~, ~) onExportSettingChanged(), ...
+        "chooseOutputFolder", @(~, ~) onChooseOutputFolder(), ...
+        "exportCrops", @(~, ~) onExportCrops());
+    spec = batch_crop.ui.buildSpec(S.outputFolder, callbacks);
+    ui = labkit.ui.app.create(spec, "debug", debugLog);
+    fig = ui.figure;
 
-    ui = labkit.ui.app.createShell(struct( ...
-        'title', 'Microscope Batch Image Crop', ...
-        'position', [80 60 1440 860], ...
-        'leftWidth', 400, ...
-        'options', workbenchOpts));
-    fig = ui.fig;
-    layFA = ui.filesAnalysisGrid;
-    laySR = ui.summaryResultsGrid;
-    layLog = ui.logGrid;
-
-    ui.previewAxes = uiaxes(ui.rightGrid);
-    ui.previewAxes.Layout.Row = 1;
-    title(ui.previewAxes, 'Rotated preview + fixed crop');
-    labkit.ui.view.draw(ui.previewAxes, 'popout');
-    imageRuntime = labkit.ui.tool.createRuntime(ui.previewAxes, ...
+    previewAxes = ui.controls.preview.primaryAxes;
+    imageRuntime = labkit.ui.tool.createRuntime(previewAxes, ...
         struct('figure', fig, 'onTrace', debugLog.trace));
     cropSession = imageRuntime.createSession(struct( ...
         'name', 'batchCropCenter', ...
         'onPointerDown', @onPreviewPointerDown, ...
         'installScrollWheel', false));
 
-    callbacks = struct( ...
-        'onOpenFiles', @onOpenFiles, ...
-        'onClearImages', @onClearImages, ...
-        'onImageSelectionChanged', @onImageSelectionChanged, ...
-        'onPreviousImage', @onPreviousImage, ...
-        'onNextImage', @onNextImage, ...
-        'onCropGeometryChanged', @onCropGeometryChanged, ...
-        'onRotationChanged', @onRotationChanged, ...
-        'onFillModeChanged', @onFillModeChanged, ...
-        'onCenterChanged', @onCenterChanged, ...
-        'onUseCanvasCenter', @onUseCanvasCenter, ...
-        'onExportSettingChanged', @onExportSettingChanged, ...
-        'onChooseOutputFolder', @onChooseOutputFolder, ...
-        'onExportCrops', @onExportCrops);
-    controls = batch_crop.ui.createControls(layFA, laySR, layLog, ...
-        S.outputFolder, callbacks);
-    btnOpenFiles = controls.btnOpenFiles;
-    btnClearImages = controls.btnClearImages;
-    txtImageSource = controls.txtImageSource;
-    lbImages = controls.lbImages;
-    btnPrevious = controls.btnPrevious;
-    btnNext = controls.btnNext;
-    txtImageStatus = controls.txtImageStatus;
-    edtCropWidth = controls.edtCropWidth;
-    edtCropHeight = controls.edtCropHeight;
-    edtRotation = controls.edtRotation;
-    ddFillMode = controls.ddFillMode;
-    edtCenterX = controls.edtCenterX;
-    edtCenterY = controls.edtCenterY;
-    btnUseCanvasCenter = controls.btnUseCanvasCenter;
-    ddFormat = controls.ddFormat;
-    txtOutputFolder = controls.txtOutputFolder;
-    btnChooseOutput = controls.btnChooseOutput;
-    btnExport = controls.btnExport;
-    resultTable = controls.resultTable;
-    txtDetails = controls.txtDetails;
-    txtLog = controls.txtLog;
+    btnOpenFiles = ui.controls.images.chooseButton;
+    btnClearImages = ui.controls.images.clearButton;
+    txtImageSource = ui.controls.imageSource.valueHandle;
+    lbImages = ui.controls.images.listbox;
+    btnPrevious = ui.controls.previousImage.button;
+    btnNext = ui.controls.nextImage.button;
+    txtImageStatus = ui.controls.imageStatus.valueHandle;
+    edtCropWidth = ui.controls.cropWidth.valueHandle;
+    edtCropHeight = ui.controls.cropHeight.valueHandle;
+    edtRotation = ui.controls.rotation.valueHandle;
+    ddFillMode = ui.controls.fillMode.valueHandle;
+    edtCenterX = ui.controls.centerX.valueHandle;
+    edtCenterY = ui.controls.centerY.valueHandle;
+    btnUseCanvasCenter = ui.controls.useCanvasCenter.button;
+    ddFormat = ui.controls.format.valueHandle;
+    txtOutputFolder = ui.controls.outputFolder.valueHandle;
+    btnChooseOutput = ui.controls.chooseOutputFolder.button;
+    btnExport = ui.controls.exportCrops.button;
+    resultTable = ui.controls.resultTable.table;
+    txtDetails = ui.controls.details.textArea;
     if debugLog.enabled
-        debugLog.attachTextLog(txtLog);
         debugLog.trace('Batch image crop debug trace enabled.');
-        debugLog.instrumentFigure(fig);
     end
 
     resetPreviewAxes();
@@ -108,17 +83,14 @@ function varargout = labkit_BatchImageCrop_app(varargin)
         varargout{2} = debugLog;
     end
 
-    function onOpenFiles(~, ~)
-        [files, folder] = uigetfile(batch_crop.io.imageDialogFilter(), ...
-            'Select microscope images', pwd, 'MultiSelect', 'on');
-        if isequal(files, 0)
+    function onImagesChosen(~, event)
+        if isempty(event.paths)
             addLog('Image file selection cancelled.');
             return;
         end
 
         try
-            paths = batch_crop.io.selectedImagePaths(files, folder);
-            items = readCropItems(paths);
+            items = readCropItems(event.paths);
         catch ME
             showError('Could not load images', ME.message);
             return;
@@ -131,7 +103,7 @@ function varargout = labkit_BatchImageCrop_app(varargin)
         refreshAll();
     end
 
-    function onClearImages(~, ~)
+    function onClearImages()
         S.items = repmat(batch_crop.state.emptyItem(), 0, 1);
         S.currentIndex = 0;
         S.lastExport = [];
@@ -139,7 +111,7 @@ function varargout = labkit_BatchImageCrop_app(varargin)
         refreshAll();
     end
 
-    function onImageSelectionChanged(~, ~)
+    function onImageSelectionChanged()
         if isempty(S.items)
             return;
         end
@@ -152,7 +124,7 @@ function varargout = labkit_BatchImageCrop_app(varargin)
         refreshAll();
     end
 
-    function onPreviousImage(~, ~)
+    function onPreviousImage()
         if isempty(S.items)
             return;
         end
@@ -160,7 +132,7 @@ function varargout = labkit_BatchImageCrop_app(varargin)
         refreshAll();
     end
 
-    function onNextImage(~, ~)
+    function onNextImage()
         if isempty(S.items)
             return;
         end
@@ -168,14 +140,14 @@ function varargout = labkit_BatchImageCrop_app(varargin)
         refreshAll();
     end
 
-    function onCropGeometryChanged(~, ~)
+    function onCropGeometryChanged()
         edtCropWidth.Value = round(max(1, edtCropWidth.Value));
         edtCropHeight.Value = round(max(1, edtCropHeight.Value));
         refreshPreview();
         refreshSummary();
     end
 
-    function onRotationChanged(~, ~)
+    function onRotationChanged()
         if ~hasCurrentImage()
             return;
         end
@@ -186,12 +158,12 @@ function varargout = labkit_BatchImageCrop_app(varargin)
         refreshAll();
     end
 
-    function onFillModeChanged(~, ~)
+    function onFillModeChanged()
         refreshPreview();
         refreshSummary();
     end
 
-    function onCenterChanged(~, ~)
+    function onCenterChanged()
         if ~hasCurrentImage()
             return;
         end
@@ -202,7 +174,7 @@ function varargout = labkit_BatchImageCrop_app(varargin)
         refreshAll();
     end
 
-    function onUseCanvasCenter(~, ~)
+    function onUseCanvasCenter()
         if ~hasCurrentImage()
             return;
         end
@@ -215,11 +187,11 @@ function varargout = labkit_BatchImageCrop_app(varargin)
         refreshAll();
     end
 
-    function onExportSettingChanged(~, ~)
+    function onExportSettingChanged()
         refreshSummary();
     end
 
-    function onChooseOutputFolder(~, ~)
+    function onChooseOutputFolder()
         folder = uigetdir(char(S.outputFolder), 'Select crop export folder');
         if isequal(folder, 0)
             addLog('Export folder selection cancelled.');
@@ -235,7 +207,7 @@ function varargout = labkit_BatchImageCrop_app(varargin)
             return;
         end
         [canvas, ~] = currentCanvas();
-        pt = ui.previewAxes.CurrentPoint;
+        pt = previewAxes.CurrentPoint;
         x = min(max(pt(1, 1), 1), size(canvas, 2));
         y = min(max(pt(1, 2), 1), size(canvas, 1));
         S.items(S.currentIndex).centerXY = [x, y];
@@ -245,7 +217,7 @@ function varargout = labkit_BatchImageCrop_app(varargin)
         refreshAll();
     end
 
-    function onExportCrops(~, ~)
+    function onExportCrops()
         if isempty(S.items)
             showError('No images loaded', 'Load images before exporting crops.');
             return;
@@ -292,7 +264,7 @@ function varargout = labkit_BatchImageCrop_app(varargin)
 
     function refreshList()
         if isempty(S.items)
-            lbImages.Items = {'No images loaded'};
+            labkit.ui.view.setListItems(ui, 'images', {'No images loaded'});
             lbImages.Value = 'No images loaded';
             txtImageSource.Value = 'No images loaded';
             txtImageStatus.Value = 'Images: 0';
@@ -300,7 +272,7 @@ function varargout = labkit_BatchImageCrop_app(varargin)
         end
 
         items = batch_crop.view.listboxItems(S.items);
-        lbImages.Items = items;
+        labkit.ui.view.setListItems(ui, 'images', items);
         S.currentIndex = min(max(S.currentIndex, 1), numel(S.items));
         lbImages.Value = items{S.currentIndex};
         txtImageSource.Value = char(S.items(S.currentIndex).path);
@@ -349,29 +321,30 @@ function varargout = labkit_BatchImageCrop_app(varargin)
 
         ensureCurrentCenter();
         [canvas, ~] = currentCanvas();
-        hImage = labkit.ui.view.draw(ui.previewAxes, 'image', canvas, ...
-            'Rotated preview + fixed crop');
-        hold(ui.previewAxes, 'on');
+        hImage = labkit.ui.view.drawImage(ui, 'preview', canvas, ...
+            "title", "Rotated preview + fixed crop", ...
+            "axis", "crop");
+        hold(previewAxes, 'on');
         item = S.items(S.currentIndex);
         cropWidth = currentCropWidth();
         cropHeight = currentCropHeight();
         position = batch_crop.view.rectanglePosition(item.centerXY, cropWidth, cropHeight);
-        hRect = rectangle(ui.previewAxes, 'Position', position, ...
+        hRect = rectangle(previewAxes, 'Position', position, ...
             'EdgeColor', [1 0.84 0], ...
             'LineWidth', 1.5, ...
             'LineStyle', '-');
-        hLineX = plot(ui.previewAxes, ...
+        hLineX = plot(previewAxes, ...
             [item.centerXY(1) - 16, item.centerXY(1) + 16], ...
             [item.centerXY(2), item.centerXY(2)], ...
             'Color', [0 0.85 1], ...
             'LineWidth', 1.25);
-        hLineY = plot(ui.previewAxes, ...
+        hLineY = plot(previewAxes, ...
             [item.centerXY(1), item.centerXY(1)], ...
             [item.centerXY(2) - 16, item.centerXY(2) + 16], ...
             'Color', [0 0.85 1], ...
             'LineWidth', 1.25);
-        hold(ui.previewAxes, 'off');
-        axis(ui.previewAxes, 'image');
+        hold(previewAxes, 'off');
+        axis(previewAxes, 'image');
         cropSession.setBackground(hImage);
         cropSession.setGraphics([hRect, hLineX, hLineY]);
         cropSession.activate();
@@ -391,8 +364,8 @@ function varargout = labkit_BatchImageCrop_app(varargin)
     end
 
     function resetPreviewAxes()
-        labkit.ui.view.draw(ui.previewAxes, 'reset', ...
-            'Rotated preview + fixed crop', true);
+        labkit.ui.view.resetAxes(ui, 'preview', ...
+            'Rotated preview + fixed crop', true, 'crop');
     end
 
     function opts = currentExportOptions()
@@ -449,7 +422,7 @@ function varargout = labkit_BatchImageCrop_app(varargin)
     end
 
     function addLog(message)
-        labkit.ui.view.update(txtLog, 'appendLog', message);
+        labkit.ui.view.appendLog(ui, 'appLog', message);
         if debugLog.enabled
             debugLog.append(message);
         end
