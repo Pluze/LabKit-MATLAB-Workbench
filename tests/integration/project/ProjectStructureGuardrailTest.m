@@ -157,6 +157,16 @@ classdef ProjectStructureGuardrailTest < matlab.unittest.TestCase
                 'image_match', 'image_match', 'labkit_ImageMatch_app.m');
         end
 
+        function ui2MigratedAppsUseCanonicalAppStructure(testCase)
+            root = setupLabKitTestPath();
+            specs = migratedUi2AppSpecs();
+
+            for k = 1:size(specs, 1)
+                assertMigratedUi2AppStructure(testCase, root, ...
+                    specs{k, 1}, specs{k, 2}, specs{k, 3});
+            end
+        end
+
         function electrochemAppsUseOwnedPackageNamespaces(testCase)
             root = setupLabKitTestPath();
 
@@ -314,6 +324,141 @@ function assertImageMeasurementPackageLayout(testCase, root, appFolder, packageN
         ['Image-measurement app should not keep workflow dispatch adapters: ' appFolder]);
     assertAppOwnedPackageCapability(testCase, root, appDir, packageDir, ...
         'image_measurement', packageName);
+end
+
+function specs = migratedUi2AppSpecs()
+    specs = { ...
+        fullfile('apps', 'image_measurement', 'focus_stack'), ...
+        'focus_stack', 'labkit_FocusStack_app.m'; ...
+        fullfile('apps', 'image_measurement', 'image_enhance'), ...
+        'image_enhance', 'labkit_ImageEnhance_app.m'; ...
+        fullfile('apps', 'image_measurement', 'image_match'), ...
+        'image_match', 'labkit_ImageMatch_app.m'};
+end
+
+function assertMigratedUi2AppStructure(testCase, root, appRelDir, packageName, entrypointName)
+    appDir = fullfile(root, appRelDir);
+    packageDir = fullfile(appDir, ['+' packageName]);
+    uiDir = fullfile(packageDir, '+ui');
+    entrypointFile = fullfile(appDir, entrypointName);
+    buildSpecFile = fullfile(uiDir, 'buildSpec.m');
+    appLabel = relativePath(root, appDir);
+
+    testCase.verifyTrue(isfile(buildSpecFile), ...
+        ['UI 2.0 migrated apps must keep the ordinary data-only spec at ' ...
+        relativePath(root, buildSpecFile)]);
+    testCase.verifyTrue(isfile(entrypointFile), ...
+        ['Missing migrated app entrypoint: ' relativePath(root, entrypointFile)]);
+
+    entrypointSource = fileread(entrypointFile);
+    testCase.verifyTrue(contains(entrypointSource, [packageName '.ui.buildSpec(']), ...
+        [appLabel ' should call its canonical +ui/buildSpec.m file.']);
+    testCase.verifyTrue(contains(entrypointSource, 'labkit.ui.app.create('), ...
+        [appLabel ' should launch through labkit.ui.app.create.']);
+
+    buildSpecSource = fileread(buildSpecFile);
+    testCase.verifyTrue(contains(buildSpecSource, 'labkit.ui.spec.app'), ...
+        [relativePath(root, buildSpecFile) ' should return a UI 2.0 app spec.']);
+    assertSourceDoesNotContain(testCase, buildSpecSource, ...
+        buildSpecForbiddenWords(), relativePath(root, buildSpecFile));
+
+    packageSource = readPackageSource(packageDir);
+    assertSourceDoesNotContain(testCase, packageSource, ...
+        migratedUiForbiddenWords(), appLabel);
+    testCase.verifyFalse(contains(packageSource, 'labkit.ui.spec.custom'), ...
+        [appLabel ' should keep ordinary canary UI custom count at 0.']);
+
+    assertNoGenericHelperNames(testCase, root, packageDir);
+    assertRolePackageBoundaries(testCase, root, packageDir);
+end
+
+function words = buildSpecForbiddenWords()
+    words = {'uifigure(', 'uigridlayout(', 'uibutton(', 'uilabel(', ...
+        'uidropdown(', 'uispinner(', 'uieditfield(', 'uitable(', ...
+        'uiaxes(', 'uitextarea(', 'labkit.ui.app.create', ...
+        'Layout.Row', 'Layout.Column', 'uigetfile(', 'uigetdir(', ...
+        'uiputfile(', 'uialert(', 'writetable(', 'imwrite(', 'S.'};
+end
+
+function words = migratedUiForbiddenWords()
+    words = {'labkit.ui.app.createShell', 'labkit.ui.app.tab(', ...
+        'labkit.ui.view.section', 'labkit.ui.view.form', ...
+        'labkit.ui.view.panel', 'labkit.ui.view.draw(', ...
+        'labkit.ui.view.update(', 'labkit.ui.view.place', ...
+        'uigridlayout(', 'Layout.Row', 'Layout.Column', ...
+        'createRightAxesPair', 'createEditorUi', 'createUi('};
+end
+
+function assertNoGenericHelperNames(testCase, root, packageDir)
+    forbidden = {'helpers.m', 'utils.m', 'common.m', 'misc.m', ...
+        'functions.m', 'callbacks.m', 'manager.m', 'processor.m', ...
+        'newUI.m', 'layout.m', 'layout2.m', 'createUI.m', 'makeUI.m', ...
+        'place.m', 'createRightAxesPair.m', 'createEditorUi.m', 'createUi.m'};
+    files = dir(fullfile(packageDir, '**', '*.m'));
+    bad = strings(1, 0);
+    for k = 1:numel(files)
+        if any(strcmp(files(k).name, forbidden))
+            bad(end+1) = string(relativePath(root, ...
+                fullfile(files(k).folder, files(k).name)));
+        end
+    end
+
+    testCase.verifyTrue(isempty(bad), ...
+        ['Migrated app packages should name files by stable role/output, not ' ...
+        'generic helper buckets: ' strjoin(cellstr(bad), ', ')]);
+end
+
+function assertRolePackageBoundaries(testCase, root, packageDir)
+    assertComponentSourcesDoNotContain(testCase, root, fullfile(packageDir, '+ops'), ...
+        {'labkit.ui', 'uialert(', 'uigetfile(', 'uigetdir(', ...
+        'uiputfile(', 'writetable(', 'imwrite('});
+    assertComponentSourcesDoNotContain(testCase, root, fullfile(packageDir, '+view'), ...
+        {'labkit.ui.app.create', 'uigridlayout(', 'uiaxes(', 'uialert(', ...
+        'uigetfile(', 'uigetdir(', 'uiputfile(', 'writetable(', 'imwrite('});
+    assertComponentSourcesDoNotContain(testCase, root, fullfile(packageDir, '+io'), ...
+        {'labkit.ui', 'uialert(', 'uigridlayout(', 'writetable(', 'imwrite('});
+    assertComponentSourcesDoNotContain(testCase, root, fullfile(packageDir, '+export'), ...
+        {'labkit.ui', 'uialert(', 'uigetfile(', 'uigetdir(', ...
+        'uiputfile(', 'uigridlayout('});
+    assertComponentSourcesDoNotContain(testCase, root, fullfile(packageDir, '+state'), ...
+        {'labkit.ui', 'uialert(', 'uigetfile(', 'uigetdir(', ...
+        'uiputfile(', 'writetable(', 'imwrite(', 'uigridlayout('});
+end
+
+function assertComponentSourcesDoNotContain(testCase, root, folder, forbiddenWords)
+    if ~isfolder(folder)
+        return;
+    end
+
+    files = dir(fullfile(folder, '*.m'));
+    for k = 1:numel(files)
+        filepath = fullfile(files(k).folder, files(k).name);
+        assertSourceDoesNotContain(testCase, fileread(filepath), ...
+            forbiddenWords, relativePath(root, filepath));
+    end
+end
+
+function assertSourceDoesNotContain(testCase, source, forbiddenWords, label)
+    matches = strings(1, 0);
+    for k = 1:numel(forbiddenWords)
+        word = forbiddenWords{k};
+        if contains(source, word)
+            matches(end+1) = string(word);
+        end
+    end
+
+    testCase.verifyTrue(isempty(matches), ...
+        [label ' contains code outside its migrated app structure boundary: ' ...
+        strjoin(cellstr(matches), ', ')]);
+end
+
+function source = readPackageSource(packageDir)
+    files = dir(fullfile(packageDir, '**', '*.m'));
+    parts = cell(1, numel(files));
+    for k = 1:numel(files)
+        parts{k} = fileread(fullfile(files(k).folder, files(k).name));
+    end
+    source = strjoin(parts, newline);
 end
 
 function assertAppOwnedPackageCapability(testCase, root, appDir, packageDir, family, packageName)

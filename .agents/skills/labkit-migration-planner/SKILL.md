@@ -44,6 +44,7 @@ old prose:
 git status --short --branch
 git log --oneline -n 40
 find apps -path '*+ui/runApp.m' -print | sort
+find apps -path '*+ui/buildSpec.m' -print | sort
 find apps -path '*/private/*' -type f -print | sort
 rg -n "expectedOversizedRunnerDebtFiles|expectedAppPrivateDebtFiles|expectedPrivateContractDebtFiles" tests/integration/project
 ```
@@ -91,6 +92,9 @@ guardrails without reducing active debt or clarifying an app-facing contract.
 For each proposed migration, classify work as:
 
 - app-owned deterministic behavior: extract under the owning app package
+- migrated ordinary UI: keep the data-only spec in
+  `+<app_slug>/+ui/buildSpec.m`; use app-local custom builders only for
+  justified interactions
 - runner orchestration: leave in the public entrypoint or `+ui/runApp.m`
 - reusable foundation: use `labkit-boundary-guard` before touching `+labkit`
 - validation routing: use `labkit-test-planner`

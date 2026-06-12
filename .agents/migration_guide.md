@@ -52,6 +52,10 @@ Current facts:
   migrated apps needed `pathPanel.selectionMode`,
   `pathPanel.onSelectionChange`, and `previewArea.onModeChange`, but they did
   not justify public primitive constructors or a larger file-panel API.
+- App structure governance is now part of the UI 2.0 migration contract:
+  migrated apps keep their ordinary data-only spec in
+  `+<app_slug>/+ui/buildSpec.m`, route extracted production code through
+  role-based app-owned component packages, and avoid generic helper buckets.
 - Human docs, scoped `AGENTS.md`, repo skills, public-surface guardrails, and
   GUI structural tests should describe the implemented foundation as current
   behavior while keeping app migration order in this ledger.
@@ -523,6 +527,15 @@ Keep app-local:
 
 A UI 2.0 migration PR is not progress unless it satisfies the relevant gates:
 
+- migrated app entry points call `<app_slug>.ui.buildSpec(...)` and
+  `labkit.ui.app.create(...)`; ordinary `buildSpec.m` files return only
+  data-only `labkit.ui.spec.*` trees
+- extracted app-owned helpers live under role-based component packages:
+  `+ui`, `+state`, `+io`, `+ops`, `+view`, and `+export`; create only the
+  packages the app actually needs
+- helper file names describe stable roles or outputs and do not use generic
+  buckets such as `helpers.m`, `utils.m`, `common.m`, `misc.m`,
+  `callbacks.m`, `manager.m`, `processor.m`, `layout.m`, or `createUI.m`
 - ordinary app UI no longer writes `uigridlayout`, `Layout.Row`,
   `Layout.Column`, `gridSize`, `rowHeight`, `rightGridSize`,
   `rightRowHeight`, or local `place(...)`
@@ -662,7 +675,7 @@ Current implementation checkpoint:
 Use staged guardrails so the branch remains useful throughout migration:
 
 - Early: allow old UI APIs only outside migrated canary paths; fail if migrated
-  apps call old APIs.
+  apps call old APIs or bypass `+<app_slug>/+ui/buildSpec.m`.
 - Middle: maintain a shrinking allowlist of app families that still call
   pre-2.0 APIs. The allowlist must be in project guardrails, not hidden in prose
   alone.
@@ -671,6 +684,10 @@ Use staged guardrails so the branch remains useful throughout migration:
   `rightRowHeight`, `resizeRows`, direct `Layout.Row`, direct `Layout.Column`,
   and local `place(...)`, except in approved `custom`/tool implementation
   files.
+- Migrated-app structure guardrails must require the canonical `buildSpec.m`
+  location, reject ordinary handle/layout creation in `buildSpec.m`, reject
+  generic helper-bucket file names, and keep component package responsibilities
+  aligned with `docs/architecture.md`.
 - Public-surface tests must require the target 2.0 API list and reject helper
   dump packages such as `+labkit/+ui/+control`.
 - Public-surface tests must reject app-facing primitive spec constructors unless
@@ -754,6 +771,8 @@ the current project behavior once the corresponding implementation lands.
 The UI 2.0 migration is complete only when:
 
 - all supported app entry points launch through `labkit.ui.app.create`
+- all migrated app entry points call a canonical
+  `+<app_slug>/+ui/buildSpec.m` and route extracted helpers by role
 - all ordinary app UI is declared through the stable minimal
   `labkit.ui.spec.*` surface
 - all migrated controls, sections, tabs, preview axes, and logs are reachable
@@ -763,6 +782,8 @@ The UI 2.0 migration is complete only when:
 - no app-owned ordinary UI code calls internal primitive spec constructors
 - custom builders are limited to documented compound interactions and every
   remaining custom use has a reason
+- app-owned package structure guardrails enforce role-based components and
+  reject generic helper buckets
 - old public API files are deleted or made private implementation details that
   apps cannot call
 - public-surface and no-legacy guardrails enforce the new contract

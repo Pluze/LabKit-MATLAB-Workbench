@@ -28,6 +28,22 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
   `+state`, `+ops`, `+view`, `+export`, and `+io` as needed. Do not use a fixed
   `+app` namespace; the app folder already provides ownership context, while a
   shared `+app` package name creates MATLAB package-resolution ambiguity.
+- UI 2.0 migrated apps should put the ordinary data-only spec in
+  `+<app_slug>/+ui/buildSpec.m`. The public app entry point owns state,
+  callback closures, alerts, log wording, and refresh order; `buildSpec.m`
+  describes controls, sections, workspace, initial text/defaults, and callback
+  handles only.
+- Do not create MATLAB handles, call `labkit.ui.app.create`, mutate app state,
+  perform IO/computation/export, or set `Layout.Row`/`Layout.Column` in
+  `+ui/buildSpec.m`. Use named `+ui/build<Thing>.m` custom builders only for
+  justified interactions that cannot be expressed with the ordinary spec
+  grammar.
+- Route helper files by role: `+state` for defaults/factories, `+io` for file
+  discovery/readers/filters, `+ops` for GUI-free transforms, `+view` for table
+  rows/detail lines/display data, and `+export` for output writers/manifests.
+  Do not add boundary-blurring files named `helpers.m`, `utils.m`, `common.m`,
+  `misc.m`, `callbacks.m`, `manager.m`, `processor.m`, `layout.m`, or
+  `createUI.m`.
 - Callback-heavy migrated apps should move app-owned production code into these
   package components instead of adding new `private` runners or string-dispatch
   workflow adapters.

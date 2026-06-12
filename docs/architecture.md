@@ -101,6 +101,44 @@ Current image-measurement, electrochemistry, wearable, and DIC apps already
 follow the app-owned package shape. Do not copy older family-level `private/`
 helper layouts into new app work.
 
+### App-Owned Package Shape
+
+UI 2.0 migrations use role-based app packages. The standard is not that every
+app owns every package; it is that a file lives under the package matching the
+role it actually performs:
+
+```text
+<app_slug>/+ui/buildSpec.m     data-only UI 2.0 workbench spec
+<app_slug>/+ui/build*.m        justified custom/tool UI builders only
+<app_slug>/+state/*.m          state factories, defaults, and presets
+<app_slug>/+io/*.m             file discovery, filters, readers, import parsing
+<app_slug>/+ops/*.m            GUI-free calculations and transforms
+<app_slug>/+view/*.m           tables, detail lines, display names, preview data
+<app_slug>/+export/*.m         output writers, manifests, summary tables
+```
+
+For a migrated UI 2.0 app, the public `labkit_<AppName>_app.m` entry point
+owns launch/debug routing, app state, callback closures, alerts, log wording,
+and refresh order. It should call `<app_slug>.ui.buildSpec(...)` and
+`labkit.ui.app.create(...)` rather than hand-writing ordinary layout. Keeping
+nested callbacks in the runner is acceptable when they need closure access to
+app state and UI registry handles.
+
+`+ui/buildSpec.m` returns only a data-only `labkit.ui.spec.*` tree. It may read
+initial labels, defaults, callback handles, filters, and initial display data
+from app-owned helpers, but it must not create MATLAB UI handles, call
+`labkit.ui.app.create`, mutate app state, perform IO, run computations, write
+exports, or set row/column layout mechanics. Custom UI belongs in a named
+`+ui/build<Thing>.m` file only when an interaction cannot be represented by the
+ordinary spec grammar.
+
+File names should describe stable roles or outputs, not temporary
+implementation buckets. Avoid names such as `helpers.m`, `utils.m`, `common.m`,
+`misc.m`, `callbacks.m`, `manager.m`, `processor.m`, `layout.m`, and
+`createUI.m`; prefer names such as `buildSpec.m`, `resultTableData.m`,
+`detailLines.m`, `readImages.m`, `computeFocusStack.m`, `buildManifest.m`, or
+`emptyResult.m`.
+
 ## Current Temporary Debt Inventory
 
 This inventory is a narrow exception list, not a preferred design. It should
