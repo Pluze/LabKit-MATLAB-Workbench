@@ -670,6 +670,12 @@ Validation routing:
 - broad API removal: `testLabkitUiGui`, `testAppsGui`, `testAppsSmokeGui`,
   `testProject`, and default `test`
 
+CI status checks after a push should be low-noise. Before reading the new run
+status, inspect the most recent successful run for the same workflow/branch,
+compute its total elapsed duration, and wait at least that long. Use that
+duration as the minimum interval between later status reads unless a job has
+already failed and logs are needed for a fix.
+
 Automated GUI tests remain structural. Interactive file selection, real drawing,
 visual quality, and full workflow feel require manual MATLAB GUI validation.
 
