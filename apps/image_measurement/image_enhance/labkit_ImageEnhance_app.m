@@ -27,9 +27,8 @@ function varargout = labkit_ImageEnhance_app(varargin)
 
     stepKinds = {'Brightness/contrast', 'Local contrast', 'Sharpen', ...
         'Hue/saturation', 'White balance'};
-
     callbacks = struct( ...
-        'openFiles', @onOpenFiles, ...
+        'sourceImagesChosen', @onSourceImagesChosen, ...
         'clearImages', @onClearImages, ...
         'imageSelectionChanged', @onImageSelectionChanged, ...
         'previewModeChanged', @onPreviewModeChanged, ...
@@ -40,28 +39,16 @@ function varargout = labkit_ImageEnhance_app(varargin)
         'resetHistory', @onResetHistory, ...
         'chooseOutputFolder', @onChooseOutputFolder, ...
         'exportImages', @onExportImages);
-    uih = image_enhance.ui.createEditorUi(stepKinds, char(S.outputFolder), callbacks);
-    fig = uih.fig; previewAxes = uih.previewAxes; txtLog = uih.txtLog;
-    btnOpenFiles = uih.btnOpenFiles; btnClearImages = uih.btnClearImages;
-    lbImages = uih.lbImages; txtImageSource = uih.txtImageSource;
-    txtImageStatus = uih.txtImageStatus; ddPreviewMode = uih.ddPreviewMode;
-    lbTools = uih.lbTools; txtToolStatus = uih.txtToolStatus;
-    lblAmount = uih.lblAmount; edtAmount = uih.edtAmount;
-    lblSecondary = uih.lblSecondary; edtSecondary = uih.edtSecondary;
-    btnApplyTool = uih.btnApplyTool;
-    btnUndoHistory = uih.btnUndoHistory; btnResetHistory = uih.btnResetHistory;
-    historyTable = uih.historyTable; txtHistoryStatus = uih.txtHistoryStatus;
-    resultTable = uih.resultTable; btnChooseOutput = uih.btnChooseOutput;
-    txtOutputFolder = uih.txtOutputFolder; ddFormat = uih.ddFormat;
-    btnExport = uih.btnExport; txtDetails = uih.txtDetails;
+    spec = image_enhance.ui.buildSpec(stepKinds, char(S.outputFolder), callbacks);
+    ui = labkit.ui.app.create(spec, 'debug', debugLog);
+    fig = ui.figure;
     if debugLog.enabled
-        debugLog.attachTextLog(txtLog);
         debugLog.trace('Image enhance debug trace enabled.');
         debugLog.instrumentFigure(fig);
     end
 
     resetPreviewAxes();
-    updateToolControls(false);
+    updateToolControls(true);
     refreshAll();
 
     if nargout >= 1
@@ -71,28 +58,20 @@ function varargout = labkit_ImageEnhance_app(varargin)
         varargout{2} = debugLog;
     end
 
-    function onOpenFiles(~, ~)
-        [files, folder] = uigetfile(image_enhance.io.imageDialogFilter(), ...
-            'Select images to enhance', pwd, 'MultiSelect', 'on');
-        if isequal(files, 0)
-            addLog('Image file selection cancelled.');
-            return;
-        end
-
+    function onSourceImagesChosen(~, event)
         try
-            paths = image_enhance.io.selectedImagePaths(files, folder);
-            S.items = image_enhance.io.readImages(paths);
+            S.items = image_enhance.io.readImages(event.paths);
         catch ME
             showError('Could not load images', ME.message);
+            refreshAll();
             return;
         end
 
         S.currentIndex = 1;
         S.steps = repmat(image_enhance.state.emptyStep(), 0, 1);
         S.pendingDirty = false;
-        S.outputFolder = string(folder);
+        S.outputFolder = string(fileparts(event.paths{1}));
         S.lastExport = [];
-        txtOutputFolder.Value = char(S.outputFolder);
         addLog(sprintf('Loaded %d image(s).', numel(S.items)));
         refreshAll();
     end
@@ -107,13 +86,12 @@ function varargout = labkit_ImageEnhance_app(varargin)
         refreshAll();
     end
 
-    function onImageSelectionChanged(~, ~)
-        if isempty(S.items)
+    function onImageSelectionChanged(~, event)
+        if isempty(S.items) || isempty(event.value)
             return;
         end
-
-        names = image_enhance.view.displayImageNames(S.items);
-        idx = find(strcmp(names, lbImages.Value), 1);
+        selectedPath = string(event.value);
+        idx = find(string({S.items.path}) == selectedPath, 1);
         if isempty(idx)
             return;
         end
@@ -149,7 +127,6 @@ function varargout = labkit_ImageEnhance_app(varargin)
             showError('No images loaded', 'Load images before applying enhancement tools.');
             return;
         end
-
         step = currentToolStep();
         S.steps(end + 1, 1) = step;
         S.pendingDirty = false;
@@ -188,7 +165,7 @@ function varargout = labkit_ImageEnhance_app(varargin)
             return;
         end
         S.outputFolder = string(folder);
-        txtOutputFolder.Value = char(S.outputFolder);
+        refreshExportControls();
         refreshDetails();
     end
 
@@ -197,10 +174,9 @@ function varargout = labkit_ImageEnhance_app(varargin)
             showError('No images loaded', 'Load images before exporting enhanced outputs.');
             return;
         end
-
         opts = struct();
         opts.outputFolder = S.outputFolder;
-        opts.format = ddFormat.Value;
+        opts.format = labkit.ui.view.getValue(ui, 'exportFormat');
         busyOpts = struct();
         busyOpts.title = 'Export enhanced images';
         busyOpts.message = 'Writing enhanced image outputs...';
@@ -212,7 +188,6 @@ function varargout = labkit_ImageEnhance_app(varargin)
             showError('Export failed', ME.message);
             return;
         end
-
         statuses = string({S.lastExport.results.status});
         addLog(sprintf('Exported %d image(s), %d failed. Manifest: %s', ...
             sum(statuses == "saved"), sum(statuses == "failed"), ...
@@ -221,13 +196,24 @@ function varargout = labkit_ImageEnhance_app(varargin)
     end
 
     function controls = exportBusyControls()
-        controls = {btnOpenFiles, btnClearImages, lbImages, ddPreviewMode, ...
-            lbTools, edtAmount, edtSecondary, btnApplyTool, ...
-            btnUndoHistory, btnResetHistory, btnChooseOutput, ddFormat, btnExport};
+        controls = { ...
+            ui.controls.sourceImages.chooseButton, ...
+            ui.controls.sourceImages.clearButton, ...
+            ui.controls.sourceImages.listbox, ...
+            ui.controls.preview.viewModeDropDown, ...
+            ui.controls.toolKind.handle, ...
+            ui.controls.toolAmount.handle, ...
+            ui.controls.toolSecondary.handle, ...
+            ui.controls.applyTool.button, ...
+            ui.controls.undoHistory.button, ...
+            ui.controls.resetHistory.button, ...
+            ui.controls.chooseOutputFolder.button, ...
+            ui.controls.exportFormat.handle, ...
+            ui.controls.exportImages.button};
     end
 
     function refreshAll()
-        refreshList();
+        refreshSourceLibrary();
         updateToolControls(false);
         refreshControls();
         refreshSelection();
@@ -236,43 +222,43 @@ function varargout = labkit_ImageEnhance_app(varargin)
         refreshMetrics();
         refreshDetails();
         refreshToolStatus();
+        refreshExportControls();
     end
 
-    function refreshList()
+    function refreshSourceLibrary()
         if isempty(S.items)
-            lbImages.Items = {'No images loaded'};
-            lbImages.Value = 'No images loaded';
-            txtImageSource.Value = 'No images loaded';
-            txtImageStatus.Value = 'Images: 0';
+            labkit.ui.view.setValue(ui, 'sourceImages', {});
+            labkit.ui.view.setValue(ui, 'imageStatus', 'Images: 0');
             return;
         end
-
-        names = image_enhance.view.displayImageNames(S.items);
-        S.currentIndex = min(max(S.currentIndex, 1), numel(S.items));
-        lbImages.Items = names;
-        lbImages.Value = names{S.currentIndex};
-        txtImageStatus.Value = sprintf('Images: %d | history steps: %d', ...
-            numel(S.items), numel(S.steps));
-
+        paths = cellstr(string({S.items.path}));
+        labkit.ui.view.setValue(ui, 'sourceImages', paths);
+        labkit.ui.view.setValue(ui, 'imageStatus', sprintf( ...
+            'Images: %d | history steps: %d', numel(S.items), numel(S.steps)));
     end
 
     function refreshSelection()
         if isempty(S.items)
-            txtImageSource.Value = 'No images loaded';
             return;
         end
-
-        txtImageSource.Value = char(S.items(S.currentIndex).path);
+        paths = cellstr(string({S.items.path}));
+        labkit.ui.view.setListSelection(ui, 'sourceImages', paths, ...
+            paths{currentSelectionIndex()}, struct());
     end
 
     function refreshControls()
         hasImages = ~isempty(S.items);
         hasSteps = ~isempty(S.steps);
-        btnClearImages.Enable = image_enhance.view.ternary(hasImages, 'on', 'off');
-        btnApplyTool.Enable = image_enhance.view.ternary(hasImages, 'on', 'off');
-        btnUndoHistory.Enable = image_enhance.view.ternary(hasSteps, 'on', 'off');
-        btnResetHistory.Enable = image_enhance.view.ternary(hasSteps, 'on', 'off');
-        btnExport.Enable = image_enhance.view.ternary(hasImages, 'on', 'off');
+        ui.controls.sourceImages.clearButton.Enable = onOff(hasImages);
+        ui.controls.sourceImages.listbox.Enable = onOff(hasImages);
+        labkit.ui.view.setEnabled(ui, 'applyTool', hasImages);
+        labkit.ui.view.setEnabled(ui, 'undoHistory', hasSteps);
+        labkit.ui.view.setEnabled(ui, 'resetHistory', hasSteps);
+        labkit.ui.view.setEnabled(ui, 'exportImages', hasImages);
+    end
+
+    function refreshExportControls()
+        labkit.ui.view.setValue(ui, 'outputFolder', char(S.outputFolder));
     end
 
     function refreshPreview()
@@ -280,56 +266,59 @@ function varargout = labkit_ImageEnhance_app(varargin)
             resetPreviewAxes();
             return;
         end
-
-        original = S.items(S.currentIndex).image;
+        original = S.items(currentSelectionIndex()).image;
         processed = currentProcessedImages(S.pendingDirty);
-        enhanced = processed{S.currentIndex};
-
-        switch ddPreviewMode.Value
+        enhanced = processed{currentSelectionIndex()};
+        switch currentPreviewMode()
             case 'Original'
-                labkit.ui.view.draw(previewAxes, 'image', original, 'Original Preview');
+                labkit.ui.view.drawImage(ui, 'preview', original, ...
+                    'title', 'Original Preview');
             case 'Before | After'
-                labkit.ui.view.draw(previewAxes, 'image', ...
-                    image_enhance.view.beforeAfterImage(original, enhanced), 'Before | After');
+                labkit.ui.view.drawImage(ui, 'preview', ...
+                    image_enhance.view.beforeAfterImage(original, enhanced), ...
+                    'title', 'Before | After');
             otherwise
-                labkit.ui.view.draw(previewAxes, 'image', enhanced, 'Enhanced Preview');
+                labkit.ui.view.drawImage(ui, 'preview', enhanced, ...
+                    'title', 'Enhanced Preview');
         end
     end
 
     function refreshMetrics()
         if isempty(S.items)
-            resultTable.Data = image_enhance.view.resultTableData([], [], 0);
+            ui.controls.metricsTable.table.Data = ...
+                image_enhance.view.resultTableData([], [], 0);
             return;
         end
-
         processed = currentProcessedImages(false);
-        resultTable.Data = image_enhance.view.resultTableData( ...
-            S.items(S.currentIndex), processed{S.currentIndex}, numel(S.steps));
+        ui.controls.metricsTable.table.Data = image_enhance.view.resultTableData( ...
+            S.items(currentSelectionIndex()), ...
+            processed{currentSelectionIndex()}, numel(S.steps));
     end
 
     function refreshHistory()
-        historyTable.Data = image_enhance.view.historyTableData(S.steps);
-        txtHistoryStatus.Value = sprintf('History steps: %d', numel(S.steps));
+        ui.controls.historyTable.table.Data = image_enhance.view.historyTableData(S.steps);
+        labkit.ui.view.setValue(ui, 'historyStatus', ...
+            sprintf('History steps: %d', numel(S.steps)));
     end
 
     function refreshDetails()
-        txtDetails.Value = image_enhance.view.detailLines( ...
-            S.items, max(S.currentIndex, 1), S.steps, S.lastExport);
+        labkit.ui.view.setValue(ui, 'exportDetails', image_enhance.view.detailLines( ...
+            S.items, max(currentSelectionIndex(), 1), S.steps, S.lastExport));
     end
 
     function refreshToolStatus()
         if isempty(S.items)
-            txtToolStatus.Value = 'Select an image, choose a tool, then apply it to history.';
+            labkit.ui.view.setValue(ui, 'toolStatus', ...
+                'Select an image, choose a tool, then apply it to history.');
             return;
         end
-
         step = currentToolStep();
         if S.pendingDirty
             prefix = 'Previewing: ';
         else
             prefix = 'Ready: ';
         end
-        txtToolStatus.Value = [prefix char(step.label)];
+        labkit.ui.view.setValue(ui, 'toolStatus', [prefix char(step.label)]);
     end
 
     function processed = currentProcessedImages(includePending)
@@ -337,7 +326,6 @@ function varargout = labkit_ImageEnhance_app(varargin)
         for k = 1:numel(S.items)
             images{k} = S.items(k).image;
         end
-
         steps = S.steps;
         if includePending
             steps(end + 1, 1) = currentToolStep();
@@ -346,30 +334,52 @@ function varargout = labkit_ImageEnhance_app(varargin)
     end
 
     function step = currentToolStep()
-        step = image_enhance.ops.makeStep(lbTools.Value, ...
-            edtAmount.Value, edtSecondary.Value, 0);
+        step = image_enhance.ops.makeStep( ...
+            labkit.ui.view.getValue(ui, 'toolKind'), ...
+            labkit.ui.view.getValue(ui, 'toolAmount'), ...
+            labkit.ui.view.getValue(ui, 'toolSecondary'), 0);
     end
 
     function updateToolControls(resetToDefaults)
-        values = image_enhance.ops.defaultStepValues(lbTools.Value);
-        lblAmount.Text = char(values.amountLabel);
-        lblSecondary.Text = char(values.secondaryLabel);
-        edtAmount.Limits = values.amountLimits;
-        edtSecondary.Limits = values.secondaryLimits;
-        edtAmount.Value = min(max(edtAmount.Value, edtAmount.Limits(1)), edtAmount.Limits(2));
-        edtSecondary.Value = min(max(edtSecondary.Value, edtSecondary.Limits(1)), edtSecondary.Limits(2));
+        values = image_enhance.ops.defaultStepValues( ...
+            labkit.ui.view.getValue(ui, 'toolKind'));
+        amountHandle = ui.controls.toolAmount.handle;
+        secondaryHandle = ui.controls.toolSecondary.handle;
+        ui.controls.toolAmount.label.Text = char(values.amountLabel);
+        ui.controls.toolSecondary.label.Text = char(values.secondaryLabel);
+        amountHandle.Limits = values.amountLimits;
+        secondaryHandle.Limits = values.secondaryLimits;
+        amountHandle.Value = clampValue(amountHandle.Value, values.amountLimits);
+        secondaryHandle.Value = clampValue(secondaryHandle.Value, values.secondaryLimits);
         if resetToDefaults
-            edtAmount.Value = values.amount;
-            edtSecondary.Value = values.secondary;
+            labkit.ui.view.setValue(ui, 'toolAmount', values.amount);
+            labkit.ui.view.setValue(ui, 'toolSecondary', values.secondary);
         end
     end
 
+    function index = currentSelectionIndex()
+        if isempty(S.items)
+            index = 0;
+            return;
+        end
+        S.currentIndex = min(max(S.currentIndex, 1), numel(S.items));
+        index = S.currentIndex;
+    end
+
+    function mode = currentPreviewMode()
+        mode = string(labkit.ui.view.getValue(ui, 'preview'));
+        if strlength(mode) == 0
+            mode = "Enhanced";
+        end
+        mode = char(mode);
+    end
+
     function resetPreviewAxes()
-        labkit.ui.view.draw(previewAxes, 'reset', 'Enhanced Preview', true);
+        labkit.ui.view.resetAxes(ui, 'preview', 'Enhanced Preview', true);
     end
 
     function addLog(message)
-        labkit.ui.view.update(txtLog, 'appendLog', message);
+        labkit.ui.view.appendLog(ui, 'logPanel', message);
         if debugLog.enabled
             debugLog.append(message);
         end
@@ -378,5 +388,21 @@ function varargout = labkit_ImageEnhance_app(varargin)
     function showError(titleText, message)
         addLog(sprintf('%s: %s', titleText, message));
         uialert(fig, message, titleText);
+    end
+end
+
+function value = clampValue(value, limits)
+    value = min(max(value, limits(1)), limits(2));
+end
+
+function text = onOff(value)
+    if islogical(value) && isscalar(value)
+        if value
+            text = 'on';
+        else
+            text = 'off';
+        end
+    else
+        text = char(string(value));
     end
 end

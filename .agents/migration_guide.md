@@ -556,10 +556,15 @@ Current implementation checkpoint:
 - The first canary is now complete on the current branch:
   `labkit_ImageMatch_app` launches through `labkit.ui.app.create`, uses the
   declarative workbench, and no longer carries ordinary old-UI layout code.
+- The image-editor pair is now complete on the current branch:
+  `labkit_ImageEnhance_app` also launches through `labkit.ui.app.create` and
+  confirms that ordinary image-app UI can stay within the current stable spec
+  surface without promoting new primitives.
 - Canary-driven framework additions now in use are:
   `pathPanel.selectionMode`, `pathPanel.onSelectionChange`, and
   `previewArea.onModeChange`.
-- The next migration slice is `labkit_ImageEnhance_app`.
+- The next migration slice should move beyond the image-editor pair into a
+  broader image app, with Focus Stack as the cleanest next candidate.
 
 1. **Spec grammar and validation**
    - Complete in the current foundation checkpoint. Future changes should be
@@ -595,7 +600,7 @@ Current implementation checkpoint:
      path.
 
 4. **Image editor pair**
-   - Migrate `labkit_ImageEnhance_app` next.
+   - Complete on the current branch with `labkit_ImageEnhance_app`.
    - Consolidate any API gaps revealed by the first two image apps before
      migrating broad app families.
    - Update `docs/ui.md`, `docs/apps.md`, `+labkit/AGENTS.md`, `apps/AGENTS.md`,
