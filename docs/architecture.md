@@ -165,7 +165,7 @@ Private helpers may keep shorter comments, but should still identify expected ca
 
 ## Validation Boundary
 
-The default automated validation boundary is the non-GUI MATLAB build task: project architecture checks, `labkit` facade/parser checks, and pure app analysis/export checks. GitHub Actions runs that task on pushes and pull requests to `main`.
+The default automated validation boundary is the non-GUI MATLAB build task: project architecture checks, `labkit` facade/parser checks, and pure app analysis/export checks. GitHub Actions runs that task on pushes and pull requests for every branch.
 
 GUI launch/layout checks live in source-aligned build tasks such as `testLabkitUiGui` and `testAppsGui`. Interactive GUI workflows are validated manually in MATLAB app windows. See `docs/testing.md` for the canonical validation matrix.
 

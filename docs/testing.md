@@ -108,7 +108,7 @@ commands.
 | Manual GUI validation | User-run app windows | Interactive file selection, drawing, visual inspection, and full workflow feel. |
 
 CI runs shell-wrapper, quality, unit, and integration jobs on pushes and pull
-requests to `main` through `.github/workflows/matlab-tests.yml`. Manual and
+requests for every branch through `.github/workflows/matlab-tests.yml`. Manual and
 scheduled CI runs also execute coverage, GUI structural, and non-blocking GUI
 gesture jobs. Coverage is intentionally outside the default PR gate to keep PR
 feedback focused and avoid duplicate test execution. Do not describe CI as full
