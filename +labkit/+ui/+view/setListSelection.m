@@ -26,8 +26,8 @@ function varargout = setListSelection(ui, id, items, preferred, opts)
         error('labkit:ui:view:NoListbox', ...
             'Control "%s" does not expose a listbox.', control.id);
     end
-    [value, index] = labkit.ui.view.update( ...
-        control.listbox, 'listSelection', items, preferred, opts);
+    [value, index] = refreshListboxSelection(control.listbox, ...
+        items, preferred, opts);
     if nargout >= 1
         varargout{1} = value;
     end

@@ -17,5 +17,10 @@ function clearAxes(ui, id, axisId)
     end
     control = resolveControl(ui, id);
     ax = controlAxes(control, axisId);
-    labkit.ui.view.draw(ax, 'clear');
+    if ~isempty(ax.Children)
+        delete(ax.Children);
+    end
+    hold(ax, 'off');
+    ax.XLimMode = 'auto';
+    ax.YLimMode = 'auto';
 end

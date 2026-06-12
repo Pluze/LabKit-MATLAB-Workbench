@@ -25,5 +25,20 @@ function resetAxes(ui, id, titleText, resetScaleAndTicks, axisId)
     end
     control = resolveControl(ui, id);
     ax = controlAxes(control, axisId);
-    labkit.ui.view.draw(ax, 'reset', titleText, resetScaleAndTicks);
+    cla(ax, 'reset');
+    ax.NextPlot = 'replace';
+    ax.XLimMode = 'auto';
+    ax.YLimMode = 'auto';
+    if resetScaleAndTicks
+        ax.XScale = 'linear';
+        ax.YScale = 'linear';
+        ax.XTickMode = 'auto';
+        ax.YTickMode = 'auto';
+    end
+    title(ax, titleText);
+    xlabel(ax, '');
+    ylabel(ax, '');
+    grid(ax, 'off');
+    box(ax, 'on');
+    labkit.ui.view.draw(ax, 'popout');
 end

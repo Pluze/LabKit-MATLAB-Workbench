@@ -19,7 +19,7 @@ function imageHandle = drawImage(ui, id, imageData, varargin)
     opts = parseOptions(varargin);
     control = resolveControl(ui, id);
     ax = controlAxes(control, optionValue(opts, 'axis', ""));
-    imageHandle = labkit.ui.view.draw(ax, 'image', imageData, ...
+    imageHandle = showImage(ax, imageData, ...
         optionValue(opts, 'title', ''), optionValue(opts, 'options', struct()));
 end
 

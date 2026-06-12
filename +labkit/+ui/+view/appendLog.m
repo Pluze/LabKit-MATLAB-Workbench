@@ -11,8 +11,7 @@ function appendLog(ui, idOrMessage, maybeMessage)
 %   message - text appended to the log panel.
 %
 % Output:
-%   None. The helper delegates text-area mutation to the existing view update
-%   implementation so log behavior remains consistent during migration.
+%   None.
 
     if nargin < 3
         id = firstControlOfKind(ui, 'logPanel');
@@ -27,7 +26,11 @@ function appendLog(ui, idOrMessage, maybeMessage)
         error('labkit:ui:view:InvalidLogPanel', ...
             'Control "%s" is not a log panel.', control.id);
     end
-    labkit.ui.view.update(control.textArea, 'appendLog', message);
+    timestamp = datestr(now, 'HH:MM:SS');
+    old = control.textArea.Value;
+    old{end + 1} = sprintf('[%s] %s', timestamp, char(message));
+    control.textArea.Value = old;
+    drawnow limitrate
 end
 
 function id = firstControlOfKind(ui, kind)

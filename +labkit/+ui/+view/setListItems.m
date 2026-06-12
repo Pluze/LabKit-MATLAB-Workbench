@@ -14,7 +14,7 @@ function setListItems(ui, id, items)
 
     control = resolveControl(ui, id);
     listbox = listboxHandle(control);
-    labkit.ui.view.update(listbox, 'listItems', items);
+    refreshListboxItems(listbox, items);
 end
 
 function listbox = listboxHandle(control)
