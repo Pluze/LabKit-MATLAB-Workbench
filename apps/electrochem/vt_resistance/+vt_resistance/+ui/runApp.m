@@ -10,152 +10,73 @@ function fig = runApp(debugLog)
     S.items = S.session.items;
     S.current = [];
 
-    ui = labkit.ui.app.createShell(struct( ...
-        'title', 'Gamry VT Steady Resistance GUI', ...
-        'position', [40 30 1680 980], ...
-        'leftWidth', 430, ...
-        'options', struct( ...
-        'rightTitle', 'Plots', ...
-        'rightGridSize', [4 1], ...
-        'rightRowHeight', {{'fit', '1x', 'fit', '1x'}}, ...
-        'rightRowSpacing', 10)));
-    ui = vt_resistance.ui.createRightAxesPair(ui, 'Top Plot', 'Bottom Plot', true);
-    fig = ui.fig;
-    layFA = ui.filesAnalysisGrid;
-    laySR = ui.summaryResultsGrid;
-    layLog = ui.logGrid;
-
-    fileCallbacks = struct();
-    fileCallbacks.onOpenFiles = @onOpenFiles;
-    fileCallbacks.onOpenFolder = @onOpenFolder;
-    fileCallbacks.onClearAll = @(~,~) clearAllFiles();
-    fileCallbacks.onExport = @(~,~) exportResultsCSV();
-    fileCallbacks.onSelectFile = @(~,~) onSelectFile();
-    fileLabels = struct( ...
-        'panelTitle', 'Files', ...
-        'openFiles', 'Open DTA file(s)', ...
-        'openFolder', 'Open folder recursively', ...
-        'clearAll', 'Clear all', ...
-        'export', 'Export results CSV', ...
-        'loadedText', 'No files loaded');
-    fileUi = labkit.ui.view.panel(layFA, 'files', fileLabels, fileCallbacks);
-    lbFiles = fileUi.listbox;
-    txtLoaded = fileUi.loadedText;
-
-    settingsUi = labkit.ui.view.section(layFA, 'Analysis Settings', 2, [3 2]);
-    gs = settingsUi.grid;
-
-    uilabel(gs,'Text','Pulse detection:','HorizontalAlignment','right');
-    ddPulseMode = uidropdown(gs, ...
-        'Items',{'Metadata first, then auto','Metadata only','Auto from Im only'}, ...
-        'Value','Metadata first, then auto', ...
-        'ValueChangedFcn',@(~,~) analyzeCurrentFile());
-    ddPulseMode.Layout.Row = 1;
-    ddPulseMode.Layout.Column = 2;
-
-    uilabel(gs,'Text','Steady window:','HorizontalAlignment','right');
-    ddSteadyWindow = uidropdown(gs, ...
-        'Items',{'Full pulse median','Center 60% median'}, ...
-        'Value','Full pulse median', ...
-        'ValueChangedFcn',@(~,~) analyzeCurrentFile());
-    ddSteadyWindow.Layout.Row = 2;
-    ddSteadyWindow.Layout.Column = 2;
-
-    uilabel(gs,'Text','Resistance voltage:','HorizontalAlignment','right');
-    ddVoltageMode = uidropdown(gs, ...
-        'Items',{'Baseline-corrected dV/I','Raw Vf/I'}, ...
-        'Value','Baseline-corrected dV/I', ...
-        'ValueChangedFcn',@(~,~) analyzeCurrentFile());
-    ddVoltageMode.Layout.Row = 3;
-    ddVoltageMode.Layout.Column = 2;
-
-    actionUi = labkit.ui.view.section(layFA, 'Plot / Debug', 3, [2 3]);
-    ga = actionUi.grid;
-
-    btnReanalyze = uibutton(ga,'Text','Re-analyze file','ButtonPushedFcn',@(~,~) analyzeCurrentFile());
-    btnReanalyze.Layout.Row = 1; btnReanalyze.Layout.Column = 1;
-    btnRefresh = uibutton(ga,'Text','Refresh plots','ButtonPushedFcn',@(~,~) refreshPlots());
-    btnRefresh.Layout.Row = 1; btnRefresh.Layout.Column = 2;
-    btnSwap = uibutton(ga,'Text','Swap top / bottom','ButtonPushedFcn',@(~,~) swapPlots());
-    btnSwap.Layout.Row = 1; btnSwap.Layout.Column = 3;
-
-    btnReset = uibutton(ga,'Text','Reset axes','ButtonPushedFcn',@(~,~) resetAxes());
-    btnReset.Layout.Row = 2; btnReset.Layout.Column = 1;
-    cbShowMarkers = uicheckbox(ga,'Text','Show markers','Value',true,'ValueChangedFcn',@(~,~) refreshPlots());
-    cbShowMarkers.Layout.Row = 2; cbShowMarkers.Layout.Column = 2;
-    cbShowShading = uicheckbox(ga,'Text','Shade windows','Value',true,'ValueChangedFcn',@(~,~) refreshPlots());
-    cbShowShading.Layout.Row = 2; cbShowShading.Layout.Column = 3;
-
-    infoUi = labkit.ui.view.section(laySR, 'Current File Summary', 1, [13 2]);
-    gi = infoUi.grid;
-
-    S.txtControlMode = labkit.ui.view.form(gi, struct('kind', 'info', 'row', 1, 'label', 'Control mode:'));
-    S.txtDetect = labkit.ui.view.form(gi, struct('kind', 'info', 'row', 2, 'label', 'Detection:'));
-    S.txtWindow = labkit.ui.view.form(gi, struct('kind', 'info', 'row', 3, 'label', 'Window:'));
-    S.txtCathIV = labkit.ui.view.form(gi, struct('kind', 'info', 'row', 4, 'label', 'Cathodic I / Vss:'));
-    S.txtAnodIV = labkit.ui.view.form(gi, struct('kind', 'info', 'row', 5, 'label', 'Anodic I / Vss:'));
-    S.txtCathBase = labkit.ui.view.form(gi, struct('kind', 'info', 'row', 6, 'label', 'Cathodic baseline:'));
-    S.txtAnodBase = labkit.ui.view.form(gi, struct('kind', 'info', 'row', 7, 'label', 'Anodic baseline:'));
-    S.txtCathBaseWin = labkit.ui.view.form(gi, struct('kind', 'info', 'row', 8, 'label', 'Cath baseline window:'));
-    S.txtAnodBaseWin = labkit.ui.view.form(gi, struct('kind', 'info', 'row', 9, 'label', 'Anod baseline window:'));
-    S.txtCathR = labkit.ui.view.form(gi, struct('kind', 'info', 'row', 10, 'label', 'Cathodic R:'));
-    S.txtAnodR = labkit.ui.view.form(gi, struct('kind', 'info', 'row', 11, 'label', 'Anodic R:'));
-    S.txtAvgR = labkit.ui.view.form(gi, struct('kind', 'info', 'row', 12, 'label', 'Average R:'));
-    S.txtStatus = labkit.ui.view.form(gi, struct('kind', 'info', 'row', 13, 'label', 'Status:'));
-
-    tableUi = labkit.ui.view.panel(laySR, 'table', 'Batch Results', 2, ...
-        {'File','Ic(A)','Ia(A)','Vc_ss(V)','Va_ss(V)','R_cath(ohm)','R_anod(ohm)','R_avg(ohm)','Detection'}, ...
-        cell(0,9));
-    tbl = tableUi.table;
-
-    logUi = labkit.ui.view.panel(layLog, 'log', 1);
-    txtLog = logUi.textArea;
-
+    callbacks = struct( ...
+        "openFilesChosen", @onOpenFilesChosen, ...
+        "openFolder", @onOpenFolder, ...
+        "clearAll", @(~,~) clearAllFiles(), ...
+        "exportResults", @(~,~) exportResultsCSV(), ...
+        "fileSelectionChanged", @(~,~) onSelectFile(), ...
+        "analysisChanged", @(~,~) analyzeCurrentFile(), ...
+        "reanalyzeFile", @(~,~) analyzeCurrentFile(), ...
+        "refreshPlots", @(~,~) refreshPlots(), ...
+        "swapPlots", @(~,~) swapPlots(), ...
+        "resetAxes", @(~,~) resetAxes());
+    spec = vt_resistance.ui.buildSpec(callbacks);
+    ui = labkit.ui.app.create(spec, "debug", debugLog);
+    fig = ui.figure;
+    lbFiles = ui.controls.files.listbox;
+    txtLoaded = ui.controls.files.status;
+    ddPulseMode = ui.controls.pulseMode.valueHandle;
+    ddSteadyWindow = ui.controls.steadyWindow.valueHandle;
+    ddVoltageMode = ui.controls.voltageMode.valueHandle;
+    cbShowMarkers = ui.controls.showMarkers.valueHandle;
+    cbShowShading = ui.controls.showShading.valueHandle;
+    S.txtControlMode = ui.controls.controlMode.valueHandle;
+    S.txtDetect = ui.controls.detect.valueHandle;
+    S.txtWindow = ui.controls.window.valueHandle;
+    S.txtCathIV = ui.controls.cathIV.valueHandle;
+    S.txtAnodIV = ui.controls.anodIV.valueHandle;
+    S.txtCathBase = ui.controls.cathBase.valueHandle;
+    S.txtAnodBase = ui.controls.anodBase.valueHandle;
+    S.txtCathBaseWin = ui.controls.cathBaseWindow.valueHandle;
+    S.txtAnodBaseWin = ui.controls.anodBaseWindow.valueHandle;
+    S.txtCathR = ui.controls.cathR.valueHandle;
+    S.txtAnodR = ui.controls.anodR.valueHandle;
+    S.txtAvgR = ui.controls.averageR.valueHandle;
+    S.txtStatus = ui.controls.status.valueHandle;
+    tbl = ui.controls.results.table;
     topPlotDefaults = struct('x', 'Time (s)', 'y', 'VT: Vf vs time', 'grid', true);
     bottomPlotDefaults = struct('x', 'Time (s)', 'y', 'IT: Im vs time', 'grid', true);
-    plotControls = vt_resistance.ui.topBottomPlotControls( ...
-        ui.topControlsPanel, ...
-        ui.bottomControlsPanel, ...
-        {'Time (s)', 'Sample #'}, ...
-        {'VT: Vf vs time', 'IT: Im vs time'}, ...
-        topPlotDefaults, ...
-        bottomPlotDefaults, ...
-        @(~,~) refreshPlots());
-    ddTopX = plotControls.topX;
-    ddTopY = plotControls.topY;
-    cbTopGrid = plotControls.topGridCheckbox;
-    axTop = ui.topAxes;
-    ddBotX = plotControls.bottomX;
-    ddBotY = plotControls.bottomY;
-    cbBotGrid = plotControls.bottomGridCheckbox;
-    axBottom = ui.bottomAxes;
+    ddTopX = ui.controls.topX.valueHandle;
+    ddTopY = ui.controls.topY.valueHandle;
+    cbTopGrid = ui.controls.topGrid.valueHandle;
+    axTop = ui.controls.plotAxes.axesById.top;
+    ddBotX = ui.controls.bottomX.valueHandle;
+    ddBotY = ui.controls.bottomY.valueHandle;
+    cbBotGrid = ui.controls.bottomGrid.valueHandle;
+    axBottom = ui.controls.plotAxes.axesById.bottom;
     if debugLog.enabled
-        debugLog.attachTextLog(txtLog);
         debugLog.trace('VT resistance debug trace enabled.');
-        debugLog.instrumentFigure(fig);
     end
     %% App callbacks, session actions, refresh, plotting, and export
-    function onOpenFiles(~,~)
-        [files,path] = uigetfile({'*.DTA;*.dta','Gamry DTA files (*.DTA)'}, ...
-            'Select Gamry DTA file(s)','MultiSelect','on');
-        if isequal(files,0)
+    function onOpenFilesChosen(~, event)
+        if isempty(event.paths)
+            addLog('Open cancelled.');
             return;
         end
-        if ischar(files)
-            files = {files};
-        end
-        filepaths = cellfun(@(f) fullfile(path,f), files, 'UniformOutput', false);
-        addFiles(filepaths);
+        addFiles(event.paths);
     end
 
     function onOpenFolder(~,~)
         folder = uigetdir(pwd,'Select folder containing DTA files');
         if isequal(folder,0)
+            addLog('Folder selection cancelled.');
             return;
         end
         filepaths = labkit.dta.findFiles(folder);
         if isempty(filepaths)
             uialert(fig,'No .DTA files found in the selected folder.','Open folder');
+            addLog(['No .DTA files found under: ' folder]);
             return;
         end
         addFiles(filepaths);
@@ -176,6 +97,12 @@ function fig = runApp(debugLog)
         refreshBatchTable();
         refreshResultsSummary();
         refreshPlots();
+
+        if ~isempty(report.failed)
+            firstError = report.failed(1);
+            uialert(fig, sprintf('Failed to load:\n%s\n\n%s', ...
+                firstError.filepath, firstError.message), 'Load error');
+        end
     end
 
     function postProcessAddedItems(filepaths)
@@ -260,24 +187,27 @@ function fig = runApp(debugLog)
 
     function refreshFileList()
         if isempty(S.items)
-            labkit.ui.view.update(lbFiles, 'listSelection', {});
-            txtLoaded.Value = fileLabels.loadedText;
+            labkit.ui.view.setListItems(ui, 'files', {});
+            txtLoaded.Value = 'No files loaded';
             S.current = [];
             return;
         end
 
         names = {S.items.name};
-        [~, idx] = labkit.ui.view.update(lbFiles, 'listSelection', names, S.current);
-        S.current = idx(1);
+        labkit.ui.view.setListItems(ui, 'files', names);
+        if isempty(S.current) || S.current < 1 || S.current > numel(names)
+            S.current = 1;
+        end
+        lbFiles.Value = names{S.current};
         txtLoaded.Value = sprintf('%d file(s) loaded', numel(S.items));
     end
 
     function refreshBatchTable()
         if isempty(S.items)
-            tbl.Data = cell(0,9);
+            tbl.Data = cell(0, 9);
             return;
         end
-            tbl.Data = vt_resistance.view.buildBatchTableData(S.items);
+        tbl.Data = vt_resistance.view.buildBatchTableData(S.items);
     end
 
     function refreshResultsSummary()
@@ -341,8 +271,8 @@ function fig = runApp(debugLog)
     end
 
     function refreshPlots()
-        labkit.ui.view.draw(axTop, 'clear');
-        labkit.ui.view.draw(axBottom, 'clear');
+        clearAxis(axTop);
+        clearAxis(axBottom);
         if isempty(S.items) || isempty(S.current) || S.current < 1 || S.current > numel(S.items)
             title(axTop,'Top Plot');
             title(axBottom,'Bottom Plot');
@@ -446,7 +376,15 @@ function fig = runApp(debugLog)
     end
 
     function swapPlots()
-        plotControls.swapSelections();
+        topX = ddTopX.Value;
+        topY = ddTopY.Value;
+        topGrid = cbTopGrid.Value;
+        ddTopX.Value = ddBotX.Value;
+        ddTopY.Value = ddBotY.Value;
+        cbTopGrid.Value = cbBotGrid.Value;
+        ddBotX.Value = topX;
+        ddBotY.Value = topY;
+        cbBotGrid.Value = topGrid;
         refreshPlots();
     end
 
@@ -456,12 +394,17 @@ function fig = runApp(debugLog)
     end
 
     function restoreDefaultPlotSelections()
-        plotControls.setSelections(topPlotDefaults, bottomPlotDefaults);
+        ddTopX.Value = topPlotDefaults.x;
+        ddTopY.Value = topPlotDefaults.y;
+        cbTopGrid.Value = topPlotDefaults.grid;
+        ddBotX.Value = bottomPlotDefaults.x;
+        ddBotY.Value = bottomPlotDefaults.y;
+        cbBotGrid.Value = bottomPlotDefaults.grid;
     end
 
     function resetAxesToDefaultState()
-        labkit.ui.view.draw(axTop, 'reset', 'Top Plot');
-        labkit.ui.view.draw(axBottom, 'reset', 'Bottom Plot');
+        resetAxis(axTop, 'Top Plot');
+        resetAxis(axBottom, 'Bottom Plot');
     end
 
     function exportResultsCSV()
@@ -483,8 +426,19 @@ function fig = runApp(debugLog)
     end
 
     function addLog(msg)
-        labkit.ui.view.update(txtLog, 'appendLog', msg);
+        labkit.ui.view.appendLog(ui, 'appLog', msg);
         debugLog.append(msg);
     end
 
+end
+
+function clearAxis(ax)
+    cla(ax);
+end
+
+function resetAxis(ax, titleText)
+    cla(ax);
+    title(ax, titleText);
+    xlabel(ax, '');
+    ylabel(ax, '');
 end
