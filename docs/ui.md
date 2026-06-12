@@ -141,7 +141,7 @@ opts.tabs = labkit.ui.app.tab( ...
 
 The shell owns split panes, scrollable tab grids, row resize handles, and the right-side grid. Multi-row tabs get resize handles between adjacent logical rows by default. Use `struct('resize','none')` only for tabs whose rows should remain fixed. Apps own the controls and axes placed inside returned grids.
 
-## Views And Forms
+## Legacy Views And Forms
 
 Unmigrated apps use `labkit.ui.view.section` for titled app-defined sections:
 
@@ -150,7 +150,8 @@ section = labkit.ui.view.section(layFA, 'Analysis Settings', 2, [3 2]);
 grid = section.grid;
 ```
 
-Use `labkit.ui.view.form` as the single public control entry point. It replaces separate labeled spinner/dropdown/edit/read-only helpers:
+In unmigrated apps, `labkit.ui.view.form` is the single public control entry
+point. It replaces separate labeled spinner/dropdown/edit/read-only helpers:
 
 ```matlab
 [lblMode, ddMode] = labkit.ui.view.form(grid, struct( ...
@@ -179,9 +180,12 @@ txtMetric = labkit.ui.view.form(grid, struct( ...
 
 `form` also accepts a section spec with `title`, `row`, `layout`, and `controls`. The returned struct exposes `controls`, `labels`, `setValue(id,value,reason)`, and `getValue(id)`. `setValue` no-ops for unchanged values and suppresses app-facing semantic callbacks for internal/programmatic updates.
 
-When manually placing a component in a shell tab grid, use `labkit.ui.view.place(component, parentGrid, logicalRow)`. App code should not depend on physical row indices inserted by row-resize handles.
+In unmigrated shell code, use `labkit.ui.view.place(component, parentGrid,
+logicalRow)` when manually placing a component in a shell tab grid. App code
+should not depend on physical row indices inserted by row-resize handles.
 
-Use `labkit.ui.view.panel` for reusable component groups such as file panels, log panels, read-only text panels, and result tables:
+In unmigrated apps, use `labkit.ui.view.panel` for reusable component groups
+such as file panels, log panels, read-only text panels, and result tables:
 
 ```matlab
 fileUi = labkit.ui.view.panel(layFA, 'files', labels, callbacks);
@@ -189,7 +193,8 @@ logUi = labkit.ui.view.panel(layLog, 'log', 1, {'Ready.'});
 tableUi = labkit.ui.view.panel(laySR, 'table', 'Batch Results', 2, columns);
 ```
 
-Use `labkit.ui.view.update` for state changes on existing component handles:
+In unmigrated apps, use `labkit.ui.view.update` for state changes on existing
+component handles:
 
 ```matlab
 labkit.ui.view.update(logUi.textArea, 'appendLog', 'Loaded file.');
@@ -197,9 +202,11 @@ labkit.ui.view.update(logUi.textArea, 'appendLog', 'Loaded file.');
     'listSelection', names, previousSelection);
 ```
 
-## Axes And Rendering
+## Legacy Axes And Rendering
 
-Use view helpers for app-neutral rendering boilerplate:
+In unmigrated apps, use legacy view helpers for app-neutral rendering
+boilerplate. Migrated apps should prefer `previewArea` in the workspace plus
+the named view helpers such as `drawImage`, `resetAxes`, and `clearAxes`.
 
 ```matlab
 ax = labkit.ui.view.axes(parent, 1, 'Preview', 'X', 'Y');
@@ -246,7 +253,13 @@ Debug launches support:
 [fig, debug] = appName("--debug", opts);
 ```
 
-App-local `addLog` functions should append to the visible UI log with `labkit.ui.view.update(txtLog, 'appendLog', message)` and then call `debug.append(message)`. Debug-mode apps attach the Log tab text area, emit a startup trace line, pass `debug.trace` into reusable tools through `onTrace`, and call `debug.instrumentFigure(fig)` after controls are built.
+Unmigrated app-local `addLog` functions should append to the visible UI log
+with `labkit.ui.view.update(txtLog, 'appendLog', message)` and then call
+`debug.append(message)`. Migrated apps should append through
+`labkit.ui.view.appendLog(ui, "log", message)` or the app's chosen log-panel
+id, then call `debug.append(message)`. Debug-mode apps attach the Log tab text
+area, emit a startup trace line, pass `debug.trace` into reusable tools through
+`onTrace`, and call `debug.instrumentFigure(fig)` after controls are built.
 
 Trace lines include timestamp plus stable `app=...`, `component=...`, `event=...`, and `reason=...` fields. Default instrumentation skips low-level pointer, drag, and scroll callbacks.
 

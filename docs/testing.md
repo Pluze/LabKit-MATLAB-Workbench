@@ -114,6 +114,14 @@ gesture jobs. Coverage is intentionally outside the default PR gate to keep PR
 feedback focused and avoid duplicate test execution. Do not describe CI as full
 interactive GUI workflow validation.
 
+Each MATLAB CI job writes a GitHub Step Summary with JUnit totals, artifact
+locations, the slowest test cases, and failed-test details when available.
+Failure summaries also include a compact MATLAB log tail so common failures can
+be inspected from the Actions page. MATLAB HTML reports remain uploaded as
+artifacts; GitHub Actions does not render artifact HTML inline, so interactive
+HTML browsing still requires downloading the artifact or adding a separate
+publishing target.
+
 The shell-wrapper job owns repository-level checks that are cheaper and safer
 outside MATLAB, including the rule that `LabKit.prj` and `resources/project/`
 must stay untracked local IDE metadata. MATLAB build tasks should not shell out
@@ -178,7 +186,7 @@ UI framework changes should cover the affected layer rather than only the change
 
 | UI layer | Automated coverage |
 | --- | --- |
-| Public surface | `testProject` checks the layered `labkit.ui.app/view/tool/diag` API and private implementation packages. |
+| Public surface | `testProject` checks the layered `labkit.ui.app/spec/view/tool/diag` API and private implementation packages. |
 | Shell/layout | `testLabkitUiGui` and affected app-family GUI tasks. |
 | Runtime/tools | `testLabkitUiGui` runtime, anchor-editor, and scale-bar tool tests. |
 | Diagnostics | `testLabkitUiGui` debug instrumentation tests plus `testAppsSmokeGui` debug launch trace checks. |

@@ -12,7 +12,10 @@ Preserve LabKit's app-first architecture:
 - apps own experiment-specific workflow
 - `+labkit` owns small, stable UI/DTA/biosignal facades
 - no public helper-dump packages
-- UI apps should use the layered `labkit.ui.app/view/tool/diag` facades; the older flat helper surface has been removed
+- UI apps should use the layered `labkit.ui.app/spec/view/tool/diag` facades;
+  the older flat helper surface has been removed, and pre-2.0
+  `createShell`/legacy view APIs are migration-era dependencies for
+  unmigrated apps
 
 ## Required Read Order
 
@@ -43,7 +46,14 @@ Before moving code into `+labkit`, prove that the helper:
 
 If this is not proven, keep the code app-local.
 
-For UI boundary work, prefer `labkit.ui.app.createShell`, `labkit.ui.app.dispatchRequest`, `labkit.ui.diag.createContext`, `labkit.ui.tool.createRuntime`, and the unified `labkit.ui.view.section/form/panel/axes/draw/update/place` facade. Keep control micro-helpers and one-off component builders private unless they are a deliberate public facade addition.
+For new or migrated UI boundary work, prefer `labkit.ui.app.create`,
+`labkit.ui.spec.*`, named `labkit.ui.view.*` helpers,
+`labkit.ui.app.dispatchRequest`, `labkit.ui.diag.createContext`, and
+`labkit.ui.tool.createRuntime`. Keep primitive builders private; do not expose
+public `labkit.ui.spec.button`, `dropdown`, `slider`, `listbox`, `table`,
+`axes`, or similar MATLAB primitive constructors. Use `createShell` and legacy
+`view.section/form/panel/axes/draw/update/place` APIs only for unmigrated apps
+or framework internals that still support those apps during the migration.
 
 ## Validation
 

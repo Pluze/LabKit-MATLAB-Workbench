@@ -42,10 +42,14 @@ Current facts:
   `createShell`, `tab`, `section`, `form`, `panel`, `draw`, `update`, `place`,
   explicit grid sizes, row heights, right-grid sizing, and direct
   `Layout.Row`/`Layout.Column` mechanics.
-- Current docs, scoped `AGENTS.md`, repo skills, public-surface guardrails, and
-  GUI structural tests still describe the pre-2.0 layered UI API. Update them
-  only when the corresponding implementation contract changes, not in this
-  planning-only pass.
+- The UI 2.0 foundation slice has landed: public spec constructors,
+  `labkit.ui.app.create`, named view helpers, GUI-free validation,
+  public-surface guardrails, and reusable UI structural tests exist.
+- No production app has migrated to UI 2.0 yet. The next implementation slice
+  is the `labkit_ImageMatch_app` canary.
+- Human docs, scoped `AGENTS.md`, repo skills, public-surface guardrails, and
+  GUI structural tests should describe the implemented foundation as current
+  behavior while keeping app migration order in this ledger.
 
 Completed migration baseline: ECG Print, DIC Preprocess, DIC Postprocess, CIC
 runner normalization, and CSC runner normalization are complete. Treat them as
@@ -543,7 +547,17 @@ without reducing app-facing layout decisions.
 Use small, runnable, reviewable PRs. Each PR should leave the branch with a
 coherent API contract and passing focused validation.
 
+Current implementation checkpoint:
+
+- Foundation is complete for the first implementation slice: stable spec
+  constructors, `labkit.ui.app.create`, named view helpers, validation tests,
+  public-surface guardrails, and docs/AGENTS/skill routing are expected to
+  exist.
+- App migration has not started. The next slice is the ImageMatch canary.
+
 1. **Spec grammar and validation**
+   - Complete in the current foundation checkpoint. Future changes should be
+     narrow fixes, not a second planning pass.
    - Add only the stable minimal public spec constructors and validation.
    - Add private/internal primitive builders for `field`, `action`,
      `pathPanel`, `previewArea`, `resultTable`, `logPanel`, and `statusPanel`.
@@ -554,6 +568,8 @@ coherent API contract and passing focused validation.
    - Do not migrate apps yet.
 
 2. **Vertical app builder slice**
+   - Complete in the current foundation checkpoint. Future changes should be
+     driven by canary migration evidence.
    - Add `labkit.ui.app.create` for `controlTabs`, sections, workspace,
      composite families, registries, debug context, and basic resize policy.
    - Add named view helpers needed by one canary app.
@@ -684,10 +700,10 @@ visual quality, and full workflow feel require manual MATLAB GUI validation.
 Update each documentation surface when its owned contract changes:
 
 - `docs/ui.md`: rewrite when `app.create`, `spec.*`, named view helpers, custom
-  escape hatches, and the final public surface are implemented.
-  During UI 2.0 planning it may carry one short API ergonomics target example
-  so the spec shape stays concrete; do not expand that example into a second
-  migration roadmap.
+  escape hatches, and the final public surface are implemented. It now
+  documents the implemented UI 2.0 foundation plus migration-era legacy APIs;
+  keep it current as app migrations remove old surface, but do not expand it
+  into a second migration roadmap.
 - `docs/architecture.md`: update when the official app-facing UI surface
   changes from pre-2.0 layered construction to declarative construction.
 - `docs/apps.md`: update when app entrypoint guidance changes to
@@ -697,7 +713,9 @@ Update each documentation surface when its owned contract changes:
 - `AGENTS.md`, `+labkit/AGENTS.md`, `apps/AGENTS.md`, and `tests/AGENTS.md`:
   update when agent routing or ownership rules change.
 - Repo skills: update `labkit-app-builder`, `labkit-boundary-guard`, and
-  `labkit-test-planner` guidance when the new UI API becomes the default.
+  `labkit-test-planner` guidance when the new UI API becomes the default for
+  new or migrated UI work while preserving legacy routing for unmigrated app
+  maintenance.
 
 Do not update human docs with future-tense roadmap text. They should describe
 the current project behavior once the corresponding implementation lands.
