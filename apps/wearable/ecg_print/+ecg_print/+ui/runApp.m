@@ -16,90 +16,76 @@ function fig = runApp(debugLog)
     S.measurements = [];
     S.filepath = "";
 
-    opts = struct( ...
-        'rightTitle', 'ECG Preview', ...
-        'rightGridSize', [4 1], ...
-        'rightRowHeight', {{'1.2x', '1x', '1x', '1x'}}, ...
-        'rightRowSpacing', 8);
-    opts.tabs = [ ...
-        labkit.ui.app.tab('filesAnalysis', 'Files + Analysis', [6 1], ...
-            {140, 255, 120, 235, 100, 125}), ...
-        labkit.ui.app.tab('summaryResults', 'Summary + Results', [2 1], ...
-            {210, '1x'}), ...
-        labkit.ui.app.tab('log', 'Log', [1 1], {'1x'})];
-
-    ui = labkit.ui.app.createShell(struct( ...
-        'title', 'ECG Signal Print + SNR Explorer', ...
-        'position', [80 70 1480 880], ...
-        'leftWidth', 410, ...
-        'options', opts));
-    fig = ui.fig;
-
     callbacks = struct( ...
-        'onOpenRecording', @onOpenRecording, ...
-        'onPreviewHeader', @onPreviewHeader, ...
-        'onImportOptionChanged', @onImportOptionChanged, ...
-        'onRefreshImport', @onRefreshImport, ...
-        'onChannelChanged', @onChannelChanged, ...
-        'onAnalyze', @onAnalyze, ...
-        'onExportSegments', @onExportSegments, ...
-        'onExportWaveform', @onExportWaveform, ...
-        'onRefreshPlots', @(~,~) refreshPlots());
-    controls = ecg_print.ui.createControls(ui, callbacks);
+        "recordingChosen", @onRecordingChosen, ...
+        "clearRecording", @(~, ~) onClearRecording(), ...
+        "previewHeader", @(~, ~) onPreviewHeader(), ...
+        "importOptionChanged", @(~, ~) onImportOptionChanged(), ...
+        "refreshImport", @(~, ~) onRefreshImport(), ...
+        "channelChanged", @(~, ~) onChannelChanged(), ...
+        "analyze", @(~, ~) onAnalyze(), ...
+        "exportSegments", @(~, ~) onExportSegments(), ...
+        "exportWaveform", @(~, ~) onExportWaveform(), ...
+        "refreshPlots", @(~, ~) refreshPlots());
+    spec = ecg_print.ui.buildSpec(callbacks);
+    ui = labkit.ui.app.create(spec, "debug", debugLog);
+    fig = ui.figure;
 
-    txtFile = controls.txtFile;
-    txtImportStatus = controls.txtImportStatus;
-    edtHeaderLine = controls.edtHeaderLine;
-    ddHasHeader = controls.ddHasHeader;
-    edtTimeColumn = controls.edtTimeColumn;
-    ddTimeUnit = controls.ddTimeUnit;
-    edtSignalColumns = controls.edtSignalColumns;
-    edtFallbackFs = controls.edtFallbackFs;
-    ddChannel = controls.ddChannel;
-    edtStart = controls.edtStart;
-    edtEnd = controls.edtEnd;
-    edtLow = controls.edtLow;
-    edtHigh = controls.edtHigh;
-    ddPeakMethod = controls.ddPeakMethod;
-    edtPeakDist = controls.edtPeakDist;
-    edtWin = controls.edtWin;
-    edtTopN = controls.edtTopN;
-    edtSmooth = controls.edtSmooth;
-    ddTemplateView = controls.ddTemplateView;
-    summaryTable = controls.summaryTable;
-    txtFilePreview = controls.txtFilePreview;
-    txtLog = controls.txtLog;
-    ui.waveAxes = controls.waveAxes;
-    ui.noiseAxes = controls.noiseAxes;
-    ui.snrAxes = controls.snrAxes;
-    ui.templateAxes = controls.templateAxes;
+    txtFile = ui.controls.recording.status;
+    txtImportStatus = ui.controls.importStatus.valueHandle;
+    edtHeaderLine = ui.controls.headerLine.valueHandle;
+    ddHasHeader = ui.controls.hasHeader.valueHandle;
+    edtTimeColumn = ui.controls.timeColumn.valueHandle;
+    ddTimeUnit = ui.controls.timeUnit.valueHandle;
+    edtSignalColumns = ui.controls.signalColumns.valueHandle;
+    edtFallbackFs = ui.controls.fallbackFs.valueHandle;
+    ddChannel = ui.controls.channel.valueHandle;
+    edtStart = ui.controls.roiStart.valueHandle;
+    edtEnd = ui.controls.roiEnd.valueHandle;
+    edtLow = ui.controls.lowCut.valueHandle;
+    edtHigh = ui.controls.highCut.valueHandle;
+    ddPeakMethod = ui.controls.peakMethod.valueHandle;
+    edtPeakDist = ui.controls.peakDistance.valueHandle;
+    edtWin = ui.controls.segmentWindow.valueHandle;
+    edtTopN = ui.controls.templateTopN.valueHandle;
+    edtSmooth = ui.controls.smoothBeats.valueHandle;
+    ddTemplateView = ui.controls.templateView.valueHandle;
+    summaryTable = ui.controls.summaryTable.table;
+    txtFilePreview = ui.controls.filePreview.textArea;
+    ui.waveAxes = ui.controls.previewAxes.axesById.wave;
+    ui.noiseAxes = ui.controls.previewAxes.axesById.noise;
+    ui.snrAxes = ui.controls.previewAxes.axesById.snr;
+    ui.templateAxes = ui.controls.previewAxes.axesById.template;
 
     if debugLog.enabled
-        debugLog.attachTextLog(txtLog);
         debugLog.trace('ECG print debug trace enabled.');
-        debugLog.instrumentFigure(fig);
     end
 
     resetAxes();
 
-    function onOpenRecording(~, ~)
-        [fn, fp] = uigetfile( ...
-            {'*.mat;*.csv;*.txt;*.tsv', 'Biosignal files (*.mat, *.csv, *.txt, *.tsv)'; ...
-            '*.*', 'All files'}, ...
-            'Select biosignal recording');
-        if isequal(fn, 0)
+    function onRecordingChosen(~, event)
+        if isempty(event.paths)
             addLog('Recording selection cancelled.');
             return;
         end
 
-        S.filepath = string(fullfile(fp, fn));
+        S.filepath = string(event.paths{1});
         txtFile.Value = char(S.filepath);
         clearParsedRecording();
         updateFilePreview();
         refreshImportParsing(false);
     end
 
-    function onRefreshImport(~, ~)
+    function onClearRecording()
+        S.filepath = "";
+        txtFile.Value = 'No file loaded';
+        txtFilePreview.Value = {'Open a CSV/text file, then use Preview file header.'};
+        txtImportStatus.Value = 'Open a recording to inspect import settings.';
+        clearParsedRecording();
+        addLog('Cleared recording.');
+    end
+
+    function onRefreshImport()
         refreshImportParsing(true);
     end
 
@@ -162,7 +148,7 @@ function fig = runApp(debugLog)
         addLog(sprintf('Parsed %d channel(s) from %s', numel(channels), char(S.filepath)));
     end
 
-    function onPreviewHeader(~, ~)
+    function onPreviewHeader()
         updateFilePreview();
     end
 
@@ -175,7 +161,7 @@ function fig = runApp(debugLog)
         addLog(sprintf('Previewed file header: %s', char(S.filepath)));
     end
 
-    function onImportOptionChanged(~, ~)
+    function onImportOptionChanged()
         if strlength(S.filepath) > 0
             txtImportStatus.Value = 'Import settings changed. Click Parse / refresh file.';
         end
@@ -198,7 +184,7 @@ function fig = runApp(debugLog)
         refreshPlots();
     end
 
-    function onChannelChanged(~, ~)
+    function onChannelChanged()
         if isempty(S.recording) || strcmp(ddChannel.Value, '(none)')
             return;
         end
@@ -221,7 +207,7 @@ function fig = runApp(debugLog)
         refreshPlots();
     end
 
-    function onAnalyze(~, ~)
+    function onAnalyze()
         if isempty(S.signal)
             showError('No channel selected', 'Open a recording and select a channel first.');
             return;
@@ -258,7 +244,7 @@ function fig = runApp(debugLog)
         end
     end
 
-    function onExportSegments(~, ~)
+    function onExportSegments()
         if isempty(S.measurements) || isempty(S.measurements.perSegment)
             showError('No segment SNR', 'Analyze a signal before exporting segment SNR.');
             return;
@@ -273,7 +259,7 @@ function fig = runApp(debugLog)
         addLog(sprintf('Exported segment SNR CSV: %s', fullfile(fp, fn)));
     end
 
-    function onExportWaveform(~, ~)
+    function onExportWaveform()
         [fn, fp] = uiputfile('ecg_waveform.png', 'Export waveform PNG');
         if isequal(fn, 0)
             addLog('Waveform export cancelled.');
@@ -346,7 +332,8 @@ function fig = runApp(debugLog)
 
     function refreshTemplatePlot()
         ax = ui.templateAxes;
-        labkit.ui.view.draw(ax, 'reset', 'Template + Residual Band');
+        labkit.ui.view.resetAxes(ui, 'previewAxes', ...
+            'Template + Residual Band', true, 'template');
         xlabel(ax, 'Time from peak (s)');
         ylabel(ax, 'Amplitude');
         request = ecg_print.view.templatePlotRequest( ...
@@ -396,22 +383,26 @@ function fig = runApp(debugLog)
     end
 
     function resetAxes()
-        labkit.ui.view.draw(ui.waveAxes, 'reset', 'Waveform + Peaks');
+        labkit.ui.view.resetAxes(ui, 'previewAxes', ...
+            'Waveform + Peaks', true, 'wave');
         xlabel(ui.waveAxes, 'Time (s)');
         ylabel(ui.waveAxes, 'Amplitude');
-        labkit.ui.view.draw(ui.noiseAxes, 'reset', 'Template Noise RMS Over Time');
+        labkit.ui.view.resetAxes(ui, 'previewAxes', ...
+            'Template Noise RMS Over Time', true, 'noise');
         xlabel(ui.noiseAxes, 'Time (s)');
         ylabel(ui.noiseAxes, 'Noise RMS');
-        labkit.ui.view.draw(ui.snrAxes, 'reset', 'Template SNR Over Time');
+        labkit.ui.view.resetAxes(ui, 'previewAxes', ...
+            'Template SNR Over Time', true, 'snr');
         xlabel(ui.snrAxes, 'Time (s)');
         ylabel(ui.snrAxes, 'SNR (dB)');
-        labkit.ui.view.draw(ui.templateAxes, 'reset', 'Template + Residual Band');
+        labkit.ui.view.resetAxes(ui, 'previewAxes', ...
+            'Template + Residual Band', true, 'template');
         xlabel(ui.templateAxes, 'Time from peak (s)');
         ylabel(ui.templateAxes, 'Amplitude');
     end
 
     function addLog(message)
-        labkit.ui.view.update(txtLog, 'appendLog', message);
+        labkit.ui.view.appendLog(ui, 'appLog', message);
         debugLog.append(message);
     end
 
