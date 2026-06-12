@@ -83,7 +83,12 @@ The app owns:
 - failed-row behavior
 - callback ordering, alerts, and log wording
 
-Every public app entry point should preserve its launch name, route debug launch requests through `labkit.ui.app.dispatchRequest`, build the GUI with `labkit.ui.app.createShell`, and keep visible debug trace wired into the Log tab during debug launches. Image apps with drawing, scale bars, ROI, or preview scroll should pass a `labkit.ui.tool.createRuntime` result into reusable tools instead of owning figure pointer callbacks directly.
+Every public app entry point should preserve its launch name and route debug
+launch requests through `labkit.ui.app.dispatchRequest`. App GUIs build from
+`labkit.ui.app.create` and `labkit.ui.spec.*`. Debug launches should keep
+visible debug trace wired into the Log tab. Image apps with drawing, scale
+bars, ROI, or preview scroll should pass a `labkit.ui.tool.createRuntime`
+result into reusable tools instead of owning figure pointer callbacks directly.
 
 When a documented UI tool owns app-neutral interaction mechanics, the app should consume that tool and keep workflow meaning, summaries, and exports app-local. `docs/architecture.md` owns the reusable-library extraction rule and temporary debt inventory.
 
@@ -107,6 +112,14 @@ apps/<family>/<app_slug>/+<app_slug>/+io/
 Create component packages only when the app has code for that responsibility.
 Use the app slug package name, not a fixed `+app` namespace, so MATLAB package
 resolution cannot mix helpers from sibling apps.
+
+For UI 2.0 migrated apps, put the data-only workbench spec in
+`+<app_slug>/+ui/buildSpec.m` and keep ordinary controls declarative. The public
+entry point, or the app-owned orchestration runner it delegates to when the
+public file is a thin dispatch wrapper, owns state, callbacks, alerts, log
+wording, and refresh order. That orchestration source should call
+`<app_slug>.ui.buildSpec(...)` followed by `labkit.ui.app.create(...)`.
+`docs/architecture.md` owns the detailed component package role boundaries.
 
 A typical single-file order before extraction is:
 
@@ -163,7 +176,11 @@ Define these before adding controls or helpers:
 10. GUI shell spec, debug trace behavior, and file-selection mode
 ```
 
-Start from the closest existing app, reduce it to the needed workflow, and preserve ownership boundaries. Prefer `labkit.ui.app.createShell` even for small apps so daily interaction stays consistent across app families.
+Start from the closest existing app, reduce it to the needed workflow, and
+preserve ownership boundaries. For new app UI, prefer
+`labkit.ui.app.create` with `labkit.ui.spec.*` even for small apps so daily
+interaction stays consistent across app families. Do not copy old manual
+layout into new code.
 
 ## Validation
 

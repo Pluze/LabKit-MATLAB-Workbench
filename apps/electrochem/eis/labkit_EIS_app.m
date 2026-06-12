@@ -17,7 +17,7 @@ function varargout = labkit_EIS_app(varargin)
         error('labkit_EIS_app:TooManyOutputs', 'labkit_EIS_app returns at most the app figure handle.');
     end
 
-    fig = eis.ui.runApp(debugLog);
+    fig = eis.run(debugLog);
     if nargout >= 1
         varargout{1} = fig;
     end

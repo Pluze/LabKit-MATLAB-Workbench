@@ -8,8 +8,8 @@ function calibration = scaleOptionsFromStruct(opts)
 %   labkit_CurvatureMeasurement_app package tests.
 %
 % Inputs/outputs:
-%   Option struct with current and legacy scale fields. Returns a
-%   labkit.ui scale-bar calibration struct.
+%   Option struct with current and legacy scale fields. Returns a GUI-free
+%   calibration struct for curvature calculations.
 %
 % Side effects:
 %   None.
@@ -38,7 +38,8 @@ function calibration = scaleOptionsFromStruct(opts)
         referenceLength = 1;
         scaleUnit = 'mm';
     end
-    calibration = labkit.ui.tool.scaleBarCalibration(referencePx, referenceLength, scaleUnit);
+    calibration = curvature.ops.normalizeScaleCalibration(referencePx, ...
+        referenceLength, scaleUnit);
 end
 
 function value = positiveOrNaN(value)

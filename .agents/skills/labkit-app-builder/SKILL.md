@@ -113,21 +113,41 @@ Use the closest existing app as the starting pattern, then reduce it to the actu
 
 Build the app in this order:
 
-1. Add or update the app entry point with `labkit.ui.app.createShell`.
-2. Wire file loading through the appropriate facade or app-local reader.
-3. Store state in one app struct; avoid globals, base workspace state, and hidden local paths.
-4. Rebuild the user workflow around stable controls, previews, summaries, and exports; do not reproduce command-line debug staging.
-5. Move GUI-free calculations below the app `end` as app-local functions.
-6. Extract production helpers into an app-owned package when the app is too
-   large for a readable single entry point.
-7. For active runner or app-private migrations, use `labkit-migration-planner`
+1. Add or update the public app entry point as a thin dispatch wrapper, then
+   create the GUI from package-root `run.m` with `labkit.ui.app.create` and
+   `labkit.ui.spec.*`.
+2. Put the data-only spec in `+<app_slug>/+ui/buildSpec.m`; package-root
+   `run.m` should create callback handles, call
+   `<app_slug>.ui.buildSpec(...)`, then call `labkit.ui.app.create(...)`.
+3. Keep `buildSpec.m` free of MATLAB handle creation, `labkit.ui.app.create`,
+   state mutation, IO, computation, export writing, nested callback
+   implementations, and row/column layout mechanics. Use a named
+   `+ui/build<Thing>.m` custom builder only for a justified interaction that the
+   ordinary spec grammar cannot represent.
+4. Wire file loading through the appropriate facade or app-local reader.
+5. Store state in one app struct; avoid globals, base workspace state, and hidden local paths.
+6. Rebuild the user workflow around stable controls, previews, summaries,
+   semantic control ids, and exports; do not reproduce command-line debug
+   staging.
+7. Move GUI-free calculations below the app `end` as app-local functions.
+8. Extract production helpers into role-based app-owned package components when
+   the app is too large for a readable single entry point:
+   `+state` for defaults/factories, `+io` for file discovery/readers/filters,
+   `+ops` for GUI-free transforms, `+view` for table/detail/display data, and
+   `+export` for output writers/manifests. Create only the packages the app
+   actually needs.
+9. Avoid boundary-blurring helper names such as `helpers.m`, `utils.m`,
+   `common.m`, `misc.m`, `callbacks.m`, `manager.m`, `processor.m`,
+   `layout.m`, and `createUI.m`; name files by stable role or output instead.
+10. For active runner or app-private migrations, use `labkit-migration-planner`
    to audit the current debt map and update `.agents/migration_guide.md`.
-8. Do not add new `private/` runners, `*Workflow.m` string-dispatch adapters,
+11. Do not add new `private/` runners, `*Workflow.m` string-dispatch adapters,
    fixed `+app` package names, or app-local public helper packages.
-9. Render prepared data through `labkit.ui` helpers; keep analysis out of UI helpers.
-10. Add export builders before CSV/PNG writing so output contracts can be tested.
-11. Add focused tests with synthetic fixtures or minimal generated data.
-12. Update human docs for user-facing behavior and scoped `AGENTS.md` only when rules change.
+12. Render prepared data through UI 2.0 named view helpers or existing
+   `labkit.ui.tool.*` helpers; keep analysis out of UI helpers.
+13. Add export builders before CSV/PNG writing so output contracts can be tested.
+14. Add focused tests with synthetic fixtures or minimal generated data.
+15. Update human docs for user-facing behavior and scoped `AGENTS.md` only when rules change.
 
 ## Validation
 

@@ -109,6 +109,20 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
                 'Coverage job should upload coverage artifacts.');
         end
 
+        function ciPushAndPullRequestsRunOnAllBranches(testCase)
+            root = setupLabKitTestPath();
+            workflowPath = fullfile(root, ".github", "workflows", ...
+                "matlab-tests.yml");
+            workflow = char(fileread(workflowPath));
+
+            testCase.verifyTrue(isempty(regexp(workflow, ...
+                '(?m)^  push:\s*\n\s+branches:', 'once')), ...
+                'Push workflows should run on every branch, not only main.');
+            testCase.verifyTrue(isempty(regexp(workflow, ...
+                '(?m)^  pull_request:\s*\n\s+branches:', 'once')), ...
+                'Pull request workflows should run for every target branch.');
+        end
+
         function ciRepositoryStateChecksStayOutsideMatlab(testCase)
             root = setupLabKitTestPath();
             workflowPath = fullfile(root, ".github", "workflows", ...

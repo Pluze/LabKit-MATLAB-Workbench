@@ -25,7 +25,7 @@ function varargout = labkit_VTResistance_app(varargin)
         error('labkit_VTResistance_app:TooManyOutputs', 'labkit_VTResistance_app returns at most the app figure handle.');
     end
 
-    fig = vt_resistance.ui.runApp(debugLog);
+    fig = vt_resistance.run(debugLog);
     if nargout >= 1
         varargout{1} = fig;
     end

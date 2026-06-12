@@ -95,7 +95,7 @@ function debugContext = createContext(appName, opts)
             if isempty(textArea) || ~isvalid(textArea)
                 return;
             end
-            labkit.ui.view.update(textArea, 'appendLog', line);
+            appendTextLog(textArea, line);
         end
     end
 
@@ -179,6 +179,14 @@ function debugContext = createContext(appName, opts)
     end
 end
 
+function appendTextLog(textArea, msg)
+    timestamp = datestr(now, 'HH:MM:SS');
+    old = textArea.Value;
+    old{end + 1} = sprintf('[%s] %s', timestamp, char(msg));
+    textArea.Value = old;
+    drawnow limitrate
+end
+
 function wrapped = callbackWrapperForHandle(handle, propName, callback, traceFcn)
     if isa(callback, 'function_handle')
         wrapped = @wrappedFunctionHandle;
@@ -227,9 +235,23 @@ end
 
 function label = callbackTraceLabel(handle, propName, callback)
     label = sprintf('%s %s', char(string(propName)), handleLabel(handle));
-    callbackName = callbackNameText(callback);
+    callbackName = originalCallbackName(handle);
+    if strlength(callbackName) == 0
+        callbackName = callbackNameText(callback);
+    end
     if strlength(callbackName) > 0
         label = sprintf('%s -> %s', label, char(callbackName));
+    end
+end
+
+function txt = originalCallbackName(handle)
+    txt = "";
+    try
+        if isappdata(handle, 'labkit_ui_original_callback_name')
+            txt = string(getappdata(handle, 'labkit_ui_original_callback_name'));
+        end
+    catch
+        txt = "";
     end
 end
 

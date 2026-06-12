@@ -9,8 +9,8 @@ function lengthResult = computeCurveLength(xPix, yPix, calibration)
 %   curvature fit helpers.
 %
 % Inputs/outputs:
-%   Pixel vectors plus a labkit.ui scale-bar calibration struct. Returns the
-%   same length-result struct previously built inside the app file.
+%   Pixel vectors plus a GUI-free scale calibration struct. Returns the same
+%   length-result struct previously built inside the app file.
 %
 % Side effects:
 %   None. This helper performs GUI-free numeric length measurement only.
@@ -26,7 +26,9 @@ function lengthResult = computeCurveLength(xPix, yPix, calibration)
     end
 
     if nargin < 3 || isempty(calibration)
-        calibration = labkit.ui.tool.scaleBarCalibration();
+        calibration = curvature.ops.normalizeScaleCalibration();
+    else
+        calibration = curvature.ops.normalizeScaleCalibration(calibration);
     end
 
     lengthPx = sum(hypot(diff(xPix), diff(yPix)));

@@ -26,11 +26,11 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
   migration creates an app-owned package for DIC or wearable apps, add unit
   tests that call non-UI package functions such as `+ops`, `+view`, `+export`,
   `+io`, or `+state` directly.
-- Guardrails should also prevent app `+ui/runApp.m` files from keeping
-  same-named local helper copies once the behavior exists in the app-owned
-  package. Ordinary tests should call the package helper; GUI structural tests
-  only prove wiring/layout.
-- UI public-surface tests should assert the layered `labkit.ui.app/view/tool/diag` facade and keep low-level controls, row resize, panel internals, and popout implementation private.
+- Guardrails should prevent app lifecycle orchestration from living in
+  `+ui/runApp.m`; migrated apps use package-root `run.m` plus data-only
+  `+ui/buildSpec.m`. Ordinary tests should call package helpers directly; GUI
+  structural tests only prove wiring/layout.
+- UI public-surface tests should assert the layered `labkit.ui.app/spec/view/tool/diag` facade and keep low-level controls, row resize, panel internals, and popout implementation private.
 - GUI smoke/debug tests may assert that every app supports debug launch and visible startup trace, but should not claim full interactive workflow validation.
 - When one test file grows too broad, add new focused `test_*.m` files instead of appending unrelated coverage.
 - GUI tests are structural launch/layout/callback checks; do not claim full interactive workflow validation from automated GUI tests.

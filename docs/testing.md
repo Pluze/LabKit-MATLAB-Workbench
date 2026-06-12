@@ -108,11 +108,19 @@ commands.
 | Manual GUI validation | User-run app windows | Interactive file selection, drawing, visual inspection, and full workflow feel. |
 
 CI runs shell-wrapper, quality, unit, and integration jobs on pushes and pull
-requests to `main` through `.github/workflows/matlab-tests.yml`. Manual and
+requests for every branch through `.github/workflows/matlab-tests.yml`. Manual and
 scheduled CI runs also execute coverage, GUI structural, and non-blocking GUI
 gesture jobs. Coverage is intentionally outside the default PR gate to keep PR
 feedback focused and avoid duplicate test execution. Do not describe CI as full
 interactive GUI workflow validation.
+
+Each MATLAB CI job writes a GitHub Step Summary with JUnit totals, artifact
+locations, the slowest test cases, and failed-test details when available.
+Failure summaries also include a compact MATLAB log tail so common failures can
+be inspected from the Actions page. MATLAB HTML reports remain uploaded as
+artifacts; GitHub Actions does not render artifact HTML inline, so interactive
+HTML browsing still requires downloading the artifact or adding a separate
+publishing target.
 
 The shell-wrapper job owns repository-level checks that are cheaper and safer
 outside MATLAB, including the rule that `LabKit.prj` and `resources/project/`
@@ -178,7 +186,7 @@ UI framework changes should cover the affected layer rather than only the change
 
 | UI layer | Automated coverage |
 | --- | --- |
-| Public surface | `testProject` checks the layered `labkit.ui.app/view/tool/diag` API and private implementation packages. |
+| Public surface | `testProject` checks the layered `labkit.ui.app/spec/view/tool/diag` API and private implementation packages. |
 | Shell/layout | `testLabkitUiGui` and affected app-family GUI tasks. |
 | Runtime/tools | `testLabkitUiGui` runtime, anchor-editor, and scale-bar tool tests. |
 | Diagnostics | `testLabkitUiGui` debug instrumentation tests plus `testAppsSmokeGui` debug launch trace checks. |

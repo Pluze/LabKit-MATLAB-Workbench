@@ -37,7 +37,7 @@ function varargout = labkit_CSC_app(varargin)
 
     % Application state container
 
-    fig = csc.ui.runApp(debugLog);
+    fig = csc.run(debugLog);
     if nargout >= 1
         varargout{1} = fig;
     end

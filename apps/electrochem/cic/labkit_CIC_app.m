@@ -38,7 +38,7 @@ function varargout = labkit_CIC_app(varargin)
         error('labkit_CIC_app:TooManyOutputs', 'labkit_CIC_app returns at most the app figure handle.');
     end
 
-    fig = cic.ui.runApp(debugLog);
+    fig = cic.run(debugLog);
     if nargout >= 1
         varargout{1} = fig;
     end

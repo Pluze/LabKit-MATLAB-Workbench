@@ -37,7 +37,7 @@ debt for the touched area.
 - Preserve behavior unless the user explicitly asks for a behavior change.
 - Keep app-specific formulas, thresholds, plots, result schemas, exports, and workflow decisions in the owning app.
 - Keep reusable `+labkit` API growth conservative and domain-neutral.
-- New app-facing UI work should use `labkit.ui.app.*`, `labkit.ui.view.*`, `labkit.ui.tool.*`, and `labkit.ui.diag.*`; the older flat `labkit.ui.*` helper surface has been removed.
+- New app-facing UI work should use `labkit.ui.app.*`, `labkit.ui.spec.*`, `labkit.ui.view.*`, `labkit.ui.tool.*`, and `labkit.ui.diag.*`; the older flat `labkit.ui.*` helper surface has been removed.
 - New app code must not call `labkit.io.*`, `labkit.data.*`, `labkit.analysis.*`, or `labkit.util.*`; use `labkit.dta.*`, `labkit.biosignal.*`, `labkit.ui.*`, or app-local helpers.
 - Do not reintroduce root-level legacy command wrappers, app-specific public helper packages, or public helper-dump packages such as `+labkit/+analysis`, `+data`, `+io`, or `+util`.
 - Do not convert struct models to MATLAB classes, rewrite all GUIs, replace separate app entry points with one launcher, or migrate code to another language without explicit approval.
@@ -119,7 +119,7 @@ Interactive GUI workflows are checked manually by the user. Do not run interacti
 7. Commit with a concise Conventional Commits message.
 8. After a coherent series of changes is complete, check the current `main` and `origin/main` state before opening a PR. If the development branch is behind, update it only with non-destructive git operations and do not discard user work.
 9. Push the completed branch, open a PR, and include the change scope, test results, unverified behavior, and any intentional follow-up work.
-10. After any push that is meant to complete work, inspect the triggered CI run. Prefer low-output status checks such as `gh run list` or `gh run view --json status,conclusion,jobs`; use streaming `gh run watch` only when concise status polling is insufficient. If CI fails, read only the failing job logs, fix the underlying issue, rerun the relevant local checks, push the fix, and repeat until required CI passes. A task is not complete while required CI is red, unless CI access or infrastructure is blocked and the blocker is reported explicitly.
+10. After any push that is meant to complete work, inspect the triggered CI run. Before the first status read, find the most recent successful run for the same workflow/branch and wait at least that run's total elapsed duration; use the same duration as the minimum interval between later status reads so CI polling does not become noisy. Prefer low-output status checks such as `gh run list` or `gh run view --json status,conclusion,jobs`; use streaming `gh run watch` only when concise status polling is insufficient. If CI fails, read only the failing job logs, fix the underlying issue, rerun the relevant local checks, push the fix, and repeat until required CI passes. A task is not complete while required CI is red, unless CI access or infrastructure is blocked and the blocker is reported explicitly.
 11. After required CI passes and no blocking review remains, merge the PR and delete the development branch.
 12. If permissions, CI, branch protection, review state, or tool availability prevent push, CI inspection, PR creation, merge, or branch deletion, stop and report the exact blocker instead of working around it.
 13. Do not force-push unless explicitly approved.

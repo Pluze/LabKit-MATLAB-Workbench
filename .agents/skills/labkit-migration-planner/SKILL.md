@@ -44,14 +44,16 @@ old prose:
 git status --short --branch
 git log --oneline -n 40
 find apps -path '*+ui/runApp.m' -print | sort
+find apps -path '*/+*/run.m' -print | sort
+find apps -path '*+ui/buildSpec.m' -print | sort
 find apps -path '*/private/*' -type f -print | sort
-rg -n "expectedOversizedRunnerDebtFiles|expectedAppPrivateDebtFiles|expectedPrivateContractDebtFiles" tests/integration/project
+rg -n "expected\\w*Debt\\w*" tests/integration/project
 ```
 
-For runner size checks, count the `+ui/runApp.m` files that matter to the
-requested migration. Do not treat a line-count drop as success unless directly
-tested behavior moved out of the runner and the GUI path calls the extracted
-helper.
+For runner size checks, count migrated package-root `run.m` files. A
+`+ui/runApp.m` file is migration debt, not the final app structure. Do not
+treat a line-count drop as success unless directly tested behavior moved out of
+the runner and the GUI path calls the extracted helper.
 
 ## Health Review
 
@@ -91,7 +93,11 @@ guardrails without reducing active debt or clarifying an app-facing contract.
 For each proposed migration, classify work as:
 
 - app-owned deterministic behavior: extract under the owning app package
-- runner orchestration: leave in the public entrypoint or `+ui/runApp.m`
+- migrated ordinary UI: keep the data-only spec in
+  `+<app_slug>/+ui/buildSpec.m`; use app-local custom builders only for
+  justified interactions
+- runner orchestration: keep it in package-root `run.m` after migration; public
+  entrypoints stay thin wrappers
 - reusable foundation: use `labkit-boundary-guard` before touching `+labkit`
 - validation routing: use `labkit-test-planner`
 - documentation drift: update only the source that owns the changed contract
