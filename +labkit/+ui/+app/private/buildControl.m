@@ -198,6 +198,8 @@ function ui = buildPathPanel(ui, pathSpec, parentGrid, row)
     clearButton.Layout.Column = 2;
     listbox = uilistbox(grid, 'Items', {optionValue(props, 'emptyText', 'No selection')}, ...
         'Multiselect', pathMultiselect(props));
+    listbox.ValueChangedFcn = semanticPathSelectionCallback(pathSpec.id, ...
+        optionValue(props, 'onSelectionChange', []));
     listbox.Layout.Row = 2;
     listbox.Layout.Column = [1 2];
     status = uieditfield(grid, 'text', 'Editable', 'off', ...
@@ -340,7 +342,9 @@ function callback = semanticPathChooseCallback(id, appCallback)
         event = semanticEvent(control, source, rawEvent, 'user');
         event.action = 'choose';
         event.mode = optionValue(control.props, 'mode', '');
-        event.paths = currentPathValues(control);
+        event.paths = paths;
+        event.selection = currentPathValues(control);
+        event.value = event.selection;
         if ~isempty(appCallback)
             appCallback(control, event);
         end
@@ -360,10 +364,31 @@ function callback = semanticPathClearCallback(id, appCallback)
         event.action = 'clear';
         event.mode = optionValue(control.props, 'mode', '');
         event.paths = {};
+        event.selection = {};
         event.value = {};
         if ~isempty(appCallback)
             appCallback(control, event);
         end
+    end
+end
+
+function callback = semanticPathSelectionCallback(id, appCallback)
+    if isempty(appCallback)
+        callback = [];
+        return;
+    end
+    callback = @wrapped;
+
+    function wrapped(source, rawEvent)
+        ui = currentUiRegistry(source);
+        control = ui.controls.(id);
+        event = semanticEvent(control, source, rawEvent, 'user');
+        event.action = 'select';
+        event.mode = optionValue(control.props, 'mode', '');
+        event.paths = currentPathValues(control);
+        event.selection = event.paths;
+        event.value = event.paths;
+        appCallback(control, event);
     end
 end
 
@@ -539,11 +564,20 @@ function text = chooseButtonText(props)
 end
 
 function value = pathMultiselect(props)
-    mode = optionValue(props, 'mode', 'singleFile');
-    if any(strcmp(mode, {'multiFile', 'multiFolder'}))
+    mode = optionValue(props, 'selectionMode', defaultSelectionMode( ...
+        optionValue(props, 'mode', 'singleFile')));
+    if strcmp(mode, 'multiple')
         value = 'on';
     else
         value = 'off';
+    end
+end
+
+function mode = defaultSelectionMode(pathMode)
+    if any(strcmp(pathMode, {'multiFile', 'multiFolder'}))
+        mode = 'multiple';
+    else
+        mode = 'single';
     end
 end
 

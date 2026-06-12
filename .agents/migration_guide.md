@@ -553,7 +553,13 @@ Current implementation checkpoint:
   constructors, `labkit.ui.app.create`, named view helpers, validation tests,
   public-surface guardrails, and docs/AGENTS/skill routing are expected to
   exist.
-- App migration has not started. The next slice is the ImageMatch canary.
+- The first canary is now complete on the current branch:
+  `labkit_ImageMatch_app` launches through `labkit.ui.app.create`, uses the
+  declarative workbench, and no longer carries ordinary old-UI layout code.
+- Canary-driven framework additions now in use are:
+  `pathPanel.selectionMode`, `pathPanel.onSelectionChange`, and
+  `previewArea.onModeChange`.
+- The next migration slice is `labkit_ImageEnhance_app`.
 
 1. **Spec grammar and validation**
    - Complete in the current foundation checkpoint. Future changes should be
@@ -577,17 +583,19 @@ Current implementation checkpoint:
      preview/log handles, and debug integration.
 
 3. **Canary app migration**
-   - Migrate `labkit_ImageMatch_app` first because it is recent, regular, and
-     exposes the local `place(...)`/preview-boilerplate style debt clearly.
+   - Complete on the current branch with `labkit_ImageMatch_app`, because it is
+     recent, regular, and exposes the local
+     `place(...)`/preview-boilerplate style debt clearly.
    - Keep app calculations, state, export, image IO, and wording app-local.
    - Update only the image-measurement GUI structural contract needed for the
      canary.
-   - Prove ordinary UI needs no public primitive constructors and custom count 0.
-   - Add a temporary guardrail that prevents new old-style calls in the canary
+   - Prove ordinary UI needs no public primitive constructors and custom
+     count 0.
+   - Keep a canary guardrail that prevents new old-style calls in the migrated
      path.
 
 4. **Image editor pair**
-   - Migrate `labkit_ImageEnhance_app`.
+   - Migrate `labkit_ImageEnhance_app` next.
    - Consolidate any API gaps revealed by the first two image apps before
      migrating broad app families.
    - Update `docs/ui.md`, `docs/apps.md`, `+labkit/AGENTS.md`, `apps/AGENTS.md`,

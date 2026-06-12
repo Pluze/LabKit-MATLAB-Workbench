@@ -8,7 +8,10 @@ function spec = pathPanel(id, labelText, varargin)
 %   id - globally unique path-panel id.
 %   labelText - panel label.
 %   mode - singleFile, multiFile, folder, multiFolder, or outputFolder.
-%   filters, status, emptyText, onChoose, onRemove, onClear - optional props.
+%   selectionMode - single or multiple list selection behavior. Defaults to
+%       multiple for multiFile/multiFolder and single otherwise.
+%   filters, status, emptyText, onChoose, onSelectionChange, onClear -
+%       optional props.
 %
 % Output:
 %   spec - scalar data-only UI spec struct.
@@ -17,6 +20,9 @@ function spec = pathPanel(id, labelText, varargin)
     props.label = char(string(labelText));
     props.mode = char(string(optionValue(props, 'mode', 'singleFile')));
     validateMode(props.mode);
+    props.selectionMode = char(string(optionValue(props, ...
+        'selectionMode', defaultSelectionMode(props.mode))));
+    validateSelectionMode(props.selectionMode);
     spec = makeSpec('pathPanel', id, props, {}, struct());
 end
 
@@ -25,6 +31,22 @@ function validateMode(mode)
     if ~any(strcmp(mode, allowed))
         error('labkit:ui:spec:InvalidPathPanelMode', ...
             'Unsupported pathPanel mode "%s".', mode);
+    end
+end
+
+function validateSelectionMode(mode)
+    allowed = {'single', 'multiple'};
+    if ~any(strcmp(mode, allowed))
+        error('labkit:ui:spec:InvalidPathPanelSelectionMode', ...
+            'Unsupported pathPanel selectionMode "%s".', mode);
+    end
+end
+
+function mode = defaultSelectionMode(pathMode)
+    if any(strcmp(pathMode, {'multiFile', 'multiFolder'}))
+        mode = 'multiple';
+    else
+        mode = 'single';
     end
 end
 

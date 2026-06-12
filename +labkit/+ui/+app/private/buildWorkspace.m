@@ -31,6 +31,8 @@ function ui = buildPreviewArea(ui, previewSpec, parentGrid, row)
     if hasModes
         grid.RowHeight = {'fit', '1x'};
         modeDropDown = uidropdown(grid, 'Items', cellstr(string(props.viewModes)));
+        modeDropDown.ValueChangedFcn = semanticPreviewModeCallback( ...
+            previewSpec.id, optionValue(props, 'onModeChange', []));
         modeDropDown.Layout.Row = 1;
         modeDropDown.Layout.Column = 1;
         axesHostRow = 2;
@@ -63,6 +65,9 @@ function ui = buildPreviewArea(ui, previewSpec, parentGrid, row)
     adapter.axesById = axesById;
     adapter.primaryAxes = axesHandles(1);
     adapter.viewModeDropDown = modeDropDown;
+    if ~isempty(modeDropDown)
+        adapter.valueHandle = modeDropDown;
+    end
     ui.controls.(previewSpec.id) = adapter;
 end
 
@@ -151,6 +156,33 @@ function adapter = baseAdapter(spec, kind)
     adapter.kind = kind;
     adapter.spec = spec;
     adapter.props = spec.props;
+end
+
+function callback = semanticPreviewModeCallback(id, appCallback)
+    if isempty(appCallback)
+        callback = [];
+        return;
+    end
+    callback = @wrapped;
+
+    function wrapped(source, rawEvent)
+        ui = currentUiRegistry(source);
+        control = ui.controls.(id);
+        event = semanticEvent(control, source, rawEvent, 'user');
+        event.action = 'mode';
+        event.mode = source.Value;
+        event.value = source.Value;
+        appCallback(control, event);
+    end
+end
+
+function ui = currentUiRegistry(source)
+    fig = ancestor(source, 'figure');
+    if isempty(fig) || ~isappdata(fig, 'labkitUiRegistry')
+        error('labkit:ui:app:MissingRegistry', ...
+            'UI registry appdata was not found on the current figure.');
+    end
+    ui = getappdata(fig, 'labkitUiRegistry');
 end
 
 function value = optionValue(opts, name, defaultValue)

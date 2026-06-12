@@ -9,6 +9,8 @@ function spec = previewArea(id, titleText, varargin)
 %   titleText - preview area title.
 %   layout - single, pair, or stack.
 %   viewModes - optional cell array of user-facing view mode labels.
+%   onModeChange - optional callback(control, event) for the view-mode
+%       selector when viewModes are present.
 %   axisIds - optional cell array of valid axis ids.
 %   count - optional axes count for stack layouts.
 %

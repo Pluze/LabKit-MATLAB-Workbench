@@ -27,7 +27,7 @@ function varargout = labkit_ImageMatch_app(varargin)
 
     methods = {'Balanced', 'White balance', 'Tone only', 'Lab style', 'Histogram'};
     callbacks = struct( ...
-        'openFiles', @onOpenFiles, ...
+        'sourceImagesChosen', @onSourceImagesChosen, ...
         'clearImages', @onClearImages, ...
         'imageSelectionChanged', @onImageSelectionChanged, ...
         'previewModeChanged', @onPreviewModeChanged, ...
@@ -37,21 +37,10 @@ function varargout = labkit_ImageMatch_app(varargin)
         'resetHistory', @onResetHistory, ...
         'chooseOutputFolder', @onChooseOutputFolder, ...
         'exportImages', @onExportImages);
-    uih = image_match.ui.createEditorUi(methods, char(S.outputFolder), callbacks);
-    fig = uih.fig; previewAxes = uih.previewAxes; txtLog = uih.txtLog;
-    btnOpenFiles = uih.btnOpenFiles; btnClearImages = uih.btnClearImages;
-    lbImages = uih.lbImages; txtImageSource = uih.txtImageSource;
-    txtImageStatus = uih.txtImageStatus; ddPreviewMode = uih.ddPreviewMode;
-    ddReference = uih.ddReference; ddMethod = uih.ddMethod;
-    edtStrength = uih.edtStrength; edtTone = uih.edtTone;
-    edtColor = uih.edtColor; txtMatchFlow = uih.txtMatchFlow;
-    btnApplyMatch = uih.btnApplyMatch; btnUndoHistory = uih.btnUndoHistory;
-    btnResetHistory = uih.btnResetHistory; historyTable = uih.historyTable;
-    txtHistoryStatus = uih.txtHistoryStatus; resultTable = uih.resultTable;
-    btnChooseOutput = uih.btnChooseOutput; txtOutputFolder = uih.txtOutputFolder;
-    ddFormat = uih.ddFormat; btnExport = uih.btnExport; txtDetails = uih.txtDetails;
+    spec = image_match.ui.buildSpec(methods, char(S.outputFolder), callbacks);
+    ui = labkit.ui.app.create(spec, 'debug', debugLog);
+    fig = ui.figure;
     if debugLog.enabled
-        debugLog.attachTextLog(txtLog);
         debugLog.trace('Image match debug trace enabled.');
         debugLog.instrumentFigure(fig);
     end
@@ -66,27 +55,20 @@ function varargout = labkit_ImageMatch_app(varargin)
         varargout{2} = debugLog;
     end
 
-    function onOpenFiles(~, ~)
-        [files, folder] = uigetfile(image_match.io.imageDialogFilter(), ...
-            'Select images to match', pwd, 'MultiSelect', 'on');
-        if isequal(files, 0)
-            addLog('Image file selection cancelled.');
-            return;
-        end
+    function onSourceImagesChosen(~, event)
         try
-            paths = image_match.io.selectedImagePaths(files, folder);
-            S.items = image_match.io.readImages(paths);
+            S.items = image_match.io.readImages(event.paths);
         catch ME
             showError('Could not load images', ME.message);
+            refreshAll();
             return;
         end
 
         S.currentIndex = 1;
         S.steps = repmat(image_match.state.emptyStep(), 0, 1);
         S.pendingDirty = false;
-        S.outputFolder = string(folder);
+        S.outputFolder = string(fileparts(event.paths{1}));
         S.lastExport = [];
-        txtOutputFolder.Value = char(S.outputFolder);
         addLog(sprintf('Loaded %d image(s).', numel(S.items)));
         refreshAll();
     end
@@ -101,12 +83,12 @@ function varargout = labkit_ImageMatch_app(varargin)
         refreshAll();
     end
 
-    function onImageSelectionChanged(~, ~)
-        if isempty(S.items)
+    function onImageSelectionChanged(~, event)
+        if isempty(S.items) || isempty(event.value)
             return;
         end
-        names = image_match.view.displayImageNames(S.items);
-        idx = find(strcmp(names, lbImages.Value), 1);
+        selectedPath = string(event.value);
+        idx = find(string({S.items.path}) == selectedPath, 1);
         if isempty(idx)
             return;
         end
@@ -171,7 +153,7 @@ function varargout = labkit_ImageMatch_app(varargin)
             return;
         end
         S.outputFolder = string(folder);
-        txtOutputFolder.Value = char(S.outputFolder);
+        refreshExportControls();
         refreshDetails();
     end
 
@@ -182,7 +164,7 @@ function varargout = labkit_ImageMatch_app(varargin)
         end
         opts = struct();
         opts.outputFolder = S.outputFolder;
-        opts.format = ddFormat.Value;
+        opts.format = labkit.ui.view.getValue(ui, 'exportFormat');
         busyOpts = struct();
         busyOpts.title = 'Export matched images';
         busyOpts.message = 'Writing matched image outputs...';
@@ -202,16 +184,29 @@ function varargout = labkit_ImageMatch_app(varargin)
     end
 
     function controls = exportBusyControls()
-        controls = {btnOpenFiles, btnClearImages, lbImages, ddPreviewMode, ...
-            ddReference, ddMethod, edtStrength, edtTone, edtColor, ...
-            btnApplyMatch, btnUndoHistory, btnResetHistory, btnChooseOutput, ...
-            ddFormat, btnExport};
+        controls = { ...
+            ui.controls.sourceImages.chooseButton ...
+            ui.controls.sourceImages.clearButton ...
+            ui.controls.sourceImages.listbox ...
+            ui.controls.preview.viewModeDropDown ...
+            ui.controls.referenceImage.handle ...
+            ui.controls.matchMethod.handle ...
+            ui.controls.matchStrength.handle ...
+            ui.controls.toneStrength.handle ...
+            ui.controls.colorStrength.handle ...
+            ui.controls.applyMatch.button ...
+            ui.controls.undoHistory.button ...
+            ui.controls.resetHistory.button ...
+            ui.controls.chooseOutputFolder.button ...
+            ui.controls.exportFormat.handle ...
+            ui.controls.exportImages.button};
     end
 
     function refreshAll()
-        refreshList();
-        refreshControls();
+        refreshSourceLibrary();
         refreshSelection();
+        refreshMatchControls();
+        refreshExportControls();
         refreshHistory();
         refreshPreview();
         refreshMetrics();
@@ -219,48 +214,55 @@ function varargout = labkit_ImageMatch_app(varargin)
         refreshMatchStatus();
     end
 
-    function refreshList()
+    function refreshSourceLibrary()
         if isempty(S.items)
-            lbImages.Items = {'No images loaded'};
-            lbImages.Value = 'No images loaded';
-            txtImageSource.Value = 'No images loaded';
-            txtImageStatus.Value = 'Images: 0';
-            ddReference.Items = {'No reference'};
-            ddReference.Value = 'No reference';
+            labkit.ui.view.setValue(ui, 'sourceImages', {});
+            labkit.ui.view.setValue(ui, 'imageStatus', 'Images: 0');
+            referenceHandle = ui.controls.referenceImage.handle;
+            referenceHandle.Items = {'No reference'};
+            referenceHandle.Value = 'No reference';
             return;
         end
+
+        paths = cellstr(string({S.items.path}));
+        labkit.ui.view.setValue(ui, 'sourceImages', paths);
+        labkit.ui.view.setValue(ui, 'imageStatus', sprintf( ...
+            'Images: %d | match steps: %d', numel(S.items), numel(S.steps)));
+
         names = image_match.view.displayImageNames(S.items);
-        S.currentIndex = min(max(S.currentIndex, 1), numel(S.items));
-        lbImages.Items = names;
-        lbImages.Value = names{S.currentIndex};
-        txtImageStatus.Value = sprintf('Images: %d | match steps: %d', ...
-            numel(S.items), numel(S.steps));
-        previousReference = ddReference.Value;
-        ddReference.Items = names;
+        referenceHandle = ui.controls.referenceImage.handle;
+        previousReference = referenceHandle.Value;
+        referenceHandle.Items = names;
         if any(strcmp(names, previousReference))
-            ddReference.Value = previousReference;
+            referenceHandle.Value = previousReference;
         else
-            ddReference.Value = names{S.currentIndex};
+            referenceHandle.Value = names{currentSelectionIndex()};
         end
     end
 
     function refreshSelection()
         if isempty(S.items)
-            txtImageSource.Value = 'No images loaded';
             return;
         end
-        txtImageSource.Value = char(S.items(S.currentIndex).path);
+        paths = cellstr(string({S.items.path}));
+        labkit.ui.view.setListSelection(ui, 'sourceImages', paths, ...
+            paths{currentSelectionIndex()}, struct());
     end
 
-    function refreshControls()
+    function refreshMatchControls()
         hasImages = ~isempty(S.items);
         hasSteps = ~isempty(S.steps);
-        btnClearImages.Enable = image_match.view.ternary(hasImages, 'on', 'off');
-        ddReference.Enable = image_match.view.ternary(hasImages, 'on', 'off');
-        btnApplyMatch.Enable = image_match.view.ternary(hasImages, 'on', 'off');
-        btnUndoHistory.Enable = image_match.view.ternary(hasSteps, 'on', 'off');
-        btnResetHistory.Enable = image_match.view.ternary(hasSteps, 'on', 'off');
-        btnExport.Enable = image_match.view.ternary(hasImages, 'on', 'off');
+        ui.controls.sourceImages.clearButton.Enable = onOff(hasImages);
+        ui.controls.sourceImages.listbox.Enable = onOff(hasImages);
+        labkit.ui.view.setEnabled(ui, 'referenceImage', hasImages);
+        labkit.ui.view.setEnabled(ui, 'applyMatch', hasImages);
+        labkit.ui.view.setEnabled(ui, 'undoHistory', hasSteps);
+        labkit.ui.view.setEnabled(ui, 'resetHistory', hasSteps);
+        labkit.ui.view.setEnabled(ui, 'exportImages', hasImages);
+    end
+
+    function refreshExportControls()
+        labkit.ui.view.setValue(ui, 'outputFolder', char(S.outputFolder));
     end
 
     function refreshPreview()
@@ -268,42 +270,49 @@ function varargout = labkit_ImageMatch_app(varargin)
             resetPreviewAxes();
             return;
         end
-        original = S.items(S.currentIndex).image;
+        original = S.items(currentSelectionIndex()).image;
         processed = currentProcessedImages(S.pendingDirty);
-        matched = processed{S.currentIndex};
-        switch ddPreviewMode.Value
+        matched = processed{currentSelectionIndex()};
+        switch currentPreviewMode()
             case 'Original'
-                labkit.ui.view.draw(previewAxes, 'image', original, 'Original Preview');
+                labkit.ui.view.drawImage(ui, 'preview', original, ...
+                    'title', 'Original Preview');
             case 'Before | After'
-                labkit.ui.view.draw(previewAxes, 'image', ...
-                    image_match.view.beforeAfterImage(original, matched), 'Before | After');
+                labkit.ui.view.drawImage(ui, 'preview', ...
+                    image_match.view.beforeAfterImage(original, matched), ...
+                    'title', 'Before | After');
             otherwise
-                labkit.ui.view.draw(previewAxes, 'image', matched, 'Matched Preview');
+                labkit.ui.view.drawImage(ui, 'preview', matched, ...
+                    'title', 'Matched Preview');
         end
     end
 
     function refreshMetrics()
         if isempty(S.items)
-            resultTable.Data = image_match.view.resultTableData([], [], 0);
+            ui.controls.metricsTable.table.Data = ...
+                image_match.view.resultTableData([], [], 0);
             return;
         end
         processed = currentProcessedImages(false);
-        resultTable.Data = image_match.view.resultTableData( ...
-            S.items(S.currentIndex), processed{S.currentIndex}, numel(S.steps));
+        ui.controls.metricsTable.table.Data = image_match.view.resultTableData( ...
+            S.items(currentSelectionIndex()), ...
+            processed{currentSelectionIndex()}, numel(S.steps));
     end
 
     function refreshHistory()
-        historyTable.Data = image_match.view.historyTableData(S.steps);
-        txtHistoryStatus.Value = sprintf('History steps: %d', numel(S.steps));
+        ui.controls.historyTable.table.Data = image_match.view.historyTableData(S.steps);
+        labkit.ui.view.setValue(ui, 'historyStatus', ...
+            sprintf('History steps: %d', numel(S.steps)));
     end
 
     function refreshDetails()
-        txtDetails.Value = image_match.view.detailLines( ...
-            S.items, max(S.currentIndex, 1), S.steps, S.lastExport);
+        labkit.ui.view.setValue(ui, 'exportDetails', image_match.view.detailLines( ...
+            S.items, max(currentSelectionIndex(), 1), S.steps, S.lastExport));
     end
 
     function refreshMatchStatus()
-        txtMatchFlow.Value = image_match.view.matchFlowLines(ddMethod.Value);
+        labkit.ui.view.setValue(ui, 'matchFlow', ...
+            image_match.view.matchFlowLines(labkit.ui.view.getValue(ui, 'matchMethod')));
     end
 
     function processed = currentProcessedImages(includePending)
@@ -319,8 +328,11 @@ function varargout = labkit_ImageMatch_app(varargin)
     end
 
     function step = currentMatchStep()
-        step = image_match.ops.makeStep(currentReferenceIndex(), ddMethod.Value, ...
-            edtStrength.Value, edtTone.Value, edtColor.Value);
+        step = image_match.ops.makeStep(currentReferenceIndex(), ...
+            labkit.ui.view.getValue(ui, 'matchMethod'), ...
+            labkit.ui.view.getValue(ui, 'matchStrength'), ...
+            labkit.ui.view.getValue(ui, 'toneStrength'), ...
+            labkit.ui.view.getValue(ui, 'colorStrength'));
     end
 
     function index = currentReferenceIndex()
@@ -329,20 +341,38 @@ function varargout = labkit_ImageMatch_app(varargin)
             return;
         end
         names = image_match.view.displayImageNames(S.items);
-        idx = find(strcmp(names, ddReference.Value), 1);
+        selectedReference = labkit.ui.view.getValue(ui, 'referenceImage');
+        idx = find(strcmp(names, selectedReference), 1);
         if ~isempty(idx)
             index = idx;
-        elseif S.currentIndex > 0
-            index = S.currentIndex;
+        else
+            index = currentSelectionIndex();
         end
     end
 
+    function index = currentSelectionIndex()
+        if isempty(S.items)
+            index = 0;
+            return;
+        end
+        S.currentIndex = min(max(S.currentIndex, 1), numel(S.items));
+        index = S.currentIndex;
+    end
+
+    function mode = currentPreviewMode()
+        mode = string(labkit.ui.view.getValue(ui, 'preview'));
+        if strlength(mode) == 0
+            mode = "Matched";
+        end
+        mode = char(mode);
+    end
+
     function resetPreviewAxes()
-        labkit.ui.view.draw(previewAxes, 'reset', 'Matched Preview', true);
+        labkit.ui.view.resetAxes(ui, 'preview', 'Matched Preview', true);
     end
 
     function addLog(message)
-        labkit.ui.view.update(txtLog, 'appendLog', message);
+        labkit.ui.view.appendLog(ui, 'logPanel', message);
         if debugLog.enabled
             debugLog.append(message);
         end
@@ -351,5 +381,17 @@ function varargout = labkit_ImageMatch_app(varargin)
     function showError(titleText, message)
         addLog(sprintf('%s: %s', titleText, message));
         uialert(fig, message, titleText);
+    end
+end
+
+function text = onOff(value)
+    if islogical(value) && isscalar(value)
+        if value
+            text = 'on';
+        else
+            text = 'off';
+        end
+    else
+        text = char(string(value));
     end
 end
