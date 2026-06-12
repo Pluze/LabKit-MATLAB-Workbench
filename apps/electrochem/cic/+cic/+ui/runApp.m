@@ -11,63 +11,60 @@ function fig = runApp(debugLog)
     S.current = [];
 
     callbacks = struct( ...
-        'onOpenFiles', @onOpenFiles, ...
-        'onOpenFolder', @onOpenFolder, ...
-        'onClearAll', @(~,~) clearAllFiles(), ...
-        'onExport', @(~,~) exportResultsCSV(), ...
-        'onSelectFile', @(~,~) onSelectFile(), ...
-        'onPresetChanged', @(~,~) onPresetChanged(), ...
-        'onAnalyzeCurrentFile', @(~,~) analyzeCurrentFile(), ...
-        'onRefreshResultsSummary', @(~,~) refreshResultsSummary(), ...
-        'onRefreshCICUnitDisplays', @(~,~) refreshCICUnitDisplays(), ...
-        'onRefreshPlots', @(~,~) refreshPlots(), ...
-        'onSwapPlots', @(~,~) swapPlots(), ...
-        'onResetAxes', @(~,~) resetAxes());
-    C = cic.ui.buildControls(callbacks);
+        "openFilesChosen", @onOpenFilesChosen, ...
+        "openFolder", @onOpenFolder, ...
+        "clearAll", @(~,~) clearAllFiles(), ...
+        "exportResults", @(~,~) exportResultsCSV(), ...
+        "fileSelectionChanged", @(~,~) onSelectFile(), ...
+        "presetChanged", @(~,~) onPresetChanged(), ...
+        "analyzeCurrentFile", @(~,~) analyzeCurrentFile(), ...
+        "refreshResultsSummary", @(~,~) refreshResultsSummary(), ...
+        "refreshCICUnitDisplays", @(~,~) refreshCICUnitDisplays(), ...
+        "refreshPlots", @(~,~) refreshPlots(), ...
+        "swapPlots", @(~,~) swapPlots(), ...
+        "resetAxes", @(~,~) resetAxes());
+    spec = cic.ui.buildSpec(callbacks);
+    ui = labkit.ui.app.create(spec, "debug", debugLog);
 
-    fig = C.fig;
-    lbFiles = C.lbFiles;
-    txtLoaded = C.txtLoaded;
-    ddPreset = C.ddPreset;
-    edCathLim = C.edCathLim;
-    edAnodLim = C.edAnodLim;
-    edDelayUs = C.edDelayUs;
-    edArea = C.edArea;
-    ddPulseMode = C.ddPulseMode;
-    ddCICMode = C.ddCICMode;
-    ddCICUnit = C.ddCICUnit;
-    cbUseMeasuredCurrent = C.cbUseMeasuredCurrent;
-    S.txtControlMode = C.txtControlMode;
-    S.txtDetect = C.txtDetect;
-    S.txtDelay = C.txtDelay;
-    S.txtArea = C.txtArea;
-    S.txtEmc = C.txtEmc;
-    S.txtEma = C.txtEma;
-    S.txtQc = C.txtQc;
-    S.txtQa = C.txtQa;
-    S.txtQt = C.txtQt;
-    S.txtSafe = C.txtSafe;
-    S.txtBest = C.txtBest;
-    cbShowMarkers = C.cbShowMarkers;
-    cbShowLimits = C.cbShowLimits;
-    cbShowShading = C.cbShowShading;
-    tbl = C.tbl;
-    txtLog = C.txtLog;
-    topPlotDefaults = C.topPlotDefaults;
-    bottomPlotDefaults = C.bottomPlotDefaults;
-    plotControls = C.plotControls;
-    ddTopX = C.ddTopX;
-    ddTopY = C.ddTopY;
-    cbTopGrid = C.cbTopGrid;
-    axTop = C.axTop;
-    ddBotX = C.ddBotX;
-    ddBotY = C.ddBotY;
-    cbBotGrid = C.cbBotGrid;
-    axBottom = C.axBottom;
+    fig = ui.figure;
+    lbFiles = ui.controls.files.listbox;
+    txtLoaded = ui.controls.files.status;
+    ddPreset = ui.controls.preset.valueHandle;
+    edCathLim = ui.controls.cathLimit.valueHandle;
+    edAnodLim = ui.controls.anodLimit.valueHandle;
+    edDelayUs = ui.controls.delayUs.valueHandle;
+    edArea = ui.controls.area.valueHandle;
+    ddPulseMode = ui.controls.pulseMode.valueHandle;
+    ddCICMode = ui.controls.cicMode.valueHandle;
+    ddCICUnit = ui.controls.cicUnit.valueHandle;
+    cbUseMeasuredCurrent = ui.controls.useMeasuredCurrent.valueHandle;
+    S.txtControlMode = ui.controls.controlMode.valueHandle;
+    S.txtDetect = ui.controls.detect.valueHandle;
+    S.txtDelay = ui.controls.delay.valueHandle;
+    S.txtArea = ui.controls.areaSummary.valueHandle;
+    S.txtEmc = ui.controls.emc.valueHandle;
+    S.txtEma = ui.controls.ema.valueHandle;
+    S.txtQc = ui.controls.qc.valueHandle;
+    S.txtQa = ui.controls.qa.valueHandle;
+    S.txtQt = ui.controls.qt.valueHandle;
+    S.txtSafe = ui.controls.safe.valueHandle;
+    S.txtBest = ui.controls.best.valueHandle;
+    cbShowMarkers = ui.controls.showMarkers.valueHandle;
+    cbShowLimits = ui.controls.showLimits.valueHandle;
+    cbShowShading = ui.controls.showShading.valueHandle;
+    tbl = ui.controls.results.table;
+    topPlotDefaults = struct('x', 'Time (s)', 'y', 'VT: Vf vs time', 'grid', true);
+    bottomPlotDefaults = struct('x', 'Time (s)', 'y', 'IT: Im vs time', 'grid', true);
+    ddTopX = ui.controls.topX.valueHandle;
+    ddTopY = ui.controls.topY.valueHandle;
+    cbTopGrid = ui.controls.topGrid.valueHandle;
+    axTop = ui.controls.plotAxes.axesById.top;
+    ddBotX = ui.controls.bottomX.valueHandle;
+    ddBotY = ui.controls.bottomY.valueHandle;
+    cbBotGrid = ui.controls.bottomGrid.valueHandle;
+    axBottom = ui.controls.plotAxes.axesById.bottom;
     if debugLog.enabled
-        debugLog.attachTextLog(txtLog);
         debugLog.trace('CIC debug trace enabled.');
-        debugLog.instrumentFigure(fig);
     end
     %% App callbacks, session actions, refresh, plotting, and export
     function onPresetChanged()
@@ -84,20 +81,12 @@ function fig = runApp(debugLog)
         analyzeCurrentFile();
     end
 
-    function onOpenFiles(~,~)
-        [f,p] = uigetfile({'*.DTA;*.dta','Gamry DTA (*.DTA)';'*.*','All files'}, ...
-            'Select one or more Gamry DTA files','MultiSelect','on');
-        if isequal(f,0)
+    function onOpenFilesChosen(~, event)
+        if isempty(event.paths)
             addLog('Open cancelled.');
             return;
         end
-
-        if ischar(f) || isstring(f)
-            f = {char(f)};
-        end
-
-        filepaths = cellfun(@(name) fullfile(p, name), f, 'UniformOutput', false);
-        loadDTAFiles(filepaths);
+        loadDTAFiles(event.paths);
     end
 
     function onOpenFolder(~,~)
@@ -232,15 +221,18 @@ function fig = runApp(debugLog)
 
     function refreshFileList()
         if isempty(S.items)
-            labkit.ui.view.update(lbFiles, 'listSelection', {});
-            txtLoaded.Value = C.loadedText;
+            labkit.ui.view.setListItems(ui, 'files', {});
+            txtLoaded.Value = 'No files loaded';
             S.current = [];
             return;
         end
 
         names = {S.items.name};
-        [~, idx] = labkit.ui.view.update(lbFiles, 'listSelection', names, S.current);
-        S.current = idx(1);
+        labkit.ui.view.setListItems(ui, 'files', names);
+        if isempty(S.current) || S.current < 1 || S.current > numel(names)
+            S.current = 1;
+        end
+        lbFiles.Value = names{S.current};
         txtLoaded.Value = sprintf('%d file(s) loaded', numel(S.items));
     end
 
@@ -277,8 +269,8 @@ function fig = runApp(debugLog)
     end
 
     function refreshPlots()
-        labkit.ui.view.draw(axTop, 'clear');
-        labkit.ui.view.draw(axBottom, 'clear');
+        clearAxis(axTop);
+        clearAxis(axBottom);
         if isempty(S.items) || isempty(S.current) || S.current < 1 || S.current > numel(S.items)
             title(axTop,'Top Plot');
             title(axBottom,'Bottom Plot');
@@ -366,7 +358,15 @@ function fig = runApp(debugLog)
     end
 
     function swapPlots()
-        plotControls.swapSelections();
+        topX = ddTopX.Value;
+        topY = ddTopY.Value;
+        topGrid = cbTopGrid.Value;
+        ddTopX.Value = ddBotX.Value;
+        ddTopY.Value = ddBotY.Value;
+        cbTopGrid.Value = cbBotGrid.Value;
+        ddBotX.Value = topX;
+        ddBotY.Value = topY;
+        cbBotGrid.Value = topGrid;
         refreshPlots();
     end
 
@@ -376,12 +376,17 @@ function fig = runApp(debugLog)
     end
 
     function restoreDefaultPlotSelections()
-        plotControls.setSelections(topPlotDefaults, bottomPlotDefaults);
+        ddTopX.Value = topPlotDefaults.x;
+        ddTopY.Value = topPlotDefaults.y;
+        cbTopGrid.Value = topPlotDefaults.grid;
+        ddBotX.Value = bottomPlotDefaults.x;
+        ddBotY.Value = bottomPlotDefaults.y;
+        cbBotGrid.Value = bottomPlotDefaults.grid;
     end
 
     function resetAxesToDefaultState()
-        labkit.ui.view.draw(axTop, 'reset', 'Top Plot', true);
-        labkit.ui.view.draw(axBottom, 'reset', 'Bottom Plot', true);
+        resetAxis(axTop, 'Top Plot');
+        resetAxis(axBottom, 'Bottom Plot');
     end
 
     function exportResultsCSV()
@@ -405,8 +410,19 @@ function fig = runApp(debugLog)
 
     %% ===================== Logging =====================
     function addLog(msg)
-        labkit.ui.view.update(txtLog, 'appendLog', msg);
+        labkit.ui.view.appendLog(ui, 'appLog', msg);
         debugLog.append(msg);
     end
 
+end
+
+function clearAxis(ax)
+    cla(ax);
+end
+
+function resetAxis(ax, titleText)
+    cla(ax);
+    title(ax, titleText);
+    xlabel(ax, '');
+    ylabel(ax, '');
 end
