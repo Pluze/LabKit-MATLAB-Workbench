@@ -8,9 +8,9 @@ function fit = computeCurvatureFit(xPix, yPix, calibration, doDensify, denseN, f
 %   labkit_CurvatureMeasurement_app callbacks and package tests.
 %
 % Inputs/outputs:
-%   Pixel anchor vectors, a labkit.ui scale-bar calibration struct, and
-%   optional displayed fit-path vectors. Returns the same fit-result struct
-%   previously built inside the app file.
+%   Pixel anchor vectors, a GUI-free scale calibration struct, and optional
+%   displayed fit-path vectors. Returns the same fit-result struct previously
+%   built inside the app file.
 %
 % Side effects:
 %   None. This helper performs GUI-free numeric fitting only.
@@ -26,7 +26,9 @@ function fit = computeCurvatureFit(xPix, yPix, calibration, doDensify, denseN, f
     end
 
     if nargin < 3 || isempty(calibration)
-        calibration = labkit.ui.tool.scaleBarCalibration();
+        calibration = curvature.ops.normalizeScaleCalibration();
+    else
+        calibration = curvature.ops.normalizeScaleCalibration(calibration);
     end
 
     if nargin < 4 || isempty(doDensify)

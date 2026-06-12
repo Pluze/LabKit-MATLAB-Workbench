@@ -43,8 +43,9 @@ function ui = buildField(ui, fieldSpec, parentGrid, row)
             control.Value = logical(props.value);
         end
         adapter = registerValueControl(fieldSpec, control, control, []);
-        control.ValueChangedFcn = semanticValueCallback(fieldSpec.id, ...
-            optionValue(props, 'onChange', []));
+        appCallback = optionValue(props, 'onChange', []);
+        control.ValueChangedFcn = semanticValueCallback(fieldSpec.id, appCallback);
+        setOriginalCallbackName(control, appCallback);
         ui.controls.(fieldSpec.id) = adapter;
         return;
     end
@@ -172,8 +173,9 @@ function [ui, adapter] = buildAction(ui, actionSpec, parentGrid, row, column)
     adapter.handle = button;
     adapter.valueHandle = button;
     ui.controls.(actionSpec.id) = adapter;
-    button.ButtonPushedFcn = semanticActionCallback(actionSpec.id, ...
-        optionValue(props, 'onInvoke', []));
+    appCallback = optionValue(props, 'onInvoke', []);
+    button.ButtonPushedFcn = semanticActionCallback(actionSpec.id, appCallback);
+    setOriginalCallbackName(button, appCallback);
 end
 
 function ui = buildPathPanel(ui, pathSpec, parentGrid, row)
@@ -189,11 +191,13 @@ function ui = buildPathPanel(ui, pathSpec, parentGrid, row)
     chooseButton = uibutton(grid, 'Text', chooseButtonText(props), ...
         'ButtonPushedFcn', semanticPathChooseCallback(pathSpec.id, ...
         optionValue(props, 'onChoose', [])));
+    setOriginalCallbackName(chooseButton, optionValue(props, 'onChoose', []));
     chooseButton.Layout.Row = 1;
     chooseButton.Layout.Column = 1;
     clearButton = uibutton(grid, 'Text', optionValue(props, 'clearLabel', 'Clear'), ...
         'ButtonPushedFcn', semanticPathClearCallback(pathSpec.id, ...
         optionValue(props, 'onClear', [])));
+    setOriginalCallbackName(clearButton, optionValue(props, 'onClear', []));
     clearButton.Layout.Row = 1;
     clearButton.Layout.Column = 2;
     listbox = uilistbox(grid, 'Items', {char(string(optionValue(props, ...
@@ -201,6 +205,7 @@ function ui = buildPathPanel(ui, pathSpec, parentGrid, row)
         'Multiselect', pathMultiselect(props));
     listbox.ValueChangedFcn = semanticPathSelectionCallback(pathSpec.id, ...
         optionValue(props, 'onSelectionChange', []));
+    setOriginalCallbackName(listbox, optionValue(props, 'onSelectionChange', []));
     listbox.Layout.Row = 2;
     listbox.Layout.Column = [1 2];
     status = uieditfield(grid, 'text', 'Editable', 'off', ...
@@ -310,6 +315,16 @@ function callback = semanticValueCallback(id, appCallback)
             event.value = control.getValue();
         end
         appCallback(control, event);
+    end
+end
+
+function setOriginalCallbackName(handle, callback)
+    if isempty(callback) || ~isa(callback, 'function_handle')
+        return;
+    end
+    try
+        setappdata(handle, 'labkit_ui_original_callback_name', func2str(callback));
+    catch
     end
 end
 
