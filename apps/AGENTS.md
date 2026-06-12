@@ -29,10 +29,11 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
   `+app` namespace; the app folder already provides ownership context, while a
   shared `+app` package name creates MATLAB package-resolution ambiguity.
 - UI 2.0 migrated apps should put the ordinary data-only spec in
-  `+<app_slug>/+ui/buildSpec.m`. The public app entry point owns state,
-  callback closures, alerts, log wording, and refresh order; `buildSpec.m`
-  describes controls, sections, workspace, initial text/defaults, and callback
-  handles only.
+  `+<app_slug>/+ui/buildSpec.m`. The public app entry point, or the app-owned
+  orchestration runner it delegates to when the public file is a thin dispatch
+  wrapper, owns state, callback closures, alerts, log wording, and refresh
+  order; `buildSpec.m` describes controls, sections, workspace, initial
+  text/defaults, and callback handles only.
 - Do not create MATLAB handles, call `labkit.ui.app.create`, mutate app state,
   perform IO/computation/export, or set `Layout.Row`/`Layout.Column` in
   `+ui/buildSpec.m`. Use named `+ui/build<Thing>.m` custom builders only for

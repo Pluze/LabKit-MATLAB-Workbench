@@ -118,9 +118,10 @@ Build the app in this order:
    `labkit.ui.app.createShell` only when intentionally preserving an
    unmigrated legacy UI until its migration slice.
 2. For UI 2.0 migrated apps with extracted helpers, put the data-only spec in
-   `+<app_slug>/+ui/buildSpec.m`; the public entry point should create callback
-   handles, call `<app_slug>.ui.buildSpec(...)`, then call
-   `labkit.ui.app.create(...)`.
+   `+<app_slug>/+ui/buildSpec.m`; the public entry point, or the app-owned
+   orchestration runner it delegates to when the public file is a thin dispatch
+   wrapper, should create callback handles, call
+   `<app_slug>.ui.buildSpec(...)`, then call `labkit.ui.app.create(...)`.
 3. Keep `buildSpec.m` free of MATLAB handle creation, `labkit.ui.app.create`,
    state mutation, IO, computation, export writing, nested callback
    implementations, and row/column layout mechanics. Use a named

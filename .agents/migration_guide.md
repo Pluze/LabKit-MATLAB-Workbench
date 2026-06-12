@@ -527,9 +527,10 @@ Keep app-local:
 
 A UI 2.0 migration PR is not progress unless it satisfies the relevant gates:
 
-- migrated app entry points call `<app_slug>.ui.buildSpec(...)` and
-  `labkit.ui.app.create(...)`; ordinary `buildSpec.m` files return only
-  data-only `labkit.ui.spec.*` trees
+- migrated app entry points, or their app-owned orchestration runners when the
+  public file is a thin dispatch wrapper, call
+  `<app_slug>.ui.buildSpec(...)` and `labkit.ui.app.create(...)`; ordinary
+  `buildSpec.m` files return only data-only `labkit.ui.spec.*` trees
 - extracted app-owned helpers live under role-based component packages:
   `+ui`, `+state`, `+io`, `+ops`, `+view`, and `+export`; create only the
   packages the app actually needs
@@ -770,8 +771,10 @@ the current project behavior once the corresponding implementation lands.
 
 The UI 2.0 migration is complete only when:
 
-- all supported app entry points launch through `labkit.ui.app.create`
-- all migrated app entry points call a canonical
+- all supported app entry points launch through `labkit.ui.app.create` directly
+  or delegate to an app-owned orchestration runner that does
+- all migrated app entry points, or their app-owned orchestration runners when
+  the public file is a thin dispatch wrapper, call a canonical
   `+<app_slug>/+ui/buildSpec.m` and route extracted helpers by role
 - all ordinary app UI is declared through the stable minimal
   `labkit.ui.spec.*` surface

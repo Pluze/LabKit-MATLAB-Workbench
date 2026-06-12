@@ -10,8 +10,8 @@ function spec = pathPanel(id, labelText, varargin)
 %   mode - singleFile, multiFile, folder, multiFolder, or outputFolder.
 %   selectionMode - single or multiple list selection behavior. Defaults to
 %       multiple for multiFile/multiFolder and single otherwise.
-%   filters, status, emptyText, onChoose, onSelectionChange, onClear -
-%       optional props.
+%   filters, chooseLabel, clearLabel, status, emptyText, onChoose,
+%       onSelectionChange, onClear - optional props.
 %
 % Output:
 %   spec - scalar data-only UI spec struct.

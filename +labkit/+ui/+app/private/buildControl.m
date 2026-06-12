@@ -191,7 +191,7 @@ function ui = buildPathPanel(ui, pathSpec, parentGrid, row)
         optionValue(props, 'onChoose', [])));
     chooseButton.Layout.Row = 1;
     chooseButton.Layout.Column = 1;
-    clearButton = uibutton(grid, 'Text', 'Clear', ...
+    clearButton = uibutton(grid, 'Text', optionValue(props, 'clearLabel', 'Clear'), ...
         'ButtonPushedFcn', semanticPathClearCallback(pathSpec.id, ...
         optionValue(props, 'onClear', [])));
     clearButton.Layout.Row = 1;
@@ -554,6 +554,11 @@ function applyCommonValueProps(control, props)
 end
 
 function text = chooseButtonText(props)
+    if isfield(props, 'chooseLabel')
+        text = char(string(props.chooseLabel));
+        return;
+    end
+
     mode = optionValue(props, 'mode', 'singleFile');
     switch mode
         case {'folder', 'multiFolder', 'outputFolder'}

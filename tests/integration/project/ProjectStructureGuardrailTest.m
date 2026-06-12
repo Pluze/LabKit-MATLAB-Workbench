@@ -333,7 +333,11 @@ function specs = migratedUi2AppSpecs()
         fullfile('apps', 'image_measurement', 'image_enhance'), ...
         'image_enhance', 'labkit_ImageEnhance_app.m'; ...
         fullfile('apps', 'image_measurement', 'image_match'), ...
-        'image_match', 'labkit_ImageMatch_app.m'};
+        'image_match', 'labkit_ImageMatch_app.m'; ...
+        fullfile('apps', 'electrochem', 'chrono_overlay'), ...
+        'chrono_overlay', 'labkit_ChronoOverlay_app.m'; ...
+        fullfile('apps', 'electrochem', 'eis'), ...
+        'eis', 'labkit_EIS_app.m'};
 end
 
 function assertMigratedUi2AppStructure(testCase, root, appRelDir, packageName, entrypointName)
@@ -350,10 +354,10 @@ function assertMigratedUi2AppStructure(testCase, root, appRelDir, packageName, e
     testCase.verifyTrue(isfile(entrypointFile), ...
         ['Missing migrated app entrypoint: ' relativePath(root, entrypointFile)]);
 
-    entrypointSource = fileread(entrypointFile);
-    testCase.verifyTrue(contains(entrypointSource, [packageName '.ui.buildSpec(']), ...
+    orchestrationSource = migratedAppOrchestrationSource(entrypointFile, uiDir);
+    testCase.verifyTrue(contains(orchestrationSource, [packageName '.ui.buildSpec(']), ...
         [appLabel ' should call its canonical +ui/buildSpec.m file.']);
-    testCase.verifyTrue(contains(entrypointSource, 'labkit.ui.app.create('), ...
+    testCase.verifyTrue(contains(orchestrationSource, 'labkit.ui.app.create('), ...
         [appLabel ' should launch through labkit.ui.app.create.']);
 
     buildSpecSource = fileread(buildSpecFile);
@@ -370,6 +374,14 @@ function assertMigratedUi2AppStructure(testCase, root, appRelDir, packageName, e
 
     assertNoGenericHelperNames(testCase, root, packageDir);
     assertRolePackageBoundaries(testCase, root, packageDir);
+end
+
+function source = migratedAppOrchestrationSource(entrypointFile, uiDir)
+    source = fileread(entrypointFile);
+    runAppFile = fullfile(uiDir, 'runApp.m');
+    if isfile(runAppFile)
+        source = strjoin({source, fileread(runAppFile)}, newline);
+    end
 end
 
 function words = buildSpecForbiddenWords()

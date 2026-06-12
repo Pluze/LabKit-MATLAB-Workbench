@@ -9,111 +9,35 @@ function fig = runApp(debugLog)
     S.session = labkit.dta.makeSession('chrono_overlay');
     S.items = S.session.items;
 
-    workbenchOpts = struct();
-    workbenchOpts.rightTitle = 'Overlay Plots';
-    workbenchOpts.rightGridSize = [2 1];
-    workbenchOpts.rightRowHeight = {'1x', '1x'};
-    workbenchOpts.rightRowSpacing = 10;
-    ui = labkit.ui.app.createShell(struct( ...
-        'title', 'Gamry Multi-DTA Plot Export GUI', ...
-        'position', [80 60 1480 900], ...
-        'leftWidth', 340, ...
-        'options', workbenchOpts));
-    fig = ui.fig;
-    layFA = ui.filesAnalysisGrid;
-    laySR = ui.summaryResultsGrid;
-    layLog = ui.logGrid;
-    right = ui.rightGrid;
-
-    fileCallbacks = struct();
-    fileCallbacks.onOpenFiles = @onOpenFiles;
-    fileCallbacks.onOpenFolder = @onOpenFolder;
-    fileCallbacks.onRemoveSelected = @onRemoveSelected;
-    fileCallbacks.onClearAll = @onClearAll;
-    fileCallbacks.onExport = @onExportCSV;
-    fileCallbacks.onSelectFile = @(~,~) refreshPlots();
-    fileLabels = struct( ...
-        'panelTitle', 'Files', ...
-        'openFiles', 'Open DTA file(s)', ...
-        'openFolder', 'Open folder recursively', ...
-        'removeSelected', 'Remove selected', ...
-        'clearAll', 'Clear all', ...
-        'export', 'Export curves CSV', ...
-        'loadedText', 'No files loaded');
-    fileUi = labkit.ui.view.panel(layFA, 'files', fileLabels, fileCallbacks, ...
-        struct('showRemoveSelected', true, 'multiselect', 'on'));
-    lbFiles = fileUi.listbox;
-    txtLoaded = fileUi.loadedText;
-
-    plotOptionsUi = labkit.ui.view.section(layFA, 'Plot Options', 2, [4 2]);
-    gp = plotOptionsUi.grid;
-
-    [~, ddXAxis] = labkit.ui.view.form(gp, struct( ...
-        'kind', 'dropdown', ...
-        'label', 'X axis:', ...
-        'items', {{'Time (s)', 'Time (ms)', 'Sample #'}}, ...
-        'value', 'Time (s)', ...
-        'callback', @(~,~) refreshPlots()));
-
-    [~, edLineWidth] = labkit.ui.view.form(gp, struct( ...
-        'kind', 'spinner', ...
-        'label', 'Line width:', ...
-        'value', 1.3, ...
-        'limits', [0.1 10], ...
-        'step', 0.1, ...
-        'callback', @(~,~) refreshPlots()));
-
-    cbLegend = uicheckbox(gp, ...
-        'Text', 'Show file-name legend', ...
-        'Value', true, ...
-        'ValueChangedFcn', @(~,~) refreshPlots());
-    cbLegend.Layout.Row = 3;
-    cbLegend.Layout.Column = [1 2];
-
-    cbGrid = uicheckbox(gp, ...
-        'Text', 'Show grid', ...
-        'Value', true, ...
-        'ValueChangedFcn', @(~,~) refreshPlots());
-    cbGrid.Layout.Row = 4;
-    cbGrid.Layout.Column = [1 2];
-
-    infoUi = labkit.ui.view.panel(laySR, 'text', 'Usage', 1, { ...
-        'Usage:', ...
-        '1. Open multiple .DTA files.', ...
-        '2. Curves are aligned to the center of the blank time between cathodic and anodic phases.', ...
-        '3. Voltage and current curves will be overlaid.', ...
-        '4. Export CSV columns as: TimeGapCenterAligned_s, V_*, I_*.', ...
-        '5. If files have different time grids, export uses a merged aligned-time axis with interpolation.' ...
-        });
-    txtInfo = infoUi.textArea;
-
-    logUi = labkit.ui.view.panel(layLog, 'log', 1);
-    txtLog = logUi.textArea;
+    callbacks = struct( ...
+        "openFilesChosen", @onOpenFilesChosen, ...
+        "openFolder", @onOpenFolder, ...
+        "removeSelected", @onRemoveSelected, ...
+        "clearAll", @onClearAll, ...
+        "exportCSV", @onExportCSV, ...
+        "selectionChanged", @(~,~) refreshPlots(), ...
+        "plotOptionsChanged", @(~,~) refreshPlots());
+    spec = chrono_overlay.ui.buildSpec(callbacks);
+    ui = labkit.ui.app.create(spec, "debug", debugLog);
+    fig = ui.figure;
+    lbFiles = ui.controls.files.listbox;
+    txtLoaded = ui.controls.files.status;
+    ddXAxis = ui.controls.xAxis.valueHandle;
+    edLineWidth = ui.controls.lineWidth.valueHandle;
+    cbLegend = ui.controls.showLegend.valueHandle;
+    cbGrid = ui.controls.showGrid.valueHandle;
+    axV = ui.controls.overlayPlots.axesById.voltage;
+    axI = ui.controls.overlayPlots.axesById.current;
     if debugLog.enabled
-        debugLog.attachTextLog(txtLog);
         debugLog.trace('Chrono overlay debug trace enabled.');
-        debugLog.instrumentFigure(fig);
     end
-
-    axV = labkit.ui.view.axes(right, 1, 'Voltage', 'Time (s)', 'Vf (V)');
-    axI = labkit.ui.view.axes(right, 2, 'Current', 'Time (s)', 'Im (A)');
     %% App callbacks, session actions, refresh, and export
-    function onOpenFiles(~, ~)
-        [f, p] = uigetfile( ...
-            {'*.DTA;*.dta', 'Gamry DTA (*.DTA)'; '*.*', 'All files'}, ...
-            'Select one or more Gamry DTA files', ...
-            'MultiSelect', 'on');
-        if isequal(f, 0)
+    function onOpenFilesChosen(~, event)
+        if isempty(event.paths)
             addLog('Open cancelled.');
             return;
         end
-
-        if ischar(f) || isstring(f)
-            f = {char(f)};
-        end
-
-        filepaths = cellfun(@(name) fullfile(p, name), f, 'UniformOutput', false);
-        loadFiles(filepaths);
+        loadFiles(event.paths);
     end
 
     function onOpenFolder(~, ~)
@@ -198,11 +122,11 @@ function fig = runApp(debugLog)
 
     function refreshFileList()
         if isempty(S.items)
-            labkit.ui.view.update(lbFiles, 'listItems', {});
+            labkit.ui.view.setListItems(ui, 'files', {});
             txtLoaded.Value = 'No files loaded';
             return;
         end
-        labkit.ui.view.update(lbFiles, 'listItems', {S.items.name});
+        labkit.ui.view.setListItems(ui, 'files', {S.items.name});
         txtLoaded.Value = sprintf('%d file(s) loaded', numel(S.items));
     end
 
@@ -254,7 +178,7 @@ function fig = runApp(debugLog)
     end
 
     function addLog(msg)
-        labkit.ui.view.update(txtLog, 'appendLog', msg);
+        labkit.ui.view.appendLog(ui, 'appLog', msg);
         debugLog.append(msg);
     end
 end

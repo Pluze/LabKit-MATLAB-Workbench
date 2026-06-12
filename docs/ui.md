@@ -93,6 +93,10 @@ The fixed shape behind this sketch is:
 - `pathPanel` separates chooser mode from list-selection behavior. A workflow
   can load multiple files while keeping one current selection by using
   `mode="multiFile"` with `selectionMode="single"`.
+- `pathPanel` owns generic chooser/list/status mechanics while apps own command
+  wording. Use `chooseLabel` when the default `Choose files` or `Choose folder`
+  text is not the app's user-facing action label, and use `clearLabel` when
+  the clear action needs app-specific wording such as `Clear all`.
 - `field` uses a fixed kind whitelist: `text`, `number`, `spinner`, `dropdown`,
   `slider`, `checkbox`, and `readonly`.
 - Public callbacks use `function callback(control, event)`, where `event`
@@ -102,6 +106,9 @@ The fixed shape behind this sketch is:
   selector is also workspace-owned; apps can react through
   `onModeChange`. Put preview-like content in a left tab only when it is
   intentionally a compact control-pane preview.
+- `previewArea` can take `axisIds`, `axisTitles`, `xLabels`, and `yLabels` so
+  plot and waveform apps keep app-authored axis wording without owning axes
+  layout mechanics.
 - App-specific hand-written layout must go through `labkit.ui.spec.custom` and
   a named builder file, for example:
 

@@ -117,10 +117,11 @@ resolution cannot mix helpers from sibling apps.
 
 For UI 2.0 migrated apps, put the data-only workbench spec in
 `+<app_slug>/+ui/buildSpec.m` and keep ordinary controls declarative. The public
-entry point owns state, callbacks, alerts, log wording, and refresh order; it
-should call `<app_slug>.ui.buildSpec(...)` followed by
-`labkit.ui.app.create(...)`. `docs/architecture.md` owns the detailed component
-package role boundaries.
+entry point, or the app-owned orchestration runner it delegates to when the
+public file is a thin dispatch wrapper, owns state, callbacks, alerts, log
+wording, and refresh order. That orchestration source should call
+`<app_slug>.ui.buildSpec(...)` followed by `labkit.ui.app.create(...)`.
+`docs/architecture.md` owns the detailed component package role boundaries.
 
 A typical single-file order before extraction is:
 

@@ -117,9 +117,10 @@ role it actually performs:
 <app_slug>/+export/*.m         output writers, manifests, summary tables
 ```
 
-For a migrated UI 2.0 app, the public `labkit_<AppName>_app.m` entry point
-owns launch/debug routing, app state, callback closures, alerts, log wording,
-and refresh order. It should call `<app_slug>.ui.buildSpec(...)` and
+For a migrated UI 2.0 app, the public `labkit_<AppName>_app.m` entry point or
+the app-owned orchestration runner it delegates to owns launch/debug routing,
+app state, callback closures, alerts, log wording, and refresh order. That
+orchestration source should call `<app_slug>.ui.buildSpec(...)` and
 `labkit.ui.app.create(...)` rather than hand-writing ordinary layout. Keeping
 nested callbacks in the runner is acceptable when they need closure access to
 app state and UI registry handles.

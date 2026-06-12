@@ -52,6 +52,8 @@ function ui = buildPreviewArea(ui, previewSpec, parentGrid, row)
         ax.Layout.Row = axesRow(props.layout, k);
         ax.Layout.Column = axesColumn(props.layout, k);
         title(ax, axisTitle(previewSpec, axisIds, k));
+        xlabel(ax, axisLabel(props, 'xLabels', k));
+        ylabel(ax, axisLabel(props, 'yLabels', k));
         enableAxesPopout(ax);
         axesHandles(k) = ax;
         axesById.(axisIds{k}) = ax;
@@ -147,6 +149,15 @@ function titleText = axisTitle(previewSpec, axisIds, index)
         titleText = optionValue(previewSpec.props, 'title', previewSpec.id);
     else
         titleText = axisIds{index};
+    end
+end
+
+function labelText = axisLabel(props, fieldName, index)
+    labels = optionValue(props, fieldName, {});
+    if numel(labels) >= index
+        labelText = char(string(labels{index}));
+    else
+        labelText = '';
     end
 end
 
