@@ -164,35 +164,13 @@ classdef ProjectDebtGuardrailTest < matlab.unittest.TestCase
                 numel(workflowFiles), numel(dispatchFiles));
         end
 
-        function appUiRunnersDoNotShadowExtractedPackageHelpers(testCase)
+        function appUiRunnersAreNotUsedForAppLifecycle(testCase)
             root = setupLabKitTestPath();
-            runners = collectRelativeFiles(root, ...
+            uiRunners = collectRelativeFiles(root, ...
                 fullfile(root, 'apps', '**', '+ui', 'runApp.m'));
-            findings = strings(numel(runners), 1);
-            findingCount = 0;
-
-            for k = 1:numel(runners)
-                runnerPath = fullfile(root, strrep(runners(k), '/', filesep));
-                packageRoot = owningPackageRootForRunner(runnerPath);
-                if strlength(packageRoot) == 0
-                    continue;
-                end
-
-                runnerFunctions = setdiff(functionNamesInFile(runnerPath), "runApp");
-                packageFunctions = packageComponentFunctionNames(packageRoot);
-                overlap = intersect(runnerFunctions, packageFunctions);
-                if ~isempty(overlap)
-                    findingCount = findingCount + 1;
-                    findings(findingCount) = runners(k) + " -> " + ...
-                        strjoin(overlap, ", ");
-                end
-            end
-            findings = findings(1:findingCount);
-
-            testCase.verifyTrue(isempty(findings), ...
-                ['App UI runners should call extracted app-owned package helpers, ' ...
-                'not keep same-named local copies. Findings: ' ...
-                strjoin(cellstr(findings), ', ')]);
+            testCase.verifyTrue(isempty(uiRunners), ...
+                ['App lifecycle runners belong at package root run.m, not ' ...
+                '+ui/runApp.m. Files: ' strjoin(cellstr(uiRunners), ', ')]);
         end
 
         function dicWearableMigrationsHaveDirectPackageTests(testCase)
@@ -316,7 +294,7 @@ end
 function files = collectOversizedAppRunners(root, maxLines)
     entries = [ ...
         dir(fullfile(root, 'apps', '**', 'private', 'run*App.m')); ...
-        dir(fullfile(root, 'apps', '**', '+ui', 'runApp.m'))];
+        dir(fullfile(root, 'apps', '**', '+*', 'run.m'))];
     files = strings(numel(entries), 1);
     fileCount = 0;
     for k = 1:numel(entries)
@@ -340,44 +318,6 @@ function files = collectRunnerMigrationMapFiles(mapFile)
         files(k) = string(tokens{k}{1});
     end
     files = unique(files);
-end
-
-function packageRoot = owningPackageRootForRunner(runnerPath)
-    uiDir = fileparts(runnerPath);
-    packageRoot = string(fileparts(uiDir));
-    [~, packageName] = fileparts(char(packageRoot));
-    if ~startsWith(packageName, '+')
-        packageRoot = "";
-    end
-end
-
-function names = packageComponentFunctionNames(packageRoot)
-    components = ["+ops", "+view", "+export", "+io", "+state"];
-    filesByComponent = cell(numel(components), 1);
-    for k = 1:numel(components)
-        componentRoot = fullfile(packageRoot, components(k));
-        filesByComponent{k} = dir(fullfile(componentRoot, '*.m'));
-    end
-
-    files = vertcat(filesByComponent{:});
-    names = strings(numel(files), 1);
-    for k = 1:numel(files)
-        [~, name] = fileparts(files(k).name);
-        names(k) = string(name);
-    end
-    names = unique(names);
-end
-
-function names = functionNamesInFile(filepath)
-    content = fileread(filepath);
-    withOutput = regexp(content, ...
-        '(?m)^\s*function\s+(?:\[[^\]]+\]|\w+)\s*=\s*(\w+)\s*\(', ...
-        'tokens');
-    withoutOutput = regexp(content, ...
-        '(?m)^\s*function\s+(\w+)\s*\(', ...
-        'tokens');
-    names = [tokenValues(withOutput); tokenValues(withoutOutput)];
-    names = unique(names);
 end
 
 function files = collectRelativeFiles(root, pattern)
@@ -510,12 +450,5 @@ function paths = relativePaths(root, filepaths)
     paths = cell(size(filepaths));
     for k = 1:numel(filepaths)
         paths{k} = relativePath(root, filepaths{k});
-    end
-end
-
-function values = tokenValues(tokens)
-    values = strings(numel(tokens), 1);
-    for k = 1:numel(tokens)
-        values(k) = string(tokens{k}{1});
     end
 end

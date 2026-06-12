@@ -361,6 +361,7 @@ function assertMigratedUi2AppStructure(testCase, root, appRelDir, packageName, e
     packageDir = fullfile(appDir, ['+' packageName]);
     uiDir = fullfile(packageDir, '+ui');
     entrypointFile = fullfile(appDir, entrypointName);
+    runFile = fullfile(packageDir, 'run.m');
     buildSpecFile = fullfile(uiDir, 'buildSpec.m');
     appLabel = relativePath(root, appDir);
 
@@ -369,9 +370,14 @@ function assertMigratedUi2AppStructure(testCase, root, appRelDir, packageName, e
         relativePath(root, buildSpecFile)]);
     testCase.verifyTrue(isfile(entrypointFile), ...
         ['Missing migrated app entrypoint: ' relativePath(root, entrypointFile)]);
+    testCase.verifyTrue(isfile(runFile), ...
+        ['Migrated app lifecycle runner must live at package root: ' ...
+        relativePath(root, runFile)]);
+    testCase.verifyFalse(isfile(fullfile(uiDir, 'runApp.m')), ...
+        [appLabel ' should not keep app lifecycle orchestration in +ui/runApp.m.']);
 
     orchestrationSource = migratedAppOrchestrationSource(entrypointFile, ...
-        packageDir, uiDir);
+        runFile);
     testCase.verifyTrue(contains(orchestrationSource, [packageName '.ui.buildSpec(']), ...
         [appLabel ' should call its canonical +ui/buildSpec.m file.']);
     testCase.verifyTrue(contains(orchestrationSource, 'labkit.ui.app.create('), ...
@@ -393,16 +399,8 @@ function assertMigratedUi2AppStructure(testCase, root, appRelDir, packageName, e
     assertRolePackageBoundaries(testCase, root, packageDir);
 end
 
-function source = migratedAppOrchestrationSource(entrypointFile, packageDir, uiDir)
-    source = fileread(entrypointFile);
-    runFile = fullfile(packageDir, 'run.m');
-    if isfile(runFile)
-        source = strjoin({source, fileread(runFile)}, newline);
-    end
-    runAppFile = fullfile(uiDir, 'runApp.m');
-    if isfile(runAppFile)
-        source = strjoin({source, fileread(runAppFile)}, newline);
-    end
+function source = migratedAppOrchestrationSource(entrypointFile, runFile)
+    source = strjoin({fileread(entrypointFile), fileread(runFile)}, newline);
 end
 
 function words = buildSpecForbiddenWords()
@@ -512,12 +510,9 @@ function assertAppOwnedPackageCapability(testCase, root, appDir, packageDir, fam
         ['App-owned non-UI package functions should have direct unit tests: ' ...
         relativePath(root, packageDir)]);
 
-    uiRunApp = fullfile(packageDir, '+ui', 'runApp.m');
-    if isfile(uiRunApp)
-        testCase.verifyTrue(numel(packageFiles) > 1, ...
-            ['App-owned package should not be only a +ui/runApp.m wrapper: ' ...
-            relativePath(root, appDir)]);
-    end
+    testCase.verifyFalse(isfile(fullfile(packageDir, '+ui', 'runApp.m')), ...
+        ['App-owned package should not keep app lifecycle orchestration in +ui/runApp.m: ' ...
+        relativePath(root, appDir)]);
 end
 
 function tf = hasNonUiPackageComponent(packageDir)

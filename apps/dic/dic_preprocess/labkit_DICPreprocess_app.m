@@ -17,7 +17,7 @@ function varargout = labkit_DICPreprocess_app(varargin)
             'labkit_DICPreprocess_app returns at most the app figure handle.');
     end
 
-    fig = dic_preprocess.ui.runApp(debugLog);
+    fig = dic_preprocess.run(debugLog);
     if nargout >= 1
         varargout{1} = fig;
     end

@@ -55,13 +55,16 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
   `apps/wearable/ecg_print/+ecg_print/...` with the public command still named
   `labkit_ECGPrint_app`; do not create a direct `apps/wearable/+ecg_print`
   package.
-- After an app-owned helper is extracted, remove same-named local copies from
-  `+ui/runApp.m` so GUI paths call the tested package helper.
+- Migrated apps use a package-root `run.m` for app lifecycle orchestration.
+  Keep `+ui` focused on `buildSpec.m`, UI handle mapping, and justified
+  tool/widget glue; do not put app lifecycle runners in `+ui/runApp.m`.
 - Do not add new `*Workflow.m` files or app-owned `+core/dispatch.m` string
   routers.
 - When a public app file grows large, prefer moving GUI-free app-owned calculations, export builders, formatting utilities, deterministic image/signal transforms, and focused control construction into `apps/<family>/<app_slug>/+<app_slug>/...`.
 - Do not add new `apps/<family>/private/` helpers unless the helper is genuinely shared by multiple apps in that family and the user approves that family-level boundary.
-- Keep the public app entry point responsible for GUI state, callbacks, user alerts, app workflow order, debug launch routing, and user-facing log wording.
+- Keep the public app entry point as a thin launch wrapper. The package-root
+  `run.m` owns GUI state, callbacks, user alerts, app workflow order, debug
+  launch routing, and user-facing log wording.
 
 ## Documentation Sync
 

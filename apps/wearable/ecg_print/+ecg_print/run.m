@@ -2,8 +2,8 @@
 % Input is the debug context prepared by the public launcher. Output is the app
 % figure. Side effects are GUI creation, user-driven file I/O, exports,
 % plotting, and debug trace attachment exactly as in the original entrypoint body.
-function fig = runApp(debugLog)
-%RUNAPP Build and run the ECG Print app body.
+function fig = run(debugLog)
+%RUN Build and run the ECG Print app body.
 
     S = struct();
     S.recording = [];

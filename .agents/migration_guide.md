@@ -34,7 +34,7 @@ ui-2-declarative-spec
 Current facts:
 
 - Oversized app entry points: none.
-- Oversized app `+ui/runApp.m` runners over 500 lines: none.
+- Oversized package-root app `run.m` runners over 500 lines: none.
 - App `private/` debt: none.
 - `+labkit` private helper contract debt: none.
 - String-dispatch workflow adapters and app `+core/dispatch.m` routers: none.

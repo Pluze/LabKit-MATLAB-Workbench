@@ -2,7 +2,7 @@
 % Input is the debug context prepared by the public launcher. Output is the app
 % figure. Side effects are GUI creation, user-driven file I/O, exports,
 % plotting, and debug trace attachment exactly as in the original entrypoint body.
-function fig = runApp(debugLog)
+function fig = run(debugLog)
 %RUNCICAPP Build and run the app body.
 
     S = struct();
