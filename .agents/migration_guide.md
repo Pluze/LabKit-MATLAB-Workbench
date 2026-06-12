@@ -45,8 +45,13 @@ Current facts:
 - The UI 2.0 foundation slice has landed: public spec constructors,
   `labkit.ui.app.create`, named view helpers, GUI-free validation,
   public-surface guardrails, and reusable UI structural tests exist.
-- No production app has migrated to UI 2.0 yet. The next implementation slice
-  is the `labkit_ImageMatch_app` canary.
+- The first migrated app slice is complete: `labkit_ImageMatch_app`,
+  `labkit_ImageEnhance_app`, and `labkit_FocusStack_app` now launch through
+  `labkit.ui.app.create` and no longer carry ordinary old-UI layout code.
+- Current image-app evidence still supports a narrow public surface. The
+  migrated apps needed `pathPanel.selectionMode`,
+  `pathPanel.onSelectionChange`, and `previewArea.onModeChange`, but they did
+  not justify public primitive constructors or a larger file-panel API.
 - Human docs, scoped `AGENTS.md`, repo skills, public-surface guardrails, and
   GUI structural tests should describe the implemented foundation as current
   behavior while keeping app migration order in this ledger.
@@ -560,11 +565,21 @@ Current implementation checkpoint:
   `labkit_ImageEnhance_app` also launches through `labkit.ui.app.create` and
   confirms that ordinary image-app UI can stay within the current stable spec
   surface without promoting new primitives.
+- The next broader image-app slice is now complete on the current branch:
+  `labkit_FocusStack_app` also launches through `labkit.ui.app.create`,
+  confirms that paired preview workspaces fit the stable grammar, and keeps
+  ordinary UI custom count at 0.
 - Canary-driven framework additions now in use are:
   `pathPanel.selectionMode`, `pathPanel.onSelectionChange`, and
   `previewArea.onModeChange`.
-- The next migration slice should move beyond the image-editor pair into a
-  broader image app, with Focus Stack as the cleanest next candidate.
+- Focus Stack also confirms the preferred file-panel composition: use
+  `pathPanel` for chooser/list/count behavior and add adjacent actions such as
+  `Open image folder` only when the workflow genuinely needs a second load
+  path. Do not grow a separate public file-panel family yet.
+- The next migration slice should stay in image measurement with
+  `labkit_BatchImageCrop_app`, because it exercises the first justified
+  custom/tool-heavy preview interaction while leaving ordinary controls
+  declarative.
 
 1. **Spec grammar and validation**
    - Complete in the current foundation checkpoint. Future changes should be
@@ -621,8 +636,9 @@ Current implementation checkpoint:
    - Migrate DIC Preprocess and DIC Postprocess using spec for ordinary
      controls and `custom`/tool surfaces for ROI, mask, crop, and paired-preview
      interactions.
-   - Migrate Curvature, Focus Stack, and Batch Crop after preview-pair,
-     scale-bar, anchor-editor, and crop/selection custom patterns are explicit.
+   - Focus Stack is complete on the current branch. Migrate Batch Crop and
+     Curvature after the crop/selection custom boundary stays explicit and
+     scale-bar/anchor-editor/tool patterns remain app-owned.
    - Do not generalize image algorithms into `+labkit`.
 
 7. **Wearable app**

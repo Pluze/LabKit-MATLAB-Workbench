@@ -152,6 +152,8 @@ function verify_app_owned_workflow_boundaries()
         'batch_crop_gui(');
     h.assertImageMeasurementAppBoundary(curvatureSource, 'labkit_CurvatureMeasurement_app');
     h.assertImageMeasurementAppBoundary(focusStackSource, 'labkit_FocusStack_app');
+    assertDeclarativeImageApp(focusStackSource, ...
+        'labkit_FocusStack_app', 'focus_stack.ui.createRightAxesPair');
     h.assertImageMeasurementAppBoundary(imageEnhanceSource, 'labkit_ImageEnhance_app');
     assertDeclarativeImageApp(imageEnhanceSource, ...
         'labkit_ImageEnhance_app', 'image_enhance.ui.createEditorUi');

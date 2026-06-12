@@ -25,159 +25,25 @@ function varargout = labkit_FocusStack_app(varargin)
     S.registrationLines = {};
     S.result = focus_stack.state.emptyResult();
 
-    workbenchOpts = struct( ...
-        'rightTitle', 'Focus Stack Preview', ...
-        'rightGridSize', [2 1], ...
-        'rightRowHeight', {{'1x', '1x'}}, ...
-        'rightRowSpacing', 10);
-    workbenchOpts.tabs = [ ...
-        labkit.ui.app.tab('filesAnalysis', 'Files + Analysis', [4 1], ...
-            {250, 235, 185, 170}, ...
-            struct('resizeOptions', struct('minTopHeight', 130, 'minBottomHeight', 90))), ...
-        labkit.ui.app.tab('summaryResults', 'Summary + Results', [2 1], ...
-            {220, '1x'}), ...
-        labkit.ui.app.tab('log', 'Log', [1 1], {'1x'})];
-
-    ui = labkit.ui.app.createShell(struct( ...
-        'title', 'Microscope Focus Stack Fusion', ...
-        'position', [80 60 1440 860], ...
-        'leftWidth', 390, ...
-        'options', workbenchOpts));
-    ui = focus_stack.ui.createRightAxesPair(ui, ...
-        'Fused all-in-focus image', 'Focus-depth index map', false);
-    fig = ui.fig;
-    layFA = ui.filesAnalysisGrid;
-    laySR = ui.summaryResultsGrid;
-    layLog = ui.logGrid;
-
-    filePanel = labkit.ui.view.section(layFA, 'Images', 1, [4 2], ...
-        struct('rowHeight', {{'fit', 'fit', 105, 'fit'}}, ...
-        'columnWidth', {{'1x', '1x'}}));
-    fileGrid = filePanel.grid;
-
-    btnOpenFolder = uibutton(fileGrid, 'Text', 'Open image folder', ...
-        'ButtonPushedFcn', @onOpenFolder);
-    btnOpenFolder.Layout.Row = 1;
-    btnOpenFolder.Layout.Column = 1;
-
-    btnOpenFiles = uibutton(fileGrid, 'Text', 'Open image files', ...
-        'ButtonPushedFcn', @onOpenFiles);
-    btnOpenFiles.Layout.Row = 1;
-    btnOpenFiles.Layout.Column = 2;
-
-    txtFolder = labkit.ui.view.form(fileGrid, struct( ...
-        'kind', 'readonly', ...
-        'value', 'No images loaded'));
-    txtFolder.Layout.Row = 2;
-    txtFolder.Layout.Column = [1 2];
-
-    lbImages = uilistbox(fileGrid, 'Items', {'No images loaded'});
-    lbImages.Layout.Row = 3;
-    lbImages.Layout.Column = [1 2];
-
-    txtStackStatus = labkit.ui.view.form(fileGrid, struct( ...
-        'kind', 'readonly', ...
-        'value', 'Images: 0'));
-    txtStackStatus.Layout.Row = 4;
-    txtStackStatus.Layout.Column = [1 2];
-
-    analysisPanel = labkit.ui.view.section(layFA, 'Fusion Options', 2, [6 2], ...
-        struct('rowHeight', {{'fit', 'fit', 'fit', 'fit', 'fit', 'fit'}}, ...
-        'columnWidth', {{155, '1x'}}));
-    analysisGrid = analysisPanel.grid;
-
-    [lblFusionPreset, ddFusionPreset] = labkit.ui.view.form(analysisGrid, struct( ...
-        'kind', 'dropdown', ...
-        'label', 'Preset:', ...
-        'items', {{'Balanced', 'Crisp details', 'Smooth transitions', 'Noisy images'}}, ...
-        'value', 'Balanced', ...
-        'callback', @onFusionPresetChanged));
-    lblFusionPreset.Layout.Row = 1;
-    lblFusionPreset.Layout.Column = 1;
-    ddFusionPreset.Layout.Row = 1;
-    ddFusionPreset.Layout.Column = 2;
-
-    chkRegister = uicheckbox(analysisGrid, ...
-        'Text', 'Auto-register stack to middle image', ...
-        'Value', false);
-    chkRegister.Layout.Row = 2;
-    chkRegister.Layout.Column = [1 2];
-
-    [lblFocusWindow, edtFocusWindow] = labkit.ui.view.form(analysisGrid, struct( ...
-        'kind', 'spinner', ...
-        'label', 'Detail scale (px):', ...
-        'value', 31, ...
-        'limits', [3 99], ...
-        'step', 2));
-    lblFocusWindow.Layout.Row = 3;
-    lblFocusWindow.Layout.Column = 1;
-    edtFocusWindow.Layout.Row = 3;
-    edtFocusWindow.Layout.Column = 2;
-
-    [lblSmoothRadius, edtSmoothRadius] = labkit.ui.view.form(analysisGrid, struct( ...
-        'kind', 'spinner', ...
-        'label', 'Blend radius (px):', ...
-        'value', 4, ...
-        'limits', [0 50], ...
-        'step', 1));
-    lblSmoothRadius.Layout.Row = 4;
-    lblSmoothRadius.Layout.Column = 1;
-    edtSmoothRadius.Layout.Row = 4;
-    edtSmoothRadius.Layout.Column = 2;
-
-    [lblUncertainBlend, edtUncertainBlend] = labkit.ui.view.form(analysisGrid, struct( ...
-        'kind', 'spinner', ...
-        'label', 'Uncertain blend (%):', ...
-        'value', 5, ...
-        'limits', [0 100], ...
-        'step', 1));
-    lblUncertainBlend.Layout.Row = 5;
-    lblUncertainBlend.Layout.Column = 1;
-    edtUncertainBlend.Layout.Row = 5;
-    edtUncertainBlend.Layout.Column = 2;
-
-    btnRun = uibutton(analysisGrid, 'Text', 'Run focus stack', ...
-        'Enable', 'off', ...
-        'ButtonPushedFcn', @onRunFocusStack);
-    btnRun.Layout.Row = 6;
-    btnRun.Layout.Column = [1 2];
-
-    exportPanel = labkit.ui.view.section(layFA, 'Export', 3, [3 1], ...
-        struct('rowHeight', {{'fit', 'fit', 'fit'}}));
-    exportGrid = exportPanel.grid;
-
-    btnExportFused = uibutton(exportGrid, 'Text', 'Export fused PNG', ...
-        'Enable', 'off', ...
-        'ButtonPushedFcn', @onExportFused);
-    btnExportFused.Layout.Row = 1;
-    btnExportMap = uibutton(exportGrid, 'Text', 'Export focus map PNG', ...
-        'Enable', 'off', ...
-        'ButtonPushedFcn', @onExportFocusMap);
-    btnExportMap.Layout.Row = 2;
-    btnExportSummary = uibutton(exportGrid, 'Text', 'Export summary CSV', ...
-        'Enable', 'off', ...
-        'ButtonPushedFcn', @onExportSummary);
-    btnExportSummary.Layout.Row = 3;
-
-    labkit.ui.view.panel(layFA, 'text', 'Workflow Notes', 4, { ...
+    fusionPresets = {'Balanced', 'Crisp details', 'Smooth transitions', 'Noisy images'};
+    workflowNotes = { ...
         '1. Load a folder or select one or more image files from the same microscope field of view.', ...
         '2. Use file selection when a folder contains bad frames that should be excluded.', ...
         '3. Start with Balanced. Use Crisp for fine texture, Smooth for visible seams, Noisy for grainy images.', ...
-        '4. Detail scale controls feature size; Blend radius controls seam softness; Uncertain blend softens low-texture areas.'});
-
-    resultTable = uitable(laySR, ...
-        'ColumnName', {'Metric', 'Value'}, ...
-        'Data', focus_stack.view.initialResultTable());
-    resultTable.Layout.Row = 1;
-
-    txtDetails = uitextarea(laySR, 'Editable', 'off');
-    labkit.ui.view.place(txtDetails, laySR, 2);
-    txtDetails.Value = {'Load a focus image folder or select image files to begin.'};
-
-    logUi = labkit.ui.view.panel(layLog, 'log', 1, {'Ready.'});
-    txtLog = logUi.textArea;
+        '4. Detail scale controls feature size; Blend radius controls seam softness; Uncertain blend softens low-texture areas.'};
+    callbacks = struct( ...
+        'openImageFolder', @onOpenFolder, ...
+        'sourceImagesChosen', @onOpenFilesChosen, ...
+        'clearImages', @onClearImages, ...
+        'fusionPresetChanged', @onFusionPresetChanged, ...
+        'runFocusStack', @onRunFocusStack, ...
+        'exportFused', @onExportFused, ...
+        'exportFocusMap', @onExportFocusMap, ...
+        'exportSummary', @onExportSummary);
+    spec = focus_stack.ui.buildSpec(fusionPresets, workflowNotes, callbacks);
+    ui = labkit.ui.app.create(spec, 'debug', debugLog);
+    fig = ui.figure;
     if debugLog.enabled
-        debugLog.attachTextLog(txtLog);
         debugLog.trace('Focus stack debug trace enabled.');
         debugLog.instrumentFigure(fig);
     end
@@ -201,23 +67,23 @@ function varargout = labkit_FocusStack_app(varargin)
         loadImageFolder(string(folder));
     end
 
-    function onOpenFiles(~, ~)
-        [files, folder] = uigetfile(focus_stack.io.imageDialogFilter(), ...
-            'Select focus image files', pwd, 'MultiSelect', 'on');
-        if isequal(files, 0)
-            addLog('Image file selection cancelled.');
-            return;
-        end
+    function onOpenFilesChosen(~, event)
+        loadImagePaths(string(event.paths(:)), string(fileparts(event.paths{1})), ...
+            sprintf('Selected image files from %s', char(fileparts(event.paths{1}))), ...
+            sprintf('Loaded %d selected image file(s).', numel(event.paths)));
+    end
 
-        try
-            paths = focus_stack.io.selectedImagePaths(files, folder);
-        catch ME
-            showError('Could not select focus images', ME.message);
-            return;
-        end
-        loadImagePaths(paths, string(folder), ...
-            sprintf('Selected image files from %s', char(folder)), ...
-            sprintf('Loaded %d selected image file(s).', numel(paths)));
+    function onClearImages(~, ~)
+        S.folder = "";
+        S.paths = strings(0, 1);
+        S.images = {};
+        S.alignedImages = {};
+        S.registrationLines = {};
+        S.result = focus_stack.state.emptyResult();
+        addLog('Cleared loaded focus images and results.');
+        refreshSourcePanel();
+        refreshPreview();
+        refreshSummary();
     end
 
     function loadImageFolder(folder)
@@ -239,20 +105,16 @@ function varargout = labkit_FocusStack_app(varargin)
             return;
         end
 
-        sourceDescription = string(sourceDescription);
-        S.paths = paths;
+        S.paths = string(paths(:));
         S.images = images;
         S.alignedImages = {};
         S.registrationLines = {};
         S.result = focus_stack.state.emptyResult();
         S.folder = string(sourceFolder);
 
-        txtFolder.Value = char(sourceDescription);
-        lbImages.Items = focus_stack.view.displayImageNames(paths);
-        if ~isempty(lbImages.Items)
-            lbImages.Value = lbImages.Items{1};
-        end
+        labkit.ui.view.setValue(ui, 'sourceLocation', char(string(sourceDescription)));
         addLog(logMessage);
+        refreshSourcePanel();
         refreshPreview();
         refreshSummary();
     end
@@ -264,7 +126,7 @@ function varargout = labkit_FocusStack_app(varargin)
         end
 
         opts = currentFusionOptions();
-        registerStack = chkRegister.Value;
+        registerStack = labkit.ui.view.getValue(ui, 'autoRegister');
         busyOpts = struct();
         busyOpts.title = 'Focus stacking';
         busyOpts.message = 'Fusing selected microscope images...';
@@ -291,17 +153,19 @@ function varargout = labkit_FocusStack_app(varargin)
 
     function opts = currentFusionOptions()
         opts = struct();
-        opts.focusWindow = round(edtFocusWindow.Value);
-        opts.smoothRadius = round(edtSmoothRadius.Value);
-        opts.minConfidence = edtUncertainBlend.Value / 100;
+        opts.focusWindow = round(labkit.ui.view.getValue(ui, 'focusWindow'));
+        opts.smoothRadius = round(labkit.ui.view.getValue(ui, 'smoothRadius'));
+        opts.minConfidence = labkit.ui.view.getValue(ui, 'uncertainBlend') / 100;
     end
 
     function onFusionPresetChanged(~, ~)
-        settings = focus_stack.state.fusionPresetSettings(ddFusionPreset.Value);
-        edtFocusWindow.Value = settings.focusWindow;
-        edtSmoothRadius.Value = settings.smoothRadius;
-        edtUncertainBlend.Value = settings.minConfidencePercent;
-        addLog(sprintf('Fusion preset set to %s.', ddFusionPreset.Value));
+        settings = focus_stack.state.fusionPresetSettings( ...
+            labkit.ui.view.getValue(ui, 'fusionPreset'));
+        labkit.ui.view.setValue(ui, 'focusWindow', settings.focusWindow);
+        labkit.ui.view.setValue(ui, 'smoothRadius', settings.smoothRadius);
+        labkit.ui.view.setValue(ui, 'uncertainBlend', settings.minConfidencePercent);
+        addLog(sprintf('Fusion preset set to %s.', ...
+            labkit.ui.view.getValue(ui, 'fusionPreset')));
     end
 
     function payload = runFocusStackComputation(opts, registerStack)
@@ -318,9 +182,20 @@ function varargout = labkit_FocusStack_app(varargin)
     end
 
     function controls = focusStackBusyControls()
-        controls = {btnOpenFolder, btnOpenFiles, lbImages, ddFusionPreset, chkRegister, ...
-            edtFocusWindow, edtSmoothRadius, edtUncertainBlend, btnRun, ...
-            btnExportFused, btnExportMap, btnExportSummary};
+        controls = { ...
+            ui.controls.openImageFolder.button, ...
+            ui.controls.sourceImages.chooseButton, ...
+            ui.controls.sourceImages.clearButton, ...
+            ui.controls.sourceImages.listbox, ...
+            ui.controls.fusionPreset.handle, ...
+            ui.controls.autoRegister.handle, ...
+            ui.controls.focusWindow.handle, ...
+            ui.controls.smoothRadius.handle, ...
+            ui.controls.uncertainBlend.handle, ...
+            ui.controls.runFocusStack.button, ...
+            ui.controls.exportFused.button, ...
+            ui.controls.exportFocusMap.button, ...
+            ui.controls.exportSummary.button};
     end
 
     function onExportFused(~, ~)
@@ -398,17 +273,28 @@ function varargout = labkit_FocusStack_app(varargin)
         end
     end
 
+    function refreshSourcePanel()
+        if isempty(S.images)
+            labkit.ui.view.setValue(ui, 'sourceImages', {});
+            labkit.ui.view.setValue(ui, 'sourceLocation', 'No images loaded');
+            return;
+        end
+
+        labkit.ui.view.setValue(ui, 'sourceImages', cellstr(S.paths));
+    end
+
     function refreshPreview()
         if S.result.ok
-            labkit.ui.view.draw(ui.topAxes, 'image', S.result.fused, ...
-                'Fused all-in-focus image');
-            labkit.ui.view.draw(ui.bottomAxes, 'image', ...
+            labkit.ui.view.drawImage(ui, 'preview', S.result.fused, ...
+                'axis', 'fused', 'title', 'Fused all-in-focus image');
+            labkit.ui.view.drawImage(ui, 'preview', ...
                 focus_stack.view.focusIndexRgb(S.result.focusIndex, S.result.inputCount), ...
-                'Focus-depth index map');
+                'axis', 'focusMap', 'title', 'Focus-depth index map');
         elseif ~isempty(S.images)
-            labkit.ui.view.draw(ui.topAxes, 'image', focus_stack.view.previewImage(S.images{1}), ...
-                'First source image');
-            labkit.ui.view.draw(ui.bottomAxes, 'reset', 'Focus-depth index map', true);
+            labkit.ui.view.drawImage(ui, 'preview', ...
+                focus_stack.view.previewImage(S.images{1}), ...
+                'axis', 'fused', 'title', 'First source image');
+            labkit.ui.view.resetAxes(ui, 'preview', 'Focus-depth index map', true, 'focusMap');
         else
             resetPreviewAxes();
         end
@@ -416,48 +302,64 @@ function varargout = labkit_FocusStack_app(varargin)
     end
 
     function refreshSummary()
-        txtStackStatus.Value = sprintf('Images: %d', numel(S.images));
         if S.result.ok
-            resultTable.Data = focus_stack.view.resultTableData(S.result);
-            txtDetails.Value = focus_stack.view.details(S.result, S.paths, S.registrationLines);
+            ui.controls.resultTable.table.Data = focus_stack.view.resultTableData(S.result);
+            labkit.ui.view.setValue(ui, 'details', ...
+                focus_stack.view.details(S.result, S.paths, S.registrationLines));
         elseif numel(S.images) >= 2
-            resultTable.Data = focus_stack.view.initialResultTable();
-            txtDetails.Value = { ...
+            ui.controls.resultTable.table.Data = focus_stack.view.initialResultTable();
+            labkit.ui.view.setValue(ui, 'details', { ...
                 sprintf('Loaded images: %d', numel(S.images)), ...
-                'Run focus stack to compute the fused image and focus-depth map.'};
+                'Run focus stack to compute the fused image and focus-depth map.'});
         elseif ~isempty(S.images)
-            resultTable.Data = focus_stack.view.initialResultTable();
-            txtDetails.Value = { ...
+            ui.controls.resultTable.table.Data = focus_stack.view.initialResultTable();
+            labkit.ui.view.setValue(ui, 'details', { ...
                 sprintf('Loaded images: %d', numel(S.images)), ...
-                'Load at least two images before running focus stack.'};
+                'Load at least two images before running focus stack.'});
         else
-            resultTable.Data = focus_stack.view.initialResultTable();
-            txtDetails.Value = {'Load a focus image folder or select image files to begin.'};
+            ui.controls.resultTable.table.Data = focus_stack.view.initialResultTable();
+            labkit.ui.view.setValue(ui, 'details', ...
+                {'Load a focus image folder or select image files to begin.'});
         end
         updateControls();
     end
 
     function updateControls()
+        hasImages = ~isempty(S.images);
         hasStack = numel(S.images) >= 2;
         hasResult = S.result.ok;
-        btnRun.Enable = focus_stack.view.ternary(hasStack, 'on', 'off');
-        btnExportFused.Enable = focus_stack.view.ternary(hasResult, 'on', 'off');
-        btnExportMap.Enable = focus_stack.view.ternary(hasResult, 'on', 'off');
-        btnExportSummary.Enable = focus_stack.view.ternary(hasResult, 'on', 'off');
+        ui.controls.sourceImages.clearButton.Enable = onOff(hasImages);
+        ui.controls.sourceImages.listbox.Enable = onOff(hasImages);
+        labkit.ui.view.setEnabled(ui, 'runFocusStack', hasStack);
+        labkit.ui.view.setEnabled(ui, 'exportFused', hasResult);
+        labkit.ui.view.setEnabled(ui, 'exportFocusMap', hasResult);
+        labkit.ui.view.setEnabled(ui, 'exportSummary', hasResult);
     end
 
     function resetPreviewAxes()
-        labkit.ui.view.draw(ui.topAxes, 'reset', 'Fused all-in-focus image', true);
-        labkit.ui.view.draw(ui.bottomAxes, 'reset', 'Focus-depth index map', true);
+        labkit.ui.view.resetAxes(ui, 'preview', 'Fused all-in-focus image', true, 'fused');
+        labkit.ui.view.resetAxes(ui, 'preview', 'Focus-depth index map', true, 'focusMap');
     end
 
     function addLog(message)
-        labkit.ui.view.update(txtLog, 'appendLog', message);
+        labkit.ui.view.appendLog(ui, 'logPanel', message);
         debugLog.append(message);
     end
 
     function showError(titleText, message)
         addLog(sprintf('%s: %s', titleText, message));
         uialert(fig, message, titleText);
+    end
+end
+
+function text = onOff(value)
+    if islogical(value) && isscalar(value)
+        if value
+            text = 'on';
+        else
+            text = 'off';
+        end
+    else
+        text = char(string(value));
     end
 end
