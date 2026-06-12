@@ -15,65 +15,56 @@ function fig = runApp(debugLog)
     S.currentCurve = 1;
 
     callbacks = struct( ...
-        'onOpenFiles', @onOpenFiles, ...
-        'onOpenFolder', @onOpenFolder, ...
-        'onClearAll', @(~,~) clearAllFiles(), ...
-        'onExport', @(~,~) reloadSelectedFile(), ...
-        'onSelectFile', @(~,~) onSelectFile(), ...
-        'onCurveChanged', @(~,~) onCurveChanged(), ...
-        'onAutoPresetAndRefresh', @(~,~) autoPresetAndRefresh(), ...
-        'onSwapPlots', @(~,~) onSwapPlots(), ...
-        'onRefreshCompare', @(~,~) refreshCompare(), ...
-        'onRefreshPlotsOnly', @(~,~) refreshPlotsOnly(), ...
-        'onClearBothAxes', @(~,~) clearBothAxes());
-    C = csc.ui.buildControls(callbacks);
+        "openFilesChosen", @onOpenFilesChosen, ...
+        "openFolder", @onOpenFolder, ...
+        "clearAll", @(~,~) clearAllFiles(), ...
+        "reloadSelected", @(~,~) reloadSelectedFile(), ...
+        "fileSelectionChanged", @(~,~) onSelectFile(), ...
+        "curveChanged", @(~,~) onCurveChanged(), ...
+        "autoPresetAndRefresh", @(~,~) autoPresetAndRefresh(), ...
+        "swapPlots", @(~,~) onSwapPlots(), ...
+        "refreshCompare", @(~,~) refreshCompare(), ...
+        "refreshPlotsOnly", @(~,~) refreshPlotsOnly(), ...
+        "clearBothAxes", @(~,~) clearBothAxes());
+    spec = csc.ui.buildSpec(callbacks);
+    ui = labkit.ui.app.create(spec, "debug", debugLog);
 
-    fig = C.fig;
-    lbFiles = C.lbFiles;
-    txtLoaded = C.txtLoaded;
-    txtFile = C.txtFile;
-    txtScan = C.txtScan;
-    ddCurve = C.ddCurve;
-    ddMode = C.ddMode;
-    edArea = C.edArea;
-    txtQct = C.txtQct;
-    txtQcv = C.txtQcv;
-    txtDiff = C.txtDiff;
-    txtRel = C.txtRel;
-    txtDtErr = C.txtDtErr;
-    lblStatus = C.lblStatus;
-    txtLog = C.txtLog;
-    plotControls = C.plotControls;
-    ddTopX = C.ddTopX;
-    ddTopY = C.ddTopY;
-    cbTopGrid = C.cbTopGrid;
-    ddBotX = C.ddBotX;
-    ddBotY = C.ddBotY;
-    cbBotGrid = C.cbBotGrid;
-    axTop = C.axTop;
-    axBottom = C.axBottom;
-    cbTopHold = C.cbTopHold;
-    cbTopTrim = C.cbTopTrim;
-    cbBotHold = C.cbBotHold;
-    cbBotTrim = C.cbBotTrim;
+    fig = ui.figure;
+    lbFiles = ui.controls.files.listbox;
+    txtLoaded = ui.controls.files.status;
+    txtFile = ui.controls.filePath.valueHandle;
+    txtScan = ui.controls.scanRate.valueHandle;
+    ddCurve = ui.controls.curve.valueHandle;
+    ddMode = ui.controls.mode.valueHandle;
+    edArea = ui.controls.area.valueHandle;
+    txtQct = ui.controls.qct.valueHandle;
+    txtQcv = ui.controls.qcv.valueHandle;
+    txtDiff = ui.controls.diff.valueHandle;
+    txtRel = ui.controls.relativeDiff.valueHandle;
+    txtDtErr = ui.controls.dtError.valueHandle;
+    txtStatus = ui.controls.status.valueHandle;
+    ddTopX = ui.controls.topX.valueHandle;
+    ddTopY = ui.controls.topY.valueHandle;
+    cbTopGrid = ui.controls.topGrid.valueHandle;
+    ddBotX = ui.controls.bottomX.valueHandle;
+    ddBotY = ui.controls.bottomY.valueHandle;
+    cbBotGrid = ui.controls.bottomGrid.valueHandle;
+    axTop = ui.controls.plotAxes.axesById.top;
+    axBottom = ui.controls.plotAxes.axesById.bottom;
+    cbTopHold = ui.controls.topHold.valueHandle;
+    cbTopTrim = ui.controls.topTrim.valueHandle;
+    cbBotHold = ui.controls.bottomHold.valueHandle;
+    cbBotTrim = ui.controls.bottomTrim.valueHandle;
     if debugLog.enabled
-        debugLog.attachTextLog(txtLog);
         debugLog.trace('CSC debug trace enabled.');
-        debugLog.instrumentFigure(fig);
     end
     %% App callbacks, loading, refresh, and plotting
-    function onOpenFiles(~,~)
-        [files,path] = uigetfile({'*.DTA;*.dta','Gamry DTA files (*.DTA)'}, ...
-            'Select Gamry DTA file(s)','MultiSelect','on');
-        if isequal(files,0)
+    function onOpenFilesChosen(~, event)
+        if isempty(event.paths)
             addLog('Open file canceled.');
             return;
         end
-        if ischar(files) || isstring(files)
-            files = {char(files)};
-        end
-        filepaths = cellfun(@(f) fullfile(path,f), files, 'UniformOutput', false);
-        addFiles(filepaths);
+        addFiles(event.paths);
     end
 
     function onOpenFolder(~,~)
@@ -159,12 +150,16 @@ function fig = runApp(debugLog)
 
     function refreshFileList()
         if isempty(S.items)
-            labkit.ui.view.update(lbFiles, 'listSelection', {});
+            labkit.ui.view.setListItems(ui, 'files', {});
             txtLoaded.Value = 'No files loaded';
             return;
         end
-        [~, idx] = labkit.ui.view.update(lbFiles, 'listSelection', {S.items.name}, S.current);
-        S.current = idx(1);
+        names = {S.items.name};
+        labkit.ui.view.setListItems(ui, 'files', names);
+        if isempty(S.current) || S.current < 1 || S.current > numel(names)
+            S.current = 1;
+        end
+        lbFiles.Value = names{S.current};
         txtLoaded.Value = sprintf('%d file(s) loaded', numel(S.items));
     end
 
@@ -195,7 +190,7 @@ function fig = runApp(debugLog)
         if isempty(S.curves)
             ddCurve.Items = {'(none)'};
             ddCurve.Value = '(none)';
-            lblStatus.Text = 'No curve found';
+            txtStatus.Value = 'No curve found';
             addLog('No curve parsed.');
             return;
         end
@@ -207,7 +202,7 @@ function fig = runApp(debugLog)
         ddCurve.Items = items;
         ddCurve.Value = items{1};
 
-        lblStatus.Text = sprintf('Loaded %d curve(s)', numel(S.curves));
+        txtStatus.Value = sprintf('Loaded %d curve(s)', numel(S.curves));
         addLog(sprintf('Loaded %d curve(s) from %s.', numel(S.curves), item.name));
 
         updateDropdowns();
@@ -224,7 +219,7 @@ function fig = runApp(debugLog)
         txtScan.Value = '';
         ddCurve.Items = {'(none)'};
         ddCurve.Value = '(none)';
-        lblStatus.Text = 'Ready';
+        txtStatus.Value = 'Ready';
         txtQct.Value = '';
         txtQcv.Value = '';
         txtDiff.Value = '';
@@ -252,13 +247,24 @@ function fig = runApp(debugLog)
     end
 
     function onSwapPlots()
-        tx = ddTopX.Value; ty = ddTopY.Value;
-        bx = ddBotX.Value; by = ddBotY.Value;
+        tx = ddTopX.Value;
+        ty = ddTopY.Value;
+        tg = cbTopGrid.Value;
+        th = cbTopHold.Value;
+        tt = cbTopTrim.Value;
+        bx = ddBotX.Value;
+        by = ddBotY.Value;
 
-        if any(strcmp(ddTopX.Items,bx)), ddTopX.Value = bx; end
-        if any(strcmp(ddTopY.Items,by)), ddTopY.Value = by; end
-        if any(strcmp(ddBotX.Items,tx)), ddBotX.Value = tx; end
-        if any(strcmp(ddBotY.Items,ty)), ddBotY.Value = ty; end
+        if any(strcmp(ddTopX.Items, bx)), ddTopX.Value = bx; end
+        if any(strcmp(ddTopY.Items, by)), ddTopY.Value = by; end
+        cbTopGrid.Value = cbBotGrid.Value;
+        cbTopHold.Value = cbBotHold.Value;
+        cbTopTrim.Value = cbBotTrim.Value;
+        if any(strcmp(ddBotX.Items, tx)), ddBotX.Value = tx; end
+        if any(strcmp(ddBotY.Items, ty)), ddBotY.Value = ty; end
+        cbBotGrid.Value = tg;
+        cbBotHold.Value = th;
+        cbBotTrim.Value = tt;
 
         addLog('Swapped top/bottom selections.');
         refreshPlotsOnly();
@@ -380,11 +386,11 @@ function fig = runApp(debugLog)
         if ~isempty(readout.logMessage)
             addLog(readout.logMessage);
         end
-        lblStatus.Text = readout.statusText;
+        txtStatus.Value = readout.statusText;
     end
 
     function addLog(msg)
-        labkit.ui.view.update(txtLog, 'appendLog', msg);
+        labkit.ui.view.appendLog(ui, 'appLog', msg);
         debugLog.append(msg);
     end
 
