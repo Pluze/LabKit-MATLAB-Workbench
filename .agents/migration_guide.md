@@ -14,9 +14,7 @@ retirement rules, and the minimum standard for handling future migration debt.
 Update this ledger when migration debt is added, reduced, retired, or
 reprioritized. Keep it aligned with:
 
-- `ProjectDebtGuardrailTest.expectedOversizedRunnerDebtFiles`
-- `ProjectDebtGuardrailTest.expectedAppPrivateDebtFiles`
-- `ProjectDocumentationGuardrailTest.expectedPrivateContractDebtFiles`
+- Exact expected-debt inventories in project guardrail tests
 - `ProjectStructureGuardrailTest` package and startup path checks
 - `docs/architecture.md` for human-facing boundary facts
 

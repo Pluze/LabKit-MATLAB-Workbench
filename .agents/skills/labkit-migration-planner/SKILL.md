@@ -47,7 +47,7 @@ find apps -path '*+ui/runApp.m' -print | sort
 find apps -path '*/+*/run.m' -print | sort
 find apps -path '*+ui/buildSpec.m' -print | sort
 find apps -path '*/private/*' -type f -print | sort
-rg -n "expectedOversizedRunnerDebtFiles|expectedAppPrivateDebtFiles|expectedPrivateContractDebtFiles" tests/integration/project
+rg -n "expected\\w*Debt\\w*" tests/integration/project
 ```
 
 For runner size checks, count migrated package-root `run.m` files. A

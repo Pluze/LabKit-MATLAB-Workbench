@@ -70,21 +70,12 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
                 'after the function declaration: ' strjoin(cellstr(missing), ', ')]);
         end
 
-        function privateHelperContractDebtDoesNotGrow(testCase)
+        function privateHelperContractDebtIsRemoved(testCase)
             root = setupLabKitTestPath();
-            expectedFiles = expectedPrivateContractDebtFiles();
             actual = collectPrivateContractDebt(root);
-            unexpectedFiles = setdiff(actual, expectedFiles);
-            staleFiles = setdiff(expectedFiles, actual);
-            testCase.verifyTrue(isempty(unexpectedFiles), ...
-                ['expected-debt: new private helpers without implementation contracts: ' ...
-                strjoin(cellstr(unexpectedFiles), ', ')]);
-            testCase.verifyTrue(isempty(staleFiles), ...
-                ['expected-debt: private helper contract inventory includes ' ...
-                'resolved files. Remove them from expectedPrivateContractDebtFiles: ' ...
-                strjoin(cellstr(staleFiles), ', ')]);
-            testCase.verifyLessThanOrEqual(numel(actual), numel(expectedFiles), ...
-                'Private helper implementation contract debt should only shrink.');
+            testCase.verifyTrue(isempty(actual), ...
+                ['private helpers without implementation contracts must not remain: ' ...
+                strjoin(cellstr(actual), ', ')]);
 
             fprintf('Private helper contract debt inventory: %d files missing top-of-file contracts.\n', ...
                 numel(actual));
@@ -196,10 +187,6 @@ function actual = collectPrivateContractDebt(root)
         end
     end
     actual = unique(actual);
-end
-
-function files = expectedPrivateContractDebtFiles()
-    files = strings(1, 0);
 end
 
 function files = collectAppOwnedPackageFiles(root)
