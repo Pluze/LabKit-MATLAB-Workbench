@@ -81,9 +81,9 @@ The app-facing UI API is intentionally layered:
 
 | Layer | Responsibility | App-facing API |
 | --- | --- | --- |
-| App | Declarative app creation, legacy shell construction, request dispatch, busy state. | `labkit.ui.app.create`, `createShell`, `tab`, `dispatchRequest`, `runBusy`. |
+| App | Declarative app creation, request dispatch, busy state. | `labkit.ui.app.create`, `dispatchRequest`, `runBusy`. |
 | Spec | Data-only UI 2.0 workbench specs. | `labkit.ui.spec.app`, `workspace`, `tab`, `section`, `field`, `rangeField`, `action`, `actionGroup`, `pathPanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `custom`. |
-| View | Semantic UI 2.0 state helpers plus migration-era sections, forms, panels, axes, and rendering actions. | `labkit.ui.view.setValue`, `getValue`, `setEnabled`, `appendLog`, `setListItems`, `setListSelection`, `drawImage`, `resetAxes`, `clearAxes`, plus legacy `section`, `form`, `panel`, `axes`, `draw`, `update`, `place`. |
+| View | Semantic UI 2.0 registry updates and preview rendering helpers. | `labkit.ui.view.setValue`, `getValue`, `setEnabled`, `appendLog`, `setListItems`, `setListSelection`, `drawImage`, `resetAxes`, `clearAxes`. |
 | Tool | Exclusive interaction runtime and composed tools. | `labkit.ui.tool.createRuntime`, `anchorEditor`, `scaleBar`, `scaleBarCalibration`. |
 | Diagnostics | Debug launch, visible trace, callback instrumentation. | `labkit.ui.diag.createContext`. |
 

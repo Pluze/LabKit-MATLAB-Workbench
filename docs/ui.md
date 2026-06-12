@@ -4,9 +4,9 @@
 
 | Facade | Owns | Main APIs |
 | --- | --- | --- |
-| `labkit.ui.app` | Declarative app creation, legacy shell construction, request dispatch, busy state. | `create`, `createShell`, `tab`, `dispatchRequest`, `runBusy`. |
+| `labkit.ui.app` | Declarative app creation, request dispatch, busy state. | `create`, `dispatchRequest`, `runBusy`. |
 | `labkit.ui.spec` | UI 2.0 data-only workbench specs. | `app`, `workspace`, `tab`, `section`, `field`, `rangeField`, `action`, `actionGroup`, `pathPanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `custom`. |
-| `labkit.ui.view` | Semantic UI 2.0 state updates plus migration-era sections, forms, panels, and axes helpers. | `setValue`, `getValue`, `setEnabled`, `appendLog`, `setListItems`, `setListSelection`, `drawImage`, `resetAxes`, `clearAxes`, plus legacy `section`, `form`, `panel`, `axes`, `draw`, `update`, `place`. |
+| `labkit.ui.view` | Semantic UI 2.0 registry updates and preview rendering helpers. | `setValue`, `getValue`, `setEnabled`, `appendLog`, `setListItems`, `setListSelection`, `drawImage`, `resetAxes`, `clearAxes`. |
 | `labkit.ui.tool` | Reusable composed image tools and interaction runtime. | `createRuntime`, `anchorEditor`, `scaleBar`, `scaleBarCalibration`. |
 | `labkit.ui.diag` | Debug launch context, visible trace, callback instrumentation. | `createContext`. |
 
@@ -16,8 +16,8 @@ The root `labkit.ui.*` flat helper surface has been removed. Apps should call th
 
 The UI 2.0 surface makes app code read as a semantic description
 of a LabKit workbench workflow, not as grid construction or a general MATLAB GUI
-DSL. The declarative foundation is available for new migration work; existing
-apps may still use the legacy app/view helpers below until they are migrated.
+DSL. App UI structure should be expressed through app-local
+`+<app_slug>/+ui/buildSpec.m` files and created through `labkit.ui.app.create`.
 
 ```matlab
 function varargout = labkit_Example_app(varargin)
@@ -121,115 +121,25 @@ labkit.ui.spec.custom("roiEditor", @example.ui.buildRoiEditor, ...
 runner, callbacks, and ordinary control specs should not create grids or set
 `Layout.Row`/`Layout.Column` directly.
 
-## Legacy Standard Shell
-
-Unmigrated apps still start from `labkit.ui.app.createShell`:
+## View Helpers
 
 ```matlab
-opts = struct( ...
-    'rightTitle', 'Preview', ...
-    'rightGridSize', [1 1], ...
-    'rightRowHeight', {{'1x'}});
-ui = labkit.ui.app.createShell(struct( ...
-    'title', 'Example App', ...
-    'position', [90 70 1200 800], ...
-    'leftWidth', 380, ...
-    'options', opts));
+labkit.ui.view.setValue(ui, "displayLimits", [0.1 0.9]);
+labkit.ui.view.setEnabled(ui, "run", false);
+labkit.ui.view.setListItems(ui, "sourceImages", imageNames);
+labkit.ui.view.setListSelection(ui, "sourceImages", imageNames, currentName);
+labkit.ui.view.appendLog(ui, "log", "Loaded image.");
+labkit.ui.view.drawImage(ui, "preview", imageData, ...
+    "axis", "raw", "title", "Reference");
+labkit.ui.view.resetAxes(ui, "preview", "Reference", true, "raw");
+labkit.ui.view.clearAxes(ui, "preview", "difference");
 ```
 
-Default left tabs are:
-
-```text
-Files + Analysis
-Summary + Results
-Log
-```
-
-Custom tabs use `labkit.ui.app.tab`:
-
-```matlab
-opts.tabs = labkit.ui.app.tab( ...
-    'filesAnalysis', 'Files + Analysis', [4 1], ...
-    {180, 220, 260, 140});
-```
-
-The shell owns split panes, scrollable tab grids, row resize handles, and the right-side grid. Multi-row tabs get resize handles between adjacent logical rows by default. Use `struct('resize','none')` only for tabs whose rows should remain fixed. Apps own the controls and axes placed inside returned grids.
-
-## Legacy Views And Forms
-
-Unmigrated apps use `labkit.ui.view.section` for titled app-defined sections:
-
-```matlab
-section = labkit.ui.view.section(layFA, 'Analysis Settings', 2, [3 2]);
-grid = section.grid;
-```
-
-In unmigrated apps, `labkit.ui.view.form` is the single public control entry
-point. It replaces separate labeled spinner/dropdown/edit/read-only helpers:
-
-```matlab
-[lblMode, ddMode] = labkit.ui.view.form(grid, struct( ...
-    'kind', 'dropdown', ...
-    'label', 'Mode:', ...
-    'items', {{'Auto', 'Manual'}}, ...
-    'value', 'Auto', ...
-    'callback', @onModeChanged));
-
-[lblN, edN] = labkit.ui.view.form(grid, struct( ...
-    'kind', 'spinner', ...
-    'label', 'Samples:', ...
-    'value', 10, ...
-    'limits', [1 Inf], ...
-    'step', 1));
-
-txtStatus = labkit.ui.view.form(grid, struct( ...
-    'kind', 'readonly', ...
-    'value', 'No file loaded'));
-
-txtMetric = labkit.ui.view.form(grid, struct( ...
-    'kind', 'info', ...
-    'row', 3, ...
-    'label', 'Current value:'));
-```
-
-`form` also accepts a section spec with `title`, `row`, `layout`, and `controls`. The returned struct exposes `controls`, `labels`, `setValue(id,value,reason)`, and `getValue(id)`. `setValue` no-ops for unchanged values and suppresses app-facing semantic callbacks for internal/programmatic updates.
-
-In unmigrated shell code, use `labkit.ui.view.place(component, parentGrid,
-logicalRow)` when manually placing a component in a shell tab grid. App code
-should not depend on physical row indices inserted by row-resize handles.
-
-In unmigrated apps, use `labkit.ui.view.panel` for reusable component groups
-such as file panels, log panels, read-only text panels, and result tables:
-
-```matlab
-fileUi = labkit.ui.view.panel(layFA, 'files', labels, callbacks);
-logUi = labkit.ui.view.panel(layLog, 'log', 1, {'Ready.'});
-tableUi = labkit.ui.view.panel(laySR, 'table', 'Batch Results', 2, columns);
-```
-
-In unmigrated apps, use `labkit.ui.view.update` for state changes on existing
-component handles:
-
-```matlab
-labkit.ui.view.update(logUi.textArea, 'appendLog', 'Loaded file.');
-[value, idx] = labkit.ui.view.update(fileUi.listbox, ...
-    'listSelection', names, previousSelection);
-```
-
-## Legacy Axes And Rendering
-
-In unmigrated apps, use legacy view helpers for app-neutral rendering
-boilerplate. Migrated apps should prefer `previewArea` in the workspace plus
-the named view helpers such as `drawImage`, `resetAxes`, and `clearAxes`.
-
-```matlab
-ax = labkit.ui.view.axes(parent, 1, 'Preview', 'X', 'Y');
-labkit.ui.view.draw(ax, 'reset', 'Preview', true);
-hImage = labkit.ui.view.draw(ax, 'image', imageData, 'Reference');
-labkit.ui.view.draw(ax, 'popout');
-```
-
-`draw(..., 'popout')` installs the standard right-click action `Open axes in new figure` and attaches it to axes children such as images and plotted lines. Apps should call it after custom redraws that create new graphics children.
+View helpers target semantic ids in the UI registry returned by
+`labkit.ui.app.create`. They do not create arbitrary controls or expose MATLAB
+layout primitives. `previewArea` axes automatically receive the standard
+right-click action `Open axes in new figure`; apps redraw prepared data through
+the named preview helpers.
 
 ## Interaction Tools
 
@@ -267,13 +177,11 @@ Debug launches support:
 [fig, debug] = appName("--debug", opts);
 ```
 
-Unmigrated app-local `addLog` functions should append to the visible UI log
-with `labkit.ui.view.update(txtLog, 'appendLog', message)` and then call
-`debug.append(message)`. Migrated apps should append through
-`labkit.ui.view.appendLog(ui, "log", message)` or the app's chosen log-panel
-id, then call `debug.append(message)`. Debug-mode apps attach the Log tab text
-area, emit a startup trace line, pass `debug.trace` into reusable tools through
-`onTrace`, and call `debug.instrumentFigure(fig)` after controls are built.
+Apps append visible log lines through `labkit.ui.view.appendLog(ui, "log",
+message)` or the app's chosen log-panel id, then call `debug.append(message)`.
+Debug-mode apps attach the Log tab text area, emit a startup trace line, pass
+`debug.trace` into reusable tools through `onTrace`, and call
+`debug.instrumentFigure(fig)` after controls are built.
 
 Trace lines include timestamp plus stable `app=...`, `component=...`, `event=...`, and `reason=...` fields. Default instrumentation skips low-level pointer, drag, and scroll callbacks.
 

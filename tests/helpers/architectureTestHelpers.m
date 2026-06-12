@@ -206,8 +206,7 @@ function assertWearableAppBoundary(source, appName)
 end
 
 function assertUsesGuiFoundation(source, appName)
-    assert(contains(source, 'labkit.ui.app.create(') || ...
-        contains(source, 'labkit.ui.app.createShell'), ...
+    assert(contains(source, 'labkit.ui.app.create('), ...
         [appName ' should build from the reusable GUI foundation.']);
 end
 

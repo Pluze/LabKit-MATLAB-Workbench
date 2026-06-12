@@ -65,11 +65,15 @@ function ui = scaleBarPanel(parent, row, opts)
     defaultScaleBarLength = optionValue(opts, 'defaultScaleBarLength', 1);
 
     panelTitle = char(string(optionValue(opts, 'title', 'Scale Bar')));
-    panelUi = labkit.ui.view.section(parent, panelTitle, row, [10 2], ...
-        struct('rowHeight', {{'fit', 'fit', 'fit', 'fit', 'fit', ...
-        'fit', 'fit', 'fit', 'fit', 'fit'}}, ...
-        'columnWidth', {{145, '1x'}}));
-    grid = panelUi.grid;
+    panel = uipanel(parent, 'Title', panelTitle);
+    panel.Layout.Row = row;
+    panel.Layout.Column = 1;
+    grid = uigridlayout(panel, [10 2]);
+    grid.RowHeight = {'fit', 'fit', 'fit', 'fit', 'fit', ...
+        'fit', 'fit', 'fit', 'fit', 'fit'};
+    grid.ColumnWidth = {145, '1x'};
+    grid.Padding = [8 8 8 8];
+    panelUi = struct('panel', panel, 'grid', grid);
 
     btnMeasureReference = uibutton(grid, ...
         'Text', 'Measure reference pixels', ...

@@ -40,5 +40,5 @@ function resetAxes(ui, id, titleText, resetScaleAndTicks, axisId)
     ylabel(ax, '');
     grid(ax, 'off');
     box(ax, 'on');
-    labkit.ui.view.draw(ax, 'popout');
+    enablePopout(ax);
 end

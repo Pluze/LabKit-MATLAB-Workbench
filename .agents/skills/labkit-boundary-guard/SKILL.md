@@ -13,9 +13,8 @@ Preserve LabKit's app-first architecture:
 - `+labkit` owns small, stable UI/DTA/biosignal facades
 - no public helper-dump packages
 - UI apps should use the layered `labkit.ui.app/spec/view/tool/diag` facades;
-  the older flat helper surface has been removed, and pre-2.0
-  `createShell`/legacy view APIs are migration-era dependencies for
-  unmigrated apps
+  the older flat helper surface and pre-2.0 `createShell`/legacy view APIs
+  have been removed
 
 ## Required Read Order
 
@@ -51,9 +50,8 @@ For new or migrated UI boundary work, prefer `labkit.ui.app.create`,
 `labkit.ui.app.dispatchRequest`, `labkit.ui.diag.createContext`, and
 `labkit.ui.tool.createRuntime`. Keep primitive builders private; do not expose
 public `labkit.ui.spec.button`, `dropdown`, `slider`, `listbox`, `table`,
-`axes`, or similar MATLAB primitive constructors. Use `createShell` and legacy
-`view.section/form/panel/axes/draw/update/place` APIs only for unmigrated apps
-or framework internals that still support those apps during the migration.
+`axes`, or similar MATLAB primitive constructors. Do not reintroduce
+`createShell` or legacy `view.section/form/panel/axes/draw/update/place` APIs.
 
 ## Validation
 

@@ -14,9 +14,8 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
 
 - Keep domain formulas, thresholds, integration rules, option defaults, plot labels, result fields, export columns, failed-row behavior, alerts, and log wording app-local unless the user explicitly approves a boundary change.
 - When a documented UI tool owns app-neutral controls or interaction mechanics, consume it instead of reimplementing widget state or normalization. Keep app calculations, summaries, alerts, and exports local.
-- Use `labkit.ui.app.create` with `labkit.ui.spec.*` for new or migrated app
-  GUIs. Unmigrated apps may continue to use `labkit.ui.app.createShell` until
-  their UI 2.0 migration lands.
+- Use `labkit.ui.app.create` with `labkit.ui.spec.*` for app GUIs. Do not
+  reintroduce the removed `labkit.ui.app.createShell` or legacy view helpers.
 - Use `labkit.ui.app.dispatchRequest` for debug launch routing and `labkit.ui.diag.createContext` only when an app has an app-specific nonstandard request path.
 - Debug launches should attach the Log tab text area, emit a startup trace line, and instrument high-level component callbacks after controls are built.
 - Image apps with custom preview scroll, drawing, ROI, scale-bar, or other axes interaction should create a `labkit.ui.tool.createRuntime` and pass that runtime into reusable tools. Do not set image-tool `WindowScrollWheelFcn`, `WindowButtonMotionFcn`, `WindowButtonUpFcn`, or axes `ButtonDownFcn` directly in app code.
@@ -28,12 +27,11 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
   `+state`, `+ops`, `+view`, `+export`, and `+io` as needed. Do not use a fixed
   `+app` namespace; the app folder already provides ownership context, while a
   shared `+app` package name creates MATLAB package-resolution ambiguity.
-- UI 2.0 migrated apps should put the ordinary data-only spec in
-  `+<app_slug>/+ui/buildSpec.m`. The public app entry point, or the app-owned
-  orchestration runner it delegates to when the public file is a thin dispatch
-  wrapper, owns state, callback closures, alerts, log wording, and refresh
-  order; `buildSpec.m` describes controls, sections, workspace, initial
-  text/defaults, and callback handles only.
+- Apps put the ordinary data-only spec in `+<app_slug>/+ui/buildSpec.m`.
+  The public app entry point delegates to package-root `run.m`; that runner
+  owns state, callback closures, alerts, log wording, and refresh order.
+  `buildSpec.m` describes controls, sections, workspace, initial text/defaults,
+  and callback handles only.
 - Do not create MATLAB handles, call `labkit.ui.app.create`, mutate app state,
   perform IO/computation/export, or set `Layout.Row`/`Layout.Column` in
   `+ui/buildSpec.m`. Use named `+ui/build<Thing>.m` custom builders only for

@@ -122,7 +122,7 @@ function runtime = createRuntime(ax, opts)
 
     function installDefaultCallbacks()
         if isValidHandle(state.ax)
-            labkit.ui.view.draw(state.ax, 'popout');
+            enableAxesPopout(state.ax);
         end
         if ~isValidHandle(state.fig) || ~isempty(state.activeScrollToken)
             return;

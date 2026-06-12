@@ -95,7 +95,7 @@ function debugContext = createContext(appName, opts)
             if isempty(textArea) || ~isvalid(textArea)
                 return;
             end
-            labkit.ui.view.update(textArea, 'appendLog', line);
+            appendTextLog(textArea, line);
         end
     end
 
@@ -177,6 +177,14 @@ function debugContext = createContext(appName, opts)
     function out = getLog()
         out = lines;
     end
+end
+
+function appendTextLog(textArea, msg)
+    timestamp = datestr(now, 'HH:MM:SS');
+    old = textArea.Value;
+    old{end + 1} = sprintf('[%s] %s', timestamp, char(msg));
+    textArea.Value = old;
+    drawnow limitrate
 end
 
 function wrapped = callbackWrapperForHandle(handle, propName, callback, traceFcn)

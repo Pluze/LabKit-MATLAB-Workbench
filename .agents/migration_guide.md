@@ -38,11 +38,10 @@ Current facts:
 - App `private/` debt: none.
 - `+labkit` private helper contract debt: none.
 - String-dispatch workflow adapters and app `+core/dispatch.m` routers: none.
-- UI app-facing style debt is active: ordinary app UI still exposes
-  `createShell`, `tab`, `section`, `form`, `panel`, `draw`, `update`, `place`,
-  explicit grid sizes, row heights, right-grid sizing, and direct
-  `Layout.Row`/`Layout.Column` mechanics.
-- The UI 2.0 foundation slice has landed: public spec constructors,
+- UI app-facing style debt is resolved: `createShell`, `tab`, `section`,
+  `form`, `panel`, `draw`, `update`, and `place` have been removed from the
+  public app-facing surface.
+- The UI 2.0 foundation has landed: public spec constructors,
   `labkit.ui.app.create`, named view helpers, GUI-free validation,
   public-surface guardrails, and reusable UI structural tests exist.
 - The first migrated app slice is complete: `labkit_ImageMatch_app`,
@@ -89,19 +88,20 @@ from large app files into large framework helpers.
 ### Problems To Eliminate
 
 The current UI facade fixed the old flat `labkit.ui.*` sprawl, but app code
-still leaks low-level layout and action mechanics:
+The removed pre-2.0 surface leaked low-level layout and action mechanics:
 
 - app specs pass `gridSize`, `rowHeight`, `resizeRows`, `rightGridSize`, and
   `rightRowHeight`
-- apps manually set `Layout.Row` and `Layout.Column`
-- apps and tests depend on row placement rather than semantic control identity
-- app-local `place(...)` helpers hide but do not remove physical layout coupling
-- `labkit.ui.view.draw` and `labkit.ui.view.update` use string actions and
+- app-owned code manually set `Layout.Row` and `Layout.Column`
+- app and test code depended on row placement rather than semantic control
+  identity
+- app-local `place(...)` helpers hid but did not remove physical layout
+  coupling
+- `labkit.ui.view.draw` and `labkit.ui.view.update` used string actions and
   varargs instead of named operations
-- file/log/table/text panels encode special cases under one action-style
+- file/log/table/text panels encoded special cases under one action-style
   `panel` surface
-- docs and scoped agent rules still point new app authors at the pre-2.0 style
-- GUI structural tests over-assert row/column details for reusable UI helpers
+- GUI structural tests over-asserted row/column details for reusable UI helpers
 
 ### Stable Minimal UI 2.0 Surface
 
@@ -203,10 +203,9 @@ labkit.ui.view.update
 labkit.ui.view.place
 ```
 
-During migration, old and new APIs may coexist only to keep each PR runnable.
-Do not add a compatibility bridge that makes old app calls permanent. Do not
-document the old surface as supported once a migrated app family no longer
-needs it.
+The final UI 2.0 surface has removed these APIs. Do not add a compatibility
+bridge that makes old app calls permanent, and do not document the old surface
+as supported.
 
 ### Spec Shape Decisions
 
@@ -492,7 +491,7 @@ is:
 
 - **Underdesign risk:** no `detailsPanel`, `historyPanel`, or
   `axesControlStrip` may leave some repeated code after the first migrations.
-  Keep them Tier 2 until canary apps prove that `statusPanel`, `resultTable`,
+  Keep them Tier 2 until migrated apps prove that `statusPanel`, `resultTable`,
   `field`, and `actionGroup` are awkward or duplicative.
 - **Overdesign risk:** `statusPanel` could become a generic hidden panel DSL,
   `previewArea` could absorb plot-control semantics, and callback event fields
@@ -572,7 +571,7 @@ Current implementation checkpoint:
   constructors, `labkit.ui.app.create`, named view helpers, validation tests,
   public-surface guardrails, and docs/AGENTS/skill routing are expected to
   exist.
-- The first canary is now complete on the current branch:
+- The first migrated app is now complete on the current branch:
   `labkit_ImageMatch_app` launches through `labkit.ui.app.create`, uses the
   declarative workbench, and no longer carries ordinary old-UI layout code.
 - The image-editor pair is now complete on the current branch:
@@ -583,7 +582,7 @@ Current implementation checkpoint:
   `labkit_FocusStack_app` also launches through `labkit.ui.app.create`,
   confirms that paired preview workspaces fit the stable grammar, and keeps
   ordinary UI custom count at 0.
-- Canary-driven framework additions now in use are:
+- Migrated-app-driven framework additions now in use are:
   `pathPanel.selectionMode`, `pathPanel.onSelectionChange`, and
   `previewArea.onModeChange`.
 - Focus Stack also confirms the preferred file-panel composition: use
@@ -609,24 +608,24 @@ Current implementation checkpoint:
 
 2. **Vertical app builder slice**
    - Complete in the current foundation checkpoint. Future changes should be
-     driven by canary migration evidence.
+     driven by migrated app evidence.
    - Add `labkit.ui.app.create` for `controlTabs`, sections, workspace,
      composite families, registries, debug context, and basic resize policy.
-   - Add named view helpers needed by one canary app.
+   - Add named view helpers needed by one migrated app.
    - Use reusable UI GUI tests to verify semantic registry, callback wiring,
      preview/log handles, and debug integration.
 
-3. **Canary app migration**
+3. **Initial app migration**
    - Complete on the current branch with `labkit_ImageMatch_app`, because it is
      recent, regular, and exposes the local
      `place(...)`/preview-boilerplate style debt clearly.
    - Keep app calculations, state, export, image IO, and wording app-local.
    - Update only the image-measurement GUI structural contract needed for the
-     canary.
+     migrated app.
    - Prove ordinary UI needs no public primitive constructors and custom
      count 0.
-   - Keep a canary guardrail that prevents new old-style calls in the migrated
-     path.
+   - Keep a migrated-app guardrail that prevents old-style calls in the
+     migrated path.
 
 4. **Image editor pair**
    - Complete on the current branch with `labkit_ImageEnhance_app`.
@@ -669,17 +668,12 @@ Current implementation checkpoint:
 
 9. **Ledger retirement**
    - Remove this active UI 2.0 section or shrink it to a short historical
-     invariant after the old API surface and temporary allowlists are gone.
+     invariant after the old API surface and temporary debt ledgers are gone.
 
 ### Guardrail Plan
 
 Use staged guardrails so the branch remains useful throughout migration:
 
-- Early: allow old UI APIs only outside migrated canary paths; fail if migrated
-  apps call old APIs or bypass `+<app_slug>/+ui/buildSpec.m`.
-- Middle: maintain a shrinking allowlist of app families that still call
-  pre-2.0 APIs. The allowlist must be in project guardrails, not hidden in prose
-  alone.
 - Final: hard-fail all app-owned calls to `createShell`, `tab`, `section`,
   `form`, `panel`, `draw`, `update`, `place`, `rightGridSize`,
   `rightRowHeight`, `resizeRows`, direct `Layout.Row`, direct `Layout.Column`,
@@ -694,7 +688,7 @@ Use staged guardrails so the branch remains useful throughout migration:
 - Public-surface tests must reject app-facing primitive spec constructors unless
   a later design review explicitly promotes one through the public spec
   promotion rule.
-- Canary-family guardrails should report custom usage count and fail ordinary
+- Migrated-family guardrails should report custom usage count and fail ordinary
   form-like custom usage in migrated paths.
 - Documentation guardrails must prevent scoped agent rules from recommending
   deleted UI APIs.
@@ -726,7 +720,7 @@ Validation routing:
   builder validation, and promotion guardrails: `testLabkitUi`
 - app builder, layout policy, registry, resize, preview, log, diagnostics:
   `testLabkitUiGui`
-- canary and app-family migrations: affected app-family GUI task plus
+- migrated app-family work: affected app-family GUI task plus
   `testAppsSmokeGui`
 - public surface, no-legacy, no-manual-layout, docs/AGENTS/skill routing:
   `testProject`
@@ -748,9 +742,8 @@ Update each documentation surface when its owned contract changes:
 
 - `docs/ui.md`: rewrite when `app.create`, `spec.*`, named view helpers, custom
   escape hatches, and the final public surface are implemented. It now
-  documents the implemented UI 2.0 foundation plus migration-era legacy APIs;
-  keep it current as app migrations remove old surface, but do not expand it
-  into a second migration roadmap.
+  documents the implemented UI 2.0 foundation and final public surface; keep it
+  current without expanding it into a second migration roadmap.
 - `docs/architecture.md`: update when the official app-facing UI surface
   changes from pre-2.0 layered construction to declarative construction.
 - `docs/apps.md`: update when app entrypoint guidance changes to
@@ -760,9 +753,7 @@ Update each documentation surface when its owned contract changes:
 - `AGENTS.md`, `+labkit/AGENTS.md`, `apps/AGENTS.md`, and `tests/AGENTS.md`:
   update when agent routing or ownership rules change.
 - Repo skills: update `labkit-app-builder`, `labkit-boundary-guard`, and
-  `labkit-test-planner` guidance when the new UI API becomes the default for
-  new or migrated UI work while preserving legacy routing for unmigrated app
-  maintenance.
+  `labkit-test-planner` guidance when the app UI/API contract changes.
 
 Do not update human docs with future-tense roadmap text. They should describe
 the current project behavior once the corresponding implementation lands.

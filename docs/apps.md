@@ -84,13 +84,11 @@ The app owns:
 - callback ordering, alerts, and log wording
 
 Every public app entry point should preserve its launch name and route debug
-launch requests through `labkit.ui.app.dispatchRequest`. New or migrated app
-GUIs should build from `labkit.ui.app.create` and `labkit.ui.spec.*`;
-unmigrated apps may keep `labkit.ui.app.createShell` until their UI 2.0
-migration lands. Debug launches should keep visible debug trace wired into the
-Log tab. Image apps with drawing, scale bars, ROI, or preview scroll should
-pass a `labkit.ui.tool.createRuntime` result into reusable tools instead of
-owning figure pointer callbacks directly.
+launch requests through `labkit.ui.app.dispatchRequest`. App GUIs build from
+`labkit.ui.app.create` and `labkit.ui.spec.*`. Debug launches should keep
+visible debug trace wired into the Log tab. Image apps with drawing, scale
+bars, ROI, or preview scroll should pass a `labkit.ui.tool.createRuntime`
+result into reusable tools instead of owning figure pointer callbacks directly.
 
 When a documented UI tool owns app-neutral interaction mechanics, the app should consume that tool and keep workflow meaning, summaries, and exports app-local. `docs/architecture.md` owns the reusable-library extraction rule and temporary debt inventory.
 
@@ -182,8 +180,7 @@ Start from the closest existing app, reduce it to the needed workflow, and
 preserve ownership boundaries. For new app UI, prefer
 `labkit.ui.app.create` with `labkit.ui.spec.*` even for small apps so daily
 interaction stays consistent across app families. Do not copy old manual
-layout into new code unless the app is intentionally remaining unmigrated for
-that slice.
+layout into new code.
 
 ## Validation
 

@@ -113,14 +113,11 @@ Use the closest existing app as the starting pattern, then reduce it to the actu
 
 Build the app in this order:
 
-1. Add or update the app entry point with `labkit.ui.app.create` and
-   `labkit.ui.spec.*` for new or migrated GUI work. Use
-   `labkit.ui.app.createShell` only when intentionally preserving an
-   unmigrated legacy UI until its migration slice.
-2. For UI 2.0 migrated apps with extracted helpers, put the data-only spec in
-   `+<app_slug>/+ui/buildSpec.m`; the public entry point, or the app-owned
-   orchestration runner it delegates to when the public file is a thin dispatch
-   wrapper, should create callback handles, call
+1. Add or update the public app entry point as a thin dispatch wrapper, then
+   create the GUI from package-root `run.m` with `labkit.ui.app.create` and
+   `labkit.ui.spec.*`.
+2. Put the data-only spec in `+<app_slug>/+ui/buildSpec.m`; package-root
+   `run.m` should create callback handles, call
    `<app_slug>.ui.buildSpec(...)`, then call `labkit.ui.app.create(...)`.
 3. Keep `buildSpec.m` free of MATLAB handle creation, `labkit.ui.app.create`,
    state mutation, IO, computation, export writing, nested callback
@@ -146,9 +143,8 @@ Build the app in this order:
    to audit the current debt map and update `.agents/migration_guide.md`.
 11. Do not add new `private/` runners, `*Workflow.m` string-dispatch adapters,
    fixed `+app` package names, or app-local public helper packages.
-12. Render prepared data through UI 2.0 named view helpers, existing
-   `labkit.ui.tool.*` helpers, or migration-era view helpers for unmigrated
-   apps; keep analysis out of UI helpers.
+12. Render prepared data through UI 2.0 named view helpers or existing
+   `labkit.ui.tool.*` helpers; keep analysis out of UI helpers.
 13. Add export builders before CSV/PNG writing so output contracts can be tested.
 14. Add focused tests with synthetic fixtures or minimal generated data.
 15. Update human docs for user-facing behavior and scoped `AGENTS.md` only when rules change.

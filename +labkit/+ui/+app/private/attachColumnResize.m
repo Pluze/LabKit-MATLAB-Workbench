@@ -20,8 +20,8 @@ function attachColumnResize(fig, grid, leftColumn, separatorColumn, opts)
 %   WindowButtonMotionFcn/WindowButtonUpFcn callbacks while dragging.
 %
 % Notes:
-%   This helper mutates layout handles only; apps should normally request
-%   resizable shells through labkit.ui.app.createShell.
+%   This helper mutates layout handles only; apps request resizable workbench
+%   layouts through labkit.ui.app.create.
 
     if nargin < 5
         opts = struct();
