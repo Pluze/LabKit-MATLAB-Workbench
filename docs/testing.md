@@ -30,6 +30,7 @@ buildtool testAppsDicGui
 buildtool testAppsImageMeasurement
 buildtool testAppsImageMeasurementGui
 buildtool testAppsWearableGui
+buildtool testAppsTemplatesGui
 buildtool testAppsGui
 buildtool testAppsSmokeGui
 buildtool testGuiStructural
@@ -143,6 +144,7 @@ buildtool testAppsElectrochem
 buildtool testAppsDicGui
 buildtool testAppsImageMeasurementGui
 buildtool testAppsWearableGui
+buildtool testAppsTemplatesGui
 buildtool testAppsGui
 buildtool testAppsSmokeGui
 buildtool testGuiStructural
@@ -172,6 +174,7 @@ Focused build tasks mirror source ownership:
 | `testAppsImageMeasurement` | Image-measurement calculations and exports. |
 | `testAppsImageMeasurementGui` | Image-measurement layout contracts. |
 | `testAppsWearableGui` | Wearable app layout contracts. |
+| `testAppsTemplatesGui` | Template app structure, starter helper, and layout contracts. |
 | `testAppsGui` | All app-family noninteractive GUI checks. |
 | `testAppsSmokeGui` | Cross-app launch smoke checks. |
 | `testGuiStructural` | All structural GUI checks. |

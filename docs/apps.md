@@ -50,6 +50,7 @@ the repository contract.
 | `labkit_ImageMatch_app` | experimental | Reference-based white-balance, tone, Lab color-style, and histogram matching for figure images. | Image files | Matched images and processing manifest CSV. |
 | `labkit_BatchImageCrop_app` | experimental | Batch fixed-size microscope image crops with per-image crop center and rotation. | Microscope image files | Cropped images and crop manifest CSV. |
 | `labkit_ECGPrint_app` | experimental | ECG waveform preview, ROI filtering, peak/segment SNR, and SNR-over-time display. | MAT timetable or CSV/TSV table | Segment SNR CSV and waveform PNG. |
+| `labkit_TemplateApp_app` | template | Starter canvas showing the current UI 2.0 app structure. | Synthetic placeholder state | Example controls, preview, summary, and log. |
 
 Status labels:
 
@@ -59,6 +60,7 @@ Status labels:
 | `active` | Current workflow still being refined through real use. |
 | `experimental` | Newer utility or workflow under evaluation. |
 | `archived` | Kept for reference, not part of normal use. |
+| `template` | Developer-facing starter app that demonstrates current app structure and UI APIs. |
 
 ## App Families
 
@@ -69,6 +71,10 @@ DIC apps live under `apps/dic/`. They use the shared GUI shell and interaction r
 Image measurement apps live under `apps/image_measurement/`. They are separate from DIC because their workflows are general image measurements or image-processing utilities rather than DIC preprocessing or strain postprocessing.
 
 Wearable biosignal apps live under `apps/wearable/`. They use the biosignal facade for recording loading, channel extraction, time ROI, filtering, events, segments, templates, and measurements, while the app owns workflow wording, plot layout, import controls, and export choices.
+
+Template apps live under `apps/templates/`. They are launchable examples for
+starting new LabKit apps and should demonstrate current app structure without
+owning scientific workflow logic.
 
 ## App Ownership
 
@@ -182,6 +188,11 @@ preserve ownership boundaries. For new app UI, prefer
 interaction stays consistent across app families. Do not copy old manual
 layout into new code.
 
+For a blank starting point, copy `apps/templates/starter_app/`, rename the
+public command, folder slug, and package namespace, then replace the synthetic
+state and display helpers with the new workflow's state, calculations, plots,
+exports, and tests.
+
 ## Validation
 
 Pure app calculations, export table construction, and plotting helpers belong
@@ -207,3 +218,4 @@ Interactive file selection, drawing, visual inspection, and full workflow feel a
 | `labkit_ImageMatch_app` | Multi-image reference matching with ordered history, undo/reset, balanced matching, white-balance matching, tone-only matching, Lab style matching, histogram matching, and batch export. | Exports matched image files plus a manifest CSV with source/output path, status, output size, and step count. |
 | `labkit_BatchImageCrop_app` | Selected-file microscope image loading, fixed global crop width/height, per-image rotation, per-image crop-center confirmation on a rotated preview canvas, and exact-pixel crop generation without resizing. | Exports unique cropped image files and a crop manifest CSV with source/output paths, rotation, center, output size, canvas size, and status. |
 | `labkit_ECGPrint_app` | CSV/MAT import parsing, channel/ROI selection, padded filtering before ROI crop, ECG peak detection, segments, template, and SNR-over-time plots. | Exports per-segment SNR CSV and waveform PNG. Multi-file/class statistics belong in a separate wearable stats app. |
+| `labkit_TemplateApp_app` | Developer-facing starter canvas for current UI 2.0 app structure, including app entrypoint, package-root runner, data-only `buildSpec`, semantic view updates, preview area, result table, log panel, and debug trace. | No scientific export workflow; copy it as a starting point and replace the placeholder state with real app-owned behavior. |

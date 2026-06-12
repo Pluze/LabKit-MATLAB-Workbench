@@ -105,7 +105,8 @@ classdef ProjectStructureGuardrailTest < matlab.unittest.TestCase
 
             testCase.verifyFalse(isfolder(fullfile(root, 'apps', 'private')), ...
                 'The transitional apps/private launcher directory should be removed.');
-            expectedDirs = {'electrochem', 'dic', 'image_measurement', 'wearable'};
+            expectedDirs = {'electrochem', 'dic', 'image_measurement', ...
+                'wearable', 'templates'};
             for k = 1:numel(expectedDirs)
                 testCase.verifyTrue(isfolder(fullfile(root, 'apps', expectedDirs{k})), ...
                     ['Missing app family folder: apps/' expectedDirs{k}]);
@@ -225,6 +226,23 @@ classdef ProjectStructureGuardrailTest < matlab.unittest.TestCase
                 'DIC postprocess app should not use a fixed +app namespace.');
             assertAppOwnedPackageCapability(testCase, root, appDir, ...
                 packageDir, 'dic', 'dic_postprocess');
+        end
+
+        function templateAppsUseOwnedPackageNamespace(testCase)
+            root = setupLabKitTestPath();
+            appDir = fullfile(root, 'apps', 'templates', 'starter_app');
+            packageDir = fullfile(appDir, '+starter_app');
+
+            testCase.verifyTrue(isfolder(appDir), ...
+                'Starter template app should live under apps/templates/starter_app.');
+            testCase.verifyTrue(isfile(fullfile(appDir, 'labkit_TemplateApp_app.m')), ...
+                'Template app entrypoint should live under its app folder.');
+            testCase.verifyFalse(isfolder(fullfile(appDir, 'private')), ...
+                'Template app should use an app-owned package, not private/.');
+            testCase.verifyFalse(isfolder(fullfile(appDir, '+app')), ...
+                'Template app should not use a fixed +app namespace.');
+            assertAppOwnedPackageCapability(testCase, root, appDir, ...
+                packageDir, 'templates', 'starter_app');
         end
 
         function sensitiveSampleHygieneScansTrackedText(testCase)
@@ -350,7 +368,9 @@ function specs = migratedUi2AppSpecs()
         fullfile('apps', 'dic', 'dic_preprocess'), ...
         'dic_preprocess', 'labkit_DICPreprocess_app.m'; ...
         fullfile('apps', 'dic', 'dic_postprocess'), ...
-        'dic_postprocess', 'labkit_DICPostprocess_app.m'};
+        'dic_postprocess', 'labkit_DICPostprocess_app.m'; ...
+        fullfile('apps', 'templates', 'starter_app'), ...
+        'starter_app', 'labkit_TemplateApp_app.m'};
 end
 
 function assertMigratedUi2AppStructure(testCase, root, appRelDir, packageName, entrypointName)
@@ -603,6 +623,9 @@ function legacy = legacyEntrypointInfo(appName)
         case 'labkit_ECGPrint_app'
             legacy = struct('launchName', 'launchECGPrintApp', ...
                 'legacyCall', 'wearable_ecg_print_gui(');
+        case 'labkit_TemplateApp_app'
+            legacy = struct('launchName', 'launchTemplateApp', ...
+                'legacyCall', 'template_app_gui(');
         otherwise
             error('Unknown app entrypoint in manifest: %s', appName);
     end

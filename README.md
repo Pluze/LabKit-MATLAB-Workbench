@@ -7,7 +7,8 @@
 
 Focused MATLAB GUI apps for lab workflows in electrochemistry, DIC, image
 measurement, microscopy focus stacking, image enhancement, batch image
-cropping, and wearable biosignal review.
+cropping, wearable biosignal review, and a starter template app for new
+LabKit app development.
 
 LabKit MATLAB Workbench is an app-first research workbench. Each workflow keeps
 its own launch command, app-owned calculations, plots, summaries, and exports.
@@ -59,6 +60,9 @@ labkit_BatchImageCrop_app
 
 % Wearable biosignal review
 labkit_ECGPrint_app
+
+% App development template
+labkit_TemplateApp_app
 ```
 
 Use the app window to load files, inspect plots or measurements, tune workflow
@@ -81,6 +85,7 @@ options, and export outputs when the selected app provides an export action.
 | `labkit_ImageMatch_app` | Reference-based white-balance, tone, and color-style matching for figure images | Image files | Matched images and processing manifest CSV |
 | `labkit_BatchImageCrop_app` | Fixed-size batch microscope crops with per-image center and rotation | Microscope image files | Cropped images and crop manifest CSV |
 | `labkit_ECGPrint_app` | ECG waveform preview, filtering, peak/segment SNR, and SNR-over-time display | MAT timetable, CSV, or TSV recordings | Segment SNR CSV and waveform PNG |
+| `labkit_TemplateApp_app` | Starter canvas showing the current UI 2.0 app structure | Synthetic placeholder state | Example controls, preview, summary, and log |
 
 ## Reusable Foundation
 
@@ -88,8 +93,9 @@ The reusable library is intentionally small and app-facing:
 
 | Facade | Scope |
 | --- | --- |
-| `labkit.ui.app` | Figure shells, tabs, request dispatch, and busy-state feedback. |
-| `labkit.ui.view` | Sections, forms, panels, tables, logs, axes setup, image display, and prepared plotting. |
+| `labkit.ui.app` | Declarative app creation, request dispatch, and busy-state feedback. |
+| `labkit.ui.spec` | Data-only UI 2.0 workbench specs for tabs, sections, fields, actions, paths, previews, results, logs, and status panels. |
+| `labkit.ui.view` | Semantic registry updates, list state, logs, preview image drawing, axes reset, and axes clearing. |
 | `labkit.ui.tool` | Interaction runtime, anchor editing, scale-bar placement, and calibration helpers. |
 | `labkit.ui.diag` | Debug context, trace logging, callback instrumentation, and visible log mirroring. |
 | `labkit.dta` | Gamry DTA file discovery, type detection, loading, sessions, parsed curves, and pulse helpers. |
@@ -130,6 +136,7 @@ apps/electrochem/       Electrochemistry apps
 apps/dic/               DIC image workflow apps
 apps/image_measurement/ General image measurement and microscopy apps
 apps/wearable/          Wearable biosignal apps
+apps/templates/         Starter app template for new LabKit apps
 tests/                  MATLAB tests, GUI structural checks, and fixtures
 scripts/                Test wrapper scripts
 docs/                   Human-readable architecture, API, app, and testing docs

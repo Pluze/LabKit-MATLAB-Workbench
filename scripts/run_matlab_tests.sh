@@ -32,6 +32,7 @@ Common tasks:
   testAppsImageMeasurement
   testAppsImageMeasurementGui
   testAppsWearableGui
+  testAppsTemplatesGui
   testAppsGui
   testAppsSmokeGui
   testGuiStructural

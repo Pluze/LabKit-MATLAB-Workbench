@@ -46,6 +46,7 @@ labkit_ImageEnhance_app
 labkit_ImageMatch_app
 labkit_BatchImageCrop_app
 labkit_ECGPrint_app
+labkit_TemplateApp_app
 ```
 
 `labkit_launcher` is the primary human-facing entry point for selecting apps.
@@ -100,6 +101,11 @@ and are not ready for a reusable `+labkit` facade.
 Current image-measurement, electrochemistry, wearable, and DIC apps already
 follow the app-owned package shape. Do not copy older family-level `private/`
 helper layouts into new app work.
+
+Template apps under `apps/templates/` are launchable examples for app authors.
+They must follow the same public entrypoint, package-root `run.m`, data-only
+`+ui/buildSpec.m`, and app-owned helper package rules as workflow apps, but
+they should not encode scientific logic or reusable library behavior.
 
 ### App-Owned Package Shape
 
@@ -211,9 +217,9 @@ GUI launch/layout checks live in source-aligned build tasks such as `testLabkitU
 
 ## Current Package Surface
 
-- `labkit.ui.app`: declarative app creation, legacy shell specs, tab specs, internal request dispatch, and busy-state feedback.
+- `labkit.ui.app`: declarative app creation, request dispatch, and busy-state feedback.
 - `labkit.ui.spec`: data-only UI 2.0 workbench specs for tabs, sections, fields, actions, path panels, previews, results, logs, status, and custom tool slots.
-- `labkit.ui.view`: semantic UI 2.0 state helpers, sections, unified form controls, file panels, logs, tables, listbox state, axes reset/popout, image display, and prepared-X/Y plotting.
+- `labkit.ui.view`: semantic UI 2.0 registry updates, list state, logs, preview image drawing, axes reset, and axes clearing.
 - `labkit.ui.tool`: interaction runtime, anchor editing, scale-bar tool, and scale-bar calibration.
 - `labkit.ui.diag`: debug context, visible trace, callback instrumentation, and log mirroring.
 - `labkit.dta`: DTA file discovery, type detection, single/batch/folder loading, pulse detection, item construction behind the facade, parsed table/curve access, session save/load, and session add/remove/select operations.

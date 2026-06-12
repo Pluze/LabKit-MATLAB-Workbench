@@ -12,6 +12,7 @@ function h = architectureTestHelpers()
     h.assertDICAppBoundary = @assertDICAppBoundary;
     h.assertImageMeasurementAppBoundary = @assertImageMeasurementAppBoundary;
     h.assertWearableAppBoundary = @assertWearableAppBoundary;
+    h.assertUsesGuiFoundation = @assertUsesGuiFoundation;
     h.guiWords = @guiWords;
     h.appEntrypointWords = @appEntrypointWords;
     h.experimentWorkflowWords = @experimentWorkflowWords;
