@@ -20,7 +20,7 @@ apps/ category folders containing public app entry points or app subfolders
 Short version:
 
 ```text
-labkit.ui        layered GUI foundation split into app/view/tool/diag facades
+labkit.ui        layered GUI foundation split into app/spec/view/tool/diag facades
 labkit.dta       current electrochemistry/Gamry DTA file and session facade
 labkit.biosignal current wearable/physiological time-series facade
 apps/            experiment-specific workflow apps
@@ -60,7 +60,7 @@ repository does not track `LabKit.prj` or `resources/project/`.
 | Area | Responsibility |
 | --- | --- |
 | `apps/` | Public app entry points and app-specific workflow code, including app-owned package helpers under the owning app folder. |
-| `+labkit/+ui` | Reusable GUI app/view/tool/diagnostics facades plus private implementation helpers. |
+| `+labkit/+ui` | Reusable GUI app/spec/view/tool/diagnostics facades plus private implementation helpers. |
 | `+labkit/+dta` | GUI-free DTA discovery, loading, session, pulse, and parsed curve/table facade. |
 | `+labkit/+biosignal` | GUI-free recording loading, channel extraction, waveform processing, events, segments, templates, measurements, and group comparisons. |
 | `private/` helpers | Parser, normalization, item/session construction, pulse, and implementation details hidden behind the owning facade. |
@@ -81,8 +81,9 @@ The app-facing UI API is intentionally layered:
 
 | Layer | Responsibility | App-facing API |
 | --- | --- | --- |
-| App | Figure shell, tabs, request dispatch, busy state. | `labkit.ui.app.createShell`, `tab`, `dispatchRequest`, `runBusy`. |
-| View | Sections, forms, reusable panels, axes, rendering actions, and UI state updates. | `labkit.ui.view.section`, `form`, `panel`, `axes`, `draw`, `update`, `place`. |
+| App | Declarative app creation, legacy shell construction, request dispatch, busy state. | `labkit.ui.app.create`, `createShell`, `tab`, `dispatchRequest`, `runBusy`. |
+| Spec | Data-only UI 2.0 workbench specs. | `labkit.ui.spec.app`, `workspace`, `tab`, `section`, `field`, `rangeField`, `action`, `actionGroup`, `pathPanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `custom`. |
+| View | Semantic UI 2.0 state helpers plus migration-era sections, forms, panels, axes, and rendering actions. | `labkit.ui.view.setValue`, `getValue`, `setEnabled`, `appendLog`, `setListItems`, `setListSelection`, `drawImage`, `resetAxes`, `clearAxes`, plus legacy `section`, `form`, `panel`, `axes`, `draw`, `update`, `place`. |
 | Tool | Exclusive interaction runtime and composed tools. | `labkit.ui.tool.createRuntime`, `anchorEditor`, `scaleBar`, `scaleBarCalibration`. |
 | Diagnostics | Debug launch, visible trace, callback instrumentation. | `labkit.ui.diag.createContext`. |
 
@@ -171,8 +172,9 @@ GUI launch/layout checks live in source-aligned build tasks such as `testLabkitU
 
 ## Current Package Surface
 
-- `labkit.ui.app`: shell specs, tab specs, internal request dispatch, and busy-state feedback.
-- `labkit.ui.view`: sections, unified form controls, file panels, logs, tables, listbox state, axes reset/popout, image display, and prepared-X/Y plotting.
+- `labkit.ui.app`: declarative app creation, legacy shell specs, tab specs, internal request dispatch, and busy-state feedback.
+- `labkit.ui.spec`: data-only UI 2.0 workbench specs for tabs, sections, fields, actions, path panels, previews, results, logs, status, and custom tool slots.
+- `labkit.ui.view`: semantic UI 2.0 state helpers, sections, unified form controls, file panels, logs, tables, listbox state, axes reset/popout, image display, and prepared-X/Y plotting.
 - `labkit.ui.tool`: interaction runtime, anchor editing, scale-bar tool, and scale-bar calibration.
 - `labkit.ui.diag`: debug context, visible trace, callback instrumentation, and log mirroring.
 - `labkit.dta`: DTA file discovery, type detection, single/batch/folder loading, pulse detection, item construction behind the facade, parsed table/curve access, session save/load, and session add/remove/select operations.

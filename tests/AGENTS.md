@@ -30,7 +30,7 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
   same-named local helper copies once the behavior exists in the app-owned
   package. Ordinary tests should call the package helper; GUI structural tests
   only prove wiring/layout.
-- UI public-surface tests should assert the layered `labkit.ui.app/view/tool/diag` facade and keep low-level controls, row resize, panel internals, and popout implementation private.
+- UI public-surface tests should assert the layered `labkit.ui.app/spec/view/tool/diag` facade and keep low-level controls, row resize, panel internals, and popout implementation private.
 - GUI smoke/debug tests may assert that every app supports debug launch and visible startup trace, but should not claim full interactive workflow validation.
 - When one test file grows too broad, add new focused `test_*.m` files instead of appending unrelated coverage.
 - GUI tests are structural launch/layout/callback checks; do not claim full interactive workflow validation from automated GUI tests.

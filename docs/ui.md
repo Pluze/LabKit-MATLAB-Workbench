@@ -1,22 +1,23 @@
 # UI Library
 
-`labkit.ui` is the reusable MATLAB GUI foundation. It is now split into four app-facing facade packages:
+`labkit.ui` is the reusable MATLAB GUI foundation. It is split into app-facing facade packages:
 
 | Facade | Owns | Main APIs |
 | --- | --- | --- |
-| `labkit.ui.app` | Figure shell, tabs, request dispatch, busy state. | `createShell`, `tab`, `dispatchRequest`, `runBusy`. |
-| `labkit.ui.view` | Sections, forms, component panels, axes rendering, and app-neutral UI state updates. | `section`, `form`, `panel`, `axes`, `draw`, `update`, `place`. |
+| `labkit.ui.app` | Declarative app creation, legacy shell construction, request dispatch, busy state. | `create`, `createShell`, `tab`, `dispatchRequest`, `runBusy`. |
+| `labkit.ui.spec` | UI 2.0 data-only workbench specs. | `app`, `workspace`, `tab`, `section`, `field`, `rangeField`, `action`, `actionGroup`, `pathPanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `custom`. |
+| `labkit.ui.view` | Semantic UI 2.0 state updates plus migration-era sections, forms, panels, and axes helpers. | `setValue`, `getValue`, `setEnabled`, `appendLog`, `setListItems`, `setListSelection`, `drawImage`, `resetAxes`, `clearAxes`, plus legacy `section`, `form`, `panel`, `axes`, `draw`, `update`, `place`. |
 | `labkit.ui.tool` | Reusable composed image tools and interaction runtime. | `createRuntime`, `anchorEditor`, `scaleBar`, `scaleBarCalibration`. |
 | `labkit.ui.diag` | Debug launch context, visible trace, callback instrumentation. | `createContext`. |
 
 The root `labkit.ui.*` flat helper surface has been removed. Apps should call the facade that owns the behavior they need. Private implementation details live under each facade's `private/` folder.
 
-## UI 2.0 API Ergonomics Target
+## UI 2.0 Declarative Workbench
 
-The planned UI 2.0 surface should make app code read as a semantic description
+The UI 2.0 surface makes app code read as a semantic description
 of a LabKit workbench workflow, not as grid construction or a general MATLAB GUI
-DSL. This sketch fixes the intended API feel while the implementation is still
-being designed. Until UI 2.0 lands, use the current APIs in the sections below.
+DSL. The declarative foundation is available for new migration work; existing
+apps may still use the legacy app/view helpers below until they are migrated.
 
 ```matlab
 function varargout = labkit_Example_app(varargin)
@@ -106,9 +107,9 @@ labkit.ui.spec.custom("roiEditor", @example.ui.buildRoiEditor, ...
 runner, callbacks, and ordinary control specs should not create grids or set
 `Layout.Row`/`Layout.Column` directly.
 
-## Standard Shell
+## Legacy Standard Shell
 
-Every app should start from `labkit.ui.app.createShell`:
+Unmigrated apps still start from `labkit.ui.app.createShell`:
 
 ```matlab
 opts = struct( ...
@@ -142,7 +143,7 @@ The shell owns split panes, scrollable tab grids, row resize handles, and the ri
 
 ## Views And Forms
 
-Use `labkit.ui.view.section` for titled app-defined sections:
+Unmigrated apps use `labkit.ui.view.section` for titled app-defined sections:
 
 ```matlab
 section = labkit.ui.view.section(layFA, 'Analysis Settings', 2, [3 2]);

@@ -1,0 +1,44 @@
+function appendLog(ui, idOrMessage, maybeMessage)
+%APPENDLOG Append a line to a UI 2.0 log panel.
+%
+% App-facing contract:
+%   labkit.ui.view.appendLog(ui, message)
+%   labkit.ui.view.appendLog(ui, id, message)
+%
+% Inputs:
+%   ui - UI registry returned by labkit.ui.app.create.
+%   id - optional logPanel id. If omitted, the first log panel is used.
+%   message - text appended to the log panel.
+%
+% Output:
+%   None. The helper delegates text-area mutation to the existing view update
+%   implementation so log behavior remains consistent during migration.
+
+    if nargin < 3
+        id = firstControlOfKind(ui, 'logPanel');
+        message = idOrMessage;
+    else
+        id = idOrMessage;
+        message = maybeMessage;
+    end
+
+    control = resolveControl(ui, id);
+    if ~isfield(control, 'textArea')
+        error('labkit:ui:view:InvalidLogPanel', ...
+            'Control "%s" is not a log panel.', control.id);
+    end
+    labkit.ui.view.update(control.textArea, 'appendLog', message);
+end
+
+function id = firstControlOfKind(ui, kind)
+    names = fieldnames(ui.controls);
+    for k = 1:numel(names)
+        control = ui.controls.(names{k});
+        if isfield(control, 'kind') && strcmp(control.kind, kind)
+            id = names{k};
+            return;
+        end
+    end
+    error('labkit:ui:view:UnknownControl', ...
+        'No UI control of kind "%s" exists.', kind);
+end
