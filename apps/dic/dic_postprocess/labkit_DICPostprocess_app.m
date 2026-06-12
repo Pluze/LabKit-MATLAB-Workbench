@@ -28,125 +28,45 @@ function varargout = labkit_DICPostprocess_app(varargin)
     S.overlayEyy = [];
     S.summaryTable = table();
 
-    workbenchOpts = struct( ...
-        'rightTitle', 'Strain Overlays', ...
-        'rightGridSize', [2 1], ...
-        'rightRowHeight', {{'1x', '1x'}}, ...
-        'rightRowSpacing', 10);
-    workbenchOpts.tabs = [ ...
-        labkit.ui.app.tab('filesAnalysis', 'Files + Analysis', [4 1], ...
-            {240, 230, 260, 120}, ...
-            struct('resizeOptions', struct('minTopHeight', 120, 'minBottomHeight', 90))), ...
-        labkit.ui.app.tab('summaryResults', 'Summary + Results', [2 1], ...
-            {210, '1x'}, ...
-            struct('resizeOptions', struct('minTopHeight', 120, 'minBottomHeight', 90))), ...
-        labkit.ui.app.tab('log', 'Log', [1 1], {'1x'})];
-    ui = labkit.ui.app.createShell(struct( ...
-        'title', 'DIC Strain Postprocess', ...
-        'position', [90 70 1450 880], ...
-        'leftWidth', 390, ...
-        'options', workbenchOpts));
-    ui = dic_postprocess.ui.createRightAxesPair(ui, ...
-        'EXX Overlay', 'EYY Overlay', false);
-    fig = ui.fig;
+    callbacks = struct( ...
+        "openMat", @onOpenMat, ...
+        "openReference", @onOpenReference, ...
+        "openMask", @onOpenMask, ...
+        "generate", @onGenerate, ...
+        "optionsChanged", @onOptionsChanged, ...
+        "saveOverlays", @onSaveOverlays, ...
+        "exportSummary", @onExportSummary, ...
+        "exportColorbar", @onExportColorbar);
+    spec = dic_postprocess.ui.buildSpec(callbacks);
+    ui = labkit.ui.app.create(spec, "debug", debugLog);
+    fig = ui.figure;
 
-    layFA = ui.filesAnalysisGrid;
-    laySR = ui.summaryResultsGrid;
-    layLog = ui.logGrid;
-
-    filePanel = labkit.ui.view.section(layFA, 'Inputs', 1, [6 2], ...
-        struct('rowHeight', {{'fit', 'fit', 'fit', 'fit', 'fit', 'fit'}}, ...
-        'columnWidth', {{'1x', '1x'}}));
-    fileGrid = filePanel.grid;
-
-    btnMat = uibutton(fileGrid, 'Text', 'Open DIC MAT', 'ButtonPushedFcn', @onOpenMat);
-    btnMat.Layout.Row = 1;
-    btnMat.Layout.Column = 1;
-    btnReference = uibutton(fileGrid, 'Text', 'Open reference image', 'ButtonPushedFcn', @onOpenReference);
-    btnReference.Layout.Row = 1;
-    btnReference.Layout.Column = 2;
-    btnMask = uibutton(fileGrid, 'Text', 'Open mask image', 'ButtonPushedFcn', @onOpenMask);
-    btnMask.Layout.Row = 2;
-    btnMask.Layout.Column = [1 2];
-
-    txtMat = labkit.ui.view.form(fileGrid, struct( ...
-        'kind', 'readonly', ...
-        'value', 'No MAT file loaded'));
-    txtMat.Layout.Row = 3;
-    txtMat.Layout.Column = [1 2];
-    txtReference = labkit.ui.view.form(fileGrid, struct( ...
-        'kind', 'readonly', ...
-        'value', 'No reference image loaded'));
-    txtReference.Layout.Row = 4;
-    txtReference.Layout.Column = [1 2];
-    txtMask = labkit.ui.view.form(fileGrid, struct( ...
-        'kind', 'readonly', ...
-        'value', 'No mask image loaded'));
-    txtMask.Layout.Row = 5;
-    txtMask.Layout.Column = [1 2];
-
-    btnGenerate = uibutton(fileGrid, 'Text', 'Generate overlays + summary', ...
-        'ButtonPushedFcn', @onGenerate);
-    btnGenerate.Layout.Row = 6;
-    btnGenerate.Layout.Column = [1 2];
-
-    optionPanel = labkit.ui.view.section(layFA, 'Overlay Options', 2, [6 2], ...
-        struct('rowHeight', {{'fit', 'fit', 'fit', 'fit', 'fit', 'fit'}}));
-    optionGrid = optionPanel.grid;
-
-    [~, edAlpha] = labkit.ui.view.form(optionGrid, struct('kind', 'spinner', 'label', 'Alpha:', 'value', 0.60, 'limits', [0 1], 'step', 0.05, 'callback', @onOptionsChanged));
-    [~, edMin] = labkit.ui.view.form(optionGrid, struct('kind', 'spinner', 'label', 'Color min:', 'value', -0.15, 'step', 0.01, 'callback', @onOptionsChanged));
-    [~, edMax] = labkit.ui.view.form(optionGrid, struct('kind', 'spinner', 'label', 'Color max:', 'value', 0.15, 'step', 0.01, 'callback', @onOptionsChanged));
-    [~, edOversample] = labkit.ui.view.form(optionGrid, struct('kind', 'spinner', 'label', 'Oversample:', 'value', 6, 'limits', [1 20], 'step', 1, 'callback', @onOptionsChanged));
-    [~, edSigma] = labkit.ui.view.form(optionGrid, struct('kind', 'spinner', 'label', 'Smooth sigma:', 'value', 0.8, 'limits', [0 Inf], 'step', 0.1, 'callback', @onOptionsChanged));
-    [~, edResolution] = labkit.ui.view.form(optionGrid, struct('kind', 'spinner', 'label', 'Export DPI:', 'value', 1000, 'limits', [72 2400], 'step', 50));
-
-    imagePanel = labkit.ui.view.section(layFA, 'Optical Image Enhancement', 3, [7 2], ...
-        struct('rowHeight', {{'fit', 'fit', 'fit', 'fit', 'fit', 'fit', 'fit'}}));
-    imageGrid = imagePanel.grid;
-
-    [~, edBrightness] = labkit.ui.view.form(imageGrid, struct('kind', 'spinner', 'label', 'Brightness:', 'value', 0, 'limits', [-1 1], 'step', 0.05, 'callback', @onOptionsChanged));
-    [~, edContrast] = labkit.ui.view.form(imageGrid, struct('kind', 'spinner', 'label', 'Contrast:', 'value', 1, 'limits', [0.05 5], 'step', 0.05, 'callback', @onOptionsChanged));
-    [~, edGamma] = labkit.ui.view.form(imageGrid, struct('kind', 'spinner', 'label', 'Gamma:', 'value', 1, 'limits', [0.05 5], 'step', 0.05, 'callback', @onOptionsChanged));
-    [~, edSaturation] = labkit.ui.view.form(imageGrid, struct('kind', 'spinner', 'label', 'Saturation:', 'value', 1, 'limits', [0 5], 'step', 0.05, 'callback', @onOptionsChanged));
-    [~, edRedGain] = labkit.ui.view.form(imageGrid, struct('kind', 'spinner', 'label', 'Red gain:', 'value', 1, 'limits', [0 5], 'step', 0.05, 'callback', @onOptionsChanged));
-    [~, edGreenGain] = labkit.ui.view.form(imageGrid, struct('kind', 'spinner', 'label', 'Green gain:', 'value', 1, 'limits', [0 5], 'step', 0.05, 'callback', @onOptionsChanged));
-    [~, edBlueGain] = labkit.ui.view.form(imageGrid, struct('kind', 'spinner', 'label', 'Blue gain:', 'value', 1, 'limits', [0 5], 'step', 0.05, 'callback', @onOptionsChanged));
-
-    exportPanel = labkit.ui.view.section(layFA, 'Exports', 4, [3 2], ...
-        struct('rowHeight', {{'fit', 'fit', 'fit'}}, 'columnWidth', {{'1x', '1x'}}));
-    exportGrid = exportPanel.grid;
-    btnSaveOverlays = uibutton(exportGrid, 'Text', 'Save overlay PNGs', ...
-        'ButtonPushedFcn', @onSaveOverlays);
-    btnSaveOverlays.Layout.Row = 1;
-    btnSaveOverlays.Layout.Column = [1 2];
-    btnExportSummary = uibutton(exportGrid, 'Text', 'Export summary CSV', ...
-        'ButtonPushedFcn', @onExportSummary);
-    btnExportSummary.Layout.Row = 2;
-    btnExportSummary.Layout.Column = [1 2];
-    btnExportColorbar = uibutton(exportGrid, 'Text', 'Export strain colorbar + levels', ...
-        'ButtonPushedFcn', @onExportColorbar);
-    btnExportColorbar.Layout.Row = 3;
-    btnExportColorbar.Layout.Column = [1 2];
-
-    resultUi = labkit.ui.view.panel(laySR, 'table', 'ROI Strain Summary', 1, ...
-        {'Metric', 'EXX', 'EYY'});
-    resultTable = resultUi.table;
-
-    txtSummary = uitextarea(laySR, 'Editable', 'off');
-    labkit.ui.view.place(txtSummary, laySR, 2);
-    txtSummary.Value = {'No DIC result loaded.'};
-
-    logUi = labkit.ui.view.panel(layLog, 'log', 1, {'Ready.'});
-    txtLog = logUi.textArea;
+    txtMat = ui.controls.matPath.valueHandle;
+    txtReference = ui.controls.referencePath.valueHandle;
+    txtMask = ui.controls.maskPath.valueHandle;
+    edAlpha = ui.controls.alpha.valueHandle;
+    edMin = ui.controls.colorMin.valueHandle;
+    edMax = ui.controls.colorMax.valueHandle;
+    edOversample = ui.controls.oversample.valueHandle;
+    edSigma = ui.controls.smoothSigma.valueHandle;
+    edResolution = ui.controls.exportDpi.valueHandle;
+    edBrightness = ui.controls.brightness.valueHandle;
+    edContrast = ui.controls.contrast.valueHandle;
+    edGamma = ui.controls.gamma.valueHandle;
+    edSaturation = ui.controls.saturation.valueHandle;
+    edRedGain = ui.controls.redGain.valueHandle;
+    edGreenGain = ui.controls.greenGain.valueHandle;
+    edBlueGain = ui.controls.blueGain.valueHandle;
+    resultTable = ui.controls.resultTable.table;
+    txtSummary = ui.controls.summaryText.textArea;
+    ui.topAxes = ui.controls.overlayAxes.axesById.exx;
+    ui.bottomAxes = ui.controls.overlayAxes.axesById.eyy;
     if debugLog.enabled
-        debugLog.attachTextLog(txtLog);
         debugLog.trace('DIC postprocess debug trace enabled.');
-        debugLog.instrumentFigure(fig);
     end
 
-    labkit.ui.view.draw(ui.topAxes, 'reset', 'EXX Overlay', true);
-    labkit.ui.view.draw(ui.bottomAxes, 'reset', 'EYY Overlay', true);
+    labkit.ui.view.resetAxes(ui, 'overlayAxes', 'EXX Overlay', true, 'exx');
+    labkit.ui.view.resetAxes(ui, 'overlayAxes', 'EYY Overlay', true, 'eyy');
 
     if nargout >= 1
         varargout{1} = fig;
@@ -312,8 +232,8 @@ function varargout = labkit_DICPostprocess_app(varargin)
             S.referenceImage, S.strain.eyy, overlayMask, S.strain.roiMask, opts);
         summaryMask = dic_postprocess.ops.summaryMaskForStrain(S.strain, overlayMask);
         S.summaryTable = dic_postprocess.ops.summarizeStrain(S.strain, summaryMask);
-        dic_postprocess.ui.showImage(ui.topAxes, S.overlayExx, 'EXX Overlay');
-        dic_postprocess.ui.showImage(ui.bottomAxes, S.overlayEyy, 'EYY Overlay');
+        dic_postprocess.ui.showImage(ui, S.overlayExx, 'EXX Overlay', 'exx');
+        dic_postprocess.ui.showImage(ui, S.overlayEyy, 'EYY Overlay', 'eyy');
         resultTable.Data = dic_postprocess.view.summaryTableData(S.summaryTable);
         refreshSummaryText();
     end
@@ -347,7 +267,7 @@ function varargout = labkit_DICPostprocess_app(varargin)
     end
 
     function addLog(msg)
-        labkit.ui.view.update(txtLog, 'appendLog', msg);
+        labkit.ui.view.appendLog(ui, 'appLog', msg);
         debugLog.append(msg);
     end
 end
