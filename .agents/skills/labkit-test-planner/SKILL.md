@@ -24,7 +24,7 @@ another skill already read shared AGENTS context, do not reread it.
 ## Task Routing
 
 Use the smallest source-aligned validation set that covers the touched
-boundary. `docs/testing.md` owns the canonical build-task names, wrappers, and
+boundary. `docs/testing.md` owns the canonical build-task names, CI scope, and
 command examples.
 
 ```text

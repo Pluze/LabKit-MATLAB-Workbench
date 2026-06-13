@@ -8,7 +8,7 @@ These docs are written for people who run, maintain, or extend LabKit. Start wit
 | --- | --- |
 | `../README.md` | Project overview, app launch list, and the default validation entry point. |
 | `*.md` component docs | Human-readable behavior, architecture, public APIs, and maintenance contracts. |
-| `testing.md` | The canonical build-task matrix, wrapper behavior, CI scope, fixture expectations, and GUI validation limits. |
+| `testing.md` | The canonical build-task matrix, CI scope, fixture expectations, and GUI validation limits. |
 | `../AGENTS.md` and scoped `AGENTS.md` files | Future execution rules for agent work, ownership red lines, and routing rules. |
 | `../.agents/migration_guide.md` | Agent-facing migration debt ledger, current debt snapshot, and future debt-handling rules. |
 | `../.agents/skills/` | Task procedures for boundary checks, app building, migration planning, and validation routing. |

@@ -15,8 +15,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  shell-wrapper:
-    name: Shell Wrapper Checks
+  repository-hygiene:
+    name: Repository Hygiene
     runs-on: ubuntu-latest
     timeout-minutes: 5
 
@@ -33,30 +33,14 @@ jobs:
             exit 1
           fi
 
-      - name: Check Bash wrapper syntax
-        run: bash -n scripts/run_matlab_tests.sh
+      - name: Check MATLAB batch locator syntax
+        run: bash -n scripts/matlab_batch.sh
 
-      - name: Check Bash wrapper help
-        run: bash scripts/run_matlab_tests.sh --help
+      - name: Check MATLAB batch locator help
+        run: bash scripts/matlab_batch.sh --help
 
-      - name: Check Bash wrapper build task smoke
-        run: MATLAB_CMD=true bash scripts/run_matlab_tests.sh testProject
-
-      - name: Check PowerShell wrapper parser
-        run: pwsh -NoProfile -Command '$null = [scriptblock]::Create((Get-Content -Raw -LiteralPath "scripts/run_matlab_tests.ps1"))'
-
-      - name: Check PowerShell wrapper help
-        run: pwsh -NoProfile -File scripts/run_matlab_tests.ps1 --help
-
-      - name: Check PowerShell wrapper build task smoke
-        run: pwsh -NoProfile -Command '$env:MATLAB_CMD="true"; ./scripts/run_matlab_tests.ps1 testProject'
-
-      - name: Check removed selector flags are rejected
-        run: |
-          if bash scripts/run_matlab_tests.sh --suite; then
-            echo "Expected --suite to be rejected"
-            exit 1
-          fi
+      - name: Check MATLAB batch locator smoke
+        run: MATLAB_CMD=true bash scripts/matlab_batch.sh "buildtool listTasks"
 
   quality:
     name: Quality Guardrails

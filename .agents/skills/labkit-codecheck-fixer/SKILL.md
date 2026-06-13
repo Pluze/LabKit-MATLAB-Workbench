@@ -67,11 +67,11 @@ Coordinate with:
 5. Run focused validation for the touched area. Examples:
 
    ```bash
-   scripts/run_matlab_tests.sh testLabkitBiosignal
-   scripts/run_matlab_tests.sh testLabkitDta
-   scripts/run_matlab_tests.sh testLabkitUi
-   scripts/run_matlab_tests.sh testAppsImageMeasurement
-   scripts/run_matlab_tests.sh testProject
+   buildtool testLabkitBiosignal
+   buildtool testLabkitDta
+   buildtool testLabkitUi
+   buildtool testAppsImageMeasurement
+   buildtool testProject
    ```
 
    Pick the smallest source-aligned task that covers the behavior, adding

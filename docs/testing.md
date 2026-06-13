@@ -68,24 +68,16 @@ Default non-GUI build task:
 buildtool test
 ```
 
-On Windows PowerShell:
+If MATLAB is not on `PATH`, use the thin MATLAB locator:
 
-```powershell
-.\scripts\run_matlab_tests.ps1 test
+```bash
+scripts/matlab_batch.sh "buildtool test"
 ```
 
-If local execution policy blocks direct `.ps1` execution, run:
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 test
-```
-
-Both wrappers accept build task names only and call `buildtool`. Selector flags
-such as `--suite`, `--test`, and `--gui` are not supported. Set `MATLAB_CMD`
-when MATLAB is not on `PATH`, set `MATLAB_FLAGS` for MATLAB startup flags, and
-set `MATLAB_TEST_LOG` to override the default `matlab_test.log` location. Run
-`buildtool listTasks` or `scripts/run_matlab_tests.sh listTasks` to inspect the
-current task catalog.
+`scripts/matlab_batch.sh` only locates MATLAB, changes to the repository root,
+and runs the supplied MATLAB `-batch` command. It does not parse test task names
+or maintain a separate test interface. Set `MATLAB_CMD` when MATLAB is not on
+`PATH`. Run `buildtool listTasks` to inspect the current task catalog.
 
 Advanced targeted debugging can call the internal runner directly:
 
@@ -112,12 +104,12 @@ commands.
 | Focused GUI build tasks | Local MATLAB with graphics support | Noninteractive launch, layout, and callback wiring checks for selected app families. |
 | Manual GUI validation | User-run app windows | Interactive file selection, drawing, visual inspection, and full workflow feel. |
 
-CI runs shell-wrapper, quality, unit, and integration jobs on pushes and pull
-requests for every branch through `.github/workflows/matlab-tests.yml`. Manual and
-scheduled CI runs also execute coverage, GUI structural, and non-blocking GUI
-gesture jobs. Coverage is intentionally outside the default PR gate to keep PR
-feedback focused and avoid duplicate test execution. Do not describe CI as full
-interactive GUI workflow validation.
+CI runs repository-hygiene, quality, unit, and integration jobs on pushes and
+pull requests for every branch through `.github/workflows/matlab-tests.yml`.
+Manual and scheduled CI runs also execute coverage, GUI structural, and
+non-blocking GUI gesture jobs. Coverage is intentionally outside the default PR
+gate to keep PR feedback focused and avoid duplicate test execution. Do not
+describe CI as full interactive GUI workflow validation.
 
 Each MATLAB CI job writes a GitHub Step Summary with JUnit totals, artifact
 locations, the slowest test cases, and failed-test details when available.
@@ -127,12 +119,12 @@ artifacts; GitHub Actions does not render artifact HTML inline, so interactive
 HTML browsing still requires downloading the artifact or adding a separate
 publishing target.
 
-The shell-wrapper job owns repository-level checks that are cheaper and safer
-outside MATLAB, including the rule that `LabKit.prj` and `resources/project/`
-must stay untracked local IDE metadata. MATLAB build tasks should not shell out
-to git for this repository-state check. CI jobs also use explicit job timeouts
-so a MATLAB process hang fails quickly instead of consuming the GitHub Actions
-six-hour default.
+The repository-hygiene job owns repository-level checks that are cheaper and
+safer outside MATLAB, including the rule that `LabKit.prj` and
+`resources/project/` must stay untracked local IDE metadata. MATLAB build tasks
+should not shell out to git for this repository-state check. CI jobs also use
+explicit job timeouts so a MATLAB process hang fails quickly instead of
+consuming the GitHub Actions six-hour default.
 
 ## Focused Build Tasks
 
@@ -153,14 +145,6 @@ buildtool testAppsGui
 buildtool testAppsSmokeGui
 buildtool testGuiStructural
 buildtool testGuiGesture
-```
-
-Use task names from Windows PowerShell:
-
-```powershell
-.\scripts\run_matlab_tests.ps1 testLabkitDta
-.\scripts\run_matlab_tests.ps1 testAppsElectrochem
-.\scripts\run_matlab_tests.ps1 testGuiStructural
 ```
 
 Focused build tasks mirror source ownership:
