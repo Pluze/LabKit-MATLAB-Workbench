@@ -32,11 +32,30 @@ function verify_labkit_launcher_layout()
     assert(strcmp(fig.Name, 'LabKit App Launcher'), ...
         'labkit_launcher should return the launcher figure handle.');
     h.assertFigureMinimumSize(fig, 1320, 760);
-    h.assertTabTitles(fig, {'Find App', 'Status', 'Filter', 'Selected App', 'Actions'});
+    h.assertTabTitles(fig, {'Find App', 'Selected App', 'Actions', 'Status'});
+    assertNoPanelTitle(fig, {'Filter', 'Search'});
     h.assertButtonContract(fig, {'Open Selected App', 'Refresh App List'});
     h.assertDropdownGroups(fig, h.dropdownGroup(['All'; unique(apps.Family)], 1));
     h.assertAnyTableColumns(fig, {'Family', 'App', 'Command'});
     h.invokeButton(fig, 'Refresh App List');
+end
+
+function assertNoPanelTitle(fig, blockedTitles)
+    actual = titleValues(fig);
+    for k = 1:numel(blockedTitles)
+        assert(~any(actual == string(blockedTitles{k})), ...
+            'Launcher should not draw a separate "%s" filter panel.', blockedTitles{k});
+    end
+end
+
+function values = titleValues(fig)
+    controls = findall(fig);
+    values = strings(0, 1);
+    for k = 1:numel(controls)
+        if isprop(controls(k), 'Title')
+            values(end + 1, 1) = string(controls(k).Title);
+        end
+    end
 end
 
 function verify_gui_smoke()

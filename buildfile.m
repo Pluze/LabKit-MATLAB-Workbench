@@ -94,6 +94,10 @@ function coverageTask(~)
     runCatalogTask("coverage");
 end
 
+function listTasksTask(~)
+    printTaskCatalog(taskCatalog());
+end
+
 function checkProjectTask(~)
     root = fileparts(mfilename("fullpath"));
     checkProjectDefinition(root);
@@ -163,6 +167,7 @@ function catalog = taskCatalog()
         taskSpec("testGuiStructural", "Run noninteractive GUI structural tests.", "Suites", "gui", "Tags", "Structural", "IncludeGui", true), ...
         taskSpec("testGuiGesture", "Run noninteractive GUI gesture tests.", "Tags", "Gesture", "IncludeGui", true), ...
         taskSpec("coverage", "Run official tests with coverage artifacts.", "Tags", ["Unit", "Integration"], "IncludeCoverage", true), ...
+        taskSpec("listTasks", "List official LabKit build tasks.", "RunTests", false), ...
         taskSpec("checkProject", "Verify optional local MATLAB Project metadata when present.", "RunTests", false), ...
         taskSpec("packageDryRun", "Verify package boundary inventory without exporting.", "RunTests", false)];
 end
@@ -233,6 +238,13 @@ function runBuildTests(runName, varargin)
     runLabKitTests(varargin{:}, ...
         "RunName", runName, ...
         "ArtifactsRoot", fullfile(root, "artifacts"));
+end
+
+function printTaskCatalog(catalog)
+    fprintf("LabKit build tasks:\n");
+    for k = 1:numel(catalog)
+        fprintf("  %-30s %s\n", catalog(k).Name, catalog(k).Description);
+    end
 end
 
 function checkProjectDefinition(root)

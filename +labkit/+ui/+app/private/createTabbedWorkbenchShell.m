@@ -2,7 +2,7 @@
 % code. Inputs and outputs are internal uifigure, grid, tab, or resize handle
 % values. Side effects are limited to UI object creation or callback wiring on
 % supplied parents; assumes the caller owns component lifecycle.
-function ui = createTabbedWorkbenchShell(figName, figPosition, leftWidth, labels, tabSpecs, rightGridSize, rightRowHeight, rightRowSpacing)
+function ui = createTabbedWorkbenchShell(figName, figPosition, leftWidth, labels, tabSpecs, rightGridSize, rightRowHeight, rightRowSpacing, debug)
 %CREATETABBEDWORKBENCHSHELL Build the private tabbed workbench skeleton.
 %
 % Called by:
@@ -26,6 +26,10 @@ function ui = createTabbedWorkbenchShell(figName, figPosition, leftWidth, labels
 %   Logical tab rows are expanded with physical resize-handle rows here.
 %   App code should use UI 2.0 specs rather than depending on physical row
 %   indices.
+
+    if nargin < 9
+        debug = [];
+    end
 
     ui = struct();
     ui.fig = uifigure('Name', figName, 'Position', figPosition);
@@ -75,7 +79,8 @@ function ui = createTabbedWorkbenchShell(figName, figPosition, leftWidth, labels
         ui.([spec.key 'Tab']) = tab;
         ui.([spec.key 'ScrollPanel']) = panel;
         ui.([spec.key 'Grid']) = grid;
-        ui.([spec.key 'ResizeHandles']) = attachTabRowResizeHandles(ui.fig, grid, spec, rowMap);
+        ui.([spec.key 'ResizeHandles']) = attachTabRowResizeHandles( ...
+            ui.fig, grid, spec, rowMap, debugTrace(debug));
     end
 
     ui.rightPanel = uipanel(ui.main, 'Title', labels.rightPanel);
@@ -89,7 +94,8 @@ function ui = createTabbedWorkbenchShell(figName, figPosition, leftWidth, labels
     ui.rightGrid.Padding = [8 8 8 8];
 
     attachColumnResize(ui.fig, ui.main, 1, 2, ...
-        struct('minWidth', 260, 'rightReserve', 360, 'separatorWidth', 6));
+        struct('minWidth', 260, 'rightReserve', 360, 'separatorWidth', 6, ...
+        'onTrace', debugTrace(debug)));
 end
 
 function [tab, panel] = createScrollableTab(parent, titleText)
@@ -144,31 +150,31 @@ function rows = validResizeRows(spec, logicalRows)
     rows = [];
     if isfield(spec, 'resizeRows') && ~isempty(spec.resizeRows)
         rows = unique(spec.resizeRows(:).');
-        rows = rows(rows >= 1 & rows < logicalRows & isfinite(rows));
+        rows = rows(rows >= 1 & rows <= logicalRows & isfinite(rows));
         return;
     end
 
     mode = optionValue(spec, 'resize', 'betweenRows');
     if islogical(mode)
         if mode
-            rows = 1:max(logicalRows - 1, 0);
+            rows = 1:logicalRows;
         end
         return;
     end
     mode = lower(char(string(mode)));
     switch mode
         case {'betweenrows', 'auto', 'all'}
-            rows = 1:max(logicalRows - 1, 0);
+            rows = 1:logicalRows;
         case {'none', 'off', 'false'}
             rows = [];
         otherwise
             error('labkit:ui:InvalidTabResizeMode', ...
                 'Unsupported tab resize mode "%s".', char(string(mode)));
     end
-    rows = rows(rows >= 1 & rows < logicalRows & isfinite(rows));
+    rows = rows(rows >= 1 & rows <= logicalRows & isfinite(rows));
 end
 
-function handles = attachTabRowResizeHandles(fig, grid, spec, rowMap)
+function handles = attachTabRowResizeHandles(fig, grid, spec, rowMap, traceCallback)
     handles = gobjects(0);
     resizeRows = validResizeRows(spec, spec.gridSize(1));
     if isempty(resizeRows)
@@ -178,13 +184,21 @@ function handles = attachTabRowResizeHandles(fig, grid, spec, rowMap)
     handles = gobjects(1, numel(resizeRows));
     for k = 1:numel(resizeRows)
         topRow = resizeRows(k);
-        opts = struct('minTopHeight', 80, 'minBottomHeight', 80);
+        opts = struct('minTopHeight', 80);
         if isfield(spec, 'resizeOptions')
             opts = mergeStruct(opts, spec.resizeOptions);
         end
         opts.topRow = rowMap(topRow);
-        opts.bottomRow = rowMap(topRow + 1);
+        opts.onTrace = traceCallback;
         handles(k) = addRowResizeHandle(fig, grid, rowMap(topRow) + 1, opts);
+    end
+end
+
+function callback = debugTrace(debug)
+    callback = [];
+    if isstruct(debug) && isfield(debug, 'trace') && ...
+            isa(debug.trace, 'function_handle')
+        callback = debug.trace;
     end
 end
 

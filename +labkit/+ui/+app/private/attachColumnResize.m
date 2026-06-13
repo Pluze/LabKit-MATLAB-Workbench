@@ -32,17 +32,14 @@ function attachColumnResize(fig, grid, leftColumn, separatorColumn, opts)
     separatorWidth = optionValue(opts, 'separatorWidth', 6);
 
     separator = findSeparator(grid, separatorColumn);
-    separator.ButtonDownFcn = @startDrag;
+    attachDragHandle(fig, separator, struct( ...
+        'pointer', 'left', ...
+        'onDrag', @dragResize, ...
+        'onTrace', optionValue(opts, 'onTrace', []), ...
+        'traceName', 'column-resize'));
 
-    function startDrag(~, ~)
-        fig.Pointer = 'left';
-        fig.WindowButtonMotionFcn = @doDrag;
-        fig.WindowButtonUpFcn = @stopDrag;
-    end
-
-    function doDrag(~, ~)
-        pointer = fig.CurrentPoint;
-        newWidth = max(minWidth, pointer(1) - grid.Position(1));
+    function dragResize(~, ~, currentPoint)
+        newWidth = max(minWidth, currentPoint(1) - grid.Position(1));
         maxWidth = max(minWidth, fig.Position(3) - rightReserve);
         newWidth = min(newWidth, maxWidth);
 
@@ -50,12 +47,6 @@ function attachColumnResize(fig, grid, leftColumn, separatorColumn, opts)
         widths{leftColumn} = newWidth;
         widths{separatorColumn} = separatorWidth;
         grid.ColumnWidth = widths;
-    end
-
-    function stopDrag(~, ~)
-        fig.WindowButtonMotionFcn = '';
-        fig.WindowButtonUpFcn = '';
-        fig.Pointer = 'arrow';
     end
 end
 

@@ -15,31 +15,10 @@ Examples:
   scripts/run_matlab_tests.sh checkStyle
   scripts/run_matlab_tests.sh testUnit coverage
   scripts/run_matlab_tests.sh testGuiStructural
+  scripts/run_matlab_tests.sh listTasks
 
-Common tasks:
-  checkStyle
-  test
-  testUnit
-  testIntegration
-  testProject
-  testLabkitDta
-  testLabkitBiosignal
-  testLabkitUi
-  testLabkitUiGui
-  testAppsElectrochem
-  testAppsElectrochemGui
-  testAppsDicGui
-  testAppsImageMeasurement
-  testAppsImageMeasurementGui
-  testAppsWearableGui
-  testAppsTemplatesGui
-  testAppsGui
-  testAppsSmokeGui
-  testGuiStructural
-  testGuiGesture
-  coverage
-  checkProject
-  packageDryRun
+Task catalog:
+  See docs/testing.md or run `buildtool listTasks`.
 
 Removed interface:
   --suite, --test, and --gui are no longer supported. Use build task names.

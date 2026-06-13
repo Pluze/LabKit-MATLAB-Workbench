@@ -120,6 +120,10 @@ labkit.ui.spec.custom("roiEditor", @example.ui.buildRoiEditor, ...
 `buildRoiEditor.m` may hand-write layout for that custom tool only. The app
 runner, callbacks, and ordinary control specs should not create grids or set
 `Layout.Row`/`Layout.Column` directly.
+- Control tabs with more than one section include draggable horizontal
+  separators between sections by default so users can reallocate vertical
+  space between tools. A tab may opt out with `resize="none"` when a fixed
+  stack is intentional.
 
 ## View Helpers
 

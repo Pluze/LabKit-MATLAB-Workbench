@@ -36,6 +36,7 @@ buildtool testAppsSmokeGui
 buildtool testGuiStructural
 buildtool testGuiGesture
 buildtool coverage
+buildtool listTasks
 buildtool checkProject
 buildtool packageDryRun
 ```
@@ -45,6 +46,7 @@ buildtool packageDryRun
 - `buildtool coverage` generates official JUnit, HTML test result, Cobertura,
   and HTML coverage artifacts. Coverage is report-only and runs in manual or
   scheduled CI, not as a default PR quality gate.
+- `buildtool listTasks` prints the build task catalog from `buildfile.m`.
 - Official runner artifacts are namespaced by build task run name under
   `artifacts/test-results/<RunName>/`, `artifacts/coverage/<RunName>/`,
   `artifacts/gui/<RunName>/`, and `artifacts/logs/<RunName>/` so combined task
@@ -81,7 +83,9 @@ powershell -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 test
 Both wrappers accept build task names only and call `buildtool`. Selector flags
 such as `--suite`, `--test`, and `--gui` are not supported. Set `MATLAB_CMD`
 when MATLAB is not on `PATH`, set `MATLAB_FLAGS` for MATLAB startup flags, and
-set `MATLAB_TEST_LOG` to override the default `matlab_test.log` location.
+set `MATLAB_TEST_LOG` to override the default `matlab_test.log` location. Run
+`buildtool listTasks` or `scripts/run_matlab_tests.sh listTasks` to inspect the
+current task catalog.
 
 Advanced targeted debugging can call the internal runner directly:
 

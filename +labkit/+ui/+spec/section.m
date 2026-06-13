@@ -8,7 +8,9 @@ function spec = section(id, titleText, children, varargin)
 %   id - globally unique section id.
 %   titleText - section title.
 %   children - cell row vector of control specs.
-%   opts - app-neutral section options such as height.
+%   opts - app-neutral section options such as height and chrome. The chrome
+%       option defaults to 'panel'; set chrome to 'none' for a logical section
+%       that should not draw its own titled border.
 %
 % Output:
 %   spec - scalar data-only UI spec struct.

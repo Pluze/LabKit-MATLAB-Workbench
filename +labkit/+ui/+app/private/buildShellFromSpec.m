@@ -16,7 +16,8 @@ function ui = buildShellFromSpec(spec, debug)
         tabShellSpecs(tabs), ...
         [max(1, numel(workspaceChildren)) 1], ...
         workspaceRowHeights(workspaceChildren), ...
-        optionValue(workspaceSpec.props, 'rowSpacing', 8));
+        optionValue(workspaceSpec.props, 'rowSpacing', 8), ...
+        debug);
 
     ui = shell;
     ui.figure = shell.fig;
@@ -33,7 +34,7 @@ function specs = tabShellSpecs(tabs)
     specs = repmat(struct( ...
         'key', '', 'title', '', 'gridSize', [1 1], ...
         'rowHeight', {{'fit'}}, 'columnWidth', {{'1x'}}, ...
-        'resize', 'none'), 1, numel(tabs));
+        'resize', 'betweenRows'), 1, numel(tabs));
     for k = 1:numel(tabs)
         tabSpec = tabs{k};
         rowCount = max(1, numel(tabSpec.children));
@@ -42,7 +43,7 @@ function specs = tabShellSpecs(tabs)
         specs(k).gridSize = [rowCount 1];
         specs(k).rowHeight = tabRowHeights(tabSpec.children);
         specs(k).columnWidth = {'1x'};
-        specs(k).resize = optionValue(tabSpec.props, 'resize', 'none');
+        specs(k).resize = optionValue(tabSpec.props, 'resize', 'betweenRows');
     end
 end
 

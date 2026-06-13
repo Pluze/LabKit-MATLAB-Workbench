@@ -20,9 +20,16 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
             catalog = extractBuildfileCatalog(root);
             catalogNames = catalog.Name;
 
+            testingDoc = fullfile(root, "docs", "testing.md");
+            matrixTasks = extractPrimaryTestingCommandMatrix(fileread(testingDoc));
+            testCase.verifyFalse(isempty(matrixTasks), ...
+                "docs/testing.md task matrix should be parseable.");
+            testCase.verifyEqual(matrixTasks(:), catalogNames(:), ...
+                "docs/testing.md task matrix should match buildfile catalog order.");
+
             docFiles = [ ...
                 fullfile(root, "README.md"), ...
-                fullfile(root, "docs", "testing.md")];
+                testingDoc];
             for k = 1:numel(docFiles)
                 tasks = extractBuildtoolTasks(fileread(docFiles(k)));
                 verifyTaskSubset(testCase, tasks, catalogNames, ...
@@ -33,9 +40,13 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
                 fullfile(root, "scripts", "run_matlab_tests.sh"), ...
                 fullfile(root, "scripts", "run_matlab_tests.ps1")];
             for k = 1:numel(wrapperFiles)
-                tasks = extractWrapperCommonTasks(fileread(wrapperFiles(k)));
-                verifyTaskSubset(testCase, tasks, catalogNames, ...
-                    "Wrapper help tasks in " + relativePath(root, wrapperFiles(k)));
+                wrapper = string(fileread(wrapperFiles(k)));
+                testCase.verifyFalse(contains(wrapper, "Common tasks:"), ...
+                    "Wrappers should not duplicate the task matrix: " + ...
+                    relativePath(root, wrapperFiles(k)));
+                testCase.verifyTrue(contains(wrapper, "buildtool listTasks"), ...
+                    "Wrappers should route task discovery to the build catalog: " + ...
+                    relativePath(root, wrapperFiles(k)));
             end
         end
 
@@ -191,23 +202,27 @@ function tasks = extractBuildtoolTasks(content)
     tasks = unique(tasks(strlength(tasks) > 0), 'stable');
 end
 
-function tasks = extractWrapperCommonTasks(content)
+function tasks = extractPrimaryTestingCommandMatrix(content)
     content = char(content);
-    startIndex = strfind(content, 'Common tasks:');
-    stopIndex = strfind(content, 'Removed interface:');
-    if isempty(startIndex) || isempty(stopIndex)
+    sectionStart = strfind(content, 'Use the MATLAB build tasks for the common official test entry points:');
+    if isempty(sectionStart)
         tasks = strings(1, 0);
         return;
     end
 
-    block = content(startIndex(1):stopIndex(1)-1);
-    tokens = regexp(block, '(?m)^\s{2}([A-Za-z][A-Za-z0-9_]*)\s*$', ...
-        'tokens');
+    content = content(sectionStart(1):end);
+    blocks = regexp(content, '```bash\s*(.*?)```', 'tokens');
+    if isempty(blocks)
+        tasks = strings(1, 0);
+        return;
+    end
+
+    tokens = regexp(blocks{1}{1}, ...
+        '(?m)^buildtool[ \t]+([A-Za-z][A-Za-z0-9_]*)[ \t]*$', 'tokens');
     tasks = strings(1, numel(tokens));
     for k = 1:numel(tokens)
         tasks(k) = string(tokens{k}{1});
     end
-    tasks = unique(tasks, 'stable');
 end
 
 function verifyTaskSubset(testCase, tasks, catalogNames, label)

@@ -7,7 +7,7 @@ function handle = addRowResizeHandle(fig, grid, handleRow, opts)
 %
 % Usage:
 %   handle = addRowResizeHandle(fig, grid, 2, ...
-%       struct('topRow', 1, 'bottomRow', 3));
+%       struct('topRow', 1));
 %
 % Inputs:
 %   fig - owning figure.
@@ -17,22 +17,18 @@ function handle = addRowResizeHandle(fig, grid, handleRow, opts)
 %
 % Options:
 %   topRow - physical row above handle, default handleRow-1.
-%   bottomRow - physical row below handle, default handleRow+1.
 %   minTopHeight - pixels, default 80.
-%   minBottomHeight - pixels, default 80.
 %   handleHeight - pixels, default 6.
 %
 % Output:
-%   handle - uipanel used as the draggable separator.
+%   handle - panel component used as the draggable separator.
 
     if nargin < 4
         opts = struct();
     end
 
     topRow = optionValue(opts, 'topRow', handleRow - 1);
-    bottomRow = optionValue(opts, 'bottomRow', handleRow + 1);
     minTopHeight = optionValue(opts, 'minTopHeight', 80);
-    minBottomHeight = optionValue(opts, 'minBottomHeight', 80);
     handleHeight = optionValue(opts, 'handleHeight', 6);
 
     rows = grid.RowHeight;
@@ -44,36 +40,28 @@ function handle = addRowResizeHandle(fig, grid, handleRow, opts)
         'BorderType', 'none');
     handle.Layout.Row = handleRow;
     handle.Layout.Column = 1;
-    handle.ButtonDownFcn = @startDrag;
-
-    drag = struct('startY', 0, 'topHeight', 0, 'bottomHeight', 0);
-
-    function startDrag(~, ~)
-        drawnow;
-        drag.startY = fig.CurrentPoint(2);
-        drag.topHeight = rowHeightFromChild(grid, topRow, minTopHeight);
-        drag.bottomHeight = rowHeightFromChild(grid, bottomRow, minBottomHeight);
-        fig.Pointer = 'top';
-        fig.WindowButtonMotionFcn = @doDrag;
-        fig.WindowButtonUpFcn = @stopDrag;
+    if isprop(handle, 'Tooltip')
+        handle.Tooltip = 'Drag to resize panels';
     end
 
-    function doDrag(~, ~)
-        deltaDown = drag.startY - fig.CurrentPoint(2);
-        newTop = max(minTopHeight, drag.topHeight + deltaDown);
-        newBottom = max(minBottomHeight, drag.bottomHeight - deltaDown);
+    attachDragHandle(fig, handle, struct( ...
+        'pointer', 'top', ...
+        'onStart', @startResize, ...
+        'onDrag', @dragResize, ...
+        'onTrace', optionValue(opts, 'onTrace', []), ...
+        'traceName', 'row-resize'));
 
+    function data = startResize(~)
+        data = struct( ...
+            'topHeight', rowHeightFromChild(grid, topRow, minTopHeight));
+    end
+
+    function dragResize(data, deltaPoint, ~)
+        deltaDown = -deltaPoint(2);
         rowHeights = grid.RowHeight;
-        rowHeights{topRow} = newTop;
+        rowHeights{topRow} = max(minTopHeight, data.topHeight + deltaDown);
         rowHeights{handleRow} = handleHeight;
-        rowHeights{bottomRow} = newBottom;
         grid.RowHeight = rowHeights;
-    end
-
-    function stopDrag(~, ~)
-        fig.WindowButtonMotionFcn = '';
-        fig.WindowButtonUpFcn = '';
-        fig.Pointer = 'arrow';
     end
 end
 

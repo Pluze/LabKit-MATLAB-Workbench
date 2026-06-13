@@ -4,8 +4,13 @@
 % children are built.
 function ui = buildSection(ui, sectionSpec, parentGrid, row, debug)
     childCount = max(1, numel(sectionSpec.children));
-    panel = uipanel(parentGrid, ...
-        'Title', optionValue(sectionSpec.props, 'title', sectionSpec.id));
+    panelArgs = {};
+    if sectionDrawsOwnTitle(sectionSpec) && hasPanelChrome(sectionSpec)
+        panelArgs = {'Title', optionValue(sectionSpec.props, 'title', sectionSpec.id)};
+    else
+        panelArgs = {'BorderType', 'none'};
+    end
+    panel = uipanel(parentGrid, panelArgs{:});
     panel.Layout.Row = row;
     panel.Layout.Column = 1;
 
@@ -25,6 +30,21 @@ function ui = buildSection(ui, sectionSpec, parentGrid, row, debug)
     for iChild = 1:numel(sectionSpec.children)
         ui = buildControl(ui, sectionSpec.children{iChild}, grid, iChild, debug);
     end
+end
+
+function tf = sectionDrawsOwnTitle(sectionSpec)
+    tf = true;
+    if numel(sectionSpec.children) ~= 1
+        return;
+    end
+    child = sectionSpec.children{1};
+    tf = ~ismember(child.kind, ...
+        {'previewArea', 'resultTable', 'logPanel', 'statusPanel', 'pathPanel'});
+end
+
+function tf = hasPanelChrome(sectionSpec)
+    chrome = optionValue(sectionSpec.props, 'chrome', 'panel');
+    tf = ~strcmpi(char(string(chrome)), 'none');
 end
 
 function rowHeight = sectionRowHeights(children)

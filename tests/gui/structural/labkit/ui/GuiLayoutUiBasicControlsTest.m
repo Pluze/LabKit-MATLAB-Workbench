@@ -65,6 +65,7 @@ function verify_gui_layout_ui_basic_controls()
     labkit.ui.view.appendLog(ui, 'logPanel', 'Completed.');
     assert(any(contains(string(ui.controls.logPanel.textArea.Value), 'Completed.')), ...
         'appendLog should append to a semantic log panel.');
+    assertSinglePanelTitle(ui.figure, 'Log');
     labkit.ui.view.drawImage(ui, 'preview', zeros(8, 9, 3, 'uint8'), ...
         'axis', 'main', 'title', 'Preview');
     ax = ui.controls.preview.primaryAxes;
@@ -77,4 +78,10 @@ function verify_gui_layout_ui_basic_controls()
 
     function noop(varargin)
     end
+end
+
+function assertSinglePanelTitle(fig, titleText)
+    panels = findall(fig, 'Type', 'uipanel', 'Title', titleText);
+    assert(numel(panels) == 1, ...
+        'Single full-panel controls should not be wrapped in a duplicate titled section.');
 end

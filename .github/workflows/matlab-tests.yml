@@ -42,6 +42,15 @@ jobs:
       - name: Check Bash wrapper build task smoke
         run: MATLAB_CMD=true bash scripts/run_matlab_tests.sh testProject
 
+      - name: Check PowerShell wrapper parser
+        run: pwsh -NoProfile -Command '$null = [scriptblock]::Create((Get-Content -Raw -LiteralPath "scripts/run_matlab_tests.ps1"))'
+
+      - name: Check PowerShell wrapper help
+        run: pwsh -NoProfile -File scripts/run_matlab_tests.ps1 --help
+
+      - name: Check PowerShell wrapper build task smoke
+        run: pwsh -NoProfile -Command '$env:MATLAB_CMD="true"; ./scripts/run_matlab_tests.ps1 testProject'
+
       - name: Check removed selector flags are rejected
         run: |
           if bash scripts/run_matlab_tests.sh --suite; then

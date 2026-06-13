@@ -67,7 +67,7 @@ function ui = scaleBarPanel(parent, row, opts)
     panelTitle = char(string(optionValue(opts, 'title', 'Scale Bar')));
     panel = uipanel(parent, 'Title', panelTitle);
     panel.Layout.Row = row;
-    panel.Layout.Column = 1;
+    panel.Layout.Column = parentColumnSpan(parent);
     grid = uigridlayout(panel, [10 2]);
     grid.RowHeight = {'fit', 'fit', 'fit', 'fit', 'fit', ...
         'fit', 'fit', 'fit', 'fit', 'fit'};
@@ -363,6 +363,17 @@ function value = optionValue(opts, name, defaultValue)
     value = defaultValue;
     if isstruct(opts) && isfield(opts, name)
         value = opts.(name);
+    end
+end
+
+function column = parentColumnSpan(parent)
+    column = 1;
+    try
+        columnCount = numel(parent.ColumnWidth);
+        if columnCount > 1
+            column = [1 columnCount];
+        end
+    catch
     end
 end
 

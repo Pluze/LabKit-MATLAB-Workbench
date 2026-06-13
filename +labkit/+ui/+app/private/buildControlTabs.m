@@ -8,8 +8,21 @@ function ui = buildControlTabs(ui, tabs, debug)
         ui.tabs.(tabSpec.id) = struct('id', tabSpec.id, ...
             'spec', tabSpec, 'grid', grid, ...
             'tab', ui.([tabSpec.id 'Tab']));
+        rowMap = logicalRowMap(grid, numel(tabSpec.children));
         for iSection = 1:numel(tabSpec.children)
-            ui = buildSection(ui, tabSpec.children{iSection}, grid, iSection, debug);
+            ui = buildSection(ui, tabSpec.children{iSection}, grid, ...
+                rowMap(iSection), debug);
         end
+    end
+end
+
+function rowMap = logicalRowMap(grid, rowCount)
+    rowMap = 1:rowCount;
+    try
+        data = grid.UserData;
+        if isstruct(data) && isfield(data, 'LabKitLogicalRowMap')
+            rowMap = data.LabKitLogicalRowMap;
+        end
+    catch
     end
 end

@@ -21,7 +21,7 @@ function verify_template_app_layout()
         'Template app should launch with its documented figure title.');
     h.assertFigureMinimumSize(fig, 1280, 760);
     h.assertTabTitles(fig, {'Setup', 'Review', 'Log', ...
-        'Inputs', 'Options', 'Actions', 'Summary', 'Details'});
+        'Inputs', 'Options', 'Actions', 'Template Summary', 'Details'});
     h.assertButtonContract(fig, {'Choose files', 'Clear', ...
         'Run template step', 'Reset'});
     h.assertAnyTableColumns(fig, {'Field', 'Value'});

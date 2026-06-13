@@ -43,6 +43,7 @@ function checkCurvatureMeasurementLayout(h)
     h.assertTabTitles(fig, {'Files + Analysis', 'Summary + Results', 'Log'});
     h.assertTableColumns(fig, {'Metric', 'Value'});
     h.assertAxesContract(fig, {h.axesSpec('Image + Circle Fit', '', '')});
+    assertScaleBarPanelSpansControlTab(fig);
 
     h.closeAllFigures();
     [fig, debug] = labkit_CurvatureMeasurement_app("debug", struct());
@@ -170,6 +171,20 @@ function checkImageMatchLayout(h)
         'Image match debug launch should return an enabled trace logger.');
     assertAnyTextAreaContains(h, fig, 'Image match debug trace enabled', ...
         'Image match debug launch should mirror trace lines into the visible Log tab.');
+end
+
+function assertScaleBarPanelSpansControlTab(fig)
+    scalePanels = findall(fig, 'Type', 'uipanel', 'Title', 'Scale Bar');
+    assert(numel(scalePanels) >= 1, 'Curvature app should include a Scale Bar panel.');
+    for k = 1:numel(scalePanels)
+        layout = scalePanels(k).Layout;
+        if isprop(layout, 'Column') && isequal(layout.Column, [1 2])
+            assert(scalePanels(k).Position(3) > 250, ...
+                'Scale Bar panel width should not be clipped to the section label column.');
+            return;
+        end
+    end
+    error('Scale Bar panel should span the full two-column control section.');
 end
 
 function assertAnyTextAreaContains(h, fig, needle, message)

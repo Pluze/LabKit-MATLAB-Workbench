@@ -24,31 +24,10 @@ Examples:
   .\scripts\run_matlab_tests.ps1 checkStyle
   .\scripts\run_matlab_tests.ps1 testUnit coverage
   .\scripts\run_matlab_tests.ps1 testGuiStructural
+  .\scripts\run_matlab_tests.ps1 listTasks
 
-Common tasks:
-  checkStyle
-  test
-  testUnit
-  testIntegration
-  testProject
-  testLabkitDta
-  testLabkitBiosignal
-  testLabkitUi
-  testLabkitUiGui
-  testAppsElectrochem
-  testAppsElectrochemGui
-  testAppsDicGui
-  testAppsImageMeasurement
-  testAppsImageMeasurementGui
-  testAppsWearableGui
-  testAppsTemplatesGui
-  testAppsGui
-  testAppsSmokeGui
-  testGuiStructural
-  testGuiGesture
-  coverage
-  checkProject
-  packageDryRun
+Task catalog:
+  See docs/testing.md or run `buildtool listTasks`.
 
 Removed interface:
   --suite, --test, and --gui are no longer supported. Use build task names.
