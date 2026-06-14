@@ -8,6 +8,8 @@ function spec = statusPanel(id, titleText, varargin)
 %   id - globally unique status panel id.
 %   titleText - status panel title.
 %   value - initial text or cellstr, default ''.
+%   minRows - optional minimum visible text rows used by automatic layout.
+%   minHeight - optional minimum panel row height in pixels.
 %
 % Output:
 %   spec - scalar data-only UI spec struct.

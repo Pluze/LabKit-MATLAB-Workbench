@@ -8,6 +8,8 @@ function spec = logPanel(id, titleText, varargin)
 %   id - globally unique log panel id.
 %   titleText - log panel title.
 %   value - initial log lines as text or cellstr, default {'Ready.'}.
+%   minRows - optional minimum visible log rows used by automatic layout.
+%   minHeight - optional minimum panel row height in pixels.
 %
 % Output:
 %   spec - scalar data-only UI spec struct.

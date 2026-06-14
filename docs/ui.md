@@ -122,6 +122,10 @@ The fixed shape behind this sketch is:
   the clear action needs app-specific wording such as `Clear all`.
 - `field` uses a fixed kind whitelist: `text`, `number`, `spinner`, `dropdown`,
   `slider`, `checkbox`, and `readonly`.
+- Text-heavy controls have conservative automatic starting heights. `statusPanel`,
+  `logPanel`, `pathPanel`, and `resultTable` accept `minRows` and `minHeight`
+  when an app needs more room without hand-writing grid layout. Use explicit
+  `height` only when the whole row should be fixed or flexed intentionally.
 - Public callbacks use `function callback(control, event)`, where `event`
   carries semantic fields such as `id`, `kind`, `source`, `value`,
   `previousValue`, and `ui`.

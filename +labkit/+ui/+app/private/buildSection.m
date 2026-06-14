@@ -51,32 +51,7 @@ function rowHeight = sectionRowHeights(children)
     count = max(1, numel(children));
     rowHeight = repmat({'fit'}, 1, count);
     for k = 1:numel(children)
-        rowHeight{k} = childRowHeight(children{k});
-    end
-end
-
-function value = childRowHeight(spec)
-    switch spec.kind
-        case {'previewArea', 'resultTable', 'logPanel', 'statusPanel', 'pathPanel'}
-            defaultValue = '1x';
-        otherwise
-            defaultValue = 'fit';
-    end
-    value = heightValue(spec.props, defaultValue);
-end
-
-function value = heightValue(props, defaultValue)
-    value = optionValue(props, 'height', defaultValue);
-    if ischar(value) || isstring(value)
-        text = char(string(value));
-        switch lower(text)
-            case {'fit', 'fixed'}
-                value = 'fit';
-            case {'flex', 'fill', 'grow'}
-                value = '1x';
-            otherwise
-                value = text;
-        end
+        rowHeight{k} = specRowHeight(children{k}, 'fit');
     end
 end
 

@@ -51,7 +51,7 @@ function rowHeight = tabRowHeights(children)
     count = max(1, numel(children));
     rowHeight = repmat({'fit'}, 1, count);
     for k = 1:numel(children)
-        rowHeight{k} = heightValue(children{k}.props, 'fit');
+        rowHeight{k} = specRowHeight(children{k}, 'fit');
     end
 end
 
@@ -59,32 +59,15 @@ function rowHeight = workspaceRowHeights(children)
     count = max(1, numel(children));
     rowHeight = repmat({'1x'}, 1, count);
     for k = 1:numel(children)
-        rowHeight{k} = childRowHeight(children{k});
+        rowHeight{k} = workspaceRowHeight(children{k});
     end
 end
 
-function value = childRowHeight(spec)
-    switch spec.kind
-        case {'previewArea', 'resultTable', 'logPanel', 'statusPanel', 'pathPanel'}
-            defaultValue = '1x';
-        otherwise
-            defaultValue = 'fit';
-    end
-    value = heightValue(spec.props, defaultValue);
-end
-
-function value = heightValue(props, defaultValue)
-    value = optionValue(props, 'height', defaultValue);
-    if ischar(value) || isstring(value)
-        text = char(string(value));
-        switch lower(text)
-            case {'fit', 'fixed'}
-                value = 'fit';
-            case {'flex', 'fill', 'grow'}
-                value = '1x';
-            otherwise
-                value = text;
-        end
+function value = workspaceRowHeight(spec)
+    if isstruct(spec.props) && isfield(spec.props, 'height')
+        value = specRowHeight(spec, '1x');
+    else
+        value = '1x';
     end
 end
 

@@ -85,6 +85,7 @@ function verify_gui_layout_ui_declarative_app()
     assert(numel(ui.setupResizeHandles) == 3 && all(isvalid(ui.setupResizeHandles)), ...
         'Multi-section control tabs should expose a height separator after every section.');
     assertSectionsDoNotOverlapResizeHandles(ui);
+    assertTextPanelsHaveDefaultRoom(ui);
     assertDefaultResizeHandleDrags(ui);
 
     ui.controls.sourceImages.chooseButton.ButtonPushedFcn( ...
@@ -160,6 +161,26 @@ function verify_gui_layout_ui_declarative_app()
     function paths = dialogProvider(~)
         paths = {fullfile(tempdir, 'a.png'), fullfile(tempdir, 'b.png')};
     end
+end
+
+function assertTextPanelsHaveDefaultRoom(ui)
+    settleLayout();
+    assert(ui.controls.notesText.textArea.Position(4) >= 105, ...
+        'statusPanel controls should start with enough height for multiple lines.');
+    ui.logTab.Parent.SelectedTab = ui.logTab;
+    settleLayout();
+    assert(ui.controls.logPanel.textArea.Position(4) >= 180, ...
+        'logPanel controls should start with enough height for useful log history.');
+    ui.setupTab.Parent.SelectedTab = ui.setupTab;
+    settleLayout();
+    assert(ui.controls.sourceImages.listbox.Position(4) >= 95, ...
+        'pathPanel lists should start with enough height for several entries.');
+end
+
+function settleLayout()
+    drawnow;
+    pause(0.5);
+    drawnow;
 end
 
 function assertDefaultResizeHandleDrags(ui)

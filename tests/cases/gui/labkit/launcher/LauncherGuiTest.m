@@ -42,7 +42,19 @@ function verify_launcher_layout()
     h.assertButtonContract(fig, {'Open Selected App', 'Open Debug', ...
         'Project Governance', 'Clean Artifacts', 'Refresh App List'});
     h.assertAnyTableColumns(fig, {'Family', 'App', 'Command'});
+    assertLauncherTextAreasHaveRoom(fig);
     h.invokeButton(fig, 'Refresh App List');
+end
+
+function assertLauncherTextAreasHaveRoom(fig)
+    drawnow;
+    pause(0.5);
+    drawnow;
+    ui = getappdata(fig, 'labkitUiRegistry');
+    assert(ui.controls.selectedDetails.textArea.Position(4) >= 105, ...
+        'Selected App details should have enough default height for multiple lines.');
+    assert(ui.controls.statusLine.textArea.Position(4) >= 80, ...
+        'Launcher action status should have enough default height for long messages.');
 end
 
 function assertNoPanelTitle(fig, blockedTitles)
