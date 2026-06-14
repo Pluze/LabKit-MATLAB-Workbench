@@ -13,9 +13,8 @@ function [handled, outputs, debugContext] = dispatchRequest(appName, args, nout)
 % Outputs:
 %   handled - false for normal and debug launches.
 %   outputs - empty cell array reserved for future launch request handlers.
-%   debugContext - disabled for normal launches; enabled for "debug",
-%       "-debug", "--debug", or "__labkit_debug__" launches. Debug launch
-%       requests do not consume app launch.
+%   debugContext - disabled for normal launches; enabled for "debug" launches.
+%       Debug launch requests do not consume app launch.
 
     appName = char(appName);
     handled = false;
@@ -36,8 +35,11 @@ function [handled, outputs, debugContext] = dispatchRequest(appName, args, nout)
             error(errorId(appName, 'TooManyOutputs'), ...
                 '%s debug mode returns at most the app figure and debug log.', appName);
         end
-        opts = debugOptions(appName, request, args);
-        debugContext = labkit.ui.diag.createContext(appName, opts);
+        if numel(args) > 1
+            error(errorId(appName, 'UnsupportedInput'), ...
+                '%s debug launch does not accept options.', appName);
+        end
+        debugContext = labkit.ui.diag.createContext(appName, struct('enabled', true));
         return;
     end
 
@@ -46,25 +48,7 @@ function [handled, outputs, debugContext] = dispatchRequest(appName, args, nout)
 end
 
 function tf = isDebugRequest(request)
-    tf = any(request == ["__labkit_debug__", "debug", "-debug", "--debug"]);
-end
-
-function opts = debugOptions(appName, request, args)
-    opts = struct();
-    if numel(args) > 2
-        error(errorId(appName, 'InvalidDebugOptions'), ...
-            '%s accepts at most one options struct.', char(request));
-    elseif numel(args) == 2
-        opts = args{2};
-    end
-    if ~isstruct(opts)
-        error(errorId(appName, 'InvalidDebugOptions'), ...
-            '%s options must be a struct.', char(request));
-    end
-    opts.enabled = true;
-    if ~isfield(opts, 'traceEnabled')
-        opts.traceEnabled = true;
-    end
+    tf = request == "debug";
 end
 
 function id = errorId(appName, suffix)

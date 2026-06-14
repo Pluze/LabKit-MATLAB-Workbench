@@ -46,7 +46,7 @@ function checkCurvatureMeasurementLayout(h)
     assertScaleBarPanelSpansControlTab(fig);
 
     h.closeAllFigures();
-    [fig, debug] = labkit_CurvatureMeasurement_app("debug", struct());
+    [fig, debug] = labkit_CurvatureMeasurement_app("debug");
     drawnow;
     assert(debug.enabled && debug.traceEnabled, ...
         'Curvature debug launch should return an enabled trace logger.');
@@ -80,7 +80,7 @@ function checkFocusStackLayout(h)
         h.axesSpec('Focus-depth index map', '', '')});
 
     h.closeAllFigures();
-    [fig, debug] = labkit_FocusStack_app("debug", struct());
+    [fig, debug] = labkit_FocusStack_app("debug");
     drawnow;
     assert(debug.enabled && debug.traceEnabled, ...
         'Focus Stack debug launch should return an enabled trace logger.');
@@ -111,7 +111,7 @@ function checkBatchImageCropLayout(h)
     h.assertAxesContract(fig, {h.axesSpec('Rotated preview + fixed crop', '', '')});
 
     h.closeAllFigures();
-    [fig, debug] = labkit_BatchImageCrop_app("debug", struct());
+    [fig, debug] = labkit_BatchImageCrop_app("debug");
     drawnow;
     assert(debug.enabled && debug.traceEnabled, ...
         'Batch crop debug launch should return an enabled trace logger.');
@@ -138,7 +138,7 @@ function checkImageEnhanceLayout(h)
     h.assertAxesContract(fig, {h.axesSpec('Enhanced Preview', '', '')});
 
     h.closeAllFigures();
-    [fig, debug] = labkit_ImageEnhance_app("debug", struct());
+    [fig, debug] = labkit_ImageEnhance_app("debug");
     drawnow;
     assert(debug.enabled && debug.traceEnabled, ...
         'Image enhance debug launch should return an enabled trace logger.');
@@ -165,7 +165,7 @@ function checkImageMatchLayout(h)
     h.assertAxesContract(fig, {h.axesSpec('Matched Preview', '', '')});
 
     h.closeAllFigures();
-    [fig, debug] = labkit_ImageMatch_app("debug", struct());
+    [fig, debug] = labkit_ImageMatch_app("debug");
     drawnow;
     assert(debug.enabled && debug.traceEnabled, ...
         'Image match debug launch should return an enabled trace logger.');

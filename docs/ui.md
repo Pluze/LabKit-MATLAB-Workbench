@@ -194,14 +194,16 @@ Apps route debug launch requests through:
     appName, varargin, nargout);
 ```
 
-Debug contexts are created by dispatch for normal app entry points. Non-debug string inputs are rejected by the public app launch path. Apps with nonstandard request paths may call `labkit.ui.diag.createContext(appName, opts)` directly.
+Debug contexts are created by dispatch for normal app entry points. Non-debug
+string inputs are rejected by the public app launch path. App launchers expose
+only the simple debug form; lower-level debug options such as log files or
+callbacks belong to direct `labkit.ui.diag.createContext(appName, opts)` tests
+and helpers.
 
 Debug launches support:
 
 ```matlab
-[fig, debug] = appName("__labkit_debug__", opts);
-[fig, debug] = appName("debug", opts);
-[fig, debug] = appName("--debug", opts);
+[fig, debug] = appName("debug");
 ```
 
 Apps append visible log lines through `labkit.ui.view.appendLog(ui, "log",

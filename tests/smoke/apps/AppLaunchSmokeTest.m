@@ -80,7 +80,7 @@ function verify_gui_smoke()
         assertLaunchedFigure(entryName);
 
         closeAllFigures();
-        [fig, debug] = feval(entryName, "__labkit_debug__", struct());
+        [fig, debug] = feval(entryName, "debug");
         drawnow;
         assert(isstruct(debug) && debug.enabled, ...
             'Debug launch for %s should return an enabled debug log struct.', entryName);
@@ -112,7 +112,7 @@ function verify_generated_app_smoke()
     addpath(appFolder);
     cleanup = onCleanup(@() cleanupGeneratedApp(tempRoot, appFolder));
 
-    [fig, debug] = labkit_SurfaceScan_app("__labkit_debug__", struct());
+    [fig, debug] = labkit_SurfaceScan_app("debug");
     drawnow;
 
     assert(strcmp(fig.Name, 'Surface Scan'), ...
