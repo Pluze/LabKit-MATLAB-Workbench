@@ -24,8 +24,9 @@ another skill already read shared AGENTS context, do not reread it.
 ## Task Routing
 
 Use the smallest source-aligned validation set that covers the touched
-boundary. `docs/testing.md` owns the canonical build-task names, wrappers, and
-command examples.
+boundary. `docs/testing.md` owns the stable build-task names, CI scope, and
+command examples. Build tasks are broad discovery-driven entry points; use
+`runLabKitTests("Suites", ...)` for component or app-family iteration.
 
 ```text
 project                    startup, architecture, package surface, sample-data hygiene
@@ -41,7 +42,9 @@ apps/smoke                 cross-app noninteractive launch checks
 ```
 
 Pair reusable changes with downstream apps when the app-facing contract could
-be affected. Use the default non-GUI task for broad changes.
+be affected. Use the default non-GUI build task for broad non-GUI changes, the
+labkit/app GUI build tasks for broad GUI structural routing, and runner suite
+selectors for narrower local diagnosis.
 
 ## GUI Claims
 

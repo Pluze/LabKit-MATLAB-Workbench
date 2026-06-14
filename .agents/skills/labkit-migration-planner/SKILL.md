@@ -1,18 +1,20 @@
 ---
 name: labkit-migration-planner
-description: "Use for LabKit migration roadmap work, runner/private helper debt scans, app-owned package migration planning, project-health and overengineering reviews from git history, migration guide updates, or aligning guardrail inventories with current debt. Coordinate with labkit-boundary-guard for app-vs-library ownership and labkit-test-planner for validation routing."
+description: "Use for LabKit migration-debt work, runner/private helper debt scans, app-owned package migration planning, project-health and overengineering reviews from git history, migration guide updates, or aligning guardrails with current debt. Coordinate with labkit-boundary-guard for app-vs-library ownership and labkit-test-planner for validation routing."
 ---
 
 # LabKit Migration Planner
 
 ## Goal
 
-Keep LabKit migration guidance current without creating another governance
-layer.
+Keep LabKit migration guidance executable and current without creating another
+governance layer.
 
 This skill owns the workflow for auditing and updating
-`.agents/migration_guide.md`. It does not own architecture policy, app-building
-patterns, or the validation command matrix.
+`.agents/migration_guide.md`. The guide may contain active migration debt,
+retirement rules, and explicitly requested executable goal prompts. It does not
+own architecture policy, app-building patterns, or the validation command
+matrix.
 
 ## Required Read Order
 
@@ -25,6 +27,8 @@ Start with a quick pass:
 Use a deep pass only when the task needs it:
 
 - read `Migration Standard` and `Future Debt Rules` before editing the guide
+- read any `Goal Prompt:` section completely before executing or revising an
+  unattended migration route
 - read debt-specific notes only if the guide records active debt for that area
 - read `docs/architecture.md` for package-boundary or debt-exception changes
 - read `docs/apps.md` for app entrypoint or app-owned package shape changes
@@ -61,8 +65,8 @@ When asked about project health, overengineering, management quality, or
 whether migration work is useful, ground the answer in evidence:
 
 - recent commit mix: feature, fix, test, refactor, docs, CI, and merge density
-- current debt facts: oversized runners, app `private` helpers, stale expected
-  debt lists, and removed legacy surfaces
+- current debt facts: oversized runners, app `private` helpers, stale debt
+  ledger entries, and removed legacy surfaces
 - validation health: latest local checks, latest CI, and whether red CI was
   fixed before more migration work
 - governance weight: size and overlap of docs, AGENTS, skills, migration guide,
@@ -74,19 +78,59 @@ Call work healthy only when refactoring reduces real complexity or risk. Flag
 work as overengineered when it adds rules, documents, helper layers, or exact
 guardrails without reducing active debt or clarifying an app-facing contract.
 
+## Executable Goal Prompt Mode
+
+Use this mode when the user asks to execute or complete a migration route,
+asks for an unattended goal, or asks to make `.agents/migration_guide.md`
+runnable by another agent.
+
+Treat a `Goal Prompt:` section as the active task contract. It should be
+specific enough for a capable coding agent to continue until the migration is
+complete without asking for another plan. Before executing it:
+
+- verify current repository facts instead of trusting stale prompt prose
+- convert the workstreams into an explicit task plan
+- keep the guide updated when facts, workstreams, blockers, validation gates, or
+  completion criteria change
+- prefer dynamic discovery and current source contracts over hard-coded lists
+- continue by phase until completion criteria are met or a blocker in the prompt
+  is actually reached
+
+A good executable prompt includes:
+
+- objective
+- operating principles
+- current facts to preserve
+- target shape
+- required workstreams
+- non-goals
+- validation gates
+- blockers
+- completion criteria
+- handoff expectations
+
+During execution, update the guide at phase boundaries and when decisions
+change. Do not log every micro-step. When the migration completes, shrink the
+guide again: remove completed route detail unless it still defines an active
+contract or future debt rule.
+
 ## Update Rules
 
 - Keep `.agents/migration_guide.md` as the only active migration debt ledger.
+- Allow an explicitly requested `Goal Prompt:` section while a migration route
+  is active. Treat it as executable state, not as permanent architecture docs.
 - Human docs should describe current behavior and boundaries, not migration
   execution steps.
 - Debt inventories must match guardrail expectations and current files.
-- Remove resolved debt from the guide, guardrail expected lists, and roadmap in
-  the same change.
+- Remove resolved debt from the guide and guardrails in the same change.
 - When all debt inventories are empty, keep the guide as a compact zero-debt
   ledger. Prefer shrinking roadmap prose over adding new plans, scripts, or
   governance layers.
 - Do not add a second governance doc or standalone migration handbook.
 - Do not add scripts for v1 audits unless repeated manual scans prove the need.
+- Do not preserve old guide prose just because it helped a completed migration.
+  Finished routes should either become current docs/tests/contracts or be
+  removed.
 
 ## Migration Decision
 
@@ -112,6 +156,7 @@ Report:
 
 - current debt facts checked
 - migration guide changes
+- active goal prompt status when a `Goal Prompt:` route is being executed
 - guardrail inventory changes
 - docs or scoped AGENTS intentionally unchanged, with reason
 - validation commands and CI status when pushed

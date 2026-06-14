@@ -156,14 +156,13 @@ defaults in `+state`, deterministic calculations and image/signal transforms in
 
 Do not add new string-dispatch workflow adapters such as `*Workflow.m` for
 tests. Tests should call the app-owned package function that owns the behavior.
-Use `apps/<family>/private/` only for helpers that are genuinely shared by
-multiple apps in that family and are not ready for a reusable `+labkit` facade.
-DIC apps now use app-owned packages rather than family-level `private/`
-helpers. Do not add app-owned `+core/dispatch.m` string routers to new app work.
+Do not add `apps/<family>/private/` helpers; current apps use app-owned
+packages rather than family-level private helper folders. Do not add app-owned
+`+core/dispatch.m` string routers to new app work.
 
-For active runner and app-private debt migrations, use
-`../.agents/migration_guide.md` as the agent-facing roadmap. This document only
-describes the preferred app shape and current app behavior.
+For future migration debt, use `../.agents/migration_guide.md` as the
+agent-facing debt ledger. This document only describes the preferred app shape
+and current app behavior.
 
 ## New App Checklist
 

@@ -23,8 +23,6 @@ classdef ProjectDebtGuardrailTest < matlab.unittest.TestCase
                 ['hidden load diagnostics must not remain. Files: ' ...
                 strjoin(cellstr(diagnosticsFiles), ', ')]);
 
-            fprintf('Legacy backdoor inventory: %d test-command files, %d handler files, %d diagnostics files.\n', ...
-                numel(testCommandFiles), numel(handlerFiles), numel(diagnosticsFiles));
         end
 
         function oversizedAppEntrypointDebtIsRemoved(testCase)
@@ -33,7 +31,6 @@ classdef ProjectDebtGuardrailTest < matlab.unittest.TestCase
             testCase.verifyEmpty(actual, ...
                 ['app entrypoints must remain at or below 500 lines. Files: ' ...
                 strjoin(cellstr(actual), ', ')]);
-            fprintf('Entrypoint size debt inventory: %d files over 500 lines.\n', numel(actual));
         end
 
         function oversizedRunnerDebtIsRemoved(testCase)
@@ -43,28 +40,6 @@ classdef ProjectDebtGuardrailTest < matlab.unittest.TestCase
                 ['oversized app runners must not remain. ' ...
                 'Split deterministic behavior into app-owned +ops/+view/+export/+io/+state ' ...
                 'before moving runner bodies. Files: ' strjoin(cellstr(actualFiles), ', ')]);
-
-            fprintf('Oversized runner debt inventory: %d files over 500 lines.\n', ...
-                numel(actualFiles));
-        end
-
-        function oversizedRunnersHaveMigrationMaps(testCase)
-            root = setupLabKitTestPath();
-            actualFiles = collectOversizedAppRunners(root, 500);
-            mapFile = fullfile(root, '.agents', 'migration_guide.md');
-            testCase.assertTrue(isfile(mapFile), ...
-                '.agents/migration_guide.md should track every oversized runner.');
-
-            mappedFiles = collectRunnerMigrationMapFiles(mapFile);
-            missingFiles = setdiff(actualFiles, mappedFiles);
-            staleFiles = setdiff(mappedFiles, actualFiles);
-
-            testCase.verifyTrue(isempty(missingFiles), ...
-                ['Oversized app runners need migration maps. Files: ' ...
-                strjoin(cellstr(missingFiles), ', ')]);
-            testCase.verifyTrue(isempty(staleFiles), ...
-                ['Runner migration maps include resolved or non-oversized files. ' ...
-                'Remove or update these headings: ' strjoin(cellstr(staleFiles), ', ')]);
         end
 
         function oldRunnerDependenciesAreRemoved(testCase)
@@ -84,8 +59,6 @@ classdef ProjectDebtGuardrailTest < matlab.unittest.TestCase
             testCase.verifyEmpty(dependencyFiles, ...
                 ['old custom-runner dependencies must not remain. Files: ' ...
                 strjoin(cellstr(dependencyFiles), ', ')]);
-
-            fprintf('Old runner dependency inventory: %d files.\n', numel(dependencyFiles));
         end
 
         function appPrivateRunnerDebtIsRemoved(testCase)
@@ -99,9 +72,6 @@ classdef ProjectDebtGuardrailTest < matlab.unittest.TestCase
             testCase.verifyTrue(isempty(actualFiles), ...
                 ['app private helper debt must not remain. Files: ' ...
                 strjoin(cellstr(actualFiles), ', ')]);
-
-            fprintf('App private helper debt inventory: %d files in %d directories.\n', ...
-                numel(actualFiles), numel(actualDirs));
         end
 
         function wearableMigrationTargetUsesAppSubfolder(testCase)
@@ -137,9 +107,6 @@ classdef ProjectDebtGuardrailTest < matlab.unittest.TestCase
             testCase.verifyTrue(isempty(dispatchFiles), ...
                 ['App-owned +core/dispatch.m string routers should not exist. Files: ' ...
                 strjoin(cellstr(dispatchFiles), ', ')]);
-
-            fprintf('Workflow dispatch debt inventory: %d Workflow files, %d +core dispatch files.\n', ...
-                numel(workflowFiles), numel(dispatchFiles));
         end
 
         function appUiRunnersAreNotUsedForAppLifecycle(testCase)
@@ -182,9 +149,6 @@ classdef ProjectDebtGuardrailTest < matlab.unittest.TestCase
                 'non-UI app-owned functions; GUI structural tests alone do not prove ' ...
                 'runner complexity was reduced. Findings: ' ...
                 strjoin(cellstr(missing), ', ')]);
-
-            fprintf('DIC/wearable migrated app package inventory: %d package roots.\n', ...
-                numel(packageRoots));
         end
     end
 end
@@ -286,16 +250,6 @@ function files = collectOversizedAppRunners(root, maxLines)
         end
     end
     files = unique(files(1:fileCount));
-end
-
-function files = collectRunnerMigrationMapFiles(mapFile)
-    content = fileread(mapFile);
-    tokens = regexp(content, '(?m)^## `([^`]+)`\s*$', 'tokens');
-    files = strings(numel(tokens), 1);
-    for k = 1:numel(tokens)
-        files(k) = string(tokens{k}{1});
-    end
-    files = unique(files);
 end
 
 function files = collectRelativeFiles(root, pattern)

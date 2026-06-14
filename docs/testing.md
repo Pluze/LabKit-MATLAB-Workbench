@@ -12,7 +12,7 @@ Do not claim behavior is preserved unless tests or fixtures support that claim.
 
 ## Test Commands
 
-Use the MATLAB build tasks for the common official test entry points:
+Use MATLAB build tasks for the stable official entry points:
 
 ```bash
 buildtool checkStyle
@@ -20,19 +20,10 @@ buildtool test
 buildtool testUnit
 buildtool testIntegration
 buildtool testProject
-buildtool testLabkitDta
-buildtool testLabkitBiosignal
-buildtool testLabkitUi
-buildtool testLabkitUiGui
-buildtool testAppsElectrochem
-buildtool testAppsElectrochemGui
-buildtool testAppsDicGui
-buildtool testAppsImageMeasurement
-buildtool testAppsImageMeasurementGui
-buildtool testAppsWearableGui
-buildtool testAppsTemplatesGui
+buildtool testLabkit
+buildtool testLabkitGui
+buildtool testApps
 buildtool testAppsGui
-buildtool testAppsSmokeGui
 buildtool testGuiStructural
 buildtool testGuiGesture
 buildtool coverage
@@ -43,6 +34,10 @@ buildtool packageDryRun
 
 - `buildtool test` is the full non-GUI entry point.
 - `buildtool checkStyle` runs official project/style guardrails.
+- `buildtool testLabkit` and `buildtool testApps` run discovered non-GUI tests
+  below the reusable `labkit` and app-owned test trees.
+- `buildtool testLabkitGui` and `buildtool testAppsGui` run discovered GUI
+  tests below the same ownership trees.
 - `buildtool coverage` generates official JUnit, HTML test result, Cobertura,
   and HTML coverage artifacts. Coverage is report-only and runs in manual or
   scheduled CI, not as a default PR quality gate.
@@ -68,56 +63,51 @@ Default non-GUI build task:
 buildtool test
 ```
 
-On Windows PowerShell:
+If MATLAB is not on `PATH`, use the thin MATLAB locator:
 
-```powershell
-.\scripts\run_matlab_tests.ps1 test
+```bash
+scripts/matlab_batch.sh "buildtool test"
 ```
 
-If local execution policy blocks direct `.ps1` execution, run:
+`scripts/matlab_batch.sh` only locates MATLAB, changes to the repository root,
+and runs the supplied MATLAB `-batch` command. It does not parse test task names
+or maintain a separate test interface. Set `MATLAB_CMD` when MATLAB is not on
+`PATH`. Run `buildtool listTasks` to inspect the current task catalog.
 
-```powershell
-powershell -ExecutionPolicy Bypass -File .\scripts\run_matlab_tests.ps1 test
-```
-
-Both wrappers accept build task names only and call `buildtool`. Selector flags
-such as `--suite`, `--test`, and `--gui` are not supported. Set `MATLAB_CMD`
-when MATLAB is not on `PATH`, set `MATLAB_FLAGS` for MATLAB startup flags, and
-set `MATLAB_TEST_LOG` to override the default `matlab_test.log` location. Run
-`buildtool listTasks` or `scripts/run_matlab_tests.sh listTasks` to inspect the
-current task catalog.
-
-Advanced targeted debugging can call the internal runner directly:
+Targeted debugging uses the same runner selectors used by the build tasks:
 
 ```matlab
-runLabKitTests("Tests", "AppHookHelpersTest", "FailIfNoTests", true)
+runLabKitTests("Suites", "apps/dic", "IncludeGui", false)
+runLabKitTests("Suites", "labkit/dta", "IncludeGui", false)
+runLabKitTests("Tests", "AppHookHelpersTest")
+runLabKitTests("Tags", "Gesture", "IncludeGui", true)
 ```
 
-To inspect test selection without executing tests or writing artifacts, use
-the internal list-only mode:
+To inspect test selection without executing tests or writing artifacts, add
+list-only mode:
 
 ```matlab
 runLabKitTests("Suites", "labkit/dta", "ListOnly", true)
 ```
 
-Use direct `runLabKitTests(...)` calls only for local diagnosis. Build tasks
-remain the official entry points for CI, PR validation, and local validation
-commands.
+Use direct `runLabKitTests(...)` calls for local diagnosis and source-aligned
+iteration. Build tasks remain the stable official entry points for CI, PR
+validation, and broad local validation commands.
 
 ## Validation Levels
 
 | Level | Where | Purpose |
 | --- | --- | --- |
 | Default non-GUI build task | CI and local shell | Project guardrails, `labkit` facade behavior, non-GUI reusable UI checks, and pure app analysis/export helpers. |
-| Focused GUI build tasks | Local MATLAB with graphics support | Noninteractive launch, layout, and callback wiring checks for selected app families. |
+| Focused GUI build tasks | Local MATLAB with graphics support | Noninteractive launch, layout, and callback wiring checks. |
 | Manual GUI validation | User-run app windows | Interactive file selection, drawing, visual inspection, and full workflow feel. |
 
-CI runs shell-wrapper, quality, unit, and integration jobs on pushes and pull
-requests for every branch through `.github/workflows/matlab-tests.yml`. Manual and
-scheduled CI runs also execute coverage, GUI structural, and non-blocking GUI
-gesture jobs. Coverage is intentionally outside the default PR gate to keep PR
-feedback focused and avoid duplicate test execution. Do not describe CI as full
-interactive GUI workflow validation.
+CI runs repository-hygiene, quality, unit, and integration jobs on pushes and
+pull requests for every branch through `.github/workflows/matlab-tests.yml`.
+Manual and scheduled CI runs also execute coverage, GUI structural, and
+non-blocking GUI gesture jobs. Coverage is intentionally outside the default PR
+gate to keep PR feedback focused and avoid duplicate test execution. Do not
+describe CI as full interactive GUI workflow validation.
 
 Each MATLAB CI job writes a GitHub Step Summary with JUnit totals, artifact
 locations, the slowest test cases, and failed-test details when available.
@@ -127,77 +117,54 @@ artifacts; GitHub Actions does not render artifact HTML inline, so interactive
 HTML browsing still requires downloading the artifact or adding a separate
 publishing target.
 
-The shell-wrapper job owns repository-level checks that are cheaper and safer
-outside MATLAB, including the rule that `LabKit.prj` and `resources/project/`
-must stay untracked local IDE metadata. MATLAB build tasks should not shell out
-to git for this repository-state check. CI jobs also use explicit job timeouts
-so a MATLAB process hang fails quickly instead of consuming the GitHub Actions
-six-hour default.
+The repository-hygiene job owns repository-level checks that are cheaper and
+safer outside MATLAB, including the rule that `LabKit.prj` and
+`resources/project/` must stay untracked local IDE metadata. MATLAB build tasks
+should not shell out to git for this repository-state check. CI jobs also use
+explicit job timeouts so a MATLAB process hang fails quickly instead of
+consuming the GitHub Actions six-hour default.
 
-## Focused Build Tasks
+## Targeted Selection
 
-```bash
-buildtool testProject
-buildtool testLabkitDta
-buildtool testLabkitDta testAppsElectrochem
-buildtool testLabkitBiosignal
-buildtool testLabkitBiosignal testAppsWearableGui
-buildtool testLabkitUiGui
-buildtool testLabkitUiGui testAppsGui
-buildtool testAppsElectrochem
-buildtool testAppsDicGui
-buildtool testAppsImageMeasurementGui
-buildtool testAppsWearableGui
-buildtool testAppsTemplatesGui
-buildtool testAppsGui
-buildtool testAppsSmokeGui
-buildtool testGuiStructural
-buildtool testGuiGesture
-```
+The runner discovers tests by directory and filters by suite, tag, and test
+name. Use broad build tasks for official validation and runner selectors for
+focused iteration:
 
-Use task names from Windows PowerShell:
-
-```powershell
-.\scripts\run_matlab_tests.ps1 testLabkitDta
-.\scripts\run_matlab_tests.ps1 testAppsElectrochem
-.\scripts\run_matlab_tests.ps1 testGuiStructural
-```
-
-Focused build tasks mirror source ownership:
-
-| Task | Use it for |
+| Change area | Focused selector |
 | --- | --- |
-| `testProject` | Startup, architecture, package surface, repository hygiene, and sample-data hygiene guardrails. |
-| `testLabkitDta` | DTA parser, facade, session, pulse, and item-schema checks. |
-| `testLabkitBiosignal` | Biosignal import, channel extraction, processing, ECG peaks, segments, SNR, and group comparison. |
-| `testLabkitUi` | Reusable UI helpers that do not require app windows. |
-| `testLabkitUiGui` | Reusable UI layout, callback wiring, diagnostics, and tool GUI checks. |
-| `testAppsElectrochem` | Electrochem app-owned calculations and exports. |
-| `testAppsElectrochemGui` | Electrochem app layout contracts. |
-| `testAppsDicGui` | DIC app layout contracts. |
-| `testAppsImageMeasurement` | Image-measurement calculations and exports. |
-| `testAppsImageMeasurementGui` | Image-measurement layout contracts. |
-| `testAppsWearableGui` | Wearable app layout contracts. |
-| `testAppsTemplatesGui` | Template app structure, starter helper, and layout contracts. |
-| `testAppsGui` | All app-family noninteractive GUI checks. |
-| `testAppsSmokeGui` | Cross-app launch smoke checks. |
-| `testGuiStructural` | All structural GUI checks. |
-| `testGuiGesture` | Runtime, anchor-editor, and scale-bar gesture checks. |
+| Startup, architecture, package surface, hygiene | `buildtool testProject` |
+| DTA parser, facade, session, pulse, item schemas | `runLabKitTests("Suites", "labkit/dta")` |
+| Biosignal import, processing, ECG, segments | `runLabKitTests("Suites", "labkit/biosignal")` |
+| Reusable non-GUI UI helpers | `runLabKitTests("Suites", "labkit/ui", "IncludeGui", false)` |
+| Reusable UI layout, callbacks, diagnostics, tools | `runLabKitTests("Suites", "labkit/ui", "IncludeGui", true)` |
+| Electrochem app calculations and exports | `runLabKitTests("Suites", "apps/electrochem", "IncludeGui", false)` |
+| DIC app state, IO/export, view, image-processing helpers | `runLabKitTests("Suites", "apps/dic", "IncludeGui", false)` |
+| Image-measurement calculations and exports | `runLabKitTests("Suites", "apps/image_measurement", "IncludeGui", false)` |
+| Wearable app import, plotting request, measurement helpers | `runLabKitTests("Suites", "apps/wearable", "IncludeGui", false)` |
+| Template app helper behavior | `runLabKitTests("Suites", "apps/templates", "IncludeGui", false)` |
+| App-family GUI layout contracts | `runLabKitTests("Suites", "apps/<family>", "IncludeGui", true)` |
+| Cross-app launch smoke checks | `runLabKitTests("Suites", "apps/smoke", "IncludeGui", true)` |
+| All structural GUI checks | `buildtool testGuiStructural` |
+| Runtime, anchor-editor, and scale-bar gesture checks | `buildtool testGuiGesture` |
 
-For reusable library changes, add downstream app tasks when the app-facing
-contract could be affected. For example, pair `testLabkitDta` with
-`testAppsElectrochem`, `testLabkitBiosignal` with `testAppsWearableGui`, and
-`testLabkitUiGui` with `testAppsGui` when layout or callback behavior changed.
+For reusable library changes, add downstream app selectors when the app-facing
+contract could be affected. For example, pair
+`runLabKitTests("Suites", "labkit/dta")` with
+`runLabKitTests("Suites", "apps/electrochem", "IncludeGui", false)`,
+`runLabKitTests("Suites", "labkit/biosignal")` with
+`runLabKitTests("Suites", "apps/wearable", "IncludeGui", false)`, and
+`runLabKitTests("Suites", "labkit/ui", "IncludeGui", true)` with
+`buildtool testAppsGui` when layout or callback behavior changed.
 
 UI framework changes should cover the affected layer rather than only the changed file:
 
 | UI layer | Automated coverage |
 | --- | --- |
 | Public surface | `testProject` checks the layered `labkit.ui.app/spec/view/tool/diag` API and private implementation packages. |
-| Shell/layout | `testLabkitUiGui` and affected app-family GUI tasks. |
-| Runtime/tools | `testLabkitUiGui` runtime, anchor-editor, and scale-bar tool tests. |
-| Diagnostics | `testLabkitUiGui` debug instrumentation tests plus `testAppsSmokeGui` debug launch trace checks. |
-| App migration | Affected app-family GUI task plus `testProject` entrypoint/boundary guardrails. |
+| Shell/layout | `testLabkitGui` and affected app-family GUI selectors. |
+| Runtime/tools | `testLabkitGui` runtime, anchor-editor, and scale-bar tool tests. |
+| Diagnostics | `testLabkitGui` debug instrumentation tests plus `runLabKitTests("Suites", "apps/smoke", "IncludeGui", true)`. |
+| App migration | Affected app-family GUI selector plus `testProject` entrypoint/boundary guardrails. |
 | Gesture tools | `buildtool testGuiGesture` for runtime, anchor-editor, and scale-bar lifecycle checks. |
 
 ## MATLAB Code Analyzer Suppression Policy

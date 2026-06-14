@@ -94,9 +94,10 @@ app-owned package under the owning app folder. For large apps, the default
 helper location is `apps/<family>/<app_slug>/+<app_slug>/...`, with component
 packages such as `+ui`, `+state`, `+ops`, `+view`, `+export`, and `+io` created
 as needed. The app-owned package name should match the app folder slug; do not
-use a fixed `+app` namespace for every app. `apps/<family>/private/` should be
-reserved for helpers that are genuinely shared by multiple apps in that family
-and are not ready for a reusable `+labkit` facade.
+use a fixed `+app` namespace for every app. Do not add `apps/<family>/private/`
+helper folders; shared family behavior should either stay in the owning app
+package until the boundary is clear or move behind a deliberate reusable
+`+labkit` facade after design review.
 
 Current image-measurement, electrochemistry, wearable, and DIC apps already
 follow the app-owned package shape. Do not copy older family-level `private/`
@@ -211,9 +212,16 @@ Private helpers may keep shorter comments, but should still identify expected ca
 
 ## Validation Boundary
 
-The default automated validation boundary is the non-GUI MATLAB build task: project architecture checks, `labkit` facade/parser checks, and pure app analysis/export checks. GitHub Actions runs that task on pushes and pull requests for every branch.
+The default automated validation boundary is the non-GUI MATLAB build task:
+project architecture checks, `labkit` facade/parser checks, and pure app
+analysis/export checks. GitHub Actions splits that coverage into focused
+repository-hygiene, quality, unit, and integration jobs on pushes and pull
+requests.
 
-GUI launch/layout checks live in source-aligned build tasks such as `testLabkitUiGui` and `testAppsGui`. Interactive GUI workflows are validated manually in MATLAB app windows. See `docs/testing.md` for the canonical validation matrix.
+GUI launch/layout checks live in broad discovery-driven build tasks such as
+`testLabkitGui`, `testAppsGui`, and the focused `runLabKitTests` suite
+selectors documented in `docs/testing.md`. Interactive GUI workflows are
+validated manually in MATLAB app windows.
 
 ## Current Package Surface
 

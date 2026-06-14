@@ -47,8 +47,8 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
   package components instead of adding new `private` runners or string-dispatch
   workflow adapters.
 - Use `.agents/migration_guide.md` and the `labkit-migration-planner` skill for
-  active runner, app-private, and migration-roadmap work. This file owns app
-  boundary rules, not the full migration playbook.
+  active runner, app-private, and migration-debt work. This file owns app
+  boundary rules, not the migration debt ledger.
 - When the wearable ECG Print app is migrated, target
   `apps/wearable/ecg_print/+ecg_print/...` with the public command still named
   `labkit_ECGPrint_app`; do not create a direct `apps/wearable/+ecg_print`
@@ -59,7 +59,9 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
 - Do not add new `*Workflow.m` files or app-owned `+core/dispatch.m` string
   routers.
 - When a public app file grows large, prefer moving GUI-free app-owned calculations, export builders, formatting utilities, deterministic image/signal transforms, and focused control construction into `apps/<family>/<app_slug>/+<app_slug>/...`.
-- Do not add new `apps/<family>/private/` helpers unless the helper is genuinely shared by multiple apps in that family and the user approves that family-level boundary.
+- Do not add new `apps/<family>/private/` helpers. Keep helpers in the owning
+  app package, or use `labkit-boundary-guard` before promoting genuinely
+  reusable behavior into `+labkit`.
 - Keep the public app entry point as a thin launch wrapper. The package-root
   `run.m` owns GUI state, callbacks, user alerts, app workflow order, debug
   launch routing, and user-facing log wording.

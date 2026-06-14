@@ -64,19 +64,10 @@ Coordinate with:
    - Do not change unrelated Code Analyzer findings in other files unless the
      same local edit naturally fixes them.
 
-5. Run focused validation for the touched area. Examples:
-
-   ```bash
-   scripts/run_matlab_tests.sh testLabkitBiosignal
-   scripts/run_matlab_tests.sh testLabkitDta
-   scripts/run_matlab_tests.sh testLabkitUi
-   scripts/run_matlab_tests.sh testAppsImageMeasurement
-   scripts/run_matlab_tests.sh testProject
-   ```
-
-   Pick the smallest source-aligned task that covers the behavior, adding
-   `testProject` when project guardrails or suppression policy could be
-   affected.
+5. Run focused validation for the touched area. Pick the smallest
+   source-aligned `buildtool` task from `docs/testing.md` that covers the
+   behavior, adding the project guardrail task when project guardrails or
+   suppression policy could be affected.
 
 6. Rerun the Code Analyzer tool and confirm the target file no longer appears
    in `matlab_code_check.json.files`.

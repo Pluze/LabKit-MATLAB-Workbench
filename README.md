@@ -112,20 +112,17 @@ Run the default non-GUI MATLAB build task:
 buildtool test
 ```
 
-The wrapper scripts call the same build tasks:
+If MATLAB is not on `PATH`, use the thin MATLAB locator:
 
 ```bash
-scripts/run_matlab_tests.sh test
+scripts/matlab_batch.sh "buildtool test"
 ```
 
-```powershell
-.\scripts\run_matlab_tests.ps1 test
-```
-
-Focused build tasks are available for project guardrails, DTA, biosignal, UI,
-app families, GUI structural checks, gesture checks, coverage, optional local
-MATLAB Project checks, and package dry runs. See `docs/testing.md` for the
-complete command matrix and GUI validation limits.
+Additional build tasks cover project guardrails, broad reusable-library checks,
+broad app-owned checks, GUI structural checks, gesture checks, coverage,
+optional local MATLAB Project checks, and package dry runs. Use the
+`runLabKitTests` suite and tag selectors documented in `docs/testing.md` for
+component or app-family iteration.
 
 ## Repository Layout
 
@@ -138,7 +135,7 @@ apps/image_measurement/ General image measurement and microscopy apps
 apps/wearable/          Wearable biosignal apps
 apps/templates/         Starter app template for new LabKit apps
 tests/                  MATLAB tests, GUI structural checks, and fixtures
-scripts/                Test wrapper scripts
+scripts/                MATLAB locator, project setup, and reporting helpers
 docs/                   Human-readable architecture, API, app, and testing docs
 ```
 

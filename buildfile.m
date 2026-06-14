@@ -30,56 +30,20 @@ function testProjectTask(~)
     runCatalogTask("testProject");
 end
 
-function testLabkitDtaTask(~)
-    runCatalogTask("testLabkitDta");
+function testLabkitTask(~)
+    runCatalogTask("testLabkit");
 end
 
-function testLabkitBiosignalTask(~)
-    runCatalogTask("testLabkitBiosignal");
+function testLabkitGuiTask(~)
+    runCatalogTask("testLabkitGui");
 end
 
-function testLabkitUiTask(~)
-    runCatalogTask("testLabkitUi");
-end
-
-function testLabkitUiGuiTask(~)
-    runCatalogTask("testLabkitUiGui");
-end
-
-function testAppsElectrochemTask(~)
-    runCatalogTask("testAppsElectrochem");
-end
-
-function testAppsElectrochemGuiTask(~)
-    runCatalogTask("testAppsElectrochemGui");
-end
-
-function testAppsDicGuiTask(~)
-    runCatalogTask("testAppsDicGui");
-end
-
-function testAppsImageMeasurementTask(~)
-    runCatalogTask("testAppsImageMeasurement");
-end
-
-function testAppsImageMeasurementGuiTask(~)
-    runCatalogTask("testAppsImageMeasurementGui");
-end
-
-function testAppsWearableGuiTask(~)
-    runCatalogTask("testAppsWearableGui");
-end
-
-function testAppsTemplatesGuiTask(~)
-    runCatalogTask("testAppsTemplatesGui");
+function testAppsTask(~)
+    runCatalogTask("testApps");
 end
 
 function testAppsGuiTask(~)
     runCatalogTask("testAppsGui");
-end
-
-function testAppsSmokeGuiTask(~)
-    runCatalogTask("testAppsSmokeGui");
 end
 
 function testGuiStructuralTask(~)
@@ -151,19 +115,10 @@ function catalog = taskCatalog()
         taskSpec("testUnit", "Run official unit tests.", "Tags", "Unit"), ...
         taskSpec("testIntegration", "Run official integration tests.", "Tags", "Integration"), ...
         taskSpec("testProject", "Run project guardrails.", "Suites", "project"), ...
-        taskSpec("testLabkitDta", "Run DTA facade/parser tests.", "Suites", "labkit/dta"), ...
-        taskSpec("testLabkitBiosignal", "Run biosignal facade tests.", "Suites", "labkit/biosignal"), ...
-        taskSpec("testLabkitUi", "Run reusable UI non-GUI tests.", "Suites", "labkit/ui", "IncludeGui", false), ...
-        taskSpec("testLabkitUiGui", "Run reusable UI GUI tests.", "Suites", "labkit/ui", "IncludeGui", true), ...
-        taskSpec("testAppsElectrochem", "Run electrochem app non-GUI tests.", "Suites", "apps/electrochem", "IncludeGui", false), ...
-        taskSpec("testAppsElectrochemGui", "Run electrochem app GUI tests.", "Suites", "apps/electrochem", "IncludeGui", true), ...
-        taskSpec("testAppsDicGui", "Run DIC app GUI tests.", "Suites", "apps/dic", "IncludeGui", true), ...
-        taskSpec("testAppsImageMeasurement", "Run image-measurement app non-GUI tests.", "Suites", "apps/image_measurement", "IncludeGui", false), ...
-        taskSpec("testAppsImageMeasurementGui", "Run image-measurement app GUI tests.", "Suites", "apps/image_measurement", "IncludeGui", true), ...
-        taskSpec("testAppsWearableGui", "Run wearable app GUI tests.", "Suites", "apps/wearable", "IncludeGui", true), ...
-        taskSpec("testAppsTemplatesGui", "Run template app GUI tests.", "Suites", "apps/templates", "IncludeGui", true), ...
-        taskSpec("testAppsGui", "Run all app GUI tests.", "Suites", "apps", "IncludeGui", true), ...
-        taskSpec("testAppsSmokeGui", "Run cross-app GUI smoke tests.", "Suites", "apps/smoke", "IncludeGui", true), ...
+        taskSpec("testLabkit", "Run all reusable labkit non-GUI tests.", "Suites", "labkit", "IncludeGui", false), ...
+        taskSpec("testLabkitGui", "Run all reusable labkit GUI tests.", "Suites", "labkit", "IncludeGui", true), ...
+        taskSpec("testApps", "Run all app-owned non-GUI tests.", "Suites", "apps", "IncludeGui", false), ...
+        taskSpec("testAppsGui", "Run all app-owned GUI tests.", "Suites", "apps", "IncludeGui", true), ...
         taskSpec("testGuiStructural", "Run noninteractive GUI structural tests.", "Suites", "gui", "Tags", "Structural", "IncludeGui", true), ...
         taskSpec("testGuiGesture", "Run noninteractive GUI gesture tests.", "Tags", "Gesture", "IncludeGui", true), ...
         taskSpec("coverage", "Run official tests with coverage artifacts.", "Tags", ["Unit", "Integration"], "IncludeCoverage", true), ...

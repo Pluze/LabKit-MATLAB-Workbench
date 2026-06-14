@@ -35,6 +35,7 @@
 ## Validation Routing
 
 Package boundary or public surface changes should include project guardrails.
-Add the focused DTA, biosignal, or UI task for the touched facade, and add
-downstream app-family tasks when the app-facing contract may be affected. Use
-`docs/testing.md` for exact task names and GUI/non-GUI pairings.
+Use `runLabKitTests("Suites", ...)` for the touched DTA, biosignal, or UI
+facade, and add downstream app-family suite selectors when the app-facing
+contract may be affected. Use `docs/testing.md` for stable build-task names,
+suite selectors, and GUI/non-GUI pairings.

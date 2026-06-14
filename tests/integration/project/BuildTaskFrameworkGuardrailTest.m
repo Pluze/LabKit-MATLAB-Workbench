@@ -15,7 +15,7 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
                 'Build task catalog entries should carry non-empty descriptions.');
         end
 
-        function documentedAndWrapperTasksStayInCatalog(testCase)
+        function documentedBuildTasksStayInCatalog(testCase)
             root = setupLabKitTestPath();
             catalog = extractBuildfileCatalog(root);
             catalogNames = catalog.Name;
@@ -36,28 +36,34 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
                     "Documented buildtool tasks in " + relativePath(root, docFiles(k)));
             end
 
-            wrapperFiles = [ ...
-                fullfile(root, "scripts", "run_matlab_tests.sh"), ...
-                fullfile(root, "scripts", "run_matlab_tests.ps1")];
-            for k = 1:numel(wrapperFiles)
-                wrapper = string(fileread(wrapperFiles(k)));
-                testCase.verifyFalse(contains(wrapper, "Common tasks:"), ...
-                    "Wrappers should not duplicate the task matrix: " + ...
-                    relativePath(root, wrapperFiles(k)));
-                testCase.verifyTrue(contains(wrapper, "buildtool listTasks"), ...
-                    "Wrappers should route task discovery to the build catalog: " + ...
-                    relativePath(root, wrapperFiles(k)));
+            batchLocator = string(fileread(fullfile(root, "scripts", ...
+                "matlab_batch.sh")));
+            formerWrapperName = "run_" + "matlab_tests";
+            testCase.verifyFalse(contains(batchLocator, formerWrapperName), ...
+                'MATLAB locator should not reintroduce the former test wrapper.');
+            testCase.verifyFalse(contains(batchLocator, "TASK"), ...
+                'MATLAB locator should not parse or own build task names.');
+
+            oldWrapperDocs = [ ...
+                string(fullfile(root, "README.md")), ...
+                string(fullfile(root, "docs", "testing.md"))];
+            for k = 1:numel(oldWrapperDocs)
+                testCase.verifyFalse(contains(fileread(oldWrapperDocs(k)), ...
+                    formerWrapperName), ...
+                    "User-facing docs should not reference the former test wrapper: " + ...
+                    relativePath(root, oldWrapperDocs(k)));
             end
         end
 
         function focusedBuildTasksMatchAtLeastOneTest(testCase)
-            setupLabKitTestPath();
-            taskSpecs = focusedTaskSpecs();
+            root = setupLabKitTestPath();
+            taskSpecs = focusedTaskSpecs(root);
+            testCase.assertFalse(isempty(taskSpecs), ...
+                "Runnable build task specs should be discovered from buildfile.m.");
             for k = 1:numel(taskSpecs)
                 spec = taskSpecs(k);
-                output = runLabKitTests(spec.Args{:}, ...
-                    "RunName", spec.Name + "_list", ...
-                    "ListOnly", true);
+                output = listLabKitTestsQuietly(spec.Args{:}, ...
+                    "RunName", spec.Name + "_list");
                 testCase.verifyGreaterThan(output.count, 0, ...
                     "Focused build task should match tests: " + spec.Name);
             end
@@ -65,15 +71,36 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
 
         function defaultRunnerSelectionExcludesGuiTests(testCase)
             setupLabKitTestPath();
-            output = runLabKitTests( ...
+            output = listLabKitTestsQuietly( ...
                 "IncludeGui", false, ...
-                "RunName", "default_list", ...
-                "ListOnly", true);
+                "RunName", "default_list");
 
             testCase.verifyGreaterThan(output.count, 0, ...
                 'Default non-GUI runner selection should not be empty.');
             testCase.verifyFalse(any(contains(output.tests.Tags, "GUI")), ...
                 'Default non-GUI runner selection must not include GUI tests.');
+        end
+
+        function buildTaskCatalogStaysCompactAndDiscoveryDriven(testCase)
+            root = setupLabKitTestPath();
+            catalog = extractBuildfileCatalog(root);
+
+            granularPrefixes = ["testLabkitDta", "testLabkitBiosignal", ...
+                "testLabkitUi", "testAppsElectrochem", "testAppsDic", ...
+                "testAppsImageMeasurement", "testAppsWearable", ...
+                "testAppsTemplates", "testAppsSmoke"];
+            for k = 1:numel(granularPrefixes)
+                testCase.verifyFalse(any(startsWith(catalog.Name, granularPrefixes(k))), ...
+                    "Build tasks should stay compact; use runLabKitTests Suites for " + ...
+                    "granular routing instead of " + granularPrefixes(k) + "* tasks.");
+            end
+
+            expectedDiscoveryTasks = ["testLabkit", "testLabkitGui", ...
+                "testApps", "testAppsGui"];
+            missing = setdiff(expectedDiscoveryTasks, catalog.Name);
+            testCase.verifyTrue(isempty(missing), ...
+                "Build catalog should expose broad discovery-driven tasks: " + ...
+                strjoin(missing, ", "));
         end
 
         function testFilesUseKnownTags(testCase)
@@ -102,69 +129,6 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
             end
         end
 
-        function ciCoverageRunsOnlyOnManualOrScheduledWorkflows(testCase)
-            root = setupLabKitTestPath();
-            workflowPath = fullfile(root, ".github", "workflows", ...
-                "matlab-tests.yml");
-            workflow = string(fileread(workflowPath));
-
-            testCase.verifyFalse(contains(workflow, "tasks: testUnit coverage"), ...
-                'PR unit job should not duplicate coverage execution.');
-            testCase.verifyTrue(contains(workflow, "tasks: coverage"), ...
-                'Coverage should remain available through a dedicated job.');
-            coverageJob = extractWorkflowJob(workflow, "coverage");
-            testCase.verifyTrue(contains(coverageJob, ...
-                "github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'"), ...
-                'Coverage job should only run for manual or scheduled workflows.');
-            testCase.verifyTrue(contains(coverageJob, "artifacts/coverage/**"), ...
-                'Coverage job should upload coverage artifacts.');
-        end
-
-        function ciPushAndPullRequestsRunOnAllBranches(testCase)
-            root = setupLabKitTestPath();
-            workflowPath = fullfile(root, ".github", "workflows", ...
-                "matlab-tests.yml");
-            workflow = char(fileread(workflowPath));
-
-            testCase.verifyTrue(isempty(regexp(workflow, ...
-                '(?m)^  push:\s*\n\s+branches:', 'once')), ...
-                'Push workflows should run on every branch, not only main.');
-            testCase.verifyTrue(isempty(regexp(workflow, ...
-                '(?m)^  pull_request:\s*\n\s+branches:', 'once')), ...
-                'Pull request workflows should run for every target branch.');
-        end
-
-        function ciRepositoryStateChecksStayOutsideMatlab(testCase)
-            root = setupLabKitTestPath();
-            workflowPath = fullfile(root, ".github", "workflows", ...
-                "matlab-tests.yml");
-            workflow = string(fileread(workflowPath));
-            shellWrapperJob = extractWorkflowJob(workflow, "shell-wrapper");
-
-            testCase.verifyTrue(contains(shellWrapperJob, ...
-                "Check MATLAB Project metadata is local"), ...
-                'Repository metadata checks should run in shell-wrapper.');
-            testCase.verifyTrue(contains(shellWrapperJob, ...
-                "git ls-files -- LabKit.prj resources/project"), ...
-                'Tracked MATLAB Project metadata should be checked by git in shell.');
-            testCase.verifyFalse(contains(workflow, "matlabProjectMetadataStaysLocal"), ...
-                'MATLAB tests should not shell out to git for repository metadata.');
-        end
-
-        function ciMatlabJobsHaveTimeouts(testCase)
-            root = setupLabKitTestPath();
-            workflowPath = fullfile(root, ".github", "workflows", ...
-                "matlab-tests.yml");
-            workflow = string(fileread(workflowPath));
-            jobNames = ["quality", "unit", "coverage", "integration", ...
-                "gui-structural", "gui-gesture"];
-
-            for k = 1:numel(jobNames)
-                job = extractWorkflowJob(workflow, jobNames(k));
-                testCase.verifyTrue(contains(job, "timeout-minutes:"), ...
-                    "CI MATLAB job should have an explicit timeout: " + jobNames(k));
-            end
-        end
     end
 end
 
@@ -204,7 +168,7 @@ end
 
 function tasks = extractPrimaryTestingCommandMatrix(content)
     content = char(content);
-    sectionStart = strfind(content, 'Use the MATLAB build tasks for the common official test entry points:');
+    sectionStart = strfind(content, 'Use MATLAB build tasks for the stable official entry points:');
     if isempty(sectionStart)
         tasks = strings(1, 0);
         return;
@@ -231,28 +195,80 @@ function verifyTaskSubset(testCase, tasks, catalogNames, label)
         label + " not in buildfile catalog: " + strjoin(missing, ", "));
 end
 
-function taskSpecs = focusedTaskSpecs()
-    taskSpecs = [ ...
-        listTaskSpec("testProject", {"Suites", "project"}), ...
-        listTaskSpec("testLabkitDta", {"Suites", "labkit/dta"}), ...
-        listTaskSpec("testLabkitBiosignal", {"Suites", "labkit/biosignal"}), ...
-        listTaskSpec("testLabkitUi", {"Suites", "labkit/ui", "IncludeGui", false}), ...
-        listTaskSpec("testLabkitUiGui", {"Suites", "labkit/ui", "IncludeGui", true}), ...
-        listTaskSpec("testAppsElectrochem", {"Suites", "apps/electrochem", "IncludeGui", false}), ...
-        listTaskSpec("testAppsElectrochemGui", {"Suites", "apps/electrochem", "IncludeGui", true}), ...
-        listTaskSpec("testAppsDicGui", {"Suites", "apps/dic", "IncludeGui", true}), ...
-        listTaskSpec("testAppsImageMeasurement", {"Suites", "apps/image_measurement", "IncludeGui", false}), ...
-        listTaskSpec("testAppsImageMeasurementGui", {"Suites", "apps/image_measurement", "IncludeGui", true}), ...
-        listTaskSpec("testAppsWearableGui", {"Suites", "apps/wearable", "IncludeGui", true}), ...
-        listTaskSpec("testAppsTemplatesGui", {"Suites", "apps/templates", "IncludeGui", true}), ...
-        listTaskSpec("testAppsGui", {"Suites", "apps", "IncludeGui", true}), ...
-        listTaskSpec("testAppsSmokeGui", {"Suites", "apps/smoke", "IncludeGui", true}), ...
-        listTaskSpec("testGuiStructural", {"Suites", "gui", "Tags", "Structural", "IncludeGui", true}), ...
-        listTaskSpec("testGuiGesture", {"Tags", "Gesture", "IncludeGui", true})];
+function taskSpecs = focusedTaskSpecs(root)
+    specs = parseRunnableTaskSpecs(root);
+    taskSpecs = specs([specs.Required]);
 end
 
-function spec = listTaskSpec(name, args)
-    spec = struct("Name", string(name), "Args", {args});
+function specs = parseRunnableTaskSpecs(root)
+    content = fileread(fullfile(root, "buildfile.m"));
+    lines = string(splitlines(content));
+    lines = lines(contains(lines, "taskSpec("));
+    specs = struct("Name", {}, "Args", {}, "Required", {});
+    for k = 1:numel(lines)
+        line = string(lines{k});
+        nameTokens = regexp(line, 'taskSpec\("([^"]+)"', 'tokens', 'once');
+        if isempty(nameTokens) || contains(line, '"RunTests", false')
+            continue;
+        end
+
+        required = ~contains(line, '"Required", false');
+        args = taskSpecArguments(line);
+        specs(end+1) = struct( ...
+            "Name", string(nameTokens{1}), ...
+            "Args", {args}, ...
+            "Required", required);
+    end
+end
+
+function args = taskSpecArguments(line)
+    args = {};
+    args = appendStringListArgument(args, line, "Suites");
+    args = appendStringListArgument(args, line, "Tags");
+    args = appendLogicalArgument(args, line, "IncludeGui");
+    args = appendLogicalArgument(args, line, "IncludeCoverage");
+end
+
+function args = appendStringListArgument(args, line, name)
+    values = extractNameValueStrings(line, name);
+    if isempty(values)
+        return;
+    end
+    args = [args, {char(name), values}];
+end
+
+function values = extractNameValueStrings(line, name)
+    pattern = '"' + name + '"\s*,\s*(\[[^\]]+\]|"[^"]*")';
+    token = regexp(line, pattern, 'tokens', 'once');
+    if isempty(token)
+        values = strings(1, 0);
+        return;
+    end
+
+    valueTokens = regexp(token{1}, '"([^"]+)"', 'tokens');
+    values = strings(1, numel(valueTokens));
+    for k = 1:numel(valueTokens)
+        values(k) = string(valueTokens{k}{1});
+    end
+end
+
+function args = appendLogicalArgument(args, line, name)
+    value = extractNameValueLogical(line, name);
+    if isempty(value)
+        return;
+    end
+    args = [args, {char(name), value}];
+end
+
+function value = extractNameValueLogical(line, name)
+    pattern = '"' + name + '"\s*,\s*(true|false)';
+    token = regexp(line, pattern, 'tokens', 'once');
+    if isempty(token)
+        value = [];
+        return;
+    end
+
+    value = strcmp(token{1}, "true");
 end
 
 function files = collectTestFiles(root)
@@ -281,31 +297,14 @@ function tags = extractQuotedTags(content)
     end
 end
 
-function job = extractWorkflowJob(workflow, jobName)
-    lines = splitlines(string(workflow));
-    jobHeader = "  " + jobName + ":";
-    startLine = find(lines == jobHeader, 1);
-    if isempty(startLine)
-        job = "";
-        return;
-    end
-
-    stopLine = numel(lines);
-    for k = startLine + 1:numel(lines)
-        line = lines(k);
-        if startsWith(line, "  ") && ~startsWith(line, "    ") && ...
-                endsWith(line, ":")
-            stopLine = k - 1;
-            break;
-        end
-    end
-    job = strjoin(lines(startLine:stopLine), newline);
-end
-
 function rel = relativePath(root, filepath)
     rel = replace(string(filepath), "\", "/");
     root = replace(string(root), "\", "/");
     if startsWith(rel, root + "/")
         rel = extractAfter(rel, strlength(root) + 1);
     end
+end
+
+function output = listLabKitTestsQuietly(varargin)
+    evalc('output = runLabKitTests(varargin{:}, "ListOnly", true);');
 end

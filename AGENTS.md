@@ -101,8 +101,8 @@ When using local lab files to reproduce a bug:
 
 Run relevant automated checks after executable MATLAB, test, fixture, package, or validation-rule changes. Use focused checks during iteration and the default non-GUI build task for broad changes.
 
-Use `docs/testing.md` as the canonical command matrix for build tasks, wrapper
-behavior, CI scope, fixture expectations, and GUI validation limits. Scoped
+Use `docs/testing.md` as the canonical command matrix for build tasks, CI
+scope, fixture expectations, and GUI validation limits. Scoped
 `AGENTS.md` files should only route by ownership and should not duplicate the
 full task list.
 

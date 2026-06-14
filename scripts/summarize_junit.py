@@ -30,7 +30,7 @@ def main() -> int:
         lines = [
             f"### {run_name}",
             "",
-            f"> ⚠️ {message}",
+            f"> Warning: {message}",
             "",
             artifact_lines(args),
             "",
@@ -45,7 +45,7 @@ def main() -> int:
         suites, failed_cases = parse_junit(junit_path)
     except Exception as exc:  # pragma: no cover - defensive CI reporting path.
         message = f"Could not parse {junit_path}: {exc}"
-        lines = [f"### {run_name}", "", f"> ⚠️ {message}", ""]
+        lines = [f"### {run_name}", "", f"> Warning: {message}", ""]
         lines += log_tail_summary(args.log, args.summary_log_tail_lines)
         write_summary(summary_path, lines)
         print_annotation("warning", f"{run_name} report parse failed", message)
