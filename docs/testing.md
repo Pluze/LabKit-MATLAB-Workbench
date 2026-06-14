@@ -17,7 +17,8 @@ scripts/matlab_batch.sh "buildtool test"
 ```
 
 `scripts/matlab_batch.sh` only finds MATLAB, changes to the repository root,
-and runs the supplied MATLAB `-batch` command.
+and runs the supplied MATLAB `-batch` command. Its MATLAB log is written to
+`artifacts/logs/matlab_batch/matlab.log`.
 
 ## Build Tasks
 
@@ -167,8 +168,18 @@ Test artifacts are written under:
 ```text
 artifacts/test-results/<RunName>/
 artifacts/coverage/<RunName>/
+artifacts/code-check/
+artifacts/debug/<RunName>/
 artifacts/gui/<RunName>/
 artifacts/logs/<RunName>/
+artifacts/logs/matlab_batch/
+```
+
+`runLabKitTests` sets `LABKIT_ARTIFACTS` while tests run, so apps launched in
+debug mode write their trace files into the same artifact root:
+
+```text
+artifacts/debug/<RunName>/<AppName>/
 ```
 
 Coverage is report-only and not part of the default local check.

@@ -17,6 +17,9 @@ Examples:
 
 Environment:
   MATLAB_CMD Optional path or command name for MATLAB.
+
+Log:
+  artifacts/logs/matlab_batch/matlab.log
 USAGE
 }
 
@@ -62,4 +65,6 @@ if [[ -z "$MATLAB_BIN" ]]; then
     exit 127
 fi
 
-exec "$MATLAB_BIN" -batch "cd($(matlab_literal "$ROOT_DIR")); $1;"
+LOG_DIR="$ROOT_DIR/artifacts/logs/matlab_batch"
+mkdir -p "$LOG_DIR"
+exec "$MATLAB_BIN" -logfile "$LOG_DIR/matlab.log" -batch "cd($(matlab_literal "$ROOT_DIR")); $1;"

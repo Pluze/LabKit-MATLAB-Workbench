@@ -7,7 +7,7 @@ function paths = labkitArtifactPaths(varargin)
 %   Create logical flag that creates directories when true
 %
 % Output fields include JUnit XML, HTML test results, coverage, MATLAB log,
-% GUI trace, and GUI snapshot locations.
+% app debug trace, GUI trace, and GUI snapshot locations.
 
     p = inputParser;
     p.addParameter("Root", defaultArtifactRoot(), @(v) ischar(v) || isstring(v));
@@ -30,6 +30,7 @@ function paths = labkitArtifactPaths(varargin)
     paths.coverageHtml = fullfile(paths.coverage, "html");
     paths.logs = artifactPath(artifactRoot, "logs", runName);
     paths.matlabLog = fullfile(paths.logs, "matlab.log");
+    paths.debug = artifactPath(artifactRoot, "debug", runName);
     paths.gui = artifactPath(artifactRoot, "gui", runName);
     paths.guiTrace = fullfile(paths.gui, "trace");
     paths.guiSnapshots = fullfile(paths.gui, "snapshots");
@@ -41,6 +42,7 @@ function paths = labkitArtifactPaths(varargin)
         ensureDirectory(paths.coverage);
         ensureDirectory(paths.coverageHtml);
         ensureDirectory(paths.logs);
+        ensureDirectory(paths.debug);
         ensureDirectory(paths.guiTrace);
         ensureDirectory(paths.guiSnapshots);
     end

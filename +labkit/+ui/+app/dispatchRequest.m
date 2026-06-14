@@ -14,7 +14,9 @@ function [handled, outputs, debugContext] = dispatchRequest(appName, args, nout)
 %   handled - false for normal and debug launches.
 %   outputs - empty cell array reserved for future launch request handlers.
 %   debugContext - disabled for normal launches; enabled for "debug" launches.
-%       Debug launch requests do not consume app launch.
+%       Debug launch requests do not consume app launch. Public app debug
+%       launches write a trace log under artifacts/debug so the last event is
+%       still available if the GUI freezes before the Log tab can be inspected.
 
     appName = char(appName);
     handled = false;
@@ -39,7 +41,9 @@ function [handled, outputs, debugContext] = dispatchRequest(appName, args, nout)
             error(errorId(appName, 'UnsupportedInput'), ...
                 '%s debug launch does not accept options.', appName);
         end
-        debugContext = labkit.ui.diag.createContext(appName, struct('enabled', true));
+        debugContext = labkit.ui.diag.createContext(appName, struct( ...
+            'enabled', true, ...
+            'logFile', defaultDebugLogFile(appName)));
         return;
     end
 

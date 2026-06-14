@@ -322,6 +322,9 @@ function initializeLogFile(logFile, appName)
     end
     cleaner = onCleanup(@() fclose(fid));
     fprintf(fid, '%s debug log\n', char(appName));
+    fprintf(fid, 'created=%s\n', datestr(now, 31));
+    fprintf(fid, 'matlab=%s\n', version);
+    fprintf(fid, 'platform=%s\n', computer);
 end
 
 function appendLine(logFile, line)

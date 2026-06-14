@@ -20,7 +20,9 @@ labkit_launcher
 ```
 
 The launcher scans `apps/**/labkit_*_app.m`, shows the available tools, and
-opens the selected app. Known apps can also be launched directly, for example:
+opens the selected app. It also has direct actions for Debug launch, Project
+Governance, and cleaning generated artifacts. Known apps can also be launched
+directly, for example:
 
 ```matlab
 labkit_CIC_app
@@ -55,6 +57,8 @@ If MATLAB is not on `PATH`, use the locator:
 ```bash
 scripts/matlab_batch.sh "buildtool test"
 ```
+
+The locator writes its MATLAB log to `artifacts/logs/matlab_batch/matlab.log`.
 
 See [docs/testing.md](docs/testing.md) for focused selectors and GUI checks.
 

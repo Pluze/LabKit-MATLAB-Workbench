@@ -19,8 +19,9 @@ fix codecheck issues in +labkit/+biosignal/compareGroups.m
 use the codecheck fixer skill
 ```
 
-Do not trigger this skill just because `matlab_code_check.json` exists or
-because unrelated work produces Code Analyzer messages.
+Do not trigger this skill just because
+`artifacts/code-check/matlab_code_check.json` exists or because unrelated work
+produces Code Analyzer messages.
 
 ## Required Read Order
 
@@ -45,12 +46,13 @@ Coordinate with:
    project_governance.ops.runCodeCheckReport();
    ```
 
-   The ignored report is `matlab_code_check.json`.
+   The ignored report is `artifacts/code-check/matlab_code_check.json`.
 
 2. Choose the target file:
 
    - If the user named a file, use that file.
-   - Otherwise use the first entry in `matlab_code_check.json.files`.
+   - Otherwise use the first entry in
+     `artifacts/code-check/matlab_code_check.json.files`.
 
 3. Read only that file's messages from JSON. Fix all messages reported for that
    file in one coherent pass.
@@ -71,7 +73,7 @@ Coordinate with:
    suppression policy could be affected.
 
 6. Rerun the Code Analyzer tool and confirm the target file no longer appears
-   in `matlab_code_check.json.files`.
+   in `artifacts/code-check/matlab_code_check.json.files`.
 
 7. Repeat steps 3-6 only for the same target file until it is clean, or stop and
    report the blocker if a warning cannot be fixed without behavior or boundary
@@ -92,7 +94,7 @@ Report:
 - behavior-preservation strategy
 - validation commands and results
 - whether the target file is absent from the refreshed
-  `matlab_code_check.json.files`
+  `artifacts/code-check/matlab_code_check.json.files`
 - staged files
 - any remaining Code Analyzer findings in other files as intentionally out of
   scope

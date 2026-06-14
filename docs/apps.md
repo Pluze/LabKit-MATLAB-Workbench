@@ -13,8 +13,10 @@ labkit_launcher
 ```
 
 The launcher initializes the LabKit path, discovers
-`apps/**/labkit_*_app.m`, and opens the selected app. If you already know the
-command, launch it directly:
+`apps/**/labkit_*_app.m`, and opens the selected app. It also provides direct
+actions to launch the selected app in debug mode, open Project Governance, and
+clean LabKit-generated artifacts. If you already know the command, launch it
+directly:
 
 ```matlab
 labkit_CIC_app
@@ -22,6 +24,10 @@ labkit_DICPreprocess_app
 labkit_ImageEnhance_app
 labkit_ECGPrint_app
 ```
+
+The cleanup action removes `artifacts/` plus legacy root diagnostic files named
+`matlab_code_check.json` or `matlab_test*.log`. It does not remove source code,
+docs, tests, photos, or derived data folders.
 
 For path setup without opening the launcher:
 
@@ -50,7 +56,7 @@ MATLAB path. It does not add app-owned package folders such as
 | `labkit_ImageMatch_app` | Image measurement | Reference-based tone, white-balance, Lab style, and histogram matching. | Image files | Matched images and manifest CSV. |
 | `labkit_BatchImageCrop_app` | Image measurement | Fixed-size batch microscope crops with per-image center and rotation. | Microscope images | Cropped images and crop manifest CSV. |
 | `labkit_ECGPrint_app` | Wearable biosignal | ECG waveform preview, ROI filtering, peak/segment SNR, and SNR-over-time display. | MAT timetable or CSV/TSV table | Segment SNR CSV and waveform PNG. |
-| `labkit_ProjectGovernance_app` | Project tools | Create app scaffolds and scan MATLAB project code. | Scaffold options or repository code | New app files or `matlab_code_check.json`. |
+| `labkit_ProjectGovernance_app` | Project tools | Create app scaffolds and scan MATLAB project code. | Scaffold options or repository code | New app files or `artifacts/code-check/matlab_code_check.json`. |
 
 ## Creating A New App
 
@@ -131,7 +137,7 @@ for the extraction rule.
 
 - Create new app scaffolds directly from the governance app generator.
 - Scan project MATLAB files with Code Analyzer and write
-  `matlab_code_check.json`.
+  `artifacts/code-check/matlab_code_check.json`.
 
 It also exposes local MATLAB Project creation as a maintenance action. The
 tracked repository does not include `LabKit.prj` or `resources/project/`;

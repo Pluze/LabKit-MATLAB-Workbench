@@ -11,10 +11,10 @@ function varargout = labkit_launcher(varargin)
 
     root = fileparts(mfilename('fullpath'));
     mode = parseMode(varargin);
-
     apps = discoverApps(root);
+
     if mode == "list"
-        varargout = {appTable(apps)};
+        varargout = {appCatalogTable(apps)};
         return;
     end
 
@@ -24,7 +24,7 @@ function varargout = labkit_launcher(varargin)
     end
 
     initializePath(root);
-    fig = createLauncherFigure(root, apps);
+    fig = runLauncher(root, apps);
     if nargout == 1
         varargout = {fig};
     end
@@ -68,75 +68,19 @@ function initializePath(root)
     end
 end
 
-function fig = createLauncherFigure(root, apps)
-    initialFamilyItems = familyFilterItems(apps);
-    spec = labkit.ui.spec.app('labkitLauncher', 'LabKit App Launcher', ...
-        'position', [100 80 1320 760], ...
-        'leftWidth', 390, ...
-        'controlTabs', { ...
-            labkit.ui.spec.tab('findApp', 'Find App', { ...
-                labkit.ui.spec.section('searchSection', '', { ...
-                    labkit.ui.spec.field('launcherSummary', ...
-                        'LabKit Apps', ...
-                        'kind', 'readonly', ...
-                        'value', sprintf('%d app entry points found', numel(apps))), ...
-                    labkit.ui.spec.field('search', 'Search:', ...
-                        'kind', 'text', ...
-                        'onChange', @onFilterChanged), ...
-                    labkit.ui.spec.field('family', 'Family:', ...
-                        'kind', 'dropdown', ...
-                        'items', cellstr(initialFamilyItems), ...
-                        'value', char(initialFamilyItems(1)), ...
-                        'onChange', @onFilterChanged)}, ...
-                    'chrome', 'none'), ...
-                labkit.ui.spec.section('selectedAppSection', 'Selected App', { ...
-                    labkit.ui.spec.statusPanel('selectedDetails', ...
-                        'Selected App', ...
-                        'value', {'No app selected.'}), ...
-                    labkit.ui.spec.action('openSelected', ...
-                        'Open Selected App', @onLaunch)}), ...
-                labkit.ui.spec.section('actionsSection', 'Actions', { ...
-                    labkit.ui.spec.action('refreshApps', ...
-                        'Refresh App List', @onRefresh), ...
-                    labkit.ui.spec.statusPanel('launcherHint', ...
-                        'Hint', ...
-                        'value', {'Select a row to inspect it. Double-click a row to open that app.'})}), ...
-                labkit.ui.spec.section('statusSection', 'Status', { ...
-                    labkit.ui.spec.logPanel('statusLog', 'Status', ...
-                        'value', {'Ready.'})})})}, ...
-        'workspace', labkit.ui.spec.workspace('applicationsWorkspace', ...
-            'Applications', { ...
-            labkit.ui.spec.resultTable('appTable', 'Applications', ...
-                'columns', {'Family', 'App', 'Command'})}));
+function fig = runLauncher(root, apps)
+    callbacks = struct( ...
+        'filterChanged', @onFilterChanged, ...
+        'launchSelected', @onLaunchSelected, ...
+        'launchSelectedDebug', @onLaunchSelectedDebug, ...
+        'openGovernance', @onOpenGovernance, ...
+        'cleanArtifacts', @onCleanArtifacts, ...
+        'refreshApps', @onRefreshApps);
+    ui = labkit.ui.app.create(buildLauncherSpec(apps, callbacks));
+    handles = launcherHandles(ui);
+    configureTable(handles.table, @onSelectionChanged, @onTableDoubleClicked);
 
-    ui = labkit.ui.app.create(spec);
-    fig = ui.figure;
-    fig.Color = [0.97 0.98 0.99];
-    txtFilter = ui.controls.search.valueHandle;
-    ddFamily = ui.controls.family.valueHandle;
-    summaryText = ui.controls.launcherSummary.valueHandle;
-    detailText = ui.controls.selectedDetails.textArea;
-    btnDetailLaunch = ui.controls.openSelected.button;
-    tblApps = ui.controls.appTable.table;
-    tblApps.ColumnEditable = [false false false];
-    tblApps.ColumnSortable = [true true true];
-    tblApps.RowName = {};
-    tblApps.ColumnWidth = {'fit', 'fit', 'auto'};
-    if isprop(tblApps, 'SelectionChangedFcn')
-        tblApps.SelectionChangedFcn = @onSelectionChanged;
-    else
-        tblApps.CellSelectionCallback = @onSelectionChanged;
-    end
-    if isprop(tblApps, 'SelectionType')
-        tblApps.SelectionType = 'row';
-    end
-    if isprop(tblApps, 'DoubleClickedFcn')
-        tblApps.DoubleClickedFcn = @onTableDoubleClicked;
-    elseif isprop(tblApps, 'CellDoubleClickedFcn')
-        tblApps.CellDoubleClickedFcn = @onTableDoubleClicked;
-    end
-    statusLabel = ui.controls.statusLog.textArea;
-
+    fig = handles.figure;
     state = struct();
     state.apps = apps;
     state.visibleApps = apps;
@@ -149,12 +93,12 @@ function fig = createLauncherFigure(root, apps)
         refreshTable();
     end
 
-    function onRefresh(~, ~)
+    function onRefreshApps(~, ~)
         state.apps = discoverApps(root);
-        ddFamily.Items = cellstr(familyFilterItems(state.apps));
-        ddFamily.Value = ddFamily.Items{1};
+        handles.family.Items = cellstr(familyFilterItems(state.apps));
+        handles.family.Value = handles.family.Items{1};
+        handles.summary.Value = launcherSummaryText(state.apps);
         state.selectedRow = 1;
-        summaryText.Value = sprintf('%d app entry points found', numel(state.apps));
         refreshTable();
     end
 
@@ -176,23 +120,56 @@ function fig = createLauncherFigure(root, apps)
             state.selectedRow = row;
             refreshSelection();
         end
-        onLaunch();
+        launchSelectedApp(false);
     end
 
-    function onLaunch(~, ~)
+    function onLaunchSelected(varargin)
+        launchSelectedApp(false);
+    end
+
+    function onLaunchSelectedDebug(varargin)
+        launchSelectedApp(true);
+    end
+
+    function onOpenGovernance(varargin)
+        app = findAppByCommand(state.apps, 'labkit_ProjectGovernance_app');
+        if isempty(app)
+            setStatus('Project Governance app was not found.');
+            return;
+        end
+        launchApp(app, false);
+    end
+
+    function onCleanArtifacts(varargin)
+        if ~confirmCleanArtifacts(fig)
+            setStatus('Clean artifacts canceled.');
+            return;
+        end
+        result = cleanGeneratedArtifacts(root);
+        setStatus(cleanArtifactsStatus(result));
+    end
+
+    function launchSelectedApp(debugMode)
         if isempty(state.visibleApps)
             setStatus('No app entry points found.');
             return;
         end
         row = min(max(state.selectedRow, 1), numel(state.visibleApps));
-        app = state.visibleApps(row);
-        setStatus(sprintf('Launching %s...', app.command));
+        launchApp(state.visibleApps(row), debugMode);
+    end
+
+    function launchApp(app, debugMode)
+        setStatus(launchStartStatus(app, debugMode));
         drawnow;
 
         try
             addpath(app.folder, '-end');
-            feval(app.command);
-            setStatus(sprintf('Launched %s.', app.command));
+            if debugMode
+                feval(app.command, "debug");
+            else
+                feval(app.command);
+            end
+            setStatus(launchSuccessStatus(app, debugMode));
         catch err
             setStatus(sprintf('Failed to launch %s: %s', ...
                 app.command, err.message));
@@ -201,9 +178,10 @@ function fig = createLauncherFigure(root, apps)
 
     function refreshTable()
         state.visibleApps = filterApps(state.apps, ...
-            string(txtFilter.Value), string(ddFamily.Value));
-        tblApps.Data = displayRows(state.visibleApps);
-        state.selectedRow = min(max(state.selectedRow, 1), max(numel(state.visibleApps), 1));
+            string(handles.search.Value), string(handles.family.Value));
+        handles.table.Data = appDisplayRows(state.visibleApps);
+        state.selectedRow = min(max(state.selectedRow, 1), ...
+            max(numel(state.visibleApps), 1));
         setLaunchEnabled(~isempty(state.visibleApps));
         refreshSelection();
         setStatus(sprintf('%d of %d apps shown', ...
@@ -212,30 +190,25 @@ function fig = createLauncherFigure(root, apps)
 
     function refreshSelection()
         if isempty(state.visibleApps)
-            detailText.Value = {'No matching apps'; 'No app matches the current filters.'};
+            handles.details.Value = noMatchingAppDetails();
             clearTableStyles();
             return;
         end
 
         row = min(max(state.selectedRow, 1), numel(state.visibleApps));
-        app = state.visibleApps(row);
-        detailText.Value = [ ...
-            {char(app.displayName)}; ...
-            {['Family: ' char(app.family)]}; ...
-            {['Command: ' app.command]}; ...
-            {['Path: ' app.relativePath]}; ...
-            cellstr(wrapDescription(app.description))];
+        handles.details.Value = selectedAppDetails(state.visibleApps(row));
         highlightSelectedRow(row);
     end
 
     function setLaunchEnabled(enabled)
         stateValue = matlab.lang.OnOffSwitchState(enabled);
-        btnDetailLaunch.Enable = stateValue;
+        handles.openButton.Enable = stateValue;
+        handles.debugButton.Enable = stateValue;
     end
 
     function clearTableStyles()
         try
-            removeStyle(tblApps);
+            removeStyle(handles.table);
         catch
         end
     end
@@ -243,40 +216,189 @@ function fig = createLauncherFigure(root, apps)
     function highlightSelectedRow(row)
         clearTableStyles();
         try
-            addStyle(tblApps, state.selectedStyle, 'row', row);
+            addStyle(handles.table, state.selectedStyle, 'row', row);
         catch
         end
     end
 
     function setStatus(message)
-        statusLabel.Value = {char(message)};
+        handles.status.Value = {char(message)};
     end
 
     function row = selectedTableRow()
         row = NaN;
-        if isprop(tblApps, 'Selection') && ~isempty(tblApps.Selection)
-            row = tblApps.Selection(1, 1);
+        if isprop(handles.table, 'Selection') && ~isempty(handles.table.Selection)
+            row = handles.table.Selection(1, 1);
         end
     end
-
 end
 
-function row = eventRow(event)
-    row = NaN;
-    if isobject(event) && isprop(event, 'Selection')
-        indices = event.Selection;
-    elseif isstruct(event) && isfield(event, 'Selection')
-        indices = event.Selection;
-    elseif isobject(event) && isprop(event, 'Indices')
-        indices = event.Indices;
-    elseif isstruct(event) && isfield(event, 'Indices')
-        indices = event.Indices;
+function spec = buildLauncherSpec(apps, callbacks)
+    initialFamilyItems = familyFilterItems(apps);
+    spec = labkit.ui.spec.app('labkitLauncher', 'LabKit App Launcher', ...
+        'position', [100 80 1320 760], ...
+        'leftWidth', 390, ...
+        'controlTabs', launcherTabs(apps, initialFamilyItems, callbacks), ...
+        'workspace', launcherWorkspace());
+end
+
+function tabs = launcherTabs(apps, familyItems, callbacks)
+    tabs = { ...
+        labkit.ui.spec.tab('findApp', 'Find App', { ...
+            searchSection(apps, familyItems, callbacks), ...
+            selectedAppSection(callbacks), ...
+            actionsSection(callbacks), ...
+            statusSection()})};
+end
+
+function section = searchSection(apps, familyItems, callbacks)
+    section = labkit.ui.spec.section('searchSection', '', { ...
+        labkit.ui.spec.field('launcherSummary', ...
+            'LabKit Apps', ...
+            'kind', 'readonly', ...
+            'value', launcherSummaryText(apps)), ...
+        labkit.ui.spec.field('search', 'Search:', ...
+            'kind', 'text', ...
+            'onChange', callbacks.filterChanged), ...
+        labkit.ui.spec.field('family', 'Family:', ...
+            'kind', 'dropdown', ...
+            'items', cellstr(familyItems), ...
+            'value', char(familyItems(1)), ...
+            'onChange', callbacks.filterChanged)}, ...
+        'chrome', 'none');
+end
+
+function section = selectedAppSection(callbacks)
+    section = labkit.ui.spec.section('selectedAppSection', 'Selected App', { ...
+        labkit.ui.spec.statusPanel('selectedDetails', ...
+            'Selected App', ...
+            'value', {'No app selected.'}), ...
+        labkit.ui.spec.actionGroup('selectedLaunchActions', { ...
+            labkit.ui.spec.action('openSelected', ...
+                'Open Selected App', callbacks.launchSelected), ...
+            labkit.ui.spec.action('openSelectedDebug', ...
+                'Open Debug', callbacks.launchSelectedDebug)})});
+end
+
+function section = actionsSection(callbacks)
+    section = labkit.ui.spec.section('actionsSection', 'Actions', { ...
+        labkit.ui.spec.actionGroup('projectToolActions', { ...
+            labkit.ui.spec.action('openGovernance', ...
+                'Project Governance', callbacks.openGovernance), ...
+            labkit.ui.spec.action('cleanArtifacts', ...
+                'Clean Artifacts', callbacks.cleanArtifacts)}), ...
+        labkit.ui.spec.action('refreshApps', ...
+            'Refresh App List', callbacks.refreshApps), ...
+        labkit.ui.spec.statusPanel('launcherHint', ...
+            'Hint', ...
+            'value', {'Select a row to inspect it. Double-click a row to open that app.'})});
+end
+
+function section = statusSection()
+    section = labkit.ui.spec.section('statusSection', 'Status', { ...
+        labkit.ui.spec.logPanel('statusLog', 'Status', ...
+            'value', {'Ready.'})});
+end
+
+function workspace = launcherWorkspace()
+    workspace = labkit.ui.spec.workspace('applicationsWorkspace', ...
+        'Applications', { ...
+        labkit.ui.spec.resultTable('appTable', 'Applications', ...
+            'columns', {'Family', 'App', 'Command'})});
+end
+
+function handles = launcherHandles(ui)
+    handles = struct();
+    handles.figure = ui.figure;
+    handles.figure.Color = [0.97 0.98 0.99];
+    handles.search = ui.controls.search.valueHandle;
+    handles.family = ui.controls.family.valueHandle;
+    handles.summary = ui.controls.launcherSummary.valueHandle;
+    handles.details = ui.controls.selectedDetails.textArea;
+    handles.openButton = ui.controls.openSelected.button;
+    handles.debugButton = ui.controls.openSelectedDebug.button;
+    handles.table = ui.controls.appTable.table;
+    handles.status = ui.controls.statusLog.textArea;
+end
+
+function configureTable(tableHandle, selectionCallback, doubleClickCallback)
+    tableHandle.ColumnEditable = [false false false];
+    tableHandle.ColumnSortable = [true true true];
+    tableHandle.RowName = {};
+    tableHandle.ColumnWidth = {'fit', 'fit', 'auto'};
+    if isprop(tableHandle, 'SelectionChangedFcn')
+        tableHandle.SelectionChangedFcn = selectionCallback;
     else
-        indices = [];
+        tableHandle.CellSelectionCallback = selectionCallback;
     end
-    if ~isempty(indices)
-        row = indices(1, 1);
+    if isprop(tableHandle, 'SelectionType')
+        tableHandle.SelectionType = 'row';
     end
+    if isprop(tableHandle, 'DoubleClickedFcn')
+        tableHandle.DoubleClickedFcn = doubleClickCallback;
+    elseif isprop(tableHandle, 'CellDoubleClickedFcn')
+        tableHandle.CellDoubleClickedFcn = doubleClickCallback;
+    end
+end
+
+function text = launcherSummaryText(apps)
+    text = sprintf('%d app entry points found', numel(apps));
+end
+
+function rows = selectedAppDetails(app)
+    rows = [ ...
+        {char(app.displayName)}; ...
+        {['Family: ' char(app.family)]}; ...
+        {['Command: ' app.command]}; ...
+        {['Path: ' app.relativePath]}; ...
+        cellstr(wrapDescription(app.description))];
+end
+
+function rows = noMatchingAppDetails()
+    rows = {'No matching apps'; 'No app matches the current filters.'};
+end
+
+function message = launchStartStatus(app, debugMode)
+    if debugMode
+        message = sprintf('Launching %s in debug mode...', app.command);
+    else
+        message = sprintf('Launching %s...', app.command);
+    end
+end
+
+function message = launchSuccessStatus(app, debugMode)
+    if debugMode
+        message = sprintf('Launched %s in debug mode.', app.command);
+    else
+        message = sprintf('Launched %s.', app.command);
+    end
+end
+
+function message = cleanArtifactsStatus(result)
+    if isempty(result.errors)
+        message = sprintf('Cleaned %d generated artifact item(s).', ...
+            result.removedCount);
+    else
+        message = sprintf('Cleaned %d item(s); %d item(s) failed.', ...
+            result.removedCount, numel(result.errors));
+    end
+end
+
+function rows = appDisplayRows(apps)
+    rows = cell(numel(apps), 3);
+    for k = 1:numel(apps)
+        rows{k, 1} = char(apps(k).family);
+        rows{k, 2} = char(apps(k).displayName);
+        rows{k, 3} = apps(k).command;
+    end
+end
+
+function items = familyFilterItems(apps)
+    if isempty(apps)
+        items = "All";
+        return;
+    end
+    items = ["All"; unique(string({apps.family})')];
 end
 
 function lines = wrapDescription(description)
@@ -328,11 +450,10 @@ function apps = discoverApps(root)
         end
 
         [folder, command] = fileparts(filepath);
-        family = appFamily(appRoot, folder);
         appCount = appCount + 1;
         apps(appCount).command = command;
         apps(appCount).displayName = displayNameFromCommand(command);
-        apps(appCount).family = family;
+        apps(appCount).family = appFamily(appRoot, folder);
         apps(appCount).folder = folder;
         apps(appCount).relativePath = relativePath(root, filepath);
         apps(appCount).description = appDescription(filepath, command);
@@ -345,6 +466,95 @@ function apps = discoverApps(root)
 
     [~, order] = sortrows([[apps.family]', [apps.displayName]']);
     apps = apps(order);
+end
+
+function filtered = filterApps(apps, textFilter, familyFilter)
+    if isempty(apps)
+        filtered = apps;
+        return;
+    end
+
+    keep = true(numel(apps), 1);
+    if strlength(strtrim(textFilter)) > 0
+        q = lower(strtrim(textFilter));
+        fields = lower([string({apps.command})', string({apps.displayName})', ...
+            string({apps.family})', string({apps.relativePath})']);
+        keep = keep & any(contains(fields, q), 2);
+    end
+    if familyFilter ~= "All"
+        keep = keep & (string({apps.family})' == familyFilter);
+    end
+    filtered = apps(keep);
+end
+
+function app = findAppByCommand(apps, command)
+    app = [];
+    if isempty(apps)
+        return;
+    end
+    idx = find(string({apps.command}) == string(command), 1);
+    if ~isempty(idx)
+        app = apps(idx);
+    end
+end
+
+function result = cleanGeneratedArtifacts(root)
+    targets = generatedArtifactTargets(root);
+    removedCount = 0;
+    errors = strings(0, 1);
+
+    for k = 1:numel(targets)
+        target = char(targets(k));
+        try
+            if exist(target, 'dir') == 7
+                rmdir(target, 's');
+                removedCount = removedCount + 1;
+            elseif exist(target, 'file') == 2
+                delete(target);
+                removedCount = removedCount + 1;
+            end
+        catch err
+            errors(end + 1, 1) = string(target) + ": " + string(err.message);
+        end
+    end
+
+    result = struct( ...
+        'removedCount', removedCount, ...
+        'errors', errors);
+end
+
+function targets = generatedArtifactTargets(root)
+    targets = string(fullfile(root, 'artifacts'));
+    legacyReport = fullfile(root, 'matlab_code_check.json');
+    if exist(legacyReport, 'file') == 2
+        targets(end + 1) = string(legacyReport);
+    end
+
+    legacyLogs = dir(fullfile(root, 'matlab_test*.log'));
+    for k = 1:numel(legacyLogs)
+        if legacyLogs(k).isdir
+            continue;
+        end
+        targets(end + 1) = string(fullfile(legacyLogs(k).folder, legacyLogs(k).name));
+    end
+    targets = unique(targets, 'stable');
+end
+
+function tf = confirmCleanArtifacts(fig)
+    try
+        choice = uiconfirm(fig, ...
+            ['Remove LabKit-generated artifacts and legacy root diagnostic ' ...
+            'files? This does not remove app source, docs, tests, photos, ' ...
+            'or derived data folders.'], ...
+            'Clean Artifacts', ...
+            'Options', {'Clean', 'Cancel'}, ...
+            'DefaultOption', 'Cancel', ...
+            'CancelOption', 'Cancel', ...
+            'Icon', 'warning');
+        tf = strcmp(choice, 'Clean');
+    catch
+        tf = false;
+    end
 end
 
 function app = emptyAppStruct()
@@ -372,12 +582,6 @@ function family = appFamily(appRoot, folder)
     else
         family = string(parts{1});
     end
-end
-
-function parts = pathParts(pathValue)
-    normalized = strrep(char(pathValue), filesep, '/');
-    parts = strsplit(normalized, '/');
-    parts = parts(~cellfun('isempty', parts));
 end
 
 function name = displayNameFromCommand(command)
@@ -415,7 +619,8 @@ function description = appDescription(filepath, command)
             continue;
         end
         text = strtrim(regexprep(stripped, '^%+', ''));
-        if strlength(text) == 0 || strcmpi(text, 'Main features') || strcmpi(text, 'Notes')
+        if strlength(text) == 0 || strcmpi(text, 'Main features') || ...
+                strcmpi(text, 'Notes')
             continue;
         end
         lineCount = lineCount + 1;
@@ -429,43 +634,7 @@ function description = appDescription(filepath, command)
     end
 end
 
-function rows = displayRows(apps)
-    rows = cell(numel(apps), 3);
-    for k = 1:numel(apps)
-        rows{k, 1} = char(apps(k).family);
-        rows{k, 2} = char(apps(k).displayName);
-        rows{k, 3} = apps(k).command;
-    end
-end
-
-function filtered = filterApps(apps, textFilter, familyFilter)
-    if isempty(apps)
-        filtered = apps;
-        return;
-    end
-
-    keep = true(numel(apps), 1);
-    if strlength(strtrim(textFilter)) > 0
-        q = lower(strtrim(textFilter));
-        fields = lower([string({apps.command})', string({apps.displayName})', ...
-            string({apps.family})', string({apps.relativePath})']);
-        keep = keep & any(contains(fields, q), 2);
-    end
-    if familyFilter ~= "All"
-        keep = keep & (string({apps.family})' == familyFilter);
-    end
-    filtered = apps(keep);
-end
-
-function items = familyFilterItems(apps)
-    if isempty(apps)
-        items = "All";
-        return;
-    end
-    items = ["All"; unique(string({apps.family})')];
-end
-
-function T = appTable(apps)
+function T = appCatalogTable(apps)
     command = strings(numel(apps), 1);
     displayName = strings(numel(apps), 1);
     family = strings(numel(apps), 1);
@@ -481,7 +650,32 @@ function T = appTable(apps)
         description(k) = string(apps(k).description);
     end
     T = table(command, displayName, family, folder, relativePath, description, ...
-        'VariableNames', {'Command', 'DisplayName', 'Family', 'Folder', 'RelativePath', 'Description'});
+        'VariableNames', {'Command', 'DisplayName', 'Family', 'Folder', ...
+        'RelativePath', 'Description'});
+end
+
+function row = eventRow(event)
+    row = NaN;
+    if isobject(event) && isprop(event, 'Selection')
+        indices = event.Selection;
+    elseif isstruct(event) && isfield(event, 'Selection')
+        indices = event.Selection;
+    elseif isobject(event) && isprop(event, 'Indices')
+        indices = event.Indices;
+    elseif isstruct(event) && isfield(event, 'Indices')
+        indices = event.Indices;
+    else
+        indices = [];
+    end
+    if ~isempty(indices)
+        row = indices(1, 1);
+    end
+end
+
+function parts = pathParts(pathValue)
+    normalized = strrep(char(pathValue), filesep, '/');
+    parts = strsplit(normalized, '/');
+    parts = parts(~cellfun('isempty', parts));
 end
 
 function rel = relativePath(root, filepath)

@@ -35,7 +35,8 @@ function verify_labkit_launcher_layout()
     h.assertFigureMinimumSize(fig, 1320, 760);
     h.assertTabTitles(fig, {'Find App', 'Selected App', 'Actions', 'Status'});
     assertNoPanelTitle(fig, {'Filter', 'Search'});
-    h.assertButtonContract(fig, {'Open Selected App', 'Refresh App List'});
+    h.assertButtonContract(fig, {'Open Selected App', 'Open Debug', ...
+        'Project Governance', 'Clean Artifacts', 'Refresh App List'});
     h.assertDropdownGroups(fig, h.dropdownGroup(['All'; unique(apps.Family)], 1));
     h.assertAnyTableColumns(fig, {'Family', 'App', 'Command'});
     h.invokeButton(fig, 'Refresh App List');
@@ -88,6 +89,8 @@ function verify_gui_smoke()
             'Debug launch for %s should preserve the app name.', entryName);
         assert(isfield(debug, 'getLog') && isa(debug.getLog, 'function_handle'), ...
             'Debug launch for %s should return a getLog function.', entryName);
+        assert(strlength(debug.logFile) > 0 && exist(char(debug.logFile), 'file') == 2, ...
+            'Debug launch for %s should create an app debug log artifact.', entryName);
         lines = string(debug.getLog());
         assert(any(contains(lines, 'debug trace enabled')), ...
             'Debug launch for %s should emit a startup trace line.', entryName);
@@ -121,6 +124,8 @@ function verify_generated_app_smoke()
         'Generated app debug launch should return an enabled debug log struct.');
     assert(debug.appName == "labkit_SurfaceScan_app", ...
         'Generated app debug context should preserve the generated app name.');
+    assert(strlength(debug.logFile) > 0 && exist(char(debug.logFile), 'file') == 2, ...
+        'Generated app debug launch should create a debug log artifact.');
     assertVisibleDebugTrace(fig, 'labkit_SurfaceScan_app');
 end
 

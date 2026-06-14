@@ -212,7 +212,20 @@ Debug-mode apps attach the Log tab text area, emit a startup trace line, pass
 `debug.trace` into reusable tools through `onTrace`, and call
 `debug.instrumentFigure(fig)` after controls are built.
 
-Trace lines include timestamp plus stable `app=...`, `component=...`, `event=...`, and `reason=...` fields. Default instrumentation skips low-level pointer, drag, and scroll callbacks.
+Each public debug launch also writes a trace file under
+`artifacts/debug/<AppName>/`. Official test runs set `LABKIT_ARTIFACTS` and
+`LABKIT_RUN_NAME`, so test-launched apps write under
+`artifacts/debug/<RunName>/<AppName>/`. The file is the authoritative debug
+record when the GUI freezes or the app Log tab is inaccessible; the visible Log
+tab is only the human-readable mirror.
+
+Trace is for diagnosing GUI interaction failures, callback errors, stalled file
+loads, and environment-sensitive launch problems. It is not workflow
+documentation and should not record sensitive file paths, raw sample metadata,
+or high-volume pointer movement. Trace lines include timestamp plus stable
+`app=...`, `component=...`, `event=...`, and `reason=...` fields. Default
+instrumentation wraps semantic callbacks and skips low-level pointer, drag, and
+scroll callbacks.
 
 ## Callback Policy
 

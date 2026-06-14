@@ -85,6 +85,7 @@ jobs:
           retention-days: 14
           path: |
             artifacts/test-results/**
+            artifacts/debug/**
             artifacts/logs/**
 
   unit:
@@ -130,6 +131,7 @@ jobs:
           retention-days: 14
           path: |
             artifacts/test-results/**
+            artifacts/debug/**
             artifacts/logs/**
 
   coverage:
@@ -177,6 +179,7 @@ jobs:
           path: |
             artifacts/test-results/**
             artifacts/coverage/**
+            artifacts/debug/**
             artifacts/logs/**
 
   integration:
@@ -222,6 +225,7 @@ jobs:
           retention-days: 14
           path: |
             artifacts/test-results/**
+            artifacts/debug/**
             artifacts/logs/**
 
   gui-structural:
@@ -268,6 +272,7 @@ jobs:
           retention-days: 14
           path: |
             artifacts/test-results/**
+            artifacts/debug/**
             artifacts/gui/**
             artifacts/logs/**
 
@@ -316,5 +321,6 @@ jobs:
           retention-days: 14
           path: |
             artifacts/test-results/**
+            artifacts/debug/**
             artifacts/gui/**
             artifacts/logs/**

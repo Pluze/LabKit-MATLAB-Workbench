@@ -36,9 +36,32 @@ classdef ProjectGovernanceAppTest < matlab.unittest.TestCase
                 "apps/project/new_tool/labkit_NewTool_app.m")));
             testCase.verifyTrue(any(contains(string(rows(:, 2)), ...
                 "tests/unit/apps/project/NewToolScaffoldTest.m")));
+            testCase.verifyTrue(any(contains(string(rows(:, 2)), ...
+                "artifacts/code-check/matlab_code_check.json")));
             testCase.verifyTrue(any(contains(string(lines), "App slug")));
             testCase.verifyTrue(any(contains(string(lines), "Scan Project Code")));
+            testCase.verifyTrue(any(contains(string(lines), ...
+                "artifacts/code-check/matlab_code_check.json")));
             testCase.verifyTrue(any(contains(string(lines), "Created app scaffold")));
+        end
+
+        function codeCheckReportWritesUnderArtifacts(testCase)
+            tempRoot = tempname;
+            cleaner = onCleanup(@() removeFolderIfPresent(tempRoot));
+            mkdir(tempRoot);
+            writeTextFile(fullfile(tempRoot, "sample.m"), [
+                "function out = sample(in)"
+                "out = in;"
+                "end"]);
+
+            report = project_governance.ops.runCodeCheckReport("Root", tempRoot);
+
+            expectedReport = fullfile(tempRoot, "artifacts", "code-check", ...
+                "matlab_code_check.json");
+            testCase.verifyTrue(isfile(expectedReport));
+            testCase.verifyFalse(isfile(fullfile(tempRoot, "matlab_code_check.json")));
+            testCase.verifyEqual(report.outputs.json, ...
+                "artifacts/code-check/matlab_code_check.json");
         end
 
         function createAppOperationBuildsOrdinaryFiles(testCase)
@@ -67,6 +90,16 @@ function removeFolderIfPresent(folder)
     if exist(folder, "dir") == 7
         rmdir(folder, "s");
     end
+end
+
+function writeTextFile(filepath, lines)
+    fid = fopen(filepath, "w");
+    assert(fid > 0, "Could not write test file: %s", filepath);
+    cleaner = onCleanup(@() fclose(fid));
+    for k = 1:numel(lines)
+        fprintf(fid, "%s\n", char(lines(k)));
+    end
+    clear cleaner
 end
 
 function value = normalizePath(value)

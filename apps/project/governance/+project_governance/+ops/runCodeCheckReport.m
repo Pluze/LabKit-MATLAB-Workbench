@@ -1,6 +1,7 @@
 % Expected caller: project_governance app, Code Analyzer fixer workflow, and
 % manual MATLAB diagnosis. Output is the JSON-ready report struct. Side
-% effects: writes matlab_code_check.json under the repository root.
+% effects: writes artifacts/code-check/matlab_code_check.json under the
+% scanned repository root.
 function report = runCodeCheckReport(varargin)
 %RUNCODECHECKREPORT Write an ignored MATLAB Code Analyzer report.
 
@@ -10,10 +11,10 @@ function report = runCodeCheckReport(varargin)
     p.parse(varargin{:});
 
     root = char(string(p.Results.Root));
-    jsonPath = fullfile(root, "matlab_code_check.json");
+    jsonPath = defaultJsonPath(root);
 
     files = collectMFiles(root);
-    report = analyzeFiles(root, files);
+    report = analyzeFiles(root, files, jsonPath);
     writeJsonReport(jsonPath, report);
 
     fprintf('Scanned %d MATLAB files.\n', report.summary.filesScanned);
@@ -49,7 +50,7 @@ function tf = isExcludedPath(root, filepath)
     tf = any(ismember(parts, excludedFolders));
 end
 
-function report = analyzeFiles(root, files)
+function report = analyzeFiles(root, files, jsonPath)
     fileReports = emptyFileReport();
     scanErrors = emptyScanError();
 
@@ -88,7 +89,7 @@ function report = analyzeFiles(root, files)
     report.generator = "project_governance.ops.runCodeCheckReport";
     report.root = string(root);
     report.outputs = struct( ...
-        "json", "matlab_code_check.json");
+        "json", relativePath(root, jsonPath));
     report.scope = struct( ...
         "description", "All .m files under the repository except generated, hidden, photo, and dependency folders.", ...
         "excludedFolders", [".git", ".github", ".vscode", ".codes", ...
@@ -191,6 +192,7 @@ function lines = readFileLines(filepath)
 end
 
 function writeJsonReport(filepath, report)
+    ensureParentDirectory(filepath);
     try
         text = jsonencode(report, PrettyPrint=true);
     catch
@@ -201,6 +203,18 @@ function writeJsonReport(filepath, report)
     cleaner = onCleanup(@() fclose(fid));
     fprintf(fid, "%s\n", text);
     clear cleaner;
+end
+
+function filepath = defaultJsonPath(root)
+    filepath = fullfile(root, "artifacts", "code-check", ...
+        "matlab_code_check.json");
+end
+
+function ensureParentDirectory(filepath)
+    folder = fileparts(filepath);
+    if exist(folder, "dir") ~= 7
+        mkdir(folder);
+    end
 end
 
 function rel = relativePath(root, filepath)
