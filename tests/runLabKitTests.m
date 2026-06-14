@@ -2,14 +2,16 @@ function output = runLabKitTests(varargin)
 %RUNLABKITTESTS Run LabKit tests through MATLAB's official test framework.
 %
 % output = runLabKitTests(Name,Value) discovers official matlab.unittest
-% tests under tests/unit, tests/smoke, tests/contract, and tests/gui.
+% tests under tests/cases/unit, tests/cases/contract, and tests/cases/gui.
 %
 % Name-value options:
-%   IncludeGui      Include tests under tests/gui.
+%   IncludeGui      Include tests under tests/cases/gui.
 %   Suites          Suite targets such as project, labkit/dta, or gui.
 %   Tests           Test names or substrings to include.
 %   Tags            Required official test tags. Multiple tags are ORed.
 %   ExcludeTags     Official test tags to exclude.
+%   AffectedAppsOnly Restrict GUI tests to app folders changed vs HEAD.
+%   AffectedBaseRef Git ref used by AffectedAppsOnly. Default is HEAD.
 %   IncludeCoverage Generate Cobertura and HTML coverage artifacts.
 %   FailIfNoTests   Error when no official tests match.
 %   ArtifactsRoot   Root artifact directory.
@@ -17,12 +19,13 @@ function output = runLabKitTests(varargin)
 %   ListOnly        List matched tests without executing or writing artifacts.
 
     root = fileparts(fileparts(mfilename("fullpath")));
-    addpath(fullfile(root, "tests", "support"));
+    addpath(fullfile(root, "tests", "runner"));
     setupLabKitTestPath();
 
     opts = parseOptions(root, varargin{:});
     restoreRunName = setRunNameEnvironment(opts.RunName);
     restoreArtifactsRoot = setArtifactsRootEnvironment(opts.ArtifactsRoot);
+    opts = resolveAffectedAppSelection(root, opts);
     suite = discoverOfficialSuite(root, opts);
 
     fprintf("LabKit official test run: %s\n", opts.RunName);
@@ -109,6 +112,8 @@ function opts = parseOptions(root, varargin)
     p.addParameter("Tests", strings(1, 0), @isStringLikeList);
     p.addParameter("Tags", strings(1, 0), @isStringLikeList);
     p.addParameter("ExcludeTags", strings(1, 0), @isStringLikeList);
+    p.addParameter("AffectedAppsOnly", false, @isLogicalScalar);
+    p.addParameter("AffectedBaseRef", "HEAD", @isTextScalar);
     p.addParameter("IncludeCoverage", false, @isLogicalScalar);
     p.addParameter("FailIfNoTests", true, @isLogicalScalar);
     p.addParameter("ArtifactsRoot", fullfile(root, "artifacts"), @isTextScalar);
@@ -123,17 +128,39 @@ function opts = parseOptions(root, varargin)
     opts.IncludeCoverage = logical(opts.IncludeCoverage);
     opts.FailIfNoTests = logical(opts.FailIfNoTests);
     opts.ListOnly = logical(opts.ListOnly);
+    opts.AffectedAppsOnly = logical(opts.AffectedAppsOnly);
     opts.Suites = normalizeTextList(opts.Suites);
     opts.Tests = normalizeTextList(opts.Tests);
     opts.Tags = normalizeTextList(opts.Tags);
     opts.ExcludeTags = normalizeTextList(opts.ExcludeTags);
+    opts.AffectedBaseRef = string(opts.AffectedBaseRef);
     opts.ArtifactsRoot = char(opts.ArtifactsRoot);
     opts.RunName = string(opts.RunName);
 end
 
+function opts = resolveAffectedAppSelection(root, opts)
+    if ~opts.AffectedAppsOnly
+        return;
+    end
+
+    if ~isempty(opts.Suites) && ~all(lower(opts.Suites) == "gui")
+        error("LabKit:Tests:InvalidAffectedAppsSelection", ...
+            "AffectedAppsOnly cannot be combined with explicit suite targets other than gui.");
+    end
+
+    targets = detectAffectedAppGuiSuiteTargets(root, opts.AffectedBaseRef);
+    if isempty(targets)
+        error("LabKit:Tests:NoAffectedApps", ...
+            "No app-owned GUI test targets were detected from changed files.");
+    end
+
+    opts.IncludeGui = true;
+    opts.Suites = targets;
+end
+
 function suite = discoverOfficialSuite(root, opts)
-    testsRoot = fullfile(root, "tests");
-    groups = discoverOfficialGroups(testsRoot);
+    casesRoot = fullfile(root, "tests", "cases");
+    groups = discoverOfficialGroups(casesRoot);
     groups = filterGroupsBySuite(groups, opts);
 
     suite = matlab.unittest.Test.empty(1, 0);
@@ -172,11 +199,11 @@ function printSuiteListing(listing)
     end
 end
 
-function groups = discoverOfficialGroups(testsRoot)
+function groups = discoverOfficialGroups(casesRoot)
     groups = struct("key", {}, "suite", {});
-    roots = ["unit", "contract", "smoke", "gui"];
+    roots = ["unit", "contract", "gui"];
     for r = 1:numel(roots)
-        sectionRoot = fullfile(testsRoot, roots(r));
+        sectionRoot = fullfile(casesRoot, roots(r));
         if exist(sectionRoot, "dir") ~= 7
             continue;
         end
@@ -188,7 +215,7 @@ function groups = discoverOfficialGroups(testsRoot)
             if isempty(suite)
                 continue;
             end
-            key = relativeTestKey(folders(f), testsRoot);
+            key = relativeTestKey(folders(f), casesRoot);
             groups(end+1) = struct("key", key, "suite", suite);
         end
     end
@@ -226,7 +253,7 @@ function groups = filterGroupsBySuite(groups, opts)
     suiteTargets(suiteTargets == "gui") = [];
 
     keep = true(size(groups));
-    guiKeys = startsWith([groups.key], "gui/") | startsWith([groups.key], "smoke/");
+    guiKeys = startsWith([groups.key], "gui/");
     if ~opts.IncludeGui && ~guiOnly
         keep = keep & ~guiKeys;
     elseif guiOnly
@@ -244,6 +271,114 @@ function groups = filterGroupsBySuite(groups, opts)
     end
 
     groups = groups(keep);
+end
+
+function targets = detectAffectedAppGuiSuiteTargets(root, baseRef)
+    changedPaths = [ ...
+        gitChangedPaths(root, baseRef), ...
+        gitUntrackedPaths(root)];
+    changedPaths = unique(changedPaths, "stable");
+
+    targets = strings(1, 0);
+    for k = 1:numel(changedPaths)
+        appPath = appIdentityFromChangedPath(changedPaths(k));
+        if isempty(appPath)
+            continue;
+        end
+        targets(end+1) = guiSuiteTargetForApp(root, appPath(1), appPath(2));
+    end
+    targets = unique(targets, "stable");
+end
+
+function paths = gitChangedPaths(root, baseRef)
+    ref = validateGitRef(baseRef);
+    command = "git -C " + shellDoubleQuote(root) + ...
+        " diff --name-only --diff-filter=ACMRTUXB " + ref + ...
+        " -- apps tests/cases/gui/apps tests/cases/gui/labkit";
+    paths = runGitPathCommand(command);
+end
+
+function paths = gitUntrackedPaths(root)
+    command = "git -C " + shellDoubleQuote(root) + ...
+        " ls-files --others --exclude-standard -- apps tests/cases/gui/apps tests/cases/gui/labkit";
+    paths = runGitPathCommand(command);
+end
+
+function paths = runGitPathCommand(command)
+    [status, output] = system(char(command));
+    if status ~= 0
+        error("LabKit:Tests:GitSelectionFailed", ...
+            "Could not inspect changed test targets with git: %s", strtrim(output));
+    end
+
+    paths = splitlines(string(output));
+    paths = strip(replace(paths, "\", "/"));
+    paths = paths(strlength(paths) > 0).';
+end
+
+function appPath = appIdentityFromChangedPath(path)
+    parts = split(strip(replace(string(path), "\", "/")), "/");
+    appPath = strings(1, 0);
+    if numel(parts) >= 3 && parts(1) == "apps"
+        appPath = [parts(2), parts(3)];
+        return;
+    end
+
+    if numel(parts) >= 6 && all(parts(1:4).' == ["tests", "cases", "gui", "apps"])
+        appPath = [parts(5), parts(6)];
+        return;
+    end
+
+    if numel(parts) >= 5 && all(parts(1:4).' == ["tests", "cases", "gui", "labkit"])
+        appPath = ["labkit", parts(5)];
+    end
+end
+
+function target = guiSuiteTargetForApp(root, family, slug)
+    if family == "project"
+        target = "gui/labkit/project";
+        return;
+    end
+
+    if family == "labkit"
+        target = "gui/labkit/" + slug;
+        return;
+    end
+
+    appSuiteRoot = fullfile(root, "tests", "cases", "gui", "apps");
+    if strlength(slug) > 0
+        appFolder = fullfile(appSuiteRoot, family, slug);
+        if exist(appFolder, "dir") == 7
+            target = "gui/apps/" + family + "/" + slug;
+            return;
+        end
+    end
+
+    target = "gui/apps/" + family;
+end
+
+function ref = validateGitRef(baseRef)
+    ref = string(baseRef);
+    if ~isscalar(ref) || strlength(ref) == 0
+        error("LabKit:Tests:InvalidGitRef", ...
+            "AffectedBaseRef must be a nonempty git ref.");
+    end
+
+    chars = char(ref);
+    allowed = isstrprop(chars, "alphanum") | ismember(chars, "./_@{}^-~");
+    if ~all(allowed)
+        error("LabKit:Tests:InvalidGitRef", ...
+            "AffectedBaseRef contains unsupported shell characters.");
+    end
+end
+
+function quoted = shellDoubleQuote(value)
+    quoted = string(value);
+    if contains(quoted, """")
+        error("LabKit:Tests:InvalidShellValue", ...
+            "Shell-quoted values cannot contain double-quote characters.");
+    end
+    quoted = """" + quoted + """";
 end
 
 function suite = filterSuiteByName(suite, tests)
@@ -292,17 +427,13 @@ function tf = groupMatchesSuite(groupKey, target)
         target, ...
         "unit/" + target, ...
         "contract/" + target, ...
-        "smoke/" + target, ...
-        "gui/structural/" + target, ...
+        "gui/" + target, ...
         "gui/gesture/" + target]);
     if target == "project"
         candidates(end+1) = "contract";
     end
-    if target == "apps/smoke"
-        candidates(end+1) = "smoke/apps";
-    elseif startsWith(target, "apps/")
+    if startsWith(target, "apps/")
         family = eraseBetween(target, 1, strlength("apps/"));
-        candidates(end+1) = "smoke/" + target;
         candidates(end+1) = "contract/app_workflows/" + family;
     end
 
@@ -325,10 +456,10 @@ function targets = normalizeSuiteTargets(targets)
     targets = normalizeTextList(targets);
     for k = 1:numel(targets)
         target = replace(targets(k), "\", "/");
-        target = erase(target, "tests/unit/");
-        target = erase(target, "tests/contract/");
-        target = erase(target, "tests/smoke/");
-        target = erase(target, "tests/gui/");
+        target = erase(target, "tests/cases/unit/");
+        target = erase(target, "tests/cases/contract/");
+        target = erase(target, "tests/cases/gui/");
+        target = erase(target, "tests/cases/");
         while startsWith(target, "/")
             target = extractAfter(target, 1);
         end

@@ -6,18 +6,26 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
 
 - `docs/testing.md`
 - affected source files
-- nearby tests under `tests/unit/`, `tests/contract/`, `tests/smoke/`, or `tests/gui/`
+- nearby tests under `tests/cases/unit/`, `tests/cases/contract/`, or
+  `tests/cases/gui/`
 
 ## Test Layout
 
-- Add tests under `tests/unit/`, `tests/contract/`, `tests/smoke/`, or
-  `tests/gui/` using `matlab.unittest` or `matlab.uitest` styles.
+- Add runnable tests under `tests/cases/unit/`, `tests/cases/contract/`, or
+  `tests/cases/gui/` using `matlab.unittest` or `matlab.uitest` styles.
+- Keep app GUI tests under
+  `tests/cases/gui/apps/<family>/<app_slug>/` so local validation can target
+  one affected app without running unrelated app GUIs.
+- Keep LabKit-owned GUI entry points and reusable UI checks under
+  `tests/cases/gui/labkit/<area>/`.
 - Do not add a separate custom runner or direct pass/fail test tree; route
   coverage through `tests/runLabKitTests.m` and build tasks.
 - Keep architecture guardrails in the narrowest project-suite file that matches the concern.
-- Use `tests/helpers/` only for setup, lookup, assertion, cleanup, and fixture-building helpers.
-- Use `tests/support/` for official-runner setup, artifact paths, structured
-  trace capture, GUI fixture setup, and component snapshots.
+- Use `tests/shared/` for small test-facing assertions, fixture builders, GUI
+  probes, cleanup, and lookup helpers. Keep ordinary MATLAB helper functions
+  as one-function files unless a grouped API materially improves call sites.
+- Use `tests/runner/` for official-runner setup, artifact paths, structured
+  trace capture, and artifact writers that keep the test runner working.
 - Do not move app-specific formulas, expected scientific values, result schemas, or export columns into shared test helpers.
 - Keep compatibility bridge assertions isolated in named compatibility tests. Ordinary app and facade tests should prefer current canonical fields and direct package functions.
 - Unit app tests should not read app source text to prove behavior. Keep source-string scans in project guardrails.
@@ -31,9 +39,9 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
   `+ui/buildSpec.m`. Ordinary tests should call package helpers directly; GUI
   structural tests only prove wiring/layout.
 - UI public-surface tests should assert the layered `labkit.ui.app/spec/view/tool/diag` facade and keep low-level controls, row resize, panel internals, and popout implementation private.
-- GUI smoke/debug tests may assert that every app supports debug launch and visible startup trace, but should not claim full interactive workflow validation.
+- GUI launch/debug tests may assert that every app supports debug launch and visible startup trace, but should not claim full interactive workflow validation.
 - When one test file grows too broad, add new focused `test_*.m` files instead of appending unrelated coverage.
-- GUI tests are structural launch/layout/callback checks; do not claim full interactive workflow validation from automated GUI tests.
+- GUI tests are launch/layout/callback checks; do not claim full interactive workflow validation from automated GUI tests.
 
 ## Fixture and Hygiene Rules
 

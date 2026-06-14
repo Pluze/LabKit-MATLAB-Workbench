@@ -1,8 +1,0 @@
-function root = labkitRepoRoot()
-%LABKITREPOROOT Return the LabKit repository root from test support code.
-%
-% Expected caller: tests, wrappers, and build/test support helpers.
-% Output: absolute repository root path as a character vector.
-
-    root = fileparts(fileparts(fileparts(mfilename("fullpath"))));
-end

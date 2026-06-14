@@ -26,7 +26,9 @@ another skill already read shared AGENTS context, do not reread it.
 Use the smallest source-aligned validation set that covers the touched
 boundary. `docs/testing.md` owns the stable build-task names, CI scope, and
 command examples. Build tasks are broad discovery-driven entry points; use
-`runLabKitTests("Suites", ...)` for component or app-family iteration.
+`runLabKitTests("Suites", ...)` for component or app-family iteration. For
+local GUI edits that only touch one app, prefer the app-level GUI
+folder or `runLabKitTests("AffectedAppsOnly", true)`.
 
 ```text
 project                    startup, architecture, package surface, sample-data hygiene
@@ -38,7 +40,12 @@ apps/dic                   DIC app layout
 apps/image_measurement     image measurement calculations, exports, layout
 apps/wearable              wearable app layout
 apps/project               governance app helpers and private scaffold source
-apps/smoke                 cross-app noninteractive launch checks
+gui/apps                   app GUI launch, layout, and callback wiring checks
+gui/apps/<family>/<app_slug>
+                           one app GUI layout and callback wiring checks
+gui/labkit/launcher        launcher discovery and layout checks
+gui/labkit/project         project governance app layout checks
+gui/labkit/scaffold        generated scaffold launch/debug checks
 ```
 
 Pair reusable changes with downstream apps when the app-facing contract could

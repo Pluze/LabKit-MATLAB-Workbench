@@ -220,17 +220,6 @@ items, results, options, notes, logmsg
 
 ## Test Fixtures
 
-Named DTA fixtures live under `tests/fixtures/dta/`:
-
-```text
-chrono_chronopot_current_pulse_0p2ms.DTA
-chrono_chronopot_current_pulse_1ms.DTA
-chrono_chronopot_current_pt_0p65ms.DTA
-chrono_chronoamp_voltage_pulse_0p2ms.DTA
-chrono_chronoamp_voltage_pulse_1ms.DTA
-cv_cyclic_voltammetry_pt_reference.DTA
-cv_cyclic_voltammetry_pt_replicate.DTA
-eis_potentiostatic_zcurve.DTA
-```
-
-Tests may require specific named fixtures but should not fail only because additional DTA files are added to `tests/fixtures/dta/`.
+DTA tests generate named synthetic `.DTA` files through `dtaFixturePath` and
+`dtaFixtureDir`. Keep parser fixtures generated from minimal structural text
+instead of committing raw `.DTA` files.

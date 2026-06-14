@@ -51,7 +51,7 @@ buildtool packageDryRun
 | `testLabkit` | Reusable `+labkit` non-GUI behavior. |
 | `testApps` | App-owned non-GUI helpers and exports. |
 | `testLabkitGui` | Reusable UI launch/layout/tool diagnostics. |
-| `testAppsGui` | App-owned GUI layout plus app launch smoke checks. |
+| `testAppsGui` | App-owned GUI launch, layout, and callback checks. |
 | `testGuiStructural` | All noninteractive structural GUI checks. |
 | `testGuiGesture` | Runtime, anchor editor, and scale-bar gesture lifecycle checks. |
 | `checkStyle` | Project/style guardrails. |
@@ -68,7 +68,10 @@ For local iteration, call the runner directly:
 runLabKitTests("Suites", "apps/dic", "IncludeGui", false)
 runLabKitTests("Suites", "labkit/dta", "IncludeGui", false)
 runLabKitTests("Tests", "ProjectGovernanceAppTest")
-runLabKitTests("Suites", "apps/smoke", "IncludeGui", true)
+runLabKitTests("Suites", "gui/apps", "IncludeGui", true)
+runLabKitTests("Suites", "gui/apps/electrochem/cic", "IncludeGui", true)
+runLabKitTests("Suites", "gui/labkit/launcher", "IncludeGui", true)
+runLabKitTests("AffectedAppsOnly", true)
 ```
 
 List matching tests without running them:
@@ -91,22 +94,45 @@ Common selectors:
 | Image-measurement helpers | `runLabKitTests("Suites", "apps/image_measurement", "IncludeGui", false)` |
 | Wearable app helpers | `runLabKitTests("Suites", "apps/wearable", "IncludeGui", false)` |
 | Project governance and scaffold-source helpers | `runLabKitTests("Suites", "apps/project", "IncludeGui", false)` |
-| App launch smoke | `runLabKitTests("Suites", "apps/smoke", "IncludeGui", true)` |
+| App GUI launch and layout | `runLabKitTests("Suites", "gui/apps", "IncludeGui", true)` |
+| Launcher GUI | `runLabKitTests("Suites", "gui/labkit/launcher", "IncludeGui", true)` |
+| Project governance GUI | `runLabKitTests("Suites", "gui/labkit/project", "IncludeGui", true)` |
+| Generated scaffold GUI | `runLabKitTests("Suites", "gui/labkit/scaffold", "IncludeGui", true)` |
+| One app GUI | `runLabKitTests("Suites", "gui/apps/<family>/<app_slug>", "IncludeGui", true)` |
+| Changed app GUI layout | `runLabKitTests("AffectedAppsOnly", true)` |
 
 ## Test Layout
 
 ```text
-tests/unit/        pure library and app-owned helper behavior
-tests/contract/    long-lived project, package, docs, and hygiene contracts
-tests/smoke/       app discovery, launch, debug, and trace checks
-tests/gui/         noninteractive GUI layout and gesture checks
-tests/fixtures/    synthetic fixtures
-tests/helpers/     assertions and focused helper functions
-tests/support/     runner setup, artifact paths, discovery, and GUI support
+tests/cases/unit/              pure library and app-owned helper behavior
+tests/cases/contract/          long-lived project, package, docs, and hygiene contracts
+tests/cases/gui/apps/          app GUI launch, layout, and callback checks
+tests/cases/gui/labkit/        launcher, governance, scaffold, and reusable UI GUI checks
+tests/cases/gui/gesture/       focused runtime interaction lifecycle checks
+tests/shared/                  small test-facing assertions, fixture builders, GUI probes, and lookup helpers
+tests/runner/                  runner setup, artifact paths, trace plumbing, and artifact writers
 ```
+
+`tests/shared/` intentionally keeps ordinary MATLAB helper functions as
+one-function files because those helpers are called directly by tests. Prefer a
+plain function file there over a larger registry object unless repeated call
+patterns justify a grouped API.
 
 The runner discovers tests by directory and then filters by suite, tag, and
 test name. It does not use a generated registry.
+
+App GUI tests live at:
+
+```text
+tests/cases/gui/apps/<family>/<app_slug>/
+```
+
+Use that folder as the local selector when a change affects one app. The
+`AffectedAppsOnly` selector inspects changed files under `apps/` and
+`tests/cases/gui/apps/` relative to `HEAD`, maps them to matching
+per-app GUI test folders, and runs only those GUI tests. Shared UI,
+launcher, runner, or broad documentation changes should still use the explicit
+suite or build task that matches the shared surface.
 
 ## GUI Validation
 
@@ -134,21 +160,10 @@ Fixtures should be synthetic and minimal. Do not commit raw local lab files,
 identifying file names, subject names, device serials, local absolute paths, or
 timestamp-shaped sample identifiers.
 
-Named DTA fixtures currently live under `tests/fixtures/dta/`:
-
-```text
-chrono_chronopot_current_pulse_0p2ms.DTA
-chrono_chronopot_current_pulse_1ms.DTA
-chrono_chronopot_current_pt_0p65ms.DTA
-chrono_chronoamp_voltage_pulse_0p2ms.DTA
-chrono_chronoamp_voltage_pulse_1ms.DTA
-cv_cyclic_voltammetry_pt_reference.DTA
-cv_cyclic_voltammetry_pt_replicate.DTA
-eis_potentiostatic_zcurve.DTA
-```
-
-Tests may depend on these names, but should not fail only because additional
-DTA fixtures are added.
+DTA tests generate named synthetic `.DTA` files in a temporary directory through
+`dtaFixturePath` and `dtaFixtureDir`. Tests may depend on those synthetic names
+for discovery and short-name behavior, but the repository should not track raw
+`.DTA` fixture files.
 
 ## Numerical Tolerance
 

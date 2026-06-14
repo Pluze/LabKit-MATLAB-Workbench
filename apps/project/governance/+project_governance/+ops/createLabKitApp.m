@@ -30,7 +30,7 @@ function created = createLabKitApp(varargin)
 
     scaffoldRoot = scaffoldSourceRoot();
     appFolder = fullfile(root, "apps", family, slug);
-    testFolder = fullfile(root, "tests", "unit", "apps", family);
+    testFolder = fullfile(root, "tests", "cases", "unit", "apps", family);
     testFile = fullfile(testFolder, char(camelName(slug) + "ScaffoldTest.m"));
     if exist(appFolder, "dir") == 7 && ~logical(p.Results.Force)
         error("LabKit:CreateApp:DestinationExists", ...

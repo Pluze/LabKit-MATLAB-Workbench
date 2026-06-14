@@ -69,7 +69,7 @@ See [docs/testing.md](docs/testing.md) for focused selectors and GUI checks.
 apps/                   Launchable app workflows and app-owned helpers
 docs/                   Human-facing usage, architecture, and API docs
 scripts/                Shell/Python support utilities for MATLAB batch runs and CI summaries
-tests/                  Unit, contract, smoke, GUI, fixtures, and support code
+tests/                  Unit, contract, GUI, shared helpers, and runner code
 ```
 
 ## Documentation

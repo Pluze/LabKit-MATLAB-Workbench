@@ -1,0 +1,26 @@
+classdef GuiLayoutDicPostprocessTest < matlab.uitest.TestCase
+    %GUILAYOUTDICPOSTPROCESSTEST Verify DIC postprocess GUI layout contracts.
+
+    methods (Test, TestTags = {'GUI', 'Structural'})
+        function dic_postprocess_layout(testCase)
+            setupLabKitTestPath();
+            h = guiTestHelpers();
+            h.assertUifigureAvailable();
+            cleanup = onCleanup(@() h.closeAllFigures());
+
+            fig = h.launchFigure('labkit_DICPostprocess_app', 'DIC Strain Postprocess');
+            h.assertFigureMinimumSize(fig, 1450, 880);
+            h.assertComponentCounts(fig, struct('Button', 7, 'Table', 1, ...
+                'TextArea', 2, 'Axes', 2));
+            h.assertButtonContract(fig, {'Open DIC MAT', 'Open reference image', ...
+                'Open mask image', 'Generate overlays + summary', ...
+                'Save overlay PNGs', 'Export summary CSV', ...
+                'Export strain colorbar + levels'});
+            h.assertTabTitles(fig, {'Files + Analysis', 'Summary + Results', 'Log'});
+            h.assertTableColumns(fig, {'Metric','EXX','EYY'});
+            h.assertAxesContract(fig, { ...
+                h.axesSpec('EXX Overlay', '', ''), ...
+                h.axesSpec('EYY Overlay', '', '')});
+        end
+    end
+end
