@@ -70,7 +70,6 @@ end
 
 function fig = runLauncher(root, apps)
     callbacks = struct( ...
-        'filterChanged', @onFilterChanged, ...
         'launchSelected', @onLaunchSelected, ...
         'launchSelectedDebug', @onLaunchSelectedDebug, ...
         'openGovernance', @onOpenGovernance, ...
@@ -88,16 +87,9 @@ function fig = runLauncher(root, apps)
     state.selectedStyle = uistyle('BackgroundColor', [0.86 0.93 1.00]);
     refreshTable();
 
-    function onFilterChanged(~, ~)
-        state.selectedRow = 1;
-        refreshTable();
-    end
-
     function onRefreshApps(~, ~)
         state.apps = discoverApps(root);
-        handles.family.Items = cellstr(familyFilterItems(state.apps));
-        handles.family.Value = handles.family.Items{1};
-        handles.summary.Value = launcherSummaryText(state.apps);
+        state.visibleApps = state.apps;
         state.selectedRow = 1;
         refreshTable();
     end
@@ -177,8 +169,7 @@ function fig = runLauncher(root, apps)
     end
 
     function refreshTable()
-        state.visibleApps = filterApps(state.apps, ...
-            string(handles.search.Value), string(handles.family.Value));
+        state.visibleApps = state.apps;
         handles.table.Data = appDisplayRows(state.visibleApps);
         state.selectedRow = min(max(state.selectedRow, 1), ...
             max(numel(state.visibleApps), 1));
@@ -222,7 +213,7 @@ function fig = runLauncher(root, apps)
     end
 
     function setStatus(message)
-        handles.status.Value = {char(message)};
+        handles.status.Value = char(message);
     end
 
     function row = selectedTableRow()
@@ -234,54 +225,34 @@ function fig = runLauncher(root, apps)
 end
 
 function spec = buildLauncherSpec(apps, callbacks)
-    initialFamilyItems = familyFilterItems(apps);
     spec = labkit.ui.spec.app('labkitLauncher', 'LabKit App Launcher', ...
         'position', [100 80 1320 760], ...
         'leftWidth', 390, ...
-        'controlTabs', launcherTabs(apps, initialFamilyItems, callbacks), ...
+        'controlTabs', launcherTabs(callbacks), ...
         'workspace', launcherWorkspace());
 end
 
-function tabs = launcherTabs(apps, familyItems, callbacks)
+function tabs = launcherTabs(callbacks)
     tabs = { ...
-        labkit.ui.spec.tab('findApp', 'Find App', { ...
-            searchSection(apps, familyItems, callbacks), ...
-            selectedAppSection(callbacks), ...
-            actionsSection(callbacks), ...
-            statusSection()})};
+        labkit.ui.spec.tab('launcher', 'Launcher', { ...
+            selectedAppSection(), ...
+            actionsSection(callbacks)})};
 end
 
-function section = searchSection(apps, familyItems, callbacks)
-    section = labkit.ui.spec.section('searchSection', '', { ...
-        labkit.ui.spec.field('launcherSummary', ...
-            'LabKit Apps', ...
-            'kind', 'readonly', ...
-            'value', launcherSummaryText(apps)), ...
-        labkit.ui.spec.field('search', 'Search:', ...
-            'kind', 'text', ...
-            'onChange', callbacks.filterChanged), ...
-        labkit.ui.spec.field('family', 'Family:', ...
-            'kind', 'dropdown', ...
-            'items', cellstr(familyItems), ...
-            'value', char(familyItems(1)), ...
-            'onChange', callbacks.filterChanged)}, ...
-        'chrome', 'none');
-end
-
-function section = selectedAppSection(callbacks)
+function section = selectedAppSection()
     section = labkit.ui.spec.section('selectedAppSection', 'Selected App', { ...
         labkit.ui.spec.statusPanel('selectedDetails', ...
             'Selected App', ...
-            'value', {'No app selected.'}), ...
-        labkit.ui.spec.actionGroup('selectedLaunchActions', { ...
-            labkit.ui.spec.action('openSelected', ...
-                'Open Selected App', callbacks.launchSelected), ...
-            labkit.ui.spec.action('openSelectedDebug', ...
-                'Open Debug', callbacks.launchSelectedDebug)})});
+            'value', {'No app selected.'})});
 end
 
 function section = actionsSection(callbacks)
     section = labkit.ui.spec.section('actionsSection', 'Actions', { ...
+        labkit.ui.spec.actionGroup('primaryActions', { ...
+            labkit.ui.spec.action('openSelected', ...
+                'Open Selected App', callbacks.launchSelected), ...
+            labkit.ui.spec.action('openSelectedDebug', ...
+                'Open Debug', callbacks.launchSelectedDebug)}), ...
         labkit.ui.spec.actionGroup('projectToolActions', { ...
             labkit.ui.spec.action('openGovernance', ...
                 'Project Governance', callbacks.openGovernance), ...
@@ -289,15 +260,9 @@ function section = actionsSection(callbacks)
                 'Clean Artifacts', callbacks.cleanArtifacts)}), ...
         labkit.ui.spec.action('refreshApps', ...
             'Refresh App List', callbacks.refreshApps), ...
-        labkit.ui.spec.statusPanel('launcherHint', ...
-            'Hint', ...
-            'value', {'Select a row to inspect it. Double-click a row to open that app.'})});
-end
-
-function section = statusSection()
-    section = labkit.ui.spec.section('statusSection', 'Status', { ...
-        labkit.ui.spec.logPanel('statusLog', 'Status', ...
-            'value', {'Ready.'})});
+        labkit.ui.spec.field('statusLine', 'Status', ...
+            'kind', 'readonly', ...
+            'value', 'Ready.')});
 end
 
 function workspace = launcherWorkspace()
@@ -311,14 +276,11 @@ function handles = launcherHandles(ui)
     handles = struct();
     handles.figure = ui.figure;
     handles.figure.Color = [0.97 0.98 0.99];
-    handles.search = ui.controls.search.valueHandle;
-    handles.family = ui.controls.family.valueHandle;
-    handles.summary = ui.controls.launcherSummary.valueHandle;
     handles.details = ui.controls.selectedDetails.textArea;
     handles.openButton = ui.controls.openSelected.button;
     handles.debugButton = ui.controls.openSelectedDebug.button;
     handles.table = ui.controls.appTable.table;
-    handles.status = ui.controls.statusLog.textArea;
+    handles.status = ui.controls.statusLine.valueHandle;
 end
 
 function configureTable(tableHandle, selectionCallback, doubleClickCallback)
@@ -339,10 +301,6 @@ function configureTable(tableHandle, selectionCallback, doubleClickCallback)
     elseif isprop(tableHandle, 'CellDoubleClickedFcn')
         tableHandle.CellDoubleClickedFcn = doubleClickCallback;
     end
-end
-
-function text = launcherSummaryText(apps)
-    text = sprintf('%d app entry points found', numel(apps));
 end
 
 function rows = selectedAppDetails(app)
@@ -391,14 +349,6 @@ function rows = appDisplayRows(apps)
         rows{k, 2} = char(apps(k).displayName);
         rows{k, 3} = apps(k).command;
     end
-end
-
-function items = familyFilterItems(apps)
-    if isempty(apps)
-        items = "All";
-        return;
-    end
-    items = ["All"; unique(string({apps.family})')];
 end
 
 function lines = wrapDescription(description)
@@ -466,25 +416,6 @@ function apps = discoverApps(root)
 
     [~, order] = sortrows([[apps.family]', [apps.displayName]']);
     apps = apps(order);
-end
-
-function filtered = filterApps(apps, textFilter, familyFilter)
-    if isempty(apps)
-        filtered = apps;
-        return;
-    end
-
-    keep = true(numel(apps), 1);
-    if strlength(strtrim(textFilter)) > 0
-        q = lower(strtrim(textFilter));
-        fields = lower([string({apps.command})', string({apps.displayName})', ...
-            string({apps.family})', string({apps.relativePath})']);
-        keep = keep & any(contains(fields, q), 2);
-    end
-    if familyFilter ~= "All"
-        keep = keep & (string({apps.family})' == familyFilter);
-    end
-    filtered = apps(keep);
 end
 
 function app = findAppByCommand(apps, command)

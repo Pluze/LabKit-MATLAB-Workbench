@@ -33,11 +33,11 @@ function verify_labkit_launcher_layout()
     assert(strcmp(fig.Name, 'LabKit App Launcher'), ...
         'labkit_launcher should return the launcher figure handle.');
     h.assertFigureMinimumSize(fig, 1320, 760);
-    h.assertTabTitles(fig, {'Find App', 'Selected App', 'Actions', 'Status'});
-    assertNoPanelTitle(fig, {'Filter', 'Search'});
+    h.assertTabTitles(fig, {'Launcher', 'Selected App', 'Actions'});
+    assertNoPanelTitle(fig, {'Filter', 'Search', 'Status', 'Hint'});
+    assertNoControlText(fig, {'Search:', 'Family:', 'LabKit Apps', 'Hint'});
     h.assertButtonContract(fig, {'Open Selected App', 'Open Debug', ...
         'Project Governance', 'Clean Artifacts', 'Refresh App List'});
-    h.assertDropdownGroups(fig, h.dropdownGroup(['All'; unique(apps.Family)], 1));
     h.assertAnyTableColumns(fig, {'Family', 'App', 'Command'});
     h.invokeButton(fig, 'Refresh App List');
 end
@@ -50,12 +50,30 @@ function assertNoPanelTitle(fig, blockedTitles)
     end
 end
 
+function assertNoControlText(fig, blockedTexts)
+    actual = textValues(fig);
+    for k = 1:numel(blockedTexts)
+        assert(~any(actual == string(blockedTexts{k})), ...
+            'Launcher should not draw "%s".', blockedTexts{k});
+    end
+end
+
 function values = titleValues(fig)
     controls = findall(fig);
     values = strings(0, 1);
     for k = 1:numel(controls)
         if isprop(controls(k), 'Title')
             values(end + 1, 1) = string(controls(k).Title);
+        end
+    end
+end
+
+function values = textValues(fig)
+    controls = findall(fig);
+    values = strings(0, 1);
+    for k = 1:numel(controls)
+        if isprop(controls(k), 'Text')
+            values(end + 1, 1) = string(controls(k).Text);
         end
     end
 end
