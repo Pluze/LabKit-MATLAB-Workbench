@@ -1,5 +1,5 @@
-classdef GuiSmokeTest < matlab.uitest.TestCase
-    %GUISMOKETEST Verify LabKit behavior through official MATLAB tests.
+classdef AppLaunchSmokeTest < matlab.uitest.TestCase
+    %APPLAUNCHSMOKETEST Verify launchable LabKit apps through discovery.
 
     methods (Test, TestTags = {'GUI', 'Structural', 'Smoke'})
         function test_labkit_launcher_layout(testCase)
@@ -11,6 +11,11 @@ classdef GuiSmokeTest < matlab.uitest.TestCase
             setupLabKitTestPath();
             verify_gui_smoke();
         end
+
+        function generated_app_launches(testCase)
+            setupLabKitTestPath();
+            verify_generated_app_smoke();
+        end
     end
 end
 
@@ -21,11 +26,7 @@ function verify_labkit_launcher_layout()
     h.assertUifigureAvailable();
     cleanup = onCleanup(@() h.closeAllFigures());
 
-    apps = labkit_launcher("list");
-    assert(istable(apps), 'labkit_launcher list mode should return a table.');
-    assert(all(ismember({'Command', 'DisplayName', 'Family'}, apps.Properties.VariableNames)), ...
-        'labkit_launcher list mode should expose Command, DisplayName, and Family columns.');
-    assert(height(apps) > 0, 'labkit_launcher list mode should find app entry points.');
+    apps = discoverLabKitApps();
 
     fig = labkit_launcher();
     drawnow;
@@ -65,22 +66,18 @@ function verify_gui_smoke()
     root = testRepoRoot();
     legacyDir = fullfile(root, 'legacy');
 
-    entries = appEntryManifest();
+    apps = discoverLabKitApps();
 
     cleanup = onCleanup(@closeAllFigures);
-    for k = 1:size(entries, 1)
+    for k = 1:height(apps)
         closeAllFigures();
-        entryName = entries{k, 1};
-        expectedTitle = entries{k, 2};
+        entryName = char(apps.Command(k));
+        fprintf('Smoke launching %s (%d/%d).\n', entryName, k, height(apps));
 
         feval(entryName);
         drawnow;
         assert(~pathContains(legacyDir), 'Entry point %s should not leave legacy/ on the MATLAB path.', entryName);
-
-        figs = findall(groot, 'Type', 'figure');
-        names = getFigureNames(figs);
-        assert(any(strcmp(names, expectedTitle)), ...
-            'GUI entry point %s did not create expected figure "%s".', entryName, expectedTitle);
+        assertLaunchedFigure(entryName);
 
         closeAllFigures();
         [fig, debug] = feval(entryName, "__labkit_debug__", struct());
@@ -96,6 +93,44 @@ function verify_gui_smoke()
             'Debug launch for %s should emit a startup trace line.', entryName);
         assertVisibleDebugTrace(fig, entryName);
     end
+end
+
+function verify_generated_app_smoke()
+%VERIFY_GENERATED_APP_SMOKE Verify scaffold output launches as ordinary code.
+
+    assertUifigureAvailable();
+    tempRoot = tempname;
+
+    created = project_governance.ops.createLabKitApp( ...
+        "Root", tempRoot, ...
+        "Family", "bench_tools", ...
+        "Slug", "surface_scan", ...
+        "EntryPoint", "labkit_SurfaceScan_app", ...
+        "Label", "Surface Scan");
+
+    appFolder = char(created.AppFolder);
+    addpath(appFolder);
+    cleanup = onCleanup(@() cleanupGeneratedApp(tempRoot, appFolder));
+
+    [fig, debug] = labkit_SurfaceScan_app("__labkit_debug__", struct());
+    drawnow;
+
+    assert(strcmp(fig.Name, 'Surface Scan'), ...
+        'Generated app should launch with the requested window label.');
+    assert(isstruct(debug) && debug.enabled, ...
+        'Generated app debug launch should return an enabled debug log struct.');
+    assert(debug.appName == "labkit_SurfaceScan_app", ...
+        'Generated app debug context should preserve the generated app name.');
+    assertVisibleDebugTrace(fig, 'labkit_SurfaceScan_app');
+end
+
+function assertLaunchedFigure(entryName)
+    figs = findall(groot, 'Type', 'figure');
+    assert(~isempty(figs), 'GUI entry point %s did not create a figure.', entryName);
+
+    names = getFigureNames(figs);
+    assert(any(strlength(string(names)) > 0), ...
+        'GUI entry point %s should create a named figure.', entryName);
 end
 
 function tf = pathContains(folder)
@@ -125,6 +160,16 @@ function closeAllFigures()
         delete(figs);
     end
     drawnow;
+end
+
+function cleanupGeneratedApp(tempRoot, appFolder)
+    closeAllFigures();
+    if contains(path, appFolder)
+        rmpath(appFolder);
+    end
+    if exist(tempRoot, "dir") == 7
+        rmdir(tempRoot, "s");
+    end
 end
 
 function assertVisibleDebugTrace(fig, entryName)

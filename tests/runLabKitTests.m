@@ -2,7 +2,7 @@ function output = runLabKitTests(varargin)
 %RUNLABKITTESTS Run LabKit tests through MATLAB's official test framework.
 %
 % output = runLabKitTests(Name,Value) discovers official matlab.unittest
-% tests under tests/unit, tests/integration, and tests/gui.
+% tests under tests/unit, tests/smoke, tests/contract, and tests/gui.
 %
 % Name-value options:
 %   IncludeGui      Include tests under tests/gui.
@@ -167,7 +167,7 @@ end
 
 function groups = discoverOfficialGroups(testsRoot)
     groups = struct("key", {}, "suite", {});
-    roots = ["unit", "integration", "gui"];
+    roots = ["unit", "contract", "smoke", "gui"];
     for r = 1:numel(roots)
         sectionRoot = fullfile(testsRoot, roots(r));
         if exist(sectionRoot, "dir") ~= 7
@@ -219,10 +219,11 @@ function groups = filterGroupsBySuite(groups, opts)
     suiteTargets(suiteTargets == "gui") = [];
 
     keep = true(size(groups));
+    guiKeys = startsWith([groups.key], "gui/") | startsWith([groups.key], "smoke/");
     if ~opts.IncludeGui && ~guiOnly
-        keep = keep & ~startsWith([groups.key], "gui/");
+        keep = keep & ~guiKeys;
     elseif guiOnly
-        keep = keep & startsWith([groups.key], "gui/");
+        keep = keep & guiKeys;
     end
 
     if ~isempty(suiteTargets)
@@ -283,12 +284,19 @@ function tf = groupMatchesSuite(groupKey, target)
     candidates = unique([ ...
         target, ...
         "unit/" + target, ...
-        "integration/" + target, ...
+        "contract/" + target, ...
+        "smoke/" + target, ...
         "gui/structural/" + target, ...
         "gui/gesture/" + target]);
-    if startsWith(target, "apps/")
+    if target == "project"
+        candidates(end+1) = "contract";
+    end
+    if target == "apps/smoke"
+        candidates(end+1) = "smoke/apps";
+    elseif startsWith(target, "apps/")
         family = eraseBetween(target, 1, strlength("apps/"));
-        candidates(end+1) = "integration/app_workflows/" + family;
+        candidates(end+1) = "smoke/" + target;
+        candidates(end+1) = "contract/app_workflows/" + family;
     end
 
     tf = false;
@@ -311,7 +319,9 @@ function targets = normalizeSuiteTargets(targets)
     for k = 1:numel(targets)
         target = replace(targets(k), "\", "/");
         target = erase(target, "tests/unit/");
-        target = erase(target, "tests/integration/");
+        target = erase(target, "tests/contract/");
+        target = erase(target, "tests/smoke/");
+        target = erase(target, "tests/gui/");
         while startsWith(target, "/")
             target = extractAfter(target, 1);
         end

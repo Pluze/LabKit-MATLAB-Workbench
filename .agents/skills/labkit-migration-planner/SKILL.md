@@ -51,7 +51,7 @@ find apps -path '*+ui/runApp.m' -print | sort
 find apps -path '*/+*/run.m' -print | sort
 find apps -path '*+ui/buildSpec.m' -print | sort
 find apps -path '*/private/*' -type f -print | sort
-rg -n "expected\\w*Debt\\w*" tests/integration/project
+rg -n "expected\\w*Debt\\w*" tests/contract
 ```
 
 For runner size checks, count migrated package-root `run.m` files. A
@@ -113,6 +113,17 @@ During execution, update the guide at phase boundaries and when decisions
 change. Do not log every micro-step. When the migration completes, shrink the
 guide again: remove completed route detail unless it still defines an active
 contract or future debt rule.
+
+At completion, do a final omission audit before handoff:
+
+- inspect whether the migration exposed follow-up issues that are still active
+  debt
+- if no active migration debt remains, shrink `.agents/migration_guide.md` to
+  the compact no-task ledger
+- if active debt remains, record only the current debt facts and the minimum
+  executable prompt needed to finish them
+- do not leave completed `Goal Prompt:` sections, stale workstreams, or
+  historical route detail in the guide
 
 ## Update Rules
 

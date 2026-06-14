@@ -13,6 +13,10 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
 ## App Ownership
 
 - Keep domain formulas, thresholds, integration rules, option defaults, plot labels, result fields, export columns, failed-row behavior, alerts, and log wording app-local unless the user explicitly approves a boundary change.
+- For a new app cold start, use `labkit_ProjectGovernance_app` interactively or
+  `project_governance.ops.createLabKitApp(...)` from MATLAB after
+  `startup_labkit(false)`. Do not add MATLAB governance entry points under
+  `scripts/`.
 - When a documented UI tool owns app-neutral controls or interaction mechanics, consume it instead of reimplementing widget state or normalization. Keep app calculations, summaries, alerts, and exports local.
 - Use `labkit.ui.app.create` with `labkit.ui.spec.*` for app GUIs. Do not
   reintroduce the removed `labkit.ui.app.createShell` or legacy view helpers.
@@ -32,6 +36,13 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
   owns state, callback closures, alerts, log wording, and refresh order.
   `buildSpec.m` describes controls, sections, workspace, initial text/defaults,
   and callback handles only.
+- Keep nontrivial `buildSpec.m` files readable by showing the app constructor,
+  control-tab tree, and workspace at the top, then defining tabs, sections, and
+  workspace regions with local builder functions. Prefer this source structure
+  over formatter scripts or shared UI templates unless repeated drift proves a
+  tool is worth maintaining. Order functions as: `buildSpec`, tab tree,
+  tab builders, section builders in visual order, workspace builder, small
+  helper builders, then `callbackValue`.
 - Do not create MATLAB handles, call `labkit.ui.app.create`, mutate app state,
   perform IO/computation/export, or set `Layout.Row`/`Layout.Column` in
   `+ui/buildSpec.m`. Use named `+ui/build<Thing>.m` custom builders only for

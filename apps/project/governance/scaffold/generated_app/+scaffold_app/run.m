@@ -1,11 +1,15 @@
-% Expected caller: labkit_TemplateApp_app. Input is a debug context prepared
-% by labkit.ui.app.dispatchRequest. Output is the app figure. Side effects are
-% GUI creation, synthetic template-state updates, and debug trace attachment.
+% Expected caller: scaffold_App_app. Input is a debug context prepared by
+% labkit.ui.app.dispatchRequest. Output is the app figure. Side effects are
+% GUI creation, scaffold-state updates, and debug trace attachment.
 function fig = run(debugLog)
-%RUN Build and run the LabKit Template App.
+%RUN Build and run the LabKit Scaffold App.
 
     S = struct();
     S.inputNames = strings(0, 1);
+    S.outputFolder = "";
+    S.sampleName = "Sample";
+    S.repeatCount = 1;
+    S.threshold = 0.50;
     S.primaryValue = 5;
     S.mode = "Preview";
     S.enabled = true;
@@ -14,23 +18,25 @@ function fig = run(debugLog)
     callbacks = struct( ...
         'inputsChosen', @onInputsChosen, ...
         'inputsCleared', @onInputsCleared, ...
+        'outputFolderChosen', @onOutputFolderChosen, ...
+        'outputFolderCleared', @onOutputFolderCleared, ...
         'inputSelectionChanged', @onInputSelectionChanged, ...
         'settingChanged', @onSettingChanged, ...
         'previewModeChanged', @onPreviewModeChanged, ...
-        'runTemplate', @onRunTemplate, ...
-        'resetTemplate', @onResetTemplate);
+        'runWorkflow', @onRunWorkflow, ...
+        'resetWorkflow', @onResetWorkflow);
 
-    spec = starter_app.ui.buildSpec(callbacks);
+    spec = scaffold_app.ui.buildSpec(callbacks);
     ui = labkit.ui.app.create(spec, 'debug', debugLog);
     fig = ui.figure;
 
     if debugLog.enabled
-        debugLog.trace('Template app debug trace enabled.');
+        debugLog.trace('Scaffold app debug trace enabled.');
         debugLog.instrumentFigure(fig);
     end
 
     refreshAll();
-    addLog('Template app ready.');
+    addLog('Scaffold app ready.');
 
     function onInputsChosen(~, event)
         names = strings(0, 1);
@@ -55,7 +61,22 @@ function fig = run(debugLog)
     function onInputsCleared(~, ~)
         S.inputNames = strings(0, 1);
         S.lastAction = "Cleared inputs";
-        addLog('Cleared template inputs.');
+        addLog('Cleared scaffold inputs.');
+        refreshAll();
+    end
+
+    function onOutputFolderChosen(~, event)
+        paths = eventPaths(event);
+        if ~isempty(paths)
+            S.outputFolder = paths(1);
+            S.lastAction = "Selected output folder";
+            refreshAll();
+        end
+    end
+
+    function onOutputFolderCleared(~, ~)
+        S.outputFolder = "";
+        S.lastAction = "Cleared output folder";
         refreshAll();
     end
 
@@ -68,6 +89,9 @@ function fig = run(debugLog)
     end
 
     function onSettingChanged(~, ~)
+        S.sampleName = string(labkit.ui.view.getValue(ui, 'sampleName'));
+        S.repeatCount = labkit.ui.view.getValue(ui, 'repeatCount');
+        S.threshold = labkit.ui.view.getValue(ui, 'threshold');
         S.primaryValue = labkit.ui.view.getValue(ui, 'primaryValue');
         S.mode = string(labkit.ui.view.getValue(ui, 'mode'));
         S.enabled = logical(labkit.ui.view.getValue(ui, 'enableOption'));
@@ -84,43 +108,59 @@ function fig = run(debugLog)
         refreshAll();
     end
 
-    function onRunTemplate(~, ~)
-        S.lastAction = "Ran template workflow";
-        addLog('Ran the template placeholder workflow.');
+    function onRunWorkflow(~, ~)
+        S.lastAction = "Ran scaffold workflow";
+        addLog('Ran the scaffold placeholder workflow.');
         refreshAll();
     end
 
-    function onResetTemplate(~, ~)
+    function onResetWorkflow(~, ~)
         S.inputNames = strings(0, 1);
+        S.outputFolder = "";
+        S.sampleName = "Sample";
+        S.repeatCount = 1;
+        S.threshold = 0.50;
         S.primaryValue = 5;
         S.mode = "Preview";
         S.enabled = true;
-        S.lastAction = "Reset template";
+        S.lastAction = "Reset scaffold";
+        labkit.ui.view.setValue(ui, 'sampleName', char(S.sampleName));
+        labkit.ui.view.setValue(ui, 'repeatCount', S.repeatCount);
+        labkit.ui.view.setValue(ui, 'threshold', S.threshold);
         labkit.ui.view.setValue(ui, 'primaryValue', S.primaryValue);
         labkit.ui.view.setValue(ui, 'mode', char(S.mode));
         labkit.ui.view.setValue(ui, 'enableOption', S.enabled);
-        addLog('Reset template state.');
+        addLog('Reset scaffold state.');
         refreshAll();
     end
 
     function refreshAll()
         labkit.ui.view.setListItems(ui, 'inputs', cellstr(S.inputNames));
         labkit.ui.view.setListSelection(ui, 'inputs', cellstr(S.inputNames), {});
-        labkit.ui.view.setEnabled(ui, 'runTemplate', S.enabled);
-        ui.controls.summaryTable.table.Data = starter_app.view.summaryTableData(S);
-        ui.controls.details.textArea.Value = starter_app.view.detailLines(S);
+        labkit.ui.view.setEnabled(ui, 'runWorkflow', S.enabled);
+        ui.controls.summaryTable.table.Data = scaffold_app.view.summaryTableData(S);
+        ui.controls.details.textArea.Value = scaffold_app.view.detailLines(S);
         refreshPreview();
     end
 
     function refreshPreview()
-        canvas = templateCanvas(S);
+        canvas = scaffoldCanvas(S);
         labkit.ui.view.drawImage(ui, 'preview', canvas, ...
-            'axis', 'main', 'title', char("Template " + S.mode));
+            'axis', 'main', 'title', char("Scaffold " + S.mode));
     end
 
     function addLog(message)
         labkit.ui.view.appendLog(ui, 'logPanel', message);
         debugLog.append(message);
+    end
+end
+
+function paths = eventPaths(event)
+    paths = strings(0, 1);
+    if isstruct(event) && isfield(event, 'paths')
+        paths = string(event.paths(:));
+    elseif isobject(event) && isprop(event, 'paths')
+        paths = string(event.paths(:));
     end
 end
 
@@ -136,7 +176,7 @@ function value = eventValue(event)
     end
 end
 
-function canvas = templateCanvas(S)
+function canvas = scaffoldCanvas(S)
     width = 240;
     height = 160;
     [x, y] = meshgrid(linspace(0, 1, width), linspace(0, 1, height));

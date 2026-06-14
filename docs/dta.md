@@ -64,7 +64,7 @@ Pulse detection:
 
 Lower-level recursive discovery, parser functions, item construction, session mutation, and pulse internals are private DTA implementation details.
 
-The DTA facade and parser fixture checks run in the default GitHub Actions workflow through the non-GUI MATLAB build task.
+The DTA facade and parser fixture checks run through the default non-GUI MATLAB build task.
 
 ## Parser Assumptions
 

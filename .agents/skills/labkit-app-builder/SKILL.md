@@ -109,6 +109,33 @@ Docs to update:
 
 Use the closest existing app as the starting pattern, then reduce it to the actual workflow. Do not start from a large copy-only template.
 
+## New App Cold Start
+
+For a new app, use the project governance scaffold after the design brief is
+clear. Human users can launch:
+
+```matlab
+labkit_ProjectGovernance_app
+```
+
+Agents or CLI-style MATLAB sessions should call the same app-owned operation
+directly:
+
+```matlab
+startup_labkit(false);
+created = project_governance.ops.createLabKitApp( ...
+    "Family", "image_measurement", ...
+    "Slug", "surface_roughness", ...
+    "Label", "Surface Roughness");
+```
+
+Optional `"EntryPoint"` may be provided when the public command should differ
+from the slug-derived default. The governance operation generates ordinary
+MATLAB scaffold files from its private scaffold source and creates a direct
+unit-test scaffold. After generation, edit the app as ordinary MATLAB source.
+Do not add an app manifest, generated registry, per-app build task, or MATLAB
+governance entry point under `scripts/`.
+
 ## Implementation Pattern
 
 Build the app in this order:
@@ -119,35 +146,43 @@ Build the app in this order:
 2. Put the data-only spec in `+<app_slug>/+ui/buildSpec.m`; package-root
    `run.m` should create callback handles, call
    `<app_slug>.ui.buildSpec(...)`, then call `labkit.ui.app.create(...)`.
-3. Keep `buildSpec.m` free of MATLAB handle creation, `labkit.ui.app.create`,
+3. Keep the top of nontrivial `buildSpec.m` files shallow: the app constructor
+   should name the control-tab tree and workspace, while local builder
+   functions define each tab, section, and workspace region. Prefer this
+   source shape over adding formatter scripts or shared UI templates; the
+   purpose is to make the page hierarchy readable without turning app-owned UI
+   wording into framework configuration. Order functions as `buildSpec`, tab
+   tree, tab builders, section builders in visual order, workspace builder,
+   small helper builders, then `callbackValue`.
+4. Keep `buildSpec.m` free of MATLAB handle creation, `labkit.ui.app.create`,
    state mutation, IO, computation, export writing, nested callback
    implementations, and row/column layout mechanics. Use a named
    `+ui/build<Thing>.m` custom builder only for a justified interaction that the
    ordinary spec grammar cannot represent.
-4. Wire file loading through the appropriate facade or app-local reader.
-5. Store state in one app struct; avoid globals, base workspace state, and hidden local paths.
-6. Rebuild the user workflow around stable controls, previews, summaries,
+5. Wire file loading through the appropriate facade or app-local reader.
+6. Store state in one app struct; avoid globals, base workspace state, and hidden local paths.
+7. Rebuild the user workflow around stable controls, previews, summaries,
    semantic control ids, and exports; do not reproduce command-line debug
    staging.
-7. Move GUI-free calculations below the app `end` as app-local functions.
-8. Extract production helpers into role-based app-owned package components when
+8. Move GUI-free calculations below the app `end` as app-local functions.
+9. Extract production helpers into role-based app-owned package components when
    the app is too large for a readable single entry point:
    `+state` for defaults/factories, `+io` for file discovery/readers/filters,
    `+ops` for GUI-free transforms, `+view` for table/detail/display data, and
    `+export` for output writers/manifests. Create only the packages the app
    actually needs.
-9. Avoid boundary-blurring helper names such as `helpers.m`, `utils.m`,
+10. Avoid boundary-blurring helper names such as `helpers.m`, `utils.m`,
    `common.m`, `misc.m`, `callbacks.m`, `manager.m`, `processor.m`,
    `layout.m`, and `createUI.m`; name files by stable role or output instead.
-10. For active runner or app-private migrations, use `labkit-migration-planner`
+11. For active runner or app-private migrations, use `labkit-migration-planner`
    to audit the current debt map and update `.agents/migration_guide.md`.
-11. Do not add new `private/` runners, `*Workflow.m` string-dispatch adapters,
+12. Do not add new `private/` runners, `*Workflow.m` string-dispatch adapters,
    fixed `+app` package names, or app-local public helper packages.
-12. Render prepared data through UI 2.0 named view helpers or existing
+13. Render prepared data through UI 2.0 named view helpers or existing
    `labkit.ui.tool.*` helpers; keep analysis out of UI helpers.
-13. Add export builders before CSV/PNG writing so output contracts can be tested.
-14. Add focused tests with synthetic fixtures or minimal generated data.
-15. Update human docs for user-facing behavior and scoped `AGENTS.md` only when rules change.
+14. Add export builders before CSV/PNG writing so output contracts can be tested.
+15. Add focused tests with synthetic fixtures or minimal generated data.
+16. Update human docs for user-facing behavior and scoped `AGENTS.md` only when rules change.
 
 ## Validation
 

@@ -1,24 +1,27 @@
-%RUN_MATLAB_CODE_CHECK Write an ignored MATLAB Code Analyzer report.
-% Expected caller: manual shell/MATLAB invocation from this repository.
-% Output shape: root-level JSON report file.
-% Side effects: writes matlab_code_check.json.
+% Expected caller: project_governance app, Code Analyzer fixer workflow, and
+% manual MATLAB diagnosis. Output is the JSON-ready report struct. Side
+% effects: writes matlab_code_check.json under the repository root.
+function report = runCodeCheckReport(varargin)
+%RUNCODECHECKREPORT Write an ignored MATLAB Code Analyzer report.
 
-root = fileparts(fileparts(mfilename('fullpath')));
-if strlength(string(root)) == 0
-    root = pwd;
+    p = inputParser;
+    p.FunctionName = "project_governance.ops.runCodeCheckReport";
+    p.addParameter("Root", project_governance.ops.repoRoot(), @isTextScalar);
+    p.parse(varargin{:});
+
+    root = char(string(p.Results.Root));
+    jsonPath = fullfile(root, "matlab_code_check.json");
+
+    files = collectMFiles(root);
+    report = analyzeFiles(root, files);
+    writeJsonReport(jsonPath, report);
+
+    fprintf('Scanned %d MATLAB files.\n', report.summary.filesScanned);
+    fprintf('Code Analyzer messages: %d across %d files.\n', ...
+        report.summary.messageCount, report.summary.filesWithMessages);
+    fprintf('Scan errors: %d.\n', report.summary.scanErrorCount);
+    fprintf('JSON report: %s\n', jsonPath);
 end
-
-jsonPath = fullfile(root, "matlab_code_check.json");
-
-files = collectMFiles(root);
-report = analyzeFiles(root, files);
-writeJsonReport(jsonPath, report);
-
-fprintf('Scanned %d MATLAB files.\n', report.summary.filesScanned);
-fprintf('Code Analyzer messages: %d across %d files.\n', ...
-    report.summary.messageCount, report.summary.filesWithMessages);
-fprintf('Scan errors: %d.\n', report.summary.scanErrorCount);
-fprintf('JSON report: %s\n', jsonPath);
 
 function files = collectMFiles(root)
     entries = dir(fullfile(root, "**", "*.m"));
@@ -82,7 +85,7 @@ function report = analyzeFiles(root, files)
     report.schemaVersion = "1.1";
     report.generatedAt = string(datetime("now", "TimeZone", "local", ...
         "Format", "yyyy-MM-dd'T'HH:mm:ssXXX"));
-    report.generator = "scripts/run_matlab_code_check.m";
+    report.generator = "project_governance.ops.runCodeCheckReport";
     report.root = string(root);
     report.outputs = struct( ...
         "json", "matlab_code_check.json");
@@ -97,6 +100,10 @@ function report = analyzeFiles(root, files)
         "scanErrorCount", numel(scanErrors));
     report.files = fileReports;
     report.scanErrors = scanErrors;
+end
+
+function tf = isTextScalar(value)
+    tf = ischar(value) || (isstring(value) && isscalar(value));
 end
 
 function messages = normalizeMessages(rel, filepath, rawMessages, lineText)

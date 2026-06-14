@@ -6,20 +6,13 @@ function startup_labkit(printBanner)
     end
     printBanner = logical(printBanner);
 
-    persistent hasInitialized;
-    if isempty(hasInitialized)
-        hasInitialized = false;
-    end
     root = fileparts(mfilename('fullpath'));
 
-    if ~hasInitialized
-        addpath(root);
-        addpath(fullfile(root, 'apps'), '-end');
-        appDirs = appPathDirs(fullfile(root, 'apps'));
-        for k = 1:numel(appDirs)
-            addpath(appDirs{k}, '-end');
-        end
-        hasInitialized = true;
+    addPathIfMissing(root);
+    addPathIfMissing(fullfile(root, 'apps'), '-end');
+    appDirs = appPathDirs(fullfile(root, 'apps'));
+    for k = 1:numel(appDirs)
+        addPathIfMissing(appDirs{k}, '-end');
     end
 
     if printBanner
@@ -53,5 +46,17 @@ end
 
 function tf = shouldSkipAppDir(name)
     tf = startsWith(name, '.') || startsWith(name, '+') ...
-        || startsWith(name, '@') || strcmp(name, 'private');
+        || startsWith(name, '@') || any(strcmp(name, {'private', 'scaffold'}));
+end
+
+function addPathIfMissing(folder, varargin)
+    if exist(folder, 'dir') ~= 7 || pathContains(folder)
+        return;
+    end
+    addpath(folder, varargin{:});
+end
+
+function tf = pathContains(folder)
+    paths = strsplit(path, pathsep);
+    tf = any(strcmp(paths, folder));
 end

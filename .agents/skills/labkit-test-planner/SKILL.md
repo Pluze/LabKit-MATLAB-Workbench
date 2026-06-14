@@ -37,7 +37,7 @@ apps/electrochem           electrochem app-owned calculations, exports, layout
 apps/dic                   DIC app layout
 apps/image_measurement     image measurement calculations, exports, layout
 apps/wearable              wearable app layout
-apps/templates             starter app structure, layout, and example helpers
+apps/project               governance app helpers and private scaffold source
 apps/smoke                 cross-app noninteractive launch checks
 ```
 

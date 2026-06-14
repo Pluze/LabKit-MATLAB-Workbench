@@ -1,15 +1,18 @@
-function proj = create_local_matlab_project()
-%CREATE_LOCAL_MATLAB_PROJECT Create or refresh the optional local LabKit project.
+% Expected caller: project_governance app and tests. Output is a struct with
+% the project handle and project-file path. Side effects: creates or refreshes
+% local MATLAB Project metadata.
+function result = createLocalMatlabProject()
+%CREATELOCALMATLABPROJECT Create or refresh the optional local LabKit project.
 %
 % Usage:
-%   proj = create_local_matlab_project
+%   result = project_governance.ops.createLocalMatlabProject()
 %
 % This helper is for MATLAB desktop users who want Project features such as
 % dependency analysis, Project Issues, and shortcuts. The generated LabKit.prj
 % and resources/project/ metadata are local IDE state and are intentionally
 % ignored by git.
 
-    root = fileparts(fileparts(mfilename('fullpath')));
+    root = project_governance.ops.repoRoot();
     projectFile = fullfile(root, 'LabKit.prj');
 
     proj = openOrCreateProject(root, projectFile);
@@ -19,6 +22,7 @@ function proj = create_local_matlab_project()
 
     startup_labkit(false);
     fprintf('LabKit local MATLAB Project is ready:\n  %s\n', projectFile);
+    result = struct("Project", proj, "ProjectFile", string(projectFile));
 end
 
 function proj = openOrCreateProject(root, projectFile)

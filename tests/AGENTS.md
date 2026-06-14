@@ -6,12 +6,12 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
 
 - `docs/testing.md`
 - affected source files
-- nearby tests under `tests/unit/`, `tests/integration/`, or `tests/gui/`
+- nearby tests under `tests/unit/`, `tests/contract/`, `tests/smoke/`, or `tests/gui/`
 
 ## Test Layout
 
-- Add tests under `tests/unit/`, `tests/integration/`, or `tests/gui/` using
-  `matlab.unittest` or `matlab.uitest` styles.
+- Add tests under `tests/unit/`, `tests/contract/`, `tests/smoke/`, or
+  `tests/gui/` using `matlab.unittest` or `matlab.uitest` styles.
 - Do not add a separate custom runner or direct pass/fail test tree; route
   coverage through `tests/runLabKitTests.m` and build tasks.
 - Keep architecture guardrails in the narrowest project-suite file that matches the concern.
