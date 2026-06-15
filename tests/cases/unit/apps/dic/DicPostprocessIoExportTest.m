@@ -31,21 +31,14 @@ classdef DicPostprocessIoExportTest < matlab.unittest.TestCase
             mkdir(outDir);
             cleanup = onCleanup(@() cleanupFolder(outDir));
             overlayPath = fullfile(outDir, 'overlay.png');
-            colorbarPath = fullfile(outDir, 'colorbar.png');
             overlayImage = zeros(4, 4, 3);
-            opts = struct();
-            opts.colorRange = [-0.1 0.2];
-            opts.colormap = jet(8);
-            opts.exportResolution = 96;
+            overlayImage(2:3, 2:3, 1) = 1;
 
-            dic_postprocess.export.exportOverlayFigure( ...
-                overlayImage, 'EXX', opts.colorRange, opts.exportResolution, overlayPath);
-            dic_postprocess.export.exportStrainColorbar(opts, colorbarPath);
+            dic_postprocess.export.exportOverlayImage(overlayImage, overlayPath);
 
             testCase.verifyTrue(isfile(overlayPath));
-            testCase.verifyTrue(isfile(colorbarPath));
             testCase.verifyGreaterThan(dir(overlayPath).bytes, 0);
-            testCase.verifyGreaterThan(dir(colorbarPath).bytes, 0);
+            testCase.verifySize(imread(overlayPath), [4 4 3]);
         end
     end
 end

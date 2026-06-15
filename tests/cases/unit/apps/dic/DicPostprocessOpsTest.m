@@ -17,14 +17,66 @@ classdef DicPostprocessOpsTest < matlab.unittest.TestCase
             setupLabKitTestPath();
 
             strain = struct();
-            strain.exx = ones(2);
-            strain.eyy = ones(2);
+            strain.exx = [1 2; NaN 4];
+            strain.eyy = [5 Inf; 7 8];
             strain.roiMask = logical([1 0; 0 1]);
-            overlayMask = true(4);
 
-            mask = dic_postprocess.ops.summaryMaskForStrain(strain, overlayMask);
+            mask = dic_postprocess.ops.summaryMaskForStrain(strain);
 
             testCase.verifyEqual(mask, strain.roiMask);
+        end
+
+        function strainValidMaskTrimsFiniteRoiBoundary(testCase)
+            setupLabKitTestPath();
+
+            strainMap = ones(5);
+            strainMap([1 end], :) = -10;
+            strainMap(:, [1 end]) = -10;
+            roiMask = true(5);
+
+            validMap = dic_postprocess.ops.strainValidMask( ...
+                strainMap, roiMask, true(5));
+
+            expected = false(5);
+            expected(2:4, 2:4) = true;
+            testCase.verifyEqual(validMap, expected);
+        end
+
+        function strainValidMaskKeepsNarrowRoiWhenTrimWouldErase(testCase)
+            setupLabKitTestPath();
+
+            validMap = dic_postprocess.ops.strainValidMask( ...
+                ones(2), true(2), true(2));
+
+            testCase.verifyEqual(validMap, true(2));
+        end
+
+        function edgeTrimCanBeDisabledForFullRoiCoverage(testCase)
+            setupLabKitTestPath();
+
+            validMap = dic_postprocess.ops.strainValidMask( ...
+                ones(5), true(5), true(5), 0);
+
+            testCase.verifyEqual(validMap, true(5));
+        end
+
+        function summaryMaskUsesMatFiniteDomainWhenRoiAbsent(testCase)
+            setupLabKitTestPath();
+
+            strain = struct();
+            strain.exx = [1 2 NaN; NaN NaN NaN; 7 8 9];
+            strain.eyy = [NaN 12 NaN; NaN 15 NaN; Inf 18 19];
+            strain.roiMask = [];
+
+            mask = dic_postprocess.ops.summaryMaskForStrain(strain);
+            summary = dic_postprocess.ops.summarizeStrain(strain, mask);
+
+            expected = logical([1 1 0; 0 1 0; 1 1 1]);
+            testCase.verifyEqual(mask, expected);
+            testCase.verifyEqual(summary.EXX([1 4 5]), [5.4; 1; 9], ...
+                'AbsTol', 1e-12);
+            testCase.verifyEqual(summary.EYY([1 4 5]), [16; 12; 19], ...
+                'AbsTol', 1e-12);
         end
 
         function summarizeStrainIgnoresInvalidValues(testCase)
@@ -58,6 +110,48 @@ classdef DicPostprocessOpsTest < matlab.unittest.TestCase
             testCase.verifyLessThanOrEqual(overlay, 1);
         end
 
+        function overlayExcludesFiniteLowValueRoiBoundary(testCase)
+            setupLabKitTestPath();
+
+            reference = uint8(128 * ones(5));
+            strainMap = ones(5);
+            strainMap([1 end], :) = 0;
+            strainMap(:, [1 end]) = 0;
+            opts = postprocessOverlayOptions();
+            opts.alpha = 1;
+            opts.colormap = [0 0 1; 1 0 0];
+
+            overlay = dic_postprocess.ops.makeStrainOverlay( ...
+                reference, strainMap, true(5), true(5), opts);
+
+            basePixel = double(reference(1, 1)) / 255;
+            testCase.verifyEqual(squeeze(overlay(1, 1, :)).', ...
+                [basePixel basePixel basePixel], 'AbsTol', 1e-12);
+            testCase.verifyEqual(squeeze(overlay(3, 3, :)).', ...
+                [1 0 0], 'AbsTol', 1e-12);
+        end
+
+        function overlayCanCoverFullRoiWhenEdgeTrimDisabled(testCase)
+            setupLabKitTestPath();
+
+            reference = uint8(128 * ones(5));
+            strainMap = ones(5);
+            strainMap([1 end], :) = 0;
+            strainMap(:, [1 end]) = 0;
+            opts = postprocessOverlayOptions();
+            opts.alpha = 1;
+            opts.edgeTrim = 0;
+            opts.colormap = [0 0 1; 1 0 0];
+
+            overlay = dic_postprocess.ops.makeStrainOverlay( ...
+                reference, strainMap, true(5), true(5), opts);
+
+            testCase.verifyEqual(squeeze(overlay(1, 1, :)).', ...
+                [0 0 1], 'AbsTol', 1e-12);
+            testCase.verifyEqual(squeeze(overlay(3, 3, :)).', ...
+                [1 0 0], 'AbsTol', 1e-12);
+        end
+
         function extendStrainMapHandlesEmptyValidMap(testCase)
             setupLabKitTestPath();
 
@@ -74,8 +168,8 @@ function opts = postprocessOverlayOptions()
     opts.colorRange = [0 1];
     opts.oversample = 1;
     opts.sigmaSmooth = 0;
+    opts.edgeTrim = 1;
     opts.colormap = [0 0 1; 1 0 0];
-    opts.exportResolution = 96;
     opts.brightness = 0;
     opts.contrast = 1;
     opts.gamma = 1;

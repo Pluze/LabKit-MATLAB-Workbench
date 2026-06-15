@@ -35,21 +35,6 @@ classdef DicPostprocessViewTest < matlab.unittest.TestCase
             testCase.verifyEqual(emptyData, {});
         end
 
-        function colorbarLevelsTableMatchesColormapAndRange(testCase)
-            setupLabKitTestPath();
-
-            opts = struct();
-            opts.colorRange = [-0.2 0.4];
-            opts.colormap = [1 0 0; 0 1 0; 0 0 1];
-
-            T = dic_postprocess.view.colorbarLevelsTable(opts);
-
-            testCase.verifyEqual(T.StrainLevel, [-0.2; 0.1; 0.4], 'AbsTol', 1e-12);
-            testCase.verifyEqual(T.Red, [1; 0; 0]);
-            testCase.verifyEqual(T.Green, [0; 1; 0]);
-            testCase.verifyEqual(T.Blue, [0; 0; 1]);
-        end
-
         function ternarySelectsDisplayText(testCase)
             setupLabKitTestPath();
 

@@ -1,10 +1,9 @@
 % DIC Postprocess ops helper. Expected caller: labkit_DICPostprocess_app.
-% Inputs are strain struct and overlay mask. Output is logical summary mask.
-% Side effects: none.
-function mask = summaryMaskForStrain(strain, overlayMask)
+% Input is the MAT-derived strain struct. Output is the logical summary mask
+% over the MAT strain domain. Side effects: none.
+function mask = summaryMaskForStrain(strain)
+    mask = isfinite(strain.exx) | isfinite(strain.eyy);
     if ~isempty(strain.roiMask)
-        mask = logical(strain.roiMask);
-    else
-        mask = imresize(logical(overlayMask), size(strain.exx), 'nearest');
+        mask = mask & logical(strain.roiMask);
     end
 end

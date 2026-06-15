@@ -22,8 +22,7 @@ function fig = run(debugLog)
         "generate", @onGenerate, ...
         "optionsChanged", @onOptionsChanged, ...
         "saveOverlays", @onSaveOverlays, ...
-        "exportSummary", @onExportSummary, ...
-        "exportColorbar", @onExportColorbar);
+        "exportSummary", @onExportSummary);
     spec = dic_postprocess.ui.buildSpec(callbacks);
     ui = labkit.ui.app.create(spec, "debug", debugLog);
     fig = ui.figure;
@@ -36,7 +35,7 @@ function fig = run(debugLog)
     edMax = ui.controls.colorMax.valueHandle;
     edOversample = ui.controls.oversample.valueHandle;
     edSigma = ui.controls.smoothSigma.valueHandle;
-    edResolution = ui.controls.exportDpi.valueHandle;
+    edEdgeTrim = ui.controls.edgeTrim.valueHandle;
     edBrightness = ui.controls.brightness.valueHandle;
     edContrast = ui.controls.contrast.valueHandle;
     edGamma = ui.controls.gamma.valueHandle;
@@ -127,14 +126,11 @@ function fig = run(debugLog)
         end
 
         tag = dic_postprocess.view.tagFromPath(char(S.matPath));
-        opts = overlayOptionsFromControls();
         exxFile = fullfile(folder, sprintf('overlay_exx_%s.png', tag));
         eyyFile = fullfile(folder, sprintf('overlay_eyy_%s.png', tag));
-        dic_postprocess.export.exportOverlayFigure(S.overlayExx, 'EXX', ...
-            opts.colorRange, opts.exportResolution, exxFile);
-        dic_postprocess.export.exportOverlayFigure(S.overlayEyy, 'EYY', ...
-            opts.colorRange, opts.exportResolution, eyyFile);
-        addLog(sprintf('Saved overlay PNGs: %s and %s', exxFile, eyyFile));
+        dic_postprocess.export.exportOverlayImage(S.overlayExx, exxFile);
+        dic_postprocess.export.exportOverlayImage(S.overlayEyy, eyyFile);
+        addLog(sprintf('Saved clean overlay PNGs: %s and %s', exxFile, eyyFile));
     end
 
     function onExportSummary(~, ~)
@@ -154,35 +150,6 @@ function fig = run(debugLog)
         out = fullfile(p, f);
         writetable(S.summaryTable, out);
         addLog(sprintf('Exported summary CSV: %s', out));
-    end
-
-    function onExportColorbar(~, ~)
-        if edMax.Value <= edMin.Value
-            uialert(fig, 'Color max must be greater than color min.', 'Invalid color range');
-            return;
-        end
-
-        [folder, name] = fileparts(char(S.matPath));
-        if isempty(folder)
-            folder = pwd;
-        end
-        if isempty(name)
-            name = 'dic_strain';
-        end
-        defaultName = fullfile(folder, [name '_strain_colorbar.png']);
-        [f, p] = uiputfile({'*.png', 'PNG image'}, 'Save strain colorbar', defaultName);
-        if isequal(f, 0)
-            addLog('Export strain colorbar cancelled.');
-            return;
-        end
-
-        opts = overlayOptionsFromControls();
-        pngOut = fullfile(p, f);
-        [~, baseName] = fileparts(f);
-        csvOut = fullfile(p, [baseName '_levels.csv']);
-        dic_postprocess.export.exportStrainColorbar(opts, pngOut);
-        writetable(dic_postprocess.view.colorbarLevelsTable(opts), csvOut);
-        addLog(sprintf('Exported strain colorbar: %s and %s', pngOut, csvOut));
     end
 
     function onOptionsChanged(~, ~)
@@ -210,7 +177,7 @@ function fig = run(debugLog)
             S.referenceImage, S.strain.exx, overlayMask, S.strain.roiMask, opts);
         S.overlayEyy = dic_postprocess.ops.makeStrainOverlay( ...
             S.referenceImage, S.strain.eyy, overlayMask, S.strain.roiMask, opts);
-        summaryMask = dic_postprocess.ops.summaryMaskForStrain(S.strain, overlayMask);
+        summaryMask = dic_postprocess.ops.summaryMaskForStrain(S.strain);
         S.summaryTable = dic_postprocess.ops.summarizeStrain(S.strain, summaryMask);
         dic_postprocess.ui.showImage(ui, S.overlayExx, 'EXX Overlay', 'exx');
         dic_postprocess.ui.showImage(ui, S.overlayEyy, 'EYY Overlay', 'eyy');
@@ -224,8 +191,8 @@ function fig = run(debugLog)
         opts.colorRange = [edMin.Value edMax.Value];
         opts.oversample = max(1, round(edOversample.Value));
         opts.sigmaSmooth = edSigma.Value;
+        opts.edgeTrim = max(0, round(edEdgeTrim.Value));
         opts.colormap = jet(256);
-        opts.exportResolution = round(edResolution.Value);
         opts.brightness = edBrightness.Value;
         opts.contrast = edContrast.Value;
         opts.gamma = edGamma.Value;
