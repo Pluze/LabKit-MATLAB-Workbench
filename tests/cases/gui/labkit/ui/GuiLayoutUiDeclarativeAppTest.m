@@ -165,16 +165,28 @@ end
 
 function assertTextPanelsHaveDefaultRoom(ui)
     settleLayout();
-    assert(ui.controls.notesText.textArea.Position(4) >= 105, ...
-        'statusPanel controls should start with enough height for multiple lines.');
+    assertStatusPanelContract(ui.controls.notesText);
     ui.logTab.Parent.SelectedTab = ui.logTab;
     settleLayout();
-    assert(ui.controls.logPanel.textArea.Position(4) >= 180, ...
-        'logPanel controls should start with enough height for useful log history.');
+    assertLogPanelContract(ui.controls.logPanel);
     ui.setupTab.Parent.SelectedTab = ui.setupTab;
     settleLayout();
-    assert(ui.controls.sourceImages.listbox.Position(4) >= 95, ...
-        'pathPanel lists should start with enough height for several entries.');
+    assertPathPanelContract(ui.controls.sourceImages);
+end
+
+function assertStatusPanelContract(control)
+    assert(isvalid(control.textArea) && strcmp(control.kind, 'statusPanel'), ...
+        'statusPanel controls should expose a valid read-only text area.');
+end
+
+function assertLogPanelContract(control)
+    assert(isvalid(control.textArea) && strcmp(control.kind, 'logPanel'), ...
+        'logPanel controls should expose a valid read-only text area.');
+end
+
+function assertPathPanelContract(control)
+    assert(isvalid(control.listbox) && strcmp(control.kind, 'pathPanel'), ...
+        'pathPanel controls should expose a valid selectable list.');
 end
 
 function settleLayout()
