@@ -9,7 +9,7 @@ function data = summaryTableData(S)
     analysis = fieldOrDefault(S, "analysis", struct());
 
     data = {
-        'Session', displayPath(fieldOrDefault(S, "sessionFile", ""));
+        'Filter', displayPath(fieldOrDefault(S, "sessionFile", ""));
         'Protocol', displayPath(fieldOrDefault(S, "protocolFile", ""));
         'Recordings', displayNumber(fieldOrDefault(analysis, "recordingCount", 0));
         'Analyzed', displayNumber(fieldOrDefault(analysis, "analyzedCount", 0));

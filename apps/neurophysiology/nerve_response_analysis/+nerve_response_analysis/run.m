@@ -38,17 +38,17 @@ function fig = run(debugLog)
         end
         S.sessionFile = paths(1);
         S.analysis = [];
-        S.statusMessage = "Session selected.";
-        S.lastAction = "Selected session";
-        addLog("Selected session: " + displayPath(S.sessionFile));
+        S.statusMessage = "Filter record selected.";
+        S.lastAction = "Selected filter record";
+        addLog("Selected filter record: " + displayPath(S.sessionFile));
         refreshAll();
     end
 
     function onSessionCleared(~, ~)
         S.sessionFile = "";
         S.analysis = [];
-        S.statusMessage = "No session selected.";
-        S.lastAction = "Cleared session";
+        S.statusMessage = "No filter record selected.";
+        S.lastAction = "Cleared filter record";
         refreshAll();
     end
 
@@ -115,7 +115,7 @@ function fig = run(debugLog)
 
     function onRunAnalysis(~, ~)
         if strlength(S.sessionFile) == 0
-            S.statusMessage = "Select a screening session first.";
+            S.statusMessage = "Select a filter record first.";
             refreshAll();
             return;
         end
@@ -141,7 +141,7 @@ function fig = run(debugLog)
         end
         S.statusMessage = sprintf("Analyzed %d recording(s).", ...
             S.analysis.analyzedCount);
-        S.lastAction = "Analyzed session";
+        S.lastAction = "Analyzed filter record";
         addLog(S.statusMessage);
         refreshAll();
     end
@@ -209,7 +209,7 @@ function S = defaultState()
         "maxDurationSec", 0, ...
         "previewMode", "Counts", ...
         "analysis", [], ...
-        "statusMessage", "No session selected.", ...
+        "statusMessage", "No filter record selected.", ...
         "lastAction", "Ready");
 end
 

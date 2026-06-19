@@ -50,7 +50,7 @@ function analysis = analyzeRecording(filepath, protocol, opts)
         return;
     end
 
-    pairs = protocolPairs(protocol);
+    pairs = analysisPairs(protocol, roles);
     metricsByPair = cell(numel(pairs), 1);
     issuesByPair = cell(numel(pairs), 1);
     for k = 1:numel(pairs)
@@ -105,6 +105,9 @@ end
 
 function aliases = roleAliases(roleSpec)
     aliases = string(fieldOrDefault(roleSpec, "id", ""));
+    if isfield(roleSpec, "nativeName")
+        aliases = [aliases(:); string(roleSpec.nativeName(:))];
+    end
     if isfield(roleSpec, "match") && isfield(roleSpec.match, "anyNativeName")
         aliases = [aliases(:); string(roleSpec.match.anyNativeName(:))];
     end
@@ -218,10 +221,57 @@ function names = protocolPairRoleNames(protocol)
     end
 end
 
-function pairs = protocolPairs(protocol)
+function pairs = analysisPairs(protocol, roles)
+    pairs = configuredPairs(protocol);
+    if ~isempty(pairs)
+        return;
+    end
+    pairs = inferredPairs(roles);
+end
+
+function pairs = configuredPairs(protocol)
     pairs = struct([]);
     if isfield(protocol, "channels") && isfield(protocol.channels, "pairs")
         pairs = protocol.channels.pairs;
+    end
+end
+
+function pairs = inferredPairs(roles)
+    pairs = struct([]);
+    if ~isstruct(roles)
+        return;
+    end
+    names = string(fieldnames(roles));
+    pairCells = {};
+    for k = 1:numel(names)
+        role = roles.(char(names(k)));
+        roleId = string(fieldOrDefault(role, "id", names(k)));
+        if ~endsWith(roleId, "_positive")
+            continue;
+        end
+        negativeId = replace(roleId, "_positive", "_negative");
+        negativeKey = matlab.lang.makeValidName(char(negativeId));
+        if ~isfield(roles, char(negativeKey))
+            continue;
+        end
+        negative = roles.(char(negativeKey));
+        if ~logical(fieldOrDefault(role, "found", false)) || ...
+                ~logical(fieldOrDefault(negative, "found", false))
+            continue;
+        end
+        baseId = extractBefore(roleId, strlength(roleId) - strlength("_positive") + 1);
+        if strlength(baseId) == 0
+            baseId = "pair";
+        end
+        pairCells{end + 1} = struct( ...
+            "id", baseId + "_diff", ...
+            "label", upper(baseId), ...
+            "positive", roleId, ...
+            "negative", negativeId, ...
+            "mode", "positive-minus-negative");
+    end
+    if ~isempty(pairCells)
+        pairs = [pairCells{:}];
     end
 end
 

@@ -9,16 +9,15 @@ function data = previewChannelsTableData(S)
         rows = S.previewChannelRows;
     end
     if height(rows) == 0
-        data = cell(0, 5);
+        data = cell(0, 4);
         return;
     end
 
-    data = cell(height(rows), 5);
+    data = cell(height(rows), 4);
     for r = 1:height(rows)
         data{r, 1} = logical(rows.preview(r));
         data{r, 2} = char(rows.role(r));
         data{r, 3} = char(rows.label(r));
         data{r, 4} = char(rows.channel(r));
-        data{r, 5} = logical(rows.required(r));
     end
 end

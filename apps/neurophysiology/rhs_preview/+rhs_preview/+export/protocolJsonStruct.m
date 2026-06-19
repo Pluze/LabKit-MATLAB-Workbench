@@ -1,6 +1,5 @@
 % Expected caller: rhs_preview.run and tests. Inputs are app state/channel
-% rows. Output is a jsonencode-compatible protocol draft without local raw
-% file paths.
+% rows. Output is a jsonencode-compatible channel protocol draft.
 function payload = protocolJsonStruct(S)
 %PROTOCOLJSONSTRUCT Build a protocol draft from Preview channel-role rows.
 
@@ -10,10 +9,6 @@ function payload = protocolJsonStruct(S)
         rows = S.previewChannelRows;
     end
     roles = roleStructArray(rows);
-    pairs = pairStructArray(pairRowsFromState(S));
-    family = string(fieldOrDefault(S, "family", "amplifier"));
-    windowStart = double(fieldOrDefault(S, "windowStartSec", 0));
-    windowDuration = double(fieldOrDefault(S, "windowDurationSec", 0.050));
     base = baseIdentity(S);
 
     payload = struct( ...
@@ -21,17 +16,13 @@ function payload = protocolJsonStruct(S)
         "protocolId", base.protocolId, ...
         "label", base.label, ...
         "channels", struct( ...
-            "roles", roles, ...
-            "pairs", pairs), ...
-        "preview", struct( ...
-            "defaultFamily", family, ...
-            "defaultWindowSec", [windowStart, windowStart + windowDuration]));
+            "roles", roles));
 end
 
 function base = baseIdentity(S)
     base = struct( ...
-        "protocolId", "rhs_protocol_draft", ...
-        "label", "RHS Protocol Draft");
+        "protocolId", "rhs_channel_protocol", ...
+        "label", "RHS Channel Protocol");
     if isstruct(S) && isfield(S, "protocol") && isstruct(S.protocol) && ...
             isscalar(S.protocol)
         if isfield(S.protocol, "protocolId")
@@ -54,48 +45,13 @@ function roles = roleStructArray(rows)
     for k = 1:numel(idx)
         r = idx(k);
         roleId = matlab.lang.makeValidName(char(rows.role(r)));
-        match = struct();
-        match.anyNativeName = cellstr(string(rows.channel(r)));
         roleCells{k} = struct( ...
             "id", string(roleId), ...
             "label", string(rows.label(r)), ...
-            "match", match, ...
-            "required", logical(rows.required(r)));
+            "nativeName", string(rows.channel(r)));
     end
     if ~isempty(roleCells)
         roles = [roleCells{:}];
-    end
-end
-
-function rows = pairRowsFromState(S)
-    rows = table();
-    if isstruct(S) && isfield(S, "protocolPairRows") && ...
-            istable(S.protocolPairRows)
-        rows = S.protocolPairRows;
-    end
-end
-
-function pairs = pairStructArray(rows)
-    pairs = struct([]);
-    if height(rows) == 0
-        return;
-    end
-    keep = strlength(strtrim(string(rows.id))) > 0 & ...
-        strlength(strtrim(string(rows.positive))) > 0 & ...
-        strlength(strtrim(string(rows.negative))) > 0;
-    idx = find(keep);
-    pairCells = cell(numel(idx), 1);
-    for k = 1:numel(idx)
-        r = idx(k);
-        pairCells{k} = struct( ...
-            "id", string(rows.id(r)), ...
-            "label", string(rows.label(r)), ...
-            "positive", string(rows.positive(r)), ...
-            "negative", string(rows.negative(r)), ...
-            "mode", string(rows.mode(r)));
-    end
-    if ~isempty(pairCells)
-        pairs = [pairCells{:}];
     end
 end
 

@@ -104,12 +104,10 @@ The protocol is intentionally app-owned. `labkit.rhs` can read the waveforms
 and metadata it describes, but it should not interpret nerve experiment
 semantics itself.
 
-The supported protocol shape is intentionally small:
+The supported protocol shape records only channel meaning:
 
 ```text
 channels.roles   named channel roles matched to RHS native channel names
-channels.pairs   differential or associated role pairs built from roles
-preview          default preview family and time window
 ```
 
 Minimal saved shape:
@@ -117,46 +115,31 @@ Minimal saved shape:
 ```json
 {
   "schemaVersion": "labkit.rhs.protocol.v1",
-  "protocolId": "rhs_protocol_draft",
-  "label": "RHS Protocol Draft",
+  "protocolId": "rhs_channel_protocol",
+  "label": "RHS Channel Protocol",
   "channels": {
     "roles": [
       {
         "id": "reference",
         "label": "Reference",
-        "match": {"anyNativeName": ["C-001"]},
-        "required": false
-      }
-    ],
-    "pairs": [
-      {
-        "id": "cp_diff",
-        "label": "CP",
-        "positive": "cp_positive",
-        "negative": "cp_negative",
-        "mode": "positive-minus-negative"
+        "nativeName": "C-001"
       }
     ]
-  },
-  "preview": {
-    "defaultFamily": "amplifier",
-    "defaultWindowSec": [0, 0.05]
   }
 }
 ```
 
 Roles should express lab meaning such as `reference`, `cp_positive`,
-`cp_negative`, `stim_monitor`, or any other experiment-local name. Pairs should
-express relationships such as a positive-minus-negative differential. Optional
-recording-pattern hints can be added later when a real workflow needs them, but
-QC thresholds, CAP search windows, metric lists, common-mode algorithm details,
-and export schemas belong to the analysis apps, not the protocol file.
+`cp_negative`, `stim_monitor`, or any other experiment-local name. Differential
+pairs, event detection, CAP search windows, metric lists, common-mode
+algorithm details, preview windows, file filtering, and export schemas belong
+to the owning apps, not the protocol file.
 
 `labkit_RHSPreview_app` is the visual protocol drafting surface. The Protocol
-tab loads an optional JSON, shows editable channel-role and pair rows beside
-the stacked waveform preview, and saves a normalized lightweight draft. There
-is no tracked sample protocol file; users create one from an RHS recording in
-the Preview app.
+tab loads an optional JSON, shows editable channel-role rows beside the
+stacked waveform preview, and saves a normalized lightweight draft. There is
+no tracked sample protocol file; users create one from an RHS recording in the
+Preview app.
 
 ## Neurophysiology App Flow
 
@@ -164,13 +147,13 @@ The RHS app family keeps raw RHS access lazy and channel-map aware:
 
 ```text
 labkit_RHSPreview_app
-  RHS file + optional protocol JSON -> stacked waveform preview and protocol draft
+  RHS file + optional protocol JSON -> stacked waveform preview and channel protocol draft
 
-labkit_RHSScreen_app
-  RHS folder + optional protocol JSON -> curated rhs_screen_session.json
+labkit_RHSPreview_app
+  RHS folder -> manual rhs_filter_record.json
 
 labkit_NerveResponseAnalysis_app
-  rhs_screen_session.json + recommended protocol JSON -> nerve_response_analysis.json
+  rhs_filter_record.json + recommended protocol JSON -> nerve_response_analysis.json
 
 labkit_ResponseReviewStats_app
   nerve_response_analysis.json or segment CSV -> response_review_metrics.csv
@@ -180,7 +163,7 @@ labkit_ResponseReviewStats_app
 
 `labkit_RHSPreview_app` only needs one Intan `.rhs` file. A protocol JSON is
 optional. If no protocol exists yet, load an RHS file, inspect the waveforms,
-fill the Protocol Roles and Protocol Pairs tables, then save a protocol draft.
+fill the Protocol Channel Roles table, then save a protocol draft.
 
 Choosing an RHS file indexes the header/data blocks and immediately reads an
 adaptive preview window. The right pane shows selected channels as stacked,
@@ -194,13 +177,12 @@ ROI to set the preview window to that marked time range and reread only that
 window.
 
 The Protocol tab is the protocol-drafting surface. Select which channels to
-plot, assign roles/labels, mark required channels, define any role pairs, and
-use Save Protocol Draft to write a JSON draft. Apps should not require
-hand-written JSON for basic preview or screening.
+plot, assign roles/labels, and use Save Protocol Draft to write a JSON draft.
+Apps should not require hand-written JSON for basic preview or analysis.
 
-`labkit_RHSScreen_app` expects a folder, not a single file. The app searches
-that folder recursively for `.rhs` recordings, so either flat or nested batches
-are valid:
+The Filter tab is the manual folder curation surface. Choose an RHS folder in
+Preview and the app searches that folder recursively for `.rhs` recordings, so
+either flat or nested batches are valid:
 
 ```text
 experiment_batch/
@@ -210,26 +192,24 @@ experiment_batch/
     recording_003.rhs
 ```
 
-Screening export requires an output folder and writes:
+The file list has one editable `label` field and one editable `comment` field
+per path. Use `good` for files that should go downstream and `bad` for files
+that should be skipped. Save Filter Record writes:
 
 ```text
-rhs_screen_session.json
+rhs_filter_record.json
 ```
 
-Choosing a folder starts a structural scan immediately. The Refresh Scan action
-reruns the same pass after changing QC options or protocol metadata. This scan
-indexes RHS headers and block structure only; it is the replacement for the old
-workflow that converted every RHS file into timetables before manual curation.
+The filter record stores local paths to the original RHS files, plus the manual
+label and comment. It does not copy raw waveforms and it does not perform
+automated recording quality classification. If the RHS files move, refresh the
+folder or update the filter record paths before analysis.
 
-The session JSON stores metadata and local paths to the original RHS files; it
-does not copy raw waveforms. If the RHS files move, rescan the folder or update
-the session paths before analysis.
-
-`labkit_NerveResponseAnalysis_app` needs the `rhs_screen_session.json` created
-by screening. A protocol JSON is recommended for reliable role and differential
-pair resolution, but the app should still run with best-effort fallbacks and
-issue rows when protocol information is missing. The RHS files referenced by
-the session must still be reachable. Export writes:
+`labkit_NerveResponseAnalysis_app` needs the `rhs_filter_record.json` created
+by Preview. A protocol JSON is recommended for reliable role resolution, but
+the app should still run with best-effort fallbacks and issue rows when
+protocol information is missing. The RHS files referenced by the filter record
+must still be reachable. Export writes:
 
 ```text
 nerve_response_analysis.json
@@ -245,21 +225,13 @@ Export writes:
 response_review_metrics.csv
 ```
 
-`rhs_screen_session.json` stores recording paths, header/index QC, channel
-signatures, grouping, a user-editable `keep` flag, review notes, and kept
-recording ids. It does not store raw waveforms. Auto QC is intentionally
-structural: index failures are failed, header-only/no-data files need review,
-trailing partial blocks need review when exact blocks are required, short
-recordings can need review, and otherwise recordings default to kept. It does
-not decide whether a nerve response is scientifically good.
-
-The analysis app reads only recordings kept by the screening session. For each
-kept RHS file it reads only the channels it needs, using the protocol to
-resolve roles such as reference and positive/negative differential pairs.
+The analysis app reads only filter-record rows labeled `good`. For each good
+RHS file it reads only the channels it needs, using the protocol to resolve
+roles such as `reference`, `cp_positive`, and `cp_negative`.
 
 Event detection tries usable stimulus-current information first, then
 reference-channel derivative detection, then recording-channel fallbacks
-derived from protocol pairs or known role names. Missing or poor channels
+derived from analysis-owned role-pair inference or known role names. Missing or poor channels
 should produce issue rows or review flags, not a crashing batch.
 
 The response review app accepts the analysis metrics directly, and also accepts

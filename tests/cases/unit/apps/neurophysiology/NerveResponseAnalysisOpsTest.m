@@ -77,7 +77,25 @@ classdef NerveResponseAnalysisOpsTest < matlab.unittest.TestCase
             testCase.verifyEqual(metrics.status(1), "ok");
         end
 
-        function analyzeSessionUsesManualKeepColumn(testCase)
+        function analyzeSessionUsesManualFilterLabels(testCase)
+            setupLabKitTestPath();
+
+            recordings = table(["R001"; "R002"], ...
+                ["missing_bad.rhs"; "missing_good.rhs"], ...
+                ["bad"; "good"], ...
+                ["manual reject"; "manual keep"], ...
+                'VariableNames', {'recordingId', 'filePath', 'label', 'comment'});
+            session = struct("recordings", recordings);
+
+            analysis = nerve_response_analysis.ops.analyzeSession(session, ...
+                struct(), struct());
+
+            testCase.verifyEqual(analysis.recordingCount, 2);
+            testCase.verifyEqual(analysis.analyzedCount, 1);
+            testCase.verifyEqual(analysis.issues.recordingId(1), "R002");
+        end
+
+        function analyzeSessionStillAcceptsLegacyKeepColumn(testCase)
             setupLabKitTestPath();
 
             recordings = table(["R001"; "R002"], ...

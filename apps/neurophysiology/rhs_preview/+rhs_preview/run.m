@@ -9,14 +9,18 @@ function fig = run(debugLog)
     callbacks = struct( ...
         "rhsChosen", @onRhsChosen, ...
         "rhsCleared", @onRhsCleared, ...
+        "folderChosen", @onFolderChosen, ...
+        "folderCleared", @onFolderCleared, ...
         "protocolChosen", @onProtocolChosen, ...
         "protocolCleared", @onProtocolCleared, ...
         "settingChanged", @onSettingChanged, ...
         "previewChannelEdited", @onPreviewChannelEdited, ...
-        "protocolPairEdited", @onProtocolPairEdited, ...
+        "fileFilterEdited", @onFileFilterEdited, ...
         "refreshPreviewWindow", @onRefreshPreviewWindow, ...
+        "refreshFolderFiles", @onRefreshFolderFiles, ...
         "zoomToRoi", @onZoomToRoi, ...
         "saveProtocol", @onSaveProtocol, ...
+        "saveFilterRecord", @onSaveFilterRecord, ...
         "resetWorkflow", @onResetWorkflow);
 
     spec = rhs_preview.ui.buildSpec(callbacks);
@@ -63,10 +67,26 @@ function fig = run(debugLog)
         S.roiSec = [NaN NaN];
         S.family = "amplifier";
         S.previewChannelRows = table();
-        S.protocolPairRows = table();
-        S.protocolPairsEdited = false;
         S.statusMessage = "No RHS file selected.";
         S.lastAction = "Cleared RHS file";
+        refreshAll();
+    end
+
+    function onFolderChosen(~, event)
+        paths = rhs_preview.ops.eventPaths(event);
+        if isempty(paths)
+            return;
+        end
+        S.rhsFolder = paths(1);
+        refreshFolderFiles("Discovered RHS files");
+        refreshAll();
+    end
+
+    function onFolderCleared(~, ~)
+        S.rhsFolder = "";
+        S.filterRows = table();
+        S.statusMessage = "No RHS folder selected.";
+        S.lastAction = "Cleared RHS folder";
         refreshAll();
     end
 
@@ -78,7 +98,6 @@ function fig = run(debugLog)
         S.protocolFile = paths(1);
         S.protocol = rhs_preview.io.loadProtocol(S.protocolFile);
         rebuildPreviewChannelRows();
-        rebuildProtocolPairRows(true);
         S.lastAction = "Selected protocol";
         addLog("Selected protocol: " + rhs_preview.view.displayFile(S.protocolFile));
         refreshAll();
@@ -88,7 +107,6 @@ function fig = run(debugLog)
         S.protocolFile = "";
         S.protocol = struct();
         rebuildPreviewChannelRows();
-        rebuildProtocolPairRows(true);
         S.lastAction = "Cleared protocol";
         refreshAll();
     end
@@ -107,7 +125,6 @@ function fig = run(debugLog)
         if S.family ~= previousFamily || S.maxPreviewChannels ~= previousMaxChannels
             S = rhs_preview.ops.normalizeChannelSelection(S);
             rebuildPreviewChannelRows();
-            rebuildProtocolPairRows(false);
             if S.autoWindow
                 applyAdaptivePreviewWindow();
             end
@@ -124,9 +141,6 @@ function fig = run(debugLog)
         data = labkit.ui.view.getValue(ui, "previewChannelsTable");
         S.previewChannelRows = rhs_preview.ops.applyPreviewChannelsTableData( ...
             S.previewChannelRows, data);
-        if ~S.protocolPairsEdited
-            rebuildProtocolPairRows(false);
-        end
         S.lastAction = "Updated preview channels";
         if isPreviewToggleEdit(event) && rhs_preview.ops.hasReadableChannel(S)
             if S.autoWindow
@@ -137,17 +151,27 @@ function fig = run(debugLog)
         refreshAll();
     end
 
-    function onProtocolPairEdited(~, ~)
-        data = labkit.ui.view.getValue(ui, "protocolPairsTable");
-        S.protocolPairRows = rhs_preview.ops.applyProtocolPairsTableData(data);
-        S.protocolPairsEdited = true;
-        S.statusMessage = "Protocol pairs updated.";
-        S.lastAction = "Updated protocol pairs";
+    function onFileFilterEdited(~, ~)
+        data = labkit.ui.view.getValue(ui, "fileFilterTable");
+        S.filterRows = rhs_preview.ops.applyFileFilterTableData( ...
+            S.filterRows, data);
+        S.statusMessage = "File filter updated.";
+        S.lastAction = "Updated file filter";
         refreshAll();
     end
 
     function onRefreshPreviewWindow(~, ~)
         readPreviewWindowFromState("Refresh preview window");
+        refreshAll();
+    end
+
+    function onRefreshFolderFiles(~, ~)
+        if strlength(S.rhsFolder) == 0
+            S.statusMessage = "Select an RHS folder first.";
+            refreshAll();
+            return;
+        end
+        refreshFolderFiles("Refreshed RHS file list");
         refreshAll();
     end
 
@@ -181,53 +205,10 @@ function fig = run(debugLog)
         if nargin < 3
             preserveRoi = false;
         end
-        ok = false;
-        if strlength(S.rhsFile) == 0
-            S.statusMessage = "Select an RHS file first.";
-            return;
-        end
-        previousRoiSec = S.roiSec;
-
-        opts = struct();
-        opts.family = S.family;
-        S.windowStartSec = rhs_preview.ops.clampWindowStartSec(S.windowStartSec, S);
-        opts.timeRangeSec = [S.windowStartSec, ...
-            S.windowStartSec + max(S.windowDurationSec, eps)];
-        selectedChannels = selectedPreviewChannels();
-        if isempty(selectedChannels)
-            S.statusMessage = "Select at least one preview channel first.";
-            return;
-        else
-            opts.channels = selectedChannels;
-        end
-
-        try
-            [window, status] = labkit.rhs.readWindow(S.rhsFile, opts);
-        catch ME
-            S.preview = [];
-            S.statusMessage = string(ME.message);
-            S.lastAction = "Preview read failed";
-            addLog("Preview read failed: " + S.statusMessage);
-            return;
-        end
-        S.preview = window;
-        if preserveRoi && ~isempty(window.timeSec)
-            S.roiSec = rhs_preview.ops.clampRoi(previousRoiSec, window.timeSec);
-        else
-            S.roiSec = [NaN NaN];
-        end
-        if status.ok
-            S.statusMessage = "Preview window read.";
-            S.lastAction = string(actionLabel);
-            if logRead
-                addLog(sprintf("Read %d sample(s) from %s.", ...
-                    numel(window.timeSec), char(window.family)));
-            end
-            ok = true;
-        else
-            S.statusMessage = status.message;
-            S.lastAction = "Preview read failed";
-            addLog("Preview read failed: " + status.message);
+        [S, ok, logMessage] = rhs_preview.ops.readPreviewWindow( ...
+            S, selectedPreviewChannels(), actionLabel, preserveRoi);
+        if strlength(logMessage) > 0 && (logRead || ~ok)
+            addLog(logMessage);
         end
     end
 
@@ -323,6 +304,25 @@ function fig = run(debugLog)
         refreshAll();
     end
 
+    function onSaveFilterRecord(~, ~)
+        if isempty(S.filterRows) || height(S.filterRows) == 0
+            S.statusMessage = "Select an RHS folder before saving a filter record.";
+            refreshAll();
+            return;
+        end
+        data = labkit.ui.view.getValue(ui, "fileFilterTable");
+        S.filterRows = rhs_preview.ops.applyFileFilterTableData(S.filterRows, data);
+        outputPath = rhs_preview.io.promptFilterRecordOutput();
+        if strlength(outputPath) == 0
+            return;
+        end
+        rhs_preview.export.writeFilterRecordJson(S, outputPath);
+        S.statusMessage = "Saved filter record JSON.";
+        S.lastAction = "Saved filter record";
+        addLog("Saved filter record JSON: " + rhs_preview.view.displayFile(outputPath));
+        refreshAll();
+    end
+
     function onResetWorkflow(~, ~)
         S = rhs_preview.state.defaultState();
         labkit.ui.view.setValue(ui, "windowStartPanner", S.windowStartSec);
@@ -347,7 +347,6 @@ function fig = run(debugLog)
             end
             S = rhs_preview.ops.normalizeChannelSelection(S);
             rebuildPreviewChannelRows();
-            rebuildProtocolPairRows(false);
             S.autoWindow = true;
             S.windowStartSec = 0;
             applyAdaptivePreviewWindow();
@@ -362,6 +361,23 @@ function fig = run(debugLog)
         S.lastAction = "Indexed RHS file";
     end
 
+    function refreshFolderFiles(actionLabel)
+        try
+            S.filterRows = rhs_preview.ops.discoverFilterRows( ...
+                S.rhsFolder, S.filterRows);
+        catch ME
+            S.filterRows = table();
+            S.statusMessage = string(ME.message);
+            S.lastAction = "Folder scan failed";
+            addLog("Folder scan failed: " + S.statusMessage);
+            return;
+        end
+        S.statusMessage = sprintf("Discovered %d RHS file(s).", ...
+            height(S.filterRows));
+        S.lastAction = string(actionLabel);
+        addLog(S.statusMessage);
+    end
+
     function tf = isPreviewToggleEdit(event)
         tf = true;
         if (isstruct(event) && isfield(event, "indices")) || ...
@@ -374,6 +390,8 @@ function fig = run(debugLog)
     function refreshAll()
         labkit.ui.view.setListItems(ui, "rhsFile", ...
             cellstr(rhs_preview.view.selectedList(S.rhsFile)));
+        labkit.ui.view.setListItems(ui, "rhsFolder", ...
+            cellstr(rhs_preview.view.selectedList(S.rhsFolder)));
         labkit.ui.view.setListItems(ui, "protocolFile", ...
             cellstr(rhs_preview.view.selectedList(S.protocolFile)));
         refreshChannelControls();
@@ -385,13 +403,17 @@ function fig = run(debugLog)
             rhs_preview.ops.hasValidRoi(S));
         labkit.ui.view.setEnabled(ui, "saveProtocol", ~isempty(S.previewChannelRows) && ...
             height(S.previewChannelRows) > 0);
+        labkit.ui.view.setEnabled(ui, "refreshFolderFiles", ...
+            strlength(S.rhsFolder) > 0);
+        labkit.ui.view.setEnabled(ui, "saveFilterRecord", ...
+            ~isempty(S.filterRows) && height(S.filterRows) > 0);
         labkit.ui.view.setValue(ui, "statusField", char(S.statusMessage));
         labkit.ui.view.setValue(ui, "summaryTable", ...
             rhs_preview.view.summaryTableData(S));
         labkit.ui.view.setValue(ui, "previewChannelsTable", ...
             rhs_preview.view.previewChannelsTableData(S));
-        labkit.ui.view.setValue(ui, "protocolPairsTable", ...
-            rhs_preview.view.protocolPairsTableData(S));
+        labkit.ui.view.setValue(ui, "fileFilterTable", ...
+            rhs_preview.view.fileFilterTableData(S));
         ui.controls.details.textArea.Value = rhs_preview.view.detailLines(S);
         refreshPreview();
     end
@@ -411,17 +433,6 @@ function fig = run(debugLog)
     function rebuildPreviewChannelRows()
         S.previewChannelRows = rhs_preview.ops.channelRows(S.info, S.family, ...
             S.maxPreviewChannels, S.protocol);
-    end
-
-    function rebuildProtocolPairRows(forceFromProtocol)
-        if nargin < 1
-            forceFromProtocol = false;
-        end
-        if forceFromProtocol || ~S.protocolPairsEdited
-            S.protocolPairRows = rhs_preview.ops.pairRows( ...
-                S.previewChannelRows, S.protocol);
-            S.protocolPairsEdited = false;
-        end
     end
 
     function applyAdaptivePreviewWindow()
@@ -467,7 +478,6 @@ function fig = run(debugLog)
                 S.maxPreviewChannels);
         end
     end
-
     function addLog(message)
         labkit.ui.view.appendLog(ui, "logPanel", message);
         debugLog.append(message);

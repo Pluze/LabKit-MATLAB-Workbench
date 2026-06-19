@@ -4,13 +4,13 @@ function lines = detailLines(S)
 %DETAILLINES Build nerve-response analysis detail lines.
 
     if nargin == 0 || isempty(S)
-        lines = {'No screening session has been analyzed.'};
+        lines = {'No filter record has been analyzed.'};
         return;
     end
 
     lines = {
         char(string(fieldOrDefault(S, "statusMessage", ...
-        "No screening session has been analyzed.")))
+        "No filter record has been analyzed.")))
         "Max recordings: " + char(maxText(fieldOrDefault(S, "maxRecordings", 0)))
         "Max duration: " + char(maxText(fieldOrDefault(S, "maxDurationSec", 0))) + " s"
         "Output folder: " + char(displayPath(fieldOrDefault(S, "outputFolder", "")))};

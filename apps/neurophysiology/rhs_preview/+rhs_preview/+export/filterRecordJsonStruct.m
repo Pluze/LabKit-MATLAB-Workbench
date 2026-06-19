@@ -1,19 +1,19 @@
-% Expected caller: rhs_screen.export.writeSessionJson and tests. Input is a
-% rhs_screen session struct. Output is a jsonencode-compatible struct.
-function payload = sessionJsonStruct(session)
-%SESSIONJSONSTRUCT Convert a screening session to JSON-safe data.
+% Expected caller: rhs_preview.export.writeFilterRecordJson and tests. Input
+% is RHS Preview app state. Output is a JSON-safe manual file filter record.
+function payload = filterRecordJsonStruct(S)
+%FILTERRECORDJSONSTRUCT Convert file filter rows to JSON-safe data.
 
-    payload = session;
-    if isfield(payload, "recordings") && istable(payload.recordings)
-        payload.recordings = tableToStructArray(payload.recordings);
+    rows = table();
+    if isstruct(S) && isfield(S, "filterRows") && istable(S.filterRows)
+        rows = S.filterRows;
     end
-    if isfield(payload, "groups") && istable(payload.groups)
-        payload.groups = tableToStructArray(payload.groups);
-    end
-    if isfield(payload, "acceptedRecordingIds")
-        payload.acceptedRecordingIds = cellstr(string(payload.acceptedRecordingIds(:)));
-    end
-    payload.exportedBy = "labkit_RHSScreen_app";
+
+    payload = struct( ...
+        "type", "rhsFilterRecord", ...
+        "version", 1, ...
+        "exportedBy", "labkit_RHSPreview_app", ...
+        "rootFolder", string(fieldOrDefault(S, "rhsFolder", "")), ...
+        "recordings", tableToStructArray(rows));
 end
 
 function rows = tableToStructArray(T)
@@ -47,5 +47,12 @@ function value = jsonValue(value)
         value = logical(value);
     elseif isnumeric(value)
         value = double(value);
+    end
+end
+
+function value = fieldOrDefault(S, fieldName, defaultValue)
+    value = defaultValue;
+    if isstruct(S) && isfield(S, fieldName)
+        value = S.(fieldName);
     end
 end

@@ -1,8 +1,8 @@
 % Expected caller: nerve_response_analysis.run or tests. Input is a
-% rhs_screen session struct plus protocol and options. Output is a combined
+% RHS filter/session struct plus protocol and options. Output is a combined
 % analysis struct. Side effects are lazy RHS reads through analyzeRecording.
 function analysis = analyzeSession(session, protocol, opts)
-%ANALYZESESSION Analyze accepted recordings from a screening session.
+%ANALYZESESSION Analyze good recordings from a filter record.
 
     if nargin < 2 || isempty(protocol)
         protocol = struct();
@@ -12,12 +12,7 @@ function analysis = analyzeSession(session, protocol, opts)
     end
 
     recordings = recordingsTable(session);
-    accepted = recordings;
-    if height(recordings) > 0 && ismember("keep", recordings.Properties.VariableNames)
-        accepted = recordings(logical(recordings.keep), :);
-    elseif height(recordings) > 0 && ismember("qcFlag", recordings.Properties.VariableNames)
-        accepted = recordings(recordings.qcFlag == "accepted", :);
-    end
+    accepted = acceptedRows(recordings);
 
     maxRecordings = double(fieldOrDefault(opts, "maxRecordings", Inf));
     if isfinite(maxRecordings) && maxRecordings > 0
@@ -52,6 +47,20 @@ function analysis = analyzeSession(session, protocol, opts)
     end
 end
 
+function accepted = acceptedRows(recordings)
+    accepted = recordings;
+    if height(recordings) == 0
+        return;
+    end
+    if ismember("keep", recordings.Properties.VariableNames)
+        accepted = recordings(logical(recordings.keep), :);
+    elseif ismember("label", recordings.Properties.VariableNames)
+        accepted = recordings(recordings.label == "good", :);
+    elseif ismember("qcFlag", recordings.Properties.VariableNames)
+        accepted = recordings(recordings.qcFlag == "accepted", :);
+    end
+end
+
 function value = fieldOrDefault(S, fieldName, defaultValue)
     value = defaultValue;
     if isstruct(S) && isfield(S, fieldName)
@@ -70,11 +79,22 @@ function recordings = recordingsTable(session)
 
     if height(recordings) == 0
         recordings = table(strings(0, 1), strings(0, 1), strings(0, 1), ...
-            'VariableNames', {'recordingId', 'filePath', 'qcFlag'});
+            strings(0, 1), ...
+            'VariableNames', {'recordingId', 'filePath', 'label', 'comment'});
         return;
     end
     recordings.recordingId = string(recordings.recordingId);
     recordings.filePath = string(recordings.filePath);
+    if ismember("label", recordings.Properties.VariableNames)
+        recordings.label = normalizeLabel(recordings.label);
+    else
+        recordings.label = repmat("good", height(recordings), 1);
+    end
+    if ismember("comment", recordings.Properties.VariableNames)
+        recordings.comment = string(recordings.comment);
+    else
+        recordings.comment = strings(height(recordings), 1);
+    end
     if ismember("qcFlag", recordings.Properties.VariableNames)
         recordings.qcFlag = string(recordings.qcFlag);
     else
@@ -83,6 +103,14 @@ function recordings = recordingsTable(session)
     if ismember("keep", recordings.Properties.VariableNames)
         recordings.keep = logical(recordings.keep);
     end
+end
+
+function labels = normalizeLabel(labels)
+    labels = lower(strtrim(string(labels)));
+    good = ismember(labels, ["good", "keep", "kept", "true", "1", "yes", "y", "好"]);
+    bad = ismember(labels, ["bad", "reject", "rejected", "false", "0", "no", "n", "坏"]);
+    labels(good) = "good";
+    labels(bad) = "bad";
 end
 
 function output = appendTable(output, input)

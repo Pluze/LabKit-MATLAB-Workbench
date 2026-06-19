@@ -30,7 +30,6 @@ labkit_DICPreprocess_app
 labkit_ImageEnhance_app
 labkit_ECGPrint_app
 labkit_RHSPreview_app
-labkit_RHSScreen_app
 labkit_NerveResponseAnalysis_app
 labkit_ResponseReviewStats_app
 ```
@@ -46,7 +45,7 @@ or scan the project with MATLAB Code Analyzer.
 | DIC | `labkit_DICPreprocess_app`, `labkit_DICPostprocess_app` | Image preparation, ROI masks, strain overlays, and summaries. |
 | Image measurement | `labkit_CurvatureMeasurement_app`, `labkit_FocusStack_app`, `labkit_ImageEnhance_app`, `labkit_BatchImageCrop_app` | Image measurement, microscopy utilities, and figure preparation. |
 | Wearable biosignal | `labkit_ECGPrint_app` | ECG import, filtering, peak/segment review, and exports. |
-| Neurophysiology | `labkit_RHSPreview_app`, `labkit_RHSScreen_app`, `labkit_NerveResponseAnalysis_app`, `labkit_ResponseReviewStats_app` | Intan RHS inspection, screening sessions, event-locked nerve response analysis, and aligned response statistics. |
+| Neurophysiology | `labkit_RHSPreview_app`, `labkit_NerveResponseAnalysis_app`, `labkit_ResponseReviewStats_app` | Intan RHS inspection, channel protocol drafting, manual filter records, event-locked nerve response analysis, and aligned response statistics. |
 | Project tools | `labkit_ProjectGovernance_app` | New-app scaffolding and project code checks. |
 
 ## Validate Locally

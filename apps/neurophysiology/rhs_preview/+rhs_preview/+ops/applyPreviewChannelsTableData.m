@@ -18,7 +18,6 @@ function rows = applyPreviewChannelsTableData(rows, data)
         rows.preview(target) = logicalValue(data{r, 1});
         rows.role(target) = string(data{r, 2});
         rows.label(target) = string(data{r, 3});
-        rows.required(target) = logicalValue(data{r, 5});
     end
 end
 

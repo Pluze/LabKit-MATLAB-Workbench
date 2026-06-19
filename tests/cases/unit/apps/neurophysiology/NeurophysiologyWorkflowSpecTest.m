@@ -8,26 +8,22 @@ classdef NeurophysiologyWorkflowSpecTest < matlab.unittest.TestCase
             spec = rhs_preview.ui.buildSpec(struct());
 
             testCase.verifyEqual(tabTitles(spec), ...
-                ["Setup", "Protocol", "Review", "Log"]);
+                ["Setup", "Protocol", "Filter", "Review", "Log"]);
             testCase.verifyTrue(any(sectionTitles(spec) == ...
-                "Protocol Roles + Preview Channels"));
-            testCase.verifyTrue(any(sectionTitles(spec) == "Protocol Pairs"));
+                "Protocol Channel Roles"));
+            testCase.verifyTrue(any(sectionTitles(spec) == "File Filter"));
             testCase.verifyTrue(any(actionLabels(spec) == ...
                 "Save Protocol Draft"));
+            testCase.verifyTrue(any(actionLabels(spec) == ...
+                "Save Filter Record"));
             testCase.verifyTrue(any(actionLabels(spec) == "Zoom to ROI"));
         end
 
-        function screenWorkflowSeparatesProtocolReviewAndExport(testCase)
+        function screenCommandIsRetiredIntoPreview(testCase)
             setupLabKitTestPath();
 
-            spec = rhs_screen.ui.buildSpec(struct());
-
-            testCase.verifyEqual(tabTitles(spec), ...
-                ["Setup", "Protocol", "Review", "Export", "Log"]);
-            testCase.verifyTrue(any(sectionTitles(spec) == ...
-                "Protocol (optional)"));
-            testCase.verifyTrue(any(actionLabels(spec) == "Refresh Scan"));
-            testCase.verifyTrue(any(actionLabels(spec) == "Export Session"));
+            testCase.verifyEqual(exist("labkit_RHSScreen_app", "file"), 0);
+            testCase.verifyEqual(exist("rhs_screen.ui.buildSpec", "file"), 0);
         end
 
         function analysisWorkflowKeepsHeavyAnalyzeExplicit(testCase)
@@ -38,9 +34,11 @@ classdef NeurophysiologyWorkflowSpecTest < matlab.unittest.TestCase
             testCase.verifyEqual(tabTitles(spec), ...
                 ["Setup", "Protocol", "Review", "Export", "Log"]);
             testCase.verifyTrue(any(sectionTitles(spec) == ...
+                "Filter Record"));
+            testCase.verifyTrue(any(sectionTitles(spec) == ...
                 "Protocol (recommended)"));
             testCase.verifyTrue(any(actionLabels(spec) == ...
-                "Analyze Session"));
+                "Analyze Filtered Files"));
             testCase.verifyTrue(any(actionLabels(spec) == ...
                 "Export Analysis"));
         end
