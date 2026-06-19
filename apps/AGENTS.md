@@ -7,6 +7,7 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
 - `docs/apps.md`
 - `docs/ui.md` for layout, controls, axes, callbacks, or app shell changes
 - `docs/dta.md` for DTA-backed apps
+- `docs/rhs.md` for RHS-backed apps
 - `docs/biosignal.md` for wearable or biosignal-backed apps
 - affected app tests under `tests/cases/unit/apps/` or `tests/cases/gui/apps/`
 
@@ -24,6 +25,9 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
 - Debug launches should attach the Log tab text area, emit a startup trace line, and instrument high-level component callbacks after controls are built.
 - Image apps with custom preview scroll, drawing, ROI, scale-bar, or other axes interaction should create a `labkit.ui.tool.createRuntime` and pass that runtime into reusable tools. Do not set image-tool `WindowScrollWheelFcn`, `WindowButtonMotionFcn`, `WindowButtonUpFcn`, or axes `ButtonDownFcn` directly in app code.
 - DTA-backed apps use `labkit.dta.*` for discovery, loading, sessions, pulse detection, and parsed curve/table access.
+- RHS-backed apps use `labkit.rhs.*` for discovery, header inspection,
+  indexing, and window reads. Channel roles, protocols, event detection,
+  nerve response metrics, and exports stay app-owned.
 - Biosignal-backed apps use `labkit.biosignal.*` for recording loading, channel extraction, waveform processing, events, segments, measurements, and group comparisons.
 - Do not create app-specific helper packages outside the owning app tree, and do not move app-specific helper code into `+labkit`.
 - When an app needs extracted helpers, prefer an app-owned package under the app folder. The package name should match the app folder slug, such as `apps/image_measurement/batch_crop/+batch_crop/`.

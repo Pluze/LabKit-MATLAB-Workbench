@@ -43,9 +43,10 @@ be created from `labkit_ProjectGovernance_app`; `LabKit.prj` and
 | `labkit.ui` | App shell, data-only UI specs, semantic view updates, reusable tools, and diagnostics. |
 | `labkit.dta` | GUI-free Gamry DTA loading, sessions, parsed curves, and pulse helpers. |
 | `labkit.biosignal` | GUI-free recording import, channel extraction, filtering, events, segments, templates, and measurements. |
+| `labkit.rhs` | GUI-free Intan RHS discovery, header parsing, block indexing, and lazy waveform window reads. |
 
-Apps own experiment-specific vocabulary, thresholds, units, plots, result
-schemas, export formats, alerts, and log wording. Reusable facades own
+Apps own experiment-specific vocabulary, thresholds, protocol roles, plots,
+result schemas, export formats, alerts, and log wording. Reusable facades own
 domain-neutral mechanics that multiple apps can share.
 
 ## App Package Shape
@@ -79,7 +80,7 @@ App GUIs use the layered UI foundation:
 | Layer | App-facing API |
 | --- | --- |
 | App | `labkit.ui.app.create`, `dispatchRequest`, `runBusy` |
-| Spec | `labkit.ui.spec.app`, `workspace`, `tab`, `section`, `field`, `rangeField`, `action`, `actionGroup`, `pathPanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `custom` |
+| Spec | `labkit.ui.spec.app`, `workspace`, `tab`, `section`, `field`, `rangeField`, `panner`, `action`, `actionGroup`, `pathPanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `custom` |
 | View | `labkit.ui.view.setValue`, `getValue`, `setEnabled`, `appendLog`, `setListItems`, `setListSelection`, `drawImage`, `resetAxes`, `clearAxes` |
 | Tool | `labkit.ui.tool.createRuntime`, `anchorEditor`, `scaleBar`, `scaleBarCalibration` |
 | Diagnostics | `labkit.ui.diag.createContext` |

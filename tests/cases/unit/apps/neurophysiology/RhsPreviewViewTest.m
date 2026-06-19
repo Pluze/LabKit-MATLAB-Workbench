@@ -1,0 +1,96 @@
+classdef RhsPreviewViewTest < matlab.unittest.TestCase
+    %RHSPREVIEWVIEWTEST Verify RHS Preview display helpers.
+
+    methods (Test, TestTags = {'Unit'})
+        function summaryAndDetailsRenderDefaultState(testCase)
+            setupLabKitTestPath();
+
+            rows = rhs_preview.view.summaryTableData(struct());
+            lines = rhs_preview.view.detailLines(struct());
+
+            testCase.verifyTrue(iscell(rows));
+            testCase.verifyGreaterThanOrEqual(size(rows, 1), 4);
+            testCase.verifyEqual(size(rows, 2), 2);
+            testCase.verifyTrue(iscell(lines));
+            testCase.verifyFalse(isempty(lines));
+        end
+
+        function detailLinesShowChannelNamesWithoutPaths(testCase)
+            setupLabKitTestPath();
+
+            S = struct();
+            S.info = struct();
+            S.info.channelFamilies = struct();
+            S.info.channelFamilies.amplifier = struct( ...
+                "nativeName", {"C-001", "C-002"});
+            S.rhsFile = fullfile("synthetic", "primary.rhs");
+            lines = rhs_preview.view.detailLines(S);
+
+            joined = string(strjoin(lines, newline));
+            testCase.verifyTrue(contains(joined, "C-001"));
+            testCase.verifyFalse(contains(joined, "synthetic/primary.rhs"));
+        end
+
+        function channelRowsBuildPreviewAndProtocolDraft(testCase)
+            setupLabKitTestPath();
+
+            info = struct();
+            info.channelFamilies = struct();
+            info.channelFamilies.amplifier = struct( ...
+                "nativeName", {"C-001", "C-002", "C-003"}, ...
+                "customName", {"C-001", "C-002", "C-003"});
+            protocol = struct("channels", struct( ...
+                "roles", struct( ...
+                    "id", "reference", ...
+                    "label", "Reference", ...
+                    "match", struct("anyNativeName", {{"C-002"}}), ...
+                    "required", true), ...
+                "pairs", struct( ...
+                    "id", "ref_pair", ...
+                    "label", "Reference Pair", ...
+                    "positive", "reference", ...
+                    "negative", "ground", ...
+                    "mode", "positive-minus-negative")));
+
+            rows = rhs_preview.ops.channelRows(info, "amplifier", 2, protocol);
+            pairRows = rhs_preview.ops.pairRows(rows, protocol);
+
+            testCase.verifyEqual(height(rows), 3);
+            testCase.verifyEqual(rows.preview(:), [true; true; false]);
+            testCase.verifyEqual(rows.role(2), "reference");
+            testCase.verifyTrue(rows.required(2));
+            testCase.verifyEqual(pairRows.id, "ref_pair");
+
+            S = struct("previewChannelRows", rows, ...
+                "protocolPairRows", pairRows, ...
+                "family", "amplifier", ...
+                "windowStartSec", 0, ...
+                "windowDurationSec", 0.050);
+            payload = rhs_preview.export.protocolJsonStruct(S);
+
+            testCase.verifyEqual(payload.schemaVersion, "labkit.rhs.protocol.v1");
+            testCase.verifyEqual(payload.channels.roles.id, "reference");
+            testCase.verifyEqual(string(payload.channels.roles.match.anyNativeName), ...
+                "C-002");
+            testCase.verifyEqual(payload.channels.pairs.id, "ref_pair");
+
+            S.protocol = struct( ...
+                "schemaVersion", "labkit.rhs.protocol.v1", ...
+                "protocolId", "loaded_protocol", ...
+                "label", "Loaded Protocol", ...
+                "channels", struct("pairs", struct( ...
+                    "id", "reference_pair", ...
+                    "positive", "reference", ...
+                    "negative", "ground")), ...
+                "eventDetection", struct("sources", struct( ...
+                    "id", "manual_marks", ...
+                    "kind", "manual")));
+            payload = rhs_preview.export.protocolJsonStruct(S);
+
+            testCase.verifyEqual(payload.protocolId, "loaded_protocol");
+            testCase.verifyEqual(payload.channels.pairs.id, "ref_pair");
+            testCase.verifyEqual(payload.channels.roles.id, "reference");
+            testCase.verifyFalse(isfield(payload, "eventDetection"));
+        end
+    end
+end

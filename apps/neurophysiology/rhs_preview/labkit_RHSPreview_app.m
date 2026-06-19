@@ -1,0 +1,27 @@
+function varargout = labkit_RHSPreview_app(varargin)
+%LABKIT_RHSPREVIEW_APP Launch the RHS Preview app.
+
+    [requestHandled, requestOutputs, debugLog] = labkit.ui.app.dispatchRequest( ...
+        'labkit_RHSPreview_app', varargin, nargout);
+    if requestHandled
+        varargout = requestOutputs;
+        return;
+    end
+    if debugLog.enabled
+        if nargout > 2
+            error('labkit_RHSPreview_app:TooManyOutputs', ...
+                'labkit_RHSPreview_app debug mode returns at most the app figure and debug log.');
+        end
+    elseif nargout > 1
+        error('labkit_RHSPreview_app:TooManyOutputs', ...
+            'labkit_RHSPreview_app returns at most the app figure handle.');
+    end
+
+    fig = rhs_preview.run(debugLog);
+    if nargout >= 1
+        varargout{1} = fig;
+    end
+    if nargout >= 2
+        varargout{2} = debugLog;
+    end
+end

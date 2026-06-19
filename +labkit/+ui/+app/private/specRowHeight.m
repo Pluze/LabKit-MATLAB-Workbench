@@ -55,8 +55,8 @@ end
 
 function value = pathPanelHeight(props)
     rows = optionValue(props, 'minRows', defaultPathRows(props));
-    value = max(optionValue(props, 'minHeight', 165), ...
-        32 + 22 * max(1, double(rows)) + 82);
+    value = max(optionValue(props, 'minHeight', defaultPathMinHeight(props)), ...
+        22 * max(1, double(rows)) + 96);
 end
 
 function value = tablePanelHeight(props)
@@ -65,13 +65,12 @@ function value = tablePanelHeight(props)
         24 * max(1, double(rows)) + 58);
 end
 
-function rows = defaultPathRows(props)
-    mode = char(string(optionValue(props, 'mode', 'singleFile')));
-    if any(strcmp(mode, {'multiFile', 'multiFolder'}))
-        rows = 5;
-    else
-        rows = 3;
-    end
+function rows = defaultPathRows(~)
+    rows = 5;
+end
+
+function value = defaultPathMinHeight(~)
+    value = 165;
 end
 
 function height = numericRowHeight(value, fallback)
@@ -108,7 +107,7 @@ function height = defaultControlHeight()
 end
 
 function value = sectionTitleAllowance(sectionSpec)
-    value = 10;
+    value = 0;
     if sectionDrawsOwnTitle(sectionSpec) && hasPanelChrome(sectionSpec)
         value = 28;
     end

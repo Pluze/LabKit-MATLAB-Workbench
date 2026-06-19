@@ -8,8 +8,8 @@
 LabKit is a MATLAB workbench for small, focused lab GUI apps. It is organized
 around independent workflows rather than one large analysis platform. Apps own
 their scientific choices, plots, result tables, and exports. The reusable
-`+labkit` library stays small: GUI shell helpers, Gamry DTA loading, and
-biosignal processing facades.
+`+labkit` library stays small: GUI shell helpers, Gamry DTA loading, Intan RHS
+loading, and biosignal processing facades.
 
 ## Start Here
 
@@ -29,6 +29,10 @@ labkit_CIC_app
 labkit_DICPreprocess_app
 labkit_ImageEnhance_app
 labkit_ECGPrint_app
+labkit_RHSPreview_app
+labkit_RHSScreen_app
+labkit_NerveResponseAnalysis_app
+labkit_ResponseReviewStats_app
 ```
 
 Use `labkit_ProjectGovernance_app` when you want to create a new app scaffold
@@ -42,6 +46,7 @@ or scan the project with MATLAB Code Analyzer.
 | DIC | `labkit_DICPreprocess_app`, `labkit_DICPostprocess_app` | Image preparation, ROI masks, strain overlays, and summaries. |
 | Image measurement | `labkit_CurvatureMeasurement_app`, `labkit_FocusStack_app`, `labkit_ImageEnhance_app`, `labkit_BatchImageCrop_app` | Image measurement, microscopy utilities, and figure preparation. |
 | Wearable biosignal | `labkit_ECGPrint_app` | ECG import, filtering, peak/segment review, and exports. |
+| Neurophysiology | `labkit_RHSPreview_app`, `labkit_RHSScreen_app`, `labkit_NerveResponseAnalysis_app`, `labkit_ResponseReviewStats_app` | Intan RHS inspection, screening sessions, event-locked nerve response analysis, and aligned response statistics. |
 | Project tools | `labkit_ProjectGovernance_app` | New-app scaffolding and project code checks. |
 
 ## Validate Locally
@@ -65,7 +70,7 @@ See [docs/testing.md](docs/testing.md) for focused selectors and GUI checks.
 ## Repository Map
 
 ```text
-+labkit/                Reusable UI, DTA, and biosignal facades
++labkit/                Reusable UI, DTA, RHS, and biosignal facades
 apps/                   Launchable app workflows and app-owned helpers
 docs/                   Human-facing usage, architecture, and API docs
 scripts/                Shell/Python support utilities for MATLAB batch runs and CI summaries
@@ -78,8 +83,9 @@ tests/                  Unit, contract, GUI, shared helpers, and runner code
 - [docs/apps.md](docs/apps.md): app catalog, new-app workflow, app structure.
 - [docs/architecture.md](docs/architecture.md): ownership boundaries.
 - [docs/testing.md](docs/testing.md): build tasks, selectors, GUI limits.
-- [docs/ui.md](docs/ui.md), [docs/dta.md](docs/dta.md), and
-  [docs/biosignal.md](docs/biosignal.md): reusable facade references.
+- [docs/ui.md](docs/ui.md), [docs/dta.md](docs/dta.md),
+  [docs/rhs.md](docs/rhs.md), and [docs/biosignal.md](docs/biosignal.md):
+  reusable facade references.
 
 ## License
 

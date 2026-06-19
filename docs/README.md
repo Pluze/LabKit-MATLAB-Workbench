@@ -39,6 +39,7 @@ and what automated GUI checks do and do not prove.
 | GUI app shell, specs, view helpers, tools, diagnostics | [ui.md](ui.md) |
 | Gamry DTA loading, sessions, parser outputs, pulse detection | [dta.md](dta.md) |
 | Wearable/physiological recordings, ECG peaks, segments, measurements | [biosignal.md](biosignal.md) |
+| Intan RHS discovery, header inspection, indexing, and window reads | [rhs.md](rhs.md) |
 
 ## What Is Not Here
 

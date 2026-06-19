@@ -20,14 +20,18 @@ function runtime = createRuntime(ax, opts)
 % Options:
 %   figure - owning figure, default ancestor(ax, 'figure').
 %   defaultScrollFcn - app-default scroll callback, default [].
+%   defaultScrollTargets - handles that receive default scroll events,
+%                          default ax.
+%   scrollScope - "targets" (default) or "figure". "targets" gates scroll
+%                 callbacks to the declared handles and their children.
 %   onInteractionChanged - callback(active, name), default [].
 %   onTrace - callback(message), default []. Receives verbose debug trace
 %             messages for callback ownership and session lifecycle.
 %
 % Returned runtime API:
-%   axes(), figure(), setDefaultScrollFcn(fcn), installDefaultCallbacks(),
-%   setTraceCallback(fcn), createSession(spec), isInteractionActive(), and
-%   delete().
+%   axes(), figure(), setDefaultScrollFcn(fcn), setDefaultScrollTargets(h),
+%   installDefaultCallbacks(), setTraceCallback(fcn), createSession(spec),
+%   isInteractionActive(), and delete().
 %
 % Session spec fields:
 %   name - descriptive char/string name, default "interaction".
@@ -35,6 +39,9 @@ function runtime = createRuntime(ax, opts)
 %   onScroll - callback installed on the figure while active when enabled.
 %   installScrollWheel - logical, default true. False leaves the runtime
 %                        default scroll callback active during the session.
+%   scrollTargets - handles that receive session scroll events. Defaults to
+%                   the runtime axes plus active background/graphics handles.
+%   scrollScope - "targets" (default) or "figure".
 %
 % Session API:
 %   activate(), deactivate(), isActive(), setBackground(handle),
@@ -60,6 +67,12 @@ function runtime = createRuntime(ax, opts)
             if isfield(opts, 'defaultScrollFcn')
                 runtime.setDefaultScrollFcn(opts.defaultScrollFcn);
             end
+            if isfield(opts, 'defaultScrollTargets')
+                runtime.setDefaultScrollTargets(opts.defaultScrollTargets);
+            end
+            if isfield(opts, 'scrollScope')
+                runtime.setScrollScope(opts.scrollScope);
+            end
             if isfield(opts, 'onTrace')
                 runtime.setTraceCallback(opts.onTrace);
             end
@@ -72,6 +85,10 @@ function runtime = createRuntime(ax, opts)
     state.ax = ax;
     state.fig = optionValue(opts, 'figure', ancestor(ax, 'figure'));
     state.defaultScrollFcn = optionValue(opts, 'defaultScrollFcn', []);
+    state.defaultScrollTargets = normalizeHandles( ...
+        optionValue(opts, 'defaultScrollTargets', ax));
+    state.defaultScrollScope = scrollScopeValue(optionValue(opts, ...
+        'scrollScope', 'targets'));
     state.fallbackScrollFcn = currentScrollFcn(state.fig);
     state.activeToken = [];
     state.activeName = "";
@@ -85,6 +102,8 @@ function runtime = createRuntime(ax, opts)
     runtime.figure = @runtimeFigure;
     runtime.setFigure = @setFigure;
     runtime.setDefaultScrollFcn = @setDefaultScrollFcn;
+    runtime.setDefaultScrollTargets = @setDefaultScrollTargets;
+    runtime.setScrollScope = @setScrollScope;
     runtime.setTraceCallback = @setTraceCallback;
     runtime.installDefaultCallbacks = @installDefaultCallbacks;
     runtime.createSession = @createSession;
@@ -116,6 +135,20 @@ function runtime = createRuntime(ax, opts)
         installDefaultCallbacks();
     end
 
+    function setDefaultScrollTargets(handles)
+        state.defaultScrollTargets = normalizeHandles(handles);
+        trace(sprintf('default scroll targets updated: %d', ...
+            numel(state.defaultScrollTargets)));
+        installDefaultCallbacks();
+    end
+
+    function setScrollScope(scope)
+        state.defaultScrollScope = scrollScopeValue(scope);
+        trace(sprintf('default scroll scope updated: %s', ...
+            char(state.defaultScrollScope)));
+        installDefaultCallbacks();
+    end
+
     function setTraceCallback(fcn)
         state.onTrace = fcn;
     end
@@ -131,8 +164,15 @@ function runtime = createRuntime(ax, opts)
             state.fig.WindowScrollWheelFcn = state.fallbackScrollFcn;
             trace('installed fallback scroll callback');
         else
-            state.fig.WindowScrollWheelFcn = state.defaultScrollFcn;
+            state.fig.WindowScrollWheelFcn = @onDefaultScroll;
             trace('installed runtime default scroll callback');
+        end
+    end
+
+    function onDefaultScroll(src, evt)
+        if shouldDispatchScroll(state.fig, state.defaultScrollTargets, ...
+                state.defaultScrollScope)
+            state.defaultScrollFcn(src, evt);
         end
     end
 
@@ -169,6 +209,10 @@ function runtime = createRuntime(ax, opts)
         sessionState.onPointerDown = optionValue(spec, 'onPointerDown', []);
         sessionState.onScroll = optionValue(spec, 'onScroll', []);
         sessionState.installScrollWheel = optionValue(spec, 'installScrollWheel', true);
+        sessionState.scrollTargets = normalizeHandles(optionValue(spec, ...
+            'scrollTargets', []));
+        sessionState.scrollScope = scrollScopeValue(optionValue(spec, ...
+            'scrollScope', 'targets'));
         sessionState.background = [];
         sessionState.graphics = [];
         sessionState.dragActive = false;
@@ -351,8 +395,23 @@ function runtime = createRuntime(ax, opts)
                 return;
             end
             state.activeScrollToken = sessionState.token;
-            state.fig.WindowScrollWheelFcn = sessionState.onScroll;
+            state.fig.WindowScrollWheelFcn = @onSessionScroll;
             trace(sprintf('installed session scroll callback: %s', char(sessionState.name)));
+        end
+
+        function onSessionScroll(src, evt)
+            if shouldDispatchScroll(state.fig, sessionScrollTargets(), ...
+                    sessionState.scrollScope)
+                sessionState.onScroll(src, evt);
+            end
+        end
+
+        function handles = sessionScrollTargets()
+            handles = sessionState.scrollTargets;
+            if isempty(handles)
+                handles = normalizeHandles({state.ax, ...
+                    sessionState.background, sessionState.graphics});
+            end
         end
 
         function updateInteractiveTargets(active)
@@ -411,9 +470,83 @@ function handles = normalizeHandles(handles)
         return;
     end
     if iscell(handles)
-        handles = [handles{:}];
+        parts = cell(1, numel(handles));
+        count = 0;
+        for k = 1:numel(handles)
+            item = normalizeHandles(handles{k});
+            if ~isempty(item)
+                count = count + 1;
+                parts{count} = item;
+            end
+        end
+        if count == 0
+            handles = [];
+        else
+            handles = [parts{1:count}];
+        end
+        return;
     end
     handles = handles(:).';
+end
+
+function tf = shouldDispatchScroll(fig, targets, scope)
+    scope = scrollScopeValue(scope);
+    if scope == "figure"
+        tf = true;
+        return;
+    end
+    targets = normalizeHandles(targets);
+    if isempty(targets)
+        tf = false;
+        return;
+    end
+    tf = pointerOverTargets(fig, targets);
+end
+
+function tf = pointerOverTargets(fig, targets)
+    tf = false;
+    if ~isValidHandle(fig)
+        return;
+    end
+    try
+        hit = hittest(fig);
+    catch
+        hit = [];
+    end
+    if isempty(hit) || ~isValidHandle(hit)
+        return;
+    end
+
+    current = hit;
+    while ~isempty(current) && isValidHandle(current)
+        if anyHandleMatches(current, targets)
+            tf = true;
+            return;
+        end
+        if ~isprop(current, 'Parent')
+            return;
+        end
+        current = current.Parent;
+    end
+end
+
+function tf = anyHandleMatches(handle, handles)
+    tf = false;
+    for k = 1:numel(handles)
+        target = handles(k);
+        if isValidHandle(target) && isequal(handle, target)
+            tf = true;
+            return;
+        end
+    end
+end
+
+function scope = scrollScopeValue(scope)
+    scope = lower(string(scope));
+    if scope == "figure"
+        return;
+    end
+    scope = "targets";
 end
 
 function fcn = currentScrollFcn(fig)

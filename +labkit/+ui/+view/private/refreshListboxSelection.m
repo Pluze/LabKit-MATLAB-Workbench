@@ -56,12 +56,22 @@ function [value, index] = refreshListboxSelection(lb, names, preferredSelection,
 end
 
 function names = normalizeNames(names)
-    if isstring(names)
-        names = cellstr(names);
-    elseif ischar(names)
-        names = {names};
+    if isempty(names)
+        names = {};
+        return;
     end
-    names = reshape(names, 1, []);
+
+    if ischar(names)
+        names = {names};
+    elseif isstring(names)
+        names = cellstr(reshape(names, 1, []));
+    elseif ~iscell(names)
+        names = cellstr(reshape(string(names), 1, []));
+    else
+        names = reshape(names, 1, []);
+    end
+    names = cellfun(@(value) char(string(value)), names, ...
+        'UniformOutput', false);
 end
 
 function selected = selectValidNames(names, preferredSelection)
@@ -77,7 +87,7 @@ function selected = selectValidNames(names, preferredSelection)
     end
 
     if ischar(preferredSelection) || isstring(preferredSelection)
-        preferredSelection = cellstr(string(preferredSelection));
+        preferredSelection = cellstr(reshape(string(preferredSelection), 1, []));
     end
     preferredSelection = reshape(preferredSelection, 1, []);
     keep = ismember(string(preferredSelection), string(names));

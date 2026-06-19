@@ -34,7 +34,9 @@ function fig = run(debugLog)
     ui.topAxes = ui.controls.previewAxes.axesById.reference;
     ui.bottomAxes = ui.controls.previewAxes.axesById.current;
     imageRuntime = labkit.ui.tool.createRuntime(ui.topAxes, ...
-        struct('figure', fig, 'defaultScrollFcn', @onPreviewScrollZoom));
+        struct('figure', fig, ...
+        'defaultScrollFcn', @onPreviewScrollZoom, ...
+        'defaultScrollTargets', [ui.topAxes ui.bottomAxes]));
     ui.imageRuntime = imageRuntime;
     controls = dic_preprocess.ui.mapControlHandles(ui);
     txtReference = controls.txtReference;

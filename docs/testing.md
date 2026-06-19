@@ -87,12 +87,14 @@ Common selectors:
 | Architecture, docs, package surface, hygiene | `buildtool testProject` |
 | DTA parser, session, pulse, item schemas | `runLabKitTests("Suites", "labkit/dta")` |
 | Biosignal import, filtering, ECG, segments | `runLabKitTests("Suites", "labkit/biosignal")` |
+| RHS parser, header indexing, and lazy window reads | `runLabKitTests("Suites", "labkit/rhs")` |
 | Reusable UI helpers without GUI launch | `runLabKitTests("Suites", "labkit/ui", "IncludeGui", false)` |
 | Reusable UI layout, callbacks, diagnostics, tools | `runLabKitTests("Suites", "labkit/ui", "IncludeGui", true)` |
 | Electrochem app calculations and exports | `runLabKitTests("Suites", "apps/electrochem", "IncludeGui", false)` |
 | DIC app helpers | `runLabKitTests("Suites", "apps/dic", "IncludeGui", false)` |
 | Image-measurement helpers | `runLabKitTests("Suites", "apps/image_measurement", "IncludeGui", false)` |
 | Wearable app helpers | `runLabKitTests("Suites", "apps/wearable", "IncludeGui", false)` |
+| Neurophysiology RHS app helpers | `runLabKitTests("Suites", "apps/neurophysiology", "IncludeGui", false)` |
 | Project governance and scaffold-source helpers | `runLabKitTests("Suites", "apps/project", "IncludeGui", false)` |
 | App GUI launch and layout | `runLabKitTests("Suites", "gui/apps", "IncludeGui", true)` |
 | Launcher GUI | `runLabKitTests("Suites", "gui/labkit/launcher", "IncludeGui", true)` |

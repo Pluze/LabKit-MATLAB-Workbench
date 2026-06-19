@@ -5,8 +5,8 @@
 | Facade | Owns | Main APIs |
 | --- | --- | --- |
 | `labkit.ui.app` | Declarative app creation, request dispatch, busy state. | `create`, `dispatchRequest`, `runBusy`. |
-| `labkit.ui.spec` | UI 2.0 data-only workbench specs. | `app`, `workspace`, `tab`, `section`, `field`, `rangeField`, `action`, `actionGroup`, `pathPanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `custom`. |
-| `labkit.ui.view` | Semantic UI 2.0 registry updates and preview rendering helpers. | `setValue`, `getValue`, `setEnabled`, `appendLog`, `setListItems`, `setListSelection`, `drawImage`, `resetAxes`, `clearAxes`. |
+| `labkit.ui.spec` | UI 2.0 data-only workbench specs. | `app`, `workspace`, `tab`, `section`, `field`, `rangeField`, `panner`, `action`, `actionGroup`, `pathPanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `custom`. |
+| `labkit.ui.view` | Semantic UI 2.0 registry updates and preview rendering helpers. | `setValue`, `getValue`, `setEnabled`, `setLimits`, `appendLog`, `setListItems`, `setListSelection`, `drawImage`, `resetAxes`, `clearAxes`. |
 | `labkit.ui.tool` | Reusable composed image tools and interaction runtime. | `createRuntime`, `anchorEditor`, `scaleBar`, `scaleBarCalibration`. |
 | `labkit.ui.diag` | Debug launch context, visible trace, callback instrumentation. | `createContext`. |
 
@@ -109,19 +109,25 @@ The fixed shape behind this sketch is:
   `ui.controls.sourceImages` are primary registry paths regardless of tab or
   section placement.
 - Public specs express stable app shapes: `pathPanel`, `field`, `rangeField`,
-  `action`, `actionGroup`, `previewArea`, `resultTable`, `logPanel`, and
+  `panner`, `action`, `actionGroup`, `previewArea`, `resultTable`, `logPanel`, and
   `statusPanel`. Primitive controls such as button, dropdown, slider, listbox,
   textarea, and axes are internal implementation details, not public spec
   constructors.
 - `pathPanel` separates chooser mode from list-selection behavior. A workflow
   can load multiple files while keeping one current selection by using
   `mode="multiFile"` with `selectionMode="single"`.
+- `pathPanel` list boxes always show an empty-state prompt before files are
+  chosen or after Clear. The default prompt is mode-aware, and apps can override
+  it with `emptyText` when list wording should differ from the status line.
 - `pathPanel` owns generic chooser/list/status mechanics while apps own command
   wording. Use `chooseLabel` when the default `Choose files` or `Choose folder`
   text is not the app's user-facing action label, and use `clearLabel` when
   the clear action needs app-specific wording such as `Clear all`.
 - `field` uses a fixed kind whitelist: `text`, `number`, `spinner`, `dropdown`,
   `slider`, `checkbox`, and `readonly`.
+- `panner` is the preferred control for browsing along a numeric axis. It
+  combines a slider with built-in left/right small-step buttons while exposing
+  one semantic value and one `onChange` callback to the app.
 - Text-heavy controls have conservative automatic starting heights. `statusPanel`,
   `logPanel`, `pathPanel`, and `resultTable` accept `minRows` and `minHeight`
   when an app needs more room without hand-writing grid layout. Use explicit
@@ -129,6 +135,9 @@ The fixed shape behind this sketch is:
 - Public callbacks use `function callback(control, event)`, where `event`
   carries semantic fields such as `id`, `kind`, `source`, `value`,
   `previousValue`, and `ui`.
+- `labkit.ui.view.setLimits` updates numeric limits for slider-like controls
+  and range fields, clamping existing values without firing synchronous
+  value-change callbacks.
 - `previewArea` belongs in `workspace` by default. Its optional `viewModes`
   selector is also workspace-owned; apps can react through
   `onModeChange`. Put preview-like content in a left tab only when it is
@@ -184,6 +193,10 @@ runtime = labkit.ui.tool.createRuntime(ax, struct( ...
 ```
 
 The runtime owns exclusive sessions, pointer callbacks, drag capture, scroll ownership, and restoration. Temporary drag callbacks are cleared on normal release and on callback errors before errors are rethrown. Apps should not set `WindowScrollWheelFcn`, `WindowButtonMotionFcn`, `WindowButtonUpFcn`, or image-tool `ButtonDownFcn` directly.
+Default and session scroll callbacks are target-gated by default: the runtime
+dispatches wheel events only when the pointer is over the declared axes,
+background, or graphics handles. Pass `scrollScope="figure"` only when a tool
+intentionally wants whole-figure wheel behavior.
 
 Use `labkit.ui.tool.anchorEditor(runtime, imageSize, opts)` for generic anchor editing. Use `labkit.ui.tool.scaleBar(parent, row, runtime, opts)` for calibration controls, reference-pixel editing, unit normalization, final scale-bar placement, and overlay drawing. Apps still own image loading, redraw order, scientific calculations, result summaries, alerts, logs, and exports.
 

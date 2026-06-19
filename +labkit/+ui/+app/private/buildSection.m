@@ -50,9 +50,18 @@ end
 function rowHeight = sectionRowHeights(children)
     count = max(1, numel(children));
     rowHeight = repmat({'fit'}, 1, count);
+    if numel(children) == 1 && isGrowableSectionChild(children{1})
+        rowHeight{1} = '1x';
+        return;
+    end
     for k = 1:numel(children)
         rowHeight{k} = specRowHeight(children{k}, 'fit');
     end
+end
+
+function tf = isGrowableSectionChild(child)
+    tf = ismember(child.kind, ...
+        {'previewArea', 'resultTable', 'logPanel', 'statusPanel', 'pathPanel'});
 end
 
 function adapter = baseAdapter(spec, kind)

@@ -8,6 +8,8 @@ function ui = buildControl(ui, controlSpec, parentGrid, row, debug)
             ui = buildField(ui, controlSpec, parentGrid, row);
         case 'rangeField'
             ui = buildRangeField(ui, controlSpec, parentGrid, row);
+        case 'panner'
+            ui = buildPanner(ui, controlSpec, parentGrid, row);
         case 'action'
             ui = buildAction(ui, controlSpec, parentGrid, row, [1 2]);
         case 'actionGroup'
@@ -88,6 +90,72 @@ function control = createFieldControl(parentGrid, kind, props, enabled)
                 'Unsupported UI 2.0 field kind "%s".', kind);
     end
     applyCommonValueProps(control, props);
+end
+
+function ui = buildPanner(ui, pannerSpec, parentGrid, row)
+    props = pannerSpec.props;
+    labelText = optionValue(props, 'label', pannerSpec.id);
+    enabled = optionValue(props, 'enabled', true);
+
+    label = uilabel(parentGrid, 'Text', labelText, ...
+        'HorizontalAlignment', 'right');
+    label.Layout.Row = row;
+    label.Layout.Column = 1;
+
+    grid = uigridlayout(parentGrid, [1 3]);
+    grid.Padding = [0 0 0 0];
+    grid.ColumnSpacing = 6;
+    grid.ColumnWidth = {34, '1x', 34};
+    grid.Layout.Row = row;
+    grid.Layout.Column = 2;
+
+    leftButton = uibutton(grid, 'Text', optionValue(props, 'leftLabel', '<'), ...
+        'Enable', onOff(enabled));
+    leftButton.Layout.Row = 1;
+    leftButton.Layout.Column = 1;
+    slider = uislider(grid, 'Enable', onOff(enabled));
+    slider.Layout.Row = 1;
+    slider.Layout.Column = 2;
+    applyCommonValueProps(slider, props);
+    slider.Value = clampNumericValue(slider.Value, slider.Limits);
+    rightButton = uibutton(grid, 'Text', optionValue(props, 'rightLabel', '>'), ...
+        'Enable', onOff(enabled));
+    rightButton.Layout.Row = 1;
+    rightButton.Layout.Column = 3;
+
+    adapter = baseAdapter(pannerSpec, 'panner');
+    adapter.label = label;
+    adapter.grid = grid;
+    adapter.leftButton = leftButton;
+    adapter.rightButton = rightButton;
+    adapter.slider = slider;
+    adapter.handle = slider;
+    adapter.valueHandle = slider;
+    adapter.getValue = @() slider.Value;
+    adapter.setValue = @(value) setPannerValue(slider, value);
+    ui.controls.(pannerSpec.id) = adapter;
+
+    appCallback = optionValue(props, 'onChange', []);
+    slider.ValueChangedFcn = semanticValueCallback(pannerSpec.id, appCallback);
+    leftButton.ButtonPushedFcn = semanticPannerStepCallback( ...
+        pannerSpec.id, -1, appCallback);
+    rightButton.ButtonPushedFcn = semanticPannerStepCallback( ...
+        pannerSpec.id, 1, appCallback);
+    setOriginalCallbackName(slider, appCallback);
+    setOriginalCallbackName(leftButton, appCallback);
+    setOriginalCallbackName(rightButton, appCallback);
+end
+
+function setPannerValue(slider, value)
+    value = clampNumericValue(value, slider.Limits);
+    if isequaln(slider.Value, value)
+        return;
+    end
+    callback = slider.ValueChangedFcn;
+    cleanupObj = onCleanup(@() restoreValueChangedCallback(slider, callback));
+    slider.ValueChangedFcn = [];
+    slider.Value = value;
+    clear cleanupObj;
 end
 
 function ui = buildRangeField(ui, rangeSpec, parentGrid, row)
@@ -186,6 +254,8 @@ function ui = buildPathPanel(ui, pathSpec, parentGrid, row)
     grid = uigridlayout(panel, [3 2]);
     grid.RowHeight = {'fit', '1x', 'fit'};
     grid.ColumnWidth = {'1x', '1x'};
+    grid.RowSpacing = 6;
+    grid.ColumnSpacing = 8;
     grid.Padding = [8 8 8 8];
 
     chooseButton = uibutton(grid, 'Text', chooseButtonText(props), ...
@@ -200,16 +270,21 @@ function ui = buildPathPanel(ui, pathSpec, parentGrid, row)
     setOriginalCallbackName(clearButton, optionValue(props, 'onClear', []));
     clearButton.Layout.Row = 1;
     clearButton.Layout.Column = 2;
-    listbox = uilistbox(grid, 'Items', {char(string(optionValue(props, ...
-        'emptyText', 'No selection')))}, ...
+    emptyText = emptyPathText(props);
+    listbox = uilistbox(grid, 'Items', {emptyText}, ...
         'Multiselect', pathMultiselect(props));
+    if strcmp(listbox.Multiselect, 'on')
+        listbox.Value = {emptyText};
+    else
+        listbox.Value = emptyText;
+    end
     listbox.ValueChangedFcn = semanticPathSelectionCallback(pathSpec.id, ...
         optionValue(props, 'onSelectionChange', []));
     setOriginalCallbackName(listbox, optionValue(props, 'onSelectionChange', []));
     listbox.Layout.Row = 2;
     listbox.Layout.Column = [1 2];
     status = uieditfield(grid, 'text', 'Editable', 'off', ...
-        'Value', optionValue(props, 'status', 'No selection'));
+        'Value', pathStatusText(props, {}));
     status.Layout.Row = 3;
     status.Layout.Column = [1 2];
 
@@ -235,7 +310,24 @@ function ui = buildResultTable(ui, tableSpec, parentGrid, row)
     grid.Padding = [8 8 8 8];
     columns = optionValue(props, 'columns', {});
     table = uitable(grid, 'ColumnName', columns, ...
-        'Data', optionValue(props, 'data', cell(0, numel(columns))));
+        'RowName', optionValue(props, 'rowName', {}), ...
+        'Data', tableDataForUi(optionValue(props, 'data', ...
+        cell(0, numel(columns)))));
+    if isfield(props, 'columnEditable')
+        table.ColumnEditable = props.columnEditable;
+    end
+    if isfield(props, 'columnFormat')
+        table.ColumnFormat = props.columnFormat;
+    end
+    if isfield(props, 'columnWidth')
+        table.ColumnWidth = props.columnWidth;
+    end
+    appCellEditCallback = optionValue(props, 'onCellEdit', []);
+    table.CellEditCallback = semanticTableCellEditCallback(tableSpec.id, ...
+        appCellEditCallback);
+    setOriginalCallbackName(table, appCellEditCallback);
+    table.CellSelectionCallback = semanticTableSelectionCallback(tableSpec.id, ...
+        optionValue(props, 'onSelectionChange', []));
     table.Layout.Row = 1;
     table.Layout.Column = 1;
     adapter = baseAdapter(tableSpec, 'resultTable');
@@ -243,7 +335,21 @@ function ui = buildResultTable(ui, tableSpec, parentGrid, row)
     adapter.grid = grid;
     adapter.table = table;
     adapter.valueHandle = table;
+    adapter.getValue = @() table.Data;
+    adapter.setValue = @(value) setTableData(table, value);
     ui.controls.(tableSpec.id) = adapter;
+end
+
+function setTableData(table, value)
+    value = tableDataForUi(value);
+    if isequaln(table.Data, value)
+        return;
+    end
+    callback = table.CellEditCallback;
+    cleanupObj = onCleanup(@() restoreTableEditCallback(table, callback));
+    table.CellEditCallback = [];
+    table.Data = value;
+    clear cleanupObj;
 end
 
 function ui = buildLogPanel(ui, logSpec, parentGrid, row, debug)
@@ -314,6 +420,90 @@ function callback = semanticValueCallback(id, appCallback)
         if isfield(control, 'getValue')
             event.value = control.getValue();
         end
+        appCallback(control, event);
+    end
+end
+
+function callback = semanticPannerStepCallback(id, direction, appCallback)
+    callback = @wrapped;
+
+    function wrapped(source, rawEvent)
+        ui = currentUiRegistry(source);
+        control = ui.controls.(id);
+        previousValue = control.getValue();
+        nextValue = pannerStepValue(control, direction);
+        control.setValue(nextValue);
+        if isempty(appCallback) || isequaln(previousValue, control.getValue())
+            return;
+        end
+        event = semanticEvent(control, control.valueHandle, rawEvent, 'user');
+        event.value = control.getValue();
+        event.previousValue = previousValue;
+        event.stepDirection = direction;
+        event.action = 'step';
+        appCallback(control, event);
+    end
+end
+
+function callback = semanticTableCellEditCallback(id, appCallback)
+    if isempty(appCallback)
+        callback = [];
+        return;
+    end
+    callback = @wrapped;
+
+    function wrapped(source, rawEvent)
+        ui = currentUiRegistry(source);
+        control = ui.controls.(id);
+        event = semanticEvent(control, source, rawEvent, 'user');
+        event.value = source.Data;
+        event.indices = rawEventValue(rawEvent, 'Indices', []);
+        event.previousData = rawEventValue(rawEvent, 'PreviousData', []);
+        event.newData = rawEventValue(rawEvent, 'NewData', []);
+        event.editData = rawEventValue(rawEvent, 'EditData', []);
+        appCallback(control, event);
+    end
+end
+
+function value = pannerStepValue(control, direction)
+    slider = control.valueHandle;
+    limits = double(slider.Limits);
+    span = max(eps, diff(limits));
+    step = optionValue(control.props, 'step', NaN);
+    if ~isfinite(step) || step <= 0
+        fraction = optionValue(control.props, 'stepFraction', 0.002);
+        step = span .* max(eps, double(fraction));
+    end
+    if isfield(control.props, 'minStep')
+        step = max(step, double(control.props.minStep));
+    end
+    if isfield(control.props, 'maxStep')
+        step = min(step, double(control.props.maxStep));
+    end
+    value = clampNumericValue(slider.Value + direction .* step, limits);
+end
+
+function value = clampNumericValue(value, limits)
+    value = double(value);
+    if ~isfinite(value)
+        value = limits(1);
+    end
+    value = min(limits(2), max(limits(1), value));
+end
+
+function callback = semanticTableSelectionCallback(id, appCallback)
+    if isempty(appCallback)
+        callback = [];
+        return;
+    end
+    callback = @wrapped;
+
+    function wrapped(source, rawEvent)
+        ui = currentUiRegistry(source);
+        control = ui.controls.(id);
+        event = semanticEvent(control, source, rawEvent, 'user');
+        event.value = source.Data;
+        event.indices = rawEventValue(rawEvent, 'Indices', []);
         appCallback(control, event);
     end
 end
@@ -410,7 +600,7 @@ end
 
 function control = applyPathSelection(control, paths, updateStatus)
     items = normalizedPaths(paths);
-    emptyText = optionValue(control.props, 'emptyText', 'No selection');
+    emptyText = emptyPathText(control.props);
     if isempty(items)
         control.listbox.Items = {emptyText};
         if strcmp(control.listbox.Multiselect, 'on')
@@ -455,7 +645,8 @@ function paths = choosePaths(control)
 end
 
 function paths = chooseFiles(props, allowMulti)
-    filters = optionValue(props, 'filters', {'*.*', 'All files'});
+    filters = normalizeFileFilters(optionValue(props, 'filters', ...
+        {'*.*', 'All files'}));
     titleText = optionValue(props, 'dialogTitle', chooseButtonText(props));
     startPath = optionValue(props, 'startPath', pwd);
     if allowMulti
@@ -473,7 +664,7 @@ function paths = chooseFiles(props, allowMulti)
     files = reshape(files, 1, []);
     paths = cell(1, numel(files));
     for k = 1:numel(files)
-        paths{k} = fullfile(folder, files{k});
+        paths{k} = fullfile(folder, char(string(files{k})));
     end
 end
 
@@ -521,9 +712,9 @@ end
 
 function text = pathStatusText(props, paths)
     if isempty(paths)
-        text = optionValue(props, 'status', 'No selection');
+        text = emptyStatusText(props);
     elseif numel(paths) == 1
-        text = paths{1};
+        text = char(string(paths{1}));
     else
         text = sprintf('%d selected', numel(paths));
     end
@@ -532,13 +723,65 @@ end
 function values = currentPathValues(control)
     values = {};
     if isfield(control, 'listbox') && isvalid(control.listbox)
+        emptyText = emptyPathText(control.props);
         if isempty(control.listbox.Items) || ...
                 (numel(control.listbox.Items) == 1 && strcmp(control.listbox.Items{1}, ...
-                optionValue(control.props, 'emptyText', 'No selection')))
+                emptyText))
             values = {};
             return;
         end
         values = cellstr(string(control.listbox.Value));
+    end
+end
+
+function text = emptyStatusText(props)
+    if isstruct(props) && isfield(props, 'status')
+        text = char(string(props.status));
+    else
+        text = emptyPathText(props);
+    end
+end
+
+function text = emptyPathText(props)
+    if isstruct(props) && isfield(props, 'emptyText')
+        text = char(string(props.emptyText));
+        return;
+    end
+    if isstruct(props) && isfield(props, 'status')
+        text = char(string(props.status));
+        return;
+    end
+
+    mode = char(string(optionValue(props, 'mode', 'singleFile')));
+    switch mode
+        case 'multiFile'
+            text = 'No files selected';
+        case {'folder', 'multiFolder'}
+            text = 'No folder selected';
+        case 'outputFolder'
+            text = 'No output folder selected';
+        otherwise
+            text = 'No file selected';
+    end
+end
+
+function filters = normalizeFileFilters(filters)
+    if iscell(filters) && numel(filters) == 1 && iscell(filters{1})
+        filters = filters{1};
+    end
+    if ischar(filters)
+        return;
+    end
+    if isstring(filters)
+        if isscalar(filters)
+            filters = char(filters);
+            return;
+        end
+        filters = cellstr(filters);
+    end
+    if iscell(filters)
+        filters = cellfun(@(value) char(string(value)), filters, ...
+            'UniformOutput', false);
     end
 end
 
@@ -549,6 +792,64 @@ function ui = currentUiRegistry(source)
             'UI registry appdata was not found on the current figure.');
     end
     ui = getappdata(fig, 'labkitUiRegistry');
+end
+
+function restoreTableEditCallback(handle, callback)
+    if ~isempty(handle) && isvalid(handle)
+        handle.CellEditCallback = callback;
+    end
+end
+
+function restoreValueChangedCallback(handle, callback)
+    if ~isempty(handle) && isvalid(handle)
+        handle.ValueChangedFcn = callback;
+    end
+end
+
+function value = rawEventValue(rawEvent, propertyName, defaultValue)
+    value = defaultValue;
+    if isstruct(rawEvent) && isfield(rawEvent, propertyName)
+        value = rawEvent.(propertyName);
+    elseif ~isempty(rawEvent) && isprop(rawEvent, propertyName)
+        value = rawEvent.(propertyName);
+    end
+end
+
+function data = tableDataForUi(data)
+    if istable(data) || isnumeric(data) || islogical(data)
+        return;
+    end
+    if isempty(data)
+        return;
+    end
+    if isstring(data)
+        data = cellstr(data);
+    end
+    if ~iscell(data)
+        data = cellstr(string(data));
+    end
+    for k = 1:numel(data)
+        data{k} = tableCellValueForUi(data{k});
+    end
+end
+
+function value = tableCellValueForUi(value)
+    if isnumeric(value) || islogical(value) || ischar(value)
+        return;
+    end
+    if isstring(value)
+        if isscalar(value)
+            value = char(value);
+        else
+            value = char(strjoin(value(:).', ", "));
+        end
+        return;
+    end
+    if iscell(value)
+        value = char(strjoin(string(value(:)).', ", "));
+    else
+        value = char(string(value));
+    end
 end
 
 function applyCommonValueProps(control, props)

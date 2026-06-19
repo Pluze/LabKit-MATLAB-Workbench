@@ -23,6 +23,10 @@ labkit_CIC_app
 labkit_DICPreprocess_app
 labkit_ImageEnhance_app
 labkit_ECGPrint_app
+labkit_RHSPreview_app
+labkit_RHSScreen_app
+labkit_NerveResponseAnalysis_app
+labkit_ResponseReviewStats_app
 ```
 
 The cleanup action removes `artifacts/` plus legacy root diagnostic files named
@@ -56,6 +60,10 @@ MATLAB path. It does not add app-owned package folders such as
 | `labkit_ImageMatch_app` | Image measurement | Reference-based tone, white-balance, Lab style, and histogram matching. | Image files | Matched images and manifest CSV. |
 | `labkit_BatchImageCrop_app` | Image measurement | Fixed-size batch microscope crops with per-image center and rotation. | Microscope images | Cropped images and crop manifest CSV. |
 | `labkit_ECGPrint_app` | Wearable biosignal | ECG waveform preview, ROI filtering, peak/segment SNR, and SNR-over-time display. | MAT timetable or CSV/TSV table | Segment SNR CSV and waveform PNG. |
+| `labkit_RHSPreview_app` | Neurophysiology | Intan RHS header inspection, stacked waveform preview, ROI zooming, and visual protocol drafting. | RHS file and optional protocol JSON | Header summary, preview window, and protocol JSON draft. |
+| `labkit_RHSScreen_app` | Neurophysiology | Auto folder-level RHS QC, grouping, and good-recording selection without MAT conversion. | RHS folder and optional protocol JSON | Screening session JSON. |
+| `labkit_NerveResponseAnalysis_app` | Neurophysiology | Protocol-assisted event train detection, differential response derivation, common-mode correction, and CAP metrics. | Screening session JSON and recommended protocol JSON | Analysis JSON with events, trains, metrics, and issues. |
+| `labkit_ResponseReviewStats_app` | Neurophysiology | Immediate metric loading, aligned response segment review, and descriptive statistics from analysis metrics or legacy segment CSV. | Analysis JSON or segment CSV | Metrics CSV and summary table. |
 | `labkit_ProjectGovernance_app` | Project tools | Create app scaffolds and scan MATLAB project code. | Scaffold options or repository code | New app files or `artifacts/code-check/matlab_code_check.json`. |
 
 ## Creating A New App
