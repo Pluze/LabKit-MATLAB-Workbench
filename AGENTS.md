@@ -107,6 +107,19 @@ scope, fixture expectations, and GUI validation limits. Scoped
 `AGENTS.md` files should only route by ownership and should not duplicate the
 full task list.
 
+In noninteractive agent shells, prefer the repository wrapper
+`scripts/matlab_batch.sh "..."` for MATLAB validation. If a MATLAB command
+exits before printing the build-task or `runLabKitTests` startup banner, treat
+that as a MATLAB launcher or runtime-access failure first: inspect
+`artifacts/logs/matlab_batch/matlab.log`, rerun the same command with the
+needed runtime permissions, and do not diagnose source or test failures from an
+empty launcher result.
+
+Do not add MATLAB Code Analyzer suppression pragmas such as `%#ok<...>` in
+source, tests, fixtures, or generated MATLAB files. Refactor the code or test
+helper shape instead; the project guardrails intentionally reject suppression
+pragmas.
+
 Interactive GUI workflows are checked manually by the user. Do not run interactive GUI workflows in MATLAB `-batch` mode. If MATLAB cannot run, report the blocker and do not claim tests passed.
 
 ## Git Workflow

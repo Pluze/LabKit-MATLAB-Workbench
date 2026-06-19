@@ -20,6 +20,11 @@ scripts/matlab_batch.sh "buildtool test"
 and runs the supplied MATLAB `-batch` command. Its MATLAB log is written to
 `artifacts/logs/matlab_batch/matlab.log`.
 
+If the wrapper exits before printing a build-task banner such as `** Starting`
+or a `LabKit official test run` line, inspect that log before treating the run
+as a source or test failure. A launch failure should be fixed by restoring
+MATLAB/runtime access and rerunning the same command.
+
 ## Build Tasks
 
 Use MATLAB build tasks for the stable official entry points:
@@ -45,7 +50,7 @@ buildtool packageDryRun
 | Task | Use it for |
 | --- | --- |
 | `test` | Full non-GUI validation. |
-| `testProject` | Architecture, docs, package boundaries, hygiene, and build-task contracts. |
+| `testProject` | Architecture, docs, package boundaries, sample-data hygiene, Code Analyzer suppression policy, and build-task contracts. |
 | `testUnit` | Unit-tagged tests across the discovered test tree. |
 | `testIntegration` | Retained task name for non-GUI contract-style tests. |
 | `testLabkit` | Reusable `+labkit` non-GUI behavior. |
