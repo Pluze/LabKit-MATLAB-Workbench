@@ -17,8 +17,10 @@ function verify_batchImageCrop()
     checkRotatedCropKeepsRequestedSize();
     checkSelectedFileNormalization();
     checkReadItemsAcceptsPathPanelCellPaths();
+    checkDuplicateItemCreatesIndependentCropTask();
     checkManifestContract();
     checkExportWritesUniqueOutputs();
+    checkExportWritesUniqueOutputsForDuplicateSource();
 end
 
 function checkFixedPixelCropPreservesClassAndSize()
@@ -103,6 +105,25 @@ function checkReadItemsAcceptsPathPanelCellPaths()
         'Batch crop reader should load image data from pathPanel paths.');
 end
 
+function checkDuplicateItemCreatesIndependentCropTask()
+    item = batch_crop.state.emptyItem();
+    item.path = "source.png";
+    item.image = uint8(ones(5, 6));
+    item.angleDeg = 12;
+    item.centerXY = [3, 4];
+    item.centerSet = true;
+
+    duplicated = batch_crop.state.duplicateItem(item);
+    assert(duplicated.path == item.path, ...
+        'Duplicated crop task should preserve the source image path.');
+    assert(isequal(duplicated.image, item.image), ...
+        'Duplicated crop task should reuse the loaded image data.');
+    assert(duplicated.angleDeg == item.angleDeg, ...
+        'Duplicated crop task should preserve rotation.');
+    assert(~duplicated.centerSet && all(isnan(duplicated.centerXY)), ...
+        'Duplicated crop task should require a new crop center.');
+end
+
 function checkManifestContract()
     result = batch_crop.ops.cropImage(uint8(ones(5, 6)), struct( ...
         'cropWidth', 3, ...
@@ -147,6 +168,39 @@ function checkExportWritesUniqueOutputs()
         'Batch export should avoid overwriting existing crop outputs.');
     assert(isfile(outputPath), 'Batch export should write cropped image output.');
     assert(isfile(payload.manifestPath), 'Batch export should write a manifest CSV.');
+end
+
+function checkExportWritesUniqueOutputsForDuplicateSource()
+    folder = tempname;
+    mkdir(folder);
+    cleanup = onCleanup(@() removeTempFolder(folder));
+
+    sourcePath = string(fullfile(folder, 'shared_source.png'));
+    item = struct( ...
+        'path', sourcePath, ...
+        'image', uint8(20 * ones(8, 8)), ...
+        'angleDeg', 0, ...
+        'centerXY', [3, 3], ...
+        'centerSet', true);
+    items = [item; item];
+    items(2).centerXY = [6, 6];
+
+    payload = batch_crop.export.writeOutputs(items, struct( ...
+        'outputFolder', string(folder), ...
+        'format', 'PNG', ...
+        'cropWidth', 4, ...
+        'cropHeight', 4, ...
+        'fillMode', 'Black'));
+
+    outputPaths = string({payload.results.outputPath});
+    assert(numel(unique(outputPaths)) == 2, ...
+        'Duplicate-source crop tasks should write unique output files.');
+    assert(endsWith(outputPaths(1), "shared_source_crop.png"), ...
+        'First duplicate-source crop should use the base crop filename.');
+    assert(endsWith(outputPaths(2), "shared_source_crop_001.png"), ...
+        'Second duplicate-source crop should use a numbered crop filename.');
+    assert(height(payload.manifest) == 2, ...
+        'Manifest should keep one row per duplicate-source crop task.');
 end
 
 function cols = expectedManifestColumns()

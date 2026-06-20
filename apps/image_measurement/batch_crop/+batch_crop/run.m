@@ -13,6 +13,7 @@ function fig = run(debugLog)
     callbacks = struct( ...
         "imagesChosen", @onImagesChosen, ...
         "clearImages", @(~, ~) onClearImages(), ...
+        "duplicateImage", @(~, ~) onDuplicateImage(), ...
         "imageSelectionChanged", @(~, ~) onImageSelectionChanged(), ...
         "previousImage", @(~, ~) onPreviousImage(), ...
         "nextImage", @(~, ~) onNextImage(), ...
@@ -38,6 +39,7 @@ function fig = run(debugLog)
 
     btnOpenFiles = ui.controls.images.chooseButton;
     btnClearImages = ui.controls.images.clearButton;
+    btnDuplicateImage = ui.controls.duplicateImage.button;
     txtImageSource = ui.controls.imageSource.valueHandle;
     lbImages = ui.controls.images.listbox;
     btnPrevious = ui.controls.previousImage.button;
@@ -88,6 +90,21 @@ function fig = run(debugLog)
         S.currentIndex = 0;
         S.lastExport = [];
         addLog('Cleared loaded images.');
+        refreshAll();
+    end
+
+    function onDuplicateImage()
+        if ~hasCurrentImage()
+            return;
+        end
+
+        duplicated = batch_crop.state.duplicateItem(S.items(S.currentIndex));
+        insertAt = S.currentIndex + 1;
+        S.items = [S.items(1:S.currentIndex); duplicated; S.items(insertAt:end)];
+        S.currentIndex = insertAt;
+        S.lastExport = [];
+        addLog(sprintf('Duplicated image %d as crop task %d. Pick a new crop center.', ...
+            insertAt - 1, insertAt));
         refreshAll();
     end
 
@@ -213,7 +230,8 @@ function fig = run(debugLog)
         busyOpts.title = 'Export crops';
         busyOpts.message = 'Writing cropped microscope images...';
         busyOpts.controls = [btnOpenFiles, btnClearImages, btnExport, ...
-            btnChooseOutput, btnPrevious, btnNext, btnUseCanvasCenter];
+            btnChooseOutput, btnDuplicateImage, btnPrevious, btnNext, ...
+            btnUseCanvasCenter];
         try
             payload = labkit.ui.app.runBusy(fig, ...
                 @() batch_crop.export.writeOutputs(S.items, opts), busyOpts);
@@ -264,6 +282,7 @@ function fig = run(debugLog)
         hasImage = hasCurrentImage();
         enabled = ternary(hasImage, 'on', 'off');
         btnClearImages.Enable = enabled;
+        btnDuplicateImage.Enable = enabled;
         btnPrevious.Enable = ternary(hasImage && S.currentIndex > 1, 'on', 'off');
         btnNext.Enable = ternary(hasImage && S.currentIndex < numel(S.items), 'on', 'off');
         edtRotation.Enable = enabled;
