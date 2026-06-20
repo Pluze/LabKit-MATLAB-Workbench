@@ -15,6 +15,10 @@ Examples:
   scripts/matlab_batch.sh "buildtool testProject"
   scripts/matlab_batch.sh "buildtool listTasks"
 
+For direct runLabKitTests selectors, include:
+  startup_labkit(false); addpath('tests');
+See docs/testing.md for focused runner examples.
+
 Environment:
   MATLAB_CMD Optional path or command name for MATLAB.
 

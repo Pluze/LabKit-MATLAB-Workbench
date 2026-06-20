@@ -16,6 +16,7 @@ function verify_batchImageCrop()
     checkOutOfBoundsCropPadsWithFill();
     checkRotatedCropKeepsRequestedSize();
     checkSelectedFileNormalization();
+    checkReadItemsAcceptsPathPanelCellPaths();
     checkManifestContract();
     checkExportWritesUniqueOutputs();
 end
@@ -83,6 +84,23 @@ function checkSelectedFileNormalization()
     assertThrows(@() batch_crop.io.selectedImagePaths('notes.txt', folder), ...
         'labkit_BatchImageCrop_app:UnsupportedImageFile', ...
         'Manual selection should reject unsupported file types.');
+end
+
+function checkReadItemsAcceptsPathPanelCellPaths()
+    folder = tempname;
+    mkdir(folder);
+    cleanup = onCleanup(@() removeTempFolder(folder));
+
+    sourcePath = fullfile(folder, 'frame_a.png');
+    imwrite(uint8(42 * ones(6, 7)), sourcePath);
+
+    items = batch_crop.state.readItems({sourcePath});
+    assert(numel(items) == 1, ...
+        'Batch crop reader should accept pathPanel cell-array paths.');
+    assert(items(1).path == string(sourcePath), ...
+        'Batch crop reader should preserve the selected source path.');
+    assert(isequal(size(items(1).image), [6 7]), ...
+        'Batch crop reader should load image data from pathPanel paths.');
 end
 
 function checkManifestContract()

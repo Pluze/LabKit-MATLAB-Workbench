@@ -16,6 +16,7 @@ function verify_focusStackFusion()
     checkSummaryTableContract();
     checkFolderDiscovery();
     checkSelectedFileSelection();
+    checkReadImagesAcceptsPathPanelCellPaths();
     checkRegistrationImprovesSyntheticDrift();
     checkInvalidInputs();
 end
@@ -108,6 +109,23 @@ function checkSelectedFileSelection()
     assertThrows(@() focus_stack.io.selectedImagePaths('notes.txt', folder), ...
         'labkit_FocusStack_app:UnsupportedImageFile', ...
         'Manual selection should reject unsupported file types.');
+end
+
+function checkReadImagesAcceptsPathPanelCellPaths()
+    folder = tempname;
+    mkdir(folder);
+    cleanup = onCleanup(@() removeTempFolder(folder));
+
+    firstPath = fullfile(folder, 'frame_a.png');
+    secondPath = fullfile(folder, 'frame_b.png');
+    imwrite(uint8(50 * ones(8, 8)), firstPath);
+    imwrite(uint8(100 * ones(8, 8)), secondPath);
+
+    images = focus_stack.io.readImages({firstPath, secondPath});
+    assert(numel(images) == 2, ...
+        'Focus stack reader should accept pathPanel cell-array paths.');
+    assert(isequal(size(images{1}), [8 8]), ...
+        'Focus stack reader should load image data from pathPanel paths.');
 end
 
 function checkRegistrationImprovesSyntheticDrift()

@@ -15,6 +15,7 @@ function verify_imageEnhance()
     checkBrightnessContrastAndSharpenPipeline();
     checkWhiteBalanceReducesChannelCast();
     checkSelectedFileNormalization();
+    checkReadImagesAcceptsPathPanelCellPaths();
     checkManifestAndExportContract();
 end
 
@@ -62,6 +63,23 @@ function checkSelectedFileNormalization()
     assertThrows(@() image_enhance.io.selectedImagePaths('notes.txt', folder), ...
         'labkit_ImageEnhance_app:UnsupportedImageFile', ...
         'Manual image selection should reject unsupported file types.');
+end
+
+function checkReadImagesAcceptsPathPanelCellPaths()
+    folder = tempname;
+    mkdir(folder);
+    cleanup = onCleanup(@() removeTempFolder(folder));
+
+    sourcePath = fullfile(folder, 'figure_a.png');
+    imwrite(uint8(80 * ones(8, 9, 3)), sourcePath);
+
+    items = image_enhance.io.readImages({sourcePath});
+    assert(numel(items) == 1, ...
+        'Image enhance reader should accept pathPanel cell-array paths.');
+    assert(items(1).path == string(sourcePath), ...
+        'Image enhance reader should preserve the selected source path.');
+    assert(isequal(size(items(1).image), [8 9 3]), ...
+        'Image enhance reader should load RGB image data from pathPanel paths.');
 end
 
 function checkManifestAndExportContract()

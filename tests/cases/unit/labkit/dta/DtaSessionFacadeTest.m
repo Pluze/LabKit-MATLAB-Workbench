@@ -36,6 +36,12 @@ function verify_dtaSessionFacade()
     assert(duplicateReport.nAdded == 0 && duplicateReport.nSkipped == 1 && duplicateReport.nFailed == 0, ...
         'DTA session facade should count duplicate skips.');
 
+    pathPanelSession = labkit.dta.makeSession('template');
+    [pathPanelSession, pathPanelReport] = labkit.dta.addFilesToSession( ...
+        pathPanelSession, {string(fixture)}, "chrono", callbacks);
+    assert(numel(pathPanelSession.items) == 1 && pathPanelReport.nAdded == 1, ...
+        'DTA session facade should accept scalar-string cell-array paths.');
+
     [items, idx] = labkit.dta.selectSessionItems(session, session.items(1).name);
     assert(numel(items) == 1 && idx == 1, 'DTA session facade should select items by display name.');
 

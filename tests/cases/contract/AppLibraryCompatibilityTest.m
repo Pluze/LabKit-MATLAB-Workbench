@@ -1,0 +1,147 @@
+classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
+    %APPLIBRARYCOMPATIBILITYTEST Verify app-facing boundary input shapes.
+
+    methods (Test, TestTags = {'Integration'})
+        function pathPanelCellPathsReachAppReaders(testCase)
+            setupLabKitTestPath();
+            folder = tempname;
+            mkdir(folder);
+            cleanup = onCleanup(@() removeTempFolder(folder));
+
+            firstImage = fullfile(folder, 'input_a.png');
+            secondImage = fullfile(folder, 'input_b.png');
+            imwrite(uint8(40 * ones(8, 9, 3)), firstImage);
+            imwrite(uint8(90 * ones(8, 9, 3)), secondImage);
+
+            readers = { ...
+                @() batch_crop.state.readItems({firstImage}), ...
+                @() image_enhance.io.readImages({firstImage}), ...
+                @() image_match.io.readImages({firstImage, secondImage}), ...
+                @() focus_stack.io.readImages({firstImage, secondImage})};
+
+            for k = 1:numel(readers)
+                payload = readers{k}();
+                testCase.verifyNotEmpty(payload, ...
+                    sprintf('Reader %d should accept pathPanel cell-array paths.', k));
+            end
+        end
+
+        function pathPanelCellPathsReachDtaSessionFacade(testCase)
+            setupLabKitTestPath();
+            fixture = dtaFixturePath('chrono_chronopot_current_pulse_0p2ms.DTA');
+            session = labkit.dta.makeSession('compatibility');
+
+            [session, report] = labkit.dta.addFilesToSession( ...
+                session, {string(fixture)}, "chrono");
+
+            testCase.verifyEqual(numel(session.items), 1, ...
+                'DTA session facade should accept scalar-string cell-array paths.');
+            testCase.verifyEqual(report.nAdded, 1, ...
+                'DTA session facade should report the pathPanel-shaped input as added.');
+
+            itemName = session.items(1).name;
+            [selectedByString, idxByString] = labkit.dta.selectSessionItems( ...
+                session, string(itemName));
+            [selectedByCell, idxByCell] = labkit.dta.selectSessionItems( ...
+                session, {string(itemName)});
+            testCase.verifyEqual(idxByString, 1, ...
+                'DTA selection should accept scalar string listbox values.');
+            testCase.verifyEqual(idxByCell, 1, ...
+                'DTA selection should accept scalar-string cell listbox values.');
+            testCase.verifyEqual(selectedByString.name, selectedByCell.name, ...
+                'DTA selection shapes should resolve to the same item.');
+
+            [removedSession, removeReport] = labkit.dta.removeSelectedItemsFromSession( ...
+                session, {string(itemName)}, struct());
+            testCase.verifyEmpty(removedSession.items, ...
+                'DTA removal should accept scalar-string cell listbox values.');
+            testCase.verifyEqual(numel(removeReport.removed), 1, ...
+                'DTA removal should report one removed item.');
+        end
+
+        function pathPanelCellPathReachesBiosignalRecordingFacade(testCase)
+            setupLabKitTestPath();
+            folder = tempname;
+            mkdir(folder);
+            cleanup = onCleanup(@() removeTempFolder(folder));
+
+            recordingPath = fullfile(folder, 'recording.csv');
+            writeLines(recordingPath, [
+                "time_s,ECG"
+                "0,0.1"
+                "0.01,0.3"
+                "0.02,0.2"]);
+
+            eventPaths = {recordingPath};
+            filepath = char(string(eventPaths{1}));
+            [recording, status] = labkit.biosignal.readRecording(filepath);
+
+            testCase.verifyTrue(status.ok, status.message);
+            testCase.verifyTrue(any(strcmp(labkit.biosignal.listChannels(recording), 'ECG')), ...
+                'Biosignal facade should read the pathPanel-selected recording.');
+
+            signalByString = labkit.biosignal.getChannel(recording, "ECG");
+            signalByIndex = labkit.biosignal.getChannel(recording, 1);
+            testCase.verifyEqual(signalByString.displayName, signalByIndex.displayName, ...
+                'Biosignal channel lookup should accept string and numeric UI values.');
+
+            filtered = labkit.biosignal.filterSignal(signalByString, struct( ...
+                'type', 'bandpass', ...
+                'cutoffHz', [0.5 40], ...
+                'edgeMode', 'none'));
+            cropped = labkit.biosignal.cropSignal(filtered, [0 0.02]);
+            testCase.verifyEqual(numel(cropped.time), numel(cropped.values), ...
+                'Biosignal crop/filter option shapes should preserve signal alignment.');
+        end
+
+        function pathPanelCellPathsReachRhsFacade(testCase)
+            setupLabKitTestPath();
+            folder = tempname;
+            mkdir(folder);
+            cleanup = onCleanup(@() removeTempFolder(folder));
+
+            rhsFile = fullfile(folder, 'recording.rhs');
+            writeSyntheticRhsFixture(rhsFile, struct("nBlocks", 2));
+
+            fileEvent = struct('paths', {{rhsFile}});
+            filePaths = rhs_preview.ops.eventPaths(fileEvent);
+            testCase.verifyEqual(filePaths, string(rhsFile), ...
+                'RHS Preview event helper should normalize pathPanel file paths.');
+
+            [index, indexStatus] = labkit.rhs.indexFile(filePaths(1));
+            testCase.verifyTrue(indexStatus.ok, indexStatus.message);
+            testCase.verifyTrue(index.hasData, ...
+                'RHS facade should index the pathPanel-selected file.');
+
+            opts = struct( ...
+                "family", 'amplifier', ...
+                "channels", {{'C001'}}, ...
+                "timeRangeSec", [0; 3/30000]);
+            [window, windowStatus] = labkit.rhs.readWindow(filePaths(1), opts);
+            testCase.verifyTrue(windowStatus.ok, windowStatus.message);
+            testCase.verifyEqual(window.channels, "C-001", ...
+                'RHS readWindow should accept app-style family, channel, and range shapes.');
+
+            folderEvent = struct('paths', {{folder}});
+            folderPaths = rhs_preview.ops.eventPaths(folderEvent);
+            files = labkit.rhs.findFiles(folderPaths(1));
+            testCase.verifyTrue(any(strcmp(files, rhsFile)), ...
+                'RHS facade should discover files under the pathPanel-selected folder.');
+        end
+    end
+end
+
+function removeTempFolder(folder)
+    if exist(folder, 'dir') == 7
+        rmdir(folder, 's');
+    end
+end
+
+function writeLines(filepath, lines)
+    fid = fopen(filepath, 'w');
+    assert(fid > 0, 'Could not create temporary text fixture.');
+    cleanup = onCleanup(@() fclose(fid));
+    for k = 1:numel(lines)
+        fprintf(fid, '%s\n', char(lines(k)));
+    end
+end

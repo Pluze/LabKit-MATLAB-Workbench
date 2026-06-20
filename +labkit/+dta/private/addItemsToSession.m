@@ -105,6 +105,13 @@ function out = normalizeFilepaths(filepaths)
         out = cellstr(filepaths(:));
     elseif iscell(filepaths)
         out = filepaths(:).';
+        for k = 1:numel(out)
+            if ~(ischar(out{k}) || (isstring(out{k}) && isscalar(out{k})))
+                error('labkit:dta:InvalidFilepath', ...
+                    'Each filepath must be a character vector or scalar string.');
+            end
+            out{k} = char(out{k});
+        end
     else
         error('labkit:dta:InvalidFilepaths', 'filepaths must be a char, string, or cell array.');
     end

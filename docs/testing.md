@@ -79,6 +79,15 @@ runLabKitTests("Suites", "gui/labkit/launcher", "IncludeGui", true)
 runLabKitTests("AffectedAppsOnly", true)
 ```
 
+In a noninteractive shell through the repository MATLAB wrapper, wrap the same
+focused selector with the app path setup and the test runner path. `startup_labkit`
+configures app/runtime paths only; build tasks add `tests/` internally, but
+direct runner calls do not:
+
+```bash
+scripts/matlab_batch.sh "startup_labkit(false); addpath('tests'); runLabKitTests(\"Suites\", \"apps/image_measurement\", \"IncludeGui\", false)"
+```
+
 List matching tests without running them:
 
 ```matlab

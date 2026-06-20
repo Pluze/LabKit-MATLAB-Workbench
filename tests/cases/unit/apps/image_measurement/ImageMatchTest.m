@@ -16,6 +16,7 @@ function verify_imageMatch()
     checkToneOnlyMatchMovesBrightnessWithoutChangingColorStrongly();
     checkLabStyleMatchMovesColorTowardReference();
     checkHistogramMatchPreservesDisplayRange();
+    checkReadImagesAcceptsPathPanelCellPaths();
     checkManifestAndExportContract();
 end
 
@@ -71,6 +72,25 @@ function checkHistogramMatchPreservesDisplayRange()
         'Histogram matching should preserve image size.');
     assert(all(out(:) >= 0 & out(:) <= 1), ...
         'Histogram matching should clamp output to display range.');
+end
+
+function checkReadImagesAcceptsPathPanelCellPaths()
+    folder = tempname;
+    mkdir(folder);
+    cleanup = onCleanup(@() removeTempFolder(folder));
+
+    sourcePath = fullfile(folder, 'source.png');
+    referencePath = fullfile(folder, 'reference.png');
+    imwrite(uint8(90 * ones(8, 9, 3)), sourcePath);
+    imwrite(uint8(110 * ones(8, 9, 3)), referencePath);
+
+    items = image_match.io.readImages({sourcePath, referencePath});
+    assert(numel(items) == 2, ...
+        'Image match reader should accept pathPanel cell-array paths.');
+    assert(items(1).path == string(sourcePath), ...
+        'Image match reader should preserve the first selected source path.');
+    assert(isequal(size(items(2).image), [8 9 3]), ...
+        'Image match reader should load RGB image data from pathPanel paths.');
 end
 
 function checkManifestAndExportContract()

@@ -4,6 +4,7 @@
 function items = readItems(paths)
 %READITEMS Load selected image paths into crop item structs.
 
+    paths = string(paths(:));
     items = repmat(batch_crop.state.emptyItem(), numel(paths), 1);
     for k = 1:numel(paths)
         img = imread(paths(k));
