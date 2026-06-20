@@ -20,7 +20,10 @@ function hImage = showImage(ax, imageData, titleText, opts)
 %   clearAxes - logical, default true.
 %   hitTest - image HitTest value, default "off".
 %   pickableParts - image PickableParts value, default "none".
-%   enableNavigation - logical, default true; enables image-style zoom tools.
+%   enableNavigation - logical, default true; refreshes standard axes toolbar.
+%                      Wheel zoom is owned by previewArea navigation.
+%   preserveView - logical, default true. Preserves current XLim/YLim when
+%                  redrawing an image with the same displayed image bounds.
 %
 % Output:
 %   hImage - image graphics object. Axes popout is refreshed automatically.
@@ -29,6 +32,8 @@ function hImage = showImage(ax, imageData, titleText, opts)
         opts = struct();
     end
 
+    viewState = currentImageViewState(ax, imageData, ...
+        optionValue(opts, 'preserveView', true));
     if optionValue(opts, 'clearAxes', true)
         cla(ax);
     end
@@ -44,6 +49,11 @@ function hImage = showImage(ax, imageData, titleText, opts)
     ax.XTick = [];
     ax.YTick = [];
     title(ax, titleText);
+    setappdata(ax, imageViewBoundsKey(), viewState.newBounds);
+    if viewState.preserve
+        ax.XLim = clampLimits(viewState.xLim, viewState.newBounds(1:2));
+        ax.YLim = clampLimits(viewState.yLim, viewState.newBounds(3:4));
+    end
 
     if optionValue(opts, 'enableNavigation', true)
         enableImageNavigation(ax);
@@ -53,17 +63,49 @@ end
 
 function enableImageNavigation(ax)
     try
-        enableDefaultInteractivity(ax);
-    catch
-    end
-    try
-        ax.Interactions = zoomInteraction;
-    catch
-    end
-    try
         ax.Toolbar.Visible = 'on';
     catch
     end
+end
+
+function state = currentImageViewState(ax, imageData, preserveView)
+    state = struct();
+    state.newBounds = [0.5, size(imageData, 2) + 0.5, ...
+        0.5, size(imageData, 1) + 0.5];
+    state.xLim = [];
+    state.yLim = [];
+    state.preserve = false;
+    if ~preserveView || ~isappdata(ax, imageViewBoundsKey())
+        return;
+    end
+    oldBounds = getappdata(ax, imageViewBoundsKey());
+    if ~isequal(size(oldBounds), [1 4]) || ...
+            any(abs(double(oldBounds) - state.newBounds) > sqrt(eps))
+        return;
+    end
+    state.xLim = ax.XLim;
+    state.yLim = ax.YLim;
+    state.preserve = numel(state.xLim) == 2 && numel(state.yLim) == 2 && ...
+        all(isfinite(state.xLim)) && all(isfinite(state.yLim));
+end
+
+function limits = clampLimits(limits, fullLimits)
+    span = diff(limits);
+    fullSpan = diff(fullLimits);
+    if span >= fullSpan
+        limits = fullLimits;
+        return;
+    end
+    if limits(1) < fullLimits(1)
+        limits = [fullLimits(1), fullLimits(1) + span];
+    end
+    if limits(2) > fullLimits(2)
+        limits = [fullLimits(2) - span, fullLimits(2)];
+    end
+end
+
+function key = imageViewBoundsKey()
+    key = 'labkitImageViewBounds';
 end
 
 function value = optionValue(opts, name, defaultValue)

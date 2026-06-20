@@ -23,7 +23,7 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
   reintroduce the removed `labkit.ui.app.createShell` or legacy view helpers.
 - Use `labkit.ui.app.dispatchRequest` for debug launch routing and `labkit.ui.diag.createContext` only when an app has an app-specific nonstandard request path.
 - Debug launches should attach the Log tab text area, emit a startup trace line, and instrument high-level component callbacks after controls are built.
-- Image apps with custom preview scroll, drawing, ROI, scale-bar, or other axes interaction should create a `labkit.ui.tool.createRuntime` and pass that runtime into reusable tools. Do not set image-tool `WindowScrollWheelFcn`, `WindowButtonMotionFcn`, `WindowButtonUpFcn`, or axes `ButtonDownFcn` directly in app code.
+- Apps with custom preview scroll, drawing, ROI, scale-bar, or other axes interaction should create a `labkit.ui.tool.createRuntime` and pass that runtime into reusable tools. Do not set preview-tool `WindowScrollWheelFcn`, `WindowButtonMotionFcn`, `WindowButtonUpFcn`, or axes `ButtonDownFcn` directly in app code.
 - DTA-backed apps use `labkit.dta.*` for discovery, loading, sessions, pulse detection, and parsed curve/table access.
 - RHS-backed apps use `labkit.rhs.*` for discovery, header inspection,
   indexing, and window reads. Channel roles, protocols, event detection,

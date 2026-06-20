@@ -343,7 +343,6 @@ function fig = run(debugLog)
             'Color', [0 0.85 1], ...
             'LineWidth', 1.25);
         hold(previewAxes, 'off');
-        axis(previewAxes, 'image');
         cropSession.setBackground(hImage);
         cropSession.setGraphics([hRect, hLineX, hLineY]);
         cropSession.activate();

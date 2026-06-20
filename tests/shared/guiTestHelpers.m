@@ -107,6 +107,10 @@ function assertAxesContract(fig, expectedAxes)
     axesHandles = findControlsByClass(fig, 'Axes');
     assert(numel(axesHandles) == numel(expectedAxes), ...
         'Expected %d axes contract entry/entries, found %d axes.', numel(expectedAxes), numel(axesHandles));
+    if ~isempty(expectedAxes)
+        assert(~isempty(fig.WindowScrollWheelFcn), ...
+            'Preview axes should install LabKit scroll-wheel navigation.');
+    end
     for k = 1:numel(expectedAxes)
         found = false;
         for j = 1:numel(axesHandles)

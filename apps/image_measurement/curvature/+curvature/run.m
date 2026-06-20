@@ -30,7 +30,6 @@ function fig = run(debugLog)
     ui.topAxes = ui.controls.imageAxes.primaryAxes;
     imageRuntime = labkit.ui.tool.createRuntime(ui.topAxes, ...
         struct('figure', fig, ...
-        'defaultScrollFcn', @onPreviewScroll, ...
         'onTrace', debugLog.trace));
 
     scaleTool = labkit.ui.tool.scaleBar(ui.sections.scaleBarSection.grid, ...
@@ -434,19 +433,6 @@ function fig = run(debugLog)
             curve = S.curveEditor.curvePoints();
         end
         curvature.view.plotStaticCurveAnchors(ax, points, curve, S.fit, chkShowDense.Value);
-    end
-
-    function onPreviewScroll(~, event)
-        if isempty(S.image)
-            return;
-        end
-        point = ui.topAxes.CurrentPoint;
-        x = point(1, 1);
-        y = point(1, 2);
-        if ~curvature.view.insideImageBounds(x, y, size(S.image))
-            return;
-        end
-        curvature.view.zoomAxesAtPoint(ui.topAxes, x, y, event.VerticalScrollCount, size(S.image));
     end
 
     function refreshSummary()

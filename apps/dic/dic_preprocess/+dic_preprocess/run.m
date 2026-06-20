@@ -34,9 +34,7 @@ function fig = run(debugLog)
     ui.topAxes = ui.controls.previewAxes.axesById.reference;
     ui.bottomAxes = ui.controls.previewAxes.axesById.current;
     imageRuntime = labkit.ui.tool.createRuntime(ui.topAxes, ...
-        struct('figure', fig, ...
-        'defaultScrollFcn', @onPreviewScrollZoom, ...
-        'defaultScrollTargets', [ui.topAxes ui.bottomAxes]));
+        struct('figure', fig));
     ui.imageRuntime = imageRuntime;
     controls = dic_preprocess.ui.mapControlHandles(ui);
     txtReference = controls.txtReference;
@@ -380,11 +378,6 @@ function fig = run(debugLog)
         showMaskCanvas('ROI mask canvas');
         addLog(sprintf('Undid mask edit: %s.', snapshot.description));
         refreshSummary();
-    end
-
-    function onPreviewScrollZoom(~, evt)
-        dic_preprocess.ui.zoomPreviewUnderPointer( ...
-            fig, ui.topAxes, ui.bottomAxes, evt);
     end
 
     function onSaveMask(~, ~)

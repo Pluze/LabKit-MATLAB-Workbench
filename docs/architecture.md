@@ -82,7 +82,7 @@ App GUIs use the layered UI foundation:
 | App | `labkit.ui.app.create`, `dispatchRequest`, `runBusy` |
 | Spec | `labkit.ui.spec.app`, `workspace`, `tab`, `section`, `field`, `rangeField`, `panner`, `action`, `actionGroup`, `pathPanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `custom` |
 | View | `labkit.ui.view.setValue`, `getValue`, `setEnabled`, `appendLog`, `setListItems`, `setListSelection`, `drawImage`, `resetAxes`, `clearAxes` |
-| Tool | `labkit.ui.tool.createRuntime`, `anchorEditor`, `scaleBar`, `scaleBarCalibration` |
+| Tool | `labkit.ui.tool.createRuntime`, `anchorEditor`, `scaleBar`, `scaleBarCalibration`, `zoomAxesAtPoint` |
 | Diagnostics | `labkit.ui.diag.createContext` |
 
 `+ui/buildSpec.m` returns a data-only `labkit.ui.spec.*` tree. It should not

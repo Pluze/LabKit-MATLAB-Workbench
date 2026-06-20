@@ -19,6 +19,7 @@ function resetAxes(ax, ttl, resetScaleAndTicks)
     end
 
     cla(ax, 'reset');
+    clearImageViewState(ax);
     ax.NextPlot = 'replace';
     ax.XLimMode = 'auto';
     ax.YLimMode = 'auto';
@@ -34,4 +35,11 @@ function resetAxes(ax, ttl, resetScaleAndTicks)
     grid(ax, 'off');
     box(ax, 'on');
     enablePopout(ax);
+end
+
+function clearImageViewState(ax)
+    key = 'labkitImageViewBounds';
+    if isappdata(ax, key)
+        rmappdata(ax, key);
+    end
 end

@@ -96,6 +96,20 @@ function verify_gui_layout_ui_image_axes_runtime()
         'Runtime figure-scope scroll should dispatch without target hit testing.');
     runtime2.delete();
 
+    fig3 = uifigure('Visible', 'off', 'Name', 'labkit_image_axes_runtime_fallback_probe');
+    cleanup3 = onCleanup(@() delete(fig3));
+    ax3 = uiaxes(fig3);
+    fallbackCalls = 0;
+    fig3.WindowScrollWheelFcn = @onFallbackScroll;
+    runtime3 = labkit.ui.tool.createRuntime(ax3, struct( ...
+        'figure', fig3, ...
+        'defaultScrollFcn', @onTargetDefaultScroll, ...
+        'defaultScrollTargets', []));
+    fig3.WindowScrollWheelFcn(fig3, struct());
+    assert(fallbackCalls == 1, ...
+        'Runtime target misses should pass scroll events back to the pre-runtime fallback.');
+    runtime3.delete();
+
     function onInteractionChanged(active, name)
         interactionEvents(end+1, :) = {active, char(name)};
     end
@@ -110,5 +124,9 @@ function verify_gui_layout_ui_image_axes_runtime()
 
     function onTargetDefaultScroll(~, ~)
         targetCalls = targetCalls + 1;
+    end
+
+    function onFallbackScroll(~, ~)
+        fallbackCalls = fallbackCalls + 1;
     end
 end

@@ -7,11 +7,6 @@ function value = specRowHeight(spec, defaultValue)
     end
 
     props = spec.props;
-    if isfield(props, 'height')
-        value = normalizeHeight(props.height);
-        return;
-    end
-
     switch spec.kind
         case 'section'
             value = sectionHeight(spec, defaultValue);
@@ -25,6 +20,16 @@ function value = specRowHeight(spec, defaultValue)
             value = tablePanelHeight(props);
         otherwise
             value = normalizeHeight(defaultValue);
+    end
+
+    if isfield(props, 'height')
+        explicitHeight = normalizeHeight(props.height);
+        if strcmp(spec.kind, 'section') && isNumericHeight(explicitHeight) && ...
+                isNumericHeight(value)
+            value = max(double(explicitHeight), double(value));
+        else
+            value = explicitHeight;
+        end
     end
 end
 
@@ -100,6 +105,10 @@ function value = normalizeHeight(value)
                 value = text;
         end
     end
+end
+
+function tf = isNumericHeight(value)
+    tf = isnumeric(value) && isscalar(value) && isfinite(value);
 end
 
 function height = defaultControlHeight()

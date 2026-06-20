@@ -7,7 +7,7 @@
 | `labkit.ui.app` | Declarative app creation, request dispatch, busy state. | `create`, `dispatchRequest`, `runBusy`. |
 | `labkit.ui.spec` | UI 2.0 data-only workbench specs. | `app`, `workspace`, `tab`, `section`, `field`, `rangeField`, `panner`, `action`, `actionGroup`, `pathPanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `custom`. |
 | `labkit.ui.view` | Semantic UI 2.0 registry updates and preview rendering helpers. | `setValue`, `getValue`, `setEnabled`, `setLimits`, `appendLog`, `setListItems`, `setListSelection`, `drawImage`, `resetAxes`, `clearAxes`. |
-| `labkit.ui.tool` | Reusable composed image tools and interaction runtime. | `createRuntime`, `anchorEditor`, `scaleBar`, `scaleBarCalibration`. |
+| `labkit.ui.tool` | Reusable composed preview tools and interaction runtime. | `createRuntime`, `anchorEditor`, `scaleBar`, `scaleBarCalibration`, `zoomAxesAtPoint`. |
 | `labkit.ui.diag` | Debug launch context, visible trace, callback instrumentation. | `createContext`. |
 
 The root `labkit.ui.*` flat helper surface has been removed. Apps should call the facade that owns the behavior they need. Private implementation details live under each facade's `private/` folder.
@@ -132,6 +132,9 @@ The fixed shape behind this sketch is:
   `logPanel`, `pathPanel`, and `resultTable` accept `minRows` and `minHeight`
   when an app needs more room without hand-writing grid layout. Use explicit
   `height` only when the whole row should be fixed or flexed intentionally.
+  Numeric section heights are treated as preferred heights and are clamped to
+  the section's estimated content minimum, so adding controls cannot silently
+  clip buttons or fields.
 - Public callbacks use `function callback(control, event)`, where `event`
   carries semantic fields such as `id`, `kind`, `source`, `value`,
   `previousValue`, and `ui`.
@@ -145,6 +148,13 @@ The fixed shape behind this sketch is:
 - `previewArea` can take `axisIds`, `axisTitles`, `xLabels`, and `yLabels` so
   plot and waveform apps keep app-authored axis wording without owning axes
   layout mechanics.
+- `previewArea` axes install LabKit-managed scroll-wheel navigation by
+  default. Wheel events are target-gated to the preview axes under the
+  pointer; scrolling over controls, logs, or empty figure space does not zoom
+  plots. This does not rely on MATLAB focus-gated `UIAxes.Interactions`, so
+  users should not need to click a preview before wheel zoom works. Apps should
+  override this only when wheel input changes app data or workflow state rather
+  than ordinary axes limits.
 - App-specific hand-written layout must go through `labkit.ui.spec.custom` and
   a named builder file, for example:
 
@@ -179,11 +189,14 @@ View helpers target semantic ids in the UI registry returned by
 `labkit.ui.app.create`. They do not create arbitrary controls or expose MATLAB
 layout primitives. `previewArea` axes automatically receive the standard
 right-click action `Open axes in new figure`; apps redraw prepared data through
-the named preview helpers.
+the named preview helpers. `drawImage` preserves the current axes view when an
+image is redrawn with the same displayed bounds, so overlay refreshes do not
+throw away a user's zoomed preview. Use `resetAxes` or `clearAxes` when an app
+intentionally wants to return the preview to its home view.
 
 ## Interaction Tools
 
-Image apps that need scroll, drag, hit-test, anchor editing, ROI-style drawing, or scale bars should create a runtime:
+Preview tools that need custom scroll semantics, drag, hit-test, anchor editing, ROI-style drawing, or scale bars should create a runtime:
 
 ```matlab
 runtime = labkit.ui.tool.createRuntime(ax, struct( ...
@@ -192,11 +205,20 @@ runtime = labkit.ui.tool.createRuntime(ax, struct( ...
     'onTrace', debug.trace));
 ```
 
-The runtime owns exclusive sessions, pointer callbacks, drag capture, scroll ownership, and restoration. Temporary drag callbacks are cleared on normal release and on callback errors before errors are rethrown. Apps should not set `WindowScrollWheelFcn`, `WindowButtonMotionFcn`, `WindowButtonUpFcn`, or image-tool `ButtonDownFcn` directly.
+The runtime owns exclusive sessions, pointer callbacks, drag capture, scroll ownership, and restoration. Temporary drag callbacks are cleared on normal release and on callback errors before errors are rethrown. Apps should not set `WindowScrollWheelFcn`, `WindowButtonMotionFcn`, `WindowButtonUpFcn`, or preview-tool `ButtonDownFcn` directly.
 Default and session scroll callbacks are target-gated by default: the runtime
 dispatches wheel events only when the pointer is over the declared axes,
 background, or graphics handles. Pass `scrollScope="figure"` only when a tool
-intentionally wants whole-figure wheel behavior.
+intentionally wants whole-figure wheel behavior. When a runtime target does
+not receive the event, the pre-runtime fallback remains available, so
+app-specific tools do not block the framework previewArea navigator outside
+their declared targets.
+
+Use `labkit.ui.tool.zoomAxesAtPoint(ax, [x y], scrollCount)` when a custom
+tool or app needs the same cursor-centered axes-limit zoom used by default
+previewArea navigation. The helper supports generic numeric plots and infers
+image bounds for displayed image children; pass `"Bounds", [xmin xmax ymin ymax]`
+when a tool has stricter data limits.
 
 Use `labkit.ui.tool.anchorEditor(runtime, imageSize, opts)` for generic anchor editing. Use `labkit.ui.tool.scaleBar(parent, row, runtime, opts)` for calibration controls, reference-pixel editing, unit normalization, final scale-bar placement, and overlay drawing. Apps still own image loading, redraw order, scientific calculations, result summaries, alerts, logs, and exports.
 

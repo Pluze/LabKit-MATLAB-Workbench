@@ -20,7 +20,15 @@ function clearAxes(ui, id, axisId)
     if ~isempty(ax.Children)
         delete(ax.Children);
     end
+    clearImageViewState(ax);
     hold(ax, 'off');
     ax.XLimMode = 'auto';
     ax.YLimMode = 'auto';
+end
+
+function clearImageViewState(ax)
+    key = 'labkitImageViewBounds';
+    if isappdata(ax, key)
+        rmappdata(ax, key);
+    end
 end

@@ -50,8 +50,11 @@ function runtime = createRuntime(ax, opts)
 %
 % The runtime owns axes-level image-tool callback lifecycle. Apps register
 % default behavior through this runtime instead of mutating figure/axes
-% pointer callbacks directly. Layout resize helpers remain separate shell
-% behavior and do not use this runtime.
+% pointer callbacks directly. Target misses are passed to the scroll callback
+% that existed before the runtime was installed, allowing the framework
+% previewArea navigator or other fallbacks to keep working outside the tool's
+% declared targets. Layout resize helpers remain separate shell behavior and
+% do not use this runtime.
 
     if nargin < 2
         opts = struct();
@@ -173,6 +176,8 @@ function runtime = createRuntime(ax, opts)
         if shouldDispatchScroll(state.fig, state.defaultScrollTargets, ...
                 state.defaultScrollScope)
             state.defaultScrollFcn(src, evt);
+        else
+            callFallbackScroll(src, evt);
         end
     end
 
@@ -403,6 +408,8 @@ function runtime = createRuntime(ax, opts)
             if shouldDispatchScroll(state.fig, sessionScrollTargets(), ...
                     sessionState.scrollScope)
                 sessionState.onScroll(src, evt);
+            else
+                callFallbackScroll(src, evt);
             end
         end
 
@@ -442,6 +449,23 @@ function runtime = createRuntime(ax, opts)
             return;
         end
         state.onTrace(sprintf('imageAxesRuntime: %s', char(message)));
+    end
+
+    function callFallbackScroll(src, evt)
+        fcn = state.fallbackScrollFcn;
+        if isempty(fcn)
+            return;
+        end
+        if isValidHandle(state.fig) && isequal(fcn, state.fig.WindowScrollWheelFcn)
+            return;
+        end
+        if isa(fcn, 'function_handle')
+            fcn(src, evt);
+        elseif iscell(fcn) && ~isempty(fcn)
+            feval(fcn{1}, src, evt, fcn{2:end});
+        elseif ischar(fcn) || isstring(fcn)
+            feval(char(fcn), src, evt);
+        end
     end
 end
 
