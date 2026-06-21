@@ -40,7 +40,8 @@ function verify_launcher_layout()
     assertNoPanelTitle(fig, {'Filter', 'Search', 'Status', 'Hint'});
     assertNoControlText(fig, {'Search:', 'Family:', 'LabKit Apps', 'Hint'});
     h.assertButtonContract(fig, {'Open Selected App', 'Open Debug', ...
-        'Run Code Analyzer', 'Clean Artifacts', 'Refresh App List'});
+        'Update from GitHub', 'Run Code Analyzer', 'Clean Artifacts', ...
+        'Refresh App List'});
     h.assertAnyTableColumns(fig, {'Family', 'App', 'Command'});
     assertLauncherTextAreasHaveRoom(fig);
     h.invokeButton(fig, 'Refresh App List');

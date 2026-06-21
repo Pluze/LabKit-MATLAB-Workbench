@@ -3,6 +3,8 @@ LabKit.prj
 matlab_test.log
 matlab_test*.log
 matlab_code_check.json
+.labkit-managed-files.txt
+LabKit-backup-*.zip
 artifacts/
 resources/project/
 resources/.DS_Store

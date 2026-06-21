@@ -14,18 +14,20 @@ labkit_launcher
 
 The launcher initializes the LabKit path, discovers
 `apps/**/labkit_*_app.m`, and opens the selected app. It also provides direct
-actions to launch the selected app in debug mode, run MATLAB Code Analyzer,
-and clean LabKit-generated artifacts. If you already know the command, launch
-it directly:
+actions to launch the selected app in debug mode, update non-git installs from
+the GitHub `main` zip, run MATLAB Code Analyzer, and clean LabKit-generated
+artifacts.
+
+Start apps from the launcher in normal use. Manual command launch is mainly for
+debugging or scripted local work; add the repository root, `apps/`, and the
+target app folder to the MATLAB path before calling an app command:
 
 ```matlab
+root = pwd;
+addpath(root);
+addpath(fullfile(root, "apps"), "-end");
+addpath(fullfile(root, "apps", "electrochem", "cic"), "-end");
 labkit_CIC_app
-labkit_DICPreprocess_app
-labkit_ImageEnhance_app
-labkit_ECGPrint_app
-labkit_RHSPreview_app
-labkit_NerveResponseAnalysis_app
-labkit_ResponseReviewStats_app
 ```
 
 The cleanup action targets generated LabKit artifacts: `artifacts/` plus older
@@ -34,6 +36,12 @@ root-level diagnostic files named `matlab_code_check.json` or
 
 The Code Analyzer action writes
 `artifacts/code-check/matlab_code_check.json` for manual maintenance review.
+
+The update action is disabled for git checkouts. For zip-download installs, it
+downloads GitHub `main`, backs up the LabKit-managed files it will overwrite or
+remove into a visible `LabKit-backup-*.zip` at the project root, then overlays
+the new project files without deleting user files that are not tracked by the
+updater manifest.
 
 The launcher sets up the app path before opening an app. App-owned packages are
 reached through their owning app entrypoint and package namespace.
