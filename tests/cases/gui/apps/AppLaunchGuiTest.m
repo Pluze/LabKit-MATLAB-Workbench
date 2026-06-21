@@ -10,13 +10,15 @@ classdef AppLaunchGuiTest < matlab.uitest.TestCase
 end
 
 function verify_app_entrypoint_launches()
-%VERIFY_APP_ENTRYPOINT_LAUNCHES Verify GUI entry points can launch.
+%VERIFY_APP_ENTRYPOINT_LAUNCHES Verify app entry points not covered elsewhere.
 
     assertUifigureAvailable();
     root = testRepoRoot();
     legacyDir = fullfile(root, 'legacy');
 
-    apps = discoverLabKitApps();
+    apps = appsWithoutDedicatedLayoutTests(root, discoverLabKitApps());
+    assert(height(apps) > 0, ...
+        'Launch smoke should cover apps that do not have dedicated GUI layout tests.');
 
     cleanup = onCleanup(@closeAllFigures);
     for k = 1:height(apps)
@@ -46,6 +48,38 @@ function verify_app_entrypoint_launches()
             'Debug launch for %s should emit a startup trace line.', entryName);
         assertVisibleDebugTrace(fig, entryName);
     end
+end
+
+function apps = appsWithoutDedicatedLayoutTests(root, apps)
+    keep = true(height(apps), 1);
+    for k = 1:height(apps)
+        keep(k) = ~hasDedicatedLayoutTest(root, apps.Folder(k), apps.Command(k));
+    end
+    apps = apps(keep, :);
+end
+
+function tf = hasDedicatedLayoutTest(root, appFolder, command)
+    appFolder = char(appFolder);
+    command = string(command);
+    appsRoot = fullfile(root, 'apps');
+    rel = appFolder;
+    prefix = [appsRoot filesep];
+    if startsWith(appFolder, prefix)
+        rel = appFolder(numel(prefix)+1:end);
+    end
+    relParts = split(string(strrep(rel, filesep, '/')), '/');
+    if numel(relParts) >= 2
+        guiFolder = fullfile(root, 'tests', 'cases', 'gui', 'apps', ...
+            char(relParts(1)), char(relParts(2)));
+        tf = isfolder(guiFolder) && ~isempty(dir(fullfile(guiFolder, '*.m')));
+        if tf
+            return;
+        end
+    end
+
+    tf = command == "labkit_ProjectGovernance_app" && ...
+        isfile(fullfile(root, 'tests', 'cases', 'gui', 'labkit', ...
+        'project', 'GuiLayoutProjectTest.m'));
 end
 
 function assertLaunchedFigure(entryName)

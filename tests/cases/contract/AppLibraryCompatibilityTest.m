@@ -2,7 +2,7 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
     %APPLIBRARYCOMPATIBILITYTEST Verify app-facing boundary input shapes.
 
     methods (Test, TestTags = {'Integration'})
-        function pathPanelCellPathsReachAppReaders(testCase)
+        function appReadersAcceptPathPanelStringColumns(testCase)
             setupLabKitTestPath();
             folder = tempname;
             mkdir(folder);
@@ -12,18 +12,56 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
             secondImage = fullfile(folder, 'input_b.png');
             imwrite(uint8(40 * ones(8, 9, 3)), firstImage);
             imwrite(uint8(90 * ones(8, 9, 3)), secondImage);
+            singlePath = reshape(string(firstImage), [], 1);
+            multiPaths = reshape([string(firstImage); string(secondImage)], [], 1);
 
             readers = { ...
-                @() batch_crop.state.readItems({firstImage}), ...
-                @() image_enhance.io.readImages({firstImage}), ...
-                @() image_match.io.readImages({firstImage, secondImage}), ...
-                @() focus_stack.io.readImages({firstImage, secondImage})};
+                @() batch_crop.state.readItems(singlePath), ...
+                @() image_enhance.io.readImages(singlePath), ...
+                @() image_match.io.readImages(multiPaths), ...
+                @() focus_stack.io.readImages(multiPaths)};
 
             for k = 1:numel(readers)
                 payload = readers{k}();
                 testCase.verifyNotEmpty(payload, ...
-                    sprintf('Reader %d should accept pathPanel cell-array paths.', k));
+                    sprintf('Reader %d should accept pathPanel string-column paths.', k));
             end
+        end
+
+        function appReadersDoNotNormalizePathShapes(testCase)
+            root = setupLabKitTestPath();
+            readerFiles = [
+                fullfile(root, "apps", "image_measurement", "batch_crop", ...
+                    "+batch_crop", "+state", "readItems.m")
+                fullfile(root, "apps", "image_measurement", "image_enhance", ...
+                    "+image_enhance", "+io", "readImages.m")
+                fullfile(root, "apps", "image_measurement", "image_match", ...
+                    "+image_match", "+io", "readImages.m")
+                fullfile(root, "apps", "image_measurement", "focus_stack", ...
+                    "+focus_stack", "+io", "readImages.m")];
+            forbiddenPatterns = [
+                "string\(paths\)"
+                "paths\s*=\s*paths\(:\)"
+                "assertStringColumnPaths"
+                "normalizePathList"];
+            findings = strings(0, 1);
+            for k = 1:numel(readerFiles)
+                content = fileread(readerFiles(k));
+                for p = 1:numel(forbiddenPatterns)
+                    if ~isempty(regexp(content, forbiddenPatterns(p), 'once'))
+                        findings(end+1, 1) = string(localRelativePath(root, readerFiles(k))) + ...
+                            " matches " + forbiddenPatterns(p);
+                    end
+                end
+            end
+            testCase.verifyEmpty(findings, ...
+                "App readers should rely on the pathPanel string-column contract; " + ...
+                "normalization belongs inside the UI event producer: " + ...
+                strjoin(findings, "; "));
+
+            emptyCropItems = batch_crop.state.readItems(strings(0, 1));
+            testCase.verifyEmpty(emptyCropItems, ...
+                'Batch crop reader should preserve empty string-list shape as no items.');
         end
 
         function pathPanelCellPathsReachDtaSessionFacade(testCase)
@@ -94,7 +132,7 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
                 'Biosignal crop/filter option shapes should preserve signal alignment.');
         end
 
-        function pathPanelCellPathsReachRhsFacade(testCase)
+        function pathPanelStringColumnsReachRhsFacade(testCase)
             setupLabKitTestPath();
             folder = tempname;
             mkdir(folder);
@@ -103,10 +141,9 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
             rhsFile = fullfile(folder, 'recording.rhs');
             writeSyntheticRhsFixture(rhsFile, struct("nBlocks", 2));
 
-            fileEvent = struct('paths', {{rhsFile}});
-            filePaths = rhs_preview.ops.eventPaths(fileEvent);
+            filePaths = reshape(string(rhsFile), [], 1);
             testCase.verifyEqual(filePaths, string(rhsFile), ...
-                'RHS Preview event helper should normalize pathPanel file paths.');
+                'PathPanel file paths should arrive at app callbacks as string columns.');
 
             [index, indexStatus] = labkit.rhs.indexFile(filePaths(1));
             testCase.verifyTrue(indexStatus.ok, indexStatus.message);
@@ -122,11 +159,57 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
             testCase.verifyEqual(window.channels, "C-001", ...
                 'RHS readWindow should accept app-style family, channel, and range shapes.');
 
-            folderEvent = struct('paths', {{folder}});
-            folderPaths = rhs_preview.ops.eventPaths(folderEvent);
+            folderPaths = reshape(string(folder), [], 1);
             files = labkit.rhs.findFiles(folderPaths(1));
             testCase.verifyTrue(any(strcmp(files, rhsFile)), ...
                 'RHS facade should discover files under the pathPanel-selected folder.');
+        end
+
+        function appsUseNormalizedPathEventContract(testCase)
+            root = setupLabKitTestPath();
+            appFiles = collectAppMFiles(root);
+            forbiddenPatterns = [
+                "event\.paths\{"
+                "event\.paths\(:\)"
+                "string\(event\.paths"
+                "labkit\.ui\.app\.normalizePathList"];
+            findings = strings(0, 1);
+
+            for k = 1:numel(appFiles)
+                content = fileread(appFiles(k));
+                for p = 1:numel(forbiddenPatterns)
+                    if ~isempty(regexp(content, forbiddenPatterns(p), 'once'))
+                        findings(end+1, 1) = string(localRelativePath(root, appFiles(k))) + ...
+                            " matches " + forbiddenPatterns(p);
+                    end
+                end
+            end
+
+            testCase.verifyEmpty(findings, ...
+                "Apps should consume pathPanel event.paths directly as a string column; " + ...
+                "path normalization belongs inside pathPanel, not app code: " + ...
+                strjoin(findings, "; "));
+        end
+    end
+end
+
+function rel = localRelativePath(root, pathValue)
+    root = char(root);
+    pathValue = char(pathValue);
+    prefix = [root filesep];
+    if startsWith(pathValue, prefix)
+        rel = pathValue(numel(prefix)+1:end);
+    else
+        rel = pathValue;
+    end
+end
+
+function files = collectAppMFiles(root)
+    listing = dir(fullfile(root, "apps", "**", "*.m"));
+    files = strings(0, 1);
+    for k = 1:numel(listing)
+        if ~listing(k).isdir
+            files(end+1, 1) = string(fullfile(listing(k).folder, listing(k).name));
         end
     end
 end

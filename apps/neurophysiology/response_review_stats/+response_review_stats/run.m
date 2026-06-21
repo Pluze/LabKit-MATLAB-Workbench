@@ -221,9 +221,13 @@ end
 function paths = eventPaths(event)
     paths = strings(0, 1);
     if isstruct(event) && isfield(event, "paths")
-        paths = string(event.paths(:));
+        paths = event.paths;
     elseif isobject(event) && isprop(event, "paths")
-        paths = string(event.paths(:));
+        paths = event.paths;
+    end
+    if ~(isstring(paths) && iscolumn(paths))
+        error('response_review_stats:InvalidPathEvent', ...
+            'pathPanel event paths must be a string column.');
     end
 end
 

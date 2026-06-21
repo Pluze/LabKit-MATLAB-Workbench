@@ -39,12 +39,7 @@ function fig = run(debugLog)
     addLog('Scaffold app ready.');
 
     function onInputsChosen(~, event)
-        names = strings(0, 1);
-        if isstruct(event) && isfield(event, 'paths')
-            names = string(event.paths(:));
-        elseif isobject(event) && isprop(event, 'paths')
-            names = string(event.paths(:));
-        end
+        names = eventPaths(event);
         if isempty(names)
             names = "Selected item";
         else
@@ -158,9 +153,13 @@ end
 function paths = eventPaths(event)
     paths = strings(0, 1);
     if isstruct(event) && isfield(event, 'paths')
-        paths = string(event.paths(:));
+        paths = event.paths;
     elseif isobject(event) && isprop(event, 'paths')
-        paths = string(event.paths(:));
+        paths = event.paths;
+    end
+    if ~(isstring(paths) && iscolumn(paths))
+        error('scaffold_app:InvalidPathEvent', ...
+            'pathPanel event paths must be a string column.');
     end
 end
 

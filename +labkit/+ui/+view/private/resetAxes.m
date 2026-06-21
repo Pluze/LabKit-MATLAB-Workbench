@@ -34,7 +34,7 @@ function resetAxes(ax, ttl, resetScaleAndTicks)
     ylabel(ax, '');
     grid(ax, 'off');
     box(ax, 'on');
-    enablePopout(ax);
+    labkit.ui.tool.enableAxesPopout(ax);
 end
 
 function clearImageViewState(ax)

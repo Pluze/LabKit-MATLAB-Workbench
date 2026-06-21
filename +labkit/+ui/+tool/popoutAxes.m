@@ -1,16 +1,15 @@
-% Private UI view helper. Expected caller: labkit.ui.view panel, control,
-% plot, or text facades. Inputs and outputs are internal UI handles, labels,
-% selections, table data, or plot info. Side effects are limited to supplied UI
-% parents or axes; assumes the caller owns callbacks and app state.
 function newFig = popoutAxes(srcAx)
 %POPOUTAXES Copy a UI axes into an editable MATLAB figure.
 %
+% App-facing contract:
+%   newFig = labkit.ui.tool.popoutAxes(srcAx)
+%
 % Inputs:
-%   srcAx - source UI axes.
+%   srcAx - source UI axes or axes handle.
 %
 % Output:
-%   newFig - standalone MATLAB figure containing copied axes content.
-%            Plot axes are freely resizable; image axes preserve data aspect.
+%   newFig - standalone MATLAB figure containing copied axes content. Plot
+%       axes are freely resizable; image axes preserve data aspect ratio.
 
     if isempty(srcAx) || ~isvalid(srcAx)
         error('labkit:ui:InvalidAxes', 'Source axes is not valid.');
@@ -63,7 +62,6 @@ function applyAxesState(srcAx, dstAx)
     catch
     end
     applyAspectRatio(srcAx, dstAx);
-
     addLegendIfNeeded(dstAx);
 end
 

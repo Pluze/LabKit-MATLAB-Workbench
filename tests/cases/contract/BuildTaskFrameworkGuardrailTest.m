@@ -211,6 +211,32 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
             end
         end
 
+        function userFacingDocsAvoidRetiredValidationVocabulary(testCase)
+            root = setupLabKitTestPath();
+            docFiles = [
+                fullfile(root, "README.md")
+                fullfile(root, "docs", "apps.md")
+                fullfile(root, "docs", "testing.md")];
+            retiredPhrases = [
+                "changed-file, core, or GUI tasks"
+                "project validation tasks"
+                "buildtool core"
+                "buildtool project"
+                "buildtool testProject"
+                "buildtool testGui"
+                "buildtool testApps"
+                "scripts/matlab_batch.sh"];
+
+            for f = 1:numel(docFiles)
+                content = string(fileread(docFiles(f)));
+                for p = 1:numel(retiredPhrases)
+                    testCase.verifyFalse(contains(content, retiredPhrases(p)), ...
+                        "User-facing validation docs should not mention retired task vocabulary: " + ...
+                        relativePath(root, docFiles(f)) + " contains " + retiredPhrases(p));
+                end
+            end
+        end
+
         function testFilesUseKnownTags(testCase)
             root = setupLabKitTestPath();
             allowedTags = ["Unit", "Integration", "GUI", "Structural", ...

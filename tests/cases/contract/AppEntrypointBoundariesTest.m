@@ -17,14 +17,7 @@ function verify_app_entrypoint_boundaries()
 
     assert(exist(fullfile(root, 'apps', 'private'), 'dir') ~= 7, ...
         'The transitional apps/private launcher directory should be removed after all app bodies move public.');
-    assert(exist(fullfile(root, 'apps', 'electrochem'), 'dir') == 7, ...
-        'Electrochem apps should live under apps/electrochem.');
-    assert(exist(fullfile(root, 'apps', 'dic'), 'dir') == 7, ...
-        'DIC apps should live under apps/dic.');
-    assert(exist(fullfile(root, 'apps', 'image_measurement'), 'dir') == 7, ...
-        'Image measurement apps should live under apps/image_measurement.');
-    assert(exist(fullfile(root, 'apps', 'wearable'), 'dir') == 7, ...
-        'Wearable biosignal apps should live under apps/wearable.');
+    assertAppsUseFamilySubfolders(root);
     chronoSource = h.assertAppEntrypoint(root, ...
         'labkit_ChronoOverlay_app', ...
         'launchChronoOverlayApp', ...
@@ -103,4 +96,33 @@ function verify_app_entrypoint_boundaries()
         'wearable_ecg_print_gui(');
     h.assertWearableAppBoundary(ecgPrintSource, 'labkit_ECGPrint_app');
 
+end
+
+function assertAppsUseFamilySubfolders(root)
+    appFiles = dir(fullfile(root, 'apps', '**', 'labkit_*_app.m'));
+    assert(~isempty(appFiles), ...
+        'App entrypoint boundary guardrail should discover app entry files.');
+    appsRoot = fullfile(root, 'apps');
+    for k = 1:numel(appFiles)
+        appFolder = appFiles(k).folder;
+        relFolder = string(localRelativePath(appsRoot, appFolder));
+        parts = split(relFolder, filesep);
+        assert(numel(parts) >= 2, ...
+            ['App entrypoints should live under apps/<family>/<app_slug>/: ' ...
+            char(fullfile(appFiles(k).folder, appFiles(k).name))]);
+        assert(parts(1) ~= "private", ...
+            ['App entrypoints should not live under apps/private/: ' ...
+            char(fullfile(appFiles(k).folder, appFiles(k).name))]);
+    end
+end
+
+function rel = localRelativePath(root, pathValue)
+    root = char(root);
+    pathValue = char(pathValue);
+    prefix = [root filesep];
+    if startsWith(pathValue, prefix)
+        rel = pathValue(numel(prefix)+1:end);
+    else
+        rel = pathValue;
+    end
 end

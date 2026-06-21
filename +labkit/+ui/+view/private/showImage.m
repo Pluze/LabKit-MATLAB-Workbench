@@ -58,7 +58,7 @@ function hImage = showImage(ax, imageData, titleText, opts)
     if optionValue(opts, 'enableNavigation', true)
         enableImageNavigation(ax);
     end
-    enablePopout(ax);
+    labkit.ui.tool.enableAxesPopout(ax);
 end
 
 function enableImageNavigation(ax)

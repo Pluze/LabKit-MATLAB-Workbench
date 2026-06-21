@@ -54,7 +54,7 @@ function ui = buildPreviewArea(ui, previewSpec, parentGrid, row)
         title(ax, axisTitle(previewSpec, axisIds, k));
         xlabel(ax, axisLabel(props, 'xLabels', k));
         ylabel(ax, axisLabel(props, 'yLabels', k));
-        enableAxesPopout(ax);
+        labkit.ui.tool.enableAxesPopout(ax);
         axesHandles(k) = ax;
         axesById.(axisIds{k}) = ax;
     end

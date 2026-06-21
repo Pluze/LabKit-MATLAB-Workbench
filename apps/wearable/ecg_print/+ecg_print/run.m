@@ -69,7 +69,7 @@ function fig = run(debugLog)
             return;
         end
 
-        S.filepath = string(event.paths{1});
+        S.filepath = event.paths(1);
         txtFile.Value = char(S.filepath);
         clearParsedRecording();
         updateFilePreview();

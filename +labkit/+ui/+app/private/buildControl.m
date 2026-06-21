@@ -242,7 +242,7 @@ function [ui, adapter] = buildAction(ui, actionSpec, parentGrid, row, column)
     adapter.valueHandle = button;
     ui.controls.(actionSpec.id) = adapter;
     appCallback = optionValue(props, 'onInvoke', []);
-    button.ButtonPushedFcn = semanticActionCallback(actionSpec.id, appCallback, props);
+    button.ButtonPushedFcn = semanticActionCallback(actionSpec.id, appCallback);
     setOriginalCallbackName(button, appCallback);
 end
 
@@ -423,7 +423,7 @@ function callback = semanticValueCallback(id, appCallback)
         if isfield(control, 'getValue')
             event.value = control.getValue();
         end
-        appCallback(control, event);
+        runSemanticAppCallback(ui, control, event, appCallback, id);
     end
 end
 
@@ -447,7 +447,7 @@ function callback = semanticPannerStepCallback(id, direction, appCallback)
         event.previousValue = previousValue;
         event.stepDirection = direction;
         event.action = 'step';
-        appCallback(control, event);
+        runSemanticAppCallback(ui, control, event, appCallback, id);
     end
 end
 
@@ -470,7 +470,7 @@ function callback = semanticTableCellEditCallback(id, appCallback)
         event.previousData = rawEventValue(rawEvent, 'PreviousData', []);
         event.newData = rawEventValue(rawEvent, 'NewData', []);
         event.editData = rawEventValue(rawEvent, 'EditData', []);
-        appCallback(control, event);
+        runSemanticAppCallback(ui, control, event, appCallback, id);
     end
 end
 
@@ -516,7 +516,7 @@ function callback = semanticTableSelectionCallback(id, appCallback)
         event = semanticEvent(control, source, rawEvent, 'user');
         event.value = source.Data;
         event.indices = rawEventValue(rawEvent, 'Indices', []);
-        appCallback(control, event);
+        runSemanticAppCallback(ui, control, event, appCallback, id);
     end
 end
 
@@ -530,7 +530,7 @@ function setOriginalCallbackName(handle, callback)
     end
 end
 
-function callback = semanticActionCallback(id, appCallback, props)
+function callback = semanticActionCallback(id, appCallback)
     callback = @wrapped;
 
     function wrapped(source, rawEvent)
@@ -541,13 +541,7 @@ function callback = semanticActionCallback(id, appCallback, props)
         control = ui.controls.(id);
         event = semanticEvent(control, source, rawEvent, 'user');
         event.action = id;
-        if isempty(appCallback)
-            return;
-        end
-
-        labkit.ui.app.runBusy(ui.figure, actionBusyMessage(id, props), ...
-            @() appCallback(control, event), ...
-            struct('freezeInteractions', false));
+        runSemanticAppCallback(ui, control, event, appCallback, id);
     end
 end
 
@@ -557,6 +551,16 @@ function message = actionBusyMessage(id, props)
         message = optionValue(props, 'label', id);
     end
     message = char(string(message));
+end
+
+function runSemanticAppCallback(ui, control, event, appCallback, id)
+    if isempty(appCallback)
+        return;
+    end
+
+    labkit.ui.app.runBusy(ui.figure, actionBusyMessage(id, control.props), ...
+        @() appCallback(control, event), ...
+        struct('freezeInteractions', false));
 end
 
 function tf = isFigureBusy(fig)
@@ -588,12 +592,10 @@ function callback = semanticPathChooseCallback(id, appCallback)
         event = semanticEvent(control, source, rawEvent, 'user');
         event.action = 'choose';
         event.mode = optionValue(control.props, 'mode', '');
-        event.paths = paths;
+        event.paths = normalizePathList(paths);
         event.selection = currentPathValues(control);
         event.value = event.selection;
-        if ~isempty(appCallback)
-            appCallback(control, event);
-        end
+        runSemanticAppCallback(ui, control, event, appCallback, id);
     end
 end
 
@@ -612,12 +614,10 @@ function callback = semanticPathClearCallback(id, appCallback)
         event = semanticEvent(control, source, rawEvent, 'user');
         event.action = 'clear';
         event.mode = optionValue(control.props, 'mode', '');
-        event.paths = {};
-        event.selection = {};
-        event.value = {};
-        if ~isempty(appCallback)
-            appCallback(control, event);
-        end
+        event.paths = strings(0, 1);
+        event.selection = strings(0, 1);
+        event.value = strings(0, 1);
+        runSemanticAppCallback(ui, control, event, appCallback, id);
     end
 end
 
@@ -640,7 +640,7 @@ function callback = semanticPathSelectionCallback(id, appCallback)
         event.paths = currentPathValues(control);
         event.selection = event.paths;
         event.value = event.paths;
-        appCallback(control, event);
+        runSemanticAppCallback(ui, control, event, appCallback, id);
     end
 end
 
@@ -743,17 +743,7 @@ function paths = chooseMultipleFolders(startPath)
 end
 
 function paths = normalizedPaths(paths)
-    if isempty(paths)
-        paths = {};
-        return;
-    end
-    if ischar(paths) || isstring(paths)
-        paths = cellstr(string(paths));
-    elseif ~iscell(paths)
-        paths = cellstr(string(paths));
-    end
-    paths = cellfun(@(value) char(string(value)), reshape(paths, 1, []), ...
-        'UniformOutput', false);
+    paths = cellstr(normalizePathList(paths).');
 end
 
 function text = pathStatusText(props, paths)
@@ -767,17 +757,42 @@ function text = pathStatusText(props, paths)
 end
 
 function values = currentPathValues(control)
-    values = {};
+    values = strings(0, 1);
     if isfield(control, 'listbox') && isvalid(control.listbox)
         emptyText = emptyPathText(control.props);
         if isempty(control.listbox.Items) || ...
                 (numel(control.listbox.Items) == 1 && strcmp(control.listbox.Items{1}, ...
                 emptyText))
-            values = {};
             return;
         end
-        values = cellstr(string(control.listbox.Value));
+        values = normalizePathList(control.listbox.Value);
     end
+end
+
+function paths = normalizePathList(value)
+    if isempty(value)
+        paths = strings(0, 1);
+    elseif ischar(value)
+        paths = string({value});
+    elseif isstring(value)
+        paths = value;
+    elseif iscell(value)
+        if ~all(cellfun(@isTextScalar, value))
+            error('labkit:ui:app:InvalidPathList', ...
+                'Path panel values must be text scalars.');
+        end
+        paths = string(value);
+    else
+        error('labkit:ui:app:InvalidPathList', ...
+            'Path panel values must be char, string, or a cell array of text.');
+    end
+    paths = paths(:);
+    paths = paths(strlength(paths) > 0);
+end
+
+function tf = isTextScalar(value)
+    tf = (ischar(value) && (isrow(value) || isempty(value))) || ...
+        (isstring(value) && isscalar(value));
 end
 
 function text = emptyStatusText(props)

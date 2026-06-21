@@ -45,7 +45,7 @@ function fig = run(debugLog)
     addLog("RHS Preview ready.");
 
     function onRhsChosen(~, event)
-        paths = rhs_preview.ops.eventPaths(event);
+        paths = event.paths;
         if isempty(paths)
             return;
         end
@@ -73,7 +73,7 @@ function fig = run(debugLog)
     end
 
     function onFolderChosen(~, event)
-        paths = rhs_preview.ops.eventPaths(event);
+        paths = event.paths;
         if isempty(paths)
             return;
         end
@@ -91,7 +91,7 @@ function fig = run(debugLog)
     end
 
     function onProtocolChosen(~, event)
-        paths = rhs_preview.ops.eventPaths(event);
+        paths = event.paths;
         if isempty(paths)
             return;
         end

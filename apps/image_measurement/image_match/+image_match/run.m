@@ -47,7 +47,7 @@ function fig = run(debugLog)
         S.currentIndex = 1;
         S.steps = repmat(image_match.state.emptyStep(), 0, 1);
         S.pendingDirty = false;
-        S.outputFolder = string(fileparts(event.paths{1}));
+        S.outputFolder = string(fileparts(event.paths(1)));
         S.lastExport = [];
         addLog(sprintf('Loaded %d image(s).', numel(S.items)));
         refreshAll();

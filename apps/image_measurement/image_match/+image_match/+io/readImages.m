@@ -1,14 +1,13 @@
 % Expected caller: labkit_ImageMatch_app and batch export tests. Input is a
-% string vector of image paths. Output is an item struct array with RGB double
-% images normalized to [0, 1]. Alpha channels are ignored.
+% pathPanel string column. Output is an item struct array with RGB double images
+% normalized to [0, 1]. Alpha channels are ignored.
 function items = readImages(paths)
 
-    paths = string(paths(:));
     template = image_match.state.emptyItem();
     items = repmat(template, numel(paths), 1);
 
     for k = 1:numel(paths)
-        imageData = imread(paths(k));
+        imageData = imread(char(paths(k)));
         items(k) = template;
         items(k).path = paths(k);
         items(k).name = displayName(paths(k));

@@ -64,8 +64,8 @@ ls /Applications/MATLAB_*.app/bin/matlab
 export PATH="/Applications/MATLAB_R2025a.app/bin:$PATH"
 ```
 
-See [docs/testing.md](docs/testing.md) for changed-file, GUI, and project
-validation tasks.
+See [docs/testing.md](docs/testing.md) for changed-file, headless, GUI, and
+coverage validation tasks.
 
 ## Repository Map
 

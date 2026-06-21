@@ -153,7 +153,7 @@ entry points; the implementation lives in
 
 ## Validation
 
-Use the changed-file, core, or GUI tasks from
+Use the changed-file, headless, or GUI tasks from
 [testing.md](testing.md) depending on the scope of the app change.
 
 Automated GUI tests check launch, layout, callback wiring, and debug trace

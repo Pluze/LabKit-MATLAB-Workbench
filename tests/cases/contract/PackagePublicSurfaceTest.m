@@ -54,11 +54,13 @@ function verify_package_public_surface()
     assertPrivatePackageHasMFiles(fullfile(root, '+labkit', '+ui', '+spec', 'private'), ...
         'UI 2.0 spec private implementation');
     h.assertTopLevelMFiles(fullfile(root, '+labkit', '+ui', '+tool'), ...
-        {'anchorEditor.m', 'createRuntime.m', 'scaleBar.m', ...
-        'scaleBarCalibration.m', 'zoomAxesAtPoint.m'}, ...
+        {'anchorEditor.m', 'createRuntime.m', 'enableAxesPopout.m', ...
+        'popoutAxes.m', 'scaleBar.m', 'scaleBarCalibration.m', ...
+        'zoomAxesAtPoint.m'}, ...
         'UI tool facade');
     assertPrivatePackageHasMFiles(fullfile(root, '+labkit', '+ui', '+tool', 'private'), ...
         'UI tool private implementation');
+    assertNoDuplicateUiPrivateHelperNames(root);
     assertNoPublicPackage(fullfile(root, '+labkit', '+ui', '+control'), ...
         'UI control helpers should stay private instead of becoming a public helper-dump package.');
 
@@ -111,4 +113,50 @@ function assertPrivatePackageHasMFiles(packageDir, label)
     files = dir(fullfile(packageDir, '*.m'));
     assert(any(~[files.isdir]), ...
         [label ' package should keep private implementation files.']);
+end
+
+function assertNoDuplicateUiPrivateHelperNames(root)
+    privateDirs = {
+        fullfile(root, '+labkit', '+ui', '+app', 'private')
+        fullfile(root, '+labkit', '+ui', '+tool', 'private')
+        fullfile(root, '+labkit', '+ui', '+view', 'private')};
+    names = strings(0, 1);
+    locations = strings(0, 1);
+    for d = 1:numel(privateDirs)
+        files = dir(fullfile(privateDirs{d}, '*.m'));
+        for k = 1:numel(files)
+            names(end+1, 1) = string(files(k).name);
+            locations(end+1, 1) = localRelativePath(root, ...
+                fullfile(files(k).folder, files(k).name));
+        end
+    end
+
+    uniqueNames = unique(names);
+    duplicateNames = strings(0, 1);
+    for k = 1:numel(uniqueNames)
+        if nnz(names == uniqueNames(k)) > 1
+            duplicateNames(end+1, 1) = uniqueNames(k);
+        end
+    end
+    duplicateDescriptions = strings(0, 1);
+    for k = 1:numel(duplicateNames)
+        duplicateDescriptions(end+1, 1) = duplicateNames(k) + ": " + ...
+            strjoin(locations(names == duplicateNames(k)), ", ");
+    end
+    assert(isempty(duplicateDescriptions), ...
+        ['UI layer private helpers should not duplicate the same helper name ' ...
+        'across app/tool/view private packages. Promote shared behavior to an ' ...
+        'appropriate facade or a single owning private package: ' ...
+        strjoin(cellstr(duplicateDescriptions), '; ')]);
+end
+
+function rel = localRelativePath(root, pathValue)
+    root = char(root);
+    pathValue = char(pathValue);
+    prefix = [root filesep];
+    if startsWith(pathValue, prefix)
+        rel = pathValue(numel(prefix)+1:end);
+    else
+        rel = pathValue;
+    end
 end
