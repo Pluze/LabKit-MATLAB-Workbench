@@ -69,11 +69,14 @@ function verify_launcher_layout()
     drawnow;
     assert(strcmp(fig.Name, 'LabKit App Launcher'), ...
         'labkit_launcher should return the launcher figure handle.');
-    h.assertStandardWorkbenchLayout(fig);
+    assertCompactLauncherLayout(fig);
     assertNoLauncherTabs(fig);
-    assertNoPanelTitle(fig, {'Filter', 'Search', 'Status', 'Hint'});
-    assertPanelTitle(fig, 'GitHub Update');
+    assertNoPanelTitle(fig, {'Filter', 'Search', 'Status', 'Hint', ...
+        'GitHub Update'});
+    assertControlText(fig, 'GitHub download');
     assertNoControlText(fig, {'Search:', 'Family:', 'LabKit Apps', 'Hint'});
+    assertLauncherFontSizes(fig);
+    assertLauncherTableDensity(fig);
     h.assertButtonContract(fig, {'Open Selected App', 'Open Debug', ...
         'Latest', 'Release', 'Run Code Analyzer', 'Clean Artifacts', ...
         'Refresh App List'});
@@ -87,6 +90,29 @@ function verify_launcher_layout()
     h.invokeButton(fig, 'Refresh App List');
 end
 
+function assertCompactLauncherLayout(fig)
+    pos = fig.Position;
+    assert(pos(3) <= 1300 && pos(4) <= 660 && pos(3) >= 1220 && pos(4) >= 580, ...
+        'Launcher should open in a compact but not cramped default window.');
+    mainGrid = findLauncherMainGrid(fig);
+    columns = mainGrid.ColumnWidth;
+    assert(numel(columns) == 3 && isequal(columns{1}, 360) && ...
+        isequal(columns{2}, 5) && strcmp(char(string(columns{3})), '1x'), ...
+        'Launcher should use compact launcher-specific workbench columns without squeezing controls.');
+end
+
+function grid = findLauncherMainGrid(fig)
+    grids = findall(fig, 'Type', 'uigridlayout');
+    for k = 1:numel(grids)
+        columns = grids(k).ColumnWidth;
+        if numel(columns) == 3 && isequal(columns{1}, 360) && isequal(columns{2}, 5)
+            grid = grids(k);
+            return;
+        end
+    end
+    error('Launcher main grid was not found.');
+end
+
 function assertLauncherTextAreasHaveRoom(fig)
     drawnow;
     pause(0.5);
@@ -98,6 +124,25 @@ function assertLauncherTextAreasHaveRoom(fig)
     assert(isvalid(ui.controls.statusLine.textArea) && ...
         ~isempty(ui.controls.statusLine.textArea.Value), ...
         'Launcher action status should preserve a readable status panel.');
+end
+
+function assertLauncherFontSizes(fig)
+    buttons = findall(fig, 'Type', 'uibutton');
+    buttonSizes = arrayfun(@(control) control.FontSize, buttons);
+    tables = findall(fig, 'Type', 'uitable');
+    assert(numel(tables) == 1 && tables(1).FontSize >= 15, ...
+        'Launcher app table should use the larger launcher font.');
+    assert(~isempty(buttonSizes) && all(buttonSizes < tables(1).FontSize), ...
+        'Launcher buttons should keep the smaller default font.');
+end
+
+function assertLauncherTableDensity(fig)
+    tables = findall(fig, 'Type', 'uitable');
+    assert(numel(tables) == 1, 'Launcher should draw one app table.');
+    widths = tables(1).ColumnWidth;
+    assert(numel(widths) == 3 && isequal(widths{1}, 160) && ...
+        isequal(widths{2}, 220) && strcmp(char(string(widths{3})), 'auto'), ...
+        'Launcher table should avoid over-wide family and app columns.');
 end
 
 function assertNoLauncherTabs(fig)
@@ -128,16 +173,15 @@ function assertUpdateButtonSplit(fig)
     stableButton = buttons(texts == "Release");
     assert(numel(mainButton) == 1 && numel(stableButton) == 1, ...
         'Launcher should have one main update button and one stable update button.');
-    assert(isequal(mainButton.Layout.Column, [1 3]), ...
-        'Main update button should occupy the left three quarters of the update row.');
-    assert(isequal(stableButton.Layout.Column, 4), ...
-        'Release update button should occupy the right quarter of the update row.');
-end
-
-function assertPanelTitle(fig, expectedTitle)
-    actual = titleValues(fig);
-    assert(any(actual == string(expectedTitle)), ...
-        'Launcher should draw the "%s" update group.', expectedTitle);
+    assert(isequal(mainButton.Parent, stableButton.Parent), ...
+        'Update buttons should live in the same compact row.');
+    columns = mainButton.Parent.ColumnWidth;
+    assert(numel(columns) == 3 && all(strcmp(string(columns), "1x")), ...
+        'Update row should split label, Latest, and Release into thirds.');
+    assert(isequal(mainButton.Layout.Column, 2), ...
+        'Latest update button should occupy the middle third.');
+    assert(isequal(stableButton.Layout.Column, 3), ...
+        'Release update button should occupy the right third.');
 end
 
 function pos = absolutePosition(control)
@@ -165,6 +209,12 @@ function assertNoPanelTitle(fig, blockedTitles)
         assert(~any(actual == string(blockedTitles{k})), ...
             'Launcher should not draw a separate "%s" filter panel.', blockedTitles{k});
     end
+end
+
+function assertControlText(fig, expectedText)
+    actual = textValues(fig);
+    assert(any(actual == string(expectedText)), ...
+        'Launcher should draw "%s".', expectedText);
 end
 
 function assertNoControlText(fig, blockedTexts)

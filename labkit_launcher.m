@@ -62,48 +62,52 @@ function addPathIfMissing(folder, varargin)
 end
 
 function fig = runLauncher(root, apps)
+    panelFontSize = 15;
+    tableFontSize = 15;
+
     fig = uifigure('Name', 'LabKit App Launcher', ...
-        'Position', [120 80 1500 900], 'Color', [0.97 0.98 0.99]);
+        'Position', [150 130 1260 620], 'Color', [0.97 0.98 0.99]);
     main = uigridlayout(fig, [1 3]);
-    main.ColumnWidth = {430, 6, '1x'};
+    main.ColumnWidth = {360, 5, '1x'};
     main.RowHeight = {'1x'};
-    main.Padding = [10 10 10 10];
+    main.Padding = [6 6 6 6];
     main.ColumnSpacing = 0;
 
-    leftPanel = uipanel(main, 'Title', 'Controls');
+    leftPanel = uipanel(main, 'Title', 'Controls', 'FontSize', panelFontSize);
     leftPanel.Layout.Row = 1;
     leftPanel.Layout.Column = 1;
     divider = uipanel(main, 'BorderType', 'none', ...
         'BackgroundColor', [0.78 0.80 0.82]);
     divider.Layout.Row = 1;
     divider.Layout.Column = 2;
-    rightPanel = uipanel(main, 'Title', 'Applications');
+    rightPanel = uipanel(main, 'Title', 'Applications', 'FontSize', panelFontSize);
     rightPanel.Layout.Row = 1;
     rightPanel.Layout.Column = 3;
 
     controlsGrid = uigridlayout(leftPanel, [7 1]);
-    controlsGrid.RowHeight = {58, 30, 30, 30, 30, 30, '1x'};
-    controlsGrid.Padding = [10 10 10 10];
+    controlsGrid.RowHeight = {34, 34, 34, 34, 34, 34, '1x'};
+    controlsGrid.Padding = [6 6 6 6];
     controlsGrid.RowSpacing = 6;
 
-    updatePanel = uipanel(controlsGrid, 'Title', 'GitHub Update');
-    updatePanel.Layout.Row = 1;
-    updatePanel.Layout.Column = 1;
-
-    updateGrid = uigridlayout(updatePanel, [1 4]);
-    updateGrid.ColumnWidth = {'1x', '1x', '1x', '1x'};
+    updateGrid = uigridlayout(controlsGrid, [1 3]);
+    updateGrid.Layout.Row = 1;
+    updateGrid.Layout.Column = 1;
+    updateGrid.ColumnWidth = {'1x', '1x', '1x'};
     updateGrid.RowHeight = {'1x'};
-    updateGrid.Padding = [6 4 6 4];
+    updateGrid.Padding = [0 0 0 0];
     updateGrid.ColumnSpacing = 6;
 
+    updateLabel = uilabel(updateGrid, 'Text', 'GitHub download');
+    updateLabel.Layout.Row = 1;
+    updateLabel.Layout.Column = 1;
     btnUpdate = uibutton(updateGrid, 'Text', 'Latest', ...
         'ButtonPushedFcn', @onUpdateFromMain);
     btnUpdate.Layout.Row = 1;
-    btnUpdate.Layout.Column = [1 3];
+    btnUpdate.Layout.Column = 2;
     btnRelease = uibutton(updateGrid, 'Text', 'Release', ...
         'ButtonPushedFcn', @onUpdateFromStable);
     btnRelease.Layout.Row = 1;
-    btnRelease.Layout.Column = 4;
+    btnRelease.Layout.Column = 3;
     if isprop(btnUpdate, 'Tooltip')
         btnUpdate.Tooltip = 'Download and apply the latest main branch zip.';
         btnRelease.Tooltip = 'Download and apply the latest GitHub release or tag zip.';
@@ -121,10 +125,11 @@ function fig = runLauncher(root, apps)
     txtInfo = uitextarea(controlsGrid, 'Editable', 'off', 'Value', {'Ready.'});
 
     tableGrid = uigridlayout(rightPanel, [1 1]);
-    tableGrid.Padding = [8 8 8 8];
+    tableGrid.Padding = [4 4 4 4];
     appTable = uitable(tableGrid, 'ColumnName', {'Family', 'App', 'Command'}, ...
-        'ColumnEditable', [false false false], 'RowName', {});
-    appTable.ColumnWidth = {'fit', 'fit', 'auto'};
+        'ColumnEditable', [false false false], 'RowName', {}, ...
+        'FontSize', tableFontSize);
+    appTable.ColumnWidth = {160, 220, 'auto'};
     configureTable(appTable, @onSelectionChanged, @onTableDoubleClicked);
 
     ui = struct();
