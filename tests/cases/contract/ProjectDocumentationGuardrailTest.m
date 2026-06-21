@@ -55,6 +55,31 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
                 strjoin(cellstr(duplicates), ', ')]);
         end
 
+        function humanDocsAvoidRetiredScriptAndPathBoundaryClaims(testCase)
+            root = setupLabKitTestPath();
+            files = collectHumanDocFiles(root);
+            forbidden = [
+                "MATLAB batch runs"
+                "Shell/Python support utilities"
+                "file normalization"
+                "normalizePathList"];
+            findings = strings(1, 0);
+
+            for k = 1:numel(files)
+                content = string(fileread(files(k)));
+                for p = 1:numel(forbidden)
+                    if contains(content, forbidden(p))
+                        findings(end+1) = relativePath(root, files(k)) + ...
+                            " -> " + forbidden(p);
+                    end
+                end
+            end
+
+            testCase.verifyTrue(isempty(findings), ...
+                ['Human docs should not describe removed script wrappers or ' ...
+                'app-owned path normalization: ' strjoin(cellstr(findings), ', ')]);
+        end
+
         function publicLibraryFunctionsDocumentAppFacingContracts(testCase)
             root = setupLabKitTestPath();
             publicFiles = collectPublicLibraryFiles(root);

@@ -64,10 +64,6 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
 - Use `.agents/migration_guide.md` and the `labkit-migration-planner` skill for
   active runner, app-private, and migration-debt work. This file owns app
   boundary rules, not the migration debt ledger.
-- When the wearable ECG Print app is migrated, target
-  `apps/wearable/ecg_print/+ecg_print/...` with the public command still named
-  `labkit_ECGPrint_app`; do not create a direct `apps/wearable/+ecg_print`
-  package.
 - Migrated apps use a package-root `run.m` for app lifecycle orchestration.
   Keep `+ui` focused on `buildSpec.m`, UI handle mapping, and justified
   tool/widget glue; do not put app lifecycle runners in `+ui/runApp.m`.

@@ -12,7 +12,7 @@ typical outputs.
 
 ## I Want To Create Or Modify An App
 
-Read [apps.md](apps.md), then [ui.md](ui.md) when the work touches layout,
+Read [apps.md](apps.md). Read [ui.md](ui.md) only when the work touches layout,
 controls, previews, callbacks, or debug traces.
 
 Use `labkit_ProjectGovernance_app` to create a starter app scaffold. After
@@ -29,8 +29,11 @@ when a helper is reusable enough for `+labkit`.
 
 Read [testing.md](testing.md).
 
-It explains build tasks, targeted selectors, test layout, fixture expectations,
-and what automated GUI checks do and do not prove.
+It explains the supported build tasks, test layout, fixture expectations, and
+what automated GUI checks do and do not prove.
+
+For normal contributor work, start with the changed-file task. Use the full
+non-GUI task when changed-file discovery is not available.
 
 ## I Am Using A Reusable Facade
 
@@ -43,6 +46,5 @@ and what automated GUI checks do and do not prove.
 
 ## What Is Not Here
 
-Agent execution rules live in `AGENTS.md`, scoped `AGENTS.md` files, and
-`.agents/skills/`. Active migration debt lives in `.agents/migration_guide.md`.
-Those files are intentionally separate from these human-facing docs.
+Agent execution rules, migration ledgers, and skill procedures are intentionally
+outside this human documentation set.

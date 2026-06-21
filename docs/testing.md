@@ -1,6 +1,7 @@
 # Testing
 
-Use this page to choose the smallest check that proves the change you made.
+Use this page to choose the smallest supported build task that proves the
+change you made.
 
 ## Default Check
 
@@ -82,10 +83,8 @@ one-function files because those helpers are called directly by tests. Prefer a
 plain function file there over a larger registry object unless repeated call
 patterns justify a grouped API.
 
-The runner discovers tests by directory and then filters by suite, tag, and
-test name. It does not use a generated registry. Build tasks are the supported
-human and CI entry points; the lower-level runner exists so the buildfile can
-compose those tasks without duplicating discovery logic.
+Build tasks are the supported human and CI entry points. The lower-level runner
+is an implementation detail used by the buildfile.
 
 App GUI tests live at:
 

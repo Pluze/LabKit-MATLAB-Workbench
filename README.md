@@ -37,6 +37,17 @@ labkit_ResponseReviewStats_app
 Use `labkit_ProjectGovernance_app` when you want to create a new app scaffold
 or scan the project with MATLAB Code Analyzer.
 
+## Contributor Quick Path
+
+1. Open MATLAB at the repository root and run `labkit_launcher`.
+2. Read [docs/README.md](docs/README.md) to choose the one or two docs that
+   match your task.
+3. Make the smallest source change that preserves the owning app or facade
+   boundary.
+4. Before committing, use the changed-file validation task from
+   [docs/testing.md](docs/testing.md). Use the full non-GUI task when there is
+   no git checkout or changed-file state.
+
 ## App Families
 
 | Family | Examples | Purpose |
@@ -64,8 +75,8 @@ ls /Applications/MATLAB_*.app/bin/matlab
 export PATH="/Applications/MATLAB_R2025a.app/bin:$PATH"
 ```
 
-See [docs/testing.md](docs/testing.md) for changed-file, headless, GUI, and
-coverage validation tasks.
+See [docs/testing.md](docs/testing.md) for the supported build tasks and GUI
+validation limits.
 
 ## Repository Map
 
@@ -73,7 +84,7 @@ coverage validation tasks.
 +labkit/                Reusable UI, DTA, RHS, and biosignal facades
 apps/                   Launchable app workflows and app-owned helpers
 docs/                   Human-facing usage, architecture, and API docs
-scripts/                Shell/Python support utilities for MATLAB batch runs and CI summaries
+scripts/                CI/report helper scripts
 tests/                  Unit, contract, GUI, shared helpers, and runner code
 ```
 
@@ -82,7 +93,7 @@ tests/                  Unit, contract, GUI, shared helpers, and runner code
 - [docs/README.md](docs/README.md): choose the right document.
 - [docs/apps.md](docs/apps.md): app catalog, new-app workflow, app structure.
 - [docs/architecture.md](docs/architecture.md): ownership boundaries.
-- [docs/testing.md](docs/testing.md): build tasks, selectors, GUI limits.
+- [docs/testing.md](docs/testing.md): build tasks and GUI limits.
 - [docs/ui.md](docs/ui.md), [docs/dta.md](docs/dta.md),
   [docs/rhs.md](docs/rhs.md), and [docs/biosignal.md](docs/biosignal.md):
   reusable facade references.

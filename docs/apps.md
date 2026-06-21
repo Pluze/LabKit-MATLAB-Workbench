@@ -113,7 +113,7 @@ Create optional role packages only when the app has code for that role:
 
 ```text
 +state/    defaults, factories, presets
-+io/       app-local readers, filters, file normalization
++io/       app-local file discovery, filters, readers, and import parsing
 +ops/      GUI-free calculations and transforms
 +view/     table rows, detail text, display-ready data
 +export/   CSV/image output writers and manifests

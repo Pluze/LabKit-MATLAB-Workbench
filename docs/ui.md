@@ -93,70 +93,37 @@ function workspace = previewWorkspace(callbacks)
 end
 ```
 
-The fixed shape behind this sketch is:
+Use these app-facing contracts:
 
-- The default app shell remains a LabKit workbench: left control tabs plus a
-  right workspace for primary preview, plotting, waveform, image, or canvas
-  content.
-- Nontrivial apps should keep the top-level `buildSpec.m` call shallow and use
-  local builder functions for tabs, sections, and workspace regions. This keeps
-  the UI tree readable without adding a second UI definition language or a
-  formatter-only maintenance path. Put section builders in visual order, then
-  the workspace builder, then small helper builders.
-- `controlTabs`, `sections`, workspace children, and slots use cell arrays of
-  scalar spec structs for heterogeneous children.
-- Control ids are globally unique within the app spec. `ui.controls.run` and
-  `ui.controls.sourceImages` are primary registry paths regardless of tab or
-  section placement.
-- Public specs express stable app shapes: `pathPanel`, `field`, `rangeField`,
-  `panner`, `action`, `actionGroup`, `previewArea`, `resultTable`, `logPanel`, and
-  `statusPanel`. Primitive controls such as button, dropdown, slider, listbox,
-  textarea, and axes are internal implementation details, not public spec
-  constructors.
-- `pathPanel` separates chooser mode from list-selection behavior. A workflow
-  can load multiple files while keeping one current selection by using
-  `mode="multiFile"` with `selectionMode="single"`.
-- `pathPanel` list boxes always show an empty-state prompt before files are
-  chosen or after Clear. The default prompt is mode-aware, and apps can override
-  it with `emptyText` when list wording should differ from the status line.
-- `pathPanel` owns generic chooser/list/status mechanics while apps own command
-  wording. Use `chooseLabel` when the default `Choose files` or `Choose folder`
-  text is not the app's user-facing action label, and use `clearLabel` when
-  the clear action needs app-specific wording such as `Clear all`.
-- `field` uses a fixed kind whitelist: `text`, `number`, `spinner`, `dropdown`,
-  `slider`, `checkbox`, and `readonly`.
-- `panner` is the preferred control for browsing along a numeric axis. It
-  combines a slider with built-in left/right small-step buttons while exposing
-  one semantic value and one `onChange` callback to the app.
-- Text-heavy controls have conservative automatic starting heights. `statusPanel`,
-  `logPanel`, `pathPanel`, and `resultTable` accept `minRows` and `minHeight`
-  when an app needs more room without hand-writing grid layout. Use explicit
-  `height` only when the whole row should be fixed or flexed intentionally.
-  Numeric section heights are treated as preferred heights and are clamped to
-  the section's estimated content minimum, so adding controls cannot silently
-  clip buttons or fields.
-- Public callbacks use `function callback(control, event)`, where `event`
-  carries semantic fields such as `id`, `kind`, `source`, `value`,
-  `previousValue`, and `ui`.
-- `labkit.ui.view.setLimits` updates numeric limits for slider-like controls
-  and range fields, clamping existing values without firing synchronous
-  value-change callbacks.
+- The default shell is a LabKit workbench: control tabs on the left and primary
+  preview, plot, waveform, image, or canvas content on the right.
+- `buildSpec.m` describes controls and workspace structure only. App runners
+  own state, callbacks, alerts, refresh order, and log wording.
+- Control ids are globally unique within an app. The UI registry is keyed by
+  those ids, not by tab or section placement.
+- Public specs are semantic controls such as `pathPanel`, `field`, `panner`,
+  `action`, `previewArea`, `resultTable`, `logPanel`, and `statusPanel`.
+  Primitive MATLAB controls are implementation details.
+- Public callbacks use `function callback(control, event)`. Events carry
+  semantic fields such as `id`, `kind`, `source`, `value`, `previousValue`,
+  and `ui`.
+- `pathPanel` owns chooser/list/status mechanics and normalizes selected paths
+  before app callbacks run. App callbacks receive `event.paths`,
+  `event.selection`, and `event.value` as string column vectors. Apps should
+  consume that contract directly instead of normalizing path-list shapes.
 - `previewArea` belongs in `workspace` by default. Its optional `viewModes`
-  selector is also workspace-owned; apps can react through
-  `onModeChange`. Put preview-like content in a left tab only when it is
-  intentionally a compact control-pane preview.
-- `previewArea` can take `axisIds`, `axisTitles`, `xLabels`, and `yLabels` so
-  plot and waveform apps keep app-authored axis wording without owning axes
-  layout mechanics.
-- `previewArea` axes install LabKit-managed scroll-wheel navigation by
-  default. Wheel events are target-gated to the preview axes under the
-  pointer; scrolling over controls, logs, or empty figure space does not zoom
-  plots. This does not rely on MATLAB focus-gated `UIAxes.Interactions`, so
-  users should not need to click a preview before wheel zoom works. Apps should
-  override this only when wheel input changes app data or workflow state rather
-  than ordinary axes limits.
-- App-specific hand-written layout must go through `labkit.ui.spec.custom` and
-  a named builder file, for example:
+  selector is workspace-owned, and apps can react through `onModeChange`.
+- `previewArea` axes install LabKit-managed, pointer-gated mouse-wheel zoom by
+  default. Scrolling over controls, logs, or empty figure space does not zoom
+  plots, and users should not need to click a preview before wheel zoom works.
+- Text-heavy controls have conservative automatic heights. Use `minRows` or
+  `minHeight` when content needs more room; use fixed numeric `height` only
+  when a fixed row is intentional.
+- `labkit.ui.view.setLimits` updates numeric limits and clamps existing values
+  without firing synchronous value-change callbacks.
+
+App-specific hand-written layout must go through `labkit.ui.spec.custom` and a
+named builder file, for example:
 
 ```matlab
 labkit.ui.spec.custom("roiEditor", @example.ui.buildRoiEditor, ...
@@ -166,10 +133,10 @@ labkit.ui.spec.custom("roiEditor", @example.ui.buildRoiEditor, ...
 `buildRoiEditor.m` may hand-write layout for that custom tool only. The app
 runner, callbacks, and ordinary control specs should not create grids or set
 `Layout.Row`/`Layout.Column` directly.
-- Control tabs with more than one section include draggable horizontal
-  separators between sections by default so users can reallocate vertical
-  space between tools. A tab may opt out with `resize="none"` when a fixed
-  stack is intentional.
+
+Control tabs with more than one section include draggable horizontal
+separators by default. A tab may opt out with `resize="none"` when a fixed
+stack is intentional.
 
 ## Busy State
 

@@ -47,7 +47,7 @@ Current facts:
 ## Migration Standard
 
 Apps are first-class products. `+labkit` stays a small domain-neutral foundation
-with UI, DTA, and biosignal facades. App-specific calculations, summaries,
+with UI, DTA, RHS, and biosignal facades. App-specific calculations, summaries,
 plots, exports, workflow wording, file conventions, and result schemas stay
 under the owning app tree.
 

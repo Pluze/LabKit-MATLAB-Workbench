@@ -7,10 +7,10 @@ is the small reusable foundation they share.
 
 ```text
 apps/      workflow-specific GUI apps and app-owned helpers
-+labkit/   reusable UI, DTA, and biosignal facades
++labkit/   reusable UI, DTA, RHS, and biosignal facades
 tests/     behavior tests, project contracts, GUI checks, shared helpers, and runner code
 docs/      human-facing usage, API, architecture, and validation docs
-scripts/   shell/Python support utilities for MATLAB batch runs and CI summaries
+scripts/   CI/report helper scripts
 ```
 
 Apps should remain independently launchable. The reusable library should grow

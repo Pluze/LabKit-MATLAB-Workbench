@@ -177,6 +177,20 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
                 "Docs and runner changes should not trigger GUI validation.");
         end
 
+        function changedValidationPlanRoutesScopedAgentDocsToProject(testCase)
+            root = setupLabKitTestPath();
+
+            steps = labkitValidationPlanForChangedPaths(root, [
+                "apps/AGENTS.md"
+                "+labkit/AGENTS.md"
+                "tests/AGENTS.md"]);
+            signatures = validationStepSignatures(steps);
+
+            testCase.verifyEqual(signatures, "project|false", ...
+                "Scoped AGENTS changes should run project guardrails, not " + ...
+                "invalid app or package suite names.");
+        end
+
         function changedValidationPlanCompressesCoveredGuiTargets(testCase)
             root = setupLabKitTestPath();
 
@@ -442,7 +456,8 @@ function rel = relativePath(root, filepath)
 end
 
 function output = listLabKitTestsQuietly(varargin)
-    evalc('output = runLabKitTests(varargin{:}, "ListOnly", true);');
+    evalc(['output = runLabKitTests(varargin{:}, "ListOnly", true, ' ...
+        '"FailIfNoTests", false);']);
 end
 
 function signatures = validationStepSignatures(steps)
