@@ -22,6 +22,25 @@ classdef LauncherGuiTest < matlab.uitest.TestCase
             verify_launcher_layout();
         end
 
+        function clean_artifacts_has_static_safety_guards(testCase)
+            root = setupLabKitTestPath();
+            source = fileread(fullfile(root, "labkit_launcher.m"));
+            body = launcherFunctionBlock(source, ...
+                'function result = cleanGeneratedArtifacts(root)', ...
+                'function tf = confirmCleanArtifacts(fig)');
+
+            testCase.verifyFalse(isempty(strfind(body, 'targets = {')), ...
+                'Clean Artifacts must keep targets as a cell list, not a char array.');
+            testCase.verifyTrue(isempty(strfind(body, 'targets = [')), ...
+                'Clean Artifacts must not concatenate char paths with square brackets.');
+            testCase.verifyFalse(isempty(strfind(body, 'validateCleanArtifactsRoot(root)')), ...
+                'Clean Artifacts must validate the project root before deleting files.');
+            testCase.verifyFalse(isempty(strfind(body, ...
+                'validateCleanArtifactsTarget(root, target, relativeTarget);')), ...
+                'Clean Artifacts must validate each target before deleting files.');
+            verifyTargetValidationBeforeDeletion(testCase, body);
+        end
+
         function launcher_runs_when_only_launcher_file_exists(testCase)
             root = setupLabKitTestPath();
             h = guiTestHelpers();
@@ -55,6 +74,37 @@ classdef LauncherGuiTest < matlab.uitest.TestCase
             clear labkit_launcher;
             cd(originalFolder);
         end
+    end
+end
+
+function block = launcherFunctionBlock(source, startMarker, endMarker)
+    startIndex = strfind(source, startMarker);
+    endIndex = strfind(source, endMarker);
+    assert(~isempty(startIndex), 'Launcher source block start not found: %s', startMarker);
+    assert(~isempty(endIndex), 'Launcher source block end not found: %s', endMarker);
+    assert(startIndex(1) < endIndex(1), ...
+        'Launcher source block markers are out of order.');
+    block = source(startIndex(1):endIndex(1)-1);
+end
+
+function verifyTargetValidationBeforeDeletion(testCase, body)
+    validationIndex = strfind(body, ...
+        'validateCleanArtifactsTarget(root, target, relativeTarget);');
+    rmdirIndex = strfind(body, 'rmdir(target,');
+    deleteIndex = strfind(body, 'delete(target);');
+    testCase.verifyFalse(isempty(validationIndex), ...
+        'Clean Artifacts target validation call is missing.');
+    testCase.verifyFalse(isempty(rmdirIndex), ...
+        'Clean Artifacts directory deletion call is missing.');
+    testCase.verifyFalse(isempty(deleteIndex), ...
+        'Clean Artifacts file deletion call is missing.');
+    if ~isempty(validationIndex) && ~isempty(rmdirIndex)
+        testCase.verifyLessThan(validationIndex(1), rmdirIndex(1), ...
+            'Clean Artifacts must validate before rmdir.');
+    end
+    if ~isempty(validationIndex) && ~isempty(deleteIndex)
+        testCase.verifyLessThan(validationIndex(1), deleteIndex(1), ...
+            'Clean Artifacts must validate before delete.');
     end
 end
 

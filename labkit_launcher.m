@@ -573,13 +573,25 @@ function lines = wrapDescription(description)
 end
 
 function result = cleanGeneratedArtifacts(root)
-    targets = [fullfile(root, 'artifacts'), ...
-        fullfile(root, 'matlab_code_check.json'), fullfile(root, 'matlab_test.log')];
+    try
+        root = validateCleanArtifactsRoot(root);
+    catch err
+        result = struct('removedCount', 0, 'errors', string(err.message));
+        return;
+    end
+
+    targets = {
+        'artifacts'
+        'matlab_code_check.json'
+        'matlab_test.log'
+    };
     removedCount = 0;
     errors = strings(0, 1);
     for k = 1:numel(targets)
-        target = char(targets(k));
+        relativeTarget = targets{k};
+        target = fullfile(root, relativeTarget);
         try
+            validateCleanArtifactsTarget(root, target, relativeTarget);
             if exist(target, 'dir') == 7
                 rmdir(target, 's');
                 removedCount = removedCount + 1;
@@ -592,6 +604,46 @@ function result = cleanGeneratedArtifacts(root)
         end
     end
     result = struct('removedCount', removedCount, 'errors', errors);
+end
+
+function root = validateCleanArtifactsRoot(root)
+    root = canonicalPath(root);
+    if isSamePath(root, filesep)
+        error('labkit_launcher:UnsafeCleanRoot', ...
+            'Clean Artifacts refused to use the filesystem root as the project root.');
+    end
+    if exist(fullfile(root, 'labkit_launcher.m'), 'file') ~= 2
+        error('labkit_launcher:UnsafeCleanRoot', ...
+            'Clean Artifacts refused a folder that is not a LabKit launcher root: %s', root);
+    end
+end
+
+function validateCleanArtifactsTarget(root, target, relativeTarget)
+    if exist(target, 'dir') ~= 7 && exist(target, 'file') ~= 2
+        return;
+    end
+
+    canonicalRoot = canonicalPath(root);
+    canonicalTarget = canonicalPath(target);
+    expectedTarget = fullfile(canonicalRoot, relativeTarget);
+    if ~isSamePath(canonicalTarget, expectedTarget) || ...
+            isSamePath(canonicalTarget, canonicalRoot) || ...
+            ~startsWith(string(canonicalTarget), string([canonicalRoot filesep]))
+        error('labkit_launcher:UnsafeCleanTarget', ...
+            'Clean Artifacts refused unsafe target: %s', target);
+    end
+end
+
+function resolvedPath = canonicalPath(filepath)
+    resolvedPath = char(java.io.File(char(filepath)).getCanonicalPath());
+end
+
+function tf = isSamePath(left, right)
+    if ispc
+        tf = strcmpi(char(left), char(right));
+    else
+        tf = strcmp(char(left), char(right));
+    end
 end
 
 function tf = confirmCleanArtifacts(fig)
