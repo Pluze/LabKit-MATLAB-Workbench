@@ -30,8 +30,9 @@ none
 
 Current facts:
 
-- Oversized app entry points: none.
-- Oversized package-root app `run.m` runners over 500 lines: none.
+- Tracked files over the 650-line repository file budget: none.
+- App entry points and package-root app `run.m` runners are covered by the
+  repository file budget rather than a separate app-only line limit.
 - App `private/` debt: none.
 - `+labkit` private helper contract debt: none.
 - String-dispatch workflow adapters and app `+core/dispatch.m` routers: none.

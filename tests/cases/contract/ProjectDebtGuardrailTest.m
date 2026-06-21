@@ -25,21 +25,15 @@ classdef ProjectDebtGuardrailTest < matlab.unittest.TestCase
 
         end
 
-        function oversizedAppEntrypointDebtIsRemoved(testCase)
+        function trackedFilesStayWithinLineBudget(testCase)
             root = setupLabKitTestPath();
-            actual = collectOversizedEntrypoints(root, 500);
+            maxLines = 650;
+            actual = collectOversizedTrackedFiles(root, maxLines);
             testCase.verifyEmpty(actual, ...
-                ['app entrypoints must remain at or below 500 lines. Files: ' ...
+                ['tracked files must remain at or below ' num2str(maxLines) ...
+                ' lines. Split large files by cohesive private helpers or ' ...
+                'app-owned component packages before adding more logic. Files: ' ...
                 strjoin(cellstr(actual), ', ')]);
-        end
-
-        function oversizedRunnerDebtIsRemoved(testCase)
-            root = setupLabKitTestPath();
-            actualFiles = collectOversizedAppRunners(root, 500);
-            testCase.verifyTrue(isempty(actualFiles), ...
-                ['oversized app runners must not remain. ' ...
-                'Split deterministic behavior into app-owned +ops/+view/+export/+io/+state ' ...
-                'before moving runner bodies. Files: ' strjoin(cellstr(actualFiles), ', ')]);
         end
 
         function oldRunnerDependenciesAreRemoved(testCase)
@@ -229,23 +223,16 @@ function dirs = collectDirectPackageDirs(folder, root)
     dirs = unique(dirs(1:dirCount));
 end
 
-function files = collectOversizedAppRunners(root, maxLines)
-    entries = [ ...
-        dir(fullfile(root, 'apps', '**', 'private', 'run*App.m')); ...
-        dir(fullfile(root, 'apps', '**', '+*', 'run.m'))];
-    files = strings(numel(entries), 1);
-    fileCount = 0;
-    for k = 1:numel(entries)
-        if entries(k).isdir
-            continue;
-        end
-        filepath = fullfile(entries(k).folder, entries(k).name);
-        if countFileLines(filepath) > maxLines
-            fileCount = fileCount + 1;
-            files(fileCount) = string(relativePath(root, filepath));
+function files = collectOversizedTrackedFiles(root, maxLines)
+    tracked = gitTrackedFiles(root);
+    files = strings(1, 0);
+    for k = 1:numel(tracked)
+        filepath = fullfile(root, char(tracked(k)));
+        lineCount = countFileLines(filepath);
+        if lineCount > maxLines
+            files(end+1) = tracked(k) + " (" + string(lineCount) + " lines)";
         end
     end
-    files = unique(files(1:fileCount));
 end
 
 function files = collectRelativeFiles(root, pattern)
@@ -338,23 +325,16 @@ function tf = packageNamespaceHasDirectUnitTest(root, family, namespace)
     end
 end
 
-function actual = collectOversizedEntrypoints(root, maxLines)
-    appFiles = dir(fullfile(root, 'apps', '**', 'labkit_*_app.m'));
-    actual = strings(numel(appFiles), 1);
-    actualCount = 0;
-    for k = 1:numel(appFiles)
-        filepath = fullfile(appFiles(k).folder, appFiles(k).name);
-        lineCount = countFileLines(filepath);
-        if lineCount > maxLines
-            actualCount = actualCount + 1;
-            actual(actualCount) = string(relativePath(root, filepath));
-        end
-    end
-    actual = actual(1:actualCount);
-end
-
 function n = countFileLines(filepath)
     n = numel(readlines(filepath));
+end
+
+function files = gitTrackedFiles(root)
+    command = sprintf('git -C "%s" ls-files', root);
+    [status, output] = system(command);
+    assert(status == 0, 'Could not list tracked files with git.');
+    files = string(splitlines(strtrim(output))).';
+    files = files(strlength(files) > 0);
 end
 
 function rel = relativePath(root, filepath)

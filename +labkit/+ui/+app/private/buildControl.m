@@ -247,163 +247,42 @@ function [ui, adapter] = buildAction(ui, actionSpec, parentGrid, row, column)
 end
 
 function ui = buildPathPanel(ui, pathSpec, parentGrid, row)
-    props = pathSpec.props;
-    panel = uipanel(parentGrid, 'Title', optionValue(props, 'label', pathSpec.id));
-    panel.Layout.Row = row;
-    panel.Layout.Column = [1 2];
-    grid = uigridlayout(panel, [3 2]);
-    grid.RowHeight = {'fit', '1x', 'fit'};
-    grid.ColumnWidth = {'1x', '1x'};
-    grid.RowSpacing = 6;
-    grid.ColumnSpacing = 8;
-    grid.Padding = [8 8 8 8];
-
-    chooseButton = uibutton(grid, 'Text', chooseButtonText(props), ...
-        'ButtonPushedFcn', semanticPathChooseCallback(pathSpec.id, ...
-        optionValue(props, 'onChoose', [])));
-    setOriginalCallbackName(chooseButton, optionValue(props, 'onChoose', []));
-    chooseButton.Layout.Row = 1;
-    chooseButton.Layout.Column = 1;
-    clearButton = uibutton(grid, 'Text', optionValue(props, 'clearLabel', 'Clear'), ...
-        'ButtonPushedFcn', semanticPathClearCallback(pathSpec.id, ...
-        optionValue(props, 'onClear', [])));
-    setOriginalCallbackName(clearButton, optionValue(props, 'onClear', []));
-    clearButton.Layout.Row = 1;
-    clearButton.Layout.Column = 2;
-    emptyText = emptyPathText(props);
-    listbox = uilistbox(grid, 'Items', {emptyText}, ...
-        'Multiselect', pathMultiselect(props));
-    if strcmp(listbox.Multiselect, 'on')
-        listbox.Value = {emptyText};
-    else
-        listbox.Value = emptyText;
-    end
-    listbox.ValueChangedFcn = semanticPathSelectionCallback(pathSpec.id, ...
-        optionValue(props, 'onSelectionChange', []));
-    setOriginalCallbackName(listbox, optionValue(props, 'onSelectionChange', []));
-    listbox.Layout.Row = 2;
-    listbox.Layout.Column = [1 2];
-    status = uieditfield(grid, 'text', 'Editable', 'off', ...
-        'Value', pathStatusText(props, {}));
-    status.Layout.Row = 3;
-    status.Layout.Column = [1 2];
-
-    adapter = baseAdapter(pathSpec, 'pathPanel');
-    adapter.panel = panel;
-    adapter.grid = grid;
-    adapter.chooseButton = chooseButton;
-    adapter.clearButton = clearButton;
-    adapter.listbox = listbox;
-    adapter.status = status;
-    adapter.valueHandle = listbox;
-    adapter.getValue = @() currentPathValues(adapter);
-    adapter.setValue = @(paths) applyPathSelection(adapter, paths, true);
+    callbacks = struct( ...
+        'choose', semanticPathChooseCallback(pathSpec.id, ...
+            optionValue(pathSpec.props, 'onChoose', [])), ...
+        'clear', semanticPathClearCallback(pathSpec.id, ...
+            optionValue(pathSpec.props, 'onClear', [])), ...
+        'selection', semanticPathSelectionCallback(pathSpec.id, ...
+            optionValue(pathSpec.props, 'onSelectionChange', [])), ...
+        'setOriginalCallbackName', @setOriginalCallbackName);
+    adapter = buildPathPanelControl(pathSpec, parentGrid, row, callbacks);
     ui.controls.(pathSpec.id) = adapter;
 end
 
 function ui = buildResultTable(ui, tableSpec, parentGrid, row)
-    props = tableSpec.props;
-    panel = uipanel(parentGrid, 'Title', optionValue(props, 'title', tableSpec.id));
-    panel.Layout.Row = row;
-    panel.Layout.Column = [1 2];
-    grid = uigridlayout(panel, [1 1]);
-    grid.Padding = [8 8 8 8];
-    columns = optionValue(props, 'columns', {});
-    table = uitable(grid, 'ColumnName', columns, ...
-        'RowName', optionValue(props, 'rowName', {}), ...
-        'Data', tableDataForUi(optionValue(props, 'data', ...
-        cell(0, numel(columns)))));
-    if isfield(props, 'columnEditable')
-        table.ColumnEditable = props.columnEditable;
-    end
-    if isfield(props, 'columnFormat')
-        table.ColumnFormat = props.columnFormat;
-    end
-    if isfield(props, 'columnWidth')
-        table.ColumnWidth = props.columnWidth;
-    end
-    appCellEditCallback = optionValue(props, 'onCellEdit', []);
-    table.CellEditCallback = semanticTableCellEditCallback(tableSpec.id, ...
-        appCellEditCallback);
-    setOriginalCallbackName(table, appCellEditCallback);
-    table.CellSelectionCallback = semanticTableSelectionCallback(tableSpec.id, ...
-        optionValue(props, 'onSelectionChange', []));
-    table.Layout.Row = 1;
-    table.Layout.Column = 1;
-    adapter = baseAdapter(tableSpec, 'resultTable');
-    adapter.panel = panel;
-    adapter.grid = grid;
-    adapter.table = table;
-    adapter.valueHandle = table;
-    adapter.getValue = @() table.Data;
-    adapter.setValue = @(value) setTableData(table, value);
+    callbacks = struct( ...
+        'cellEdit', semanticTableCellEditCallback(tableSpec.id, ...
+            optionValue(tableSpec.props, 'onCellEdit', [])), ...
+        'selection', semanticTableSelectionCallback(tableSpec.id, ...
+            optionValue(tableSpec.props, 'onSelectionChange', [])), ...
+        'setOriginalCallbackName', @setOriginalCallbackName);
+    adapter = buildResultTableControl(tableSpec, parentGrid, row, callbacks);
     ui.controls.(tableSpec.id) = adapter;
 end
 
-function setTableData(table, value)
-    value = tableDataForUi(value);
-    if isequaln(table.Data, value)
-        return;
-    end
-    callback = table.CellEditCallback;
-    cleanupObj = onCleanup(@() restoreTableEditCallback(table, callback));
-    table.CellEditCallback = [];
-    table.Data = value;
-    clear cleanupObj;
-end
-
 function ui = buildLogPanel(ui, logSpec, parentGrid, row, debug)
-    props = logSpec.props;
-    panel = uipanel(parentGrid, 'Title', optionValue(props, 'title', logSpec.id));
-    panel.Layout.Row = row;
-    panel.Layout.Column = [1 2];
-    grid = uigridlayout(panel, [1 1]);
-    grid.Padding = [8 8 8 8];
-    textArea = uitextarea(grid, 'Editable', 'off', ...
-        'Value', textLines(optionValue(props, 'value', {'Ready.'})));
-    textArea.Layout.Row = 1;
-    textArea.Layout.Column = 1;
-    adapter = baseAdapter(logSpec, 'logPanel');
-    adapter.panel = panel;
-    adapter.grid = grid;
-    adapter.textArea = textArea;
-    adapter.valueHandle = textArea;
-    ui.controls.(logSpec.id) = adapter;
-    if isDebugEnabled(debug)
-        debug.attachTextLog(textArea);
-    end
+    ui.controls.(logSpec.id) = buildPanelControl('logPanel', logSpec, ...
+        parentGrid, row, debug, ui);
 end
 
 function ui = buildStatusPanel(ui, statusSpec, parentGrid, row)
-    props = statusSpec.props;
-    panel = uipanel(parentGrid, 'Title', optionValue(props, 'title', statusSpec.id));
-    panel.Layout.Row = row;
-    panel.Layout.Column = [1 2];
-    grid = uigridlayout(panel, [1 1]);
-    grid.Padding = [8 8 8 8];
-    textArea = uitextarea(grid, 'Editable', 'off', ...
-        'Value', textLines(optionValue(props, 'value', {''})));
-    textArea.Layout.Row = 1;
-    textArea.Layout.Column = 1;
-    adapter = baseAdapter(statusSpec, 'statusPanel');
-    adapter.panel = panel;
-    adapter.grid = grid;
-    adapter.textArea = textArea;
-    adapter.valueHandle = textArea;
-    ui.controls.(statusSpec.id) = adapter;
+    ui.controls.(statusSpec.id) = buildPanelControl('statusPanel', statusSpec, ...
+        parentGrid, row, struct(), ui);
 end
 
 function ui = buildCustom(ui, customSpec, parentGrid, row, debug)
-    props = customSpec.props;
-    panel = uipanel(parentGrid, 'Title', customSpec.id);
-    panel.Layout.Row = row;
-    panel.Layout.Column = [1 2];
-    context = struct('ui', ui, 'debug', debug, 'spec', customSpec);
-    handle = props.builder(panel, customSpec.id, context, props);
-    adapter = baseAdapter(customSpec, 'custom');
-    adapter.panel = panel;
-    adapter.handle = handle;
-    ui.controls.(customSpec.id) = adapter;
+    ui.controls.(customSpec.id) = buildPanelControl('custom', customSpec, ...
+        parentGrid, row, debug, ui);
 end
 
 function callback = semanticValueCallback(id, appCallback)
@@ -582,18 +461,18 @@ function callback = semanticPathChooseCallback(id, appCallback)
             return;
         end
         control = ui.controls.(id);
-        paths = choosePaths(control);
+        paths = control.choosePaths();
         if isempty(paths)
             return;
         end
-        control = applyPathSelection(control, paths, true);
+        control = control.applySelection(control, paths, true);
         ui.controls.(id) = control;
         setappdata(ui.figure, 'labkitUiRegistry', ui);
         event = semanticEvent(control, source, rawEvent, 'user');
         event.action = 'choose';
         event.mode = optionValue(control.props, 'mode', '');
-        event.paths = normalizePathList(paths);
-        event.selection = currentPathValues(control);
+        event.paths = control.normalizePathList(paths);
+        event.selection = control.currentValue();
         event.value = event.selection;
         runSemanticAppCallback(ui, control, event, appCallback, id);
     end
@@ -608,7 +487,7 @@ function callback = semanticPathClearCallback(id, appCallback)
             return;
         end
         control = ui.controls.(id);
-        control = applyPathSelection(control, {}, true);
+        control = control.applySelection(control, {}, true);
         ui.controls.(id) = control;
         setappdata(ui.figure, 'labkitUiRegistry', ui);
         event = semanticEvent(control, source, rawEvent, 'user');
@@ -637,212 +516,10 @@ function callback = semanticPathSelectionCallback(id, appCallback)
         event = semanticEvent(control, source, rawEvent, 'user');
         event.action = 'select';
         event.mode = optionValue(control.props, 'mode', '');
-        event.paths = currentPathValues(control);
+        event.paths = control.currentValue();
         event.selection = event.paths;
         event.value = event.paths;
         runSemanticAppCallback(ui, control, event, appCallback, id);
-    end
-end
-
-function control = applyPathSelection(control, paths, updateStatus)
-    items = normalizedPaths(paths);
-    emptyText = emptyPathText(control.props);
-    if isempty(items)
-        control.listbox.Items = {emptyText};
-        if strcmp(control.listbox.Multiselect, 'on')
-            control.listbox.Value = {emptyText};
-        else
-            control.listbox.Value = emptyText;
-        end
-    else
-        control.listbox.Items = items;
-        if strcmp(control.listbox.Multiselect, 'on')
-            control.listbox.Value = items;
-        else
-            control.listbox.Value = items{1};
-        end
-    end
-    if updateStatus
-        control.status.Value = pathStatusText(control.props, items);
-    end
-end
-
-function paths = choosePaths(control)
-    props = control.props;
-    if isfield(props, 'dialogProvider') && isa(props.dialogProvider, 'function_handle')
-        paths = normalizedPaths(props.dialogProvider(props));
-        return;
-    end
-
-    mode = optionValue(props, 'mode', 'singleFile');
-    switch mode
-        case 'singleFile'
-            paths = chooseFiles(props, false);
-        case 'multiFile'
-            paths = chooseFiles(props, true);
-        case {'folder', 'outputFolder'}
-            paths = chooseFolder(optionValue(props, 'startPath', pwd));
-        case 'multiFolder'
-            paths = chooseMultipleFolders(optionValue(props, 'startPath', pwd));
-        otherwise
-            error('labkit:ui:app:InvalidPathMode', ...
-                'Unsupported pathPanel mode "%s".', mode);
-    end
-end
-
-function paths = chooseFiles(props, allowMulti)
-    filters = normalizeFileFilters(optionValue(props, 'filters', ...
-        {'*.*', 'All files'}));
-    titleText = optionValue(props, 'dialogTitle', chooseButtonText(props));
-    startPath = optionValue(props, 'startPath', pwd);
-    if allowMulti
-        [files, folder] = uigetfile(filters, titleText, startPath, 'MultiSelect', 'on');
-    else
-        [files, folder] = uigetfile(filters, titleText, startPath);
-    end
-    if isequal(files, 0) || isequal(folder, 0)
-        paths = {};
-        return;
-    end
-    if ischar(files) || isstring(files)
-        files = {char(string(files))};
-    end
-    files = reshape(files, 1, []);
-    paths = cell(1, numel(files));
-    for k = 1:numel(files)
-        paths{k} = fullfile(folder, char(string(files{k})));
-    end
-end
-
-function paths = chooseFolder(startPath)
-    folder = uigetdir(startPath, 'Choose folder');
-    if isequal(folder, 0)
-        paths = {};
-    else
-        paths = {folder};
-    end
-end
-
-function paths = chooseMultipleFolders(startPath)
-    paths = {};
-    nextPath = startPath;
-    while true
-        folder = uigetdir(nextPath, sprintf('Choose folder %d', numel(paths) + 1));
-        if isequal(folder, 0)
-            break;
-        end
-        paths{end + 1} = folder;
-        nextPath = folder;
-        choice = questdlg('Add another folder?', 'Select folders', ...
-            'Add another', 'Done', 'Done');
-        if ~strcmp(choice, 'Add another')
-            break;
-        end
-    end
-    paths = unique(paths, 'stable');
-end
-
-function paths = normalizedPaths(paths)
-    paths = cellstr(normalizePathList(paths).');
-end
-
-function text = pathStatusText(props, paths)
-    if isempty(paths)
-        text = emptyStatusText(props);
-    elseif numel(paths) == 1
-        text = char(string(paths{1}));
-    else
-        text = sprintf('%d selected', numel(paths));
-    end
-end
-
-function values = currentPathValues(control)
-    values = strings(0, 1);
-    if isfield(control, 'listbox') && isvalid(control.listbox)
-        emptyText = emptyPathText(control.props);
-        if isempty(control.listbox.Items) || ...
-                (numel(control.listbox.Items) == 1 && strcmp(control.listbox.Items{1}, ...
-                emptyText))
-            return;
-        end
-        values = normalizePathList(control.listbox.Value);
-    end
-end
-
-function paths = normalizePathList(value)
-    if isempty(value)
-        paths = strings(0, 1);
-    elseif ischar(value)
-        paths = string({value});
-    elseif isstring(value)
-        paths = value;
-    elseif iscell(value)
-        if ~all(cellfun(@isTextScalar, value))
-            error('labkit:ui:app:InvalidPathList', ...
-                'Path panel values must be text scalars.');
-        end
-        paths = string(value);
-    else
-        error('labkit:ui:app:InvalidPathList', ...
-            'Path panel values must be char, string, or a cell array of text.');
-    end
-    paths = paths(:);
-    paths = paths(strlength(paths) > 0);
-end
-
-function tf = isTextScalar(value)
-    tf = (ischar(value) && (isrow(value) || isempty(value))) || ...
-        (isstring(value) && isscalar(value));
-end
-
-function text = emptyStatusText(props)
-    if isstruct(props) && isfield(props, 'status')
-        text = char(string(props.status));
-    else
-        text = emptyPathText(props);
-    end
-end
-
-function text = emptyPathText(props)
-    if isstruct(props) && isfield(props, 'emptyText')
-        text = char(string(props.emptyText));
-        return;
-    end
-    if isstruct(props) && isfield(props, 'status')
-        text = char(string(props.status));
-        return;
-    end
-
-    mode = char(string(optionValue(props, 'mode', 'singleFile')));
-    switch mode
-        case 'multiFile'
-            text = 'No files selected';
-        case {'folder', 'multiFolder'}
-            text = 'No folder selected';
-        case 'outputFolder'
-            text = 'No output folder selected';
-        otherwise
-            text = 'No file selected';
-    end
-end
-
-function filters = normalizeFileFilters(filters)
-    if iscell(filters) && numel(filters) == 1 && iscell(filters{1})
-        filters = filters{1};
-    end
-    if ischar(filters)
-        return;
-    end
-    if isstring(filters)
-        if isscalar(filters)
-            filters = char(filters);
-            return;
-        end
-        filters = cellstr(filters);
-    end
-    if iscell(filters)
-        filters = cellfun(@(value) char(string(value)), filters, ...
-            'UniformOutput', false);
     end
 end
 
@@ -853,12 +530,6 @@ function ui = currentUiRegistry(source)
             'UI registry appdata was not found on the current figure.');
     end
     ui = getappdata(fig, 'labkitUiRegistry');
-end
-
-function restoreTableEditCallback(handle, callback)
-    if ~isempty(handle) && isvalid(handle)
-        handle.CellEditCallback = callback;
-    end
 end
 
 function restoreValueChangedCallback(handle, callback)
@@ -873,43 +544,6 @@ function value = rawEventValue(rawEvent, propertyName, defaultValue)
         value = rawEvent.(propertyName);
     elseif ~isempty(rawEvent) && isprop(rawEvent, propertyName)
         value = rawEvent.(propertyName);
-    end
-end
-
-function data = tableDataForUi(data)
-    if istable(data) || isnumeric(data) || islogical(data)
-        return;
-    end
-    if isempty(data)
-        return;
-    end
-    if isstring(data)
-        data = cellstr(data);
-    end
-    if ~iscell(data)
-        data = cellstr(string(data));
-    end
-    for k = 1:numel(data)
-        data{k} = tableCellValueForUi(data{k});
-    end
-end
-
-function value = tableCellValueForUi(value)
-    if isnumeric(value) || islogical(value) || ischar(value)
-        return;
-    end
-    if isstring(value)
-        if isscalar(value)
-            value = char(value);
-        else
-            value = char(strjoin(value(:).', ", "));
-        end
-        return;
-    end
-    if iscell(value)
-        value = char(strjoin(string(value(:)).', ", "));
-    else
-        value = char(string(value));
     end
 end
 
@@ -928,51 +562,6 @@ function applyCommonValueProps(control, props)
     end
     if isfield(props, 'value') && isprop(control, 'Value')
         control.Value = props.value;
-    end
-end
-
-function text = chooseButtonText(props)
-    if isfield(props, 'chooseLabel')
-        text = char(string(props.chooseLabel));
-        return;
-    end
-
-    mode = optionValue(props, 'mode', 'singleFile');
-    switch mode
-        case {'folder', 'multiFolder', 'outputFolder'}
-            text = 'Choose folder';
-        otherwise
-            text = 'Choose files';
-    end
-end
-
-function value = pathMultiselect(props)
-    mode = optionValue(props, 'selectionMode', defaultSelectionMode( ...
-        optionValue(props, 'mode', 'singleFile')));
-    if strcmp(mode, 'multiple')
-        value = 'on';
-    else
-        value = 'off';
-    end
-end
-
-function mode = defaultSelectionMode(pathMode)
-    if any(strcmp(pathMode, {'multiFile', 'multiFolder'}))
-        mode = 'multiple';
-    else
-        mode = 'single';
-    end
-end
-
-function lines = textLines(value)
-    if isstring(value)
-        lines = cellstr(value);
-    elseif ischar(value)
-        lines = {value};
-    elseif iscell(value)
-        lines = cellstr(string(value));
-    else
-        lines = cellstr(string(value));
     end
 end
 
@@ -996,11 +585,6 @@ function value = optionValue(opts, name, defaultValue)
     if isstruct(opts) && isfield(opts, name)
         value = opts.(name);
     end
-end
-
-function tf = isDebugEnabled(debugContext)
-    tf = isstruct(debugContext) && isfield(debugContext, 'enabled') && ...
-        logical(debugContext.enabled);
 end
 
 function text = onOff(value)
