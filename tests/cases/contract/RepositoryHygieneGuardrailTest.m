@@ -44,6 +44,36 @@ classdef RepositoryHygieneGuardrailTest < matlab.unittest.TestCase
                 strjoin(cellstr(actual), ', ')]);
         end
 
+        function charPathListsDoNotUseBracketConcatenation(testCase)
+            root = setupLabKitTestPath();
+            tracked = gitTrackedFiles(root);
+            matlabFiles = tracked(endsWith(tracked, ".m"));
+            actual = collectUnsafeCharPathLists(root, matlabFiles);
+            testCase.verifyEmpty(actual, ...
+                ['path target lists must use string arrays or cell arrays, ' ...
+                'not char bracket concatenation. Files: ' ...
+                strjoin(cellstr(actual), ', ')]);
+        end
+
+        function charPathListPatternCatchesUnsafeExamples(testCase)
+            pattern = unsafeCharPathListPattern();
+            unsafe = ['targets = [fullfile(root, ''artifacts''), ...' newline ...
+                '    fullfile(root, ''matlab_test.log'')];'];
+            cellList = ['targets = {' newline ...
+                '    ''artifacts''' newline ...
+                '    ''matlab_test.log''' newline ...
+                '};'];
+            stringList = ['targets = [fullfile(root, "artifacts"), ...' newline ...
+                '    fullfile(root, "matlab_test.log")];'];
+
+            testCase.verifyFalse(isempty(regexp(unsafe, pattern, 'once')), ...
+                'Guardrail pattern must catch char fullfile bracket lists.');
+            testCase.verifyEmpty(regexp(cellList, pattern, 'once'), ...
+                'Guardrail pattern must allow cell path lists.');
+            testCase.verifyEmpty(regexp(stringList, pattern, 'once'), ...
+                'Guardrail pattern must allow string path lists.');
+        end
+
         function appPrivateHelpersAreNotTracked(testCase)
             root = setupLabKitTestPath();
             actualDirs = collectPrivateDirs(fullfile(root, 'apps'), root);
@@ -58,6 +88,26 @@ classdef RepositoryHygieneGuardrailTest < matlab.unittest.TestCase
                 strjoin(cellstr(actualFiles), ', ')]);
         end
     end
+end
+
+function findings = collectUnsafeCharPathLists(root, files)
+    findings = strings(1, 0);
+    pattern = unsafeCharPathListPattern();
+    for k = 1:numel(files)
+        filepath = fullfile(root, char(files(k)));
+        if exist(filepath, 'file') ~= 2
+            continue;
+        end
+        content = fileread(filepath);
+        if ~isempty(regexp(content, pattern, 'once'))
+            findings(end+1) = files(k);
+        end
+    end
+end
+
+function pattern = unsafeCharPathListPattern()
+    pattern = ['(?m)^\s*[A-Za-z]\w*\s*=\s*\[\s*fullfile\([^\]]*''[^\]]*\)' ...
+        '\s*,[^\]]*fullfile\([^\]]*''[^\]]*\)\s*\]'];
 end
 
 function files = collectNonAsciiFiles(root, tracked)

@@ -42,6 +42,7 @@ debt for the touched area.
 - New app code must not call `labkit.io.*`, `labkit.data.*`, `labkit.analysis.*`, or `labkit.util.*`; use `labkit.dta.*`, `labkit.rhs.*`, `labkit.biosignal.*`, `labkit.ui.*`, or app-local helpers.
 - Do not reintroduce root-level legacy command wrappers, app-specific public helper packages, or public helper-dump packages such as `+labkit/+analysis`, `+data`, `+io`, or `+util`.
 - Do not convert struct models to MATLAB classes, rewrite all GUIs, replace separate app entry points with one launcher, or migrate code to another language without explicit approval.
+- Path or file-target collections must use string arrays or cell arrays. Never build multiple paths with char bracket concatenation such as `[fullfile(...), fullfile(...)]`.
 
 Default principle:
 
