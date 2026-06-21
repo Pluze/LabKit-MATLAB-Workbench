@@ -32,6 +32,13 @@ what automated GUI checks do and do not prove.
 For normal contributor work, start with the changed-file task. Use the full
 non-GUI task when changed-file discovery is not available.
 
+## I Need To Publish A Release
+
+Read [release.md](release.md).
+
+It explains version-number selection, tag naming, and GitHub release note
+format.
+
 ## I Am Using A Reusable Facade
 
 | Facade | Read |

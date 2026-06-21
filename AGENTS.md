@@ -151,6 +151,22 @@ Interactive GUI workflows are checked manually by the user. Do not run interacti
 
 Use lowercase type prefixes such as `feat:`, `fix:`, `docs:`, `test:`, `ci:`, `refactor:`, and `chore:`.
 
+## Release Workflow
+
+Use `docs/release.md` as the human-facing source of truth for version-number
+selection, release tag naming, and GitHub release note format.
+
+For new releases, use `vX.Y.Z` tags, for example `v2.2.0`. Do not rename or
+delete already published historical tags only to normalize naming; preserve
+them for compatibility with existing links and user checkouts. If a legacy tag
+such as `2.1` already exists, keep it and use the normalized `vX.Y.Z` style for
+future releases.
+
+Use GitHub release titles in the form `LabKit MATLAB Workbench vX.Y.Z` and
+organize notes with `Highlights`, `Fixes`, `Upgrade Note`, and `Validation`
+sections, omitting empty sections. Before publishing, verify the release tag
+points at the intended commit and report the release URL.
+
 ## Handoff
 
 Report:
