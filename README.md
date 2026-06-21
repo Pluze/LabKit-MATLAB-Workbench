@@ -19,10 +19,11 @@ Open MATLAB at the repository root and run:
 labkit_launcher
 ```
 
-The launcher scans `apps/**/labkit_*_app.m`, shows the available tools, and
+The launcher is self-contained so it can open even when other LabKit folders
+are missing. It scans `apps/**/labkit_*_app.m`, shows the available tools, and
 opens the selected app. It also has direct actions for Debug launch, updating
-non-git installs from the GitHub `main` zip, MATLAB Code Analyzer reporting,
-and cleaning generated artifacts.
+or repairing non-git installs from the GitHub `main` zip, MATLAB Code Analyzer
+reporting, and cleaning generated artifacts.
 
 Start apps from the launcher in normal use. To launch an app command manually,
 first add the repository root, `apps/`, and the target app folder to the MATLAB
@@ -32,9 +33,10 @@ Use the launcher's `Run Code Analyzer` action when you want an ignored
 `artifacts/code-check/matlab_code_check.json` report.
 
 Use `Update from GitHub` only for zip-download installs. The updater is
-disabled in git checkouts. It overwrites LabKit-managed files from GitHub
-`main`, preserves user files that are not project files, and writes a visible
-`LabKit-backup-*.zip` in the project root before changing files.
+disabled in git checkouts. It shows progress while downloading and applying
+GitHub `main`, restores missing LabKit-managed folders, preserves user files
+that are not project files, and writes a visible `LabKit-backup-*.zip` in the
+project root before changing files.
 
 ## Contributor Quick Path
 
@@ -82,7 +84,7 @@ validation limits.
 +labkit/                Reusable UI, DTA, RHS, and biosignal facades
 apps/                   Launchable app workflows and app-owned helpers
 docs/                   Human-facing usage, architecture, and API docs
-scripts/                CI/report helper scripts
+scripts/                CI helper scripts
 tests/                  Unit, contract, GUI, shared helpers, and runner code
 ```
 

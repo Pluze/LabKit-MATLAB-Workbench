@@ -30,7 +30,8 @@ none
 
 Current facts:
 
-- Tracked files over the 650-line repository file budget: none.
+- Tracked files over the 650-line repository file budget: `labkit_launcher.m`
+  only, by design, because it is the self-contained repair entry point.
 - App entry points and package-root app `run.m` runners are covered by the
   repository file budget rather than a separate app-only line limit.
 - App `private/` debt: none.

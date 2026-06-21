@@ -10,7 +10,7 @@ apps/      workflow-specific GUI apps and app-owned helpers
 +labkit/   reusable UI, DTA, RHS, and biosignal facades
 tests/     behavior tests, project contracts, GUI checks, shared helpers, and runner code
 docs/      human-facing usage, API, architecture, and validation docs
-scripts/   CI/report helper scripts
+scripts/   CI helper scripts
 ```
 
 Apps should remain independently launchable. The reusable library should grow
@@ -30,8 +30,11 @@ stable user entry points, for example `labkit_CIC_app`,
 `labkit_DICPreprocess_app`, `labkit_ECGPrint_app`, and
 `labkit_RHSPreview_app`.
 
-The launcher configures the MATLAB path for app entry points. MATLAB desktop
-project metadata belongs to each developer's local workspace.
+The launcher is intentionally self-contained: it uses native MATLAB UI and
+local helper functions so users can repair a damaged zip install even if
+packages, apps, docs, or scripts have been deleted. It configures the MATLAB
+path for app entry points. MATLAB desktop project metadata belongs to each
+developer's local workspace.
 
 ## Ownership Boundaries
 

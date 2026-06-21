@@ -13,6 +13,27 @@ classdef RepositoryHygieneGuardrailTest < matlab.unittest.TestCase
                 strjoin(cellstr(actual), ', ')]);
         end
 
+        function launcherIsTheOnlyLineBudgetException(testCase)
+            root = setupLabKitTestPath();
+            maxLines = 650;
+            tracked = gitTrackedFiles(root);
+            launcher = "labkit_launcher.m";
+            tracked = setdiff(tracked, launcher);
+            actual = collectOversizedFiles(root, tracked, maxLines);
+            testCase.verifyEmpty(actual, ...
+                ['only labkit_launcher.m may exceed ' num2str(maxLines) ...
+                ' lines because it is the self-contained repair entry point. Files: ' ...
+                strjoin(cellstr(actual), ', ')]);
+        end
+
+        function scriptsDoNotContainMatlabEntryScripts(testCase)
+            root = setupLabKitTestPath();
+            actual = collectRelativeFiles(root, fullfile(root, 'scripts', '*.m'));
+            testCase.verifyEmpty(actual, ...
+                ['launcher-owned MATLAB helpers must remain inside ' ...
+                'labkit_launcher.m. Files: ' strjoin(cellstr(actual), ', ')]);
+        end
+
         function appPrivateHelpersAreNotTracked(testCase)
             root = setupLabKitTestPath();
             actualDirs = collectPrivateDirs(fullfile(root, 'apps'), root);
@@ -31,9 +52,17 @@ end
 
 function files = collectOversizedTrackedFiles(root, maxLines)
     tracked = gitTrackedFiles(root);
+    tracked = setdiff(tracked, "labkit_launcher.m");
+    files = collectOversizedFiles(root, tracked, maxLines);
+end
+
+function files = collectOversizedFiles(root, tracked, maxLines)
     files = strings(1, 0);
     for k = 1:numel(tracked)
         filepath = fullfile(root, char(tracked(k)));
+        if exist(filepath, 'file') ~= 2
+            continue;
+        end
         lineCount = countFileLines(filepath);
         if lineCount > maxLines
             files(end+1) = tracked(k) + " (" + string(lineCount) + " lines)";

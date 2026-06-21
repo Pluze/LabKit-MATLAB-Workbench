@@ -1,13 +1,14 @@
 function varargout = labkit_launcher(varargin)
-%LABKIT_LAUNCHER Open a GUI selector for LabKit app entry points.
+%LABKIT_LAUNCHER Self-contained GUI selector and repair updater for LabKit.
 %
 % Usage:
 %   labkit_launcher
+%   apps = labkit_launcher("list")
 %
-% This single-file launcher scans apps/**/labkit_*_app.m entry points,
-% initializes the LabKit path, and lets users launch an app without manually
-% locating the app folder. Existing app entry points remain independently
-% launchable.
+% This launcher intentionally avoids dependencies on other LabKit .m files so
+% it can still restore a damaged zip install when packages, apps, or scripts
+% have been deleted. App launch still adds the restored app folders to the
+% MATLAB path before calling the selected app entry point.
 
     root = fileparts(mfilename('fullpath'));
     mode = parseMode(varargin);
@@ -17,7 +18,6 @@ function varargout = labkit_launcher(varargin)
         varargout = {appCatalogTable(apps)};
         return;
     end
-
     if nargout > 1
         error('labkit_launcher:TooManyOutputs', ...
             'labkit_launcher returns at most the launcher figure handle.');
@@ -39,12 +39,8 @@ function mode = parseMode(args)
         error('labkit_launcher:InvalidInput', ...
             'labkit_launcher accepts no inputs or the string "list".');
     end
-
     value = string(args{1});
-    if strlength(value) == 0
-        return;
-    end
-    if ~strcmpi(value, "list")
+    if strlength(value) > 0 && ~strcmpi(value, "list")
         error('labkit_launcher:InvalidInput', ...
             'Unsupported labkit_launcher mode: %s', value);
     end
@@ -66,46 +62,81 @@ function addPathIfMissing(folder, varargin)
 end
 
 function fig = runLauncher(root, apps)
-    callbacks = struct( ...
-        'launchSelected', @onLaunchSelected, ...
-        'launchSelectedDebug', @onLaunchSelectedDebug, ...
-        'runCodeCheck', @onRunCodeCheck, ...
-        'updateFromMain', @onUpdateFromMain, ...
-        'cleanArtifacts', @onCleanArtifacts, ...
-        'refreshApps', @onRefreshApps);
-    ui = labkit.ui.app.create(buildLauncherSpec(apps, callbacks));
-    handles = launcherHandles(ui);
-    configureTable(handles.table, @onSelectionChanged, @onTableDoubleClicked);
+    fig = uifigure('Name', 'LabKit App Launcher', ...
+        'Position', [120 80 1500 900], 'Color', [0.97 0.98 0.99]);
+    main = uigridlayout(fig, [1 3]);
+    main.ColumnWidth = {430, 6, '1x'};
+    main.RowHeight = {'1x'};
+    main.Padding = [10 10 10 10];
+    main.ColumnSpacing = 0;
 
-    fig = handles.figure;
-    state = struct();
-    state.apps = apps;
-    state.visibleApps = apps;
-    state.selectedRow = 1;
-    state.selectedStyle = uistyle('BackgroundColor', [0.86 0.93 1.00]);
+    leftPanel = uipanel(main, 'Title', 'Controls');
+    leftPanel.Layout.Row = 1;
+    leftPanel.Layout.Column = 1;
+    divider = uipanel(main, 'BorderType', 'none', ...
+        'BackgroundColor', [0.78 0.80 0.82]);
+    divider.Layout.Row = 1;
+    divider.Layout.Column = 2;
+    rightPanel = uipanel(main, 'Title', 'Applications');
+    rightPanel.Layout.Row = 1;
+    rightPanel.Layout.Column = 3;
+
+    controlsGrid = uigridlayout(leftPanel, [7 1]);
+    controlsGrid.RowHeight = {30, 30, 30, 30, 30, 30, '1x'};
+    controlsGrid.Padding = [10 10 10 10];
+    controlsGrid.RowSpacing = 6;
+
+    btnUpdate = uibutton(controlsGrid, 'Text', 'Update from GitHub', ...
+        'ButtonPushedFcn', @onUpdateFromMain);
+    btnRefresh = uibutton(controlsGrid, 'Text', 'Refresh App List', ...
+        'ButtonPushedFcn', @onRefreshApps);
+    btnOpen = uibutton(controlsGrid, 'Text', 'Open Selected App', ...
+        'ButtonPushedFcn', @onLaunchSelected);
+    btnDebug = uibutton(controlsGrid, 'Text', 'Open Debug', ...
+        'ButtonPushedFcn', @onLaunchSelectedDebug);
+    btnClean = uibutton(controlsGrid, 'Text', 'Clean Artifacts', ...
+        'ButtonPushedFcn', @onCleanArtifacts);
+    btnCode = uibutton(controlsGrid, 'Text', 'Run Code Analyzer', ...
+        'ButtonPushedFcn', @onRunCodeCheck);
+    txtInfo = uitextarea(controlsGrid, 'Editable', 'off', 'Value', {'Ready.'});
+
+    tableGrid = uigridlayout(rightPanel, [1 1]);
+    tableGrid.Padding = [8 8 8 8];
+    appTable = uitable(tableGrid, 'ColumnName', {'Family', 'App', 'Command'}, ...
+        'ColumnEditable', [false false false], 'RowName', {});
+    appTable.ColumnWidth = {'fit', 'fit', 'auto'};
+    configureTable(appTable, @onSelectionChanged, @onTableDoubleClicked);
+
+    ui = struct();
+    ui.figure = fig;
+    ui.controls = struct();
+    ui.controls.selectedDetails = struct('textArea', txtInfo);
+    ui.controls.statusLine = struct('textArea', txtInfo);
+    ui.controls.appTable = struct('table', appTable);
+    setappdata(fig, 'labkitUiRegistry', ui);
+
+    state = struct('apps', apps, 'visibleApps', apps, 'selectedRow', 1, ...
+        'status', integrityStatus(root, apps));
     refreshTable();
 
-    function onRefreshApps(~, ~)
+    function onRefreshApps(varargin)
         state.apps = discoverApps(root);
         state.visibleApps = state.apps;
         state.selectedRow = 1;
+        initializePath(root, state.apps);
         refreshTable();
     end
 
     function onSelectionChanged(~, event)
         row = eventRow(event);
-        if isnan(row)
-            return;
+        if ~isnan(row)
+            state.selectedRow = row;
+            refreshSelection();
         end
-        state.selectedRow = row;
-        refreshSelection();
     end
 
     function onTableDoubleClicked(~, event)
         row = eventRow(event);
-        if isnan(row)
-            row = selectedTableRow();
-        end
         if ~isnan(row)
             state.selectedRow = row;
             refreshSelection();
@@ -126,49 +157,87 @@ function fig = runLauncher(root, apps)
             setStatus('Clean artifacts canceled.');
             return;
         end
-        result = cleanGeneratedArtifacts(root);
-        setStatus(cleanArtifactsStatus(result));
+        setStatus(cleanArtifactsStatus(cleanGeneratedArtifacts(root)));
     end
 
     function onRunCodeCheck(varargin)
         setStatus('Running MATLAB Code Analyzer...');
         drawnow;
+        dlg = [];
         try
-            addScriptPath(root);
-            report = runLabKitCodeCheckReport("Root", root);
+            dlg = uiprogressdlg(fig, 'Title', 'MATLAB Code Analyzer', ...
+                'Message', 'Preparing scan...', 'Indeterminate', 'on');
+        catch
+        end
+        if ~isempty(dlg)
+            dlgCleanup = onCleanup(@() close(dlg));
+        end
+        try
+            report = runCodeAnalyzerReport(root, @onCodeCheckProgress);
             setStatus(codeCheckStatus(report));
         catch err
             setStatus(sprintf('Code Analyzer failed: %s', err.message));
+        end
+        clear dlgCleanup;
+
+        function onCodeCheckProgress(message, value)
+            setStatus(message);
+            if ~isempty(dlg) && isvalid(dlg)
+                dlg.Message = char(message);
+                if isfinite(value)
+                    dlg.Indeterminate = 'off';
+                    dlg.Value = min(max(value, 0), 1);
+                end
+            end
+            drawnow limitrate;
         end
     end
 
     function onUpdateFromMain(varargin)
         setStatus('Updating LabKit from GitHub main...');
         drawnow;
+        dlg = [];
         try
-            addScriptPath(root);
-            result = updateLabKitFromMainZip("Root", root);
+            dlg = uiprogressdlg(fig, 'Title', 'Update LabKit', ...
+                'Message', 'Preparing update...', 'Indeterminate', 'on');
+        catch
+        end
+        if ~isempty(dlg)
+            dlgCleanup = onCleanup(@() close(dlg));
+        end
+        try
+            result = launcherUpdateFromMainZip(root, @onUpdateProgress);
             setStatus(result.message);
+            onRefreshApps();
         catch err
             setStatus(sprintf('Update failed: %s', err.message));
+        end
+        clear dlgCleanup;
+
+        function onUpdateProgress(message, value)
+            setStatus(message);
+            if ~isempty(dlg) && isvalid(dlg)
+                dlg.Message = char(message);
+                if isfinite(value)
+                    dlg.Indeterminate = 'off';
+                    dlg.Value = value;
+                end
+            end
+            drawnow limitrate;
         end
     end
 
     function launchSelectedApp(debugMode)
         if isempty(state.visibleApps)
-            setStatus('No app entry points found.');
+            setStatus('No app entry points found. Use Update from GitHub to repair this install.');
             return;
         end
         row = min(max(state.selectedRow, 1), numel(state.visibleApps));
-        launchApp(state.visibleApps(row), debugMode);
-    end
-
-    function launchApp(app, debugMode)
+        app = state.visibleApps(row);
         setStatus(launchStartStatus(app, debugMode));
         drawnow;
-
         try
-            addpath(app.folder, '-end');
+            addPathIfMissing(app.folder, '-end');
             if debugMode
                 feval(app.command, "debug");
             else
@@ -176,130 +245,52 @@ function fig = runLauncher(root, apps)
             end
             setStatus(launchSuccessStatus(app, debugMode));
         catch err
-            setStatus(sprintf('Failed to launch %s: %s', ...
+            setStatus(sprintf(['Failed to launch %s: %s. If project files are missing ' ...
+                'or damaged, use Update from GitHub to repair this install.'], ...
                 app.command, err.message));
         end
     end
 
     function refreshTable()
         state.visibleApps = state.apps;
-        handles.table.Data = appDisplayRows(state.visibleApps);
-        state.selectedRow = min(max(state.selectedRow, 1), ...
-            max(numel(state.visibleApps), 1));
+        appTable.Data = appDisplayRows(state.visibleApps);
+        state.selectedRow = min(max(state.selectedRow, 1), max(numel(state.visibleApps), 1));
         setLaunchEnabled(~isempty(state.visibleApps));
         refreshSelection();
-        setStatus(sprintf('%d of %d apps shown', ...
-            numel(state.visibleApps), numel(state.apps)));
+        if isempty(state.visibleApps)
+            setStatus('No app entry points found. Use Update from GitHub to repair this install.');
+        else
+            setStatus(integrityStatus(root, state.apps));
+        end
     end
 
     function refreshSelection()
         if isempty(state.visibleApps)
-            handles.details.Value = noMatchingAppDetails();
-            clearTableStyles();
+            updateInfo(noMatchingAppDetails());
             return;
         end
-
         row = min(max(state.selectedRow, 1), numel(state.visibleApps));
-        handles.details.Value = selectedAppDetails(state.visibleApps(row));
-        highlightSelectedRow(row);
+        updateInfo(selectedAppDetails(state.visibleApps(row)));
     end
 
     function setLaunchEnabled(enabled)
         stateValue = matlab.lang.OnOffSwitchState(enabled);
-        handles.openButton.Enable = stateValue;
-        handles.debugButton.Enable = stateValue;
-    end
-
-    function clearTableStyles()
-        try
-            removeStyle(handles.table);
-        catch
-        end
-    end
-
-    function highlightSelectedRow(row)
-        clearTableStyles();
-        try
-            addStyle(handles.table, state.selectedStyle, 'row', row);
-        catch
-        end
+        btnOpen.Enable = stateValue;
+        btnDebug.Enable = stateValue;
     end
 
     function setStatus(message)
-        handles.status.Value = char(message);
+        state.status = string(message);
+        refreshSelection();
     end
 
-    function row = selectedTableRow()
-        row = NaN;
-        if isprop(handles.table, 'Selection') && ~isempty(handles.table.Selection)
-            row = handles.table.Selection(1, 1);
-        end
+    function updateInfo(detailRows)
+        rows = reshape(cellstr(string(detailRows(:))), [], 1);
+        txtInfo.Value = [{['Status: ' char(state.status)]}; {''}; rows];
     end
-end
-
-function spec = buildLauncherSpec(apps, callbacks)
-    spec = labkit.ui.spec.app('labkitLauncher', 'LabKit App Launcher', ...
-        'controlTabs', launcherTabs(callbacks), ...
-        'workspace', launcherWorkspace());
-end
-
-function tabs = launcherTabs(callbacks)
-    tabs = { ...
-        labkit.ui.spec.tab('launcher', 'Launcher', { ...
-            selectedAppSection(), ...
-            actionsSection(callbacks)})};
-end
-
-function section = selectedAppSection()
-    section = labkit.ui.spec.section('selectedAppSection', 'Selected App', { ...
-        labkit.ui.spec.statusPanel('selectedDetails', ...
-            'Selected App', ...
-            'value', {'No app selected.'})});
-end
-
-function section = actionsSection(callbacks)
-    section = labkit.ui.spec.section('actionsSection', 'Actions', { ...
-        labkit.ui.spec.actionGroup('primaryActions', { ...
-            labkit.ui.spec.action('openSelected', ...
-                'Open Selected App', callbacks.launchSelected), ...
-            labkit.ui.spec.action('openSelectedDebug', ...
-                'Open Debug', callbacks.launchSelectedDebug)}), ...
-        labkit.ui.spec.actionGroup('projectToolActions', { ...
-            labkit.ui.spec.action('updateFromMain', ...
-                'Update from GitHub', callbacks.updateFromMain), ...
-            labkit.ui.spec.action('runCodeCheck', ...
-                'Run Code Analyzer', callbacks.runCodeCheck), ...
-            labkit.ui.spec.action('cleanArtifacts', ...
-                'Clean Artifacts', callbacks.cleanArtifacts)}), ...
-        labkit.ui.spec.action('refreshApps', ...
-            'Refresh App List', callbacks.refreshApps), ...
-        labkit.ui.spec.statusPanel('statusLine', 'Action Result', ...
-            'value', {'Ready.'})});
-end
-
-function workspace = launcherWorkspace()
-    workspace = labkit.ui.spec.workspace('applicationsWorkspace', ...
-        'Applications', { ...
-        labkit.ui.spec.resultTable('appTable', 'Applications', ...
-            'columns', {'Family', 'App', 'Command'})});
-end
-
-function handles = launcherHandles(ui)
-    handles = struct();
-    handles.figure = ui.figure;
-    handles.figure.Color = [0.97 0.98 0.99];
-    handles.details = ui.controls.selectedDetails.textArea;
-    handles.openButton = ui.controls.openSelected.button;
-    handles.debugButton = ui.controls.openSelectedDebug.button;
-    handles.table = ui.controls.appTable.table;
-    handles.status = ui.controls.statusLine.textArea;
 end
 
 function configureTable(tableHandle, selectionCallback, doubleClickCallback)
-    tableHandle.ColumnEditable = [false false false];
-    tableHandle.ColumnSortable = [true true true];
-    tableHandle.RowName = {};
-    tableHandle.ColumnWidth = {'fit', 'fit', 'auto'};
     if isprop(tableHandle, 'SelectionChangedFcn')
         tableHandle.SelectionChangedFcn = selectionCallback;
     else
@@ -315,17 +306,57 @@ function configureTable(tableHandle, selectionCallback, doubleClickCallback)
     end
 end
 
+function row = eventRow(event)
+    row = NaN;
+    if isprop(event, 'Indices') && ~isempty(event.Indices)
+        row = event.Indices(1, 1);
+    elseif isprop(event, 'Selection') && ~isempty(event.Selection)
+        row = event.Selection(1, 1);
+    end
+end
+
+function rows = appDisplayRows(apps)
+    rows = cell(numel(apps), 3);
+    for k = 1:numel(apps)
+        rows{k, 1} = char(apps(k).family);
+        rows{k, 2} = char(apps(k).displayName);
+        rows{k, 3} = apps(k).command;
+    end
+end
+
 function rows = selectedAppDetails(app)
-    rows = [ ...
-        {char(app.displayName)}; ...
-        {['Family: ' char(app.family)]}; ...
-        {['Command: ' app.command]}; ...
-        {['Path: ' app.relativePath]}; ...
+    rows = [{char(app.displayName)}; {['Family: ' char(app.family)]}; ...
+        {['Command: ' app.command]}; {['Path: ' app.relativePath]}; ...
         cellstr(wrapDescription(app.description))];
 end
 
 function rows = noMatchingAppDetails()
-    rows = {'No matching apps'; 'No app matches the current filters.'};
+    rows = {'No app entry points found.'; 'Use Update from GitHub to repair this install.'};
+end
+
+function message = integrityStatus(root, apps)
+    missing = missingManagedProjectParts(root);
+    if isempty(apps)
+        message = "No app entry points found. Use Update from GitHub to repair this install.";
+    elseif isempty(missing)
+        message = sprintf('%d app(s) available. Project structure looks complete.', numel(apps));
+    else
+        message = sprintf(['%d app(s) available, but managed project parts are ' ...
+            'missing: %s. Use Update from GitHub to repair this install.'], ...
+            numel(apps), strjoin(cellstr(missing), ', '));
+    end
+end
+
+function missing = missingManagedProjectParts(root)
+    required = ["+labkit", "apps", "docs", "tests", "buildfile.m", ...
+        "README.md", "AGENTS.md"];
+    missing = strings(1, 0);
+    for k = 1:numel(required)
+        path = fullfile(root, char(required(k)));
+        if exist(path, "file") ~= 2 && exist(path, "dir") ~= 7
+            missing(end+1) = required(k);
+        end
+    end
 end
 
 function message = launchStartStatus(app, debugMode)
@@ -346,8 +377,7 @@ end
 
 function message = cleanArtifactsStatus(result)
     if isempty(result.errors)
-        message = sprintf('Cleaned %d generated artifact item(s).', ...
-            result.removedCount);
+        message = sprintf('Cleaned %d generated artifact item(s).', result.removedCount);
     else
         message = sprintf('Cleaned %d item(s); %d item(s) failed.', ...
             result.removedCount, numel(result.errors));
@@ -355,61 +385,9 @@ function message = cleanArtifactsStatus(result)
 end
 
 function message = codeCheckStatus(report)
-    message = sprintf(['Code Analyzer wrote %s: %d message(s) across ' ...
-        '%d file(s), %d scan error(s).'], ...
-        char(report.outputs.json), ...
-        report.summary.messageCount, ...
-        report.summary.filesWithMessages, ...
-        report.summary.scanErrorCount);
-end
-
-function addScriptPath(root)
-    scriptDir = fullfile(root, 'scripts');
-    if exist(scriptDir, 'dir') == 7 && ~pathContains(scriptDir)
-        addpath(scriptDir, '-end');
-    end
-end
-
-function tf = pathContains(folder)
-    paths = strsplit(path, pathsep);
-    tf = any(strcmp(paths, folder));
-end
-
-function rows = appDisplayRows(apps)
-    rows = cell(numel(apps), 3);
-    for k = 1:numel(apps)
-        rows{k, 1} = char(apps(k).family);
-        rows{k, 2} = char(apps(k).displayName);
-        rows{k, 3} = apps(k).command;
-    end
-end
-
-function lines = wrapDescription(description)
-    text = string(description);
-    if strlength(text) == 0
-        lines = "No description found in the app header.";
-        return;
-    end
-
-    sentences = splitSentences(text);
-    lines = sentences(1:min(numel(sentences), 3));
-end
-
-function sentences = splitSentences(text)
-    parts = regexp(char(text), '(?<=[.!?])\s+', 'split');
-    sentences = strings(numel(parts), 1);
-    sentenceCount = 0;
-    for k = 1:numel(parts)
-        value = strtrim(string(parts{k}));
-        if strlength(value) > 0
-            sentenceCount = sentenceCount + 1;
-            sentences(sentenceCount) = value;
-        end
-    end
-    sentences = sentences(1:sentenceCount);
-    if sentenceCount == 0
-        sentences = text;
-    end
+    message = sprintf('Code Analyzer wrote %s: %d message(s) across %d file(s), %d scan error(s).', ...
+        char(report.outputs.json), report.summary.messageCount, ...
+        report.summary.filesWithMessages, report.summary.scanErrorCount);
 end
 
 function apps = discoverApps(root)
@@ -419,19 +397,16 @@ function apps = discoverApps(root)
         apps = template;
         return;
     end
-
     entries = dir(fullfile(appRoot, '**', 'labkit_*_app.m'));
-    candidates = entries(~[entries.isdir]);
-    apps = repmat(template, numel(candidates), 1);
+    entries = entries(~[entries.isdir]);
+    apps = repmat(template, numel(entries), 1);
     appCount = 0;
-
-    for k = 1:numel(candidates)
-        filepath = fullfile(candidates(k).folder, candidates(k).name);
+    for k = 1:numel(entries)
+        filepath = fullfile(entries(k).folder, entries(k).name);
         rel = relativePath(appRoot, filepath);
         if isHiddenImplementationPath(rel)
             continue;
         end
-
         [folder, command] = fileparts(filepath);
         appCount = appCount + 1;
         apps(appCount).command = command;
@@ -441,21 +416,108 @@ function apps = discoverApps(root)
         apps(appCount).relativePath = relativePath(root, filepath);
         apps(appCount).description = appDescription(filepath, command);
     end
-
     apps = apps(1:appCount);
-    if isempty(apps)
+    if ~isempty(apps)
+        keys = [reshape(string({apps.family}), [], 1), ...
+            reshape(string({apps.displayName}), [], 1)];
+        [~, order] = sortrows(keys);
+        apps = apps(order);
+    end
+end
+
+function app = emptyAppStruct()
+    app = struct('command', {}, 'displayName', {}, 'family', {}, ...
+        'folder', {}, 'relativePath', {}, 'description', {});
+end
+
+function catalog = appCatalogTable(apps)
+    catalog = table(string({apps.command})', string({apps.displayName})', ...
+        string({apps.family})', string({apps.folder})', ...
+        string({apps.relativePath})', string({apps.description})', ...
+        'VariableNames', {'Command', 'DisplayName', 'Family', 'Folder', ...
+        'RelativePath', 'Description'});
+end
+
+function tf = isHiddenImplementationPath(rel)
+    parts = split(string(strrep(rel, filesep, '/')), '/');
+    tf = any(startsWith(parts, '+')) || any(parts == "private");
+end
+
+function name = displayNameFromCommand(command)
+    name = regexprep(command, '^labkit_', '');
+    name = regexprep(name, '_app$', '');
+    name = regexprep(name, '_', ' ');
+    words = split(string(name));
+    for k = 1:numel(words)
+        words(k) = upper(extractBefore(words(k), 2)) + extractAfter(words(k), 1);
+    end
+    name = strjoin(cellstr(words), ' ');
+end
+
+function family = appFamily(appRoot, folder)
+    rel = relativePath(appRoot, folder);
+    parts = split(string(strrep(rel, filesep, '/')), '/');
+    if isempty(parts) || strlength(parts(1)) == 0
+        family = "General";
+    else
+        family = displayToken(parts(1));
+    end
+end
+
+function value = displayToken(token)
+    words = split(strrep(string(token), '_', ' '));
+    for k = 1:numel(words)
+        words(k) = upper(extractBefore(words(k), 2)) + extractAfter(words(k), 1);
+    end
+    value = strjoin(cellstr(words), ' ');
+end
+
+function description = appDescription(filepath, command)
+    description = "";
+    try
+        text = fileread(filepath);
+    catch
         return;
     end
+    lines = splitlines(string(text));
+    for k = 1:min(numel(lines), 20)
+        line = strtrim(lines(k));
+        prefix = "%" + upper(command);
+        if startsWith(line, prefix, 'IgnoreCase', true)
+            description = strtrim(erase(extractAfter(line, strlength(prefix)), "-"));
+            return;
+        elseif startsWith(line, "%")
+            cleaned = strtrim(extractAfter(line, 1));
+            if strlength(cleaned) > 0 && ~startsWith(cleaned, "Usage")
+                description = cleaned;
+                return;
+            end
+        end
+    end
+end
 
-    [~, order] = sortrows([[apps.family]', [apps.displayName]']);
-    apps = apps(order);
+function lines = wrapDescription(description)
+    text = string(description);
+    if strlength(text) == 0
+        lines = "No description found in the app header.";
+        return;
+    end
+    parts = regexp(char(text), '(?<=[.!?])\s+', 'split');
+    lines = strings(0, 1);
+    for k = 1:numel(parts)
+        value = strtrim(string(parts{k}));
+        if strlength(value) > 0
+            lines(end+1, 1) = value;
+        end
+    end
+    lines = lines(1:min(numel(lines), 3));
 end
 
 function result = cleanGeneratedArtifacts(root)
-    targets = generatedArtifactTargets(root);
+    targets = [fullfile(root, 'artifacts'), ...
+        fullfile(root, 'matlab_code_check.json'), fullfile(root, 'matlab_test.log')];
     removedCount = 0;
     errors = strings(0, 1);
-
     for k = 1:numel(targets)
         target = char(targets(k));
         try
@@ -467,168 +529,435 @@ function result = cleanGeneratedArtifacts(root)
                 removedCount = removedCount + 1;
             end
         catch err
-            errors(end + 1, 1) = string(target) + ": " + string(err.message);
+            errors(end+1) = string(err.message);
         end
     end
-
-    result = struct( ...
-        'removedCount', removedCount, ...
-        'errors', errors);
-end
-
-function targets = generatedArtifactTargets(root)
-    targets = string(fullfile(root, 'artifacts'));
-    legacyReport = fullfile(root, 'matlab_code_check.json');
-    if exist(legacyReport, 'file') == 2
-        targets(end + 1) = string(legacyReport);
-    end
-
-    legacyLogs = dir(fullfile(root, 'matlab_test*.log'));
-    for k = 1:numel(legacyLogs)
-        if legacyLogs(k).isdir
-            continue;
-        end
-        targets(end + 1) = string(fullfile(legacyLogs(k).folder, legacyLogs(k).name));
-    end
-    targets = unique(targets, 'stable');
+    result = struct('removedCount', removedCount, 'errors', errors);
 end
 
 function tf = confirmCleanArtifacts(fig)
     try
         choice = uiconfirm(fig, ...
-            ['Remove LabKit-generated artifacts and older root-level diagnostic ' ...
-            'files? This does not remove app source, docs, tests, photos, ' ...
-            'or derived data folders.'], ...
-            'Clean Artifacts', ...
-            'Options', {'Clean', 'Cancel'}, ...
-            'DefaultOption', 'Cancel', ...
-            'CancelOption', 'Cancel', ...
-            'Icon', 'warning');
+            'Remove generated LabKit artifacts and old diagnostic logs?', ...
+            'Clean Artifacts', 'Options', {'Clean', 'Cancel'}, ...
+            'DefaultOption', 'Cancel', 'CancelOption', 'Cancel');
         tf = strcmp(choice, 'Clean');
     catch
         tf = false;
     end
 end
 
-function app = emptyAppStruct()
-    app = struct( ...
-        'command', {}, ...
-        'displayName', {}, ...
-        'family', {}, ...
-        'folder', {}, ...
-        'relativePath', {}, ...
-        'description', {});
+function report = runCodeAnalyzerReport(root, progressFcn)
+    if nargin < 2
+        progressFcn = [];
+    end
+    excludedFolders = [".git", ".github", ".vscode", ".codes", ...
+        "artifacts", "node_modules", "photos"];
+    notifyProgress(progressFcn, "Finding MATLAB files...", 0.02);
+    files = sort(collectFiles(root, "*.m", excludedFolders));
+    fileReports = emptyCodeCheckFileReport();
+    scanErrors = emptyCodeCheckScanError();
+    totalFiles = max(numel(files), 1);
+    for k = 1:numel(files)
+        filepath = char(files(k));
+        rel = string(relativePath(root, filepath));
+        notifyProgress(progressFcn, ...
+            sprintf("Scanning %d/%d: %s", k, numel(files), char(rel)), ...
+            0.05 + 0.90 * (k - 1) / totalFiles);
+        try
+            rawMessages = checkcode(filepath, '-id');
+        catch err
+            scanErrors(end+1) = struct("path", rel, ...
+                "absolutePath", string(filepath), ...
+                "identifier", string(err.identifier), ...
+                "message", string(err.message));
+            rawMessages = struct([]);
+        end
+        messages = normalizeCodeCheckMessages(rel, filepath, rawMessages);
+        if ~isempty(messages)
+            fileReports(end+1) = struct("path", rel, ...
+                "absolutePath", string(filepath), ...
+                "messageCount", numel(messages), ...
+                "messages", messages);
+        end
+    end
+    output = fullfile(root, 'artifacts', 'code-check', 'matlab_code_check.json');
+    notifyProgress(progressFcn, "Writing Code Analyzer report...", 0.96);
+    ensureFolder(fileparts(output));
+    messageCount = sum(arrayfun(@(item) item.messageCount, fileReports));
+    report = struct();
+    report.schemaVersion = "1.1";
+    report.generatedAt = string(datetime("now", "TimeZone", "local", ...
+        "Format", "yyyy-MM-dd'T'HH:mm:ssXXX"));
+    report.generator = "labkit_launcher";
+    report.root = string(root);
+    report.outputs = struct("json", string(relativePath(root, output)));
+    report.scope = struct("description", ...
+        "All .m files under the repository except generated, hidden, photo, and dependency folders.", ...
+        "excludedFolders", excludedFolders);
+    report.summary = struct('filesScanned', numel(files), ...
+        'filesWithMessages', numel(fileReports), ...
+        'messageCount', messageCount, ...
+        'scanErrorCount', numel(scanErrors));
+    report.files = fileReports;
+    report.scanErrors = scanErrors;
+    writeText(output, jsonencode(report, PrettyPrint=true));
+    notifyProgress(progressFcn, "Code Analyzer report complete.", 1.00);
 end
 
-function tf = isHiddenImplementationPath(rel)
-    parts = pathParts(rel);
-    tf = any(startsWith(parts, '+')) || ...
-        any(startsWith(parts, '@')) || ...
-        any(strcmp(parts, 'private'));
-end
-
-function family = appFamily(appRoot, folder)
-    relFolder = relativePath(appRoot, folder);
-    parts = pathParts(relFolder);
-    if isempty(parts)
-        family = "apps";
-    else
-        family = string(parts{1});
+function messages = normalizeCodeCheckMessages(rel, filepath, rawMessages)
+    messages = emptyCodeCheckMessage();
+    lineText = readFileLines(filepath);
+    for k = 1:numel(rawMessages)
+        raw = rawMessages(k);
+        line = numericVectorField(raw, "line");
+        column = numericVectorField(raw, "column");
+        message = stringField(raw, "message");
+        primaryLine = firstNumeric(line);
+        if primaryLine >= 1 && primaryLine <= numel(lineText)
+            sourceLine = string(strtrim(lineText(primaryLine)));
+        else
+            sourceLine = "";
+        end
+        messages(end+1) = struct("path", rel, ...
+            "absolutePath", string(filepath), ...
+            "line", line, ...
+            "column", column, ...
+            "id", analyzerId(raw, message), ...
+            "message", message, ...
+            "fix", fixText(raw), ...
+            "sourceLine", sourceLine);
     end
 end
 
-function name = displayNameFromCommand(command)
-    name = string(command);
-    name = erase(name, "labkit_");
-    name = erase(name, "_app");
-    name = regexprep(name, '([A-Z]+)([A-Z][a-z])', '$1 $2');
-    name = regexprep(name, '([a-z])([A-Z])', '$1 $2');
-    name = strrep(name, '_', ' ');
+function lines = readFileLines(filepath)
+    try
+        lines = readlines(filepath);
+    catch
+        lines = splitlines(string(fileread(filepath)));
+    end
 end
 
-function description = appDescription(filepath, command)
-    fid = fopen(filepath, 'r');
-    if fid < 0
-        description = "App entry point: " + string(command);
+function id = analyzerId(raw, message)
+    id = stringField(raw, "id");
+    if strlength(id) > 0
         return;
     end
-    cleanup = onCleanup(@() fclose(fid));
-
-    lines = strings(2, 1);
-    lineCount = 0;
-    while lineCount < numel(lines)
-        line = fgetl(fid);
-        if ~ischar(line)
-            break;
-        end
-        stripped = strtrim(line);
-        if startsWith(stripped, 'function ')
-            continue;
-        end
-        if ~startsWith(stripped, '%')
-            if lineCount > 0
-                break;
-            end
-            continue;
-        end
-        text = strtrim(regexprep(stripped, '^%+', ''));
-        if strlength(text) == 0 || strcmpi(text, 'Main features') || ...
-                strcmpi(text, 'Notes')
-            continue;
-        end
-        lineCount = lineCount + 1;
-        lines(lineCount) = string(text);
+    tokens = regexp(char(message), "\(([^()]+)\)\s*$", "tokens", "once");
+    if ~isempty(tokens)
+        id = string(tokens{1});
     end
-    lines = lines(1:lineCount);
-    if lineCount == 0
-        description = "App entry point: " + string(command);
+end
+
+function value = numericVectorField(raw, name)
+    if isfield(raw, name) && ~isempty(raw.(name))
+        value = double(raw.(name));
     else
-        description = strjoin(lines, " ");
+        value = NaN;
     end
 end
 
-function T = appCatalogTable(apps)
-    command = strings(numel(apps), 1);
-    displayName = strings(numel(apps), 1);
-    family = strings(numel(apps), 1);
-    folder = strings(numel(apps), 1);
-    relativePath = strings(numel(apps), 1);
-    description = strings(numel(apps), 1);
-    for k = 1:numel(apps)
-        command(k) = string(apps(k).command);
-        displayName(k) = string(apps(k).displayName);
-        family(k) = string(apps(k).family);
-        folder(k) = string(apps(k).folder);
-        relativePath(k) = string(apps(k).relativePath);
-        description(k) = string(apps(k).description);
-    end
-    T = table(command, displayName, family, folder, relativePath, description, ...
-        'VariableNames', {'Command', 'DisplayName', 'Family', 'Folder', ...
-        'RelativePath', 'Description'});
-end
-
-function row = eventRow(event)
-    row = NaN;
-    if isobject(event) && isprop(event, 'Selection')
-        indices = event.Selection;
-    elseif isstruct(event) && isfield(event, 'Selection')
-        indices = event.Selection;
-    elseif isobject(event) && isprop(event, 'Indices')
-        indices = event.Indices;
-    elseif isstruct(event) && isfield(event, 'Indices')
-        indices = event.Indices;
+function value = firstNumeric(values)
+    values = values(~isnan(values));
+    if isempty(values)
+        value = NaN;
     else
-        indices = [];
-    end
-    if ~isempty(indices)
-        row = indices(1, 1);
+        value = values(1);
     end
 end
 
-function parts = pathParts(pathValue)
-    normalized = strrep(char(pathValue), filesep, '/');
-    parts = strsplit(normalized, '/');
-    parts = parts(~cellfun('isempty', parts));
+function value = stringField(raw, name)
+    if isfield(raw, name) && ~isempty(raw.(name))
+        value = string(raw.(name));
+    else
+        value = "";
+    end
+end
+
+function value = fixText(raw)
+    value = "";
+    if isfield(raw, "fix") && ~isempty(raw.fix) && ...
+            (ischar(raw.fix) || isstring(raw.fix))
+        value = string(raw.fix);
+    end
+end
+
+function value = emptyCodeCheckFileReport()
+    value = repmat(struct("path", "", "absolutePath", "", ...
+        "messageCount", 0, "messages", emptyCodeCheckMessage()), 1, 0);
+end
+
+function value = emptyCodeCheckMessage()
+    value = repmat(struct("path", "", "absolutePath", "", ...
+        "line", NaN, "column", NaN, "id", "", "message", "", ...
+        "fix", "", "sourceLine", ""), 1, 0);
+end
+
+function value = emptyCodeCheckScanError()
+    value = repmat(struct("path", "", "absolutePath", "", ...
+        "identifier", "", "message", ""), 1, 0);
+end
+
+function result = launcherUpdateFromMainZip(root, progressFcn)
+    sourceUrl = "https://github.com/Pluze/LabKit-MATLAB-Workbench/archive/refs/heads/main.zip";
+    tempRoot = tempname;
+    cleanup = onCleanup(@() removeFolderIfPresent(tempRoot));
+    notifyProgress(progressFcn, "Checking LabKit folder...", 0.05);
+    assertUpdateTargetRoot(root);
+    notifyProgress(progressFcn, "Checking update mode...", 0.10);
+    assertNotGitCheckout(root);
+    if ~confirmUpdate(root)
+        result = summaryStruct(root, "", 0, 0, "Update canceled.");
+        return;
+    end
+    notifyProgress(progressFcn, "Preparing update workspace...", 0.15);
+    ensureFolder(tempRoot);
+    zipPath = fullfile(tempRoot, "main.zip");
+    extractRoot = fullfile(tempRoot, "extracted");
+    notifyProgress(progressFcn, "Downloading GitHub main zip...", 0.25);
+    fetchZip(sourceUrl, zipPath);
+    notifyProgress(progressFcn, "Extracting update zip...", 0.40);
+    unzip(char(zipPath), char(extractRoot));
+    sourceRoot = findExtractedProjectRoot(extractRoot);
+    assertInstallRoot(sourceRoot);
+    notifyProgress(progressFcn, "Reading managed file list...", 0.55);
+    newFiles = collectManagedFiles(sourceRoot);
+    oldFiles = readManifest(root);
+    notifyProgress(progressFcn, "Creating visible backup zip...", 0.65);
+    backupPath = createBackup(root, tempRoot, newFiles, oldFiles);
+    notifyProgress(progressFcn, "Copying LabKit-managed files...", 0.75);
+    copiedCount = overlayManagedFiles(sourceRoot, root, newFiles);
+    notifyProgress(progressFcn, "Removing retired managed files...", 0.90);
+    deletedCount = deleteStaleManagedFiles(root, oldFiles, newFiles);
+    notifyProgress(progressFcn, "Writing update manifest...", 0.96);
+    writeManifest(root, newFiles);
+    notifyProgress(progressFcn, "Update complete.", 1.00);
+    result = summaryStruct(root, backupPath, copiedCount, deletedCount, ...
+        sprintf(['Updated from GitHub main. Copied %d file(s), removed %d ' ...
+        'retired managed file(s). Restart labkit_launcher. Backup: %s'], ...
+        copiedCount, deletedCount, backupPath));
+    clear cleanup;
+    removeFolderIfPresent(tempRoot);
+end
+
+function assertUpdateTargetRoot(root)
+    hasLauncher = exist(fullfile(root, "labkit_launcher.m"), "file") == 2;
+    hasLabkit = exist(fullfile(root, "+labkit"), "dir") == 7;
+    if ~hasLauncher && ~hasLabkit
+        error("labkit_launcher:InvalidRoot", ...
+            "Run from a folder containing labkit_launcher.m or +labkit: %s", root);
+    end
+end
+
+function assertInstallRoot(root)
+    if exist(fullfile(root, "labkit_launcher.m"), "file") ~= 2 || ...
+            exist(fullfile(root, "+labkit"), "dir") ~= 7 || ...
+            exist(fullfile(root, "apps"), "dir") ~= 7
+        error("labkit_launcher:InvalidRoot", ...
+            "Downloaded zip did not contain a complete LabKit install root.");
+    end
+end
+
+function assertNotGitCheckout(root)
+    if exist(fullfile(root, ".git"), "dir") == 7
+        error("labkit_launcher:GitCheckout", ...
+            "Update from GitHub zip is disabled for git checkouts. Use git to sync this working tree.");
+    end
+end
+
+function tf = confirmUpdate(root)
+    message = sprintf(['Download the latest GitHub main zip and overwrite ' ...
+        'LabKit-managed files in:\n\n%s\n\nThis can restore missing managed ' ...
+        'folders. User files that are not LabKit project files are left in place.'], root);
+    try
+        choice = questdlg(message, "Update LabKit", "Update", "Cancel", "Cancel");
+        tf = strcmp(choice, "Update");
+    catch
+        tf = false;
+    end
+end
+
+function fetchZip(sourceUrl, zipPath)
+    websave(zipPath, sourceUrl);
+end
+
+function sourceRoot = findExtractedProjectRoot(extractRoot)
+    entries = dir(extractRoot);
+    entries = entries([entries.isdir]);
+    entries = entries(~ismember(string({entries.name}), [".", ".."]));
+    for k = 1:numel(entries)
+        candidate = fullfile(entries(k).folder, entries(k).name);
+        if exist(fullfile(candidate, "labkit_launcher.m"), "file") == 2
+            sourceRoot = candidate;
+            return;
+        end
+    end
+    error("labkit_launcher:InvalidZip", "Downloaded zip did not contain a LabKit project root.");
+end
+
+function files = collectManagedFiles(root)
+    entries = dir(fullfile(root, "**", "*"));
+    files = strings(1, 0);
+    for k = 1:numel(entries)
+        if entries(k).isdir
+            continue;
+        end
+        rel = relativePath(root, fullfile(entries(k).folder, entries(k).name));
+        if isManagedRelativePath(rel)
+            files(end+1) = string(rel);
+        end
+    end
+    files = sort(unique(files));
+end
+
+function tf = isManagedRelativePath(rel)
+    parts = split(string(strrep(rel, filesep, "/")), "/");
+    rootFiles = ["AGENTS.md", "LICENSE", "README.md", "buildfile.m", ...
+        "labkit_launcher.m", ".gitignore"];
+    managedRoots = ["+labkit", "apps", "docs", "scripts", "tests", ".agents", ".github"];
+    tf = ismember(string(rel), rootFiles) || ismember(parts(1), managedRoots);
+end
+
+function backupPath = createBackup(root, tempRoot, newFiles, oldFiles)
+    backupFiles = filesToBackup(root, newFiles, oldFiles);
+    backupPath = fullfile(root, sprintf("LabKit-backup-%s.zip", ...
+        char(datetime("now", "Format", "yyyyMMdd-HHmmss"))));
+    staging = fullfile(tempRoot, "backup-staging");
+    ensureFolder(staging);
+    writeText(fullfile(staging, "README_RESTORE.txt"), ...
+        ["This zip contains LabKit-managed files overwritten or removed during an update." newline ...
+        "To restore, unzip it over the LabKit install folder." newline]);
+    for k = 1:numel(backupFiles)
+        source = fullfile(root, char(backupFiles(k)));
+        if exist(source, "file") ~= 2
+            continue;
+        end
+        target = fullfile(staging, char(backupFiles(k)));
+        ensureFolder(fileparts(target));
+        copyfile(source, target);
+    end
+    zipFiles = collectRelativeFiles(staging);
+    zip(char(backupPath), cellstr(zipFiles), char(staging));
+end
+
+function files = filesToBackup(root, newFiles, oldFiles)
+    manifest = manifestPath(root);
+    changed = newFiles(arrayfun(@(f) exist(fullfile(root, char(f)), "file") == 2, newFiles));
+    stale = setdiff(oldFiles, newFiles);
+    files = unique([changed(:); stale(:)]);
+    if exist(manifest, "file") == 2
+        files(end+1) = string(relativePath(root, manifest));
+    end
+    files = sort(unique(files));
+end
+
+function copiedCount = overlayManagedFiles(sourceRoot, root, files)
+    copiedCount = 0;
+    for k = 1:numel(files)
+        source = fullfile(sourceRoot, char(files(k)));
+        target = fullfile(root, char(files(k)));
+        ensureFolder(fileparts(target));
+        copyfile(source, target, "f");
+        copiedCount = copiedCount + 1;
+    end
+end
+
+function deletedCount = deleteStaleManagedFiles(root, oldFiles, newFiles)
+    stale = setdiff(oldFiles, newFiles);
+    deletedCount = 0;
+    for k = 1:numel(stale)
+        target = fullfile(root, char(stale(k)));
+        if exist(target, "file") == 2 && isManagedRelativePath(stale(k))
+            delete(target);
+            deletedCount = deletedCount + 1;
+        end
+    end
+end
+
+function writeManifest(root, files)
+    writeText(manifestPath(root), strjoin(cellstr(files), newline) + newline);
+end
+
+function files = readManifest(root)
+    path = manifestPath(root);
+    if exist(path, "file") ~= 2
+        files = strings(1, 0);
+        return;
+    end
+    files = string(splitlines(strtrim(fileread(path)))).';
+    files = files(strlength(files) > 0);
+end
+
+function path = manifestPath(root)
+    path = fullfile(root, ".labkit-managed-files.txt");
+end
+
+function result = summaryStruct(root, backupPath, copiedCount, deletedCount, message)
+    result = struct("updated", copiedCount > 0 || deletedCount > 0, ...
+        "root", string(root), "backupZip", string(backupPath), ...
+        "copiedCount", copiedCount, "deletedCount", deletedCount, ...
+        "message", string(message));
+end
+
+function notifyProgress(progressFcn, message, value)
+    try
+        progressFcn(string(message), value);
+    catch
+    end
+end
+
+function files = collectFiles(root, pattern, excludedFolders)
+    entries = dir(fullfile(root, "**", pattern));
+    files = strings(1, 0);
+    for k = 1:numel(entries)
+        if entries(k).isdir
+            continue;
+        end
+        filepath = string(fullfile(entries(k).folder, entries(k).name));
+        rel = string(relativePath(root, filepath));
+        parts = split(strrep(rel, filesep, "/"), "/");
+        if any(ismember(parts, excludedFolders))
+            continue;
+        end
+        files(end+1) = filepath;
+    end
+end
+
+function files = collectRelativeFiles(root)
+    entries = dir(fullfile(root, "**", "*"));
+    files = strings(1, 0);
+    for k = 1:numel(entries)
+        if ~entries(k).isdir
+            files(end+1) = string(relativePath(root, fullfile(entries(k).folder, entries(k).name)));
+        end
+    end
+    files = sort(unique(files));
+end
+
+function ensureFolder(folder)
+    if strlength(string(folder)) > 0 && exist(folder, "dir") ~= 7
+        mkdir(folder);
+    end
+end
+
+function removeFolderIfPresent(folder)
+    if exist(folder, "dir") == 7
+        rmdir(folder, "s");
+    end
+end
+
+function writeText(filepath, text)
+    ensureFolder(fileparts(filepath));
+    fid = fopen(filepath, "w");
+    assert(fid > 0, "Could not write file: %s", filepath);
+    cleaner = onCleanup(@() fclose(fid));
+    fprintf(fid, "%s", text);
+    clear cleaner;
+end
+
+function tf = pathContains(folder)
+    paths = strsplit(path, pathsep);
+    tf = any(strcmp(paths, folder));
 end
 
 function rel = relativePath(root, filepath)

@@ -39,14 +39,14 @@ Coordinate with:
 
 ## Workflow
 
-1. Run the manual Code Analyzer tool:
+1. Run the manual Code Analyzer action from the self-contained launcher:
 
    ```matlab
-   addpath(fullfile(pwd, "scripts"), "-end");
-   runLabKitCodeCheckReport();
+   labkit_launcher
    ```
 
-   The ignored report is `artifacts/code-check/matlab_code_check.json`.
+   Click `Run Code Analyzer`. The ignored report is
+   `artifacts/code-check/matlab_code_check.json`.
 
 2. Choose the target file:
 
@@ -72,8 +72,8 @@ Coordinate with:
    behavior, adding the project guardrail task when project guardrails or
    suppression policy could be affected.
 
-6. Rerun the Code Analyzer tool and confirm the target file no longer appears
-   in `artifacts/code-check/matlab_code_check.json.files`.
+6. Rerun the launcher Code Analyzer action and confirm the target file no
+   longer appears in `artifacts/code-check/matlab_code_check.json.files`.
 
 7. Repeat steps 3-6 only for the same target file until it is clean, or stop and
    report the blocker if a warning cannot be fixed without behavior or boundary
