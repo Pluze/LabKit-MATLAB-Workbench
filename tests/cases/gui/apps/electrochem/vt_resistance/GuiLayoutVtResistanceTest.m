@@ -37,6 +37,22 @@ classdef GuiLayoutVtResistanceTest < matlab.uitest.TestCase
             h.invokeButton(fig, 'Refresh plots');
             h.invokeButton(fig, 'Reset axes');
             h.invokeButton(fig, 'Clear all');
+            verifyVtPlotAxisClearRemovesAnnotations();
         end
     end
+end
+
+function verifyVtPlotAxisClearRemovesAnnotations()
+    fig = uifigure('Visible', 'off');
+    cleaner = onCleanup(@() delete(fig));
+    ax = uiaxes(fig);
+    plot(ax, 1:3, [1 4 2], 'HandleVisibility', 'off');
+    hold(ax, 'on');
+    xline(ax, 2, ':', 'marker');
+    text(ax, 2, 3, 'annotation', 'HandleVisibility', 'off');
+    vt_resistance.view.clearPlotAxis(ax);
+    assert(isempty(ax.Children), ...
+        'VT plot refresh should remove previous hidden markers and annotations.');
+    assert(strcmp(ax.XLimMode, 'auto') && strcmp(ax.YLimMode, 'auto'), ...
+        'VT plot refresh should restore automatic axis limits.');
 end

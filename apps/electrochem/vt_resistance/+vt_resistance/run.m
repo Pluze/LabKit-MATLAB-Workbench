@@ -389,6 +389,7 @@ function fig = run(debugLog)
     end
 
     function resetAxes()
+        restoreDefaultPlotSelections();
         resetAxesToDefaultState();
         refreshPlots();
     end
@@ -433,11 +434,11 @@ function fig = run(debugLog)
 end
 
 function clearAxis(ax)
-    cla(ax);
+    vt_resistance.view.clearPlotAxis(ax);
 end
 
 function resetAxis(ax, titleText)
-    cla(ax);
+    clearAxis(ax);
     title(ax, titleText);
     xlabel(ax, '');
     ylabel(ax, '');

@@ -117,6 +117,7 @@ Use these app-facing contracts:
 - `previewArea` axes install LabKit-managed, pointer-gated mouse-wheel zoom by
   default. Scrolling over controls, logs, or empty figure space does not zoom
   plots, and users should not need to click a preview before wheel zoom works.
+  Time-series axes with a time x-label zoom the horizontal time axis only.
 - Text-heavy controls have conservative automatic heights owned by the
   framework. App specs must not set concrete height, row-count, spacing,
   padding, chrome, row-height, or column-width properties.
@@ -234,7 +235,9 @@ Use `labkit.ui.tool.zoomAxesAtPoint(ax, [x y], scrollCount)` when a custom
 tool or app needs the same cursor-centered axes-limit zoom used by default
 previewArea navigation. The helper supports generic numeric plots and infers
 image bounds for displayed image children; pass `"Bounds", [xmin xmax ymin ymax]`
-when a tool has stricter data limits.
+when a tool has stricter data limits. Generic plots zoom both axes by default;
+time-labeled x-axes zoom only the horizontal axis unless `"ZoomAxes"` is
+provided explicitly.
 
 Use `labkit.ui.tool.anchorEditor(runtime, imageSize, opts)` for generic anchor editing. Use `labkit.ui.tool.scaleBar(parent, row, runtime, opts)` for calibration controls, reference-pixel editing, unit normalization, final scale-bar placement, and overlay drawing. Apps still own image loading, redraw order, scientific calculations, result summaries, alerts, logs, and exports.
 

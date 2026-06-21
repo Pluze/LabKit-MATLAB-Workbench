@@ -121,6 +121,11 @@ banner such as `** Starting headless`, treat that as a MATLAB launcher or
 runtime-access failure first. Do not diagnose source or test failures from an
 empty launcher result.
 
+When a Codex sandbox run exits before any MATLAB banner or logfile is created,
+rerun the same command with escalated sandbox permissions before reporting the
+result. Treat the escalated rerun as the decisive local result; if escalation
+itself is blocked, report that approval blocker explicitly.
+
 Do not add MATLAB Code Analyzer suppression pragmas such as `%#ok<...>` in
 source, tests, fixtures, or generated MATLAB files. Refactor the code or test
 helper shape instead; the project guardrails intentionally reject suppression

@@ -88,7 +88,7 @@ function state = setBusyTitle(state, fig, message)
         return;
     end
 
-    state.oldName = fig.Name;
+    state.oldName = stripBusySuffix(fig.Name);
     text = char(string(message));
     if isempty(strtrim(text))
         text = 'Working';
@@ -96,6 +96,17 @@ function state = setBusyTitle(state, fig, message)
     state.busyName = sprintf('%s [Working: %s]', char(string(state.oldName)), text);
     fig.Name = state.busyName;
     state.nameChanged = true;
+end
+
+function name = stripBusySuffix(name)
+    name = char(string(name));
+    while true
+        stripped = regexprep(name, '\s*\[Working: [^\]]*\]\s*$', '');
+        if strcmp(stripped, name)
+            return;
+        end
+        name = stripped;
+    end
 end
 
 function state = setBusyPointer(state, fig)

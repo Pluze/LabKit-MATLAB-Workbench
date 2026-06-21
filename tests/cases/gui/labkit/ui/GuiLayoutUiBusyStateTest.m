@@ -70,6 +70,14 @@ function verify_gui_layout_ui_busy_state()
     assert(~isappdata(fig, 'labkitUiBusy'), ...
         'Busy-state helper should clear the busy flag after callback errors.');
 
+    fig.Name = 'labkit_busy_state_probe [Working: Previous]';
+    nestedBusyTitle = "";
+    labkit.ui.app.runBusy(fig, "Next step", @captureBusyTitle);
+    assert(count(string(nestedBusyTitle), "[Working:") == 1, ...
+        'Busy-state helper should not stack working labels.');
+    assert(strcmp(fig.Name, 'labkit_busy_state_probe'), ...
+        'Busy-state helper should restore the base title after nested labels.');
+
     verifyBusyActionWrapper();
     verifyBusyNonActionWrappers();
 
@@ -101,6 +109,10 @@ function verify_gui_layout_ui_busy_state()
         assert(isappdata(fig, 'labkitUiBusy') && getappdata(fig, 'labkitUiBusy'), ...
             'Busy-state helper should mark the figure busy before failing work runs.');
         error('labkit:ui:test:BusyFailure', 'Synthetic busy-state failure.');
+    end
+
+    function captureBusyTitle()
+        nestedBusyTitle = string(fig.Name);
     end
 
     function scrollProbe(~, ~)

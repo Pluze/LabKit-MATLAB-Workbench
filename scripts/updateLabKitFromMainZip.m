@@ -32,7 +32,7 @@ function result = updateLabKitFromMainZip(varargin)
     zipPath = fullfile(tempRoot, "main.zip");
     extractRoot = fullfile(tempRoot, "extracted");
     fetchZip(sourceUrl, zipPath);
-    unzip(zipPath, extractRoot);
+    unzip(char(zipPath), char(extractRoot));
     sourceRoot = findExtractedProjectRoot(extractRoot);
     assertInstallRoot(sourceRoot);
 
@@ -75,8 +75,8 @@ end
 function assertNotGitCheckout(root)
     if exist(fullfile(root, ".git"), "dir") == 7
         error("updateLabKitFromMainZip:GitCheckout", ...
-            ["Update from GitHub zip is disabled for git checkouts. " ...
-            "Use git to sync this working tree."]);
+            "Update from GitHub zip is disabled for git checkouts. " + ...
+            "Use git to sync this working tree.");
     end
 end
 
@@ -158,7 +158,7 @@ end
 function backupPath = createBackup(root, tempRoot, newFiles, oldFiles)
     backupFiles = filesToBackup(root, newFiles, oldFiles);
     timestamp = char(datetime("now", "Format", "yyyyMMdd-HHmmss"));
-    backupName = ["LabKit-backup-" timestamp ".zip"];
+    backupName = sprintf("LabKit-backup-%s.zip", timestamp);
     backupPath = fullfile(root, backupName);
     staging = fullfile(tempRoot, "backup-staging");
     ensureFolder(staging);
@@ -177,7 +177,7 @@ function backupPath = createBackup(root, tempRoot, newFiles, oldFiles)
         copyfile(source, target);
     end
     zipFiles = collectRelativeFiles(staging);
-    zip(backupPath, cellstr(zipFiles), staging);
+    zip(char(backupPath), cellstr(zipFiles), char(staging));
 end
 
 function files = filesToBackup(root, newFiles, oldFiles)

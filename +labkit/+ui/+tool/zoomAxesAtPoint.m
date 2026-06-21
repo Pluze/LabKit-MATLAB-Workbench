@@ -19,6 +19,8 @@ function didZoom = zoomAxesAtPoint(ax, point, scrollCount, varargin)
 %       linear axes. Default is 10 data units for bounded/image axes and no
 %       practical minimum for unbounded plot axes.
 %   ZoomBase - optional scalar zoom base, default 1.20.
+%   ZoomAxes - optional "xy", "x", or "y". Default is "xy", except plot axes
+%       whose x-axis label is time-like default to "x".
 %
 % Output:
 %   didZoom - true when the axes limits were updated.
@@ -57,6 +59,8 @@ function didZoom = zoomAxesAtPoint(ax, point, scrollCount, varargin)
 
     minSpan = optionValue(opts, 'MinSpan', defaultMinSpan(bounds));
     minSpan = normalizeMinSpan(minSpan);
+    zoomAxes = normalizeZoomAxes(optionValue(opts, 'ZoomAxes', ...
+        defaultZoomAxes(ax, bounds)));
 
     currentX = double(ax.XLim);
     currentY = double(ax.YLim);
@@ -71,17 +75,25 @@ function didZoom = zoomAxesAtPoint(ax, point, scrollCount, varargin)
         yBounds = bounds(3:4);
     end
 
-    [newX, okX] = zoomOneAxis(currentX, x, scrollCount, ...
-        string(ax.XScale), xBounds, minSpan(1), zoomBase);
-    [newY, okY] = zoomOneAxis(currentY, y, scrollCount, ...
-        string(ax.YScale), yBounds, minSpan(2), zoomBase);
+    newX = currentX;
+    newY = currentY;
+    okX = true;
+    okY = true;
+    if contains(zoomAxes, "x")
+        [newX, okX] = zoomOneAxis(currentX, x, scrollCount, ...
+            string(ax.XScale), xBounds, minSpan(1), zoomBase);
+    end
+    if contains(zoomAxes, "y")
+        [newY, okY] = zoomOneAxis(currentY, y, scrollCount, ...
+            string(ax.YScale), yBounds, minSpan(2), zoomBase);
+    end
     if ~(okX && okY)
         return;
     end
 
     ax.XLim = newX;
     ax.YLim = newY;
-    didZoom = true;
+    didZoom = ~isequal(currentX, newX) || ~isequal(currentY, newY);
 end
 
 function opts = parseOptions(args)
@@ -255,6 +267,36 @@ function minSpan = defaultMinSpan(bounds)
     else
         minSpan = [min(10, diff(bounds(1:2))), ...
             min(10, diff(bounds(3:4)))];
+    end
+end
+
+function zoomAxes = defaultZoomAxes(ax, bounds)
+    if isempty(bounds) && hasTimeXLabel(ax)
+        zoomAxes = "x";
+    else
+        zoomAxes = "xy";
+    end
+end
+
+function tf = hasTimeXLabel(ax)
+    tf = false;
+    try
+        label = string(ax.XLabel.String);
+    catch
+        return;
+    end
+    label = lower(strjoin(label(:).', " "));
+    tf = contains(label, "time");
+end
+
+function zoomAxes = normalizeZoomAxes(value)
+    zoomAxes = lower(strtrim(string(value)));
+    if zoomAxes == "both"
+        zoomAxes = "xy";
+    end
+    if ~isscalar(zoomAxes) || ~ismember(zoomAxes, ["xy", "x", "y"])
+        error('labkit:ui:tool:InvalidZoomAxes', ...
+            'ZoomAxes must be "xy", "x", or "y".');
     end
 end
 

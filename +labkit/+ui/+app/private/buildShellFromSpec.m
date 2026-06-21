@@ -49,9 +49,23 @@ end
 function rowHeight = tabRowHeights(children)
     count = max(1, numel(children));
     rowHeight = repmat({'fit'}, 1, count);
+    if numel(children) == 1 && isGrowableTabChild(children{1})
+        rowHeight{1} = '1x';
+        return;
+    end
     for k = 1:numel(children)
         rowHeight{k} = specRowHeight(children{k}, 'fit');
     end
+end
+
+function tf = isGrowableTabChild(child)
+    if strcmp(child.kind, 'section')
+        tf = numel(child.children) == 1 && isGrowableTabChild(child.children{1});
+        return;
+    end
+    tf = ismember(child.kind, ...
+        {'previewArea', 'resultTable', 'logPanel', 'statusPanel', ...
+        'usagePanel', 'pathPanel'});
 end
 
 function rowHeight = workspaceRowHeights(children)

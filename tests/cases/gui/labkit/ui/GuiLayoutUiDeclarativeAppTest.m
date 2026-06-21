@@ -225,6 +225,7 @@ function assertTextPanelsHaveDefaultRoom(ui)
     ui.logTab.Parent.SelectedTab = ui.logTab;
     settleLayout();
     assertLogPanelContract(ui.controls.logPanel);
+    assertLogTabFillsAvailableHeight(ui);
     ui.setupTab.Parent.SelectedTab = ui.setupTab;
     settleLayout();
     assertPathPanelContract(ui.controls.sourceImages);
@@ -241,6 +242,15 @@ end
 function assertLogPanelContract(control)
     assert(isvalid(control.textArea) && strcmp(control.kind, 'logPanel'), ...
         'logPanel controls should expose a valid read-only text area.');
+end
+
+function assertLogTabFillsAvailableHeight(ui)
+    logicalRowMap = ui.logGrid.UserData.LabKitLogicalRowMap;
+    logRowHeight = ui.logGrid.RowHeight{logicalRowMap(1)};
+    assert(strcmp(char(string(logRowHeight)), '1x'), ...
+        'A single growable log section should fill the log tab height.');
+    assert(isequal(ui.sections.logSection.grid.RowHeight, {'1x'}), ...
+        'A logPanel section should let the log text area grow vertically.');
 end
 
 function assertPathPanelContract(control)
