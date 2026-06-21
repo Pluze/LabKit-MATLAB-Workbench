@@ -9,6 +9,7 @@ function fig = run(debugLog)
     S.currentIndex = 0;
     S.outputFolder = string(pwd);
     S.lastExport = [];
+    S.canvasCache = emptyCanvasCache();
 
     callbacks = struct( ...
         "imagesChosen", @onImagesChosen, ...
@@ -19,9 +20,9 @@ function fig = run(debugLog)
         "nextImage", @(~, ~) onNextImage(), ...
         "cropGeometryChanged", @(~, ~) onCropGeometryChanged(), ...
         "rotationChanged", @(~, ~) onRotationChanged(), ...
-        "fillModeChanged", @(~, ~) onFillModeChanged(), ...
+        "paddingChanged", @(~, ~) onPaddingChanged(), ...
         "centerChanged", @(~, ~) onCenterChanged(), ...
-        "useCanvasCenter", @(~, ~) onUseCanvasCenter(), ...
+        "useImageCenter", @(~, ~) onUseImageCenter(), ...
         "exportSettingChanged", @(~, ~) onExportSettingChanged(), ...
         "chooseOutputFolder", @(~, ~) onChooseOutputFolder(), ...
         "exportCrops", @(~, ~) onExportCrops());
@@ -48,10 +49,10 @@ function fig = run(debugLog)
     edtCropWidth = ui.controls.cropWidth.valueHandle;
     edtCropHeight = ui.controls.cropHeight.valueHandle;
     edtRotation = ui.controls.rotation.valueHandle;
-    ddFillMode = ui.controls.fillMode.valueHandle;
+    edtPaddingPercent = ui.controls.paddingPercent.valueHandle;
     edtCenterX = ui.controls.centerX.valueHandle;
     edtCenterY = ui.controls.centerY.valueHandle;
-    btnUseCanvasCenter = ui.controls.useCanvasCenter.button;
+    btnUseImageCenter = ui.controls.useImageCenter.button;
     ddFormat = ui.controls.format.valueHandle;
     txtOutputFolder = ui.controls.outputFolder.valueHandle;
     btnChooseOutput = ui.controls.chooseOutputFolder.button;
@@ -81,6 +82,7 @@ function fig = run(debugLog)
         S.items = items;
         S.currentIndex = 1;
         S.lastExport = [];
+        S.canvasCache = emptyCanvasCache();
         addLog(sprintf('Loaded %d image(s).', numel(S.items)));
         refreshAll();
     end
@@ -89,6 +91,7 @@ function fig = run(debugLog)
         S.items = repmat(batch_crop.state.emptyItem(), 0, 1);
         S.currentIndex = 0;
         S.lastExport = [];
+        S.canvasCache = emptyCanvasCache();
         addLog('Cleared loaded images.');
         refreshAll();
     end
@@ -103,6 +106,7 @@ function fig = run(debugLog)
         S.items = [S.items(1:S.currentIndex); duplicated; S.items(insertAt:end)];
         S.currentIndex = insertAt;
         S.lastExport = [];
+        S.canvasCache = emptyCanvasCache();
         addLog(sprintf('Duplicated image %d as crop task %d. Pick a new crop center.', ...
             insertAt - 1, insertAt));
         refreshAll();
@@ -150,12 +154,19 @@ function fig = run(debugLog)
         end
         S.items(S.currentIndex).angleDeg = edtRotation.Value;
         ensureCurrentCenter();
+        S.canvasCache = emptyCanvasCache();
         addLog(sprintf('Updated rotation for image %d: %.3g deg.', ...
             S.currentIndex, S.items(S.currentIndex).angleDeg));
         refreshAll();
     end
 
-    function onFillModeChanged()
+    function onPaddingChanged()
+        edtPaddingPercent.Value = min(max(double(edtPaddingPercent.Value), 0), 50);
+        S.canvasCache = emptyCanvasCache();
+        if hasCurrentImage()
+            addLog(sprintf('Updated padding for image %d: %.3g%%.', ...
+                S.currentIndex, edtPaddingPercent.Value));
+        end
         refreshPreview();
         refreshSummary();
     end
@@ -171,15 +182,13 @@ function fig = run(debugLog)
         refreshAll();
     end
 
-    function onUseCanvasCenter()
+    function onUseImageCenter()
         if ~hasCurrentImage()
             return;
         end
-        [canvas, ~] = currentCanvas();
-        S.items(S.currentIndex).centerXY = [(size(canvas, 2) + 1) / 2, ...
-            (size(canvas, 1) + 1) / 2];
+        S.items(S.currentIndex).centerXY = sourceCenterXY(S.items(S.currentIndex).image);
         S.items(S.currentIndex).centerSet = true;
-        addLog(sprintf('Set image %d crop center to rotated canvas center.', ...
+        addLog(sprintf('Set image %d crop center to source image center.', ...
             S.currentIndex));
         refreshAll();
     end
@@ -203,14 +212,16 @@ function fig = run(debugLog)
         if ~hasCurrentImage()
             return;
         end
-        [canvas, ~] = currentCanvas();
+        geometry = currentGeometry();
         pt = previewAxes.CurrentPoint;
-        x = min(max(pt(1, 1), 1), size(canvas, 2));
-        y = min(max(pt(1, 2), 1), size(canvas, 1));
-        S.items(S.currentIndex).centerXY = [x, y];
+        x = min(max(pt(1, 1), 1), size(geometry.canvas, 2));
+        y = min(max(pt(1, 2), 1), size(geometry.canvas, 1));
+        centerXY = batch_crop.ops.canvasToOriginal(geometry, [x, y]);
+        centerXY = clampToSource(centerXY, S.items(S.currentIndex).image);
+        S.items(S.currentIndex).centerXY = centerXY;
         S.items(S.currentIndex).centerSet = true;
         addLog(sprintf('Picked crop center for image %d: x=%.1f, y=%.1f.', ...
-            S.currentIndex, x, y));
+            S.currentIndex, centerXY(1), centerXY(2)));
         refreshAll();
     end
 
@@ -279,21 +290,22 @@ function fig = run(debugLog)
         btnPrevious.Enable = ternary(hasImage && S.currentIndex > 1, 'on', 'off');
         btnNext.Enable = ternary(hasImage && S.currentIndex < numel(S.items), 'on', 'off');
         edtRotation.Enable = enabled;
+        edtPaddingPercent.Enable = enabled;
         edtCenterX.Enable = enabled;
         edtCenterY.Enable = enabled;
-        btnUseCanvasCenter.Enable = enabled;
+        btnUseImageCenter.Enable = enabled;
 
         if hasImage
             ensureCurrentCenter();
             item = S.items(S.currentIndex);
-            [canvas, ~] = currentCanvas();
             edtRotation.Value = item.angleDeg;
-            edtCenterX.Limits = [1, max(1, size(canvas, 2))];
-            edtCenterY.Limits = [1, max(1, size(canvas, 1))];
+            edtCenterX.Limits = [1, max(1, size(item.image, 2))];
+            edtCenterY.Limits = [1, max(1, size(item.image, 1))];
             edtCenterX.Value = item.centerXY(1);
             edtCenterY.Value = item.centerXY(2);
         else
             edtRotation.Value = 0;
+            edtPaddingPercent.Value = 12;
             edtCenterX.Limits = [1, Inf];
             edtCenterY.Limits = [1, Inf];
             edtCenterX.Value = 1;
@@ -312,27 +324,28 @@ function fig = run(debugLog)
         end
 
         ensureCurrentCenter();
-        [canvas, ~] = currentCanvas();
-        hImage = labkit.ui.view.drawImage(ui, 'preview', canvas, ...
-            "title", "Rotated preview + fixed crop", ...
+        geometry = currentGeometry();
+        hImage = labkit.ui.view.drawImage(ui, 'preview', geometry.canvas, ...
+            "title", "Padded rotation preview + fixed crop", ...
             "axis", "crop");
         hold(previewAxes, 'on');
         item = S.items(S.currentIndex);
         cropWidth = currentCropWidth();
         cropHeight = currentCropHeight();
-        position = batch_crop.view.rectanglePosition(item.centerXY, cropWidth, cropHeight);
+        canvasCenterXY = batch_crop.ops.originalToCanvas(geometry, item.centerXY);
+        position = batch_crop.view.rectanglePosition(canvasCenterXY, cropWidth, cropHeight);
         hRect = rectangle(previewAxes, 'Position', position, ...
             'EdgeColor', [1 0.84 0], ...
             'LineWidth', 1.5, ...
             'LineStyle', '-');
         hLineX = plot(previewAxes, ...
-            [item.centerXY(1) - 16, item.centerXY(1) + 16], ...
-            [item.centerXY(2), item.centerXY(2)], ...
+            [canvasCenterXY(1) - 16, canvasCenterXY(1) + 16], ...
+            [canvasCenterXY(2), canvasCenterXY(2)], ...
             'Color', [0 0.85 1], ...
             'LineWidth', 1.25);
         hLineY = plot(previewAxes, ...
-            [item.centerXY(1), item.centerXY(1)], ...
-            [item.centerXY(2) - 16, item.centerXY(2) + 16], ...
+            [canvasCenterXY(1), canvasCenterXY(1)], ...
+            [canvasCenterXY(2) - 16, canvasCenterXY(2) + 16], ...
             'Color', [0 0.85 1], ...
             'LineWidth', 1.25);
         hold(previewAxes, 'off');
@@ -342,21 +355,15 @@ function fig = run(debugLog)
     end
 
     function refreshSummary()
-        if hasCurrentImage()
-            [canvas, ~] = currentCanvas();
-            canvasSize = [size(canvas, 2), size(canvas, 1)];
-        else
-            canvasSize = [0, 0];
-        end
         resultTable.Data = batch_crop.view.summaryTableData(S, S.currentIndex, ...
-            canvasSize, currentCropWidth(), currentCropHeight(), ddFormat.Value);
+            currentCropWidth(), currentCropHeight(), currentPaddingPercent(), ddFormat.Value);
         txtDetails.Value = batch_crop.view.detailLines(S, S.currentIndex, ...
-            currentCropWidth(), currentCropHeight(), ddFillMode.Value);
+            currentCropWidth(), currentCropHeight(), currentPaddingPercent());
     end
 
     function resetPreviewAxes()
         labkit.ui.view.resetAxes(ui, 'preview', ...
-            'Rotated preview + fixed crop', true, 'crop');
+            'Padded rotation preview + fixed crop', true, 'crop');
     end
 
     function opts = currentExportOptions()
@@ -365,7 +372,7 @@ function fig = run(debugLog)
         opts.format = ddFormat.Value;
         opts.cropWidth = currentCropWidth();
         opts.cropHeight = currentCropHeight();
-        opts.fillMode = ddFillMode.Value;
+        opts.paddingPercent = currentPaddingPercent();
     end
 
     function width = currentCropWidth()
@@ -376,23 +383,33 @@ function fig = run(debugLog)
         height = max(1, round(double(edtCropHeight.Value)));
     end
 
-    function [canvas, mask] = currentCanvas()
+    function percent = currentPaddingPercent()
+        percent = min(max(double(edtPaddingPercent.Value), 0), 50);
+    end
+
+    function geometry = currentGeometry()
         item = S.items(S.currentIndex);
-        fillValue = batch_crop.view.previewFillValue(item.image, ddFillMode.Value);
-        [canvas, mask] = batch_crop.ops.rotateCanvas(item.image, item.angleDeg, fillValue);
+        key = canvasCacheKey(S.currentIndex, item, currentPaddingPercent());
+        if S.canvasCache.valid && isequal(S.canvasCache.key, key)
+            geometry = S.canvasCache.geometry;
+            return;
+        end
+
+        geometry = batch_crop.ops.prepareCropCanvas(item.image, struct( ...
+            'angleDeg', item.angleDeg, ...
+            'paddingPercent', currentPaddingPercent()));
+        S.canvasCache = struct('valid', true, 'key', key, 'geometry', geometry);
     end
 
     function ensureCurrentCenter()
         if ~hasCurrentImage()
             return;
         end
-        [canvas, ~] = currentCanvas();
         item = S.items(S.currentIndex);
         if isempty(item.centerXY) || any(~isfinite(item.centerXY))
-            item.centerXY = [(size(canvas, 2) + 1) / 2, (size(canvas, 1) + 1) / 2];
+            item.centerXY = sourceCenterXY(item.image);
         end
-        item.centerXY(1) = min(max(item.centerXY(1), 1), size(canvas, 2));
-        item.centerXY(2) = min(max(item.centerXY(2), 1), size(canvas, 1));
+        item.centerXY = clampToSource(item.centerXY, item.image);
         S.items(S.currentIndex) = item;
     end
 
@@ -410,6 +427,32 @@ function fig = run(debugLog)
 
     function items = readCropItems(paths)
         items = batch_crop.state.readItems(paths);
+    end
+
+    function key = canvasCacheKey(index, item, paddingPercent)
+        key = struct( ...
+            'index', index, ...
+            'path', item.path, ...
+            'angleDeg', double(item.angleDeg), ...
+            'paddingPercent', double(paddingPercent), ...
+            'width', size(item.image, 2), ...
+            'height', size(item.image, 1), ...
+            'channels', size(item.image, 3), ...
+            'className', string(class(item.image)));
+    end
+
+    function cache = emptyCanvasCache()
+        cache = struct('valid', false, 'key', [], 'geometry', []);
+    end
+
+    function centerXY = sourceCenterXY(imageData)
+        centerXY = [(size(imageData, 2) + 1) / 2, (size(imageData, 1) + 1) / 2];
+    end
+
+    function centerXY = clampToSource(centerXY, imageData)
+        centerXY = double(centerXY(:)).';
+        centerXY(1) = min(max(centerXY(1), 1), size(imageData, 2));
+        centerXY(2) = min(max(centerXY(2), 1), size(imageData, 1));
     end
 
     function addLog(message)

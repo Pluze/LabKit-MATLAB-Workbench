@@ -10,7 +10,7 @@ function T = buildManifest(results)
     if isempty(results)
         T = table(strings(0, 1), strings(0, 1), strings(0, 1), ...
             zeros(0, 1), zeros(0, 1), zeros(0, 1), zeros(0, 1), ...
-            zeros(0, 1), zeros(0, 1), zeros(0, 1), strings(0, 1), ...
+            zeros(0, 1), zeros(0, 1), zeros(0, 1), zeros(0, 1), strings(0, 1), ...
             'VariableNames', manifestColumns());
         return;
     end
@@ -20,12 +20,13 @@ function T = buildManifest(results)
     outputImage = strings(n, 1);
     status = strings(n, 1);
     rotationDeg = zeros(n, 1);
+    paddingPercent = zeros(n, 1);
     centerX = zeros(n, 1);
     centerY = zeros(n, 1);
     cropWidth = zeros(n, 1);
     cropHeight = zeros(n, 1);
-    canvasWidth = zeros(n, 1);
-    canvasHeight = zeros(n, 1);
+    sourceWidth = zeros(n, 1);
+    sourceHeight = zeros(n, 1);
     message = strings(n, 1);
 
     for k = 1:n
@@ -33,24 +34,25 @@ function T = buildManifest(results)
         outputImage(k) = string(fieldOr(results(k), 'outputPath', ""));
         status(k) = string(fieldOr(results(k), 'status', ""));
         rotationDeg(k) = double(fieldOr(results(k), 'rotationDeg', NaN));
+        paddingPercent(k) = double(fieldOr(results(k), 'paddingPercent', NaN));
         centerX(k) = double(fieldOr(results(k), 'centerX', NaN));
         centerY(k) = double(fieldOr(results(k), 'centerY', NaN));
         cropWidth(k) = double(fieldOr(results(k), 'cropWidth', NaN));
         cropHeight(k) = double(fieldOr(results(k), 'cropHeight', NaN));
-        canvasWidth(k) = double(fieldOr(results(k), 'canvasWidth', NaN));
-        canvasHeight(k) = double(fieldOr(results(k), 'canvasHeight', NaN));
+        sourceWidth(k) = double(fieldOr(results(k), 'sourceWidth', NaN));
+        sourceHeight(k) = double(fieldOr(results(k), 'sourceHeight', NaN));
         message(k) = string(fieldOr(results(k), 'message', ""));
     end
 
-    T = table(sourceImage, outputImage, status, rotationDeg, centerX, centerY, ...
-        cropWidth, cropHeight, canvasWidth, canvasHeight, message, ...
+    T = table(sourceImage, outputImage, status, rotationDeg, paddingPercent, ...
+        centerX, centerY, cropWidth, cropHeight, sourceWidth, sourceHeight, message, ...
         'VariableNames', manifestColumns());
 end
 
 function names = manifestColumns()
     names = {'SourceImage', 'OutputImage', 'Status', 'RotationDeg', ...
-        'CenterX_px', 'CenterY_px', 'CropWidth_px', 'CropHeight_px', ...
-        'CanvasWidth_px', 'CanvasHeight_px', 'Message'};
+        'PaddingPercent', 'CenterX_px', 'CenterY_px', 'CropWidth_px', ...
+        'CropHeight_px', 'SourceWidth_px', 'SourceHeight_px', 'Message'};
 end
 
 function value = fieldOr(s, name, defaultValue)

@@ -2,12 +2,13 @@
 % callbacks and package tests. Inputs are an image array and crop options.
 % Output is a result struct with the cropped image and crop metadata.
 function result = cropImage(imageData, opts)
-%CROPIMAGE Rotate an image canvas and crop a fixed pixel rectangle.
+%CROPIMAGE Pad/rotate an image canvas and crop a fixed pixel rectangle.
 % Expected caller: labkit_BatchImageCrop_app and batch_crop package tests.
 % Inputs are an image array and opts with cropWidth, cropHeight, angleDeg,
-% centerXY, fillMode, or fillValue. Output preserves image class and returns
-% exactly cropHeight-by-cropWidth pixels, padding when the crop crosses canvas
-% bounds. This helper does not resize the image and has no file side effects.
+% centerXY in original-image coordinates, paddingPercent, or fillValue.
+% Output preserves image class and returns exactly cropHeight-by-cropWidth
+% pixels, padding when the crop crosses canvas bounds. This helper does not
+% resize the source image and has no file side effects.
 
     if nargin < 2
         opts = struct();
@@ -17,29 +18,37 @@ function result = cropImage(imageData, opts)
     cropWidth = requiredPositiveInteger(opts, 'cropWidth');
     cropHeight = requiredPositiveInteger(opts, 'cropHeight');
     angleDeg = double(optionValue(opts, 'angleDeg', 0));
-    fillValue = fillValueForImage(imageData, opts);
+    paddingPercent = double(optionValue(opts, 'paddingPercent', 0));
 
-    [canvas, mask] = batch_crop.ops.rotateCanvas(imageData, angleDeg, fillValue);
+    geometry = batch_crop.ops.prepareCropCanvas(imageData, struct( ...
+        'angleDeg', angleDeg, ...
+        'paddingPercent', paddingPercent, ...
+        'fillValue', optionValue(opts, 'fillValue', [])));
     centerXY = optionValue(opts, 'centerXY', []);
     if isempty(centerXY) || numel(centerXY) ~= 2 || any(~isfinite(double(centerXY)))
-        centerXY = [(size(canvas, 2) + 1) / 2, (size(canvas, 1) + 1) / 2];
+        centerXY = [(size(imageData, 2) + 1) / 2, (size(imageData, 1) + 1) / 2];
     else
         centerXY = double(centerXY(:)).';
     end
+    centerXY(1) = min(max(centerXY(1), 1), size(imageData, 2));
+    centerXY(2) = min(max(centerXY(2), 1), size(imageData, 1));
 
-    cropped = batch_crop.ops.cropCanvasFixedSize(canvas, centerXY, [cropWidth, cropHeight], fillValue);
+    canvasCenterXY = batch_crop.ops.originalToCanvas(geometry, centerXY);
+    cropped = batch_crop.ops.cropCanvasFixedSize(geometry.canvas, canvasCenterXY, ...
+        [cropWidth, cropHeight], geometry.fillValue);
 
     result = batch_crop.state.emptyResult();
     result.ok = true;
     result.status = "cropped";
     result.image = cropped;
     result.rotationDeg = angleDeg;
+    result.paddingPercent = geometry.paddingPercent;
     result.centerX = centerXY(1);
     result.centerY = centerXY(2);
     result.cropWidth = cropWidth;
     result.cropHeight = cropHeight;
-    result.canvasWidth = size(canvas, 2);
-    result.canvasHeight = size(canvas, 1);
+    result.sourceWidth = size(imageData, 2);
+    result.sourceHeight = size(imageData, 1);
     result.message = "OK";
 end
 
@@ -57,31 +66,6 @@ function value = requiredPositiveInteger(opts, name)
             'Crop %s must be a positive pixel count.', name);
     end
     value = max(1, round(double(raw)));
-end
-
-function value = fillValueForImage(imageData, opts)
-    if isfield(opts, 'fillValue') && ~isempty(opts.fillValue)
-        value = double(opts.fillValue(1));
-        return;
-    end
-
-    mode = lower(char(string(optionValue(opts, 'fillMode', 'Black'))));
-    if strcmp(mode, 'white')
-        if islogical(imageData)
-            value = 1;
-        elseif isinteger(imageData)
-            value = double(intmax(class(imageData)));
-        else
-            maxPixel = max(double(imageData(:)));
-            if maxPixel > 1
-                value = 255;
-            else
-                value = 1;
-            end
-        end
-    else
-        value = 0;
-    end
 end
 
 function value = optionValue(opts, name, defaultValue)

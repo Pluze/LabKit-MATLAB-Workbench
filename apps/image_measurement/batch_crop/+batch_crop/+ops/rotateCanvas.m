@@ -1,7 +1,7 @@
 % App-owned image rotation helper. Expected caller: cropImage. Inputs are
 % image data, angle in degrees, and fill value. Output is a loose rotated
 % canvas with background filled consistently for grayscale/RGB images.
-function [canvas, mask] = rotateCanvas(imageData, angleDeg, fillValue)
+function [canvas, mask, info] = rotateCanvas(imageData, angleDeg, fillValue)
 %ROTATEIMAGECANVAS Rotate an image without resizing its pixel scale.
 % Expected caller: cropImage. The output canvas may be larger than the
 % input when angleDeg is nonzero. The implementation uses base MATLAB
@@ -14,15 +14,22 @@ function [canvas, mask] = rotateCanvas(imageData, angleDeg, fillValue)
     if abs(mod(double(angleDeg), 360)) < 1e-12
         canvas = imageData;
         mask = true(size(imageData, 1), size(imageData, 2));
+        info = struct( ...
+            'identity', true, ...
+            'angleDeg', double(angleDeg), ...
+            'centerX', (size(imageData, 2) + 1) / 2, ...
+            'centerY', (size(imageData, 1) + 1) / 2, ...
+            'minX', 0, ...
+            'minY', 0);
         return;
     end
 
-    [xInput, yInput, mask] = looseRotationGrid(size(imageData, 1), ...
+    [xInput, yInput, mask, info] = looseRotationGrid(size(imageData, 1), ...
         size(imageData, 2), angleDeg);
     canvas = interpolateImage(imageData, xInput, yInput, mask, fillValue);
 end
 
-function [xInput, yInput, mask] = looseRotationGrid(height, width, angleDeg)
+function [xInput, yInput, mask, info] = looseRotationGrid(height, width, angleDeg)
     cx = (width + 1) / 2;
     cy = (height + 1) / 2;
     theta = deg2rad(double(angleDeg));
@@ -43,6 +50,13 @@ function [xInput, yInput, mask] = looseRotationGrid(height, width, angleDeg)
     xInput = xCentered + cx;
     yInput = yCentered + cy;
     mask = xInput >= 1 & xInput <= width & yInput >= 1 & yInput <= height;
+    info = struct( ...
+        'identity', false, ...
+        'angleDeg', double(angleDeg), ...
+        'centerX', cx, ...
+        'centerY', cy, ...
+        'minX', minX, ...
+        'minY', minY);
 end
 
 function canvas = interpolateImage(imageData, xInput, yInput, mask, fillValue)

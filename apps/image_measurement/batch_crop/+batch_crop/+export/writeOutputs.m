@@ -5,7 +5,7 @@ function payload = writeOutputs(items, opts)
 %WRITEOUTPUTS Write cropped images and a manifest CSV.
 % Expected caller: labkit_BatchImageCrop_app and batch_crop package tests. Items
 % must contain path, image, angleDeg, and centerXY fields. Options contain
-% outputFolder, format, cropWidth, cropHeight, and fillMode/fillValue.
+% outputFolder, format, cropWidth, cropHeight, and paddingPercent/fillValue.
 
     if nargin < 2
         opts = struct();
