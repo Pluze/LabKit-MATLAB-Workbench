@@ -17,6 +17,11 @@ function verify_gui_layout_ui_declarative_app()
     cleanup = onCleanup(@() h.closeAllFigures());
 
     events = {};
+    dialogCalls = 0;
+    firstDialogPaths = [ ...
+        string(fullfile(tempdir, 'a.png')); ...
+        string(fullfile(tempdir, 'b.png'))];
+    secondDialogPaths = string(fullfile(tempdir, 'other-folder', 'c.png'));
     spec = labkit.ui.spec.app('probeApp', 'UI 2 Probe', ...
         'controlTabs', { ...
             labkit.ui.spec.tab('setup', 'Setup', { ...
@@ -77,7 +82,8 @@ function verify_gui_layout_ui_declarative_app()
                 'onModeChange', @captureEvent)}));
 
     ui = labkit.ui.app.create(spec);
-    dialogPaths = cellstr(reshape(dialogProvider(struct()), 1, []));
+    dialogPaths = cellstr(firstDialogPaths(:).');
+    appendedDialogPaths = cellstr([firstDialogPaths; secondDialogPaths].');
     drawnow;
     h.assertStandardWorkbenchLayout(ui.figure);
     h.assertTabTitles(ui.figure, {'Setup', 'Review', 'Log', 'Preview', ...
@@ -125,11 +131,26 @@ function verify_gui_layout_ui_declarative_app()
         numel(events{end}.selection) == 1, ...
         'pathPanel choose should report chosen paths and current selection as string columns.');
 
+    ui.controls.sourceImages.chooseButton.ButtonPushedFcn( ...
+        ui.controls.sourceImages.chooseButton, []);
+    assert(isequal(ui.controls.sourceImages.listbox.Items, appendedDialogPaths), ...
+        'pathPanel multi-file choose should append files from later chooser runs.');
+    assert(strcmp(ui.controls.sourceImages.status.Value, '3 selected'), ...
+        'pathPanel append should update status for the full selected path list.');
+    assert(isequal(events{end}.paths, [firstDialogPaths; secondDialogPaths]), ...
+        'pathPanel choose events should report the full appended path queue.');
+
     ui.controls.sourceImages.listbox.Value = dialogPaths{2};
     ui.controls.sourceImages.listbox.ValueChangedFcn(ui.controls.sourceImages.listbox, []);
     assert(strcmp(events{end}.action, 'select') && ...
         isequal(events{end}.value, string(dialogPaths{2})), ...
         'pathPanel selection changes should emit semantic string selection events.');
+    labkit.ui.view.setListItems(ui, 'sourceImages', {'Alpha', 'Beta', 'Gamma'});
+    ui.controls.sourceImages.listbox.Value = 'Beta';
+    ui.controls.sourceImages.listbox.ValueChangedFcn(ui.controls.sourceImages.listbox, []);
+    assert(strcmp(events{end}.action, 'select') && ...
+        isequal(events{end}.value, firstDialogPaths(2)), ...
+        'pathPanel selection should map display-only list labels back to stored full paths.');
 
     ui.controls.sourceImages.clearButton.ButtonPushedFcn( ...
         ui.controls.sourceImages.clearButton, []);
@@ -214,8 +235,12 @@ function verify_gui_layout_ui_declarative_app()
     end
 
     function paths = dialogProvider(~)
-        paths = [string(fullfile(tempdir, 'a.png')), ...
-            string(fullfile(tempdir, 'b.png'))];
+        dialogCalls = dialogCalls + 1;
+        if dialogCalls == 1
+            paths = firstDialogPaths;
+        else
+            paths = secondDialogPaths;
+        end
     end
 end
 
@@ -275,6 +300,9 @@ function assertDefaultResizeHandleDrags(ui)
             ~isempty(ui.figure.WindowButtonUpFcn), ...
             'Resize handle press should install figure drag callbacks.');
 
+        if k == 1
+            assertPathPanelRowCanGrowWithSection(ui);
+        end
         ui.figure.WindowButtonMotionFcn(ui.figure, struct('CurrentPoint', [0 240]));
         rowHeight = grid.RowHeight;
         topRow = resizeHandle.Layout.Row - 1;
@@ -317,6 +345,14 @@ function assertDefaultResizeHandleDrags(ui)
 
     function beforeResizeKeyPress(~, ~)
     end
+end
+
+function assertPathPanelRowCanGrowWithSection(ui)
+    pathRowHeight = ui.sections.inputs.grid.RowHeight{1};
+    assert(strcmp(char(string(pathRowHeight)), '1x'), ...
+        ['pathPanel row inside mixed sections should be growable so ' ...
+        'section resize space flows into the file list, found %s.'], ...
+        char(string(pathRowHeight)));
 end
 
 function assertSectionsDoNotOverlapResizeHandles(ui)

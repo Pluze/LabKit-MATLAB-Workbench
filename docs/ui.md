@@ -112,6 +112,8 @@ Use these app-facing contracts:
   before app callbacks run. App callbacks receive `event.paths`,
   `event.selection`, and `event.value` as string column vectors. Apps should
   consume that contract directly instead of normalizing path-list shapes.
+- `pathPanel` multi-file and multi-folder chooser runs append to the existing
+  path queue; users clear the queue with the control's `Clear` action.
 - `previewArea` belongs in `workspace` by default. Its optional `viewModes`
   selector is workspace-owned, and apps can react through `onModeChange`.
 - `previewArea` axes install LabKit-managed, pointer-gated mouse-wheel zoom by

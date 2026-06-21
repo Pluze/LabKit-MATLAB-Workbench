@@ -489,21 +489,32 @@ function callback = semanticPathChooseCallback(id, appCallback)
             return;
         end
         control = ui.controls.(id);
-        paths = control.choosePaths(control);
+        paths = control.normalizePathList(control.choosePaths(control));
         if isempty(paths)
             return;
         end
-        control = control.applySelection(control, paths, true);
+        eventPaths = paths;
+        if appendsPathChoices(control)
+            eventPaths = unique([control.currentItems(); paths], 'stable');
+            eventPaths = eventPaths(:);
+        end
+        control = control.applySelection(control, eventPaths, true);
+        control = control.setSelection(control, paths);
         ui.controls.(id) = control;
         setappdata(ui.figure, 'labkitUiRegistry', ui);
         event = semanticEvent(control, source, rawEvent, 'user');
         event.action = 'choose';
         event.mode = optionValue(control.props, 'mode', '');
-        event.paths = control.normalizePathList(paths);
+        event.paths = control.currentItems();
         event.selection = control.currentValue();
         event.value = event.selection;
         runSemanticAppCallback(ui, control, event, appCallback, id);
     end
+end
+
+function tf = appendsPathChoices(control)
+    mode = lower(string(optionValue(control.props, 'mode', '')));
+    tf = any(mode == ["multifile" "multifolder"]);
 end
 
 function callback = semanticPathClearCallback(id, appCallback)

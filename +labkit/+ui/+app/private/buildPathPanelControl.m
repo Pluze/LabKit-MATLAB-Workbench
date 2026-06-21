@@ -32,6 +32,7 @@ function adapter = buildPathPanelControl(pathSpec, parentGrid, row, callbacks)
     emptyText = emptyPathText(props);
     listbox = uilistbox(grid, 'Items', {emptyText}, ...
         'Multiselect', pathMultiselect(props));
+    storePathItems(listbox, strings(0, 1));
     if strcmp(listbox.Multiselect, 'on')
         listbox.Value = {emptyText};
     else
@@ -63,6 +64,8 @@ function adapter = buildPathPanelControl(pathSpec, parentGrid, row, callbacks)
     adapter.getValue = @() currentPathValues(adapter);
     adapter.setValue = @(paths) applyPathSelection(adapter, paths, true);
     adapter.currentValue = @() currentPathValues(adapter);
+    adapter.currentItems = @() currentPathItems(adapter);
+    adapter.setSelection = @setCurrentSelection;
     adapter.applySelection = @applyPathSelection;
     adapter.choosePaths = @(varargin) choosePaths(currentControl(adapter, varargin{:}));
     adapter.normalizePathList = @normalizePathList;
@@ -70,6 +73,7 @@ end
 
 function control = applyPathSelection(control, paths, updateStatus)
     items = normalizedPaths(paths);
+    storePathItems(control.listbox, string(items(:)));
     emptyText = emptyPathText(control.props);
     if isempty(items)
         control.listbox.Items = {emptyText};
@@ -88,6 +92,24 @@ function control = applyPathSelection(control, paths, updateStatus)
     end
     if updateStatus
         control.status.Value = pathStatusText(control.props, items);
+    end
+end
+
+function control = setCurrentSelection(control, paths)
+    selection = normalizedPaths(paths);
+    if isempty(selection) || isempty(control.listbox.Items)
+        return;
+    end
+    if strcmp(control.listbox.Multiselect, 'on')
+        valid = selection(ismember(selection, string(control.listbox.Items)));
+        if ~isempty(valid)
+            control.listbox.Value = cellstr(valid(:).');
+        end
+    else
+        first = char(selection(1));
+        if any(strcmp(control.listbox.Items, first))
+            control.listbox.Value = first;
+        end
     end
 end
 
@@ -187,7 +209,35 @@ function values = currentPathValues(control)
             strcmp(control.listbox.Items{1}, emptyText));
         if ~isEmptyPrompt
             values = normalizePathList(control.listbox.Value);
+            storedPaths = currentPathItems(control);
+            visibleItems = string(control.listbox.Items(:));
+            if numel(storedPaths) == numel(visibleItems)
+                [matched, indices] = ismember(values, visibleItems);
+                if all(matched)
+                    values = storedPaths(indices);
+                end
+            end
         end
+    end
+end
+
+function values = currentPathItems(control)
+    values = strings(0, 1);
+    if isfield(control, 'listbox') && isvalid(control.listbox)
+        try
+            values = string(getappdata(control.listbox, 'labkitPathPanelPaths'));
+            values = values(:);
+            values = values(strlength(values) > 0);
+        catch
+            values = strings(0, 1);
+        end
+    end
+end
+
+function storePathItems(listbox, paths)
+    try
+        setappdata(listbox, 'labkitPathPanelPaths', string(paths(:)));
+    catch
     end
 end
 

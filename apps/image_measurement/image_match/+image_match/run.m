@@ -11,6 +11,8 @@ function fig = run(debugLog)
     S.outputFolder = string(pwd);
     S.lastExport = [];
     S.pendingDirty = false;
+    S.processedImages = {};
+    S.processedStepCount = -1;
 
     methods = {'Balanced', 'White balance', 'Tone only', 'Lab style', 'Histogram'};
     callbacks = struct( ...
@@ -37,7 +39,7 @@ function fig = run(debugLog)
 
     function onSourceImagesChosen(~, event)
         try
-            S.items = image_match.io.readImages(event.paths);
+            S.items = readOrReuseImages(event.paths);
         catch ME
             showError('Could not load images', ME.message);
             refreshAll();
@@ -47,6 +49,7 @@ function fig = run(debugLog)
         S.currentIndex = 1;
         S.steps = repmat(image_match.state.emptyStep(), 0, 1);
         S.pendingDirty = false;
+        invalidateProcessedCache();
         S.outputFolder = string(fileparts(event.paths(1)));
         S.lastExport = [];
         addLog(sprintf('Loaded %d image(s).', numel(S.items)));
@@ -58,6 +61,7 @@ function fig = run(debugLog)
         S.currentIndex = 0;
         S.steps = repmat(image_match.state.emptyStep(), 0, 1);
         S.pendingDirty = false;
+        invalidateProcessedCache();
         S.lastExport = [];
         addLog('Cleared loaded images and match history.');
         refreshAll();
@@ -98,6 +102,7 @@ function fig = run(debugLog)
         step = currentMatchStep();
         S.steps(end + 1, 1) = step;
         S.pendingDirty = false;
+        invalidateProcessedCache();
         S.lastExport = [];
         addLog(sprintf('Applied match: %s', char(step.label)));
         refreshAll();
@@ -110,6 +115,7 @@ function fig = run(debugLog)
         removed = S.steps(end);
         S.steps(end) = [];
         S.pendingDirty = false;
+        invalidateProcessedCache();
         S.lastExport = [];
         addLog(sprintf('Undid match step: %s', char(removed.label)));
         refreshAll();
@@ -121,6 +127,7 @@ function fig = run(debugLog)
         end
         S.steps = repmat(image_match.state.emptyStep(), 0, 1);
         S.pendingDirty = false;
+        invalidateProcessedCache();
         S.lastExport = [];
         addLog('Reset match history.');
         refreshAll();
@@ -227,8 +234,7 @@ function fig = run(debugLog)
             return;
         end
         original = S.items(currentSelectionIndex()).image;
-        processed = currentProcessedImages(S.pendingDirty);
-        matched = processed{currentSelectionIndex()};
+        matched = currentProcessedImage(S.pendingDirty);
         switch currentPreviewMode()
             case 'Original'
                 labkit.ui.view.drawImage(ui, 'preview', original, ...
@@ -249,10 +255,10 @@ function fig = run(debugLog)
                 image_match.view.resultTableData([], [], 0);
             return;
         end
-        processed = currentProcessedImages(false);
+        processedImage = currentProcessedImage(false);
         ui.controls.metricsTable.table.Data = image_match.view.resultTableData( ...
             S.items(currentSelectionIndex()), ...
-            processed{currentSelectionIndex()}, numel(S.steps));
+            processedImage, numel(S.steps));
     end
 
     function refreshHistory()
@@ -271,16 +277,63 @@ function fig = run(debugLog)
             image_match.view.matchFlowLines(labkit.ui.view.getValue(ui, 'matchMethod')));
     end
 
-    function processed = currentProcessedImages(includePending)
-        images = cell(numel(S.items), 1);
-        for k = 1:numel(S.items)
-            images{k} = S.items(k).image;
+    function items = readOrReuseImages(paths)
+        paths = string(paths(:));
+        template = image_match.state.emptyItem();
+        items = repmat(template, numel(paths), 1);
+        existingPaths = strings(0, 1);
+        if ~isempty(S.items)
+            existingPaths = string({S.items.path}).';
         end
-        steps = S.steps;
+        missing = paths(~ismember(paths, existingPaths));
+        loaded = image_match.io.readImages(missing);
+        for k = 1:numel(paths)
+            existingIndex = find(existingPaths == paths(k), 1);
+            if ~isempty(existingIndex)
+                items(k) = S.items(existingIndex);
+                continue;
+            end
+            loadedIndex = find(string({loaded.path}) == paths(k), 1);
+            if ~isempty(loadedIndex)
+                items(k) = loaded(loadedIndex);
+            end
+        end
+    end
+
+    function processed = committedProcessedImages()
+        if isempty(S.items)
+            processed = {};
+            return;
+        end
+        cacheValid = numel(S.processedImages) == numel(S.items) && ...
+            S.processedStepCount == numel(S.steps);
+        if ~cacheValid
+            images = cell(numel(S.items), 1);
+            for k = 1:numel(S.items)
+                images{k} = S.items(k).image;
+            end
+            S.processedImages = image_match.ops.applyPipeline(images, S.steps);
+            S.processedStepCount = numel(S.steps);
+        end
+        processed = S.processedImages;
+    end
+
+    function imageOut = currentProcessedImage(includePending)
+        processed = committedProcessedImages();
+        index = currentSelectionIndex();
+        imageOut = processed{index};
         if includePending
-            steps(end + 1, 1) = currentMatchStep();
+            step = currentMatchStep();
+            referenceIndex = min(max(1, round(step.referenceIndex)), ...
+                numel(processed));
+            imageOut = image_match.ops.applyStep( ...
+                imageOut, step, processed{referenceIndex});
         end
-        processed = image_match.ops.applyPipeline(images, steps);
+    end
+
+    function invalidateProcessedCache()
+        S.processedImages = {};
+        S.processedStepCount = -1;
     end
 
     function step = currentMatchStep()

@@ -51,7 +51,11 @@ function rowHeight = sectionRowHeights(children)
         return;
     end
     for k = 1:numel(children)
-        rowHeight{k} = specRowHeight(children{k}, 'fit');
+        if isGrowableSectionChild(children{k})
+            rowHeight{k} = '1x';
+        else
+            rowHeight{k} = specRowHeight(children{k}, 'fit');
+        end
     end
 end
 
