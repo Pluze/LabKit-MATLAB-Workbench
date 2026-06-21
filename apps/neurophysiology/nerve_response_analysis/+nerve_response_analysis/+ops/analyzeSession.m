@@ -107,8 +107,8 @@ end
 
 function labels = normalizeLabel(labels)
     labels = lower(strtrim(string(labels)));
-    good = ismember(labels, ["good", "keep", "kept", "true", "1", "yes", "y", "好"]);
-    bad = ismember(labels, ["bad", "reject", "rejected", "false", "0", "no", "n", "坏"]);
+    good = ismember(labels, ["good", "keep", "kept", "true", "1", "yes", "y"]);
+    bad = ismember(labels, ["bad", "reject", "rejected", "false", "0", "no", "n"]);
     labels(good) = "good";
     labels(bad) = "bad";
 end

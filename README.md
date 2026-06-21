@@ -22,8 +22,8 @@ labkit_launcher
 The launcher is self-contained so it can open even when other LabKit folders
 are missing. It scans `apps/**/labkit_*_app.m`, shows the available tools, and
 opens the selected app. It also has direct actions for Debug launch, updating
-or repairing non-git installs from the GitHub `main` zip, MATLAB Code Analyzer
-reporting, and cleaning generated artifacts.
+or repairing non-git installs from GitHub zips, MATLAB Code Analyzer reporting,
+and cleaning generated artifacts.
 
 Start apps from the launcher in normal use. To launch an app command manually,
 first add the repository root, `apps/`, and the target app folder to the MATLAB
@@ -32,11 +32,13 @@ path, then call the app command.
 Use the launcher's `Run Code Analyzer` action when you want an ignored
 `artifacts/code-check/matlab_code_check.json` report.
 
-Use `Update from GitHub` only for zip-download installs. The updater is
-disabled in git checkouts. It shows progress while downloading and applying
-GitHub `main`, restores missing LabKit-managed folders, preserves user files
-that are not project files, and writes a visible `LabKit-backup-*.zip` in the
-project root before changing files.
+Use the launcher's `GitHub Update` actions only for zip-download installs; they
+are disabled in git checkouts. `Latest` downloads the current `main` zip.
+`Release` downloads the latest GitHub release, falling back to the latest tag
+when no release is available. Both actions show progress, restore missing
+LabKit-managed folders, preserve user files that are not project files, and
+write a visible `LabKit-backup-*.zip` in the project root before changing
+files.
 
 ## Contributor Quick Path
 

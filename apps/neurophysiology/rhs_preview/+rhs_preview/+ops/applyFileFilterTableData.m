@@ -22,9 +22,9 @@ end
 
 function label = normalizeLabel(value)
     value = lower(strtrim(string(value)));
-    if any(value == ["bad", "reject", "rejected", "false", "0", "no", "n", "坏"])
+    if any(value == ["bad", "reject", "rejected", "false", "0", "no", "n"])
         label = "bad";
-    elseif any(value == ["good", "keep", "kept", "true", "1", "yes", "y", "好"])
+    elseif any(value == ["good", "keep", "kept", "true", "1", "yes", "y"])
         label = "good";
     elseif strlength(value) == 0
         label = "good";

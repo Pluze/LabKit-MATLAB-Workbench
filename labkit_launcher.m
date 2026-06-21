@@ -82,12 +82,32 @@ function fig = runLauncher(root, apps)
     rightPanel.Layout.Column = 3;
 
     controlsGrid = uigridlayout(leftPanel, [7 1]);
-    controlsGrid.RowHeight = {30, 30, 30, 30, 30, 30, '1x'};
+    controlsGrid.RowHeight = {58, 30, 30, 30, 30, 30, '1x'};
     controlsGrid.Padding = [10 10 10 10];
     controlsGrid.RowSpacing = 6;
 
-    btnUpdate = uibutton(controlsGrid, 'Text', 'Update from GitHub', ...
+    updatePanel = uipanel(controlsGrid, 'Title', 'GitHub Update');
+    updatePanel.Layout.Row = 1;
+    updatePanel.Layout.Column = 1;
+
+    updateGrid = uigridlayout(updatePanel, [1 4]);
+    updateGrid.ColumnWidth = {'1x', '1x', '1x', '1x'};
+    updateGrid.RowHeight = {'1x'};
+    updateGrid.Padding = [6 4 6 4];
+    updateGrid.ColumnSpacing = 6;
+
+    btnUpdate = uibutton(updateGrid, 'Text', 'Latest', ...
         'ButtonPushedFcn', @onUpdateFromMain);
+    btnUpdate.Layout.Row = 1;
+    btnUpdate.Layout.Column = [1 3];
+    btnRelease = uibutton(updateGrid, 'Text', 'Release', ...
+        'ButtonPushedFcn', @onUpdateFromStable);
+    btnRelease.Layout.Row = 1;
+    btnRelease.Layout.Column = 4;
+    if isprop(btnUpdate, 'Tooltip')
+        btnUpdate.Tooltip = 'Download and apply the latest main branch zip.';
+        btnRelease.Tooltip = 'Download and apply the latest GitHub release or tag zip.';
+    end
     btnRefresh = uibutton(controlsGrid, 'Text', 'Refresh App List', ...
         'ButtonPushedFcn', @onRefreshApps);
     btnOpen = uibutton(controlsGrid, 'Text', 'Open Selected App', ...
@@ -227,9 +247,43 @@ function fig = runLauncher(root, apps)
         end
     end
 
+    function onUpdateFromStable(varargin)
+        setStatus('Updating LabKit from latest release/tag...');
+        drawnow;
+        dlg = [];
+        try
+            dlg = uiprogressdlg(fig, 'Title', 'Update LabKit', ...
+                'Message', 'Preparing release update...', 'Indeterminate', 'on');
+        catch
+        end
+        if ~isempty(dlg)
+            dlgCleanup = onCleanup(@() close(dlg));
+        end
+        try
+            result = launcherUpdateFromStableZip(root, @onUpdateProgress);
+            setStatus(result.message);
+            onRefreshApps();
+        catch err
+            setStatus(sprintf('Update failed: %s', err.message));
+        end
+        clear dlgCleanup;
+
+        function onUpdateProgress(message, value)
+            setStatus(message);
+            if ~isempty(dlg) && isvalid(dlg)
+                dlg.Message = char(message);
+                if isfinite(value)
+                    dlg.Indeterminate = 'off';
+                    dlg.Value = value;
+                end
+            end
+            drawnow limitrate;
+        end
+    end
+
     function launchSelectedApp(debugMode)
         if isempty(state.visibleApps)
-            setStatus('No app entry points found. Use Update from GitHub to repair this install.');
+            setStatus('No app entry points found. Use GitHub Update to repair this install.');
             return;
         end
         row = min(max(state.selectedRow, 1), numel(state.visibleApps));
@@ -246,7 +300,7 @@ function fig = runLauncher(root, apps)
             setStatus(launchSuccessStatus(app, debugMode));
         catch err
             setStatus(sprintf(['Failed to launch %s: %s. If project files are missing ' ...
-                'or damaged, use Update from GitHub to repair this install.'], ...
+                'or damaged, use GitHub Update to repair this install.'], ...
                 app.command, err.message));
         end
     end
@@ -258,7 +312,7 @@ function fig = runLauncher(root, apps)
         setLaunchEnabled(~isempty(state.visibleApps));
         refreshSelection();
         if isempty(state.visibleApps)
-            setStatus('No app entry points found. Use Update from GitHub to repair this install.');
+            setStatus('No app entry points found. Use GitHub Update to repair this install.');
         else
             setStatus(integrityStatus(root, state.apps));
         end
@@ -331,18 +385,18 @@ function rows = selectedAppDetails(app)
 end
 
 function rows = noMatchingAppDetails()
-    rows = {'No app entry points found.'; 'Use Update from GitHub to repair this install.'};
+    rows = {'No app entry points found.'; 'Use GitHub Update to repair this install.'};
 end
 
 function message = integrityStatus(root, apps)
     missing = missingManagedProjectParts(root);
     if isempty(apps)
-        message = "No app entry points found. Use Update from GitHub to repair this install.";
+        message = "No app entry points found. Use GitHub Update to repair this install.";
     elseif isempty(missing)
         message = sprintf('%d app(s) available. Project structure looks complete.', numel(apps));
     else
         message = sprintf(['%d app(s) available, but managed project parts are ' ...
-            'missing: %s. Use Update from GitHub to repair this install.'], ...
+            'missing: %s. Use GitHub Update to repair this install.'], ...
             numel(apps), strjoin(cellstr(missing), ', '));
     end
 end
@@ -699,23 +753,46 @@ function value = emptyCodeCheckScanError()
 end
 
 function result = launcherUpdateFromMainZip(root, progressFcn)
-    sourceUrl = "https://github.com/Pluze/LabKit-MATLAB-Workbench/archive/refs/heads/main.zip";
-    tempRoot = tempname;
-    cleanup = onCleanup(@() removeFolderIfPresent(tempRoot));
+    source = struct( ...
+        "kind", "main", ...
+        "label", "GitHub main", ...
+        "zipUrl", "https://github.com/Pluze/LabKit-MATLAB-Workbench/archive/refs/heads/main.zip", ...
+        "zipName", "main.zip");
+    result = launcherUpdateFromZipSource(root, source, progressFcn);
+end
+
+function result = launcherUpdateFromStableZip(root, progressFcn)
     notifyProgress(progressFcn, "Checking LabKit folder...", 0.05);
     assertUpdateTargetRoot(root);
     notifyProgress(progressFcn, "Checking update mode...", 0.10);
     assertNotGitCheckout(root);
-    if ~confirmUpdate(root)
+    notifyProgress(progressFcn, "Resolving latest GitHub release or tag...", 0.12);
+    source = resolveStableZipSource();
+    result = launcherUpdateFromZipSource(root, source, progressFcn, true);
+end
+
+function result = launcherUpdateFromZipSource(root, source, progressFcn, preflightDone)
+    if nargin < 4
+        preflightDone = false;
+    end
+    tempRoot = tempname;
+    cleanup = onCleanup(@() removeFolderIfPresent(tempRoot));
+    if ~preflightDone
+        notifyProgress(progressFcn, "Checking LabKit folder...", 0.05);
+        assertUpdateTargetRoot(root);
+        notifyProgress(progressFcn, "Checking update mode...", 0.10);
+        assertNotGitCheckout(root);
+    end
+    if ~confirmUpdate(root, source.label)
         result = summaryStruct(root, "", 0, 0, "Update canceled.");
         return;
     end
     notifyProgress(progressFcn, "Preparing update workspace...", 0.15);
     ensureFolder(tempRoot);
-    zipPath = fullfile(tempRoot, "main.zip");
+    zipPath = fullfile(tempRoot, char(source.zipName));
     extractRoot = fullfile(tempRoot, "extracted");
-    notifyProgress(progressFcn, "Downloading GitHub main zip...", 0.25);
-    fetchZip(sourceUrl, zipPath);
+    notifyProgress(progressFcn, sprintf("Downloading %s zip...", char(source.label)), 0.25);
+    fetchZip(source.zipUrl, zipPath);
     notifyProgress(progressFcn, "Extracting update zip...", 0.40);
     unzip(char(zipPath), char(extractRoot));
     sourceRoot = findExtractedProjectRoot(extractRoot);
@@ -733,11 +810,89 @@ function result = launcherUpdateFromMainZip(root, progressFcn)
     writeManifest(root, newFiles);
     notifyProgress(progressFcn, "Update complete.", 1.00);
     result = summaryStruct(root, backupPath, copiedCount, deletedCount, ...
-        sprintf(['Updated from GitHub main. Copied %d file(s), removed %d ' ...
+        sprintf(['Updated from %s. Copied %d file(s), removed %d ' ...
         'retired managed file(s). Restart labkit_launcher. Backup: %s'], ...
-        copiedCount, deletedCount, backupPath));
+        char(source.label), copiedCount, deletedCount, backupPath));
     clear cleanup;
     removeFolderIfPresent(tempRoot);
+end
+
+function source = resolveStableZipSource()
+    release = latestStableRelease();
+    if strlength(release.tagName) > 0
+        source = stableSourceFromTag(release.tagName, ...
+            sprintf("GitHub release %s", release.tagName));
+        return;
+    end
+    tagName = latestGitHubTag();
+    if strlength(tagName) > 0
+        source = stableSourceFromTag(tagName, sprintf("GitHub tag %s", tagName));
+        return;
+    end
+    error("labkit_launcher:NoStableRelease", ...
+        "Could not find a GitHub release or tag to download.");
+end
+
+function release = latestStableRelease()
+    release = struct("tagName", "");
+    try
+        options = weboptions("Timeout", 20, "UserAgent", "MATLAB LabKit Launcher");
+        raw = webread("https://api.github.com/repos/Pluze/LabKit-MATLAB-Workbench/releases", options);
+    catch
+        return;
+    end
+    if ~isstruct(raw)
+        return;
+    end
+    for k = 1:numel(raw)
+        item = raw(k);
+        if logicalField(item, "draft") || logicalField(item, "prerelease")
+            continue;
+        end
+        tag = stringField(item, "tag_name");
+        if strlength(tag) > 0
+            release.tagName = tag;
+            return;
+        end
+    end
+end
+
+function tagName = latestGitHubTag()
+    tagName = "";
+    try
+        options = weboptions("Timeout", 20, "UserAgent", "MATLAB LabKit Launcher");
+        raw = webread("https://api.github.com/repos/Pluze/LabKit-MATLAB-Workbench/tags", options);
+    catch
+        return;
+    end
+    if isstruct(raw) && ~isempty(raw)
+        tagName = stringField(raw(1), "name");
+    end
+end
+
+function source = stableSourceFromTag(tagName, label)
+    safeTag = encodeUrlPathSegment(tagName);
+    source = struct( ...
+        "kind", "stable", ...
+        "label", string(label), ...
+        "zipUrl", "https://github.com/Pluze/LabKit-MATLAB-Workbench/archive/refs/tags/" + string(safeTag) + ".zip", ...
+        "zipName", "stable-" + sanitizeFilename(tagName) + ".zip");
+end
+
+function encoded = encodeUrlPathSegment(value)
+    encoded = char(string(value));
+    encoded = strrep(encoded, '%', '%25');
+    encoded = strrep(encoded, ' ', '%20');
+    encoded = strrep(encoded, '#', '%23');
+    encoded = strrep(encoded, '?', '%3F');
+    encoded = strrep(encoded, '/', '%2F');
+end
+
+function value = logicalField(raw, name)
+    value = false;
+    if isfield(raw, name) && ~isempty(raw.(name))
+        value = logical(raw.(name));
+    end
 end
 
 function assertUpdateTargetRoot(root)
@@ -765,10 +920,11 @@ function assertNotGitCheckout(root)
     end
 end
 
-function tf = confirmUpdate(root)
-    message = sprintf(['Download the latest GitHub main zip and overwrite ' ...
+function tf = confirmUpdate(root, sourceLabel)
+    message = sprintf(['Download %s zip and overwrite ' ...
         'LabKit-managed files in:\n\n%s\n\nThis can restore missing managed ' ...
-        'folders. User files that are not LabKit project files are left in place.'], root);
+        'folders. User files that are not LabKit project files are left in place.'], ...
+        char(sourceLabel), root);
     try
         choice = questdlg(message, "Update LabKit", "Update", "Cancel", "Cancel");
         tf = strcmp(choice, "Update");
@@ -953,6 +1109,13 @@ function writeText(filepath, text)
     cleaner = onCleanup(@() fclose(fid));
     fprintf(fid, "%s", text);
     clear cleaner;
+end
+
+function name = sanitizeFilename(value)
+    name = regexprep(char(string(value)), '[^A-Za-z0-9._-]', '-');
+    if isempty(name)
+        name = 'release';
+    end
 end
 
 function tf = pathContains(folder)

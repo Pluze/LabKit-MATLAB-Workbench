@@ -34,6 +34,16 @@ classdef RepositoryHygieneGuardrailTest < matlab.unittest.TestCase
                 'labkit_launcher.m. Files: ' strjoin(cellstr(actual), ', ')]);
         end
 
+        function trackedTextFilesUseAsciiOnly(testCase)
+            root = setupLabKitTestPath();
+            tracked = gitTrackedFiles(root);
+            textFiles = tracked(arrayfun(@isTextTrackedFile, tracked));
+            actual = collectNonAsciiFiles(root, textFiles);
+            testCase.verifyEmpty(actual, ...
+                ['tracked text files must remain ASCII-only. Files: ' ...
+                strjoin(cellstr(actual), ', ')]);
+        end
+
         function appPrivateHelpersAreNotTracked(testCase)
             root = setupLabKitTestPath();
             actualDirs = collectPrivateDirs(fullfile(root, 'apps'), root);
@@ -48,6 +58,32 @@ classdef RepositoryHygieneGuardrailTest < matlab.unittest.TestCase
                 strjoin(cellstr(actualFiles), ', ')]);
         end
     end
+end
+
+function files = collectNonAsciiFiles(root, tracked)
+    files = strings(1, 0);
+    for k = 1:numel(tracked)
+        filepath = fullfile(root, char(tracked(k)));
+        if exist(filepath, 'file') ~= 2
+            continue;
+        end
+        text = fileread(filepath);
+        if any(double(text) > 127)
+            files(end+1) = tracked(k);
+        end
+    end
+end
+
+function tf = isTextTrackedFile(filepath)
+    [~, name, ext] = fileparts(char(filepath));
+    ext = lower(string(ext));
+    basename = string(name) + ext;
+    textExts = [".m", ".md", ".txt", ".json", ".yml", ".yaml", ...
+        ".csv", ".tsv", ".xml", ".html", ".css", ".js", ".sh", ...
+        ".ps1", ".gitignore", ".gitattributes"];
+    textNames = ["LICENSE", "NOTICE", "AGENTS"];
+    tf = ismember(ext, textExts) || ismember(basename, textNames) || ...
+        startsWith(basename, ".git");
 end
 
 function files = collectOversizedTrackedFiles(root, maxLines)

@@ -46,10 +46,10 @@ classdef LauncherGuiTest < matlab.uitest.TestCase
             fig = labkit_launcher();
             drawnow;
             testCase.verifyEqual(string(fig.Name), "LabKit App Launcher");
-            h.assertButtonContract(fig, {'Update from GitHub', ...
+            h.assertButtonContract(fig, {'Latest', 'Release', ...
                 'Refresh App List'});
             assertNoLauncherTabs(fig);
-            assertInfoContains(fig, "Use Update from GitHub to repair");
+            assertInfoContains(fig, "Use GitHub Update to repair");
             clear cleanupFigures;
             h.closeAllFigures();
             clear labkit_launcher;
@@ -72,13 +72,15 @@ function verify_launcher_layout()
     h.assertStandardWorkbenchLayout(fig);
     assertNoLauncherTabs(fig);
     assertNoPanelTitle(fig, {'Filter', 'Search', 'Status', 'Hint'});
+    assertPanelTitle(fig, 'GitHub Update');
     assertNoControlText(fig, {'Search:', 'Family:', 'LabKit Apps', 'Hint'});
     h.assertButtonContract(fig, {'Open Selected App', 'Open Debug', ...
-        'Update from GitHub', 'Run Code Analyzer', 'Clean Artifacts', ...
+        'Latest', 'Release', 'Run Code Analyzer', 'Clean Artifacts', ...
         'Refresh App List'});
-    assertLauncherButtonOrder(fig, {'Update from GitHub', ...
+    assertLauncherButtonOrder(fig, {'Latest', 'Release', ...
         'Refresh App List', 'Open Selected App', 'Open Debug', ...
         'Clean Artifacts', 'Run Code Analyzer'});
+    assertUpdateButtonSplit(fig);
     h.assertAnyTableColumns(fig, {'Family', 'App', 'Command'});
     assertLauncherTextAreasHaveRoom(fig);
     assertInfoContains(fig, "Project structure looks complete");
@@ -108,12 +110,46 @@ function assertLauncherButtonOrder(fig, expectedTexts)
     drawnow;
     buttons = findall(fig, 'Type', 'uibutton');
     texts = string(get(buttons, 'Text'));
-    positions = cell2mat(get(buttons, 'Position'));
-    [~, order] = sort(positions(:, 2), 'descend');
+    positions = zeros(numel(buttons), 4);
+    for k = 1:numel(buttons)
+        positions(k, :) = absolutePosition(buttons(k));
+    end
+    [~, order] = sortrows([-round(positions(:, 2), 3), round(positions(:, 1), 3)]);
     orderedTexts = texts(order);
     actual = orderedTexts(ismember(orderedTexts, string(expectedTexts)));
     assert(isequal(actual(:), string(expectedTexts(:))), ...
         'Launcher action buttons should stay together in the requested order.');
+end
+
+function assertUpdateButtonSplit(fig)
+    buttons = findall(fig, 'Type', 'uibutton');
+    texts = string(get(buttons, 'Text'));
+    mainButton = buttons(texts == "Latest");
+    stableButton = buttons(texts == "Release");
+    assert(numel(mainButton) == 1 && numel(stableButton) == 1, ...
+        'Launcher should have one main update button and one stable update button.');
+    assert(isequal(mainButton.Layout.Column, [1 3]), ...
+        'Main update button should occupy the left three quarters of the update row.');
+    assert(isequal(stableButton.Layout.Column, 4), ...
+        'Release update button should occupy the right quarter of the update row.');
+end
+
+function assertPanelTitle(fig, expectedTitle)
+    actual = titleValues(fig);
+    assert(any(actual == string(expectedTitle)), ...
+        'Launcher should draw the "%s" update group.', expectedTitle);
+end
+
+function pos = absolutePosition(control)
+    pos = control.Position;
+    parent = control.Parent;
+    while ~isempty(parent) && ~isa(parent, 'matlab.ui.Figure')
+        if isprop(parent, 'Position')
+            parentPos = parent.Position;
+            pos(1:2) = pos(1:2) + parentPos(1:2);
+        end
+        parent = parent.Parent;
+    end
 end
 
 function assertInfoContains(fig, expectedText)
