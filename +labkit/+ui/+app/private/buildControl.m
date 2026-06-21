@@ -242,7 +242,7 @@ function [ui, adapter] = buildAction(ui, actionSpec, parentGrid, row, column)
     adapter.valueHandle = button;
     ui.controls.(actionSpec.id) = adapter;
     appCallback = optionValue(props, 'onInvoke', []);
-    button.ButtonPushedFcn = semanticActionCallback(actionSpec.id, appCallback);
+    button.ButtonPushedFcn = semanticActionCallback(actionSpec.id, appCallback, props);
     setOriginalCallbackName(button, appCallback);
 end
 
@@ -415,6 +415,9 @@ function callback = semanticValueCallback(id, appCallback)
 
     function wrapped(source, rawEvent)
         ui = currentUiRegistry(source);
+        if isFigureBusy(ui.figure)
+            return;
+        end
         control = ui.controls.(id);
         event = semanticEvent(control, source, rawEvent, 'user');
         if isfield(control, 'getValue')
@@ -429,6 +432,9 @@ function callback = semanticPannerStepCallback(id, direction, appCallback)
 
     function wrapped(source, rawEvent)
         ui = currentUiRegistry(source);
+        if isFigureBusy(ui.figure)
+            return;
+        end
         control = ui.controls.(id);
         previousValue = control.getValue();
         nextValue = pannerStepValue(control, direction);
@@ -454,6 +460,9 @@ function callback = semanticTableCellEditCallback(id, appCallback)
 
     function wrapped(source, rawEvent)
         ui = currentUiRegistry(source);
+        if isFigureBusy(ui.figure)
+            return;
+        end
         control = ui.controls.(id);
         event = semanticEvent(control, source, rawEvent, 'user');
         event.value = source.Data;
@@ -500,6 +509,9 @@ function callback = semanticTableSelectionCallback(id, appCallback)
 
     function wrapped(source, rawEvent)
         ui = currentUiRegistry(source);
+        if isFigureBusy(ui.figure)
+            return;
+        end
         control = ui.controls.(id);
         event = semanticEvent(control, source, rawEvent, 'user');
         event.value = source.Data;
@@ -518,17 +530,42 @@ function setOriginalCallbackName(handle, callback)
     end
 end
 
-function callback = semanticActionCallback(id, appCallback)
+function callback = semanticActionCallback(id, appCallback, props)
     callback = @wrapped;
 
     function wrapped(source, rawEvent)
         ui = currentUiRegistry(source);
+        if isFigureBusy(ui.figure)
+            return;
+        end
         control = ui.controls.(id);
         event = semanticEvent(control, source, rawEvent, 'user');
         event.action = id;
-        if ~isempty(appCallback)
-            appCallback(control, event);
+        if isempty(appCallback)
+            return;
         end
+
+        labkit.ui.app.runBusy(ui.figure, actionBusyMessage(id, props), ...
+            @() appCallback(control, event), ...
+            struct('freezeInteractions', false));
+    end
+end
+
+function message = actionBusyMessage(id, props)
+    message = optionValue(props, 'busyMessage', "");
+    if strlength(string(message)) == 0
+        message = optionValue(props, 'label', id);
+    end
+    message = char(string(message));
+end
+
+function tf = isFigureBusy(fig)
+    tf = false;
+    try
+        tf = isappdata(fig, 'labkitUiBusy') && ...
+            logical(getappdata(fig, 'labkitUiBusy'));
+    catch
+        tf = false;
     end
 end
 
@@ -537,6 +574,9 @@ function callback = semanticPathChooseCallback(id, appCallback)
 
     function wrapped(source, rawEvent)
         ui = currentUiRegistry(source);
+        if isFigureBusy(ui.figure)
+            return;
+        end
         control = ui.controls.(id);
         paths = choosePaths(control);
         if isempty(paths)
@@ -562,6 +602,9 @@ function callback = semanticPathClearCallback(id, appCallback)
 
     function wrapped(source, rawEvent)
         ui = currentUiRegistry(source);
+        if isFigureBusy(ui.figure)
+            return;
+        end
         control = ui.controls.(id);
         control = applyPathSelection(control, {}, true);
         ui.controls.(id) = control;
@@ -587,6 +630,9 @@ function callback = semanticPathSelectionCallback(id, appCallback)
 
     function wrapped(source, rawEvent)
         ui = currentUiRegistry(source);
+        if isFigureBusy(ui.figure)
+            return;
+        end
         control = ui.controls.(id);
         event = semanticEvent(control, source, rawEvent, 'user');
         event.action = 'select';

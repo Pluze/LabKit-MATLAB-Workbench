@@ -171,6 +171,47 @@ runner, callbacks, and ordinary control specs should not create grids or set
   space between tools. A tab may opt out with `resize="none"` when a fixed
   stack is intentional.
 
+## Busy State
+
+Every `labkit.ui.spec.action` callback runs as an app-wide action transaction.
+The framework marks the app busy before invoking the app callback and clears
+that busy state after the callback returns or errors. While the figure is busy,
+other UI 2.0 semantic callbacks return without invoking app code, so repeated
+clicks or value changes do not submit duplicate work even when the user waits
+and interacts again before the first action finishes.
+
+The default busy text comes from the action label:
+
+```matlab
+labkit.ui.spec.action("exportCrops", ...
+    "Export cropped images", callbacks.exportCrops, ...
+    "enabled", false)
+```
+
+This displays `Working: Export cropped images` in the window title while the
+callback runs. Use `busyMessage` only when the title text needs to differ from
+the button label.
+
+`labkit.ui.app.runBusy` remains the lower-level helper for custom synchronous
+work that is not launched from a UI 2.0 action:
+
+```matlab
+payload = labkit.ui.app.runBusy(fig, ...
+    "Writing cropped microscope images...", ...
+    @() batch_crop.export.writeOutputs(items, opts));
+```
+
+Busy state is app-wide. While the callback runs, LabKit marks the figure busy,
+sets a busy pointer, and appends the busy message to the window title. Direct
+`runBusy` calls also freeze figure-level mouse, wheel, motion, and keyboard
+callbacks and turn graphics hit testing off by default. Action transactions use
+a non-invasive mode so actions that start editors or plotting tools can leave
+their own pointer and callback state in place.
+
+`runBusy` intentionally does not create modal progress dialogs. Apps should not
+maintain their own busy-control lists, and `runBusy` does not mutate control
+`Enable` values. App callbacks still own permanent button enablement logic.
+
 ## View Helpers
 
 ```matlab

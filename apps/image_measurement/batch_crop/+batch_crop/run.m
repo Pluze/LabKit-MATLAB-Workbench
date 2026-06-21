@@ -226,15 +226,8 @@ function fig = run(debugLog)
         end
 
         opts = currentExportOptions();
-        busyOpts = struct();
-        busyOpts.title = 'Export crops';
-        busyOpts.message = 'Writing cropped microscope images...';
-        busyOpts.controls = [btnOpenFiles, btnClearImages, btnExport, ...
-            btnChooseOutput, btnDuplicateImage, btnPrevious, btnNext, ...
-            btnUseCanvasCenter];
         try
-            payload = labkit.ui.app.runBusy(fig, ...
-                @() batch_crop.export.writeOutputs(S.items, opts), busyOpts);
+            payload = batch_crop.export.writeOutputs(S.items, opts);
         catch ME
             showError('Export failed', ME.message);
             return;

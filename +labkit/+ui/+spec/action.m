@@ -9,6 +9,8 @@ function spec = action(id, labelText, onInvoke, varargin)
 %   labelText - command label.
 %   onInvoke - function handle called as callback(control, event).
 %   enabled, priority, tooltip - optional app-neutral props.
+%   busyMessage - optional string. Overrides the default busy title text,
+%       which is the action label.
 %
 % Output:
 %   spec - scalar data-only UI spec struct.

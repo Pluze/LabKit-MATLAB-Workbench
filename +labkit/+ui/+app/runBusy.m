@@ -1,55 +1,52 @@
-function varargout = runBusy(fig, workFcn, opts)
-%RUNBUSY Run synchronous GUI work with busy feedback.
+function varargout = runBusy(fig, message, workFcn, opts)
+%RUNBUSY Run synchronous GUI work while the whole app is busy.
 %
-% Usage:
-%   labkit.ui.app.runBusy(fig, @() refreshResults(), opts);
-%   result = labkit.ui.app.runBusy(fig, @() computeResult(), opts);
+% App-facing contract:
+%   labkit.ui.app.runBusy(fig, "Writing outputs...", @() writeOutputs());
+%   result = labkit.ui.app.runBusy(fig, "Computing result...", @() compute());
 %
 % Inputs:
 %   fig - owning uifigure or figure. Empty or invalid figures are accepted;
-%       control disabling still runs for valid controls in opts.controls.
+%       the work callback still runs.
+%   message - short busy message appended to the figure title while work runs.
 %   workFcn - scalar function handle to run synchronously.
-%   opts - optional struct.
-%
-% Options:
-%   controls - UI component handle array or cell array. Valid components
-%       with an Enable property are disabled while workFcn runs and restored
-%       afterward. Default [].
-%   title - progress dialog title, default "Working".
-%   message - progress dialog message, default "Please wait...".
-%   showDialog - logical, default true. Shows an indeterminate progress
-%       dialog when fig is valid and uiprogressdlg is available.
-%   indeterminate - logical, default true. Uses an indeterminate progress
-%       dialog. When false, opts.value is used as the initial value.
-%   value - scalar in [0, 1], default 0.05, used only when indeterminate is
-%       false.
-%   pointer - figure pointer while work runs, default "watch".
+%   opts - optional struct. freezeInteractions controls whether figure-level
+%       pointer, keyboard, click, motion, scroll, and graphics hit-testing are
+%       temporarily disabled. Default true.
 %
 % Outputs:
 %   varargout - outputs returned by workFcn. When no outputs are requested,
 %       workFcn is called for side effects only.
 %
+% Behavior:
+%   The helper marks the app busy, sets the figure pointer to "watch", and
+%   appends a busy message to the window title. When freezeInteractions is true,
+%   it also clears app-level pointer, keyboard, click, motion, and scroll
+%   callbacks and turns graphics hit testing off where supported. It restores
+%   previous state after success or failure and rethrows callback errors.
+%
 % Notes:
-%   This helper is intended for long, synchronous callbacks. If the callback
-%   permanently changes control enable states, refresh those states after
-%   runBusy returns so the cleanup restore does not preserve stale
-%   pre-run values.
+%   This helper is intended for synchronous callbacks that must block repeated
+%   user actions. It intentionally avoids transient modal progress dialogs.
+%   runBusy intentionally does not change control Enable states. App callbacks
+%   may update their own button enabled/disabled logic while the work runs.
 
     if nargin < 3
-        opts = struct();
+        error('labkit:ui:runBusy:InvalidInput', ...
+            'runBusy requires fig, message, and workFcn.');
     end
     if ~isa(workFcn, 'function_handle')
         error('labkit:ui:runBusy:InvalidCallback', ...
             'workFcn must be a function handle.');
     end
 
+    if nargin < 4
+        opts = struct();
+    end
+
     validFig = isLiveHandle(fig);
-    controlState = disableControls(optionValue(opts, 'controls', []));
-    [oldPointer, pointerChanged] = setBusyPointer( ...
-        fig, validFig, optionValue(opts, 'pointer', 'watch'));
-    dlg = createProgressDialog(fig, validFig, opts);
-    cleanupObj = onCleanup(@() restoreBusyState( ...
-        controlState, fig, validFig, oldPointer, pointerChanged, dlg));
+    state = enterBusyState(fig, validFig, message, opts);
+    cleanupObj = onCleanup(@() restoreBusyState(state));
 
     drawnow;
     if nargout == 0
@@ -59,109 +56,232 @@ function varargout = runBusy(fig, workFcn, opts)
     end
 end
 
-function value = optionValue(opts, name, defaultValue)
-    value = defaultValue;
-    if isstruct(opts) && isfield(opts, name)
-        value = opts.(name);
+function state = enterBusyState(fig, validFig, message, opts)
+    state = struct( ...
+        'fig', fig, ...
+        'validFig', validFig, ...
+        'nameChanged', false, ...
+        'oldName', '', ...
+        'busyName', '', ...
+        'pointerChanged', false, ...
+        'oldPointer', '', ...
+        'busyPointer', '', ...
+        'callbackState', struct('property', {}, 'value', {}), ...
+        'busyState', struct('hadValue', false, 'value', []), ...
+        'hitState', struct('handle', {}, 'hitTest', {}, 'pickableParts', {}));
+
+    if ~validFig
+        return;
+    end
+
+    state = setBusyTitle(state, fig, message);
+    state = setBusyPointer(state, fig);
+    state.busyState = setBusyFlag(fig, true);
+    if logical(optionValue(opts, 'freezeInteractions', true))
+        state.callbackState = clearFigureInteractionCallbacks(fig);
+        state.hitState = disableGraphicsHitTesting(fig);
     end
 end
 
-function controlState = disableControls(controls)
-    handles = normalizeControls(controls);
-    controlState = struct('handle', {}, 'enable', {});
-    for k = 1:numel(handles)
-        h = handles{k};
-        if ~isLiveHandle(h) || ~isprop(h, 'Enable')
+function state = setBusyTitle(state, fig, message)
+    if ~isprop(fig, 'Name')
+        return;
+    end
+
+    state.oldName = fig.Name;
+    text = char(string(message));
+    if isempty(strtrim(text))
+        text = 'Working';
+    end
+    state.busyName = sprintf('%s [Working: %s]', char(string(state.oldName)), text);
+    fig.Name = state.busyName;
+    state.nameChanged = true;
+end
+
+function state = setBusyPointer(state, fig)
+    if ~isprop(fig, 'Pointer')
+        return;
+    end
+
+    state.oldPointer = fig.Pointer;
+    state.busyPointer = 'watch';
+    try
+        fig.Pointer = state.busyPointer;
+        state.pointerChanged = true;
+    catch
+        state.pointerChanged = false;
+    end
+end
+
+function callbackState = clearFigureInteractionCallbacks(fig)
+    names = {'WindowButtonDownFcn', 'WindowButtonMotionFcn', ...
+        'WindowButtonUpFcn', 'WindowScrollWheelFcn', 'WindowKeyPressFcn', ...
+        'WindowKeyReleaseFcn'};
+    callbackState = struct('property', {}, 'value', {});
+    for k = 1:numel(names)
+        name = names{k};
+        if ~isprop(fig, name)
             continue;
         end
-        controlState(end+1) = struct( ...
-            'handle', h, ...
-            'enable', h.Enable);
-        h.Enable = 'off';
-    end
-end
-
-function handles = normalizeControls(controls)
-    if isempty(controls)
-        handles = {};
-    elseif iscell(controls)
-        handles = controls(:);
-    else
+        callbackState(end+1) = struct( ...
+            'property', name, ...
+            'value', fig.(name));
         try
-            handles = num2cell(controls(:));
+            fig.(name) = [];
         catch
-            handles = {controls};
         end
     end
 end
 
-function [oldPointer, pointerChanged] = setBusyPointer(fig, validFig, pointer)
-    oldPointer = '';
-    pointerChanged = false;
-    if ~validFig || ~isprop(fig, 'Pointer')
-        return;
-    end
-
-    oldPointer = fig.Pointer;
+function busyState = setBusyFlag(fig, value)
+    key = 'labkitUiBusy';
+    busyState = struct('hadValue', false, 'value', []);
     try
-        fig.Pointer = char(pointer);
-        pointerChanged = true;
+        busyState.hadValue = isappdata(fig, key);
+        if busyState.hadValue
+            busyState.value = getappdata(fig, key);
+        end
+        setappdata(fig, key, logical(value));
     catch
-        pointerChanged = false;
     end
 end
 
-function dlg = createProgressDialog(fig, validFig, opts)
-    dlg = [];
-    if ~validFig || ~optionValue(opts, 'showDialog', true)
-        return;
-    end
-
-    titleText = char(optionValue(opts, 'title', 'Working'));
-    messageText = char(optionValue(opts, 'message', 'Please wait...'));
-    indeterminate = logical(optionValue(opts, 'indeterminate', true));
-    try
-        if indeterminate
-            dlg = uiprogressdlg(fig, ...
-                'Title', titleText, ...
-                'Message', messageText, ...
-                'Indeterminate', 'on');
-        else
-            dlg = uiprogressdlg(fig, ...
-                'Title', titleText, ...
-                'Message', messageText, ...
-                'Value', optionValue(opts, 'value', 0.05));
+function hitState = disableGraphicsHitTesting(fig)
+    handles = liveDescendants(fig);
+    hitState = struct('handle', {}, 'hitTest', {}, 'pickableParts', {});
+    for k = 1:numel(handles)
+        h = handles{k};
+        if ~isLiveHandle(h) || (~isprop(h, 'HitTest') && ~isprop(h, 'PickableParts'))
+            continue;
         end
-    catch
-        dlg = [];
-    end
-end
-
-function restoreBusyState(controlState, fig, validFig, oldPointer, pointerChanged, dlg)
-    if ~isempty(dlg) && isLiveHandle(dlg)
-        try
-            close(dlg);
-        catch
-        end
-    end
-
-    if validFig && pointerChanged && isLiveHandle(fig) && isprop(fig, 'Pointer')
-        try
-            fig.Pointer = oldPointer;
-        catch
-        end
-    end
-
-    for k = numel(controlState):-1:1
-        h = controlState(k).handle;
-        if isLiveHandle(h) && isprop(h, 'Enable')
+        entry = struct('handle', h, 'hitTest', [], 'pickableParts', []);
+        changed = false;
+        if isprop(h, 'HitTest')
             try
-                h.Enable = controlState(k).enable;
+                entry.hitTest = h.HitTest;
+                h.HitTest = 'off';
+                changed = true;
+            catch
+            end
+        end
+        if isprop(h, 'PickableParts')
+            try
+                entry.pickableParts = h.PickableParts;
+                h.PickableParts = 'none';
+                changed = true;
+            catch
+            end
+        end
+        if changed
+            hitState(end+1) = entry;
+        end
+    end
+end
+
+function restoreBusyState(state)
+    restoreHitTesting(state.hitState);
+    restoreFigureCallbacks(state.fig, state.validFig, state.callbackState);
+    restoreBusyFlag(state.fig, state.validFig, state.busyState);
+    restorePointer(state.fig, state.validFig, state.oldPointer, ...
+        state.busyPointer, state.pointerChanged);
+    restoreTitle(state.fig, state.validFig, state.oldName, ...
+        state.busyName, state.nameChanged);
+    drawnow;
+end
+
+function restoreHitTesting(hitState)
+    for k = numel(hitState):-1:1
+        h = hitState(k).handle;
+        if ~isLiveHandle(h)
+            continue;
+        end
+        if isprop(h, 'HitTest') && ~isempty(hitState(k).hitTest)
+            try
+                h.HitTest = hitState(k).hitTest;
+            catch
+            end
+        end
+        if isprop(h, 'PickableParts') && ~isempty(hitState(k).pickableParts)
+            try
+                h.PickableParts = hitState(k).pickableParts;
             catch
             end
         end
     end
-    drawnow;
+end
+
+function restoreFigureCallbacks(fig, validFig, callbackState)
+    if ~validFig || ~isLiveHandle(fig)
+        return;
+    end
+
+    for k = numel(callbackState):-1:1
+        name = callbackState(k).property;
+        if ~isprop(fig, name)
+            continue;
+        end
+        try
+            fig.(name) = callbackState(k).value;
+        catch
+        end
+    end
+end
+
+function restoreBusyFlag(fig, validFig, busyState)
+    if ~validFig || ~isLiveHandle(fig)
+        return;
+    end
+
+    key = 'labkitUiBusy';
+    try
+        if busyState.hadValue
+            setappdata(fig, key, busyState.value);
+        else
+            rmappdata(fig, key);
+        end
+    catch
+    end
+end
+
+function restorePointer(fig, validFig, oldPointer, busyPointer, pointerChanged)
+    if ~validFig || ~pointerChanged || ~isLiveHandle(fig) || ~isprop(fig, 'Pointer')
+        return;
+    end
+    if ~strcmp(char(string(fig.Pointer)), char(string(busyPointer)))
+        return;
+    end
+
+    try
+        fig.Pointer = oldPointer;
+    catch
+    end
+end
+
+function restoreTitle(fig, validFig, oldName, busyName, nameChanged)
+    if ~validFig || ~nameChanged || ~isLiveHandle(fig) || ~isprop(fig, 'Name')
+        return;
+    end
+    if ~strcmp(char(string(fig.Name)), char(string(busyName)))
+        return;
+    end
+
+    try
+        fig.Name = oldName;
+    catch
+    end
+end
+
+function handles = liveDescendants(fig)
+    handles = {};
+    if ~isLiveHandle(fig)
+        return;
+    end
+    try
+        values = findall(fig);
+        handles = num2cell(values(:));
+    catch
+        handles = {};
+    end
 end
 
 function tf = isLiveHandle(h)
@@ -173,5 +293,12 @@ function tf = isLiveHandle(h)
         tf = all(isvalid(h));
     catch
         tf = false;
+    end
+end
+
+function value = optionValue(opts, name, defaultValue)
+    value = defaultValue;
+    if isstruct(opts) && isfield(opts, name)
+        value = opts.(name);
     end
 end
