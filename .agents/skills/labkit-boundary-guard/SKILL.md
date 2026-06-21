@@ -45,7 +45,7 @@ Before moving code into `+labkit`, prove that the helper:
 
 If this is not proven, keep the code app-local.
 
-For new or migrated UI boundary work, prefer `labkit.ui.app.create`,
+For UI boundary work, prefer `labkit.ui.app.create`,
 `labkit.ui.spec.*`, named `labkit.ui.view.*` helpers,
 `labkit.ui.app.dispatchRequest`, `labkit.ui.diag.createContext`, and
 `labkit.ui.tool.createRuntime`. Keep primitive builders private; do not expose

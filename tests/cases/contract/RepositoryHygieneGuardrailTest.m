@@ -1,0 +1,101 @@
+classdef RepositoryHygieneGuardrailTest < matlab.unittest.TestCase
+    %REPOSITORYHYGIENEGUARDRAILTEST Generic repository size and helper hygiene.
+
+    methods (Test, TestTags = {'Integration', 'Style'})
+        function trackedFilesStayWithinLineBudget(testCase)
+            root = setupLabKitTestPath();
+            maxLines = 650;
+            actual = collectOversizedTrackedFiles(root, maxLines);
+            testCase.verifyEmpty(actual, ...
+                ['tracked files must remain at or below ' num2str(maxLines) ...
+                ' lines. Split large files by cohesive private helpers or ' ...
+                'app-owned component packages before adding more logic. Files: ' ...
+                strjoin(cellstr(actual), ', ')]);
+        end
+
+        function appPrivateHelpersAreNotTracked(testCase)
+            root = setupLabKitTestPath();
+            actualDirs = collectPrivateDirs(fullfile(root, 'apps'), root);
+            testCase.verifyTrue(isempty(actualDirs), ...
+                ['app private helper directories are not allowed. Files: ' ...
+                strjoin(cellstr(actualDirs), ', ')]);
+
+            actualFiles = collectRelativeFiles(root, ...
+                fullfile(root, 'apps', '**', 'private', '*.m'));
+            testCase.verifyTrue(isempty(actualFiles), ...
+                ['app private helper files must live in app-owned packages. Files: ' ...
+                strjoin(cellstr(actualFiles), ', ')]);
+        end
+    end
+end
+
+function files = collectOversizedTrackedFiles(root, maxLines)
+    tracked = gitTrackedFiles(root);
+    files = strings(1, 0);
+    for k = 1:numel(tracked)
+        filepath = fullfile(root, char(tracked(k)));
+        lineCount = countFileLines(filepath);
+        if lineCount > maxLines
+            files(end+1) = tracked(k) + " (" + string(lineCount) + " lines)";
+        end
+    end
+end
+
+function dirs = collectPrivateDirs(folder, root)
+    if ~isfolder(folder)
+        dirs = strings(1, 0);
+        return;
+    end
+
+    entries = dir(fullfile(folder, '**', 'private'));
+    entries = entries([entries.isdir]);
+    if isempty(entries)
+        dirs = strings(1, 0);
+        return;
+    end
+
+    paths = fullfile({entries.folder}, {entries.name});
+    dirs = unique(string(relativePaths(root, paths)));
+end
+
+function files = collectRelativeFiles(root, pattern)
+    entries = dir(pattern);
+    files = strings(numel(entries), 1);
+    fileCount = 0;
+    for k = 1:numel(entries)
+        if ~entries(k).isdir
+            fileCount = fileCount + 1;
+            files(fileCount) = string(relativePath(root, ...
+                fullfile(entries(k).folder, entries(k).name)));
+        end
+    end
+    files = unique(files(1:fileCount));
+end
+
+function n = countFileLines(filepath)
+    n = numel(readlines(filepath));
+end
+
+function files = gitTrackedFiles(root)
+    command = sprintf('git -C "%s" ls-files', root);
+    [status, output] = system(command);
+    assert(status == 0, 'Could not list tracked files with git.');
+    files = string(splitlines(strtrim(output))).';
+    files = files(strlength(files) > 0);
+end
+
+function rel = relativePath(root, filepath)
+    rel = filepath;
+    prefix = [root filesep];
+    if startsWith(filepath, prefix)
+        rel = filepath(numel(prefix)+1:end);
+    end
+    rel = strrep(rel, filesep, '/');
+end
+
+function paths = relativePaths(root, filepaths)
+    paths = cell(size(filepaths));
+    for k = 1:numel(filepaths)
+        paths{k} = relativePath(root, filepaths{k});
+    end
+end

@@ -54,10 +54,10 @@ find apps -path '*/private/*' -type f -print | sort
 rg -n "expected\\w*Debt\\w*" tests/contract
 ```
 
-For runner size checks, count migrated package-root `run.m` files. A
-`+ui/runApp.m` file is migration debt, not the final app structure. Do not
-treat a line-count drop as success unless directly tested behavior moved out of
-the runner and the GUI path calls the extracted helper.
+For runner size checks, count package-root `run.m` files. A `+ui/runApp.m`
+file is active app-structure debt. Do not treat a line-count drop as success
+unless directly tested behavior moved out of the runner and the GUI path calls
+the extracted helper.
 
 ## Health Review
 
@@ -148,10 +148,10 @@ At completion, do a final omission audit before handoff:
 For each proposed migration, classify work as:
 
 - app-owned deterministic behavior: extract under the owning app package
-- migrated ordinary UI: keep the data-only spec in
+- ordinary UI: keep the data-only spec in
   `+<app_slug>/+ui/buildSpec.m`; use app-local custom builders only for
   justified interactions
-- runner orchestration: keep it in package-root `run.m` after migration; public
+- runner orchestration: keep it in package-root `run.m`; public
   entrypoints stay thin wrappers
 - reusable foundation: use `labkit-boundary-guard` before touching `+labkit`
 - validation routing: use `labkit-test-planner`

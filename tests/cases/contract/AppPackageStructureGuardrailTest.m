@@ -9,7 +9,7 @@ classdef AppPackageStructureGuardrailTest < matlab.unittest.TestCase
                 'App package structure guardrail should discover app entrypoints.');
 
             for k = 1:size(specs, 1)
-                assertMigratedUi2AppStructure(testCase, root, ...
+                assertCanonicalAppPackageStructure(testCase, root, ...
                     specs{k, 1}, specs{k, 2}, specs{k, 3});
             end
         end
@@ -39,7 +39,7 @@ function specs = discoveredAppSpecs(root)
     end
 end
 
-function assertMigratedUi2AppStructure(testCase, root, appRelDir, packageName, entrypointName)
+function assertCanonicalAppPackageStructure(testCase, root, appRelDir, packageName, entrypointName)
     appDir = fullfile(root, appRelDir);
     packageDir = fullfile(appDir, ['+' packageName]);
     uiDir = fullfile(packageDir, '+ui');
@@ -59,17 +59,17 @@ function assertMigratedUi2AppStructure(testCase, root, appRelDir, packageName, e
         [appLabel ' should not keep workflow dispatch adapters.']);
 
     testCase.verifyTrue(isfile(buildSpecFile), ...
-        ['UI 2.0 migrated apps must keep the ordinary data-only spec at ' ...
+        ['Apps must keep the ordinary data-only spec at ' ...
         relativePath(root, buildSpecFile)]);
     testCase.verifyTrue(isfile(entrypointFile), ...
-        ['Missing migrated app entrypoint: ' relativePath(root, entrypointFile)]);
+        ['Missing app entrypoint: ' relativePath(root, entrypointFile)]);
     testCase.verifyTrue(isfile(runFile), ...
-        ['Migrated app lifecycle runner must live at package root: ' ...
+        ['App lifecycle runner must live at package root: ' ...
         relativePath(root, runFile)]);
     testCase.verifyFalse(isfile(fullfile(uiDir, 'runApp.m')), ...
         [appLabel ' should not keep app lifecycle orchestration in +ui/runApp.m.']);
 
-    orchestrationSource = migratedAppOrchestrationSource(entrypointFile, ...
+    orchestrationSource = appOrchestrationSource(entrypointFile, ...
         runFile);
     testCase.verifyTrue(contains(orchestrationSource, [packageName '.ui.buildSpec(']), ...
         [appLabel ' should call its canonical +ui/buildSpec.m file.']);
@@ -86,7 +86,7 @@ function assertMigratedUi2AppStructure(testCase, root, appRelDir, packageName, e
 
     packageSource = readPackageSource(packageDir);
     assertSourceDoesNotContain(testCase, packageSource, ...
-        migratedUiForbiddenWords(), appLabel);
+        appPackageForbiddenWords(), appLabel);
     assertNoGenericHelperNames(testCase, root, packageDir);
     assertRolePackageBoundaries(testCase, root, packageDir);
     family = appFamilyFromRelativeDir(appRelDir);
@@ -94,7 +94,7 @@ function assertMigratedUi2AppStructure(testCase, root, appRelDir, packageName, e
         family, packageName);
 end
 
-function source = migratedAppOrchestrationSource(entrypointFile, runFile)
+function source = appOrchestrationSource(entrypointFile, runFile)
     source = strjoin({fileread(entrypointFile), fileread(runFile)}, newline);
 end
 
@@ -106,7 +106,7 @@ function words = buildSpecForbiddenWords()
         'uiputfile(', 'uialert(', 'writetable(', 'imwrite(', 'S.'};
 end
 
-function words = migratedUiForbiddenWords()
+function words = appPackageForbiddenWords()
     words = {'labkit.ui.app.createShell', 'labkit.ui.app.tab(', ...
         'labkit.ui.view.section', 'labkit.ui.view.form', ...
         'labkit.ui.view.panel', 'labkit.ui.view.draw(', ...
@@ -193,7 +193,7 @@ function assertSourceDoesNotContain(testCase, source, forbiddenWords, label)
     end
 
     testCase.verifyTrue(isempty(matches), ...
-        [label ' contains code outside its migrated app structure boundary: ' ...
+        [label ' contains code outside its app structure boundary: ' ...
         strjoin(cellstr(matches), ', ')]);
 end
 

@@ -42,8 +42,8 @@ Coordinate with:
 1. Run the manual Code Analyzer tool:
 
    ```matlab
-   startup_labkit(false);
-   project_governance.ops.runCodeCheckReport();
+   addpath(fullfile(pwd, "scripts"), "-end");
+   runLabKitCodeCheckReport();
    ```
 
    The ignored report is `artifacts/code-check/matlab_code_check.json`.

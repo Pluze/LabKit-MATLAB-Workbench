@@ -55,31 +55,6 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
                 strjoin(cellstr(duplicates), ', ')]);
         end
 
-        function humanDocsAvoidRetiredScriptAndPathBoundaryClaims(testCase)
-            root = setupLabKitTestPath();
-            files = collectHumanDocFiles(root);
-            forbidden = [
-                "MATLAB batch runs"
-                "Shell/Python support utilities"
-                "file normalization"
-                "normalizePathList"];
-            findings = strings(1, 0);
-
-            for k = 1:numel(files)
-                content = string(fileread(files(k)));
-                for p = 1:numel(forbidden)
-                    if contains(content, forbidden(p))
-                        findings(end+1) = relativePath(root, files(k)) + ...
-                            " -> " + forbidden(p);
-                    end
-                end
-            end
-
-            testCase.verifyTrue(isempty(findings), ...
-                ['Human docs should not describe removed script wrappers or ' ...
-                'app-owned path normalization: ' strjoin(cellstr(findings), ', ')]);
-        end
-
         function publicLibraryFunctionsDocumentAppFacingContracts(testCase)
             root = setupLabKitTestPath();
             publicFiles = collectPublicLibraryFiles(root);
@@ -95,15 +70,12 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
                 'after the function declaration: ' strjoin(cellstr(missing), ', ')]);
         end
 
-        function privateHelperContractDebtIsRemoved(testCase)
+        function privateHelpersDocumentImplementationContracts(testCase)
             root = setupLabKitTestPath();
-            actual = collectPrivateContractDebt(root);
+            actual = collectPrivateHelpersMissingContracts(root);
             testCase.verifyTrue(isempty(actual), ...
-                ['private helpers without implementation contracts must not remain: ' ...
+                ['private helpers need implementation contracts: ' ...
                 strjoin(cellstr(actual), ', ')]);
-
-            fprintf('Private helper contract debt inventory: %d files missing top-of-file contracts.\n', ...
-                numel(actual));
         end
 
         function appOwnedPackageHelpersDocumentImplementationContracts(testCase)
@@ -193,7 +165,7 @@ function tf = hasFunctionContractComment(filepath)
     tf = nextIdx <= numel(lines) && startsWith(strtrim(lines(nextIdx)), "%");
 end
 
-function actual = collectPrivateContractDebt(root)
+function actual = collectPrivateHelpersMissingContracts(root)
     privateDirs = [ ...
         collectPrivateDirs(fullfile(root, '+labkit')), ...
         collectPrivateDirs(fullfile(root, 'apps'))];

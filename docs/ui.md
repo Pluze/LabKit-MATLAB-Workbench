@@ -132,10 +132,10 @@ Use these app-facing contracts:
 - `labkit.ui.view.setLimits` updates numeric limits and clamps existing values
   without firing synchronous value-change callbacks.
 
-App-specific hand-written layout is not part of the public spec grammar. When a
-workflow needs a control that cannot be expressed with the ordinary specs, add a
-named framework or app-owned spec instead of placing MATLAB layout code in
-`buildSpec.m`.
+The public spec grammar is semantic: pages, sections, controls, order, values,
+and callbacks. When a workflow needs a control that cannot be expressed with
+the ordinary specs, add a named framework or app-owned spec instead of placing
+MATLAB layout code in `buildSpec.m`.
 
 Control tabs with more than one section include draggable horizontal
 separators by default. A tab may opt out with `resize="none"` when a fixed

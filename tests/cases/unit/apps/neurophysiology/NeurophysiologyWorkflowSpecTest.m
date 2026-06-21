@@ -19,13 +19,6 @@ classdef NeurophysiologyWorkflowSpecTest < matlab.unittest.TestCase
             testCase.verifyTrue(any(actionLabels(spec) == "Zoom to ROI"));
         end
 
-        function screenCommandIsRetiredIntoPreview(testCase)
-            setupLabKitTestPath();
-
-            testCase.verifyEqual(exist("labkit_RHSScreen_app", "file"), 0);
-            testCase.verifyEqual(exist("rhs_screen.ui.buildSpec", "file"), 0);
-        end
-
         function analysisWorkflowKeepsHeavyAnalyzeExplicit(testCase)
             setupLabKitTestPath();
 

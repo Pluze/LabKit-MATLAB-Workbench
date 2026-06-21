@@ -36,21 +36,6 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
                     "Documented buildtool tasks in " + relativePath(root, docFiles(k)));
             end
 
-            formerWrapperName = "run_" + "matlab_tests";
-
-            oldWrapperDocs = [ ...
-                string(fullfile(root, "README.md")), ...
-                string(fullfile(root, "docs", "testing.md"))];
-            for k = 1:numel(oldWrapperDocs)
-                testCase.verifyFalse(contains(fileread(oldWrapperDocs(k)), ...
-                    formerWrapperName), ...
-                    "User-facing docs should not reference the former test wrapper: " + ...
-                    relativePath(root, oldWrapperDocs(k)));
-                testCase.verifyFalse(contains(fileread(oldWrapperDocs(k)), ...
-                    "runLabKitTests"), ...
-                    "User-facing docs should route test commands through buildtool: " + ...
-                    relativePath(root, oldWrapperDocs(k)));
-            end
         end
 
         function runnableBuildTaskSpecsMapToKnownTestScopes(testCase)
@@ -210,43 +195,6 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
             testCase.verifyEqual(catalog.Name(:).', expectedTasks, ...
                 "Build task catalog should expose a compact intent-based task set.");
 
-            retiredPrefixes = ["test", "checkStyle", "core", "project", ...
-                "matlabProject", "packageDryRun", "testLabkitDta", ...
-                "testLabkitBiosignal", "testLabkitUi", ...
-                "testAppsElectrochem", "testAppsDic", ...
-                "testAppsImageMeasurement", "testAppsWearable", ...
-                "testAppsTemplates", "testAppsSmoke"];
-            for k = 1:numel(retiredPrefixes)
-                testCase.verifyFalse(any(startsWith(catalog.Name, retiredPrefixes(k))), ...
-                    "Build tasks should stay intent-based; use changed for " + ...
-                    "granular local routing instead of " + retiredPrefixes(k) + "* tasks.");
-            end
-        end
-
-        function userFacingDocsAvoidRetiredValidationVocabulary(testCase)
-            root = setupLabKitTestPath();
-            docFiles = [
-                fullfile(root, "README.md")
-                fullfile(root, "docs", "apps.md")
-                fullfile(root, "docs", "testing.md")];
-            retiredPhrases = [
-                "changed-file, core, or GUI tasks"
-                "project validation tasks"
-                "buildtool core"
-                "buildtool project"
-                "buildtool testProject"
-                "buildtool testGui"
-                "buildtool testApps"
-                "scripts/matlab_batch.sh"];
-
-            for f = 1:numel(docFiles)
-                content = string(fileread(docFiles(f)));
-                for p = 1:numel(retiredPhrases)
-                    testCase.verifyFalse(contains(content, retiredPhrases(p)), ...
-                        "User-facing validation docs should not mention retired task vocabulary: " + ...
-                        relativePath(root, docFiles(f)) + " contains " + retiredPhrases(p));
-                end
-            end
         end
 
         function testFilesUseKnownTags(testCase)

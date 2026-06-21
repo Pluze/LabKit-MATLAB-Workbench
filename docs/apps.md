@@ -14,9 +14,9 @@ labkit_launcher
 
 The launcher initializes the LabKit path, discovers
 `apps/**/labkit_*_app.m`, and opens the selected app. It also provides direct
-actions to launch the selected app in debug mode, open Project Governance, and
-clean LabKit-generated artifacts. If you already know the command, launch it
-directly:
+actions to launch the selected app in debug mode, run MATLAB Code Analyzer,
+and clean LabKit-generated artifacts. If you already know the command, launch
+it directly:
 
 ```matlab
 labkit_CIC_app
@@ -28,19 +28,15 @@ labkit_NerveResponseAnalysis_app
 labkit_ResponseReviewStats_app
 ```
 
-The cleanup action removes `artifacts/` plus legacy root diagnostic files named
-`matlab_code_check.json` or `matlab_test*.log`. It does not remove source code,
-docs, tests, photos, or derived data folders.
+The cleanup action targets generated LabKit artifacts: `artifacts/` plus older
+root-level diagnostic files named `matlab_code_check.json` or
+`matlab_test*.log`.
 
-For path setup without opening the launcher:
+The Code Analyzer action writes
+`artifacts/code-check/matlab_code_check.json` for manual maintenance review.
 
-```matlab
-startup_labkit
-```
-
-`startup_labkit` adds the repository root, `apps/`, and app folders to the
-MATLAB path. It does not add app-owned package folders such as
-`apps/image_measurement/batch_crop/+batch_crop/` as direct path entries.
+The launcher sets up the app path before opening an app. App-owned packages are
+reached through their owning app entrypoint and package namespace.
 
 ## App Catalog
 
@@ -62,40 +58,17 @@ MATLAB path. It does not add app-owned package folders such as
 | `labkit_RHSPreview_app` | Neurophysiology | Intan RHS header inspection, stacked waveform preview, ROI zooming, channel protocol drafting, and manual folder filtering. | RHS file, RHS folder, and optional protocol JSON | Header summary, preview window, channel protocol JSON, and filter record JSON. |
 | `labkit_NerveResponseAnalysis_app` | Neurophysiology | Filter-record-driven event train detection, differential response derivation, common-mode correction, and CAP metrics. | Filter record JSON and recommended protocol JSON | Analysis JSON with events, trains, metrics, and issues. |
 | `labkit_ResponseReviewStats_app` | Neurophysiology | Immediate metric loading, aligned response segment review, and descriptive statistics from analysis metrics or legacy segment CSV. | Analysis JSON or segment CSV | Metrics CSV and summary table. |
-| `labkit_ProjectGovernance_app` | Project tools | Create app scaffolds and scan MATLAB project code. | Scaffold options or repository code | New app files or `artifacts/code-check/matlab_code_check.json`. |
 
 ## Creating A New App
 
-Run:
-
-```matlab
-labkit_ProjectGovernance_app
-```
-
-Use the app's `Create app` workflow. The fields mean:
-
-| Field | Meaning | Example |
-| --- | --- | --- |
-| Family folder | First folder under `apps/`. Choose the domain or tool family. | `image_measurement` |
-| App slug | Lowercase folder and package name. Use `lower_snake_case`. | `surface_roughness` |
-| Public command | MATLAB function users call. Leave blank to generate it from the slug. | `labkit_SurfaceRoughness_app` |
-| Window label | Human-readable title for the generated app window. | `Surface Roughness` |
-
-The preview shows the files that will be created. The generated app is
-ordinary MATLAB code; edit it directly after creation.
-
-For command-line use, call the same app-owned operation after `startup_labkit`:
-
-```matlab
-startup_labkit
-project_governance.ops.createLabKitApp("Family","image_measurement", ...
-    "Slug","surface_roughness", ...
-    "Label","Surface Roughness")
-```
+Create new apps directly in the standard app shape below. Use the smallest
+nearby app as a reference when it shares the same workflow style, then replace
+the state, callbacks, result tables, and exports with the new app's real
+behavior.
 
 ## App File Shape
 
-Generated and migrated apps use this shape:
+Apps use this shape:
 
 ```text
 apps/<family>/<app_slug>/labkit_<AppName>_app.m
@@ -136,20 +109,6 @@ Keep these decisions in the owning app:
 Move code into `+labkit` only when it is domain-neutral, app-facing, broadly
 reusable, and clearer as a public facade. See [architecture.md](architecture.md)
 for the extraction rule.
-
-## Project Governance App
-
-`labkit_ProjectGovernance_app` has two primary jobs:
-
-- Create new app scaffolds directly from the governance app generator.
-- Scan project MATLAB files with Code Analyzer and write
-  `artifacts/code-check/matlab_code_check.json`.
-
-It also exposes local MATLAB Project creation as a maintenance action. The
-tracked repository does not include `LabKit.prj` or `resources/project/`;
-those files are local IDE state. `scripts/` does not contain MATLAB governance
-entry points; the implementation lives in
-`apps/project/governance/+project_governance/+ops`.
 
 ## Validation
 

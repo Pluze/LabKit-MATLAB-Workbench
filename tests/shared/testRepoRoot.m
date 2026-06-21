@@ -3,7 +3,8 @@ function root = testRepoRoot()
 
     root = fileparts(mfilename('fullpath'));
     while true
-        if exist(fullfile(root, 'startup_labkit.m'), 'file') == 2
+        if exist(fullfile(root, 'labkit_launcher.m'), 'file') == 2 && ...
+                exist(fullfile(root, '+labkit'), 'dir') == 7
             return;
         end
 

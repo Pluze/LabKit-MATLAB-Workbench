@@ -20,9 +20,9 @@ labkit_launcher
 ```
 
 The launcher scans `apps/**/labkit_*_app.m`, shows the available tools, and
-opens the selected app. It also has direct actions for Debug launch, Project
-Governance, and cleaning generated artifacts. Known apps can also be launched
-directly, for example:
+opens the selected app. It also has direct actions for Debug launch, MATLAB
+Code Analyzer reporting, and cleaning generated artifacts. Known apps can also
+be launched directly, for example:
 
 ```matlab
 labkit_CIC_app
@@ -34,8 +34,8 @@ labkit_NerveResponseAnalysis_app
 labkit_ResponseReviewStats_app
 ```
 
-Use `labkit_ProjectGovernance_app` when you want to create a new app scaffold
-or scan the project with MATLAB Code Analyzer.
+Use the launcher's `Run Code Analyzer` action when you want an ignored
+`artifacts/code-check/matlab_code_check.json` report.
 
 ## Contributor Quick Path
 
@@ -57,7 +57,6 @@ or scan the project with MATLAB Code Analyzer.
 | Image measurement | `labkit_CurvatureMeasurement_app`, `labkit_FocusStack_app`, `labkit_ImageEnhance_app`, `labkit_BatchImageCrop_app` | Image measurement, microscopy utilities, and figure preparation. |
 | Wearable biosignal | `labkit_ECGPrint_app` | ECG import, filtering, peak/segment review, and exports. |
 | Neurophysiology | `labkit_RHSPreview_app`, `labkit_NerveResponseAnalysis_app`, `labkit_ResponseReviewStats_app` | Intan RHS inspection, channel protocol drafting, manual filter records, event-locked nerve response analysis, and aligned response statistics. |
-| Project tools | `labkit_ProjectGovernance_app` | New-app scaffolding and project code checks. |
 
 ## Validate Locally
 

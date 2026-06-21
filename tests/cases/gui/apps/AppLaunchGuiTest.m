@@ -77,9 +77,7 @@ function tf = hasDedicatedLayoutTest(root, appFolder, command)
         end
     end
 
-    tf = command == "labkit_ProjectGovernance_app" && ...
-        isfile(fullfile(root, 'tests', 'cases', 'gui', 'labkit', ...
-        'project', 'GuiLayoutProjectTest.m'));
+    tf = false;
 end
 
 function assertLaunchedFigure(entryName)

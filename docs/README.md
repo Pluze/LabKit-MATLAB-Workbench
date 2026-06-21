@@ -15,9 +15,6 @@ typical outputs.
 Read [apps.md](apps.md). Read [ui.md](ui.md) only when the work touches layout,
 controls, previews, callbacks, or debug traces.
 
-Use `labkit_ProjectGovernance_app` to create a starter app scaffold. After
-generation, the result is ordinary MATLAB code under `apps/<family>/<slug>/`.
-
 ## I Want To Understand The Codebase
 
 Read [architecture.md](architecture.md).

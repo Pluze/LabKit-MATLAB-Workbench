@@ -111,30 +111,14 @@ Use the closest existing app as the starting pattern, then reduce it to the actu
 
 ## New App Cold Start
 
-For a new app, use the project governance scaffold after the design brief is
-clear. Human users can launch:
+For a new app, create the standard app shape directly and use only the
+smallest genuinely similar existing app as a reference. The first committed
+version should already express the real workflow: app state, callbacks,
+results, exports, and usage text should be specific to the new app.
 
-```matlab
-labkit_ProjectGovernance_app
-```
-
-Agents or CLI-style MATLAB sessions should call the same app-owned operation
-directly:
-
-```matlab
-startup_labkit(false);
-created = project_governance.ops.createLabKitApp( ...
-    "Family", "image_measurement", ...
-    "Slug", "surface_roughness", ...
-    "Label", "Surface Roughness");
-```
-
-Optional `"EntryPoint"` may be provided when the public command should differ
-from the slug-derived default. The governance operation generates ordinary
-MATLAB scaffold files from its private scaffold source and creates a direct
-unit-test scaffold. After generation, edit the app as ordinary MATLAB source.
-Do not add an app manifest, generated registry, per-app build task, or MATLAB
-governance entry point under `scripts/`.
+Keep app discovery source-based through `apps/**/labkit_*_app.m`; app
+manifests, registries, per-app build tasks, and governance apps are outside
+the current app model.
 
 ## Implementation Pattern
 

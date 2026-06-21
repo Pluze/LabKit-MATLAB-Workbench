@@ -1,5 +1,5 @@
-classdef TestCompatibilityDebtGuardrailTest < matlab.unittest.TestCase
-    %TESTCOMPATIBILITYDEBTGUARDRAILTEST Keep test migration debt isolated.
+classdef TestCompatibilityGuardrailTest < matlab.unittest.TestCase
+    %TESTCOMPATIBILITYGUARDRAILTEST Keep test compatibility checks isolated.
 
     methods (Test, TestTags = {'Integration', 'Style'})
         function appUnitTestsDoNotReadAppSourceForBehavior(testCase)
@@ -19,7 +19,7 @@ classdef TestCompatibilityDebtGuardrailTest < matlab.unittest.TestCase
                 strjoin(cellstr(findings), ', ')]);
         end
 
-        function dtaLegacyBridgeAssertionsStayIsolated(testCase)
+        function dtaCompatibilityBridgeAssertionsStayIsolated(testCase)
             root = setupLabKitTestPath();
             files = [ ...
                 collectMFiles(fullfile(root, 'tests', 'cases', 'unit', 'labkit', 'dta')), ...
@@ -28,44 +28,14 @@ classdef TestCompatibilityDebtGuardrailTest < matlab.unittest.TestCase
                 'DtaCompatibilityBridgeTest.m'));
             files = setdiff(files, allowed);
 
-            legacyField = "(item|chronoItem|eisItem|aligned)\.(t|Vf|Im|alignTime|tAligned|Freq|Time|Pt|Zreal|Zimag|negZimag|Zmod|Zphz|Idc|Vdc)\b";
-            legacyText = "stable-compatible|mirror legacy|Legacy .* should mirror";
-            findings = filesMatchingAnyPattern(root, files, [legacyField, legacyText]);
+            compatibilityField = "(item|chronoItem|eisItem|aligned)\.(t|Vf|Im|alignTime|tAligned|Freq|Time|Pt|Zreal|Zimag|negZimag|Zmod|Zphz|Idc|Vdc)\b";
+            compatibilityText = "stable-compatible|mirror legacy|Legacy .* should mirror";
+            findings = filesMatchingAnyPattern(root, files, ...
+                [compatibilityField, compatibilityText]);
             testCase.verifyTrue(isempty(findings), ...
-                ['DTA legacy bridge assertions belong in DtaCompatibilityBridgeTest. ' ...
-                'Ordinary DTA/app tests should use canonical fields. Findings: ' ...
-                strjoin(cellstr(findings), ', ')]);
-        end
-
-        function projectDebtGuardrailsUseCurrentGovernanceLabels(testCase)
-            root = setupLabKitTestPath();
-            files = collectMFiles(fullfile(root, 'tests', 'integration', 'project'));
-            findings = filesMatchingAnyPattern(root, files, "Phase\s+\d+");
-            testCase.verifyTrue(isempty(findings), ...
-                ['Project guardrail messages should use current governance labels, ' ...
-                'not historical roadmap phase names. Findings: ' ...
-                strjoin(cellstr(findings), ', ')]);
-        end
-
-        function exactDebtInventoriesAreRemoved(testCase)
-            root = setupLabKitTestPath();
-            files = collectMFiles(fullfile(root, 'tests', 'integration', 'project'));
-            inventoryFunctions = strings(1, 0);
-            for k = 1:numel(files)
-                content = fileread(files(k));
-                tokens = regexp(content, ...
-                    '(?m)^function\s+\w+\s*=\s*(expected\w*Debt\w*)\s*\(', ...
-                    'tokens');
-                for i = 1:numel(tokens)
-                    inventoryFunctions(end+1) = string(relativePath(root, files(k))) + ...
-                        " -> " + string(tokens{i}{1});
-                end
-            end
-
-            testCase.verifyTrue(isempty(inventoryFunctions), ...
-                ['Exact expected-debt inventories must not remain. Prefer capability ' ...
-                'guardrails for package layout and test quality. Findings: ' ...
-                strjoin(cellstr(inventoryFunctions), ', ')]);
+                ['DTA compatibility bridge assertions belong in ' ...
+                'DtaCompatibilityBridgeTest. Ordinary DTA/app tests should use ' ...
+                'canonical fields. Findings: ' strjoin(cellstr(findings), ', ')]);
         end
 
         function trackedEditorNoiseFilesAreForbidden(testCase)

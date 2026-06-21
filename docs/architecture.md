@@ -28,11 +28,10 @@ labkit_launcher
 The launcher discovers `apps/**/labkit_*_app.m`. Public app command names are
 stable user entry points, for example `labkit_CIC_app`,
 `labkit_DICPreprocess_app`, `labkit_ECGPrint_app`, and
-`labkit_ProjectGovernance_app`.
+`labkit_RHSPreview_app`.
 
-`startup_labkit` configures the MATLAB path. Local MATLAB Project metadata can
-be created from `labkit_ProjectGovernance_app`; `LabKit.prj` and
-`resources/project/` are not tracked.
+The launcher configures the MATLAB path for app entry points. MATLAB desktop
+project metadata belongs to each developer's local workspace.
 
 ## Ownership Boundaries
 

@@ -15,24 +15,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  repository-hygiene:
-    name: Repository Hygiene
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v6
-
-      - name: Check MATLAB Project metadata is local
-        run: |
-          tracked="$(git ls-files -- LabKit.prj resources/project)"
-          if [ -n "$tracked" ]; then
-            echo "MATLAB Project metadata must stay local and untracked:"
-            echo "$tracked"
-            exit 1
-          fi
-
   headless-shards:
     name: ${{ matrix.label }}
     runs-on: ubuntu-latest

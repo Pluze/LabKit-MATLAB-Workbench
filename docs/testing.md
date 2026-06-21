@@ -84,7 +84,7 @@ GUI checks are structural rather than full interactive workflow validation.
 tests/cases/unit/              pure library and app-owned helper behavior
 tests/cases/contract/          long-lived project, package, docs, and hygiene contracts
 tests/cases/gui/apps/          app GUI launch, layout, and callback checks
-tests/cases/gui/labkit/        launcher, governance, scaffold, and reusable UI GUI checks
+tests/cases/gui/labkit/        launcher and reusable UI GUI checks
 tests/cases/gui/gesture/       focused runtime interaction lifecycle checks
 tests/shared/                  small test-facing assertions, fixture builders, GUI probes, and lookup helpers
 tests/runner/                  runner setup, artifact paths, trace plumbing, and artifact writers

@@ -23,7 +23,7 @@ function varargout = labkit_launcher(varargin)
             'labkit_launcher returns at most the launcher figure handle.');
     end
 
-    initializePath(root);
+    initializePath(root, apps);
     fig = runLauncher(root, apps);
     if nargout == 1
         varargout = {fig};
@@ -51,20 +51,17 @@ function mode = parseMode(args)
     mode = "list";
 end
 
-function initializePath(root)
-    startupFile = fullfile(root, 'startup_labkit.m');
-    if exist(startupFile, 'file') == 2
-        currentFolder = pwd;
-        cleanup = onCleanup(@() cd(currentFolder));
-        cd(root);
-        startup_labkit(false);
-        clear cleanup;
-    else
-        addpath(root);
-        appRoot = fullfile(root, 'apps');
-        if exist(appRoot, 'dir') == 7
-            addpath(appRoot, '-end');
-        end
+function initializePath(root, apps)
+    addPathIfMissing(root);
+    addPathIfMissing(fullfile(root, 'apps'), '-end');
+    for k = 1:numel(apps)
+        addPathIfMissing(apps(k).folder, '-end');
+    end
+end
+
+function addPathIfMissing(folder, varargin)
+    if exist(folder, 'dir') == 7 && ~pathContains(folder)
+        addpath(folder, varargin{:});
     end
 end
 
@@ -72,7 +69,7 @@ function fig = runLauncher(root, apps)
     callbacks = struct( ...
         'launchSelected', @onLaunchSelected, ...
         'launchSelectedDebug', @onLaunchSelectedDebug, ...
-        'openGovernance', @onOpenGovernance, ...
+        'runCodeCheck', @onRunCodeCheck, ...
         'cleanArtifacts', @onCleanArtifacts, ...
         'refreshApps', @onRefreshApps);
     ui = labkit.ui.app.create(buildLauncherSpec(apps, callbacks));
@@ -123,15 +120,6 @@ function fig = runLauncher(root, apps)
         launchSelectedApp(true);
     end
 
-    function onOpenGovernance(varargin)
-        app = findAppByCommand(state.apps, 'labkit_ProjectGovernance_app');
-        if isempty(app)
-            setStatus('Project Governance app was not found.');
-            return;
-        end
-        launchApp(app, false);
-    end
-
     function onCleanArtifacts(varargin)
         if ~confirmCleanArtifacts(fig)
             setStatus('Clean artifacts canceled.');
@@ -139,6 +127,18 @@ function fig = runLauncher(root, apps)
         end
         result = cleanGeneratedArtifacts(root);
         setStatus(cleanArtifactsStatus(result));
+    end
+
+    function onRunCodeCheck(varargin)
+        setStatus('Running MATLAB Code Analyzer...');
+        drawnow;
+        try
+            addScriptPath(root);
+            report = runLabKitCodeCheckReport("Root", root);
+            setStatus(codeCheckStatus(report));
+        catch err
+            setStatus(sprintf('Code Analyzer failed: %s', err.message));
+        end
     end
 
     function launchSelectedApp(debugMode)
@@ -252,8 +252,8 @@ function section = actionsSection(callbacks)
             labkit.ui.spec.action('openSelectedDebug', ...
                 'Open Debug', callbacks.launchSelectedDebug)}), ...
         labkit.ui.spec.actionGroup('projectToolActions', { ...
-            labkit.ui.spec.action('openGovernance', ...
-                'Project Governance', callbacks.openGovernance), ...
+            labkit.ui.spec.action('runCodeCheck', ...
+                'Run Code Analyzer', callbacks.runCodeCheck), ...
             labkit.ui.spec.action('cleanArtifacts', ...
                 'Clean Artifacts', callbacks.cleanArtifacts)}), ...
         labkit.ui.spec.action('refreshApps', ...
@@ -339,6 +339,27 @@ function message = cleanArtifactsStatus(result)
     end
 end
 
+function message = codeCheckStatus(report)
+    message = sprintf(['Code Analyzer wrote %s: %d message(s) across ' ...
+        '%d file(s), %d scan error(s).'], ...
+        char(report.outputs.json), ...
+        report.summary.messageCount, ...
+        report.summary.filesWithMessages, ...
+        report.summary.scanErrorCount);
+end
+
+function addScriptPath(root)
+    scriptDir = fullfile(root, 'scripts');
+    if exist(scriptDir, 'dir') == 7 && ~pathContains(scriptDir)
+        addpath(scriptDir, '-end');
+    end
+end
+
+function tf = pathContains(folder)
+    paths = strsplit(path, pathsep);
+    tf = any(strcmp(paths, folder));
+end
+
 function rows = appDisplayRows(apps)
     rows = cell(numel(apps), 3);
     for k = 1:numel(apps)
@@ -415,17 +436,6 @@ function apps = discoverApps(root)
     apps = apps(order);
 end
 
-function app = findAppByCommand(apps, command)
-    app = [];
-    if isempty(apps)
-        return;
-    end
-    idx = find(string({apps.command}) == string(command), 1);
-    if ~isempty(idx)
-        app = apps(idx);
-    end
-end
-
 function result = cleanGeneratedArtifacts(root)
     targets = generatedArtifactTargets(root);
     removedCount = 0;
@@ -471,7 +481,7 @@ end
 function tf = confirmCleanArtifacts(fig)
     try
         choice = uiconfirm(fig, ...
-            ['Remove LabKit-generated artifacts and legacy root diagnostic ' ...
+            ['Remove LabKit-generated artifacts and older root-level diagnostic ' ...
             'files? This does not remove app source, docs, tests, photos, ' ...
             'or derived data folders.'], ...
             'Clean Artifacts', ...

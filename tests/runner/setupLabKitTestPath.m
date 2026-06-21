@@ -2,13 +2,28 @@ function root = setupLabKitTestPath()
 %SETUPLABKITTESTPATH Add repo and shared test paths for official tests.
 %
 % Expected caller: tests/runLabKitTests.m and official matlab.unittest tests.
-% Side effects: adds the repository root, tests, tests/runner, and
-% tests/shared to the MATLAB path, then runs startup_labkit.
+% Side effects: adds the repository root, apps, app entry folders, tests,
+% tests/runner, and tests/shared to the MATLAB path.
 
     root = labkitRepoRoot();
-    addpath(root);
-    addpath(fullfile(root, "tests"));
-    addpath(fullfile(root, "tests", "runner"));
-    addpath(fullfile(root, "tests", "shared"));
-    startup_labkit(false);
+    addPathIfMissing(root);
+    addPathIfMissing(fullfile(root, "apps"), "-end");
+    apps = labkit_launcher("list");
+    for k = 1:height(apps)
+        addPathIfMissing(char(apps.Folder(k)), "-end");
+    end
+    addPathIfMissing(fullfile(root, "tests"));
+    addPathIfMissing(fullfile(root, "tests", "runner"));
+    addPathIfMissing(fullfile(root, "tests", "shared"));
+end
+
+function addPathIfMissing(folder, varargin)
+    if exist(folder, "dir") == 7 && ~pathContains(folder)
+        addpath(folder, varargin{:});
+    end
+end
+
+function tf = pathContains(folder)
+    paths = strsplit(path, pathsep);
+    tf = any(strcmp(paths, folder));
 end

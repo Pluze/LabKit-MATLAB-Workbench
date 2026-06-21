@@ -37,14 +37,12 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
 - Keep compatibility bridge assertions isolated in named compatibility tests. Ordinary app and facade tests should prefer current canonical fields and direct package functions.
 - Unit app tests should not read app source text to prove behavior. Keep source-string scans in project guardrails.
 - Boundary tests may require app-owned logic to stay under the owning app tree, but should not require GUI-free helpers to remain inside the public app entry-point file or assert exact app-private helper file lists.
-- Runner-migration tests should not rely only on GUI structural launches. When
-  migration creates an app-owned package for DIC or wearable apps, add unit
-  tests that call non-UI package functions such as `+ops`, `+view`, `+export`,
-  `+io`, or `+state` directly.
+- App-owned packages need direct unit coverage for non-UI functions such as
+  `+ops`, `+view`, `+export`, `+io`, or `+state`; GUI structural tests only
+  prove launch/layout wiring.
 - Guardrails should prevent app lifecycle orchestration from living in
-  `+ui/runApp.m`; migrated apps use package-root `run.m` plus data-only
-  `+ui/buildSpec.m`. Ordinary tests should call package helpers directly; GUI
-  structural tests only prove wiring/layout.
+  `+ui/runApp.m`; apps use package-root `run.m` plus data-only
+  `+ui/buildSpec.m`. Ordinary tests should call package helpers directly.
 - UI public-surface tests should assert the layered `labkit.ui.app/spec/view/tool/diag` facade and keep low-level controls, row resize, panel internals, and popout implementation private.
 - GUI launch/debug tests may assert that every app supports debug launch and visible startup trace, but should not claim full interactive workflow validation.
 - When one test file grows too broad, add new focused `test_*.m` files instead of appending unrelated coverage.

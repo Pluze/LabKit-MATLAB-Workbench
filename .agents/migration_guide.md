@@ -14,7 +14,7 @@ Update this ledger only when migration debt is added, reduced, retired, or
 reprioritized. Keep it aligned with:
 
 - current capability-style project guardrails
-- `AppPackageStructureGuardrailTest` app package and UI 2.0 structure checks
+- `AppPackageStructureGuardrailTest` app package structure checks
 - `docs/architecture.md` when human-facing boundary facts change
 
 When debt is retired, remove stale ledger entries and shrink this file in the
@@ -39,7 +39,7 @@ Current facts:
 - No active runner maps exist.
 - Supported app entry points launch through `labkit.ui.app.create` directly or
   through app-owned package-root `run.m` orchestration.
-- Migrated apps keep ordinary data-only specs in
+- Apps keep ordinary data-only specs in
   `+<app_slug>/+ui/buildSpec.m`, route extracted production code through
   role-based app-owned component packages, and avoid generic helper buckets.
 - The public app-facing UI surface is the layered

@@ -39,13 +39,10 @@ apps/electrochem           electrochem app-owned calculations, exports, layout
 apps/dic                   DIC app layout
 apps/image_measurement     image measurement calculations, exports, layout
 apps/wearable              wearable app layout
-apps/project               governance app helpers and private scaffold source
 gui/apps                   app GUI launch, layout, and callback wiring checks
 gui/apps/<family>/<app_slug>
                            one app GUI layout and callback wiring checks
 gui/labkit/launcher        launcher discovery and layout checks
-gui/labkit/project         project governance app layout checks
-gui/labkit/scaffold        generated scaffold launch/debug checks
 ```
 
 Pair reusable changes with downstream apps when the app-facing contract could

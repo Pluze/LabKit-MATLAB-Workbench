@@ -187,7 +187,6 @@ function tf = isProjectRoutingPath(path)
         "apps/AGENTS.md", ...
         "README.md", ...
         "buildfile.m", ...
-        "startup_labkit.m", ...
         "tests/AGENTS.md"]);
 end
 
@@ -202,10 +201,6 @@ end
 function target = appGuiSuiteTarget(root, family, slug)
     family = string(family);
     slug = string(slug);
-    if family == "project"
-        target = "gui/labkit/project";
-        return;
-    end
 
     if strlength(slug) > 0
         appFolder = fullfile(root, "tests", "cases", "gui", "apps", ...

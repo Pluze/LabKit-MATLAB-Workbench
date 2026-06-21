@@ -14,10 +14,9 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
 ## App Ownership
 
 - Keep domain formulas, thresholds, integration rules, option defaults, plot labels, result fields, export columns, failed-row behavior, alerts, and log wording app-local unless the user explicitly approves a boundary change.
-- For a new app cold start, use `labkit_ProjectGovernance_app` interactively or
-  `project_governance.ops.createLabKitApp(...)` from MATLAB after
-  `startup_labkit(false)`. Do not add MATLAB governance entry points under
-  `scripts/`.
+- For a new app cold start, create the standard app shape directly and use the
+  smallest genuinely similar app as a reference. Keep the first version focused
+  on the real workflow rather than placeholder behavior.
 - When a documented UI tool owns app-neutral controls or interaction mechanics, consume it instead of reimplementing widget state or normalization. Keep app calculations, summaries, alerts, and exports local.
 - Use `labkit.ui.app.create` with `labkit.ui.spec.*` for app GUIs. Do not
   reintroduce the removed `labkit.ui.app.createShell` or legacy view helpers.
@@ -62,13 +61,13 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
   Do not add boundary-blurring files named `helpers.m`, `utils.m`, `common.m`,
   `misc.m`, `callbacks.m`, `manager.m`, `processor.m`, `layout.m`, or
   `createUI.m`.
-- Callback-heavy migrated apps should move app-owned production code into these
+- Callback-heavy apps should move app-owned production code into these
   package components instead of adding new `private` runners or string-dispatch
   workflow adapters.
 - Use `.agents/migration_guide.md` and the `labkit-migration-planner` skill for
   active runner, app-private, and migration-debt work. This file owns app
   boundary rules, not the migration debt ledger.
-- Migrated apps use a package-root `run.m` for app lifecycle orchestration.
+- Apps use a package-root `run.m` for app lifecycle orchestration.
   Keep `+ui` focused on `buildSpec.m`, UI handle mapping, and justified
   tool/widget glue; do not put app lifecycle runners in `+ui/runApp.m`.
 - Do not add new `*Workflow.m` files or app-owned `+core/dispatch.m` string

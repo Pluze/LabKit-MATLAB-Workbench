@@ -1,13 +1,13 @@
-% Expected caller: project_governance app, Code Analyzer fixer workflow, and
-% manual MATLAB diagnosis. Output is the JSON-ready report struct. Side
-% effects: writes artifacts/code-check/matlab_code_check.json under the
-% scanned repository root.
-function report = runCodeCheckReport(varargin)
-%RUNCODECHECKREPORT Write an ignored MATLAB Code Analyzer report.
+% Script helper. Expected caller: labkit_launcher and manual
+% Code Analyzer diagnosis from the repository root. Inputs are optional
+% name-value settings. Output is the JSON-ready report struct. Side effects:
+% writes artifacts/code-check/matlab_code_check.json under the scanned root.
+function report = runLabKitCodeCheckReport(varargin)
+%RUNLABKITCODECHECKREPORT Write an ignored MATLAB Code Analyzer report.
 
     p = inputParser;
-    p.FunctionName = "project_governance.ops.runCodeCheckReport";
-    p.addParameter("Root", project_governance.ops.repoRoot(), @isTextScalar);
+    p.FunctionName = "runLabKitCodeCheckReport";
+    p.addParameter("Root", defaultRoot(), @isTextScalar);
     p.parse(varargin{:});
 
     root = char(string(p.Results.Root));
@@ -22,6 +22,10 @@ function report = runCodeCheckReport(varargin)
         report.summary.messageCount, report.summary.filesWithMessages);
     fprintf('Scan errors: %d.\n', report.summary.scanErrorCount);
     fprintf('JSON report: %s\n', jsonPath);
+end
+
+function root = defaultRoot()
+    root = fileparts(fileparts(mfilename('fullpath')));
 end
 
 function files = collectMFiles(root)
@@ -86,7 +90,7 @@ function report = analyzeFiles(root, files, jsonPath)
     report.schemaVersion = "1.1";
     report.generatedAt = string(datetime("now", "TimeZone", "local", ...
         "Format", "yyyy-MM-dd'T'HH:mm:ssXXX"));
-    report.generator = "project_governance.ops.runCodeCheckReport";
+    report.generator = "runLabKitCodeCheckReport";
     report.root = string(root);
     report.outputs = struct( ...
         "json", relativePath(root, jsonPath));
