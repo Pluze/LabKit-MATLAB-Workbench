@@ -14,50 +14,7 @@ classdef AppPackageStructureGuardrailTest < matlab.unittest.TestCase
             end
         end
 
-        function appUiSpecsUseSharedLayoutDefaults(testCase)
-            root = setupLabKitTestPath();
-            files = appBuildSpecFiles(root);
-            fixedFindings = strings(0, 1);
-            fitFindings = strings(0, 1);
-            layoutFindings = strings(0, 1);
-            for k = 1:numel(files)
-                source = fileread(files(k));
-                if ~isempty(regexp(source, '"height"\s*,\s*\d+', 'once'))
-                    fixedFindings(end+1, 1) = string(relativePath(root, files(k)));
-                end
-                if ~isempty(regexp(source, '"height"\s*,\s*"fit"', 'once'))
-                    fitFindings(end+1, 1) = string(relativePath(root, files(k)));
-                end
-                if ~isempty(regexp(source, '[''"](?:position|leftWidth)[''"]\s*,', 'once'))
-                    layoutFindings(end+1, 1) = string(relativePath(root, files(k)));
-                end
-            end
-
-            testCase.verifyEmpty(fixedFindings, ...
-                "App UI specs should rely on automatic section sizing or " + ...
-                "'flex', not fixed numeric heights: " + ...
-                strjoin(fixedFindings, ", "));
-            testCase.verifyEmpty(fitFindings, ...
-                "App UI specs should omit redundant height='fit'; " + ...
-                "the default section sizing is automatic: " + ...
-                strjoin(fitFindings, ", "));
-            testCase.verifyEmpty(layoutFindings, ...
-                "App UI specs should rely on shared app window defaults " + ...
-                "instead of app-local position/leftWidth constants: " + ...
-                strjoin(layoutFindings, ", "));
-        end
     end
-end
-
-function files = appBuildSpecFiles(root)
-    entries = dir(fullfile(root, 'apps', '**', '+ui', 'buildSpec.m'));
-    files = strings(0, 1);
-    for k = 1:numel(entries)
-        if ~entries(k).isdir
-            files(end+1, 1) = string(fullfile(entries(k).folder, entries(k).name));
-        end
-    end
-    files = sort(files);
 end
 
 function specs = discoveredAppSpecs(root)
@@ -124,13 +81,12 @@ function assertMigratedUi2AppStructure(testCase, root, appRelDir, packageName, e
         [relativePath(root, buildSpecFile) ' should return a UI 2.0 app spec.']);
     assertSourceDoesNotContain(testCase, buildSpecSource, ...
         buildSpecForbiddenWords(), relativePath(root, buildSpecFile));
+    assertNoAppOwnedLayoutProps(testCase, buildSpecSource, ...
+        relativePath(root, buildSpecFile));
 
     packageSource = readPackageSource(packageDir);
     assertSourceDoesNotContain(testCase, packageSource, ...
         migratedUiForbiddenWords(), appLabel);
-    testCase.verifyFalse(contains(packageSource, 'labkit.ui.spec.custom'), ...
-        [appLabel ' should keep ordinary migrated app UI custom count at 0.']);
-
     assertNoGenericHelperNames(testCase, root, packageDir);
     assertRolePackageBoundaries(testCase, root, packageDir);
     family = appFamilyFromRelativeDir(appRelDir);
@@ -157,6 +113,25 @@ function words = migratedUiForbiddenWords()
         'labkit.ui.view.update(', 'labkit.ui.view.place', ...
         'uigridlayout(', 'Layout.Row', 'Layout.Column', ...
         'createRightAxesPair', 'createEditorUi', 'createUi('};
+end
+
+function assertNoAppOwnedLayoutProps(testCase, source, label)
+    layoutProps = {'height', 'minRows', 'minHeight', 'maxColumns', ...
+        'rowSpacing', 'columnSpacing', 'padding', 'chrome', ...
+        'columnWidth', 'rowHeight', 'position', 'leftWidth'};
+    matches = strings(1, 0);
+    for k = 1:numel(layoutProps)
+        prop = layoutProps{k};
+        if contains(source, ['''' prop ''',']) || ...
+                contains(source, ['"' prop '",'])
+            matches(end+1) = string(prop);
+        end
+    end
+
+    testCase.verifyTrue(isempty(matches), ...
+        [label ' declares concrete layout props. Apps may declare pages, ' ...
+        'sections, controls, order, semantic values, and callbacks; LabKit ' ...
+        'owns concrete layout: ' strjoin(cellstr(matches), ', ')]);
 end
 
 function assertNoGenericHelperNames(testCase, root, packageDir)

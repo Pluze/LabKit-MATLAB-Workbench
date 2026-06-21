@@ -53,6 +53,7 @@ end
 
 function validateTreeShape(spec)
     assertCommonSpec(spec);
+    validateNoAppLayoutProps(spec);
     switch spec.kind
         case 'app'
             for k = 1:numel(spec.props.controlTabs)
@@ -62,17 +63,32 @@ function validateTreeShape(spec)
             validateTreeShape(spec.props.workspace);
         case 'workspace'
             validateChildKinds(spec, {'previewArea', 'resultTable', ...
-                'statusPanel', 'logPanel', 'custom'});
+                'statusPanel', 'usagePanel', 'logPanel'});
         case 'tab'
             validateChildKinds(spec, {'section'});
         case 'section'
             validateChildKinds(spec, {'field', 'rangeField', 'panner', 'action', ...
                 'actionGroup', 'pathPanel', 'resultTable', 'statusPanel', ...
-                'logPanel', 'custom'});
+                'usagePanel', 'logPanel'});
         case 'actionGroup'
             validateChildKinds(spec, {'action'});
         otherwise
             validateChildKinds(spec, {});
+    end
+end
+
+function validateNoAppLayoutProps(spec)
+    layoutProps = {'height', 'minRows', 'minHeight', 'maxColumns', ...
+        'rowSpacing', 'columnSpacing', 'padding', 'chrome', ...
+        'columnWidth', 'rowHeight', 'position', 'leftWidth'};
+    for k = 1:numel(layoutProps)
+        if isfield(spec.props, layoutProps{k})
+            error('labkit:ui:app:RetiredLayoutProperty', ...
+                ['Spec "%s" uses app-owned layout property "%s". ' ...
+                'Apps may declare pages, sections, controls, order, and ' ...
+                'semantic options; LabKit owns concrete layout.'], ...
+                spec.id, layoutProps{k});
+        end
     end
 end
 

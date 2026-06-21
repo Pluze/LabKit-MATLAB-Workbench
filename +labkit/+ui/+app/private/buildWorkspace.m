@@ -7,7 +7,7 @@ function ui = buildWorkspace(ui, workspaceSpec, debug)
         switch childSpec.kind
             case 'previewArea'
                 ui = buildPreviewArea(ui, childSpec, ui.rightGrid, iChild);
-            case {'resultTable', 'statusPanel', 'logPanel', 'custom'}
+            case {'resultTable', 'statusPanel', 'usagePanel', 'logPanel'}
                 ui = buildControl(ui, childSpec, ui.rightGrid, iChild, debug);
             otherwise
                 error('labkit:ui:app:UnsupportedWorkspaceChild', ...

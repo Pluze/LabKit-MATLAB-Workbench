@@ -5,7 +5,7 @@
 | Facade | Owns | Main APIs |
 | --- | --- | --- |
 | `labkit.ui.app` | Declarative app creation, request dispatch, busy state. | `create`, `dispatchRequest`, `runBusy`. |
-| `labkit.ui.spec` | UI 2.0 data-only workbench specs. | `app`, `workspace`, `tab`, `section`, `field`, `rangeField`, `panner`, `action`, `actionGroup`, `pathPanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `custom`. |
+| `labkit.ui.spec` | UI 2.0 data-only workbench specs. | `app`, `workspace`, `tab`, `section`, `field`, `rangeField`, `panner`, `action`, `actionGroup`, `pathPanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `usagePanel`. |
 | `labkit.ui.view` | Semantic UI 2.0 registry updates and preview rendering helpers. | `setValue`, `getValue`, `setEnabled`, `setLimits`, `appendLog`, `setListItems`, `setListSelection`, `drawImage`, `resetAxes`, `clearAxes`. |
 | `labkit.ui.tool` | Reusable composed preview tools and interaction runtime. | `createRuntime`, `anchorEditor`, `scaleBar`, `scaleBarCalibration`, `enableAxesPopout`, `popoutAxes`, `zoomAxesAtPoint`. |
 | `labkit.ui.diag` | Debug launch context, visible trace, callback instrumentation. | `createContext`. |
@@ -56,7 +56,8 @@ end
 function spec = buildSpec(callbacks)
 spec = labkit.ui.spec.app("exampleApp", "Example App", ...
     "controlTabs", controlTabs(callbacks), ...
-    "workspace", previewWorkspace(callbacks));
+    "workspace", previewWorkspace(callbacks), ...
+    "usage", {"Load input data.", "Run analysis.", "Review/export results."});
 end
 
 function tabs = controlTabs(callbacks)
@@ -116,31 +117,25 @@ Use these app-facing contracts:
 - `previewArea` axes install LabKit-managed, pointer-gated mouse-wheel zoom by
   default. Scrolling over controls, logs, or empty figure space does not zoom
   plots, and users should not need to click a preview before wheel zoom works.
-- Text-heavy controls have conservative automatic heights. Use `minRows` or
-  `minHeight` when content needs more room; use fixed numeric `height` only
-  when a fixed row is intentional.
-- Section height is automatic by default: the builder estimates height from
-  child control types, spacing, padding, and panel chrome. Omit
-  `height="fit"` in app specs because that is the default behavior. Use
-  `height="flex"` only for content that should consume remaining vertical
-  space, such as long logs, details, or review tables.
+- Text-heavy controls have conservative automatic heights owned by the
+  framework. App specs must not set concrete height, row-count, spacing,
+  padding, chrome, row-height, or column-width properties.
+- Section height is automatic: the builder estimates height from child control
+  types and framework spacing defaults. Apps declare only the page, section,
+  and control order.
 - `actionGroup` lays out commands in wrapped rows by default instead of
-  forcing every button onto one line. Use `maxColumns` only when a workflow
-  needs a different command grid.
+  forcing every button onto one line. The framework chooses the column count
+  from the button count and label length.
+- Use app-level `usage`/`usageTitle` on `labkit.ui.spec.app` for static
+  workflow instructions. The framework places that read-only usage panel at the
+  bottom of the first control tab.
 - `labkit.ui.view.setLimits` updates numeric limits and clamps existing values
   without firing synchronous value-change callbacks.
 
-App-specific hand-written layout must go through `labkit.ui.spec.custom` and a
-named builder file, for example:
-
-```matlab
-labkit.ui.spec.custom("roiEditor", @example.ui.buildRoiEditor, ...
-    "height", "flex")
-```
-
-`buildRoiEditor.m` may hand-write layout for that custom tool only. The app
-runner, callbacks, and ordinary control specs should not create grids or set
-`Layout.Row`/`Layout.Column` directly.
+App-specific hand-written layout is not part of the public spec grammar. When a
+workflow needs a control that cannot be expressed with the ordinary specs, add a
+named framework or app-owned spec instead of placing MATLAB layout code in
+`buildSpec.m`.
 
 Control tabs with more than one section include draggable horizontal
 separators by default. A tab may opt out with `resize="none"` when a fixed
@@ -211,9 +206,9 @@ throw away a user's zoomed preview. Use `resetAxes` or `clearAxes` when an app
 intentionally wants to return the preview to its home view.
 
 `logPanel` follows appended lines by default: `appendLog` scrolls the log to the
-bottom after adding a line. Users can right-click a log to pause auto-scroll
-while reading older lines, then use the same context menu to follow the latest
-line again.
+bottom after adding a line. Users can use the visible follow button or the log
+context menu to pause auto-scroll while reading older lines, then resume
+following the latest line.
 
 ## Interaction Tools
 

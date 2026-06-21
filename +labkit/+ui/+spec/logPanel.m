@@ -8,10 +8,11 @@ function spec = logPanel(id, titleText, varargin)
 %   id - globally unique log panel id.
 %   titleText - log panel title.
 %   value - initial log lines as text or cellstr, default {'Ready.'}.
-%   minRows - optional minimum visible log rows used by automatic layout.
-%   minHeight - optional minimum panel row height in pixels.
-%   Log panels follow the latest appended line by default. Users can right-click
-%   the log to pause or resume automatic scrolling.
+%   Use app-level usage, not logPanel, for static workflow help.
+%   Log panels follow the latest appended line by default. Users can use the
+%   visible follow button or context menu to pause or resume automatic
+%   scrolling.
+%   Concrete log-panel sizing is owned by the framework.
 %
 % Output:
 %   spec - scalar data-only UI spec struct.

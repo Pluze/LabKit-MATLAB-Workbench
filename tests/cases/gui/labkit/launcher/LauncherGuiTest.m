@@ -35,7 +35,7 @@ function verify_launcher_layout()
     drawnow;
     assert(strcmp(fig.Name, 'LabKit App Launcher'), ...
         'labkit_launcher should return the launcher figure handle.');
-    h.assertFigureMinimumSize(fig, 1320, 760);
+    h.assertStandardWorkbenchLayout(fig);
     h.assertTabTitles(fig, {'Launcher', 'Selected App', 'Actions'});
     assertNoPanelTitle(fig, {'Filter', 'Search', 'Status', 'Hint'});
     assertNoControlText(fig, {'Search:', 'Family:', 'LabKit Apps', 'Hint'});
@@ -52,11 +52,11 @@ function assertLauncherTextAreasHaveRoom(fig)
     drawnow;
     ui = getappdata(fig, 'labkitUiRegistry');
     assert(isvalid(ui.controls.selectedDetails.textArea) && ...
-        ui.controls.selectedDetails.props.minRows >= 6, ...
-        'Selected App details should preserve its multi-line status panel contract.');
+        ~isempty(ui.controls.selectedDetails.textArea.Value), ...
+        'Selected App details should preserve a readable status panel.');
     assert(isvalid(ui.controls.statusLine.textArea) && ...
-        ui.controls.statusLine.props.minRows >= 3, ...
-        'Launcher action status should preserve its multi-line status panel contract.');
+        ~isempty(ui.controls.statusLine.textArea.Value), ...
+        'Launcher action status should preserve a readable status panel.');
 end
 
 function assertNoPanelTitle(fig, blockedTitles)

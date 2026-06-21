@@ -48,10 +48,14 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
   tab builders, section builders in visual order, workspace builder, small
   helper builders, then `callbackValue`.
 - Do not create MATLAB handles, call `labkit.ui.app.create`, mutate app state,
-  perform IO/computation/export, or set `Layout.Row`/`Layout.Column` in
-  `+ui/buildSpec.m`. Use named `+ui/build<Thing>.m` custom builders only for
-  justified interactions that cannot be expressed with the ordinary spec
-  grammar.
+  perform IO/computation/export, set `Layout.Row`/`Layout.Column`, or pass
+  concrete layout props such as `height`, `minRows`, `minHeight`, `maxColumns`,
+  `rowSpacing`, `columnSpacing`, `padding`, `chrome`, `columnWidth`,
+  `rowHeight`, `position`, or `leftWidth` in `+ui/buildSpec.m`. Apps may
+  declare tabs, sections, control order, semantic values, and callbacks; the
+  LabKit framework owns concrete layout. When an app needs a control that
+  cannot be expressed with the ordinary spec grammar, add a named spec/tool
+  contract instead of custom layout code.
 - Route helper files by role: `+state` for defaults/factories, `+io` for file
   discovery/readers/filters, `+ops` for GUI-free transforms, `+view` for table
   rows/detail lines/display data, and `+export` for output writers/manifests.

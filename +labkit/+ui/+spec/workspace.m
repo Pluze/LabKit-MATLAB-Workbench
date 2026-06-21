@@ -8,7 +8,7 @@ function spec = workspace(id, titleText, children, varargin)
 %   id - globally unique workspace id.
 %   titleText - workspace panel title.
 %   children - cell row vector of workspace child specs, usually previewArea.
-%   opts - app-neutral layout options such as row heights.
+%   Concrete workspace row layout is owned by the framework.
 %
 % Output:
 %   spec - scalar data-only UI spec struct.

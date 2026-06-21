@@ -20,10 +20,10 @@ function ui = buildControl(ui, controlSpec, parentGrid, row, debug)
             ui = buildResultTable(ui, controlSpec, parentGrid, row);
         case 'logPanel'
             ui = buildLogPanel(ui, controlSpec, parentGrid, row, debug);
+        case 'usagePanel'
+            ui = buildUsagePanel(ui, controlSpec, parentGrid, row);
         case 'statusPanel'
             ui = buildStatusPanel(ui, controlSpec, parentGrid, row);
-        case 'custom'
-            ui = buildCustom(ui, controlSpec, parentGrid, row, debug);
         otherwise
             error('labkit:ui:app:UnsupportedControl', ...
                 'Unsupported UI 2.0 control kind "%s".', controlSpec.kind);
@@ -214,14 +214,13 @@ end
 function ui = buildActionGroup(ui, groupSpec, parentGrid, row)
     actions = groupSpec.children;
     count = max(1, numel(actions));
-    maxColumns = max(1, round(double(optionValue(groupSpec.props, ...
-        'maxColumns', 2))));
+    maxColumns = actionGroupMaxColumns(groupSpec);
     columnCount = min(count, maxColumns);
     rowCount = max(1, ceil(count / columnCount));
     grid = uigridlayout(parentGrid, [rowCount columnCount]);
     grid.Padding = [0 0 0 0];
-    grid.RowSpacing = optionValue(groupSpec.props, 'rowSpacing', 6);
-    grid.ColumnSpacing = optionValue(groupSpec.props, 'columnSpacing', 8);
+    grid.RowSpacing = 6;
+    grid.ColumnSpacing = 8;
     grid.RowHeight = repmat({'fit'}, 1, rowCount);
     grid.ColumnWidth = repmat({'1x'}, 1, columnCount);
     grid.Layout.Row = row;
@@ -240,6 +239,22 @@ function ui = buildActionGroup(ui, groupSpec, parentGrid, row)
         [ui, actionAdapter] = buildAction(ui, actions{k}, grid, ...
             actionRow, actionColumn);
         ui.controls.(groupSpec.id).actions.(actions{k}.id) = actionAdapter;
+    end
+end
+
+function maxColumns = actionGroupMaxColumns(groupSpec)
+    maxColumns = 2;
+    labels = actionLabels(groupSpec.children);
+    if any(strlength(labels) > 28)
+        maxColumns = 1;
+    end
+end
+
+function labels = actionLabels(actions)
+    labels = strings(1, numel(actions));
+    for k = 1:numel(actions)
+        labels(k) = string(optionValue(actions{k}.props, ...
+            'label', actions{k}.id));
     end
 end
 
@@ -285,17 +300,17 @@ end
 
 function ui = buildLogPanel(ui, logSpec, parentGrid, row, debug)
     ui.controls.(logSpec.id) = buildPanelControl('logPanel', logSpec, ...
-        parentGrid, row, debug, ui);
+        parentGrid, row, debug);
+end
+
+function ui = buildUsagePanel(ui, usageSpec, parentGrid, row)
+    ui.controls.(usageSpec.id) = buildPanelControl('usagePanel', usageSpec, ...
+        parentGrid, row, struct());
 end
 
 function ui = buildStatusPanel(ui, statusSpec, parentGrid, row)
     ui.controls.(statusSpec.id) = buildPanelControl('statusPanel', statusSpec, ...
-        parentGrid, row, struct(), ui);
-end
-
-function ui = buildCustom(ui, customSpec, parentGrid, row, debug)
-    ui.controls.(customSpec.id) = buildPanelControl('custom', customSpec, ...
-        parentGrid, row, debug, ui);
+        parentGrid, row, struct());
 end
 
 function callback = semanticValueCallback(id, appCallback)

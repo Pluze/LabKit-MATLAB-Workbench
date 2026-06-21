@@ -19,6 +19,7 @@ function h = guiTestHelpers()
     h.assertTableColumns = @assertTableColumns;
     h.assertAnyTableColumns = @assertAnyTableColumns;
     h.assertFigureMinimumSize = @assertFigureMinimumSize;
+    h.assertStandardWorkbenchLayout = @assertStandardWorkbenchLayout;
     h.assertComponentCounts = @assertComponentCounts;
     h.findControlsByClass = @findControlsByClass;
     h.assertDropdownCallbacksPresent = @assertDropdownCallbacksPresent;
@@ -176,6 +177,23 @@ function assertFigureMinimumSize(fig, minWidth, minHeight)
     pos = fig.Position;
     assert(pos(3) >= minWidth, 'Expected figure width >= %d, found %.0f.', minWidth, pos(3));
     assert(pos(4) >= minHeight, 'Expected figure height >= %d, found %.0f.', minHeight, pos(4));
+end
+
+function assertStandardWorkbenchLayout(fig)
+    assertFigureMinimumSize(fig, 1500, 900);
+    mainGrid = findall(fig, 'Type', 'uigridlayout');
+    hasWorkbenchColumns = false;
+    for k = 1:numel(mainGrid)
+        columns = mainGrid(k).ColumnWidth;
+        if numel(columns) >= 3 && isnumeric(columns{1}) && ...
+                columns{1} >= 420 && isequal(columns{2}, 6) && ...
+                strcmp(char(string(columns{3})), '1x')
+            hasWorkbenchColumns = true;
+            break;
+        end
+    end
+    assert(hasWorkbenchColumns, ...
+        'App should use the shared LabKit workbench shell layout.');
 end
 
 function assertComponentCounts(fig, expectedCounts)

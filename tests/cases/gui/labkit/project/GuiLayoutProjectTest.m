@@ -17,8 +17,8 @@ function verify_gui_layout_project()
     cleanup = onCleanup(@() h.closeAllFigures());
 
     fig = h.launchFigure('labkit_ProjectGovernance_app', 'Project Governance');
-    h.assertFigureMinimumSize(fig, 1280, 760);
-    h.assertComponentCounts(fig, struct('Button', 4, 'Table', 1, ...
+    h.assertStandardWorkbenchLayout(fig);
+    h.assertComponentCounts(fig, struct('Button', 5, 'Table', 1, ...
         'TextArea', 2));
     h.assertButtonContract(fig, {'Create app', 'Refresh', ...
         'Scan Project Code', 'Create local project'});

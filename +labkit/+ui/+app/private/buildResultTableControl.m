@@ -21,9 +21,6 @@ function adapter = buildResultTableControl(tableSpec, parentGrid, row, callbacks
     if isfield(props, 'columnFormat')
         table.ColumnFormat = props.columnFormat;
     end
-    if isfield(props, 'columnWidth')
-        table.ColumnWidth = props.columnWidth;
-    end
 
     table.CellEditCallback = callbacks.cellEdit;
     callbacks.setOriginalCallbackName(table, optionValue(props, 'onCellEdit', []));

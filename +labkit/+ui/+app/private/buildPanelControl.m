@@ -1,18 +1,18 @@
 % Private UI app helper. Expected caller: buildControl panel branches.
 % Inputs are a panel kind, validated control spec, parent grid, target row,
-% debug context, and UI registry. Output is the semantic panel adapter.
-% Side effects: creates MATLAB panel/text/custom controls.
-function adapter = buildPanelControl(kind, spec, parentGrid, row, debug, ui)
+% and debug context. Output is the semantic panel adapter.
+% Side effects: creates MATLAB panel/text controls.
+function adapter = buildPanelControl(kind, spec, parentGrid, row, debug)
     switch kind
         case 'logPanel'
             adapter = buildTextPanel(spec, parentGrid, row, {'Ready.'}, kind);
             if isDebugEnabled(debug)
                 debug.attachTextLog(adapter.textArea);
             end
+        case 'usagePanel'
+            adapter = buildTextPanel(spec, parentGrid, row, {''}, kind);
         case 'statusPanel'
             adapter = buildTextPanel(spec, parentGrid, row, {''}, kind);
-        case 'custom'
-            adapter = buildCustomPanel(spec, parentGrid, row, debug, ui);
         otherwise
             error('labkit:ui:app:UnsupportedPanelKind', ...
                 'Unsupported panel control kind "%s".', kind);
@@ -24,11 +24,24 @@ function adapter = buildTextPanel(spec, parentGrid, row, defaultValue, kind)
     panel = uipanel(parentGrid, 'Title', optionValue(props, 'title', spec.id));
     panel.Layout.Row = row;
     panel.Layout.Column = [1 2];
-    grid = uigridlayout(panel, [1 1]);
+    isLogPanel = strcmp(kind, 'logPanel');
+    gridRows = 1 + double(isLogPanel);
+    grid = uigridlayout(panel, [gridRows 1]);
     grid.Padding = [8 8 8 8];
+    if isLogPanel
+        grid.RowHeight = {'fit', '1x'};
+        followButton = uibutton(grid, 'Text', 'Pause auto-scroll');
+        followButton.Layout.Row = 1;
+        followButton.Layout.Column = 1;
+        textRow = 2;
+    else
+        grid.RowHeight = {'1x'};
+        followButton = [];
+        textRow = 1;
+    end
     textArea = uitextarea(grid, 'Editable', 'off', ...
         'Value', textLines(optionValue(props, 'value', defaultValue)));
-    textArea.Layout.Row = 1;
+    textArea.Layout.Row = textRow;
     textArea.Layout.Column = 1;
 
     adapter = baseAdapter(spec, kind);
@@ -36,21 +49,25 @@ function adapter = buildTextPanel(spec, parentGrid, row, defaultValue, kind)
     adapter.grid = grid;
     adapter.textArea = textArea;
     adapter.valueHandle = textArea;
-    if strcmp(kind, 'logPanel')
+    if isLogPanel
+        adapter.followLatestButton = followButton;
         adapter = configureLogFollowLatest(adapter);
     end
 end
 
 function adapter = configureLogFollowLatest(adapter)
     textArea = adapter.textArea;
+    button = adapter.followLatestButton;
     setappdata(textArea, logFollowKey(), true);
     setappdata(textArea, logFollowMenuKey(), []);
+    setappdata(textArea, logFollowButtonKey(), button);
+    button.ButtonPushedFcn = @(src, ~) toggleLogFollowLatest(textArea, [], src);
     try
         fig = ancestor(textArea, 'figure');
         menu = uicontextmenu(fig);
         item = uimenu(menu, 'Text', 'Pause auto-scroll', ...
             'Checked', 'on', ...
-            'MenuSelectedFcn', @(src, ~) toggleLogFollowLatest(textArea, src));
+            'MenuSelectedFcn', @(src, ~) toggleLogFollowLatest(textArea, src, []));
         textArea.ContextMenu = menu;
         setappdata(textArea, logFollowMenuKey(), item);
         adapter.followLatestMenu = item;
@@ -60,10 +77,10 @@ function adapter = configureLogFollowLatest(adapter)
     scrollLogToBottom(textArea);
 end
 
-function toggleLogFollowLatest(textArea, menuItem)
+function toggleLogFollowLatest(textArea, menuItem, button)
     enabled = ~logFollowLatest(textArea);
     setLogFollowLatest(textArea, enabled);
-    updateLogFollowMenu(textArea, menuItem);
+    updateLogFollowControls(textArea, menuItem, button);
     if enabled
         scrollLogToBottom(textArea);
     end
@@ -84,7 +101,7 @@ function enabled = logFollowLatest(textArea)
     end
 end
 
-function updateLogFollowMenu(textArea, menuItem)
+function updateLogFollowControls(textArea, menuItem, button)
     if nargin < 2 || isempty(menuItem)
         menuItem = [];
         try
@@ -95,15 +112,29 @@ function updateLogFollowMenu(textArea, menuItem)
             menuItem = [];
         end
     end
-    if isempty(menuItem) || ~isvalid(menuItem)
-        return;
+    if nargin < 3 || isempty(button)
+        button = [];
+        try
+            if isappdata(textArea, logFollowButtonKey())
+                button = getappdata(textArea, logFollowButtonKey());
+            end
+        catch
+            button = [];
+        end
     end
     if logFollowLatest(textArea)
-        menuItem.Text = 'Pause auto-scroll';
-        menuItem.Checked = 'on';
+        label = 'Pause auto-scroll';
+        checked = 'on';
     else
-        menuItem.Text = 'Follow latest';
-        menuItem.Checked = 'off';
+        label = 'Follow latest';
+        checked = 'off';
+    end
+    if ~isempty(menuItem) && isvalid(menuItem)
+        menuItem.Text = label;
+        menuItem.Checked = checked;
+    end
+    if ~isempty(button) && isvalid(button)
+        button.Text = label;
     end
 end
 
@@ -122,17 +153,8 @@ function key = logFollowMenuKey()
     key = 'labkitLogFollowLatestMenu';
 end
 
-function adapter = buildCustomPanel(spec, parentGrid, row, debug, ui)
-    props = spec.props;
-    panel = uipanel(parentGrid, 'Title', spec.id);
-    panel.Layout.Row = row;
-    panel.Layout.Column = [1 2];
-    context = struct('ui', ui, 'debug', debug, 'spec', spec);
-    handle = props.builder(panel, spec.id, context, props);
-
-    adapter = baseAdapter(spec, 'custom');
-    adapter.panel = panel;
-    adapter.handle = handle;
+function key = logFollowButtonKey()
+    key = 'labkitLogFollowLatestButton';
 end
 
 function adapter = baseAdapter(spec, kind)

@@ -5,7 +5,7 @@
 function ui = buildSection(ui, sectionSpec, parentGrid, row, debug)
     childCount = max(1, numel(sectionSpec.children));
     panelArgs = {};
-    if sectionDrawsOwnTitle(sectionSpec) && hasPanelChrome(sectionSpec)
+    if sectionDrawsOwnTitle(sectionSpec)
         panelArgs = {'Title', optionValue(sectionSpec.props, 'title', sectionSpec.id)};
     else
         panelArgs = {'BorderType', 'none'};
@@ -17,9 +17,9 @@ function ui = buildSection(ui, sectionSpec, parentGrid, row, debug)
     grid = uigridlayout(panel, [childCount 2]);
     grid.RowHeight = sectionRowHeights(sectionSpec.children);
     grid.ColumnWidth = {145, '1x'};
-    grid.RowSpacing = optionValue(sectionSpec.props, 'rowSpacing', 8);
-    grid.ColumnSpacing = optionValue(sectionSpec.props, 'columnSpacing', 8);
-    grid.Padding = optionValue(sectionSpec.props, 'padding', [8 8 8 8]);
+    grid.RowSpacing = 8;
+    grid.ColumnSpacing = 8;
+    grid.Padding = [8 8 8 8];
 
     adapter = baseAdapter(sectionSpec, 'section');
     adapter.panel = panel;
@@ -39,12 +39,8 @@ function tf = sectionDrawsOwnTitle(sectionSpec)
     end
     child = sectionSpec.children{1};
     tf = ~ismember(child.kind, ...
-        {'previewArea', 'resultTable', 'logPanel', 'statusPanel', 'pathPanel'});
-end
-
-function tf = hasPanelChrome(sectionSpec)
-    chrome = optionValue(sectionSpec.props, 'chrome', 'panel');
-    tf = ~strcmpi(char(string(chrome)), 'none');
+        {'previewArea', 'resultTable', 'logPanel', 'statusPanel', ...
+        'usagePanel', 'pathPanel'});
 end
 
 function rowHeight = sectionRowHeights(children)
@@ -61,7 +57,8 @@ end
 
 function tf = isGrowableSectionChild(child)
     tf = ismember(child.kind, ...
-        {'previewArea', 'resultTable', 'logPanel', 'statusPanel', 'pathPanel'});
+        {'previewArea', 'resultTable', 'logPanel', 'statusPanel', ...
+        'usagePanel', 'pathPanel'});
 end
 
 function adapter = baseAdapter(spec, kind)
