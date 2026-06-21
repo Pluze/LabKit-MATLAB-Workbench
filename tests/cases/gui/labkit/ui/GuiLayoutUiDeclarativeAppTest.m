@@ -21,7 +21,13 @@ function verify_gui_layout_ui_declarative_app()
     firstDialogPaths = [ ...
         string(fullfile(tempdir, 'a.png')); ...
         string(fullfile(tempdir, 'b.png'))];
-    secondDialogPaths = string(fullfile(tempdir, 'other-folder', 'c.png'));
+    recursiveFolder = tempname;
+    recursiveNestedFolder = fullfile(recursiveFolder, 'nested');
+    mkdir(recursiveNestedFolder);
+    cleanupRecursiveFolder = onCleanup(@() removeTempFolder(recursiveFolder));
+    secondDialogPaths = string(fullfile(recursiveNestedFolder, 'c.png'));
+    writeEmptyFile(secondDialogPaths);
+    writeEmptyFile(fullfile(recursiveNestedFolder, 'notes.txt'));
     spec = labkit.ui.spec.app('probeApp', 'UI 2 Probe', ...
         'controlTabs', { ...
             labkit.ui.spec.tab('setup', 'Setup', { ...
@@ -31,6 +37,8 @@ function verify_gui_layout_ui_declarative_app()
                         'selectionMode', 'single', ...
                         'status', 'No images loaded', ...
                         'emptyText', "No selection", ...
+                        'filters', {'*.png;*.jpg', 'Images (*.png, *.jpg)'; ...
+                        '*.*', 'All files (*.*)'}, ...
                         'dialogProvider', @dialogProvider, ...
                         'onChoose', @captureEvent, ...
                         'onSelectionChange', @captureEvent), ...
@@ -239,7 +247,7 @@ function verify_gui_layout_ui_declarative_app()
         if dialogCalls == 1
             paths = firstDialogPaths;
         else
-            paths = secondDialogPaths;
+            paths = string(recursiveFolder);
         end
     end
 end
@@ -385,4 +393,17 @@ function tf = sameCallback(actual, expected)
     tf = isa(actual, 'function_handle') && ...
         isa(expected, 'function_handle') && ...
         strcmp(func2str(actual), func2str(expected));
+end
+
+function writeEmptyFile(filepath)
+    fid = fopen(char(filepath), 'w');
+    assert(fid > 0, 'Failed to create test file: %s', char(filepath));
+    cleaner = onCleanup(@() fclose(fid));
+    clear cleaner;
+end
+
+function removeTempFolder(folder)
+    if isfolder(folder)
+        rmdir(folder, 's');
+    end
 end

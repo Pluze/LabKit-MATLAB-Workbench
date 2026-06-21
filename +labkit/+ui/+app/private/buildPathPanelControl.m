@@ -116,7 +116,7 @@ end
 function paths = choosePaths(control)
     props = control.props;
     if isfield(props, 'dialogProvider') && isa(props.dialogProvider, 'function_handle')
-        paths = normalizedPaths(props.dialogProvider(props));
+        paths = expandPathChoices(normalizedPaths(props.dialogProvider(props)), props);
         return;
     end
 
@@ -125,7 +125,7 @@ function paths = choosePaths(control)
         case 'singleFile'
             paths = chooseFiles(props, false);
         case 'multiFile'
-            paths = chooseFiles(props, true);
+            paths = chooseFileOrFolder(props);
         case {'folder', 'outputFolder'}
             paths = chooseFolder(optionValue(props, 'startPath', pwd));
         case 'multiFolder'
@@ -162,9 +162,25 @@ function paths = chooseFiles(props, allowMulti)
         files = {char(string(files))};
     end
     files = reshape(files, 1, []);
-    paths = cell(1, numel(files));
+    paths = strings(numel(files), 1);
     for k = 1:numel(files)
-        paths{k} = fullfile(folder, char(string(files{k})));
+        paths(k) = string(fullfile(folder, char(string(files{k}))));
+    end
+    paths = expandPathChoices(paths, props);
+end
+
+function paths = chooseFileOrFolder(props)
+    startPath = optionValue(props, 'startPath', pwd);
+    choice = questdlg('Choose files or recursively load a folder?', ...
+        'Choose input source', 'File', 'Folder', 'Cancel', 'File');
+    switch choice
+        case 'File'
+            paths = chooseFiles(props, false);
+        case 'Folder'
+            folder = chooseFolder(startPath);
+            paths = expandPathChoices(string(folder(:)), props);
+        otherwise
+            paths = strings(0, 1);
     end
 end
 
@@ -260,6 +276,65 @@ function paths = normalizePathList(value)
     end
     paths = paths(:);
     paths = paths(strlength(paths) > 0);
+end
+
+function paths = expandPathChoices(paths, props)
+    paths = normalizePathList(paths);
+    if isempty(paths) || ~strcmp(optionValue(props, 'mode', ''), 'multiFile')
+        return;
+    end
+
+    filters = normalizeFileFilters(optionValue(props, 'filters', ...
+        {'*.*', 'All files'}));
+    expanded = strings(0, 1);
+    for k = 1:numel(paths)
+        path = paths(k);
+        if isfolder(path)
+            expanded = [expanded; filesUnderFolder(path, filters)];
+        else
+            expanded(end + 1, 1) = path;
+        end
+    end
+    paths = unique(expanded, 'stable');
+end
+
+function paths = filesUnderFolder(folder, filters)
+    patterns = fileFilterPatterns(filters);
+    paths = strings(0, 1);
+    for k = 1:numel(patterns)
+        entries = dir(fullfile(char(folder), '**', char(patterns(k))));
+        entries = entries(~[entries.isdir]);
+        for iEntry = 1:numel(entries)
+            paths(end + 1, 1) = string(fullfile(entries(iEntry).folder, entries(iEntry).name));
+        end
+    end
+    paths = sort(unique(paths, 'stable'));
+end
+
+function patterns = fileFilterPatterns(filters)
+    if ischar(filters) || isstring(filters)
+        raw = string(filters);
+    elseif iscell(filters)
+        raw = string(filters(:, 1));
+    else
+        raw = "*.*";
+    end
+
+    patterns = strings(0, 1);
+    for k = 1:numel(raw)
+        tokens = split(raw(k), ';');
+        tokens = strtrim(tokens);
+        tokens = tokens(strlength(tokens) > 0);
+        patterns = [patterns; tokens(:)];
+    end
+    if isempty(patterns)
+        patterns = "*.*";
+    end
+    patterns = unique(patterns, 'stable');
+    concretePatterns = patterns(patterns ~= "*.*" & patterns ~= "*");
+    if ~isempty(concretePatterns)
+        patterns = concretePatterns;
+    end
 end
 
 function text = pathStatusText(props, paths)

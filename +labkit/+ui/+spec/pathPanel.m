@@ -12,7 +12,8 @@ function spec = pathPanel(id, labelText, varargin)
 %       multiple for multiFile/multiFolder and single otherwise.
 %   filters, chooseLabel, clearLabel, status, emptyText, onChoose,
 %       onSelectionChange, onClear - optional semantic props. emptyText defaults
-%       to a mode-aware prompt, or to status when status is supplied.
+%       to a mode-aware prompt, or to status when status is supplied. In
+%       multiFile mode, selected folders are expanded recursively using filters.
 %
 % Output:
 %   spec - scalar data-only UI spec struct.
