@@ -36,6 +36,90 @@ function adapter = buildTextPanel(spec, parentGrid, row, defaultValue, kind)
     adapter.grid = grid;
     adapter.textArea = textArea;
     adapter.valueHandle = textArea;
+    if strcmp(kind, 'logPanel')
+        adapter = configureLogFollowLatest(adapter);
+    end
+end
+
+function adapter = configureLogFollowLatest(adapter)
+    textArea = adapter.textArea;
+    setappdata(textArea, logFollowKey(), true);
+    setappdata(textArea, logFollowMenuKey(), []);
+    try
+        fig = ancestor(textArea, 'figure');
+        menu = uicontextmenu(fig);
+        item = uimenu(menu, 'Text', 'Pause auto-scroll', ...
+            'Checked', 'on', ...
+            'MenuSelectedFcn', @(src, ~) toggleLogFollowLatest(textArea, src));
+        textArea.ContextMenu = menu;
+        setappdata(textArea, logFollowMenuKey(), item);
+        adapter.followLatestMenu = item;
+    catch
+        adapter.followLatestMenu = [];
+    end
+    scrollLogToBottom(textArea);
+end
+
+function toggleLogFollowLatest(textArea, menuItem)
+    enabled = ~logFollowLatest(textArea);
+    setLogFollowLatest(textArea, enabled);
+    updateLogFollowMenu(textArea, menuItem);
+    if enabled
+        scrollLogToBottom(textArea);
+    end
+end
+
+function setLogFollowLatest(textArea, enabled)
+    setappdata(textArea, logFollowKey(), logical(enabled));
+end
+
+function enabled = logFollowLatest(textArea)
+    enabled = true;
+    try
+        if isappdata(textArea, logFollowKey())
+            enabled = logical(getappdata(textArea, logFollowKey()));
+        end
+    catch
+        enabled = true;
+    end
+end
+
+function updateLogFollowMenu(textArea, menuItem)
+    if nargin < 2 || isempty(menuItem)
+        menuItem = [];
+        try
+            if isappdata(textArea, logFollowMenuKey())
+                menuItem = getappdata(textArea, logFollowMenuKey());
+            end
+        catch
+            menuItem = [];
+        end
+    end
+    if isempty(menuItem) || ~isvalid(menuItem)
+        return;
+    end
+    if logFollowLatest(textArea)
+        menuItem.Text = 'Pause auto-scroll';
+        menuItem.Checked = 'on';
+    else
+        menuItem.Text = 'Follow latest';
+        menuItem.Checked = 'off';
+    end
+end
+
+function scrollLogToBottom(textArea)
+    try
+        scroll(textArea, 'bottom');
+    catch
+    end
+end
+
+function key = logFollowKey()
+    key = 'labkitLogFollowLatest';
+end
+
+function key = logFollowMenuKey()
+    key = 'labkitLogFollowLatestMenu';
 end
 
 function adapter = buildCustomPanel(spec, parentGrid, row, debug, ui)

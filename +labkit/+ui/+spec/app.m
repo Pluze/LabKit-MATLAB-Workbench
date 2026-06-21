@@ -10,8 +10,9 @@ function spec = app(id, titleText, varargin)
 %   titleText - app figure title.
 %   controlTabs - cell row vector of tab specs.
 %   workspace - workspace spec for right-side preview/plot/canvas content.
-%   position - optional figure position, default [90 70 1200 800].
-%   leftWidth - optional left control pane width, default 420.
+%   position - optional figure position, default [80 60 1500 900].
+%   leftWidth - optional left control pane width, default 420. Most apps should
+%       use the default and avoid maintaining app-local layout constants.
 %
 % Output:
 %   spec - scalar data-only UI spec struct consumed by labkit.ui.app.create.

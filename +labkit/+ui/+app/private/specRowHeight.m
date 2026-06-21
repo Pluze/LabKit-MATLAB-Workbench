@@ -18,6 +18,8 @@ function value = specRowHeight(spec, defaultValue)
             value = pathPanelHeight(props);
         case 'resultTable'
             value = tablePanelHeight(props);
+        case 'actionGroup'
+            value = actionGroupHeight(spec);
         otherwise
             value = normalizeHeight(defaultValue);
     end
@@ -70,6 +72,21 @@ function value = tablePanelHeight(props)
         24 * max(1, double(rows)) + 58);
 end
 
+function value = actionGroupHeight(groupSpec)
+    count = numel(groupSpec.children);
+    if count == 0
+        value = defaultControlHeight();
+        return;
+    end
+    maxColumns = max(1, round(double(optionValue(groupSpec.props, ...
+        'maxColumns', 2))));
+    columnCount = min(count, maxColumns);
+    rowCount = max(1, ceil(count / columnCount));
+    rowSpacing = optionValue(groupSpec.props, 'rowSpacing', 6);
+    value = rowCount * defaultControlHeight() + ...
+        max(0, rowCount - 1) * double(rowSpacing);
+end
+
 function rows = defaultPathRows(~)
     rows = 5;
 end
@@ -112,7 +129,7 @@ function tf = isNumericHeight(value)
 end
 
 function height = defaultControlHeight()
-    height = 32;
+    height = 26;
 end
 
 function value = sectionTitleAllowance(sectionSpec)

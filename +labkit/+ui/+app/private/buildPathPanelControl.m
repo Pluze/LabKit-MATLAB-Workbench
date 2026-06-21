@@ -64,7 +64,7 @@ function adapter = buildPathPanelControl(pathSpec, parentGrid, row, callbacks)
     adapter.setValue = @(paths) applyPathSelection(adapter, paths, true);
     adapter.currentValue = @() currentPathValues(adapter);
     adapter.applySelection = @applyPathSelection;
-    adapter.choosePaths = @() choosePaths(adapter);
+    adapter.choosePaths = @(varargin) choosePaths(currentControl(adapter, varargin{:}));
     adapter.normalizePathList = @normalizePathList;
 end
 
@@ -114,11 +114,14 @@ function paths = choosePaths(control)
     end
 end
 
-function paths = chooseFiles(props, allowMulti)
-    if ~canOpenBlockingDialog()
-        paths = {};
-        return;
+function control = currentControl(defaultControl, varargin)
+    control = defaultControl;
+    if ~isempty(varargin)
+        control = varargin{1};
     end
+end
+
+function paths = chooseFiles(props, allowMulti)
     filters = normalizeFileFilters(optionValue(props, 'filters', ...
         {'*.*', 'All files'}));
     titleText = optionValue(props, 'dialogTitle', chooseButtonText(props));
@@ -144,10 +147,6 @@ function paths = chooseFiles(props, allowMulti)
 end
 
 function paths = chooseFolder(startPath)
-    if ~canOpenBlockingDialog()
-        paths = {};
-        return;
-    end
     folder = uigetdir(startPath, 'Choose folder');
     if isequal(folder, 0)
         paths = {};
@@ -157,9 +156,6 @@ function paths = chooseFolder(startPath)
 end
 
 function paths = chooseMultipleFolders(startPath)
-    if ~canOpenBlockingDialog()
-        return;
-    end
     paths = {};
     nextPath = startPath;
     while true
@@ -176,10 +172,6 @@ function paths = chooseMultipleFolders(startPath)
         end
     end
     paths = unique(paths, 'stable');
-end
-
-function tf = canOpenBlockingDialog()
-    tf = usejava('desktop') && desktop('-inuse');
 end
 
 function paths = normalizedPaths(paths)

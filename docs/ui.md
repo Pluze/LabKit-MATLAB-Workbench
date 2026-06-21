@@ -119,6 +119,14 @@ Use these app-facing contracts:
 - Text-heavy controls have conservative automatic heights. Use `minRows` or
   `minHeight` when content needs more room; use fixed numeric `height` only
   when a fixed row is intentional.
+- Section height is automatic by default: the builder estimates height from
+  child control types, spacing, padding, and panel chrome. Omit
+  `height="fit"` in app specs because that is the default behavior. Use
+  `height="flex"` only for content that should consume remaining vertical
+  space, such as long logs, details, or review tables.
+- `actionGroup` lays out commands in wrapped rows by default instead of
+  forcing every button onto one line. Use `maxColumns` only when a workflow
+  needs a different command grid.
 - `labkit.ui.view.setLimits` updates numeric limits and clamps existing values
   without firing synchronous value-change callbacks.
 
@@ -201,6 +209,11 @@ the named preview helpers. `drawImage` preserves the current axes view when an
 image is redrawn with the same displayed bounds, so overlay refreshes do not
 throw away a user's zoomed preview. Use `resetAxes` or `clearAxes` when an app
 intentionally wants to return the preview to its home view.
+
+`logPanel` follows appended lines by default: `appendLog` scrolls the log to the
+bottom after adding a line. Users can right-click a log to pause auto-scroll
+while reading older lines, then use the same context menu to follow the latest
+line again.
 
 ## Interaction Tools
 

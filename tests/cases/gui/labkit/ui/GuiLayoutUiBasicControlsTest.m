@@ -65,6 +65,7 @@ function verify_gui_layout_ui_basic_controls()
     labkit.ui.view.appendLog(ui, 'logPanel', 'Completed.');
     assert(any(contains(string(ui.controls.logPanel.textArea.Value), 'Completed.')), ...
         'appendLog should append to a semantic log panel.');
+    assertLogPanelFollowLatestControls(ui.controls.logPanel);
     assertSinglePanelTitle(ui.figure, 'Log');
     labkit.ui.view.drawImage(ui, 'preview', zeros(8, 9, 3, 'uint8'), ...
         'axis', 'main', 'title', 'Preview');
@@ -78,6 +79,29 @@ function verify_gui_layout_ui_basic_controls()
 
     function noop(varargin)
     end
+end
+
+function assertLogPanelFollowLatestControls(control)
+    textArea = control.textArea;
+    assert(isappdata(textArea, 'labkitLogFollowLatest') && ...
+        getappdata(textArea, 'labkitLogFollowLatest'), ...
+        'logPanel should follow the latest log lines by default.');
+    menu = control.followLatestMenu;
+    assert(isvalid(menu) && strcmp(menu.Text, 'Pause auto-scroll') && ...
+        strcmp(menu.Checked, 'on'), ...
+        'logPanel should expose a follow-latest context menu.');
+
+    menu.MenuSelectedFcn(menu, []);
+    assert(~getappdata(textArea, 'labkitLogFollowLatest') && ...
+        strcmp(menu.Text, 'Follow latest') && strcmp(menu.Checked, 'off'), ...
+        'logPanel context menu should pause automatic tail scrolling.');
+
+    labkit.ui.view.appendLog(struct('controls', struct('logPanel', control)), ...
+        'logPanel', 'Paused line');
+    menu.MenuSelectedFcn(menu, []);
+    assert(getappdata(textArea, 'labkitLogFollowLatest') && ...
+        strcmp(menu.Text, 'Pause auto-scroll') && strcmp(menu.Checked, 'on'), ...
+        'logPanel context menu should restore automatic tail scrolling.');
 end
 
 function assertSinglePanelTitle(fig, titleText)

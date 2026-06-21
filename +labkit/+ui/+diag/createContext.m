@@ -184,7 +184,32 @@ function appendTextLog(textArea, msg)
     old = textArea.Value;
     old{end + 1} = sprintf('[%s] %s', timestamp, char(msg));
     textArea.Value = old;
+    if shouldFollowLatest(textArea)
+        scrollLogToBottom(textArea);
+    end
     drawnow limitrate
+end
+
+function tf = shouldFollowLatest(textArea)
+    tf = true;
+    try
+        if isappdata(textArea, logFollowKey())
+            tf = logical(getappdata(textArea, logFollowKey()));
+        end
+    catch
+        tf = true;
+    end
+end
+
+function scrollLogToBottom(textArea)
+    try
+        scroll(textArea, 'bottom');
+    catch
+    end
+end
+
+function key = logFollowKey()
+    key = 'labkitLogFollowLatest';
 end
 
 function wrapped = callbackWrapperForHandle(handle, propName, callback, traceFcn)

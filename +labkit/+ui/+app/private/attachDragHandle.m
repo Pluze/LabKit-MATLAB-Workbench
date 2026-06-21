@@ -18,8 +18,9 @@ function attachDragHandle(fig, handle, opts)
 %
 % The helper centralizes the behavior used by column and row resize handles:
 % make the handle pickable when supported, save existing figure callbacks,
-% install temporary motion/release callbacks, and restore the previous state
-% on release.
+% install temporary motion/release/cancel callbacks, and restore the previous
+% state on release. A click outside the drag handle or Escape cancels a stuck
+% drag lifecycle when a slow app misses the mouse-up event.
 
     if nargin < 3
         opts = struct();
@@ -28,24 +29,37 @@ function attachDragHandle(fig, handle, opts)
     applyPointerHitTarget(handle);
     handle.ButtonDownFcn = @startDrag;
 
-    drag = struct('startPoint', [NaN NaN], 'data', [], ...
-        'oldPointer', '', 'oldMotionFcn', [], 'oldUpFcn', []);
+    drag = struct('active', false, 'startPoint', [NaN NaN], 'data', [], ...
+        'oldPointer', '', 'oldMotionFcn', [], 'oldUpFcn', [], ...
+        'oldDownFcn', [], 'oldKeyPressFcn', []);
 
     function startDrag(~, evt)
+        if drag.active
+            finishDrag(false, 'restart');
+        end
         drawnow;
+        drag.active = true;
         drag.startPoint = pointerPoint(fig, evt);
         drag.oldPointer = fig.Pointer;
         drag.oldMotionFcn = fig.WindowButtonMotionFcn;
         drag.oldUpFcn = fig.WindowButtonUpFcn;
+        drag.oldDownFcn = fig.WindowButtonDownFcn;
+        drag.oldKeyPressFcn = fig.WindowKeyPressFcn;
         drag.data = invokeStart(optionValue(opts, 'onStart', []), ...
             drag.startPoint);
         fig.Pointer = optionValue(opts, 'pointer', 'arrow');
         fig.WindowButtonMotionFcn = @doDrag;
         fig.WindowButtonUpFcn = @stopDrag;
+        fig.WindowButtonDownFcn = @cancelDrag;
+        fig.WindowKeyPressFcn = @keyCancelDrag;
         trace(opts, 'begin', drag.startPoint, [0 0]);
     end
 
     function doDrag(~, evt)
+        if ~drag.active || ~isLiveHandle(fig)
+            finishDrag(false, 'invalid');
+            return;
+        end
         currentPoint = pointerPoint(fig, evt);
         if any(~isfinite(currentPoint))
             return;
@@ -58,14 +72,51 @@ function attachDragHandle(fig, handle, opts)
     end
 
     function stopDrag(~, ~)
-        callback = optionValue(opts, 'onStop', []);
-        if ~isempty(callback)
-            callback(drag.data);
+        finishDrag(true, 'end');
+    end
+
+    function cancelDrag(~, ~)
+        finishDrag(false, 'cancel');
+    end
+
+    function keyCancelDrag(~, evt)
+        if isEscapeKey(evt)
+            finishDrag(false, 'cancel');
+            return;
+        end
+        oldCallback = drag.oldKeyPressFcn;
+        if isa(oldCallback, 'function_handle')
+            oldCallback(fig, evt);
+        elseif iscell(oldCallback) && ~isempty(oldCallback) && ...
+                isa(oldCallback{1}, 'function_handle')
+            oldCallback{1}(fig, evt, oldCallback{2:end});
+        end
+    end
+
+    function finishDrag(runStopCallback, eventName)
+        if ~drag.active
+            return;
+        end
+        if runStopCallback
+            callback = optionValue(opts, 'onStop', []);
+            if ~isempty(callback)
+                callback(drag.data);
+            end
+        end
+        restoreDragState();
+        drag.active = false;
+        trace(opts, eventName, [NaN NaN], [NaN NaN]);
+    end
+
+    function restoreDragState()
+        if ~isLiveHandle(fig)
+            return;
         end
         fig.WindowButtonMotionFcn = drag.oldMotionFcn;
         fig.WindowButtonUpFcn = drag.oldUpFcn;
+        fig.WindowButtonDownFcn = drag.oldDownFcn;
+        fig.WindowKeyPressFcn = drag.oldKeyPressFcn;
         fig.Pointer = drag.oldPointer;
-        trace(opts, 'end', [NaN NaN], [NaN NaN]);
     end
 end
 
@@ -133,6 +184,21 @@ function value = eventValue(evt, name)
         value = evt.(name);
     elseif isobject(evt) && isprop(evt, name)
         value = evt.(name);
+    end
+end
+
+function tf = isEscapeKey(evt)
+    key = string(eventValue(evt, 'Key'));
+    character = string(eventValue(evt, 'Character'));
+    tf = any(strcmpi([key character], ["escape" "esc"]));
+end
+
+function tf = isLiveHandle(h)
+    tf = false;
+    try
+        tf = ~isempty(h) && isvalid(h);
+    catch
+        tf = false;
     end
 end
 

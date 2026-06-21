@@ -308,6 +308,33 @@ function assertDefaultResizeHandleDrags(ui)
             'Resize handle release should clear temporary figure drag callbacks.');
         assert(strcmp(ui.figure.Pointer, 'arrow'), ...
             'Resize handle release should restore the default pointer.');
+
+        ui.figure.WindowButtonDownFcn = @beforeResizePointerDown;
+        ui.figure.WindowKeyPressFcn = @beforeResizeKeyPress;
+        resizeHandle.ButtonDownFcn(resizeHandle, struct('CurrentPoint', [0 300]));
+        cancelCallback = ui.figure.WindowButtonDownFcn;
+        cancelCallback(ui.figure, struct());
+        assert(isempty(ui.figure.WindowButtonMotionFcn) && ...
+            isempty(ui.figure.WindowButtonUpFcn), ...
+            'Resize cancel should clear temporary motion and release callbacks.');
+        assert(sameCallback(ui.figure.WindowButtonDownFcn, @beforeResizePointerDown) && ...
+            sameCallback(ui.figure.WindowKeyPressFcn, @beforeResizeKeyPress), ...
+            'Resize cancel should restore prior pointer and key callbacks.');
+        assert(strcmp(ui.figure.Pointer, 'arrow'), ...
+            'Resize cancel should restore the default pointer.');
+
+        resizeHandle.ButtonDownFcn(resizeHandle, struct('CurrentPoint', [0 300]));
+        keyCallback = ui.figure.WindowKeyPressFcn;
+        keyCallback(ui.figure, struct('Key', 'escape'));
+        assert(isempty(ui.figure.WindowButtonMotionFcn) && ...
+            isempty(ui.figure.WindowButtonUpFcn), ...
+            'Escape should cancel a stuck resize drag.');
+    end
+
+    function beforeResizePointerDown(~, ~)
+    end
+
+    function beforeResizeKeyPress(~, ~)
     end
 end
 
@@ -335,4 +362,10 @@ function panels = directSectionPanels(grid, resizeHandles)
             panels(end + 1) = children(k);
         end
     end
+end
+
+function tf = sameCallback(actual, expected)
+    tf = isa(actual, 'function_handle') && ...
+        isa(expected, 'function_handle') && ...
+        strcmp(func2str(actual), func2str(expected));
 end

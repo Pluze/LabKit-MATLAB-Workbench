@@ -13,7 +13,51 @@ classdef AppPackageStructureGuardrailTest < matlab.unittest.TestCase
                     specs{k, 1}, specs{k, 2}, specs{k, 3});
             end
         end
+
+        function appUiSpecsUseSharedLayoutDefaults(testCase)
+            root = setupLabKitTestPath();
+            files = appBuildSpecFiles(root);
+            fixedFindings = strings(0, 1);
+            fitFindings = strings(0, 1);
+            layoutFindings = strings(0, 1);
+            for k = 1:numel(files)
+                source = fileread(files(k));
+                if ~isempty(regexp(source, '"height"\s*,\s*\d+', 'once'))
+                    fixedFindings(end+1, 1) = string(relativePath(root, files(k)));
+                end
+                if ~isempty(regexp(source, '"height"\s*,\s*"fit"', 'once'))
+                    fitFindings(end+1, 1) = string(relativePath(root, files(k)));
+                end
+                if ~isempty(regexp(source, '[''"](?:position|leftWidth)[''"]\s*,', 'once'))
+                    layoutFindings(end+1, 1) = string(relativePath(root, files(k)));
+                end
+            end
+
+            testCase.verifyEmpty(fixedFindings, ...
+                "App UI specs should rely on automatic section sizing or " + ...
+                "'flex', not fixed numeric heights: " + ...
+                strjoin(fixedFindings, ", "));
+            testCase.verifyEmpty(fitFindings, ...
+                "App UI specs should omit redundant height='fit'; " + ...
+                "the default section sizing is automatic: " + ...
+                strjoin(fitFindings, ", "));
+            testCase.verifyEmpty(layoutFindings, ...
+                "App UI specs should rely on shared app window defaults " + ...
+                "instead of app-local position/leftWidth constants: " + ...
+                strjoin(layoutFindings, ", "));
+        end
     end
+end
+
+function files = appBuildSpecFiles(root)
+    entries = dir(fullfile(root, 'apps', '**', '+ui', 'buildSpec.m'));
+    files = strings(0, 1);
+    for k = 1:numel(entries)
+        if ~entries(k).isdir
+            files(end+1, 1) = string(fullfile(entries(k).folder, entries(k).name));
+        end
+    end
+    files = sort(files);
 end
 
 function specs = discoveredAppSpecs(root)

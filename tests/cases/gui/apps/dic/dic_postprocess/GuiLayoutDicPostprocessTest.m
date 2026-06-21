@@ -20,6 +20,18 @@ classdef GuiLayoutDicPostprocessTest < matlab.uitest.TestCase
             h.assertAxesContract(fig, { ...
                 h.axesSpec('EXX Overlay', '', ''), ...
                 h.axesSpec('EYY Overlay', '', '')});
+            assertFilesAnalysisSectionsFit(fig);
         end
+    end
+end
+
+function assertFilesAnalysisSectionsFit(fig)
+    ui = getappdata(fig, 'labkitUiRegistry');
+    sectionIds = {'inputsSection', 'overlayOptions', 'imageOptions', ...
+        'exportsSection'};
+    for k = 1:numel(sectionIds)
+        props = ui.sections.(sectionIds{k}).spec.props;
+        assert(~isfield(props, 'height'), ...
+            'DIC postprocess left sections should use default automatic height estimation.');
     end
 end

@@ -30,7 +30,32 @@ function appendLog(ui, idOrMessage, maybeMessage)
     old = control.textArea.Value;
     old{end + 1} = sprintf('[%s] %s', timestamp, char(message));
     control.textArea.Value = old;
+    if shouldFollowLatest(control.textArea)
+        scrollLogToBottom(control.textArea);
+    end
     drawnow limitrate
+end
+
+function tf = shouldFollowLatest(textArea)
+    tf = true;
+    try
+        if isappdata(textArea, logFollowKey())
+            tf = logical(getappdata(textArea, logFollowKey()));
+        end
+    catch
+        tf = true;
+    end
+end
+
+function scrollLogToBottom(textArea)
+    try
+        scroll(textArea, 'bottom');
+    catch
+    end
+end
+
+function key = logFollowKey()
+    key = 'labkitLogFollowLatest';
 end
 
 function id = firstControlOfKind(ui, kind)

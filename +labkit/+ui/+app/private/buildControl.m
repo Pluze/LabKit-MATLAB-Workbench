@@ -214,10 +214,16 @@ end
 function ui = buildActionGroup(ui, groupSpec, parentGrid, row)
     actions = groupSpec.children;
     count = max(1, numel(actions));
-    grid = uigridlayout(parentGrid, [1 count]);
+    maxColumns = max(1, round(double(optionValue(groupSpec.props, ...
+        'maxColumns', 2))));
+    columnCount = min(count, maxColumns);
+    rowCount = max(1, ceil(count / columnCount));
+    grid = uigridlayout(parentGrid, [rowCount columnCount]);
     grid.Padding = [0 0 0 0];
-    grid.ColumnSpacing = 8;
-    grid.ColumnWidth = repmat({'1x'}, 1, count);
+    grid.RowSpacing = optionValue(groupSpec.props, 'rowSpacing', 6);
+    grid.ColumnSpacing = optionValue(groupSpec.props, 'columnSpacing', 8);
+    grid.RowHeight = repmat({'fit'}, 1, rowCount);
+    grid.ColumnWidth = repmat({'1x'}, 1, columnCount);
     grid.Layout.Row = row;
     grid.Layout.Column = [1 2];
     adapter = baseAdapter(groupSpec, 'actionGroup');
@@ -225,7 +231,14 @@ function ui = buildActionGroup(ui, groupSpec, parentGrid, row)
     adapter.actions = struct();
     ui.controls.(groupSpec.id) = adapter;
     for k = 1:numel(actions)
-        [ui, actionAdapter] = buildAction(ui, actions{k}, grid, 1, k);
+        actionRow = ceil(k / columnCount);
+        actionColumn = mod(k - 1, columnCount) + 1;
+        if columnCount > 1 && actionColumn == 1 && k == numel(actions) && ...
+                mod(numel(actions), columnCount) == 1
+            actionColumn = [1 columnCount];
+        end
+        [ui, actionAdapter] = buildAction(ui, actions{k}, grid, ...
+            actionRow, actionColumn);
         ui.controls.(groupSpec.id).actions.(actions{k}.id) = actionAdapter;
     end
 end
@@ -461,7 +474,7 @@ function callback = semanticPathChooseCallback(id, appCallback)
             return;
         end
         control = ui.controls.(id);
-        paths = control.choosePaths();
+        paths = control.choosePaths(control);
         if isempty(paths)
             return;
         end
