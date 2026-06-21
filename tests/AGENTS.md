@@ -21,6 +21,10 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
 - Do not add a separate custom runner or direct pass/fail test tree. Build
   tasks are the human and CI entry points; `tests/runLabKitTests.m` is the
   lower-level implementation behind those tasks.
+- CI may shard non-GUI runner selections across multiple GitHub Actions jobs
+  for wall-clock speed. Keep those shards as thin calls into
+  `tests/runLabKitTests.m` rather than adding granular public build tasks only
+  for CI parallelism.
 - Keep local multi-suite validation as serial build-task routing, not as a
   separate parallel runner.
 - Keep architecture guardrails in the narrowest project-suite file that matches the concern.

@@ -66,6 +66,18 @@ Common choices:
 | Any GUI launch, layout, callback, or gesture change | `buildtool gui` |
 | Architecture, docs, package surface, hygiene | `buildtool headless` |
 
+## CI Scope
+
+Push and pull-request CI runs repository hygiene plus parallel non-GUI MATLAB
+shards for unit and integration coverage. The shards split unit tests by
+ownership area and split integration guardrails into app-boundary and
+project/package groups. They use the same official test runner as the build
+tasks, skip HTML reports for speed, and still publish JUnit summaries and logs.
+
+Manual and scheduled workflows keep the broader report jobs available:
+coverage runs separately, and GUI validation remains opt-in because automated
+GUI checks are structural rather than full interactive workflow validation.
+
 ## Test Layout
 
 ```text

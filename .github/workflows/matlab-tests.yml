@@ -33,12 +33,31 @@ jobs:
             exit 1
           fi
 
-  headless:
-    name: Headless Tests
+  headless-shards:
+    name: ${{ matrix.label }}
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
       MLM_LICENSE_TOKEN: ${{ secrets.MLM_LICENSE_TOKEN }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - label: Unit Tests - LabKit
+            run_name: unit-labkit
+            selector: '"Suites", "labkit", "Tags", "Unit", "IncludeGui", false'
+          - label: Unit Tests - Apps
+            run_name: unit-apps
+            selector: '"Suites", "apps", "Tags", "Unit", "IncludeGui", false'
+          - label: Unit Tests - Project
+            run_name: unit-project
+            selector: '"Suites", "project", "Tags", "Unit", "IncludeGui", false'
+          - label: Integration Tests - Apps
+            run_name: integration-apps
+            selector: '"Tests", ["AppEntrypointBoundariesTest", "AppLibraryCompatibilityTest", "AppOwnedWorkflowBoundariesTest", "AppPackageStructureGuardrailTest"], "Tags", "Integration", "IncludeGui", false'
+          - label: Integration Tests - Project
+            run_name: integration-project
+            selector: '"Tests", ["BuildTaskFrameworkGuardrailTest", "CiValidationPolicyGuardrailTest", "CodeAnalyzerSuppressionPolicyTest", "PackageDependencyBoundariesTest", "PackagePublicSurfaceTest", "ProjectDebtGuardrailTest", "ProjectDocumentationGuardrailTest", "SensitiveSampleHygieneTest", "StartupBoundariesTest", "TestCompatibilityDebtGuardrailTest"], "Tags", "Integration", "IncludeGui", false'
 
     steps:
       - name: Check out repository
@@ -50,34 +69,39 @@ jobs:
           release: ${{ env.MATLAB_RELEASE }}
 
       - name: Prepare artifact directories
-        run: mkdir -p artifacts/logs/headless
+        run: mkdir -p artifacts/logs/${{ matrix.run_name }}
 
-      - name: Run headless tests
-        uses: matlab-actions/run-build@v3
+      - name: Run ${{ matrix.label }}
+        uses: matlab-actions/run-command@v3
         with:
-          tasks: headless
-          startup-options: -logfile artifacts/logs/headless/matlab.log
+          command: >
+            addpath("tests");
+            runLabKitTests(${{ matrix.selector }},
+            "HtmlReport", false,
+            "RunName", "${{ matrix.run_name }}",
+            "ArtifactsRoot", fullfile(pwd, "artifacts"));
+          startup-options: -logfile artifacts/logs/${{ matrix.run_name }}/matlab.log
 
-      - name: Summarize headless tests
+      - name: Summarize ${{ matrix.label }}
         if: always()
         run: >
           python scripts/summarize_junit.py
-          artifacts/test-results/headless/junit.xml
-          --run-name headless
-          --html artifacts/test-results/headless/html/index.html
-          --log artifacts/logs/headless/matlab.log
+          artifacts/test-results/${{ matrix.run_name }}/junit.xml
+          --run-name ${{ matrix.run_name }}
+          --html artifacts/test-results/${{ matrix.run_name }}/html/index.html
+          --log artifacts/logs/${{ matrix.run_name }}/matlab.log
 
-      - name: Upload headless artifacts
+      - name: Upload ${{ matrix.label }} artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: matlab-headless
+          name: matlab-${{ matrix.run_name }}
           if-no-files-found: warn
           retention-days: 14
           path: |
-            artifacts/test-results/**
-            artifacts/debug/**
-            artifacts/logs/**
+            artifacts/test-results/${{ matrix.run_name }}/**
+            artifacts/debug/${{ matrix.run_name }}/**
+            artifacts/logs/${{ matrix.run_name }}/**
 
   coverage:
     name: Coverage Report

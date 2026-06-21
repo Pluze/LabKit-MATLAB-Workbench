@@ -20,6 +20,33 @@ classdef CiValidationPolicyGuardrailTest < matlab.unittest.TestCase
                 'Coverage job should upload coverage artifacts.');
         end
 
+        function ciPushUsesParallelNonGuiShards(testCase)
+            root = setupLabKitTestPath();
+            workflowPath = fullfile(root, ".github", "workflows", ...
+                "matlab-tests.yml");
+            workflow = string(fileread(workflowPath));
+            shardJob = extractWorkflowJob(workflow, "headless-shards");
+
+            testCase.verifyTrue(contains(shardJob, "strategy:"), ...
+                'Push/PR MATLAB validation should use a matrix for parallelism.');
+            expectedLabels = [
+                "label: Unit Tests - LabKit"
+                "label: Unit Tests - Apps"
+                "label: Unit Tests - Project"
+                "label: Integration Tests - Apps"
+                "label: Integration Tests - Project"];
+            for k = 1:numel(expectedLabels)
+                testCase.verifyTrue(contains(shardJob, expectedLabels(k)), ...
+                    'CI matrix should include shard: ' + expectedLabels(k));
+            end
+            testCase.verifyTrue(contains(shardJob, "matlab-actions/run-command"), ...
+                'CI shards should call the runner directly instead of one serial build task.');
+            testCase.verifyTrue(contains(shardJob, '"HtmlReport", false'), ...
+                'CI shards should skip HTML reports to reduce wall-clock time.');
+            testCase.verifyFalse(contains(shardJob, "tasks: headless"), ...
+                'Push/PR CI should not collapse non-GUI validation into one serial headless task.');
+        end
+
         function ciPushAndPullRequestsRunOnAllBranches(testCase)
             root = setupLabKitTestPath();
             workflowPath = fullfile(root, ".github", "workflows", ...
@@ -60,7 +87,7 @@ classdef CiValidationPolicyGuardrailTest < matlab.unittest.TestCase
             workflowPath = fullfile(root, ".github", "workflows", ...
                 "matlab-tests.yml");
             workflow = string(fileread(workflowPath));
-            jobNames = ["headless", "coverage", "gui"];
+            jobNames = ["headless-shards", "coverage", "gui"];
 
             for k = 1:numel(jobNames)
                 job = extractWorkflowJob(workflow, jobNames(k));
