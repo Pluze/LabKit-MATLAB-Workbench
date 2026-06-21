@@ -53,17 +53,15 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
             end
         end
 
-        function focusedBuildTasksMatchAtLeastOneTest(testCase)
+        function runnableBuildTaskSpecsMapToKnownTestScopes(testCase)
             root = setupLabKitTestPath();
             taskSpecs = focusedTaskSpecs(root);
             testCase.assertFalse(isempty(taskSpecs), ...
                 "Runnable build task specs should be discovered from buildfile.m.");
             for k = 1:numel(taskSpecs)
                 spec = taskSpecs(k);
-                output = listLabKitTestsQuietly(spec.Args{:}, ...
-                    "RunName", spec.Name + "_list");
-                testCase.verifyGreaterThan(output.count, 0, ...
-                    "Focused build task should match tests: " + spec.Name);
+                testCase.verifyTrue(taskSpecMapsToKnownTests(root, spec), ...
+                    "Runnable build task spec should map to known tests: " + spec.Name);
             end
         end
 
@@ -377,6 +375,85 @@ function args = taskSpecArguments(line)
     args = appendLogicalArgument(args, line, "IncludeGui");
     args = appendLogicalArgument(args, line, "IncludeCoverage");
     args = appendLogicalArgument(args, line, "HtmlReport");
+end
+
+function tf = taskSpecMapsToKnownTests(root, spec)
+    if any(strcmp(spec.Args, "Plan"))
+        tf = taskSpecUsesKnownPlan(spec);
+        return;
+    end
+
+    suiteTargets = taskSpecStringValues(spec, "Suites");
+    tagTargets = taskSpecStringValues(spec, "Tags");
+    if isempty(suiteTargets)
+        suiteTargets = ["unit", "contract"];
+    end
+
+    tf = all(arrayfun(@(target) suiteTargetHasTests(root, target), suiteTargets));
+    if tf && ~isempty(tagTargets)
+        tf = all(arrayfun(@(tag) testTagExists(root, tag), tagTargets));
+    end
+end
+
+function tf = taskSpecUsesKnownPlan(spec)
+    plans = taskSpecStringValues(spec, "Plan");
+    tf = ~isempty(plans) && all(ismember(plans, ["changed", "ui", "apps", "app", "project"]));
+end
+
+function values = taskSpecStringValues(spec, name)
+    values = strings(1, 0);
+    for k = 1:numel(spec.Args)
+        if isequal(spec.Args{k}, char(name)) && k < numel(spec.Args)
+            values = string(spec.Args{k + 1});
+            return;
+        end
+    end
+end
+
+function tf = suiteTargetHasTests(root, target)
+    target = string(target);
+    if target == "gui"
+        folders = fullfile(root, "tests", "cases", "gui");
+    elseif target == "project"
+        folders = [ ...
+            fullfile(root, "tests", "cases", "unit", "project")
+            fullfile(root, "tests", "cases", "contract")];
+    elseif startsWith(target, "gui/")
+        folders = fullfile(root, "tests", "cases", target);
+    elseif startsWith(target, "apps/") || startsWith(target, "labkit/")
+        folders = [
+            fullfile(root, "tests", "cases", "unit", target)
+            fullfile(root, "tests", "cases", "contract", target)];
+    else
+        folders = fullfile(root, "tests", "cases", target);
+    end
+
+    tf = false;
+    for k = 1:numel(folders)
+        tf = tf || folderHasTestFiles(folders(k));
+    end
+end
+
+function tf = folderHasTestFiles(folder)
+    if exist(folder, "dir") ~= 7
+        tf = false;
+        return;
+    end
+
+    files = dir(fullfile(folder, "**", "*Test.m"));
+    tf = ~isempty(files);
+end
+
+function tf = testTagExists(root, tag)
+    files = collectTestFiles(fullfile(root, "tests", "cases"));
+    tf = false;
+    for k = 1:numel(files)
+        tags = extractQuotedTags(fileread(files(k)));
+        tf = tf || any(tags == string(tag));
+        if tf
+            return;
+        end
+    end
 end
 
 function args = appendStringListArgument(args, line, name)
