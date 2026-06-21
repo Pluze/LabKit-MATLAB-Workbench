@@ -153,17 +153,8 @@ entry points; the implementation lives in
 
 ## Validation
 
-For app helper logic, use focused non-GUI selectors such as:
-
-```matlab
-runLabKitTests("Suites", "apps/image_measurement", "IncludeGui", false)
-```
-
-For app layout or launch changes, use GUI selectors or build tasks:
-
-```bash
-buildtool testAppsGui
-```
+Use the changed-file, core, or GUI tasks from
+[testing.md](testing.md) depending on the scope of the app change.
 
 Automated GUI tests check launch, layout, callback wiring, and debug trace
 plumbing. They do not replace manual workflow review in MATLAB.

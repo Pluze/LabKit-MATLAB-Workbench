@@ -112,7 +112,7 @@ Current architecture exceptions: none.
 The default automated validation boundary is:
 
 ```bash
-buildtool test
+buildtool headless
 ```
 
 This covers project contracts, reusable facade behavior, and non-GUI app

@@ -53,18 +53,19 @@ or scan the project with MATLAB Code Analyzer.
 Default non-GUI check:
 
 ```bash
-buildtool test
+buildtool headless
 ```
 
-If MATLAB is not on `PATH`, use the locator:
+If `buildtool` is not available in your shell, find your MATLAB app and add its
+`bin` directory to `PATH`, then rerun the same command:
 
 ```bash
-scripts/matlab_batch.sh "buildtool test"
+ls /Applications/MATLAB_*.app/bin/matlab
+export PATH="/Applications/MATLAB_R2025a.app/bin:$PATH"
 ```
 
-The locator writes its MATLAB log to `artifacts/logs/matlab_batch/matlab.log`.
-
-See [docs/testing.md](docs/testing.md) for focused selectors and GUI checks.
+See [docs/testing.md](docs/testing.md) for changed-file, GUI, and project
+validation tasks.
 
 ## Repository Map
 

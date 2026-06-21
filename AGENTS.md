@@ -107,12 +107,18 @@ scope, fixture expectations, and GUI validation limits. Scoped
 `AGENTS.md` files should only route by ownership and should not duplicate the
 full task list.
 
-In noninteractive agent shells, prefer the repository wrapper
-`scripts/matlab_batch.sh "..."` for MATLAB validation. If a MATLAB command
-exits before printing the build-task or `runLabKitTests` startup banner, treat
-that as a MATLAB launcher or runtime-access failure first: inspect
-`artifacts/logs/matlab_batch/matlab.log`, rerun the same command with the
-needed runtime permissions, and do not diagnose source or test failures from an
+In noninteractive agent shells, run MATLAB build tasks directly, for example
+`buildtool headless`. If the shell cannot find `buildtool`, locate MATLAB
+without adding a repository wrapper, for example:
+
+```bash
+ls /Applications/MATLAB_*.app/bin/matlab
+export PATH="/Applications/MATLAB_R2025a.app/bin:$PATH"
+```
+
+Then rerun the same build task. If MATLAB exits before printing a build-task
+banner such as `** Starting headless`, treat that as a MATLAB launcher or
+runtime-access failure first. Do not diagnose source or test failures from an
 empty launcher result.
 
 Do not add MATLAB Code Analyzer suppression pragmas such as `%#ok<...>` in

@@ -18,8 +18,11 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
   one affected app without running unrelated app GUIs.
 - Keep LabKit-owned GUI entry points and reusable UI checks under
   `tests/cases/gui/labkit/<area>/`.
-- Do not add a separate custom runner or direct pass/fail test tree; route
-  coverage through `tests/runLabKitTests.m` and build tasks.
+- Do not add a separate custom runner or direct pass/fail test tree. Build
+  tasks are the human and CI entry points; `tests/runLabKitTests.m` is the
+  lower-level implementation behind those tasks.
+- Keep local multi-suite validation as serial build-task routing, not as a
+  separate parallel runner.
 - Keep architecture guardrails in the narrowest project-suite file that matches the concern.
 - Use `tests/shared/` for small test-facing assertions, fixture builders, GUI
   probes, cleanup, and lookup helpers. Keep ordinary MATLAB helper functions

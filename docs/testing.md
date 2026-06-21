@@ -7,115 +7,63 @@ Use this page to choose the smallest check that proves the change you made.
 Run the default non-GUI build task for broad local validation:
 
 ```bash
-buildtool test
+buildtool headless
 ```
 
-If MATLAB is not on `PATH`:
+If `buildtool` is not available in your shell, find your MATLAB app and add its
+`bin` directory to `PATH`, then rerun the same command:
 
 ```bash
-scripts/matlab_batch.sh "buildtool test"
+ls /Applications/MATLAB_*.app/bin/matlab
+export PATH="/Applications/MATLAB_R2025a.app/bin:$PATH"
 ```
 
-`scripts/matlab_batch.sh` only finds MATLAB, changes to the repository root,
-and runs the supplied MATLAB `-batch` command. Its MATLAB log is written to
-`artifacts/logs/matlab_batch/matlab.log`.
-
-If the wrapper exits before printing a build-task banner such as `** Starting`
-or a `LabKit official test run` line, inspect that log before treating the run
-as a source or test failure. A launch failure should be fixed by restoring
-MATLAB/runtime access and rerunning the same command.
+If MATLAB exits before printing a build-task banner such as
+`** Starting headless` or a `LabKit official test run` line, treat that as a
+MATLAB launcher or runtime access failure before diagnosing source or test
+failures.
 
 ## Build Tasks
 
 Use MATLAB build tasks for the stable official entry points:
 
 ```bash
-buildtool checkStyle
-buildtool test
-buildtool testUnit
-buildtool testIntegration
-buildtool testProject
-buildtool testLabkit
-buildtool testLabkitGui
-buildtool testApps
-buildtool testAppsGui
-buildtool testGuiStructural
-buildtool testGuiGesture
+buildtool changed
+buildtool headless
+buildtool gui
 buildtool coverage
 buildtool listTasks
-buildtool checkProject
-buildtool packageDryRun
 ```
 
 | Task | Use it for |
 | --- | --- |
-| `test` | Full non-GUI validation. |
-| `testProject` | Architecture, docs, package boundaries, sample-data hygiene, Code Analyzer suppression policy, and build-task contracts. |
-| `testUnit` | Unit-tagged tests across the discovered test tree. |
-| `testIntegration` | Retained task name for non-GUI contract-style tests. |
-| `testLabkit` | Reusable `+labkit` non-GUI behavior. |
-| `testApps` | App-owned non-GUI helpers and exports. |
-| `testLabkitGui` | Reusable UI launch/layout/tool diagnostics. |
-| `testAppsGui` | App-owned GUI launch, layout, and callback checks. |
-| `testGuiStructural` | All noninteractive structural GUI checks. |
-| `testGuiGesture` | Runtime, anchor editor, and scale-bar gesture lifecycle checks. |
-| `checkStyle` | Project/style guardrails. |
-| `coverage` | Manual or scheduled coverage reports. |
-| `listTasks` | Current build task catalog. |
-| `checkProject` | Optional local `LabKit.prj` metadata. |
-| `packageDryRun` | Package-boundary inventory without exporting a toolbox. |
+| `changed` | Fast local validation selected from changed and untracked files. |
+| `headless` | Full non-GUI validation. |
+| `gui` | Noninteractive GUI launch, layout, callback, and gesture checks. |
 
-## Focused Selectors
+Report and discovery tasks:
 
-For local iteration, call the runner directly:
-
-```matlab
-runLabKitTests("Suites", "apps/dic", "IncludeGui", false)
-runLabKitTests("Suites", "labkit/dta", "IncludeGui", false)
-runLabKitTests("Tests", "ProjectGovernanceAppTest")
-runLabKitTests("Suites", "gui/apps", "IncludeGui", true)
-runLabKitTests("Suites", "gui/apps/electrochem/cic", "IncludeGui", true)
-runLabKitTests("Suites", "gui/labkit/launcher", "IncludeGui", true)
-runLabKitTests("AffectedAppsOnly", true)
-```
-
-In a noninteractive shell through the repository MATLAB wrapper, wrap the same
-focused selector with the app path setup and the test runner path. `startup_labkit`
-configures app/runtime paths only; build tasks add `tests/` internally, but
-direct runner calls do not:
-
-```bash
-scripts/matlab_batch.sh "startup_labkit(false); addpath('tests'); runLabKitTests(\"Suites\", \"apps/image_measurement\", \"IncludeGui\", false)"
-```
-
-List matching tests without running them:
-
-```matlab
-runLabKitTests("Suites", "labkit/dta", "ListOnly", true)
-```
-
-Common selectors:
-
-| Change area | Focused selector |
+| Task | Use it for |
 | --- | --- |
-| Architecture, docs, package surface, hygiene | `buildtool testProject` |
-| DTA parser, session, pulse, item schemas | `runLabKitTests("Suites", "labkit/dta")` |
-| Biosignal import, filtering, ECG, segments | `runLabKitTests("Suites", "labkit/biosignal")` |
-| RHS parser, header indexing, and lazy window reads | `runLabKitTests("Suites", "labkit/rhs")` |
-| Reusable UI helpers without GUI launch | `runLabKitTests("Suites", "labkit/ui", "IncludeGui", false)` |
-| Reusable UI layout, callbacks, diagnostics, tools | `runLabKitTests("Suites", "labkit/ui", "IncludeGui", true)` |
-| Electrochem app calculations and exports | `runLabKitTests("Suites", "apps/electrochem", "IncludeGui", false)` |
-| DIC app helpers | `runLabKitTests("Suites", "apps/dic", "IncludeGui", false)` |
-| Image-measurement helpers | `runLabKitTests("Suites", "apps/image_measurement", "IncludeGui", false)` |
-| Wearable app helpers | `runLabKitTests("Suites", "apps/wearable", "IncludeGui", false)` |
-| Neurophysiology RHS app helpers | `runLabKitTests("Suites", "apps/neurophysiology", "IncludeGui", false)` |
-| Project governance and scaffold-source helpers | `runLabKitTests("Suites", "apps/project", "IncludeGui", false)` |
-| App GUI launch and layout | `runLabKitTests("Suites", "gui/apps", "IncludeGui", true)` |
-| Launcher GUI | `runLabKitTests("Suites", "gui/labkit/launcher", "IncludeGui", true)` |
-| Project governance GUI | `runLabKitTests("Suites", "gui/labkit/project", "IncludeGui", true)` |
-| Generated scaffold GUI | `runLabKitTests("Suites", "gui/labkit/scaffold", "IncludeGui", true)` |
-| One app GUI | `runLabKitTests("Suites", "gui/apps/<family>/<app_slug>", "IncludeGui", true)` |
-| Changed app GUI layout | `runLabKitTests("AffectedAppsOnly", true)` |
+| `coverage` | Manual or scheduled coverage reports. |
+| `listTasks` | Print the current build task catalog. |
+
+## Choosing A Task
+
+Use build tasks directly for local iteration. The `changed` task is the
+default focused choice before committing: it inspects changed and untracked
+files and runs a conservative serial validation plan inside one MATLAB
+process. It requires git and a git checkout. Use `headless` in exported
+source trees, packaged copies, or environments without git state.
+
+Common choices:
+
+| Change area | Build task |
+| --- | --- |
+| Changed source, tests, or docs before commit | `buildtool changed` |
+| Full broad non-GUI validation | `buildtool headless` |
+| Any GUI launch, layout, callback, or gesture change | `buildtool gui` |
+| Architecture, docs, package surface, hygiene | `buildtool headless` |
 
 ## Test Layout
 
@@ -135,7 +83,9 @@ plain function file there over a larger registry object unless repeated call
 patterns justify a grouped API.
 
 The runner discovers tests by directory and then filters by suite, tag, and
-test name. It does not use a generated registry.
+test name. It does not use a generated registry. Build tasks are the supported
+human and CI entry points; the lower-level runner exists so the buildfile can
+compose those tasks without duplicating discovery logic.
 
 App GUI tests live at:
 
@@ -143,12 +93,9 @@ App GUI tests live at:
 tests/cases/gui/apps/<family>/<app_slug>/
 ```
 
-Use that folder as the local selector when a change affects one app. The
-`AffectedAppsOnly` selector inspects changed files under `apps/` and
-`tests/cases/gui/apps/` relative to `HEAD`, maps them to matching
-per-app GUI test folders, and runs only those GUI tests. Shared UI,
-launcher, runner, or broad documentation changes should still use the explicit
-suite or build task that matches the shared surface.
+When a change affects one app, `buildtool changed` maps the touched app
+folder to the matching GUI test folder when one exists. Shared UI, launcher,
+runner, or broad documentation changes map to broader build-task selections.
 
 ## GUI Validation
 
@@ -203,11 +150,10 @@ artifacts/code-check/
 artifacts/debug/<RunName>/
 artifacts/gui/<RunName>/
 artifacts/logs/<RunName>/
-artifacts/logs/matlab_batch/
 ```
 
-`runLabKitTests` sets `LABKIT_ARTIFACTS` while tests run, so apps launched in
-debug mode write their trace files into the same artifact root:
+Build tasks set `LABKIT_ARTIFACTS` while tests run, so apps launched in debug
+mode write their trace files into the same artifact root:
 
 ```text
 artifacts/debug/<RunName>/<AppName>/

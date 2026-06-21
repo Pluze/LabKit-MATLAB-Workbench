@@ -37,7 +37,7 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
             root = setupLabKitTestPath();
             canonical = fullfile(root, "docs", "testing.md");
             canonicalTasks = extractBuildtoolTaskNames(fileread(canonical));
-            testCase.verifyGreaterThan(numel(canonicalTasks), 5, ...
+            testCase.verifyGreaterThanOrEqual(numel(canonicalTasks), 5, ...
                 'docs/testing.md should remain the canonical build-task matrix.');
 
             files = collectGuidanceFilesExceptTesting(root);

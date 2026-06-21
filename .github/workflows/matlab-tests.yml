@@ -33,19 +33,10 @@ jobs:
             exit 1
           fi
 
-      - name: Check MATLAB batch locator syntax
-        run: bash -n scripts/matlab_batch.sh
-
-      - name: Check MATLAB batch locator help
-        run: bash scripts/matlab_batch.sh --help
-
-      - name: Check MATLAB batch locator smoke
-        run: MATLAB_CMD=true bash scripts/matlab_batch.sh "buildtool listTasks"
-
-  quality:
-    name: Quality Guardrails
+  headless:
+    name: Headless Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     env:
       MLM_LICENSE_TOKEN: ${{ secrets.MLM_LICENSE_TOKEN }}
 
@@ -59,74 +50,28 @@ jobs:
           release: ${{ env.MATLAB_RELEASE }}
 
       - name: Prepare artifact directories
-        run: mkdir -p artifacts/logs/checkStyle
+        run: mkdir -p artifacts/logs/headless
 
-      - name: Run quality guardrails
+      - name: Run headless tests
         uses: matlab-actions/run-build@v3
         with:
-          tasks: checkStyle
-          startup-options: -logfile artifacts/logs/checkStyle/matlab.log
+          tasks: headless
+          startup-options: -logfile artifacts/logs/headless/matlab.log
 
-      - name: Summarize quality guardrails
+      - name: Summarize headless tests
         if: always()
         run: >
           python scripts/summarize_junit.py
-          artifacts/test-results/checkStyle/junit.xml
-          --run-name checkStyle
-          --html artifacts/test-results/checkStyle/html/index.html
-          --log artifacts/logs/checkStyle/matlab.log
+          artifacts/test-results/headless/junit.xml
+          --run-name headless
+          --html artifacts/test-results/headless/html/index.html
+          --log artifacts/logs/headless/matlab.log
 
-      - name: Upload quality artifacts
+      - name: Upload headless artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: matlab-quality
-          if-no-files-found: warn
-          retention-days: 14
-          path: |
-            artifacts/test-results/**
-            artifacts/debug/**
-            artifacts/logs/**
-
-  unit:
-    name: Unit Tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    env:
-      MLM_LICENSE_TOKEN: ${{ secrets.MLM_LICENSE_TOKEN }}
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v6
-
-      - name: Set up MATLAB
-        uses: matlab-actions/setup-matlab@v3
-        with:
-          release: ${{ env.MATLAB_RELEASE }}
-
-      - name: Prepare artifact directories
-        run: mkdir -p artifacts/logs/testUnit
-
-      - name: Run unit tests
-        uses: matlab-actions/run-build@v3
-        with:
-          tasks: testUnit
-          startup-options: -logfile artifacts/logs/testUnit/matlab.log
-
-      - name: Summarize unit tests
-        if: always()
-        run: >
-          python scripts/summarize_junit.py
-          artifacts/test-results/testUnit/junit.xml
-          --run-name testUnit
-          --html artifacts/test-results/testUnit/html/index.html
-          --log artifacts/logs/testUnit/matlab.log
-
-      - name: Upload unit artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: matlab-unit
+          name: matlab-headless
           if-no-files-found: warn
           retention-days: 14
           path: |
@@ -182,8 +127,9 @@ jobs:
             artifacts/debug/**
             artifacts/logs/**
 
-  integration:
-    name: Integration Tests
+  gui:
+    name: GUI Tests
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
@@ -199,124 +145,28 @@ jobs:
           release: ${{ env.MATLAB_RELEASE }}
 
       - name: Prepare artifact directories
-        run: mkdir -p artifacts/logs/testIntegration
+        run: mkdir -p artifacts/logs/gui
 
-      - name: Run integration tests
+      - name: Run GUI tests
         uses: matlab-actions/run-build@v3
         with:
-          tasks: testIntegration
-          startup-options: -logfile artifacts/logs/testIntegration/matlab.log
+          tasks: gui
+          startup-options: -logfile artifacts/logs/gui/matlab.log
 
-      - name: Summarize integration tests
+      - name: Summarize GUI tests
         if: always()
         run: >
           python scripts/summarize_junit.py
-          artifacts/test-results/testIntegration/junit.xml
-          --run-name testIntegration
-          --html artifacts/test-results/testIntegration/html/index.html
-          --log artifacts/logs/testIntegration/matlab.log
+          artifacts/test-results/gui/junit.xml
+          --run-name gui
+          --html artifacts/test-results/gui/html/index.html
+          --log artifacts/logs/gui/matlab.log
 
-      - name: Upload integration artifacts
+      - name: Upload GUI artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: matlab-integration
-          if-no-files-found: warn
-          retention-days: 14
-          path: |
-            artifacts/test-results/**
-            artifacts/debug/**
-            artifacts/logs/**
-
-  gui-structural:
-    name: GUI Structural Tests
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    env:
-      MLM_LICENSE_TOKEN: ${{ secrets.MLM_LICENSE_TOKEN }}
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v6
-
-      - name: Set up MATLAB
-        uses: matlab-actions/setup-matlab@v3
-        with:
-          release: ${{ env.MATLAB_RELEASE }}
-
-      - name: Prepare artifact directories
-        run: mkdir -p artifacts/logs/testGuiStructural
-
-      - name: Run GUI structural tests
-        uses: matlab-actions/run-build@v3
-        with:
-          tasks: testGuiStructural
-          startup-options: -logfile artifacts/logs/testGuiStructural/matlab.log
-
-      - name: Summarize GUI structural tests
-        if: always()
-        run: >
-          python scripts/summarize_junit.py
-          artifacts/test-results/testGuiStructural/junit.xml
-          --run-name testGuiStructural
-          --html artifacts/test-results/testGuiStructural/html/index.html
-          --log artifacts/logs/testGuiStructural/matlab.log
-
-      - name: Upload GUI structural artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: matlab-gui-structural
-          if-no-files-found: warn
-          retention-days: 14
-          path: |
-            artifacts/test-results/**
-            artifacts/debug/**
-            artifacts/gui/**
-            artifacts/logs/**
-
-  gui-gesture:
-    name: GUI Gesture Tests
-    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
-    continue-on-error: true
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    env:
-      MLM_LICENSE_TOKEN: ${{ secrets.MLM_LICENSE_TOKEN }}
-
-    steps:
-      - name: Check out repository
-        uses: actions/checkout@v6
-
-      - name: Set up MATLAB
-        uses: matlab-actions/setup-matlab@v3
-        with:
-          release: ${{ env.MATLAB_RELEASE }}
-
-      - name: Prepare artifact directories
-        run: mkdir -p artifacts/logs/testGuiGesture
-
-      - name: Run GUI gesture tests
-        uses: matlab-actions/run-build@v3
-        with:
-          tasks: testGuiGesture
-          startup-options: -logfile artifacts/logs/testGuiGesture/matlab.log
-
-      - name: Summarize GUI gesture tests
-        if: always()
-        run: >
-          python scripts/summarize_junit.py
-          artifacts/test-results/testGuiGesture/junit.xml
-          --run-name testGuiGesture
-          --html artifacts/test-results/testGuiGesture/html/index.html
-          --log artifacts/logs/testGuiGesture/matlab.log
-
-      - name: Upload GUI gesture artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: matlab-gui-gesture
+          name: matlab-gui
           if-no-files-found: warn
           retention-days: 14
           path: |

@@ -1,18 +1,20 @@
 function output = runLabKitTests(varargin)
-%RUNLABKITTESTS Run LabKit tests through MATLAB's official test framework.
+%RUNLABKITTESTS Low-level LabKit runner for MATLAB's official test framework.
 %
-% output = runLabKitTests(Name,Value) discovers official matlab.unittest
-% tests under tests/cases/unit, tests/cases/contract, and tests/cases/gui.
+% Prefer buildtool tasks for human and CI entry points. This runner discovers
+% official matlab.unittest tests under tests/cases/unit, tests/cases/contract,
+% and tests/cases/gui so buildfile.m can compose stable tasks without
+% duplicating test discovery.
 %
-% Name-value options:
+% Internal name-value options:
 %   IncludeGui      Include tests under tests/cases/gui.
 %   Suites          Suite targets such as project, labkit/dta, or gui.
 %   Tests           Test names or substrings to include.
 %   Tags            Required official test tags. Multiple tags are ORed.
 %   ExcludeTags     Official test tags to exclude.
-%   AffectedAppsOnly Restrict GUI tests to app folders changed vs HEAD.
-%   AffectedBaseRef Git ref used by AffectedAppsOnly. Default is HEAD.
+%   Plan            Named serial plan: changed, ui, apps, or project.
 %   IncludeCoverage Generate Cobertura and HTML coverage artifacts.
+%   HtmlReport      Generate the official HTML test report. Default true.
 %   FailIfNoTests   Error when no official tests match.
 %   ArtifactsRoot   Root artifact directory.
 %   RunName         Name used in artifact titles and console output.
@@ -25,7 +27,13 @@ function output = runLabKitTests(varargin)
     opts = parseOptions(root, varargin{:});
     restoreRunName = setRunNameEnvironment(opts.RunName);
     restoreArtifactsRoot = setArtifactsRootEnvironment(opts.ArtifactsRoot);
-    opts = resolveAffectedAppSelection(root, opts);
+
+    if strlength(opts.Plan) > 0
+        output = runValidationPlan(root, opts);
+        clear restoreRunName restoreArtifactsRoot
+        return;
+    end
+
     suite = discoverOfficialSuite(root, opts);
 
     fprintf("LabKit official test run: %s\n", opts.RunName);
@@ -59,11 +67,13 @@ function output = runLabKitTests(varargin)
         "LoggingLevel", opts.LoggingLevel);
     runner.addPlugin(matlab.unittest.plugins.XMLPlugin.producingJUnitFormat( ...
         paths.junitXml));
-    runner.addPlugin(matlab.unittest.plugins.TestReportPlugin.producingHTML( ...
-        paths.testHtml, ...
-        "MainFile", "index.html", ...
-        "Title", "LabKit MATLAB Tests - " + opts.RunName, ...
-        "IncludingCommandWindowText", true));
+    if opts.HtmlReport
+        runner.addPlugin(matlab.unittest.plugins.TestReportPlugin.producingHTML( ...
+            paths.testHtml, ...
+            "MainFile", "index.html", ...
+            "Title", "LabKit MATLAB Tests - " + opts.RunName, ...
+            "IncludingCommandWindowText", true));
+    end
 
     if opts.IncludeCoverage
         coverageFormats = [ ...
@@ -112,9 +122,9 @@ function opts = parseOptions(root, varargin)
     p.addParameter("Tests", strings(1, 0), @isStringLikeList);
     p.addParameter("Tags", strings(1, 0), @isStringLikeList);
     p.addParameter("ExcludeTags", strings(1, 0), @isStringLikeList);
-    p.addParameter("AffectedAppsOnly", false, @isLogicalScalar);
-    p.addParameter("AffectedBaseRef", "HEAD", @isTextScalar);
+    p.addParameter("Plan", "", @isTextScalar);
     p.addParameter("IncludeCoverage", false, @isLogicalScalar);
+    p.addParameter("HtmlReport", true, @isLogicalScalar);
     p.addParameter("FailIfNoTests", true, @isLogicalScalar);
     p.addParameter("ArtifactsRoot", fullfile(root, "artifacts"), @isTextScalar);
     p.addParameter("RunName", "local", @isTextScalar);
@@ -126,36 +136,143 @@ function opts = parseOptions(root, varargin)
     opts = p.Results;
     opts.IncludeGui = logical(opts.IncludeGui);
     opts.IncludeCoverage = logical(opts.IncludeCoverage);
+    opts.HtmlReport = logical(opts.HtmlReport);
     opts.FailIfNoTests = logical(opts.FailIfNoTests);
     opts.ListOnly = logical(opts.ListOnly);
-    opts.AffectedAppsOnly = logical(opts.AffectedAppsOnly);
     opts.Suites = normalizeTextList(opts.Suites);
     opts.Tests = normalizeTextList(opts.Tests);
     opts.Tags = normalizeTextList(opts.Tags);
     opts.ExcludeTags = normalizeTextList(opts.ExcludeTags);
-    opts.AffectedBaseRef = string(opts.AffectedBaseRef);
+    opts.Plan = lower(string(opts.Plan));
     opts.ArtifactsRoot = char(opts.ArtifactsRoot);
     opts.RunName = string(opts.RunName);
 end
 
-function opts = resolveAffectedAppSelection(root, opts)
-    if ~opts.AffectedAppsOnly
-        return;
+function output = runValidationPlan(root, opts)
+    ensurePlanHasNoExplicitSelectors(opts);
+    planName = opts.Plan;
+    if planName == "changed"
+        changedPaths = detectAffectedValidationPaths(root);
+        steps = labkitValidationPlanForChangedPaths(root, changedPaths);
+    else
+        steps = namedValidationPlan(planName);
     end
 
-    if ~isempty(opts.Suites) && ~all(lower(opts.Suites) == "gui")
-        error("LabKit:Tests:InvalidAffectedAppsSelection", ...
-            "AffectedAppsOnly cannot be combined with explicit suite targets other than gui.");
+    if isempty(steps)
+        error("LabKit:Tests:NoAffectedValidationTargets", ...
+            "No validation targets were detected for plan %s.", planName);
     end
 
-    targets = detectAffectedAppGuiSuiteTargets(root, opts.AffectedBaseRef);
-    if isempty(targets)
-        error("LabKit:Tests:NoAffectedApps", ...
-            "No app-owned GUI test targets were detected from changed files.");
+    fprintf("LabKit validation plan: %s\n", planName);
+    fprintf("Validation plan steps: %d\n", numel(steps));
+    printValidationPlanSteps(steps);
+
+    childOutputs = cell(1, numel(steps));
+    totalCount = 0;
+    for k = 1:numel(steps)
+        step = steps(k);
+        stepRunName = opts.RunName + "_" + step.RunNameSuffix;
+        fprintf("Validation plan step %d/%d: %s\n", ...
+            k, numel(steps), stepRunName);
+
+        childArgs = validationPlanStepArgs(step);
+        childOutputs{k} = runLabKitTests(childArgs{:}, ...
+            "HtmlReport", opts.HtmlReport, ...
+            "FailIfNoTests", opts.FailIfNoTests, ...
+            "ArtifactsRoot", opts.ArtifactsRoot, ...
+            "RunName", stepRunName, ...
+            "ListOnly", opts.ListOnly, ...
+            "OutputDetail", opts.OutputDetail, ...
+            "LoggingLevel", opts.LoggingLevel, ...
+            "IncludeCoverage", opts.IncludeCoverage);
+        if isfield(childOutputs{k}, "count")
+            totalCount = totalCount + childOutputs{k}.count;
+        else
+            totalCount = totalCount + numel(childOutputs{k}.official);
+        end
     end
 
-    opts.IncludeGui = true;
-    opts.Suites = targets;
+    output = struct( ...
+        "plan", planName, ...
+        "steps", steps, ...
+        "outputs", {childOutputs}, ...
+        "count", totalCount, ...
+        "runName", opts.RunName);
+end
+
+function ensurePlanHasNoExplicitSelectors(opts)
+    if ~isempty(opts.Suites) || ~isempty(opts.Tests) || ~isempty(opts.Tags) || ...
+            ~isempty(opts.ExcludeTags)
+        error("LabKit:Tests:InvalidValidationPlan", ...
+            "Plan cannot be combined with explicit suite, test, or tag selectors.");
+    end
+end
+
+function args = validationPlanStepArgs(step)
+    args = {};
+    if ~isempty(step.Suites)
+        args = [args, {"Suites", step.Suites}];
+    end
+    args = [args, {"IncludeGui", step.IncludeGui}];
+end
+
+function printValidationPlanSteps(steps)
+    for k = 1:numel(steps)
+        suites = stepSuitesLabel(steps(k));
+        fprintf("  %d. %s includeGui=%d suites=%s\n", ...
+            k, steps(k).RunNameSuffix, steps(k).IncludeGui, suites);
+    end
+end
+
+function label = stepSuitesLabel(step)
+    if isempty(step.Suites)
+        label = "<all-headless>";
+    else
+        label = strjoin(step.Suites, ",");
+    end
+end
+
+function steps = namedValidationPlan(planName)
+    switch planName
+        case "ui"
+            steps = [ ...
+                validationPlanStep("labkit_ui", "labkit/ui", true), ...
+                validationPlanStep("gui_apps", "gui/apps", true)];
+        case {"app", "apps"}
+            steps = [ ...
+                validationPlanStep("apps", "apps", false), ...
+                validationPlanStep("gui_apps", "gui/apps", true)];
+        case "project"
+            steps = validationPlanStep("project", "project", false);
+        otherwise
+            error("LabKit:Tests:UnknownValidationPlan", ...
+                "Unknown validation plan: %s.", planName);
+    end
+end
+
+function step = validationPlanStep(runNameSuffix, suites, includeGui)
+    step = struct( ...
+        "RunNameSuffix", string(runNameSuffix), ...
+        "Suites", {normalizeTextList(suites)}, ...
+        "IncludeGui", logical(includeGui));
+end
+
+function paths = detectAffectedValidationPaths(root)
+    assertChangedValidationGitAvailable(root);
+    changedPaths = [ ...
+        gitChangedPaths(root, "HEAD", strings(1, 0)), ...
+        gitUntrackedPaths(root, strings(1, 0))];
+    paths = unique(changedPaths, "stable");
+end
+
+function assertChangedValidationGitAvailable(root)
+    command = "git -C " + shellDoubleQuote(root) + ...
+        " rev-parse --is-inside-work-tree";
+    [status, output] = system(char(command));
+    if status ~= 0 || strip(string(output)) ~= "true"
+        error("LabKit:Tests:ChangedRequiresGit", ...
+            "The changed build task requires git and a git checkout. Use buildtool headless when git state is unavailable.");
+    end
 end
 
 function suite = discoverOfficialSuite(root, opts)
@@ -200,6 +317,15 @@ function printSuiteListing(listing)
 end
 
 function groups = discoverOfficialGroups(casesRoot)
+    persistent cachedCasesRoot cachedSignature cachedGroups
+
+    signature = testTreeSignature(casesRoot);
+    if isequal(cachedCasesRoot, string(casesRoot)) && ...
+            isequal(cachedSignature, signature)
+        groups = cachedGroups;
+        return;
+    end
+
     groups = struct("key", {}, "suite", {});
     roots = ["unit", "contract", "gui"];
     for r = 1:numel(roots)
@@ -217,6 +343,48 @@ function groups = discoverOfficialGroups(casesRoot)
             end
             key = relativeTestKey(folders(f), casesRoot);
             groups(end+1) = struct("key", key, "suite", suite);
+        end
+    end
+
+    cachedCasesRoot = string(casesRoot);
+    cachedSignature = signature;
+    cachedGroups = groups;
+end
+
+function signature = testTreeSignature(root)
+    files = testTreeMFiles(root);
+    if isempty(files)
+        signature = strings(1, 0);
+        return;
+    end
+
+    parts = strings(1, numel(files));
+    for k = 1:numel(files)
+        info = dir(files(k));
+        if isempty(info)
+            parts(k) = string(files(k)) + "|missing";
+        else
+            parts(k) = string(files(k)) + "|" + string(info.datenum) + ...
+                "|" + string(info.bytes);
+        end
+    end
+    signature = strjoin(parts, newline);
+end
+
+function files = testTreeMFiles(root)
+    files = strings(1, 0);
+    entries = dir(root);
+    [~, order] = sort({entries.name});
+    entries = entries(order);
+    for k = 1:numel(entries)
+        entry = entries(k);
+        if entry.isdir
+            if strcmp(entry.name, ".") || strcmp(entry.name, "..")
+                continue;
+            end
+            files = [files, testTreeMFiles(fullfile(entry.folder, entry.name))];
+        elseif endsWith(entry.name, ".m")
+            files(end+1) = string(fullfile(entry.folder, entry.name));
         end
     end
 end
@@ -273,34 +441,22 @@ function groups = filterGroupsBySuite(groups, opts)
     groups = groups(keep);
 end
 
-function targets = detectAffectedAppGuiSuiteTargets(root, baseRef)
-    changedPaths = [ ...
-        gitChangedPaths(root, baseRef), ...
-        gitUntrackedPaths(root)];
-    changedPaths = unique(changedPaths, "stable");
-
-    targets = strings(1, 0);
-    for k = 1:numel(changedPaths)
-        appPath = appIdentityFromChangedPath(changedPaths(k));
-        if isempty(appPath)
-            continue;
-        end
-        targets(end+1) = guiSuiteTargetForApp(root, appPath(1), appPath(2));
-    end
-    targets = unique(targets, "stable");
-end
-
-function paths = gitChangedPaths(root, baseRef)
+function paths = gitChangedPaths(root, baseRef, pathspecs)
     ref = validateGitRef(baseRef);
     command = "git -C " + shellDoubleQuote(root) + ...
-        " diff --name-only --diff-filter=ACMRTUXB " + ref + ...
-        " -- apps tests/cases/gui/apps tests/cases/gui/labkit";
+        " diff --name-only --diff-filter=ACMRTUXB " + ref;
+    if ~isempty(pathspecs)
+        command = command + " -- " + strjoin(pathspecs, " ");
+    end
     paths = runGitPathCommand(command);
 end
 
-function paths = gitUntrackedPaths(root)
+function paths = gitUntrackedPaths(root, pathspecs)
     command = "git -C " + shellDoubleQuote(root) + ...
-        " ls-files --others --exclude-standard -- apps tests/cases/gui/apps tests/cases/gui/labkit";
+        " ls-files --others --exclude-standard";
+    if ~isempty(pathspecs)
+        command = command + " -- " + strjoin(pathspecs, " ");
+    end
     paths = runGitPathCommand(command);
 end
 
@@ -316,59 +472,18 @@ function paths = runGitPathCommand(command)
     paths = paths(strlength(paths) > 0).';
 end
 
-function appPath = appIdentityFromChangedPath(path)
-    parts = split(strip(replace(string(path), "\", "/")), "/");
-    appPath = strings(1, 0);
-    if numel(parts) >= 3 && parts(1) == "apps"
-        appPath = [parts(2), parts(3)];
-        return;
-    end
-
-    if numel(parts) >= 6 && all(parts(1:4).' == ["tests", "cases", "gui", "apps"])
-        appPath = [parts(5), parts(6)];
-        return;
-    end
-
-    if numel(parts) >= 5 && all(parts(1:4).' == ["tests", "cases", "gui", "labkit"])
-        appPath = ["labkit", parts(5)];
-    end
-end
-
-function target = guiSuiteTargetForApp(root, family, slug)
-    if family == "project"
-        target = "gui/labkit/project";
-        return;
-    end
-
-    if family == "labkit"
-        target = "gui/labkit/" + slug;
-        return;
-    end
-
-    appSuiteRoot = fullfile(root, "tests", "cases", "gui", "apps");
-    if strlength(slug) > 0
-        appFolder = fullfile(appSuiteRoot, family, slug);
-        if exist(appFolder, "dir") == 7
-            target = "gui/apps/" + family + "/" + slug;
-            return;
-        end
-    end
-
-    target = "gui/apps/" + family;
-end
-
 function ref = validateGitRef(baseRef)
     ref = string(baseRef);
     if ~isscalar(ref) || strlength(ref) == 0
         error("LabKit:Tests:InvalidGitRef", ...
-            "AffectedBaseRef must be a nonempty git ref.");
+            "Changed-file validation requires a nonempty git ref.");
     end
 
     chars = char(ref);
     allowed = isstrprop(chars, "alphanum") | ismember(chars, "./_@{}^-~");
     if ~all(allowed)
         error("LabKit:Tests:InvalidGitRef", ...
-            "AffectedBaseRef contains unsupported shell characters.");
+            "Changed-file validation git ref contains unsupported shell characters.");
     end
 end
 

@@ -2,7 +2,7 @@ function plan = buildfile
 %BUILDFILE LabKit build and validation entry points.
 
     plan = buildplan(localfunctions);
-    plan.DefaultTasks = "test";
+    plan.DefaultTasks = "headless";
 
     catalog = taskCatalog();
     for k = 1:numel(catalog)
@@ -10,48 +10,16 @@ function plan = buildfile
     end
 end
 
-function checkStyleTask(~)
-    runCatalogTask("checkStyle");
+function changedTask(~)
+    runCatalogTask("changed");
 end
 
-function testTask(~)
-    runCatalogTask("test");
+function headlessTask(~)
+    runCatalogTask("headless");
 end
 
-function testUnitTask(~)
-    runCatalogTask("testUnit");
-end
-
-function testIntegrationTask(~)
-    runCatalogTask("testIntegration");
-end
-
-function testProjectTask(~)
-    runCatalogTask("testProject");
-end
-
-function testLabkitTask(~)
-    runCatalogTask("testLabkit");
-end
-
-function testLabkitGuiTask(~)
-    runCatalogTask("testLabkitGui");
-end
-
-function testAppsTask(~)
-    runCatalogTask("testApps");
-end
-
-function testAppsGuiTask(~)
-    runCatalogTask("testAppsGui");
-end
-
-function testGuiStructuralTask(~)
-    runCatalogTask("testGuiStructural");
-end
-
-function testGuiGestureTask(~)
-    runCatalogTask("testGuiGesture");
+function guiTask(~)
+    runCatalogTask("gui");
 end
 
 function coverageTask(~)
@@ -62,69 +30,13 @@ function listTasksTask(~)
     printTaskCatalog(taskCatalog());
 end
 
-function checkProjectTask(~)
-    root = fileparts(mfilename("fullpath"));
-    checkProjectDefinition(root);
-end
-
-function packageDryRunTask(~)
-    root = fileparts(mfilename("fullpath"));
-
-    packageCandidates = [ ...
-        "+labkit", ...
-        "apps", ...
-        "docs", ...
-        "scripts", ...
-        "README.md", ...
-        "labkit_launcher.m", ...
-        "buildfile.m", ...
-        "startup_labkit.m"];
-    validationOnly = [ ...
-        "tests", ...
-        "AGENTS.md"];
-    excludedGeneratedOrLocal = [ ...
-        "artifacts", ...
-        "photos", ...
-        "derived", ...
-        "project", ...
-        "resources/project", ...
-        "LabKit.prj", ...
-        ".git", ...
-        "LABKIT_REFACTOR_ROADMAP.md"];
-
-    assertRelativePathsExist(root, packageCandidates);
-    assertRelativePathsExist(root, validationOnly);
-
-    report = struct( ...
-        "schemaVersion", 1, ...
-        "packageCandidates", {cellstr(packageCandidates)}, ...
-        "validationOnly", {cellstr(validationOnly)}, ...
-        "excludedGeneratedOrLocal", {cellstr(excludedGeneratedOrLocal)}, ...
-        "createsToolbox", false);
-    reportFile = writePackageDryRunReport(root, report);
-
-    fprintf("LabKit package dry run wrote:\n  %s\n", reportFile);
-    fprintf("Package candidates: %d, validation-only roots/files: %d\n", ...
-        numel(packageCandidates), numel(validationOnly));
-end
-
 function catalog = taskCatalog()
     catalog = [ ...
-        taskSpec("checkStyle", "Run project/style guardrails.", "Suites", "project", "Tags", "Style"), ...
-        taskSpec("test", "Run the full non-GUI test entry point.", "IncludeGui", false), ...
-        taskSpec("testUnit", "Run official unit tests.", "Tags", "Unit"), ...
-        taskSpec("testIntegration", "Run official contract tests.", "Tags", "Integration"), ...
-        taskSpec("testProject", "Run project guardrails.", "Suites", "project"), ...
-        taskSpec("testLabkit", "Run all reusable labkit non-GUI tests.", "Suites", "labkit", "IncludeGui", false), ...
-        taskSpec("testLabkitGui", "Run all reusable labkit GUI tests.", "Suites", "labkit", "IncludeGui", true), ...
-        taskSpec("testApps", "Run all app-owned non-GUI tests.", "Suites", "apps", "IncludeGui", false), ...
-        taskSpec("testAppsGui", "Run all app-owned GUI tests.", "Suites", "apps", "IncludeGui", true), ...
-        taskSpec("testGuiStructural", "Run noninteractive GUI structural tests.", "Suites", "gui", "Tags", "Structural", "IncludeGui", true), ...
-        taskSpec("testGuiGesture", "Run noninteractive GUI gesture tests.", "Tags", "Gesture", "IncludeGui", true), ...
+        taskSpec("changed", "Run conservative changed-file validation.", "Plan", "changed", "HtmlReport", false), ...
+        taskSpec("headless", "Run the full non-GUI validation set.", "IncludeGui", false), ...
+        taskSpec("gui", "Run noninteractive GUI launch, layout, and gesture checks.", "Suites", "gui", "IncludeGui", true), ...
         taskSpec("coverage", "Run official tests with coverage artifacts.", "Tags", ["Unit", "Integration"], "IncludeCoverage", true), ...
-        taskSpec("listTasks", "List official LabKit build tasks.", "RunTests", false), ...
-        taskSpec("checkProject", "Verify optional local MATLAB Project metadata when present.", "RunTests", false), ...
-        taskSpec("packageDryRun", "Verify package boundary inventory without exporting.", "RunTests", false)];
+        taskSpec("listTasks", "List official LabKit build tasks.", "RunTests", false)];
 end
 
 function spec = taskSpec(name, description, varargin)
@@ -132,9 +44,11 @@ function spec = taskSpec(name, description, varargin)
     p.FunctionName = "taskSpec";
     p.addParameter("RunTests", true, @isLogicalScalar);
     p.addParameter("Suites", strings(1, 0), @isStringLikeList);
+    p.addParameter("Plan", "", @isTextScalar);
     p.addParameter("Tags", strings(1, 0), @isStringLikeList);
     p.addParameter("IncludeGui", [], @isEmptyOrLogicalScalar);
     p.addParameter("IncludeCoverage", [], @isEmptyOrLogicalScalar);
+    p.addParameter("HtmlReport", [], @isEmptyOrLogicalScalar);
     p.addParameter("Required", true, @isLogicalScalar);
     p.parse(varargin{:});
 
@@ -144,9 +58,11 @@ function spec = taskSpec(name, description, varargin)
         "Description", string(description), ...
         "RunTests", runTests, ...
         "Suites", normalizeTextList(p.Results.Suites), ...
+        "Plan", string(p.Results.Plan), ...
         "Tags", normalizeTextList(p.Results.Tags), ...
         "IncludeGui", normalizeOptionalLogical(p.Results.IncludeGui), ...
         "IncludeCoverage", normalizeOptionalLogical(p.Results.IncludeCoverage), ...
+        "HtmlReport", normalizeOptionalLogical(p.Results.HtmlReport), ...
         "Required", runTests && logical(p.Results.Required));
 end
 
@@ -176,6 +92,9 @@ function args = taskRunArguments(spec)
     if ~isempty(spec.Suites)
         args = [args, {"Suites", spec.Suites}];
     end
+    if strlength(spec.Plan) > 0
+        args = [args, {"Plan", spec.Plan}];
+    end
     if ~isempty(spec.Tags)
         args = [args, {"Tags", spec.Tags}];
     end
@@ -184,6 +103,9 @@ function args = taskRunArguments(spec)
     end
     if ~isempty(spec.IncludeCoverage)
         args = [args, {"IncludeCoverage", spec.IncludeCoverage}];
+    end
+    if ~isempty(spec.HtmlReport)
+        args = [args, {"HtmlReport", spec.HtmlReport}];
     end
 end
 
@@ -200,164 +122,6 @@ function printTaskCatalog(catalog)
     for k = 1:numel(catalog)
         fprintf("  %-30s %s\n", catalog(k).Name, catalog(k).Description);
     end
-end
-
-function checkProjectDefinition(root)
-    projectFile = fullfile(root, "LabKit.prj");
-    if exist(projectFile, "file") ~= 2
-        fprintf("No local MATLAB Project file found at:\n  %s\n", projectFile);
-        fprintf("Run labkit_ProjectGovernance_app to create one for local IDE use.\n");
-        return;
-    end
-
-    [proj, shouldCloseProject] = openLabKitProject(projectFile, root);
-    cleanup = onCleanup(@() closeProjectIfLoaded(proj, shouldCloseProject));
-
-    if string(proj.Name) ~= "LabKit"
-        error("LabKit:Build:ProjectName", ...
-            "Expected project name LabKit, found %s.", string(proj.Name));
-    end
-    if normalizePath(proj.RootFolder) ~= normalizePath(root)
-        error("LabKit:Build:ProjectRoot", ...
-            "Project root does not match repository root.");
-    end
-
-    expectedPaths = expectedProjectPaths(root);
-    actualPaths = normalizePaths(projectEntryPaths(proj.ProjectPath));
-    for k = 1:numel(expectedPaths)
-        if ~any(actualPaths == normalizePath(expectedPaths(k)))
-            error("LabKit:Build:ProjectPath", ...
-                "Project path is missing required folder: %s", expectedPaths(k));
-        end
-    end
-
-    assertNoHiddenProjectPath(root, actualPaths);
-
-    startupFiles = normalizePaths(projectEntryPaths(proj.StartupFiles));
-    if ~any(startupFiles == normalizePath(fullfile(root, "startup_labkit.m")))
-        error("LabKit:Build:ProjectStartup", ...
-            "Project startup files must include startup_labkit.m.");
-    end
-
-    fprintf("LabKit MATLAB Project metadata verified.\n");
-    clear cleanup
-end
-
-function [proj, shouldCloseProject] = openLabKitProject(projectFile, root)
-    shouldCloseProject = true;
-    try
-        proj = currentProject;
-        if normalizePath(proj.RootFolder) == normalizePath(root)
-            shouldCloseProject = false;
-            return;
-        end
-    catch
-    end
-    proj = openProject(projectFile);
-end
-
-function paths = expectedProjectPaths(root)
-    paths = string(root);
-    appsRoot = fullfile(root, "apps");
-    if exist(appsRoot, "dir") == 7
-        paths = [paths, string(appsRoot), appPathDirs(appsRoot)];
-    end
-    paths = unique(paths, "stable");
-end
-
-function dirs = appPathDirs(appRoot)
-    entries = dir(fullfile(appRoot, "**"));
-    entries = entries([entries.isdir]);
-    [~, order] = sort(string(fullfile({entries.folder}, {entries.name})));
-    entries = entries(order);
-    dirs = strings(1, numel(entries));
-    dirCount = 0;
-    for k = 1:numel(entries)
-        entry = entries(k);
-        if strcmp(entry.name, ".") || strcmp(entry.name, "..")
-            continue;
-        end
-        child = string(fullfile(entry.folder, entry.name));
-        if normalizePath(child) == normalizePath(appRoot) || ...
-                ~isProjectPathCandidate(appRoot, child)
-            continue;
-        end
-
-        dirCount = dirCount + 1;
-        dirs(dirCount) = child;
-    end
-    dirs = dirs(1:dirCount);
-end
-
-function tf = isProjectPathCandidate(appRoot, folder)
-    rel = extractAfter(normalizePath(folder), strlength(normalizePath(appRoot)) + 1);
-    parts = split(rel, "/");
-    tf = ~any(startsWith(parts, ".") | startsWith(parts, "+") | ...
-        startsWith(parts, "@") | parts == "private");
-end
-
-function paths = projectEntryPaths(entries)
-    if isempty(entries)
-        paths = strings(1, 0);
-    elseif isstring(entries) || ischar(entries) || iscellstr(entries)
-        paths = string(entries);
-    else
-        paths = strings(1, numel(entries));
-        for k = 1:numel(entries)
-            if isprop(entries(k), "File")
-                paths(k) = string(entries(k).File);
-            else
-                paths(k) = string(entries(k));
-            end
-        end
-    end
-end
-
-function assertNoHiddenProjectPath(root, actualPaths)
-    rootPath = normalizePath(root);
-    for k = 1:numel(actualPaths)
-        path = actualPaths(k);
-        if path == rootPath
-            continue;
-        end
-        if startsWith(path, rootPath + "/")
-            relativePath = extractAfter(path, strlength(rootPath) + 1);
-        else
-            relativePath = path;
-        end
-        parts = split(relativePath, "/");
-        if any(parts == "private" | startsWith(parts, "+") | ...
-                startsWith(parts, "@") | startsWith(parts, "."))
-            error("LabKit:Build:ProjectHiddenPath", ...
-                "Project path includes private/package/hidden folder: %s", path);
-        end
-    end
-end
-
-function assertRelativePathsExist(root, relativePaths)
-    for k = 1:numel(relativePaths)
-        path = fullfile(root, relativePaths(k));
-        if exist(path, "file") ~= 2 && exist(path, "dir") ~= 7
-            error("LabKit:Build:PackageDryRunMissingPath", ...
-                "Package dry run expected path is missing: %s", relativePaths(k));
-        end
-    end
-end
-
-function reportFile = writePackageDryRunReport(root, report)
-    reportDir = fullfile(root, "artifacts", "package");
-    if exist(reportDir, "dir") ~= 7
-        mkdir(reportDir);
-    end
-    reportFile = fullfile(reportDir, "package-dry-run.json");
-    fid = fopen(reportFile, "w");
-    if fid < 0
-        error("LabKit:Build:PackageDryRunReport", ...
-            "Could not write package dry-run report: %s", reportFile);
-    end
-    cleanup = onCleanup(@() fclose(fid));
-    fwrite(fid, jsonencode(report), "char");
-    clear cleanup
 end
 
 function values = normalizeTextList(values)
@@ -389,31 +153,10 @@ function tf = isLogicalScalar(value)
     tf = (islogical(value) || isnumeric(value)) && isscalar(value);
 end
 
+function tf = isTextScalar(value)
+    tf = ischar(value) || (isstring(value) && isscalar(value));
+end
+
 function tf = isEmptyOrLogicalScalar(value)
     tf = isempty(value) || isLogicalScalar(value);
-end
-
-function normalized = normalizePaths(paths)
-    normalized = strings(size(paths));
-    for k = 1:numel(paths)
-        normalized(k) = normalizePath(paths(k));
-    end
-end
-
-function normalized = normalizePath(path)
-    normalized = replace(string(path), "\", "/");
-    normalized = regexprep(normalized, "/+$", "");
-    normalized = lower(normalized);
-end
-
-function closeProjectIfLoaded(proj, shouldCloseProject)
-    if ~shouldCloseProject || isempty(proj) || ~isvalid(proj)
-        return;
-    end
-    try
-        if proj.isLoaded
-            proj.close;
-        end
-    catch
-    end
 end

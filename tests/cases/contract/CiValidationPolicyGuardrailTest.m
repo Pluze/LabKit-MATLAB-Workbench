@@ -8,8 +8,8 @@ classdef CiValidationPolicyGuardrailTest < matlab.unittest.TestCase
                 "matlab-tests.yml");
             workflow = string(fileread(workflowPath));
 
-            testCase.verifyFalse(contains(workflow, "tasks: testUnit coverage"), ...
-                'PR unit job should not duplicate coverage execution.');
+            testCase.verifyFalse(contains(workflow, "tasks: headless coverage"), ...
+                'PR headless job should not duplicate coverage execution.');
             testCase.verifyTrue(contains(workflow, "tasks: coverage"), ...
                 'Coverage should remain available through a dedicated job.');
             coverageJob = extractWorkflowJob(workflow, "coverage");
@@ -60,8 +60,7 @@ classdef CiValidationPolicyGuardrailTest < matlab.unittest.TestCase
             workflowPath = fullfile(root, ".github", "workflows", ...
                 "matlab-tests.yml");
             workflow = string(fileread(workflowPath));
-            jobNames = ["quality", "unit", "coverage", "integration", ...
-                "gui-structural", "gui-gesture"];
+            jobNames = ["headless", "coverage", "gui"];
 
             for k = 1:numel(jobNames)
                 job = extractWorkflowJob(workflow, jobNames(k));
