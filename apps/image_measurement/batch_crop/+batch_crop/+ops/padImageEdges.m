@@ -1,10 +1,9 @@
 % App-owned edge-padding helper. Expected caller: batch-crop preview/export
 % transforms and package tests. Inputs are an image array and a padding
-% percent. Output preserves class and pads from edge-continuous pixels with a
-% small, clipped reflected residual so large padding does not mirror high
-% contrast source content into the synthetic area.
+% percent. Output preserves class and pads from edge-continuous pixels that
+% fade into reflected texture so crop previews stay visually continuous.
 function [padded, padding] = padImageEdges(imageData, paddingPercent)
-%PADIMAGEEDGES Expand an image using edge-continuous low-artifact padding.
+%PADIMAGEEDGES Expand an image using edge-blended reflected texture.
 
     validateImageData(imageData);
     percent = normalizePaddingPercent(paddingPercent);
@@ -18,7 +17,9 @@ function [padded, padding] = padImageEdges(imageData, paddingPercent)
         'left', padX, ...
         'right', padX, ...
         'top', padY, ...
-        'bottom', padY);
+        'bottom', padY, ...
+        'repairWidthX', edgeRepairWidth(width, padX), ...
+        'repairWidthY', edgeRepairWidth(height, padY));
 
     if padX == 0 && padY == 0
         padded = imageData;
@@ -27,25 +28,15 @@ function [padded, padding] = padImageEdges(imageData, paddingPercent)
 
     rowCoords = (1 - padY):(height + padY);
     colCoords = (1 - padX):(width + padX);
+    repaired = repairImageBorder(imageData, padding.repairWidthY, padding.repairWidthX);
     rowIdx = reflectedSubscripts(rowCoords, height);
     colIdx = reflectedSubscripts(colCoords, width);
-    clampedRows = min(max(rowCoords, 1), height);
-    clampedCols = min(max(colCoords, 1), width);
 
     if ndims(imageData) == 2
-        reflected = imageData(rowIdx, colIdx);
-        edgeBase = imageData(clampedRows, clampedCols);
+        padded = repaired(rowIdx, colIdx);
     else
-        reflected = imageData(rowIdx, colIdx, :);
-        edgeBase = imageData(clampedRows, clampedCols, :);
+        padded = repaired(rowIdx, colIdx, :);
     end
-
-    if islogical(imageData)
-        padded = edgeBase;
-        return;
-    end
-
-    padded = blendClippedResidual(edgeBase, reflected, imageData, rowCoords, colCoords, padding);
 end
 
 function validateImageData(imageData)
@@ -66,7 +57,16 @@ function percent = normalizePaddingPercent(paddingPercent)
         error('labkit_BatchImageCrop_app:InvalidPaddingPercent', ...
             'Padding percent must be finite.');
     end
-    percent = min(max(percent, 0), 50);
+    percent = min(max(percent, 0), 200);
+end
+
+function width = edgeRepairWidth(count, padSize)
+    if padSize <= 0 || count <= 4
+        width = 0;
+        return;
+    end
+
+    width = min([96, padSize, max(8, round(count * 0.06)), floor(count / 2)]);
 end
 
 function idx = reflectedSubscripts(coords, count)
@@ -82,68 +82,65 @@ function idx = reflectedSubscripts(coords, count)
     idx(over) = period - folded(over) + 2;
 end
 
-function padded = blendClippedResidual(edgeBase, reflected, imageData, rowCoords, colCoords, padding)
-    height = size(imageData, 1);
-    width = size(imageData, 2);
-    [colGrid, rowGrid] = meshgrid(colCoords, rowCoords);
-
-    inside = colGrid >= 1 & colGrid <= width & rowGrid >= 1 & rowGrid <= height;
-    outsideDistance = max(max(1 - colGrid, colGrid - width), ...
-        max(1 - rowGrid, rowGrid - height));
-    outsideDistance(inside) = 0;
-
-    residualWeight = residualBlendWeights(outsideDistance, inside, padding, height, width);
+function repaired = repairImageBorder(imageData, rowWidth, colWidth)
+    if islogical(imageData) || (rowWidth == 0 && colWidth == 0)
+        repaired = imageData;
+        return;
+    end
 
     if ndims(imageData) == 2
-        padded = blendPlane(edgeBase, reflected, imageData, residualWeight, inside);
+        repaired = repairPlane(imageData, rowWidth, colWidth);
     else
-        blended = edgeBase;
+        repaired = imageData;
         for channel = 1:size(imageData, 3)
-            blended(:, :, channel) = blendPlane(edgeBase(:, :, channel), ...
-                reflected(:, :, channel), imageData(:, :, channel), residualWeight, inside);
+            repaired(:, :, channel) = repairPlane(imageData(:, :, channel), rowWidth, colWidth);
         end
-        padded = blended;
     end
 end
 
-function weights = residualBlendWeights(outsideDistance, inside, padding, height, width)
-    maxPad = max([padding.left, padding.right, padding.top, padding.bottom]);
-    if maxPad == 0
-        weights = zeros(size(outsideDistance));
-        return;
+function plane = repairPlane(inputPlane, rowWidth, colWidth)
+    values = double(inputPlane);
+    repaired = values;
+    height = size(values, 1);
+    width = size(values, 2);
+
+    if colWidth > 0
+        leftCols = 1:colWidth;
+        leftTargets = 2 * colWidth:-1:(colWidth + 1);
+        weights = edgeRepairWeights(colWidth);
+        repaired(:, leftCols) = blendColumns(values(:, leftCols), values(:, leftTargets), weights);
+
+        rightCols = (width - colWidth + 1):width;
+        rightTargets = (width - colWidth):-1:(width - 2 * colWidth + 1);
+        repaired(:, rightCols) = blendColumns(values(:, rightCols), values(:, rightTargets), fliplr(weights));
     end
 
-    fadeInWidth = max(1, min(maxPad, round(min(height, width) * 0.02)));
-    fadeOutWidth = max(fadeInWidth + 1, round(maxPad * 0.65));
-    fadeIn = smoothstep(min(1, max(0, outsideDistance - 1) ./ fadeInWidth));
-    fadeOut = 1 - smoothstep(min(1, max(0, outsideDistance - fadeInWidth) ./ fadeOutWidth));
-    weights = 0.18 .* fadeIn .* fadeOut;
-    weights(inside) = 0;
+    if rowWidth > 0
+        topRows = 1:rowWidth;
+        topTargets = 2 * rowWidth:-1:(rowWidth + 1);
+        weights = edgeRepairWeights(rowWidth).';
+        repaired(topRows, :) = blendRows(repaired(topRows, :), repaired(topTargets, :), weights);
+
+        bottomRows = (height - rowWidth + 1):height;
+        bottomTargets = (height - rowWidth):-1:(height - 2 * rowWidth + 1);
+        repaired(bottomRows, :) = blendRows(repaired(bottomRows, :), ...
+            repaired(bottomTargets, :), flipud(weights));
+    end
+
+    plane = castPlane(repaired, inputPlane);
 end
 
-function weights = smoothstep(x)
+function values = blendColumns(edgeValues, sourceValues, weights)
+    values = (1 - weights) .* edgeValues + weights .* sourceValues;
+end
+
+function values = blendRows(edgeValues, sourceValues, weights)
+    values = (1 - weights) .* edgeValues + weights .* sourceValues;
+end
+
+function weights = edgeRepairWeights(width)
+    x = linspace(1, 0, width);
     weights = x .* x .* (3 - 2 .* x);
-end
-
-function plane = blendPlane(edgeBasePlane, reflectedPlane, sourcePlane, residualWeight, inside)
-    edgeBase = double(edgeBasePlane);
-    residual = double(reflectedPlane) - edgeBase;
-    residualLimit = robustResidualLimit(sourcePlane);
-    residual = min(max(residual, -residualLimit), residualLimit);
-    blended = edgeBase + residualWeight .* residual;
-    blended(inside) = double(sourcePlane);
-    plane = castPlane(blended, sourcePlane);
-end
-
-function limit = robustResidualLimit(sourcePlane)
-    values = double(sourcePlane(:));
-    dynamicRange = max(values) - min(values);
-    if dynamicRange == 0
-        limit = 0;
-        return;
-    end
-
-    limit = max(eps, 0.06 * dynamicRange);
 end
 
 function plane = castPlane(values, sourcePlane)

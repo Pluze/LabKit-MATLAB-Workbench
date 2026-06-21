@@ -30,6 +30,14 @@ command examples. Build tasks are broad discovery-driven entry points; use
 local GUI edits that only touch one app, prefer the app-level GUI
 folder or `runLabKitTests("AffectedAppsOnly", true)`.
 
+For a dirty worktree, route through the changed-file validation planner before
+manually choosing tests. The focused planner maps the current diff to the
+affected plan; do not skip that planning step and hand-pick broad or low-level
+suites just because the likely answer seems obvious. If release validation or
+an explicit user request requires broader gates, run them after the focused
+plan or state why a completed broader gate fully covers the affected plan
+instead of rerunning narrower tests for ceremony.
+
 ```text
 project                    startup, architecture, package surface, sample-data hygiene
 labkit/dta                 DTA parser, facade, session, item, pulse behavior
@@ -49,6 +57,12 @@ Pair reusable changes with downstream apps when the app-facing contract could
 be affected. Use the default non-GUI build task for broad non-GUI changes, the
 labkit/app GUI build tasks for broad GUI structural routing, and runner suite
 selectors for narrower local diagnosis.
+
+When local GUI validation is needed, account for focus stealing. MATLAB GUI
+tests open real figures on macOS and can interrupt the user's typing. Prefer
+the focused GUI target, CI, or another noninteractive display for broad GUI
+validation; only start full local GUI validation when the user asked for it,
+release validation requires it, or the user is not actively using the keyboard.
 
 ## GUI Claims
 

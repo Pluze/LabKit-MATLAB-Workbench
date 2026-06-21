@@ -14,8 +14,10 @@ function verify_batchImageCrop()
 
     checkFixedPixelCropPreservesClassAndSize();
     checkOutOfBoundsCropUsesWhiteBackground();
-    checkEdgeContinuousPaddingPreservesSourceAndBoundary();
-    checkLargePaddingSuppressesInteriorMirroring();
+    checkReflectedPaddingPreservesSourceAndBlendsBoundary();
+    checkPaddingFadesIntoReflectedTexture();
+    checkPaddingDoesNotStretchDarkEdgePixels();
+    checkPaddingAllowsLargeExtension();
     checkCoordinateTransformsRoundTripOriginalPoints();
     checkPaddingDoesNotMoveCropCenterMetadata();
     checkRotatedCropKeepsRequestedSize();
@@ -62,28 +64,60 @@ function checkOutOfBoundsCropUsesWhiteBackground()
         'In-bounds crop area should preserve source pixels.');
 end
 
-function checkEdgeContinuousPaddingPreservesSourceAndBoundary()
-    img = uint8(repmat([10 40 80 120], 4, 1));
+function checkReflectedPaddingPreservesSourceAndBlendsBoundary()
+    img = uint8(120 * ones(20, 20));
+    img(:, 1) = 0;
+    img(1, :) = 0;
+    img(9:12, 9:12) = 200;
     [padded, padding] = batch_crop.ops.padImageEdges(img, 50);
 
-    sourceBlock = padded((1:4) + padding.top, (1:4) + padding.left);
-    assert(isequal(sourceBlock, img), ...
-        'Padding must not alter source-image pixels.');
-    edgeValue = double(padded(padding.top + 1, padding.left + 1));
-    firstPaddingValue = double(padded(padding.top + 1, padding.left));
-    rawReflectedValue = double(img(1, 2));
-    assert(abs(firstPaddingValue - edgeValue) < abs(rawReflectedValue - edgeValue), ...
-        'Padding should stay continuous at the original image boundary.');
+    sourceBlock = padded((1:20) + padding.top, (1:20) + padding.left);
+    assert(isequal(sourceBlock(9:12, 9:12), img(9:12, 9:12)), ...
+        'Padding repair must not alter interior source-image pixels.');
+    edgeValue = double(img(10, 1));
+    insetValue = double(img(10, 2));
+    firstPaddingValue = double(padded(padding.top + 10, padding.left));
+    assert(abs(firstPaddingValue - insetValue) < abs(firstPaddingValue - edgeValue), ...
+        'Padding should use inset edge texture instead of stretching the outermost edge pixel.');
 end
 
-function checkLargePaddingSuppressesInteriorMirroring()
-    img = uint8(100 * ones(8, 8));
-    img(:, 4:5) = 250;
+function checkPaddingFadesIntoReflectedTexture()
+    img = uint8(100 * ones(40, 40));
+    img(:, 20:22) = 250;
     [padded, padding] = batch_crop.ops.padImageEdges(img, 50);
 
-    leftPadding = double(padded(padding.top + 1, 1:padding.left));
-    assert(max(leftPadding) < 130, ...
-        'Large padding should not mirror high-contrast interior content into the synthetic edge.');
+    leftPadding = double(padded(padding.top + 20, 1:padding.left));
+    edgeValue = double(img(20, 1));
+    reflectedTextureValue = double(img(20, 21));
+    assert(abs(leftPadding(1) - reflectedTextureValue) < abs(leftPadding(1) - edgeValue), ...
+        'Far padding should fade into reflected image texture.');
+end
+
+function checkPaddingDoesNotStretchDarkEdgePixels()
+    img = uint8(180 * ones(20, 30));
+    img(:, 1) = 0;
+    [padded, padding] = batch_crop.ops.padImageEdges(img, 40);
+
+    leftPadding = double(padded(padding.top + 10, 1:padding.left));
+    sourceBlock = double(padded((1:20) + padding.top, (1:30) + padding.left));
+    assert(sourceBlock(10, 1) > 120, ...
+        'Border repair should replace dark outermost source-edge pixels with nearby texture.');
+    assert(leftPadding(end) > 120, ...
+        'The first padded pixel should use repaired edge texture.');
+    assert(leftPadding(1) > 120, ...
+        'Inset reflection should keep the far padding from becoming a stretched dark edge.');
+    assert(~any(leftPadding < 60), ...
+        'Dark edge pixels should not extend into the synthetic padding.');
+end
+
+function checkPaddingAllowsLargeExtension()
+    img = uint8(ones(4, 5));
+    [padded, padding] = batch_crop.ops.padImageEdges(img, 250);
+
+    assert(padding.percent == 200, ...
+        'Padding percent should clamp to the supported 200%% maximum.');
+    assert(isequal(size(padded), [20 25]), ...
+        '200%% padding should add two source widths/heights on each side.');
 end
 
 function checkCoordinateTransformsRoundTripOriginalPoints()

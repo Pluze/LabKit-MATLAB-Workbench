@@ -24,6 +24,7 @@ function hImage = showImage(ax, imageData, titleText, opts)
 %                      Wheel zoom is owned by previewArea navigation.
 %   preserveView - logical, default true. Preserves current XLim/YLim when
 %                  redrawing an image with the same displayed image bounds.
+%   xData, yData - optional two-element image XData/YData center coordinates.
 %
 % Output:
 %   hImage - image graphics object. Axes popout is refreshed automatically.
@@ -32,19 +33,21 @@ function hImage = showImage(ax, imageData, titleText, opts)
         opts = struct();
     end
 
-    viewState = currentImageViewState(ax, imageData, ...
+    xData = optionValue(opts, 'xData', [1, size(imageData, 2)]);
+    yData = optionValue(opts, 'yData', [1, size(imageData, 1)]);
+    viewState = currentImageViewState(ax, imageData, xData, yData, ...
         optionValue(opts, 'preserveView', true));
     if optionValue(opts, 'clearAxes', true)
         cla(ax);
     end
 
-    hImage = image(ax, imageData);
+    hImage = image(ax, 'CData', imageData, 'XData', xData, 'YData', yData);
     hImage.HitTest = optionValue(opts, 'hitTest', 'off');
     hImage.PickableParts = optionValue(opts, 'pickableParts', 'none');
 
     axis(ax, 'image');
-    ax.XLim = [0.5, size(imageData, 2) + 0.5];
-    ax.YLim = [0.5, size(imageData, 1) + 0.5];
+    ax.XLim = viewState.newBounds(1:2);
+    ax.YLim = viewState.newBounds(3:4);
     ax.YDir = 'reverse';
     ax.XTick = [];
     ax.YTick = [];
@@ -68,10 +71,10 @@ function enableImageNavigation(ax)
     end
 end
 
-function state = currentImageViewState(ax, imageData, preserveView)
+function state = currentImageViewState(ax, imageData, xData, yData, preserveView)
     state = struct();
-    state.newBounds = [0.5, size(imageData, 2) + 0.5, ...
-        0.5, size(imageData, 1) + 0.5];
+    state.newBounds = [imageDataLimits(xData, size(imageData, 2)), ...
+        imageDataLimits(yData, size(imageData, 1))];
     state.xLim = [];
     state.yLim = [];
     state.preserve = false;
@@ -87,6 +90,17 @@ function state = currentImageViewState(ax, imageData, preserveView)
     state.yLim = ax.YLim;
     state.preserve = numel(state.xLim) == 2 && numel(state.yLim) == 2 && ...
         all(isfinite(state.xLim)) && all(isfinite(state.yLim));
+end
+
+function limits = imageDataLimits(data, count)
+    data = double(data(:)).';
+    if numel(data) < 2 || count <= 1
+        center = data(1);
+        limits = center + [-0.5, 0.5];
+        return;
+    end
+    step = abs(diff(data(1:2))) / max(1, count - 1);
+    limits = sort(data(1:2)) + [-0.5, 0.5] .* step;
 end
 
 function limits = clampLimits(limits, fullLimits)

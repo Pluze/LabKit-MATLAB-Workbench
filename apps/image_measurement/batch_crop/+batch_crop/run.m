@@ -144,7 +144,7 @@ function fig = run(debugLog)
     function onCropGeometryChanged()
         edtCropWidth.Value = round(max(1, edtCropWidth.Value));
         edtCropHeight.Value = round(max(1, edtCropHeight.Value));
-        refreshPreview();
+        refreshPreview(capturePreviewView());
         refreshSummary();
     end
 
@@ -152,22 +152,24 @@ function fig = run(debugLog)
         if ~hasCurrentImage()
             return;
         end
+        viewState = capturePreviewView();
         S.items(S.currentIndex).angleDeg = edtRotation.Value;
         ensureCurrentCenter();
         S.canvasCache = emptyCanvasCache();
         addLog(sprintf('Updated rotation for image %d: %.3g deg.', ...
             S.currentIndex, S.items(S.currentIndex).angleDeg));
-        refreshAll();
+        refreshAll(viewState);
     end
 
     function onPaddingChanged()
-        edtPaddingPercent.Value = min(max(double(edtPaddingPercent.Value), 0), 50);
+        edtPaddingPercent.Value = min(max(double(edtPaddingPercent.Value), 0), 200);
+        viewState = capturePreviewView();
         S.canvasCache = emptyCanvasCache();
         if hasCurrentImage()
             addLog(sprintf('Updated padding for image %d: %.3g%%.', ...
                 S.currentIndex, edtPaddingPercent.Value));
         end
-        refreshPreview();
+        refreshPreview(viewState);
         refreshSummary();
     end
 
@@ -213,10 +215,12 @@ function fig = run(debugLog)
             return;
         end
         geometry = currentGeometry();
+        placement = previewPlacement(geometry);
         pt = previewAxes.CurrentPoint;
-        x = min(max(pt(1, 1), 1), size(geometry.canvas, 2));
-        y = min(max(pt(1, 2), 1), size(geometry.canvas, 1));
-        centerXY = batch_crop.ops.canvasToOriginal(geometry, [x, y]);
+        canvasXY = [pt(1, 1), pt(1, 2)] - placement.offset;
+        canvasXY(1) = min(max(canvasXY(1), 1), size(geometry.canvas, 2));
+        canvasXY(2) = min(max(canvasXY(2), 1), size(geometry.canvas, 1));
+        centerXY = batch_crop.ops.canvasToOriginal(geometry, canvasXY);
         centerXY = clampToSource(centerXY, S.items(S.currentIndex).image);
         S.items(S.currentIndex).centerXY = centerXY;
         S.items(S.currentIndex).centerSet = true;
@@ -257,10 +261,13 @@ function fig = run(debugLog)
         end
     end
 
-    function refreshAll()
+    function refreshAll(viewState)
+        if nargin < 1
+            viewState = [];
+        end
         refreshList();
         refreshControls();
-        refreshPreview();
+        refreshPreview(viewState);
         refreshSummary();
     end
 
@@ -315,7 +322,10 @@ function fig = run(debugLog)
         btnExport.Enable = ternary(hasImage && all([S.items.centerSet]), 'on', 'off');
     end
 
-    function refreshPreview()
+    function refreshPreview(viewState)
+        if nargin < 1
+            viewState = [];
+        end
         if ~hasCurrentImage()
             resetPreviewAxes();
             cropSession.setBackground([]);
@@ -325,14 +335,16 @@ function fig = run(debugLog)
 
         ensureCurrentCenter();
         geometry = currentGeometry();
+        placement = previewPlacement(geometry);
         hImage = labkit.ui.view.drawImage(ui, 'preview', geometry.canvas, ...
             "title", "Padded rotation preview + fixed crop", ...
-            "axis", "crop");
+            "axis", "crop", ...
+            "options", struct("xData", placement.xData, "yData", placement.yData));
         hold(previewAxes, 'on');
         item = S.items(S.currentIndex);
         cropWidth = currentCropWidth();
         cropHeight = currentCropHeight();
-        canvasCenterXY = batch_crop.ops.originalToCanvas(geometry, item.centerXY);
+        canvasCenterXY = batch_crop.ops.originalToCanvas(geometry, item.centerXY) + placement.offset;
         position = batch_crop.view.rectanglePosition(canvasCenterXY, cropWidth, cropHeight);
         hRect = rectangle(previewAxes, 'Position', position, ...
             'EdgeColor', [1 0.84 0], ...
@@ -352,6 +364,7 @@ function fig = run(debugLog)
         cropSession.setBackground(hImage);
         cropSession.setGraphics([hRect, hLineX, hLineY]);
         cropSession.activate();
+        restorePreviewView(viewState, geometry, placement);
     end
 
     function refreshSummary()
@@ -384,7 +397,7 @@ function fig = run(debugLog)
     end
 
     function percent = currentPaddingPercent()
-        percent = min(max(double(edtPaddingPercent.Value), 0), 50);
+        percent = min(max(double(edtPaddingPercent.Value), 0), 200);
     end
 
     function geometry = currentGeometry()
@@ -399,6 +412,75 @@ function fig = run(debugLog)
             'angleDeg', item.angleDeg, ...
             'paddingPercent', currentPaddingPercent()));
         S.canvasCache = struct('valid', true, 'key', key, 'geometry', geometry);
+    end
+
+    function placement = previewPlacement(geometry)
+        sourceCenter = sourceCenterFromSize(geometry.sourceWidth, geometry.sourceHeight);
+        canvasCenter = batch_crop.ops.originalToCanvas(geometry, sourceCenter);
+        offset = sourceCenter - canvasCenter;
+        placement = struct( ...
+            'offset', offset, ...
+            'xData', [1, size(geometry.canvas, 2)] + offset(1), ...
+            'yData', [1, size(geometry.canvas, 1)] + offset(2));
+    end
+
+    function state = capturePreviewView()
+        state = struct('valid', false);
+        if ~hasCurrentImage() || ~all(isfinite(previewAxes.XLim)) || ...
+                ~all(isfinite(previewAxes.YLim))
+            return;
+        end
+
+        geometry = currentGeometry();
+        placement = previewPlacement(geometry);
+        centerCanvas = [mean(previewAxes.XLim), mean(previewAxes.YLim)] - placement.offset;
+        centerOriginal = batch_crop.ops.canvasToOriginal(geometry, centerCanvas);
+        state = struct( ...
+            'valid', true, ...
+            'centerOriginal', centerOriginal, ...
+            'xSpan', diff(previewAxes.XLim), ...
+            'ySpan', diff(previewAxes.YLim));
+    end
+
+    function restorePreviewView(state, geometry, placement)
+        if isempty(state) || ~isstruct(state) || ~isfield(state, 'valid') || ~state.valid
+            return;
+        end
+        if ~isfinite(state.xSpan) || ~isfinite(state.ySpan) || ...
+                state.xSpan <= 0 || state.ySpan <= 0
+            return;
+        end
+
+        centerCanvas = batch_crop.ops.originalToCanvas(geometry, state.centerOriginal) + placement.offset;
+        previewAxes.XLim = centeredLimits(centerCanvas(1), state.xSpan, ...
+            imageDataLimits(placement.xData, size(geometry.canvas, 2)));
+        previewAxes.YLim = centeredLimits(centerCanvas(2), state.ySpan, ...
+            imageDataLimits(placement.yData, size(geometry.canvas, 1)));
+    end
+
+    function limits = centeredLimits(center, span, fullLimits)
+        fullSpan = diff(fullLimits);
+        if span >= fullSpan
+            limits = fullLimits;
+            return;
+        end
+        limits = center + [-0.5, 0.5] .* span;
+        if limits(1) < fullLimits(1)
+            limits = [fullLimits(1), fullLimits(1) + span];
+        end
+        if limits(2) > fullLimits(2)
+            limits = [fullLimits(2) - span, fullLimits(2)];
+        end
+    end
+
+    function limits = imageDataLimits(data, count)
+        data = double(data(:)).';
+        if numel(data) < 2 || count <= 1
+            limits = data(1) + [-0.5, 0.5];
+            return;
+        end
+        step = abs(diff(data(1:2))) / max(1, count - 1);
+        limits = sort(data(1:2)) + [-0.5, 0.5] .* step;
     end
 
     function ensureCurrentCenter()
@@ -446,7 +528,11 @@ function fig = run(debugLog)
     end
 
     function centerXY = sourceCenterXY(imageData)
-        centerXY = [(size(imageData, 2) + 1) / 2, (size(imageData, 1) + 1) / 2];
+        centerXY = sourceCenterFromSize(size(imageData, 2), size(imageData, 1));
+    end
+
+    function centerXY = sourceCenterFromSize(width, height)
+        centerXY = [(width + 1) / 2, (height + 1) / 2];
     end
 
     function centerXY = clampToSource(centerXY, imageData)

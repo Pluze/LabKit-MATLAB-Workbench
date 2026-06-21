@@ -11,7 +11,9 @@ function imageHandle = drawImage(ui, id, imageData, varargin)
 %   imageData - image matrix passed to the axes renderer.
 %   title - optional axes title.
 %   axis - optional named axes id.
-%   options - optional struct passed to the existing image renderer.
+%   options - optional struct passed to the existing image renderer. Supported
+%       renderer fields include xData/yData image center coordinates,
+%       clearAxes, hitTest, pickableParts, enableNavigation, and preserveView.
 %
 % Output:
 %   imageHandle - graphics image object returned by the renderer.

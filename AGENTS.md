@@ -108,6 +108,11 @@ scope, fixture expectations, and GUI validation limits. Scoped
 `AGENTS.md` files should only route by ownership and should not duplicate the
 full task list.
 
+For dirty worktrees, let the changed-file validation route choose the focused
+test plan before hand-selecting broader gates. Prefer non-disruptive validation
+while the user is actively working; local GUI gates can steal keyboard focus
+and should be run only when necessary or explicitly requested.
+
 In noninteractive agent shells, run MATLAB build tasks directly, for example
 `buildtool headless`. If the shell cannot find `buildtool`, locate MATLAB
 without adding a repository wrapper, for example:
