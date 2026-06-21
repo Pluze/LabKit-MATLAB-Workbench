@@ -14,7 +14,8 @@ function verify_batchImageCrop()
 
     checkFixedPixelCropPreservesClassAndSize();
     checkOutOfBoundsCropUsesWhiteBackground();
-    checkReflectedPaddingPreservesSourceAndSoftensEdge();
+    checkEdgeContinuousPaddingPreservesSourceAndBoundary();
+    checkLargePaddingSuppressesInteriorMirroring();
     checkCoordinateTransformsRoundTripOriginalPoints();
     checkPaddingDoesNotMoveCropCenterMetadata();
     checkRotatedCropKeepsRequestedSize();
@@ -61,7 +62,7 @@ function checkOutOfBoundsCropUsesWhiteBackground()
         'In-bounds crop area should preserve source pixels.');
 end
 
-function checkReflectedPaddingPreservesSourceAndSoftensEdge()
+function checkEdgeContinuousPaddingPreservesSourceAndBoundary()
     img = uint8(repmat([10 40 80 120], 4, 1));
     [padded, padding] = batch_crop.ops.padImageEdges(img, 50);
 
@@ -72,7 +73,17 @@ function checkReflectedPaddingPreservesSourceAndSoftensEdge()
     firstPaddingValue = double(padded(padding.top + 1, padding.left));
     rawReflectedValue = double(img(1, 2));
     assert(abs(firstPaddingValue - edgeValue) < abs(rawReflectedValue - edgeValue), ...
-        'Padding should blend reflected pixels near the edge to avoid a hard seam.');
+        'Padding should stay continuous at the original image boundary.');
+end
+
+function checkLargePaddingSuppressesInteriorMirroring()
+    img = uint8(100 * ones(8, 8));
+    img(:, 4:5) = 250;
+    [padded, padding] = batch_crop.ops.padImageEdges(img, 50);
+
+    leftPadding = double(padded(padding.top + 1, 1:padding.left));
+    assert(max(leftPadding) < 130, ...
+        'Large padding should not mirror high-contrast interior content into the synthetic edge.');
 end
 
 function checkCoordinateTransformsRoundTripOriginalPoints()

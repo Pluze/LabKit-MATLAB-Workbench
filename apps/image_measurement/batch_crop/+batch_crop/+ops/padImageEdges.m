@@ -1,9 +1,10 @@
 % App-owned edge-padding helper. Expected caller: batch-crop preview/export
 % transforms and package tests. Inputs are an image array and a padding
-% percent. Output preserves class and pads by reflecting the source image with
-% a narrow edge-only blend to reduce visible seams.
+% percent. Output preserves class and pads from edge-continuous pixels with a
+% small, clipped reflected residual so large padding does not mirror high
+% contrast source content into the synthetic area.
 function [padded, padding] = padImageEdges(imageData, paddingPercent)
-%PADIMAGEEDGES Expand an image using reflected edge-continuous padding.
+%PADIMAGEEDGES Expand an image using edge-continuous low-artifact padding.
 
     validateImageData(imageData);
     percent = normalizePaddingPercent(paddingPercent);
@@ -28,18 +29,23 @@ function [padded, padding] = padImageEdges(imageData, paddingPercent)
     colCoords = (1 - padX):(width + padX);
     rowIdx = reflectedSubscripts(rowCoords, height);
     colIdx = reflectedSubscripts(colCoords, width);
+    clampedRows = min(max(rowCoords, 1), height);
+    clampedCols = min(max(colCoords, 1), width);
 
     if ndims(imageData) == 2
-        padded = imageData(rowIdx, colIdx);
+        reflected = imageData(rowIdx, colIdx);
+        edgeBase = imageData(clampedRows, clampedCols);
     else
-        padded = imageData(rowIdx, colIdx, :);
+        reflected = imageData(rowIdx, colIdx, :);
+        edgeBase = imageData(clampedRows, clampedCols, :);
     end
 
     if islogical(imageData)
+        padded = edgeBase;
         return;
     end
 
-    padded = blendPaddingTowardEdge(padded, imageData, rowCoords, colCoords, padding);
+    padded = blendClippedResidual(edgeBase, reflected, imageData, rowCoords, colCoords, padding);
 end
 
 function validateImageData(imageData)
@@ -76,7 +82,7 @@ function idx = reflectedSubscripts(coords, count)
     idx(over) = period - folded(over) + 2;
 end
 
-function padded = blendPaddingTowardEdge(padded, imageData, rowCoords, colCoords, padding)
+function padded = blendClippedResidual(edgeBase, reflected, imageData, rowCoords, colCoords, padding)
     height = size(imageData, 1);
     width = size(imageData, 2);
     [colGrid, rowGrid] = meshgrid(colCoords, rowCoords);
@@ -86,36 +92,58 @@ function padded = blendPaddingTowardEdge(padded, imageData, rowCoords, colCoords
         max(1 - rowGrid, rowGrid - height));
     outsideDistance(inside) = 0;
 
-    maxPad = max([padding.left, padding.right, padding.top, padding.bottom]);
-    blendWidth = min(maxPad, max(1, round(min(height, width) * 0.04)));
-    alpha = smoothstep(min(1, outsideDistance ./ (blendWidth + 1)));
-    alpha(inside) = 0;
+    residualWeight = residualBlendWeights(outsideDistance, inside, padding, height, width);
 
-    clampRows = min(max(rowGrid, 1), height);
-    clampCols = min(max(colGrid, 1), width);
     if ndims(imageData) == 2
-        padded = blendPlane(padded, imageData, alpha, inside, clampRows, clampCols);
+        padded = blendPlane(edgeBase, reflected, imageData, residualWeight, inside);
     else
-        blended = padded;
+        blended = edgeBase;
         for channel = 1:size(imageData, 3)
-            blended(:, :, channel) = blendPlane(padded(:, :, channel), ...
-                imageData(:, :, channel), alpha, inside, clampRows, clampCols);
+            blended(:, :, channel) = blendPlane(edgeBase(:, :, channel), ...
+                reflected(:, :, channel), imageData(:, :, channel), residualWeight, inside);
         end
         padded = blended;
     end
+end
+
+function weights = residualBlendWeights(outsideDistance, inside, padding, height, width)
+    maxPad = max([padding.left, padding.right, padding.top, padding.bottom]);
+    if maxPad == 0
+        weights = zeros(size(outsideDistance));
+        return;
+    end
+
+    fadeInWidth = max(1, min(maxPad, round(min(height, width) * 0.02)));
+    fadeOutWidth = max(fadeInWidth + 1, round(maxPad * 0.65));
+    fadeIn = smoothstep(min(1, max(0, outsideDistance - 1) ./ fadeInWidth));
+    fadeOut = 1 - smoothstep(min(1, max(0, outsideDistance - fadeInWidth) ./ fadeOutWidth));
+    weights = 0.18 .* fadeIn .* fadeOut;
+    weights(inside) = 0;
 end
 
 function weights = smoothstep(x)
     weights = x .* x .* (3 - 2 .* x);
 end
 
-function plane = blendPlane(paddedPlane, sourcePlane, alpha, inside, clampRows, clampCols)
-    edgeLinear = sub2ind(size(sourcePlane), clampRows, clampCols);
-    edgePlane = double(sourcePlane(edgeLinear));
-    reflected = double(paddedPlane);
-    blended = alpha .* reflected + (1 - alpha) .* edgePlane;
-    blended(inside) = reflected(inside);
+function plane = blendPlane(edgeBasePlane, reflectedPlane, sourcePlane, residualWeight, inside)
+    edgeBase = double(edgeBasePlane);
+    residual = double(reflectedPlane) - edgeBase;
+    residualLimit = robustResidualLimit(sourcePlane);
+    residual = min(max(residual, -residualLimit), residualLimit);
+    blended = edgeBase + residualWeight .* residual;
+    blended(inside) = double(sourcePlane);
     plane = castPlane(blended, sourcePlane);
+end
+
+function limit = robustResidualLimit(sourcePlane)
+    values = double(sourcePlane(:));
+    dynamicRange = max(values) - min(values);
+    if dynamicRange == 0
+        limit = 0;
+        return;
+    end
+
+    limit = max(eps, 0.06 * dynamicRange);
 end
 
 function plane = castPlane(values, sourcePlane)
