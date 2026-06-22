@@ -50,6 +50,21 @@ classdef GuiLayoutEisTest < matlab.uitest.TestCase
             testCase.verifyNotEqual(ui.controls.summary.textArea.Value, ...
                 {'No files loaded.'}, ...
                 'Open DTA file(s) should refresh the EIS summary.');
+            ax = ui.controls.plot.axesById.overlay;
+            ax.XLim = [-1e4 5e4];
+            ax.YLim = [4e4 13e4];
+            ax.XLimMode = 'manual';
+            ax.YLimMode = 'manual';
+
+            h.invokeDropdownValue(fig, 'log10(Freq)');
+            h.invokeCheckbox(fig, 'Log Y', true);
+
+            testCase.verifyEqual(ax.XLimMode, 'auto');
+            testCase.verifyEqual(ax.YLimMode, 'auto');
+            testCase.verifyLessThan(diff(ax.XLim), 10, ...
+                'Changing EIS coordinate selections should discard stale zoomed X limits.');
+            testCase.verifyLessThan(diff(log10(ax.YLim)), 6, ...
+                'Changing EIS log coordinate selections should discard stale zoomed Y limits.');
         end
     end
 end

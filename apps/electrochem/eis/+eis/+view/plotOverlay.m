@@ -8,9 +8,11 @@ function labels = plotOverlay(ax, items, opts)
     opts = fillPlotOptions(opts);
 
     cla(ax);
+    resetPlotView(ax);
     ax.XScale = ternary(opts.logX, 'log', 'linear');
     ax.YScale = ternary(opts.logY, 'log', 'linear');
     axis(ax, 'normal');
+    resetPlotView(ax);
 
     cmap = lines(numel(items));
     labels = cell(1, numel(items));
@@ -120,4 +122,11 @@ function txt = ternary(cond, a, b)
     else
         txt = b;
     end
+end
+
+function resetPlotView(ax)
+    ax.XLimMode = 'auto';
+    ax.YLimMode = 'auto';
+    ax.ZLimMode = 'auto';
+    ax.CLimMode = 'auto';
 end
