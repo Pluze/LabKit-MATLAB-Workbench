@@ -64,6 +64,13 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
 - Callback-heavy apps should move app-owned production code into these
   package components instead of adding new `private` runners or string-dispatch
   workflow adapters.
+- For apps with a preview-edit-export workflow, keep preview computation
+  separate from export computation. Preview callbacks should operate only on
+  the current selection and on display-resolution data when practical; Apply
+  actions should record user workflow state or history instead of processing
+  every loaded file; Export actions should be the batch boundary that processes
+  original-resolution inputs. Do not maintain full-resolution batch result
+  caches solely to make previews responsive.
 - Use `.agents/migration_guide.md` and the `labkit-migration-planner` skill for
   active runner, app-private, and migration-debt work. This file owns app
   boundary rules, not the migration debt ledger.
