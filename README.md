@@ -5,51 +5,39 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![MATLAB](https://img.shields.io/badge/MATLAB-apps-orange.svg)](https://www.mathworks.com/products/matlab.html)
 
-LabKit is a MATLAB workbench for small, focused lab GUI apps. It is organized
-around independent workflows rather than one large analysis platform. Apps own
-their scientific choices, plots, result tables, and exports. The reusable
-`+labkit` library stays small: GUI shell helpers, Gamry DTA loading, Intan RHS
-loading, and biosignal processing facades.
+LabKit is a MATLAB workbench for focused lab GUI apps. Each app owns its lab
+workflow, plots, result tables, and exports. The reusable `+labkit` foundation
+stays small: GUI shell helpers, Gamry DTA loading, Intan RHS loading, and
+biosignal processing facades.
 
-## Start Here
+## Quick Start
 
-Open MATLAB at the repository root and run:
+Download the single-file launcher:
+
+**[Download `labkit_launcher.m`](https://raw.githubusercontent.com/Pluze/LabKit-MATLAB-Workbench/main/labkit_launcher.m)**
+
+1. Create a standalone folder for LabKit, for example `LabKit/`.
+2. Save `labkit_launcher.m` in that folder.
+3. Open MATLAB in that folder and run:
 
 ```matlab
 labkit_launcher
 ```
 
-The launcher is self-contained so it can open even when other LabKit folders
-are missing. It scans `apps/**/labkit_*_app.m`, shows the available tools, and
-opens the selected app. It also has direct actions for Debug launch, updating
-or repairing non-git installs from GitHub zips, MATLAB Code Analyzer reporting,
-and cleaning generated artifacts.
+Use `Latest` in the launcher to update from the current `main` branch, or
+`Release` to use the latest stable GitHub release. Keep lab data and exported
+results in your own project folders; the LabKit folder can be treated as an
+application runtime folder.
 
-Start apps from the launcher in normal use. To launch an app command manually,
-first add the repository root, `apps/`, and the target app folder to the MATLAB
-path, then call the app command.
+## Why Use The Launcher
 
-Use the launcher's `Run Code Analyzer` action when you want an ignored
-`artifacts/code-check/matlab_code_check.json` report.
+- It is the stable entry point for opening every LabKit app.
+- It can start from a folder that only contains `labkit_launcher.m`.
+- It downloads or updates the LabKit code for normal users.
+- It keeps users away from repository layout details during routine use.
 
-Use the launcher's `GitHub Update` actions only for zip-download installs; they
-are disabled in git checkouts. `Latest` downloads the current `main` zip.
-`Release` downloads the latest GitHub release, falling back to the latest tag
-when no release is available. Both actions show progress, restore missing
-LabKit-managed folders, preserve user files that are not project files, and
-write a visible `LabKit-backup-*.zip` in the project root before changing
-files.
-
-## Contributor Quick Path
-
-1. Open MATLAB at the repository root and run `labkit_launcher`.
-2. Read [docs/README.md](docs/README.md) to choose the one or two docs that
-   match your task.
-3. Make the smallest source change that preserves the owning app or facade
-   boundary.
-4. Before committing, use the changed-file validation task from
-   [docs/testing.md](docs/testing.md). Use the full non-GUI task when there is
-   no git checkout or changed-file state.
+A git checkout is only needed for source development, testing, CI work, or
+reviewing implementation details.
 
 ## App Families
 
@@ -59,46 +47,36 @@ files.
 | DIC | `labkit_DICPreprocess_app`, `labkit_DICPostprocess_app` | Image preparation, ROI masks, strain overlays, and summaries. |
 | Image measurement | `labkit_CurvatureMeasurement_app`, `labkit_FocusStack_app`, `labkit_ImageEnhance_app`, `labkit_BatchImageCrop_app` | Image measurement, microscopy utilities, and figure preparation. |
 | Wearable biosignal | `labkit_ECGPrint_app` | ECG import, filtering, peak/segment review, and exports. |
-| Neurophysiology | `labkit_RHSPreview_app`, `labkit_NerveResponseAnalysis_app`, `labkit_ResponseReviewStats_app` | Intan RHS inspection, channel protocol drafting, manual filter records, event-locked nerve response analysis, and aligned response statistics. |
+| Neurophysiology | `labkit_RHSPreview_app`, `labkit_NerveResponseAnalysis_app`, `labkit_ResponseReviewStats_app` | Intan RHS inspection, channel protocol drafting, filter records, event-locked nerve response analysis, and aligned response statistics. |
 
-## Validate Locally
+See [docs/apps.md](docs/apps.md) for the full app catalog and expected inputs
+and outputs.
 
-Default non-GUI check:
+## Documentation
+
+Start with [docs/README.md](docs/README.md). It separates normal app usage from
+maintainer references so the homepage does not need to expose the whole
+repository structure.
+
+Useful direct links:
+
+- [App catalog and launch notes](docs/apps.md)
+- [Architecture and ownership boundaries](docs/architecture.md)
+- [Testing and validation tasks](docs/testing.md)
+- [Release policy](docs/release.md)
+
+## Development
+
+Clone the repository when you need to change source code or run tests:
 
 ```bash
+git clone https://github.com/Pluze/LabKit-MATLAB-Workbench.git
+cd LabKit-MATLAB-Workbench
 buildtool headless
-```
-
-If `buildtool` is not available in your shell, find your MATLAB app and add its
-`bin` directory to `PATH`, then rerun the same command:
-
-```bash
-ls /Applications/MATLAB_*.app/bin/matlab
-export PATH="/Applications/MATLAB_R2025a.app/bin:$PATH"
 ```
 
 See [docs/testing.md](docs/testing.md) for the supported build tasks and GUI
 validation limits.
-
-## Repository Map
-
-```text
-+labkit/                Reusable UI, DTA, RHS, and biosignal facades
-apps/                   Launchable app workflows and app-owned helpers
-docs/                   Human-facing usage, architecture, and API docs
-scripts/                CI helper scripts
-tests/                  Unit, contract, GUI, shared helpers, and runner code
-```
-
-## Documentation
-
-- [docs/README.md](docs/README.md): choose the right document.
-- [docs/apps.md](docs/apps.md): app catalog, new-app workflow, app structure.
-- [docs/architecture.md](docs/architecture.md): ownership boundaries.
-- [docs/testing.md](docs/testing.md): build tasks and GUI limits.
-- [docs/ui.md](docs/ui.md), [docs/dta.md](docs/dta.md),
-  [docs/rhs.md](docs/rhs.md), and [docs/biosignal.md](docs/biosignal.md):
-  reusable facade references.
 
 ## License
 

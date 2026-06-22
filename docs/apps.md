@@ -6,22 +6,27 @@ app-owned workflow logic.
 
 ## Launching Apps
 
-From the repository root in MATLAB:
+For normal use, start from the single-file launcher linked in the root
+[README](../README.md). Put `labkit_launcher.m` in a standalone LabKit folder,
+open MATLAB in that folder, and run:
 
 ```matlab
 labkit_launcher
 ```
 
-The launcher is self-contained so it can open even when other LabKit folders
-are missing. It initializes the LabKit path, discovers
-`apps/**/labkit_*_app.m`, and opens the selected app. It also provides direct
-actions to launch the selected app in debug mode, update or repair non-git
-installs from GitHub zips, run MATLAB Code Analyzer, and clean LabKit-generated
-artifacts.
+The launcher is self-contained so it can open before the rest of LabKit is
+installed. Use `Latest` to download the current `main` branch or `Release` to
+download the latest stable release. After LabKit is present, the launcher
+initializes the MATLAB path, discovers app entry points, and opens the selected
+app.
 
-Start apps from the launcher in normal use. Manual command launch is mainly for
-debugging or scripted local work; add the repository root, `apps/`, and the
-target app folder to the MATLAB path before calling an app command:
+Treat the LabKit folder as an application runtime folder. Keep source data and
+exported results in separate project folders; routine users do not need to
+inspect or edit the files downloaded by the launcher.
+
+Manual command launch is mainly for source checkouts, debugging, or scripted
+local work. Add the repository root, `apps/`, and the target app folder to the
+MATLAB path before calling an app command:
 
 ```matlab
 root = pwd;
@@ -31,20 +36,13 @@ addpath(fullfile(root, "apps", "electrochem", "cic"), "-end");
 labkit_CIC_app
 ```
 
-The cleanup action targets generated LabKit artifacts: `artifacts/` plus older
-root-level diagnostic files named `matlab_code_check.json` or
-`matlab_test*.log`.
+The launcher also provides debug launch, generated-artifact cleanup, and MATLAB
+Code Analyzer actions for maintenance work. Cleanup targets generated LabKit
+artifacts: `artifacts/` plus older root-level diagnostic files named
+`matlab_code_check.json` or `matlab_test*.log`.
 
 The Code Analyzer action writes
 `artifacts/code-check/matlab_code_check.json` for manual maintenance review.
-
-The update actions are disabled for git checkouts. For zip-download installs,
-`Latest` downloads GitHub `main`; `Release` downloads the latest GitHub
-release, falling back to the latest tag when no release is available. Both
-actions show progress, back up the LabKit-managed files they will overwrite or
-remove into a visible `LabKit-backup-*.zip` at the project root, then restore
-missing managed folders and overlay new project files without deleting user
-files that are not tracked by the updater manifest.
 
 The launcher sets up the app path before opening an app. App-owned packages are
 reached through their owning app entrypoint and package namespace.

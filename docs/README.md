@@ -1,45 +1,25 @@
 # Documentation
 
-Use this directory by task. Most work should need one or two pages, not the
-whole documentation set.
+Use this directory by task. Normal app users should only need the launcher and
+the app catalog; maintainer references are grouped separately.
 
-## I Want To Use An App
+## App Users
 
-Start with [apps.md](apps.md).
+- [Root README](../README.md): download the single-file launcher and start
+  LabKit.
+- [apps.md](apps.md): see available apps, expected inputs, and typical
+  outputs.
 
-It explains how apps are launched, what each app is for, expected inputs, and
-typical outputs.
+## App Authors And Maintainers
 
-## I Want To Create Or Modify An App
+- [apps.md](apps.md): app file shape, app ownership, and new-app guidance.
+- [architecture.md](architecture.md): package boundaries and extraction rules.
+- [testing.md](testing.md): supported build tasks, CI scope, fixtures, and GUI
+  validation limits.
+- [release.md](release.md): version selection, tag naming, and GitHub release
+  note format.
 
-Read [apps.md](apps.md). Read [ui.md](ui.md) only when the work touches layout,
-controls, previews, callbacks, or debug traces.
-
-## I Want To Understand The Codebase
-
-Read [architecture.md](architecture.md).
-
-It explains the app-first model, when code belongs in an app-owned package, and
-when a helper is reusable enough for `+labkit`.
-
-## I Need To Validate A Change
-
-Read [testing.md](testing.md).
-
-It explains the supported build tasks, test layout, fixture expectations, and
-what automated GUI checks do and do not prove.
-
-For normal contributor work, start with the changed-file task. Use the full
-non-GUI task when changed-file discovery is not available.
-
-## I Need To Publish A Release
-
-Read [release.md](release.md).
-
-It explains version-number selection, tag naming, and GitHub release note
-format.
-
-## I Am Using A Reusable Facade
+## Reusable Facades
 
 | Facade | Read |
 | --- | --- |
@@ -48,7 +28,7 @@ format.
 | Wearable/physiological recordings, ECG peaks, segments, measurements | [biosignal.md](biosignal.md) |
 | Intan RHS discovery, header inspection, indexing, and window reads | [rhs.md](rhs.md) |
 
-## What Is Not Here
+## Not In Human Docs
 
 Agent execution rules, migration ledgers, and skill procedures are intentionally
 outside this human documentation set.

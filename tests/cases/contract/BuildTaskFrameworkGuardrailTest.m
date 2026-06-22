@@ -289,12 +289,18 @@ function tasks = extractPrimaryTestingCommandMatrix(content)
         return;
     end
 
-    tokens = regexp(blocks{1}{1}, ...
+    block = normalizeLineEndings(blocks{1}{1});
+    tokens = regexp(block, ...
         '(?m)^buildtool[ \t]+([A-Za-z][A-Za-z0-9_]*)[ \t]*$', 'tokens');
     tasks = strings(1, numel(tokens));
     for k = 1:numel(tokens)
         tasks(k) = string(tokens{k}{1});
     end
+end
+
+function content = normalizeLineEndings(content)
+    content = strrep(content, sprintf('\r\n'), sprintf('\n'));
+    content = strrep(content, sprintf('\r'), sprintf('\n'));
 end
 
 function verifyTaskSubset(testCase, tasks, catalogNames, label)
