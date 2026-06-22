@@ -232,7 +232,12 @@ function fig = run(debugLog)
     end
 
     function onScaleReferenceEditChanged()
-        refreshScaleTool();
+        if scaleTool.isReferenceEditActive()
+            cropSession.deactivate();
+            return;
+        end
+        refreshPreview(capturePreviewView());
+        refreshSummary();
     end
 
     function onExportSettingChanged()
@@ -425,12 +430,14 @@ function fig = run(debugLog)
             'Color', [0 0.85 1], ...
             'LineWidth', 1.25);
         hold(previewAxes, 'off');
-        cropSession.setBackground(hImage);
-        cropSession.setGraphics([hRect, hLineX, hLineY]);
-        cropSession.activate();
         scaleTool.setBackground(hImage);
         scaleTool.setImageSize(size(item.image));
         scaleTool.refresh();
+        cropSession.setBackground(hImage);
+        cropSession.setGraphics([hRect, hLineX, hLineY]);
+        if ~scaleTool.isReferenceEditActive()
+            cropSession.activate();
+        end
         batch_crop.view.restorePreviewView(previewAxes, viewState, geometry, placement);
     end
 
@@ -565,6 +572,13 @@ function fig = run(debugLog)
     function refreshScaleTool()
         physicalMode = strcmpi(currentScaleMode(), "Physical");
         hasImage = hasCurrentImage();
+        if scaleTool.isReferenceEditActive()
+            scaleTool.setEnabled(struct( ...
+                'hasImage', hasImage && physicalMode, ...
+                'blockInputs', ~physicalMode, ...
+                'blockPlacement', true));
+            return;
+        end
         if hasImage
             scaleTool.setCalibration(S.items(S.currentIndex).scaleCalibration);
             scaleTool.setImageSize(size(S.items(S.currentIndex).image));
