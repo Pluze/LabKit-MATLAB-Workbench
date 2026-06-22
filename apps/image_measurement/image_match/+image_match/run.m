@@ -133,9 +133,9 @@ function fig = run(debugLog)
             return;
         end
         step = currentMatchStep();
+        appendCommittedStep(step);
         S.steps(end + 1, 1) = step;
         S.pendingDirty = false;
-        invalidateProcessedCache();
         S.lastExport = [];
         addLog(sprintf('Applied match: %s', char(step.label)));
         refreshAll();
@@ -189,6 +189,7 @@ function fig = run(debugLog)
         opts = struct();
         opts.outputFolder = S.outputFolder;
         opts.format = labkit.ui.view.getValue(ui, 'exportFormat');
+        opts.processedImages = committedProcessedImages();
         try
             S.lastExport = image_match.export.writeOutputs( ...
                 S.items, S.referenceItem, S.steps, opts);
@@ -271,16 +272,19 @@ function fig = run(debugLog)
             return;
         end
         original = S.items(currentSelectionIndex()).image;
-        matched = currentProcessedImage(S.pendingDirty);
         switch currentPreviewMode()
             case 'Original'
-                labkit.ui.view.drawImage(ui, 'preview', original, ...
+                labkit.ui.view.drawImage(ui, 'preview', ...
+                    image_match.view.previewImage(original), ...
                     'title', 'Original Preview');
             case 'Before | After'
+                matched = currentPreviewImage(S.pendingDirty);
                 labkit.ui.view.drawImage(ui, 'preview', ...
-                    image_match.view.beforeAfterImage(original, matched), ...
+                    image_match.view.beforeAfterImage( ...
+                    image_match.view.previewImage(original), matched), ...
                     'title', 'Before | After');
             otherwise
+                matched = currentPreviewImage(S.pendingDirty);
                 labkit.ui.view.drawImage(ui, 'preview', matched, ...
                     'title', 'Matched Preview');
         end
@@ -350,8 +354,12 @@ function fig = run(debugLog)
             for k = 1:numel(S.items)
                 images{k} = S.items(k).image;
             end
-            S.processedImages = image_match.ops.applyPipeline( ...
-                images, S.steps, referenceImageData());
+            if isempty(S.steps)
+                S.processedImages = images;
+            else
+                S.processedImages = image_match.ops.applyPipeline( ...
+                    images, S.steps, referenceImageData());
+            end
             S.processedStepCount = numel(S.steps);
         end
         processed = S.processedImages;
@@ -366,6 +374,25 @@ function fig = run(debugLog)
             imageOut = image_match.ops.applyStep( ...
                 imageOut, step, referenceImageData());
         end
+    end
+
+    function imageOut = currentPreviewImage(includePending)
+        processed = committedProcessedImages();
+        imageOut = image_match.view.previewImage(processed{currentSelectionIndex()});
+        if includePending
+            imageOut = image_match.ops.applyStep( ...
+                imageOut, currentMatchStep(), image_match.view.previewImage(referenceImageData()));
+        end
+    end
+
+    function appendCommittedStep(step)
+        processed = committedProcessedImages();
+        referenceImage = referenceImageData();
+        for k = 1:numel(processed)
+            processed{k} = image_match.ops.applyStep(processed{k}, step, referenceImage);
+        end
+        S.processedImages = processed;
+        S.processedStepCount = numel(S.steps) + 1;
     end
 
     function invalidateProcessedCache()

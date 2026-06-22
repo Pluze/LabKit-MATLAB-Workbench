@@ -18,6 +18,7 @@ function verify_imageMatch()
     checkHistogramMatchPreservesDisplayRange();
     checkReferenceIsSeparateFromBatchSources();
     checkReadImagesAcceptsPathPanelCellPaths();
+    checkPreviewImageDownsamplesLargeInputs();
     checkManifestAndExportContract();
 end
 
@@ -122,9 +123,11 @@ function checkManifestAndExportContract()
     items = image_match.io.readImages(sourcePath);
     referenceItem = image_match.io.readImages(referencePath);
     steps = image_match.ops.makeStep('Balanced', 100, 100, 100);
+    cachedImage = 0.35 .* ones(10, 12, 3);
     payload = image_match.export.writeOutputs(items, referenceItem, steps, struct( ...
         'outputFolder', string(folder), ...
-        'format', 'PNG'));
+        'format', 'PNG', ...
+        'processedImages', {{cachedImage}}));
 
     assert(numel(payload.results) == 1, ...
         'Batch export should only write source images, not the reference image.');
@@ -132,6 +135,9 @@ function checkManifestAndExportContract()
         'Batch export should avoid overwriting existing matched outputs.');
     assert(isfile(payload.results(1).outputPath), ...
         'Batch export should write matched image output.');
+    written = im2double(imread(payload.results(1).outputPath));
+    assert(abs(mean(written(:)) - 0.35) < 0.02, ...
+        'Batch export should reuse precomputed matched images when provided.');
     assert(isfile(payload.manifestPath), ...
         'Batch export should write a manifest CSV.');
 
@@ -139,6 +145,17 @@ function checkManifestAndExportContract()
     assert(isequal(T.Properties.VariableNames, expectedManifestColumns()), ...
         'Image match manifest columns changed.');
     assert(T.StepCount(1) == 1, 'Manifest should preserve step count.');
+end
+
+function checkPreviewImageDownsamplesLargeInputs()
+    img = repmat(linspace(0, 1, 160), 120, 1);
+    preview = image_match.view.previewImage(img, 4000);
+    assert(size(preview, 3) == 3, ...
+        'Image-match preview should render grayscale inputs as RGB.');
+    assert(size(preview, 1) * size(preview, 2) <= 4100, ...
+        'Image-match preview should downsample large display images.');
+    assert(all(preview(:) >= 0 & preview(:) <= 1), ...
+        'Image-match preview should stay in display range.');
 end
 
 function img = syntheticGradientImage()

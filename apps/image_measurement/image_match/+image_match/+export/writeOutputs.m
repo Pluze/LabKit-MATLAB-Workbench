@@ -26,7 +26,12 @@ function payload = writeOutputs(items, referenceItem, steps, opts)
     for k = 1:numel(items)
         images{k} = items(k).image;
     end
-    processed = image_match.ops.applyPipeline(images, steps, referenceItem.image);
+    processed = optionValue(opts, 'processedImages', []);
+    if isempty(processed)
+        processed = image_match.ops.applyPipeline(images, steps, referenceItem.image);
+    else
+        processed = normalizeProcessedImages(processed, numel(items));
+    end
 
     resultTemplate = emptyResult();
     results = repmat(resultTemplate, numel(items), 1);
@@ -75,6 +80,25 @@ function result = emptyResult()
         'heightPx', 0, ...
         'stepCount', 0, ...
         'message', "");
+end
+
+function images = normalizeProcessedImages(images, expectedCount)
+    if isnumeric(images)
+        images = {images};
+    end
+    if ~iscell(images) || numel(images) ~= expectedCount
+        error('labkit_ImageMatch_app:ProcessedImageCountMismatch', ...
+            'Precomputed matched images must match the loaded source image count.');
+    end
+    images = images(:);
+    for k = 1:numel(images)
+        images{k} = min(max(im2double(images{k}), 0), 1);
+        if ndims(images{k}) == 2
+            images{k} = repmat(images{k}, 1, 1, 3);
+        elseif size(images{k}, 3) > 3
+            images{k} = images{k}(:, :, 1:3);
+        end
+    end
 end
 
 function outputPath = uniqueOutputPath(outputFolder, sourcePath, formatName)

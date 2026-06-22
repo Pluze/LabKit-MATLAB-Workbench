@@ -16,6 +16,7 @@ function verify_imageEnhance()
     checkWhiteBalanceReducesChannelCast();
     checkSelectedFileNormalization();
     checkReadImagesAcceptsPathPanelCellPaths();
+    checkPreviewImageDownsamplesLargeInputs();
     checkManifestAndExportContract();
 end
 
@@ -93,14 +94,19 @@ function checkManifestAndExportContract()
 
     items = image_enhance.io.readImages(sourcePath);
     steps = image_enhance.ops.makeStep('Brightness/contrast', 5, 0, 0);
+    cachedImage = 0.25 .* ones(10, 12, 3);
     payload = image_enhance.export.writeOutputs(items, steps, struct( ...
         'outputFolder', string(folder), ...
-        'format', 'PNG'));
+        'format', 'PNG', ...
+        'processedImages', {{cachedImage}}));
 
     assert(endsWith(payload.results(1).outputPath, "sample_enhanced_001.png"), ...
         'Batch export should avoid overwriting existing enhanced outputs.');
     assert(isfile(payload.results(1).outputPath), ...
         'Batch export should write enhanced image output.');
+    written = im2double(imread(payload.results(1).outputPath));
+    assert(abs(mean(written(:)) - 0.25) < 0.02, ...
+        'Batch export should reuse precomputed enhanced images when provided.');
     assert(isfile(payload.manifestPath), ...
         'Batch export should write a manifest CSV.');
 
@@ -108,6 +114,17 @@ function checkManifestAndExportContract()
     assert(isequal(T.Properties.VariableNames, expectedManifestColumns()), ...
         'Image enhancement manifest columns changed.');
     assert(T.StepCount(1) == 1, 'Manifest should preserve step count.');
+end
+
+function checkPreviewImageDownsamplesLargeInputs()
+    img = repmat(linspace(0, 1, 160), 120, 1);
+    preview = image_enhance.view.previewImage(img, 4000);
+    assert(size(preview, 3) == 3, ...
+        'Enhancement preview should render grayscale inputs as RGB.');
+    assert(size(preview, 1) * size(preview, 2) <= 4100, ...
+        'Enhancement preview should downsample large display images.');
+    assert(all(preview(:) >= 0 & preview(:) <= 1), ...
+        'Enhancement preview should stay in display range.');
 end
 
 function img = syntheticGradientImage()
