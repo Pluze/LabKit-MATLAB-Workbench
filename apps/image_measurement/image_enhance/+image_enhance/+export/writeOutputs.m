@@ -21,12 +21,7 @@ function payload = writeOutputs(items, steps, opts)
     for k = 1:numel(items)
         images{k} = items(k).image;
     end
-    processed = optionValue(opts, 'processedImages', []);
-    if isempty(processed)
-        processed = image_enhance.ops.applyPipeline(images, steps);
-    else
-        processed = normalizeProcessedImages(processed, numel(items));
-    end
+    processed = image_enhance.ops.applyPipeline(images, steps);
 
     resultTemplate = emptyResult();
     results = repmat(resultTemplate, numel(items), 1);
@@ -75,25 +70,6 @@ function result = emptyResult()
         'heightPx', 0, ...
         'stepCount', 0, ...
         'message', "");
-end
-
-function images = normalizeProcessedImages(images, expectedCount)
-    if isnumeric(images)
-        images = {images};
-    end
-    if ~iscell(images) || numel(images) ~= expectedCount
-        error('labkit_ImageEnhance_app:ProcessedImageCountMismatch', ...
-            'Precomputed enhanced images must match the loaded image count.');
-    end
-    images = images(:);
-    for k = 1:numel(images)
-        images{k} = min(max(im2double(images{k}), 0), 1);
-        if ndims(images{k}) == 2
-            images{k} = repmat(images{k}, 1, 1, 3);
-        elseif size(images{k}, 3) > 3
-            images{k} = images{k}(:, :, 1:3);
-        end
-    end
 end
 
 function outputPath = uniqueOutputPath(outputFolder, sourcePath, formatName)

@@ -1,11 +1,11 @@
 % Expected caller: labkit_ImageMatch_app preview rendering. Input is an image
-% array and optional maximum display pixels. Output is RGB double preview data
+% array and optional maximum display height. Output is RGB double preview data
 % downsampled for responsive UI display; export data remains full resolution.
-function imageOut = previewImage(imageIn, maxPixels)
+function imageOut = previewImage(imageIn, maxHeight)
 %PREVIEWIMAGE Normalize and downsample display-only preview image data.
 
-    if nargin < 2 || isempty(maxPixels)
-        maxPixels = 8e5;
+    if nargin < 2 || isempty(maxHeight)
+        maxHeight = 1500;
     end
     imageOut = min(max(im2double(imageIn), 0), 1);
     if ndims(imageOut) == 2
@@ -14,11 +14,10 @@ function imageOut = previewImage(imageIn, maxPixels)
         imageOut = imageOut(:, :, 1:3);
     end
 
-    pixelCount = size(imageOut, 1) * size(imageOut, 2);
-    if pixelCount <= maxPixels
+    if size(imageOut, 1) <= maxHeight
         return;
     end
-    scale = sqrt(double(maxPixels) ./ double(pixelCount));
+    scale = double(maxHeight) ./ double(size(imageOut, 1));
     targetSize = max(1, round([size(imageOut, 1), size(imageOut, 2)] .* scale));
     imageOut = imresize(imageOut, targetSize);
 end

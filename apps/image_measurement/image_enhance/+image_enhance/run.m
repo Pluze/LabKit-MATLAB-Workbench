@@ -11,8 +11,8 @@ function fig = run(debugLog)
     S.outputFolder = string(pwd);
     S.lastExport = [];
     S.pendingDirty = false;
-    S.processedImages = {};
-    S.processedStepCount = -1;
+    S.previewImages = {};
+    S.previewImageKeys = strings(0, 1);
 
     stepKinds = {'Brightness/contrast', 'Local contrast', 'Sharpen', ...
         'Hue/saturation', 'White balance'};
@@ -52,7 +52,7 @@ function fig = run(debugLog)
         S.currentIndex = 1;
         S.steps = repmat(image_enhance.state.emptyStep(), 0, 1);
         S.pendingDirty = false;
-        invalidateProcessedCache();
+        invalidatePreviewCache();
         S.outputFolder = string(fileparts(event.paths(1)));
         S.lastExport = [];
         addLog(sprintf('Loaded %d image(s).', numel(S.items)));
@@ -64,7 +64,7 @@ function fig = run(debugLog)
         S.currentIndex = 0;
         S.steps = repmat(image_enhance.state.emptyStep(), 0, 1);
         S.pendingDirty = false;
-        invalidateProcessedCache();
+        invalidatePreviewCache();
         S.lastExport = [];
         addLog('Cleared loaded images and enhancement history.');
         refreshAll();
@@ -112,7 +112,6 @@ function fig = run(debugLog)
             return;
         end
         step = currentToolStep();
-        appendCommittedStep(step);
         S.steps(end + 1, 1) = step;
         S.pendingDirty = false;
         S.lastExport = [];
@@ -127,7 +126,6 @@ function fig = run(debugLog)
         removed = S.steps(end);
         S.steps(end) = [];
         S.pendingDirty = false;
-        invalidateProcessedCache();
         S.lastExport = [];
         addLog(sprintf('Undid history step: %s', char(removed.label)));
         refreshAll();
@@ -139,7 +137,6 @@ function fig = run(debugLog)
         end
         S.steps = repmat(image_enhance.state.emptyStep(), 0, 1);
         S.pendingDirty = false;
-        invalidateProcessedCache();
         S.lastExport = [];
         addLog('Reset enhancement history.');
         refreshAll();
@@ -164,7 +161,6 @@ function fig = run(debugLog)
         opts = struct();
         opts.outputFolder = S.outputFolder;
         opts.format = labkit.ui.view.getValue(ui, 'exportFormat');
-        opts.processedImages = committedProcessedImages();
         try
             S.lastExport = image_enhance.export.writeOutputs(S.items, S.steps, opts);
         catch ME
@@ -232,17 +228,15 @@ function fig = run(debugLog)
             resetPreviewAxes();
             return;
         end
-        original = S.items(currentSelectionIndex()).image;
+        original = currentPreviewSourceImage();
         switch currentPreviewMode()
             case 'Original'
-                labkit.ui.view.drawImage(ui, 'preview', ...
-                    image_enhance.view.previewImage(original), ...
+                labkit.ui.view.drawImage(ui, 'preview', original, ...
                     'title', 'Original Preview');
             case 'Before | After'
                 enhanced = currentPreviewImage(S.pendingDirty);
                 labkit.ui.view.drawImage(ui, 'preview', ...
-                    image_enhance.view.beforeAfterImage( ...
-                    image_enhance.view.previewImage(original), enhanced), ...
+                    image_enhance.view.beforeAfterImage(original, enhanced), ...
                     'title', 'Before | After');
             otherwise
                 enhanced = currentPreviewImage(S.pendingDirty);
@@ -257,7 +251,7 @@ function fig = run(debugLog)
                 image_enhance.view.resultTableData([], [], 0);
             return;
         end
-        processedImage = currentProcessedImage(false);
+        processedImage = currentPreviewImage(false);
         ui.controls.metricsTable.table.Data = image_enhance.view.resultTableData( ...
             S.items(currentSelectionIndex()), ...
             processedImage, numel(S.steps));
@@ -312,58 +306,46 @@ function fig = run(debugLog)
         end
     end
 
-    function processed = committedProcessedImages()
+    function imageOut = currentPreviewSourceImage()
         if isempty(S.items)
-            processed = {};
+            imageOut = [];
             return;
         end
-        cacheValid = numel(S.processedImages) == numel(S.items) && ...
-            S.processedStepCount == numel(S.steps);
-        if ~cacheValid
-            images = cell(numel(S.items), 1);
-            for k = 1:numel(S.items)
-                images{k} = S.items(k).image;
-            end
-            if isempty(S.steps)
-                S.processedImages = images;
-            else
-                S.processedImages = image_enhance.ops.applyPipeline(images, S.steps);
-            end
-            S.processedStepCount = numel(S.steps);
+        index = currentSelectionIndex();
+        if numel(S.previewImages) ~= numel(S.items)
+            S.previewImages = cell(numel(S.items), 1);
+            S.previewImageKeys = strings(numel(S.items), 1);
         end
-        processed = S.processedImages;
-    end
-
-    function imageOut = currentProcessedImage(includePending)
-        processed = committedProcessedImages();
-        imageOut = processed{currentSelectionIndex()};
-        if includePending
-            imageOut = image_enhance.ops.applyStep( ...
-                imageOut, currentToolStep(), []);
+        item = S.items(index);
+        key = previewImageKey(item);
+        if isempty(S.previewImages{index}) || S.previewImageKeys(index) ~= key
+            S.previewImages{index} = image_enhance.view.previewImage(item.image);
+            S.previewImageKeys(index) = key;
         end
+        imageOut = S.previewImages{index};
     end
 
     function imageOut = currentPreviewImage(includePending)
-        processed = committedProcessedImages();
-        imageOut = image_enhance.view.previewImage(processed{currentSelectionIndex()});
+        imageOut = currentPreviewSourceImage();
+        steps = S.steps;
+        if ~isempty(steps)
+            imageOut = image_enhance.ops.applyPipeline({imageOut}, steps);
+            imageOut = imageOut{1};
+        end
         if includePending
             imageOut = image_enhance.ops.applyStep( ...
                 imageOut, currentToolStep(), []);
         end
     end
 
-    function appendCommittedStep(step)
-        processed = committedProcessedImages();
-        for k = 1:numel(processed)
-            processed{k} = image_enhance.ops.applyStep(processed{k}, step, []);
-        end
-        S.processedImages = processed;
-        S.processedStepCount = numel(S.steps) + 1;
+    function invalidatePreviewCache()
+        S.previewImages = {};
+        S.previewImageKeys = strings(0, 1);
     end
 
-    function invalidateProcessedCache()
-        S.processedImages = {};
-        S.processedStepCount = -1;
+    function key = previewImageKey(item)
+        dims = strjoin(string(size(item.image)), "x");
+        key = strjoin([string(item.path), dims, string(class(item.image))], "|");
     end
 
     function step = currentToolStep()
