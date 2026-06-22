@@ -93,11 +93,11 @@ function fig = run(debugLog)
             return;
         end
 
-        S.items = items;
-        S.currentIndex = 1;
+        S.items = batch_crop.state.mergeChosenItems(S.items, items);
+        S.currentIndex = min(max(S.currentIndex, 1), numel(S.items));
         S.lastExport = [];
         S.canvasCache = emptyCanvasCache();
-        addLog(sprintf('Loaded %d image(s).', numel(S.items)));
+        addLog(sprintf('Loaded %d image file(s); crop tasks: %d.', numel(items), numel(S.items)));
         refreshAll();
     end
 
@@ -397,12 +397,12 @@ function fig = run(debugLog)
         if ~hasCurrentImage()
             resetPreviewAxes();
             cropSession.setBackground([]);
-        cropSession.setGraphics([]);
-        scaleTool.setBackground([]);
-        scaleTool.setImageSize([]);
-        return;
-    end
-    ensureCurrentCenter();
+            cropSession.setGraphics([]);
+            scaleTool.setBackground([]);
+            scaleTool.setImageSize([]);
+            return;
+        end
+        ensureCurrentCenter();
         geometry = currentGeometry();
         placement = previewPlacement(geometry);
         hImage = labkit.ui.view.drawImage(ui, 'preview', geometry.canvas, ...
@@ -558,15 +558,11 @@ function fig = run(debugLog)
         S.items(S.currentIndex) = item;
     end
 
-    function tf = hasCurrentImage()
-        tf = ~isempty(S.items) && S.currentIndex >= 1 && S.currentIndex <= numel(S.items);
-    end
+    function tf = hasCurrentImage(), tf = ~isempty(S.items) && S.currentIndex >= 1 && S.currentIndex <= numel(S.items); end
 
     function count = countConfirmedCenters()
         count = 0;
-        if ~isempty(S.items)
-            count = sum([S.items.centerSet]);
-        end
+        if ~isempty(S.items), count = sum([S.items.centerSet]); end
     end
 
     function refreshScaleTool()
@@ -602,14 +598,11 @@ function fig = run(debugLog)
     end
 
     function refreshScaleStatus()
-        txtScaleStatus.Value = batch_crop.view.scaleStatusText(S, S.currentIndex, ...
-            currentScaleMode(), [edtPhysicalWidth.Value, edtPhysicalHeight.Value], ...
-            currentScaleUnit());
+        txtScaleStatus.Value = batch_crop.view.scaleStatusText(S, S.currentIndex, currentScaleMode(), ...
+            [edtPhysicalWidth.Value, edtPhysicalHeight.Value], currentScaleUnit());
     end
 
-    function items = readCropItems(paths)
-        items = batch_crop.state.readItems(paths);
-    end
+    function items = readCropItems(paths), items = batch_crop.state.readItems(paths); end
 
     function key = canvasCacheKey(index, item, paddingPercent)
         key = struct( ...
@@ -623,17 +616,11 @@ function fig = run(debugLog)
             'className', string(class(item.image)));
     end
 
-    function cache = emptyCanvasCache()
-        cache = struct('valid', false, 'key', [], 'geometry', []);
-    end
+    function cache = emptyCanvasCache(), cache = struct('valid', false, 'key', [], 'geometry', []); end
 
-    function centerXY = sourceCenterXY(imageData)
-        centerXY = sourceCenterFromSize(size(imageData, 2), size(imageData, 1));
-    end
+    function centerXY = sourceCenterXY(imageData), centerXY = sourceCenterFromSize(size(imageData, 2), size(imageData, 1)); end
 
-    function centerXY = sourceCenterFromSize(width, height)
-        centerXY = [(width + 1) / 2, (height + 1) / 2];
-    end
+    function centerXY = sourceCenterFromSize(width, height), centerXY = [(width + 1) / 2, (height + 1) / 2]; end
 
     function centerXY = clampToSource(centerXY, imageData)
         centerXY = double(centerXY(:)).';

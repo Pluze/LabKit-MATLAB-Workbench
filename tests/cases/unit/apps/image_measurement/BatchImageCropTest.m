@@ -25,6 +25,7 @@ function verify_batchImageCrop()
     checkSelectedFileNormalization();
     checkReadItemsAcceptsPathPanelCellPaths();
     checkDuplicateItemCreatesIndependentCropTask();
+    checkMergeChosenItemsPreservesDuplicateCropTasks();
     checkManifestContract();
     checkPhysicalScaleCropUsesUnifiedOutputPixels();
     checkScalePlanWarnsButDoesNotBlockOutliers();
@@ -239,6 +240,34 @@ function checkDuplicateItemCreatesIndependentCropTask()
     assert(duplicated.scaleCalibration.isCalibrated && ...
         duplicated.scaleCalibration.pixelsPerUnit == item.scaleCalibration.pixelsPerUnit, ...
         'Duplicated crop task should preserve source-image scale calibration.');
+end
+
+function checkMergeChosenItemsPreservesDuplicateCropTasks()
+    itemA = physicalItem("source_a.png", uint8(40 * ones(10, 12)), 4);
+    itemA.centerXY = [3, 4];
+    duplicateA = batch_crop.state.duplicateItem(itemA);
+    duplicateA.centerXY = [8, 7];
+    duplicateA.centerSet = true;
+    duplicateA.scaleCalibration = labkit.ui.tool.scaleBarCalibration(80, 10, "um", ...
+        struct('defaultUnit', 'um', 'referenceLine', [1 1; 81 1]));
+
+    loadedA = batch_crop.state.emptyItem();
+    loadedA.path = "source_a.png";
+    loadedA.image = uint8(90 * ones(10, 12));
+    loadedB = batch_crop.state.emptyItem();
+    loadedB.path = "source_b.png";
+    loadedB.image = uint8(120 * ones(8, 9));
+
+    merged = batch_crop.state.mergeChosenItems([itemA; duplicateA], [loadedA; loadedB]);
+    assert(numel(merged) == 3, ...
+        'Choosing additional files should preserve duplicate crop tasks and append new images.');
+    assert(all([merged(1:2).path] == "source_a.png") && merged(3).path == "source_b.png", ...
+        'Merged crop tasks should keep existing duplicate-source tasks before new source items.');
+    assert(isequal(merged(1).centerXY, itemA.centerXY) && isequal(merged(2).centerXY, duplicateA.centerXY), ...
+        'Merged crop tasks should preserve each duplicate task crop center.');
+    assert(merged(1).scaleCalibration.pixelsPerUnit == 4 && ...
+        merged(2).scaleCalibration.pixelsPerUnit == 8, ...
+        'Merged duplicate crop tasks should keep independent per-task scale calibrations.');
 end
 
 function checkManifestContract()

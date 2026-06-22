@@ -91,6 +91,13 @@ function verify_gui_layout_ui_scale_bar_tool()
         'Measure reference button should finish reference edit mode when active.');
     assert(isequal(ax.XLim, zoomXLim) && isequal(ax.YLim, zoomYLim), ...
         'Scale-bar reference editing should preserve zoom when it finishes.');
+    roiXLim = [120 210];
+    roiYLim = [50 110];
+    ax.XLim = roiXLim;
+    ax.YLim = roiYLim;
+    tool.setCalibration(restored);
+    assert(isequal(ax.XLim, roiXLim) && isequal(ax.YLim, roiYLim), ...
+        'Restoring saved scale calibration while inactive should not refocus axes on the reference line.');
     traceText = string(traceMessages);
     assert(any(contains(traceText, 'scaleBarTool: Measure reference button finishing active edit')) && ...
         any(contains(traceText, 'imageAxesRuntime: deactivate session anchorCurveEditor active=1')), ...

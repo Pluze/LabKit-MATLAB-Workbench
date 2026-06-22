@@ -144,7 +144,7 @@ function tool = scaleBar(parent, row, runtime, opts)
         state.referenceLine = referenceLineFromCalibration(cal);
         state.scaleBar = [];
         scalePanel.setCalibration(cal);
-        if ~isempty(state.referenceEditor)
+        if state.referenceEditActive && ~isempty(state.referenceEditor)
             state.suppressReferenceEditorCallback = true;
             cleanupObj = onCleanup(@() clearReferenceEditorSuppression());
             state.referenceEditor.setPoints(state.referenceLine);
