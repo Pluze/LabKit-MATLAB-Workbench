@@ -132,6 +132,20 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
                 "App-only changes should run the matching app GUI test folder.");
         end
 
+        function changedValidationMapperTargetsPackagedAppGui(testCase)
+            root = setupLabKitTestPath();
+
+            steps = labkitValidationPlanForChangedPaths(root, ...
+                "apps/image_measurement/batch_crop/+batch_crop/run.m");
+            signatures = validationStepSignatures(steps);
+
+            testCase.verifyTrue(any(signatures == "apps/image_measurement|false"), ...
+                "Packaged app source changes should run owning family app tests.");
+            testCase.verifyTrue(any(signatures == ...
+                "gui/apps/image_measurement/batch_crop|true"), ...
+                "Packaged app source changes should run the matching app GUI test folder.");
+        end
+
         function affectedValidationMapperFallsBackConservatively(testCase)
             root = setupLabKitTestPath();
 

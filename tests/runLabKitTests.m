@@ -264,6 +264,9 @@ function paths = detectAffectedValidationPaths(root)
         gitChangedPaths(root, "HEAD", strings(1, 0)), ...
         gitUntrackedPaths(root, strings(1, 0))];
     paths = unique(changedPaths, "stable");
+    if isempty(paths) && gitRefExists(root, "HEAD^")
+        paths = gitChangedPaths(root, "HEAD^", strings(1, 0));
+    end
 end
 
 function assertChangedValidationGitAvailable(root)
@@ -459,6 +462,14 @@ function paths = gitUntrackedPaths(root, pathspecs)
         command = command + " -- " + strjoin(pathspecs, " ");
     end
     paths = runGitPathCommand(command);
+end
+
+function tf = gitRefExists(root, ref)
+    ref = validateGitRef(ref);
+    command = "git -C " + shellDoubleQuote(root) + ...
+        " rev-parse --verify --quiet " + ref;
+    [status, ~] = system(char(command));
+    tf = status == 0;
 end
 
 function paths = runGitPathCommand(command)

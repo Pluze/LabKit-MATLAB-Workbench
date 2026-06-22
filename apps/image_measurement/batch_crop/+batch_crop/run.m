@@ -2,8 +2,6 @@
 % prepared by the public launcher. Output is the app figure. Side effects are
 % GUI creation, user-driven image loading, crop export, and debug trace attachment.
 function fig = run(debugLog)
-%RUN Build and run the Batch Image Crop app body.
-
     S = struct();
     S.items = repmat(batch_crop.state.emptyItem(), 0, 1);
     S.currentIndex = 0;
@@ -79,7 +77,6 @@ function fig = run(debugLog)
     if debugLog.enabled
         debugLog.trace('Batch image crop debug trace enabled.');
     end
-
     resetPreviewAxes();
     refreshAll();
 
@@ -112,7 +109,6 @@ function fig = run(debugLog)
         addLog('Cleared loaded images.');
         refreshAll();
     end
-
     function onDuplicateImage()
         if ~hasCurrentImage()
             return;
@@ -283,7 +279,8 @@ function fig = run(debugLog)
                 'Set or confirm the crop center for every loaded image before exporting.');
             return;
         end
-        if strcmpi(currentScaleMode(), "Physical") && ~allScaleCalibrated()
+        if strcmpi(currentScaleMode(), "Physical") && ...
+                ~batch_crop.state.allScaleCalibrated(S.items)
             showError('Scale calibration missing', ...
                 'Physical scale mode requires a valid scale calibration for every loaded image.');
             return;
@@ -336,7 +333,8 @@ function fig = run(debugLog)
         txtImageSource.Value = char(S.items(S.currentIndex).path);
         if strcmpi(currentScaleMode(), "Physical")
             txtImageStatus.Value = sprintf('Images: %d | centers: %d | scales: %d', ...
-                numel(S.items), countConfirmedCenters(), countScaleCalibrations());
+                numel(S.items), countConfirmedCenters(), ...
+                batch_crop.state.countScaleCalibrations(S.items));
         else
             txtImageStatus.Value = sprintf('Images: %d | confirmed centers: %d', ...
                 numel(S.items), countConfirmedCenters());
@@ -383,7 +381,7 @@ function fig = run(debugLog)
 
         refreshScaleTool();
         readyToExport = hasImage && all([S.items.centerSet]) && ...
-            (~physicalMode || allScaleCalibrated());
+            (~physicalMode || batch_crop.state.allScaleCalibrated(S.items));
         btnExport.Enable = ternary(readyToExport, 'on', 'off');
     end
 
@@ -394,13 +392,12 @@ function fig = run(debugLog)
         if ~hasCurrentImage()
             resetPreviewAxes();
             cropSession.setBackground([]);
-            cropSession.setGraphics([]);
-            scaleTool.setBackground([]);
-            scaleTool.setImageSize([]);
-            return;
-        end
-
-        ensureCurrentCenter();
+        cropSession.setGraphics([]);
+        scaleTool.setBackground([]);
+        scaleTool.setImageSize([]);
+        return;
+    end
+    ensureCurrentCenter();
         geometry = currentGeometry();
         placement = previewPlacement(geometry);
         hImage = labkit.ui.view.drawImage(ui, 'preview', geometry.canvas, ...
@@ -434,7 +431,7 @@ function fig = run(debugLog)
         scaleTool.setBackground(hImage);
         scaleTool.setImageSize(size(item.image));
         scaleTool.refresh();
-        restorePreviewView(viewState, geometry, placement);
+        batch_crop.view.restorePreviewView(previewAxes, viewState, geometry, placement);
     end
 
     function refreshSummary()
@@ -468,7 +465,7 @@ function fig = run(debugLog)
     function width = currentCropWidth()
         if strcmpi(currentScaleMode(), "Physical") && hasCurrentImage()
             cal = currentScaleCalibration();
-            if isScaleCalibrationSet(cal)
+            if batch_crop.state.isScaleCalibrationSet(cal)
                 width = max(1, round(double(edtPhysicalWidth.Value) * cal.pixelsPerUnit));
                 return;
             end
@@ -479,7 +476,7 @@ function fig = run(debugLog)
     function height = currentCropHeight()
         if strcmpi(currentScaleMode(), "Physical") && hasCurrentImage()
             cal = currentScaleCalibration();
-            if isScaleCalibrationSet(cal)
+            if batch_crop.state.isScaleCalibrationSet(cal)
                 height = max(1, round(double(edtPhysicalHeight.Value) * cal.pixelsPerUnit));
                 return;
             end
@@ -539,54 +536,7 @@ function fig = run(debugLog)
 
         geometry = currentGeometry();
         placement = previewPlacement(geometry);
-        centerCanvas = [mean(previewAxes.XLim), mean(previewAxes.YLim)] - placement.offset;
-        centerOriginal = batch_crop.ops.canvasToOriginal(geometry, centerCanvas);
-        state = struct( ...
-            'valid', true, ...
-            'centerOriginal', centerOriginal, ...
-            'xSpan', diff(previewAxes.XLim), ...
-            'ySpan', diff(previewAxes.YLim));
-    end
-
-    function restorePreviewView(state, geometry, placement)
-        if isempty(state) || ~isstruct(state) || ~isfield(state, 'valid') || ~state.valid
-            return;
-        end
-        if ~isfinite(state.xSpan) || ~isfinite(state.ySpan) || ...
-                state.xSpan <= 0 || state.ySpan <= 0
-            return;
-        end
-
-        centerCanvas = batch_crop.ops.originalToCanvas(geometry, state.centerOriginal) + placement.offset;
-        previewAxes.XLim = centeredLimits(centerCanvas(1), state.xSpan, ...
-            imageDataLimits(placement.xData, size(geometry.canvas, 2)));
-        previewAxes.YLim = centeredLimits(centerCanvas(2), state.ySpan, ...
-            imageDataLimits(placement.yData, size(geometry.canvas, 1)));
-    end
-
-    function limits = centeredLimits(center, span, fullLimits)
-        fullSpan = diff(fullLimits);
-        if span >= fullSpan
-            limits = fullLimits;
-            return;
-        end
-        limits = center + [-0.5, 0.5] .* span;
-        if limits(1) < fullLimits(1)
-            limits = [fullLimits(1), fullLimits(1) + span];
-        end
-        if limits(2) > fullLimits(2)
-            limits = [fullLimits(2) - span, fullLimits(2)];
-        end
-    end
-
-    function limits = imageDataLimits(data, count)
-        data = double(data(:)).';
-        if numel(data) < 2 || count <= 1
-            limits = data(1) + [-0.5, 0.5];
-            return;
-        end
-        step = abs(diff(data(1:2))) / max(1, count - 1);
-        limits = sort(data(1:2)) + [-0.5, 0.5] .* step;
+        state = batch_crop.view.capturePreviewView(previewAxes, geometry, placement);
     end
 
     function ensureCurrentCenter()
@@ -606,27 +556,9 @@ function fig = run(debugLog)
     end
 
     function count = countConfirmedCenters()
-        if isempty(S.items)
-            count = 0;
-        else
-            count = sum([S.items.centerSet]);
-        end
-    end
-
-    function count = countScaleCalibrations()
         count = 0;
-        for k = 1:numel(S.items)
-            if isScaleCalibrationSet(S.items(k).scaleCalibration)
-                count = count + 1;
-            end
-        end
-    end
-
-    function tf = allScaleCalibrated()
-        tf = true;
-        for k = 1:numel(S.items)
-            tf = tf && isfield(S.items(k), 'scaleCalibration') && ...
-                isScaleCalibrationSet(S.items(k).scaleCalibration);
+        if ~isempty(S.items)
+            count = sum([S.items.centerSet]);
         end
     end
 
@@ -650,53 +582,19 @@ function fig = run(debugLog)
         if ~hasCurrentImage()
             return;
         end
-        cal = currentScaleCalibration();
-        if ~isstruct(cal)
-            return;
-        end
-        updated = labkit.ui.tool.scaleBarCalibration( ...
-            fieldOr(cal, 'referencePixels', NaN), ...
-            fieldOr(cal, 'referenceLength', 1), ...
-            currentScaleUnit(), ...
-            struct('defaultUnit', 'um', ...
-            'referenceLine', fieldOr(cal, 'referenceLine', zeros(0, 2))));
+        updated = batch_crop.state.withScaleUnit(currentScaleCalibration(), currentScaleUnit());
         S.items(S.currentIndex).scaleCalibration = updated;
         scaleTool.setCalibration(updated);
     end
 
     function refreshScaleStatus()
-        if ~strcmpi(currentScaleMode(), "Physical")
-            txtScaleStatus.Value = 'Pixel mode: output size uses crop width/height in px.';
-            return;
-        end
-        if isempty(S.items)
-            txtScaleStatus.Value = sprintf('Physical mode: set %.6g x %.6g %s and load images.', ...
-                edtPhysicalWidth.Value, edtPhysicalHeight.Value, char(currentScaleUnit()));
-            return;
-        end
-        if hasCurrentImage()
-            cal = currentScaleCalibration();
-            if isScaleCalibrationSet(cal)
-                txtScaleStatus.Value = sprintf( ...
-                    'Physical mode: image %d scale %.6g px/%s; calibrated %d/%d.', ...
-                    S.currentIndex, cal.pixelsPerUnit, cal.unit, ...
-                    countScaleCalibrations(), numel(S.items));
-            else
-                txtScaleStatus.Value = sprintf( ...
-                    'Physical mode: image %d needs scale; calibrated %d/%d.', ...
-                    S.currentIndex, countScaleCalibrations(), numel(S.items));
-            end
-        end
+        txtScaleStatus.Value = batch_crop.view.scaleStatusText(S, S.currentIndex, ...
+            currentScaleMode(), [edtPhysicalWidth.Value, edtPhysicalHeight.Value], ...
+            currentScaleUnit());
     end
 
     function items = readCropItems(paths)
         items = batch_crop.state.readItems(paths);
-    end
-
-    function tf = isScaleCalibrationSet(cal)
-        tf = isstruct(cal) && isfield(cal, 'isCalibrated') && cal.isCalibrated && ...
-            isfield(cal, 'pixelsPerUnit') && isfinite(double(cal.pixelsPerUnit)) && ...
-            double(cal.pixelsPerUnit) > 0;
     end
 
     function key = canvasCacheKey(index, item, paddingPercent)
@@ -744,15 +642,8 @@ function fig = run(debugLog)
     function value = ternary(condition, trueValue, falseValue)
         if condition
             value = trueValue;
-        else
-            value = falseValue;
+            return;
         end
-    end
-
-    function value = fieldOr(s, name, defaultValue)
-        value = defaultValue;
-        if isstruct(s) && isfield(s, name) && ~isempty(s.(name))
-            value = s.(name);
-        end
+        value = falseValue;
     end
 end

@@ -1,0 +1,28 @@
+% App-owned scale status view helper. Expected caller: batch-crop app summary
+% refresh. Inputs are state, current index, mode, physical size, and unit.
+% Output is display text only.
+function text = scaleStatusText(state, currentIndex, mode, physicalSize, unitName)
+%SCALESTATUSTEXT Build the Scale tab status line.
+
+    if ~strcmpi(string(mode), "Physical")
+        text = 'Pixel mode: output size uses crop width/height in px.';
+        return;
+    end
+
+    if isempty(state.items)
+        text = sprintf('Physical mode: set %.6g x %.6g %s and load images.', ...
+            physicalSize(1), physicalSize(2), char(string(unitName)));
+        return;
+    end
+
+    calibratedCount = batch_crop.state.countScaleCalibrations(state.items);
+    item = state.items(currentIndex);
+    cal = item.scaleCalibration;
+    if batch_crop.state.isScaleCalibrationSet(cal)
+        text = sprintf('Physical mode: image %d scale %.6g px/%s; calibrated %d/%d.', ...
+            currentIndex, cal.pixelsPerUnit, cal.unit, calibratedCount, numel(state.items));
+    else
+        text = sprintf('Physical mode: image %d needs scale; calibrated %d/%d.', ...
+            currentIndex, calibratedCount, numel(state.items));
+    end
+end
