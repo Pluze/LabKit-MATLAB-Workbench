@@ -4,8 +4,10 @@
 function payload = writeOutputs(items, opts)
 %WRITEOUTPUTS Write cropped images and a manifest CSV.
 % Expected caller: labkit_BatchImageCrop_app and batch_crop package tests. Items
-% must contain path, image, angleDeg, and centerXY fields. Options contain
+% must contain path, image, angleDeg, and centerXY fields. Pixel options contain
 % outputFolder, format, cropWidth, cropHeight, and paddingPercent/fillValue.
+% Physical options additionally contain scaleMode='Physical', physicalWidth,
+% physicalHeight, scaleUnit, and per-item scaleCalibration fields.
 
     if nargin < 2
         opts = struct();
@@ -22,6 +24,13 @@ function payload = writeOutputs(items, opts)
     end
 
     outputFormat = normalizeOutputFormat(optionValue(opts, 'format', 'PNG'));
+    scaleMode = string(optionValue(opts, 'scaleMode', "Pixels"));
+    physicalMode = strcmpi(scaleMode, "Physical");
+    scalePlan = [];
+    if physicalMode
+        scalePlan = batch_crop.ops.scalePlan(items, opts);
+    end
+
     results = repmat(batch_crop.state.emptyResult(), numel(items), 1);
     reservedPaths = strings(0, 1);
     for k = 1:numel(items)
@@ -31,7 +40,11 @@ function payload = writeOutputs(items, opts)
             cropOpts = opts;
             cropOpts.angleDeg = items(k).angleDeg;
             cropOpts.centerXY = items(k).centerXY;
-            crop = batch_crop.ops.cropImage(items(k).image, cropOpts);
+            if physicalMode
+                crop = batch_crop.ops.cropScaledImage(items(k).image, cropOpts, scalePlan, k);
+            else
+                crop = batch_crop.ops.cropImage(items(k).image, cropOpts);
+            end
             outputPath = uniqueBatchCropOutputPath(outputFolder, ...
                 string(items(k).path), outputFormat.extension, reservedPaths, "_crop");
             reservedPaths(end+1, 1) = outputPath;

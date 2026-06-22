@@ -7,6 +7,7 @@ function tool = scaleBar(parent, row, runtime, opts)
 %   tool.setImageSize(size(imageData));
 %   tool.setBackground(hImage);
 %   cal = tool.calibration();
+%   tool.setCalibration(cal);
 %   tool.renderOverlay();
 %
 % Inputs:
@@ -33,8 +34,8 @@ function tool = scaleBar(parent, row, runtime, opts)
 % Output:
 %   tool - struct exposing the underlying panel handles plus methods:
 %          setImageSize(imageSize), setBackground(handle), resetForNewImage(),
-%          calibration(), setReferencePixels(px), clearReferencePixels(),
-%          finishReferenceEdit(), isReferenceEditActive(), refresh(),
+%          calibration(), setCalibration(cal), setReferencePixels(px),
+%          clearReferencePixels(), finishReferenceEdit(), isReferenceEditActive(), refresh(),
 %          scaleBarSpec(), placedScaleBar(), renderOverlay(), clearScaleBar(),
 %          hasScaleBar(), setEnabled(state), and delete().
 %
@@ -79,6 +80,7 @@ function tool = scaleBar(parent, row, runtime, opts)
     tool.setBackground = @setBackground;
     tool.resetForNewImage = @resetForNewImage;
     tool.calibration = @calibration;
+    tool.setCalibration = @setCalibration;
     tool.setReferencePixels = @setReferencePixels;
     tool.clearReferencePixels = @clearReferencePixels;
     tool.finishReferenceEdit = @finishReferenceEdit;
@@ -135,6 +137,19 @@ function tool = scaleBar(parent, row, runtime, opts)
             struct('units', {scalePanel.controls.unitDropdown.Items}, ...
             'defaultUnit', scalePanel.controls.unitDropdown.Items{1}, ...
             'referenceLine', state.referenceLine));
+    end
+
+    function setCalibration(cal)
+        trace('setCalibration');
+        state.referenceLine = referenceLineFromCalibration(cal);
+        state.scaleBar = [];
+        scalePanel.setCalibration(cal);
+        if ~isempty(state.referenceEditor)
+            state.suppressReferenceEditorCallback = true;
+            cleanupObj = onCleanup(@() clearReferenceEditorSuppression());
+            state.referenceEditor.setPoints(state.referenceLine);
+        end
+        refreshEnabled();
     end
 
     function setReferencePixels(px)
@@ -420,6 +435,17 @@ function tool = scaleBar(parent, row, runtime, opts)
             return;
         end
         state.onTrace(sprintf('scaleBarTool: %s', char(message)));
+    end
+end
+
+function line = referenceLineFromCalibration(cal)
+    line = zeros(0, 2);
+    if ~isstruct(cal) || ~isfield(cal, 'referenceLine') || isempty(cal.referenceLine)
+        return;
+    end
+    candidate = double(cal.referenceLine);
+    if isequal(size(candidate), [2 2]) && all(isfinite(candidate(:)))
+        line = candidate;
     end
 end
 

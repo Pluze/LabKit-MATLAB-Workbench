@@ -241,7 +241,7 @@ when a tool has stricter data limits. Generic plots zoom both axes by default;
 time-labeled x-axes zoom only the horizontal axis unless `"ZoomAxes"` is
 provided explicitly.
 
-Use `labkit.ui.tool.anchorEditor(runtime, imageSize, opts)` for generic anchor editing. Use `labkit.ui.tool.scaleBar(parent, row, runtime, opts)` for calibration controls, reference-pixel editing, unit normalization, final scale-bar placement, and overlay drawing. Apps still own image loading, redraw order, scientific calculations, result summaries, alerts, logs, and exports.
+Use `labkit.ui.tool.anchorEditor(runtime, imageSize, opts)` for generic anchor editing. Use `labkit.ui.tool.scaleBar(parent, row, runtime, opts)` for calibration controls, reference-pixel editing, unit normalization, final scale-bar placement, and overlay drawing. Apps can persist `tool.calibration()` per image and restore it with `tool.setCalibration(cal)`. Apps still own image loading, redraw order, scientific calculations, result summaries, alerts, logs, and exports.
 
 `labkit.ui.tool.scaleBarCalibration(referencePixels, referenceLength, unitName, opts)` is the GUI-free calibration struct helper used by apps and app-private calculations.
 

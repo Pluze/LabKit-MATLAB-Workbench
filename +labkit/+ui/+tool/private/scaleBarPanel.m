@@ -36,10 +36,10 @@ function ui = scaleBarPanel(parent, row, opts)
 %
 % Output:
 %   ui - struct containing panel/grid handles, controls, and methods:
-%        setReferencePixels(px), clearReferencePixels(), referencePixels(),
-%        referenceLength(), scaleUnit(), scaleBarLength(), calibration(),
-%        pixelsPerUnit(), scaleBarSpec(imageSize), updateReadout(),
-%        setEnabled(state).
+%        setReferencePixels(px), setCalibration(cal), clearReferencePixels(),
+%        referencePixels(), referenceLength(), scaleUnit(), scaleBarLength(),
+%        calibration(), pixelsPerUnit(), scaleBarSpec(imageSize),
+%        updateReadout(), setEnabled(state).
 %
 %   scaleBarSpec(imageSize) returns a struct with fields line, label, color,
 %   labelPosition, verticalAlignment, pixelsPerUnit, unit, barLength,
@@ -159,6 +159,7 @@ function ui = scaleBarPanel(parent, row, opts)
         'referencePixelsReadout', txtReferencePx, ...
         'pixelsPerUnitReadout', txtPxPerUnit);
     ui.setReferencePixels = @setReferencePixels;
+    ui.setCalibration = @setCalibration;
     ui.clearReferencePixels = @clearReferencePixels;
     ui.referencePixels = @referencePixels;
     ui.referenceLength = @referenceLength;
@@ -190,6 +191,18 @@ function ui = scaleBarPanel(parent, row, opts)
 
     function setReferencePixels(px)
         edtReferencePx.Value = max(0, px);
+        updateReadout();
+    end
+
+    function setCalibration(cal)
+        if isempty(cal)
+            clearReferencePixels();
+            return;
+        end
+        edtReferencePx.Value = max(0, numericField(cal, 'referencePixels', 0));
+        edtReferenceLen.Value = max(0, numericField(cal, 'referenceLength', defaultReferenceLength));
+        unitValue = char(string(fieldOr(cal, 'unit', defaultUnit)));
+        ddUnit.Value = defaultChoice(unitValue, units);
         updateReadout();
     end
 
@@ -363,6 +376,21 @@ function value = optionValue(opts, name, defaultValue)
     value = defaultValue;
     if isstruct(opts) && isfield(opts, name)
         value = opts.(name);
+    end
+end
+
+function value = fieldOr(s, name, defaultValue)
+    value = defaultValue;
+    if isstruct(s) && isfield(s, name) && ~isempty(s.(name))
+        value = s.(name);
+    end
+end
+
+function value = numericField(s, name, defaultValue)
+    value = defaultValue;
+    if isstruct(s) && isfield(s, name) && ~isempty(s.(name)) && ...
+            isnumeric(s.(name)) && isscalar(s.(name)) && isfinite(double(s.(name)))
+        value = double(s.(name));
     end
 end
 

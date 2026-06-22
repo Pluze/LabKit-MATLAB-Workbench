@@ -23,6 +23,7 @@ function fig = run(debugLog)
         "paddingChanged", @(~, ~) onPaddingChanged(), ...
         "centerChanged", @(~, ~) onCenterChanged(), ...
         "useImageCenter", @(~, ~) onUseImageCenter(), ...
+        "scaleSettingChanged", @(~, ~) onScaleSettingChanged(), ...
         "exportSettingChanged", @(~, ~) onExportSettingChanged(), ...
         "chooseOutputFolder", @(~, ~) onChooseOutputFolder(), ...
         "exportCrops", @(~, ~) onExportCrops());
@@ -37,6 +38,15 @@ function fig = run(debugLog)
         'name', 'batchCropCenter', ...
         'onPointerDown', @onPreviewPointerDown, ...
         'installScrollWheel', false));
+    scaleTool = labkit.ui.tool.scaleBar(ui.sections.scaleBarSection.grid, 1, ...
+        imageRuntime, struct( ...
+        'title', 'Current Image Scale', ...
+        'defaultUnit', 'um', ...
+        'defaultReferenceLength', 100, ...
+        'onCalibrationChanged', @(~, ~) onScaleCalibrationChanged(), ...
+        'onReferenceEditChanged', @(~, ~) onScaleReferenceEditChanged(), ...
+        'onError', @showError, ...
+        'onTrace', debugLog.trace));
 
     btnOpenFiles = ui.controls.images.chooseButton;
     btnClearImages = ui.controls.images.clearButton;
@@ -53,6 +63,13 @@ function fig = run(debugLog)
     edtCenterX = ui.controls.centerX.valueHandle;
     edtCenterY = ui.controls.centerY.valueHandle;
     btnUseImageCenter = ui.controls.useImageCenter.button;
+    ddScaleMode = ui.controls.scaleMode.valueHandle;
+    ddScaleUnit = ui.controls.scaleUnit.valueHandle;
+    edtPhysicalWidth = ui.controls.physicalWidth.valueHandle;
+    edtPhysicalHeight = ui.controls.physicalHeight.valueHandle;
+    edtTargetPixelsPerUnit = ui.controls.targetPixelsPerUnit.valueHandle;
+    edtMaxUpsamplePercent = ui.controls.maxUpsamplePercent.valueHandle;
+    txtScaleStatus = ui.controls.scaleStatus.valueHandle;
     ddFormat = ui.controls.format.valueHandle;
     txtOutputFolder = ui.controls.outputFolder.valueHandle;
     btnChooseOutput = ui.controls.chooseOutputFolder.button;
@@ -116,7 +133,7 @@ function fig = run(debugLog)
         if isempty(S.items)
             return;
         end
-        items = batch_crop.view.listboxItems(S.items);
+        items = batch_crop.view.listboxItems(S.items, currentScaleMode());
         idx = find(strcmp(items, lbImages.Value), 1);
         if isempty(idx)
             return;
@@ -195,6 +212,33 @@ function fig = run(debugLog)
         refreshAll();
     end
 
+    function onScaleSettingChanged()
+        edtPhysicalWidth.Value = max(eps, double(edtPhysicalWidth.Value));
+        edtPhysicalHeight.Value = max(eps, double(edtPhysicalHeight.Value));
+        edtTargetPixelsPerUnit.Value = max(0, double(edtTargetPixelsPerUnit.Value));
+        edtMaxUpsamplePercent.Value = max(0, double(edtMaxUpsamplePercent.Value));
+        if strcmpi(currentScaleMode(), "Physical")
+            syncCurrentScaleUnit();
+            scaleTool.setEnabled(struct('hasImage', hasCurrentImage()));
+        end
+        refreshAll(capturePreviewView());
+    end
+
+    function onScaleCalibrationChanged()
+        if ~hasCurrentImage()
+            return;
+        end
+        cal = scaleTool.calibration();
+        S.items(S.currentIndex).scaleCalibration = cal;
+        ddScaleUnit.Value = char(cal.unit);
+        refreshList();
+        refreshSummary();
+    end
+
+    function onScaleReferenceEditChanged()
+        refreshScaleTool();
+    end
+
     function onExportSettingChanged()
         refreshSummary();
     end
@@ -239,6 +283,11 @@ function fig = run(debugLog)
                 'Set or confirm the crop center for every loaded image before exporting.');
             return;
         end
+        if strcmpi(currentScaleMode(), "Physical") && ~allScaleCalibrated()
+            showError('Scale calibration missing', ...
+                'Physical scale mode requires a valid scale calibration for every loaded image.');
+            return;
+        end
 
         opts = currentExportOptions();
         try
@@ -280,27 +329,40 @@ function fig = run(debugLog)
             return;
         end
 
-        items = batch_crop.view.listboxItems(S.items);
+        items = batch_crop.view.listboxItems(S.items, currentScaleMode());
         labkit.ui.view.setListItems(ui, 'images', items);
         S.currentIndex = min(max(S.currentIndex, 1), numel(S.items));
         lbImages.Value = items{S.currentIndex};
         txtImageSource.Value = char(S.items(S.currentIndex).path);
-        txtImageStatus.Value = sprintf('Images: %d | confirmed centers: %d', ...
-            numel(S.items), countConfirmedCenters());
+        if strcmpi(currentScaleMode(), "Physical")
+            txtImageStatus.Value = sprintf('Images: %d | centers: %d | scales: %d', ...
+                numel(S.items), countConfirmedCenters(), countScaleCalibrations());
+        else
+            txtImageStatus.Value = sprintf('Images: %d | confirmed centers: %d', ...
+                numel(S.items), countConfirmedCenters());
+        end
     end
 
     function refreshControls()
         hasImage = hasCurrentImage();
         enabled = ternary(hasImage, 'on', 'off');
+        physicalMode = strcmpi(currentScaleMode(), "Physical");
         btnClearImages.Enable = enabled;
         btnDuplicateImage.Enable = enabled;
         btnPrevious.Enable = ternary(hasImage && S.currentIndex > 1, 'on', 'off');
         btnNext.Enable = ternary(hasImage && S.currentIndex < numel(S.items), 'on', 'off');
+        edtCropWidth.Enable = ternary(hasImage && ~physicalMode, 'on', 'off');
+        edtCropHeight.Enable = ternary(hasImage && ~physicalMode, 'on', 'off');
         edtRotation.Enable = enabled;
         edtPaddingPercent.Enable = enabled;
         edtCenterX.Enable = enabled;
         edtCenterY.Enable = enabled;
         btnUseImageCenter.Enable = enabled;
+        ddScaleUnit.Enable = ternary(physicalMode, 'on', 'off');
+        edtPhysicalWidth.Enable = ternary(physicalMode, 'on', 'off');
+        edtPhysicalHeight.Enable = ternary(physicalMode, 'on', 'off');
+        edtTargetPixelsPerUnit.Enable = ternary(physicalMode, 'on', 'off');
+        edtMaxUpsamplePercent.Enable = ternary(physicalMode, 'on', 'off');
 
         if hasImage
             ensureCurrentCenter();
@@ -319,7 +381,10 @@ function fig = run(debugLog)
             edtCenterY.Value = 1;
         end
 
-        btnExport.Enable = ternary(hasImage && all([S.items.centerSet]), 'on', 'off');
+        refreshScaleTool();
+        readyToExport = hasImage && all([S.items.centerSet]) && ...
+            (~physicalMode || allScaleCalibrated());
+        btnExport.Enable = ternary(readyToExport, 'on', 'off');
     end
 
     function refreshPreview(viewState)
@@ -330,6 +395,8 @@ function fig = run(debugLog)
             resetPreviewAxes();
             cropSession.setBackground([]);
             cropSession.setGraphics([]);
+            scaleTool.setBackground([]);
+            scaleTool.setImageSize([]);
             return;
         end
 
@@ -364,6 +431,9 @@ function fig = run(debugLog)
         cropSession.setBackground(hImage);
         cropSession.setGraphics([hRect, hLineX, hLineY]);
         cropSession.activate();
+        scaleTool.setBackground(hImage);
+        scaleTool.setImageSize(size(item.image));
+        scaleTool.refresh();
         restorePreviewView(viewState, geometry, placement);
     end
 
@@ -372,6 +442,7 @@ function fig = run(debugLog)
             currentCropWidth(), currentCropHeight(), currentPaddingPercent(), ddFormat.Value);
         txtDetails.Value = batch_crop.view.detailLines(S, S.currentIndex, ...
             currentCropWidth(), currentCropHeight(), currentPaddingPercent());
+        refreshScaleStatus();
     end
 
     function resetPreviewAxes()
@@ -386,14 +457,49 @@ function fig = run(debugLog)
         opts.cropWidth = currentCropWidth();
         opts.cropHeight = currentCropHeight();
         opts.paddingPercent = currentPaddingPercent();
+        opts.scaleMode = currentScaleMode();
+        opts.scaleUnit = currentScaleUnit();
+        opts.physicalWidth = max(eps, double(edtPhysicalWidth.Value));
+        opts.physicalHeight = max(eps, double(edtPhysicalHeight.Value));
+        opts.targetPixelsPerUnit = max(0, double(edtTargetPixelsPerUnit.Value));
+        opts.maxUpsamplePercent = max(0, double(edtMaxUpsamplePercent.Value));
     end
 
     function width = currentCropWidth()
+        if strcmpi(currentScaleMode(), "Physical") && hasCurrentImage()
+            cal = currentScaleCalibration();
+            if isScaleCalibrationSet(cal)
+                width = max(1, round(double(edtPhysicalWidth.Value) * cal.pixelsPerUnit));
+                return;
+            end
+        end
         width = max(1, round(double(edtCropWidth.Value)));
     end
 
     function height = currentCropHeight()
+        if strcmpi(currentScaleMode(), "Physical") && hasCurrentImage()
+            cal = currentScaleCalibration();
+            if isScaleCalibrationSet(cal)
+                height = max(1, round(double(edtPhysicalHeight.Value) * cal.pixelsPerUnit));
+                return;
+            end
+        end
         height = max(1, round(double(edtCropHeight.Value)));
+    end
+
+    function mode = currentScaleMode()
+        mode = string(ddScaleMode.Value);
+    end
+
+    function unitName = currentScaleUnit()
+        unitName = string(ddScaleUnit.Value);
+    end
+
+    function cal = currentScaleCalibration()
+        cal = [];
+        if hasCurrentImage() && isfield(S.items(S.currentIndex), 'scaleCalibration')
+            cal = S.items(S.currentIndex).scaleCalibration;
+        end
     end
 
     function percent = currentPaddingPercent()
@@ -507,8 +613,90 @@ function fig = run(debugLog)
         end
     end
 
+    function count = countScaleCalibrations()
+        count = 0;
+        for k = 1:numel(S.items)
+            if isScaleCalibrationSet(S.items(k).scaleCalibration)
+                count = count + 1;
+            end
+        end
+    end
+
+    function tf = allScaleCalibrated()
+        tf = true;
+        for k = 1:numel(S.items)
+            tf = tf && isfield(S.items(k), 'scaleCalibration') && ...
+                isScaleCalibrationSet(S.items(k).scaleCalibration);
+        end
+    end
+
+    function refreshScaleTool()
+        physicalMode = strcmpi(currentScaleMode(), "Physical");
+        hasImage = hasCurrentImage();
+        if hasImage
+            scaleTool.setCalibration(S.items(S.currentIndex).scaleCalibration);
+            scaleTool.setImageSize(size(S.items(S.currentIndex).image));
+        else
+            scaleTool.setCalibration([]);
+            scaleTool.setImageSize([]);
+        end
+        scaleTool.setEnabled(struct( ...
+            'hasImage', hasImage && physicalMode, ...
+            'blockInputs', ~physicalMode, ...
+            'blockPlacement', true));
+    end
+
+    function syncCurrentScaleUnit()
+        if ~hasCurrentImage()
+            return;
+        end
+        cal = currentScaleCalibration();
+        if ~isstruct(cal)
+            return;
+        end
+        updated = labkit.ui.tool.scaleBarCalibration( ...
+            fieldOr(cal, 'referencePixels', NaN), ...
+            fieldOr(cal, 'referenceLength', 1), ...
+            currentScaleUnit(), ...
+            struct('defaultUnit', 'um', ...
+            'referenceLine', fieldOr(cal, 'referenceLine', zeros(0, 2))));
+        S.items(S.currentIndex).scaleCalibration = updated;
+        scaleTool.setCalibration(updated);
+    end
+
+    function refreshScaleStatus()
+        if ~strcmpi(currentScaleMode(), "Physical")
+            txtScaleStatus.Value = 'Pixel mode: output size uses crop width/height in px.';
+            return;
+        end
+        if isempty(S.items)
+            txtScaleStatus.Value = sprintf('Physical mode: set %.6g x %.6g %s and load images.', ...
+                edtPhysicalWidth.Value, edtPhysicalHeight.Value, char(currentScaleUnit()));
+            return;
+        end
+        if hasCurrentImage()
+            cal = currentScaleCalibration();
+            if isScaleCalibrationSet(cal)
+                txtScaleStatus.Value = sprintf( ...
+                    'Physical mode: image %d scale %.6g px/%s; calibrated %d/%d.', ...
+                    S.currentIndex, cal.pixelsPerUnit, cal.unit, ...
+                    countScaleCalibrations(), numel(S.items));
+            else
+                txtScaleStatus.Value = sprintf( ...
+                    'Physical mode: image %d needs scale; calibrated %d/%d.', ...
+                    S.currentIndex, countScaleCalibrations(), numel(S.items));
+            end
+        end
+    end
+
     function items = readCropItems(paths)
         items = batch_crop.state.readItems(paths);
+    end
+
+    function tf = isScaleCalibrationSet(cal)
+        tf = isstruct(cal) && isfield(cal, 'isCalibrated') && cal.isCalibrated && ...
+            isfield(cal, 'pixelsPerUnit') && isfinite(double(cal.pixelsPerUnit)) && ...
+            double(cal.pixelsPerUnit) > 0;
     end
 
     function key = canvasCacheKey(index, item, paddingPercent)
@@ -558,6 +746,13 @@ function fig = run(debugLog)
             value = trueValue;
         else
             value = falseValue;
+        end
+    end
+
+    function value = fieldOr(s, name, defaultValue)
+        value = defaultValue;
+        if isstruct(s) && isfield(s, name) && ~isempty(s.(name))
+            value = s.(name);
         end
     end
 end

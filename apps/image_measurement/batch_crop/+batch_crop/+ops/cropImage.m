@@ -49,6 +49,11 @@ function result = cropImage(imageData, opts)
     result.cropHeight = cropHeight;
     result.sourceWidth = size(imageData, 2);
     result.sourceHeight = size(imageData, 1);
+    result.scaleMode = "Pixels";
+    result.nativeCropWidth = cropWidth;
+    result.nativeCropHeight = cropHeight;
+    result.outputWidth = cropWidth;
+    result.outputHeight = cropHeight;
     result.message = "OK";
 end
 

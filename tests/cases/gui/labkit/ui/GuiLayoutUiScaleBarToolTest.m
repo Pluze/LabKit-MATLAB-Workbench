@@ -51,6 +51,17 @@ function verify_gui_layout_ui_scale_bar_tool()
     cal = tool.calibration();
     assert(cal.isCalibrated && cal.pixelsPerUnit == 4 && strcmp(cal.unit, 'mm'), ...
         'Scale-bar tool should expose the shared calibration model.');
+    callbackCount = calls.calibration;
+    restored = labkit.ui.tool.scaleBarCalibration(150, 30, "um", ...
+        struct('defaultUnit', 'um', 'referenceLine', [10 12; 160 12]));
+    tool.setCalibration(restored);
+    restoredCal = tool.calibration();
+    assert(restoredCal.isCalibrated && restoredCal.pixelsPerUnit == 5 && ...
+        strcmp(restoredCal.unit, 'um') && isequal(restoredCal.referenceLine, [10 12; 160 12]), ...
+        'Scale-bar tool should restore a saved per-image calibration without losing endpoints.');
+    assert(calls.calibration == callbackCount, ...
+        'Programmatic scale-bar calibration restore should not fire app calibration callbacks.');
+    tool.setCalibration(cal);
 
     tool.controls.barLengthSpinner.Value = 10;
     h.invokeCallback(tool.controls.barLengthSpinner, 'ValueChangedFcn');

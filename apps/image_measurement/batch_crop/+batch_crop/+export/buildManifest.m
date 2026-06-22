@@ -10,7 +10,10 @@ function T = buildManifest(results)
     if isempty(results)
         T = table(strings(0, 1), strings(0, 1), strings(0, 1), ...
             zeros(0, 1), zeros(0, 1), zeros(0, 1), zeros(0, 1), ...
-            zeros(0, 1), zeros(0, 1), zeros(0, 1), zeros(0, 1), strings(0, 1), ...
+            zeros(0, 1), zeros(0, 1), zeros(0, 1), zeros(0, 1), ...
+            strings(0, 1), strings(0, 1), zeros(0, 1), zeros(0, 1), ...
+            zeros(0, 1), zeros(0, 1), zeros(0, 1), zeros(0, 1), ...
+            zeros(0, 1), strings(0, 1), strings(0, 1), ...
             'VariableNames', manifestColumns());
         return;
     end
@@ -27,6 +30,16 @@ function T = buildManifest(results)
     cropHeight = zeros(n, 1);
     sourceWidth = zeros(n, 1);
     sourceHeight = zeros(n, 1);
+    scaleMode = strings(n, 1);
+    scaleUnit = strings(n, 1);
+    sourcePixelsPerUnit = zeros(n, 1);
+    targetPixelsPerUnit = zeros(n, 1);
+    resampleFactor = zeros(n, 1);
+    nativeCropWidth = zeros(n, 1);
+    nativeCropHeight = zeros(n, 1);
+    outputWidth = zeros(n, 1);
+    outputHeight = zeros(n, 1);
+    scaleWarning = strings(n, 1);
     message = strings(n, 1);
 
     for k = 1:n
@@ -41,18 +54,34 @@ function T = buildManifest(results)
         cropHeight(k) = double(fieldOr(results(k), 'cropHeight', NaN));
         sourceWidth(k) = double(fieldOr(results(k), 'sourceWidth', NaN));
         sourceHeight(k) = double(fieldOr(results(k), 'sourceHeight', NaN));
+        scaleMode(k) = string(fieldOr(results(k), 'scaleMode', ""));
+        scaleUnit(k) = string(fieldOr(results(k), 'scaleUnit', ""));
+        sourcePixelsPerUnit(k) = double(fieldOr(results(k), 'sourcePixelsPerUnit', NaN));
+        targetPixelsPerUnit(k) = double(fieldOr(results(k), 'targetPixelsPerUnit', NaN));
+        resampleFactor(k) = double(fieldOr(results(k), 'resampleFactor', NaN));
+        nativeCropWidth(k) = double(fieldOr(results(k), 'nativeCropWidth', NaN));
+        nativeCropHeight(k) = double(fieldOr(results(k), 'nativeCropHeight', NaN));
+        outputWidth(k) = double(fieldOr(results(k), 'outputWidth', NaN));
+        outputHeight(k) = double(fieldOr(results(k), 'outputHeight', NaN));
+        scaleWarning(k) = string(fieldOr(results(k), 'scaleWarning', ""));
         message(k) = string(fieldOr(results(k), 'message', ""));
     end
 
     T = table(sourceImage, outputImage, status, rotationDeg, paddingPercent, ...
-        centerX, centerY, cropWidth, cropHeight, sourceWidth, sourceHeight, message, ...
+        centerX, centerY, cropWidth, cropHeight, sourceWidth, sourceHeight, ...
+        scaleMode, scaleUnit, sourcePixelsPerUnit, targetPixelsPerUnit, ...
+        resampleFactor, nativeCropWidth, nativeCropHeight, outputWidth, ...
+        outputHeight, scaleWarning, message, ...
         'VariableNames', manifestColumns());
 end
 
 function names = manifestColumns()
     names = {'SourceImage', 'OutputImage', 'Status', 'RotationDeg', ...
         'PaddingPercent', 'CenterX_px', 'CenterY_px', 'CropWidth_px', ...
-        'CropHeight_px', 'SourceWidth_px', 'SourceHeight_px', 'Message'};
+        'CropHeight_px', 'SourceWidth_px', 'SourceHeight_px', 'ScaleMode', ...
+        'ScaleUnit', 'SourcePixelsPerUnit', 'TargetPixelsPerUnit', ...
+        'ResampleFactor', 'NativeCropWidth_px', 'NativeCropHeight_px', ...
+        'OutputWidth_px', 'OutputHeight_px', 'ScaleWarning', 'Message'};
 end
 
 function value = fieldOr(s, name, defaultValue)
