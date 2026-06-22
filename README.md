@@ -5,14 +5,15 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![MATLAB](https://img.shields.io/badge/MATLAB-apps-orange.svg)](https://www.mathworks.com/products/matlab.html)
 
-LabKit is a MATLAB workbench for focused lab GUI apps. Each app owns its lab
-workflow, plots, result tables, and exports. The reusable `+labkit` foundation
-stays small: GUI shell helpers, Gamry DTA loading, Intan RHS loading, and
-biosignal processing facades.
+Focused MATLAB GUI apps for lab workflows.
 
-## Quick Start
+LabKit gives lab users a launcher-first way to open small, purpose-built apps
+for electrochemistry, DIC, image measurement, wearable biosignals, and
+neurophysiology. Each app owns its workflow, plots, result tables, and exports.
+The reusable `+labkit` foundation stays small: GUI shell helpers, Gamry DTA
+loading, Intan RHS loading, and biosignal processing facades.
 
-Download the single-file launcher:
+## Start Here
 
 **[Download `labkit_launcher.m`](https://github.com/Pluze/LabKit-MATLAB-Workbench/releases/latest/download/labkit_launcher.m)**
 
@@ -29,12 +30,14 @@ Use `Latest` in the launcher to update from the current `main` branch, or
 results in your own project folders; the LabKit folder can be treated as an
 application runtime folder.
 
-## Why Use The Launcher
+## What You Get
 
-- It is the stable entry point for opening every LabKit app.
-- It can start from a folder that only contains `labkit_launcher.m`.
-- It downloads or updates the LabKit code for normal users.
-- It keeps users away from repository layout details during routine use.
+- A single launcher that can start from a folder containing only
+  `labkit_launcher.m`.
+- Independent apps with stable public commands and app-owned workflow logic.
+- A small shared foundation for GUI shells, DTA loading, RHS loading, and
+  biosignal processing.
+- Generated artifacts kept separate from source data and exported results.
 
 A git checkout is only needed for source development, testing, CI work, or
 reviewing implementation details.
@@ -52,18 +55,16 @@ reviewing implementation details.
 See [docs/apps.md](docs/apps.md) for the full app catalog and expected inputs
 and outputs.
 
-## Documentation
+## Find The Right Page
 
-Start with [docs/README.md](docs/README.md). It separates normal app usage from
-maintainer references so the homepage does not need to expose the whole
-repository structure.
-
-Useful direct links:
-
-- [App catalog and launch notes](docs/apps.md)
-- [Architecture and ownership boundaries](docs/architecture.md)
-- [Testing and validation tasks](docs/testing.md)
-- [Release policy](docs/release.md)
+| I want to | Go to |
+| --- | --- |
+| Open LabKit or pick an app | [docs/apps.md](docs/apps.md) |
+| Understand the documentation set | [docs/README.md](docs/README.md) |
+| Report a problem or ask for workflow support | [.github/SUPPORT.md](.github/SUPPORT.md) |
+| Change source code or run checks | [docs/testing.md](docs/testing.md) |
+| Understand package and app boundaries | [docs/architecture.md](docs/architecture.md) |
+| Prepare a public release | [docs/release.md](docs/release.md) |
 
 ## Development
 
@@ -77,6 +78,18 @@ buildtool headless
 
 See [docs/testing.md](docs/testing.md) for the supported build tasks and GUI
 validation limits.
+
+## Project Shape
+
+```text
+apps/      workflow-specific MATLAB GUI apps
++labkit/   reusable UI, DTA, RHS, and biosignal facades
+docs/      human-facing usage, API, architecture, and validation docs
+tests/     behavior tests, project contracts, GUI checks, and runner code
+```
+
+Apps are the deliverables. Shared code moves into `+labkit` only when it is
+domain-neutral, app-facing, tested, and useful beyond one workflow.
 
 ## License
 

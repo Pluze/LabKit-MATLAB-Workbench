@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Read the documentation index
+    url: https://github.com/Pluze/LabKit-MATLAB-Workbench/blob/main/docs/README.md
+    about: Start here when you are looking for the right app, API, or validation page.
+  - name: Read support guidance
+    url: https://github.com/Pluze/LabKit-MATLAB-Workbench/blob/main/.github/SUPPORT.md
+    about: See what to include before opening a public issue.

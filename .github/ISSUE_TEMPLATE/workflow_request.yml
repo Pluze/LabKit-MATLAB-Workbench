@@ -1,0 +1,65 @@
+name: App workflow request
+description: Request a new app workflow, app behavior, import path, export, or GUI improvement.
+title: "[Workflow]: "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for user-facing app workflows. LabKit keeps app-specific formulas, plots, exports, wording, and result schemas inside the owning app unless a shared foundation contract is clearly needed.
+  - type: dropdown
+    id: family
+    attributes:
+      label: App family
+      options:
+        - Electrochemistry
+        - DIC
+        - Image measurement
+        - Wearable biosignal
+        - Neurophysiology
+        - Launcher or shared UI
+        - New app family
+        - Unsure
+    validations:
+      required: true
+  - type: input
+    id: app
+    attributes:
+      label: Target app
+      description: Name the app if one already owns this workflow.
+      placeholder: labkit_RHSPreview_app
+  - type: textarea
+    id: current-workflow
+    attributes:
+      label: Current workflow
+      description: Describe the manual or current LabKit workflow in user terms.
+    validations:
+      required: true
+  - type: textarea
+    id: desired-workflow
+    attributes:
+      label: Desired workflow
+      description: Describe what the user should be able to do and what should be easier afterward.
+    validations:
+      required: true
+  - type: textarea
+    id: inputs
+    attributes:
+      label: Inputs
+      description: Describe the file types, table columns, image shapes, or protocol fields without exposing private identifiers.
+  - type: textarea
+    id: outputs
+    attributes:
+      label: Outputs
+      description: List expected plots, tables, images, CSV/JSON exports, or summary fields.
+  - type: textarea
+    id: example
+    attributes:
+      label: Synthetic example or notes
+      description: Add a synthetic example, sketch, or redacted description if it helps.
+  - type: checkboxes
+    id: data-hygiene
+    attributes:
+      label: Data hygiene
+      options:
+        - label: I will use synthetic or redacted examples and will not upload sensitive lab data or identifying metadata.
+          required: true
