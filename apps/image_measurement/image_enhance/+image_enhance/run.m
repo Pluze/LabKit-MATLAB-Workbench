@@ -13,6 +13,7 @@ function fig = run(debugLog)
     S.pendingDirty = false;
     S.previewImages = {};
     S.previewImageKeys = strings(0, 1);
+    S.previewScales = [];
 
     stepKinds = {'Brightness/contrast', 'Local contrast', 'Sharpen', ...
         'Hue/saturation', 'White balance'};
@@ -315,11 +316,14 @@ function fig = run(debugLog)
         if numel(S.previewImages) ~= numel(S.items)
             S.previewImages = cell(numel(S.items), 1);
             S.previewImageKeys = strings(numel(S.items), 1);
+            S.previewScales = ones(numel(S.items), 1);
         end
         item = S.items(index);
         key = previewImageKey(item);
         if isempty(S.previewImages{index}) || S.previewImageKeys(index) ~= key
-            S.previewImages{index} = image_enhance.view.previewImage(item.image);
+            [previewImage, previewScale] = image_enhance.view.previewImage(item.image);
+            S.previewImages{index} = previewImage;
+            S.previewScales(index) = previewScale;
             S.previewImageKeys(index) = key;
         end
         imageOut = S.previewImages{index};
@@ -327,20 +331,47 @@ function fig = run(debugLog)
 
     function imageOut = currentPreviewImage(includePending)
         imageOut = currentPreviewSourceImage();
-        steps = S.steps;
+        previewScale = currentPreviewScale();
+        steps = previewScaledSteps(S.steps, previewScale);
         if ~isempty(steps)
             imageOut = image_enhance.ops.applyPipeline({imageOut}, steps);
             imageOut = imageOut{1};
         end
         if includePending
             imageOut = image_enhance.ops.applyStep( ...
-                imageOut, currentToolStep(), []);
+                previewScaledStep(currentToolStep(), previewScale), []);
         end
     end
 
     function invalidatePreviewCache()
         S.previewImages = {};
         S.previewImageKeys = strings(0, 1);
+        S.previewScales = [];
+    end
+
+    function scale = currentPreviewScale()
+        index = currentSelectionIndex();
+        if isempty(S.previewScales) || numel(S.previewScales) < index
+            scale = 1;
+            return;
+        end
+        scale = S.previewScales(index);
+        if ~isfinite(scale) || scale <= 0
+            scale = 1;
+        end
+    end
+
+    function steps = previewScaledSteps(steps, scale)
+        for iStep = 1:numel(steps)
+            steps(iStep) = previewScaledStep(steps(iStep), scale);
+        end
+    end
+
+    function step = previewScaledStep(step, scale)
+        switch lower(regexprep(char(string(step.kind)), '[^a-zA-Z0-9]', ''))
+            case {'localcontrast', 'sharpen'}
+                step.secondary = step.secondary .* scale;
+        end
     end
 
     function key = previewImageKey(item)

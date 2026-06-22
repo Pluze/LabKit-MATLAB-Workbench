@@ -14,6 +14,7 @@ function verify_imageEnhance()
 
     checkBrightnessContrastAndSharpenPipeline();
     checkWhiteBalanceReducesChannelCast();
+    checkPixelRadiusScalesWithPreview();
     checkSelectedFileNormalization();
     checkReadImagesAcceptsPathPanelCellPaths();
     checkPreviewImageDownsamplesLargeInputs();
@@ -116,13 +117,29 @@ end
 
 function checkPreviewImageDownsamplesLargeInputs()
     img = repmat(linspace(0, 1, 160), 120, 1);
-    preview = image_enhance.view.previewImage(img, 50);
+    [preview, scale] = image_enhance.view.previewImage(img, 50);
     assert(size(preview, 3) == 3, ...
         'Enhancement preview should render grayscale inputs as RGB.');
     assert(size(preview, 1) <= 50, ...
         'Enhancement preview should downsample large display images by height.');
+    assert(abs(scale - 50 / 120) < 1e-12, ...
+        'Enhancement preview should report the display-to-source scale.');
     assert(all(preview(:) >= 0 & preview(:) <= 1), ...
         'Enhancement preview should stay in display range.');
+end
+
+function checkPixelRadiusScalesWithPreview()
+    img = syntheticGradientImage();
+    preview = image_enhance.view.previewImage(img, 24);
+    fullStep = image_enhance.ops.makeStep('Local contrast', 50, 12, 0);
+    previewStep = image_enhance.ops.makeStep('Local contrast', 50, 6, 0);
+
+    fullProcessed = image_enhance.ops.applyStep(img, fullStep, []);
+    fullPreview = image_enhance.view.previewImage(fullProcessed, 24);
+    previewProcessed = image_enhance.ops.applyStep(preview, previewStep, []);
+
+    assert(mean(abs(fullPreview(:) - previewProcessed(:))) < 0.04, ...
+        'Downsampled previews should scale pixel-radius controls for export-like behavior.');
 end
 
 function img = syntheticGradientImage()
