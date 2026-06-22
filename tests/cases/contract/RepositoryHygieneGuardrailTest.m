@@ -74,6 +74,28 @@ classdef RepositoryHygieneGuardrailTest < matlab.unittest.TestCase
                 'Guardrail pattern must allow string path lists.');
         end
 
+        function matlabFunctionsDoNotUseSingleLineBodies(testCase)
+            root = setupLabKitTestPath();
+            tracked = gitTrackedFiles(root);
+            matlabFiles = tracked(endsWith(tracked, ".m"));
+            actual = collectSingleLineFunctionBodies(root, matlabFiles);
+            testCase.verifyEmpty(actual, ...
+                ['MATLAB functions must not put executable bodies and end on ' ...
+                'the declaration line. Split helpers or format bodies on ' ...
+                'separate lines. Files: ' strjoin(cellstr(actual), ', ')]);
+        end
+
+        function singleLineFunctionPatternCatchesCompressedBodies(testCase)
+            lines = [
+                "function [a, b] = allowedSignature(x)"
+                "function y = bad(x), y = x + 1; end"
+                "function z = alsoBad(x); z = x; end"
+            ];
+            findings = singleLineFunctionBodyLines(lines, "example.m");
+            testCase.verifyEqual(findings, ["example.m:2", "example.m:3"], ...
+                'Guardrail pattern should catch compressed function bodies without flagging signatures.');
+        end
+
         function appPrivateHelpersAreNotTracked(testCase)
             root = setupLabKitTestPath();
             actualDirs = collectPrivateDirs(fullfile(root, 'apps'), root);
@@ -86,6 +108,31 @@ classdef RepositoryHygieneGuardrailTest < matlab.unittest.TestCase
             testCase.verifyTrue(isempty(actualFiles), ...
                 ['app private helper files must live in app-owned packages. Files: ' ...
                 strjoin(cellstr(actualFiles), ', ')]);
+        end
+    end
+end
+
+function findings = collectSingleLineFunctionBodies(root, files)
+    findings = strings(1, 0);
+    for k = 1:numel(files)
+        filepath = fullfile(root, char(files(k)));
+        if exist(filepath, 'file') ~= 2
+            continue;
+        end
+        lines = readlines(filepath);
+        findings = [findings, singleLineFunctionBodyLines(lines, files(k))];
+    end
+end
+
+function findings = singleLineFunctionBodyLines(lines, relativeFile)
+    findings = strings(1, 0);
+    for k = 1:numel(lines)
+        text = strtrim(lines(k));
+        hasFunction = startsWith(text, "function ");
+        hasInlineEnd = ~isempty(regexp(text, '(^|[;,]\s*)end\s*(%.*)?$', 'once'));
+        hasBodySeparator = contains(text, ";") || contains(text, ",");
+        if hasFunction && hasInlineEnd && hasBodySeparator
+            findings(end + 1) = string(relativeFile) + ":" + string(k);
         end
     end
 end

@@ -38,6 +38,13 @@ an explicit user request requires broader gates, run them after the focused
 plan or state why a completed broader gate fully covers the affected plan
 instead of rerunning narrower tests for ceremony.
 
+After a planned run fails, do not rerun the planner just to discover the same
+scope again. Fix the root cause and rerun the narrowest failed suite or test
+directly, for example `runLabKitTests("Suites", "project")` after a project
+guardrail failure. Escalate back to `buildtool changed`, `headless`, or `gui`
+only when the fix touches additional areas, changes validation routing, or the
+user explicitly asks for a broader/release gate.
+
 ```text
 project                    startup, architecture, package surface, sample-data hygiene
 labkit/dta                 DTA parser, facade, session, item, pulse behavior

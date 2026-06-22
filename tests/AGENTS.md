@@ -48,6 +48,19 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
 - When one test file grows too broad, add new focused `test_*.m` files instead of appending unrelated coverage.
 - GUI tests are launch/layout/callback checks; do not claim full interactive workflow validation from automated GUI tests.
 
+## Validation Scope Discipline
+
+- Use the changed-file planner once to choose the initial affected scope for a
+  dirty worktree. If that planned run fails, fix the specific failure and
+  rerun the narrowest failing scope or failing suite directly; do not rerun
+  `buildtool changed` just to rediscover the same plan.
+- Prefer `runLabKitTests("Suites", "...")` for rerunning a failed suite such
+  as `project`, `labkit/ui`, or `apps/image_measurement`. Rerun broader
+  build tasks only when the fix changes validation routing, touches additional
+  source areas, or the user explicitly asks for a release/full gate.
+- Stop an accidentally overbroad GUI run when it is not needed; GUI tests can
+  steal focus and should be treated as a scarce validation resource.
+
 ## Fixture and Hygiene Rules
 
 - Keep fixtures synthetic and minimal.

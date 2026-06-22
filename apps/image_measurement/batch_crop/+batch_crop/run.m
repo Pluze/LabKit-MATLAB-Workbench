@@ -7,7 +7,7 @@ function fig = run(debugLog)
     S.currentIndex = 0;
     S.outputFolder = string(pwd);
     S.lastExport = [];
-    S.canvasCache = emptyCanvasCache();
+    S.canvasCache = batch_crop.state.emptyCanvasCache();
 
     callbacks = struct( ...
         "imagesChosen", @onImagesChosen, ...
@@ -87,7 +87,7 @@ function fig = run(debugLog)
         end
 
         try
-            items = readCropItems(event.paths);
+            items = batch_crop.state.readItems(event.paths);
         catch ME
             showError('Could not load images', ME.message);
             return;
@@ -96,7 +96,7 @@ function fig = run(debugLog)
         S.items = batch_crop.state.mergeChosenItems(S.items, items);
         S.currentIndex = min(max(S.currentIndex, 1), numel(S.items));
         S.lastExport = [];
-        S.canvasCache = emptyCanvasCache();
+        S.canvasCache = batch_crop.state.emptyCanvasCache();
         addLog(sprintf('Loaded %d image file(s); crop tasks: %d.', numel(items), numel(S.items)));
         refreshAll();
     end
@@ -105,7 +105,7 @@ function fig = run(debugLog)
         S.items = repmat(batch_crop.state.emptyItem(), 0, 1);
         S.currentIndex = 0;
         S.lastExport = [];
-        S.canvasCache = emptyCanvasCache();
+        S.canvasCache = batch_crop.state.emptyCanvasCache();
         addLog('Cleared loaded images.');
         refreshAll();
     end
@@ -119,7 +119,7 @@ function fig = run(debugLog)
         S.items = [S.items(1:S.currentIndex); duplicated; S.items(insertAt:end)];
         S.currentIndex = insertAt;
         S.lastExport = [];
-        S.canvasCache = emptyCanvasCache();
+        S.canvasCache = batch_crop.state.emptyCanvasCache();
         addLog(sprintf('Duplicated image %d as crop task %d. Pick a new crop center.', ...
             insertAt - 1, insertAt));
         refreshAll();
@@ -168,7 +168,7 @@ function fig = run(debugLog)
         viewState = capturePreviewView();
         S.items(S.currentIndex).angleDeg = edtRotation.Value;
         ensureCurrentCenter();
-        S.canvasCache = emptyCanvasCache();
+        S.canvasCache = batch_crop.state.emptyCanvasCache();
         addLog(sprintf('Updated rotation for image %d: %.3g deg.', ...
             S.currentIndex, S.items(S.currentIndex).angleDeg));
         refreshAll(viewState);
@@ -177,7 +177,7 @@ function fig = run(debugLog)
     function onPaddingChanged()
         edtPaddingPercent.Value = min(max(double(edtPaddingPercent.Value), 0), 200);
         viewState = capturePreviewView();
-        S.canvasCache = emptyCanvasCache();
+        S.canvasCache = batch_crop.state.emptyCanvasCache();
         if hasCurrentImage()
             addLog(sprintf('Updated padding for image %d: %.3g%%.', ...
                 S.currentIndex, edtPaddingPercent.Value));
@@ -201,7 +201,7 @@ function fig = run(debugLog)
         if ~hasCurrentImage()
             return;
         end
-        S.items(S.currentIndex).centerXY = sourceCenterXY(S.items(S.currentIndex).image);
+        S.items(S.currentIndex).centerXY = batch_crop.ops.sourceCenterXY(S.items(S.currentIndex).image);
         S.items(S.currentIndex).centerSet = true;
         addLog(sprintf('Set image %d crop center to source image center.', ...
             S.currentIndex));
@@ -338,11 +338,11 @@ function fig = run(debugLog)
         txtImageSource.Value = char(S.items(S.currentIndex).path);
         if strcmpi(currentScaleMode(), "Physical")
             txtImageStatus.Value = sprintf('Images: %d | centers: %d | scales: %d', ...
-                numel(S.items), countConfirmedCenters(), ...
+                numel(S.items), batch_crop.state.countConfirmedCenters(S.items), ...
                 batch_crop.state.countScaleCalibrations(S.items));
         else
             txtImageStatus.Value = sprintf('Images: %d | confirmed centers: %d', ...
-                numel(S.items), countConfirmedCenters());
+                numel(S.items), batch_crop.state.countConfirmedCenters(S.items));
         end
     end
 
@@ -435,9 +435,7 @@ function fig = run(debugLog)
         scaleTool.refresh();
         cropSession.setBackground(hImage);
         cropSession.setGraphics([hRect, hLineX, hLineY]);
-        if ~scaleTool.isReferenceEditActive()
-            cropSession.activate();
-        end
+        cropSession.activateIfAvailable();
         batch_crop.view.restorePreviewView(previewAxes, viewState, geometry, placement);
     end
 
@@ -525,7 +523,7 @@ function fig = run(debugLog)
     end
 
     function placement = previewPlacement(geometry)
-        sourceCenter = sourceCenterFromSize(geometry.sourceWidth, geometry.sourceHeight);
+        sourceCenter = batch_crop.ops.sourceCenterFromSize(geometry.sourceWidth, geometry.sourceHeight);
         canvasCenter = batch_crop.ops.originalToCanvas(geometry, sourceCenter);
         offset = sourceCenter - canvasCenter;
         placement = struct( ...
@@ -552,17 +550,14 @@ function fig = run(debugLog)
         end
         item = S.items(S.currentIndex);
         if isempty(item.centerXY) || any(~isfinite(item.centerXY))
-            item.centerXY = sourceCenterXY(item.image);
+            item.centerXY = batch_crop.ops.sourceCenterXY(item.image);
         end
         item.centerXY = clampToSource(item.centerXY, item.image);
         S.items(S.currentIndex) = item;
     end
 
-    function tf = hasCurrentImage(), tf = ~isempty(S.items) && S.currentIndex >= 1 && S.currentIndex <= numel(S.items); end
-
-    function count = countConfirmedCenters()
-        count = 0;
-        if ~isempty(S.items), count = sum([S.items.centerSet]); end
+    function tf = hasCurrentImage()
+        tf = ~isempty(S.items) && S.currentIndex >= 1 && S.currentIndex <= numel(S.items);
     end
 
     function refreshScaleTool()
@@ -602,8 +597,6 @@ function fig = run(debugLog)
             [edtPhysicalWidth.Value, edtPhysicalHeight.Value], currentScaleUnit());
     end
 
-    function items = readCropItems(paths), items = batch_crop.state.readItems(paths); end
-
     function key = canvasCacheKey(index, item, paddingPercent)
         key = struct( ...
             'index', index, ...
@@ -615,12 +608,6 @@ function fig = run(debugLog)
             'channels', size(item.image, 3), ...
             'className', string(class(item.image)));
     end
-
-    function cache = emptyCanvasCache(), cache = struct('valid', false, 'key', [], 'geometry', []); end
-
-    function centerXY = sourceCenterXY(imageData), centerXY = sourceCenterFromSize(size(imageData, 2), size(imageData, 1)); end
-
-    function centerXY = sourceCenterFromSize(width, height), centerXY = [(width + 1) / 2, (height + 1) / 2]; end
 
     function centerXY = clampToSource(centerXY, imageData)
         centerXY = double(centerXY(:)).';

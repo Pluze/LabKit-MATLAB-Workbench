@@ -19,6 +19,7 @@ function verify_batchImageCrop()
     checkPaddingDoesNotStretchDarkEdgePixels();
     checkPaddingAllowsLargeExtension();
     checkCoordinateTransformsRoundTripOriginalPoints();
+    checkSourceCenterHelpersUseImageGeometry();
     checkPaddingDoesNotMoveCropCenterMetadata();
     checkRotatedCropKeepsRequestedSize();
     checkRotationBackgroundUsesWhiteFill();
@@ -135,6 +136,14 @@ function checkCoordinateTransformsRoundTripOriginalPoints()
 
     assert(max(abs(recoveredXY - originalXY)) < 1e-9, ...
         'Canvas/original coordinate transforms should preserve source coordinates.');
+end
+
+function checkSourceCenterHelpersUseImageGeometry()
+    img = uint8(zeros(7, 9, 3));
+    assert(isequal(batch_crop.ops.sourceCenterXY(img), [5, 4]), ...
+        'Source center helper should return one-based [x y] image coordinates.');
+    assert(isequal(batch_crop.ops.sourceCenterFromSize(10, 12), [5.5, 6.5]), ...
+        'Source size helper should preserve half-pixel centers for even image sizes.');
 end
 
 function checkPaddingDoesNotMoveCropCenterMetadata()

@@ -31,7 +31,7 @@ function runtime = createRuntime(ax, opts)
 % Returned runtime API:
 %   axes(), figure(), setDefaultScrollFcn(fcn), setDefaultScrollTargets(h),
 %   installDefaultCallbacks(), setTraceCallback(fcn), createSession(spec),
-%   isInteractionActive(), and delete().
+%   isInteractionActive(), activeInteractionName(), and delete().
 %
 % Session spec fields:
 %   name - descriptive char/string name, default "interaction".
@@ -44,9 +44,10 @@ function runtime = createRuntime(ax, opts)
 %   scrollScope - "targets" (default) or "figure".
 %
 % Session API:
-%   activate(), deactivate(), isActive(), setBackground(handle),
-%   setGraphics(handles), captureDrag(motionFcn, releaseFcn), releaseDrag(),
-%   refresh(), and delete().
+%   activate(), activateIfAvailable(), canActivate(), deactivate(),
+%   isActive(), setBackground(handle), setGraphics(handles),
+%   captureDrag(motionFcn, releaseFcn), releaseDrag(), refresh(), and
+%   delete().
 %
 % The runtime owns axes-level image-tool callback lifecycle. Apps register
 % default behavior through this runtime instead of mutating figure/axes
@@ -111,6 +112,7 @@ function runtime = createRuntime(ax, opts)
     runtime.installDefaultCallbacks = @installDefaultCallbacks;
     runtime.createSession = @createSession;
     runtime.isInteractionActive = @isInteractionActive;
+    runtime.activeInteractionName = @activeInteractionName;
     runtime.delete = @deleteRuntime;
 
     if isValidHandle(ax)
@@ -185,6 +187,10 @@ function runtime = createRuntime(ax, opts)
         tf = ~isempty(state.activeToken);
     end
 
+    function name = activeInteractionName()
+        name = state.activeName;
+    end
+
     function deleteRuntime()
         trace('delete runtime');
         if ~isempty(state.activeDeactivate)
@@ -224,6 +230,8 @@ function runtime = createRuntime(ax, opts)
 
         session = struct();
         session.activate = @activateSession;
+        session.activateIfAvailable = @activateSessionIfAvailable;
+        session.canActivate = @canActivateSession;
         session.deactivate = @deactivateSession;
         session.isActive = @isSessionActive;
         session.setBackground = @setSessionBackground;
@@ -267,6 +275,20 @@ function runtime = createRuntime(ax, opts)
                 installDefaultCallbacks();
             end
             notifyInteractionChanged(true, sessionState.name);
+        end
+
+        function activated = activateSessionIfAvailable()
+            activated = canActivateSession();
+            if activated
+                activateSession();
+            else
+                trace(sprintf('skip activate busy peer %s active=%s', ...
+                    char(sessionState.name), char(state.activeName)));
+            end
+        end
+
+        function tf = canActivateSession()
+            tf = isempty(state.activeToken) || isequal(state.activeToken, sessionState.token);
         end
 
         function deactivateSession()
