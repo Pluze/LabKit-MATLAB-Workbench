@@ -1,13 +1,18 @@
 % Expected caller: labkit_ImageMatch_app and image_match export tests.
-% Inputs are loaded image items, ordered reference-match steps, and export options.
+% Inputs are loaded source image items, one reference image item, ordered
+% reference-match steps, and export options.
 % Output includes per-image result structs and the manifest CSV path.
-function payload = writeOutputs(items, steps, opts)
+function payload = writeOutputs(items, referenceItem, steps, opts)
 
     if isempty(items)
         error('labkit_ImageMatch_app:NoImagesLoaded', ...
             'Load images before exporting matched outputs.');
     end
-    if nargin < 3 || isempty(opts)
+    if nargin < 2 || isempty(referenceItem)
+        error('labkit_ImageMatch_app:NoReferenceImage', ...
+            'Load a reference image before exporting matched outputs.');
+    end
+    if nargin < 4 || isempty(opts)
         opts = struct();
     end
     outputFolder = optionValue(opts, 'outputFolder', string(pwd));
@@ -21,7 +26,7 @@ function payload = writeOutputs(items, steps, opts)
     for k = 1:numel(items)
         images{k} = items(k).image;
     end
-    processed = image_match.ops.applyPipeline(images, steps);
+    processed = image_match.ops.applyPipeline(images, steps, referenceItem.image);
 
     resultTemplate = emptyResult();
     results = repmat(resultTemplate, numel(items), 1);

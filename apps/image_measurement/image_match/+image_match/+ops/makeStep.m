@@ -1,18 +1,18 @@
 % Expected caller: labkit_ImageMatch_app and image_match tests. Inputs are the
-% reference index, method, and strength controls. Output is a normalized match
-% history step with a stable display label.
-function step = makeStep(referenceIndex, method, strength, toneStrength, colorStrength)
+% method and strength controls. Output is a normalized match history step with a
+% stable display label.
+function step = makeStep(method, strength, toneStrength, colorStrength)
 
-    if nargin < 5
+    if nargin < 4
         colorStrength = 100;
     end
-    if nargin < 4
+    if nargin < 3
         toneStrength = 100;
     end
-    if nargin < 3
+    if nargin < 2
         strength = 100;
     end
-    if nargin < 2
+    if nargin < 1
         method = "Balanced";
     end
 
@@ -22,6 +22,5 @@ function step = makeStep(referenceIndex, method, strength, toneStrength, colorSt
     step.secondary = double(toneStrength);
     step.colorStrength = double(colorStrength);
     step.matchMethod = string(method);
-    step.referenceIndex = double(referenceIndex);
     step.label = image_match.ops.describeStep(step);
 end

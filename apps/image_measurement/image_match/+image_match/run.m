@@ -6,6 +6,7 @@ function fig = run(debugLog)
 
     S = struct();
     S.items = repmat(image_match.state.emptyItem(), 0, 1);
+    S.referenceItem = [];
     S.currentIndex = 0;
     S.steps = repmat(image_match.state.emptyStep(), 0, 1);
     S.outputFolder = string(pwd);
@@ -16,6 +17,8 @@ function fig = run(debugLog)
 
     methods = {'Balanced', 'White balance', 'Tone only', 'Lab style', 'Histogram'};
     callbacks = struct( ...
+        'referenceImageChosen', @onReferenceImageChosen, ...
+        'clearReference', @onClearReference, ...
         'sourceImagesChosen', @onSourceImagesChosen, ...
         'clearImages', @onClearImages, ...
         'imageSelectionChanged', @onImageSelectionChanged, ...
@@ -36,6 +39,32 @@ function fig = run(debugLog)
 
     resetPreviewAxes();
     refreshAll();
+
+    function onReferenceImageChosen(~, event)
+        try
+            loaded = image_match.io.readImages(event.paths(1));
+        catch ME
+            showError('Could not load reference image', ME.message);
+            refreshAll();
+            return;
+        end
+
+        S.referenceItem = loaded(1);
+        S.pendingDirty = false;
+        invalidateProcessedCache();
+        S.lastExport = [];
+        addLog(sprintf('Loaded reference image: %s.', char(S.referenceItem.name)));
+        refreshAll();
+    end
+
+    function onClearReference(~, ~)
+        S.referenceItem = [];
+        S.pendingDirty = false;
+        invalidateProcessedCache();
+        S.lastExport = [];
+        addLog('Cleared reference image.');
+        refreshAll();
+    end
 
     function onSourceImagesChosen(~, event)
         try
@@ -99,6 +128,10 @@ function fig = run(debugLog)
             showError('No images loaded', 'Load images before applying reference matches.');
             return;
         end
+        if ~hasReference()
+            showError('No reference image', 'Load a reference image before applying matches.');
+            return;
+        end
         step = currentMatchStep();
         S.steps(end + 1, 1) = step;
         S.pendingDirty = false;
@@ -149,11 +182,16 @@ function fig = run(debugLog)
             showError('No images loaded', 'Load images before exporting matched outputs.');
             return;
         end
+        if ~hasReference()
+            showError('No reference image', 'Load a reference image before exporting matched outputs.');
+            return;
+        end
         opts = struct();
         opts.outputFolder = S.outputFolder;
         opts.format = labkit.ui.view.getValue(ui, 'exportFormat');
         try
-            S.lastExport = image_match.export.writeOutputs(S.items, S.steps, opts);
+            S.lastExport = image_match.export.writeOutputs( ...
+                S.items, S.referenceItem, S.steps, opts);
         catch ME
             showError('Export failed', ME.message);
             return;
@@ -167,6 +205,7 @@ function fig = run(debugLog)
 
     function refreshAll()
         refreshSourceLibrary();
+        refreshReferenceLibrary();
         refreshSelection();
         refreshMatchControls();
         refreshExportControls();
@@ -181,9 +220,6 @@ function fig = run(debugLog)
         if isempty(S.items)
             labkit.ui.view.setValue(ui, 'sourceImages', {});
             labkit.ui.view.setValue(ui, 'imageStatus', 'Images: 0');
-            referenceHandle = ui.controls.referenceImage.handle;
-            referenceHandle.Items = {'No reference'};
-            referenceHandle.Value = 'No reference';
             return;
         end
 
@@ -191,15 +227,14 @@ function fig = run(debugLog)
         labkit.ui.view.setValue(ui, 'sourceImages', paths);
         labkit.ui.view.setValue(ui, 'imageStatus', sprintf( ...
             'Images: %d | match steps: %d', numel(S.items), numel(S.steps)));
+    end
 
-        names = image_match.view.displayImageNames(S.items);
-        referenceHandle = ui.controls.referenceImage.handle;
-        previousReference = referenceHandle.Value;
-        referenceHandle.Items = names;
-        if any(strcmp(names, previousReference))
-            referenceHandle.Value = previousReference;
+    function refreshReferenceLibrary()
+        if hasReference()
+            labkit.ui.view.setValue(ui, 'referenceImage', ...
+                cellstr(S.referenceItem.path));
         else
-            referenceHandle.Value = names{currentSelectionIndex()};
+            labkit.ui.view.setValue(ui, 'referenceImage', {});
         end
     end
 
@@ -214,14 +249,16 @@ function fig = run(debugLog)
 
     function refreshMatchControls()
         hasImages = ~isempty(S.items);
+        refLoaded = hasReference();
         hasSteps = ~isempty(S.steps);
+        ui.controls.referenceImage.clearButton.Enable = onOff(refLoaded);
+        ui.controls.referenceImage.listbox.Enable = onOff(refLoaded);
         ui.controls.sourceImages.clearButton.Enable = onOff(hasImages);
         ui.controls.sourceImages.listbox.Enable = onOff(hasImages);
-        labkit.ui.view.setEnabled(ui, 'referenceImage', hasImages);
-        labkit.ui.view.setEnabled(ui, 'applyMatch', hasImages);
+        labkit.ui.view.setEnabled(ui, 'applyMatch', hasImages && refLoaded);
         labkit.ui.view.setEnabled(ui, 'undoHistory', hasSteps);
         labkit.ui.view.setEnabled(ui, 'resetHistory', hasSteps);
-        labkit.ui.view.setEnabled(ui, 'exportImages', hasImages);
+        labkit.ui.view.setEnabled(ui, 'exportImages', hasImages && refLoaded);
     end
 
     function refreshExportControls()
@@ -269,7 +306,8 @@ function fig = run(debugLog)
 
     function refreshDetails()
         labkit.ui.view.setValue(ui, 'exportDetails', image_match.view.detailLines( ...
-            S.items, max(currentSelectionIndex(), 1), S.steps, S.lastExport));
+            S.items, max(currentSelectionIndex(), 1), S.referenceItem, ...
+            S.steps, S.lastExport));
     end
 
     function refreshMatchStatus()
@@ -312,7 +350,8 @@ function fig = run(debugLog)
             for k = 1:numel(S.items)
                 images{k} = S.items(k).image;
             end
-            S.processedImages = image_match.ops.applyPipeline(images, S.steps);
+            S.processedImages = image_match.ops.applyPipeline( ...
+                images, S.steps, referenceImageData());
             S.processedStepCount = numel(S.steps);
         end
         processed = S.processedImages;
@@ -324,10 +363,8 @@ function fig = run(debugLog)
         imageOut = processed{index};
         if includePending
             step = currentMatchStep();
-            referenceIndex = min(max(1, round(step.referenceIndex)), ...
-                numel(processed));
             imageOut = image_match.ops.applyStep( ...
-                imageOut, step, processed{referenceIndex});
+                imageOut, step, referenceImageData());
         end
     end
 
@@ -337,26 +374,24 @@ function fig = run(debugLog)
     end
 
     function step = currentMatchStep()
-        step = image_match.ops.makeStep(currentReferenceIndex(), ...
+        step = image_match.ops.makeStep( ...
             labkit.ui.view.getValue(ui, 'matchMethod'), ...
             labkit.ui.view.getValue(ui, 'matchStrength'), ...
             labkit.ui.view.getValue(ui, 'toneStrength'), ...
             labkit.ui.view.getValue(ui, 'colorStrength'));
     end
 
-    function index = currentReferenceIndex()
-        index = 0;
-        if isempty(S.items)
-            return;
-        end
-        names = image_match.view.displayImageNames(S.items);
-        selectedReference = labkit.ui.view.getValue(ui, 'referenceImage');
-        idx = find(strcmp(names, selectedReference), 1);
-        if ~isempty(idx)
-            index = idx;
+    function imageData = referenceImageData()
+        if hasReference()
+            imageData = S.referenceItem.image;
         else
-            index = currentSelectionIndex();
+            imageData = [];
         end
+    end
+
+    function tf = hasReference()
+        tf = ~isempty(S.referenceItem) && isfield(S.referenceItem, 'image') && ...
+            ~isempty(S.referenceItem.image);
     end
 
     function index = currentSelectionIndex()

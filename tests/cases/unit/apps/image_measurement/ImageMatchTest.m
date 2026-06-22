@@ -16,6 +16,7 @@ function verify_imageMatch()
     checkToneOnlyMatchMovesBrightnessWithoutChangingColorStrongly();
     checkLabStyleMatchMovesColorTowardReference();
     checkHistogramMatchPreservesDisplayRange();
+    checkReferenceIsSeparateFromBatchSources();
     checkReadImagesAcceptsPathPanelCellPaths();
     checkManifestAndExportContract();
 end
@@ -26,8 +27,8 @@ function checkWhiteBalanceMatchMovesChannelRatiosTowardReference()
     reference = tintImage(base, [1.18 0.96 0.72]);
     beforeDistance = channelRatioDistance(source, reference);
 
-    step = image_match.ops.makeStep(2, 'White balance', 100, 100, 100);
-    processed = image_match.ops.applyPipeline({source; reference}, step);
+    step = image_match.ops.makeStep('White balance', 100, 100, 100);
+    processed = image_match.ops.applyPipeline({source}, step, reference);
     afterDistance = channelRatioDistance(processed{1}, reference);
 
     assert(afterDistance < beforeDistance * 0.55, ...
@@ -40,8 +41,8 @@ function checkToneOnlyMatchMovesBrightnessWithoutChangingColorStrongly()
     reference = min(1, 1.18 .* base + 0.18);
     sourceRatio = channelRatios(source);
 
-    step = image_match.ops.makeStep(2, 'Tone only', 100, 100, 0);
-    processed = image_match.ops.applyPipeline({source; reference}, step);
+    step = image_match.ops.makeStep('Tone only', 100, 100, 0);
+    processed = image_match.ops.applyPipeline({source}, step, reference);
     out = processed{1};
 
     assert(mean(out(:)) > mean(source(:)), ...
@@ -54,8 +55,8 @@ function checkLabStyleMatchMovesColorTowardReference()
     [source, reference] = syntheticColorPair();
     beforeDistance = meanChannelDistance(source, reference);
 
-    step = image_match.ops.makeStep(2, 'Lab style', 100, 80, 100);
-    processed = image_match.ops.applyPipeline({source; reference}, step);
+    step = image_match.ops.makeStep('Lab style', 100, 80, 100);
+    processed = image_match.ops.applyPipeline({source}, step, reference);
     afterDistance = meanChannelDistance(processed{1}, reference);
 
     assert(afterDistance < beforeDistance * 0.60, ...
@@ -64,14 +65,28 @@ end
 
 function checkHistogramMatchPreservesDisplayRange()
     [source, reference] = syntheticColorPair();
-    step = image_match.ops.makeStep(2, 'Histogram', 75, 100, 100);
-    processed = image_match.ops.applyPipeline({source; reference}, step);
+    step = image_match.ops.makeStep('Histogram', 75, 100, 100);
+    processed = image_match.ops.applyPipeline({source}, step, reference);
     out = processed{1};
 
     assert(isequal(size(out), size(source)), ...
         'Histogram matching should preserve image size.');
     assert(all(out(:) >= 0 & out(:) <= 1), ...
         'Histogram matching should clamp output to display range.');
+end
+
+function checkReferenceIsSeparateFromBatchSources()
+    [source, reference] = syntheticColorPair();
+    steps = [ ...
+        image_match.ops.makeStep('White balance', 100, 100, 100); ...
+        image_match.ops.makeStep('Tone only', 100, 100, 100)];
+
+    processed = image_match.ops.applyPipeline({source}, steps, reference);
+
+    assert(numel(processed) == 1, ...
+        'Reference image should not be included in the processed source batch.');
+    assert(isequal(size(processed{1}), size(source)), ...
+        'Processed source image should preserve source dimensions.');
 end
 
 function checkReadImagesAcceptsPathPanelCellPaths()
@@ -104,12 +119,15 @@ function checkManifestAndExportContract()
     imwrite(uint8(180 * ones(10, 12, 3)), referencePath);
     imwrite(uint8(255 * ones(5, 5, 3)), fullfile(folder, 'sample_matched.png'));
 
-    items = image_match.io.readImages([sourcePath; referencePath]);
-    steps = image_match.ops.makeStep(2, 'Balanced', 100, 100, 100);
-    payload = image_match.export.writeOutputs(items, steps, struct( ...
+    items = image_match.io.readImages(sourcePath);
+    referenceItem = image_match.io.readImages(referencePath);
+    steps = image_match.ops.makeStep('Balanced', 100, 100, 100);
+    payload = image_match.export.writeOutputs(items, referenceItem, steps, struct( ...
         'outputFolder', string(folder), ...
         'format', 'PNG'));
 
+    assert(numel(payload.results) == 1, ...
+        'Batch export should only write source images, not the reference image.');
     assert(endsWith(payload.results(1).outputPath, "sample_matched_001.png"), ...
         'Batch export should avoid overwriting existing matched outputs.');
     assert(isfile(payload.results(1).outputPath), ...
