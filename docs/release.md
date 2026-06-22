@@ -46,3 +46,35 @@ commands or CI workflow that passed and the commit used for the release.
 Attach `labkit_launcher.m` to each GitHub release. The root README download
 link points at the latest release asset so browsers download the launcher
 instead of opening the raw source text.
+
+## Launcher Asset Reproducibility
+
+Generate the launcher asset from the release tag, not from an editor buffer,
+copied file, or platform-dependent checkout. This keeps the release asset byte
+for byte identical to the tagged source file, including line endings.
+
+Use a tag-specific staging folder:
+
+```bash
+mkdir -p artifacts/release/vX.Y.Z
+git show vX.Y.Z:labkit_launcher.m > artifacts/release/vX.Y.Z/labkit_launcher.m
+```
+
+Before upload, compare the staged launcher against the tag blob:
+
+```bash
+git show vX.Y.Z:labkit_launcher.m | shasum -a 256
+shasum -a 256 artifacts/release/vX.Y.Z/labkit_launcher.m
+wc -c artifacts/release/vX.Y.Z/labkit_launcher.m
+```
+
+After creating the GitHub release, verify that the uploaded asset reports the
+same byte count and SHA-256 digest:
+
+```bash
+gh release view vX.Y.Z --json assets
+```
+
+If the asset digest or size differs from the tag-exported file, delete only the
+incorrect asset and re-upload the tag-exported `labkit_launcher.m`. Do not move
+or recreate an already-published release tag to fix an asset upload mistake.

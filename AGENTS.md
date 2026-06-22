@@ -173,6 +173,15 @@ organize notes with `Highlights`, `Fixes`, `Upgrade Note`, and `Validation`
 sections, omitting empty sections. Before publishing, verify the release tag
 points at the intended commit and report the release URL.
 
+Release assets must be reproducible from the tag. Export `labkit_launcher.m`
+from the tag blob, for example
+`git show vX.Y.Z:labkit_launcher.m > artifacts/release/vX.Y.Z/labkit_launcher.m`,
+and upload that exported file rather than a working-tree copy. Before upload,
+compare the tag blob and staged asset with `shasum -a 256` and `wc -c`. After
+publishing, inspect `gh release view vX.Y.Z --json assets` and verify the
+uploaded asset size and SHA-256 digest match the staged file. If they differ,
+replace only the asset with the tag-exported file; do not move a published tag.
+
 ## Handoff
 
 Report:
