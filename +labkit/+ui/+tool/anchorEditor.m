@@ -102,6 +102,7 @@ function editor = anchorEditor(runtime, imageSize, opts)
     function setActive(enabled)
         trace(sprintf('setActive %d', logical(enabled)));
         if logical(enabled)
+            rememberCurrentView();
             state.session.activate();
         else
             state.session.deactivate();
@@ -159,6 +160,7 @@ function editor = anchorEditor(runtime, imageSize, opts)
 
     function setImageSize(imageSize)
         trace(sprintf('setImageSize %s', sizeText(imageSize)));
+        rememberCurrentView();
         state.imageSize = imageSize;
         refresh();
     end
@@ -171,6 +173,9 @@ function editor = anchorEditor(runtime, imageSize, opts)
     function refresh()
         trace(sprintf('refresh active=%d points=%d', ...
             state.session.isActive(), size(state.points, 1)));
+        if state.session.isActive()
+            rememberCurrentView();
+        end
         ensureGraphics();
         state.session.setGraphics([state.curveLine state.anchorLine]);
         state.session.refresh();
@@ -286,8 +291,7 @@ function editor = anchorEditor(runtime, imageSize, opts)
             return;
         end
         zoomAxesAtPoint(state.ax, x, y, event.VerticalScrollCount, state.imageSize);
-        state.viewXLim = state.ax.XLim;
-        state.viewYLim = state.ax.YLim;
+        rememberCurrentView();
     end
 
     function ensureGraphics()
@@ -341,10 +345,33 @@ function editor = anchorEditor(runtime, imageSize, opts)
         if isempty(state.imageSize) || ~isvalid(state.ax)
             return;
         end
+        if isempty(state.viewXLim) || isempty(state.viewYLim)
+            return;
+        end
         fullX = [0.5, state.imageSize(2) + 0.5];
         fullY = [0.5, state.imageSize(1) + 0.5];
-        state.ax.XLim = validStoredLimits(state.viewXLim, fullX);
-        state.ax.YLim = validStoredLimits(state.viewYLim, fullY);
+        xLim = validStoredLimits(state.viewXLim, fullX);
+        yLim = validStoredLimits(state.viewYLim, fullY);
+        if isempty(xLim) || isempty(yLim)
+            return;
+        end
+        state.ax.XLim = xLim;
+        state.ax.YLim = yLim;
+    end
+
+    function rememberCurrentView()
+        if isempty(state.imageSize) || ~isvalid(state.ax)
+            return;
+        end
+        fullX = [0.5, state.imageSize(2) + 0.5];
+        fullY = [0.5, state.imageSize(1) + 0.5];
+        xLim = validStoredLimits(state.ax.XLim, fullX);
+        yLim = validStoredLimits(state.ax.YLim, fullY);
+        if isempty(xLim) || isempty(yLim)
+            return;
+        end
+        state.viewXLim = xLim;
+        state.viewYLim = yLim;
     end
 
     function notifyChanged(reason)
@@ -386,7 +413,7 @@ function zoomAxesAtPoint(ax, x, y, scrollCount, imageSize)
 end
 
 function limits = validStoredLimits(storedLimits, fullLimits)
-    limits = fullLimits;
+    limits = [];
     if isempty(storedLimits) || numel(storedLimits) ~= 2 || any(~isfinite(storedLimits))
         return;
     end

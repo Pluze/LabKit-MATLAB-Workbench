@@ -38,6 +38,10 @@ function verify_gui_layout_ui_scale_bar_tool()
     tool.setImageSize([120 240 3]);
 
     bg = imagesc(ax, rand(120, 240));
+    ax.XLim = [30 150];
+    ax.YLim = [20 100];
+    zoomXLim = ax.XLim;
+    zoomYLim = ax.YLim;
     tool.setBackground(bg);
     tool.setReferencePixels(80);
     tool.controls.referenceLengthSpinner.Value = 20;
@@ -64,6 +68,8 @@ function verify_gui_layout_ui_scale_bar_tool()
     h.invokeCallback(tool.controls.measureReferenceButton, 'ButtonPushedFcn');
     assert(tool.isReferenceEditActive() && calls.beforeEdit == 1, ...
         'Measure reference button should enter reference edit mode.');
+    assert(isequal(ax.XLim, zoomXLim) && isequal(ax.YLim, zoomYLim), ...
+        'Scale-bar reference editing should preserve the current zoom when it starts.');
     traceText = string(traceMessages);
     assert(any(contains(traceText, 'scaleBarTool: Measure reference button starting edit')) && ...
         any(contains(traceText, 'anchorCurveEditor: setPoints')) && ...
@@ -72,6 +78,8 @@ function verify_gui_layout_ui_scale_bar_tool()
     h.invokeCallback(tool.controls.measureReferenceButton, 'ButtonPushedFcn');
     assert(~tool.isReferenceEditActive(), ...
         'Measure reference button should finish reference edit mode when active.');
+    assert(isequal(ax.XLim, zoomXLim) && isequal(ax.YLim, zoomYLim), ...
+        'Scale-bar reference editing should preserve zoom when it finishes.');
     traceText = string(traceMessages);
     assert(any(contains(traceText, 'scaleBarTool: Measure reference button finishing active edit')) && ...
         any(contains(traceText, 'imageAxesRuntime: deactivate session anchorCurveEditor active=1')), ...

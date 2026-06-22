@@ -28,7 +28,13 @@ function verify_gui_layout_ui_anchor_curve_editor()
         struct('closed', true, ...
         'style', 'Curve', ...
         'onChanged', @(~,~) markChanged()));
+    ax.XLim = [8 38];
+    ax.YLim = [6 34];
+    expectedXLim = ax.XLim;
+    expectedYLim = ax.YLim;
     editor.start([10 10; 30 12; 28 30]);
+    assertAxesLimits(ax, expectedXLim, expectedYLim, ...
+        'Starting anchor editing should preserve the current zoom.');
     assert(changed, 'Anchor curve editor should fire the change callback when started.');
     points = editor.getPoints();
     assert(isequal(size(points), [3 2]), 'Anchor curve editor should preserve anchor points.');
@@ -40,7 +46,11 @@ function verify_gui_layout_ui_anchor_curve_editor()
         'Closed straight-line editor curves should end at the first point.');
     editor.setStyle('Curve');
     editor.setPoints([10 10; 40 10; 40 30; 10 30]);
+    assertAxesLimits(ax, expectedXLim, expectedYLim, ...
+        'Refreshing anchor points should preserve the current zoom.');
     editor.insertPoint([25 10]);
+    assertAxesLimits(ax, expectedXLim, expectedYLim, ...
+        'Adding an anchor should preserve the current zoom.');
     points = editor.getPoints();
     assert(isequal(size(points), [5 2]) && isequal(points(2, :), [25 10]), ...
         'Anchor curve editor should insert new anchors into the nearest displayed curve segment.');
@@ -126,4 +136,8 @@ function verify_gui_layout_ui_anchor_curve_editor()
     function markChanged()
         changed = true;
     end
+end
+
+function assertAxesLimits(ax, expectedXLim, expectedYLim, message)
+    assert(isequal(ax.XLim, expectedXLim) && isequal(ax.YLim, expectedYLim), message);
 end
