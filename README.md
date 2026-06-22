@@ -14,7 +14,7 @@ biosignal processing facades.
 
 Download the single-file launcher:
 
-**[Download `labkit_launcher.m`](https://raw.githubusercontent.com/Pluze/LabKit-MATLAB-Workbench/main/labkit_launcher.m)**
+**[Download `labkit_launcher.m`](https://github.com/Pluze/LabKit-MATLAB-Workbench/releases/latest/download/labkit_launcher.m)**
 
 1. Create a standalone folder for LabKit, for example `LabKit/`.
 2. Save `labkit_launcher.m` in that folder.

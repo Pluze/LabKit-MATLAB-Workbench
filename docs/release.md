@@ -42,3 +42,7 @@ Use this note structure:
 
 Omit an empty section when it does not apply. Keep validation factual: name the
 commands or CI workflow that passed and the commit used for the release.
+
+Attach `labkit_launcher.m` to each GitHub release. The root README download
+link points at the latest release asset so browsers download the launcher
+instead of opening the raw source text.
