@@ -48,7 +48,8 @@ function labels = plotOverlay(ax, items, opts)
         legend(ax, 'off');
     end
 
-    if eis.view.axisModeForSelection(opts.xName, opts.yName) == "equal"
+    if eis.view.axisModeForSelection(opts.xName, opts.yName, ...
+            opts.logX, opts.logY) == "equal"
         axis(ax, 'equal');
     end
 end

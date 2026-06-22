@@ -62,6 +62,19 @@ function verify_gui_layout_ui_axes_workbench()
         isequal(plotAx.YLim, [0 20]), ...
         'Time-series axes should scroll-zoom the horizontal time axis only.');
     xlabel(plotAx, 'Probe X');
+    plotAx.XScale = 'log';
+    plotAx.YScale = 'log';
+    plotAx.XLim = [1 1000];
+    plotAx.YLim = [1 1000];
+    didZoomLog = labkit.ui.tool.zoomAxesAtPoint(plotAx, [10 100], -1);
+    assert(didZoomLog && diff(log10(plotAx.XLim)) < 3 && ...
+        diff(log10(plotAx.YLim)) < 3, ...
+        'Log axes should scroll-zoom in log space.');
+    assert(abs(relativeLogPosition(10, plotAx.XLim) - 1/3) < 1e-12 && ...
+        abs(relativeLogPosition(100, plotAx.YLim) - 2/3) < 1e-12, ...
+        'Log axes scroll zoom should preserve the pointer anchor in log space.');
+    plotAx.XScale = 'linear';
+    plotAx.YScale = 'linear';
     h.assertAxesPopoutEnabled(plotAx, ...
         'UI 2.0 preview axes should install the LabKit popout context action.');
     menuItem = findall(plotAx.ContextMenu, 'Type', 'uimenu', ...
@@ -117,4 +130,8 @@ function verify_gui_layout_ui_axes_workbench()
 
     function noop(varargin)
     end
+end
+
+function value = relativeLogPosition(anchor, limits)
+    value = (log10(anchor) - log10(limits(1))) ./ diff(log10(limits));
 end
