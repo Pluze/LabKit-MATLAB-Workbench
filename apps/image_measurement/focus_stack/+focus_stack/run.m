@@ -11,6 +11,7 @@ function fig = run(debugLog)
     S.alignedImages = {};
     S.registrationLines = {};
     S.result = focus_stack.state.emptyResult();
+    S.lastRunFingerprint = "";
 
     fusionPresets = {'Balanced', 'Crisp details', 'Smooth transitions', 'Noisy images'};
     workflowNotes = { ...
@@ -23,6 +24,7 @@ function fig = run(debugLog)
         'sourceImagesChosen', @onOpenFilesChosen, ...
         'clearImages', @onClearImages, ...
         'fusionPresetChanged', @onFusionPresetChanged, ...
+        'fusionOptionsChanged', @onFusionOptionsChanged, ...
         'runFocusStack', @onRunFocusStack, ...
         'exportFused', @onExportFused, ...
         'exportFocusMap', @onExportFocusMap, ...
@@ -61,6 +63,7 @@ function fig = run(debugLog)
         S.alignedImages = {};
         S.registrationLines = {};
         S.result = focus_stack.state.emptyResult();
+        S.lastRunFingerprint = "";
         addLog('Cleared loaded focus images and results.');
         refreshSourcePanel();
         refreshPreview();
@@ -91,6 +94,7 @@ function fig = run(debugLog)
         S.alignedImages = {};
         S.registrationLines = {};
         S.result = focus_stack.state.emptyResult();
+        S.lastRunFingerprint = "";
         S.folder = string(sourceFolder);
 
         labkit.ui.view.setValue(ui, 'sourceLocation', char(string(sourceDescription)));
@@ -108,6 +112,13 @@ function fig = run(debugLog)
 
         opts = currentFusionOptions();
         registerStack = labkit.ui.view.getValue(ui, 'autoRegister');
+        task = focus_stack.state.runTask(S.paths, S.images, opts, registerStack);
+        if S.result.ok && S.lastRunFingerprint == task.fingerprint
+            addLog('Focus stack result is already up to date; skipped duplicate run.');
+            refreshPreview();
+            refreshSummary();
+            return;
+        end
         try
             payload = runFocusStackComputation(opts, registerStack);
         catch ME
@@ -118,6 +129,7 @@ function fig = run(debugLog)
         S.alignedImages = payload.imagesForFusion;
         S.registrationLines = payload.registrationLines;
         S.result = payload.result;
+        S.lastRunFingerprint = task.fingerprint;
         addLog(sprintf('Focus stack complete: %d images fused with %s.', ...
             S.result.inputCount, S.result.method));
         for k = 1:numel(S.registrationLines)
@@ -140,8 +152,17 @@ function fig = run(debugLog)
         labkit.ui.view.setValue(ui, 'focusWindow', settings.focusWindow);
         labkit.ui.view.setValue(ui, 'smoothRadius', settings.smoothRadius);
         labkit.ui.view.setValue(ui, 'uncertainBlend', settings.minConfidencePercent);
+        markResultDirty();
         addLog(sprintf('Fusion preset set to %s.', ...
             labkit.ui.view.getValue(ui, 'fusionPreset')));
+        refreshPreview();
+        refreshSummary();
+    end
+
+    function onFusionOptionsChanged(~, ~)
+        markResultDirty();
+        refreshPreview();
+        refreshSummary();
     end
 
     function payload = runFocusStackComputation(opts, registerStack)
@@ -303,6 +324,15 @@ function fig = run(debugLog)
     function addLog(message)
         labkit.ui.view.appendLog(ui, 'logPanel', message);
         debugLog.append(message);
+    end
+
+    function markResultDirty()
+        if S.result.ok
+            S.result = focus_stack.state.emptyResult();
+            S.alignedImages = {};
+            S.registrationLines = {};
+        end
+        S.lastRunFingerprint = "";
     end
 
     function showError(titleText, message)

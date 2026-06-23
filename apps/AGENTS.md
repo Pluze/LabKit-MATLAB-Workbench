@@ -80,6 +80,12 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
   operations with pixel-unit parameters such as radius or window size, scale
   those parameters to the preview resolution so preview behavior remains
   comparable to original-resolution export.
+- Apps with preview, run, or export task lifecycles should build immutable
+  app-owned task snapshots in `+state` and compare deterministic fingerprints
+  before repeated work. The runner may own dirty flags, small preview caches,
+  and last-successful fingerprints; `+ops` and `+export` should stay GUI-free
+  and testable. Do not promote app task semantics into `+labkit` until at
+  least two apps prove the same neutral abstraction is needed.
 - Use `.agents/migration_guide.md` and the `labkit-migration-planner` skill for
   active runner, app-private, and migration-debt work. This file owns app
   boundary rules, not the migration debt ledger.

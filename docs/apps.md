@@ -116,6 +116,25 @@ Create optional role packages only when the app has code for that role:
 Use the app slug as the package name. Do not use a shared `+app` namespace.
 Do not add family-level `private/` helper folders.
 
+## Task Lifecycle
+
+Apps with preview, edit, run, or export workflows should keep task lifecycle
+state explicit. Runner code may track dirty flags, small preview caches, and
+the last successful task fingerprint, but GUI-free helpers own deterministic
+task snapshots under the app package, usually in `+state`.
+
+Use this boundary:
+
+- `+state` builds immutable task snapshots and fingerprints from inputs,
+  options, and committed steps.
+- `+ops` performs deterministic computation without GUI or file side effects.
+- `+export` writes outputs from an explicit task/options boundary.
+- preview callbacks operate on the current selection and display-resolution
+  data when practical; full batch work happens at export or run actions.
+
+The UI framework prevents duplicate callback submission. Apps decide what
+changed, what result is dirty, and whether a repeated task can be skipped.
+
 ## App Ownership
 
 Keep these decisions in the owning app:

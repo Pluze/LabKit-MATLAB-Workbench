@@ -19,6 +19,7 @@ function verify_imageEnhance()
     checkReadImagesAcceptsPathPanelCellPaths();
     checkPreviewImageDownsamplesLargeInputs();
     checkManifestAndExportContract();
+    checkExportTaskFingerprintTracksInputsOptionsAndSteps();
 end
 
 function checkBrightnessContrastAndSharpenPipeline()
@@ -113,6 +114,34 @@ function checkManifestAndExportContract()
     assert(isequal(T.Properties.VariableNames, expectedManifestColumns()), ...
         'Image enhancement manifest columns changed.');
     assert(T.StepCount(1) == 1, 'Manifest should preserve step count.');
+end
+
+function checkExportTaskFingerprintTracksInputsOptionsAndSteps()
+    item = image_enhance.state.emptyItem();
+    item.path = "sample.png";
+    item.name = "sample.png";
+    item.image = syntheticGradientImage();
+    step = image_enhance.ops.makeStep('Brightness/contrast', 5, 0, 0);
+
+    base = image_enhance.state.exportTask(item, step, struct( ...
+        'outputFolder', "out_a", ...
+        'format', 'PNG'));
+    repeated = image_enhance.state.exportTask(item, step, struct( ...
+        'outputFolder', "out_a", ...
+        'format', 'PNG'));
+    moved = image_enhance.state.exportTask(item, step, struct( ...
+        'outputFolder', "out_b", ...
+        'format', 'PNG'));
+    changedStep = image_enhance.state.exportTask(item, ...
+        image_enhance.ops.makeStep('Brightness/contrast', 6, 0, 0), ...
+        struct('outputFolder', "out_a", 'format', 'PNG'));
+
+    assert(base.fingerprint == repeated.fingerprint, ...
+        'Identical enhancement export tasks should have stable fingerprints.');
+    assert(base.fingerprint ~= moved.fingerprint, ...
+        'Changing the enhancement output folder should change the task fingerprint.');
+    assert(base.fingerprint ~= changedStep.fingerprint, ...
+        'Changing enhancement steps should change the task fingerprint.');
 end
 
 function checkPreviewImageDownsamplesLargeInputs()

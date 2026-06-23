@@ -32,6 +32,7 @@ function verify_batchImageCrop()
     checkScalePlanWarnsButDoesNotBlockOutliers();
     checkExportWritesUniqueOutputs();
     checkExportWritesUniqueOutputsForDuplicateSource();
+    checkExportPlanFingerprintTracksItemsAndOptions();
 end
 
 function checkFixedPixelCropPreservesClassAndSize()
@@ -416,6 +417,38 @@ function checkExportWritesUniqueOutputsForDuplicateSource()
         'Second duplicate-source crop should use a numbered crop filename.');
     assert(height(payload.manifest) == 2, ...
         'Manifest should keep one row per duplicate-source crop task.');
+end
+
+function checkExportPlanFingerprintTracksItemsAndOptions()
+    item = batch_crop.state.emptyItem();
+    item.path = "shared_source.png";
+    item.image = uint8(20 * ones(8, 8));
+    item.angleDeg = 0;
+    item.centerXY = [3, 3];
+    item.centerSet = true;
+    opts = struct( ...
+        'outputFolder', "out_a", ...
+        'format', 'PNG', ...
+        'cropWidth', 4, ...
+        'cropHeight', 4, ...
+        'paddingPercent', 0, ...
+        'scaleMode', 'Pixels');
+
+    base = batch_crop.state.exportPlan(item, opts);
+    repeated = batch_crop.state.exportPlan(item, opts);
+    moved = opts;
+    moved.outputFolder = "out_b";
+    movedPlan = batch_crop.state.exportPlan(item, moved);
+    shifted = item;
+    shifted.centerXY = [5, 5];
+    shiftedPlan = batch_crop.state.exportPlan(shifted, opts);
+
+    assert(base.fingerprint == repeated.fingerprint, ...
+        'Identical batch-crop export plans should have stable fingerprints.');
+    assert(base.fingerprint ~= movedPlan.fingerprint, ...
+        'Changing the crop output folder should change the plan fingerprint.');
+    assert(base.fingerprint ~= shiftedPlan.fingerprint, ...
+        'Changing a crop center should change the plan fingerprint.');
 end
 
 function cols = expectedManifestColumns()

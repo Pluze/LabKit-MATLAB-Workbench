@@ -20,6 +20,7 @@ function verify_imageMatch()
     checkReadImagesAcceptsPathPanelCellPaths();
     checkPreviewImageDownsamplesLargeInputs();
     checkManifestAndExportContract();
+    checkExportTaskFingerprintTracksReferenceOptionsAndSteps();
 end
 
 function checkWhiteBalanceMatchMovesChannelRatiosTowardReference()
@@ -143,6 +144,40 @@ function checkManifestAndExportContract()
     assert(isequal(T.Properties.VariableNames, expectedManifestColumns()), ...
         'Image match manifest columns changed.');
     assert(T.StepCount(1) == 1, 'Manifest should preserve step count.');
+end
+
+function checkExportTaskFingerprintTracksReferenceOptionsAndSteps()
+    [sourceImage, referenceImage] = syntheticColorPair();
+    item = image_match.state.emptyItem();
+    item.path = "source.png";
+    item.name = "source.png";
+    item.image = sourceImage;
+    referenceItem = image_match.state.emptyItem();
+    referenceItem.path = "reference.png";
+    referenceItem.name = "reference.png";
+    referenceItem.image = referenceImage;
+    step = image_match.ops.makeStep('Balanced', 100, 100, 100);
+
+    base = image_match.state.exportTask(item, referenceItem, step, struct( ...
+        'outputFolder', "out_a", ...
+        'format', 'PNG'));
+    repeated = image_match.state.exportTask(item, referenceItem, step, struct( ...
+        'outputFolder', "out_a", ...
+        'format', 'PNG'));
+    changedReference = referenceItem;
+    changedReference.path = "reference_b.png";
+    changedReferenceTask = image_match.state.exportTask(item, changedReference, ...
+        step, struct('outputFolder', "out_a", 'format', 'PNG'));
+    changedStep = image_match.state.exportTask(item, referenceItem, ...
+        image_match.ops.makeStep('Tone only', 100, 100, 0), ...
+        struct('outputFolder', "out_a", 'format', 'PNG'));
+
+    assert(base.fingerprint == repeated.fingerprint, ...
+        'Identical image-match export tasks should have stable fingerprints.');
+    assert(base.fingerprint ~= changedReferenceTask.fingerprint, ...
+        'Changing the reference image should change the match task fingerprint.');
+    assert(base.fingerprint ~= changedStep.fingerprint, ...
+        'Changing match steps should change the task fingerprint.');
 end
 
 function checkPreviewImageDownsamplesLargeInputs()

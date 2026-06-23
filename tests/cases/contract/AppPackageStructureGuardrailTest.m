@@ -14,6 +14,32 @@ classdef AppPackageStructureGuardrailTest < matlab.unittest.TestCase
             end
         end
 
+        function imageWorkflowAppsKeepTaskLifecycleSnapshots(testCase)
+            root = setupLabKitTestPath();
+            expected = [
+                "apps/image_measurement/image_enhance/+image_enhance/+state/exportTask.m"
+                "apps/image_measurement/image_match/+image_match/+state/exportTask.m"
+                "apps/image_measurement/batch_crop/+batch_crop/+state/exportPlan.m"
+                "apps/image_measurement/focus_stack/+focus_stack/+state/runTask.m"];
+
+            for k = 1:numel(expected)
+                filepath = repoPath(root, expected(k));
+                testCase.verifyTrue(isfile(filepath), ...
+                    "Image workflow task lifecycle helper is missing: " + expected(k));
+                source = string(fileread(filepath));
+                testCase.verifyTrue(contains(source, "fingerprint"), ...
+                    "Task lifecycle helper should expose a deterministic fingerprint: " + expected(k));
+            end
+
+            docs = string(fileread(fullfile(root, "docs", "apps.md")));
+            appRules = string(fileread(fullfile(root, "apps", "AGENTS.md")));
+            testCase.verifyTrue(contains(docs, "Task Lifecycle"), ...
+                "docs/apps.md should document the app-owned task lifecycle boundary.");
+            testCase.verifyTrue(contains(appRules, "immutable") && ...
+                contains(appRules, "fingerprints"), ...
+                "apps/AGENTS.md should preserve the task snapshot/fingerprint rule.");
+        end
+
     end
 end
 
@@ -285,4 +311,9 @@ function rel = relativePath(root, filepath)
         rel = filepath(numel(prefix)+1:end);
     end
     rel = strrep(rel, filesep, '/');
+end
+
+function filepath = repoPath(root, pathValue)
+    parts = [{char(root)}; cellstr(split(string(pathValue), "/"))];
+    filepath = fullfile(parts{:});
 end

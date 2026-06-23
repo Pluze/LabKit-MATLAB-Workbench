@@ -11,11 +11,14 @@ function fig = run(debugLog)
     S.steps = repmat(image_match.state.emptyStep(), 0, 1);
     S.outputFolder = string(labkit.ui.app.defaultDialogFolder("output"));
     S.lastExport = [];
+    S.lastExportFingerprint = "";
     S.pendingDirty = false;
     S.previewImages = {};
     S.previewImageKeys = strings(0, 1);
     S.referencePreviewImage = [];
     S.referencePreviewKey = "";
+    S.previewResultImage = [];
+    S.previewResultKey = "";
 
     methods = {'Balanced', 'White balance', 'Tone only', 'Lab style', 'Histogram'};
     callbacks = struct( ...
@@ -54,7 +57,7 @@ function fig = run(debugLog)
         S.referenceItem = loaded(1);
         S.pendingDirty = false;
         invalidatePreviewCache();
-        S.lastExport = [];
+        markExportDirty();
         addLog(sprintf('Loaded reference image: %s.', char(S.referenceItem.name)));
         refreshAll();
     end
@@ -63,7 +66,7 @@ function fig = run(debugLog)
         S.referenceItem = [];
         S.pendingDirty = false;
         invalidatePreviewCache();
-        S.lastExport = [];
+        markExportDirty();
         addLog('Cleared reference image.');
         refreshAll();
     end
@@ -82,7 +85,7 @@ function fig = run(debugLog)
         S.pendingDirty = false;
         invalidatePreviewCache();
         S.outputFolder = string(fileparts(event.paths(1)));
-        S.lastExport = [];
+        markExportDirty();
         addLog(sprintf('Loaded %d image(s).', numel(S.items)));
         refreshAll();
     end
@@ -93,7 +96,7 @@ function fig = run(debugLog)
         S.steps = repmat(image_match.state.emptyStep(), 0, 1);
         S.pendingDirty = false;
         invalidatePreviewCache();
-        S.lastExport = [];
+        markExportDirty();
         addLog('Cleared loaded images and match history.');
         refreshAll();
     end
@@ -120,7 +123,7 @@ function fig = run(debugLog)
 
     function onMatchSettingChanged(~, ~)
         S.pendingDirty = true;
-        S.lastExport = [];
+        markExportDirty();
         refreshPreview();
         refreshMatchStatus();
     end
@@ -137,7 +140,7 @@ function fig = run(debugLog)
         step = currentMatchStep();
         S.steps(end + 1, 1) = step;
         S.pendingDirty = false;
-        S.lastExport = [];
+        markExportDirty();
         addLog(sprintf('Applied match: %s', char(step.label)));
         refreshAll();
     end
@@ -149,7 +152,7 @@ function fig = run(debugLog)
         removed = S.steps(end);
         S.steps(end) = [];
         S.pendingDirty = false;
-        S.lastExport = [];
+        markExportDirty();
         addLog(sprintf('Undid match step: %s', char(removed.label)));
         refreshAll();
     end
@@ -160,7 +163,7 @@ function fig = run(debugLog)
         end
         S.steps = repmat(image_match.state.emptyStep(), 0, 1);
         S.pendingDirty = false;
-        S.lastExport = [];
+        markExportDirty();
         addLog('Reset match history.');
         refreshAll();
     end
@@ -173,6 +176,7 @@ function fig = run(debugLog)
             return;
         end
         S.outputFolder = string(folder);
+        markExportDirty();
         refreshExportControls();
         refreshDetails();
     end
@@ -189,9 +193,16 @@ function fig = run(debugLog)
         opts = struct();
         opts.outputFolder = S.outputFolder;
         opts.format = labkit.ui.view.getValue(ui, 'exportFormat');
+        task = image_match.state.exportTask(S.items, S.referenceItem, S.steps, opts);
+        if ~isempty(S.lastExport) && S.lastExportFingerprint == task.fingerprint
+            addLog('Matched export is already up to date; skipped duplicate write.');
+            refreshDetails();
+            return;
+        end
         try
             S.lastExport = image_match.export.writeOutputs( ...
                 S.items, S.referenceItem, S.steps, opts);
+            S.lastExportFingerprint = task.fingerprint;
         catch ME
             showError('Export failed', ME.message);
             return;
@@ -375,6 +386,15 @@ function fig = run(debugLog)
         imageOut = currentPreviewSourceImage();
         referenceImage = currentPreviewReferenceImage();
         steps = S.steps;
+        stepsForKey = steps;
+        if includePending
+            stepsForKey(end + 1, 1) = currentMatchStep();
+        end
+        key = currentPreviewResultKey(stepsForKey, includePending);
+        if ~isempty(S.previewResultImage) && S.previewResultKey == key
+            imageOut = S.previewResultImage;
+            return;
+        end
         if ~isempty(steps)
             imageOut = image_match.ops.applyPipeline({imageOut}, steps, referenceImage);
             imageOut = imageOut{1};
@@ -383,6 +403,8 @@ function fig = run(debugLog)
             imageOut = image_match.ops.applyStep( ...
                 imageOut, currentMatchStep(), referenceImage);
         end
+        S.previewResultImage = imageOut;
+        S.previewResultKey = key;
     end
 
     function invalidatePreviewCache()
@@ -390,6 +412,28 @@ function fig = run(debugLog)
         S.previewImageKeys = strings(0, 1);
         S.referencePreviewImage = [];
         S.referencePreviewKey = "";
+        S.previewResultImage = [];
+        S.previewResultKey = "";
+    end
+
+    function key = currentPreviewResultKey(stepsForKey, includePending)
+        item = S.items(currentSelectionIndex());
+        referenceItem = S.referenceItem;
+        if ~hasReference()
+            referenceItem = [];
+        end
+        task = image_match.state.exportTask(item, referenceItem, stepsForKey, struct( ...
+            'outputFolder', "preview", ...
+            'format', "display"));
+        key = task.fingerprint + sprintf('\n') + ...
+            "pending=" + string(logical(includePending));
+    end
+
+    function markExportDirty()
+        S.lastExport = [];
+        S.lastExportFingerprint = "";
+        S.previewResultImage = [];
+        S.previewResultKey = "";
     end
 
     function key = previewImageKey(item)

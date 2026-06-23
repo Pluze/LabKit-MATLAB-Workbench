@@ -7,6 +7,7 @@ function fig = run(debugLog)
     S.currentIndex = 0;
     S.outputFolder = string(labkit.ui.app.defaultDialogFolder("output"));
     S.lastExport = [];
+    S.lastExportFingerprint = "";
     S.canvasCache = batch_crop.state.emptyCanvasCache();
 
     callbacks = struct( ...
@@ -95,7 +96,7 @@ function fig = run(debugLog)
 
         S.items = batch_crop.state.mergeChosenItems(S.items, items);
         S.currentIndex = min(max(S.currentIndex, 1), numel(S.items));
-        S.lastExport = [];
+        S = batch_crop.state.clearExportState(S);
         S.canvasCache = batch_crop.state.emptyCanvasCache();
         addLog(sprintf('Loaded %d image file(s); crop tasks: %d.', numel(items), numel(S.items)));
         refreshAll();
@@ -104,7 +105,7 @@ function fig = run(debugLog)
     function onClearImages()
         S.items = repmat(batch_crop.state.emptyItem(), 0, 1);
         S.currentIndex = 0;
-        S.lastExport = [];
+        S = batch_crop.state.clearExportState(S);
         S.canvasCache = batch_crop.state.emptyCanvasCache();
         addLog('Cleared loaded images.');
         refreshAll();
@@ -118,7 +119,7 @@ function fig = run(debugLog)
         insertAt = S.currentIndex + 1;
         S.items = [S.items(1:S.currentIndex); duplicated; S.items(insertAt:end)];
         S.currentIndex = insertAt;
-        S.lastExport = [];
+        S = batch_crop.state.clearExportState(S);
         S.canvasCache = batch_crop.state.emptyCanvasCache();
         addLog(sprintf('Duplicated image %d as crop task %d. Pick a new crop center.', ...
             insertAt - 1, insertAt));
@@ -157,6 +158,7 @@ function fig = run(debugLog)
     function onCropGeometryChanged()
         edtCropWidth.Value = round(max(1, edtCropWidth.Value));
         edtCropHeight.Value = round(max(1, edtCropHeight.Value));
+        S = batch_crop.state.clearExportState(S);
         refreshPreview(capturePreviewView());
         refreshSummary();
     end
@@ -168,6 +170,7 @@ function fig = run(debugLog)
         viewState = capturePreviewView();
         S.items(S.currentIndex).angleDeg = edtRotation.Value;
         ensureCurrentCenter();
+        S = batch_crop.state.clearExportState(S);
         S.canvasCache = batch_crop.state.emptyCanvasCache();
         addLog(sprintf('Updated rotation for image %d: %.3g deg.', ...
             S.currentIndex, S.items(S.currentIndex).angleDeg));
@@ -177,6 +180,7 @@ function fig = run(debugLog)
     function onPaddingChanged()
         edtPaddingPercent.Value = min(max(double(edtPaddingPercent.Value), 0), 200);
         viewState = capturePreviewView();
+        S = batch_crop.state.clearExportState(S);
         S.canvasCache = batch_crop.state.emptyCanvasCache();
         if hasCurrentImage()
             addLog(sprintf('Updated padding for image %d: %.3g%%.', ...
@@ -192,6 +196,7 @@ function fig = run(debugLog)
         end
         S.items(S.currentIndex).centerXY = [edtCenterX.Value, edtCenterY.Value];
         S.items(S.currentIndex).centerSet = true;
+        S = batch_crop.state.clearExportState(S);
         addLog(sprintf('Set crop center for image %d: x=%.1f, y=%.1f.', ...
             S.currentIndex, edtCenterX.Value, edtCenterY.Value));
         refreshAll();
@@ -203,6 +208,7 @@ function fig = run(debugLog)
         end
         S.items(S.currentIndex).centerXY = batch_crop.ops.sourceCenterXY(S.items(S.currentIndex).image);
         S.items(S.currentIndex).centerSet = true;
+        S = batch_crop.state.clearExportState(S);
         addLog(sprintf('Set image %d crop center to source image center.', ...
             S.currentIndex));
         refreshAll();
@@ -217,6 +223,7 @@ function fig = run(debugLog)
             syncCurrentScaleUnit();
             scaleTool.setEnabled(struct('hasImage', hasCurrentImage()));
         end
+        S = batch_crop.state.clearExportState(S);
         refreshAll(capturePreviewView());
     end
 
@@ -227,6 +234,7 @@ function fig = run(debugLog)
         cal = scaleTool.calibration();
         S.items(S.currentIndex).scaleCalibration = cal;
         ddScaleUnit.Value = char(cal.unit);
+        S = batch_crop.state.clearExportState(S);
         refreshList();
         refreshSummary();
     end
@@ -236,11 +244,13 @@ function fig = run(debugLog)
             cropSession.deactivate();
             return;
         end
+        S = batch_crop.state.clearExportState(S);
         refreshPreview(capturePreviewView());
         refreshSummary();
     end
 
     function onExportSettingChanged()
+        S = batch_crop.state.clearExportState(S);
         refreshSummary();
     end
 
@@ -253,6 +263,7 @@ function fig = run(debugLog)
         end
         S.outputFolder = string(folder);
         txtOutputFolder.Value = char(S.outputFolder);
+        S = batch_crop.state.clearExportState(S);
         refreshSummary();
     end
 
@@ -270,6 +281,7 @@ function fig = run(debugLog)
         centerXY = clampToSource(centerXY, S.items(S.currentIndex).image);
         S.items(S.currentIndex).centerXY = centerXY;
         S.items(S.currentIndex).centerSet = true;
+        S = batch_crop.state.clearExportState(S);
         addLog(sprintf('Picked crop center for image %d: x=%.1f, y=%.1f.', ...
             S.currentIndex, centerXY(1), centerXY(2)));
         refreshAll();
@@ -293,6 +305,12 @@ function fig = run(debugLog)
         end
 
         opts = currentExportOptions();
+        plan = batch_crop.state.exportPlan(S.items, opts);
+        if ~isempty(S.lastExport) && S.lastExportFingerprint == plan.fingerprint
+            addLog('Crop export is already up to date; skipped duplicate write.');
+            refreshSummary();
+            return;
+        end
         try
             payload = batch_crop.export.writeOutputs(S.items, opts);
         catch ME
@@ -301,6 +319,7 @@ function fig = run(debugLog)
         end
 
         S.lastExport = payload;
+        S.lastExportFingerprint = plan.fingerprint;
         statuses = string({payload.results.status});
         savedCount = sum(statuses == "saved");
         failedCount = sum(statuses == "failed");
@@ -511,7 +530,7 @@ function fig = run(debugLog)
 
     function geometry = currentGeometry()
         item = S.items(S.currentIndex);
-        key = canvasCacheKey(S.currentIndex, item, currentPaddingPercent());
+        key = batch_crop.state.canvasCacheKey(S.currentIndex, item, currentPaddingPercent());
         if S.canvasCache.valid && isequal(S.canvasCache.key, key)
             geometry = S.canvasCache.geometry;
             return;
@@ -596,18 +615,6 @@ function fig = run(debugLog)
     function refreshScaleStatus()
         txtScaleStatus.Value = batch_crop.view.scaleStatusText(S, S.currentIndex, currentScaleMode(), ...
             [edtPhysicalWidth.Value, edtPhysicalHeight.Value], currentScaleUnit());
-    end
-
-    function key = canvasCacheKey(index, item, paddingPercent)
-        key = struct( ...
-            'index', index, ...
-            'path', item.path, ...
-            'angleDeg', double(item.angleDeg), ...
-            'paddingPercent', double(paddingPercent), ...
-            'width', size(item.image, 2), ...
-            'height', size(item.image, 1), ...
-            'channels', size(item.image, 3), ...
-            'className', string(class(item.image)));
     end
 
     function centerXY = clampToSource(centerXY, imageData)

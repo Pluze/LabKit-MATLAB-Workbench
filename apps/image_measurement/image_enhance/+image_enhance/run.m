@@ -10,10 +10,13 @@ function fig = run(debugLog)
     S.steps = repmat(image_enhance.state.emptyStep(), 0, 1);
     S.outputFolder = string(labkit.ui.app.defaultDialogFolder("output"));
     S.lastExport = [];
+    S.lastExportFingerprint = "";
     S.pendingDirty = false;
     S.previewImages = {};
     S.previewImageKeys = strings(0, 1);
     S.previewScales = [];
+    S.previewResultImage = [];
+    S.previewResultKey = "";
 
     stepKinds = {'Brightness/contrast', 'Local contrast', 'Sharpen', ...
         'Hue/saturation', 'White balance'};
@@ -55,7 +58,7 @@ function fig = run(debugLog)
         S.pendingDirty = false;
         invalidatePreviewCache();
         S.outputFolder = string(fileparts(event.paths(1)));
-        S.lastExport = [];
+        markExportDirty();
         addLog(sprintf('Loaded %d image(s).', numel(S.items)));
         refreshAll();
     end
@@ -66,7 +69,7 @@ function fig = run(debugLog)
         S.steps = repmat(image_enhance.state.emptyStep(), 0, 1);
         S.pendingDirty = false;
         invalidatePreviewCache();
-        S.lastExport = [];
+        markExportDirty();
         addLog('Cleared loaded images and enhancement history.');
         refreshAll();
     end
@@ -94,7 +97,7 @@ function fig = run(debugLog)
     function onToolChanged(~, ~)
         updateToolControls(true);
         S.pendingDirty = true;
-        S.lastExport = [];
+        markExportDirty();
         refreshPreview();
         refreshToolStatus();
     end
@@ -102,7 +105,7 @@ function fig = run(debugLog)
     function onToolSettingChanged(~, ~)
         updateToolControls(false);
         S.pendingDirty = true;
-        S.lastExport = [];
+        markExportDirty();
         refreshPreview();
         refreshToolStatus();
     end
@@ -115,7 +118,7 @@ function fig = run(debugLog)
         step = currentToolStep();
         S.steps(end + 1, 1) = step;
         S.pendingDirty = false;
-        S.lastExport = [];
+        markExportDirty();
         addLog(sprintf('Applied tool: %s', char(step.label)));
         refreshAll();
     end
@@ -127,7 +130,7 @@ function fig = run(debugLog)
         removed = S.steps(end);
         S.steps(end) = [];
         S.pendingDirty = false;
-        S.lastExport = [];
+        markExportDirty();
         addLog(sprintf('Undid history step: %s', char(removed.label)));
         refreshAll();
     end
@@ -138,7 +141,7 @@ function fig = run(debugLog)
         end
         S.steps = repmat(image_enhance.state.emptyStep(), 0, 1);
         S.pendingDirty = false;
-        S.lastExport = [];
+        markExportDirty();
         addLog('Reset enhancement history.');
         refreshAll();
     end
@@ -151,6 +154,7 @@ function fig = run(debugLog)
             return;
         end
         S.outputFolder = string(folder);
+        markExportDirty();
         refreshExportControls();
         refreshDetails();
     end
@@ -163,8 +167,15 @@ function fig = run(debugLog)
         opts = struct();
         opts.outputFolder = S.outputFolder;
         opts.format = labkit.ui.view.getValue(ui, 'exportFormat');
+        task = image_enhance.state.exportTask(S.items, S.steps, opts);
+        if ~isempty(S.lastExport) && S.lastExportFingerprint == task.fingerprint
+            addLog('Enhanced export is already up to date; skipped duplicate write.');
+            refreshDetails();
+            return;
+        end
         try
             S.lastExport = image_enhance.export.writeOutputs(S.items, S.steps, opts);
+            S.lastExportFingerprint = task.fingerprint;
         catch ME
             showError('Export failed', ME.message);
             return;
@@ -334,20 +345,50 @@ function fig = run(debugLog)
         imageOut = currentPreviewSourceImage();
         previewScale = currentPreviewScale();
         steps = previewScaledSteps(S.steps, previewScale);
+        stepsForKey = steps;
+        if includePending
+            stepsForKey(end + 1, 1) = previewScaledStep(currentToolStep(), previewScale);
+        end
+        key = currentPreviewResultKey(stepsForKey, includePending);
+        if ~isempty(S.previewResultImage) && S.previewResultKey == key
+            imageOut = S.previewResultImage;
+            return;
+        end
         if ~isempty(steps)
             imageOut = image_enhance.ops.applyPipeline({imageOut}, steps);
             imageOut = imageOut{1};
         end
         if includePending
             imageOut = image_enhance.ops.applyStep( ...
-                previewScaledStep(currentToolStep(), previewScale), []);
+                imageOut, previewScaledStep(currentToolStep(), previewScale), []);
         end
+        S.previewResultImage = imageOut;
+        S.previewResultKey = key;
     end
 
     function invalidatePreviewCache()
         S.previewImages = {};
         S.previewImageKeys = strings(0, 1);
         S.previewScales = [];
+        S.previewResultImage = [];
+        S.previewResultKey = "";
+    end
+
+    function key = currentPreviewResultKey(stepsForKey, includePending)
+        item = S.items(currentSelectionIndex());
+        task = image_enhance.state.exportTask(item, stepsForKey, struct( ...
+            'outputFolder', "preview", ...
+            'format', "display"));
+        key = task.fingerprint + sprintf('\n') + ...
+            "scale=" + string(currentPreviewScale()) + ...
+            "|pending=" + string(logical(includePending));
+    end
+
+    function markExportDirty()
+        S.lastExport = [];
+        S.lastExportFingerprint = "";
+        S.previewResultImage = [];
+        S.previewResultKey = "";
     end
 
     function scale = currentPreviewScale()

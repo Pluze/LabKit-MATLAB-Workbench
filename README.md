@@ -17,6 +17,10 @@ loading, Intan RHS loading, and biosignal processing facades.
 
 **[Download `labkit_launcher.m`](https://github.com/Pluze/LabKit-MATLAB-Workbench/releases/latest/download/labkit_launcher.m)**
 
+For portable or offline use, download the latest release source zip from the
+[GitHub releases page](https://github.com/Pluze/LabKit-MATLAB-Workbench/releases/latest)
+and run LabKit from the extracted folder.
+
 1. Create a standalone folder for LabKit, for example `LabKit/`.
 2. Save `labkit_launcher.m` in that folder.
 3. Open MATLAB in that folder and run:

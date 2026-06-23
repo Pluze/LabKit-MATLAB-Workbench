@@ -18,6 +18,7 @@ function verify_focusStackFusion()
     checkSelectedFileSelection();
     checkReadImagesAcceptsPathPanelCellPaths();
     checkRegistrationImprovesSyntheticDrift();
+    checkRunTaskFingerprintTracksOptionsAndRegistration();
     checkInvalidInputs();
 end
 
@@ -140,6 +141,26 @@ function checkRegistrationImprovesSyntheticDrift()
         'Automatic registration should reduce synthetic alignment error.');
     assert(contains(strjoin(string(lines), " "), "reference image: 2"), ...
         'Registration should use the middle stack image as reference.');
+end
+
+function checkRunTaskFingerprintTracksOptionsAndRegistration()
+    [nearImage, farImage] = syntheticFocusPair();
+    paths = ["near.png"; "far.png"];
+    opts = struct('focusWindow', 5, 'smoothRadius', 1, 'minConfidence', 0.05);
+
+    base = focus_stack.state.runTask(paths, {nearImage, farImage}, opts, false);
+    repeated = focus_stack.state.runTask(paths, {nearImage, farImage}, opts, false);
+    registered = focus_stack.state.runTask(paths, {nearImage, farImage}, opts, true);
+    changedOpts = opts;
+    changedOpts.smoothRadius = 2;
+    changed = focus_stack.state.runTask(paths, {nearImage, farImage}, changedOpts, false);
+
+    assert(base.fingerprint == repeated.fingerprint, ...
+        'Identical focus-stack run tasks should have stable fingerprints.');
+    assert(base.fingerprint ~= registered.fingerprint, ...
+        'Changing registration should change the focus-stack task fingerprint.');
+    assert(base.fingerprint ~= changed.fingerprint, ...
+        'Changing fusion options should change the focus-stack task fingerprint.');
 end
 
 function names = fileNames(paths)
