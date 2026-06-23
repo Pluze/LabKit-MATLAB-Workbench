@@ -118,15 +118,17 @@ results, exports, and usage text should be specific to the new app.
 
 Keep app discovery source-based through `apps/**/labkit_*_app.m`; app
 manifests, registries, per-app build tasks, and governance apps are outside
-the current app model.
+the current app model. App-owned `version.m` files provide visible version and
+update-date metadata without becoming dependency manifests.
 
 ## Implementation Pattern
 
 Build the app in this order:
 
-1. Add or update the public app entry point as a thin dispatch wrapper, then
-   create the GUI from package-root `run.m` with `labkit.ui.app.create` and
-   `labkit.ui.spec.*`.
+1. Add or update app-local `requirements.m` and `version.m`, then keep the
+   public app entry point as a thin dispatch wrapper. It should pass both
+   structs to `labkit.ui.app.dispatchRequest`, create the GUI from package-root
+   `run.m`, and apply the app version title to the returned figure.
 2. Put the data-only spec in `+<app_slug>/+ui/buildSpec.m`; package-root
    `run.m` should create callback handles, call
    `<app_slug>.ui.buildSpec(...)`, then call `labkit.ui.app.create(...)`.

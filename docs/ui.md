@@ -4,7 +4,7 @@
 
 | Facade | Owns | Main APIs |
 | --- | --- | --- |
-| `labkit.ui.app` | Declarative app creation, request dispatch, busy state, safe dialog defaults. | `create`, `dispatchRequest`, `defaultDialogFolder`, `promptOutputFile`, `runBusy`. |
+| `labkit.ui.app` | Declarative app creation, request dispatch, busy state, safe dialog defaults, app title versioning. | `create`, `dispatchRequest`, `appVersionTitle`, `applyVersionTitle`, `defaultDialogFolder`, `promptOutputFile`, `runBusy`. |
 | `labkit.ui.spec` | UI 2.0 data-only workbench specs. | `app`, `workspace`, `tab`, `section`, `field`, `rangeField`, `panner`, `action`, `actionGroup`, `pathPanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `usagePanel`. |
 | `labkit.ui.view` | Semantic UI 2.0 registry updates and preview rendering helpers. | `setValue`, `getValue`, `setEnabled`, `setLimits`, `appendLog`, `setListItems`, `setListSelection`, `drawImage`, `resetAxes`, `clearAxes`. |
 | `labkit.ui.tool` | Reusable composed preview tools and interaction runtime. | `createRuntime`, `anchorEditor`, `scaleBar`, `scaleBarCalibration`, `enableAxesPopout`, `popoutAxes`, `zoomAxesAtPoint`. |
@@ -28,14 +28,17 @@ callbacks, and `buildSpec.m` owns only data-only UI shape:
 ```matlab
 function varargout = labkit_Example_app(varargin)
     requirements = example.requirements();
+    appVersion = example.version();
     [handled, outputs, debug] = labkit.ui.app.dispatchRequest( ...
-        "labkit_Example_app", varargin, nargout, "Requirements", requirements);
+        "labkit_Example_app", varargin, nargout, ...
+        "Requirements", requirements, "Version", appVersion);
     if handled
         varargout = outputs;
         return;
     end
 
     fig = example.run(debug);
+    labkit.ui.app.applyVersionTitle(fig, appVersion);
     if nargout >= 1
         varargout{1} = fig;
     end
@@ -269,6 +272,9 @@ string inputs are rejected by the public app launch path. App launchers expose
 only the simple debug form; lower-level debug options such as log files or
 callbacks belong to direct `labkit.ui.diag.createContext(appName, opts)` tests
 and helpers.
+
+The same dispatch path also consumes lightweight `"requirements"` and
+`"version"` requests without launching a GUI.
 
 Debug launches support:
 

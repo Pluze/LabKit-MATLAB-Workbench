@@ -2,8 +2,9 @@ function varargout = labkit_ECGPrint_app(varargin)
 %LABKIT_ECGPRINT_APP Explore ECG quality, SNR, and printable waveforms.
 
     requirements = ecg_print.requirements();
+    appVersion = ecg_print.version();
     [requestHandled, requestOutputs, debugLog] = labkit.ui.app.dispatchRequest( ...
-        'labkit_ECGPrint_app', varargin, nargout, "Requirements", requirements);
+        'labkit_ECGPrint_app', varargin, nargout, "Requirements", requirements, "Version", appVersion);
     if requestHandled
         varargout = requestOutputs;
         return;
@@ -19,6 +20,7 @@ function varargout = labkit_ECGPrint_app(varargin)
     end
 
     fig = ecg_print.run(debugLog);
+    labkit.ui.app.applyVersionTitle(fig, appVersion);
     if nargout >= 1
         varargout{1} = fig;
     end

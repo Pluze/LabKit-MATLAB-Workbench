@@ -2,8 +2,9 @@ function varargout = labkit_ImageMatch_app(varargin)
 %LABKIT_IMAGEMATCH_APP Reference image matching app for figure images.
 
     requirements = image_match.requirements();
+    appVersion = image_match.version();
     [requestHandled, requestOutputs, debugLog] = labkit.ui.app.dispatchRequest( ...
-        'labkit_ImageMatch_app', varargin, nargout, "Requirements", requirements);
+        'labkit_ImageMatch_app', varargin, nargout, "Requirements", requirements, "Version", appVersion);
     if requestHandled
         varargout = requestOutputs;
         return;
@@ -19,6 +20,7 @@ function varargout = labkit_ImageMatch_app(varargin)
     end
 
     fig = image_match.run(debugLog);
+    labkit.ui.app.applyVersionTitle(fig, appVersion);
     if nargout >= 1
         varargout{1} = fig;
     end

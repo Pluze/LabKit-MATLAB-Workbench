@@ -2,8 +2,9 @@ function varargout = labkit_FocusStack_app(varargin)
 %LABKIT_FOCUSSTACK_APP Fuse a focus image stack into one all-in-focus image.
 
     requirements = focus_stack.requirements();
+    appVersion = focus_stack.version();
     [requestHandled, requestOutputs, debugLog] = labkit.ui.app.dispatchRequest( ...
-        'labkit_FocusStack_app', varargin, nargout, "Requirements", requirements);
+        'labkit_FocusStack_app', varargin, nargout, "Requirements", requirements, "Version", appVersion);
     if requestHandled
         varargout = requestOutputs;
         return;
@@ -19,6 +20,7 @@ function varargout = labkit_FocusStack_app(varargin)
     end
 
     fig = focus_stack.run(debugLog);
+    labkit.ui.app.applyVersionTitle(fig, appVersion);
     if nargout >= 1
         varargout{1} = fig;
     end

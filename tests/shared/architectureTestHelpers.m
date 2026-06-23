@@ -19,6 +19,12 @@ function h = architectureTestHelpers()
 end
 
 function source = assertAppEntrypoint(root, appName, launchName, legacyCall)
+    if nargin < 3
+        launchName = '';
+    end
+    if nargin < 4
+        legacyCall = '';
+    end
     appFile = appEntryFile(root, appName);
     privateLaunchFile = fullfile(root, 'apps', 'private', [launchName '.m']);
     packageLaunchFile = fullfile(root, '+labkit', '+app', [launchName '.m']);
@@ -28,22 +34,28 @@ function source = assertAppEntrypoint(root, appName, launchName, legacyCall)
     assert(~isempty(which(appName)), ['App entry point does not resolve: ' appName]);
     assert(exist(rootLevelAppFile, 'file') ~= 2, ...
         [appName ' should live under an apps category folder, not apps/ root.']);
-    assert(exist(privateLaunchFile, 'file') ~= 2, ...
-        [appName ' should not keep a separate apps/private launcher.']);
-    assert(exist(packageLaunchFile, 'file') ~= 2, ...
-        [appName ' implementation should not live in the reusable +labkit package.']);
+    if strlength(string(launchName)) > 0
+        assert(exist(privateLaunchFile, 'file') ~= 2, ...
+            [appName ' should not keep a separate apps/private launcher.']);
+        assert(exist(packageLaunchFile, 'file') ~= 2, ...
+            [appName ' implementation should not live in the reusable +labkit package.']);
+    end
 
     appSource = fileread(appFile);
     appOwnedSource = readAppOwnedSource(appFile);
     assert(contains(appSource, ['function varargout = ' appName]), ...
         [appName ' should expose one public app entry-point source file.']);
-    assert(~contains(appSource, launchName), ...
-        [appName ' should not delegate to a separate launcher.']);
-    assert(~contains(appSource, ['labkit.app.' launchName]), ...
-        [appName ' should not route app implementation through the reusable package.']);
+    if strlength(string(launchName)) > 0
+        assert(~contains(appSource, launchName), ...
+            [appName ' should not delegate to a separate launcher.']);
+        assert(~contains(appSource, ['labkit.app.' launchName]), ...
+            [appName ' should not route app implementation through the reusable package.']);
+    end
     assert(~contains(appSource, '_legacy'), [appName ' should not call legacy implementations.']);
-    assert(~contains(appSource, legacyCall), ...
-        [appName ' should not delegate to a removed root legacy-compatible wrapper.']);
+    if strlength(string(legacyCall)) > 0
+        assert(~contains(appSource, legacyCall), ...
+            [appName ' should not delegate to a removed root legacy-compatible wrapper.']);
+    end
     assert(~contains(appSource, 'labkit.io.'), ...
         [appName ' should not call low-level IO APIs directly.']);
     assert(~contains(appSource, 'labkit.data.'), ...
@@ -53,6 +65,10 @@ function source = assertAppEntrypoint(root, appName, launchName, legacyCall)
     assert(~contains(appSource, 'labkit.util.'), ...
         [appName ' should not call utility APIs directly.']);
     assertUsesGuiFoundation(appOwnedSource, appName);
+    assert(contains(appSource, '.version()') && ...
+        contains(appSource, '"Version"') && ...
+        contains(appSource, 'labkit.ui.app.applyVersionTitle'), ...
+        [appName ' should expose app version metadata and apply it to the figure title.']);
     assert(~contains(appOwnedSource, 'labkit.ui.create'), ...
         [appName ' should not call removed flat UI create* helpers.']);
     assert(~contains(appOwnedSource, 'labkit.ui.appendLog'), ...
@@ -266,14 +282,17 @@ function words = guiWords()
         'uilabel', 'uidropdown', 'uitable'};
 end
 
-function words = appEntrypointWords()
-    words = {'labkit_CIC_app', 'labkit_VTResistance_app', 'labkit_CSC_app', ...
-        'labkit_EIS_app', 'labkit_ChronoOverlay_app', ...
-        'labkit_DICPreprocess_app', 'labkit_DICPostprocess_app', ...
-        'labkit_CurvatureMeasurement_app', 'labkit_FocusStack_app', ...
-        'labkit_ImageEnhance_app', 'labkit_ImageMatch_app', ...
-        'labkit_BatchImageCrop_app', ...
-        'labkit_ECGPrint_app'};
+function words = appEntrypointWords(root)
+    if nargin < 1
+        words = {};
+        return;
+    end
+    entries = dir(fullfile(root, 'apps', '**', 'labkit_*_app.m'));
+    words = cell(1, numel(entries));
+    for k = 1:numel(entries)
+        [~, words{k}] = fileparts(entries(k).name);
+    end
+    words = sort(words);
 end
 
 function words = experimentWorkflowWords()

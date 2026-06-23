@@ -26,6 +26,12 @@
 - `labkit.contract` owns only MATLAB-native facade contract structs, simple range
   checks, and app requirement assertions. It must stay domain-neutral and must
   not become a package manager, plugin registry, or app metadata store.
+- App version display belongs to app-owned `version.m` files plus
+  `labkit.ui.app` title formatting; do not move app metadata into
+  `labkit.contract` or a central registry.
+- When app-facing facade code changes under `+labkit/+ui`, `+dta`, `+rhs`, or
+  `+biosignal`, update the owning facade `version()` contract in the same
+  change. Facade versions use `X.Y.Z` semantic format and must only increase.
 - Reusable UI tools may own domain-neutral interaction workflows such as image scale-bar controls, reference editing, unit normalization, and overlay placement. Keep those tools independent from app result schemas, scientific formulas, file formats, and workflow wording.
 - App-facing UI APIs live under `labkit.ui.app.*`, `labkit.ui.spec.*`, `labkit.ui.view.*`, `labkit.ui.tool.*`, and `labkit.ui.diag.*`. Do not reintroduce flat `labkit.ui.*` helper files.
 - Preview-axis tools that need pointer, drag, scroll, or hit-test ownership must use `labkit.ui.tool.createRuntime` sessions instead of each helper managing figure/axes callbacks independently.

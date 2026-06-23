@@ -15,7 +15,7 @@ function verify_package_dependency_boundaries()
     root = testRepoRoot();
     h = architectureTestHelpers();
     guiWords = h.guiWords();
-    appWords = h.appEntrypointWords();
+    appWords = h.appEntrypointWords(root);
     workflowWords = h.experimentWorkflowWords();
 
     h.assertPackageSourcesDoNotContain(fullfile(root, '+labkit', '+dta', 'private'), ...

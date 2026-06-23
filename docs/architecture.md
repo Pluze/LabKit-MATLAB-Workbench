@@ -81,7 +81,7 @@ App GUIs use the layered UI foundation:
 
 | Layer | App-facing API |
 | --- | --- |
-| App | `labkit.ui.app.create`, `dispatchRequest`, `defaultDialogFolder`, `runBusy` |
+| App | `labkit.ui.app.create`, `dispatchRequest`, `appVersionTitle`, `applyVersionTitle`, `defaultDialogFolder`, `promptOutputFile`, `runBusy` |
 | Spec | `labkit.ui.spec.app`, `workspace`, `tab`, `section`, `field`, `rangeField`, `panner`, `action`, `actionGroup`, `pathPanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `usagePanel` |
 | View | `labkit.ui.view.setValue`, `getValue`, `setEnabled`, `appendLog`, `setListItems`, `setListSelection`, `drawImage`, `resetAxes`, `clearAxes` |
 | Tool | `labkit.ui.tool.createRuntime`, `anchorEditor`, `scaleBar`, `scaleBarCalibration`, `zoomAxesAtPoint` |
@@ -92,6 +92,12 @@ Reusable facades publish MATLAB-native contract versions through their
 `requirements.m` functions, and `labkit.contract` checks those ranges in tests
 and at launch. This is a same-repo maintenance guardrail; routine users still
 update LabKit as one repository.
+
+Apps also publish app-local `version.m` metadata for display in the launcher and
+app window title. App versions are not dependency constraints and do not belong
+in `labkit.contract`. Project guardrails check `X.Y.Z` format and require
+versioned code changes to increase the corresponding app, launcher, or facade
+version.
 
 `+ui/buildSpec.m` returns a data-only `labkit.ui.spec.*` tree. It should not
 create MATLAB UI handles, mutate app state, perform IO, run calculations, write

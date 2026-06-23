@@ -11,8 +11,9 @@ function varargout = labkit_VTResistance_app(varargin)
 %   - Compute baseline-corrected resistance as abs((Vss - Vbaseline) / Iss).
 
     requirements = vt_resistance.requirements();
+    appVersion = vt_resistance.version();
     [requestHandled, requestOutputs, debugLog] = labkit.ui.app.dispatchRequest( ...
-        'labkit_VTResistance_app', varargin, nargout, "Requirements", requirements);
+        'labkit_VTResistance_app', varargin, nargout, "Requirements", requirements, "Version", appVersion);
     if requestHandled
         varargout = requestOutputs;
         return;
@@ -27,6 +28,7 @@ function varargout = labkit_VTResistance_app(varargin)
     end
 
     fig = vt_resistance.run(debugLog);
+    labkit.ui.app.applyVersionTitle(fig, appVersion);
     if nargout >= 1
         varargout{1} = fig;
     end

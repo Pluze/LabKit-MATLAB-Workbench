@@ -21,8 +21,9 @@ function varargout = labkit_CSC_app(varargin)
 %   CSC = Q / area (cm^2); both charge and normalized CSC are shown.
 %
     requirements = csc.requirements();
+    appVersion = csc.version();
     [requestHandled, requestOutputs, debugLog] = labkit.ui.app.dispatchRequest( ...
-        'labkit_CSC_app', varargin, nargout, "Requirements", requirements);
+        'labkit_CSC_app', varargin, nargout, "Requirements", requirements, "Version", appVersion);
     if requestHandled
         varargout = requestOutputs;
         return;
@@ -39,6 +40,7 @@ function varargout = labkit_CSC_app(varargin)
     % Application state container
 
     fig = csc.run(debugLog);
+    labkit.ui.app.applyVersionTitle(fig, appVersion);
     if nargout >= 1
         varargout{1} = fig;
     end

@@ -2,8 +2,9 @@ function varargout = labkit_RHSPreview_app(varargin)
 %LABKIT_RHSPREVIEW_APP Launch the RHS Preview app.
 
     requirements = rhs_preview.requirements();
+    appVersion = rhs_preview.version();
     [requestHandled, requestOutputs, debugLog] = labkit.ui.app.dispatchRequest( ...
-        'labkit_RHSPreview_app', varargin, nargout, "Requirements", requirements);
+        'labkit_RHSPreview_app', varargin, nargout, "Requirements", requirements, "Version", appVersion);
     if requestHandled
         varargout = requestOutputs;
         return;
@@ -19,6 +20,7 @@ function varargout = labkit_RHSPreview_app(varargin)
     end
 
     fig = rhs_preview.run(debugLog);
+    labkit.ui.app.applyVersionTitle(fig, appVersion);
     if nargout >= 1
         varargout{1} = fig;
     end
