@@ -4,6 +4,7 @@ function varargout = labkit_launcher(varargin)
 % Usage:
 %   labkit_launcher
 %   apps = labkit_launcher("list")
+%   info = labkit_launcher("version")
 %
 % This launcher intentionally avoids dependencies on other LabKit .m files so
 % it can still restore a damaged zip install when packages, apps, or scripts
@@ -16,6 +17,10 @@ function varargout = labkit_launcher(varargin)
 
     if mode == "list"
         varargout = {appCatalogTable(apps)};
+        return;
+    end
+    if mode == "version"
+        varargout = {launcherVersion()};
         return;
     end
     if nargout > 1
@@ -37,14 +42,36 @@ function mode = parseMode(args)
     end
     if numel(args) ~= 1
         error('labkit_launcher:InvalidInput', ...
-            'labkit_launcher accepts no inputs or the string "list".');
+            'labkit_launcher accepts no inputs or the string "list" or "version".');
     end
     value = string(args{1});
-    if strlength(value) > 0 && ~strcmpi(value, "list")
+    if strlength(strtrim(value)) == 0
         error('labkit_launcher:InvalidInput', ...
-            'Unsupported labkit_launcher mode: %s', value);
+            'Unsupported labkit_launcher mode: empty string.');
     end
-    mode = "list";
+    if strcmpi(value, "list")
+        mode = "list";
+        return;
+    end
+    if strcmpi(value, "version")
+        mode = "version";
+        return;
+    end
+    error('labkit_launcher:InvalidInput', ...
+        'Unsupported labkit_launcher mode: %s', value);
+end
+
+function info = launcherVersion()
+    info = struct( ...
+        "name", "labkit_launcher", ...
+        "displayName", "LabKit App Launcher", ...
+        "version", "1.0.0", ...
+        "updated", "2026-06-23");
+end
+
+function titleText = launcherVersionTitle()
+    info = launcherVersion();
+    titleText = info.displayName + " v" + info.version + " (" + info.updated + ")";
 end
 
 function initializePath(root, apps)
@@ -71,6 +98,7 @@ function fig = runLauncher(root, apps)
         figArgs = [figArgs, {'Visible', 'off'}];
     end
     fig = uifigure(figArgs{:});
+    fig.Name = char(launcherVersionTitle());
     applyLauncherGuiTestMode(fig);
     main = uigridlayout(fig, [1 3]);
     main.ColumnWidth = {360, 5, '1x'};
@@ -131,10 +159,11 @@ function fig = runLauncher(root, apps)
 
     tableGrid = uigridlayout(rightPanel, [1 1]);
     tableGrid.Padding = [4 4 4 4];
-    appTable = uitable(tableGrid, 'ColumnName', {'Family', 'App', 'Command'}, ...
-        'ColumnEditable', [false false false], 'RowName', {}, ...
+    appTable = uitable(tableGrid, ...
+        'ColumnName', {'Family', 'App', 'Version', 'Updated', 'Command'}, ...
+        'ColumnEditable', [false false false false false], 'RowName', {}, ...
         'FontSize', tableFontSize);
-    appTable.ColumnWidth = {160, 220, 'auto'};
+    appTable.ColumnWidth = {150, 200, 90, 110, 'auto'};
     configureTable(appTable, @onSelectionChanged, @onTableDoubleClicked);
 
     ui = struct();
@@ -380,16 +409,19 @@ function row = eventRow(event)
 end
 
 function rows = appDisplayRows(apps)
-    rows = cell(numel(apps), 3);
+    rows = cell(numel(apps), 5);
     for k = 1:numel(apps)
         rows{k, 1} = char(apps(k).family);
         rows{k, 2} = char(apps(k).displayName);
-        rows{k, 3} = apps(k).command;
+        rows{k, 3} = char(apps(k).version);
+        rows{k, 4} = char(apps(k).updated);
+        rows{k, 5} = apps(k).command;
     end
 end
 
 function rows = selectedAppDetails(app)
     rows = [{char(app.displayName)}; {['Family: ' char(app.family)]}; ...
+        {['Version: ' char(app.version)]}; {['Updated: ' char(app.updated)]}; ...
         {['Command: ' app.command]}; {['Path: ' app.relativePath]}; ...
         cellstr(wrapDescription(app.description))];
 end
@@ -479,6 +511,9 @@ function apps = discoverApps(root)
         apps(appCount).folder = folder;
         apps(appCount).relativePath = relativePath(root, filepath);
         apps(appCount).description = appDescription(filepath, command);
+        versionInfo = appVersionInfo(folder);
+        apps(appCount).version = versionInfo.version;
+        apps(appCount).updated = versionInfo.updated;
     end
     apps = apps(1:appCount);
     if ~isempty(apps)
@@ -491,15 +526,42 @@ end
 
 function app = emptyAppStruct()
     app = struct('command', {}, 'displayName', {}, 'family', {}, ...
-        'folder', {}, 'relativePath', {}, 'description', {});
+        'folder', {}, 'relativePath', {}, 'description', {}, ...
+        'version', {}, 'updated', {});
 end
 
 function catalog = appCatalogTable(apps)
     catalog = table(string({apps.command})', string({apps.displayName})', ...
         string({apps.family})', string({apps.folder})', ...
         string({apps.relativePath})', string({apps.description})', ...
+        string({apps.version})', string({apps.updated})', ...
         'VariableNames', {'Command', 'DisplayName', 'Family', 'Folder', ...
-        'RelativePath', 'Description'});
+        'RelativePath', 'Description', 'Version', 'Updated'});
+end
+
+function info = appVersionInfo(folder)
+    info = struct('version', "", 'updated', "");
+    entries = dir(fullfile(folder, '+*', 'version.m'));
+    if isempty(entries)
+        return;
+    end
+    filepath = fullfile(entries(1).folder, entries(1).name);
+    try
+        text = fileread(filepath);
+    catch
+        return;
+    end
+    info.version = stringLiteralField(text, "version");
+    info.updated = stringLiteralField(text, "updated");
+end
+
+function value = stringLiteralField(text, fieldName)
+    value = "";
+    pattern = ['"' char(fieldName) '"\s*,\s*"([^"]+)"'];
+    tokens = regexp(char(text), pattern, 'tokens', 'once');
+    if ~isempty(tokens)
+        value = string(tokens{1});
+    end
 end
 
 function tf = isHiddenImplementationPath(rel)

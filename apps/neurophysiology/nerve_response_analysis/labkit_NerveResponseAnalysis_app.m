@@ -2,8 +2,9 @@ function varargout = labkit_NerveResponseAnalysis_app(varargin)
 %LABKIT_NERVERESPONSEANALYSIS_APP Launch the Nerve Response Analysis app.
 
     requirements = nerve_response_analysis.requirements();
+    appVersion = nerve_response_analysis.version();
     [requestHandled, requestOutputs, debugLog] = labkit.ui.app.dispatchRequest( ...
-        'labkit_NerveResponseAnalysis_app', varargin, nargout, "Requirements", requirements);
+        'labkit_NerveResponseAnalysis_app', varargin, nargout, "Requirements", requirements, "Version", appVersion);
     if requestHandled
         varargout = requestOutputs;
         return;
@@ -19,6 +20,7 @@ function varargout = labkit_NerveResponseAnalysis_app(varargin)
     end
 
     fig = nerve_response_analysis.run(debugLog);
+    labkit.ui.app.applyVersionTitle(fig, appVersion);
     if nargout >= 1
         varargout{1} = fig;
     end

@@ -2,8 +2,9 @@ function varargout = labkit_DICPostprocess_app(varargin)
 %LABKIT_DICPOSTPROCESS_APP Ncorr strain summary and overlay export app.
 
     requirements = dic_postprocess.requirements();
+    appVersion = dic_postprocess.version();
     [requestHandled, requestOutputs, debugLog] = labkit.ui.app.dispatchRequest( ...
-        'labkit_DICPostprocess_app', varargin, nargout, "Requirements", requirements);
+        'labkit_DICPostprocess_app', varargin, nargout, "Requirements", requirements, "Version", appVersion);
     if requestHandled
         varargout = requestOutputs;
         return;
@@ -19,6 +20,7 @@ function varargout = labkit_DICPostprocess_app(varargin)
     end
 
     fig = dic_postprocess.run(debugLog);
+    labkit.ui.app.applyVersionTitle(fig, appVersion);
     if nargout >= 1
         varargout{1} = fig;
     end

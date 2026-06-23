@@ -24,8 +24,9 @@ function varargout = labkit_CIC_app(varargin)
 %   - By default, the evaluation point is 10 us after the end of each phase,
 %     matching the convention commonly used in the literature the user shared.
     requirements = cic.requirements();
+    appVersion = cic.version();
     [requestHandled, requestOutputs, debugLog] = labkit.ui.app.dispatchRequest( ...
-        'labkit_CIC_app', varargin, nargout, "Requirements", requirements);
+        'labkit_CIC_app', varargin, nargout, "Requirements", requirements, "Version", appVersion);
     if requestHandled
         varargout = requestOutputs;
         return;
@@ -40,6 +41,7 @@ function varargout = labkit_CIC_app(varargin)
     end
 
     fig = cic.run(debugLog);
+    labkit.ui.app.applyVersionTitle(fig, appVersion);
     if nargout >= 1
         varargout{1} = fig;
     end

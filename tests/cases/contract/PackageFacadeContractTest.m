@@ -39,6 +39,17 @@ classdef PackageFacadeContractTest < matlab.unittest.TestCase
             end
         end
 
+        function appVersionsAreValidAndExposed(testCase)
+            root = setupLabKitTestPath();
+            apps = collectAppEntrypoints(root);
+
+            testCase.verifyNotEmpty(apps, 'Contract test should discover app entrypoints.');
+            for k = 1:numel(apps)
+                info = feval(apps(k).functionName, "version");
+                validateAppVersionShape(testCase, info, apps(k).functionName);
+            end
+        end
+
         function incompatibleRequirementsProduceClearFailures(testCase)
             setupLabKitTestPath();
             req = labkit.contract.requirements("ui", ">=99.0 <100");
@@ -57,6 +68,25 @@ classdef PackageFacadeContractTest < matlab.unittest.TestCase
                 'probe_app:IncompatibleLabKit');
         end
     end
+end
+
+function validateAppVersionShape(testCase, info, appName)
+    testCase.verifyTrue(isstruct(info) && isscalar(info), ...
+        appName + " version request should return one app version struct.");
+    requiredFields = ["name", "displayName", "family", "version", "updated"];
+    for k = 1:numel(requiredFields)
+        field = requiredFields(k);
+        testCase.verifyTrue(isfield(info, field), ...
+            appName + " version should include " + field + ".");
+        value = info.(field);
+        testCase.verifyTrue(ischar(value) || (isstring(value) && isscalar(value)), ...
+            appName + " version field " + field + " should be scalar text.");
+        testCase.verifyGreaterThan(strlength(strtrim(string(value))), 0, ...
+            appName + " version field " + field + " should be nonempty.");
+    end
+    testCase.verifyEqual(string(info.name), appName);
+    testCase.verifyMatches(string(info.version), "^\d+\.\d+\.\d+$");
+    testCase.verifyMatches(string(info.updated), "^\d{4}-\d{2}-\d{2}$");
 end
 
 function versions = currentVersions()

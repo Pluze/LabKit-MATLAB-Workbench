@@ -139,6 +139,16 @@ function checkRequestDispatch()
         'probe_app', {'requirements'}, 1, "Requirements", req);
     assert(handled && numel(outputs) == 1 && isequal(outputs{1}, req) && ~debug.enabled, ...
         'Requirements request should return the app requirement struct without launching.');
+
+    info = struct("name", "probe_app", "displayName", "Probe App", ...
+        "family", "Probe", "version", "1.0.0", "updated", "2026-06-23");
+    [handled, outputs, debug] = labkit.ui.app.dispatchRequest( ...
+        'probe_app', {'version'}, 1, "Version", info);
+    assert(handled && numel(outputs) == 1 && isequal(outputs{1}, info) && ~debug.enabled, ...
+        'Version request should return the app version struct without launching.');
+    titleText = labkit.ui.app.appVersionTitle("Probe App", info);
+    assert(titleText == "Probe App v1.0.0 (2026-06-23)", ...
+        'App version title helper should include version and update date.');
 end
 
 function checkPromptOutputFile()
@@ -192,6 +202,10 @@ function checkRequestErrors()
         'probe_app:UnsupportedInput', 'Requirements request should not accept options.');
     assertThrows(@() labkit.ui.app.dispatchRequest('probe_app', {'requirements'}, 2), ...
         'probe_app:TooManyOutputs', 'Requirements request should return at most one output.');
+    assertThrows(@() labkit.ui.app.dispatchRequest('probe_app', {'version', struct()}, 1), ...
+        'probe_app:UnsupportedInput', 'Version request should not accept options.');
+    assertThrows(@() labkit.ui.app.dispatchRequest('probe_app', {'version'}, 2), ...
+        'probe_app:TooManyOutputs', 'Version request should return at most one output.');
 end
 
 function assertThrows(fn, expectedIdentifier, label)

@@ -38,9 +38,17 @@ function fig = launchFigure(entryName, expectedTitle)
     drawnow;
     figs = findall(groot, 'Type', 'figure');
     names = getFigureNames(figs);
-    idx = find(strcmp(names, expectedTitle), 1);
+    idx = find(figureTitleMatches(names, expectedTitle), 1);
     assert(~isempty(idx), 'GUI entry point %s did not create expected figure "%s".', entryName, expectedTitle);
     fig = figs(idx);
+end
+
+function matches = figureTitleMatches(names, expectedTitle)
+    names = string(names);
+    expectedTitle = string(expectedTitle);
+    versionPattern = "^" + regexptranslate("escape", expectedTitle) + ...
+        " v\d+\.\d+\.\d+ \(\d{4}-\d{2}-\d{2}\)$";
+    matches = names == expectedTitle | ~cellfun(@isempty, regexp(cellstr(names), char(versionPattern), 'once'));
 end
 
 function assertTexts(fig, expectedTexts)

@@ -15,10 +15,10 @@ labkit_launcher
 ```
 
 The launcher is self-contained so it can open before the rest of LabKit is
-installed. Use `Latest` to download the current `main` branch or `Release` to
-download the latest stable release. After LabKit is present, the launcher
-initializes the MATLAB path, discovers app entry points, and opens the selected
-app.
+installed and report its own version. Use `Latest` to download the current
+`main` branch or `Release` to download the latest stable release. After LabKit
+is present, the launcher initializes the MATLAB path, discovers app entry
+points with their app versions, and opens the selected app.
 
 Treat the LabKit folder as an application runtime folder. Keep source data and
 exported results in separate project folders; routine users do not need to
@@ -88,6 +88,7 @@ Apps use this shape:
 ```text
 apps/<family>/<app_slug>/labkit_<AppName>_app.m
 apps/<family>/<app_slug>/+<app_slug>/requirements.m
+apps/<family>/<app_slug>/+<app_slug>/version.m
 apps/<family>/<app_slug>/+<app_slug>/run.m
 apps/<family>/<app_slug>/+<app_slug>/+ui/buildSpec.m
 ```
@@ -96,6 +97,12 @@ apps/<family>/<app_slug>/+<app_slug>/+ui/buildSpec.m
 entrypoints return this struct for the lightweight `"requirements"` request and
 check facade contracts before normal or debug launch. Apps do not declare their
 own package metadata or solve dependencies.
+
+`version.m` declares the app's own visible version, display name, family, and
+last version-change date. Public app entrypoints return it for the lightweight
+`"version"` request, and app windows include the version and date in their
+figure title. When an app's code or app-facing behavior changes, update that
+app version metadata in the same change.
 
 For nontrivial apps, `buildSpec.m` should make the page hierarchy obvious at
 the top of the file. Keep the app constructor shallow, then use local builder

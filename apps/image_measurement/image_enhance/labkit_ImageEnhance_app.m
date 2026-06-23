@@ -2,8 +2,9 @@ function varargout = labkit_ImageEnhance_app(varargin)
 %LABKIT_IMAGEENHANCE_APP Image enhancement and color matching app for figures.
 
     requirements = image_enhance.requirements();
+    appVersion = image_enhance.version();
     [requestHandled, requestOutputs, debugLog] = labkit.ui.app.dispatchRequest( ...
-        'labkit_ImageEnhance_app', varargin, nargout, "Requirements", requirements);
+        'labkit_ImageEnhance_app', varargin, nargout, "Requirements", requirements, "Version", appVersion);
     if requestHandled
         varargout = requestOutputs;
         return;
@@ -19,6 +20,7 @@ function varargout = labkit_ImageEnhance_app(varargin)
     end
 
     fig = image_enhance.run(debugLog);
+    labkit.ui.app.applyVersionTitle(fig, appVersion);
     if nargout >= 1
         varargout{1} = fig;
     end

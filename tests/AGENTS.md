@@ -36,6 +36,10 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
 - Do not move app-specific formulas, expected scientific values, result schemas, or export columns into shared test helpers.
 - Keep compatibility bridge assertions isolated in named compatibility tests. Ordinary app and facade tests should prefer current canonical fields and direct package functions.
 - Unit app tests should not read app source text to prove behavior. Keep source-string scans in project guardrails.
+- Version-change guardrails belong in the project contract suite and should use
+  git changed paths plus current version APIs instead of maintaining app
+  registries by hand. They should reject malformed, unchanged, or lower
+  versions for changed versioned code.
 - Boundary tests may require app-owned logic to stay under the owning app tree, but should not require GUI-free helpers to remain inside the public app entry-point file or assert exact app-private helper file lists.
 - App-owned packages need direct unit coverage for non-UI functions such as
   `+ops`, `+view`, `+export`, `+io`, or `+state`; GUI structural tests only

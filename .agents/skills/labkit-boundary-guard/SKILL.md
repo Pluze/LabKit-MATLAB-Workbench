@@ -48,7 +48,10 @@ If this is not proven, keep the code app-local.
 For UI boundary work, prefer `labkit.ui.app.create`,
 `labkit.ui.spec.*`, named `labkit.ui.view.*` helpers,
 `labkit.ui.app.dispatchRequest`, `labkit.ui.diag.createContext`, and
-`labkit.ui.tool.createRuntime`. Keep primitive builders private; do not expose
+`labkit.ui.tool.createRuntime`. App version metadata stays in app-owned
+`version.m` files; reusable UI may format or apply that title, but
+`labkit.contract` should not become an app metadata registry. Keep primitive
+builders private; do not expose
 public `labkit.ui.spec.button`, `dropdown`, `slider`, `listbox`, `table`,
 `axes`, or similar MATLAB primitive constructors. Do not reintroduce
 `createShell` or legacy `view.section/form/panel/axes/draw/update/place` APIs.

@@ -6,6 +6,9 @@ function [handled, outputs, debugContext] = dispatchRequest(appName, args, nout,
 %       "labkit_Example_app", varargin, nargout);
 %   [handled, outputs, debug] = labkit.ui.app.dispatchRequest( ...
 %       "labkit_Example_app", varargin, nargout, "Requirements", req);
+%   [handled, outputs, debug] = labkit.ui.app.dispatchRequest( ...
+%       "labkit_Example_app", varargin, nargout, ...
+%       "Requirements", req, "Version", info);
 %
 % Inputs:
 %   appName - app entry-point name used to build app-scoped error IDs.
@@ -13,12 +16,13 @@ function [handled, outputs, debugContext] = dispatchRequest(appName, args, nout,
 %   nout - requested output count from the app entry point.
 %   Name-value options:
 %       Requirements - optional struct returned by app requirements().
+%       Version - optional struct returned by app version().
 %
 % Outputs:
-%   handled - true only when the lightweight "requirements" request is
-%       consumed; false for normal and debug launches.
-%   outputs - one-cell output containing the requirements struct for the
-%       "requirements" request; empty otherwise.
+%   handled - true only when a lightweight request such as "requirements" or
+%       "version" is consumed; false for normal and debug launches.
+%   outputs - one-cell output containing the requested app struct for handled
+%       lightweight requests; empty otherwise.
 %   debugContext - disabled for normal launches; enabled for "debug" launches.
 %       Debug launch requests do not consume app launch. Public app debug
 %       launches write a trace log under artifacts/debug so the last event is
@@ -54,6 +58,20 @@ function [handled, outputs, debugContext] = dispatchRequest(appName, args, nout,
         return;
     end
 
+    if request == "version"
+        if nout > 1
+            error(errorId(appName, 'TooManyOutputs'), ...
+                '%s version request returns at most one output.', appName);
+        end
+        if numel(args) > 1
+            error(errorId(appName, 'UnsupportedInput'), ...
+                '%s version request does not accept options.', appName);
+        end
+        handled = true;
+        outputs = {options.Version};
+        return;
+    end
+
     if isDebugRequest(request)
         if nout > 2
             error(errorId(appName, 'TooManyOutputs'), ...
@@ -79,7 +97,7 @@ function tf = isDebugRequest(request)
 end
 
 function options = parseOptions(varargin)
-    options = struct('Requirements', []);
+    options = struct('Requirements', [], 'Version', []);
     if isempty(varargin)
         return;
     end
@@ -92,6 +110,8 @@ function options = parseOptions(varargin)
         switch name
             case "Requirements"
                 options.Requirements = varargin{k + 1};
+            case "Version"
+                options.Version = varargin{k + 1};
             otherwise
                 error('labkit:ui:app:InvalidDispatchOptions', ...
                     'Unsupported dispatch option "%s".', name);

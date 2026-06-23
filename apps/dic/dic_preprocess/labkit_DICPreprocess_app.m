@@ -2,8 +2,9 @@ function varargout = labkit_DICPreprocess_app(varargin)
 %LABKIT_DICPREPROCESS_APP Image registration and paired-crop app for DIC workflows.
 
     requirements = dic_preprocess.requirements();
+    appVersion = dic_preprocess.version();
     [requestHandled, requestOutputs, debugLog] = labkit.ui.app.dispatchRequest( ...
-        'labkit_DICPreprocess_app', varargin, nargout, "Requirements", requirements);
+        'labkit_DICPreprocess_app', varargin, nargout, "Requirements", requirements, "Version", appVersion);
     if requestHandled
         varargout = requestOutputs;
         return;
@@ -19,6 +20,7 @@ function varargout = labkit_DICPreprocess_app(varargin)
     end
 
     fig = dic_preprocess.run(debugLog);
+    labkit.ui.app.applyVersionTitle(fig, appVersion);
     if nargout >= 1
         varargout{1} = fig;
     end

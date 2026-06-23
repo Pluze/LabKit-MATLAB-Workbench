@@ -6,13 +6,20 @@ classdef LauncherGuiTest < matlab.uitest.TestCase
             setupLabKitTestPath();
 
             apps = labkit_launcher("list");
+            info = labkit_launcher("version");
 
             testCase.verifyTrue(istable(apps), ...
                 'labkit_launcher list mode should return a table.');
+            testCase.verifyEqual(info.name, "labkit_launcher");
+            testCase.verifyMatches(info.version, "^\d+\.\d+\.\d+$");
+            testCase.verifyMatches(info.updated, "^\d{4}-\d{2}-\d{2}$");
             testCase.verifyTrue(all(ismember( ...
                 ["Command", "DisplayName", "Family", "Folder", ...
-                "RelativePath", "Description"], string(apps.Properties.VariableNames))), ...
+                "RelativePath", "Description", "Version", "Updated"], ...
+                string(apps.Properties.VariableNames))), ...
                 'labkit_launcher list mode should return the app catalog columns.');
+            testCase.verifyTrue(all(strlength(apps.Version) > 0 & strlength(apps.Updated) > 0), ...
+                'labkit_launcher list mode should expose app version and update dates.');
             testCase.verifyGreaterThan(height(apps), 0, ...
                 'labkit_launcher list mode should discover app entry points.');
         end
@@ -99,12 +106,14 @@ classdef LauncherGuiTest < matlab.uitest.TestCase
             clear labkit_launcher;
 
             apps = labkit_launcher("list");
+            info = labkit_launcher("version");
             testCase.verifyTrue(istable(apps));
             testCase.verifyEqual(height(apps), 0);
 
             fig = labkit_launcher();
             drawnow;
-            testCase.verifyEqual(string(fig.Name), "LabKit App Launcher");
+            testCase.verifyEqual(string(fig.Name), ...
+                info.displayName + " v" + info.version + " (" + info.updated + ")");
             h.assertButtonContract(fig, {'Latest', 'Release', ...
                 'Refresh App List'});
             assertNoLauncherTabs(fig);
@@ -162,8 +171,10 @@ function verify_launcher_layout()
     cleanup = onCleanup(@() h.closeAllFigures());
 
     fig = labkit_launcher();
+    info = labkit_launcher("version");
     drawnow;
-    assert(strcmp(fig.Name, 'LabKit App Launcher'), ...
+    expectedTitle = info.displayName + " v" + info.version + " (" + info.updated + ")";
+    assert(strcmp(fig.Name, expectedTitle), ...
         'labkit_launcher should return the launcher figure handle.');
     assertCompactLauncherLayout(fig);
     assertNoLauncherTabs(fig);
@@ -180,7 +191,7 @@ function verify_launcher_layout()
         'Refresh App List', 'Open Selected App', 'Open Debug', ...
         'Clean Artifacts', 'Run Code Analyzer'});
     assertUpdateButtonSplit(fig);
-    h.assertAnyTableColumns(fig, {'Family', 'App', 'Command'});
+    h.assertAnyTableColumns(fig, {'Family', 'App', 'Version', 'Updated', 'Command'});
     assertLauncherTextAreasHaveRoom(fig);
     assertInfoContains(fig, "Project structure looks complete");
     h.invokeButton(fig, 'Refresh App List');
@@ -236,8 +247,9 @@ function assertLauncherTableDensity(fig)
     tables = findall(fig, 'Type', 'uitable');
     assert(numel(tables) == 1, 'Launcher should draw one app table.');
     widths = tables(1).ColumnWidth;
-    assert(numel(widths) == 3 && isequal(widths{1}, 160) && ...
-        isequal(widths{2}, 220) && strcmp(char(string(widths{3})), 'auto'), ...
+    assert(numel(widths) == 5 && isequal(widths{1}, 150) && ...
+        isequal(widths{2}, 200) && isequal(widths{3}, 90) && ...
+        isequal(widths{4}, 110) && strcmp(char(string(widths{5})), 'auto'), ...
         'Launcher table should avoid over-wide family and app columns.');
 end
 

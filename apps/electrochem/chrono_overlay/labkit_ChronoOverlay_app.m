@@ -3,8 +3,9 @@ function varargout = labkit_ChronoOverlay_app(varargin)
 % Single-file app that composes +labkit GUI/DTA APIs and owns overlay workflow choices.
 
     requirements = chrono_overlay.requirements();
+    appVersion = chrono_overlay.version();
     [requestHandled, requestOutputs, debugLog] = labkit.ui.app.dispatchRequest( ...
-        'labkit_ChronoOverlay_app', varargin, nargout, "Requirements", requirements);
+        'labkit_ChronoOverlay_app', varargin, nargout, "Requirements", requirements, "Version", appVersion);
     if requestHandled
         varargout = requestOutputs;
         return;
@@ -19,6 +20,7 @@ function varargout = labkit_ChronoOverlay_app(varargin)
     end
 
     fig = chrono_overlay.run(debugLog);
+    labkit.ui.app.applyVersionTitle(fig, appVersion);
     if nargout >= 1
         varargout{1} = fig;
     end

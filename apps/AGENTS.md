@@ -21,9 +21,13 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
 - Use `labkit.ui.app.create` with `labkit.ui.spec.*` for app GUIs. Do not
   reintroduce the removed `labkit.ui.app.createShell` or legacy view helpers.
 - Use `labkit.ui.app.dispatchRequest` for debug launch routing and `labkit.ui.diag.createContext` only when an app has an app-specific nonstandard request path.
-- Each public app entrypoint should call an app package `requirements.m` and
-  pass it to `labkit.ui.app.dispatchRequest`. The only lightweight non-GUI
-  request is `"requirements"`.
+- Each public app entrypoint should call app package `requirements.m` and
+  `version.m`, pass both structs to `labkit.ui.app.dispatchRequest`, and apply
+  the version title after `run.m` returns the figure. Lightweight non-GUI
+  requests are `"requirements"` and `"version"`.
+- When app source, app-owned package code, or app-facing behavior changes,
+  update that app's `version.m` version metadata in the same change. App
+  versions use `X.Y.Z` semantic format and must only increase.
 - Debug launches should attach the Log tab text area, emit a startup trace line, and instrument high-level component callbacks after controls are built.
 - Apps with custom preview scroll, drawing, ROI, scale-bar, or other axes interaction should create a `labkit.ui.tool.createRuntime` and pass that runtime into reusable tools. Do not set preview-tool `WindowScrollWheelFcn`, `WindowButtonMotionFcn`, `WindowButtonUpFcn`, or axes `ButtonDownFcn` directly in app code.
 - DTA-backed apps use `labkit.dta.*` for discovery, loading, sessions, pulse detection, and parsed curve/table access.
