@@ -68,13 +68,15 @@ Common choices:
 
 ## CI Scope
 
-Push and pull-request CI runs repository hygiene plus parallel non-GUI MATLAB
-shards for unit and integration coverage. The shards split unit tests by
-ownership area and split integration guardrails into app-boundary and
-project/package groups. Workflow YAML calls buildfile CI shard tasks through
-`matlab-actions/run-build`; it must not maintain test-class lists or call the
-lower-level runner directly. The buildfile tasks use suite and tag filters,
-skip HTML reports for speed, and still publish JUnit summaries and logs.
+Branch-push and pull-request CI runs repository hygiene plus parallel non-GUI
+MATLAB shards for unit and integration coverage. Release tag pushes do not
+rerun the same SHA, which avoids duplicate CI after a commit has already run on
+its branch. The shards split unit tests by ownership area and split
+integration guardrails into app-boundary and project/package groups. Workflow
+YAML calls buildfile CI shard tasks through `matlab-actions/run-build`; it must
+not maintain test-class lists or call the lower-level runner directly. The
+buildfile tasks use suite and tag filters, skip HTML reports for speed, and
+still publish JUnit summaries and logs.
 MATLAB CI checkouts fetch the current commit plus its parent so version and
 changed-file guardrails have a stable `HEAD^` baseline on push and pull-request
 runs.

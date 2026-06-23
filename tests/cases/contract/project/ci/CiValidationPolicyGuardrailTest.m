@@ -78,18 +78,26 @@ classdef CiValidationPolicyGuardrailTest < matlab.unittest.TestCase
                 "LabKit:Tests:UnmatchedTestSelector");
         end
 
-        function ciPushAndPullRequestsRunOnAllBranches(testCase)
+        function ciBranchPushesAndPullRequestsAvoidDuplicateTagRuns(testCase)
             root = setupLabKitTestPath();
             workflowPath = fullfile(root, ".github", "workflows", ...
                 "matlab-tests.yml");
             workflow = char(fileread(workflowPath));
+            pushEvent = extractWorkflowEvent(workflow, "push");
+            pullRequestEvent = extractWorkflowEvent(workflow, "pull_request");
 
-            testCase.verifyTrue(isempty(regexp(workflow, ...
-                '(?m)^  push:\s*\n\s+branches:', 'once')), ...
-                'Push workflows should run on every branch, not only main.');
+            testCase.verifyTrue(contains(pushEvent, "branches:"), ...
+                'Push workflows should target branch refs so tag pushes do not duplicate CI.');
+            testCase.verifyTrue(~isempty(regexp(char(pushEvent), ...
+                "(?m)^\s+- '\*\*'\s*$", 'once')), ...
+                'Push workflows should run on all branches.');
+            testCase.verifyFalse(contains(pushEvent, "tags:"), ...
+                'Release tag pushes should not trigger duplicate CI for an already-tested commit.');
             testCase.verifyTrue(isempty(regexp(workflow, ...
                 '(?m)^  pull_request:\s*\n\s+branches:', 'once')), ...
                 'Pull request workflows should run for every target branch.');
+            testCase.verifyGreaterThan(strlength(pullRequestEvent), 0, ...
+                'Pull request workflow trigger should remain present.');
         end
 
         function ciMatlabJobsHaveTimeouts(testCase)
@@ -120,6 +128,35 @@ classdef CiValidationPolicyGuardrailTest < matlab.unittest.TestCase
             end
         end
     end
+end
+
+function event = extractWorkflowEvent(workflow, eventName)
+    lines = splitlines(string(workflow));
+    eventHeader = "  " + eventName + ":";
+    startLine = find(lines == eventHeader, 1);
+    if isempty(startLine)
+        event = "";
+        return;
+    end
+
+    stopLine = numel(lines);
+    for k = startLine + 1:numel(lines)
+        line = lines(k);
+        trimmed = strtrim(line);
+        if strlength(trimmed) == 0
+            continue;
+        end
+        if ~startsWith(line, " ")
+            stopLine = k - 1;
+            break;
+        end
+        if startsWith(line, "  ") && ~startsWith(line, "    ") && ...
+                endsWith(line, ":")
+            stopLine = k - 1;
+            break;
+        end
+    end
+    event = strjoin(lines(startLine:stopLine), newline);
 end
 
 function job = extractWorkflowJob(workflow, jobName)
