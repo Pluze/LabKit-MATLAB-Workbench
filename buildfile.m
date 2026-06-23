@@ -34,7 +34,7 @@ function catalog = taskCatalog()
     catalog = [ ...
         taskSpec("changed", "Run conservative changed-file validation.", "Plan", "changed", "HtmlReport", false), ...
         taskSpec("headless", "Run the full non-GUI validation set.", "IncludeGui", false), ...
-        taskSpec("gui", "Run noninteractive GUI launch, layout, and gesture checks.", "Suites", "gui", "IncludeGui", true), ...
+        taskSpec("gui", "Run noninteractive GUI launch, layout, and gesture checks.", "Suites", "gui", "IncludeGui", true, "GuiMode", "hidden"), ...
         taskSpec("coverage", "Run official tests with coverage artifacts.", "Tags", ["Unit", "Integration"], "IncludeCoverage", true), ...
         taskSpec("listTasks", "List official LabKit build tasks.", "RunTests", false)];
 end
@@ -49,6 +49,7 @@ function spec = taskSpec(name, description, varargin)
     p.addParameter("IncludeGui", [], @isEmptyOrLogicalScalar);
     p.addParameter("IncludeCoverage", [], @isEmptyOrLogicalScalar);
     p.addParameter("HtmlReport", [], @isEmptyOrLogicalScalar);
+    p.addParameter("GuiMode", "", @isTextScalar);
     p.addParameter("Required", true, @isLogicalScalar);
     p.parse(varargin{:});
 
@@ -63,6 +64,7 @@ function spec = taskSpec(name, description, varargin)
         "IncludeGui", normalizeOptionalLogical(p.Results.IncludeGui), ...
         "IncludeCoverage", normalizeOptionalLogical(p.Results.IncludeCoverage), ...
         "HtmlReport", normalizeOptionalLogical(p.Results.HtmlReport), ...
+        "GuiMode", string(p.Results.GuiMode), ...
         "Required", runTests && logical(p.Results.Required));
 end
 
@@ -106,6 +108,9 @@ function args = taskRunArguments(spec)
     end
     if ~isempty(spec.HtmlReport)
         args = [args, {"HtmlReport", spec.HtmlReport}];
+    end
+    if strlength(spec.GuiMode) > 0
+        args = [args, {"GuiMode", spec.GuiMode}];
     end
 end
 

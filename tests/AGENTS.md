@@ -60,6 +60,10 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
   source areas, or the user explicitly asks for a release/full gate.
 - Stop an accidentally overbroad GUI run when it is not needed; GUI tests can
   steal focus and should be treated as a scarce validation resource.
+- Official GUI build tasks should run with hidden test windows by default.
+  Hidden mode must still create real MATLAB figures and controls rather than
+  mock GUI objects; visible or minimized GUI mode is for observing the same
+  automated checks during local diagnosis.
 
 ## Fixture and Hygiene Rules
 

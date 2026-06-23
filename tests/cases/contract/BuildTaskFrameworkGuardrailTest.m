@@ -211,6 +211,30 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
 
         end
 
+        function guiBuildTaskRunsHiddenByDefault(testCase)
+            root = setupLabKitTestPath();
+            taskSpecs = parseRunnableTaskSpecs(root);
+            guiSpec = taskSpecs([taskSpecs.Name] == "gui");
+            testCase.assertEqual(numel(guiSpec), 1, ...
+                "Build task catalog should contain one gui task spec.");
+            testCase.verifyEqual(taskSpecStringValues(guiSpec, "GuiMode"), "hidden", ...
+                "buildtool gui should keep automated GUI windows hidden by default.");
+
+            runnerSource = string(fileread(fullfile(root, "tests", "runLabKitTests.m")));
+            guiModeSource = string(fileread(fullfile(root, "tests", ...
+                "runner", "labkitGuiTestMode.m")));
+            required = [ ...
+                contains(runnerSource, "p.addParameter(""GuiMode"", labkitDefaultGuiMode()"), ...
+                contains(runnerSource, "restoreGuiMode = labkitGuiTestMode(opts.GuiMode)"), ...
+                contains(guiModeSource, "setenv(""LABKIT_GUI_TEST_MODE"""), ...
+                contains(guiModeSource, "set(groot, ""DefaultFigureVisible"", ""off"")") ...
+            ];
+            for k = 1:numel(required)
+                testCase.verifyTrue(required(k), ...
+                    "Runner should preserve hidden GUI test mode support.");
+            end
+        end
+
         function testFilesUseKnownTags(testCase)
             root = setupLabKitTestPath();
             allowedTags = ["Unit", "Integration", "GUI", "Structural", ...
@@ -340,6 +364,7 @@ function args = taskSpecArguments(line)
     args = appendStringListArgument(args, line, "Suites");
     args = appendStringListArgument(args, line, "Plan");
     args = appendStringListArgument(args, line, "Tags");
+    args = appendStringListArgument(args, line, "GuiMode");
     args = appendLogicalArgument(args, line, "IncludeGui");
     args = appendLogicalArgument(args, line, "IncludeCoverage");
     args = appendLogicalArgument(args, line, "HtmlReport");

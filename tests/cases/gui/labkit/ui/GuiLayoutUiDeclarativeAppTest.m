@@ -6,6 +6,28 @@ classdef GuiLayoutUiDeclarativeAppTest < matlab.uitest.TestCase
             setupLabKitTestPath();
             verify_gui_layout_ui_declarative_app();
         end
+
+        function app_builder_respects_hidden_gui_test_mode(testCase)
+            setupLabKitTestPath();
+            h = guiTestHelpers();
+            h.assertUifigureAvailable();
+            cleanupMode = setGuiTestModeForTest("hidden");
+            cleanupFigures = onCleanup(@() h.closeAllFigures());
+
+            spec = labkit.ui.spec.app('hiddenModeProbe', 'Hidden Mode Probe', ...
+                'controlTabs', {labkit.ui.spec.tab('setup', 'Setup', { ...
+                labkit.ui.spec.section('actions', 'Actions', { ...
+                labkit.ui.spec.action('run', 'Run', @noop)})})}, ...
+                'workspace', labkit.ui.spec.workspace('workspace', ...
+                'Preview', {labkit.ui.spec.previewArea('preview', 'Preview')}));
+
+            ui = labkit.ui.app.create(spec);
+            drawnow;
+            testCase.verifyEqual(string(ui.figure.Visible), "off", ...
+                "LABKIT_GUI_TEST_MODE=hidden should keep app test figures off screen.");
+            clear cleanupMode cleanupFigures
+            h.closeAllFigures();
+        end
     end
 end
 
@@ -406,4 +428,10 @@ function removeTempFolder(folder)
     if isfolder(folder)
         rmdir(folder, 's');
     end
+end
+
+function cleanup = setGuiTestModeForTest(mode)
+    previous = getenv('LABKIT_GUI_TEST_MODE');
+    setenv('LABKIT_GUI_TEST_MODE', char(mode));
+    cleanup = onCleanup(@() setenv('LABKIT_GUI_TEST_MODE', previous));
 end

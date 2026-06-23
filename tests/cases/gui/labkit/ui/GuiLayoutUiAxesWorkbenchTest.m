@@ -83,6 +83,10 @@ function verify_gui_layout_ui_axes_workbench()
     drawnow;
     popoutFig = findall(groot, 'Type', 'figure', 'Name', 'Probe Plot');
     assert(~isempty(popoutFig), 'Axes popout menu should create a standalone plot figure.');
+    if string(getenv('LABKIT_GUI_TEST_MODE')) == "hidden"
+        assert(strcmp(popoutFig(1).Visible, 'off'), ...
+            'Axes popout should stay hidden during hidden GUI test runs.');
+    end
     popoutCleaner = onCleanup(@() delete(popoutFig(1)));
     popoutAxes = findobj(popoutFig(1), 'Type', 'axes');
     assert(numel(popoutAxes) >= 1 && ~isempty(popoutAxes(1).Children), ...
@@ -122,6 +126,10 @@ function verify_gui_layout_ui_axes_workbench()
     drawnow;
     imagePopoutFig = findall(groot, 'Type', 'figure', 'Name', 'Image Probe');
     assert(~isempty(imagePopoutFig), 'Image axes popout should create a standalone figure.');
+    if string(getenv('LABKIT_GUI_TEST_MODE')) == "hidden"
+        assert(strcmp(imagePopoutFig(1).Visible, 'off'), ...
+            'Image axes popout should stay hidden during hidden GUI test runs.');
+    end
     imageCleaner = onCleanup(@() delete(imagePopoutFig(1)));
     imagePopoutAxes = findobj(imagePopoutFig(1), 'Type', 'axes');
     assert(numel(imagePopoutAxes) >= 1, 'Image popout should create copied axes.');

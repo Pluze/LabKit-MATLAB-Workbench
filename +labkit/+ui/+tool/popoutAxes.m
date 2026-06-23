@@ -20,7 +20,12 @@ function newFig = popoutAxes(srcAx)
         titleText = "LabKit Plot";
     end
 
-    newFig = figure('Name', char(titleText), 'Color', 'w');
+    figArgs = {'Name', char(titleText), 'Color', 'w'};
+    if guiTestMode() == "hidden"
+        figArgs = [figArgs, {'Visible', 'off'}];
+    end
+    newFig = figure(figArgs{:});
+    applyGuiTestMode(newFig);
     dstAx = axes('Parent', newFig);
     copyAxesState(srcAx, dstAx);
 
@@ -29,6 +34,22 @@ function newFig = popoutAxes(srcAx)
         copyobj(children, dstAx);
     end
     applyAxesState(srcAx, dstAx);
+end
+
+function mode = guiTestMode()
+    mode = lower(strtrim(string(getenv('LABKIT_GUI_TEST_MODE'))));
+    if ~any(mode == ["hidden", "minimized"])
+        mode = "visible";
+    end
+end
+
+function applyGuiTestMode(fig)
+    if guiTestMode() == "minimized" && isprop(fig, 'WindowState')
+        try
+            fig.WindowState = 'minimized';
+        catch
+        end
+    end
 end
 
 function copyAxesState(srcAx, dstAx)

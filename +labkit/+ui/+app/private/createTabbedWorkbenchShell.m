@@ -32,7 +32,12 @@ function ui = createTabbedWorkbenchShell(figName, figPosition, leftWidth, labels
     end
 
     ui = struct();
-    ui.fig = uifigure('Name', figName, 'Position', figPosition);
+    figArgs = {'Name', figName, 'Position', figPosition};
+    if guiTestMode() == "hidden"
+        figArgs = [figArgs, {'Visible', 'off'}];
+    end
+    ui.fig = uifigure(figArgs{:});
+    applyGuiTestMode(ui.fig);
 
     ui.main = uigridlayout(ui.fig, [1 3]);
     ui.main.ColumnWidth = {leftWidth, 6, '1x'};
@@ -96,6 +101,22 @@ function ui = createTabbedWorkbenchShell(figName, figPosition, leftWidth, labels
     attachColumnResize(ui.fig, ui.main, 1, 2, ...
         struct('minWidth', 260, 'rightReserve', 360, 'separatorWidth', 6, ...
         'onTrace', debugTrace(debug)));
+end
+
+function mode = guiTestMode()
+    mode = lower(strtrim(string(getenv('LABKIT_GUI_TEST_MODE'))));
+    if ~any(mode == ["hidden", "minimized"])
+        mode = "visible";
+    end
+end
+
+function applyGuiTestMode(fig)
+    if guiTestMode() == "minimized" && isprop(fig, 'WindowState')
+        try
+            fig.WindowState = 'minimized';
+        catch
+        end
+    end
 end
 
 function [tab, panel] = createScrollableTab(parent, titleText)

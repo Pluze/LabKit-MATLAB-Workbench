@@ -65,8 +65,13 @@ function fig = runLauncher(root, apps)
     panelFontSize = 15;
     tableFontSize = 15;
 
-    fig = uifigure('Name', 'LabKit App Launcher', ...
-        'Position', [150 130 1260 620], 'Color', [0.97 0.98 0.99]);
+    figArgs = {'Name', 'LabKit App Launcher', ...
+        'Position', [150 130 1260 620], 'Color', [0.97 0.98 0.99]};
+    if launcherGuiTestMode() == "hidden"
+        figArgs = [figArgs, {'Visible', 'off'}];
+    end
+    fig = uifigure(figArgs{:});
+    applyLauncherGuiTestMode(fig);
     main = uigridlayout(fig, [1 3]);
     main.ColumnWidth = {360, 5, '1x'};
     main.RowHeight = {'1x'};
@@ -982,6 +987,22 @@ function assertNotGitCheckout(root)
     if exist(fullfile(root, ".git"), "dir") == 7
         error("labkit_launcher:GitCheckout", ...
             "Update from GitHub zip is disabled for git checkouts. Use git to sync this working tree.");
+    end
+end
+
+function mode = launcherGuiTestMode()
+    mode = lower(strtrim(string(getenv('LABKIT_GUI_TEST_MODE'))));
+    if ~any(mode == ["hidden", "minimized"])
+        mode = "visible";
+    end
+end
+
+function applyLauncherGuiTestMode(fig)
+    if launcherGuiTestMode() == "minimized" && isprop(fig, 'WindowState')
+        try
+            fig.WindowState = 'minimized';
+        catch
+        end
     end
 end
 

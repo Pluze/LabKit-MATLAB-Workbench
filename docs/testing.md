@@ -40,7 +40,7 @@ buildtool listTasks
 | --- | --- |
 | `changed` | Fast local validation selected from changed and untracked files. |
 | `headless` | Full non-GUI validation. |
-| `gui` | Noninteractive GUI launch, layout, callback, and gesture checks. |
+| `gui` | Noninteractive GUI launch, layout, callback, and gesture checks. GUI windows are hidden by default. |
 
 Report and discovery tasks:
 
@@ -117,6 +117,11 @@ Automated GUI tests check:
 - callback wiring
 - debug trace plumbing
 - reusable tool lifecycle
+
+`buildtool gui` runs with hidden test windows by default while still creating
+real MATLAB figures, controls, callbacks, and layout trees. The setting is
+scoped to the MATLAB test process; visible or minimized GUI mode is only for
+local diagnosis, and manual app work should not share that MATLAB session.
 
 They do not prove:
 

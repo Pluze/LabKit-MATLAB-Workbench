@@ -14,6 +14,7 @@ function output = runLabKitTests(varargin)
 %   ExcludeTags     Official test tags to exclude.
 %   Plan            Named serial plan: changed, ui, apps, or project.
 %   IncludeCoverage Generate Cobertura and HTML coverage artifacts.
+%   GuiMode         GUI test window mode: hidden, minimized, or visible.
 %   HtmlReport      Generate the official HTML test report. Default true.
 %   FailIfNoTests   Error when no official tests match.
 %   ArtifactsRoot   Root artifact directory.
@@ -27,10 +28,11 @@ function output = runLabKitTests(varargin)
     opts = parseOptions(root, varargin{:});
     restoreRunName = setRunNameEnvironment(opts.RunName);
     restoreArtifactsRoot = setArtifactsRootEnvironment(opts.ArtifactsRoot);
+    restoreGuiMode = labkitGuiTestMode(opts.GuiMode);
 
     if strlength(opts.Plan) > 0
         output = runValidationPlan(root, opts);
-        clear restoreRunName restoreArtifactsRoot
+        clear restoreRunName restoreArtifactsRoot restoreGuiMode
         return;
     end
 
@@ -54,7 +56,7 @@ function output = runLabKitTests(varargin)
             "listOnly", true, ...
             "count", height(listing), ...
             "tests", listing);
-        clear restoreRunName restoreArtifactsRoot
+        clear restoreRunName restoreArtifactsRoot restoreGuiMode
         return;
     end
 
@@ -100,7 +102,7 @@ function output = runLabKitTests(varargin)
         "official", officialResults, ...
         "artifacts", paths, ...
         "runName", opts.RunName);
-    clear restoreRunName restoreArtifactsRoot
+    clear restoreRunName restoreArtifactsRoot restoreGuiMode
 end
 
 function cleanup = setRunNameEnvironment(runName)
@@ -125,6 +127,7 @@ function opts = parseOptions(root, varargin)
     p.addParameter("ExcludeTags", strings(1, 0), @isStringLikeList);
     p.addParameter("Plan", "", @isTextScalar);
     p.addParameter("IncludeCoverage", false, @isLogicalScalar);
+    p.addParameter("GuiMode", labkitDefaultGuiMode(), @isTextScalar);
     p.addParameter("HtmlReport", true, @isLogicalScalar);
     p.addParameter("FailIfNoTests", true, @isLogicalScalar);
     p.addParameter("ArtifactsRoot", fullfile(root, "artifacts"), @isTextScalar);
@@ -137,6 +140,7 @@ function opts = parseOptions(root, varargin)
     opts = p.Results;
     opts.IncludeGui = logical(opts.IncludeGui);
     opts.IncludeCoverage = logical(opts.IncludeCoverage);
+    opts.GuiMode = labkitNormalizeGuiMode(opts.GuiMode);
     opts.HtmlReport = logical(opts.HtmlReport);
     opts.FailIfNoTests = logical(opts.FailIfNoTests);
     opts.ListOnly = logical(opts.ListOnly);
@@ -182,6 +186,7 @@ function output = runValidationPlan(root, opts)
             "FailIfNoTests", opts.FailIfNoTests, ...
             "ArtifactsRoot", opts.ArtifactsRoot, ...
             "RunName", stepRunName, ...
+            "GuiMode", opts.GuiMode, ...
             "ListOnly", opts.ListOnly, ...
             "OutputDetail", opts.OutputDetail, ...
             "LoggingLevel", opts.LoggingLevel, ...
