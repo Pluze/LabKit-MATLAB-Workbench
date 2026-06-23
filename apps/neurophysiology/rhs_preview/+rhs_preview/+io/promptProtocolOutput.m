@@ -6,11 +6,10 @@ function outputPath = promptProtocolOutput(defaultFolder)
     if nargin < 1 || strlength(string(defaultFolder)) == 0
         defaultFolder = tempdir;
     end
-    [file, folder] = uiputfile({'*.json', 'Protocol JSON'}, ...
-        'Save RHS protocol', fullfile(char(defaultFolder), 'rhs_protocol_draft.json'));
-    if isequal(file, 0) || isequal(folder, 0)
+    [outputPath, cancelled] = labkit.ui.app.promptOutputFile( ...
+        {'*.json', 'Protocol JSON'}, 'Save RHS protocol', ...
+        fullfile(char(defaultFolder), 'rhs_protocol_draft.json'));
+    if cancelled
         outputPath = "";
-    else
-        outputPath = string(fullfile(folder, file));
     end
 end

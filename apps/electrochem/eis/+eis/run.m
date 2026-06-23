@@ -179,17 +179,16 @@ function fig = run(debugLog)
             return;
         end
 
-        [f, p] = uiputfile('gamry_eis_plot_export.csv', 'Save current X/Y plot CSV', ...
-            fullfile(labkit.ui.app.defaultDialogFolder("output"), ...
-            'gamry_eis_plot_export.csv'));
-        if isequal(f, 0)
+        [out, cancelled] = labkit.ui.app.promptOutputFile( ...
+            'gamry_eis_plot_export.csv', 'Save current X/Y plot CSV', ...
+            'gamry_eis_plot_export.csv');
+        if cancelled
             return;
         end
 
         T = eis.export.buildExportTable(items, ddX.Value, ddY.Value, cbLogX.Value, cbLogY.Value);
-        out = fullfile(p, f);
         writetable(T, out);
-        addLog(sprintf('Exported CSV: %s', out));
+        addLog(sprintf('Exported CSV: %s', char(out)));
     end
 
     function addLog(msg)

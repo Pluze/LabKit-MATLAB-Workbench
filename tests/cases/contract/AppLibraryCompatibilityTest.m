@@ -197,7 +197,7 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
             forbiddenPatterns = [
                 "\bpwd\b"
                 "uigetdir\s*\(\s*pwd"
-                "uiputfile\s*\([^,\n]+,\s*[^,\n]+\)"];
+                "uiputfile\s*\("];
             findings = strings(0, 1);
 
             for k = 1:numel(appFiles)
@@ -212,7 +212,8 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
 
             testCase.verifyEmpty(findings, ...
                 "Apps should not default file dialogs or exports into the LabKit " + ...
-                "runtime folder; use pathPanel or labkit.ui.app.defaultDialogFolder: " + ...
+                "runtime folder; use pathPanel, labkit.ui.app.defaultDialogFolder, " + ...
+                "or labkit.ui.app.promptOutputFile: " + ...
                 strjoin(findings, "; "));
         end
     end

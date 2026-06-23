@@ -16,6 +16,7 @@ function verify_imageCurvatureMeasurement()
     checkPixelAndTypedScaleModes();
     checkCurveLengthMeasurement();
     checkDensifyUsesCurvePath();
+    checkTaskFingerprintsTrackInputs();
     checkInvalidCurvePoints();
 end
 
@@ -128,6 +129,40 @@ function checkDensifyUsesCurvePath()
         'Densified fit points should follow the displayed curve path, not the anchor chord.');
     assertClose(fit.curveLength_px, 2 * hypot(10, 10), 1e-9, ...
         'Curve-path fit should measure length along the displayed curve path.');
+end
+
+function checkTaskFingerprintsTrackInputs()
+    points = [0 0; 10 0; 20 10];
+    fitPath = [0 0; 5 5; 10 0; 20 10];
+    calibration = curvature.ops.normalizeScaleCalibration( ...
+        10, 2, 'mm', struct('referenceLine', [0 0; 10 0]));
+
+    fitTask = curvature.state.fitTask(points, fitPath, calibration, ...
+        struct('doDensify', true, 'denseN', 25));
+    sameFitTask = curvature.state.fitTask(points, fitPath, calibration, ...
+        struct('doDensify', true, 'denseN', 25));
+    changedFitTask = curvature.state.fitTask(points, fitPath, calibration, ...
+        struct('doDensify', false, 'denseN', 25));
+
+    assert(fitTask.fingerprint == sameFitTask.fingerprint, ...
+        'Identical curvature fit tasks should keep a stable fingerprint.');
+    assert(fitTask.fingerprint ~= changedFitTask.fingerprint, ...
+        'Changed densify options should invalidate curvature fit tasks.');
+    assert(isequal(fitTask.points, points), ...
+        'Fit task should preserve anchor points.');
+    assert(isequal(fitTask.fitPath, fitPath), ...
+        'Fit task should preserve displayed fit path.');
+
+    lengthTask = curvature.state.lengthTask(points, fitPath, calibration);
+    changedLengthTask = curvature.state.lengthTask(points + [0 1], fitPath, calibration);
+    changedPathTask = curvature.state.lengthTask(points, points, calibration);
+
+    assert(lengthTask.fingerprint ~= changedLengthTask.fingerprint, ...
+        'Changed anchor points should invalidate curvature length tasks.');
+    assert(lengthTask.fingerprint ~= changedPathTask.fingerprint, ...
+        'Changed displayed path should invalidate curvature length tasks.');
+    assert(isequal(lengthTask.lengthPath, fitPath), ...
+        'Length task should preserve displayed length path.');
 end
 
 function checkInvalidCurvePoints()

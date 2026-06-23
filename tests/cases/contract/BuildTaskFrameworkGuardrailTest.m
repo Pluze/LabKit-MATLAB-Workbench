@@ -101,6 +101,20 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
                 "Plan=list-only mode should still discover tests.");
         end
 
+        function changedValidationPlanAcceptsParentGitRefs(testCase)
+            setupLabKitTestPath();
+
+            output = listLabKitTestsQuietly( ...
+                "Plan", "changed", ...
+                "HtmlReport", false, ...
+                "RunName", "changed_plan_parent_ref_probe");
+
+            testCase.verifyEqual(output.plan, "changed", ...
+                "Changed plan should report the selected validation plan.");
+            testCase.verifyGreaterThan(output.count, 0, ...
+                "Changed plan should discover tests when using HEAD or HEAD^ refs.");
+        end
+
         function affectedValidationMapperCoversSharedUiAndAppChanges(testCase)
             root = setupLabKitTestPath();
 

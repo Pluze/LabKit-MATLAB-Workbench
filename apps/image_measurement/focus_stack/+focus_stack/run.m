@@ -238,11 +238,10 @@ function fig = run(debugLog)
 
     function filepath = chooseSavePath(titleText, defaultName)
         defaultPath = fullfile(defaultSaveFolder(), defaultName);
-        [fn, fp] = uiputfile({'*.png;*.csv', 'Export files'}, titleText, defaultPath);
-        if isequal(fn, 0)
+        [filepath, cancelled] = labkit.ui.app.promptOutputFile( ...
+            {'*.png;*.csv', 'Export files'}, titleText, defaultPath);
+        if cancelled
             filepath = "";
-        else
-            filepath = string(fullfile(fp, fn));
         end
     end
 

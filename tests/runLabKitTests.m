@@ -453,7 +453,7 @@ end
 function paths = gitChangedPaths(root, baseRef, pathspecs)
     ref = validateGitRef(baseRef);
     command = "git -C " + shellDoubleQuote(root) + ...
-        " diff --name-only --diff-filter=ACMRTUXB " + ref;
+        " diff --name-only --diff-filter=ACMRTUXB " + shellDoubleQuote(ref);
     if ~isempty(pathspecs)
         command = command + " -- " + strjoin(pathspecs, " ");
     end
@@ -472,7 +472,7 @@ end
 function tf = gitRefExists(root, ref)
     ref = validateGitRef(ref);
     command = "git -C " + shellDoubleQuote(root) + ...
-        " rev-parse --verify --quiet " + ref;
+        " rev-parse --verify --quiet " + shellDoubleQuote(ref);
     [status, ~] = system(char(command));
     tf = status == 0;
 end
@@ -497,7 +497,8 @@ function ref = validateGitRef(baseRef)
     end
 
     chars = char(ref);
-    allowed = isstrprop(chars, "alphanum") | ismember(chars, "./_@{}^-~");
+    allowedRefChars = './_@{}^-~';
+    allowed = isstrprop(chars, "alphanum") | ismember(chars, allowedRefChars);
     if ~all(allowed)
         error("LabKit:Tests:InvalidGitRef", ...
             "Changed-file validation git ref contains unsupported shell characters.");

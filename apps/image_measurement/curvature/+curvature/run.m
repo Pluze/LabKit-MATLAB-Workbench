@@ -13,6 +13,8 @@ function fig = run(debugLog)
     S.curveEditActive = false;
     S.fit = curvature.state.emptyFitResult();
     S.length = curvature.state.emptyLengthResult();
+    S.lastFitFingerprint = "";
+    S.lastLengthFingerprint = "";
 
     callbacks = struct( ...
         'onOpenImage', @onOpenImage, ...
@@ -95,6 +97,7 @@ function fig = run(debugLog)
         S.curveEditor = [];
         S.fit = curvature.state.emptyFitResult();
         S.length = curvature.state.emptyLengthResult();
+        clearTaskFingerprints();
         txtImage.Value = char(filepath);
         addLog(sprintf('Loaded image: %s', filepath));
         refreshAll();
@@ -121,6 +124,7 @@ function fig = run(debugLog)
         ensureCurveEditor();
         S.curveEditor.start([S.xPix(:), S.yPix(:)]);
         S.fit = curvature.state.emptyFitResult();
+        S.lastFitFingerprint = "";
         addLog('Started curve edit. Double-click blank image space to add/insert points; drag points to move; double-click a point to delete it.');
         refreshAll();
     end
@@ -130,6 +134,7 @@ function fig = run(debugLog)
         S.yPix = points(:, 2);
         S.fit = curvature.state.emptyFitResult();
         S.length = curvature.state.emptyLengthResult();
+        clearTaskFingerprints();
         refreshSummary();
         if any(strcmp(reason, {'add point', 'delete point', 'move point'}))
             addLog(sprintf('Curve edit updated: %d point(s).', numel(S.xPix)));
@@ -150,6 +155,7 @@ function fig = run(debugLog)
             S.yPix = [];
             S.fit = curvature.state.emptyFitResult();
             S.length = curvature.state.emptyLengthResult();
+            clearTaskFingerprints();
             refreshAll();
         end
         addLog('Cleared curve points.');
@@ -165,6 +171,7 @@ function fig = run(debugLog)
     function onReferenceEditChanged(~, reason)
         S.fit = curvature.state.emptyFitResult();
         S.length = curvature.state.emptyLengthResult();
+        clearTaskFingerprints();
         reasonText = char(string(reason));
         if strcmp(reasonText, 'start')
             addLog('Started reference-pixel edit. Double-click two endpoints, then drag endpoints to refine.');
@@ -195,10 +202,23 @@ function fig = run(debugLog)
 
         try
             fitPath = currentCurveFitPoints();
-            S.fit = curvature.ops.computeCurvatureFit(S.xPix, S.yPix, scaleTool.calibration(), ...
-                chkDensify.Value, round(edtDenseN.Value), ...
-                fitPath(:, 1), fitPath(:, 2));
+            task = curvature.state.fitTask([S.xPix(:), S.yPix(:)], ...
+                fitPath, scaleTool.calibration(), struct( ...
+                'doDensify', chkDensify.Value, ...
+                'denseN', round(edtDenseN.Value)));
+            if S.fit.ok && S.lastFitFingerprint == task.fingerprint
+                addLog('Curvature fit already matches current curve and scale.');
+                refreshSummary();
+                return;
+            end
+
+            S.fit = curvature.ops.computeCurvatureFit( ...
+                task.points(:, 1), task.points(:, 2), task.calibration, ...
+                task.options.doDensify, task.options.denseN, ...
+                task.fitPath(:, 1), task.fitPath(:, 2));
             S.length = curvature.state.lengthResultFromFit(S.fit);
+            S.lastFitFingerprint = task.fingerprint;
+            S.lastLengthFingerprint = "";
         catch ME
             showError('Circle fit failed', ME.message);
             return;
@@ -219,10 +239,19 @@ function fig = run(debugLog)
             return;
         end
 
-        points = currentCurveLengthPoints();
         try
-            S.length = curvature.ops.computeCurveLength(points(:, 1), points(:, 2), ...
-                scaleTool.calibration());
+            points = currentCurveLengthPoints();
+            task = curvature.state.lengthTask([S.xPix(:), S.yPix(:)], ...
+                points, scaleTool.calibration());
+            if S.length.ok && S.lastLengthFingerprint == task.fingerprint
+                addLog('Curve length already matches current curve and scale.');
+                refreshSummary();
+                return;
+            end
+
+            S.length = curvature.ops.computeCurveLength( ...
+                task.lengthPath(:, 1), task.lengthPath(:, 2), task.calibration);
+            S.lastLengthFingerprint = task.fingerprint;
         catch ME
             showError('Curve length failed', ME.message);
             return;
@@ -239,15 +268,13 @@ function fig = run(debugLog)
             return;
         end
 
-        [fn, fp] = uiputfile('*.csv', 'Export curvature result CSV', ...
-            fullfile(labkit.ui.app.defaultDialogFolder("output"), ...
-            'curvature_result.csv'));
-        if isequal(fn, 0)
+        [filepath, cancelled] = labkit.ui.app.promptOutputFile( ...
+            '*.csv', 'Export curvature result CSV', 'curvature_result.csv');
+        if cancelled
             addLog('Export result CSV cancelled.');
             return;
         end
 
-        filepath = string(fullfile(fp, fn));
         try
             T = curvature.export.buildResultTable(S.fit, S.imagePath, S.length);
             writetable(T, filepath);
@@ -264,15 +291,13 @@ function fig = run(debugLog)
             return;
         end
 
-        [fn, fp] = uiputfile('*.png', 'Export overlay PNG', ...
-            fullfile(labkit.ui.app.defaultDialogFolder("output"), ...
-            'curvature_overlay.png'));
-        if isequal(fn, 0)
+        [filepath, cancelled] = labkit.ui.app.promptOutputFile( ...
+            '*.png', 'Export overlay PNG', 'curvature_overlay.png');
+        if cancelled
             addLog('Export overlay PNG cancelled.');
             return;
         end
 
-        filepath = string(fullfile(fp, fn));
         try
             refreshImageOverlay();
             exportgraphics(ui.topAxes, filepath, 'Resolution', 300);
@@ -308,6 +333,7 @@ function fig = run(debugLog)
     function onCalibrationSettingsChanged(~, reason)
         S.fit = curvature.state.emptyFitResult();
         S.length = curvature.state.emptyLengthResult();
+        clearTaskFingerprints();
         scaleTool.clearScaleBar();
         if curvature.ui.isReferenceEditReason(reason)
             refreshScaleReadout();
@@ -323,6 +349,11 @@ function fig = run(debugLog)
 
     function refreshImageOverlayCallback(~, ~)
         refreshImageOverlay();
+    end
+
+    function clearTaskFingerprints()
+        S.lastFitFingerprint = "";
+        S.lastLengthFingerprint = "";
     end
 
     function points = currentCurveLengthPoints()

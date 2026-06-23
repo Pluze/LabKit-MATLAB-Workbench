@@ -159,16 +159,16 @@ function fig = run(debugLog)
             return;
         end
 
-        [f, p] = uiputfile('gamry_overlay_curves.csv', 'Save overlay curves CSV', ...
-            fullfile(labkit.ui.app.defaultDialogFolder("output"), 'gamry_overlay_curves.csv'));
-        if isequal(f, 0)
+        [out, cancelled] = labkit.ui.app.promptOutputFile( ...
+            'gamry_overlay_curves.csv', 'Save overlay curves CSV', ...
+            'gamry_overlay_curves.csv');
+        if cancelled
             return;
         end
 
         T = chrono_overlay.export.buildOverlayExportTable(items);
-        out = fullfile(p, f);
         writetable(T, out);
-        addLog(sprintf('Exported CSV: %s', out));
+        addLog(sprintf('Exported CSV: %s', char(out)));
     end
 
     function opts = plotOptions()

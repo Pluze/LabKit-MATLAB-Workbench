@@ -395,19 +395,18 @@ function fig = run(debugLog)
             uialert(fig,'No results to export.','Export');
             return;
         end
-        [f,p] = uiputfile('cic_results.csv','Save results CSV', ...
-            fullfile(labkit.ui.app.defaultDialogFolder("output"), 'cic_results.csv'));
-        if isequal(f,0)
+        [out, cancelled] = labkit.ui.app.promptOutputFile( ...
+            'cic_results.csv', 'Save results CSV', 'cic_results.csv');
+        if cancelled
             return;
         end
-        out = fullfile(p,f);
         [~, unitLabel] = cic.view.displayUnit(ddCICUnit.Value);
         [ok, msg] = cic.export.writeResultsCSV(S.items, out, unitLabel);
         if ~ok
             uialert(fig,msg,'Export');
             return;
         end
-        addLog(['Exported CSV: ' out]);
+        addLog(['Exported CSV: ' char(out)]);
     end
 
     %% ===================== Logging =====================

@@ -14,6 +14,7 @@ function verify_appHookHelpers()
 
     checkDebugLog();
     checkCallbackWrapper();
+    checkPromptOutputFile();
     checkRequestDispatch();
     checkRequestErrors();
 end
@@ -140,6 +141,40 @@ function checkRequestDispatch()
         'Requirements request should return the app requirement struct without launching.');
 end
 
+function checkPromptOutputFile()
+    capturedDefault = "";
+    outputFolder = tempname(tempdir);
+    mkdir(outputFolder);
+    cleaner = onCleanup(@() cleanupFolder(outputFolder));
+
+    [filepath, cancelled, file, folder] = labkit.ui.app.promptOutputFile( ...
+        '*.csv', 'Save CSV', fullfile(pwd, 'unsafe.csv'), ...
+        'Chooser', @chooseFile);
+    assert(~cancelled, 'Output prompt helper should report a selected file.');
+    assert(filepath == string(fullfile(outputFolder, 'result.csv')), ...
+        'Output prompt helper should return a full selected path.');
+    assert(strcmp(file, 'result.csv') && strcmp(folder, outputFolder), ...
+        'Output prompt helper should preserve chooser outputs.');
+    assert(~startsWith(capturedDefault, string(testRepoRoot())), ...
+        'Output prompt helper should not default into the LabKit runtime folder.');
+
+    [filepath, cancelled] = labkit.ui.app.promptOutputFile( ...
+        '*.csv', 'Save CSV', 'result.csv', 'Chooser', @cancelFile);
+    assert(cancelled && filepath == "", ...
+        'Output prompt helper should normalize canceled chooser output.');
+
+    function [file, folder] = chooseFile(~, ~, defaultPath)
+        capturedDefault = string(defaultPath);
+        file = 'result.csv';
+        folder = outputFolder;
+    end
+
+    function [file, folder] = cancelFile(~, ~, ~)
+        file = 0;
+        folder = 0;
+    end
+end
+
 function checkRequestErrors()
     assertThrows(@() labkit.ui.app.dispatchRequest('probe_app', {42}, 0), ...
         'probe_app:UnsupportedInput', 'Nonstrings should be unsupported app input.');
@@ -173,5 +208,11 @@ end
 function cleanupFile(filepath)
     if exist(filepath, 'file') == 2
         delete(filepath);
+    end
+end
+
+function cleanupFolder(folder)
+    if exist(folder, 'dir') == 7
+        rmdir(folder, 's');
     end
 end

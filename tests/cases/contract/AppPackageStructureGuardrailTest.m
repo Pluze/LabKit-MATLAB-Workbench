@@ -20,7 +20,9 @@ classdef AppPackageStructureGuardrailTest < matlab.unittest.TestCase
                 "apps/image_measurement/image_enhance/+image_enhance/+state/exportTask.m"
                 "apps/image_measurement/image_match/+image_match/+state/exportTask.m"
                 "apps/image_measurement/batch_crop/+batch_crop/+state/exportPlan.m"
-                "apps/image_measurement/focus_stack/+focus_stack/+state/runTask.m"];
+                "apps/image_measurement/focus_stack/+focus_stack/+state/runTask.m"
+                "apps/image_measurement/curvature/+curvature/+state/fitTask.m"
+                "apps/image_measurement/curvature/+curvature/+state/lengthTask.m"];
 
             for k = 1:numel(expected)
                 filepath = repoPath(root, expected(k));
@@ -187,7 +189,9 @@ function assertRolePackageBoundaries(testCase, root, packageDir)
         {'labkit.ui.app.create', 'uigridlayout(', 'uiaxes(', 'uialert(', ...
         'uigetfile(', 'uigetdir(', 'uiputfile(', 'writetable(', 'imwrite('});
     assertComponentSourcesDoNotContain(testCase, root, fullfile(packageDir, '+io'), ...
-        {'labkit.ui', 'uialert(', 'uigridlayout(', 'writetable(', 'imwrite('});
+        {'labkit.ui.app.create', 'labkit.ui.spec', 'labkit.ui.view', ...
+        'labkit.ui.tool', 'labkit.ui.diag', 'uialert(', 'uigridlayout(', ...
+        'writetable(', 'imwrite('});
     assertComponentSourcesDoNotContain(testCase, root, fullfile(packageDir, '+export'), ...
         {'labkit.ui', 'uialert(', 'uigetfile(', 'uigetdir(', ...
         'uiputfile(', 'uigridlayout('});

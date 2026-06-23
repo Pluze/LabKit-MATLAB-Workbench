@@ -143,15 +143,15 @@ function fig = run(debugLog)
         [folder, name] = fileparts(char(S.matPath));
         folder = labkit.ui.app.defaultDialogFolder("output", folder);
         defaultName = fullfile(folder, [name '_strain_summary.csv']);
-        [f, p] = uiputfile('*.csv', 'Save strain summary CSV', defaultName);
-        if isequal(f, 0)
+        [out, cancelled] = labkit.ui.app.promptOutputFile( ...
+            '*.csv', 'Save strain summary CSV', defaultName);
+        if cancelled
             addLog('Export summary cancelled.');
             return;
         end
 
-        out = fullfile(p, f);
         writetable(S.summaryTable, out);
-        addLog(sprintf('Exported summary CSV: %s', out));
+        addLog(sprintf('Exported summary CSV: %s', char(out)));
     end
 
     function onOptionsChanged(~, ~)

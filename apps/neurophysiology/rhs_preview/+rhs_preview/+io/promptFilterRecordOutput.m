@@ -6,11 +6,10 @@ function outputPath = promptFilterRecordOutput(defaultFolder)
     if nargin < 1 || strlength(string(defaultFolder)) == 0
         defaultFolder = tempdir;
     end
-    [file, folder] = uiputfile({'*.json', 'Filter JSON'}, ...
-        'Save RHS filter record', fullfile(char(defaultFolder), 'rhs_filter_record.json'));
-    if isequal(file, 0) || isequal(folder, 0)
+    [outputPath, cancelled] = labkit.ui.app.promptOutputFile( ...
+        {'*.json', 'Filter JSON'}, 'Save RHS filter record', ...
+        fullfile(char(defaultFolder), 'rhs_filter_record.json'));
+    if cancelled
         outputPath = "";
-    else
-        outputPath = string(fullfile(folder, file));
     end
 end

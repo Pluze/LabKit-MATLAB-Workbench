@@ -249,26 +249,26 @@ function fig = run(debugLog)
             showError('No segment SNR', 'Analyze a signal before exporting segment SNR.');
             return;
         end
-        [fn, fp] = uiputfile('ecg_segment_snr.csv', 'Export segment SNR CSV', ...
-            fullfile(labkit.ui.app.defaultDialogFolder("output"), 'ecg_segment_snr.csv'));
-        if isequal(fn, 0)
+        [out, cancelled] = labkit.ui.app.promptOutputFile( ...
+            'ecg_segment_snr.csv', 'Export segment SNR CSV', 'ecg_segment_snr.csv');
+        if cancelled
             addLog('Segment SNR export cancelled.');
             return;
         end
         writetable(ecg_print.export.analysisTable(S.measurements.perSegment, ...
-            edtSmooth.Value), fullfile(fp, fn));
-        addLog(sprintf('Exported segment SNR CSV: %s', fullfile(fp, fn)));
+            edtSmooth.Value), out);
+        addLog(sprintf('Exported segment SNR CSV: %s', char(out)));
     end
 
     function onExportWaveform()
-        [fn, fp] = uiputfile('ecg_waveform.png', 'Export waveform PNG', ...
-            fullfile(labkit.ui.app.defaultDialogFolder("output"), 'ecg_waveform.png'));
-        if isequal(fn, 0)
+        [out, cancelled] = labkit.ui.app.promptOutputFile( ...
+            'ecg_waveform.png', 'Export waveform PNG', 'ecg_waveform.png');
+        if cancelled
             addLog('Waveform export cancelled.');
             return;
         end
-        exportgraphics(ui.waveAxes, fullfile(fp, fn), 'Resolution', 300);
-        addLog(sprintf('Exported waveform PNG: %s', fullfile(fp, fn)));
+        exportgraphics(ui.waveAxes, out, 'Resolution', 300);
+        addLog(sprintf('Exported waveform PNG: %s', char(out)));
     end
 
     function refreshPlots()

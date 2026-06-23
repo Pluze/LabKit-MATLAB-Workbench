@@ -414,19 +414,18 @@ function fig = run(debugLog)
             uialert(fig,'No results to export.','Export');
             return;
         end
-        [f,p] = uiputfile('vt_steady_resistance_results.csv','Save results CSV', ...
-            fullfile(labkit.ui.app.defaultDialogFolder("output"), ...
-            'vt_steady_resistance_results.csv'));
-        if isequal(f,0)
+        [out, cancelled] = labkit.ui.app.promptOutputFile( ...
+            'vt_steady_resistance_results.csv', 'Save results CSV', ...
+            'vt_steady_resistance_results.csv');
+        if cancelled
             return;
         end
-        out = fullfile(p,f);
         [ok, msg] = vt_resistance.export.writeResultsCSV(S.items, out);
         if ~ok
             uialert(fig,msg,'Export');
             return;
         end
-        addLog(['Exported CSV: ' out]);
+        addLog(['Exported CSV: ' char(out)]);
     end
 
     function addLog(msg)
