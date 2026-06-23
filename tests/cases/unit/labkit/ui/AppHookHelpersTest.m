@@ -15,6 +15,7 @@ function verify_appHookHelpers()
     checkDebugLog();
     checkCallbackWrapper();
     checkPromptOutputFile();
+    checkDefaultDialogFolder();
     checkRequestDispatch();
     checkRequestErrors();
 end
@@ -149,6 +150,9 @@ function checkRequestDispatch()
     titleText = labkit.ui.app.appVersionTitle("Probe App", info);
     assert(titleText == "Probe App v1.0.0 (2026-06-23)", ...
         'App version title helper should include version and update date.');
+    retitled = labkit.ui.app.appVersionTitle(titleText, info);
+    assert(retitled == titleText, ...
+        'App version title helper should be idempotent for an already-versioned title.');
 end
 
 function checkPromptOutputFile()
@@ -182,6 +186,43 @@ function checkPromptOutputFile()
     function [file, folder] = cancelFile(~, ~, ~)
         file = 0;
         folder = 0;
+    end
+end
+
+function checkDefaultDialogFolder()
+    homeFolder = tempname(tempdir);
+    mkdir(homeFolder);
+    homeCleaner = onCleanup(@() cleanupFolder(homeFolder));
+
+    previousUserProfile = getenv('USERPROFILE');
+    previousHome = getenv('HOME');
+    hadInputPref = ispref('LabKit', 'LastInputFolder');
+    if hadInputPref
+        previousInputPref = getpref('LabKit', 'LastInputFolder');
+    else
+        previousInputPref = '';
+    end
+    prefCleaner = onCleanup(@() restoreDialogEnvironment( ...
+        previousUserProfile, previousHome, hadInputPref, previousInputPref));
+
+    if hadInputPref
+        rmpref('LabKit', 'LastInputFolder');
+    end
+    setenv('USERPROFILE', '');
+    setenv('HOME', homeFolder);
+
+    folder = labkit.ui.app.defaultDialogFolder("input");
+    assert(strcmp(folder, homeFolder), ...
+        'Dialog default helper should use HOME when USERPROFILE and remembered folders are unavailable.');
+end
+
+function restoreDialogEnvironment(previousUserProfile, previousHome, hadInputPref, previousInputPref)
+    setenv('USERPROFILE', previousUserProfile);
+    setenv('HOME', previousHome);
+    if hadInputPref
+        setpref('LabKit', 'LastInputFolder', previousInputPref);
+    elseif ispref('LabKit', 'LastInputFolder')
+        rmpref('LabKit', 'LastInputFolder');
     end
 end
 

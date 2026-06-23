@@ -11,10 +11,20 @@ function titleText = appVersionTitle(baseTitle, info)
 % Outputs:
 %   titleText - string in the form "<baseTitle> v<version> (<updated>)".
 
-    baseTitle = normalizeTitle(baseTitle, info);
     version = textField(info, 'version');
     updated = textField(info, 'updated');
-    titleText = baseTitle + " v" + version + " (" + updated + ")";
+    suffix = " v" + version + " (" + updated + ")";
+    baseTitle = stripVersionSuffix(normalizeTitle(baseTitle, info), suffix);
+    titleText = baseTitle + suffix;
+end
+
+function baseTitle = stripVersionSuffix(baseTitle, suffix)
+    if endsWith(baseTitle, suffix)
+        suffixStart = strlength(baseTitle) - strlength(suffix) + 1;
+        if suffixStart > 1
+            baseTitle = strtrim(extractBefore(baseTitle, suffixStart));
+        end
+    end
 end
 
 function baseTitle = normalizeTitle(value, info)

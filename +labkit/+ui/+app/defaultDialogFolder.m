@@ -71,6 +71,10 @@ function folder = userFolder()
     if strlength(folder) > 0
         return;
     end
+    folder = string(getenv('HOME'));
+    if strlength(folder) > 0
+        return;
+    end
     rawUserPath = string(userpath);
     if strlength(rawUserPath) == 0
         folder = "";
@@ -112,6 +116,10 @@ function tf = isInsideLabKitRoot(folder)
     end
     folder = normalizedFolder(folder);
     root = normalizedFolder(root);
+    if ispc
+        folder = lower(folder);
+        root = lower(root);
+    end
     tf = folder == root || startsWith(folder, root + filesep);
 end
 

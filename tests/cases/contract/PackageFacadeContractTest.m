@@ -17,6 +17,11 @@ classdef PackageFacadeContractTest < matlab.unittest.TestCase
                 testCase.verifyTrue(all(contains(info.compatible, "<")), ...
                     "Facade compatibility ranges should use upper bounds: " + info.name);
                 testCase.verifyGreaterThan(strlength(info.notes), 0);
+                exactCurrent = labkit.contract.requirements(info.facade, "=" + string(info.current));
+                exactReport = labkit.contract.checkRequirements(exactCurrent, info);
+                testCase.verifyTrue(exactReport.ok, ...
+                    "Facade current version should fall inside its advertised compatibility range: " + ...
+                    info.name + " " + exactReport.message);
             end
         end
 
@@ -57,7 +62,8 @@ classdef PackageFacadeContractTest < matlab.unittest.TestCase
 
             testCase.verifyFalse(report.ok);
             testCase.verifyTrue(contains(report.message, "labkit.ui"));
-            testCase.verifyTrue(contains(report.message, "requires >=99.0 <100"));
+            testCase.verifyTrue(contains(report.message, ...
+                "does not satisfy the app requirement >=99.0 <100"));
             testCase.verifyError(@() labkit.contract.assertRequirements("probe_app", req), ...
                 'probe_app:IncompatibleLabKit');
             testCase.verifyError(@() labkit.ui.app.dispatchRequest( ...
@@ -66,6 +72,18 @@ classdef PackageFacadeContractTest < matlab.unittest.TestCase
             testCase.verifyError(@() labkit.ui.app.dispatchRequest( ...
                 "probe_app", {"debug"}, 0, "Requirements", req), ...
                 'probe_app:IncompatibleLabKit');
+        end
+
+        function futureRequirementsFailEvenWhenRangesIntersect(testCase)
+            setupLabKitTestPath();
+            versions = labkit.contract.versionInfo("ui", "2.2.1", ">=2.0 <3", ...
+                "stable", "Probe UI contract.");
+            req = labkit.contract.requirements("ui", ">=2.9 <3");
+            report = labkit.contract.checkRequirements(req, versions);
+
+            testCase.verifyFalse(report.ok);
+            testCase.verifyTrue(contains(report.message, ...
+                "current 2.2.1 does not satisfy the app requirement >=2.9 <3"));
         end
     end
 end

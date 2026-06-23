@@ -294,7 +294,7 @@ function suite = discoverOfficialSuite(root, opts)
         suite = [suite, groups(k).suite];
     end
 
-    suite = filterSuiteByName(suite, opts.Tests);
+    suite = filterSuiteByName(suite, opts.Tests, opts.FailIfNoTests);
     suite = filterSuiteByTags(suite, opts.Tags, opts.ExcludeTags);
 end
 
@@ -514,7 +514,7 @@ function quoted = shellDoubleQuote(value)
     quoted = """" + quoted + """";
 end
 
-function suite = filterSuiteByName(suite, tests)
+function suite = filterSuiteByName(suite, tests, failIfUnmatched)
     tests = lower(normalizeTextList(tests));
     if isempty(tests) || isempty(suite)
         return;
@@ -522,8 +522,17 @@ function suite = filterSuiteByName(suite, tests)
 
     keep = false(size(suite));
     names = lower(string({suite.Name}));
+    matchCounts = zeros(size(tests));
     for t = 1:numel(tests)
-        keep = keep | contains(names, tests(t));
+        matched = contains(names, tests(t));
+        matchCounts(t) = sum(matched);
+        keep = keep | matched;
+    end
+    if failIfUnmatched && any(matchCounts == 0)
+        missing = tests(matchCounts == 0);
+        error("LabKit:Tests:UnmatchedTestSelector", ...
+            "Requested test selector(s) matched no official tests: %s", ...
+            strjoin(missing, ", "));
     end
     suite = suite(keep);
 end

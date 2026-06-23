@@ -47,6 +47,39 @@ classdef CiValidationPolicyGuardrailTest < matlab.unittest.TestCase
                 'Push/PR CI should not collapse non-GUI validation into one serial headless task.');
         end
 
+        function ciWorkflowTestSelectorsResolveToKnownClasses(testCase)
+            root = setupLabKitTestPath();
+            workflowPath = fullfile(root, ".github", "workflows", ...
+                "matlab-tests.yml");
+            workflow = string(fileread(workflowPath));
+            selectors = workflowTestSelectors(workflow);
+            knownClasses = knownTestClassNames(root);
+
+            testCase.verifyNotEmpty(selectors, ...
+                'CI workflow should declare explicit test-class selectors for integration shards.');
+            testCase.verifyEmpty(setdiff(selectors, knownClasses), ...
+                "CI workflow should not reference missing test classes: " + ...
+                strjoin(setdiff(selectors, knownClasses), ", "));
+
+            requiredSelectors = [
+                "VersionChangeGuardrailTest"
+                "RepositoryHygieneGuardrailTest"
+                "TestCompatibilityGuardrailTest"];
+            testCase.verifyEmpty(setdiff(requiredSelectors, selectors), ...
+                "CI workflow should include current release and hygiene guardrails: " + ...
+                strjoin(setdiff(requiredSelectors, selectors), ", "));
+        end
+
+        function runnerRejectsUnmatchedTestSelectors(testCase)
+            setupLabKitTestPath();
+            testCase.verifyError(@() runLabKitTests( ...
+                "Tests", "DefinitelyMissingLabKitSelector", ...
+                "ListOnly", true, ...
+                "HtmlReport", false, ...
+                "RunName", "missing-selector-probe"), ...
+                "LabKit:Tests:UnmatchedTestSelector");
+        end
+
         function ciPushAndPullRequestsRunOnAllBranches(testCase)
             root = setupLabKitTestPath();
             workflowPath = fullfile(root, ".github", "workflows", ...
@@ -74,7 +107,45 @@ classdef CiValidationPolicyGuardrailTest < matlab.unittest.TestCase
                     "CI MATLAB job should have an explicit timeout: " + jobNames(k));
             end
         end
+
+        function ciMatlabJobsFetchParentCommit(testCase)
+            root = setupLabKitTestPath();
+            workflowPath = fullfile(root, ".github", "workflows", ...
+                "matlab-tests.yml");
+            workflow = string(fileread(workflowPath));
+            jobNames = ["headless-shards", "coverage", "gui"];
+
+            for k = 1:numel(jobNames)
+                job = extractWorkflowJob(workflow, jobNames(k));
+                testCase.verifyTrue(contains(job, "fetch-depth: 2"), ...
+                    "CI MATLAB checkout should keep HEAD^ available: " + jobNames(k));
+            end
+        end
     end
+end
+
+function selectors = workflowTestSelectors(workflow)
+    blocks = regexp(char(workflow), '"Tests"\s*,\s*\[([^\]]*)\]', 'tokens');
+    selectors = strings(0, 1);
+    for k = 1:numel(blocks)
+        names = regexp(blocks{k}{1}, '"([^"]+)"', 'tokens');
+        for n = 1:numel(names)
+            selectors(end+1, 1) = string(names{n}{1});
+        end
+    end
+    selectors = unique(selectors, "stable");
+end
+
+function names = knownTestClassNames(root)
+    listing = dir(fullfile(root, "tests", "cases", "**", "*.m"));
+    names = strings(0, 1);
+    for k = 1:numel(listing)
+        if ~listing(k).isdir
+            [~, name] = fileparts(listing(k).name);
+            names(end+1, 1) = string(name);
+        end
+    end
+    names = unique(names, "stable");
 end
 
 function job = extractWorkflowJob(workflow, jobName)

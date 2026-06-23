@@ -73,6 +73,15 @@ shards for unit and integration coverage. The shards split unit tests by
 ownership area and split integration guardrails into app-boundary and
 project/package groups. They use the same official test runner as the build
 tasks, skip HTML reports for speed, and still publish JUnit summaries and logs.
+MATLAB CI checkouts fetch the current commit plus its parent so version and
+changed-file guardrails have a stable `HEAD^` baseline on push and pull-request
+runs.
+
+When adding, renaming, or retiring a test class that appears in a CI `Tests`
+selector, update `.github/workflows/matlab-tests.yml` in the same change. The
+runner treats an explicitly requested `Tests` selector that matches no official
+tests as an error, and project guardrails verify that workflow selectors point
+at existing test classes.
 
 Manual and scheduled workflows keep the broader report jobs available:
 coverage runs separately, and GUI validation remains opt-in because automated

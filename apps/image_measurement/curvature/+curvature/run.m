@@ -71,7 +71,7 @@ function fig = run(debugLog)
     function onOpenImage(~, ~)
         [fn, fp] = uigetfile( ...
             {'*.png;*.jpg;*.jpeg;*.tif;*.tiff;*.bmp', 'Image files'}, ...
-            'Select image');
+            'Select image', labkit.ui.app.defaultDialogFolder("input"));
         if isequal(fn, 0)
             addLog('Image selection cancelled.');
             return;

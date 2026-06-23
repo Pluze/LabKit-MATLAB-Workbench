@@ -55,7 +55,8 @@ function fig = run(debugLog)
     labkit.ui.view.resetAxes(ui, 'overlayAxes', 'EYY Overlay', true, 'eyy');
 
     function onOpenMat(~, ~)
-        [f, p] = uigetfile({'*.mat', 'MAT files (*.mat)'}, 'Select Ncorr DIC MAT file');
+        [f, p] = uigetfile({'*.mat', 'MAT files (*.mat)'}, ...
+            'Select Ncorr DIC MAT file', labkit.ui.app.defaultDialogFolder("input"));
         if isequal(f, 0)
             addLog('DIC MAT selection cancelled.');
             return;

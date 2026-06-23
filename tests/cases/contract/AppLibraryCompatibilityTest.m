@@ -209,12 +209,30 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
                     end
                 end
             end
+            findings = [findings; bareUigetfileFindings(root, appFiles)];
 
             testCase.verifyEmpty(findings, ...
                 "Apps should not default file dialogs or exports into the LabKit " + ...
                 "runtime folder; use pathPanel, labkit.ui.app.defaultDialogFolder, " + ...
                 "or labkit.ui.app.promptOutputFile: " + ...
                 strjoin(findings, "; "));
+        end
+    end
+end
+
+function findings = bareUigetfileFindings(root, files)
+    findings = strings(0, 1);
+    for k = 1:numel(files)
+        content = fileread(files(k));
+        calls = regexp(content, 'uigetfile\s*\(([\s\S]*?)\);', 'tokens');
+        for c = 1:numel(calls)
+            callText = string(calls{c}{1});
+            hasSafeInputDefault = ~isempty(regexp(callText, ...
+                'labkit\.ui\.app\.defaultDialogFolder\s*\(\s*["'']input["'']\s*\)', 'once'));
+            if ~hasSafeInputDefault
+                findings(end+1, 1) = string(localRelativePath(root, files(k))) + ...
+                    " has uigetfile without labkit.ui.app.defaultDialogFolder(""input"")";
+            end
         end
     end
 end

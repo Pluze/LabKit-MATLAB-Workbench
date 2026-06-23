@@ -49,6 +49,10 @@ Attach `labkit_launcher.m` to each GitHub release. The root README download
 link points at the latest release asset so browsers download the launcher
 instead of opening the raw source text.
 
+Before tagging a release that adds, renames, or removes guardrail tests, verify
+that CI workflow `Tests` selectors still reference existing test classes and
+include any new release-blocking guardrails.
+
 ## Launcher Asset Reproducibility
 
 Generate the launcher asset from the release tag, not from an editor buffer,

@@ -7,7 +7,7 @@ function filepath = chooseImageFile(titleText)
 
     [f, p] = uigetfile( ...
         {'*.png;*.jpg;*.jpeg;*.tif;*.tiff;*.bmp', 'Image files'; '*.*', 'All files'}, ...
-        titleText);
+        titleText, labkit.ui.app.defaultDialogFolder("input"));
     if isequal(f, 0)
         filepath = "";
     else

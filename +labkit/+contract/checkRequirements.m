@@ -12,8 +12,8 @@ function report = checkRequirements(req, versions)
 %
 % Outputs:
 %   report - struct with ok, failures, and message fields. ok is true only
-%       when every app requirement intersects the current facade-compatible
-%       contract ranges.
+%       when each current facade version satisfies the app requirement and
+%       the requirement intersects the facade-compatible contract ranges.
 
     if nargin < 2 || isempty(versions)
         versions = currentFacadeVersions();
@@ -33,9 +33,17 @@ function report = checkRequirements(req, versions)
         end
 
         advertised = versions(match).compatible;
+        current = versions(match).current;
+        if ~versionSatisfiesRange(current, entries(k).range)
+            message = sprintf('labkit.%s current %s does not satisfy the app requirement %s. It advertises support for %s.', ...
+                entries(k).facade, current, entries(k).range, ...
+                strjoin(cellstr(advertised(:).'), ', '));
+            failures(end + 1, 1) = makeFailure(entries(k), advertised, message);
+            continue;
+        end
         if ~rangeIntersectsAny(entries(k).range, advertised)
             message = sprintf('labkit.%s current %s supports %s, but the app requires %s.', ...
-                entries(k).facade, versions(match).current, ...
+                entries(k).facade, current, ...
                 strjoin(cellstr(advertised(:).'), ', '), entries(k).range);
             failures(end + 1, 1) = makeFailure(entries(k), advertised, message);
         end
@@ -110,6 +118,39 @@ function failure = makeFailure(entry, advertised, message)
     failure.required = entry.range;
     failure.available = advertised;
     failure.message = string(message);
+end
+
+function tf = versionSatisfiesRange(versionText, rangeText)
+    version = parseVersion(versionText);
+    range = parseRange(rangeText);
+    tf = satisfiesLowerBound(version, range.lower) && ...
+        satisfiesUpperBound(version, range.upper);
+end
+
+function tf = satisfiesLowerBound(version, bound)
+    if isempty(bound.version)
+        tf = true;
+        return;
+    end
+    cmp = compareVersions(version, bound.version);
+    if bound.exclusive
+        tf = cmp > 0;
+    else
+        tf = cmp >= 0;
+    end
+end
+
+function tf = satisfiesUpperBound(version, bound)
+    if isempty(bound.version)
+        tf = true;
+        return;
+    end
+    cmp = compareVersions(version, bound.version);
+    if bound.exclusive
+        tf = cmp < 0;
+    else
+        tf = cmp <= 0;
+    end
 end
 
 function tf = rangeIntersectsAny(requiredRange, advertisedRanges)

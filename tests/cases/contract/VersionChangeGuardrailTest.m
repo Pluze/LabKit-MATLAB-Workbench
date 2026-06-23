@@ -128,8 +128,8 @@ function version = versionInWorkingTree(root, relPath)
 end
 
 function version = versionInGit(root, ref, relPath)
-    command = "git -C " + shellDoubleQuote(root) + " show " + ...
-        shellDoubleQuote(validateGitRef(ref) + ":" + normalizePath(relPath));
+    command = gitCommand(root, "show " + ...
+        shellDoubleQuote(validateGitRef(ref) + ":" + normalizePath(relPath)));
     [status, output] = system(char(command));
     if status ~= 0
         version = "";
@@ -173,28 +173,25 @@ function result = compareSemver(left, right)
 end
 
 function tf = isGitCheckout(root)
-    command = "git -C " + shellDoubleQuote(root) + ...
-        " rev-parse --is-inside-work-tree";
+    command = gitCommand(root, "rev-parse --is-inside-work-tree");
     [status, output] = system(char(command));
     tf = status == 0 && strip(string(output)) == "true";
 end
 
 function paths = gitChangedPaths(root, baseRef)
-    command = "git -C " + shellDoubleQuote(root) + ...
-        " diff --name-only --diff-filter=ACMRTUXB " + ...
-        shellDoubleQuote(validateGitRef(baseRef));
+    command = gitCommand(root, "diff --name-only --diff-filter=ACMRTUXB " + ...
+        shellDoubleQuote(validateGitRef(baseRef)));
     paths = runGitPathCommand(command);
 end
 
 function paths = gitUntrackedPaths(root)
-    command = "git -C " + shellDoubleQuote(root) + ...
-        " ls-files --others --exclude-standard";
+    command = gitCommand(root, "ls-files --others --exclude-standard");
     paths = runGitPathCommand(command);
 end
 
 function tf = gitRefExists(root, ref)
-    command = "git -C " + shellDoubleQuote(root) + ...
-        " rev-parse --verify --quiet " + shellDoubleQuote(validateGitRef(ref));
+    command = gitCommand(root, "rev-parse --verify --quiet " + ...
+        shellDoubleQuote(validateGitRef(ref)));
     [status, ~] = system(char(command));
     tf = status == 0;
 end
@@ -226,6 +223,12 @@ function ref = validateGitRef(ref)
         error("LabKit:Tests:InvalidGitRef", ...
             "Version guardrail git ref contains unsupported shell characters.");
     end
+end
+
+function command = gitCommand(root, arguments)
+    command = "git --no-pager -c core.fsmonitor=false " + ...
+        "-c credential.helper= -c core.askPass= -C " + ...
+        shellDoubleQuote(root) + " " + arguments;
 end
 
 function quoted = shellDoubleQuote(value)
