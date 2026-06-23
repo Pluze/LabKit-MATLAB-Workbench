@@ -101,18 +101,28 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
                 "Plan=list-only mode should still discover tests.");
         end
 
-        function changedValidationPlanAcceptsParentGitRefs(testCase)
-            setupLabKitTestPath();
+        function changedValidationPlanQuotesParentGitRefs(testCase)
+            root = setupLabKitTestPath();
 
-            output = listLabKitTestsQuietly( ...
-                "Plan", "changed", ...
-                "HtmlReport", false, ...
-                "RunName", "changed_plan_parent_ref_probe");
+            steps = labkitValidationPlanForChangedPaths(root, [
+                "tests/runLabKitTests.m"
+                "tests/cases/contract/BuildTaskFrameworkGuardrailTest.m"]);
+            signatures = validationStepSignatures(steps);
 
-            testCase.verifyEqual(output.plan, "changed", ...
-                "Changed plan should report the selected validation plan.");
-            testCase.verifyGreaterThan(output.count, 0, ...
-                "Changed plan should discover tests when using HEAD or HEAD^ refs.");
+            testCase.verifyEqual(signatures, "project|false", ...
+                "Changed runner and contract test files should route to project guardrails.");
+
+            runnerSource = string(fileread(fullfile(root, "tests", "runLabKitTests.m")));
+            required = [
+                contains(runnerSource, ...
+                    "diff --name-only --diff-filter=ACMRTUXB "" + shellDoubleQuote(ref)")
+                contains(runnerSource, ...
+                    "rev-parse --verify --quiet "" + shellDoubleQuote(ref)")
+            ];
+            for k = 1:numel(required)
+                testCase.verifyTrue(required(k), ...
+                    "Changed validation should quote git refs before system shell calls.");
+            end
         end
 
         function affectedValidationMapperCoversSharedUiAndAppChanges(testCase)
