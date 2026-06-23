@@ -26,6 +26,26 @@ function coverageTask(~)
     runCatalogTask("coverage");
 end
 
+function ciUnitLabKitTask(~)
+    runCatalogTask("ciUnitLabKit");
+end
+
+function ciUnitAppsTask(~)
+    runCatalogTask("ciUnitApps");
+end
+
+function ciUnitProjectTask(~)
+    runCatalogTask("ciUnitProject");
+end
+
+function ciIntegrationAppsTask(~)
+    runCatalogTask("ciIntegrationApps");
+end
+
+function ciIntegrationProjectTask(~)
+    runCatalogTask("ciIntegrationProject");
+end
+
 function listTasksTask(~)
     printTaskCatalog(taskCatalog());
 end
@@ -36,6 +56,11 @@ function catalog = taskCatalog()
         taskSpec("headless", "Run the full non-GUI validation set.", "IncludeGui", false), ...
         taskSpec("gui", "Run noninteractive GUI launch, layout, and gesture checks.", "Suites", "gui", "IncludeGui", true, "GuiMode", "hidden"), ...
         taskSpec("coverage", "Run official tests with coverage artifacts.", "Tags", ["Unit", "Integration"], "IncludeCoverage", true), ...
+        taskSpec("ciUnitLabKit", "Run CI LabKit unit shard.", "Visibility", "ci", "Suites", "labkit", "Tags", "Unit", "IncludeGui", false, "HtmlReport", false), ...
+        taskSpec("ciUnitApps", "Run CI app unit shard.", "Visibility", "ci", "Suites", "apps", "Tags", "Unit", "IncludeGui", false, "HtmlReport", false), ...
+        taskSpec("ciUnitProject", "Run CI project unit shard.", "Visibility", "ci", "Suites", "project", "Tags", "Unit", "IncludeGui", false, "HtmlReport", false), ...
+        taskSpec("ciIntegrationApps", "Run CI app integration shard.", "Visibility", "ci", "Suites", "apps", "Tags", "Integration", "IncludeGui", false, "HtmlReport", false), ...
+        taskSpec("ciIntegrationProject", "Run CI project integration shard.", "Visibility", "ci", "Suites", "project", "Tags", "Integration", "IncludeGui", false, "HtmlReport", false), ...
         taskSpec("listTasks", "List official LabKit build tasks.", "RunTests", false)];
 end
 
@@ -51,12 +76,14 @@ function spec = taskSpec(name, description, varargin)
     p.addParameter("HtmlReport", [], @isEmptyOrLogicalScalar);
     p.addParameter("GuiMode", "", @isTextScalar);
     p.addParameter("Required", true, @isLogicalScalar);
+    p.addParameter("Visibility", "public", @isTextScalar);
     p.parse(varargin{:});
 
     runTests = logical(p.Results.RunTests);
     spec = struct( ...
         "Name", string(name), ...
         "Description", string(description), ...
+        "Visibility", string(p.Results.Visibility), ...
         "RunTests", runTests, ...
         "Suites", normalizeTextList(p.Results.Suites), ...
         "Plan", string(p.Results.Plan), ...
@@ -125,6 +152,9 @@ end
 function printTaskCatalog(catalog)
     fprintf("LabKit build tasks:\n");
     for k = 1:numel(catalog)
+        if catalog(k).Visibility ~= "public"
+            continue;
+        end
         fprintf("  %-30s %s\n", catalog(k).Name, catalog(k).Description);
     end
 end

@@ -29,45 +29,43 @@ classdef CiValidationPolicyGuardrailTest < matlab.unittest.TestCase
 
             testCase.verifyTrue(contains(shardJob, "strategy:"), ...
                 'Push/PR MATLAB validation should use a matrix for parallelism.');
-            expectedLabels = [
-                "label: Unit Tests - LabKit"
-                "label: Unit Tests - Apps"
-                "label: Unit Tests - Project"
-                "label: Integration Tests - Apps"
-                "label: Integration Tests - Project"];
-            for k = 1:numel(expectedLabels)
-                testCase.verifyTrue(contains(shardJob, expectedLabels(k)), ...
-                    'CI matrix should include shard: ' + expectedLabels(k));
+            expectedTasks = [
+                "ciUnitLabKit"
+                "ciUnitApps"
+                "ciUnitProject"
+                "ciIntegrationApps"
+                "ciIntegrationProject"];
+            for k = 1:numel(expectedTasks)
+                testCase.verifyTrue(contains(shardJob, "task: " + expectedTasks(k)), ...
+                    'CI matrix should include build task: ' + expectedTasks(k));
             end
-            testCase.verifyTrue(contains(shardJob, "matlab-actions/run-command"), ...
-                'CI shards should call the runner directly instead of one serial build task.');
-            testCase.verifyTrue(contains(shardJob, '"HtmlReport", false'), ...
-                'CI shards should skip HTML reports to reduce wall-clock time.');
+            testCase.verifyTrue(contains(shardJob, "matlab-actions/run-build"), ...
+                'CI shards should call buildfile tasks through run-build.');
             testCase.verifyFalse(contains(shardJob, "tasks: headless"), ...
                 'Push/PR CI should not collapse non-GUI validation into one serial headless task.');
         end
 
-        function ciWorkflowTestSelectorsResolveToKnownClasses(testCase)
+        function ciWorkflowUsesBuildTasksInsteadOfRunnerSelectors(testCase)
             root = setupLabKitTestPath();
             workflowPath = fullfile(root, ".github", "workflows", ...
                 "matlab-tests.yml");
             workflow = string(fileread(workflowPath));
-            selectors = workflowTestSelectors(workflow);
-            knownClasses = knownTestClassNames(root);
+            shardJob = extractWorkflowJob(workflow, "headless-shards");
+            buildTasks = workflowBuildTasks(shardJob);
+            catalogTasks = buildfileTaskNames(root);
 
-            testCase.verifyNotEmpty(selectors, ...
-                'CI workflow should declare explicit test-class selectors for integration shards.');
-            testCase.verifyEmpty(setdiff(selectors, knownClasses), ...
-                "CI workflow should not reference missing test classes: " + ...
-                strjoin(setdiff(selectors, knownClasses), ", "));
-
-            requiredSelectors = [
-                "VersionChangeGuardrailTest"
-                "RepositoryHygieneGuardrailTest"
-                "TestCompatibilityGuardrailTest"];
-            testCase.verifyEmpty(setdiff(requiredSelectors, selectors), ...
-                "CI workflow should include current release and hygiene guardrails: " + ...
-                strjoin(setdiff(requiredSelectors, selectors), ", "));
+            testCase.verifyFalse(contains(shardJob, "matlab-actions/run-command"), ...
+                'CI shards should not use run-command for test execution.');
+            testCase.verifyFalse(contains(shardJob, "runLabKitTests("), ...
+                'CI workflow should not call the low-level runner directly.');
+            testCase.verifyFalse(contains(shardJob, 'addpath("tests")'), ...
+                'CI workflow should not manage runner path setup directly.');
+            testCase.verifyFalse(~isempty(regexp(char(shardJob), ...
+                '"Tests"\s*,\s*\[', 'once')), ...
+                'CI workflow should not maintain long-lived test-class selectors.');
+            testCase.verifyEmpty(setdiff(buildTasks, catalogTasks), ...
+                "CI workflow should reference buildfile tasks only: " + ...
+                strjoin(setdiff(buildTasks, catalogTasks), ", "));
         end
 
         function runnerRejectsUnmatchedTestSelectors(testCase)
@@ -124,30 +122,6 @@ classdef CiValidationPolicyGuardrailTest < matlab.unittest.TestCase
     end
 end
 
-function selectors = workflowTestSelectors(workflow)
-    blocks = regexp(char(workflow), '"Tests"\s*,\s*\[([^\]]*)\]', 'tokens');
-    selectors = strings(0, 1);
-    for k = 1:numel(blocks)
-        names = regexp(blocks{k}{1}, '"([^"]+)"', 'tokens');
-        for n = 1:numel(names)
-            selectors(end+1, 1) = string(names{n}{1});
-        end
-    end
-    selectors = unique(selectors, "stable");
-end
-
-function names = knownTestClassNames(root)
-    listing = dir(fullfile(root, "tests", "cases", "**", "*.m"));
-    names = strings(0, 1);
-    for k = 1:numel(listing)
-        if ~listing(k).isdir
-            [~, name] = fileparts(listing(k).name);
-            names(end+1, 1) = string(name);
-        end
-    end
-    names = unique(names, "stable");
-end
-
 function job = extractWorkflowJob(workflow, jobName)
     lines = splitlines(string(workflow));
     jobHeader = "  " + jobName + ":";
@@ -167,4 +141,24 @@ function job = extractWorkflowJob(workflow, jobName)
         end
     end
     job = strjoin(lines(startLine:stopLine), newline);
+end
+
+function tasks = workflowBuildTasks(workflow)
+    tokens = regexp(char(workflow), '(?m)^\s+task:\s*([A-Za-z][A-Za-z0-9_]*)\s*$', ...
+        'tokens');
+    tasks = strings(1, numel(tokens));
+    for k = 1:numel(tokens)
+        tasks(k) = string(tokens{k}{1});
+    end
+    tasks = unique(tasks, "stable");
+end
+
+function names = buildfileTaskNames(root)
+    content = fileread(fullfile(root, "buildfile.m"));
+    tokens = regexp(content, 'taskSpec\("([^"]+)"', 'tokens');
+    names = strings(1, numel(tokens));
+    for k = 1:numel(tokens)
+        names(k) = string(tokens{k}{1});
+    end
+    names = unique(names, "stable");
 end

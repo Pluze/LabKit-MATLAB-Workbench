@@ -27,19 +27,19 @@ jobs:
         include:
           - label: Unit Tests - LabKit
             run_name: unit-labkit
-            selector: '"Suites", "labkit", "Tags", "Unit", "IncludeGui", false'
+            task: ciUnitLabKit
           - label: Unit Tests - Apps
             run_name: unit-apps
-            selector: '"Suites", "apps", "Tags", "Unit", "IncludeGui", false'
+            task: ciUnitApps
           - label: Unit Tests - Project
             run_name: unit-project
-            selector: '"Suites", "project", "Tags", "Unit", "IncludeGui", false'
+            task: ciUnitProject
           - label: Integration Tests - Apps
             run_name: integration-apps
-            selector: '"Tests", ["AppEntrypointBoundariesTest", "AppLibraryCompatibilityTest", "AppOwnedWorkflowBoundariesTest", "AppPackageStructureGuardrailTest"], "Tags", "Integration", "IncludeGui", false'
+            task: ciIntegrationApps
           - label: Integration Tests - Project
             run_name: integration-project
-            selector: '"Tests", ["BuildTaskFrameworkGuardrailTest", "CiValidationPolicyGuardrailTest", "CodeAnalyzerSuppressionPolicyTest", "PackageDependencyBoundariesTest", "PackageFacadeContractTest", "PackagePublicSurfaceTest", "ProjectDocumentationGuardrailTest", "RepositoryHygieneGuardrailTest", "SensitiveSampleHygieneTest", "StartupBoundariesTest", "TestCompatibilityGuardrailTest", "VersionChangeGuardrailTest"], "Tags", "Integration", "IncludeGui", false'
+            task: ciIntegrationProject
 
     steps:
       - name: Check out repository
@@ -56,14 +56,9 @@ jobs:
         run: mkdir -p artifacts/logs/${{ matrix.run_name }}
 
       - name: Run ${{ matrix.label }}
-        uses: matlab-actions/run-command@v3
+        uses: matlab-actions/run-build@v3
         with:
-          command: >
-            addpath("tests");
-            runLabKitTests(${{ matrix.selector }},
-            "HtmlReport", false,
-            "RunName", "${{ matrix.run_name }}",
-            "ArtifactsRoot", fullfile(pwd, "artifacts"));
+          tasks: ${{ matrix.task }}
           startup-options: -logfile artifacts/logs/${{ matrix.run_name }}/matlab.log
 
       - name: Summarize ${{ matrix.label }}

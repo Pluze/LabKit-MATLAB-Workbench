@@ -18,7 +18,7 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
         function documentedBuildTasksStayInCatalog(testCase)
             root = setupLabKitTestPath();
             catalog = extractBuildfileCatalog(root);
-            catalogNames = catalog.Name;
+            catalogNames = catalog.Name(catalog.Visibility == "public");
 
             testingDoc = fullfile(root, "docs", "testing.md");
             matrixTasks = extractPrimaryTestingCommandMatrix(fileread(testingDoc));
@@ -47,6 +47,23 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
                 spec = taskSpecs(k);
                 testCase.verifyTrue(taskSpecMapsToKnownTests(root, spec), ...
                     "Runnable build task spec should map to known tests: " + spec.Name);
+            end
+        end
+
+        function nonDynamicBuildTasksMatchOfficialTests(testCase)
+            root = setupLabKitTestPath();
+            taskSpecs = parseRunnableTaskSpecs(root);
+            taskSpecs = taskSpecs([taskSpecs.Name] ~= "changed");
+            testCase.assertFalse(isempty(taskSpecs), ...
+                "Non-dynamic build task specs should be discovered from buildfile.m.");
+
+            for k = 1:numel(taskSpecs)
+                spec = taskSpecs(k);
+                output = listLabKitTestsQuietly( ...
+                    spec.Args{:}, ...
+                    "RunName", spec.Name + "_list");
+                testCase.verifyGreaterThan(output.count, 0, ...
+                    "Build task should match at least one official test: " + spec.Name);
             end
         end
 
@@ -106,7 +123,7 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
 
             steps = labkitValidationPlanForChangedPaths(root, [
                 "tests/runLabKitTests.m"
-                "tests/cases/contract/BuildTaskFrameworkGuardrailTest.m"]);
+                "tests/cases/contract/project/build/BuildTaskFrameworkGuardrailTest.m"]);
             signatures = validationStepSignatures(steps);
 
             testCase.verifyEqual(signatures, "project|false", ...
@@ -230,8 +247,15 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
 
             expectedTasks = ["changed", "headless", "gui", "coverage", ...
                 "listTasks"];
-            testCase.verifyEqual(catalog.Name(:).', expectedTasks, ...
-                "Build task catalog should expose a compact intent-based task set.");
+            publicTasks = catalog.Name(catalog.Visibility == "public").';
+            testCase.verifyEqual(publicTasks, expectedTasks, ...
+                "Build task catalog should expose a compact public task set.");
+
+            expectedCiTasks = ["ciUnitLabKit", "ciUnitApps", "ciUnitProject", ...
+                "ciIntegrationApps", "ciIntegrationProject"];
+            ciTasks = catalog.Name(catalog.Visibility == "ci").';
+            testCase.verifyEqual(ciTasks, expectedCiTasks, ...
+                "CI shard tasks should stay in buildfile instead of workflow selectors.");
 
         end
 
@@ -289,16 +313,27 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
 end
 
 function catalog = extractBuildfileCatalog(root)
-    content = fileread(fullfile(root, "buildfile.m"));
-    tokens = regexp(content, 'taskSpec\("([^"]+)",\s*"([^"]+)"', 'tokens');
-    names = strings(1, numel(tokens));
-    descriptions = strings(1, numel(tokens));
-    for k = 1:numel(tokens)
-        names(k) = string(tokens{k}{1});
-        descriptions(k) = string(tokens{k}{2});
+    lines = string(splitlines(fileread(fullfile(root, "buildfile.m"))));
+    lines = lines(contains(lines, "taskSpec("));
+    names = strings(1, 0);
+    descriptions = strings(1, 0);
+    visibility = strings(1, 0);
+    for k = 1:numel(lines)
+        tokens = regexp(lines(k), 'taskSpec\("([^"]+)",\s*"([^"]+)"', ...
+            'tokens', 'once');
+        if isempty(tokens)
+            continue;
+        end
+        names(end+1) = string(tokens{1});
+        descriptions(end+1) = string(tokens{2});
+        visible = extractNameValueStrings(lines(k), "Visibility");
+        if isempty(visible)
+            visible = "public";
+        end
+        visibility(end+1) = visible(1);
     end
     catalog = table(names.', descriptions.', ...
-        'VariableNames', {'Name', 'Description'});
+        visibility.', 'VariableNames', {'Name', 'Description', 'Visibility'});
 end
 
 function names = extractTaskFunctionNames(root)
@@ -400,16 +435,10 @@ function tf = taskSpecMapsToKnownTests(root, spec)
         return;
     end
 
-    suiteTargets = taskSpecStringValues(spec, "Suites");
-    tagTargets = taskSpecStringValues(spec, "Tags");
-    if isempty(suiteTargets)
-        suiteTargets = ["unit", "contract"];
-    end
-
-    tf = all(arrayfun(@(target) suiteTargetHasTests(root, target), suiteTargets));
-    if tf && ~isempty(tagTargets)
-        tf = all(arrayfun(@(tag) testTagExists(root, tag), tagTargets));
-    end
+    output = listLabKitTestsQuietly( ...
+        spec.Args{:}, ...
+        "RunName", spec.Name + "_map_probe");
+    tf = output.count > 0;
 end
 
 function tf = taskSpecUsesKnownPlan(spec)
@@ -422,52 +451,6 @@ function values = taskSpecStringValues(spec, name)
     for k = 1:numel(spec.Args)
         if isequal(spec.Args{k}, char(name)) && k < numel(spec.Args)
             values = string(spec.Args{k + 1});
-            return;
-        end
-    end
-end
-
-function tf = suiteTargetHasTests(root, target)
-    target = string(target);
-    if target == "gui"
-        folders = fullfile(root, "tests", "cases", "gui");
-    elseif target == "project"
-        folders = [ ...
-            fullfile(root, "tests", "cases", "unit", "project")
-            fullfile(root, "tests", "cases", "contract")];
-    elseif startsWith(target, "gui/")
-        folders = fullfile(root, "tests", "cases", target);
-    elseif startsWith(target, "apps/") || startsWith(target, "labkit/")
-        folders = [
-            fullfile(root, "tests", "cases", "unit", target)
-            fullfile(root, "tests", "cases", "contract", target)];
-    else
-        folders = fullfile(root, "tests", "cases", target);
-    end
-
-    tf = false;
-    for k = 1:numel(folders)
-        tf = tf || folderHasTestFiles(folders(k));
-    end
-end
-
-function tf = folderHasTestFiles(folder)
-    if exist(folder, "dir") ~= 7
-        tf = false;
-        return;
-    end
-
-    files = dir(fullfile(folder, "**", "*Test.m"));
-    tf = ~isempty(files);
-end
-
-function tf = testTagExists(root, tag)
-    files = collectTestFiles(fullfile(root, "tests", "cases"));
-    tf = false;
-    for k = 1:numel(files)
-        tags = extractQuotedTags(fileread(files(k)));
-        tf = tf || any(tags == string(tag));
-        if tf
             return;
         end
     end

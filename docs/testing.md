@@ -71,17 +71,18 @@ Common choices:
 Push and pull-request CI runs repository hygiene plus parallel non-GUI MATLAB
 shards for unit and integration coverage. The shards split unit tests by
 ownership area and split integration guardrails into app-boundary and
-project/package groups. They use the same official test runner as the build
-tasks, skip HTML reports for speed, and still publish JUnit summaries and logs.
+project/package groups. Workflow YAML calls buildfile CI shard tasks through
+`matlab-actions/run-build`; it must not maintain test-class lists or call the
+lower-level runner directly. The buildfile tasks use suite and tag filters,
+skip HTML reports for speed, and still publish JUnit summaries and logs.
 MATLAB CI checkouts fetch the current commit plus its parent so version and
 changed-file guardrails have a stable `HEAD^` baseline on push and pull-request
 runs.
 
-When adding, renaming, or retiring a test class that appears in a CI `Tests`
-selector, update `.github/workflows/matlab-tests.yml` in the same change. The
-runner treats an explicitly requested `Tests` selector that matches no official
-tests as an error, and project guardrails verify that workflow selectors point
-at existing test classes.
+When adding a test, place it under the correct ownership tree and give it the
+right stage tag: `Unit`, `Integration`, or `GUI`. CI shard membership should
+follow from `tests/cases` layout plus `TestTags`; ordinary test additions
+should not require editing `.github/workflows/matlab-tests.yml`.
 
 Manual and scheduled workflows keep the broader report jobs available:
 coverage runs separately, and GUI validation remains opt-in because automated
@@ -91,13 +92,18 @@ GUI checks are structural rather than full interactive workflow validation.
 
 ```text
 tests/cases/unit/              pure library and app-owned helper behavior
-tests/cases/contract/          long-lived project, package, docs, and hygiene contracts
+tests/cases/contract/apps/     long-lived app boundary and app workflow guardrails
+tests/cases/contract/project/  project contracts grouped by topic
 tests/cases/gui/apps/          app GUI launch, layout, and callback checks
 tests/cases/gui/labkit/        launcher and reusable UI GUI checks
 tests/cases/gui/gesture/       focused runtime interaction lifecycle checks
 tests/shared/                  small test-facing assertions, fixture builders, GUI probes, and lookup helpers
 tests/runner/                  runner setup, artifact paths, trace plumbing, and artifact writers
 ```
+
+Project contract tests use a third directory level for the guarded contract,
+for example `build`, `ci`, `docs`, `hygiene`, `packages`, `runtime`, or
+`release`.
 
 `tests/shared/` intentionally keeps ordinary MATLAB helper functions as
 one-function files because those helpers are called directly by tests. Prefer a

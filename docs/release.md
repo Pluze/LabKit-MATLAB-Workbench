@@ -49,9 +49,11 @@ Attach `labkit_launcher.m` to each GitHub release. The root README download
 link points at the latest release asset so browsers download the launcher
 instead of opening the raw source text.
 
-Before tagging a release that adds, renames, or removes guardrail tests, verify
-that CI workflow `Tests` selectors still reference existing test classes and
-include any new release-blocking guardrails.
+Before tagging a release that adds, renames, or removes release-blocking
+guardrail tests, verify that the buildfile CI shard tasks still discover the
+intended suite and tag coverage. The workflow should call those build tasks
+through `matlab-actions/run-build` rather than maintaining long-lived test
+class selectors.
 
 ## Launcher Asset Reproducibility
 

@@ -11,8 +11,12 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
 
 ## Test Layout
 
-- Add runnable tests under `tests/cases/unit/`, `tests/cases/contract/`, or
-  `tests/cases/gui/` using `matlab.unittest` or `matlab.uitest` styles.
+- Add runnable tests under `tests/cases/unit/`, `tests/cases/contract/apps/`,
+  `tests/cases/contract/project/`, or `tests/cases/gui/` using
+  `matlab.unittest` or `matlab.uitest` styles.
+- Under `tests/cases/contract/project/`, group guardrails by topic such as
+  `build`, `ci`, `docs`, `hygiene`, `packages`, `runtime`, or `release`
+  instead of adding unrelated project guardrails to one flat folder.
 - Keep app GUI tests under
   `tests/cases/gui/apps/<family>/<app_slug>/` so local validation can target
   one affected app without running unrelated app GUIs.
@@ -21,10 +25,11 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
 - Do not add a separate custom runner or direct pass/fail test tree. Build
   tasks are the human and CI entry points; `tests/runLabKitTests.m` is the
   lower-level implementation behind those tasks.
-- CI may shard non-GUI runner selections across multiple GitHub Actions jobs
-  for wall-clock speed. Keep those shards as thin calls into
-  `tests/runLabKitTests.m` rather than adding granular public build tasks only
-  for CI parallelism.
+- CI may shard non-GUI validation across multiple GitHub Actions jobs for
+  wall-clock speed. Keep those shards as CI-only buildfile tasks invoked with
+  `matlab-actions/run-build`; workflow YAML must not call
+  `tests/runLabKitTests.m`, maintain test-class selector lists, or add the
+  runner path by hand.
 - Keep local multi-suite validation as serial build-task routing, not as a
   separate parallel runner.
 - Keep architecture guardrails in the narrowest project-suite file that matches the concern.

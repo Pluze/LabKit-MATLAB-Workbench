@@ -571,12 +571,8 @@ function tf = groupMatchesSuite(groupKey, target)
         "contract/" + target, ...
         "gui/" + target, ...
         "gui/gesture/" + target]);
-    if target == "project"
-        candidates(end+1) = "contract";
-    end
     if startsWith(target, "apps/")
-        family = eraseBetween(target, 1, strlength("apps/"));
-        candidates(end+1) = "contract/app_workflows/" + family;
+        candidates(end+1) = "contract/apps";
     end
 
     tf = false;
