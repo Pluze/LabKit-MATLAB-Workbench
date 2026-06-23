@@ -1,8 +1,9 @@
 function varargout = labkit_CurvatureMeasurement_app(varargin)
 %LABKIT_CURVATUREMEASUREMENT_APP Measure curve radius and curvature from images.
 
+    requirements = curvature.requirements();
     [requestHandled, requestOutputs, debugLog] = labkit.ui.app.dispatchRequest( ...
-        'labkit_CurvatureMeasurement_app', varargin, nargout);
+        'labkit_CurvatureMeasurement_app', varargin, nargout, "Requirements", requirements);
     if requestHandled
         varargout = requestOutputs;
         return;

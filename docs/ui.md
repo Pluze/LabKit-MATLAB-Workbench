@@ -4,13 +4,16 @@
 
 | Facade | Owns | Main APIs |
 | --- | --- | --- |
-| `labkit.ui.app` | Declarative app creation, request dispatch, busy state. | `create`, `dispatchRequest`, `runBusy`. |
+| `labkit.ui.app` | Declarative app creation, request dispatch, busy state, safe dialog defaults. | `create`, `dispatchRequest`, `defaultDialogFolder`, `runBusy`. |
 | `labkit.ui.spec` | UI 2.0 data-only workbench specs. | `app`, `workspace`, `tab`, `section`, `field`, `rangeField`, `panner`, `action`, `actionGroup`, `pathPanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `usagePanel`. |
 | `labkit.ui.view` | Semantic UI 2.0 registry updates and preview rendering helpers. | `setValue`, `getValue`, `setEnabled`, `setLimits`, `appendLog`, `setListItems`, `setListSelection`, `drawImage`, `resetAxes`, `clearAxes`. |
 | `labkit.ui.tool` | Reusable composed preview tools and interaction runtime. | `createRuntime`, `anchorEditor`, `scaleBar`, `scaleBarCalibration`, `enableAxesPopout`, `popoutAxes`, `zoomAxesAtPoint`. |
 | `labkit.ui.diag` | Debug launch context, visible trace, callback instrumentation. | `createContext`. |
 
 The root `labkit.ui.*` flat helper surface has been removed. Apps should call the facade that owns the behavior they need. Private implementation details live under each facade's `private/` folder.
+
+`labkit.ui.version()` returns the UI facade contract version struct used by
+`labkit.contract` requirement checks.
 
 ## UI 2.0 Declarative Workbench
 
@@ -24,19 +27,23 @@ callbacks, and `buildSpec.m` owns only data-only UI shape:
 
 ```matlab
 function varargout = labkit_Example_app(varargin)
-    [varargout{1:nargout}] = example.run(varargin{:});
+    requirements = example.requirements();
+    [handled, outputs, debug] = labkit.ui.app.dispatchRequest( ...
+        "labkit_Example_app", varargin, nargout, "Requirements", requirements);
+    if handled
+        varargout = outputs;
+        return;
+    end
+
+    fig = example.run(debug);
+    if nargout >= 1
+        varargout{1} = fig;
+    end
 end
 ```
 
 ```matlab
-function varargout = run(varargin)
-[handled, outputs, debug] = labkit.ui.app.dispatchRequest( ...
-    "labkit_Example_app", varargin, nargout);
-if handled
-    varargout = outputs;
-    return;
-end
-
+function fig = run(debug)
 callbacks = struct( ...
     "run", @onRun, ...
     "reset", @onReset, ...
@@ -45,10 +52,7 @@ spec = example.ui.buildSpec(callbacks);
 ui = labkit.ui.app.create(spec, "debug", debug);
 labkit.ui.view.setEnabled(ui, "run", false);
 labkit.ui.view.appendLog(ui, "appLog", "Ready.");
-
-if nargout >= 1
-    varargout{1} = ui.figure;
-end
+fig = ui.figure;
 end
 ```
 
@@ -112,6 +116,9 @@ Use these app-facing contracts:
   before app callbacks run. App callbacks receive `event.paths`,
   `event.selection`, and `event.value` as string column vectors. Apps should
   consume that contract directly instead of normalizing path-list shapes.
+- `pathPanel` and app-owned save/open dialogs should not default to `pwd`;
+  `labkit.ui.app.defaultDialogFolder("input")` and `"output"` provide safe
+  remembered defaults outside the LabKit install root.
 - `pathPanel` multi-file and multi-folder chooser runs append to the existing
   path queue; users clear the queue with the control's `Clear` action.
 - `previewArea` belongs in `workspace` by default. Its optional `viewModes`

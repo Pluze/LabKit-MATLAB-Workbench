@@ -68,7 +68,8 @@ function fig = run(debugLog)
     end
 
     function onOpenFolder(~,~)
-        folder = uigetdir(pwd,'Select folder containing DTA files');
+        folder = uigetdir(labkit.ui.app.defaultDialogFolder("input"), ...
+            'Select folder containing DTA files');
         if isequal(folder,0)
             addLog('Folder selection canceled.');
             return;

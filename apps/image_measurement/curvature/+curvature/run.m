@@ -240,7 +240,8 @@ function fig = run(debugLog)
         end
 
         [fn, fp] = uiputfile('*.csv', 'Export curvature result CSV', ...
-            'curvature_result.csv');
+            fullfile(labkit.ui.app.defaultDialogFolder("output"), ...
+            'curvature_result.csv'));
         if isequal(fn, 0)
             addLog('Export result CSV cancelled.');
             return;
@@ -263,7 +264,9 @@ function fig = run(debugLog)
             return;
         end
 
-        [fn, fp] = uiputfile('*.png', 'Export overlay PNG', 'curvature_overlay.png');
+        [fn, fp] = uiputfile('*.png', 'Export overlay PNG', ...
+            fullfile(labkit.ui.app.defaultDialogFolder("output"), ...
+            'curvature_overlay.png'));
         if isequal(fn, 0)
             addLog('Export overlay PNG cancelled.');
             return;

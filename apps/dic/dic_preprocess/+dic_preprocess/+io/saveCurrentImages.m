@@ -2,12 +2,15 @@
 % source paths used for the default folder. Outputs are written paths plus a
 % cancellation flag. Side effects: opens a folder dialog and writes two PNGs.
 
-function [outputs, cancelled] = saveCurrentImages(referenceImage, movingImage, referencePath, movingPath)
+function [outputs, cancelled] = saveCurrentImages(referenceImage, movingImage, referencePath, movingPath, fallbackFolder)
 %SAVECURRENTIMAGES Prompt for a folder and save the current DIC image pair.
 
     outputs = struct('referencePath', "", 'movingPath', "");
+    if nargin < 5
+        fallbackFolder = tempdir;
+    end
     folder = uigetdir(dic_preprocess.io.defaultSaveFolder( ...
-        referencePath, movingPath), 'Select folder for current images');
+        referencePath, movingPath, fallbackFolder), 'Select folder for current images');
     cancelled = isequal(folder, 0);
     if cancelled
         return;

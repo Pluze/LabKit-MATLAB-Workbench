@@ -21,6 +21,9 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
 - Use `labkit.ui.app.create` with `labkit.ui.spec.*` for app GUIs. Do not
   reintroduce the removed `labkit.ui.app.createShell` or legacy view helpers.
 - Use `labkit.ui.app.dispatchRequest` for debug launch routing and `labkit.ui.diag.createContext` only when an app has an app-specific nonstandard request path.
+- Each public app entrypoint should call an app package `requirements.m` and
+  pass it to `labkit.ui.app.dispatchRequest`. The only lightweight non-GUI
+  request is `"requirements"`.
 - Debug launches should attach the Log tab text area, emit a startup trace line, and instrument high-level component callbacks after controls are built.
 - Apps with custom preview scroll, drawing, ROI, scale-bar, or other axes interaction should create a `labkit.ui.tool.createRuntime` and pass that runtime into reusable tools. Do not set preview-tool `WindowScrollWheelFcn`, `WindowButtonMotionFcn`, `WindowButtonUpFcn`, or axes `ButtonDownFcn` directly in app code.
 - DTA-backed apps use `labkit.dta.*` for discovery, loading, sessions, pulse detection, and parsed curve/table access.
@@ -28,6 +31,9 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
   indexing, and window reads. Channel roles, protocols, event detection,
   nerve response metrics, and exports stay app-owned.
 - Biosignal-backed apps use `labkit.biosignal.*` for recording loading, channel extraction, waveform processing, events, segments, measurements, and group comparisons.
+- App-local file dialogs that remain outside `pathPanel` must use
+  `labkit.ui.app.defaultDialogFolder("input")` or `"output"` instead of `pwd`
+  or bare output filenames.
 - Do not create app-specific helper packages outside the owning app tree, and do not move app-specific helper code into `+labkit`.
 - When an app needs extracted helpers, prefer an app-owned package under the app folder. The package name should match the app folder slug, such as `apps/image_measurement/batch_crop/+batch_crop/`.
 - New extracted app helper code should use component packages such as `+ui`,

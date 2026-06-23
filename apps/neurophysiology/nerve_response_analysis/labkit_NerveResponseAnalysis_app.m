@@ -1,8 +1,9 @@
 function varargout = labkit_NerveResponseAnalysis_app(varargin)
 %LABKIT_NERVERESPONSEANALYSIS_APP Launch the Nerve Response Analysis app.
 
+    requirements = nerve_response_analysis.requirements();
     [requestHandled, requestOutputs, debugLog] = labkit.ui.app.dispatchRequest( ...
-        'labkit_NerveResponseAnalysis_app', varargin, nargout);
+        'labkit_NerveResponseAnalysis_app', varargin, nargout, "Requirements", requirements);
     if requestHandled
         varargout = requestOutputs;
         return;

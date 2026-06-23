@@ -1,8 +1,9 @@
 function varargout = labkit_ResponseReviewStats_app(varargin)
 %LABKIT_RESPONSEREVIEWSTATS_APP Launch the Response Review Stats app.
 
+    requirements = response_review_stats.requirements();
     [requestHandled, requestOutputs, debugLog] = labkit.ui.app.dispatchRequest( ...
-        'labkit_ResponseReviewStats_app', varargin, nargout);
+        'labkit_ResponseReviewStats_app', varargin, nargout, "Requirements", requirements);
     if requestHandled
         varargout = requestOutputs;
         return;

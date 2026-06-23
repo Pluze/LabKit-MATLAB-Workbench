@@ -4,6 +4,9 @@
 discovery, header inspection, block indexing, and lazy time-window reads for
 RHS-backed apps.
 
+`labkit.rhs.version()` returns the RHS facade contract version struct used by
+`labkit.contract` requirement checks.
+
 This facade owns the RHS file mechanics only. Experiment protocols, channel
 roles, stimulus-train interpretation, CAP thresholds, segment definitions,
 plots, and export schemas stay in the owning app or protocol file.

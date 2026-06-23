@@ -1,8 +1,9 @@
 function varargout = labkit_RHSPreview_app(varargin)
 %LABKIT_RHSPREVIEW_APP Launch the RHS Preview app.
 
+    requirements = rhs_preview.requirements();
     [requestHandled, requestOutputs, debugLog] = labkit.ui.app.dispatchRequest( ...
-        'labkit_RHSPreview_app', varargin, nargout);
+        'labkit_RHSPreview_app', varargin, nargout, "Requirements", requirements);
     if requestHandled
         varargout = requestOutputs;
         return;

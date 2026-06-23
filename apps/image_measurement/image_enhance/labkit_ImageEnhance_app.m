@@ -1,8 +1,9 @@
 function varargout = labkit_ImageEnhance_app(varargin)
 %LABKIT_IMAGEENHANCE_APP Image enhancement and color matching app for figures.
 
+    requirements = image_enhance.requirements();
     [requestHandled, requestOutputs, debugLog] = labkit.ui.app.dispatchRequest( ...
-        'labkit_ImageEnhance_app', varargin, nargout);
+        'labkit_ImageEnhance_app', varargin, nargout, "Requirements", requirements);
     if requestHandled
         varargout = requestOutputs;
         return;

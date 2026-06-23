@@ -2,8 +2,9 @@ function varargout = labkit_ChronoOverlay_app(varargin)
 %LABKIT_CHRONOOVERLAY_APP Chrono voltage/current overlay and export app.
 % Single-file app that composes +labkit GUI/DTA APIs and owns overlay workflow choices.
 
+    requirements = chrono_overlay.requirements();
     [requestHandled, requestOutputs, debugLog] = labkit.ui.app.dispatchRequest( ...
-        'labkit_ChronoOverlay_app', varargin, nargout);
+        'labkit_ChronoOverlay_app', varargin, nargout, "Requirements", requirements);
     if requestHandled
         varargout = requestOutputs;
         return;

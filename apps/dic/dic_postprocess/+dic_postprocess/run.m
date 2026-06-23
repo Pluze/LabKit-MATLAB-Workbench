@@ -119,7 +119,8 @@ function fig = run(debugLog)
             return;
         end
 
-        folder = uigetdir(pwd, 'Select folder for overlay PNGs');
+        folder = uigetdir(labkit.ui.app.defaultDialogFolder("output"), ...
+            'Select folder for overlay PNGs');
         if isequal(folder, 0)
             addLog('Save overlay PNGs cancelled.');
             return;
@@ -140,6 +141,7 @@ function fig = run(debugLog)
         end
 
         [folder, name] = fileparts(char(S.matPath));
+        folder = labkit.ui.app.defaultDialogFolder("output", folder);
         defaultName = fullfile(folder, [name '_strain_summary.csv']);
         [f, p] = uiputfile('*.csv', 'Save strain summary CSV', defaultName);
         if isequal(f, 0)

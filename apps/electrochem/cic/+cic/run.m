@@ -90,7 +90,8 @@ function fig = run(debugLog)
     end
 
     function onOpenFolder(~,~)
-        folder = uigetdir(pwd, 'Select a folder to recursively scan for .DTA files');
+        folder = uigetdir(labkit.ui.app.defaultDialogFolder("input"), ...
+            'Select a folder to recursively scan for .DTA files');
         if isequal(folder,0)
             addLog('Folder selection cancelled.');
             return;
@@ -394,7 +395,8 @@ function fig = run(debugLog)
             uialert(fig,'No results to export.','Export');
             return;
         end
-        [f,p] = uiputfile('cic_results.csv','Save results CSV');
+        [f,p] = uiputfile('cic_results.csv','Save results CSV', ...
+            fullfile(labkit.ui.app.defaultDialogFolder("output"), 'cic_results.csv'));
         if isequal(f,0)
             return;
         end

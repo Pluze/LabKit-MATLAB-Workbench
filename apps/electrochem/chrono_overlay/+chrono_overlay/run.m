@@ -41,7 +41,8 @@ function fig = run(debugLog)
     end
 
     function onOpenFolder(~, ~)
-        folder = uigetdir(pwd, 'Select a folder to recursively scan for .DTA files');
+        folder = uigetdir(labkit.ui.app.defaultDialogFolder("input"), ...
+            'Select a folder to recursively scan for .DTA files');
         if isequal(folder, 0)
             addLog('Folder selection cancelled.');
             return;
@@ -158,7 +159,8 @@ function fig = run(debugLog)
             return;
         end
 
-        [f, p] = uiputfile('gamry_overlay_curves.csv', 'Save overlay curves CSV');
+        [f, p] = uiputfile('gamry_overlay_curves.csv', 'Save overlay curves CSV', ...
+            fullfile(labkit.ui.app.defaultDialogFolder("output"), 'gamry_overlay_curves.csv'));
         if isequal(f, 0)
             return;
         end

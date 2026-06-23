@@ -132,6 +132,12 @@ function checkRequestDispatch()
     fileText = string(fileread(debugLogFile));
     assert(contains(fileText, 'event=dispatch probe'), ...
         'Default debug log files should capture trace lines.');
+
+    req = labkit.contract.requirements("ui", ">=2.0 <3");
+    [handled, outputs, debug] = labkit.ui.app.dispatchRequest( ...
+        'probe_app', {'requirements'}, 1, "Requirements", req);
+    assert(handled && numel(outputs) == 1 && isequal(outputs{1}, req) && ~debug.enabled, ...
+        'Requirements request should return the app requirement struct without launching.');
 end
 
 function checkRequestErrors()
@@ -147,6 +153,10 @@ function checkRequestErrors()
         'probe_app:TooManyOutputs', 'Too many debug outputs should fail with the canonical id.');
     assertThrows(@() labkit.ui.app.dispatchRequest('probe_app', {'debug', struct()}, 0), ...
         'probe_app:UnsupportedInput', 'Public debug launch should not accept options.');
+    assertThrows(@() labkit.ui.app.dispatchRequest('probe_app', {'requirements', struct()}, 1), ...
+        'probe_app:UnsupportedInput', 'Requirements request should not accept options.');
+    assertThrows(@() labkit.ui.app.dispatchRequest('probe_app', {'requirements'}, 2), ...
+        'probe_app:TooManyOutputs', 'Requirements request should return at most one output.');
 end
 
 function assertThrows(fn, expectedIdentifier, label)

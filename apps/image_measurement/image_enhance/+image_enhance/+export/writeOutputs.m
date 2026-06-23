@@ -10,7 +10,7 @@ function payload = writeOutputs(items, steps, opts)
     if nargin < 3 || isempty(opts)
         opts = struct();
     end
-    outputFolder = optionValue(opts, 'outputFolder', string(pwd));
+    outputFolder = optionValue(opts, 'outputFolder', string(tempdir));
     outputFormat = optionValue(opts, 'format', 'PNG');
 
     if exist(outputFolder, 'dir') ~= 7

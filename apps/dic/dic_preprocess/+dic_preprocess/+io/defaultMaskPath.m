@@ -6,7 +6,7 @@ function filepath = defaultMaskPath(referencePath, fallbackFolder)
 %DEFAULTMASKPATH Build the default DIC preprocess ROI mask path.
 
     if nargin < 2 || strlength(string(fallbackFolder)) == 0
-        fallbackFolder = pwd;
+        fallbackFolder = tempdir;
     end
 
     [folder, name] = fileparts(char(referencePath));

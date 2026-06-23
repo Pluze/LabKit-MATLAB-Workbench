@@ -2,8 +2,9 @@ function varargout = labkit_EIS_app(varargin)
 %LABKIT_EIS_APP EIS overlay/export app.
 % Single-file app that composes +labkit GUI/DTA APIs and owns EIS workflow choices.
 
+    requirements = eis.requirements();
     [requestHandled, requestOutputs, debugLog] = labkit.ui.app.dispatchRequest( ...
-        'labkit_EIS_app', varargin, nargout);
+        'labkit_EIS_app', varargin, nargout, "Requirements", requirements);
     if requestHandled
         varargout = requestOutputs;
         return;

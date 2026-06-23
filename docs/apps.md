@@ -47,6 +47,12 @@ The Code Analyzer action writes
 The launcher sets up the app path before opening an app. App-owned packages are
 reached through their owning app entrypoint and package namespace.
 
+The launcher refuses updates when the LabKit folder contains unmanaged
+non-LabKit files. Keep lab data and exports outside the LabKit runtime folder.
+If a release removes or merges app entrypoints, the launcher warns before
+overwriting managed files; users who need old entrypoints should choose an older
+release tag manually.
+
 ## App Catalog
 
 | Command | Family | Purpose | Inputs | Typical outputs |
@@ -81,9 +87,15 @@ Apps use this shape:
 
 ```text
 apps/<family>/<app_slug>/labkit_<AppName>_app.m
+apps/<family>/<app_slug>/+<app_slug>/requirements.m
 apps/<family>/<app_slug>/+<app_slug>/run.m
 apps/<family>/<app_slug>/+<app_slug>/+ui/buildSpec.m
 ```
+
+`requirements.m` declares only LabKit facade contract ranges. Public app
+entrypoints return this struct for the lightweight `"requirements"` request and
+check facade contracts before normal or debug launch. Apps do not declare their
+own package metadata or solve dependencies.
 
 For nontrivial apps, `buildSpec.m` should make the page hierarchy obvious at
 the top of the file. Keep the app constructor shallow, then use local builder

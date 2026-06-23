@@ -190,6 +190,31 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
                 "path normalization belongs inside pathPanel, not app code: " + ...
                 strjoin(findings, "; "));
         end
+
+        function appDialogsAvoidLabKitRuntimeDefaults(testCase)
+            root = setupLabKitTestPath();
+            appFiles = collectAppMFiles(root);
+            forbiddenPatterns = [
+                "\bpwd\b"
+                "uigetdir\s*\(\s*pwd"
+                "uiputfile\s*\([^,\n]+,\s*[^,\n]+\)"];
+            findings = strings(0, 1);
+
+            for k = 1:numel(appFiles)
+                content = fileread(appFiles(k));
+                for p = 1:numel(forbiddenPatterns)
+                    if ~isempty(regexp(content, forbiddenPatterns(p), 'once'))
+                        findings(end+1, 1) = string(localRelativePath(root, appFiles(k))) + ...
+                            " matches " + forbiddenPatterns(p);
+                    end
+                end
+            end
+
+            testCase.verifyEmpty(findings, ...
+                "Apps should not default file dialogs or exports into the LabKit " + ...
+                "runtime folder; use pathPanel or labkit.ui.app.defaultDialogFolder: " + ...
+                strjoin(findings, "; "));
+        end
     end
 end
 

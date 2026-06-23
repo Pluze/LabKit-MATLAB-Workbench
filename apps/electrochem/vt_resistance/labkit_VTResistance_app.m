@@ -10,8 +10,9 @@ function varargout = labkit_VTResistance_app(varargin)
 %   - Estimate steady phase voltage by median(Vf) in the same selected window.
 %   - Compute baseline-corrected resistance as abs((Vss - Vbaseline) / Iss).
 
+    requirements = vt_resistance.requirements();
     [requestHandled, requestOutputs, debugLog] = labkit.ui.app.dispatchRequest( ...
-        'labkit_VTResistance_app', varargin, nargout);
+        'labkit_VTResistance_app', varargin, nargout, "Requirements", requirements);
     if requestHandled
         varargout = requestOutputs;
         return;

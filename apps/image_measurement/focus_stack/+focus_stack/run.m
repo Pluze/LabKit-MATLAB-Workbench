@@ -39,7 +39,8 @@ function fig = run(debugLog)
     refreshSummary();
 
     function onOpenFolder(~, ~)
-        folder = uigetdir(pwd, 'Select focus image folder');
+        folder = uigetdir(labkit.ui.app.defaultDialogFolder("input"), ...
+            'Select focus image folder');
         if isequal(folder, 0)
             addLog('Image folder selection cancelled.');
             return;
@@ -227,7 +228,7 @@ function fig = run(debugLog)
     function folder = defaultSaveFolder()
         folder = char(S.folder);
         if isempty(folder) || exist(folder, 'dir') ~= 7
-            folder = pwd;
+            folder = labkit.ui.app.defaultDialogFolder("output");
         end
     end
 

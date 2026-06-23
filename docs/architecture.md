@@ -81,11 +81,17 @@ App GUIs use the layered UI foundation:
 
 | Layer | App-facing API |
 | --- | --- |
-| App | `labkit.ui.app.create`, `dispatchRequest`, `runBusy` |
+| App | `labkit.ui.app.create`, `dispatchRequest`, `defaultDialogFolder`, `runBusy` |
 | Spec | `labkit.ui.spec.app`, `workspace`, `tab`, `section`, `field`, `rangeField`, `panner`, `action`, `actionGroup`, `pathPanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `usagePanel` |
 | View | `labkit.ui.view.setValue`, `getValue`, `setEnabled`, `appendLog`, `setListItems`, `setListSelection`, `drawImage`, `resetAxes`, `clearAxes` |
 | Tool | `labkit.ui.tool.createRuntime`, `anchorEditor`, `scaleBar`, `scaleBarCalibration`, `zoomAxesAtPoint` |
 | Diagnostics | `labkit.ui.diag.createContext` |
+
+Reusable facades publish MATLAB-native contract versions through their
+`version()` APIs. Apps declare required facade ranges through app-local
+`requirements.m` functions, and `labkit.contract` checks those ranges in tests
+and at launch. This is a same-repo maintenance guardrail; routine users still
+update LabKit as one repository.
 
 `+ui/buildSpec.m` returns a data-only `labkit.ui.spec.*` tree. It should not
 create MATLAB UI handles, mutate app state, perform IO, run calculations, write

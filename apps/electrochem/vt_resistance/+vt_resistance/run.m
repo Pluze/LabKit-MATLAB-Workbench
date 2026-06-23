@@ -68,7 +68,8 @@ function fig = run(debugLog)
     end
 
     function onOpenFolder(~,~)
-        folder = uigetdir(pwd,'Select folder containing DTA files');
+        folder = uigetdir(labkit.ui.app.defaultDialogFolder("input"), ...
+            'Select folder containing DTA files');
         if isequal(folder,0)
             addLog('Folder selection cancelled.');
             return;
@@ -413,7 +414,9 @@ function fig = run(debugLog)
             uialert(fig,'No results to export.','Export');
             return;
         end
-        [f,p] = uiputfile('vt_steady_resistance_results.csv','Save results CSV');
+        [f,p] = uiputfile('vt_steady_resistance_results.csv','Save results CSV', ...
+            fullfile(labkit.ui.app.defaultDialogFolder("output"), ...
+            'vt_steady_resistance_results.csv'));
         if isequal(f,0)
             return;
         end

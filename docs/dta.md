@@ -2,6 +2,9 @@
 
 `labkit.dta.*` is the current electrochemistry/Gamry DTA facade. It provides GUI-free DTA discovery, loading, sessions, pulse detection, parser access, and parsed table/curve helpers for DTA-backed apps.
 
+`labkit.dta.version()` returns the DTA facade contract version struct used by
+`labkit.contract` requirement checks.
+
 This facade exists because several electrochemistry workflows share the same file family. Other data or device families should become peer facades only after real apps need them; DTA-specific parser behavior should not leak into `labkit.ui` or unrelated apps.
 
 ## Public DTA API

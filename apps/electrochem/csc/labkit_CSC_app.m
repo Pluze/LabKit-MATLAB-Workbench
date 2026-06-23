@@ -20,8 +20,9 @@ function varargout = labkit_CSC_app(varargin)
 % Optional normalization
 %   CSC = Q / area (cm^2); both charge and normalized CSC are shown.
 %
+    requirements = csc.requirements();
     [requestHandled, requestOutputs, debugLog] = labkit.ui.app.dispatchRequest( ...
-        'labkit_CSC_app', varargin, nargout);
+        'labkit_CSC_app', varargin, nargout, "Requirements", requirements);
     if requestHandled
         varargout = requestOutputs;
         return;

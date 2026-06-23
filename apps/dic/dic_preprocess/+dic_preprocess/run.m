@@ -249,7 +249,8 @@ function fig = run(debugLog)
 
         [outputs, cancelled] = dic_preprocess.io.saveCurrentImages( ...
             S.currentReferenceImage, S.currentMovingImage, ...
-            S.referencePath, S.movingPath);
+            S.referencePath, S.movingPath, ...
+            labkit.ui.app.defaultDialogFolder("output"));
         if cancelled
             addLog('Save current images cancelled.');
             return;
@@ -391,7 +392,8 @@ function fig = run(debugLog)
         end
 
         [out, cancelled] = dic_preprocess.io.saveMask( ...
-            S.maskImage, S.referencePath);
+            S.maskImage, S.referencePath, ...
+            labkit.ui.app.defaultDialogFolder("output"));
         if cancelled
             addLog('Save ROI mask cancelled.');
             return;

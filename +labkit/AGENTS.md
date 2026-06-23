@@ -23,6 +23,9 @@
   trains, nerve channel roles, CAP thresholds, segment schemas, or exports.
 - `labkit.biosignal` stays GUI-free and independent from DTA/app code.
 - `labkit.ui` stays parser/data/analysis-free; apps pass prepared values, labels, tables, callbacks, and handles into UI helpers.
+- `labkit.contract` owns only MATLAB-native facade contract structs, simple range
+  checks, and app requirement assertions. It must stay domain-neutral and must
+  not become a package manager, plugin registry, or app metadata store.
 - Reusable UI tools may own domain-neutral interaction workflows such as image scale-bar controls, reference editing, unit normalization, and overlay placement. Keep those tools independent from app result schemas, scientific formulas, file formats, and workflow wording.
 - App-facing UI APIs live under `labkit.ui.app.*`, `labkit.ui.spec.*`, `labkit.ui.view.*`, `labkit.ui.tool.*`, and `labkit.ui.diag.*`. Do not reintroduce flat `labkit.ui.*` helper files.
 - Preview-axis tools that need pointer, drag, scroll, or hit-test ownership must use `labkit.ui.tool.createRuntime` sessions instead of each helper managing figure/axes callbacks independently.

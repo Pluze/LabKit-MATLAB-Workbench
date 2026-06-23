@@ -291,7 +291,8 @@ function fig = run(debugLog)
             refreshAll();
             return;
         end
-        outputPath = rhs_preview.io.promptProtocolOutput();
+        outputPath = rhs_preview.io.promptProtocolOutput( ...
+            labkit.ui.app.defaultDialogFolder("output"));
         if strlength(outputPath) == 0
             return;
         end
@@ -312,7 +313,8 @@ function fig = run(debugLog)
         end
         data = labkit.ui.view.getValue(ui, "fileFilterTable");
         S.filterRows = rhs_preview.ops.applyFileFilterTableData(S.filterRows, data);
-        outputPath = rhs_preview.io.promptFilterRecordOutput();
+        outputPath = rhs_preview.io.promptFilterRecordOutput( ...
+            labkit.ui.app.defaultDialogFolder("output"));
         if strlength(outputPath) == 0
             return;
         end

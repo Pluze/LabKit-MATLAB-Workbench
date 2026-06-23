@@ -2,6 +2,9 @@
 
 `labkit.biosignal.*` is the GUI-free facade for physiological or wearable time-series data. It is a peer of `labkit.dta`, not a replacement for app-owned workflow logic.
 
+`labkit.biosignal.version()` returns the biosignal facade contract version
+struct used by `labkit.contract` requirement checks.
+
 The module currently supports the first ECG-oriented wearable app, but the public API intentionally uses generic signal vocabulary: recordings, channels, events, segments, templates, measurements, and groups.
 
 ## Public Surface

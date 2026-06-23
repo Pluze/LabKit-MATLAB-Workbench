@@ -6,7 +6,7 @@ function folder = defaultSaveFolder(referencePath, movingPath, fallbackFolder)
 %DEFAULTSAVEFOLDER Choose the DIC preprocess current-image save folder.
 
     if nargin < 3 || strlength(string(fallbackFolder)) == 0
-        fallbackFolder = pwd;
+        fallbackFolder = tempdir;
     end
 
     [folder, ~] = fileparts(char(referencePath));

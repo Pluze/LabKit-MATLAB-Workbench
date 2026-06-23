@@ -127,9 +127,10 @@ function paths = choosePaths(control)
         case 'multiFile'
             paths = chooseFileOrFolder(props);
         case {'folder', 'outputFolder'}
-            paths = chooseFolder(optionValue(props, 'startPath', pwd));
+            kind = folderDialogKind(mode);
+            paths = chooseFolder(dialogStartPath(props, kind), kind);
         case 'multiFolder'
-            paths = chooseMultipleFolders(optionValue(props, 'startPath', pwd));
+            paths = chooseMultipleFolders(dialogStartPath(props, "input"));
         otherwise
             error('labkit:ui:app:InvalidPathMode', ...
                 'Unsupported pathPanel mode "%s".', mode);
@@ -147,7 +148,7 @@ function paths = chooseFiles(props, allowMulti)
     filters = normalizeFileFilters(optionValue(props, 'filters', ...
         {'*.*', 'All files'}));
     titleText = optionValue(props, 'dialogTitle', chooseButtonText(props));
-    startPath = optionValue(props, 'startPath', pwd);
+    startPath = dialogStartPath(props, "input");
     if allowMulti
         [files, folder] = uigetfile(filters, titleText, startPath, ...
             'MultiSelect', 'on');
@@ -158,6 +159,7 @@ function paths = chooseFiles(props, allowMulti)
         paths = {};
         return;
     end
+    rememberDialogFolder(folder, "input");
     if ischar(files) || isstring(files)
         files = {char(string(files))};
     end
@@ -170,25 +172,26 @@ function paths = chooseFiles(props, allowMulti)
 end
 
 function paths = chooseFileOrFolder(props)
-    startPath = optionValue(props, 'startPath', pwd);
+    startPath = dialogStartPath(props, "input");
     choice = questdlg('Choose files or recursively load a folder?', ...
         'Choose input source', 'File', 'Folder', 'Cancel', 'File');
     switch choice
         case 'File'
             paths = chooseFiles(props, false);
         case 'Folder'
-            folder = chooseFolder(startPath);
+            folder = chooseFolder(startPath, "input");
             paths = expandPathChoices(string(folder(:)), props);
         otherwise
             paths = strings(0, 1);
     end
 end
 
-function paths = chooseFolder(startPath)
+function paths = chooseFolder(startPath, kind)
     folder = uigetdir(startPath, 'Choose folder');
     if isequal(folder, 0)
         paths = {};
     else
+        rememberDialogFolder(folder, kind);
         paths = {folder};
     end
 end
@@ -202,6 +205,7 @@ function paths = chooseMultipleFolders(startPath)
             break;
         end
         paths{end + 1} = folder;
+        rememberDialogFolder(folder, "input");
         nextPath = folder;
         choice = questdlg('Add another folder?', 'Select folders', ...
             'Add another', 'Done', 'Done');
@@ -210,6 +214,34 @@ function paths = chooseMultipleFolders(startPath)
         end
     end
     paths = unique(paths, 'stable');
+end
+
+function kind = folderDialogKind(mode)
+    if strcmp(mode, 'outputFolder')
+        kind = "output";
+    else
+        kind = "input";
+    end
+end
+
+function startPath = dialogStartPath(props, kind)
+    startPath = labkit.ui.app.defaultDialogFolder(kind, ...
+        optionValue(props, 'startPath', ""));
+end
+
+function rememberDialogFolder(folder, kind)
+    if isempty(folder) || isequal(folder, 0)
+        return;
+    end
+    if strcmp(kind, "output")
+        prefName = 'LastOutputFolder';
+    else
+        prefName = 'LastInputFolder';
+    end
+    try
+        setpref('LabKit', prefName, char(string(folder)));
+    catch
+    end
 end
 
 function paths = normalizedPaths(paths)

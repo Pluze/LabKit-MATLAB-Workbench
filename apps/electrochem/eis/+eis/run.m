@@ -60,7 +60,8 @@ function fig = run(debugLog)
     end
 
     function onOpenFolder(~, ~)
-        folder = uigetdir(pwd, 'Select a folder to recursively scan for .DTA files');
+        folder = uigetdir(labkit.ui.app.defaultDialogFolder("input"), ...
+            'Select a folder to recursively scan for .DTA files');
         if isequal(folder, 0)
             addLog('Folder selection cancelled.');
             return;
@@ -178,7 +179,9 @@ function fig = run(debugLog)
             return;
         end
 
-        [f, p] = uiputfile('gamry_eis_plot_export.csv', 'Save current X/Y plot CSV');
+        [f, p] = uiputfile('gamry_eis_plot_export.csv', 'Save current X/Y plot CSV', ...
+            fullfile(labkit.ui.app.defaultDialogFolder("output"), ...
+            'gamry_eis_plot_export.csv'));
         if isequal(f, 0)
             return;
         end

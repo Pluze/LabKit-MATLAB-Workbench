@@ -8,7 +8,7 @@ function fig = run(debugLog)
     S.items = repmat(image_enhance.state.emptyItem(), 0, 1);
     S.currentIndex = 0;
     S.steps = repmat(image_enhance.state.emptyStep(), 0, 1);
-    S.outputFolder = string(pwd);
+    S.outputFolder = string(labkit.ui.app.defaultDialogFolder("output"));
     S.lastExport = [];
     S.pendingDirty = false;
     S.previewImages = {};
@@ -144,7 +144,8 @@ function fig = run(debugLog)
     end
 
     function onChooseOutputFolder(~, ~)
-        folder = uigetdir(char(S.outputFolder), 'Select image enhancement export folder');
+        folder = uigetdir(labkit.ui.app.defaultDialogFolder("output", S.outputFolder), ...
+            'Select image enhancement export folder');
         if isequal(folder, 0)
             addLog('Export folder selection cancelled.');
             return;

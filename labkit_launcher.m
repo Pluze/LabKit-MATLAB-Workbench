@@ -823,6 +823,8 @@ function result = launcherUpdateFromStableZip(root, progressFcn)
     assertUpdateTargetRoot(root);
     notifyProgress(progressFcn, "Checking update mode...", 0.10);
     assertNotGitCheckout(root);
+    notifyProgress(progressFcn, "Checking install folder hygiene...", 0.11);
+    assertNoUnmanagedInstallFiles(root);
     notifyProgress(progressFcn, "Resolving latest GitHub release or tag...", 0.12);
     source = resolveStableZipSource();
     result = launcherUpdateFromZipSource(root, source, progressFcn, true);
@@ -839,6 +841,8 @@ function result = launcherUpdateFromZipSource(root, source, progressFcn, preflig
         assertUpdateTargetRoot(root);
         notifyProgress(progressFcn, "Checking update mode...", 0.10);
         assertNotGitCheckout(root);
+        notifyProgress(progressFcn, "Checking install folder hygiene...", 0.11);
+        assertNoUnmanagedInstallFiles(root);
     end
     if ~confirmUpdate(root, source.label)
         result = summaryStruct(root, "", 0, 0, "Update canceled.");
@@ -854,11 +858,15 @@ function result = launcherUpdateFromZipSource(root, source, progressFcn, preflig
     unzip(char(zipPath), char(extractRoot));
     sourceRoot = findExtractedProjectRoot(extractRoot);
     assertInstallRoot(sourceRoot);
+    removedApps = removedAppEntrypoints(root, sourceRoot);
+    if ~isempty(removedApps) && ~confirmDestructiveUpdate(source.label, removedApps)
+        result = summaryStruct(root, "", 0, 0, ...
+            "Update canceled because the candidate removes app entrypoints.");
+        return;
+    end
     notifyProgress(progressFcn, "Reading managed file list...", 0.55);
     newFiles = collectManagedFiles(sourceRoot);
     oldFiles = readManifest(root);
-    notifyProgress(progressFcn, "Creating visible backup zip...", 0.65);
-    backupPath = createBackup(root, tempRoot, newFiles, oldFiles);
     notifyProgress(progressFcn, "Copying LabKit-managed files...", 0.75);
     copiedCount = overlayManagedFiles(sourceRoot, root, newFiles);
     notifyProgress(progressFcn, "Removing retired managed files...", 0.90);
@@ -866,10 +874,10 @@ function result = launcherUpdateFromZipSource(root, source, progressFcn, preflig
     notifyProgress(progressFcn, "Writing update manifest...", 0.96);
     writeManifest(root, newFiles);
     notifyProgress(progressFcn, "Update complete.", 1.00);
-    result = summaryStruct(root, backupPath, copiedCount, deletedCount, ...
+    result = summaryStruct(root, "", copiedCount, deletedCount, ...
         sprintf(['Updated from %s. Copied %d file(s), removed %d ' ...
-        'retired managed file(s). Restart labkit_launcher. Backup: %s'], ...
-        char(source.label), copiedCount, deletedCount, backupPath));
+        'retired managed file(s). Restart labkit_launcher.'], ...
+        char(source.label), copiedCount, deletedCount));
     clear cleanup;
     removeFolderIfPresent(tempRoot);
 end
@@ -977,14 +985,56 @@ function assertNotGitCheckout(root)
     end
 end
 
+function assertNoUnmanagedInstallFiles(root)
+    files = collectRelativeFiles(root);
+    unmanaged = strings(1, 0);
+    for k = 1:numel(files)
+        rel = files(k);
+        if isManagedRelativePath(rel) || isLauncherRuntimePath(rel)
+            continue;
+        end
+        unmanaged(end+1) = rel;
+    end
+    unmanaged = sort(unique(unmanaged));
+    if isempty(unmanaged)
+        return;
+    end
+    preview = unmanaged(1:min(20, numel(unmanaged)));
+    suffix = '';
+    if numel(unmanaged) > numel(preview)
+        suffix = sprintf('\n... and %d more file(s)', numel(unmanaged) - numel(preview));
+    end
+    error("labkit_launcher:UnmanagedInstallFiles", ...
+        ['LabKit update refused because this folder contains files that are ' ...
+        'not part of LabKit-managed artifacts. Keep lab data and exports outside ' ...
+        'the LabKit install folder, then remove or move these files before updating:\n\n%s%s'], ...
+        strjoin(cellstr(preview), newline), suffix);
+end
+
 function tf = confirmUpdate(root, sourceLabel)
     message = sprintf(['Download %s zip and overwrite ' ...
-        'LabKit-managed files in:\n\n%s\n\nThis can restore missing managed ' ...
-        'folders. User files that are not LabKit project files are left in place.'], ...
+        'LabKit-managed files in:\n\n%s\n\nLabKit install folders should not ' ...
+        'contain personal data, lab files, or exports. This update has already ' ...
+        'refused unmanaged files and will fully replace managed LabKit files.'], ...
         char(sourceLabel), root);
     try
         choice = questdlg(message, "Update LabKit", "Update", "Cancel", "Cancel");
         tf = strcmp(choice, "Update");
+    catch
+        tf = false;
+    end
+end
+
+function tf = confirmDestructiveUpdate(sourceLabel, removedApps)
+    appList = strjoin(cellstr(removedApps(:)), newline);
+    message = sprintf(['The %s update removes or merges these app entrypoints:\n\n%s\n\n' ...
+        'This is a destructive LabKit update. Continue only if you do not need ' ...
+        'those old entrypoints, or cancel and manually choose an older release tag.'], ...
+        char(sourceLabel), appList);
+    try
+        choice = questdlg(message, "Destructive LabKit Update", ...
+            "Continue update", "Cancel", "Cancel");
+        tf = strcmp(choice, "Continue update");
     catch
         tf = false;
     end
@@ -1029,6 +1079,34 @@ function tf = isManagedRelativePath(rel)
         "labkit_launcher.m", ".gitignore"];
     managedRoots = ["+labkit", "apps", "docs", "scripts", "tests", ".agents", ".github"];
     tf = ismember(string(rel), rootFiles) || ismember(parts(1), managedRoots);
+end
+
+function tf = isLauncherRuntimePath(rel)
+    rel = string(strrep(rel, filesep, "/"));
+    parts = split(rel, "/");
+    name = parts(end);
+    tf = rel == ".labkit-managed-files.txt" || ...
+        parts(1) == "artifacts" || ...
+        startsWith(name, "LabKit-backup-") && endsWith(name, ".zip");
+end
+
+function removed = removedAppEntrypoints(currentRoot, sourceRoot)
+    currentApps = collectAppEntrypoints(currentRoot);
+    sourceApps = collectAppEntrypoints(sourceRoot);
+    removed = setdiff(currentApps, sourceApps);
+end
+
+function apps = collectAppEntrypoints(root)
+    entries = dir(fullfile(root, "apps", "**", "labkit_*_app.m"));
+    apps = strings(1, 0);
+    for k = 1:numel(entries)
+        if entries(k).isdir
+            continue;
+        end
+        apps(end+1) = string(relativePath(root, ...
+            fullfile(entries(k).folder, entries(k).name)));
+    end
+    apps = sort(unique(apps));
 end
 
 function backupPath = createBackup(root, tempRoot, newFiles, oldFiles)

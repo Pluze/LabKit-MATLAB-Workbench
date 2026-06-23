@@ -1,8 +1,9 @@
 function varargout = labkit_BatchImageCrop_app(varargin)
 %LABKIT_BATCHIMAGECROP_APP Batch crop microscope images at fixed pixel size.
 
+    requirements = batch_crop.requirements();
     [requestHandled, requestOutputs, debugLog] = labkit.ui.app.dispatchRequest( ...
-        'labkit_BatchImageCrop_app', varargin, nargout);
+        'labkit_BatchImageCrop_app', varargin, nargout, "Requirements", requirements);
     if requestHandled
         varargout = requestOutputs;
         return;

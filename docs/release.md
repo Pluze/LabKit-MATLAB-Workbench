@@ -34,7 +34,9 @@ Use this note structure:
 - Bug fixes, if any.
 
 ## Upgrade Note
-- Compatibility or upgrade guidance, if any.
+- Compatibility or upgrade guidance, if any. Mention app entrypoint or app
+  requirement changes and any LabKit facade contract version or supported-range
+  changes.
 
 ## Validation
 - Local and CI validation evidence.

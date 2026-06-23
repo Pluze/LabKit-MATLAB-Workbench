@@ -249,7 +249,8 @@ function fig = run(debugLog)
             showError('No segment SNR', 'Analyze a signal before exporting segment SNR.');
             return;
         end
-        [fn, fp] = uiputfile('ecg_segment_snr.csv', 'Export segment SNR CSV');
+        [fn, fp] = uiputfile('ecg_segment_snr.csv', 'Export segment SNR CSV', ...
+            fullfile(labkit.ui.app.defaultDialogFolder("output"), 'ecg_segment_snr.csv'));
         if isequal(fn, 0)
             addLog('Segment SNR export cancelled.');
             return;
@@ -260,7 +261,8 @@ function fig = run(debugLog)
     end
 
     function onExportWaveform()
-        [fn, fp] = uiputfile('ecg_waveform.png', 'Export waveform PNG');
+        [fn, fp] = uiputfile('ecg_waveform.png', 'Export waveform PNG', ...
+            fullfile(labkit.ui.app.defaultDialogFolder("output"), 'ecg_waveform.png'));
         if isequal(fn, 0)
             addLog('Waveform export cancelled.');
             return;
