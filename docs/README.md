@@ -18,6 +18,8 @@ the app catalog; maintainer references are grouped separately.
   validation limits.
 - [release.md](release.md): version selection, tag naming, and GitHub release
   note format.
+- [workflow-assets.md](workflow-assets.md): command-line generation of real app
+  screenshots and example outputs for SOPs and onboarding guides.
 
 ## Reusable Facades
 
