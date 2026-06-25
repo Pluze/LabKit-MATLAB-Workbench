@@ -65,7 +65,7 @@ function info = launcherVersion()
     info = struct( ...
         "name", "labkit_launcher", ...
         "displayName", "LabKit App Launcher", ...
-        "version", "1.1.0", ...
+        "version", "1.1.1", ...
         "updated", "2026-06-25");
 end
 
@@ -567,6 +567,12 @@ end
 function line = installFolderPolicyLine(root)
     if exist(fullfile(root, ".git"), "dir") == 7
         line = "Git checkout detected: launcher zip updates are disabled; use git for this tree.";
+        return;
+    end
+    legacyFiles = legacyInstallFilesWithoutManifest(root);
+    if ~isempty(legacyFiles)
+        line = string(sprintf(['Folder hygiene: LabKit files exist without ' ...
+            '.labkit-managed-files.txt; rebuild in an empty folder before updating.']));
         return;
     end
     unmanaged = unmanagedInstallFiles(root);
@@ -1402,6 +1408,21 @@ function applyLauncherGuiTestMode(fig)
 end
 
 function assertNoUnmanagedInstallFiles(root)
+    legacyFiles = legacyInstallFilesWithoutManifest(root);
+    if ~isempty(legacyFiles)
+        preview = legacyFiles(1:min(20, numel(legacyFiles)));
+        suffix = '';
+        if numel(legacyFiles) > numel(preview)
+            suffix = sprintf('\n... and %d more file(s)', numel(legacyFiles) - numel(preview));
+        end
+        error("labkit_launcher:MissingManagedManifest", ...
+            ['LabKit update refused because this folder contains LabKit files ' ...
+            'but no managed install manifest. Create a new empty LabKit folder, ' ...
+            'put only labkit_launcher.m in it, then use Latest, Release, or ' ...
+            'Versions to rebuild the install. Move lab data and exports outside ' ...
+            'the LabKit folder before rebuilding.\n\nFiles found:\n%s%s'], ...
+            strjoin(cellstr(preview), newline), suffix);
+    end
     unmanaged = unmanagedInstallFiles(root);
     if isempty(unmanaged)
         return;
@@ -1421,17 +1442,17 @@ end
 function unmanaged = unmanagedInstallFiles(root)
     files = collectRelativeFiles(root);
     manifestFiles = readManifest(root);
-    hasManifest = exist(manifestPath(root), "file") == 2 && ~isempty(manifestFiles);
+    hasManifest = hasManagedManifest(root);
     unmanaged = strings(1, 0);
     for k = 1:numel(files)
         rel = files(k);
-        if isLauncherRuntimePath(rel)
+        if hasManifest && isLauncherRuntimePath(rel)
             continue;
         end
         if hasManifest
             isAllowed = any(manifestFiles == rel);
         else
-            isAllowed = isManagedRelativePath(rel);
+            isAllowed = isLauncherBootstrapPath(rel);
         end
         if isAllowed
             continue;
@@ -1439,6 +1460,29 @@ function unmanaged = unmanagedInstallFiles(root)
         unmanaged(end+1) = rel;
     end
     unmanaged = sort(unique(unmanaged));
+end
+
+function files = legacyInstallFilesWithoutManifest(root)
+    if hasManagedManifest(root)
+        files = strings(1, 0);
+        return;
+    end
+    files = collectRelativeFiles(root);
+    keep = false(size(files));
+    for k = 1:numel(files)
+        keep(k) = isLauncherBootstrapPath(files(k));
+    end
+    files = sort(unique(files(~keep)));
+end
+
+function tf = hasManagedManifest(root)
+    manifestFiles = readManifest(root);
+    tf = exist(manifestPath(root), "file") == 2 && ~isempty(manifestFiles);
+end
+
+function tf = isLauncherBootstrapPath(rel)
+    rel = string(strrep(rel, filesep, "/"));
+    tf = rel == "labkit_launcher.m";
 end
 
 function tf = confirmUpdate(root, sourceLabel)
