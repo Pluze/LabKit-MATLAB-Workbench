@@ -8,6 +8,11 @@ Use semantic versioning for public releases.
 - Minor releases, such as `v2.2.0`, are for user-visible features, workflow changes, or meaningful maintenance improvements.
 - Major releases, such as `v3.0.0`, are for breaking changes or intentionally incompatible workflows.
 
+If a commit marked as breaking, such as `feat!`, changes user workflow or app
+compatibility, choose a major version. If the implementation changes a user
+workflow without intentionally breaking compatibility, describe it in the
+release notes so launcher users can choose or roll back versions deliberately.
+
 ## Tags
 
 Use `vX.Y.Z` for new release tags, for example `v2.2.0`.
@@ -48,6 +53,10 @@ commands or CI workflow that passed and the commit used for the release.
 Attach `labkit_launcher.m` to each GitHub release. The root README download
 link points at the latest release asset so browsers download the launcher
 instead of opening the raw source text.
+
+The launcher version manager lists recent releases, tags, and main-branch
+commits. Keep release titles and upgrade notes clear enough for users to select
+an older release when the newest build is unsuitable for their workflow.
 
 Before tagging a release that adds, renames, or removes release-blocking
 guardrail tests, verify that the buildfile CI shard tasks still discover the

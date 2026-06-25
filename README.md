@@ -29,10 +29,11 @@ and run LabKit from the extracted folder.
 labkit_launcher
 ```
 
-Use `Latest` in the launcher to update from the current `main` branch, or
-`Release` to use the latest stable GitHub release. Keep lab data and exported
-results in your own project folders; the LabKit folder can be treated as an
-application runtime folder.
+Use `Latest` in the launcher to update from the current `main` branch,
+`Release` to use the latest stable GitHub release, or `Versions` to choose a
+recent release, tag, or main-branch commit for a deliberate upgrade or
+rollback. Keep lab data and exported results in your own project folders; the
+LabKit folder is an application runtime folder.
 
 ## What You Get
 

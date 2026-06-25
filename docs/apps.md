@@ -16,9 +16,11 @@ labkit_launcher
 
 The launcher is self-contained so it can open before the rest of LabKit is
 installed and report its own version. Use `Latest` to download the current
-`main` branch or `Release` to download the latest stable release. After LabKit
-is present, the launcher initializes the MATLAB path, discovers app entry
-points with their app versions, and opens the selected app.
+`main` branch, `Release` to download the latest stable release, or `Versions`
+to choose a recent release, tag, or main-branch commit. The version manager is
+for deliberate upgrades or rollback when a newer build is unsuitable. After
+LabKit is present, the launcher initializes the MATLAB path, discovers app
+entry points with their app versions, and opens the selected app.
 
 Treat the LabKit folder as an application runtime folder. Keep source data and
 exported results in separate project folders; routine users do not need to
@@ -37,9 +39,8 @@ labkit_CIC_app
 ```
 
 The launcher also provides debug launch, generated-artifact cleanup, and MATLAB
-Code Analyzer actions for maintenance work. Cleanup targets generated LabKit
-artifacts: `artifacts/` plus older root-level diagnostic files named
-`matlab_code_check.json` or `matlab_test*.log`.
+Code Analyzer actions for maintenance work. Cleanup removes generated LabKit
+artifacts under `artifacts/`.
 
 The Code Analyzer action writes
 `artifacts/code-check/matlab_code_check.json` for manual maintenance review.
@@ -48,10 +49,12 @@ The launcher sets up the app path before opening an app. App-owned packages are
 reached through their owning app entrypoint and package namespace.
 
 The launcher refuses updates when the LabKit folder contains unmanaged
-non-LabKit files. Keep lab data and exports outside the LabKit runtime folder.
-If a release removes or merges app entrypoints, the launcher warns before
-overwriting managed files; users who need old entrypoints should choose an older
-release tag manually.
+non-LabKit files. After a managed install has a manifest, only manifest-listed
+LabKit files and generated `artifacts/` are allowed in the runtime folder.
+Keep lab data and exports outside the LabKit runtime folder. If a release
+removes or merges app entrypoints, the launcher warns before overwriting
+managed files; users who need old entrypoints should choose an older release,
+tag, or commit through `Versions`.
 
 ## App Catalog
 

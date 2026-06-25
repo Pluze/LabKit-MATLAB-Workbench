@@ -65,8 +65,8 @@ function info = launcherVersion()
     info = struct( ...
         "name", "labkit_launcher", ...
         "displayName", "LabKit App Launcher", ...
-        "version", "1.0.0", ...
-        "updated", "2026-06-23");
+        "version", "1.1.0", ...
+        "updated", "2026-06-25");
 end
 
 function titleText = launcherVersionTitle()
@@ -122,10 +122,10 @@ function fig = runLauncher(root, apps)
     controlsGrid.Padding = [6 6 6 6];
     controlsGrid.RowSpacing = 6;
 
-    updateGrid = uigridlayout(controlsGrid, [1 3]);
+    updateGrid = uigridlayout(controlsGrid, [1 4]);
     updateGrid.Layout.Row = 1;
     updateGrid.Layout.Column = 1;
-    updateGrid.ColumnWidth = {'1x', '1x', '1x'};
+    updateGrid.ColumnWidth = {'0.95x', '1x', '1x', '1x'};
     updateGrid.RowHeight = {'1x'};
     updateGrid.Padding = [0 0 0 0];
     updateGrid.ColumnSpacing = 6;
@@ -141,9 +141,14 @@ function fig = runLauncher(root, apps)
         'ButtonPushedFcn', @onUpdateFromStable);
     btnRelease.Layout.Row = 1;
     btnRelease.Layout.Column = 3;
+    btnVersions = uibutton(updateGrid, 'Text', 'Versions', ...
+        'ButtonPushedFcn', @onOpenVersionManager);
+    btnVersions.Layout.Row = 1;
+    btnVersions.Layout.Column = 4;
     if isprop(btnUpdate, 'Tooltip')
         btnUpdate.Tooltip = 'Download and apply the latest main branch zip.';
         btnRelease.Tooltip = 'Download and apply the latest GitHub release or tag zip.';
+        btnVersions.Tooltip = 'Choose a recent release, tag, or main-branch commit.';
     end
     btnRefresh = uibutton(controlsGrid, 'Text', 'Refresh App List', ...
         'ButtonPushedFcn', @onRefreshApps);
@@ -320,6 +325,14 @@ function fig = runLauncher(root, apps)
         end
     end
 
+    function onOpenVersionManager(varargin)
+        openVersionManager(fig, root, @onVersionManagerUpdated, @setStatus);
+    end
+
+    function onVersionManagerUpdated()
+        onRefreshApps();
+    end
+
     function launchSelectedApp(debugMode)
         if isempty(state.visibleApps)
             setStatus('No app entry points found. Use GitHub Update to repair this install.');
@@ -380,6 +393,198 @@ function fig = runLauncher(root, apps)
     function updateInfo(detailRows)
         rows = reshape(cellstr(string(detailRows(:))), [], 1);
         txtInfo.Value = [{['Status: ' char(state.status)]}; {''}; rows];
+    end
+end
+
+function manager = openVersionManager(parentFig, root, refreshCallback, statusCallback)
+    if nargin < 3
+        refreshCallback = [];
+    end
+    if nargin < 4
+        statusCallback = [];
+    end
+
+    managerArgs = {'Name', 'LabKit Version Manager', ...
+        'Position', [210 170 900 520], 'Color', [0.97 0.98 0.99]};
+    if launcherGuiTestMode() == "hidden"
+        managerArgs = [managerArgs, {'Visible', 'off'}];
+    end
+    manager = uifigure(managerArgs{:});
+    applyLauncherGuiTestMode(manager);
+
+    layout = uigridlayout(manager, [4 1]);
+    layout.RowHeight = {86, '1x', 36, 76};
+    layout.Padding = [8 8 8 8];
+    layout.RowSpacing = 8;
+
+    currentInfo = uitextarea(layout, 'Editable', 'off', ...
+        'Value', cellstr(currentInstallVersionLines(root)));
+    currentInfo.Layout.Row = 1;
+
+    sourceTable = uitable(layout, ...
+        'ColumnName', {'Type', 'Version or commit', 'Date', 'Summary'}, ...
+        'ColumnEditable', [false false false false], 'RowName', {}, ...
+        'FontSize', 14);
+    sourceTable.ColumnWidth = {100, 170, 170, 'auto'};
+    sourceTable.Layout.Row = 2;
+
+    buttonGrid = uigridlayout(layout, [1 4]);
+    buttonGrid.Layout.Row = 3;
+    buttonGrid.ColumnWidth = {'1x', '1x', '1x', '1x'};
+    buttonGrid.RowHeight = {'1x'};
+    buttonGrid.Padding = [0 0 0 0];
+    buttonGrid.ColumnSpacing = 8;
+
+    btnRefresh = uibutton(buttonGrid, 'Text', 'Refresh', ...
+        'ButtonPushedFcn', @onRefreshSources);
+    btnRefresh.Layout.Column = 1;
+    btnInstall = uibutton(buttonGrid, 'Text', 'Install Selected', ...
+        'ButtonPushedFcn', @onInstallSelected);
+    btnInstall.Layout.Column = 2;
+    btnClose = uibutton(buttonGrid, 'Text', 'Close', ...
+        'ButtonPushedFcn', @(~, ~) close(manager));
+    btnClose.Layout.Column = 4;
+    if isprop(btnRefresh, 'Tooltip')
+        btnRefresh.Tooltip = 'Fetch recent GitHub releases, tags, and main commits.';
+        btnInstall.Tooltip = 'Download and apply the selected LabKit version.';
+        btnClose.Tooltip = 'Close version manager.';
+    end
+
+    statusText = uitextarea(layout, 'Editable', 'off', ...
+        'Value', {'Choose a recent release, tag, or main-branch commit.'});
+    statusText.Layout.Row = 4;
+
+    sourceState = struct('sources', emptyVersionSources(), 'selectedRow', 1);
+    configureTable(sourceTable, @onSourceSelection, @onSourceDoubleClicked);
+    onRefreshSources();
+
+    function onRefreshSources(varargin)
+        setManagerStatus('Fetching recent LabKit versions from GitHub...');
+        drawnow;
+        try
+            sourceState.sources = recentVersionSources();
+            sourceState.selectedRow = 1;
+            sourceTable.Data = versionSourceRows(sourceState.sources);
+            btnInstall.Enable = matlab.lang.OnOffSwitchState(~isempty(sourceState.sources));
+            if isempty(sourceState.sources)
+                setManagerStatus('No release, tag, or commit options were returned by GitHub.');
+            else
+                setManagerStatus(sprintf('Loaded %d version option(s). Select one to install or roll back.', ...
+                    numel(sourceState.sources)));
+            end
+        catch err
+            sourceState.sources = emptyVersionSources();
+            sourceTable.Data = cell(0, 4);
+            btnInstall.Enable = 'off';
+            setManagerStatus(sprintf('Version lookup failed: %s', err.message));
+        end
+    end
+
+    function onSourceSelection(~, event)
+        row = eventRow(event);
+        if ~isnan(row)
+            sourceState.selectedRow = row;
+        end
+    end
+
+    function onSourceDoubleClicked(varargin)
+        onInstallSelected();
+    end
+
+    function onInstallSelected(varargin)
+        if isempty(sourceState.sources)
+            setManagerStatus('No version option is available to install.');
+            return;
+        end
+        row = min(max(sourceState.selectedRow, 1), numel(sourceState.sources));
+        source = sourceState.sources(row);
+        setManagerStatus(sprintf('Preparing %s...', char(source.label)));
+        notifyStatus(statusCallback, sprintf('Updating LabKit from %s...', char(source.label)));
+        drawnow;
+        dlg = [];
+        try
+            dlg = uiprogressdlg(manager, 'Title', 'Install LabKit Version', ...
+                'Message', 'Preparing update...', 'Indeterminate', 'on');
+        catch
+        end
+        if ~isempty(dlg)
+            dlgCleanup = onCleanup(@() close(dlg));
+        end
+        try
+            result = launcherUpdateFromZipSource(root, source, @onVersionUpdateProgress);
+            setManagerStatus(result.message);
+            notifyStatus(statusCallback, result.message);
+            currentInfo.Value = cellstr(currentInstallVersionLines(root));
+            if ~isempty(refreshCallback)
+                refreshCallback();
+            end
+        catch err
+            message = sprintf('Version install failed: %s', err.message);
+            setManagerStatus(message);
+            notifyStatus(statusCallback, message);
+        end
+        clear dlgCleanup;
+
+        function onVersionUpdateProgress(message, value)
+            setManagerStatus(message);
+            notifyStatus(statusCallback, message);
+            if ~isempty(dlg) && isvalid(dlg)
+                dlg.Message = char(message);
+                if isfinite(value)
+                    dlg.Indeterminate = 'off';
+                    dlg.Value = min(max(value, 0), 1);
+                end
+            end
+            drawnow limitrate;
+        end
+    end
+
+    function setManagerStatus(message)
+        statusText.Value = cellstr(wrapDescription(string(message)));
+    end
+end
+
+function notifyStatus(statusCallback, message)
+    if isempty(statusCallback)
+        return;
+    end
+    try
+        statusCallback(string(message));
+    catch
+    end
+end
+
+function lines = currentInstallVersionLines(root)
+    info = launcherVersion();
+    lines = [
+        string(sprintf("Current launcher: %s v%s (%s)", ...
+            info.displayName, info.version, info.updated))
+        "Install folder: " + string(root)
+        installFolderPolicyLine(root)
+    ];
+end
+
+function line = installFolderPolicyLine(root)
+    if exist(fullfile(root, ".git"), "dir") == 7
+        line = "Git checkout detected: launcher zip updates are disabled; use git for this tree.";
+        return;
+    end
+    unmanaged = unmanagedInstallFiles(root);
+    if isempty(unmanaged)
+        line = "Folder hygiene: no unmanaged files detected outside allowed runtime artifacts.";
+    else
+        line = string(sprintf(['Folder hygiene: %d unmanaged file(s) detected; ' ...
+            'updates will be refused until they are moved out.'], numel(unmanaged)));
+    end
+end
+
+function rows = versionSourceRows(sources)
+    rows = cell(numel(sources), 4);
+    for k = 1:numel(sources)
+        rows{k, 1} = char(sources(k).kind);
+        rows{k, 2} = char(sources(k).name);
+        rows{k, 3} = char(sources(k).date);
+        rows{k, 4} = char(sources(k).summary);
     end
 end
 
@@ -647,11 +852,7 @@ function result = cleanGeneratedArtifacts(root)
         return;
     end
 
-    targets = {
-        'artifacts'
-        'matlab_code_check.json'
-        'matlab_test.log'
-    };
+    targets = {'artifacts'};
     removedCount = 0;
     errors = strings(0, 1);
     for k = 1:numel(targets)
@@ -716,7 +917,7 @@ end
 function tf = confirmCleanArtifacts(fig)
     try
         choice = uiconfirm(fig, ...
-            'Remove generated LabKit artifacts and old diagnostic logs?', ...
+            'Remove generated LabKit artifacts?', ...
             'Clean Artifacts', 'Options', {'Clean', 'Cancel'}, ...
             'DefaultOption', 'Cancel', 'CancelOption', 'Cancel');
         tf = strcmp(choice, 'Clean');
@@ -852,6 +1053,32 @@ function value = stringField(raw, name)
     end
 end
 
+function value = nestedStringField(raw, names)
+    value = "";
+    current = raw;
+    for k = 1:numel(names)
+        name = names(k);
+        if ~isstruct(current) || ~isfield(current, name) || isempty(current.(name))
+            return;
+        end
+        current = current.(name);
+    end
+    if ischar(current) || isstring(current)
+        value = string(current);
+    end
+end
+
+function line = firstTextLine(text)
+    parts = splitlines(string(text));
+    parts = strip(parts);
+    parts = parts(strlength(parts) > 0);
+    if isempty(parts)
+        line = "";
+    else
+        line = parts(1);
+    end
+end
+
 function value = fixText(raw)
     value = "";
     if isfield(raw, "fix") && ~isempty(raw.fix) && ...
@@ -912,7 +1139,7 @@ function result = launcherUpdateFromZipSource(root, source, progressFcn, preflig
         assertNoUnmanagedInstallFiles(root);
     end
     if ~confirmUpdate(root, source.label)
-        result = summaryStruct(root, "", 0, 0, "Update canceled.");
+        result = summaryStruct(root, 0, 0, "Update canceled.");
         return;
     end
     notifyProgress(progressFcn, "Preparing update workspace...", 0.15);
@@ -927,7 +1154,7 @@ function result = launcherUpdateFromZipSource(root, source, progressFcn, preflig
     assertInstallRoot(sourceRoot);
     removedApps = removedAppEntrypoints(root, sourceRoot);
     if ~isempty(removedApps) && ~confirmDestructiveUpdate(source.label, removedApps)
-        result = summaryStruct(root, "", 0, 0, ...
+        result = summaryStruct(root, 0, 0, ...
             "Update canceled because the candidate removes app entrypoints.");
         return;
     end
@@ -941,7 +1168,7 @@ function result = launcherUpdateFromZipSource(root, source, progressFcn, preflig
     notifyProgress(progressFcn, "Writing update manifest...", 0.96);
     writeManifest(root, newFiles);
     notifyProgress(progressFcn, "Update complete.", 1.00);
-    result = summaryStruct(root, "", copiedCount, deletedCount, ...
+    result = summaryStruct(root, copiedCount, deletedCount, ...
         sprintf(['Updated from %s. Copied %d file(s), removed %d ' ...
         'retired managed file(s). Restart labkit_launcher.'], ...
         char(source.label), copiedCount, deletedCount));
@@ -965,11 +1192,98 @@ function source = resolveStableZipSource()
         "Could not find a GitHub release or tag to download.");
 end
 
+function sources = recentVersionSources()
+    sources = emptyVersionSources();
+    sources = [sources, safeVersionSources(@() recentReleaseSources(5))];
+    sources = [sources, safeVersionSources(@() recentTagSources(5))];
+    sources = [sources, safeVersionSources(@() recentCommitSources(8))];
+end
+
+function sources = safeVersionSources(fetchFcn)
+    try
+        sources = fetchFcn();
+    catch
+        sources = emptyVersionSources();
+    end
+end
+
+function sources = recentReleaseSources(limit)
+    sources = emptyVersionSources();
+    raw = githubApiRead("https://api.github.com/repos/Pluze/LabKit-MATLAB-Workbench/releases");
+    if ~isstruct(raw)
+        return;
+    end
+    for k = 1:numel(raw)
+        item = raw(k);
+        if logicalField(item, "draft") || logicalField(item, "prerelease")
+            continue;
+        end
+        tag = stringField(item, "tag_name");
+        if strlength(tag) == 0
+            continue;
+        end
+        name = stringField(item, "name");
+        if strlength(name) == 0
+            name = tag;
+        end
+        date = stringField(item, "published_at");
+        summary = "GitHub release " + tag;
+        source = sourceFromTag("Release", tag, "GitHub release " + tag, ...
+            tag, date, name + " (" + tag + ")");
+        source.summary = summary;
+        sources(end+1) = source;
+        if numel(sources) >= limit
+            return;
+        end
+    end
+end
+
+function sources = recentTagSources(limit)
+    sources = emptyVersionSources();
+    raw = githubApiRead("https://api.github.com/repos/Pluze/LabKit-MATLAB-Workbench/tags?per_page=" + string(limit));
+    if ~isstruct(raw)
+        return;
+    end
+    for k = 1:min(numel(raw), limit)
+        tag = stringField(raw(k), "name");
+        if strlength(tag) == 0
+            continue;
+        end
+        sources(end+1) = sourceFromTag("Tag", tag, "GitHub tag " + tag, ...
+            tag, "", "Tag " + tag);
+    end
+end
+
+function sources = recentCommitSources(limit)
+    sources = emptyVersionSources();
+    raw = githubApiRead("https://api.github.com/repos/Pluze/LabKit-MATLAB-Workbench/commits?sha=main&per_page=" + string(limit));
+    if ~isstruct(raw)
+        return;
+    end
+    for k = 1:min(numel(raw), limit)
+        sha = stringField(raw(k), "sha");
+        if strlength(sha) < 7
+            continue;
+        end
+        short = extractBefore(sha, 8);
+        message = firstTextLine(nestedStringField(raw(k), ["commit", "message"]));
+        date = nestedStringField(raw(k), ["commit", "author", "date"]);
+        label = "main commit " + short;
+        sources(end+1) = createVersionSource("Commit", label, ...
+            "https://github.com/Pluze/LabKit-MATLAB-Workbench/archive/" + sha + ".zip", ...
+            "commit-" + short + ".zip", short, date, message);
+    end
+end
+
+function raw = githubApiRead(url)
+    options = weboptions("Timeout", 20, "UserAgent", "MATLAB LabKit Launcher");
+    raw = webread(char(url), options);
+end
+
 function release = latestStableRelease()
     release = struct("tagName", "");
     try
-        options = weboptions("Timeout", 20, "UserAgent", "MATLAB LabKit Launcher");
-        raw = webread("https://api.github.com/repos/Pluze/LabKit-MATLAB-Workbench/releases", options);
+        raw = githubApiRead("https://api.github.com/repos/Pluze/LabKit-MATLAB-Workbench/releases");
     catch
         return;
     end
@@ -992,8 +1306,7 @@ end
 function tagName = latestGitHubTag()
     tagName = "";
     try
-        options = weboptions("Timeout", 20, "UserAgent", "MATLAB LabKit Launcher");
-        raw = webread("https://api.github.com/repos/Pluze/LabKit-MATLAB-Workbench/tags", options);
+        raw = githubApiRead("https://api.github.com/repos/Pluze/LabKit-MATLAB-Workbench/tags");
     catch
         return;
     end
@@ -1003,12 +1316,32 @@ function tagName = latestGitHubTag()
 end
 
 function source = stableSourceFromTag(tagName, label)
+    source = sourceFromTag("Stable", tagName, label, tagName, "", ...
+        "Stable tag " + string(tagName));
+end
+
+function source = sourceFromTag(kind, tagName, label, name, date, summary)
     safeTag = encodeUrlPathSegment(tagName);
+    source = createVersionSource(kind, label, ...
+        "https://github.com/Pluze/LabKit-MATLAB-Workbench/archive/refs/tags/" + string(safeTag) + ".zip", ...
+        "stable-" + sanitizeFilename(tagName) + ".zip", ...
+        name, date, summary);
+end
+
+function source = createVersionSource(kind, label, zipUrl, zipName, name, date, summary)
     source = struct( ...
-        "kind", "stable", ...
+        "kind", string(kind), ...
         "label", string(label), ...
-        "zipUrl", "https://github.com/Pluze/LabKit-MATLAB-Workbench/archive/refs/tags/" + string(safeTag) + ".zip", ...
-        "zipName", "stable-" + sanitizeFilename(tagName) + ".zip");
+        "zipUrl", string(zipUrl), ...
+        "zipName", string(zipName), ...
+        "name", string(name), ...
+        "date", string(date), ...
+        "summary", string(summary));
+end
+
+function sources = emptyVersionSources()
+    sources = struct("kind", {}, "label", {}, "zipUrl", {}, "zipName", {}, ...
+        "name", {}, "date", {}, "summary", {});
 end
 
 function encoded = encodeUrlPathSegment(value)
@@ -1069,16 +1402,7 @@ function applyLauncherGuiTestMode(fig)
 end
 
 function assertNoUnmanagedInstallFiles(root)
-    files = collectRelativeFiles(root);
-    unmanaged = strings(1, 0);
-    for k = 1:numel(files)
-        rel = files(k);
-        if isManagedRelativePath(rel) || isLauncherRuntimePath(rel)
-            continue;
-        end
-        unmanaged(end+1) = rel;
-    end
-    unmanaged = sort(unique(unmanaged));
+    unmanaged = unmanagedInstallFiles(root);
     if isempty(unmanaged)
         return;
     end
@@ -1092,6 +1416,29 @@ function assertNoUnmanagedInstallFiles(root)
         'not part of LabKit-managed artifacts. Keep lab data and exports outside ' ...
         'the LabKit install folder, then remove or move these files before updating:\n\n%s%s'], ...
         strjoin(cellstr(preview), newline), suffix);
+end
+
+function unmanaged = unmanagedInstallFiles(root)
+    files = collectRelativeFiles(root);
+    manifestFiles = readManifest(root);
+    hasManifest = exist(manifestPath(root), "file") == 2 && ~isempty(manifestFiles);
+    unmanaged = strings(1, 0);
+    for k = 1:numel(files)
+        rel = files(k);
+        if isLauncherRuntimePath(rel)
+            continue;
+        end
+        if hasManifest
+            isAllowed = any(manifestFiles == rel);
+        else
+            isAllowed = isManagedRelativePath(rel);
+        end
+        if isAllowed
+            continue;
+        end
+        unmanaged(end+1) = rel;
+    end
+    unmanaged = sort(unique(unmanaged));
 end
 
 function tf = confirmUpdate(root, sourceLabel)
@@ -1167,10 +1514,8 @@ end
 function tf = isLauncherRuntimePath(rel)
     rel = string(strrep(rel, filesep, "/"));
     parts = split(rel, "/");
-    name = parts(end);
     tf = rel == ".labkit-managed-files.txt" || ...
-        parts(1) == "artifacts" || ...
-        startsWith(name, "LabKit-backup-") && endsWith(name, ".zip");
+        parts(1) == "artifacts";
 end
 
 function removed = removedAppEntrypoints(currentRoot, sourceRoot)
@@ -1190,39 +1535,6 @@ function apps = collectAppEntrypoints(root)
             fullfile(entries(k).folder, entries(k).name)));
     end
     apps = sort(unique(apps));
-end
-
-function backupPath = createBackup(root, tempRoot, newFiles, oldFiles)
-    backupFiles = filesToBackup(root, newFiles, oldFiles);
-    backupPath = fullfile(root, sprintf("LabKit-backup-%s.zip", ...
-        char(datetime("now", "Format", "yyyyMMdd-HHmmss"))));
-    staging = fullfile(tempRoot, "backup-staging");
-    ensureFolder(staging);
-    writeText(fullfile(staging, "README_RESTORE.txt"), ...
-        ["This zip contains LabKit-managed files overwritten or removed during an update." newline ...
-        "To restore, unzip it over the LabKit install folder." newline]);
-    for k = 1:numel(backupFiles)
-        source = fullfile(root, char(backupFiles(k)));
-        if exist(source, "file") ~= 2
-            continue;
-        end
-        target = fullfile(staging, char(backupFiles(k)));
-        ensureFolder(fileparts(target));
-        copyfile(source, target);
-    end
-    zipFiles = collectRelativeFiles(staging);
-    zip(char(backupPath), cellstr(zipFiles), char(staging));
-end
-
-function files = filesToBackup(root, newFiles, oldFiles)
-    manifest = manifestPath(root);
-    changed = newFiles(arrayfun(@(f) exist(fullfile(root, char(f)), "file") == 2, newFiles));
-    stale = setdiff(oldFiles, newFiles);
-    files = unique([changed(:); stale(:)]);
-    if exist(manifest, "file") == 2
-        files(end+1) = string(relativePath(root, manifest));
-    end
-    files = sort(unique(files));
 end
 
 function copiedCount = overlayManagedFiles(sourceRoot, root, files)
@@ -1266,9 +1578,9 @@ function path = manifestPath(root)
     path = fullfile(root, ".labkit-managed-files.txt");
 end
 
-function result = summaryStruct(root, backupPath, copiedCount, deletedCount, message)
+function result = summaryStruct(root, copiedCount, deletedCount, message)
     result = struct("updated", copiedCount > 0 || deletedCount > 0, ...
-        "root", string(root), "backupZip", string(backupPath), ...
+        "root", string(root), ...
         "copiedCount", copiedCount, "deletedCount", deletedCount, ...
         "message", string(message));
 end
