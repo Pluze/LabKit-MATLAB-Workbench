@@ -6,8 +6,7 @@ function fig = run(debugLog)
 %RUNEISAPP Build and run the app body.
 
     S = struct();
-    S.session = labkit.dta.makeSession('eis_overlay');
-    S.items = S.session.items;
+    S.items = struct([]);
 
     axisItems = { ...
         'Freq (Hz)', ...
@@ -24,7 +23,6 @@ function fig = run(debugLog)
 
     callbacks = struct( ...
         "openFilesChosen", @onOpenFilesChosen, ...
-        "openFolder", @onOpenFolder, ...
         "removeSelected", @onRemoveSelected, ...
         "clearAll", @onClearAll, ...
         "exportCSV", @onExportCSV, ...
@@ -33,7 +31,6 @@ function fig = run(debugLog)
     spec = eis.ui.buildSpec(axisItems, callbacks);
     ui = labkit.ui.app.create(spec, "debug", debugLog);
     fig = ui.figure;
-    lbFiles = ui.controls.files.listbox;
     txtLoaded = ui.controls.files.status;
     ddX = ui.controls.xAxis.valueHandle;
     ddY = ui.controls.yAxis.valueHandle;
@@ -52,49 +49,46 @@ function fig = run(debugLog)
     end
     %% App callbacks, session actions, refresh, and export
     function onOpenFilesChosen(~, event)
-        if isempty(event.paths)
+        paths = labkit.ui.view.filePaths(event.addedFiles);
+        if isempty(paths)
             addLog('Open cancelled.');
             return;
         end
-        loadFiles(event.paths);
-    end
-
-    function onOpenFolder(~, ~)
-        folder = uigetdir(labkit.ui.app.defaultDialogFolder("input"), ...
-            'Select a folder to recursively scan for .DTA files');
-        if isequal(folder, 0)
-            addLog('Folder selection cancelled.');
-            return;
-        end
-
-        filepaths = labkit.dta.findFiles(folder);
-        if isempty(filepaths)
-            addLog(sprintf('No DTA files found under: %s', folder));
-            uialert(fig, sprintf('No .DTA files found under:\n%s', folder), 'No files found');
-            return;
-        end
-
-        addLog(sprintf('Found %d DTA file(s) under %s', numel(filepaths), folder));
-        loadFiles(filepaths);
+        loadFiles(paths);
     end
 
     function loadFiles(filepaths)
+        filepaths = normalizePaths(filepaths);
         if isempty(filepaths)
             return;
         end
 
-        callbacks = struct();
-        callbacks.onAdded = @onAddedDTA;
-        callbacks.onSkipped = @(filepath) addLog(sprintf('Skipped already loaded: %s', filepath));
-        callbacks.onFailed = @(filepath, message) addLog(sprintf('Failed: %s | %s', filepath, message));
-        [S.session, report] = labkit.dta.addFilesToSession(S.session, filepaths, "eis", callbacks);
-        S.items = S.session.items;
+        failed = struct('filepath', {}, 'message', {});
+        for iFile = 1:numel(filepaths)
+            filepath = filepaths(iFile);
+            if isLoaded(filepath)
+                addLog(sprintf('Skipped already loaded: %s', char(filepath)));
+                continue;
+            end
+
+            [item, status] = labkit.dta.loadFile(filepath, "eis");
+            if ~status.ok
+                failed(end + 1) = struct( ...
+                    'filepath', char(filepath), ...
+                    'message', char(status.message));
+                addLog(sprintf('Failed: %s | %s', char(filepath), char(status.message)));
+                continue;
+            end
+
+            S.items = appendItem(S.items, item);
+            onAddedDTA(char(filepath), item);
+        end
 
         refreshFileList();
         refreshPlot();
 
-        if ~isempty(report.failed)
-            firstError = report.failed(1);
+        if ~isempty(failed)
+            firstError = failed(1);
             uialert(fig, sprintf('Failed to load:\n%s\n\n%s', firstError.filepath, firstError.message), 'Load error');
         end
     end
@@ -107,21 +101,24 @@ function fig = run(debugLog)
         addLog(sprintf('Loaded: %s', filepath));
     end
 
-    function onRemoveSelected(~, ~)
-        if isempty(S.items) || isempty(lbFiles.Value)
+    function onRemoveSelected(~, event)
+        if isempty(S.items)
             return;
         end
-        callbacks = struct();
-        callbacks.onRemoved = @(name, ~) addLog(sprintf('Removed: %s', name));
-        [S.session, ~] = labkit.dta.removeSelectedItemsFromSession(S.session, lbFiles.Value, callbacks);
-        S.items = S.session.items;
+        paths = labkit.ui.view.filePaths(event.removedFiles);
+        if isempty(paths)
+            return;
+        end
+        report = removeItemsByPaths(paths);
+        for k = 1:numel(report.removed)
+            addLog(sprintf('Removed: %s', report.removed{k}));
+        end
         refreshFileList();
         refreshPlot();
     end
 
     function onClearAll(~, ~)
-        S.session = labkit.dta.makeSession('eis_overlay');
-        S.items = S.session.items;
+        S.items = struct([]);
         refreshFileList();
         refreshPlot();
         addLog('Cleared all files.');
@@ -133,7 +130,7 @@ function fig = run(debugLog)
             txtLoaded.Value = 'No files loaded';
             return;
         end
-        labkit.ui.view.setListItems(ui, 'files', {S.items.name});
+        labkit.ui.view.setValue(ui, 'files', string({S.items.filepath}).');
         txtLoaded.Value = sprintf('%d file(s) loaded', numel(S.items));
     end
 
@@ -151,7 +148,7 @@ function fig = run(debugLog)
             return;
         end
 
-        items = labkit.dta.selectSessionItems(S.session, lbFiles.Value);
+        items = selectedItems();
         if isempty(items)
             txtSummary.Value = {'No files selected.'};
             return;
@@ -173,7 +170,7 @@ function fig = run(debugLog)
     end
 
     function onExportCSV(~, ~)
-        items = labkit.dta.selectSessionItems(S.session, lbFiles.Value);
+        items = selectedItems();
         if isempty(items)
             uialert(fig, 'No files selected for export.', 'Export');
             return;
@@ -194,6 +191,58 @@ function fig = run(debugLog)
     function addLog(msg)
         labkit.ui.view.appendLog(ui, 'appLog', msg);
         debugLog.append(msg);
+    end
+
+    function items = selectedItems()
+        files = labkit.ui.view.getValue(ui, 'files');
+        paths = labkit.ui.view.filePaths(files);
+        if isempty(paths)
+            items = struct([]);
+            return;
+        end
+        keep = ismember(string({S.items.filepath}), string(paths(:)));
+        items = S.items(keep);
+    end
+
+    function report = removeItemsByPaths(filepaths)
+        paths = normalizePaths(filepaths);
+        report = struct('removed', {{}}, 'missing', {{}});
+        if isempty(paths)
+            return;
+        end
+        if isempty(S.items)
+            report.missing = cellstr(paths(:).');
+            return;
+        end
+        keep = true(1, numel(S.items));
+        itemPaths = string({S.items.filepath});
+        for k = 1:numel(paths)
+            idx = find(itemPaths == paths(k) & keep, 1, 'first');
+            if isempty(idx)
+                report.missing{end + 1} = char(paths(k));
+                continue;
+            end
+            report.removed{end + 1} = char(paths(k));
+            keep(idx) = false;
+        end
+        S.items = S.items(keep);
+    end
+
+    function tf = isLoaded(filepath)
+        tf = ~isempty(S.items) && any(string({S.items.filepath}) == string(filepath));
+    end
+
+    function paths = normalizePaths(paths)
+        paths = string(paths(:));
+        paths = paths(strlength(paths) > 0);
+    end
+
+    function items = appendItem(items, item)
+        if isempty(items)
+            items = item;
+        else
+            items(end + 1) = item;
+        end
     end
 end
 

@@ -11,10 +11,9 @@ classdef GuiLayoutEisTest < matlab.uitest.TestCase
             fig = h.launchFigure('labkit_EIS_app', 'Gamry EIS Multi-DTA Plot GUI');
             ui = getappdata(fig, 'labkitUiRegistry');
             h.assertStandardWorkbenchLayout(fig);
-            h.assertComponentCounts(fig, struct('Button', 6, 'CheckBox', 5, ...
+            h.assertComponentCounts(fig, struct('Button', 5, 'CheckBox', 5, ...
                 'DropDown', 2, 'ListBox', 1, 'TextArea', 3, 'Axes', 1));
-            h.assertButtonContract(fig, {'Open DTA file(s)', ...
-                'Open folder recursively', 'Remove selected', ...
+            h.assertButtonContract(fig, {'Add DTA files', 'Remove selected', ...
                 'Clear all', 'Export current plot CSV'});
             h.assertCheckboxContract(fig, {'Show markers', 'Log X', 'Log Y', ...
                 'Legend', 'Grid'});
@@ -22,7 +21,6 @@ classdef GuiLayoutEisTest < matlab.uitest.TestCase
             h.assertTabTitles(fig, {'Files + Analysis', 'Summary + Results', 'Log'});
             h.assertAxesContract(fig, { ...
                 h.axesSpec('EIS Overlay', 'Zreal (ohm)', '-Zimag (ohm)')});
-            assertActionGroupWrapsLongFileActions(ui);
             h.assertDropdownCallbacksPresent(fig);
             h.invokeDropdownValue(fig, 'Freq (Hz)');
             h.invokeCheckbox(fig, 'Log X', true);
@@ -41,15 +39,15 @@ classdef GuiLayoutEisTest < matlab.uitest.TestCase
             ui.controls.files.props.dialogProvider = @(~) string(fixture);
             setappdata(fig, 'labkitUiRegistry', ui);
 
-            h.invokeButton(fig, 'Open DTA file(s)');
+            h.invokeButton(fig, 'Add DTA files');
 
             testCase.verifyEqual(ui.controls.files.status.Value, '1 file(s) loaded');
-            testCase.verifyTrue(any(strcmp(ui.controls.files.listbox.Items, ...
+            testCase.verifyTrue(any(contains(string(ui.controls.files.listbox.Items), ...
                 'eis_potentiostatic_zcurve.DTA')), ...
-                'Open DTA file(s) should load the dialog-selected EIS fixture.');
+                'Add DTA files should load the dialog-selected EIS fixture.');
             testCase.verifyNotEqual(ui.controls.summary.textArea.Value, ...
                 {'No files loaded.'}, ...
-                'Open DTA file(s) should refresh the EIS summary.');
+                'Add DTA files should refresh the EIS summary.');
             ax = ui.controls.plot.axesById.overlay;
             ax.XLim = [-1e4 5e4];
             ax.YLim = [4e4 13e4];
@@ -67,17 +65,6 @@ classdef GuiLayoutEisTest < matlab.uitest.TestCase
                 'Changing EIS log coordinate selections should discard stale zoomed Y limits.');
         end
     end
-end
-
-function assertActionGroupWrapsLongFileActions(ui)
-    group = ui.controls.fileActions;
-    assert(numel(group.grid.RowHeight) == 2 && ...
-        numel(group.grid.ColumnWidth) == 2, ...
-        'Long file actions should wrap to two columns instead of truncating in one row.');
-    exportButton = group.actions.exportPlot.button;
-    assert(isequal(exportButton.Layout.Row, 2) && ...
-        isequal(exportButton.Layout.Column, [1 2]), ...
-        'Odd trailing file action should span the second row.');
 end
 
 function items = eisAxisItems()

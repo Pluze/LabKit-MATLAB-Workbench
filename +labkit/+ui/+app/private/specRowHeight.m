@@ -1,5 +1,5 @@
 % Private UI app layout helper. Expected caller: buildShellFromSpec and
-% buildSection. Inputs are one validated UI 2.0 spec and an optional default
+% buildSection. Inputs are one validated UI 3.0 spec and an optional default
 % row height. Output is a MATLAB uigridlayout RowHeight value.
 function value = specRowHeight(spec, defaultValue)
     if nargin < 2
@@ -15,8 +15,8 @@ function value = specRowHeight(spec, defaultValue)
             value = textPanelHeight(3, 105);
         case 'logPanel'
             value = textPanelHeight(8, 240);
-        case 'pathPanel'
-            value = pathPanelHeight();
+        case 'filePanel'
+            value = filePanelHeight(spec);
         case 'resultTable'
             value = tablePanelHeight();
         case 'actionGroup'
@@ -47,9 +47,13 @@ function value = textPanelHeight(defaultRows, defaultMinHeight)
     value = max(defaultMinHeight, 22 * max(1, double(defaultRows)) + 58);
 end
 
-function value = pathPanelHeight()
-    rows = 5;
-    value = max(165, 22 * max(1, double(rows)) + 96);
+function value = filePanelHeight(spec)
+    if strcmp(char(string(optionValue(spec.props, 'mode', 'multi'))), 'single')
+        value = 64;
+        return;
+    end
+    rows = 6;
+    value = max(185, 22 * max(1, double(rows)) + 104);
 end
 
 function value = tablePanelHeight()
@@ -132,7 +136,7 @@ function tf = sectionDrawsOwnTitle(sectionSpec)
     child = sectionSpec.children{1};
     tf = ~ismember(child.kind, ...
         {'previewArea', 'resultTable', 'logPanel', 'statusPanel', ...
-        'usagePanel', 'pathPanel'});
+        'usagePanel', 'filePanel'});
 end
 
 function value = optionValue(opts, name, defaultValue)

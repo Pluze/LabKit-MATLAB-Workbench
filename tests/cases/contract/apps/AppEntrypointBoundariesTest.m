@@ -32,8 +32,7 @@ end
 function assertFamilyBoundary(h, source, appName, family)
     family = string(family);
     if family == "Electrochem"
-        h.assertDTAFacadeUsage(source, appName, electrochemKind(appName), ...
-            ~contains(string(appName), "CSC"));
+        h.assertDTAFacadeUsage(source, appName, electrochemKind(appName), false);
     elseif family == "DIC"
         h.assertDICAppBoundary(source, appName);
     elseif family == "Image Measurement"

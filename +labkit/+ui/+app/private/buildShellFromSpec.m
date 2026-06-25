@@ -63,9 +63,13 @@ function tf = isGrowableTabChild(child)
         tf = numel(child.children) == 1 && isGrowableTabChild(child.children{1});
         return;
     end
+    if strcmp(child.kind, 'filePanel')
+        tf = strcmp(char(string(optionValue(child.props, 'mode', 'multi'))), 'multi');
+        return;
+    end
     tf = ismember(child.kind, ...
         {'previewArea', 'resultTable', 'logPanel', 'statusPanel', ...
-        'usagePanel', 'pathPanel'});
+        'usagePanel'});
 end
 
 function rowHeight = workspaceRowHeights(children)

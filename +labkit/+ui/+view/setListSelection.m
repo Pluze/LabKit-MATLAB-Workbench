@@ -1,12 +1,12 @@
 function varargout = setListSelection(ui, id, items, preferred, opts)
-%SETLISTSELECTION Apply list selection for a UI 2.0 list-bearing control.
+%SETLISTSELECTION Apply list selection for a UI 3.0 list-bearing control.
 %
 % App-facing contract:
 %   [value, index] = labkit.ui.view.setListSelection(ui, id, items, preferred, opts)
 %
 % Inputs:
 %   ui - UI registry returned by labkit.ui.app.create.
-%   id - semantic id for a pathPanel or list-bearing control.
+%   id - semantic id for a list-bearing control.
 %   items - display item list.
 %   preferred - preferred selected item, items, or index.
 %   opts - optional selection policy struct.
@@ -22,6 +22,10 @@ function varargout = setListSelection(ui, id, items, preferred, opts)
         opts = struct();
     end
     control = resolveControl(ui, id);
+    if isfield(control, 'kind') && strcmp(control.kind, 'filePanel')
+        error('labkit:ui:view:FilePanelListSelection', ...
+            'Use labkit.ui.view.setFileSelection for filePanel controls.');
+    end
     if ~isfield(control, 'listbox') || ~isgraphics(control.listbox)
         error('labkit:ui:view:NoListbox', ...
             'Control "%s" does not expose a listbox.', control.id);

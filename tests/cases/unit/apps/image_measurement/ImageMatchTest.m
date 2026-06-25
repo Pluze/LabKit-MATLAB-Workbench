@@ -17,7 +17,7 @@ function verify_imageMatch()
     checkLabStyleMatchMovesColorTowardReference();
     checkHistogramMatchPreservesDisplayRange();
     checkReferenceIsSeparateFromBatchSources();
-    checkReadImagesAcceptsPathPanelCellPaths();
+    checkReadImagesAcceptsFilePanelCellPaths();
     checkPreviewImageDownsamplesLargeInputs();
     checkManifestAndExportContract();
     checkExportTaskFingerprintTracksReferenceOptionsAndSteps();
@@ -91,7 +91,7 @@ function checkReferenceIsSeparateFromBatchSources()
         'Processed source image should preserve source dimensions.');
 end
 
-function checkReadImagesAcceptsPathPanelCellPaths()
+function checkReadImagesAcceptsFilePanelCellPaths()
     folder = tempname;
     mkdir(folder);
     cleanup = onCleanup(@() removeTempFolder(folder));
@@ -103,11 +103,11 @@ function checkReadImagesAcceptsPathPanelCellPaths()
 
     items = image_match.io.readImages({sourcePath, referencePath});
     assert(numel(items) == 2, ...
-        'Image match reader should accept pathPanel cell-array paths.');
+        'Image match reader should accept filePanel cell-array paths.');
     assert(items(1).path == string(sourcePath), ...
         'Image match reader should preserve the first selected source path.');
     assert(isequal(size(items(2).image), [8 9 3]), ...
-        'Image match reader should load RGB image data from pathPanel paths.');
+        'Image match reader should load RGB image data from filePanel paths.');
 end
 
 function checkManifestAndExportContract()

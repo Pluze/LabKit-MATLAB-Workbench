@@ -1,5 +1,5 @@
 function appendLog(ui, idOrMessage, maybeMessage)
-%APPENDLOG Append a line to a UI 2.0 log panel.
+%APPENDLOG Append a line to a UI 3.0 log panel.
 %
 % App-facing contract:
 %   labkit.ui.view.appendLog(ui, message)

@@ -2,7 +2,7 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
     %APPLIBRARYCOMPATIBILITYTEST Verify app-facing boundary input shapes.
 
     methods (Test, TestTags = {'Integration'})
-        function appReadersAcceptPathPanelStringColumns(testCase)
+        function appReadersAcceptFilePanelStringColumns(testCase)
             setupLabKitTestPath();
             folder = tempname;
             mkdir(folder);
@@ -24,7 +24,7 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
             for k = 1:numel(readers)
                 payload = readers{k}();
                 testCase.verifyNotEmpty(payload, ...
-                    sprintf('Reader %d should accept pathPanel string-column paths.', k));
+                    sprintf('Reader %d should accept filePanel string-column paths.', k));
             end
         end
 
@@ -55,7 +55,7 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
                 end
             end
             testCase.verifyEmpty(findings, ...
-                "App readers should rely on the pathPanel string-column contract; " + ...
+                "App readers should rely on the filePanel string-column contract; " + ...
                 "normalization belongs inside the UI event producer: " + ...
                 strjoin(findings, "; "));
 
@@ -64,40 +64,21 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
                 'Batch crop reader should preserve empty string-list shape as no items.');
         end
 
-        function pathPanelCellPathsReachDtaSessionFacade(testCase)
+        function filePanelFilesReachDtaFileFacade(testCase)
             setupLabKitTestPath();
             fixture = dtaFixturePath('chrono_chronopot_current_pulse_0p2ms.DTA');
-            session = labkit.dta.makeSession('compatibility');
 
-            [session, report] = labkit.dta.addFilesToSession( ...
-                session, {string(fixture)}, "chrono");
+            [items, report] = labkit.dta.loadFiles({string(fixture)}, "chrono");
 
-            testCase.verifyEqual(numel(session.items), 1, ...
-                'DTA session facade should accept scalar-string cell-array paths.');
-            testCase.verifyEqual(report.nAdded, 1, ...
-                'DTA session facade should report the pathPanel-shaped input as added.');
-
-            itemName = session.items(1).name;
-            [selectedByString, idxByString] = labkit.dta.selectSessionItems( ...
-                session, string(itemName));
-            [selectedByCell, idxByCell] = labkit.dta.selectSessionItems( ...
-                session, {string(itemName)});
-            testCase.verifyEqual(idxByString, 1, ...
-                'DTA selection should accept scalar string listbox values.');
-            testCase.verifyEqual(idxByCell, 1, ...
-                'DTA selection should accept scalar-string cell listbox values.');
-            testCase.verifyEqual(selectedByString.name, selectedByCell.name, ...
-                'DTA selection shapes should resolve to the same item.');
-
-            [removedSession, removeReport] = labkit.dta.removeSelectedItemsFromSession( ...
-                session, {string(itemName)}, struct());
-            testCase.verifyEmpty(removedSession.items, ...
-                'DTA removal should accept scalar-string cell listbox values.');
-            testCase.verifyEqual(numel(removeReport.removed), 1, ...
-                'DTA removal should report one removed item.');
+            testCase.verifyEqual(numel(items), 1, ...
+                'DTA file facade should accept scalar-string cell-array file paths.');
+            testCase.verifyEqual(report.nLoaded, 1, ...
+                'DTA file facade should report the filePanel-shaped input as loaded.');
+            testCase.verifyEqual(items{1}.type, "chrono", ...
+                'DTA file facade should return parsed items without owning app file state.');
         end
 
-        function pathPanelCellPathReachesBiosignalRecordingFacade(testCase)
+        function filePanelPathReachesBiosignalRecordingFacade(testCase)
             setupLabKitTestPath();
             folder = tempname;
             mkdir(folder);
@@ -116,7 +97,7 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
 
             testCase.verifyTrue(status.ok, status.message);
             testCase.verifyTrue(any(strcmp(labkit.biosignal.listChannels(recording), 'ECG')), ...
-                'Biosignal facade should read the pathPanel-selected recording.');
+                'Biosignal facade should read the filePanel-selected recording.');
 
             signalByString = labkit.biosignal.getChannel(recording, "ECG");
             signalByIndex = labkit.biosignal.getChannel(recording, 1);
@@ -132,7 +113,7 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
                 'Biosignal crop/filter option shapes should preserve signal alignment.');
         end
 
-        function pathPanelStringColumnsReachRhsFacade(testCase)
+        function filePanelStringColumnsReachRhsFacade(testCase)
             setupLabKitTestPath();
             folder = tempname;
             mkdir(folder);
@@ -143,12 +124,12 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
 
             filePaths = reshape(string(rhsFile), [], 1);
             testCase.verifyEqual(filePaths, string(rhsFile), ...
-                'PathPanel file paths should arrive at app callbacks as string columns.');
+                'FilePanel file paths should arrive at app callbacks as string columns.');
 
             [index, indexStatus] = labkit.rhs.indexFile(filePaths(1));
             testCase.verifyTrue(indexStatus.ok, indexStatus.message);
             testCase.verifyTrue(index.hasData, ...
-                'RHS facade should index the pathPanel-selected file.');
+                'RHS facade should index the filePanel-selected file.');
 
             opts = struct( ...
                 "family", 'amplifier', ...
@@ -162,16 +143,26 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
             folderPaths = reshape(string(folder), [], 1);
             files = labkit.rhs.findFiles(folderPaths(1));
             testCase.verifyTrue(any(strcmp(files, rhsFile)), ...
-                'RHS facade should discover files under the pathPanel-selected folder.');
+                'RHS facade should discover files under the filePanel-selected folder.');
         end
 
-        function appsUseNormalizedPathEventContract(testCase)
+        function appsUseFilePanelFileEventContract(testCase)
             root = setupLabKitTestPath();
             appFiles = collectAppMFiles(root);
             forbiddenPatterns = [
-                "event\.paths\{"
-                "event\.paths\(:\)"
-                "string\(event\.paths"
+                "event\.tasks"
+                "addedTasks"
+                "removedTasks"
+                "selectedTasks"
+                "event\.paths"
+                "event\.selection"
+                "addedPaths"
+                "removedPaths"
+                "labkit\.ui\.spec\.taskPanel"
+                "labkit\.ui\.view\.getTasks"
+                "labkit\.ui\.view\.setTaskSelection"
+                "labkit\.ui\.view\.taskLabels"
+                "labkit\.ui\.view\.taskPaths"
                 "labkit\.ui\.app\.normalizePathList"];
             findings = strings(0, 1);
 
@@ -186,8 +177,8 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
             end
 
             testCase.verifyEmpty(findings, ...
-                "Apps should consume pathPanel event.paths directly as a string column; " + ...
-                "path normalization belongs inside pathPanel, not app code: " + ...
+                "Apps should consume filePanel file entries and extract paths with " + ...
+                "labkit.ui.view.filePaths; task/path events are retired: " + ...
                 strjoin(findings, "; "));
         end
 
@@ -213,7 +204,7 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
 
             testCase.verifyEmpty(findings, ...
                 "Apps should not default file dialogs or exports into the LabKit " + ...
-                "runtime folder; use pathPanel, labkit.ui.app.defaultDialogFolder, " + ...
+                "runtime folder; use filePanel, labkit.ui.app.defaultDialogFolder, " + ...
                 "or labkit.ui.app.promptOutputFile: " + ...
                 strjoin(findings, "; "));
         end

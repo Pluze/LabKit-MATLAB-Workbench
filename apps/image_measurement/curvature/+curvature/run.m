@@ -17,7 +17,8 @@ function fig = run(debugLog)
     S.lastLengthFingerprint = "";
 
     callbacks = struct( ...
-        'onOpenImage', @onOpenImage, ...
+        'onImageChosen', @onImageChosen, ...
+        'onImageCleared', @(~, ~) onImageCleared(), ...
         'onStartCurveEdit', @onStartCurveEdit, ...
         'onUndoCurvePoint', @onUndoCurvePoint, ...
         'onClearCurve', @onClearCurve, ...
@@ -44,7 +45,6 @@ function fig = run(debugLog)
         'onError', @onScaleToolError, ...
         'onTrace', debugLog.trace));
     controls = curvature.ui.mapControlHandles(ui, scaleTool);
-    txtImage = controls.txtImage;
     txtPointCount = controls.txtPointCount;
     btnStartCurve = controls.btnStartCurve;
     btnUndoPoint = controls.btnUndoPoint;
@@ -68,16 +68,14 @@ function fig = run(debugLog)
     resetAxes();
     refreshScaleReadout();
 
-    function onOpenImage(~, ~)
-        [fn, fp] = uigetfile( ...
-            {'*.png;*.jpg;*.jpeg;*.tif;*.tiff;*.bmp', 'Image files'}, ...
-            'Select image', labkit.ui.app.defaultDialogFolder("input"));
-        if isequal(fn, 0)
+    function onImageChosen(~, event)
+        paths = labkit.ui.view.filePaths(event.addedFiles);
+        if isempty(paths)
             addLog('Image selection cancelled.');
             return;
         end
 
-        filepath = string(fullfile(fp, fn));
+        filepath = paths(1);
         try
             img = imread(filepath);
         catch ME
@@ -98,8 +96,25 @@ function fig = run(debugLog)
         S.fit = curvature.state.emptyFitResult();
         S.length = curvature.state.emptyLengthResult();
         clearTaskFingerprints();
-        txtImage.Value = char(filepath);
         addLog(sprintf('Loaded image: %s', filepath));
+        refreshAll();
+    end
+
+    function onImageCleared()
+        S.imagePath = "";
+        S.image = [];
+        S.xPix = [];
+        S.yPix = [];
+        S.curveEditActive = false;
+        if ~isempty(S.curveEditor)
+            S.curveEditor.delete();
+        end
+        S.curveEditor = [];
+        S.fit = curvature.state.emptyFitResult();
+        S.length = curvature.state.emptyLengthResult();
+        clearTaskFingerprints();
+        resetAxes();
+        addLog('Cleared image file.');
         refreshAll();
     end
 
@@ -309,6 +324,7 @@ function fig = run(debugLog)
     end
 
     function refreshAll()
+        labkit.ui.view.setValue(ui, 'imageFile', fileValue(S.imagePath));
         refreshScaleReadout();
         refreshImageOverlay();
         refreshSummary();
@@ -492,4 +508,13 @@ function fig = run(debugLog)
         addLog(sprintf('%s: %s', titleText, message));
         uialert(fig, message, titleText);
     end
+end
+
+function items = fileValue(pathValue)
+    pathValue = string(pathValue);
+    if strlength(pathValue) == 0
+        items = strings(0, 1);
+        return;
+    end
+    items = pathValue;
 end

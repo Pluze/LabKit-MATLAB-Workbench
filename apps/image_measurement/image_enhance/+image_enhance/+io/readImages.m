@@ -1,5 +1,5 @@
 % Expected caller: labkit_ImageEnhance_app and batch export tests. Input is a
-% pathPanel string column. Output is an item struct array with RGB double images
+% filePanel string column. Output is an item struct array with RGB double images
 % normalized to [0, 1]. Alpha channels are ignored.
 function items = readImages(paths)
 

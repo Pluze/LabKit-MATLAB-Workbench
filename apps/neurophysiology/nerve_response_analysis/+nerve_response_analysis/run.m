@@ -11,8 +11,8 @@ function fig = run(debugLog)
         "sessionCleared", @onSessionCleared, ...
         "protocolChosen", @onProtocolChosen, ...
         "protocolCleared", @onProtocolCleared, ...
-        "outputFolderChosen", @onOutputFolderChosen, ...
-        "outputFolderCleared", @onOutputFolderCleared, ...
+        "outputFolderChosen", @(~, ~) onOutputFolderChosen(), ...
+        "outputFolderCleared", @(~, ~) onOutputFolderCleared(), ...
         "settingChanged", @onSettingChanged, ...
         "previewModeChanged", @onPreviewModeChanged, ...
         "runAnalysis", @onRunAnalysis, ...
@@ -77,16 +77,20 @@ function fig = run(debugLog)
         refreshAll();
     end
 
-    function onOutputFolderChosen(~, event)
-        paths = eventPaths(event);
-        if ~isempty(paths)
-            S.outputFolder = paths(1);
-            S.lastAction = "Selected output folder";
+    function onOutputFolderChosen()
+        folder = uigetdir(labkit.ui.app.defaultDialogFolder("output", S.outputFolder), ...
+            "Select analysis output folder");
+        if isequal(folder, 0)
+            S.lastAction = "Output folder selection cancelled";
             refreshAll();
+            return;
         end
+        S.outputFolder = string(folder);
+        S.lastAction = "Selected output folder";
+        refreshAll();
     end
 
-    function onOutputFolderCleared(~, ~)
+    function onOutputFolderCleared()
         S.outputFolder = "";
         S.lastAction = "Cleared output folder";
         refreshAll();
@@ -175,9 +179,9 @@ function fig = run(debugLog)
     end
 
     function refreshAll()
-        labkit.ui.view.setListItems(ui, "sessionFile", cellstr(selectedList(S.sessionFile)));
-        labkit.ui.view.setListItems(ui, "protocolFile", cellstr(selectedList(S.protocolFile)));
-        labkit.ui.view.setListItems(ui, "outputFolder", cellstr(selectedList(S.outputFolder)));
+        labkit.ui.view.setValue(ui, "sessionFile", fileValue(S.sessionFile));
+        labkit.ui.view.setValue(ui, "protocolFile", fileValue(S.protocolFile));
+        labkit.ui.view.setValue(ui, "outputFolder", char(outputFolderText(S.outputFolder)));
         labkit.ui.view.setEnabled(ui, "runAnalysis", strlength(S.sessionFile) > 0);
         labkit.ui.view.setEnabled(ui, "exportAnalysis", ~isempty(S.analysis) && ...
             strlength(S.outputFolder) > 0);
@@ -227,15 +231,20 @@ function protocol = loadProtocol(protocolFile)
 end
 
 function paths = eventPaths(event)
-    paths = strings(0, 1);
-    if isstruct(event) && isfield(event, "paths")
-        paths = event.paths;
-    elseif isobject(event) && isprop(event, "paths")
-        paths = event.paths;
+    files = struct([]);
+    if isstruct(event) && isfield(event, "addedFiles")
+        files = event.addedFiles;
+    elseif isobject(event) && isprop(event, "addedFiles")
+        files = event.addedFiles;
+    elseif isstruct(event) && isfield(event, "selectedFiles")
+        files = event.selectedFiles;
+    elseif isobject(event) && isprop(event, "selectedFiles")
+        files = event.selectedFiles;
     end
+    paths = labkit.ui.view.filePaths(files);
     if ~(isstring(paths) && iscolumn(paths))
         error('nerve_response_analysis:InvalidPathEvent', ...
-            'pathPanel event paths must be a string column.');
+            'filePanel event file paths must be a string column.');
     end
 end
 
@@ -251,13 +260,22 @@ function value = eventValue(event)
     end
 end
 
-function items = selectedList(pathValue)
+function items = fileValue(pathValue)
     pathValue = string(pathValue);
     if strlength(pathValue) == 0
         items = strings(0, 1);
-    else
-        items = displayPath(pathValue);
+        return;
     end
+    items = pathValue;
+end
+
+function text = outputFolderText(pathValue)
+    pathValue = string(pathValue);
+    if strlength(pathValue) == 0
+        text = "No output folder selected";
+        return;
+    end
+    text = pathValue;
 end
 
 function text = displayPath(pathValue)

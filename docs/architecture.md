@@ -43,7 +43,7 @@ developer's local workspace.
 | App entry point | Public launch name and debug dispatch. |
 | App package | Workflow state, callbacks, calculations, summaries, exports, and app-local helpers. |
 | `labkit.ui` | App shell, data-only UI specs, semantic view updates, reusable tools, and diagnostics. |
-| `labkit.dta` | GUI-free Gamry DTA loading, sessions, parsed curves, and pulse helpers. |
+| `labkit.dta` | GUI-free Gamry DTA discovery, loading, parsed curves, and pulse helpers. |
 | `labkit.biosignal` | GUI-free recording import, channel extraction, filtering, events, segments, templates, and measurements. |
 | `labkit.rhs` | GUI-free Intan RHS discovery, header parsing, block indexing, and lazy waveform window reads. |
 
@@ -82,8 +82,8 @@ App GUIs use the layered UI foundation:
 | Layer | App-facing API |
 | --- | --- |
 | App | `labkit.ui.app.create`, `dispatchRequest`, `appVersionTitle`, `applyVersionTitle`, `defaultDialogFolder`, `promptOutputFile`, `runBusy` |
-| Spec | `labkit.ui.spec.app`, `workspace`, `tab`, `section`, `field`, `rangeField`, `panner`, `action`, `actionGroup`, `pathPanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `usagePanel` |
-| View | `labkit.ui.view.setValue`, `getValue`, `setEnabled`, `appendLog`, `setListItems`, `setListSelection`, `drawImage`, `resetAxes`, `clearAxes` |
+| Spec | `labkit.ui.spec.app`, `workspace`, `tab`, `section`, `field`, `rangeField`, `panner`, `action`, `actionGroup`, `filePanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `usagePanel` |
+| View | `labkit.ui.view.setValue`, `getValue`, `getFiles`, `setFileSelection`, `setEnabled`, `setLimits`, `appendLog`, `setListItems`, `setListSelection`, `fileLabels`, `filePaths`, `drawImage`, `resetAxes`, `clearAxes` |
 | Tool | `labkit.ui.tool.createRuntime`, `anchorEditor`, `scaleBar`, `scaleBarCalibration`, `zoomAxesAtPoint` |
 | Diagnostics | `labkit.ui.diag.createContext` |
 

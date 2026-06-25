@@ -6,9 +6,8 @@ function fig = run(debugLog)
 %RUNCSCAPP Build and run the app body.
 
     S = struct();
-    S.session = labkit.dta.makeSession('cv_csc');
     S.filepath = '';
-    S.items = S.session.items;
+    S.items = struct([]);
     S.current = [];
     S.curves = struct('name',{},'headers',{},'units',{},'data',{},'numericMask',{});
     S.scanRate = NaN; % V/s
@@ -16,7 +15,7 @@ function fig = run(debugLog)
 
     callbacks = struct( ...
         "openFilesChosen", @onOpenFilesChosen, ...
-        "openFolder", @onOpenFolder, ...
+        "removeSelected", @onRemoveSelected, ...
         "clearAll", @(~,~) clearAllFiles(), ...
         "reloadSelected", @(~,~) reloadSelectedFile(), ...
         "fileSelectionChanged", @(~,~) onSelectFile(), ...
@@ -30,7 +29,6 @@ function fig = run(debugLog)
     ui = labkit.ui.app.create(spec, "debug", debugLog);
 
     fig = ui.figure;
-    lbFiles = ui.controls.files.listbox;
     txtLoaded = ui.controls.files.status;
     txtFile = ui.controls.filePath.valueHandle;
     txtScan = ui.controls.scanRate.valueHandle;
@@ -60,48 +58,48 @@ function fig = run(debugLog)
     end
     %% App callbacks, loading, refresh, and plotting
     function onOpenFilesChosen(~, event)
-        if isempty(event.paths)
+        paths = labkit.ui.view.filePaths(event.addedFiles);
+        if isempty(paths)
             addLog('Open file canceled.');
             return;
         end
-        addFiles(event.paths);
-    end
-
-    function onOpenFolder(~,~)
-        folder = uigetdir(labkit.ui.app.defaultDialogFolder("input"), ...
-            'Select folder containing DTA files');
-        if isequal(folder,0)
-            addLog('Folder selection canceled.');
-            return;
-        end
-        filepaths = labkit.dta.findFiles(folder);
-        if isempty(filepaths)
-            uialert(fig,'No .DTA files found in the selected folder.','Open folder');
-            addLog(['No .DTA files found under: ' folder]);
-            return;
-        end
-        addFiles(filepaths);
+        addFiles(paths);
     end
 
     function addFiles(filepaths)
+        filepaths = normalizePaths(filepaths);
         if isempty(filepaths)
             return;
         end
 
-        callbacks = struct();
-        callbacks.onAdded = @(~, item) onAddedItem(item);
-        callbacks.onSkipped = @(filepath) addLog(['Skipped duplicate: ' filepath]);
-        callbacks.onFailed = @(filepath, message) addLog(sprintf('Failed to load %s: %s', filepath, message));
-        [S.session, report] = labkit.dta.addFilesToSession(S.session, filepaths, "cvct", callbacks);
-        S.items = S.session.items;
+        failed = struct('filepath', {}, 'message', {});
+        for iFile = 1:numel(filepaths)
+            filepath = filepaths(iFile);
+            if isLoaded(filepath)
+                addLog(['Skipped duplicate: ' char(filepath)]);
+                continue;
+            end
+
+            [item, status] = labkit.dta.loadFile(filepath, "cvct");
+            if ~status.ok
+                failed(end + 1) = struct( ...
+                    'filepath', char(filepath), ...
+                    'message', char(status.message));
+                addLog(sprintf('Failed to load %s: %s', char(filepath), char(status.message)));
+                continue;
+            end
+
+            S.items = appendItem(S.items, item);
+            onAddedItem(item);
+        end
         if ~isempty(S.items) && isempty(S.current)
             S.current = 1;
         end
         refreshFileList();
         loadCurrentItem();
 
-        if ~isempty(report.failed)
-            firstError = report.failed(1);
+        if ~isempty(failed)
+            firstError = failed(1);
             uialert(fig, sprintf('Failed to load:\n%s\n\n%s', ...
                 firstError.filepath, firstError.message), 'Load error');
         end
@@ -115,10 +113,12 @@ function fig = run(debugLog)
     end
 
     function onSelectFile()
-        if isempty(S.items) || isempty(lbFiles.Value)
+        files = labkit.ui.view.getValue(ui, 'files');
+        paths = labkit.ui.view.filePaths(files);
+        if isempty(S.items) || isempty(paths)
             return;
         end
-        idx = find(strcmp({S.items.name}, lbFiles.Value), 1);
+        idx = find(string({S.items.filepath}) == string(paths(1)), 1);
         if isempty(idx)
             idx = 1;
         end
@@ -126,9 +126,29 @@ function fig = run(debugLog)
         loadCurrentItem();
     end
 
+    function onRemoveSelected(~, event)
+        if isempty(S.items)
+            return;
+        end
+        paths = labkit.ui.view.filePaths(event.removedFiles);
+        if isempty(paths)
+            return;
+        end
+        report = removeItemsByPaths(paths);
+        for k = 1:numel(report.removed)
+            addLog(sprintf('Removed: %s', report.removed{k}));
+        end
+        S.current = min(S.current, numel(S.items));
+        if isempty(S.items)
+            S.current = [];
+            clearCurrentItem();
+        end
+        refreshFileList();
+        loadCurrentItem();
+    end
+
     function clearAllFiles()
-        S.session = labkit.dta.makeSession('cv_csc');
-        S.items = S.session.items;
+        S.items = struct([]);
         S.current = [];
         clearCurrentItem();
         refreshFileList();
@@ -143,8 +163,7 @@ function fig = run(debugLog)
             return;
         end
         filepath = S.items(S.current).filepath;
-        [S.session, ~] = labkit.dta.removeSelectedItemsFromSession(S.session, {S.items(S.current).name}, struct());
-        S.items = S.session.items;
+        removeItemsByPaths(filepath);
         S.current = [];
         addFiles({filepath});
     end
@@ -155,12 +174,13 @@ function fig = run(debugLog)
             txtLoaded.Value = 'No files loaded';
             return;
         end
-        names = {S.items.name};
-        labkit.ui.view.setListItems(ui, 'files', names);
-        if isempty(S.current) || S.current < 1 || S.current > numel(names)
+        paths = string({S.items.filepath}).';
+        labkit.ui.view.setValue(ui, 'files', paths);
+        if isempty(S.current) || S.current < 1 || S.current > numel(paths)
             S.current = 1;
         end
-        lbFiles.Value = names{S.current};
+        files = labkit.ui.view.getFiles(ui, 'files');
+        labkit.ui.view.setFileSelection(ui, 'files', files(S.current));
         txtLoaded.Value = sprintf('%d file(s) loaded', numel(S.items));
     end
 
@@ -172,9 +192,8 @@ function fig = run(debugLog)
         if isempty(S.current) || S.current < 1 || S.current > numel(S.items)
             S.current = 1;
         end
-        S.session.items(S.current).currentCurve = 1;
-        S.session.items(S.current).analysis = [];
-        S.items = S.session.items;
+        S.items(S.current).currentCurve = 1;
+        S.items(S.current).analysis = [];
         item = S.items(S.current);
         S.filepath = item.filepath;
         S.scanRate = item.scanRate;
@@ -281,9 +300,8 @@ function fig = run(debugLog)
     end
 
     function syncSessionCurrentCurve()
-        if ~isempty(S.session.items) && ~isempty(S.current)
-            S.session.items(S.current).currentCurve = S.currentCurve;
-            S.items = S.session.items;
+        if ~isempty(S.items) && ~isempty(S.current)
+            S.items(S.current).currentCurve = S.currentCurve;
         end
     end
 
@@ -393,6 +411,47 @@ function fig = run(debugLog)
     function addLog(msg)
         labkit.ui.view.appendLog(ui, 'appLog', msg);
         debugLog.append(msg);
+    end
+
+    function report = removeItemsByPaths(filepaths)
+        paths = normalizePaths(filepaths);
+        report = struct('removed', {{}}, 'missing', {{}});
+        if isempty(paths)
+            return;
+        end
+        if isempty(S.items)
+            report.missing = cellstr(paths(:).');
+            return;
+        end
+        keep = true(1, numel(S.items));
+        itemPaths = string({S.items.filepath});
+        for k = 1:numel(paths)
+            idx = find(itemPaths == paths(k) & keep, 1, 'first');
+            if isempty(idx)
+                report.missing{end + 1} = char(paths(k));
+                continue;
+            end
+            report.removed{end + 1} = char(paths(k));
+            keep(idx) = false;
+        end
+        S.items = S.items(keep);
+    end
+
+    function tf = isLoaded(filepath)
+        tf = ~isempty(S.items) && any(string({S.items.filepath}) == string(filepath));
+    end
+
+    function paths = normalizePaths(paths)
+        paths = string(paths(:));
+        paths = paths(strlength(paths) > 0);
+    end
+
+    function items = appendItem(items, item)
+        if isempty(items)
+            items = item;
+        else
+            items(end + 1) = item;
+        end
     end
 
 end

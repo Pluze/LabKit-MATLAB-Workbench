@@ -30,12 +30,12 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
   versions use `X.Y.Z` semantic format and must only increase.
 - Debug launches should attach the Log tab text area, emit a startup trace line, and instrument high-level component callbacks after controls are built.
 - Apps with custom preview scroll, drawing, ROI, scale-bar, or other axes interaction should create a `labkit.ui.tool.createRuntime` and pass that runtime into reusable tools. Do not set preview-tool `WindowScrollWheelFcn`, `WindowButtonMotionFcn`, `WindowButtonUpFcn`, or axes `ButtonDownFcn` directly in app code.
-- DTA-backed apps use `labkit.dta.*` for discovery, loading, sessions, pulse detection, and parsed curve/table access.
+- DTA-backed apps use `labkit.dta.*` for discovery, loading, pulse detection, and parsed curve/table access. Task queues, duplicate policy, current selection, analysis state, and export workflow stay app-owned.
 - RHS-backed apps use `labkit.rhs.*` for discovery, header inspection,
   indexing, and window reads. Channel roles, protocols, event detection,
   nerve response metrics, and exports stay app-owned.
 - Biosignal-backed apps use `labkit.biosignal.*` for recording loading, channel extraction, waveform processing, events, segments, measurements, and group comparisons.
-- App-local file dialogs that remain outside `pathPanel` must use
+- App-local file dialogs that remain outside `filePanel` must use
   `labkit.ui.app.defaultDialogFolder("input")` or `"output"` instead of `pwd`
   or bare output filenames.
 - Do not create app-specific helper packages outside the owning app tree, and do not move app-specific helper code into `+labkit`.

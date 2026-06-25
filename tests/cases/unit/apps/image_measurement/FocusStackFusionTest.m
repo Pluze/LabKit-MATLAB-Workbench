@@ -15,8 +15,7 @@ function verify_focusStackFusion()
     checkSyntheticFocusSelection();
     checkSummaryTableContract();
     checkFolderDiscovery();
-    checkSelectedFileSelection();
-    checkReadImagesAcceptsPathPanelCellPaths();
+    checkReadImagesAcceptsFilePanelCellPaths();
     checkRegistrationImprovesSyntheticDrift();
     checkRunTaskFingerprintTracksOptionsAndRegistration();
     checkInvalidInputs();
@@ -92,27 +91,7 @@ function checkFolderDiscovery()
         'Image folder discovery should filter image files and sort by name.');
 end
 
-function checkSelectedFileSelection()
-    folder = tempname;
-    mkdir(folder);
-    cleanup = onCleanup(@() removeTempFolder(folder));
-
-    paths = focus_stack.io.selectedImagePaths( ...
-        {'frame_b.png', 'frame_a.tif'}, folder);
-    names = fileNames(paths);
-    assert(isequal(names, {'frame_a.tif'; 'frame_b.png'}), ...
-        'Selected image files should be normalized and sorted by name.');
-
-    onePath = focus_stack.io.selectedImagePaths('frame_c.jpg', folder);
-    assert(numel(onePath) == 1 && endsWith(onePath, "frame_c.jpg"), ...
-        'Single-file selection should be accepted for preview before stacking.');
-
-    assertThrows(@() focus_stack.io.selectedImagePaths('notes.txt', folder), ...
-        'labkit_FocusStack_app:UnsupportedImageFile', ...
-        'Manual selection should reject unsupported file types.');
-end
-
-function checkReadImagesAcceptsPathPanelCellPaths()
+function checkReadImagesAcceptsFilePanelCellPaths()
     folder = tempname;
     mkdir(folder);
     cleanup = onCleanup(@() removeTempFolder(folder));
@@ -124,9 +103,9 @@ function checkReadImagesAcceptsPathPanelCellPaths()
 
     images = focus_stack.io.readImages({firstPath, secondPath});
     assert(numel(images) == 2, ...
-        'Focus stack reader should accept pathPanel cell-array paths.');
+        'Focus stack reader should accept filePanel cell-array paths.');
     assert(isequal(size(images{1}), [8 8]), ...
-        'Focus stack reader should load image data from pathPanel paths.');
+        'Focus stack reader should load image data from filePanel paths.');
 end
 
 function checkRegistrationImprovesSyntheticDrift()
@@ -161,15 +140,6 @@ function checkRunTaskFingerprintTracksOptionsAndRegistration()
         'Changing registration should change the focus-stack task fingerprint.');
     assert(base.fingerprint ~= changed.fingerprint, ...
         'Changing fusion options should change the focus-stack task fingerprint.');
-end
-
-function names = fileNames(paths)
-    paths = string(paths(:));
-    names = cell(numel(paths), 1);
-    for k = 1:numel(paths)
-        [~, base, ext] = fileparts(char(paths(k)));
-        names{k} = [base ext];
-    end
 end
 
 function checkInvalidInputs()

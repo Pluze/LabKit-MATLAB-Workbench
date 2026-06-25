@@ -6,7 +6,7 @@ function kind = normalizeExpectedKind(kind)
 %NORMALIZEEXPECTEDKIND Validate and normalize a private DTA kind argument.
 %
 % Called by:
-%   loadFile, loadFiles, loadFolder, and addFilesToSession.
+%   loadFile, loadFiles, and loadFolder.
 %
 % Inputs:
 %   kind - char vector or scalar string. Missing or blank means "auto".

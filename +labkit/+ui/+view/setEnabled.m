@@ -1,5 +1,5 @@
 function setEnabled(ui, id, enabled)
-%SETENABLED Set Enable state for a UI 2.0 control or compound control.
+%SETENABLED Set Enable state for a UI 3.0 control or compound control.
 %
 % App-facing contract:
 %   labkit.ui.view.setEnabled(ui, id, enabled)

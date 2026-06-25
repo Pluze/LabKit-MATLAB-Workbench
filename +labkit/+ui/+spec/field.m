@@ -25,7 +25,7 @@ function validateFieldKind(kind)
         'checkbox', 'readonly'};
     if ~any(strcmpi(kind, allowed))
         error('labkit:ui:spec:InvalidFieldKind', ...
-            'Unsupported UI 2.0 field kind "%s".', kind);
+            'Unsupported UI 3.0 field kind "%s".', kind);
     end
 end
 

@@ -10,6 +10,7 @@ function fig = run(debugLog)
         "rhsChosen", @onRhsChosen, ...
         "rhsCleared", @onRhsCleared, ...
         "folderChosen", @onFolderChosen, ...
+        "folderRemoved", @onFolderRemoved, ...
         "folderCleared", @onFolderCleared, ...
         "protocolChosen", @onProtocolChosen, ...
         "protocolCleared", @onProtocolCleared, ...
@@ -45,7 +46,7 @@ function fig = run(debugLog)
     addLog("RHS Preview ready.");
 
     function onRhsChosen(~, event)
-        paths = event.paths;
+        paths = labkit.ui.view.filePaths(event.addedFiles);
         if isempty(paths)
             return;
         end
@@ -73,12 +74,34 @@ function fig = run(debugLog)
     end
 
     function onFolderChosen(~, event)
-        paths = event.paths;
+        paths = labkit.ui.view.filePaths(event.addedFiles);
         if isempty(paths)
             return;
         end
-        S.rhsFolder = paths(1);
-        refreshFolderFiles("Discovered RHS files");
+        S.rhsFolder = commonParentFolder(paths);
+        refreshFilterRowsFromPaths(paths, "Discovered RHS files");
+        refreshAll();
+    end
+
+    function onFolderRemoved(~, event)
+        paths = labkit.ui.view.filePaths(event.removedFiles);
+        if isempty(paths) || isempty(S.filterRows) || height(S.filterRows) == 0
+            return;
+        end
+        keep = ~ismember(string(S.filterRows.filePath), string(paths));
+        S.filterRows = S.filterRows(keep, :);
+        S.filterRows.recordingId = "R" + compose("%03d", ...
+            (1:height(S.filterRows)).');
+        remainingPaths = filterTaskPaths(S.filterRows);
+        if isempty(remainingPaths)
+            S.rhsFolder = "";
+            S.statusMessage = "No RHS folder selected.";
+        else
+            S.rhsFolder = commonParentFolder(remainingPaths);
+            S.statusMessage = sprintf("Removed %d RHS filter task(s).", ...
+                numel(paths));
+        end
+        S.lastAction = "Removed RHS filter files";
         refreshAll();
     end
 
@@ -91,7 +114,7 @@ function fig = run(debugLog)
     end
 
     function onProtocolChosen(~, event)
-        paths = event.paths;
+        paths = labkit.ui.view.filePaths(event.addedFiles);
         if isempty(paths)
             return;
         end
@@ -380,6 +403,23 @@ function fig = run(debugLog)
         addLog(S.statusMessage);
     end
 
+    function refreshFilterRowsFromPaths(paths, actionLabel)
+        try
+            S.filterRows = rhs_preview.ops.discoverFilterRows(paths, ...
+                S.filterRows);
+        catch ME
+            S.filterRows = table();
+            S.statusMessage = string(ME.message);
+            S.lastAction = "RHS task scan failed";
+            addLog("RHS task scan failed: " + S.statusMessage);
+            return;
+        end
+        S.statusMessage = sprintf("Discovered %d RHS file(s).", ...
+            height(S.filterRows));
+        S.lastAction = string(actionLabel);
+        addLog(S.statusMessage);
+    end
+
     function tf = isPreviewToggleEdit(event)
         tf = true;
         if (isstruct(event) && isfield(event, "indices")) || ...
@@ -390,12 +430,9 @@ function fig = run(debugLog)
     end
 
     function refreshAll()
-        labkit.ui.view.setListItems(ui, "rhsFile", ...
-            cellstr(rhs_preview.view.selectedList(S.rhsFile)));
-        labkit.ui.view.setListItems(ui, "rhsFolder", ...
-            cellstr(rhs_preview.view.selectedList(S.rhsFolder)));
-        labkit.ui.view.setListItems(ui, "protocolFile", ...
-            cellstr(rhs_preview.view.selectedList(S.protocolFile)));
+        labkit.ui.view.setValue(ui, "rhsFile", fileValue(S.rhsFile));
+        labkit.ui.view.setValue(ui, "rhsFolder", filterTaskPaths(S.filterRows));
+        labkit.ui.view.setValue(ui, "protocolFile", fileValue(S.protocolFile));
         refreshChannelControls();
         refreshWindowControls();
         labkit.ui.view.setEnabled(ui, "refreshPreviewWindow", ...
@@ -497,5 +534,62 @@ function fig = run(debugLog)
             return;
         end
         S.lastScrollTic = tic;
+    end
+end
+
+function items = fileValue(pathValue)
+    pathValue = string(pathValue);
+    if strlength(pathValue) == 0
+        items = strings(0, 1);
+        return;
+    end
+    items = pathValue;
+end
+
+function paths = filterTaskPaths(rows)
+    if istable(rows) && height(rows) > 0 && any(strcmp(rows.Properties.VariableNames, "filePath"))
+        paths = string(rows.filePath);
+        paths = paths(:);
+    else
+        paths = strings(0, 1);
+    end
+end
+
+function folder = commonParentFolder(paths)
+    paths = string(paths);
+    paths = paths(strlength(paths) > 0);
+    if isempty(paths)
+        folder = "";
+        return;
+    end
+    folders = strings(numel(paths), 1);
+    for k = 1:numel(paths)
+        folders(k) = string(fileparts(char(paths(k))));
+    end
+    folder = folders(1);
+    parts = split(folder, filesep);
+    for k = 2:numel(folders)
+        peer = split(folders(k), filesep);
+        n = min(numel(parts), numel(peer));
+        keep = false(n, 1);
+        for iPart = 1:n
+            keep(iPart) = parts(iPart) == peer(iPart);
+        end
+        firstMismatch = find(~keep, 1, "first");
+        if isempty(firstMismatch)
+            parts = parts(1:n);
+        elseif firstMismatch == 1
+            parts = strings(0, 1);
+        else
+            parts = parts(1:firstMismatch - 1);
+        end
+    end
+    parts = parts(strlength(parts) > 0);
+    if isempty(parts)
+        folder = fileparts(char(paths(1)));
+    elseif startsWith(folders(1), filesep)
+        folder = string(filesep) + strjoin(parts, filesep);
+    else
+        folder = strjoin(parts, filesep);
     end
 end

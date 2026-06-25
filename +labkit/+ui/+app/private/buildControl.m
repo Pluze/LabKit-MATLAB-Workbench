@@ -14,8 +14,8 @@ function ui = buildControl(ui, controlSpec, parentGrid, row, debug)
             ui = buildAction(ui, controlSpec, parentGrid, row, [1 2]);
         case 'actionGroup'
             ui = buildActionGroup(ui, controlSpec, parentGrid, row);
-        case 'pathPanel'
-            ui = buildPathPanel(ui, controlSpec, parentGrid, row);
+        case 'filePanel'
+            ui = buildFilePanel(ui, controlSpec, parentGrid, row);
         case 'resultTable'
             ui = buildResultTable(ui, controlSpec, parentGrid, row);
         case 'logPanel'
@@ -26,7 +26,7 @@ function ui = buildControl(ui, controlSpec, parentGrid, row, debug)
             ui = buildStatusPanel(ui, controlSpec, parentGrid, row);
         otherwise
             error('labkit:ui:app:UnsupportedControl', ...
-                'Unsupported UI 2.0 control kind "%s".', controlSpec.kind);
+                'Unsupported UI 3.0 control kind "%s".', controlSpec.kind);
     end
 end
 
@@ -87,7 +87,7 @@ function control = createFieldControl(parentGrid, kind, props, enabled)
                 'Editable', 'off', 'Enable', onOff(enabled));
         otherwise
             error('labkit:ui:app:UnsupportedFieldKind', ...
-                'Unsupported UI 2.0 field kind "%s".', kind);
+                'Unsupported UI 3.0 field kind "%s".', kind);
     end
     applyCommonValueProps(control, props);
 end
@@ -274,17 +274,19 @@ function [ui, adapter] = buildAction(ui, actionSpec, parentGrid, row, column)
     setOriginalCallbackName(button, appCallback);
 end
 
-function ui = buildPathPanel(ui, pathSpec, parentGrid, row)
+function ui = buildFilePanel(ui, fileSpec, parentGrid, row)
     callbacks = struct( ...
-        'choose', semanticPathChooseCallback(pathSpec.id, ...
-            optionValue(pathSpec.props, 'onChoose', [])), ...
-        'clear', semanticPathClearCallback(pathSpec.id, ...
-            optionValue(pathSpec.props, 'onClear', [])), ...
-        'selection', semanticPathSelectionCallback(pathSpec.id, ...
-            optionValue(pathSpec.props, 'onSelectionChange', [])), ...
+        'choose', semanticFileChooseCallback(fileSpec.id, ...
+            optionValue(fileSpec.props, 'onChoose', [])), ...
+        'remove', semanticFileRemoveCallback(fileSpec.id, ...
+            optionValue(fileSpec.props, 'onRemove', [])), ...
+        'clear', semanticFileClearCallback(fileSpec.id, ...
+            optionValue(fileSpec.props, 'onClear', [])), ...
+        'selection', semanticFileSelectionCallback(fileSpec.id, ...
+            optionValue(fileSpec.props, 'onSelectionChange', [])), ...
         'setOriginalCallbackName', @setOriginalCallbackName);
-    adapter = buildPathPanelControl(pathSpec, parentGrid, row, callbacks);
-    ui.controls.(pathSpec.id) = adapter;
+    adapter = buildFilePanelControl(fileSpec, parentGrid, row, callbacks);
+    ui.controls.(fileSpec.id) = adapter;
 end
 
 function ui = buildResultTable(ui, tableSpec, parentGrid, row)
@@ -480,7 +482,7 @@ function tf = isFigureBusy(fig)
     end
 end
 
-function callback = semanticPathChooseCallback(id, appCallback)
+function callback = semanticFileChooseCallback(id, appCallback)
     callback = @wrapped;
 
     function wrapped(source, rawEvent)
@@ -493,31 +495,17 @@ function callback = semanticPathChooseCallback(id, appCallback)
         if isempty(paths)
             return;
         end
-        eventPaths = paths;
-        if appendsPathChoices(control)
-            eventPaths = unique([control.currentItems(); paths], 'stable');
-            eventPaths = eventPaths(:);
-        end
-        control = control.applySelection(control, eventPaths, true);
-        control = control.setSelection(control, paths);
+        [control, addedFiles] = control.appendSelection(control, paths);
+        control = control.setFileSelection(control, addedFiles);
         ui.controls.(id) = control;
         setappdata(ui.figure, 'labkitUiRegistry', ui);
-        event = semanticEvent(control, source, rawEvent, 'user');
-        event.action = 'choose';
-        event.mode = optionValue(control.props, 'mode', '');
-        event.paths = control.currentItems();
-        event.selection = control.currentValue();
-        event.value = event.selection;
+        event = fileEvent(control, source, rawEvent, 'choose');
+        event.addedFiles = addedFiles;
         runSemanticAppCallback(ui, control, event, appCallback, id);
     end
 end
 
-function tf = appendsPathChoices(control)
-    mode = lower(string(optionValue(control.props, 'mode', '')));
-    tf = any(mode == ["multifile" "multifolder"]);
-end
-
-function callback = semanticPathClearCallback(id, appCallback)
+function callback = semanticFileRemoveCallback(id, appCallback)
     callback = @wrapped;
 
     function wrapped(source, rawEvent)
@@ -526,20 +514,35 @@ function callback = semanticPathClearCallback(id, appCallback)
             return;
         end
         control = ui.controls.(id);
-        control = control.applySelection(control, {}, true);
+        [control, removedFiles] = control.removeSelection(control);
         ui.controls.(id) = control;
         setappdata(ui.figure, 'labkitUiRegistry', ui);
-        event = semanticEvent(control, source, rawEvent, 'user');
-        event.action = 'clear';
-        event.mode = optionValue(control.props, 'mode', '');
-        event.paths = strings(0, 1);
-        event.selection = strings(0, 1);
-        event.value = strings(0, 1);
+        event = fileEvent(control, source, rawEvent, 'remove');
+        event.removedFiles = removedFiles;
         runSemanticAppCallback(ui, control, event, appCallback, id);
     end
 end
 
-function callback = semanticPathSelectionCallback(id, appCallback)
+function callback = semanticFileClearCallback(id, appCallback)
+    callback = @wrapped;
+
+    function wrapped(source, rawEvent)
+        ui = currentUiRegistry(source);
+        if isFigureBusy(ui.figure)
+            return;
+        end
+        control = ui.controls.(id);
+        previousFiles = control.currentFiles();
+        control = control.applySelection(control, {}, true);
+        ui.controls.(id) = control;
+        setappdata(ui.figure, 'labkitUiRegistry', ui);
+        event = fileEvent(control, source, rawEvent, 'clear');
+        event.removedFiles = previousFiles;
+        runSemanticAppCallback(ui, control, event, appCallback, id);
+    end
+end
+
+function callback = semanticFileSelectionCallback(id, appCallback)
     if isempty(appCallback)
         callback = [];
         return;
@@ -552,14 +555,18 @@ function callback = semanticPathSelectionCallback(id, appCallback)
             return;
         end
         control = ui.controls.(id);
-        event = semanticEvent(control, source, rawEvent, 'user');
-        event.action = 'select';
-        event.mode = optionValue(control.props, 'mode', '');
-        event.paths = control.currentValue();
-        event.selection = event.paths;
-        event.value = event.paths;
+        event = fileEvent(control, source, rawEvent, 'select');
         runSemanticAppCallback(ui, control, event, appCallback, id);
     end
+end
+
+function event = fileEvent(control, source, rawEvent, action)
+    event = semanticEvent(control, source, rawEvent, 'user');
+    event.action = action;
+    event.mode = 'filePanel';
+    event.files = control.currentFiles();
+    event.selectedFiles = control.currentSelectedFiles();
+    event.value = event.selectedFiles;
 end
 
 function ui = currentUiRegistry(source)

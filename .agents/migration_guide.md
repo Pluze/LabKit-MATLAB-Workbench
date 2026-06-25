@@ -46,8 +46,8 @@ Current facts:
 - The public app-facing UI surface is the layered
   `labkit.ui.app/spec/view/tool/diag` foundation documented in `docs/ui.md`.
 - App-owned save dialogs that need safe default-folder handling use
-  `labkit.ui.app.promptOutputFile`; ordinary input selection remains owned by
-  `pathPanel` or intentional app-local file prompts.
+  `labkit.ui.app.promptOutputFile`; ordinary file input selection is represented
+  as file entries through `labkit.ui.spec.filePanel`.
 - Image workflow apps keep run/export/measurement task snapshots and
   deterministic fingerprints under app-owned `+state` helpers.
 

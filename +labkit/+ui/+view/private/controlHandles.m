@@ -1,5 +1,5 @@
 % Private UI view helper. Expected caller: named labkit.ui.view helpers.
-% Collects MATLAB graphics handles from a UI 2.0 control adapter so common
+% Collects MATLAB graphics handles from a UI 3.0 control adapter so common
 % state such as Enable can be applied across compound controls.
 function handles = controlHandles(control)
     handles = {};

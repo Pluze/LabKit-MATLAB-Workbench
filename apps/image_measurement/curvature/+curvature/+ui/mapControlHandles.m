@@ -1,11 +1,10 @@
 % Expected caller: curvature.run after labkit.ui.app.create. Inputs are the
-% UI 2.0 registry and the scale-bar tool. Output is the app's control handle
+% UI 3.0 registry and the scale-bar tool. Output is the app's control handle
 % struct used by the existing runner logic. Side effects: none.
 function controls = mapControlHandles(ui, scaleTool)
-%MAPCONTROLHANDLES Map UI 2.0 adapters to curvature control handles.
+%MAPCONTROLHANDLES Map UI 3.0 adapters to curvature control handles.
 
     controls = struct();
-    controls.txtImage = ui.controls.imagePath.valueHandle;
     controls.txtPointCount = ui.controls.pointCount.valueHandle;
     controls.btnStartCurve = ui.controls.startCurveEdit.button;
     controls.btnUndoPoint = ui.controls.undoCurvePoint.button;

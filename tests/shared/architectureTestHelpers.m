@@ -147,7 +147,8 @@ end
 
 function assertDTAFacadeUsage(source, appName, expectedKind, expectsFolderDiscovery)
     usesDTAFacade = contains(source, 'labkit.dta.loadFile') || ...
-        contains(source, 'labkit.dta.addFilesToSession');
+        contains(source, 'labkit.dta.loadFiles') || ...
+        contains(source, 'labkit.dta.loadFolder');
     expectedKindLiteral = sprintf('"%s"', expectedKind);
     assert(usesDTAFacade && contains(source, expectedKindLiteral), ...
         [appName ' should load DTA files through the GUI-free DTA facade.']);

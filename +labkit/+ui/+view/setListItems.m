@@ -1,31 +1,40 @@
 function setListItems(ui, id, items)
-%SETLISTITEMS Replace the items of a UI 2.0 list-bearing control.
+%SETLISTITEMS Replace the items of a UI 3.0 list-bearing control.
 %
 % App-facing contract:
 %   labkit.ui.view.setListItems(ui, id, items)
 %
 % Inputs:
 %   ui - UI registry returned by labkit.ui.app.create.
-%   id - semantic id for a pathPanel or list-bearing control.
-%   items - cell array or string array of display names. For pathPanel
-%       controls, empty items restore the framework empty prompt instead of
-%       leaving the listbox visually blank.
+%   id - semantic id for a list-bearing control.
+%   items - cell array or string array of display names. For filePanel
+%       controls, only empty items are accepted; use setValue to replace
+%       file entries and setFileSelection to select entries.
 %
 % Output:
 %   None.
 
     control = resolveControl(ui, id);
-    if isPathPanel(control) && isEmptyItemSet(items)
+    if isResettablePanel(control) && isEmptyItemSet(items)
         control.setValue({});
         return;
+    end
+    if isFilePanel(control)
+        error('labkit:ui:view:FilePanelListItems', ...
+            ['filePanel items are file-entry structs, not display labels; ' ...
+            'use setValue to replace file entries.']);
     end
     listbox = listboxHandle(control);
     refreshListboxItems(listbox, items);
 end
 
-function tf = isPathPanel(control)
-    tf = isfield(control, 'kind') && strcmp(control.kind, 'pathPanel') && ...
+function tf = isResettablePanel(control)
+    tf = isFilePanel(control) && ...
         isfield(control, 'setValue') && isa(control.setValue, 'function_handle');
+end
+
+function tf = isFilePanel(control)
+    tf = isfield(control, 'kind') && strcmp(control.kind, 'filePanel');
 end
 
 function tf = isEmptyItemSet(items)

@@ -1,5 +1,5 @@
 function setValue(ui, id, value)
-%SETVALUE Set a UI 2.0 control value through the semantic registry.
+%SETVALUE Set a UI 3.0 control value through the semantic registry.
 %
 % App-facing contract:
 %   labkit.ui.view.setValue(ui, id, value)

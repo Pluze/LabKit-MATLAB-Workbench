@@ -64,12 +64,13 @@ function fig = run(debugLog)
     resetAxes();
 
     function onRecordingChosen(~, event)
-        if isempty(event.paths)
+        paths = labkit.ui.view.filePaths(event.addedFiles);
+        if isempty(paths)
             addLog('Recording selection cancelled.');
             return;
         end
 
-        S.filepath = event.paths(1);
+        S.filepath = paths(1);
         txtFile.Value = char(S.filepath);
         clearParsedRecording();
         updateFilePreview();

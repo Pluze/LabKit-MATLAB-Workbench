@@ -1,5 +1,5 @@
 % App-owned focus-stack image loading helper. Expected caller:
-% labkit_FocusStack_app run callback. Input is a pathPanel string column. Output
+% labkit_FocusStack_app run callback. Input is a filePanel string column. Output
 % is a cell column of image arrays. Reads image files and has no write side
 % effects.
 function images = readImages(paths)

@@ -1,6 +1,6 @@
 # DTA Library
 
-`labkit.dta.*` is the current electrochemistry/Gamry DTA facade. It provides GUI-free DTA discovery, loading, sessions, pulse detection, parser access, and parsed table/curve helpers for DTA-backed apps.
+`labkit.dta.*` is the current electrochemistry/Gamry DTA facade. It provides GUI-free DTA discovery, loading, pulse detection, parser access, and parsed table/curve helpers for DTA-backed apps.
 
 `labkit.dta.version()` returns the DTA facade contract version struct used by
 `labkit.contract` requirement checks.
@@ -36,19 +36,12 @@ Use the smallest loading API that matches the workflow:
 One explicit file:        labkit.dta.loadFile
 Known list of files:      labkit.dta.loadFiles
 Script/prototype folder:  labkit.dta.loadFolder
-GUI session app:          labkit.dta.addFilesToSession
 ```
 
-Session helpers:
-
-```matlab
-session = labkit.dta.makeSession('new_experiment');
-[session, report] = labkit.dta.addFilesToSession(session, files, "chrono", callbacks);
-[selectedItems, idx] = labkit.dta.selectSessionItems(session, selectedNames);
-[session, report] = labkit.dta.removeSelectedItemsFromSession(session, selectedNames, callbacks);
-labkit.dta.saveSession(session, filepath);
-session = labkit.dta.loadSession(filepath);
-```
+GUI apps keep file queues, duplicate policy, current selection, result state,
+and export workflow in the owning app. A filePanel event usually passes
+`labkit.ui.view.filePaths(event.files)` into `labkit.dta.loadFile` or
+`labkit.dta.loadFiles`; DTA does not create, mutate, or save app state files.
 
 Parsed table and curve helpers:
 
@@ -65,7 +58,7 @@ Pulse detection:
 [pulse, message] = labkit.dta.detectPulses(t, Im, meta, "Metadata first, then auto");
 ```
 
-Lower-level recursive discovery, parser functions, item construction, session mutation, and pulse internals are private DTA implementation details.
+Lower-level recursive discovery, parser functions, item construction, and pulse internals are private DTA implementation details.
 
 The DTA facade and parser fixture checks run through the default non-GUI MATLAB build task.
 
@@ -207,19 +200,6 @@ cath.start_s, cath.end_s, cath.current_A,
 anod.start_s, anod.end_s, anod.current_A,
 gap.start_s, gap.end_s, gap.center_s
 ```
-
-## Session Struct
-
-Created by `labkit.dta.makeSession`.
-
-Current fields:
-
-```text
-type, version, kind, createdAt, modifiedAt,
-items, results, options, notes, logmsg
-```
-
-`labkit.dta.addFilesToSession` supports `onAdded`, `onSkipped`, and `onFailed` callbacks so apps can preserve log timing while sharing DTA add/duplicate/failure logic. Empty file lists are no-ops that return empty reports without firing callbacks.
 
 ## Test Fixtures
 

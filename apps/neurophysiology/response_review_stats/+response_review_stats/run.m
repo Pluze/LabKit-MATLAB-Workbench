@@ -9,8 +9,8 @@ function fig = run(debugLog)
     callbacks = struct( ...
         "inputChosen", @onInputChosen, ...
         "inputCleared", @onInputCleared, ...
-        "outputFolderChosen", @onOutputFolderChosen, ...
-        "outputFolderCleared", @onOutputFolderCleared, ...
+        "outputFolderChosen", @(~, ~) onOutputFolderChosen(), ...
+        "outputFolderCleared", @(~, ~) onOutputFolderCleared(), ...
         "settingChanged", @onSettingChanged, ...
         "previewModeChanged", @onPreviewModeChanged, ...
         "loadMetrics", @onLoadMetrics, ...
@@ -52,16 +52,20 @@ function fig = run(debugLog)
         refreshAll();
     end
 
-    function onOutputFolderChosen(~, event)
-        paths = eventPaths(event);
-        if ~isempty(paths)
-            S.outputFolder = paths(1);
-            S.lastAction = "Selected output folder";
+    function onOutputFolderChosen()
+        folder = uigetdir(labkit.ui.app.defaultDialogFolder("output", S.outputFolder), ...
+            "Select metrics output folder");
+        if isequal(folder, 0)
+            S.lastAction = "Output folder selection cancelled";
             refreshAll();
+            return;
         end
+        S.outputFolder = string(folder);
+        S.lastAction = "Selected output folder";
+        refreshAll();
     end
 
-    function onOutputFolderCleared(~, ~)
+    function onOutputFolderCleared()
         S.outputFolder = "";
         S.lastAction = "Cleared output folder";
         refreshAll();
@@ -121,8 +125,8 @@ function fig = run(debugLog)
     end
 
     function refreshAll()
-        labkit.ui.view.setListItems(ui, "inputFile", cellstr(selectedList(S.inputFile)));
-        labkit.ui.view.setListItems(ui, "outputFolder", cellstr(selectedList(S.outputFolder)));
+        labkit.ui.view.setValue(ui, "inputFile", fileValue(S.inputFile));
+        labkit.ui.view.setValue(ui, "outputFolder", char(outputFolderText(S.outputFolder)));
         labkit.ui.view.setEnabled(ui, "loadMetrics", strlength(S.inputFile) > 0);
         labkit.ui.view.setEnabled(ui, "exportMetrics", ...
             istable(S.metrics) && height(S.metrics) > 0 && ...
@@ -219,15 +223,20 @@ function metrics = metricsFromAnalysisPayload(payload)
 end
 
 function paths = eventPaths(event)
-    paths = strings(0, 1);
-    if isstruct(event) && isfield(event, "paths")
-        paths = event.paths;
-    elseif isobject(event) && isprop(event, "paths")
-        paths = event.paths;
+    files = struct([]);
+    if isstruct(event) && isfield(event, "addedFiles")
+        files = event.addedFiles;
+    elseif isobject(event) && isprop(event, "addedFiles")
+        files = event.addedFiles;
+    elseif isstruct(event) && isfield(event, "selectedFiles")
+        files = event.selectedFiles;
+    elseif isobject(event) && isprop(event, "selectedFiles")
+        files = event.selectedFiles;
     end
+    paths = labkit.ui.view.filePaths(files);
     if ~(isstring(paths) && iscolumn(paths))
         error('response_review_stats:InvalidPathEvent', ...
-            'pathPanel event paths must be a string column.');
+            'filePanel event file paths must be a string column.');
     end
 end
 
@@ -243,13 +252,22 @@ function value = eventValue(event)
     end
 end
 
-function items = selectedList(pathValue)
+function items = fileValue(pathValue)
     pathValue = string(pathValue);
     if strlength(pathValue) == 0
         items = strings(0, 1);
-    else
-        items = displayPath(pathValue);
+        return;
     end
+    items = pathValue;
+end
+
+function text = outputFolderText(pathValue)
+    pathValue = string(pathValue);
+    if strlength(pathValue) == 0
+        text = "No output folder selected";
+        return;
+    end
+    text = pathValue;
 end
 
 function text = displayPath(pathValue)

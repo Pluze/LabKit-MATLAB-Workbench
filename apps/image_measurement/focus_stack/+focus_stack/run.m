@@ -15,13 +15,13 @@ function fig = run(debugLog)
 
     fusionPresets = {'Balanced', 'Crisp details', 'Smooth transitions', 'Noisy images'};
     workflowNotes = { ...
-        '1. Load a folder or select one or more image files from the same microscope field of view.', ...
-        '2. Use file selection when a folder contains bad frames that should be excluded.', ...
+        '1. Add a folder or selected image files from the same microscope field of view.', ...
+        '2. Remove selected files when a folder contains bad frames that should be excluded.', ...
         '3. Start with Balanced. Use Crisp for fine texture, Smooth for visible seams, Noisy for grainy images.', ...
         '4. Detail scale controls feature size; Blend radius controls seam softness; Uncertain blend softens low-texture areas.'};
     callbacks = struct( ...
-        'openImageFolder', @onOpenFolder, ...
         'sourceImagesChosen', @onOpenFilesChosen, ...
+        'removeImages', @onRemoveImages, ...
         'clearImages', @onClearImages, ...
         'fusionPresetChanged', @onFusionPresetChanged, ...
         'fusionOptionsChanged', @onFusionOptionsChanged, ...
@@ -40,20 +40,15 @@ function fig = run(debugLog)
     resetPreviewAxes();
     refreshSummary();
 
-    function onOpenFolder(~, ~)
-        folder = uigetdir(labkit.ui.app.defaultDialogFolder("input"), ...
-            'Select focus image folder');
-        if isequal(folder, 0)
-            addLog('Image folder selection cancelled.');
+    function onOpenFilesChosen(~, event)
+        paths = labkit.ui.view.filePaths(event.addedFiles);
+        if isempty(paths)
+            addLog('Image selection cancelled.');
             return;
         end
-        loadImageFolder(string(folder));
-    end
-
-    function onOpenFilesChosen(~, event)
-        loadImagePaths(event.paths, string(fileparts(event.paths(1))), ...
-            sprintf('Selected image files from %s', char(fileparts(event.paths(1)))), ...
-            sprintf('Loaded %d selected image file(s).', numel(event.paths)));
+        loadImagePaths(paths, string(fileparts(paths(1))), ...
+            sprintf('Selected image files from %s', char(fileparts(paths(1)))), ...
+            sprintf('Loaded %d focus image file(s).', numel(paths)));
     end
 
     function onClearImages(~, ~)
@@ -70,15 +65,22 @@ function fig = run(debugLog)
         refreshSummary();
     end
 
-    function loadImageFolder(folder)
-        try
-            paths = focus_stack.io.findImages(folder);
-        catch ME
-            showError('Could not load focus stack', ME.message);
+    function onRemoveImages(~, event)
+        removeIdx = fileIndices(event.removedFiles, numel(S.paths));
+        if isempty(removeIdx)
+            refreshSummary();
             return;
         end
-        loadImagePaths(paths, folder, char(folder), ...
-            sprintf('Loaded %d image(s) from folder.', numel(paths)));
+        paths = S.paths;
+        paths(removeIdx) = [];
+        if numel(paths) < 2
+            onClearImages([], []);
+            addLog('At least two focus image files are required.');
+            return;
+        end
+        loadImagePaths(paths, string(fileparts(paths(1))), ...
+            sprintf('Selected image files from %s', char(fileparts(paths(1)))), ...
+            sprintf('Removed image file(s); %d remaining.', numel(paths)));
     end
 
     function loadImagePaths(paths, sourceFolder, sourceDescription, logMessage)
@@ -323,6 +325,27 @@ function fig = run(debugLog)
     function addLog(message)
         labkit.ui.view.appendLog(ui, 'logPanel', message);
         debugLog.append(message);
+    end
+
+    function idx = fileIndices(files, itemCount)
+        idx = zeros(numel(files), 1);
+        for k = 1:numel(files)
+            if isfield(files(k), 'index')
+                indexValue = double(files(k).index);
+                if isscalar(indexValue) && isfinite(indexValue)
+                    idx(k) = indexValue;
+                    continue;
+                end
+            end
+            if isfield(files(k), 'id')
+                token = regexp(char(string(files(k).id)), '^file(\d+)$', ...
+                    'tokens', 'once');
+                if ~isempty(token)
+                    idx(k) = str2double(token{1});
+                end
+            end
+        end
+        idx = unique(idx(idx >= 1 & idx <= itemCount), 'stable');
     end
 
     function markResultDirty()

@@ -1,5 +1,5 @@
 function value = getValue(ui, id)
-%GETVALUE Read a UI 2.0 control value through the semantic registry.
+%GETVALUE Read a UI 3.0 control value through the semantic registry.
 %
 % App-facing contract:
 %   value = labkit.ui.view.getValue(ui, id)

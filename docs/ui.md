@@ -5,8 +5,8 @@
 | Facade | Owns | Main APIs |
 | --- | --- | --- |
 | `labkit.ui.app` | Declarative app creation, request dispatch, busy state, safe dialog defaults, app title versioning. | `create`, `dispatchRequest`, `appVersionTitle`, `applyVersionTitle`, `defaultDialogFolder`, `promptOutputFile`, `runBusy`. |
-| `labkit.ui.spec` | UI 2.0 data-only workbench specs. | `app`, `workspace`, `tab`, `section`, `field`, `rangeField`, `panner`, `action`, `actionGroup`, `pathPanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `usagePanel`. |
-| `labkit.ui.view` | Semantic UI 2.0 registry updates and preview rendering helpers. | `setValue`, `getValue`, `setEnabled`, `setLimits`, `appendLog`, `setListItems`, `setListSelection`, `drawImage`, `resetAxes`, `clearAxes`. |
+| `labkit.ui.spec` | UI 3.0 data-only workbench specs. | `app`, `workspace`, `tab`, `section`, `field`, `rangeField`, `panner`, `action`, `actionGroup`, `filePanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `usagePanel`. |
+| `labkit.ui.view` | Semantic UI 3.0 registry updates and preview rendering helpers. | `setValue`, `getValue`, `getFiles`, `setFileSelection`, `setEnabled`, `setLimits`, `appendLog`, `setListItems`, `setListSelection`, `fileLabels`, `filePaths`, `drawImage`, `resetAxes`, `clearAxes`. |
 | `labkit.ui.tool` | Reusable composed preview tools and interaction runtime. | `createRuntime`, `anchorEditor`, `scaleBar`, `scaleBarCalibration`, `enableAxesPopout`, `popoutAxes`, `zoomAxesAtPoint`. |
 | `labkit.ui.diag` | Debug launch context, visible trace, callback instrumentation. | `createContext`. |
 
@@ -15,9 +15,9 @@ The root `labkit.ui.*` flat helper surface has been removed. Apps should call th
 `labkit.ui.version()` returns the UI facade contract version struct used by
 `labkit.contract` requirement checks.
 
-## UI 2.0 Declarative Workbench
+## UI 3.0 Declarative Workbench
 
-The UI 2.0 surface makes app code read as a semantic description
+The UI 3.0 surface makes app code read as a semantic description
 of a LabKit workbench workflow, not as grid construction or a general MATLAB GUI
 DSL. App UI structure should be expressed through app-local
 `+<app_slug>/+ui/buildSpec.m` files and created through `labkit.ui.app.create`.
@@ -109,24 +109,40 @@ Use these app-facing contracts:
   own state, callbacks, alerts, refresh order, and log wording.
 - Control ids are globally unique within an app. The UI registry is keyed by
   those ids, not by tab or section placement.
-- Public specs are semantic controls such as `pathPanel`, `field`, `panner`,
+- Public specs are semantic controls such as `filePanel`, `field`, `panner`,
   `action`, `previewArea`, `resultTable`, `logPanel`, and `statusPanel`.
   Primitive MATLAB controls are implementation details.
 - Public callbacks use `function callback(control, event)`. Events carry
   semantic fields such as `id`, `kind`, `source`, `value`, `previousValue`,
   and `ui`.
-- `pathPanel` owns chooser/list/status mechanics and normalizes selected paths
-  before app callbacks run. App callbacks receive `event.paths`,
-  `event.selection`, and `event.value` as string column vectors. Apps should
-  consume that contract directly instead of normalizing path-list shapes.
-- `pathPanel` and app-owned save/open dialogs should not default to `pwd`;
+- `filePanel` owns file input mechanics: file chooser defaults, optional
+  recursive folder scans, duplicate filename display, current selection, and
+  file-entry events. Each file entry exposes `id`, `index`, `path`, `name`,
+  `displayName`, and `status`. Callback events expose file entries through
+  `event.files`, `event.addedFiles`, `event.removedFiles`,
+  `event.selectedFiles`, and `event.value` for the current selection. Apps
+  that need paths call `labkit.ui.view.filePaths(files)` instead of reading
+  fields directly from the event.
+- Multi-file `filePanel` mode uses the fixed commands Add, Remove selected,
+  and Clear. Add lets users choose files or recursively scan a folder; folder
+  scans count matching files first and ask for confirmation when the count
+  exceeds the panel warning threshold. File labels show sequence numbers plus
+  short filenames, adding the nearest unique parent directory when repeated
+  filenames would otherwise collide. Apps that allow duplicate source files
+  should remove by file `id` or `index` from `event.removedFiles` instead of
+  deleting by path. Programmatic file replacement uses
+  `labkit.ui.view.setValue`; programmatic file selection uses
+  `labkit.ui.view.setFileSelection`.
+- Single-file `filePanel` mode opens one file directly, replaces the previous
+  file on the next choose action, does not offer recursive folder selection,
+  and displays the short filename in one read-only text field instead of a
+  selectable list.
+- `filePanel` and app-owned save/open dialogs should not default to `pwd`;
   `labkit.ui.app.defaultDialogFolder("input")` and `"output"` provide safe
   remembered defaults outside the LabKit install root.
 - App-owned save dialogs may use `labkit.ui.app.promptOutputFile` when they
   only need a safe output default and cancel normalization; apps still own
   filenames, filters, export formats, and user-facing prompt wording.
-- `pathPanel` multi-file and multi-folder chooser runs append to the existing
-  path queue; users clear the queue with the control's `Clear` action.
 - `previewArea` belongs in `workspace` by default. Its optional `viewModes`
   selector is workspace-owned, and apps can react through `onModeChange`.
 - `previewArea` axes install LabKit-managed, pointer-gated mouse-wheel zoom by
@@ -162,7 +178,7 @@ stack is intentional.
 Every `labkit.ui.spec.action` callback runs as an app-wide action transaction.
 The framework marks the app busy before invoking the app callback and clears
 that busy state after the callback returns or errors. While the figure is busy,
-other UI 2.0 semantic callbacks return without invoking app code, so repeated
+other UI 3.0 semantic callbacks return without invoking app code, so repeated
 clicks or value changes do not submit duplicate work even when the user waits
 and interacts again before the first action finishes.
 
@@ -179,7 +195,7 @@ callback runs. Use `busyMessage` only when the title text needs to differ from
 the button label.
 
 `labkit.ui.app.runBusy` remains the lower-level helper for custom synchronous
-work that is not launched from a UI 2.0 action:
+work that is not launched from a UI 3.0 action:
 
 ```matlab
 payload = labkit.ui.app.runBusy(fig, ...
@@ -202,9 +218,11 @@ maintain their own busy-control lists, and `runBusy` does not mutate control
 
 ```matlab
 labkit.ui.view.setValue(ui, "displayLimits", [0.1 0.9]);
+labkit.ui.view.setValue(ui, "sourceImages", ["a.png"; "b.png"]);
+files = labkit.ui.view.getFiles(ui, "sourceImages");
+labkit.ui.view.setFileSelection(ui, "sourceImages", files(1));
+paths = labkit.ui.view.filePaths(labkit.ui.view.getValue(ui, "sourceImages"));
 labkit.ui.view.setEnabled(ui, "run", false);
-labkit.ui.view.setListItems(ui, "sourceImages", imageNames);
-labkit.ui.view.setListSelection(ui, "sourceImages", imageNames, currentName);
 labkit.ui.view.appendLog(ui, "log", "Loaded image.");
 labkit.ui.view.drawImage(ui, "preview", imageData, ...
     "axis", "raw", "title", "Reference");

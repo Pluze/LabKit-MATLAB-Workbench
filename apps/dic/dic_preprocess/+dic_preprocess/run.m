@@ -7,8 +7,10 @@ function fig = run(debugLog)
 
     S = dic_preprocess.state.initialState();
     callbacks = struct( ...
-        'openReference', @onOpenReference, ...
-        'openMoving', @onOpenMoving, ...
+        'referenceChosen', @onReferenceChosen, ...
+        'referenceCleared', @(~, ~) onReferenceCleared(), ...
+        'movingChosen', @onMovingChosen, ...
+        'movingCleared', @(~, ~) onMovingCleared(), ...
         'previewChanged', @(~,~) refreshPreview(), ...
         'align', @onAlign, ...
         'autoAlign', @onAutoAlign, ...
@@ -37,8 +39,6 @@ function fig = run(debugLog)
         struct('figure', fig));
     ui.imageRuntime = imageRuntime;
     controls = dic_preprocess.ui.mapControlHandles(ui);
-    txtReference = controls.txtReference;
-    txtMoving = controls.txtMoving;
     txtSummary = ui.controls.summaryText.textArea;
     txtDetails = ui.controls.detailsText.textArea;
     ddPreview = controls.ddPreview;
@@ -52,33 +52,51 @@ function fig = run(debugLog)
     refreshPreview();
 
 
-    function onOpenReference(~, ~)
-        filepath = dic_preprocess.io.chooseImageFile('Select reference image');
-        if filepath == ""
+    function onReferenceChosen(~, event)
+        paths = labkit.ui.view.filePaths(event.addedFiles);
+        if isempty(paths)
             addLog('Reference image selection cancelled.');
             return;
         end
+        filepath = paths(1);
         S = dic_preprocess.state.setLoadedImage( ...
             S, 'reference', filepath, imread(filepath));
         resetWorkflowStateForNewInput();
-        txtReference.Value = char(filepath);
         addLog(sprintf('Loaded reference image: %s', filepath));
         chooseDefaultPreviewAfterLoad();
         refreshPreview();
     end
 
-    function onOpenMoving(~, ~)
-        filepath = dic_preprocess.io.chooseImageFile('Select moving image');
-        if filepath == ""
+    function onReferenceCleared()
+        S.referencePath = "";
+        S.referenceImage = [];
+        S.currentReferenceImage = [];
+        resetWorkflowStateForNewInput();
+        addLog('Cleared reference image file.');
+        refreshPreview();
+    end
+
+    function onMovingChosen(~, event)
+        paths = labkit.ui.view.filePaths(event.addedFiles);
+        if isempty(paths)
             addLog('Moving image selection cancelled.');
             return;
         end
+        filepath = paths(1);
         S = dic_preprocess.state.setLoadedImage( ...
             S, 'moving', filepath, imread(filepath));
         resetWorkflowStateForNewInput();
-        txtMoving.Value = char(filepath);
         addLog(sprintf('Loaded moving image: %s', filepath));
         chooseDefaultPreviewAfterLoad();
+        refreshPreview();
+    end
+
+    function onMovingCleared()
+        S.movingPath = "";
+        S.movingImage = [];
+        S.currentMovingImage = [];
+        resetWorkflowStateForNewInput();
+        addLog('Cleared moving image file.');
         refreshPreview();
     end
 
@@ -453,6 +471,8 @@ function fig = run(debugLog)
     end
 
     function refreshSummary()
+        labkit.ui.view.setValue(ui, 'referenceFile', fileValue(S.referencePath));
+        labkit.ui.view.setValue(ui, 'movingFile', fileValue(S.movingPath));
         txtSummary.Value = dic_preprocess.view.buildSummary(S);
         dic_preprocess.ui.updateUndoButton(controls, S);
     end
@@ -469,8 +489,17 @@ function fig = run(debugLog)
             ddPreview.Value = 'False-color overlay';
         else
             ddPreview.Value = 'Current pair';
-        end
     end
+end
+
+function items = fileValue(pathValue)
+    pathValue = string(pathValue);
+    if strlength(pathValue) == 0
+        items = strings(0, 1);
+        return;
+    end
+    items = pathValue;
+end
 
     function pushHistory(description)
         [S.history, appended] = dic_preprocess.state.appendEditHistory( ...

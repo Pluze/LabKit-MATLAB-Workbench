@@ -20,7 +20,7 @@ function validateAppSpec(spec)
     duplicate = firstDuplicate(ids);
     if strlength(duplicate) > 0
         error('labkit:ui:app:DuplicateId', ...
-            'Duplicate UI 2.0 spec id "%s".', char(duplicate));
+            'Duplicate UI 3.0 spec id "%s".', char(duplicate));
     end
     validateTreeShape(spec);
 end
@@ -68,7 +68,7 @@ function validateTreeShape(spec)
             validateChildKinds(spec, {'section'});
         case 'section'
             validateChildKinds(spec, {'field', 'rangeField', 'panner', 'action', ...
-                'actionGroup', 'pathPanel', 'resultTable', 'statusPanel', ...
+                'actionGroup', 'filePanel', 'resultTable', 'statusPanel', ...
                 'usagePanel', 'logPanel'});
         case 'actionGroup'
             validateChildKinds(spec, {'action'});
@@ -117,6 +117,6 @@ function assertCommonSpec(spec)
             ~iscell(spec.children) || ...
             ~(isempty(spec.children) || isrow(spec.children))
         error('labkit:ui:app:InvalidSpec', ...
-            'UI 2.0 specs must be scalar structs with cell row children.');
+            'UI 3.0 specs must be scalar structs with cell row children.');
     end
 end

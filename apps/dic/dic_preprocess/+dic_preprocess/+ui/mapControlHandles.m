@@ -1,14 +1,10 @@
 % Expected caller: DIC preprocess runner after labkit.ui.app.create. Input is
-% the UI 2.0 registry. Output is the app's legacy-named control handle struct
+% the UI 3.0 registry. Output is the app's legacy-named control handle struct
 % used by existing app-owned interaction helpers. Side effects: none.
 function controls = mapControlHandles(ui)
-%MAPCONTROLHANDLES Map UI 2.0 adapters to DIC preprocess control handles.
+%MAPCONTROLHANDLES Map UI 3.0 adapters to DIC preprocess control handles.
 
     controls = struct();
-    controls.btnReference = ui.controls.openReference.button;
-    controls.btnMoving = ui.controls.openMoving.button;
-    controls.txtReference = ui.controls.referencePath.valueHandle;
-    controls.txtMoving = ui.controls.movingPath.valueHandle;
     controls.ddPreview = ui.controls.previewMode.valueHandle;
     controls.btnAlign = ui.controls.align.button;
     controls.btnAutoAlign = ui.controls.autoAlign.button;

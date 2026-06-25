@@ -6,13 +6,12 @@ function fig = run(debugLog)
 %RUNCICAPP Build and run the app body.
 
     S = struct();
-    S.session = labkit.dta.makeSession('cic_vt');
-    S.items = S.session.items; % loaded files + parsed content + analysis
+    S.items = struct([]); % loaded files + parsed content + analysis
     S.current = [];
 
     callbacks = struct( ...
         "openFilesChosen", @onOpenFilesChosen, ...
-        "openFolder", @onOpenFolder, ...
+        "removeSelected", @onRemoveSelected, ...
         "clearAll", @(~,~) clearAllFiles(), ...
         "exportResults", @(~,~) exportResultsCSV(), ...
         "fileSelectionChanged", @(~,~) onSelectFile(), ...
@@ -27,7 +26,6 @@ function fig = run(debugLog)
     ui = labkit.ui.app.create(spec, "debug", debugLog);
 
     fig = ui.figure;
-    lbFiles = ui.controls.files.listbox;
     txtLoaded = ui.controls.files.status;
     ddPreset = ui.controls.preset.valueHandle;
     edCathLim = ui.controls.cathLimit.valueHandle;
@@ -82,45 +80,45 @@ function fig = run(debugLog)
     end
 
     function onOpenFilesChosen(~, event)
-        if isempty(event.paths)
+        paths = labkit.ui.view.filePaths(event.addedFiles);
+        if isempty(paths)
             addLog('Open cancelled.');
             return;
         end
-        loadDTAFiles(event.paths);
-    end
-
-    function onOpenFolder(~,~)
-        folder = uigetdir(labkit.ui.app.defaultDialogFolder("input"), ...
-            'Select a folder to recursively scan for .DTA files');
-        if isequal(folder,0)
-            addLog('Folder selection cancelled.');
-            return;
-        end
-
-        filepaths = labkit.dta.findFiles(folder);
-        if isempty(filepaths)
-            addLog(sprintf('No DTA files found under: %s', folder));
-            uialert(fig, sprintf('No .DTA files found under:\n%s', folder), 'No files found');
-            return;
-        end
-
-        addLog(sprintf('Found %d DTA file(s) under %s', numel(filepaths), folder));
-        loadDTAFiles(filepaths);
+        loadDTAFiles(paths);
     end
 
     function loadDTAFiles(filepaths)
+        filepaths = normalizePaths(filepaths);
         if isempty(filepaths)
             return;
         end
 
-        filepaths = unique(filepaths, 'stable');
-        callbacks = struct();
-        callbacks.onAdded = @(~, ~) [];
-        callbacks.onSkipped = @(filepath) addLog(sprintf('Skipped already loaded: %s', filepath));
-        callbacks.onFailed = @(filepath, message) addLog(sprintf('Failed: %s | %s', filepath, message));
-        [S.session, report] = labkit.dta.addFilesToSession(S.session, filepaths, "chrono", callbacks);
-        postProcessAddedItems(report.added);
-        S.items = S.session.items;
+        failed = struct('filepath', {}, 'message', {});
+        for iFile = 1:numel(filepaths)
+            filepath = filepaths(iFile);
+            if isLoaded(filepath)
+                addLog(sprintf('Skipped already loaded: %s', char(filepath)));
+                continue;
+            end
+
+            [item, status] = labkit.dta.loadFile(filepath, "chrono");
+            if ~status.ok
+                failed(end + 1) = struct( ...
+                    'filepath', char(filepath), ...
+                    'message', char(status.message));
+                addLog(sprintf('Failed: %s | %s', char(filepath), char(status.message)));
+                continue;
+            end
+
+            item.analysis = [];
+            for ii = 1:numel(item.logmsg)
+                addLog(item.logmsg{ii});
+            end
+            item = analyzeItem(item);
+            S.items = appendItem(S.items, item);
+            addLog(sprintf('Loaded: %s', char(filepath)));
+        end
 
         refreshFileList();
         restoreDefaultPlotSelections();
@@ -129,28 +127,9 @@ function fig = run(debugLog)
         refreshResultsSummary();
         refreshPlots();
 
-        if ~isempty(report.failed)
-            firstError = report.failed(1);
+        if ~isempty(failed)
+            firstError = failed(1);
             uialert(fig, sprintf('Failed to load:\n%s\n\n%s', firstError.filepath, firstError.message), 'Load error');
-        end
-    end
-
-    function postProcessAddedItems(filepaths)
-        for iFile = 1:numel(filepaths)
-            idx = find(strcmp(string({S.session.items.filepath}), string(filepaths{iFile})), 1, 'first');
-            if isempty(idx)
-                continue;
-            end
-            item = S.session.items(idx);
-            item.analysis = [];
-
-            for ii = 1:numel(item.logmsg)
-                addLog(item.logmsg{ii});
-            end
-
-            item = analyzeItem(item);
-            S.session.items(idx) = item;
-            addLog(sprintf('Loaded: %s', filepaths{iFile}));
         end
     end
 
@@ -161,7 +140,6 @@ function fig = run(debugLog)
             return;
         end
         S.items(S.current) = analyzeItem(S.items(S.current));
-        S.session.items = S.items;
         refreshBatchTable();
         refreshResultsSummary();
         refreshPlots();
@@ -186,7 +164,9 @@ function fig = run(debugLog)
     end
 
     function onSelectFile()
-        if isempty(lbFiles.Items)
+        files = labkit.ui.view.getValue(ui, 'files');
+        paths = labkit.ui.view.filePaths(files);
+        if isempty(paths)
             S.current = [];
             resetAxesToDefaultState();
             refreshResultsSummary();
@@ -194,7 +174,7 @@ function fig = run(debugLog)
             return;
         end
 
-        idx = find(strcmp(lbFiles.Items, lbFiles.Value), 1);
+        idx = find(string({S.items.filepath}) == string(paths(1)), 1);
         if isempty(idx)
             S.current = [];
         else
@@ -207,9 +187,32 @@ function fig = run(debugLog)
         refreshPlots();
     end
 
+    function onRemoveSelected(~, event)
+        if isempty(S.items)
+            return;
+        end
+        paths = labkit.ui.view.filePaths(event.removedFiles);
+        if isempty(paths)
+            return;
+        end
+        report = removeItemsByPaths(paths);
+        for k = 1:numel(report.removed)
+            addLog(sprintf('Removed: %s', report.removed{k}));
+        end
+        S.current = min(S.current, numel(S.items));
+        if isempty(S.items)
+            S.current = [];
+        end
+        restoreDefaultPlotSelections();
+        resetAxesToDefaultState();
+        refreshFileList();
+        refreshBatchTable();
+        refreshResultsSummary();
+        refreshPlots();
+    end
+
     function clearAllFiles()
-        S.session = labkit.dta.makeSession('cic_vt');
-        S.items = S.session.items;
+        S.items = struct([]);
         S.current = [];
         restoreDefaultPlotSelections();
         resetAxesToDefaultState();
@@ -228,12 +231,13 @@ function fig = run(debugLog)
             return;
         end
 
-        names = {S.items.name};
-        labkit.ui.view.setListItems(ui, 'files', names);
-        if isempty(S.current) || S.current < 1 || S.current > numel(names)
+        paths = string({S.items.filepath}).';
+        labkit.ui.view.setValue(ui, 'files', paths);
+        if isempty(S.current) || S.current < 1 || S.current > numel(paths)
             S.current = 1;
         end
-        lbFiles.Value = names{S.current};
+        files = labkit.ui.view.getFiles(ui, 'files');
+        labkit.ui.view.setFileSelection(ui, 'files', files(S.current));
         txtLoaded.Value = sprintf('%d file(s) loaded', numel(S.items));
     end
 
@@ -413,6 +417,47 @@ function fig = run(debugLog)
     function addLog(msg)
         labkit.ui.view.appendLog(ui, 'appLog', msg);
         debugLog.append(msg);
+    end
+
+    function report = removeItemsByPaths(filepaths)
+        paths = normalizePaths(filepaths);
+        report = struct('removed', {{}}, 'missing', {{}});
+        if isempty(paths)
+            return;
+        end
+        if isempty(S.items)
+            report.missing = cellstr(paths(:).');
+            return;
+        end
+        keep = true(1, numel(S.items));
+        itemPaths = string({S.items.filepath});
+        for k = 1:numel(paths)
+            idx = find(itemPaths == paths(k) & keep, 1, 'first');
+            if isempty(idx)
+                report.missing{end + 1} = char(paths(k));
+                continue;
+            end
+            report.removed{end + 1} = char(paths(k));
+            keep(idx) = false;
+        end
+        S.items = S.items(keep);
+    end
+
+    function tf = isLoaded(filepath)
+        tf = ~isempty(S.items) && any(string({S.items.filepath}) == string(filepath));
+    end
+
+    function paths = normalizePaths(paths)
+        paths = string(paths(:));
+        paths = paths(strlength(paths) > 0);
+    end
+
+    function items = appendItem(items, item)
+        if isempty(items)
+            items = item;
+        else
+            items(end + 1) = item;
+        end
     end
 
 end

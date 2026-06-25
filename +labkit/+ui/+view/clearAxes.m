@@ -1,5 +1,5 @@
 function clearAxes(ui, id, axisId)
-%CLEARAXES Clear a UI 2.0 previewArea axes.
+%CLEARAXES Clear a UI 3.0 previewArea axes.
 %
 % App-facing contract:
 %   labkit.ui.view.clearAxes(ui, id, axisId)

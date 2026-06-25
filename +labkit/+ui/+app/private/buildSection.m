@@ -40,7 +40,7 @@ function tf = sectionDrawsOwnTitle(sectionSpec)
     child = sectionSpec.children{1};
     tf = ~ismember(child.kind, ...
         {'previewArea', 'resultTable', 'logPanel', 'statusPanel', ...
-        'usagePanel', 'pathPanel'});
+        'usagePanel', 'filePanel'});
 end
 
 function rowHeight = sectionRowHeights(children)
@@ -60,9 +60,13 @@ function rowHeight = sectionRowHeights(children)
 end
 
 function tf = isGrowableSectionChild(child)
+    if strcmp(child.kind, 'filePanel')
+        tf = strcmp(char(string(optionValue(child.props, 'mode', 'multi'))), 'multi');
+        return;
+    end
     tf = ismember(child.kind, ...
         {'previewArea', 'resultTable', 'logPanel', 'statusPanel', ...
-        'usagePanel', 'pathPanel'});
+        'usagePanel'});
 end
 
 function adapter = baseAdapter(spec, kind)

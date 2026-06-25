@@ -1,5 +1,5 @@
 classdef GuiLayoutUiAxesWorkbenchTest < matlab.uitest.TestCase
-    %GUILAYOUTUIAXESWORKBENCHTEST Verify UI 2.0 shell and axes behavior.
+    %GUILAYOUTUIAXESWORKBENCHTEST Verify UI 3.0 shell and axes behavior.
 
     methods (Test, TestTags = {'GUI', 'Structural'})
         function test_gui_layout_ui_axes_workbench(testCase)
@@ -33,9 +33,9 @@ function verify_gui_layout_ui_axes_workbench()
     h.assertStandardWorkbenchLayout(ui.figure);
     h.assertTabTitles(ui.figure, {'Setup', 'Preview', 'Inputs'});
     assert(isequal(ui.main.ColumnWidth, {420, 6, '1x'}), ...
-        'UI 2.0 app builder should create the standard resizable workbench layout.');
+        'UI 3.0 app builder should create the standard resizable workbench layout.');
     assert(strcmp(ui.rightPanel.Title, 'Preview'), ...
-        'UI 2.0 app builder should preserve the workspace title.');
+        'UI 3.0 app builder should preserve the workspace title.');
 
     plotAx = ui.controls.plotPreview.axesById.plot;
     plot(plotAx, 1:3, [1 4 2], 'DisplayName', 'probe');
@@ -76,7 +76,7 @@ function verify_gui_layout_ui_axes_workbench()
     plotAx.XScale = 'linear';
     plotAx.YScale = 'linear';
     h.assertAxesPopoutEnabled(plotAx, ...
-        'UI 2.0 preview axes should install the LabKit popout context action.');
+        'UI 3.0 preview axes should install the LabKit popout context action.');
     menuItem = findall(plotAx.ContextMenu, 'Type', 'uimenu', ...
         'Tag', 'labkitAxesPopoutMenu');
     h.invokeCallback(menuItem, 'MenuSelectedFcn');

@@ -25,6 +25,7 @@ function fig = run(debugLog)
         'referenceImageChosen', @onReferenceImageChosen, ...
         'clearReference', @onClearReference, ...
         'sourceImagesChosen', @onSourceImagesChosen, ...
+        'removeImages', @onRemoveImages, ...
         'clearImages', @onClearImages, ...
         'imageSelectionChanged', @onImageSelectionChanged, ...
         'previewModeChanged', @onPreviewModeChanged, ...
@@ -46,8 +47,13 @@ function fig = run(debugLog)
     refreshAll();
 
     function onReferenceImageChosen(~, event)
+        paths = labkit.ui.view.filePaths(event.addedFiles);
+        if isempty(paths)
+            addLog('Reference image selection cancelled.');
+            return;
+        end
         try
-            loaded = image_match.io.readImages(event.paths(1));
+            loaded = image_match.io.readImages(paths(1));
         catch ME
             showError('Could not load reference image', ME.message);
             refreshAll();
@@ -72,8 +78,13 @@ function fig = run(debugLog)
     end
 
     function onSourceImagesChosen(~, event)
+        paths = labkit.ui.view.filePaths(event.addedFiles);
+        if isempty(paths)
+            addLog('Image selection cancelled.');
+            return;
+        end
         try
-            S.items = readOrReuseImages(event.paths);
+            S.items = readOrReuseImages(paths);
         catch ME
             showError('Could not load images', ME.message);
             refreshAll();
@@ -84,7 +95,7 @@ function fig = run(debugLog)
         S.steps = repmat(image_match.state.emptyStep(), 0, 1);
         S.pendingDirty = false;
         invalidatePreviewCache();
-        S.outputFolder = string(fileparts(event.paths(1)));
+        S.outputFolder = string(fileparts(paths(1)));
         markExportDirty();
         addLog(sprintf('Loaded %d image(s).', numel(S.items)));
         refreshAll();
@@ -101,16 +112,37 @@ function fig = run(debugLog)
         refreshAll();
     end
 
-    function onImageSelectionChanged(~, event)
-        if isempty(S.items) || isempty(event.value)
+    function onRemoveImages(~, event)
+        if isempty(S.items)
             return;
         end
-        selectedPath = string(event.value);
-        idx = find(string({S.items.path}) == selectedPath, 1);
+        removeIdx = fileIndices(event.removedFiles, numel(S.items));
+        if isempty(removeIdx)
+            refreshAll();
+            return;
+        end
+        S.items(removeIdx) = [];
+        S.currentIndex = min(S.currentIndex, numel(S.items));
+        if isempty(S.items)
+            S.currentIndex = 0;
+        end
+        pendingDirty = S.pendingDirty;
+        invalidatePreviewCache();
+        S.pendingDirty = pendingDirty;
+        markExportDirty();
+        addLog(sprintf('Removed image file(s); %d remaining.', numel(S.items)));
+        refreshAll();
+    end
+
+    function onImageSelectionChanged(~, event)
+        if isempty(S.items)
+            return;
+        end
+        idx = fileIndices(event.selectedFiles, numel(S.items));
         if isempty(idx)
             return;
         end
-        S.currentIndex = idx;
+        S.currentIndex = idx(1);
         refreshSelection();
         refreshPreview();
         refreshMetrics();
@@ -253,17 +285,15 @@ function fig = run(debugLog)
         if isempty(S.items)
             return;
         end
-        paths = cellstr(string({S.items.path}));
-        labkit.ui.view.setListSelection(ui, 'sourceImages', paths, ...
-            paths{currentSelectionIndex()}, struct());
+        files = labkit.ui.view.getFiles(ui, 'sourceImages');
+        labkit.ui.view.setFileSelection( ...
+            ui, 'sourceImages', files(currentSelectionIndex()));
     end
 
     function refreshMatchControls()
         hasImages = ~isempty(S.items);
         refLoaded = hasReference();
         hasSteps = ~isempty(S.steps);
-        ui.controls.referenceImage.clearButton.Enable = onOff(refLoaded);
-        ui.controls.referenceImage.listbox.Enable = onOff(refLoaded);
         ui.controls.sourceImages.clearButton.Enable = onOff(hasImages);
         ui.controls.sourceImages.listbox.Enable = onOff(hasImages);
         labkit.ui.view.setEnabled(ui, 'applyMatch', hasImages && refLoaded);
@@ -348,6 +378,27 @@ function fig = run(debugLog)
                 items(k) = loaded(loadedIndex);
             end
         end
+    end
+
+    function idx = fileIndices(files, itemCount)
+        idx = zeros(numel(files), 1);
+        for k = 1:numel(files)
+            if isfield(files(k), 'index')
+                indexValue = double(files(k).index);
+                if isscalar(indexValue) && isfinite(indexValue)
+                    idx(k) = indexValue;
+                    continue;
+                end
+            end
+            if isfield(files(k), 'id')
+                token = regexp(char(string(files(k).id)), '^file(\d+)$', ...
+                    'tokens', 'once');
+                if ~isempty(token)
+                    idx(k) = str2double(token{1});
+                end
+            end
+        end
+        idx = unique(idx(idx >= 1 & idx <= itemCount), 'stable');
     end
 
     function imageOut = currentPreviewSourceImage()

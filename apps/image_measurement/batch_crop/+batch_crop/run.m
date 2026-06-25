@@ -12,9 +12,10 @@ function fig = run(debugLog)
 
     callbacks = struct( ...
         "imagesChosen", @onImagesChosen, ...
+        "removeImages", @(~, event) onRemoveImages(event), ...
         "clearImages", @(~, ~) onClearImages(), ...
         "duplicateImage", @(~, ~) onDuplicateImage(), ...
-        "imageSelectionChanged", @(~, ~) onImageSelectionChanged(), ...
+        "imageSelectionChanged", @(~, event) onImageSelectionChanged(event), ...
         "previousImage", @(~, ~) onPreviousImage(), ...
         "nextImage", @(~, ~) onNextImage(), ...
         "cropGeometryChanged", @(~, ~) onCropGeometryChanged(), ...
@@ -47,11 +48,9 @@ function fig = run(debugLog)
         'onError', @showError, ...
         'onTrace', debugLog.trace));
 
-    btnOpenFiles = ui.controls.images.chooseButton;
     btnClearImages = ui.controls.images.clearButton;
     btnDuplicateImage = ui.controls.duplicateImage.button;
     txtImageSource = ui.controls.imageSource.valueHandle;
-    lbImages = ui.controls.images.listbox;
     btnPrevious = ui.controls.previousImage.button;
     btnNext = ui.controls.nextImage.button;
     txtImageStatus = ui.controls.imageStatus.valueHandle;
@@ -82,13 +81,14 @@ function fig = run(debugLog)
     refreshAll();
 
     function onImagesChosen(~, event)
-        if isempty(event.paths)
+        paths = labkit.ui.view.filePaths(event.addedFiles);
+        if isempty(paths)
             addLog('Image file selection cancelled.');
             return;
         end
 
         try
-            items = batch_crop.state.readItems(event.paths);
+            items = batch_crop.state.readItems(paths);
         catch ME
             showError('Could not load images', ME.message);
             return;
@@ -110,6 +110,30 @@ function fig = run(debugLog)
         addLog('Cleared loaded images.');
         refreshAll();
     end
+
+    function onRemoveImages(event)
+        if isempty(S.items) || ~isfield(event, 'removedFiles') || isempty(event.removedFiles)
+            refreshAll();
+            return;
+        end
+        removeIdx = batch_crop.state.fileIndices(event.removedFiles, numel(S.items));
+        if isempty(removeIdx)
+            refreshAll();
+            return;
+        end
+        S.items(removeIdx) = [];
+        if isempty(S.items)
+            S.currentIndex = 0;
+        else
+            S.currentIndex = min(max(S.currentIndex, 1), numel(S.items));
+        end
+        S = batch_crop.state.clearExportState(S);
+        S.canvasCache = batch_crop.state.emptyCanvasCache();
+        addLog(sprintf('Removed %d crop task(s); remaining: %d.', ...
+            numel(removeIdx), numel(S.items)));
+        refreshAll();
+    end
+
     function onDuplicateImage()
         if ~hasCurrentImage()
             return;
@@ -126,16 +150,15 @@ function fig = run(debugLog)
         refreshAll();
     end
 
-    function onImageSelectionChanged()
+    function onImageSelectionChanged(event)
         if isempty(S.items)
             return;
         end
-        items = batch_crop.view.listboxItems(S.items, currentScaleMode());
-        idx = find(strcmp(items, lbImages.Value), 1);
+        idx = batch_crop.state.fileIndices(event.selectedFiles, numel(S.items));
         if isempty(idx)
             return;
         end
-        S.currentIndex = idx;
+        S.currentIndex = idx(1);
         refreshAll();
     end
 
@@ -272,13 +295,14 @@ function fig = run(debugLog)
             return;
         end
         geometry = currentGeometry();
-        placement = previewPlacement(geometry);
+        placement = batch_crop.view.previewPlacement(geometry);
         pt = previewAxes.CurrentPoint;
         canvasXY = [pt(1, 1), pt(1, 2)] - placement.offset;
         canvasXY(1) = min(max(canvasXY(1), 1), size(geometry.canvas, 2));
         canvasXY(2) = min(max(canvasXY(2), 1), size(geometry.canvas, 1));
         centerXY = batch_crop.ops.canvasToOriginal(geometry, canvasXY);
-        centerXY = clampToSource(centerXY, S.items(S.currentIndex).image);
+        centerXY = batch_crop.ops.clampCenterToSource(centerXY, ...
+            S.items(S.currentIndex).image);
         S.items(S.currentIndex).centerXY = centerXY;
         S.items(S.currentIndex).centerSet = true;
         S = batch_crop.state.clearExportState(S);
@@ -344,17 +368,16 @@ function fig = run(debugLog)
 
     function refreshList()
         if isempty(S.items)
-            labkit.ui.view.setListItems(ui, 'images', {'No images loaded'});
-            lbImages.Value = 'No images loaded';
+            labkit.ui.view.setListItems(ui, 'images', {});
             txtImageSource.Value = 'No images loaded';
             txtImageStatus.Value = 'Images: 0';
             return;
         end
 
-        items = batch_crop.view.listboxItems(S.items, currentScaleMode());
-        labkit.ui.view.setListItems(ui, 'images', items);
+        labkit.ui.view.setValue(ui, 'images', string({S.items.path}).');
         S.currentIndex = min(max(S.currentIndex, 1), numel(S.items));
-        lbImages.Value = items{S.currentIndex};
+        files = labkit.ui.view.getFiles(ui, 'images');
+        labkit.ui.view.setFileSelection(ui, 'images', files(S.currentIndex));
         txtImageSource.Value = char(S.items(S.currentIndex).path);
         if strcmpi(currentScaleMode(), "Physical")
             txtImageStatus.Value = sprintf('Images: %d | centers: %d | scales: %d', ...
@@ -368,24 +391,24 @@ function fig = run(debugLog)
 
     function refreshControls()
         hasImage = hasCurrentImage();
-        enabled = ternary(hasImage, 'on', 'off');
+        enabled = batch_crop.view.ternary(hasImage, 'on', 'off');
         physicalMode = strcmpi(currentScaleMode(), "Physical");
         btnClearImages.Enable = enabled;
         btnDuplicateImage.Enable = enabled;
-        btnPrevious.Enable = ternary(hasImage && S.currentIndex > 1, 'on', 'off');
-        btnNext.Enable = ternary(hasImage && S.currentIndex < numel(S.items), 'on', 'off');
-        edtCropWidth.Enable = ternary(hasImage && ~physicalMode, 'on', 'off');
-        edtCropHeight.Enable = ternary(hasImage && ~physicalMode, 'on', 'off');
+        btnPrevious.Enable = batch_crop.view.ternary(hasImage && S.currentIndex > 1, 'on', 'off');
+        btnNext.Enable = batch_crop.view.ternary(hasImage && S.currentIndex < numel(S.items), 'on', 'off');
+        edtCropWidth.Enable = batch_crop.view.ternary(hasImage && ~physicalMode, 'on', 'off');
+        edtCropHeight.Enable = batch_crop.view.ternary(hasImage && ~physicalMode, 'on', 'off');
         edtRotation.Enable = enabled;
         edtPaddingPercent.Enable = enabled;
         edtCenterX.Enable = enabled;
         edtCenterY.Enable = enabled;
         btnUseImageCenter.Enable = enabled;
-        ddScaleUnit.Enable = ternary(physicalMode, 'on', 'off');
-        edtPhysicalWidth.Enable = ternary(physicalMode, 'on', 'off');
-        edtPhysicalHeight.Enable = ternary(physicalMode, 'on', 'off');
-        edtTargetPixelsPerUnit.Enable = ternary(physicalMode, 'on', 'off');
-        edtMaxUpsamplePercent.Enable = ternary(physicalMode, 'on', 'off');
+        ddScaleUnit.Enable = batch_crop.view.ternary(physicalMode, 'on', 'off');
+        edtPhysicalWidth.Enable = batch_crop.view.ternary(physicalMode, 'on', 'off');
+        edtPhysicalHeight.Enable = batch_crop.view.ternary(physicalMode, 'on', 'off');
+        edtTargetPixelsPerUnit.Enable = batch_crop.view.ternary(physicalMode, 'on', 'off');
+        edtMaxUpsamplePercent.Enable = batch_crop.view.ternary(physicalMode, 'on', 'off');
 
         if hasImage
             ensureCurrentCenter();
@@ -407,7 +430,7 @@ function fig = run(debugLog)
         refreshScaleTool();
         readyToExport = hasImage && all([S.items.centerSet]) && ...
             (~physicalMode || batch_crop.state.allScaleCalibrated(S.items));
-        btnExport.Enable = ternary(readyToExport, 'on', 'off');
+        btnExport.Enable = batch_crop.view.ternary(readyToExport, 'on', 'off');
     end
 
     function refreshPreview(viewState)
@@ -424,7 +447,7 @@ function fig = run(debugLog)
         end
         ensureCurrentCenter();
         geometry = currentGeometry();
-        placement = previewPlacement(geometry);
+        placement = batch_crop.view.previewPlacement(geometry);
         hImage = labkit.ui.view.drawImage(ui, 'preview', geometry.canvas, ...
             "title", "Padded rotation preview + fixed crop", ...
             "axis", "crop", ...
@@ -542,16 +565,6 @@ function fig = run(debugLog)
         S.canvasCache = struct('valid', true, 'key', key, 'geometry', geometry);
     end
 
-    function placement = previewPlacement(geometry)
-        sourceCenter = batch_crop.ops.sourceCenterFromSize(geometry.sourceWidth, geometry.sourceHeight);
-        canvasCenter = batch_crop.ops.originalToCanvas(geometry, sourceCenter);
-        offset = sourceCenter - canvasCenter;
-        placement = struct( ...
-            'offset', offset, ...
-            'xData', [1, size(geometry.canvas, 2)] + offset(1), ...
-            'yData', [1, size(geometry.canvas, 1)] + offset(2));
-    end
-
     function state = capturePreviewView()
         state = struct('valid', false);
         if ~hasCurrentImage() || ~all(isfinite(previewAxes.XLim)) || ...
@@ -560,7 +573,7 @@ function fig = run(debugLog)
         end
 
         geometry = currentGeometry();
-        placement = previewPlacement(geometry);
+        placement = batch_crop.view.previewPlacement(geometry);
         state = batch_crop.view.capturePreviewView(previewAxes, geometry, placement);
     end
 
@@ -572,7 +585,8 @@ function fig = run(debugLog)
         if isempty(item.centerXY) || any(~isfinite(item.centerXY))
             item.centerXY = batch_crop.ops.sourceCenterXY(item.image);
         end
-        item.centerXY = clampToSource(item.centerXY, item.image);
+        item.centerXY = batch_crop.ops.clampCenterToSource(item.centerXY, ...
+            item.image);
         S.items(S.currentIndex) = item;
     end
 
@@ -617,12 +631,6 @@ function fig = run(debugLog)
             [edtPhysicalWidth.Value, edtPhysicalHeight.Value], currentScaleUnit());
     end
 
-    function centerXY = clampToSource(centerXY, imageData)
-        centerXY = double(centerXY(:)).';
-        centerXY(1) = min(max(centerXY(1), 1), size(imageData, 2));
-        centerXY(2) = min(max(centerXY(2), 1), size(imageData, 1));
-    end
-
     function addLog(message)
         labkit.ui.view.appendLog(ui, 'appLog', message);
         if debugLog.enabled
@@ -635,11 +643,4 @@ function fig = run(debugLog)
         uialert(fig, message, titleText);
     end
 
-    function value = ternary(condition, trueValue, falseValue)
-        if condition
-            value = trueValue;
-            return;
-        end
-        value = falseValue;
-    end
 end

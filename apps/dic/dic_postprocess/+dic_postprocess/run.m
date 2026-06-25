@@ -16,9 +16,12 @@ function fig = run(debugLog)
     S.summaryTable = table();
 
     callbacks = struct( ...
-        "openMat", @onOpenMat, ...
-        "openReference", @onOpenReference, ...
-        "openMask", @onOpenMask, ...
+        "matChosen", @onMatChosen, ...
+        "matCleared", @(~, ~) onMatCleared(), ...
+        "referenceChosen", @onReferenceChosen, ...
+        "referenceCleared", @(~, ~) onReferenceCleared(), ...
+        "maskChosen", @onMaskChosen, ...
+        "maskCleared", @(~, ~) onMaskCleared(), ...
         "generate", @onGenerate, ...
         "optionsChanged", @onOptionsChanged, ...
         "saveOverlays", @onSaveOverlays, ...
@@ -27,9 +30,6 @@ function fig = run(debugLog)
     ui = labkit.ui.app.create(spec, "debug", debugLog);
     fig = ui.figure;
 
-    txtMat = ui.controls.matPath.valueHandle;
-    txtReference = ui.controls.referencePath.valueHandle;
-    txtMask = ui.controls.maskPath.valueHandle;
     edAlpha = ui.controls.alpha.valueHandle;
     edMin = ui.controls.colorMin.valueHandle;
     edMax = ui.controls.colorMax.valueHandle;
@@ -54,42 +54,64 @@ function fig = run(debugLog)
     labkit.ui.view.resetAxes(ui, 'overlayAxes', 'EXX Overlay', true, 'exx');
     labkit.ui.view.resetAxes(ui, 'overlayAxes', 'EYY Overlay', true, 'eyy');
 
-    function onOpenMat(~, ~)
-        [f, p] = uigetfile({'*.mat', 'MAT files (*.mat)'}, ...
-            'Select Ncorr DIC MAT file', labkit.ui.app.defaultDialogFolder("input"));
-        if isequal(f, 0)
+    function onMatChosen(~, event)
+        paths = labkit.ui.view.filePaths(event.addedFiles);
+        if isempty(paths)
             addLog('DIC MAT selection cancelled.');
             return;
         end
-        S.matPath = string(fullfile(p, f));
-        txtMat.Value = char(S.matPath);
+        S.matPath = paths(1);
         addLog(sprintf('Selected DIC MAT: %s', S.matPath));
         refreshSummaryText();
     end
 
-    function onOpenReference(~, ~)
-        filepath = dic_postprocess.io.chooseImageFile('Select reference image');
-        if filepath == ""
+    function onMatCleared()
+        S.matPath = "";
+        S.strain = struct();
+        clearOutputs();
+        addLog('Cleared DIC MAT task.');
+        refreshSummaryText();
+    end
+
+    function onReferenceChosen(~, event)
+        paths = labkit.ui.view.filePaths(event.addedFiles);
+        if isempty(paths)
             addLog('Reference image selection cancelled.');
             return;
         end
+        filepath = paths(1);
         S.referencePath = filepath;
         S.referenceImage = imread(filepath);
-        txtReference.Value = char(filepath);
         addLog(sprintf('Loaded reference image: %s', filepath));
         refreshSummaryText();
     end
 
-    function onOpenMask(~, ~)
-        filepath = dic_postprocess.io.chooseImageFile('Select mask image');
-        if filepath == ""
+    function onReferenceCleared()
+        S.referencePath = "";
+        S.referenceImage = [];
+        clearOutputs();
+        addLog('Cleared reference image file.');
+        refreshSummaryText();
+    end
+
+    function onMaskChosen(~, event)
+        paths = labkit.ui.view.filePaths(event.addedFiles);
+        if isempty(paths)
             addLog('Mask image selection cancelled.');
             return;
         end
+        filepath = paths(1);
         S.maskPath = filepath;
         S.maskImage = imread(filepath);
-        txtMask.Value = char(filepath);
         addLog(sprintf('Loaded mask image: %s', filepath));
+        refreshSummaryText();
+    end
+
+    function onMaskCleared()
+        S.maskPath = "";
+        S.maskImage = [];
+        clearOutputs();
+        addLog('Cleared mask image file.');
         refreshSummaryText();
     end
 
@@ -204,6 +226,9 @@ function fig = run(debugLog)
     end
 
     function refreshSummaryText()
+        labkit.ui.view.setValue(ui, "matFile", fileValue(S.matPath));
+        labkit.ui.view.setValue(ui, "referenceFile", fileValue(S.referencePath));
+        labkit.ui.view.setValue(ui, "maskFile", fileValue(S.maskPath));
         lines = {};
         lines{end+1} = sprintf('DIC MAT: %s', dic_postprocess.view.displayPath(S.matPath));
         lines{end+1} = sprintf('Reference image: %s', dic_postprocess.view.displayPath(S.referencePath));
@@ -216,8 +241,26 @@ function fig = run(debugLog)
         txtSummary.Value = lines;
     end
 
+    function clearOutputs()
+        S.overlayExx = [];
+        S.overlayEyy = [];
+        S.summaryTable = table();
+        resultTable.Data = {};
+        labkit.ui.view.resetAxes(ui, 'overlayAxes', 'EXX Overlay', true, 'exx');
+        labkit.ui.view.resetAxes(ui, 'overlayAxes', 'EYY Overlay', true, 'eyy');
+    end
+
     function addLog(msg)
         labkit.ui.view.appendLog(ui, 'appLog', msg);
         debugLog.append(msg);
     end
+end
+
+function items = fileValue(pathValue)
+    pathValue = string(pathValue);
+    if strlength(pathValue) == 0
+        items = strings(0, 1);
+        return;
+    end
+    items = pathValue;
 end

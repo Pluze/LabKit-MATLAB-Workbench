@@ -12,6 +12,6 @@ function info = version()
 %       compatible contract ranges implemented by this code, contract status,
 %       and a short maintainer note.
 
-    info = labkit.contract.versionInfo("dta", "1.0.0", ">=1.0 <2", ...
-        "stable", "DTA parser, session, item, pulse, and curve facade contract.");
+    info = labkit.contract.versionInfo("dta", "2.0.0", ">=2.0 <3", ...
+        "stable", "DTA parser, file item, pulse, and curve facade contract.");
 end

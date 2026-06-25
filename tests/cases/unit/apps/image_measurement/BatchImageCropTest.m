@@ -23,8 +23,7 @@ function verify_batchImageCrop()
     checkPaddingDoesNotMoveCropCenterMetadata();
     checkRotatedCropKeepsRequestedSize();
     checkRotationBackgroundUsesWhiteFill();
-    checkSelectedFileNormalization();
-    checkReadItemsAcceptsPathPanelCellPaths();
+    checkReadItemsAcceptsFilePanelCellPaths();
     checkDuplicateItemCreatesIndependentCropTask();
     checkMergeChosenItemsPreservesDuplicateCropTasks();
     checkManifestContract();
@@ -195,23 +194,7 @@ function checkRotationBackgroundUsesWhiteFill()
         'Rotation and crop regions outside the source canvas should use white background fill.');
 end
 
-function checkSelectedFileNormalization()
-    folder = tempname;
-    mkdir(folder);
-    cleanup = onCleanup(@() removeTempFolder(folder));
-
-    paths = batch_crop.io.selectedImagePaths( ...
-        {'frame_b.png', 'frame_a.tif'}, folder);
-    names = fileNames(paths);
-    assert(isequal(names, {'frame_a.tif'; 'frame_b.png'}), ...
-        'Selected batch crop images should be sorted by filename.');
-
-    assertThrows(@() batch_crop.io.selectedImagePaths('notes.txt', folder), ...
-        'labkit_BatchImageCrop_app:UnsupportedImageFile', ...
-        'Manual selection should reject unsupported file types.');
-end
-
-function checkReadItemsAcceptsPathPanelCellPaths()
+function checkReadItemsAcceptsFilePanelCellPaths()
     folder = tempname;
     mkdir(folder);
     cleanup = onCleanup(@() removeTempFolder(folder));
@@ -221,11 +204,11 @@ function checkReadItemsAcceptsPathPanelCellPaths()
 
     items = batch_crop.state.readItems({sourcePath});
     assert(numel(items) == 1, ...
-        'Batch crop reader should accept pathPanel cell-array paths.');
+        'Batch crop reader should accept filePanel cell-array paths.');
     assert(items(1).path == string(sourcePath), ...
         'Batch crop reader should preserve the selected source path.');
     assert(isequal(size(items(1).image), [6 7]), ...
-        'Batch crop reader should load image data from pathPanel paths.');
+        'Batch crop reader should load image data from filePanel paths.');
 end
 
 function checkDuplicateItemCreatesIndependentCropTask()
@@ -469,14 +452,6 @@ function item = physicalItem(pathValue, imageData, pixelsPerUnit)
     item.centerSet = true;
     item.scaleCalibration = labkit.ui.tool.scaleBarCalibration(pixelsPerUnit, 1, "um", ...
         struct('defaultUnit', 'um', 'referenceLine', [1 1; 1 + pixelsPerUnit, 1]));
-end
-
-function names = fileNames(paths)
-    names = cell(numel(paths), 1);
-    for k = 1:numel(paths)
-        [~, base, ext] = fileparts(char(paths(k)));
-        names{k} = [base ext];
-    end
 end
 
 function assertThrows(fcn, expectedId, message)

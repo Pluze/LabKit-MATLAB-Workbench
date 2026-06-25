@@ -15,8 +15,7 @@ function verify_imageEnhance()
     checkBrightnessContrastAndSharpenPipeline();
     checkWhiteBalanceReducesChannelCast();
     checkPixelRadiusScalesWithPreview();
-    checkSelectedFileNormalization();
-    checkReadImagesAcceptsPathPanelCellPaths();
+    checkReadImagesAcceptsFilePanelCellPaths();
     checkPreviewImageDownsamplesLargeInputs();
     checkManifestAndExportContract();
     checkExportTaskFingerprintTracksInputsOptionsAndSteps();
@@ -52,23 +51,7 @@ function checkWhiteBalanceReducesChannelCast()
         'Gray-world white balance should reduce channel mean spread.');
 end
 
-function checkSelectedFileNormalization()
-    folder = tempname;
-    mkdir(folder);
-    cleanup = onCleanup(@() removeTempFolder(folder));
-
-    paths = image_enhance.io.selectedImagePaths( ...
-        {'figure_b.png', 'figure_a.tif'}, folder);
-    names = fileNames(paths);
-    assert(isequal(names, {'figure_a.tif'; 'figure_b.png'}), ...
-        'Selected enhancement images should be sorted by filename.');
-
-    assertThrows(@() image_enhance.io.selectedImagePaths('notes.txt', folder), ...
-        'labkit_ImageEnhance_app:UnsupportedImageFile', ...
-        'Manual image selection should reject unsupported file types.');
-end
-
-function checkReadImagesAcceptsPathPanelCellPaths()
+function checkReadImagesAcceptsFilePanelCellPaths()
     folder = tempname;
     mkdir(folder);
     cleanup = onCleanup(@() removeTempFolder(folder));
@@ -78,11 +61,11 @@ function checkReadImagesAcceptsPathPanelCellPaths()
 
     items = image_enhance.io.readImages({sourcePath});
     assert(numel(items) == 1, ...
-        'Image enhance reader should accept pathPanel cell-array paths.');
+        'Image enhance reader should accept filePanel cell-array paths.');
     assert(items(1).path == string(sourcePath), ...
         'Image enhance reader should preserve the selected source path.');
     assert(isequal(size(items(1).image), [8 9 3]), ...
-        'Image enhance reader should load RGB image data from pathPanel paths.');
+        'Image enhance reader should load RGB image data from filePanel paths.');
 end
 
 function checkManifestAndExportContract()
@@ -179,14 +162,6 @@ end
 function spread = channelMeanSpread(img)
     means = squeeze(mean(img, [1 2]));
     spread = max(means) - min(means);
-end
-
-function names = fileNames(paths)
-    names = cell(numel(paths), 1);
-    for k = 1:numel(paths)
-        [~, base, ext] = fileparts(char(paths(k)));
-        names{k} = [base ext];
-    end
 end
 
 function cols = expectedManifestColumns()

@@ -1,5 +1,5 @@
 function resetAxes(ui, id, titleText, resetScaleAndTicks, axisId)
-%RESETAXES Reset a UI 2.0 previewArea axes.
+%RESETAXES Reset a UI 3.0 previewArea axes.
 %
 % App-facing contract:
 %   labkit.ui.view.resetAxes(ui, id, titleText, resetScaleAndTicks, axisId)
