@@ -59,13 +59,19 @@ classdef RuntimeGestureTest < matlab.uitest.TestCase
 
             dragMotionCalls = 0;
             dragReleaseCalls = 0;
+            releaseSawCallbacksCleared = false;
             sessionB.captureDrag(@onDragMotion, @onDragRelease);
             assert(~isempty(fig.WindowButtonMotionFcn) && ~isempty(fig.WindowButtonUpFcn), ...
                 'Drag capture should install temporary figure callbacks.');
-            fig.WindowButtonMotionFcn(fig, struct());
-            fig.WindowButtonUpFcn(fig, struct());
+            staleMotionFcn = fig.WindowButtonMotionFcn;
+            releaseFcn = fig.WindowButtonUpFcn;
+            staleMotionFcn(fig, struct());
+            releaseFcn(fig, struct());
+            staleMotionFcn(fig, struct());
             assert(dragMotionCalls == 1 && dragReleaseCalls == 1, ...
-                'Normal drag callbacks should be invoked once.');
+                'Stale queued drag motion should not run after release.');
+            assert(releaseSawCallbacksCleared, ...
+                'Drag release should clear temporary figure callbacks before release work runs.');
             assert(isempty(fig.WindowButtonMotionFcn) && isempty(fig.WindowButtonUpFcn), ...
                 'Normal drag release should clear temporary figure callbacks.');
 
@@ -112,6 +118,8 @@ classdef RuntimeGestureTest < matlab.uitest.TestCase
             end
 
             function onDragRelease(~, ~)
+                releaseSawCallbacksCleared = isempty(fig.WindowButtonMotionFcn) && ...
+                    isempty(fig.WindowButtonUpFcn);
                 dragReleaseCalls = dragReleaseCalls + 1;
             end
 

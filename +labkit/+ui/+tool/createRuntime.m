@@ -348,6 +348,11 @@ function runtime = createRuntime(ax, opts)
             state.fig.WindowButtonUpFcn = @onDragRelease;
 
             function onDragMotion(src, evt)
+                if ~sessionState.dragActive
+                    trace(sprintf('skip stale drag motion for session %s', ...
+                        char(sessionState.name)));
+                    return;
+                end
                 try
                     if ~isempty(motionFcn)
                         motionFcn(src, evt);
@@ -361,6 +366,11 @@ function runtime = createRuntime(ax, opts)
             end
 
             function onDragRelease(src, evt)
+                wasActive = sessionState.dragActive;
+                releaseDrag();
+                if ~wasActive
+                    return;
+                end
                 try
                     if ~isempty(releaseFcn)
                         releaseFcn(src, evt);
@@ -371,7 +381,6 @@ function runtime = createRuntime(ax, opts)
                     releaseDrag();
                     rethrow(ME);
                 end
-                releaseDrag();
             end
         end
 
