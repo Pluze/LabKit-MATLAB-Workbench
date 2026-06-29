@@ -54,6 +54,18 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
   `+ui/buildSpec.m`. Ordinary tests should call package helpers directly.
 - UI public-surface tests should assert the layered `labkit.ui.app/spec/view/tool/diag` facade and keep low-level controls, row resize, panel internals, and popout implementation private.
 - GUI launch/debug tests may assert that every app supports debug launch and visible startup trace, but should not claim full interactive workflow validation.
+- App GUI tests should prefer semantic contracts such as expected command
+  buttons, dropdown choices, tabs, tables, axes, callbacks, and debug traces.
+  Do not use raw component-class count snapshots in app GUI tests; those couple
+  app tests to framework implementation details such as whether a readonly
+  display is backed by an edit field, label, or text area. Put low-level
+  control-shape assertions in focused `tests/cases/gui/labkit/...` tests only
+  when the control shape is itself the framework contract.
+- Scientific and visualization tests should prefer deterministic state, data,
+  numeric, export, axis-label, callback-event, or debug-trace assertions over
+  whole-GUI or whole-image snapshots. Use minimal synthetic inputs. Add pixel
+  or screenshot baselines only when the rendered pixels are the behavior being
+  protected, and keep those baselines narrowly scoped.
 - When one test file grows too broad, add new focused `test_*.m` files instead of appending unrelated coverage.
 - GUI tests are launch/layout/callback checks; do not claim full interactive workflow validation from automated GUI tests.
 

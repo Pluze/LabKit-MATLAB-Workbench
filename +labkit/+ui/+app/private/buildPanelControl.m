@@ -31,6 +31,7 @@ function adapter = buildTextPanel(spec, parentGrid, row, defaultValue, kind)
     if isLogPanel
         grid.RowHeight = {'fit', '1x'};
         followButton = uibutton(grid, 'Text', 'Pause auto-scroll');
+        applyTextFit(followButton, 'charsPerStep', 18, 'maxShrinkSteps', 2);
         followButton.Layout.Row = 1;
         followButton.Layout.Column = 1;
         textRow = 2;
@@ -41,6 +42,7 @@ function adapter = buildTextPanel(spec, parentGrid, row, defaultValue, kind)
     end
     textArea = uitextarea(grid, 'Editable', 'off', ...
         'Value', textLines(optionValue(props, 'value', defaultValue)));
+    applyTextFit(textArea, 'charsPerStep', 48, 'maxShrinkSteps', 1);
     textArea.Layout.Row = textRow;
     textArea.Layout.Column = 1;
 

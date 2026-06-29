@@ -11,8 +11,6 @@ classdef GuiLayoutEisTest < matlab.uitest.TestCase
             fig = h.launchFigure('labkit_EIS_app', 'Gamry EIS Multi-DTA Plot GUI');
             ui = getappdata(fig, 'labkitUiRegistry');
             h.assertStandardWorkbenchLayout(fig);
-            h.assertComponentCounts(fig, struct('Button', 5, 'CheckBox', 5, ...
-                'DropDown', 2, 'ListBox', 1, 'TextArea', 3, 'Axes', 1));
             h.assertButtonContract(fig, {'Add DTA files', 'Remove selected', ...
                 'Clear all', 'Export current plot CSV'});
             h.assertCheckboxContract(fig, {'Show markers', 'Log X', 'Log Y', ...
@@ -41,7 +39,7 @@ classdef GuiLayoutEisTest < matlab.uitest.TestCase
 
             h.invokeButton(fig, 'Add DTA files');
 
-            testCase.verifyEqual(ui.controls.files.status.Value, '1 file(s) loaded');
+            testCase.verifyEqual(char(string(ui.controls.files.status.Value)), '1 file(s) loaded');
             testCase.verifyTrue(any(contains(string(ui.controls.files.listbox.Items), ...
                 'eis_potentiostatic_zcurve.DTA')), ...
                 'Add DTA files should load the dialog-selected EIS fixture.');

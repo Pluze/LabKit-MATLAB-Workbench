@@ -162,6 +162,12 @@ Use these app-facing contracts:
 - Text-heavy controls have conservative automatic heights owned by the
   framework. App specs must not set concrete height, row-count, spacing,
   padding, chrome, row-height, or column-width properties.
+- Text-bearing controls default to complete display over single-line
+  compactness. The framework enables wrapping where MATLAB supports it,
+  shrinks long labels within a small readability range, gives text-heavy rows
+  extra height, and keeps the full text available as a tooltip when supported.
+  Apps should shorten wording when it improves workflow clarity, but should
+  not add app-local layout or font-size patches to prevent clipping.
 - Section height is automatic: the builder estimates height from child control
   types and framework spacing defaults. Apps declare only the page, section,
   and control order.
@@ -336,6 +342,9 @@ when an instrumented callback starts, removes it when the callback completes,
 and writes a crash report when a callback errors or exceeds the stall timeout.
 The active-operation report records the current callback so a MATLAB process
 crash or hard UI freeze still leaves the last in-flight operation on disk.
+Crash reports include the exact MATLAB error id, message, stack, and a
+`recent_operations` section derived from semantic trace lines so a bug report
+can include both the failure and the likely reproduction path.
 MATLAB timer callbacks cannot interrupt every synchronous native or M-code
 stall while the main thread is blocked, so active-operation files and the
 normal trace log are part of the freeze report contract.

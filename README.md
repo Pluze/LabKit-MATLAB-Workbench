@@ -3,7 +3,11 @@
 [![Release](https://img.shields.io/github/v/release/Pluze/LabKit-MATLAB-Workbench?label=release)](https://github.com/Pluze/LabKit-MATLAB-Workbench/releases)
 [![MATLAB Tests](https://github.com/Pluze/LabKit-MATLAB-Workbench/actions/workflows/matlab-tests.yml/badge.svg)](https://github.com/Pluze/LabKit-MATLAB-Workbench/actions/workflows/matlab-tests.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![MATLAB](https://img.shields.io/badge/MATLAB-apps-orange.svg)](https://www.mathworks.com/products/matlab.html)
+[![Open in MATLAB Online](https://www.mathworks.com/images/responsive/global/open-in-matlab-online.svg)](https://matlab.mathworks.com/open/github/v1?repo=Pluze/LabKit-MATLAB-Workbench&file=labkit_launcher.m)
+[![GitHub contributors](https://img.shields.io/github/contributors/Pluze/LabKit-MATLAB-Workbench)](https://github.com/Pluze/LabKit-MATLAB-Workbench/graphs/contributors)
+[![Last commit](https://img.shields.io/github/last-commit/Pluze/LabKit-MATLAB-Workbench?style=plastic)](https://github.com/Pluze/LabKit-MATLAB-Workbench/commits/main)
+[![Commit activity](https://img.shields.io/github/commit-activity/m/Pluze/LabKit-MATLAB-Workbench)](https://github.com/Pluze/LabKit-MATLAB-Workbench/commits/main)
+[![GitHub stars](https://img.shields.io/github/stars/Pluze/LabKit-MATLAB-Workbench)](https://github.com/Pluze/LabKit-MATLAB-Workbench/stargazers)
 
 Focused MATLAB GUI apps for lab workflows.
 
@@ -16,6 +20,10 @@ loading, Intan RHS loading, and biosignal processing facades.
 ## Start Here
 
 **[Download `labkit_launcher.m`](https://github.com/Pluze/LabKit-MATLAB-Workbench/releases/latest/download/labkit_launcher.m)**
+
+You can also open the launcher directly in
+[MATLAB Online](https://matlab.mathworks.com/open/github/v1?repo=Pluze/LabKit-MATLAB-Workbench&file=labkit_launcher.m)
+when you want to inspect or try the current repository without a local clone.
 
 For portable or offline use, download the latest release source zip from the
 [GitHub releases page](https://github.com/Pluze/LabKit-MATLAB-Workbench/releases/latest)

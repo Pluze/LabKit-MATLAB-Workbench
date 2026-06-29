@@ -39,6 +39,7 @@ function ui = buildField(ui, fieldSpec, parentGrid, row)
     if strcmp(kind, 'checkbox')
         control = uicheckbox(parentGrid, 'Text', labelText, ...
             'Enable', onOff(enabled));
+        applyTextFit(control);
         control.Layout.Row = row;
         control.Layout.Column = [1 2];
         if isfield(props, 'value')
@@ -54,12 +55,17 @@ function ui = buildField(ui, fieldSpec, parentGrid, row)
 
     label = uilabel(parentGrid, 'Text', labelText, ...
         'HorizontalAlignment', 'right');
+    applyTextFit(label);
     label.Layout.Row = row;
     label.Layout.Column = 1;
     control = createFieldControl(parentGrid, kind, props, enabled);
     control.Layout.Row = row;
     control.Layout.Column = 2;
     adapter = registerValueControl(fieldSpec, control, control, label);
+    if strcmp(kind, 'readonly')
+        adapter.getValue = @() getReadonlyText(control);
+        adapter.setValue = @(value) setReadonlyText(control, value);
+    end
     ui.controls.(fieldSpec.id) = adapter;
     if isprop(control, 'ValueChangedFcn')
         control.ValueChangedFcn = semanticValueCallback(fieldSpec.id, ...
@@ -83,8 +89,12 @@ function control = createFieldControl(parentGrid, kind, props, enabled)
         case 'slider'
             control = uislider(parentGrid, 'Enable', onOff(enabled));
         case 'readonly'
-            control = uieditfield(parentGrid, 'text', ...
-                'Editable', 'off', 'Enable', onOff(enabled));
+            control = uitextarea(parentGrid, ...
+                'Value', char(string(optionValue(props, 'value', ''))), ...
+                'Editable', 'off', ...
+                'Enable', onOff(enabled), ...
+                'Tag', 'LabKitReadonlyText');
+            applyTextFit(control);
         otherwise
             error('labkit:ui:app:UnsupportedFieldKind', ...
                 'Unsupported UI 3.0 field kind "%s".', kind);
@@ -99,6 +109,7 @@ function ui = buildPanner(ui, pannerSpec, parentGrid, row)
 
     label = uilabel(parentGrid, 'Text', labelText, ...
         'HorizontalAlignment', 'right');
+    applyTextFit(label);
     label.Layout.Row = row;
     label.Layout.Column = 1;
 
@@ -111,6 +122,7 @@ function ui = buildPanner(ui, pannerSpec, parentGrid, row)
 
     leftButton = uibutton(grid, 'Text', optionValue(props, 'leftLabel', '<'), ...
         'Enable', onOff(enabled));
+    applyTextFit(leftButton, 'charsPerStep', 12, 'maxShrinkSteps', 2);
     leftButton.Layout.Row = 1;
     leftButton.Layout.Column = 1;
     slider = uislider(grid, 'Enable', onOff(enabled));
@@ -120,6 +132,7 @@ function ui = buildPanner(ui, pannerSpec, parentGrid, row)
     slider.Value = clampNumericValue(slider.Value, slider.Limits);
     rightButton = uibutton(grid, 'Text', optionValue(props, 'rightLabel', '>'), ...
         'Enable', onOff(enabled));
+    applyTextFit(rightButton, 'charsPerStep', 12, 'maxShrinkSteps', 2);
     rightButton.Layout.Row = 1;
     rightButton.Layout.Column = 3;
 
@@ -169,6 +182,7 @@ function ui = buildRangeField(ui, rangeSpec, parentGrid, row)
 
     label = uilabel(parentGrid, 'Text', labelText, ...
         'HorizontalAlignment', 'right');
+    applyTextFit(label);
     label.Layout.Row = row;
     label.Layout.Column = 1;
     grid = uigridlayout(parentGrid, [1 2]);
@@ -262,6 +276,7 @@ function [ui, adapter] = buildAction(ui, actionSpec, parentGrid, row, column)
     props = actionSpec.props;
     button = uibutton(parentGrid, 'Text', optionValue(props, 'label', actionSpec.id), ...
         'Enable', onOff(optionValue(props, 'enabled', true)));
+    applyTextFit(button, 'charsPerStep', 18, 'maxShrinkSteps', 3);
     button.Layout.Row = row;
     button.Layout.Column = column;
     adapter = baseAdapter(actionSpec, 'action');
@@ -588,24 +603,6 @@ function value = rawEventValue(rawEvent, propertyName, defaultValue)
         value = rawEvent.(propertyName);
     elseif ~isempty(rawEvent) && isprop(rawEvent, propertyName)
         value = rawEvent.(propertyName);
-    end
-end
-
-function applyCommonValueProps(control, props)
-    if isfield(props, 'items') && isprop(control, 'Items')
-        control.Items = cellstr(string(props.items));
-    end
-    if isfield(props, 'limits') && isprop(control, 'Limits')
-        control.Limits = props.limits;
-    end
-    if isfield(props, 'step') && isprop(control, 'Step')
-        control.Step = props.step;
-    end
-    if isfield(props, 'valueDisplayFormat') && isprop(control, 'ValueDisplayFormat')
-        control.ValueDisplayFormat = props.valueDisplayFormat;
-    end
-    if isfield(props, 'value') && isprop(control, 'Value')
-        control.Value = props.value;
     end
 end
 

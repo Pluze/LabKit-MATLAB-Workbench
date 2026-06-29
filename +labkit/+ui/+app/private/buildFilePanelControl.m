@@ -26,6 +26,7 @@ function adapter = buildMultiFilePanelControl(fileSpec, parentGrid, row, callbac
     chooseButton = uibutton(grid, ...
         'Text', optionValue(props, 'chooseLabel', 'Add...'), ...
         'ButtonPushedFcn', callbacks.choose);
+    applyTextFit(chooseButton, 'charsPerStep', 18, 'maxShrinkSteps', 3);
     callbacks.setOriginalCallbackName(chooseButton, optionValue(props, ...
         'onChoose', []));
     chooseButton.Layout.Row = 1;
@@ -34,6 +35,7 @@ function adapter = buildMultiFilePanelControl(fileSpec, parentGrid, row, callbac
     removeButton = uibutton(grid, ...
         'Text', optionValue(props, 'removeLabel', 'Remove selected'), ...
         'ButtonPushedFcn', callbacks.remove);
+    applyTextFit(removeButton, 'charsPerStep', 18, 'maxShrinkSteps', 3);
     callbacks.setOriginalCallbackName(removeButton, optionValue(props, ...
         'onRemove', []));
     removeButton.Layout.Row = 1;
@@ -42,6 +44,7 @@ function adapter = buildMultiFilePanelControl(fileSpec, parentGrid, row, callbac
     clearButton = uibutton(grid, ...
         'Text', optionValue(props, 'clearLabel', 'Clear'), ...
         'ButtonPushedFcn', callbacks.clear);
+    applyTextFit(clearButton, 'charsPerStep', 18, 'maxShrinkSteps', 3);
     callbacks.setOriginalCallbackName(clearButton, optionValue(props, ...
         'onClear', []));
     clearButton.Layout.Row = 1;
@@ -57,8 +60,11 @@ function adapter = buildMultiFilePanelControl(fileSpec, parentGrid, row, callbac
     listbox.Layout.Row = 2;
     listbox.Layout.Column = [1 3];
 
-    status = uieditfield(grid, 'text', 'Editable', 'off', ...
-        'Value', fileStatusText(props, emptyFiles()));
+    status = uitextarea(grid, ...
+        'Value', fileStatusText(props, emptyFiles()), ...
+        'Editable', 'off', ...
+        'Tag', 'LabKitFilePanelStatusText');
+    applyTextFit(status);
     status.Layout.Row = 3;
     status.Layout.Column = [1 3];
 
@@ -90,13 +96,17 @@ function adapter = buildSingleFilePanelControl(fileSpec, parentGrid, row, callba
     chooseButton = uibutton(grid, ...
         'Text', optionValue(props, 'chooseLabel', 'Choose...'), ...
         'ButtonPushedFcn', callbacks.choose);
+    applyTextFit(chooseButton, 'charsPerStep', 18, 'maxShrinkSteps', 3);
     callbacks.setOriginalCallbackName(chooseButton, optionValue(props, ...
         'onChoose', []));
     chooseButton.Layout.Row = 1;
     chooseButton.Layout.Column = 1;
 
-    displayField = uieditfield(grid, 'text', 'Editable', 'off', ...
-        'Value', emptyFileText(props));
+    displayField = uitextarea(grid, ...
+        'Value', emptyFileText(props), ...
+        'Editable', 'off', ...
+        'Tag', 'LabKitFilePanelStatusText');
+    applyTextFit(displayField);
     displayField.Layout.Row = 1;
     displayField.Layout.Column = 2;
 
@@ -155,9 +165,9 @@ function control = applyFileSelection(control, pathsOrFiles, updateStatus)
     emptyText = emptyFileText(control.props);
     if isSingleMode(control.props)
         if isempty(files)
-            control.displayField.Value = emptyText;
+            setText(control.displayField, emptyText);
         else
-            control.displayField.Value = char(files(1).displayName);
+            setText(control.displayField, char(files(1).displayName));
         end
         return;
     end
@@ -175,7 +185,7 @@ function control = applyFileSelection(control, pathsOrFiles, updateStatus)
         end
     end
     if updateStatus
-        control.status.Value = fileStatusText(control.props, files);
+        setText(control.status, fileStatusText(control.props, files));
     end
 end
 
@@ -589,6 +599,16 @@ function text = emptyFileText(props)
         return;
     end
     text = 'No files loaded';
+end
+
+function setText(handle, text)
+    if isprop(handle, 'Text')
+        handle.Text = char(string(text));
+        applyTextFit(handle);
+    elseif isprop(handle, 'Value')
+        handle.Value = char(string(text));
+        applyTextFit(handle);
+    end
 end
 
 function value = fileMultiselect(props)

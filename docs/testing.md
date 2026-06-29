@@ -135,6 +135,21 @@ Automated GUI tests check:
 - debug trace plumbing
 - reusable tool lifecycle
 
+App GUI layout tests should express user-facing and app-facing contracts:
+expected command buttons, dropdown choices, tabs, table columns, axes, callback
+wiring, and debug trace behavior. They should not assert raw MATLAB component
+class counts, because those counts are framework implementation details.
+Reusable LabKit GUI tests may assert low-level control shape only when that
+shape is the framework behavior under test.
+
+For scientific and visualization behavior, prefer deterministic value or state
+assertions over visual snapshots whenever the result can be expressed as data:
+export tables, image dimensions, masks, numeric summaries, axis labels,
+selected files, callback events, and debug traces. Use minimal synthetic data
+that makes the behavior obvious. Add image or screenshot comparisons only when
+the rendered pixels are the actual contract, and keep those baselines focused
+on the visual behavior under test rather than the entire app shell.
+
 `buildtool gui` runs with hidden test windows by default while still creating
 real MATLAB figures, controls, callbacks, and layout trees. The setting is
 scoped to the MATLAB test process; visible or minimized GUI mode is only for

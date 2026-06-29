@@ -19,6 +19,10 @@ Include:
 - short reproduction steps
 - the expected and actual behavior
 - redacted logs or generated artifact folder names, if available
+- for GUI hangs or callback errors, the generated debug log plus any
+  `*_crash_report.txt` or `*_active_operation.txt` file. These reports include
+  the exact MATLAB error id/message/stack and a recent-operation trace that
+  helps reconstruct the repro path.
 
 Do not upload raw lab files, identifying file names, subject names, device
 serials, local absolute paths, timestamps, or private experiment labels. Use

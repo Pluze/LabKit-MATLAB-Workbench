@@ -313,6 +313,8 @@ function debugContext = createContext(appName, opts)
             fprintf(fid, 'error_message=%s\n', sanitizeReportLine(exception.message));
             writeStack(fid, exception);
         end
+        fprintf(fid, '\nrecent_operations:\n');
+        writeRecentOperations(fid, recentOperationLines(12));
         fprintf(fid, '\nrecent_log:\n');
         recent = recentLines(40);
         for k = 1:numel(recent)
@@ -335,6 +337,18 @@ function debugContext = createContext(appName, opts)
     function recent = recentLines(maxCount)
         first = max(1, numel(lines) - maxCount + 1);
         recent = lines(first:end);
+    end
+
+    function recent = recentOperationLines(maxCount)
+        recent = {};
+        for k = 1:numel(lines)
+            line = string(lines{k});
+            if isReproTraceLine(line)
+                recent{end + 1, 1} = char(line);
+            end
+        end
+        first = max(1, numel(recent) - maxCount + 1);
+        recent = recent(first:end);
     end
 end
 
@@ -581,6 +595,23 @@ function writeStack(fid, exception)
             sanitizeReportLine(stack(k).file), stack(k).line, ...
             sanitizeReportLine(stack(k).name));
     end
+end
+
+function writeRecentOperations(fid, recent)
+    if isempty(recent)
+        fprintf(fid, '(none captured)\n');
+        return;
+    end
+    for k = 1:numel(recent)
+        fprintf(fid, '%d. %s\n', k, sanitizeReportLine(recent{k}));
+    end
+end
+
+function tf = isReproTraceLine(line)
+    tf = contains(line, '[debug]') && ...
+        (contains(line, 'BEGIN ') || contains(line, 'ERROR ') || ...
+        contains(line, 'component=filePanel') || ...
+        contains(line, ' callback start') || contains(line, ' callback end'));
 end
 
 function value = optionValue(opts, name, defaultValue)

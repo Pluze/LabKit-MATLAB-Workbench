@@ -17,6 +17,10 @@ function value = specRowHeight(spec, defaultValue)
             value = textPanelHeight(8, 240);
         case 'filePanel'
             value = filePanelHeight(spec);
+        case 'field'
+            value = fieldHeight(spec);
+        case 'action'
+            value = actionHeight(spec);
         case 'resultTable'
             value = tablePanelHeight();
         case 'actionGroup'
@@ -70,8 +74,42 @@ function value = actionGroupHeight(groupSpec)
     maxColumns = actionGroupMaxColumns(groupSpec);
     columnCount = min(count, maxColumns);
     rowCount = max(1, ceil(count / columnCount));
-    value = rowCount * defaultControlHeight() + ...
+    rowHeight = max(defaultControlHeight(), max(actionHeights(groupSpec.children)));
+    value = rowCount * rowHeight + ...
         max(0, rowCount - 1) * 6;
+end
+
+function value = fieldHeight(fieldSpec)
+    props = fieldSpec.props;
+    kind = lower(char(string(optionValue(props, 'kind', 'text'))));
+    label = string(optionValue(props, 'label', fieldSpec.id));
+    if strcmp(kind, 'readonly')
+        valueText = string(optionValue(props, 'value', ''));
+        value = estimatedTextHeight([label valueText], 34, 3);
+    elseif strcmp(kind, 'checkbox')
+        value = estimatedTextHeight(label, 42, 2);
+    else
+        value = estimatedTextHeight(label, 30, 2);
+    end
+end
+
+function value = actionHeight(actionSpec)
+    label = string(optionValue(actionSpec.props, 'label', actionSpec.id));
+    value = estimatedTextHeight(label, 22, 2);
+end
+
+function values = actionHeights(actions)
+    values = zeros(1, max(1, numel(actions)));
+    for k = 1:numel(actions)
+        values(k) = actionHeight(actions{k});
+    end
+end
+
+function value = estimatedTextHeight(texts, charsPerLine, maxLines)
+    text = join(string(texts(:)), " ");
+    lineCount = max(1, ceil(double(max(strlength(splitlines(text)))) ./ charsPerLine));
+    lineCount = min(maxLines, lineCount);
+    value = max(defaultControlHeight(), 20 * lineCount + 6);
 end
 
 function maxColumns = actionGroupMaxColumns(groupSpec)

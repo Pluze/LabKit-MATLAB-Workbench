@@ -20,7 +20,6 @@ function h = guiTestHelpers()
     h.assertAnyTableColumns = @assertAnyTableColumns;
     h.assertFigureMinimumSize = @assertFigureMinimumSize;
     h.assertStandardWorkbenchLayout = @assertStandardWorkbenchLayout;
-    h.assertComponentCounts = @assertComponentCounts;
     h.findControlsByClass = @findControlsByClass;
     h.assertDropdownCallbacksPresent = @assertDropdownCallbacksPresent;
     h.invokeDropdownValue = @invokeDropdownValue;
@@ -202,26 +201,6 @@ function assertStandardWorkbenchLayout(fig)
     end
     assert(hasWorkbenchColumns, ...
         'App should use the shared LabKit workbench shell layout.');
-end
-
-function assertComponentCounts(fig, expectedCounts)
-    names = fieldnames(expectedCounts);
-    for k = 1:numel(names)
-        name = names{k};
-        expected = expectedCounts.(name);
-        actual = countComponents(fig, name);
-        assert(actual == expected, 'Expected %d %s component(s), found %d.', expected, name, actual);
-    end
-end
-
-function count = countComponents(fig, classNamePart)
-    controls = allGuiObjects(fig);
-    count = 0;
-    for k = 1:numel(controls)
-        if contains(class(controls{k}), classNamePart)
-            count = count + 1;
-        end
-    end
 end
 
 function controls = findControlsByClass(fig, classNamePart)

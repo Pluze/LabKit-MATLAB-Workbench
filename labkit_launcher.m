@@ -65,7 +65,7 @@ function info = launcherVersion()
     info = struct( ...
         "name", "labkit_launcher", ...
         "displayName", "LabKit App Launcher", ...
-        "version", "1.1.2", ...
+        "version", "1.1.3", ...
         "updated", "2026-06-29");
 end
 
@@ -127,7 +127,7 @@ function fig = runLauncher(root, apps)
     updateGrid = uigridlayout(controlsGrid, [1 4]);
     updateGrid.Layout.Row = 1;
     updateGrid.Layout.Column = 1;
-    updateGrid.ColumnWidth = {'0.95x', '1x', '1x', '1x'};
+    updateGrid.ColumnWidth = {'1.5x', '1x', '1x', '1x'};
     updateGrid.RowHeight = {'1x'};
     updateGrid.Padding = [0 0 0 0];
     updateGrid.ColumnSpacing = 6;
