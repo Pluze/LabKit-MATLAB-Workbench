@@ -3,8 +3,10 @@ name: MATLAB Tests
 on:
   push:
     branches:
-      - '**'
+      - main
   pull_request:
+    branches:
+      - main
   workflow_dispatch:
   schedule:
     - cron: '17 10 * * 1'
@@ -13,7 +15,7 @@ env:
   MATLAB_RELEASE: R2025a
 
 concurrency:
-  group: matlab-tests-${{ github.workflow }}-${{ github.ref }}
+  group: matlab-tests-${{ github.workflow }}-${{ github.event.pull_request.head.sha || github.sha }}
   cancel-in-progress: true
 
 jobs:
