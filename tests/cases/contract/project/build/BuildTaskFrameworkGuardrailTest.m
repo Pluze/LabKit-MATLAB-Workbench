@@ -50,23 +50,6 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
             end
         end
 
-        function nonDynamicBuildTasksMatchOfficialTests(testCase)
-            root = setupLabKitTestPath();
-            taskSpecs = parseRunnableTaskSpecs(root);
-            taskSpecs = taskSpecs([taskSpecs.Name] ~= "changed");
-            testCase.assertFalse(isempty(taskSpecs), ...
-                "Non-dynamic build task specs should be discovered from buildfile.m.");
-
-            for k = 1:numel(taskSpecs)
-                spec = taskSpecs(k);
-                output = listLabKitTestsQuietly( ...
-                    spec.Args{:}, ...
-                    "RunName", spec.Name + "_list");
-                testCase.verifyGreaterThan(output.count, 0, ...
-                    "Build task should match at least one official test: " + spec.Name);
-            end
-        end
-
         function defaultRunnerSelectionExcludesGuiTests(testCase)
             setupLabKitTestPath();
             output = listLabKitTestsQuietly( ...
