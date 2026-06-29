@@ -19,6 +19,8 @@ function verify_imageEnhance()
     checkPixelRadiusScalesWithPreview();
     checkEmptyNumericToolValuesStayScalar();
     checkWhiteRoiToolAvailabilityFollowsBatchMode();
+    checkWhiteRoiDefaultUsesImageCorner();
+    checkResultTableReportsExportSizeNotPreviewSize();
     checkReadImagesAcceptsFilePanelStringPaths();
     checkReadImagesReportsImportProgress();
     checkPreviewImageDownsamplesLargeInputs();
@@ -171,6 +173,34 @@ function checkWhiteRoiToolAvailabilityFollowsBatchMode()
     availability = image_enhance.ui.toolAvailability(S, 'White ROI calibration');
     assert(availability.canSetWhiteRoi && availability.canApply, ...
         'A per-image white ROI should enable applying the tool for the selected image.');
+    assert(~availability.canPreviewPending, ...
+        'White ROI movement should not trigger expensive pending preview recomputation.');
+end
+
+function checkWhiteRoiDefaultUsesImageCorner()
+    position = image_enhance.ui.whiteRoiHelpers("defaultPosition", [100 200 3]);
+    assert(position(1) <= 10 && position(2) <= 10, ...
+        'Default white ROI should start near the image corner instead of the center.');
+    assert(position(3) == 40 && position(4) == 20, ...
+        'Default white ROI should keep the existing 20 percent image-size footprint.');
+
+    smallPosition = image_enhance.ui.whiteRoiHelpers("defaultPosition", [6 5 3]);
+    assert(isequal(smallPosition, [1 1 5 6]), ...
+        'Default white ROI should clamp to small image bounds.');
+end
+
+function checkResultTableReportsExportSizeNotPreviewSize()
+    item = image_enhance.state.emptyItem();
+    item.name = "large.png";
+    item.image = zeros(2400, 3200, 3);
+    previewImage = zeros(1500, 2000, 3);
+
+    data = image_enhance.view.resultTableData(item, previewImage, 0);
+    metricNames = string(data(:, 1));
+    outputValue = string(data(metricNames == "Output size", 2));
+
+    assert(outputValue == "3200 x 2400 px", ...
+        'Image Enhance should report export/source size, not display-preview size.');
 end
 
 function checkReadImagesAcceptsFilePanelStringPaths()

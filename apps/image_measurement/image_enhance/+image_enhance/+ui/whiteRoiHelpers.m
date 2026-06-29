@@ -13,10 +13,15 @@ function out = whiteRoiHelpers(action, varargin)
             out.whiteRoi = out.whiteRoi .* double(varargin{2});
         case "defaultPosition"
             imageSize = varargin{1};
-            width = max(8, round(imageSize(2) * 0.2));
-            height = max(8, round(imageSize(1) * 0.2));
-            out = [round((imageSize(2) - width) / 2), ...
-                round((imageSize(1) - height) / 2), width, height];
+            imageHeight = max(1, double(imageSize(1)));
+            imageWidth = max(1, double(imageSize(2)));
+            width = min(imageWidth, max(8, round(imageWidth * 0.2)));
+            height = min(imageHeight, max(8, round(imageHeight * 0.2)));
+            x = min(max(1, round(imageWidth * 0.03)), ...
+                max(1, imageWidth - width + 1));
+            y = min(max(1, round(imageHeight * 0.03)), ...
+                max(1, imageHeight - height + 1));
+            out = [x, y, width, height];
         otherwise
             error('labkit_ImageEnhance_app:UnknownWhiteRoiHelper', ...
                 'Unknown white ROI helper action: %s.', char(string(action)));

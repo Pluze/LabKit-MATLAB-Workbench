@@ -19,6 +19,7 @@ function verify_imageMatch()
     checkHistogramMatchPreservesDisplayRange();
     checkReferenceIsSeparateFromBatchSources();
     checkReadImagesAcceptsFilePanelCellPaths();
+    checkResultTableReportsExportSizeNotPreviewSize();
     checkPreviewImageDownsamplesLargeInputs();
     checkManifestAndExportContract();
     checkExportTaskFingerprintTracksReferenceOptionsAndSteps();
@@ -144,6 +145,20 @@ function checkReadImagesAcceptsFilePanelCellPaths()
         'Image match reader should preserve the first selected source path.');
     assert(isequal(size(items(2).image), [8 9 3]), ...
         'Image match reader should load RGB image data from filePanel paths.');
+end
+
+function checkResultTableReportsExportSizeNotPreviewSize()
+    item = image_match.state.emptyItem();
+    item.name = "source.png";
+    item.image = zeros(2600, 3900, 3);
+    previewImage = zeros(1500, 2250, 3);
+
+    data = image_match.view.resultTableData(item, previewImage, 0);
+    metricNames = string(data(:, 1));
+    outputValue = string(data(metricNames == "Output size", 2));
+
+    assert(outputValue == "3900 x 2600 px", ...
+        'Image Match should report export/source size, not display-preview size.');
 end
 
 function checkManifestAndExportContract()

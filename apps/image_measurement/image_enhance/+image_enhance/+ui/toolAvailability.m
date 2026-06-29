@@ -12,7 +12,7 @@ function state = toolAvailability(S, toolKind)
     state.isWhiteRoi = isWhiteRoi;
     state.canSetWhiteRoi = hasImages && ~S.batchMode && isWhiteRoi;
     state.canApply = hasImages && (~isWhiteRoi || (~S.batchMode && hasRoi));
-    state.canPreviewPending = state.canApply;
+    state.canPreviewPending = state.canApply && ~isWhiteRoi;
     if ~hasImages
         state.status = 'Select an image, choose a tool, then apply it to history.';
     elseif isWhiteRoi && S.batchMode

@@ -567,7 +567,6 @@ function fig = run(debugLog)
         markExportDirty();
         S = image_enhance.state.setActivePendingDirty(S, true);
         refreshControls();
-        refreshPreview();
         refreshToolStatus();
     end
 
