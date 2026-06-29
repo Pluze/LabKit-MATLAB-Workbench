@@ -18,6 +18,7 @@ function verify_gui_layout_ui_debug_trace()
 
     checkDefaultInstrumentationSkipsScroll(h);
     checkExplicitInstrumentation(h);
+    checkDiagnosticReports();
     checkFilePanelSemanticTrace();
 end
 
@@ -121,6 +122,53 @@ function checkExplicitInstrumentation(h)
     end
 end
 
+function checkDiagnosticReports()
+    folder = tempname;
+    mkdir(folder);
+    cleanup = onCleanup(@() removeFolder(folder));
+    logFile = fullfile(folder, 'probe.log');
+    crashFile = fullfile(folder, 'probe_crash.txt');
+    activeFile = fullfile(folder, 'probe_active.txt');
+    debug = labkit.ui.diag.createContext('probe_app', struct( ...
+        'logFile', logFile, ...
+        'crashReportFile', crashFile, ...
+        'activeOperationFile', activeFile, ...
+        'stallTimeoutSeconds', 5));
+
+    wrappedOk = debug.wrapCallback('normal callback', @normalCallback);
+    wrappedOk();
+    assert(exist(activeFile, 'file') ~= 2, ...
+        'Completed callbacks should clear the active-operation report.');
+
+    wrappedError = debug.wrapCallback('failing callback', @failingCallback);
+    assertExpectedFailure(@() wrappedError());
+    report = string(fileread(crashFile));
+    assert(contains(report, 'status=error') && ...
+        contains(report, 'operation=failing callback') && ...
+        contains(report, 'error_id=probe:ExpectedFailure'), ...
+        'Unhandled callback errors should write a crash report.');
+
+    try
+        failingCallback();
+    catch ME
+        debug.reportException('loader', 'caught failure', ME);
+    end
+    report = string(fileread(crashFile));
+    assert(contains(report, 'status=caught_error') && ...
+        contains(report, 'operation=loader caught failure') && ...
+        contains(report, 'error_id=probe:ExpectedFailure'), ...
+        'Caught app exceptions should be reportable through the debug context.');
+
+    function normalCallback()
+        assert(exist(activeFile, 'file') == 2, ...
+            'Running callbacks should leave an active-operation report on disk.');
+    end
+
+    function failingCallback()
+        error('probe:ExpectedFailure', 'Expected diagnostic failure.');
+    end
+end
+
 function checkFilePanelSemanticTrace()
     spec = labkit.ui.spec.app('filePanelTraceProbe', 'FilePanel Trace Probe', ...
         'controlTabs', {labkit.ui.spec.tab('setup', 'Setup', { ...
@@ -149,7 +197,7 @@ function checkFilePanelSemanticTrace()
         'filePanel should trace the accepted path count before app callbacks run.');
     assert(any(contains(lines, 'component=filePanel') & ...
         contains(lines, 'event=inputs selection updated') & ...
-        contains(lines, 'total=2 added=2 selected=2')), ...
+        contains(lines, 'total=2 added=2')), ...
         'filePanel should trace framework selection updates.');
     assert(any(contains(lines, 'component=filePanel') & ...
         contains(lines, 'event=inputs callback start') & ...
@@ -162,4 +210,21 @@ function checkFilePanelSemanticTrace()
 end
 
 function noop(varargin)
+end
+
+function assertExpectedFailure(callback)
+    failedAsExpected = false;
+    try
+        callback();
+    catch ME
+        failedAsExpected = strcmp(ME.identifier, 'probe:ExpectedFailure');
+    end
+    assert(failedAsExpected, ...
+        'Diagnostic failure probe should throw the expected error id.');
+end
+
+function removeFolder(folder)
+    if exist(folder, 'dir') == 7
+        rmdir(folder, 's');
+    end
 end

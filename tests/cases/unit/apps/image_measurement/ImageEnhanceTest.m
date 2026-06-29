@@ -17,6 +17,7 @@ function verify_imageEnhance()
     checkWhiteRoiCalibrationAvoidsWashedHighlights();
     checkPixelRadiusScalesWithPreview();
     checkEmptyNumericToolValuesStayScalar();
+    checkWhiteRoiToolAvailabilityFollowsBatchMode();
     checkReadImagesAcceptsFilePanelStringPaths();
     checkReadImagesReportsImportProgress();
     checkPreviewImageDownsamplesLargeInputs();
@@ -109,6 +110,30 @@ function checkEmptyNumericToolValuesStayScalar()
     task = image_enhance.state.exportTask(item, step, struct('outputFolder', "out"));
     assert(contains(task.fingerprint, "stepCount=1"), ...
         'Scalar fallback steps should remain valid export-task inputs.');
+end
+
+function checkWhiteRoiToolAvailabilityFollowsBatchMode()
+    item = image_enhance.state.emptyItem();
+    item.path = "sample.png";
+    item.name = "sample.png";
+    item.image = syntheticGradientImage();
+    S = struct('items', item, 'currentIndex', 1, ...
+        'steps', repmat(image_enhance.state.emptyStep(), 0, 1), ...
+        'batchMode', true, 'pendingDirty', false);
+
+    availability = image_enhance.ui.toolAvailability(S, 'White ROI calibration');
+    assert(~availability.canSetWhiteRoi && ~availability.canApply, ...
+        'White ROI controls should stay disabled in shared batch mode.');
+
+    S.batchMode = false;
+    availability = image_enhance.ui.toolAvailability(S, 'White ROI calibration');
+    assert(availability.canSetWhiteRoi && ~availability.canApply, ...
+        'Turning off shared batch mode should immediately enable ROI selection.');
+
+    S.items.whiteRoi = [1 1 4 4];
+    availability = image_enhance.ui.toolAvailability(S, 'White ROI calibration');
+    assert(availability.canSetWhiteRoi && availability.canApply, ...
+        'A per-image white ROI should enable applying the tool for the selected image.');
 end
 
 function checkReadImagesAcceptsFilePanelStringPaths()

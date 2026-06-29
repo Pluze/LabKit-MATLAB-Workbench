@@ -37,6 +37,10 @@
 - Preview-axis tools that need pointer, drag, scroll, or hit-test ownership must use `labkit.ui.tool.createRuntime` sessions instead of each helper managing figure/axes callbacks independently.
 - Tool callbacks must keep user-facing semantic callbacks separate from internal refresh/sync callbacks, no-op when a setter receives the current value, and trace callback reason/source when a tool exposes debug trace.
 - Debug traces are diagnostic probes for GUI interaction failures, callback errors, stalled file loads, and environment-sensitive launch problems; do not turn them into workflow narration or log sensitive paths/data.
+- Debug contexts own framework crash reports, active-operation files, and
+  caught-exception reporting. Keep report fields app-neutral and sanitized;
+  apps should pass caught `MException` values through `debug.reportException`
+  rather than inventing app-local report formats.
 - Do not introduce MATLAB classes unless explicitly approved.
 
 ## Comments and Docs

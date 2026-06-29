@@ -2,8 +2,6 @@
 % prepared by the public launcher. Output is the app figure. Side effects are
 % GUI creation, user-driven image loading, image export, and debug trace attachment.
 function fig = run(debugLog)
-%RUN Build and run the Image Enhance app body.
-
     S = struct();
     S.items = repmat(image_enhance.state.emptyItem(), 0, 1);
     S.currentIndex = 0;
@@ -60,7 +58,7 @@ function fig = run(debugLog)
             addLog(sprintf('Starting image import for %d selected path(s).', numel(paths)));
             S.items = readOrReuseImages(paths);
         catch ME
-            showError('Could not load images', ME.message);
+            showException('Could not load images', ME);
             refreshAll();
             return;
         end
@@ -130,8 +128,8 @@ function fig = run(debugLog)
         refreshPreview();
     end
 
-    function onBatchModeChanged(~, ~)
-        S.batchMode = logical(labkit.ui.view.getValue(ui, 'batchMode'));
+    function onBatchModeChanged(~, event)
+        S.batchMode = logical(event.value);
         S = image_enhance.state.setActivePendingDirty(S, false);
         invalidatePreviewCache();
         markExportDirty();
@@ -143,6 +141,7 @@ function fig = run(debugLog)
         S = image_enhance.state.setActivePendingDirty(S, true);
         markExportDirty();
         refreshPreview();
+        refreshControls();
         refreshToolStatus();
     end
 
@@ -151,6 +150,7 @@ function fig = run(debugLog)
         S = image_enhance.state.setActivePendingDirty(S, true);
         markExportDirty();
         refreshPreview();
+        refreshControls();
         refreshToolStatus();
     end
 
@@ -232,7 +232,7 @@ function fig = run(debugLog)
             S.lastExport = image_enhance.export.writeOutputs(S.items, image_enhance.state.stepsForTask(S), opts);
             S.lastExportFingerprint = task.fingerprint;
         catch ME
-            showError('Export failed', ME.message);
+            showException('Export failed', ME);
             return;
         end
         statuses = string({S.lastExport.results.status});
@@ -637,5 +637,12 @@ function fig = run(debugLog)
     function showError(titleText, message)
         addLog(sprintf('%s: %s', titleText, message));
         uialert(fig, message, titleText);
+    end
+
+    function showException(titleText, exception)
+        if debugLog.enabled && isfield(debugLog, 'reportException')
+            debugLog.reportException('imageEnhance', titleText, exception);
+        end
+        showError(titleText, exception.message);
     end
 end

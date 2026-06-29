@@ -29,6 +29,7 @@ function ui = create(spec, varargin)
         debug.instrumentFigure(ui.figure);
     end
     setappdata(ui.figure, 'labkitUiRegistry', ui);
+    setappdata(ui.figure, 'labkitUiDebugContext', debug);
 end
 
 function opts = parseOptions(args)

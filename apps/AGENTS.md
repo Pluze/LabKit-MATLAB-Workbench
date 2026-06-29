@@ -29,6 +29,10 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
   update that app's `version.m` version metadata in the same change. App
   versions use `X.Y.Z` semantic format and must only increase.
 - Debug launches should attach the Log tab text area, emit a startup trace line, and instrument high-level component callbacks after controls are built.
+- App callbacks that catch `MException` and continue must call
+  `debug.reportException(component, event, ME)` before showing an alert,
+  logging a recovery message, or returning. Do not swallow import, export,
+  preview, or tool errors without a framework debug/crash report.
 - Apps with custom preview scroll, drawing, ROI, scale-bar, or other axes interaction should create a `labkit.ui.tool.createRuntime` and pass that runtime into reusable tools. Do not set preview-tool `WindowScrollWheelFcn`, `WindowButtonMotionFcn`, `WindowButtonUpFcn`, or axes `ButtonDownFcn` directly in app code.
 - DTA-backed apps use `labkit.dta.*` for discovery, loading, pulse detection, and parsed curve/table access. Task queues, duplicate policy, current selection, analysis state, and export workflow stay app-owned.
 - RHS-backed apps use `labkit.rhs.*` for discovery, header inspection,

@@ -8,7 +8,7 @@
 | `labkit.ui.spec` | UI 3.0 data-only workbench specs. | `app`, `workspace`, `tab`, `section`, `field`, `rangeField`, `panner`, `action`, `actionGroup`, `filePanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `usagePanel`. |
 | `labkit.ui.view` | Semantic UI 3.0 registry updates and preview rendering helpers. | `setValue`, `getValue`, `getFiles`, `setFileSelection`, `setEnabled`, `setLimits`, `appendLog`, `setListItems`, `setListSelection`, `fileLabels`, `filePaths`, `drawImage`, `resetAxes`, `clearAxes`. |
 | `labkit.ui.tool` | Reusable composed preview tools and interaction runtime. | `createRuntime`, `anchorEditor`, `scaleBar`, `scaleBarCalibration`, `enableAxesPopout`, `popoutAxes`, `zoomAxesAtPoint`. |
-| `labkit.ui.diag` | Debug launch context, visible trace, callback instrumentation. | `createContext`. |
+| `labkit.ui.diag` | Debug launch context, visible trace, callback instrumentation, and crash reports. | `createContext`. |
 
 The root `labkit.ui.*` flat helper surface has been removed. Apps should call the facade that owns the behavior they need. Private implementation details live under each facade's `private/` folder.
 
@@ -330,6 +330,20 @@ Each public debug launch also writes a trace file under
 `artifacts/debug/<RunName>/<AppName>/`. The file is the authoritative debug
 record when the GUI freezes or the app Log tab is inaccessible; the visible Log
 tab is only the human-readable mirror.
+
+Debug instrumentation writes an active-operation report next to the trace log
+when an instrumented callback starts, removes it when the callback completes,
+and writes a crash report when a callback errors or exceeds the stall timeout.
+The active-operation report records the current callback so a MATLAB process
+crash or hard UI freeze still leaves the last in-flight operation on disk.
+MATLAB timer callbacks cannot interrupt every synchronous native or M-code
+stall while the main thread is blocked, so active-operation files and the
+normal trace log are part of the freeze report contract.
+
+Apps that intentionally catch an `MException` and continue should still call
+`debug.reportException(component, event, ME)` before showing their own alert or
+recovering. This keeps swallowed import, export, or preview failures visible in
+the same crash-report stream as uncaught callback errors.
 
 Trace is for diagnosing GUI interaction failures, callback errors, stalled file
 loads, and environment-sensitive launch problems. It is not workflow

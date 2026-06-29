@@ -6,6 +6,7 @@ function debugContext = createContext(appName, opts)
 %   debug.append("Loaded file");
 %   debug.trace("button pressed");
 %   debug.trace("scaleBar", "reference changed", "user");
+%   debug.reportException("load", caughtException);
 %   debug.attachTextLog(txtLog);
 %   debug.instrumentFigure(fig);
 %
@@ -20,10 +21,18 @@ function debugContext = createContext(appName, opts)
 %           line as logCallback(line).
 %       traceCallback - function handle, default []. Called only for trace
 %           lines as traceCallback(line).
+%       stallTimeoutSeconds - positive scalar, default 30. Instrumented
+%           callbacks still running after this duration write a crash report.
+%       crashReportFile - char/string filepath, default derived from logFile.
+%       activeOperationFile - char/string filepath, default derived from
+%           logFile. This file is written at callback start and removed only
+%           after callback completion so a process crash leaves the active
+%           callback visible on disk.
 %
 % Output:
 %   debugContext - struct with appName, enabled, traceEnabled, logFile,
-%       append, trace, setTraceCallback, attachTextLog, wrapCallback,
+%       crashReportFile, activeOperationFile, append, trace,
+%       reportException, setTraceCallback, attachTextLog, wrapCallback,
 %       instrumentFigure, and getLog. Trace lines include stable app,
 %       component, event, and reason fields. Default figure instrumentation
 %       wraps high-level component callbacks and intentionally skips pointer,
@@ -39,6 +48,12 @@ function debugContext = createContext(appName, opts)
     logFile = string(optionValue(opts, 'logFile', ""));
     logCallback = optionValue(opts, 'logCallback', []);
     traceCallback = optionValue(opts, 'traceCallback', []);
+    crashReportFile = string(optionValue(opts, 'crashReportFile', ...
+        defaultReportFile(logFile, "crash_report")));
+    activeOperationFile = string(optionValue(opts, 'activeOperationFile', ...
+        defaultReportFile(logFile, "active_operation")));
+    stallTimeoutSeconds = normalizePositiveScalar( ...
+        optionValue(opts, 'stallTimeoutSeconds', 30), 30);
     lines = {};
 
     if enabled && strlength(logFile) > 0
@@ -50,8 +65,11 @@ function debugContext = createContext(appName, opts)
     debugContext.enabled = logical(enabled);
     debugContext.traceEnabled = logical(traceEnabled);
     debugContext.logFile = logFile;
+    debugContext.crashReportFile = crashReportFile;
+    debugContext.activeOperationFile = activeOperationFile;
     debugContext.append = @append;
     debugContext.trace = @trace;
+    debugContext.reportException = @reportException;
     debugContext.setTraceCallback = @setTraceCallback;
     debugContext.attachTextLog = @attachTextLog;
     debugContext.wrapCallback = @wrapCallback;
@@ -88,6 +106,25 @@ function debugContext = createContext(appName, opts)
         traceCallback = callback;
     end
 
+    function reportException(component, event, exception)
+        if nargin < 3
+            exception = event;
+            event = component;
+            component = "app";
+        end
+        if ~isa(exception, 'MException')
+            trace(component, sprintf('ERROR %s: %s', ...
+                char(string(event)), char(string(exception))), 'caught');
+            return;
+        end
+
+        label = sprintf('%s %s', char(string(component)), char(string(event)));
+        trace(component, sprintf('ERROR %s: %s %s', ...
+            char(string(event)), exception.identifier, exception.message), 'caught');
+        op = completedOperation(label);
+        writeOperationReport("caught_error", op, exception);
+    end
+
     function attachTextLog(textArea)
         setTraceCallback(@appendTraceToTextLog);
 
@@ -110,18 +147,22 @@ function debugContext = createContext(appName, opts)
         wrappedCallback = @wrapped;
 
         function varargout = wrapped(varargin)
+            op = startOperation(callbackName);
             trace(sprintf('BEGIN %s', callbackName));
             try
                 if nargout == 0
                     originalCallback(varargin{:});
                     trace(sprintf('END %s', callbackName));
+                    finishOperation(op, "completed", []);
                 else
                     [varargout{1:nargout}] = originalCallback(varargin{:});
                     trace(sprintf('END %s', callbackName));
+                    finishOperation(op, "completed", []);
                 end
             catch ME
                 trace(sprintf('ERROR %s: %s %s', ...
                     callbackName, ME.identifier, ME.message));
+                finishOperation(op, "error", ME);
                 rethrow(ME);
             end
         end
@@ -150,7 +191,8 @@ function debugContext = createContext(appName, opts)
                 if isempty(currentCallback) || isAlreadyInstrumented(handle, propName)
                     continue;
                 end
-                wrapped = callbackWrapperForHandle(handle, propName, currentCallback, @trace);
+                wrapped = callbackWrapperForHandle(handle, propName, currentCallback, ...
+                    @trace, @startOperation, @finishOperation);
                 if isempty(wrapped)
                     continue;
                 end
@@ -176,6 +218,123 @@ function debugContext = createContext(appName, opts)
 
     function out = getLog()
         out = lines;
+    end
+
+    function op = startOperation(label)
+        op = emptyOperation();
+        if ~enabled || ~traceEnabled
+            return;
+        end
+        op = struct( ...
+            'id', operationId(), ...
+            'label', char(string(label)), ...
+            'startedAt', datestr(now, 31), ...
+            'startTic', tic, ...
+            'timer', []);
+        writeOperationReport("active", op, []);
+        op.timer = startStallTimer(op);
+    end
+
+    function op = completedOperation(label)
+        op = struct( ...
+            'id', operationId(), ...
+            'label', char(string(label)), ...
+            'startedAt', datestr(now, 31), ...
+            'startTic', tic, ...
+            'timer', []);
+    end
+
+    function finishOperation(op, status, exception)
+        if ~isstruct(op) || ~isfield(op, 'id') || strlength(string(op.id)) == 0
+            return;
+        end
+        stopStallTimer(op);
+        if status == "error"
+            writeOperationReport("error", op, exception);
+        end
+        removeActiveOperationFile();
+    end
+
+    function timerObj = startStallTimer(op)
+        timerObj = [];
+        if stallTimeoutSeconds <= 0 || strlength(crashReportFile) == 0
+            return;
+        end
+        try
+            timerObj = timer( ...
+                'ExecutionMode', 'singleShot', ...
+                'StartDelay', stallTimeoutSeconds, ...
+                'Name', sprintf('labkit_stall_%s', op.id), ...
+                'TimerFcn', @(~,~) writeOperationReport("stalled", op, []));
+            start(timerObj);
+        catch
+            timerObj = [];
+        end
+    end
+
+    function stopStallTimer(op)
+        if ~isfield(op, 'timer') || isempty(op.timer)
+            return;
+        end
+        try
+            stop(op.timer);
+            delete(op.timer);
+        catch
+        end
+    end
+
+    function writeOperationReport(status, op, exception)
+        filepath = crashReportFile;
+        if status == "active"
+            filepath = activeOperationFile;
+        end
+        if strlength(filepath) == 0
+            return;
+        end
+
+        fid = fopen(filepath, 'w');
+        if fid < 0
+            return;
+        end
+        cleaner = onCleanup(@() fclose(fid));
+        fprintf(fid, 'LabKit app diagnostic report\n');
+        fprintf(fid, 'created=%s\n', datestr(now, 31));
+        fprintf(fid, 'app=%s\n', char(appName));
+        fprintf(fid, 'status=%s\n', char(status));
+        fprintf(fid, 'operation=%s\n', sanitizeReportLine(op.label));
+        fprintf(fid, 'operation_id=%s\n', sanitizeReportLine(op.id));
+        fprintf(fid, 'operation_started=%s\n', sanitizeReportLine(op.startedAt));
+        fprintf(fid, 'elapsed_seconds=%.3f\n', elapsedSeconds(op));
+        fprintf(fid, 'stall_timeout_seconds=%.3f\n', stallTimeoutSeconds);
+        fprintf(fid, 'matlab=%s\n', version);
+        fprintf(fid, 'platform=%s\n', computer);
+        if ~isempty(exception) && isa(exception, 'MException')
+            fprintf(fid, 'error_id=%s\n', sanitizeReportLine(exception.identifier));
+            fprintf(fid, 'error_message=%s\n', sanitizeReportLine(exception.message));
+            writeStack(fid, exception);
+        end
+        fprintf(fid, '\nrecent_log:\n');
+        recent = recentLines(40);
+        for k = 1:numel(recent)
+            fprintf(fid, '%s\n', sanitizeReportLine(recent{k}));
+        end
+    end
+
+    function removeActiveOperationFile()
+        if strlength(activeOperationFile) == 0
+            return;
+        end
+        try
+            if exist(activeOperationFile, 'file') == 2
+                delete(activeOperationFile);
+            end
+        catch
+        end
+    end
+
+    function recent = recentLines(maxCount)
+        first = max(1, numel(lines) - maxCount + 1);
+        recent = lines(first:end);
     end
 end
 
@@ -212,7 +371,7 @@ function key = logFollowKey()
     key = 'labkitLogFollowLatest';
 end
 
-function wrapped = callbackWrapperForHandle(handle, propName, callback, traceFcn)
+function wrapped = callbackWrapperForHandle(handle, propName, callback, traceFcn, startOperationFcn, finishOperationFcn)
     if isa(callback, 'function_handle')
         wrapped = @wrappedFunctionHandle;
     elseif iscell(callback) && ~isempty(callback) && isa(callback{1}, 'function_handle')
@@ -223,17 +382,21 @@ function wrapped = callbackWrapperForHandle(handle, propName, callback, traceFcn
 
     function varargout = wrappedFunctionHandle(varargin)
         label = callbackTraceLabel(handle, propName, callback);
+        op = startOperationFcn(label);
         traceFcn(sprintf('BEGIN %s', label));
         try
             if nargout == 0
                 callback(varargin{:});
                 traceFcn(sprintf('END %s', label));
+                finishOperationFcn(op, "completed", []);
             else
                 [varargout{1:nargout}] = callback(varargin{:});
                 traceFcn(sprintf('END %s', label));
+                finishOperationFcn(op, "completed", []);
             end
         catch ME
             traceFcn(sprintf('ERROR %s: %s %s', label, ME.identifier, ME.message));
+            finishOperationFcn(op, "error", ME);
             rethrow(ME);
         end
     end
@@ -242,17 +405,21 @@ function wrapped = callbackWrapperForHandle(handle, propName, callback, traceFcn
         callbackFcn = callback{1};
         callbackArgs = callback(2:end);
         label = callbackTraceLabel(handle, propName, callbackFcn);
+        op = startOperationFcn(label);
         traceFcn(sprintf('BEGIN %s', label));
         try
             if nargout == 0
                 callbackFcn(varargin{:}, callbackArgs{:});
                 traceFcn(sprintf('END %s', label));
+                finishOperationFcn(op, "completed", []);
             else
                 [varargout{1:nargout}] = callbackFcn(varargin{:}, callbackArgs{:});
                 traceFcn(sprintf('END %s', label));
+                finishOperationFcn(op, "completed", []);
             end
         catch ME
             traceFcn(sprintf('ERROR %s: %s %s', label, ME.identifier, ME.message));
+            finishOperationFcn(op, "error", ME);
             rethrow(ME);
         end
     end
@@ -360,6 +527,60 @@ function appendLine(logFile, line)
     end
     cleaner = onCleanup(@() fclose(fid));
     fprintf(fid, '%s\n', char(line));
+end
+
+function filepath = defaultReportFile(logFile, suffix)
+    logFile = string(logFile);
+    if strlength(logFile) == 0
+        filepath = "";
+        return;
+    end
+    [folder, name] = fileparts(logFile);
+    filepath = fullfile(folder, sprintf('%s_%s.txt', char(name), char(suffix)));
+end
+
+function value = normalizePositiveScalar(value, defaultValue)
+    try
+        value = double(value);
+        if ~isscalar(value) || ~isfinite(value) || value < 0
+            value = defaultValue;
+        end
+    catch
+        value = defaultValue;
+    end
+end
+
+function op = emptyOperation()
+    op = struct('id', '', 'label', '', 'startedAt', '', ...
+        'startTic', [], 'timer', []);
+end
+
+function id = operationId()
+    [~, seed] = fileparts(tempname);
+    id = char(matlab.lang.makeValidName(seed));
+end
+
+function seconds = elapsedSeconds(op)
+    seconds = NaN;
+    try
+        seconds = toc(op.startTic);
+    catch
+    end
+end
+
+function text = sanitizeReportLine(value)
+    text = char(string(value));
+    text = strrep(text, newline, ' ');
+    text = strrep(text, sprintf('\r'), ' ');
+end
+
+function writeStack(fid, exception)
+    stack = exception.stack;
+    for k = 1:numel(stack)
+        fprintf(fid, 'stack_%d=%s:%d %s\n', k, ...
+            sanitizeReportLine(stack(k).file), stack(k).line, ...
+            sanitizeReportLine(stack(k).name));
+    end
 end
 
 function value = optionValue(opts, name, defaultValue)

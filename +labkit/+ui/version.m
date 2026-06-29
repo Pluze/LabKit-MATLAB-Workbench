@@ -12,6 +12,6 @@ function info = version()
 %       compatible contract ranges implemented by this code, contract status,
 %       and a short maintainer note.
 
-    info = labkit.contract.versionInfo("ui", "3.1.2", ">=3.0 <4", ...
-        "stable", "UI 3.x app/spec/view/tool/diag contract with filePanel title context, debug trace, and close guard.");
+    info = labkit.contract.versionInfo("ui", "3.1.3", ">=3.0 <4", ...
+        "stable", "UI 3.x app/spec/view/tool/diag contract with filePanel title context, debug trace, close guard, and crash reports.");
 end
