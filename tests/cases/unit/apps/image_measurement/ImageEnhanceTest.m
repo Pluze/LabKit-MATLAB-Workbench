@@ -15,6 +15,7 @@ function verify_imageEnhance()
     checkBrightnessContrastAndSharpenPipeline();
     checkWhiteBalanceReducesChannelCast();
     checkWhiteRoiCalibrationAvoidsWashedHighlights();
+    checkSubjectPreservingEnhanceLiftsBackgroundWithoutHueDrift();
     checkPixelRadiusScalesWithPreview();
     checkEmptyNumericToolValuesStayScalar();
     checkWhiteRoiToolAvailabilityFollowsBatchMode();
@@ -94,6 +95,37 @@ function checkWhiteRoiCalibrationAvoidsWashedHighlights()
         'White ROI calibration should not over-shift subject hue.');
     assert(saturationRatio > 0.85 && saturationRatio < 1.25, ...
         'White ROI calibration should keep subject saturation changes modest.');
+end
+
+function checkSubjectPreservingEnhanceLiftsBackgroundWithoutHueDrift()
+    img = 0.55 .* ones(48, 72, 3);
+    img(:, :, 1) = img(:, :, 1) .* 0.96;
+    img(:, :, 2) = img(:, :, 2) .* 1.04;
+    img(:, :, 3) = img(:, :, 3) .* 1.02;
+    img(18:35, 24:52, 1) = 0.72;
+    img(18:35, 24:52, 2) = 0.42;
+    img(18:35, 24:52, 3) = 0.14;
+    img = min(max(img, 0), 1);
+
+    step = image_enhance.ops.makeStep('Subject-preserving enhance', 85, 90, 0);
+    out = image_enhance.ops.applyStep(img, step, []);
+    backgroundBefore = rgb2gray(img(1:12, 1:20, :));
+    backgroundAfter = rgb2gray(out(1:12, 1:20, :));
+    subjectBefore = img(18:35, 24:52, :);
+    subjectAfter = out(18:35, 24:52, :);
+    beforeHsv = rgb2hsv(subjectBefore);
+    afterHsv = rgb2hsv(subjectAfter);
+    hueShift = circularHueDistance(mean(beforeHsv(:, :, 1), 'all'), ...
+        mean(afterHsv(:, :, 1), 'all'));
+    saturationRatio = mean(afterHsv(:, :, 2), 'all') ./ ...
+        max(mean(beforeHsv(:, :, 2), 'all'), eps);
+
+    assert(mean(backgroundAfter, 'all') > mean(backgroundBefore, 'all') + 0.10, ...
+        'Subject-preserving enhance should visibly lift a dull low-saturation background.');
+    assert(hueShift < 0.035, ...
+        'Subject-preserving enhance should not strongly shift subject hue.');
+    assert(saturationRatio > 0.80 && saturationRatio < 1.20, ...
+        'Subject-preserving enhance should keep subject saturation changes modest.');
 end
 
 function checkEmptyNumericToolValuesStayScalar()

@@ -19,7 +19,9 @@ function outputImage = applyStep(inputImage, step, referenceImage)
         case 'whitebalance'
             outputImage = whiteBalance(inputImage, step.amount, step.secondary);
         case 'whiteroicalibration'
-            outputImage = whiteRoiCalibration(inputImage, step, referenceImage);
+            outputImage = protectedBackgroundEnhance(inputImage, step, referenceImage, true);
+        case 'subjectpreservingenhance'
+            outputImage = protectedBackgroundEnhance(inputImage, step, [], false);
         otherwise
             error('labkit_ImageEnhance_app:UnknownEnhancementStep', ...
                 'Unknown image enhancement step: %s', char(step.kind));
@@ -27,98 +29,49 @@ function outputImage = applyStep(inputImage, step, referenceImage)
     outputImage = min(max(outputImage, 0), 1);
 end
 
-function outputImage = whiteRoiCalibration(inputImage, step, context)
-    roi = roiFromContext(context);
-    if isempty(roi)
-        error('labkit_ImageEnhance_app:MissingWhiteRoi', ...
-            'White ROI calibration requires a white background ROI for each image.');
-    end
+function outputImage = protectedBackgroundEnhance(inputImage, step, context, requireRoi)
+    strength = clamp01(double(step.amount) / 100);
+    targetWhite = min(max(double(step.secondary) / 100, 0.70), 0.98);
+    backgroundMask = backgroundMaskFromContext(inputImage, context, requireRoi);
 
-    roi = clampRoi(roi, size(inputImage));
-    patch = inputImage(roi(2):(roi(2) + roi(4) - 1), ...
-        roi(1):(roi(1) + roi(3) - 1), :);
-    strength = min(max(double(step.amount) / 100, 0), 1);
-    targetWhite = min(max(double(step.secondary) / 100, 0.75), 0.98);
-
-    patchMean = squeeze(mean(patch, [1 2])).';
-    backgroundLuma = rgb2gray(reshape(patchMean, 1, 1, 3));
-    gains = backgroundLuma ./ max(patchMean, eps);
-    gains = 1 + 0.35 .* (gains - 1);
-    gains = min(max(gains, 0.85), 1.18);
-    balanced = inputImage .* reshape(gains, 1, 1, []);
-
-    luma = rgb2gray(min(max(balanced, 0), 1));
-    foreground = foregroundMask(inputImage, patchMean, luma);
-    highTarget = min(0.98, targetWhite + 0.06);
-    lowTarget = 0.025;
-    roiLuma = rgb2gray(min(max(patch .* reshape(gains, 1, 1, []), 0), 1));
-    tonedLuma = autoToneLuma(luma, roiLuma, lowTarget, highTarget);
-    tonedLuma = compressHighlights(tonedLuma, min(0.96, highTarget));
-    tonedLuma = addLocalContrast(tonedLuma, 0.10 + 0.18 * strength);
-
-    hsvImage = rgb2hsv(min(max(balanced, 0), 1));
-    hsvImage(:, :, 3) = max(hsvImage(:, :, 3), tonedLuma);
-    hsvImage(:, :, 2) = hsvImage(:, :, 2) .* (0.15 + 0.85 .* foreground);
-    calibrated = hsv2rgb(hsvImage);
-    calibrated = enhanceForegroundVibrance(calibrated, foreground, 0.05 * strength);
-    outputImage = (1 - strength) .* inputImage + strength .* calibrated;
-end
-
-function mask = foregroundMask(inputImage, patchMean, luma)
-    delta = sqrt(sum((inputImage - reshape(patchMean, 1, 1, [])).^2, 3));
-    lumaDelta = abs(luma - mean(luma(:)));
-    mask = min(1, max(0, (delta - 0.08) ./ 0.22 + 0.3 .* lumaDelta));
-end
-
-function out = autoToneLuma(luma, roiLuma, lowTarget, highTarget)
-    values = sort(luma(:));
-    if isempty(values)
-        out = luma;
+    if exist('rgb2lab', 'file') ~= 2 || exist('lab2rgb', 'file') ~= 2
+        outputImage = protectedRgbFallback(inputImage, strength, targetWhite, backgroundMask);
         return;
     end
-    low = percentileFromSorted(values, 1.0);
-    roiWhite = median(roiLuma(:));
-    high = max(percentileFromSorted(values, 95.0), roiWhite);
-    if high <= low + 0.01
-        out = luma;
-        return;
-    end
-    out = (luma - low) ./ (high - low);
-    out = min(max(out, 0), 1);
-    out = lowTarget + out .* (highTarget - lowTarget);
-end
 
-function value = percentileFromSorted(values, pct)
-    index = 1 + (numel(values) - 1) * pct / 100;
-    lo = floor(index);
-    hi = ceil(index);
-    if lo == hi
-        value = values(lo);
-    else
-        value = values(lo) .* (hi - index) + values(hi) .* (index - lo);
-    end
-end
+    labImage = rgb2lab(inputImage);
+    sourceL = labImage(:, :, 1) ./ 100;
+    hsvImage = rgb2hsv(inputImage);
+    sat = hsvImage(:, :, 2);
+    stats = luminanceStats(sourceL);
 
-function out = compressHighlights(luma, shoulder)
-    shoulder = min(max(shoulder, 0.72), 0.96);
-    over = max(0, luma - shoulder);
-    out = luma;
-    out(luma > shoulder) = shoulder + over(luma > shoulder) ./ ...
-        (1 + 4 .* over(luma > shoulder));
-end
+    contrastScale = min(1.18, max(0.92, 0.30 ./ max(stats.contrast, 0.08)));
+    tonedL = (sourceL - stats.mid) .* contrastScale + stats.mid;
+    backgroundLevel = weightedMean(tonedL, backgroundMask);
+    maxLift = 0.22 + 0.23 .* double(requireRoi);
+    sourceBlend = 0.28 - 0.20 .* double(requireRoi);
+    lift = min(maxLift, max(0, targetWhite - backgroundLevel));
+    brightMask = smoothstep(0.18, 0.74, sourceL);
+    saturationGuard = 1 - 0.42 .* smoothstep(0.18, 0.58, sat);
+    tonedL = tonedL + lift .* (0.35 + 0.65 .* brightMask) .* saturationGuard;
+    tonedL = min(max((1 - sourceBlend) .* tonedL + sourceBlend .* sourceL, 0), 1);
 
-function out = addLocalContrast(luma, amount)
-    blurred = boxBlur(luma, 17);
-    detail = luma - blurred;
-    out = min(max(luma + amount .* detail, 0), 1);
-end
+    detail = tonedL - boxBlur(tonedL, 3);
+    tonedL = tonedL + (0.08 + 0.05 .* double(stats.contrast < 0.24)) .* detail;
+    shadowMask = smoothstep(0.24, 0.08, sourceL);
+    highlightMask = smoothstep(0.88, 0.99, tonedL);
+    tonedL = tonedL .* (1 - 0.55 .* shadowMask) + sourceL .* (0.55 .* shadowMask);
+    tonedL = tonedL .* (1 - 0.40 .* highlightMask) + min(tonedL, 0.965) .* (0.40 .* highlightMask);
+    tonedL = min(max(tonedL, 0.015), 0.99);
 
-function out = enhanceForegroundVibrance(inputImage, foreground, amount)
-    hsvImage = rgb2hsv(min(max(inputImage, 0), 1));
-    saturation = hsvImage(:, :, 2);
-    boost = amount .* foreground .* (1 - saturation);
-    hsvImage(:, :, 2) = min(1, saturation .* (1 + boost));
-    out = hsv2rgb(hsvImage);
+    labOut = labImage;
+    labOut(:, :, 1) = ((1 - strength) .* sourceL + strength .* tonedL) .* 100;
+    labOut = correctBackgroundLabCast(labOut, backgroundMask, strength);
+    outputImage = lab2rgb(labOut, 'OutputType', 'double');
+    finishLift = 0.08 + 0.14 .* double(requireRoi);
+    outputImage = finishBackgroundLuma(outputImage, inputImage, ...
+        backgroundMask, targetWhite, strength, finishLift);
+    outputImage = min(max(outputImage, 0), 1);
 end
 
 function roi = roiFromContext(context)
@@ -140,6 +93,118 @@ function roi = clampRoi(roi, imageSize)
     x2 = max(x1, min(imageSize(2), round(roi(1) + roi(3) - 1)));
     y2 = max(y1, min(imageSize(1), round(roi(2) + roi(4) - 1)));
     roi = [x1 y1 x2 - x1 + 1 y2 - y1 + 1];
+end
+
+function mask = backgroundMaskFromContext(inputImage, context, requireRoi)
+    roi = roiFromContext(context);
+    if requireRoi && isempty(roi)
+        error('labkit_ImageEnhance_app:MissingWhiteRoi', ...
+            'White ROI calibration requires a white background ROI for each image.');
+    end
+    if ~isempty(roi)
+        roi = clampRoi(roi, size(inputImage));
+        mask = zeros(size(inputImage, 1), size(inputImage, 2));
+        mask(roi(2):(roi(2) + roi(4) - 1), ...
+            roi(1):(roi(1) + roi(3) - 1)) = 1;
+        mask = boxBlur(mask, max(9, 2 * round(max(roi(3:4)) / 5) + 1));
+        mask = min(max(mask, 0), 1);
+        return;
+    end
+
+    hsvImage = rgb2hsv(inputImage);
+    value = rgb2gray(inputImage);
+    sat = hsvImage(:, :, 2);
+    mask = smoothstep(0.22, 0.03, sat) .* smoothstep(0.30, 0.78, value);
+    if nnz(mask > 0.45) < 100
+        mask = smoothstep(0.30, 0.06, sat) .* smoothstep(0.20, 0.86, value);
+    end
+    if nnz(mask > 0.20) < 16
+        mask = ones(size(value));
+    end
+    mask = min(max(boxBlur(mask, 7), 0), 1);
+end
+
+function labImage = correctBackgroundLabCast(labImage, backgroundMask, strength)
+    if nnz(backgroundMask > 0.35) < 16
+        return;
+    end
+    meanA = weightedMean(labImage(:, :, 2), backgroundMask);
+    meanB = weightedMean(labImage(:, :, 3), backgroundMask);
+    shiftA = min(2.2, max(-2.2, -meanA));
+    shiftB = min(2.2, max(-2.2, -meanB));
+    correction = 0.55 .* strength .* backgroundMask;
+    labImage(:, :, 2) = labImage(:, :, 2) + correction .* shiftA;
+    labImage(:, :, 3) = labImage(:, :, 3) + correction .* shiftB;
+end
+
+function outputImage = protectedRgbFallback(inputImage, strength, targetWhite, backgroundMask)
+    luma = rgb2gray(inputImage);
+    stats = luminanceStats(luma);
+    contrastScale = min(1.12, max(0.92, 0.28 ./ max(stats.contrast, 0.08)));
+    toned = (luma - stats.mid) .* contrastScale + stats.mid;
+    lift = min(0.16, max(0, targetWhite - weightedMean(toned, backgroundMask)));
+    toned = min(max(toned + lift .* (0.35 + 0.65 .* smoothstep(0.18, 0.74, luma)), 0), 1);
+    ratio = min(1.18, max(0.88, toned ./ max(luma, 0.04)));
+    outputImage = (1 - strength) .* inputImage + strength .* (inputImage .* ratio);
+end
+
+function outputImage = finishBackgroundLuma(outputImage, inputImage, backgroundMask, targetWhite, strength, maxLift)
+    luma = rgb2gray(outputImage);
+    backgroundLevel = weightedMean(luma, backgroundMask);
+    lift = min(maxLift, max(0, targetWhite - backgroundLevel));
+    if lift <= 0
+        return;
+    end
+    hsvImage = rgb2hsv(inputImage);
+    sourceLuma = rgb2gray(inputImage);
+    saturationGuard = 1 - 0.58 .* smoothstep(0.18, 0.58, hsvImage(:, :, 2));
+    brightMask = smoothstep(0.18, 0.74, sourceLuma);
+    correction = strength .* lift .* (0.35 + 0.65 .* brightMask) .* saturationGuard;
+    outputImage = outputImage + repmat(correction, 1, 1, 3);
+end
+
+function stats = luminanceStats(value)
+    values = sort(double(value(isfinite(value))));
+    stats = struct('low', 0, 'mid', 0, 'high', 0, 'contrast', 0);
+    if isempty(values)
+        return;
+    end
+    stats.low = percentileFromSorted(values, 1);
+    stats.mid = percentileFromSorted(values, 50);
+    stats.high = percentileFromSorted(values, 99);
+    stats.contrast = percentileFromSorted(values, 90) - percentileFromSorted(values, 10);
+end
+
+function value = percentileFromSorted(values, pct)
+    index = 1 + (numel(values) - 1) * pct / 100;
+    lo = floor(index);
+    hi = ceil(index);
+    if lo == hi
+        value = values(lo);
+    else
+        value = values(lo) .* (hi - index) + values(hi) .* (index - lo);
+    end
+end
+
+function out = weightedMean(values, weights)
+    values = double(values(:));
+    weights = double(weights(:));
+    valid = isfinite(values) & isfinite(weights) & weights > 0;
+    if ~any(valid)
+        out = mean(values(isfinite(values)), 'omitnan');
+        return;
+    end
+    out = sum(values(valid) .* weights(valid)) ./ sum(weights(valid));
+end
+
+function y = smoothstep(edge0, edge1, x)
+    t = (x - edge0) ./ max(edge1 - edge0, eps);
+    t = min(max(t, 0), 1);
+    y = t .* t .* (3 - 2 .* t);
+end
+
+function value = clamp01(value)
+    value = min(max(value, 0), 1);
 end
 
 function imageData = normalizeImage(imageData)

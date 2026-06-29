@@ -14,6 +14,7 @@ function verify_imageMatch()
 
     checkWhiteBalanceMatchMovesChannelRatiosTowardReference();
     checkToneOnlyMatchMovesBrightnessWithoutChangingColorStrongly();
+    checkProtectedToneMatchesBackgroundWithoutSubjectHueDrift();
     checkLabStyleMatchMovesColorTowardReference();
     checkHistogramMatchPreservesDisplayRange();
     checkReferenceIsSeparateFromBatchSources();
@@ -51,6 +52,41 @@ function checkToneOnlyMatchMovesBrightnessWithoutChangingColorStrongly()
         'Tone-only matching should move source brightness toward a brighter reference.');
     assert(norm(channelRatios(out) - sourceRatio) < 0.12, ...
         'Tone-only matching should not strongly alter average color ratios.');
+end
+
+function checkProtectedToneMatchesBackgroundWithoutSubjectHueDrift()
+    source = 0.50 .* ones(48, 72, 3);
+    source(:, :, 1) = source(:, :, 1) .* 0.96;
+    source(:, :, 2) = source(:, :, 2) .* 1.06;
+    source(:, :, 3) = source(:, :, 3) .* 1.02;
+    source(18:35, 24:52, 1) = 0.70;
+    source(18:35, 24:52, 2) = 0.42;
+    source(18:35, 24:52, 3) = 0.16;
+
+    reference = 0.86 .* ones(48, 72, 3);
+    reference(:, :, 1) = reference(:, :, 1) .* 1.01;
+    reference(:, :, 2) = reference(:, :, 2) .* 1.00;
+    reference(:, :, 3) = reference(:, :, 3) .* 0.99;
+    reference(18:35, 24:52, :) = source(18:35, 24:52, :);
+
+    step = image_match.ops.makeStep('Protected tone', 100, 100, 100);
+    processed = image_match.ops.applyPipeline({source}, step, reference);
+    out = processed{1};
+    sourceBackground = mean(rgb2gray(source(1:12, 1:20, :)), 'all');
+    outputBackground = mean(rgb2gray(out(1:12, 1:20, :)), 'all');
+    referenceBackground = mean(rgb2gray(reference(1:12, 1:20, :)), 'all');
+    subjectBefore = source(18:35, 24:52, :);
+    subjectAfter = out(18:35, 24:52, :);
+    beforeHsv = rgb2hsv(subjectBefore);
+    afterHsv = rgb2hsv(subjectAfter);
+    hueShift = circularHueDistance(mean(beforeHsv(:, :, 1), 'all'), ...
+        mean(afterHsv(:, :, 1), 'all'));
+
+    assert(abs(outputBackground - referenceBackground) < ...
+        abs(sourceBackground - referenceBackground), ...
+        'Protected tone should move source background luminance toward the reference.');
+    assert(hueShift < 0.035, ...
+        'Protected tone should preserve subject hue while matching background tone.');
 end
 
 function checkLabStyleMatchMovesColorTowardReference()
@@ -221,6 +257,11 @@ function distance = meanChannelDistance(a, b)
     aMeans = squeeze(mean(a, [1 2]));
     bMeans = squeeze(mean(b, [1 2]));
     distance = norm(aMeans - bMeans);
+end
+
+function value = circularHueDistance(a, b)
+    delta = abs(a - b);
+    value = min(delta, 1 - delta);
 end
 
 function cols = expectedManifestColumns()

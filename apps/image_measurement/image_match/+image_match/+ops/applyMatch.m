@@ -23,6 +23,9 @@ function outputImage = applyMatch(inputImage, referenceImage, step)
             matched = whiteBalanceMatch(inputImage, referenceImage);
         case "toneonly"
             matched = labToneMatch(inputImage, referenceImage, 1);
+        case "protectedtone"
+            matched = protectedToneMatch(inputImage, referenceImage, ...
+                toneStrength, colorStrength);
         case "labstyle"
             matched = labStyleMatch(inputImage, referenceImage, ...
                 toneStrength, colorStrength);
@@ -79,6 +82,51 @@ function outputImage = labToneMatch(inputImage, referenceImage, toneStrength)
     outputImage = labToRgb(labImage);
 end
 
+function outputImage = protectedToneMatch(inputImage, referenceImage, toneStrength, colorStrength)
+    labImage = rgbToLab(inputImage);
+    referenceLab = rgbToLab(referenceImage);
+    hsvImage = rgb2hsv(inputImage);
+    sourceL = labImage(:, :, 1) ./ 100;
+    referenceL = referenceLab(:, :, 1) ./ 100;
+    sourceStats = luminanceStats(sourceL);
+    referenceStats = luminanceStats(referenceL);
+
+    scale = (referenceStats.high - referenceStats.low) ./ ...
+        max(sourceStats.high - sourceStats.low, eps);
+    scale = min(1.22, max(0.90, scale));
+    matchedL = (sourceL - sourceStats.mid) .* scale + sourceStats.mid;
+    medianShift = min(0.15, max(-0.04, referenceStats.mid - sourceStats.mid));
+    matchedL = matchedL + 0.85 .* medianShift;
+
+    sourceBackground = backgroundMask(inputImage);
+    referenceBackground = backgroundMask(referenceImage);
+    if nnz(sourceBackground > 0.45) >= 16 && nnz(referenceBackground > 0.45) >= 16
+        sourceBackgroundLevel = weightedMean(matchedL, sourceBackground);
+        referenceBackgroundLevel = weightedMean(referenceL, referenceBackground);
+        lift = min(0.22, max(-0.04, referenceBackgroundLevel - sourceBackgroundLevel));
+    else
+        lift = min(0.14, max(-0.03, referenceStats.mid - sourceStats.mid));
+    end
+
+    brightMask = smoothstep(0.18, 0.74, sourceL);
+    saturationGuard = 1 - 0.42 .* smoothstep(0.18, 0.58, hsvImage(:, :, 2));
+    matchedL = matchedL + lift .* (0.35 + 0.65 .* brightMask) .* saturationGuard;
+    matchedL = min(max(0.72 .* matchedL + 0.28 .* sourceL, 0), 1);
+    detail = matchedL - boxBlur(matchedL, 3);
+    matchedL = matchedL + (0.08 + 0.05 .* double(sourceStats.contrast < 0.24)) .* detail;
+    shadowMask = smoothstep(0.24, 0.08, sourceL);
+    highlightMask = smoothstep(0.88, 0.99, matchedL);
+    matchedL = matchedL .* (1 - 0.55 .* shadowMask) + sourceL .* (0.55 .* shadowMask);
+    matchedL = matchedL .* (1 - 0.40 .* highlightMask) + min(matchedL, 0.965) .* (0.40 .* highlightMask);
+    matchedL = min(max(matchedL, 0.015), 0.99);
+
+    labOut = labImage;
+    labOut(:, :, 1) = ((1 - toneStrength) .* sourceL + toneStrength .* matchedL) .* 100;
+    labOut = protectedBackgroundColorMatch(labOut, referenceLab, ...
+        sourceBackground, referenceBackground, colorStrength);
+    outputImage = labToRgb(labOut);
+end
+
 function outputImage = labStyleMatch(inputImage, referenceImage, toneStrength, colorStrength)
     labImage = rgbToLab(inputImage);
     referenceLab = rgbToLab(referenceImage);
@@ -103,6 +151,84 @@ function outputImage = labHistogramMatch(inputImage, referenceImage, toneStrengt
     labImage(:, :, 2:3) = (1 - colorStrength) .* labImage(:, :, 2:3) + ...
         colorStrength .* matchedLab(:, :, 2:3);
     outputImage = labToRgb(labImage);
+end
+
+function labImage = protectedBackgroundColorMatch(labImage, referenceLab, ...
+        sourceBackground, referenceBackground, colorStrength)
+    if colorStrength <= 0 || nnz(sourceBackground > 0.35) < 16 || ...
+            nnz(referenceBackground > 0.35) < 16
+        return;
+    end
+    sourceA = weightedMean(labImage(:, :, 2), sourceBackground);
+    sourceB = weightedMean(labImage(:, :, 3), sourceBackground);
+    referenceA = weightedMean(referenceLab(:, :, 2), referenceBackground);
+    referenceB = weightedMean(referenceLab(:, :, 3), referenceBackground);
+    shiftA = min(2.2, max(-2.2, referenceA - sourceA));
+    shiftB = min(2.2, max(-2.2, referenceB - sourceB));
+    correction = 0.55 .* colorStrength .* sourceBackground;
+    labImage(:, :, 2) = labImage(:, :, 2) + correction .* shiftA;
+    labImage(:, :, 3) = labImage(:, :, 3) + correction .* shiftB;
+end
+
+function mask = backgroundMask(imageData)
+    hsvImage = rgb2hsv(imageData);
+    value = rgb2gray(imageData);
+    sat = hsvImage(:, :, 2);
+    mask = smoothstep(0.22, 0.03, sat) .* smoothstep(0.30, 0.78, value);
+    if nnz(mask > 0.45) < 100
+        mask = smoothstep(0.30, 0.06, sat) .* smoothstep(0.20, 0.86, value);
+    end
+    if nnz(mask > 0.20) < 16
+        mask = ones(size(value));
+    end
+    mask = min(max(boxBlur(mask, 7), 0), 1);
+end
+
+function stats = luminanceStats(value)
+    values = sort(double(value(isfinite(value))));
+    stats = struct('low', 0, 'mid', 0, 'high', 0, 'contrast', 0);
+    if isempty(values)
+        return;
+    end
+    stats.low = percentileFromSorted(values, 1);
+    stats.mid = percentileFromSorted(values, 50);
+    stats.high = percentileFromSorted(values, 99);
+    stats.contrast = percentileFromSorted(values, 90) - percentileFromSorted(values, 10);
+end
+
+function value = percentileFromSorted(values, pct)
+    index = 1 + (numel(values) - 1) * pct / 100;
+    lo = floor(index);
+    hi = ceil(index);
+    if lo == hi
+        value = values(lo);
+    else
+        value = values(lo) .* (hi - index) + values(hi) .* (index - lo);
+    end
+end
+
+function out = weightedMean(values, weights)
+    values = double(values(:));
+    weights = double(weights(:));
+    valid = isfinite(values) & isfinite(weights) & weights > 0;
+    if ~any(valid)
+        out = mean(values(isfinite(values)), 'omitnan');
+        return;
+    end
+    out = sum(values(valid) .* weights(valid)) ./ sum(weights(valid));
+end
+
+function y = smoothstep(edge0, edge1, x)
+    t = (x - edge0) ./ max(edge1 - edge0, eps);
+    t = min(max(t, 0), 1);
+    y = t .* t .* (3 - 2 .* t);
+end
+
+function outputImage = boxBlur(inputImage, windowSize)
+    windowSize = max(1, round(windowSize));
+    kernel = ones(windowSize, windowSize);
+    outputImage = conv2(inputImage, kernel, 'same') ./ ...
+        conv2(ones(size(inputImage)), kernel, 'same');
 end
 
 function matched = covarianceMatch(sourceLab, referenceLab)

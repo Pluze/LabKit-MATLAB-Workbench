@@ -51,6 +51,13 @@ function values = defaultStepValues(kind)
             values.secondaryLimits = [60 100];
             values.amount = 100;
             values.secondary = 92;
+        case 'subjectpreservingenhance'
+            values.amountLabel = "Strength (%):";
+            values.secondaryLabel = "Background target (%):";
+            values.amountLimits = [0 100];
+            values.secondaryLimits = [70 98];
+            values.amount = 70;
+            values.secondary = 90;
     end
 end
 

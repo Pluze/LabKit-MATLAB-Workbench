@@ -18,6 +18,13 @@ function lines = matchFlowLines(method)
                 '2. Match L* percentiles for brightness and contrast.'
                 '3. Keep a*/b* color channels unchanged.'
                 'Best for exposure and contrast drift without changing sample color.'};
+        case 'protectedtone'
+            lines = {
+                'Protected tone match'
+                '1. Convert source and reference to Lab.'
+                '2. Match smooth L* brightness and contrast statistics with bounded lift.'
+                '3. Correct only low-saturation background cast; preserve subject a*/b* color.'
+                'Best for figure photos where the background should match but sample color must not drift.'};
         case 'labstyle'
             lines = {
                 'Lab style match'

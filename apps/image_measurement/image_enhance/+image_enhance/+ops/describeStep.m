@@ -22,6 +22,9 @@ function label = describeStep(step)
         case 'whiteroicalibration'
             label = sprintf('White ROI calibration %g%%, target %g%%', ...
                 step.amount, step.secondary);
+        case 'subjectpreservingenhance'
+            label = sprintf('Subject-preserving enhance %g%%, background target %g%%', ...
+                step.amount, step.secondary);
         otherwise
             label = sprintf('%s %+g %+g', char(step.kind), ...
                 step.amount, step.secondary);
