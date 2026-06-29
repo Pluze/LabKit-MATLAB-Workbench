@@ -17,6 +17,8 @@ function value = specRowHeight(spec, defaultValue)
             value = textPanelHeight(8, 240);
         case 'filePanel'
             value = filePanelHeight(spec);
+        case 'toolPanel'
+            value = 356;
         case 'field'
             value = fieldHeight(spec);
         case 'action'
@@ -53,7 +55,7 @@ end
 
 function value = filePanelHeight(spec)
     if strcmp(char(string(optionValue(spec.props, 'mode', 'multi'))), 'single')
-        value = 64;
+        value = 94;
         return;
     end
     rows = 6;

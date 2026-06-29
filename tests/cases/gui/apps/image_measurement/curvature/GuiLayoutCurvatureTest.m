@@ -51,15 +51,20 @@ classdef GuiLayoutCurvatureTest < matlab.uitest.TestCase
 end
 
 function assertScaleBarPanelSpansControlTab(fig)
+    hosts = findall(fig, 'Type', 'uipanel', 'Tag', 'LabKitToolPanel_scaleBarHost');
+    assert(numel(hosts) >= 1, 'Curvature app should include a scale-bar tool host.');
+    hostLayout = hosts(1).Layout;
+    assert(isprop(hostLayout, 'Column') && isequal(hostLayout.Column, [1 2]), ...
+        'Scale-bar tool host should span the full two-column control section.');
+
     scalePanels = findall(fig, 'Type', 'uipanel', 'Title', 'Scale Bar');
     assert(numel(scalePanels) >= 1, 'Curvature app should include a Scale Bar panel.');
     for k = 1:numel(scalePanels)
-        layout = scalePanels(k).Layout;
-        if isprop(layout, 'Column') && isequal(layout.Column, [1 2])
+        if scalePanels(k).Parent == hosts(1).Children(1)
             assert(scalePanels(k).Position(3) > 250, ...
-                'Scale Bar panel width should not be clipped to the section label column.');
+                'Scale Bar panel width should not be clipped inside the tool host.');
             return;
         end
     end
-    error('Scale Bar panel should span the full two-column control section.');
+    error('Scale Bar panel should be mounted inside the semantic tool host.');
 end

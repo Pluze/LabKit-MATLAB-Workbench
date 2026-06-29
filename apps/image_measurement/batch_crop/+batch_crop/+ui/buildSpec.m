@@ -27,7 +27,12 @@ end
 function tab = scaleTab(callbacks)
     tab = labkit.ui.spec.tab("scale", "Scale", { ...
         scaleSettingsSection(callbacks), ...
-        labkit.ui.spec.section("scaleBarSection", "Current Image Scale", {})});
+        scaleBarSection()});
+end
+
+function section = scaleBarSection()
+    section = labkit.ui.spec.section("scaleBarSection", "Current Image Scale", { ...
+        labkit.ui.spec.toolPanel("scaleBarHost", "Scale Bar controls")});
 end
 
 function section = scaleSettingsSection(callbacks)

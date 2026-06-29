@@ -67,13 +67,23 @@ function validateTreeShape(spec)
         case 'tab'
             validateChildKinds(spec, {'section'});
         case 'section'
+            validateNonEmptySection(spec);
             validateChildKinds(spec, {'field', 'rangeField', 'panner', 'action', ...
                 'actionGroup', 'filePanel', 'resultTable', 'statusPanel', ...
-                'usagePanel', 'logPanel'});
+                'usagePanel', 'logPanel', 'toolPanel'});
         case 'actionGroup'
             validateChildKinds(spec, {'action'});
         otherwise
             validateChildKinds(spec, {});
+    end
+end
+
+function validateNonEmptySection(spec)
+    if isempty(spec.children)
+        error('labkit:ui:app:EmptySection', ...
+            ['Spec "%s" declares an empty section. Add semantic controls, ' ...
+            'or use labkit.ui.spec.toolPanel for reusable tool hosts.'], ...
+            spec.id);
     end
 end
 

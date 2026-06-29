@@ -5,7 +5,7 @@
 | Facade | Owns | Main APIs |
 | --- | --- | --- |
 | `labkit.ui.app` | Declarative app creation, request dispatch, busy state, safe dialog defaults, app title versioning. | `create`, `dispatchRequest`, `appVersionTitle`, `applyVersionTitle`, `defaultDialogFolder`, `defaultOutputFolder`, `promptOutputFile`, `runBusy`, `setCloseGuard`. |
-| `labkit.ui.spec` | UI 3.0 data-only workbench specs. | `app`, `workspace`, `tab`, `section`, `field`, `rangeField`, `panner`, `action`, `actionGroup`, `filePanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `usagePanel`. |
+| `labkit.ui.spec` | UI 3.0 data-only workbench specs. | `app`, `workspace`, `tab`, `section`, `field`, `rangeField`, `panner`, `action`, `actionGroup`, `filePanel`, `toolPanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `usagePanel`. |
 | `labkit.ui.view` | Semantic UI 3.0 registry updates and preview rendering helpers. | `setValue`, `getValue`, `getFiles`, `setFileSelection`, `setEnabled`, `setLimits`, `appendLog`, `setListItems`, `setListSelection`, `fileLabels`, `filePaths`, `drawImage`, `resetAxes`, `clearAxes`. |
 | `labkit.ui.tool` | Reusable composed preview tools and interaction runtime. | `createRuntime`, `anchorEditor`, `scaleBar`, `scaleBarCalibration`, `enableAxesPopout`, `popoutAxes`, `zoomAxesAtPoint`. |
 | `labkit.ui.diag` | Debug launch context, visible trace, callback instrumentation, and crash reports. | `createContext`. |
@@ -109,9 +109,13 @@ Use these app-facing contracts:
   own state, callbacks, alerts, refresh order, and log wording.
 - Control ids are globally unique within an app. The UI registry is keyed by
   those ids, not by tab or section placement.
-- Public specs are semantic controls such as `filePanel`, `field`, `panner`,
-  `action`, `previewArea`, `resultTable`, `logPanel`, and `statusPanel`.
+- Public specs are semantic controls such as `filePanel`, `toolPanel`, `field`,
+  `panner`, `action`, `previewArea`, `resultTable`, `logPanel`, and `statusPanel`.
   Primitive MATLAB controls are implementation details.
+- `section` specs should contain real semantic controls. Use `toolPanel` as a
+  named host when a reusable `labkit.ui.tool.*` control needs to attach a
+  composed runtime widget from the app runner; do not leave empty titled
+  sections as placeholders.
 - Public callbacks use `function callback(control, event)`. Events carry
   semantic fields such as `id`, `kind`, `source`, `value`, `previousValue`,
   and `ui`.
