@@ -299,6 +299,20 @@ function verify_gui_layout_ui_declarative_app()
     selection = labkit.ui.view.filePaths(labkit.ui.view.getValue(ui, 'sourceImages'));
     assert(isequal(selection, "b.png"), ...
         'File helpers should apply semantic filePanel selection.');
+    malformedFiles = struct('id', "", 'path', "", 'status', "");
+    malformedFiles(1).id = strings(0, 1);
+    malformedFiles(1).path = string(fullfile(tempdir, 'folder_scan_a.png'));
+    malformedFiles(1).status = "needs center";
+    malformedFiles(2).id = ["file1", "extra"];
+    malformedFiles(2).path = string(fullfile(tempdir, 'folder_scan_b.png'));
+    malformedFiles(2).status = ["ready", "ignored"];
+    labkit.ui.view.setValue(ui, 'sourceImages', malformedFiles);
+    normalizedFiles = labkit.ui.view.getFiles(ui, 'sourceImages');
+    normalizedIds = string({normalizedFiles.id}).';
+    normalizedStatus = string({normalizedFiles.status}).';
+    assert(isequal(normalizedIds, ["file1"; "file2"]) && ...
+        isequal(normalizedStatus, ["needs center"; "ready"]), ...
+        'filePanel setValue should scalarize malformed entry ids/status and regenerate duplicates.');
     labkit.ui.view.appendLog(ui, 'logPanel', 'Completed.');
     assert(any(contains(string(ui.controls.logPanel.textArea.Value), 'Completed.')), ...
         'appendLog should append to the requested log panel.');

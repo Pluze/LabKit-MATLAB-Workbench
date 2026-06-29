@@ -455,7 +455,7 @@ function files = completeFileEntries(files)
     for k = 1:numel(files)
         pathValue = "";
         if isfield(files(k), 'path')
-            pathValue = string(files(k).path);
+            pathValue = filePanelScalarText(files(k).path, "");
         end
         files(k).path = pathValue;
         [~, base, ext] = fileparts(char(pathValue));
@@ -464,11 +464,19 @@ function files = completeFileEntries(files)
             name = pathValue;
         end
         files(k).name = name;
-        if ~isfield(files(k), 'displayName') || strlength(string(files(k).displayName)) == 0
+        displayName = "";
+        if isfield(files(k), 'displayName')
+            displayName = filePanelScalarText(files(k).displayName, "");
+        end
+        if strlength(displayName) == 0
             files(k).displayName = name;
+        else
+            files(k).displayName = displayName;
         end
         if ~isfield(files(k), 'status')
             files(k).status = "";
+        else
+            files(k).status = filePanelScalarText(files(k).status, "");
         end
     end
 end
@@ -478,7 +486,7 @@ function files = assignFileIds(files, offset)
     for k = 1:numel(files)
         id = "";
         if isfield(files(k), 'id')
-            id = string(files(k).id);
+            id = filePanelScalarText(files(k).id, "");
         end
         usedIds = seen(1:k-1);
         if strlength(id) == 0 || any(usedIds == id)
