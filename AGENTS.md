@@ -144,18 +144,37 @@ Interactive GUI workflows are checked manually by the user. Do not run interacti
 ## Git Workflow
 
 1. Inspect status before editing.
-2. Work on a dedicated development branch by default. Branch names should use the `codex/` prefix unless the user requests another name.
+2. For small, focused updates, work directly on `main` by default after
+   confirming local `main` is aligned with `origin/main`. Use a dedicated
+   development branch only for larger, riskier, multi-commit, cross-area, or
+   review-heavy work. Branch names should use the `codex/` prefix unless the
+   user requests another name.
 3. Keep commits logical and purpose-based. Commits do not need to be extremely dense; for larger efforts, prefer phase commits at stable checkpoints.
 4. Do not mix unrelated functional, documentation, formatting, or test changes in the same commit.
 5. Run relevant tests or explain why they were not run.
 6. Review the diff for unrelated changes.
 7. Commit with a concise Conventional Commits message.
-8. After a coherent series of changes is complete, check the current `main` and `origin/main` state before opening a PR. If the development branch is behind, update it only with non-destructive git operations and do not discard user work.
-9. Push the completed branch, open a PR, and include the change scope, test results, unverified behavior, and any intentional follow-up work.
+8. After a coherent series of changes is complete, check the current `main` and `origin/main` state before pushing directly or opening a PR. If the development branch is behind, update it only with non-destructive git operations and do not discard user work.
+9. For direct-`main` work, push `main` after validation and then fetch/prune
+   `origin` and verify local `main` still matches `origin/main`. For branch
+   work, push the completed branch, open a PR, and include the change scope,
+   test results, unverified behavior, and any intentional follow-up work.
 10. After any push that is meant to complete work, inspect the triggered CI run. Before the first status read, find the most recent successful run for the same workflow/branch and wait at least that run's total elapsed duration; use the same duration as the minimum interval between later status reads so CI polling does not become noisy. Prefer low-output status checks such as `gh run list` or `gh run view --json status,conclusion,jobs`; use streaming `gh run watch` only when concise status polling is insufficient. If CI fails, read only the failing job logs, fix the underlying issue, rerun the relevant local checks, push the fix, and repeat until required CI passes. A task is not complete while required CI is red, unless CI access or infrastructure is blocked and the blocker is reported explicitly.
-11. After required CI passes and no blocking review remains, merge the PR and delete the development branch.
-12. If permissions, CI, branch protection, review state, or tool availability prevent push, CI inspection, PR creation, merge, or branch deletion, stop and report the exact blocker instead of working around it.
-13. Do not force-push unless explicitly approved.
+11. After required CI passes and no blocking review remains, merge the PR with
+    an allowed repository merge method and delete the remote development
+    branch.
+12. After a successful merge, keep the local checkout aligned with the remote
+    default branch before ending the task: fetch/prune `origin`, switch to
+    `main`, fast-forward local `main` to `origin/main`, delete the merged local
+    development branch, and verify `git status --short --branch` shows local
+    `main` and `origin/main` in sync. Do not leave the workspace on a merged
+    feature branch or with stale development refs unless a permission,
+    unmerged-work, or local-change blocker prevents cleanup.
+13. If permissions, CI, branch protection, review state, tool availability,
+    merge-method policy, fast-forward sync, or branch deletion prevent push, CI
+    inspection, PR creation, merge, local/remote cleanup, or branch deletion,
+    stop and report the exact blocker instead of working around it.
+14. Do not force-push unless explicitly approved.
 
 Use lowercase type prefixes such as `feat:`, `fix:`, `docs:`, `test:`, `ci:`, `refactor:`, and `chore:`.
 
