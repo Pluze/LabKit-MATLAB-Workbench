@@ -455,7 +455,7 @@ function files = completeFileEntries(files)
     for k = 1:numel(files)
         pathValue = "";
         if isfield(files(k), 'path')
-            pathValue = scalarText(files(k).path, "");
+            pathValue = filePanelScalarText(files(k).path, "");
         end
         files(k).path = pathValue;
         [~, base, ext] = fileparts(char(pathValue));
@@ -466,7 +466,7 @@ function files = completeFileEntries(files)
         files(k).name = name;
         displayName = "";
         if isfield(files(k), 'displayName')
-            displayName = scalarText(files(k).displayName, "");
+            displayName = filePanelScalarText(files(k).displayName, "");
         end
         if strlength(displayName) == 0
             files(k).displayName = name;
@@ -476,7 +476,7 @@ function files = completeFileEntries(files)
         if ~isfield(files(k), 'status')
             files(k).status = "";
         else
-            files(k).status = scalarText(files(k).status, "");
+            files(k).status = filePanelScalarText(files(k).status, "");
         end
     end
 end
@@ -486,7 +486,7 @@ function files = assignFileIds(files, offset)
     for k = 1:numel(files)
         id = "";
         if isfield(files(k), 'id')
-            id = scalarText(files(k).id, "");
+            id = filePanelScalarText(files(k).id, "");
         end
         usedIds = seen(1:k-1);
         if strlength(id) == 0 || any(usedIds == id)
@@ -501,15 +501,6 @@ function files = assignFileIds(files, offset)
         files(k).index = offset + k;
         seen(k) = string(files(k).id);
     end
-end
-
-function value = scalarText(rawValue, fallback)
-    value = string(rawValue);
-    if isempty(value)
-        value = string(fallback);
-        return;
-    end
-    value = value(1);
 end
 
 function ids = fileIds(files)
