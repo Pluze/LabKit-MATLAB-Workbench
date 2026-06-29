@@ -241,12 +241,37 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
                 "The broad GUI step should cover narrower app GUI targets.");
         end
 
+        function changedFastValidationPlanUsesRepresentativeAppGuiSmoke(testCase)
+            root = setupLabKitTestPath();
+
+            steps = labkitValidationPlanForChangedPaths(root, ...
+                "+labkit/+ui/+app/runBusy.m", "Mode", "fast");
+            signatures = validationStepSignatures(steps);
+            tests = validationStepTestSelectors(steps);
+
+            testCase.verifyTrue(any(signatures == "labkit/ui|false"), ...
+                "Fast changed UI validation should keep reusable UI non-GUI coverage.");
+            testCase.verifyTrue(any(signatures == "gui/labkit/ui|true"), ...
+                "Fast changed UI validation should keep reusable UI GUI smoke coverage.");
+            testCase.verifyFalse(any(signatures == "gui/apps|true"), ...
+                "Fast changed UI validation should avoid the full downstream app GUI suite.");
+            testCase.verifyTrue(any(signatures == ...
+                "gui/apps/image_measurement/image_enhance,gui/apps/image_measurement/batch_crop|true"), ...
+                "Fast changed UI validation should run representative downstream app GUI smoke coverage.");
+            testCase.verifyTrue(any(contains(tests, "test_gui_layout_ui_declarative_app") & ...
+                contains(tests, "test_gui_layout_ui_debug_trace")), ...
+                "Fast changed UI validation should use reusable UI test-name selectors.");
+            testCase.verifyTrue(any(contains(tests, "image_enhance_layout") & ...
+                contains(tests, "batch_crop_layout")), ...
+                "Fast changed UI validation should use test-name selectors to avoid the full reusable UI GUI suite.");
+        end
+
         function buildTaskCatalogStaysCompactAndDiscoveryDriven(testCase)
             root = setupLabKitTestPath();
             catalog = extractBuildfileCatalog(root);
 
-            expectedTasks = ["changed", "headless", "gui", "coverage", ...
-                "listTasks"];
+            expectedTasks = ["changed", "changedFast", "headless", "gui", ...
+                "coverage", "listTasks"];
             publicTasks = catalog.Name(catalog.Visibility == "public").';
             testCase.verifyEqual(publicTasks, expectedTasks, ...
                 "Build task catalog should expose a compact public task set.");
@@ -443,7 +468,8 @@ end
 
 function tf = taskSpecUsesKnownPlan(spec)
     plans = taskSpecStringValues(spec, "Plan");
-    tf = ~isempty(plans) && all(ismember(plans, ["changed", "ui", "apps", "app", "project"]));
+    tf = ~isempty(plans) && all(ismember(lower(plans), ...
+        ["changed", "changedfast", "ui", "apps", "app", "project"]));
 end
 
 function values = taskSpecStringValues(spec, name)
@@ -542,6 +568,15 @@ function signatures = validationStepSignatures(steps)
     for k = 1:numel(steps)
         signatures(k) = strjoin(steps(k).Suites, ",") + "|" + ...
             string(steps(k).IncludeGui);
+    end
+end
+
+function selectors = validationStepTestSelectors(steps)
+    selectors = strings(1, numel(steps));
+    for k = 1:numel(steps)
+        if isfield(steps(k), "Tests")
+            selectors(k) = strjoin(steps(k).Tests, ",");
+        end
     end
 end
 

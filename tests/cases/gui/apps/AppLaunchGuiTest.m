@@ -26,15 +26,11 @@ function verify_app_entrypoint_launches()
         entryName = char(apps.Command(k));
         fprintf('App launching %s (%d/%d).\n', entryName, k, height(apps));
 
-        feval(entryName);
+        [fig, debug] = feval(entryName, "debug");
         drawnow;
         assert(~pathContains(legacyDir), ...
             'Entry point %s should not leave legacy/ on the MATLAB path.', entryName);
         assertLaunchedFigure(entryName);
-
-        closeAllFigures();
-        [fig, debug] = feval(entryName, "debug");
-        drawnow;
         assert(isstruct(debug) && debug.enabled, ...
             'Debug launch for %s should return an enabled debug log struct.', entryName);
         assert(debug.appName == string(entryName), ...

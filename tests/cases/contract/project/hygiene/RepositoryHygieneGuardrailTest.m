@@ -7,22 +7,10 @@ classdef RepositoryHygieneGuardrailTest < matlab.unittest.TestCase
             maxLines = 650;
             actual = collectOversizedTrackedFiles(root, maxLines);
             testCase.verifyEmpty(actual, ...
-                ['tracked files must remain at or below ' num2str(maxLines) ...
-                ' lines. Split large files by cohesive private helpers or ' ...
-                'app-owned component packages before adding more logic. Files: ' ...
-                strjoin(cellstr(actual), ', ')]);
-        end
-
-        function launcherIsTheOnlyLineBudgetException(testCase)
-            root = setupLabKitTestPath();
-            maxLines = 650;
-            tracked = gitTrackedFiles(root);
-            launcher = "labkit_launcher.m";
-            tracked = setdiff(tracked, launcher);
-            actual = collectOversizedFiles(root, tracked, maxLines);
-            testCase.verifyEmpty(actual, ...
-                ['only labkit_launcher.m may exceed ' num2str(maxLines) ...
-                ' lines because it is the self-contained repair entry point. Files: ' ...
+                ['tracked files except labkit_launcher.m must remain at or ' ...
+                'below ' num2str(maxLines) ' lines. Split large files by ' ...
+                'cohesive private helpers or app-owned component packages ' ...
+                'before adding more logic. Files: ' ...
                 strjoin(cellstr(actual), ', ')]);
         end
 
@@ -189,7 +177,7 @@ function findings = collectSingleLineFunctionBodies(root, files)
         if exist(filepath, 'file') ~= 2
             continue;
         end
-        lines = readlines(filepath);
+        lines = readCachedLines(filepath);
         findings = [findings, singleLineFunctionBodyLines(lines, files(k))];
     end
 end
@@ -215,7 +203,7 @@ function findings = collectUnsafeCharPathLists(root, files)
         if exist(filepath, 'file') ~= 2
             continue;
         end
-        content = fileread(filepath);
+        content = readCachedText(filepath);
         if ~isempty(regexp(content, pattern, 'once'))
             findings(end+1) = files(k);
         end
@@ -235,7 +223,7 @@ function findings = collectUnsafePathScalarColonUses(root, files)
         if exist(filepath, 'file') ~= 2
             continue;
         end
-        lines = readlines(filepath);
+        lines = readCachedLines(filepath);
         for iLine = 1:numel(lines)
             if ~isempty(regexp(lines(iLine), pattern, 'once'))
                 findings(end+1) = files(k) + ":" + string(iLine);
@@ -259,7 +247,7 @@ function findings = collectUnsafeStateNumericAssignments(root)
         if exist(filepath, 'file') ~= 2
             continue;
         end
-        lines = readlines(filepath);
+        lines = readCachedLines(filepath);
         for iLine = 1:numel(lines)
             if anyPatternMatches(lines(iLine), patterns)
                 findings(end+1) = string(relativePath(root, filepath)) + ":" + string(iLine);
@@ -293,7 +281,7 @@ function files = collectNonAsciiFiles(root, tracked)
         if exist(filepath, 'file') ~= 2
             continue;
         end
-        text = fileread(filepath);
+        text = readCachedText(filepath);
         if any(double(text) > 127)
             files(end+1) = tracked(k);
         end
@@ -364,15 +352,50 @@ function files = collectRelativeFiles(root, pattern)
 end
 
 function n = countFileLines(filepath)
-    n = numel(readlines(filepath));
+    n = numel(readCachedLines(filepath));
 end
 
 function files = gitTrackedFiles(root)
+    persistent cachedRoot cachedFiles
+    if isequal(cachedRoot, string(root))
+        files = cachedFiles;
+        return;
+    end
     command = sprintf('git -C "%s" ls-files', root);
     [status, output] = system(command);
     assert(status == 0, 'Could not list tracked files with git.');
     files = string(splitlines(strtrim(output))).';
     files = files(strlength(files) > 0);
+    cachedRoot = string(root);
+    cachedFiles = files;
+end
+
+function lines = readCachedLines(filepath)
+    persistent cache
+    if isempty(cache)
+        cache = containers.Map('KeyType', 'char', 'ValueType', 'any');
+    end
+    key = char(filepath);
+    if isKey(cache, key)
+        lines = cache(key);
+        return;
+    end
+    lines = readlines(filepath);
+    cache(key) = lines;
+end
+
+function text = readCachedText(filepath)
+    persistent cache
+    if isempty(cache)
+        cache = containers.Map('KeyType', 'char', 'ValueType', 'any');
+    end
+    key = char(filepath);
+    if isKey(cache, key)
+        text = cache(key);
+        return;
+    end
+    text = fileread(filepath);
+    cache(key) = text;
 end
 
 function rel = relativePath(root, filepath)

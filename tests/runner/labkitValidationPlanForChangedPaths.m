@@ -1,20 +1,25 @@
-function steps = labkitValidationPlanForChangedPaths(root, changedPaths)
+function steps = labkitValidationPlanForChangedPaths(root, changedPaths, varargin)
 %LABKITVALIDATIONPLANFORCHANGEDPATHS Map changed files to runner selections.
 % Expected caller: tests/runLabKitTests.m and runner guardrail tests.
 % Inputs:
 %   root         repository root used to check app GUI test folders
 %   changedPaths relative repository paths from git diff or ls-files
+%   Mode         conservative (default) or fast
 % Output:
 %   steps        struct array with RunNameSuffix, Suites, and IncludeGui
 % Side effects: none. Unknown paths intentionally fall back to the full
 %   non-GUI runner selection rather than returning a narrow false signal.
 
+    mode = parseMode(varargin{:});
     changedPaths = normalizeChangedPaths(changedPaths);
     steps = emptyPlanSteps();
     for k = 1:numel(changedPaths)
         steps = [steps, stepsForChangedPath(root, changedPaths(k))];
     end
     steps = compressPlanSteps(uniquePlanSteps(steps));
+    if mode == "fast"
+        steps = fastPlanSteps(steps);
+    end
 end
 
 function steps = stepsForChangedPath(root, path)
@@ -232,15 +237,91 @@ function step = fullNonGuiStep()
     step = planStep("headless", strings(1, 0), false);
 end
 
-function step = planStep(runNameSuffix, suites, includeGui)
+function step = planStep(runNameSuffix, suites, includeGui, varargin)
+    tests = strings(1, 0);
+    if ~isempty(varargin)
+        p = inputParser;
+        p.FunctionName = "planStep";
+        p.addParameter("Tests", tests, @isStringLikeList);
+        p.parse(varargin{:});
+        tests = normalizeTextList(p.Results.Tests);
+    end
     step = struct( ...
         "RunNameSuffix", string(runNameSuffix), ...
         "Suites", {normalizeTextList(suites)}, ...
+        "Tests", {tests}, ...
         "IncludeGui", logical(includeGui));
 end
 
+function steps = fastPlanSteps(steps)
+    fastSteps = emptyPlanSteps();
+    for k = 1:numel(steps)
+        fastSteps = [fastSteps, fastStepForPlanStep(steps(k))];
+    end
+    steps = compressPlanSteps(uniquePlanSteps(fastSteps));
+end
+
+function steps = fastStepForPlanStep(step)
+    suites = normalizeTextList(step.Suites);
+    if ~step.IncludeGui || isempty(suites)
+        steps = step;
+        return;
+    end
+
+    if any(suites == "labkit/ui")
+        steps = [ ...
+            planStep("labkit_ui", "labkit/ui", false), ...
+            planStep("gui_labkit_ui_smoke", "gui/labkit/ui", true, ...
+            "Tests", fastUiSmokeTests())];
+    elseif any(suites == "gui")
+        steps = planStep("gui_smoke", ...
+            ["gui/labkit/ui", ...
+            "gui/apps/image_measurement/image_enhance", ...
+            "gui/apps/image_measurement/batch_crop"], true, ...
+            "Tests", fastGuiSmokeTests());
+    elseif any(suites == "gui/apps")
+        steps = planStep("gui_apps_smoke", ...
+            ["gui/apps/image_measurement/image_enhance", ...
+            "gui/apps/image_measurement/batch_crop"], true, ...
+            "Tests", ["image_enhance_layout", "batch_crop_layout"]);
+    else
+        steps = step;
+    end
+end
+
+function tests = fastGuiSmokeTests()
+    tests = [ ...
+        "image_enhance_layout", ...
+        "batch_crop_layout", ...
+        fastUiSmokeTests()];
+end
+
+function tests = fastUiSmokeTests()
+    tests = [ ...
+        "test_gui_layout_ui_declarative_app", ...
+        "test_gui_layout_ui_debug_trace"];
+end
+
+function mode = parseMode(varargin)
+    mode = "conservative";
+    if isempty(varargin)
+        return;
+    end
+
+    p = inputParser;
+    p.FunctionName = "labkitValidationPlanForChangedPaths";
+    p.addParameter("Mode", mode, @isTextScalar);
+    p.parse(varargin{:});
+    mode = lower(string(p.Results.Mode));
+    if ~ismember(mode, ["conservative", "fast"])
+        error("LabKit:Tests:InvalidValidationPlanMode", ...
+            "Changed validation plan Mode must be conservative or fast.");
+    end
+end
+
 function steps = emptyPlanSteps()
-    steps = struct("RunNameSuffix", {}, "Suites", {}, "IncludeGui", {});
+    steps = struct("RunNameSuffix", {}, "Suites", {}, "Tests", {}, ...
+        "IncludeGui", {});
 end
 
 function steps = uniquePlanSteps(steps)
@@ -286,6 +367,10 @@ function tf = stepCovers(candidate, step)
         tf = false;
         return;
     end
+    if ~testsCover(candidate, step)
+        tf = false;
+        return;
+    end
 
     candidateSuites = normalizeTextList(candidate.Suites);
     stepSuites = normalizeTextList(step.Suites);
@@ -304,6 +389,18 @@ function tf = stepCovers(candidate, step)
     end
 end
 
+function tf = testsCover(candidate, step)
+    candidateTests = normalizeTextList(candidate.Tests);
+    stepTests = normalizeTextList(step.Tests);
+    if isempty(candidateTests)
+        tf = true;
+    elseif isempty(stepTests)
+        tf = false;
+    else
+        tf = all(ismember(stepTests, candidateTests));
+    end
+end
+
 function tf = suiteCoveredByAny(candidateSuites, target)
     tf = false;
     target = string(target);
@@ -314,7 +411,8 @@ function tf = suiteCoveredByAny(candidateSuites, target)
 end
 
 function signature = stepSignature(step)
-    signature = strjoin(step.Suites, ",") + "|" + string(step.IncludeGui);
+    signature = strjoin(step.Suites, ",") + "|" + ...
+        strjoin(step.Tests, ",") + "|" + string(step.IncludeGui);
 end
 
 function paths = normalizeChangedPaths(paths)
@@ -338,4 +436,12 @@ function values = normalizeTextList(values)
     end
     values = values(:).';
     values = values(strlength(values) > 0);
+end
+
+function tf = isTextScalar(value)
+    tf = ischar(value) || (isstring(value) && isscalar(value));
+end
+
+function tf = isStringLikeList(value)
+    tf = ischar(value) || isstring(value) || iscellstr(value);
 end

@@ -12,7 +12,7 @@ function output = runLabKitTests(varargin)
 %   Tests           Test names or substrings to include.
 %   Tags            Required official test tags. Multiple tags are ORed.
 %   ExcludeTags     Official test tags to exclude.
-%   Plan            Named serial plan: changed, ui, apps, or project.
+%   Plan            Named serial plan: changed, changedFast, ui, apps, or project.
 %   IncludeCoverage Generate Cobertura and HTML coverage artifacts.
 %   GuiMode         GUI test window mode: hidden, minimized, or visible.
 %   HtmlReport      Generate the official HTML test report. Default true.
@@ -159,6 +159,10 @@ function output = runValidationPlan(root, opts)
     if planName == "changed"
         changedPaths = detectAffectedValidationPaths(root);
         steps = labkitValidationPlanForChangedPaths(root, changedPaths);
+    elseif planName == "changedfast"
+        changedPaths = detectAffectedValidationPaths(root);
+        steps = labkitValidationPlanForChangedPaths(root, changedPaths, ...
+            "Mode", "fast");
     else
         steps = namedValidationPlan(planName);
     end
@@ -219,14 +223,17 @@ function args = validationPlanStepArgs(step)
     if ~isempty(step.Suites)
         args = [args, {"Suites", step.Suites}];
     end
+    if isfield(step, "Tests") && ~isempty(step.Tests)
+        args = [args, {"Tests", step.Tests}];
+    end
     args = [args, {"IncludeGui", step.IncludeGui}];
 end
 
 function printValidationPlanSteps(steps)
     for k = 1:numel(steps)
-        suites = stepSuitesLabel(steps(k));
-        fprintf("  %d. %s includeGui=%d suites=%s\n", ...
-            k, steps(k).RunNameSuffix, steps(k).IncludeGui, suites);
+        fprintf("  %d. %s includeGui=%d suites=%s tests=%s\n", ...
+            k, steps(k).RunNameSuffix, steps(k).IncludeGui, ...
+            stepSuitesLabel(steps(k)), stepTestsLabel(steps(k)));
     end
 end
 
@@ -235,6 +242,13 @@ function label = stepSuitesLabel(step)
         label = "<all-headless>";
     else
         label = strjoin(step.Suites, ",");
+    end
+end
+function label = stepTestsLabel(step)
+    if ~isfield(step, "Tests") || isempty(step.Tests)
+        label = "<all>";
+    else
+        label = strjoin(step.Tests, ",");
     end
 end
 

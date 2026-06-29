@@ -61,11 +61,19 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
   display is backed by an edit field, label, or text area. Put low-level
   control-shape assertions in focused `tests/cases/gui/labkit/...` tests only
   when the control shape is itself the framework contract.
+- Do not duplicate expensive app figure launches for the same contract. If a
+  dedicated layout test already covers an app, broad entry-point smoke tests
+  should skip it. For apps without dedicated layout tests, prefer one debug
+  launch that verifies startup, figure creation, path hygiene, and trace
+  plumbing.
 - Scientific and visualization tests should prefer deterministic state, data,
   numeric, export, axis-label, callback-event, or debug-trace assertions over
   whole-GUI or whole-image snapshots. Use minimal synthetic inputs. Add pixel
   or screenshot baselines only when the rendered pixels are the behavior being
   protected, and keep those baselines narrowly scoped.
+- Repository-wide guardrails should cache tracked-file lists or file contents
+  within the test process when multiple assertions scan the same scope. Do not
+  add duplicate full-tree scans that differ only by diagnostic wording.
 - When one test file grows too broad, add new focused `test_*.m` files instead of appending unrelated coverage.
 - GUI tests are launch/layout/callback checks; do not claim full interactive workflow validation from automated GUI tests.
 
@@ -75,6 +83,11 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
   dirty worktree. If that planned run fails, fix the specific failure and
   rerun the narrowest failing scope or failing suite directly; do not rerun
   `buildtool changed` just to rediscover the same plan.
+- Use the fast changed-file task for tight local iteration when shared UI or
+  broad GUI-adjacent edits would trigger full downstream app GUI coverage. It
+  is a smoke gate, not the final handoff gate; run the conservative changed
+  task or the relevant broad task before pushing substantive
+  validation-routing changes.
 - Prefer `runLabKitTests("Suites", "...")` for rerunning a failed suite such
   as `project`, `labkit/ui`, or `apps/image_measurement`. Rerun broader
   build tasks only when the fix changes validation routing, touches additional

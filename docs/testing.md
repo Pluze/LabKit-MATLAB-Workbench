@@ -30,6 +30,7 @@ Use MATLAB build tasks for the stable official entry points:
 
 ```bash
 buildtool changed
+buildtool changedFast
 buildtool headless
 buildtool gui
 buildtool coverage
@@ -39,6 +40,7 @@ buildtool listTasks
 | Task | Use it for |
 | --- | --- |
 | `changed` | Fast local validation selected from changed and untracked files. |
+| `changedFast` | Faster changed-file validation for local iteration; uses representative GUI smoke coverage when broad app GUI coverage would otherwise run. |
 | `headless` | Full non-GUI validation. |
 | `gui` | Noninteractive GUI launch, layout, callback, and gesture checks. GUI windows are hidden by default. |
 
@@ -56,12 +58,21 @@ default focused choice before committing: it inspects changed and untracked
 files and runs a conservative serial validation plan inside one MATLAB
 process. It requires git and a git checkout. Use `headless` in exported
 source trees, packaged copies, or environments without git state.
+Use `changedFast` during tight edit cycles when a shared UI or broad app-GUI
+change would otherwise run the full downstream app GUI suite. It keeps
+reusable UI coverage and representative downstream app smoke checks, but it is
+not a substitute for the conservative `changed` task before handoff.
+Fast validation plans may combine suite routing with test-name selectors for
+expensive GUI smoke coverage. Keep those selectors small and contract-oriented:
+choose tests that cover startup, declarative shell behavior, debug trace
+plumbing, and one or two representative downstream app layouts.
 
 Common choices:
 
 | Change area | Build task |
 | --- | --- |
 | Changed source, tests, or docs before commit | `buildtool changed` |
+| Local iteration after a broad UI or GUI-adjacent edit | `buildtool changedFast` |
 | Full broad non-GUI validation | `buildtool headless` |
 | Any GUI launch, layout, callback, or gesture change | `buildtool gui` |
 | Architecture, docs, package surface, hygiene | `buildtool headless` |
@@ -141,6 +152,10 @@ wiring, and debug trace behavior. They should not assert raw MATLAB component
 class counts, because those counts are framework implementation details.
 Reusable LabKit GUI tests may assert low-level control shape only when that
 shape is the framework behavior under test.
+Avoid duplicating expensive figure launches for the same contract. If an app
+already has a dedicated layout test, entry-point smoke coverage should not
+launch it again. For apps without a dedicated layout test, one debug launch can
+cover startup, named figure creation, path hygiene, and visible trace plumbing.
 
 For scientific and visualization behavior, prefer deterministic value or state
 assertions over visual snapshots whenever the result can be expressed as data:
@@ -149,6 +164,11 @@ selected files, callback events, and debug traces. Use minimal synthetic data
 that makes the behavior obvious. Add image or screenshot comparisons only when
 the rendered pixels are the actual contract, and keep those baselines focused
 on the visual behavior under test rather than the entire app shell.
+
+Repository-wide guardrails should avoid repeated full-tree IO. Cache tracked
+file lists or file contents within the test process when several assertions
+scan the same scope, and avoid adding a second test that repeats the same scan
+with only a different diagnostic wording.
 
 `buildtool gui` runs with hidden test windows by default while still creating
 real MATLAB figures, controls, callbacks, and layout trees. The setting is

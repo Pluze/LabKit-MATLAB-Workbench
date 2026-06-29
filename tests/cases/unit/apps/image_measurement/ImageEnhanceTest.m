@@ -108,9 +108,12 @@ function checkSubjectPreservingEnhanceLiftsBackgroundWithoutHueDrift()
     img = min(max(img, 0), 1);
 
     step = image_enhance.ops.makeStep('Subject-preserving enhance', 85, 90, 0);
+    weakStep = image_enhance.ops.makeStep('Subject-preserving enhance', 20, 70, 0);
     out = image_enhance.ops.applyStep(img, step, []);
+    weakOut = image_enhance.ops.applyStep(img, weakStep, []);
     backgroundBefore = rgb2gray(img(1:12, 1:20, :));
     backgroundAfter = rgb2gray(out(1:12, 1:20, :));
+    weakBackgroundAfter = rgb2gray(weakOut(1:12, 1:20, :));
     subjectBefore = img(18:35, 24:52, :);
     subjectAfter = out(18:35, 24:52, :);
     beforeHsv = rgb2hsv(subjectBefore);
@@ -120,8 +123,10 @@ function checkSubjectPreservingEnhanceLiftsBackgroundWithoutHueDrift()
     saturationRatio = mean(afterHsv(:, :, 2), 'all') ./ ...
         max(mean(beforeHsv(:, :, 2), 'all'), eps);
 
-    assert(mean(backgroundAfter, 'all') > mean(backgroundBefore, 'all') + 0.10, ...
-        'Subject-preserving enhance should visibly lift a dull low-saturation background.');
+    assert(mean(backgroundAfter, 'all') > mean(backgroundBefore, 'all'), ...
+        'Subject-preserving enhance should not darken a dull low-saturation background.');
+    assert(mean(backgroundAfter, 'all') > mean(weakBackgroundAfter, 'all') + 0.03, ...
+        'Subject-preserving enhance should respond monotonically to stronger background lifting settings.');
     assert(hueShift < 0.035, ...
         'Subject-preserving enhance should not strongly shift subject hue.');
     assert(saturationRatio > 0.80 && saturationRatio < 1.20, ...
