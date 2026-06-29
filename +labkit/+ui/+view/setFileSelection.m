@@ -22,4 +22,5 @@ function setFileSelection(ui, id, filesOrIds)
             'Control "%s" is not a filePanel.', control.id);
     end
     control.setFileSelection(control, filesOrIds);
+    applySelectedFileContext(ui, id);
 end

@@ -499,6 +499,7 @@ function callback = semanticFileChooseCallback(id, appCallback)
         control = control.setFileSelection(control, addedFiles);
         ui.controls.(id) = control;
         setappdata(ui.figure, 'labkitUiRegistry', ui);
+        labkit.ui.view.setFileSelection(ui, id, control.currentSelectedFiles());
         event = fileEvent(control, source, rawEvent, 'choose');
         event.addedFiles = addedFiles;
         runSemanticAppCallback(ui, control, event, appCallback, id);
@@ -517,6 +518,7 @@ function callback = semanticFileRemoveCallback(id, appCallback)
         [control, removedFiles] = control.removeSelection(control);
         ui.controls.(id) = control;
         setappdata(ui.figure, 'labkitUiRegistry', ui);
+        labkit.ui.view.setFileSelection(ui, id, control.currentSelectedFiles());
         event = fileEvent(control, source, rawEvent, 'remove');
         event.removedFiles = removedFiles;
         runSemanticAppCallback(ui, control, event, appCallback, id);
@@ -536,6 +538,7 @@ function callback = semanticFileClearCallback(id, appCallback)
         control = control.applySelection(control, {}, true);
         ui.controls.(id) = control;
         setappdata(ui.figure, 'labkitUiRegistry', ui);
+        labkit.ui.view.setFileSelection(ui, id, control.currentSelectedFiles());
         event = fileEvent(control, source, rawEvent, 'clear');
         event.removedFiles = previousFiles;
         runSemanticAppCallback(ui, control, event, appCallback, id);
@@ -543,10 +546,6 @@ function callback = semanticFileClearCallback(id, appCallback)
 end
 
 function callback = semanticFileSelectionCallback(id, appCallback)
-    if isempty(appCallback)
-        callback = [];
-        return;
-    end
     callback = @wrapped;
 
     function wrapped(source, rawEvent)
@@ -555,6 +554,10 @@ function callback = semanticFileSelectionCallback(id, appCallback)
             return;
         end
         control = ui.controls.(id);
+        labkit.ui.view.setFileSelection(ui, id, control.currentSelectedFiles());
+        if isempty(appCallback)
+            return;
+        end
         event = fileEvent(control, source, rawEvent, 'select');
         runSemanticAppCallback(ui, control, event, appCallback, id);
     end

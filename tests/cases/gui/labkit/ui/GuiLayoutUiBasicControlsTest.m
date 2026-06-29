@@ -58,6 +58,8 @@ function verify_gui_layout_ui_basic_controls()
     selectedFilePaths = labkit.ui.view.filePaths(labkit.ui.view.getValue(ui, 'files'));
     assert(isequal(selectedFilePaths, "b.dat"), ...
         'setFileSelection should apply valid filePanel selection.');
+    assert(contains(string(ui.figure.Name), "file 2/2: b.dat"), ...
+        'setFileSelection should surface the selected file in the app title.');
 
     labkit.ui.view.setValue(ui, 'gain', 4);
     assert(labkit.ui.view.getValue(ui, 'gain') == 4, ...
@@ -76,11 +78,13 @@ function verify_gui_layout_ui_basic_controls()
         'axis', 'main', 'title', 'Preview');
     ax = ui.controls.preview.primaryAxes;
     assert(~isempty(ax.Children), 'drawImage should draw into a semantic preview axes.');
+    assert(strcmp(char(ax.Title.String), 'Preview | file 2/2: b.dat'), ...
+        'drawImage should include selected file context in preview titles.');
     labkit.ui.view.clearAxes(ui, 'preview', 'main');
     assert(isempty(ax.Children), 'clearAxes should remove preview axes children.');
     labkit.ui.view.resetAxes(ui, 'preview', 'Preview Reset', true, 'main');
-    assert(strcmp(char(ax.Title.String), 'Preview Reset'), ...
-        'resetAxes should retitle a semantic preview axes.');
+    assert(strcmp(char(ax.Title.String), 'Preview Reset | file 2/2: b.dat'), ...
+        'resetAxes should preserve selected file context in preview titles.');
 
     function noop(varargin)
     end

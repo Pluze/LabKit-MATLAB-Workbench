@@ -11,7 +11,8 @@ function plan = scalePlan(items, opts)
     if nargin < 2
         opts = struct();
     end
-    sourcePpu = sourcePixelsPerUnit(items);
+    targetUnit = string(optionValue(opts, 'scaleUnit', "um"));
+    sourcePpu = sourcePixelsPerUnit(items, targetUnit);
     if any(~isfinite(sourcePpu) | sourcePpu <= 0)
         error('labkit_BatchImageCrop_app:ScaleCalibrationMissing', ...
             'Physical scale mode requires a valid scale calibration for every loaded image.');
@@ -42,7 +43,7 @@ function plan = scalePlan(items, opts)
 
     plan = struct();
     plan.mode = "Physical";
-    plan.unit = string(optionValue(opts, 'scaleUnit', "um"));
+    plan.unit = targetUnit;
     plan.targetSource = source;
     plan.physicalWidth = widthUnit;
     plan.physicalHeight = heightUnit;
@@ -56,12 +57,13 @@ function plan = scalePlan(items, opts)
     plan.warnings = warnings;
 end
 
-function values = sourcePixelsPerUnit(items)
+function values = sourcePixelsPerUnit(items, targetUnit)
     values = NaN(numel(items), 1);
     for k = 1:numel(items)
         if isfield(items(k), 'scaleCalibration') && isstruct(items(k).scaleCalibration) && ...
                 isfield(items(k).scaleCalibration, 'pixelsPerUnit')
-            values(k) = double(items(k).scaleCalibration.pixelsPerUnit);
+            values(k) = batch_crop.ops.pixelsPerUnitForUnit( ...
+                items(k).scaleCalibration, targetUnit);
         end
     end
 end

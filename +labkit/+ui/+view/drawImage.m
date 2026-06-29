@@ -22,7 +22,8 @@ function imageHandle = drawImage(ui, id, imageData, varargin)
     control = resolveControl(ui, id);
     ax = controlAxes(control, optionValue(opts, 'axis', ""));
     imageHandle = showImage(ax, imageData, ...
-        optionValue(opts, 'title', ''), optionValue(opts, 'options', struct()));
+        fileContextTitle(ui, optionValue(opts, 'title', '')), ...
+        optionValue(opts, 'options', struct()));
 end
 
 function opts = parseOptions(args)

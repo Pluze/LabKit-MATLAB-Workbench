@@ -16,6 +16,9 @@ function setValue(ui, id, value)
     control = resolveControl(ui, id);
     if isfield(control, 'setValue') && isa(control.setValue, 'function_handle')
         control.setValue(value);
+        if isfield(control, 'kind') && strcmp(control.kind, 'filePanel')
+            applySelectedFileContext(ui, id);
+        end
         return;
     end
     handle = controlValueHandle(control);

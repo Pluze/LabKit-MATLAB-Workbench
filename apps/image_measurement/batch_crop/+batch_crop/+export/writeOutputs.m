@@ -4,8 +4,9 @@
 function payload = writeOutputs(items, opts)
 %WRITEOUTPUTS Write cropped images and a manifest CSV.
 % Expected caller: labkit_BatchImageCrop_app and batch_crop package tests. Items
-% must contain path, image, angleDeg, and centerXY fields. Pixel options contain
-% outputFolder, format, cropWidth, cropHeight, and paddingPercent/fillValue.
+% must contain path, image, angleDeg, centerXY, and optional per-item
+% paddingPercent fields. Pixel options contain outputFolder, format,
+% cropWidth, cropHeight, and fallback paddingPercent/fillValue.
 % Physical options additionally contain scaleMode='Physical', physicalWidth,
 % physicalHeight, scaleUnit, and per-item scaleCalibration fields.
 
@@ -39,6 +40,8 @@ function payload = writeOutputs(items, opts)
         try
             cropOpts = opts;
             cropOpts.angleDeg = items(k).angleDeg;
+            cropOpts.paddingPercent = batch_crop.state.itemPaddingPercent( ...
+                items(k), optionValue(opts, 'paddingPercent', 0));
             cropOpts.centerXY = items(k).centerXY;
             if physicalMode
                 crop = batch_crop.ops.cropScaledImage(items(k).image, cropOpts, scalePlan, k);

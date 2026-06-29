@@ -202,13 +202,15 @@ function fig = run(debugLog)
 
     function onPaddingChanged()
         edtPaddingPercent.Value = min(max(double(edtPaddingPercent.Value), 0), 200);
+        if ~hasCurrentImage()
+            return;
+        end
         viewState = capturePreviewView();
+        S.items(S.currentIndex).paddingPercent = edtPaddingPercent.Value;
         S = batch_crop.state.clearExportState(S);
         S.canvasCache = batch_crop.state.emptyCanvasCache();
-        if hasCurrentImage()
-            addLog(sprintf('Updated padding for image %d: %.3g%%.', ...
-                S.currentIndex, edtPaddingPercent.Value));
-        end
+        addLog(sprintf('Updated padding for image %d: %.3g%%.', ...
+            S.currentIndex, S.items(S.currentIndex).paddingPercent));
         refreshPreview(viewState);
         refreshSummary();
     end
@@ -217,24 +219,26 @@ function fig = run(debugLog)
         if ~hasCurrentImage()
             return;
         end
+        viewState = capturePreviewView();
         S.items(S.currentIndex).centerXY = [edtCenterX.Value, edtCenterY.Value];
         S.items(S.currentIndex).centerSet = true;
         S = batch_crop.state.clearExportState(S);
         addLog(sprintf('Set crop center for image %d: x=%.1f, y=%.1f.', ...
             S.currentIndex, edtCenterX.Value, edtCenterY.Value));
-        refreshAll();
+        refreshAll(viewState);
     end
 
     function onUseImageCenter()
         if ~hasCurrentImage()
             return;
         end
+        viewState = capturePreviewView();
         S.items(S.currentIndex).centerXY = batch_crop.ops.sourceCenterXY(S.items(S.currentIndex).image);
         S.items(S.currentIndex).centerSet = true;
         S = batch_crop.state.clearExportState(S);
         addLog(sprintf('Set image %d crop center to source image center.', ...
             S.currentIndex));
-        refreshAll();
+        refreshAll(viewState);
     end
 
     function onScaleSettingChanged()
@@ -243,7 +247,6 @@ function fig = run(debugLog)
         edtTargetPixelsPerUnit.Value = max(0, double(edtTargetPixelsPerUnit.Value));
         edtMaxUpsamplePercent.Value = max(0, double(edtMaxUpsamplePercent.Value));
         if strcmpi(currentScaleMode(), "Physical")
-            syncCurrentScaleUnit();
             scaleTool.setEnabled(struct('hasImage', hasCurrentImage()));
         end
         S = batch_crop.state.clearExportState(S);
@@ -256,7 +259,6 @@ function fig = run(debugLog)
         end
         cal = scaleTool.calibration();
         S.items(S.currentIndex).scaleCalibration = cal;
-        ddScaleUnit.Value = char(cal.unit);
         S = batch_crop.state.clearExportState(S);
         refreshList();
         refreshSummary();
@@ -294,6 +296,7 @@ function fig = run(debugLog)
         if ~hasCurrentImage()
             return;
         end
+        viewState = capturePreviewView();
         geometry = currentGeometry();
         placement = batch_crop.view.previewPlacement(geometry);
         pt = previewAxes.CurrentPoint;
@@ -308,7 +311,7 @@ function fig = run(debugLog)
         S = batch_crop.state.clearExportState(S);
         addLog(sprintf('Picked crop center for image %d: x=%.1f, y=%.1f.', ...
             S.currentIndex, centerXY(1), centerXY(2)));
-        refreshAll();
+        refreshAll(viewState);
     end
 
     function onExportCrops()
@@ -318,13 +321,13 @@ function fig = run(debugLog)
         end
         if ~all([S.items.centerSet])
             showError('Crop centers missing', ...
-                'Set or confirm the crop center for every loaded image before exporting.');
+                batch_crop.view.missingWorkflowItemsText(S.items, "center"));
             return;
         end
         if strcmpi(currentScaleMode(), "Physical") && ...
                 ~batch_crop.state.allScaleCalibrated(S.items)
             showError('Scale calibration missing', ...
-                'Physical scale mode requires a valid scale calibration for every loaded image.');
+                batch_crop.view.missingWorkflowItemsText(S.items, "scale"));
             return;
         end
 
@@ -374,7 +377,8 @@ function fig = run(debugLog)
             return;
         end
 
-        labkit.ui.view.setValue(ui, 'images', string({S.items.path}).');
+        labkit.ui.view.setValue(ui, 'images', ...
+            batch_crop.view.filePanelEntries(S.items, currentScaleMode()));
         S.currentIndex = min(max(S.currentIndex, 1), numel(S.items));
         files = labkit.ui.view.getFiles(ui, 'images');
         labkit.ui.view.setFileSelection(ui, 'images', files(S.currentIndex));
@@ -414,13 +418,14 @@ function fig = run(debugLog)
             ensureCurrentCenter();
             item = S.items(S.currentIndex);
             edtRotation.Value = item.angleDeg;
+            edtPaddingPercent.Value = batch_crop.state.itemPaddingPercent(item, edtPaddingPercent.Value);
             edtCenterX.Limits = [1, max(1, size(item.image, 2))];
             edtCenterY.Limits = [1, max(1, size(item.image, 1))];
             edtCenterX.Value = item.centerXY(1);
             edtCenterY.Value = item.centerXY(2);
         else
             edtRotation.Value = 0;
-            edtPaddingPercent.Value = 12;
+            edtPaddingPercent.Value = 0;
             edtCenterX.Limits = [1, Inf];
             edtCenterY.Limits = [1, Inf];
             edtCenterX.Value = 1;
@@ -428,9 +433,7 @@ function fig = run(debugLog)
         end
 
         refreshScaleTool();
-        readyToExport = hasImage && all([S.items.centerSet]) && ...
-            (~physicalMode || batch_crop.state.allScaleCalibrated(S.items));
-        btnExport.Enable = batch_crop.view.ternary(readyToExport, 'on', 'off');
+        btnExport.Enable = enabled;
     end
 
     function refreshPreview(viewState)
@@ -514,7 +517,8 @@ function fig = run(debugLog)
         if strcmpi(currentScaleMode(), "Physical") && hasCurrentImage()
             cal = currentScaleCalibration();
             if batch_crop.state.isScaleCalibrationSet(cal)
-                width = max(1, round(double(edtPhysicalWidth.Value) * cal.pixelsPerUnit));
+                pixelsPerUnit = batch_crop.ops.pixelsPerUnitForUnit(cal, currentScaleUnit());
+                width = max(1, round(double(edtPhysicalWidth.Value) * pixelsPerUnit));
                 return;
             end
         end
@@ -525,7 +529,8 @@ function fig = run(debugLog)
         if strcmpi(currentScaleMode(), "Physical") && hasCurrentImage()
             cal = currentScaleCalibration();
             if batch_crop.state.isScaleCalibrationSet(cal)
-                height = max(1, round(double(edtPhysicalHeight.Value) * cal.pixelsPerUnit));
+                pixelsPerUnit = batch_crop.ops.pixelsPerUnitForUnit(cal, currentScaleUnit());
+                height = max(1, round(double(edtPhysicalHeight.Value) * pixelsPerUnit));
                 return;
             end
         end
@@ -548,6 +553,11 @@ function fig = run(debugLog)
     end
 
     function percent = currentPaddingPercent()
+        if hasCurrentImage()
+            percent = batch_crop.state.itemPaddingPercent( ...
+                S.items(S.currentIndex), edtPaddingPercent.Value);
+            return;
+        end
         percent = min(max(double(edtPaddingPercent.Value), 0), 200);
     end
 
@@ -615,15 +625,6 @@ function fig = run(debugLog)
             'hasImage', hasImage && physicalMode, ...
             'blockInputs', ~physicalMode, ...
             'blockPlacement', true));
-    end
-
-    function syncCurrentScaleUnit()
-        if ~hasCurrentImage()
-            return;
-        end
-        updated = batch_crop.state.withScaleUnit(currentScaleCalibration(), currentScaleUnit());
-        S.items(S.currentIndex).scaleCalibration = updated;
-        scaleTool.setCalibration(updated);
     end
 
     function refreshScaleStatus()

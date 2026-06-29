@@ -36,7 +36,7 @@ function resetAxes(ui, id, titleText, resetScaleAndTicks, axisId)
         ax.XTickMode = 'auto';
         ax.YTickMode = 'auto';
     end
-    title(ax, titleText);
+    title(ax, fileContextTitle(ui, titleText));
     xlabel(ax, '');
     ylabel(ax, '');
     grid(ax, 'off');

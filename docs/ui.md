@@ -123,6 +123,12 @@ Use these app-facing contracts:
   `event.selectedFiles`, and `event.value` for the current selection. Apps
   that need paths call `labkit.ui.view.filePaths(files)` instead of reading
   fields directly from the event.
+- The active `filePanel` selection is also a framework title context. When a
+  file is selected through the panel or `labkit.ui.view.setFileSelection`, the
+  app window title and preview axes titles include `file N/M: name.ext`; when
+  selection is cleared, the framework removes that suffix. Apps should keep
+  preview titles focused on the view or measurement being shown, not duplicate
+  the selected filename in app-local title strings.
 - Multi-file `filePanel` mode uses the fixed commands Add, Remove selected,
   and Clear. Add lets users choose files or recursively scan a folder; folder
   scans count matching files first and ask for confirmation when the count
