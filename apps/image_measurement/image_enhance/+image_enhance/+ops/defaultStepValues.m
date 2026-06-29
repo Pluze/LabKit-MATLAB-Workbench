@@ -44,6 +44,13 @@ function values = defaultStepValues(kind)
             values.amountLimits = [0 100];
             values.amount = 100;
             values.secondary = 0;
+        case 'whiteroicalibration'
+            values.amountLabel = "Strength (%):";
+            values.secondaryLabel = "White target (%):";
+            values.amountLimits = [0 100];
+            values.secondaryLimits = [60 100];
+            values.amount = 100;
+            values.secondary = 92;
     end
 end
 

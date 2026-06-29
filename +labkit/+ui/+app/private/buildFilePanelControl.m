@@ -62,7 +62,7 @@ function adapter = buildMultiFilePanelControl(fileSpec, parentGrid, row, callbac
     status.Layout.Row = 3;
     status.Layout.Column = [1 3];
 
-    adapter = baseFilePanelAdapter(fileSpec, props, panel, grid);
+    adapter = baseFilePanelAdapter(fileSpec, props, panel, grid, callbacks);
     adapter.chooseButton = chooseButton;
     adapter.removeButton = removeButton;
     adapter.clearButton = clearButton;
@@ -100,7 +100,7 @@ function adapter = buildSingleFilePanelControl(fileSpec, parentGrid, row, callba
     displayField.Layout.Row = 1;
     displayField.Layout.Column = 2;
 
-    adapter = baseFilePanelAdapter(fileSpec, props, panel, grid);
+    adapter = baseFilePanelAdapter(fileSpec, props, panel, grid, callbacks);
     adapter.chooseButton = chooseButton;
     adapter.status = displayField;
     adapter.displayField = displayField;
@@ -111,7 +111,7 @@ function adapter = buildSingleFilePanelControl(fileSpec, parentGrid, row, callba
     storeFiles(adapter, emptyFiles());
 end
 
-function adapter = baseFilePanelAdapter(fileSpec, props, panel, grid)
+function adapter = baseFilePanelAdapter(fileSpec, props, panel, grid, callbacks)
     adapter = struct();
     adapter.id = fileSpec.id;
     adapter.kind = 'filePanel';
@@ -119,6 +119,7 @@ function adapter = baseFilePanelAdapter(fileSpec, props, panel, grid)
     adapter.props = props;
     adapter.panel = panel;
     adapter.grid = grid;
+    adapter.trace = optionValue(callbacks, 'trace', []);
 end
 
 function adapter = attachFilePanelMethods(adapter)
@@ -258,13 +259,15 @@ end
 function paths = chooseFilePaths(control)
     props = control.props;
     if isfield(props, 'dialogProvider') && isa(props.dialogProvider, 'function_handle')
+        traceFilePanelControl(control, 'dialog provider start', 'source=custom');
         paths = filePanelNormalizePathList(props.dialogProvider(props));
+        traceFilePanelControl(control, 'dialog provider end', sprintf('count=%d', numel(paths)));
         if isSingleMode(props)
             if ~isempty(paths)
                 paths = paths(1);
             end
         else
-            paths = expandFileChoices(paths, props, control.panel);
+            paths = expandFileChoices(paths, props, control);
         end
         return;
     end
@@ -272,7 +275,9 @@ function paths = chooseFilePaths(control)
     startPath = labkit.ui.app.defaultDialogFolder("input", ...
         optionValue(props, 'startPath', ""));
     if isSingleMode(props)
+        traceFilePanelControl(control, 'file chooser start', 'mode=single');
         paths = chooseFiles(props, startPath);
+        traceFilePanelControl(control, 'file chooser end', sprintf('count=%d', numel(paths)));
         if ~isempty(paths)
             paths = paths(1);
         end
@@ -283,17 +288,19 @@ function paths = chooseFilePaths(control)
         'Add files', 'Files', 'Folder', 'Cancel', 'Files');
     switch choice
         case 'Files'
+            traceFilePanelControl(control, 'file chooser start', 'mode=multi');
             paths = chooseFiles(props, startPath);
+            traceFilePanelControl(control, 'file chooser end', sprintf('count=%d', numel(paths)));
         case 'Folder'
             folder = chooseFolder(startPath);
-            paths = expandFileChoices(string(folder(:)), props, control.panel);
+            paths = expandFileChoices(string(folder), props, control);
         otherwise
             paths = strings(0, 1);
     end
 end
 
 function paths = chooseFiles(props, startPath)
-    filters = normalizeFileFilters(optionValue(props, 'filters', {'*.*', 'All files'}));
+    filters = normalizeFilePanelFilters(optionValue(props, 'filters', {'*.*', 'All files'}));
     titleText = optionValue(props, 'dialogTitle', optionValue(props, 'chooseLabel', 'Choose files'));
     allowMulti = ~isSingleMode(props) && ...
         (isinf(double(optionValue(props, 'maxFiles', Inf))) || ...
@@ -326,18 +333,24 @@ function folder = chooseFolder(startPath)
     end
 end
 
-function paths = expandFileChoices(paths, props, parent)
+function paths = expandFileChoices(paths, props, control)
     paths = filePanelNormalizePathList(paths);
     if isempty(paths)
         return;
     end
-    filters = normalizeFileFilters(optionValue(props, 'filters', {'*.*', 'All files'}));
+    filters = normalizeFilePanelFilters(optionValue(props, 'filters', {'*.*', 'All files'}));
+    traceFilePanelControl(control, 'expand choices start', sprintf('count=%d', numel(paths)));
     expandedParts = cell(numel(paths), 1);
     for k = 1:numel(paths)
         path = paths(k);
         if isfolder(path)
+            traceFilePanelControl(control, 'folder scan start', sprintf('index=%d', k));
             folderPaths = filesUnderFolder(path, filters);
-            if shouldRejectLargeFolder(folderPaths, path, props, parent)
+            traceFilePanelControl(control, 'folder scan end', sprintf( ...
+                'index=%d count=%d', k, numel(folderPaths)));
+            if shouldRejectLargeFolder(folderPaths, path, props, control)
+                traceFilePanelControl(control, 'folder scan rejected', sprintf( ...
+                    'index=%d count=%d', k, numel(folderPaths)));
                 folderPaths = strings(0, 1);
             end
             expandedParts{k} = folderPaths;
@@ -346,14 +359,17 @@ function paths = expandFileChoices(paths, props, parent)
         end
     end
     paths = vertcat(expandedParts{:});
+    traceFilePanelControl(control, 'expand choices end', sprintf('count=%d', numel(paths)));
 end
 
-function tf = shouldRejectLargeFolder(paths, folder, props, parent)
+function tf = shouldRejectLargeFolder(paths, folder, props, control)
     threshold = double(optionValue(props, 'folderWarningThreshold', 500));
     tf = false;
     if numel(paths) <= threshold
         return;
     end
+    traceFilePanelControl(control, 'large folder prompt', sprintf( ...
+        'count=%d threshold=%d', numel(paths), threshold));
     if isfield(props, 'folderWarningProvider') && isa(props.folderWarningProvider, 'function_handle')
         tf = ~logical(props.folderWarningProvider(folder, numel(paths), threshold));
         return;
@@ -362,7 +378,7 @@ function tf = shouldRejectLargeFolder(paths, folder, props, parent)
         'Loading a very large folder may take a while. Continue?'], ...
         numel(paths), char(folder));
     try
-        fig = ancestor(parent, 'figure');
+        fig = ancestor(control.panel, 'figure');
         answer = uiconfirm(fig, message, 'Large folder scan', ...
             'Options', {'Continue', 'Cancel'}, ...
             'DefaultOption', 'Cancel', ...
@@ -375,7 +391,7 @@ function tf = shouldRejectLargeFolder(paths, folder, props, parent)
 end
 
 function paths = filesUnderFolder(folder, filters)
-    patterns = fileFilterPatterns(filters);
+    patterns = filePanelFilterPatterns(filters);
     pathParts = cell(numel(patterns), 1);
     for k = 1:numel(patterns)
         entries = dir(fullfile(char(folder), '**', char(patterns(k))));
@@ -542,52 +558,6 @@ function control = currentControl(defaultControl, varargin)
     control = defaultControl;
     if ~isempty(varargin)
         control = varargin{1};
-    end
-end
-
-function patterns = fileFilterPatterns(filters)
-    if ischar(filters) || isstring(filters)
-        raw = string(filters);
-    elseif iscell(filters)
-        raw = string(filters(:, 1));
-    else
-        raw = "*.*";
-    end
-    patternParts = cell(numel(raw), 1);
-    for k = 1:numel(raw)
-        tokens = split(raw(k), ';');
-        tokens = strtrim(tokens);
-        tokens = tokens(strlength(tokens) > 0);
-        patternParts{k} = tokens(:);
-    end
-    patterns = vertcat(patternParts{:});
-    if isempty(patterns)
-        patterns = "*.*";
-    end
-    patterns = unique(patterns, 'stable');
-    concretePatterns = patterns(patterns ~= "*.*" & patterns ~= "*");
-    if ~isempty(concretePatterns)
-        patterns = concretePatterns;
-    end
-end
-
-function filters = normalizeFileFilters(filters)
-    if iscell(filters) && numel(filters) == 1 && iscell(filters{1})
-        filters = filters{1};
-    end
-    if ischar(filters)
-        return;
-    end
-    if isstring(filters)
-        if isscalar(filters)
-            filters = char(filters);
-            return;
-        end
-        filters = cellstr(filters);
-    end
-    if iscell(filters)
-        filters = cellfun(@(value) char(string(value)), filters, ...
-            'UniformOutput', false);
     end
 end
 

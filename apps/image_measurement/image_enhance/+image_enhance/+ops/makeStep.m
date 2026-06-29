@@ -9,8 +9,15 @@ function step = makeStep(kind, amount, secondary, referenceIndex)
 
     step = image_enhance.state.emptyStep();
     step.kind = string(kind);
-    step.amount = double(amount);
-    step.secondary = double(secondary);
-    step.referenceIndex = double(referenceIndex);
+    step.amount = numericScalar(amount, 0);
+    step.secondary = numericScalar(secondary, 0);
+    step.referenceIndex = numericScalar(referenceIndex, 0);
     step.label = image_enhance.ops.describeStep(step);
+end
+
+function value = numericScalar(value, fallback)
+    value = double(value);
+    if isempty(value) || ~isscalar(value) || ~isfinite(value)
+        value = fallback;
+    end
 end

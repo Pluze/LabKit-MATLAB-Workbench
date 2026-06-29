@@ -95,7 +95,8 @@ function fig = run(debugLog)
         S.steps = repmat(image_match.state.emptyStep(), 0, 1);
         S.pendingDirty = false;
         invalidatePreviewCache();
-        S.outputFolder = string(fileparts(paths(1)));
+        S.outputFolder = string(labkit.ui.app.defaultOutputFolder( ...
+            paths, "image_match", S.outputFolder));
         markExportDirty();
         addLog(sprintf('Loaded %d image(s).', numel(S.items)));
         refreshAll();

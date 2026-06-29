@@ -19,6 +19,9 @@ function label = describeStep(step)
         case 'whitebalance'
             label = sprintf('Gray-world white balance %g%%, temp %+g%%', ...
                 step.amount, step.secondary);
+        case 'whiteroicalibration'
+            label = sprintf('White ROI calibration %g%%, target %g%%', ...
+                step.amount, step.secondary);
         otherwise
             label = sprintf('%s %+g %+g', char(step.kind), ...
                 step.amount, step.secondary);

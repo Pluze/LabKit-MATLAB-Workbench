@@ -74,6 +74,76 @@ classdef RepositoryHygieneGuardrailTest < matlab.unittest.TestCase
                 'Guardrail pattern must allow string path lists.');
         end
 
+        function pathScalarsAreNotExpandedAsCharacterColumns(testCase)
+            root = setupLabKitTestPath();
+            tracked = gitTrackedFiles(root);
+            matlabFiles = tracked(endsWith(tracked, ".m"));
+            actual = collectUnsafePathScalarColonUses(root, matlabFiles);
+            testCase.verifyEmpty(actual, ...
+                ['folder-like path scalars must not be expanded with (:), ' ...
+                'because char paths then become one path per character. Use ' ...
+                'string(folder), cellstr(paths(:)), or reshape only known ' ...
+                'string arrays. Files: ' strjoin(cellstr(actual), ', ')]);
+        end
+
+        function pathScalarColonPatternCatchesUnsafeExamples(testCase)
+            pattern = unsafePathScalarColonPattern();
+            colonExpr = "(:)";
+            unsafe = [
+                "paths = expandFileChoices(string(folder" + colonExpr + "), props);"
+                "files = findUnderRoot(rootDir" + colonExpr + ");"
+                "out = string(outputFolder" + colonExpr + ");"
+            ];
+            safe = [
+                "paths = string(paths(:));"
+                "rows = table(filePath(:), label(:));"
+                "folder = string(folder);"
+            ];
+
+            testCase.verifyTrue(all(~cellfun(@isempty, regexp(unsafe, pattern, 'once'))), ...
+                'Guardrail pattern must catch folder-like scalar path expansion.');
+            testCase.verifyTrue(all(cellfun(@isempty, regexp(safe, pattern, 'once'))), ...
+                'Guardrail pattern must allow path-list normalization and table column shaping.');
+        end
+
+        function appStateNumericAssignmentsSanitizeScalars(testCase)
+            root = setupLabKitTestPath();
+            actual = collectUnsafeStateNumericAssignments(root);
+            testCase.verifyEmpty(actual, ...
+                ['app state/model helpers must sanitize UI or option numeric ' ...
+                'values to finite scalars before assigning scalar state fields. Files: ' ...
+                strjoin(cellstr(actual), ', ')]);
+        end
+
+        function appStateNumericPatternCatchesDirectDoubleAssignments(testCase)
+            patterns = unsafeStateNumericAssignmentPatterns();
+            unsafe = [
+                "step.amount = double(amount);"
+                "S.windowStartSec = double(labkit.ui.view.getValue(ui, ""windowStartPanner""));"
+                "optsOut.cropWidth = double(optionValue(opts, 'cropWidth', 0));"
+            ];
+            safe = [
+                "step.amount = numericScalar(amount, 0);"
+                "step.amount = double(values(:));"
+                "value = double(amount);"
+                "count = double(event.VerticalScrollCount);"
+            ];
+
+            unsafeMatched = false(size(unsafe));
+            for k = 1:numel(unsafe)
+                unsafeMatched(k) = anyPatternMatches(unsafe(k), patterns);
+            end
+            safeMatched = false(size(safe));
+            for k = 1:numel(safe)
+                safeMatched(k) = anyPatternMatches(safe(k), patterns);
+            end
+
+            testCase.verifyTrue(all(unsafeMatched), ...
+                'Guardrail pattern must catch direct UI/option numeric assignment to state fields.');
+            testCase.verifyFalse(any(safeMatched), ...
+                'Guardrail pattern must allow scalar helper calls and non-state conversions.');
+        end
+
         function matlabFunctionsDoNotUseSingleLineBodies(testCase)
             root = setupLabKitTestPath();
             tracked = gitTrackedFiles(root);
@@ -155,6 +225,65 @@ end
 function pattern = unsafeCharPathListPattern()
     pattern = ['(?m)^\s*[A-Za-z]\w*\s*=\s*\[\s*fullfile\([^\]]*''[^\]]*\)' ...
         '\s*,[^\]]*fullfile\([^\]]*''[^\]]*\)\s*\]'];
+end
+
+function findings = collectUnsafePathScalarColonUses(root, files)
+    findings = strings(1, 0);
+    pattern = unsafePathScalarColonPattern();
+    for k = 1:numel(files)
+        filepath = fullfile(root, char(files(k)));
+        if exist(filepath, 'file') ~= 2
+            continue;
+        end
+        lines = readlines(filepath);
+        for iLine = 1:numel(lines)
+            if ~isempty(regexp(lines(iLine), pattern, 'once'))
+                findings(end+1) = files(k) + ":" + string(iLine);
+            end
+        end
+    end
+end
+
+function pattern = unsafePathScalarColonPattern()
+    pathScalarNames = ['(?:folder|rootDir|startPath|outputFolder|' ...
+        'inputFolder|selectedFolder)'];
+    pattern = ['(?<![A-Za-z0-9_])' pathScalarNames '\s*\(:\)'];
+end
+
+function findings = collectUnsafeStateNumericAssignments(root)
+    files = dir(fullfile(root, 'apps', '**', '*.m'));
+    findings = strings(1, 0);
+    patterns = unsafeStateNumericAssignmentPatterns();
+    for k = 1:numel(files)
+        filepath = fullfile(files(k).folder, files(k).name);
+        if exist(filepath, 'file') ~= 2
+            continue;
+        end
+        lines = readlines(filepath);
+        for iLine = 1:numel(lines)
+            if anyPatternMatches(lines(iLine), patterns)
+                findings(end+1) = string(relativePath(root, filepath)) + ":" + string(iLine);
+            end
+        end
+    end
+end
+
+function patterns = unsafeStateNumericAssignmentPatterns()
+    patterns = [
+        "^\s*step\.[A-Za-z]\w*\s*=\s*double\(\s*[A-Za-z]\w*\s*\)\s*;"
+        "^\s*S\.[A-Za-z]\w*\s*=\s*double\(\s*labkit\.ui\.view\.getValue\("
+        "^\s*optsOut\.[A-Za-z]\w*\s*=\s*double\(\s*optionValue\("
+    ];
+end
+
+function tf = anyPatternMatches(text, patterns)
+    tf = false;
+    for k = 1:numel(patterns)
+        if ~isempty(regexp(text, patterns(k), 'once'))
+            tf = true;
+            return;
+        end
+    end
 end
 
 function files = collectNonAsciiFiles(root, tracked)

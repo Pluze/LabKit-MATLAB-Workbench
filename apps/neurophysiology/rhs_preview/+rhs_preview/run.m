@@ -140,11 +140,11 @@ function fig = run(debugLog)
         changedId = rhs_preview.ops.eventId(event);
         S.family = string(labkit.ui.view.getValue(ui, "channelFamily"));
         if changedId == "windowStartPanner"
-            S.windowStartSec = double(labkit.ui.view.getValue(ui, ...
-                "windowStartPanner"));
+            S.windowStartSec = numericScalar(labkit.ui.view.getValue(ui, ...
+                "windowStartPanner"), S.windowStartSec);
         end
-        S.maxPreviewChannels = max(1, floor(double(labkit.ui.view.getValue(ui, ...
-            "maxPreviewChannels"))));
+        S.maxPreviewChannels = max(1, floor(numericScalar(labkit.ui.view.getValue(ui, ...
+            "maxPreviewChannels"), S.maxPreviewChannels)));
         if S.family ~= previousFamily || S.maxPreviewChannels ~= previousMaxChannels
             S = rhs_preview.ops.normalizeChannelSelection(S);
             rebuildPreviewChannelRows();
@@ -315,7 +315,7 @@ function fig = run(debugLog)
             return;
         end
         outputPath = rhs_preview.io.promptProtocolOutput( ...
-            labkit.ui.app.defaultDialogFolder("output"));
+            labkit.ui.app.defaultOutputFolder(defaultOutputSources(), "rhs_preview"));
         if strlength(outputPath) == 0
             return;
         end
@@ -337,7 +337,7 @@ function fig = run(debugLog)
         data = labkit.ui.view.getValue(ui, "fileFilterTable");
         S.filterRows = rhs_preview.ops.applyFileFilterTableData(S.filterRows, data);
         outputPath = rhs_preview.io.promptFilterRecordOutput( ...
-            labkit.ui.app.defaultDialogFolder("output"));
+            labkit.ui.app.defaultOutputFolder(defaultOutputSources(), "rhs_preview"));
         if strlength(outputPath) == 0
             return;
         end
@@ -522,6 +522,16 @@ function fig = run(debugLog)
         debugLog.append(message);
     end
 
+    function paths = defaultOutputSources()
+        paths = strings(0, 1);
+        candidates = [S.rhsFile, S.rhsFolder, S.protocolFile];
+        for k = 1:numel(candidates)
+            if strlength(candidates(k)) > 0
+                paths(end + 1, 1) = candidates(k);
+            end
+        end
+    end
+
     function tf = shouldProcessPreviewScroll()
         tf = true;
         minIntervalSec = 0.080;
@@ -534,6 +544,13 @@ function fig = run(debugLog)
             return;
         end
         S.lastScrollTic = tic;
+    end
+end
+
+function value = numericScalar(value, fallback)
+    value = double(value);
+    if isempty(value) || ~isscalar(value) || ~isfinite(value)
+        value = fallback;
     end
 end
 

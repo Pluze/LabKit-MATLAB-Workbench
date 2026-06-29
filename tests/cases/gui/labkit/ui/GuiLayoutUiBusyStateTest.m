@@ -80,6 +80,7 @@ function verify_gui_layout_ui_busy_state()
 
     verifyBusyActionWrapper();
     verifyBusyNonActionWrappers();
+    verifyCloseGuard();
 
     function value = probeWork()
         assert(strcmp(btnRun.Enable, 'on'), ...
@@ -119,6 +120,48 @@ function verify_gui_layout_ui_busy_state()
     end
 
     function clickProbe(~, ~)
+    end
+end
+
+function verifyCloseGuard()
+    confirmCalls = 0;
+    lastMessage = "";
+    spec = labkit.ui.spec.app('closeGuardProbe', 'Close Guard Probe', ...
+        'controlTabs', {labkit.ui.spec.tab('main', 'Main', { ...
+        labkit.ui.spec.section('actions', 'Actions', { ...
+        labkit.ui.spec.action('noop', 'Noop', @(~, ~) [])})})}, ...
+        'workspace', labkit.ui.spec.workspace('workspace', 'Preview', { ...
+        labkit.ui.spec.statusPanel('status', 'Status')}));
+    ui = labkit.ui.app.create(spec);
+    cleaner = onCleanup(@() deleteIfValid(ui.figure));
+    setappdata(ui.figure, 'labkitUiCloseConfirmFcn', @confirmCancel);
+    closeFcn = ui.figure.CloseRequestFcn;
+
+    labkit.ui.app.setCloseGuard(ui.figure, true, "Unfinished probe work.");
+    closeFcn(ui.figure, struct());
+    assert(isvalid(ui.figure), ...
+        'Close guard should keep the figure open when the user cancels.');
+    assert(confirmCalls == 1 && lastMessage == "Unfinished probe work.", ...
+        'Close guard should use the app-provided dirty-state message.');
+
+    setappdata(ui.figure, 'labkitUiBusy', true);
+    setappdata(ui.figure, 'labkitUiCloseConfirmFcn', @confirmClose);
+    closeFcn(ui.figure, struct());
+    assert(~isvalid(ui.figure), ...
+        'Close guard should close the figure when the user confirms.');
+    assert(confirmCalls == 2 && contains(lastMessage, "still working"), ...
+        'Close guard should prefer the framework busy message while busy.');
+
+    function response = confirmCancel(~, message)
+        confirmCalls = confirmCalls + 1;
+        lastMessage = string(message);
+        response = "Cancel";
+    end
+
+    function response = confirmClose(~, message)
+        confirmCalls = confirmCalls + 1;
+        lastMessage = string(message);
+        response = "Close";
     end
 end
 
@@ -263,4 +306,10 @@ function tf = sameCallback(actual, expected)
     tf = isa(actual, 'function_handle') && ...
         isa(expected, 'function_handle') && ...
         strcmp(func2str(actual), func2str(expected));
+end
+
+function deleteIfValid(fig)
+    if ~isempty(fig) && isvalid(fig)
+        delete(fig);
+    end
 end

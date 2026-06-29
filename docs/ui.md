@@ -4,7 +4,7 @@
 
 | Facade | Owns | Main APIs |
 | --- | --- | --- |
-| `labkit.ui.app` | Declarative app creation, request dispatch, busy state, safe dialog defaults, app title versioning. | `create`, `dispatchRequest`, `appVersionTitle`, `applyVersionTitle`, `defaultDialogFolder`, `promptOutputFile`, `runBusy`. |
+| `labkit.ui.app` | Declarative app creation, request dispatch, busy state, safe dialog defaults, app title versioning. | `create`, `dispatchRequest`, `appVersionTitle`, `applyVersionTitle`, `defaultDialogFolder`, `defaultOutputFolder`, `promptOutputFile`, `runBusy`, `setCloseGuard`. |
 | `labkit.ui.spec` | UI 3.0 data-only workbench specs. | `app`, `workspace`, `tab`, `section`, `field`, `rangeField`, `panner`, `action`, `actionGroup`, `filePanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `usagePanel`. |
 | `labkit.ui.view` | Semantic UI 3.0 registry updates and preview rendering helpers. | `setValue`, `getValue`, `getFiles`, `setFileSelection`, `setEnabled`, `setLimits`, `appendLog`, `setListItems`, `setListSelection`, `fileLabels`, `filePaths`, `drawImage`, `resetAxes`, `clearAxes`. |
 | `labkit.ui.tool` | Reusable composed preview tools and interaction runtime. | `createRuntime`, `anchorEditor`, `scaleBar`, `scaleBarCalibration`, `enableAxesPopout`, `popoutAxes`, `zoomAxesAtPoint`. |
@@ -146,6 +146,10 @@ Use these app-facing contracts:
 - `filePanel` and app-owned save/open dialogs should not default to `pwd`;
   `labkit.ui.app.defaultDialogFolder("input")` and `"output"` provide safe
   remembered defaults outside the LabKit install root.
+- App output defaults should be source-adjacent when a source file or folder is
+  known. Use `labkit.ui.app.defaultOutputFolder(sourcePaths, subfolderName)`;
+  the helper uses the first source path when multiple files are loaded and
+  creates the app-specific subfolder before returning it.
 - App-owned save dialogs may use `labkit.ui.app.promptOutputFile` when they
   only need a safe output default and cancel normalization; apps still own
   filenames, filters, export formats, and user-facing prompt wording.
@@ -215,6 +219,14 @@ sets a busy pointer, and appends the busy message to the window title. Direct
 callbacks and turn graphics hit testing off by default. Action transactions use
 a non-invasive mode so actions that start editors or plotting tools can leave
 their own pointer and callback state in place.
+
+LabKit-created app figures install a framework close guard. If the user tries
+to close an app while a semantic action or `runBusy` operation is active, the
+framework asks for confirmation instead of immediately deleting the figure.
+Apps with unfinished workflow state should call
+`labkit.ui.app.setCloseGuard(fig, true, message)` during refresh or dirty-state
+updates, then clear it with `setCloseGuard(fig, false)` after the workflow is
+complete.
 
 `runBusy` intentionally does not create modal progress dialogs. Apps should not
 maintain their own busy-control lists, and `runBusy` does not mutate control
@@ -326,6 +338,10 @@ or high-volume pointer movement. Trace lines include timestamp plus stable
 `app=...`, `component=...`, `event=...`, and `reason=...` fields. Default
 instrumentation wraps semantic callbacks and skips low-level pointer, drag, and
 scroll callbacks.
+`filePanel` emits framework trace lines for file choice, accepted path count,
+selection updates, and callback handoff boundaries. These traces intentionally
+record counts and semantic ids, not full local paths; app-owned readers remain
+responsible for per-file decode or parser progress.
 
 ## Callback Policy
 

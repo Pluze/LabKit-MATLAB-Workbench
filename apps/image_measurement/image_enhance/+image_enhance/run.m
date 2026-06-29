@@ -8,6 +8,7 @@ function fig = run(debugLog)
     S.items = repmat(image_enhance.state.emptyItem(), 0, 1);
     S.currentIndex = 0;
     S.steps = repmat(image_enhance.state.emptyStep(), 0, 1);
+    S.batchMode = true;
     S.outputFolder = string(labkit.ui.app.defaultDialogFolder("output"));
     S.lastExport = [];
     S.lastExportFingerprint = "";
@@ -17,17 +18,21 @@ function fig = run(debugLog)
     S.previewScales = [];
     S.previewResultImage = [];
     S.previewResultKey = "";
+    S.whiteRoiHandle = [];
+    S.whiteRoiListener = [];
 
     stepKinds = {'Brightness/contrast', 'Local contrast', 'Sharpen', ...
-        'Hue/saturation', 'White balance'};
+        'Hue/saturation', 'White balance', 'White ROI calibration'};
     callbacks = struct( ...
         'sourceImagesChosen', @onSourceImagesChosen, ...
         'removeImages', @onRemoveImages, ...
         'clearImages', @onClearImages, ...
         'imageSelectionChanged', @onImageSelectionChanged, ...
+        'batchModeChanged', @onBatchModeChanged, ...
         'previewModeChanged', @onPreviewModeChanged, ...
         'toolChanged', @onToolChanged, ...
         'toolSettingChanged', @onToolSettingChanged, ...
+        'setWhiteRoi', @onSetWhiteRoi, ...
         'applyTool', @onApplyTool, ...
         'undoHistory', @onUndoHistory, ...
         'resetHistory', @onResetHistory, ...
@@ -52,6 +57,7 @@ function fig = run(debugLog)
             return;
         end
         try
+            addLog(sprintf('Starting image import for %d selected path(s).', numel(paths)));
             S.items = readOrReuseImages(paths);
         catch ME
             showError('Could not load images', ME.message);
@@ -61,9 +67,10 @@ function fig = run(debugLog)
 
         S.currentIndex = 1;
         S.steps = repmat(image_enhance.state.emptyStep(), 0, 1);
-        S.pendingDirty = false;
+        S = image_enhance.state.setActivePendingDirty(S, false);
         invalidatePreviewCache();
-        S.outputFolder = string(fileparts(paths(1)));
+        S.outputFolder = string(labkit.ui.app.defaultOutputFolder( ...
+            paths, "image_enhance", S.outputFolder));
         markExportDirty();
         addLog(sprintf('Loaded %d image(s).', numel(S.items)));
         refreshAll();
@@ -73,7 +80,7 @@ function fig = run(debugLog)
         S.items = repmat(image_enhance.state.emptyItem(), 0, 1);
         S.currentIndex = 0;
         S.steps = repmat(image_enhance.state.emptyStep(), 0, 1);
-        S.pendingDirty = false;
+        S = image_enhance.state.setActivePendingDirty(S, false);
         invalidatePreviewCache();
         markExportDirty();
         addLog('Cleared loaded images and enhancement history.');
@@ -94,9 +101,9 @@ function fig = run(debugLog)
         if isempty(S.items)
             S.currentIndex = 0;
         end
-        pendingDirty = S.pendingDirty;
+        pendingDirty = image_enhance.state.activePendingDirty(S);
         invalidatePreviewCache();
-        S.pendingDirty = pendingDirty;
+        S = image_enhance.state.setActivePendingDirty(S, pendingDirty);
         markExportDirty();
         addLog(sprintf('Removed image file(s); %d remaining.', numel(S.items)));
         refreshAll();
@@ -112,18 +119,28 @@ function fig = run(debugLog)
         end
         S.currentIndex = idx(1);
         refreshSelection();
+        refreshHistory();
         refreshPreview();
         refreshMetrics();
         refreshDetails();
+        refreshToolStatus();
     end
 
     function onPreviewModeChanged(~, ~)
         refreshPreview();
     end
 
+    function onBatchModeChanged(~, ~)
+        S.batchMode = logical(labkit.ui.view.getValue(ui, 'batchMode'));
+        S = image_enhance.state.setActivePendingDirty(S, false);
+        invalidatePreviewCache();
+        markExportDirty();
+        refreshAll();
+    end
+
     function onToolChanged(~, ~)
         updateToolControls(true);
-        S.pendingDirty = true;
+        S = image_enhance.state.setActivePendingDirty(S, true);
         markExportDirty();
         refreshPreview();
         refreshToolStatus();
@@ -131,7 +148,7 @@ function fig = run(debugLog)
 
     function onToolSettingChanged(~, ~)
         updateToolControls(false);
-        S.pendingDirty = true;
+        S = image_enhance.state.setActivePendingDirty(S, true);
         markExportDirty();
         refreshPreview();
         refreshToolStatus();
@@ -142,32 +159,42 @@ function fig = run(debugLog)
             showError('No images loaded', 'Load images before applying enhancement tools.');
             return;
         end
+        availability = currentToolAvailability();
+        if ~availability.canApply
+            showError('White ROI missing', ...
+                'Switch off batch mode and set a white ROI for this image before applying.');
+            return;
+        end
         step = currentToolStep();
-        S.steps(end + 1, 1) = step;
-        S.pendingDirty = false;
+        steps = image_enhance.state.activeSteps(S);
+        steps(end + 1, 1) = step;
+        S = image_enhance.state.setActiveSteps(S, steps);
+        S = image_enhance.state.setActivePendingDirty(S, false);
         markExportDirty();
         addLog(sprintf('Applied tool: %s', char(step.label)));
         refreshAll();
     end
 
     function onUndoHistory(~, ~)
-        if isempty(S.steps)
+        steps = image_enhance.state.activeSteps(S);
+        if isempty(steps)
             return;
         end
-        removed = S.steps(end);
-        S.steps(end) = [];
-        S.pendingDirty = false;
+        removed = steps(end);
+        steps(end) = [];
+        S = image_enhance.state.setActiveSteps(S, steps);
+        S = image_enhance.state.setActivePendingDirty(S, false);
         markExportDirty();
         addLog(sprintf('Undid history step: %s', char(removed.label)));
         refreshAll();
     end
 
     function onResetHistory(~, ~)
-        if isempty(S.steps)
+        if isempty(image_enhance.state.activeSteps(S))
             return;
         end
-        S.steps = repmat(image_enhance.state.emptyStep(), 0, 1);
-        S.pendingDirty = false;
+        S = image_enhance.state.setActiveSteps(S, repmat(image_enhance.state.emptyStep(), 0, 1));
+        S = image_enhance.state.setActivePendingDirty(S, false);
         markExportDirty();
         addLog('Reset enhancement history.');
         refreshAll();
@@ -194,14 +221,15 @@ function fig = run(debugLog)
         opts = struct();
         opts.outputFolder = S.outputFolder;
         opts.format = labkit.ui.view.getValue(ui, 'exportFormat');
-        task = image_enhance.state.exportTask(S.items, S.steps, opts);
+        opts.itemSteps = image_enhance.state.itemStepsForExport(S);
+        task = image_enhance.state.exportTask(S.items, image_enhance.state.stepsForTask(S), opts);
         if ~isempty(S.lastExport) && S.lastExportFingerprint == task.fingerprint
             addLog('Enhanced export is already up to date; skipped duplicate write.');
             refreshDetails();
             return;
         end
         try
-            S.lastExport = image_enhance.export.writeOutputs(S.items, S.steps, opts);
+            S.lastExport = image_enhance.export.writeOutputs(S.items, image_enhance.state.stepsForTask(S), opts);
             S.lastExportFingerprint = task.fingerprint;
         catch ME
             showError('Export failed', ME.message);
@@ -231,12 +259,14 @@ function fig = run(debugLog)
         if isempty(S.items)
             labkit.ui.view.setValue(ui, 'sourceImages', {});
             labkit.ui.view.setValue(ui, 'imageStatus', 'Images: 0');
+            labkit.ui.view.setValue(ui, 'batchModeStatus', image_enhance.state.modeStatusText(S));
             return;
         end
         paths = cellstr(string({S.items.path}));
         labkit.ui.view.setValue(ui, 'sourceImages', paths);
         labkit.ui.view.setValue(ui, 'imageStatus', sprintf( ...
-            'Images: %d | history steps: %d', numel(S.items), numel(S.steps)));
+            'Images: %d | current steps: %d', numel(S.items), numel(image_enhance.state.activeSteps(S))));
+        labkit.ui.view.setValue(ui, 'batchModeStatus', image_enhance.state.modeStatusText(S));
     end
 
     function refreshSelection()
@@ -250,10 +280,12 @@ function fig = run(debugLog)
 
     function refreshControls()
         hasImages = ~isempty(S.items);
-        hasSteps = ~isempty(S.steps);
-        ui.controls.sourceImages.clearButton.Enable = onOff(hasImages);
-        ui.controls.sourceImages.listbox.Enable = onOff(hasImages);
-        labkit.ui.view.setEnabled(ui, 'applyTool', hasImages);
+        hasSteps = ~isempty(image_enhance.state.activeSteps(S));
+        availability = currentToolAvailability();
+        ui.controls.sourceImages.clearButton.Enable = image_enhance.ui.onOff(hasImages);
+        ui.controls.sourceImages.listbox.Enable = image_enhance.ui.onOff(hasImages);
+        labkit.ui.view.setEnabled(ui, 'applyTool', availability.canApply);
+        labkit.ui.view.setEnabled(ui, 'setWhiteRoi', availability.canSetWhiteRoi);
         labkit.ui.view.setEnabled(ui, 'undoHistory', hasSteps);
         labkit.ui.view.setEnabled(ui, 'resetHistory', hasSteps);
         labkit.ui.view.setEnabled(ui, 'exportImages', hasImages);
@@ -269,19 +301,22 @@ function fig = run(debugLog)
             return;
         end
         original = currentPreviewSourceImage();
-        switch currentPreviewMode()
+        switch string(labkit.ui.view.getValue(ui, 'preview'))
             case 'Original'
                 labkit.ui.view.drawImage(ui, 'preview', original, ...
                     'title', 'Original Preview');
+                refreshWhiteRoiOverlay();
             case 'Before | After'
-                enhanced = currentPreviewImage(S.pendingDirty);
+                enhanced = currentPreviewImage(image_enhance.state.activePendingDirty(S));
                 labkit.ui.view.drawImage(ui, 'preview', ...
                     image_enhance.view.beforeAfterImage(original, enhanced), ...
                     'title', 'Before | After');
+                clearWhiteRoiOverlay();
             otherwise
-                enhanced = currentPreviewImage(S.pendingDirty);
+                enhanced = currentPreviewImage(image_enhance.state.activePendingDirty(S));
                 labkit.ui.view.drawImage(ui, 'preview', enhanced, ...
                     'title', 'Enhanced Preview');
+                refreshWhiteRoiOverlay();
         end
     end
 
@@ -294,18 +329,18 @@ function fig = run(debugLog)
         processedImage = currentPreviewImage(false);
         ui.controls.metricsTable.table.Data = image_enhance.view.resultTableData( ...
             S.items(currentSelectionIndex()), ...
-            processedImage, numel(S.steps));
+            processedImage, numel(image_enhance.state.activeSteps(S)));
     end
 
     function refreshHistory()
-        ui.controls.historyTable.table.Data = image_enhance.view.historyTableData(S.steps);
+        ui.controls.historyTable.table.Data = image_enhance.view.historyTableData(image_enhance.state.activeSteps(S));
         labkit.ui.view.setValue(ui, 'historyStatus', ...
-            sprintf('History steps: %d', numel(S.steps)));
+            sprintf('History steps: %d', numel(image_enhance.state.activeSteps(S))));
     end
 
     function refreshDetails()
         labkit.ui.view.setValue(ui, 'exportDetails', image_enhance.view.detailLines( ...
-            S.items, max(currentSelectionIndex(), 1), S.steps, S.lastExport));
+            S.items, max(currentSelectionIndex(), 1), image_enhance.state.activeSteps(S), S.lastExport));
     end
 
     function refreshToolStatus()
@@ -314,17 +349,23 @@ function fig = run(debugLog)
                 'Select an image, choose a tool, then apply it to history.');
             return;
         end
+        availability = currentToolAvailability();
         step = currentToolStep();
-        if S.pendingDirty
+        if availability.isWhiteRoi
+            labkit.ui.view.setValue(ui, 'toolStatus', availability.status);
+            return;
+        end
+        if image_enhance.state.activePendingDirty(S)
             prefix = 'Previewing: ';
         else
             prefix = 'Ready: ';
         end
-        labkit.ui.view.setValue(ui, 'toolStatus', [prefix char(step.label)]);
+        labkit.ui.view.setValue(ui, 'toolStatus', ...
+            [prefix char(step.label) ' | ' availability.status]);
     end
 
     function items = readOrReuseImages(paths)
-        paths = string(paths(:));
+        paths = image_enhance.io.normalizeAppPaths(paths);
         template = image_enhance.state.emptyItem();
         items = repmat(template, numel(paths), 1);
         existingPaths = strings(0, 1);
@@ -332,10 +373,15 @@ function fig = run(debugLog)
             existingPaths = string({S.items.path}).';
         end
         missing = paths(~ismember(paths, existingPaths));
-        loaded = image_enhance.io.readImages(missing);
+        addLog(sprintf('Image import will read %d new file(s) and reuse %d loaded file(s).', ...
+            numel(missing), numel(paths) - numel(missing)));
+        loaded = image_enhance.io.readImages(missing, struct( ...
+            'progressFcn', @onReadProgress));
         for k = 1:numel(paths)
             existingIndex = find(existingPaths == paths(k), 1);
             if ~isempty(existingIndex)
+                addLog(sprintf('Reusing image %d/%d: %s', ...
+                    k, numel(paths), char(image_enhance.io.displayName(paths(k)))));
                 items(k) = S.items(existingIndex);
                 continue;
             end
@@ -343,6 +389,17 @@ function fig = run(debugLog)
             if ~isempty(loadedIndex)
                 items(k) = loaded(loadedIndex);
             end
+        end
+    end
+
+    function onReadProgress(progress)
+        switch string(progress.stage)
+            case "beforeRead"
+                addLog(sprintf('Reading image %d/%d: %s', ...
+                    progress.index, progress.count, char(progress.name)));
+            case "afterRead"
+                addLog(sprintf('Finished image %d/%d: %s', ...
+                    progress.index, progress.count, char(progress.name)));
         end
     end
 
@@ -392,9 +449,9 @@ function fig = run(debugLog)
     function imageOut = currentPreviewImage(includePending)
         imageOut = currentPreviewSourceImage();
         previewScale = currentPreviewScale();
-        steps = previewScaledSteps(S.steps, previewScale);
+        steps = previewScaledSteps(image_enhance.state.activeSteps(S), previewScale);
         stepsForKey = steps;
-        if includePending
+        if includePending && currentToolAvailability().canPreviewPending
             stepsForKey(end + 1, 1) = previewScaledStep(currentToolStep(), previewScale);
         end
         key = currentPreviewResultKey(stepsForKey, includePending);
@@ -403,12 +460,14 @@ function fig = run(debugLog)
             return;
         end
         if ~isempty(steps)
-            imageOut = image_enhance.ops.applyPipeline({imageOut}, steps);
+            imageOut = image_enhance.ops.applyPipeline( ...
+                {imageOut}, steps, {image_enhance.ui.whiteRoiHelpers("context", S.items(currentSelectionIndex()), currentPreviewScale())});
             imageOut = imageOut{1};
         end
-        if includePending
+        if includePending && currentToolAvailability().canPreviewPending
             imageOut = image_enhance.ops.applyStep( ...
-                imageOut, previewScaledStep(currentToolStep(), previewScale), []);
+                imageOut, previewScaledStep(currentToolStep(), previewScale), ...
+                image_enhance.ui.whiteRoiHelpers("context", S.items(currentSelectionIndex()), currentPreviewScale()));
         end
         S.previewResultImage = imageOut;
         S.previewResultKey = key;
@@ -476,6 +535,66 @@ function fig = run(debugLog)
             labkit.ui.view.getValue(ui, 'toolSecondary'), 0);
     end
 
+    function onSetWhiteRoi(~, ~)
+        if isempty(S.items) || S.batchMode
+            showError('White ROI unavailable', ...
+                'White ROI calibration uses per-image mode only.');
+            return;
+        end
+        clearWhiteRoiOverlay();
+        position = image_enhance.ui.whiteRoiHelpers("defaultPosition", size(currentPreviewSourceImage()));
+        if image_enhance.ui.whiteRoiHelpers("hasRoi", S.items(currentSelectionIndex()))
+            position = S.items(currentSelectionIndex()).whiteRoi .* currentPreviewScale();
+        end
+        S.whiteRoiHandle = drawrectangle(ui.controls.preview.primaryAxes, ...
+            'Position', position, 'Color', [1 1 1], 'StripeColor', [0 0 0]);
+        S.whiteRoiListener = addlistener(S.whiteRoiHandle, 'ROIMoved', ...
+            @(~, event) storeWhiteRoi(event.CurrentPosition));
+        storeWhiteRoi(S.whiteRoiHandle.Position);
+    end
+
+    function availability = currentToolAvailability()
+        availability = image_enhance.ui.toolAvailability( ...
+            S, labkit.ui.view.getValue(ui, 'toolKind'));
+    end
+
+    function storeWhiteRoi(position)
+        if isempty(S.items)
+            return;
+        end
+        S.items(currentSelectionIndex()).whiteRoi = double(position) ./ currentPreviewScale();
+        markExportDirty();
+        S = image_enhance.state.setActivePendingDirty(S, true);
+        refreshControls();
+        refreshPreview();
+        refreshToolStatus();
+    end
+
+    function refreshWhiteRoiOverlay()
+        if ~image_enhance.ui.whiteRoiHelpers("isTool", labkit.ui.view.getValue(ui, 'toolKind')) || S.batchMode || ~image_enhance.ui.whiteRoiHelpers("hasRoi", S.items(currentSelectionIndex()))
+            clearWhiteRoiOverlay();
+            return;
+        end
+        if isempty(S.whiteRoiHandle) || ~isvalid(S.whiteRoiHandle)
+            S.whiteRoiHandle = drawrectangle(ui.controls.preview.primaryAxes, ...
+                'Position', S.items(currentSelectionIndex()).whiteRoi .* currentPreviewScale(), ...
+                'Color', [1 1 1], 'StripeColor', [0 0 0]);
+            S.whiteRoiListener = addlistener(S.whiteRoiHandle, 'ROIMoved', ...
+                @(~, event) storeWhiteRoi(event.CurrentPosition));
+        end
+    end
+
+    function clearWhiteRoiOverlay()
+        if ~isempty(S.whiteRoiListener)
+            delete(S.whiteRoiListener);
+            S.whiteRoiListener = [];
+        end
+        if ~isempty(S.whiteRoiHandle) && isvalid(S.whiteRoiHandle)
+            delete(S.whiteRoiHandle);
+        end
+        S.whiteRoiHandle = [];
+    end
+
     function updateToolControls(resetToDefaults)
         values = image_enhance.ops.defaultStepValues( ...
             labkit.ui.view.getValue(ui, 'toolKind'));
@@ -485,8 +604,10 @@ function fig = run(debugLog)
         ui.controls.toolSecondary.label.Text = char(values.secondaryLabel);
         amountHandle.Limits = values.amountLimits;
         secondaryHandle.Limits = values.secondaryLimits;
-        amountHandle.Value = clampValue(amountHandle.Value, values.amountLimits);
-        secondaryHandle.Value = clampValue(secondaryHandle.Value, values.secondaryLimits);
+        amountHandle.Value = image_enhance.state.clampValue( ...
+            amountHandle.Value, values.amountLimits);
+        secondaryHandle.Value = image_enhance.state.clampValue( ...
+            secondaryHandle.Value, values.secondaryLimits);
         if resetToDefaults
             labkit.ui.view.setValue(ui, 'toolAmount', values.amount);
             labkit.ui.view.setValue(ui, 'toolSecondary', values.secondary);
@@ -500,14 +621,6 @@ function fig = run(debugLog)
         end
         S.currentIndex = min(max(S.currentIndex, 1), numel(S.items));
         index = S.currentIndex;
-    end
-
-    function mode = currentPreviewMode()
-        mode = string(labkit.ui.view.getValue(ui, 'preview'));
-        if strlength(mode) == 0
-            mode = "Enhanced";
-        end
-        mode = char(mode);
     end
 
     function resetPreviewAxes()
@@ -524,21 +637,5 @@ function fig = run(debugLog)
     function showError(titleText, message)
         addLog(sprintf('%s: %s', titleText, message));
         uialert(fig, message, titleText);
-    end
-end
-
-function value = clampValue(value, limits)
-    value = min(max(value, limits(1)), limits(2));
-end
-
-function text = onOff(value)
-    if islogical(value) && isscalar(value)
-        if value
-            text = 'on';
-        else
-            text = 'off';
-        end
-    else
-        text = char(string(value));
     end
 end

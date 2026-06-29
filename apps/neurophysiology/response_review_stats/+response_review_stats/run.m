@@ -35,6 +35,8 @@ function fig = run(debugLog)
             return;
         end
         S.inputFile = paths(1);
+        S.outputFolder = string(labkit.ui.app.defaultOutputFolder( ...
+            paths, "response_review_stats", S.outputFolder));
         S.statusMessage = "Input selected.";
         S.lastAction = "Selected input";
         addLog("Selected input: " + displayPath(S.inputFile));
@@ -72,10 +74,10 @@ function fig = run(debugLog)
     end
 
     function onSettingChanged(~, ~)
-        S.baselineWindowSec = double(labkit.ui.view.getValue(ui, ...
-            "baselineWindowSec"));
-        S.noiseWindowSec = double(labkit.ui.view.getValue(ui, ...
-            "noiseWindowSec"));
+        S.baselineWindowSec = numericScalar(labkit.ui.view.getValue(ui, ...
+            "baselineWindowSec"), S.baselineWindowSec);
+        S.noiseWindowSec = numericScalar(labkit.ui.view.getValue(ui, ...
+            "noiseWindowSec"), S.noiseWindowSec);
         S.lastAction = "Updated metric windows";
         if strlength(S.inputFile) > 0
             loadMetricsFromState("Refreshed metrics after window change");
@@ -185,6 +187,13 @@ function fig = run(debugLog)
         S.lastAction = string(actionLabel);
         addLog(S.statusMessage);
         ok = true;
+    end
+end
+
+function value = numericScalar(value, fallback)
+    value = double(value);
+    if isempty(value) || ~isscalar(value) || ~isfinite(value)
+        value = fallback;
     end
 end
 

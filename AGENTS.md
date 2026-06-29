@@ -43,6 +43,8 @@ debt for the touched area.
 - Do not reintroduce root-level legacy command wrappers, app-specific public helper packages, or public helper-dump packages such as `+labkit/+analysis`, `+data`, `+io`, or `+util`.
 - Do not convert struct models to MATLAB classes, rewrite all GUIs, replace separate app entry points with one launcher, or migrate code to another language without explicit approval.
 - Path or file-target collections must use string arrays or cell arrays. Never build multiple paths with char bracket concatenation such as `[fullfile(...), fullfile(...)]`.
+- Folder/path scalars must not be reshaped with `(:)`, because char paths become one element per character. Use `string(folder)` for one selected folder/path and reserve `paths(:)` for values already known to be string arrays or cell arrays of paths.
+- UI numeric control values must be sanitized to finite scalars before they are assigned into app state, step structs, or task structs. Do not write `step.amount = double(amount)` or similar directly from callback values; use a small scalar-normalization helper with a fallback.
 
 Default principle:
 

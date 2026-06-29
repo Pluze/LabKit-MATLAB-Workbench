@@ -65,8 +65,8 @@ function info = launcherVersion()
     info = struct( ...
         "name", "labkit_launcher", ...
         "displayName", "LabKit App Launcher", ...
-        "version", "1.1.1", ...
-        "updated", "2026-06-25");
+        "version", "1.1.2", ...
+        "updated", "2026-06-29");
 end
 
 function titleText = launcherVersionTitle()
@@ -92,7 +92,9 @@ function fig = runLauncher(root, apps)
     panelFontSize = 15;
     tableFontSize = 15;
 
+    closeExistingLauncherFigures();
     figArgs = {'Name', 'LabKit App Launcher', ...
+        'Tag', launcherFigureTag(), ...
         'Position', [150 130 1260 620], 'Color', [0.97 0.98 0.99]};
     if launcherGuiTestMode() == "hidden"
         figArgs = [figArgs, {'Visible', 'off'}];
@@ -1389,6 +1391,19 @@ function assertNotGitCheckout(root)
         error("labkit_launcher:GitCheckout", ...
             "Update from GitHub zip is disabled for git checkouts. Use git to sync this working tree.");
     end
+end
+
+function closeExistingLauncherFigures()
+    figures = findall(groot, 'Type', 'figure', 'Tag', launcherFigureTag());
+    for k = 1:numel(figures)
+        if isvalid(figures(k))
+            close(figures(k));
+        end
+    end
+end
+
+function tag = launcherFigureTag()
+    tag = 'labkit_launcher_main';
 end
 
 function mode = launcherGuiTestMode()

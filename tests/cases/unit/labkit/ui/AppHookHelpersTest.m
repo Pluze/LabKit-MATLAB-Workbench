@@ -16,6 +16,7 @@ function verify_appHookHelpers()
     checkCallbackWrapper();
     checkPromptOutputFile();
     checkDefaultDialogFolder();
+    checkDefaultOutputFolder();
     checkRequestDispatch();
     checkRequestErrors();
 end
@@ -214,6 +215,28 @@ function checkDefaultDialogFolder()
     folder = labkit.ui.app.defaultDialogFolder("input");
     assert(strcmp(folder, homeFolder), ...
         'Dialog default helper should use HOME when USERPROFILE and remembered folders are unavailable.');
+end
+
+function checkDefaultOutputFolder()
+    sourceFolder = tempname(tempdir);
+    mkdir(sourceFolder);
+    cleaner = onCleanup(@() cleanupFolder(sourceFolder));
+    firstFile = fullfile(sourceFolder, 'first.png');
+    secondFile = fullfile(tempdir, 'second.png');
+    fid = fopen(firstFile, 'w');
+    fclose(fid);
+
+    folder = labkit.ui.app.defaultOutputFolder( ...
+        [string(firstFile); string(secondFile)], "exports");
+    assert(strcmp(folder, fullfile(sourceFolder, 'exports')), ...
+        'Default output folder should use the first source path as the base.');
+    assert(exist(folder, 'dir') == 7, ...
+        'Default output folder should create the app output subfolder.');
+
+    folderFromSourceFolder = labkit.ui.app.defaultOutputFolder(sourceFolder, ...
+        "folder_exports");
+    assert(strcmp(folderFromSourceFolder, fullfile(sourceFolder, 'folder_exports')), ...
+        'Default output folder should accept a source folder directly.');
 end
 
 function restoreDialogEnvironment(previousUserProfile, previousHome, hadInputPref, previousInputPref)

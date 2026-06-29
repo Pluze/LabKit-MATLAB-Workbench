@@ -14,6 +14,7 @@ function task = exportTask(items, steps, opts)
     task.outputFolder = string(optionValue(opts, 'outputFolder', ""));
     task.options = struct('format', string(optionValue(opts, 'format', "PNG")));
     task.steps = steps;
+    task.itemSteps = optionValue(opts, 'itemSteps', {});
     task.fingerprint = taskFingerprint(items, steps, task);
 end
 
@@ -33,8 +34,22 @@ function fingerprint = taskFingerprint(items, steps, task)
     for k = 1:numel(steps)
         lines(end + 1, 1) = "step[" + string(k) + "]=" + stepToken(steps(k));
     end
+    if ~isempty(task.itemSteps)
+        for k = 1:numel(task.itemSteps)
+            itemStepLines = itemStepTokens(k, task.itemSteps{k});
+            lines = [lines; itemStepLines];
+        end
+    end
 
     fingerprint = strjoin(lines, sprintf('\n'));
+end
+
+function lines = itemStepTokens(itemIndex, steps)
+    lines = "itemStepCount[" + string(itemIndex) + "]=" + string(numel(steps));
+    for k = 1:numel(steps)
+        lines(end + 1, 1) = "itemStep[" + string(itemIndex) + "," + ...
+            string(k) + "]=" + stepToken(steps(k));
+    end
 end
 
 function token = imageToken(imageData)

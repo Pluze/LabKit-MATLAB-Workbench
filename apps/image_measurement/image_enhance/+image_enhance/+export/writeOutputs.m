@@ -21,14 +21,24 @@ function payload = writeOutputs(items, steps, opts)
     for k = 1:numel(items)
         images{k} = items(k).image;
     end
-    processed = image_enhance.ops.applyPipeline(images, steps);
+    itemSteps = optionValue(opts, 'itemSteps', {});
+    if isempty(itemSteps)
+        processed = image_enhance.ops.applyPipeline(images, steps, num2cell(items));
+    else
+        processed = cell(numel(items), 1);
+        for k = 1:numel(items)
+            processed{k} = image_enhance.ops.applyPipeline( ...
+                images(k), itemSteps{k}, {items(k)});
+            processed{k} = processed{k}{1};
+        end
+    end
 
     resultTemplate = emptyResult();
     results = repmat(resultTemplate, numel(items), 1);
     for k = 1:numel(items)
         result = resultTemplate;
         result.sourcePath = items(k).path;
-        result.stepCount = numel(steps);
+        result.stepCount = stepCountForItem(steps, itemSteps, k);
         result.widthPx = size(processed{k}, 2);
         result.heightPx = size(processed{k}, 1);
 
@@ -70,6 +80,14 @@ function result = emptyResult()
         'heightPx', 0, ...
         'stepCount', 0, ...
         'message', "");
+end
+
+function count = stepCountForItem(steps, itemSteps, index)
+    if isempty(itemSteps)
+        count = numel(steps);
+    else
+        count = numel(itemSteps{index});
+    end
 end
 
 function outputPath = uniqueOutputPath(outputFolder, sourcePath, formatName)

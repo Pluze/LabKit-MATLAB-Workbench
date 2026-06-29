@@ -18,9 +18,16 @@ function step = makeStep(method, strength, toneStrength, colorStrength)
 
     step = image_match.state.emptyStep();
     step.kind = "Reference match";
-    step.amount = double(strength);
-    step.secondary = double(toneStrength);
-    step.colorStrength = double(colorStrength);
+    step.amount = numericScalar(strength, 100);
+    step.secondary = numericScalar(toneStrength, 100);
+    step.colorStrength = numericScalar(colorStrength, 100);
     step.matchMethod = string(method);
     step.label = image_match.ops.describeStep(step);
+end
+
+function value = numericScalar(value, fallback)
+    value = double(value);
+    if isempty(value) || ~isscalar(value) || ~isfinite(value)
+        value = fallback;
+    end
 end

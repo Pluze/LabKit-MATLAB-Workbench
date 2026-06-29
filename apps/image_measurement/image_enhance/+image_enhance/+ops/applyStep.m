@@ -18,11 +18,128 @@ function outputImage = applyStep(inputImage, step, referenceImage)
                 step.amount, step.secondary);
         case 'whitebalance'
             outputImage = whiteBalance(inputImage, step.amount, step.secondary);
+        case 'whiteroicalibration'
+            outputImage = whiteRoiCalibration(inputImage, step, referenceImage);
         otherwise
             error('labkit_ImageEnhance_app:UnknownEnhancementStep', ...
                 'Unknown image enhancement step: %s', char(step.kind));
     end
     outputImage = min(max(outputImage, 0), 1);
+end
+
+function outputImage = whiteRoiCalibration(inputImage, step, context)
+    roi = roiFromContext(context);
+    if isempty(roi)
+        error('labkit_ImageEnhance_app:MissingWhiteRoi', ...
+            'White ROI calibration requires a white background ROI for each image.');
+    end
+
+    roi = clampRoi(roi, size(inputImage));
+    patch = inputImage(roi(2):(roi(2) + roi(4) - 1), ...
+        roi(1):(roi(1) + roi(3) - 1), :);
+    strength = min(max(double(step.amount) / 100, 0), 1);
+    targetWhite = min(max(double(step.secondary) / 100, 0.75), 0.98);
+
+    patchMean = squeeze(mean(patch, [1 2])).';
+    backgroundLuma = rgb2gray(reshape(patchMean, 1, 1, 3));
+    gains = backgroundLuma ./ max(patchMean, eps);
+    gains = 1 + 0.35 .* (gains - 1);
+    gains = min(max(gains, 0.85), 1.18);
+    balanced = inputImage .* reshape(gains, 1, 1, []);
+
+    luma = rgb2gray(min(max(balanced, 0), 1));
+    foreground = foregroundMask(inputImage, patchMean, luma);
+    highTarget = min(0.98, targetWhite + 0.06);
+    lowTarget = 0.025;
+    roiLuma = rgb2gray(min(max(patch .* reshape(gains, 1, 1, []), 0), 1));
+    tonedLuma = autoToneLuma(luma, roiLuma, lowTarget, highTarget);
+    tonedLuma = compressHighlights(tonedLuma, min(0.96, highTarget));
+    tonedLuma = addLocalContrast(tonedLuma, 0.10 + 0.18 * strength);
+
+    hsvImage = rgb2hsv(min(max(balanced, 0), 1));
+    hsvImage(:, :, 3) = max(hsvImage(:, :, 3), tonedLuma);
+    hsvImage(:, :, 2) = hsvImage(:, :, 2) .* (0.15 + 0.85 .* foreground);
+    calibrated = hsv2rgb(hsvImage);
+    calibrated = enhanceForegroundVibrance(calibrated, foreground, 0.05 * strength);
+    outputImage = (1 - strength) .* inputImage + strength .* calibrated;
+end
+
+function mask = foregroundMask(inputImage, patchMean, luma)
+    delta = sqrt(sum((inputImage - reshape(patchMean, 1, 1, [])).^2, 3));
+    lumaDelta = abs(luma - mean(luma(:)));
+    mask = min(1, max(0, (delta - 0.08) ./ 0.22 + 0.3 .* lumaDelta));
+end
+
+function out = autoToneLuma(luma, roiLuma, lowTarget, highTarget)
+    values = sort(luma(:));
+    if isempty(values)
+        out = luma;
+        return;
+    end
+    low = percentileFromSorted(values, 1.0);
+    roiWhite = median(roiLuma(:));
+    high = max(percentileFromSorted(values, 95.0), roiWhite);
+    if high <= low + 0.01
+        out = luma;
+        return;
+    end
+    out = (luma - low) ./ (high - low);
+    out = min(max(out, 0), 1);
+    out = lowTarget + out .* (highTarget - lowTarget);
+end
+
+function value = percentileFromSorted(values, pct)
+    index = 1 + (numel(values) - 1) * pct / 100;
+    lo = floor(index);
+    hi = ceil(index);
+    if lo == hi
+        value = values(lo);
+    else
+        value = values(lo) .* (hi - index) + values(hi) .* (index - lo);
+    end
+end
+
+function out = compressHighlights(luma, shoulder)
+    shoulder = min(max(shoulder, 0.72), 0.96);
+    over = max(0, luma - shoulder);
+    out = luma;
+    out(luma > shoulder) = shoulder + over(luma > shoulder) ./ ...
+        (1 + 4 .* over(luma > shoulder));
+end
+
+function out = addLocalContrast(luma, amount)
+    blurred = boxBlur(luma, 17);
+    detail = luma - blurred;
+    out = min(max(luma + amount .* detail, 0), 1);
+end
+
+function out = enhanceForegroundVibrance(inputImage, foreground, amount)
+    hsvImage = rgb2hsv(min(max(inputImage, 0), 1));
+    saturation = hsvImage(:, :, 2);
+    boost = amount .* foreground .* (1 - saturation);
+    hsvImage(:, :, 2) = min(1, saturation .* (1 + boost));
+    out = hsv2rgb(hsvImage);
+end
+
+function roi = roiFromContext(context)
+    roi = [];
+    if isstruct(context) && isfield(context, 'whiteRoi')
+        roi = double(context.whiteRoi);
+    elseif isstruct(context) && isfield(context, 'item') && ...
+            isfield(context.item, 'whiteRoi')
+        roi = double(context.item.whiteRoi);
+    end
+    if numel(roi) ~= 4 || any(~isfinite(roi)) || any(roi(3:4) <= 0)
+        roi = [];
+    end
+end
+
+function roi = clampRoi(roi, imageSize)
+    x1 = max(1, min(imageSize(2), round(roi(1))));
+    y1 = max(1, min(imageSize(1), round(roi(2))));
+    x2 = max(x1, min(imageSize(2), round(roi(1) + roi(3) - 1)));
+    y2 = max(y1, min(imageSize(1), round(roi(2) + roi(4) - 1)));
+    roi = [x1 y1 x2 - x1 + 1 y2 - y1 + 1];
 end
 
 function imageData = normalizeImage(imageData)

@@ -2,17 +2,20 @@
 % source RGB double images in a cell array and an ordered step array. Output is
 % a cell array after applying the same non-destructive history pipeline to each
 % image.
-function processed = applyPipeline(images, steps)
+function processed = applyPipeline(images, steps, contexts)
 
     images = normalizeImages(images);
     steps = steps(:);
     processed = images;
+    if nargin < 3 || isempty(contexts)
+        contexts = repmat({[]}, numel(images), 1);
+    end
 
     for iStep = 1:numel(steps)
         step = steps(iStep);
         for iImage = 1:numel(processed)
             processed{iImage} = image_enhance.ops.applyStep( ...
-                processed{iImage}, step, []);
+                processed{iImage}, step, contexts{iImage});
         end
     end
 end

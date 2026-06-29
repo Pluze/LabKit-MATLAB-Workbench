@@ -21,9 +21,9 @@ end
 
 function optsOut = normalizeOptions(opts)
     optsOut = struct();
-    optsOut.focusWindow = double(optionValue(opts, 'focusWindow', 0));
-    optsOut.smoothRadius = double(optionValue(opts, 'smoothRadius', 0));
-    optsOut.minConfidence = double(optionValue(opts, 'minConfidence', 0));
+    optsOut.focusWindow = numericScalar(optionValue(opts, 'focusWindow', 0), 0);
+    optsOut.smoothRadius = numericScalar(optionValue(opts, 'smoothRadius', 0), 0);
+    optsOut.minConfidence = numericScalar(optionValue(opts, 'minConfidence', 0), 0);
 end
 
 function fingerprint = taskFingerprint(task, images)
@@ -60,5 +60,12 @@ function value = optionValue(opts, name, defaultValue)
     value = defaultValue;
     if isstruct(opts) && isfield(opts, name) && ~isempty(opts.(name))
         value = opts.(name);
+    end
+end
+
+function value = numericScalar(value, fallback)
+    value = double(value);
+    if isempty(value) || ~isscalar(value) || ~isfinite(value)
+        value = fallback;
     end
 end

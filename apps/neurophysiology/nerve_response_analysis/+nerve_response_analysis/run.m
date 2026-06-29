@@ -37,6 +37,8 @@ function fig = run(debugLog)
             return;
         end
         S.sessionFile = paths(1);
+        S.outputFolder = string(labkit.ui.app.defaultOutputFolder( ...
+            paths, "nerve_response_analysis", S.outputFolder));
         S.analysis = [];
         S.statusMessage = "Filter record selected.";
         S.lastAction = "Selected filter record";

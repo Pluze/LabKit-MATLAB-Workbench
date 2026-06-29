@@ -96,6 +96,9 @@ function fig = run(debugLog)
 
         S.items = batch_crop.state.mergeChosenItems(S.items, items);
         S.currentIndex = min(max(S.currentIndex, 1), numel(S.items));
+        S.outputFolder = string(labkit.ui.app.defaultOutputFolder( ...
+            paths, "batch_crop", S.outputFolder));
+        txtOutputFolder.Value = char(S.outputFolder);
         S = batch_crop.state.clearExportState(S);
         S.canvasCache = batch_crop.state.emptyCanvasCache();
         addLog(sprintf('Loaded %d image file(s); crop tasks: %d.', numel(items), numel(S.items)));

@@ -44,6 +44,28 @@ classdef LauncherGuiTest < matlab.uitest.TestCase
             h.closeAllFigures();
         end
 
+        function launcher_replaces_existing_launcher_window(testCase)
+            setupLabKitTestPath();
+            h = guiTestHelpers();
+            h.assertUifigureAvailable();
+            cleanupMode = setGuiTestModeForTest("hidden");
+            cleanupFigures = onCleanup(@() h.closeAllFigures());
+
+            firstFig = labkit_launcher();
+            drawnow;
+            secondFig = labkit_launcher();
+            drawnow;
+
+            testCase.verifyFalse(isvalid(firstFig), ...
+                "Starting labkit_launcher again should close the previous launcher window.");
+            testCase.verifyTrue(isvalid(secondFig), ...
+                "The replacement launcher window should remain open.");
+            testCase.verifyEqual(string(secondFig.Tag), "labkit_launcher_main", ...
+                "Launcher windows should carry the stable replacement tag.");
+            clear cleanupMode cleanupFigures
+            h.closeAllFigures();
+        end
+
         function clean_artifacts_has_static_safety_guards(testCase)
             root = setupLabKitTestPath();
             source = fileread(fullfile(root, "labkit_launcher.m"));

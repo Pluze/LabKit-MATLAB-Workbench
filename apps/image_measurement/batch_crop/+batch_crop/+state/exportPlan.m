@@ -28,15 +28,15 @@ end
 function optsOut = normalizeOptions(opts)
     optsOut = struct();
     optsOut.format = string(optionValue(opts, 'format', "PNG"));
-    optsOut.cropWidth = double(optionValue(opts, 'cropWidth', 0));
-    optsOut.cropHeight = double(optionValue(opts, 'cropHeight', 0));
-    optsOut.paddingPercent = double(optionValue(opts, 'paddingPercent', 0));
+    optsOut.cropWidth = numericScalar(optionValue(opts, 'cropWidth', 0), 0);
+    optsOut.cropHeight = numericScalar(optionValue(opts, 'cropHeight', 0), 0);
+    optsOut.paddingPercent = numericScalar(optionValue(opts, 'paddingPercent', 0), 0);
     optsOut.scaleMode = string(optionValue(opts, 'scaleMode', "Pixels"));
     optsOut.scaleUnit = string(optionValue(opts, 'scaleUnit', ""));
-    optsOut.physicalWidth = double(optionValue(opts, 'physicalWidth', 0));
-    optsOut.physicalHeight = double(optionValue(opts, 'physicalHeight', 0));
-    optsOut.targetPixelsPerUnit = double(optionValue(opts, 'targetPixelsPerUnit', 0));
-    optsOut.maxUpsamplePercent = double(optionValue(opts, 'maxUpsamplePercent', 0));
+    optsOut.physicalWidth = numericScalar(optionValue(opts, 'physicalWidth', 0), 0);
+    optsOut.physicalHeight = numericScalar(optionValue(opts, 'physicalHeight', 0), 0);
+    optsOut.targetPixelsPerUnit = numericScalar(optionValue(opts, 'targetPixelsPerUnit', 0), 0);
+    optsOut.maxUpsamplePercent = numericScalar(optionValue(opts, 'maxUpsamplePercent', 0), 0);
 end
 
 function lines = optionLines(opts)
@@ -97,5 +97,12 @@ function value = optionValue(opts, name, defaultValue)
     value = defaultValue;
     if isstruct(opts) && isfield(opts, name) && ~isempty(opts.(name))
         value = opts.(name);
+    end
+end
+
+function value = numericScalar(value, fallback)
+    value = double(value);
+    if isempty(value) || ~isscalar(value) || ~isfinite(value)
+        value = fallback;
     end
 end
