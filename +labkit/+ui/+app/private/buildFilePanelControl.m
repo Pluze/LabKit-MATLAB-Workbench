@@ -86,10 +86,10 @@ function adapter = buildSingleFilePanelControl(fileSpec, parentGrid, row, callba
     panel = uipanel(parentGrid, 'Title', optionValue(props, 'label', fileSpec.id));
     panel.Layout.Row = row;
     panel.Layout.Column = [1 2];
-    grid = uigridlayout(panel, [1 2]);
-    grid.RowHeight = {'fit'};
-    grid.ColumnWidth = {'fit', '1x'};
-    grid.RowSpacing = 6;
+    grid = uigridlayout(panel, [2 2]);
+    grid.RowHeight = {32, '1x'};
+    grid.ColumnWidth = {128, '1x'};
+    grid.RowSpacing = 0;
     grid.ColumnSpacing = 8;
     grid.Padding = [8 8 8 8];
 
@@ -102,7 +102,7 @@ function adapter = buildSingleFilePanelControl(fileSpec, parentGrid, row, callba
     chooseButton.Layout.Row = 1;
     chooseButton.Layout.Column = 1;
 
-    displayField = uitextarea(grid, ...
+    displayField = uieditfield(grid, 'text', ...
         'Value', emptyFileText(props), ...
         'Editable', 'off', ...
         'Tag', 'LabKitFilePanelStatusText');
