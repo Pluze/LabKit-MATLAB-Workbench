@@ -90,7 +90,7 @@ function fig = run(debugLog)
         if isempty(S.items)
             return;
         end
-        removeIdx = fileIndices(event.removedFiles, numel(S.items));
+        removeIdx = labkit.ui.view.fileIndices(event.removedFiles, numel(S.items));
         if isempty(removeIdx)
             refreshAll();
             return;
@@ -112,7 +112,7 @@ function fig = run(debugLog)
         if isempty(S.items)
             return;
         end
-        idx = fileIndices(event.selectedFiles, numel(S.items));
+        idx = labkit.ui.view.fileIndices(event.selectedFiles, numel(S.items));
         if isempty(idx)
             return;
         end
@@ -219,18 +219,14 @@ function fig = run(debugLog)
             showError('No images loaded', 'Load images before exporting enhanced outputs.');
             return;
         end
-        opts = struct();
-        opts.outputFolder = S.outputFolder;
-        opts.format = labkit.ui.view.getValue(ui, 'exportFormat');
-        opts.itemSteps = image_enhance.state.itemStepsForExport(S);
-        task = image_enhance.state.exportTask(S.items, image_enhance.state.stepsForTask(S), opts);
+        [task, opts, steps] = currentExportTask();
         if ~isempty(S.lastExport) && S.lastExportFingerprint == task.fingerprint
             addLog('Enhanced export is already up to date; skipped duplicate write.');
             refreshDetails();
             return;
         end
         try
-            S.lastExport = image_enhance.export.writeOutputs(S.items, image_enhance.state.stepsForTask(S), opts);
+            S.lastExport = image_enhance.export.writeOutputs(S.items, steps, opts);
             S.lastExportFingerprint = task.fingerprint;
         catch ME
             showException('Export failed', ME);
@@ -342,6 +338,7 @@ function fig = run(debugLog)
     function refreshDetails()
         labkit.ui.view.setValue(ui, 'exportDetails', image_enhance.view.detailLines( ...
             S.items, max(currentSelectionIndex(), 1), image_enhance.state.activeSteps(S), S.lastExport));
+        updateCloseGuard();
     end
 
     function refreshToolStatus()
@@ -402,27 +399,6 @@ function fig = run(debugLog)
                 addLog(sprintf('Finished image %d/%d: %s', ...
                     progress.index, progress.count, char(progress.name)));
         end
-    end
-
-    function idx = fileIndices(files, itemCount)
-        idx = zeros(numel(files), 1);
-        for k = 1:numel(files)
-            if isfield(files(k), 'index')
-                indexValue = double(files(k).index);
-                if isscalar(indexValue) && isfinite(indexValue)
-                    idx(k) = indexValue;
-                    continue;
-                end
-            end
-            if isfield(files(k), 'id')
-                token = regexp(char(string(files(k).id)), '^file(\d+)$', ...
-                    'tokens', 'once');
-                if ~isempty(token)
-                    idx(k) = str2double(token{1});
-                end
-            end
-        end
-        idx = unique(idx(idx >= 1 & idx <= itemCount), 'stable');
     end
 
     function imageOut = currentPreviewSourceImage()
@@ -497,6 +473,25 @@ function fig = run(debugLog)
         S.lastExportFingerprint = "";
         S.previewResultImage = [];
         S.previewResultKey = "";
+    end
+
+    function updateCloseGuard()
+        dirty = false;
+        if ~isempty(S.items)
+            task = currentExportTask();
+            dirty = image_enhance.state.activePendingDirty(S) || ...
+                S.lastExportFingerprint ~= task.fingerprint;
+        end
+        labkit.ui.app.setCloseGuard(fig, dirty, ...
+            "Image enhance has unexported changes. Close anyway?");
+    end
+
+    function [task, opts, steps] = currentExportTask()
+        steps = image_enhance.state.stepsForTask(S);
+        opts = struct('outputFolder', S.outputFolder, ...
+            'format', labkit.ui.view.getValue(ui, 'exportFormat'), ...
+            'itemSteps', image_enhance.state.itemStepsForExport(S));
+        task = image_enhance.state.exportTask(S.items, steps, opts);
     end
 
     function scale = currentPreviewScale()

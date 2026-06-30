@@ -67,7 +67,7 @@ function fig = run(debugLog)
     end
 
     function onRemoveImages(~, event)
-        removeIdx = fileIndices(event.removedFiles, numel(S.paths));
+        removeIdx = labkit.ui.view.fileIndices(event.removedFiles, numel(S.paths));
         if isempty(removeIdx)
             refreshSummary();
             return;
@@ -308,6 +308,7 @@ function fig = run(debugLog)
                 {'Load a focus image folder or select image files to begin.'});
         end
         updateControls();
+        updateCloseGuard();
     end
 
     function updateControls()
@@ -322,6 +323,18 @@ function fig = run(debugLog)
         labkit.ui.view.setEnabled(ui, 'exportSummary', hasResult);
     end
 
+    function updateCloseGuard()
+        dirty = false;
+        if numel(S.images) >= 2
+            task = focus_stack.state.runTask( ...
+                S.paths, S.images, currentFusionOptions(), ...
+                labkit.ui.view.getValue(ui, 'autoRegister'));
+            dirty = ~S.result.ok || S.lastRunFingerprint ~= task.fingerprint;
+        end
+        labkit.ui.app.setCloseGuard(fig, dirty, ...
+            "Focus stack has unrun changes. Close anyway?");
+    end
+
     function resetPreviewAxes()
         labkit.ui.view.resetAxes(ui, 'preview', 'Fused all-in-focus image', true, 'fused');
         labkit.ui.view.resetAxes(ui, 'preview', 'Focus-depth index map', true, 'focusMap');
@@ -330,27 +343,6 @@ function fig = run(debugLog)
     function addLog(message)
         labkit.ui.view.appendLog(ui, 'logPanel', message);
         debugLog.append(message);
-    end
-
-    function idx = fileIndices(files, itemCount)
-        idx = zeros(numel(files), 1);
-        for k = 1:numel(files)
-            if isfield(files(k), 'index')
-                indexValue = double(files(k).index);
-                if isscalar(indexValue) && isfinite(indexValue)
-                    idx(k) = indexValue;
-                    continue;
-                end
-            end
-            if isfield(files(k), 'id')
-                token = regexp(char(string(files(k).id)), '^file(\d+)$', ...
-                    'tokens', 'once');
-                if ~isempty(token)
-                    idx(k) = str2double(token{1});
-                end
-            end
-        end
-        idx = unique(idx(idx >= 1 & idx <= itemCount), 'stable');
     end
 
     function markResultDirty()

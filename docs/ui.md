@@ -6,7 +6,7 @@
 | --- | --- | --- |
 | `labkit.ui.app` | Declarative app creation, request dispatch, busy state, safe dialog defaults, app title versioning. | `create`, `dispatchRequest`, `appVersionTitle`, `applyVersionTitle`, `defaultDialogFolder`, `defaultOutputFolder`, `promptOutputFile`, `promptOutputFolder`, `runBusy`, `setCloseGuard`. |
 | `labkit.ui.spec` | UI 3.0 data-only workbench specs. | `app`, `workspace`, `tab`, `section`, `field`, `rangeField`, `panner`, `action`, `actionGroup`, `filePanel`, `toolPanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `usagePanel`. |
-| `labkit.ui.view` | Semantic UI 3.0 registry updates and preview rendering helpers. | `setValue`, `getValue`, `getFiles`, `setFileSelection`, `setEnabled`, `setLimits`, `appendLog`, `setListItems`, `setListSelection`, `fileLabels`, `filePaths`, `drawImage`, `resetAxes`, `clearAxes`. |
+| `labkit.ui.view` | Semantic UI 3.0 registry updates and preview rendering helpers. | `setValue`, `getValue`, `getFiles`, `setFileSelection`, `setEnabled`, `setLimits`, `appendLog`, `setListItems`, `setListSelection`, `fileLabels`, `filePaths`, `fileIndices`, `drawImage`, `resetAxes`, `clearAxes`. |
 | `labkit.ui.tool` | Reusable composed preview tools and interaction runtime. | `createRuntime`, `anchorEditor`, `scaleBar`, `scaleBarCalibration`, `enableAxesPopout`, `popoutAxes`, `zoomAxesAtPoint`. |
 | `labkit.ui.diag` | Debug launch context, visible trace, callback instrumentation, and crash reports. | `createContext`. |
 
@@ -126,7 +126,9 @@ Use these app-facing contracts:
   `event.files`, `event.addedFiles`, `event.removedFiles`,
   `event.selectedFiles`, and `event.value` for the current selection. Apps
   that need paths call `labkit.ui.view.filePaths(files)` instead of reading
-  fields directly from the event.
+  fields directly from the event; apps that remove or select by panel entry
+  call `labkit.ui.view.fileIndices(files, itemCount)` instead of parsing
+  `id` or `index` locally.
 - The active `filePanel` selection is also a framework title context. When a
   file is selected through the panel or `labkit.ui.view.setFileSelection`, the
   app window title and preview axes titles include `file N/M: name.ext`; when

@@ -116,7 +116,7 @@ function fig = run(debugLog)
             refreshAll();
             return;
         end
-        removeIdx = batch_crop.state.fileIndices(event.removedFiles, numel(S.items));
+        removeIdx = labkit.ui.view.fileIndices(event.removedFiles, numel(S.items));
         if isempty(removeIdx)
             refreshAll();
             return;
@@ -154,7 +154,7 @@ function fig = run(debugLog)
         if isempty(S.items)
             return;
         end
-        idx = batch_crop.state.fileIndices(event.selectedFiles, numel(S.items));
+        idx = labkit.ui.view.fileIndices(event.selectedFiles, numel(S.items));
         if isempty(idx)
             return;
         end

@@ -28,6 +28,18 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
             end
         end
 
+        function filePanelIndicesNormalizeToStableItemIndices(testCase)
+            setupLabKitTestPath();
+            files = struct( ...
+                'index', {2, [], 99, []}, ...
+                'id', {'file1', 'file3', 'file4', 'file2'});
+
+            idx = labkit.ui.view.fileIndices(files, 3);
+
+            testCase.verifyEqual(idx, [2; 3], ...
+                'filePanel index helpers should prefer valid index values, fall back from missing indices, and drop duplicates or out-of-range values.');
+        end
+
         function appReadersDoNotNormalizePathShapes(testCase)
             root = setupLabKitTestPath();
             readerFiles = [
@@ -233,6 +245,30 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
             testCase.verifyEmpty(unique(findings, "stable"), ...
                 "App runners that catch MException and continue must report " + ...
                 "through the debug context before alerts or recovery logs: " + ...
+                strjoin(findings, "; "));
+        end
+
+        function dirtyImageWorkflowRunnersUseCloseGuard(testCase)
+            root = setupLabKitTestPath();
+            guardedRunnerFiles = [
+                fullfile(root, "apps", "image_measurement", "focus_stack", ...
+                    "+focus_stack", "run.m")
+                fullfile(root, "apps", "image_measurement", "image_enhance", ...
+                    "+image_enhance", "run.m")
+                fullfile(root, "apps", "image_measurement", "image_match", ...
+                    "+image_match", "run.m")];
+            findings = strings(0, 1);
+
+            for k = 1:numel(guardedRunnerFiles)
+                content = string(fileread(guardedRunnerFiles(k)));
+                if ~contains(content, "labkit.ui.app.setCloseGuard")
+                    findings(end+1, 1) = string(localRelativePath(root, guardedRunnerFiles(k)));
+                end
+            end
+
+            testCase.verifyEmpty(findings, ...
+                "Image workflow runners with dirty/export fingerprints should " + ...
+                "connect meaningful unfinished state to the framework close guard: " + ...
                 strjoin(findings, "; "));
         end
     end

@@ -118,7 +118,7 @@ function fig = run(debugLog)
         if isempty(S.items)
             return;
         end
-        removeIdx = fileIndices(event.removedFiles, numel(S.items));
+        removeIdx = labkit.ui.view.fileIndices(event.removedFiles, numel(S.items));
         if isempty(removeIdx)
             refreshAll();
             return;
@@ -140,7 +140,7 @@ function fig = run(debugLog)
         if isempty(S.items)
             return;
         end
-        idx = fileIndices(event.selectedFiles, numel(S.items));
+        idx = labkit.ui.view.fileIndices(event.selectedFiles, numel(S.items));
         if isempty(idx)
             return;
         end
@@ -352,6 +352,7 @@ function fig = run(debugLog)
         labkit.ui.view.setValue(ui, 'exportDetails', image_match.view.detailLines( ...
             S.items, max(currentSelectionIndex(), 1), S.referenceItem, ...
             S.steps, S.lastExport));
+        updateCloseGuard();
     end
 
     function refreshMatchStatus()
@@ -380,27 +381,6 @@ function fig = run(debugLog)
                 items(k) = loaded(loadedIndex);
             end
         end
-    end
-
-    function idx = fileIndices(files, itemCount)
-        idx = zeros(numel(files), 1);
-        for k = 1:numel(files)
-            if isfield(files(k), 'index')
-                indexValue = double(files(k).index);
-                if isscalar(indexValue) && isfinite(indexValue)
-                    idx(k) = indexValue;
-                    continue;
-                end
-            end
-            if isfield(files(k), 'id')
-                token = regexp(char(string(files(k).id)), '^file(\d+)$', ...
-                    'tokens', 'once');
-                if ~isempty(token)
-                    idx(k) = str2double(token{1});
-                end
-            end
-        end
-        idx = unique(idx(idx >= 1 & idx <= itemCount), 'stable');
     end
 
     function imageOut = currentPreviewSourceImage()
@@ -487,6 +467,18 @@ function fig = run(debugLog)
         S.lastExportFingerprint = "";
         S.previewResultImage = [];
         S.previewResultKey = "";
+    end
+
+    function updateCloseGuard()
+        dirty = false;
+        if ~isempty(S.items) && hasReference()
+            task = image_match.state.exportTask(S.items, S.referenceItem, S.steps, struct( ...
+                'outputFolder', S.outputFolder, ...
+                'format', labkit.ui.view.getValue(ui, 'exportFormat')));
+            dirty = S.pendingDirty || S.lastExportFingerprint ~= task.fingerprint;
+        end
+        labkit.ui.app.setCloseGuard(fig, dirty, ...
+            "Image match has unexported changes. Close anyway?");
     end
 
     function key = previewImageKey(item)

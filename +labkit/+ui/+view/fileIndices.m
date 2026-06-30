@@ -1,8 +1,16 @@
-% Expected caller: batch_crop.run filePanel callbacks. Inputs are filePanel
-% file-entry structs and the current item count. Output is a stable numeric index
-% vector bounded to existing app items. No UI state is read or changed.
 function idx = fileIndices(files, itemCount)
-%FILEINDICES Return app item indices from filePanel file entries.
+%FILEINDICES Return bounded indices from filePanel file-entry structs.
+%
+% App-facing contract:
+%   idx = labkit.ui.view.fileIndices(files, itemCount)
+%
+% Inputs:
+%   files - file-entry struct array emitted by filePanel events or returned
+%       by getFiles. Entries may expose index or id fields.
+%   itemCount - current number of app-owned items that file entries refer to.
+%
+% Output:
+%   idx - stable numeric column of unique indices within 1:itemCount.
 
     idx = zeros(numel(files), 1);
     for k = 1:numel(files)
