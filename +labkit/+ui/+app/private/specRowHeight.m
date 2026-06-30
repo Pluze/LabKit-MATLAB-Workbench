@@ -55,7 +55,7 @@ end
 
 function value = filePanelHeight(spec)
     if strcmp(char(string(optionValue(spec.props, 'mode', 'multi'))), 'single')
-        value = 94;
+        value = 72;
         return;
     end
     rows = 6;

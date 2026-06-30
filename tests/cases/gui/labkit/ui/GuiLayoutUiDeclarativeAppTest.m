@@ -439,6 +439,9 @@ function assertSingleFilePanelContract(control)
         'single-mode filePanel controls should not stretch vertically with the section.');
     assert(control.displayField.Position(3) > control.chooseButton.Position(3), ...
         'single-mode filePanel should reserve most horizontal space for the filename.');
+    rowHeight = control.panel.Parent.RowHeight{control.panel.Layout.Row};
+    assert(isnumeric(rowHeight) && rowHeight <= 72, ...
+        'single-mode filePanel should use a compact section row height.');
 end
 
 function settleLayout()
