@@ -202,9 +202,9 @@ function fig = run(debugLog)
     end
 
     function onChooseOutputFolder(~, ~)
-        folder = uigetdir(labkit.ui.app.defaultDialogFolder("output", S.outputFolder), ...
-            'Select image enhancement export folder');
-        if isequal(folder, 0)
+        [folder, cancelled] = labkit.ui.app.promptOutputFolder( ...
+            'Select image enhancement export folder', S.outputFolder);
+        if cancelled
             addLog('Export folder selection cancelled.');
             return;
         end

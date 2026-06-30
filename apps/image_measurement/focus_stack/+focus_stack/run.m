@@ -145,9 +145,12 @@ function fig = run(debugLog)
 
     function opts = currentFusionOptions()
         opts = struct();
-        opts.focusWindow = round(labkit.ui.view.getValue(ui, 'focusWindow'));
-        opts.smoothRadius = round(labkit.ui.view.getValue(ui, 'smoothRadius'));
-        opts.minConfidence = labkit.ui.view.getValue(ui, 'uncertainBlend') / 100;
+        opts.focusWindow = finiteScalar( ...
+            labkit.ui.view.getValue(ui, 'focusWindow'), 7, 3, inf, true);
+        opts.smoothRadius = finiteScalar( ...
+            labkit.ui.view.getValue(ui, 'smoothRadius'), 1, 0, inf, true);
+        opts.minConfidence = finiteScalar( ...
+            labkit.ui.view.getValue(ui, 'uncertainBlend'), 25, 0, 100, false) / 100;
     end
 
     function onFusionPresetChanged(~, ~)
@@ -374,5 +377,16 @@ function text = onOff(value)
         end
     else
         text = char(string(value));
+    end
+end
+
+function value = finiteScalar(value, fallback, minValue, maxValue, roundValue)
+    value = double(value);
+    if isempty(value) || ~isscalar(value) || ~isfinite(value)
+        value = fallback;
+    end
+    value = min(max(value, minValue), maxValue);
+    if roundValue
+        value = round(value);
     end
 end

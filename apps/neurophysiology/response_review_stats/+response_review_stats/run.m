@@ -55,9 +55,9 @@ function fig = run(debugLog)
     end
 
     function onOutputFolderChosen()
-        folder = uigetdir(labkit.ui.app.defaultDialogFolder("output", S.outputFolder), ...
-            "Select metrics output folder");
-        if isequal(folder, 0)
+        [folder, cancelled] = labkit.ui.app.promptOutputFolder( ...
+            "Select metrics output folder", S.outputFolder);
+        if cancelled
             S.lastAction = "Output folder selection cancelled";
             refreshAll();
             return;

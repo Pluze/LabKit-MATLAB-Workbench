@@ -142,9 +142,9 @@ function fig = run(debugLog)
             return;
         end
 
-        folder = uigetdir(labkit.ui.app.defaultDialogFolder("output"), ...
-            'Select folder for overlay PNGs');
-        if isequal(folder, 0)
+        [folder, cancelled] = labkit.ui.app.promptOutputFolder( ...
+            'Select folder for overlay PNGs', "");
+        if cancelled
             addLog('Save overlay PNGs cancelled.');
             return;
         end

@@ -80,9 +80,9 @@ function fig = run(debugLog)
     end
 
     function onOutputFolderChosen()
-        folder = uigetdir(labkit.ui.app.defaultDialogFolder("output", S.outputFolder), ...
-            "Select analysis output folder");
-        if isequal(folder, 0)
+        [folder, cancelled] = labkit.ui.app.promptOutputFolder( ...
+            "Select analysis output folder", S.outputFolder);
+        if cancelled
             S.lastAction = "Output folder selection cancelled";
             refreshAll();
             return;
@@ -99,10 +99,10 @@ function fig = run(debugLog)
     end
 
     function onSettingChanged(~, ~)
-        S.maxRecordings = max(0, double(labkit.ui.view.getValue(ui, ...
-            "maxRecordings")));
-        S.maxDurationSec = max(0, double(labkit.ui.view.getValue(ui, ...
-            "maxDurationSec")));
+        S.maxRecordings = finiteNonnegativeScalar( ...
+            labkit.ui.view.getValue(ui, "maxRecordings"), S.maxRecordings);
+        S.maxDurationSec = finiteNonnegativeScalar( ...
+            labkit.ui.view.getValue(ui, "maxDurationSec"), S.maxDurationSec);
         if ~isempty(S.analysis)
             S.analysis = [];
             S.statusMessage = "Analysis options changed. Analyze session to refresh.";
@@ -248,6 +248,15 @@ function paths = eventPaths(event)
         error('nerve_response_analysis:InvalidPathEvent', ...
             'filePanel event file paths must be a string column.');
     end
+end
+
+function value = finiteNonnegativeScalar(value, fallback)
+    value = double(value);
+    if isempty(value) || ~isscalar(value) || ~isfinite(value)
+        value = fallback;
+        return;
+    end
+    value = max(0, value);
 end
 
 function value = eventValue(event)

@@ -46,10 +46,10 @@ GUI workflow acceptance validation migration
 Current facts:
 
 - MATLAB source inventory from tracked files:
-  - total: 694 `.m` files, 58,105 lines
-  - `apps/`: 406 files, 23,817 lines, max 649 lines
-  - `+labkit/`: 171 files, 16,299 lines, max 647 lines
-  - `tests/`: 114 files, 15,712 lines, max 649 lines
+  - total: 695 `.m` files, 58,240 lines
+  - `apps/`: 406 files, 23,840 lines, max 649 lines
+  - `+labkit/`: 172 files, 16,377 lines, max 647 lines
+  - `tests/`: 114 files, 15,746 lines, max 649 lines
   - `labkit_launcher.m`: 1,722 lines and intentionally exempt
 - Tracked files over the 650-line repository file budget:
   `labkit_launcher.m` only, by design, because it is the self-contained repair
@@ -92,8 +92,8 @@ Current facts:
 - The public app-facing UI surface is the layered
   `labkit.ui.app/spec/view/tool/diag` foundation documented in `docs/ui.md`.
 - App-owned save dialogs that need safe output-file handling use
-  `labkit.ui.app.promptOutputFile`; output folder selection still appears in
-  several apps as direct `uigetdir(labkit.ui.app.defaultDialogFolder(...))`.
+  `labkit.ui.app.promptOutputFile`; app-owned output-folder dialogs now use
+  `labkit.ui.app.promptOutputFolder`.
 - Image workflow apps keep run/export/measurement task snapshots and
   deterministic fingerprints under app-owned `+state` helpers.
 - `buildtool gui` already runs hidden noninteractive MATLAB GUI tests through
@@ -255,7 +255,7 @@ Target shape:
 - Output file prompts use `labkit.ui.app.promptOutputFile`.
 - Output folder prompts use a framework-level helper with chooser injection,
   cancel normalization, safe default-folder handling, and remembered output
-  folder behavior. Candidate public API:
+  folder behavior:
   `labkit.ui.app.promptOutputFolder(titleText, defaultFolder, "Chooser", f)`.
 - App-specific filenames, filters, export schemas, and user-facing messages
   stay app-owned.
@@ -268,9 +268,13 @@ Target shape:
 
 Current problem edges:
 
-- Direct output-folder `uigetdir` calls remain in several apps.
-- Direct `double(labkit.ui.view.getValue(...))` assignments remain in at least
-  one runner setting path.
+- Direct output-folder `uigetdir` calls have been migrated out of apps. The
+  remaining `uigetdir` call is inside `labkit.ui.app.promptOutputFolder`, and
+  filePanel keeps its own input-folder chooser.
+- Direct `double(labkit.ui.view.getValue(...))` assignments in known runner
+  setting paths have been migrated to finite scalar normalization. Broader
+  direct control-value normalization still belongs to app-local cleanup passes
+  when those callbacks are touched.
 - Modal `uialert` is app-owned and expected, but workflow tests need an
   injectable or traceable way to avoid stalls where the path can be reached
   noninteractively.
@@ -279,16 +283,18 @@ Current problem edges:
 
 Workstreams:
 
-1. Add the folder-prompt framework helper before broad workflow testing.
-   Unit-test default folder safety, cancel behavior, chooser injection, and
+1. Completed 2026-06-30: added `labkit.ui.app.promptOutputFolder` with unit
+   coverage for safe defaults, cancel normalization, chooser injection, and
    remembered output folder updates.
-2. Migrate app output-folder callbacks from direct `uigetdir` to the framework
-   helper. Keep app status text, log wording, default source choice, and export
-   policy local.
-3. Audit direct numeric assignments from UI controls and options. Fix app-local
-   paths first with `numericScalar`-style helpers or task snapshot
-   normalization; promote only if multiple apps prove the same domain-neutral
-   API is needed.
+2. Completed 2026-06-30: migrated app output-folder callbacks from direct
+   `uigetdir` to the framework helper while keeping app status text, log
+   wording, default source choice, and export policy local.
+3. Partially completed 2026-06-30: known direct
+   `labkit.ui.view.getValue` numeric writes in `nerve_response_analysis` and
+   `focus_stack` now pass through app-local finite scalar normalization.
+   Continue auditing direct numeric UI control assignments during runner
+   cleanup; promote only if multiple apps prove the same domain-neutral API is
+   needed.
 4. Audit caught exceptions in app runners. Add framework debug reporting where
    callbacks catch and continue.
 5. Add workflow-test hooks only where a real hidden GUI test would otherwise

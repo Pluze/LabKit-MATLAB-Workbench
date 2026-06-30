@@ -4,7 +4,7 @@
 
 | Facade | Owns | Main APIs |
 | --- | --- | --- |
-| `labkit.ui.app` | Declarative app creation, request dispatch, busy state, safe dialog defaults, app title versioning. | `create`, `dispatchRequest`, `appVersionTitle`, `applyVersionTitle`, `defaultDialogFolder`, `defaultOutputFolder`, `promptOutputFile`, `runBusy`, `setCloseGuard`. |
+| `labkit.ui.app` | Declarative app creation, request dispatch, busy state, safe dialog defaults, app title versioning. | `create`, `dispatchRequest`, `appVersionTitle`, `applyVersionTitle`, `defaultDialogFolder`, `defaultOutputFolder`, `promptOutputFile`, `promptOutputFolder`, `runBusy`, `setCloseGuard`. |
 | `labkit.ui.spec` | UI 3.0 data-only workbench specs. | `app`, `workspace`, `tab`, `section`, `field`, `rangeField`, `panner`, `action`, `actionGroup`, `filePanel`, `toolPanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `usagePanel`. |
 | `labkit.ui.view` | Semantic UI 3.0 registry updates and preview rendering helpers. | `setValue`, `getValue`, `getFiles`, `setFileSelection`, `setEnabled`, `setLimits`, `appendLog`, `setListItems`, `setListSelection`, `fileLabels`, `filePaths`, `drawImage`, `resetAxes`, `clearAxes`. |
 | `labkit.ui.tool` | Reusable composed preview tools and interaction runtime. | `createRuntime`, `anchorEditor`, `scaleBar`, `scaleBarCalibration`, `enableAxesPopout`, `popoutAxes`, `zoomAxesAtPoint`. |
@@ -157,6 +157,11 @@ Use these app-facing contracts:
 - App-owned save dialogs may use `labkit.ui.app.promptOutputFile` when they
   only need a safe output default and cancel normalization; apps still own
   filenames, filters, export formats, and user-facing prompt wording.
+- App-owned output folder dialogs should use
+  `labkit.ui.app.promptOutputFolder` when they need a safe output default,
+  cancel normalization, remembered output folder updates, or test chooser
+  injection. Apps still own the selected folder state, exports, and workflow
+  wording.
 - `previewArea` belongs in `workspace` by default. Its optional `viewModes`
   selector is workspace-owned, and apps can react through `onModeChange`.
 - `previewArea` axes install LabKit-managed, pointer-gated mouse-wheel zoom by

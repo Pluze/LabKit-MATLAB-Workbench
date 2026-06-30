@@ -15,6 +15,7 @@ function verify_appHookHelpers()
     checkDebugLog();
     checkCallbackWrapper();
     checkPromptOutputFile();
+    checkPromptOutputFolder();
     checkDefaultDialogFolder();
     checkDefaultOutputFolder();
     checkRequestDispatch();
@@ -186,6 +187,39 @@ function checkPromptOutputFile()
 
     function [file, folder] = cancelFile(~, ~, ~)
         file = 0;
+        folder = 0;
+    end
+end
+
+function checkPromptOutputFolder()
+    capturedDefault = "";
+    outputFolder = tempname(tempdir);
+    mkdir(outputFolder);
+    cleaner = onCleanup(@() cleanupFolder(outputFolder));
+
+    [folder, cancelled] = labkit.ui.app.promptOutputFolder( ...
+        'Select output folder', pwd, 'Chooser', @chooseFolder);
+    assert(~cancelled, 'Output folder prompt helper should report a selected folder.');
+    assert(folder == string(outputFolder), ...
+        'Output folder prompt helper should return the selected folder.');
+    assert(~startsWith(capturedDefault, string(testRepoRoot())), ...
+        'Output folder prompt helper should not default into the LabKit runtime folder.');
+
+    remembered = labkit.ui.app.defaultDialogFolder("output");
+    assert(strcmp(remembered, outputFolder), ...
+        'Output folder prompt helper should remember existing selected folders.');
+
+    [folder, cancelled] = labkit.ui.app.promptOutputFolder( ...
+        'Select output folder', outputFolder, 'Chooser', @cancelFolder);
+    assert(cancelled && folder == "", ...
+        'Output folder prompt helper should normalize canceled chooser output.');
+
+    function folder = chooseFolder(defaultFolder, ~)
+        capturedDefault = string(defaultFolder);
+        folder = outputFolder;
+    end
+
+    function folder = cancelFolder(~, ~)
         folder = 0;
     end
 end
