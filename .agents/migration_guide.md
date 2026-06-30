@@ -135,6 +135,9 @@ Current facts:
 - `GuiLayoutRhsPreviewTest` adds the first RHS/large-file representative
   workflow test, covering synthetic RHS indexing, automatic preview drawing,
   preview channel table population, and filter-file discovery.
+- `GuiLayoutBatchCropTest` covers a second image workflow shape: synthetic
+  image load, center confirmation, default output-folder export, manifest
+  creation, and crop-file creation.
 
 ## Active Route A: Runner Complexity And Helper Quality
 
@@ -318,7 +321,7 @@ Target shape:
 Migration workstreams:
 
 1. Extend workflow acceptance beyond the current representatives
-   (`eis`, `focus_stack`, `rhs_preview`) to the remaining supported app
+   (`eis`, `focus_stack`, `batch_crop`, `rhs_preview`) to the remaining supported app
    families. Start with CI-sized synthetic inputs, then record which app
    families merit larger manual or scheduled stress cases.
 2. Extend `tests/shared/labkitWorkflowDriver.m` only for app-neutral semantic
