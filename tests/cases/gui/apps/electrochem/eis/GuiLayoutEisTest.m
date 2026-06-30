@@ -1,5 +1,5 @@
 classdef GuiLayoutEisTest < matlab.uitest.TestCase
-    %GUILAYOUTEISTEST Verify EIS GUI layout contracts.
+    %GUILAYOUTEISTEST Verify EIS GUI layout and workflow contracts.
 
     methods (Test, TestTags = {'GUI', 'Structural'})
         function eis_layout(testCase)
@@ -25,6 +25,9 @@ classdef GuiLayoutEisTest < matlab.uitest.TestCase
             h.invokeButton(fig, 'Clear all');
         end
 
+    end
+
+    methods (Test, TestTags = {'GUI', 'Workflow'})
         function eis_file_button_loads_selected_dta(testCase)
             setupLabKitTestPath();
             h = guiTestHelpers();
@@ -33,27 +36,27 @@ classdef GuiLayoutEisTest < matlab.uitest.TestCase
 
             fixture = dtaFixturePath('eis_potentiostatic_zcurve.DTA');
             fig = h.launchFigure('labkit_EIS_app', 'Gamry EIS Multi-DTA Plot GUI');
-            ui = getappdata(fig, 'labkitUiRegistry');
-            ui.controls.files.props.dialogProvider = @(~) string(fixture);
-            setappdata(fig, 'labkitUiRegistry', ui);
+            workflow = labkitWorkflowDriver(fig);
+            workflow.chooseFiles('files', fixture);
 
-            h.invokeButton(fig, 'Add DTA files');
+            workflow.click('Add DTA files');
 
-            testCase.verifyEqual(char(string(ui.controls.files.status.Value)), '1 file(s) loaded');
-            testCase.verifyTrue(any(contains(string(ui.controls.files.listbox.Items), ...
+            testCase.verifyEqual(char(workflow.fileStatus('files')), '1 file(s) loaded');
+            testCase.verifyTrue(any(contains(workflow.fileListItems('files'), ...
                 'eis_potentiostatic_zcurve.DTA')), ...
                 'Add DTA files should load the dialog-selected EIS fixture.');
-            testCase.verifyNotEqual(ui.controls.summary.textArea.Value, ...
+            testCase.verifyNotEqual(workflow.textAreaValue('summary'), ...
                 {'No files loaded.'}, ...
                 'Add DTA files should refresh the EIS summary.');
+            ui = workflow.registry();
             ax = ui.controls.plot.axesById.overlay;
             ax.XLim = [-1e4 5e4];
             ax.YLim = [4e4 13e4];
             ax.XLimMode = 'manual';
             ax.YLimMode = 'manual';
 
-            h.invokeDropdownValue(fig, 'log10(Freq)');
-            h.invokeCheckbox(fig, 'Log Y', true);
+            workflow.dropdown('log10(Freq)');
+            workflow.checkbox('Log Y', true);
 
             testCase.verifyEqual(ax.XLimMode, 'auto');
             testCase.verifyEqual(ax.YLimMode, 'auto');

@@ -42,7 +42,7 @@ buildtool listTasks
 | `changed` | Fast local validation selected from changed and untracked files. |
 | `changedFast` | Faster changed-file validation for local iteration; uses representative GUI smoke coverage when broad app GUI coverage would otherwise run. |
 | `headless` | Full non-GUI validation. |
-| `gui` | Noninteractive GUI launch, layout, callback, and gesture checks. GUI windows are hidden by default. |
+| `gui` | Noninteractive GUI launch, layout, callback, workflow, and gesture checks. GUI windows are hidden by default. |
 
 Report and discovery tasks:
 
@@ -95,13 +95,15 @@ changed-file guardrails have a stable `HEAD^` baseline on push and pull-request
 runs.
 
 When adding a test, place it under the correct ownership tree and give it the
-right stage tag: `Unit`, `Integration`, or `GUI`. CI shard membership should
-follow from `tests/cases` layout plus `TestTags`; ordinary test additions
-should not require editing `.github/workflows/matlab-tests.yml`.
+right stage tag: `Unit`, `Integration`, or `GUI`. GUI tests may add secondary
+tags such as `Structural`, `Workflow`, or `Gesture` to describe the contract
+shape. CI shard membership should follow from `tests/cases` layout plus
+`TestTags`; ordinary test additions should not require editing
+`.github/workflows/matlab-tests.yml`.
 
 Manual and scheduled workflows keep the broader report jobs available:
 coverage runs separately, and GUI validation remains opt-in because automated
-GUI checks are structural rather than full interactive workflow validation.
+GUI checks use hidden synthetic workflows rather than full manual interaction.
 
 ## Test Layout
 
@@ -109,7 +111,7 @@ GUI checks are structural rather than full interactive workflow validation.
 tests/cases/unit/              pure library and app-owned helper behavior
 tests/cases/contract/apps/     long-lived app boundary and app workflow guardrails
 tests/cases/contract/project/  project contracts grouped by topic
-tests/cases/gui/apps/          app GUI launch, layout, and callback checks
+tests/cases/gui/apps/          app GUI launch, layout, callback, and workflow checks
 tests/cases/gui/labkit/        launcher and reusable UI GUI checks
 tests/cases/gui/gesture/       focused runtime interaction lifecycle checks
 tests/shared/                  small test-facing assertions, fixture builders, GUI probes, and lookup helpers

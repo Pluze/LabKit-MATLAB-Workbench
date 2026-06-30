@@ -294,7 +294,7 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
         function testFilesUseKnownTags(testCase)
             root = setupLabKitTestPath();
             allowedTags = ["Unit", "Integration", "GUI", "Structural", ...
-                "Gesture", "Style", "Smoke"];
+                "Workflow", "Gesture", "Style", "Smoke"];
             files = collectTestFiles(fullfile(root, "tests"));
             testCase.assertFalse(isempty(files), ...
                 'Test tag guardrail should scan test files.');

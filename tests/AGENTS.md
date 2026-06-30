@@ -55,7 +55,8 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
 - UI public-surface tests should assert the layered `labkit.ui.app/spec/view/tool/diag` facade and keep low-level controls, row resize, panel internals, and popout implementation private.
 - GUI launch/debug tests may assert that every app supports debug launch and visible startup trace, but should not claim full interactive workflow validation.
 - App GUI tests should prefer semantic contracts such as expected command
-  buttons, dropdown choices, tabs, tables, axes, callbacks, and debug traces.
+  buttons, dropdown choices, tabs, tables, axes, callbacks, workflow outcomes,
+  and debug traces.
   Do not use raw component-class count snapshots in app GUI tests; those couple
   app tests to framework implementation details such as whether a readonly
   display is backed by an edit field, label, or text area. Put low-level
@@ -80,7 +81,10 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
   from legitimate small public facades, factories, filters, defaults,
   role-package contracts, and test-facing helpers.
 - When one test file grows too broad, add new focused `test_*.m` files instead of appending unrelated coverage.
-- GUI tests are launch/layout/callback checks; do not claim full interactive workflow validation from automated GUI tests.
+- GUI `Structural` tests are launch/layout/callback checks. GUI `Workflow`
+  tests may cover hidden synthetic core flows through semantic UI operations,
+  but must not claim manual visual review, scientific validity, or full
+  interactive workflow validation.
 
 ## Validation Scope Discipline
 

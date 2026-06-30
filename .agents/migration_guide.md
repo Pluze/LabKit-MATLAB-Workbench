@@ -39,7 +39,6 @@ Current active migration debt:
 
 ```text
 runner complexity and helper quality migration
-testable workflow hook migration
 GUI workflow acceptance validation migration
 ```
 
@@ -111,6 +110,10 @@ Current facts:
 - Current app GUI tests are mostly launch, layout, callback, and debug-trace
   checks; they do not yet consistently prove that each app can complete its
   core user task flow with synthetic inputs and exports.
+- `tests/shared/labkitWorkflowDriver.m` provides the first app-neutral hidden
+  GUI workflow helper for registry reads, filePanel injection, semantic control
+  invocation, and state reads. `GuiLayoutEisTest` has the first `Workflow`
+  tagged representative app test.
 
 ## Active Route A: Runner Complexity And Helper Quality
 
@@ -251,51 +254,7 @@ Completion criteria:
 - Any new guardrail catches cosmetic helper extraction without failing
   legitimate small APIs or test-facing helper functions.
 
-## Active Route B: Testable Workflow Hooks
-
-Objective:
-
-Remove callback edges that block hidden workflow acceptance tests while
-preserving normal public app behavior.
-
-Target shape:
-
-- File input uses `labkit.ui.spec.filePanel` and framework file-entry events.
-- Output file prompts use `labkit.ui.app.promptOutputFile`.
-- Output folder prompts use `labkit.ui.app.promptOutputFolder` with chooser
-  injection, cancel normalization, safe default-folder handling, and remembered
-  output folder behavior:
-  `labkit.ui.app.promptOutputFolder(titleText, defaultFolder, "Chooser", f)`.
-- App-specific filenames, filters, export schemas, and user-facing messages
-  stay app-owned.
-- App-specific alert titles and messages stay app-owned while modal mechanics
-  route through `labkit.ui.app.showAlert`.
-- Caught callback exceptions that continue must reach the framework debug
-  context before alerts or recovery logs are shown.
-- UI numeric control values must be normalized to finite scalar app state or
-  task values before assignment.
-- Apps with newly introduced dirty or incomplete workflow state should use the
-  framework close guard when leaving would discard meaningful user work.
-
-Current problem edges:
-
-- Broad direct numeric UI control assignment audits still belong to app-local
-  runner cleanup when those callbacks are touched.
-
-Workstreams:
-
-1. Continue auditing direct numeric UI control assignments during runner
-   cleanup; promote only if multiple apps prove the same domain-neutral API is
-   needed.
-2. Use the Route A helper rubric while doing this work. Do not solve a dialog
-   migration by adding many single-use one-line wrappers.
-
-Completion criteria:
-
-- Remaining direct numeric UI state assignments found during runner cleanup are
-  finite-scalar normalized before reaching app state or task structs.
-
-## Active Route C: GUI Workflow Acceptance Validation
+## Active Route B: GUI Workflow Acceptance Validation
 
 Objective:
 
@@ -304,12 +263,13 @@ hidden, synthetic-data workflow acceptance checks that prove a user can
 complete each app's core task flow. The target is not scientific correctness
 proof. Correctness stays in app-owned GUI-free unit tests.
 
-Dependency:
+Prerequisite status:
 
-Do not broadly roll out this route before Route B has a working folder-prompt
-hook, hidden-test-safe alert helper, and a clear remaining-modal-edge policy.
-Otherwise workflow tests will either stall on OS dialogs or grow app-specific
-test shims that later need removal.
+The workflow-test blockers that previously required a separate hook migration
+are retired: filePanel path/index helpers, output file/folder prompt helpers,
+hidden-test-safe alert routing, debug reporting for caught callback exceptions,
+finite-scalar numeric assignment guardrails, and close guards for current
+fingerprinted image workflows are all in source and tests.
 
 Target shape:
 
@@ -340,14 +300,14 @@ Target shape:
 
 Migration workstreams:
 
-1. Define the shared workflow-driver helper in `tests/shared/` with explicit,
-   semantic operations. Avoid vague helpers that guess app meaning from button
-   labels or combine unrelated concepts such as status text and selected-list
-   text.
-2. Add the first representative app workflow tests for at least one image app,
-   one electrochem/DTA app, and one large-file or biosignal/RHS app. Start with
-   CI-sized synthetic inputs, then record which app families merit larger
-   manual or scheduled stress cases.
+1. Add the next representative app workflow tests for at least one image app
+   and one large-file or biosignal/RHS app. Start with CI-sized synthetic
+   inputs, then record which app families merit larger manual or scheduled
+   stress cases.
+2. Extend `tests/shared/labkitWorkflowDriver.m` only for app-neutral semantic
+   operations proven by real workflow tests. Avoid vague helpers that guess app
+   meaning from button labels or combine unrelated concepts such as status text
+   and selected-list text.
 3. Add app-owned hooks only when a real workflow path otherwise opens a modal
    alert, OS file chooser, or output chooser that would stall hidden GUI tests.
    Keep normal public app entry points unchanged.
