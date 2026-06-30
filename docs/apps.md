@@ -140,6 +140,26 @@ Create optional role packages only when the app has code for that role:
 Use the app slug as the package name. Do not use a shared `+app` namespace.
 Do not add family-level `private/` helper folders.
 
+## Runner And Helper Shape
+
+Package-root `run.m` owns app lifecycle orchestration: launch/debug wiring,
+state coordination, callback adapters, user alerts, refresh order, close
+guards, and user-facing log wording. Reducing `run.m` complexity should move
+cohesive responsibilities out of the runner, not scatter simple callback-local
+code into many tiny files.
+
+Keep small code local when the call site is clearer than a separate name. Move
+code into app-owned role packages when it owns deterministic state, IO
+normalization, file discovery, GUI-free operations, export output, display
+data, or focused custom UI/tool glue that can be tested or reused by the real
+app path.
+
+Near the runner size thresholds, choose one substantial responsibility to move
+or one reusable workflow hook to extract. Do not create short pass-through
+helpers solely to lower the line count. See
+[architecture.md](architecture.md#extraction-quality) for the reusable
+extraction rule and helper-quality principles.
+
 ## Task Lifecycle
 
 Apps with preview, edit, run, or export workflows should keep task lifecycle

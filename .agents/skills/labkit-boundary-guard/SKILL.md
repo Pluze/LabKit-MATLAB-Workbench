@@ -45,6 +45,13 @@ Before moving code into `+labkit`, prove that the helper:
 
 If this is not proven, keep the code app-local.
 
+Do not promote a helper into `+labkit` merely because it is duplicated, short,
+or useful for lowering an app runner's line count. First decide whether the
+duplication is still app-family workflow policy, a private implementation
+detail, or a true domain-neutral app-facing contract. Family-specific formulas,
+filters, option defaults, display labels, export columns, and workflow wording
+stay under the owning app package even when two sibling apps share the shape.
+
 For UI boundary work, prefer `labkit.ui.app.create`,
 `labkit.ui.spec.*`, named `labkit.ui.view.*` helpers,
 `labkit.ui.app.dispatchRequest`, `labkit.ui.diag.createContext`, and

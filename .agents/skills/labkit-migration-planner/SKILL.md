@@ -59,6 +59,18 @@ file is active app-structure debt. Do not treat a line-count drop as success
 unless directly tested behavior moved out of the runner and the GUI path calls
 the extracted helper.
 
+For runner-complexity work, scan helper quality as well as file length:
+
+- count package-root `run.m` files and sort by line count
+- count short app helpers, excluding public entrypoints, `requirements.m`,
+  `version.m`, package-root `run.m`, and ordinary `+ui/buildSpec.m`
+- identify repeated micro-helper families and one-call pass-through wrappers
+- classify short helpers as keep-as-contract, merge, inline, or framework-hook
+  candidate before proposing new extraction
+- treat roughly 500 runner lines as a review threshold and roughly 625 lines as
+  a migration threshold, but never use a threshold as the only extraction
+  reason
+
 ## Health Review
 
 When asked about project health, overengineering, management quality, or
@@ -160,6 +172,18 @@ For each proposed migration, classify work as:
 Migration progress means behavior becomes clearer, directly testable, and used
 by the real GUI path. Moving a large block into another large helper is not
 progress.
+
+For helper extraction, prefer responsibility quality over helper count:
+
+- keep small callback-local code inline or nested when a separate file hides
+  state mutation or workflow order
+- keep or create app-owned helpers when they protect deterministic state,
+  IO/file discovery, GUI-free operations, export boundaries, display data, or
+  focused custom UI/tool glue
+- promote to `+labkit` only after the boundary guard proves a domain-neutral
+  app-facing contract
+- do not add a blocking short-helper guardrail until a reviewed dry-run report
+  can avoid false positives for valid small contracts
 
 ## Handoff Requirements
 

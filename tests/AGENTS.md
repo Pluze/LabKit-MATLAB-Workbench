@@ -74,6 +74,11 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
 - Repository-wide guardrails should cache tracked-file lists or file contents
   within the test process when multiple assertions scan the same scope. Do not
   add duplicate full-tree scans that differ only by diagnostic wording.
+- Runner-complexity and helper-quality checks should start as dry-run reports.
+  Do not add a blocking minimum-helper-length guardrail. If a helper-quality
+  guardrail becomes necessary, it must distinguish cosmetic micro-extraction
+  from legitimate small public facades, factories, filters, defaults,
+  role-package contracts, and test-facing helpers.
 - When one test file grows too broad, add new focused `test_*.m` files instead of appending unrelated coverage.
 - GUI tests are launch/layout/callback checks; do not claim full interactive workflow validation from automated GUI tests.
 

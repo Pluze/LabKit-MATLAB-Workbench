@@ -53,6 +53,28 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
   owns state, callback closures, alerts, log wording, and refresh order.
   `buildSpec.m` describes controls, sections, workspace, initial text/defaults,
   and callback handles only.
+- Package-root `run.m` files are allowed to contain app lifecycle
+  orchestration. Do not treat the repository line budget as a request to split
+  every small callback, label formatter, boolean check, or one-call framework
+  wrapper into a separate file.
+- Treat roughly 500 lines in `run.m` as a responsibility-review threshold,
+  roughly 625 lines as a migration threshold, and the repository file budget as
+  only the hard backstop. Near those thresholds, use
+  `.agents/migration_guide.md` to decide which cohesive responsibility should
+  move, not how many helper files to create.
+- Before extracting a new app helper, name the contract it owns: deterministic
+  state shape, IO normalization, file discovery, GUI-free operation, export
+  boundary, display data, or focused custom UI/tool glue. A helper that only
+  exists to make the line count smaller should stay local, inline, or nested.
+- Helpers under roughly 20 lines need a clear reason to live in their own file:
+  stable app data shape, multiple meaningful call sites, direct tests, public
+  facade role, or an allowed small factory/filter/default contract. Otherwise
+  keep the code near the caller so workflow order and state mutation stay easy
+  to read.
+- When reducing a dense runner, also audit recently extracted micro-helpers.
+  Inline or merge short helpers that obscure the call site and have no
+  independent contract; extract larger cohesive blocks that remove a real
+  responsibility from the runner.
 - Keep nontrivial `buildSpec.m` files readable by showing the app constructor,
   control-tab tree, and workspace at the top, then defining tabs, sections, and
   workspace regions with local builder functions. Prefer this source structure

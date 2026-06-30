@@ -1,39 +1,85 @@
 # Agent Migration Ledger
 
 This is the agent-facing migration debt ledger for LabKit. It is not an
-architecture manual, validation matrix, historical changelog, or roadmap.
+architecture manual, validation matrix, historical changelog, or general
+roadmap.
 
 Human-facing architecture and app behavior live in `docs/`. Exact validation
 commands live in `docs/testing.md` and are routed through
-`labkit-test-planner`. This ledger owns only active migration debt facts,
-retirement rules, and the minimum standard for handling future migration debt.
+`labkit-test-planner`. This ledger owns active migration debt facts, retirement
+rules, and executable migration routes.
 
-## Lifecycle
+## How To Use This File
 
-Update this ledger only when migration debt is added, reduced, retired, or
-reprioritized. Keep it aligned with:
+Use this file when working on migration debt, runner complexity, helper
+structure, app workflow validation, app-owned package cleanup, or framework
+hook extraction. A capable agent should be able to continue an active route
+from this file without asking for a new plan.
 
-- current capability-style project guardrails
-- `AppPackageStructureGuardrailTest` app package structure checks
-- `docs/architecture.md` when human-facing boundary facts change
+Before executing a route:
 
-When debt is retired, remove stale ledger entries and shrink this file in the
-same change. A completed migration should not remain as active roadmap text.
+1. Verify the current facts with source scans. Do not trust this snapshot if
+   files have changed.
+2. Preserve app-first ownership: app workflow stays in apps; reusable mechanics
+   move to `+labkit` only when the boundary test is clearly met.
+3. Prefer behavior-backed refactors. A line-count drop is not progress unless
+   responsibilities become clearer and the real GUI or app path calls the
+   extracted helper.
+4. Update this file only when migration debt is added, reduced, retired, or
+   reprioritized.
+
+When a route completes, shrink this file again. Completed work should become
+source, tests, docs, or guardrails, not permanent roadmap prose.
 
 ## Current Debt Snapshot
+
+Last audited: 2026-06-30.
 
 Current active migration debt:
 
 ```text
+runner complexity and helper quality migration
+testable workflow hook migration
 GUI workflow acceptance validation migration
 ```
 
 Current facts:
 
-- Tracked files over the 650-line repository file budget: `labkit_launcher.m`
-  only, by design, because it is the self-contained repair entry point.
-- App entry points and package-root app `run.m` runners are covered by the
-  repository file budget rather than a separate app-only line limit.
+- MATLAB source inventory from tracked files:
+  - total: 694 `.m` files, 58,105 lines
+  - `apps/`: 406 files, 23,817 lines, max 649 lines
+  - `+labkit/`: 171 files, 16,299 lines, max 647 lines
+  - `tests/`: 114 files, 15,712 lines, max 649 lines
+  - `labkit_launcher.m`: 1,722 lines and intentionally exempt
+- Tracked files over the 650-line repository file budget:
+  `labkit_launcher.m` only, by design, because it is the self-contained repair
+  entry point.
+- Package-root app `run.m` files currently range from 220 to 649 lines.
+  Hotspots are:
+  - `apps/image_measurement/batch_crop/+batch_crop/run.m` at 649 lines
+  - `apps/image_measurement/image_enhance/+image_enhance/run.m` at 648 lines
+  - `apps/neurophysiology/rhs_preview/+rhs_preview/run.m` at 612 lines
+  - `apps/image_measurement/image_match/+image_match/run.m` at 554 lines
+  - `apps/dic/dic_preprocess/+dic_preprocess/run.m` at 522 lines
+  - `apps/image_measurement/curvature/+curvature/run.m` at 520 lines
+  - `apps/electrochem/vt_resistance/+vt_resistance/run.m` at 502 lines
+- `+labkit` implementation hotspots near the file budget are:
+  - `+labkit/+ui/+app/private/buildFilePanelControl.m` at 647 lines
+  - `+labkit/+ui/+app/private/buildControl.m` at 643 lines
+  - `+labkit/+ui/+tool/createRuntime.m` at 636 lines
+  - `+labkit/+ui/+diag/createContext.m` at 628 lines
+  - `+labkit/+biosignal/private/detectEcgPeaksImpl.m` at 623 lines
+- Short app helper inventory, excluding app entrypoints, `requirements.m`,
+  `version.m`, package-root `run.m`, and `+ui/buildSpec.m`:
+  - 55 app helpers are 1-10 lines
+  - 97 app helpers are 11-20 lines
+  - 79 app helpers are 21-40 lines
+  - many short files are useful role contracts, but some are likely cosmetic
+    extraction created by line-budget pressure.
+- Repeated micro-helper families to audit before adding more helpers include
+  `ternary.m`, `onOff.m`, `supportedImageExtensions.m`, `imageDialogFilter.m`,
+  one-off `optionValue`, `fieldOrDefault`, `numericScalar`, small display-name
+  helpers, and tiny pass-through wrappers.
 - App `private/` debt: none.
 - `+labkit` private helper contract debt: none.
 - String-dispatch workflow adapters and app `+core/dispatch.m` routers: none.
@@ -45,9 +91,9 @@ Current facts:
   role-based app-owned component packages, and avoid generic helper buckets.
 - The public app-facing UI surface is the layered
   `labkit.ui.app/spec/view/tool/diag` foundation documented in `docs/ui.md`.
-- App-owned save dialogs that need safe default-folder handling use
-  `labkit.ui.app.promptOutputFile`; ordinary file input selection is represented
-  as file entries through `labkit.ui.spec.filePanel`.
+- App-owned save dialogs that need safe output-file handling use
+  `labkit.ui.app.promptOutputFile`; output folder selection still appears in
+  several apps as direct `uigetdir(labkit.ui.app.defaultDialogFolder(...))`.
 - Image workflow apps keep run/export/measurement task snapshots and
   deterministic fingerprints under app-owned `+state` helpers.
 - `buildtool gui` already runs hidden noninteractive MATLAB GUI tests through
@@ -57,17 +103,223 @@ Current facts:
   checks; they do not yet consistently prove that each app can complete its
   core user task flow with synthetic inputs and exports.
 
-## Active Route: GUI Workflow Acceptance Validation
+## Active Route A: Runner Complexity And Helper Quality
+
+Objective:
+
+Replace line-count-driven extraction with responsibility-driven runner cleanup.
+The goal is smaller, clearer `run.m` orchestration without proliferating tiny
+files that exist only to satisfy the 650-line guardrail.
+
+Target shape:
+
+- Package-root `run.m` owns app lifecycle orchestration:
+  launch/debug wiring, state coordination, callback adapters, user alerts, log
+  wording, refresh order, dirty flags, small preview caches, and close-guard
+  state.
+- App-owned helpers own stable behavior contracts:
+  deterministic state snapshots, IO normalization, file discovery, pure
+  computation, export writers/manifests, view model data, and focused custom
+  UI/tool glue.
+- Helper files are extracted because they clarify a responsibility and can be
+  tested or reused by the real app path, not because a file is close to a line
+  limit.
+- Existing tiny helper files are audited by call-site value. Some should stay
+  as named app contracts; some should merge into a neighboring cohesive helper;
+  some should be inlined into the owning runner or buildSpec when that makes
+  the workflow easier to read.
+
+Runner size policy:
+
+- The 650-line repository file budget remains a hard backstop.
+- Treat 500 lines as a review threshold for app `run.m`: new substantive logic
+  should be accompanied by a responsibility audit.
+- Treat 625 lines as a migration threshold: do not add more behavior to that
+  runner until a cohesive block has moved to an app-owned package or a reusable
+  framework hook.
+- Do not create a new helper solely to reduce a file below a threshold. If a
+  small helper is extracted, the migration or commit handoff must identify the
+  behavior contract it protects.
+- A runner below 500 lines can still be too complex when it mixes unrelated
+  responsibilities, blocks workflow testing with OS dialogs, repeats a shared
+  framework mechanism, or keeps deterministic calculations inside callbacks.
+
+Helper extraction rubric:
+
+Keep code in the runner, as a nested local function, or inline at the call site
+when most of these are true:
+
+- the code is under roughly 20 lines and has one or two call sites
+- the helper only formats a trivial label, returns a constant list, checks a
+  single boolean, or wraps one framework call
+- the helper name is broader than the behavior it contains
+- the helper has no useful independent test surface
+- keeping it near the callback makes state changes or workflow order easier to
+  understand
+
+Keep or create an app-owned helper when most of these are true:
+
+- the helper has an app-specific but stable contract that can be named clearly
+- it is deterministic or isolates one explicit side effect such as export or
+  file discovery
+- it owns a data shape used by multiple callbacks, tests, or workflow phases
+- it can be tested directly without launching a GUI
+- moving it makes the runner orchestration read more clearly
+- it prevents a known regression class such as unsafe path shapes, unsanitized
+  numeric state, stale task fingerprints, duplicate export work, or malformed
+  output records
+
+Promote behavior to `+labkit` only when `labkit-boundary-guard` criteria are
+met:
+
+- domain-neutral name
+- no app units, thresholds, result columns, plot wording, or export schema
+- no app state reads or mutations
+- independently testable
+- used by at least two real apps or clearly owned by a facade
+- improves the app-facing API rather than broadening a vague helper surface
+
+Allowed short-file exceptions:
+
+- public app entrypoints, `requirements.m`, `version.m`, and public facade
+  functions that are intentionally one-function APIs
+- `+ui/buildSpec.m` local builders when they keep visual order readable
+- tiny factories such as `emptyItem` or task defaults when tests and app code
+  both consume the named shape
+- file filters or extension lists while they are still app-specific input
+  policy
+- small test helpers under `tests/shared/` that are direct test-facing APIs
+- private framework adapter helpers when splitting prevents duplicated
+  callback or UI-control internals
+
+Workstreams:
+
+1. Build a repeatable dry-run audit for helper quality. It should report file
+   length, role package, function count, call count, public/private status,
+   direct unit-test references, and whether the helper is in an allowed
+   exception class. Do not add a blocking guardrail until the report has been
+   reviewed against current short helpers.
+2. Classify current app helpers under 20 lines into:
+   keep as contract, merge with neighboring helper, inline into caller, or
+   candidate reusable framework hook. Record only unresolved debt here; do not
+   preserve the full historical spreadsheet in docs.
+3. Prototype the cleanup on one dense image app and one dense non-image app.
+   Recommended first pair:
+   `image_enhance` or `batch_crop`, plus `rhs_preview` or
+   `vt_resistance`. The prototype should reduce runner responsibility and not
+   increase helper count through one-line wrappers.
+4. For helpers duplicated across app siblings, prefer family-local app-owned
+   consolidation only when the shared behavior is still app/workflow-specific.
+   Do not create family-level public helper packages. If the behavior is
+   domain-neutral and app-facing, evaluate it for `+labkit`.
+5. Add or update tests after code cleanup:
+   - direct unit tests for app-owned deterministic helpers
+   - focused GUI tests only when callback wiring or visible app behavior
+     changes
+   - project guardrails only after the rule is proven and low-noise
+6. After several cleanup passes, replace the hard-coded short-helper audit with
+   a low-noise guardrail only if it can distinguish cosmetic micro-extraction
+   from legitimate small public contracts.
+
+Non-goals:
+
+- Do not enforce a minimum helper length.
+- Do not inline short helpers that are public API, stable task/data factories,
+  or directly tested behavior contracts.
+- Do not move app-specific formulas, thresholds, result schemas, plot labels,
+  export columns, or workflow wording into `+labkit`.
+- Do not compress MATLAB function bodies or use one-line functions to satisfy
+  line budgets.
+
+Completion criteria:
+
+- Dense runners above the migration threshold have responsibility maps and
+  no longer grow by adding unrelated behavior.
+- Short helper files have been reviewed with an explicit keep/merge/inline
+  decision for the current hotspots.
+- New helper extraction is justified by contract, tests, call-site clarity, or
+  reusable boundary value, not by line count alone.
+- Any new guardrail catches cosmetic helper extraction without failing
+  legitimate small APIs or test-facing helper functions.
+
+## Active Route B: Testable Workflow Hooks
+
+Objective:
+
+Remove OS-dialog and callback edges that block hidden workflow acceptance tests
+while preserving normal public app behavior.
+
+Target shape:
+
+- File input uses `labkit.ui.spec.filePanel` and framework file-entry events.
+- Output file prompts use `labkit.ui.app.promptOutputFile`.
+- Output folder prompts use a framework-level helper with chooser injection,
+  cancel normalization, safe default-folder handling, and remembered output
+  folder behavior. Candidate public API:
+  `labkit.ui.app.promptOutputFolder(titleText, defaultFolder, "Chooser", f)`.
+- App-specific filenames, filters, export schemas, and user-facing messages
+  stay app-owned.
+- Caught callback exceptions that continue must reach the framework debug
+  context before alerts or recovery logs are shown.
+- UI numeric control values must be normalized to finite scalar app state or
+  task values before assignment.
+- Apps with dirty or incomplete workflow state should use the framework close
+  guard when leaving would discard meaningful user work.
+
+Current problem edges:
+
+- Direct output-folder `uigetdir` calls remain in several apps.
+- Direct `double(labkit.ui.view.getValue(...))` assignments remain in at least
+  one runner setting path.
+- Modal `uialert` is app-owned and expected, but workflow tests need an
+  injectable or traceable way to avoid stalls where the path can be reached
+  noninteractively.
+- `setCloseGuard` exists but is not yet consistently connected to app dirty
+  workflow state.
+
+Workstreams:
+
+1. Add the folder-prompt framework helper before broad workflow testing.
+   Unit-test default folder safety, cancel behavior, chooser injection, and
+   remembered output folder updates.
+2. Migrate app output-folder callbacks from direct `uigetdir` to the framework
+   helper. Keep app status text, log wording, default source choice, and export
+   policy local.
+3. Audit direct numeric assignments from UI controls and options. Fix app-local
+   paths first with `numericScalar`-style helpers or task snapshot
+   normalization; promote only if multiple apps prove the same domain-neutral
+   API is needed.
+4. Audit caught exceptions in app runners. Add framework debug reporting where
+   callbacks catch and continue.
+5. Add workflow-test hooks only where a real hidden GUI test would otherwise
+   block. Do not add fake app APIs that ordinary users can see or need.
+6. Use the Route A helper rubric while doing this work. Do not solve a dialog
+   migration by adding many single-use one-line wrappers.
+
+Completion criteria:
+
+- Hidden GUI workflow tests can replace file and folder chooser edges without
+  OS dialogs.
+- Export-folder selection behavior remains safe outside the LabKit runtime
+  folder.
+- Numeric UI state assignments that affect app state or task structs are
+  finite-scalar normalized.
+- Caught callback exceptions that continue are represented in debug reports.
+
+## Active Route C: GUI Workflow Acceptance Validation
 
 Objective:
 
 Migrate app-level GUI validation from mostly structural launch/layout checks to
-hidden, synthetic-data workflow acceptance checks that prove a user can complete
-each app's core task flow. The target is not scientific correctness proof.
-Correctness stays in app-owned GUI-free unit tests. Workflow GUI tests should
-expose broken flows, state-machine errors, modal-dialog stalls, basic
-performance regressions, reload/reset/idempotency bugs, and export-path
-failures.
+hidden, synthetic-data workflow acceptance checks that prove a user can
+complete each app's core task flow. The target is not scientific correctness
+proof. Correctness stays in app-owned GUI-free unit tests.
+
+Dependency:
+
+Do not broadly roll out this route before Route B has a working folder-prompt
+hook and a clear modal-edge policy. Otherwise workflow tests will either stall
+on OS dialogs or grow app-specific test shims that later need removal.
 
 Target shape:
 
@@ -78,15 +330,12 @@ Target shape:
   visible windows and blocking OS dialogs.
 - Add a small `tests/shared` semantic GUI workflow driver only for
   app-neutral mechanics such as reading the `labkitUiRegistry`, invoking
-  semantic actions, injecting `filePanel` dialog providers, checking enabled
-  state, reading status text, and counting preview children.
+  semantic actions, injecting `filePanel` and folder-prompt providers, checking
+  enabled state, reading status text, reading log text, and counting preview
+  children.
 - Keep synthetic fixture generation, expected workflow sequence, performance
   budget, export assertions, and result-schema expectations in the owning app's
   tests.
-- Use app-owned runner hooks only where workflow tests need to replace modal or
-  OS-bound edges such as alerts, input dialogs, output-folder choosers, and save
-  prompts. These hooks are test infrastructure for app-owned workflows, not a
-  new public `+labkit` API.
 - Let completed app workflow tests absorb smoke-launch coverage for that app
   and most low-value exact layout assertions. Keep only essential structural
   checks for semantic controls, standard shell shape, debug trace, and visible
@@ -160,28 +409,43 @@ Completion criteria:
   missing-coverage guardrail.
 - Framework UI, gesture, contract, and GUI-free unit tests remain in their
   current ownership lanes.
-- This active route is removed or shrunk to a compact debt-free ledger once the
-  migration is complete.
+
+## Long-Term Compatibility Queue
+
+The DTA facade intentionally keeps legacy bridge fields beside canonical
+unit-explicit fields. This is compatibility debt, not current cleanup debt.
+
+Do not remove fields such as chrono `t`, `Vf`, `Im`, `alignTime`,
+`tAligned`, or EIS `Pt`, `Freq`, `Zreal`, `Zimag`, `negZimag` during ordinary
+runner cleanup. A removal requires an explicit DTA major-version route after
+electrochem apps and tests have moved to canonical fields.
 
 ## Migration Standard
 
-Apps are first-class products. `+labkit` stays a small domain-neutral foundation
-with UI, DTA, RHS, and biosignal facades. App-specific calculations, summaries,
-plots, exports, workflow wording, file conventions, and result schemas stay
-under the owning app tree.
+Apps are first-class products. `+labkit` stays a small domain-neutral
+foundation with UI, DTA, RHS, and biosignal facades. App-specific calculations,
+summaries, plots, exports, workflow wording, file conventions, and result
+schemas stay under the owning app tree.
 
-A healthy runner owns orchestration only: launch/debug wiring, shell assembly,
-state coordination, callback registration, alerts, log wording, and refresh
-ordering.
+A healthy runner owns orchestration only. App-owned helpers own deterministic
+or explicitly side-effecting app behavior. Reusable framework helpers own
+app-neutral mechanics that multiple apps share.
 
-Extract only behavior that becomes clearer and directly testable, and only when
-the real GUI path calls the extracted helper. Use app-owned packages for
-app-specific deterministic behavior. Use `labkit-boundary-guard` before moving
-anything into `+labkit`.
+Migration progress means:
 
-Do not create new app `private` runners, root legacy command wrappers,
-`*Workflow.m` adapters, app `+core/dispatch.m` routers, or convenience public
-packages such as `+labkit/+analysis`, `+io`, `+data`, or `+util`.
+- a responsibility boundary becomes clearer
+- deterministic behavior becomes directly testable
+- the real GUI or app path uses the extracted helper
+- duplicate app-neutral mechanics are removed from apps
+- the total cognitive load of the workflow falls
+
+Migration is not progress when it only:
+
+- moves a large block into another large file
+- turns one obvious line into a one-line helper
+- hides app-specific workflow behind a generic name
+- adds guardrails that are noisier than the drift they prevent
+- adds docs without retiring stale debt or clarifying an active contract
 
 ## Future Debt Rules
 
@@ -191,5 +455,9 @@ packages such as `+labkit/+analysis`, `+io`, `+data`, or `+util`.
   prose, scripts, or new governance layers.
 - Keep completed migrations as historical baselines only when they clarify a
   current guardrail invariant.
+- Treat line-count budgets as backstops, not design goals.
+- Do not add a minimum-line-count guardrail until the short-helper audit can
+  distinguish cosmetic extraction from legitimate small contracts.
+- Use `labkit-boundary-guard` before promoting behavior to `+labkit`.
 - Use `labkit-test-planner` for validation routing and `docs/testing.md` for
   exact commands.

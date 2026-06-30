@@ -117,6 +117,23 @@ A helper may move into `+labkit` only when all of these are true:
 
 If those conditions are not met, keep the helper app-local.
 
+## Extraction Quality
+
+Line budgets are maintainability backstops, not architecture goals. A smaller
+file is only better when the responsibilities are clearer.
+
+Extracted helpers should own a coherent behavior contract: a stable data shape,
+an explicit side effect, a GUI-free calculation, an export boundary, a display
+model, or a reusable app-facing framework mechanism. Trivial label formatters,
+single boolean checks, constant lists, and one-call facade wrappers can remain
+local, nested, or inline when that makes the workflow easier to follow.
+
+There is no minimum useful helper length. Small public facades, factories,
+filters, defaults, and test-facing helpers are valid when the name protects a
+real contract. Conversely, a long extracted helper is not reusable merely
+because it moved out of `run.m`; it must improve ownership, testability, or the
+app-facing API.
+
 ## Current Exceptions
 
 Current architecture exceptions: none.
