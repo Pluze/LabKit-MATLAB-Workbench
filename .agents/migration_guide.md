@@ -112,8 +112,11 @@ Current facts:
   core user task flow with synthetic inputs and exports.
 - `tests/shared/labkitWorkflowDriver.m` provides the first app-neutral hidden
   GUI workflow helper for registry reads, filePanel injection, semantic control
-  invocation, and state reads. `GuiLayoutEisTest` has the first `Workflow`
-  tagged representative app test.
+  invocation, enabled-state reads, table reads, text-area reads, and filePanel
+  state reads.
+- `GuiLayoutEisTest` and `GuiLayoutFocusStackTest` have the first `Workflow`
+  tagged representative app tests, covering one DTA/electrochem app and one
+  image app with synthetic inputs.
 
 ## Active Route A: Runner Complexity And Helper Quality
 
@@ -300,10 +303,9 @@ Target shape:
 
 Migration workstreams:
 
-1. Add the next representative app workflow tests for at least one image app
-   and one large-file or biosignal/RHS app. Start with CI-sized synthetic
-   inputs, then record which app families merit larger manual or scheduled
-   stress cases.
+1. Add the next representative workflow test for one large-file,
+   biosignal, or RHS app. Start with CI-sized synthetic inputs, then record
+   which app families merit larger manual or scheduled stress cases.
 2. Extend `tests/shared/labkitWorkflowDriver.m` only for app-neutral semantic
    operations proven by real workflow tests. Avoid vague helpers that guess app
    meaning from button labels or combine unrelated concepts such as status text

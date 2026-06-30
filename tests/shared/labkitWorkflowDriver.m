@@ -16,7 +16,9 @@ function driver = labkitWorkflowDriver(fig)
     driver.checkbox = @(text, value) h.invokeCheckbox(fig, text, value);
     driver.fileStatus = @fileStatus;
     driver.fileListItems = @fileListItems;
+    driver.tableData = @tableData;
     driver.textAreaValue = @textAreaValue;
+    driver.enabled = @enabled;
 
     function ui = registry()
         assert(isappdata(fig, 'labkitUiRegistry'), ...
@@ -51,13 +53,51 @@ function driver = labkitWorkflowDriver(fig)
         value = ui.controls.(id).textArea.Value;
     end
 
-    function control = filePanel(panelId)
+    function data = tableData(controlId)
         ui = registry();
-        id = char(string(panelId));
-        assert(isfield(ui.controls, id), ...
-            'Workflow filePanel id not found: %s.', id);
-        control = ui.controls.(id);
+        id = char(string(controlId));
+        assert(isfield(ui.controls, id) && isfield(ui.controls.(id), 'table'), ...
+            'Workflow table id not found: %s.', id);
+        data = ui.controls.(id).table.Data;
+    end
+
+    function tf = enabled(controlId)
+        control = semanticControl(controlId);
+        handles = controlHandles(control);
+        enabledValues = false(size(handles));
+        for k = 1:numel(handles)
+            enabledValues(k) = isprop(handles{k}, 'Enable') && ...
+                strcmp(char(handles{k}.Enable), 'on');
+        end
+        tf = any(enabledValues);
+    end
+
+    function control = filePanel(panelId)
+        control = semanticControl(panelId);
         assert(isfield(control, 'status') && isfield(control, 'listbox'), ...
-            'Control %s is not a multi-file filePanel.', id);
+            'Control %s is not a multi-file filePanel.', char(string(panelId)));
+    end
+
+    function control = semanticControl(controlId)
+        ui = registry();
+        id = char(string(controlId));
+        assert(isfield(ui.controls, id), ...
+            'Workflow control id not found: %s.', id);
+        control = ui.controls.(id);
+    end
+
+    function handles = controlHandles(control)
+        names = fieldnames(control);
+        handles = cell(1, numel(names));
+        count = 0;
+        for k = 1:numel(names)
+            value = control.(names{k});
+            if isscalar(value) && isobject(value) && isvalid(value) && ...
+                    isprop(value, 'Enable')
+                count = count + 1;
+                handles{count} = value;
+            end
+        end
+        handles = handles(1:count);
     end
 end
