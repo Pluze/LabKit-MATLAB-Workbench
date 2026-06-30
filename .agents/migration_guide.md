@@ -141,6 +141,9 @@ Current facts:
 - `GuiLayoutVtResistanceTest` covers another electrochem workflow shape:
   chrono fixture load, automatic resistance analysis, result-table refresh,
   summary-field refresh, and plot redraw.
+- `GuiLayoutChronoOverlayTest` covers multi-file chrono overlay workflow:
+  fixture load, file-list refresh, voltage/current plot redraw, and X-axis
+  unit switching.
 
 ## Active Route A: Runner Complexity And Helper Quality
 
@@ -324,7 +327,8 @@ Target shape:
 Migration workstreams:
 
 1. Extend workflow acceptance beyond the current representatives
-   (`eis`, `vt_resistance`, `focus_stack`, `batch_crop`, `rhs_preview`) to the remaining supported app
+   (`eis`, `chrono_overlay`, `vt_resistance`, `focus_stack`, `batch_crop`,
+   `rhs_preview`) to the remaining supported app
    families. Start with CI-sized synthetic inputs, then record which app
    families merit larger manual or scheduled stress cases.
 2. Extend `tests/shared/labkitWorkflowDriver.m` only for app-neutral semantic
