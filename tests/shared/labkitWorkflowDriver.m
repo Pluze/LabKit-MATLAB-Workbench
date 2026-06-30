@@ -19,6 +19,7 @@ function driver = labkitWorkflowDriver(fig)
     driver.tableData = @tableData;
     driver.textAreaValue = @textAreaValue;
     driver.enabled = @enabled;
+    driver.previewChildCount = @previewChildCount;
 
     function ui = registry()
         assert(isappdata(fig, 'labkitUiRegistry'), ...
@@ -70,6 +71,13 @@ function driver = labkitWorkflowDriver(fig)
                 strcmp(char(handles{k}.Enable), 'on');
         end
         tf = any(enabledValues);
+    end
+
+    function n = previewChildCount(controlId)
+        control = semanticControl(controlId);
+        assert(isfield(control, 'primaryAxes'), ...
+            'Workflow preview id not found: %s.', char(string(controlId)));
+        n = numel(control.primaryAxes.Children);
     end
 
     function control = filePanel(panelId)

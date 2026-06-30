@@ -117,6 +117,9 @@ Current facts:
 - `GuiLayoutEisTest` and `GuiLayoutFocusStackTest` have the first `Workflow`
   tagged representative app tests, covering one DTA/electrochem app and one
   image app with synthetic inputs.
+- `GuiLayoutRhsPreviewTest` adds the first RHS/large-file representative
+  workflow test, covering synthetic RHS indexing, automatic preview drawing,
+  preview channel table population, and filter-file discovery.
 
 ## Active Route A: Runner Complexity And Helper Quality
 
@@ -303,9 +306,10 @@ Target shape:
 
 Migration workstreams:
 
-1. Add the next representative workflow test for one large-file,
-   biosignal, or RHS app. Start with CI-sized synthetic inputs, then record
-   which app families merit larger manual or scheduled stress cases.
+1. Extend workflow acceptance beyond the current representatives
+   (`eis`, `focus_stack`, `rhs_preview`) to the remaining supported app
+   families. Start with CI-sized synthetic inputs, then record which app
+   families merit larger manual or scheduled stress cases.
 2. Extend `tests/shared/labkitWorkflowDriver.m` only for app-neutral semantic
    operations proven by real workflow tests. Avoid vague helpers that guess app
    meaning from button labels or combine unrelated concepts such as status text
