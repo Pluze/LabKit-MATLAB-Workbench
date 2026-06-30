@@ -241,7 +241,7 @@ function fig = run(debugLog)
             updateSummary();
             refreshPlots();
         catch ME
-            showError('Analysis failed', ME.message);
+            showException('Analysis failed', ME);
         end
     end
 
@@ -412,5 +412,10 @@ function fig = run(debugLog)
     function showError(titleText, message)
         uialert(fig, char(message), titleText);
         addLog(sprintf('%s: %s', titleText, message));
+    end
+
+    function showException(titleText, exception)
+        debugLog.reportException('ecgPrint', titleText, exception);
+        showError(titleText, exception.message);
     end
 end

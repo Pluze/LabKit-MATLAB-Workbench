@@ -391,6 +391,7 @@ function fig = run(debugLog)
             S.filterRows = rhs_preview.ops.discoverFilterRows( ...
                 S.rhsFolder, S.filterRows);
         catch ME
+            debugLog.reportException('rhsPreview', 'Folder scan failed', ME);
             S.filterRows = table();
             S.statusMessage = string(ME.message);
             S.lastAction = "Folder scan failed";
@@ -408,6 +409,7 @@ function fig = run(debugLog)
             S.filterRows = rhs_preview.ops.discoverFilterRows(paths, ...
                 S.filterRows);
         catch ME
+            debugLog.reportException('rhsPreview', 'RHS task scan failed', ME);
             S.filterRows = table();
             S.statusMessage = string(ME.message);
             S.lastAction = "RHS task scan failed";

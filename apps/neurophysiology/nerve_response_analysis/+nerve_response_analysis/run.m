@@ -138,6 +138,7 @@ function fig = run(debugLog)
             S.analysis = nerve_response_analysis.ops.analyzeSession( ...
                 session, protocol, opts);
         catch ME
+            debugLog.reportException('nerveResponseAnalysis', 'Analysis failed', ME);
             S.analysis = [];
             S.statusMessage = string(ME.message);
             S.lastAction = "Analysis failed";

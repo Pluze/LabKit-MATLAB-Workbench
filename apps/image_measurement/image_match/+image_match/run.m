@@ -56,7 +56,7 @@ function fig = run(debugLog)
         try
             loaded = image_match.io.readImages(paths(1));
         catch ME
-            showError('Could not load reference image', ME.message);
+            showException('Could not load reference image', ME);
             refreshAll();
             return;
         end
@@ -87,7 +87,7 @@ function fig = run(debugLog)
         try
             S.items = readOrReuseImages(paths);
         catch ME
-            showError('Could not load images', ME.message);
+            showException('Could not load images', ME);
             refreshAll();
             return;
         end
@@ -238,7 +238,7 @@ function fig = run(debugLog)
                 S.items, S.referenceItem, S.steps, opts);
             S.lastExportFingerprint = task.fingerprint;
         catch ME
-            showError('Export failed', ME.message);
+            showException('Export failed', ME);
             return;
         end
         statuses = string({S.lastExport.results.status});
@@ -538,6 +538,11 @@ function fig = run(debugLog)
     function showError(titleText, message)
         addLog(sprintf('%s: %s', titleText, message));
         uialert(fig, message, titleText);
+    end
+
+    function showException(titleText, exception)
+        debugLog.reportException('imageMatch', titleText, exception);
+        showError(titleText, exception.message);
     end
 end
 

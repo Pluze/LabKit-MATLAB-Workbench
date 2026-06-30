@@ -131,6 +131,7 @@ function fig = run(debugLog)
             renderOverlays(true);
             addLog('Generated EXX/EYY overlays and ROI summary.');
         catch ME
+            debugLog.reportException('dicPostprocess', 'Generate failed', ME);
             uialert(fig, ME.message, 'DIC postprocess error');
             addLog(sprintf('Generate failed: %s', ME.message));
         end
@@ -182,6 +183,7 @@ function fig = run(debugLog)
             try
                 renderOverlays(false);
             catch ME
+                debugLog.reportException('dicPostprocess', 'Option update skipped', ME);
                 addLog(sprintf('Option update skipped: %s', ME.message));
             end
         end

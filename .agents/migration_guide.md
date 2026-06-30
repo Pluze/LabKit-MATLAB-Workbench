@@ -46,22 +46,22 @@ GUI workflow acceptance validation migration
 Current facts:
 
 - MATLAB source inventory from tracked files:
-  - total: 695 `.m` files, 58,240 lines
-  - `apps/`: 406 files, 23,840 lines, max 649 lines
+  - total: 695 `.m` files, 58,305 lines
+  - `apps/`: 406 files, 23,863 lines, max 648 lines
   - `+labkit/`: 172 files, 16,377 lines, max 647 lines
-  - `tests/`: 114 files, 15,746 lines, max 649 lines
+  - `tests/`: 114 files, 15,788 lines, max 649 lines
   - `labkit_launcher.m`: 1,722 lines and intentionally exempt
 - Tracked files over the 650-line repository file budget:
   `labkit_launcher.m` only, by design, because it is the self-contained repair
   entry point.
-- Package-root app `run.m` files currently range from 220 to 649 lines.
+- Package-root app `run.m` files currently range from 220 to 648 lines.
   Hotspots are:
-  - `apps/image_measurement/batch_crop/+batch_crop/run.m` at 649 lines
   - `apps/image_measurement/image_enhance/+image_enhance/run.m` at 648 lines
-  - `apps/neurophysiology/rhs_preview/+rhs_preview/run.m` at 612 lines
-  - `apps/image_measurement/image_match/+image_match/run.m` at 554 lines
+  - `apps/image_measurement/batch_crop/+batch_crop/run.m` at 646 lines
+  - `apps/neurophysiology/rhs_preview/+rhs_preview/run.m` at 614 lines
+  - `apps/image_measurement/image_match/+image_match/run.m` at 559 lines
+  - `apps/image_measurement/curvature/+curvature/run.m` at 525 lines
   - `apps/dic/dic_preprocess/+dic_preprocess/run.m` at 522 lines
-  - `apps/image_measurement/curvature/+curvature/run.m` at 520 lines
   - `apps/electrochem/vt_resistance/+vt_resistance/run.m` at 502 lines
 - `+labkit` implementation hotspots near the file budget are:
   - `+labkit/+ui/+app/private/buildFilePanelControl.m` at 647 lines
@@ -94,6 +94,8 @@ Current facts:
 - App-owned save dialogs that need safe output-file handling use
   `labkit.ui.app.promptOutputFile`; app-owned output-folder dialogs now use
   `labkit.ui.app.promptOutputFolder`.
+- Package-root app runners that catch `MException` and continue report through
+  the framework debug context before alerts or recovery logs.
 - Image workflow apps keep run/export/measurement task snapshots and
   deterministic fingerprints under app-owned `+state` helpers.
 - `buildtool gui` already runs hidden noninteractive MATLAB GUI tests through
@@ -253,9 +255,9 @@ Target shape:
 
 - File input uses `labkit.ui.spec.filePanel` and framework file-entry events.
 - Output file prompts use `labkit.ui.app.promptOutputFile`.
-- Output folder prompts use a framework-level helper with chooser injection,
-  cancel normalization, safe default-folder handling, and remembered output
-  folder behavior:
+- Output folder prompts use `labkit.ui.app.promptOutputFolder` with chooser
+  injection, cancel normalization, safe default-folder handling, and remembered
+  output folder behavior:
   `labkit.ui.app.promptOutputFolder(titleText, defaultFolder, "Chooser", f)`.
 - App-specific filenames, filters, export schemas, and user-facing messages
   stay app-owned.
@@ -268,49 +270,35 @@ Target shape:
 
 Current problem edges:
 
-- Direct output-folder `uigetdir` calls have been migrated out of apps. The
-  remaining `uigetdir` call is inside `labkit.ui.app.promptOutputFolder`, and
-  filePanel keeps its own input-folder chooser.
-- Direct `double(labkit.ui.view.getValue(...))` assignments in known runner
-  setting paths have been migrated to finite scalar normalization. Broader
-  direct control-value normalization still belongs to app-local cleanup passes
-  when those callbacks are touched.
 - Modal `uialert` is app-owned and expected, but workflow tests need an
   injectable or traceable way to avoid stalls where the path can be reached
   noninteractively.
 - `setCloseGuard` exists but is not yet consistently connected to app dirty
   workflow state.
+- Broad direct numeric UI control assignment audits still belong to app-local
+  runner cleanup when those callbacks are touched.
 
 Workstreams:
 
-1. Completed 2026-06-30: added `labkit.ui.app.promptOutputFolder` with unit
-   coverage for safe defaults, cancel normalization, chooser injection, and
-   remembered output folder updates.
-2. Completed 2026-06-30: migrated app output-folder callbacks from direct
-   `uigetdir` to the framework helper while keeping app status text, log
-   wording, default source choice, and export policy local.
-3. Partially completed 2026-06-30: known direct
-   `labkit.ui.view.getValue` numeric writes in `nerve_response_analysis` and
-   `focus_stack` now pass through app-local finite scalar normalization.
-   Continue auditing direct numeric UI control assignments during runner
+1. Audit modal alert paths that hidden workflow tests can reach. Add test hooks
+   only where a real hidden GUI test would otherwise block; do not add fake app
+   APIs that ordinary users can see or need.
+2. Connect `labkit.ui.app.setCloseGuard` to dirty or incomplete workflow state
+   where closing would discard meaningful user work.
+3. Continue auditing direct numeric UI control assignments during runner
    cleanup; promote only if multiple apps prove the same domain-neutral API is
    needed.
-4. Audit caught exceptions in app runners. Add framework debug reporting where
-   callbacks catch and continue.
-5. Add workflow-test hooks only where a real hidden GUI test would otherwise
-   block. Do not add fake app APIs that ordinary users can see or need.
-6. Use the Route A helper rubric while doing this work. Do not solve a dialog
+4. Use the Route A helper rubric while doing this work. Do not solve a dialog
    migration by adding many single-use one-line wrappers.
 
 Completion criteria:
 
-- Hidden GUI workflow tests can replace file and folder chooser edges without
-  OS dialogs.
-- Export-folder selection behavior remains safe outside the LabKit runtime
-  folder.
-- Numeric UI state assignments that affect app state or task structs are
-  finite-scalar normalized.
-- Caught callback exceptions that continue are represented in debug reports.
+- Hidden GUI workflow tests can avoid modal alert stalls without changing
+  normal public app behavior.
+- Dirty or incomplete workflow state is connected to the framework close guard
+  where losing that state would matter.
+- Remaining direct numeric UI state assignments found during runner cleanup are
+  finite-scalar normalized before reaching app state or task structs.
 
 ## Active Route C: GUI Workflow Acceptance Validation
 

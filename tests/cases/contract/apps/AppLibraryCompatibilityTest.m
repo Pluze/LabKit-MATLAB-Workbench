@@ -208,6 +208,33 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
                 "labkit.ui.app.promptOutputFile, or labkit.ui.app.promptOutputFolder: " + ...
                 strjoin(findings, "; "));
         end
+
+        function appRunnersReportCaughtCallbackExceptions(testCase)
+            root = setupLabKitTestPath();
+            runFiles = collectAppRunFiles(root);
+            findings = strings(0, 1);
+
+            for k = 1:numel(runFiles)
+                content = string(fileread(runFiles(k)));
+                catchBlocks = regexp(content, ...
+                    'catch\s+ME([\s\S]*?)(?=\n\s*(?:catch|end)\b)', ...
+                    'tokens');
+                for c = 1:numel(catchBlocks)
+                    block = string(catchBlocks{c}{1});
+                    reportsException = contains(block, 'reportException') || ...
+                        contains(block, 'showException');
+                    if ~reportsException
+                        findings(end+1, 1) = string(localRelativePath(root, runFiles(k))) + ...
+                            " has catch ME without debug.reportException";
+                    end
+                end
+            end
+
+            testCase.verifyEmpty(unique(findings, "stable"), ...
+                "App runners that catch MException and continue must report " + ...
+                "through the debug context before alerts or recovery logs: " + ...
+                strjoin(findings, "; "));
+        end
     end
 end
 
@@ -245,6 +272,21 @@ function files = collectAppMFiles(root)
     for k = 1:numel(listing)
         if ~listing(k).isdir
             files(end+1, 1) = string(fullfile(listing(k).folder, listing(k).name));
+        end
+    end
+end
+
+function files = collectAppRunFiles(root)
+    listing = dir(fullfile(root, "apps", "**", "run.m"));
+    files = strings(0, 1);
+    packageMarker = filesep + "+";
+    for k = 1:numel(listing)
+        if listing(k).isdir
+            continue;
+        end
+        pathValue = string(fullfile(listing(k).folder, listing(k).name));
+        if contains(pathValue, packageMarker)
+            files(end+1, 1) = pathValue;
         end
     end
 end

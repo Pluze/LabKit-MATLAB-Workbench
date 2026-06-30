@@ -174,6 +174,7 @@ function fig = run(debugLog)
                     S.aligned, opts);
             end
         catch ME
+            debugLog.reportException('responseReviewStats', 'Metric load failed', ME);
             S.metrics = table();
             S.summary = table();
             S.aligned = [];

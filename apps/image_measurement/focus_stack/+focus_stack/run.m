@@ -89,7 +89,7 @@ function fig = run(debugLog)
         try
             images = focus_stack.io.readImages(paths);
         catch ME
-            showError('Could not load focus stack', ME.message);
+            showException('Could not load focus stack', ME);
             return;
         end
 
@@ -126,7 +126,7 @@ function fig = run(debugLog)
         try
             payload = runFocusStackComputation(opts, registerStack);
         catch ME
-            showError('Focus stacking failed', ME.message);
+            showException('Focus stacking failed', ME);
             return;
         end
 
@@ -198,7 +198,7 @@ function fig = run(debugLog)
         try
             imwrite(S.result.fused, filepath);
         catch ME
-            showError('Could not export fused PNG', ME.message);
+            showException('Could not export fused PNG', ME);
             return;
         end
         addLog(sprintf('Exported fused PNG: %s', filepath));
@@ -217,7 +217,7 @@ function fig = run(debugLog)
         try
             imwrite(focus_stack.view.focusIndexRgb(S.result.focusIndex, S.result.inputCount), filepath);
         catch ME
-            showError('Could not export focus map PNG', ME.message);
+            showException('Could not export focus map PNG', ME);
             return;
         end
         addLog(sprintf('Exported focus map PNG: %s', filepath));
@@ -237,7 +237,7 @@ function fig = run(debugLog)
             T = focus_stack.export.buildSummaryTable(S.result, S.paths);
             writetable(T, filepath);
         catch ME
-            showError('Could not export summary CSV', ME.message);
+            showException('Could not export summary CSV', ME);
             return;
         end
         addLog(sprintf('Exported summary CSV: %s', filepath));
@@ -365,6 +365,11 @@ function fig = run(debugLog)
     function showError(titleText, message)
         addLog(sprintf('%s: %s', titleText, message));
         uialert(fig, message, titleText);
+    end
+
+    function showException(titleText, exception)
+        debugLog.reportException('focusStack', titleText, exception);
+        showError(titleText, exception.message);
     end
 end
 

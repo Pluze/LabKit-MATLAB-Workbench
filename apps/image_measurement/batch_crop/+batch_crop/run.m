@@ -29,7 +29,6 @@ function fig = run(debugLog)
     spec = batch_crop.ui.buildSpec(S.outputFolder, callbacks);
     ui = labkit.ui.app.create(spec, "debug", debugLog);
     fig = ui.figure;
-
     previewAxes = ui.controls.preview.primaryAxes;
     imageRuntime = labkit.ui.tool.createRuntime(previewAxes, ...
         struct('figure', fig, 'onTrace', debugLog.trace));
@@ -85,14 +84,13 @@ function fig = run(debugLog)
             addLog('Image file selection cancelled.');
             return;
         end
-
         try
             items = batch_crop.state.readItems(paths);
         catch ME
+            debugLog.reportException('batchCrop', 'Could not load images', ME);
             showError('Could not load images', ME.message);
             return;
         end
-
         S.items = batch_crop.state.mergeChosenItems(S.items, items);
         S.currentIndex = min(max(S.currentIndex, 1), numel(S.items));
         S.outputFolder = string(labkit.ui.app.defaultOutputFolder( ...
@@ -332,7 +330,6 @@ function fig = run(debugLog)
                 batch_crop.view.missingWorkflowItemsText(S.items, "scale"));
             return;
         end
-
         opts = currentExportOptions();
         plan = batch_crop.state.exportPlan(S.items, opts);
         if ~isempty(S.lastExport) && S.lastExportFingerprint == plan.fingerprint
@@ -343,6 +340,7 @@ function fig = run(debugLog)
         try
             payload = batch_crop.export.writeOutputs(S.items, opts);
         catch ME
+            debugLog.reportException('batchCrop', 'Export failed', ME);
             showError('Export failed', ME.message);
             return;
         end
@@ -645,5 +643,4 @@ function fig = run(debugLog)
         addLog(sprintf('%s: %s', titleText, message));
         uialert(fig, message, titleText);
     end
-
 end

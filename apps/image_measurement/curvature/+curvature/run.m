@@ -79,7 +79,7 @@ function fig = run(debugLog)
         try
             img = imread(filepath);
         catch ME
-            showError('Could not read image', ME.message);
+            showException('Could not read image', ME);
             return;
         end
 
@@ -235,7 +235,7 @@ function fig = run(debugLog)
             S.lastFitFingerprint = task.fingerprint;
             S.lastLengthFingerprint = "";
         catch ME
-            showError('Circle fit failed', ME.message);
+            showException('Circle fit failed', ME);
             return;
         end
 
@@ -268,7 +268,7 @@ function fig = run(debugLog)
                 task.lengthPath(:, 1), task.lengthPath(:, 2), task.calibration);
             S.lastLengthFingerprint = task.fingerprint;
         catch ME
-            showError('Curve length failed', ME.message);
+            showException('Curve length failed', ME);
             return;
         end
         addLog(sprintf('Curve length measured: %.6g %s.', ...
@@ -294,7 +294,7 @@ function fig = run(debugLog)
             T = curvature.export.buildResultTable(S.fit, S.imagePath, S.length);
             writetable(T, filepath);
         catch ME
-            showError('Could not export result CSV', ME.message);
+            showException('Could not export result CSV', ME);
             return;
         end
         addLog(sprintf('Exported result CSV: %s', filepath));
@@ -317,7 +317,7 @@ function fig = run(debugLog)
             refreshImageOverlay();
             exportgraphics(ui.topAxes, filepath, 'Resolution', 300);
         catch ME
-            showError('Could not export overlay PNG', ME.message);
+            showException('Could not export overlay PNG', ME);
             return;
         end
         addLog(sprintf('Exported overlay PNG: %s', filepath));
@@ -507,6 +507,11 @@ function fig = run(debugLog)
     function showError(titleText, message)
         addLog(sprintf('%s: %s', titleText, message));
         uialert(fig, message, titleText);
+    end
+
+    function showException(titleText, exception)
+        debugLog.reportException('curvature', titleText, exception);
+        showError(titleText, exception.message);
     end
 end
 
