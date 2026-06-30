@@ -324,8 +324,8 @@ function fig = run(debugLog)
                 batch_crop.view.missingWorkflowItemsText(S.items, "center"));
             return;
         end
-        if strcmpi(currentScaleMode(), "Physical") && ...
-                ~batch_crop.state.allScaleCalibrated(S.items)
+        scaleSummary = batch_crop.state.scaleCalibrationSummary(S.items);
+        if strcmpi(currentScaleMode(), "Physical") && ~scaleSummary.allCalibrated
             showError('Scale calibration missing', ...
                 batch_crop.view.missingWorkflowItemsText(S.items, "scale"));
             return;
@@ -384,9 +384,10 @@ function fig = run(debugLog)
         labkit.ui.view.setFileSelection(ui, 'images', files(S.currentIndex));
         txtImageSource.Value = char(S.items(S.currentIndex).path);
         if strcmpi(currentScaleMode(), "Physical")
+            scaleSummary = batch_crop.state.scaleCalibrationSummary(S.items);
             txtImageStatus.Value = sprintf('Images: %d | centers: %d | scales: %d', ...
                 numel(S.items), batch_crop.state.countConfirmedCenters(S.items), ...
-                batch_crop.state.countScaleCalibrations(S.items));
+                scaleSummary.calibratedCount);
         else
             txtImageStatus.Value = sprintf('Images: %d | confirmed centers: %d', ...
                 numel(S.items), batch_crop.state.countConfirmedCenters(S.items));

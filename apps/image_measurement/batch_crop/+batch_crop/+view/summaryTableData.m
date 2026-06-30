@@ -25,7 +25,7 @@ function data = summaryTableData(state, currentIndex, cropWidth, cropHeight, pad
         'Padding', sprintf('%.3g%% repaired reflect', paddingPercent); ...
         'Center', sprintf('x %.1f, y %.1f', item.centerXY(1), item.centerXY(2)); ...
         'Source image', sprintf('%d x %d px', size(item.image, 2), size(item.image, 1)); ...
-        'Confirmed centers', sprintf('%d / %d', countConfirmedCenters(state.items), numel(state.items)); ...
+        'Confirmed centers', sprintf('%d / %d', batch_crop.state.countConfirmedCenters(state.items), numel(state.items)); ...
         'Output format', char(outputFormat); ...
         'Output folder', char(state.outputFolder)};
 end
@@ -33,12 +33,4 @@ end
 function text = aspectRatioText(width, height)
     g = gcd(width, height);
     text = sprintf('%d:%d', width / g, height / g);
-end
-
-function count = countConfirmedCenters(items)
-    if isempty(items)
-        count = 0;
-    else
-        count = sum([items.centerSet]);
-    end
 end

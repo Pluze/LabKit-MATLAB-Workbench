@@ -33,6 +33,7 @@ function verify_batchImageCrop()
     checkPhysicalScaleCropUsesUnifiedOutputPixels();
     checkPhysicalScaleUnitsAreConvertedWithoutMutatingCalibration();
     checkScalePlanWarnsButDoesNotBlockOutliers();
+    checkScaleCalibrationSummaryReportsReadiness();
     checkMissingWorkflowPromptNamesAffectedFiles();
     checkFilePanelEntriesExposeWorkflowStatus();
     checkExportWritesUniqueOutputs();
@@ -436,6 +437,26 @@ function checkScalePlanWarnsButDoesNotBlockOutliers()
         'Manual target pixels/unit should define the common physical output size.');
     assert(contains(plan.warnings(1), "upsample") && strlength(plan.warnings(2)) == 0, ...
         'Scale planning should label large resampling differences without rejecting the plan.');
+end
+
+function checkScaleCalibrationSummaryReportsReadiness()
+    items = [physicalItem("ready_a.png", uint8(ones(10, 10)), 4); ...
+        physicalItem("ready_b.png", uint8(10 * ones(8, 12)), 8); ...
+        physicalItem("needs_scale.png", uint8(20 * ones(6, 7)), 4)];
+    items(3).scaleCalibration = batch_crop.state.emptyScaleCalibration("um");
+
+    summary = batch_crop.state.scaleCalibrationSummary(items);
+
+    assert(summary.total == 3, ...
+        'Scale summary should report every crop item.');
+    assert(summary.calibratedCount == 2 && summary.missingCount == 1, ...
+        'Scale summary should count calibrated and missing scale items.');
+    assert(~summary.allCalibrated, ...
+        'Scale summary should reject mixed calibrated/missing item vectors.');
+
+    readySummary = batch_crop.state.scaleCalibrationSummary(items(1:2));
+    assert(readySummary.allCalibrated && readySummary.missingCount == 0, ...
+        'Scale summary should accept all-calibrated item vectors.');
 end
 
 function checkMissingWorkflowPromptNamesAffectedFiles()

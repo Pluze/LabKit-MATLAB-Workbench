@@ -15,7 +15,7 @@ function text = scaleStatusText(state, currentIndex, mode, physicalSize, unitNam
         return;
     end
 
-    calibratedCount = batch_crop.state.countScaleCalibrations(state.items);
+    scaleSummary = batch_crop.state.scaleCalibrationSummary(state.items);
     item = state.items(currentIndex);
     cal = item.scaleCalibration;
     if batch_crop.state.isScaleCalibrationSet(cal)
@@ -24,9 +24,9 @@ function text = scaleStatusText(state, currentIndex, mode, physicalSize, unitNam
             '(%.6g px/%s for crop); calibrated %d/%d.'], ...
             physicalSize(1), physicalSize(2), char(string(unitName)), ...
             currentIndex, cal.pixelsPerUnit, cal.unit, cropPixelsPerUnit, ...
-            char(string(unitName)), calibratedCount, numel(state.items));
+            char(string(unitName)), scaleSummary.calibratedCount, scaleSummary.total);
     else
         text = sprintf('Physical mode: image %d needs scale; calibrated %d/%d.', ...
-            currentIndex, calibratedCount, numel(state.items));
+            currentIndex, scaleSummary.calibratedCount, scaleSummary.total);
     end
 end
