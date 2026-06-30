@@ -83,6 +83,10 @@ Current facts:
   helper audit. It reports short helper file length, role package, function
   count, approximate call count, public/private status, direct unit-test
   references, allowed exception class, and a non-blocking recommendation.
+- First audit-driven cleanup: `image_enhance.state.stepsForTask` and
+  `image_enhance.state.itemStepsForExport` were merged into the existing
+  export-task state contract instead of being inlined into the near-limit
+  runner.
 - App `private/` debt: none.
 - `+labkit` private helper contract debt: none.
 - String-dispatch workflow adapters and app `+core/dispatch.m` routers: none.

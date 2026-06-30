@@ -487,11 +487,9 @@ function fig = run(debugLog)
     end
 
     function [task, opts, steps] = currentExportTask()
-        steps = image_enhance.state.stepsForTask(S);
         opts = struct('outputFolder', S.outputFolder, ...
-            'format', labkit.ui.view.getValue(ui, 'exportFormat'), ...
-            'itemSteps', image_enhance.state.itemStepsForExport(S));
-        task = image_enhance.state.exportTask(S.items, steps, opts);
+            'format', labkit.ui.view.getValue(ui, 'exportFormat'));
+        [task, opts, steps] = image_enhance.state.exportTask(S, opts);
     end
 
     function scale = currentPreviewScale()

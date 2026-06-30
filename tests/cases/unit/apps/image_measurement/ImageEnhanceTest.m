@@ -27,6 +27,7 @@ function verify_imageEnhance()
     checkManifestAndExportContract();
     checkPerImageExportSteps();
     checkExportTaskFingerprintTracksInputsOptionsAndSteps();
+    checkExportTaskBuildsStateDrivenInputs();
 end
 
 function checkBrightnessContrastAndSharpenPipeline()
@@ -335,6 +336,39 @@ function checkExportTaskFingerprintTracksInputsOptionsAndSteps()
         'Changing the enhancement output folder should change the task fingerprint.');
     assert(base.fingerprint ~= changedStep.fingerprint, ...
         'Changing enhancement steps should change the task fingerprint.');
+end
+
+function checkExportTaskBuildsStateDrivenInputs()
+    items = repmat(image_enhance.state.emptyItem(), 2, 1);
+    for k = 1:2
+        items(k).path = "sample_" + string(k) + ".png";
+        items(k).name = "sample_" + string(k) + ".png";
+        items(k).image = syntheticGradientImage();
+    end
+    sharedStep = image_enhance.ops.makeStep('Brightness/contrast', 5, 0, 0);
+    firstStep = image_enhance.ops.makeStep('Brightness/contrast', 6, 0, 0);
+    secondStep = image_enhance.ops.makeStep('Brightness/contrast', -6, 0, 0);
+
+    S = struct('items', items, 'steps', sharedStep, 'batchMode', true);
+    [task, opts, steps] = image_enhance.state.exportTask(S, ...
+        struct('outputFolder', "out", 'format', 'PNG'));
+    assert(numel(steps) == 1 && steps.amount == sharedStep.amount, ...
+        'Batch-mode state export tasks should use the shared history.');
+    assert(isempty(opts.itemSteps) && isempty(task.itemSteps), ...
+        'Batch-mode state export tasks should not duplicate per-image histories.');
+
+    S.batchMode = false;
+    S.items(1).steps = firstStep;
+    S.items(2).steps = secondStep;
+    [task, opts, steps] = image_enhance.state.exportTask(S, ...
+        struct('outputFolder', "out", 'format', 'PNG'));
+    assert(numel(steps) == 2 && steps(1).amount == firstStep.amount && ...
+        steps(2).amount == secondStep.amount, ...
+        'Per-image state export tasks should concatenate item histories.');
+    assert(numel(opts.itemSteps) == 2 && numel(task.itemSteps) == 2, ...
+        'Per-image state export tasks should preserve individual histories.');
+    assert(contains(task.fingerprint, "itemStepCount[2]=1"), ...
+        'Per-image state export tasks should include item-step fingerprints.');
 end
 
 function checkPreviewImageDownsamplesLargeInputs()
