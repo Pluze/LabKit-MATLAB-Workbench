@@ -79,6 +79,10 @@ Current facts:
   `ternary.m`, `onOff.m`, `supportedImageExtensions.m`, `imageDialogFilter.m`,
   one-off `optionValue`, `fieldOrDefault`, `numericScalar`, small display-name
   helpers, and tiny pass-through wrappers.
+- `tests/runner/labkitHelperQualityAudit.m` provides the Route A dry-run
+  helper audit. It reports short helper file length, role package, function
+  count, approximate call count, public/private status, direct unit-test
+  references, allowed exception class, and a non-blocking recommendation.
 - App `private/` debt: none.
 - `+labkit` private helper contract debt: none.
 - String-dispatch workflow adapters and app `+core/dispatch.m` routers: none.
@@ -212,30 +216,26 @@ Allowed short-file exceptions:
 
 Workstreams:
 
-1. Build a repeatable dry-run audit for helper quality. It should report file
-   length, role package, function count, call count, public/private status,
-   direct unit-test references, and whether the helper is in an allowed
-   exception class. Do not add a blocking guardrail until the report has been
-   reviewed against current short helpers.
-2. Classify current app helpers under 20 lines into:
+1. Use `labkitHelperQualityAudit(root, "MaxLines", 20)` to classify current
+   app helpers under 20 lines into:
    keep as contract, merge with neighboring helper, inline into caller, or
    candidate reusable framework hook. Record only unresolved debt here; do not
    preserve the full historical spreadsheet in docs.
-3. Prototype the cleanup on one dense image app and one dense non-image app.
+2. Prototype the cleanup on one dense image app and one dense non-image app.
    Recommended first pair:
    `image_enhance` or `batch_crop`, plus `rhs_preview` or
    `vt_resistance`. The prototype should reduce runner responsibility and not
    increase helper count through one-line wrappers.
-4. For helpers duplicated across app siblings, prefer family-local app-owned
+3. For helpers duplicated across app siblings, prefer family-local app-owned
    consolidation only when the shared behavior is still app/workflow-specific.
    Do not create family-level public helper packages. If the behavior is
    domain-neutral and app-facing, evaluate it for `+labkit`.
-5. Add or update tests after code cleanup:
+4. Add or update tests after code cleanup:
    - direct unit tests for app-owned deterministic helpers
    - focused GUI tests only when callback wiring or visible app behavior
      changes
    - project guardrails only after the rule is proven and low-noise
-6. After several cleanup passes, replace the hard-coded short-helper audit with
+5. After several cleanup passes, replace the dry-run helper audit with
    a low-noise guardrail only if it can distinguish cosmetic micro-extraction
    from legitimate small public contracts.
 
