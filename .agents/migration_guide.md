@@ -144,6 +144,9 @@ Current facts:
 - `GuiLayoutChronoOverlayTest` covers multi-file chrono overlay workflow:
   fixture load, file-list refresh, voltage/current plot redraw, and X-axis
   unit switching.
+- `GuiLayoutImageEnhanceTest` covers image enhancement workflow: synthetic
+  image load, default tool application, history-table refresh, default
+  output-folder export, manifest creation, and enhanced-file creation.
 
 ## Active Route A: Runner Complexity And Helper Quality
 
@@ -328,7 +331,7 @@ Migration workstreams:
 
 1. Extend workflow acceptance beyond the current representatives
    (`eis`, `chrono_overlay`, `vt_resistance`, `focus_stack`, `batch_crop`,
-   `rhs_preview`) to the remaining supported app
+   `image_enhance`, `rhs_preview`) to the remaining supported app
    families. Start with CI-sized synthetic inputs, then record which app
    families merit larger manual or scheduled stress cases.
 2. Extend `tests/shared/labkitWorkflowDriver.m` only for app-neutral semantic

@@ -36,6 +36,58 @@ classdef GuiLayoutImageEnhanceTest < matlab.uitest.TestCase
             verifyPerImageHistoryRefresh(fig);
         end
     end
+
+    methods (Test, TestTags = {'GUI', 'Workflow'})
+        function image_enhance_workflow_applies_tool_and_exports(testCase)
+            setupLabKitTestPath();
+            h = guiTestHelpers();
+            h.assertUifigureAvailable();
+            cleanup = onCleanup(@() h.closeAllFigures());
+
+            folder = tempname;
+            mkdir(folder);
+            folderCleanup = onCleanup(@() removeTempFolder(folder));
+            sourcePath = fullfile(folder, 'paper.png');
+            imwrite(syntheticPaperImage(), sourcePath);
+
+            fig = h.launchFigure('labkit_ImageEnhance_app', 'Paper Image Enhance');
+            driver = labkitWorkflowDriver(fig);
+            driver.chooseFiles('sourceImages', sourcePath);
+
+            driver.click('Add images or folder');
+            testCase.verifyTrue(driver.enabled('applyTool'), ...
+                'Image enhance apply action should enable after image load.');
+            testCase.verifyTrue(driver.enabled('exportImages'), ...
+                'Image enhance export action should enable after image load.');
+            testCase.verifyTrue(contains(driver.fileStatus('sourceImages'), '1'), ...
+                'Image enhance file status should report the loaded image count.');
+
+            driver.click('Apply tool');
+            history = driver.tableData('historyTable');
+            testCase.verifyEqual(size(history, 1), 1, ...
+                'Image enhance workflow should add one history step.');
+            testCase.verifyTrue(contains(string(history{1, 2}), 'Brightness'), ...
+                'Image enhance default tool should be recorded in history.');
+
+            driver.click('Export enhanced images');
+            outputFolder = fullfile(folder, 'image_enhance');
+            manifestFiles = dir(fullfile(outputFolder, '*manifest*.csv'));
+            outputFiles = dir(fullfile(outputFolder, '*_enhanced.png'));
+            testCase.verifyFalse(isempty(manifestFiles), ...
+                'Image enhance workflow should write a manifest CSV.');
+            testCase.verifyFalse(isempty(outputFiles), ...
+                'Image enhance workflow should write an enhanced PNG.');
+            testCase.verifyTrue(any(contains(string(driver.textAreaValue('exportDetails')), ...
+                'Last manifest')), ...
+                'Image enhance details should show the last manifest after export.');
+        end
+    end
+end
+
+function img = syntheticPaperImage()
+    [x, y] = meshgrid(1:64, 1:48);
+    base = 0.45 + 0.25 .* sin(x ./ 7) + 0.20 .* cos(y ./ 5);
+    img = uint8(255 .* min(max(base, 0), 1));
 end
 
 function verifyPerImageHistoryRefresh(fig)
@@ -65,4 +117,10 @@ function verifyPerImageHistoryRefresh(fig)
         'Per-image mode should show the first image history while first is selected.');
     assert(contains(string(secondData{1, 2}), "Sharpen"), ...
         'Per-image mode should refresh history when the selected image changes.');
+end
+
+function removeTempFolder(folder)
+    if exist(folder, 'dir') == 7
+        rmdir(folder, 's');
+    end
 end
