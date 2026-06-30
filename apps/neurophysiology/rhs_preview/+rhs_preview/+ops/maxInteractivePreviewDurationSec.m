@@ -3,7 +3,8 @@
 function durationSec = maxInteractivePreviewDurationSec(S)
 %MAXINTERACTIVEPREVIEWDURATIONSEC Cap scroll-zoom preview duration.
 
-    fileDurationSec = rhs_preview.ops.indexedDurationSec(S);
+    bounds = rhs_preview.ops.previewWindowBounds(S);
+    fileDurationSec = bounds.durationSec;
     if fileDurationSec <= 0
         durationSec = 1;
         return;
@@ -17,5 +18,5 @@ function durationSec = maxInteractivePreviewDurationSec(S)
     channelCount = rhs_preview.ops.selectedChannelCount( ...
         S.previewChannelRows, S.maxPreviewChannels);
     durationSec = min(fileDurationSec, 1200000 ./ (sampleRateHz .* channelCount));
-    durationSec = max(durationSec, rhs_preview.ops.minPreviewDurationSec(S));
+    durationSec = max(durationSec, bounds.minDurationSec);
 end

@@ -112,6 +112,27 @@ classdef RhsPreviewViewTest < matlab.unittest.TestCase
             testCase.verifyEqual(string(payload.recordings(2).comment), ...
                 "manual reject");
         end
+
+        function previewWindowBoundsSummarizeIndexedTiming(testCase)
+            setupLabKitTestPath();
+
+            S = struct();
+            S.index = struct("durationSec", 12, ...
+                "info", struct("sampleRateHz", 2000));
+            S.windowDurationSec = 3;
+
+            bounds = rhs_preview.ops.previewWindowBounds(S);
+
+            testCase.verifyTrue(bounds.hasIndexedDuration);
+            testCase.verifyEqual(bounds.durationSec, 12);
+            testCase.verifyEqual(bounds.maxStartSec, 9);
+            testCase.verifyEqual(bounds.minDurationSec, 0.025, "AbsTol", 1e-12);
+
+            S.index.durationSec = 0;
+            bounds = rhs_preview.ops.previewWindowBounds(S);
+            testCase.verifyFalse(bounds.hasIndexedDuration);
+            testCase.verifyEqual(bounds.durationSec, 0);
+        end
     end
 end
 

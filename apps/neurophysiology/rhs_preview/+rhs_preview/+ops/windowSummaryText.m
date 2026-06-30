@@ -3,7 +3,8 @@
 function text = windowSummaryText(S)
 %WINDOWSUMMARYTEXT Format current preview window.
 
-    fileDurationSec = rhs_preview.ops.indexedDurationSec(S);
+    bounds = rhs_preview.ops.previewWindowBounds(S);
+    fileDurationSec = bounds.durationSec;
     if fileDurationSec <= 0
         text = "Select RHS to estimate preview length.";
         return;
@@ -11,7 +12,7 @@ function text = windowSummaryText(S)
 
     startSec = rhs_preview.ops.clampWindowStartSec(S.windowStartSec, S);
     stopSec = min(fileDurationSec, startSec + max(double(S.windowDurationSec), eps));
-    if rhs_preview.ops.maxPreviewStartSec(S) <= 0
+    if bounds.maxStartSec <= 0
         text = string(sprintf("full file: %.6g to %.6g s (%.6g s)", ...
             startSec, stopSec, fileDurationSec));
     else

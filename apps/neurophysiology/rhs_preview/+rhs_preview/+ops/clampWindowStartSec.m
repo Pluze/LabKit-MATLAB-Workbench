@@ -7,5 +7,6 @@ function startSec = clampWindowStartSec(startSec, S)
     if ~isfinite(startSec)
         startSec = 0;
     end
-    startSec = min(rhs_preview.ops.maxPreviewStartSec(S), max(0, startSec));
+    bounds = rhs_preview.ops.previewWindowBounds(S);
+    startSec = min(bounds.maxStartSec, max(0, startSec));
 end

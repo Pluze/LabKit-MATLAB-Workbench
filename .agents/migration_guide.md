@@ -91,6 +91,9 @@ Current facts:
   were merged into `batch_crop.state.scaleCalibrationSummary`, keeping the
   reusable `isScaleCalibrationSet` predicate while replacing two one-purpose
   loops with one tested state-summary contract.
+- Dense non-image cleanup prototype: RHS Preview indexed-duration and preview
+  timing micro helpers were merged into `rhs_preview.ops.previewWindowBounds`,
+  leaving clamping and summary-format helpers as behavior-specific contracts.
 - App `private/` debt: none.
 - `+labkit` private helper contract debt: none.
 - String-dispatch workflow adapters and app `+core/dispatch.m` routers: none.
@@ -229,11 +232,11 @@ Workstreams:
    keep as contract, merge with neighboring helper, inline into caller, or
    candidate reusable framework hook. Record only unresolved debt here; do not
    preserve the full historical spreadsheet in docs.
-2. Prototype the cleanup on one dense non-image app. The image-app side is now
-   represented by `image_enhance` and `batch_crop`; the remaining recommended
-   prototype is `rhs_preview` or `vt_resistance`. The prototype should reduce
-   runner responsibility and not increase helper count through one-line
-   wrappers.
+2. Continue cleanup on current hotspots only when the next change removes a
+   real responsibility split or duplicate app-neutral mechanic. Dense image
+   apps are represented by `image_enhance` and `batch_crop`; dense non-image
+   work is represented by `rhs_preview`. Do not keep adding prototype passes
+   solely to lower file counts.
 3. For helpers duplicated across app siblings, prefer family-local app-owned
    consolidation only when the shared behavior is still app/workflow-specific.
    Do not create family-level public helper packages. If the behavior is

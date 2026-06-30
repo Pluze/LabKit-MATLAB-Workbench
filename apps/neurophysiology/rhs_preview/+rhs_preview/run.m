@@ -206,9 +206,10 @@ function fig = run(debugLog)
             return;
         end
         roiSec = sort(double(S.roiSec(:))).';
-        durationSec = max(diff(roiSec), rhs_preview.ops.minPreviewDurationSec(S));
-        if rhs_preview.ops.hasIndexedDuration(S)
-            durationSec = min(durationSec, rhs_preview.ops.indexedDurationSec(S));
+        bounds = rhs_preview.ops.previewWindowBounds(S);
+        durationSec = max(diff(roiSec), bounds.minDurationSec);
+        if bounds.hasIndexedDuration
+            durationSec = min(durationSec, bounds.durationSec);
         end
         S.windowDurationSec = durationSec;
         S.windowStartSec = roiSec(1);
@@ -270,8 +271,8 @@ function fig = run(debugLog)
     end
 
     function onPreviewScrollWheel(~, event)
-        if ~rhs_preview.ops.hasReadableChannel(S) || ...
-                ~rhs_preview.ops.hasIndexedDuration(S)
+        bounds = rhs_preview.ops.previewWindowBounds(S);
+        if ~rhs_preview.ops.hasReadableChannel(S) || ~bounds.hasIndexedDuration
             return;
         end
         scrollCount = rhs_preview.ops.scrollWheelCount(event);
@@ -287,11 +288,11 @@ function fig = run(debugLog)
             centerSec = S.windowStartSec + S.windowDurationSec ./ 2;
         end
         oldStart = rhs_preview.ops.clampWindowStartSec(S.windowStartSec, S);
-        oldDuration = max(S.windowDurationSec, rhs_preview.ops.minPreviewDurationSec(S));
-        fileDuration = rhs_preview.ops.indexedDurationSec(S);
+        oldDuration = max(S.windowDurationSec, bounds.minDurationSec);
+        fileDuration = bounds.durationSec;
         factor = 1.25 .^ double(scrollCount);
         newDuration = min(rhs_preview.ops.maxInteractivePreviewDurationSec(S), ...
-            max(rhs_preview.ops.minPreviewDurationSec(S), oldDuration .* factor));
+            max(bounds.minDurationSec, oldDuration .* factor));
         if ~isfinite(newDuration) || newDuration <= 0
             return;
         end
@@ -487,7 +488,8 @@ function fig = run(debugLog)
     end
 
     function refreshWindowControls()
-        if ~rhs_preview.ops.hasIndexedDuration(S)
+        bounds = rhs_preview.ops.previewWindowBounds(S);
+        if ~bounds.hasIndexedDuration
             labkit.ui.view.setLimits(ui, "windowStartPanner", [0 1]);
             labkit.ui.view.setValue(ui, "windowStartPanner", 0);
             labkit.ui.view.setEnabled(ui, "windowStartPanner", false);
@@ -496,7 +498,7 @@ function fig = run(debugLog)
             return;
         end
 
-        maxStartSec = rhs_preview.ops.maxPreviewStartSec(S);
+        maxStartSec = bounds.maxStartSec;
         sliderMax = max(maxStartSec, eps);
         S.windowStartSec = rhs_preview.ops.clampWindowStartSec(S.windowStartSec, S);
         labkit.ui.view.setLimits(ui, "windowStartPanner", [0 sliderMax]);
