@@ -129,7 +129,7 @@ function fig = run(debugLog)
 
         if ~isempty(failed)
             firstError = failed(1);
-            uialert(fig, sprintf('Failed to load:\n%s\n\n%s', firstError.filepath, firstError.message), 'Load error');
+            labkit.ui.app.showAlert(fig, sprintf('Failed to load:\n%s\n\n%s', firstError.filepath, firstError.message), 'Load error');
         end
     end
 
@@ -396,7 +396,7 @@ function fig = run(debugLog)
 
     function exportResultsCSV()
         if isempty(S.items)
-            uialert(fig,'No results to export.','Export');
+            labkit.ui.app.showAlert(fig,'No results to export.','Export');
             return;
         end
         [out, cancelled] = labkit.ui.app.promptOutputFile( ...
@@ -407,7 +407,7 @@ function fig = run(debugLog)
         [~, unitLabel] = cic.view.displayUnit(ddCICUnit.Value);
         [ok, msg] = cic.export.writeResultsCSV(S.items, out, unitLabel);
         if ~ok
-            uialert(fig,msg,'Export');
+            labkit.ui.app.showAlert(fig,msg,'Export');
             return;
         end
         addLog(['Exported CSV: ' char(out)]);

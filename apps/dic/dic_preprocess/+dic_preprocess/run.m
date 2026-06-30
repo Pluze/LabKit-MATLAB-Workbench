@@ -110,7 +110,7 @@ function fig = run(debugLog)
         addLog('Opening point selector. Choose matching points, then accept.');
         [movingPoints, fixedPoints] = cpselect(S.currentMovingImage, S.currentReferenceImage, 'Wait', true);
         if size(movingPoints, 1) < 2
-            uialert(fig, 'Rigid registration requires at least two point pairs.', 'Not enough points');
+            labkit.ui.app.showAlert(fig, 'Rigid registration requires at least two point pairs.', 'Not enough points');
             addLog('Alignment cancelled: fewer than two point pairs.');
             return;
         end
@@ -139,7 +139,7 @@ function fig = run(debugLog)
             [alignedImage, tform, method] = dic_preprocess.ops.autoAlignMovingToReference( ...
                 S.currentReferenceImage, S.currentMovingImage);
         catch err
-            uialert(fig, sprintf('Automatic alignment failed:\n%s', err.message), 'Auto align failed');
+            labkit.ui.app.showAlert(fig, sprintf('Automatic alignment failed:\n%s', err.message), 'Auto align failed');
             addLog(sprintf('Automatic alignment failed: %s', err.message));
             return;
         end
@@ -183,7 +183,7 @@ function fig = run(debugLog)
 
     function onApplyCropRoi(~, ~)
         if isempty(S.cropRoiTop) || ~isvalid(S.cropRoiTop)
-            uialert(fig, 'Start a crop ROI before applying the crop.', 'No active ROI');
+            labkit.ui.app.showAlert(fig, 'Start a crop ROI before applying the crop.', 'No active ROI');
             return;
         end
 
@@ -227,7 +227,7 @@ function fig = run(debugLog)
 
     function onUndoEdit(~, ~)
         if isempty(S.history)
-            uialert(fig, 'No align or crop operation is available to undo.', 'Undo');
+            labkit.ui.app.showAlert(fig, 'No align or crop operation is available to undo.', 'Undo');
             return;
         end
 
@@ -245,7 +245,7 @@ function fig = run(debugLog)
 
     function onResetToOriginals(~, ~)
         if isempty(S.referenceImage) || isempty(S.movingImage)
-            uialert(fig, 'Load both images before resetting the working pair.', 'Reset');
+            labkit.ui.app.showAlert(fig, 'Load both images before resetting the working pair.', 'Reset');
             return;
         end
         pushHistory('reset to originals');
@@ -280,7 +280,7 @@ function fig = run(debugLog)
 
     function onStartMaskEdit(~, ~)
         if isempty(S.currentReferenceImage)
-            uialert(fig, 'Load a reference image before drawing an ROI mask.', 'Missing image');
+            labkit.ui.app.showAlert(fig, 'Load a reference image before drawing an ROI mask.', 'Missing image');
             return;
         end
 
@@ -403,7 +403,7 @@ function fig = run(debugLog)
         if isempty(S.maskImage)
             [boundaryMask, ok] = currentBoundaryMask(false);
             if ~ok
-                uialert(fig, 'Draw a mask ROI or add a boundary to the mask canvas before saving.', 'Save ROI mask');
+                labkit.ui.app.showAlert(fig, 'Draw a mask ROI or add a boundary to the mask canvas before saving.', 'Save ROI mask');
                 return;
             end
             S.maskImage = boundaryMask;
@@ -445,7 +445,7 @@ function fig = run(debugLog)
             S.maskPoints, size(S.currentReferenceImage), ...
             S.maskBoundaryStyle, S.maskEditor);
         if ~ok && showAlert
-            uialert(fig, 'Mask ROI needs at least three anchors.', 'Not enough anchors');
+            labkit.ui.app.showAlert(fig, 'Mask ROI needs at least three anchors.', 'Not enough anchors');
         end
     end
 

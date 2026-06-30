@@ -80,6 +80,7 @@ function verify_gui_layout_ui_busy_state()
 
     verifyBusyActionWrapper();
     verifyBusyNonActionWrappers();
+    verifyHiddenModeAlertRecording();
     verifyCloseGuard();
 
     function value = probeWork()
@@ -123,6 +124,36 @@ function verify_gui_layout_ui_busy_state()
     end
 end
 
+function verifyHiddenModeAlertRecording()
+    cleanupMode = setGuiTestModeForTest("hidden");
+    debug = labkit.ui.diag.createContext('alert_probe_app', struct());
+    spec = labkit.ui.spec.app('alertProbe', 'Alert Probe', ...
+        'controlTabs', {labkit.ui.spec.tab('main', 'Main', { ...
+        labkit.ui.spec.section('actions', 'Actions', { ...
+        labkit.ui.spec.action('noop', 'Noop', @(~, ~) [])})})}, ...
+        'workspace', labkit.ui.spec.workspace('workspace', 'Preview', { ...
+        labkit.ui.spec.statusPanel('status', 'Status')}));
+    ui = labkit.ui.app.create(spec, 'debug', debug);
+    cleaner = onCleanup(@() deleteIfValid(ui.figure));
+
+    shown = labkit.ui.app.showAlert(ui.figure, ...
+        "Synthetic hidden alert message.", "Hidden Alert");
+
+    assert(~shown, ...
+        'showAlert should not open a modal dialog during hidden GUI tests.');
+    assert(isappdata(ui.figure, 'labkitUiAlerts'), ...
+        'showAlert should record hidden-mode alert payloads on the figure.');
+    alerts = getappdata(ui.figure, 'labkitUiAlerts');
+    assert(alerts(end).title == "Hidden Alert" && ...
+        alerts(end).message == "Synthetic hidden alert message.", ...
+        'showAlert should preserve app-owned alert title and message.');
+    lines = string(debug.getLog());
+    assert(any(contains(lines, 'component=alert') & ...
+        contains(lines, 'reason=skipped-hidden-gui')), ...
+        'showAlert should trace hidden-mode alert skips through the debug context.');
+    clear cleanupMode;
+end
+
 function verifyCloseGuard()
     confirmCalls = 0;
     lastMessage = "";
@@ -163,6 +194,12 @@ function verifyCloseGuard()
         lastMessage = string(message);
         response = "Close";
     end
+end
+
+function cleanup = setGuiTestModeForTest(mode)
+    oldMode = getenv('LABKIT_GUI_TEST_MODE');
+    setenv('LABKIT_GUI_TEST_MODE', char(mode));
+    cleanup = onCleanup(@() setenv('LABKIT_GUI_TEST_MODE', oldMode));
 end
 
 function verifyBusyNonActionWrappers()

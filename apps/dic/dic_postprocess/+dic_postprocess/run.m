@@ -117,12 +117,12 @@ function fig = run(debugLog)
 
     function onGenerate(~, ~)
         if strlength(S.matPath) == 0 || isempty(S.referenceImage) || isempty(S.maskImage)
-            uialert(fig, 'Load the DIC MAT file, reference image, and mask image first.', ...
+            labkit.ui.app.showAlert(fig, 'Load the DIC MAT file, reference image, and mask image first.', ...
                 'Missing inputs');
             return;
         end
         if edMax.Value <= edMin.Value
-            uialert(fig, 'Color max must be greater than color min.', 'Invalid color range');
+            labkit.ui.app.showAlert(fig, 'Color max must be greater than color min.', 'Invalid color range');
             return;
         end
 
@@ -132,14 +132,14 @@ function fig = run(debugLog)
             addLog('Generated EXX/EYY overlays and ROI summary.');
         catch ME
             debugLog.reportException('dicPostprocess', 'Generate failed', ME);
-            uialert(fig, ME.message, 'DIC postprocess error');
+            labkit.ui.app.showAlert(fig, ME.message, 'DIC postprocess error');
             addLog(sprintf('Generate failed: %s', ME.message));
         end
     end
 
     function onSaveOverlays(~, ~)
         if isempty(S.overlayExx) || isempty(S.overlayEyy)
-            uialert(fig, 'Generate overlays before saving.', 'Save overlays');
+            labkit.ui.app.showAlert(fig, 'Generate overlays before saving.', 'Save overlays');
             return;
         end
 
@@ -160,7 +160,7 @@ function fig = run(debugLog)
 
     function onExportSummary(~, ~)
         if isempty(S.summaryTable) || height(S.summaryTable) == 0
-            uialert(fig, 'Generate a summary before exporting.', 'Export summary');
+            labkit.ui.app.showAlert(fig, 'Generate a summary before exporting.', 'Export summary');
             return;
         end
 
@@ -192,7 +192,7 @@ function fig = run(debugLog)
     function renderOverlays(showAlerts)
         if edMax.Value <= edMin.Value
             if showAlerts
-                uialert(fig, 'Color max must be greater than color min.', 'Invalid color range');
+                labkit.ui.app.showAlert(fig, 'Color max must be greater than color min.', 'Invalid color range');
             end
             return;
         end

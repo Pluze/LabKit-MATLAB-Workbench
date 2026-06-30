@@ -13,11 +13,11 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
 
 ## App Ownership
 
-- Keep domain formulas, thresholds, integration rules, option defaults, plot labels, result fields, export columns, failed-row behavior, alerts, and log wording app-local unless the user explicitly approves a boundary change.
+- Keep domain formulas, thresholds, integration rules, option defaults, plot labels, result fields, export columns, failed-row behavior, alert wording/trigger decisions, and log wording app-local unless the user explicitly approves a boundary change.
 - For a new app cold start, create the standard app shape directly and use the
   smallest genuinely similar app as a reference. Keep the first version focused
   on the real workflow rather than placeholder behavior.
-- When a documented UI tool owns app-neutral controls or interaction mechanics, consume it instead of reimplementing widget state or normalization. Keep app calculations, summaries, alerts, and exports local.
+- When a documented UI tool owns app-neutral controls or interaction mechanics, consume it instead of reimplementing widget state or normalization. Keep app calculations, summaries, alert text, and exports local.
 - Use `labkit.ui.app.create` with `labkit.ui.spec.*` for app GUIs. Do not
   reintroduce the removed `labkit.ui.app.createShell` or legacy view helpers.
 - Use `labkit.ui.app.dispatchRequest` for debug launch routing and `labkit.ui.diag.createContext` only when an app has an app-specific nonstandard request path.
@@ -33,6 +33,9 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
   `debug.reportException(component, event, ME)` before showing an alert,
   logging a recovery message, or returning. Do not swallow import, export,
   preview, or tool errors without a framework debug/crash report.
+- App alerts must call `labkit.ui.app.showAlert(fig, message, titleText)`
+  instead of raw `uialert`. Apps still own the title, message, and decision to
+  alert; the framework owns hidden-test-safe modal mechanics.
 - Apps with custom preview scroll, drawing, ROI, scale-bar, or other axes interaction should create a `labkit.ui.tool.createRuntime` and pass that runtime into reusable tools. Do not set preview-tool `WindowScrollWheelFcn`, `WindowButtonMotionFcn`, `WindowButtonUpFcn`, or axes `ButtonDownFcn` directly in app code.
 - DTA-backed apps use `labkit.dta.*` for discovery, loading, pulse detection, and parsed curve/table access. Task queues, duplicate policy, current selection, analysis state, and export workflow stay app-owned.
 - RHS-backed apps use `labkit.rhs.*` for discovery, header inspection,
@@ -50,7 +53,7 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
   shared `+app` package name creates MATLAB package-resolution ambiguity.
 - Apps put the ordinary data-only spec in `+<app_slug>/+ui/buildSpec.m`.
   The public app entry point delegates to package-root `run.m`; that runner
-  owns state, callback closures, alerts, log wording, and refresh order.
+  owns state, callback closures, alert wording, log wording, and refresh order.
   `buildSpec.m` describes controls, sections, workspace, initial text/defaults,
   and callback handles only.
 - Package-root `run.m` files are allowed to contain app lifecycle

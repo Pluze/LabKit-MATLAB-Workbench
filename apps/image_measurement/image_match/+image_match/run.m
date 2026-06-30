@@ -529,7 +529,7 @@ function fig = run(debugLog)
 
     function showError(titleText, message)
         addLog(sprintf('%s: %s', titleText, message));
-        uialert(fig, message, titleText);
+        labkit.ui.app.showAlert(fig, message, titleText);
     end
 
     function showException(titleText, exception)

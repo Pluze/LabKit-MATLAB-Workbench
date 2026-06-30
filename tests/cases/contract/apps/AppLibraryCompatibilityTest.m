@@ -221,6 +221,24 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
                 strjoin(findings, "; "));
         end
 
+        function appAlertsUseFrameworkShowAlert(testCase)
+            root = setupLabKitTestPath();
+            appFiles = collectAppMFiles(root);
+            findings = strings(0, 1);
+
+            for k = 1:numel(appFiles)
+                content = fileread(appFiles(k));
+                if ~isempty(regexp(content, '\buialert\s*\(', 'once'))
+                    findings(end+1, 1) = string(localRelativePath(root, appFiles(k)));
+                end
+            end
+
+            testCase.verifyEmpty(findings, ...
+                "Apps should route alerts through labkit.ui.app.showAlert " + ...
+                "so hidden GUI workflow tests can record error paths without modal stalls: " + ...
+                strjoin(findings, "; "));
+        end
+
         function appRunnersReportCaughtCallbackExceptions(testCase)
             root = setupLabKitTestPath();
             runFiles = collectAppRunFiles(root);

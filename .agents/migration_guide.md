@@ -46,10 +46,10 @@ GUI workflow acceptance validation migration
 Current facts:
 
 - MATLAB source inventory from tracked files:
-  - total: 695 `.m` files, 58,328 lines
+  - total: 696 `.m` files, 58,443 lines
   - `apps/`: 405 files, 23,817 lines, max 646 lines
-  - `+labkit/`: 173 files, 16,410 lines, max 647 lines
-  - `tests/`: 114 files, 15,824 lines, max 649 lines
+  - `+labkit/`: 174 files, 16,469 lines, max 647 lines
+  - `tests/`: 114 files, 15,880 lines, max 649 lines
   - `labkit_launcher.m`: 1,722 lines and intentionally exempt
 - Tracked files over the 650-line repository file budget:
   `labkit_launcher.m` only, by design, because it is the self-contained repair
@@ -97,6 +97,8 @@ Current facts:
 - App-owned save dialogs that need safe output-file handling use
   `labkit.ui.app.promptOutputFile`; app-owned output-folder dialogs now use
   `labkit.ui.app.promptOutputFolder`.
+- App-owned alerts use `labkit.ui.app.showAlert`, preserving normal modal
+  behavior while recording and skipping the modal in hidden GUI test mode.
 - Package-root app runners that catch `MException` and continue report through
   the framework debug context before alerts or recovery logs.
 - Image workflow apps keep run/export/measurement task snapshots and
@@ -253,8 +255,8 @@ Completion criteria:
 
 Objective:
 
-Remove OS-dialog and callback edges that block hidden workflow acceptance tests
-while preserving normal public app behavior.
+Remove callback edges that block hidden workflow acceptance tests while
+preserving normal public app behavior.
 
 Target shape:
 
@@ -266,6 +268,8 @@ Target shape:
   `labkit.ui.app.promptOutputFolder(titleText, defaultFolder, "Chooser", f)`.
 - App-specific filenames, filters, export schemas, and user-facing messages
   stay app-owned.
+- App-specific alert titles and messages stay app-owned while modal mechanics
+  route through `labkit.ui.app.showAlert`.
 - Caught callback exceptions that continue must reach the framework debug
   context before alerts or recovery logs are shown.
 - UI numeric control values must be normalized to finite scalar app state or
@@ -275,27 +279,19 @@ Target shape:
 
 Current problem edges:
 
-- Modal `uialert` is app-owned and expected, but workflow tests need an
-  injectable or traceable way to avoid stalls where the path can be reached
-  noninteractively.
 - Broad direct numeric UI control assignment audits still belong to app-local
   runner cleanup when those callbacks are touched.
 
 Workstreams:
 
-1. Audit modal alert paths that hidden workflow tests can reach. Add test hooks
-   only where a real hidden GUI test would otherwise block; do not add fake app
-   APIs that ordinary users can see or need.
-2. Continue auditing direct numeric UI control assignments during runner
+1. Continue auditing direct numeric UI control assignments during runner
    cleanup; promote only if multiple apps prove the same domain-neutral API is
    needed.
-3. Use the Route A helper rubric while doing this work. Do not solve a dialog
+2. Use the Route A helper rubric while doing this work. Do not solve a dialog
    migration by adding many single-use one-line wrappers.
 
 Completion criteria:
 
-- Hidden GUI workflow tests can avoid modal alert stalls without changing
-  normal public app behavior.
 - Remaining direct numeric UI state assignments found during runner cleanup are
   finite-scalar normalized before reaching app state or task structs.
 
@@ -311,8 +307,9 @@ proof. Correctness stays in app-owned GUI-free unit tests.
 Dependency:
 
 Do not broadly roll out this route before Route B has a working folder-prompt
-hook and a clear modal-edge policy. Otherwise workflow tests will either stall
-on OS dialogs or grow app-specific test shims that later need removal.
+hook, hidden-test-safe alert helper, and a clear remaining-modal-edge policy.
+Otherwise workflow tests will either stall on OS dialogs or grow app-specific
+test shims that later need removal.
 
 Target shape:
 

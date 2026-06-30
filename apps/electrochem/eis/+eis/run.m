@@ -89,7 +89,7 @@ function fig = run(debugLog)
 
         if ~isempty(failed)
             firstError = failed(1);
-            uialert(fig, sprintf('Failed to load:\n%s\n\n%s', firstError.filepath, firstError.message), 'Load error');
+            labkit.ui.app.showAlert(fig, sprintf('Failed to load:\n%s\n\n%s', firstError.filepath, firstError.message), 'Load error');
         end
     end
 
@@ -172,7 +172,7 @@ function fig = run(debugLog)
     function onExportCSV(~, ~)
         items = selectedItems();
         if isempty(items)
-            uialert(fig, 'No files selected for export.', 'Export');
+            labkit.ui.app.showAlert(fig, 'No files selected for export.', 'Export');
             return;
         end
 

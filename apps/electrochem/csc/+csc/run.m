@@ -100,7 +100,7 @@ function fig = run(debugLog)
 
         if ~isempty(failed)
             firstError = failed(1);
-            uialert(fig, sprintf('Failed to load:\n%s\n\n%s', ...
+            labkit.ui.app.showAlert(fig, sprintf('Failed to load:\n%s\n\n%s', ...
                 firstError.filepath, firstError.message), 'Load error');
         end
     end
@@ -158,7 +158,7 @@ function fig = run(debugLog)
 
     function reloadSelectedFile()
         if isempty(S.items) || isempty(S.current)
-            uialert(fig,'No file selected.','Reload');
+            labkit.ui.app.showAlert(fig,'No file selected.','Reload');
             addLog('Reload failed: no file selected.');
             return;
         end
