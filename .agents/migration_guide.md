@@ -170,11 +170,17 @@ Current facts:
   active curve-editor point injection through the shared workflow driver,
   curvature fit, curve-length measurement, result-table/detail refresh, and
   image/overlay redraw.
+- `GuiLayoutNerveResponseAnalysisTest` covers nerve-response workflow:
+  synthetic filter-record JSON load, filtered analysis, missing-RHS issue
+  reporting, summary/detail refresh, preview redraw, and JSON export.
+- `GuiLayoutResponseReviewStatsTest` covers response-review workflow:
+  synthetic segment CSV load, automatic metric calculation, summary/detail
+  refresh, summary/aligned preview redraw, and metrics CSV export.
 - Workflow-backed app structural GUI tests have been trimmed so ordinary table
   columns, preview axes, redraw paths, and clear/refresh callbacks are covered
   by real workflow tests instead of duplicate launch-only assertions.
-- Remaining supported apps without dedicated workflow acceptance are
-  `labkit_NerveResponseAnalysis_app` and `labkit_ResponseReviewStats_app`.
+- `AppLaunchGuiTest` is now a missing-coverage guardrail instead of broad app
+  smoke coverage; supported app entry points must have dedicated GUI coverage.
 
 ## Active Route A: Runner Complexity And Helper Quality
 
@@ -357,13 +363,9 @@ Target shape:
 
 Migration workstreams:
 
-1. Extend workflow acceptance beyond the current representatives
-   (`eis`, `chrono_overlay`, `vt_resistance`, `cic`, `csc`, `focus_stack`,
-   `batch_crop`, `curvature`, `image_enhance`, `image_match`, `rhs_preview`,
-   `ecg_print`, `dic_preprocess`, and `dic_postprocess`) to the two remaining
-   supported neurophysiology apps: `labkit_NerveResponseAnalysis_app` and
-   `labkit_ResponseReviewStats_app`. Start with CI-sized synthetic inputs, then
-   record which app families merit larger manual or scheduled stress cases.
+1. Keep workflow acceptance at supported-app coverage. New supported app entry
+   points must add dedicated GUI coverage instead of relying on
+   `AppLaunchGuiTest`.
 2. Extend `tests/shared/labkitWorkflowDriver.m` only for app-neutral semantic
    operations proven by real workflow tests. Avoid vague helpers that guess app
    meaning from button labels or combine unrelated concepts such as status text
@@ -371,20 +373,11 @@ Migration workstreams:
 3. Add app-owned hooks only when a real workflow path otherwise opens a modal
    alert, OS file chooser, or output chooser that would stall hidden GUI tests.
    Keep normal public app entry points unchanged.
-4. Extend test tags and build routing only after the first workflow tests prove
-   the shape. Candidate tags are `Workflow` for default hidden acceptance and
-   `Stress` for larger manual or scheduled runs.
-5. For each remaining app that gains workflow acceptance, shrink or merge its
-   `GuiLayout*Test` coverage to non-duplicated structural checks, and stop
-   relying on `AppLaunchGuiTest` as that app's primary smoke coverage. Apps
-   already covered by workflow tests should keep only shell, command-surface,
-   option-surface, debug, gesture/tool, and special layout structural checks.
-6. When every supported app has workflow acceptance coverage, convert
-   `AppLaunchGuiTest` into a guardrail that fails only for apps missing
-   dedicated workflow or structural GUI coverage.
-7. Update `docs/testing.md` and `tests/AGENTS.md` when the validation contract
-   changes from structural-only wording to the final structural/workflow/gesture
-   split. Do not update user-facing app docs for internal test hooks.
+4. Record larger manual or scheduled stress cases only when a supported app has
+   a concrete workflow risk that is too large for default hidden CI.
+5. Update `docs/testing.md` and `tests/AGENTS.md` only if the validation
+   contract changes again. Do not update user-facing app docs for internal test
+   hooks.
 
 Non-goals:
 
@@ -409,16 +402,8 @@ Validation gates:
 
 Completion criteria:
 
-- Each supported app has at least one hidden workflow acceptance test covering
-  launch, synthetic input load, core action, state update, and export or task
-  completion artifact.
 - Representative robustness paths cover cancel/reload/reset/idempotent export
   where applicable.
-- App-level structural GUI tests no longer duplicate workflow coverage through
-  brittle exact component counts unless that exact structure is the behavior
-  under test.
-- `AppLaunchGuiTest` is retired as broad smoke coverage or narrowed to a
-  missing-coverage guardrail.
 - Framework UI, gesture, contract, and GUI-free unit tests remain in their
   current ownership lanes.
 
