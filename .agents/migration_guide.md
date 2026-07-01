@@ -44,10 +44,10 @@ none
 Current facts:
 
 - MATLAB source inventory from current working-tree files:
-  - total: 692 `.m` files, 60,056 lines
-  - `apps/`: 378 files, 23,465 lines, max 649 lines
+  - total: 690 `.m` files, 60,054 lines
+  - `apps/`: 376 files, 23,437 lines, max 649 lines
   - `+labkit/`: 191 files, 17,056 lines, max 647 lines
-  - `tests/`: 120 files, 17,258 lines, max 649 lines
+  - `tests/`: 120 files, 17,284 lines, max 649 lines
   - `labkit_launcher.m`: 1,722 lines and intentionally exempt
 - Tracked files over the 650-line repository file budget:
   `labkit_launcher.m` only, by design, because it is the self-contained repair
@@ -100,6 +100,9 @@ Current facts:
   - Short `+export/write*.m` helpers are classified as
     `export-side-effect` exceptions because they isolate explicit file-write
     side effects.
+  - Unused duplicate `image_enhance.view.displayImageNames` and
+    `image_match.view.displayImageNames` files were deleted after the expanded
+    helper audit showed no real call sites.
 - App `private/` debt: none.
 - `+labkit` private helper contract debt: none.
 - String-dispatch workflow adapters and app `+core/dispatch.m` routers: none.
