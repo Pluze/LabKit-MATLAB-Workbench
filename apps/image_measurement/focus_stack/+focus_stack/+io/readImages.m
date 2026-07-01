@@ -9,14 +9,10 @@ function images = readImages(paths)
         error('labkit_FocusStack_app:NoImagesSelected', ...
             'Select at least one image file.');
     end
-    focus_stack.io.assertSupportedImagePaths(paths);
-
-    images = cell(numel(paths), 1);
-    for k = 1:numel(paths)
-        if exist(char(paths(k)), 'file') ~= 2
-            error('labkit_FocusStack_app:ImageFileNotFound', ...
-                'Image file does not exist: %s', char(paths(k)));
-        end
-        images{k} = imread(char(paths(k)));
+    records = labkit.image.readFiles(paths, struct("Normalize", false, ...
+        "AllowEmpty", false));
+    images = cell(numel(records), 1);
+    for k = 1:numel(records)
+        images{k} = records(k).image;
     end
 end

@@ -48,6 +48,7 @@ user explicitly asks for a broader/release gate.
 ```text
 project                    startup, architecture, package surface, sample-data hygiene
 labkit/dta                 DTA parser, facade, session, item, pulse behavior
+labkit/image               image file IO, RGB normalization, resizing, mean filtering, basic enhancement primitives
 labkit/biosignal           biosignal import, processing, ECG peaks, segments, measurements
 labkit/ui                  reusable UI helpers; include GUI coverage for layout/callback/shell/debug/tool checks
 apps/electrochem           electrochem app-owned calculations, exports, layout

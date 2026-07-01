@@ -6,6 +6,7 @@
 
 - `docs/architecture.md`
 - `docs/ui.md` for `+labkit/+ui`
+- `docs/image.md` for `+labkit/+image`
 - `docs/dta.md` for `+labkit/+dta`
 - `docs/rhs.md` for `+labkit/+rhs`
 - `docs/biosignal.md` for `+labkit/+biosignal`
@@ -22,6 +23,11 @@
   RHS file metadata and waveform windows, but it must not encode stimulus
   trains, nerve channel roles, CAP thresholds, segment schemas, or exports.
 - `labkit.biosignal` stays GUI-free and independent from DTA/app code.
+- `labkit.image` stays GUI-free and owns only generic image file IO,
+  display normalization, resizing, mean filtering, and basic enhancement
+  primitives. It must not encode app tool histories, ROI/background policy,
+  reference-match workflows, crop/export schemas, focus-stack algorithms, DIC
+  behavior, or user-facing workflow text.
 - `labkit.ui` stays parser/data/analysis-free; apps pass prepared values, labels, tables, callbacks, and handles into UI helpers.
 - `labkit.contract` owns only MATLAB-native facade contract structs, simple range
   checks, and app requirement assertions. It must stay domain-neutral and must
@@ -29,8 +35,8 @@
 - App version display belongs to app-owned `version.m` files plus
   `labkit.ui.app` title formatting; do not move app metadata into
   `labkit.contract` or a central registry.
-- When app-facing facade code changes under `+labkit/+ui`, `+dta`, `+rhs`, or
-  `+biosignal`, update the owning facade `version()` contract in the same
+- When app-facing facade code changes under `+labkit/+ui`, `+image`, `+dta`,
+  `+rhs`, or `+biosignal`, update the owning facade `version()` contract in the same
   change. Facade versions use `X.Y.Z` semantic format and must only increase.
 - Reusable UI tools may own domain-neutral interaction workflows such as image scale-bar controls, reference editing, unit normalization, and overlay placement. Keep those tools independent from app result schemas, scientific formulas, file formats, and workflow wording.
 - App-facing UI APIs live under `labkit.ui.app.*`, `labkit.ui.spec.*`, `labkit.ui.view.*`, `labkit.ui.tool.*`, and `labkit.ui.diag.*`. Do not reintroduce flat `labkit.ui.*` helper files.
@@ -45,7 +51,7 @@
 
 ## Comments and Docs
 
-- Public functions under `+labkit/+ui`, `+labkit/+dta`, `+labkit/+rhs`, and `+labkit/+biosignal` must document app-facing call contracts immediately after the function declaration.
+- Public functions under `+labkit/+ui`, `+labkit/+image`, `+labkit/+dta`, `+labkit/+rhs`, and `+labkit/+biosignal` must document app-facing call contracts immediately after the function declaration.
 - Private helpers must document expected caller, input/output shapes, side effects, and assumptions.
 - Reusable API or package-boundary changes update the relevant human component doc and this file if agent rules change.
 - Do not update this file for package implementation changes that preserve public contracts and boundary rules; state that docs/AGENTS were unchanged because contracts were preserved when the change is nontrivial.
@@ -53,7 +59,7 @@
 ## Validation Routing
 
 Package boundary or public surface changes should include project guardrails.
-Use `runLabKitTests("Suites", ...)` for the touched DTA, RHS, biosignal, or UI
+Use `runLabKitTests("Suites", ...)` for the touched DTA, RHS, biosignal, image, or UI
 facade, and add downstream app-family suite selectors when the app-facing
 contract may be affected. Use `docs/testing.md` for stable build-task names,
 suite selectors, and GUI/non-GUI pairings.

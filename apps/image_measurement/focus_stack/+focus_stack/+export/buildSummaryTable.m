@@ -25,7 +25,7 @@ function T = buildSummaryTable(result, paths)
 
     imageNames = strings(result.inputCount, 1);
     for k = 1:result.inputCount
-        imageNames(k) = string(focus_stack.view.displayNameFromPath(paths(k)));
+        imageNames(k) = labkit.image.displayName(paths(k));
     end
 
     T = table( ...

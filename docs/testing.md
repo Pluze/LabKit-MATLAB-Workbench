@@ -78,6 +78,9 @@ Common choices:
 | Any GUI launch, layout, callback, or gesture change | `buildtool gui` |
 | Architecture, docs, package surface, hygiene | `buildtool headless` |
 
+Focused runner suite targets include `labkit/image` for the reusable image
+facade and `apps/image_measurement` for downstream image apps.
+
 ## CI Scope
 
 Main-branch push and pull-request CI runs repository hygiene plus parallel

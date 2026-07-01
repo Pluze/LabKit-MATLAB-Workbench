@@ -8,7 +8,7 @@ function names = displayImageNamesForDetails(paths, count)
     names = cell(count, 1);
     for k = 1:count
         if k <= numel(paths)
-            names{k} = focus_stack.view.displayNameFromPath(paths(k));
+            names{k} = char(labkit.image.displayName(paths(k)));
         else
             names{k} = sprintf('slice_%03d', k);
         end

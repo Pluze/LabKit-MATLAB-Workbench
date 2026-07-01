@@ -8,18 +8,7 @@ function [imageOut, scale] = previewImage(imageIn, maxHeight)
     if nargin < 2 || isempty(maxHeight)
         maxHeight = 1500;
     end
-    scale = 1;
-    imageOut = min(max(im2double(imageIn), 0), 1);
-    if ndims(imageOut) == 2
-        imageOut = repmat(imageOut, 1, 1, 3);
-    elseif size(imageOut, 3) > 3
-        imageOut = imageOut(:, :, 1:3);
-    end
-
-    if size(imageOut, 1) <= maxHeight
-        return;
-    end
-    scale = double(maxHeight) ./ double(size(imageOut, 1));
-    targetSize = max(1, round([size(imageOut, 1), size(imageOut, 2)] .* scale));
-    imageOut = imresize(imageOut, targetSize);
+    imageOut = labkit.image.toRgbDouble(imageIn);
+    [imageOut, scale] = labkit.image.resizeToFit(imageOut, ...
+        "MaxHeight", maxHeight);
 end

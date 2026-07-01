@@ -44,10 +44,10 @@ none
 Current facts:
 
 - MATLAB source inventory from current working-tree files:
-  - total: 688 `.m` files, 59,660 lines
-  - `apps/`: 392 files, 23,780 lines, max 649 lines
-  - `+labkit/`: 174 files, 16,505 lines, max 647 lines
-  - `tests/`: 119 files, 17,098 lines, max 649 lines
+  - total: 692 `.m` files, 60,056 lines
+  - `apps/`: 378 files, 23,465 lines, max 649 lines
+  - `+labkit/`: 191 files, 17,056 lines, max 647 lines
+  - `tests/`: 120 files, 17,258 lines, max 649 lines
   - `labkit_launcher.m`: 1,722 lines and intentionally exempt
 - Tracked files over the 650-line repository file budget:
   `labkit_launcher.m` only, by design, because it is the self-contained repair
@@ -110,6 +110,10 @@ Current facts:
   role-based app-owned component packages, and avoid generic helper buckets.
 - The public app-facing UI surface is the layered
   `labkit.ui.app/spec/view/tool/diag` foundation documented in `docs/ui.md`.
+- Generic image source filters, path normalization, display names, source
+  image reads, RGB double conversion, preview resizing, mean filtering, basic
+  enhancement primitives, and image writes now live in `labkit.image` and are
+  documented in `docs/image.md`. Image workflow semantics remain app-owned.
 - File-entry path and item-index extraction are framework view helpers:
   apps use `labkit.ui.view.filePaths` and `labkit.ui.view.fileIndices`
   instead of parsing filePanel event structs locally.
@@ -217,7 +221,7 @@ electrochem apps and tests have moved to canonical fields.
 ## Migration Standard
 
 Apps are first-class products. `+labkit` stays a small domain-neutral
-foundation with UI, DTA, RHS, and biosignal facades. App-specific calculations,
+foundation with UI, image, DTA, RHS, and biosignal facades. App-specific calculations,
 summaries, plots, exports, workflow wording, file conventions, and result
 schemas stay under the owning app tree.
 

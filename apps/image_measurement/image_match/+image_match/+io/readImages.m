@@ -3,30 +3,13 @@
 % normalized to [0, 1]. Alpha channels are ignored.
 function items = readImages(paths)
 
+    records = labkit.image.readFiles(paths);
     template = image_match.state.emptyItem();
-    items = repmat(template, numel(paths), 1);
-
-    for k = 1:numel(paths)
-        imageData = imread(char(paths(k)));
+    items = repmat(template, numel(records), 1);
+    for k = 1:numel(records)
         items(k) = template;
-        items(k).path = paths(k);
-        items(k).name = displayName(paths(k));
-        items(k).image = normalizeImage(imageData);
+        items(k).path = records(k).path;
+        items(k).name = records(k).name;
+        items(k).image = records(k).image;
     end
-end
-
-function name = displayName(path)
-    [~, base, ext] = fileparts(char(path));
-    name = string([base ext]);
-end
-
-function imageData = normalizeImage(imageData)
-    if ndims(imageData) == 2
-        imageData = repmat(imageData, 1, 1, 3);
-    elseif size(imageData, 3) > 3
-        imageData = imageData(:, :, 1:3);
-    end
-
-    imageData = im2double(imageData);
-    imageData = min(max(imageData, 0), 1);
 end

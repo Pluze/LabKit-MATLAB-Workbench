@@ -4,7 +4,7 @@
 function img = previewImage(img)
 %PREVIEWIMAGE Normalize an image for focus-stack preview display.
 
-    img = im2double(img);
+    img = labkit.image.toRgbDouble(img);
     if ndims(img) == 3 && size(img, 3) > 3
         img = img(:, :, 1:3);
     end

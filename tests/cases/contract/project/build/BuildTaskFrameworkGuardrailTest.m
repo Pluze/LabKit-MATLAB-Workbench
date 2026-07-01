@@ -144,6 +144,21 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
                 "Broad downstream app GUI coverage should replace narrower app GUI targets.");
         end
 
+        function affectedValidationMapperCoversImageFacadeChanges(testCase)
+            root = setupLabKitTestPath();
+
+            steps = labkitValidationPlanForChangedPaths(root, ...
+                "+labkit/+image/readFiles.m");
+            signatures = validationStepSignatures(steps);
+
+            testCase.verifyTrue(any(signatures == "labkit/image|false"), ...
+                "Image facade changes should run reusable image facade tests.");
+            testCase.verifyTrue(any(signatures == "apps/image_measurement|false"), ...
+                "Image facade changes should run downstream image app unit tests.");
+            testCase.verifyTrue(any(signatures == "gui/apps/image_measurement|true"), ...
+                "Image facade changes should run downstream image app GUI checks.");
+        end
+
         function changedValidationMapperTargetsSingleAppGui(testCase)
             root = setupLabKitTestPath();
 

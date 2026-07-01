@@ -96,7 +96,7 @@ validation limits.
 
 ```text
 apps/      workflow-specific MATLAB GUI apps
-+labkit/   reusable UI, DTA, RHS, and biosignal facades
++labkit/   reusable UI, image, DTA, RHS, and biosignal facades
 docs/      human-facing usage, API, architecture, and validation docs
 tests/     behavior tests, project contracts, GUI checks, and runner code
 ```

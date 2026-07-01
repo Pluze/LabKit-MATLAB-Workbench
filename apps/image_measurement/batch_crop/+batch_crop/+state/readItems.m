@@ -4,11 +4,11 @@
 function items = readItems(paths)
 %READITEMS Load selected image paths into crop item structs.
 
-    items = repmat(batch_crop.state.emptyItem(), numel(paths), 1);
-    for k = 1:numel(paths)
-        img = imread(char(paths(k)));
-        items(k).path = string(paths(k));
-        items(k).image = img;
+    records = labkit.image.readFiles(paths, struct("Normalize", false));
+    items = repmat(batch_crop.state.emptyItem(), numel(records), 1);
+    for k = 1:numel(records)
+        items(k).path = records(k).path;
+        items(k).image = records(k).image;
         items(k).angleDeg = 0;
         items(k).centerXY = [NaN, NaN];
         items(k).centerSet = false;

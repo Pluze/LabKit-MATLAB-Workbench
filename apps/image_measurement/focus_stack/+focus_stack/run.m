@@ -196,7 +196,7 @@ function fig = run(debugLog)
             return;
         end
         try
-            imwrite(S.result.fused, filepath);
+            labkit.image.writeFile(S.result.fused, filepath);
         catch ME
             showException('Could not export fused PNG', ME);
             return;
@@ -215,7 +215,8 @@ function fig = run(debugLog)
             return;
         end
         try
-            imwrite(focus_stack.view.focusIndexRgb(S.result.focusIndex, S.result.inputCount), filepath);
+            labkit.image.writeFile( ...
+                focus_stack.view.focusIndexRgb(S.result.focusIndex, S.result.inputCount), filepath);
         catch ME
             showException('Could not export focus map PNG', ME);
             return;

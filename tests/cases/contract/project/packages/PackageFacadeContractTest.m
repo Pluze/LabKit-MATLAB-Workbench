@@ -5,7 +5,7 @@ classdef PackageFacadeContractTest < matlab.unittest.TestCase
         function facadeVersionsAreValid(testCase)
             setupLabKitTestPath();
             versions = currentVersions();
-            expectedFacades = ["ui"; "dta"; "rhs"; "biosignal"];
+            expectedFacades = ["ui"; "dta"; "rhs"; "biosignal"; "image"];
 
             testCase.verifyEqual(sort([versions.facade].'), sort(expectedFacades));
             for k = 1:numel(versions)
@@ -112,7 +112,8 @@ function versions = currentVersions()
         labkit.ui.version()
         labkit.dta.version()
         labkit.rhs.version()
-        labkit.biosignal.version()];
+        labkit.biosignal.version()
+        labkit.image.version()];
 end
 
 function validateRequirementShape(testCase, req, appName)

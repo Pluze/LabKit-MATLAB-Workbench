@@ -51,7 +51,7 @@ function payload = writeOutputs(items, opts)
             outputPath = uniqueBatchCropOutputPath(outputFolder, ...
                 string(items(k).path), outputFormat.extension, reservedPaths, "_crop");
             reservedPaths(end+1, 1) = outputPath;
-            imwrite(crop.image, char(outputPath));
+            labkit.image.writeFile(crop.image, outputPath);
 
             result = crop;
             result.image = [];

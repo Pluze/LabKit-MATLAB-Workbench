@@ -26,9 +26,6 @@ function images = normalizeImages(images)
     end
     images = images(:);
     for k = 1:numel(images)
-        images{k} = min(max(im2double(images{k}), 0), 1);
-        if ndims(images{k}) == 2
-            images{k} = repmat(images{k}, 1, 1, 3);
-        end
+        images{k} = labkit.image.toRgbDouble(images{k});
     end
 end

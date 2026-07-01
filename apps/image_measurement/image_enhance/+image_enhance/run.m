@@ -363,7 +363,7 @@ function fig = run(debugLog)
     end
 
     function items = readOrReuseImages(paths)
-        paths = image_enhance.io.normalizeAppPaths(paths);
+        paths = labkit.image.normalizePaths(paths);
         template = image_enhance.state.emptyItem();
         items = repmat(template, numel(paths), 1);
         existingPaths = strings(0, 1);
@@ -379,7 +379,7 @@ function fig = run(debugLog)
             existingIndex = find(existingPaths == paths(k), 1);
             if ~isempty(existingIndex)
                 addLog(sprintf('Reusing image %d/%d: %s', ...
-                    k, numel(paths), char(image_enhance.io.displayName(paths(k)))));
+                    k, numel(paths), char(labkit.image.displayName(paths(k)))));
                 items(k) = S.items(existingIndex);
                 continue;
             end

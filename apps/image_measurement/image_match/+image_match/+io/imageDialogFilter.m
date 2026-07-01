@@ -1,9 +1,0 @@
-% Expected caller: labkit_ImageMatch_app file dialogs. Output is a uigetfile
-% filter spec for image formats supported by the reference-match workflow.
-function filterSpec = imageDialogFilter()
-
-    filterSpec = { ...
-        '*.png;*.jpg;*.jpeg;*.tif;*.tiff;*.bmp', ...
-        'Image files (*.png, *.jpg, *.jpeg, *.tif, *.tiff, *.bmp)'; ...
-        '*.*', 'All files (*.*)'};
-end

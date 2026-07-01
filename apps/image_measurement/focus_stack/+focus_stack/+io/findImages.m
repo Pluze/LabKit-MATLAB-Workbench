@@ -20,7 +20,7 @@ function paths = findImages(folder)
         if entry.isdir
             continue;
         end
-        keep(k) = focus_stack.io.isSupportedImagePath(entry.name);
+        keep(k) = labkit.image.isSupportedPath(entry.name);
     end
     entries = entries(keep);
 

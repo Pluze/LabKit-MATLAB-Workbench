@@ -42,6 +42,12 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
   indexing, and window reads. Channel roles, protocols, event detection,
   nerve response metrics, and exports stay app-owned.
 - Biosignal-backed apps use `labkit.biosignal.*` for recording loading, channel extraction, waveform processing, events, segments, measurements, and group comparisons.
+- Image-backed apps use `labkit.image.*` for generic source-image filters,
+  path normalization, display names, reads/writes, RGB double conversion,
+  preview resizing, mean filtering, and basic enhancement primitives. Tool
+  lists, ROI/background policy, reference matching, crop geometry, focus-stack
+  algorithms, DIC behavior, export schemas, and user-facing workflow text stay
+  app-owned.
 - App-local file dialogs that remain outside `filePanel` must use
   `labkit.ui.app.defaultDialogFolder("input")` or `"output"` instead of `pwd`
   or bare output filenames.

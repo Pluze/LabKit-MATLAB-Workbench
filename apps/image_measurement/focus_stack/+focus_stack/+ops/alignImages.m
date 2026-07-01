@@ -94,7 +94,7 @@ end
 
 function gray = alignmentGray(imageData)
     gray = focus_stack.ops.normalizeGray(imageData);
-    lowpass = focus_stack.ops.boxMean2(gray, 31);
+    lowpass = labkit.image.meanFilter2(gray, 31);
     gray = gray - lowpass;
     mx = max(abs(gray(:)));
     if mx > 0

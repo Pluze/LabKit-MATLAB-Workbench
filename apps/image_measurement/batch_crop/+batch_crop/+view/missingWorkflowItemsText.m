@@ -27,7 +27,7 @@ function names = missingItemNames(items, missingKind)
     names = strings(0, 1);
     for k = 1:numel(items)
         if isMissing(items(k), missingKind)
-            names(end + 1, 1) = batch_crop.view.displayNameFromPath(items(k).path);
+            names(end + 1, 1) = labkit.image.displayName(items(k).path);
         end
     end
 end

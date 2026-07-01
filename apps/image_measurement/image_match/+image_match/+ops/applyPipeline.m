@@ -35,8 +35,5 @@ function imageData = normalizeImage(imageData)
     if isempty(imageData)
         return;
     end
-    imageData = min(max(im2double(imageData), 0), 1);
-    if ndims(imageData) == 2
-        imageData = repmat(imageData, 1, 1, 3);
-    end
+    imageData = labkit.image.toRgbDouble(imageData);
 end

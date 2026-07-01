@@ -7,7 +7,7 @@ is the small reusable foundation they share.
 
 ```text
 apps/      workflow-specific GUI apps and app-owned helpers
-+labkit/   reusable UI, DTA, RHS, and biosignal facades
++labkit/   reusable UI, image, DTA, RHS, and biosignal facades
 tests/     behavior tests, project contracts, GUI checks, shared helpers, and runner code
 docs/      human-facing usage, API, architecture, and validation docs
 scripts/   CI helper scripts
@@ -43,6 +43,7 @@ developer's local workspace.
 | App entry point | Public launch name and debug dispatch. |
 | App package | Workflow state, callbacks, calculations, summaries, exports, and app-local helpers. |
 | `labkit.ui` | App shell, data-only UI specs, semantic view updates, reusable tools, and diagnostics. |
+| `labkit.image` | GUI-free image file IO, display normalization, resizing, mean filtering, and basic enhancement primitives. |
 | `labkit.dta` | GUI-free Gamry DTA discovery, loading, parsed curves, and pulse helpers. |
 | `labkit.biosignal` | GUI-free recording import, channel extraction, filtering, events, segments, templates, and measurements. |
 | `labkit.rhs` | GUI-free Intan RHS discovery, header parsing, block indexing, and lazy waveform window reads. |
@@ -98,6 +99,13 @@ app window title. App versions are not dependency constraints and do not belong
 in `labkit.contract`. Project guardrails check `X.Y.Z` format and require
 versioned code changes to increase the corresponding app, launcher, or facade
 version.
+
+Image workflows may use `labkit.image` for generic image file filters, source
+image reads, display-name normalization, RGB double conversion, preview-size
+fitting, mean filtering, basic enhancement primitives, and image writes. Apps
+still own processing step semantics, ROI/background policy, matching formulas,
+crop geometry, focus-stack algorithms, DIC behavior, export schemas, and user
+workflow text.
 
 `+ui/buildSpec.m` returns a data-only `labkit.ui.spec.*` tree. It should not
 create MATLAB UI handles, mutate app state, perform IO, run calculations, write

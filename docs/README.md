@@ -26,6 +26,7 @@ the app catalog; maintainer references are grouped separately.
 | Facade | Read |
 | --- | --- |
 | GUI app shell, specs, view helpers, tools, diagnostics | [ui.md](ui.md) |
+| Image file IO, preview normalization, and basic processing primitives | [image.md](image.md) |
 | Gamry DTA loading, parser outputs, pulse detection | [dta.md](dta.md) |
 | Wearable/physiological recordings, ECG peaks, segments, measurements | [biosignal.md](biosignal.md) |
 | Intan RHS discovery, header inspection, indexing, and window reads | [rhs.md](rhs.md) |

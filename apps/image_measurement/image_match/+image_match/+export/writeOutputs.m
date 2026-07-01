@@ -40,7 +40,7 @@ function payload = writeOutputs(items, referenceItem, steps, opts)
         outputPath = uniqueOutputPath(outputFolder, items(k).path, outputFormat);
         result.outputPath = outputPath;
         try
-            imwrite(processed{k}, outputPath);
+            labkit.image.writeFile(processed{k}, outputPath);
             result.status = "saved";
             result.message = "Saved";
         catch ME

@@ -10,7 +10,7 @@ description: "Use for LabKit refactors, extraction, public API additions, packag
 Preserve LabKit's app-first architecture:
 
 - apps own experiment-specific workflow
-- `+labkit` owns small, stable UI/DTA/biosignal facades
+- `+labkit` owns small, stable UI/image/DTA/RHS/biosignal facades
 - no public helper-dump packages
 - UI apps should use the layered `labkit.ui.app/spec/view/tool/diag` facades;
   the older flat helper surface and pre-2.0 `createShell`/legacy view APIs
@@ -30,7 +30,8 @@ the touched files:
 - read `docs/architecture.md` for public package surfaces, allowed debt, or
   app-vs-library ownership changes
 - read the relevant component doc only for the touched facade:
-  `docs/apps.md`, `docs/ui.md`, `docs/dta.md`, or `docs/biosignal.md`
+  `docs/apps.md`, `docs/ui.md`, `docs/image.md`, `docs/dta.md`,
+  `docs/rhs.md`, or `docs/biosignal.md`
 
 ## Boundary Decision
 
@@ -52,6 +53,12 @@ detail, or a true domain-neutral app-facing contract. Family-specific formulas,
 filters, option defaults, display labels, export columns, and workflow wording
 stay under the owning app package even when two sibling apps share the shape.
 
+For image boundary work, keep `labkit.image` GUI-free and limited to generic
+file IO, display normalization, resizing, mean filtering, and basic
+enhancement primitives. App tool histories, ROI/background policy,
+reference-match workflows, crop/export schemas, focus-stack algorithms, DIC
+behavior, and workflow wording stay app-owned.
+
 For UI boundary work, prefer `labkit.ui.app.create`,
 `labkit.ui.spec.*`, named `labkit.ui.view.*` helpers,
 `labkit.ui.app.dispatchRequest`, `labkit.ui.diag.createContext`, and
@@ -66,7 +73,7 @@ public `labkit.ui.spec.button`, `dropdown`, `slider`, `listbox`, `table`,
 ## Validation
 
 Run or recommend project guardrails for package-boundary and public-surface
-changes. Add focused DTA, biosignal, UI, or app-family validation when that
+changes. Add focused DTA, RHS, biosignal, image, UI, or app-family validation when that
 boundary is touched, and use `docs/testing.md` for exact task names and
 pairings.
 

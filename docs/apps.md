@@ -131,7 +131,7 @@ Create optional role packages only when the app has code for that role:
 
 ```text
 +state/    defaults, factories, presets
-+io/       app-local file discovery, filters, readers, and import parsing
++io/       app-local file discovery, workflow-specific readers, and import parsing
 +ops/      GUI-free calculations and transforms
 +view/     table rows, detail text, display-ready data
 +export/   CSV/image output writers and manifests
@@ -166,6 +166,11 @@ Apps with preview, edit, run, or export workflows should keep task lifecycle
 state explicit. Runner code may track dirty flags, small preview caches, and
 the last successful task fingerprint, but GUI-free helpers own deterministic
 task snapshots under the app package, usually in `+state`.
+
+Image apps should use `labkit.image` for generic image filters, path
+normalization, display names, reads/writes, RGB double conversion, preview
+resizing, mean filtering, and basic enhancement primitives. Keep app-owned
+readers when they build app item structs or enforce workflow-specific state.
 
 Use this boundary:
 

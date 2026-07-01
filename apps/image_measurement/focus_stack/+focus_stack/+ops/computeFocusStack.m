@@ -132,7 +132,7 @@ end
 
 function score = focusDetailEnergy(detailImage, focusWindow)
     gray = grayImage(detailImage);
-    score = focus_stack.ops.boxMean2(gray .^ 2, focusWindow);
+    score = labkit.image.meanFilter2(gray .^ 2, focusWindow);
     score(~isfinite(score)) = 0;
     score = max(score, 0);
 end
@@ -147,8 +147,8 @@ function scoreStack = baseFocusScoreStack(pyramids, level)
 end
 
 function score = localVarianceScore(gray, windowSize)
-    meanValue = focus_stack.ops.boxMean2(gray, windowSize);
-    score = focus_stack.ops.boxMean2(gray .^ 2, windowSize) - meanValue .^ 2;
+    meanValue = labkit.image.meanFilter2(gray, windowSize);
+    score = labkit.image.meanFilter2(gray .^ 2, windowSize) - meanValue .^ 2;
     score(~isfinite(score)) = 0;
     score = max(score, 0);
 end
@@ -168,7 +168,7 @@ function weights = focusWeightsFromScores(scoreStack, focusIndex, confidence, mi
             w(lowConfidence & zeroScore) = 1 / imageCount;
         end
         if smoothRadius > 0
-            w = focus_stack.ops.boxMean2(w, 2 * smoothRadius + 1);
+            w = labkit.image.meanFilter2(w, 2 * smoothRadius + 1);
         end
         weights(:, :, k) = w;
     end

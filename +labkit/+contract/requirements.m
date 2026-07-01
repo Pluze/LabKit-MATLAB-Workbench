@@ -5,9 +5,9 @@ function req = requirements(varargin)
 %   req = labkit.contract.requirements("ui", ">=2.0 <3", ...)
 %
 % Inputs:
-%   Facade/range pairs - facade names such as "ui", "dta", "rhs", or
-%       "biosignal", followed by simple semantic-version ranges. Ranges use
-%       whitespace-separated constraints such as ">=2.0 <3".
+%   Facade/range pairs - facade names such as "ui", "dta", "rhs",
+%       "biosignal", or "image", followed by simple semantic-version ranges.
+%       Ranges use whitespace-separated constraints such as ">=2.0 <3".
 %
 % Outputs:
 %   req - struct with type and facades fields. The facades field is a struct

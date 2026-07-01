@@ -3,13 +3,13 @@
 % Output is a display-ready RGB double image in [0, 1].
 function outputImage = applyMatch(inputImage, referenceImage, step)
 
-    inputImage = normalizeImage(inputImage);
+    inputImage = labkit.image.toRgbDouble(inputImage);
     if isempty(referenceImage)
         outputImage = inputImage;
         return;
     end
 
-    referenceImage = normalizeImage(referenceImage);
+    referenceImage = labkit.image.toRgbDouble(referenceImage);
     strength = clamp01(double(step.amount) / 100);
     toneStrength = clamp01(double(step.secondary) / 100);
     colorStrength = clamp01(double(step.colorStrength) / 100);
@@ -112,7 +112,7 @@ function outputImage = protectedToneMatch(inputImage, referenceImage, toneStreng
     saturationGuard = 1 - 0.42 .* smoothstep(0.18, 0.58, hsvImage(:, :, 2));
     matchedL = matchedL + lift .* (0.35 + 0.65 .* brightMask) .* saturationGuard;
     matchedL = min(max(0.72 .* matchedL + 0.28 .* sourceL, 0), 1);
-    detail = matchedL - boxBlur(matchedL, 3);
+    detail = matchedL - labkit.image.meanFilter2(matchedL, 3);
     matchedL = matchedL + (0.08 + 0.05 .* double(sourceStats.contrast < 0.24)) .* detail;
     shadowMask = smoothstep(0.24, 0.08, sourceL);
     highlightMask = smoothstep(0.88, 0.99, matchedL);
@@ -181,7 +181,7 @@ function mask = backgroundMask(imageData)
     if nnz(mask > 0.20) < 16
         mask = ones(size(value));
     end
-    mask = min(max(boxBlur(mask, 7), 0), 1);
+    mask = min(max(labkit.image.meanFilter2(mask, 7), 0), 1);
 end
 
 function stats = luminanceStats(value)
@@ -222,13 +222,6 @@ function y = smoothstep(edge0, edge1, x)
     t = (x - edge0) ./ max(edge1 - edge0, eps);
     t = min(max(t, 0), 1);
     y = t .* t .* (3 - 2 .* t);
-end
-
-function outputImage = boxBlur(inputImage, windowSize)
-    windowSize = max(1, round(windowSize));
-    kernel = ones(windowSize, windowSize);
-    outputImage = conv2(inputImage, kernel, 'same') ./ ...
-        conv2(ones(size(inputImage)), kernel, 'same');
 end
 
 function matched = covarianceMatch(sourceLab, referenceLab)

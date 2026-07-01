@@ -100,7 +100,7 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
   task or the relevant broad task before pushing substantive
   validation-routing changes.
 - Prefer `runLabKitTests("Suites", "...")` for rerunning a failed suite such
-  as `project`, `labkit/ui`, or `apps/image_measurement`. Rerun broader
+  as `project`, `labkit/ui`, `labkit/image`, or `apps/image_measurement`. Rerun broader
   build tasks only when the fix changes validation routing, touches additional
   source areas, or the user explicitly asks for a release/full gate.
 - Stop an accidentally overbroad GUI run when it is not needed; GUI tests can

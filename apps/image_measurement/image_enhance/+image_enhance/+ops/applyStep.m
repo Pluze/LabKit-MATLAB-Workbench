@@ -3,21 +3,24 @@
 % image for match-reference steps. Output is RGB double image data in [0, 1].
 function outputImage = applyStep(inputImage, step, referenceImage)
 
-    inputImage = normalizeImage(inputImage);
+    inputImage = labkit.image.toRgbDouble(inputImage);
     key = normalizeKind(step.kind);
     switch key
         case 'brightnesscontrast'
-            outputImage = adjustBrightnessContrast(inputImage, ...
+            outputImage = labkit.image.adjustBrightnessContrast(inputImage, ...
                 step.amount, step.secondary);
         case 'localcontrast'
-            outputImage = localContrast(inputImage, step.amount, step.secondary);
+            outputImage = labkit.image.localContrast(inputImage, ...
+                step.amount, step.secondary);
         case 'sharpen'
-            outputImage = sharpenImage(inputImage, step.amount, step.secondary);
+            outputImage = labkit.image.sharpen(inputImage, ...
+                step.amount, step.secondary);
         case 'huesaturation'
-            outputImage = adjustHueSaturation(inputImage, ...
+            outputImage = labkit.image.adjustHueSaturation(inputImage, ...
                 step.amount, step.secondary);
         case 'whitebalance'
-            outputImage = whiteBalance(inputImage, step.amount, step.secondary);
+            outputImage = labkit.image.grayWorldWhiteBalance(inputImage, ...
+                step.amount, step.secondary);
         case 'whiteroicalibration'
             outputImage = protectedBackgroundEnhance(inputImage, step, referenceImage, true);
         case 'subjectpreservingenhance'
@@ -56,7 +59,7 @@ function outputImage = protectedBackgroundEnhance(inputImage, step, context, req
     tonedL = tonedL + lift .* (0.35 + 0.65 .* brightMask) .* saturationGuard;
     tonedL = min(max((1 - sourceBlend) .* tonedL + sourceBlend .* sourceL, 0), 1);
 
-    detail = tonedL - boxBlur(tonedL, 3);
+    detail = tonedL - labkit.image.meanFilter2(tonedL, 3);
     tonedL = tonedL + (0.08 + 0.05 .* double(stats.contrast < 0.24)) .* detail;
     shadowMask = smoothstep(0.24, 0.08, sourceL);
     highlightMask = smoothstep(0.88, 0.99, tonedL);
@@ -106,7 +109,8 @@ function mask = backgroundMaskFromContext(inputImage, context, requireRoi)
         mask = zeros(size(inputImage, 1), size(inputImage, 2));
         mask(roi(2):(roi(2) + roi(4) - 1), ...
             roi(1):(roi(1) + roi(3) - 1)) = 1;
-        mask = boxBlur(mask, max(9, 2 * round(max(roi(3:4)) / 5) + 1));
+        mask = labkit.image.meanFilter2(mask, ...
+            max(9, 2 * round(max(roi(3:4)) / 5) + 1));
         mask = min(max(mask, 0), 1);
         return;
     end
@@ -121,7 +125,7 @@ function mask = backgroundMaskFromContext(inputImage, context, requireRoi)
     if nnz(mask > 0.20) < 16
         mask = ones(size(value));
     end
-    mask = min(max(boxBlur(mask, 7), 0), 1);
+    mask = min(max(labkit.image.meanFilter2(mask, 7), 0), 1);
 end
 
 function labImage = correctBackgroundLabCast(labImage, backgroundMask, strength)
@@ -205,71 +209,6 @@ end
 
 function value = clamp01(value)
     value = min(max(value, 0), 1);
-end
-
-function imageData = normalizeImage(imageData)
-    imageData = im2double(imageData);
-    if ndims(imageData) == 2
-        imageData = repmat(imageData, 1, 1, 3);
-    elseif size(imageData, 3) > 3
-        imageData = imageData(:, :, 1:3);
-    end
-    imageData = min(max(imageData, 0), 1);
-end
-
-function outputImage = adjustBrightnessContrast(inputImage, brightnessPct, contrastPct)
-    brightness = double(brightnessPct) / 100;
-    contrastScale = max(0, 1 + double(contrastPct) / 100);
-    outputImage = (inputImage - 0.5) .* contrastScale + 0.5 + brightness;
-end
-
-function outputImage = localContrast(inputImage, amountPct, radiusPx)
-    amount = max(0, double(amountPct)) / 100;
-    radius = max(1, round(double(radiusPx)));
-    hsvImage = rgb2hsv(inputImage);
-    valueChannel = hsvImage(:, :, 3);
-    blurred = boxBlur(valueChannel, 2 * radius + 1);
-    hsvImage(:, :, 3) = valueChannel + amount .* 1.5 .* (valueChannel - blurred);
-    outputImage = hsv2rgb(hsvImage);
-end
-
-function outputImage = sharpenImage(inputImage, amountPct, radiusPx)
-    amount = max(0, double(amountPct)) / 100;
-    radius = max(0.5, double(radiusPx));
-    windowSize = max(3, 2 * round(radius) + 1);
-    blurred = zeros(size(inputImage));
-    for channel = 1:size(inputImage, 3)
-        blurred(:, :, channel) = boxBlur(inputImage(:, :, channel), windowSize);
-    end
-    outputImage = inputImage + amount .* 2.0 .* (inputImage - blurred);
-end
-
-function outputImage = adjustHueSaturation(inputImage, hueDeg, saturationPct)
-    hsvImage = rgb2hsv(inputImage);
-    hsvImage(:, :, 1) = mod(hsvImage(:, :, 1) + double(hueDeg) / 360, 1);
-    hsvImage(:, :, 2) = hsvImage(:, :, 2) .* (1 + double(saturationPct) / 100);
-    outputImage = hsv2rgb(hsvImage);
-end
-
-function outputImage = whiteBalance(inputImage, strengthPct, temperaturePct)
-    strength = min(max(double(strengthPct) / 100, 0), 1);
-    channelMean = squeeze(mean(inputImage, [1 2]));
-    grayMean = mean(channelMean);
-    gains = grayMean ./ max(channelMean, eps);
-    gains = reshape(gains, 1, 1, []);
-    balanced = inputImage .* gains;
-
-    temperature = double(temperaturePct) / 100;
-    balanced(:, :, 1) = balanced(:, :, 1) + 0.08 * temperature;
-    balanced(:, :, 3) = balanced(:, :, 3) - 0.08 * temperature;
-    outputImage = (1 - strength) .* inputImage + strength .* balanced;
-end
-
-function outputImage = boxBlur(inputImage, windowSize)
-    windowSize = max(1, round(windowSize));
-    kernel = ones(windowSize, windowSize);
-    outputImage = conv2(inputImage, kernel, 'same') ./ ...
-        conv2(ones(size(inputImage)), kernel, 'same');
 end
 
 function key = normalizeKind(kind)

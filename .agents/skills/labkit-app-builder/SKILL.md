@@ -1,6 +1,6 @@
 ---
 name: labkit-app-builder
-description: "Use for building or refactoring a LabKit MATLAB GUI app from legacy MATLAB scripts/functions, rough reference code, command-line/debug scripts, existing GUI code, SOPs, experiment protocols, workflow notes, or prose descriptions. Trigger when creating a new app, migrating old analysis code into apps/, translating a manual lab workflow into an interactive GUI, or deciding what legacy algorithm/science/calculation to keep while redesigning app flow around labkit.ui/dta/biosignal facades."
+description: "Use for building or refactoring a LabKit MATLAB GUI app from legacy MATLAB scripts/functions, rough reference code, command-line/debug scripts, existing GUI code, SOPs, experiment protocols, workflow notes, or prose descriptions. Trigger when creating a new app, migrating old analysis code into apps/, translating a manual lab workflow into an interactive GUI, or deciding what legacy algorithm/science/calculation to keep while redesigning app flow around labkit.ui/image/dta/rhs/biosignal facades."
 ---
 
 # LabKit App Builder
@@ -12,7 +12,7 @@ Turn existing analysis code or a written lab procedure into a maintainable LabKi
 The target shape is:
 
 - one launchable app entry point under `apps/<category>/`
-- reusable UI/data boilerplate behind `labkit.ui`, `labkit.dta`, or `labkit.biosignal`
+- reusable UI/data boilerplate behind `labkit.ui`, `labkit.image`, `labkit.dta`, `labkit.rhs`, or `labkit.biosignal`
 - domain formulas, plot choices, result fields, export schemas, and workflow wording owned by the app
 - app-owned helper packages under `apps/<family>/<app_slug>/+<app_slug>/...`
   when the app needs extracted production helpers
@@ -32,7 +32,7 @@ Use a deep pass only for the boundary being touched:
 - read `tests/AGENTS.md` if adding tests or fixtures
 - read `docs/apps.md` for public app shape or entrypoint changes
 - read `docs/ui.md` for shell, layout, controls, axes, callbacks, or debug UI
-- read `docs/dta.md` or `docs/biosignal.md` only for those facade-backed apps
+- read `docs/image.md`, `docs/dta.md`, `docs/rhs.md`, or `docs/biosignal.md` only for those facade-backed apps
 
 Do not copy local paths, real filenames, sample labels, subject names, timestamps, device IDs, or proprietary row values into tracked files.
 

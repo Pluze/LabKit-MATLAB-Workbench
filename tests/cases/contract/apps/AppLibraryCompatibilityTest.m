@@ -68,12 +68,31 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
             end
             testCase.verifyEmpty(findings, ...
                 "App readers should rely on the filePanel string-column contract; " + ...
-                "normalization belongs inside the UI event producer: " + ...
+                "path normalization belongs inside labkit.image: " + ...
                 strjoin(findings, "; "));
 
             emptyCropItems = batch_crop.state.readItems(strings(0, 1));
             testCase.verifyEmpty(emptyCropItems, ...
                 'Batch crop reader should preserve empty string-list shape as no items.');
+        end
+
+        function filePanelPathReachesImageFacade(testCase)
+            setupLabKitTestPath();
+            folder = tempname;
+            mkdir(folder);
+            cleanup = onCleanup(@() removeTempFolder(folder));
+
+            imagePath = fullfile(folder, 'source.png');
+            imwrite(uint8(120 * ones(8, 9)), imagePath);
+            eventPaths = reshape(string(imagePath), [], 1);
+
+            records = labkit.image.readFiles(eventPaths);
+
+            testCase.verifyEqual(numel(records), 1, ...
+                'Image facade should accept filePanel string-column paths.');
+            testCase.verifyEqual(records.name, "source.png");
+            testCase.verifyEqual(size(records.image), [8 9 3], ...
+                'Image facade should normalize grayscale source images to RGB.');
         end
 
         function filePanelFilesReachDtaFileFacade(testCase)
