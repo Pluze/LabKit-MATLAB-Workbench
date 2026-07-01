@@ -135,6 +135,9 @@ Current facts:
 - `GuiLayoutRhsPreviewTest` adds the first RHS/large-file representative
   workflow test, covering synthetic RHS indexing, automatic preview drawing,
   preview channel table population, and filter-file discovery.
+- `GuiLayoutEcgPrintTest` covers wearable ECG workflow: synthetic CSV recording
+  load, channel discovery, ROI analysis, summary-table refresh, and waveform,
+  noise, SNR, and template plot redraw.
 - `GuiLayoutBatchCropTest` covers a second image workflow shape: synthetic
   image load, center confirmation, default output-folder export, manifest
   creation, and crop-file creation.
@@ -341,8 +344,8 @@ Migration workstreams:
 
 1. Extend workflow acceptance beyond the current representatives
    (`eis`, `chrono_overlay`, `vt_resistance`, `cic`, `csc`, `focus_stack`,
-   `batch_crop`, `image_enhance`, `image_match`, `rhs_preview`) to the remaining supported app
-   families. Start with CI-sized synthetic inputs, then record which app
+   `batch_crop`, `image_enhance`, `image_match`, `rhs_preview`, `ecg_print`)
+   to the remaining supported app families. Start with CI-sized synthetic inputs, then record which app
    families merit larger manual or scheduled stress cases.
 2. Extend `tests/shared/labkitWorkflowDriver.m` only for app-neutral semantic
    operations proven by real workflow tests. Avoid vague helpers that guess app
