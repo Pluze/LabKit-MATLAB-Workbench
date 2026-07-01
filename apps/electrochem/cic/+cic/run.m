@@ -68,11 +68,11 @@ function fig = run(debugLog)
     function onPresetChanged()
         switch ddPreset.Value
             case 'Pt (-0.6 to 0.8 V)'
-                edCathLim.Value = -0.6;
-                edAnodLim.Value = 0.8;
+                labkit.ui.view.setValue(ui, "cathLimit", -0.6);
+                labkit.ui.view.setValue(ui, "anodLimit", 0.8);
             case 'PEDOT:PSS (-0.9 to 0.6 V)'
-                edCathLim.Value = -0.9;
-                edAnodLim.Value = 0.6;
+                labkit.ui.view.setValue(ui, "cathLimit", -0.9);
+                labkit.ui.view.setValue(ui, "anodLimit", 0.6);
             otherwise
                 % keep manual values
         end

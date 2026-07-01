@@ -64,6 +64,9 @@ classdef LabKitImageFacadeTest < matlab.unittest.TestCase
 
             rgb = labkit.image.toRgbDouble(uint8(100 * ones(4, 5)));
             [preview, scale] = labkit.image.resizeToFit(image, "MaxHeight", 6);
+            [budgetPreview, budgetInfo] = labkit.image.previewBudget(image, ...
+                "MaxPixels", 40, ...
+                "Expansion", 4);
             meanPlane = labkit.image.meanFilter2([0 0 0; 0 1 0; 0 0 0], 3);
             bright = labkit.image.adjustBrightnessContrast(image, 10, 20);
             saturated = labkit.image.adjustHueSaturation(image, 0, 25);
@@ -74,6 +77,9 @@ classdef LabKitImageFacadeTest < matlab.unittest.TestCase
             testCase.verifyEqual(size(rgb), [4 5 3]);
             testCase.verifyEqual(size(preview), [6 10 3]);
             testCase.verifyEqual(scale, 0.5, "AbsTol", 1e-12);
+            testCase.verifyLessThan(size(budgetPreview, 1), size(image, 1));
+            testCase.verifyEqual(budgetInfo.scaleFactor, 5);
+            testCase.verifyEqual(budgetInfo.coordinateScale, 0.2, "AbsTol", 1e-12);
             testCase.verifyEqual(meanPlane(2, 2), 1 / 9, "AbsTol", 1e-12);
             testCase.verifyEqual(meanPlane(1, 1), 1 / 4, "AbsTol", 1e-12);
             testCase.verifyGreaterThan(mean(bright(:)), mean(image(:)));

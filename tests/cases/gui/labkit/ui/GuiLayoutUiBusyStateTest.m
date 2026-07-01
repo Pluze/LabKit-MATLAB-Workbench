@@ -80,6 +80,7 @@ function verify_gui_layout_ui_busy_state()
 
     verifyBusyActionWrapper();
     verifyBusyNonActionWrappers();
+    verifyDebouncedParameterWrappers();
     verifyHiddenModeAlertRecording();
     verifyCloseGuard();
 
@@ -268,6 +269,39 @@ function verifyBusyNonActionWrappers()
 
     function onOtherProbe(~, ~)
         duplicateCount = duplicateCount + 1;
+    end
+end
+
+function verifyDebouncedParameterWrappers()
+    count = 0;
+    values = [];
+    spec = labkit.ui.spec.app('debouncedParameterProbe', ...
+        'Debounced Parameter Probe', ...
+        'controlTabs', {labkit.ui.spec.tab('main', 'Main', { ...
+        labkit.ui.spec.section('params', 'Params', { ...
+        labkit.ui.spec.field('gain', 'Gain', ...
+        'kind', 'number', ...
+        'value', 1, ...
+        'onChange', @onGainChanged)})})}, ...
+        'workspace', labkit.ui.spec.workspace('workspace', 'Preview', {}));
+    ui = labkit.ui.app.create(spec);
+    cleaner = onCleanup(@() delete(ui.figure));
+
+    ui.controls.gain.handle.Value = 2;
+    ui.controls.gain.handle.ValueChangedFcn(ui.controls.gain.handle, struct());
+    ui.controls.gain.handle.Value = 3;
+    ui.controls.gain.handle.ValueChangedFcn(ui.controls.gain.handle, struct());
+    ui.controls.gain.handle.Value = 4;
+    ui.controls.gain.handle.ValueChangedFcn(ui.controls.gain.handle, struct());
+    pause(0.65);
+    drawnow;
+
+    assert(count == 1 && isequal(values, 4), ...
+        'Parameter callbacks should debounce rapid value changes and submit only the latest value.');
+
+    function onGainChanged(~, event)
+        count = count + 1;
+        values(end + 1) = event.value;
     end
 end
 

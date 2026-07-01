@@ -179,8 +179,8 @@ function fig = run(debugLog)
         S.measurements = [];
         ddChannel.Items = {'(none)'};
         ddChannel.Value = '(none)';
-        edtStart.Value = 0;
-        edtEnd.Value = 0;
+        labkit.ui.view.setValue(ui, "roiStart", 0);
+        labkit.ui.view.setValue(ui, "roiEnd", 0);
         updateSummary();
         refreshPlots();
     end
@@ -201,8 +201,8 @@ function fig = run(debugLog)
         S.template = [];
         S.measurements = [];
         if ~isempty(S.signal.time)
-            edtStart.Value = 0;
-            edtEnd.Value = max(S.signal.time);
+            labkit.ui.view.setValue(ui, "roiStart", 0);
+            labkit.ui.view.setValue(ui, "roiEnd", max(S.signal.time));
         end
         updateSummary();
         refreshPlots();

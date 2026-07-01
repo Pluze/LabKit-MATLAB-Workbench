@@ -35,7 +35,7 @@ function values = defaultStepValues(kind)
         case 'huesaturation'
             values.amountLabel = "Hue (deg):";
             values.secondaryLabel = "Saturation (%):";
-            values.amountLimits = [-180 180];
+            values.amountLimits = [-360 360];
             values.amount = 0;
             values.secondary = 10;
         case 'whitebalance'

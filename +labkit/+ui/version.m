@@ -12,6 +12,6 @@ function info = version()
 %       compatible contract ranges implemented by this code, contract status,
 %       and a short maintainer note.
 
-    info = labkit.contract.versionInfo("ui", "3.2.10", ">=3.0 <4", ...
-        "stable", "UI 3.x app/spec/view/tool/diag contract with compact single-file panels, toolPanel file entry helpers, filePanel title context, preview-area row/column sizing, debug trace, hidden-test-safe alerts, close guard, crash reports, output folder prompts, and default text fitting.");
+    info = labkit.contract.versionInfo("ui", "3.3.0", ">=3.0 <4", ...
+        "stable", "UI 3.x app/spec/view/tool/diag contract with debounced parameter callbacks, spinner-backed panners, reusable image preview redraws, compact single-file panels, toolPanel file entry helpers, filePanel title context, preview-area row/column sizing, debug trace, hidden-test-safe alerts, close guard, crash reports, output folder prompts, and default text fitting.");
 end

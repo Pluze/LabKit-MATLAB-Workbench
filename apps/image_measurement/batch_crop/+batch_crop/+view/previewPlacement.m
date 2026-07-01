@@ -7,9 +7,19 @@ function placement = previewPlacement(geometry)
     sourceCenter = batch_crop.ops.sourceCenterFromSize( ...
         geometry.sourceWidth, geometry.sourceHeight);
     canvasCenter = batch_crop.ops.originalToCanvas(geometry, sourceCenter);
-    offset = sourceCenter - canvasCenter;
+    displayCenter = originalToPreviewSource(geometry, sourceCenter);
+    offset = displayCenter - canvasCenter;
     placement = struct( ...
         'offset', offset, ...
         'xData', [1, size(geometry.canvas, 2)] + offset(1), ...
         'yData', [1, size(geometry.canvas, 1)] + offset(2));
+end
+
+function point = originalToPreviewSource(geometry, point)
+    scale = 1;
+    if isfield(geometry, 'coordinateScale') && isfinite(double(geometry.coordinateScale)) && ...
+            double(geometry.coordinateScale) > 0
+        scale = double(geometry.coordinateScale);
+    end
+    point = (point - 0.5) .* scale + 0.5;
 end

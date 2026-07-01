@@ -6,6 +6,7 @@ function canvasXY = originalToCanvas(geometry, originalXY)
 %ORIGINALTOCANVAS Map unpadded source-image coordinates to preview canvas coordinates.
 
     point = double(originalXY(:)).';
+    point = originalToPreviewSource(geometry, point);
     xPadded = point(1) + geometry.padding.left;
     yPadded = point(2) + geometry.padding.top;
 
@@ -23,4 +24,17 @@ function canvasXY = originalToCanvas(geometry, originalXY)
     yCentered = s .* dx + c .* dy;
     canvasXY = [xCentered - geometry.rotation.minX + 1, ...
         yCentered - geometry.rotation.minY + 1];
+end
+
+function point = originalToPreviewSource(geometry, point)
+    scale = geometryScale(geometry);
+    point = (point - 0.5) .* scale + 0.5;
+end
+
+function scale = geometryScale(geometry)
+    scale = 1;
+    if isfield(geometry, 'coordinateScale') && isfinite(double(geometry.coordinateScale)) && ...
+            double(geometry.coordinateScale) > 0
+        scale = double(geometry.coordinateScale);
+    end
 end

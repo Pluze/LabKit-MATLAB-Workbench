@@ -17,6 +17,7 @@ records = labkit.image.readFiles(paths);
 
 preview = labkit.image.toRgbDouble(records(1).image);
 [preview, scale] = labkit.image.resizeToFit(preview, "MaxHeight", 1500);
+[preview, budget] = labkit.image.previewBudget(preview, "MaxPixels", 1.2e6);
 
 blurred = labkit.image.meanFilter2(preview(:, :, 1), 7);
 enhanced = labkit.image.adjustBrightnessContrast(preview, 10, 20);
@@ -36,6 +37,8 @@ The facade may own:
 - `imread`/`imwrite` wrappers that normalize app-facing edge behavior
 - RGB double conversion, preview-size fitting, and edge-normalized mean
   filtering
+- display-pixel budget helpers for responsive previews while preserving a
+  documented integer coordinate scale
 - generic image enhancement primitives such as brightness/contrast, HSV
   hue/saturation, gray-world white balance, local contrast, and sharpening
 

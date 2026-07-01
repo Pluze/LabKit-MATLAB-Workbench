@@ -30,8 +30,8 @@ function result = cropImage(imageData, opts)
     else
         centerXY = double(centerXY(:)).';
     end
-    centerXY(1) = min(max(centerXY(1), 1), size(imageData, 2));
-    centerXY(2) = min(max(centerXY(2), 1), size(imageData, 1));
+    centerXY = batch_crop.ops.clampCropCenterToCanvas(geometry, centerXY, ...
+        [cropWidth, cropHeight]);
 
     canvasCenterXY = batch_crop.ops.originalToCanvas(geometry, centerXY);
     cropped = batch_crop.ops.cropCanvasFixedSize(geometry.canvas, canvasCenterXY, ...

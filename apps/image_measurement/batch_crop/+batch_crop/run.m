@@ -9,6 +9,7 @@ function fig = run(debugLog)
     S.lastExport = [];
     S.lastExportFingerprint = "";
     S.canvasCache = batch_crop.state.emptyCanvasCache();
+    S.cropDefaultsInitialized = false;
     callbacks = struct( ...
         "imagesChosen", @onImagesChosen, ...
         "removeImages", @(~, event) onRemoveImages(event), ...
@@ -21,7 +22,9 @@ function fig = run(debugLog)
         "rotationChanged", @(~, ~) onRotationChanged(), ...
         "paddingChanged", @(~, ~) onPaddingChanged(), ...
         "centerChanged", @(~, ~) onCenterChanged(), ...
-        "useImageCenter", @(~, ~) onUseImageCenter(), ...
+        "useImageCenter", @(~, ~) onUseImageCenter("xy"), ...
+        "useImageXCenter", @(~, ~) onUseImageCenter("x"), ...
+        "useImageYCenter", @(~, ~) onUseImageCenter("y"), ...
         "scaleSettingChanged", @(~, ~) onScaleSettingChanged(), ...
         "exportSettingChanged", @(~, ~) onExportSettingChanged(), ...
         "chooseOutputFolder", @(~, ~) onChooseOutputFolder(), ...
@@ -59,6 +62,8 @@ function fig = run(debugLog)
     edtCenterX = ui.controls.centerX.valueHandle;
     edtCenterY = ui.controls.centerY.valueHandle;
     btnUseImageCenter = ui.controls.useImageCenter.button;
+    btnUseImageXCenter = ui.controls.useImageXCenter.button;
+    btnUseImageYCenter = ui.controls.useImageYCenter.button;
     ddScaleMode = ui.controls.scaleMode.valueHandle;
     ddScaleUnit = ui.controls.scaleUnit.valueHandle;
     edtPhysicalWidth = ui.controls.physicalWidth.valueHandle;
@@ -107,6 +112,7 @@ function fig = run(debugLog)
         S.currentIndex = 0;
         S = batch_crop.state.clearExportState(S);
         S.canvasCache = batch_crop.state.emptyCanvasCache();
+        S.cropDefaultsInitialized = false;
         addLog('Cleared loaded images.');
         refreshAll();
     end
@@ -179,8 +185,9 @@ function fig = run(debugLog)
     end
 
     function onCropGeometryChanged()
-        edtCropWidth.Value = round(max(1, edtCropWidth.Value));
-        edtCropHeight.Value = round(max(1, edtCropHeight.Value));
+        labkit.ui.view.setValue(ui, "cropWidth", round(max(1, edtCropWidth.Value)));
+        labkit.ui.view.setValue(ui, "cropHeight", round(max(1, edtCropHeight.Value)));
+        ensureCurrentCenter();
         S = batch_crop.state.clearExportState(S);
         refreshPreview(capturePreviewView());
         refreshSummary();
@@ -201,12 +208,14 @@ function fig = run(debugLog)
     end
 
     function onPaddingChanged()
-        edtPaddingPercent.Value = min(max(double(edtPaddingPercent.Value), 0), 200);
+        labkit.ui.view.setValue(ui, "paddingPercent", ...
+            min(max(double(edtPaddingPercent.Value), 0), 200));
         if ~hasCurrentImage()
             return;
         end
         viewState = capturePreviewView();
         S.items(S.currentIndex).paddingPercent = edtPaddingPercent.Value;
+        ensureCurrentCenter();
         S = batch_crop.state.clearExportState(S);
         S.canvasCache = batch_crop.state.emptyCanvasCache();
         addLog(sprintf('Updated padding for image %d: %.3g%%.', ...
@@ -220,32 +229,54 @@ function fig = run(debugLog)
             return;
         end
         viewState = capturePreviewView();
-        S.items(S.currentIndex).centerXY = [edtCenterX.Value, edtCenterY.Value];
+        centerXY = adjustedCropCenter([edtCenterX.Value, edtCenterY.Value]);
+        S.items(S.currentIndex).centerXY = centerXY;
         S.items(S.currentIndex).centerSet = true;
+        labkit.ui.view.setValue(ui, "centerX", centerXY(1));
+        labkit.ui.view.setValue(ui, "centerY", centerXY(2));
         S = batch_crop.state.clearExportState(S);
         addLog(sprintf('Set crop center for image %d: x=%.1f, y=%.1f.', ...
-            S.currentIndex, edtCenterX.Value, edtCenterY.Value));
+            S.currentIndex, centerXY(1), centerXY(2)));
         refreshAll(viewState);
     end
 
-    function onUseImageCenter()
+    function onUseImageCenter(mode)
         if ~hasCurrentImage()
             return;
         end
         viewState = capturePreviewView();
-        S.items(S.currentIndex).centerXY = batch_crop.ops.sourceCenterXY(S.items(S.currentIndex).image);
+        current = S.items(S.currentIndex).centerXY;
+        if isempty(current) || any(~isfinite(current))
+            current = batch_crop.ops.sourceCenterXY(S.items(S.currentIndex).image);
+        end
+        sourceCenter = batch_crop.ops.sourceCenterXY(S.items(S.currentIndex).image);
+        switch string(mode)
+            case "x"
+                current(1) = sourceCenter(1);
+            case "y"
+                current(2) = sourceCenter(2);
+            otherwise
+                current = sourceCenter;
+        end
+        S.items(S.currentIndex).centerXY = adjustedCropCenter(current);
         S.items(S.currentIndex).centerSet = true;
+        labkit.ui.view.setValue(ui, "centerX", S.items(S.currentIndex).centerXY(1));
+        labkit.ui.view.setValue(ui, "centerY", S.items(S.currentIndex).centerXY(2));
         S = batch_crop.state.clearExportState(S);
-        addLog(sprintf('Set image %d crop center to source image center.', ...
-            S.currentIndex));
+        addLog(sprintf('Set image %d crop %s center.', ...
+            S.currentIndex, char(upper(string(mode)))));
         refreshAll(viewState);
     end
 
     function onScaleSettingChanged()
-        edtPhysicalWidth.Value = max(eps, double(edtPhysicalWidth.Value));
-        edtPhysicalHeight.Value = max(eps, double(edtPhysicalHeight.Value));
-        edtTargetPixelsPerUnit.Value = max(0, double(edtTargetPixelsPerUnit.Value));
-        edtMaxUpsamplePercent.Value = max(0, double(edtMaxUpsamplePercent.Value));
+        labkit.ui.view.setValue(ui, "physicalWidth", ...
+            max(eps, double(edtPhysicalWidth.Value)));
+        labkit.ui.view.setValue(ui, "physicalHeight", ...
+            max(eps, double(edtPhysicalHeight.Value)));
+        labkit.ui.view.setValue(ui, "targetPixelsPerUnit", ...
+            max(0, double(edtTargetPixelsPerUnit.Value)));
+        labkit.ui.view.setValue(ui, "maxUpsamplePercent", ...
+            max(0, double(edtMaxUpsamplePercent.Value)));
         if strcmpi(currentScaleMode(), "Physical")
             scaleTool.setEnabled(struct('hasImage', hasCurrentImage()));
         end
@@ -304,14 +335,20 @@ function fig = run(debugLog)
         canvasXY(1) = min(max(canvasXY(1), 1), size(geometry.canvas, 2));
         canvasXY(2) = min(max(canvasXY(2), 1), size(geometry.canvas, 1));
         centerXY = batch_crop.ops.canvasToOriginal(geometry, canvasXY);
-        centerXY = batch_crop.ops.clampCenterToSource(centerXY, ...
-            S.items(S.currentIndex).image);
+        centerXY = adjustedCropCenter(centerXY);
+        wasCenterSet = S.items(S.currentIndex).centerSet;
         S.items(S.currentIndex).centerXY = centerXY;
         S.items(S.currentIndex).centerSet = true;
+        labkit.ui.view.setValue(ui, "centerX", centerXY(1));
+        labkit.ui.view.setValue(ui, "centerY", centerXY(2));
         S = batch_crop.state.clearExportState(S);
         addLog(sprintf('Picked crop center for image %d: x=%.1f, y=%.1f.', ...
             S.currentIndex, centerXY(1), centerXY(2)));
-        refreshAll(viewState);
+        if ~wasCenterSet
+            refreshList();
+        end
+        refreshPreview(viewState);
+        refreshSummary();
     end
 
     function onExportCrops()
@@ -402,35 +439,48 @@ function fig = run(debugLog)
         btnDuplicateImage.Enable = enabled;
         btnPrevious.Enable = batch_crop.view.ternary(hasImage && S.currentIndex > 1, 'on', 'off');
         btnNext.Enable = batch_crop.view.ternary(hasImage && S.currentIndex < numel(S.items), 'on', 'off');
-        edtCropWidth.Enable = batch_crop.view.ternary(hasImage && ~physicalMode, 'on', 'off');
-        edtCropHeight.Enable = batch_crop.view.ternary(hasImage && ~physicalMode, 'on', 'off');
-        edtRotation.Enable = enabled;
-        edtPaddingPercent.Enable = enabled;
-        edtCenterX.Enable = enabled;
-        edtCenterY.Enable = enabled;
+        labkit.ui.view.setEnabled(ui, "cropWidth", hasImage && ~physicalMode);
+        labkit.ui.view.setEnabled(ui, "cropHeight", hasImage && ~physicalMode);
+        labkit.ui.view.setEnabled(ui, "rotation", hasImage);
+        labkit.ui.view.setEnabled(ui, "paddingPercent", hasImage);
+        labkit.ui.view.setEnabled(ui, "centerX", hasImage);
+        labkit.ui.view.setEnabled(ui, "centerY", hasImage);
         btnUseImageCenter.Enable = enabled;
+        btnUseImageXCenter.Enable = enabled;
+        btnUseImageYCenter.Enable = enabled;
         ddScaleUnit.Enable = batch_crop.view.ternary(physicalMode, 'on', 'off');
-        edtPhysicalWidth.Enable = batch_crop.view.ternary(physicalMode, 'on', 'off');
-        edtPhysicalHeight.Enable = batch_crop.view.ternary(physicalMode, 'on', 'off');
-        edtTargetPixelsPerUnit.Enable = batch_crop.view.ternary(physicalMode, 'on', 'off');
-        edtMaxUpsamplePercent.Enable = batch_crop.view.ternary(physicalMode, 'on', 'off');
+        labkit.ui.view.setEnabled(ui, "physicalWidth", hasImage && physicalMode);
+        labkit.ui.view.setEnabled(ui, "physicalHeight", hasImage && physicalMode);
+        labkit.ui.view.setEnabled(ui, "targetPixelsPerUnit", hasImage && physicalMode);
+        labkit.ui.view.setEnabled(ui, "maxUpsamplePercent", hasImage && physicalMode);
 
         if hasImage
+            item = S.items(S.currentIndex);
+            cropLimit = cropSizeUpperLimit(item.image);
+            labkit.ui.view.setLimits(ui, "cropWidth", ...
+                [1, cropLimit]);
+            labkit.ui.view.setLimits(ui, "cropHeight", ...
+                [1, cropLimit]);
+            initializeCropSizeDefaultsIfNeeded(item.image);
             ensureCurrentCenter();
             item = S.items(S.currentIndex);
-            edtRotation.Value = item.angleDeg;
-            edtPaddingPercent.Value = batch_crop.state.itemPaddingPercent(item, edtPaddingPercent.Value);
-            edtCenterX.Limits = [1, max(1, size(item.image, 2))];
-            edtCenterY.Limits = [1, max(1, size(item.image, 1))];
-            edtCenterX.Value = item.centerXY(1);
-            edtCenterY.Value = item.centerXY(2);
+            labkit.ui.view.setValue(ui, "rotation", item.angleDeg);
+            labkit.ui.view.setValue(ui, "paddingPercent", ...
+                batch_crop.state.itemPaddingPercent(item, edtPaddingPercent.Value));
+            centerLimits = centerCoordinateLimits(currentGeometry());
+            labkit.ui.view.setLimits(ui, "centerX", centerLimits.x);
+            labkit.ui.view.setLimits(ui, "centerY", centerLimits.y);
+            labkit.ui.view.setValue(ui, "centerX", item.centerXY(1));
+            labkit.ui.view.setValue(ui, "centerY", item.centerXY(2));
         else
-            edtRotation.Value = 0;
-            edtPaddingPercent.Value = 0;
-            edtCenterX.Limits = [1, Inf];
-            edtCenterY.Limits = [1, Inf];
-            edtCenterX.Value = 1;
-            edtCenterY.Value = 1;
+            labkit.ui.view.setLimits(ui, "cropWidth", [1, 100000]);
+            labkit.ui.view.setLimits(ui, "cropHeight", [1, 100000]);
+            labkit.ui.view.setValue(ui, "rotation", 0);
+            labkit.ui.view.setValue(ui, "paddingPercent", 0);
+            labkit.ui.view.setLimits(ui, "centerX", [1, 100000]);
+            labkit.ui.view.setLimits(ui, "centerY", [1, 100000]);
+            labkit.ui.view.setValue(ui, "centerX", 1);
+            labkit.ui.view.setValue(ui, "centerY", 1);
         end
 
         refreshScaleTool();
@@ -452,14 +502,16 @@ function fig = run(debugLog)
         ensureCurrentCenter();
         geometry = currentGeometry();
         placement = batch_crop.view.previewPlacement(geometry);
-        hImage = labkit.ui.view.drawImage(ui, 'preview', geometry.canvas, ...
+        render = batch_crop.view.previewRenderData(geometry, placement);
+        hImage = labkit.ui.view.drawImage(ui, 'preview', render.imageData, ...
             "title", "Padded rotation preview + fixed crop", ...
             "axis", "crop", ...
-            "options", struct("xData", placement.xData, "yData", placement.yData));
+            "options", struct("xData", render.xData, "yData", render.yData));
         hold(previewAxes, 'on');
         item = S.items(S.currentIndex);
-        cropWidth = currentCropWidth();
-        cropHeight = currentCropHeight();
+        previewScale = geometryScale(geometry);
+        cropWidth = max(1, currentCropWidth() * previewScale);
+        cropHeight = max(1, currentCropHeight() * previewScale);
         canvasCenterXY = batch_crop.ops.originalToCanvas(geometry, item.centerXY) + placement.offset;
         colStart = round(canvasCenterXY(1) - (cropWidth - 1) / 2);
         rowStart = round(canvasCenterXY(2) - (cropHeight - 1) / 2);
@@ -574,7 +626,8 @@ function fig = run(debugLog)
 
         geometry = batch_crop.ops.prepareCropCanvas(item.image, struct( ...
             'angleDeg', item.angleDeg, ...
-            'paddingPercent', currentPaddingPercent()));
+            'paddingPercent', currentPaddingPercent(), ...
+            'maxCanvasPixels', 1.2e6));
         S.canvasCache = struct('valid', true, 'key', key, 'geometry', geometry);
     end
 
@@ -598,9 +651,48 @@ function fig = run(debugLog)
         if isempty(item.centerXY) || any(~isfinite(item.centerXY))
             item.centerXY = batch_crop.ops.sourceCenterXY(item.image);
         end
-        item.centerXY = batch_crop.ops.clampCenterToSource(item.centerXY, ...
-            item.image);
+        item.centerXY = adjustedCropCenter(item.centerXY);
         S.items(S.currentIndex) = item;
+    end
+
+    function initializeCropSizeDefaultsIfNeeded(imageData)
+        if S.cropDefaultsInitialized
+            return;
+        end
+        labkit.ui.view.setValue(ui, "cropWidth", ...
+            max(1, round(size(imageData, 2) * 0.7)));
+        labkit.ui.view.setValue(ui, "cropHeight", ...
+            max(1, round(size(imageData, 1) * 0.7)));
+        S.cropDefaultsInitialized = true;
+    end
+
+    function limit = cropSizeUpperLimit(imageData)
+        limit = max(1, ceil(2 * hypot(double(size(imageData, 2)), ...
+            double(size(imageData, 1)))));
+    end
+
+    function limits = centerCoordinateLimits(geometry)
+        scale = geometryScale(geometry);
+        limits = struct( ...
+            'x', [1 - double(geometry.padding.left) / scale, ...
+                double(geometry.sourceWidth) + double(geometry.padding.right) / scale], ...
+            'y', [1 - double(geometry.padding.top) / scale, ...
+                double(geometry.sourceHeight) + double(geometry.padding.bottom) / scale]);
+    end
+
+    function centerXY = adjustedCropCenter(centerXY)
+        geometry = currentGeometry();
+        centerXY = batch_crop.ops.clampCropCenterToCanvas(geometry, centerXY, ...
+            [currentCropWidth(), currentCropHeight()]);
+    end
+
+    function scale = geometryScale(geometry)
+        scale = 1;
+        if isfield(geometry, 'coordinateScale') && ...
+                isfinite(double(geometry.coordinateScale)) && ...
+                double(geometry.coordinateScale) > 0
+            scale = double(geometry.coordinateScale);
+        end
     end
 
     function tf = hasCurrentImage()

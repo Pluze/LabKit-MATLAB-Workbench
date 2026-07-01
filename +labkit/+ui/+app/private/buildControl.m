@@ -102,6 +102,7 @@ function control = createFieldControl(parentGrid, kind, props, enabled)
                 'Unsupported UI 3.0 field kind "%s".', kind);
     end
     applyCommonValueProps(control, props);
+    applySliderTicks(control, props);
 end
 
 function ui = buildPanner(ui, pannerSpec, parentGrid, row)
@@ -115,62 +116,125 @@ function ui = buildPanner(ui, pannerSpec, parentGrid, row)
     label.Layout.Row = row;
     label.Layout.Column = 1;
 
-    grid = uigridlayout(parentGrid, [1 3]);
+    hasSlider = pannerHasFiniteSlider(props);
+    if hasSlider
+        grid = uigridlayout(parentGrid, [1 2]);
+    else
+        grid = uigridlayout(parentGrid, [1 1]);
+    end
     grid.Padding = [0 0 0 0];
     grid.ColumnSpacing = 6;
-    grid.ColumnWidth = {34, '1x', 34};
+    if hasSlider
+        grid.ColumnWidth = {76, '1x'};
+    else
+        grid.ColumnWidth = {'1x'};
+    end
     grid.Layout.Row = row;
     grid.Layout.Column = 2;
 
-    leftButton = uibutton(grid, 'Text', optionValue(props, 'leftLabel', '<'), ...
+    valueSpinner = uispinner(grid, ...
         'Enable', onOff(enabled));
-    applyTextFit(leftButton, 'charsPerStep', 12, 'maxShrinkSteps', 2);
-    leftButton.Layout.Row = 1;
-    leftButton.Layout.Column = 1;
-    slider = uislider(grid, 'Enable', onOff(enabled));
-    slider.Layout.Row = 1;
-    slider.Layout.Column = 2;
-    applyCommonValueProps(slider, props);
-    slider.Value = clampNumericValue(slider.Value, slider.Limits);
-    rightButton = uibutton(grid, 'Text', optionValue(props, 'rightLabel', '>'), ...
-        'Enable', onOff(enabled));
-    applyTextFit(rightButton, 'charsPerStep', 12, 'maxShrinkSteps', 2);
-    rightButton.Layout.Row = 1;
-    rightButton.Layout.Column = 3;
+    valueSpinner.Layout.Row = 1;
+    valueSpinner.Layout.Column = 1;
+    applyCommonValueProps(valueSpinner, props);
+    valueSpinner.Value = clampNumericValue(valueSpinner.Value, valueSpinner.Limits);
+    applyPannerSpinnerStep(valueSpinner, props);
+    slider = [];
+    if hasSlider
+        slider = uislider(grid, 'Enable', onOff(enabled));
+        slider.Layout.Row = 1;
+        slider.Layout.Column = 2;
+        applyCommonValueProps(slider, props);
+        applySliderTicks(slider, props);
+        slider.Value = clampNumericValue(slider.Value, slider.Limits);
+        syncPannerValue(slider, valueSpinner, slider.Value);
+    end
 
     adapter = baseAdapter(pannerSpec, 'panner');
     adapter.label = label;
     adapter.grid = grid;
-    adapter.leftButton = leftButton;
-    adapter.rightButton = rightButton;
+    adapter.valueSpinner = valueSpinner;
     adapter.slider = slider;
-    adapter.handle = slider;
-    adapter.valueHandle = slider;
-    adapter.getValue = @() slider.Value;
-    adapter.setValue = @(value) setPannerValue(slider, value);
+    adapter.handle = valueSpinner;
+    adapter.valueHandle = valueSpinner;
+    adapter.getValue = @() valueSpinner.Value;
+    adapter.setValue = @(value) setPannerValue(slider, valueSpinner, value);
     ui.controls.(pannerSpec.id) = adapter;
 
     appCallback = optionValue(props, 'onChange', []);
-    slider.ValueChangedFcn = semanticValueCallback(pannerSpec.id, appCallback);
-    leftButton.ButtonPushedFcn = semanticPannerStepCallback( ...
-        pannerSpec.id, -1, appCallback);
-    rightButton.ButtonPushedFcn = semanticPannerStepCallback( ...
-        pannerSpec.id, 1, appCallback);
-    setOriginalCallbackName(slider, appCallback);
-    setOriginalCallbackName(leftButton, appCallback);
-    setOriginalCallbackName(rightButton, appCallback);
+    if hasSlider
+        slider.ValueChangedFcn = semanticPannerSliderCallback(pannerSpec.id, appCallback);
+        if isprop(slider, 'ValueChangingFcn')
+            slider.ValueChangingFcn = semanticPannerSliderChangingCallback( ...
+                pannerSpec.id, appCallback);
+        end
+        setOriginalCallbackName(slider, appCallback);
+    end
+    valueSpinner.ValueChangedFcn = semanticPannerSpinnerCallback( ...
+        pannerSpec.id, appCallback);
+    setOriginalCallbackName(valueSpinner, appCallback);
 end
 
-function setPannerValue(slider, value)
-    value = clampNumericValue(value, slider.Limits);
-    if isequaln(slider.Value, value)
+function tf = pannerHasFiniteSlider(props)
+    tf = isfield(props, 'limits') && numel(props.limits) == 2 && ...
+        all(isfinite(double(props.limits)));
+end
+
+function applySliderTicks(control, props)
+    if isempty(control) || ~contains(class(control), 'Slider') || ...
+            ~isfield(props, 'showTicks') || logical(props.showTicks)
         return;
     end
-    callback = slider.ValueChangedFcn;
-    cleanupObj = onCleanup(@() restoreValueChangedCallback(slider, callback));
-    slider.ValueChangedFcn = [];
-    slider.Value = value;
+    if isprop(control, 'MajorTicks')
+        control.MajorTicks = [];
+    end
+    if isprop(control, 'MinorTicks')
+        control.MinorTicks = [];
+    end
+end
+
+function setPannerValue(slider, valueSpinner, value)
+    value = clampNumericValue(value, valueSpinner.Limits);
+    sliderValueMatches = isempty(slider) || isequaln(slider.Value, value);
+    if sliderValueMatches && isequaln(valueSpinner.Value, value)
+        return;
+    end
+    sliderCallback = [];
+    if ~isempty(slider)
+        sliderCallback = slider.ValueChangedFcn;
+    end
+    spinnerCallback = valueSpinner.ValueChangedFcn;
+    cleanupObj = onCleanup(@() restorePannerCallbacks( ...
+        slider, sliderCallback, valueSpinner, spinnerCallback));
+    if ~isempty(slider)
+        slider.ValueChangedFcn = [];
+    end
+    valueSpinner.ValueChangedFcn = [];
+    syncPannerValue(slider, valueSpinner, value);
     clear cleanupObj;
+end
+
+function syncPannerValue(slider, valueSpinner, value)
+    value = clampNumericValue(value, valueSpinner.Limits);
+    if ~isempty(slider)
+        slider.Value = clampNumericValue(value, slider.Limits);
+    end
+    valueSpinner.Value = value;
+end
+
+function applyPannerSpinnerStep(valueSpinner, props)
+    if isfield(props, 'step')
+        return;
+    end
+    if ~all(isfinite(double(valueSpinner.Limits)))
+        return;
+    end
+    valueSpinner.Step = pannerStepAmount(props, valueSpinner.Limits);
+end
+
+function restorePannerCallbacks(slider, sliderCallback, valueSpinner, spinnerCallback)
+    restoreValueChangedCallback(slider, sliderCallback);
+    restoreValueChangedCallback(valueSpinner, spinnerCallback);
 end
 
 function ui = buildRangeField(ui, rangeSpec, parentGrid, row)
@@ -355,7 +419,7 @@ function callback = semanticValueCallback(id, appCallback)
     end
 end
 
-function callback = semanticPannerStepCallback(id, direction, appCallback)
+function callback = semanticPannerSliderCallback(id, appCallback)
     callback = @wrapped;
 
     function wrapped(source, rawEvent)
@@ -364,17 +428,56 @@ function callback = semanticPannerStepCallback(id, direction, appCallback)
             return;
         end
         control = ui.controls.(id);
-        previousValue = control.getValue();
-        nextValue = pannerStepValue(control, direction);
+        control.setValue(source.Value);
+        if isempty(appCallback)
+            return;
+        end
+        event = semanticEvent(control, source, rawEvent, 'user');
+        event.value = control.getValue();
+        event.action = 'slide';
+        runSemanticAppCallback(ui, control, event, appCallback, id);
+    end
+end
+
+function callback = semanticPannerSliderChangingCallback(id, appCallback)
+    callback = @wrapped;
+
+    function wrapped(source, rawEvent)
+        ui = currentUiRegistry(source);
+        if isFigureBusy(ui.figure)
+            return;
+        end
+        control = ui.controls.(id);
+        nextValue = rawEventValue(rawEvent, 'Value', source.Value);
         control.setValue(nextValue);
+        if isempty(appCallback)
+            return;
+        end
+        event = semanticEvent(control, source, rawEvent, 'user');
+        event.value = control.getValue();
+        event.action = 'slide';
+        runSemanticAppCallback(ui, control, event, appCallback, id);
+    end
+end
+
+function callback = semanticPannerSpinnerCallback(id, appCallback)
+    callback = @wrapped;
+
+    function wrapped(source, rawEvent)
+        ui = currentUiRegistry(source);
+        if isFigureBusy(ui.figure)
+            return;
+        end
+        control = ui.controls.(id);
+        previousValue = rawEventValue(rawEvent, 'PreviousValue', []);
+        control.setValue(source.Value);
         if isempty(appCallback) || isequaln(previousValue, control.getValue())
             return;
         end
-        event = semanticEvent(control, control.valueHandle, rawEvent, 'user');
+        event = semanticEvent(control, source, rawEvent, 'user');
         event.value = control.getValue();
         event.previousValue = previousValue;
-        event.stepDirection = direction;
-        event.action = 'step';
+        event.action = 'edit';
         runSemanticAppCallback(ui, control, event, appCallback, id);
     end
 end
@@ -402,22 +505,24 @@ function callback = semanticTableCellEditCallback(id, appCallback)
     end
 end
 
-function value = pannerStepValue(control, direction)
-    slider = control.valueHandle;
-    limits = double(slider.Limits);
+function step = pannerStepAmount(props, limits)
+    limits = double(limits);
+    if ~all(isfinite(limits))
+        step = 1;
+        return;
+    end
     span = max(eps, diff(limits));
-    step = optionValue(control.props, 'step', NaN);
+    step = optionValue(props, 'step', NaN);
     if ~isfinite(step) || step <= 0
-        fraction = optionValue(control.props, 'stepFraction', 0.002);
+        fraction = optionValue(props, 'stepFraction', 0.002);
         step = span .* max(eps, double(fraction));
     end
-    if isfield(control.props, 'minStep')
-        step = max(step, double(control.props.minStep));
+    if isfield(props, 'minStep')
+        step = max(step, double(props.minStep));
     end
-    if isfield(control.props, 'maxStep')
-        step = min(step, double(control.props.maxStep));
+    if isfield(props, 'maxStep')
+        step = min(step, double(props.maxStep));
     end
-    value = clampNumericValue(slider.Value + direction .* step, limits);
 end
 
 function value = clampNumericValue(value, limits)

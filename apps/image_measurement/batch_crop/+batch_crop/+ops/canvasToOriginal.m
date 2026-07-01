@@ -7,8 +7,9 @@ function originalXY = canvasToOriginal(geometry, canvasXY)
 
     point = double(canvasXY(:)).';
     if geometry.rotation.identity
-        originalXY = [point(1) - geometry.padding.left, ...
-            point(2) - geometry.padding.top];
+        originalXY = previewSourceToOriginal(geometry, ...
+            [point(1) - geometry.padding.left, ...
+            point(2) - geometry.padding.top]);
         return;
     end
 
@@ -19,6 +20,20 @@ function originalXY = canvasToOriginal(geometry, canvasXY)
     yCentered = point(2) + geometry.rotation.minY - 1;
     xPadded = c .* xCentered + s .* yCentered + geometry.rotation.centerX;
     yPadded = -s .* xCentered + c .* yCentered + geometry.rotation.centerY;
-    originalXY = [xPadded - geometry.padding.left, ...
-        yPadded - geometry.padding.top];
+    originalXY = previewSourceToOriginal(geometry, ...
+        [xPadded - geometry.padding.left, ...
+        yPadded - geometry.padding.top]);
+end
+
+function point = previewSourceToOriginal(geometry, point)
+    scale = geometryScale(geometry);
+    point = (point - 0.5) ./ scale + 0.5;
+end
+
+function scale = geometryScale(geometry)
+    scale = 1;
+    if isfield(geometry, 'coordinateScale') && isfinite(double(geometry.coordinateScale)) && ...
+            double(geometry.coordinateScale) > 0
+        scale = double(geometry.coordinateScale);
+    end
 end

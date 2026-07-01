@@ -81,22 +81,24 @@ function ui = scaleBarPanel(parent, row, opts)
     btnMeasureReference.Layout.Row = 1;
     btnMeasureReference.Layout.Column = [1 2];
 
-    [lblReferencePx, edtReferencePx] = createLabeledSpinner(grid, ...
+    [lblReferencePx, edtReferencePx, sldReferencePx, ctlReferencePx] = createLabeledPanner(grid, ...
         'Reference pixels:', 'Value', 0, 'Limits', [0 Inf], 'Step', 1, ...
+        'SliderLimits', [0 5000], ...
         'ValueChangedFcn', @onCalibrationChanged);
     lblReferencePx.Layout.Row = 2;
     lblReferencePx.Layout.Column = 1;
-    edtReferencePx.Layout.Row = 2;
-    edtReferencePx.Layout.Column = 2;
+    ctlReferencePx.Layout.Row = 2;
+    ctlReferencePx.Layout.Column = 2;
 
-    [lblReferenceLen, edtReferenceLen] = createLabeledSpinner(grid, ...
+    [lblReferenceLen, edtReferenceLen, sldReferenceLen, ctlReferenceLen] = createLabeledPanner(grid, ...
         'Reference length:', 'Value', defaultReferenceLength, ...
         'Limits', [0 Inf], 'Step', 10, ...
+        'SliderLimits', [0 defaultSliderUpper(defaultReferenceLength, 1000)], ...
         'ValueChangedFcn', @onCalibrationChanged);
     lblReferenceLen.Layout.Row = 3;
     lblReferenceLen.Layout.Column = 1;
-    edtReferenceLen.Layout.Row = 3;
-    edtReferenceLen.Layout.Column = 2;
+    ctlReferenceLen.Layout.Row = 3;
+    ctlReferenceLen.Layout.Column = 2;
 
     [lblUnit, ddUnit] = createLabeledDropdown(grid, ...
         'Scale unit:', 'Items', units, 'Value', defaultChoice(defaultUnit, units), ...
@@ -106,14 +108,15 @@ function ui = scaleBarPanel(parent, row, opts)
     ddUnit.Layout.Row = 4;
     ddUnit.Layout.Column = 2;
 
-    [lblBarLen, edtBarLen] = createLabeledSpinner(grid, ...
+    [lblBarLen, edtBarLen, sldBarLen, ctlBarLen] = createLabeledPanner(grid, ...
         'Scale bar length:', 'Value', defaultScaleBarLength, ...
         'Limits', [0 Inf], 'Step', 10, ...
+        'SliderLimits', [0 defaultSliderUpper(defaultScaleBarLength, 1000)], ...
         'ValueChangedFcn', @onScaleBarChanged);
     lblBarLen.Layout.Row = 5;
     lblBarLen.Layout.Column = 1;
-    edtBarLen.Layout.Row = 5;
-    edtBarLen.Layout.Column = 2;
+    ctlBarLen.Layout.Row = 5;
+    ctlBarLen.Layout.Column = 2;
 
     [lblPosition, ddPosition] = createLabeledDropdown(grid, ...
         'Scale position:', 'Items', positions, ...
@@ -150,9 +153,12 @@ function ui = scaleBarPanel(parent, row, opts)
     ui.controls = struct( ...
         'measureReferenceButton', btnMeasureReference, ...
         'referencePixelsSpinner', edtReferencePx, ...
+        'referencePixelsSlider', sldReferencePx, ...
         'referenceLengthSpinner', edtReferenceLen, ...
+        'referenceLengthSlider', sldReferenceLen, ...
         'unitDropdown', ddUnit, ...
         'barLengthSpinner', edtBarLen, ...
+        'barLengthSlider', sldBarLen, ...
         'positionDropdown', ddPosition, ...
         'colorDropdown', ddColor, ...
         'placeButton', btnPlaceScaleBar, ...
@@ -191,6 +197,7 @@ function ui = scaleBarPanel(parent, row, opts)
 
     function setReferencePixels(px)
         edtReferencePx.Value = max(0, px);
+        syncScaleSlider(sldReferencePx, edtReferencePx);
         updateReadout();
     end
 
@@ -201,6 +208,8 @@ function ui = scaleBarPanel(parent, row, opts)
         end
         edtReferencePx.Value = max(0, numericField(cal, 'referencePixels', 0));
         edtReferenceLen.Value = max(0, numericField(cal, 'referenceLength', defaultReferenceLength));
+        syncScaleSlider(sldReferencePx, edtReferencePx);
+        syncScaleSlider(sldReferenceLen, edtReferenceLen);
         unitValue = char(string(fieldOr(cal, 'unit', defaultUnit)));
         ddUnit.Value = defaultChoice(unitValue, units);
         updateReadout();
@@ -208,6 +217,7 @@ function ui = scaleBarPanel(parent, row, opts)
 
     function clearReferencePixels()
         edtReferencePx.Value = 0;
+        syncScaleSlider(sldReferencePx, edtReferencePx);
         updateReadout();
     end
 
@@ -299,13 +309,38 @@ function ui = scaleBarPanel(parent, row, opts)
         btnMeasureReference.Text = ternary(referenceEditActive, ...
             'Finish reference edit', 'Measure reference pixels');
         edtReferencePx.Enable = ternary(hasImage && ~blockInputs && ~referenceEditActive, 'on', 'off');
+        setOptionalEnable(sldReferencePx, edtReferencePx.Enable);
         edtReferenceLen.Enable = ternary(hasImage && ~blockInputs, 'on', 'off');
+        setOptionalEnable(sldReferenceLen, edtReferenceLen.Enable);
         ddUnit.Enable = ternary(hasImage && ~blockInputs, 'on', 'off');
         edtBarLen.Enable = ternary(hasImage && ~blockInputs, 'on', 'off');
+        setOptionalEnable(sldBarLen, edtBarLen.Enable);
         ddPosition.Enable = ternary(hasImage && ~blockInputs, 'on', 'off');
         ddColor.Enable = ternary(hasImage && ~blockInputs, 'on', 'off');
         btnPlaceScaleBar.Enable = ternary(hasImage && pxPerUnit > 0 && ~blockPlacement, 'on', 'off');
     end
+end
+
+function upper = defaultSliderUpper(value, minimumUpper)
+    value = double(value);
+    if ~isfinite(value) || value <= 0
+        value = minimumUpper / 10;
+    end
+    upper = max(minimumUpper, value * 10);
+end
+
+function syncScaleSlider(slider, spinner)
+    if isempty(slider) || ~isvalid(slider)
+        return;
+    end
+    slider.Value = min(slider.Limits(2), max(slider.Limits(1), spinner.Value));
+end
+
+function setOptionalEnable(handle, state)
+    if isempty(handle) || ~isvalid(handle)
+        return;
+    end
+    handle.Enable = state;
 end
 
 function line = defaultScaleBarLine(imageSize, scaleBarPx, position)

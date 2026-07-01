@@ -175,6 +175,18 @@ Use these app-facing contracts:
   default. Scrolling over controls, logs, or empty figure space does not zoom
   plots, and users should not need to click a preview before wheel zoom works.
   Time-series axes with a time x-label zoom the horizontal time axis only.
+- Parameter value controls (`field`, `rangeField`, and `panner`) debounce
+  semantic `onChange` callbacks by default so short bursts of edits submit
+  only the latest value after roughly 0.5 seconds of idle time. Explicit
+  actions, file selection, and table edits run immediately. Apps should put
+  expensive recompute work behind those semantic callbacks or explicit action
+  buttons rather than binding work to lower-level MATLAB value-changing events.
+- `panner` is the preferred app-spec control for bounded numeric parameters.
+  It renders as a compact numeric spinner plus a linked slider when limits are
+  finite, and as spinner-only when limits are intentionally unbounded. Slider
+  drags update the numeric readout continuously and submit semantic changes
+  through the same debounced callback queue as spinner edits; release submits
+  the final committed value.
 - Text-heavy controls have conservative automatic heights owned by the
   framework. App specs must not set concrete height, row-count, spacing,
   padding, chrome, row-height, or column-width properties.

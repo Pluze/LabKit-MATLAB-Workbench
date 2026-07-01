@@ -24,6 +24,8 @@ function hImage = showImage(ax, imageData, titleText, opts)
 %                      Wheel zoom is owned by previewArea navigation.
 %   preserveView - logical, default true. Preserves current XLim/YLim when
 %                  redrawing an image with the same displayed image bounds.
+%   reuseImage - logical, default true. Reuses the previous LabKit image
+%                object while clearing non-image overlay graphics.
 %   xData, yData - optional two-element image XData/YData center coordinates.
 %
 % Output:
@@ -37,11 +39,24 @@ function hImage = showImage(ax, imageData, titleText, opts)
     yData = optionValue(opts, 'yData', [1, size(imageData, 1)]);
     viewState = currentImageViewState(ax, imageData, xData, yData, ...
         optionValue(opts, 'preserveView', true));
+    hImage = [];
     if optionValue(opts, 'clearAxes', true)
-        cla(ax);
+        hImage = reusableImage(ax, optionValue(opts, 'reuseImage', true));
+        if isempty(hImage)
+            cla(ax);
+        else
+            clearNonReusableChildren(ax, hImage);
+        end
     end
 
-    hImage = image(ax, 'CData', imageData, 'XData', xData, 'YData', yData);
+    if isempty(hImage)
+        hImage = image(ax, 'CData', imageData, 'XData', xData, 'YData', yData);
+        hImage.Tag = imageObjectTag();
+    else
+        hImage.CData = imageData;
+        hImage.XData = xData;
+        hImage.YData = yData;
+    end
     hImage.HitTest = optionValue(opts, 'hitTest', 'off');
     hImage.PickableParts = optionValue(opts, 'pickableParts', 'none');
 
@@ -62,6 +77,28 @@ function hImage = showImage(ax, imageData, titleText, opts)
         enableImageNavigation(ax);
     end
     labkit.ui.tool.enableAxesPopout(ax);
+end
+
+function hImage = reusableImage(ax, reuseImage)
+    hImage = [];
+    if ~reuseImage
+        return;
+    end
+    candidates = findobj(ax, 'Type', 'image', 'Tag', imageObjectTag());
+    if isempty(candidates)
+        return;
+    end
+    hImage = candidates(1);
+end
+
+function clearNonReusableChildren(ax, hImage)
+    children = ax.Children;
+    for k = 1:numel(children)
+        child = children(k);
+        if ~isequal(child, hImage) && isvalid(child)
+            delete(child);
+        end
+    end
 end
 
 function enableImageNavigation(ax)
@@ -120,6 +157,10 @@ end
 
 function key = imageViewBoundsKey()
     key = 'labkitImageViewBounds';
+end
+
+function tag = imageObjectTag()
+    tag = 'LabKitViewImage';
 end
 
 function value = optionValue(opts, name, defaultValue)

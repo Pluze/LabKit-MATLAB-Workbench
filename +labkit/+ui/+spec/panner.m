@@ -1,5 +1,5 @@
 function spec = panner(id, labelText, varargin)
-%PANNER Create a slider with built-in small-step pan buttons.
+%PANNER Create a numeric spinner with a linked slider.
 %
 % App-facing contract:
 %   spec = labkit.ui.spec.panner(id, label, "value", value, ...)
@@ -7,13 +7,19 @@ function spec = panner(id, labelText, varargin)
 % Inputs:
 %   id - globally unique panner id.
 %   labelText - field label.
-%   limits - two-element numeric slider limits, default [0 1].
+%   limits - two-element numeric limits, default [0 1]. Finite limits render
+%       a linked slider; infinite limits render the same panner contract as a
+%       spinner-only bounded-number control.
 %   value - current numeric value, default limits(1).
-%   step - absolute button step, optional. When omitted, buttons use
-%          stepFraction of the current limit span.
-%   stepFraction - fraction of limit span for button step, default 0.002.
-%   minStep, maxStep - optional bounds for computed button step.
-%   leftLabel, rightLabel - optional button labels, default "<" and ">".
+%   step - absolute spinner step, optional. When omitted, stepFraction is
+%       applied to finite limits.
+%   stepFraction - fraction of finite limit span for inferred spinner step,
+%       default 0.002.
+%   minStep, maxStep - optional bounds for inferred spinner step.
+%   valueDisplayFormat - optional numeric edit display format, for example
+%       "%.2f".
+%   showTicks - logical, default false. True shows slider ticks when a slider
+%       is rendered.
 %   enabled, tooltip, onChange - optional app-neutral props.
 %
 % Output:
@@ -25,6 +31,9 @@ function spec = panner(id, labelText, varargin)
         props.limits = [0 1];
     end
     props.limits = numericLimits(props.limits);
+    if ~isfield(props, 'showTicks')
+        props.showTicks = false;
+    end
     if ~isfield(props, 'value')
         props.value = props.limits(1);
     end
@@ -33,8 +42,8 @@ end
 
 function limits = numericLimits(limits)
     limits = double(limits(:)).';
-    if numel(limits) ~= 2 || any(~isfinite(limits)) || limits(1) >= limits(2)
+    if numel(limits) ~= 2 || any(isnan(limits)) || limits(1) >= limits(2)
         error('labkit:ui:spec:InvalidPannerLimits', ...
-            'panner limits must be a finite increasing two-element vector.');
+            'panner limits must be an increasing two-element numeric vector.');
     end
 end

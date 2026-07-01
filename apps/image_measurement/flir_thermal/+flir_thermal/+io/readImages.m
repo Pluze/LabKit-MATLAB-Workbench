@@ -25,6 +25,9 @@ function item = itemFromRecord(record, template)
     item.raw = record.raw;
     item.temperatureC = record.temperatureC;
     item.displayRange = initialRange(item);
+    item.rangePreset = "-20 to 120 C";
+    item.rangeControlBounds = flir_thermal.view.rangeControlBounds( ...
+        item, item.rangePreset, [-20 120]);
     item.rangeAdjusted = false;
     item.units = record.units;
     item.metadata = record.metadata;

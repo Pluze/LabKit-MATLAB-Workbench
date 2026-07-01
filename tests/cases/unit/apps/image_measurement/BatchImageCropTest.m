@@ -14,14 +14,19 @@ function verify_batchImageCrop()
 
     checkFixedPixelCropPreservesClassAndSize();
     checkOutOfBoundsCropUsesWhiteBackground();
+    checkCropCenterAvoidsInvalidRotatedMaskRegions();
     checkReflectedPaddingPreservesSourceAndBlendsBoundary();
     checkPaddingFadesIntoReflectedTexture();
     checkPaddingDoesNotStretchDarkEdgePixels();
     checkPaddingAllowsLargeExtension();
+    checkCropCenterShiftsMinimallyToCanvasBounds();
     checkCoordinateTransformsRoundTripOriginalPoints();
+    checkPreviewGeometryDownsamplesBeforeRotationAndKeepsOriginalCoordinates();
     checkPreviewViewPreservesZoomAcrossPaddingRedraw();
+    checkPreviewViewPreservesOriginalRoiAcrossPreviewScaleChanges();
+    checkPreviewRenderDataDownsamplesWithoutChangingCoordinates();
     checkSourceCenterHelpersUseImageGeometry();
-    checkPaddingDoesNotMoveCropCenterMetadata();
+    checkPaddingKeepsShiftedCropOnValidRotatedMask();
     checkRotatedCropKeepsRequestedSize();
     checkRotationBackgroundUsesWhiteFill();
     checkNewItemsDefaultToZeroPadding();
@@ -39,6 +44,31 @@ function verify_batchImageCrop()
     checkExportWritesUniqueOutputs();
     checkExportWritesUniqueOutputsForDuplicateSource();
     checkExportPlanFingerprintTracksItemsAndOptions();
+end
+
+function checkCropCenterAvoidsInvalidRotatedMaskRegions()
+    img = uint8(ones(6, 8));
+    geometry = batch_crop.ops.prepareCropCanvas(img, struct( ...
+        'angleDeg', 0, ...
+        'paddingPercent', 0));
+    geometry.mask = false(size(geometry.mask));
+    geometry.mask(2:5, 3:7) = true;
+
+    centerXY = batch_crop.ops.clampCropCenterToCanvas(geometry, [1 1], [3 2]);
+
+    assert(isequal(centerXY, [4 2.5]), ...
+        'Center adjustment should keep the complete ROI inside the valid image mask, not just the canvas.');
+end
+
+function checkCropCenterShiftsMinimallyToCanvasBounds()
+    img = uint8(ones(8, 10));
+    geometry = batch_crop.ops.prepareCropCanvas(img, struct( ...
+        'angleDeg', 0, ...
+        'paddingPercent', 0));
+    centerXY = batch_crop.ops.clampCropCenterToCanvas(geometry, [9 2], [6 4]);
+
+    assert(isequal(centerXY, [7.5 2.5]), ...
+        'Center adjustment should use the smallest x/y shift that keeps the crop on the canvas.');
 end
 
 function checkFixedPixelCropPreservesClassAndSize()
@@ -69,10 +99,10 @@ function checkOutOfBoundsCropUsesWhiteBackground()
 
     assert(isequal(size(result.image), [4 4]), ...
         'Out-of-bounds crops should still use the requested output size.');
-    assert(result.image(1, 1) == intmax('uint8'), ...
-        'Out-of-bounds crop area should use the fixed white background.');
-    assert(result.image(end, end) == 10, ...
-        'In-bounds crop area should preserve source pixels.');
+    assert(all(result.image == 10, "all"), ...
+        'Out-of-bounds crop centers should shift minimally so the ROI stays on the image.');
+    assert(result.centerX == 2.5 && result.centerY == 2.5, ...
+        'Crop metadata should expose the minimally shifted center.');
 end
 
 function checkReflectedPaddingPreservesSourceAndBlendsBoundary()
@@ -145,6 +175,25 @@ function checkCoordinateTransformsRoundTripOriginalPoints()
         'Canvas/original coordinate transforms should preserve source coordinates.');
 end
 
+function checkPreviewGeometryDownsamplesBeforeRotationAndKeepsOriginalCoordinates()
+    img = uint8(zeros(120, 160, 3));
+    geometry = batch_crop.ops.prepareCropCanvas(img, struct( ...
+        'angleDeg', 35, ...
+        'paddingPercent', 200, ...
+        'maxCanvasPixels', 4000));
+    assert(geometry.coordinateScale < 1, ...
+        'Large padded preview canvases should downsample before padding and rotation.');
+    assert(size(geometry.canvas, 1) * size(geometry.canvas, 2) < ...
+        5 * size(img, 1) * size(img, 2), ...
+        'Preview geometry should avoid constructing the full padded high-resolution canvas.');
+
+    originalXY = [73.25, 44.75];
+    recoveredXY = batch_crop.ops.canvasToOriginal(geometry, ...
+        batch_crop.ops.originalToCanvas(geometry, originalXY));
+    assert(max(abs(recoveredXY - originalXY)) < 1e-9, ...
+        'Preview geometry coordinate transforms should still report original-image coordinates.');
+end
+
 function checkPreviewViewPreservesZoomAcrossPaddingRedraw()
     img = uint8(zeros(20, 30));
     geometry = batch_crop.ops.prepareCropCanvas(img, struct( ...
@@ -171,6 +220,64 @@ function checkPreviewViewPreservesZoomAcrossPaddingRedraw()
         'Preview redraw should preserve the visible source-coordinate center.');
 end
 
+function checkPreviewViewPreservesOriginalRoiAcrossPreviewScaleChanges()
+    img = uint8(zeros(120, 160));
+    geometryA = batch_crop.ops.prepareCropCanvas(img, struct( ...
+        'angleDeg', 0, ...
+        'paddingPercent', 20));
+    placementA = batch_crop.view.previewPlacement(geometryA);
+    geometryB = batch_crop.ops.prepareCropCanvas(img, struct( ...
+        'angleDeg', 0, ...
+        'paddingPercent', 200, ...
+        'maxCanvasPixels', 5000));
+    placementB = batch_crop.view.previewPlacement(geometryB);
+    assert(geometryB.coordinateScale < geometryA.coordinateScale, ...
+        'Test setup should force a changed preview coordinate scale.');
+
+    fig = figure('Visible', 'off');
+    cleanup = onCleanup(@() close(fig));
+    ax = axes(fig);
+    ax.XLim = [30, 70];
+    ax.YLim = [25, 65];
+
+    state = batch_crop.view.capturePreviewView(ax, geometryA, placementA);
+    batch_crop.view.restorePreviewView(ax, state, geometryB, placementB);
+    restored = restoredOriginalLimits(ax, geometryB, placementB);
+
+    assert(max(abs(restored.x - state.originalXLim)) < 1e-9 && ...
+        max(abs(restored.y - state.originalYLim)) < 1e-9, ...
+        'Preview redraw should preserve the same original-image ROI when preview scale changes.');
+end
+
+function checkPreviewRenderDataDownsamplesWithoutChangingCoordinates()
+    img = uint8(zeros(30, 40, 3));
+    geometry = batch_crop.ops.prepareCropCanvas(img, struct( ...
+        'angleDeg', 0, ...
+        'paddingPercent', 0));
+    placement = batch_crop.view.previewPlacement(geometry);
+    render = batch_crop.view.previewRenderData(geometry, placement, ...
+        struct('MaxPreviewPixels', 200));
+
+    assert(render.scaleFactor > 1, ...
+        'Large preview canvases should be downsampled for display.');
+    assert(size(render.imageData, 1) < size(geometry.canvas, 1) && ...
+        size(render.imageData, 2) < size(geometry.canvas, 2), ...
+        'Preview CData should have fewer displayed pixels after downsampling.');
+    assert(isequal(render.xData, placement.xData) && ...
+        isequal(render.yData, placement.yData), ...
+        'Preview downsampling must preserve full-resolution canvas coordinates.');
+end
+
+function limits = restoredOriginalLimits(ax, geometry, placement)
+    xCanvas = ax.XLim - placement.offset(1);
+    yCanvas = ax.YLim - placement.offset(2);
+    leftTop = batch_crop.ops.canvasToOriginal(geometry, [xCanvas(1), yCanvas(1)]);
+    rightBottom = batch_crop.ops.canvasToOriginal(geometry, [xCanvas(2), yCanvas(2)]);
+    limits = struct( ...
+        'x', sort([leftTop(1), rightBottom(1)]), ...
+        'y', sort([leftTop(2), rightBottom(2)]));
+end
+
 function checkSourceCenterHelpersUseImageGeometry()
     img = uint8(zeros(7, 9, 3));
     assert(isequal(batch_crop.ops.sourceCenterXY(img), [5, 4]), ...
@@ -179,7 +286,7 @@ function checkSourceCenterHelpersUseImageGeometry()
         'Source size helper should preserve half-pixel centers for even image sizes.');
 end
 
-function checkPaddingDoesNotMoveCropCenterMetadata()
+function checkPaddingKeepsShiftedCropOnValidRotatedMask()
     img = uint8(zeros(7, 9));
     result = batch_crop.ops.cropImage(img, struct( ...
         'cropWidth', 3, ...
@@ -188,8 +295,10 @@ function checkPaddingDoesNotMoveCropCenterMetadata()
         'angleDeg', 33, ...
         'paddingPercent', 40));
 
-    assert(result.centerX == 2 && result.centerY == 5, ...
-        'Crop result metadata should keep original-image center coordinates.');
+    assert(max(abs([result.centerX, result.centerY] - [1.9393, 4.7952])) < 1e-4, ...
+        'Crop result metadata should expose the minimally shifted valid-mask center.');
+    assert(max(result.image(:)) == 0, ...
+        'A mask-adjusted rotated crop should avoid white outside-canvas fill when possible.');
     assert(result.sourceWidth == 9 && result.sourceHeight == 7, ...
         'Crop result metadata should expose source dimensions, not padded canvas size.');
     assert(result.paddingPercent == 40, ...

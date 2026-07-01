@@ -9,6 +9,8 @@ function fig = run(debugLog)
     S.currentIndex = 0;
     S.outputFolder = string(labkit.ui.app.defaultDialogFolder("output"));
     S.lastExport = [];
+    S.roiHandle = [];
+    S.roiListeners = [];
 
     callbacks = struct( ...
         'filesChosen', @onFilesChosen, ...
@@ -18,8 +20,15 @@ function fig = run(debugLog)
         'previousImage', @onPreviousImage, ...
         'nextImage', @onNextImage, ...
         'autoRange', @onAutoRange, ...
-        'displayChanged', @onDisplayChanged, ...
-        'previewModeChanged', @onPreviewModeChanged, ...
+        'groupRange', @onGroupRange, ...
+        'perImageRange', @onPerImageRange, ...
+        'roundRange', @onRoundRange, ...
+        'paletteChanged', @onPaletteChanged, ...
+        'rangePresetChanged', @onRangePresetChanged, ...
+        'rangeChanged', @onRangeChanged, ...
+        'drawRoi', @onDrawRoi, ...
+        'clearRoi', @onClearRoi, ...
+        'exportRoiCsv', @onExportRoiCsv, ...
         'chooseOutputFolder', @onChooseOutputFolder, ...
         'exportCurrent', @onExportCurrent, ...
         'exportAll', @onExportAll);
@@ -51,6 +60,7 @@ function fig = run(debugLog)
         end
         if isempty(S.items)
             S.currentIndex = 0;
+            clearRoiOverlay();
         else
             S.currentIndex = 1;
             syncRangeControlsFromCurrentItem();
@@ -88,6 +98,7 @@ function fig = run(debugLog)
         S.currentIndex = min(S.currentIndex, numel(S.items));
         if isempty(S.items)
             S.currentIndex = 0;
+            clearRoiOverlay();
         end
         addLog(sprintf('Removed FLIR file(s); %d remaining.', numel(S.items)));
         refreshAll();
@@ -97,6 +108,7 @@ function fig = run(debugLog)
         S.items = repmat(flir_thermal.state.emptyItem(), 0, 1);
         S.currentIndex = 0;
         S.lastExport = [];
+        clearRoiOverlay();
         addLog('Cleared loaded FLIR files.');
         refreshAll();
     end
@@ -133,20 +145,159 @@ function fig = run(debugLog)
         if ~hasCurrentItem()
             return;
         end
-        S.items(S.currentIndex).displayRange = autoRangeForItem(S.items(S.currentIndex));
+        range = autoRangeForItem(S.items(S.currentIndex));
+        S.items(S.currentIndex).displayRange = range;
+        S.items(S.currentIndex).rangeControlBounds = ...
+            controlBoundsContaining(range, currentControlBounds());
         S.items(S.currentIndex).rangeAdjusted = true;
         syncRangeControlsFromCurrentItem();
         addLog(sprintf('Auto range set for %s.', char(S.items(S.currentIndex).name)));
         refreshAll();
     end
 
-    function onDisplayChanged(~, ~)
+    function onGroupRange(~, ~)
+        if isempty(S.items)
+            return;
+        end
+        ranges = zeros(numel(S.items), 2);
+        for k = 1:numel(S.items)
+            ranges(k, :) = autoRangeForItem(S.items(k));
+        end
+        range = normalizeRange([min(ranges(:, 1)), max(ranges(:, 2))]);
+        for k = 1:numel(S.items)
+            S.items(k).displayRange = range;
+            S.items(k).rangeControlBounds = ...
+                controlBoundsContaining(range, itemControlBounds(S.items(k)));
+            S.items(k).rangeAdjusted = true;
+        end
+        syncRangeControlsFromCurrentItem();
+        addLog(sprintf('Set all FLIR files to group range %.3g to %.3g C.', ...
+            range(1), range(2)));
+        refreshAll();
+    end
+
+    function onPerImageRange(~, ~)
+        if isempty(S.items)
+            return;
+        end
+        for k = 1:numel(S.items)
+            range = autoRangeForItem(S.items(k));
+            S.items(k).displayRange = range;
+            S.items(k).rangeControlBounds = ...
+                controlBoundsContaining(range, itemControlBounds(S.items(k)));
+            S.items(k).rangeAdjusted = true;
+        end
+        syncRangeControlsFromCurrentItem();
+        addLog(sprintf('Set each FLIR file to its own measured range (%d files).', ...
+            numel(S.items)));
+        refreshAll();
+    end
+
+    function onRoundRange(~, ~)
+        if ~hasCurrentItem()
+            return;
+        end
+        current = currentRange();
+        range = normalizeRange([floor(current(1)), ceil(current(2))]);
+        S.items(S.currentIndex).displayRange = range;
+        S.items(S.currentIndex).rangeControlBounds = ...
+            controlBoundsContaining(range, currentControlBounds());
+        S.items(S.currentIndex).rangeAdjusted = true;
+        syncRangeControlsFromCurrentItem();
+        addLog(sprintf('Rounded range for %s to %.0f to %.0f C.', ...
+            char(S.items(S.currentIndex).name), range(1), range(2)));
+        refreshAll();
+    end
+
+    function onPaletteChanged(~, ~)
+        refreshPreview();
+        refreshSummary();
+    end
+
+    function onRangePresetChanged(~, ~)
+        if ~hasCurrentItem()
+            return;
+        end
+        preset = string(labkit.ui.view.getValue(ui, 'rangePreset'));
+        bounds = flir_thermal.view.rangeControlBounds( ...
+            S.items(S.currentIndex), preset, currentControlBounds());
+        S.items(S.currentIndex).rangePreset = preset;
+        S.items(S.currentIndex).rangeControlBounds = bounds;
+        clampedRange = clampRangeToBounds(currentRange(), bounds);
+        if ~isequaln(clampedRange, currentRange())
+            S.items(S.currentIndex).displayRange = clampedRange;
+            S.items(S.currentIndex).rangeAdjusted = true;
+        end
+        syncRangeControlsFromCurrentItem();
+        refreshAll();
+    end
+
+    function onRangeChanged(~, ~)
         commitCurrentRangeFromControls();
         refreshAll();
     end
 
-    function onPreviewModeChanged(~, ~)
+    function onDrawRoi(~, ~)
+        if ~hasCurrentItem()
+            return;
+        end
+        if exist('drawrectangle', 'file') ~= 2
+            showError('ROI tool unavailable', ...
+                'The MATLAB drawrectangle ROI tool is not available in this installation.');
+            return;
+        end
+        clearRoiOverlay();
+        ax = ui.controls.preview.axesById.thermalImage;
+        position = defaultRoiPosition(S.items(S.currentIndex));
+        try
+            S.roiHandle = drawrectangle(ax, 'Position', position, ...
+                'Color', [1 1 1], 'FaceAlpha', 0.05);
+            S.roiListeners = [ ...
+                addlistener(S.roiHandle, 'MovingROI', @onRoiMoved), ...
+                addlistener(S.roiHandle, 'ROIMoved', @onRoiMoved)];
+            storeCurrentRoi();
+            addLog(sprintf('ROI set for %s.', char(S.items(S.currentIndex).name)));
+            refreshExportControls();
+            refreshDetails();
+        catch ME
+            clearRoiOverlay();
+            showException('Could not start ROI selection', ME);
+        end
+    end
+
+    function onClearRoi(~, ~)
+        if ~hasCurrentItem()
+            return;
+        end
+        S.items(S.currentIndex).roiRect = [];
+        clearRoiOverlay();
+        addLog(sprintf('Cleared ROI for %s.', char(S.items(S.currentIndex).name)));
         refreshPreview();
+        refreshExportControls();
+        refreshDetails();
+    end
+
+    function onExportRoiCsv(~, ~)
+        if ~hasCurrentItem()
+            showError('No FLIR image selected', ...
+                'Load and select a FLIR radiometric image before exporting ROI CSV.');
+            return;
+        end
+        storeCurrentRoi();
+        if isempty(S.items(S.currentIndex).roiRect)
+            showError('No ROI selected', ...
+                'Draw an ROI on the current thermal image before exporting ROI CSV.');
+            return;
+        end
+        try
+            opts = exportOptions(S.items(S.currentIndex));
+            result = flir_thermal.export.writeRoiCsv(S.items(S.currentIndex), opts);
+        catch ME
+            showException('Could not export ROI CSV', ME);
+            return;
+        end
+        addLog(sprintf('Exported ROI CSV: %s', char(result.roiCsvPath)));
+        refreshDetails();
     end
 
     function onChooseOutputFolder(~, ~)
@@ -240,18 +391,12 @@ function fig = run(debugLog)
         labkit.ui.view.drawImage(ui, 'preview', rgb, ...
             'axis', 'thermalImage', ...
             'Title', char(label));
+        restoreRoiOverlay();
         drawTemperatureScale(range, units);
     end
 
     function [values, units, label] = previewValues(item)
-        mode = string(labkit.ui.view.getValue(ui, 'preview'));
-        if mode == "Raw signal"
-            values = item.raw;
-            units = "raw";
-            label = "Raw thermal signal";
-        else
-            [values, units, label] = flir_thermal.view.valueMatrix(item);
-        end
+        [values, units, label] = flir_thermal.view.valueMatrix(item);
     end
 
     function refreshSummary()
@@ -267,8 +412,16 @@ function fig = run(debugLog)
         labkit.ui.view.setEnabled(ui, 'previousImage', hasItems && S.currentIndex > 1);
         labkit.ui.view.setEnabled(ui, 'nextImage', hasItems && S.currentIndex < numel(S.items));
         labkit.ui.view.setEnabled(ui, 'autoRange', hasItems && S.currentIndex >= 1);
+        labkit.ui.view.setEnabled(ui, 'groupRange', hasItems);
+        labkit.ui.view.setEnabled(ui, 'perImageRange', hasItems);
+        labkit.ui.view.setEnabled(ui, 'roundRange', hasItems && S.currentIndex >= 1);
+        labkit.ui.view.setEnabled(ui, 'rangePreset', hasItems && S.currentIndex >= 1);
         labkit.ui.view.setEnabled(ui, 'temperatureMin', hasItems && S.currentIndex >= 1);
         labkit.ui.view.setEnabled(ui, 'temperatureMax', hasItems && S.currentIndex >= 1);
+        hasRoi = hasItems && S.currentIndex >= 1 && hasCurrentRoi();
+        labkit.ui.view.setEnabled(ui, 'drawRoi', hasItems && S.currentIndex >= 1);
+        labkit.ui.view.setEnabled(ui, 'clearRoi', hasRoi);
+        labkit.ui.view.setEnabled(ui, 'exportRoiCsv', hasRoi);
         labkit.ui.view.setEnabled(ui, 'exportCurrent', hasItems && S.currentIndex >= 1);
         labkit.ui.view.setEnabled(ui, 'exportAll', hasItems);
     end
@@ -310,8 +463,38 @@ function fig = run(debugLog)
 
     function syncRangeControlsFromCurrentItem()
         range = currentRange();
-        labkit.ui.view.setValue(ui, 'temperatureMin', round(range(1) * 10) / 10);
-        labkit.ui.view.setValue(ui, 'temperatureMax', round(range(2) * 10) / 10);
+        bounds = currentControlBounds();
+        labkit.ui.view.setLimits(ui, 'temperatureMin', bounds);
+        labkit.ui.view.setLimits(ui, 'temperatureMax', bounds);
+        labkit.ui.view.setValue(ui, 'rangePreset', currentRangePreset());
+        labkit.ui.view.setValue(ui, 'temperatureMin', round(range(1) * 100) / 100);
+        labkit.ui.view.setValue(ui, 'temperatureMax', round(range(2) * 100) / 100);
+    end
+
+    function preset = currentRangePreset()
+        preset = "-20 to 120 C";
+        if hasCurrentItem() && isfield(S.items(S.currentIndex), 'rangePreset') && ...
+                strlength(string(S.items(S.currentIndex).rangePreset)) > 0
+            preset = string(S.items(S.currentIndex).rangePreset);
+        end
+    end
+
+    function bounds = currentControlBounds()
+        bounds = [-20 120];
+        if hasCurrentItem() && isfield(S.items(S.currentIndex), 'rangeControlBounds')
+            bounds = normalizeRange(S.items(S.currentIndex).rangeControlBounds);
+        end
+        bounds = controlBoundsContaining(currentRange(), bounds);
+    end
+
+    function bounds = itemControlBounds(item)
+        bounds = [-20 120];
+        if isfield(item, 'rangeControlBounds')
+            bounds = normalizeRange(item.rangeControlBounds);
+        end
+        if isfield(item, 'displayRange')
+            bounds = controlBoundsContaining(item.displayRange, bounds);
+        end
     end
 
     function text = rangeStatus(item)
@@ -344,6 +527,7 @@ function fig = run(debugLog)
     end
 
     function resetPreviewAxes()
+        clearRoiOverlay();
         labkit.ui.view.resetAxes(ui, 'preview', 'Clean thermal image', false, ...
             'thermalImage');
         labkit.ui.view.resetAxes(ui, 'preview', 'Scale', false, ...
@@ -351,15 +535,18 @@ function fig = run(debugLog)
     end
 
     function drawTemperatureScale(range, units)
-        values = linspace(range(2), range(1), 256).';
+        values = linspace(range(1), range(2), 256).';
         imageData = labkit.thermal.renderImage(repmat(values, 1, 12), ...
             struct('Limits', range, 'Palette', currentPalette()));
-        labkit.ui.view.drawImage(ui, 'preview', imageData, ...
-            'axis', 'temperatureScale', ...
-            'title', 'Scale', ...
-            'options', struct('xData', [0 1], 'yData', [range(2) range(1)], ...
-            'preserveView', false, 'enableNavigation', false));
         ax = ui.controls.preview.axesById.temperatureScale;
+        cla(ax);
+        image(ax, 'CData', imageData, 'XData', [0 1], 'YData', range);
+        title(ax, '');
+        ax.DataAspectRatioMode = 'auto';
+        ax.PlotBoxAspectRatioMode = 'auto';
+        ax.XLim = [0 1];
+        ax.YLim = [range(1) range(2)];
+        ax.YDir = 'normal';
         ax.XTick = [];
         ax.YTick = [range(1), mean(range), range(2)];
         ax.YTickLabel = cellstr(string(compose('%.1f', ax.YTick)));
@@ -374,12 +561,108 @@ function fig = run(debugLog)
         palette = string(labkit.ui.view.getValue(ui, 'palette'));
     end
 
+    function range = clampRangeToBounds(range, bounds)
+        range = normalizeRange(range);
+        bounds = normalizeRange(bounds);
+        range = min(bounds(2), max(bounds(1), range));
+        if range(2) <= range(1)
+            range = bounds;
+        end
+    end
+
+    function bounds = controlBoundsContaining(range, bounds)
+        range = normalizeRange(range);
+        bounds = normalizeRange(bounds);
+        bounds = [min(bounds(1), range(1)), max(bounds(2), range(2))];
+        if bounds(2) <= bounds(1)
+            bounds(2) = bounds(1) + 1;
+        end
+    end
+
     function opts = exportOptions(items)
         opts = struct();
         opts.outputFolder = S.outputFolder;
         opts.format = string(labkit.ui.view.getValue(ui, 'exportFormat'));
         opts.palette = currentPalette();
         opts.range = [];
+    end
+
+    function onRoiMoved(~, ~)
+        storeCurrentRoi();
+        refreshExportControls();
+        refreshDetails();
+    end
+
+    function storeCurrentRoi()
+        if ~hasCurrentItem() || isempty(S.roiHandle) || ~isvalid(S.roiHandle)
+            return;
+        end
+        S.items(S.currentIndex).roiRect = double(S.roiHandle.Position);
+    end
+
+    function restoreRoiOverlay()
+        clearRoiOverlay();
+        if ~hasCurrentItem() || isempty(S.items(S.currentIndex).roiRect)
+            return;
+        end
+        if exist('drawrectangle', 'file') ~= 2
+            return;
+        end
+        try
+            ax = ui.controls.preview.axesById.thermalImage;
+            S.roiHandle = drawrectangle(ax, ...
+                'Position', clampRoiRect(S.items(S.currentIndex).roiRect, ...
+                S.items(S.currentIndex)), ...
+                'Color', [1 1 1], 'FaceAlpha', 0.05);
+            S.roiListeners = [ ...
+                addlistener(S.roiHandle, 'MovingROI', @onRoiMoved), ...
+                addlistener(S.roiHandle, 'ROIMoved', @onRoiMoved)];
+        catch
+            clearRoiOverlay();
+        end
+    end
+
+    function clearRoiOverlay()
+        if ~isempty(S.roiListeners)
+            delete(S.roiListeners(isvalid(S.roiListeners)));
+        end
+        S.roiListeners = [];
+        if ~isempty(S.roiHandle) && isvalid(S.roiHandle)
+            delete(S.roiHandle);
+        end
+        S.roiHandle = [];
+    end
+
+    function tf = hasCurrentRoi()
+        tf = hasCurrentItem() && isfield(S.items(S.currentIndex), 'roiRect') && ...
+            ~isempty(S.items(S.currentIndex).roiRect);
+    end
+
+    function rect = defaultRoiPosition(item)
+        [values] = flir_thermal.view.valueMatrix(item);
+        h = size(values, 1);
+        w = size(values, 2);
+        rectW = max(1, round(w / 3));
+        rectH = max(1, round(h / 3));
+        rect = [ ...
+            max(1, round((w - rectW) / 2) + 1), ...
+            max(1, round((h - rectH) / 2) + 1), ...
+            rectW, rectH];
+    end
+
+    function rect = clampRoiRect(rect, item)
+        [values] = flir_thermal.view.valueMatrix(item);
+        h = size(values, 1);
+        w = size(values, 2);
+        rect = double(rect(:)).';
+        if numel(rect) ~= 4 || ~all(isfinite(rect)) || any(rect(3:4) <= 0)
+            rect = defaultRoiPosition(item);
+            return;
+        end
+        rect(1) = min(max(1, rect(1)), w);
+        rect(2) = min(max(1, rect(2)), h);
+        rect(3) = min(max(1, rect(3)), w - rect(1) + 1);
+        rect(4) = min(max(1, rect(4)), h - rect(2) + 1);
     end
 
     function addLog(message)

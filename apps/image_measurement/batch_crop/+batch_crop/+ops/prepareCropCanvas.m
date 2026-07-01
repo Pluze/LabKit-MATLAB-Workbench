@@ -14,9 +14,11 @@ function geometry = prepareCropCanvas(imageData, opts)
     paddingPercent = double(optionValue(opts, 'paddingPercent', 0));
     fillValue = batch_crop.ops.whiteFillValue(imageData, opts);
 
-    [padded, padding] = batch_crop.ops.padImageEdges(imageData, paddingPercent);
     sourceHeight = size(imageData, 1);
     sourceWidth = size(imageData, 2);
+    [canvasSource, coordinateScale] = previewSourceImage(imageData, ...
+        paddingPercent, opts);
+    [padded, padding] = batch_crop.ops.padImageEdges(canvasSource, paddingPercent);
 
     if isIdentityRotation(angleDeg)
         canvas = padded;
@@ -39,12 +41,35 @@ function geometry = prepareCropCanvas(imageData, opts)
         'angleDeg', angleDeg, ...
         'paddingPercent', padding.percent, ...
         'padding', padding, ...
+        'coordinateScale', coordinateScale, ...
         'sourceWidth', sourceWidth, ...
         'sourceHeight', sourceHeight, ...
+        'previewSourceWidth', size(canvasSource, 2), ...
+        'previewSourceHeight', size(canvasSource, 1), ...
         'paddedWidth', size(padded, 2), ...
         'paddedHeight', size(padded, 1), ...
         'fillValue', fillValue, ...
         'rotation', rotation);
+end
+
+function [canvasSource, coordinateScale] = previewSourceImage(imageData, paddingPercent, opts)
+    maxCanvasPixels = double(optionValue(opts, 'maxCanvasPixels', Inf));
+    if ~isfinite(maxCanvasPixels) || maxCanvasPixels <= 0
+        canvasSource = imageData;
+        coordinateScale = 1;
+        return;
+    end
+
+    expansion = estimatedPaddingExpansion(paddingPercent);
+    [canvasSource, info] = labkit.image.previewBudget(imageData, ...
+        "MaxPixels", maxCanvasPixels, ...
+        "Expansion", expansion);
+    coordinateScale = info.coordinateScale;
+end
+
+function expansion = estimatedPaddingExpansion(paddingPercent)
+    percent = min(max(double(paddingPercent), 0), 200);
+    expansion = (1 + 2 * percent / 100) ^ 2;
 end
 
 function tf = isIdentityRotation(angleDeg)
