@@ -68,8 +68,9 @@ For runner-complexity work, scan helper quality as well as file length:
 - classify short helpers as keep-as-contract, merge, inline, or framework-hook
   candidate before proposing new extraction
 - treat roughly 500 runner lines as a review threshold and roughly 625 lines as
-  a migration threshold, but never use a threshold as the only extraction
-  reason
+  a budget-watchlist trigger. A watchlist runner is not active migration debt
+  by line count alone; record debt only when the next change would add
+  unrelated behavior or the audit finds a concrete responsibility split.
 
 ## Health Review
 
@@ -77,8 +78,8 @@ When asked about project health, overengineering, management quality, or
 whether migration work is useful, ground the answer in evidence:
 
 - recent commit mix: feature, fix, test, refactor, docs, CI, and merge density
-- current debt facts: oversized runners, app `private` helpers, stale debt
-  ledger entries, and removed legacy surfaces
+- current debt facts: budget-watchlist runners, app `private` helpers, stale
+  debt ledger entries, helper-audit findings, and removed legacy surfaces
 - validation health: latest local checks, latest CI, and whether red CI was
   fixed before more migration work
 - governance weight: size and overlap of docs, AGENTS, skills, migration guide,
@@ -180,6 +181,8 @@ For helper extraction, prefer responsibility quality over helper count:
 - keep or create app-owned helpers when they protect deterministic state,
   IO/file discovery, GUI-free operations, export boundaries, display data, or
   focused custom UI/tool glue
+- treat short `+export/write*.m` files as valid side-effect boundaries when
+  they isolate output writes behind an explicit export contract
 - promote to `+labkit` only after the boundary guard proves a domain-neutral
   app-facing contract
 - do not add a blocking short-helper guardrail until a reviewed dry-run report

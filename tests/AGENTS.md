@@ -62,11 +62,12 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
   display is backed by an edit field, label, or text area. Put low-level
   control-shape assertions in focused `tests/cases/gui/labkit/...` tests only
   when the control shape is itself the framework contract.
-- Do not duplicate expensive app figure launches for the same contract. If a
-  dedicated layout test already covers an app, broad entry-point smoke tests
-  should skip it. For apps without dedicated layout tests, prefer one debug
-  launch that verifies startup, figure creation, path hygiene, and trace
-  plumbing.
+- Do not duplicate expensive app figure launches for the same contract. If an
+  app already has dedicated GUI coverage, broad entry-point checks should act
+  as missing-coverage guardrails rather than launching it again. For apps
+  without dedicated GUI coverage, prefer one debug launch that verifies
+  startup, figure creation, path hygiene, and trace plumbing until dedicated
+  layout or workflow tests are added.
 - Scientific and visualization tests should prefer deterministic state, data,
   numeric, export, axis-label, callback-event, or debug-trace assertions over
   whole-GUI or whole-image snapshots. Use minimal synthetic inputs. Add pixel
@@ -79,7 +80,8 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
   Do not add a blocking minimum-helper-length guardrail. If a helper-quality
   guardrail becomes necessary, it must distinguish cosmetic micro-extraction
   from legitimate small public facades, factories, filters, defaults,
-  role-package contracts, and test-facing helpers.
+  role-package contracts, export side-effect boundaries, and test-facing
+  helpers.
 - When one test file grows too broad, add new focused `test_*.m` files instead of appending unrelated coverage.
 - GUI `Structural` tests are launch/layout/callback checks. GUI `Workflow`
   tests may cover hidden synthetic core flows through semantic UI operations,
@@ -94,7 +96,7 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
   `buildtool changed` just to rediscover the same plan.
 - Use the fast changed-file task for tight local iteration when shared UI or
   broad GUI-adjacent edits would trigger full downstream app GUI coverage. It
-  is a smoke gate, not the final handoff gate; run the conservative changed
+  is an iteration gate, not the final handoff gate; run the conservative changed
   task or the relevant broad task before pushing substantive
   validation-routing changes.
 - Prefer `runLabKitTests("Suites", "...")` for rerunning a failed suite such

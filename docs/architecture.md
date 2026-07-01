@@ -147,6 +147,6 @@ buildtool headless
 ```
 
 This covers project contracts, reusable facade behavior, and non-GUI app
-helper behavior. GUI checks cover launch, layout, callback wiring, and trace
-plumbing. Manual MATLAB review is still required for full interactive workflow
-feel.
+helper behavior. GUI checks cover launch, layout, callback wiring, trace
+plumbing, reusable tool lifecycle, and hidden synthetic app workflows. Manual
+MATLAB review is still required for full interactive workflow feel.

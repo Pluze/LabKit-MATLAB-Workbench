@@ -33,7 +33,7 @@ source, tests, docs, or guardrails, not permanent roadmap prose.
 
 ## Current Debt Snapshot
 
-Last audited: 2026-06-30.
+Last audited: 2026-07-01.
 
 Current active migration debt:
 
@@ -132,7 +132,7 @@ Current facts:
   invocation, enabled-state reads, table reads, text-area reads, filePanel
   state reads, preview child counts, and shared anchor-editor point injection.
 - Every currently supported app entry point has dedicated app GUI coverage.
-  `AppLaunchGuiTest` is a missing-coverage guardrail rather than broad smoke
+  `AppLaunchGuiTest` is a missing-coverage guardrail rather than broad launch
   coverage.
 - Workflow-backed app structural GUI tests have been trimmed so ordinary table
   columns, preview axes, redraw paths, and clear/refresh callbacks are covered

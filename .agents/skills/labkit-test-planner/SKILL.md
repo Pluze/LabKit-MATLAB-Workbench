@@ -49,14 +49,14 @@ user explicitly asks for a broader/release gate.
 project                    startup, architecture, package surface, sample-data hygiene
 labkit/dta                 DTA parser, facade, session, item, pulse behavior
 labkit/biosignal           biosignal import, processing, ECG peaks, segments, measurements
-labkit/ui                  reusable UI helpers; include GUI coverage for layout/callback/shell/debug checks
+labkit/ui                  reusable UI helpers; include GUI coverage for layout/callback/shell/debug/tool checks
 apps/electrochem           electrochem app-owned calculations, exports, layout
 apps/dic                   DIC app layout
 apps/image_measurement     image measurement calculations, exports, layout
 apps/wearable              wearable app layout
-gui/apps                   app GUI launch, layout, and callback wiring checks
+gui/apps                   app GUI launch, layout, callback wiring, and workflow checks
 gui/apps/<family>/<app_slug>
-                           one app GUI layout and callback wiring checks
+                           one app GUI layout, callback wiring, and workflow checks
 gui/labkit/launcher        launcher discovery and layout checks
 ```
 
@@ -74,9 +74,11 @@ release validation requires it, or the user is not actively using the keyboard.
 ## GUI Claims
 
 - Default non-GUI tests do not validate interactive GUI workflow behavior.
-- Automated GUI tests are structural launch/layout/callback checks.
+- Automated GUI tests include `Structural` launch/layout/callback checks and
+  `Workflow` hidden synthetic app flows.
 - Debug GUI checks validate trace plumbing and callback instrumentation, not full user interaction quality.
-- Interactive file selection, drawing, visual inspection, and full workflow feel require manual user validation.
+- Interactive file selection, drawing, visual inspection, scientific validity,
+  and full workflow feel require manual user validation.
 - Do not run interactive GUI workflows in MATLAB `-batch` mode.
 
 ## Handoff Requirements

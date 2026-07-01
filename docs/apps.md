@@ -200,4 +200,7 @@ Use the changed-file, headless, or GUI tasks from
 [testing.md](testing.md) depending on the scope of the app change.
 
 Automated GUI tests check launch, layout, callback wiring, and debug trace
-plumbing. They do not replace manual workflow review in MATLAB.
+plumbing, and current supported apps also have hidden synthetic workflow
+coverage for their core task flow. These tests do not prove scientific
+validity, visual quality, or manual workflow feel; keep manual workflow review
+in MATLAB for those questions.

@@ -40,7 +40,7 @@ buildtool listTasks
 | Task | Use it for |
 | --- | --- |
 | `changed` | Fast local validation selected from changed and untracked files. |
-| `changedFast` | Faster changed-file validation for local iteration; uses representative GUI smoke coverage when broad app GUI coverage would otherwise run. |
+| `changedFast` | Faster changed-file validation for local iteration; uses representative GUI workflow/layout coverage when broad app GUI coverage would otherwise run. |
 | `headless` | Full non-GUI validation. |
 | `gui` | Noninteractive GUI launch, layout, callback, workflow, and gesture checks. GUI windows are hidden by default. |
 
@@ -60,12 +60,13 @@ process. It requires git and a git checkout. Use `headless` in exported
 source trees, packaged copies, or environments without git state.
 Use `changedFast` during tight edit cycles when a shared UI or broad app-GUI
 change would otherwise run the full downstream app GUI suite. It keeps
-reusable UI coverage and representative downstream app smoke checks, but it is
+reusable UI coverage and representative downstream app checks, but it is
 not a substitute for the conservative `changed` task before handoff.
 Fast validation plans may combine suite routing with test-name selectors for
-expensive GUI smoke coverage. Keep those selectors small and contract-oriented:
+expensive GUI coverage. Keep those selectors small and contract-oriented:
 choose tests that cover startup, declarative shell behavior, debug trace
-plumbing, and one or two representative downstream app layouts.
+plumbing, hidden synthetic workflows, and representative downstream app
+layouts.
 
 Common choices:
 
@@ -149,6 +150,7 @@ Automated GUI tests check:
 - callback wiring
 - debug trace plumbing
 - reusable tool lifecycle
+- hidden synthetic app workflows
 
 App GUI layout tests should express user-facing and app-facing contracts:
 expected command buttons, dropdown choices, tabs, table columns, axes, callback
@@ -157,9 +159,11 @@ class counts, because those counts are framework implementation details.
 Reusable LabKit GUI tests may assert low-level control shape only when that
 shape is the framework behavior under test.
 Avoid duplicating expensive figure launches for the same contract. If an app
-already has a dedicated layout test, entry-point smoke coverage should not
-launch it again. For apps without a dedicated layout test, one debug launch can
-cover startup, named figure creation, path hygiene, and visible trace plumbing.
+already has dedicated GUI coverage, broad entry-point coverage should act as a
+missing-coverage guardrail rather than launching it again. For future apps
+without dedicated GUI coverage, one debug launch can cover startup, named
+figure creation, path hygiene, and visible trace plumbing until app-specific
+layout or workflow tests are added.
 
 For scientific and visualization behavior, prefer deterministic value or state
 assertions over visual snapshots whenever the result can be expressed as data:
