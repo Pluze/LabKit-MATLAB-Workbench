@@ -137,7 +137,7 @@ function fig = run(debugLog)
     function onSettingChanged(~, event)
         previousFamily = S.family;
         previousMaxChannels = S.maxPreviewChannels;
-        changedId = rhs_preview.ops.eventId(event);
+        changedId = eventId(event);
         S.family = string(labkit.ui.view.getValue(ui, "channelFamily"));
         if changedId == "windowStartPanner"
             S.windowStartSec = numericScalar(labkit.ui.view.getValue(ui, ...
@@ -155,7 +155,7 @@ function fig = run(debugLog)
         S.lastAction = "Updated preview settings";
         if rhs_preview.ops.hasReadableChannel(S)
             readPreviewWindowFromState( ...
-                rhs_preview.ops.settingActionLabel(changedId), false);
+                settingActionLabel(changedId), false);
         end
         refreshAll();
     end
@@ -240,7 +240,7 @@ function fig = run(debugLog)
         if isempty(S.preview) || isempty(S.preview.timeSec)
             return;
         end
-        if ~rhs_preview.ops.isNormalClick(fig)
+        if ~isNormalClick(fig)
             return;
         end
         startX = rhs_preview.view.previewX(source);
@@ -275,7 +275,7 @@ function fig = run(debugLog)
         if ~rhs_preview.ops.hasReadableChannel(S) || ~bounds.hasIndexedDuration
             return;
         end
-        scrollCount = rhs_preview.ops.scrollWheelCount(event);
+        scrollCount = scrollWheelCount(event);
         if scrollCount == 0
             return;
         end
@@ -555,6 +555,37 @@ function value = numericScalar(value, fallback)
     value = double(value);
     if isempty(value) || ~isscalar(value) || ~isfinite(value)
         value = fallback;
+    end
+end
+
+function id = eventId(event)
+    id = "";
+    if isstruct(event) && isfield(event, "id")
+        id = string(event.id);
+    elseif isobject(event) && isprop(event, "id")
+        id = string(event.id);
+    end
+end
+function label = settingActionLabel(changedId)
+    if string(changedId) == "windowStartPanner"
+        label = "Panned preview window";
+    else
+        label = "Updated preview window";
+    end
+end
+function tf = isNormalClick(fig)
+    tf = true;
+    if isempty(fig) || ~isvalid(fig) || ~isprop(fig, 'SelectionType')
+        return;
+    end
+    tf = strcmp(fig.SelectionType, 'normal');
+end
+function count = scrollWheelCount(event)
+    count = 0;
+    if isstruct(event) && isfield(event, "VerticalScrollCount")
+        count = double(event.VerticalScrollCount);
+    elseif isobject(event) && isprop(event, "VerticalScrollCount")
+        count = double(event.VerticalScrollCount);
     end
 end
 

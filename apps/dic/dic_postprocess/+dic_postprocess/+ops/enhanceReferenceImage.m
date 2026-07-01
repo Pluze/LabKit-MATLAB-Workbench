@@ -2,7 +2,10 @@
 % Inputs are reference image data and overlay options. Output is normalized,
 % enhanced RGB image data. Side effects: none.
 function img = enhanceReferenceImage(referenceImage, opts)
-    img = dic_postprocess.ops.ensureRgb(im2double(referenceImage));
+    img = im2double(referenceImage);
+    if ndims(img) == 2
+        img = repmat(img, [1 1 3]);
+    end
     gains = reshape(opts.rgbGain, 1, 1, 3);
     img = img .* gains;
     img = dic_postprocess.ops.clamp01(img);

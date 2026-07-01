@@ -461,7 +461,9 @@ function fig = run(debugLog)
         cropWidth = currentCropWidth();
         cropHeight = currentCropHeight();
         canvasCenterXY = batch_crop.ops.originalToCanvas(geometry, item.centerXY) + placement.offset;
-        position = batch_crop.view.rectanglePosition(canvasCenterXY, cropWidth, cropHeight);
+        colStart = round(canvasCenterXY(1) - (cropWidth - 1) / 2);
+        rowStart = round(canvasCenterXY(2) - (cropHeight - 1) / 2);
+        position = [colStart - 0.5, rowStart - 0.5, cropWidth, cropHeight];
         hRect = rectangle(previewAxes, 'Position', position, ...
             'EdgeColor', [1 0.84 0], ...
             'LineWidth', 1.5, ...

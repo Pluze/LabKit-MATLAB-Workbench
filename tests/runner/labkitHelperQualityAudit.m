@@ -192,6 +192,8 @@ function className = allowedExceptionClass(path)
         className = "state-factory";
     elseif contains(path, "/+io/") && any(contains(string(name), ["Filter", "Extensions"]))
         className = "input-policy";
+    elseif contains(path, "/+export/") && startsWith(string(name), "write")
+        className = "export-side-effect";
     elseif startsWith(path, "tests/shared/")
         className = "test-api";
     else
