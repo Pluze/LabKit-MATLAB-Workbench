@@ -30,4 +30,66 @@ classdef GuiLayoutDicPreprocessTest < matlab.uitest.TestCase
                 'DIC preprocess should install a preview scroll-wheel zoom callback.');
         end
     end
+
+    methods (Test, TestTags = {'GUI', 'Workflow'})
+        function dic_preprocess_workflow_loads_and_auto_aligns_pair(testCase)
+            setupLabKitTestPath();
+            h = guiTestHelpers();
+            h.assertUifigureAvailable();
+            cleanup = onCleanup(@() h.closeAllFigures());
+
+            folder = tempname;
+            mkdir(folder);
+            folderCleanup = onCleanup(@() removeTempFolder(folder));
+            referencePath = fullfile(folder, 'reference.png');
+            movingPath = fullfile(folder, 'moving.png');
+            reference = syntheticDicImage();
+            imwrite(reference, referencePath);
+            imwrite(reference, movingPath);
+
+            fig = h.launchFigure('labkit_DICPreprocess_app', ...
+                'DIC Image Preprocess');
+            driver = labkitWorkflowDriver(fig);
+            driver.chooseFiles('referenceFile', referencePath);
+            driver.chooseFiles('movingFile', movingPath);
+
+            driver.click('Choose reference');
+            driver.click('Choose moving');
+            driver.click('Auto align current pair');
+
+            ui = driver.registry();
+            testCase.verifyTrue(contains(string(ui.controls.referenceFile.status.Value), ...
+                'reference.png'), ...
+                'DIC preprocess workflow should show the loaded reference image.');
+            testCase.verifyTrue(contains(string(ui.controls.movingFile.status.Value), ...
+                'moving.png'), ...
+                'DIC preprocess workflow should show the loaded moving image.');
+            testCase.verifyEqual(string(ui.controls.previewMode.valueHandle.Value), ...
+                "False-color overlay", ...
+                'DIC preprocess workflow should switch to false-color overlay after auto align.');
+            testCase.verifyTrue(any(contains(string(driver.textAreaValue('summaryText')), ...
+                'Reference')), ...
+                'DIC preprocess workflow should refresh the summary after loading images.');
+            testCase.verifyTrue(any(contains(lower(string(driver.textAreaValue('detailsText'))), ...
+                'transform matrix')), ...
+                'DIC preprocess workflow should refresh alignment details after auto align.');
+            testCase.verifyGreaterThan(numel(ui.controls.previewAxes.axesById.reference.Children), 0, ...
+                'DIC preprocess workflow should draw the reference preview.');
+            testCase.verifyGreaterThan(numel(ui.controls.previewAxes.axesById.current.Children), 0, ...
+                'DIC preprocess workflow should draw the current preview.');
+        end
+    end
+end
+
+function img = syntheticDicImage()
+    [x, y] = meshgrid(1:96, 1:72);
+    base = 0.35 + 0.25 .* sin(x ./ 6) + 0.25 .* cos(y ./ 5);
+    dots = mod(round(x ./ 9) + round(y ./ 7), 2) .* 0.12;
+    img = uint8(255 .* min(max(base + dots, 0), 1));
+end
+
+function removeTempFolder(folder)
+    if exist(folder, 'dir') == 7
+        rmdir(folder, 's');
+    end
 end
