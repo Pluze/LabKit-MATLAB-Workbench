@@ -48,27 +48,17 @@ The Code Analyzer action writes
 The launcher sets up the app path before opening an app. App-owned packages are
 reached through their owning app entrypoint and package namespace.
 
-The launcher refuses updates when the LabKit folder contains unmanaged
-non-LabKit files. First-time installation is allowed only from an empty runtime
-folder containing `labkit_launcher.m`. Older LabKit folders that do not contain
-`.labkit-managed-files.txt` should be rebuilt in a new empty folder instead of
-updated in place.
+The launcher update flow treats the LabKit folder as a replaceable runtime
+directory. Before copying a selected GitHub zip into place, the launcher moves
+the current top-level runtime contents into a dated `LabKit-previous-*`
+subfolder under the same folder. It then copies the downloaded LabKit root as a
+whole replacement instead of tracking individual managed files.
 
-`.labkit-managed-files.txt` is the launcher's managed-install manifest. The
-launcher writes it after a successful zip install or update. It is a plain text
-file with one repository-relative managed file path per line, for example
-`labkit_launcher.m`, `+labkit/+ui/app/create.m`, or
-`apps/image_measurement/image_match/labkit_ImageMatch_app.m`. During a later
-update or rollback, the launcher uses the manifest to decide which LabKit files
-may be overwritten, which previously managed files can be removed when they
-retire, and whether unexpected files exist in the runtime folder. After a
-managed install has this manifest, only manifest-listed LabKit files and
-generated `artifacts/` are allowed in the runtime folder.
-
-Keep lab data and exports outside the LabKit runtime folder. If a release
-removes or merges app entrypoints, the launcher warns before overwriting
-managed files; users who need old entrypoints should choose an older release,
-tag, or commit through `Versions`.
+Keep lab data and exports outside the LabKit runtime folder. The update prompt
+warns that current folder contents will be moved into the dated snapshot. If a
+release removes or merges app entrypoints, the launcher gives an additional
+warning before replacing the runtime; users who need old entrypoints should
+choose an older release, tag, or commit through `Versions`.
 
 ## App Catalog
 

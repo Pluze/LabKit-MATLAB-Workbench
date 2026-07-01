@@ -65,7 +65,7 @@ function info = launcherVersion()
     info = struct( ...
         "name", "labkit_launcher", ...
         "displayName", "LabKit App Launcher", ...
-        "version", "1.1.4", ...
+        "version", "1.1.5", ...
         "updated", "2026-07-01");
 end
 
@@ -571,19 +571,7 @@ function line = installFolderPolicyLine(root)
         line = "Git checkout detected: launcher zip updates are disabled; use git for this tree.";
         return;
     end
-    legacyFiles = legacyInstallFilesWithoutManifest(root);
-    if ~isempty(legacyFiles)
-        line = string(sprintf(['Folder hygiene: LabKit files exist without ' ...
-            '.labkit-managed-files.txt; rebuild in an empty folder before updating.']));
-        return;
-    end
-    unmanaged = unmanagedInstallFiles(root);
-    if isempty(unmanaged)
-        line = "Folder hygiene: no unmanaged files detected outside allowed runtime artifacts.";
-    else
-        line = string(sprintf(['Folder hygiene: %d unmanaged file(s) detected; ' ...
-            'updates will be refused until they are moved out.'], numel(unmanaged)));
-    end
+    line = "Update policy: the current runtime folder is moved into a dated LabKit-previous-* snapshot before replacement.";
 end
 
 function rows = versionSourceRows(sources)
@@ -1125,8 +1113,6 @@ function result = launcherUpdateFromStableZip(root, progressFcn)
     assertUpdateTargetRoot(root);
     notifyProgress(progressFcn, "Checking update mode...", 0.10);
     assertNotGitCheckout(root);
-    notifyProgress(progressFcn, "Checking install folder hygiene...", 0.11);
-    assertNoUnmanagedInstallFiles(root);
     notifyProgress(progressFcn, "Resolving latest GitHub release or tag...", 0.12);
     source = resolveStableZipSource();
     result = launcherUpdateFromZipSource(root, source, progressFcn, true);
@@ -1143,11 +1129,9 @@ function result = launcherUpdateFromZipSource(root, source, progressFcn, preflig
         assertUpdateTargetRoot(root);
         notifyProgress(progressFcn, "Checking update mode...", 0.10);
         assertNotGitCheckout(root);
-        notifyProgress(progressFcn, "Checking install folder hygiene...", 0.11);
-        assertNoUnmanagedInstallFiles(root);
     end
     if ~confirmUpdate(root, source.label)
-        result = summaryStruct(root, 0, 0, "Update canceled.");
+        result = summaryStruct(root, 0, 0, "", "Update canceled.");
         return;
     end
     notifyProgress(progressFcn, "Preparing update workspace...", 0.15);
@@ -1162,24 +1146,19 @@ function result = launcherUpdateFromZipSource(root, source, progressFcn, preflig
     assertInstallRoot(sourceRoot);
     removedApps = removedAppEntrypoints(root, sourceRoot);
     if ~isempty(removedApps) && ~confirmDestructiveUpdate(source.label, removedApps)
-        result = summaryStruct(root, 0, 0, ...
+        result = summaryStruct(root, 0, 0, "", ...
             "Update canceled because the candidate removes app entrypoints.");
         return;
     end
-    notifyProgress(progressFcn, "Reading managed file list...", 0.55);
-    newFiles = collectManagedFiles(sourceRoot);
-    oldFiles = readManifest(root);
-    notifyProgress(progressFcn, "Copying changed LabKit-managed files...", 0.75);
-    copiedCount = overlayManagedFiles(sourceRoot, root, newFiles, progressFcn);
-    notifyProgress(progressFcn, "Removing retired managed files...", 0.90);
-    deletedCount = deleteStaleManagedFiles(root, oldFiles, newFiles);
-    notifyProgress(progressFcn, "Writing update manifest...", 0.96);
-    writeManifest(root, newFiles);
+    notifyProgress(progressFcn, "Moving current LabKit folder into a dated snapshot...", 0.55);
+    [snapshotFolder, movedCount] = moveCurrentInstallToSnapshot(root, progressFcn);
+    notifyProgress(progressFcn, "Copying replacement LabKit folder...", 0.75);
+    copiedCount = copyReplacementTree(sourceRoot, root, progressFcn);
     notifyProgress(progressFcn, "Update complete.", 1.00);
-    result = summaryStruct(root, copiedCount, deletedCount, ...
-        sprintf(['Updated from %s. Copied %d file(s), removed %d ' ...
-        'retired managed file(s). Restart labkit_launcher.'], ...
-        char(source.label), copiedCount, deletedCount));
+    result = summaryStruct(root, copiedCount, movedCount, snapshotFolder, ...
+        sprintf(['Updated from %s. Moved %d old top-level item(s) to %s and ' ...
+        'copied %d replacement top-level item(s). Restart labkit_launcher.'], ...
+        char(source.label), movedCount, char(snapshotFolder), copiedCount));
     clear cleanup;
     removeFolderIfPresent(tempRoot);
 end
@@ -1422,89 +1401,12 @@ function applyLauncherGuiTestMode(fig)
     end
 end
 
-function assertNoUnmanagedInstallFiles(root)
-    legacyFiles = legacyInstallFilesWithoutManifest(root);
-    if ~isempty(legacyFiles)
-        preview = legacyFiles(1:min(20, numel(legacyFiles)));
-        suffix = '';
-        if numel(legacyFiles) > numel(preview)
-            suffix = sprintf('\n... and %d more file(s)', numel(legacyFiles) - numel(preview));
-        end
-        error("labkit_launcher:MissingManagedManifest", ...
-            ['LabKit update refused because this folder contains LabKit files ' ...
-            'but no managed install manifest. Create a new empty LabKit folder, ' ...
-            'put only labkit_launcher.m in it, then use Latest, Release, or ' ...
-            'Versions to rebuild the install. Move lab data and exports outside ' ...
-            'the LabKit folder before rebuilding.\n\nFiles found:\n%s%s'], ...
-            strjoin(cellstr(preview), newline), suffix);
-    end
-    unmanaged = unmanagedInstallFiles(root);
-    if isempty(unmanaged)
-        return;
-    end
-    preview = unmanaged(1:min(20, numel(unmanaged)));
-    suffix = '';
-    if numel(unmanaged) > numel(preview)
-        suffix = sprintf('\n... and %d more file(s)', numel(unmanaged) - numel(preview));
-    end
-    error("labkit_launcher:UnmanagedInstallFiles", ...
-        ['LabKit update refused because this folder contains files that are ' ...
-        'not part of LabKit-managed artifacts. Keep lab data and exports outside ' ...
-        'the LabKit install folder, then remove or move these files before updating:\n\n%s%s'], ...
-        strjoin(cellstr(preview), newline), suffix);
-end
-
-function unmanaged = unmanagedInstallFiles(root)
-    files = collectRelativeFiles(root);
-    manifestFiles = readManifest(root);
-    hasManifest = hasManagedManifest(root);
-    unmanaged = strings(1, 0);
-    for k = 1:numel(files)
-        rel = files(k);
-        if hasManifest && isLauncherRuntimePath(rel)
-            continue;
-        end
-        if hasManifest
-            isAllowed = any(manifestFiles == rel);
-        else
-            isAllowed = isLauncherBootstrapPath(rel);
-        end
-        if isAllowed
-            continue;
-        end
-        unmanaged(end+1) = rel;
-    end
-    unmanaged = sort(unique(unmanaged));
-end
-
-function files = legacyInstallFilesWithoutManifest(root)
-    if hasManagedManifest(root)
-        files = strings(1, 0);
-        return;
-    end
-    files = collectRelativeFiles(root);
-    keep = false(size(files));
-    for k = 1:numel(files)
-        keep(k) = isLauncherBootstrapPath(files(k));
-    end
-    files = sort(unique(files(~keep)));
-end
-
-function tf = hasManagedManifest(root)
-    manifestFiles = readManifest(root);
-    tf = exist(manifestPath(root), "file") == 2 && ~isempty(manifestFiles);
-end
-
-function tf = isLauncherBootstrapPath(rel)
-    rel = string(strrep(rel, filesep, "/"));
-    tf = rel == "labkit_launcher.m";
-end
-
 function tf = confirmUpdate(root, sourceLabel)
-    message = sprintf(['Download %s zip and overwrite ' ...
-        'LabKit-managed files in:\n\n%s\n\nLabKit install folders should not ' ...
-        'contain personal data, lab files, or exports. This update has already ' ...
-        'refused unmanaged files and will fully replace managed LabKit files.'], ...
+    message = sprintf(['Download %s zip and replace the LabKit runtime in:\n\n%s\n\n' ...
+        'The LabKit folder should contain only LabKit runtime files. Before ' ...
+        'installing, the launcher will move the current folder contents into a ' ...
+        'dated LabKit-previous-* subfolder, then copy the selected zip into place. ' ...
+        'Keep lab data and exports outside the LabKit folder.'], ...
         char(sourceLabel), root);
     try
         choice = questdlg(message, "Update LabKit", "Update", "Cancel", "Cancel");
@@ -1547,36 +1449,6 @@ function sourceRoot = findExtractedProjectRoot(extractRoot)
     error("labkit_launcher:InvalidZip", "Downloaded zip did not contain a LabKit project root.");
 end
 
-function files = collectManagedFiles(root)
-    entries = dir(fullfile(root, "**", "*"));
-    files = strings(1, 0);
-    for k = 1:numel(entries)
-        if entries(k).isdir
-            continue;
-        end
-        rel = relativePath(root, fullfile(entries(k).folder, entries(k).name));
-        if isManagedRelativePath(rel)
-            files(end+1) = string(rel);
-        end
-    end
-    files = sort(unique(files));
-end
-
-function tf = isManagedRelativePath(rel)
-    parts = split(string(strrep(rel, filesep, "/")), "/");
-    rootFiles = ["AGENTS.md", "LICENSE", "README.md", "buildfile.m", ...
-        "labkit_launcher.m", ".gitignore"];
-    managedRoots = ["+labkit", "apps", "docs", "scripts", "tests", ".agents", ".github"];
-    tf = ismember(string(rel), rootFiles) || ismember(parts(1), managedRoots);
-end
-
-function tf = isLauncherRuntimePath(rel)
-    rel = string(strrep(rel, filesep, "/"));
-    parts = split(rel, "/");
-    tf = rel == ".labkit-managed-files.txt" || ...
-        parts(1) == "artifacts";
-end
-
 function removed = removedAppEntrypoints(currentRoot, sourceRoot)
     currentApps = collectAppEntrypoints(currentRoot);
     sourceApps = collectAppEntrypoints(sourceRoot);
@@ -1596,111 +1468,80 @@ function apps = collectAppEntrypoints(root)
     apps = sort(unique(apps));
 end
 
-function copiedCount = overlayManagedFiles(sourceRoot, root, files, progressFcn)
+function [snapshotFolder, movedCount] = moveCurrentInstallToSnapshot(root, progressFcn)
+    snapshotFolder = uniqueInstallSnapshotFolder(root);
+    ensureFolder(snapshotFolder);
+    entries = installRootEntries(root);
+    [~, snapshotName, snapshotExt] = fileparts(snapshotFolder);
+    snapshotLeaf = string(snapshotName) + string(snapshotExt);
+    entries = entries(string({entries.name}) ~= snapshotLeaf);
+    movedCount = 0;
+    entryCount = numel(entries);
+    for k = 1:entryCount
+        name = string(entries(k).name);
+        source = fullfile(root, char(name));
+        target = fullfile(snapshotFolder, char(name));
+        notifyTopLevelProgress(progressFcn, "Moving old runtime", ...
+            k, entryCount, name, 0.55, 0.18);
+        movefile(source, target, "f");
+        movedCount = movedCount + 1;
+    end
+end
+
+function snapshotFolder = uniqueInstallSnapshotFolder(root)
+    stamp = datestr(now, 'yyyymmdd_HHMMSS');
+    baseName = "LabKit-previous-" + string(stamp);
+    snapshotFolder = fullfile(root, char(baseName));
+    suffix = 1;
+    while exist(snapshotFolder, "file") ~= 0 || exist(snapshotFolder, "dir") ~= 0
+        snapshotFolder = fullfile(root, char(baseName + "-" + string(suffix)));
+        suffix = suffix + 1;
+    end
+end
+
+function copiedCount = copyReplacementTree(sourceRoot, root, progressFcn)
+    entries = installRootEntries(sourceRoot);
     copiedCount = 0;
-    fileCount = numel(files);
-    for k = 1:numel(files)
-        source = fullfile(sourceRoot, char(files(k)));
-        target = fullfile(root, char(files(k)));
-        notifyCopyProgress(progressFcn, k, fileCount, copiedCount, files(k));
-        if filesAreEqual(source, target)
-            continue;
-        end
-        ensureFolder(fileparts(target));
+    entryCount = numel(entries);
+    for k = 1:entryCount
+        name = string(entries(k).name);
+        source = fullfile(sourceRoot, char(name));
+        target = fullfile(root, char(name));
+        notifyTopLevelProgress(progressFcn, "Copying replacement", ...
+            k, entryCount, name, 0.75, 0.24);
         copyfile(source, target, "f");
         copiedCount = copiedCount + 1;
     end
 end
 
-function notifyCopyProgress(progressFcn, index, fileCount, copiedCount, rel)
-    if fileCount == 0
-        notifyProgress(progressFcn, "No managed files to copy.", 0.89);
+function entries = installRootEntries(root)
+    entries = [dir(fullfile(root, "*")); dir(fullfile(root, ".*"))];
+    names = string({entries.name});
+    keep = ~ismember(names, [".", ".."]);
+    entries = entries(keep);
+    names = string({entries.name});
+    [~, uniqueOrder] = unique(names, "stable");
+    entries = entries(uniqueOrder);
+    [~, order] = sort(lower(string({entries.name})));
+    entries = entries(order);
+end
+
+function notifyTopLevelProgress(progressFcn, action, index, count, name, startValue, span)
+    if count == 0
+        notifyProgress(progressFcn, action + ": no top-level items.", startValue + span);
         return;
     end
-    if index == 1 || index == fileCount || mod(index, 25) == 0
-        value = 0.75 + 0.14 * min(1, max(0, index / fileCount));
-        message = sprintf("Checking managed files %d/%d; copied %d changed file(s): %s", ...
-            index, fileCount, copiedCount, char(rel));
-        notifyProgress(progressFcn, message, value);
-    end
+    value = startValue + span * min(1, max(0, index / count));
+    message = sprintf("%s %d/%d: %s", char(action), index, count, char(name));
+    notifyProgress(progressFcn, message, value);
 end
 
-function tf = filesAreEqual(leftPath, rightPath)
-    if exist(rightPath, "file") ~= 2
-        tf = false;
-        return;
-    end
-    leftInfo = dir(leftPath);
-    rightInfo = dir(rightPath);
-    if isempty(leftInfo) || isempty(rightInfo) || leftInfo.bytes ~= rightInfo.bytes
-        tf = false;
-        return;
-    end
-    tf = binaryFilesMatch(leftPath, rightPath);
-end
-
-function tf = binaryFilesMatch(leftPath, rightPath)
-    leftId = fopen(leftPath, "rb");
-    if leftId < 0
-        tf = false;
-        return;
-    end
-    leftCleanup = onCleanup(@() fclose(leftId));
-    rightId = fopen(rightPath, "rb");
-    if rightId < 0
-        tf = false;
-        return;
-    end
-    rightCleanup = onCleanup(@() fclose(rightId));
-    tf = true;
-    blockSize = 1024 * 1024;
-    while true
-        leftBlock = fread(leftId, blockSize, "*uint8");
-        rightBlock = fread(rightId, blockSize, "*uint8");
-        if ~isequal(leftBlock, rightBlock)
-            tf = false;
-            return;
-        end
-        if isempty(leftBlock)
-            return;
-        end
-    end
-end
-
-function deletedCount = deleteStaleManagedFiles(root, oldFiles, newFiles)
-    stale = setdiff(oldFiles, newFiles);
-    deletedCount = 0;
-    for k = 1:numel(stale)
-        target = fullfile(root, char(stale(k)));
-        if exist(target, "file") == 2 && isManagedRelativePath(stale(k))
-            delete(target);
-            deletedCount = deletedCount + 1;
-        end
-    end
-end
-
-function writeManifest(root, files)
-    writeText(manifestPath(root), strjoin(cellstr(files), newline) + newline);
-end
-
-function files = readManifest(root)
-    path = manifestPath(root);
-    if exist(path, "file") ~= 2
-        files = strings(1, 0);
-        return;
-    end
-    files = string(splitlines(strtrim(fileread(path)))).';
-    files = files(strlength(files) > 0);
-end
-
-function path = manifestPath(root)
-    path = fullfile(root, ".labkit-managed-files.txt");
-end
-
-function result = summaryStruct(root, copiedCount, deletedCount, message)
-    result = struct("updated", copiedCount > 0 || deletedCount > 0, ...
+function result = summaryStruct(root, copiedCount, movedCount, snapshotFolder, message)
+    result = struct("updated", copiedCount > 0, ...
         "root", string(root), ...
-        "copiedCount", copiedCount, "deletedCount", deletedCount, ...
+        "copiedCount", copiedCount, "deletedCount", 0, ...
+        "movedCount", movedCount, ...
+        "snapshotFolder", string(snapshotFolder), ...
         "message", string(message));
 end
 
@@ -1726,17 +1567,6 @@ function files = collectFiles(root, pattern, excludedFolders)
         end
         files(end+1) = filepath;
     end
-end
-
-function files = collectRelativeFiles(root)
-    entries = dir(fullfile(root, "**", "*"));
-    files = strings(1, 0);
-    for k = 1:numel(entries)
-        if ~entries(k).isdir
-            files(end+1) = string(relativePath(root, fullfile(entries(k).folder, entries(k).name)));
-        end
-    end
-    files = sort(unique(files));
 end
 
 function ensureFolder(folder)

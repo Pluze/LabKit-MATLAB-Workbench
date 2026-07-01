@@ -41,7 +41,9 @@ Use `Latest` in the launcher to update from the current `main` branch,
 `Release` to use the latest stable GitHub release, or `Versions` to choose a
 recent release, tag, or main-branch commit for a deliberate upgrade or
 rollback. Keep lab data and exported results in your own project folders; the
-LabKit folder is an application runtime folder.
+LabKit folder is an application runtime folder. During an update, the launcher
+moves the current runtime contents into a dated `LabKit-previous-*` subfolder
+before copying the selected LabKit zip into place.
 
 ## What You Get
 
