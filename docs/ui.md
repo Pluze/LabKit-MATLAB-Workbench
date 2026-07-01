@@ -144,7 +144,8 @@ Use these app-facing contracts:
   should remove by file `id` or `index` from `event.removedFiles` instead of
   deleting by path. Programmatic file replacement uses
   `labkit.ui.view.setValue`; programmatic file selection uses
-  `labkit.ui.view.setFileSelection`.
+  `labkit.ui.view.setFileSelection`. Apps with their own nearby status field
+  can pass `showStatus=false` to omit the panel's internal count/status text.
 - Single-file `filePanel` mode opens one file directly, replaces the previous
   file on the next choose action, does not offer recursive folder selection,
   and displays the short filename in one read-only text field instead of a

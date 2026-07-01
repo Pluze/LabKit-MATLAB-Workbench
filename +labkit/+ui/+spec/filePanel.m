@@ -21,6 +21,8 @@ function spec = filePanel(id, labelText, varargin)
 %   folderWarningProvider - optional function handle
 %       continue = f(folder, fileCount, threshold) used to customize or test
 %       large-folder confirmation.
+%   showStatus - logical, default true. When false, multi-file panels omit the
+%       internal count/status field so apps can provide their own summary.
 %   chooseLabel, removeLabel, clearLabel, status, emptyText, onChoose,
 %       onRemove, onSelectionChange, onClear - optional semantic props.
 %
@@ -46,6 +48,7 @@ function spec = filePanel(id, labelText, varargin)
     props.folderWarningThreshold = optionValue(props, ...
         'folderWarningThreshold', 500);
     validateWarningThreshold(props.folderWarningThreshold);
+    props.showStatus = logical(optionValue(props, 'showStatus', true));
     spec = makeSpec('filePanel', id, props, {}, struct());
 end
 

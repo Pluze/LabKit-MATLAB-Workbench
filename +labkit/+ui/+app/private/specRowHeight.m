@@ -58,6 +58,11 @@ function value = filePanelHeight(spec)
         value = 72;
         return;
     end
+    if ~logical(optionValue(spec.props, 'showStatus', true))
+        rows = 5;
+        value = max(170, 22 * max(1, double(rows)) + 64);
+        return;
+    end
     rows = 6;
     value = max(185, 22 * max(1, double(rows)) + 104);
 end

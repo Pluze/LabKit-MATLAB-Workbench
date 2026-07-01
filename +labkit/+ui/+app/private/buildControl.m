@@ -9,7 +9,8 @@ function ui = buildControl(ui, controlSpec, parentGrid, row, debug)
         case 'rangeField'
             ui = buildRangeField(ui, controlSpec, parentGrid, row);
         case 'panner'
-            ui = buildPanner(ui, controlSpec, parentGrid, row);
+            ui.controls.(controlSpec.id) = buildPannerControl(controlSpec, ...
+                parentGrid, row);
         case 'action'
             ui = buildAction(ui, controlSpec, parentGrid, row, [1 2]);
         case 'actionGroup'
@@ -105,81 +106,6 @@ function control = createFieldControl(parentGrid, kind, props, enabled)
     applySliderTicks(control, props);
 end
 
-function ui = buildPanner(ui, pannerSpec, parentGrid, row)
-    props = pannerSpec.props;
-    labelText = optionValue(props, 'label', pannerSpec.id);
-    enabled = optionValue(props, 'enabled', true);
-
-    label = uilabel(parentGrid, 'Text', labelText, ...
-        'HorizontalAlignment', 'right');
-    applyTextFit(label);
-    label.Layout.Row = row;
-    label.Layout.Column = 1;
-
-    hasSlider = pannerHasFiniteSlider(props);
-    if hasSlider
-        grid = uigridlayout(parentGrid, [1 2]);
-    else
-        grid = uigridlayout(parentGrid, [1 1]);
-    end
-    grid.Padding = [0 0 0 0];
-    grid.ColumnSpacing = 6;
-    if hasSlider
-        grid.ColumnWidth = {76, '1x'};
-    else
-        grid.ColumnWidth = {'1x'};
-    end
-    grid.Layout.Row = row;
-    grid.Layout.Column = 2;
-
-    valueSpinner = uispinner(grid, ...
-        'Enable', onOff(enabled));
-    valueSpinner.Layout.Row = 1;
-    valueSpinner.Layout.Column = 1;
-    applyCommonValueProps(valueSpinner, props);
-    valueSpinner.Value = clampNumericValue(valueSpinner.Value, valueSpinner.Limits);
-    applyPannerSpinnerStep(valueSpinner, props);
-    slider = [];
-    if hasSlider
-        slider = uislider(grid, 'Enable', onOff(enabled));
-        slider.Layout.Row = 1;
-        slider.Layout.Column = 2;
-        applyCommonValueProps(slider, props);
-        applySliderTicks(slider, props);
-        slider.Value = clampNumericValue(slider.Value, slider.Limits);
-        syncPannerValue(slider, valueSpinner, slider.Value);
-    end
-
-    adapter = baseAdapter(pannerSpec, 'panner');
-    adapter.label = label;
-    adapter.grid = grid;
-    adapter.valueSpinner = valueSpinner;
-    adapter.slider = slider;
-    adapter.handle = valueSpinner;
-    adapter.valueHandle = valueSpinner;
-    adapter.getValue = @() valueSpinner.Value;
-    adapter.setValue = @(value) setPannerValue(slider, valueSpinner, value);
-    ui.controls.(pannerSpec.id) = adapter;
-
-    appCallback = optionValue(props, 'onChange', []);
-    if hasSlider
-        slider.ValueChangedFcn = semanticPannerSliderCallback(pannerSpec.id, appCallback);
-        if isprop(slider, 'ValueChangingFcn')
-            slider.ValueChangingFcn = semanticPannerSliderChangingCallback( ...
-                pannerSpec.id, appCallback);
-        end
-        setOriginalCallbackName(slider, appCallback);
-    end
-    valueSpinner.ValueChangedFcn = semanticPannerSpinnerCallback( ...
-        pannerSpec.id, appCallback);
-    setOriginalCallbackName(valueSpinner, appCallback);
-end
-
-function tf = pannerHasFiniteSlider(props)
-    tf = isfield(props, 'limits') && numel(props.limits) == 2 && ...
-        all(isfinite(double(props.limits)));
-end
-
 function applySliderTicks(control, props)
     if isempty(control) || ~contains(class(control), 'Slider') || ...
             ~isfield(props, 'showTicks') || logical(props.showTicks)
@@ -191,50 +117,6 @@ function applySliderTicks(control, props)
     if isprop(control, 'MinorTicks')
         control.MinorTicks = [];
     end
-end
-
-function setPannerValue(slider, valueSpinner, value)
-    value = clampNumericValue(value, valueSpinner.Limits);
-    sliderValueMatches = isempty(slider) || isequaln(slider.Value, value);
-    if sliderValueMatches && isequaln(valueSpinner.Value, value)
-        return;
-    end
-    sliderCallback = [];
-    if ~isempty(slider)
-        sliderCallback = slider.ValueChangedFcn;
-    end
-    spinnerCallback = valueSpinner.ValueChangedFcn;
-    cleanupObj = onCleanup(@() restorePannerCallbacks( ...
-        slider, sliderCallback, valueSpinner, spinnerCallback));
-    if ~isempty(slider)
-        slider.ValueChangedFcn = [];
-    end
-    valueSpinner.ValueChangedFcn = [];
-    syncPannerValue(slider, valueSpinner, value);
-    clear cleanupObj;
-end
-
-function syncPannerValue(slider, valueSpinner, value)
-    value = clampNumericValue(value, valueSpinner.Limits);
-    if ~isempty(slider)
-        slider.Value = clampNumericValue(value, slider.Limits);
-    end
-    valueSpinner.Value = value;
-end
-
-function applyPannerSpinnerStep(valueSpinner, props)
-    if isfield(props, 'step')
-        return;
-    end
-    if ~all(isfinite(double(valueSpinner.Limits)))
-        return;
-    end
-    valueSpinner.Step = pannerStepAmount(props, valueSpinner.Limits);
-end
-
-function restorePannerCallbacks(slider, sliderCallback, valueSpinner, spinnerCallback)
-    restoreValueChangedCallback(slider, sliderCallback);
-    restoreValueChangedCallback(valueSpinner, spinnerCallback);
 end
 
 function ui = buildRangeField(ui, rangeSpec, parentGrid, row)
@@ -419,69 +301,6 @@ function callback = semanticValueCallback(id, appCallback)
     end
 end
 
-function callback = semanticPannerSliderCallback(id, appCallback)
-    callback = @wrapped;
-
-    function wrapped(source, rawEvent)
-        ui = currentUiRegistry(source);
-        if isFigureBusy(ui.figure)
-            return;
-        end
-        control = ui.controls.(id);
-        control.setValue(source.Value);
-        if isempty(appCallback)
-            return;
-        end
-        event = semanticEvent(control, source, rawEvent, 'user');
-        event.value = control.getValue();
-        event.action = 'slide';
-        runSemanticAppCallback(ui, control, event, appCallback, id);
-    end
-end
-
-function callback = semanticPannerSliderChangingCallback(id, appCallback)
-    callback = @wrapped;
-
-    function wrapped(source, rawEvent)
-        ui = currentUiRegistry(source);
-        if isFigureBusy(ui.figure)
-            return;
-        end
-        control = ui.controls.(id);
-        nextValue = rawEventValue(rawEvent, 'Value', source.Value);
-        control.setValue(nextValue);
-        if isempty(appCallback)
-            return;
-        end
-        event = semanticEvent(control, source, rawEvent, 'user');
-        event.value = control.getValue();
-        event.action = 'slide';
-        runSemanticAppCallback(ui, control, event, appCallback, id);
-    end
-end
-
-function callback = semanticPannerSpinnerCallback(id, appCallback)
-    callback = @wrapped;
-
-    function wrapped(source, rawEvent)
-        ui = currentUiRegistry(source);
-        if isFigureBusy(ui.figure)
-            return;
-        end
-        control = ui.controls.(id);
-        previousValue = rawEventValue(rawEvent, 'PreviousValue', []);
-        control.setValue(source.Value);
-        if isempty(appCallback) || isequaln(previousValue, control.getValue())
-            return;
-        end
-        event = semanticEvent(control, source, rawEvent, 'user');
-        event.value = control.getValue();
-        event.previousValue = previousValue;
-        event.action = 'edit';
-        runSemanticAppCallback(ui, control, event, appCallback, id);
-    end
-end
-
 function callback = semanticTableCellEditCallback(id, appCallback)
     if isempty(appCallback)
         callback = [];
@@ -503,34 +322,6 @@ function callback = semanticTableCellEditCallback(id, appCallback)
         event.editData = rawEventValue(rawEvent, 'EditData', []);
         runSemanticAppCallback(ui, control, event, appCallback, id);
     end
-end
-
-function step = pannerStepAmount(props, limits)
-    limits = double(limits);
-    if ~all(isfinite(limits))
-        step = 1;
-        return;
-    end
-    span = max(eps, diff(limits));
-    step = optionValue(props, 'step', NaN);
-    if ~isfinite(step) || step <= 0
-        fraction = optionValue(props, 'stepFraction', 0.002);
-        step = span .* max(eps, double(fraction));
-    end
-    if isfield(props, 'minStep')
-        step = max(step, double(props.minStep));
-    end
-    if isfield(props, 'maxStep')
-        step = min(step, double(props.maxStep));
-    end
-end
-
-function value = clampNumericValue(value, limits)
-    value = double(value);
-    if ~isfinite(value)
-        value = limits(1);
-    end
-    value = min(limits(2), max(limits(1), value));
 end
 
 function callback = semanticTableSelectionCallback(id, appCallback)

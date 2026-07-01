@@ -200,6 +200,48 @@ classdef LauncherGuiTest < matlab.uitest.TestCase
             clear labkit_launcher;
             cd(originalFolder);
         end
+
+        function launcher_refresh_handles_added_and_removed_apps(testCase)
+            root = setupLabKitTestPath();
+            h = guiTestHelpers();
+            h.assertUifigureAvailable();
+            h.closeAllFigures();
+            cleanupFigures = onCleanup(@() h.closeAllFigures());
+
+            tempRoot = string(tempname);
+            mkdir(tempRoot);
+            testCase.addTeardown(@() removeFolderIfPresent(tempRoot));
+            copyfile(fullfile(root, "labkit_launcher.m"), ...
+                fullfile(tempRoot, "labkit_launcher.m"));
+            createMinimalLauncherApp(tempRoot, "alpha", "labkit_Alpha_app");
+            createMinimalLauncherApp(tempRoot, "beta", "labkit_Beta_app");
+            originalFolder = pwd;
+            cd(tempRoot);
+            testCase.addTeardown(@() cd(originalFolder));
+            clear labkit_launcher;
+
+            fig = labkit_launcher();
+            drawnow;
+            ui = getappdata(fig, 'labkitUiRegistry');
+            tableHandle = ui.controls.appTable.table;
+            betaRow = find(string(tableHandle.Data(:, 5)) == "labkit_Beta_app", 1);
+            invokeTableSelection(tableHandle, betaRow);
+            createMinimalLauncherApp(tempRoot, "gamma", "labkit_Gamma_app");
+            h.invokeButton(fig, 'Refresh App List');
+            drawnow;
+            assertDetailsCommand(fig, "labkit_Beta_app", ...
+                'Adding an app should not move the current launcher selection.');
+
+            delete(fullfile(tempRoot, "apps", "beta", "labkit_Beta_app.m"));
+            h.invokeButton(fig, 'Refresh App List');
+            drawnow;
+            assertDetailsCommand(fig, string(tableHandle.Data{1, 5}), ...
+                'Removing the selected app should fall back to the first available app.');
+            clear cleanupFigures;
+            h.closeAllFigures();
+            clear labkit_launcher;
+            cd(originalFolder);
+        end
     end
 end
 
@@ -271,7 +313,50 @@ function verify_launcher_layout()
     h.assertAnyTableColumns(fig, {'Family', 'App', 'Version', 'Updated', 'Command'});
     assertLauncherTextAreasHaveRoom(fig);
     assertInfoContains(fig, "Project structure looks complete");
+    assertRefreshPreservesSelectedApp(fig, h);
+end
+
+function assertRefreshPreservesSelectedApp(fig, h)
+    ui = getappdata(fig, 'labkitUiRegistry');
+    tableHandle = ui.controls.appTable.table;
+    if size(tableHandle.Data, 1) < 2
+        return;
+    end
+    targetRow = 2;
+    expectedCommand = string(tableHandle.Data{targetRow, 5});
+    invokeTableSelection(tableHandle, targetRow);
     h.invokeButton(fig, 'Refresh App List');
+    drawnow;
+    details = string(ui.controls.selectedDetails.textArea.Value);
+    assert(any(contains(details, "Command: " + expectedCommand)), ...
+        'Refreshing the launcher app list should preserve the selected app when it still exists.');
+end
+
+function assertDetailsCommand(fig, expectedCommand, message)
+    ui = getappdata(fig, 'labkitUiRegistry');
+    details = string(ui.controls.selectedDetails.textArea.Value);
+    assert(any(contains(details, "Command: " + string(expectedCommand))), message);
+end
+
+function invokeTableSelection(tableHandle, row)
+    event = struct('Selection', [row 1], 'Indices', [row 1]);
+    if isprop(tableHandle, 'SelectionChangedFcn') && ~isempty(tableHandle.SelectionChangedFcn)
+        tableHandle.SelectionChangedFcn(tableHandle, event);
+    else
+        tableHandle.CellSelectionCallback(tableHandle, event);
+    end
+end
+
+function createMinimalLauncherApp(root, family, command)
+    folder = fullfile(root, "apps", family);
+    mkdir(folder);
+    writeText(fullfile(folder, command + ".m"), sprintf([ ...
+        'function varargout = %s(varargin)\n' ...
+        '%%%s Minimal launcher test app.\n' ...
+        'if nargout > 0\n' ...
+        '    varargout = {[]};\n' ...
+        'end\n' ...
+        'end\n'], command, upper(command)));
 end
 
 function assertCompactLauncherLayout(fig)
@@ -443,4 +528,11 @@ function removeFolderIfPresent(folder)
         end
         rmdir(folder, "s");
     end
+end
+
+function writeText(filepath, text)
+    fid = fopen(filepath, 'w');
+    assert(fid > 0, 'Could not create launcher test file: %s', filepath);
+    cleanup = onCleanup(@() fclose(fid));
+    fprintf(fid, '%s', text);
 end

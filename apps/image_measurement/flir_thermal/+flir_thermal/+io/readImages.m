@@ -18,14 +18,17 @@ function [items, report] = readImages(paths, opts)
 end
 
 function item = itemFromRecord(record, template)
+    labels = flir_thermal.view.rangeControlLabels();
     item = template;
     item.path = record.path;
     item.name = record.name;
     item.format = record.format;
     item.raw = record.raw;
     item.temperatureC = record.temperatureC;
+    [item.hotSpot, item.coldSpot] = ...
+        flir_thermal.ops.extremeTemperatureReadings(record.temperatureC);
     item.displayRange = initialRange(item);
-    item.rangePreset = "-20 to 120 C";
+    item.rangePreset = labels.defaultPreset;
     item.rangeControlBounds = flir_thermal.view.rangeControlBounds( ...
         item, item.rangePreset, [-20 120]);
     item.rangeAdjusted = false;

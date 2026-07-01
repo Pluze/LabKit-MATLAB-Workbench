@@ -456,7 +456,7 @@ function fig = run(debugLog)
 
         if hasImage
             item = S.items(S.currentIndex);
-            cropLimit = cropSizeUpperLimit(item.image);
+            cropLimit = batch_crop.ops.cropSizeUpperLimit(item.image);
             labkit.ui.view.setLimits(ui, "cropWidth", ...
                 [1, cropLimit]);
             labkit.ui.view.setLimits(ui, "cropHeight", ...
@@ -467,7 +467,7 @@ function fig = run(debugLog)
             labkit.ui.view.setValue(ui, "rotation", item.angleDeg);
             labkit.ui.view.setValue(ui, "paddingPercent", ...
                 batch_crop.state.itemPaddingPercent(item, edtPaddingPercent.Value));
-            centerLimits = centerCoordinateLimits(currentGeometry());
+            centerLimits = batch_crop.view.centerCoordinateLimits(currentGeometry());
             labkit.ui.view.setLimits(ui, "centerX", centerLimits.x);
             labkit.ui.view.setLimits(ui, "centerY", centerLimits.y);
             labkit.ui.view.setValue(ui, "centerX", item.centerXY(1));
@@ -483,7 +483,7 @@ function fig = run(debugLog)
             labkit.ui.view.setValue(ui, "centerY", 1);
         end
 
-        refreshScaleTool();
+        refreshScaleControls([]);
         btnExport.Enable = enabled;
     end
 
@@ -502,42 +502,10 @@ function fig = run(debugLog)
         ensureCurrentCenter();
         geometry = currentGeometry();
         placement = batch_crop.view.previewPlacement(geometry);
-        render = batch_crop.view.previewRenderData(geometry, placement);
-        hImage = labkit.ui.view.drawImage(ui, 'preview', render.imageData, ...
-            "title", "Padded rotation preview + fixed crop", ...
-            "axis", "crop", ...
-            "options", struct("xData", render.xData, "yData", render.yData));
-        hold(previewAxes, 'on');
         item = S.items(S.currentIndex);
-        previewScale = geometryScale(geometry);
-        cropWidth = max(1, currentCropWidth() * previewScale);
-        cropHeight = max(1, currentCropHeight() * previewScale);
-        canvasCenterXY = batch_crop.ops.originalToCanvas(geometry, item.centerXY) + placement.offset;
-        colStart = round(canvasCenterXY(1) - (cropWidth - 1) / 2);
-        rowStart = round(canvasCenterXY(2) - (cropHeight - 1) / 2);
-        position = [colStart - 0.5, rowStart - 0.5, cropWidth, cropHeight];
-        hRect = rectangle(previewAxes, 'Position', position, ...
-            'EdgeColor', [1 0.84 0], ...
-            'LineWidth', 1.5, ...
-            'LineStyle', '-');
-        hLineX = plot(previewAxes, ...
-            [canvasCenterXY(1) - 16, canvasCenterXY(1) + 16], ...
-            [canvasCenterXY(2), canvasCenterXY(2)], ...
-            'Color', [0 0.85 1], ...
-            'LineWidth', 1.25);
-        hLineY = plot(previewAxes, ...
-            [canvasCenterXY(1), canvasCenterXY(1)], ...
-            [canvasCenterXY(2) - 16, canvasCenterXY(2) + 16], ...
-            'Color', [0 0.85 1], ...
-            'LineWidth', 1.25);
-        hold(previewAxes, 'off');
-        scaleTool.setBackground(hImage);
-        scaleTool.setImageSize(size(item.image));
-        scaleTool.refresh();
-        cropSession.setBackground(hImage);
-        cropSession.setGraphics([hRect, hLineX, hLineY]);
-        cropSession.activateIfAvailable();
-        batch_crop.view.restorePreviewView(previewAxes, viewState, geometry, placement);
+        tools = struct('scaleTool', scaleTool, 'cropSession', cropSession);
+        batch_crop.view.drawPreview(ui, previewAxes, geometry, placement, item, ...
+            [currentCropWidth(), currentCropHeight()], tools, viewState);
     end
 
     function refreshSummary()
@@ -545,7 +513,7 @@ function fig = run(debugLog)
             currentCropWidth(), currentCropHeight(), currentPaddingPercent(), ddFormat.Value);
         txtDetails.Value = batch_crop.view.detailLines(S, S.currentIndex, ...
             currentCropWidth(), currentCropHeight(), currentPaddingPercent());
-        refreshScaleStatus();
+        refreshScaleControls(txtScaleStatus);
     end
 
     function resetPreviewAxes()
@@ -570,7 +538,7 @@ function fig = run(debugLog)
 
     function width = currentCropWidth()
         if strcmpi(currentScaleMode(), "Physical") && hasCurrentImage()
-            cal = currentScaleCalibration();
+            cal = batch_crop.state.itemScaleCalibration(S.items, S.currentIndex);
             if batch_crop.state.isScaleCalibrationSet(cal)
                 pixelsPerUnit = batch_crop.ops.pixelsPerUnitForUnit(cal, currentScaleUnit());
                 width = max(1, round(double(edtPhysicalWidth.Value) * pixelsPerUnit));
@@ -582,7 +550,7 @@ function fig = run(debugLog)
 
     function height = currentCropHeight()
         if strcmpi(currentScaleMode(), "Physical") && hasCurrentImage()
-            cal = currentScaleCalibration();
+            cal = batch_crop.state.itemScaleCalibration(S.items, S.currentIndex);
             if batch_crop.state.isScaleCalibrationSet(cal)
                 pixelsPerUnit = batch_crop.ops.pixelsPerUnitForUnit(cal, currentScaleUnit());
                 height = max(1, round(double(edtPhysicalHeight.Value) * pixelsPerUnit));
@@ -600,13 +568,6 @@ function fig = run(debugLog)
         unitName = string(ddScaleUnit.Value);
     end
 
-    function cal = currentScaleCalibration()
-        cal = [];
-        if hasCurrentImage() && isfield(S.items(S.currentIndex), 'scaleCalibration')
-            cal = S.items(S.currentIndex).scaleCalibration;
-        end
-    end
-
     function percent = currentPaddingPercent()
         if hasCurrentImage()
             percent = batch_crop.state.itemPaddingPercent( ...
@@ -618,17 +579,8 @@ function fig = run(debugLog)
 
     function geometry = currentGeometry()
         item = S.items(S.currentIndex);
-        key = batch_crop.state.canvasCacheKey(S.currentIndex, item, currentPaddingPercent());
-        if S.canvasCache.valid && isequal(S.canvasCache.key, key)
-            geometry = S.canvasCache.geometry;
-            return;
-        end
-
-        geometry = batch_crop.ops.prepareCropCanvas(item.image, struct( ...
-            'angleDeg', item.angleDeg, ...
-            'paddingPercent', currentPaddingPercent(), ...
-            'maxCanvasPixels', 1.2e6));
-        S.canvasCache = struct('valid', true, 'key', key, 'geometry', geometry);
+        [geometry, S.canvasCache] = batch_crop.state.currentGeometry( ...
+            S.canvasCache, S.currentIndex, item, currentPaddingPercent());
     end
 
     function state = capturePreviewView()
@@ -666,64 +618,19 @@ function fig = run(debugLog)
         S.cropDefaultsInitialized = true;
     end
 
-    function limit = cropSizeUpperLimit(imageData)
-        limit = max(1, ceil(2 * hypot(double(size(imageData, 2)), ...
-            double(size(imageData, 1)))));
-    end
-
-    function limits = centerCoordinateLimits(geometry)
-        scale = geometryScale(geometry);
-        limits = struct( ...
-            'x', [1 - double(geometry.padding.left) / scale, ...
-                double(geometry.sourceWidth) + double(geometry.padding.right) / scale], ...
-            'y', [1 - double(geometry.padding.top) / scale, ...
-                double(geometry.sourceHeight) + double(geometry.padding.bottom) / scale]);
-    end
-
     function centerXY = adjustedCropCenter(centerXY)
         geometry = currentGeometry();
         centerXY = batch_crop.ops.clampCropCenterToCanvas(geometry, centerXY, ...
             [currentCropWidth(), currentCropHeight()]);
     end
 
-    function scale = geometryScale(geometry)
-        scale = 1;
-        if isfield(geometry, 'coordinateScale') && ...
-                isfinite(double(geometry.coordinateScale)) && ...
-                double(geometry.coordinateScale) > 0
-            scale = double(geometry.coordinateScale);
-        end
-    end
-
     function tf = hasCurrentImage()
         tf = ~isempty(S.items) && S.currentIndex >= 1 && S.currentIndex <= numel(S.items);
     end
 
-    function refreshScaleTool()
-        physicalMode = strcmpi(currentScaleMode(), "Physical");
-        hasImage = hasCurrentImage();
-        if scaleTool.isReferenceEditActive()
-            scaleTool.setEnabled(struct( ...
-                'hasImage', hasImage && physicalMode, ...
-                'blockInputs', ~physicalMode, ...
-                'blockPlacement', true));
-            return;
-        end
-        if hasImage
-            scaleTool.setCalibration(S.items(S.currentIndex).scaleCalibration);
-            scaleTool.setImageSize(size(S.items(S.currentIndex).image));
-        else
-            scaleTool.setCalibration([]);
-            scaleTool.setImageSize([]);
-        end
-        scaleTool.setEnabled(struct( ...
-            'hasImage', hasImage && physicalMode, ...
-            'blockInputs', ~physicalMode, ...
-            'blockPlacement', true));
-    end
-
-    function refreshScaleStatus()
-        txtScaleStatus.Value = batch_crop.view.scaleStatusText(S, S.currentIndex, currentScaleMode(), ...
+    function refreshScaleControls(statusControl)
+        batch_crop.view.refreshScaleControls(scaleTool, statusControl, S.items, ...
+            S.currentIndex, currentScaleMode(), ...
             [edtPhysicalWidth.Value, edtPhysicalHeight.Value], currentScaleUnit());
     end
 

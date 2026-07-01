@@ -132,6 +132,37 @@ classdef RepositoryHygieneGuardrailTest < matlab.unittest.TestCase
                 'Guardrail pattern must allow scalar helper calls and non-state conversions.');
         end
 
+        function appUiLabelHelpersOwnDeclaredLongLiterals(testCase)
+            root = setupLabKitTestPath();
+            actual = collectDuplicatedAppUiLabelHelperLiterals(root);
+            testCase.verifyEmpty(actual, ...
+                ['long user-visible literals declared by app UI label helpers ' ...
+                'must not be hard-coded again in the same app source or tests. ' ...
+                'Reference the helper instead. Findings: ' ...
+                strjoin(cellstr(actual), ', ')]);
+        end
+
+        function appUiLabelHelperPatternCatchesDuplicatedLiteral(testCase)
+            helperFile = "apps/family/sample/+sample/+view/sampleLabels.m";
+            appFiles = [
+                helperFile
+                "apps/family/sample/+sample/run.m"
+                "tests/cases/gui/apps/family/sample/GuiLayoutSampleTest.m"
+            ];
+            contents = containers.Map('KeyType', 'char', 'ValueType', 'any');
+            contents(char(helperFile)) = [
+                "function labels = sampleLabels()"
+                "labels = struct('runAction', ""Run current sample"");"
+                "end"
+            ];
+            contents(char(appFiles(2))) = "buttonText = ""Run current sample"";";
+            contents(char(appFiles(3))) = "expected = {'Run current sample'};";
+
+            findings = duplicatedLabelLiteralsForFiles(appFiles, contents);
+            testCase.verifyEqual(numel(findings), 2, ...
+                'Guardrail helper should catch source and test copies of a declared UI label.');
+        end
+
         function matlabFunctionsDoNotUseSingleLineBodies(testCase)
             root = setupLabKitTestPath();
             tracked = gitTrackedFiles(root);
@@ -314,6 +345,119 @@ function tf = anyPatternMatches(text, patterns)
             return;
         end
     end
+end
+
+function findings = collectDuplicatedAppUiLabelHelperLiterals(root)
+    tracked = gitTrackedFiles(root);
+    matlabFiles = tracked(endsWith(tracked, ".m"));
+    contents = containers.Map('KeyType', 'char', 'ValueType', 'any');
+    for k = 1:numel(matlabFiles)
+        filepath = fullfile(root, char(matlabFiles(k)));
+        if exist(filepath, 'file') == 2
+            contents(char(matlabFiles(k))) = readCachedLines(filepath);
+        end
+    end
+    findings = duplicatedLabelLiteralsForFiles(matlabFiles, contents);
+end
+
+function findings = duplicatedLabelLiteralsForFiles(files, contents)
+    findings = strings(1, 0);
+    helperFiles = files(arrayfun(@isAppUiLabelHelperFile, files));
+    for k = 1:numel(helperFiles)
+        helperFile = helperFiles(k);
+        if ~isKey(contents, char(helperFile))
+            continue;
+        end
+        literals = helperUserVisibleLiterals(contents(char(helperFile)));
+        if isempty(literals)
+            continue;
+        end
+        appName = appNameFromPath(helperFile);
+        scopedFiles = files(arrayfun(@(f) isSameAppSourceOrTest(f, appName), files));
+        scopedFiles = setdiff(scopedFiles, helperFile, "stable");
+        for iLiteral = 1:numel(literals)
+            literal = literals(iLiteral);
+            for iFile = 1:numel(scopedFiles)
+                file = scopedFiles(iFile);
+                if ~isKey(contents, char(file))
+                    continue;
+                end
+                lines = contents(char(file));
+                lineNumbers = linesContainingQuotedLiteral(lines, literal);
+                for iLine = 1:numel(lineNumbers)
+                    findings(end + 1) = helperFile + " owns " + ...
+                        quoteForFinding(literal) + " but " + file + ":" + ...
+                        string(lineNumbers(iLine)) + " hard-codes it";
+                end
+            end
+        end
+    end
+end
+
+function tf = isAppUiLabelHelperFile(file)
+    file = string(file);
+    tf = startsWith(file, "apps/") && contains(file, "/+view/") && ...
+        ~isempty(regexp(file, '(Labels|Choices|Items)\.m$', 'once'));
+end
+
+function literals = helperUserVisibleLiterals(lines)
+    literals = strings(1, 0);
+    pattern = """([^""]{8,})""|'((?:''|[^']){8,})'";
+    for k = 1:numel(lines)
+        line = string(lines(k));
+        if startsWith(strtrim(line), "%")
+            continue;
+        end
+        matches = regexp(line, pattern, 'tokens');
+        for iMatch = 1:numel(matches)
+            token = string(matches{iMatch});
+            token = token(strlength(token) > 0);
+            if isempty(token)
+                continue;
+            end
+            literal = replace(token(1), "''", "'");
+            if isUserVisibleLabelLiteral(literal)
+                literals(end + 1) = literal;
+            end
+        end
+    end
+    literals = unique(literals, "stable");
+end
+
+function tf = isUserVisibleLabelLiteral(literal)
+    tf = strlength(literal) >= 8 && ...
+        isempty(regexp(literal, '^[A-Za-z]\w*$', 'once')) && ...
+        ~startsWith(literal, "labkit:");
+end
+
+function appName = appNameFromPath(file)
+    parts = split(string(file), "/");
+    packagePart = parts(startsWith(parts, "+"));
+    appName = extractAfter(packagePart(1), 1);
+end
+
+function tf = isSameAppSourceOrTest(file, appName)
+    file = string(file);
+    packageToken = "/+" + appName + "/";
+    testToken = "/" + appName + "/";
+    tf = contains("/" + file, packageToken) || ...
+        (startsWith(file, "tests/") && contains("/" + file + "/", testToken));
+end
+
+function lineNumbers = linesContainingQuotedLiteral(lines, literal)
+    lineNumbers = zeros(1, 0);
+    singleQuoted = "'" + replace(literal, "'", "''") + "'";
+    doubleQuoted = """" + literal + """";
+    for k = 1:numel(lines)
+        line = string(lines(k));
+        if contains(line, singleQuoted) || contains(line, doubleQuoted)
+            lineNumbers(end + 1) = k;
+        end
+    end
+end
+
+function text = quoteForFinding(literal)
+    text = """" + literal + """";
 end
 
 function files = collectNonAsciiFiles(root, tracked)

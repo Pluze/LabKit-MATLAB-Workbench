@@ -57,6 +57,9 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
 - App GUI tests should prefer semantic contracts such as expected command
   buttons, dropdown choices, tabs, tables, axes, callbacks, workflow outcomes,
   and debug traces.
+  When an app exposes user-visible labels, option values, or action text
+  through an app-local `*Labels`, `*Choices`, or `*Items` helper, GUI and unit
+  tests must call that helper instead of duplicating the literal strings.
   Do not use raw component-class count snapshots in app GUI tests; those couple
   app tests to framework implementation details such as whether a readonly
   display is backed by an edit field, label, or text area. Put low-level
@@ -76,6 +79,11 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
 - Repository-wide guardrails should cache tracked-file lists or file contents
   within the test process when multiple assertions scan the same scope. Do not
   add duplicate full-tree scans that differ only by diagnostic wording.
+- Project hygiene guardrails may scan app source and test text to enforce that
+  declared UI label helpers own their long user-visible literals. Keep this
+  check scoped to named label/choice helpers so ordinary one-off UI labels,
+  axis labels, error messages, and short units do not become false-positive
+  architecture debt.
 - Runner-complexity and helper-quality checks should start as dry-run reports.
   Do not add a blocking minimum-helper-length guardrail. If a helper-quality
   guardrail becomes necessary, it must report boundary class, call count,

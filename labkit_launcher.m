@@ -10,6 +10,23 @@ function varargout = labkit_launcher(varargin)
 % it can still restore a damaged zip install when packages, apps, or scripts
 % have been deleted. App launch still adds the restored app folders to the
 % MATLAB path before calling the selected app entry point.
+%
+% Maintenance map:
+%   Section: Public entrypoint and version
+%   Section: Path setup
+%   Section: Main launcher window
+%   Section: Version manager window
+%   Section: Version manager support
+%   Section: Table selection and display helpers
+%   Section: Launcher status messages
+%   Section: App discovery and catalog metadata
+%   Section: Clean Artifacts action
+%   Section: Code Analyzer action
+%   Section: Update entrypoints and install transaction
+%   Section: GitHub update source discovery
+%   Section: Update validation and launcher window helpers
+%   Section: Update install file operations
+%   Section: Shared filesystem and path helpers
 
     root = fileparts(mfilename('fullpath'));
     mode = parseMode(varargin);
@@ -34,6 +51,8 @@ function varargout = labkit_launcher(varargin)
         varargout = {fig};
     end
 end
+
+%% Section: Public entrypoint and version
 
 function mode = parseMode(args)
     mode = "gui";
@@ -65,7 +84,7 @@ function info = launcherVersion()
     info = struct( ...
         "name", "labkit_launcher", ...
         "displayName", "LabKit App Launcher", ...
-        "version", "1.1.5", ...
+        "version", "1.1.6", ...
         "updated", "2026-07-01");
 end
 
@@ -73,6 +92,8 @@ function titleText = launcherVersionTitle()
     info = launcherVersion();
     titleText = info.displayName + " v" + info.version + " (" + info.updated + ")";
 end
+
+%% Section: Path setup
 
 function initializePath(root, apps)
     addPathIfMissing(root);
@@ -87,6 +108,8 @@ function addPathIfMissing(folder, varargin)
         addpath(folder, varargin{:});
     end
 end
+
+%% Section: Main launcher window
 
 function fig = runLauncher(root, apps)
     panelFontSize = 15;
@@ -186,9 +209,10 @@ function fig = runLauncher(root, apps)
     refreshTable();
 
     function onRefreshApps(varargin)
+        selectedCommand = currentSelectedAppCommand();
         state.apps = discoverApps(root);
         state.visibleApps = state.apps;
-        state.selectedRow = 1;
+        state.selectedRow = appRowByCommand(state.visibleApps, selectedCommand);
         initializePath(root, state.apps);
         refreshTable();
     end
@@ -363,6 +387,7 @@ function fig = runLauncher(root, apps)
         state.visibleApps = state.apps;
         appTable.Data = appDisplayRows(state.visibleApps);
         state.selectedRow = min(max(state.selectedRow, 1), max(numel(state.visibleApps), 1));
+        selectTableRow(appTable, state.selectedRow, state.visibleApps);
         setLaunchEnabled(~isempty(state.visibleApps));
         refreshSelection();
         if isempty(state.visibleApps)
@@ -381,6 +406,15 @@ function fig = runLauncher(root, apps)
         updateInfo(selectedAppDetails(state.visibleApps(row)));
     end
 
+    function command = currentSelectedAppCommand()
+        command = "";
+        if isempty(state.visibleApps)
+            return;
+        end
+        row = min(max(state.selectedRow, 1), numel(state.visibleApps));
+        command = string(state.visibleApps(row).command);
+    end
+
     function setLaunchEnabled(enabled)
         stateValue = matlab.lang.OnOffSwitchState(enabled);
         btnOpen.Enable = stateValue;
@@ -397,6 +431,8 @@ function fig = runLauncher(root, apps)
         txtInfo.Value = [{['Status: ' char(state.status)]}; {''}; rows];
     end
 end
+
+%% Section: Version manager window
 
 function manager = openVersionManager(parentFig, root, refreshCallback, statusCallback)
     if nargin < 3
@@ -546,6 +582,8 @@ function manager = openVersionManager(parentFig, root, refreshCallback, statusCa
     end
 end
 
+%% Section: Version manager support
+
 function notifyStatus(statusCallback, message)
     if isempty(statusCallback)
         return;
@@ -584,6 +622,8 @@ function rows = versionSourceRows(sources)
     end
 end
 
+%% Section: Table selection and display helpers
+
 function configureTable(tableHandle, selectionCallback, doubleClickCallback)
     if isprop(tableHandle, 'SelectionChangedFcn')
         tableHandle.SelectionChangedFcn = selectionCallback;
@@ -606,6 +646,36 @@ function row = eventRow(event)
         row = event.Indices(1, 1);
     elseif isprop(event, 'Selection') && ~isempty(event.Selection)
         row = event.Selection(1, 1);
+    elseif isstruct(event) && isfield(event, 'Indices') && ~isempty(event.Indices)
+        row = event.Indices(1, 1);
+    elseif isstruct(event) && isfield(event, 'Selection') && ~isempty(event.Selection)
+        row = event.Selection(1, 1);
+    end
+end
+
+function row = appRowByCommand(apps, selectedCommand)
+    row = 1;
+    if isempty(apps) || strlength(string(selectedCommand)) == 0
+        return;
+    end
+    commands = string({apps.command});
+    match = find(commands == string(selectedCommand), 1, 'first');
+    if ~isempty(match)
+        row = match;
+    end
+end
+
+function selectTableRow(tableHandle, row, apps)
+    if isempty(apps) || ~isprop(tableHandle, 'Selection')
+        return;
+    end
+    try
+        tableHandle.Selection = row;
+    catch
+        try
+            tableHandle.Selection = [row 1];
+        catch
+        end
     end
 end
 
@@ -630,6 +700,8 @@ end
 function rows = noMatchingAppDetails()
     rows = {'No app entry points found.'; 'Use GitHub Update to repair this install.'};
 end
+
+%% Section: Launcher status messages
 
 function message = integrityStatus(root, apps)
     missing = missingManagedProjectParts(root);
@@ -686,6 +758,8 @@ function message = codeCheckStatus(report)
         char(report.outputs.json), report.summary.messageCount, ...
         report.summary.filesWithMessages, report.summary.scanErrorCount);
 end
+
+%% Section: App discovery and catalog metadata
 
 function apps = discoverApps(root)
     appRoot = fullfile(root, 'apps');
@@ -840,6 +914,8 @@ function lines = wrapDescription(description)
     lines = lines(1:min(numel(lines), 3));
 end
 
+%% Section: Clean Artifacts action
+
 function result = cleanGeneratedArtifacts(root)
     try
         root = validateCleanArtifactsRoot(root);
@@ -921,6 +997,8 @@ function tf = confirmCleanArtifacts(fig)
         tf = false;
     end
 end
+
+%% Section: Code Analyzer action
 
 function report = runCodeAnalyzerReport(root, progressFcn)
     if nargin < 2
@@ -1099,6 +1177,8 @@ function value = emptyCodeCheckScanError()
         "identifier", "", "message", ""), 1, 0);
 end
 
+%% Section: Update entrypoints and install transaction
+
 function result = launcherUpdateFromMainZip(root, progressFcn)
     source = struct( ...
         "kind", "main", ...
@@ -1162,6 +1242,8 @@ function result = launcherUpdateFromZipSource(root, source, progressFcn, preflig
     clear cleanup;
     removeFolderIfPresent(tempRoot);
 end
+
+%% Section: GitHub update source discovery
 
 function source = resolveStableZipSource()
     release = latestStableRelease();
@@ -1347,6 +1429,8 @@ function value = logicalField(raw, name)
     end
 end
 
+%% Section: Update validation and launcher window helpers
+
 function assertUpdateTargetRoot(root)
     hasLauncher = exist(fullfile(root, "labkit_launcher.m"), "file") == 2;
     hasLabkit = exist(fullfile(root, "+labkit"), "dir") == 7;
@@ -1430,6 +1514,8 @@ function tf = confirmDestructiveUpdate(sourceLabel, removedApps)
         tf = false;
     end
 end
+
+%% Section: Update install file operations
 
 function fetchZip(sourceUrl, zipPath)
     websave(zipPath, sourceUrl);
@@ -1544,6 +1630,8 @@ function result = summaryStruct(root, copiedCount, movedCount, snapshotFolder, m
         "snapshotFolder", string(snapshotFolder), ...
         "message", string(message));
 end
+
+%% Section: Shared filesystem and path helpers
 
 function notifyProgress(progressFcn, message, value)
     try

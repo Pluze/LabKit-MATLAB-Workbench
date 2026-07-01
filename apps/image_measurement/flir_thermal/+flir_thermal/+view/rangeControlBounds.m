@@ -7,14 +7,15 @@ function bounds = rangeControlBounds(item, preset, fallbackBounds)
         fallbackBounds = [-20 120];
     end
     preset = string(preset);
+    labels = flir_thermal.view.rangeControlLabels();
     switch preset
-        case "-20 to 120 C"
+        case labels.standardPreset
             bounds = [-20 120];
-        case "Image estimate +50%"
+        case labels.estimatedPreset
             bounds = estimatedExpandedBounds(item, fallbackBounds);
-        case "-20 to 400 C"
+        case labels.highPreset
             bounds = [-20 400];
-        case "-100 to 2000 C"
+        case labels.widePreset
             bounds = [-100 2000];
         otherwise
             bounds = normalizeBounds(fallbackBounds);
