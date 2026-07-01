@@ -65,8 +65,13 @@ For runner-complexity work, scan helper quality as well as file length:
 - count short app helpers, excluding public entrypoints, `requirements.m`,
   `version.m`, package-root `run.m`, and ordinary `+ui/buildSpec.m`
 - identify repeated micro-helper families and one-call pass-through wrappers
-- classify short helpers as keep-as-contract, merge, inline, or framework-hook
-  candidate before proposing new extraction
+- classify short helpers by boundary signal before proposing new extraction:
+  public framework API, framework-private implementation, app state contract,
+  IO/input policy, export or dialog side-effect boundary, view formatting,
+  small pure operation, test/runner API, or generic helper
+- treat a one-call generic helper without test references as an inline/merge
+  candidate; treat a one-call role helper as a contract-review candidate, not
+  as automatic debt
 - treat roughly 500 runner lines as a review threshold and roughly 625 lines as
   a budget-watchlist trigger. A watchlist runner is not active migration debt
   by line count alone; record debt only when the next change would add
@@ -183,6 +188,9 @@ For helper extraction, prefer responsibility quality over helper count:
   focused custom UI/tool glue
 - treat short `+export/write*.m` files as valid side-effect boundaries when
   they isolate output writes behind an explicit export contract
+- treat small public facades, test helpers, state factories, input filters, and
+  app-owned side-effect boundaries as valid files when their names expose a
+  caller-facing contract
 - promote to `+labkit` only after the boundary guard proves a domain-neutral
   app-facing contract
 - do not add a blocking short-helper guardrail until a reviewed dry-run report

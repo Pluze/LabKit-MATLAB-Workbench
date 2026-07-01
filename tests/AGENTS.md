@@ -78,10 +78,13 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
   add duplicate full-tree scans that differ only by diagnostic wording.
 - Runner-complexity and helper-quality checks should start as dry-run reports.
   Do not add a blocking minimum-helper-length guardrail. If a helper-quality
-  guardrail becomes necessary, it must distinguish cosmetic micro-extraction
-  from legitimate small public facades, factories, filters, defaults,
-  role-package contracts, export side-effect boundaries, and test-facing
-  helpers.
+  guardrail becomes necessary, it must report boundary class, call count,
+  direct test references, and review reason. It must distinguish cosmetic
+  micro-extraction from legitimate small public facades, framework-private
+  implementation details, factories, filters, defaults, role-package contracts,
+  export/dialog side-effect boundaries, and test-facing helpers. Do not use
+  helper-count reduction or runner line-count reduction as proof of better
+  organization unless the resulting files have coherent contracts.
 - When one test file grows too broad, add new focused `test_*.m` files instead of appending unrelated coverage.
 - GUI `Structural` tests are launch/layout/callback checks. GUI `Workflow`
   tests may cover hidden synthetic core flows through semantic UI operations,

@@ -70,15 +70,41 @@ Current facts:
   - `+labkit/+ui/+tool/createRuntime.m` at 636 lines
   - `+labkit/+ui/+diag/createContext.m` at 628 lines
   - `+labkit/+biosignal/private/detectEcgPeaksImpl.m` at 623 lines
+- Current tracked MATLAB inventory: 690 files and 60,073 total lines after the
+  helper-audit expansion. The largest owned areas are `apps/` with 376 files
+  and 23,437 lines, `+labkit/` with 191 files and 17,056 lines, and `tests/`
+  with 120 files and 17,413 lines. Treat these as drift baselines, not targets.
 - `tests/runner/labkitHelperQualityAudit.m` provides the Route A dry-run
-  helper audit. It reports short helper file length, role package, function
-  count, approximate call count, public/private status, direct unit-test
-  references, allowed exception class, and a non-blocking recommendation.
+  helper audit. It reports short helper file length, top-level scope, role
+  package, function count, approximate call count, public/private status,
+  direct unit-test references, boundary class, allowed exception class,
+  non-blocking recommendation, and review reason.
 - Current helper audit status:
-  `labkitHelperQualityAudit(root, "MaxLines", 20)` reports zero
+  `labkitHelperQualityAudit(root, "MaxLines", 20, "Scope", "all")` reports
+  70 `keep-boundary`, 79 `review-contract`, 10
+  `review-one-call-contract`, 1 `review`, and zero
   `inline-or-merge-candidate` rows after the current cleanup. Keep it as a
-  dry-run report; do not turn it into a blocking minimum-length rule unless it
-  remains low-noise after future drift.
+  dry-run report; do not turn it into a blocking minimum-length rule.
+- Helper-quality interpretation:
+  - `keep-boundary`: valid small file because the name protects a public
+    facade, state factory/contract, input policy, export/dialog side effect,
+    UI adapter, test API, or runner API.
+  - `review-contract`: short helper has direct tests or multiple call sites;
+    revisit only when the owning behavior changes.
+  - `review-one-call-contract`: one-call role helper with a plausible boundary
+    signal, such as view formatting or framework-private implementation.
+    Review for cohesion before inlining or expanding it.
+  - `review`: one-call short helper without a strong boundary signal. Prefer
+    merging it into the nearest cohesive app-owned contract during the next
+    touch unless inspection proves a durable contract.
+  - `inline-or-merge-candidate`: one-call tiny helper without tests, multiple
+    call sites, or boundary signal. This is the main helper-debt trigger.
+- Current non-automatic review queue from the all-scope helper audit:
+  `batch_crop.state.canvasCacheKey`, framework-private `getReadonlyText`,
+  `refreshListboxItems`, `defaultPulseOptions`, `createReadOnlyTextField`, DIC
+  postprocess `strainToRgb` and `trimStrainEdgeMask`, and one-call
+  curvature/focus-stack view formatting helpers. These are not blockers;
+  inspect them when related code is touched.
 - Audit-driven cleanup history that defines the current helper-quality
   baseline:
   - `image_enhance.state.stepsForTask` and
@@ -240,6 +266,20 @@ Migration progress means:
 - duplicate app-neutral mechanics are removed from apps
 - the total cognitive load of the workflow falls
 
+Use large-project governance principles when judging helper organization:
+
+- Optimize for future readers and maintainers. A new file must make the
+  workflow easier to understand at the call site, not merely shorter.
+- Review complexity at multiple levels: expression, function, file, package,
+  and public facade. File length is a backstop; nesting, local state, coupling,
+  side effects, and unclear ownership are stronger extraction signals.
+- Keep private interfaces private. App-owned implementation helpers stay under
+  role packages, framework-private helpers stay under facade `private/`
+  folders, and test-only helpers stay under `tests/`.
+- Prefer locally consistent, tool-checkable rules over personal taste. If the
+  rule cannot be audited with low false-positive risk, keep it as guidance and
+  a dry-run report.
+
 Migration is not progress when it only:
 
 - moves a large block into another large file
@@ -257,8 +297,12 @@ Migration is not progress when it only:
 - Keep completed migrations as historical baselines only when they clarify a
   current guardrail invariant.
 - Treat line-count budgets as backstops, not design goals.
-- Do not add a minimum-line-count guardrail until the short-helper audit can
-  distinguish cosmetic extraction from legitimate small contracts.
+- Do not add a minimum-line-count guardrail. Use the helper audit's boundary
+  class, call count, test references, and review reason to distinguish cosmetic
+  extraction from legitimate small contracts.
+- Do not split a runner or long implementation file merely to lower its line
+  count. Extract only a cohesive behavior contract whose name, tests, and real
+  GUI/app call path make the new file independently meaningful.
 - Use `labkit-boundary-guard` before promoting behavior to `+labkit`.
 - Use `labkit-test-planner` for validation routing and `docs/testing.md` for
   exact commands.

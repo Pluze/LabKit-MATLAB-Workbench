@@ -140,7 +140,9 @@ There is no minimum useful helper length. Small public facades, factories,
 filters, defaults, and test-facing helpers are valid when the name protects a
 real contract. Conversely, a long extracted helper is not reusable merely
 because it moved out of `run.m`; it must improve ownership, testability, or the
-app-facing API.
+app-facing API. When reviewing helper organization, prefer evidence from the
+helper's boundary role, call sites, tests, side effects, and ownership over raw
+line count.
 
 ## Current Exceptions
 

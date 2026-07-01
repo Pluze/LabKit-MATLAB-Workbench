@@ -1,42 +1,52 @@
 function audit = labkitHelperQualityAudit(root, varargin)
 %LABKITHELPERQUALITYAUDIT Dry-run report for short helper classification.
 % Expected caller: migration planning and project tests. Inputs are the repo
-% root and optional MaxLines/Scope values. Output is a table describing short
-% helper files, call/test references, package role, and a non-blocking
-% recommendation. Side effects: reads tracked MATLAB source files.
+% root and optional MaxLines/Scope values. Scope may be a tracked path prefix
+% or "all". Output is a table describing short helper files, call/test
+% references, package role, boundary class, and a non-blocking recommendation.
+% Side effects: reads tracked MATLAB source files.
 
     if nargin < 1 || strlength(string(root)) == 0
         root = labkitRepoRoot();
     end
     opts = parseOptions(varargin{:});
-    files = gitTrackedMatlabFiles(root);
-    files = files(startsWith(files, opts.scope + "/"));
+    trackedFiles = gitTrackedMatlabFiles(root);
+    files = scopedFiles(trackedFiles, opts.scope);
     files = files(arrayfun(@(p) isCandidateHelper(root, p, opts.maxLines), files));
 
-    allSource = readSourceCorpus(root, gitTrackedMatlabFiles(root));
-    rows = cell(numel(files), 9);
+    allSource = readSourceCorpus(root, trackedFiles);
+    rows = cell(numel(files), 12);
     for k = 1:numel(files)
         path = files(k);
         lines = readFileLines(fullfile(root, char(path)));
         basename = helperName(path);
+        boundary = boundaryClass(path);
+        exception = allowedExceptionClass(boundary);
+        callCount = approximateCallCount(allSource, basename);
+        testRefs = directUnitTestReferences(allSource.unit, basename, path);
         rows{k, 1} = path;
         rows{k, 2} = numel(lines);
-        rows{k, 3} = rolePackage(path);
-        rows{k, 4} = functionCount(lines);
-        rows{k, 5} = approximateCallCount(allSource, basename);
-        rows{k, 6} = publicStatus(path);
-        rows{k, 7} = directUnitTestReferences(allSource.unit, basename, path);
-        rows{k, 8} = allowedExceptionClass(path);
-        rows{k, 9} = recommendation(rows{k, 2}, rows{k, 4}, rows{k, 5}, ...
-            rows{k, 7}, rows{k, 8});
+        rows{k, 3} = topLevelScope(path);
+        rows{k, 4} = rolePackage(path);
+        rows{k, 5} = functionCount(lines);
+        rows{k, 6} = callCount;
+        rows{k, 7} = publicStatus(path);
+        rows{k, 8} = testRefs;
+        rows{k, 9} = boundary;
+        rows{k, 10} = exception;
+        rows{k, 11} = recommendation(rows{k, 2}, rows{k, 5}, callCount, ...
+            testRefs, exception, boundary);
+        rows{k, 12} = reviewReason(rows{k, 11}, exception, boundary);
     end
 
     audit = cell2table(rows, 'VariableNames', { ...
-        'RelativePath', 'Lines', 'RolePackage', 'FunctionCount', ...
-        'CallCount', 'PublicStatus', 'DirectUnitTestReferences', ...
-        'AllowedException', 'Recommendation'});
+        'RelativePath', 'Lines', 'TopLevelScope', 'RolePackage', ...
+        'FunctionCount', 'CallCount', 'PublicStatus', ...
+        'DirectUnitTestReferences', 'BoundaryClass', 'AllowedException', ...
+        'Recommendation', 'ReviewReason'});
     if ~isempty(audit)
-        audit = sortrows(audit, {'Recommendation', 'Lines', 'RelativePath'});
+        audit = sortrows(audit, {'Recommendation', 'TopLevelScope', ...
+            'Lines', 'RelativePath'});
     end
 end
 
@@ -59,6 +69,17 @@ function opts = parseOptions(varargin)
                     "Unsupported option %s.", name);
         end
     end
+end
+
+function files = scopedFiles(files, scope)
+    if scope == "all"
+        return;
+    end
+    prefix = scope;
+    if ~endsWith(prefix, "/")
+        prefix = prefix + "/";
+    end
+    files = files(startsWith(files, prefix));
 end
 
 function tf = isCandidateHelper(root, path, maxLines)
@@ -140,6 +161,14 @@ function name = helperName(path)
     name = string(name);
 end
 
+function scope = topLevelScope(path)
+    parts = split(string(path), "/");
+    scope = parts(1);
+    if ~any(startsWith(scope, ["+", "apps", "tests", "scripts"]))
+        scope = "root";
+    end
+end
+
 function role = rolePackage(path)
     parts = split(string(path), "/");
     packageParts = parts(startsWith(parts, "+"));
@@ -162,7 +191,9 @@ function n = approximateCallCount(corpus, name)
 end
 
 function statusText = publicStatus(path)
-    if contains(path, "/private/")
+    if startsWith(path, "+labkit/") && ~contains(path, "/private/")
+        statusText = "framework-public-api";
+    elseif contains(path, "/private/")
         statusText = "private";
     elseif contains(path, "/+")
         statusText = "app-owned-package";
@@ -183,32 +214,87 @@ function n = directUnitTestReferences(unitCorpus, name, path)
     end
 end
 
-function className = allowedExceptionClass(path)
+function className = boundaryClass(path)
     path = string(path);
     [~, name] = fileparts(char(path));
-    if contains(path, "/+ui/")
-        className = "ui-builder-adapter";
-    elseif contains(path, "/+state/") && any(startsWith(string(name), ["empty", "default"]))
-        className = "state-factory";
-    elseif contains(path, "/+io/") && any(contains(string(name), ["Filter", "Extensions"]))
-        className = "input-policy";
-    elseif contains(path, "/+export/") && startsWith(string(name), "write")
-        className = "export-side-effect";
+    name = string(name);
+    if startsWith(path, "+labkit/") && ~contains(path, "/private/")
+        className = "public-framework-api";
+    elseif startsWith(path, "+labkit/") && contains(path, "/private/")
+        className = "framework-private-implementation";
     elseif startsWith(path, "tests/shared/")
         className = "test-api";
+    elseif startsWith(path, "tests/runner/")
+        className = "runner-api";
+    elseif contains(path, "/+export/") && startsWith(name, "write")
+        className = "export-side-effect";
+    elseif contains(path, "/+io/") && startsWith(name, "prompt")
+        className = "dialog-side-effect";
+    elseif contains(path, "/+io/") && any(startsWith(name, ["save", "write"]))
+        className = "io-side-effect";
+    elseif contains(path, "/+io/") && any(contains(name, ...
+            ["Filter", "Extensions", "Path", "Folder", "Images"]))
+        className = "input-policy";
+    elseif contains(path, "/+state/") && any(startsWith(name, ...
+            ["empty", "default", "initial"]))
+        className = "state-factory";
+    elseif contains(path, "/+state/") && any(startsWith(name, ...
+            ["active", "clear", "count", "has", "is", "read", "restore", "set"]))
+        className = "state-contract";
+    elseif contains(path, "/+ui/")
+        className = "ui-builder-adapter";
+    elseif contains(path, "/+view/")
+        className = "view-formatting";
+    elseif contains(path, "/+ops/") && any(startsWith(name, ...
+            ["clamp", "has", "is", "normalize", "sampleRate", ...
+            "sourceCenter", "trim"]))
+        className = "small-pure-operation";
+    elseif contains(path, "/+ops/") && any(contains(name, ...
+            ["Mask", "Rgb", "Strain"]))
+        className = "small-pure-operation";
+    else
+        className = "generic-helper";
+    end
+end
+
+function className = allowedExceptionClass(boundary)
+    keepClasses = ["dialog-side-effect", "export-side-effect", ...
+        "input-policy", "public-framework-api", "runner-api", ...
+        "io-side-effect", "state-contract", "state-factory", "test-api", ...
+        "ui-builder-adapter"];
+    if any(string(boundary) == keepClasses)
+        className = boundary;
     else
         className = "";
     end
 end
 
-function text = recommendation(lines, functionCountValue, callCount, testRefs, exceptionClass)
+function text = recommendation(lines, functionCountValue, callCount, testRefs, exceptionClass, boundary)
     if strlength(string(exceptionClass)) > 0
-        text = "keep-exception";
+        text = "keep-boundary";
     elseif testRefs > 0 || callCount > 1
         text = "review-contract";
+    elseif any(string(boundary) == ["framework-private-implementation", ...
+            "small-pure-operation", "view-formatting"])
+        text = "review-one-call-contract";
     elseif lines <= 12 && functionCountValue <= 1 && callCount <= 1
         text = "inline-or-merge-candidate";
     else
         text = "review";
+    end
+end
+
+function text = reviewReason(recommendationText, exceptionClass, boundary)
+    switch string(recommendationText)
+        case "keep-boundary"
+            text = "named-boundary:" + string(exceptionClass);
+        case "review-contract"
+            text = "referenced-by-tests-or-multiple-call-sites";
+        case "review-one-call-contract"
+            text = "one-call-role-helper-needs-contract-review:" + string(boundary);
+        case "inline-or-merge-candidate"
+            text = "short-one-call-helper-without-boundary-signal";
+        otherwise
+            text = "short-helper-needs-ownership-review:" + string(boundary);
     end
 end
