@@ -166,6 +166,15 @@ Current facts:
   reference/source image load, default reference-match application,
   history-table refresh, preview redraw, default output-folder export,
   manifest creation, and matched-file creation.
+- `GuiLayoutCurvatureTest` covers curvature workflow: synthetic image load,
+  active curve-editor point injection through the shared workflow driver,
+  curvature fit, curve-length measurement, result-table/detail refresh, and
+  image/overlay redraw.
+- Workflow-backed app structural GUI tests have been trimmed so ordinary table
+  columns, preview axes, redraw paths, and clear/refresh callbacks are covered
+  by real workflow tests instead of duplicate launch-only assertions.
+- Remaining supported apps without dedicated workflow acceptance are
+  `labkit_NerveResponseAnalysis_app` and `labkit_ResponseReviewStats_app`.
 
 ## Active Route A: Runner Complexity And Helper Quality
 
@@ -350,10 +359,11 @@ Migration workstreams:
 
 1. Extend workflow acceptance beyond the current representatives
    (`eis`, `chrono_overlay`, `vt_resistance`, `cic`, `csc`, `focus_stack`,
-   `batch_crop`, `image_enhance`, `image_match`, `rhs_preview`, `ecg_print`)
-   and `dic_preprocess`, `dic_postprocess` to the remaining supported app
-   families. Start with CI-sized synthetic inputs, then record which app
-   families merit larger manual or scheduled stress cases.
+   `batch_crop`, `curvature`, `image_enhance`, `image_match`, `rhs_preview`,
+   `ecg_print`, `dic_preprocess`, and `dic_postprocess`) to the two remaining
+   supported neurophysiology apps: `labkit_NerveResponseAnalysis_app` and
+   `labkit_ResponseReviewStats_app`. Start with CI-sized synthetic inputs, then
+   record which app families merit larger manual or scheduled stress cases.
 2. Extend `tests/shared/labkitWorkflowDriver.m` only for app-neutral semantic
    operations proven by real workflow tests. Avoid vague helpers that guess app
    meaning from button labels or combine unrelated concepts such as status text
@@ -364,9 +374,11 @@ Migration workstreams:
 4. Extend test tags and build routing only after the first workflow tests prove
    the shape. Candidate tags are `Workflow` for default hidden acceptance and
    `Stress` for larger manual or scheduled runs.
-5. For each app that gains workflow acceptance, shrink or merge its
+5. For each remaining app that gains workflow acceptance, shrink or merge its
    `GuiLayout*Test` coverage to non-duplicated structural checks, and stop
-   relying on `AppLaunchGuiTest` as that app's primary smoke coverage.
+   relying on `AppLaunchGuiTest` as that app's primary smoke coverage. Apps
+   already covered by workflow tests should keep only shell, command-surface,
+   option-surface, debug, gesture/tool, and special layout structural checks.
 6. When every supported app has workflow acceptance coverage, convert
    `AppLaunchGuiTest` into a guardrail that fails only for apps missing
    dedicated workflow or structural GUI coverage.

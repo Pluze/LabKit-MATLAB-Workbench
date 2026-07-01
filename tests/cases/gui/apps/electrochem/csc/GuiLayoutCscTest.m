@@ -19,13 +19,8 @@ classdef GuiLayoutCscTest < matlab.uitest.TestCase
                 h.dropdownGroup({'(none)'}, 5), ...
                 h.dropdownGroup({'Full', 'Cathodic', 'Anodic'}, 1)]);
             h.assertTabTitles(fig, {'Files + Analysis', 'Summary + Results', 'Log'});
-            h.assertAxesContract(fig, { ...
-                h.axesSpec('Top Plot', 'X', 'Y'), ...
-                h.axesSpec('Bottom Plot', 'X', 'Y')});
             h.assertDropdownCallbacksPresent(fig);
             h.invokeDropdownValue(fig, 'Cathodic');
-            h.invokeButton(fig, 'Refresh Plots');
-            h.invokeButton(fig, 'Clear Both');
         end
     end
 

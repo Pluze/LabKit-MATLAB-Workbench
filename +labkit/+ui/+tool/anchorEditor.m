@@ -65,6 +65,7 @@ function editor = anchorEditor(runtime, imageSize, opts)
     state.viewYLim = [];
     state.onChanged = optionValue(opts, 'onChanged', []);
     state.onTrace = optionValue(opts, 'onTrace', []);
+    state.editorToken = nextEditorToken();
     state.session = runtime.createSession(struct( ...
         'name', 'anchorCurveEditor', ...
         'onPointerDown', @onAxesClicked, ...
@@ -103,9 +104,11 @@ function editor = anchorEditor(runtime, imageSize, opts)
         trace(sprintf('setActive %d', logical(enabled)));
         if logical(enabled)
             rememberCurrentView();
+            registerActiveEditor();
             state.session.activate();
         else
             state.session.deactivate();
+            unregisterActiveEditor();
         end
     end
 
@@ -205,6 +208,7 @@ function editor = anchorEditor(runtime, imageSize, opts)
     function deleteEditor()
         trace('deleteEditor');
         state.session.delete();
+        unregisterActiveEditor();
         if ~isempty(state.curveLine) && isvalid(state.curveLine)
             delete(state.curveLine);
         end
@@ -383,6 +387,25 @@ function editor = anchorEditor(runtime, imageSize, opts)
         state.onChanged(state.points, reason);
     end
 
+    function registerActiveEditor()
+        if ~isValidHandle(state.ax)
+            return;
+        end
+        setappdata(state.ax, anchorEditorAppdataKey(), ...
+            struct('token', state.editorToken, 'editor', editor));
+    end
+
+    function unregisterActiveEditor()
+        if ~isValidHandle(state.ax) || ~isappdata(state.ax, anchorEditorAppdataKey())
+            return;
+        end
+        registered = getappdata(state.ax, anchorEditorAppdataKey());
+        if isstruct(registered) && isfield(registered, 'token') && ...
+                isequal(registered.token, state.editorToken)
+            rmappdata(state.ax, anchorEditorAppdataKey());
+        end
+    end
+
     function trace(message)
         if isempty(state.onTrace)
             return;
@@ -466,4 +489,17 @@ end
 
 function tf = isValidHandle(h)
     tf = ~isempty(h) && all(isvalid(h));
+end
+
+function token = nextEditorToken()
+    persistent nextToken
+    if isempty(nextToken)
+        nextToken = 0;
+    end
+    nextToken = nextToken + 1;
+    token = nextToken;
+end
+
+function key = anchorEditorAppdataKey()
+    key = 'labkit_ui_activeAnchorEditor';
 end

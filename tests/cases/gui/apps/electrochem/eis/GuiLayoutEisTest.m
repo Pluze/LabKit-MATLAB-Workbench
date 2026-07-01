@@ -9,7 +9,6 @@ classdef GuiLayoutEisTest < matlab.uitest.TestCase
             cleanup = onCleanup(@() h.closeAllFigures());
 
             fig = h.launchFigure('labkit_EIS_app', 'Gamry EIS Multi-DTA Plot GUI');
-            ui = getappdata(fig, 'labkitUiRegistry');
             h.assertStandardWorkbenchLayout(fig);
             h.assertButtonContract(fig, {'Add DTA files', 'Remove selected', ...
                 'Clear all', 'Export current plot CSV'});
@@ -17,12 +16,9 @@ classdef GuiLayoutEisTest < matlab.uitest.TestCase
                 'Legend', 'Grid'});
             h.assertDropdownGroups(fig, h.dropdownGroup(eisAxisItems(), 2));
             h.assertTabTitles(fig, {'Files + Analysis', 'Summary + Results', 'Log'});
-            h.assertAxesContract(fig, { ...
-                h.axesSpec('EIS Overlay', 'Zreal (ohm)', '-Zimag (ohm)')});
             h.assertDropdownCallbacksPresent(fig);
             h.invokeDropdownValue(fig, 'Freq (Hz)');
             h.invokeCheckbox(fig, 'Log X', true);
-            h.invokeButton(fig, 'Clear all');
         end
 
     end

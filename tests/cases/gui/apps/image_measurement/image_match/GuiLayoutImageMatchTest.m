@@ -21,9 +21,6 @@ classdef GuiLayoutImageMatchTest < matlab.uitest.TestCase
                 'Protected tone', 'Lab style', 'Histogram'}, 1), ...
                 h.dropdownGroup({'PNG', 'TIFF', 'JPEG'}, 1)]);
             h.assertTabTitles(fig, {'Library + Export', 'Match + History', 'Log'});
-            h.assertAnyTableColumns(fig, {'Metric', 'Value'});
-            h.assertAnyTableColumns(fig, {'#', 'Step', 'Settings'});
-            h.assertAxesContract(fig, {h.axesSpec('Matched Preview', '', '')});
 
             h.closeAllFigures();
             [fig, debug] = labkit_ImageMatch_app("debug");

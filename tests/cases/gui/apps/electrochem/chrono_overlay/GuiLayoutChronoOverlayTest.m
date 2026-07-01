@@ -17,13 +17,9 @@ classdef GuiLayoutChronoOverlayTest < matlab.uitest.TestCase
             h.assertDropdownGroups(fig, h.dropdownGroup( ...
                 {'Time (s)', 'Time (ms)', 'Sample #'}, 1));
             h.assertTabTitles(fig, {'Files + Analysis', 'Log'});
-            h.assertAxesContract(fig, { ...
-                h.axesSpec('Voltage', 'Time (s)', 'Vf (V)'), ...
-                h.axesSpec('Current', 'Time (s)', 'Im (A)')});
             h.assertDropdownCallbacksPresent(fig);
             h.invokeDropdownValue(fig, 'Time (ms)');
             h.invokeCheckbox(fig, 'Show file-name legend', false);
-            h.invokeButton(fig, 'Clear all');
         end
     end
 

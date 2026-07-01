@@ -18,10 +18,6 @@ classdef GuiLayoutFocusStackTest < matlab.uitest.TestCase
             h.assertDropdownGroups(fig, h.dropdownGroup({'Balanced', ...
                 'Crisp details', 'Smooth transitions', 'Noisy images'}, 1));
             h.assertTabTitles(fig, {'Files + Analysis', 'Summary + Results', 'Log'});
-            h.assertTableColumns(fig, {'Metric', 'Value'});
-            h.assertAxesContract(fig, { ...
-                h.axesSpec('Fused all-in-focus image', '', ''), ...
-                h.axesSpec('Focus-depth index map', '', '')});
 
             h.closeAllFigures();
             [fig, debug] = labkit_FocusStack_app("debug");

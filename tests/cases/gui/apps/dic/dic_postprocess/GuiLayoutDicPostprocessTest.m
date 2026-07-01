@@ -15,10 +15,6 @@ classdef GuiLayoutDicPostprocessTest < matlab.uitest.TestCase
                 'Generate overlays + summary', ...
                 'Save overlay PNGs', 'Export summary CSV'});
             h.assertTabTitles(fig, {'Files + Analysis', 'Summary + Results', 'Log'});
-            h.assertTableColumns(fig, {'Metric','EXX','EYY'});
-            h.assertAxesContract(fig, { ...
-                h.axesSpec('EXX Overlay', '', ''), ...
-                h.axesSpec('EYY Overlay', '', '')});
             assertFilesAnalysisSectionsFit(fig);
         end
     end

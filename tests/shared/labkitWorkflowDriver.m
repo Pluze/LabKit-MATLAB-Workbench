@@ -4,8 +4,9 @@ function driver = labkitWorkflowDriver(fig)
 % Expected caller: hidden GUI workflow acceptance tests. Inputs are a LabKit
 % app figure with labkitUiRegistry appdata. Output is a small struct of
 % app-neutral operations for injecting filePanel choices, invoking controls,
-% and reading semantic UI state. The helper mutates only test-injected dialog
-% providers and GUI controls through their public callbacks.
+% setting active tool anchors, and reading semantic UI state. The helper
+% mutates only test-injected dialog providers, active LabKit UI tools, and GUI
+% controls through their public callbacks.
 
     h = guiTestHelpers();
     driver = struct();
@@ -20,6 +21,7 @@ function driver = labkitWorkflowDriver(fig)
     driver.textAreaValue = @textAreaValue;
     driver.enabled = @enabled;
     driver.previewChildCount = @previewChildCount;
+    driver.setAnchorPoints = @setAnchorPoints;
 
     function ui = registry()
         assert(isappdata(fig, 'labkitUiRegistry'), ...
@@ -78,6 +80,27 @@ function driver = labkitWorkflowDriver(fig)
         assert(isfield(control, 'primaryAxes'), ...
             'Workflow preview id not found: %s.', char(string(controlId)));
         n = numel(control.primaryAxes.Children);
+    end
+
+    function setAnchorPoints(controlId, points)
+        control = semanticControl(controlId);
+        assert(isfield(control, 'primaryAxes'), ...
+            'Workflow preview id not found: %s.', char(string(controlId)));
+        ax = control.primaryAxes;
+        key = 'labkit_ui_activeAnchorEditor';
+        assert(isappdata(ax, key), ...
+            'No active LabKit anchor editor is registered for preview %s.', ...
+            char(string(controlId)));
+        registered = getappdata(ax, key);
+        assert(isstruct(registered) && isfield(registered, 'editor'), ...
+            'Registered anchor editor for preview %s is malformed.', ...
+            char(string(controlId)));
+        editor = registered.editor;
+        assert(isstruct(editor) && isfield(editor, 'setPoints') && ...
+            isa(editor.setPoints, 'function_handle'), ...
+            'Registered anchor editor for preview %s does not support setPoints.', ...
+            char(string(controlId)));
+        editor.setPoints(points);
     end
 
     function control = filePanel(panelId)

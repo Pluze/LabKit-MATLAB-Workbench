@@ -22,9 +22,6 @@ classdef GuiLayoutImageEnhanceTest < matlab.uitest.TestCase
                 h.dropdownGroup({'PNG', 'TIFF', 'JPEG'}, 1)]);
             h.assertCheckboxContract(fig, {'Batch shared processing'});
             h.assertTabTitles(fig, {'Library + Export', 'Tools + History', 'Log'});
-            h.assertAnyTableColumns(fig, {'Metric', 'Value'});
-            h.assertAnyTableColumns(fig, {'#', 'Step', 'Settings'});
-            h.assertAxesContract(fig, {h.axesSpec('Enhanced Preview', '', '')});
 
             h.closeAllFigures();
             [fig, debug] = labkit_ImageEnhance_app("debug");

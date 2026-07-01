@@ -23,8 +23,6 @@ classdef GuiLayoutCurvatureTest < matlab.uitest.TestCase
                 'Top center', 'Top left', 'Top right'}, 1), ...
                 h.dropdownGroup({'Black', 'White'}, 1)]);
             h.assertTabTitles(fig, {'Files + Analysis', 'Summary + Results', 'Log'});
-            h.assertTableColumns(fig, {'Metric', 'Value'});
-            h.assertAxesContract(fig, {h.axesSpec('Image + Circle Fit', '', '')});
             assertScaleBarPanelSpansControlTab(fig);
 
             h.closeAllFigures();
@@ -48,6 +46,61 @@ classdef GuiLayoutCurvatureTest < matlab.uitest.TestCase
                 'Curvature debug mode should mirror instrumented callback traces into the visible Log tab.');
         end
     end
+
+    methods (Test, TestTags = {'GUI', 'Workflow'})
+        function curvature_workflow_fits_curve_and_measures_length(testCase)
+            setupLabKitTestPath();
+            h = guiTestHelpers();
+            h.assertUifigureAvailable();
+            cleanup = onCleanup(@() h.closeAllFigures());
+
+            folder = tempname;
+            mkdir(folder);
+            folderCleanup = onCleanup(@() removeTempFolder(folder));
+            imagePath = fullfile(folder, 'curvature.png');
+            imwrite(syntheticCurvatureImage(), imagePath);
+
+            fig = h.launchFigure('labkit_CurvatureMeasurement_app', ...
+                'Image Curvature Measurement');
+            driver = labkitWorkflowDriver(fig);
+            driver.chooseFiles('imageFile', imagePath);
+
+            driver.click('Choose image');
+            driver.click('Start curve edit');
+            driver.setAnchorPoints('imageAxes', [28 70; 48 42; 84 30; 120 42; 140 70]);
+
+            ui = driver.registry();
+            testCase.verifyTrue(contains(string(ui.controls.pointCount.valueHandle.Value), ...
+                '5'), ...
+                'Curvature workflow should show the injected curve point count.');
+            testCase.verifyTrue(contains(string(driver.textAreaValue('detailsText')), ...
+                'Curve edit active'), ...
+                'Curvature workflow should show edit guidance while the anchor editor is active.');
+
+            driver.click('Finish curve edit');
+            testCase.verifyTrue(driver.enabled('fitCurvature'), ...
+                'Curvature fit action should enable after at least three curve points.');
+            testCase.verifyTrue(driver.enabled('measureCurveLength'), ...
+                'Curve length action should enable after at least two curve points.');
+
+            driver.click('Fit circle + curvature');
+            fitTable = driver.tableData('resultTable');
+            testCase.verifyTrue(any(strcmp(string(fitTable(:, 1)), 'Radius')), ...
+                'Curvature workflow should write radius into the result table.');
+            testCase.verifyTrue(any(strcmp(string(fitTable(:, 1)), 'Curvature')), ...
+                'Curvature workflow should write curvature into the result table.');
+            testCase.verifyTrue(any(contains(string(driver.textAreaValue('detailsText')), ...
+                'Curve length')), ...
+                'Curvature workflow should refresh details after the curvature fit.');
+            testCase.verifyGreaterThan(driver.previewChildCount('imageAxes'), 0, ...
+                'Curvature workflow should draw the image preview and overlays.');
+
+            driver.click('Measure curve length');
+            lengthTable = driver.tableData('resultTable');
+            testCase.verifyTrue(any(strcmp(string(lengthTable(:, 1)), 'Curve length')), ...
+                'Curvature workflow should keep curve length visible after measuring length.');
+        end
+    end
 end
 
 function assertScaleBarPanelSpansControlTab(fig)
@@ -67,4 +120,17 @@ function assertScaleBarPanelSpansControlTab(fig)
         end
     end
     error('Scale Bar panel should be mounted inside the semantic tool host.');
+end
+
+function img = syntheticCurvatureImage()
+    [x, y] = meshgrid(1:168, 1:104);
+    background = 0.30 + 0.20 .* sin(x ./ 11) + 0.15 .* cos(y ./ 9);
+    curve = exp(-((sqrt((x - 84).^2 + (y - 88).^2) - 58).^2) ./ 12);
+    img = uint8(255 .* min(max(background + 0.45 .* curve, 0), 1));
+end
+
+function removeTempFolder(folder)
+    if exist(folder, 'dir') == 7
+        rmdir(folder, 's');
+    end
 end

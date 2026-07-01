@@ -24,8 +24,6 @@ classdef GuiLayoutBatchCropTest < matlab.uitest.TestCase
                     'Top center', 'Top left', 'Top right'}, 1), ...
                 h.dropdownGroup({'Black', 'White'}, 1)]);
             h.assertTabTitles(fig, {'Files + Analysis', 'Scale', 'Summary + Results', 'Log'});
-            h.assertTableColumns(fig, {'Metric', 'Value'});
-            h.assertAxesContract(fig, {h.axesSpec('Padded rotation preview + fixed crop', '', '')});
 
             h.closeAllFigures();
             [fig, debug] = labkit_BatchImageCrop_app("debug");
