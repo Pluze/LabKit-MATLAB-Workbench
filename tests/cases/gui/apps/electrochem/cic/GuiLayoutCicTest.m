@@ -39,4 +39,46 @@ classdef GuiLayoutCicTest < matlab.uitest.TestCase
             h.invokeButton(fig, 'Clear all');
         end
     end
+
+    methods (Test, TestTags = {'GUI', 'Workflow'})
+        function cic_workflow_loads_analyzes_and_plots_chrono(testCase)
+            setupLabKitTestPath();
+            h = guiTestHelpers();
+            h.assertUifigureAvailable();
+            cleanup = onCleanup(@() h.closeAllFigures());
+
+            fixture = dtaFixturePath('chrono_chronopot_current_pulse_0p2ms.DTA');
+            fig = h.launchFigure('labkit_CIC_app', ...
+                'Gamry CIC GUI (Voltage Transient)');
+            driver = labkitWorkflowDriver(fig);
+            driver.chooseFiles('files', fixture);
+
+            driver.click('Add DTA files');
+
+            testCase.verifyEqual(char(driver.fileStatus('files')), '1 file(s) loaded');
+            testCase.verifyTrue(any(contains(driver.fileListItems('files'), ...
+                'chrono_chronopot_current_pulse_0p2ms.DTA')), ...
+                'CIC workflow should list the loaded chrono fixture.');
+            data = driver.tableData('results');
+            testCase.verifyEqual(size(data), [1 8], ...
+                'CIC workflow should populate one batch result row.');
+            testCase.verifyTrue(isnumeric(data{1, 5}) && isfinite(data{1, 5}), ...
+                'CIC workflow should compute a cathodic charge value.');
+            testCase.verifyTrue(ischar(data{1, 8}) || isstring(data{1, 8}), ...
+                'CIC workflow should populate the safety result column.');
+
+            ui = driver.registry();
+            testCase.verifyTrue(contains(string(ui.controls.detect.valueHandle.Value), ...
+                'metadata-current'), ...
+                'CIC workflow should refresh the detection summary field.');
+            testCase.verifyTrue(contains(string(ui.controls.qt.valueHandle.Value), 'C'), ...
+                'CIC workflow should refresh computed total charge summary fields.');
+            testCase.verifyTrue(strlength(string(ui.controls.safe.valueHandle.Value)) > 1, ...
+                'CIC workflow should refresh the safety summary field.');
+            testCase.verifyGreaterThan(numel(ui.controls.plotAxes.axesById.top.Children), 0, ...
+                'CIC workflow should draw the top plot.');
+            testCase.verifyGreaterThan(numel(ui.controls.plotAxes.axesById.bottom.Children), 0, ...
+                'CIC workflow should draw the bottom plot.');
+        end
+    end
 end
