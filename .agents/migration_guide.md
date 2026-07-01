@@ -141,6 +141,9 @@ Current facts:
 - `GuiLayoutDicPreprocessTest` covers DIC preprocess workflow: synthetic
   reference/moving image load, automatic alignment, false-color preview
   selection, summary/detail refresh, and preview redraw.
+- `GuiLayoutDicPostprocessTest` covers DIC postprocess workflow: synthetic
+  Ncorr MAT/reference/mask load, overlay generation, strain-summary table
+  refresh, summary-text refresh, and EXX/EYY overlay redraw.
 - `GuiLayoutBatchCropTest` covers a second image workflow shape: synthetic
   image load, center confirmation, default output-folder export, manifest
   creation, and crop-file creation.
@@ -348,8 +351,8 @@ Migration workstreams:
 1. Extend workflow acceptance beyond the current representatives
    (`eis`, `chrono_overlay`, `vt_resistance`, `cic`, `csc`, `focus_stack`,
    `batch_crop`, `image_enhance`, `image_match`, `rhs_preview`, `ecg_print`)
-   and `dic_preprocess` to the remaining supported app families. Start with
-   CI-sized synthetic inputs, then record which app
+   and `dic_preprocess`, `dic_postprocess` to the remaining supported app
+   families. Start with CI-sized synthetic inputs, then record which app
    families merit larger manual or scheduled stress cases.
 2. Extend `tests/shared/labkitWorkflowDriver.m` only for app-neutral semantic
    operations proven by real workflow tests. Avoid vague helpers that guess app
