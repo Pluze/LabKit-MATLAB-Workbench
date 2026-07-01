@@ -65,8 +65,8 @@ function info = launcherVersion()
     info = struct( ...
         "name", "labkit_launcher", ...
         "displayName", "LabKit App Launcher", ...
-        "version", "1.1.3", ...
-        "updated", "2026-06-29");
+        "version", "1.1.4", ...
+        "updated", "2026-07-01");
 end
 
 function titleText = launcherVersionTitle()
@@ -1169,8 +1169,8 @@ function result = launcherUpdateFromZipSource(root, source, progressFcn, preflig
     notifyProgress(progressFcn, "Reading managed file list...", 0.55);
     newFiles = collectManagedFiles(sourceRoot);
     oldFiles = readManifest(root);
-    notifyProgress(progressFcn, "Copying LabKit-managed files...", 0.75);
-    copiedCount = overlayManagedFiles(sourceRoot, root, newFiles);
+    notifyProgress(progressFcn, "Copying changed LabKit-managed files...", 0.75);
+    copiedCount = overlayManagedFiles(sourceRoot, root, newFiles, progressFcn);
     notifyProgress(progressFcn, "Removing retired managed files...", 0.90);
     deletedCount = deleteStaleManagedFiles(root, oldFiles, newFiles);
     notifyProgress(progressFcn, "Writing update manifest...", 0.96);
@@ -1596,14 +1596,74 @@ function apps = collectAppEntrypoints(root)
     apps = sort(unique(apps));
 end
 
-function copiedCount = overlayManagedFiles(sourceRoot, root, files)
+function copiedCount = overlayManagedFiles(sourceRoot, root, files, progressFcn)
     copiedCount = 0;
+    fileCount = numel(files);
     for k = 1:numel(files)
         source = fullfile(sourceRoot, char(files(k)));
         target = fullfile(root, char(files(k)));
+        notifyCopyProgress(progressFcn, k, fileCount, copiedCount, files(k));
+        if filesAreEqual(source, target)
+            continue;
+        end
         ensureFolder(fileparts(target));
         copyfile(source, target, "f");
         copiedCount = copiedCount + 1;
+    end
+end
+
+function notifyCopyProgress(progressFcn, index, fileCount, copiedCount, rel)
+    if fileCount == 0
+        notifyProgress(progressFcn, "No managed files to copy.", 0.89);
+        return;
+    end
+    if index == 1 || index == fileCount || mod(index, 25) == 0
+        value = 0.75 + 0.14 * min(1, max(0, index / fileCount));
+        message = sprintf("Checking managed files %d/%d; copied %d changed file(s): %s", ...
+            index, fileCount, copiedCount, char(rel));
+        notifyProgress(progressFcn, message, value);
+    end
+end
+
+function tf = filesAreEqual(leftPath, rightPath)
+    if exist(rightPath, "file") ~= 2
+        tf = false;
+        return;
+    end
+    leftInfo = dir(leftPath);
+    rightInfo = dir(rightPath);
+    if isempty(leftInfo) || isempty(rightInfo) || leftInfo.bytes ~= rightInfo.bytes
+        tf = false;
+        return;
+    end
+    tf = binaryFilesMatch(leftPath, rightPath);
+end
+
+function tf = binaryFilesMatch(leftPath, rightPath)
+    leftId = fopen(leftPath, "rb");
+    if leftId < 0
+        tf = false;
+        return;
+    end
+    leftCleanup = onCleanup(@() fclose(leftId));
+    rightId = fopen(rightPath, "rb");
+    if rightId < 0
+        tf = false;
+        return;
+    end
+    rightCleanup = onCleanup(@() fclose(rightId));
+    tf = true;
+    blockSize = 1024 * 1024;
+    while true
+        leftBlock = fread(leftId, blockSize, "*uint8");
+        rightBlock = fread(rightId, blockSize, "*uint8");
+        if ~isequal(leftBlock, rightBlock)
+            tf = false;
+            return;
+        end
+        if isempty(leftBlock)
+            return;
+        end
     end
 end
 
