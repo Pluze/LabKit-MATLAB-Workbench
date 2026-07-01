@@ -5,7 +5,7 @@ classdef PackageFacadeContractTest < matlab.unittest.TestCase
         function facadeVersionsAreValid(testCase)
             setupLabKitTestPath();
             versions = currentVersions();
-            expectedFacades = ["ui"; "dta"; "rhs"; "biosignal"; "image"];
+            expectedFacades = ["ui"; "dta"; "rhs"; "biosignal"; "image"; "thermal"];
 
             testCase.verifyEqual(sort([versions.facade].'), sort(expectedFacades));
             for k = 1:numel(versions)
@@ -74,6 +74,17 @@ classdef PackageFacadeContractTest < matlab.unittest.TestCase
                 'probe_app:IncompatibleLabKit');
         end
 
+        function defaultRequirementSourceIncludesThermal(testCase)
+            setupLabKitTestPath();
+            req = labkit.contract.requirements("thermal", ">=1.0 <2");
+            report = labkit.contract.checkRequirements(req);
+
+            testCase.verifyTrue(report.ok, ...
+                "Default LabKit requirement source should include labkit.thermal.");
+            testCase.verifyWarningFree(@() labkit.contract.assertRequirements( ...
+                "probe_thermal_app", req));
+        end
+
         function futureRequirementsFailEvenWhenRangesIntersect(testCase)
             setupLabKitTestPath();
             versions = labkit.contract.versionInfo("ui", "2.2.1", ">=2.0 <3", ...
@@ -113,7 +124,8 @@ function versions = currentVersions()
         labkit.dta.version()
         labkit.rhs.version()
         labkit.biosignal.version()
-        labkit.image.version()];
+        labkit.image.version()
+        labkit.thermal.version()];
 end
 
 function validateRequirementShape(testCase, req, appName)

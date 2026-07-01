@@ -8,7 +8,8 @@ function report = checkRequirements(req, versions)
 % Inputs:
 %   req - struct returned by labkit.contract.requirements.
 %   versions - optional struct array of facade version structs. When omitted,
-%       current labkit.ui/dta/rhs/biosignal/image version APIs are queried.
+%       current labkit.ui/dta/rhs/biosignal/image/thermal version APIs are
+%       queried.
 %
 % Outputs:
 %   report - struct with ok, failures, and message fields. ok is true only
@@ -65,7 +66,8 @@ function versions = currentFacadeVersions()
         labkit.dta.version()
         labkit.rhs.version()
         labkit.biosignal.version()
-        labkit.image.version()];
+        labkit.image.version()
+        labkit.thermal.version()];
 end
 
 function entries = normalizeRequirements(req)

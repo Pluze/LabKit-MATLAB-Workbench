@@ -13,6 +13,8 @@ function spec = previewArea(id, titleText, varargin)
 %       selector when viewModes are present.
 %   axisIds - optional cell array of valid axis ids.
 %   axisTitles, xLabels, yLabels - optional axis label cell arrays.
+%   columnWidths - optional uigridlayout ColumnWidth cell for pair layouts.
+%   rowHeights - optional uigridlayout RowHeight cell for stack layouts.
 %   count - optional axes count for stack layouts.
 %
 % Output:

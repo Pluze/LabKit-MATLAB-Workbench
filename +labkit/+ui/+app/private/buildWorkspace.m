@@ -42,7 +42,7 @@ function ui = buildPreviewArea(ui, previewSpec, parentGrid, row)
         axesHostRow = 1;
     end
 
-    axesGrid = previewAxesGrid(grid, props.layout, count);
+    axesGrid = previewAxesGrid(grid, props, count);
     axesGrid.Layout.Row = axesHostRow;
     axesGrid.Layout.Column = 1;
     axesHandles = gobjects(1, count);
@@ -74,7 +74,8 @@ function ui = buildPreviewArea(ui, previewSpec, parentGrid, row)
     ui.controls.(previewSpec.id) = adapter;
 end
 
-function grid = previewAxesGrid(parent, layout, count)
+function grid = previewAxesGrid(parent, props, count)
+    layout = props.layout;
     switch layout
         case 'single'
             grid = uigridlayout(parent, [1 1]);
@@ -83,16 +84,32 @@ function grid = previewAxesGrid(parent, layout, count)
         case 'pair'
             grid = uigridlayout(parent, [1 count]);
             grid.RowHeight = {'1x'};
-            grid.ColumnWidth = repmat({'1x'}, 1, count);
+            grid.ColumnWidth = layoutSizes(props, 'columnWidths', count, ...
+                repmat({'1x'}, 1, count));
         case 'stack'
             grid = uigridlayout(parent, [count 1]);
-            grid.RowHeight = repmat({'1x'}, 1, count);
+            grid.RowHeight = layoutSizes(props, 'rowHeights', count, ...
+                repmat({'1x'}, 1, count));
             grid.ColumnWidth = {'1x'};
         otherwise
             error('labkit:ui:app:InvalidPreviewLayout', ...
                 'Unsupported previewArea layout "%s".', layout);
     end
     grid.Padding = [0 0 0 0];
+end
+
+function sizes = layoutSizes(props, fieldName, count, defaultSizes)
+    sizes = defaultSizes;
+    if ~isfield(props, fieldName)
+        return;
+    end
+    candidate = props.(fieldName);
+    if ~(iscell(candidate) && numel(candidate) == count)
+        error('labkit:ui:app:InvalidPreviewLayoutSizes', ...
+            'previewArea %s must be a cell array with %d entries.', ...
+            fieldName, count);
+    end
+    sizes = candidate;
 end
 
 function row = axesRow(layout, index)

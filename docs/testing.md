@@ -79,7 +79,8 @@ Common choices:
 | Architecture, docs, package surface, hygiene | `buildtool headless` |
 
 Focused runner suite targets include `labkit/image` for the reusable image
-facade and `apps/image_measurement` for downstream image apps.
+facade, `labkit/thermal` for thermal parsing and rendering, and
+`apps/image_measurement` for downstream image apps.
 
 ## CI Scope
 
@@ -201,6 +202,11 @@ Do not run interactive GUI workflows in MATLAB `-batch` mode.
 Fixtures should be synthetic and minimal. Do not commit raw local lab files,
 identifying file names, subject names, device serials, local absolute paths, or
 timestamp-shaped sample identifiers.
+
+Thermal parser tests should generate anonymous synthetic radiometric structures
+instead of tracking real camera files. Preserve only the container shape,
+record offsets, calibration fields, byte-order behavior, and pixel matrix data
+needed for regression coverage.
 
 DTA tests generate named synthetic `.DTA` files in a temporary directory through
 `dtaFixturePath` and `dtaFixtureDir`. Tests may depend on those synthetic names

@@ -181,8 +181,8 @@ function assertImageMeasurementAppBoundary(source, appName)
     packageName = imageMeasurementPackageForApp(appName);
     assert(contains(source, [packageName '.']), ...
         [appName ' should use its app-owned package namespace.']);
-    allPackageNames = {'batch_crop', 'curvature', 'focus_stack', ...
-        'image_enhance', 'image_match'};
+    allPackageNames = {'batch_crop', 'curvature', 'flir_thermal', ...
+        'focus_stack', 'image_enhance', 'image_match'};
     otherPackageNames = setdiff(allPackageNames, {packageName});
     for iPackage = 1:numel(otherPackageNames)
         assert(~contains(source, [otherPackageNames{iPackage} '.']), ...
@@ -204,6 +204,8 @@ function packageName = imageMeasurementPackageForApp(appName)
             packageName = 'curvature';
         case 'labkit_FocusStack_app'
             packageName = 'focus_stack';
+        case 'labkit_FLIRThermal_app'
+            packageName = 'flir_thermal';
         case 'labkit_ImageEnhance_app'
             packageName = 'image_enhance';
         case 'labkit_ImageMatch_app'

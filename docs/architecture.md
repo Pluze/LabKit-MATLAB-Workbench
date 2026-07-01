@@ -7,7 +7,7 @@ is the small reusable foundation they share.
 
 ```text
 apps/      workflow-specific GUI apps and app-owned helpers
-+labkit/   reusable UI, image, DTA, RHS, and biosignal facades
++labkit/   reusable UI, image, thermal, DTA, RHS, and biosignal facades
 tests/     behavior tests, project contracts, GUI checks, shared helpers, and runner code
 docs/      human-facing usage, API, architecture, and validation docs
 scripts/   CI helper scripts
@@ -44,6 +44,7 @@ developer's local workspace.
 | App package | Workflow state, callbacks, calculations, summaries, exports, and app-local helpers. |
 | `labkit.ui` | App shell, data-only UI specs, semantic view updates, reusable tools, and diagnostics. |
 | `labkit.image` | GUI-free image file IO, display normalization, resizing, mean filtering, and basic enhancement primitives. |
+| `labkit.thermal` | GUI-free thermal source-file parsing, raw thermal matrices, embedded calibration metadata, raw-to-temperature conversion, and thermal colormap rendering. |
 | `labkit.dta` | GUI-free Gamry DTA discovery, loading, parsed curves, and pulse helpers. |
 | `labkit.biosignal` | GUI-free recording import, channel extraction, filtering, events, segments, templates, and measurements. |
 | `labkit.rhs` | GUI-free Intan RHS discovery, header parsing, block indexing, and lazy waveform window reads. |
@@ -106,6 +107,14 @@ fitting, mean filtering, basic enhancement primitives, and image writes. Apps
 still own processing step semantics, ROI/background policy, matching formulas,
 crop geometry, focus-stack algorithms, DIC behavior, export schemas, and user
 workflow text.
+
+Thermal workflows may use `labkit.thermal` for radiometric source reads,
+embedded calibration metadata, raw thermal matrices, Celsius conversion, and
+thermal palette rendering. Apps still own file queues, display-range defaults,
+export manifests, colorbar placement, overlay-removal workflow wording,
+measurements, and user-facing decisions. Generic image IO and filters stay in
+`labkit.image`; thermal file parsing and raw-to-temperature mechanics stay in
+`labkit.thermal`.
 
 `+ui/buildSpec.m` returns a data-only `labkit.ui.spec.*` tree. It should not
 create MATLAB UI handles, mutate app state, perform IO, run calculations, write

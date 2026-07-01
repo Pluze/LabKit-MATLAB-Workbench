@@ -103,7 +103,8 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
   task or the relevant broad task before pushing substantive
   validation-routing changes.
 - Prefer `runLabKitTests("Suites", "...")` for rerunning a failed suite such
-  as `project`, `labkit/ui`, `labkit/image`, or `apps/image_measurement`. Rerun broader
+  as `project`, `labkit/ui`, `labkit/image`, `labkit/thermal`, or
+  `apps/image_measurement`. Rerun broader
   build tasks only when the fix changes validation routing, touches additional
   source areas, or the user explicitly asks for a release/full gate.
 - Stop an accidentally overbroad GUI run when it is not needed; GUI tests can
@@ -118,6 +119,13 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
 - Keep fixtures synthetic and minimal.
 - Never copy raw local lab files, real filenames, timestamps, absolute paths, subject names, device IDs, or proprietary metadata into tracked files.
 - Parser regressions should preserve only structural format details required for coverage.
+- Thermal/FLIR parser regressions must use anonymous synthetic fixtures that
+  preserve only container shape, directory records, calibration fields, byte
+  order, and pixel matrix behavior needed by the test. Do not commit real
+  radiometric images, camera serials, firmware strings, capture timestamps,
+  source filenames, local paths, or vendor metadata copied from lab files.
+  External parsers may inform compatibility analysis, but tests must exercise
+  LabKit's own parser code without runtime dependency on those tools.
 - Run the project guardrail task after fixture, hygiene, architecture, or
   test-layout changes. Use `docs/testing.md` for the exact command.
 

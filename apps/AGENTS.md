@@ -25,6 +25,15 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
   `version.m`, pass both structs to `labkit.ui.app.dispatchRequest`, and apply
   the version title after `run.m` returns the figure. Lightweight non-GUI
   requests are `"requirements"` and `"version"`.
+- App package `requirements.m` must return the result of
+  `labkit.contract.requirements(...)`. Do not return a plain struct, map, or
+  app-authored schema; launch dispatch rejects anything whose `type` is not
+  `"labkit.requirements"`.
+- App package `version.m` must return scalar text fields named exactly
+  `name`, `displayName`, `family`, `version`, and `updated`. The `name` field
+  is the public app entrypoint function, such as `labkit_FocusStack_app`, not
+  the human display name. Use `X.Y.Z` for `version` and `YYYY-MM-DD` for
+  `updated`.
 - When app source, app-owned package code, or app-facing behavior changes,
   update that app's `version.m` version metadata in the same change. App
   versions use `X.Y.Z` semantic format and must only increase.
@@ -47,6 +56,15 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
   preview resizing, mean filtering, and basic enhancement primitives. Tool
   lists, ROI/background policy, reference matching, crop geometry, focus-stack
   algorithms, DIC behavior, export schemas, and user-facing workflow text stay
+  app-owned.
+- Thermal-image apps use `labkit.thermal.*` for radiometric source parsing,
+  raw thermal matrices, embedded calibration metadata, raw-to-temperature
+  conversion, thermal palette rendering, and compatibility inspection. Mixed
+  file selections should use `labkit.thermal.inspectFile` or
+  `labkit.thermal.readFiles(..., struct("SkipInvalid", true))`; do not
+  reimplement "is this thermal" detection in app-local catch blocks. File
+  queues, display-range defaults, export manifests, colorbar placement,
+  overlay-removal workflow wording, measurements, alerts, and logs stay
   app-owned.
 - App-local file dialogs that remain outside `filePanel` must use
   `labkit.ui.app.defaultDialogFolder("input")` or `"output"` instead of `pwd`

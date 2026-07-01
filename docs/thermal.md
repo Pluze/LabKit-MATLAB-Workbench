@@ -1,0 +1,85 @@
+# Thermal Facade
+
+`labkit.thermal.*` is the GUI-free facade for reusable thermal source-file
+parsing, raw thermal matrices, embedded calibration metadata,
+raw-to-temperature conversion, and thermal palette rendering. It is separate
+from `labkit.image`: ordinary image IO and filters stay in `labkit.image`,
+while radiometric source formats and thermal calibration mechanics live here.
+
+`labkit.thermal.version()` returns the thermal facade contract version used by
+app `requirements.m` declarations.
+
+## Common Calls
+
+```matlab
+filter = labkit.thermal.fileDialogFilter("IncludeAll", true);
+[records, report] = labkit.thermal.readFiles(paths, ...
+    struct("SkipInvalid", true));
+probe = labkit.thermal.inspectFile(paths(1));
+
+values = records(1).temperatureC;
+if all(isnan(values), "all")
+    values = records(1).raw;
+end
+
+rgb = labkit.thermal.renderImage(values, ...
+    struct("Limits", [20 40], "Palette", "iron"));
+```
+
+Current source support is FLIR radiometric JPEG/RJPEG files that contain an
+embedded FFF RawThermalImage record. `readFile` returns a struct with:
+
+- `path`, `name`, and `format`
+- `raw`: the raw thermal signal matrix
+- `temperatureC`: Celsius matrix when embedded calibration is complete, or
+  `NaN` values when conversion is unavailable
+- `units`: `"C"` or `"raw"`
+- `metadata`: reader name, raw image type, byte-order normalization, embedded
+  calibration fields, and parsed FFF records
+- `message`: short conversion status text
+
+`rawToTemperatureC` supports `"environment"` correction, which uses emissivity,
+distance, reflected/atmospheric/window temperatures, humidity, transmission,
+and Planck constants when available. `"planck-basic"` applies only the embedded
+Planck constants.
+
+Use `inspectFile` or `readFiles(..., struct("SkipInvalid", true))` when a
+workflow accepts mixed selections from a file dialog. The facade owns the
+distinction between extension-compatible files and files that actually contain
+readable thermal payloads; apps should present the returned report instead of
+reimplementing that detection with app-local catch blocks.
+
+## Ownership
+
+The facade may own:
+
+- thermal source extension lists and file-dialog filters
+- compatibility inspection for deciding whether a file contains readable
+  thermal payloads
+- radiometric container parsing that exposes raw thermal matrices
+- embedded calibration metadata normalization
+- raw thermal signal to Celsius conversion
+- generic thermal palette rendering
+- private compatibility code for vendor container variants
+
+Apps own:
+
+- file queues, selected image state, and display-range defaults
+- palette choices exposed to users and workflow wording
+- colorbar export placement, manifests, filenames, and failed-row policy
+- overlay-removal workflows, measurements, annotations, alerts, and logs
+- any app-specific decisions about which matrix to show or export
+
+Use `labkit.thermal.readFiles` when an app needs reusable thermal records. Apps
+may copy returned fields into app-owned item structs. Keep app-owned readers
+when they build workflow state, apply user policy, or combine thermal data with
+other app inputs.
+
+## Compatibility
+
+Radiometric files vary by camera family and firmware. The facade should prefer
+structural parsing and defensive metadata checks over hard-coded app behavior.
+When adding compatibility for a new thermal source variant, add synthetic
+fixtures or anonymous structural tests that preserve only format shape and do
+not commit lab sample files, local paths, filenames, serial numbers, timestamps,
+or identifying metadata.

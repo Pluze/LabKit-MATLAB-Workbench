@@ -76,6 +76,7 @@ choose an older release, tag, or commit through `Versions`.
 | `labkit_ImageEnhance_app` | Image measurement | Brightness, contrast, clarity, color, and white-balance processing. | Image files | Enhanced images and manifest CSV. |
 | `labkit_ImageMatch_app` | Image measurement | Reference-based tone, white-balance, Lab style, and histogram matching. | Source image files and separate reference image | Matched images and manifest CSV. |
 | `labkit_BatchImageCrop_app` | Image measurement | Fixed-size batch microscope crops with edge-continuous padding, rotation, duplicate crop tasks, and optional per-image physical scale normalization with independent crop and calibration units. | Microscope images, optional scale calibration per image | Cropped same-size images and crop manifest CSV. |
+| `labkit_FLIRThermal_app` | Image measurement | FLIR radiometric JPEG/RJPEG thermal postprocessing with clean heatmap rendering. | FLIR radiometric image files | Thermal image exports, colorbar PNGs, and manifest CSV. |
 | `labkit_ECGPrint_app` | Wearable biosignal | ECG waveform preview, ROI filtering, peak/segment SNR, and SNR-over-time display. | MAT timetable or CSV/TSV table | Segment SNR CSV and waveform PNG. |
 | `labkit_RHSPreview_app` | Neurophysiology | Intan RHS header inspection, stacked waveform preview, ROI zooming, channel protocol drafting, and manual folder filtering. | RHS file, RHS folder, and optional protocol JSON | Header summary, preview window, channel protocol JSON, and filter record JSON. |
 | `labkit_NerveResponseAnalysis_app` | Neurophysiology | Filter-record-driven event train detection, differential response derivation, common-mode correction, and CAP metrics. | Filter record JSON and recommended protocol JSON | Analysis JSON with events, trains, metrics, and issues. |
@@ -100,16 +101,19 @@ apps/<family>/<app_slug>/+<app_slug>/run.m
 apps/<family>/<app_slug>/+<app_slug>/+ui/buildSpec.m
 ```
 
-`requirements.m` declares only LabKit facade contract ranges. Public app
-entrypoints return this struct for the lightweight `"requirements"` request and
-check facade contracts before normal or debug launch. Apps do not declare their
-own package metadata or solve dependencies.
+`requirements.m` declares only LabKit facade contract ranges by returning
+`labkit.contract.requirements(...)`. Public app entrypoints return this struct
+for the lightweight `"requirements"` request and check facade contracts before
+normal or debug launch. Apps do not declare their own package metadata or solve
+dependencies.
 
 `version.m` declares the app's own visible version, display name, family, and
 last version-change date. Public app entrypoints return it for the lightweight
 `"version"` request, and app windows include the version and date in their
-figure title. When an app's code or app-facing behavior changes, update that
-app version metadata in the same change.
+figure title. It returns `name`, `displayName`, `family`, `version`, and
+`updated`, where `name` is the public app entrypoint function. When an app's
+code or app-facing behavior changes, update that app version metadata in the
+same change.
 
 For nontrivial apps, `buildSpec.m` should make the page hierarchy obvious at
 the top of the file. Keep the app constructor shallow, then use local builder
@@ -159,7 +163,9 @@ task snapshots under the app package, usually in `+state`.
 
 Image apps should use `labkit.image` for generic image filters, path
 normalization, display names, reads/writes, RGB double conversion, preview
-resizing, mean filtering, and basic enhancement primitives. Keep app-owned
+resizing, mean filtering, and basic enhancement primitives. Thermal image apps
+should use `labkit.thermal` for radiometric source parsing, raw thermal
+matrices, temperature conversion, and thermal palette rendering. Keep app-owned
 readers when they build app item structs or enforce workflow-specific state.
 
 Use this boundary:

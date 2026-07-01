@@ -1,6 +1,6 @@
 # Agent Constitution
 
-This repository is an internal MATLAB app workbench for lab GUI workflows. It is not a monolithic analysis platform. Apps are first-class deliverables; `+labkit` is a small reusable foundation with UI, image, DTA, RHS, and biosignal facades.
+This repository is an internal MATLAB app workbench for lab GUI workflows. It is not a monolithic analysis platform. Apps are first-class deliverables; `+labkit` is a small reusable foundation with UI, image, thermal, DTA, RHS, and biosignal facades.
 
 ## Read Order
 
@@ -24,6 +24,8 @@ Read component docs only when relevant:
 - `docs/ui.md` for reusable GUI shell, components, or layout work
 - `docs/image.md` for image file IO, display normalization, resizing,
   filtering, enhancement primitives, or image facade work
+- `docs/thermal.md` for thermal image file parsing, raw-to-temperature
+  conversion, thermal rendering, or FLIR radiometric JPEG work
 - `docs/dta.md` for DTA API, parser, item, pulse, or session work
 - `docs/rhs.md` for RHS API, parser, channel metadata, indexing, or waveform window reads
 - `docs/biosignal.md` for biosignal recording, waveform processing, events, or wearable work
@@ -41,7 +43,7 @@ debt for the touched area.
 - Keep app-specific formulas, thresholds, plots, result schemas, exports, and workflow decisions in the owning app.
 - Keep reusable `+labkit` API growth conservative and domain-neutral.
 - New app-facing UI work should use `labkit.ui.app.*`, `labkit.ui.spec.*`, `labkit.ui.view.*`, `labkit.ui.tool.*`, and `labkit.ui.diag.*`; the older flat `labkit.ui.*` helper surface has been removed.
-- New app code must not call `labkit.io.*`, `labkit.data.*`, `labkit.analysis.*`, or `labkit.util.*`; use `labkit.dta.*`, `labkit.rhs.*`, `labkit.biosignal.*`, `labkit.image.*`, `labkit.ui.*`, or app-local helpers.
+- New app code must not call `labkit.io.*`, `labkit.data.*`, `labkit.analysis.*`, or `labkit.util.*`; use `labkit.dta.*`, `labkit.rhs.*`, `labkit.biosignal.*`, `labkit.image.*`, `labkit.thermal.*`, `labkit.ui.*`, or app-local helpers.
 - Do not reintroduce root-level legacy command wrappers, app-specific public helper packages, or public helper-dump packages such as `+labkit/+analysis`, `+data`, `+io`, or `+util`.
 - Do not convert struct models to MATLAB classes, rewrite all GUIs, replace separate app entry points with one launcher, or migrate code to another language without explicit approval.
 - Treat file line budgets as maintainability backstops, not extraction goals. Do not create or preserve tiny app helpers solely to lower a `run.m` line count; keep callback-local glue local when that makes workflow order clearer, and extract only cohesive app-owned contracts or reusable framework mechanics.
@@ -89,7 +91,7 @@ Do not duplicate long policy text across human docs. Human docs may explain arch
 
 ## Public API Documentation
 
-Every public library function under `+labkit/+ui`, `+labkit/+image`, `+labkit/+dta`, `+labkit/+rhs`, and `+labkit/+biosignal` must document its app-facing call contract immediately after the function declaration. Include inputs, outputs, options/spec fields, defaults, legal values, and examples where useful.
+Every public library function under `+labkit/+ui`, `+labkit/+image`, `+labkit/+thermal`, `+labkit/+dta`, `+labkit/+rhs`, and `+labkit/+biosignal` must document its app-facing call contract immediately after the function declaration. Include inputs, outputs, options/spec fields, defaults, legal values, and examples where useful.
 
 Private and app-owned package helpers must include concise top-of-file implementation contracts: expected caller, input/output shapes, side effects, and non-obvious assumptions.
 
