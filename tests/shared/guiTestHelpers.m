@@ -230,7 +230,7 @@ function invokeDropdownValue(fig, value)
         if isprop(control, 'Items') && isprop(control, 'Value') && any(strcmp(control.Items, value))
             control.Value = value;
             invokeCallback(control, 'ValueChangedFcn');
-            drawnow;
+            waitForUiIdle(fig);
             return;
         end
     end
@@ -241,13 +241,13 @@ function invokeCheckbox(fig, text, value)
     control = findControlByText(fig, text, 'Value');
     control.Value = value;
     invokeCallback(control, 'ValueChangedFcn');
-    drawnow;
+    waitForUiIdle(fig);
 end
 
 function invokeButton(fig, text)
     control = findControlByText(fig, text, 'ButtonPushedFcn');
     invokeCallback(control, 'ButtonPushedFcn');
-    drawnow;
+    waitForUiIdle(fig);
 end
 
 function h = findControlByText(fig, text, callbackProperty)
@@ -274,6 +274,28 @@ function invokeCallback(h, callbackProperty)
     else
         error('Unsupported callback type for %s.', callbackProperty);
     end
+end
+
+function waitForUiIdle(fig)
+    timeoutSeconds = 2.0;
+    startTime = tic;
+    drawnow;
+    while isvalid(fig) && uiHasPendingWork(fig) && toc(startTime) < timeoutSeconds
+        pause(0.05);
+        drawnow;
+    end
+    drawnow;
+end
+
+function tf = uiHasPendingWork(fig)
+    tf = false;
+    if isappdata(fig, 'labkitUiBusy') && logical(getappdata(fig, 'labkitUiBusy'))
+        tf = true;
+        return;
+    end
+    data = getappdata(fig);
+    names = string(fieldnames(data));
+    tf = any(startsWith(names, "labkitUiSemanticDebounce_"));
 end
 
 function assertCallbackPresent(h, callbackProperty, label)
