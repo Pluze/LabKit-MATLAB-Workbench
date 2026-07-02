@@ -33,6 +33,11 @@ classdef GuiLayoutBatchCropTest < matlab.uitest.TestCase
                 'Batch crop debug launch should return an enabled trace logger.');
             assertAnyTextAreaContains(h, fig, 'Batch image crop debug trace enabled', ...
                 'Batch crop debug launch should mirror trace lines into the visible Log tab.');
+            driver = labkitWorkflowDriver(fig);
+            testCase.verifyTrue(isfile(debug.manifestFile), ...
+                'Batch crop debug launch should record a sample manifest.');
+            testCase.verifyEqual(char(driver.fileStatus('images')), 'No images loaded', ...
+                'Batch crop debug launch should not preload generated samples.');
         end
     end
 

@@ -1,7 +1,7 @@
 % Private debug-launch artifact helper. Expected caller:
 % labkit.ui.app.dispatchRequest. Input is an app entry-point name. Output is a
 % writable debug log file path under the canonical LabKit artifact root. Side
-% effect: creates the parent artifact directory.
+% effect: creates one per-launch debug session directory.
 function filepath = defaultDebugLogFile(appName)
 %DEFAULTDEBUGLOGFILE Return the default app debug trace log path.
 
@@ -9,17 +9,16 @@ function filepath = defaultDebugLogFile(appName)
     artifactsRoot = defaultArtifactsRoot();
     runName = sanitizePathToken(getenv("LABKIT_RUN_NAME"), "");
 
-    if strlength(runName) > 0
-        logFolder = fullfile(artifactsRoot, "debug", char(runName), char(appName));
-    else
-        logFolder = fullfile(artifactsRoot, "debug", char(appName));
-    end
-    logFolder = ensureWritableFolder(logFolder, appName);
-
     [~, seed] = fileparts(tempname);
-    filename = sprintf('%s_%s_%s.log', ...
-        char(appName), datestr(now, 'yyyymmdd_HHMMSS'), seed);
-    filepath = fullfile(logFolder, char(filename));
+    sessionName = sprintf('%s_%s', datestr(now, 'yyyymmdd_HHMMSS'), seed);
+    if strlength(runName) > 0
+        logFolder = fullfile(artifactsRoot, "debug", char(runName), char(appName), sessionName);
+    else
+        logFolder = fullfile(artifactsRoot, "debug", char(appName), sessionName);
+    end
+    logFolder = ensureWritableFolder(logFolder, appName, sessionName);
+
+    filepath = fullfile(logFolder, "trace.log");
 end
 
 function root = defaultArtifactsRoot()
@@ -40,16 +39,16 @@ function root = repoRoot()
     root = fileparts(labkitFolder);
 end
 
-function folder = ensureWritableFolder(folder, appName)
+function folder = ensureWritableFolder(folder, appName, sessionName)
     try
         ensureDirectory(folder);
     catch
         fallbackRoot = fullfile(tempdir, "LabKit-MATLAB-Workbench", "artifacts");
         runName = sanitizePathToken(getenv("LABKIT_RUN_NAME"), "");
         if strlength(runName) > 0
-            folder = fullfile(fallbackRoot, "debug", char(runName), char(appName));
+            folder = fullfile(fallbackRoot, "debug", char(runName), char(appName), sessionName);
         else
-            folder = fullfile(fallbackRoot, "debug", char(appName));
+            folder = fullfile(fallbackRoot, "debug", char(appName), sessionName);
         end
         ensureDirectory(folder);
     end

@@ -30,6 +30,11 @@ classdef GuiLayoutImageEnhanceTest < matlab.uitest.TestCase
                 'Image enhance debug launch should return an enabled trace logger.');
             assertAnyTextAreaContains(h, fig, 'Image enhance debug trace enabled', ...
                 'Image enhance debug launch should mirror trace lines into the visible Log tab.');
+            driver = labkitWorkflowDriver(fig);
+            testCase.verifyTrue(isfile(debug.manifestFile), ...
+                'Image enhance debug launch should record a sample manifest.');
+            testCase.verifyEqual(char(driver.fileStatus('sourceImages')), 'No images loaded', ...
+                'Image enhance debug launch should not preload generated samples.');
             verifyPerImageHistoryRefresh(fig);
         end
     end

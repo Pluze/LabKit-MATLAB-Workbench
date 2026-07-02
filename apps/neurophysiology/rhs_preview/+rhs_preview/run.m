@@ -40,6 +40,7 @@ function fig = run(debugLog)
     if debugLog.enabled
         debugLog.trace("RHS Preview debug trace enabled.");
         debugLog.instrumentFigure(fig);
+        rhs_preview.debug.writeAndLogSamplePack(debugLog, @addLog);
     end
 
     refreshAll();

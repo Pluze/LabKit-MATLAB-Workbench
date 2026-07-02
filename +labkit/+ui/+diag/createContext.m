@@ -28,15 +28,13 @@ function debugContext = createContext(appName, opts)
 %           logFile. This file is written at callback start and removed only
 %           after callback completion so a process crash leaves the active
 %           callback visible on disk.
+%       artifactFolder, sampleFolder, outputFolder, manifestFile -
+%           char/string debug artifact paths derived from logFile by default.
 %
 % Output:
-%   debugContext - struct with appName, enabled, traceEnabled, logFile,
-%       crashReportFile, activeOperationFile, append, trace,
-%       reportException, setTraceCallback, attachTextLog, wrapCallback,
-%       instrumentFigure, and getLog. Trace lines include stable app,
-%       component, event, and reason fields. Default figure instrumentation
-%       wraps high-level component callbacks and intentionally skips pointer,
-%       drag, and scroll.
+%   debugContext - struct with appName, file paths, append/trace/report
+%       callbacks, figure instrumentation, recordArtifacts, and getLog.
+%       Trace lines include stable app, component, event, and reason fields.
 
     if nargin < 2 || isempty(opts)
         opts = struct();
@@ -52,6 +50,11 @@ function debugContext = createContext(appName, opts)
         defaultReportFile(logFile, "crash_report")));
     activeOperationFile = string(optionValue(opts, 'activeOperationFile', ...
         defaultReportFile(logFile, "active_operation")));
+    artifacts = debugArtifactPaths(opts, logFile, enabled);
+    artifactFolder = artifacts.artifactFolder;
+    sampleFolder = artifacts.sampleFolder;
+    outputFolder = artifacts.outputFolder;
+    manifestFile = artifacts.manifestFile;
     stallTimeoutSeconds = normalizePositiveScalar( ...
         optionValue(opts, 'stallTimeoutSeconds', 30), 30);
     lines = {};
@@ -59,7 +62,6 @@ function debugContext = createContext(appName, opts)
     if enabled && strlength(logFile) > 0
         initializeLogFile(logFile, appName);
     end
-
     debugContext = struct();
     debugContext.appName = appName;
     debugContext.enabled = logical(enabled);
@@ -67,6 +69,10 @@ function debugContext = createContext(appName, opts)
     debugContext.logFile = logFile;
     debugContext.crashReportFile = crashReportFile;
     debugContext.activeOperationFile = activeOperationFile;
+    debugContext.artifactFolder = artifactFolder;
+    debugContext.sampleFolder = sampleFolder;
+    debugContext.outputFolder = outputFolder;
+    debugContext.manifestFile = manifestFile;
     debugContext.append = @append;
     debugContext.trace = @trace;
     debugContext.reportException = @reportException;
@@ -74,6 +80,7 @@ function debugContext = createContext(appName, opts)
     debugContext.attachTextLog = @attachTextLog;
     debugContext.wrapCallback = @wrapCallback;
     debugContext.instrumentFigure = @instrumentFigure;
+    debugContext.recordArtifacts = @recordArtifacts;
     debugContext.getLog = @getLog;
 
     function append(message)
@@ -123,6 +130,20 @@ function debugContext = createContext(appName, opts)
             char(string(event)), exception.identifier, exception.message), 'caught');
         op = completedOperation(label);
         writeOperationReport("caught_error", op, exception);
+    end
+
+    function recordArtifacts(manifest)
+        if ~enabled || strlength(manifestFile) == 0
+            return;
+        end
+        metadata = struct( ...
+            "appName", appName, ...
+            "logFile", logFile, ...
+            "artifactFolder", artifactFolder, ...
+            "sampleFolder", sampleFolder, ...
+            "outputFolder", outputFolder);
+        writeDebugManifest(manifestFile, manifest, metadata);
+        trace("debugArtifacts", "manifest written", "internal");
     end
 
     function attachTextLog(textArea)

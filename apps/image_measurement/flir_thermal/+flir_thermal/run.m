@@ -37,6 +37,7 @@ function fig = run(debugLog)
     if debugLog.enabled
         debugLog.trace('FLIR thermal debug trace enabled.');
         debugLog.instrumentFigure(fig);
+        flir_thermal.debug.writeAndLogSamplePack(debugLog, @addLog);
     end
     readingTool = flir_thermal.view.temperatureReadingTool(fig, ...
         ui.controls.preview.axesById.thermalImage, ...
@@ -164,10 +165,10 @@ function fig = run(debugLog)
             ranges(k, :) = autoRangeForItem(S.items(k));
         end
         range = normalizeRange([min(ranges(:, 1)), max(ranges(:, 2))]);
+        sharedBounds = range;
         for k = 1:numel(S.items)
             S.items(k).displayRange = range;
-            S.items(k).rangeControlBounds = ...
-                controlBoundsContaining(range, itemControlBounds(S.items(k)));
+            S.items(k).rangeControlBounds = sharedBounds;
             S.items(k).rangeAdjusted = true;
         end
         syncRangeControlsFromCurrentItem();

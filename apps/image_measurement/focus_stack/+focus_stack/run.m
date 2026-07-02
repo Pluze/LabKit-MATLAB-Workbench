@@ -35,6 +35,7 @@ function fig = run(debugLog)
     if debugLog.enabled
         debugLog.trace('Focus stack debug trace enabled.');
         debugLog.instrumentFigure(fig);
+        setupDebugSamples();
     end
 
     resetPreviewAxes();
@@ -344,6 +345,17 @@ function fig = run(debugLog)
     function addLog(message)
         labkit.ui.view.appendLog(ui, 'logPanel', message);
         debugLog.append(message);
+    end
+
+    function setupDebugSamples()
+        try
+            pack = focus_stack.debug.writeSamplePack(debugLog);
+            addLog(sprintf('Debug sample files: %s', char(pack.sampleFolder)));
+            addLog(sprintf('Debug output folder: %s', char(pack.outputFolder)));
+        catch ME
+            debugLog.reportException('focusStack', 'Debug sample setup failed', ME);
+            addLog(sprintf('Debug sample setup failed: %s', ME.message));
+        end
     end
 
     function markResultDirty()

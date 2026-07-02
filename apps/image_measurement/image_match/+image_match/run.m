@@ -42,6 +42,7 @@ function fig = run(debugLog)
     if debugLog.enabled
         debugLog.trace('Image match debug trace enabled.');
         debugLog.instrumentFigure(fig);
+        setupDebugSamples();
     end
 
     resetPreviewAxes();
@@ -524,6 +525,17 @@ function fig = run(debugLog)
         labkit.ui.view.appendLog(ui, 'logPanel', message);
         if debugLog.enabled
             debugLog.append(message);
+        end
+    end
+
+    function setupDebugSamples()
+        try
+            pack = image_match.debug.writeSamplePack(debugLog);
+            addLog(sprintf('Debug sample files: %s', char(pack.sampleFolder)));
+            addLog(sprintf('Debug output folder: %s', char(pack.outputFolder)));
+        catch ME
+            debugLog.reportException('imageMatch', 'Debug sample setup failed', ME);
+            addLog(sprintf('Debug sample setup failed: %s', ME.message));
         end
     end
 

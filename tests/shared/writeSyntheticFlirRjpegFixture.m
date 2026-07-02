@@ -109,15 +109,15 @@ end
 
 function bytes = rawPngBytes(raw)
     path = [tempname '.png'];
-    cleanup = onCleanup(@() deleteIfExists(path));
     imwrite(raw, char(path));
     fid = fopen(char(path), "r");
     if fid < 0
         error("tests:flir:FixtureWriteFailed", ...
             "Could not read synthetic thermal PNG payload.");
     end
-    closeFile = onCleanup(@() fclose(fid));
     bytes = fread(fid, inf, "*uint8").';
+    fclose(fid);
+    deleteIfExists(path);
 end
 
 function block = flirBlock(cameraBytes, rawRecordBytes)

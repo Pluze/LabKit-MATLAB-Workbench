@@ -36,6 +36,13 @@ classdef GuiLayoutFlirThermalTest < matlab.uitest.TestCase
                 'FLIR Thermal debug launch should return an enabled trace logger.');
             assertAnyTextAreaContains(h, fig, 'FLIR thermal debug trace enabled', ...
                 'FLIR Thermal debug launch should mirror trace lines into the visible Log tab.');
+            ui = getappdata(fig, 'labkitUiRegistry');
+            testCase.verifyTrue(isfile(debug.manifestFile), ...
+                'FLIR Thermal debug launch should record a sample manifest.');
+            testCase.verifyEqual(char(labkit.ui.view.getValue(ui, 'fileStatus')), 'Files: 0', ...
+                'FLIR Thermal debug launch should not preload generated samples.');
+            testCase.verifyEqual(char(labkit.ui.view.getValue(ui, 'currentImage')), 'No FLIR image loaded', ...
+                'FLIR Thermal debug launch should not preload generated samples.');
         end
     end
 
@@ -76,6 +83,37 @@ classdef GuiLayoutFlirThermalTest < matlab.uitest.TestCase
             testCase.verifyEqual(scaleAxes.PlotBoxAspectRatioMode, 'auto');
             testCase.verifyEmpty(char(string(scaleAxes.Title.String)));
             testCase.verifyEqual(numel(scaleAxes.Children), 1);
+        end
+
+        function flir_shared_range_limits_manual_adjustment_to_shared_bounds(testCase)
+            setupLabKitTestPath();
+            h = guiTestHelpers();
+            h.assertUifigureAvailable();
+            folder = tempname;
+            mkdir(folder);
+            cleanupFolder = onCleanup(@() removeTempFolder(folder));
+            cleanupFigure = onCleanup(@() h.closeAllFigures());
+            coolPath = fullfile(folder, "synthetic_flir_cool.jpg");
+            warmPath = fullfile(folder, "synthetic_flir_warm.jpg");
+            writeSyntheticFlirRjpegFixture(coolPath, struct("raw", uint16(18000 + [0 10; 20 30])));
+            writeSyntheticFlirRjpegFixture(warmPath, struct("raw", uint16(18000 + [400 420; 450 470])));
+
+            fig = h.launchFigure('labkit_FLIRThermal_app', ...
+                'FLIR Thermal Postprocess');
+            driver = labkitWorkflowDriver(fig);
+            driver.chooseFiles('thermalFiles', [string(coolPath); string(warmPath)]);
+            h.invokeButton(fig, 'Add FLIR files or folder');
+            labels = flir_thermal.view.rangeControlLabels();
+            h.invokeButton(fig, char(labels.setSharedRange));
+            drawnow;
+
+            ui = getappdata(fig, 'labkitUiRegistry');
+            minLimits = ui.controls.temperatureMin.slider.Limits;
+            maxLimits = ui.controls.temperatureMax.slider.Limits;
+            currentMin = labkit.ui.view.getValue(ui, 'temperatureMin');
+            currentMax = labkit.ui.view.getValue(ui, 'temperatureMax');
+            testCase.verifyLessThanOrEqual(max(abs(minLimits - [currentMin currentMax])), 0.05);
+            testCase.verifyLessThanOrEqual(max(abs(maxLimits - [currentMin currentMax])), 0.05);
         end
     end
 end

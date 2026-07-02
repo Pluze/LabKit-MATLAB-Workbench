@@ -79,6 +79,7 @@ function fig = run(debugLog)
     txtDetails = ui.controls.details.textArea;
     if debugLog.enabled
         debugLog.trace('Batch image crop debug trace enabled.');
+        batch_crop.debug.writeAndLogSamplePack(debugLog, @addLog);
     end
     resetPreviewAxes();
     refreshAll();

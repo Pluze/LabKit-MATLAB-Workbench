@@ -47,6 +47,7 @@ function fig = run(debugLog)
     btnCancelCrop = controls.btnCancelCrop;
     if debugLog.enabled
         debugLog.trace('DIC preprocess debug trace enabled.');
+        setupDebugSamples();
     end
 
     refreshPreview();
@@ -491,6 +492,17 @@ function fig = run(debugLog)
             ddPreview.Value = 'Current pair';
     end
 end
+
+    function setupDebugSamples()
+        try
+            pack = dic_preprocess.debug.writeSamplePack(debugLog);
+            addLog(sprintf('Debug sample files: %s', char(pack.sampleFolder)));
+            addLog(sprintf('Debug output folder: %s', char(pack.outputFolder)));
+        catch ME
+            debugLog.reportException('dicPreprocess', 'Debug sample setup failed', ME);
+            addLog(sprintf('Debug sample setup failed: %s', ME.message));
+        end
+    end
 
 function items = fileValue(pathValue)
     pathValue = string(pathValue);

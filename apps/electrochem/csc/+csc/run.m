@@ -55,6 +55,7 @@ function fig = run(debugLog)
     cbBotTrim = ui.controls.bottomTrim.valueHandle;
     if debugLog.enabled
         debugLog.trace('CSC debug trace enabled.');
+        setupDebugSamples();
     end
     %% App callbacks, loading, refresh, and plotting
     function onOpenFilesChosen(~, event)
@@ -411,6 +412,17 @@ function fig = run(debugLog)
     function addLog(msg)
         labkit.ui.view.appendLog(ui, 'appLog', msg);
         debugLog.append(msg);
+    end
+
+    function setupDebugSamples()
+        try
+            pack = csc.debug.writeSamplePack(debugLog);
+            addLog(sprintf('Debug sample files: %s', char(pack.sampleFolder)));
+            addLog(sprintf('Debug output folder: %s', char(pack.outputFolder)));
+        catch ME
+            debugLog.reportException('csc', 'Debug sample setup failed', ME);
+            addLog(sprintf('Debug sample setup failed: %s', ME.message));
+        end
     end
 
     function report = removeItemsByPaths(filepaths)
