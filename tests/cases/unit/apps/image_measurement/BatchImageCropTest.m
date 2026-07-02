@@ -30,6 +30,7 @@ function verify_batchImageCrop()
     checkRotatedCropKeepsRequestedSize();
     checkRotationBackgroundUsesWhiteFill();
     checkNewItemsDefaultToZeroPadding();
+    checkItemsForPathsDefersImageReads();
     checkReadItemsAcceptsFilePanelCellPaths();
     checkDuplicateItemCreatesIndependentCropTask();
     checkMergeChosenItemsPreservesDuplicateCropTasks();
@@ -329,6 +330,24 @@ function checkNewItemsDefaultToZeroPadding()
     item = batch_crop.state.emptyItem();
     assert(item.paddingPercent == 0 && batch_crop.state.itemPaddingPercent(item) == 0, ...
         'New batch-crop items should default to no repaired padding.');
+end
+
+function checkItemsForPathsDefersImageReads()
+    missingPath = fullfile(tempdir, 'labkit_missing_batch_crop_source.png');
+    if isfile(missingPath)
+        delete(missingPath);
+    end
+
+    items = batch_crop.state.itemsForPaths({missingPath});
+
+    assert(numel(items) == 1, ...
+        'Batch crop path items should preserve one task per selected file.');
+    assert(items(1).path == string(missingPath), ...
+        'Batch crop path items should preserve the selected source path.');
+    assert(isempty(items(1).image), ...
+        'Batch crop file selection should defer image reads until preview or export needs pixels.');
+    assert(~items(1).centerSet && all(isnan(items(1).centerXY)), ...
+        'Deferred batch crop items should still require explicit crop-center confirmation.');
 end
 
 function checkReadItemsAcceptsFilePanelCellPaths()

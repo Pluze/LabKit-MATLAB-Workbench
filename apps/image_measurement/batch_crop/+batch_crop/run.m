@@ -90,13 +90,7 @@ function fig = run(debugLog)
             addLog('Image file selection cancelled.');
             return;
         end
-        try
-            items = batch_crop.state.readItems(paths);
-        catch ME
-            debugLog.reportException('batchCrop', 'Could not load images', ME);
-            showError('Could not load images', ME.message);
-            return;
-        end
+        items = batch_crop.state.itemsForPaths(paths);
         S.items = batch_crop.state.mergeChosenItems(S.items, items);
         S.currentIndex = min(max(S.currentIndex, 1), numel(S.items));
         S.outputFolder = string(labkit.ui.app.defaultOutputFolder( ...
@@ -104,7 +98,7 @@ function fig = run(debugLog)
         txtOutputFolder.Value = char(S.outputFolder);
         S = batch_crop.state.clearExportState(S);
         S.canvasCache = batch_crop.state.emptyCanvasCache();
-        addLog(sprintf('Loaded %d image file(s); crop tasks: %d.', numel(items), numel(S.items)));
+        addLog(sprintf('Selected %d image file(s); crop tasks: %d.', numel(items), numel(S.items)));
         refreshAll();
     end
 
@@ -368,6 +362,9 @@ function fig = run(debugLog)
                 batch_crop.view.missingWorkflowItemsText(S.items, "scale"));
             return;
         end
+        if ~ensureAllImagesLoaded()
+            return;
+        end
         opts = currentExportOptions();
         plan = batch_crop.state.exportPlan(S.items, opts);
         if ~isempty(S.lastExport) && S.lastExportFingerprint == plan.fingerprint
@@ -433,6 +430,7 @@ function fig = run(debugLog)
     end
 
     function refreshControls()
+        ensureCurrentImageLoaded();
         hasImage = hasCurrentImage();
         enabled = batch_crop.view.ternary(hasImage, 'on', 'off');
         physicalMode = strcmpi(currentScaleMode(), "Physical");
@@ -492,6 +490,7 @@ function fig = run(debugLog)
         if nargin < 1
             viewState = [];
         end
+        ensureCurrentImageLoaded();
         if ~hasCurrentImage()
             resetPreviewAxes();
             cropSession.setBackground([]);
@@ -510,6 +509,7 @@ function fig = run(debugLog)
     end
 
     function refreshSummary()
+        ensureCurrentImageLoaded();
         resultTable.Data = batch_crop.view.summaryTableData(S, S.currentIndex, ...
             currentCropWidth(), currentCropHeight(), currentPaddingPercent(), ddFormat.Value);
         txtDetails.Value = batch_crop.view.detailLines(S, S.currentIndex, ...
@@ -626,7 +626,58 @@ function fig = run(debugLog)
     end
 
     function tf = hasCurrentImage()
-        tf = ~isempty(S.items) && S.currentIndex >= 1 && S.currentIndex <= numel(S.items);
+        tf = ~isempty(S.items) && S.currentIndex >= 1 && S.currentIndex <= numel(S.items) && ...
+            ~isempty(S.items(S.currentIndex).image);
+    end
+
+    function tf = ensureCurrentImageLoaded()
+        tf = false;
+        if isempty(S.items) || S.currentIndex < 1 || S.currentIndex > numel(S.items)
+            return;
+        end
+        [S.items, tf, message] = loadImageForIndex(S.items, S.currentIndex);
+        if ~tf && strlength(message) > 0
+            addLog(sprintf('Could not load image %d: %s', S.currentIndex, char(message)));
+        end
+    end
+
+    function tf = ensureAllImagesLoaded()
+        tf = true;
+        for k = 1:numel(S.items)
+            [S.items, ok, message] = loadImageForIndex(S.items, k);
+            if ~ok
+                tf = false;
+                showError('Could not load image', ...
+                    sprintf('Image %d could not be loaded: %s', k, char(message)));
+                return;
+            end
+        end
+        S.canvasCache = batch_crop.state.emptyCanvasCache();
+    end
+
+    function [items, ok, message] = loadImageForIndex(items, index)
+        ok = false;
+        message = "";
+        if index < 1 || index > numel(items)
+            return;
+        end
+        if ~isempty(items(index).image)
+            ok = true;
+            return;
+        end
+        try
+            loaded = batch_crop.state.readItems(items(index).path);
+            if isempty(loaded)
+                message = "No image was loaded.";
+                return;
+            end
+            items(index).image = loaded(1).image;
+            items(index).path = loaded(1).path;
+            ok = true;
+        catch ME
+            debugLog.reportException('batchCrop', 'Could not load image', ME);
+            message = string(ME.message);
+        end
     end
 
     function refreshScaleControls(statusControl)
