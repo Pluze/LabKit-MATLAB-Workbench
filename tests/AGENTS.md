@@ -78,6 +78,10 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
   without dedicated GUI coverage, prefer one debug launch that verifies
   startup, figure creation, path hygiene, and trace plumbing until dedicated
   layout or workflow tests are added.
+- Prefer `guiTestHelpers().waitForUiIdle(...)` or a bounded state-stability
+  helper over fixed GUI sleeps. If a test must wait for framework debounce,
+  the owning UI/tool implementation should register pending work through the
+  GUI idle appdata contract instead of relying on `pause(...)` duration.
 - Scientific and visualization tests should prefer deterministic state, data,
   numeric, export, axis-label, callback-event, or debug-trace assertions over
   whole-GUI or whole-image snapshots. Use minimal synthetic inputs. Add pixel

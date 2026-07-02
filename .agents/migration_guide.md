@@ -38,7 +38,7 @@ Last audited: 2026-07-02.
 Current active migration debt:
 
 ```text
-test performance compression route
+none
 ```
 
 Current facts:
@@ -94,14 +94,11 @@ Current facts:
   launch-only assertions already covered by workflow tests or shared debug
   tests.
 - Test performance profiling on 2026-07-02 showed two actionable timing
-  layers:
-  - GUI suite discovery/list-only took about 5.28 seconds inside MATLAB
-    profiler capture, with `runLabKitTests>discoverOfficialGroups` around
-    3.72 seconds and `setupLabKitTestPath` around 1.33 seconds.
-  - `GuiLayoutUiDeclarativeAppTest/test_gui_layout_ui_declarative_app` took
-    about 15 seconds of test execution, with fixed `settleLayout` waits
-    contributing about 2.32 seconds and app/workspace/preview construction
-    contributing about 3.44 seconds.
+  layers: fixed GUI waits and repeated runner path scans. Current test
+  contracts now route GUI debounce/layout settling through GUI idle helpers,
+  keep runner path setup to one MATLAB path read per configuration pass, and
+  report JUnit slow-test plus shard estimates through
+  `scripts/summarize_junit.py`.
 
 ## Reopen Triggers
 
@@ -119,133 +116,11 @@ Open a new active route here only when current scans expose concrete debt:
   `AppLaunchGuiTest` coverage guardrail to fail
 - hidden workflow validation needs a new app-neutral driver operation or a new
   app-owned test hook to avoid a blocking OS/modal dialog
+- current JUnit timing or profiler evidence identifies a new test-performance
+  hotspot whose fix would change runner behavior, validation policy, or
+  app/workflow coverage
 - a migration exposes package-boundary drift that cannot be fixed locally
   without a new `+labkit` API decision
-
-## Active Route: Test Performance Compression
-
-Goal Prompt:
-
-Compress LabKit validation wall-clock time without weakening the behavior
-contracts that make the GUI app workbench safe to change.
-
-Objective:
-
-- Reduce local edit-loop time, full GUI suite wall-clock time, and CI time
-  separately. Do not optimize one by making the others less trustworthy.
-- Use current profile artifacts, JUnit timing, and GitHub Actions step timing
-  as evidence before changing runner structure.
-- Keep build tasks and `docs/testing.md` as the human command surface; this
-  route owns only the active migration work and agent execution state.
-
-Operating principles:
-
-- Measure first, then change the narrow slow path that the data proves.
-- Preserve existing app workflow coverage unless an equivalent or stronger
-  app-owned unit, integration, or focused GUI test replaces the same contract.
-- Prefer event-driven waits, deterministic shard selection, and test metadata
-  over fixed sleeps and hard-coded class lists.
-- Follow large-project test strategy patterns conservatively:
-  duration-aware sharding may learn from pytest-xdist-style load balancing,
-  shard environment contracts may follow Bazel-style `TEST_TOTAL_SHARDS` /
-  `TEST_SHARD_INDEX` conventions, and changed-file routing may grow toward
-  Pants-style changed-target selection with dependents. Do not add a second
-  runner framework.
-
-Current facts to preserve:
-
-- `buildtool changed`, `changedFast`, `headless`, and `gui` remain the public
-  build tasks.
-- CI non-GUI shards already finish their MATLAB test steps quickly relative to
-  `matlab-actions/setup-matlab`; avoid adding more default push jobs unless
-  current CI evidence changes.
-- GUI validation is opt-in for workflow dispatch and scheduled runs; local GUI
-  sharding is already supported through `runLabKitTests` `ShardCount` and
-  `ShardIndex`.
-- Artifacts under `artifacts/profile/` and `artifacts/test-results/` are
-  ignored evidence, not tracked fixtures.
-- Feature-branch work in this route should not bump facade or app versions on
-  every small commit. Before squash, PR handoff, or direct `main` integration,
-  compare against latest `main` and make the required aggregate version bump
-  once.
-
-Route status:
-
-- Timing baseline reporting is now routed through `scripts/summarize_junit.py`,
-  which emits slow-test rows plus deterministic and duration-aware shard
-  estimates from each JUnit report.
-- Semantic app debounce and scale-bar tool debounce now register as GUI idle
-  pending work for tests; fixed `pause(0.65)` waits have been removed from the
-  automated GUI test tree.
-- Declarative app layout settling now waits for bounded layout-position
-  stability instead of sleeping a fixed 0.5 seconds per tab switch.
-- Runner path setup now reads the MATLAB path once per configuration pass and
-  updates that cached entry list as paths are added, avoiding repeated full
-  path splits during test startup.
-
-Required workstreams:
-
-1. Timing baseline:
-   - add or extend a timing summary tool that reads JUnit XML and reports case
-     counts, total test time, slowest cases, deterministic shard estimates, and
-     duration-aware shard estimates
-   - add lightweight profiling recipes for test discovery, representative GUI
-     cases, and changed-plan startup
-2. Fixed-wait removal:
-   - expose the existing GUI idle/debounce wait helper for direct tests
-   - replace fixed GUI waits such as `pause(0.65)` and layout sleeps with
-     event-driven waits or bounded stability checks
-   - use short test-only debounce settings only where the spec under test can
-     safely override production defaults
-3. Focused GUI decomposition:
-   - split oversized GUI tests, starting with
-     `GuiLayoutUiDeclarativeAppTest`, into focused contract tests
-   - keep one lightweight integration smoke test for app-builder composition
-   - avoid reintroducing launch-only duplicates for apps already covered by
-     real workflow tests
-4. Shard quality:
-   - keep current deterministic modulo sharding as the fallback
-   - add optional duration-aware sharding from recent timing artifacts when it
-     proves better balance
-   - support environment-variable shard inputs without changing the public
-     build-task surface
-5. Runner startup:
-   - profile and reduce repeated path setup and suite discovery costs
-   - avoid triggering launcher/app catalog discovery during runner paths that
-     do not need it
-6. CI strategy:
-   - keep default push/PR non-GUI job count conservative while setup cost
-     dominates
-   - consider GUI matrix sharding only for workflow-dispatch or scheduled GUI
-     runs, where wall-clock time matters more than runner-minute cost
-
-Non-goals:
-
-- Do not remove GUI workflow coverage just to make timing numbers smaller.
-- Do not move app-specific workflow logic into `+labkit`.
-- Do not add another custom runner or bypass MATLAB `matlab.unittest`.
-- Do not make ordinary push CI run all GUI tests by default.
-- Do not cache license, keychain, or MATLAB private runtime state.
-
-Validation gates:
-
-- For migration-guide-only updates, run or justify the narrow project
-  guardrail scope.
-- For runner, planner, or shared test-helper changes, run the focused changed
-  plan first, then the narrowest affected suite if a failure localizes.
-- For GUI wait or GUI test decomposition changes, run the affected GUI suite
-  with hidden GUI mode and compare timing artifacts before and after.
-- For CI workflow changes, inspect the triggered `MATLAB Tests` run and report
-  setup time, test step time, and any skipped GUI/coverage jobs explicitly.
-
-Completion criteria:
-
-- The route can be retired when timing summary evidence exists, fixed GUI
-  sleeps are removed or justified, oversized GUI tests are decomposed enough
-  for focused reruns, shard balance is evidence-backed, and CI job structure
-  reflects current setup-versus-test timing.
-- When complete, shrink this section back out of the ledger and preserve only
-  current contracts in source, tests, docs, or guardrails.
 
 ## Long-Term Compatibility Queue
 
