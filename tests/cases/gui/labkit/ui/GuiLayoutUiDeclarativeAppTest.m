@@ -408,14 +408,14 @@ function verify_gui_layout_ui_declarative_app()
 end
 
 function assertTextPanelsHaveDefaultRoom(ui)
-    settleLayout();
+    settleLayout(ui.figure);
     assertStatusPanelContract(ui.controls.notesText);
     ui.logTab.Parent.SelectedTab = ui.logTab;
-    settleLayout();
+    settleLayout(ui.figure);
     assertLogPanelContract(ui.controls.logPanel);
     assertLogTabFillsAvailableHeight(ui);
     ui.setupTab.Parent.SelectedTab = ui.setupTab;
-    settleLayout();
+    settleLayout(ui.figure);
     assertMultiFilePanelContract(ui.controls.sourceImages);
     assertMultiFilePanelContract(ui.controls.fileQueue);
     assertSingleFilePanelContract(ui.controls.singleFile);
@@ -481,10 +481,41 @@ function assertSingleFilePanelContract(control)
         'single-mode filePanel should use a compact section row height.');
 end
 
-function settleLayout()
+function settleLayout(fig)
+    timeoutSeconds = 0.5;
+    stablePassesNeeded = 2;
     drawnow;
-    pause(0.5);
+    previous = layoutSignature(fig);
+    stablePasses = 0;
+    startTime = tic;
+    while isvalid(fig) && toc(startTime) < timeoutSeconds && ...
+            stablePasses < stablePassesNeeded
+        pause(0.025);
+        drawnow;
+        current = layoutSignature(fig);
+        if isequal(current, previous)
+            stablePasses = stablePasses + 1;
+        else
+            stablePasses = 0;
+            previous = current;
+        end
+    end
     drawnow;
+end
+
+function signature = layoutSignature(fig)
+    objects = findall(fig, '-property', 'Position');
+    signature = zeros(numel(objects), 4);
+    for k = 1:numel(objects)
+        try
+            position = objects(k).Position;
+        catch
+            continue;
+        end
+        if isnumeric(position) && numel(position) == 4
+            signature(k, :) = round(double(position(:).') .* 10) ./ 10;
+        end
+    end
 end
 
 function assertDefaultResizeHandleDrags(ui)

@@ -177,6 +177,8 @@ Route status:
 - Semantic app debounce and scale-bar tool debounce now register as GUI idle
   pending work for tests; fixed `pause(0.65)` waits have been removed from the
   automated GUI test tree.
+- Declarative app layout settling now waits for bounded layout-position
+  stability instead of sleeping a fixed 0.5 seconds per tab switch.
 
 Required workstreams:
 
