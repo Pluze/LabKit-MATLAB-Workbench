@@ -62,6 +62,21 @@ Interpret tables this way:
 
 Check `source_tag` and `tags` before drawing conclusions from rankings.
 
+Keep measured scenarios narrow:
+
+- Startup targets should open the launcher or app, call `drawnow`, pause only
+  long enough for initial UI work to settle, and rely on `CloseFiguresAfterRun`
+  for cleanup. Profile close latency as a separate scenario.
+- Compare normal and debug launches separately. Debug trace mirroring is a real
+  developer workflow cost, but it should not be reported as ordinary user
+  startup cost.
+- For large-file UX complaints, profile the chooser callback path separately
+  from Run or Export. Use synthetic multi-file inputs and compare path-only
+  registration with app-owned readers before changing algorithms.
+- Treat single GUI runs as directional. MATLAB web UI creation and event
+  scheduling can create outliers, so confirm shared-framework changes with
+  representative runs plus focused tests.
+
 ## Optimization Workflow
 
 1. State the measured scenario and profile artifact path.

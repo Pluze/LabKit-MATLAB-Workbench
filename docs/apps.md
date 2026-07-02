@@ -179,6 +179,13 @@ Use this boundary:
 - preview callbacks operate on the current selection and display-resolution
   data when practical; full batch work happens at export or run actions.
 
+File selection should register files and build app-owned task state with the
+least data needed for the immediate preview. For large selections, avoid
+eagerly reading or computing every file in the chooser callback unless the
+workflow truly cannot show a useful first state without the full batch. For
+example, a crop workflow can keep path-only crop tasks until the current preview
+or export needs pixels.
+
 The UI framework prevents duplicate callback submission. Apps decide what
 changed, what result is dirty, and whether a repeated task can be skipped.
 
