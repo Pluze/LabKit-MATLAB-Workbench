@@ -66,6 +66,33 @@ classdef LauncherGuiTest < matlab.uitest.TestCase
             h.closeAllFigures();
         end
 
+        function launcher_defers_app_folder_path_setup_until_launch(testCase)
+            root = setupLabKitTestPath();
+            h = guiTestHelpers();
+            h.assertUifigureAvailable();
+            h.closeAllFigures();
+            cleanupFigures = onCleanup(@() h.closeAllFigures());
+
+            tempRoot = string(tempname);
+            mkdir(tempRoot);
+            testCase.addTeardown(@() removeFolderIfPresent(tempRoot));
+            copyfile(fullfile(root, "labkit_launcher.m"), fullfile(tempRoot, "labkit_launcher.m"));
+            appFolder = createMinimalLauncherApp(tempRoot, "lazy", "labkit_LazyPath_app");
+            testCase.addTeardown(@() removePathIfPresent(appFolder));
+            originalFolder = pwd;
+            cd(tempRoot); clear labkit_launcher;
+            testCase.addTeardown(@() cd(originalFolder));
+            fig = labkit_launcher();
+            drawnow;
+            testCase.verifyFalse(pathContainsExact(appFolder));
+            h.invokeButton(fig, 'Open Selected App'); drawnow;
+            testCase.verifyTrue(pathContainsExact(appFolder));
+            clear cleanupFigures;
+            h.closeAllFigures();
+            clear labkit_launcher;
+            cd(originalFolder);
+        end
+
         function clean_artifacts_has_static_safety_guards(testCase)
             root = setupLabKitTestPath();
             source = fileread(fullfile(root, "labkit_launcher.m"));
@@ -403,7 +430,7 @@ function invokeTableSelection(tableHandle, row)
     end
 end
 
-function createMinimalLauncherApp(root, family, command)
+function folder = createMinimalLauncherApp(root, family, command)
     folder = fullfile(root, "apps", family);
     mkdir(folder);
     writeText(fullfile(folder, command + ".m"), sprintf([ ...
@@ -596,6 +623,21 @@ function removeFolderIfPresent(folder)
             rmpath(folder);
         end
         rmdir(folder, "s");
+    end
+end
+
+function removePathIfPresent(folder)
+    if pathContainsExact(folder)
+        rmpath(char(folder));
+    end
+end
+
+function tf = pathContainsExact(folder)
+    paths = string(strsplit(path, pathsep));
+    if ispc
+        tf = any(strcmpi(paths, string(folder)));
+    else
+        tf = any(strcmp(paths, string(folder)));
     end
 end
 

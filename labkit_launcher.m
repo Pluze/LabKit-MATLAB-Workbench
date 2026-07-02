@@ -28,16 +28,17 @@ function varargout = labkit_launcher(varargin)
 %   Section: Update install file operations
 %   Section: Shared filesystem and path helpers
 
-    root = fileparts(mfilename('fullpath'));
     mode = parseMode(varargin);
+    if mode == "version"
+        varargout = {launcherVersion()};
+        return;
+    end
+
+    root = fileparts(mfilename('fullpath'));
     apps = discoverApps(root);
 
     if mode == "list"
         varargout = {appCatalogTable(apps)};
-        return;
-    end
-    if mode == "version"
-        varargout = {launcherVersion()};
         return;
     end
     if nargout > 1
@@ -45,7 +46,7 @@ function varargout = labkit_launcher(varargin)
             'labkit_launcher returns at most the launcher figure handle.');
     end
 
-    initializePath(root, apps);
+    initializeLauncherPath(root);
     fig = runLauncher(root, apps);
     if nargout == 1
         varargout = {fig};
@@ -84,7 +85,7 @@ function info = launcherVersion()
     info = struct( ...
         "name", "labkit_launcher", ...
         "displayName", "LabKit App Launcher", ...
-        "version", "1.2.0", ...
+        "version", "1.2.1", ...
         "updated", "2026-07-02");
 end
 
@@ -95,12 +96,8 @@ end
 
 %% Section: Path setup
 
-function initializePath(root, apps)
+function initializeLauncherPath(root)
     addPathIfMissing(root);
-    addPathIfMissing(fullfile(root, 'apps'), '-end');
-    for k = 1:numel(apps)
-        addPathIfMissing(apps(k).folder, '-end');
-    end
 end
 
 function addPathIfMissing(folder, varargin)
@@ -213,7 +210,7 @@ function fig = runLauncher(root, apps)
         state.apps = discoverApps(root);
         state.visibleApps = state.apps;
         state.selectedRow = appRowByCommand(state.visibleApps, selectedCommand);
-        initializePath(root, state.apps);
+        initializeLauncherPath(root);
         refreshTable();
     end
 
@@ -369,7 +366,7 @@ function fig = runLauncher(root, apps)
         setStatus(launchStartStatus(app, debugMode));
         drawnow;
         try
-            addPathIfMissing(app.folder, '-end');
+            initializeAppPath(app);
             if debugMode
                 feval(app.command, "debug");
             else
@@ -430,6 +427,10 @@ function fig = runLauncher(root, apps)
         rows = reshape(cellstr(string(detailRows(:))), [], 1);
         txtInfo.Value = [{['Status: ' char(state.status)]}; {''}; rows];
     end
+end
+
+function initializeAppPath(app)
+    addPathIfMissing(app.folder, '-end');
 end
 
 %% Section: Version manager window

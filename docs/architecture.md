@@ -11,6 +11,7 @@ apps/      workflow-specific GUI apps and app-owned helpers
 tests/     behavior tests, project contracts, GUI checks, shared helpers, and runner code
 docs/      human-facing usage, API, architecture, and validation docs
 scripts/   CI helper scripts
+tools/     maintainer-only MATLAB diagnostics and report generators
 ```
 
 Apps should remain independently launchable. The reusable library should grow
@@ -35,6 +36,10 @@ local helper functions so users can repair a damaged zip install even if
 packages, apps, docs, or scripts have been deleted. It configures the MATLAB
 path for app entry points. MATLAB desktop project metadata belongs to each
 developer's local workspace.
+
+Tools under `tools/` are source-checkout maintainer diagnostics. They are not
+runtime entry points for launcher users and are not dependencies of
+`labkit_launcher.m`.
 
 ## Ownership Boundaries
 

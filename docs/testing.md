@@ -245,3 +245,36 @@ artifacts/debug/<RunName>/<AppName>/<SessionId>/
 ```
 
 Coverage is report-only and not part of the default local check.
+
+## Profiling GUI Startup
+
+For source-checkout performance work, the profiling tools live under
+`tools/profiling/` and write ignored artifacts under `artifacts/profile/`.
+
+Batch-friendly run:
+
+```bash
+matlab -batch "addpath(fullfile('tools','profiling')); profileLabKitTarget('labkit_launcher', [], 'OpenReport', false, 'WaitForGuiClose', false, 'CloseFiguresAfterRun', true, 'PrintSummary', true)"
+```
+
+Interactive run:
+
+```matlab
+addpath(fullfile("tools", "profiling"))
+profileLabKitTarget("labkit_launcher")
+```
+
+The profiler writes:
+
+- `profile_*.html`: interactive flame graph, function table, `profile-json`,
+  `agent-summary-json`, and a searchable `AGENT_SUMMARY_BEGIN` block.
+- `profile_*.json`: machine-readable metadata, summary text/tables, and all
+  captured function rows.
+
+No profiler rows are dropped. Read `top_project_self_time` first for editable
+LabKit code, then use `top_captured_total_time` for captured workflow context
+such as deliberate clicks, downstream app launches, network calls, GUI close
+cost, or MATLAB callbacks. Default summary rankings exclude `profiler_tool`
+rows, but the JSON `functions` array still keeps them for audit. Agent-side
+filtering should use each row's `source_tag` and `tags` fields, for example
+`project`, `matlab_internal`, `external`, or `profiler_tool`.
