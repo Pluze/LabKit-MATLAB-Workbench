@@ -24,6 +24,31 @@ classdef GuiLayoutChronoOverlayTest < matlab.uitest.TestCase
     end
 
     methods (Test, TestTags = {'GUI', 'Workflow'})
+        function chrono_overlay_debug_launch_generates_boundary_samples(testCase)
+            setupLabKitTestPath();
+            h = guiTestHelpers();
+            h.assertUifigureAvailable();
+            cleanup = onCleanup(@() h.closeAllFigures());
+
+            [fig, debug] = labkit_ChronoOverlay_app("debug");
+            testCase.verifyTrue(debug.enabled && debug.traceEnabled, ...
+                'Chrono overlay debug launch should return an enabled trace logger.');
+            testCase.verifyTrue(isfolder(debug.sampleFolder), ...
+                'Chrono overlay debug launch should create a controlled samples folder.');
+            testCase.verifyTrue(isfolder(debug.outputFolder), ...
+                'Chrono overlay debug launch should create a controlled output folder.');
+            testCase.verifyTrue(isfile(debug.manifestFile), ...
+                'Chrono overlay debug launch should record a sample manifest.');
+
+            driver = labkitWorkflowDriver(fig);
+            testCase.verifyEqual(char(driver.fileStatus('files')), 'No files loaded');
+
+            manifestText = string(fileread(debug.manifestFile));
+            testCase.verifyTrue(contains(manifestText, 'malformedChronoDta') && ...
+                contains(manifestText, 'validEdgeChronoDta'), ...
+                'Chrono overlay debug manifest should include boundary-test samples.');
+        end
+
         function chrono_overlay_workflow_loads_and_plots_chrono_files(testCase)
             setupLabKitTestPath();
             h = guiTestHelpers();

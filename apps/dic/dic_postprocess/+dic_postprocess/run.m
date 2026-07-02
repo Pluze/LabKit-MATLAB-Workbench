@@ -49,6 +49,7 @@ function fig = run(debugLog)
     ui.bottomAxes = ui.controls.overlayAxes.axesById.eyy;
     if debugLog.enabled
         debugLog.trace('DIC postprocess debug trace enabled.');
+        setupDebugSamples();
     end
 
     labkit.ui.view.resetAxes(ui, 'overlayAxes', 'EXX Overlay', true, 'exx');
@@ -255,6 +256,17 @@ function fig = run(debugLog)
     function addLog(msg)
         labkit.ui.view.appendLog(ui, 'appLog', msg);
         debugLog.append(msg);
+    end
+
+    function setupDebugSamples()
+        try
+            pack = dic_postprocess.debug.writeSamplePack(debugLog);
+            addLog(sprintf('Debug sample files: %s', char(pack.sampleFolder)));
+            addLog(sprintf('Debug output folder: %s', char(pack.outputFolder)));
+        catch ME
+            debugLog.reportException('dicPostprocess', 'Debug sample setup failed', ME);
+            addLog(sprintf('Debug sample setup failed: %s', ME.message));
+        end
     end
 end
 

@@ -24,6 +24,7 @@ function fig = run(debugLog)
     if debugLog.enabled
         debugLog.trace("Response Review Stats debug trace enabled.");
         debugLog.instrumentFigure(fig);
+        setupDebugSamples();
     end
 
     refreshAll();
@@ -148,6 +149,17 @@ function fig = run(debugLog)
     function addLog(message)
         labkit.ui.view.appendLog(ui, "logPanel", message);
         debugLog.append(message);
+    end
+
+    function setupDebugSamples()
+        try
+            pack = response_review_stats.debug.writeSamplePack(debugLog);
+            addLog("Debug sample files: " + string(pack.sampleFolder));
+            addLog("Debug output folder: " + string(pack.outputFolder));
+        catch ME
+            debugLog.reportException('responseReviewStats', 'Debug sample setup failed', ME);
+            addLog("Debug sample setup failed: " + string(ME.message));
+        end
     end
 
     function ok = loadMetricsFromState(actionLabel)

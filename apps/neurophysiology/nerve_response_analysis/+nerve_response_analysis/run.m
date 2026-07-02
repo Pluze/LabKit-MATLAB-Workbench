@@ -26,6 +26,7 @@ function fig = run(debugLog)
     if debugLog.enabled
         debugLog.trace("Nerve Response Analysis debug trace enabled.");
         debugLog.instrumentFigure(fig);
+        setupDebugSamples();
     end
 
     refreshAll();
@@ -204,6 +205,17 @@ function fig = run(debugLog)
     function addLog(message)
         labkit.ui.view.appendLog(ui, "logPanel", message);
         debugLog.append(message);
+    end
+
+    function setupDebugSamples()
+        try
+            pack = nerve_response_analysis.debug.writeSamplePack(debugLog);
+            addLog("Debug sample files: " + string(pack.sampleFolder));
+            addLog("Debug output folder: " + string(pack.outputFolder));
+        catch ME
+            debugLog.reportException('nerveResponseAnalysis', 'Debug sample setup failed', ME);
+            addLog("Debug sample setup failed: " + string(ME.message));
+        end
     end
 end
 

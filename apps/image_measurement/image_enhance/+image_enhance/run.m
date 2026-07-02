@@ -43,6 +43,7 @@ function fig = run(debugLog)
     if debugLog.enabled
         debugLog.trace('Image enhance debug trace enabled.');
         debugLog.instrumentFigure(fig);
+        image_enhance.debug.writeAndLogSamplePack(debugLog, @addLog);
     end
 
     resetPreviewAxes();

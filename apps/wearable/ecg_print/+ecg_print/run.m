@@ -59,6 +59,7 @@ function fig = run(debugLog)
 
     if debugLog.enabled
         debugLog.trace('ECG print debug trace enabled.');
+        setupDebugSamples();
     end
 
     resetAxes();
@@ -407,6 +408,17 @@ function fig = run(debugLog)
     function addLog(message)
         labkit.ui.view.appendLog(ui, 'appLog', message);
         debugLog.append(message);
+    end
+
+    function setupDebugSamples()
+        try
+            pack = ecg_print.debug.writeSamplePack(debugLog);
+            addLog(sprintf('Debug sample files: %s', char(pack.sampleFolder)));
+            addLog(sprintf('Debug output folder: %s', char(pack.outputFolder)));
+        catch ME
+            debugLog.reportException('ecgPrint', 'Debug sample setup failed', ME);
+            addLog(sprintf('Debug sample setup failed: %s', ME.message));
+        end
     end
 
     function showError(titleText, message)

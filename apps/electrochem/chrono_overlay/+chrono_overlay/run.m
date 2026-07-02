@@ -27,6 +27,7 @@ function fig = run(debugLog)
     axI = ui.controls.overlayPlots.axesById.current;
     if debugLog.enabled
         debugLog.trace('Chrono overlay debug trace enabled.');
+        setupDebugSamples();
     end
     %% App callbacks, session actions, refresh, and export
     function onOpenFilesChosen(~, event)
@@ -164,6 +165,17 @@ function fig = run(debugLog)
     function addLog(msg)
         labkit.ui.view.appendLog(ui, 'appLog', msg);
         debugLog.append(msg);
+    end
+
+    function setupDebugSamples()
+        try
+            pack = chrono_overlay.debug.writeSamplePack(debugLog);
+            addLog(sprintf('Debug sample files: %s', char(pack.sampleFolder)));
+            addLog(sprintf('Debug output folder: %s', char(pack.outputFolder)));
+        catch ME
+            debugLog.reportException('chronoOverlay', 'Debug sample setup failed', ME);
+            addLog(sprintf('Debug sample setup failed: %s', ME.message));
+        end
     end
 
     function items = selectedItems()

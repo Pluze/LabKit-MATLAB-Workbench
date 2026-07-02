@@ -241,7 +241,7 @@ Build tasks set `LABKIT_ARTIFACTS` while tests run, so apps launched in debug
 mode write their trace files into the same artifact root:
 
 ```text
-artifacts/debug/<RunName>/<AppName>/
+artifacts/debug/<RunName>/<AppName>/<SessionId>/
 ```
 
 Coverage is report-only and not part of the default local check.

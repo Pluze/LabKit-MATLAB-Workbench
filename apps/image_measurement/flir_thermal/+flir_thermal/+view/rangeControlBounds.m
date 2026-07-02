@@ -36,9 +36,8 @@ function bounds = estimatedExpandedBounds(item, fallbackBounds)
         bounds = [lo - 1, hi + 1];
         return;
     end
-    center = (lo + hi) / 2;
-    halfWidth = 1.5 * width;
-    bounds = [center - halfWidth, center + halfWidth];
+    padding = width;
+    bounds = [lo - padding, hi + padding];
 end
 
 function bounds = normalizeBounds(bounds)

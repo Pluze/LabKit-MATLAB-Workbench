@@ -55,6 +55,7 @@ function fig = run(debugLog)
     axBottom = ui.controls.plotAxes.axesById.bottom;
     if debugLog.enabled
         debugLog.trace('VT resistance debug trace enabled.');
+        setupDebugSamples();
     end
     %% App callbacks, session actions, refresh, plotting, and export
     function onOpenFilesChosen(~, event)
@@ -445,6 +446,17 @@ function fig = run(debugLog)
     function addLog(msg)
         labkit.ui.view.appendLog(ui, 'appLog', msg);
         debugLog.append(msg);
+    end
+
+    function setupDebugSamples()
+        try
+            pack = vt_resistance.debug.writeSamplePack(debugLog);
+            addLog(sprintf('Debug sample files: %s', char(pack.sampleFolder)));
+            addLog(sprintf('Debug output folder: %s', char(pack.outputFolder)));
+        catch ME
+            debugLog.reportException('vtResistance', 'Debug sample setup failed', ME);
+            addLog(sprintf('Debug sample setup failed: %s', ME.message));
+        end
     end
 
     function report = removeItemsByPaths(filepaths)
