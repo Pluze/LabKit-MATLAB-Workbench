@@ -31,12 +31,10 @@ classdef BuildTaskEfficiencyGuardrailTest < matlab.unittest.TestCase
             tests = validationStepTestSelectors(steps);
             reasons = validationStepReasons(steps);
 
-            testCase.verifyTrue(any(signatures == "labkit/ui|false"), ...
+            testCase.verifyTrue(any(signatures == "labkit_framework/ui|false"), ...
                 "Fast changed UI validation should keep reusable UI non-GUI coverage.");
-            testCase.verifyTrue(any(signatures == "gui/labkit/ui|true"), ...
+            testCase.verifyTrue(any(signatures == "gui/labkit_framework/ui|true"), ...
                 "Fast changed UI validation should keep reusable UI GUI coverage.");
-            testCase.verifyTrue(any(signatures == "gui/gesture/labkit/ui|true"), ...
-                "Fast changed UI validation should keep representative UI gesture coverage.");
             testCase.verifyFalse(any(signatures == "gui/apps|true"), ...
                 "Fast changed UI validation should avoid the full downstream app GUI suite.");
             testCase.verifyTrue(any(signatures == ...
@@ -65,10 +63,56 @@ classdef BuildTaskEfficiencyGuardrailTest < matlab.unittest.TestCase
                 "test_gui_layout_ui_declarative_app", ...
                 "test_gui_layout_ui_scale_bar_tool", ...
                 "test_gui_layout_ui_debug_trace"], ...
-                "gui/labkit/ui");
+                "gui/labkit_framework/ui");
             verifySelectorsMatchTests(testCase, ...
                 "referenceEditAndPlacementEmitStructuredTrace", ...
-                "gui/gesture/labkit/ui");
+                "gui/labkit_framework/ui");
+        end
+
+        function changedValidationPlanRoutesLauncherToProjectGui(testCase)
+            root = setupLabKitTestPath();
+
+            steps = labkitValidationPlanForChangedPaths(root, "labkit_launcher.m");
+            signatures = validationStepSignatures(steps);
+
+            testCase.verifyTrue(any(signatures == "project|false"), ...
+                "Launcher source changes should keep project guardrail coverage.");
+            testCase.verifyTrue(any(signatures == "gui/project/launcher|true"), ...
+                "Launcher source changes should run project launcher GUI coverage.");
+        end
+
+        function changedValidationPlanRoutesProjectGuiTestsByOwner(testCase)
+            root = setupLabKitTestPath();
+
+            steps = labkitValidationPlanForChangedPaths(root, ...
+                "tests/cases/gui/project/launcher/LauncherGuiTest.m");
+            signatures = validationStepSignatures(steps);
+
+            testCase.verifyEqual(signatures, "gui/project/launcher|true", ...
+                "Project GUI test changes should rerun the owning project GUI suite.");
+        end
+
+        function changedValidationPlanRoutesFrameworkGuiTestsByOwner(testCase)
+            root = setupLabKitTestPath();
+
+            steps = labkitValidationPlanForChangedPaths(root, ...
+                "tests/cases/gui/labkit_framework/ui/ScaleBarGestureTest.m");
+            signatures = validationStepSignatures(steps);
+
+            testCase.verifyEqual(signatures, "gui/labkit_framework/ui|true", ...
+                "LabKit framework GUI test changes should rerun the owning framework GUI suite.");
+        end
+
+        function testCasePathsUseExplicitOwners(testCase)
+            root = setupLabKitTestPath();
+            caseFiles = trackedTestCaseFiles(root);
+            blocked = caseFiles( ...
+                contains(caseFiles, "/tests/cases/unit/labkit/") | ...
+                contains(caseFiles, "/tests/cases/gui/labkit/") | ...
+                contains(caseFiles, "/tests/cases/gui/gesture/"));
+
+            testCase.verifyEmpty(blocked, ...
+                "Test paths should use explicit owners: apps, labkit_framework, or project.");
         end
     end
 end
@@ -112,4 +156,15 @@ end
 function output = listLabKitTestsQuietly(varargin)
     evalc(['output = runLabKitTests(varargin{:}, "ListOnly", true, ' ...
         '"FailIfNoTests", false);']);
+end
+
+function files = trackedTestCaseFiles(root)
+    command = sprintf('git -C "%s" ls-files --cached --others --exclude-standard "tests/cases"', root);
+    [status, text] = system(command);
+    assert(status == 0, 'Could not list tracked test case files.');
+    files = string(strsplit(strtrim(text), newline));
+    files = files(strlength(files) > 0 & endsWith(files, ".m"));
+    exists = arrayfun(@(f) isfile(fullfile(root, f)), files);
+    files = files(exists);
+    files = "/" + replace(files, filesep, "/");
 end

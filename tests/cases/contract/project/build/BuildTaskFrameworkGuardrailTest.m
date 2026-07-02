@@ -133,7 +133,7 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
                 "apps/image_measurement/batch_crop/run.m"]);
             signatures = validationStepSignatures(steps);
 
-            testCase.verifyTrue(any(signatures == "labkit/ui|true"), ...
+            testCase.verifyTrue(any(signatures == "labkit_framework/ui|true"), ...
                 "Shared UI changes should run reusable UI GUI checks.");
             testCase.verifyTrue(any(signatures == "gui/apps|true"), ...
                 "Shared UI changes should run downstream app GUI checks.");
@@ -151,7 +151,7 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
                 "+labkit/+image/readFiles.m");
             signatures = validationStepSignatures(steps);
 
-            testCase.verifyTrue(any(signatures == "labkit/image|false"), ...
+            testCase.verifyTrue(any(signatures == "labkit_framework/image|false"), ...
                 "Image facade changes should run reusable image facade tests.");
             testCase.verifyTrue(any(signatures == "apps/image_measurement|false"), ...
                 "Image facade changes should run downstream image app unit tests.");
@@ -262,11 +262,9 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
             testCase.verifyEqual(publicTasks, expectedTasks, ...
                 "Build task catalog should expose a compact public task set.");
 
-            expectedCiTasks = ["ciUnitLabKit", "ciUnitApps", "ciUnitProject", ...
-                "ciIntegrationApps", "ciIntegrationProject"];
             ciTasks = catalog.Name(catalog.Visibility == "ci").';
-            testCase.verifyEqual(ciTasks, expectedCiTasks, ...
-                "CI shard tasks should stay in buildfile instead of workflow selectors.");
+            testCase.verifyEmpty(ciTasks, ...
+                "CI should call public build tasks rather than maintaining CI-only buildfile tasks.");
 
         end
 
@@ -464,18 +462,28 @@ end
 function targets = knownSuiteTargets(root)
     casesRoot = fullfile(root, "tests", "cases");
     folders = collectTestFolders(casesRoot);
-    targets = ["apps", "gui", "labkit", "project"];
+    targets = "gui";
     for k = 1:numel(folders)
         key = lower(relativePath(casesRoot, folders(k)));
         key = erase(key, "unit/");
         key = erase(key, "contract/");
         if startsWith(key, "gui/")
             targets(end+1) = key;
+            targets = [targets, suiteAncestors(key)];
         elseif key ~= "gui"
             targets(end+1) = key;
+            targets = [targets, suiteAncestors(key)];
         end
     end
     targets = unique(targets(strlength(targets) > 0), "stable");
+end
+
+function ancestors = suiteAncestors(key)
+    parts = split(string(key), "/").';
+    ancestors = strings(1, 0);
+    for k = 1:(numel(parts) - 1)
+        ancestors(end+1) = strjoin(parts(1:k), "/");
+    end
 end
 
 function tags = knownRunnerTags()

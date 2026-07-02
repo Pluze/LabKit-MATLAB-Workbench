@@ -1,5 +1,18 @@
 function plan = buildfile
 %BUILDFILE LabKit build and validation entry points.
+%
+% User-facing commands:
+%   buildtool changed       conservative validation routed from the git diff
+%   buildtool changedFast   faster local iteration routed from the git diff
+%   buildtool headless      full non-GUI validation
+%   buildtool gui           full automated GUI validation with hidden figures
+%   buildtool coverage      coverage report for manual or scheduled runs
+%   buildtool listTasks     print the public task catalog
+%
+% The buildfile deliberately stays thin. It exposes stable tasks and passes
+% suite/tag choices to tests/runLabKitTests.m. Ownership-specific routing
+% lives in the runner and changed-file planner, derived from
+% tests/cases/<kind>/<owner>/<area>/ paths.
 
     plan = buildplan(localfunctions);
     plan.DefaultTasks = "headless";
@@ -30,26 +43,6 @@ function coverageTask(~)
     runCatalogTask("coverage");
 end
 
-function ciUnitLabKitTask(~)
-    runCatalogTask("ciUnitLabKit");
-end
-
-function ciUnitAppsTask(~)
-    runCatalogTask("ciUnitApps");
-end
-
-function ciUnitProjectTask(~)
-    runCatalogTask("ciUnitProject");
-end
-
-function ciIntegrationAppsTask(~)
-    runCatalogTask("ciIntegrationApps");
-end
-
-function ciIntegrationProjectTask(~)
-    runCatalogTask("ciIntegrationProject");
-end
-
 function listTasksTask(~)
     printTaskCatalog(taskCatalog());
 end
@@ -61,11 +54,6 @@ function catalog = taskCatalog()
         taskSpec("headless", "Run the full non-GUI validation set.", "IncludeGui", false), ...
         taskSpec("gui", "Run noninteractive GUI launch, layout, and gesture checks.", "Suites", "gui", "IncludeGui", true, "GuiMode", "hidden"), ...
         taskSpec("coverage", "Run official tests with coverage artifacts.", "Tags", ["Unit", "Integration"], "IncludeCoverage", true), ...
-        taskSpec("ciUnitLabKit", "Run CI LabKit unit shard.", "Visibility", "ci", "Suites", "labkit", "Tags", "Unit", "IncludeGui", false, "HtmlReport", false), ...
-        taskSpec("ciUnitApps", "Run CI app unit shard.", "Visibility", "ci", "Suites", "apps", "Tags", "Unit", "IncludeGui", false, "HtmlReport", false), ...
-        taskSpec("ciUnitProject", "Run CI project unit shard.", "Visibility", "ci", "Suites", "project", "Tags", "Unit", "IncludeGui", false, "HtmlReport", false), ...
-        taskSpec("ciIntegrationApps", "Run CI app integration shard.", "Visibility", "ci", "Suites", "apps", "Tags", "Integration", "IncludeGui", false, "HtmlReport", false), ...
-        taskSpec("ciIntegrationProject", "Run CI project integration shard.", "Visibility", "ci", "Suites", "project", "Tags", "Integration", "IncludeGui", false, "HtmlReport", false), ...
         taskSpec("listTasks", "List official LabKit build tasks.", "RunTests", false)];
 end
 
@@ -108,6 +96,9 @@ function runCatalogTask(runName)
     end
 
     args = taskRunArguments(spec);
+    if runWithInternalShards(spec, args)
+        return;
+    end
     runBuildTests(spec.Name, args{:});
 end
 
@@ -152,6 +143,138 @@ function runBuildTests(runName, varargin)
     runLabKitTests(varargin{:}, ...
         "RunName", runName, ...
         "ArtifactsRoot", fullfile(root, "artifacts"));
+end
+
+function handled = runWithInternalShards(spec, args)
+    handled = false;
+    if spec.Name ~= "headless" || isInternalShardWorker() || ispc
+        return;
+    end
+
+    root = fileparts(mfilename("fullpath"));
+    addpath(fullfile(root, "tests"));
+    try
+        probe = runLabKitTests(args{:}, ...
+            "ListOnly", true, ...
+            "FailIfNoTests", false, ...
+            "RunName", spec.Name + "_probe", ...
+            "ArtifactsRoot", fullfile(root, "artifacts"));
+    catch
+        return;
+    end
+
+    shardCount = recommendedShardCount(probe.count);
+    if shardCount <= 1
+        return;
+    end
+
+    fprintf("LabKit shard probe: %d test(s) matched; running %d internal headless shard(s).\n", ...
+        probe.count, shardCount);
+    runInternalShardWorkers(root, spec.Name, args, shardCount);
+    handled = true;
+end
+
+function tf = isInternalShardWorker()
+    tf = string(getenv("LABKIT_INTERNAL_SHARD_WORKER")) == "1";
+end
+
+function shardCount = recommendedShardCount(testCount)
+    if testCount >= 300
+        shardCount = 3;
+    elseif testCount >= 80
+        shardCount = 2;
+    else
+        shardCount = 1;
+    end
+end
+
+function runInternalShardWorkers(root, runName, args, shardCount)
+    logsRoot = fullfile(root, "artifacts", "logs", runName + "-orchestrator");
+    ensureFolder(logsRoot);
+    scriptPath = fullfile(logsRoot, "run_shards.sh");
+    fid = fopen(scriptPath, "w");
+    if fid < 0
+        error("LabKit:Build:ShardScript", "Could not create shard script.");
+    end
+    cleanup = onCleanup(@() fclose(fid));
+
+    fprintf(fid, "#!/bin/sh\n");
+    fprintf(fid, "status=0\n");
+    matlabExe = fullfile(matlabroot, "bin", "matlab");
+    for k = 0:(shardCount - 1)
+        shardName = sprintf("%s-shard-%d", runName, k);
+        workerLog = fullfile(logsRoot, shardName + ".log");
+        batch = shardBatchCommand(root, args, shardName, shardCount, k);
+        fprintf(fid, "LABKIT_INTERNAL_SHARD_WORKER=1 %s -batch %s > %s 2>&1 &\n", ...
+            shellQuote(matlabExe), shellQuote(batch), shellQuote(workerLog));
+        fprintf(fid, "pids_%d=$!\n", k + 1);
+    end
+    for k = 1:shardCount
+        fprintf(fid, "wait $pids_%d || status=1\n", k);
+    end
+    fprintf(fid, 'if [ "$status" -ne 0 ]; then\n');
+    fprintf(fid, "  cat %s/*.log\n", shellQuote(logsRoot));
+    fprintf(fid, "fi\n");
+    fprintf(fid, "exit $status\n");
+    clear cleanup;
+    fileattrib(scriptPath, "+x");
+
+    [status, output] = system(shellQuote(scriptPath));
+    if strlength(string(output)) > 0
+        fprintf("%s", output);
+    end
+    if status ~= 0
+        error("LabKit:Build:ShardFailure", ...
+            "One or more internal test shards failed. Logs: %s", logsRoot);
+    end
+end
+
+function batch = shardBatchCommand(root, args, runName, shardCount, shardIndex)
+    shardArgs = [args, { ...
+        "ShardCount", shardCount, ...
+        "ShardIndex", shardIndex, ...
+        "RunName", string(runName), ...
+        "ArtifactsRoot", fullfile(root, "artifacts")}];
+    batch = "addpath(" + matlabLiteral(fullfile(root, "tests")) + "); " + ...
+        "runLabKitTests(" + matlabArgumentList(shardArgs) + ");";
+end
+
+function text = matlabArgumentList(args)
+    parts = strings(1, numel(args));
+    for k = 1:numel(args)
+        parts(k) = matlabLiteral(args{k});
+    end
+    text = strjoin(parts, ", ");
+end
+
+function text = matlabLiteral(value)
+    if islogical(value)
+        if value
+            text = "true";
+        else
+            text = "false";
+        end
+    elseif isnumeric(value)
+        text = string(value);
+    else
+        value = string(value);
+        if isscalar(value)
+            text = """" + replace(value, """", """""") + """";
+        else
+            quoted = """" + replace(value, """", """""") + """";
+            text = "[" + strjoin(quoted, ", ") + "]";
+        end
+    end
+end
+
+function text = shellQuote(value)
+    text = "'" + replace(string(value), "'", "'\''") + "'";
+end
+
+function ensureFolder(folder)
+    if exist(folder, "dir") ~= 7
+        mkdir(folder);
+    end
 end
 
 function printTaskCatalog(catalog)

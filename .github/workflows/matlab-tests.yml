@@ -19,31 +19,12 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  headless-shards:
-    name: ${{ matrix.label }}
+  headless:
+    name: Headless Tests
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:
       MLM_LICENSE_TOKEN: ${{ secrets.MLM_LICENSE_TOKEN }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - label: Unit Tests - LabKit
-            run_name: unit-labkit
-            task: ciUnitLabKit
-          - label: Unit Tests - Apps
-            run_name: unit-apps
-            task: ciUnitApps
-          - label: Unit Tests - Project
-            run_name: unit-project
-            task: ciUnitProject
-          - label: Integration Tests - Apps
-            run_name: integration-apps
-            task: ciIntegrationApps
-          - label: Integration Tests - Project
-            run_name: integration-project
-            task: ciIntegrationProject
 
     steps:
       - name: Check out repository
@@ -57,34 +38,49 @@ jobs:
           release: ${{ env.MATLAB_RELEASE }}
 
       - name: Prepare artifact directories
-        run: mkdir -p artifacts/logs/${{ matrix.run_name }}
+        run: mkdir -p artifacts/logs/headless
 
-      - name: Run ${{ matrix.label }}
+      - name: Run headless tests
         uses: matlab-actions/run-build@v3
         with:
-          tasks: ${{ matrix.task }}
-          startup-options: -logfile artifacts/logs/${{ matrix.run_name }}/matlab.log
+          tasks: headless
+          startup-options: -logfile artifacts/logs/headless/matlab.log
 
-      - name: Summarize ${{ matrix.label }}
+      - name: Summarize headless tests
         if: always()
-        run: >
-          python scripts/summarize_junit.py
-          artifacts/test-results/${{ matrix.run_name }}/junit.xml
-          --run-name ${{ matrix.run_name }}
-          --html artifacts/test-results/${{ matrix.run_name }}/html/index.html
-          --log artifacts/logs/${{ matrix.run_name }}/matlab.log
+        run: |
+          found=0
+          for junit in artifacts/test-results/*/junit.xml; do
+            [ -f "$junit" ] || continue
+            found=1
+            run_name="$(basename "$(dirname "$junit")")"
+            log_path="artifacts/logs/${run_name}/matlab.log"
+            if [ ! -f "$log_path" ] && [ -f "artifacts/logs/headless-orchestrator/${run_name}.log" ]; then
+              log_path="artifacts/logs/headless-orchestrator/${run_name}.log"
+            fi
+            python scripts/summarize_junit.py "$junit" \
+              --run-name "$run_name" \
+              --html "artifacts/test-results/${run_name}/html/index.html" \
+              --log "$log_path"
+          done
+          if [ "$found" -eq 0 ]; then
+            python scripts/summarize_junit.py artifacts/test-results/headless/junit.xml \
+              --run-name headless \
+              --html artifacts/test-results/headless/html/index.html \
+              --log artifacts/logs/headless/matlab.log
+          fi
 
-      - name: Upload ${{ matrix.label }} artifacts
+      - name: Upload headless artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: matlab-${{ matrix.run_name }}
+          name: matlab-headless
           if-no-files-found: warn
           retention-days: 14
           path: |
-            artifacts/test-results/${{ matrix.run_name }}/**
-            artifacts/debug/${{ matrix.run_name }}/**
-            artifacts/logs/${{ matrix.run_name }}/**
+            artifacts/test-results/**
+            artifacts/debug/**
+            artifacts/logs/**
 
   coverage:
     name: Coverage Report

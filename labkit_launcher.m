@@ -22,6 +22,7 @@ function varargout = labkit_launcher(varargin)
 %   Section: App discovery and catalog metadata
 %   Section: Clean Artifacts action
 %   Section: Code Analyzer action
+%   Section: Performance profile action
 %   Section: Update entrypoints and install transaction
 %   Section: GitHub update source discovery
 %   Section: Update validation and launcher window helpers
@@ -85,7 +86,7 @@ function info = launcherVersion()
     info = struct( ...
         "name", "labkit_launcher", ...
         "displayName", "LabKit App Launcher", ...
-        "version", "1.2.1", ...
+        "version", "1.2.2", ...
         "updated", "2026-07-02");
 end
 
@@ -180,8 +181,26 @@ function fig = runLauncher(root, apps)
         'ButtonPushedFcn', @onLaunchSelectedDebug);
     btnClean = uibutton(controlsGrid, 'Text', 'Clean Artifacts', ...
         'ButtonPushedFcn', @onCleanArtifacts);
-    btnCode = uibutton(controlsGrid, 'Text', 'Run Code Analyzer', ...
+    maintenanceGrid = uigridlayout(controlsGrid, [1 2]);
+    maintenanceGrid.Layout.Row = 6;
+    maintenanceGrid.Layout.Column = 1;
+    maintenanceGrid.ColumnWidth = {'1x', '1x'};
+    maintenanceGrid.RowHeight = {'1x'};
+    maintenanceGrid.Padding = [0 0 0 0];
+    maintenanceGrid.ColumnSpacing = 6;
+
+    btnCode = uibutton(maintenanceGrid, 'Text', 'Run Code Analyzer', ...
         'ButtonPushedFcn', @onRunCodeCheck);
+    btnCode.Layout.Row = 1;
+    btnCode.Layout.Column = 1;
+    btnProfile = uibutton(maintenanceGrid, 'Text', 'Profile Next App', ...
+        'ButtonPushedFcn', @onArmPerformanceProfile);
+    btnProfile.Layout.Row = 1;
+    btnProfile.Layout.Column = 2;
+    if isprop(btnProfile, 'Tooltip')
+        btnProfile.Tooltip = ['Profile the next app launched from this launcher ' ...
+            'until that app window closes.'];
+    end
     txtInfo = uitextarea(controlsGrid, 'Editable', 'off', 'Value', {'Ready.'});
 
     tableGrid = uigridlayout(rightPanel, [1 1]);
@@ -202,7 +221,7 @@ function fig = runLauncher(root, apps)
     setappdata(fig, 'labkitUiRegistry', ui);
 
     state = struct('apps', apps, 'visibleApps', apps, 'selectedRow', 1, ...
-        'status', integrityStatus(root, apps));
+        'status', integrityStatus(root, apps), 'profileNextLaunch', false);
     refreshTable();
 
     function onRefreshApps(varargin)
@@ -237,6 +256,13 @@ function fig = runLauncher(root, apps)
 
     function onLaunchSelectedDebug(varargin)
         launchSelectedApp(true);
+    end
+
+    function onArmPerformanceProfile(varargin)
+        state.profileNextLaunch = true;
+        btnProfile.Text = 'Profiler Armed';
+        setStatus(['Performance profiler armed. Open the selected app; ' ...
+            'the report will be written after the app closes.']);
     end
 
     function onCleanArtifacts(varargin)
@@ -365,6 +391,12 @@ function fig = runLauncher(root, apps)
         app = state.visibleApps(row);
         setStatus(launchStartStatus(app, debugMode));
         drawnow;
+        if state.profileNextLaunch
+            state.profileNextLaunch = false;
+            btnProfile.Text = 'Profile Next App';
+            profileSelectedApp(app, debugMode);
+            return;
+        end
         try
             initializeAppPath(app);
             if debugMode
@@ -376,6 +408,18 @@ function fig = runLauncher(root, apps)
         catch err
             setStatus(sprintf(['Failed to launch %s: %s. If project files are missing ' ...
                 'or damaged, use GitHub Update to repair this install.'], ...
+                app.command, err.message));
+        end
+    end
+
+    function profileSelectedApp(app, debugMode)
+        setStatus(profileStartStatus(app, debugMode));
+        drawnow;
+        try
+            result = runLauncherAppProfile(root, app, debugMode);
+            setStatus(profileSuccessStatus(app, result));
+        catch err
+            setStatus(sprintf('Performance profile failed for %s: %s', ...
                 app.command, err.message));
         end
     end
@@ -416,6 +460,7 @@ function fig = runLauncher(root, apps)
         stateValue = matlab.lang.OnOffSwitchState(enabled);
         btnOpen.Enable = stateValue;
         btnDebug.Enable = stateValue;
+        btnProfile.Enable = stateValue;
     end
 
     function setStatus(message)
@@ -745,6 +790,21 @@ function message = launchSuccessStatus(app, debugMode)
     end
 end
 
+function message = profileStartStatus(app, debugMode)
+    if debugMode
+        message = sprintf(['Profiling %s in debug mode. Close the app window ' ...
+            'to finish the report...'], app.command);
+    else
+        message = sprintf(['Profiling %s. Close the app window to finish ' ...
+            'the report...'], app.command);
+    end
+end
+
+function message = profileSuccessStatus(app, result)
+    message = sprintf('Profile complete for %s: %s', app.command, ...
+        char(result.relativeHtmlFile));
+end
+
 function message = cleanArtifactsStatus(result)
     if isempty(result.errors)
         message = sprintf('Cleaned %d generated artifact item(s).', result.removedCount);
@@ -1024,6 +1084,60 @@ function report = runCodeAnalyzerReport(root, progressFcn)
     report.issueCount = height(issues.Issues);
     report.suppressedIssueCount = height(issues.SuppressedIssues);
     notifyProgress(progressFcn, "codeIssues report complete.", 1.00);
+end
+
+%% Section: Performance profile action
+
+function result = runLauncherAppProfile(root, app, debugMode)
+    profileTool = fullfile(root, 'tools', 'profiling', 'profileLabKitTarget.m');
+    if exist(profileTool, 'file') ~= 2
+        error('labkit_launcher:ProfilerUnavailable', ...
+            ['Performance profiler tools are missing. Restore tools/profiling ' ...
+            'or update the LabKit install.']);
+    end
+    profileFolder = fileparts(profileTool);
+    addedProfilePath = ~pathContains(profileFolder);
+    addPathIfMissing(profileFolder);
+    if addedProfilePath
+        profilePathCleanup = onCleanup(@() rmpath(profileFolder));
+    end
+    initializeAppPath(app);
+
+    outputRoot = fullfile(root, 'artifacts', 'profile', 'launcher-app-session');
+    ensureFolder(outputRoot);
+    htmlFile = fullfile(outputRoot, sprintf('profile_%s_%s.html', ...
+        safeFilename(app.command), datestr(now, 'yyyymmdd_HHMMSS')));
+    targetFile = fullfile(root, char(app.relativePath));
+    target = @() launchProfileTarget(app, debugMode);
+    [htmlFile, artifacts] = profileLabKitTarget(target, htmlFile, ...
+        'OpenReport', launcherGuiTestMode() ~= "hidden", ...
+        'WaitForGuiClose', true, ...
+        'CloseFiguresAfterRun', false, ...
+        'ProjectRoot', root, ...
+        'TargetFile', targetFile, ...
+        'PrintSummary', false, ...
+        'RethrowError', true);
+
+    result = struct();
+    result.htmlFile = string(htmlFile);
+    result.jsonFile = string(artifacts.jsonFile);
+    result.relativeHtmlFile = string(relativePath(root, htmlFile));
+    result.relativeJsonFile = string(relativePath(root, artifacts.jsonFile));
+end
+
+function launchProfileTarget(app, debugMode)
+    if debugMode
+        feval(app.command, "debug");
+    else
+        feval(app.command);
+    end
+end
+
+function name = safeFilename(value)
+    name = regexprep(char(string(value)), '[^A-Za-z0-9_.-]+', '_');
+    if isempty(name)
+        name = 'app';
+    end
 end
 
 function value = stringField(raw, name)

@@ -39,11 +39,11 @@ prefer the app-level GUI folder, for example a `Suites` value such as
 `gui/apps/image_measurement/batch_crop` with `IncludeGui=true` and
 `GuiMode="hidden"`.
 
-For long focused suites, `runLabKitTests` can split a selected suite with
-zero-based `ShardCount` and `ShardIndex`. Use shards only when every shard is
-run with a distinct `RunName` and the combined shards cover the same selected
-suite; keep the conservative changed-file or relevant broad build task as the
-handoff gate for substantive changes.
+For broad validation, prefer public buildfile tasks and let the buildfile own
+whether a large selected test set should run serially or through internal
+worker shards. Use runner-level shard arguments only when developing or
+debugging the runner itself; every shard must have a distinct `RunName` and the
+combined shards must cover the same selected suite.
 
 For a dirty worktree, route through the changed-file validation planner before
 manually choosing tests. The focused planner maps the current diff to the
@@ -62,10 +62,10 @@ or the user explicitly asks for a broader/release gate.
 
 ```text
 project                    startup, architecture, package surface, sample-data hygiene
-labkit/dta                 DTA parser, facade, session, item, pulse behavior
-labkit/image               image file IO, RGB normalization, resizing, mean filtering, basic enhancement primitives
-labkit/biosignal           biosignal import, processing, ECG peaks, segments, measurements
-labkit/ui                  reusable UI helpers; include GUI coverage for layout/callback/shell/debug/tool checks
+labkit_framework/dta       DTA parser, facade, session, item, pulse behavior
+labkit_framework/image     image file IO, RGB normalization, resizing, mean filtering, basic enhancement primitives
+labkit_framework/biosignal biosignal import, processing, ECG peaks, segments, measurements
+labkit_framework/ui        reusable UI helpers; include GUI coverage for layout/callback/shell/debug/tool checks
 apps/electrochem           electrochem app-owned calculations, exports, layout
 apps/dic                   DIC app layout
 apps/image_measurement     image measurement calculations, exports, layout
@@ -73,7 +73,8 @@ apps/wearable              wearable app layout
 gui/apps                   app GUI launch, layout, callback wiring, and workflow checks
 gui/apps/<family>/<app_slug>
                            one app GUI layout, callback wiring, and workflow checks
-gui/labkit/launcher        launcher discovery and layout checks
+gui/project/launcher       launcher discovery and layout checks
+gui/labkit_framework/ui    reusable UI GUI, workflow, and gesture checks
 ```
 
 Pair reusable changes with downstream apps when the app-facing contract could

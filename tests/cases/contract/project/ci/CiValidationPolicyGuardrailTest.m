@@ -20,29 +20,25 @@ classdef CiValidationPolicyGuardrailTest < matlab.unittest.TestCase
                 'Coverage job should upload coverage artifacts.');
         end
 
-        function ciPushUsesParallelNonGuiShards(testCase)
+        function ciPushUsesPublicHeadlessTask(testCase)
             root = setupLabKitTestPath();
             workflowPath = fullfile(root, ".github", "workflows", ...
                 "matlab-tests.yml");
             workflow = string(fileread(workflowPath));
-            shardJob = extractWorkflowJob(workflow, "headless-shards");
+            headlessJob = extractWorkflowJob(workflow, "headless");
 
-            testCase.verifyTrue(contains(shardJob, "strategy:"), ...
-                'Push/PR MATLAB validation should use a matrix for parallelism.');
-            expectedTasks = [
-                "ciUnitLabKit"
-                "ciUnitApps"
-                "ciUnitProject"
-                "ciIntegrationApps"
-                "ciIntegrationProject"];
-            for k = 1:numel(expectedTasks)
-                testCase.verifyTrue(contains(shardJob, "task: " + expectedTasks(k)), ...
-                    'CI matrix should include build task: ' + expectedTasks(k));
-            end
-            testCase.verifyTrue(contains(shardJob, "matlab-actions/run-build"), ...
-                'CI shards should call buildfile tasks through run-build.');
-            testCase.verifyFalse(contains(shardJob, "tasks: headless"), ...
-                'Push/PR CI should not collapse non-GUI validation into one serial headless task.');
+            testCase.verifyTrue(contains(headlessJob, "tasks: headless"), ...
+                'CI should call the public headless build task.');
+            testCase.verifyTrue(contains(headlessJob, "artifacts/test-results/*/junit.xml"), ...
+                'CI summary should handle buildfile-managed internal shards.');
+            testCase.verifyFalse(contains(headlessJob, "LABKIT_TEST_SHARD_"), ...
+                'CI workflow should not own shard environment variables.');
+            testCase.verifyFalse(contains(headlessJob, "matrix:"), ...
+                'CI workflow should not maintain a headless shard matrix.');
+            testCase.verifyFalse(contains(headlessJob, "ciUnit"), ...
+                'CI workflow should not call CI-only unit shard tasks.');
+            testCase.verifyFalse(contains(headlessJob, "ciIntegration"), ...
+                'CI workflow should not call CI-only integration shard tasks.');
         end
 
         function ciWorkflowUsesBuildTasksInsteadOfRunnerSelectors(testCase)
@@ -50,17 +46,17 @@ classdef CiValidationPolicyGuardrailTest < matlab.unittest.TestCase
             workflowPath = fullfile(root, ".github", "workflows", ...
                 "matlab-tests.yml");
             workflow = string(fileread(workflowPath));
-            shardJob = extractWorkflowJob(workflow, "headless-shards");
-            buildTasks = workflowBuildTasks(shardJob);
+            headlessJob = extractWorkflowJob(workflow, "headless");
+            buildTasks = workflowBuildTasks(headlessJob);
             catalogTasks = buildfileTaskNames(root);
 
-            testCase.verifyFalse(contains(shardJob, "matlab-actions/run-command"), ...
-                'CI shards should not use run-command for test execution.');
-            testCase.verifyFalse(contains(shardJob, "runLabKitTests("), ...
+            testCase.verifyFalse(contains(headlessJob, "matlab-actions/run-command"), ...
+                'CI should not use run-command for test execution.');
+            testCase.verifyFalse(contains(headlessJob, "runLabKitTests("), ...
                 'CI workflow should not call the low-level runner directly.');
-            testCase.verifyFalse(contains(shardJob, 'addpath("tests")'), ...
+            testCase.verifyFalse(contains(headlessJob, 'addpath("tests")'), ...
                 'CI workflow should not manage runner path setup directly.');
-            testCase.verifyFalse(~isempty(regexp(char(shardJob), ...
+            testCase.verifyFalse(~isempty(regexp(char(headlessJob), ...
                 '"Tests"\s*,\s*\[', 'once')), ...
                 'CI workflow should not maintain long-lived test-class selectors.');
             testCase.verifyEmpty(setdiff(buildTasks, catalogTasks), ...
@@ -108,7 +104,7 @@ classdef CiValidationPolicyGuardrailTest < matlab.unittest.TestCase
             workflowPath = fullfile(root, ".github", "workflows", ...
                 "matlab-tests.yml");
             workflow = string(fileread(workflowPath));
-            jobNames = ["headless-shards", "coverage", "gui"];
+            jobNames = ["headless", "coverage", "gui"];
 
             for k = 1:numel(jobNames)
                 job = extractWorkflowJob(workflow, jobNames(k));
@@ -122,7 +118,7 @@ classdef CiValidationPolicyGuardrailTest < matlab.unittest.TestCase
             workflowPath = fullfile(root, ".github", "workflows", ...
                 "matlab-tests.yml");
             workflow = string(fileread(workflowPath));
-            jobNames = ["headless-shards", "coverage", "gui"];
+            jobNames = ["headless", "coverage", "gui"];
 
             for k = 1:numel(jobNames)
                 job = extractWorkflowJob(workflow, jobNames(k));

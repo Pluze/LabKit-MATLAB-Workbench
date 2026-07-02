@@ -80,17 +80,17 @@ suites, test-name selectors, GUI mode, and reason for each step.
 
 ## CI Scope
 
-Main-branch push and pull-request CI runs repository hygiene plus parallel
-non-GUI MATLAB shards for unit and integration coverage. Feature-branch pushes
-do not run the same MATLAB shard workflow until a pull request targets `main`,
-which avoids duplicate branch-push and PR runs for the same commit. Release tag
-pushes do not rerun the same SHA, which avoids duplicate CI after a commit has
-already run on `main` or in a PR. The shards split unit tests by ownership area
-and split integration guardrails into app-boundary and project/package groups. Workflow
-YAML calls buildfile CI shard tasks through `matlab-actions/run-build`; it must
-not maintain test-class lists or call the lower-level runner directly. The
-buildfile tasks use suite and tag filters, skip HTML reports for speed, and
-still publish JUnit summaries and logs.
+Main-branch push and pull-request CI runs the public `headless` build task.
+The buildfile probes the selected test count and may run deterministic
+zero-based internal shards when the broad non-GUI suite is large enough.
+Feature-branch pushes do not run the same MATLAB workflow until a pull request
+targets `main`, which avoids duplicate branch-push and PR runs for the same
+commit. Release tag pushes do not rerun the same SHA, which avoids duplicate
+CI after a commit has already run on `main` or in a PR. Workflow YAML calls
+public buildfile tasks through `matlab-actions/run-build`; it must not
+maintain test-class lists, owner shard lists, CI-only build tasks, shard
+environment variables, or call the lower-level runner directly. The buildfile
+task still publishes JUnit summaries and logs.
 MATLAB CI checkouts fetch the current commit plus its parent so version and
 changed-file guardrails have a stable `HEAD^` baseline on push and pull-request
 runs.
@@ -98,9 +98,9 @@ runs.
 When adding a test, place it under the correct ownership tree and give it the
 right stage tag: `Unit`, `Integration`, or `GUI`. GUI tests may add secondary
 tags such as `Structural`, `Workflow`, or `Gesture` to describe the contract
-shape. CI shard membership should follow from `tests/cases` layout plus
-`TestTags`; ordinary test additions should not require editing
-`.github/workflows/matlab-tests.yml`.
+shape. CI membership should follow from the public `headless` task and the
+runner's default non-GUI selection; ordinary test additions should not require
+editing `.github/workflows/matlab-tests.yml`.
 
 Manual and scheduled workflows keep the broader report jobs available:
 coverage runs separately, and GUI validation remains opt-in because automated
@@ -109,12 +109,16 @@ GUI checks use hidden synthetic workflows rather than full manual interaction.
 ## Test Layout
 
 ```text
-tests/cases/unit/              pure library and app-owned helper behavior
+tests/cases/unit/labkit_framework/
+                               reusable +labkit framework behavior
+tests/cases/unit/apps/         app-owned helper behavior
+tests/cases/unit/project/      project-level helper behavior
+tests/cases/gui/labkit_framework/
+                               reusable +labkit GUI checks
+tests/cases/gui/apps/          app GUI launch, layout, callback, and workflow checks
+tests/cases/gui/project/       project entrypoint GUI checks
 tests/cases/contract/apps/     long-lived app boundary and app workflow guardrails
 tests/cases/contract/project/  project contracts grouped by topic
-tests/cases/gui/apps/          app GUI launch, layout, callback, and workflow checks
-tests/cases/gui/labkit/        launcher and reusable UI GUI checks
-tests/cases/gui/gesture/       focused runtime interaction lifecycle checks
 tests/shared/                  small test-facing assertions, fixture builders, GUI probes, and lookup helpers
 tests/runner/                  runner setup, artifact paths, trace plumbing, and artifact writers
 ```
@@ -122,6 +126,13 @@ tests/runner/                  runner setup, artifact paths, trace plumbing, and
 Project contract tests use a third directory level for the guarded contract,
 for example `build`, `ci`, `docs`, `hygiene`, `packages`, `runtime`, or
 `release`.
+
+Test paths follow `tests/cases/<kind>/<owner>/<area>/...`. `kind` is
+`unit`, `gui`, or `contract`. `owner` is `apps`, `labkit_framework`, or
+`project`. The `labkit_framework` owner means reusable `+labkit` framework
+code only; repository-level entrypoints such as the launcher use `project`.
+Interaction styles such as gesture checks are expressed with `TestTags` and
+test class names, not extra ownership paths.
 
 `tests/shared/` intentionally keeps ordinary MATLAB helper functions as
 one-function files because those helpers are called directly by tests. Prefer a
@@ -131,7 +142,7 @@ patterns justify a grouped API.
 Build tasks are the supported human and CI entry points. The lower-level runner
 is an implementation detail used by the buildfile.
 
-## Focused And Parallel Iteration
+## Focused Iteration
 
 When diagnosing one failure, rerun the smallest matching suite directly after
 adding `tests` to the MATLAB path:
@@ -142,20 +153,10 @@ runLabKitTests("Suites", "gui/apps/image_measurement/batch_crop", ...
     "IncludeGui", true, "GuiMode", "hidden", "HtmlReport", false)
 ```
 
-For long GUI or broad component suites, split the same selected suite into
-deterministic zero-based shards. Start each shard in a separate MATLAB process
-and give each shard a distinct run name:
-
-```matlab
-runLabKitTests("Suites", "gui", "IncludeGui", true, "GuiMode", "hidden", ...
-    "ShardCount", 3, "ShardIndex", 0, "RunName", "gui_shard_0", ...
-    "HtmlReport", false)
-```
-
-Repeat with `ShardIndex` 1 and 2 for the remaining shards. Use the same suite,
-test-name filters, tags, and GUI settings for every shard; vary only
-`ShardIndex` and `RunName`. A sharded result is equivalent only when all shards
-passed and together cover the same selected suite.
+Use `buildtool` for broad validation. The buildfile owns execution mode
+decisions, including whether a large non-GUI run is worth splitting across
+multiple MATLAB worker processes after a lightweight probe. Users and CI should
+not maintain separate shard commands.
 
 ## GUI Validation
 

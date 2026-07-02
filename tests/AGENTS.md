@@ -20,24 +20,26 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
 - Keep app GUI tests under
   `tests/cases/gui/apps/<family>/<app_slug>/` so local validation can target
   one affected app without running unrelated app GUIs.
-- Keep LabKit-owned GUI entry points and reusable UI checks under
-  `tests/cases/gui/labkit/<area>/`.
+- Keep reusable `+labkit` framework tests under
+  `tests/cases/<kind>/labkit_framework/<area>/`.
+- Keep project-level GUI entry points such as the root launcher under
+  `tests/cases/gui/project/<area>/`.
+- Use `TestTags` such as `Gesture`, `Workflow`, or `Structural` for test style;
+  do not create extra ownership paths for style categories.
 - Do not add a separate custom runner or direct pass/fail test tree. Build
   tasks are the human and CI entry points; `tests/runLabKitTests.m` is the
   lower-level implementation behind those tasks.
 - Do not add public build tasks for every timing strategy. Keep the public
   build-task set compact and improve changed-file planner routing, printed
   plan reasons, representative selectors, or sharding support instead.
-- CI may shard non-GUI validation across multiple GitHub Actions jobs for
-  wall-clock speed. Keep those shards as CI-only buildfile tasks invoked with
-  `matlab-actions/run-build`; workflow YAML must not call
-  `tests/runLabKitTests.m`, maintain test-class selector lists, or add the
-  runner path by hand.
-- Keep local multi-suite validation as serial build-task routing. Do not add a
-  separate parallel runner framework. For long focused suites, use the
-  official `runLabKitTests` `ShardCount`/`ShardIndex` options only when all
-  shards are run with distinct `RunName` values and together cover the same
-  selected suite.
+- CI and local broad validation should call the same public buildfile tasks.
+  Workflow YAML must not call `tests/runLabKitTests.m`, maintain test-class
+  selector lists, expose shard environment variables, or add the runner path by
+  hand.
+- Keep multi-process routing inside `buildfile.m` or the runner. If a build
+  task uses worker shards, it must first probe the selected test set and then
+  launch deterministic shards with distinct `RunName` values so artifact
+  directories do not collide.
 - Keep architecture guardrails in the narrowest project-suite file that matches the concern.
 - Use `tests/shared/` for small test-facing assertions, fixture builders, GUI
   probes, cleanup, and lookup helpers. Keep ordinary MATLAB helper functions
@@ -73,8 +75,9 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
   Do not use raw component-class count snapshots in app GUI tests; those couple
   app tests to framework implementation details such as whether a readonly
   display is backed by an edit field, label, or text area. Put low-level
-  control-shape assertions in focused `tests/cases/gui/labkit/...` tests only
-  when the control shape is itself the framework contract.
+  control-shape assertions in focused
+  `tests/cases/gui/labkit_framework/...` tests only when the control shape is
+  itself the framework contract.
 - Do not duplicate expensive app figure launches for the same contract. If an
   app already has dedicated GUI coverage, broad entry-point checks should act
   as missing-coverage guardrails rather than launching it again. For apps
@@ -127,7 +130,8 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
   through the compact task set listed in `docs/testing.md` or a focused
   `runLabKitTests` invocation.
 - Prefer `runLabKitTests("Suites", "...")` for rerunning a failed suite such
-  as `project`, `labkit/ui`, `labkit/image`, `labkit/thermal`, or
+  as `project`, `labkit_framework/ui`, `labkit_framework/image`,
+  `labkit_framework/thermal`, or
   `apps/image_measurement`. Rerun broader
   build tasks only when the fix changes validation routing, touches additional
   source areas, or the user explicitly asks for a release/full gate.

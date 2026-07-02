@@ -60,6 +60,7 @@ function files = collectTrackedMFiles(root)
     for k = 1:numel(relativeFiles)
         files(k) = string(fullfile(root, char(relativeFiles(k))));
     end
+    files = files(isfile(files));
 end
 
 function findings = findSuppressionPragmas(root, files)
