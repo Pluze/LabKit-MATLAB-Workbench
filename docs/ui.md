@@ -360,11 +360,11 @@ Debug-mode apps attach the Log tab text area, emit a startup trace line, pass
 `debug.instrumentFigure(fig)` after controls are built.
 
 Each public debug launch also writes a per-launch session folder under
-`artifacts/debug/<AppName>/`. Official test runs set `LABKIT_ARTIFACTS` and
-`LABKIT_RUN_NAME`, so test-launched apps write under
-`artifacts/debug/<RunName>/<AppName>/`. Each session contains `trace.log`,
-`samples/`, `outputs/`, and `manifest.json`. The trace file is the
-authoritative debug record when the GUI freezes or the app Log tab is
+`artifacts/debug/<AppName>/<SessionId>/`. Official test runs set
+`LABKIT_ARTIFACTS` and `LABKIT_RUN_NAME`, so test-launched apps write under
+`artifacts/debug/<RunName>/<AppName>/<SessionId>/`. Each session contains
+`trace.log`, `samples/`, `outputs/`, and `manifest.json`. The trace file is
+the authoritative debug record when the GUI freezes or the app Log tab is
 inaccessible; the visible Log tab is only the human-readable mirror.
 
 Debug instrumentation writes an active-operation report next to the trace log
