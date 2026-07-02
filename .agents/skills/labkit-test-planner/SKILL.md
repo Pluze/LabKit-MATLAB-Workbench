@@ -26,9 +26,17 @@ another skill already read shared AGENTS context, do not reread it.
 Use the smallest source-aligned validation set that covers the touched
 boundary. `docs/testing.md` owns the stable build-task names, CI scope, and
 command examples. Build tasks are broad discovery-driven entry points; use
-`runLabKitTests("Suites", ...)` for component or app-family iteration. For
-local GUI edits that only touch one app, prefer the app-level GUI
-folder or `runLabKitTests("AffectedAppsOnly", true)`.
+`runLabKitTests("Suites", ...)` for component, app-family, or focused GUI
+iteration. For local GUI edits that only touch one app, prefer the app-level
+GUI folder, for example a `Suites` value such as
+`gui/apps/image_measurement/batch_crop` with `IncludeGui=true` and
+`GuiMode="hidden"`.
+
+For long focused suites, `runLabKitTests` can split a selected suite with
+zero-based `ShardCount` and `ShardIndex`. Use shards only when every shard is
+run with a distinct `RunName` and the combined shards cover the same selected
+suite; keep `buildtool changed` or the relevant broad build task as the
+handoff gate for substantive changes.
 
 For a dirty worktree, route through the changed-file validation planner before
 manually choosing tests. The focused planner maps the current diff to the

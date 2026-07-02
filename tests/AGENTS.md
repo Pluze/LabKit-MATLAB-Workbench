@@ -30,8 +30,11 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
   `matlab-actions/run-build`; workflow YAML must not call
   `tests/runLabKitTests.m`, maintain test-class selector lists, or add the
   runner path by hand.
-- Keep local multi-suite validation as serial build-task routing, not as a
-  separate parallel runner.
+- Keep local multi-suite validation as serial build-task routing. Do not add a
+  separate parallel runner framework. For long focused suites, use the
+  official `runLabKitTests` `ShardCount`/`ShardIndex` options only when all
+  shards are run with distinct `RunName` values and together cover the same
+  selected suite.
 - Keep architecture guardrails in the narrowest project-suite file that matches the concern.
 - Use `tests/shared/` for small test-facing assertions, fixture builders, GUI
   probes, cleanup, and lookup helpers. Keep ordinary MATLAB helper functions

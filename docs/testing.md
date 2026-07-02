@@ -158,9 +158,10 @@ runLabKitTests("Suites", "gui", "IncludeGui", true, "GuiMode", "hidden", ...
 
 Repeat with `ShardIndex` 1 and 2 for the remaining shards. Sharding is useful
 for local agent or maintainer iteration when MATLAB licenses and host resources
-allow multiple processes. Keep final handoff validation on the official build
-task unless the sharded runs together cover the same selected suite and all
-shards passed.
+allow multiple processes. Use the same suite, test-name filters, tags, and GUI
+settings for every shard; vary only `ShardIndex` and `RunName`. Keep final
+handoff validation on the official build task unless the sharded runs together
+cover the same selected suite and all shards passed.
 
 App GUI tests live at:
 
