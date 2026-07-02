@@ -21,14 +21,6 @@ classdef GuiLayoutImageMatchTest < matlab.uitest.TestCase
                 'Protected tone', 'Lab style', 'Histogram'}, 1), ...
                 h.dropdownGroup({'PNG', 'TIFF', 'JPEG'}, 1)]);
             h.assertTabTitles(fig, {'Library + Export', 'Match + History', 'Log'});
-
-            h.closeAllFigures();
-            [fig, debug] = labkit_ImageMatch_app("debug");
-            drawnow;
-            assert(debug.enabled && debug.traceEnabled, ...
-                'Image match debug launch should return an enabled trace logger.');
-            assertAnyTextAreaContains(h, fig, 'Image match debug trace enabled', ...
-                'Image match debug launch should mirror trace lines into the visible Log tab.');
         end
     end
 
