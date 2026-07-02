@@ -165,6 +165,12 @@ Current facts to preserve:
 - Artifacts under `artifacts/profile/` and `artifacts/test-results/` are
   ignored evidence, not tracked fixtures.
 
+Route status:
+
+- Timing baseline reporting is now routed through `scripts/summarize_junit.py`,
+  which emits slow-test rows plus deterministic and duration-aware shard
+  estimates from each JUnit report.
+
 Required workstreams:
 
 1. Timing baseline:

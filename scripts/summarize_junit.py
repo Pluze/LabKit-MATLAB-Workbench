@@ -106,6 +106,7 @@ def main() -> int:
         lines += ["No failed tests reported in JUnit.", ""]
 
     lines += slow_test_lines(test_cases, args.max_slow_tests)
+    lines += shard_estimate_lines(test_cases, args.shard_estimates)
     write_summary(summary_path, lines)
     print(
         (
@@ -126,6 +127,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-annotations", type=int, default=20)
     parser.add_argument("--max-failure-details", type=int, default=5)
     parser.add_argument("--max-slow-tests", type=int, default=5)
+    parser.add_argument(
+        "--shard-estimates",
+        default="2,3,5",
+        help=(
+            "Comma-separated shard counts for deterministic and duration-aware "
+            "timing estimates; use an empty value to disable."
+        ),
+    )
     parser.add_argument("--log-tail-lines", type=int, default=180)
     parser.add_argument("--summary-log-tail-lines", type=int, default=80)
     return parser.parse_args()
@@ -238,6 +247,81 @@ def slow_test_lines(
         )
     lines.append("")
     return lines
+
+
+def shard_estimate_lines(
+    test_cases: list[dict[str, str | float]], shard_estimates: str
+) -> list[str]:
+    counts = parse_shard_counts(shard_estimates)
+    timed_cases = [case for case in test_cases if float(case["time"]) > 0]
+    if not counts or len(timed_cases) < 2:
+        return []
+
+    lines = [
+        "#### Shard timing estimates",
+        "",
+        (
+            "Estimates use testcase durations from this JUnit report. "
+            "Deterministic matches LabKit's current name-sorted modulo sharding; "
+            "duration-aware is a greedy balance estimate for planning only."
+        ),
+        "",
+        "| shards | deterministic max (s) | duration-aware max (s) | total test time (s) |",
+        "|---:|---:|---:|---:|",
+    ]
+    total = sum(float(case["time"]) for case in timed_cases)
+    for count in counts:
+        deterministic = estimate_deterministic_shards(timed_cases, count)
+        duration_aware = estimate_duration_aware_shards(timed_cases, count)
+        lines.append(
+            f"| {count} | {max(deterministic):.2f} | "
+            f"{max(duration_aware):.2f} | {total:.2f} |"
+        )
+    lines.append("")
+    return lines
+
+
+def parse_shard_counts(value: str) -> list[int]:
+    counts: list[int] = []
+    for part in value.split(","):
+        part = part.strip()
+        if not part:
+            continue
+        try:
+            count = int(part)
+        except ValueError:
+            continue
+        if count > 1 and count not in counts:
+            counts.append(count)
+    return counts
+
+
+def estimate_deterministic_shards(
+    test_cases: list[dict[str, str | float]], shard_count: int
+) -> list[float]:
+    totals = [0.0] * shard_count
+    ordered = sorted(test_cases, key=test_identity_key)
+    for index, case in enumerate(ordered):
+        totals[index % shard_count] += float(case["time"])
+    return totals
+
+
+def estimate_duration_aware_shards(
+    test_cases: list[dict[str, str | float]], shard_count: int
+) -> list[float]:
+    totals = [0.0] * shard_count
+    ordered = sorted(test_cases, key=lambda case: float(case["time"]), reverse=True)
+    for case in ordered:
+        shard_index = min(range(shard_count), key=lambda index: totals[index])
+        totals[shard_index] += float(case["time"])
+    return totals
+
+
+def test_identity_key(case: dict[str, str | float]) -> str:
+    return (
+        f"{str(case['classname']).lower()}"
+        f".{str(case['name']).lower()}"
+    )
 
 
 def log_tail_summary(log_path: str, line_count: int) -> list[str]:
