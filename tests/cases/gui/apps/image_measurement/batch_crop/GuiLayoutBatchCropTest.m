@@ -50,8 +50,7 @@ classdef GuiLayoutBatchCropTest < matlab.uitest.TestCase
             labkit.ui.view.setValue(ui, 'scaleMode', 'Physical');
             ui.controls.scaleMode.valueHandle.ValueChangedFcn( ...
                 ui.controls.scaleMode.valueHandle, struct());
-            pause(0.65);
-            drawnow;
+            h.waitForUiIdle(fig);
             testCase.verifyEqual(string(ui.controls.physicalWidth.slider.Enable), "on");
             testCase.verifyEqual(string(ui.controls.physicalHeight.slider.Enable), "on");
             testCase.verifyEqual(string(ui.controls.targetPixelsPerUnit.slider.Enable), "on");
@@ -59,8 +58,7 @@ classdef GuiLayoutBatchCropTest < matlab.uitest.TestCase
             labkit.ui.view.setValue(ui, 'scaleMode', 'Pixels');
             ui.controls.scaleMode.valueHandle.ValueChangedFcn( ...
                 ui.controls.scaleMode.valueHandle, struct());
-            pause(0.65);
-            drawnow;
+            h.waitForUiIdle(fig);
 
             driver.click('Use XY center');
             data = driver.tableData('resultTable');

@@ -273,6 +273,7 @@ function verifyBusyNonActionWrappers()
 end
 
 function verifyDebouncedParameterWrappers()
+    h = guiTestHelpers();
     count = 0;
     values = [];
     spec = labkit.ui.spec.app('debouncedParameterProbe', ...
@@ -293,8 +294,7 @@ function verifyDebouncedParameterWrappers()
     ui.controls.gain.handle.ValueChangedFcn(ui.controls.gain.handle, struct());
     ui.controls.gain.handle.Value = 4;
     ui.controls.gain.handle.ValueChangedFcn(ui.controls.gain.handle, struct());
-    pause(0.65);
-    drawnow;
+    h.waitForUiIdle(ui.figure);
 
     assert(count == 1 && isequal(values, 4), ...
         'Parameter callbacks should debounce rapid value changes and submit only the latest value.');

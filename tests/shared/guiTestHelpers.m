@@ -27,6 +27,7 @@ function h = guiTestHelpers()
     h.invokeButton = @invokeButton;
     h.findControlByText = @findControlByText;
     h.invokeCallback = @invokeCallback;
+    h.waitForUiIdle = @waitForUiIdle;
     h.assertCallbackPresent = @assertCallbackPresent;
     h.sameStringCell = @sameStringCell;
 end
@@ -295,7 +296,8 @@ function tf = uiHasPendingWork(fig)
     end
     data = getappdata(fig);
     names = string(fieldnames(data));
-    tf = any(startsWith(names, "labkitUiSemanticDebounce_"));
+    tf = any(startsWith(names, "labkitUiSemanticDebounce_") | ...
+        startsWith(names, "labkitUiToolDebounce_"));
 end
 
 function assertCallbackPresent(h, callbackProperty, label)

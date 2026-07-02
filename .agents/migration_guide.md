@@ -174,6 +174,9 @@ Route status:
 - Timing baseline reporting is now routed through `scripts/summarize_junit.py`,
   which emits slow-test rows plus deterministic and duration-aware shard
   estimates from each JUnit report.
+- Semantic app debounce and scale-bar tool debounce now register as GUI idle
+  pending work for tests; fixed `pause(0.65)` waits have been removed from the
+  automated GUI test tree.
 
 Required workstreams:
 

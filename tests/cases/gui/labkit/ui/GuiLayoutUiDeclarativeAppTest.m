@@ -298,8 +298,7 @@ function verify_gui_layout_ui_declarative_app()
     ui.controls.pan.valueSpinner.Value = 1.5;
     ui.controls.pan.valueSpinner.ValueChangedFcn(ui.controls.pan.valueSpinner, ...
         struct('PreviousValue', 2));
-    pause(0.65);
-    drawnow;
+    h.waitForUiIdle(ui.figure);
     assert(strcmp(events{end}.id, 'pan') && ...
         strcmp(events{end}.kind, 'panner') && ...
         strcmp(events{end}.action, 'edit') && ...
@@ -309,8 +308,7 @@ function verify_gui_layout_ui_declarative_app()
     eventCountBeforeDrag = numel(events);
     ui.controls.pan.slider.ValueChangingFcn(ui.controls.pan.slider, ...
         struct('Value', 1.25));
-    pause(0.65);
-    drawnow;
+    h.waitForUiIdle(ui.figure);
     assert(numel(events) == eventCountBeforeDrag + 1 && ...
         ui.controls.pan.valueSpinner.Value == 1.25 && ...
         strcmp(events{end}.action, 'slide') && ...
@@ -319,8 +317,7 @@ function verify_gui_layout_ui_declarative_app()
     eventCountBeforeRelease = numel(events);
     ui.controls.pan.slider.Value = 1.25;
     ui.controls.pan.slider.ValueChangedFcn(ui.controls.pan.slider, struct());
-    pause(0.65);
-    drawnow;
+    h.waitForUiIdle(ui.figure);
     assert(numel(events) == eventCountBeforeRelease + 1 && ...
         strcmp(events{end}.action, 'slide') && ...
         labkit.ui.view.getValue(ui, 'pan') == 1.25, ...
@@ -374,8 +371,7 @@ function verify_gui_layout_ui_declarative_app()
 
     ui.controls.gain.handle.Value = 5;
     ui.controls.gain.handle.ValueChangedFcn(ui.controls.gain.handle, []);
-    pause(0.65);
-    drawnow;
+    h.waitForUiIdle(ui.figure);
     assert(strcmp(events{end}.id, 'gain') && events{end}.value == 5, ...
         'Field callbacks should report semantic id and current value.');
 
