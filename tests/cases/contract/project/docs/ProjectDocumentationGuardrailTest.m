@@ -194,17 +194,8 @@ function files = collectPublicLibraryFiles(root)
 end
 
 function tf = hasFunctionContractComment(filepath)
-    lines = readlines(filepath);
-    idx = find(startsWith(strtrim(lines), "function "), 1);
-    if isempty(idx)
-        tf = false;
-        return;
-    end
-    nextIdx = idx + 1;
-    while nextIdx <= numel(lines) && strlength(strtrim(lines(nextIdx))) == 0
-        nextIdx = nextIdx + 1;
-    end
-    tf = nextIdx <= numel(lines) && startsWith(strtrim(lines(nextIdx)), "%");
+    lines = leadingFunctionBlock(filepath);
+    tf = numel(lines) >= 2 && startsWith(strtrim(lines(2)), "%");
 end
 
 function actual = collectPrivateHelpersMissingContracts(root)
@@ -269,15 +260,50 @@ function tf = isTrackedPrivateScope(root, folder)
 end
 
 function tf = hasTopFileContract(filepath)
-    lines = readlines(filepath);
+    first = firstNonEmptyLine(filepath);
+    tf = ~isempty(first) && startsWith(first, "%");
+end
+
+function first = firstNonEmptyLine(filepath)
     first = strings(0);
-    for k = 1:numel(lines)
-        if strlength(strtrim(lines(k))) > 0
-            first = strtrim(lines(k));
-            break;
+    fid = fopen(filepath, "r");
+    if fid < 0
+        return;
+    end
+    cleaner = onCleanup(@() fclose(fid));
+    while ~feof(fid)
+        line = strtrim(string(fgetl(fid)));
+        if strlength(line) > 0
+            first = line;
+            return;
         end
     end
-    tf = ~isempty(first) && startsWith(first, "%");
+end
+
+function lines = leadingFunctionBlock(filepath)
+    lines = strings(1, 0);
+    fid = fopen(filepath, "r");
+    if fid < 0
+        return;
+    end
+    cleaner = onCleanup(@() fclose(fid));
+    foundFunction = false;
+    while ~feof(fid)
+        line = string(fgetl(fid));
+        trimmed = strtrim(line);
+        if ~foundFunction
+            if startsWith(trimmed, "function ")
+                lines(end+1) = trimmed;
+                foundFunction = true;
+            end
+            continue;
+        end
+        if strlength(trimmed) == 0
+            continue;
+        end
+        lines(end+1) = trimmed;
+        return;
+    end
 end
 
 function rel = relativePath(root, filepath)

@@ -13,8 +13,9 @@ function audit = labkitHelperQualityAudit(root, varargin)
     trackedFiles = gitTrackedMatlabFiles(root);
     files = scopedFiles(trackedFiles, opts.scope);
     files = files(arrayfun(@(p) isCandidateHelper(root, p, opts.maxLines), files));
+    helperTokens = helperReferenceTokens(files);
 
-    allSource = readSourceCorpus(root, trackedFiles);
+    allSource = readSourceCorpus(root, trackedFiles, helperTokens);
     rows = cell(numel(files), 12);
     for k = 1:numel(files)
         path = files(k);
@@ -105,17 +106,43 @@ function tf = isCandidateHelper(root, path, maxLines)
 end
 
 function count = fileLineCount(path)
-    fid = fopen(path, "r");
-    if fid < 0
-        count = inf;
+    text = readFileText(path);
+    if isempty(text)
+        count = 0;
         return;
     end
-    cleaner = onCleanup(@() fclose(fid));
-    count = 0;
-    while ~feof(fid)
-        fgetl(fid);
+
+    lineFeed = char(10);
+    count = sum(text == lineFeed);
+    if text(end) ~= lineFeed
         count = count + 1;
     end
+end
+
+function text = readFileText(path)
+    persistent cache
+    if isempty(cache)
+        cache = containers.Map('KeyType', 'char', 'ValueType', 'any');
+    end
+
+    key = char(path);
+    if isKey(cache, key)
+        text = cache(key);
+        return;
+    end
+
+    if exist(path, "file") ~= 2
+        text = '';
+        cache(key) = text;
+        return;
+    end
+
+    try
+        text = fileread(path);
+    catch
+        text = '';
+    end
+    cache(key) = text;
 end
 
 function files = gitTrackedMatlabFiles(root)
@@ -135,39 +162,51 @@ function value = shellQuote(value)
     value = """" + value + """";
 end
 
-function corpus = readSourceCorpus(root, files)
+function corpus = readSourceCorpus(root, files, helperNames)
     corpus.callCounts = containers.Map('KeyType', 'char', 'ValueType', 'double');
     corpus.unitBareCounts = containers.Map('KeyType', 'char', 'ValueType', 'double');
     corpus.unitQualifiedCounts = containers.Map('KeyType', 'char', 'ValueType', 'double');
+    nameFilter = tokenFilter(helperNames);
     for k = 1:numel(files)
-        text = fileread(fullfile(root, char(files(k))));
-        addCallNameCounts(corpus.callCounts, text);
+        text = readFileText(fullfile(root, char(files(k))));
+        addCallNameCounts(corpus.callCounts, text, nameFilter);
         if startsWith(files(k), "tests/cases/unit/")
-            addBareNameCounts(corpus.unitBareCounts, text);
-            addQualifiedNameCounts(corpus.unitQualifiedCounts, text);
+            addBareNameCounts(corpus.unitBareCounts, text, nameFilter);
+            addQualifiedNameCounts(corpus.unitQualifiedCounts, text, nameFilter);
         end
     end
 end
 
-function addCallNameCounts(counts, text)
+function filter = tokenFilter(values)
+    filter = containers.Map('KeyType', 'char', 'ValueType', 'logical');
+    values = unique(string(values), "stable");
+    for k = 1:numel(values)
+        filter(char(values(k))) = true;
+    end
+end
+
+function addCallNameCounts(counts, text, filter)
     tokens = regexp(text, '(?<![A-Za-z0-9_])([A-Za-z]\w*)\s*\(', 'tokens');
-    addTokenCounts(counts, tokens);
+    addTokenCounts(counts, tokens, filter);
 end
 
-function addBareNameCounts(counts, text)
+function addBareNameCounts(counts, text, filter)
     tokens = regexp(text, '(?<![A-Za-z0-9_])([A-Za-z]\w*)', 'tokens');
-    addTokenCounts(counts, tokens);
+    addTokenCounts(counts, tokens, filter);
 end
 
-function addQualifiedNameCounts(counts, text)
+function addQualifiedNameCounts(counts, text, filter)
     tokens = regexp(text, ...
         '(?<![A-Za-z0-9_])([A-Za-z]\w*(?:\.[A-Za-z]\w*)+)', 'tokens');
-    addTokenCounts(counts, tokens);
+    addTokenCounts(counts, tokens, filter);
 end
 
-function addTokenCounts(counts, tokens)
+function addTokenCounts(counts, tokens, filter)
     for k = 1:numel(tokens)
         token = char(tokens{k}{1});
+        if ~isKey(filter, token)
+            continue;
+        end
         if isKey(counts, token)
             counts(token) = counts(token) + 1;
         else
@@ -177,7 +216,7 @@ function addTokenCounts(counts, tokens)
 end
 
 function lines = readFileLines(filepath)
-    text = string(fileread(filepath));
+    text = string(readFileText(filepath));
     lines = splitlines(text);
     if ~isempty(lines) && lines(end) == ""
         lines(end) = [];
@@ -187,6 +226,19 @@ end
 function name = helperName(path)
     [~, name] = fileparts(char(path));
     name = string(name);
+end
+
+function tokens = helperReferenceTokens(files)
+    tokens = strings(1, 0);
+    for k = 1:numel(files)
+        name = helperName(files(k));
+        tokens(end+1) = name;
+        packageName = rolePackage(files(k));
+        if strlength(packageName) > 0
+            tokens(end+1) = packageName + "." + name;
+        end
+    end
+    tokens = unique(tokens, "stable");
 end
 
 function scope = topLevelScope(path)

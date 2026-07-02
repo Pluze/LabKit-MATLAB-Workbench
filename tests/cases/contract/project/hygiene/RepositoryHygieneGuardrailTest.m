@@ -369,14 +369,28 @@ end
 function findings = collectDuplicatedAppUiLabelHelperLiterals(root)
     tracked = gitTrackedFiles(root);
     matlabFiles = tracked(endsWith(tracked, ".m"));
+    helperFiles = matlabFiles(arrayfun(@isAppUiLabelHelperFile, matlabFiles));
+    if isempty(helperFiles)
+        findings = strings(1, 0);
+        return;
+    end
+
+    scopedFiles = helperFiles;
+    for k = 1:numel(helperFiles)
+        appName = appNameFromPath(helperFiles(k));
+        scopedFiles = [scopedFiles, ...
+            matlabFiles(arrayfun(@(f) isSameAppSourceOrTest(f, appName), matlabFiles))];
+    end
+    scopedFiles = unique(scopedFiles, "stable");
+
     contents = containers.Map('KeyType', 'char', 'ValueType', 'any');
-    for k = 1:numel(matlabFiles)
-        filepath = fullfile(root, char(matlabFiles(k)));
+    for k = 1:numel(scopedFiles)
+        filepath = fullfile(root, char(scopedFiles(k)));
         if exist(filepath, 'file') == 2
-            contents(char(matlabFiles(k))) = readCachedLines(filepath);
+            contents(char(scopedFiles(k))) = readCachedLines(filepath);
         end
     end
-    findings = duplicatedLabelLiteralsForFiles(matlabFiles, contents);
+    findings = duplicatedLabelLiteralsForFiles(scopedFiles, contents);
 end
 
 function findings = duplicatedLabelLiteralsForFiles(files, contents)
