@@ -66,6 +66,12 @@ be affected. Use the default non-GUI build task for broad non-GUI changes, the
 labkit/app GUI build tasks for broad GUI structural routing, and runner suite
 selectors for narrower local diagnosis.
 
+In Codex sandbox sessions, run MATLAB validation commands and GitHub CI
+inspection commands with escalated sandbox permissions on the first attempt.
+MATLAB build tasks need the host runtime, and `gh`/GitHub API checks need
+network plus the host keyring; probing in the restricted sandbox first only
+adds a known false failure.
+
 When local GUI validation is needed, account for focus stealing. MATLAB GUI
 tests open real figures on macOS and can interrupt the user's typing. Prefer
 the focused GUI target, CI, or another noninteractive display for broad GUI

@@ -135,10 +135,15 @@ banner such as `** Starting headless`, treat that as a MATLAB launcher or
 runtime-access failure first. Do not diagnose source or test failures from an
 empty launcher result.
 
-When a Codex sandbox run exits before any MATLAB banner or logfile is created,
-rerun the same command with escalated sandbox permissions before reporting the
-result. Treat the escalated rerun as the decisive local result; if escalation
-itself is blocked, report that approval blocker explicitly.
+For commands that are known to require host runtime or network/keychain access,
+use escalated sandbox permissions on the first run instead of probing in the
+restricted sandbox and then retrying. This includes MATLAB build/test commands
+(`buildtool ...`, direct `/Applications/MATLAB_*.app/bin/matlab -batch ...`,
+and focused `runLabKitTests(...)` invocations) and GitHub CLI/API inspection
+commands (`gh auth status`, `gh run ...`, `gh pr ...`, `gh release ...`, and
+equivalent `curl https://api.github.com/...` checks). Treat the escalated run
+as the decisive local result; if escalation itself is blocked, report that
+approval blocker explicitly.
 
 Do not add MATLAB Code Analyzer suppression pragmas such as `%#ok<...>` in
 source, tests, fixtures, or generated MATLAB files. Refactor the code or test
