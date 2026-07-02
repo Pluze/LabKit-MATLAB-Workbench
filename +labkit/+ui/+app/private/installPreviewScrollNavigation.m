@@ -181,7 +181,9 @@ function disableBuiltInWheelNavigation(axesHandles)
         catch
         end
         try
-            ax.Toolbar.Visible = 'on';
+            if ~strcmp(ax.Toolbar.Visible, 'on')
+                ax.Toolbar.Visible = 'on';
+            end
         catch
         end
     end

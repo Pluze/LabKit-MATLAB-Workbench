@@ -18,6 +18,7 @@ function verify_gui_layout_ui_debug_trace()
 
     checkDefaultInstrumentationSkipsScroll(h);
     checkExplicitInstrumentation(h);
+    checkAttachedTextLogReceivesTraceLines(h);
     checkDiagnosticReports();
     checkFilePanelSemanticTrace();
 end
@@ -120,6 +121,29 @@ function checkExplicitInstrumentation(h)
     function onScroll(varargin)
         scrollCalls = scrollCalls + 1;
     end
+end
+
+function checkAttachedTextLogReceivesTraceLines(h)
+    fig = uifigure('Visible', 'off', 'Name', 'labkit_debug_text_log_probe');
+    cleaner = onCleanup(@() delete(fig));
+    grid = uigridlayout(fig, [1 1]);
+    txt = uitextarea(grid, 'Value', {'Started.'}, 'Editable', 'off');
+
+    debug = labkit.ui.diag.createContext('probe_app', struct());
+    debug.attachTextLog(txt);
+    debug.trace('loader', 'first trace', 'test');
+    debug.trace('loader', 'second trace', 'test');
+
+    lines = string(debug.getLog());
+    values = string(txt.Value);
+    assert(numel(lines) == 2, ...
+        'Attached text logs should not change the in-memory debug log.');
+    assert(numel(values) == 3, ...
+        'Attached text logs should append exactly one UI row per trace line.');
+    assert(contains(values(end - 1), 'component=loader') && ...
+        contains(values(end - 1), 'event=first trace') && ...
+        contains(values(end), 'event=second trace'), ...
+        'Attached text logs should preserve trace order and message content.');
 end
 
 function checkDiagnosticReports()

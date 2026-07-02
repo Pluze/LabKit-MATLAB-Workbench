@@ -33,7 +33,6 @@ function appendLog(ui, idOrMessage, maybeMessage)
     if shouldFollowLatest(control.textArea)
         scrollLogToBottom(control.textArea);
     end
-    drawnow limitrate
 end
 
 function tf = shouldFollowLatest(textArea)
