@@ -187,7 +187,33 @@ Interactive GUI workflows are checked manually by the user. Do not run interacti
     stop and report the exact blocker instead of working around it.
 14. Do not force-push unless explicitly approved.
 
-Use lowercase type prefixes such as `feat:`, `fix:`, `docs:`, `test:`, `ci:`, `refactor:`, and `chore:`.
+Use exactly one lowercase Conventional Commit type prefix from this list:
+
+- `feat:` for a user-visible capability, public API, app workflow, supported
+  command, or documented behavior that did not exist before.
+- `fix:` for correcting broken, regressed, incompatible, or misleading
+  behavior. Use this when the primary effect is restoring expected behavior,
+  even if the patch also refactors code.
+- `perf:` for a measured or clearly performance-motivated change whose primary
+  user or maintainer effect is lower latency, lower memory use, less repeated
+  work, faster startup/shutdown, or faster validation. Prefer `refactor:` when
+  the performance effect is incidental or unmeasured.
+- `refactor:` for behavior-preserving source restructuring, boundary cleanup,
+  helper extraction/inlining, or implementation simplification that is not
+  primarily a bug fix or performance change.
+- `test:` for test files, fixtures, runner behavior, validation routing, or
+  guardrails. Use `ci:` instead when the change is mainly workflow
+  infrastructure.
+- `docs:` for human docs, AGENTS rules, skills, or process text when tracked
+  executable behavior is not changed.
+- `ci:` for GitHub Actions, build automation, release automation, CI shard
+  wiring, or hosted-runner policy.
+- `chore:` for version metadata, dependency metadata, repository housekeeping,
+  generated metadata, or other maintenance that does not fit the types above.
+
+Do not invent new type prefixes. When a commit mixes scopes, choose the type
+for the primary user-visible or maintenance effect, and split the commit when
+one type would hide a distinct behavior, test, documentation, or CI change.
 
 ## Release Workflow
 
