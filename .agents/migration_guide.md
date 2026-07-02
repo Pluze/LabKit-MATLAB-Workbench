@@ -179,6 +179,9 @@ Route status:
   automated GUI test tree.
 - Declarative app layout settling now waits for bounded layout-position
   stability instead of sleeping a fixed 0.5 seconds per tab switch.
+- Runner path setup now reads the MATLAB path once per configuration pass and
+  updates that cached entry list as paths are added, avoiding repeated full
+  path splits during test startup.
 
 Required workstreams:
 

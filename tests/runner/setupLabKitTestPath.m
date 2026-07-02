@@ -11,25 +11,23 @@ function root = setupLabKitTestPath()
         return;
     end
 
-    addPathIfMissing(root);
-    addPathIfMissing(fullfile(root, "apps"), "-end");
+    pathEntries = strsplit(path, pathsep);
+
+    pathEntries = addPathIfMissing(root, pathEntries);
+    pathEntries = addPathIfMissing(fullfile(root, "apps"), pathEntries, "-end");
     apps = labkit_launcher("list");
     for k = 1:height(apps)
-        addPathIfMissing(char(apps.Folder(k)), "-end");
+        pathEntries = addPathIfMissing(char(apps.Folder(k)), pathEntries, "-end");
     end
-    addPathIfMissing(fullfile(root, "tests"));
-    addPathIfMissing(fullfile(root, "tests", "runner"));
-    addPathIfMissing(fullfile(root, "tests", "shared"));
+    pathEntries = addPathIfMissing(fullfile(root, "tests"), pathEntries);
+    pathEntries = addPathIfMissing(fullfile(root, "tests", "runner"), pathEntries);
+    addPathIfMissing(fullfile(root, "tests", "shared"), pathEntries);
     configuredRoot = string(root);
 end
 
-function addPathIfMissing(folder, varargin)
-    if exist(folder, "dir") == 7 && ~pathContains(folder)
+function pathEntries = addPathIfMissing(folder, pathEntries, varargin)
+    if exist(folder, "dir") == 7 && ~any(strcmp(pathEntries, folder))
         addpath(folder, varargin{:});
+        pathEntries{end + 1} = folder;
     end
-end
-
-function tf = pathContains(folder)
-    paths = strsplit(path, pathsep);
-    tf = any(strcmp(paths, folder));
 end
