@@ -47,7 +47,11 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
 - Version-change guardrails belong in the project contract suite and should use
   git changed paths plus current version APIs instead of maintaining app
   registries by hand. They should reject malformed, unchanged, or lower
-  versions for changed versioned code.
+  versions for changed versioned code on `main`, in pull-request CI, or when
+  `LABKIT_ENFORCE_VERSION_BUMPS=1` is set for final branch cleanup. Local
+  feature-branch iteration may use small commits without bumping versions each
+  time; before squash, PR handoff, or direct `main` push, choose the next
+  version from the latest `main` version file and make the aggregate bump once.
 - Boundary tests may require app-owned logic to stay under the owning app tree, but should not require GUI-free helpers to remain inside the public app entry-point file or assert exact app-private helper file lists.
 - App-owned packages need direct unit coverage for non-UI functions such as
   `+ops`, `+view`, `+export`, `+io`, or `+state`; GUI structural tests only

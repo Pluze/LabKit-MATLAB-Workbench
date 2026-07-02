@@ -106,7 +106,8 @@ in `labkit.contract`. Project guardrails check `X.Y.Z` format and require
 versioned code changes to increase the corresponding app, launcher, or facade
 version. Pick the next version from the version file in the latest `main`
 commit, not from intermediate local working-tree edits made during an
-unfinished migration.
+unfinished migration. Feature-branch work may batch that version bump into the
+final squash, PR handoff, or direct `main` integration step.
 
 Image workflows may use `labkit.image` for generic image file filters, source
 image reads, display-name normalization, RGB double conversion, preview-size

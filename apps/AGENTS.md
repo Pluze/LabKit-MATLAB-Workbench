@@ -35,8 +35,10 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
   the human display name. Use `X.Y.Z` for `version` and `YYYY-MM-DD` for
   `updated`.
 - When app source, app-owned package code, or app-facing behavior changes,
-  update that app's `version.m` version metadata in the same change. App
-  versions use `X.Y.Z` semantic format and must only increase.
+  update that app's `version.m` version metadata before merge or direct `main`
+  push. Feature-branch migration work may use small commits without bumping
+  the version each time; make the aggregate bump once before squash or handoff,
+  choosing the next `X.Y.Z` value from the latest `main` version file.
 - Debug launches should attach the Log tab text area, emit a startup trace line, and instrument high-level component callbacks after controls are built.
 - App callbacks that catch `MException` and continue must call
   `debug.reportException(component, event, ME)` before showing an alert,

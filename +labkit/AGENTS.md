@@ -43,8 +43,11 @@
   `labkit.ui.app` title formatting; do not move app metadata into
   `labkit.contract` or a central registry.
 - When app-facing facade code changes under `+labkit/+ui`, `+image`, `+thermal`, `+dta`,
-  `+rhs`, or `+biosignal`, update the owning facade `version()` contract in the same
-  change. Facade versions use `X.Y.Z` semantic format and must only increase.
+  `+rhs`, or `+biosignal`, update the owning facade `version()` contract before
+  merge or direct `main` push. Feature-branch migration work may use small
+  commits without bumping the version each time; make the aggregate bump once
+  before squash or handoff, choosing the next `X.Y.Z` value from the latest
+  `main` version file.
 - Reusable UI tools may own domain-neutral interaction workflows such as image scale-bar controls, reference editing, unit normalization, and overlay placement. Keep those tools independent from app result schemas, scientific formulas, file formats, and workflow wording.
 - App-facing UI APIs live under `labkit.ui.app.*`, `labkit.ui.spec.*`, `labkit.ui.view.*`, `labkit.ui.tool.*`, and `labkit.ui.diag.*`. Do not reintroduce flat `labkit.ui.*` helper files.
 - Preview-axis tools that need pointer, drag, scroll, or hit-test ownership must use `labkit.ui.tool.createRuntime` sessions instead of each helper managing figure/axes callbacks independently.

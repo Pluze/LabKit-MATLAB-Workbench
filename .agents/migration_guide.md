@@ -164,6 +164,10 @@ Current facts to preserve:
   `ShardIndex`.
 - Artifacts under `artifacts/profile/` and `artifacts/test-results/` are
   ignored evidence, not tracked fixtures.
+- Feature-branch work in this route should not bump facade or app versions on
+  every small commit. Before squash, PR handoff, or direct `main` integration,
+  compare against latest `main` and make the required aggregate version bump
+  once.
 
 Route status:
 
