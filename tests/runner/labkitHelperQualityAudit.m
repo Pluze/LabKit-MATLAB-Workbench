@@ -119,7 +119,7 @@ function count = fileLineCount(path)
 end
 
 function files = gitTrackedMatlabFiles(root)
-    command = "git -C " + shellQuote(root) + " ls-files '*.m'";
+    command = "git -C " + shellQuote(root) + " ls-files " + shellQuote("*.m");
     [status, out] = system(command);
     if status ~= 0
         error("LabKit:HelperAudit:GitFailed", ...
@@ -132,8 +132,7 @@ end
 
 function value = shellQuote(value)
     value = string(value);
-    value = replace(value, "'", "'\''");
-    value = "'" + value + "'";
+    value = """" + value + """";
 end
 
 function corpus = readSourceCorpus(root, files)
