@@ -40,12 +40,10 @@ function steps = stepsForChangedPath(root, path)
         steps = testPathSteps(root, parts);
     elseif first == "docs"
         steps = docPathSteps(parts);
-    elseif isHeadlessRoutingPath(path)
-        steps = fullNonGuiStep();
-    elseif isProjectRoutingPath(path)
-        steps = planStep("project", "project", false);
     elseif startsWith(first, ".github") || first == ".agents" || first == "tools"
         steps = planStep("project", "project", false);
+    elseif isHeadlessRoutingPath(path)
+        steps = fullNonGuiStep();
     else
         steps = fullNonGuiStep();
     end

@@ -245,9 +245,14 @@ end
 
 function findings = collectSingleLineFunctionBodies(root, files)
     findings = strings(1, 0);
+    pattern = singleLineFunctionBodyPattern();
     for k = 1:numel(files)
         filepath = fullfile(root, char(files(k)));
         if exist(filepath, 'file') ~= 2
+            continue;
+        end
+        content = readCachedText(filepath);
+        if isempty(regexp(content, pattern, 'once'))
             continue;
         end
         lines = readCachedLines(filepath);
@@ -266,6 +271,10 @@ function findings = singleLineFunctionBodyLines(lines, relativeFile)
             findings(end + 1) = string(relativeFile) + ":" + string(k);
         end
     end
+end
+
+function pattern = singleLineFunctionBodyPattern()
+    pattern = '(?m)^\s*function\s+[^\r\n]*[;,][^\r\n]*\bend\s*(%.*)?$';
 end
 
 function findings = collectUnsafeCharPathLists(root, files)
@@ -296,6 +305,10 @@ function findings = collectUnsafePathScalarColonUses(root, files)
         if exist(filepath, 'file') ~= 2
             continue;
         end
+        content = readCachedText(filepath);
+        if ~contains(content, "(:)") || isempty(regexp(content, pattern, 'once'))
+            continue;
+        end
         lines = readCachedLines(filepath);
         for iLine = 1:numel(lines)
             if ~isempty(regexp(lines(iLine), pattern, 'once'))
@@ -318,6 +331,12 @@ function findings = collectUnsafeStateNumericAssignments(root)
     for k = 1:numel(files)
         filepath = fullfile(files(k).folder, files(k).name);
         if exist(filepath, 'file') ~= 2
+            continue;
+        end
+        content = readCachedText(filepath);
+        hasStateTarget = contains(content, "step.") || ...
+            contains(content, "S.") || contains(content, "optsOut.");
+        if ~contains(content, "double(") || ~hasStateTarget
             continue;
         end
         lines = readCachedLines(filepath);
@@ -538,7 +557,17 @@ function files = collectRelativeFiles(root, pattern)
 end
 
 function n = countFileLines(filepath)
-    n = numel(readCachedLines(filepath));
+    text = readCachedText(filepath);
+    if isempty(text)
+        n = 0;
+        return;
+    end
+
+    lineFeed = char(10);
+    n = sum(text == lineFeed);
+    if text(end) ~= lineFeed
+        n = n + 1;
+    end
 end
 
 function files = gitTrackedFiles(root)

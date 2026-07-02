@@ -14,7 +14,7 @@ function pack = writeSamplePack(debugLog)
     malformedPath = string(fullfile(sampleFolder, "ecg_malformed_text_debug.csv"));
 
     fs = 500;
-    durationSec = 18;
+    durationSec = 3;
     time = (0:(1 / fs):durationSec).';
     ecg = syntheticEcg(time, 1.15);
     motion = 0.10 .* sin(2 .* pi .* 0.7 .* time) + 0.035 .* sin(2 .* pi .* 3.3 .* time);

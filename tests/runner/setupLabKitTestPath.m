@@ -5,7 +5,12 @@ function root = setupLabKitTestPath()
 % Side effects: adds the repository root, apps, app entry folders, tests,
 % tests/runner, and tests/shared to the MATLAB path.
 
+    persistent configuredRoot
     root = labkitRepoRoot();
+    if isequal(configuredRoot, string(root))
+        return;
+    end
+
     addPathIfMissing(root);
     addPathIfMissing(fullfile(root, "apps"), "-end");
     apps = labkit_launcher("list");
@@ -15,6 +20,7 @@ function root = setupLabKitTestPath()
     addPathIfMissing(fullfile(root, "tests"));
     addPathIfMissing(fullfile(root, "tests", "runner"));
     addPathIfMissing(fullfile(root, "tests", "shared"));
+    configuredRoot = string(root);
 end
 
 function addPathIfMissing(folder, varargin)

@@ -6,20 +6,7 @@ function output = runLabKitTests(varargin)
 % and tests/cases/gui so buildfile.m can compose stable tasks without
 % duplicating test discovery.
 %
-% Internal name-value options:
-%   IncludeGui      Include tests under tests/cases/gui.
-%   Suites          Suite targets such as project, labkit/dta, or gui.
-%   Tests           Test names or substrings to include.
-%   Tags            Required official test tags. Multiple tags are ORed.
-%   ExcludeTags     Official test tags to exclude.
-%   Plan            Named serial plan: changed, changedFast, ui, apps, or project.
-%   IncludeCoverage Generate Cobertura and HTML coverage artifacts.
-%   GuiMode         GUI test window mode: hidden, minimized, or visible.
-%   HtmlReport      Generate the official HTML test report. Default true.
-%   FailIfNoTests   Error when no official tests match.
-%   ArtifactsRoot   Root artifact directory.
-%   RunName         Name used in artifact titles and console output.
-%   ListOnly        List matched tests without executing or writing artifacts.
+% Internal options are parsed below; docs/testing.md owns build-task entry points.
 
     root = fileparts(fileparts(mfilename("fullpath")));
     addpath(fullfile(root, "tests", "runner"));
@@ -63,7 +50,8 @@ function output = runLabKitTests(varargin)
     paths = labkitArtifactPaths( ...
         "Root", opts.ArtifactsRoot, ...
         "RunName", opts.RunName, ...
-        "Create", true);
+        "Create", false);
+    ensureDirectory(paths.testResults);
     runner = matlab.unittest.TestRunner.withTextOutput( ...
         "OutputDetail", opts.OutputDetail, ...
         "LoggingLevel", opts.LoggingLevel);
@@ -71,14 +59,16 @@ function output = runLabKitTests(varargin)
     runner.addPlugin(matlab.unittest.plugins.XMLPlugin.producingJUnitFormat( ...
         paths.junitXml));
     if opts.HtmlReport
+        ensureDirectory(paths.testHtml);
         runner.addPlugin(matlab.unittest.plugins.TestReportPlugin.producingHTML( ...
             paths.testHtml, ...
             "MainFile", "index.html", ...
             "Title", "LabKit MATLAB Tests - " + opts.RunName, ...
             "IncludingCommandWindowText", true));
     end
-
     if opts.IncludeCoverage
+        ensureDirectory(paths.coverage);
+        ensureDirectory(paths.coverageHtml);
         coverageFormats = [ ...
             matlab.unittest.plugins.codecoverage.CoverageReport( ...
                 paths.coverageHtml, "MainFile", "index.html"), ...
@@ -115,6 +105,12 @@ function cleanup = setArtifactsRootEnvironment(artifactsRoot)
     previousArtifactsRoot = getenv("LABKIT_ARTIFACTS");
     setenv("LABKIT_ARTIFACTS", char(artifactsRoot));
     cleanup = onCleanup(@() setenv("LABKIT_ARTIFACTS", previousArtifactsRoot));
+end
+
+function ensureDirectory(folder)
+    if exist(folder, "dir") ~= 7
+        mkdir(folder);
+    end
 end
 
 function opts = parseOptions(root, varargin)
@@ -300,7 +296,7 @@ end
 
 function suite = discoverOfficialSuite(root, opts)
     casesRoot = fullfile(root, "tests", "cases");
-    groups = discoverOfficialGroups(casesRoot);
+    groups = discoverOfficialGroups(casesRoot, opts);
     groups = filterGroupsBySuite(groups, opts);
 
     suite = matlab.unittest.Test.empty(1, 0);
@@ -339,8 +335,13 @@ function printSuiteListing(listing)
     end
 end
 
-function groups = discoverOfficialGroups(casesRoot)
+function groups = discoverOfficialGroups(casesRoot, opts)
     persistent cachedCasesRoot cachedSignature cachedGroups
+
+    if ~isempty(opts.Tests)
+        groups = labkitDiscoverSelectorGroups(casesRoot, opts);
+        return;
+    end
 
     signature = testTreeSignature(casesRoot);
     if isequal(cachedCasesRoot, string(casesRoot)) && ...

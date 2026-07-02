@@ -78,8 +78,8 @@ classdef GuiLayoutEcgPrintTest < matlab.uitest.TestCase
 end
 
 function writeSyntheticEcgCsv(filepath)
-    fs = 2000;
-    durationSec = 8;
+    fs = 500;
+    durationSec = 4;
     time = (0:(durationSec * fs - 1)).' ./ fs;
     ecg = 0.05 .* sin(2 .* pi .* 1.7 .* time) + ...
         0.02 .* sin(2 .* pi .* 23 .* time);

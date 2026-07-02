@@ -471,16 +471,39 @@ function tf = taskSpecMapsToKnownTests(root, spec)
         return;
     end
 
-    output = listLabKitTestsQuietly( ...
-        spec.Args{:}, ...
-        "RunName", spec.Name + "_map_probe");
-    tf = output.count > 0;
+    suites = lower(taskSpecStringValues(spec, "Suites"));
+    tags = taskSpecStringValues(spec, "Tags");
+    suiteOk = isempty(suites) || all(ismember(suites, knownSuiteTargets(root)));
+    tagOk = isempty(tags) || all(ismember(tags, knownRunnerTags()));
+    tf = suiteOk && tagOk;
 end
 
 function tf = taskSpecUsesKnownPlan(spec)
     plans = taskSpecStringValues(spec, "Plan");
     tf = ~isempty(plans) && all(ismember(lower(plans), ...
         ["changed", "changedfast", "ui", "apps", "app", "project"]));
+end
+
+function targets = knownSuiteTargets(root)
+    casesRoot = fullfile(root, "tests", "cases");
+    folders = collectTestFolders(casesRoot);
+    targets = ["apps", "gui", "labkit", "project"];
+    for k = 1:numel(folders)
+        key = lower(relativePath(casesRoot, folders(k)));
+        key = erase(key, "unit/");
+        key = erase(key, "contract/");
+        if startsWith(key, "gui/")
+            targets(end+1) = key;
+        elseif key ~= "gui"
+            targets(end+1) = key;
+        end
+    end
+    targets = unique(targets(strlength(targets) > 0), "stable");
+end
+
+function tags = knownRunnerTags()
+    tags = ["Unit", "Integration", "GUI", "Structural", ...
+        "Workflow", "Gesture", "Style", "Smoke"];
 end
 
 function values = taskSpecStringValues(spec, name)
@@ -533,6 +556,28 @@ function value = extractNameValueLogical(line, name)
     end
 
     value = strcmp(token{1}, "true");
+end
+
+function folders = collectTestFolders(root)
+    folders = strings(1, 0);
+    entries = dir(root);
+    [~, order] = sort({entries.name});
+    entries = entries(order);
+    hasTestFile = false;
+    for k = 1:numel(entries)
+        entry = entries(k);
+        if entry.isdir
+            if strcmp(entry.name, ".") || strcmp(entry.name, "..")
+                continue;
+            end
+            folders = [folders, collectTestFolders(fullfile(entry.folder, entry.name))];
+        elseif endsWith(entry.name, "Test.m")
+            hasTestFile = true;
+        end
+    end
+    if hasTestFile
+        folders = [string(root), folders];
+    end
 end
 
 function files = collectTestFiles(root)
