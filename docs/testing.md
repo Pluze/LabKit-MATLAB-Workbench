@@ -1,11 +1,13 @@
 # Testing
 
-Use this page to choose the smallest supported build task that proves the
-change you made.
+Use this page to choose the smallest supported validation entry point. The
+public build-task set is intentionally small; changed-file tasks inspect the
+current git diff and print why each selected scope is being run.
 
 ## Default Check
 
-Run the default non-GUI build task for broad local validation:
+Run the default broad non-GUI check when you are not sure which focused scope
+applies:
 
 ```bash
 buildtool headless
@@ -39,10 +41,10 @@ buildtool listTasks
 
 | Task | Use it for |
 | --- | --- |
-| `changed` | Fast local validation selected from changed and untracked files. |
-| `changedFast` | Faster changed-file validation for local iteration; uses representative GUI workflow/layout coverage when broad app GUI coverage would otherwise run. |
+| `changedFast` | Tight local iteration from the current diff; substitutes representative GUI coverage for expensive broad GUI scopes. |
+| `changed` | Conservative pre-handoff validation from the current diff. |
 | `headless` | Full non-GUI validation. |
-| `gui` | Noninteractive GUI launch, layout, callback, workflow, and gesture checks. GUI windows are hidden by default. |
+| `gui` | Full automated GUI validation with hidden figures. |
 
 Report and discovery tasks:
 
@@ -53,34 +55,28 @@ Report and discovery tasks:
 
 ## Choosing A Task
 
-Use build tasks directly for local iteration. The `changed` task is the
-default focused choice before committing: it inspects changed and untracked
-files and runs a conservative serial validation plan inside one MATLAB
-process. It requires git and a git checkout. Use `headless` in exported
-source trees, packaged copies, or environments without git state.
-Use `changedFast` during tight edit cycles when a shared UI or broad app-GUI
-change would otherwise run the full downstream app GUI suite. It keeps
-reusable UI coverage and representative downstream app checks, but it is
-not a substitute for the conservative `changed` task before handoff.
-Fast validation plans may combine suite routing with test-name selectors for
-expensive GUI coverage. Keep those selectors small and contract-oriented:
-choose tests that cover startup, declarative shell behavior, debug trace
-plumbing, hidden synthetic workflows, and representative downstream app
-layouts.
+Prefer automatic routing before hand-picking suites:
 
 Common choices:
 
 | Change area | Build task |
 | --- | --- |
-| Changed source, tests, or docs before commit | `buildtool changed` |
-| Local iteration after a broad UI or GUI-adjacent edit | `buildtool changedFast` |
+| Local iteration while files are changing | `buildtool changedFast` |
+| Before commit, PR, or handoff | `buildtool changed` |
 | Full broad non-GUI validation | `buildtool headless` |
-| Any GUI launch, layout, callback, or gesture change | `buildtool gui` |
-| Architecture, docs, package surface, hygiene | `buildtool headless` |
+| Full automated GUI validation | `buildtool gui` |
+| Coverage report | `buildtool coverage` |
 
-Focused runner suite targets include `labkit/image` for the reusable image
-facade, `labkit/thermal` for thermal parsing and rendering, and
-`apps/image_measurement` for downstream image apps.
+`changedFast` and `changed` require a git checkout. In exported source trees,
+packaged copies, or environments without git state, use `headless` or an
+explicit `runLabKitTests` suite selection instead.
+
+The changed-file planner routes by source ownership. For example, a single app
+change maps to that app family plus its GUI folder when one exists; reusable
+UI changes map to reusable UI coverage plus downstream GUI coverage; docs,
+AGENTS, tools, and runner support files map to project guardrails unless their
+own tests require broader coverage. The printed plan includes the selected
+suites, test-name selectors, GUI mode, and reason for each step.
 
 ## CI Scope
 
@@ -137,8 +133,8 @@ is an implementation detail used by the buildfile.
 
 ## Focused And Parallel Iteration
 
-For tight local diagnosis, run the smallest suite directly through the lower-level
-runner after adding `tests` to the MATLAB path:
+When diagnosing one failure, rerun the smallest matching suite directly after
+adding `tests` to the MATLAB path:
 
 ```matlab
 addpath("tests")
@@ -146,9 +142,9 @@ runLabKitTests("Suites", "gui/apps/image_measurement/batch_crop", ...
     "IncludeGui", true, "GuiMode", "hidden", "HtmlReport", false)
 ```
 
-For long GUI or broad component suites, the runner can split a selected suite
-into deterministic zero-based shards. Start each shard in a separate MATLAB
-process and give each shard a distinct run name:
+For long GUI or broad component suites, split the same selected suite into
+deterministic zero-based shards. Start each shard in a separate MATLAB process
+and give each shard a distinct run name:
 
 ```matlab
 runLabKitTests("Suites", "gui", "IncludeGui", true, "GuiMode", "hidden", ...
@@ -156,24 +152,10 @@ runLabKitTests("Suites", "gui", "IncludeGui", true, "GuiMode", "hidden", ...
     "HtmlReport", false)
 ```
 
-Repeat with `ShardIndex` 1 and 2 for the remaining shards. Sharding is useful
-for local agent or maintainer iteration when MATLAB licenses and host resources
-allow multiple processes. Use the same suite, test-name filters, tags, and GUI
-settings for every shard; vary only `ShardIndex` and `RunName`. Keep final
-handoff validation on the official build task unless the sharded runs together
-cover the same selected suite and all shards passed.
-
-App GUI tests live at:
-
-```text
-tests/cases/gui/apps/<family>/<app_slug>/
-```
-
-When a change affects one app, `buildtool changed` maps the touched app
-folder to the matching GUI test folder when one exists. Shared UI, launcher,
-runner, or broad documentation changes map to broader build-task selections.
-Maintainer diagnostics under `tools/` map to project guardrails rather than the
-full non-GUI suite unless their tests or shared runner code also changed.
+Repeat with `ShardIndex` 1 and 2 for the remaining shards. Use the same suite,
+test-name filters, tags, and GUI settings for every shard; vary only
+`ShardIndex` and `RunName`. A sharded result is equivalent only when all shards
+passed and together cover the same selected suite.
 
 ## GUI Validation
 

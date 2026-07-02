@@ -25,6 +25,9 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
 - Do not add a separate custom runner or direct pass/fail test tree. Build
   tasks are the human and CI entry points; `tests/runLabKitTests.m` is the
   lower-level implementation behind those tasks.
+- Do not add public build tasks for every timing strategy. Keep the public
+  build-task set compact and improve changed-file planner routing, printed
+  plan reasons, representative selectors, or sharding support instead.
 - CI may shard non-GUI validation across multiple GitHub Actions jobs for
   wall-clock speed. Keep those shards as CI-only buildfile tasks invoked with
   `matlab-actions/run-build`; workflow YAML must not call
@@ -112,15 +115,17 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
 
 ## Validation Scope Discipline
 
-- Use the changed-file planner once to choose the initial affected scope for a
-  dirty worktree. If that planned run fails, fix the specific failure and
-  rerun the narrowest failing scope or failing suite directly; do not rerun
-  `buildtool changed` just to rediscover the same plan.
-- Use the fast changed-file task for tight local iteration when shared UI or
-  broad GUI-adjacent edits would trigger full downstream app GUI coverage. It
-  is an iteration gate, not the final handoff gate; run the conservative changed
-  task or the relevant broad task before pushing substantive
-  validation-routing changes.
+- Use the fast changed-file build task for local iteration and the
+  conservative changed-file build task for pre-handoff validation when git
+  state is available. These tasks should route from the current diff and print
+  why each selected scope is being run.
+- If a changed-file plan fails, fix the specific failure and rerun the
+  narrowest failing scope or suite directly; do not rerun the changed-file
+  planner just to rediscover the same plan.
+- For new timing strategies, first improve planner routing or representative
+  selectors. Add a new public task only when the workflow cannot be expressed
+  through the compact task set listed in `docs/testing.md` or a focused
+  `runLabKitTests` invocation.
 - Prefer `runLabKitTests("Suites", "...")` for rerunning a failed suite such
   as `project`, `labkit/ui`, `labkit/image`, `labkit/thermal`, or
   `apps/image_measurement`. Rerun broader

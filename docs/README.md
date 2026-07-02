@@ -14,8 +14,8 @@ the app catalog; maintainer references are grouped separately.
 
 - [apps.md](apps.md): app file shape, app ownership, and new-app guidance.
 - [architecture.md](architecture.md): package boundaries and extraction rules.
-- [testing.md](testing.md): supported build tasks, CI scope, fixtures, and GUI
-  validation limits.
+- [testing.md](testing.md): compact build-task entry points, automatic
+  changed-file routing, CI scope, fixtures, and GUI validation limits.
 - [release.md](release.md): version selection, tag naming, and GitHub release
   note format.
 - [workflow-assets.md](workflow-assets.md): command-line generation of real app

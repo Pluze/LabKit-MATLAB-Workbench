@@ -25,17 +25,24 @@ another skill already read shared AGENTS context, do not reread it.
 
 Use the smallest source-aligned validation set that covers the touched
 boundary. `docs/testing.md` owns the stable build-task names, CI scope, and
-command examples. Build tasks are broad discovery-driven entry points; use
+command examples. Keep the public build-task set small: improve changed-file
+planner routing, representative selectors, printed plan reasons, or focused
+runner selectors before adding a new public task.
+
+Use the fast changed-file build task for tight local iteration when git state
+is available, and the conservative changed-file build task before handoff.
+These tasks inspect the current diff and print why each selected scope is
+being run. Use
 `runLabKitTests("Suites", ...)` for component, app-family, or focused GUI
-iteration. For local GUI edits that only touch one app, prefer the app-level
-GUI folder, for example a `Suites` value such as
+diagnosis after a scope is known. For local GUI edits that only touch one app,
+prefer the app-level GUI folder, for example a `Suites` value such as
 `gui/apps/image_measurement/batch_crop` with `IncludeGui=true` and
 `GuiMode="hidden"`.
 
 For long focused suites, `runLabKitTests` can split a selected suite with
 zero-based `ShardCount` and `ShardIndex`. Use shards only when every shard is
 run with a distinct `RunName` and the combined shards cover the same selected
-suite; keep `buildtool changed` or the relevant broad build task as the
+suite; keep the conservative changed-file or relevant broad build task as the
 handoff gate for substantive changes.
 
 For a dirty worktree, route through the changed-file validation planner before
@@ -49,9 +56,9 @@ instead of rerunning narrower tests for ceremony.
 After a planned run fails, do not rerun the planner just to discover the same
 scope again. Fix the root cause and rerun the narrowest failed suite or test
 directly, for example `runLabKitTests("Suites", "project")` after a project
-guardrail failure. Escalate back to `buildtool changed`, `headless`, or `gui`
-only when the fix touches additional areas, changes validation routing, or the
-user explicitly asks for a broader/release gate.
+guardrail failure. Escalate back to the changed-file, headless, or GUI build
+task only when the fix touches additional areas, changes validation routing,
+or the user explicitly asks for a broader/release gate.
 
 ```text
 project                    startup, architecture, package surface, sample-data hygiene

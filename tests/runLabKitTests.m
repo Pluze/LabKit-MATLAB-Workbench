@@ -196,9 +196,10 @@ end
 
 function printValidationPlanSteps(steps)
     for k = 1:numel(steps)
-        fprintf("  %d. %s includeGui=%d suites=%s tests=%s\n", ...
+        fprintf("  %d. %s includeGui=%d suites=%s tests=%s reason=%s\n", ...
             k, steps(k).RunNameSuffix, steps(k).IncludeGui, ...
-            stepSuitesLabel(steps(k)), stepTestsLabel(steps(k)));
+            stepSuitesLabel(steps(k)), stepTestsLabel(steps(k)), ...
+            stepReasonLabel(steps(k)));
     end
 end
 
@@ -214,6 +215,14 @@ function label = stepTestsLabel(step)
         label = "<all>";
     else
         label = strjoin(step.Tests, ",");
+    end
+end
+
+function label = stepReasonLabel(step)
+    if ~isfield(step, "Reason") || strlength(string(step.Reason)) == 0
+        label = "<unspecified>";
+    else
+        label = char(step.Reason);
     end
 end
 
