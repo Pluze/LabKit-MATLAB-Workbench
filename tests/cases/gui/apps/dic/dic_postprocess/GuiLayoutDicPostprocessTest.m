@@ -1,25 +1,7 @@
 classdef GuiLayoutDicPostprocessTest < matlab.uitest.TestCase
     %GUILAYOUTDICPOSTPROCESSTEST Verify DIC postprocess GUI layout contracts.
 
-    methods (Test, TestTags = {'GUI', 'Structural'})
-        function dic_postprocess_layout(testCase)
-            setupLabKitTestPath();
-            h = guiTestHelpers();
-            h.assertUifigureAvailable();
-            cleanup = onCleanup(@() h.closeAllFigures());
-
-            fig = h.launchFigure('labkit_DICPostprocess_app', 'DIC Strain Postprocess');
-            h.assertStandardWorkbenchLayout(fig);
-            h.assertButtonContract(fig, {'Choose DIC MAT', ...
-                'Choose reference', 'Choose mask', ...
-                'Generate overlays + summary', ...
-                'Save overlay PNGs', 'Export summary CSV'});
-            h.assertTabTitles(fig, {'Files + Analysis', 'Summary + Results', 'Log'});
-            assertFilesAnalysisSectionsFit(fig);
-        end
-    end
-
-    methods (Test, TestTags = {'GUI', 'Workflow'})
+    methods (Test, TestTags = {'GUI', 'Structural', 'Workflow'})
         function dic_postprocess_workflow_generates_overlays_and_summary(testCase)
             setupLabKitTestPath();
             h = guiTestHelpers();
@@ -38,6 +20,7 @@ classdef GuiLayoutDicPostprocessTest < matlab.uitest.TestCase
 
             fig = h.launchFigure('labkit_DICPostprocess_app', ...
                 'DIC Strain Postprocess');
+            assertDicPostprocessLayout(h, fig);
             driver = labkitWorkflowDriver(fig);
             driver.chooseFiles('matFile', matPath);
             driver.chooseFiles('referenceFile', referencePath);
@@ -70,6 +53,16 @@ classdef GuiLayoutDicPostprocessTest < matlab.uitest.TestCase
                 'DIC postprocess workflow should draw the EYY overlay.');
         end
     end
+end
+
+function assertDicPostprocessLayout(h, fig)
+    h.assertStandardWorkbenchLayout(fig);
+    h.assertButtonContract(fig, {'Choose DIC MAT', ...
+        'Choose reference', 'Choose mask', ...
+        'Generate overlays + summary', ...
+        'Save overlay PNGs', 'Export summary CSV'});
+    h.assertTabTitles(fig, {'Files + Analysis', 'Summary + Results', 'Log'});
+    assertFilesAnalysisSectionsFit(fig);
 end
 
 function assertFilesAnalysisSectionsFit(fig)

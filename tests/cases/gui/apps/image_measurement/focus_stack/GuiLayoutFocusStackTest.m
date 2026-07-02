@@ -1,42 +1,7 @@
 classdef GuiLayoutFocusStackTest < matlab.uitest.TestCase
     %GUILAYOUTFOCUSSTACKTEST Verify focus stack GUI layout contracts.
 
-    methods (Test, TestTags = {'GUI', 'Structural'})
-        function focus_stack_layout(testCase)
-            setupLabKitTestPath();
-            h = guiTestHelpers();
-            h.assertUifigureAvailable();
-            cleanup = onCleanup(@() h.closeAllFigures());
-
-            fig = h.launchFigure('labkit_FocusStack_app', ...
-                'Microscope Focus Stack Fusion');
-            h.assertStandardWorkbenchLayout(fig);
-            h.assertButtonContract(fig, {'Add images or folder', ...
-                'Remove selected', 'Clear images', 'Run focus stack', 'Export fused PNG', ...
-                'Export focus map PNG', 'Export summary CSV'});
-            h.assertCheckboxContract(fig, {'Auto-register stack to middle image'});
-            h.assertDropdownGroups(fig, h.dropdownGroup({'Balanced', ...
-                'Crisp details', 'Smooth transitions', 'Noisy images'}, 1));
-            h.assertTabTitles(fig, {'Files + Analysis', 'Summary + Results', 'Log'});
-
-            h.closeAllFigures();
-            [fig, debug] = labkit_FocusStack_app("debug");
-            drawnow;
-            assert(debug.enabled && debug.traceEnabled, ...
-                'Focus Stack debug launch should return an enabled trace logger.');
-            assertAnyTextAreaContains(h, fig, 'Focus stack debug trace enabled', ...
-                'Focus Stack debug launch should mirror trace lines into the visible Log tab.');
-
-            h.invokeDropdownValue(fig, 'Crisp details');
-            lines = string(debug.getLog());
-            assert(any(contains(lines, 'BEGIN ValueChangedFcn')), ...
-                'Focus Stack debug mode should instrument declarative control callbacks.');
-            assertAnyTextAreaContains(h, fig, 'BEGIN ValueChangedFcn', ...
-                'Focus Stack debug mode should mirror instrumented callback traces into the visible Log tab.');
-        end
-    end
-
-    methods (Test, TestTags = {'GUI', 'Workflow'})
+    methods (Test, TestTags = {'GUI', 'Structural', 'Workflow'})
         function focus_stack_workflow_loads_and_runs_synthetic_images(testCase)
             setupLabKitTestPath();
             h = guiTestHelpers();
@@ -52,8 +17,21 @@ classdef GuiLayoutFocusStackTest < matlab.uitest.TestCase
             imwrite(uint8(255 .* nearImage), nearPath);
             imwrite(uint8(255 .* farImage), farPath);
 
-            fig = h.launchFigure('labkit_FocusStack_app', ...
-                'Microscope Focus Stack Fusion');
+            [fig, debug] = labkit_FocusStack_app("debug");
+            drawnow;
+            assertFocusStackLayout(h, fig);
+            assert(debug.enabled && debug.traceEnabled, ...
+                'Focus Stack debug launch should return an enabled trace logger.');
+            assertAnyTextAreaContains(h, fig, 'Focus stack debug trace enabled', ...
+                'Focus Stack debug launch should mirror trace lines into the visible Log tab.');
+            h.invokeDropdownValue(fig, 'Crisp details');
+            lines = string(debug.getLog());
+            assert(any(contains(lines, 'BEGIN ValueChangedFcn')), ...
+                'Focus Stack debug mode should instrument declarative control callbacks.');
+            assertAnyTextAreaContains(h, fig, 'BEGIN ValueChangedFcn', ...
+                'Focus Stack debug mode should mirror instrumented callback traces into the visible Log tab.');
+            h.invokeDropdownValue(fig, 'Balanced');
+
             driver = labkitWorkflowDriver(fig);
             driver.chooseFiles('sourceImages', [string(nearPath); string(farPath)]);
 
@@ -81,6 +59,17 @@ classdef GuiLayoutFocusStackTest < matlab.uitest.TestCase
                 'Focus stack details panel should describe the completed fusion result.');
         end
     end
+end
+
+function assertFocusStackLayout(h, fig)
+    h.assertStandardWorkbenchLayout(fig);
+    h.assertButtonContract(fig, {'Add images or folder', ...
+        'Remove selected', 'Clear images', 'Run focus stack', 'Export fused PNG', ...
+        'Export focus map PNG', 'Export summary CSV'});
+    h.assertCheckboxContract(fig, {'Auto-register stack to middle image'});
+    h.assertDropdownGroups(fig, h.dropdownGroup({'Balanced', ...
+        'Crisp details', 'Smooth transitions', 'Noisy images'}, 1));
+    h.assertTabTitles(fig, {'Files + Analysis', 'Summary + Results', 'Log'});
 end
 
 function [nearImage, farImage] = syntheticFocusPair()

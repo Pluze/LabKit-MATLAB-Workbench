@@ -1,29 +1,7 @@
 classdef GuiLayoutChronoOverlayTest < matlab.uitest.TestCase
     %GUILAYOUTCHRONOOVERLAYTEST Verify chrono overlay GUI layout contracts.
 
-    methods (Test, TestTags = {'GUI', 'Structural'})
-        function chrono_overlay_layout(testCase)
-            setupLabKitTestPath();
-            h = guiTestHelpers();
-            h.assertUifigureAvailable();
-            cleanup = onCleanup(@() h.closeAllFigures());
-
-            fig = h.launchFigure('labkit_ChronoOverlay_app', ...
-                'Gamry Multi-DTA Plot Export GUI');
-            h.assertStandardWorkbenchLayout(fig);
-            h.assertButtonContract(fig, {'Add DTA files', 'Remove selected', ...
-                'Clear all', 'Export curves CSV'});
-            h.assertCheckboxContract(fig, {'Show file-name legend', 'Show grid'});
-            h.assertDropdownGroups(fig, h.dropdownGroup( ...
-                {'Time (s)', 'Time (ms)', 'Sample #'}, 1));
-            h.assertTabTitles(fig, {'Files + Analysis', 'Log'});
-            h.assertDropdownCallbacksPresent(fig);
-            h.invokeDropdownValue(fig, 'Time (ms)');
-            h.invokeCheckbox(fig, 'Show file-name legend', false);
-        end
-    end
-
-    methods (Test, TestTags = {'GUI', 'Workflow'})
+    methods (Test, TestTags = {'GUI', 'Structural', 'Workflow'})
         function chrono_overlay_debug_launch_generates_boundary_samples(testCase)
             setupLabKitTestPath();
             h = guiTestHelpers();
@@ -31,6 +9,9 @@ classdef GuiLayoutChronoOverlayTest < matlab.uitest.TestCase
             cleanup = onCleanup(@() h.closeAllFigures());
 
             [fig, debug] = labkit_ChronoOverlay_app("debug");
+            assertChronoOverlayLayout(h, fig);
+            h.invokeDropdownValue(fig, 'Time (ms)');
+            h.invokeCheckbox(fig, 'Show file-name legend', false);
             testCase.verifyTrue(debug.enabled && debug.traceEnabled, ...
                 'Chrono overlay debug launch should return an enabled trace logger.');
             testCase.verifyTrue(isfolder(debug.sampleFolder), ...
@@ -81,4 +62,15 @@ classdef GuiLayoutChronoOverlayTest < matlab.uitest.TestCase
             testCase.verifyTrue(contains(string(axCurrent.XLabel.String), "Time (ms)"));
         end
     end
+end
+
+function assertChronoOverlayLayout(h, fig)
+    h.assertStandardWorkbenchLayout(fig);
+    h.assertButtonContract(fig, {'Add DTA files', 'Remove selected', ...
+        'Clear all', 'Export curves CSV'});
+    h.assertCheckboxContract(fig, {'Show file-name legend', 'Show grid'});
+    h.assertDropdownGroups(fig, h.dropdownGroup( ...
+        {'Time (s)', 'Time (ms)', 'Sample #'}, 1));
+    h.assertTabTitles(fig, {'Files + Analysis', 'Log'});
+    h.assertDropdownCallbacksPresent(fig);
 end

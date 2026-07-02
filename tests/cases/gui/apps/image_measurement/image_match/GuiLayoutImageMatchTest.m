@@ -1,30 +1,7 @@
 classdef GuiLayoutImageMatchTest < matlab.uitest.TestCase
     %GUILAYOUTIMAGEMATCHTEST Verify image match GUI layout contracts.
 
-    methods (Test, TestTags = {'GUI', 'Structural'})
-        function image_match_layout(testCase)
-            setupLabKitTestPath();
-            h = guiTestHelpers();
-            h.assertUifigureAvailable();
-            cleanup = onCleanup(@() h.closeAllFigures());
-
-            fig = h.launchFigure('labkit_ImageMatch_app', 'Paper Image Match');
-            h.assertStandardWorkbenchLayout(fig);
-            h.assertButtonContract(fig, {'Choose reference', ...
-                'Add images or folder', 'Remove selected', ...
-                'Clear images', 'Apply match', ...
-                'Undo history', 'Reset history', ...
-                'Choose folder', 'Export matched images'});
-            h.assertDropdownGroups(fig, [ ...
-                h.dropdownGroup({'Matched', 'Original', 'Before | After'}, 1), ...
-                h.dropdownGroup({'Balanced', 'White balance', 'Tone only', ...
-                'Protected tone', 'Lab style', 'Histogram'}, 1), ...
-                h.dropdownGroup({'PNG', 'TIFF', 'JPEG'}, 1)]);
-            h.assertTabTitles(fig, {'Library + Export', 'Match + History', 'Log'});
-        end
-    end
-
-    methods (Test, TestTags = {'GUI', 'Workflow'})
+    methods (Test, TestTags = {'GUI', 'Structural', 'Workflow'})
         function image_match_workflow_applies_reference_and_exports(testCase)
             setupLabKitTestPath();
             h = guiTestHelpers();
@@ -40,6 +17,7 @@ classdef GuiLayoutImageMatchTest < matlab.uitest.TestCase
             imwrite(syntheticSourceImage(), sourcePath);
 
             fig = h.launchFigure('labkit_ImageMatch_app', 'Paper Image Match');
+            assertImageMatchLayout(h, fig);
             driver = labkitWorkflowDriver(fig);
             driver.chooseFiles('referenceImage', referencePath);
             driver.chooseFiles('sourceImages', sourcePath);
@@ -79,6 +57,21 @@ classdef GuiLayoutImageMatchTest < matlab.uitest.TestCase
                 'Image match details should show the last manifest after export.');
         end
     end
+end
+
+function assertImageMatchLayout(h, fig)
+    h.assertStandardWorkbenchLayout(fig);
+    h.assertButtonContract(fig, {'Choose reference', ...
+        'Add images or folder', 'Remove selected', ...
+        'Clear images', 'Apply match', ...
+        'Undo history', 'Reset history', ...
+        'Choose folder', 'Export matched images'});
+    h.assertDropdownGroups(fig, [ ...
+        h.dropdownGroup({'Matched', 'Original', 'Before | After'}, 1), ...
+        h.dropdownGroup({'Balanced', 'White balance', 'Tone only', ...
+        'Protected tone', 'Lab style', 'Histogram'}, 1), ...
+        h.dropdownGroup({'PNG', 'TIFF', 'JPEG'}, 1)]);
+    h.assertTabTitles(fig, {'Library + Export', 'Match + History', 'Log'});
 end
 
 function img = syntheticReferenceImage()

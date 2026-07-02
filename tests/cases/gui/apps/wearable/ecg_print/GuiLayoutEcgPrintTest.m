@@ -1,31 +1,7 @@
 classdef GuiLayoutEcgPrintTest < matlab.uitest.TestCase
     %GUILAYOUTECGPRINTTEST Verify ECG Print GUI layout contracts.
 
-    methods (Test, TestTags = {'GUI', 'Structural'})
-        function ecg_print_layout(testCase)
-            setupLabKitTestPath();
-            h = guiTestHelpers();
-            h.assertUifigureAvailable();
-            cleanup = onCleanup(@() h.closeAllFigures());
-
-            fig = h.launchFigure('labkit_ECGPrint_app', ...
-                'ECG Signal Print + SNR Explorer');
-            h.assertStandardWorkbenchLayout(fig);
-            h.assertButtonContract(fig, {'Open recording', 'Analyze current ROI', ...
-                'Preview file header', 'Parse / refresh file', ...
-                'Export segment SNR CSV', 'Export waveform PNG'});
-            h.assertDropdownGroups(fig, [ ...
-                h.dropdownGroup({'Auto', 'Yes', 'No'}, 1), ...
-                h.dropdownGroup({'Auto', 'seconds', 'milliseconds', ...
-                'microseconds', 'nanoseconds'}, 1), ...
-                h.dropdownGroup({'(none)'}, 1), ...
-                h.dropdownGroup({'QRS streaming', 'Pan-Tompkins', 'Local peaks'}, 1), ...
-                h.dropdownGroup({'Template + residual band', 'Template + segments'}, 1)]);
-            h.assertTabTitles(fig, {'Files + Analysis', 'Summary + Results', 'Log'});
-        end
-    end
-
-    methods (Test, TestTags = {'GUI', 'Workflow'})
+    methods (Test, TestTags = {'GUI', 'Structural', 'Workflow'})
         function ecg_print_workflow_loads_analyzes_and_plots_recording(testCase)
             setupLabKitTestPath();
             h = guiTestHelpers();
@@ -40,6 +16,7 @@ classdef GuiLayoutEcgPrintTest < matlab.uitest.TestCase
 
             fig = h.launchFigure('labkit_ECGPrint_app', ...
                 'ECG Signal Print + SNR Explorer');
+            assertEcgPrintLayout(h, fig);
             driver = labkitWorkflowDriver(fig);
             driver.chooseFiles('recording', recordingPath);
 
@@ -75,6 +52,21 @@ classdef GuiLayoutEcgPrintTest < matlab.uitest.TestCase
                 'ECG Print workflow should draw the template plot.');
         end
     end
+end
+
+function assertEcgPrintLayout(h, fig)
+    h.assertStandardWorkbenchLayout(fig);
+    h.assertButtonContract(fig, {'Open recording', 'Analyze current ROI', ...
+        'Preview file header', 'Parse / refresh file', ...
+        'Export segment SNR CSV', 'Export waveform PNG'});
+    h.assertDropdownGroups(fig, [ ...
+        h.dropdownGroup({'Auto', 'Yes', 'No'}, 1), ...
+        h.dropdownGroup({'Auto', 'seconds', 'milliseconds', ...
+        'microseconds', 'nanoseconds'}, 1), ...
+        h.dropdownGroup({'(none)'}, 1), ...
+        h.dropdownGroup({'QRS streaming', 'Pan-Tompkins', 'Local peaks'}, 1), ...
+        h.dropdownGroup({'Template + residual band', 'Template + segments'}, 1)]);
+    h.assertTabTitles(fig, {'Files + Analysis', 'Summary + Results', 'Log'});
 end
 
 function writeSyntheticEcgCsv(filepath)

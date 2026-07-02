@@ -1,29 +1,7 @@
 classdef GuiLayoutEisTest < matlab.uitest.TestCase
     %GUILAYOUTEISTEST Verify EIS GUI layout and workflow contracts.
 
-    methods (Test, TestTags = {'GUI', 'Structural'})
-        function eis_layout(testCase)
-            setupLabKitTestPath();
-            h = guiTestHelpers();
-            h.assertUifigureAvailable();
-            cleanup = onCleanup(@() h.closeAllFigures());
-
-            fig = h.launchFigure('labkit_EIS_app', 'Gamry EIS Multi-DTA Plot GUI');
-            h.assertStandardWorkbenchLayout(fig);
-            h.assertButtonContract(fig, {'Add DTA files', 'Remove selected', ...
-                'Clear all', 'Export current plot CSV'});
-            h.assertCheckboxContract(fig, {'Show markers', 'Log X', 'Log Y', ...
-                'Legend', 'Grid'});
-            h.assertDropdownGroups(fig, h.dropdownGroup(eisAxisItems(), 2));
-            h.assertTabTitles(fig, {'Files + Analysis', 'Summary + Results', 'Log'});
-            h.assertDropdownCallbacksPresent(fig);
-            h.invokeDropdownValue(fig, 'Freq (Hz)');
-            h.invokeCheckbox(fig, 'Log X', true);
-        end
-
-    end
-
-    methods (Test, TestTags = {'GUI', 'Workflow'})
+    methods (Test, TestTags = {'GUI', 'Structural', 'Workflow'})
         function eis_file_button_loads_selected_dta(testCase)
             setupLabKitTestPath();
             h = guiTestHelpers();
@@ -32,6 +10,9 @@ classdef GuiLayoutEisTest < matlab.uitest.TestCase
 
             fixture = dtaFixturePath('eis_potentiostatic_zcurve.DTA');
             fig = h.launchFigure('labkit_EIS_app', 'Gamry EIS Multi-DTA Plot GUI');
+            assertEisLayout(h, fig);
+            h.invokeDropdownValue(fig, 'Freq (Hz)');
+            h.invokeCheckbox(fig, 'Log X', true);
             workflow = labkitWorkflowDriver(fig);
             workflow.chooseFiles('files', fixture);
 
@@ -62,6 +43,17 @@ classdef GuiLayoutEisTest < matlab.uitest.TestCase
                 'Changing EIS log coordinate selections should discard stale zoomed Y limits.');
         end
     end
+end
+
+function assertEisLayout(h, fig)
+    h.assertStandardWorkbenchLayout(fig);
+    h.assertButtonContract(fig, {'Add DTA files', 'Remove selected', ...
+        'Clear all', 'Export current plot CSV'});
+    h.assertCheckboxContract(fig, {'Show markers', 'Log X', 'Log Y', ...
+        'Legend', 'Grid'});
+    h.assertDropdownGroups(fig, h.dropdownGroup(eisAxisItems(), 2));
+    h.assertTabTitles(fig, {'Files + Analysis', 'Summary + Results', 'Log'});
+    h.assertDropdownCallbacksPresent(fig);
 end
 
 function items = eisAxisItems()

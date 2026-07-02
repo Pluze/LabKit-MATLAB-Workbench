@@ -1,35 +1,7 @@
 classdef GuiLayoutVtResistanceTest < matlab.uitest.TestCase
     %GUILAYOUTVTRESISTANCETEST Verify VT resistance GUI layout contracts.
 
-    methods (Test, TestTags = {'GUI', 'Structural'})
-        function vt_resistance_layout(testCase)
-            setupLabKitTestPath();
-            h = guiTestHelpers();
-            h.assertUifigureAvailable();
-            cleanup = onCleanup(@() h.closeAllFigures());
-
-            fig = h.launchFigure('labkit_VTResistance_app', ...
-                'Gamry VT Steady Resistance GUI');
-            h.assertStandardWorkbenchLayout(fig);
-            h.assertButtonContract(fig, {'Add DTA files', 'Remove selected', ...
-                'Clear all', 'Export results CSV', ...
-                'Re-analyze file', 'Refresh plots', 'Swap top / bottom', ...
-                'Reset axes'});
-            h.assertCheckboxContract(fig, {'Show markers', 'Shade windows', 'Grid'});
-            h.assertTabTitles(fig, {'Files + Analysis', 'Summary + Results', 'Log'});
-            h.assertDropdownGroups(fig, [ ...
-                h.dropdownGroup({'Metadata first, then auto', 'Metadata only', ...
-                'Auto from Im only'}, 1), ...
-                h.dropdownGroup({'Full pulse median', 'Center 60% median'}, 1), ...
-                h.dropdownGroup({'Baseline-corrected dV/I', 'Raw Vf/I'}, 1), ...
-                h.dropdownGroup({'Time (s)', 'Sample #'}, 2), ...
-                h.dropdownGroup({'VT: Vf vs time', 'IT: Im vs time'}, 2)]);
-            h.assertDropdownCallbacksPresent(fig);
-            verifyVtPlotAxisClearRemovesAnnotations();
-        end
-    end
-
-    methods (Test, TestTags = {'GUI', 'Workflow'})
+    methods (Test, TestTags = {'GUI', 'Structural', 'Workflow'})
         function vt_resistance_workflow_loads_analyzes_and_plots_chrono(testCase)
             setupLabKitTestPath();
             h = guiTestHelpers();
@@ -39,6 +11,8 @@ classdef GuiLayoutVtResistanceTest < matlab.uitest.TestCase
             fixture = dtaFixturePath('chrono_chronopot_current_pulse_0p2ms.DTA');
             fig = h.launchFigure('labkit_VTResistance_app', ...
                 'Gamry VT Steady Resistance GUI');
+            assertVtResistanceLayout(h, fig);
+            verifyVtPlotAxisClearRemovesAnnotations();
             driver = labkitWorkflowDriver(fig);
             driver.chooseFiles('files', fixture);
 
@@ -65,6 +39,24 @@ classdef GuiLayoutVtResistanceTest < matlab.uitest.TestCase
                 'VT resistance workflow should draw the bottom plot.');
         end
     end
+end
+
+function assertVtResistanceLayout(h, fig)
+    h.assertStandardWorkbenchLayout(fig);
+    h.assertButtonContract(fig, {'Add DTA files', 'Remove selected', ...
+        'Clear all', 'Export results CSV', ...
+        'Re-analyze file', 'Refresh plots', 'Swap top / bottom', ...
+        'Reset axes'});
+    h.assertCheckboxContract(fig, {'Show markers', 'Shade windows', 'Grid'});
+    h.assertTabTitles(fig, {'Files + Analysis', 'Summary + Results', 'Log'});
+    h.assertDropdownGroups(fig, [ ...
+        h.dropdownGroup({'Metadata first, then auto', 'Metadata only', ...
+        'Auto from Im only'}, 1), ...
+        h.dropdownGroup({'Full pulse median', 'Center 60% median'}, 1), ...
+        h.dropdownGroup({'Baseline-corrected dV/I', 'Raw Vf/I'}, 1), ...
+        h.dropdownGroup({'Time (s)', 'Sample #'}, 2), ...
+        h.dropdownGroup({'VT: Vf vs time', 'IT: Im vs time'}, 2)]);
+    h.assertDropdownCallbacksPresent(fig);
 end
 
 function verifyVtPlotAxisClearRemovesAnnotations()

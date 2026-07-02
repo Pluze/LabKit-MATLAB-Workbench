@@ -1,30 +1,7 @@
 classdef GuiLayoutCscTest < matlab.uitest.TestCase
     %GUILAYOUTCSCTEST Verify CSC GUI layout contracts.
 
-    methods (Test, TestTags = {'GUI', 'Structural'})
-        function csc_layout(testCase)
-            setupLabKitTestPath();
-            h = guiTestHelpers();
-            h.assertUifigureAvailable();
-            cleanup = onCleanup(@() h.closeAllFigures());
-
-            fig = h.launchFigure('labkit_CSC_app', 'Gamry DTA GUI (literature CSC)');
-            h.assertStandardWorkbenchLayout(fig);
-            h.assertButtonContract(fig, {'Add DTA files', 'Remove selected', ...
-                'Clear all', 'Reload selected', ...
-                'Auto CV + CT', 'Swap Top/Bottom', 'Compare Q / CSC', ...
-                'Refresh Plots', 'Clear Both'});
-            h.assertCheckboxContract(fig, {'Grid', 'Hold', 'Show Trim'});
-            h.assertDropdownGroups(fig, [ ...
-                h.dropdownGroup({'(none)'}, 5), ...
-                h.dropdownGroup({'Full', 'Cathodic', 'Anodic'}, 1)]);
-            h.assertTabTitles(fig, {'Files + Analysis', 'Summary + Results', 'Log'});
-            h.assertDropdownCallbacksPresent(fig);
-            h.invokeDropdownValue(fig, 'Cathodic');
-        end
-    end
-
-    methods (Test, TestTags = {'GUI', 'Workflow'})
+    methods (Test, TestTags = {'GUI', 'Structural', 'Workflow'})
         function csc_workflow_loads_cvct_compares_and_plots(testCase)
             setupLabKitTestPath();
             h = guiTestHelpers();
@@ -34,6 +11,9 @@ classdef GuiLayoutCscTest < matlab.uitest.TestCase
             fixture = dtaFixturePath('cv_cyclic_voltammetry_pt_reference.DTA');
             fig = h.launchFigure('labkit_CSC_app', ...
                 'Gamry DTA GUI (literature CSC)');
+            assertCscLayout(h, fig);
+            h.invokeDropdownValue(fig, 'Cathodic');
+            h.invokeDropdownValue(fig, 'Full');
             driver = labkitWorkflowDriver(fig);
             driver.chooseFiles('files', fixture);
 
@@ -62,4 +42,18 @@ classdef GuiLayoutCscTest < matlab.uitest.TestCase
                 'CSC workflow should draw the bottom plot.');
         end
     end
+end
+
+function assertCscLayout(h, fig)
+    h.assertStandardWorkbenchLayout(fig);
+    h.assertButtonContract(fig, {'Add DTA files', 'Remove selected', ...
+        'Clear all', 'Reload selected', ...
+        'Auto CV + CT', 'Swap Top/Bottom', 'Compare Q / CSC', ...
+        'Refresh Plots', 'Clear Both'});
+    h.assertCheckboxContract(fig, {'Grid', 'Hold', 'Show Trim'});
+    h.assertDropdownGroups(fig, [ ...
+        h.dropdownGroup({'(none)'}, 5), ...
+        h.dropdownGroup({'Full', 'Cathodic', 'Anodic'}, 1)]);
+    h.assertTabTitles(fig, {'Files + Analysis', 'Summary + Results', 'Log'});
+    h.assertDropdownCallbacksPresent(fig);
 end

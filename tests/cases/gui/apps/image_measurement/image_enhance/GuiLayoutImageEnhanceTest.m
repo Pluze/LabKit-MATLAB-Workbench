@@ -1,45 +1,7 @@
 classdef GuiLayoutImageEnhanceTest < matlab.uitest.TestCase
     %GUILAYOUTIMAGEENHANCETEST Verify image enhance GUI layout contracts.
 
-    methods (Test, TestTags = {'GUI', 'Structural'})
-        function image_enhance_layout(testCase)
-            setupLabKitTestPath();
-            h = guiTestHelpers();
-            h.assertUifigureAvailable();
-            cleanup = onCleanup(@() h.closeAllFigures());
-
-            fig = h.launchFigure('labkit_ImageEnhance_app', 'Paper Image Enhance');
-            h.assertStandardWorkbenchLayout(fig);
-            h.assertButtonContract(fig, {'Add images or folder', ...
-                'Remove selected', 'Clear images', ...
-                'Set white ROI', 'Apply tool', 'Undo history', 'Reset history', ...
-                'Choose folder', 'Export enhanced images'});
-            h.assertDropdownGroups(fig, [ ...
-                h.dropdownGroup({'Enhanced', 'Original', 'Before | After'}, 1), ...
-                h.dropdownGroup({'Brightness/contrast', 'Local contrast', ...
-                'Sharpen', 'Hue/saturation', 'White balance', ...
-                'White ROI calibration', 'Subject-preserving enhance'}, 1), ...
-                h.dropdownGroup({'PNG', 'TIFF', 'JPEG'}, 1)]);
-            h.assertCheckboxContract(fig, {'Batch shared processing'});
-            h.assertTabTitles(fig, {'Library + Export', 'Tools + History', 'Log'});
-
-            h.closeAllFigures();
-            [fig, debug] = labkit_ImageEnhance_app("debug");
-            drawnow;
-            assert(debug.enabled && debug.traceEnabled, ...
-                'Image enhance debug launch should return an enabled trace logger.');
-            assertAnyTextAreaContains(h, fig, 'Image enhance debug trace enabled', ...
-                'Image enhance debug launch should mirror trace lines into the visible Log tab.');
-            driver = labkitWorkflowDriver(fig);
-            testCase.verifyTrue(isfile(debug.manifestFile), ...
-                'Image enhance debug launch should record a sample manifest.');
-            testCase.verifyEqual(char(driver.fileStatus('sourceImages')), 'No images loaded', ...
-                'Image enhance debug launch should not preload generated samples.');
-            verifyPerImageHistoryRefresh(fig);
-        end
-    end
-
-    methods (Test, TestTags = {'GUI', 'Workflow'})
+    methods (Test, TestTags = {'GUI', 'Structural', 'Workflow'})
         function image_enhance_workflow_applies_tool_and_exports(testCase)
             setupLabKitTestPath();
             h = guiTestHelpers();
@@ -52,8 +14,19 @@ classdef GuiLayoutImageEnhanceTest < matlab.uitest.TestCase
             sourcePath = fullfile(folder, 'paper.png');
             imwrite(syntheticPaperImage(), sourcePath);
 
-            fig = h.launchFigure('labkit_ImageEnhance_app', 'Paper Image Enhance');
+            [fig, debug] = labkit_ImageEnhance_app("debug");
+            drawnow;
+            assertImageEnhanceLayout(h, fig);
+            assert(debug.enabled && debug.traceEnabled, ...
+                'Image enhance debug launch should return an enabled trace logger.');
+            assertAnyTextAreaContains(h, fig, 'Image enhance debug trace enabled', ...
+                'Image enhance debug launch should mirror trace lines into the visible Log tab.');
             driver = labkitWorkflowDriver(fig);
+            testCase.verifyTrue(isfile(debug.manifestFile), ...
+                'Image enhance debug launch should record a sample manifest.');
+            testCase.verifyEqual(char(driver.fileStatus('sourceImages')), 'No images loaded', ...
+                'Image enhance debug launch should not preload generated samples.');
+            verifyPerImageHistoryRefresh(fig);
             driver.chooseFiles('sourceImages', sourcePath);
 
             driver.click('Add images or folder');
@@ -84,6 +57,22 @@ classdef GuiLayoutImageEnhanceTest < matlab.uitest.TestCase
                 'Image enhance details should show the last manifest after export.');
         end
     end
+end
+
+function assertImageEnhanceLayout(h, fig)
+    h.assertStandardWorkbenchLayout(fig);
+    h.assertButtonContract(fig, {'Add images or folder', ...
+        'Remove selected', 'Clear images', ...
+        'Set white ROI', 'Apply tool', 'Undo history', 'Reset history', ...
+        'Choose folder', 'Export enhanced images'});
+    h.assertDropdownGroups(fig, [ ...
+        h.dropdownGroup({'Enhanced', 'Original', 'Before | After'}, 1), ...
+        h.dropdownGroup({'Brightness/contrast', 'Local contrast', ...
+        'Sharpen', 'Hue/saturation', 'White balance', ...
+        'White ROI calibration', 'Subject-preserving enhance'}, 1), ...
+        h.dropdownGroup({'PNG', 'TIFF', 'JPEG'}, 1)]);
+    h.assertCheckboxContract(fig, {'Batch shared processing'});
+    h.assertTabTitles(fig, {'Library + Export', 'Tools + History', 'Log'});
 end
 
 function img = syntheticPaperImage()
