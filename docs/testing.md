@@ -290,3 +290,13 @@ cost, or MATLAB callbacks. Default summary rankings exclude `profiler_tool`
 rows, but the JSON `functions` array still keeps them for audit. Agent-side
 filtering should use each row's `source_tag` and `tags` fields, for example
 `project`, `matlab_internal`, `external`, or `profiler_tool`.
+
+Measure one user-perceived cost at a time. Startup targets should open the
+launcher or app, call `drawnow`, pause briefly, and let
+`CloseFiguresAfterRun` clean up after profiling; profile explicit `close(fig)`
+latency as its own target. Profile debug launches separately from normal
+launches because visible trace mirroring can dominate app-owned startup cost.
+For large-file workflows, use synthetic multi-file targets to compare path
+registration with actual file reads before changing algorithms. Single GUI
+profile runs can be noisy, so compare repeated or representative runs and keep
+the HTML/JSON artifact paths in the handoff.

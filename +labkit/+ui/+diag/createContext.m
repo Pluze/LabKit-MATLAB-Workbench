@@ -381,7 +381,6 @@ function appendTextLog(textArea, msg)
     if shouldFollowLatest(textArea)
         scrollLogToBottom(textArea);
     end
-    drawnow limitrate
 end
 
 function tf = shouldFollowLatest(textArea)

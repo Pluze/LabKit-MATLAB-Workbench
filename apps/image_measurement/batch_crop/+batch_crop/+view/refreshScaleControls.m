@@ -3,7 +3,8 @@
 % current index, scale mode, requested physical size, and unit. Side effects
 % are limited to scale-tool enablement/calibration and status text refresh.
 function refreshScaleControls(scaleTool, statusControl, items, currentIndex, mode, physicalSize, unitName)
-    hasImage = ~isempty(items) && currentIndex >= 1 && currentIndex <= numel(items);
+    hasImage = ~isempty(items) && currentIndex >= 1 && currentIndex <= numel(items) && ...
+        ~isempty(items(currentIndex).image);
     physicalMode = strcmpi(string(mode), "Physical");
     if scaleTool.isReferenceEditActive()
         scaleTool.setEnabled(struct( ...

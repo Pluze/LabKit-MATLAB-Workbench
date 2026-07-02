@@ -139,6 +139,12 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
   operations with pixel-unit parameters such as radius or window size, scale
   those parameters to the preview resolution so preview behavior remains
   comparable to original-resolution export.
+- File chooser callbacks should register paths and load only the data needed
+  for the immediate visible state. Do not read, parse, calibrate, or compute
+  every selected file in the selection callback unless the app cannot render a
+  useful first state without the full batch. Put path-only item factories in
+  app-owned `+state`, keep lazy load/refresh order in the runner, and add a
+  unit or GUI regression that proves large selections stay deferred.
 - Apps with preview, run, or export task lifecycles should build immutable
   app-owned task snapshots in `+state` and compare deterministic fingerprints
   before repeated work. The runner may own dirty flags, small preview caches,

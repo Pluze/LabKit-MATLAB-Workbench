@@ -33,7 +33,9 @@ function enableWrap(handle)
         return;
     end
     try
-        handle.WordWrap = 'on';
+        if ~strcmp(handle.WordWrap, 'on')
+            handle.WordWrap = 'on';
+        end
     catch
     end
 end
@@ -50,7 +52,10 @@ function applyShrink(handle, text, opts)
         longestLine = max(strlength(splitlines(text)));
         shrinkSteps = max(0, ceil(double(longestLine) ./ opts.charsPerStep) - 1);
         shrinkSteps = min(double(opts.maxShrinkSteps), shrinkSteps);
-        handle.FontSize = max(double(opts.minFontSize), baseSize - shrinkSteps);
+        targetSize = max(double(opts.minFontSize), baseSize - shrinkSteps);
+        if handle.FontSize ~= targetSize
+            handle.FontSize = targetSize;
+        end
     catch
     end
 end
@@ -59,14 +64,18 @@ function applyTooltip(handle, text)
     tooltip = char(text);
     if isprop(handle, 'Tooltip')
         try
-            handle.Tooltip = tooltip;
+            if ~strcmp(handle.Tooltip, tooltip)
+                handle.Tooltip = tooltip;
+            end
             return;
         catch
         end
     end
     if isprop(handle, 'TooltipString')
         try
-            handle.TooltipString = tooltip;
+            if ~strcmp(handle.TooltipString, tooltip)
+                handle.TooltipString = tooltip;
+            end
         catch
         end
     end

@@ -90,13 +90,7 @@ function fig = run(debugLog)
             addLog('Image file selection cancelled.');
             return;
         end
-        try
-            items = batch_crop.state.readItems(paths);
-        catch ME
-            debugLog.reportException('batchCrop', 'Could not load images', ME);
-            showError('Could not load images', ME.message);
-            return;
-        end
+        items = batch_crop.state.itemsForPaths(paths);
         S.items = batch_crop.state.mergeChosenItems(S.items, items);
         S.currentIndex = min(max(S.currentIndex, 1), numel(S.items));
         S.outputFolder = string(labkit.ui.app.defaultOutputFolder( ...
@@ -104,7 +98,7 @@ function fig = run(debugLog)
         txtOutputFolder.Value = char(S.outputFolder);
         S = batch_crop.state.clearExportState(S);
         S.canvasCache = batch_crop.state.emptyCanvasCache();
-        addLog(sprintf('Loaded %d image file(s); crop tasks: %d.', numel(items), numel(S.items)));
+        addLog(sprintf('Selected %d image file(s); crop tasks: %d.', numel(items), numel(S.items)));
         refreshAll();
     end
 
@@ -278,7 +272,7 @@ function fig = run(debugLog)
             max(0, double(edtTargetPixelsPerUnit.Value)));
         labkit.ui.view.setValue(ui, "maxUpsamplePercent", ...
             max(0, double(edtMaxUpsamplePercent.Value)));
-        if strcmpi(currentScaleMode(), "Physical")
+        if strcmpi(string(ddScaleMode.Value), "Physical")
             scaleTool.setEnabled(struct('hasImage', hasCurrentImage()));
         end
         S = batch_crop.state.clearExportState(S);
@@ -363,9 +357,12 @@ function fig = run(debugLog)
             return;
         end
         scaleSummary = batch_crop.state.scaleCalibrationSummary(S.items);
-        if strcmpi(currentScaleMode(), "Physical") && ~scaleSummary.allCalibrated
+        if strcmpi(string(ddScaleMode.Value), "Physical") && ~scaleSummary.allCalibrated
             showError('Scale calibration missing', ...
                 batch_crop.view.missingWorkflowItemsText(S.items, "scale"));
+            return;
+        end
+        if ~ensureAllImagesLoaded()
             return;
         end
         opts = currentExportOptions();
@@ -416,12 +413,12 @@ function fig = run(debugLog)
         end
 
         labkit.ui.view.setValue(ui, 'images', ...
-            batch_crop.view.filePanelEntries(S.items, currentScaleMode()));
+            batch_crop.view.filePanelEntries(S.items, string(ddScaleMode.Value)));
         S.currentIndex = min(max(S.currentIndex, 1), numel(S.items));
         files = labkit.ui.view.getFiles(ui, 'images');
         labkit.ui.view.setFileSelection(ui, 'images', files(S.currentIndex));
         txtImageSource.Value = char(S.items(S.currentIndex).path);
-        if strcmpi(currentScaleMode(), "Physical")
+        if strcmpi(string(ddScaleMode.Value), "Physical")
             scaleSummary = batch_crop.state.scaleCalibrationSummary(S.items);
             txtImageStatus.Value = sprintf('Images: %d | centers: %d | scales: %d', ...
                 numel(S.items), batch_crop.state.countConfirmedCenters(S.items), ...
@@ -433,9 +430,10 @@ function fig = run(debugLog)
     end
 
     function refreshControls()
+        ensureCurrentImageLoaded();
         hasImage = hasCurrentImage();
         enabled = batch_crop.view.ternary(hasImage, 'on', 'off');
-        physicalMode = strcmpi(currentScaleMode(), "Physical");
+        physicalMode = strcmpi(string(ddScaleMode.Value), "Physical");
         btnClearImages.Enable = enabled;
         btnDuplicateImage.Enable = enabled;
         btnPrevious.Enable = batch_crop.view.ternary(hasImage && S.currentIndex > 1, 'on', 'off');
@@ -492,6 +490,7 @@ function fig = run(debugLog)
         if nargin < 1
             viewState = [];
         end
+        ensureCurrentImageLoaded();
         if ~hasCurrentImage()
             resetPreviewAxes();
             cropSession.setBackground([]);
@@ -506,14 +505,16 @@ function fig = run(debugLog)
         item = S.items(S.currentIndex);
         tools = struct('scaleTool', scaleTool, 'cropSession', cropSession);
         batch_crop.view.drawPreview(ui, previewAxes, geometry, placement, item, ...
-            [currentCropWidth(), currentCropHeight()], tools, viewState);
+            currentCropSize(), tools, viewState);
     end
 
     function refreshSummary()
+        ensureCurrentImageLoaded();
+        cropSize = currentCropSize();
         resultTable.Data = batch_crop.view.summaryTableData(S, S.currentIndex, ...
-            currentCropWidth(), currentCropHeight(), currentPaddingPercent(), ddFormat.Value);
+            cropSize(1), cropSize(2), currentPaddingPercent(), ddFormat.Value);
         txtDetails.Value = batch_crop.view.detailLines(S, S.currentIndex, ...
-            currentCropWidth(), currentCropHeight(), currentPaddingPercent());
+            cropSize(1), cropSize(2), currentPaddingPercent());
         refreshScaleControls(txtScaleStatus);
     end
 
@@ -523,50 +524,23 @@ function fig = run(debugLog)
     end
 
     function opts = currentExportOptions()
-        opts = struct();
-        opts.outputFolder = S.outputFolder;
-        opts.format = ddFormat.Value;
-        opts.cropWidth = currentCropWidth();
-        opts.cropHeight = currentCropHeight();
-        opts.paddingPercent = currentPaddingPercent();
-        opts.scaleMode = currentScaleMode();
-        opts.scaleUnit = currentScaleUnit();
-        opts.physicalWidth = max(eps, double(edtPhysicalWidth.Value));
-        opts.physicalHeight = max(eps, double(edtPhysicalHeight.Value));
-        opts.targetPixelsPerUnit = max(0, double(edtTargetPixelsPerUnit.Value));
-        opts.maxUpsamplePercent = max(0, double(edtMaxUpsamplePercent.Value));
+        opts = batch_crop.state.exportOptions(S.outputFolder, ddFormat.Value, ...
+            currentCropSize(), currentPaddingPercent(), string(ddScaleMode.Value), ...
+            string(ddScaleUnit.Value), [edtPhysicalWidth.Value, edtPhysicalHeight.Value], ...
+            edtTargetPixelsPerUnit.Value, edtMaxUpsamplePercent.Value);
     end
 
-    function width = currentCropWidth()
-        if strcmpi(currentScaleMode(), "Physical") && hasCurrentImage()
+    function cropSize = currentCropSize()
+        if strcmpi(string(ddScaleMode.Value), "Physical") && hasCurrentImage()
             cal = batch_crop.state.itemScaleCalibration(S.items, S.currentIndex);
             if batch_crop.state.isScaleCalibrationSet(cal)
-                pixelsPerUnit = batch_crop.ops.pixelsPerUnitForUnit(cal, currentScaleUnit());
-                width = max(1, round(double(edtPhysicalWidth.Value) * pixelsPerUnit));
+                pixelsPerUnit = batch_crop.ops.pixelsPerUnitForUnit(cal, string(ddScaleUnit.Value));
+                cropSize = max(1, round([ ...
+                    double(edtPhysicalWidth.Value), double(edtPhysicalHeight.Value)] * pixelsPerUnit));
                 return;
             end
         end
-        width = max(1, round(double(edtCropWidth.Value)));
-    end
-
-    function height = currentCropHeight()
-        if strcmpi(currentScaleMode(), "Physical") && hasCurrentImage()
-            cal = batch_crop.state.itemScaleCalibration(S.items, S.currentIndex);
-            if batch_crop.state.isScaleCalibrationSet(cal)
-                pixelsPerUnit = batch_crop.ops.pixelsPerUnitForUnit(cal, currentScaleUnit());
-                height = max(1, round(double(edtPhysicalHeight.Value) * pixelsPerUnit));
-                return;
-            end
-        end
-        height = max(1, round(double(edtCropHeight.Value)));
-    end
-
-    function mode = currentScaleMode()
-        mode = string(ddScaleMode.Value);
-    end
-
-    function unitName = currentScaleUnit()
-        unitName = string(ddScaleUnit.Value);
+        cropSize = max(1, round([double(edtCropWidth.Value), double(edtCropHeight.Value)]));
     end
 
     function percent = currentPaddingPercent()
@@ -622,17 +596,43 @@ function fig = run(debugLog)
     function centerXY = adjustedCropCenter(centerXY)
         geometry = currentGeometry();
         centerXY = batch_crop.ops.clampCropCenterToCanvas(geometry, centerXY, ...
-            [currentCropWidth(), currentCropHeight()]);
+            currentCropSize());
     end
 
     function tf = hasCurrentImage()
-        tf = ~isempty(S.items) && S.currentIndex >= 1 && S.currentIndex <= numel(S.items);
+        tf = ~isempty(S.items) && S.currentIndex >= 1 && S.currentIndex <= numel(S.items) && ...
+            ~isempty(S.items(S.currentIndex).image);
+    end
+
+    function tf = ensureCurrentImageLoaded()
+        tf = false;
+        if isempty(S.items) || S.currentIndex < 1 || S.currentIndex > numel(S.items)
+            return;
+        end
+        try
+            [S.items, tf] = batch_crop.state.loadImageForIndex(S.items, S.currentIndex);
+        catch ME
+            debugLog.reportException('batchCrop', 'Could not load image', ME);
+            addLog(sprintf('Could not load image %d: %s', S.currentIndex, ME.message));
+        end
+    end
+
+    function tf = ensureAllImagesLoaded()
+        tf = false;
+        try
+            S.items = batch_crop.state.loadMissingImages(S.items);
+            S.canvasCache = batch_crop.state.emptyCanvasCache();
+            tf = true;
+        catch ME
+            debugLog.reportException('batchCrop', 'Could not load image', ME);
+            showError('Could not load image', ME.message);
+        end
     end
 
     function refreshScaleControls(statusControl)
         batch_crop.view.refreshScaleControls(scaleTool, statusControl, S.items, ...
-            S.currentIndex, currentScaleMode(), ...
-            [edtPhysicalWidth.Value, edtPhysicalHeight.Value], currentScaleUnit());
+            S.currentIndex, string(ddScaleMode.Value), ...
+            [edtPhysicalWidth.Value, edtPhysicalHeight.Value], string(ddScaleUnit.Value));
     end
 
     function addLog(message)
