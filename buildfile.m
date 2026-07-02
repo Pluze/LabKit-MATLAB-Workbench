@@ -147,7 +147,8 @@ end
 
 function handled = runWithInternalShards(spec, args)
     handled = false;
-    if spec.Name ~= "headless" || isInternalShardWorker() || ispc
+    if spec.Name ~= "headless" || isInternalShardWorker() || ...
+            isGitHubActions() || ispc
         return;
     end
 
@@ -176,6 +177,10 @@ end
 
 function tf = isInternalShardWorker()
     tf = string(getenv("LABKIT_INTERNAL_SHARD_WORKER")) == "1";
+end
+
+function tf = isGitHubActions()
+    tf = string(getenv("GITHUB_ACTIONS")) == "true";
 end
 
 function shardCount = recommendedShardCount(testCount)

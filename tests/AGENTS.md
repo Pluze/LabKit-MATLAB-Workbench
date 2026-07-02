@@ -40,6 +40,9 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
   task uses worker shards, it must first probe the selected test set and then
   launch deterministic shards with distinct `RunName` values so artifact
   directories do not collide.
+- Do not spawn buildfile-managed MATLAB worker processes on GitHub Actions
+  unless CI licensing for independent child MATLAB processes has been proven in
+  the workflow. The public CI entry should remain `buildtool headless`.
 - Keep architecture guardrails in the narrowest project-suite file that matches the concern.
 - Use `tests/shared/` for small test-facing assertions, fixture builders, GUI
   probes, cleanup, and lookup helpers. Keep ordinary MATLAB helper functions

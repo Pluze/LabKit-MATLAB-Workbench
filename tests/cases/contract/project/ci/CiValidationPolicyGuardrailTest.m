@@ -41,6 +41,17 @@ classdef CiValidationPolicyGuardrailTest < matlab.unittest.TestCase
                 'CI workflow should not call CI-only integration shard tasks.');
         end
 
+        function ciBuildfileAvoidsUnlicensedChildMatlabWorkers(testCase)
+            root = setupLabKitTestPath();
+            buildfilePath = fullfile(root, "buildfile.m");
+            buildfile = string(fileread(buildfilePath));
+
+            testCase.verifyTrue(contains(buildfile, "GITHUB_ACTIONS"), ...
+                'Buildfile-managed worker routing should detect GitHub Actions.');
+            testCase.verifyTrue(contains(buildfile, "isGitHubActions()"), ...
+                'Headless build routing should stay serial under GitHub Actions unless worker licensing is proven.');
+        end
+
         function ciWorkflowUsesBuildTasksInsteadOfRunnerSelectors(testCase)
             root = setupLabKitTestPath();
             workflowPath = fullfile(root, ".github", "workflows", ...

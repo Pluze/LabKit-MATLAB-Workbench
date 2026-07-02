@@ -43,7 +43,9 @@ For broad validation, prefer public buildfile tasks and let the buildfile own
 whether a large selected test set should run serially or through internal
 worker shards. Use runner-level shard arguments only when developing or
 debugging the runner itself; every shard must have a distinct `RunName` and the
-combined shards must cover the same selected suite.
+combined shards must cover the same selected suite. On GitHub Actions, keep the
+public CI entry as `buildtool headless` and let the buildfile choose serial
+execution unless independent child MATLAB licensing has been proven.
 
 For a dirty worktree, route through the changed-file validation planner before
 manually choosing tests. The focused planner maps the current diff to the

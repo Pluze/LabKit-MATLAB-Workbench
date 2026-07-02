@@ -155,8 +155,9 @@ runLabKitTests("Suites", "gui/apps/image_measurement/batch_crop", ...
 
 Use `buildtool` for broad validation. The buildfile owns execution mode
 decisions, including whether a large non-GUI run is worth splitting across
-multiple MATLAB worker processes after a lightweight probe. Users and CI should
-not maintain separate shard commands.
+multiple MATLAB worker processes after a lightweight probe. In environments
+where child MATLAB processes cannot acquire their own license, the same build
+task stays serial. Users and CI should not maintain separate shard commands.
 
 ## GUI Validation
 
