@@ -135,6 +135,33 @@ patterns justify a grouped API.
 Build tasks are the supported human and CI entry points. The lower-level runner
 is an implementation detail used by the buildfile.
 
+## Focused And Parallel Iteration
+
+For tight local diagnosis, run the smallest suite directly through the lower-level
+runner after adding `tests` to the MATLAB path:
+
+```matlab
+addpath("tests")
+runLabKitTests("Suites", "gui/apps/image_measurement/batch_crop", ...
+    "IncludeGui", true, "GuiMode", "hidden", "HtmlReport", false)
+```
+
+For long GUI or broad component suites, the runner can split a selected suite
+into deterministic zero-based shards. Start each shard in a separate MATLAB
+process and give each shard a distinct run name:
+
+```matlab
+runLabKitTests("Suites", "gui", "IncludeGui", true, "GuiMode", "hidden", ...
+    "ShardCount", 3, "ShardIndex", 0, "RunName", "gui_shard_0", ...
+    "HtmlReport", false)
+```
+
+Repeat with `ShardIndex` 1 and 2 for the remaining shards. Sharding is useful
+for local agent or maintainer iteration when MATLAB licenses and host resources
+allow multiple processes. Keep final handoff validation on the official build
+task unless the sharded runs together cover the same selected suite and all
+shards passed.
+
 App GUI tests live at:
 
 ```text

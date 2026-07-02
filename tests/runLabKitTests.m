@@ -12,7 +12,7 @@ function output = runLabKitTests(varargin)
     addpath(fullfile(root, "tests", "runner"));
     setupLabKitTestPath();
 
-    opts = parseOptions(root, varargin{:});
+    opts = labkitParseRunnerOptions(root, varargin{:});
     restoreRunName = setRunNameEnvironment(opts.RunName);
     restoreArtifactsRoot = setArtifactsRootEnvironment(opts.ArtifactsRoot);
     restoreGuiMode = labkitGuiTestMode(opts.GuiMode);
@@ -24,9 +24,14 @@ function output = runLabKitTests(varargin)
     end
 
     suite = discoverOfficialSuite(root, opts);
+    suite = labkitSelectTestShard(suite, opts);
 
     fprintf("LabKit official test run: %s\n", opts.RunName);
     fprintf("Official tests matched: %d\n", numel(suite));
+    if opts.ShardCount > 1
+        fprintf("Official test shard: %d/%d\n", ...
+            opts.ShardIndex + 1, opts.ShardCount);
+    end
 
     if isempty(suite) && opts.FailIfNoTests
         error("LabKit:Tests:NoOfficialTests", ...
@@ -111,42 +116,6 @@ function ensureDirectory(folder)
     if exist(folder, "dir") ~= 7
         mkdir(folder);
     end
-end
-
-function opts = parseOptions(root, varargin)
-    p = inputParser;
-    p.FunctionName = "runLabKitTests";
-    p.addParameter("IncludeGui", false, @isLogicalScalar);
-    p.addParameter("Suites", strings(1, 0), @isStringLikeList);
-    p.addParameter("Tests", strings(1, 0), @isStringLikeList);
-    p.addParameter("Tags", strings(1, 0), @isStringLikeList);
-    p.addParameter("ExcludeTags", strings(1, 0), @isStringLikeList);
-    p.addParameter("Plan", "", @isTextScalar);
-    p.addParameter("IncludeCoverage", false, @isLogicalScalar);
-    p.addParameter("GuiMode", labkitDefaultGuiMode(), @isTextScalar);
-    p.addParameter("HtmlReport", true, @isLogicalScalar);
-    p.addParameter("FailIfNoTests", true, @isLogicalScalar);
-    p.addParameter("ArtifactsRoot", fullfile(root, "artifacts"), @isTextScalar);
-    p.addParameter("RunName", "local", @isTextScalar);
-    p.addParameter("ListOnly", false, @isLogicalScalar);
-    p.addParameter("OutputDetail", "Concise", @isTextScalar);
-    p.addParameter("LoggingLevel", "Concise", @isTextScalar);
-    p.parse(varargin{:});
-
-    opts = p.Results;
-    opts.IncludeGui = logical(opts.IncludeGui);
-    opts.IncludeCoverage = logical(opts.IncludeCoverage);
-    opts.GuiMode = labkitNormalizeGuiMode(opts.GuiMode);
-    opts.HtmlReport = logical(opts.HtmlReport);
-    opts.FailIfNoTests = logical(opts.FailIfNoTests);
-    opts.ListOnly = logical(opts.ListOnly);
-    opts.Suites = normalizeTextList(opts.Suites);
-    opts.Tests = normalizeTextList(opts.Tests);
-    opts.Tags = normalizeTextList(opts.Tags);
-    opts.ExcludeTags = normalizeTextList(opts.ExcludeTags);
-    opts.Plan = lower(string(opts.Plan));
-    opts.ArtifactsRoot = char(opts.ArtifactsRoot);
-    opts.RunName = string(opts.RunName);
 end
 
 function output = runValidationPlan(root, opts)
@@ -643,8 +612,4 @@ end
 
 function tf = isTextScalar(value)
     tf = (ischar(value) || (isstring(value) && isscalar(value)));
-end
-
-function tf = isLogicalScalar(value)
-    tf = (islogical(value) || isnumeric(value)) && isscalar(value);
 end
