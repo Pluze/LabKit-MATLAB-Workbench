@@ -91,6 +91,62 @@ classdef LauncherGuiTest < matlab.uitest.TestCase
             verifyTargetValidationBeforeDeletion(testCase, body);
         end
 
+        function code_analyzer_action_uses_codeIssues(testCase)
+            root = setupLabKitTestPath();
+            source = fileread(fullfile(root, "labkit_launcher.m"));
+            body = launcherFunctionBlock(source, ...
+                '%% Section: Code Analyzer action', ...
+                '%% Section: Update entrypoints and install transaction');
+
+            testCase.verifyFalse(isempty(strfind(body, 'codeIssues(')), ...
+                'Launcher Code Analyzer action should use the codeIssues API.');
+            testCase.verifyTrue(isempty(strfind(body, 'checkcode(')), ...
+                'Launcher Code Analyzer action should not keep the old checkcode scan loop.');
+        end
+
+        function code_analyzer_button_writes_codeIssues_report(testCase)
+            root = setupLabKitTestPath();
+            h = guiTestHelpers();
+            h.assertUifigureAvailable();
+            h.closeAllFigures();
+            cleanupFigures = onCleanup(@() h.closeAllFigures());
+
+            tempRoot = string(tempname);
+            mkdir(tempRoot);
+            testCase.addTeardown(@() removeFolderIfPresent(tempRoot));
+            copyfile(fullfile(root, "labkit_launcher.m"), ...
+                fullfile(tempRoot, "labkit_launcher.m"));
+            createCodeIssuesProbeApp(tempRoot);
+            originalFolder = pwd;
+            cd(tempRoot);
+            testCase.addTeardown(@() cd(originalFolder));
+            clear labkit_launcher;
+
+            fig = labkit_launcher();
+            drawnow;
+            h.invokeButton(fig, 'Run Code Analyzer');
+            reportPath = fullfile(tempRoot, "artifacts", "code-check", ...
+                "matlab_code_issues.json");
+            testCase.verifyTrue(isfile(reportPath), ...
+                'Run Code Analyzer should write the native codeIssues report.');
+            testCase.verifyFalse(isfile(fullfile(tempRoot, "artifacts", ...
+                "code-check", "matlab_code_check.json")), ...
+                'Run Code Analyzer should not keep the old launcher JSON schema.');
+
+            reportText = string(fileread(reportPath));
+            testCase.verifyTrue(contains(reportText, ...
+                "labkit_CodeIssuesProbe_app.m"), ...
+                'Report should include issues from the generated probe app.');
+            testCase.verifyTrue(contains(reportText, '"CheckID"'), ...
+                'Report should use the native codeIssues field names.');
+            testCase.verifyTrue(contains(reportText, '"NOPRT"'), ...
+                'Report should preserve codeIssues CheckID values.');
+            clear cleanupFigures;
+            h.closeAllFigures();
+            clear labkit_launcher;
+            cd(originalFolder);
+        end
+
         function update_snapshots_runtime_before_whole_folder_replacement(testCase)
             root = setupLabKitTestPath();
             source = fileread(fullfile(root, "labkit_launcher.m"));
@@ -357,6 +413,19 @@ function createMinimalLauncherApp(root, family, command)
         '    varargout = {[]};\n' ...
         'end\n' ...
         'end\n'], command, upper(command)));
+end
+
+function createCodeIssuesProbeApp(root)
+    folder = fullfile(root, "apps", "probe");
+    mkdir(folder);
+    writeText(fullfile(folder, "labkit_CodeIssuesProbe_app.m"), sprintf([ ...
+        'function varargout = labkit_CodeIssuesProbe_app(varargin)\n' ...
+        '%%LABKIT_CODEISSUESPROBE_APP Generated launcher codeIssues probe.\n' ...
+        'value = 1\n' ...
+        'if nargout > 0\n' ...
+        '    varargout = {value};\n' ...
+        'end\n' ...
+        'end\n']));
 end
 
 function assertCompactLauncherLayout(fig)

@@ -42,8 +42,8 @@ The launcher also provides debug launch, generated-artifact cleanup, and MATLAB
 Code Analyzer actions for maintenance work. Cleanup removes generated LabKit
 artifacts under `artifacts/`.
 
-The Code Analyzer action writes
-`artifacts/code-check/matlab_code_check.json` for manual maintenance review.
+The Code Analyzer action writes a native `codeIssues` JSON export to
+`artifacts/code-check/matlab_code_issues.json` for manual maintenance review.
 
 The launcher sets up the app path before opening an app. App-owned packages are
 reached through their owning app entrypoint and package namespace.

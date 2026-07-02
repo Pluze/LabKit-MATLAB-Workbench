@@ -84,8 +84,8 @@ function info = launcherVersion()
     info = struct( ...
         "name", "labkit_launcher", ...
         "displayName", "LabKit App Launcher", ...
-        "version", "1.1.6", ...
-        "updated", "2026-07-01");
+        "version", "1.2.0", ...
+        "updated", "2026-07-02");
 end
 
 function titleText = launcherVersionTitle()
@@ -754,9 +754,10 @@ function message = cleanArtifactsStatus(result)
 end
 
 function message = codeCheckStatus(report)
-    message = sprintf('Code Analyzer wrote %s: %d message(s) across %d file(s), %d scan error(s).', ...
-        char(report.outputs.json), report.summary.messageCount, ...
-        report.summary.filesWithMessages, report.summary.scanErrorCount);
+    message = sprintf(['codeIssues report complete: %d issue(s), ' ...
+        '%d suppressed issue(s), %d file(s): %s'], ...
+        report.issueCount, report.suppressedIssueCount, ...
+        report.fileCount, char(report.output));
 end
 
 %% Section: App discovery and catalog metadata
@@ -1008,115 +1009,20 @@ function report = runCodeAnalyzerReport(root, progressFcn)
         "artifacts", "node_modules", "photos"];
     notifyProgress(progressFcn, "Finding MATLAB files...", 0.02);
     files = sort(collectFiles(root, "*.m", excludedFolders));
-    fileReports = emptyCodeCheckFileReport();
-    scanErrors = emptyCodeCheckScanError();
-    totalFiles = max(numel(files), 1);
-    for k = 1:numel(files)
-        filepath = char(files(k));
-        rel = string(relativePath(root, filepath));
-        notifyProgress(progressFcn, ...
-            sprintf("Scanning %d/%d: %s", k, numel(files), char(rel)), ...
-            0.05 + 0.90 * (k - 1) / totalFiles);
-        try
-            rawMessages = checkcode(filepath, '-id');
-        catch err
-            scanErrors(end+1) = struct("path", rel, ...
-                "absolutePath", string(filepath), ...
-                "identifier", string(err.identifier), ...
-                "message", string(err.message));
-            rawMessages = struct([]);
-        end
-        messages = normalizeCodeCheckMessages(rel, filepath, rawMessages);
-        if ~isempty(messages)
-            fileReports(end+1) = struct("path", rel, ...
-                "absolutePath", string(filepath), ...
-                "messageCount", numel(messages), ...
-                "messages", messages);
-        end
-    end
-    output = fullfile(root, 'artifacts', 'code-check', 'matlab_code_check.json');
-    notifyProgress(progressFcn, "Writing Code Analyzer report...", 0.96);
+    notifyProgress(progressFcn, ...
+        sprintf("Running codeIssues on %d MATLAB file(s)...", numel(files)), ...
+        0.08);
+    issues = codeIssues(files(:));
+    output = fullfile(root, 'artifacts', 'code-check', 'matlab_code_issues.json');
+    notifyProgress(progressFcn, "Writing native codeIssues report...", 0.96);
     ensureFolder(fileparts(output));
-    messageCount = sum(arrayfun(@(item) item.messageCount, fileReports));
+    export(issues, output, 'FileFormat', 'json', 'SourceRoot', root);
     report = struct();
-    report.schemaVersion = "1.1";
-    report.generatedAt = string(datetime("now", "TimeZone", "local", ...
-        "Format", "yyyy-MM-dd'T'HH:mm:ssXXX"));
-    report.generator = "labkit_launcher";
-    report.root = string(root);
-    report.outputs = struct("json", string(relativePath(root, output)));
-    report.scope = struct("description", ...
-        "All .m files under the repository except generated, hidden, photo, and dependency folders.", ...
-        "excludedFolders", excludedFolders);
-    report.summary = struct('filesScanned', numel(files), ...
-        'filesWithMessages', numel(fileReports), ...
-        'messageCount', messageCount, ...
-        'scanErrorCount', numel(scanErrors));
-    report.files = fileReports;
-    report.scanErrors = scanErrors;
-    writeText(output, jsonencode(report, PrettyPrint=true));
-    notifyProgress(progressFcn, "Code Analyzer report complete.", 1.00);
-end
-
-function messages = normalizeCodeCheckMessages(rel, filepath, rawMessages)
-    messages = emptyCodeCheckMessage();
-    lineText = readFileLines(filepath);
-    for k = 1:numel(rawMessages)
-        raw = rawMessages(k);
-        line = numericVectorField(raw, "line");
-        column = numericVectorField(raw, "column");
-        message = stringField(raw, "message");
-        primaryLine = firstNumeric(line);
-        if primaryLine >= 1 && primaryLine <= numel(lineText)
-            sourceLine = string(strtrim(lineText(primaryLine)));
-        else
-            sourceLine = "";
-        end
-        messages(end+1) = struct("path", rel, ...
-            "absolutePath", string(filepath), ...
-            "line", line, ...
-            "column", column, ...
-            "id", analyzerId(raw, message), ...
-            "message", message, ...
-            "fix", fixText(raw), ...
-            "sourceLine", sourceLine);
-    end
-end
-
-function lines = readFileLines(filepath)
-    try
-        lines = readlines(filepath);
-    catch
-        lines = splitlines(string(fileread(filepath)));
-    end
-end
-
-function id = analyzerId(raw, message)
-    id = stringField(raw, "id");
-    if strlength(id) > 0
-        return;
-    end
-    tokens = regexp(char(message), "\(([^()]+)\)\s*$", "tokens", "once");
-    if ~isempty(tokens)
-        id = string(tokens{1});
-    end
-end
-
-function value = numericVectorField(raw, name)
-    if isfield(raw, name) && ~isempty(raw.(name))
-        value = double(raw.(name));
-    else
-        value = NaN;
-    end
-end
-
-function value = firstNumeric(values)
-    values = values(~isnan(values));
-    if isempty(values)
-        value = NaN;
-    else
-        value = values(1);
-    end
+    report.output = string(relativePath(root, output));
+    report.fileCount = numel(files);
+    report.issueCount = height(issues.Issues);
+    report.suppressedIssueCount = height(issues.SuppressedIssues);
+    notifyProgress(progressFcn, "codeIssues report complete.", 1.00);
 end
 
 function value = stringField(raw, name)
@@ -1151,30 +1057,6 @@ function line = firstTextLine(text)
     else
         line = parts(1);
     end
-end
-
-function value = fixText(raw)
-    value = "";
-    if isfield(raw, "fix") && ~isempty(raw.fix) && ...
-            (ischar(raw.fix) || isstring(raw.fix))
-        value = string(raw.fix);
-    end
-end
-
-function value = emptyCodeCheckFileReport()
-    value = repmat(struct("path", "", "absolutePath", "", ...
-        "messageCount", 0, "messages", emptyCodeCheckMessage()), 1, 0);
-end
-
-function value = emptyCodeCheckMessage()
-    value = repmat(struct("path", "", "absolutePath", "", ...
-        "line", NaN, "column", NaN, "id", "", "message", "", ...
-        "fix", "", "sourceLine", ""), 1, 0);
-end
-
-function value = emptyCodeCheckScanError()
-    value = repmat(struct("path", "", "absolutePath", "", ...
-        "identifier", "", "message", ""), 1, 0);
 end
 
 %% Section: Update entrypoints and install transaction
