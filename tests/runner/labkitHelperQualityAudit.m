@@ -23,7 +23,7 @@ function audit = labkitHelperQualityAudit(root, varargin)
         boundary = boundaryClass(path);
         exception = allowedExceptionClass(boundary);
         callCount = approximateCallCount(allSource, basename);
-        testRefs = directUnitTestReferences(allSource.unit, basename, path);
+        testRefs = directUnitTestReferences(allSource, basename, path);
         rows{k, 1} = path;
         rows{k, 2} = numel(lines);
         rows{k, 3} = topLevelScope(path);
@@ -136,13 +136,42 @@ function value = shellQuote(value)
 end
 
 function corpus = readSourceCorpus(root, files)
-    corpus.all = "";
-    corpus.unit = "";
+    corpus.callCounts = containers.Map('KeyType', 'char', 'ValueType', 'double');
+    corpus.unitBareCounts = containers.Map('KeyType', 'char', 'ValueType', 'double');
+    corpus.unitQualifiedCounts = containers.Map('KeyType', 'char', 'ValueType', 'double');
     for k = 1:numel(files)
-        text = string(fileread(fullfile(root, char(files(k)))));
-        corpus.all = corpus.all + newline + text;
+        text = fileread(fullfile(root, char(files(k))));
+        addCallNameCounts(corpus.callCounts, text);
         if startsWith(files(k), "tests/cases/unit/")
-            corpus.unit = corpus.unit + newline + text;
+            addBareNameCounts(corpus.unitBareCounts, text);
+            addQualifiedNameCounts(corpus.unitQualifiedCounts, text);
+        end
+    end
+end
+
+function addCallNameCounts(counts, text)
+    tokens = regexp(text, '(?<![A-Za-z0-9_])([A-Za-z]\w*)\s*\(', 'tokens');
+    addTokenCounts(counts, tokens);
+end
+
+function addBareNameCounts(counts, text)
+    tokens = regexp(text, '(?<![A-Za-z0-9_])([A-Za-z]\w*)', 'tokens');
+    addTokenCounts(counts, tokens);
+end
+
+function addQualifiedNameCounts(counts, text)
+    tokens = regexp(text, ...
+        '(?<![A-Za-z0-9_])([A-Za-z]\w*(?:\.[A-Za-z]\w*)+)', 'tokens');
+    addTokenCounts(counts, tokens);
+end
+
+function addTokenCounts(counts, tokens)
+    for k = 1:numel(tokens)
+        token = char(tokens{k}{1});
+        if isKey(counts, token)
+            counts(token) = counts(token) + 1;
+        else
+            counts(token) = 1;
         end
     end
 end
@@ -184,9 +213,12 @@ function n = functionCount(lines)
 end
 
 function n = approximateCallCount(corpus, name)
-    pattern = "(?<![A-Za-z0-9_])" + regexptranslate("escape", name) + "\s*\(";
-    matches = regexp(corpus.all, pattern, "match");
-    n = max(0, numel(matches) - 1);
+    key = char(name);
+    if isKey(corpus.callCounts, key)
+        n = max(0, corpus.callCounts(key) - 1);
+    else
+        n = 0;
+    end
 end
 
 function statusText = publicStatus(path)
@@ -201,15 +233,19 @@ function statusText = publicStatus(path)
     end
 end
 
-function n = directUnitTestReferences(unitCorpus, name, path)
-    tokens = [name, rolePackage(path) + "." + name];
+function n = directUnitTestReferences(corpus, name, path)
     n = 0;
-    for k = 1:numel(tokens)
-        if strlength(tokens(k)) == 0
-            continue;
+    bareKey = char(name);
+    if isKey(corpus.unitBareCounts, bareKey)
+        n = n + corpus.unitBareCounts(bareKey);
+    end
+
+    packageName = rolePackage(path);
+    if strlength(packageName) > 0
+        qualifiedKey = char(packageName + "." + name);
+        if isKey(corpus.unitQualifiedCounts, qualifiedKey)
+            n = n + corpus.unitQualifiedCounts(qualifiedKey);
         end
-        pattern = "(?<![A-Za-z0-9_])" + regexptranslate("escape", tokens(k));
-        n = n + numel(regexp(unitCorpus, pattern, "match"));
     end
 end
 

@@ -144,6 +144,8 @@ tests/cases/gui/apps/<family>/<app_slug>/
 When a change affects one app, `buildtool changed` maps the touched app
 folder to the matching GUI test folder when one exists. Shared UI, launcher,
 runner, or broad documentation changes map to broader build-task selections.
+Maintainer diagnostics under `tools/` map to project guardrails rather than the
+full non-GUI suite unless their tests or shared runner code also changed.
 
 ## GUI Validation
 

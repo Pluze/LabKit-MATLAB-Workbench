@@ -44,7 +44,7 @@ function steps = stepsForChangedPath(root, path)
         steps = fullNonGuiStep();
     elseif isProjectRoutingPath(path)
         steps = planStep("project", "project", false);
-    elseif startsWith(first, ".github") || first == ".agents"
+    elseif startsWith(first, ".github") || first == ".agents" || first == "tools"
         steps = planStep("project", "project", false);
     else
         steps = fullNonGuiStep();

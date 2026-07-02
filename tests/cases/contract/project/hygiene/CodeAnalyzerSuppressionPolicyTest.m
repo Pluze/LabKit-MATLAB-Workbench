@@ -4,7 +4,7 @@ classdef CodeAnalyzerSuppressionPolicyTest < matlab.unittest.TestCase
     methods (Test, TestTags = {'Integration', 'Style'})
         function noCodeAnalyzerSuppressionPragmas(testCase)
             root = testRepoRoot();
-            files = collectMFilesRecursive(root, {".git", ".vscode", ".github", "artifacts", ".codes", "node_modules"});
+            files = collectTrackedMFiles(root);
             findings = findSuppressionPragmas(root, files);
 
             testCase.verifyEmpty(findings, ...
@@ -50,15 +50,15 @@ classdef CodeAnalyzerSuppressionPolicyTest < matlab.unittest.TestCase
     end
 end
 
-function files = collectMFilesRecursive(root, excludedFolders)
-    files = strings(1, 0);
-    entries = dir(fullfile(root, "**", "*.m"));
-    for k = 1:numel(entries)
-        filepath = string(fullfile(entries(k).folder, entries(k).name));
-        if isPathInExcludedFolder(root, filepath, excludedFolders)
-            continue;
-        end
-        files(end+1) = filepath;
+function files = collectTrackedMFiles(root)
+    command = "git -C " + shellDoubleQuote(root) + " ls-files " + shellDoubleQuote("*.m");
+    [status, output] = system(char(command));
+    assert(status == 0, "Could not list tracked MATLAB files with git.");
+    relativeFiles = splitlines(string(output));
+    relativeFiles = relativeFiles(strlength(relativeFiles) > 0);
+    files = strings(numel(relativeFiles), 1);
+    for k = 1:numel(relativeFiles)
+        files(k) = string(fullfile(root, char(relativeFiles(k))));
     end
 end
 
@@ -67,7 +67,11 @@ function findings = findSuppressionPragmas(root, files)
 
     for k = 1:numel(files)
         filepath = files(k);
-        lines = readlines(filepath);
+        text = fileread(filepath);
+        if ~contains(text, "%#")
+            continue;
+        end
+        lines = splitlines(string(text));
         hit = false(1, numel(lines));
         for j = 1:numel(lines)
             hit(j) = hasSuppressionPragma(lines(j));
@@ -79,6 +83,15 @@ function findings = findSuppressionPragmas(root, files)
             end
         end
     end
+end
+
+function quoted = shellDoubleQuote(value)
+    quoted = string(value);
+    if contains(quoted, """")
+        error("LabKit:CodeAnalyzerPolicy:InvalidShellValue", ...
+            "Shell-quoted values cannot contain double-quote characters.");
+    end
+    quoted = """" + quoted + """";
 end
 
 function tf = hasSuppressionPragma(line)
@@ -141,24 +154,6 @@ function ch = previousNonspaceChar(text, index)
         end
     end
     ch = "";
-end
-
-function tf = isPathInExcludedFolder(root, filepath, excludedFolders)
-    excludedFolders = string(excludedFolders);
-    relPath = string(filepath);
-    rootPrefix = string(root) + string(filesep);
-    if startsWith(relPath, rootPrefix)
-        relPath = extractAfter(relPath, strlength(rootPrefix));
-    end
-    relPath = strrep(relPath, filesep, "/");
-    parts = split(relPath, "/");
-    tf = false;
-    for k = 1:numel(excludedFolders)
-        if any(strcmp(parts, excludedFolders(k)))
-            tf = true;
-            return;
-        end
-    end
 end
 
 function relPath = relativePathFromRoot(root, filepath)

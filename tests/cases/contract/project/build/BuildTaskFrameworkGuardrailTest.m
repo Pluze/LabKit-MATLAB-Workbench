@@ -227,6 +227,19 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
                 "invalid app or package suite names.");
         end
 
+        function changedValidationPlanRoutesToolsToProject(testCase)
+            root = setupLabKitTestPath();
+
+            steps = labkitValidationPlanForChangedPaths(root, [
+                "tools/profiling/profileLabKitTarget.m"
+                "tools/profiling/private/profileLabKitPayload.m"]);
+            signatures = validationStepSignatures(steps);
+
+            testCase.verifyEqual(signatures, "project|false", ...
+                "Maintainer tools should run project guardrails, not " + ...
+                "the full non-GUI suite.");
+        end
+
         function changedValidationPlanCompressesCoveredGuiTargets(testCase)
             root = setupLabKitTestPath();
 
