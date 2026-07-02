@@ -46,6 +46,8 @@ function [lbl, spinner, slider, host] = createLabeledPanner(parent, labelText, v
     appCallback = getOption(opts, 'ValueChangedFcn', []);
     debounceDelay = max(0, double(getOption(opts, 'DebounceMs', 500)) / 1000);
     debounceTimer = [];
+    debounceFigure = ancestor(parent, 'figure');
+    debounceKey = toolDebounceKey(labelText);
     latestSource = [];
     latestEvent = [];
     if hasSlider
@@ -100,6 +102,7 @@ function [lbl, spinner, slider, host] = createLabeledPanner(parent, labelText, v
             'ExecutionMode', 'singleShot', ...
             'StartDelay', debounceDelay, ...
             'TimerFcn', @(timerObj, ~) fireDebouncedCallback(timerObj));
+        registerDebounceTimer(debounceTimer);
         start(debounceTimer);
     end
 
@@ -116,9 +119,11 @@ function [lbl, spinner, slider, host] = createLabeledPanner(parent, labelText, v
     end
 
     function clearDebounceTimer(timerObj)
+        hasExplicitTimer = nargin >= 1;
         if nargin < 1
             timerObj = debounceTimer;
         end
+        clearPendingDebounce(timerObj, hasExplicitTimer);
         if isempty(timerObj)
             return;
         end
@@ -133,6 +138,37 @@ function [lbl, spinner, slider, host] = createLabeledPanner(parent, labelText, v
             debounceTimer = [];
         end
     end
+
+    function registerDebounceTimer(timerObj)
+        if isValidFigure(debounceFigure)
+            setappdata(debounceFigure, debounceKey, struct('timer', timerObj));
+        end
+    end
+
+    function clearPendingDebounce(timerObj, hasExplicitTimer)
+        if ~isValidFigure(debounceFigure) || ~isappdata(debounceFigure, debounceKey)
+            return;
+        end
+        state = getappdata(debounceFigure, debounceKey);
+        if ~hasExplicitTimer || ~isstruct(state) || ~isfield(state, 'timer') || ...
+                isequal(state.timer, timerObj)
+            rmappdata(debounceFigure, debounceKey);
+        end
+    end
+end
+
+function key = toolDebounceKey(labelText)
+    persistent nextId
+    if isempty(nextId)
+        nextId = 0;
+    end
+    nextId = nextId + 1;
+    labelPart = matlab.lang.makeValidName(char(string(labelText)));
+    key = sprintf('labkitUiToolDebounce_%s_%d', labelPart, nextId);
+end
+
+function tf = isValidFigure(fig)
+    tf = ~isempty(fig) && isvalid(fig);
 end
 
 function opts = parseOptions(args)

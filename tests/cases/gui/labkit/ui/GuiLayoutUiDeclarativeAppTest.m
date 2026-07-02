@@ -298,8 +298,7 @@ function verify_gui_layout_ui_declarative_app()
     ui.controls.pan.valueSpinner.Value = 1.5;
     ui.controls.pan.valueSpinner.ValueChangedFcn(ui.controls.pan.valueSpinner, ...
         struct('PreviousValue', 2));
-    pause(0.65);
-    drawnow;
+    h.waitForUiIdle(ui.figure);
     assert(strcmp(events{end}.id, 'pan') && ...
         strcmp(events{end}.kind, 'panner') && ...
         strcmp(events{end}.action, 'edit') && ...
@@ -309,8 +308,7 @@ function verify_gui_layout_ui_declarative_app()
     eventCountBeforeDrag = numel(events);
     ui.controls.pan.slider.ValueChangingFcn(ui.controls.pan.slider, ...
         struct('Value', 1.25));
-    pause(0.65);
-    drawnow;
+    h.waitForUiIdle(ui.figure);
     assert(numel(events) == eventCountBeforeDrag + 1 && ...
         ui.controls.pan.valueSpinner.Value == 1.25 && ...
         strcmp(events{end}.action, 'slide') && ...
@@ -319,8 +317,7 @@ function verify_gui_layout_ui_declarative_app()
     eventCountBeforeRelease = numel(events);
     ui.controls.pan.slider.Value = 1.25;
     ui.controls.pan.slider.ValueChangedFcn(ui.controls.pan.slider, struct());
-    pause(0.65);
-    drawnow;
+    h.waitForUiIdle(ui.figure);
     assert(numel(events) == eventCountBeforeRelease + 1 && ...
         strcmp(events{end}.action, 'slide') && ...
         labkit.ui.view.getValue(ui, 'pan') == 1.25, ...
@@ -374,8 +371,7 @@ function verify_gui_layout_ui_declarative_app()
 
     ui.controls.gain.handle.Value = 5;
     ui.controls.gain.handle.ValueChangedFcn(ui.controls.gain.handle, []);
-    pause(0.65);
-    drawnow;
+    h.waitForUiIdle(ui.figure);
     assert(strcmp(events{end}.id, 'gain') && events{end}.value == 5, ...
         'Field callbacks should report semantic id and current value.');
 
@@ -412,14 +408,14 @@ function verify_gui_layout_ui_declarative_app()
 end
 
 function assertTextPanelsHaveDefaultRoom(ui)
-    settleLayout();
+    settleLayout(ui.figure);
     assertStatusPanelContract(ui.controls.notesText);
     ui.logTab.Parent.SelectedTab = ui.logTab;
-    settleLayout();
+    settleLayout(ui.figure);
     assertLogPanelContract(ui.controls.logPanel);
     assertLogTabFillsAvailableHeight(ui);
     ui.setupTab.Parent.SelectedTab = ui.setupTab;
-    settleLayout();
+    settleLayout(ui.figure);
     assertMultiFilePanelContract(ui.controls.sourceImages);
     assertMultiFilePanelContract(ui.controls.fileQueue);
     assertSingleFilePanelContract(ui.controls.singleFile);
@@ -485,10 +481,41 @@ function assertSingleFilePanelContract(control)
         'single-mode filePanel should use a compact section row height.');
 end
 
-function settleLayout()
+function settleLayout(fig)
+    timeoutSeconds = 0.5;
+    stablePassesNeeded = 2;
     drawnow;
-    pause(0.5);
+    previous = layoutSignature(fig);
+    stablePasses = 0;
+    startTime = tic;
+    while isvalid(fig) && toc(startTime) < timeoutSeconds && ...
+            stablePasses < stablePassesNeeded
+        pause(0.025);
+        drawnow;
+        current = layoutSignature(fig);
+        if isequal(current, previous)
+            stablePasses = stablePasses + 1;
+        else
+            stablePasses = 0;
+            previous = current;
+        end
+    end
     drawnow;
+end
+
+function signature = layoutSignature(fig)
+    objects = findall(fig, '-property', 'Position');
+    signature = zeros(numel(objects), 4);
+    for k = 1:numel(objects)
+        try
+            position = objects(k).Position;
+        catch
+            continue;
+        end
+        if isnumeric(position) && numel(position) == 4
+            signature(k, :) = round(double(position(:).') .* 10) ./ 10;
+        end
+    end
 end
 
 function assertDefaultResizeHandleDrags(ui)

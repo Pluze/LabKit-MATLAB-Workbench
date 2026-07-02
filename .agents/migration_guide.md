@@ -93,6 +93,12 @@ Current facts:
   missing-coverage guardrail; do not re-expand structural GUI tests with
   launch-only assertions already covered by workflow tests or shared debug
   tests.
+- Test performance profiling on 2026-07-02 showed two actionable timing
+  layers: fixed GUI waits and repeated runner path scans. Current test
+  contracts now route GUI debounce/layout settling through GUI idle helpers,
+  keep runner path setup to one MATLAB path read per configuration pass, and
+  report JUnit slow-test plus shard estimates through
+  `scripts/summarize_junit.py`.
 
 ## Reopen Triggers
 
@@ -110,6 +116,9 @@ Open a new active route here only when current scans expose concrete debt:
   `AppLaunchGuiTest` coverage guardrail to fail
 - hidden workflow validation needs a new app-neutral driver operation or a new
   app-owned test hook to avoid a blocking OS/modal dialog
+- current JUnit timing or profiler evidence identifies a new test-performance
+  hotspot whose fix would change runner behavior, validation policy, or
+  app/workflow coverage
 - a migration exposes package-boundary drift that cannot be fixed locally
   without a new `+labkit` API decision
 

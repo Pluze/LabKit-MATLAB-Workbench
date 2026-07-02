@@ -63,8 +63,7 @@ classdef ScaleBarGestureTest < matlab.uitest.TestCase
 
             tool.controls.barLengthSpinner.Value = 5;
             h.invokeCallback(tool.controls.barLengthSpinner, 'ValueChangedFcn');
-            pause(0.65);
-            drawnow;
+            h.waitForUiIdle(fig);
             h.invokeCallback(tool.controls.placeButton, 'ButtonPushedFcn');
             assert(tool.hasScaleBar() && callbacks.placed == 1 && callbacks.bar >= 1, ...
                 'Place scale bar should store a bar and emit app-facing callbacks.');

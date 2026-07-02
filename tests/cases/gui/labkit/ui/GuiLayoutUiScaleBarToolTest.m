@@ -65,8 +65,7 @@ function verify_gui_layout_ui_scale_bar_tool()
 
     tool.controls.barLengthSpinner.Value = 10;
     h.invokeCallback(tool.controls.barLengthSpinner, 'ValueChangedFcn');
-    pause(0.65);
-    drawnow;
+    h.waitForUiIdle(fig);
     spec = tool.scaleBarSpec();
     assert(strcmp(spec.label, '10 mm') && spec.pixelsPerUnit == 4, ...
         'Scale-bar tool should build the current scale-bar spec.');

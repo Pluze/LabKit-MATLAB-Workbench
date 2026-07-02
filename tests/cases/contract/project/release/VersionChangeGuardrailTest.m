@@ -10,11 +10,52 @@ classdef VersionChangeGuardrailTest < matlab.unittest.TestCase
                 "Versioned code changed without a valid increasing semver bump: " + ...
                 strjoin(issues, ", "));
         end
+
+        function featureBranchIntermediateWorkDoesNotRequirePerCommitBumps(testCase)
+            changeSet = struct( ...
+                "branchName", "codex/test-performance-route", ...
+                "githubRefName", "", ...
+                "isPullRequestCi", false, ...
+                "forceVersionCheck", false);
+
+            testCase.verifyFalse(shouldEnforceVersionBumps(changeSet), ...
+                "Local feature-branch iteration should not require every small commit to bump versions.");
+        end
+
+        function mainAndFinalBranchChecksRequireVersionBumps(testCase)
+            mainChangeSet = struct( ...
+                "branchName", "main", ...
+                "githubRefName", "", ...
+                "isPullRequestCi", false, ...
+                "forceVersionCheck", false);
+            prChangeSet = struct( ...
+                "branchName", "HEAD", ...
+                "githubRefName", "", ...
+                "isPullRequestCi", true, ...
+                "forceVersionCheck", false);
+            strictChangeSet = struct( ...
+                "branchName", "codex/test-performance-route", ...
+                "githubRefName", "", ...
+                "isPullRequestCi", false, ...
+                "forceVersionCheck", true);
+
+            testCase.verifyTrue(shouldEnforceVersionBumps(mainChangeSet), ...
+                "Direct main work should keep versioned code and version metadata together.");
+            testCase.verifyTrue(shouldEnforceVersionBumps(prChangeSet), ...
+                "Pull-request CI should enforce the aggregate version bump before merge.");
+            testCase.verifyTrue(shouldEnforceVersionBumps(strictChangeSet), ...
+                "Final branch cleanup can opt into aggregate version checks before squash or handoff.");
+        end
     end
 end
 
 function issues = changedVersionedCodeWithoutVersionBump(root)
     changeSet = gitChangeSet(root);
+    if ~shouldEnforceVersionBumps(changeSet)
+        issues = strings(1, 0);
+        return;
+    end
+
     artifacts = versionedArtifactsForPaths(root, changeSet.paths);
     issues = strings(1, 0);
 
@@ -37,17 +78,43 @@ function issues = changedVersionedCodeWithoutVersionBump(root)
 end
 
 function changeSet = gitChangeSet(root)
-    changeSet = struct("baseRef", "HEAD", "paths", strings(1, 0));
+    changeSet = struct( ...
+        "baseRef", "HEAD", ...
+        "paths", strings(1, 0), ...
+        "branchName", "", ...
+        "githubRefName", string(getenv("GITHUB_REF_NAME")), ...
+        "isPullRequestCi", isPullRequestCi(), ...
+        "forceVersionCheck", isTruthyEnv("LABKIT_ENFORCE_VERSION_BUMPS"));
     if ~isGitCheckout(root)
         return;
     end
 
+    changeSet.branchName = gitCurrentBranch(root);
     paths = [gitChangedPaths(root, "HEAD"), gitUntrackedPaths(root)];
     if isempty(paths) && gitRefExists(root, "HEAD^")
-        changeSet.baseRef = "HEAD^";
+        changeSet.baseRef = versionBaselineRef(root, changeSet);
         paths = gitChangedPaths(root, changeSet.baseRef);
     end
     changeSet.paths = unique(paths, "stable");
+end
+
+function tf = shouldEnforceVersionBumps(changeSet)
+    branchName = string(changeSet.branchName);
+    githubRefName = string(changeSet.githubRefName);
+    tf = logical(changeSet.forceVersionCheck) || ...
+        logical(changeSet.isPullRequestCi) || ...
+        branchName == "main" || githubRefName == "main";
+end
+
+function ref = versionBaselineRef(root, changeSet)
+    ref = "HEAD^";
+    branchName = string(changeSet.branchName);
+    if branchName ~= "main" && gitRefExists(root, "origin/main")
+        mergeBase = gitMergeBase(root, "HEAD", "origin/main");
+        if strlength(mergeBase) > 0
+            ref = mergeBase;
+        end
+    end
 end
 
 function artifacts = versionedArtifactsForPaths(root, paths)
@@ -194,6 +261,38 @@ function tf = gitRefExists(root, ref)
         shellDoubleQuote(validateGitRef(ref)));
     [status, ~] = system(char(command));
     tf = status == 0;
+end
+
+function branch = gitCurrentBranch(root)
+    command = gitCommand(root, "rev-parse --abbrev-ref HEAD");
+    [status, output] = system(char(command));
+    if status ~= 0
+        branch = "";
+    else
+        branch = strip(string(output));
+    end
+end
+
+function ref = gitMergeBase(root, leftRef, rightRef)
+    command = gitCommand(root, "merge-base " + ...
+        shellDoubleQuote(validateGitRef(leftRef)) + " " + ...
+        shellDoubleQuote(validateGitRef(rightRef)));
+    [status, output] = system(char(command));
+    if status ~= 0
+        ref = "";
+    else
+        ref = strip(string(output));
+    end
+end
+
+function tf = isPullRequestCi()
+    tf = string(getenv("GITHUB_EVENT_NAME")) == "pull_request" || ...
+        strlength(string(getenv("GITHUB_BASE_REF"))) > 0;
+end
+
+function tf = isTruthyEnv(name)
+    value = lower(strip(string(getenv(name))));
+    tf = ismember(value, ["1", "true", "yes", "on"]);
 end
 
 function paths = runGitPathCommand(command)

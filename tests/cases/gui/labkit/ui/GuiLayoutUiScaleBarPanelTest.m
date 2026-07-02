@@ -76,8 +76,7 @@ function verify_gui_layout_ui_scale_bar_panel()
     ui.controls.positionDropdown.Value = 'Top left';
     ui.controls.barLengthSpinner.Value = 50;
     h.invokeCallback(ui.controls.barLengthSpinner, 'ValueChangedFcn');
-    pause(0.65);
-    drawnow;
+    h.waitForUiIdle(fig);
     whiteSpec = ui.scaleBarSpec();
     assert(isequal(whiteSpec.color, [1 1 1]) && strcmp(whiteSpec.colorName, 'White'), ...
         'Scale-bar panel should map the White option to a white drawing color.');
@@ -87,8 +86,7 @@ function verify_gui_layout_ui_scale_bar_panel()
         'Scale-bar display callbacks should be invoked with source/event inputs.');
 
     h.invokeCallback(ui.controls.referenceLengthSpinner, 'ValueChangedFcn');
-    pause(0.65);
-    drawnow;
+    h.waitForUiIdle(fig);
     h.invokeCallback(ui.controls.measureReferenceButton, 'ButtonPushedFcn');
     h.invokeCallback(ui.controls.placeButton, 'ButtonPushedFcn');
     assert(calls.calibration == 1 && calls.beforeEdit == 1 && ...
