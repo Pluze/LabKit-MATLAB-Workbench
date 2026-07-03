@@ -88,6 +88,7 @@ the `origin/main` first-parent history, plus current-branch version changes.
 | 2026-07-02 | `fcfc36d` | launcher | `1.2.1 -> 1.2.2`. |
 | 2026-07-02 | `7d4ef11` | launcher, `labkit.ui` | launcher `1.2.2 -> 1.2.3`; UI `3.4.2 -> 3.4.4`. |
 | 2026-07-03 | `c04aaab` | `labkit.ui` on the current development branch | UI `3.4.4 -> 3.4.5` for declarative app definition/runtime support. |
+| 2026-07-03 | current branch | all supported apps | Patch bump for the completed workflow-first app package migration. |
 
 ## Current version inventory
 
@@ -107,23 +108,23 @@ the `origin/main` first-parent history, plus current-branch version changes.
 
 | App component | Family | Current version | Updated date | Metadata location |
 |---|---|---:|---|---|
-| `labkit_CIC_app` | Electrochem | `1.3.0` | 2026-07-01 | `apps/electrochem/cic/+cic/version.m` |
-| `labkit_CSC_app` | Electrochem | `1.3.0` | 2026-07-01 | `apps/electrochem/csc/+csc/version.m` |
-| `labkit_EIS_app` | Electrochem | `1.3.0` | 2026-07-01 | `apps/electrochem/eis/+eis/version.m` |
-| `labkit_VTResistance_app` | Electrochem | `1.3.0` | 2026-07-01 | `apps/electrochem/vt_resistance/+vt_resistance/version.m` |
-| `labkit_ChronoOverlay_app` | Electrochem | `1.3.0` | 2026-07-01 | `apps/electrochem/chrono_overlay/+chrono_overlay/version.m` |
-| `labkit_DICPreprocess_app` | DIC | `1.3.0` | 2026-07-02 | `apps/dic/dic_preprocess/+dic_preprocess/version.m` |
-| `labkit_DICPostprocess_app` | DIC | `1.3.0` | 2026-07-02 | `apps/dic/dic_postprocess/+dic_postprocess/version.m` |
-| `labkit_BatchImageCrop_app` | Image Measurement | `1.6.1` | 2026-07-02 | `apps/image_measurement/batch_crop/+batch_crop/version.m` |
-| `labkit_CurvatureMeasurement_app` | Image Measurement | `1.3.0` | 2026-07-01 | `apps/image_measurement/curvature/+curvature/version.m` |
-| `labkit_FLIRThermal_app` | Image Measurement | `1.2.0` | 2026-07-02 | `apps/image_measurement/flir_thermal/+flir_thermal/version.m` |
-| `labkit_FocusStack_app` | Image Measurement | `1.4.0` | 2026-07-01 | `apps/image_measurement/focus_stack/+focus_stack/version.m` |
-| `labkit_ImageEnhance_app` | Image Measurement | `1.5.0` | 2026-07-01 | `apps/image_measurement/image_enhance/+image_enhance/version.m` |
-| `labkit_ImageMatch_app` | Image Measurement | `1.5.0` | 2026-07-01 | `apps/image_measurement/image_match/+image_match/version.m` |
-| `labkit_RHSPreview_app` | Neurophysiology | `1.3.0` | 2026-07-02 | `apps/neurophysiology/rhs_preview/+rhs_preview/version.m` |
-| `labkit_NerveResponseAnalysis_app` | Neurophysiology | `1.3.0` | 2026-07-02 | `apps/neurophysiology/nerve_response_analysis/+nerve_response_analysis/version.m` |
-| `labkit_ResponseReviewStats_app` | Neurophysiology | `1.3.0` | 2026-07-02 | `apps/neurophysiology/response_review_stats/+response_review_stats/version.m` |
-| `labkit_ECGPrint_app` | Wearable | `1.3.1` | 2026-07-02 | `apps/wearable/ecg_print/+ecg_print/version.m` |
+| `labkit_CIC_app` | Electrochem | `1.3.1` | 2026-07-03 | `apps/electrochem/cic/+cic/version.m` |
+| `labkit_CSC_app` | Electrochem | `1.3.1` | 2026-07-03 | `apps/electrochem/csc/+csc/version.m` |
+| `labkit_EIS_app` | Electrochem | `1.3.1` | 2026-07-03 | `apps/electrochem/eis/+eis/version.m` |
+| `labkit_VTResistance_app` | Electrochem | `1.3.1` | 2026-07-03 | `apps/electrochem/vt_resistance/+vt_resistance/version.m` |
+| `labkit_ChronoOverlay_app` | Electrochem | `1.3.1` | 2026-07-03 | `apps/electrochem/chrono_overlay/+chrono_overlay/version.m` |
+| `labkit_DICPreprocess_app` | DIC | `1.3.1` | 2026-07-03 | `apps/dic/dic_preprocess/+dic_preprocess/version.m` |
+| `labkit_DICPostprocess_app` | DIC | `1.3.1` | 2026-07-03 | `apps/dic/dic_postprocess/+dic_postprocess/version.m` |
+| `labkit_BatchImageCrop_app` | Image Measurement | `1.6.2` | 2026-07-03 | `apps/image_measurement/batch_crop/+batch_crop/version.m` |
+| `labkit_CurvatureMeasurement_app` | Image Measurement | `1.3.1` | 2026-07-03 | `apps/image_measurement/curvature/+curvature/version.m` |
+| `labkit_FLIRThermal_app` | Image Measurement | `1.2.1` | 2026-07-03 | `apps/image_measurement/flir_thermal/+flir_thermal/version.m` |
+| `labkit_FocusStack_app` | Image Measurement | `1.4.1` | 2026-07-03 | `apps/image_measurement/focus_stack/+focus_stack/version.m` |
+| `labkit_ImageEnhance_app` | Image Measurement | `1.5.1` | 2026-07-03 | `apps/image_measurement/image_enhance/+image_enhance/version.m` |
+| `labkit_ImageMatch_app` | Image Measurement | `1.5.1` | 2026-07-03 | `apps/image_measurement/image_match/+image_match/version.m` |
+| `labkit_RHSPreview_app` | Neurophysiology | `1.3.1` | 2026-07-03 | `apps/neurophysiology/rhs_preview/+rhs_preview/version.m` |
+| `labkit_NerveResponseAnalysis_app` | Neurophysiology | `1.3.1` | 2026-07-03 | `apps/neurophysiology/nerve_response_analysis/+nerve_response_analysis/version.m` |
+| `labkit_ResponseReviewStats_app` | Neurophysiology | `1.3.1` | 2026-07-03 | `apps/neurophysiology/response_review_stats/+response_review_stats/version.m` |
+| `labkit_ECGPrint_app` | Wearable | `1.3.2` | 2026-07-03 | `apps/wearable/ecg_print/+ecg_print/version.m` |
 
 ## Component histories
 
