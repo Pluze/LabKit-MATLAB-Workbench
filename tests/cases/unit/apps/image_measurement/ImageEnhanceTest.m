@@ -33,10 +33,10 @@ end
 function checkBrightnessContrastAndSharpenPipeline()
     img = syntheticGradientImage();
     steps = [ ...
-        image_enhance.ops.makeStep('Brightness/contrast', 10, 25, 0); ...
-        image_enhance.ops.makeStep('Sharpen', 40, 1.5, 0)];
+        image_enhance.analysisRun.makeStep('Brightness/contrast', 10, 25, 0); ...
+        image_enhance.analysisRun.makeStep('Sharpen', 40, 1.5, 0)];
 
-    processed = image_enhance.ops.applyPipeline({img}, steps);
+    processed = image_enhance.analysisRun.applyPipeline({img}, steps);
     out = processed{1};
 
     assert(isequal(size(out), size(img)), ...
@@ -52,8 +52,8 @@ function checkWhiteBalanceReducesChannelCast()
     castImage = cat(3, 0.55 .* gray, 0.8 .* gray, 1.25 .* gray);
     beforeSpread = channelMeanSpread(castImage);
 
-    step = image_enhance.ops.makeStep('White balance', 100, 0, 0);
-    out = image_enhance.ops.applyStep(castImage, step, []);
+    step = image_enhance.analysisRun.makeStep('White balance', 100, 0, 0);
+    out = image_enhance.analysisRun.applyStep(castImage, step, []);
     afterSpread = channelMeanSpread(out);
 
     assert(afterSpread < beforeSpread * 0.25, ...
@@ -69,9 +69,9 @@ function checkWhiteRoiCalibrationAvoidsWashedHighlights()
     img(18:36, 24:56, 3) = 0.15;
     img = min(max(img, 0), 1);
 
-    step = image_enhance.ops.makeStep('White ROI calibration', 100, 92, 0);
+    step = image_enhance.analysisRun.makeStep('White ROI calibration', 100, 92, 0);
     context = struct('whiteRoi', [2 2 18 14]);
-    out = image_enhance.ops.applyStep(img, step, context);
+    out = image_enhance.analysisRun.applyStep(img, step, context);
     bg = out(2:15, 2:19, :);
     subjectBefore = img(18:36, 24:56, :);
     subjectAfter = out(18:36, 24:56, :);
@@ -110,10 +110,10 @@ function checkSubjectPreservingEnhanceLiftsBackgroundWithoutHueDrift()
     img(18:35, 24:52, 3) = 0.14;
     img = min(max(img, 0), 1);
 
-    step = image_enhance.ops.makeStep('Subject-preserving enhance', 85, 90, 0);
-    weakStep = image_enhance.ops.makeStep('Subject-preserving enhance', 20, 70, 0);
-    out = image_enhance.ops.applyStep(img, step, []);
-    weakOut = image_enhance.ops.applyStep(img, weakStep, []);
+    step = image_enhance.analysisRun.makeStep('Subject-preserving enhance', 85, 90, 0);
+    weakStep = image_enhance.analysisRun.makeStep('Subject-preserving enhance', 20, 70, 0);
+    out = image_enhance.analysisRun.applyStep(img, step, []);
+    weakOut = image_enhance.analysisRun.applyStep(img, weakStep, []);
     backgroundBefore = rgb2gray(img(1:12, 1:20, :));
     backgroundAfter = rgb2gray(out(1:12, 1:20, :));
     weakBackgroundAfter = rgb2gray(weakOut(1:12, 1:20, :));
@@ -137,41 +137,41 @@ function checkSubjectPreservingEnhanceLiftsBackgroundWithoutHueDrift()
 end
 
 function checkEmptyNumericToolValuesStayScalar()
-    step = image_enhance.ops.makeStep('Brightness/contrast', [], [], []);
+    step = image_enhance.analysisRun.makeStep('Brightness/contrast', [], [], []);
     assert(isscalar(step) && isequal(size(step), [1 1]), ...
         'Enhancement tool steps should remain scalar when UI controls report empty numeric values.');
     assert(step.amount == 0 && step.secondary == 0 && step.referenceIndex == 0, ...
         'Empty numeric tool values should fall back to scalar defaults.');
 
-    item = image_enhance.state.emptyItem();
+    item = image_enhance.appState.emptyItem();
     item.path = "sample.png";
     item.name = "sample.png";
     item.image = syntheticGradientImage();
-    task = image_enhance.state.exportTask(item, step, struct('outputFolder', "out"));
+    task = image_enhance.appState.exportTask(item, step, struct('outputFolder', "out"));
     assert(contains(task.fingerprint, "stepCount=1"), ...
         'Scalar fallback steps should remain valid export-task inputs.');
 end
 
 function checkWhiteRoiToolAvailabilityFollowsBatchMode()
-    item = image_enhance.state.emptyItem();
+    item = image_enhance.appState.emptyItem();
     item.path = "sample.png";
     item.name = "sample.png";
     item.image = syntheticGradientImage();
     S = struct('items', item, 'currentIndex', 1, ...
-        'steps', repmat(image_enhance.state.emptyStep(), 0, 1), ...
+        'steps', repmat(image_enhance.appState.emptyStep(), 0, 1), ...
         'batchMode', true, 'pendingDirty', false);
 
-    availability = image_enhance.ui.toolAvailability(S, 'White ROI calibration');
+    availability = image_enhance.userInterface.toolAvailability(S, 'White ROI calibration');
     assert(~availability.canSetWhiteRoi && ~availability.canApply, ...
         'White ROI controls should stay disabled in shared batch mode.');
 
     S.batchMode = false;
-    availability = image_enhance.ui.toolAvailability(S, 'White ROI calibration');
+    availability = image_enhance.userInterface.toolAvailability(S, 'White ROI calibration');
     assert(availability.canSetWhiteRoi && ~availability.canApply, ...
         'Turning off shared batch mode should immediately enable ROI selection.');
 
     S.items.whiteRoi = [1 1 4 4];
-    availability = image_enhance.ui.toolAvailability(S, 'White ROI calibration');
+    availability = image_enhance.userInterface.toolAvailability(S, 'White ROI calibration');
     assert(availability.canSetWhiteRoi && availability.canApply, ...
         'A per-image white ROI should enable applying the tool for the selected image.');
     assert(~availability.canPreviewPending, ...
@@ -179,24 +179,24 @@ function checkWhiteRoiToolAvailabilityFollowsBatchMode()
 end
 
 function checkWhiteRoiDefaultUsesImageCorner()
-    position = image_enhance.ui.whiteRoiHelpers("defaultPosition", [100 200 3]);
+    position = image_enhance.userInterface.whiteRoiHelpers("defaultPosition", [100 200 3]);
     assert(position(1) <= 10 && position(2) <= 10, ...
         'Default white ROI should start near the image corner instead of the center.');
     assert(position(3) == 40 && position(4) == 20, ...
         'Default white ROI should keep the existing 20 percent image-size footprint.');
 
-    smallPosition = image_enhance.ui.whiteRoiHelpers("defaultPosition", [6 5 3]);
+    smallPosition = image_enhance.userInterface.whiteRoiHelpers("defaultPosition", [6 5 3]);
     assert(isequal(smallPosition, [1 1 5 6]), ...
         'Default white ROI should clamp to small image bounds.');
 end
 
 function checkResultTableReportsExportSizeNotPreviewSize()
-    item = image_enhance.state.emptyItem();
+    item = image_enhance.appState.emptyItem();
     item.name = "large.png";
     item.image = zeros(2400, 3200, 3);
     previewImage = zeros(1500, 2000, 3);
 
-    data = image_enhance.view.resultTableData(item, previewImage, 0);
+    data = image_enhance.userInterface.resultTableData(item, previewImage, 0);
     metricNames = string(data(:, 1));
     outputValue = string(data(metricNames == "Output size", 2));
 
@@ -212,7 +212,7 @@ function checkReadImagesAcceptsFilePanelStringPaths()
     sourcePath = fullfile(folder, 'figure_a.png');
     imwrite(uint8(80 * ones(8, 9, 3)), sourcePath);
 
-    items = image_enhance.io.readImages(reshape(string(sourcePath), [], 1));
+    items = image_enhance.sourceFiles.readImages(reshape(string(sourcePath), [], 1));
     assert(numel(items) == 1, ...
         'Image enhance reader should accept filePanel string-column paths.');
     assert(items(1).path == string(sourcePath), ...
@@ -232,7 +232,7 @@ function checkReadImagesReportsImportProgress()
     imwrite(uint8(120 * ones(7, 6, 3)), secondPath);
     events = {};
 
-    items = image_enhance.io.readImages([string(firstPath); string(secondPath)], ...
+    items = image_enhance.sourceFiles.readImages([string(firstPath); string(secondPath)], ...
         struct('progressFcn', @captureProgress));
 
     stages = string(cellfun(@(event) event.stage, events, 'UniformOutput', false));
@@ -257,9 +257,9 @@ function checkManifestAndExportContract()
     imwrite(uint8(120 * ones(10, 12, 3)), sourcePath);
     imwrite(uint8(255 * ones(5, 5, 3)), fullfile(folder, 'sample_enhanced.png'));
 
-    items = image_enhance.io.readImages(sourcePath);
-    steps = image_enhance.ops.makeStep('Brightness/contrast', 5, 0, 0);
-    payload = image_enhance.export.writeOutputs(items, steps, struct( ...
+    items = image_enhance.sourceFiles.readImages(sourcePath);
+    steps = image_enhance.analysisRun.makeStep('Brightness/contrast', 5, 0, 0);
+    payload = image_enhance.resultFiles.writeOutputs(items, steps, struct( ...
         'outputFolder', string(folder), ...
         'format', 'PNG'));
 
@@ -273,7 +273,7 @@ function checkManifestAndExportContract()
     assert(isfile(payload.manifestPath), ...
         'Batch export should write a manifest CSV.');
 
-    T = image_enhance.export.buildManifest(payload.results);
+    T = image_enhance.resultFiles.buildManifest(payload.results);
     assert(isequal(T.Properties.VariableNames, expectedManifestColumns()), ...
         'Image enhancement manifest columns changed.');
     assert(T.StepCount(1) == 1, 'Manifest should preserve step count.');
@@ -288,19 +288,19 @@ function checkPerImageExportSteps()
     secondPath = string(fullfile(folder, 'second.png'));
     imwrite(uint8(80 * ones(8, 9, 3)), firstPath);
     imwrite(uint8(120 * ones(8, 9, 3)), secondPath);
-    items = image_enhance.io.readImages([firstPath; secondPath]);
+    items = image_enhance.sourceFiles.readImages([firstPath; secondPath]);
     itemSteps = {
-        image_enhance.ops.makeStep('Brightness/contrast', 20, 0, 0)
-        image_enhance.ops.makeStep('Brightness/contrast', -20, 0, 0)
+        image_enhance.analysisRun.makeStep('Brightness/contrast', 20, 0, 0)
+        image_enhance.analysisRun.makeStep('Brightness/contrast', -20, 0, 0)
         };
 
-    payload = image_enhance.export.writeOutputs(items, ...
-        repmat(image_enhance.state.emptyStep(), 0, 1), struct( ...
+    payload = image_enhance.resultFiles.writeOutputs(items, ...
+        repmat(image_enhance.appState.emptyStep(), 0, 1), struct( ...
         'outputFolder', string(folder), ...
         'format', 'PNG', ...
         'itemSteps', {itemSteps}));
 
-    T = image_enhance.export.buildManifest(payload.results);
+    T = image_enhance.resultFiles.buildManifest(payload.results);
     assert(all(T.StepCount == [1; 1]), ...
         'Per-image enhancement exports should report each image history length.');
     firstWritten = im2double(imread(payload.results(1).outputPath));
@@ -311,23 +311,23 @@ function checkPerImageExportSteps()
 end
 
 function checkExportTaskFingerprintTracksInputsOptionsAndSteps()
-    item = image_enhance.state.emptyItem();
+    item = image_enhance.appState.emptyItem();
     item.path = "sample.png";
     item.name = "sample.png";
     item.image = syntheticGradientImage();
-    step = image_enhance.ops.makeStep('Brightness/contrast', 5, 0, 0);
+    step = image_enhance.analysisRun.makeStep('Brightness/contrast', 5, 0, 0);
 
-    base = image_enhance.state.exportTask(item, step, struct( ...
+    base = image_enhance.appState.exportTask(item, step, struct( ...
         'outputFolder', "out_a", ...
         'format', 'PNG'));
-    repeated = image_enhance.state.exportTask(item, step, struct( ...
+    repeated = image_enhance.appState.exportTask(item, step, struct( ...
         'outputFolder', "out_a", ...
         'format', 'PNG'));
-    moved = image_enhance.state.exportTask(item, step, struct( ...
+    moved = image_enhance.appState.exportTask(item, step, struct( ...
         'outputFolder', "out_b", ...
         'format', 'PNG'));
-    changedStep = image_enhance.state.exportTask(item, ...
-        image_enhance.ops.makeStep('Brightness/contrast', 6, 0, 0), ...
+    changedStep = image_enhance.appState.exportTask(item, ...
+        image_enhance.analysisRun.makeStep('Brightness/contrast', 6, 0, 0), ...
         struct('outputFolder', "out_a", 'format', 'PNG'));
 
     assert(base.fingerprint == repeated.fingerprint, ...
@@ -339,18 +339,18 @@ function checkExportTaskFingerprintTracksInputsOptionsAndSteps()
 end
 
 function checkExportTaskBuildsStateDrivenInputs()
-    items = repmat(image_enhance.state.emptyItem(), 2, 1);
+    items = repmat(image_enhance.appState.emptyItem(), 2, 1);
     for k = 1:2
         items(k).path = "sample_" + string(k) + ".png";
         items(k).name = "sample_" + string(k) + ".png";
         items(k).image = syntheticGradientImage();
     end
-    sharedStep = image_enhance.ops.makeStep('Brightness/contrast', 5, 0, 0);
-    firstStep = image_enhance.ops.makeStep('Brightness/contrast', 6, 0, 0);
-    secondStep = image_enhance.ops.makeStep('Brightness/contrast', -6, 0, 0);
+    sharedStep = image_enhance.analysisRun.makeStep('Brightness/contrast', 5, 0, 0);
+    firstStep = image_enhance.analysisRun.makeStep('Brightness/contrast', 6, 0, 0);
+    secondStep = image_enhance.analysisRun.makeStep('Brightness/contrast', -6, 0, 0);
 
     S = struct('items', items, 'steps', sharedStep, 'batchMode', true);
-    [task, opts, steps] = image_enhance.state.exportTask(S, ...
+    [task, opts, steps] = image_enhance.appState.exportTask(S, ...
         struct('outputFolder', "out", 'format', 'PNG'));
     assert(numel(steps) == 1 && steps.amount == sharedStep.amount, ...
         'Batch-mode state export tasks should use the shared history.');
@@ -360,7 +360,7 @@ function checkExportTaskBuildsStateDrivenInputs()
     S.batchMode = false;
     S.items(1).steps = firstStep;
     S.items(2).steps = secondStep;
-    [task, opts, steps] = image_enhance.state.exportTask(S, ...
+    [task, opts, steps] = image_enhance.appState.exportTask(S, ...
         struct('outputFolder', "out", 'format', 'PNG'));
     assert(numel(steps) == 2 && steps(1).amount == firstStep.amount && ...
         steps(2).amount == secondStep.amount, ...
@@ -373,7 +373,7 @@ end
 
 function checkPreviewImageDownsamplesLargeInputs()
     img = repmat(linspace(0, 1, 160), 120, 1);
-    [preview, scale] = image_enhance.view.previewImage(img, 50);
+    [preview, scale] = image_enhance.userInterface.previewImage(img, 50);
     assert(size(preview, 3) == 3, ...
         'Enhancement preview should render grayscale inputs as RGB.');
     assert(size(preview, 1) <= 50, ...
@@ -386,13 +386,13 @@ end
 
 function checkPixelRadiusScalesWithPreview()
     img = syntheticGradientImage();
-    preview = image_enhance.view.previewImage(img, 24);
-    fullStep = image_enhance.ops.makeStep('Local contrast', 50, 12, 0);
-    previewStep = image_enhance.ops.makeStep('Local contrast', 50, 6, 0);
+    preview = image_enhance.userInterface.previewImage(img, 24);
+    fullStep = image_enhance.analysisRun.makeStep('Local contrast', 50, 12, 0);
+    previewStep = image_enhance.analysisRun.makeStep('Local contrast', 50, 6, 0);
 
-    fullProcessed = image_enhance.ops.applyStep(img, fullStep, []);
-    fullPreview = image_enhance.view.previewImage(fullProcessed, 24);
-    previewProcessed = image_enhance.ops.applyStep(preview, previewStep, []);
+    fullProcessed = image_enhance.analysisRun.applyStep(img, fullStep, []);
+    fullPreview = image_enhance.userInterface.previewImage(fullProcessed, 24);
+    previewProcessed = image_enhance.analysisRun.applyStep(preview, previewStep, []);
 
     assert(mean(abs(fullPreview(:) - previewProcessed(:))) < 0.04, ...
         'Downsampled previews should scale pixel-radius controls for export-like behavior.');

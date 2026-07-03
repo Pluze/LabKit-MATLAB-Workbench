@@ -63,9 +63,9 @@ workflow_exports/
 The examples are generated through app-owned code paths:
 
 ```matlab
-image_enhance.io.readImages(...)
-image_enhance.ops.makeStep(...)
-image_enhance.export.writeOutputs(...)
+image_enhance.sourceFiles.readImages(...)
+image_enhance.analysisRun.makeStep(...)
+image_enhance.resultFiles.writeOutputs(...)
 
 image_match.io.readImages(...)
 image_match.ops.makeStep(...)

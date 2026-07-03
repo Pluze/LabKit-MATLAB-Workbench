@@ -2,10 +2,10 @@
 % tool label. Output centralizes tool button enablement and status text.
 function state = toolAvailability(S, toolKind)
     hasImages = ~isempty(S.items);
-    isWhiteRoi = image_enhance.ui.whiteRoiHelpers("isTool", toolKind);
+    isWhiteRoi = image_enhance.userInterface.whiteRoiHelpers("isTool", toolKind);
     hasRoi = false;
     if hasImages
-        hasRoi = image_enhance.ui.whiteRoiHelpers("hasRoi", S.items(S.currentIndex));
+        hasRoi = image_enhance.userInterface.whiteRoiHelpers("hasRoi", S.items(S.currentIndex));
     end
 
     state = struct();

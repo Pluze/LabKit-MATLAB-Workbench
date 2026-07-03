@@ -23,11 +23,11 @@ function payload = writeOutputs(items, steps, opts)
     end
     itemSteps = optionValue(opts, 'itemSteps', {});
     if isempty(itemSteps)
-        processed = image_enhance.ops.applyPipeline(images, steps, num2cell(items));
+        processed = image_enhance.analysisRun.applyPipeline(images, steps, num2cell(items));
     else
         processed = cell(numel(items), 1);
         for k = 1:numel(items)
-            processed{k} = image_enhance.ops.applyPipeline( ...
+            processed{k} = image_enhance.analysisRun.applyPipeline( ...
                 images(k), itemSteps{k}, {items(k)});
             processed{k} = processed{k}{1};
         end
@@ -57,7 +57,7 @@ function payload = writeOutputs(items, steps, opts)
 
     manifestPath = uniquePath(fullfile(char(outputFolder), ...
         'image_enhance_manifest.csv'));
-    writetable(image_enhance.export.buildManifest(results), manifestPath);
+    writetable(image_enhance.resultFiles.buildManifest(results), manifestPath);
 
     payload = struct();
     payload.results = results;

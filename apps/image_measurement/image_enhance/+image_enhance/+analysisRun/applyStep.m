@@ -1,4 +1,4 @@
-% Expected caller: image_enhance.ops.applyPipeline and focused tests. Inputs
+% Expected caller: image_enhance.analysisRun.applyPipeline and focused tests. Inputs
 % are one RGB double source image, a normalized step, and an optional reference
 % image for match-reference steps. Output is RGB double image data in [0, 1].
 function outputImage = applyStep(inputImage, step, referenceImage)

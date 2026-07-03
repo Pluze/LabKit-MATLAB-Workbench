@@ -31,7 +31,7 @@ classdef AppPackageStructureGuardrailTest < matlab.unittest.TestCase
         function imageWorkflowAppsKeepTaskLifecycleSnapshots(testCase)
             root = setupLabKitTestPath();
             expected = [
-                "apps/image_measurement/image_enhance/+image_enhance/+state/exportTask.m"
+                "apps/image_measurement/image_enhance/+image_enhance/+appState/exportTask.m"
                 "apps/image_measurement/image_match/+image_match/+state/exportTask.m"
                 "apps/image_measurement/batch_crop/+batch_crop/+appState/exportPlan.m"
                 "apps/image_measurement/focus_stack/+focus_stack/+appState/runTask.m"

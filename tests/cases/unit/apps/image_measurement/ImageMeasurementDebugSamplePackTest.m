@@ -23,7 +23,7 @@ classdef ImageMeasurementDebugSamplePackTest < matlab.unittest.TestCase
                 "Malformed focus-stack image should fail through imread.");
 
             enhance = image_enhance.debug.writeSamplePack(debug);
-            enhanceItems = image_enhance.io.readImages(enhance.representativeFiles);
+            enhanceItems = image_enhance.sourceFiles.readImages(enhance.representativeFiles);
             testCase.verifyEqual(numel(enhanceItems), 2);
             testCase.verifyFalse(isempty(imread(char(enhance.boundaryFiles.validEdge))));
 

@@ -7,12 +7,12 @@ function step = makeStep(kind, amount, secondary, referenceIndex)
         referenceIndex = 0;
     end
 
-    step = image_enhance.state.emptyStep();
+    step = image_enhance.appState.emptyStep();
     step.kind = string(kind);
     step.amount = numericScalar(amount, 0);
     step.secondary = numericScalar(secondary, 0);
     step.referenceIndex = numericScalar(referenceIndex, 0);
-    step.label = image_enhance.ops.describeStep(step);
+    step.label = image_enhance.analysisRun.describeStep(step);
 end
 
 function value = numericScalar(value, fallback)

@@ -138,7 +138,7 @@ function verify_app_owned_workflow_boundaries()
         'labkit_FocusStack_app', 'focus_stack.userInterface.createRightAxesPair');
     h.assertImageMeasurementAppBoundary(imageEnhanceSource, 'labkit_ImageEnhance_app');
     assertDeclarativeImageApp(imageEnhanceSource, ...
-        'labkit_ImageEnhance_app', 'image_enhance.ui.createEditorUi');
+        'labkit_ImageEnhance_app', 'image_enhance.userInterface.createEditorUi');
     h.assertImageMeasurementAppBoundary(imageMatchSource, 'labkit_ImageMatch_app');
     assertDeclarativeImageApp(imageMatchSource, ...
         'labkit_ImageMatch_app', 'image_match.ui.createEditorUi');

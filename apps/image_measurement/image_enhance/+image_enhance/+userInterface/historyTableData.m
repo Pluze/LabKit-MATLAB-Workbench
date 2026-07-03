@@ -12,6 +12,6 @@ function data = historyTableData(steps)
     for k = 1:numel(steps)
         data{k, 1} = k;
         data{k, 2} = char(steps(k).kind);
-        data{k, 3} = char(image_enhance.ops.describeStep(steps(k)));
+        data{k, 3} = char(image_enhance.analysisRun.describeStep(steps(k)));
     end
 end

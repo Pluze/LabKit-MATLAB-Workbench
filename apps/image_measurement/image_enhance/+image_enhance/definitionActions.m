@@ -2,8 +2,8 @@
 % image_enhance.definition. Output maps semantic action ids to handlers used
 % by labkit.ui.app.run. Handlers preserve the enhancement workflow while
 % moving package-root lifecycle orchestration into the framework runtime.
-function actions = table()
-%TABLE Build the Image Enhance runtime action map.
+function actions = definitionActions()
+%DEFINITIONACTIONS Build the Image Enhance runtime action map.
     S = [];
     ui = [];
     fig = [];
@@ -106,8 +106,8 @@ function actions = table()
             return;
         end
         S.currentIndex = 1;
-        S.steps = repmat(image_enhance.state.emptyStep(), 0, 1);
-        S = image_enhance.state.setActivePendingDirty(S, false);
+        S.steps = repmat(image_enhance.appState.emptyStep(), 0, 1);
+        S = image_enhance.appState.setActivePendingDirty(S, false);
         invalidatePreviewCache();
         S.outputFolder = string(labkit.ui.app.defaultOutputFolder( ...
             paths, "image_enhance", S.outputFolder));
@@ -116,10 +116,10 @@ function actions = table()
         refreshAll();
     end
     function onClearImages(~, ~)
-        S.items = repmat(image_enhance.state.emptyItem(), 0, 1);
+        S.items = repmat(image_enhance.appState.emptyItem(), 0, 1);
         S.currentIndex = 0;
-        S.steps = repmat(image_enhance.state.emptyStep(), 0, 1);
-        S = image_enhance.state.setActivePendingDirty(S, false);
+        S.steps = repmat(image_enhance.appState.emptyStep(), 0, 1);
+        S = image_enhance.appState.setActivePendingDirty(S, false);
         invalidatePreviewCache();
         markExportDirty();
         addLog('Cleared loaded images and enhancement history.');
@@ -139,9 +139,9 @@ function actions = table()
         if isempty(S.items)
             S.currentIndex = 0;
         end
-        pendingDirty = image_enhance.state.activePendingDirty(S);
+        pendingDirty = image_enhance.appState.activePendingDirty(S);
         invalidatePreviewCache();
-        S = image_enhance.state.setActivePendingDirty(S, pendingDirty);
+        S = image_enhance.appState.setActivePendingDirty(S, pendingDirty);
         markExportDirty();
         addLog(sprintf('Removed image file(s); %d remaining.', numel(S.items)));
         refreshAll();
@@ -167,14 +167,14 @@ function actions = table()
     end
     function onBatchModeChanged(~, event)
         S.batchMode = logical(event.value);
-        S = image_enhance.state.setActivePendingDirty(S, false);
+        S = image_enhance.appState.setActivePendingDirty(S, false);
         invalidatePreviewCache();
         markExportDirty();
         refreshAll();
     end
     function onToolChanged(~, ~)
         updateToolControls(true);
-        S = image_enhance.state.setActivePendingDirty(S, true);
+        S = image_enhance.appState.setActivePendingDirty(S, true);
         markExportDirty();
         refreshPreview();
         refreshControls();
@@ -182,7 +182,7 @@ function actions = table()
     end
     function onToolSettingChanged(~, ~)
         updateToolControls(false);
-        S = image_enhance.state.setActivePendingDirty(S, true);
+        S = image_enhance.appState.setActivePendingDirty(S, true);
         markExportDirty();
         refreshPreview();
         refreshControls();
@@ -200,33 +200,33 @@ function actions = table()
             return;
         end
         step = currentToolStep();
-        steps = image_enhance.state.activeSteps(S);
+        steps = image_enhance.appState.activeSteps(S);
         steps(end + 1, 1) = step;
-        S = image_enhance.state.setActiveSteps(S, steps);
-        S = image_enhance.state.setActivePendingDirty(S, false);
+        S = image_enhance.appState.setActiveSteps(S, steps);
+        S = image_enhance.appState.setActivePendingDirty(S, false);
         markExportDirty();
         addLog(sprintf('Applied tool: %s', char(step.label)));
         refreshAll();
     end
     function onUndoHistory(~, ~)
-        steps = image_enhance.state.activeSteps(S);
+        steps = image_enhance.appState.activeSteps(S);
         if isempty(steps)
             return;
         end
         removed = steps(end);
         steps(end) = [];
-        S = image_enhance.state.setActiveSteps(S, steps);
-        S = image_enhance.state.setActivePendingDirty(S, false);
+        S = image_enhance.appState.setActiveSteps(S, steps);
+        S = image_enhance.appState.setActivePendingDirty(S, false);
         markExportDirty();
         addLog(sprintf('Undid history step: %s', char(removed.label)));
         refreshAll();
     end
     function onResetHistory(~, ~)
-        if isempty(image_enhance.state.activeSteps(S))
+        if isempty(image_enhance.appState.activeSteps(S))
             return;
         end
-        S = image_enhance.state.setActiveSteps(S, repmat(image_enhance.state.emptyStep(), 0, 1));
-        S = image_enhance.state.setActivePendingDirty(S, false);
+        S = image_enhance.appState.setActiveSteps(S, repmat(image_enhance.appState.emptyStep(), 0, 1));
+        S = image_enhance.appState.setActivePendingDirty(S, false);
         markExportDirty();
         addLog('Reset enhancement history.');
         refreshAll();
@@ -255,7 +255,7 @@ function actions = table()
             return;
         end
         try
-            S.lastExport = image_enhance.export.writeOutputs(S.items, steps, opts);
+            S.lastExport = image_enhance.resultFiles.writeOutputs(S.items, steps, opts);
             S.lastExportFingerprint = task.fingerprint;
         catch ME
             showException('Export failed', ME);
@@ -283,14 +283,14 @@ function actions = table()
         if isempty(S.items)
             labkit.ui.view.setValue(ui, 'sourceImages', {});
             labkit.ui.view.setValue(ui, 'imageStatus', 'Images: 0');
-            labkit.ui.view.setValue(ui, 'batchModeStatus', image_enhance.state.modeStatusText(S));
+            labkit.ui.view.setValue(ui, 'batchModeStatus', image_enhance.appState.modeStatusText(S));
             return;
         end
         paths = cellstr(string({S.items.path}));
         labkit.ui.view.setValue(ui, 'sourceImages', paths);
         labkit.ui.view.setValue(ui, 'imageStatus', sprintf( ...
-            'Images: %d | current steps: %d', numel(S.items), numel(image_enhance.state.activeSteps(S))));
-        labkit.ui.view.setValue(ui, 'batchModeStatus', image_enhance.state.modeStatusText(S));
+            'Images: %d | current steps: %d', numel(S.items), numel(image_enhance.appState.activeSteps(S))));
+        labkit.ui.view.setValue(ui, 'batchModeStatus', image_enhance.appState.modeStatusText(S));
     end
     function refreshSelection()
         if isempty(S.items)
@@ -302,10 +302,10 @@ function actions = table()
     end
     function refreshControls()
         hasImages = ~isempty(S.items);
-        hasSteps = ~isempty(image_enhance.state.activeSteps(S));
+        hasSteps = ~isempty(image_enhance.appState.activeSteps(S));
         availability = currentToolAvailability();
-        ui.controls.sourceImages.clearButton.Enable = image_enhance.ui.onOff(hasImages);
-        ui.controls.sourceImages.listbox.Enable = image_enhance.ui.onOff(hasImages);
+        ui.controls.sourceImages.clearButton.Enable = image_enhance.userInterface.onOff(hasImages);
+        ui.controls.sourceImages.listbox.Enable = image_enhance.userInterface.onOff(hasImages);
         labkit.ui.view.setEnabled(ui, 'applyTool', availability.canApply);
         labkit.ui.view.setEnabled(ui, 'setWhiteRoi', availability.canSetWhiteRoi);
         labkit.ui.view.setEnabled(ui, 'undoHistory', hasSteps);
@@ -327,13 +327,13 @@ function actions = table()
                     'title', 'Original Preview');
                 refreshWhiteRoiOverlay();
             case 'Before | After'
-                enhanced = currentPreviewImage(image_enhance.state.activePendingDirty(S));
+                enhanced = currentPreviewImage(image_enhance.appState.activePendingDirty(S));
                 labkit.ui.view.drawImage(ui, 'preview', ...
-                    image_enhance.view.beforeAfterImage(original, enhanced), ...
+                    image_enhance.userInterface.beforeAfterImage(original, enhanced), ...
                     'title', 'Before | After');
                 clearWhiteRoiOverlay();
             otherwise
-                enhanced = currentPreviewImage(image_enhance.state.activePendingDirty(S));
+                enhanced = currentPreviewImage(image_enhance.appState.activePendingDirty(S));
                 labkit.ui.view.drawImage(ui, 'preview', enhanced, ...
                     'title', 'Enhanced Preview');
                 refreshWhiteRoiOverlay();
@@ -342,22 +342,22 @@ function actions = table()
     function refreshMetrics()
         if isempty(S.items)
             ui.controls.metricsTable.table.Data = ...
-                image_enhance.view.resultTableData([], [], 0);
+                image_enhance.userInterface.resultTableData([], [], 0);
             return;
         end
         processedImage = currentPreviewImage(false);
-        ui.controls.metricsTable.table.Data = image_enhance.view.resultTableData( ...
+        ui.controls.metricsTable.table.Data = image_enhance.userInterface.resultTableData( ...
             S.items(currentSelectionIndex()), ...
-            processedImage, numel(image_enhance.state.activeSteps(S)));
+            processedImage, numel(image_enhance.appState.activeSteps(S)));
     end
     function refreshHistory()
-        ui.controls.historyTable.table.Data = image_enhance.view.historyTableData(image_enhance.state.activeSteps(S));
+        ui.controls.historyTable.table.Data = image_enhance.userInterface.historyTableData(image_enhance.appState.activeSteps(S));
         labkit.ui.view.setValue(ui, 'historyStatus', ...
-            sprintf('History steps: %d', numel(image_enhance.state.activeSteps(S))));
+            sprintf('History steps: %d', numel(image_enhance.appState.activeSteps(S))));
     end
     function refreshDetails()
-        labkit.ui.view.setValue(ui, 'exportDetails', image_enhance.view.detailLines( ...
-            S.items, max(currentSelectionIndex(), 1), image_enhance.state.activeSteps(S), S.lastExport));
+        labkit.ui.view.setValue(ui, 'exportDetails', image_enhance.userInterface.detailLines( ...
+            S.items, max(currentSelectionIndex(), 1), image_enhance.appState.activeSteps(S), S.lastExport));
         updateCloseGuard();
     end
     function refreshToolStatus()
@@ -372,7 +372,7 @@ function actions = table()
             labkit.ui.view.setValue(ui, 'toolStatus', availability.status);
             return;
         end
-        if image_enhance.state.activePendingDirty(S)
+        if image_enhance.appState.activePendingDirty(S)
             prefix = 'Previewing: ';
         else
             prefix = 'Ready: ';
@@ -382,7 +382,7 @@ function actions = table()
     end
     function items = readOrReuseImages(paths)
         paths = labkit.image.normalizePaths(paths);
-        template = image_enhance.state.emptyItem();
+        template = image_enhance.appState.emptyItem();
         items = repmat(template, numel(paths), 1);
         existingPaths = strings(0, 1);
         if ~isempty(S.items)
@@ -391,7 +391,7 @@ function actions = table()
         missing = paths(~ismember(paths, existingPaths));
         addLog(sprintf('Image import will read %d new file(s) and reuse %d loaded file(s).', ...
             numel(missing), numel(paths) - numel(missing)));
-        loaded = image_enhance.io.readImages(missing, struct( ...
+        loaded = image_enhance.sourceFiles.readImages(missing, struct( ...
             'progressFcn', @onReadProgress));
         for k = 1:numel(paths)
             existingIndex = find(existingPaths == paths(k), 1);
@@ -431,7 +431,7 @@ function actions = table()
         item = S.items(index);
         key = previewImageKey(item);
         if isempty(S.previewImages{index}) || S.previewImageKeys(index) ~= key
-            [previewImage, previewScale] = image_enhance.view.previewImage(item.image);
+            [previewImage, previewScale] = image_enhance.userInterface.previewImage(item.image);
             S.previewImages{index} = previewImage;
             S.previewScales(index) = previewScale;
             S.previewImageKeys(index) = key;
@@ -441,7 +441,7 @@ function actions = table()
     function imageOut = currentPreviewImage(includePending)
         imageOut = currentPreviewSourceImage();
         previewScale = currentPreviewScale();
-        steps = previewScaledSteps(image_enhance.state.activeSteps(S), previewScale);
+        steps = previewScaledSteps(image_enhance.appState.activeSteps(S), previewScale);
         stepsForKey = steps;
         if includePending && currentToolAvailability().canPreviewPending
             stepsForKey(end + 1, 1) = previewScaledStep(currentToolStep(), previewScale);
@@ -452,14 +452,14 @@ function actions = table()
             return;
         end
         if ~isempty(steps)
-            imageOut = image_enhance.ops.applyPipeline( ...
-                {imageOut}, steps, {image_enhance.ui.whiteRoiHelpers("context", S.items(currentSelectionIndex()), currentPreviewScale())});
+            imageOut = image_enhance.analysisRun.applyPipeline( ...
+                {imageOut}, steps, {image_enhance.userInterface.whiteRoiHelpers("context", S.items(currentSelectionIndex()), currentPreviewScale())});
             imageOut = imageOut{1};
         end
         if includePending && currentToolAvailability().canPreviewPending
-            imageOut = image_enhance.ops.applyStep( ...
+            imageOut = image_enhance.analysisRun.applyStep( ...
                 imageOut, previewScaledStep(currentToolStep(), previewScale), ...
-                image_enhance.ui.whiteRoiHelpers("context", S.items(currentSelectionIndex()), currentPreviewScale()));
+                image_enhance.userInterface.whiteRoiHelpers("context", S.items(currentSelectionIndex()), currentPreviewScale()));
         end
         S.previewResultImage = imageOut;
         S.previewResultKey = key;
@@ -473,7 +473,7 @@ function actions = table()
     end
     function key = currentPreviewResultKey(stepsForKey, includePending)
         item = S.items(currentSelectionIndex());
-        task = image_enhance.state.exportTask(item, stepsForKey, struct( ...
+        task = image_enhance.appState.exportTask(item, stepsForKey, struct( ...
             'outputFolder', "preview", ...
             'format', "display"));
         key = task.fingerprint + sprintf('\n') + ...
@@ -490,7 +490,7 @@ function actions = table()
         dirty = false;
         if ~isempty(S.items)
             task = currentExportTask();
-            dirty = image_enhance.state.activePendingDirty(S) || ...
+            dirty = image_enhance.appState.activePendingDirty(S) || ...
                 S.lastExportFingerprint ~= task.fingerprint;
         end
         labkit.ui.app.setCloseGuard(fig, dirty, ...
@@ -499,7 +499,7 @@ function actions = table()
     function [task, opts, steps] = currentExportTask()
         opts = struct('outputFolder', S.outputFolder, ...
             'format', labkit.ui.view.getValue(ui, 'exportFormat'));
-        [task, opts, steps] = image_enhance.state.exportTask(S, opts);
+        [task, opts, steps] = image_enhance.appState.exportTask(S, opts);
     end
     function scale = currentPreviewScale()
         index = currentSelectionIndex();
@@ -528,7 +528,7 @@ function actions = table()
         key = strjoin([string(item.path), dims, string(class(item.image))], "|");
     end
     function step = currentToolStep()
-        step = image_enhance.ops.makeStep( ...
+        step = image_enhance.analysisRun.makeStep( ...
             labkit.ui.view.getValue(ui, 'toolKind'), ...
             labkit.ui.view.getValue(ui, 'toolAmount'), ...
             labkit.ui.view.getValue(ui, 'toolSecondary'), 0);
@@ -540,8 +540,8 @@ function actions = table()
             return;
         end
         clearWhiteRoiOverlay();
-        position = image_enhance.ui.whiteRoiHelpers("defaultPosition", size(currentPreviewSourceImage()));
-        if image_enhance.ui.whiteRoiHelpers("hasRoi", S.items(currentSelectionIndex()))
+        position = image_enhance.userInterface.whiteRoiHelpers("defaultPosition", size(currentPreviewSourceImage()));
+        if image_enhance.userInterface.whiteRoiHelpers("hasRoi", S.items(currentSelectionIndex()))
             position = S.items(currentSelectionIndex()).whiteRoi .* currentPreviewScale();
         end
         S.whiteRoiHandle = drawrectangle(ui.controls.preview.primaryAxes, ...
@@ -551,7 +551,7 @@ function actions = table()
         storeWhiteRoi(S.whiteRoiHandle.Position);
     end
     function availability = currentToolAvailability()
-        availability = image_enhance.ui.toolAvailability( ...
+        availability = image_enhance.userInterface.toolAvailability( ...
             S, labkit.ui.view.getValue(ui, 'toolKind'));
     end
     function storeWhiteRoi(position)
@@ -560,12 +560,12 @@ function actions = table()
         end
         S.items(currentSelectionIndex()).whiteRoi = double(position) ./ currentPreviewScale();
         markExportDirty();
-        S = image_enhance.state.setActivePendingDirty(S, true);
+        S = image_enhance.appState.setActivePendingDirty(S, true);
         refreshControls();
         refreshToolStatus();
     end
     function refreshWhiteRoiOverlay()
-        if ~image_enhance.ui.whiteRoiHelpers("isTool", labkit.ui.view.getValue(ui, 'toolKind')) || S.batchMode || ~image_enhance.ui.whiteRoiHelpers("hasRoi", S.items(currentSelectionIndex()))
+        if ~image_enhance.userInterface.whiteRoiHelpers("isTool", labkit.ui.view.getValue(ui, 'toolKind')) || S.batchMode || ~image_enhance.userInterface.whiteRoiHelpers("hasRoi", S.items(currentSelectionIndex()))
             clearWhiteRoiOverlay();
             return;
         end
@@ -588,7 +588,7 @@ function actions = table()
         S.whiteRoiHandle = [];
     end
     function updateToolControls(resetToDefaults)
-        values = image_enhance.ops.defaultStepValues( ...
+        values = image_enhance.analysisRun.defaultStepValues( ...
             labkit.ui.view.getValue(ui, 'toolKind'));
         amountHandle = ui.controls.toolAmount.handle;
         secondaryHandle = ui.controls.toolSecondary.handle;
@@ -596,9 +596,9 @@ function actions = table()
         ui.controls.toolSecondary.label.Text = char(values.secondaryLabel);
         amountHandle.Limits = values.amountLimits;
         secondaryHandle.Limits = values.secondaryLimits;
-        amountHandle.Value = image_enhance.state.clampValue( ...
+        amountHandle.Value = image_enhance.appState.clampValue( ...
             amountHandle.Value, values.amountLimits);
-        secondaryHandle.Value = image_enhance.state.clampValue( ...
+        secondaryHandle.Value = image_enhance.appState.clampValue( ...
             secondaryHandle.Value, values.secondaryLimits);
         if resetToDefaults
             labkit.ui.view.setValue(ui, 'toolAmount', values.amount);

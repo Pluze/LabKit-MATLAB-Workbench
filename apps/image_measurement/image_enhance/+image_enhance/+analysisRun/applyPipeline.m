@@ -14,7 +14,7 @@ function processed = applyPipeline(images, steps, contexts)
     for iStep = 1:numel(steps)
         step = steps(iStep);
         for iImage = 1:numel(processed)
-            processed{iImage} = image_enhance.ops.applyStep( ...
+            processed{iImage} = image_enhance.analysisRun.applyStep( ...
                 processed{iImage}, step, contexts{iImage});
         end
     end

@@ -1,4 +1,4 @@
-% Expected caller: image_enhance.export.writeOutputs and tests. Input is a
+% Expected caller: image_enhance.resultFiles.writeOutputs and tests. Input is a
 % result struct array from batch export. Output is the stable CSV manifest table.
 function T = buildManifest(results)
 
