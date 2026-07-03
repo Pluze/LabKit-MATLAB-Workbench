@@ -38,6 +38,7 @@ function ui = createTabbedWorkbenchShell(figName, figPosition, leftWidth, labels
     end
     ui.fig = uifigure(figArgs{:});
     applyGuiTestMode(ui.fig);
+    paintVisibleFigure();
 
     ui.main = uigridlayout(ui.fig, [1 3]);
     ui.main.ColumnWidth = {leftWidth, 6, '1x'};
@@ -117,6 +118,13 @@ function applyGuiTestMode(fig)
         catch
         end
     end
+end
+
+function paintVisibleFigure()
+    if guiTestMode() ~= "visible"
+        return;
+    end
+    drawnow limitrate;
 end
 
 function [tab, panel] = createScrollableTab(parent, titleText)

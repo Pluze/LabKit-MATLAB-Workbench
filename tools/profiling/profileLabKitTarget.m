@@ -11,7 +11,7 @@ function [htmlFile, artifacts] = profileLabKitTarget(target, htmlFile, varargin)
 %   htmlFile  generated HTML report path
 %   artifacts struct with htmlFile, jsonFile, and functionCount
 % Options:
-%   OpenReport           true opens the generated HTML report.
+%   OpenReport           false opens no browser; true opens the generated HTML report.
 %   WaitForGuiClose      true waits for newly opened figures before export.
 %   CloseFiguresAfterRun false closes newly opened figures after profiling.
 %   ChangeFolder         true cd's to a resolved .m file folder while profiling.
@@ -28,9 +28,9 @@ function [htmlFile, artifacts] = profileLabKitTarget(target, htmlFile, varargin)
 %
 % Examples:
 %   addpath(fullfile('tools', 'profiling'))
+%   profileLabKitTarget("labkit_launcher", [], "WaitForGuiClose", false, ...
+%       "PrintSummary", true)
 %   profileLabKitTarget("labkit_launcher", [], "OpenReport", true)
-%   profileLabKitTarget("labkit_launcher", [], "OpenReport", false, ...
-%       "WaitForGuiClose", false, "PrintSummary", true)
 
     if nargin < 1
         target = [];
@@ -129,7 +129,7 @@ end
 function opt = parseProfileOptions(varargin)
     p = inputParser;
     p.FunctionName = 'profileLabKitTarget';
-    addParameter(p, 'OpenReport', true, @isLogicalScalar);
+    addParameter(p, 'OpenReport', false, @isLogicalScalar);
     addParameter(p, 'WaitForGuiClose', true, @isLogicalScalar);
     addParameter(p, 'CloseFiguresAfterRun', false, @isLogicalScalar);
     addParameter(p, 'ChangeFolder', true, @isLogicalScalar);

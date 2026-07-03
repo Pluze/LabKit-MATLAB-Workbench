@@ -35,10 +35,9 @@ function varargout = labkit_launcher(varargin)
         return;
     end
 
-    root = fileparts(mfilename('fullpath'));
-    apps = discoverApps(root);
-
     if mode == "list"
+        root = fileparts(mfilename('fullpath'));
+        apps = discoverApps(root);
         varargout = {appCatalogTable(apps)};
         return;
     end
@@ -47,8 +46,9 @@ function varargout = labkit_launcher(varargin)
             'labkit_launcher returns at most the launcher figure handle.');
     end
 
+    root = fileparts(mfilename('fullpath'));
     initializeLauncherPath(root);
-    fig = runLauncher(root, apps);
+    fig = runLauncher(root);
     if nargout == 1
         varargout = {fig};
     end
@@ -86,7 +86,7 @@ function info = launcherVersion()
     info = struct( ...
         "name", "labkit_launcher", ...
         "displayName", "LabKit App Launcher", ...
-        "version", "1.2.2", ...
+        "version", "1.2.3", ...
         "updated", "2026-07-02");
 end
 
@@ -109,7 +109,7 @@ end
 
 %% Section: Main launcher window
 
-function fig = runLauncher(root, apps)
+function fig = runLauncher(root)
     panelFontSize = 15;
     tableFontSize = 15;
 
@@ -123,6 +123,7 @@ function fig = runLauncher(root, apps)
     fig = uifigure(figArgs{:});
     fig.Name = char(launcherVersionTitle());
     applyLauncherGuiTestMode(fig);
+    paintVisibleLauncherFigure();
     main = uigridlayout(fig, [1 3]);
     main.ColumnWidth = {360, 5, '1x'};
     main.RowHeight = {'1x'};
@@ -199,7 +200,7 @@ function fig = runLauncher(root, apps)
     btnProfile.Layout.Column = 2;
     if isprop(btnProfile, 'Tooltip')
         btnProfile.Tooltip = ['Profile the next app launched from this launcher ' ...
-            'until that app window closes.'];
+            'until that app window closes. Saves the report without opening a browser.'];
     end
     txtInfo = uitextarea(controlsGrid, 'Editable', 'off', 'Value', {'Ready.'});
 
@@ -220,8 +221,17 @@ function fig = runLauncher(root, apps)
     ui.controls.appTable = struct('table', appTable);
     setappdata(fig, 'labkitUiRegistry', ui);
 
-    state = struct('apps', apps, 'visibleApps', apps, 'selectedRow', 1, ...
-        'status', integrityStatus(root, apps), 'profileNextLaunch', false);
+    state = struct('apps', emptyAppStruct(), 'visibleApps', emptyAppStruct(), ...
+        'selectedRow', 1, 'status', "Loading app list...", ...
+        'profileNextLaunch', false);
+    appTable.Data = cell(0, 5);
+    setLaunchEnabled(false);
+    updateInfo("Loading app list...");
+    drawnow limitrate;
+
+    state.apps = discoverApps(root);
+    state.visibleApps = state.apps;
+    state.status = integrityStatus(root, state.apps);
     refreshTable();
 
     function onRefreshApps(varargin)
@@ -1110,7 +1120,7 @@ function result = runLauncherAppProfile(root, app, debugMode)
     targetFile = fullfile(root, char(app.relativePath));
     target = @() launchProfileTarget(app, debugMode);
     [htmlFile, artifacts] = profileLabKitTarget(target, htmlFile, ...
-        'OpenReport', launcherGuiTestMode() ~= "hidden", ...
+        'OpenReport', false, ...
         'WaitForGuiClose', true, ...
         'CloseFiguresAfterRun', false, ...
         'ProjectRoot', root, ...
@@ -1480,6 +1490,13 @@ function applyLauncherGuiTestMode(fig)
         catch
         end
     end
+end
+
+function paintVisibleLauncherFigure()
+    if launcherGuiTestMode() ~= "visible"
+        return;
+    end
+    drawnow limitrate;
 end
 
 function tf = confirmUpdate(root, sourceLabel)
