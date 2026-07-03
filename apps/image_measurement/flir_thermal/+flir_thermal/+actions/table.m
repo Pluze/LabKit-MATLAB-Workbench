@@ -1,52 +1,95 @@
-% Expected caller: labkit_FLIRThermal_app. Input is the debug context
-% prepared by the public launcher. Output is the app figure. Side effects are
-% GUI creation, user-driven FLIR image loading, thermal export, and debug trace
-% attachment.
-function fig = run(debugLog)
-
-    S = struct();
-    S.items = repmat(flir_thermal.state.emptyItem(), 0, 1);
-    S.currentIndex = 0;
-    S.outputFolder = string(labkit.ui.app.defaultDialogFolder("output"));
-    S.lastExport = [];
-    S.roiMode = "mean";
-
-    callbacks = struct( ...
-        'filesChosen', @onFilesChosen, ...
-        'removeFiles', @onRemoveFiles, ...
-        'clearFiles', @onClearFiles, ...
-        'selectionChanged', @onSelectionChanged, ...
-        'previousImage', @onPreviousImage, ...
-        'nextImage', @onNextImage, ...
-        'autoRange', @onAutoRange, ...
-        'groupRange', @onGroupRange, ...
-        'perImageRange', @onPerImageRange, ...
-        'roundRange', @onRoundRange, ...
-        'paletteChanged', @onPaletteChanged, ...
-        'rangePresetChanged', @onRangePresetChanged, ...
-        'rangeChanged', @onRangeChanged, ...
-        'roiHotMode', @(~, ~) setRoiMode("hot"), ...
-        'roiColdMode', @(~, ~) setRoiMode("cold"), ...
-        'roiMeanMode', @(~, ~) setRoiMode("mean"), ...
-        'chooseOutputFolder', @onChooseOutputFolder, ...
-        'exportCurrent', @onExportCurrent, ...
-        'exportAll', @onExportAll);
-    spec = flir_thermal.ui.buildSpec(char(S.outputFolder), callbacks);
-    ui = labkit.ui.app.create(spec, 'debug', debugLog);
-    fig = ui.figure;
-    if debugLog.enabled
-        debugLog.trace('FLIR thermal debug trace enabled.');
-        debugLog.instrumentFigure(fig);
-        flir_thermal.debug.writeAndLogSamplePack(debugLog, @addLog);
+% App-owned action table for FLIR Thermal; expected caller is flir_thermal.definition.
+function actions = table()
+    S = [];
+    ui = [];
+    fig = [];
+    debugLog = [];
+    readingTool = [];
+    actions = struct( ...
+        'startup', @onStartup, ...
+        'filesChosen', @dispatchAction, ...
+        'removeFiles', @dispatchAction, ...
+        'clearFiles', @dispatchAction, ...
+        'selectionChanged', @dispatchAction, ...
+        'previousImage', @dispatchAction, ...
+        'nextImage', @dispatchAction, ...
+        'autoRange', @dispatchAction, ...
+        'groupRange', @dispatchAction, ...
+        'perImageRange', @dispatchAction, ...
+        'roundRange', @dispatchAction, ...
+        'paletteChanged', @dispatchAction, ...
+        'rangePresetChanged', @dispatchAction, ...
+        'rangeChanged', @dispatchAction, ...
+        'roiHotMode', @dispatchAction, ...
+        'roiColdMode', @dispatchAction, ...
+        'roiMeanMode', @dispatchAction, ...
+        'chooseOutputFolder', @dispatchAction, ...
+        'exportCurrent', @dispatchAction, ...
+        'exportAll', @dispatchAction);
+    function state = onStartup(state, ~, services)
+        S = state;
+        ui = services.ui;
+        fig = services.figure;
+        debugLog = services.debug;
+        if debugLog.enabled
+            debugLog.trace('FLIR thermal debug trace enabled.');
+            debugLog.instrumentFigure(fig);
+            flir_thermal.debug.writeAndLogSamplePack(debugLog, @addLog);
+        end
+        readingTool = flir_thermal.view.temperatureReadingTool(fig, ...
+            ui.controls.preview.axesById.thermalImage, ...
+            struct('onPoint', @setManualTemperaturePoint, ...
+            'onRoi', @setRoiTemperatureReading));
+        resetPreviewAxes();
+        refreshAll();
+        state = S;
     end
-    readingTool = flir_thermal.view.temperatureReadingTool(fig, ...
-        ui.controls.preview.axesById.thermalImage, ...
-        struct('onPoint', @setManualTemperaturePoint, ...
-        'onRoi', @setRoiTemperatureReading));
-
-    resetPreviewAxes();
-    refreshAll();
-
+    function state = dispatchAction(~, payload, ~)
+        switch string(payload.id)
+            case "filesChosen"
+                onFilesChosen([], payload.event);
+            case "removeFiles"
+                onRemoveFiles([], payload.event);
+            case "clearFiles"
+                onClearFiles([], []);
+            case "selectionChanged"
+                onSelectionChanged([], payload.event);
+            case "previousImage"
+                onPreviousImage([], []);
+            case "nextImage"
+                onNextImage([], []);
+            case "autoRange"
+                onAutoRange([], []);
+            case "groupRange"
+                onGroupRange([], []);
+            case "perImageRange"
+                onPerImageRange([], []);
+            case "roundRange"
+                onRoundRange([], []);
+            case "paletteChanged"
+                onPaletteChanged([], []);
+            case "rangePresetChanged"
+                onRangePresetChanged([], []);
+            case "rangeChanged"
+                onRangeChanged([], []);
+            case "roiHotMode"
+                setRoiMode("hot");
+            case "roiColdMode"
+                setRoiMode("cold");
+            case "roiMeanMode"
+                setRoiMode("mean");
+            case "chooseOutputFolder"
+                onChooseOutputFolder([], []);
+            case "exportCurrent"
+                onExportCurrent([], []);
+            case "exportAll"
+                onExportAll([], []);
+            otherwise
+                error('flir_thermal:actions:UnknownAction', ...
+                    'Unknown FLIR Thermal action "%s".', payload.id);
+        end
+        state = S;
+    end
     function onFilesChosen(~, event)
         paths = labkit.ui.view.filePaths(event.files);
         if isempty(paths)
@@ -76,7 +119,6 @@ function fig = run(debugLog)
         refreshAll();
         showImportReport(report);
     end
-
     function onReadProgress(event)
         switch event.stage
             case "beforeRead"
@@ -87,7 +129,6 @@ function fig = run(debugLog)
                     char(event.name)));
         end
     end
-
     function onRemoveFiles(~, event)
         if isempty(S.items)
             return;
@@ -105,7 +146,6 @@ function fig = run(debugLog)
         addLog(sprintf('Removed FLIR file(s); %d remaining.', numel(S.items)));
         refreshAll();
     end
-
     function onClearFiles(~, ~)
         S.items = repmat(flir_thermal.state.emptyItem(), 0, 1);
         S.currentIndex = 0;
@@ -113,7 +153,6 @@ function fig = run(debugLog)
         addLog('Cleared loaded FLIR files.');
         refreshAll();
     end
-
     function onSelectionChanged(~, event)
         idx = labkit.ui.view.fileIndices(event.selectedFiles, numel(S.items));
         if isempty(idx)
@@ -123,7 +162,6 @@ function fig = run(debugLog)
         syncRangeControlsFromCurrentItem();
         refreshAll();
     end
-
     function onPreviousImage(~, ~)
         if isempty(S.items)
             return;
@@ -132,7 +170,6 @@ function fig = run(debugLog)
         syncRangeControlsFromCurrentItem();
         refreshAll();
     end
-
     function onNextImage(~, ~)
         if isempty(S.items)
             return;
@@ -141,7 +178,6 @@ function fig = run(debugLog)
         syncRangeControlsFromCurrentItem();
         refreshAll();
     end
-
     function onAutoRange(~, ~)
         if ~hasCurrentItem()
             return;
@@ -155,7 +191,6 @@ function fig = run(debugLog)
         addLog(sprintf('Auto range set for %s.', char(S.items(S.currentIndex).name)));
         refreshAll();
     end
-
     function onGroupRange(~, ~)
         if isempty(S.items)
             return;
@@ -176,7 +211,6 @@ function fig = run(debugLog)
             range(1), range(2)));
         refreshAll();
     end
-
     function onPerImageRange(~, ~)
         if isempty(S.items)
             return;
@@ -193,7 +227,6 @@ function fig = run(debugLog)
             numel(S.items)));
         refreshAll();
     end
-
     function onRoundRange(~, ~)
         if isempty(S.items)
             return;
@@ -214,12 +247,10 @@ function fig = run(debugLog)
             roundedCount));
         refreshAll();
     end
-
     function onPaletteChanged(~, ~)
         refreshPreview();
         refreshSummary();
     end
-
     function onRangePresetChanged(~, ~)
         if ~hasCurrentItem()
             return;
@@ -237,12 +268,10 @@ function fig = run(debugLog)
         syncRangeControlsFromCurrentItem();
         refreshAll();
     end
-
     function onRangeChanged(~, ~)
         commitCurrentRangeFromControls();
         refreshAll();
     end
-
     function setRoiMode(mode)
         S.roiMode = string(mode);
         addLog(sprintf('ROI reading mode set to %s. Drag on the thermal image to set the ROI.', ...
@@ -250,7 +279,6 @@ function fig = run(debugLog)
         refreshExportControls();
         refreshDetails();
     end
-
     function onChooseOutputFolder(~, ~)
         [folder, cancelled] = labkit.ui.app.promptOutputFolder( ...
             'Select FLIR thermal export folder', S.outputFolder);
@@ -262,7 +290,6 @@ function fig = run(debugLog)
         refreshExportControls();
         refreshDetails();
     end
-
     function onExportCurrent(~, ~)
         if isempty(S.items) || S.currentIndex < 1
             showError('No FLIR image selected', ...
@@ -271,7 +298,6 @@ function fig = run(debugLog)
         end
         exportItems(S.items(S.currentIndex), 'current image');
     end
-
     function onExportAll(~, ~)
         if isempty(S.items)
             showError('No FLIR images loaded', ...
@@ -280,7 +306,6 @@ function fig = run(debugLog)
         end
         exportItems(S.items, 'loaded images');
     end
-
     function exportItems(items, label)
         try
             opts = exportOptions(items);
@@ -295,7 +320,6 @@ function fig = run(debugLog)
             saved, numel(payload.results), label, char(payload.manifestPath)));
         refreshDetails();
     end
-
     function refreshAll()
         syncRangeControlsFromCurrentItem();
         refreshFileStatus();
@@ -304,7 +328,6 @@ function fig = run(debugLog)
         refreshExportControls();
         refreshDetails();
     end
-
     function refreshFileStatus()
         if isempty(S.items)
             labkit.ui.view.setValue(ui, 'thermalFiles', {});
@@ -328,7 +351,6 @@ function fig = run(debugLog)
                 sprintf('%s (%s)', char(S.items(S.currentIndex).name), status));
         end
     end
-
     function refreshPreview()
         item = currentItem();
         if isempty(item)
@@ -350,7 +372,6 @@ function fig = run(debugLog)
         flir_thermal.view.drawTemperatureReadings(ax, item);
         drawTemperatureScale(range, units);
     end
-
     function setManualTemperaturePoint(pointXY)
         if ~hasCurrentItem()
             return;
@@ -367,8 +388,8 @@ function fig = run(debugLog)
         refreshPreview();
         refreshSummary();
         refreshDetails();
+        syncRuntimeState();
     end
-
     function setRoiTemperatureReading(startXY, endXY)
         if ~hasCurrentItem()
             return;
@@ -385,19 +406,17 @@ function fig = run(debugLog)
         refreshPreview();
         refreshSummary();
         refreshDetails();
+        syncRuntimeState();
     end
-
     function [values, units, label] = previewValues(item)
         [values, units, label] = flir_thermal.view.valueMatrix(item);
     end
-
     function refreshSummary()
         item = currentItem();
         range = currentRange();
         labkit.ui.view.setValue(ui, 'summaryTable', ...
             flir_thermal.view.summaryTableData(item, range, currentPalette()));
     end
-
     function refreshExportControls()
         hasItems = ~isempty(S.items);
         labkit.ui.view.setValue(ui, 'outputFolder', char(S.outputFolder));
@@ -416,23 +435,19 @@ function fig = run(debugLog)
         labkit.ui.view.setEnabled(ui, 'exportCurrent', hasItems && S.currentIndex >= 1);
         labkit.ui.view.setEnabled(ui, 'exportAll', hasItems);
     end
-
     function refreshDetails()
         labkit.ui.view.setValue(ui, 'details', ...
             flir_thermal.view.detailLines(S.items, S.currentIndex, S.outputFolder));
     end
-
     function item = currentItem()
         item = [];
         if hasCurrentItem()
             item = S.items(S.currentIndex);
         end
     end
-
     function tf = hasCurrentItem()
         tf = ~isempty(S.items) && S.currentIndex >= 1 && S.currentIndex <= numel(S.items);
     end
-
     function range = currentRange()
         if hasCurrentItem()
             range = normalizeRange(S.items(S.currentIndex).displayRange);
@@ -440,7 +455,6 @@ function fig = run(debugLog)
         end
         range = [20 40];
     end
-
     function commitCurrentRangeFromControls()
         if ~hasCurrentItem()
             return;
@@ -451,7 +465,6 @@ function fig = run(debugLog)
         S.items(S.currentIndex).displayRange = range;
         S.items(S.currentIndex).rangeAdjusted = true;
     end
-
     function syncRangeControlsFromCurrentItem()
         range = currentRange();
         bounds = currentControlBounds();
@@ -461,7 +474,6 @@ function fig = run(debugLog)
         labkit.ui.view.setValue(ui, 'temperatureMin', round(range(1) * 100) / 100);
         labkit.ui.view.setValue(ui, 'temperatureMax', round(range(2) * 100) / 100);
     end
-
     function preset = currentRangePreset()
         labels = flir_thermal.view.rangeControlLabels();
         preset = labels.defaultPreset;
@@ -470,7 +482,6 @@ function fig = run(debugLog)
             preset = string(S.items(S.currentIndex).rangePreset);
         end
     end
-
     function bounds = currentControlBounds()
         bounds = [-20 120];
         if hasCurrentItem() && isfield(S.items(S.currentIndex), 'rangeControlBounds')
@@ -478,7 +489,6 @@ function fig = run(debugLog)
         end
         bounds = controlBoundsContaining(currentRange(), bounds);
     end
-
     function bounds = itemControlBounds(item)
         bounds = [-20 120];
         if isfield(item, 'rangeControlBounds')
@@ -488,7 +498,6 @@ function fig = run(debugLog)
             bounds = controlBoundsContaining(item.displayRange, bounds);
         end
     end
-
     function text = rangeStatus(item)
         if isRangeAdjusted(item)
             text = 'range set';
@@ -496,11 +505,9 @@ function fig = run(debugLog)
             text = 'needs range';
         end
     end
-
     function tf = isRangeAdjusted(item)
         tf = isfield(item, 'rangeAdjusted') && logical(item.rangeAdjusted);
     end
-
     function tf = anyRangeAdjusted()
         tf = false;
         for item = reshape(S.items, 1, [])
@@ -510,12 +517,10 @@ function fig = run(debugLog)
             end
         end
     end
-
     function range = roundRangeOutward(range)
         range = normalizeRange(range);
         range = normalizeRange([floor(range(1)), ceil(range(2))]);
     end
-
     function range = autoRangeForItem(item)
         values = flir_thermal.view.valueMatrix(item);
         values = values(isfinite(values));
@@ -525,7 +530,6 @@ function fig = run(debugLog)
         end
         range = normalizeRange([min(values), max(values)]);
     end
-
     function range = normalizeRange(range)
         range = double(range(:)).';
         if numel(range) ~= 2 || ~all(isfinite(range))
@@ -536,14 +540,12 @@ function fig = run(debugLog)
             range(2) = range(1) + 1;
         end
     end
-
     function resetPreviewAxes()
         labkit.ui.view.resetAxes(ui, 'preview', 'Clean thermal image', false, ...
             'thermalImage');
         labkit.ui.view.resetAxes(ui, 'preview', 'Scale', false, ...
             'temperatureScale');
     end
-
     function drawTemperatureScale(range, units)
         values = linspace(range(1), range(2), 256).';
         imageData = labkit.thermal.renderImage(repmat(values, 1, 12), ...
@@ -566,11 +568,18 @@ function fig = run(debugLog)
             ylabel(ax, char(units));
         end
     end
-
+    function syncRuntimeState()
+        if isempty(fig) || ~isvalid(fig) || ...
+                ~isappdata(fig, 'labkitUiAppRuntime')
+            return;
+        end
+        runtime = getappdata(fig, 'labkitUiAppRuntime');
+        runtime.state = S;
+        setappdata(fig, 'labkitUiAppRuntime', runtime);
+    end
     function palette = currentPalette()
         palette = string(labkit.ui.view.getValue(ui, 'palette'));
     end
-
     function range = clampRangeToBounds(range, bounds)
         range = normalizeRange(range);
         bounds = normalizeRange(bounds);
@@ -579,7 +588,6 @@ function fig = run(debugLog)
             range = bounds;
         end
     end
-
     function bounds = controlBoundsContaining(range, bounds)
         range = normalizeRange(range);
         bounds = normalizeRange(bounds);
@@ -588,7 +596,6 @@ function fig = run(debugLog)
             bounds(2) = bounds(1) + 1;
         end
     end
-
     function opts = exportOptions(items)
         opts = struct();
         opts.outputFolder = S.outputFolder;
@@ -596,11 +603,9 @@ function fig = run(debugLog)
         opts.palette = currentPalette();
         opts.range = [];
     end
-
     function addLog(message)
         labkit.ui.view.appendLog(ui, 'logPanel', message);
     end
-
     function showImportReport(report)
         if report.skipped == 0
             return;
@@ -614,7 +619,6 @@ function fig = run(debugLog)
         labkit.ui.app.showAlert(fig, message, titleText);
         addLog([char(titleText) ': ' char(message)]);
     end
-
     function message = importReportMessage(report)
         if report.loaded == 0
             prefix = sprintf(['None of the %d selected file(s) contained ' ...
@@ -634,12 +638,10 @@ function fig = run(debugLog)
             end
         end
     end
-
     function showError(titleText, message)
         labkit.ui.app.showAlert(fig, message, titleText);
         addLog([char(titleText) ': ' char(message)]);
     end
-
     function showException(titleText, ME)
         debugLog.reportException('flir_thermal', titleText, ME);
         labkit.ui.app.showAlert(fig, ME.message, titleText);
