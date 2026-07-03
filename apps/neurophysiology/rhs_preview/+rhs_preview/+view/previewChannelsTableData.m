@@ -1,4 +1,4 @@
-% Expected caller: rhs_preview.run/buildSpec. Input is app state. Output is
+% Expected caller: rhs_preview.actions.table/buildSpec. Input is app state. Output is
 % an editable cell table for channel preview and protocol-role drafting.
 function data = previewChannelsTableData(S)
 %PREVIEWCHANNELSTABLEDATA Build display rows for Preview channel selection.

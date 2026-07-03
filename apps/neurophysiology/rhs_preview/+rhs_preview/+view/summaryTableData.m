@@ -1,4 +1,4 @@
-% Expected caller: rhs_preview.run and rhs_preview.ui.buildSpec. Input is
+% Expected caller: rhs_preview.actions.table and rhs_preview.ui.buildSpec. Input is
 % the app state struct. Output is a 2-column cell table for a resultTable.
 % No UI handles or app state are mutated.
 function data = summaryTableData(S)

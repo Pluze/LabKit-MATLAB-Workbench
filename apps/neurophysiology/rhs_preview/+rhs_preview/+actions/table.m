@@ -1,11 +1,14 @@
-% Expected caller: labkit_RHSPreview_app. Input is a debug context prepared by
-% labkit.ui.app.dispatchRequest. Output is the app figure. Side effects are
-% GUI creation, RHS header/window reads, app-state updates, and debug trace
-% attachment.
-function fig = run(debugLog)
-%RUN Build and run the RHS Preview app.
-
-    S = rhs_preview.state.defaultState();
+% App-owned action table for RHS Preview. Expected caller is
+% rhs_preview.definition. Output maps semantic action ids to handlers used by
+% labkit.ui.app.run while preserving lazy RHS indexing and preview behavior.
+function actions = table()
+%TABLE Build the RHS Preview runtime action map.
+    S = [];
+    ui = [];
+    fig = [];
+    debugLog = [];
+    previewRuntime = [];
+    previewSession = [];
     callbacks = struct( ...
         "rhsChosen", @onRhsChosen, ...
         "rhsCleared", @onRhsCleared, ...
@@ -23,29 +26,49 @@ function fig = run(debugLog)
         "saveProtocol", @onSaveProtocol, ...
         "saveFilterRecord", @onSaveFilterRecord, ...
         "resetWorkflow", @onResetWorkflow);
-
-    spec = rhs_preview.ui.buildSpec(callbacks);
-    ui = labkit.ui.app.create(spec, "debug", debugLog);
-    fig = ui.figure;
-    previewRuntime = labkit.ui.tool.createRuntime( ...
-        ui.controls.preview.primaryAxes, ...
-        struct("figure", fig, "defaultScrollFcn", @onPreviewScrollWheel));
-    previewSession = previewRuntime.createSession(struct( ...
-        "name", "rhsPreviewRoi", ...
-        "onPointerDown", @onPreviewAxesDown, ...
-        "installScrollWheel", false));
-    previewSession.setBackground(ui.controls.preview.primaryAxes);
-    previewSession.activate();
-
-    if debugLog.enabled
-        debugLog.trace("RHS Preview debug trace enabled.");
-        debugLog.instrumentFigure(fig);
-        rhs_preview.debug.writeAndLogSamplePack(debugLog, @addLog);
+    eventActions = ["rhsChosen", "folderChosen", "folderRemoved", ...
+        "protocolChosen", "settingChanged", "previewChannelEdited"];
+    actionIds = string(fieldnames(callbacks));
+    actions = struct("startup", @onStartup);
+    for kAction = 1:numel(actionIds)
+        actions.(char(actionIds(kAction))) = @dispatchAction;
     end
-
-    refreshAll();
-    addLog("RHS Preview ready.");
-
+    function state = onStartup(state, ~, services)
+        S = state;
+        ui = services.ui;
+        fig = services.figure;
+        debugLog = services.debug;
+        previewRuntime = labkit.ui.tool.createRuntime( ...
+            ui.controls.preview.primaryAxes, ...
+            struct("figure", fig, "defaultScrollFcn", @onPreviewScrollWheel));
+        previewSession = previewRuntime.createSession(struct( ...
+            "name", "rhsPreviewRoi", ...
+            "onPointerDown", @onPreviewAxesDown, ...
+            "installScrollWheel", false));
+        previewSession.setBackground(ui.controls.preview.primaryAxes);
+        previewSession.activate();
+        if debugLog.enabled
+            debugLog.trace("RHS Preview debug trace enabled.");
+            debugLog.instrumentFigure(fig);
+            rhs_preview.debug.writeAndLogSamplePack(debugLog, @addLog);
+        end
+        refreshAll();
+        addLog("RHS Preview ready.");
+        state = S;
+    end
+    function state = dispatchAction(~, payload, ~)
+        id = string(payload.id);
+        if ~isfield(callbacks, char(id))
+            error('rhs_preview:actions:UnknownAction', ...
+                'Unknown RHS Preview action "%s".', payload.id);
+        end
+        event = [];
+        if any(id == eventActions)
+            event = payload.event;
+        end
+        callbacks.(char(id))([], event);
+        state = S;
+    end
     function onRhsChosen(~, event)
         paths = labkit.ui.view.filePaths(event.addedFiles);
         if isempty(paths)
@@ -60,7 +83,6 @@ function fig = run(debugLog)
         end
         refreshAll();
     end
-
     function onRhsCleared(~, ~)
         S.rhsFile = "";
         S.info = [];
@@ -73,7 +95,6 @@ function fig = run(debugLog)
         S.lastAction = "Cleared RHS file";
         refreshAll();
     end
-
     function onFolderChosen(~, event)
         paths = labkit.ui.view.filePaths(event.addedFiles);
         if isempty(paths)
@@ -83,7 +104,6 @@ function fig = run(debugLog)
         refreshFilterRowsFromPaths(paths, "Discovered RHS files");
         refreshAll();
     end
-
     function onFolderRemoved(~, event)
         paths = labkit.ui.view.filePaths(event.removedFiles);
         if isempty(paths) || isempty(S.filterRows) || height(S.filterRows) == 0
@@ -105,7 +125,6 @@ function fig = run(debugLog)
         S.lastAction = "Removed RHS filter files";
         refreshAll();
     end
-
     function onFolderCleared(~, ~)
         S.rhsFolder = "";
         S.filterRows = table();
@@ -113,7 +132,6 @@ function fig = run(debugLog)
         S.lastAction = "Cleared RHS folder";
         refreshAll();
     end
-
     function onProtocolChosen(~, event)
         paths = labkit.ui.view.filePaths(event.addedFiles);
         if isempty(paths)
@@ -126,7 +144,6 @@ function fig = run(debugLog)
         addLog("Selected protocol: " + rhs_preview.view.displayFile(S.protocolFile));
         refreshAll();
     end
-
     function onProtocolCleared(~, ~)
         S.protocolFile = "";
         S.protocol = struct();
@@ -134,7 +151,6 @@ function fig = run(debugLog)
         S.lastAction = "Cleared protocol";
         refreshAll();
     end
-
     function onSettingChanged(~, event)
         previousFamily = S.family;
         previousMaxChannels = S.maxPreviewChannels;
@@ -160,7 +176,6 @@ function fig = run(debugLog)
         end
         refreshAll();
     end
-
     function onPreviewChannelEdited(~, event)
         data = labkit.ui.view.getValue(ui, "previewChannelsTable");
         S.previewChannelRows = rhs_preview.ops.applyPreviewChannelsTableData( ...
@@ -174,7 +189,6 @@ function fig = run(debugLog)
         end
         refreshAll();
     end
-
     function onFileFilterEdited(~, ~)
         data = labkit.ui.view.getValue(ui, "fileFilterTable");
         S.filterRows = rhs_preview.ops.applyFileFilterTableData( ...
@@ -183,12 +197,10 @@ function fig = run(debugLog)
         S.lastAction = "Updated file filter";
         refreshAll();
     end
-
     function onRefreshPreviewWindow(~, ~)
         readPreviewWindowFromState("Refresh preview window");
         refreshAll();
     end
-
     function onRefreshFolderFiles(~, ~)
         if strlength(S.rhsFolder) == 0
             S.statusMessage = "Select an RHS folder first.";
@@ -198,7 +210,6 @@ function fig = run(debugLog)
         refreshFolderFiles("Refreshed RHS file list");
         refreshAll();
     end
-
     function onZoomToRoi(~, ~)
         if ~rhs_preview.ops.hasValidRoi(S)
             S.statusMessage = "Drag a preview ROI before using Zoom to ROI.";
@@ -222,7 +233,6 @@ function fig = run(debugLog)
         end
         refreshAll();
     end
-
     function ok = readPreviewWindowFromState(actionLabel, logRead, preserveRoi)
         if nargin < 2
             logRead = true;
@@ -236,7 +246,6 @@ function fig = run(debugLog)
             addLog(logMessage);
         end
     end
-
     function onPreviewAxesDown(source, ~)
         if isempty(S.preview) || isempty(S.preview.timeSec)
             return;
@@ -251,7 +260,7 @@ function fig = run(debugLog)
         S.roiSec = rhs_preview.ops.clampRoi([startX startX], S.preview.timeSec);
         previewSession.captureDrag(@onPreviewAxesDrag, @onPreviewAxesUp);
         refreshPreview();
-
+        syncRuntimeState();
         function onPreviewAxesDrag(~, ~)
             currentX = rhs_preview.view.previewX(source);
             if ~isfinite(currentX)
@@ -259,8 +268,8 @@ function fig = run(debugLog)
             end
             S.roiSec = rhs_preview.ops.clampRoi([startX currentX], S.preview.timeSec);
             refreshPreview();
+            syncRuntimeState();
         end
-
         function onPreviewAxesUp(~, ~)
             S.lastAction = "Updated preview ROI";
             if all(isfinite(S.roiSec)) && diff(S.roiSec) > 0
@@ -268,9 +277,9 @@ function fig = run(debugLog)
                     S.roiSec(1), S.roiSec(2));
             end
             refreshAll();
+            syncRuntimeState();
         end
     end
-
     function onPreviewScrollWheel(~, event)
         bounds = rhs_preview.ops.previewWindowBounds(S);
         if ~rhs_preview.ops.hasReadableChannel(S) || ~bounds.hasIndexedDuration
@@ -283,7 +292,6 @@ function fig = run(debugLog)
         if ~shouldProcessPreviewScroll()
             return;
         end
-
         centerSec = rhs_preview.view.previewX(ui.controls.preview.primaryAxes);
         if ~isfinite(centerSec)
             centerSec = S.windowStartSec + S.windowDurationSec ./ 2;
@@ -297,7 +305,6 @@ function fig = run(debugLog)
         if ~isfinite(newDuration) || newDuration <= 0
             return;
         end
-
         anchor = (centerSec - oldStart) ./ oldDuration;
         anchor = min(1, max(0, anchor));
         S.windowDurationSec = min(fileDuration, newDuration);
@@ -308,8 +315,8 @@ function fig = run(debugLog)
             S.statusMessage = "Preview zoom updated.";
         end
         refreshAll();
+        syncRuntimeState();
     end
-
     function onSaveProtocol(~, ~)
         if isempty(S.previewChannelRows) || height(S.previewChannelRows) == 0
             S.statusMessage = "Select an RHS file before saving a protocol.";
@@ -329,7 +336,6 @@ function fig = run(debugLog)
         addLog("Saved protocol JSON: " + rhs_preview.view.displayFile(outputPath));
         refreshAll();
     end
-
     function onSaveFilterRecord(~, ~)
         if isempty(S.filterRows) || height(S.filterRows) == 0
             S.statusMessage = "Select an RHS folder before saving a filter record.";
@@ -349,7 +355,6 @@ function fig = run(debugLog)
         addLog("Saved filter record JSON: " + rhs_preview.view.displayFile(outputPath));
         refreshAll();
     end
-
     function onResetWorkflow(~, ~)
         S = rhs_preview.state.defaultState();
         labkit.ui.view.setValue(ui, "windowStartPanner", S.windowStartSec);
@@ -357,7 +362,6 @@ function fig = run(debugLog)
         addLog("Reset RHS Preview state.");
         refreshAll();
     end
-
     function ok = inspectSelectedFile()
         ok = false;
         if strlength(S.rhsFile) == 0
@@ -387,7 +391,6 @@ function fig = run(debugLog)
         end
         S.lastAction = "Indexed RHS file";
     end
-
     function refreshFolderFiles(actionLabel)
         try
             S.filterRows = rhs_preview.ops.discoverFilterRows( ...
@@ -405,7 +408,6 @@ function fig = run(debugLog)
         S.lastAction = string(actionLabel);
         addLog(S.statusMessage);
     end
-
     function refreshFilterRowsFromPaths(paths, actionLabel)
         try
             S.filterRows = rhs_preview.ops.discoverFilterRows(paths, ...
@@ -423,7 +425,6 @@ function fig = run(debugLog)
         S.lastAction = string(actionLabel);
         addLog(S.statusMessage);
     end
-
     function tf = isPreviewToggleEdit(event)
         tf = true;
         if (isstruct(event) && isfield(event, "indices")) || ...
@@ -432,7 +433,6 @@ function fig = run(debugLog)
             tf = isempty(indices) || any(indices(:, 2) == 1);
         end
     end
-
     function refreshAll()
         labkit.ui.view.setValue(ui, "rhsFile", fileValue(S.rhsFile));
         labkit.ui.view.setValue(ui, "rhsFolder", filterTaskPaths(S.filterRows));
@@ -460,7 +460,6 @@ function fig = run(debugLog)
         ui.controls.details.textArea.Value = rhs_preview.view.detailLines(S);
         refreshPreview();
     end
-
     function refreshChannelControls()
         selection = rhs_preview.view.channelSelection(S.info, S.family, ...
             "");
@@ -468,16 +467,13 @@ function fig = run(debugLog)
         rhs_preview.view.setDropDown(ui.controls.channelFamily, selection.families, ...
             selection.family, selection.hasChannels);
     end
-
     function refreshPreview()
         rhs_preview.view.drawStackedPreview(ui.controls.preview.primaryAxes, S);
     end
-
     function rebuildPreviewChannelRows()
         S.previewChannelRows = rhs_preview.ops.channelRows(S.info, S.family, ...
             S.maxPreviewChannels, S.protocol);
     end
-
     function applyAdaptivePreviewWindow()
         durationSec = rhs_preview.ops.suggestedPreviewDurationSec( ...
             S.index, S.previewChannelRows, S.maxPreviewChannels);
@@ -487,7 +483,6 @@ function fig = run(debugLog)
         S.windowDurationSec = durationSec;
         S.windowStartSec = rhs_preview.ops.clampWindowStartSec(S.windowStartSec, S);
     end
-
     function refreshWindowControls()
         bounds = rhs_preview.ops.previewWindowBounds(S);
         if ~bounds.hasIndexedDuration
@@ -498,7 +493,6 @@ function fig = run(debugLog)
                 "Select RHS to estimate preview length.");
             return;
         end
-
         maxStartSec = bounds.maxStartSec;
         sliderMax = max(maxStartSec, eps);
         S.windowStartSec = rhs_preview.ops.clampWindowStartSec(S.windowStartSec, S);
@@ -508,7 +502,6 @@ function fig = run(debugLog)
         labkit.ui.view.setValue(ui, "windowSummary", ...
             rhs_preview.ops.windowSummaryText(S));
     end
-
     function selected = selectedPreviewChannels()
         selected = strings(0, 1);
         if isempty(S.previewChannelRows) || height(S.previewChannelRows) == 0
@@ -526,7 +519,6 @@ function fig = run(debugLog)
         labkit.ui.view.appendLog(ui, "logPanel", message);
         debugLog.append(message);
     end
-
     function paths = defaultOutputSources()
         paths = strings(0, 1);
         candidates = [S.rhsFile, S.rhsFolder, S.protocolFile];
@@ -536,7 +528,6 @@ function fig = run(debugLog)
             end
         end
     end
-
     function tf = shouldProcessPreviewScroll()
         tf = true;
         minIntervalSec = 0.080;
@@ -550,15 +541,22 @@ function fig = run(debugLog)
         end
         S.lastScrollTic = tic;
     end
+    function syncRuntimeState()
+        if isempty(fig) || ~isvalid(fig) || ...
+                ~isappdata(fig, 'labkitUiAppRuntime')
+            return;
+        end
+        runtime = getappdata(fig, 'labkitUiAppRuntime');
+        runtime.state = S;
+        setappdata(fig, 'labkitUiAppRuntime', runtime);
+    end
 end
-
 function value = numericScalar(value, fallback)
     value = double(value);
     if isempty(value) || ~isscalar(value) || ~isfinite(value)
         value = fallback;
     end
 end
-
 function id = eventId(event)
     id = "";
     if isstruct(event) && isfield(event, "id")
@@ -589,7 +587,6 @@ function count = scrollWheelCount(event)
         count = double(event.VerticalScrollCount);
     end
 end
-
 function items = fileValue(pathValue)
     pathValue = string(pathValue);
     if strlength(pathValue) == 0
@@ -598,7 +595,6 @@ function items = fileValue(pathValue)
     end
     items = pathValue;
 end
-
 function paths = filterTaskPaths(rows)
     if istable(rows) && height(rows) > 0 && any(strcmp(rows.Properties.VariableNames, "filePath"))
         paths = string(rows.filePath);
@@ -607,7 +603,6 @@ function paths = filterTaskPaths(rows)
         paths = strings(0, 1);
     end
 end
-
 function folder = commonParentFolder(paths)
     paths = string(paths);
     paths = paths(strlength(paths) > 0);

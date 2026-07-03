@@ -1,4 +1,4 @@
-% Expected caller: rhs_preview.run and preview-window ops. Inputs are a
+% Expected caller: rhs_preview.actions.table and preview-window ops. Inputs are a
 % requested start time and app state. Output is a valid start time.
 function startSec = clampWindowStartSec(startSec, S)
 %CLAMPWINDOWSTARTSEC Clamp preview start into indexed file bounds.

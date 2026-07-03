@@ -19,7 +19,8 @@ function varargout = labkit_RHSPreview_app(varargin)
             'labkit_RHSPreview_app returns at most the app figure handle.');
     end
 
-    fig = rhs_preview.run(debugLog);
+    request = struct("debug", debugLog);
+    fig = labkit.ui.app.run(rhs_preview.definition(), request);
     labkit.ui.app.applyVersionTitle(fig, appVersion);
     if nargout >= 1
         varargout{1} = fig;

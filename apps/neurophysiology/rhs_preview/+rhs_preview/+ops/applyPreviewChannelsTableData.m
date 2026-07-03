@@ -1,4 +1,4 @@
-% Expected caller: rhs_preview.run and unit tests. Inputs are the current
+% Expected caller: rhs_preview.actions.table and unit tests. Inputs are the current
 % Preview channel rows plus GUI table cell data. Output is updated channel
 % rows preserving RHS-derived family/channel/unit metadata.
 function rows = applyPreviewChannelsTableData(rows, data)

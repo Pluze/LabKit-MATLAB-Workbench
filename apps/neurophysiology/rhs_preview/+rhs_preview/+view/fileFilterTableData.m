@@ -1,4 +1,4 @@
-% Expected caller: rhs_preview.run/buildSpec. Input is app state. Output is
+% Expected caller: rhs_preview.actions.table/buildSpec. Input is app state. Output is
 % editable cell rows for manual RHS file filtering.
 function data = fileFilterTableData(S)
 %FILEFILTERTABLEDATA Build display rows for the file filter table.

@@ -1,4 +1,4 @@
-% Expected caller: rhs_preview.run and view helpers. Input is one path-like
+% Expected caller: rhs_preview.actions.table and view helpers. Input is one path-like
 % value. Output is a filename-only display string without local directories.
 function text = displayFile(filepath)
 %DISPLAYFILE Filename-only display label.

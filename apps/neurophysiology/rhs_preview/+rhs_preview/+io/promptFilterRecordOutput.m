@@ -1,4 +1,4 @@
-% Expected caller: rhs_preview.run. Output is a user-selected filter JSON
+% Expected caller: rhs_preview.actions.table. Output is a user-selected filter JSON
 % output path, or "" when canceled. Side effect is a standard save dialog.
 function outputPath = promptFilterRecordOutput(defaultFolder)
 %PROMPTFILTERRECORDOUTPUT Prompt for a filter-record JSON destination.

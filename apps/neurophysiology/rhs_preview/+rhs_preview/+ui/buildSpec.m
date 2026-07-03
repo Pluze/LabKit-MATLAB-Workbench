@@ -1,4 +1,4 @@
-% Expected caller: rhs_preview.run. Inputs are app callback handles. Output
+% Expected caller: rhs_preview.actions.table. Inputs are app callback handles. Output
 % is a data-only UI 3.0 workbench spec.
 function spec = buildSpec(callbacks)
 %BUILDSPEC Build the RHS Preview UI spec.

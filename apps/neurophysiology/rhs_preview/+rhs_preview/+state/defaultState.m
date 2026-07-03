@@ -1,4 +1,4 @@
-% Expected caller: rhs_preview.run. Output is the initial mutable app state
+% Expected caller: rhs_preview.actions.table. Output is the initial mutable app state
 % struct. No UI handles, files, or RHS data are touched.
 function S = defaultState()
 %DEFAULTSTATE Initial RHS Preview state.

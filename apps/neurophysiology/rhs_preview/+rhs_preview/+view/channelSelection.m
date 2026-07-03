@@ -1,4 +1,4 @@
-% Expected caller: rhs_preview.run and unit tests. Inputs are one RHS info
+% Expected caller: rhs_preview.actions.table and unit tests. Inputs are one RHS info
 % struct plus the current requested family/channel. Output is display-ready
 % dropdown options and the normalized readable channel choice.
 function selection = channelSelection(info, currentFamily, currentChannel)

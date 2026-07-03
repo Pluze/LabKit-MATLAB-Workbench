@@ -1,4 +1,4 @@
-% Expected caller: rhs_preview.run. Inputs are one UI dropdown control,
+% Expected caller: rhs_preview.actions.table. Inputs are one UI dropdown control,
 % candidate items, selected value, and enabled flag. Side effect updates the
 % dropdown while suppressing its value-change callback.
 function setDropDown(control, items, value, enabled)

@@ -1,4 +1,4 @@
-% Expected caller: rhs_preview.run. Input is app state. Output indicates
+% Expected caller: rhs_preview.actions.table. Input is app state. Output indicates
 % whether a dragged ROI has a positive time width.
 function tf = hasValidRoi(S)
 %HASVALIDROI True for a finite nonzero preview ROI.

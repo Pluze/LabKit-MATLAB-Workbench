@@ -1,4 +1,4 @@
-% Expected caller: rhs_preview.run. Input is app state. Output is the
+% Expected caller: rhs_preview.actions.table. Input is app state. Output is the
 % user-facing preview-window summary.
 function text = windowSummaryText(S)
 %WINDOWSUMMARYTEXT Format current preview window.

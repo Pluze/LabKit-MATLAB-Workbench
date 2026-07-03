@@ -1,4 +1,4 @@
-% Expected caller: rhs_preview.run. Inputs are app state, selected channels,
+% Expected caller: rhs_preview.actions.table. Inputs are app state, selected channels,
 % action label, and ROI behavior. Output is updated state plus read status
 % and one optional log line. No UI handles are touched.
 function [S, ok, logMessage] = readPreviewWindow(S, selectedChannels, ...

@@ -1,4 +1,4 @@
-% Expected caller: rhs_preview.run during debug launch and unit tests. Input
+% Expected caller: rhs_preview.actions.table during debug launch and unit tests. Input
 % is a LabKit debug context. Output is a deterministic synthetic RHS sample
 % pack. Side effects: writes anonymous debug RHS/protocol files and records a
 % session manifest when available.

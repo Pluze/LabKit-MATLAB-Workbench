@@ -1,4 +1,4 @@
-% Expected caller: rhs_preview.run. Input is the preview axes. Output is the
+% Expected caller: rhs_preview.actions.table. Input is the preview axes. Output is the
 % current pointer x-coordinate in axes data units, or NaN outside x limits.
 function x = previewX(ax)
 %PREVIEWX Current x position in preview axes data units.

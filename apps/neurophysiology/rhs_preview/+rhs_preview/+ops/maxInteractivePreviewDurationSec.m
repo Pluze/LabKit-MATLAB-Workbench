@@ -1,4 +1,4 @@
-% Expected caller: rhs_preview.run. Input is app state. Output is a preview
+% Expected caller: rhs_preview.actions.table. Input is app state. Output is a preview
 % duration cap that keeps interactive redraws bounded by sample count.
 function durationSec = maxInteractivePreviewDurationSec(S)
 %MAXINTERACTIVEPREVIEWDURATIONSEC Cap scroll-zoom preview duration.

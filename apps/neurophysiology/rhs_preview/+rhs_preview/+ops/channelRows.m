@@ -1,4 +1,4 @@
-% Expected caller: rhs_preview.run and unit tests. Inputs are one RHS info
+% Expected caller: rhs_preview.actions.table and unit tests. Inputs are one RHS info
 % struct, a channel family, maximum default preview count, and optional
 % protocol struct. Output is a table used by the Preview channel selector.
 function rows = channelRows(info, family, maxPreviewChannels, protocol)

@@ -1,4 +1,4 @@
-% Expected caller: rhs_preview.run. Output is a user-selected protocol JSON
+% Expected caller: rhs_preview.actions.table. Output is a user-selected protocol JSON
 % output path, or "" when canceled. Side effect is a standard save dialog.
 function outputPath = promptProtocolOutput(defaultFolder)
 %PROMPTPROTOCOLOUTPUT Prompt for a protocol JSON destination.

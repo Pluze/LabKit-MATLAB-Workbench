@@ -1,4 +1,4 @@
-% Expected caller: rhs_preview.run. Input is an app state struct and target
+% Expected caller: rhs_preview.actions.table. Input is an app state struct and target
 % JSON path. Output is the written path. Side effect is one protocol JSON.
 function outputPath = writeProtocolJson(S, outputPath)
 %WRITEPROTOCOLJSON Write a Preview-authored protocol draft.

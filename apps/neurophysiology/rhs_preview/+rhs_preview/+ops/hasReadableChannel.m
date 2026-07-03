@@ -1,4 +1,4 @@
-% Expected caller: rhs_preview.run. Input is app state. Output indicates
+% Expected caller: rhs_preview.actions.table. Input is app state. Output indicates
 % whether the selected RHS, family, and preview rows can read a waveform.
 function tf = hasReadableChannel(S)
 %HASREADABLECHANNEL True when preview reading has at least one channel.
