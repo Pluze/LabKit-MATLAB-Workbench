@@ -1,7 +1,7 @@
 % Expected caller: cic.definition. Input is a callback struct whose fields are
 % app-owned callback handles. Output is a data-only UI 3.0 workbench spec for
 % the CIC app.
-function spec = buildSpec(callbacks)
+function spec = buildWorkbenchSpec(callbacks)
 
     presetItems = {'Pt (-0.6 to 0.8 V)', 'PEDOT:PSS (-0.9 to 0.6 V)', 'Custom'};
     pulseModes = {'Metadata first, then auto', 'Metadata only', 'Auto from Im only'};

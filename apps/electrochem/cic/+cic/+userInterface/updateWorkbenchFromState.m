@@ -1,7 +1,7 @@
 % App-owned renderer for CIC. Expected caller is labkit.ui.app.run after
 % actions update state. Inputs are app state and UI registry. Side effects
 % are limited to UI control, table, text, and axes updates.
-function render(state, ui, ~)
+function updateWorkbenchFromState(state, ui, ~)
     renderFileList(state, ui);
     renderBatchTable(state, ui);
     renderResultsSummary(state, ui);
@@ -25,8 +25,8 @@ function renderFileList(state, ui)
 end
 
 function renderBatchTable(state, ui)
-    [~, unitLabel] = cic.view.displayUnit(ui.controls.cicUnit.valueHandle.Value);
-    [data, columnNames] = cic.view.buildBatchTableData(state.items, unitLabel);
+    [~, unitLabel] = cic.userInterface.displayUnit(ui.controls.cicUnit.valueHandle.Value);
+    [data, columnNames] = cic.userInterface.buildBatchTableData(state.items, unitLabel);
     ui.controls.results.table.ColumnName = columnNames;
     if isempty(state.items)
         ui.controls.results.table.Data = cell(0, 8);
@@ -36,7 +36,7 @@ function renderBatchTable(state, ui)
 end
 
 function renderResultsSummary(state, ui)
-    summary = cic.view.buildCurrentSummary(state.items, state.current, ...
+    summary = cic.userInterface.buildCurrentSummary(state.items, state.current, ...
         ui.controls.cicMode.valueHandle.Value, ...
         ui.controls.cicUnit.valueHandle.Value);
     ui.controls.controlMode.valueHandle.Value = summary.controlMode;
@@ -83,7 +83,7 @@ function renderPlots(state, ui)
 end
 
 function plotOneAxis(ax, analysis, xChoice, yChoice, showGrid, itemName, ui)
-    request = cic.view.plotRequest(analysis, itemName, xChoice, yChoice);
+    request = cic.userInterface.plotRequest(analysis, itemName, xChoice, yChoice);
     coords = request.coords;
 
     plot(ax, request.x, request.y, 'LineWidth', 1.25, ...
@@ -91,9 +91,9 @@ function plotOneAxis(ax, analysis, xChoice, yChoice, showGrid, itemName, ui)
     hold(ax, 'on');
 
     if ui.controls.showShading.valueHandle.Value
-        cic.view.shadeWindow(ax, coords.cathStartX, coords.cathEndX, ...
+        cic.userInterface.shadeWindow(ax, coords.cathStartX, coords.cathEndX, ...
             [0.85 0.93 1.00]);
-        cic.view.shadeWindow(ax, coords.anodStartX, coords.anodEndX, ...
+        cic.userInterface.shadeWindow(ax, coords.anodStartX, coords.anodEndX, ...
             [1.00 0.92 0.85]);
     end
 
@@ -107,7 +107,7 @@ function plotOneAxis(ax, analysis, xChoice, yChoice, showGrid, itemName, ui)
     end
 
     if strcmp(request.kind, 'VT')
-        cic.view.addBaselineYLines(ax, analysis);
+        cic.userInterface.addBaselineYLines(ax, analysis);
     end
 
     if ui.controls.showMarkers.valueHandle.Value
@@ -116,11 +116,11 @@ function plotOneAxis(ax, analysis, xChoice, yChoice, showGrid, itemName, ui)
         xline(ax, coords.anodStartX, ':', 'Anod start', 'Color', [0.8 0.4 0.2]);
         xline(ax, coords.anodEndX, ':', 'Anod end', 'Color', [0.8 0.4 0.2]);
         if strcmp(request.kind, 'VT')
-            cic.view.addPaperStyleVTAnnotations(ax, analysis, xChoice, ...
+            cic.userInterface.addPaperStyleVTAnnotations(ax, analysis, xChoice, ...
                 coords.cathStartX, coords.cathEndX, coords.anodStartX, ...
                 coords.anodEndX, coords.emcX, coords.emaX);
         else
-            cic.view.addPaperStyleITAnnotations(ax, analysis, xChoice, ...
+            cic.userInterface.addPaperStyleITAnnotations(ax, analysis, xChoice, ...
                 coords.cathStartX, coords.cathEndX, coords.anodStartX, ...
                 coords.anodEndX, coords.emcX, coords.emaX);
         end

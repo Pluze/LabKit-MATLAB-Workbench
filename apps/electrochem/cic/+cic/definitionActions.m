@@ -1,7 +1,7 @@
 % App-owned action table for CIC. Expected caller is cic.definition. Output
 % maps semantic action ids to handlers used by labkit.ui.app.run. Handlers
 % own workflow transitions, DTA loading, analysis, and export side effects.
-function actions = table()
+function actions = definitionActions()
     actions = struct( ...
         "startup", @onStartup, ...
         "openFilesChosen", @onOpenFilesChosen, ...
@@ -123,7 +123,7 @@ function item = analyzeItem(item, services)
     opts.pulseMode = ui.controls.pulseMode.valueHandle.Value;
     opts.usedMeasuredCurrent = ui.controls.useMeasuredCurrent.valueHandle.Value;
 
-    analysis = cic.ops.computeCIC(item, opts);
+    analysis = cic.analysisRun.computeCIC(item, opts);
     item.analysis = analysis;
     if analysis.ok
         addLog(services, sprintf('%s: Emc=%.6f V, Ema=%.6f V, safe=%d', ...
@@ -188,9 +188,9 @@ function state = onExportResults(state, ~, services)
     if cancelled
         return;
     end
-    [~, unitLabel] = cic.view.displayUnit( ...
+    [~, unitLabel] = cic.userInterface.displayUnit( ...
         services.ui.controls.cicUnit.valueHandle.Value);
-    [ok, msg] = cic.export.writeResultsCSV(state.items, out, unitLabel);
+    [ok, msg] = cic.resultFiles.writeResultsCSV(state.items, out, unitLabel);
     if ~ok
         labkit.ui.app.showAlert(services.figure, msg, 'Export');
         return;
