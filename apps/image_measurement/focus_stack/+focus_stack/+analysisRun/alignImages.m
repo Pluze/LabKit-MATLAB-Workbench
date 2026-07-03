@@ -14,7 +14,7 @@ function [alignedImages, lines] = alignImages(images)
 % Side effects:
 %   None. This helper performs GUI-free registration only.
 
-    images = focus_stack.ops.normalizeImageCell(images);
+    images = focus_stack.analysisRun.normalizeImageCell(images);
     alignedImages = images;
     lines = {};
     if numel(images) < 2
@@ -32,7 +32,7 @@ function [alignedImages, lines] = alignImages(images)
             [alignedImages{k}, method] = alignImageToReference(reference, images{k});
             lines{end+1} = sprintf('Registered image %d using %s.', k, method);
         catch ME
-            alignedImages{k} = focus_stack.ops.resizeImageToReference(images{k}, size(reference));
+            alignedImages{k} = focus_stack.analysisRun.resizeImageToReference(images{k}, size(reference));
             lines{end+1} = sprintf('Image %d registration skipped: %s', k, ME.message);
         end
     end
@@ -40,7 +40,7 @@ end
 
 function [alignedImage, method] = alignImageToReference(referenceImage, movingImage)
     origClass = class(movingImage);
-    movingImage = focus_stack.ops.resizeImageToReference(movingImage, size(referenceImage));
+    movingImage = focus_stack.analysisRun.resizeImageToReference(movingImage, size(referenceImage));
     fixedGray = alignmentGray(referenceImage);
     movingGray = alignmentGray(movingImage);
 
@@ -93,7 +93,7 @@ function [alignedImage, method] = alignImageWithImregcorr(movingImage, movingGra
 end
 
 function gray = alignmentGray(imageData)
-    gray = focus_stack.ops.normalizeGray(imageData);
+    gray = focus_stack.analysisRun.normalizeGray(imageData);
     lowpass = labkit.image.meanFilter2(gray, 31);
     gray = gray - lowpass;
     mx = max(abs(gray(:)));

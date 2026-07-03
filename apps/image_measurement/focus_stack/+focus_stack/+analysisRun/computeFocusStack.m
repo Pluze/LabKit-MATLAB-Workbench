@@ -18,7 +18,7 @@ function result = computeFocusStack(images, opts)
     if nargin < 2
         opts = struct();
     end
-    images = focus_stack.ops.normalizeImageCell(images);
+    images = focus_stack.analysisRun.normalizeImageCell(images);
     if numel(images) < 2
         error('labkit_FocusStack_app:NotEnoughImages', ...
             'Focus stacking requires at least two images.');
@@ -47,7 +47,7 @@ function result = computeFocusStack(images, opts)
         coverage(k) = mean(focusIndex(:) == k);
     end
 
-    result = focus_stack.state.emptyResult();
+    result = focus_stack.appState.emptyResult();
     result.ok = true;
     result.message = '';
     result.fused = fused;
@@ -103,7 +103,7 @@ function [fused, focusIndex, confidence] = laplacianPyramidFocusFusion(stack, fo
     fused = weightedPyramidLevel(gaussPyramids, pyramidLevels + 1, baseWeights, channels);
 
     for level = pyramidLevels:-1:1
-        fused = focus_stack.ops.resizeImageToSize(fused, size(fusedLap{level})) + fusedLap{level};
+        fused = focus_stack.analysisRun.resizeImageToSize(fused, size(fusedLap{level})) + fusedLap{level};
     end
     fused = min(max(fused, 0), 1);
 end
@@ -115,7 +115,7 @@ function [gaussPyramid, lapPyramid] = buildLaplacianPyramid(imageData, levels)
     for level = 1:levels
         blurred = gaussianBlurImage(gaussPyramid{level}, 1);
         gaussPyramid{level + 1} = imresize(blurred, 0.5, 'bilinear');
-        expanded = focus_stack.ops.resizeImageToSize(gaussPyramid{level + 1}, size(gaussPyramid{level}));
+        expanded = focus_stack.analysisRun.resizeImageToSize(gaussPyramid{level + 1}, size(gaussPyramid{level}));
         lapPyramid{level} = gaussPyramid{level} - expanded;
     end
 end
@@ -142,7 +142,7 @@ function scoreStack = baseFocusScoreStack(pyramids, level)
     sample = pyramids{1}{level};
     scoreStack = zeros(size(sample, 1), size(sample, 2), imageCount);
     for k = 1:imageCount
-        scoreStack(:, :, k) = localVarianceScore(focus_stack.ops.normalizeGray(pyramids{k}{level}), 5);
+        scoreStack(:, :, k) = localVarianceScore(focus_stack.analysisRun.normalizeGray(pyramids{k}{level}), 5);
     end
 end
 
@@ -212,7 +212,7 @@ function [stack, resizedCount] = stackImagesAsDouble(images)
     for k = 1:imageCount
         img = images{k};
         if ~isequal(size(img, 1), heightPx) || ~isequal(size(img, 2), widthPx)
-            img = focus_stack.ops.resizeImageToReference(img, refSize);
+            img = focus_stack.analysisRun.resizeImageToReference(img, refSize);
             resizedCount = resizedCount + 1;
         end
         img = convertChannels(im2double(img), channels);
@@ -233,7 +233,7 @@ end
 function img = convertChannels(img, channels)
     if channels == 1
         if ndims(img) == 3
-            img = focus_stack.ops.normalizeGray(img);
+            img = focus_stack.analysisRun.normalizeGray(img);
         end
         return;
     end

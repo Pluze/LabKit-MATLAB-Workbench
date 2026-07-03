@@ -1,4 +1,4 @@
-% Expected caller: focus_stack.run during debug launch and unit tests. Input
+% Expected caller: app debug launch and unit tests. Input
 % is a LabKit debug context. Output is a deterministic synthetic focus-stack
 % sample pack. Side effects: writes anonymous debug images and records a
 % session manifest when available.

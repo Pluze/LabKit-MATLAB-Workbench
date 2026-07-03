@@ -34,7 +34,7 @@ classdef AppPackageStructureGuardrailTest < matlab.unittest.TestCase
                 "apps/image_measurement/image_enhance/+image_enhance/+state/exportTask.m"
                 "apps/image_measurement/image_match/+image_match/+state/exportTask.m"
                 "apps/image_measurement/batch_crop/+batch_crop/+appState/exportPlan.m"
-                "apps/image_measurement/focus_stack/+focus_stack/+state/runTask.m"
+                "apps/image_measurement/focus_stack/+focus_stack/+appState/runTask.m"
                 "apps/image_measurement/curvature/+curvature/+appState/fitTask.m"
                 "apps/image_measurement/curvature/+curvature/+appState/lengthTask.m"];
 

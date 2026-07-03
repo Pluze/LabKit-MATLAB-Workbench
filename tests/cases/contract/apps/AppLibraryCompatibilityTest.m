@@ -19,7 +19,7 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
                 @() batch_crop.appState.readItems(singlePath), ...
                 @() image_enhance.io.readImages(singlePath), ...
                 @() image_match.io.readImages(multiPaths), ...
-                @() focus_stack.io.readImages(multiPaths)};
+                @() focus_stack.sourceFiles.readImages(multiPaths)};
 
             for k = 1:numel(readers)
                 payload = readers{k}();
@@ -50,7 +50,7 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
                 fullfile(root, "apps", "image_measurement", "image_match", ...
                     "+image_match", "+io", "readImages.m")
                 fullfile(root, "apps", "image_measurement", "focus_stack", ...
-                    "+focus_stack", "+io", "readImages.m")];
+                    "+focus_stack", "+sourceFiles", "readImages.m")];
             forbiddenPatterns = [
                 "string\(paths\)"
                 "paths\s*=\s*paths\(:\)"

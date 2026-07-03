@@ -1,8 +1,8 @@
-% App-owned action table for Focus Stack. Expected caller is
+% App-owned action registry for Focus Stack. Expected caller is
 % focus_stack.definition. Output maps semantic action ids to handlers used by
 % labkit.ui.app.run. Handlers own image loading, fusion, exports, and debug
 % sample setup.
-function actions = table()
+function actions = definitionActions()
     actions = struct( ...
         "startup", @onStartup, ...
         "sourceImagesChosen", @onOpenFilesChosen, ...
@@ -46,7 +46,7 @@ function state = onOpenFilesChosen(state, payload, services)
 end
 
 function state = onClearImages(state, ~, services)
-    state = focus_stack.state.initial();
+    state = focus_stack.appLifecycle.createInitialState();
     addLog(services, 'Cleared loaded focus images and results.');
 end
 
@@ -72,7 +72,7 @@ end
 function state = loadImagePaths(state, paths, sourceFolder, sourceDescription, ...
         logMessage, services)
     try
-        images = focus_stack.io.readImages(paths);
+        images = focus_stack.sourceFiles.readImages(paths);
     catch ME
         showException(services, 'Could not load focus stack', ME);
         return;
@@ -82,7 +82,7 @@ function state = loadImagePaths(state, paths, sourceFolder, sourceDescription, .
     state.images = images;
     state.alignedImages = {};
     state.registrationLines = {};
-    state.result = focus_stack.state.emptyResult();
+    state.result = focus_stack.appState.emptyResult();
     state.lastRunFingerprint = "";
     state.folder = string(sourceFolder);
     state.sourceLocation = string(sourceDescription);
@@ -98,7 +98,7 @@ function state = onRunFocusStack(state, ~, services)
 
     opts = currentFusionOptions(services.ui);
     registerStack = labkit.ui.view.getValue(services.ui, 'autoRegister');
-    task = focus_stack.state.runTask(state.paths, state.images, opts, ...
+    task = focus_stack.appState.runTask(state.paths, state.images, opts, ...
         registerStack);
     if state.result.ok && state.lastRunFingerprint == task.fingerprint
         addLog(services, ...
@@ -125,7 +125,7 @@ end
 
 function state = onFusionPresetChanged(state, ~, services)
     ui = services.ui;
-    settings = focus_stack.state.fusionPresetSettings( ...
+    settings = focus_stack.appState.fusionPresetSettings( ...
         labkit.ui.view.getValue(ui, 'fusionPreset'));
     labkit.ui.view.setValue(ui, 'focusWindow', settings.focusWindow);
     labkit.ui.view.setValue(ui, 'smoothRadius', settings.smoothRadius);
@@ -145,13 +145,13 @@ function payload = runFocusStackComputation(state, opts, registerStack)
     registrationLines = {};
     if registerStack
         [imagesForFusion, registrationLines] = ...
-            focus_stack.ops.alignImages(state.images);
+            focus_stack.analysisRun.alignImages(state.images);
     end
 
     payload = struct();
     payload.imagesForFusion = imagesForFusion;
     payload.registrationLines = registrationLines;
-    payload.result = focus_stack.ops.computeFocusStack(imagesForFusion, opts);
+    payload.result = focus_stack.analysisRun.computeFocusStack(imagesForFusion, opts);
 end
 
 function state = onExportFused(state, ~, services)
@@ -188,7 +188,7 @@ function state = onExportFocusMap(state, ~, services)
         return;
     end
     try
-        labkit.image.writeFile(focus_stack.view.focusIndexRgb( ...
+        labkit.image.writeFile(focus_stack.userInterface.focusIndexRgb( ...
             state.result.focusIndex, state.result.inputCount), filepath);
     catch ME
         showException(services, 'Could not export focus map PNG', ME);
@@ -210,7 +210,7 @@ function state = onExportSummary(state, ~, services)
         return;
     end
     try
-        T = focus_stack.export.buildSummaryTable(state.result, state.paths);
+        T = focus_stack.resultFiles.buildSummaryTable(state.result, state.paths);
         writetable(T, filepath);
     catch ME
         showException(services, 'Could not export summary CSV', ME);
@@ -247,7 +247,7 @@ end
 
 function state = markResultDirty(state)
     if state.result.ok
-        state.result = focus_stack.state.emptyResult();
+        state.result = focus_stack.appState.emptyResult();
         state.alignedImages = {};
         state.registrationLines = {};
     end

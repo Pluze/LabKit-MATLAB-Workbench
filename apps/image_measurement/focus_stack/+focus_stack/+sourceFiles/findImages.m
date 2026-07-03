@@ -28,7 +28,7 @@ function paths = findImages(folder)
     for k = 1:numel(entries)
         paths(k) = string(fullfile(folder, entries(k).name));
     end
-    paths = focus_stack.io.sortPathsByName(paths);
+    paths = focus_stack.sourceFiles.sortPathsByName(paths);
     if numel(paths) < 2
         error('labkit_FocusStack_app:NotEnoughImages', ...
             'Focus stacking requires at least two image files in the selected folder.');

@@ -25,7 +25,7 @@ function checkSyntheticFocusSelection()
     [nearImage, farImage, mid] = syntheticFocusPair();
     opts = struct('focusWindow', 5, 'smoothRadius', 0, 'minConfidence', 0);
 
-    result = focus_stack.ops.computeFocusStack({nearImage, farImage}, opts);
+    result = focus_stack.analysisRun.computeFocusStack({nearImage, farImage}, opts);
 
     assert(result.ok, 'Focus stack should succeed for a two-image synthetic stack.');
     assert(result.inputCount == 2, 'Input image count changed.');
@@ -52,10 +52,10 @@ end
 
 function checkSummaryTableContract()
     [nearImage, farImage] = syntheticFocusPair();
-    result = focus_stack.ops.computeFocusStack({nearImage, farImage}, ...
+    result = focus_stack.analysisRun.computeFocusStack({nearImage, farImage}, ...
         struct('focusWindow', 5, 'smoothRadius', 1, 'minConfidence', 0.05));
 
-    T = focus_stack.export.buildSummaryTable( ...
+    T = focus_stack.resultFiles.buildSummaryTable( ...
         result, ["slice_a.png"; "slice_b.png"]);
 
     assert(isequal(T.Properties.VariableNames, expectedSummaryColumns()), ...
@@ -80,7 +80,7 @@ function checkFolderDiscovery()
     fprintf(fid, 'not an image fixture');
     fclose(fid);
 
-    paths = focus_stack.io.findImages(folder);
+    paths = focus_stack.sourceFiles.findImages(folder);
     names = cell(numel(paths), 1);
     for k = 1:numel(paths)
         [~, base, ext] = fileparts(char(paths(k)));
@@ -101,7 +101,7 @@ function checkReadImagesAcceptsFilePanelCellPaths()
     imwrite(uint8(50 * ones(8, 8)), firstPath);
     imwrite(uint8(100 * ones(8, 8)), secondPath);
 
-    images = focus_stack.io.readImages({firstPath, secondPath});
+    images = focus_stack.sourceFiles.readImages({firstPath, secondPath});
     assert(numel(images) == 2, ...
         'Focus stack reader should accept filePanel cell-array paths.');
     assert(isequal(size(images{1}), [8 8]), ...
@@ -112,7 +112,7 @@ function checkRegistrationImprovesSyntheticDrift()
     reference = syntheticRegistrationImage();
     moving = integerTranslateImage(reference, -3, 4, median(reference(:)));
 
-    [aligned, lines] = focus_stack.ops.alignImages({moving, reference});
+    [aligned, lines] = focus_stack.analysisRun.alignImages({moving, reference});
 
     beforeErr = mean((im2double(moving(:)) - im2double(reference(:))) .^ 2);
     afterErr = mean((im2double(aligned{1}(:)) - im2double(reference(:))) .^ 2);
@@ -127,12 +127,12 @@ function checkRunTaskFingerprintTracksOptionsAndRegistration()
     paths = ["near.png"; "far.png"];
     opts = struct('focusWindow', 5, 'smoothRadius', 1, 'minConfidence', 0.05);
 
-    base = focus_stack.state.runTask(paths, {nearImage, farImage}, opts, false);
-    repeated = focus_stack.state.runTask(paths, {nearImage, farImage}, opts, false);
-    registered = focus_stack.state.runTask(paths, {nearImage, farImage}, opts, true);
+    base = focus_stack.appState.runTask(paths, {nearImage, farImage}, opts, false);
+    repeated = focus_stack.appState.runTask(paths, {nearImage, farImage}, opts, false);
+    registered = focus_stack.appState.runTask(paths, {nearImage, farImage}, opts, true);
     changedOpts = opts;
     changedOpts.smoothRadius = 2;
-    changed = focus_stack.state.runTask(paths, {nearImage, farImage}, changedOpts, false);
+    changed = focus_stack.appState.runTask(paths, {nearImage, farImage}, changedOpts, false);
 
     assert(base.fingerprint == repeated.fingerprint, ...
         'Identical focus-stack run tasks should have stable fingerprints.');
@@ -143,10 +143,10 @@ function checkRunTaskFingerprintTracksOptionsAndRegistration()
 end
 
 function checkInvalidInputs()
-    assertThrows(@() focus_stack.ops.computeFocusStack({zeros(8, 8)}, struct()), ...
+    assertThrows(@() focus_stack.analysisRun.computeFocusStack({zeros(8, 8)}, struct()), ...
         'labkit_FocusStack_app:NotEnoughImages', ...
         'Single-image stacks should be rejected.');
-    assertThrows(@() focus_stack.ops.computeFocusStack( ...
+    assertThrows(@() focus_stack.analysisRun.computeFocusStack( ...
         {zeros(8, 8), zeros(8, 8)}, ...
         struct('focusWindow', 0)), ...
         'MATLAB:expectedPositive', ...

@@ -17,7 +17,7 @@ classdef ImageMeasurementDebugSamplePackTest < matlab.unittest.TestCase
                 "Malformed batch-crop image should fail through imread.");
 
             focus = focus_stack.debug.writeSamplePack(debug);
-            focusImages = focus_stack.io.readImages(focus.representativeFiles);
+            focusImages = focus_stack.sourceFiles.readImages(focus.representativeFiles);
             testCase.verifyEqual(numel(focusImages), 4);
             verifyThrows(testCase, @() imread(char(focus.boundaryFiles.malformed)), ...
                 "Malformed focus-stack image should fail through imread.");
