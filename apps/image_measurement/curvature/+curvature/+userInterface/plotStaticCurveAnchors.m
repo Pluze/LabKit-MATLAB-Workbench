@@ -18,9 +18,9 @@ function plotStaticCurveAnchors(ax, points, curve, fit, showDense)
     end
     if fit.ok
         if showDense
-            curvature.view.plotDenseFitPoints(ax, fit);
+            curvature.userInterface.plotDenseFitPoints(ax, fit);
         end
-        curvature.view.plotAnchorResiduals(ax, points, fit);
+        curvature.userInterface.plotAnchorResiduals(ax, points, fit);
     end
     plot(ax, points(:, 1), points(:, 2), 'o', ...
         'LineStyle', 'none', ...

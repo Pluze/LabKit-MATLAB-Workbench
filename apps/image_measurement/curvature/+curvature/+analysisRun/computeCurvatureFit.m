@@ -15,10 +15,10 @@ function fit = computeCurvatureFit(xPix, yPix, calibration, doDensify, denseN, f
 % Side effects:
 %   None. This helper performs GUI-free numeric fitting only.
 
-    fit = curvature.state.emptyFitResult();
+    fit = curvature.appState.emptyFitResult();
     xPix = xPix(:);
     yPix = yPix(:);
-    [xPix, yPix] = curvature.ops.removeDuplicateNeighbors(xPix, yPix, 1e-9);
+    [xPix, yPix] = curvature.analysisRun.removeDuplicateNeighbors(xPix, yPix, 1e-9);
 
     if numel(xPix) < 3
         error('labkit_CurvatureMeasurement_app:NotEnoughPoints', ...
@@ -26,9 +26,9 @@ function fit = computeCurvatureFit(xPix, yPix, calibration, doDensify, denseN, f
     end
 
     if nargin < 3 || isempty(calibration)
-        calibration = curvature.ops.normalizeScaleCalibration();
+        calibration = curvature.analysisRun.normalizeScaleCalibration();
     else
-        calibration = curvature.ops.normalizeScaleCalibration(calibration);
+        calibration = curvature.analysisRun.normalizeScaleCalibration(calibration);
     end
 
     if nargin < 4 || isempty(doDensify)
@@ -46,7 +46,7 @@ function fit = computeCurvatureFit(xPix, yPix, calibration, doDensify, denseN, f
         fitPathX = fitPathX(:);
         fitPathY = fitPathY(:);
         if numel(fitPathX) == numel(fitPathY)
-            [fitPathX, fitPathY] = curvature.ops.removeDuplicateNeighbors(fitPathX, fitPathY, 1e-9);
+            [fitPathX, fitPathY] = curvature.analysisRun.removeDuplicateNeighbors(fitPathX, fitPathY, 1e-9);
             if numel(fitPathX) >= 3
                 fitSourceX = fitPathX;
                 fitSourceY = fitPathY;
@@ -71,7 +71,7 @@ function fit = computeCurvatureFit(xPix, yPix, calibration, doDensify, denseN, f
     pxPerUnit = calibration.pixelsPerUnit;
     usePhysicalScale = calibration.isCalibrated;
     kappa_px = 1 / R_px;
-    lengthResult = curvature.ops.computeCurveLength(fitSourceX, fitSourceY, calibration);
+    lengthResult = curvature.analysisRun.computeCurveLength(fitSourceX, fitSourceY, calibration);
 
     if usePhysicalScale
         unitLen = scaleUnit;

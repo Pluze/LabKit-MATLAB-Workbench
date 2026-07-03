@@ -1,8 +1,8 @@
-% App-owned action table for Curvature Measurement. Expected caller is
+% App-owned action registry for Curvature Measurement. Expected caller is
 % curvature.definition. Output maps semantic action ids to handlers used by
 % labkit.ui.app.run while preserving the existing curve-edit workflow.
-function actions = table()
-%TABLE Build the Curvature Measurement runtime action map.
+function actions = definitionActions()
+%DEFINITIONACTIONS Build the Curvature Measurement runtime action map.
 
     S = [];
     ui = [];
@@ -58,7 +58,7 @@ function actions = table()
             'onScaleBarPlaced', @onScaleBarPlaced, ...
             'onError', @onScaleToolError, ...
             'onTrace', debugLog.trace));
-        controls = curvature.ui.mapControlHandles(ui, scaleTool);
+        controls = curvature.userInterface.mapControlHandles(ui, scaleTool);
         txtPointCount = controls.txtPointCount;
         btnStartCurve = controls.btnStartCurve;
         btnUndoPoint = controls.btnUndoPoint;
@@ -151,8 +151,8 @@ function actions = table()
             S.curveEditor.delete();
         end
         S.curveEditor = [];
-        S.fit = curvature.state.emptyFitResult();
-        S.length = curvature.state.emptyLengthResult();
+        S.fit = curvature.appState.emptyFitResult();
+        S.length = curvature.appState.emptyLengthResult();
         clearTaskFingerprints();
         addLog(sprintf('Loaded image: %s', filepath));
         refreshAll();
@@ -168,8 +168,8 @@ function actions = table()
             S.curveEditor.delete();
         end
         S.curveEditor = [];
-        S.fit = curvature.state.emptyFitResult();
-        S.length = curvature.state.emptyLengthResult();
+        S.fit = curvature.appState.emptyFitResult();
+        S.length = curvature.appState.emptyLengthResult();
         clearTaskFingerprints();
         resetAxes();
         addLog('Cleared image file.');
@@ -196,7 +196,7 @@ function actions = table()
         S.curveEditActive = true;
         ensureCurveEditor();
         S.curveEditor.start([S.xPix(:), S.yPix(:)]);
-        S.fit = curvature.state.emptyFitResult();
+        S.fit = curvature.appState.emptyFitResult();
         S.lastFitFingerprint = "";
         addLog('Started curve edit. Double-click blank image space to add/insert points; drag points to move; double-click a point to delete it.');
         refreshAll();
@@ -205,8 +205,8 @@ function actions = table()
     function onCurveEditorChanged(points, reason)
         S.xPix = points(:, 1);
         S.yPix = points(:, 2);
-        S.fit = curvature.state.emptyFitResult();
-        S.length = curvature.state.emptyLengthResult();
+        S.fit = curvature.appState.emptyFitResult();
+        S.length = curvature.appState.emptyLengthResult();
         clearTaskFingerprints();
         refreshSummary();
         if any(strcmp(reason, {'add point', 'delete point', 'move point'}))
@@ -227,8 +227,8 @@ function actions = table()
         else
             S.xPix = [];
             S.yPix = [];
-            S.fit = curvature.state.emptyFitResult();
-            S.length = curvature.state.emptyLengthResult();
+            S.fit = curvature.appState.emptyFitResult();
+            S.length = curvature.appState.emptyLengthResult();
             clearTaskFingerprints();
             refreshAll();
         end
@@ -244,8 +244,8 @@ function actions = table()
     end
 
     function onReferenceEditChanged(~, reason)
-        S.fit = curvature.state.emptyFitResult();
-        S.length = curvature.state.emptyLengthResult();
+        S.fit = curvature.appState.emptyFitResult();
+        S.length = curvature.appState.emptyLengthResult();
         clearTaskFingerprints();
         reasonText = char(string(reason));
         if strcmp(reasonText, 'start')
@@ -279,7 +279,7 @@ function actions = table()
 
         try
             fitPath = currentCurveFitPoints();
-            task = curvature.state.fitTask([S.xPix(:), S.yPix(:)], ...
+            task = curvature.appState.fitTask([S.xPix(:), S.yPix(:)], ...
                 fitPath, scaleTool.calibration(), struct( ...
                 'doDensify', chkDensify.Value, ...
                 'denseN', round(edtDenseN.Value)));
@@ -289,11 +289,11 @@ function actions = table()
                 return;
             end
 
-            S.fit = curvature.ops.computeCurvatureFit( ...
+            S.fit = curvature.analysisRun.computeCurvatureFit( ...
                 task.points(:, 1), task.points(:, 2), task.calibration, ...
                 task.options.doDensify, task.options.denseN, ...
                 task.fitPath(:, 1), task.fitPath(:, 2));
-            S.length = curvature.state.lengthResultFromFit(S.fit);
+            S.length = curvature.appState.lengthResultFromFit(S.fit);
             S.lastFitFingerprint = task.fingerprint;
             S.lastLengthFingerprint = "";
         catch ME
@@ -318,7 +318,7 @@ function actions = table()
 
         try
             points = currentCurveLengthPoints();
-            task = curvature.state.lengthTask([S.xPix(:), S.yPix(:)], ...
+            task = curvature.appState.lengthTask([S.xPix(:), S.yPix(:)], ...
                 points, scaleTool.calibration());
             if S.length.ok && S.lastLengthFingerprint == task.fingerprint
                 addLog('Curve length already matches current curve and scale.');
@@ -326,7 +326,7 @@ function actions = table()
                 return;
             end
 
-            S.length = curvature.ops.computeCurveLength( ...
+            S.length = curvature.analysisRun.computeCurveLength( ...
                 task.lengthPath(:, 1), task.lengthPath(:, 2), task.calibration);
             S.lastLengthFingerprint = task.fingerprint;
         catch ME
@@ -353,7 +353,7 @@ function actions = table()
         end
 
         try
-            T = curvature.export.buildResultTable(S.fit, S.imagePath, S.length);
+            T = curvature.resultFiles.buildResultTable(S.fit, S.imagePath, S.length);
             writetable(T, filepath);
         catch ME
             showException('Could not export result CSV', ME);
@@ -409,11 +409,11 @@ function actions = table()
     end
 
     function onCalibrationSettingsChanged(~, reason)
-        S.fit = curvature.state.emptyFitResult();
-        S.length = curvature.state.emptyLengthResult();
+        S.fit = curvature.appState.emptyFitResult();
+        S.length = curvature.appState.emptyLengthResult();
         clearTaskFingerprints();
         scaleTool.clearScaleBar();
-        if curvature.ui.isReferenceEditReason(reason)
+        if curvature.userInterface.isReferenceEditReason(reason)
             refreshScaleReadout();
             refreshSummary();
         else
@@ -480,23 +480,23 @@ function actions = table()
         referenceEditActive = scaleTool.isReferenceEditActive();
         editActive = S.curveEditActive || referenceEditActive;
 
-        btnStartCurve.Enable = curvature.view.ternary(hasImage, 'on', 'off');
-        btnStartCurve.Text = curvature.view.ternary(S.curveEditActive, ...
+        btnStartCurve.Enable = curvature.userInterface.ternary(hasImage, 'on', 'off');
+        btnStartCurve.Text = curvature.userInterface.ternary(S.curveEditActive, ...
             'Finish curve edit', 'Start curve edit');
         scaleTool.setEnabled(struct( ...
             'hasImage', hasImage, ...
             'blockInputs', S.curveEditActive, ...
             'blockPlacement', editActive));
 
-        btnUndoPoint.Enable = curvature.view.ternary(hasCurve && ~referenceEditActive, 'on', 'off');
-        btnClearCurve.Enable = curvature.view.ternary(hasCurve && ~referenceEditActive, 'on', 'off');
-        chkDensify.Enable = curvature.view.ternary(~editActive, 'on', 'off');
-        edtDenseN.Enable = curvature.view.ternary(~editActive, 'on', 'off');
-        chkShowDense.Enable = curvature.view.ternary(S.fit.ok && ~editActive, 'on', 'off');
-        btnFit.Enable = curvature.view.ternary(numel(S.xPix) >= 3 && ~editActive, 'on', 'off');
-        btnMeasureLength.Enable = curvature.view.ternary(numel(S.xPix) >= 2 && ~editActive, 'on', 'off');
-        btnExportCSV.Enable = curvature.view.ternary((S.fit.ok || S.length.ok) && ~editActive, 'on', 'off');
-        btnExportOverlay.Enable = curvature.view.ternary(hasImage && ~editActive, 'on', 'off');
+        btnUndoPoint.Enable = curvature.userInterface.ternary(hasCurve && ~referenceEditActive, 'on', 'off');
+        btnClearCurve.Enable = curvature.userInterface.ternary(hasCurve && ~referenceEditActive, 'on', 'off');
+        chkDensify.Enable = curvature.userInterface.ternary(~editActive, 'on', 'off');
+        edtDenseN.Enable = curvature.userInterface.ternary(~editActive, 'on', 'off');
+        chkShowDense.Enable = curvature.userInterface.ternary(S.fit.ok && ~editActive, 'on', 'off');
+        btnFit.Enable = curvature.userInterface.ternary(numel(S.xPix) >= 3 && ~editActive, 'on', 'off');
+        btnMeasureLength.Enable = curvature.userInterface.ternary(numel(S.xPix) >= 2 && ~editActive, 'on', 'off');
+        btnExportCSV.Enable = curvature.userInterface.ternary((S.fit.ok || S.length.ok) && ~editActive, 'on', 'off');
+        btnExportOverlay.Enable = curvature.userInterface.ternary(hasImage && ~editActive, 'on', 'off');
     end
 
     function refreshImageOverlay()
@@ -556,11 +556,11 @@ function actions = table()
         if ~isempty(S.curveEditor)
             curve = S.curveEditor.curvePoints();
         end
-        curvature.view.plotStaticCurveAnchors(ax, points, curve, S.fit, chkShowDense.Value);
+        curvature.userInterface.plotStaticCurveAnchors(ax, points, curve, S.fit, chkShowDense.Value);
     end
 
     function refreshSummary()
-        summary = curvature.view.summaryViewData(S.imagePath, S.xPix, S.fit, ...
+        summary = curvature.userInterface.summaryViewData(S.imagePath, S.xPix, S.fit, ...
             S.length, S.curveEditActive, scaleTool.isReferenceEditActive());
         txtPointCount.Value = summary.pointCountText;
         resultTable.Data = summary.tableData;

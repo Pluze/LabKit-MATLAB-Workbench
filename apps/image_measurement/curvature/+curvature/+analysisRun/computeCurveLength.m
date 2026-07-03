@@ -15,10 +15,10 @@ function lengthResult = computeCurveLength(xPix, yPix, calibration)
 % Side effects:
 %   None. This helper performs GUI-free numeric length measurement only.
 
-    lengthResult = curvature.state.emptyLengthResult();
+    lengthResult = curvature.appState.emptyLengthResult();
     xPix = xPix(:);
     yPix = yPix(:);
-    [xPix, yPix] = curvature.ops.removeDuplicateNeighbors(xPix, yPix, 1e-9);
+    [xPix, yPix] = curvature.analysisRun.removeDuplicateNeighbors(xPix, yPix, 1e-9);
 
     if numel(xPix) < 2
         error('labkit_CurvatureMeasurement_app:NotEnoughLengthPoints', ...
@@ -26,9 +26,9 @@ function lengthResult = computeCurveLength(xPix, yPix, calibration)
     end
 
     if nargin < 3 || isempty(calibration)
-        calibration = curvature.ops.normalizeScaleCalibration();
+        calibration = curvature.analysisRun.normalizeScaleCalibration();
     else
-        calibration = curvature.ops.normalizeScaleCalibration(calibration);
+        calibration = curvature.analysisRun.normalizeScaleCalibration(calibration);
     end
 
     lengthPx = sum(hypot(diff(xPix), diff(yPix)));

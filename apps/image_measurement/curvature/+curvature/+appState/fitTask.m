@@ -1,33 +1,41 @@
 % Expected caller: labkit_CurvatureMeasurement_app run callback and package
-% tests. Inputs are current curve points, displayed length path, and scale
-% calibration. Output is an immutable length task snapshot with a deterministic
-% fingerprint. Side effects: none.
-function task = lengthTask(points, lengthPath, calibration)
-%LENGTHTASK Build the curvature length-measurement task snapshot.
+% tests. Inputs are current curve points, displayed fit path, scale
+% calibration, and densify controls. Output is an immutable fit task snapshot
+% with a deterministic fingerprint. Side effects: none.
+function task = fitTask(points, fitPath, calibration, opts)
+%FITTASK Build the curvature-fit computation task snapshot.
 
-    if nargin < 2 || isempty(lengthPath)
-        lengthPath = points;
+    if nargin < 2 || isempty(fitPath)
+        fitPath = points;
     end
     if nargin < 3 || isempty(calibration)
-        calibration = curvature.ops.normalizeScaleCalibration();
+        calibration = curvature.analysisRun.normalizeScaleCalibration();
     else
-        calibration = curvature.ops.normalizeScaleCalibration(calibration);
+        calibration = curvature.analysisRun.normalizeScaleCalibration(calibration);
+    end
+    if nargin < 4 || isempty(opts)
+        opts = struct();
     end
 
     task = struct();
     task.points = normalizePoints(points);
-    task.lengthPath = normalizePoints(lengthPath);
+    task.fitPath = normalizePoints(fitPath);
     task.calibration = calibration;
+    task.options = struct( ...
+        'doDensify', logical(optionValue(opts, 'doDensify', true)), ...
+        'denseN', max(3, round(double(optionValue(opts, 'denseN', 300)))));
     task.fingerprint = taskFingerprint(task);
 end
 
 function fingerprint = taskFingerprint(task)
     lines = [
         "app=curvature"
-        "task=length"
+        "task=fit"
+        "doDensify=" + string(task.options.doDensify)
+        "denseN=" + numberToken(task.options.denseN)
         calibrationToken(task.calibration)
         pointBlock("point", task.points)
-        pointBlock("lengthPath", task.lengthPath)];
+        pointBlock("fitPath", task.fitPath)];
     fingerprint = strjoin(lines, sprintf('\n'));
 end
 
@@ -64,4 +72,11 @@ end
 
 function token = numberToken(value)
     token = string(mat2str(double(value), 17));
+end
+
+function value = optionValue(opts, name, defaultValue)
+    value = defaultValue;
+    if isstruct(opts) && isfield(opts, name) && ~isempty(opts.(name))
+        value = opts.(name);
+    end
 end

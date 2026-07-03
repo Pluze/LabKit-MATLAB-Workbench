@@ -5,7 +5,7 @@ function data = fitResultTableData(fit, lengthResult)
 %FITRESULTTABLEDATA Return visible result table rows for a fit result.
 
     if nargin < 2 || isempty(lengthResult)
-        lengthResult = curvature.state.lengthResultFromFit(fit);
+        lengthResult = curvature.appState.lengthResultFromFit(fit);
     end
     data = { ...
         'Curve length', sprintf('%.6g %s', lengthResult.length_show, lengthResult.unitLen); ...

@@ -19,17 +19,17 @@ function calibration = scaleOptionsFromStruct(opts)
         return;
     end
 
-    referencePx = curvature.ops.optionValue(opts, 'referencePx', ...
-        curvature.ops.optionValue(opts, 'rawpx', NaN));
-    referenceLength = curvature.ops.optionValue(opts, 'referenceLength', ...
-        curvature.ops.optionValue(opts, 'scaleLengthMm', 0));
-    scaleUnit = curvature.ops.optionValue(opts, 'scaleUnit', '');
+    referencePx = curvature.analysisRun.optionValue(opts, 'referencePx', ...
+        curvature.analysisRun.optionValue(opts, 'rawpx', NaN));
+    referenceLength = curvature.analysisRun.optionValue(opts, 'referenceLength', ...
+        curvature.analysisRun.optionValue(opts, 'scaleLengthMm', 0));
+    scaleUnit = curvature.analysisRun.optionValue(opts, 'scaleUnit', '');
     referencePx = positiveOrNaN(referencePx);
     if isempty(referenceLength) || ~isfinite(referenceLength) || referenceLength < 0
         referenceLength = 0;
     end
 
-    manualPxPerMm = curvature.ops.optionValue(opts, 'manualPxPerMm', 0);
+    manualPxPerMm = curvature.analysisRun.optionValue(opts, 'manualPxPerMm', 0);
     if isempty(manualPxPerMm) || ~isfinite(manualPxPerMm) || manualPxPerMm < 0
         manualPxPerMm = 0;
     end
@@ -38,7 +38,7 @@ function calibration = scaleOptionsFromStruct(opts)
         referenceLength = 1;
         scaleUnit = 'mm';
     end
-    calibration = curvature.ops.normalizeScaleCalibration(referencePx, ...
+    calibration = curvature.analysisRun.normalizeScaleCalibration(referencePx, ...
         referenceLength, scaleUnit);
 end
 

@@ -35,8 +35,8 @@ classdef AppPackageStructureGuardrailTest < matlab.unittest.TestCase
                 "apps/image_measurement/image_match/+image_match/+state/exportTask.m"
                 "apps/image_measurement/batch_crop/+batch_crop/+appState/exportPlan.m"
                 "apps/image_measurement/focus_stack/+focus_stack/+state/runTask.m"
-                "apps/image_measurement/curvature/+curvature/+state/fitTask.m"
-                "apps/image_measurement/curvature/+curvature/+state/lengthTask.m"];
+                "apps/image_measurement/curvature/+curvature/+appState/fitTask.m"
+                "apps/image_measurement/curvature/+curvature/+appState/lengthTask.m"];
 
             for k = 1:numel(expected)
                 filepath = repoPath(root, expected(k));

@@ -15,7 +15,7 @@ function lengthResult = lengthResultFromFit(fit)
 % Side effects:
 %   None.
 
-    lengthResult = curvature.state.emptyLengthResult();
+    lengthResult = curvature.appState.emptyLengthResult();
     if isstruct(fit) && isfield(fit, 'curveLength_px') && ...
             isfinite(fit.curveLength_px) && fit.curveLength_px >= 0
         lengthResult.ok = true;

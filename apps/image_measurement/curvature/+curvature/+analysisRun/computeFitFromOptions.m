@@ -8,12 +8,12 @@ function fit = computeFitFromOptions(xPix, yPix, opts)
         opts = struct();
     end
 
-    calibration = curvature.ops.scaleOptionsFromStruct(opts);
-    doDensify = curvature.ops.optionValue(opts, 'doDensify', true);
-    denseN = curvature.ops.optionValue(opts, 'denseN', 300);
-    fitPathX = curvature.ops.optionValue(opts, 'fitPathX', []);
-    fitPathY = curvature.ops.optionValue(opts, 'fitPathY', []);
+    calibration = curvature.analysisRun.scaleOptionsFromStruct(opts);
+    doDensify = curvature.analysisRun.optionValue(opts, 'doDensify', true);
+    denseN = curvature.analysisRun.optionValue(opts, 'denseN', 300);
+    fitPathX = curvature.analysisRun.optionValue(opts, 'fitPathX', []);
+    fitPathY = curvature.analysisRun.optionValue(opts, 'fitPathY', []);
 
-    fit = curvature.ops.computeCurvatureFit(xPix, yPix, calibration, ...
+    fit = curvature.analysisRun.computeCurvatureFit(xPix, yPix, calibration, ...
         doDensify, denseN, fitPathX, fitPathY);
 end

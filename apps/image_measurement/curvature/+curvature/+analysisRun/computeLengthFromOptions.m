@@ -8,6 +8,6 @@ function lengthResult = computeLengthFromOptions(xPix, yPix, opts)
         opts = struct();
     end
 
-    calibration = curvature.ops.scaleOptionsFromStruct(opts);
-    lengthResult = curvature.ops.computeCurveLength(xPix, yPix, calibration);
+    calibration = curvature.analysisRun.scaleOptionsFromStruct(opts);
+    lengthResult = curvature.analysisRun.computeCurveLength(xPix, yPix, calibration);
 end
