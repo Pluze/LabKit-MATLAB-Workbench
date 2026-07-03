@@ -1,0 +1,76 @@
+% App-owned renderer for EIS Overlay. Expected caller is labkit.ui.app.run
+% after actions update state. Inputs are app state, UI registry, and runtime
+% services. Side effects are limited to UI control and axes updates.
+function render(state, ui, ~)
+    renderFileList(state, ui);
+    renderPlot(state, ui);
+end
+
+function renderFileList(state, ui)
+    if isempty(state.items)
+        labkit.ui.view.setListItems(ui, 'files', {});
+        ui.controls.files.status.Value = 'No files loaded';
+        return;
+    end
+    labkit.ui.view.setValue(ui, 'files', string({state.items.filepath}).');
+    ui.controls.files.status.Value = sprintf('%d file(s) loaded', ...
+        numel(state.items));
+end
+
+function renderPlot(state, ui)
+    ax = ui.controls.plot.axesById.overlay;
+    opts = plotOptions(ui);
+    cla(ax);
+    ax.XScale = ternary(opts.logX, 'log', 'linear');
+    ax.YScale = ternary(opts.logY, 'log', 'linear');
+    axis(ax, 'normal');
+
+    if isempty(state.items)
+        title(ax, 'EIS Overlay');
+        xlabel(ax, eis.view.labelForAxis(opts.xName));
+        ylabel(ax, eis.view.labelForAxis(opts.yName));
+        ui.controls.summary.textArea.Value = {'No files loaded.'};
+        return;
+    end
+
+    items = selectedItems(state, ui);
+    if isempty(items)
+        ui.controls.summary.textArea.Value = {'No files selected.'};
+        return;
+    end
+
+    eis.view.plotOverlay(ax, items, opts);
+    ui.controls.summary.textArea.Value = eis.view.buildSummary(items);
+end
+
+function items = selectedItems(state, ui)
+    files = labkit.ui.view.getValue(ui, 'files');
+    paths = labkit.ui.view.filePaths(files);
+    if isempty(paths)
+        items = struct([]);
+        return;
+    end
+    keep = ismember(string({state.items.filepath}), string(paths(:)));
+    items = state.items(keep);
+end
+
+function opts = plotOptions(ui)
+    opts = struct();
+    opts.xName = ui.controls.xAxis.valueHandle.Value;
+    opts.yName = ui.controls.yAxis.valueHandle.Value;
+    opts.logX = ui.controls.logX.valueHandle.Value;
+    opts.logY = ui.controls.logY.valueHandle.Value;
+    opts.lineWidth = ui.controls.lineWidth.valueHandle.Value;
+    opts.markerSize = ui.controls.markerSize.valueHandle.Value;
+    opts.showMarkers = ui.controls.showMarkers.valueHandle.Value;
+    opts.showLegend = ui.controls.showLegend.valueHandle.Value;
+    opts.showGrid = ui.controls.showGrid.valueHandle.Value;
+end
+
+function txt = ternary(cond, a, b)
+    if cond
+        txt = a;
+    else
+        txt = b;
+    end
+end

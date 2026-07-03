@@ -1,4 +1,4 @@
-% Expected caller: eis.ui.runApp. Inputs are axis labels and a callback struct
+% Expected caller: eis.definition. Inputs are axis labels and a callback struct
 % whose fields are app-owned callback handles. Output is a data-only UI 3.0
 % workbench spec for the EIS Overlay app.
 function spec = buildSpec(axisItems, callbacks)
