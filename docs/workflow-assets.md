@@ -71,8 +71,8 @@ image_match.io.readImages(...)
 image_match.ops.makeStep(...)
 image_match.export.writeOutputs(...)
 
-batch_crop.state.readItems(...)
-batch_crop.export.writeOutputs(...)
+batch_crop.appState.readItems(...)
+batch_crop.resultFiles.writeOutputs(...)
 ```
 
 This is stronger than taking a static mock screenshot: the guide assets fail

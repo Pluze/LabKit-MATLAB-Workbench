@@ -22,6 +22,7 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
   `apps/<family>/<app_slug>/+<app_slug>/+userInterface/buildWorkbenchSpec.m`,
   `apps/<family>/<app_slug>/+<app_slug>/+userInterface/updateWorkbenchFromState.m`,
   and app-specific workflow packages such as
+  `apps/<family>/<app_slug>/+<app_slug>/+appState/exportPlan.m`,
   `apps/<family>/<app_slug>/+<app_slug>/+sourceFiles/readSourceFiles.m`,
   `apps/<family>/<app_slug>/+<app_slug>/+analysisRun/computeAnalysisResults.m`,
   or `apps/<family>/<app_slug>/+<app_slug>/+resultFiles/writeResultFiles.m`.
@@ -101,7 +102,8 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
 - Apps expose their runtime declaration through `+<app_slug>/definition.m`,
   initial state through `+appLifecycle/createInitialState.m`, UI declaration
   through `+userInterface/buildWorkbenchSpec.m`, visible-state updates through
-  `+userInterface/updateWorkbenchFromState.m`, and user workflows through
+  `+userInterface/updateWorkbenchFromState.m`, deterministic app-state and
+  task snapshot helpers through `+appState`, and user workflows through
   concrete app-owned packages. Existing `+state`, `+actions`, `+ui`, `+view`,
   `+ops`, `+io`, and `+export` packages are migration debt unless the file is
   kept temporarily to preserve an already migrated path.

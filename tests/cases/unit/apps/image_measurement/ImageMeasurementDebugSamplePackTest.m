@@ -11,7 +11,7 @@ classdef ImageMeasurementDebugSamplePackTest < matlab.unittest.TestCase
                 "logFile", fullfile(char(root), "trace.log")));
 
             batch = batch_crop.debug.writeSamplePack(debug);
-            items = batch_crop.state.readItems(batch.representativeFiles);
+            items = batch_crop.appState.readItems(batch.representativeFiles);
             testCase.verifyEqual(numel(items), 2);
             verifyThrows(testCase, @() imread(char(batch.boundaryFiles.malformed)), ...
                 "Malformed batch-crop image should fail through imread.");

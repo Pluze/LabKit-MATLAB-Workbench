@@ -142,7 +142,7 @@ end
 function runBatchCropWorkflow(inputs, assetDir, exportRoot)
     outputFolder = fullfile(exportRoot, "batch_crop");
     ensureDir(outputFolder);
-    items = batch_crop.state.readItems(string(inputs.cropSource));
+    items = batch_crop.appState.readItems(string(inputs.cropSource));
     items(1).angleDeg = 3;
     items(1).centerXY = [515, 350];
     items(1).centerSet = true;
@@ -153,7 +153,7 @@ function runBatchCropWorkflow(inputs, assetDir, exportRoot)
         "cropWidth", 420, ...
         "cropHeight", 320, ...
         "paddingPercent", 18);
-    payload = batch_crop.export.writeOutputs(items, opts);
+    payload = batch_crop.resultFiles.writeOutputs(items, opts);
     cropped = im2double(imread(char(payload.results(1).outputPath)));
     source = im2double(imread(inputs.cropSource));
     marked = drawCropBox(source, items(1).centerXY, ...

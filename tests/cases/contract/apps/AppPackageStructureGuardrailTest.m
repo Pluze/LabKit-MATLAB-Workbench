@@ -33,7 +33,7 @@ classdef AppPackageStructureGuardrailTest < matlab.unittest.TestCase
             expected = [
                 "apps/image_measurement/image_enhance/+image_enhance/+state/exportTask.m"
                 "apps/image_measurement/image_match/+image_match/+state/exportTask.m"
-                "apps/image_measurement/batch_crop/+batch_crop/+state/exportPlan.m"
+                "apps/image_measurement/batch_crop/+batch_crop/+appState/exportPlan.m"
                 "apps/image_measurement/focus_stack/+focus_stack/+state/runTask.m"
                 "apps/image_measurement/curvature/+curvature/+state/fitTask.m"
                 "apps/image_measurement/curvature/+curvature/+state/lengthTask.m"];
@@ -364,7 +364,7 @@ function family = appFamilyFromRelativeDir(appRelDir)
 end
 
 function tf = hasNonUiPackageComponent(packageDir)
-    componentNames = {'+ops', '+view', '+export', '+io', '+state', ...
+    componentNames = {'+ops', '+view', '+export', '+io', '+state', '+appState', ...
         '+sourceFiles', '+analysisRun', '+resultFiles', '+cropGeometry', ...
         '+thermalFrames', '+debugArtifacts'};
     tf = false;
@@ -385,7 +385,7 @@ function tf = packageNamespaceHasDirectUnitTest(root, family, packageName)
         return;
     end
 
-    componentPattern = ['ops|view|export|io|state|sourceFiles|' ...
+    componentPattern = ['ops|view|export|io|state|appState|sourceFiles|' ...
         'analysisRun|resultFiles|cropGeometry|thermalFrames|debugArtifacts'];
     pattern = [packageName '\.(' componentPattern ')\.'];
     testFiles = collectTextFiles(testRoot);
