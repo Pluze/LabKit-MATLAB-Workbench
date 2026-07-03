@@ -41,8 +41,8 @@ function verify_gui_layout_ui_axes_workbench()
     plot(plotAx, 1:3, [1 4 2], 'DisplayName', 'probe');
     assert(~isempty(ui.figure.WindowScrollWheelFcn), ...
         'previewArea should install LabKit-managed scroll-wheel navigation.');
-    assert(isempty(plotAx.Interactions), ...
-        'previewArea should not rely on focus-gated built-in axes interactions.');
+    assertPreviewScrollNotPrepared(ui.figure, plotAx, ...
+        'previewArea should defer built-in axes interaction cleanup until scroll is used.');
     plotAx.XLim = [0 10];
     plotAx.YLim = [0 20];
     didZoomPlot = labkit.ui.tool.zoomAxesAtPoint(plotAx, [5 10], -1);
@@ -98,8 +98,8 @@ function verify_gui_layout_ui_axes_workbench()
     hFirstImage = labkit.ui.view.drawImage(ui, 'plotPreview', ...
         zeros(12, 16, 3, 'uint8'), 'axis', 'image', 'title', 'Image Probe');
     imgAx = ui.controls.plotPreview.axesById.image;
-    assert(isempty(imgAx.Interactions), ...
-        'drawImage should not re-enable focus-gated built-in zoom interactions.');
+    assertPreviewScrollNotPrepared(ui.figure, imgAx, ...
+        'drawImage should not force eager built-in axes interaction cleanup.');
     didZoomImage = labkit.ui.tool.zoomAxesAtPoint(imgAx, [8 6], -2);
     assert(didZoomImage && imgAx.XLim(1) >= 0.5 && imgAx.XLim(2) <= 16.5 && ...
         imgAx.YLim(1) >= 0.5 && imgAx.YLim(2) <= 12.5, ...
@@ -145,4 +145,25 @@ end
 
 function value = relativeLogPosition(anchor, limits)
     value = (log10(anchor) - log10(limits(1))) ./ diff(log10(limits));
+end
+
+function assertPreviewScrollNotPrepared(fig, ax, message)
+    state = getappdata(fig, 'labkitPreviewScrollNavigation');
+    assert(isstruct(state) && isfield(state, 'preparedAxes'), ...
+        'previewArea should track lazy scroll preparation state.');
+    assert(~axesContains(state.preparedAxes, ax), message);
+end
+
+function tf = axesContains(axesHandles, ax)
+    tf = false;
+    if isempty(axesHandles)
+        return;
+    end
+    axesHandles = axesHandles(:).';
+    for k = 1:numel(axesHandles)
+        if isvalid(axesHandles(k)) && isequal(axesHandles(k), ax)
+            tf = true;
+            return;
+        end
+    end
 end

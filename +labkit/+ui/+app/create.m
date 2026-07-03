@@ -21,6 +21,7 @@ function ui = create(spec, varargin)
 
     debug = optionValue(opts, 'debug', []);
     ui = buildShellFromSpec(spec, debug);
+    drawnow limitrate;
     installCloseGuard(ui.figure);
     ui = buildControlTabs(ui, spec.props.controlTabs, debug);
     ui = buildWorkspace(ui, spec.props.workspace, debug);
