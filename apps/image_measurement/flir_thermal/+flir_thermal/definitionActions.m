@@ -1,5 +1,5 @@
-% App-owned action table for FLIR Thermal; expected caller is flir_thermal.definition.
-function actions = table()
+% App-owned action registry for FLIR Thermal; expected caller is flir_thermal.definition.
+function actions = definitionActions()
     S = [];
     ui = [];
     fig = [];
@@ -36,7 +36,7 @@ function actions = table()
             debugLog.instrumentFigure(fig);
             flir_thermal.debug.writeAndLogSamplePack(debugLog, @addLog);
         end
-        readingTool = flir_thermal.view.temperatureReadingTool(fig, ...
+        readingTool = flir_thermal.userInterface.temperatureReadingTool(fig, ...
             ui.controls.preview.axesById.thermalImage, ...
             struct('onPoint', @setManualTemperaturePoint, ...
             'onRoi', @setRoiTemperatureReading));
@@ -98,7 +98,7 @@ function actions = table()
         end
         try
             addLog(sprintf('Reading %d FLIR radiometric file(s).', numel(paths)));
-            [S.items, report] = flir_thermal.io.readImages(paths, ...
+            [S.items, report] = flir_thermal.sourceFiles.readImages(paths, ...
                 struct('progressFcn', @onReadProgress));
         catch ME
             showException('Could not read FLIR images', ME);
@@ -147,7 +147,7 @@ function actions = table()
         refreshAll();
     end
     function onClearFiles(~, ~)
-        S.items = repmat(flir_thermal.state.emptyItem(), 0, 1);
+        S.items = repmat(flir_thermal.appState.emptyItem(), 0, 1);
         S.currentIndex = 0;
         S.lastExport = [];
         addLog('Cleared loaded FLIR files.');
@@ -256,7 +256,7 @@ function actions = table()
             return;
         end
         preset = string(labkit.ui.view.getValue(ui, 'rangePreset'));
-        bounds = flir_thermal.view.rangeControlBounds( ...
+        bounds = flir_thermal.userInterface.rangeControlBounds( ...
             S.items(S.currentIndex), preset, currentControlBounds());
         S.items(S.currentIndex).rangePreset = preset;
         S.items(S.currentIndex).rangeControlBounds = bounds;
@@ -275,7 +275,7 @@ function actions = table()
     function setRoiMode(mode)
         S.roiMode = string(mode);
         addLog(sprintf('ROI reading mode set to %s. Drag on the thermal image to set the ROI.', ...
-            char(flir_thermal.view.roiModeLabel(S.roiMode))));
+            char(flir_thermal.userInterface.roiModeLabel(S.roiMode))));
         refreshExportControls();
         refreshDetails();
     end
@@ -309,7 +309,7 @@ function actions = table()
     function exportItems(items, label)
         try
             opts = exportOptions(items);
-            payload = flir_thermal.export.writeOutputs(items, opts);
+            payload = flir_thermal.resultFiles.writeOutputs(items, opts);
         catch ME
             showException('Could not export FLIR thermal images', ME);
             return;
@@ -333,7 +333,7 @@ function actions = table()
             labkit.ui.view.setValue(ui, 'thermalFiles', {});
         else
             labkit.ui.view.setValue(ui, 'thermalFiles', ...
-                flir_thermal.view.filePanelEntries(S.items));
+                flir_thermal.userInterface.filePanelEntries(S.items));
             files = labkit.ui.view.getFiles(ui, 'thermalFiles');
             if ~isempty(files) && S.currentIndex >= 1 && S.currentIndex <= numel(files)
                 labkit.ui.view.setFileSelection(ui, 'thermalFiles', files(S.currentIndex));
@@ -369,7 +369,7 @@ function actions = table()
         ax = ui.controls.preview.axesById.thermalImage;
         readingTool.setBackground(imageHandle);
         readingTool.activate();
-        flir_thermal.view.drawTemperatureReadings(ax, item);
+        flir_thermal.userInterface.drawTemperatureReadings(ax, item);
         drawTemperatureScale(range, units);
     end
     function setManualTemperaturePoint(pointXY)
@@ -377,7 +377,7 @@ function actions = table()
             return;
         end
         [S.items(S.currentIndex), reading] = ...
-            flir_thermal.state.withManualPoint(S.items(S.currentIndex), pointXY);
+            flir_thermal.appState.withManualPoint(S.items(S.currentIndex), pointXY);
         if ~isfinite(reading.temperatureC)
             return;
         end
@@ -395,13 +395,13 @@ function actions = table()
             return;
         end
         [S.items(S.currentIndex), meanReading] = ...
-            flir_thermal.state.withRoiReading(S.items(S.currentIndex), ...
+            flir_thermal.appState.withRoiReading(S.items(S.currentIndex), ...
             S.roiMode, startXY, endXY);
         if ~isfinite(meanReading.temperatureC)
             return;
         end
         addLog(sprintf('Set %s ROI for %s.', ...
-            char(flir_thermal.view.roiModeLabel(S.roiMode)), ...
+            char(flir_thermal.userInterface.roiModeLabel(S.roiMode)), ...
             char(S.items(S.currentIndex).name)));
         refreshPreview();
         refreshSummary();
@@ -409,13 +409,13 @@ function actions = table()
         syncRuntimeState();
     end
     function [values, units, label] = previewValues(item)
-        [values, units, label] = flir_thermal.view.valueMatrix(item);
+        [values, units, label] = flir_thermal.userInterface.valueMatrix(item);
     end
     function refreshSummary()
         item = currentItem();
         range = currentRange();
         labkit.ui.view.setValue(ui, 'summaryTable', ...
-            flir_thermal.view.summaryTableData(item, range, currentPalette()));
+            flir_thermal.userInterface.summaryTableData(item, range, currentPalette()));
     end
     function refreshExportControls()
         hasItems = ~isempty(S.items);
@@ -437,7 +437,7 @@ function actions = table()
     end
     function refreshDetails()
         labkit.ui.view.setValue(ui, 'details', ...
-            flir_thermal.view.detailLines(S.items, S.currentIndex, S.outputFolder));
+            flir_thermal.userInterface.detailLines(S.items, S.currentIndex, S.outputFolder));
     end
     function item = currentItem()
         item = [];
@@ -475,7 +475,7 @@ function actions = table()
         labkit.ui.view.setValue(ui, 'temperatureMax', round(range(2) * 100) / 100);
     end
     function preset = currentRangePreset()
-        labels = flir_thermal.view.rangeControlLabels();
+        labels = flir_thermal.userInterface.rangeControlLabels();
         preset = labels.defaultPreset;
         if hasCurrentItem() && isfield(S.items(S.currentIndex), 'rangePreset') && ...
                 strlength(string(S.items(S.currentIndex).rangePreset)) > 0
@@ -522,7 +522,7 @@ function actions = table()
         range = normalizeRange([floor(range(1)), ceil(range(2))]);
     end
     function range = autoRangeForItem(item)
-        values = flir_thermal.view.valueMatrix(item);
+        values = flir_thermal.userInterface.valueMatrix(item);
         values = values(isfinite(values));
         if isempty(values)
             range = currentRange();

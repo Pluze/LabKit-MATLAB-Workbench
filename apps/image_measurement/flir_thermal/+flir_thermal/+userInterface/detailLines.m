@@ -12,7 +12,7 @@ function lines = detailLines(items, currentIndex, outputFolder)
     currentIndex = max(1, min(currentIndex, numel(items)));
     item = items(currentIndex);
     range = double(item.displayRange(:)).';
-    labels = flir_thermal.view.rangeControlLabels();
+    labels = flir_thermal.userInterface.rangeControlLabels();
     lines = {
         sprintf('Loaded files: %d', numel(items))
         sprintf('Current file: %s', char(item.name))
@@ -75,7 +75,7 @@ function text = roiText(item, field)
 end
 
 function text = differenceSummary(item)
-    labels = flir_thermal.view.rangeControlLabels();
+    labels = flir_thermal.userInterface.rangeControlLabels();
     names = ["image hot", "image cold", "manual", ...
         labels.roiHotSpot, labels.roiColdSpot, labels.roiMean];
     values = [

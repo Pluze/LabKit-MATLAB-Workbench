@@ -54,7 +54,8 @@ Current facts:
   `labkit.ui.app.run(<slug>.definition(), request)`.
 - Chrono Overlay, EIS, VT Resistance, CIC, CSC, Response Review Stats, ECG
   Print, RHS Preview, Nerve Response Analysis, Batch Image Crop, Curvature
-  Measurement, Focus Stack, DIC Postprocess, and DIC Preprocess now prove the final
+  Measurement, Focus Stack, DIC Postprocess, DIC Preprocess, and FLIR Thermal
+  now prove the final
   workflow-first app package shape:
   `definitionActions.m`, `+appLifecycle/createInitialState.m`,
   `+userInterface/buildWorkbenchSpec.m`,
@@ -63,7 +64,7 @@ Current facts:
   `+resultFiles`, with no legacy
   `+actions`, `+state`, `+ui`, `+view`, `+ops`, `+io`, or `+export`
   buckets.
-- The other 3 app packages still use transitional `+state`, `+actions`,
+- The other 2 app packages still use transitional `+state`, `+actions`,
   `+ui`, and `+view` adapters. Treat those adapters as the next migration
   target, not as final behavior.
 - Package-root app `run.m` orchestration has been retired. App structure
@@ -335,7 +336,8 @@ flags to app code, or add a generator before the definition DSL is proven.
      definitions and workflow-first packages.
    - Chrono Overlay, EIS, VT Resistance, CIC, CSC, Response Review Stats, ECG
      Print, RHS Preview, Nerve Response Analysis, Batch Image Crop, Curvature
-     Measurement, Focus Stack, DIC Postprocess, and DIC Preprocess are representative workflow-first packages
+     Measurement, Focus Stack, DIC Postprocess, DIC Preprocess, and FLIR Thermal
+     are representative workflow-first packages
      and should be used as small app references for the fixed lifecycle/UI
      surface and direct workflow package tests.
    - After runtime gaps are closed, migrate transitional definitions from

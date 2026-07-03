@@ -21,7 +21,7 @@ function payload = writeOutputs(items, opts)
         result.palette = opts.palette;
         result = addReadingResults(result, items(k));
         try
-            [values, units] = flir_thermal.view.valueMatrix(items(k));
+            [values, units] = flir_thermal.userInterface.valueMatrix(items(k));
             range = itemRange(items(k), opts.range);
             result.rangeMin = range(1);
             result.rangeMax = range(2);
@@ -36,7 +36,7 @@ function payload = writeOutputs(items, opts)
                 struct('Limits', range, 'Palette', opts.palette));
             labkit.image.writeFile(rgb, imagePath);
             labkit.image.writeFile(colorbarImage(range, opts.palette), colorbarPath);
-            writematrix(flir_thermal.export.temperatureMatrix(items(k)), ...
+            writematrix(flir_thermal.resultFiles.temperatureMatrix(items(k)), ...
                 temperatureCsvPath);
             result.thermalImagePath = imagePath;
             result.colorbarPath = colorbarPath;
@@ -88,7 +88,7 @@ function range = itemRange(item, fallbackRange)
         range = double(item.displayRange(:)).';
     end
     if numel(range) ~= 2 || ~all(isfinite(range)) || range(2) <= range(1)
-        [values] = flir_thermal.view.valueMatrix(item);
+        [values] = flir_thermal.userInterface.valueMatrix(item);
         values = values(isfinite(values));
         if isempty(values)
             range = [20 40];

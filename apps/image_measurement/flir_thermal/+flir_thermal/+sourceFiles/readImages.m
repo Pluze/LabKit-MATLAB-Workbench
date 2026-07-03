@@ -10,7 +10,7 @@ function [items, report] = readImages(paths, opts)
     end
     opts.SkipInvalid = true;
     [records, report] = labkit.thermal.readFiles(paths, opts);
-    template = flir_thermal.state.emptyItem();
+    template = flir_thermal.appState.emptyItem();
     items = repmat(template, numel(records), 1);
     for k = 1:numel(records)
         items(k) = itemFromRecord(records(k), template);
@@ -18,7 +18,7 @@ function [items, report] = readImages(paths, opts)
 end
 
 function item = itemFromRecord(record, template)
-    labels = flir_thermal.view.rangeControlLabels();
+    labels = flir_thermal.userInterface.rangeControlLabels();
     item = template;
     item.path = record.path;
     item.name = record.name;
@@ -26,10 +26,10 @@ function item = itemFromRecord(record, template)
     item.raw = record.raw;
     item.temperatureC = record.temperatureC;
     [item.hotSpot, item.coldSpot] = ...
-        flir_thermal.ops.extremeTemperatureReadings(record.temperatureC);
+        flir_thermal.analysisRun.extremeTemperatureReadings(record.temperatureC);
     item.displayRange = initialRange(item);
     item.rangePreset = labels.defaultPreset;
-    item.rangeControlBounds = flir_thermal.view.rangeControlBounds( ...
+    item.rangeControlBounds = flir_thermal.userInterface.rangeControlBounds( ...
         item, item.rangePreset, [-20 120]);
     item.rangeAdjusted = false;
     item.units = record.units;
@@ -38,7 +38,7 @@ function item = itemFromRecord(record, template)
 end
 
 function range = initialRange(item)
-    values = flir_thermal.view.valueMatrix(item);
+    values = flir_thermal.userInterface.valueMatrix(item);
     values = values(isfinite(values));
     if isempty(values)
         range = [20 40];

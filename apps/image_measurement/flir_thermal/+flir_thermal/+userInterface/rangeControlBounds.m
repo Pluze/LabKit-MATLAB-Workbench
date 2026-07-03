@@ -7,7 +7,7 @@ function bounds = rangeControlBounds(item, preset, fallbackBounds)
         fallbackBounds = [-20 120];
     end
     preset = string(preset);
-    labels = flir_thermal.view.rangeControlLabels();
+    labels = flir_thermal.userInterface.rangeControlLabels();
     switch preset
         case labels.standardPreset
             bounds = [-20 120];
@@ -23,7 +23,7 @@ function bounds = rangeControlBounds(item, preset, fallbackBounds)
 end
 
 function bounds = estimatedExpandedBounds(item, fallbackBounds)
-    values = flir_thermal.view.valueMatrix(item);
+    values = flir_thermal.userInterface.valueMatrix(item);
     values = values(isfinite(values));
     if isempty(values)
         bounds = normalizeBounds(fallbackBounds);

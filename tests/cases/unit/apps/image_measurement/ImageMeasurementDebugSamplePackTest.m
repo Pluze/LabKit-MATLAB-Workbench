@@ -38,12 +38,12 @@ classdef ImageMeasurementDebugSamplePackTest < matlab.unittest.TestCase
             testCase.verifyFalse(isempty(imread(char(curve.boundaryFiles.validEdge))));
 
             flir = flir_thermal.debug.writeSamplePack(debug);
-            [thermalItems, report] = flir_thermal.io.readImages(flir.representativeFiles);
+            [thermalItems, report] = flir_thermal.sourceFiles.readImages(flir.representativeFiles);
             testCase.verifyEqual(report.loaded, 2);
             testCase.verifyEqual(numel(thermalItems), 2);
-            [~, edgeReport] = flir_thermal.io.readImages(flir.boundaryFiles.validEdgeLowContrast);
+            [~, edgeReport] = flir_thermal.sourceFiles.readImages(flir.boundaryFiles.validEdgeLowContrast);
             testCase.verifyEqual(edgeReport.loaded, 1);
-            [~, badReport] = flir_thermal.io.readImages(flir.boundaryFiles.malformedPlainJpeg);
+            [~, badReport] = flir_thermal.sourceFiles.readImages(flir.boundaryFiles.malformedPlainJpeg);
             testCase.verifyEqual(badReport.loaded, 0);
         end
     end

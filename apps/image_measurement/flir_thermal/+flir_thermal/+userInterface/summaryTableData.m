@@ -11,7 +11,7 @@ function data = summaryTableData(item, range, palette)
             'Palette', char(string(palette))};
         return;
     end
-    [values, units, label] = flir_thermal.view.valueMatrix(item);
+    [values, units, label] = flir_thermal.userInterface.valueMatrix(item);
     finiteValues = values(isfinite(values));
     if isempty(finiteValues)
         measured = '-';

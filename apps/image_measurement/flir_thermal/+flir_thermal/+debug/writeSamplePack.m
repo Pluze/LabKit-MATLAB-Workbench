@@ -1,4 +1,4 @@
-% Expected caller: flir_thermal.actions.table during debug launch and unit tests. Input
+% Expected caller: flir_thermal.definitionActions during debug launch and unit tests. Input
 % is a LabKit debug context. Output is a deterministic synthetic radiometric
 % JPEG-like sample pack. Side effects: writes anonymous debug files and records
 % a session manifest when available.
