@@ -54,7 +54,9 @@
   generated semantic callbacks, startup readiness, busy gating, staged
   hydration, close guards, debug exception routing, and startup phase timing.
   Public app-facing runtime growth should favor stable definition/run
-  contracts such as `define` and `run`; do not expose raw startup timers,
+  contracts such as `define` and `run`. Keep `create` as the low-level
+  workbench construction and compatibility surface during migration; do not
+  use it as the new app lifecycle API. Do not expose raw startup timers,
   loading controls, readiness flags, or `defer/update/finish` lifecycle
   mutation helpers to app code.
 - Preview-axis tools that need pointer, drag, scroll, or hit-test ownership must use `labkit.ui.tool.createRuntime` sessions instead of each helper managing figure/axes callbacks independently.

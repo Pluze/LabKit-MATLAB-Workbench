@@ -46,7 +46,7 @@ runtime entry points for launcher users and are not dependencies of
 | Area | Owns |
 | --- | --- |
 | App entry point | Public launch name plus requirements/version/debug request routing. |
-| App package | App definition, workflow state, actions, render behavior, calculations, summaries, exports, and app-local helpers. |
+| App package | App definition, workflow state, command handlers, visible-state updates, calculations, summaries, exports, and app-local helpers. |
 | `labkit.ui` | Declarative app runtime, app shell, readiness/busy state, data-only UI specs, semantic view updates, reusable tools, and diagnostics. |
 | `labkit.image` | GUI-free image file IO, display normalization, resizing, mean filtering, and basic enhancement primitives. |
 | `labkit.thermal` | GUI-free thermal source-file parsing, raw thermal matrices, embedded calibration metadata, raw-to-temperature conversion, and thermal colormap rendering. |
@@ -60,32 +60,42 @@ domain-neutral mechanics that multiple apps can share.
 
 ## App Package Shape
 
-The standard app shape is:
+The target app shape is workflow-first. Each app keeps one MATLAB package under
+its app folder:
 
 ```text
 apps/<family>/<app_slug>/labkit_<AppName>_app.m
 apps/<family>/<app_slug>/+<app_slug>/definition.m
 apps/<family>/<app_slug>/+<app_slug>/requirements.m
 apps/<family>/<app_slug>/+<app_slug>/version.m
-apps/<family>/<app_slug>/+<app_slug>/+state/initial.m
-apps/<family>/<app_slug>/+<app_slug>/+actions/table.m
-apps/<family>/<app_slug>/+<app_slug>/+ui/buildSpec.m
-apps/<family>/<app_slug>/+<app_slug>/+view/render.m
+apps/<family>/<app_slug>/+<app_slug>/definitionActions.m
+apps/<family>/<app_slug>/+<app_slug>/+appLifecycle/createInitialState.m
+apps/<family>/<app_slug>/+<app_slug>/+userInterface/buildWorkbenchSpec.m
+apps/<family>/<app_slug>/+<app_slug>/+userInterface/updateWorkbenchFromState.m
 ```
 
-Optional role packages:
+Add workflow packages only when the app has that user-facing capability:
 
 ```text
-+state/    defaults, factories, presets
-+io/       file discovery, filters, readers, import parsing
-+ops/      GUI-free calculations and transforms
-+view/     tables, detail lines, display names, preview data
-+export/   output writers, manifests, summary tables
++sourceFiles/     choosing, reading, validating, and previewing source data
++analysisRun/     collecting options, computing results, and showing results
++resultFiles/     choosing output folders, writing files, and summarizing exports
++cropGeometry/    app-owned crop geometry operations
++thermalFrames/   app-owned thermal frame queues and display choices
++debugArtifacts/  app-owned clean-room sample and debug artifact generation
 ```
 
-Create only the packages the app needs. Package names match the app slug.
-Avoid fixed `+app` namespaces, family-level `private/` helpers,
-`*Workflow.m` string dispatchers, and `+core/dispatch.m` routers.
+Create only the packages the app needs. Names should describe a workflow or
+domain capability that changes together, not a broad technical phase. Avoid
+generic `+actions`, `+renderers`, `+ops`, `+io`, `+export`, `+helpers`, and
+`+utils` packages for new app code. Avoid fixed `+app` namespaces,
+family-level `private/` helpers, `*Workflow.m` string dispatchers, and
+`+core/dispatch.m` routers.
+
+Existing `+state`, `+actions`, `+ui`, `+view`, `+ops`, `+io`, and `+export`
+packages are transitional migration adapters unless they are explicitly kept
+as a narrow compatibility bridge. New app work should follow the workflow-first
+shape.
 
 ## UI Boundary
 
@@ -130,16 +140,18 @@ measurements, and user-facing decisions. Generic image IO and filters stay in
 `labkit.thermal`.
 
 `definition.m` returns the app runtime contract. It names the initial state
-factory, data-only spec builder, action table, render function, startup phases,
-and optional hydration phases. The framework runtime validates the definition,
-generates semantic callbacks, builds the shell, owns readiness/busy state,
-schedules startup and hydration, routes diagnostics, and protects hidden test
-behavior.
+factory, data-only spec builder, command handler registry, visible-state update
+function, startup phases, and optional hydration phases. The framework runtime
+validates the definition, generates semantic callbacks, builds the shell, owns
+readiness/busy state, schedules startup and hydration, routes diagnostics, and
+protects hidden test behavior.
 
-`+ui/buildSpec.m` returns a data-only `labkit.ui.spec.*` tree. It should not
-create MATLAB UI handles, mutate app state, perform IO, run calculations, write
-exports, schedule startup, or set row/column layout mechanics. App actions own
-app-specific state changes, alerts, refresh decisions, and log wording.
+`+userInterface/buildWorkbenchSpec.m` returns a data-only `labkit.ui.spec.*`
+tree. It should not create MATLAB UI handles, mutate app state, perform IO,
+run calculations, write exports, schedule startup, or set row/column layout
+mechanics. App command handlers own app-specific state changes, alerts, refresh
+decisions, and log wording. `+userInterface/updateWorkbenchFromState.m` is the
+top-level bridge from prepared state into existing controls.
 
 ## Reusable Extraction Rule
 

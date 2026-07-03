@@ -22,7 +22,8 @@ workflow, not as grid construction or a general MATLAB GUI DSL. New app code
 should expose an app-owned `definition.m` and launch it through
 `labkit.ui.app.run`. The framework runtime owns lifecycle, callback dispatch,
 readiness, busy state, diagnostics, and staged activation. App packages declare
-state, actions, render behavior, and data-only UI structure.
+state factories, command handlers, visible-state updates, and data-only UI
+structure.
 
 Public launch files stay thin. They route requests, expose requirements and
 version metadata, and delegate the GUI to the framework runtime:
@@ -53,10 +54,10 @@ function def = definition()
 def = labkit.ui.app.define( ...
     "Id", "example", ...
     "Title", "Example App", ...
-    "InitialState", @example.state.initial, ...
-    "Spec", @example.ui.buildSpec, ...
-    "Actions", example.actions.table(), ...
-    "Render", @example.view.render, ...
+    "InitialState", @example.appLifecycle.createInitialState, ...
+    "Spec", @example.userInterface.buildWorkbenchSpec, ...
+    "Actions", example.definitionActions(), ...
+    "Render", @example.userInterface.updateWorkbenchFromState, ...
     "Startup", ["workspace"], ...
     "Hydrate", ["tools"]);
 end
@@ -69,8 +70,14 @@ visible workbench, paints a readiness surface when startup is slow, dispatches
 startup actions, and then hydrates nonessential regions when idle or on first
 interaction.
 
+Current migrated apps may still use transitional adapter packages such as
+`+state`, `+actions`, `+ui`, and `+view`. New app code should use
+`+appLifecycle`, `definitionActions.m`, and `+userInterface`; app-specific
+work belongs in concrete workflow packages such as `+sourceFiles`,
+`+analysisRun`, `+resultFiles`, or a domain-specific package.
+
 ```matlab
-function spec = buildSpec(callbacks)
+function spec = buildWorkbenchSpec(callbacks)
 spec = labkit.ui.spec.app("exampleApp", "Example App", ...
     "controlTabs", controlTabs(callbacks), ...
     "workspace", previewWorkspace(callbacks), ...
@@ -111,22 +118,24 @@ function workspace = previewWorkspace(callbacks)
 end
 ```
 
-`buildSpec.m` stays data-only. It receives framework-generated semantic
-callbacks and returns a workbench spec. It does not create MATLAB handles, run
-IO, compute data, mutate app state, schedule startup work, or set concrete
-layout geometry.
+`buildWorkbenchSpec.m` stays data-only. It receives framework-generated
+semantic callbacks and returns a workbench spec. It does not create MATLAB
+handles, run IO, compute data, mutate app state, schedule startup work, or set
+concrete layout geometry.
 
 Use these app-facing contracts:
 
 - The default shell is a LabKit workbench: control tabs on the left and primary
   preview, plot, waveform, image, or canvas content on the right.
-- `definition.m` declares app identity, state factory, UI spec, actions,
-  render function, startup phases, and optional idle hydration phases.
+- `definition.m` declares app identity, state factory, UI spec, command
+  handler registry, visible-state update function, startup phases, and
+  optional idle hydration phases.
 - The framework runtime owns lifecycle scheduling, readiness/loading surface,
   generated callbacks, busy gating, debug exception plumbing, close guards, and
   hidden/minimized test behavior.
-- `buildSpec.m` describes controls and workspace structure only. App actions
-  own app-specific state changes, alerts, refresh decisions, and log wording.
+- `buildWorkbenchSpec.m` describes controls and workspace structure only. App
+  command handlers own app-specific state changes, alerts, refresh decisions,
+  and log wording.
 - Control ids are globally unique within an app. The UI registry is keyed by
   those ids, not by tab or section placement.
 - Public specs are semantic controls such as `filePanel`, `toolPanel`, `field`,
@@ -134,12 +143,12 @@ Use these app-facing contracts:
   Primitive MATLAB controls are implementation details.
 - `section` specs should contain real semantic controls. Use `toolPanel` as a
   named host when a reusable `labkit.ui.tool.*` control needs to attach a
-  composed runtime widget from app action/render code; do not leave empty titled
-  sections as placeholders.
+  composed runtime widget from app command or UI-update code; do not leave
+  empty titled sections as placeholders.
 - Public callbacks use `function callback(control, event)`. Events carry
   semantic fields such as `id`, `kind`, `source`, `value`, `previousValue`,
   and `ui`.
-- App actions should be named by user intent or startup phase. They receive
+- App commands should be named by user intent or startup phase. They receive
   framework payload/services, return updated app state, and request framework
   effects instead of directly mutating lifecycle state.
 - `filePanel` owns file input mechanics: file chooser defaults, optional
@@ -235,7 +244,7 @@ Use these app-facing contracts:
 The public spec grammar is semantic: pages, sections, controls, order, values,
 and callbacks. When a workflow needs a control that cannot be expressed with
 the ordinary specs, add a named framework or app-owned spec instead of placing
-MATLAB layout code in `buildSpec.m`.
+MATLAB layout code in `buildWorkbenchSpec.m`.
 
 Control tabs with more than one section include draggable horizontal
 separators by default. A tab may opt out with `resize="none"` when a fixed
