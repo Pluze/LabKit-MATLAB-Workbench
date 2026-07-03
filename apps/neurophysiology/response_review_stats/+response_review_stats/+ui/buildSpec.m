@@ -1,4 +1,4 @@
-% Expected caller: response_review_stats.run. Inputs are app callback
+% Expected caller: response_review_stats.definition. Inputs are app callback
 % handles. Output is a data-only UI 3.0 workbench spec.
 function spec = buildSpec(callbacks)
 %BUILDSPEC Build the Response Review Stats UI spec.
