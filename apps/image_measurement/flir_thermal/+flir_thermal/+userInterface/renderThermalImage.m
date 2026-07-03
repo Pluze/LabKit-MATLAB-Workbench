@@ -1,12 +1,16 @@
 % Expected caller: FLIR preview/export rendering. Inputs are a temperature
-% matrix, display range, palette name, and color-mapping mode. Output is RGB
-% display data only; the source temperature matrix is never transformed.
+% matrix, display range, palette name, color-mapping mode, and optional gamma
+% value. Output is RGB display data only; the source temperature matrix is
+% never transformed.
 
-function rgb = renderThermalImage(values, range, palette, colorMapping)
+function rgb = renderThermalImage(values, range, palette, colorMapping, gammaValue)
 %RENDERTHERMALIMAGE Render FLIR values with linear, log, or gamma colors.
 
     if nargin < 4
         colorMapping = "Linear";
+    end
+    if nargin < 5
+        gammaValue = 2.2;
     end
     colorMapping = lower(string(colorMapping));
     if ~any(colorMapping == ["log", "gamma"])
@@ -25,7 +29,7 @@ function rgb = renderThermalImage(values, range, palette, colorMapping)
         curveStrength = 99;
         mapped = log1p(curveStrength * scaled) ./ log1p(curveStrength);
     else
-        displayGamma = 2.2;
+        displayGamma = flir_thermal.userInterface.normalizeGammaValue(gammaValue);
         mapped = scaled .^ (1 / displayGamma);
     end
     cmap = paletteMap(palette, 256);

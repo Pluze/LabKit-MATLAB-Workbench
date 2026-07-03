@@ -20,6 +20,7 @@ function payload = writeOutputs(items, opts)
         result.sourcePath = items(k).path;
         result.palette = opts.palette;
         result.colorMapping = opts.colorMapping;
+        result.gammaValue = opts.gammaValue;
         result = addReadingResults(result, items(k));
         try
             [values, units] = flir_thermal.userInterface.valueMatrix(items(k));
@@ -34,10 +35,10 @@ function payload = writeOutputs(items, opts)
             temperatureCsvPath = uniqueOutputPath(opts.outputFolder, items(k).path, ...
                 "_temperature_c", "CSV");
             rgb = flir_thermal.userInterface.renderThermalImage(values, ...
-                range, opts.palette, opts.colorMapping);
+                range, opts.palette, opts.colorMapping, opts.gammaValue);
             labkit.image.writeFile(rgb, imagePath);
             labkit.image.writeFile(colorbarImage(range, opts.palette, ...
-                opts.colorMapping), colorbarPath);
+                opts.colorMapping, opts.gammaValue), colorbarPath);
             writematrix(flir_thermal.resultFiles.temperatureMatrix(items(k)), ...
                 temperatureCsvPath);
             result.thermalImagePath = imagePath;
@@ -72,6 +73,7 @@ function opts = normalizeOptions(opts)
         'format', string(optionValue(opts, 'format', "PNG")), ...
         'palette', string(optionValue(opts, 'palette', "turbo")), ...
         'colorMapping', string(optionValue(opts, 'colorMapping', "Linear")), ...
+        'gammaValue', double(optionValue(opts, 'gammaValue', 2.2)), ...
         'range', double(optionValue(opts, 'range', [])));
     opts.outputFolder = char(opts.outputFolder);
     opts.format = upper(opts.format);
@@ -86,6 +88,7 @@ function opts = normalizeOptions(opts)
         otherwise
             opts.colorMapping = "Linear";
     end
+    opts.gammaValue = flir_thermal.userInterface.normalizeGammaValue(opts.gammaValue);
     opts.range = opts.range(:).';
     if ~(isempty(opts.range) || (numel(opts.range) == 2 && ...
             all(isfinite(opts.range)) && opts.range(2) > opts.range(1)))
@@ -121,6 +124,7 @@ function result = emptyResult()
         'status', "pending", ...
         'palette', "", ...
         'colorMapping', "", ...
+        'gammaValue', NaN, ...
         'units', "", ...
         'rangeMin', NaN, ...
         'rangeMax', NaN, ...
@@ -276,11 +280,11 @@ function tf = isRoiMeanReading(item)
         item.roiMean.pixelCount]));
 end
 
-function image = colorbarImage(range, palette, colorMapping)
+function image = colorbarImage(range, palette, colorMapping, gammaValue)
     values = linspace(range(2), range(1), 256).';
     values = repmat(values, 1, 32);
     image = flir_thermal.userInterface.renderThermalImage(values, range, ...
-        palette, colorMapping);
+        palette, colorMapping, gammaValue);
 end
 
 function tableOut = buildManifest(results)

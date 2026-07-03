@@ -46,6 +46,9 @@ classdef GuiLayoutFlirThermalTest < matlab.uitest.TestCase
             testCase.verifyTrue(driver.enabled('rangePreset'));
             testCase.verifyTrue(driver.enabled('temperatureMin'));
             testCase.verifyTrue(driver.enabled('temperatureMax'));
+            testCase.verifyEqual(ui.controls.gammaValue.valueSpinner.Value, 2.2);
+            testCase.verifyEqual(ui.controls.gammaValue.valueSpinner.Limits, [0.1 5]);
+            testCase.verifyEqual(ui.controls.gammaValue.valueSpinner.Step, 0.1);
             testCase.verifyTrue(driver.enabled('autoRange'));
             testCase.verifyTrue(driver.enabled('groupRange'));
             testCase.verifyTrue(driver.enabled('perImageRange'));

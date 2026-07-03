@@ -308,7 +308,7 @@ function actions = definitionActions()
     end
     function exportItems(items, label)
         try
-            opts = exportOptions(items);
+            opts = exportOptions();
             payload = flir_thermal.resultFiles.writeOutputs(items, opts);
         catch ME
             showException('Could not export FLIR thermal images', ME);
@@ -360,7 +360,8 @@ function actions = definitionActions()
         [values, units, label] = flir_thermal.userInterface.valueMatrix(item);
         range = currentRange();
         rgb = flir_thermal.userInterface.renderThermalImage(values, ...
-            range, currentPalette(), string(labkit.ui.view.getValue(ui, 'colorMapping')));
+            range, currentPalette(), ...
+            string(labkit.ui.view.getValue(ui, 'colorMapping')), currentGamma());
         imageHandle = labkit.ui.view.drawImage(ui, 'preview', rgb, ...
             'axis', 'thermalImage', ...
             'title', char(label), ...
@@ -370,7 +371,9 @@ function actions = definitionActions()
         readingTool.setBackground(imageHandle);
         readingTool.activate();
         flir_thermal.userInterface.drawTemperatureReadings(ax, item);
-        drawTemperatureScale(range, units);
+        flir_thermal.userInterface.drawTemperatureScale(ui, range, units, ...
+            currentPalette(), string(labkit.ui.view.getValue(ui, 'colorMapping')), ...
+            currentGamma());
     end
     function setManualTemperaturePoint(pointXY)
         if ~hasCurrentItem()
@@ -543,29 +546,6 @@ function actions = definitionActions()
         labkit.ui.view.resetAxes(ui, 'preview', 'Scale', false, ...
             'temperatureScale');
     end
-    function drawTemperatureScale(range, units)
-        values = linspace(range(1), range(2), 256).';
-        imageData = flir_thermal.userInterface.renderThermalImage( ...
-            repmat(values, 1, 12), range, currentPalette(), ...
-            string(labkit.ui.view.getValue(ui, 'colorMapping')));
-        ax = ui.controls.preview.axesById.temperatureScale;
-        cla(ax);
-        image(ax, 'CData', imageData, 'XData', [0 1], 'YData', range);
-        title(ax, '');
-        ax.DataAspectRatioMode = 'auto';
-        ax.PlotBoxAspectRatioMode = 'auto';
-        ax.XLim = [0 1];
-        ax.YLim = [range(1) range(2)];
-        ax.YDir = 'normal';
-        ax.XTick = [];
-        ax.YTick = [range(1), mean(range), range(2)];
-        ax.YTickLabel = cellstr(string(compose('%.1f', ax.YTick)));
-        if units == "C"
-            ylabel(ax, 'deg C');
-        else
-            ylabel(ax, char(units));
-        end
-    end
     function syncRuntimeState()
         if isempty(fig) || ~isvalid(fig) || ...
                 ~isappdata(fig, 'labkitUiAppRuntime')
@@ -577,6 +557,10 @@ function actions = definitionActions()
     end
     function palette = currentPalette()
         palette = string(labkit.ui.view.getValue(ui, 'palette'));
+    end
+    function value = currentGamma()
+        value = flir_thermal.userInterface.normalizeGammaValue( ...
+            labkit.ui.view.getValue(ui, 'gammaValue'));
     end
     function range = clampRangeToBounds(range, bounds)
         range = normalizeRange(range);
@@ -594,12 +578,13 @@ function actions = definitionActions()
             bounds(2) = bounds(1) + 1;
         end
     end
-    function opts = exportOptions(items)
+    function opts = exportOptions()
         opts = struct();
         opts.outputFolder = S.outputFolder;
         opts.format = string(labkit.ui.view.getValue(ui, 'exportFormat'));
         opts.palette = currentPalette();
         opts.colorMapping = string(labkit.ui.view.getValue(ui, 'colorMapping'));
+        opts.gammaValue = currentGamma();
         opts.range = [];
     end
     function addLog(message)
