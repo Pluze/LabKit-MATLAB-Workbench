@@ -1,6 +1,6 @@
 % Initial CSC runtime state. Expected caller: csc.definition. Output is the
 % app-owned mutable workflow state.
-function state = initial()
+function state = createInitialState()
     state = struct();
     state.filepath = '';
     state.items = struct([]);

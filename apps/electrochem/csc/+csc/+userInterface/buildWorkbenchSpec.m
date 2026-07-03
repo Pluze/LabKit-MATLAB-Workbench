@@ -1,7 +1,7 @@
 % Expected caller: csc.definition. Input is a callback struct whose fields are
 % app-owned callback handles. Output is a data-only UI 3.0 workbench spec for
 % the CSC app.
-function spec = buildSpec(callbacks)
+function spec = buildWorkbenchSpec(callbacks)
 
     emptyChoice = {'(none)'};
     modeItems = {'Full', 'Cathodic', 'Anodic'};

@@ -52,7 +52,7 @@ Current facts:
   `labkit_launcher.m` only, by design.
 - There are 17 supported app packages. All currently launch through
   `labkit.ui.app.run(<slug>.definition(), request)`.
-- Chrono Overlay, EIS, VT Resistance, and CIC now prove the final
+- Chrono Overlay, EIS, VT Resistance, CIC, and CSC now prove the final
   workflow-first app package shape:
   `definitionActions.m`, `+appLifecycle/createInitialState.m`,
   `+userInterface/buildWorkbenchSpec.m`,
@@ -60,7 +60,7 @@ Current facts:
   `+sourceFiles`, `+analysisRun`, and `+resultFiles`, with no legacy
   `+actions`, `+state`, `+ui`, `+view`, `+ops`, `+io`, or `+export`
   buckets.
-- The other 13 app packages still use transitional `+state`, `+actions`,
+- The other 12 app packages still use transitional `+state`, `+actions`,
   `+ui`, and `+view` adapters. Treat those adapters as the next migration
   target, not as final behavior.
 - Package-root app `run.m` orchestration has been retired. App structure
@@ -330,7 +330,7 @@ flags to app code, or add a generator before the definition DSL is proven.
 2. App migration
    - Package-root runner orchestration has been retired; keep new work on
      definitions and workflow-first packages.
-   - Chrono Overlay, EIS, VT Resistance, and CIC are representative
+   - Chrono Overlay, EIS, VT Resistance, CIC, and CSC are representative
      workflow-first packages and should be used as small app references for
      the fixed lifecycle/UI surface and direct workflow package tests.
    - After runtime gaps are closed, migrate transitional definitions from

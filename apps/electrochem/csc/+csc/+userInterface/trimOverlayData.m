@@ -1,5 +1,5 @@
 % Expected caller: CSC app runner and unit tests. Inputs are the trim enabled
-% state, selected Y-axis name, selected X-axis values, and csc.ops.computeCSC
+% state, selected Y-axis name, selected X-axis values, and csc.analysisRun.computeCSC
 % result struct. Output is prepared overlay data only; no file or UI side
 % effects.
 

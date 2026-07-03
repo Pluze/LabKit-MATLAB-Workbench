@@ -2,7 +2,7 @@
 % maps semantic action ids to handlers used by labkit.ui.app.run. Handlers
 % preserve the legacy CSC GUI workflow while moving package-root orchestration
 % into the declarative runtime.
-function actions = table()
+function actions = definitionActions()
     actions = struct( ...
         "startup", @onStartup, ...
         "openFilesChosen", @onOpenFilesChosen, ...
@@ -329,7 +329,7 @@ function state = autoSetDefaults(state, services)
     if isempty(state.curves)
         return;
     end
-    defaults = csc.view.defaultPlotSelections(ui.controls.topX.valueHandle.Items);
+    defaults = csc.userInterface.defaultPlotSelections(ui.controls.topX.valueHandle.Items);
     ui.controls.topX.valueHandle.Value = defaults.topX;
     ui.controls.topY.valueHandle.Value = defaults.topY;
     ui.controls.bottomX.valueHandle.Value = defaults.bottomX;
@@ -358,10 +358,10 @@ function plotTop(state, services)
     opts = struct('holdPlot', ui.controls.topHold.valueHandle.Value, ...
         'showGrid', ui.controls.topGrid.valueHandle.Value, ...
         'lineWidth', 1.2);
-    request = csc.view.plotRequest(curve, ...
+    request = csc.userInterface.plotRequest(curve, ...
         ui.controls.topX.valueHandle.Value, ...
         ui.controls.topY.valueHandle.Value, 'Top');
-    info = csc.ui.plotXY(ui.controls.plotAxes.axesById.top, request.x, ...
+    info = csc.userInterface.plotXY(ui.controls.plotAxes.axesById.top, request.x, ...
         request.y, request.labels, opts);
     if ~info.ok
         addLog(services, request.skipLog);
@@ -379,10 +379,10 @@ function plotBottom(state, services)
     opts = struct('holdPlot', ui.controls.bottomHold.valueHandle.Value, ...
         'showGrid', ui.controls.bottomGrid.valueHandle.Value, ...
         'lineWidth', 1.2);
-    request = csc.view.plotRequest(curve, ...
+    request = csc.userInterface.plotRequest(curve, ...
         ui.controls.bottomX.valueHandle.Value, ...
         ui.controls.bottomY.valueHandle.Value, 'Bottom');
-    info = csc.ui.plotXY(ui.controls.plotAxes.axesById.bottom, request.x, ...
+    info = csc.userInterface.plotXY(ui.controls.plotAxes.axesById.bottom, request.x, ...
         request.y, request.labels, opts);
     if ~info.ok
         addLog(services, request.skipLog);
@@ -407,8 +407,8 @@ function state = refreshCompare(state, ~, services)
     opts.mode = ui.controls.mode.valueHandle.Value;
     opts.scanRate = state.scanRate;
     opts.area_cm2 = ui.controls.area.valueHandle.Value;
-    result = csc.ops.computeCSC(curve, opts);
-    readout = csc.view.comparisonReadout(result, ui.controls.mode.valueHandle.Value);
+    result = csc.analysisRun.computeCSC(curve, opts);
+    readout = csc.userInterface.comparisonReadout(result, ui.controls.mode.valueHandle.Value);
 
     ui.controls.qct.valueHandle.Value = readout.qctText;
     ui.controls.qcv.valueHandle.Value = readout.qcvText;
@@ -506,7 +506,7 @@ function drawTrimOverlay(ax, enabled, xSelection, ySelection, curve, result)
     end
 
     [xValues, ~, ~, ~] = labkit.dta.getCurveXY(curve, xSelection, ySelection);
-    overlay = csc.view.trimOverlayData(enabled, ySelection, xValues, result);
+    overlay = csc.userInterface.trimOverlayData(enabled, ySelection, xValues, result);
     if ~overlay.ok
         return;
     end

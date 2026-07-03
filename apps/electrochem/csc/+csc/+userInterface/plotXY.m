@@ -1,7 +1,7 @@
 % App-owned CSC plotting helper. Expected caller: CSC action/render callbacks.
 % Inputs are a target axes, prepared X/Y vectors, label struct, and display
 % options. Output is a status struct for runner logging. Side effects are
-% limited to drawing on the supplied axes; assumes csc.view.plotRequest prepared
+% limited to drawing on the supplied axes; assumes csc.userInterface.plotRequest prepared
 % app-specific data and log text.
 function info = plotXY(ax, x, y, labels, opts)
 %PLOTXY Plot one prepared CSC X/Y numeric series.

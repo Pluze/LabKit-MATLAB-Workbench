@@ -2,5 +2,5 @@
 % labkit.ui.app.run after CSC actions complete. CSC callbacks currently
 % refresh the affected UI regions directly, so this hook intentionally has no
 % additional side effects.
-function render(~, ~, ~)
+function updateWorkbenchFromState(~, ~, ~)
 end

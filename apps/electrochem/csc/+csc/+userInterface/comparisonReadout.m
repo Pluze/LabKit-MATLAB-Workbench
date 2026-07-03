@@ -1,5 +1,5 @@
 % Expected caller: CSC app runner and unit tests. Inputs are a
-% csc.ops.computeCSC result struct and selected comparison mode. Output is a
+% csc.analysisRun.computeCSC result struct and selected comparison mode. Output is a
 % display/log text struct only; no file or UI side effects.
 
 function readout = comparisonReadout(result, mode)
@@ -37,9 +37,9 @@ function readout = comparisonReadout(result, mode)
     end
 
     readout.ok = true;
-    readout.qctText = csc.view.formatChargeAndCSC(result.Qct, result.area_cm2);
-    readout.qcvText = csc.view.formatChargeAndCSC(result.Qcv, result.area_cm2);
-    readout.diffText = csc.view.formatChargeAndCSC(result.diff_C, result.area_cm2);
+    readout.qctText = csc.userInterface.formatChargeAndCSC(result.Qct, result.area_cm2);
+    readout.qcvText = csc.userInterface.formatChargeAndCSC(result.Qcv, result.area_cm2);
+    readout.diffText = csc.userInterface.formatChargeAndCSC(result.diff_C, result.area_cm2);
     readout.relText = sprintf('%.6f %%', result.rel_pct);
     readout.dtErrText = sprintf('%.6e s', result.dtErr);
     readout.logMessage = sprintf(['Compare [%s]: Qct=%.6e C, Qcv=%.6e C, ', ...
