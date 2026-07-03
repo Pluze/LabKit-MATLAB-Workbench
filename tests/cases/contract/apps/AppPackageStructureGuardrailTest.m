@@ -73,6 +73,7 @@ function assertCanonicalAppPackageStructure(testCase, root, appRelDir, packageNa
     uiDir = fullfile(packageDir, '+ui');
     entrypointFile = fullfile(appDir, entrypointName);
     runFile = fullfile(packageDir, 'run.m');
+    definitionFile = fullfile(packageDir, 'definition.m');
     buildSpecFile = fullfile(uiDir, 'buildSpec.m');
     appLabel = relativePath(root, appDir);
 
@@ -91,18 +92,28 @@ function assertCanonicalAppPackageStructure(testCase, root, appRelDir, packageNa
         relativePath(root, buildSpecFile)]);
     testCase.verifyTrue(isfile(entrypointFile), ...
         ['Missing app entrypoint: ' relativePath(root, entrypointFile)]);
-    testCase.verifyTrue(isfile(runFile), ...
-        ['App lifecycle runner must live at package root: ' ...
-        relativePath(root, runFile)]);
+    testCase.verifyTrue(isfile(definitionFile) || isfile(runFile), ...
+        ['App package must provide a definition runtime or legacy runner: ' ...
+        relativePath(root, packageDir)]);
     testCase.verifyFalse(isfile(fullfile(uiDir, 'runApp.m')), ...
         [appLabel ' should not keep app lifecycle orchestration in +ui/runApp.m.']);
 
-    orchestrationSource = appOrchestrationSource(entrypointFile, ...
-        runFile);
-    testCase.verifyTrue(contains(orchestrationSource, [packageName '.ui.buildSpec(']), ...
+    orchestrationSource = appOrchestrationSource(entrypointFile, runFile, ...
+        definitionFile);
+    usesBuildSpecCall = contains(orchestrationSource, [packageName '.ui.buildSpec(']) || ...
+        contains(orchestrationSource, ['@' packageName '.ui.buildSpec']);
+    testCase.verifyTrue(usesBuildSpecCall, ...
         [appLabel ' should call its canonical +ui/buildSpec.m file.']);
-    testCase.verifyTrue(contains(orchestrationSource, 'labkit.ui.app.create('), ...
-        [appLabel ' should launch through labkit.ui.app.create.']);
+    if isfile(definitionFile)
+        testCase.verifyTrue(contains(orchestrationSource, 'labkit.ui.app.run(') && ...
+            contains(orchestrationSource, [packageName '.definition()']), ...
+            [appLabel ' migrated definitions should launch through labkit.ui.app.run.']);
+        testCase.verifyFalse(isfile(runFile), ...
+            [appLabel ' should not keep package-root run.m after migrating to definition.m.']);
+    else
+        testCase.verifyTrue(contains(orchestrationSource, 'labkit.ui.app.create('), ...
+            [appLabel ' legacy runner should launch through labkit.ui.app.create.']);
+    end
 
     buildSpecSource = fileread(buildSpecFile);
     testCase.verifyTrue(contains(buildSpecSource, 'labkit.ui.spec.app'), ...
@@ -124,8 +135,15 @@ function assertCanonicalAppPackageStructure(testCase, root, appRelDir, packageNa
         family, packageName);
 end
 
-function source = appOrchestrationSource(entrypointFile, runFile)
-    source = strjoin({fileread(entrypointFile), fileread(runFile)}, newline);
+function source = appOrchestrationSource(entrypointFile, runFile, definitionFile)
+    parts = {fileread(entrypointFile)};
+    if isfile(runFile)
+        parts{end + 1} = fileread(runFile);
+    end
+    if isfile(definitionFile)
+        parts{end + 1} = fileread(definitionFile);
+    end
+    source = strjoin(parts, newline);
 end
 
 function words = buildSpecForbiddenWords()
