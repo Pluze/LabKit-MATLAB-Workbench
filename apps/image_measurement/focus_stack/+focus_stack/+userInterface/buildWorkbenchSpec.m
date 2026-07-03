@@ -1,5 +1,5 @@
 % Expected caller: focus_stack.definition. Inputs are app-owned callback
-% handles and initial app state. Output is a data-only UI 3.0 workbench spec
+% handles and initial app state. Output is a data-only UI 4.0 workbench spec
 % for the Focus Stack app.
 function spec = buildWorkbenchSpec(callbacks, ~)
     fusionPresets = {'Balanced', 'Crisp details', ...

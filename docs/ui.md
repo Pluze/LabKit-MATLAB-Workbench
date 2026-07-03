@@ -5,8 +5,8 @@
 | Facade | Owns | Main APIs |
 | --- | --- | --- |
 | `labkit.ui.app` | Declarative app runtime, request dispatch, readiness/busy state, safe dialog defaults, app title versioning. | `define`, `run`, `create`, `dispatchRequest`, `appVersionTitle`, `applyVersionTitle`, `defaultDialogFolder`, `defaultOutputFolder`, `promptOutputFile`, `promptOutputFolder`, `runBusy`, `setCloseGuard`, `showAlert`. |
-| `labkit.ui.spec` | UI 3.0 data-only workbench specs. | `app`, `workspace`, `tab`, `section`, `field`, `rangeField`, `panner`, `action`, `actionGroup`, `filePanel`, `toolPanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `usagePanel`. |
-| `labkit.ui.view` | Semantic UI 3.0 registry updates and preview rendering helpers. | `setValue`, `getValue`, `getFiles`, `setFileSelection`, `setEnabled`, `setLimits`, `appendLog`, `setListItems`, `setListSelection`, `fileLabels`, `filePaths`, `fileIndices`, `drawImage`, `resetAxes`, `clearAxes`. |
+| `labkit.ui.spec` | UI 4.0 data-only workbench specs. | `app`, `workspace`, `tab`, `section`, `group`, `field`, `rangeField`, `panner`, `action`, `filePanel`, `toolPanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `usagePanel`. |
+| `labkit.ui.view` | Semantic UI 4.0 registry updates and preview rendering helpers. | `setValue`, `getValue`, `getFiles`, `setFileSelection`, `setEnabled`, `setLimits`, `appendLog`, `setListItems`, `setListSelection`, `fileLabels`, `filePaths`, `fileIndices`, `drawImage`, `resetAxes`, `clearAxes`. |
 | `labkit.ui.tool` | Reusable composed preview tools and interaction runtime. | `createRuntime`, `anchorEditor`, `scaleBar`, `scaleBarCalibration`, `enableAxesPopout`, `popoutAxes`, `zoomAxesAtPoint`. |
 | `labkit.ui.diag` | Debug launch context, visible trace, callback instrumentation, and crash reports. | `createContext`. |
 
@@ -232,9 +232,10 @@ Use these app-facing contracts:
 - Section height is automatic: the builder estimates height from child control
   types and framework spacing defaults. Apps declare only the page, section,
   and control order.
-- `actionGroup` lays out commands in wrapped rows by default instead of
-  forcing every button onto one line. The framework chooses the column count
-  from the button count and label length.
+- `group` composes related semantic controls inside a section. Groups whose
+  children are all `action` specs lay out commands in wrapped rows by default
+  instead of forcing every button onto one line; the framework chooses the
+  column count from the button count and label length.
 - Use app-level `usage`/`usageTitle` on `labkit.ui.spec.app` for static
   workflow instructions. The framework places that read-only usage panel at the
   bottom of the first control tab.
@@ -276,7 +277,7 @@ framework readiness flags, or manage loading controls directly.
 Every `labkit.ui.spec.action` callback runs as an app-wide action transaction.
 The framework marks the app busy before invoking the app callback and clears
 that busy state after the callback returns or errors. While the figure is busy,
-other UI 3.0 semantic callbacks return without invoking app code, so repeated
+other UI 4.0 semantic callbacks return without invoking app code, so repeated
 clicks or value changes do not submit duplicate work even when the user waits
 and interacts again before the first action finishes.
 
@@ -293,7 +294,7 @@ callback runs. Use `busyMessage` only when the title text needs to differ from
 the button label.
 
 `labkit.ui.app.runBusy` remains the lower-level helper for custom synchronous
-work that is not launched from a UI 3.0 action:
+work that is not launched from a UI 4.0 action:
 
 ```matlab
 payload = labkit.ui.app.runBusy(fig, ...

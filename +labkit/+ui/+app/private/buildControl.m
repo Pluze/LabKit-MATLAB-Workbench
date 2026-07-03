@@ -13,8 +13,8 @@ function ui = buildControl(ui, controlSpec, parentGrid, row, debug)
                 parentGrid, row);
         case 'action'
             ui = buildAction(ui, controlSpec, parentGrid, row, [1 2]);
-        case 'actionGroup'
-            ui = buildActionGroup(ui, controlSpec, parentGrid, row);
+        case 'group'
+            ui = buildGroup(ui, controlSpec, parentGrid, row, debug);
         case 'filePanel'
             ui = buildFilePanel(ui, controlSpec, parentGrid, row);
         case 'resultTable'
@@ -29,7 +29,7 @@ function ui = buildControl(ui, controlSpec, parentGrid, row, debug)
             ui = buildToolPanelControl(ui, controlSpec, parentGrid, row);
         otherwise
             error('labkit:ui:app:UnsupportedControl', ...
-                'Unsupported UI 3.0 control kind "%s".', controlSpec.kind);
+                'Unsupported UI 4.0 control kind "%s".', controlSpec.kind);
     end
 end
 
@@ -100,7 +100,7 @@ function control = createFieldControl(parentGrid, kind, props, enabled)
             applyTextFit(control);
         otherwise
             error('labkit:ui:app:UnsupportedFieldKind', ...
-                'Unsupported UI 3.0 field kind "%s".', kind);
+                'Unsupported UI 4.0 field kind "%s".', kind);
     end
     applyCommonValueProps(control, props);
     applySliderTicks(control, props);
@@ -173,10 +173,26 @@ function ui = buildRangeField(ui, rangeSpec, parentGrid, row)
     end
 end
 
-function ui = buildActionGroup(ui, groupSpec, parentGrid, row)
+function ui = buildGroup(ui, groupSpec, parentGrid, row, debug)
+    if usesActionLayout(groupSpec)
+        ui = buildActionLayout(ui, groupSpec, parentGrid, row);
+        return;
+    end
+    ui = buildFormGroup(ui, groupSpec, parentGrid, row, debug);
+end
+
+function tf = usesActionLayout(groupSpec)
+    layout = lower(char(string(optionValue(groupSpec.props, 'layout', 'auto'))));
+    childKinds = string(cellfun(@(child) child.kind, groupSpec.children, ...
+        'UniformOutput', false));
+    tf = strcmp(layout, 'actions') || ...
+        (strcmp(layout, 'auto') && all(childKinds == "action"));
+end
+
+function ui = buildActionLayout(ui, groupSpec, parentGrid, row)
     actions = groupSpec.children;
     count = max(1, numel(actions));
-    maxColumns = actionGroupMaxColumns(groupSpec);
+    maxColumns = actionLayoutMaxColumns(groupSpec);
     columnCount = min(count, maxColumns);
     rowCount = max(1, ceil(count / columnCount));
     grid = uigridlayout(parentGrid, [rowCount columnCount]);
@@ -187,7 +203,7 @@ function ui = buildActionGroup(ui, groupSpec, parentGrid, row)
     grid.ColumnWidth = repmat({'1x'}, 1, columnCount);
     grid.Layout.Row = row;
     grid.Layout.Column = [1 2];
-    adapter = baseAdapter(groupSpec, 'actionGroup');
+    adapter = baseAdapter(groupSpec, 'group');
     adapter.grid = grid;
     adapter.actions = struct();
     ui.controls.(groupSpec.id) = adapter;
@@ -204,7 +220,42 @@ function ui = buildActionGroup(ui, groupSpec, parentGrid, row)
     end
 end
 
-function maxColumns = actionGroupMaxColumns(groupSpec)
+function ui = buildFormGroup(ui, groupSpec, parentGrid, row, debug)
+    childCount = max(1, numel(groupSpec.children));
+    titleText = char(string(optionValue(groupSpec.props, 'title', '')));
+    if strlength(string(titleText)) > 0
+        host = uipanel(parentGrid, 'Title', titleText);
+    else
+        host = uipanel(parentGrid, 'BorderType', 'none');
+    end
+    host.Layout.Row = row;
+    host.Layout.Column = [1 2];
+
+    grid = uigridlayout(host, [childCount 2]);
+    grid.RowHeight = groupRowHeights(groupSpec.children);
+    grid.ColumnWidth = {120, '1x'};
+    grid.RowSpacing = 6;
+    grid.ColumnSpacing = 8;
+    grid.Padding = [0 0 0 0];
+
+    adapter = baseAdapter(groupSpec, 'group');
+    adapter.panel = host;
+    adapter.grid = grid;
+    ui.controls.(groupSpec.id) = adapter;
+    for iChild = 1:numel(groupSpec.children)
+        ui = buildControl(ui, groupSpec.children{iChild}, grid, iChild, debug);
+    end
+end
+
+function rowHeight = groupRowHeights(children)
+    count = max(1, numel(children));
+    rowHeight = repmat({'fit'}, 1, count);
+    for k = 1:numel(children)
+        rowHeight{k} = specRowHeight(children{k}, 'fit');
+    end
+end
+
+function maxColumns = actionLayoutMaxColumns(groupSpec)
     maxColumns = 2;
     labels = actionLabels(groupSpec.children);
     if any(strlength(labels) > 28)

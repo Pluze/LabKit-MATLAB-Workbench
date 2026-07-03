@@ -1,5 +1,5 @@
 % Private UI view helper. Expected caller: named labkit.ui.view axes helpers.
-% Returns the requested axes from a previewArea or axes-like UI 3.0 adapter.
+% Returns the requested axes from a previewArea or axes-like UI 4.0 adapter.
 function ax = controlAxes(control, axisId)
     if nargin < 2
         axisId = "";

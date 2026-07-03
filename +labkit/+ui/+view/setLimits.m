@@ -1,5 +1,5 @@
 function setLimits(ui, id, limits)
-%SETLIMITS Set numeric limits for a UI 3.0 control.
+%SETLIMITS Set numeric limits for a UI 4.0 control.
 %
 % App-facing contract:
 %   labkit.ui.view.setLimits(ui, id, limits)

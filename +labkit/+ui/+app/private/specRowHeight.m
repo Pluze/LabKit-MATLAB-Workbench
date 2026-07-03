@@ -1,5 +1,5 @@
 % Private UI app layout helper. Expected caller: buildShellFromSpec and
-% buildSection. Inputs are one validated UI 3.0 spec and an optional default
+% buildSection. Inputs are one validated UI 4.0 spec and an optional default
 % row height. Output is a MATLAB uigridlayout RowHeight value.
 function value = specRowHeight(spec, defaultValue)
     if nargin < 2
@@ -25,8 +25,8 @@ function value = specRowHeight(spec, defaultValue)
             value = actionHeight(spec);
         case 'resultTable'
             value = tablePanelHeight();
-        case 'actionGroup'
-            value = actionGroupHeight(spec);
+        case 'group'
+            value = groupHeight(spec);
         otherwise
             value = normalizeHeight(defaultValue);
     end
@@ -72,18 +72,52 @@ function value = tablePanelHeight()
     value = max(185, 24 * max(1, double(rows)) + 58);
 end
 
-function value = actionGroupHeight(groupSpec)
+function value = groupHeight(groupSpec)
+    if ~usesActionLayout(groupSpec)
+        value = formGroupHeight(groupSpec);
+        return;
+    end
+    value = actionLayoutHeight(groupSpec);
+end
+
+function tf = usesActionLayout(groupSpec)
+    layout = lower(char(string(optionValue(groupSpec.props, 'layout', 'auto'))));
+    childKinds = string(cellfun(@(child) child.kind, groupSpec.children, ...
+        'UniformOutput', false));
+    tf = strcmp(layout, 'actions') || ...
+        (strcmp(layout, 'auto') && all(childKinds == "action"));
+end
+
+function value = actionLayoutHeight(groupSpec)
     count = numel(groupSpec.children);
     if count == 0
         value = defaultControlHeight();
         return;
     end
-    maxColumns = actionGroupMaxColumns(groupSpec);
+    maxColumns = actionLayoutMaxColumns(groupSpec);
     columnCount = min(count, maxColumns);
     rowCount = max(1, ceil(count / columnCount));
     rowHeight = max(defaultControlHeight(), max(actionHeights(groupSpec.children)));
     value = rowCount * rowHeight + ...
         max(0, rowCount - 1) * 6;
+end
+
+function value = formGroupHeight(groupSpec)
+    if isempty(groupSpec.children)
+        value = defaultControlHeight();
+        return;
+    end
+    rowHeights = zeros(1, numel(groupSpec.children));
+    for k = 1:numel(groupSpec.children)
+        childHeight = specRowHeight(groupSpec.children{k}, 'fit');
+        rowHeights(k) = numericRowHeight(childHeight, defaultControlHeight());
+    end
+    titleAllowance = 0;
+    if strlength(string(optionValue(groupSpec.props, 'title', ''))) > 0
+        titleAllowance = 24;
+    end
+    value = sum(rowHeights) + 6 * max(0, numel(rowHeights) - 1) + ...
+        titleAllowance;
 end
 
 function value = fieldHeight(fieldSpec)
@@ -119,7 +153,7 @@ function value = estimatedTextHeight(texts, charsPerLine, maxLines)
     value = max(defaultControlHeight(), 20 * lineCount + 6);
 end
 
-function maxColumns = actionGroupMaxColumns(groupSpec)
+function maxColumns = actionLayoutMaxColumns(groupSpec)
     maxColumns = 2;
     labels = actionLabels(groupSpec.children);
     if any(strlength(labels) > 28)

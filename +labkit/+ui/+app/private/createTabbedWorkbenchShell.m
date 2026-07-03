@@ -13,7 +13,7 @@ function ui = createTabbedWorkbenchShell(figName, figPosition, leftWidth, labels
 %   figPosition - uifigure Position vector.
 %   leftWidth - initial fixed width of the left control panel.
 %   labels - struct with controlsPanel and rightPanel text.
-%   tabSpecs - internal tab specs derived from UI 3.0 app specs.
+%   tabSpecs - internal tab specs derived from UI 4.0 app specs.
 %   rightGridSize - right-side uigridlayout size.
 %   rightRowHeight - right-side grid RowHeight cell array.
 %   rightRowSpacing - right-side grid RowSpacing scalar.
@@ -24,7 +24,7 @@ function ui = createTabbedWorkbenchShell(figName, figPosition, leftWidth, labels
 %
 % Notes:
 %   Logical tab rows are expanded with physical resize-handle rows here.
-%   App code should use UI 3.0 specs rather than depending on physical row
+%   App code should use UI 4.0 specs rather than depending on physical row
 %   indices.
 
     if nargin < 9

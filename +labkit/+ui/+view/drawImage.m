@@ -1,5 +1,5 @@
 function imageHandle = drawImage(ui, id, imageData, varargin)
-%DRAWIMAGE Draw image data into a UI 3.0 previewArea axes.
+%DRAWIMAGE Draw image data into a UI 4.0 previewArea axes.
 %
 % App-facing contract:
 %   h = labkit.ui.view.drawImage(ui, id, imageData, "title", titleText, ...

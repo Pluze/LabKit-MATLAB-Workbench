@@ -20,7 +20,7 @@ function validateAppSpec(spec)
     duplicate = firstDuplicate(ids);
     if strlength(duplicate) > 0
         error('labkit:ui:app:DuplicateId', ...
-            'Duplicate UI 3.0 spec id "%s".', char(duplicate));
+            'Duplicate UI 4.0 spec id "%s".', char(duplicate));
     end
     validateTreeShape(spec);
 end
@@ -69,10 +69,13 @@ function validateTreeShape(spec)
         case 'section'
             validateNonEmptySection(spec);
             validateChildKinds(spec, {'field', 'rangeField', 'panner', 'action', ...
-                'actionGroup', 'filePanel', 'resultTable', 'statusPanel', ...
+                'group', 'filePanel', 'resultTable', 'statusPanel', ...
                 'usagePanel', 'logPanel', 'toolPanel'});
-        case 'actionGroup'
-            validateChildKinds(spec, {'action'});
+        case 'group'
+            validateNonEmptyGroup(spec);
+            validateGroupLayout(spec);
+            validateChildKinds(spec, {'field', 'rangeField', 'panner', ...
+                'action', 'group'});
         otherwise
             validateChildKinds(spec, {});
     end
@@ -84,6 +87,36 @@ function validateNonEmptySection(spec)
             ['Spec "%s" declares an empty section. Add semantic controls, ' ...
             'or use labkit.ui.spec.toolPanel for reusable tool hosts.'], ...
             spec.id);
+    end
+end
+
+function validateNonEmptyGroup(spec)
+    if isempty(spec.children)
+        error('labkit:ui:app:EmptyGroup', ...
+            'Spec "%s" declares an empty group. Add semantic child controls.', ...
+            spec.id);
+    end
+end
+
+function validateGroupLayout(spec)
+    layout = string(optionValue(spec.props, 'layout', 'auto'));
+    allowed = ["auto", "actions", "form", "inline", "grid"];
+    if ~isscalar(layout) || ~any(layout == allowed)
+        error('labkit:ui:app:InvalidGroupLayout', ...
+            'Spec "%s" uses unsupported group layout "%s".', ...
+            spec.id, char(layout));
+    end
+    if layout == "actions" && ~allGroupChildrenAre(spec, 'action')
+        error('labkit:ui:app:InvalidGroupLayout', ...
+            'Spec "%s" uses action layout but contains non-action children.', ...
+            spec.id);
+    end
+end
+
+function tf = allGroupChildrenAre(spec, kind)
+    tf = true;
+    for k = 1:numel(spec.children)
+        tf = tf && strcmp(spec.children{k}.kind, kind);
     end
 end
 
@@ -127,6 +160,13 @@ function assertCommonSpec(spec)
             ~iscell(spec.children) || ...
             ~(isempty(spec.children) || isrow(spec.children))
         error('labkit:ui:app:InvalidSpec', ...
-            'UI 3.0 specs must be scalar structs with cell row children.');
+            'UI 4.0 specs must be scalar structs with cell row children.');
+    end
+end
+
+function value = optionValue(opts, name, defaultValue)
+    value = defaultValue;
+    if isstruct(opts) && isfield(opts, name)
+        value = opts.(name);
     end
 end

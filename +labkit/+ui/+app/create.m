@@ -1,5 +1,5 @@
 function ui = create(spec, varargin)
-%CREATE Build a LabKit UI 3.0 workbench from declarative specs.
+%CREATE Build a LabKit UI 4.0 workbench from declarative specs.
 %
 % App-facing contract:
 %   ui = labkit.ui.app.create(spec, "debug", debugContext)

@@ -1,5 +1,5 @@
 function setListItems(ui, id, items)
-%SETLISTITEMS Replace the items of a UI 3.0 list-bearing control.
+%SETLISTITEMS Replace the items of a UI 4.0 list-bearing control.
 %
 % App-facing contract:
 %   labkit.ui.view.setListItems(ui, id, items)

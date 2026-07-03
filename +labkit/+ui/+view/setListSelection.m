@@ -1,5 +1,5 @@
 function varargout = setListSelection(ui, id, items, preferred, opts)
-%SETLISTSELECTION Apply list selection for a UI 3.0 list-bearing control.
+%SETLISTSELECTION Apply list selection for a UI 4.0 list-bearing control.
 %
 % App-facing contract:
 %   [value, index] = labkit.ui.view.setListSelection(ui, id, items, preferred, opts)

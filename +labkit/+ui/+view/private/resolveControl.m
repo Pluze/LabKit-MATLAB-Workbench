@@ -1,5 +1,5 @@
 % Private UI view helper. Expected caller: named labkit.ui.view helpers.
-% Resolves a semantic control id against a UI 3.0 registry, or passes through
+% Resolves a semantic control id against a UI 4.0 registry, or passes through
 % an adapter struct already returned by the registry.
 function control = resolveControl(uiOrControl, id)
     if nargin < 2

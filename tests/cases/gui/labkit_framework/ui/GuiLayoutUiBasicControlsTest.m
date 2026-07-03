@@ -1,5 +1,5 @@
 classdef GuiLayoutUiBasicControlsTest < matlab.uitest.TestCase
-    %GUILAYOUTUIBASICCONTROLSTEST Verify UI 3.0 view helper contracts.
+    %GUILAYOUTUIBASICCONTROLSTEST Verify UI 4.0 view helper contracts.
 
     methods (Test, TestTags = {'GUI', 'Structural'})
         function test_gui_layout_ui_basic_controls(testCase)
