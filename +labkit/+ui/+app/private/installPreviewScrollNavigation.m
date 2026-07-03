@@ -9,7 +9,6 @@ function installPreviewScrollNavigation(fig, axesHandles)
     if isempty(axesHandles)
         return;
     end
-    disableBuiltInWheelNavigation(axesHandles);
 
     key = 'labkitPreviewScrollNavigation';
     if isappdata(fig, key)
@@ -17,11 +16,16 @@ function installPreviewScrollNavigation(fig, axesHandles)
     else
         state = struct();
         state.axes = gobjects(1, 0);
+        state.preparedAxes = gobjects(1, 0);
         state.fallbackScrollFcn = fig.WindowScrollWheelFcn;
         state.callback = @onPreviewScroll;
     end
+    if ~isfield(state, 'preparedAxes')
+        state.preparedAxes = gobjects(1, 0);
+    end
 
     state.axes = uniqueAxes([normalizeAxes(state.axes), axesHandles]);
+    state.preparedAxes = axesInSet(normalizeAxes(state.preparedAxes), state.axes);
     setappdata(fig, key, state);
 
     current = fig.WindowScrollWheelFcn;
@@ -44,6 +48,7 @@ function installPreviewScrollNavigation(fig, axesHandles)
         if scrollCount == 0
             return;
         end
+        navState = prepareAxesForWheelNavigation(src, key, navState, ax);
         point = ax.CurrentPoint;
         labkit.ui.tool.zoomAxesAtPoint(ax, point(1, 1:2), scrollCount);
     end
@@ -169,22 +174,52 @@ function axesHandles = uniqueAxes(axesHandles)
     axesHandles = axesHandles(keep);
 end
 
-function disableBuiltInWheelNavigation(axesHandles)
+function state = prepareAxesForWheelNavigation(fig, key, state, ax)
+    if axesContains(state.preparedAxes, ax)
+        return;
+    end
+    disableBuiltInWheelNavigation(ax);
+    state.preparedAxes = uniqueAxes([normalizeAxes(state.preparedAxes), ax]);
+    if isValidHandle(fig)
+        setappdata(fig, key, state);
+    end
+end
+
+function disableBuiltInWheelNavigation(ax)
+    try
+        disableDefaultInteractivity(ax);
+    catch
+    end
+    try
+        ax.Interactions = [];
+    catch
+    end
+    try
+        if ~strcmp(ax.Toolbar.Visible, 'on')
+            ax.Toolbar.Visible = 'on';
+        end
+    catch
+    end
+end
+
+function axesHandles = axesInSet(axesHandles, allowedAxes)
+    keep = false(size(axesHandles));
     for k = 1:numel(axesHandles)
-        ax = axesHandles(k);
-        try
-            disableDefaultInteractivity(ax);
-        catch
-        end
-        try
-            ax.Interactions = [];
-        catch
-        end
-        try
-            if ~strcmp(ax.Toolbar.Visible, 'on')
-                ax.Toolbar.Visible = 'on';
-            end
-        catch
+        keep(k) = axesContains(allowedAxes, axesHandles(k));
+    end
+    axesHandles = axesHandles(keep);
+end
+
+function tf = axesContains(axesHandles, ax)
+    tf = false;
+    axesHandles = normalizeAxes(axesHandles);
+    if ~isValidHandle(ax)
+        return;
+    end
+    for k = 1:numel(axesHandles)
+        if isequal(axesHandles(k), ax)
+            tf = true;
+            return;
         end
     end
 end
