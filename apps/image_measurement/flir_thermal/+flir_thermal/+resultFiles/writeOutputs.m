@@ -78,10 +78,13 @@ function opts = normalizeOptions(opts)
     if ~any(opts.format == ["PNG", "TIFF", "JPEG"])
         opts.format = "PNG";
     end
-    if lower(opts.colorMapping) == "log"
-        opts.colorMapping = "Log";
-    else
-        opts.colorMapping = "Linear";
+    switch lower(opts.colorMapping)
+        case "log"
+            opts.colorMapping = "Log";
+        case "gamma"
+            opts.colorMapping = "Gamma";
+        otherwise
+            opts.colorMapping = "Linear";
     end
     opts.range = opts.range(:).';
     if ~(isempty(opts.range) || (numel(opts.range) == 2 && ...

@@ -3,13 +3,13 @@
 % display data only; the source temperature matrix is never transformed.
 
 function rgb = renderThermalImage(values, range, palette, colorMapping)
-%RENDERTHERMALIMAGE Render FLIR values with linear or log color mapping.
+%RENDERTHERMALIMAGE Render FLIR values with linear, log, or gamma colors.
 
     if nargin < 4
         colorMapping = "Linear";
     end
     colorMapping = lower(string(colorMapping));
-    if colorMapping ~= "log"
+    if ~any(colorMapping == ["log", "gamma"])
         rgb = labkit.thermal.renderImage(values, ...
             struct('Limits', range, 'Palette', palette));
         return;
@@ -21,8 +21,13 @@ function rgb = renderThermalImage(values, range, palette, colorMapping)
     scaled(~isfinite(scaled)) = 0;
     scaled = min(1, max(0, scaled));
 
-    curveStrength = 99;
-    mapped = log1p(curveStrength * scaled) ./ log1p(curveStrength);
+    if colorMapping == "log"
+        curveStrength = 99;
+        mapped = log1p(curveStrength * scaled) ./ log1p(curveStrength);
+    else
+        displayGamma = 2.2;
+        mapped = scaled .^ (1 / displayGamma);
+    end
     cmap = paletteMap(palette, 256);
     indices = floor(mapped .* (size(cmap, 1) - 1)) + 1;
     rgb = reshape(cmap(indices(:), :), [size(values, 1), size(values, 2), 3]);
