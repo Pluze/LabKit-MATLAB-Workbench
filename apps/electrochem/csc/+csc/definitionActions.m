@@ -11,11 +11,8 @@ function actions = definitionActions()
         "reloadSelected", @reloadSelectedFile, ...
         "fileSelectionChanged", @onSelectFile, ...
         "curveChanged", @onCurveChanged, ...
-        "autoPresetAndRefresh", @autoPresetAndRefresh, ...
-        "swapPlots", @onSwapPlots, ...
         "refreshCompare", @refreshCompare, ...
-        "refreshPlotsOnly", @refreshPlotsOnly, ...
-        "clearBothAxes", @clearBothAxes);
+        "refreshPlotsOnly", @refreshPlotsOnly);
 end
 
 function state = onStartup(state, ~, services)
@@ -252,45 +249,6 @@ function state = onCurveChanged(state, ~, services)
     state = updateDropdowns(state, services);
     state = autoSetDefaults(state, services);
     state = refreshAll(state, [], services);
-end
-
-function state = autoPresetAndRefresh(state, ~, services)
-    state = autoSetDefaults(state, services);
-    state = refreshAll(state, [], services);
-end
-
-function state = onSwapPlots(state, ~, services)
-    ui = services.ui;
-    tx = ui.controls.topX.valueHandle.Value;
-    ty = ui.controls.topY.valueHandle.Value;
-    tg = ui.controls.topGrid.valueHandle.Value;
-    th = ui.controls.topHold.valueHandle.Value;
-    tt = ui.controls.topTrim.valueHandle.Value;
-    bx = ui.controls.bottomX.valueHandle.Value;
-    by = ui.controls.bottomY.valueHandle.Value;
-
-    if any(strcmp(ui.controls.topX.valueHandle.Items, bx))
-        ui.controls.topX.valueHandle.Value = bx;
-    end
-    if any(strcmp(ui.controls.topY.valueHandle.Items, by))
-        ui.controls.topY.valueHandle.Value = by;
-    end
-    ui.controls.topGrid.valueHandle.Value = ui.controls.bottomGrid.valueHandle.Value;
-    ui.controls.topHold.valueHandle.Value = ui.controls.bottomHold.valueHandle.Value;
-    ui.controls.topTrim.valueHandle.Value = ui.controls.bottomTrim.valueHandle.Value;
-    if any(strcmp(ui.controls.bottomX.valueHandle.Items, tx))
-        ui.controls.bottomX.valueHandle.Value = tx;
-    end
-    if any(strcmp(ui.controls.bottomY.valueHandle.Items, ty))
-        ui.controls.bottomY.valueHandle.Value = ty;
-    end
-    ui.controls.bottomGrid.valueHandle.Value = tg;
-    ui.controls.bottomHold.valueHandle.Value = th;
-    ui.controls.bottomTrim.valueHandle.Value = tt;
-
-    addLog(services, 'Swapped top/bottom selections.');
-    state = refreshPlotsOnly(state, [], services);
-    state = refreshCompare(state, [], services);
 end
 
 function state = clearBothAxes(state, ~, services)

@@ -11,10 +11,7 @@ function actions = definitionActions()
         "exportResults", @onExportResults, ...
         "fileSelectionChanged", @onFileSelectionChanged, ...
         "analysisChanged", @onAnalyzeCurrentFile, ...
-        "reanalyzeFile", @onAnalyzeCurrentFile, ...
-        "refreshPlots", @onRefreshOnly, ...
-        "swapPlots", @onSwapPlots, ...
-        "resetAxes", @onResetAxes);
+        "refreshPlots", @onRefreshOnly);
 end
 
 function state = onStartup(state, ~, services)
@@ -178,23 +175,6 @@ function state = onExportResults(state, ~, services)
         return;
     end
     addLog(services, ['Exported CSV: ' char(out)]);
-end
-
-function state = onSwapPlots(state, ~, services)
-    ui = services.ui;
-    topX = ui.controls.topX.valueHandle.Value;
-    topY = ui.controls.topY.valueHandle.Value;
-    topGrid = ui.controls.topGrid.valueHandle.Value;
-    ui.controls.topX.valueHandle.Value = ui.controls.bottomX.valueHandle.Value;
-    ui.controls.topY.valueHandle.Value = ui.controls.bottomY.valueHandle.Value;
-    ui.controls.topGrid.valueHandle.Value = ui.controls.bottomGrid.valueHandle.Value;
-    ui.controls.bottomX.valueHandle.Value = topX;
-    ui.controls.bottomY.valueHandle.Value = topY;
-    ui.controls.bottomGrid.valueHandle.Value = topGrid;
-end
-
-function state = onResetAxes(state, ~, services)
-    restoreDefaultPlotSelections(services.ui);
 end
 
 function state = onRefreshOnly(state, ~, ~)

@@ -7,6 +7,7 @@ function h = guiTestHelpers()
     h.launchFigure = @launchFigure;
     h.assertButtonContract = @assertButtonContract;
     h.assertCheckboxContract = @assertCheckboxContract;
+    h.assertTextsAbsent = @assertTextsAbsent;
     h.assertTabTitles = @assertTabTitles;
     h.assertScrollablePanel = @assertScrollablePanel;
     h.assertScrollableGrid = @assertScrollableGrid;
@@ -63,6 +64,14 @@ function assertButtonContract(fig, expectedTexts)
     for k = 1:numel(expectedTexts)
         h = findControlByText(fig, expectedTexts{k}, 'ButtonPushedFcn');
         assertCallbackPresent(h, 'ButtonPushedFcn', expectedTexts{k});
+    end
+end
+
+function assertTextsAbsent(fig, unexpectedTexts)
+    actual = string(getTextValues(fig));
+    for k = 1:numel(unexpectedTexts)
+        assert(~any(actual == string(unexpectedTexts{k})), ...
+            'Unexpected GUI text/control: %s', unexpectedTexts{k});
     end
 end
 
