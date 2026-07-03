@@ -1,4 +1,4 @@
-% Expected caller: cic.ui.runApp. Input is a callback struct whose fields are
+% Expected caller: cic.definition. Input is a callback struct whose fields are
 % app-owned callback handles. Output is a data-only UI 3.0 workbench spec for
 % the CIC app.
 function spec = buildSpec(callbacks)
