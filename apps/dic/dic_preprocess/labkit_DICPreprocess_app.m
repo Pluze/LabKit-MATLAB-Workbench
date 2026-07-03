@@ -19,7 +19,8 @@ function varargout = labkit_DICPreprocess_app(varargin)
             'labkit_DICPreprocess_app returns at most the app figure handle.');
     end
 
-    fig = dic_preprocess.run(debugLog);
+    request = struct("debug", debugLog);
+    fig = labkit.ui.app.run(dic_preprocess.definition(), request);
     labkit.ui.app.applyVersionTitle(fig, appVersion);
     if nargout >= 1
         varargout{1} = fig;

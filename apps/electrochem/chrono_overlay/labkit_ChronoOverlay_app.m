@@ -19,7 +19,8 @@ function varargout = labkit_ChronoOverlay_app(varargin)
         error('labkit_ChronoOverlay_app:TooManyOutputs', 'labkit_ChronoOverlay_app returns at most the app figure handle.');
     end
 
-    fig = chrono_overlay.run(debugLog);
+    request = struct("debug", debugLog);
+    fig = labkit.ui.app.run(chrono_overlay.definition(), request);
     labkit.ui.app.applyVersionTitle(fig, appVersion);
     if nargout >= 1
         varargout{1} = fig;

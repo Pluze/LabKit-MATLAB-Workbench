@@ -16,10 +16,10 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
             multiPaths = reshape([string(firstImage); string(secondImage)], [], 1);
 
             readers = { ...
-                @() batch_crop.state.readItems(singlePath), ...
-                @() image_enhance.io.readImages(singlePath), ...
-                @() image_match.io.readImages(multiPaths), ...
-                @() focus_stack.io.readImages(multiPaths)};
+                @() batch_crop.appState.readItems(singlePath), ...
+                @() image_enhance.sourceFiles.readImages(singlePath), ...
+                @() image_match.sourceFiles.readImages(multiPaths), ...
+                @() focus_stack.sourceFiles.readImages(multiPaths)};
 
             for k = 1:numel(readers)
                 payload = readers{k}();
@@ -44,13 +44,13 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
             root = setupLabKitTestPath();
             readerFiles = [
                 fullfile(root, "apps", "image_measurement", "batch_crop", ...
-                    "+batch_crop", "+state", "readItems.m")
+                    "+batch_crop", "+appState", "readItems.m")
                 fullfile(root, "apps", "image_measurement", "image_enhance", ...
-                    "+image_enhance", "+io", "readImages.m")
+                    "+image_enhance", "+sourceFiles", "readImages.m")
                 fullfile(root, "apps", "image_measurement", "image_match", ...
-                    "+image_match", "+io", "readImages.m")
+                    "+image_match", "+sourceFiles", "readImages.m")
                 fullfile(root, "apps", "image_measurement", "focus_stack", ...
-                    "+focus_stack", "+io", "readImages.m")];
+                    "+focus_stack", "+sourceFiles", "readImages.m")];
             forbiddenPatterns = [
                 "string\(paths\)"
                 "paths\s*=\s*paths\(:\)"
@@ -71,7 +71,7 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
                 "path normalization belongs inside labkit.image: " + ...
                 strjoin(findings, "; "));
 
-            emptyCropItems = batch_crop.state.readItems(strings(0, 1));
+            emptyCropItems = batch_crop.appState.readItems(strings(0, 1));
             testCase.verifyEmpty(emptyCropItems, ...
                 'Batch crop reader should preserve empty string-list shape as no items.');
         end
@@ -285,26 +285,26 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
                 strjoin(findings, "; "));
         end
 
-        function dirtyImageWorkflowRunnersUseCloseGuard(testCase)
+        function dirtyImageWorkflowAppsUseCloseGuard(testCase)
             root = setupLabKitTestPath();
-            guardedRunnerFiles = [
+            guardedPackageDirs = [
                 fullfile(root, "apps", "image_measurement", "focus_stack", ...
-                    "+focus_stack", "run.m")
+                    "+focus_stack")
                 fullfile(root, "apps", "image_measurement", "image_enhance", ...
-                    "+image_enhance", "run.m")
+                    "+image_enhance")
                 fullfile(root, "apps", "image_measurement", "image_match", ...
-                    "+image_match", "run.m")];
+                    "+image_match")];
             findings = strings(0, 1);
 
-            for k = 1:numel(guardedRunnerFiles)
-                content = string(fileread(guardedRunnerFiles(k)));
+            for k = 1:numel(guardedPackageDirs)
+                content = readPackageSource(guardedPackageDirs(k));
                 if ~contains(content, "labkit.ui.app.setCloseGuard")
-                    findings(end+1, 1) = string(localRelativePath(root, guardedRunnerFiles(k)));
+                    findings(end+1, 1) = string(localRelativePath(root, guardedPackageDirs(k)));
                 end
             end
 
             testCase.verifyEmpty(findings, ...
-                "Image workflow runners with dirty/export fingerprints should " + ...
+                "Image workflow apps with dirty/export fingerprints should " + ...
                 "connect meaningful unfinished state to the framework close guard: " + ...
                 strjoin(findings, "; "));
         end
@@ -362,6 +362,15 @@ function files = collectAppRunFiles(root)
             files(end+1, 1) = pathValue;
         end
     end
+end
+
+function source = readPackageSource(packageDir)
+    files = dir(fullfile(packageDir, "**", "*.m"));
+    parts = cell(1, numel(files));
+    for k = 1:numel(files)
+        parts{k} = fileread(fullfile(files(k).folder, files(k).name));
+    end
+    source = string(strjoin(parts, newline));
 end
 
 function removeTempFolder(folder)

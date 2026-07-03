@@ -5,12 +5,12 @@ classdef CicViewTest < matlab.unittest.TestCase
         function displayUnitNormalizesKnownAndFallbackLabels(testCase)
             setupLabKitTestPath();
 
-            [scale, label, suffix] = cic.view.displayUnit('uC/cm^2');
+            [scale, label, suffix] = cic.userInterface.displayUnit('uC/cm^2');
             testCase.verifyEqual(scale, 1e3);
             testCase.verifyEqual(label, 'uC/cm^2');
             testCase.verifyEqual(suffix, 'uCcm2');
 
-            [scale, label, suffix] = cic.view.displayUnit('unexpected');
+            [scale, label, suffix] = cic.userInterface.displayUnit('unexpected');
             testCase.verifyEqual(scale, 1);
             testCase.verifyEqual(label, 'mC/cm^2');
             testCase.verifyEqual(suffix, 'mCcm2');
@@ -20,7 +20,7 @@ classdef CicViewTest < matlab.unittest.TestCase
             setupLabKitTestPath();
 
             items = makeItems();
-            summary = cic.view.buildCurrentSummary(items, 1, ...
+            summary = cic.userInterface.buildCurrentSummary(items, 1, ...
                 'Cathodic phase', 'uC/cm^2');
 
             testCase.verifyEqual(summary.controlMode, 'Current-controlled chrono');
@@ -44,7 +44,7 @@ classdef CicViewTest < matlab.unittest.TestCase
             items(1).analysis = struct('ok', false, 'message', 'bad pulse window');
             items(2).analysis.safe = false;
 
-            summary = cic.view.buildCurrentSummary(items, 1, ...
+            summary = cic.userInterface.buildCurrentSummary(items, 1, ...
                 'Total biphasic', 'mC/cm^2');
 
             testCase.verifyEqual(summary.controlMode, 'Unknown chrono control mode');
@@ -60,12 +60,12 @@ classdef CicViewTest < matlab.unittest.TestCase
 
             items = makeItems();
 
-            summary = cic.view.buildCurrentSummary(items, [], ...
+            summary = cic.userInterface.buildCurrentSummary(items, [], ...
                 'Total biphasic', 'mC/cm^2');
             testCase.verifyEqual(summary.controlMode, '-');
             testCase.verifyEqual(summary.bestSafe, 'safe-second | CICtotal = 0.012 mC/cm^2');
 
-            emptySummary = cic.view.buildCurrentSummary(struct([]), [], ...
+            emptySummary = cic.userInterface.buildCurrentSummary(struct([]), [], ...
                 'Total biphasic', 'mC/cm^2');
             testCase.verifyEqual(emptySummary.bestSafe, '-');
         end
@@ -75,7 +75,7 @@ classdef CicViewTest < matlab.unittest.TestCase
 
             A = makeAnalysis(false, 0.0025, 0.0035, 0.0060);
 
-            request = cic.view.plotRequest(A, 'sample-file', ...
+            request = cic.userInterface.plotRequest(A, 'sample-file', ...
                 'Time (s)', 'VT: Vf vs time');
 
             testCase.verifyEqual(request.kind, 'VT');
@@ -98,7 +98,7 @@ classdef CicViewTest < matlab.unittest.TestCase
 
             A = makeAnalysis(true, 0.0090, 0.0040, 0.0120);
 
-            request = cic.view.plotRequest(A, 'safe-file', ...
+            request = cic.userInterface.plotRequest(A, 'safe-file', ...
                 'Sample #', 'IT: Im vs time');
 
             testCase.verifyEqual(request.kind, 'IT');

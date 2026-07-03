@@ -19,7 +19,8 @@ function varargout = labkit_ImageMatch_app(varargin)
             'labkit_ImageMatch_app returns at most the app figure handle.');
     end
 
-    fig = image_match.run(debugLog);
+    request = struct("debug", debugLog);
+    fig = labkit.ui.app.run(image_match.definition(), request);
     labkit.ui.app.applyVersionTitle(fig, appVersion);
     if nargout >= 1
         varargout{1} = fig;

@@ -83,25 +83,25 @@ end
 
 function verifyPerImageHistoryRefresh(fig)
     ui = getappdata(fig, 'labkitUiRegistry');
-    item = image_enhance.state.emptyItem();
+    item = image_enhance.appState.emptyItem();
     item.path = "first.png";
     item.name = "first.png";
     item.image = ones(8, 8, 3) .* 0.5;
-    item.steps = image_enhance.ops.makeStep('Brightness/contrast', 10, 0, 0);
+    item.steps = image_enhance.analysisRun.makeStep('Brightness/contrast', 10, 0, 0);
     second = item;
     second.path = "second.png";
     second.name = "second.png";
-    second.steps = image_enhance.ops.makeStep('Sharpen', 20, 1, 0);
+    second.steps = image_enhance.analysisRun.makeStep('Sharpen', 20, 1, 0);
     S = struct('items', [item; second], 'currentIndex', 1, ...
-        'steps', repmat(image_enhance.state.emptyStep(), 0, 1), ...
+        'steps', repmat(image_enhance.appState.emptyStep(), 0, 1), ...
         'batchMode', false, 'pendingDirty', false);
 
-    ui.controls.historyTable.table.Data = image_enhance.view.historyTableData( ...
-        image_enhance.state.activeSteps(S));
+    ui.controls.historyTable.table.Data = image_enhance.userInterface.historyTableData( ...
+        image_enhance.appState.activeSteps(S));
     firstData = ui.controls.historyTable.table.Data;
     S.currentIndex = 2;
-    ui.controls.historyTable.table.Data = image_enhance.view.historyTableData( ...
-        image_enhance.state.activeSteps(S));
+    ui.controls.historyTable.table.Data = image_enhance.userInterface.historyTableData( ...
+        image_enhance.appState.activeSteps(S));
     secondData = ui.controls.historyTable.table.Data;
 
     assert(contains(string(firstData{1, 2}), "Brightness"), ...

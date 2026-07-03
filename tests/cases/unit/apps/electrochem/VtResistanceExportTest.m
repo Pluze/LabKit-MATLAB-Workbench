@@ -68,17 +68,17 @@ function deleteIfExists(filepath)
 end
 
 function A = computeVTResistance(item, opts)
-    A = vt_resistance.ops.computeResistance(item, opts);
+    A = vt_resistance.analysisRun.computeResistance(item, opts);
 end
 
 function T = buildVTResultsTable(items)
-    T = vt_resistance.export.buildResultsTable(items);
+    T = vt_resistance.resultFiles.buildResultsTable(items);
 end
 
 function C = buildVTBatchTableData(items)
-    C = vt_resistance.view.buildBatchTableData(items);
+    C = vt_resistance.userInterface.buildBatchTableData(items);
 end
 
 function writeVTResultsCSV(items, filepath)
-    vt_resistance.export.writeResultsCSV(items, filepath);
+    vt_resistance.resultFiles.writeResultsCSV(items, filepath);
 end

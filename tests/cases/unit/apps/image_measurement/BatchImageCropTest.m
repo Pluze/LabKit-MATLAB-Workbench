@@ -38,13 +38,13 @@ end
 
 function checkCropCenterAvoidsInvalidRotatedMaskRegions()
     img = uint8(ones(6, 8));
-    geometry = batch_crop.ops.prepareCropCanvas(img, struct( ...
+    geometry = batch_crop.cropGeometry.prepareCropCanvas(img, struct( ...
         'angleDeg', 0, ...
         'paddingPercent', 0));
     geometry.mask = false(size(geometry.mask));
     geometry.mask(2:5, 3:7) = true;
 
-    centerXY = batch_crop.ops.clampCropCenterToCanvas(geometry, [1 1], [3 2]);
+    centerXY = batch_crop.cropGeometry.clampCropCenterToCanvas(geometry, [1 1], [3 2]);
 
     assert(isequal(centerXY, [4 2.5]), ...
         'Center adjustment should keep the complete ROI inside the valid image mask, not just the canvas.');
@@ -52,10 +52,10 @@ end
 
 function checkCropCenterShiftsMinimallyToCanvasBounds()
     img = uint8(ones(8, 10));
-    geometry = batch_crop.ops.prepareCropCanvas(img, struct( ...
+    geometry = batch_crop.cropGeometry.prepareCropCanvas(img, struct( ...
         'angleDeg', 0, ...
         'paddingPercent', 0));
-    centerXY = batch_crop.ops.clampCropCenterToCanvas(geometry, [9 2], [6 4]);
+    centerXY = batch_crop.cropGeometry.clampCropCenterToCanvas(geometry, [9 2], [6 4]);
 
     assert(isequal(centerXY, [7.5 2.5]), ...
         'Center adjustment should use the smallest x/y shift that keeps the crop on the canvas.');
@@ -63,7 +63,7 @@ end
 
 function checkFixedPixelCropPreservesClassAndSize()
     img = uint8(reshape(1:100, 10, 10));
-    result = batch_crop.ops.cropImage(img, struct( ...
+    result = batch_crop.cropGeometry.cropImage(img, struct( ...
         'cropWidth', 4, ...
         'cropHeight', 3, ...
         'centerXY', [5, 6], ...
@@ -80,7 +80,7 @@ end
 
 function checkOutOfBoundsCropUsesWhiteBackground()
     img = uint8(10 * ones(5, 5));
-    result = batch_crop.ops.cropImage(img, struct( ...
+    result = batch_crop.cropGeometry.cropImage(img, struct( ...
         'cropWidth', 4, ...
         'cropHeight', 4, ...
         'centerXY', [1, 1], ...
@@ -100,7 +100,7 @@ function checkReflectedPaddingPreservesSourceAndBlendsBoundary()
     img(:, 1) = 0;
     img(1, :) = 0;
     img(9:12, 9:12) = 200;
-    [padded, padding] = batch_crop.ops.padImageEdges(img, 50);
+    [padded, padding] = batch_crop.cropGeometry.padImageEdges(img, 50);
 
     sourceBlock = padded((1:20) + padding.top, (1:20) + padding.left);
     assert(isequal(sourceBlock(9:12, 9:12), img(9:12, 9:12)), ...
@@ -115,7 +115,7 @@ end
 function checkPaddingFadesIntoReflectedTexture()
     img = uint8(100 * ones(40, 40));
     img(:, 20:22) = 250;
-    [padded, padding] = batch_crop.ops.padImageEdges(img, 50);
+    [padded, padding] = batch_crop.cropGeometry.padImageEdges(img, 50);
 
     leftPadding = double(padded(padding.top + 20, 1:padding.left));
     edgeValue = double(img(20, 1));
@@ -127,7 +127,7 @@ end
 function checkPaddingDoesNotStretchDarkEdgePixels()
     img = uint8(180 * ones(20, 30));
     img(:, 1) = 0;
-    [padded, padding] = batch_crop.ops.padImageEdges(img, 40);
+    [padded, padding] = batch_crop.cropGeometry.padImageEdges(img, 40);
 
     leftPadding = double(padded(padding.top + 10, 1:padding.left));
     sourceBlock = double(padded((1:20) + padding.top, (1:30) + padding.left));
@@ -143,7 +143,7 @@ end
 
 function checkPaddingAllowsLargeExtension()
     img = uint8(ones(4, 5));
-    [padded, padding] = batch_crop.ops.padImageEdges(img, 250);
+    [padded, padding] = batch_crop.cropGeometry.padImageEdges(img, 250);
 
     assert(padding.percent == 200, ...
         'Padding percent should clamp to the supported 200%% maximum.');
@@ -153,13 +153,13 @@ end
 
 function checkCoordinateTransformsRoundTripOriginalPoints()
     img = uint8(zeros(6, 8));
-    geometry = batch_crop.ops.prepareCropCanvas(img, struct( ...
+    geometry = batch_crop.cropGeometry.prepareCropCanvas(img, struct( ...
         'angleDeg', 27, ...
         'paddingPercent', 25));
     originalXY = [2.75, 4.25];
 
-    canvasXY = batch_crop.ops.originalToCanvas(geometry, originalXY);
-    recoveredXY = batch_crop.ops.canvasToOriginal(geometry, canvasXY);
+    canvasXY = batch_crop.cropGeometry.originalToCanvas(geometry, originalXY);
+    recoveredXY = batch_crop.cropGeometry.canvasToOriginal(geometry, canvasXY);
 
     assert(max(abs(recoveredXY - originalXY)) < 1e-9, ...
         'Canvas/original coordinate transforms should preserve source coordinates.');
@@ -167,7 +167,7 @@ end
 
 function checkPreviewGeometryDownsamplesBeforeRotationAndKeepsOriginalCoordinates()
     img = uint8(zeros(120, 160, 3));
-    geometry = batch_crop.ops.prepareCropCanvas(img, struct( ...
+    geometry = batch_crop.cropGeometry.prepareCropCanvas(img, struct( ...
         'angleDeg', 35, ...
         'paddingPercent', 200, ...
         'maxCanvasPixels', 4000));
@@ -178,33 +178,33 @@ function checkPreviewGeometryDownsamplesBeforeRotationAndKeepsOriginalCoordinate
         'Preview geometry should avoid constructing the full padded high-resolution canvas.');
 
     originalXY = [73.25, 44.75];
-    recoveredXY = batch_crop.ops.canvasToOriginal(geometry, ...
-        batch_crop.ops.originalToCanvas(geometry, originalXY));
+    recoveredXY = batch_crop.cropGeometry.canvasToOriginal(geometry, ...
+        batch_crop.cropGeometry.originalToCanvas(geometry, originalXY));
     assert(max(abs(recoveredXY - originalXY)) < 1e-9, ...
         'Preview geometry coordinate transforms should still report original-image coordinates.');
 end
 
 function checkPreviewViewPreservesZoomAcrossPaddingRedraw()
     img = uint8(zeros(20, 30));
-    geometry = batch_crop.ops.prepareCropCanvas(img, struct( ...
+    geometry = batch_crop.cropGeometry.prepareCropCanvas(img, struct( ...
         'angleDeg', 0, ...
         'paddingPercent', 40));
-    placement = batch_crop.view.previewPlacement(geometry);
+    placement = batch_crop.userInterface.previewPlacement(geometry);
     fig = figure('Visible', 'off');
     cleanup = onCleanup(@() close(fig));
     ax = axes(fig);
     ax.XLim = [5, 12];
     ax.YLim = [4, 10];
 
-    state = batch_crop.view.capturePreviewView(ax, geometry, placement);
+    state = batch_crop.userInterface.capturePreviewView(ax, geometry, placement);
     ax.XLim = placement.xData + [-0.5, 0.5];
     ax.YLim = placement.yData + [-0.5, 0.5];
-    batch_crop.view.restorePreviewView(ax, state, geometry, placement);
+    batch_crop.userInterface.restorePreviewView(ax, state, geometry, placement);
 
     assert(abs(diff(ax.XLim) - state.xSpan) < 1e-9 && ...
         abs(diff(ax.YLim) - state.ySpan) < 1e-9, ...
         'Preview redraw should preserve zoom span after padding or center updates.');
-    restoredCenter = batch_crop.ops.canvasToOriginal(geometry, ...
+    restoredCenter = batch_crop.cropGeometry.canvasToOriginal(geometry, ...
         [mean(ax.XLim), mean(ax.YLim)] - placement.offset);
     assert(max(abs(restoredCenter - state.centerOriginal)) < 1e-9, ...
         'Preview redraw should preserve the visible source-coordinate center.');
@@ -212,15 +212,15 @@ end
 
 function checkPreviewViewPreservesOriginalRoiAcrossPreviewScaleChanges()
     img = uint8(zeros(120, 160));
-    geometryA = batch_crop.ops.prepareCropCanvas(img, struct( ...
+    geometryA = batch_crop.cropGeometry.prepareCropCanvas(img, struct( ...
         'angleDeg', 0, ...
         'paddingPercent', 20));
-    placementA = batch_crop.view.previewPlacement(geometryA);
-    geometryB = batch_crop.ops.prepareCropCanvas(img, struct( ...
+    placementA = batch_crop.userInterface.previewPlacement(geometryA);
+    geometryB = batch_crop.cropGeometry.prepareCropCanvas(img, struct( ...
         'angleDeg', 0, ...
         'paddingPercent', 200, ...
         'maxCanvasPixels', 5000));
-    placementB = batch_crop.view.previewPlacement(geometryB);
+    placementB = batch_crop.userInterface.previewPlacement(geometryB);
     assert(geometryB.coordinateScale < geometryA.coordinateScale, ...
         'Test setup should force a changed preview coordinate scale.');
 
@@ -230,8 +230,8 @@ function checkPreviewViewPreservesOriginalRoiAcrossPreviewScaleChanges()
     ax.XLim = [30, 70];
     ax.YLim = [25, 65];
 
-    state = batch_crop.view.capturePreviewView(ax, geometryA, placementA);
-    batch_crop.view.restorePreviewView(ax, state, geometryB, placementB);
+    state = batch_crop.userInterface.capturePreviewView(ax, geometryA, placementA);
+    batch_crop.userInterface.restorePreviewView(ax, state, geometryB, placementB);
     restored = restoredOriginalLimits(ax, geometryB, placementB);
 
     assert(max(abs(restored.x - state.originalXLim)) < 1e-9 && ...
@@ -241,11 +241,11 @@ end
 
 function checkPreviewRenderDataDownsamplesWithoutChangingCoordinates()
     img = uint8(zeros(30, 40, 3));
-    geometry = batch_crop.ops.prepareCropCanvas(img, struct( ...
+    geometry = batch_crop.cropGeometry.prepareCropCanvas(img, struct( ...
         'angleDeg', 0, ...
         'paddingPercent', 0));
-    placement = batch_crop.view.previewPlacement(geometry);
-    render = batch_crop.view.previewRenderData(geometry, placement, ...
+    placement = batch_crop.userInterface.previewPlacement(geometry);
+    render = batch_crop.userInterface.previewRenderData(geometry, placement, ...
         struct('MaxPreviewPixels', 200));
 
     assert(render.scaleFactor > 1, ...
@@ -261,8 +261,8 @@ end
 function limits = restoredOriginalLimits(ax, geometry, placement)
     xCanvas = ax.XLim - placement.offset(1);
     yCanvas = ax.YLim - placement.offset(2);
-    leftTop = batch_crop.ops.canvasToOriginal(geometry, [xCanvas(1), yCanvas(1)]);
-    rightBottom = batch_crop.ops.canvasToOriginal(geometry, [xCanvas(2), yCanvas(2)]);
+    leftTop = batch_crop.cropGeometry.canvasToOriginal(geometry, [xCanvas(1), yCanvas(1)]);
+    rightBottom = batch_crop.cropGeometry.canvasToOriginal(geometry, [xCanvas(2), yCanvas(2)]);
     limits = struct( ...
         'x', sort([leftTop(1), rightBottom(1)]), ...
         'y', sort([leftTop(2), rightBottom(2)]));
@@ -270,15 +270,15 @@ end
 
 function checkSourceCenterHelpersUseImageGeometry()
     img = uint8(zeros(7, 9, 3));
-    assert(isequal(batch_crop.ops.sourceCenterXY(img), [5, 4]), ...
+    assert(isequal(batch_crop.cropGeometry.sourceCenterXY(img), [5, 4]), ...
         'Source center helper should return one-based [x y] image coordinates.');
-    assert(isequal(batch_crop.ops.sourceCenterFromSize(10, 12), [5.5, 6.5]), ...
+    assert(isequal(batch_crop.cropGeometry.sourceCenterFromSize(10, 12), [5.5, 6.5]), ...
         'Source size helper should preserve half-pixel centers for even image sizes.');
 end
 
 function checkPaddingKeepsShiftedCropOnValidRotatedMask()
     img = uint8(zeros(7, 9));
-    result = batch_crop.ops.cropImage(img, struct( ...
+    result = batch_crop.cropGeometry.cropImage(img, struct( ...
         'cropWidth', 3, ...
         'cropHeight', 3, ...
         'centerXY', [2, 5], ...
@@ -298,12 +298,12 @@ end
 function checkRotatedCropKeepsRequestedSize()
     img = uint8(zeros(8, 12, 3));
     img(:, 4:8, 1) = 200;
-    result = batch_crop.ops.cropImage(img, struct( ...
+    result = batch_crop.cropGeometry.cropImage(img, struct( ...
         'cropWidth', 6, ...
         'cropHeight', 5, ...
         'angleDeg', 35, ...
         'paddingPercent', 15));
-    geometry = batch_crop.ops.prepareCropCanvas(img, struct( ...
+    geometry = batch_crop.cropGeometry.prepareCropCanvas(img, struct( ...
         'angleDeg', 35, ...
         'paddingPercent', 15));
 
@@ -315,7 +315,7 @@ end
 
 function checkRotationBackgroundUsesWhiteFill()
     img = uint8(zeros(5, 5));
-    result = batch_crop.ops.cropImage(img, struct( ...
+    result = batch_crop.cropGeometry.cropImage(img, struct( ...
         'cropWidth', 9, ...
         'cropHeight', 9, ...
         'centerXY', [3, 3], ...
@@ -327,8 +327,8 @@ function checkRotationBackgroundUsesWhiteFill()
 end
 
 function checkNewItemsDefaultToZeroPadding()
-    item = batch_crop.state.emptyItem();
-    assert(item.paddingPercent == 0 && batch_crop.state.itemPaddingPercent(item) == 0, ...
+    item = batch_crop.appState.emptyItem();
+    assert(item.paddingPercent == 0 && batch_crop.appState.itemPaddingPercent(item) == 0, ...
         'New batch-crop items should default to no repaired padding.');
 end
 
@@ -338,7 +338,7 @@ function checkItemsForPathsDefersImageReads()
         delete(missingPath);
     end
 
-    items = batch_crop.state.itemsForPaths({missingPath});
+    items = batch_crop.appState.itemsForPaths({missingPath});
 
     assert(numel(items) == 1, ...
         'Batch crop path items should preserve one task per selected file.');
@@ -358,7 +358,7 @@ function checkReadItemsAcceptsFilePanelCellPaths()
     sourcePath = fullfile(folder, 'frame_a.png');
     imwrite(uint8(42 * ones(6, 7)), sourcePath);
 
-    items = batch_crop.state.readItems({sourcePath});
+    items = batch_crop.appState.readItems({sourcePath});
     assert(numel(items) == 1, ...
         'Batch crop reader should accept filePanel cell-array paths.');
     assert(items(1).path == string(sourcePath), ...
@@ -368,7 +368,7 @@ function checkReadItemsAcceptsFilePanelCellPaths()
 end
 
 function checkDuplicateItemCreatesIndependentCropTask()
-    item = batch_crop.state.emptyItem();
+    item = batch_crop.appState.emptyItem();
     item.path = "source.png";
     item.image = uint8(ones(5, 6));
     item.angleDeg = 12;
@@ -378,7 +378,7 @@ function checkDuplicateItemCreatesIndependentCropTask()
     item.scaleCalibration = labkit.ui.tool.scaleBarCalibration(80, 20, "um", ...
         struct('defaultUnit', 'um'));
 
-    duplicated = batch_crop.state.duplicateItem(item);
+    duplicated = batch_crop.appState.duplicateItem(item);
     assert(duplicated.path == item.path, ...
         'Duplicated crop task should preserve the source image path.');
     assert(isequal(duplicated.image, item.image), ...
@@ -398,20 +398,20 @@ end
 function checkMergeChosenItemsPreservesDuplicateCropTasks()
     itemA = physicalItem("source_a.png", uint8(40 * ones(10, 12)), 4);
     itemA.centerXY = [3, 4];
-    duplicateA = batch_crop.state.duplicateItem(itemA);
+    duplicateA = batch_crop.appState.duplicateItem(itemA);
     duplicateA.centerXY = [8, 7];
     duplicateA.centerSet = true;
     duplicateA.scaleCalibration = labkit.ui.tool.scaleBarCalibration(80, 10, "um", ...
         struct('defaultUnit', 'um', 'referenceLine', [1 1; 81 1]));
 
-    loadedA = batch_crop.state.emptyItem();
+    loadedA = batch_crop.appState.emptyItem();
     loadedA.path = "source_a.png";
     loadedA.image = uint8(90 * ones(10, 12));
-    loadedB = batch_crop.state.emptyItem();
+    loadedB = batch_crop.appState.emptyItem();
     loadedB.path = "source_b.png";
     loadedB.image = uint8(120 * ones(8, 9));
 
-    merged = batch_crop.state.mergeChosenItems([itemA; duplicateA], [loadedA; loadedB]);
+    merged = batch_crop.appState.mergeChosenItems([itemA; duplicateA], [loadedA; loadedB]);
     assert(numel(merged) == 3, ...
         'Choosing additional files should preserve duplicate crop tasks and append new images.');
     assert(all([merged(1:2).path] == "source_a.png") && merged(3).path == "source_b.png", ...
@@ -424,7 +424,7 @@ function checkMergeChosenItemsPreservesDuplicateCropTasks()
 end
 
 function item = physicalItem(pathValue, imageData, pixelsPerUnit)
-    item = batch_crop.state.emptyItem();
+    item = batch_crop.appState.emptyItem();
     item.path = string(pathValue);
     item.image = imageData;
     item.angleDeg = 0;

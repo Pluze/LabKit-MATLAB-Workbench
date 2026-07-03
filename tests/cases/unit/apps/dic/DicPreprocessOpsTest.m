@@ -5,7 +5,7 @@ classdef DicPreprocessOpsTest < matlab.unittest.TestCase
         function maskFromCurveHandlesEmptyCurve(testCase)
             setupLabKitTestPath();
 
-            mask = dic_preprocess.ops.maskFromCurve([], [4 5]);
+            mask = dic_preprocess.analysisRun.maskFromCurve([], [4 5]);
 
             testCase.verifyClass(mask, 'uint8');
             testCase.verifySize(mask, [4 5]);
@@ -17,7 +17,7 @@ classdef DicPreprocessOpsTest < matlab.unittest.TestCase
 
             points = [-10 -10; 20 1; 3 20];
 
-            curve = dic_preprocess.ops.maskBoundaryCurve(points, [10 12], ...
+            curve = dic_preprocess.analysisRun.maskBoundaryCurve(points, [10 12], ...
                 'Straight lines');
 
             testCase.verifySize(curve, [4 2]);
@@ -33,8 +33,8 @@ classdef DicPreprocessOpsTest < matlab.unittest.TestCase
 
             points = [3 3; 9 3; 9 9; 3 9];
 
-            curve = dic_preprocess.ops.maskBoundaryCurve(points, [12 12], 'Curve');
-            mask = dic_preprocess.ops.boundaryMaskImage(points, [12 12], 'Curve');
+            curve = dic_preprocess.analysisRun.maskBoundaryCurve(points, [12 12], 'Curve');
+            mask = dic_preprocess.analysisRun.boundaryMaskImage(points, [12 12], 'Curve');
 
             testCase.verifyGreaterThan(size(curve, 1), size(points, 1));
             testCase.verifyEqual(curve(1, :), curve(end, :), 'AbsTol', 1e-12);
@@ -49,9 +49,9 @@ classdef DicPreprocessOpsTest < matlab.unittest.TestCase
 
             points = [3 3; 9 3; 9 9; 3 9];
 
-            [missing, okMissing] = dic_preprocess.ops.boundaryMaskFromEditor( ...
+            [missing, okMissing] = dic_preprocess.analysisRun.boundaryMaskFromEditor( ...
                 points(1:2, :), [12 12], 'Curve', []);
-            [mask, ok] = dic_preprocess.ops.boundaryMaskFromEditor( ...
+            [mask, ok] = dic_preprocess.analysisRun.boundaryMaskFromEditor( ...
                 points, [12 12], 'Straight lines', []);
 
             testCase.verifyFalse(okMissing);
@@ -64,8 +64,8 @@ classdef DicPreprocessOpsTest < matlab.unittest.TestCase
         function squareCropGeometryStaysInsideImage(testCase)
             setupLabKitTestPath();
 
-            defaultRect = dic_preprocess.ops.defaultSquareRect([100 80 3]);
-            clampedRect = dic_preprocess.ops.squareRectInsideImage( ...
+            defaultRect = dic_preprocess.analysisRun.defaultSquareRect([100 80 3]);
+            clampedRect = dic_preprocess.analysisRun.squareRectInsideImage( ...
                 [-20 90 75 20], [100 80]);
 
             testCase.verifyEqual(defaultRect, [21 31 40 40]);
@@ -83,8 +83,8 @@ classdef DicPreprocessOpsTest < matlab.unittest.TestCase
             moving = uint8([30 20; 10 0]);
             mask = uint8([0 255; 255 0]);
 
-            overlay = dic_preprocess.ops.makeFalseColorOverlay(reference, moving);
-            rgb = dic_preprocess.ops.maskRgb(mask);
+            overlay = dic_preprocess.analysisRun.makeFalseColorOverlay(reference, moving);
+            rgb = dic_preprocess.analysisRun.maskRgb(mask);
 
             testCase.verifySize(overlay, [2 2 3]);
             testCase.verifyEqual(overlay(:, :, 3), zeros(2));

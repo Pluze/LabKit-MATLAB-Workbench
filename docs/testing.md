@@ -260,6 +260,32 @@ artifacts/debug/<RunName>/<AppName>/<SessionId>/
 
 Coverage is report-only and not part of the default local check.
 
+## App Runtime Migration Coverage
+
+The workflow-first app migration is covered by layered tests, not by a single
+launch-only suite:
+
+- `AppPackageStructureGuardrailTest` discovers every `apps/**/labkit_*_app.m`
+  entrypoint, requires the canonical `definition.m`,
+  `definitionActions.m`, `+appLifecycle/createInitialState.m`,
+  `+userInterface/buildWorkbenchSpec.m`, and
+  `+userInterface/updateWorkbenchFromState.m` files, and rejects retired
+  package-root app runners and broad app buckets such as `+actions`, `+state`,
+  `+ui`, `+view`, `+ops`, `+io`, and `+export`.
+- `GuiLayoutUiAppRuntimeTest` owns the framework runtime contract: startup and
+  hydration actions update state, render prepared state, record phase timings,
+  expose service dispatch, and report action failures through debug context.
+- `AppOwnedWorkflowBoundariesTest` and `AppLibraryCompatibilityTest` keep app
+  workflow code under the owning app tree and prevent apps from depending on
+  removed helper-dump or old UI surfaces.
+- App GUI workflow tests should cover semantic controls, enabled states,
+  workflow outcomes, debug traces, and exported results. Do not add broad
+  launch-only coverage for every app when a real workflow or guardrail already
+  covers the contract.
+- Debug sample-pack tests cover clean-room debug artifacts. Profiler evidence
+  is used for performance regressions and should not replace correctness
+  assertions.
+
 ## Profiling GUI Startup
 
 For source-checkout performance work, the profiling tools live under

@@ -5,7 +5,7 @@ classdef NeurophysiologyWorkflowSpecTest < matlab.unittest.TestCase
         function previewOwnsProtocolDraftingSurface(testCase)
             setupLabKitTestPath();
 
-            spec = rhs_preview.ui.buildSpec(struct());
+            spec = rhs_preview.userInterface.buildWorkbenchSpec(struct());
 
             testCase.verifyEqual(tabTitles(spec), ...
                 ["Setup", "Protocol", "Filter", "Review", "Log"]);
@@ -22,7 +22,7 @@ classdef NeurophysiologyWorkflowSpecTest < matlab.unittest.TestCase
         function analysisWorkflowKeepsHeavyAnalyzeExplicit(testCase)
             setupLabKitTestPath();
 
-            spec = nerve_response_analysis.ui.buildSpec(struct());
+            spec = nerve_response_analysis.userInterface.buildWorkbenchSpec(struct());
 
             testCase.verifyEqual(tabTitles(spec), ...
                 ["Setup", "Protocol", "Review", "Export", "Log"]);
@@ -39,7 +39,7 @@ classdef NeurophysiologyWorkflowSpecTest < matlab.unittest.TestCase
         function statsWorkflowAutoLoadHasRefreshAndExport(testCase)
             setupLabKitTestPath();
 
-            spec = response_review_stats.ui.buildSpec(struct());
+            spec = response_review_stats.userInterface.buildWorkbenchSpec(struct());
 
             testCase.verifyEqual(tabTitles(spec), ...
                 ["Setup", "Review", "Export", "Log"]);

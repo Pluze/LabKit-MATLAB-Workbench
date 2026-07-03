@@ -84,22 +84,68 @@ choose an older release, tag, or commit through `Versions`.
 
 ## Creating A New App
 
-Create new apps directly in the standard app shape below. Use the smallest
-nearby app as a reference when it shares the same workflow style, then replace
-the state, callbacks, result tables, and exports with the new app's real
-behavior.
+Create new apps from a LabKit app template instead of copying an existing app
+folder. The template should generate the public entrypoint, version metadata,
+`definition.m`, `definitionActions.m`, `+appLifecycle`,
+`+userInterface`, workflow package stubs, debug sample-pack stubs, and focused
+starter tests.
+
+Use the smallest nearby app only as a workflow reference. Do not copy its
+directory shape wholesale. Replace state, commands, result tables, plots, and
+exports with the new app's real behavior. New apps launch through the framework
+app-definition runtime instead of package-root runners.
 
 ## App File Shape
 
-Apps use this shape:
+LabKit uses one MATLAB package tree per app, but keeps the fixed framework
+surface small. App authors should see lifecycle, UI, and concrete user
+workflows, not broad buckets such as action, renderer, operation, IO, and
+export.
+
+The author-facing shape is the part app authors should read and edit first:
 
 ```text
 apps/<family>/<app_slug>/labkit_<AppName>_app.m
+apps/<family>/<app_slug>/+<app_slug>/definition.m
+apps/<family>/<app_slug>/+<app_slug>/definitionActions.m
 apps/<family>/<app_slug>/+<app_slug>/requirements.m
 apps/<family>/<app_slug>/+<app_slug>/version.m
-apps/<family>/<app_slug>/+<app_slug>/run.m
-apps/<family>/<app_slug>/+<app_slug>/+ui/buildSpec.m
+apps/<family>/<app_slug>/+<app_slug>/+appLifecycle/createInitialState.m
+apps/<family>/<app_slug>/+<app_slug>/+userInterface/buildWorkbenchSpec.m
+apps/<family>/<app_slug>/+<app_slug>/+userInterface/updateWorkbenchFromState.m
 ```
+
+App-specific behavior is grouped by user-facing workflow or domain capability,
+not by generic technical phase. Create only the packages the app actually
+needs, and name each package after the concept a user or maintainer would
+recognize:
+
+```text
+apps/<family>/<app_slug>/+<app_slug>/+sourceFiles/chooseSourceFiles.m
+apps/<family>/<app_slug>/+<app_slug>/+sourceFiles/readSourceFiles.m
+apps/<family>/<app_slug>/+<app_slug>/+sourceFiles/showSourceFilePreview.m
+apps/<family>/<app_slug>/+<app_slug>/+analysisRun/collectAnalysisOptions.m
+apps/<family>/<app_slug>/+<app_slug>/+analysisRun/computeAnalysisResults.m
+apps/<family>/<app_slug>/+<app_slug>/+analysisRun/showAnalysisResults.m
+apps/<family>/<app_slug>/+<app_slug>/+resultFiles/chooseResultFolder.m
+apps/<family>/<app_slug>/+<app_slug>/+resultFiles/writeResultFiles.m
+apps/<family>/<app_slug>/+<app_slug>/+resultFiles/showExportSummary.m
+apps/<family>/<app_slug>/+<app_slug>/+debugArtifacts/createSyntheticSampleFiles.m
+```
+
+This is intentionally workflow-first. A source-file workflow may include a
+chooser, reader, preview update, and validation in one package because those
+functions change together. A result-file workflow may include the command
+handler, writer, manifest builder, and completion summary for the same reason.
+Do not split the same user story across `actions/`, `renderers/`, `io/`, and
+`export/` role folders.
+
+Avoid abstract bucket names such as `actions.m`, `render.m`, `ops.m`,
+`io.m`, `manager.m`, or `processor.m`. Avoid generic packages such as
+`+actions`, `+renderers`, `+ops`, `+io`, and `+export` for new app code. A
+package named `+sourceFiles`, `+cropGeometry`, `+thermalFrames`,
+`+analysisRun`, or `+resultFiles` is easier to navigate because the package
+name states what user-visible capability it owns.
 
 `requirements.m` declares only LabKit facade contract ranges by returning
 `labkit.contract.requirements(...)`. Public app entrypoints return this struct
@@ -117,51 +163,80 @@ same change. When choosing the next app version, compare against the version
 file in the latest `main` commit, not against intermediate local edits in the
 current working tree.
 
-For nontrivial apps, `buildSpec.m` should make the page hierarchy obvious at
-the top of the file. Keep the app constructor shallow, then use local builder
-functions for tabs, sections, and the workspace. Put section builders in the
-same order the user sees them, and keep small field helpers after the workspace
-builder. The goal is readable MATLAB source, not a separate UI-generation DSL.
+`definition.m` declares the app's runtime contract. It returns a plain struct
+created with `labkit.ui.app.define`, naming the app id, title, initial state
+factory, data-only UI spec builder, command handler registry, visible-state
+update function, startup phases, and optional idle hydration phases. The
+framework runtime validates the definition, generates callbacks, schedules
+startup, gates busy/ready state, and routes diagnostics. App code should not
+own loading controls, startup timers, callback wrappers, or framework
+readiness flags.
 
-Create optional role packages only when the app has code for that role:
+For nontrivial apps, `+userInterface/buildWorkbenchSpec.m` should make the
+page hierarchy obvious at the top of the file. Keep the app constructor
+shallow, then use local builder functions for tabs, sections, and the
+workspace. Put section builders in the same order the user sees them, and keep
+small field helpers after the workspace builder. The goal is readable MATLAB
+source, not a separate UI-generation DSL. `+userInterface/updateWorkbenchFromState.m`
+is the single top-level bridge from state to visible controls; it should call
+specific workflow display helpers such as
+`+sourceFiles/showSourceFilePreview.m` or `+analysisRun/showAnalysisResults.m`.
 
-```text
-+state/    defaults, factories, presets
-+io/       app-local file discovery, workflow-specific readers, and import parsing
-+ops/      GUI-free calculations and transforms
-+view/     table rows, detail text, display-ready data
-+export/   CSV/image output writers and manifests
-```
+Keep one visible structure per concept. Do not keep both singular and
+directory forms for the same concept (`sourceFiles.m` plus `+sourceFiles/`,
+`analysisRun.m` plus `+analysisRun/`, or `resultFiles.m` plus
+`+resultFiles/`). When a workflow grows, add specific files inside that
+workflow package instead of creating parallel technical buckets.
 
 Use the app slug as the package name. Do not use a shared `+app` namespace.
 Do not add family-level `private/` helper folders.
 
-## Runner And Helper Shape
+## App Definition And Helper Shape
 
-Package-root `run.m` owns app lifecycle orchestration: launch/debug wiring,
-state coordination, callback adapters, user alerts, refresh order, close
-guards, and user-facing log wording. Reducing `run.m` complexity should move
-cohesive responsibilities out of the runner, not scatter simple callback-local
-code into many tiny files.
+The app definition is the runtime boundary. It names initial state, UI spec,
+registered command handlers, visible-state update, startup, and hydration. The
+framework owns lifecycle orchestration: launch/debug wiring, callback adapters,
+readiness, busy gating, close guards, startup phase timing, and
+hidden-test-safe diagnostics.
+
+Workflow package functions should use concrete verb-object names:
+
+```text
+apps/<family>/<app_slug>/+<app_slug>/+sourceFiles/chooseSourceFiles.m
+apps/<family>/<app_slug>/+<app_slug>/+sourceFiles/readSourceFiles.m
+apps/<family>/<app_slug>/+<app_slug>/+sourceFiles/showSourceFilePreview.m
+apps/<family>/<app_slug>/+<app_slug>/+analysisRun/collectAnalysisOptions.m
+apps/<family>/<app_slug>/+<app_slug>/+analysisRun/computeAnalysisResults.m
+apps/<family>/<app_slug>/+<app_slug>/+analysisRun/showAnalysisResults.m
+apps/<family>/<app_slug>/+<app_slug>/+resultFiles/writeResultFiles.m
+```
+
+The function name, not a generic parent folder, should explain the local
+responsibility. A command handler may orchestrate file reads, computation,
+state updates, and display refresh for one user workflow. Deterministic
+calculation and file-writing helpers should still be separate functions inside
+the same workflow package when they are worth testing directly.
+
+Visible UI update functions translate prepared app state into existing UI
+handles. They should not perform file IO, heavy computation, export writes, or
+state mutation. `+userInterface/buildWorkbenchSpec.m` declares the
+control/workspace tree, while `+userInterface/updateWorkbenchFromState.m`
+updates that tree from state and delegates workflow-specific display updates.
 
 Keep small code local when the call site is clearer than a separate name. Move
-code into app-owned role packages when it owns deterministic state, IO
-normalization, file discovery, GUI-free operations, export output, display
-data, or focused custom UI/tool glue that can be tested or reused by the real
-app path.
-
-Near the runner size thresholds, choose one substantial responsibility to move
-or one reusable workflow hook to extract. Do not create short pass-through
-helpers solely to lower the line count. See
-[architecture.md](architecture.md#extraction-quality) for the reusable
-extraction rule and helper-quality principles.
+code into an app-owned workflow package when it owns a stable user workflow,
+deterministic state transition, file normalization, computation, output write,
+display update, or focused custom UI/tool glue that can be tested or reused by
+the real app path. Do not create short pass-through helpers solely to lower the
+line count. See [architecture.md](architecture.md#extraction-quality) for the
+reusable extraction rule and helper-quality principles.
 
 ## Task Lifecycle
 
 Apps with preview, edit, run, or export workflows should keep task lifecycle
-state explicit. Runner code may track dirty flags, small preview caches, and
-the last successful task fingerprint, but GUI-free helpers own deterministic
-task snapshots under the app package, usually in `+state`.
+state explicit. App state may track dirty flags, small preview caches, and the
+last successful task fingerprint, but GUI-free helpers own deterministic task
+snapshots inside the workflow package that owns the task.
 
 Image apps should use `labkit.image` for generic image filters, path
 normalization, display names, reads/writes, RGB double conversion, preview
@@ -172,21 +247,22 @@ readers when they build app item structs or enforce workflow-specific state.
 
 Use this boundary:
 
-- `+state` builds immutable task snapshots and fingerprints from inputs,
-  options, and committed steps.
-- `+ops` performs deterministic computation without GUI or file side effects.
-- `+export` writes outputs from an explicit task/options boundary.
-- preview callbacks operate on the current selection and display-resolution
+- workflow state helpers build immutable task snapshots and fingerprints from
+  inputs, options, and committed steps.
+- computation helpers perform deterministic work without GUI or file side
+  effects.
+- result-file helpers write outputs from an explicit task/options boundary.
+- preview actions operate on the current selection and display-resolution
   data when practical; full batch work happens at export or run actions.
 
 File selection should register files and build app-owned task state with the
 least data needed for the immediate preview. For large selections, avoid
-eagerly reading or computing every file in the chooser callback unless the
+eagerly reading or computing every file in the chooser action unless the
 workflow truly cannot show a useful first state without the full batch. For
 example, a crop workflow can keep path-only crop tasks until the current preview
 or export needs pixels.
 
-The UI framework prevents duplicate callback submission. Apps decide what
+The UI framework prevents duplicate command submission. Apps decide what
 changed, what result is dirty, and whether a repeated task can be skipped.
 
 ## App Ownership

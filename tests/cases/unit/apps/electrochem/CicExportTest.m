@@ -78,17 +78,17 @@ function deleteIfExists(filepath)
 end
 
 function A = computeCIC(item, opts)
-    A = cic.ops.computeCIC(item, opts);
+    A = cic.analysisRun.computeCIC(item, opts);
 end
 
 function T = buildCICResultsTable(items, unitLabel)
-    T = cic.export.buildResultsTable(items, unitLabel);
+    T = cic.resultFiles.buildResultsTable(items, unitLabel);
 end
 
 function [C, cols] = buildCICBatchTableData(items, unitLabel)
-    [C, cols] = cic.view.buildBatchTableData(items, unitLabel);
+    [C, cols] = cic.userInterface.buildBatchTableData(items, unitLabel);
 end
 
 function writeCICResultsCSV(items, filepath, unitLabel)
-    cic.export.writeResultsCSV(items, filepath, unitLabel);
+    cic.resultFiles.writeResultsCSV(items, filepath, unitLabel);
 end

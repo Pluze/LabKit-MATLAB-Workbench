@@ -19,7 +19,8 @@ function varargout = labkit_ResponseReviewStats_app(varargin)
             'labkit_ResponseReviewStats_app returns at most the app figure handle.');
     end
 
-    fig = response_review_stats.run(debugLog);
+    request = struct("debug", debugLog);
+    fig = labkit.ui.app.run(response_review_stats.definition(), request);
     labkit.ui.app.applyVersionTitle(fig, appVersion);
     if nargout >= 1
         varargout{1} = fig;

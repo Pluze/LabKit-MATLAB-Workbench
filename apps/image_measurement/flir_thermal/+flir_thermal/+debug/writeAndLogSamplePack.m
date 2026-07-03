@@ -1,4 +1,4 @@
-% Expected caller: flir_thermal.run during debug launch. Inputs are a debug
+% Expected caller: flir_thermal.definitionActions during debug launch. Inputs are a debug
 % context and app log callback. Side effects: writes debug samples and logs
 % their artifact locations without mutating app state.
 function writeAndLogSamplePack(debugLog, addLog)

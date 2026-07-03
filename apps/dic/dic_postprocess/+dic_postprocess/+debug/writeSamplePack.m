@@ -1,4 +1,4 @@
-% Expected caller: dic_postprocess.run during debug launch and unit tests.
+% Expected caller: dic_postprocess.definitionActions startup action and unit tests.
 % Input is a LabKit debug context. Output is a deterministic synthetic Ncorr
 % MAT/reference/mask sample pack. Side effects: writes anonymous debug inputs
 % and records a session manifest when available.

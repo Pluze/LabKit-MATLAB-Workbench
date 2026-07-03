@@ -19,15 +19,15 @@ classdef DicDebugSamplePackTest < matlab.unittest.TestCase
                 "Malformed DIC image should fail through imread.");
 
             post = dic_postprocess.debug.writeSamplePack(debug);
-            strain = dic_postprocess.io.loadNcorrStrain(char(post.representativeFiles.mat));
+            strain = dic_postprocess.sourceFiles.loadNcorrStrain(char(post.representativeFiles.mat));
             testCase.verifyTrue(isfield(strain, "exx") && isfield(strain, "eyy"));
             testCase.verifySize(imread(char(post.representativeFiles.reference)), ...
                 size(imread(char(post.representativeFiles.mask))));
-            edge = dic_postprocess.io.loadNcorrStrain(char(post.boundaryFiles.validEdgeSparseRoiMat));
+            edge = dic_postprocess.sourceFiles.loadNcorrStrain(char(post.boundaryFiles.validEdgeSparseRoiMat));
             testCase.verifyTrue(any(edge.roiMask(:)), ...
                 "DIC postprocess edge MAT should include a readable sparse ROI.");
             verifyThrows(testCase, ...
-                @() dic_postprocess.io.loadNcorrStrain(char(post.boundaryFiles.malformedMissingStrainsMat)), ...
+                @() dic_postprocess.sourceFiles.loadNcorrStrain(char(post.boundaryFiles.malformedMissingStrainsMat)), ...
                 "Malformed DIC MAT should fail through app IO.");
         end
     end

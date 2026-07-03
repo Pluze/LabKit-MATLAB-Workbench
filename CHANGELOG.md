@@ -1,6 +1,7 @@
 # LabKit MATLAB Workbench Component Changelog
 
-Generated from `main` branch history through 2026-07-02 America/Chicago.
+Generated from `main` branch history through 2026-07-02 America/Chicago, then
+audited against the current development branch.
 
 This changelog tracks component-level version metadata for LabKit MATLAB Workbench. It is intentionally different from ordinary release notes: it records the version history of each launcher, facade, and app component that owns a `version.m` file or equivalent version function.
 
@@ -36,6 +37,59 @@ This changelog tracks component-level version metadata for LabKit MATLAB Workben
 | 2026-07-02 | `25912c5` | `labkit.ui`, Batch Crop | UI `3.4.1 -> 3.4.2`; Batch Crop `1.6.0 -> 1.6.1` | Reduced debug/profile startup overhead and deferred Batch Crop image reads until preview/export. |
 | 2026-07-02 | `7d4ef11` | `labkit.ui`, launcher | UI `3.4.2 -> 3.4.4`; launcher `1.2.2 -> 1.2.3` | Painted launcher/app windows earlier, deferred launcher app discovery, lazily prepared preview scroll interactions, and saved profile reports without opening a browser. |
 
+## Exhaustive version-change audit
+
+This table is the completeness ledger for every commit found by auditing
+`labkit_launcher.m`, `**/version.m`, and `+labkit/+contract/versionInfo.m` on
+the `origin/main` first-parent history, plus current-branch version changes.
+
+| Date | Commit | Version owner(s) | Recorded version change |
+|---|---|---|---|
+| 2026-06-23 | `a25b79f` | `labkit.biosignal`, `labkit.dta`, `labkit.rhs`, `labkit.ui`, `labkit.contract` | Introduced `versionInfo`; biosignal `1.0.0`, DTA `1.0.0`, RHS `1.0.0`, UI `2.0.0`. |
+| 2026-06-23 | `3673e54` | `labkit.ui` | `2.0.0 -> 2.1.0`. |
+| 2026-06-23 | `d70c260` | launcher, all apps, `labkit.ui` | Added app/launcher metadata; launcher `1.0.0`, apps `1.0.0`, UI `2.1.0 -> 2.2.0`. |
+| 2026-06-23 | `49d9f41` | `labkit.ui`, DIC Pre/Post, Curvature | UI `2.2.0 -> 2.2.1`; DIC Pre/Post and Curvature `1.0.0 -> 1.0.1`. |
+| 2026-06-24 | `b145c90` | `labkit.dta`, `labkit.ui`, all apps | DTA `1.0.0 -> 2.0.0`; UI `2.2.1 -> 3.0.0`; supported apps moved into the `1.2.0` line. |
+| 2026-06-25 | `fe8654c` | launcher | `1.0.0 -> 1.1.0`. |
+| 2026-06-25 | `ef89cf7` | launcher | `1.1.0 -> 1.1.1`. |
+| 2026-06-26 | `3d23b7f` | `labkit.ui` | `3.0.0 -> 3.0.1`. |
+| 2026-06-28 | `61e8edd` | `labkit.ui`, Batch Crop | UI `3.0.1 -> 3.1.0`; Batch Crop `1.2.0 -> 1.3.0`. |
+| 2026-06-28 | `e966457` | launcher, `labkit.ui`, Batch Crop, Focus Stack, Image Enhance, Image Match, RHS Preview, Nerve Response Analysis, Response Review Stats | launcher `1.1.1 -> 1.1.2`; UI `3.1.0 -> 3.1.2`; Batch Crop `1.3.0 -> 1.3.1`; listed apps moved `1.2.0 -> 1.2.1`. |
+| 2026-06-28 | `f5bc6f9` | `labkit.ui`, Batch Crop, Curvature | UI `3.1.2 -> 3.1.3`; Batch Crop `1.3.1 -> 1.3.2`; Curvature `1.2.1 -> 1.2.2`. |
+| 2026-06-29 | `1768dd5` | Image Enhance, Image Match | Image Enhance `1.2.2 -> 1.3.0`; Image Match `1.2.1 -> 1.3.0`. |
+| 2026-06-29 | `21eff4d` | launcher, `labkit.ui` | launcher `1.1.2 -> 1.1.3`; UI `3.1.3 -> 3.2.0`. |
+| 2026-06-29 | `f2189ae` | `labkit.ui` | `3.2.0 -> 3.2.2`. |
+| 2026-06-29 | `77084fb` | Image Enhance, Image Match | Both `1.3.0 -> 1.3.1`. |
+| 2026-06-29 | `871739c` | `labkit.ui`, Batch Crop, Curvature | UI `3.2.2 -> 3.2.3`; Batch Crop `1.3.2 -> 1.3.3`; Curvature `1.2.0 -> 1.2.1`. |
+| 2026-06-30 | `7f8df1c` | `labkit.ui` | `3.2.3 -> 3.2.4`. |
+| 2026-06-30 | `02b2f1b` | `labkit.ui` | `3.2.4 -> 3.2.5`. |
+| 2026-06-30 | `c5055b9` | `labkit.ui`, DIC Pre/Post, Batch Crop, Focus Stack, Image Enhance, Image Match, Curvature, neurophysiology apps | UI `3.2.5 -> 3.2.6`; affected apps advanced within their `1.2.x`/`1.3.x` lines for output-folder prompt migration. |
+| 2026-06-30 | `c0028a8` | DIC Post, Batch Crop, Curvature, Focus Stack, Image Enhance, Image Match, RHS Preview, Nerve Response Analysis, Response Review Stats, ECG Print | Affected apps advanced within `1.2.x`/`1.3.x` for caught-exception reporting. |
+| 2026-06-30 | `a81853e` | `labkit.ui`, Batch Crop, Focus Stack, Image Enhance, Image Match | UI `3.2.6 -> 3.2.7`; affected image apps advanced for file-entry index and close-guard changes. |
+| 2026-06-30 | `8d7c83b` | `labkit.ui`, DIC Post, and supported apps using alert routing | UI `3.2.7 -> 3.2.8`; affected app versions advanced for framework alert routing. |
+| 2026-06-30 | `7f73b71` | Image Enhance | `1.3.4 -> 1.3.5`. |
+| 2026-06-30 | `e3349af` | Batch Crop | `1.3.7 -> 1.3.8`. |
+| 2026-06-30 | `733fb95` | RHS Preview | `1.2.2 -> 1.2.3`. |
+| 2026-06-30 | `98a2b02` | `labkit.ui` | `3.2.8 -> 3.2.9`. |
+| 2026-06-30 | `391540a` | DIC Post, Batch Crop, RHS Preview | DIC Post `1.2.3 -> 1.2.4`; Batch Crop `1.3.8 -> 1.3.9`; RHS Preview `1.2.3 -> 1.2.4`. |
+| 2026-06-30 | `7023e87` | `labkit.image`, Batch Crop, FLIR Thermal, Focus Stack, Image Enhance, Image Match | Introduced image facade `1.0.0`; image-measurement apps advanced for shared image facade adoption. |
+| 2026-07-01 | `c33d027` | Image Enhance, Image Match | Both `1.4.0 -> 1.4.1`. |
+| 2026-07-01 | `977c945` | `labkit.thermal`, `labkit.ui`, FLIR Thermal | Introduced thermal facade `1.0.0`; UI `3.2.9 -> 3.2.10`; FLIR Thermal `1.0.0`. |
+| 2026-07-01 | `15a798b` | `labkit.image`, `labkit.ui`, Batch Crop, FLIR Thermal | image `1.0.0 -> 1.1.0`; UI `3.2.10 -> 3.3.0`; Batch Crop `1.4.0 -> 1.5.0`; FLIR Thermal `1.0.0 -> 1.1.0`. |
+| 2026-07-01 | `ebf86cf` | launcher | `1.1.3 -> 1.1.4`. |
+| 2026-07-01 | `becf939` | launcher | `1.1.4 -> 1.1.5`. |
+| 2026-07-01 | `70bfcfd` | launcher, `labkit.ui`, Batch Crop, FLIR Thermal | launcher `1.1.5 -> 1.1.6`; UI `3.3.0 -> 3.3.1`; Batch Crop `1.5.0 -> 1.5.1`; FLIR Thermal `1.1.0 -> 1.1.2`. |
+| 2026-07-01 | `8fd3ddf` | launcher | `1.1.6 -> 1.2.0`. |
+| 2026-07-01 | `279befb` | `labkit.ui` and all supported apps | UI `3.3.1 -> 3.4.0`; supported apps moved into debug-sample-pack versions. |
+| 2026-07-02 | `74025fe` | ECG Print | `1.3.0 -> 1.3.1`. |
+| 2026-07-02 | `eadcca8` | `labkit.ui` | `3.4.0 -> 3.4.1`. |
+| 2026-07-02 | `25912c5` | `labkit.ui`, Batch Crop | UI `3.4.1 -> 3.4.2`; Batch Crop `1.6.0 -> 1.6.1`. |
+| 2026-07-02 | `c07dfc0` | launcher | `1.2.0 -> 1.2.1`. |
+| 2026-07-02 | `fcfc36d` | launcher | `1.2.1 -> 1.2.2`. |
+| 2026-07-02 | `7d4ef11` | launcher, `labkit.ui` | launcher `1.2.2 -> 1.2.3`; UI `3.4.2 -> 3.4.4`. |
+| 2026-07-03 | `c04aaab` | `labkit.ui` on the current development branch | UI `3.4.4 -> 3.4.5` for declarative app definition/runtime support. |
+| 2026-07-03 | current branch | all supported apps | Patch bump for the completed workflow-first app package migration. |
+
 ## Current version inventory
 
 ### Core and launcher components
@@ -43,7 +97,7 @@ This changelog tracks component-level version metadata for LabKit MATLAB Workben
 | Component | Current version | Status / family | Metadata location | Current notes |
 |---|---:|---|---|---|
 | `labkit_launcher` | `1.2.3` | Launcher | `labkit_launcher.m` | Self-contained GUI selector, updater, repair path, version manager, profiler/code-analyzer actions. |
-| `labkit.ui` | `3.4.4` | stable facade | `+labkit/+ui/version.m` | UI 3.x app/spec/view/tool/diag contract, visible-window early paint, lazy preview scroll setup, debug artifacts, hidden-test-safe alerts, close guard, crash reports, output prompts, and text fitting. |
+| `labkit.ui` | `3.4.5` | stable facade | `+labkit/+ui/version.m` | UI 3.x app/spec/view/tool/diag contract, declarative app definitions, framework-owned runtime dispatch, visible-window early paint, startup readiness state, lazy preview scroll setup, debug artifacts, hidden-test-safe alerts, close guard, crash reports, output prompts, and text fitting. |
 | `labkit.dta` | `2.0.0` | stable facade | `+labkit/+dta/version.m` | DTA parser, file item, pulse, and curve facade contract after old session helper removal. |
 | `labkit.rhs` | `1.0.0` | stable facade | `+labkit/+rhs/version.m` | RHS discovery, metadata, indexing, and waveform-window facade contract. |
 | `labkit.image` | `1.1.0` | stable facade | `+labkit/+image/version.m` | GUI-free image file input, basic processing, and preview-budget helpers. |
@@ -54,23 +108,23 @@ This changelog tracks component-level version metadata for LabKit MATLAB Workben
 
 | App component | Family | Current version | Updated date | Metadata location |
 |---|---|---:|---|---|
-| `labkit_CIC_app` | Electrochem | `1.3.0` | 2026-07-01 | `apps/electrochem/cic/+cic/version.m` |
-| `labkit_CSC_app` | Electrochem | `1.3.0` | 2026-07-01 | `apps/electrochem/csc/+csc/version.m` |
-| `labkit_EIS_app` | Electrochem | `1.3.0` | 2026-07-01 | `apps/electrochem/eis/+eis/version.m` |
-| `labkit_VTResistance_app` | Electrochem | `1.3.0` | 2026-07-01 | `apps/electrochem/vt_resistance/+vt_resistance/version.m` |
-| `labkit_ChronoOverlay_app` | Electrochem | `1.3.0` | 2026-07-01 | `apps/electrochem/chrono_overlay/+chrono_overlay/version.m` |
-| `labkit_DICPreprocess_app` | DIC | `1.3.0` | 2026-07-02 | `apps/dic/dic_preprocess/+dic_preprocess/version.m` |
-| `labkit_DICPostprocess_app` | DIC | `1.3.0` | 2026-07-02 | `apps/dic/dic_postprocess/+dic_postprocess/version.m` |
-| `labkit_BatchImageCrop_app` | Image Measurement | `1.6.1` | 2026-07-02 | `apps/image_measurement/batch_crop/+batch_crop/version.m` |
-| `labkit_CurvatureMeasurement_app` | Image Measurement | `1.3.0` | 2026-07-01 | `apps/image_measurement/curvature/+curvature/version.m` |
-| `labkit_FLIRThermal_app` | Image Measurement | `1.2.0` | 2026-07-02 | `apps/image_measurement/flir_thermal/+flir_thermal/version.m` |
-| `labkit_FocusStack_app` | Image Measurement | `1.4.0` | 2026-07-01 | `apps/image_measurement/focus_stack/+focus_stack/version.m` |
-| `labkit_ImageEnhance_app` | Image Measurement | `1.5.0` | 2026-07-01 | `apps/image_measurement/image_enhance/+image_enhance/version.m` |
-| `labkit_ImageMatch_app` | Image Measurement | `1.5.0` | 2026-07-01 | `apps/image_measurement/image_match/+image_match/version.m` |
-| `labkit_RHSPreview_app` | Neurophysiology | `1.3.0` | 2026-07-02 | `apps/neurophysiology/rhs_preview/+rhs_preview/version.m` |
-| `labkit_NerveResponseAnalysis_app` | Neurophysiology | `1.3.0` | 2026-07-02 | `apps/neurophysiology/nerve_response_analysis/+nerve_response_analysis/version.m` |
-| `labkit_ResponseReviewStats_app` | Neurophysiology | `1.3.0` | 2026-07-02 | `apps/neurophysiology/response_review_stats/+response_review_stats/version.m` |
-| `labkit_ECGPrint_app` | Wearable | `1.3.1` | 2026-07-02 | `apps/wearable/ecg_print/+ecg_print/version.m` |
+| `labkit_CIC_app` | Electrochem | `1.3.1` | 2026-07-03 | `apps/electrochem/cic/+cic/version.m` |
+| `labkit_CSC_app` | Electrochem | `1.3.1` | 2026-07-03 | `apps/electrochem/csc/+csc/version.m` |
+| `labkit_EIS_app` | Electrochem | `1.3.1` | 2026-07-03 | `apps/electrochem/eis/+eis/version.m` |
+| `labkit_VTResistance_app` | Electrochem | `1.3.1` | 2026-07-03 | `apps/electrochem/vt_resistance/+vt_resistance/version.m` |
+| `labkit_ChronoOverlay_app` | Electrochem | `1.3.1` | 2026-07-03 | `apps/electrochem/chrono_overlay/+chrono_overlay/version.m` |
+| `labkit_DICPreprocess_app` | DIC | `1.3.1` | 2026-07-03 | `apps/dic/dic_preprocess/+dic_preprocess/version.m` |
+| `labkit_DICPostprocess_app` | DIC | `1.3.1` | 2026-07-03 | `apps/dic/dic_postprocess/+dic_postprocess/version.m` |
+| `labkit_BatchImageCrop_app` | Image Measurement | `1.6.2` | 2026-07-03 | `apps/image_measurement/batch_crop/+batch_crop/version.m` |
+| `labkit_CurvatureMeasurement_app` | Image Measurement | `1.3.1` | 2026-07-03 | `apps/image_measurement/curvature/+curvature/version.m` |
+| `labkit_FLIRThermal_app` | Image Measurement | `1.2.1` | 2026-07-03 | `apps/image_measurement/flir_thermal/+flir_thermal/version.m` |
+| `labkit_FocusStack_app` | Image Measurement | `1.4.1` | 2026-07-03 | `apps/image_measurement/focus_stack/+focus_stack/version.m` |
+| `labkit_ImageEnhance_app` | Image Measurement | `1.5.1` | 2026-07-03 | `apps/image_measurement/image_enhance/+image_enhance/version.m` |
+| `labkit_ImageMatch_app` | Image Measurement | `1.5.1` | 2026-07-03 | `apps/image_measurement/image_match/+image_match/version.m` |
+| `labkit_RHSPreview_app` | Neurophysiology | `1.3.1` | 2026-07-03 | `apps/neurophysiology/rhs_preview/+rhs_preview/version.m` |
+| `labkit_NerveResponseAnalysis_app` | Neurophysiology | `1.3.1` | 2026-07-03 | `apps/neurophysiology/nerve_response_analysis/+nerve_response_analysis/version.m` |
+| `labkit_ResponseReviewStats_app` | Neurophysiology | `1.3.1` | 2026-07-03 | `apps/neurophysiology/response_review_stats/+response_review_stats/version.m` |
+| `labkit_ECGPrint_app` | Wearable | `1.3.2` | 2026-07-03 | `apps/wearable/ecg_print/+ecg_print/version.m` |
 
 ## Component histories
 
@@ -104,6 +158,7 @@ This changelog tracks component-level version metadata for LabKit MATLAB Workben
 | `3.4.1` | 2026-07-02 | `eadcca8` | Added GUI idle/bounded stability waits and scale-bar debounce registration. |
 | `3.4.2` | 2026-07-02 | `25912c5` | Reduced debug trace text mirroring and GUI profiling overhead. |
 | `3.4.4` | 2026-07-02 | `7d4ef11` | Added visible-window early paint and lazy preview scroll-interaction setup. |
+| `3.4.5` | 2026-07-03 | `c04aaab` | Added declarative app definitions, framework-owned runtime dispatch, and startup readiness state on the current branch. |
 
 ### `labkit.dta`
 

@@ -15,10 +15,17 @@ classdef DebugSamplePackCoverageTest < matlab.unittest.TestCase
                 appFolder = string(appFiles(k).folder);
                 slug = appSlugFromEntrypoint(appFile);
                 runner = fullfile(appFolder, "+" + slug, "run.m");
+                definition = fullfile(appFolder, "+" + slug, "definition.m");
+                definitionActions = fullfile(appFolder, "+" + slug, ...
+                    "definitionActions.m");
+                actions = fullfile(appFolder, "+" + slug, "+actions", "table.m");
                 writer = fullfile(appFolder, "+" + slug, "+debug", "writeSamplePack.m");
 
-                if ~isfile(runner)
-                    missing(end + 1, 1) = appFile + " missing package-root run.m";
+                wiringFiles = [runner, definition, definitionActions, actions];
+                wiringFiles = wiringFiles(isfile(wiringFiles));
+                if isempty(wiringFiles)
+                    missing(end + 1, 1) = appFile + ...
+                        " missing runtime wiring source for debug samples";
                     continue;
                 end
                 if ~isfile(writer)
@@ -26,11 +33,13 @@ classdef DebugSamplePackCoverageTest < matlab.unittest.TestCase
                     continue;
                 end
 
-                body = string(fileread(char(runner)));
-                directCall = slug + ".debug.writeAndLogSamplePack(debugLog";
-                setupCall = slug + ".debug.writeSamplePack(debugLog)";
-                if ~(contains(body, directCall) || ...
-                        (contains(body, "setupDebugSamples()") && contains(body, setupCall)))
+                body = "";
+                for iFile = 1:numel(wiringFiles)
+                    body = body + newline + string(fileread(wiringFiles(iFile)));
+                end
+                directCall = slug + ".debug.writeAndLogSamplePack(";
+                samplePackCall = slug + ".debug.writeSamplePack(";
+                if ~(contains(body, directCall) || contains(body, samplePackCall))
                     missing(end + 1, 1) = appFile + " does not call app-owned debug sample writer";
                 end
             end

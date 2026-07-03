@@ -1,4 +1,4 @@
-% Expected caller: image_enhance.run during debug launch and unit tests.
+% Expected caller: image_enhance.definitionActions during debug launch and unit tests.
 % Input is a LabKit debug context. Output is a deterministic synthetic image
 % enhancement sample pack. Side effects: writes anonymous debug images and
 % records a session manifest when available.

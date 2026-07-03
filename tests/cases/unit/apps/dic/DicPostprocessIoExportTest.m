@@ -17,7 +17,7 @@ classdef DicPostprocessIoExportTest < matlab.unittest.TestCase
                 'mask', logical([1 0; 0 1]));
             save(matPath, 'data_dic_save');
 
-            strain = dic_postprocess.io.loadNcorrStrain(matPath);
+            strain = dic_postprocess.sourceFiles.loadNcorrStrain(matPath);
 
             testCase.verifyEqual(strain.exx, data_dic_save.strains.plot_exx_ref_formatted);
             testCase.verifyEqual(strain.eyy, data_dic_save.strains.plot_eyy_ref_formatted);
@@ -34,7 +34,7 @@ classdef DicPostprocessIoExportTest < matlab.unittest.TestCase
             overlayImage = zeros(4, 4, 3);
             overlayImage(2:3, 2:3, 1) = 1;
 
-            dic_postprocess.export.exportOverlayImage(overlayImage, overlayPath);
+            dic_postprocess.resultFiles.exportOverlayImage(overlayImage, overlayPath);
 
             testCase.verifyTrue(isfile(overlayPath));
             testCase.verifyGreaterThan(dir(overlayPath).bytes, 0);

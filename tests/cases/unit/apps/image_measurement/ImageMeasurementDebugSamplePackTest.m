@@ -11,25 +11,25 @@ classdef ImageMeasurementDebugSamplePackTest < matlab.unittest.TestCase
                 "logFile", fullfile(char(root), "trace.log")));
 
             batch = batch_crop.debug.writeSamplePack(debug);
-            items = batch_crop.state.readItems(batch.representativeFiles);
+            items = batch_crop.appState.readItems(batch.representativeFiles);
             testCase.verifyEqual(numel(items), 2);
             verifyThrows(testCase, @() imread(char(batch.boundaryFiles.malformed)), ...
                 "Malformed batch-crop image should fail through imread.");
 
             focus = focus_stack.debug.writeSamplePack(debug);
-            focusImages = focus_stack.io.readImages(focus.representativeFiles);
+            focusImages = focus_stack.sourceFiles.readImages(focus.representativeFiles);
             testCase.verifyEqual(numel(focusImages), 4);
             verifyThrows(testCase, @() imread(char(focus.boundaryFiles.malformed)), ...
                 "Malformed focus-stack image should fail through imread.");
 
             enhance = image_enhance.debug.writeSamplePack(debug);
-            enhanceItems = image_enhance.io.readImages(enhance.representativeFiles);
+            enhanceItems = image_enhance.sourceFiles.readImages(enhance.representativeFiles);
             testCase.verifyEqual(numel(enhanceItems), 2);
             testCase.verifyFalse(isempty(imread(char(enhance.boundaryFiles.validEdge))));
 
             match = image_match.debug.writeSamplePack(debug);
-            reference = image_match.io.readImages(match.referenceFile);
-            sources = image_match.io.readImages(match.representativeFiles);
+            reference = image_match.sourceFiles.readImages(match.referenceFile);
+            sources = image_match.sourceFiles.readImages(match.representativeFiles);
             testCase.verifyEqual(numel(reference), 1);
             testCase.verifyEqual(numel(sources), 2);
 
@@ -38,12 +38,12 @@ classdef ImageMeasurementDebugSamplePackTest < matlab.unittest.TestCase
             testCase.verifyFalse(isempty(imread(char(curve.boundaryFiles.validEdge))));
 
             flir = flir_thermal.debug.writeSamplePack(debug);
-            [thermalItems, report] = flir_thermal.io.readImages(flir.representativeFiles);
+            [thermalItems, report] = flir_thermal.sourceFiles.readImages(flir.representativeFiles);
             testCase.verifyEqual(report.loaded, 2);
             testCase.verifyEqual(numel(thermalItems), 2);
-            [~, edgeReport] = flir_thermal.io.readImages(flir.boundaryFiles.validEdgeLowContrast);
+            [~, edgeReport] = flir_thermal.sourceFiles.readImages(flir.boundaryFiles.validEdgeLowContrast);
             testCase.verifyEqual(edgeReport.loaded, 1);
-            [~, badReport] = flir_thermal.io.readImages(flir.boundaryFiles.malformedPlainJpeg);
+            [~, badReport] = flir_thermal.sourceFiles.readImages(flir.boundaryFiles.malformedPlainJpeg);
             testCase.verifyEqual(badReport.loaded, 0);
         end
     end

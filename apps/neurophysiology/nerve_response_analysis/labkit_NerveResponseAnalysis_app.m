@@ -19,7 +19,8 @@ function varargout = labkit_NerveResponseAnalysis_app(varargin)
             'labkit_NerveResponseAnalysis_app returns at most the app figure handle.');
     end
 
-    fig = nerve_response_analysis.run(debugLog);
+    request = struct("debug", debugLog);
+    fig = labkit.ui.app.run(nerve_response_analysis.definition(), request);
     labkit.ui.app.applyVersionTitle(fig, appVersion);
     if nargout >= 1
         varargout{1} = fig;

@@ -21,16 +21,19 @@ function ui = create(spec, varargin)
 
     debug = optionValue(opts, 'debug', []);
     ui = buildShellFromSpec(spec, debug);
-    drawnow limitrate;
+    startupLifecycle(ui.figure, 'start', ui, "Building controls...");
     installCloseGuard(ui.figure);
     ui = buildControlTabs(ui, spec.props.controlTabs, debug);
+    startupLifecycle(ui.figure, 'update', "Preparing workspace...");
     ui = buildWorkspace(ui, spec.props.workspace, debug);
+    startupLifecycle(ui.figure, 'update', "Preparing app...");
 
     if isDebugEnabled(debug) && isfield(debug, 'instrumentFigure')
         debug.instrumentFigure(ui.figure);
     end
     setappdata(ui.figure, 'labkitUiRegistry', ui);
     setappdata(ui.figure, 'labkitUiDebugContext', debug);
+    startupLifecycle(ui.figure, 'finish', "Ready.");
 end
 
 function opts = parseOptions(args)

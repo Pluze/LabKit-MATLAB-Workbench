@@ -1,4 +1,4 @@
-% Expected caller: response_review_stats.run during debug launch and unit
+% Expected caller: response_review_stats.definitionActions startup action and unit
 % tests. Input is a LabKit debug context. Output is a deterministic segment
 % and analysis-metrics sample pack. Side effects: writes anonymous debug files
 % and records a session manifest when available.

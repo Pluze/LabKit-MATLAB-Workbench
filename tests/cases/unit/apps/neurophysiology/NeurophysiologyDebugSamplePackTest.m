@@ -24,16 +24,16 @@ classdef NeurophysiologyDebugSamplePackTest < matlab.unittest.TestCase
             analysisPack = nerve_response_analysis.debug.writeSamplePack(debug);
             session = jsondecode(fileread(char(analysisPack.representativeFiles.filterRecordJson)));
             protocol = jsondecode(fileread(char(analysisPack.representativeFiles.protocolJson)));
-            analysis = nerve_response_analysis.ops.analyzeSession(session, protocol, ...
+            analysis = nerve_response_analysis.analysisRun.analyzeSession(session, protocol, ...
                 struct("maxRecordings", 1, "maxDurationSec", 0.08));
             testCase.verifyEqual(analysis.recordingCount, 2);
             testCase.verifyGreaterThanOrEqual(analysis.analyzedCount, 1);
 
             reviewPack = response_review_stats.debug.writeSamplePack(debug);
             T = readtable(char(reviewPack.representativeFiles.segmentCsv));
-            segments = response_review_stats.io.parseSegmentTable(T);
-            aligned = response_review_stats.ops.alignSegments(segments, struct());
-            metrics = response_review_stats.ops.measureAlignedSegments(aligned, struct());
+            segments = response_review_stats.sourceFiles.parseSegmentTable(T);
+            aligned = response_review_stats.analysisRun.alignSegments(segments, struct());
+            metrics = response_review_stats.analysisRun.measureAlignedSegments(aligned, struct());
             testCase.verifyGreaterThan(height(metrics), 0);
             payload = jsondecode(fileread(char(reviewPack.representativeFiles.analysisJson)));
             testCase.verifyTrue(isfield(payload, "metrics"));

@@ -14,15 +14,29 @@ classdef AppPackageStructureGuardrailTest < matlab.unittest.TestCase
             end
         end
 
+        function appFoldersDoNotMixFileAndFolderForms(testCase)
+            root = setupLabKitTestPath();
+            specs = discoveredAppSpecs(root);
+            for k = 1:size(specs, 1)
+                appDir = fullfile(root, specs{k, 1});
+                assertNoSameStemFileFolder(testCase, root, appDir);
+                packageName = specs{k, 2};
+                if strlength(string(packageName)) > 0
+                    assertNoSameStemFileFolder(testCase, root, ...
+                        fullfile(appDir, ['+' packageName]));
+                end
+            end
+        end
+
         function imageWorkflowAppsKeepTaskLifecycleSnapshots(testCase)
             root = setupLabKitTestPath();
             expected = [
-                "apps/image_measurement/image_enhance/+image_enhance/+state/exportTask.m"
-                "apps/image_measurement/image_match/+image_match/+state/exportTask.m"
-                "apps/image_measurement/batch_crop/+batch_crop/+state/exportPlan.m"
-                "apps/image_measurement/focus_stack/+focus_stack/+state/runTask.m"
-                "apps/image_measurement/curvature/+curvature/+state/fitTask.m"
-                "apps/image_measurement/curvature/+curvature/+state/lengthTask.m"];
+                "apps/image_measurement/image_enhance/+image_enhance/+appState/exportTask.m"
+                "apps/image_measurement/image_match/+image_match/+appState/exportTask.m"
+                "apps/image_measurement/batch_crop/+batch_crop/+appState/exportPlan.m"
+                "apps/image_measurement/focus_stack/+focus_stack/+appState/runTask.m"
+                "apps/image_measurement/curvature/+curvature/+appState/fitTask.m"
+                "apps/image_measurement/curvature/+curvature/+appState/lengthTask.m"];
 
             for k = 1:numel(expected)
                 filepath = repoPath(root, expected(k));
@@ -43,6 +57,22 @@ classdef AppPackageStructureGuardrailTest < matlab.unittest.TestCase
         end
 
     end
+end
+
+function assertNoSameStemFileFolder(testCase, root, folder)
+    if ~isfolder(folder)
+        return;
+    end
+    files = dir(fullfile(folder, '*.m'));
+    dirs = dir(folder);
+    dirs = dirs([dirs.isdir]);
+    dirs = dirs(~ismember({dirs.name}, {'.', '..'}));
+    fileStems = erase(string({files.name}), ".m");
+    dirStems = erase(string({dirs.name}), "+");
+    conflicts = intersect(fileStems, dirStems);
+    testCase.verifyTrue(isempty(conflicts), ...
+        [relativePath(root, folder) ' mixes file and folder forms for the ' ...
+        'same app role: ' strjoin(cellstr(conflicts), ', ')]);
 end
 
 function specs = discoveredAppSpecs(root)
@@ -71,9 +101,11 @@ function assertCanonicalAppPackageStructure(testCase, root, appRelDir, packageNa
     appDir = fullfile(root, appRelDir);
     packageDir = fullfile(appDir, ['+' packageName]);
     uiDir = fullfile(packageDir, '+ui');
+    userInterfaceDir = fullfile(packageDir, '+userInterface');
     entrypointFile = fullfile(appDir, entrypointName);
     runFile = fullfile(packageDir, 'run.m');
-    buildSpecFile = fullfile(uiDir, 'buildSpec.m');
+    definitionFile = fullfile(packageDir, 'definition.m');
+    buildSpecFile = fullfile(userInterfaceDir, 'buildWorkbenchSpec.m');
     appLabel = relativePath(root, appDir);
 
     testCase.verifyGreaterThan(strlength(string(packageName)), 0, ...
@@ -91,18 +123,26 @@ function assertCanonicalAppPackageStructure(testCase, root, appRelDir, packageNa
         relativePath(root, buildSpecFile)]);
     testCase.verifyTrue(isfile(entrypointFile), ...
         ['Missing app entrypoint: ' relativePath(root, entrypointFile)]);
-    testCase.verifyTrue(isfile(runFile), ...
-        ['App lifecycle runner must live at package root: ' ...
-        relativePath(root, runFile)]);
+    testCase.verifyTrue(isfile(definitionFile), ...
+        ['App package must provide a definition runtime: ' ...
+        relativePath(root, packageDir)]);
+    testCase.verifyFalse(isfile(runFile), ...
+        [appLabel ' should not keep package-root run.m orchestration.']);
     testCase.verifyFalse(isfile(fullfile(uiDir, 'runApp.m')), ...
         [appLabel ' should not keep app lifecycle orchestration in +ui/runApp.m.']);
+    assertWorkflowFirstPackageShape(testCase, root, packageDir);
 
-    orchestrationSource = appOrchestrationSource(entrypointFile, ...
-        runFile);
-    testCase.verifyTrue(contains(orchestrationSource, [packageName '.ui.buildSpec(']), ...
-        [appLabel ' should call its canonical +ui/buildSpec.m file.']);
-    testCase.verifyTrue(contains(orchestrationSource, 'labkit.ui.app.create('), ...
-        [appLabel ' should launch through labkit.ui.app.create.']);
+    orchestrationSource = appOrchestrationSource(entrypointFile, runFile, ...
+        definitionFile);
+    usesBuildSpecCall = contains(orchestrationSource, ...
+        [packageName '.userInterface.buildWorkbenchSpec(']) || ...
+        contains(orchestrationSource, ...
+        ['@' packageName '.userInterface.buildWorkbenchSpec']);
+    testCase.verifyTrue(usesBuildSpecCall, ...
+        [appLabel ' should call its canonical UI spec builder.']);
+    testCase.verifyTrue(contains(orchestrationSource, 'labkit.ui.app.run(') && ...
+        contains(orchestrationSource, [packageName '.definition()']), ...
+        [appLabel ' definitions should launch through labkit.ui.app.run.']);
 
     buildSpecSource = fileread(buildSpecFile);
     testCase.verifyTrue(contains(buildSpecSource, 'labkit.ui.spec.app'), ...
@@ -124,8 +164,41 @@ function assertCanonicalAppPackageStructure(testCase, root, appRelDir, packageNa
         family, packageName);
 end
 
-function source = appOrchestrationSource(entrypointFile, runFile)
-    source = strjoin({fileread(entrypointFile), fileread(runFile)}, newline);
+function assertWorkflowFirstPackageShape(testCase, root, packageDir)
+    requiredFiles = [
+        string(fullfile(packageDir, 'definitionActions.m'))
+        string(fullfile(packageDir, '+appLifecycle', 'createInitialState.m'))
+        string(fullfile(packageDir, '+userInterface', 'buildWorkbenchSpec.m'))
+        string(fullfile(packageDir, '+userInterface', 'updateWorkbenchFromState.m'))];
+    for k = 1:numel(requiredFiles)
+        testCase.verifyTrue(isfile(requiredFiles(k)), ...
+            ['Workflow-first app packages should include ' ...
+            relativePath(root, requiredFiles(k))]);
+    end
+
+    oldBuckets = ["+actions", "+renderers", "+ops", "+io", "+export", ...
+        "+state", "+view", "+ui"];
+    conflicts = strings(1, 0);
+    for k = 1:numel(oldBuckets)
+        candidate = fullfile(packageDir, char(oldBuckets(k)));
+        if isfolder(candidate)
+            conflicts(end+1) = string(relativePath(root, candidate));
+        end
+    end
+    testCase.verifyTrue(isempty(conflicts), ...
+        ['Workflow-first app packages should not reintroduce overlapping ' ...
+        'technical role buckets: ' strjoin(cellstr(conflicts), ', ')]);
+end
+
+function source = appOrchestrationSource(entrypointFile, runFile, definitionFile)
+    parts = {fileread(entrypointFile)};
+    if isfile(runFile)
+        parts{end + 1} = fileread(runFile);
+    end
+    if isfile(definitionFile)
+        parts{end + 1} = fileread(definitionFile);
+    end
+    source = strjoin(parts, newline);
 end
 
 function words = buildSpecForbiddenWords()
@@ -276,7 +349,9 @@ function family = appFamilyFromRelativeDir(appRelDir)
 end
 
 function tf = hasNonUiPackageComponent(packageDir)
-    componentNames = {'+ops', '+view', '+export', '+io', '+state'};
+    componentNames = {'+ops', '+view', '+export', '+io', '+state', '+appState', ...
+        '+sourceFiles', '+analysisRun', '+resultFiles', '+cropGeometry', ...
+        '+thermalFrames', '+debugArtifacts'};
     tf = false;
     for k = 1:numel(componentNames)
         componentRoot = fullfile(packageDir, componentNames{k});
@@ -295,7 +370,9 @@ function tf = packageNamespaceHasDirectUnitTest(root, family, packageName)
         return;
     end
 
-    pattern = [packageName '\.(ops|view|export|io|state)\.'];
+    componentPattern = ['ops|view|export|io|state|appState|sourceFiles|' ...
+        'analysisRun|resultFiles|cropGeometry|thermalFrames|debugArtifacts'];
+    pattern = [packageName '\.(' componentPattern ')\.'];
     testFiles = collectTextFiles(testRoot);
     tf = false;
     for k = 1:numel(testFiles)

@@ -20,7 +20,7 @@ classdef BatchImageCropExportTest < matlab.unittest.TestCase
 end
 
 function checkManifestContract()
-    result = batch_crop.ops.cropImage(uint8(ones(5, 6)), struct( ...
+    result = batch_crop.cropGeometry.cropImage(uint8(ones(5, 6)), struct( ...
         'cropWidth', 3, ...
         'cropHeight', 4, ...
         'centerXY', [3, 3], ...
@@ -30,7 +30,7 @@ function checkManifestContract()
     result.status = "saved";
     result.message = "Saved";
 
-    T = batch_crop.export.buildManifest(result);
+    T = batch_crop.resultFiles.buildManifest(result);
     assert(isequal(T.Properties.VariableNames, expectedManifestColumns()), ...
         'Batch crop manifest columns changed.');
     assert(height(T) == 1, 'Manifest should include one row per crop result.');
@@ -47,7 +47,7 @@ function checkPerItemPaddingExportsIndependently()
     mkdir(folder);
     cleanup = onCleanup(@() removeTempFolder(folder));
 
-    itemA = batch_crop.state.emptyItem();
+    itemA = batch_crop.appState.emptyItem();
     itemA.path = string(fullfile(folder, 'pad_a.png'));
     itemA.image = uint8(40 * ones(8, 8));
     itemA.centerXY = [4, 4];
@@ -57,7 +57,7 @@ function checkPerItemPaddingExportsIndependently()
     itemB.path = string(fullfile(folder, 'pad_b.png'));
     itemB.paddingPercent = 40;
 
-    payload = batch_crop.export.writeOutputs([itemA; itemB], struct( ...
+    payload = batch_crop.resultFiles.writeOutputs([itemA; itemB], struct( ...
         'outputFolder', string(folder), ...
         'format', 'PNG', ...
         'cropWidth', 6, ...
@@ -79,7 +79,7 @@ function checkPhysicalScaleCropUsesUnifiedOutputPixels()
     itemA = physicalItem(fullfile(folder, 'source_a.png'), uint8(80 * ones(120, 120)), 4);
     itemB = physicalItem(fullfile(folder, 'source_b.png'), uint8(160 * ones(160, 160)), 8);
 
-    payload = batch_crop.export.writeOutputs([itemA; itemB], struct( ...
+    payload = batch_crop.resultFiles.writeOutputs([itemA; itemB], struct( ...
         'outputFolder', string(folder), ...
         'format', 'PNG', ...
         'cropWidth', 10, ...
@@ -115,7 +115,7 @@ function checkPhysicalScaleUnitsAreConvertedWithoutMutatingCalibration()
     item.scaleCalibration = labkit.ui.tool.scaleBarCalibration(40, 10, "mm", ...
         struct('defaultUnit', 'mm', 'referenceLine', [1 1; 41 1]));
 
-    plan = batch_crop.ops.scalePlan(item, struct( ...
+    plan = batch_crop.cropGeometry.scalePlan(item, struct( ...
         'physicalWidth', 1000, ...
         'physicalHeight', 500, ...
         'scaleUnit', 'um', ...
@@ -129,8 +129,8 @@ function checkPhysicalScaleUnitsAreConvertedWithoutMutatingCalibration()
     assert(plan.outputWidth == 4 && plan.outputHeight == 2, ...
         'Auto target density should use converted px/requested-unit values.');
 
-    pixelsPerMm = batch_crop.ops.pixelsPerUnitForUnit(item.scaleCalibration, "mm");
-    pixelsPerUm = batch_crop.ops.pixelsPerUnitForUnit(item.scaleCalibration, "um");
+    pixelsPerMm = batch_crop.cropGeometry.pixelsPerUnitForUnit(item.scaleCalibration, "mm");
+    pixelsPerUm = batch_crop.cropGeometry.pixelsPerUnitForUnit(item.scaleCalibration, "um");
     assert(pixelsPerMm == 4 && abs(pixelsPerUm - 0.004) < 1e-12, ...
         'Calibration density conversion should preserve independent source and crop units.');
 end
@@ -139,7 +139,7 @@ function checkScalePlanWarnsButDoesNotBlockOutliers()
     itemA = physicalItem("a.png", uint8(ones(20, 20)), 5);
     itemB = physicalItem("b.png", uint8(ones(80, 80)), 20);
 
-    plan = batch_crop.ops.scalePlan([itemA; itemB], struct( ...
+    plan = batch_crop.cropGeometry.scalePlan([itemA; itemB], struct( ...
         'physicalWidth', 2, ...
         'physicalHeight', 3, ...
         'scaleUnit', 'um', ...
@@ -156,9 +156,9 @@ function checkScaleCalibrationSummaryReportsReadiness()
     items = [physicalItem("ready_a.png", uint8(ones(10, 10)), 4); ...
         physicalItem("ready_b.png", uint8(10 * ones(8, 12)), 8); ...
         physicalItem("needs_scale.png", uint8(20 * ones(6, 7)), 4)];
-    items(3).scaleCalibration = batch_crop.state.emptyScaleCalibration("um");
+    items(3).scaleCalibration = batch_crop.appState.emptyScaleCalibration("um");
 
-    summary = batch_crop.state.scaleCalibrationSummary(items);
+    summary = batch_crop.appState.scaleCalibrationSummary(items);
 
     assert(summary.total == 3, ...
         'Scale summary should report every crop item.');
@@ -167,7 +167,7 @@ function checkScaleCalibrationSummaryReportsReadiness()
     assert(~summary.allCalibrated, ...
         'Scale summary should reject mixed calibrated/missing item vectors.');
 
-    readySummary = batch_crop.state.scaleCalibrationSummary(items(1:2));
+    readySummary = batch_crop.appState.scaleCalibrationSummary(items(1:2));
     assert(readySummary.allCalibrated && readySummary.missingCount == 0, ...
         'Scale summary should accept all-calibrated item vectors.');
 end
@@ -178,10 +178,10 @@ function checkMissingWorkflowPromptNamesAffectedFiles()
         physicalItem("needs_scale.png", uint8(ones(10, 10)), 4)];
     items(2).centerSet = false;
     items(2).centerXY = [NaN, NaN];
-    items(3).scaleCalibration = batch_crop.state.emptyScaleCalibration("um");
+    items(3).scaleCalibration = batch_crop.appState.emptyScaleCalibration("um");
 
-    centerText = batch_crop.view.missingWorkflowItemsText(items, "center");
-    scaleText = batch_crop.view.missingWorkflowItemsText(items, "scale");
+    centerText = batch_crop.userInterface.missingWorkflowItemsText(items, "center");
+    scaleText = batch_crop.userInterface.missingWorkflowItemsText(items, "scale");
 
     assert(contains(centerText, "needs_center.png") && ~contains(centerText, "ready.png"), ...
         'Missing-center prompt should name only items without confirmed centers.');
@@ -195,10 +195,10 @@ function checkFilePanelEntriesExposeWorkflowStatus()
         physicalItem("needs_scale.png", uint8(ones(10, 10)), 4)];
     items(2).centerSet = false;
     items(2).centerXY = [NaN, NaN];
-    items(3).scaleCalibration = batch_crop.state.emptyScaleCalibration("um");
+    items(3).scaleCalibration = batch_crop.appState.emptyScaleCalibration("um");
 
-    pixelEntries = batch_crop.view.filePanelEntries(items, "Pixels");
-    physicalEntries = batch_crop.view.filePanelEntries(items, "Physical");
+    pixelEntries = batch_crop.userInterface.filePanelEntries(items, "Pixels");
+    physicalEntries = batch_crop.userInterface.filePanelEntries(items, "Physical");
 
     assert(isequal(string({pixelEntries.status}).', ...
         ["ready"; "needs center"; "ready"]), ...
@@ -221,7 +221,7 @@ function checkExportWritesUniqueOutputs()
         'centerXY', [3, 3], ...
         'centerSet', true);
 
-    payload = batch_crop.export.writeOutputs(item, struct( ...
+    payload = batch_crop.resultFiles.writeOutputs(item, struct( ...
         'outputFolder', string(folder), ...
         'format', 'PNG', ...
         'cropWidth', 4, ...
@@ -250,7 +250,7 @@ function checkExportWritesUniqueOutputsForDuplicateSource()
     items = [item; item];
     items(2).centerXY = [6, 6];
 
-    payload = batch_crop.export.writeOutputs(items, struct( ...
+    payload = batch_crop.resultFiles.writeOutputs(items, struct( ...
         'outputFolder', string(folder), ...
         'format', 'PNG', ...
         'cropWidth', 4, ...
@@ -269,7 +269,7 @@ function checkExportWritesUniqueOutputsForDuplicateSource()
 end
 
 function checkExportPlanFingerprintTracksItemsAndOptions()
-    item = batch_crop.state.emptyItem();
+    item = batch_crop.appState.emptyItem();
     item.path = "shared_source.png";
     item.image = uint8(20 * ones(8, 8));
     item.angleDeg = 0;
@@ -283,17 +283,17 @@ function checkExportPlanFingerprintTracksItemsAndOptions()
         'paddingPercent', 0, ...
         'scaleMode', 'Pixels');
 
-    base = batch_crop.state.exportPlan(item, opts);
-    repeated = batch_crop.state.exportPlan(item, opts);
+    base = batch_crop.appState.exportPlan(item, opts);
+    repeated = batch_crop.appState.exportPlan(item, opts);
     moved = opts;
     moved.outputFolder = "out_b";
-    movedPlan = batch_crop.state.exportPlan(item, moved);
+    movedPlan = batch_crop.appState.exportPlan(item, moved);
     shifted = item;
     shifted.centerXY = [5, 5];
-    shiftedPlan = batch_crop.state.exportPlan(shifted, opts);
+    shiftedPlan = batch_crop.appState.exportPlan(shifted, opts);
     padded = item;
     padded.paddingPercent = 40;
-    paddedPlan = batch_crop.state.exportPlan(padded, opts);
+    paddedPlan = batch_crop.appState.exportPlan(padded, opts);
 
     assert(base.fingerprint == repeated.fingerprint, ...
         'Identical batch-crop export plans should have stable fingerprints.');
@@ -315,7 +315,7 @@ function cols = expectedManifestColumns()
 end
 
 function item = physicalItem(pathValue, imageData, pixelsPerUnit)
-    item = batch_crop.state.emptyItem();
+    item = batch_crop.appState.emptyItem();
     item.path = string(pathValue);
     item.image = imageData;
     item.angleDeg = 0;

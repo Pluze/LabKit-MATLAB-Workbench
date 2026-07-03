@@ -78,5 +78,5 @@ function verify_computeCIC()
 end
 
 function A = computeCIC(item, opts)
-    A = cic.ops.computeCIC(item, opts);
+    A = cic.analysisRun.computeCIC(item, opts);
 end

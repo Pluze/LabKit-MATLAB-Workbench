@@ -49,7 +49,7 @@ git status --short --branch
 git log --oneline -n 40
 find apps -path '*+ui/runApp.m' -print | sort
 find apps -path '*/+*/run.m' -print | sort
-find apps -path '*+ui/buildSpec.m' -print | sort
+find apps -path '*+userInterface/buildWorkbenchSpec.m' -print | sort
 find apps -path '*/private/*' -type f -print | sort
 rg -n "expected\\w*Debt\\w*" tests/contract
 ```
@@ -63,7 +63,8 @@ For runner-complexity work, scan helper quality as well as file length:
 
 - count package-root `run.m` files and sort by line count
 - count short app helpers, excluding public entrypoints, `requirements.m`,
-  `version.m`, package-root `run.m`, and ordinary `+ui/buildSpec.m`
+  `version.m`, package-root `run.m`, and target
+  `+userInterface/buildWorkbenchSpec.m`
 - identify repeated micro-helper families and one-call pass-through wrappers
 - classify short helpers by boundary signal before proposing new extraction:
   public framework API, framework-private implementation, app state contract,
@@ -167,10 +168,10 @@ For each proposed migration, classify work as:
 
 - app-owned deterministic behavior: extract under the owning app package
 - ordinary UI: keep the data-only spec in
-  `+<app_slug>/+ui/buildSpec.m`; use app-local custom builders only for
-  justified interactions
-- runner orchestration: keep it in package-root `run.m`; public
-  entrypoints stay thin wrappers
+  `+<app_slug>/+userInterface/buildWorkbenchSpec.m`; use app-local custom
+  builders only for justified interactions
+- runtime orchestration: prefer `labkit.ui.app.define` plus
+  `labkit.ui.app.run`; public entrypoints stay thin dispatch wrappers
 - reusable foundation: use `labkit-boundary-guard` before touching `+labkit`
 - validation routing: use `labkit-test-planner`
 - documentation drift: update only the source that owns the changed contract
@@ -185,9 +186,11 @@ For helper extraction, prefer responsibility quality over helper count:
   state mutation or workflow order
 - keep or create app-owned helpers when they protect deterministic state,
   IO/file discovery, GUI-free operations, export boundaries, display data, or
-  focused custom UI/tool glue
-- treat short `+export/write*.m` files as valid side-effect boundaries when
-  they isolate output writes behind an explicit export contract
+  focused custom UI/tool glue. Prefer workflow-named packages such as
+  `+sourceFiles`, `+analysisRun`, `+resultFiles`, `+cropGeometry`,
+  `+thermalFrames`, or `+debugArtifacts` for new target-shape code
+- treat short output-writer files as valid side-effect boundaries when they
+  isolate output writes behind an explicit export contract
 - treat small public facades, test helpers, state factories, input filters, and
   app-owned side-effect boundaries as valid files when their names expose a
   caller-facing contract

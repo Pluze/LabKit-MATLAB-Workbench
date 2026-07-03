@@ -12,18 +12,18 @@ classdef FlirThermalTest < matlab.unittest.TestCase
             writeSyntheticFlirRjpegFixture(sourcePath);
             imwrite(uint8(80 * ones(4, 5, 3)), char(ordinaryPath));
 
-            [items, importReport] = flir_thermal.io.readImages( ...
+            [items, importReport] = flir_thermal.sourceFiles.readImages( ...
                 [string(ordinaryPath); string(sourcePath)]);
             range = items(1).displayRange;
-            rows = flir_thermal.view.summaryTableData(items(1), range, "turbo");
-            details = flir_thermal.view.detailLines(items, 1, folder);
-            entries = flir_thermal.view.filePanelEntries(items);
-            payload = flir_thermal.export.writeOutputs(items, struct( ...
+            rows = flir_thermal.userInterface.summaryTableData(items(1), range, "turbo");
+            details = flir_thermal.userInterface.detailLines(items, 1, folder);
+            entries = flir_thermal.userInterface.filePanelEntries(items);
+            payload = flir_thermal.resultFiles.writeOutputs(items, struct( ...
                 "outputFolder", folder, ...
                 "format", "PNG", ...
                 "palette", "iron", ...
                 "range", []));
-            labels = flir_thermal.view.rangeControlLabels();
+            labels = flir_thermal.userInterface.rangeControlLabels();
 
             testCase.verifyEqual(numel(items), 1);
             testCase.verifyEqual(importReport.requested, 2);
@@ -71,7 +71,7 @@ classdef FlirThermalTest < matlab.unittest.TestCase
 
         function flirThermalRawItemsFallbackAndRangeStatus(testCase)
             setupLabKitTestPath();
-            item = flir_thermal.state.emptyItem();
+            item = flir_thermal.appState.emptyItem();
             item.path = "raw_fixture.rjpg";
             item.name = "raw_fixture.rjpg";
             item.raw = [1 2; 3 4];
@@ -79,10 +79,10 @@ classdef FlirThermalTest < matlab.unittest.TestCase
             item.units = "raw";
             item.displayRange = [1 4];
 
-            [values, units, label] = flir_thermal.view.valueMatrix(item);
-            rows = flir_thermal.view.summaryTableData(item, ...
+            [values, units, label] = flir_thermal.userInterface.valueMatrix(item);
+            rows = flir_thermal.userInterface.summaryTableData(item, ...
                 item.displayRange, "gray");
-            entries = flir_thermal.view.filePanelEntries(item);
+            entries = flir_thermal.userInterface.filePanelEntries(item);
 
             testCase.verifyEqual(values, item.raw);
             testCase.verifyEqual(units, "raw");
@@ -91,27 +91,27 @@ classdef FlirThermalTest < matlab.unittest.TestCase
             testCase.verifyEqual(entries.status, "needs range");
 
             item.rangeAdjusted = true;
-            entries = flir_thermal.view.filePanelEntries(item);
+            entries = flir_thermal.userInterface.filePanelEntries(item);
             testCase.verifyEqual(entries.status, "range set");
         end
 
         function flirThermalRangeControlBoundsPresets(testCase)
             setupLabKitTestPath();
-            item = flir_thermal.state.emptyItem();
+            item = flir_thermal.appState.emptyItem();
             item.path = "bounds_fixture.rjpg";
             item.name = "bounds_fixture.rjpg";
             item.temperatureC = [20 25; 35 40];
             item.units = "C";
-            labels = flir_thermal.view.rangeControlLabels();
+            labels = flir_thermal.userInterface.rangeControlLabels();
 
-            items = flir_thermal.view.rangePresetItems();
-            defaultBounds = flir_thermal.view.rangeControlBounds(item, ...
+            items = flir_thermal.userInterface.rangePresetItems();
+            defaultBounds = flir_thermal.userInterface.rangeControlBounds(item, ...
                 labels.standardPreset, [0 1]);
-            estimatedBounds = flir_thermal.view.rangeControlBounds(item, ...
+            estimatedBounds = flir_thermal.userInterface.rangeControlBounds(item, ...
                 labels.estimatedPreset, [-20 120]);
-            highBounds = flir_thermal.view.rangeControlBounds(item, ...
+            highBounds = flir_thermal.userInterface.rangeControlBounds(item, ...
                 labels.highPreset, [-20 120]);
-            wideBounds = flir_thermal.view.rangeControlBounds(item, ...
+            wideBounds = flir_thermal.userInterface.rangeControlBounds(item, ...
                 labels.widePreset, [-20 120]);
 
             testCase.verifyTrue(any(strcmp(items, char(labels.estimatedPreset))));
@@ -127,36 +127,36 @@ classdef FlirThermalTest < matlab.unittest.TestCase
             folder = tempname;
             mkdir(folder);
             cleanup = onCleanup(@() removeTempFolder(folder));
-            item = flir_thermal.state.emptyItem();
+            item = flir_thermal.appState.emptyItem();
             item.path = fullfile(folder, "readings.rjpg");
             item.name = "readings.rjpg";
             item.temperatureC = [10 20 30; 40 50 60; 70 80 90];
             item.units = "C";
             item.displayRange = [10 90];
             [item.hotSpot, item.coldSpot] = ...
-                flir_thermal.ops.extremeTemperatureReadings(item.temperatureC);
-            item.manualPoint = flir_thermal.ops.pointTemperatureReading( ...
+                flir_thermal.analysisRun.extremeTemperatureReadings(item.temperatureC);
+            item.manualPoint = flir_thermal.analysisRun.pointTemperatureReading( ...
                 item.temperatureC, [2 2]);
             [item.roiHotSpot, ~, roiHotMean] = ...
-                flir_thermal.ops.roiTemperatureMeanReading( ...
+                flir_thermal.analysisRun.roiTemperatureMeanReading( ...
                 item.temperatureC, [1 1], [2 2]);
             item.roiHotBox = boxFromRoi(roiHotMean);
             [~, item.roiColdSpot, roiColdMean] = ...
-                flir_thermal.ops.roiTemperatureMeanReading( ...
+                flir_thermal.analysisRun.roiTemperatureMeanReading( ...
                 item.temperatureC, [2 2], [3 3]);
             item.roiColdBox = boxFromRoi(roiColdMean);
             [~, ~, item.roiMean] = ...
-                flir_thermal.ops.roiTemperatureMeanReading( ...
+                flir_thermal.analysisRun.roiTemperatureMeanReading( ...
                 item.temperatureC, [1 3], [3 3]);
 
-            details = flir_thermal.view.detailLines(item, 1, folder);
-            payload = flir_thermal.export.writeOutputs(item, struct( ...
+            details = flir_thermal.userInterface.detailLines(item, 1, folder);
+            payload = flir_thermal.resultFiles.writeOutputs(item, struct( ...
                 "outputFolder", folder, ...
                 "format", "PNG", ...
                 "palette", "turbo", ...
                 "range", []));
             manifest = payload.manifest;
-            labels = flir_thermal.view.rangeControlLabels();
+            labels = flir_thermal.userInterface.rangeControlLabels();
 
             testCase.verifyTrue(any(contains(string(details), labels.roiHotSpot)));
             testCase.verifyTrue(any(contains(string(details), "Temperature differences")));

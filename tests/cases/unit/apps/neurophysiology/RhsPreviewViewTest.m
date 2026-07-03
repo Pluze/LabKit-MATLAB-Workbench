@@ -5,8 +5,8 @@ classdef RhsPreviewViewTest < matlab.unittest.TestCase
         function summaryAndDetailsRenderDefaultState(testCase)
             setupLabKitTestPath();
 
-            rows = rhs_preview.view.summaryTableData(struct());
-            lines = rhs_preview.view.detailLines(struct());
+            rows = rhs_preview.userInterface.summaryTableData(struct());
+            lines = rhs_preview.userInterface.detailLines(struct());
 
             testCase.verifyTrue(iscell(rows));
             testCase.verifyGreaterThanOrEqual(size(rows, 1), 4);
@@ -24,7 +24,7 @@ classdef RhsPreviewViewTest < matlab.unittest.TestCase
             S.info.channelFamilies.amplifier = struct( ...
                 "nativeName", {"C-001", "C-002"});
             S.rhsFile = fullfile("synthetic", "primary.rhs");
-            lines = rhs_preview.view.detailLines(S);
+            lines = rhs_preview.userInterface.detailLines(S);
 
             joined = string(strjoin(lines, newline));
             testCase.verifyTrue(contains(joined, "C-001"));
@@ -49,14 +49,14 @@ classdef RhsPreviewViewTest < matlab.unittest.TestCase
                     "positive", "reference", ...
                     "negative", "ground")));
 
-            rows = rhs_preview.ops.channelRows(info, "amplifier", 2, protocol);
+            rows = rhs_preview.analysisRun.channelRows(info, "amplifier", 2, protocol);
 
             testCase.verifyEqual(height(rows), 3);
             testCase.verifyEqual(rows.preview(:), [true; true; false]);
             testCase.verifyEqual(rows.role(2), "reference");
 
             S = struct("previewChannelRows", rows);
-            payload = rhs_preview.export.protocolJsonStruct(S);
+            payload = rhs_preview.resultFiles.protocolJsonStruct(S);
 
             testCase.verifyEqual(payload.schemaVersion, "labkit.rhs.protocol.v1");
             testCase.verifyEqual(payload.channels.roles.id, "reference");
@@ -74,7 +74,7 @@ classdef RhsPreviewViewTest < matlab.unittest.TestCase
                 "eventDetection", struct("sources", struct( ...
                     "id", "manual_marks", ...
                     "kind", "manual")));
-            payload = rhs_preview.export.protocolJsonStruct(S);
+            payload = rhs_preview.resultFiles.protocolJsonStruct(S);
 
             testCase.verifyEqual(payload.protocolId, "loaded_protocol");
             testCase.verifyEqual(payload.channels.roles.id, "reference");
@@ -95,15 +95,15 @@ classdef RhsPreviewViewTest < matlab.unittest.TestCase
             writeSyntheticRhsFixture(fullfile(nestedDir, "second.rhs"), ...
                 struct("nBlocks", 1, "amplifierNames", "C-002"));
 
-            rows = rhs_preview.ops.discoverFilterRows(fixtureDir);
+            rows = rhs_preview.analysisRun.discoverFilterRows(fixtureDir);
             testCase.verifyEqual(height(rows), 2);
             testCase.verifyTrue(all(rows.label == "good"));
 
-            data = rhs_preview.view.fileFilterTableData(struct("filterRows", rows));
+            data = rhs_preview.userInterface.fileFilterTableData(struct("filterRows", rows));
             data{2, 1} = "bad";
             data{2, 3} = "manual reject";
-            rows = rhs_preview.ops.applyFileFilterTableData(rows, data);
-            payload = rhs_preview.export.filterRecordJsonStruct( ...
+            rows = rhs_preview.analysisRun.applyFileFilterTableData(rows, data);
+            payload = rhs_preview.resultFiles.filterRecordJsonStruct( ...
                 struct("rhsFolder", fixtureDir, "filterRows", rows));
 
             testCase.verifyEqual(payload.type, "rhsFilterRecord");
@@ -121,7 +121,7 @@ classdef RhsPreviewViewTest < matlab.unittest.TestCase
                 "info", struct("sampleRateHz", 2000));
             S.windowDurationSec = 3;
 
-            bounds = rhs_preview.ops.previewWindowBounds(S);
+            bounds = rhs_preview.analysisRun.previewWindowBounds(S);
 
             testCase.verifyTrue(bounds.hasIndexedDuration);
             testCase.verifyEqual(bounds.durationSec, 12);
@@ -129,7 +129,7 @@ classdef RhsPreviewViewTest < matlab.unittest.TestCase
             testCase.verifyEqual(bounds.minDurationSec, 0.025, "AbsTol", 1e-12);
 
             S.index.durationSec = 0;
-            bounds = rhs_preview.ops.previewWindowBounds(S);
+            bounds = rhs_preview.analysisRun.previewWindowBounds(S);
             testCase.verifyFalse(bounds.hasIndexedDuration);
             testCase.verifyEqual(bounds.durationSec, 0);
         end

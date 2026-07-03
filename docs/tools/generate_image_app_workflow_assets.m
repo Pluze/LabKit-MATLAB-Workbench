@@ -105,13 +105,13 @@ end
 function runImageEnhanceWorkflow(inputs, assetDir, exportRoot)
     outputFolder = fullfile(exportRoot, "image_enhance");
     ensureDir(outputFolder);
-    items = image_enhance.io.readImages(string(inputs.enhance));
+    items = image_enhance.sourceFiles.readImages(string(inputs.enhance));
     steps = [ ...
-        image_enhance.ops.makeStep("Brightness/contrast", 18, 26, 0); ...
-        image_enhance.ops.makeStep("Local contrast", 34, 10, 0); ...
-        image_enhance.ops.makeStep("Sharpen", 22, 1.5, 0)];
+        image_enhance.analysisRun.makeStep("Brightness/contrast", 18, 26, 0); ...
+        image_enhance.analysisRun.makeStep("Local contrast", 34, 10, 0); ...
+        image_enhance.analysisRun.makeStep("Sharpen", 22, 1.5, 0)];
     opts = struct("outputFolder", string(outputFolder), "format", "PNG");
-    payload = image_enhance.export.writeOutputs(items, steps, opts);
+    payload = image_enhance.resultFiles.writeOutputs(items, steps, opts);
     processed = im2double(imread(char(payload.results(1).outputPath)));
 
     exportPairImage(items(1).image, processed, ...
@@ -124,11 +124,11 @@ end
 function runImageMatchWorkflow(inputs, assetDir, exportRoot)
     outputFolder = fullfile(exportRoot, "image_match");
     ensureDir(outputFolder);
-    reference = image_match.io.readImages(string(inputs.matchReference));
-    items = image_match.io.readImages(string(inputs.matchSource));
-    steps = image_match.ops.makeStep("Balanced", 85, 70, 80);
+    reference = image_match.sourceFiles.readImages(string(inputs.matchReference));
+    items = image_match.sourceFiles.readImages(string(inputs.matchSource));
+    steps = image_match.analysisRun.makeStep("Balanced", 85, 70, 80);
     opts = struct("outputFolder", string(outputFolder), "format", "PNG");
-    payload = image_match.export.writeOutputs(items, reference, steps, opts);
+    payload = image_match.resultFiles.writeOutputs(items, reference, steps, opts);
     matched = im2double(imread(char(payload.results(1).outputPath)));
 
     exportTriptychImage(reference(1).image, items(1).image, matched, ...
@@ -142,7 +142,7 @@ end
 function runBatchCropWorkflow(inputs, assetDir, exportRoot)
     outputFolder = fullfile(exportRoot, "batch_crop");
     ensureDir(outputFolder);
-    items = batch_crop.state.readItems(string(inputs.cropSource));
+    items = batch_crop.appState.readItems(string(inputs.cropSource));
     items(1).angleDeg = 3;
     items(1).centerXY = [515, 350];
     items(1).centerSet = true;
@@ -153,7 +153,7 @@ function runBatchCropWorkflow(inputs, assetDir, exportRoot)
         "cropWidth", 420, ...
         "cropHeight", 320, ...
         "paddingPercent", 18);
-    payload = batch_crop.export.writeOutputs(items, opts);
+    payload = batch_crop.resultFiles.writeOutputs(items, opts);
     cropped = im2double(imread(char(payload.results(1).outputPath)));
     source = im2double(imread(inputs.cropSource));
     marked = drawCropBox(source, items(1).centerXY, ...

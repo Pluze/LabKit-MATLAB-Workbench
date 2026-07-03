@@ -59,13 +59,15 @@ enhancement primitives. App tool histories, ROI/background policy,
 reference-match workflows, crop/export schemas, focus-stack algorithms, DIC
 behavior, and workflow wording stay app-owned.
 
-For UI boundary work, prefer `labkit.ui.app.create`,
-`labkit.ui.spec.*`, named `labkit.ui.view.*` helpers,
-`labkit.ui.app.dispatchRequest`, `labkit.ui.diag.createContext`, and
-`labkit.ui.tool.createRuntime`. App version metadata stays in app-owned
-`version.m` files; reusable UI may format or apply that title, but
-`labkit.contract` should not become an app metadata registry. Keep primitive
-builders private; do not expose
+For UI app lifecycle work, prefer `labkit.ui.app.define`,
+`labkit.ui.app.run`, and `labkit.ui.app.dispatchRequest`. Treat
+`labkit.ui.app.create` as the lower-level workbench construction and
+compatibility surface, not the normal app authoring entrypoint. For reusable
+UI pieces, prefer `labkit.ui.spec.*`, named `labkit.ui.view.*` helpers,
+`labkit.ui.diag.createContext`, and `labkit.ui.tool.createRuntime`. App
+version metadata stays in app-owned `version.m` files; reusable UI may format
+or apply that title, but `labkit.contract` should not become an app metadata
+registry. Keep primitive builders private; do not expose
 public `labkit.ui.spec.button`, `dropdown`, `slider`, `listbox`, `table`,
 `axes`, or similar MATLAB primitive constructors. Do not reintroduce
 `createShell` or legacy `view.section/form/panel/axes/draw/update/place` APIs.

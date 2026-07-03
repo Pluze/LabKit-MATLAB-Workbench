@@ -8,8 +8,8 @@ classdef DicPostprocessOpsTest < matlab.unittest.TestCase
             imageData = zeros(3, 4, 3, 'uint8');
             maskImage = uint8([0 129; 128 255]);
 
-            testCase.verifyEqual(dic_postprocess.ops.imageHeightWidth(imageData), [3 4]);
-            testCase.verifyEqual(dic_postprocess.ops.imageMask(maskImage, [2 2]), ...
+            testCase.verifyEqual(dic_postprocess.analysisRun.imageHeightWidth(imageData), [3 4]);
+            testCase.verifyEqual(dic_postprocess.analysisRun.imageMask(maskImage, [2 2]), ...
                 logical([0 1; 0 1]));
         end
 
@@ -21,7 +21,7 @@ classdef DicPostprocessOpsTest < matlab.unittest.TestCase
             strain.eyy = [5 Inf; 7 8];
             strain.roiMask = logical([1 0; 0 1]);
 
-            mask = dic_postprocess.ops.summaryMaskForStrain(strain);
+            mask = dic_postprocess.analysisRun.summaryMaskForStrain(strain);
 
             testCase.verifyEqual(mask, strain.roiMask);
         end
@@ -34,7 +34,7 @@ classdef DicPostprocessOpsTest < matlab.unittest.TestCase
             strainMap(:, [1 end]) = -10;
             roiMask = true(5);
 
-            validMap = dic_postprocess.ops.strainValidMask( ...
+            validMap = dic_postprocess.analysisRun.strainValidMask( ...
                 strainMap, roiMask, true(5));
 
             expected = false(5);
@@ -45,7 +45,7 @@ classdef DicPostprocessOpsTest < matlab.unittest.TestCase
         function strainValidMaskKeepsNarrowRoiWhenTrimWouldErase(testCase)
             setupLabKitTestPath();
 
-            validMap = dic_postprocess.ops.strainValidMask( ...
+            validMap = dic_postprocess.analysisRun.strainValidMask( ...
                 ones(2), true(2), true(2));
 
             testCase.verifyEqual(validMap, true(2));
@@ -54,7 +54,7 @@ classdef DicPostprocessOpsTest < matlab.unittest.TestCase
         function edgeTrimCanBeDisabledForFullRoiCoverage(testCase)
             setupLabKitTestPath();
 
-            validMap = dic_postprocess.ops.strainValidMask( ...
+            validMap = dic_postprocess.analysisRun.strainValidMask( ...
                 ones(5), true(5), true(5), 0);
 
             testCase.verifyEqual(validMap, true(5));
@@ -68,8 +68,8 @@ classdef DicPostprocessOpsTest < matlab.unittest.TestCase
             strain.eyy = [NaN 12 NaN; NaN 15 NaN; Inf 18 19];
             strain.roiMask = [];
 
-            mask = dic_postprocess.ops.summaryMaskForStrain(strain);
-            summary = dic_postprocess.ops.summarizeStrain(strain, mask);
+            mask = dic_postprocess.analysisRun.summaryMaskForStrain(strain);
+            summary = dic_postprocess.analysisRun.summarizeStrain(strain, mask);
 
             expected = logical([1 1 0; 0 1 0; 1 1 1]);
             testCase.verifyEqual(mask, expected);
@@ -87,7 +87,7 @@ classdef DicPostprocessOpsTest < matlab.unittest.TestCase
             strain.eyy = [10 Inf; 20 30];
             mask = true(2);
 
-            T = dic_postprocess.ops.summarizeStrain(strain, mask);
+            T = dic_postprocess.analysisRun.summarizeStrain(strain, mask);
 
             testCase.verifyEqual(T.Metric, ["Mean"; "Std"; "Median"; "Min"; "Max"]);
             testCase.verifyEqual(T.EXX([1 3 4 5]), [7/3; 2; 1; 4], 'AbsTol', 1e-12);
@@ -102,7 +102,7 @@ classdef DicPostprocessOpsTest < matlab.unittest.TestCase
             displayMask = true(2);
             opts = postprocessOverlayOptions();
 
-            overlay = dic_postprocess.ops.makeStrainOverlay( ...
+            overlay = dic_postprocess.analysisRun.makeStrainOverlay( ...
                 reference, strainMap, displayMask, [], opts);
 
             testCase.verifySize(overlay, [2 2 3]);
@@ -121,7 +121,7 @@ classdef DicPostprocessOpsTest < matlab.unittest.TestCase
             opts.alpha = 1;
             opts.colormap = [0 0 1; 1 0 0];
 
-            overlay = dic_postprocess.ops.makeStrainOverlay( ...
+            overlay = dic_postprocess.analysisRun.makeStrainOverlay( ...
                 reference, strainMap, true(5), true(5), opts);
 
             basePixel = double(reference(1, 1)) / 255;
@@ -143,7 +143,7 @@ classdef DicPostprocessOpsTest < matlab.unittest.TestCase
             opts.edgeTrim = 0;
             opts.colormap = [0 0 1; 1 0 0];
 
-            overlay = dic_postprocess.ops.makeStrainOverlay( ...
+            overlay = dic_postprocess.analysisRun.makeStrainOverlay( ...
                 reference, strainMap, true(5), true(5), opts);
 
             testCase.verifyEqual(squeeze(overlay(1, 1, :)).', ...
@@ -155,7 +155,7 @@ classdef DicPostprocessOpsTest < matlab.unittest.TestCase
         function extendStrainMapHandlesEmptyValidMap(testCase)
             setupLabKitTestPath();
 
-            filled = dic_postprocess.ops.extendStrainMapToRoi([1 2; 3 4], false(2));
+            filled = dic_postprocess.analysisRun.extendStrainMapToRoi([1 2; 3 4], false(2));
 
             testCase.verifyTrue(all(isnan(filled), 'all'));
         end

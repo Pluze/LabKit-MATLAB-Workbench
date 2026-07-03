@@ -63,16 +63,16 @@ workflow_exports/
 The examples are generated through app-owned code paths:
 
 ```matlab
-image_enhance.io.readImages(...)
-image_enhance.ops.makeStep(...)
-image_enhance.export.writeOutputs(...)
+image_enhance.sourceFiles.readImages(...)
+image_enhance.analysisRun.makeStep(...)
+image_enhance.resultFiles.writeOutputs(...)
 
-image_match.io.readImages(...)
-image_match.ops.makeStep(...)
-image_match.export.writeOutputs(...)
+image_match.sourceFiles.readImages(...)
+image_match.analysisRun.makeStep(...)
+image_match.resultFiles.writeOutputs(...)
 
-batch_crop.state.readItems(...)
-batch_crop.export.writeOutputs(...)
+batch_crop.appState.readItems(...)
+batch_crop.resultFiles.writeOutputs(...)
 ```
 
 This is stronger than taking a static mock screenshot: the guide assets fail

@@ -40,20 +40,38 @@ function ui = createTabbedWorkbenchShell(figName, figPosition, leftWidth, labels
     applyGuiTestMode(ui.fig);
     paintVisibleFigure();
 
-    ui.main = uigridlayout(ui.fig, [1 3]);
+    ui.main = uigridlayout(ui.fig, [2 3]);
     ui.main.ColumnWidth = {leftWidth, 6, '1x'};
-    ui.main.RowHeight = {'1x'};
+    ui.main.RowHeight = {0, '1x'};
     ui.main.Padding = [10 10 10 10];
     ui.main.ColumnSpacing = 0;
+    ui.main.RowSpacing = 6;
+
+    ui.startupStatusPanel = uipanel(ui.main, ...
+        'BackgroundColor', [0.94 0.97 1.00], ...
+        'BorderType', 'none', ...
+        'Visible', 'off');
+    ui.startupStatusPanel.Layout.Row = 1;
+    ui.startupStatusPanel.Layout.Column = [1 3];
+
+    startupGrid = uigridlayout(ui.startupStatusPanel, [1 1]);
+    startupGrid.RowHeight = {'1x'};
+    startupGrid.ColumnWidth = {'1x'};
+    startupGrid.Padding = [8 3 8 3];
+    ui.startupStatusLabel = uilabel(startupGrid, ...
+        'Text', 'Starting...', ...
+        'FontWeight', 'bold');
+    ui.startupStatusLabel.Layout.Row = 1;
+    ui.startupStatusLabel.Layout.Column = 1;
 
     ui.separator = uipanel(ui.main, ...
         'BackgroundColor', [0.75 0.75 0.75], ...
         'BorderType', 'none');
-    ui.separator.Layout.Row = 1;
+    ui.separator.Layout.Row = 2;
     ui.separator.Layout.Column = 2;
 
     ui.leftPanel = uipanel(ui.main, 'Title', labels.controlsPanel);
-    ui.leftPanel.Layout.Row = 1;
+    ui.leftPanel.Layout.Row = 2;
     ui.leftPanel.Layout.Column = 1;
 
     ui.leftHost = uigridlayout(ui.leftPanel, [1 1]);
@@ -90,7 +108,7 @@ function ui = createTabbedWorkbenchShell(figName, figPosition, leftWidth, labels
     end
 
     ui.rightPanel = uipanel(ui.main, 'Title', labels.rightPanel);
-    ui.rightPanel.Layout.Row = 1;
+    ui.rightPanel.Layout.Row = 2;
     ui.rightPanel.Layout.Column = 3;
 
     ui.rightGrid = uigridlayout(ui.rightPanel, rightGridSize);

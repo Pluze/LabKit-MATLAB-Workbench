@@ -1,4 +1,4 @@
-% Expected caller: curvature.run during debug launch and unit tests. Input
+% Expected caller: curvature.definitionActions during debug launch and unit tests. Input
 % is a LabKit debug context. Output is a deterministic synthetic curvature
 % image sample pack. Side effects: writes anonymous debug images and records
 % a session manifest when available.

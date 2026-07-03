@@ -35,7 +35,7 @@ classdef GuiLayoutFlirThermalTest < matlab.uitest.TestCase
 
             ui = getappdata(fig, 'labkitUiRegistry');
             scaleAxes = ui.controls.preview.axesById.temperatureScale;
-            labels = flir_thermal.view.rangeControlLabels();
+            labels = flir_thermal.userInterface.rangeControlLabels();
 
             testCase.verifyEqual(string(labkit.ui.view.getValue(ui, 'rangePreset')), ...
                 labels.defaultPreset);
@@ -71,7 +71,7 @@ classdef GuiLayoutFlirThermalTest < matlab.uitest.TestCase
             driver = labkitWorkflowDriver(fig);
             driver.chooseFiles('thermalFiles', [string(coolPath); string(warmPath)]);
             h.invokeButton(fig, 'Add FLIR files or folder');
-            labels = flir_thermal.view.rangeControlLabels();
+            labels = flir_thermal.userInterface.rangeControlLabels();
             h.invokeButton(fig, char(labels.setSharedRange));
             drawnow;
 
@@ -88,7 +88,7 @@ end
 
 function assertFlirLayout(h, fig)
     h.assertStandardWorkbenchLayout(fig);
-    labels = flir_thermal.view.rangeControlLabels();
+    labels = flir_thermal.userInterface.rangeControlLabels();
     h.assertButtonContract(fig, {'Add FLIR files or folder', ...
         'Remove selected', 'Clear files', 'Previous image', ...
         'Next image', char(labels.setEachRange), ...
@@ -99,7 +99,7 @@ function assertFlirLayout(h, fig)
         'Choose folder', 'Export current', 'Export all'});
     h.assertDropdownGroups(fig, [ ...
         h.dropdownGroup({'turbo', 'iron', 'hot', 'parula', 'gray'}, 1), ...
-        h.dropdownGroup(flir_thermal.view.rangePresetItems(), 1), ...
+        h.dropdownGroup(flir_thermal.userInterface.rangePresetItems(), 1), ...
         h.dropdownGroup({'PNG', 'TIFF', 'JPEG'}, 1)]);
     h.assertTabTitles(fig, {'Files + Display + Export', 'Details', 'Log'});
     h.assertAxesContract(fig, { ...
