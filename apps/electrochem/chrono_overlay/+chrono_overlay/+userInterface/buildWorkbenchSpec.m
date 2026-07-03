@@ -1,7 +1,7 @@
-% Expected caller: chrono_overlay.ui.runApp. Input is a callback struct whose
+% Expected caller: chrono_overlay.definition. Input is a callback struct whose
 % fields are app-owned callback handles. Output is a data-only UI 3.0 workbench
 % spec for the Chrono Overlay app.
-function spec = buildSpec(callbacks)
+function spec = buildWorkbenchSpec(callbacks)
 
     spec = labkit.ui.spec.app("chronoOverlay", ...
         "Gamry Multi-DTA Plot Export GUI", ...

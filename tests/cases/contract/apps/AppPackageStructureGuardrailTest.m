@@ -364,7 +364,9 @@ function family = appFamilyFromRelativeDir(appRelDir)
 end
 
 function tf = hasNonUiPackageComponent(packageDir)
-    componentNames = {'+ops', '+view', '+export', '+io', '+state'};
+    componentNames = {'+ops', '+view', '+export', '+io', '+state', ...
+        '+sourceFiles', '+analysisRun', '+resultFiles', '+cropGeometry', ...
+        '+thermalFrames', '+debugArtifacts'};
     tf = false;
     for k = 1:numel(componentNames)
         componentRoot = fullfile(packageDir, componentNames{k});
@@ -383,7 +385,9 @@ function tf = packageNamespaceHasDirectUnitTest(root, family, packageName)
         return;
     end
 
-    pattern = [packageName '\.(ops|view|export|io|state)\.'];
+    componentPattern = ['ops|view|export|io|state|sourceFiles|' ...
+        'analysisRun|resultFiles|cropGeometry|thermalFrames|debugArtifacts'];
+    pattern = [packageName '\.(' componentPattern ')\.'];
     testFiles = collectTextFiles(testRoot);
     tf = false;
     for k = 1:numel(testFiles)

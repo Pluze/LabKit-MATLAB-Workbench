@@ -51,12 +51,16 @@ Current facts:
 - Tracked files over the 650-line repository file budget:
   `labkit_launcher.m` only, by design.
 - There are 17 supported app packages. All currently launch through
-  `labkit.ui.app.run(<slug>.definition(), request)` using transitional
-  `+state`, `+actions`, `+ui`, and `+view` adapters.
-- No app currently uses the final workflow-first shape with
-  `definitionActions.m`, `+appLifecycle/createInitialState.m`, and
-  `+userInterface/buildWorkbenchSpec.m`. Treat that shape as the next target,
-  not as current behavior.
+  `labkit.ui.app.run(<slug>.definition(), request)`.
+- Chrono Overlay now proves the final workflow-first app package shape:
+  `definitionActions.m`, `+appLifecycle/createInitialState.m`,
+  `+userInterface/buildWorkbenchSpec.m`,
+  `+userInterface/updateWorkbenchFromState.m`, `+sourceFiles`, and
+  `+resultFiles`, with no legacy `+actions`, `+state`, `+ui`, `+view`,
+  `+ops`, `+io`, or `+export` buckets.
+- The other 16 app packages still use transitional `+state`, `+actions`,
+  `+ui`, and `+view` adapters. Treat those adapters as the next migration
+  target, not as final behavior.
 - Package-root app `run.m` orchestration has been retired. App structure
   guardrails now require `definition.m` and reject package-root app runners.
 - `+labkit` implementation hotspots near the file budget:
@@ -149,9 +153,9 @@ patch.
 
 1. Keep docs and guardrails aligned with the current migration stage.
 2. Close remaining runtime gaps in `labkit.ui.app.run`.
-3. Migrate all transitional definitions to workflow-first packages.
-4. Harden guardrails after at least one representative app proves the final
-   workflow-first shape.
+3. Migrate all remaining transitional definitions to workflow-first packages.
+4. Harden guardrails incrementally from the Chrono Overlay representative
+   shape without rejecting still-unmigrated apps before their phase starts.
 5. Profile/debug slow startup paths, then optimize the new structure.
 6. Defer CI polling until merge readiness; use local validation for touched
    source phases.
@@ -324,8 +328,9 @@ flags to app code, or add a generator before the definition DSL is proven.
 2. App migration
    - Package-root runner orchestration has been retired; keep new work on
      definitions and workflow-first packages.
-   - Start with FLIR Thermal, Curvature Measurement, Image Enhance, Image
-     Match, and RHS Preview.
+   - Chrono Overlay is the first representative workflow-first package and
+     should be used as the small app reference for the fixed lifecycle/UI
+     surface.
    - After runtime gaps are closed, migrate transitional definitions from
      `+state/+actions/+ui/+view` to workflow-first packages by app family.
    - Remove obsolete runner or adapter code after behavior coverage passes
@@ -335,9 +340,10 @@ flags to app code, or add a generator before the definition DSL is proven.
    - Add validation tests for required fields, action ids, duplicate controls,
      startup phases, hidden-mode behavior, action gating, payload
      normalization, exception reporting, and phase timings.
-   - Keep workflow-first structure checks transitional until one
-     representative app migrates fully; then reject new `+actions`, `+state`,
-     `+ui`, `+view`, `+ops`, `+io`, and `+export` packages for new app code.
+   - Keep workflow-first structure checks transitional for unmigrated apps,
+     while rejecting `+actions`, `+state`, `+ui`, `+view`, `+ops`, `+io`, and
+     `+export` packages inside any app that has entered the workflow-first
+     shape.
    - Add source guardrails for direct startup timer/readiness manipulation in
      app packages after the new runtime lands.
 

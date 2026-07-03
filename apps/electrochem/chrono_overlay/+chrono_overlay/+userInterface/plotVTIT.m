@@ -1,4 +1,4 @@
-% Expected caller: chrono overlay app runner. Inputs are voltage/current axes,
+% Expected caller: chrono_overlay.userInterface.updateWorkbenchFromState. Inputs are voltage/current axes,
 % aligned item structs, and plot option fields. Side effects are limited to
 % redrawing the supplied axes.
 

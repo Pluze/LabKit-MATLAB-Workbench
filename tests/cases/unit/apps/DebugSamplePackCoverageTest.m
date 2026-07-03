@@ -16,10 +16,12 @@ classdef DebugSamplePackCoverageTest < matlab.unittest.TestCase
                 slug = appSlugFromEntrypoint(appFile);
                 runner = fullfile(appFolder, "+" + slug, "run.m");
                 definition = fullfile(appFolder, "+" + slug, "definition.m");
+                definitionActions = fullfile(appFolder, "+" + slug, ...
+                    "definitionActions.m");
                 actions = fullfile(appFolder, "+" + slug, "+actions", "table.m");
                 writer = fullfile(appFolder, "+" + slug, "+debug", "writeSamplePack.m");
 
-                wiringFiles = [runner, definition, actions];
+                wiringFiles = [runner, definition, definitionActions, actions];
                 wiringFiles = wiringFiles(isfile(wiringFiles));
                 if isempty(wiringFiles)
                     missing(end + 1, 1) = appFile + ...

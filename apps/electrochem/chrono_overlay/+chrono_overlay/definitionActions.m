@@ -2,7 +2,7 @@
 % chrono_overlay.definition. Output maps semantic action ids to handlers used
 % by labkit.ui.app.run. Handlers own app workflow transitions and IO/export
 % side effects; framework lifecycle scheduling stays in labkit.ui.app.
-function actions = table()
+function actions = definitionActions()
     actions = struct( ...
         "startup", @onStartup, ...
         "openFilesChosen", @onOpenFilesChosen, ...
@@ -62,7 +62,7 @@ function state = loadFiles(state, filepaths, services)
             continue;
         end
 
-        [item, alignMsg] = chrono_overlay.ops.alignByPulseGap(item);
+        [item, alignMsg] = chrono_overlay.sourceFiles.alignByPulseGap(item);
         state.items = appendItem(state.items, item);
         addLog(services, alignMsg);
         for ii = 1:numel(item.logmsg)
@@ -120,7 +120,7 @@ function state = onExportCSV(state, ~, services)
         return;
     end
 
-    T = chrono_overlay.export.buildOverlayExportTable(items);
+    T = chrono_overlay.resultFiles.buildOverlayExportTable(items);
     writetable(T, out);
     addLog(services, sprintf('Exported CSV: %s', char(out)));
 end

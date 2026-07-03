@@ -1,7 +1,7 @@
 % App-owned renderer for Chrono Overlay. Expected caller is labkit.ui.app.run
 % after actions update state. Inputs are app state, UI registry, and runtime
 % services. Side effects are limited to UI control and axes updates.
-function render(state, ui, ~)
+function updateWorkbenchFromState(state, ui, ~)
     renderFileList(state, ui);
     renderPlots(state, ui);
 end
@@ -21,7 +21,7 @@ function renderPlots(state, ui)
     axV = ui.controls.overlayPlots.axesById.voltage;
     axI = ui.controls.overlayPlots.axesById.current;
     if isempty(state.items)
-        chrono_overlay.view.plotVTIT(axV, axI, struct([]), plotOptions(ui));
+        chrono_overlay.userInterface.plotVTIT(axV, axI, struct([]), plotOptions(ui));
         return;
     end
 
@@ -32,7 +32,7 @@ function renderPlots(state, ui)
         return;
     end
 
-    chrono_overlay.view.plotVTIT(axV, axI, items, plotOptions(ui));
+    chrono_overlay.userInterface.plotVTIT(axV, axI, items, plotOptions(ui));
 end
 
 function items = selectedItems(state, ui)
