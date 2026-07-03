@@ -2,7 +2,7 @@
 % vt_resistance.definition. Output maps semantic action ids to handlers used
 % by labkit.ui.app.run. Handlers own workflow transitions, DTA loading,
 % analysis, and export side effects.
-function actions = table()
+function actions = definitionActions()
     actions = struct( ...
         "startup", @onStartup, ...
         "openFilesChosen", @onOpenFilesChosen, ...
@@ -102,7 +102,7 @@ function item = analyzeItem(item, services)
     opts.voltageMode = ui.controls.voltageMode.valueHandle.Value;
     opts.pulseMode = ui.controls.pulseMode.valueHandle.Value;
 
-    analysis = vt_resistance.ops.computeResistance(item, opts);
+    analysis = vt_resistance.analysisRun.computeResistance(item, opts);
     if analysis.ok
         addLog(services, sprintf('%s: Rc=%.6g ohm, Ra=%.6g ohm, Ravg=%.6g ohm', ...
             item.name, analysis.Rc_abs_ohm, analysis.Ra_abs_ohm, ...
@@ -168,7 +168,7 @@ function state = onExportResults(state, ~, services)
     if cancelled
         return;
     end
-    [ok, msg] = vt_resistance.export.writeResultsCSV(state.items, out);
+    [ok, msg] = vt_resistance.resultFiles.writeResultsCSV(state.items, out);
     if ~ok
         labkit.ui.app.showAlert(services.figure, msg, 'Export');
         return;

@@ -1,7 +1,7 @@
 % Expected caller: vt_resistance.definition. Input is a callback struct whose
 % fields are app-owned callback handles. Output is a data-only UI 3.0 workbench
 % spec for the VT Resistance app.
-function spec = buildSpec(callbacks)
+function spec = buildWorkbenchSpec(callbacks)
 
     pulseModes = {'Metadata first, then auto', 'Metadata only', 'Auto from Im only'};
     steadyWindows = {'Full pulse median', 'Center 60% median'};

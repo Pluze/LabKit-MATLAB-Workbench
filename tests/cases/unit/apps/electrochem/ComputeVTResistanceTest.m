@@ -66,5 +66,5 @@ function verify_computeVTResistance()
 end
 
 function A = computeVTResistance(item, opts)
-    A = vt_resistance.ops.computeResistance(item, opts);
+    A = vt_resistance.analysisRun.computeResistance(item, opts);
 end

@@ -1,7 +1,7 @@
 % App-owned state factory for VT Resistance. Expected caller is the LabKit
 % app runtime. Output is the mutable app state struct used by actions and
 % render. Side effects are none.
-function state = initial()
+function state = createInitialState()
     state = struct();
     state.items = struct([]);
     state.current = [];
