@@ -314,30 +314,29 @@ The future author-facing minimum should be:
 ```text
 apps/<family>/<slug>/
   labkit_<Name>_app.m
-  app.m
-  ui.m
-  model.m
-  actions.m
-  render.m
+  appDefinition.m
+  buildUiLayout.m
+  initialAppState.m
   ops/
   io/
   export/
   debug/
 ```
 
-Small apps may keep `actions.m` and `render.m` as single files. Larger apps
-may expand only the roles they need:
+Small apps add only the action and render files their workflow needs. Larger
+apps expand by adding clearly named sibling files. Avoid abstract bucket names
+such as `actions.m`, `view.m`, `render.m`, `manager.m`, or `processor.m`. Do
+not add both a file and a directory for the same role, such as `actions.m`
+plus `actions/`.
 
 ```text
-actions/files.m
-actions/edit.m
-actions/analyze.m
-actions/tools.m
-actions/export.m
-views/summary.m
-views/plots.m
-views/preview.m
-views/controls.m
+handleImageFilesChosen.m
+handleCropCenterPicked.m
+handleRunAnalysis.m
+handleExportRequested.m
+renderPreviewAxes.m
+renderSummaryTable.m
+renderControlState.m
 ```
 
 The generated or thin adapter layer remains:
@@ -354,17 +353,22 @@ The generated or thin adapter layer remains:
 
 Design rules:
 
-- app authors start from `app/ui/model/actions/render`, not from package-root
-  `run.m` or framework appdata/callback plumbing
+- app authors start from named authoring files such as `appDefinition.m`,
+  `buildUiLayout.m`, `initialAppState.m`, `handleExportRequested.m`, and
+  `renderPreviewAxes.m`, not from package-root `run.m` or framework
+  appdata/callback plumbing
 - the `+<slug>` package adapts author files to `labkit.ui.app.run`
-- `ui.m` declares controls and workspace, not MATLAB handles or layout
+- `buildUiLayout.m` declares controls and workspace, not MATLAB handles or layout
   mechanics
-- `model.m` returns pure state and cannot depend on `labkit.ui`
-- actions own workflow transitions and side effects, grouped by user intent
-  when the app grows
+- `initialAppState.m` returns pure state and cannot depend on `labkit.ui`
+- action files own workflow transitions and side effects, named by concrete
+  user intent
 - render translates prepared state to existing controls and axes, without file
   IO, export writes, or heavy computation
 - optional role folders are created on demand, not as mandatory boilerplate
+- author-facing files and directories cannot share the same stem; use
+  `handleExportRequested.m` or `renderPreviewAxes.m` instead of adding
+  `actions/` next to `actions.m` or `views/` next to `view.m`
 
 `labkit.app.new` or an equivalent script should generate this shape from
 templates such as:

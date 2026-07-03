@@ -16,8 +16,9 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
 - Keep domain formulas, thresholds, integration rules, option defaults, plot labels, result fields, export columns, failed-row behavior, alert wording/trigger decisions, and log wording app-local unless the user explicitly approves a boundary change.
 - For a new app cold start, use the LabKit app template/scaffold when
   available. App authors should primarily edit the author-facing shape
-  (`app.m`, `ui.m`, `model.m`, `actions.m`, `render.m`, and optional
-  `actions/`, `views/`, `ops/`, `io/`, `export/`, `debug/` role folders).
+  (`appDefinition.m`, `buildUiLayout.m`, `initialAppState.m`, specific
+  `handle<Intent>.m` action files, specific `render<Output>.m` view files,
+  and optional `ops/`, `io/`, `export/`, `debug/` role folders).
   The `+<app_slug>` runtime package is an adapter for MATLAB package
   resolution and framework execution, not the shape authors should have to
   learn first. Use the smallest genuinely similar app only as a workflow
@@ -93,8 +94,9 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
   initial state through `+state/initial.m`, action mapping through
   `+actions/table.m`, render behavior through `+view/render.m`, and the
   data-only spec through `+<app_slug>/+ui/buildSpec.m`. For new authoring work,
-  prefer thin adapters that call the simpler app-layer files (`app.m`, `ui.m`,
-  `model.m`, `actions.m`, and `render.m`) so ordinary app authors do not need
+  prefer thin adapters that call the simpler app-layer files
+  (`appDefinition.m`, `buildUiLayout.m`, `initialAppState.m`,
+  `handle<Intent>.m`, and `render<Output>.m`) so ordinary app authors do not need
   to start from MATLAB package mechanics.
 - `definition.m` declares identity, state factory, spec builder, actions,
   render function, startup phases, and optional hydration phases. It must not
@@ -138,10 +140,15 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
   LabKit framework owns concrete layout. When an app needs a control that
   cannot be expressed with the ordinary spec grammar, add a named spec/tool
   contract instead of custom layout code.
-- Route helper files by role: `model.m` or `+state` for defaults/factories,
+- Route helper files by role: `initialAppState.m` or `+state` for defaults/factories,
   `io/` or `+io` for file discovery/readers/filters, `ops/` or `+ops` for
-  GUI-free transforms, `views/` or `+view` for table rows/detail lines/display
-  data, and `export/` or `+export` for output writers/manifests.
+  GUI-free transforms, `render<Output>.m` or `+view` for table rows/detail
+  lines/display data, and `export/` or `+export` for output writers/manifests.
+  Do not mix file and folder forms for the same author-facing role. For
+  example, do not create both `actions.m` and `actions/`, or both `view.m` and
+  `views/`. Avoid abstract bucket names such as `actions.m`, `view.m`,
+  `render.m`, `manager.m`, and `processor.m`; prefer specific files such as
+  `handleExportRequested.m` and `renderPreviewAxes.m`.
   Do not add boundary-blurring files named `helpers.m`, `utils.m`, `common.m`,
   `misc.m`, `callbacks.m`, `manager.m`, `processor.m`, `layout.m`, or
   `createUI.m`.

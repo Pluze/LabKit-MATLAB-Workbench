@@ -14,6 +14,20 @@ classdef AppPackageStructureGuardrailTest < matlab.unittest.TestCase
             end
         end
 
+        function appFoldersDoNotMixFileAndFolderForms(testCase)
+            root = setupLabKitTestPath();
+            specs = discoveredAppSpecs(root);
+            for k = 1:size(specs, 1)
+                appDir = fullfile(root, specs{k, 1});
+                assertNoSameStemFileFolder(testCase, root, appDir);
+                packageName = specs{k, 2};
+                if strlength(string(packageName)) > 0
+                    assertNoSameStemFileFolder(testCase, root, ...
+                        fullfile(appDir, ['+' packageName]));
+                end
+            end
+        end
+
         function imageWorkflowAppsKeepTaskLifecycleSnapshots(testCase)
             root = setupLabKitTestPath();
             expected = [
@@ -43,6 +57,22 @@ classdef AppPackageStructureGuardrailTest < matlab.unittest.TestCase
         end
 
     end
+end
+
+function assertNoSameStemFileFolder(testCase, root, folder)
+    if ~isfolder(folder)
+        return;
+    end
+    files = dir(fullfile(folder, '*.m'));
+    dirs = dir(folder);
+    dirs = dirs([dirs.isdir]);
+    dirs = dirs(~ismember({dirs.name}, {'.', '..'}));
+    fileStems = erase(string({files.name}), ".m");
+    dirStems = erase(string({dirs.name}), "+");
+    conflicts = intersect(fileStems, dirStems);
+    testCase.verifyTrue(isempty(conflicts), ...
+        [relativePath(root, folder) ' mixes file and folder forms for the ' ...
+        'same app role: ' strjoin(cellstr(conflicts), ', ')]);
 end
 
 function specs = discoveredAppSpecs(root)
