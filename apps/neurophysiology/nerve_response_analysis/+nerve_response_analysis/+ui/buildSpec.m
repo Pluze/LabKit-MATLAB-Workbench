@@ -1,4 +1,4 @@
-% Expected caller: nerve_response_analysis.run. Inputs are app callback
+% Expected caller: nerve_response_analysis.definition. Inputs are app callback
 % handles. Output is a data-only UI 3.0 workbench spec.
 function spec = buildSpec(callbacks)
 %BUILDSPEC Build the Nerve Response Analysis UI spec.

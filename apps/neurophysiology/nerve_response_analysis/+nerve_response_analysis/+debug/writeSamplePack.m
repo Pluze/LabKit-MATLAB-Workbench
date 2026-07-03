@@ -1,4 +1,4 @@
-% Expected caller: nerve_response_analysis.run during debug launch and unit
+% Expected caller: nerve_response_analysis.actions.table startup action and unit
 % tests. Input is a LabKit debug context. Output is a deterministic synthetic
 % filter-record/protocol/RHS sample pack. Side effects: writes anonymous debug
 % files and records a session manifest when available.
