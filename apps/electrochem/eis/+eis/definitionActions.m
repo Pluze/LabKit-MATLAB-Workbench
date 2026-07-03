@@ -1,7 +1,7 @@
 % App-owned action table for EIS Overlay. Expected caller is eis.definition.
 % Output maps semantic action ids to handlers used by labkit.ui.app.run.
 % Handlers own app workflow transitions and IO/export side effects.
-function actions = table()
+function actions = definitionActions()
     actions = struct( ...
         "startup", @onStartup, ...
         "openFilesChosen", @onOpenFilesChosen, ...
@@ -117,7 +117,7 @@ function state = onExportCSV(state, ~, services)
     end
 
     opts = plotOptions(services.ui);
-    T = eis.export.buildExportTable(items, opts.xName, opts.yName, ...
+    T = eis.resultFiles.buildExportTable(items, opts.xName, opts.yName, ...
         opts.logX, opts.logY);
     writetable(T, out);
     addLog(services, sprintf('Exported CSV: %s', char(out)));

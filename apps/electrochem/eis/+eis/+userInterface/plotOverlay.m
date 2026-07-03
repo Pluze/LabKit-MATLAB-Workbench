@@ -1,5 +1,6 @@
-% Expected caller: EIS app runner. Inputs are an axes, EIS items, and plot
-% options. Output is legend labels. Side effects are limited to redrawing axes.
+% Expected caller: eis.userInterface.updateWorkbenchFromState. Inputs are an
+% axes, EIS items, and plot options. Output is legend labels. Side effects are
+% limited to redrawing axes.
 
 function labels = plotOverlay(ax, items, opts)
     if nargin < 3
@@ -50,7 +51,7 @@ function labels = plotOverlay(ax, items, opts)
         legend(ax, 'off');
     end
 
-    if eis.view.axisModeForSelection(opts.xName, opts.yName, ...
+    if eis.userInterface.axisModeForSelection(opts.xName, opts.yName, ...
             opts.logX, opts.logY) == "equal"
         axis(ax, 'equal');
     end
@@ -91,8 +92,8 @@ function opts = fillPlotOptions(opts)
 end
 
 function [x, y] = filteredXY(item, xName, yName, useLogX, useLogY)
-    x = eis.ops.valuesForAxis(item, xName);
-    y = eis.ops.valuesForAxis(item, yName);
+    x = eis.analysisRun.valuesForAxis(item, xName);
+    y = eis.analysisRun.valuesForAxis(item, yName);
     valid = isfinite(x) & isfinite(y);
     x = x(valid);
     y = y(valid);

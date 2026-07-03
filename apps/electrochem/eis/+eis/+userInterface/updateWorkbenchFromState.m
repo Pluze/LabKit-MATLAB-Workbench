@@ -1,7 +1,7 @@
 % App-owned renderer for EIS Overlay. Expected caller is labkit.ui.app.run
 % after actions update state. Inputs are app state, UI registry, and runtime
 % services. Side effects are limited to UI control and axes updates.
-function render(state, ui, ~)
+function updateWorkbenchFromState(state, ui, ~)
     renderFileList(state, ui);
     renderPlot(state, ui);
 end
@@ -27,8 +27,8 @@ function renderPlot(state, ui)
 
     if isempty(state.items)
         title(ax, 'EIS Overlay');
-        xlabel(ax, eis.view.labelForAxis(opts.xName));
-        ylabel(ax, eis.view.labelForAxis(opts.yName));
+        xlabel(ax, eis.userInterface.labelForAxis(opts.xName));
+        ylabel(ax, eis.userInterface.labelForAxis(opts.yName));
         ui.controls.summary.textArea.Value = {'No files loaded.'};
         return;
     end
@@ -39,8 +39,8 @@ function renderPlot(state, ui)
         return;
     end
 
-    eis.view.plotOverlay(ax, items, opts);
-    ui.controls.summary.textArea.Value = eis.view.buildSummary(items);
+    eis.userInterface.plotOverlay(ax, items, opts);
+    ui.controls.summary.textArea.Value = eis.userInterface.buildSummary(items);
 end
 
 function items = selectedItems(state, ui)

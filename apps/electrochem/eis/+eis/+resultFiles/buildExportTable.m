@@ -1,6 +1,6 @@
-% Expected caller: EIS app runner and export tests. Inputs are EIS item structs,
-% axis labels, and log flags. Output is the stable EIS export table. No file side
-% effects.
+% Expected caller: eis.definitionActions and export tests. Inputs are EIS item
+% structs, axis labels, and log flags. Output is the stable EIS export table.
+% No file side effects.
 
 function T = buildExportTable(items, xName, yName, useLogX, useLogY)
     if nargin < 4
@@ -32,8 +32,8 @@ function T = buildExportTable(items, xName, yName, useLogX, useLogY)
 end
 
 function [x, y] = filteredXY(item, xName, yName, useLogX, useLogY)
-    x = eis.ops.valuesForAxis(item, xName);
-    y = eis.ops.valuesForAxis(item, yName);
+    x = eis.analysisRun.valuesForAxis(item, xName);
+    y = eis.analysisRun.valuesForAxis(item, yName);
     valid = isfinite(x) & isfinite(y);
     x = x(valid);
     y = y(valid);
