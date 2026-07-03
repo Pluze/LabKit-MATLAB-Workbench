@@ -86,8 +86,9 @@ choose an older release, tag, or commit through `Versions`.
 
 Create new apps directly in the standard app shape below. Use the smallest
 nearby app as a reference when it shares the same workflow style, then replace
-the state, callbacks, result tables, and exports with the new app's real
-behavior.
+the state, actions, result tables, and exports with the new app's real
+behavior. New apps should launch through the framework app-definition runtime
+instead of copying a package-root runner.
 
 ## App File Shape
 
@@ -95,10 +96,14 @@ Apps use this shape:
 
 ```text
 apps/<family>/<app_slug>/labkit_<AppName>_app.m
+apps/<family>/<app_slug>/+<app_slug>/definition.m
 apps/<family>/<app_slug>/+<app_slug>/requirements.m
 apps/<family>/<app_slug>/+<app_slug>/version.m
-apps/<family>/<app_slug>/+<app_slug>/run.m
+apps/<family>/<app_slug>/+<app_slug>/+state/initial.m
+apps/<family>/<app_slug>/+<app_slug>/+actions/table.m
+apps/<family>/<app_slug>/+<app_slug>/+actions/<actionName>.m
 apps/<family>/<app_slug>/+<app_slug>/+ui/buildSpec.m
+apps/<family>/<app_slug>/+<app_slug>/+view/render.m
 ```
 
 `requirements.m` declares only LabKit facade contract ranges by returning
@@ -116,6 +121,14 @@ code or app-facing behavior changes, update that app version metadata in the
 same change. When choosing the next app version, compare against the version
 file in the latest `main` commit, not against intermediate local edits in the
 current working tree.
+
+`definition.m` declares the app's runtime contract. It returns a plain struct
+created with `labkit.ui.app.define`, naming the app id, title, initial state
+factory, data-only UI spec builder, action table, render function, startup
+phases, and optional idle hydration phases. The framework runtime validates the
+definition, generates callbacks, schedules startup, gates busy/ready state, and
+routes diagnostics. App code should not own loading controls, startup timers,
+callback wrappers, or framework readiness flags.
 
 For nontrivial apps, `buildSpec.m` should make the page hierarchy obvious at
 the top of the file. Keep the app constructor shallow, then use local builder
@@ -136,13 +149,24 @@ Create optional role packages only when the app has code for that role:
 Use the app slug as the package name. Do not use a shared `+app` namespace.
 Do not add family-level `private/` helper folders.
 
-## Runner And Helper Shape
+## App Definition And Helper Shape
 
-Package-root `run.m` owns app lifecycle orchestration: launch/debug wiring,
-state coordination, callback adapters, user alerts, refresh order, close
-guards, and user-facing log wording. Reducing `run.m` complexity should move
-cohesive responsibilities out of the runner, not scatter simple callback-local
-code into many tiny files.
+The app definition is the runtime boundary. It names state, actions, render,
+spec, startup, and hydration. The framework owns lifecycle orchestration:
+launch/debug wiring, callback adapters, readiness, busy gating, close guards,
+startup phase timing, and hidden-test-safe diagnostics.
+
+Actions own app-specific workflow transitions. They should be named by user
+intent or startup phase, update app-owned state, call app-owned IO/ops/export
+helpers as needed, and request framework effects such as alerts, logs,
+prompts, render refresh, busy text, or idle work. App actions should not reach
+behind the runtime to manipulate MATLAB timers, appdata readiness flags,
+loading controls, or generated callback wrappers.
+
+Render helpers own the translation from prepared app state into existing UI
+handles. They should not perform file IO, heavy computation, export writes, or
+state mutation. `buildSpec.m` declares the control/workspace tree, while
+`+view/render.m` updates that tree from state.
 
 Keep small code local when the call site is clearer than a separate name. Move
 code into app-owned role packages when it owns deterministic state, IO
@@ -150,9 +174,9 @@ normalization, file discovery, GUI-free operations, export output, display
 data, or focused custom UI/tool glue that can be tested or reused by the real
 app path.
 
-Near the runner size thresholds, choose one substantial responsibility to move
-or one reusable workflow hook to extract. Do not create short pass-through
-helpers solely to lower the line count. See
+When an action table, render helper, or role package grows dense, choose one
+substantial responsibility to move or one reusable workflow hook to extract.
+Do not create short pass-through helpers solely to lower the line count. See
 [architecture.md](architecture.md#extraction-quality) for the reusable
 extraction rule and helper-quality principles.
 
@@ -176,17 +200,17 @@ Use this boundary:
   options, and committed steps.
 - `+ops` performs deterministic computation without GUI or file side effects.
 - `+export` writes outputs from an explicit task/options boundary.
-- preview callbacks operate on the current selection and display-resolution
+- preview actions operate on the current selection and display-resolution
   data when practical; full batch work happens at export or run actions.
 
 File selection should register files and build app-owned task state with the
 least data needed for the immediate preview. For large selections, avoid
-eagerly reading or computing every file in the chooser callback unless the
+eagerly reading or computing every file in the chooser action unless the
 workflow truly cannot show a useful first state without the full batch. For
 example, a crop workflow can keep path-only crop tasks until the current preview
 or export needs pixels.
 
-The UI framework prevents duplicate callback submission. Apps decide what
+The UI framework prevents duplicate action submission. Apps decide what
 changed, what result is dirty, and whether a repeated task can be skipped.
 
 ## App Ownership

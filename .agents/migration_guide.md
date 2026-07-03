@@ -557,9 +557,9 @@ foundation with UI, image, DTA, RHS, and biosignal facades. App-specific
 calculations, summaries, plots, exports, workflow wording, file conventions,
 and result schemas stay under the owning app tree.
 
-A healthy runner owns orchestration only. App-owned helpers own deterministic
-or explicitly side-effecting app behavior. Reusable framework helpers own
-app-neutral mechanics that multiple apps share.
+A healthy app definition declares orchestration only. App-owned helpers own
+deterministic or explicitly side-effecting app behavior. Reusable framework
+helpers own app-neutral mechanics that multiple apps share.
 
 Migration progress means:
 

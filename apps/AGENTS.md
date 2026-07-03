@@ -18,13 +18,17 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
   smallest genuinely similar app as a reference. Keep the first version focused
   on the real workflow rather than placeholder behavior.
 - When a documented UI tool owns app-neutral controls or interaction mechanics, consume it instead of reimplementing widget state or normalization. Keep app calculations, summaries, alert text, and exports local.
-- Use `labkit.ui.app.create` with `labkit.ui.spec.*` for app GUIs. Do not
-  reintroduce the removed `labkit.ui.app.createShell` or legacy view helpers.
+- Use `labkit.ui.app.define` and `labkit.ui.app.run` with
+  `labkit.ui.spec.*` for app GUIs. `labkit.ui.app.create` is a legacy
+  compatibility surface during migration; do not use it for new app runtime
+  orchestration. Do not reintroduce the removed `labkit.ui.app.createShell` or
+  legacy view helpers.
 - Use `labkit.ui.app.dispatchRequest` for debug launch routing and `labkit.ui.diag.createContext` only when an app has an app-specific nonstandard request path.
-- Each public app entrypoint should call app package `requirements.m` and
-  `version.m`, pass both structs to `labkit.ui.app.dispatchRequest`, and apply
-  the version title after `run.m` returns the figure. Lightweight non-GUI
-  requests are `"requirements"` and `"version"`.
+- Each public app entrypoint should call app package `requirements.m`,
+  `version.m`, and `definition.m`, pass metadata structs to
+  `labkit.ui.app.dispatchRequest`, launch the definition through
+  `labkit.ui.app.run`, and apply the version title to the returned figure.
+  Lightweight non-GUI requests are `"requirements"` and `"version"`.
 - App package `requirements.m` must return the result of
   `labkit.contract.requirements(...)`. Do not return a plain struct, map, or
   app-authored schema; launch dispatch rejects anything whose `type` is not
@@ -44,6 +48,9 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
   `debug.reportException(component, event, ME)` before showing an alert,
   logging a recovery message, or returning. Do not swallow import, export,
   preview, or tool errors without a framework debug/crash report.
+- App code must not create startup timers, loading strips, readiness flags, or
+  lifecycle mutation APIs. Startup and hydration behavior is declared in
+  `definition.m` and executed by `labkit.ui.app.run`.
 - App alerts must call `labkit.ui.app.showAlert(fig, message, titleText)`
   instead of raw `uialert`. Apps still own the title, message, and decision to
   alert; the framework owns hidden-test-safe modal mechanics.
@@ -77,20 +84,23 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
   `+state`, `+ops`, `+view`, `+export`, and `+io` as needed. Do not use a fixed
   `+app` namespace; the app folder already provides ownership context, while a
   shared `+app` package name creates MATLAB package-resolution ambiguity.
-- Apps put the ordinary data-only spec in `+<app_slug>/+ui/buildSpec.m`.
-  The public app entry point delegates to package-root `run.m`; that runner
-  owns state, callback closures, alert wording, log wording, and refresh order.
-  `buildSpec.m` describes controls, sections, workspace, initial text/defaults,
-  and callback handles only.
-- Package-root `run.m` files are allowed to contain app lifecycle
-  orchestration. Do not treat the repository line budget as a request to split
-  every small callback, label formatter, boolean check, or one-call framework
-  wrapper into a separate file.
-- Treat roughly 500 lines in `run.m` as a responsibility-review threshold,
-  roughly 625 lines as a migration threshold, and the repository file budget as
-  only the hard backstop. Near those thresholds, use
-  `.agents/migration_guide.md` to decide which cohesive responsibility should
-  move, not how many helper files to create.
+- Apps put their runtime declaration in `+<app_slug>/definition.m`, initial
+  state in `+state/initial.m`, action mapping in `+actions/table.m`, render
+  behavior in `+view/render.m`, and the data-only spec in
+  `+<app_slug>/+ui/buildSpec.m`.
+- `definition.m` declares identity, state factory, spec builder, actions,
+  render function, startup phases, and optional hydration phases. It must not
+  create MATLAB handles, read files, compute results, export data, or mutate
+  framework lifecycle state.
+- `buildSpec.m` describes controls, sections, workspace, initial text/defaults,
+  and framework-generated callback handles only.
+- Package-root `run.m` lifecycle orchestration is migration debt. Do not add
+  new eager package-root runners. Existing runners may remain only as temporary
+  compatibility shims while an app is being migrated to `definition.m`.
+- Do not treat the repository line budget as a request to split every small
+  action, label formatter, boolean check, or one-call framework wrapper into a
+  separate file. Use `.agents/migration_guide.md` to decide which cohesive
+  responsibility should move.
 - Before extracting a new app helper, name the contract it owns: deterministic
   state shape, IO normalization, file discovery, GUI-free operation, export
   boundary, display data, or focused custom UI/tool glue. A helper that only
@@ -139,12 +149,12 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
   operations with pixel-unit parameters such as radius or window size, scale
   those parameters to the preview resolution so preview behavior remains
   comparable to original-resolution export.
-- File chooser callbacks should register paths and load only the data needed
+- File chooser actions should register paths and load only the data needed
   for the immediate visible state. Do not read, parse, calibrate, or compute
-  every selected file in the selection callback unless the app cannot render a
+  every selected file in the selection action unless the app cannot render a
   useful first state without the full batch. Put path-only item factories in
-  app-owned `+state`, keep lazy load/refresh order in the runner, and add a
-  unit or GUI regression that proves large selections stay deferred.
+  app-owned `+state`, keep lazy load/refresh order in actions/render, and add
+  a unit or GUI regression that proves large selections stay deferred.
 - Apps with preview, run, or export task lifecycles should build immutable
   app-owned task snapshots in `+state` and compare deterministic fingerprints
   before repeated work. The runner may own dirty flags, small preview caches,
@@ -154,18 +164,21 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
 - Use `.agents/migration_guide.md` and the `labkit-migration-planner` skill for
   active runner, app-private, and migration-debt work. This file owns app
   boundary rules, not the migration debt ledger.
-- Apps use a package-root `run.m` for app lifecycle orchestration.
-  Keep `+ui` focused on `buildSpec.m`, UI handle mapping, and justified
-  tool/widget glue; do not put app lifecycle runners in `+ui/runApp.m`.
+- Apps use `definition.m` plus the framework runtime for lifecycle
+  orchestration. Keep `+ui` focused on `buildSpec.m`, UI handle mapping, and
+  justified tool/widget glue; do not put app lifecycle runners in
+  `+ui/runApp.m`.
 - Do not add new `*Workflow.m` files or app-owned `+core/dispatch.m` string
   routers.
 - When a public app file grows large, prefer moving GUI-free app-owned calculations, export builders, formatting utilities, deterministic image/signal transforms, and focused control construction into `apps/<family>/<app_slug>/+<app_slug>/...`.
 - Do not add new `apps/<family>/private/` helpers. Keep helpers in the owning
   app package, or use `labkit-boundary-guard` before promoting genuinely
   reusable behavior into `+labkit`.
-- Keep the public app entry point as a thin launch wrapper. The package-root
-  `run.m` owns GUI state, callbacks, user alerts, app workflow order, debug
-  launch routing, and user-facing log wording.
+- Keep the public app entry point as a thin launch wrapper. App definitions,
+  actions, render helpers, and role packages own GUI state, user alerts, app
+  workflow order, and user-facing log wording. The framework owns debug launch
+  routing, callback generation, readiness, busy gating, and lifecycle
+  scheduling.
 
 ## Documentation Sync
 

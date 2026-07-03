@@ -4,7 +4,7 @@
 
 | Facade | Owns | Main APIs |
 | --- | --- | --- |
-| `labkit.ui.app` | Declarative app creation, request dispatch, busy state, safe dialog defaults, app title versioning. | `create`, `dispatchRequest`, `appVersionTitle`, `applyVersionTitle`, `defaultDialogFolder`, `defaultOutputFolder`, `promptOutputFile`, `promptOutputFolder`, `runBusy`, `setCloseGuard`, `showAlert`. |
+| `labkit.ui.app` | Declarative app runtime, request dispatch, readiness/busy state, safe dialog defaults, app title versioning. | `define`, `run`, `create`, `dispatchRequest`, `appVersionTitle`, `applyVersionTitle`, `defaultDialogFolder`, `defaultOutputFolder`, `promptOutputFile`, `promptOutputFolder`, `runBusy`, `setCloseGuard`, `showAlert`. |
 | `labkit.ui.spec` | UI 3.0 data-only workbench specs. | `app`, `workspace`, `tab`, `section`, `field`, `rangeField`, `panner`, `action`, `actionGroup`, `filePanel`, `toolPanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `usagePanel`. |
 | `labkit.ui.view` | Semantic UI 3.0 registry updates and preview rendering helpers. | `setValue`, `getValue`, `getFiles`, `setFileSelection`, `setEnabled`, `setLimits`, `appendLog`, `setListItems`, `setListSelection`, `fileLabels`, `filePaths`, `fileIndices`, `drawImage`, `resetAxes`, `clearAxes`. |
 | `labkit.ui.tool` | Reusable composed preview tools and interaction runtime. | `createRuntime`, `anchorEditor`, `scaleBar`, `scaleBarCalibration`, `enableAxesPopout`, `popoutAxes`, `zoomAxesAtPoint`. |
@@ -15,15 +15,17 @@ The root `labkit.ui.*` flat helper surface has been removed. Apps should call th
 `labkit.ui.version()` returns the UI facade contract version struct used by
 `labkit.contract` requirement checks.
 
-## UI 3.0 Declarative Workbench
+## Declarative App Runtime
 
-The UI 3.0 surface makes app code read as a semantic description
-of a LabKit workbench workflow, not as grid construction or a general MATLAB GUI
-DSL. App UI structure should be expressed through app-local
-`+<app_slug>/+ui/buildSpec.m` files and created through `labkit.ui.app.create`.
+The UI surface makes app code read as a semantic description of a LabKit
+workflow, not as grid construction or a general MATLAB GUI DSL. New app code
+should expose an app-owned `definition.m` and launch it through
+`labkit.ui.app.run`. The framework runtime owns lifecycle, callback dispatch,
+readiness, busy state, diagnostics, and staged activation. App packages declare
+state, actions, render behavior, and data-only UI structure.
 
-Public launch files stay thin, package-root `run.m` owns lifecycle and
-callbacks, and `buildSpec.m` owns only data-only UI shape:
+Public launch files stay thin. They route requests, expose requirements and
+version metadata, and delegate the GUI to the framework runtime:
 
 ```matlab
 function varargout = labkit_Example_app(varargin)
@@ -37,7 +39,8 @@ function varargout = labkit_Example_app(varargin)
         return;
     end
 
-    fig = example.run(debug);
+    request = struct("debug", debug);
+    fig = labkit.ui.app.run(example.definition(), request);
     labkit.ui.app.applyVersionTitle(fig, appVersion);
     if nargout >= 1
         varargout{1} = fig;
@@ -46,18 +49,25 @@ end
 ```
 
 ```matlab
-function fig = run(debug)
-callbacks = struct( ...
-    "run", @onRun, ...
-    "reset", @onReset, ...
-    "previewModeChanged", @onPreviewModeChanged);
-spec = example.ui.buildSpec(callbacks);
-ui = labkit.ui.app.create(spec, "debug", debug);
-labkit.ui.view.setEnabled(ui, "run", false);
-labkit.ui.view.appendLog(ui, "appLog", "Ready.");
-fig = ui.figure;
+function def = definition()
+def = labkit.ui.app.define( ...
+    "Id", "example", ...
+    "Title", "Example App", ...
+    "InitialState", @example.state.initial, ...
+    "Spec", @example.ui.buildSpec, ...
+    "Actions", example.actions.table(), ...
+    "Render", @example.view.render, ...
+    "Startup", ["workspace"], ...
+    "Hydrate", ["tools"]);
 end
 ```
+
+`definition.m` is a small MATLAB-scale DSL made of structs and function
+handles. It is not a new language, a generator, or a class hierarchy. The
+framework validates the definition, generates callback closures, builds the
+visible workbench, paints a readiness surface when startup is slow, dispatches
+startup actions, and then hydrates nonessential regions when idle or on first
+interaction.
 
 ```matlab
 function spec = buildSpec(callbacks)
@@ -101,12 +111,22 @@ function workspace = previewWorkspace(callbacks)
 end
 ```
 
+`buildSpec.m` stays data-only. It receives framework-generated semantic
+callbacks and returns a workbench spec. It does not create MATLAB handles, run
+IO, compute data, mutate app state, schedule startup work, or set concrete
+layout geometry.
+
 Use these app-facing contracts:
 
 - The default shell is a LabKit workbench: control tabs on the left and primary
   preview, plot, waveform, image, or canvas content on the right.
-- `buildSpec.m` describes controls and workspace structure only. App runners
-  own state, callbacks, alerts, refresh order, and log wording.
+- `definition.m` declares app identity, state factory, UI spec, actions,
+  render function, startup phases, and optional idle hydration phases.
+- The framework runtime owns lifecycle scheduling, readiness/loading surface,
+  generated callbacks, busy gating, debug exception plumbing, close guards, and
+  hidden/minimized test behavior.
+- `buildSpec.m` describes controls and workspace structure only. App actions
+  own app-specific state changes, alerts, refresh decisions, and log wording.
 - Control ids are globally unique within an app. The UI registry is keyed by
   those ids, not by tab or section placement.
 - Public specs are semantic controls such as `filePanel`, `toolPanel`, `field`,
@@ -114,11 +134,14 @@ Use these app-facing contracts:
   Primitive MATLAB controls are implementation details.
 - `section` specs should contain real semantic controls. Use `toolPanel` as a
   named host when a reusable `labkit.ui.tool.*` control needs to attach a
-  composed runtime widget from the app runner; do not leave empty titled
+  composed runtime widget from app action/render code; do not leave empty titled
   sections as placeholders.
 - Public callbacks use `function callback(control, event)`. Events carry
   semantic fields such as `id`, `kind`, `source`, `value`, `previousValue`,
   and `ui`.
+- App actions should be named by user intent or startup phase. They receive
+  framework payload/services, return updated app state, and request framework
+  effects instead of directly mutating lifecycle state.
 - `filePanel` owns file input mechanics: file chooser defaults, optional
   recursive folder scans, duplicate filename display, current selection, and
   file-entry events. Each file entry exposes `id`, `index`, `path`, `name`,
@@ -218,6 +241,27 @@ Control tabs with more than one section include draggable horizontal
 separators by default. A tab may opt out with `resize="none"` when a fixed
 stack is intentional.
 
+## Startup Readiness
+
+LabKit app startup is a framework runtime state, not an app-owned progress
+dialog convention. `labkit.ui.app.run` builds a named shell first, paints a
+readiness boundary when startup is slow enough to be perceptible, dispatches
+declared startup actions after the shell has a paint opportunity, and clears
+readiness only after the first visible render completes.
+
+Fast apps should not flash a loading strip. Slow apps should never sit as an
+anonymous blank frame: the framework keeps a non-modal status surface visible
+until the current startup phase has completed and the initial visible
+workspace is rendered. Hidden or minimized GUI test modes preserve readiness
+state for assertions while avoiding disruptive visual UI.
+
+Nonessential work belongs in idle hydration or first-interaction activation
+when the app definition marks it that way. Typical hydration candidates are
+inactive tabs, expensive optional tools, debug artifact generation, or
+secondary previews. App code should request app-level work through declared
+startup or action phases; it should not create raw startup timers, mutate
+framework readiness flags, or manage loading controls directly.
+
 ## Busy State
 
 Every `labkit.ui.spec.action` callback runs as an app-wide action transaction.
@@ -265,7 +309,7 @@ complete.
 
 `runBusy` intentionally does not create modal progress dialogs. Apps should not
 maintain their own busy-control lists, and `runBusy` does not mutate control
-`Enable` values. App callbacks still own permanent button enablement logic.
+`Enable` values. App render logic still owns permanent button enablement rules.
 
 ## View Helpers
 
@@ -283,14 +327,14 @@ labkit.ui.view.resetAxes(ui, "preview", "Reference", true, "raw");
 labkit.ui.view.clearAxes(ui, "preview", "difference");
 ```
 
-View helpers target semantic ids in the UI registry returned by
-`labkit.ui.app.create`. They do not create arbitrary controls or expose MATLAB
-layout primitives. `previewArea` axes automatically receive the standard
-right-click action `Open axes in new figure`; apps redraw prepared data through
-the named preview helpers. `drawImage` preserves the current axes view when an
-image is redrawn with the same displayed bounds, so overlay refreshes do not
-throw away a user's zoomed preview. Use `resetAxes` or `clearAxes` when an app
-intentionally wants to return the preview to its home view.
+View helpers target semantic ids in the UI registry owned by the app runtime.
+They do not create arbitrary controls or expose MATLAB layout primitives.
+`previewArea` axes automatically receive the standard right-click action
+`Open axes in new figure`; apps redraw prepared data through the named preview
+helpers. `drawImage` preserves the current axes view when an image is redrawn
+with the same displayed bounds, so overlay refreshes do not throw away a
+user's zoomed preview. Use `resetAxes` or `clearAxes` when an app intentionally
+wants to return the preview to its home view.
 
 `logPanel` follows appended lines by default: `appendLog` scrolls the log to the
 bottom after adding a line. Users can use the visible follow button or the log
@@ -412,7 +456,7 @@ All `setX(value)` style APIs should no-op when the requested value is already cu
 
 `labkit.ui` may provide app-neutral GUI shell, view construction, axes rendering, interaction lifecycle, composed tools, diagnostics, and reusable control state mechanics.
 
-`labkit.ui` should not own experiment names, formulas, thresholds, parser calls, result fields, export schemas, plotting annotations, or app-specific callback choreography. Apps pass labels, callbacks, prepared vectors, tables, debug contexts, and option values into UI helpers.
+`labkit.ui` should not own experiment names, formulas, thresholds, parser calls, result fields, export schemas, plotting annotations, or app-specific workflow choreography. Apps pass labels, semantic action ids, prepared vectors, tables, debug contexts, and option values into UI helpers.
 
 ## Validation
 

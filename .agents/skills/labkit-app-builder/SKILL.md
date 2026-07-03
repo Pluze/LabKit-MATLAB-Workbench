@@ -113,26 +113,38 @@ Use the closest existing app as the starting pattern, then reduce it to the actu
 
 For a new app, create the standard app shape directly and use only the
 smallest genuinely similar existing app as a reference. The first committed
-version should already express the real workflow: app state, callbacks,
-results, exports, and usage text should be specific to the new app.
+version should already express the real workflow: app definition, state,
+actions, render behavior, results, exports, and usage text should be specific
+to the new app.
 
 Keep app discovery source-based through `apps/**/labkit_*_app.m`; app
 manifests, registries, per-app build tasks, and governance apps are outside
-the current app model. App-owned `version.m` files provide visible version and
-update-date metadata without becoming dependency manifests.
+the app model. App-owned `version.m` files provide visible version and
+update-date metadata without becoming dependency manifests. App-owned
+`definition.m` files provide the framework runtime contract without becoming a
+central registry.
 
 ## Implementation Pattern
 
 Build the app in this order:
 
 1. Add or update app-local `requirements.m` and `version.m`, then keep the
-   public app entry point as a thin dispatch wrapper. It should pass both
-   structs to `labkit.ui.app.dispatchRequest`, create the GUI from package-root
-   `run.m`, and apply the app version title to the returned figure.
-2. Put the data-only spec in `+<app_slug>/+ui/buildSpec.m`; package-root
-   `run.m` should create callback handles, call
-   `<app_slug>.ui.buildSpec(...)`, then call `labkit.ui.app.create(...)`.
-3. Keep the top of nontrivial `buildSpec.m` files shallow: the app constructor
+   public app entry point as a thin dispatch wrapper. It should pass metadata
+   to `labkit.ui.app.dispatchRequest`, launch
+   `labkit.ui.app.run(<app_slug>.definition(), request)`, and apply the app
+   version title to the returned figure.
+2. Add `+<app_slug>/definition.m` using `labkit.ui.app.define`. It should name
+   app id/title, initial state factory, data-only spec builder, action table,
+   render function, startup phases, and optional hydration phases. Do not put
+   IO, computation, MATLAB handle creation, timers, loading controls, or
+   framework readiness mutation in `definition.m`.
+3. Put the data-only spec in `+<app_slug>/+ui/buildSpec.m`; the framework
+   runtime generates callback handles and passes them into the spec builder.
+4. Add app-owned `+state/initial.m`, `+actions/table.m`, focused action
+   handlers, and `+view/render.m`. Actions update app state and request
+   framework effects; render helpers update existing controls from prepared
+   state without IO, heavy computation, or exports.
+5. Keep the top of nontrivial `buildSpec.m` files shallow: the app constructor
    should name the control-tab tree and workspace, while local builder
    functions define each tab, section, and workspace region. Prefer this
    source shape over adding formatter scripts or shared UI templates; the
@@ -140,35 +152,36 @@ Build the app in this order:
    wording into framework configuration. Order functions as `buildSpec`, tab
    tree, tab builders, section builders in visual order, workspace builder,
    small helper builders, then `callbackValue`.
-4. Keep `buildSpec.m` free of MATLAB handle creation, `labkit.ui.app.create`,
+6. Keep `buildSpec.m` free of MATLAB handle creation, `labkit.ui.app.create`,
    state mutation, IO, computation, export writing, nested callback
    implementations, and row/column layout mechanics. Use a named
    `+ui/build<Thing>.m` custom builder only for a justified interaction that the
    ordinary spec grammar cannot represent.
-5. Wire file loading through the appropriate facade or app-local reader.
-6. Store state in one app struct; avoid globals, base workspace state, and hidden local paths.
-7. Rebuild the user workflow around stable controls, previews, summaries,
+7. Wire file loading through the appropriate facade or app-local reader.
+8. Store state in one app struct; avoid globals, base workspace state, and hidden local paths.
+9. Rebuild the user workflow around stable controls, previews, summaries,
    semantic control ids, and exports; do not reproduce command-line debug
    staging.
-8. Move GUI-free calculations below the app `end` as app-local functions.
-9. Extract production helpers into role-based app-owned package components when
+10. Move GUI-free calculations below the app `end` as app-local functions.
+11. Extract production helpers into role-based app-owned package components when
    the app is too large for a readable single entry point:
    `+state` for defaults/factories, `+io` for file discovery/readers/filters,
    `+ops` for GUI-free transforms, `+view` for table/detail/display data, and
    `+export` for output writers/manifests. Create only the packages the app
    actually needs.
-10. Avoid boundary-blurring helper names such as `helpers.m`, `utils.m`,
+12. Avoid boundary-blurring helper names such as `helpers.m`, `utils.m`,
    `common.m`, `misc.m`, `callbacks.m`, `manager.m`, `processor.m`,
    `layout.m`, and `createUI.m`; name files by stable role or output instead.
-11. For active runner or app-private migrations, use `labkit-migration-planner`
+13. For active runner or app-private migrations, use `labkit-migration-planner`
    to audit the current debt map and update `.agents/migration_guide.md`.
-12. Do not add new `private/` runners, `*Workflow.m` string-dispatch adapters,
-   fixed `+app` package names, or app-local public helper packages.
-13. Render prepared data through UI 2.0 named view helpers or existing
+14. Do not add new package-root eager `run.m` orchestration, `private/`
+   runners, `*Workflow.m` string-dispatch adapters, fixed `+app` package
+   names, or app-local public helper packages.
+15. Render prepared data through UI 2.0 named view helpers or existing
    `labkit.ui.tool.*` helpers; keep analysis out of UI helpers.
-14. Add export builders before CSV/PNG writing so output contracts can be tested.
-15. Add focused tests with synthetic fixtures or minimal generated data.
-16. Update human docs for user-facing behavior and scoped `AGENTS.md` only when rules change.
+16. Add export builders before CSV/PNG writing so output contracts can be tested.
+17. Add focused tests with synthetic fixtures or minimal generated data.
+18. Update human docs for user-facing behavior and scoped `AGENTS.md` only when rules change.
 
 ## Validation
 

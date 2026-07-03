@@ -45,9 +45,9 @@ runtime entry points for launcher users and are not dependencies of
 
 | Area | Owns |
 | --- | --- |
-| App entry point | Public launch name and debug dispatch. |
-| App package | Workflow state, callbacks, calculations, summaries, exports, and app-local helpers. |
-| `labkit.ui` | App shell, data-only UI specs, semantic view updates, reusable tools, and diagnostics. |
+| App entry point | Public launch name plus requirements/version/debug request routing. |
+| App package | App definition, workflow state, actions, render behavior, calculations, summaries, exports, and app-local helpers. |
+| `labkit.ui` | Declarative app runtime, app shell, readiness/busy state, data-only UI specs, semantic view updates, reusable tools, and diagnostics. |
 | `labkit.image` | GUI-free image file IO, display normalization, resizing, mean filtering, and basic enhancement primitives. |
 | `labkit.thermal` | GUI-free thermal source-file parsing, raw thermal matrices, embedded calibration metadata, raw-to-temperature conversion, and thermal colormap rendering. |
 | `labkit.dta` | GUI-free Gamry DTA discovery, loading, parsed curves, and pulse helpers. |
@@ -64,8 +64,13 @@ The standard app shape is:
 
 ```text
 apps/<family>/<app_slug>/labkit_<AppName>_app.m
-apps/<family>/<app_slug>/+<app_slug>/run.m
+apps/<family>/<app_slug>/+<app_slug>/definition.m
+apps/<family>/<app_slug>/+<app_slug>/requirements.m
+apps/<family>/<app_slug>/+<app_slug>/version.m
+apps/<family>/<app_slug>/+<app_slug>/+state/initial.m
+apps/<family>/<app_slug>/+<app_slug>/+actions/table.m
 apps/<family>/<app_slug>/+<app_slug>/+ui/buildSpec.m
+apps/<family>/<app_slug>/+<app_slug>/+view/render.m
 ```
 
 Optional role packages:
@@ -88,7 +93,7 @@ App GUIs use the layered UI foundation:
 
 | Layer | App-facing API |
 | --- | --- |
-| App | `labkit.ui.app.create`, `dispatchRequest`, `appVersionTitle`, `applyVersionTitle`, `defaultDialogFolder`, `defaultOutputFolder`, `promptOutputFile`, `promptOutputFolder`, `runBusy` |
+| App | `labkit.ui.app.define`, `run`, `create`, `dispatchRequest`, `appVersionTitle`, `applyVersionTitle`, `defaultDialogFolder`, `defaultOutputFolder`, `promptOutputFile`, `promptOutputFolder`, `runBusy` |
 | Spec | `labkit.ui.spec.app`, `workspace`, `tab`, `section`, `field`, `rangeField`, `panner`, `action`, `actionGroup`, `filePanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `usagePanel` |
 | View | `labkit.ui.view.setValue`, `getValue`, `getFiles`, `setFileSelection`, `setEnabled`, `setLimits`, `appendLog`, `setListItems`, `setListSelection`, `fileLabels`, `filePaths`, `drawImage`, `resetAxes`, `clearAxes` |
 | Tool | `labkit.ui.tool.createRuntime`, `anchorEditor`, `scaleBar`, `scaleBarCalibration`, `zoomAxesAtPoint` |
@@ -124,10 +129,17 @@ measurements, and user-facing decisions. Generic image IO and filters stay in
 `labkit.image`; thermal file parsing and raw-to-temperature mechanics stay in
 `labkit.thermal`.
 
+`definition.m` returns the app runtime contract. It names the initial state
+factory, data-only spec builder, action table, render function, startup phases,
+and optional hydration phases. The framework runtime validates the definition,
+generates semantic callbacks, builds the shell, owns readiness/busy state,
+schedules startup and hydration, routes diagnostics, and protects hidden test
+behavior.
+
 `+ui/buildSpec.m` returns a data-only `labkit.ui.spec.*` tree. It should not
 create MATLAB UI handles, mutate app state, perform IO, run calculations, write
-exports, or set row/column layout mechanics. The app runner owns state,
-callbacks, alerts, refresh order, and log wording.
+exports, schedule startup, or set row/column layout mechanics. App actions own
+app-specific state changes, alerts, refresh decisions, and log wording.
 
 ## Reusable Extraction Rule
 
