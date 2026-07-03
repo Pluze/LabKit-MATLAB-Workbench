@@ -1,4 +1,4 @@
-% Expected caller: image_match.run during debug launch and unit tests. Input
+% Expected caller: image_match.actions.table during debug launch and unit tests. Input
 % is a LabKit debug context. Output is a deterministic synthetic reference
 % matching sample pack. Side effects: writes anonymous debug images and
 % records a session manifest when available.

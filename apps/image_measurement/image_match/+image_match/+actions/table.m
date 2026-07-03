@@ -1,52 +1,98 @@
-% Expected caller: labkit_ImageMatch_app. Input is the debug context prepared
-% by the public launcher. Output is the app figure. Side effects are GUI
-% creation, user-driven image loading, matched image export, and debug trace attachment.
-function fig = run(debugLog)
-%RUN Build and run the Image Match app body.
+% App-owned action table for Image Match. Expected caller is
+% image_match.definition. Output maps semantic action ids to handlers used
+% by labkit.ui.app.run. Handlers preserve the reference-match workflow while
+% moving package-root lifecycle orchestration into the framework runtime.
+function actions = table()
+%TABLE Build the Image Match runtime action map.
 
-    S = struct();
-    S.items = repmat(image_match.state.emptyItem(), 0, 1);
-    S.referenceItem = [];
-    S.currentIndex = 0;
-    S.steps = repmat(image_match.state.emptyStep(), 0, 1);
-    S.outputFolder = string(labkit.ui.app.defaultDialogFolder("output"));
-    S.lastExport = [];
-    S.lastExportFingerprint = "";
-    S.pendingDirty = false;
-    S.previewImages = {};
-    S.previewImageKeys = strings(0, 1);
-    S.referencePreviewImage = [];
-    S.referencePreviewKey = "";
-    S.previewResultImage = [];
-    S.previewResultKey = "";
+    S = [];
+    ui = [];
+    fig = [];
+    debugLog = [];
 
-    methods = {'Balanced', 'White balance', 'Tone only', ...
-        'Protected tone', 'Lab style', 'Histogram'};
-    callbacks = struct( ...
-        'referenceImageChosen', @onReferenceImageChosen, ...
-        'clearReference', @onClearReference, ...
-        'sourceImagesChosen', @onSourceImagesChosen, ...
-        'removeImages', @onRemoveImages, ...
-        'clearImages', @onClearImages, ...
-        'imageSelectionChanged', @onImageSelectionChanged, ...
-        'previewModeChanged', @onPreviewModeChanged, ...
-        'matchSettingChanged', @onMatchSettingChanged, ...
-        'applyMatch', @onApplyMatch, ...
-        'undoHistory', @onUndoHistory, ...
-        'resetHistory', @onResetHistory, ...
-        'chooseOutputFolder', @onChooseOutputFolder, ...
-        'exportImages', @onExportImages);
-    spec = image_match.ui.buildSpec(methods, char(S.outputFolder), callbacks);
-    ui = labkit.ui.app.create(spec, 'debug', debugLog);
-    fig = ui.figure;
-    if debugLog.enabled
-        debugLog.trace('Image match debug trace enabled.');
-        debugLog.instrumentFigure(fig);
-        setupDebugSamples();
+    actions = struct( ...
+        'startup', @onStartup, ...
+        'referenceImageChosen', @dispatchReferenceImageChosen, ...
+        'clearReference', @dispatchClearReference, ...
+        'sourceImagesChosen', @dispatchSourceImagesChosen, ...
+        'removeImages', @dispatchRemoveImages, ...
+        'clearImages', @dispatchClearImages, ...
+        'imageSelectionChanged', @dispatchImageSelectionChanged, ...
+        'previewModeChanged', @dispatchPreviewModeChanged, ...
+        'matchSettingChanged', @dispatchMatchSettingChanged, ...
+        'applyMatch', @dispatchApplyMatch, ...
+        'undoHistory', @dispatchUndoHistory, ...
+        'resetHistory', @dispatchResetHistory, ...
+        'chooseOutputFolder', @dispatchChooseOutputFolder, ...
+        'exportImages', @dispatchExportImages);
+
+    function state = onStartup(state, ~, services)
+        S = state;
+        ui = services.ui;
+        fig = services.figure;
+        debugLog = services.debug;
+        if debugLog.enabled
+            debugLog.trace('Image match debug trace enabled.');
+            debugLog.instrumentFigure(fig);
+            setupDebugSamples();
+        end
+
+        resetPreviewAxes();
+        refreshAll();
+        state = S;
     end
 
-    resetPreviewAxes();
-    refreshAll();
+    function state = dispatchWithEvent(state, payload, callback)
+        S = state;
+        callback([], payload.event);
+        state = S;
+    end
+
+    function state = dispatchNoEvent(state, ~, callback)
+        S = state;
+        callback([], []);
+        state = S;
+    end
+
+    function state = dispatchReferenceImageChosen(state, payload, ~)
+        state = dispatchWithEvent(state, payload, @onReferenceImageChosen);
+    end
+    function state = dispatchClearReference(state, payload, ~)
+        state = dispatchNoEvent(state, payload, @onClearReference);
+    end
+    function state = dispatchSourceImagesChosen(state, payload, ~)
+        state = dispatchWithEvent(state, payload, @onSourceImagesChosen);
+    end
+    function state = dispatchRemoveImages(state, payload, ~)
+        state = dispatchWithEvent(state, payload, @onRemoveImages);
+    end
+    function state = dispatchClearImages(state, payload, ~)
+        state = dispatchNoEvent(state, payload, @onClearImages);
+    end
+    function state = dispatchImageSelectionChanged(state, payload, ~)
+        state = dispatchWithEvent(state, payload, @onImageSelectionChanged);
+    end
+    function state = dispatchPreviewModeChanged(state, payload, ~)
+        state = dispatchNoEvent(state, payload, @onPreviewModeChanged);
+    end
+    function state = dispatchMatchSettingChanged(state, payload, ~)
+        state = dispatchNoEvent(state, payload, @onMatchSettingChanged);
+    end
+    function state = dispatchApplyMatch(state, payload, ~)
+        state = dispatchNoEvent(state, payload, @onApplyMatch);
+    end
+    function state = dispatchUndoHistory(state, payload, ~)
+        state = dispatchNoEvent(state, payload, @onUndoHistory);
+    end
+    function state = dispatchResetHistory(state, payload, ~)
+        state = dispatchNoEvent(state, payload, @onResetHistory);
+    end
+    function state = dispatchChooseOutputFolder(state, payload, ~)
+        state = dispatchNoEvent(state, payload, @onChooseOutputFolder);
+    end
+    function state = dispatchExportImages(state, payload, ~)
+        state = dispatchNoEvent(state, payload, @onExportImages);
+    end
 
     function onReferenceImageChosen(~, event)
         paths = labkit.ui.view.filePaths(event.addedFiles);
