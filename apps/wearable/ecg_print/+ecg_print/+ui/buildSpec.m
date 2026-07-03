@@ -1,4 +1,4 @@
-% Expected caller: ecg_print.ui.runApp. Input is a callback struct whose fields
+% Expected caller: ecg_print.definition. Input is a callback struct whose fields
 % are app-owned callback handles. Output is a data-only UI 3.0 workbench spec
 % for the ECG Print app.
 function spec = buildSpec(callbacks)

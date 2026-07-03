@@ -19,7 +19,8 @@ function varargout = labkit_ECGPrint_app(varargin)
             'labkit_ECGPrint_app returns at most the app figure handle.');
     end
 
-    fig = ecg_print.run(debugLog);
+    request = struct("debug", debugLog);
+    fig = labkit.ui.app.run(ecg_print.definition(), request);
     labkit.ui.app.applyVersionTitle(fig, appVersion);
     if nargout >= 1
         varargout{1} = fig;
