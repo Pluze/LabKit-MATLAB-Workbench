@@ -28,8 +28,8 @@ classdef ImageMeasurementDebugSamplePackTest < matlab.unittest.TestCase
             testCase.verifyFalse(isempty(imread(char(enhance.boundaryFiles.validEdge))));
 
             match = image_match.debug.writeSamplePack(debug);
-            reference = image_match.io.readImages(match.referenceFile);
-            sources = image_match.io.readImages(match.representativeFiles);
+            reference = image_match.sourceFiles.readImages(match.referenceFile);
+            sources = image_match.sourceFiles.readImages(match.representativeFiles);
             testCase.verifyEqual(numel(reference), 1);
             testCase.verifyEqual(numel(sources), 2);
 

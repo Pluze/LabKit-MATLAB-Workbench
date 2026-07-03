@@ -1,4 +1,4 @@
-% Expected caller: image_match.ops.applyStep and tests. Inputs are a source
+% Expected caller: image_match.analysisRun.applyStep and tests. Inputs are a source
 % image, a reference image, and a match step with method/strength fields.
 % Output is a display-ready RGB double image in [0, 1].
 function outputImage = applyMatch(inputImage, referenceImage, step)

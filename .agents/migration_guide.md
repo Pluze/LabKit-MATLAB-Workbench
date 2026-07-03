@@ -55,7 +55,7 @@ Current facts:
 - Chrono Overlay, EIS, VT Resistance, CIC, CSC, Response Review Stats, ECG
   Print, RHS Preview, Nerve Response Analysis, Batch Image Crop, Curvature
   Measurement, Focus Stack, DIC Postprocess, DIC Preprocess, FLIR Thermal,
-  and Image Enhance now prove the final
+  Image Enhance, and Image Match now prove the final
   workflow-first app package shape:
   `definitionActions.m`, `+appLifecycle/createInitialState.m`,
   `+userInterface/buildWorkbenchSpec.m`,
@@ -64,9 +64,8 @@ Current facts:
   `+resultFiles`, with no legacy
   `+actions`, `+state`, `+ui`, `+view`, `+ops`, `+io`, or `+export`
   buckets.
-- The other 1 app package still uses transitional `+state`, `+actions`,
-  `+ui`, and `+view` adapters. Treat those adapters as the next migration
-  target, not as final behavior.
+- No app package still uses transitional `+state`, `+actions`, `+ui`,
+  `+view`, `+ops`, `+io`, or `+export` adapter buckets.
 - Package-root app `run.m` orchestration has been retired. App structure
   guardrails now require `definition.m` and reject package-root app runners.
 - `+labkit` implementation hotspots near the file budget:
@@ -113,26 +112,26 @@ Current facts:
   dispatches startup and hydration phases, records phase timings, reports
   runtime action exceptions to debug context, and applies a small effect set:
   `logDebug`, `alert`, `setBusy`, and `clearBusy`.
-- Remaining runtime gaps before full migration: complete action gating
-  semantics, normalized payload helpers for common controls, a traceable
-  readiness/busy surface for slow startup, and migration of app commands away
-  from direct UI control reads.
-- Current app runners and transitional definitions assume a complete
-  `ui.controls` registry after shell construction. Staged startup must
-  preserve that contract until each app has explicit startup and hydration
-  phases.
+- Remaining runtime hardening after app package migration: complete action
+  gating semantics, normalized payload helpers for common controls, a
+  traceable readiness/busy surface for slow startup, and migration of app
+  commands away from direct UI control reads where that reduces coupling
+  without changing behavior.
+- Workflow-first app definitions still assume a complete `ui.controls`
+  registry after shell construction. Staged startup must preserve that
+  contract until an app has explicit startup and hydration phases.
 
 ## Reopen Triggers
 
 Open a new active route here only when current scans expose concrete debt:
 
 - a package-root app `run.m` reappears, or a substantive change would add
-  unrelated behavior to a budget-watchlist transitional action table without a
+  unrelated behavior to a budget-watchlist action table without a
   responsibility audit
 - helper-quality audit reports new `inline-or-merge-candidate` rows after
   excluding valid contracts such as app entrypoints, `requirements.m`,
-  `version.m`, transitional specs, state factories, input policies, test APIs,
-  framework adapters, and transitional side-effect boundaries
+  `version.m`, workflow specs, state factories, input policies, test APIs,
+  framework adapters, and action-driven side-effect boundaries
 - a new app entry point appears without dedicated GUI coverage
 - hidden workflow validation needs a new app-neutral driver operation or
   app-owned test hook to avoid OS/modal dialogs
@@ -146,9 +145,10 @@ Open a new active route here only when current scans expose concrete debt:
 
 Status: documentation alignment, runtime hydration/timing, and every
 package-root runner transitional migration are committed or in progress on the
-active branch. This is not a final state. The route remains open until
-transitional adapters move to workflow-first packages and the profiler/debug
-startup evidence confirms the new structure.
+active branch. The app package migration is complete when this route's current
+branch validates: all supported apps use workflow-first packages and no app
+keeps transitional adapter buckets. The route remains open until final
+validation and profiler/debug startup evidence confirm the new structure.
 
 Opened 2026-07-02 after launcher/app startup traces showed blank app frames
 and delayed first render across multiple apps. Revised 2026-07-03 to make the
@@ -158,12 +158,11 @@ patch.
 ### Current Work Order
 
 1. Keep docs and guardrails aligned with the current migration stage.
-2. Close remaining runtime gaps in `labkit.ui.app.run`.
-3. Migrate all remaining transitional definitions to workflow-first packages.
-4. Harden guardrails incrementally from the Chrono Overlay representative
-   shape without rejecting still-unmigrated apps before their phase starts.
-5. Profile/debug slow startup paths, then optimize the new structure.
-6. Defer CI polling until merge readiness; use local validation for touched
+2. Validate that no app package retains transitional adapter buckets.
+3. Harden guardrails from the all-app workflow-first shape.
+4. Profile/debug slow startup paths, then optimize the new structure if the
+   evidence shows a concrete bottleneck.
+5. Defer CI polling until merge readiness; use local validation for touched
    source phases.
 
 ### Design Constraints
@@ -334,14 +333,11 @@ flags to app code, or add a generator before the definition DSL is proven.
 2. App migration
    - Package-root runner orchestration has been retired; keep new work on
      definitions and workflow-first packages.
-   - Chrono Overlay, EIS, VT Resistance, CIC, CSC, Response Review Stats, ECG
-     Print, RHS Preview, Nerve Response Analysis, Batch Image Crop, Curvature
-     Measurement, Focus Stack, DIC Postprocess, DIC Preprocess, and FLIR Thermal
-     are representative workflow-first packages
-     and should be used as small app references for the fixed lifecycle/UI
-     surface and direct workflow package tests.
-   - After runtime gaps are closed, migrate transitional definitions from
-     `+state/+actions/+ui/+view` to workflow-first packages by app family.
+   - All supported apps are workflow-first packages and should be used as
+     small references for the fixed lifecycle/UI surface and direct workflow
+     package tests.
+   - Keep app-specific state, source loading, analysis, UI projection, and
+     result export logic in app-owned workflow packages.
    - Remove obsolete runner or adapter code after behavior coverage passes
      through the new path.
 
@@ -349,10 +345,8 @@ flags to app code, or add a generator before the definition DSL is proven.
    - Add validation tests for required fields, action ids, duplicate controls,
      startup phases, hidden-mode behavior, action gating, payload
      normalization, exception reporting, and phase timings.
-   - Keep workflow-first structure checks transitional for unmigrated apps,
-     while rejecting `+actions`, `+state`, `+ui`, `+view`, `+ops`, `+io`, and
-     `+export` packages inside any app that has entered the workflow-first
-     shape.
+   - Reject `+actions`, `+state`, `+ui`, `+view`, `+ops`, `+io`, and
+     `+export` packages inside all app packages.
    - Add source guardrails for direct startup timer/readiness manipulation in
      app packages after the new runtime lands.
 

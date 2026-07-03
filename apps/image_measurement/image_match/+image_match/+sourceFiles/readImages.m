@@ -4,7 +4,7 @@
 function items = readImages(paths)
 
     records = labkit.image.readFiles(paths);
-    template = image_match.state.emptyItem();
+    template = image_match.appState.emptyItem();
     items = repmat(template, numel(records), 1);
     for k = 1:numel(records)
         items(k) = template;

@@ -124,11 +124,11 @@ end
 function runImageMatchWorkflow(inputs, assetDir, exportRoot)
     outputFolder = fullfile(exportRoot, "image_match");
     ensureDir(outputFolder);
-    reference = image_match.io.readImages(string(inputs.matchReference));
-    items = image_match.io.readImages(string(inputs.matchSource));
-    steps = image_match.ops.makeStep("Balanced", 85, 70, 80);
+    reference = image_match.sourceFiles.readImages(string(inputs.matchReference));
+    items = image_match.sourceFiles.readImages(string(inputs.matchSource));
+    steps = image_match.analysisRun.makeStep("Balanced", 85, 70, 80);
     opts = struct("outputFolder", string(outputFolder), "format", "PNG");
-    payload = image_match.export.writeOutputs(items, reference, steps, opts);
+    payload = image_match.resultFiles.writeOutputs(items, reference, steps, opts);
     matched = im2double(imread(char(payload.results(1).outputPath)));
 
     exportTriptychImage(reference(1).image, items(1).image, matched, ...

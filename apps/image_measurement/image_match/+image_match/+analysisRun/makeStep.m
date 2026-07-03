@@ -16,13 +16,13 @@ function step = makeStep(method, strength, toneStrength, colorStrength)
         method = "Balanced";
     end
 
-    step = image_match.state.emptyStep();
+    step = image_match.appState.emptyStep();
     step.kind = "Reference match";
     step.amount = numericScalar(strength, 100);
     step.secondary = numericScalar(toneStrength, 100);
     step.colorStrength = numericScalar(colorStrength, 100);
     step.matchMethod = string(method);
-    step.label = image_match.ops.describeStep(step);
+    step.label = image_match.analysisRun.describeStep(step);
 end
 
 function value = numericScalar(value, fallback)

@@ -2,8 +2,8 @@
 % image_match.definition. Output maps semantic action ids to handlers used
 % by labkit.ui.app.run. Handlers preserve the reference-match workflow while
 % moving package-root lifecycle orchestration into the framework runtime.
-function actions = table()
-%TABLE Build the Image Match runtime action map.
+function actions = definitionActions()
+%DEFINITIONACTIONS Build the Image Match runtime action map.
 
     S = [];
     ui = [];
@@ -101,7 +101,7 @@ function actions = table()
             return;
         end
         try
-            loaded = image_match.io.readImages(paths(1));
+            loaded = image_match.sourceFiles.readImages(paths(1));
         catch ME
             showException('Could not load reference image', ME);
             refreshAll();
@@ -140,7 +140,7 @@ function actions = table()
         end
 
         S.currentIndex = 1;
-        S.steps = repmat(image_match.state.emptyStep(), 0, 1);
+        S.steps = repmat(image_match.appState.emptyStep(), 0, 1);
         S.pendingDirty = false;
         invalidatePreviewCache();
         S.outputFolder = string(labkit.ui.app.defaultOutputFolder( ...
@@ -151,9 +151,9 @@ function actions = table()
     end
 
     function onClearImages(~, ~)
-        S.items = repmat(image_match.state.emptyItem(), 0, 1);
+        S.items = repmat(image_match.appState.emptyItem(), 0, 1);
         S.currentIndex = 0;
-        S.steps = repmat(image_match.state.emptyStep(), 0, 1);
+        S.steps = repmat(image_match.appState.emptyStep(), 0, 1);
         S.pendingDirty = false;
         invalidatePreviewCache();
         markExportDirty();
@@ -242,7 +242,7 @@ function actions = table()
         if isempty(S.steps)
             return;
         end
-        S.steps = repmat(image_match.state.emptyStep(), 0, 1);
+        S.steps = repmat(image_match.appState.emptyStep(), 0, 1);
         S.pendingDirty = false;
         markExportDirty();
         addLog('Reset match history.');
@@ -274,14 +274,14 @@ function actions = table()
         opts = struct();
         opts.outputFolder = S.outputFolder;
         opts.format = labkit.ui.view.getValue(ui, 'exportFormat');
-        task = image_match.state.exportTask(S.items, S.referenceItem, S.steps, opts);
+        task = image_match.appState.exportTask(S.items, S.referenceItem, S.steps, opts);
         if ~isempty(S.lastExport) && S.lastExportFingerprint == task.fingerprint
             addLog('Matched export is already up to date; skipped duplicate write.');
             refreshDetails();
             return;
         end
         try
-            S.lastExport = image_match.export.writeOutputs( ...
+            S.lastExport = image_match.resultFiles.writeOutputs( ...
                 S.items, S.referenceItem, S.steps, opts);
             S.lastExportFingerprint = task.fingerprint;
         catch ME
@@ -368,7 +368,7 @@ function actions = table()
             case 'Before | After'
                 matched = currentPreviewImage(S.pendingDirty);
                 labkit.ui.view.drawImage(ui, 'preview', ...
-                    image_match.view.beforeAfterImage(original, matched), ...
+                    image_match.userInterface.beforeAfterImage(original, matched), ...
                     'title', 'Before | After');
             otherwise
                 matched = currentPreviewImage(S.pendingDirty);
@@ -380,23 +380,23 @@ function actions = table()
     function refreshMetrics()
         if isempty(S.items)
             ui.controls.metricsTable.table.Data = ...
-                image_match.view.resultTableData([], [], 0);
+                image_match.userInterface.resultTableData([], [], 0);
             return;
         end
         processedImage = currentPreviewImage(false);
-        ui.controls.metricsTable.table.Data = image_match.view.resultTableData( ...
+        ui.controls.metricsTable.table.Data = image_match.userInterface.resultTableData( ...
             S.items(currentSelectionIndex()), ...
             processedImage, numel(S.steps));
     end
 
     function refreshHistory()
-        ui.controls.historyTable.table.Data = image_match.view.historyTableData(S.steps);
+        ui.controls.historyTable.table.Data = image_match.userInterface.historyTableData(S.steps);
         labkit.ui.view.setValue(ui, 'historyStatus', ...
             sprintf('History steps: %d', numel(S.steps)));
     end
 
     function refreshDetails()
-        labkit.ui.view.setValue(ui, 'exportDetails', image_match.view.detailLines( ...
+        labkit.ui.view.setValue(ui, 'exportDetails', image_match.userInterface.detailLines( ...
             S.items, max(currentSelectionIndex(), 1), S.referenceItem, ...
             S.steps, S.lastExport));
         updateCloseGuard();
@@ -404,19 +404,19 @@ function actions = table()
 
     function refreshMatchStatus()
         labkit.ui.view.setValue(ui, 'matchFlow', ...
-            image_match.view.matchFlowLines(labkit.ui.view.getValue(ui, 'matchMethod')));
+            image_match.userInterface.matchFlowLines(labkit.ui.view.getValue(ui, 'matchMethod')));
     end
 
     function items = readOrReuseImages(paths)
         paths = string(paths(:));
-        template = image_match.state.emptyItem();
+        template = image_match.appState.emptyItem();
         items = repmat(template, numel(paths), 1);
         existingPaths = strings(0, 1);
         if ~isempty(S.items)
             existingPaths = string({S.items.path}).';
         end
         missing = paths(~ismember(paths, existingPaths));
-        loaded = image_match.io.readImages(missing);
+        loaded = image_match.sourceFiles.readImages(missing);
         for k = 1:numel(paths)
             existingIndex = find(existingPaths == paths(k), 1);
             if ~isempty(existingIndex)
@@ -443,7 +443,7 @@ function actions = table()
         item = S.items(index);
         key = previewImageKey(item);
         if isempty(S.previewImages{index}) || S.previewImageKeys(index) ~= key
-            S.previewImages{index} = image_match.view.previewImage(item.image);
+            S.previewImages{index} = image_match.userInterface.previewImage(item.image);
             S.previewImageKeys(index) = key;
         end
         imageOut = S.previewImages{index};
@@ -456,7 +456,7 @@ function actions = table()
         end
         key = previewImageKey(S.referenceItem);
         if isempty(S.referencePreviewImage) || S.referencePreviewKey ~= key
-            S.referencePreviewImage = image_match.view.previewImage(S.referenceItem.image);
+            S.referencePreviewImage = image_match.userInterface.previewImage(S.referenceItem.image);
             S.referencePreviewKey = key;
         end
         imageOut = S.referencePreviewImage;
@@ -476,11 +476,11 @@ function actions = table()
             return;
         end
         if ~isempty(steps)
-            imageOut = image_match.ops.applyPipeline({imageOut}, steps, referenceImage);
+            imageOut = image_match.analysisRun.applyPipeline({imageOut}, steps, referenceImage);
             imageOut = imageOut{1};
         end
         if includePending
-            imageOut = image_match.ops.applyStep( ...
+            imageOut = image_match.analysisRun.applyStep( ...
                 imageOut, currentMatchStep(), referenceImage);
         end
         S.previewResultImage = imageOut;
@@ -502,7 +502,7 @@ function actions = table()
         if ~hasReference()
             referenceItem = [];
         end
-        task = image_match.state.exportTask(item, referenceItem, stepsForKey, struct( ...
+        task = image_match.appState.exportTask(item, referenceItem, stepsForKey, struct( ...
             'outputFolder', "preview", ...
             'format', "display"));
         key = task.fingerprint + sprintf('\n') + ...
@@ -519,7 +519,7 @@ function actions = table()
     function updateCloseGuard()
         dirty = false;
         if ~isempty(S.items) && hasReference()
-            task = image_match.state.exportTask(S.items, S.referenceItem, S.steps, struct( ...
+            task = image_match.appState.exportTask(S.items, S.referenceItem, S.steps, struct( ...
                 'outputFolder', S.outputFolder, ...
                 'format', labkit.ui.view.getValue(ui, 'exportFormat')));
             dirty = S.pendingDirty || S.lastExportFingerprint ~= task.fingerprint;
@@ -534,7 +534,7 @@ function actions = table()
     end
 
     function step = currentMatchStep()
-        step = image_match.ops.makeStep( ...
+        step = image_match.analysisRun.makeStep( ...
             labkit.ui.view.getValue(ui, 'matchMethod'), ...
             labkit.ui.view.getValue(ui, 'matchStrength'), ...
             labkit.ui.view.getValue(ui, 'toneStrength'), ...

@@ -141,7 +141,7 @@ function verify_app_owned_workflow_boundaries()
         'labkit_ImageEnhance_app', 'image_enhance.userInterface.createEditorUi');
     h.assertImageMeasurementAppBoundary(imageMatchSource, 'labkit_ImageMatch_app');
     assertDeclarativeImageApp(imageMatchSource, ...
-        'labkit_ImageMatch_app', 'image_match.ui.createEditorUi');
+        'labkit_ImageMatch_app', 'image_match.userInterface.createEditorUi');
     h.assertImageMeasurementAppBoundary(batchCropSource, 'labkit_BatchImageCrop_app');
     assert(exist(fullfile(root, '+labkit', '+image_measurement'), 'dir') ~= 7, ...
         'Image measurement workflow code should not be promoted to a reusable +labkit package yet.');

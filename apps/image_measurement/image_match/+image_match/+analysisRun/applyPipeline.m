@@ -15,7 +15,7 @@ function processed = applyPipeline(images, steps, referenceImage)
     for iStep = 1:numel(steps)
         step = steps(iStep);
         for iImage = 1:numel(processed)
-            processed{iImage} = image_match.ops.applyStep( ...
+            processed{iImage} = image_match.analysisRun.applyStep( ...
                 processed{iImage}, step, referenceImage);
         end
     end

@@ -26,7 +26,7 @@ function payload = writeOutputs(items, referenceItem, steps, opts)
     for k = 1:numel(items)
         images{k} = items(k).image;
     end
-    processed = image_match.ops.applyPipeline(images, steps, referenceItem.image);
+    processed = image_match.analysisRun.applyPipeline(images, steps, referenceItem.image);
 
     resultTemplate = emptyResult();
     results = repmat(resultTemplate, numel(items), 1);
@@ -52,7 +52,7 @@ function payload = writeOutputs(items, referenceItem, steps, opts)
 
     manifestPath = uniquePath(fullfile(char(outputFolder), ...
         'image_match_manifest.csv'));
-    writetable(image_match.export.buildManifest(results), manifestPath);
+    writetable(image_match.resultFiles.buildManifest(results), manifestPath);
 
     payload = struct();
     payload.results = results;

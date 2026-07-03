@@ -32,7 +32,7 @@ classdef AppPackageStructureGuardrailTest < matlab.unittest.TestCase
             root = setupLabKitTestPath();
             expected = [
                 "apps/image_measurement/image_enhance/+image_enhance/+appState/exportTask.m"
-                "apps/image_measurement/image_match/+image_match/+state/exportTask.m"
+                "apps/image_measurement/image_match/+image_match/+appState/exportTask.m"
                 "apps/image_measurement/batch_crop/+batch_crop/+appState/exportPlan.m"
                 "apps/image_measurement/focus_stack/+focus_stack/+appState/runTask.m"
                 "apps/image_measurement/curvature/+curvature/+appState/fitTask.m"
@@ -101,19 +101,11 @@ function assertCanonicalAppPackageStructure(testCase, root, appRelDir, packageNa
     appDir = fullfile(root, appRelDir);
     packageDir = fullfile(appDir, ['+' packageName]);
     uiDir = fullfile(packageDir, '+ui');
-    appLifecycleDir = fullfile(packageDir, '+appLifecycle');
     userInterfaceDir = fullfile(packageDir, '+userInterface');
     entrypointFile = fullfile(appDir, entrypointName);
     runFile = fullfile(packageDir, 'run.m');
     definitionFile = fullfile(packageDir, 'definition.m');
-    definitionActionsFile = fullfile(packageDir, 'definitionActions.m');
-    usesWorkflowFirstShape = isfolder(appLifecycleDir) || ...
-        isfolder(userInterfaceDir) || isfile(definitionActionsFile);
-    if usesWorkflowFirstShape
-        buildSpecFile = fullfile(userInterfaceDir, 'buildWorkbenchSpec.m');
-    else
-        buildSpecFile = fullfile(uiDir, 'buildSpec.m');
-    end
+    buildSpecFile = fullfile(userInterfaceDir, 'buildWorkbenchSpec.m');
     appLabel = relativePath(root, appDir);
 
     testCase.verifyGreaterThan(strlength(string(packageName)), 0, ...
@@ -138,21 +130,14 @@ function assertCanonicalAppPackageStructure(testCase, root, appRelDir, packageNa
         [appLabel ' should not keep package-root run.m orchestration.']);
     testCase.verifyFalse(isfile(fullfile(uiDir, 'runApp.m')), ...
         [appLabel ' should not keep app lifecycle orchestration in +ui/runApp.m.']);
-    if usesWorkflowFirstShape
-        assertWorkflowFirstPackageShape(testCase, root, packageDir);
-    end
+    assertWorkflowFirstPackageShape(testCase, root, packageDir);
 
     orchestrationSource = appOrchestrationSource(entrypointFile, runFile, ...
         definitionFile);
-    if usesWorkflowFirstShape
-        usesBuildSpecCall = contains(orchestrationSource, ...
-            [packageName '.userInterface.buildWorkbenchSpec(']) || ...
-            contains(orchestrationSource, ...
-            ['@' packageName '.userInterface.buildWorkbenchSpec']);
-    else
-        usesBuildSpecCall = contains(orchestrationSource, [packageName '.ui.buildSpec(']) || ...
-            contains(orchestrationSource, ['@' packageName '.ui.buildSpec']);
-    end
+    usesBuildSpecCall = contains(orchestrationSource, ...
+        [packageName '.userInterface.buildWorkbenchSpec(']) || ...
+        contains(orchestrationSource, ...
+        ['@' packageName '.userInterface.buildWorkbenchSpec']);
     testCase.verifyTrue(usesBuildSpecCall, ...
         [appLabel ' should call its canonical UI spec builder.']);
     testCase.verifyTrue(contains(orchestrationSource, 'labkit.ui.app.run(') && ...

@@ -31,8 +31,8 @@ function checkWhiteBalanceMatchMovesChannelRatiosTowardReference()
     reference = tintImage(base, [1.18 0.96 0.72]);
     beforeDistance = channelRatioDistance(source, reference);
 
-    step = image_match.ops.makeStep('White balance', 100, 100, 100);
-    processed = image_match.ops.applyPipeline({source}, step, reference);
+    step = image_match.analysisRun.makeStep('White balance', 100, 100, 100);
+    processed = image_match.analysisRun.applyPipeline({source}, step, reference);
     afterDistance = channelRatioDistance(processed{1}, reference);
 
     assert(afterDistance < beforeDistance * 0.55, ...
@@ -45,8 +45,8 @@ function checkToneOnlyMatchMovesBrightnessWithoutChangingColorStrongly()
     reference = min(1, 1.18 .* base + 0.18);
     sourceRatio = channelRatios(source);
 
-    step = image_match.ops.makeStep('Tone only', 100, 100, 0);
-    processed = image_match.ops.applyPipeline({source}, step, reference);
+    step = image_match.analysisRun.makeStep('Tone only', 100, 100, 0);
+    processed = image_match.analysisRun.applyPipeline({source}, step, reference);
     out = processed{1};
 
     assert(mean(out(:)) > mean(source(:)), ...
@@ -70,8 +70,8 @@ function checkProtectedToneMatchesBackgroundWithoutSubjectHueDrift()
     reference(:, :, 3) = reference(:, :, 3) .* 0.99;
     reference(18:35, 24:52, :) = source(18:35, 24:52, :);
 
-    step = image_match.ops.makeStep('Protected tone', 100, 100, 100);
-    processed = image_match.ops.applyPipeline({source}, step, reference);
+    step = image_match.analysisRun.makeStep('Protected tone', 100, 100, 100);
+    processed = image_match.analysisRun.applyPipeline({source}, step, reference);
     out = processed{1};
     sourceBackground = mean(rgb2gray(source(1:12, 1:20, :)), 'all');
     outputBackground = mean(rgb2gray(out(1:12, 1:20, :)), 'all');
@@ -94,8 +94,8 @@ function checkLabStyleMatchMovesColorTowardReference()
     [source, reference] = syntheticColorPair();
     beforeDistance = meanChannelDistance(source, reference);
 
-    step = image_match.ops.makeStep('Lab style', 100, 80, 100);
-    processed = image_match.ops.applyPipeline({source}, step, reference);
+    step = image_match.analysisRun.makeStep('Lab style', 100, 80, 100);
+    processed = image_match.analysisRun.applyPipeline({source}, step, reference);
     afterDistance = meanChannelDistance(processed{1}, reference);
 
     assert(afterDistance < beforeDistance * 0.60, ...
@@ -104,8 +104,8 @@ end
 
 function checkHistogramMatchPreservesDisplayRange()
     [source, reference] = syntheticColorPair();
-    step = image_match.ops.makeStep('Histogram', 75, 100, 100);
-    processed = image_match.ops.applyPipeline({source}, step, reference);
+    step = image_match.analysisRun.makeStep('Histogram', 75, 100, 100);
+    processed = image_match.analysisRun.applyPipeline({source}, step, reference);
     out = processed{1};
 
     assert(isequal(size(out), size(source)), ...
@@ -117,10 +117,10 @@ end
 function checkReferenceIsSeparateFromBatchSources()
     [source, reference] = syntheticColorPair();
     steps = [ ...
-        image_match.ops.makeStep('White balance', 100, 100, 100); ...
-        image_match.ops.makeStep('Tone only', 100, 100, 100)];
+        image_match.analysisRun.makeStep('White balance', 100, 100, 100); ...
+        image_match.analysisRun.makeStep('Tone only', 100, 100, 100)];
 
-    processed = image_match.ops.applyPipeline({source}, steps, reference);
+    processed = image_match.analysisRun.applyPipeline({source}, steps, reference);
 
     assert(numel(processed) == 1, ...
         'Reference image should not be included in the processed source batch.');
@@ -138,7 +138,7 @@ function checkReadImagesAcceptsFilePanelCellPaths()
     imwrite(uint8(90 * ones(8, 9, 3)), sourcePath);
     imwrite(uint8(110 * ones(8, 9, 3)), referencePath);
 
-    items = image_match.io.readImages({sourcePath, referencePath});
+    items = image_match.sourceFiles.readImages({sourcePath, referencePath});
     assert(numel(items) == 2, ...
         'Image match reader should accept filePanel cell-array paths.');
     assert(items(1).path == string(sourcePath), ...
@@ -148,12 +148,12 @@ function checkReadImagesAcceptsFilePanelCellPaths()
 end
 
 function checkResultTableReportsExportSizeNotPreviewSize()
-    item = image_match.state.emptyItem();
+    item = image_match.appState.emptyItem();
     item.name = "source.png";
     item.image = zeros(2600, 3900, 3);
     previewImage = zeros(1500, 2250, 3);
 
-    data = image_match.view.resultTableData(item, previewImage, 0);
+    data = image_match.userInterface.resultTableData(item, previewImage, 0);
     metricNames = string(data(:, 1));
     outputValue = string(data(metricNames == "Output size", 2));
 
@@ -172,10 +172,10 @@ function checkManifestAndExportContract()
     imwrite(uint8(180 * ones(10, 12, 3)), referencePath);
     imwrite(uint8(255 * ones(5, 5, 3)), fullfile(folder, 'sample_matched.png'));
 
-    items = image_match.io.readImages(sourcePath);
-    referenceItem = image_match.io.readImages(referencePath);
-    steps = image_match.ops.makeStep('Balanced', 100, 100, 100);
-    payload = image_match.export.writeOutputs(items, referenceItem, steps, struct( ...
+    items = image_match.sourceFiles.readImages(sourcePath);
+    referenceItem = image_match.sourceFiles.readImages(referencePath);
+    steps = image_match.analysisRun.makeStep('Balanced', 100, 100, 100);
+    payload = image_match.resultFiles.writeOutputs(items, referenceItem, steps, struct( ...
         'outputFolder', string(folder), ...
         'format', 'PNG'));
 
@@ -191,7 +191,7 @@ function checkManifestAndExportContract()
     assert(isfile(payload.manifestPath), ...
         'Batch export should write a manifest CSV.');
 
-    T = image_match.export.buildManifest(payload.results);
+    T = image_match.resultFiles.buildManifest(payload.results);
     assert(isequal(T.Properties.VariableNames, expectedManifestColumns()), ...
         'Image match manifest columns changed.');
     assert(T.StepCount(1) == 1, 'Manifest should preserve step count.');
@@ -199,28 +199,28 @@ end
 
 function checkExportTaskFingerprintTracksReferenceOptionsAndSteps()
     [sourceImage, referenceImage] = syntheticColorPair();
-    item = image_match.state.emptyItem();
+    item = image_match.appState.emptyItem();
     item.path = "source.png";
     item.name = "source.png";
     item.image = sourceImage;
-    referenceItem = image_match.state.emptyItem();
+    referenceItem = image_match.appState.emptyItem();
     referenceItem.path = "reference.png";
     referenceItem.name = "reference.png";
     referenceItem.image = referenceImage;
-    step = image_match.ops.makeStep('Balanced', 100, 100, 100);
+    step = image_match.analysisRun.makeStep('Balanced', 100, 100, 100);
 
-    base = image_match.state.exportTask(item, referenceItem, step, struct( ...
+    base = image_match.appState.exportTask(item, referenceItem, step, struct( ...
         'outputFolder', "out_a", ...
         'format', 'PNG'));
-    repeated = image_match.state.exportTask(item, referenceItem, step, struct( ...
+    repeated = image_match.appState.exportTask(item, referenceItem, step, struct( ...
         'outputFolder', "out_a", ...
         'format', 'PNG'));
     changedReference = referenceItem;
     changedReference.path = "reference_b.png";
-    changedReferenceTask = image_match.state.exportTask(item, changedReference, ...
+    changedReferenceTask = image_match.appState.exportTask(item, changedReference, ...
         step, struct('outputFolder', "out_a", 'format', 'PNG'));
-    changedStep = image_match.state.exportTask(item, referenceItem, ...
-        image_match.ops.makeStep('Tone only', 100, 100, 0), ...
+    changedStep = image_match.appState.exportTask(item, referenceItem, ...
+        image_match.analysisRun.makeStep('Tone only', 100, 100, 0), ...
         struct('outputFolder', "out_a", 'format', 'PNG'));
 
     assert(base.fingerprint == repeated.fingerprint, ...
@@ -233,7 +233,7 @@ end
 
 function checkPreviewImageDownsamplesLargeInputs()
     img = repmat(linspace(0, 1, 160), 120, 1);
-    preview = image_match.view.previewImage(img, 50);
+    preview = image_match.userInterface.previewImage(img, 50);
     assert(size(preview, 3) == 3, ...
         'Image-match preview should render grayscale inputs as RGB.');
     assert(size(preview, 1) <= 50, ...
