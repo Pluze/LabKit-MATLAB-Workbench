@@ -2,7 +2,7 @@
 % response_review_stats.definition. Output maps semantic action ids to
 % handlers used by labkit.ui.app.run. Handlers own workflow transitions,
 % metric loading, and export side effects.
-function actions = table()
+function actions = definitionActions()
     actions = struct( ...
         "startup", @onStartup, ...
         "inputChosen", @onInputChosen, ...
@@ -100,14 +100,14 @@ function state = onExportMetrics(state, ~, services)
     end
     outputPath = fullfile(char(state.outputFolder), ...
         "response_review_metrics.csv");
-    response_review_stats.export.writeMetricsCsv(state.metrics, outputPath);
+    response_review_stats.resultFiles.writeMetricsCsv(state.metrics, outputPath);
     state.statusMessage = "Exported response-review metrics.";
     state.lastAction = "Exported metrics";
     addLog(services, "Exported metrics CSV: " + displayPath(outputPath));
 end
 
 function state = onResetWorkflow(~, ~, services)
-    state = response_review_stats.state.initial();
+    state = response_review_stats.appLifecycle.createInitialState();
     addLog(services, "Reset Response Review Stats state.");
 end
 
@@ -138,13 +138,13 @@ function state = loadMetricsFromState(state, actionLabel, services)
             state.aligned = [];
         else
             T = readtable(char(state.inputFile));
-            segments = response_review_stats.io.parseSegmentTable(T);
+            segments = response_review_stats.sourceFiles.parseSegmentTable(T);
             opts = struct( ...
                 "baselineWindowSec", state.baselineWindowSec, ...
                 "noiseWindowSec", state.noiseWindowSec);
-            state.aligned = response_review_stats.ops.alignSegments( ...
+            state.aligned = response_review_stats.analysisRun.alignSegments( ...
                 segments, opts);
-            state.metrics = response_review_stats.ops.measureAlignedSegments( ...
+            state.metrics = response_review_stats.analysisRun.measureAlignedSegments( ...
                 state.aligned, opts);
         end
     catch ME
@@ -158,7 +158,7 @@ function state = loadMetricsFromState(state, actionLabel, services)
         addLog(services, "Metric load failed: " + state.statusMessage);
         return;
     end
-    state.summary = response_review_stats.ops.summarizeMetrics(state.metrics);
+    state.summary = response_review_stats.analysisRun.summarizeMetrics(state.metrics);
     state.statusMessage = sprintf("Loaded %d metric row(s).", ...
         height(state.metrics));
     state.lastAction = string(actionLabel);

@@ -1,7 +1,7 @@
 % App-owned renderer for Response Review Stats. Expected caller is
 % labkit.ui.app.run after actions update state. Inputs are app state and UI
 % registry. Side effects are limited to UI control, table, and axes updates.
-function render(state, ui, ~)
+function updateWorkbenchFromState(state, ui, ~)
     labkit.ui.view.setValue(ui, "inputFile", fileValue(state.inputFile));
     labkit.ui.view.setValue(ui, "baselineWindowSec", state.baselineWindowSec);
     labkit.ui.view.setValue(ui, "noiseWindowSec", state.noiseWindowSec);
@@ -14,10 +14,10 @@ function render(state, ui, ~)
         strlength(state.outputFolder) > 0);
     labkit.ui.view.setValue(ui, "statusField", char(state.statusMessage));
     ui.controls.summaryTable.table.Data = ...
-        response_review_stats.view.summaryTableData(state);
+        response_review_stats.userInterface.summaryTableData(state);
     ui.controls.details.textArea.Value = ...
-        response_review_stats.view.detailLines(state);
-    response_review_stats.view.drawStatsPreview( ...
+        response_review_stats.userInterface.detailLines(state);
+    response_review_stats.userInterface.drawStatsPreview( ...
         ui.controls.preview.primaryAxes, state);
 end
 

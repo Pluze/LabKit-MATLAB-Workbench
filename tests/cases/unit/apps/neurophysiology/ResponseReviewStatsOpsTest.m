@@ -14,13 +14,13 @@ classdef ResponseReviewStatsOpsTest < matlab.unittest.TestCase
             Signal2(Time_s == 0.011) = -2;
             T = table(Time_s, Signal1, Signal2);
 
-            segments = response_review_stats.io.parseSegmentTable(T);
-            aligned = response_review_stats.ops.alignSegments(segments, ...
+            segments = response_review_stats.sourceFiles.parseSegmentTable(T);
+            aligned = response_review_stats.analysisRun.alignSegments(segments, ...
                 struct("baselineWindowSec", [0 0.002]));
-            metrics = response_review_stats.ops.measureAlignedSegments(aligned, ...
+            metrics = response_review_stats.analysisRun.measureAlignedSegments(aligned, ...
                 struct("baselineWindowSec", [0 0.002], ...
                 "noiseWindowSec", [0 0.002]));
-            summary = response_review_stats.ops.summarizeMetrics(metrics);
+            summary = response_review_stats.analysisRun.summarizeMetrics(metrics);
 
             testCase.verifyEqual(numel(segments), 2);
             testCase.verifyEqual(size(aligned.values, 2), 2);
@@ -34,7 +34,7 @@ classdef ResponseReviewStatsOpsTest < matlab.unittest.TestCase
 
             metrics = table(["cp"; "cp"; "ta"], [3; 5; 2], [20; 22; 10], ...
                 'VariableNames', {'pairId', 'peakToPeak', 'snrDb'});
-            summary = response_review_stats.ops.summarizeMetrics(metrics);
+            summary = response_review_stats.analysisRun.summarizeMetrics(metrics);
 
             testCase.verifyEqual(height(summary), 2);
             testCase.verifyEqual(summary.Group(1), "cp");

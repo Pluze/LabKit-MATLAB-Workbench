@@ -1,7 +1,7 @@
 % Expected caller: response_review_stats.definition. Inputs are app callback
 % handles. Output is a data-only UI 3.0 workbench spec.
-function spec = buildSpec(callbacks)
-%BUILDSPEC Build the Response Review Stats UI spec.
+function spec = buildWorkbenchSpec(callbacks)
+%BUILDWORKBENCHSPEC Build the Response Review Stats UI spec.
 
     spec = labkit.ui.spec.app("response_review_stats", ...
         "Response Review Stats", ...
@@ -101,13 +101,13 @@ function section = summarySection()
         labkit.ui.spec.resultTable("summaryTable", ...
             "Response Review Stats Summary", ...
             "columns", {"Field", "Value"}, ...
-            "data", response_review_stats.view.summaryTableData(struct()))});
+            "data", response_review_stats.userInterface.summaryTableData(struct()))});
 end
 
 function section = detailsSection()
     section = labkit.ui.spec.section("detailsSection", "Details", { ...
         labkit.ui.spec.statusPanel("details", "Details", ...
-            "value", response_review_stats.view.detailLines(struct()))});
+            "value", response_review_stats.userInterface.detailLines(struct()))});
 end
 
 function workspace = previewWorkspace(callbacks)

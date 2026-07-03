@@ -39,7 +39,7 @@ classdef NeurophysiologyWorkflowSpecTest < matlab.unittest.TestCase
         function statsWorkflowAutoLoadHasRefreshAndExport(testCase)
             setupLabKitTestPath();
 
-            spec = response_review_stats.ui.buildSpec(struct());
+            spec = response_review_stats.userInterface.buildWorkbenchSpec(struct());
 
             testCase.verifyEqual(tabTitles(spec), ...
                 ["Setup", "Review", "Export", "Log"]);
