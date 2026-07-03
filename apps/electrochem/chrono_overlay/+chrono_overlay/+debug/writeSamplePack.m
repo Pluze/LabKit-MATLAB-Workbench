@@ -1,4 +1,4 @@
-% Expected caller: chrono_overlay.run during debug launch and unit tests.
+% Expected caller: chrono_overlay.actions.table startup action and unit tests.
 % Input is a LabKit debug context. Output is a deterministic synthetic DTA
 % sample pack. Side effects: writes anonymous debug input files under the
 % debug samples folder and records a session manifest when available.
