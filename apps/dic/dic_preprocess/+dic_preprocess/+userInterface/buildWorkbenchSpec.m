@@ -1,7 +1,7 @@
-% Expected caller: dic_preprocess.ui.runApp. Input is a callback struct whose
+% Expected caller: dic_preprocess.definition. Input is a callback struct whose
 % fields are app-owned callback handles. Output is a data-only UI 3.0
 % workbench spec for the DIC Preprocess app.
-function spec = buildSpec(callbacks)
+function spec = buildWorkbenchSpec(callbacks, ~)
 
     previewItems = {'Current pair', 'Current moving image', ...
         'False-color overlay', 'Original pair', 'ROI mask'};

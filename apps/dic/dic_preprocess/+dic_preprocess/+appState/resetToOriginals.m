@@ -11,5 +11,5 @@ function S = resetToOriginals(S)
     S.cropReference = [];
     S.cropMoving = [];
     S.cropRect = [];
-    S = dic_preprocess.state.clearOperationDerivedState(S);
+    S = dic_preprocess.appState.clearOperationDerivedState(S);
 end

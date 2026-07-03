@@ -1,9 +1,9 @@
-% App-owned action table for DIC preprocess. Expected caller is
+% App-owned action registry for DIC preprocess. Expected caller is
 % dic_preprocess.definition. Output maps semantic action ids to handlers used
 % by labkit.ui.app.run. The handlers preserve the existing ROI-edit workflow
 % while moving package-root lifecycle orchestration into the runtime.
-function actions = table()
-%TABLE Build the DIC preprocess runtime action map.
+function actions = definitionActions()
+%DEFINITIONACTIONS Build the DIC preprocess runtime action map.
 
     S = [];
     ui = [];
@@ -54,7 +54,7 @@ function actions = table()
         imageRuntime = labkit.ui.tool.createRuntime(ui.topAxes, ...
             struct('figure', fig));
         ui.imageRuntime = imageRuntime;
-        controls = dic_preprocess.ui.mapControlHandles(ui);
+        controls = dic_preprocess.userInterface.mapControlHandles(ui);
         txtSummary = ui.controls.summaryText.textArea;
         txtDetails = ui.controls.detailsText.textArea;
         ddPreview = controls.ddPreview;
@@ -159,7 +159,7 @@ function actions = table()
             return;
         end
         filepath = paths(1);
-        S = dic_preprocess.state.setLoadedImage( ...
+        S = dic_preprocess.appState.setLoadedImage( ...
             S, 'reference', filepath, imread(filepath));
         resetWorkflowStateForNewInput();
         addLog(sprintf('Loaded reference image: %s', filepath));
@@ -183,7 +183,7 @@ function actions = table()
             return;
         end
         filepath = paths(1);
-        S = dic_preprocess.state.setLoadedImage( ...
+        S = dic_preprocess.appState.setLoadedImage( ...
             S, 'moving', filepath, imread(filepath));
         resetWorkflowStateForNewInput();
         addLog(sprintf('Loaded moving image: %s', filepath));
@@ -201,7 +201,7 @@ function actions = table()
     end
 
     function onAlign(~, ~)
-        if dic_preprocess.ui.alertIfMissingImagePair(fig, S, ...
+        if dic_preprocess.userInterface.alertIfMissingImagePair(fig, S, ...
                 'Load both reference and moving images before alignment.', ...
                 'Missing images')
             return;
@@ -216,27 +216,27 @@ function actions = table()
         end
 
         pushHistory('manual alignment');
-        [alignedImage, tform] = dic_preprocess.ops.alignMovingToReference( ...
+        [alignedImage, tform] = dic_preprocess.analysisRun.alignMovingToReference( ...
             S.currentReferenceImage, S.currentMovingImage, fixedPoints, movingPoints);
         S.currentMovingImage = alignedImage;
         S.alignedImage = alignedImage;
         clearDerivedStateAndMaskEditor();
         ddPreview.Value = 'False-color overlay';
         addLog(sprintf('Aligned image using %d point pair(s).', size(movingPoints, 1)));
-        txtDetails.Value = dic_preprocess.view.transformSummary( ...
+        txtDetails.Value = dic_preprocess.userInterface.transformSummary( ...
             tform, size(S.currentReferenceImage), size(S.currentMovingImage));
         refreshPreview();
     end
 
     function onAutoAlign(~, ~)
-        if dic_preprocess.ui.alertIfMissingImagePair(fig, S, ...
+        if dic_preprocess.userInterface.alertIfMissingImagePair(fig, S, ...
                 'Load both reference and moving images before automatic alignment.', ...
                 'Missing images')
             return;
         end
 
         try
-            [alignedImage, tform, method] = dic_preprocess.ops.autoAlignMovingToReference( ...
+            [alignedImage, tform, method] = dic_preprocess.analysisRun.autoAlignMovingToReference( ...
                 S.currentReferenceImage, S.currentMovingImage);
         catch err
             labkit.ui.app.showAlert(fig, sprintf('Automatic alignment failed:\n%s', err.message), 'Auto align failed');
@@ -250,33 +250,33 @@ function actions = table()
         clearDerivedStateAndMaskEditor();
         ddPreview.Value = 'False-color overlay';
         addLog(sprintf('Automatically aligned current pair using %s.', method));
-        txtDetails.Value = dic_preprocess.view.transformSummary( ...
+        txtDetails.Value = dic_preprocess.userInterface.transformSummary( ...
             tform, size(S.currentReferenceImage), size(S.currentMovingImage));
         refreshPreview();
     end
 
     function onStartCropRoi(~, ~)
-        if dic_preprocess.ui.alertIfMissingImagePair(fig, S, ...
+        if dic_preprocess.userInterface.alertIfMissingImagePair(fig, S, ...
                 'Load both reference and moving images before cropping.', ...
                 'Missing images')
             return;
         end
 
-        S = dic_preprocess.ui.clearCropRoiState(S, controls);
-        S = dic_preprocess.ui.clearMaskRoiState(S, controls);
+        S = dic_preprocess.userInterface.clearCropRoiState(S, controls);
+        S = dic_preprocess.userInterface.clearMaskRoiState(S, controls);
 
         S.cropReference = [];
         S.cropMoving = [];
-        rect = dic_preprocess.ops.defaultSquareRect(size(S.currentReferenceImage));
+        rect = dic_preprocess.analysisRun.defaultSquareRect(size(S.currentReferenceImage));
         S.cropRect = rect;
-        cropUi = dic_preprocess.ui.startCropRoi(ui, ...
+        cropUi = dic_preprocess.userInterface.startCropRoi(ui, ...
             S.currentReferenceImage, S.currentMovingImage, rect, @onCropRoiMoved);
         S.cropRoiTop = cropUi.top;
         S.cropRoiBottom = cropUi.bottom;
         S.cropRoiListeners = cropUi.listeners;
         btnApplyCrop.Enable = 'on';
         btnCancelCrop.Enable = 'on';
-        txtDetails.Value = dic_preprocess.view.cropSelectionSummary(rect);
+        txtDetails.Value = dic_preprocess.userInterface.cropSelectionSummary(rect);
         addLog('Started crop ROI on the current pair preview.');
         refreshSummary();
     end
@@ -287,7 +287,7 @@ function actions = table()
             return;
         end
 
-        rect = dic_preprocess.ops.squareRectInsideImage(S.cropRoiTop.Position, size(S.currentReferenceImage));
+        rect = dic_preprocess.analysisRun.squareRectInsideImage(S.cropRoiTop.Position, size(S.currentReferenceImage));
         pushHistory('crop');
         S.cropRect = rect;
         S.currentReferenceImage = imcrop(S.currentReferenceImage, rect);
@@ -295,18 +295,18 @@ function actions = table()
         S.cropReference = S.currentReferenceImage;
         S.cropMoving = S.currentMovingImage;
         clearDerivedStateAndMaskEditor();
-        S = dic_preprocess.ui.clearCropRoiState(S, controls);
+        S = dic_preprocess.userInterface.clearCropRoiState(S, controls);
         ddPreview.Value = 'Current pair';
-        dic_preprocess.ui.drawPreview(ui, ...
-            dic_preprocess.view.previewRequest(S, 'Current pair'));
+        dic_preprocess.userInterface.drawPreview(ui, ...
+            dic_preprocess.userInterface.previewRequest(S, 'Current pair'));
         addLog(sprintf('Cropped current pair with [%g %g %g %g].', ...
             rect(1), rect(2), rect(3), rect(4)));
-        txtDetails.Value = dic_preprocess.view.cropSummary(rect);
+        txtDetails.Value = dic_preprocess.userInterface.cropSummary(rect);
         refreshSummary();
     end
 
     function onCancelCropRoi(~, ~)
-        S = dic_preprocess.ui.clearCropRoiState(S, controls);
+        S = dic_preprocess.userInterface.clearCropRoiState(S, controls);
         addLog('Crop ROI cancelled.');
         refreshPreview();
     end
@@ -317,12 +317,12 @@ function actions = table()
         else
             pos = S.cropRoiTop.Position;
         end
-        rect = dic_preprocess.ops.squareRectInsideImage(pos, size(S.currentReferenceImage));
+        rect = dic_preprocess.analysisRun.squareRectInsideImage(pos, size(S.currentReferenceImage));
         S.cropRect = rect;
         if ~isempty(S.cropRoiBottom) && isvalid(S.cropRoiBottom)
             S.cropRoiBottom.Position = rect;
         end
-        txtDetails.Value = dic_preprocess.view.cropSelectionSummary(rect);
+        txtDetails.Value = dic_preprocess.userInterface.cropSelectionSummary(rect);
     end
 
     function onUndoEdit(~, ~)
@@ -333,14 +333,14 @@ function actions = table()
 
         snapshot = S.history(end);
         S.history(end) = [];
-        S = dic_preprocess.ui.clearCropRoiState(S, controls);
-        S = dic_preprocess.ui.clearMaskRoiState(S, controls);
-        S = dic_preprocess.state.restoreEditSnapshot(S, snapshot);
+        S = dic_preprocess.userInterface.clearCropRoiState(S, controls);
+        S = dic_preprocess.userInterface.clearMaskRoiState(S, controls);
+        S = dic_preprocess.appState.restoreEditSnapshot(S, snapshot);
         ddPreview.Value = 'Current pair';
         addLog(sprintf('Undid %s.', snapshot.description));
         txtDetails.Value = {sprintf('Restored state before %s.', snapshot.description)};
         refreshPreview();
-        dic_preprocess.ui.updateUndoButton(controls, S);
+        dic_preprocess.userInterface.updateUndoButton(controls, S);
     end
 
     function onResetToOriginals(~, ~)
@@ -349,9 +349,9 @@ function actions = table()
             return;
         end
         pushHistory('reset to originals');
-        S = dic_preprocess.ui.clearCropRoiState(S, controls);
-        S = dic_preprocess.ui.clearMaskRoiState(S, controls);
-        S = dic_preprocess.state.resetToOriginals(S);
+        S = dic_preprocess.userInterface.clearCropRoiState(S, controls);
+        S = dic_preprocess.userInterface.clearMaskRoiState(S, controls);
+        S = dic_preprocess.appState.resetToOriginals(S);
         ddPreview.Value = 'Current pair';
         addLog('Reset current working pair to the original loaded images.');
         txtDetails.Value = {'Current working pair reset to originals.'};
@@ -359,13 +359,13 @@ function actions = table()
     end
 
     function onSaveCurrentImages(~, ~)
-        if dic_preprocess.ui.alertIfMissingImagePair(fig, S, ...
+        if dic_preprocess.userInterface.alertIfMissingImagePair(fig, S, ...
                 'Load both images before saving the current pair.', ...
                 'Save current images')
             return;
         end
 
-        [outputs, cancelled] = dic_preprocess.io.saveCurrentImages( ...
+        [outputs, cancelled] = dic_preprocess.sourceFiles.saveCurrentImages( ...
             S.currentReferenceImage, S.currentMovingImage, ...
             S.referencePath, S.movingPath, ...
             labkit.ui.app.defaultDialogFolder("output"));
@@ -384,19 +384,19 @@ function actions = table()
             return;
         end
 
-        S = dic_preprocess.ui.clearCropRoiState(S, controls);
-        S = dic_preprocess.ui.clearMaskRoiState(S, controls);
+        S = dic_preprocess.userInterface.clearCropRoiState(S, controls);
+        S = dic_preprocess.userInterface.clearMaskRoiState(S, controls);
         S.maskImage = [];
         S.maskPoints = [];
         S.maskHistory = S.maskHistory([]);
         S.maskBoundaryStyle = string(ddBoundaryStyle.Value);
-        S.maskEditor = dic_preprocess.ui.startMaskEdit(ui, imageRuntime, ...
+        S.maskEditor = dic_preprocess.userInterface.startMaskEdit(ui, imageRuntime, ...
             S.currentReferenceImage, S.maskPoints, ...
             S.maskBoundaryStyle, @onMaskEditorChanged);
-        S = dic_preprocess.ui.setMaskEditControls(S, controls, true);
+        S = dic_preprocess.userInterface.setMaskEditControls(S, controls, true);
         addLog('Started mask ROI canvas. Add/insert, move, or delete anchors; add/subtract boundaries on the mask canvas.');
         txtDetails.Value = {'ROI edit started. Double-click blank space to add/insert points, drag points to move them, double-click points to delete them.'};
-        dic_preprocess.ui.updateMaskEditControls(controls, S);
+        dic_preprocess.userInterface.updateMaskEditControls(controls, S);
     end
 
     function onMaskEditorChanged(points, ~)
@@ -442,8 +442,8 @@ function actions = table()
 
     function updateMaskDraft()
         updateMaskCurveGraphics();
-        dic_preprocess.ui.updateMaskEditControls(controls, S);
-        txtDetails.Value = dic_preprocess.view.maskDraftDetails(S.maskPoints);
+        dic_preprocess.userInterface.updateMaskEditControls(controls, S);
+        txtDetails.Value = dic_preprocess.userInterface.maskDraftDetails(S.maskPoints);
         refreshSummary();
     end
 
@@ -463,7 +463,7 @@ function actions = table()
             return;
         end
         pushMaskHistory('add boundary to mask');
-        S.maskImage = dic_preprocess.state.applyBoundaryToMask( ...
+        S.maskImage = dic_preprocess.appState.applyBoundaryToMask( ...
             S.maskImage, S.currentReferenceImage, boundaryMask, 'add');
         showMaskCanvas('ROI mask canvas');
         addLog(sprintf('Added %s boundary to ROI mask canvas.', char(S.maskBoundaryStyle)));
@@ -476,7 +476,7 @@ function actions = table()
             return;
         end
         pushMaskHistory('subtract boundary from mask');
-        S.maskImage = dic_preprocess.state.applyBoundaryToMask( ...
+        S.maskImage = dic_preprocess.appState.applyBoundaryToMask( ...
             S.maskImage, S.currentReferenceImage, boundaryMask, 'subtract');
         showMaskCanvas('ROI mask canvas');
         addLog(sprintf('Subtracted %s boundary from ROI mask canvas.', char(S.maskBoundaryStyle)));
@@ -489,7 +489,7 @@ function actions = table()
         end
         snapshot = S.maskHistory(end);
         S.maskHistory(end) = [];
-        S = dic_preprocess.state.restoreMaskSnapshot(S, snapshot);
+        S = dic_preprocess.appState.restoreMaskSnapshot(S, snapshot);
         if ~isempty(S.maskEditor)
             S.maskEditor.setPoints(S.maskPoints);
         end
@@ -509,7 +509,7 @@ function actions = table()
             S.maskImage = boundaryMask;
         end
 
-        [out, cancelled] = dic_preprocess.io.saveMask( ...
+        [out, cancelled] = dic_preprocess.sourceFiles.saveMask( ...
             S.maskImage, S.referencePath, ...
             labkit.ui.app.defaultDialogFolder("output"));
         if cancelled
@@ -524,8 +524,8 @@ function actions = table()
         [boundaryMask, ok] = currentBoundaryMask(showAlert);
         if ok
             ddPreview.Value = 'ROI mask';
-            dic_preprocess.ui.showImage(ui, 'current', ...
-                dic_preprocess.ops.maskRgb(boundaryMask), 'ROI boundary preview');
+            dic_preprocess.userInterface.showImage(ui, 'current', ...
+                dic_preprocess.analysisRun.maskRgb(boundaryMask), 'ROI boundary preview');
             updateMaskCurveGraphics();
             addLog(sprintf('Previewed %s ROI boundary with %d anchors.', ...
                 char(S.maskBoundaryStyle), size(S.maskPoints, 1)));
@@ -541,7 +541,7 @@ function actions = table()
     end
 
     function [boundaryMask, ok] = currentBoundaryMask(showAlert)
-        [boundaryMask, ok] = dic_preprocess.ops.boundaryMaskFromEditor( ...
+        [boundaryMask, ok] = dic_preprocess.analysisRun.boundaryMaskFromEditor( ...
             S.maskPoints, size(S.currentReferenceImage), ...
             S.maskBoundaryStyle, S.maskEditor);
         if ~ok && showAlert
@@ -551,41 +551,41 @@ function actions = table()
 
     function showMaskCanvas(titleText)
         ddPreview.Value = 'ROI mask';
-        dic_preprocess.ui.drawMaskCanvas(ui, ...
+        dic_preprocess.userInterface.drawMaskCanvas(ui, ...
             S.currentReferenceImage, S.maskImage, titleText);
-        dic_preprocess.ui.updateMaskEditControls(controls, S);
+        dic_preprocess.userInterface.updateMaskEditControls(controls, S);
     end
 
     function pushMaskHistory(description)
-        S.maskHistory = dic_preprocess.state.appendMaskHistory( ...
+        S.maskHistory = dic_preprocess.appState.appendMaskHistory( ...
             S.maskHistory, S.maskImage, S.maskPoints, description);
-        dic_preprocess.ui.updateMaskEditControls(controls, S);
+        dic_preprocess.userInterface.updateMaskEditControls(controls, S);
     end
 
     function refreshPreview()
-        S = dic_preprocess.ui.clearCropRoiState(S, controls);
-        S = dic_preprocess.ui.clearMaskRoiState(S, controls);
-        request = dic_preprocess.view.previewRequest(S, ddPreview.Value);
-        dic_preprocess.ui.drawPreview(ui, request);
+        S = dic_preprocess.userInterface.clearCropRoiState(S, controls);
+        S = dic_preprocess.userInterface.clearMaskRoiState(S, controls);
+        request = dic_preprocess.userInterface.previewRequest(S, ddPreview.Value);
+        dic_preprocess.userInterface.drawPreview(ui, request);
         refreshSummary();
     end
 
     function refreshSummary()
         labkit.ui.view.setValue(ui, 'referenceFile', fileValue(S.referencePath));
         labkit.ui.view.setValue(ui, 'movingFile', fileValue(S.movingPath));
-        txtSummary.Value = dic_preprocess.view.buildSummary(S);
-        dic_preprocess.ui.updateUndoButton(controls, S);
+        txtSummary.Value = dic_preprocess.userInterface.buildSummary(S);
+        dic_preprocess.userInterface.updateUndoButton(controls, S);
     end
 
     function resetWorkflowStateForNewInput()
-        S = dic_preprocess.state.resetForNewInput(S);
-        S = dic_preprocess.ui.clearCropRoiState(S, controls);
-        S = dic_preprocess.ui.clearMaskRoiState(S, controls);
-        dic_preprocess.ui.updateUndoButton(controls, S);
+        S = dic_preprocess.appState.resetForNewInput(S);
+        S = dic_preprocess.userInterface.clearCropRoiState(S, controls);
+        S = dic_preprocess.userInterface.clearMaskRoiState(S, controls);
+        dic_preprocess.userInterface.updateUndoButton(controls, S);
     end
 
     function chooseDefaultPreviewAfterLoad()
-        if dic_preprocess.state.hasImagePair(S)
+        if dic_preprocess.appState.hasImagePair(S)
             ddPreview.Value = 'False-color overlay';
         else
             ddPreview.Value = 'Current pair';
@@ -613,16 +613,16 @@ function items = fileValue(pathValue)
 end
 
     function pushHistory(description)
-        [S.history, appended] = dic_preprocess.state.appendEditHistory( ...
+        [S.history, appended] = dic_preprocess.appState.appendEditHistory( ...
             S.history, S, description);
         if appended
-            dic_preprocess.ui.updateUndoButton(controls, S);
+            dic_preprocess.userInterface.updateUndoButton(controls, S);
         end
     end
 
     function clearDerivedStateAndMaskEditor()
-        S = dic_preprocess.state.clearOperationDerivedState(S);
-        S = dic_preprocess.ui.clearMaskRoiState(S, controls);
+        S = dic_preprocess.appState.clearOperationDerivedState(S);
+        S = dic_preprocess.userInterface.clearMaskRoiState(S, controls);
     end
 
     function addLog(msg)

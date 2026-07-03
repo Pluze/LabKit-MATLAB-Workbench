@@ -5,8 +5,8 @@ function clearCropRoi(listeners, topRoi, bottomRoi)
 %CLEARCROPROI Delete DIC preprocess crop ROI handles.
 
     for iListener = 1:numel(listeners)
-        dic_preprocess.ui.deleteIfValid(listeners{iListener});
+        dic_preprocess.userInterface.deleteIfValid(listeners{iListener});
     end
-    dic_preprocess.ui.deleteIfValid(topRoi);
-    dic_preprocess.ui.deleteIfValid(bottomRoi);
+    dic_preprocess.userInterface.deleteIfValid(topRoi);
+    dic_preprocess.userInterface.deleteIfValid(bottomRoi);
 end

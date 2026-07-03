@@ -9,11 +9,11 @@ function [outfile, cancelled] = saveMask(maskImage, referencePath, fallbackFolde
     if nargin < 3
         fallbackFolder = tempdir;
     end
-    defaultName = dic_preprocess.io.defaultMaskPath(referencePath, fallbackFolder);
+    defaultName = dic_preprocess.sourceFiles.defaultMaskPath(referencePath, fallbackFolder);
     [outfile, cancelled] = labkit.ui.app.promptOutputFile( ...
         {'*.png', 'PNG mask'}, 'Save ROI mask', defaultName);
     if cancelled
         return;
     end
-    dic_preprocess.export.writeMask(maskImage, outfile);
+    dic_preprocess.resultFiles.writeMask(maskImage, outfile);
 end

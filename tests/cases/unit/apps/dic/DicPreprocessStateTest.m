@@ -7,7 +7,7 @@ classdef DicPreprocessStateTest < matlab.unittest.TestCase
 
             state = baseState();
 
-            [history, appended] = dic_preprocess.state.appendEditHistory( ...
+            [history, appended] = dic_preprocess.appState.appendEditHistory( ...
                 state.history, state, 'crop');
 
             testCase.verifyFalse(appended);
@@ -18,19 +18,19 @@ classdef DicPreprocessStateTest < matlab.unittest.TestCase
             setupLabKitTestPath();
 
             state = baseState();
-            state = dic_preprocess.state.setLoadedImage( ...
+            state = dic_preprocess.appState.setLoadedImage( ...
                 state, 'reference', "reference.png", uint8(1));
 
             testCase.verifyEqual(state.referencePath, "reference.png");
             testCase.verifyEqual(state.currentReferenceImage, uint8(1));
-            testCase.verifyFalse(dic_preprocess.state.hasImagePair(state));
+            testCase.verifyFalse(dic_preprocess.appState.hasImagePair(state));
 
-            state = dic_preprocess.state.setLoadedImage( ...
+            state = dic_preprocess.appState.setLoadedImage( ...
                 state, 'moving', "moving.png", uint8(2));
 
             testCase.verifyEqual(state.movingPath, "moving.png");
             testCase.verifyEqual(state.currentMovingImage, uint8(2));
-            testCase.verifyTrue(dic_preprocess.state.hasImagePair(state));
+            testCase.verifyTrue(dic_preprocess.appState.hasImagePair(state));
         end
 
         function appendEditHistoryCapturesAndTrimsSnapshots(testCase)
@@ -47,7 +47,7 @@ classdef DicPreprocessStateTest < matlab.unittest.TestCase
 
             history = state.history;
             for k = 1:3
-                [history, appended] = dic_preprocess.state.appendEditHistory( ...
+                [history, appended] = dic_preprocess.appState.appendEditHistory( ...
                     history, state, sprintf('step%d', k), 2);
                 testCase.verifyTrue(appended);
             end
@@ -63,7 +63,7 @@ classdef DicPreprocessStateTest < matlab.unittest.TestCase
 
             history = struct('maskImage', {}, 'maskPoints', {}, 'description', {});
             for k = 1:4
-                history = dic_preprocess.state.appendMaskHistory( ...
+                history = dic_preprocess.appState.appendMaskHistory( ...
                     history, uint8(k), [k k+1], sprintf('mask%d', k), 3);
             end
 
@@ -76,8 +76,8 @@ classdef DicPreprocessStateTest < matlab.unittest.TestCase
         function maskCanvasInitializesFromReferenceSize(testCase)
             setupLabKitTestPath();
 
-            emptyCanvas = dic_preprocess.state.maskCanvas([], zeros(3, 4, 3, 'uint8'));
-            existingCanvas = dic_preprocess.state.maskCanvas(uint8([0 255]), zeros(3, 4));
+            emptyCanvas = dic_preprocess.appState.maskCanvas([], zeros(3, 4, 3, 'uint8'));
+            existingCanvas = dic_preprocess.appState.maskCanvas(uint8([0 255]), zeros(3, 4));
 
             testCase.verifyEqual(emptyCanvas, zeros(3, 4, 'uint8'));
             testCase.verifyEqual(existingCanvas, uint8([0 255]));
@@ -87,7 +87,7 @@ classdef DicPreprocessStateTest < matlab.unittest.TestCase
             setupLabKitTestPath();
 
             state = populatedState();
-            reset = dic_preprocess.state.resetForNewInput(state);
+            reset = dic_preprocess.appState.resetForNewInput(state);
 
             testCase.verifyEqual(reset.currentReferenceImage, state.referenceImage);
             testCase.verifyEqual(reset.currentMovingImage, state.movingImage);
@@ -104,7 +104,7 @@ classdef DicPreprocessStateTest < matlab.unittest.TestCase
             setupLabKitTestPath();
 
             state = populatedState();
-            reset = dic_preprocess.state.resetToOriginals(state);
+            reset = dic_preprocess.appState.resetToOriginals(state);
 
             testCase.verifyEqual(reset.referencePath, state.referencePath);
             testCase.verifyEqual(reset.currentReferenceImage, state.referenceImage);
@@ -133,8 +133,8 @@ classdef DicPreprocessStateTest < matlab.unittest.TestCase
                 'maskPoints', [5 6; 7 8], ...
                 'description', 'mask');
 
-            state = dic_preprocess.state.restoreEditSnapshot(state, editSnapshot);
-            state = dic_preprocess.state.restoreMaskSnapshot(state, maskSnapshot);
+            state = dic_preprocess.appState.restoreEditSnapshot(state, editSnapshot);
+            state = dic_preprocess.appState.restoreMaskSnapshot(state, maskSnapshot);
 
             testCase.verifyEqual(state.currentReferenceImage, uint8(1));
             testCase.verifyEqual(state.currentMovingImage, uint8(2));
@@ -150,9 +150,9 @@ classdef DicPreprocessStateTest < matlab.unittest.TestCase
             boundary = uint8([0 255 0 0; 0 255 255 0; 0 0 0 0]);
             existing = uint8([255 0 0 0; 0 255 0 0; 0 0 0 0]);
 
-            added = dic_preprocess.state.applyBoundaryToMask([], ...
+            added = dic_preprocess.appState.applyBoundaryToMask([], ...
                 reference, boundary, 'add');
-            subtracted = dic_preprocess.state.applyBoundaryToMask(existing, ...
+            subtracted = dic_preprocess.appState.applyBoundaryToMask(existing, ...
                 reference, boundary, 'subtract');
 
             testCase.verifyEqual(added, boundary);

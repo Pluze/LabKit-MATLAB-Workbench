@@ -7,7 +7,7 @@ classdef DicPreprocessViewTest < matlab.unittest.TestCase
 
             state = baseState();
 
-            lines = dic_preprocess.view.buildSummary(state);
+            lines = dic_preprocess.userInterface.buildSummary(state);
 
             testCase.verifyEqual(lines, { ...
                 'Reference: none', ...
@@ -38,7 +38,7 @@ classdef DicPreprocessViewTest < matlab.unittest.TestCase
                 'maskPoints', {[] []}, ...
                 'description', {'alignment', 'crop'});
 
-            lines = dic_preprocess.view.buildSummary(state);
+            lines = dic_preprocess.userInterface.buildSummary(state);
 
             testCase.verifyEqual(lines, { ...
                 'Reference: reference.png', ...
@@ -52,8 +52,8 @@ classdef DicPreprocessViewTest < matlab.unittest.TestCase
         function cropSummariesPreserveDetailText(testCase)
             setupLabKitTestPath();
 
-            selection = dic_preprocess.view.cropSelectionSummary([10.2 20.7 31.5 31.5]);
-            applied = dic_preprocess.view.cropSummary([1.5 2.5 30 30]);
+            selection = dic_preprocess.userInterface.cropSelectionSummary([10.2 20.7 31.5 31.5]);
+            applied = dic_preprocess.userInterface.cropSummary([1.5 2.5 30 30]);
 
             testCase.verifyEqual(selection, { ...
                 'Active crop source: current reference and current moving images', ...
@@ -69,7 +69,7 @@ classdef DicPreprocessViewTest < matlab.unittest.TestCase
 
             tform = [1 0 0; 0 1 0; 2.5 -3.25 1];
 
-            lines = dic_preprocess.view.transformSummary(tform, [12 20 3], [10 18]);
+            lines = dic_preprocess.userInterface.transformSummary(tform, [12 20 3], [10 18]);
 
             testCase.verifyEqual(lines, { ...
                 'Reference size: 12 x 20', ...
@@ -90,9 +90,9 @@ classdef DicPreprocessViewTest < matlab.unittest.TestCase
             state.movingImage = uint8(2 .* ones(2, 2));
             state.maskImage = uint8([0 255; 255 0]);
 
-            overlay = dic_preprocess.view.previewRequest(state, 'False-color overlay');
-            original = dic_preprocess.view.previewRequest(state, 'Original pair');
-            mask = dic_preprocess.view.previewRequest(state, 'ROI mask');
+            overlay = dic_preprocess.userInterface.previewRequest(state, 'False-color overlay');
+            original = dic_preprocess.userInterface.previewRequest(state, 'Original pair');
+            mask = dic_preprocess.userInterface.previewRequest(state, 'ROI mask');
 
             testCase.verifyEqual(overlay.topTitle, "Current reference");
             testCase.verifyEqual(overlay.bottomTitle, "False-color overlay");
@@ -106,15 +106,15 @@ classdef DicPreprocessViewTest < matlab.unittest.TestCase
         function maskEditControlStateAndDraftDetailsMatchAnchorState(testCase)
             setupLabKitTestPath();
 
-            emptyState = dic_preprocess.view.maskEditControlState(true, ...
+            emptyState = dic_preprocess.userInterface.maskEditControlState(true, ...
                 zeros(0, 2), [], struct('maskImage', {}, ...
                 'maskPoints', {}, 'description', {}));
-            boundaryState = dic_preprocess.view.maskEditControlState(true, ...
+            boundaryState = dic_preprocess.userInterface.maskEditControlState(true, ...
                 [1 1; 2 2; 3 1], uint8([0 255]), ...
                 struct('maskImage', {uint8(1)}, ...
                 'maskPoints', {[1 2]}, 'description', {'mask'}));
-            emptyDetails = dic_preprocess.view.maskDraftDetails(zeros(0, 2));
-            boundaryDetails = dic_preprocess.view.maskDraftDetails([1 1; 2 2; 3 1]);
+            emptyDetails = dic_preprocess.userInterface.maskDraftDetails(zeros(0, 2));
+            boundaryDetails = dic_preprocess.userInterface.maskDraftDetails([1 1; 2 2; 3 1]);
 
             testCase.verifyEqual(emptyState.addBoundary, 'off');
             testCase.verifyEqual(emptyState.undoPoint, 'off');
@@ -125,8 +125,8 @@ classdef DicPreprocessViewTest < matlab.unittest.TestCase
                 'Mask ROI anchors: 0. Need at least 3 anchors to form a closed ROI boundary.'});
             testCase.verifyEqual(boundaryDetails, { ...
                 'Mask ROI anchors: 3. Preview, Add to mask, or Subtract from mask.'});
-            testCase.verifyEqual(dic_preprocess.view.onOff(true), 'on');
-            testCase.verifyEqual(dic_preprocess.view.onOff(false), 'off');
+            testCase.verifyEqual(dic_preprocess.userInterface.onOff(true), 'on');
+            testCase.verifyEqual(dic_preprocess.userInterface.onOff(false), 'off');
         end
     end
 end

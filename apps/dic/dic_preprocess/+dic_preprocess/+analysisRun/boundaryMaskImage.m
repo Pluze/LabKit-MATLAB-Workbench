@@ -5,6 +5,6 @@
 function mask = boundaryMaskImage(points, imageSize, boundaryStyle)
 %BOUNDARYMASKIMAGE Rasterize a DIC preprocess ROI boundary.
 
-    curve = dic_preprocess.ops.maskBoundaryCurve(points, imageSize, boundaryStyle);
-    mask = dic_preprocess.ops.maskFromCurve(curve, imageSize);
+    curve = dic_preprocess.analysisRun.maskBoundaryCurve(points, imageSize, boundaryStyle);
+    mask = dic_preprocess.analysisRun.maskFromCurve(curve, imageSize);
 end

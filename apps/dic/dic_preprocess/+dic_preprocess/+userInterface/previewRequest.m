@@ -27,7 +27,7 @@ function request = previewRequest(S, previewValue)
             request.topImage = S.currentReferenceImage;
             request.topTitle = "Current reference";
             if ~isempty(S.maskImage)
-                request.bottomImage = dic_preprocess.ops.maskRgb(S.maskImage);
+                request.bottomImage = dic_preprocess.analysisRun.maskRgb(S.maskImage);
                 request.bottomTitle = "ROI mask";
             end
         otherwise
@@ -37,7 +37,7 @@ function request = previewRequest(S, previewValue)
                 request.bottomImage = S.currentMovingImage;
                 request.bottomTitle = previewValue;
             elseif previewValue == "False-color overlay" && hasImagePair(S)
-                request.bottomImage = dic_preprocess.ops.makeFalseColorOverlay( ...
+                request.bottomImage = dic_preprocess.analysisRun.makeFalseColorOverlay( ...
                     S.currentReferenceImage, S.currentMovingImage);
                 request.bottomTitle = previewValue;
             end

@@ -6,6 +6,6 @@ function S = setMaskEditControls(S, controls, enabled)
 %SETMASKEDITCONTROLS Set DIC preprocess mask edit control state.
 
     S.maskEditActive = enabled;
-    controls.ddBoundaryStyle.Enable = dic_preprocess.view.onOff(enabled);
-    dic_preprocess.ui.updateMaskEditControls(controls, S);
+    controls.ddBoundaryStyle.Enable = dic_preprocess.userInterface.onOff(enabled);
+    dic_preprocess.userInterface.updateMaskEditControls(controls, S);
 end

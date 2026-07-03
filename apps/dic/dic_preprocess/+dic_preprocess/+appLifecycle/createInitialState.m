@@ -1,8 +1,8 @@
 % Expected caller: dic_preprocess.definition. Output is the app state struct with
 % default image, crop, mask, and undo-history fields. Side effects: none.
 
-function S = initialState()
-%INITIALSTATE Build the default DIC preprocess app state.
+function S = createInitialState()
+%CREATEINITIALSTATE Build the default DIC preprocess app state.
 
     S = struct();
     S.referencePath = "";

@@ -4,5 +4,5 @@
 function updateUndoButton(controls, S)
 %UPDATEUNDOBUTTON Apply DIC preprocess undo-button state.
 
-    controls.btnUndoEdit.Enable = dic_preprocess.view.onOff(~isempty(S.history));
+    controls.btnUndoEdit.Enable = dic_preprocess.userInterface.onOff(~isempty(S.history));
 end

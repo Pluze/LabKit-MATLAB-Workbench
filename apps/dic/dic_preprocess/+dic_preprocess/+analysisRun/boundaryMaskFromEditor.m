@@ -13,9 +13,9 @@ function [boundaryMask, ok] = boundaryMaskFromEditor(maskPoints, imageSize, boun
     end
     if ~isempty(maskEditor)
         curve = maskEditor.curvePoints();
-        boundaryMask = dic_preprocess.ops.maskFromCurve(curve, imageSize);
+        boundaryMask = dic_preprocess.analysisRun.maskFromCurve(curve, imageSize);
     else
-        boundaryMask = dic_preprocess.ops.boundaryMaskImage( ...
+        boundaryMask = dic_preprocess.analysisRun.boundaryMaskImage( ...
             maskPoints, imageSize, boundaryStyle);
     end
     ok = true;

@@ -5,7 +5,7 @@
 function S = clearCropRoiState(S, controls)
 %CLEARCROPROISTATE Clear DIC preprocess crop ROI state and controls.
 
-    dic_preprocess.ui.clearCropRoi( ...
+    dic_preprocess.userInterface.clearCropRoi( ...
         S.cropRoiListeners, S.cropRoiTop, S.cropRoiBottom);
     S.cropRoiListeners = {};
     S.cropRoiTop = [];

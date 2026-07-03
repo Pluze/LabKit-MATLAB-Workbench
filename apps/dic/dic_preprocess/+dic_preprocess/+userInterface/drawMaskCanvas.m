@@ -8,6 +8,6 @@ function drawMaskCanvas(ui, referenceImage, maskImage, titleText)
     if isempty(maskImage)
         maskImage = zeros(size(referenceImage, 1), size(referenceImage, 2), 'uint8');
     end
-    dic_preprocess.ui.showImage(ui, 'current', ...
-        dic_preprocess.ops.maskRgb(maskImage), titleText);
+    dic_preprocess.userInterface.showImage(ui, 'current', ...
+        dic_preprocess.analysisRun.maskRgb(maskImage), titleText);
 end

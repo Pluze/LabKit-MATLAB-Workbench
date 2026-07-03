@@ -15,6 +15,6 @@ function S = resetForNewInput(S)
     S.cropReference = [];
     S.cropMoving = [];
     S.cropRect = [];
-    S = dic_preprocess.state.clearOperationDerivedState(S);
+    S = dic_preprocess.appState.clearOperationDerivedState(S);
     S.history = S.history([]);
 end

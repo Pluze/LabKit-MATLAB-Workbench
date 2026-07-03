@@ -4,7 +4,7 @@
 function updateMaskEditControls(controls, S)
 %UPDATEMASKEDITCONTROLS Apply DIC preprocess mask control enable states.
 
-    state = dic_preprocess.view.maskEditControlState( ...
+    state = dic_preprocess.userInterface.maskEditControlState( ...
         S.maskEditActive, S.maskPoints, S.maskImage, S.maskHistory);
     controls.btnPreviewMask.Enable = state.preview;
     controls.btnUnionMask.Enable = state.addBoundary;

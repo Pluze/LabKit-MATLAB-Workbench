@@ -10,5 +10,5 @@ function rect = defaultSquareRect(imageSize)
     side = max(1, round(0.5 * min(H, W)));
     x = round((W - side) / 2) + 1;
     y = round((H - side) / 2) + 1;
-    rect = dic_preprocess.ops.squareRectInsideImage([x y side side], imageSize);
+    rect = dic_preprocess.analysisRun.squareRectInsideImage([x y side side], imageSize);
 end

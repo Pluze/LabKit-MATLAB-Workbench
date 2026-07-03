@@ -5,7 +5,7 @@
 function shown = alertIfMissingImagePair(fig, S, messageText, titleText)
 %ALERTIFMISSINGIMAGEPAIR Alert when DIC preprocess lacks a current image pair.
 
-    shown = ~dic_preprocess.state.hasImagePair(S);
+    shown = ~dic_preprocess.appState.hasImagePair(S);
     if shown
         labkit.ui.app.showAlert(fig, messageText, titleText);
     end
