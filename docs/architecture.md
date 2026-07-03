@@ -104,7 +104,7 @@ App GUIs use the layered UI foundation:
 | --- | --- |
 | App | `labkit.ui.app.define`, `run`, `create`, `dispatchRequest`, `appVersionTitle`, `applyVersionTitle`, `defaultDialogFolder`, `defaultOutputFolder`, `promptOutputFile`, `promptOutputFolder`, `runBusy` |
 | Spec | `labkit.ui.spec.app`, `workspace`, `tab`, `section`, `group`, `field`, `rangeField`, `panner`, `action`, `filePanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `usagePanel` |
-| View | `labkit.ui.view.setValue`, `getValue`, `getFiles`, `setFileSelection`, `setEnabled`, `setLimits`, `appendLog`, `setListItems`, `setListSelection`, `fileLabels`, `filePaths`, `drawImage`, `resetAxes`, `clearAxes` |
+| View | `labkit.ui.view.setValue`, `getValue`, `getFiles`, `setFileSelection`, `setEnabled`, `setLimits`, `appendLog`, `setListItems`, `setListSelection`, `fileLabels`, `filePaths`, `drawImage`, `applyAxesViewportPolicy`, `resetAxes`, `clearAxes` |
 | Tool | `labkit.ui.tool.createRuntime`, `anchorEditor`, `scaleBar`, `scaleBarCalibration`, `zoomAxesAtPoint` |
 | Diagnostics | `labkit.ui.diag.createContext` |
 

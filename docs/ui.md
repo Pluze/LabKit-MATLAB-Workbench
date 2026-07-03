@@ -5,8 +5,8 @@
 | Facade | Owns | Main APIs |
 | --- | --- | --- |
 | `labkit.ui.app` | Declarative app runtime, request dispatch, readiness/busy state, safe dialog defaults, app title versioning. | `define`, `run`, `create`, `dispatchRequest`, `appVersionTitle`, `applyVersionTitle`, `defaultDialogFolder`, `defaultOutputFolder`, `promptOutputFile`, `promptOutputFolder`, `runBusy`, `setCloseGuard`, `showAlert`. |
-| `labkit.ui.spec` | UI 4.0 data-only workbench specs. | `app`, `workspace`, `tab`, `section`, `group`, `field`, `rangeField`, `panner`, `action`, `filePanel`, `toolPanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `usagePanel`. |
-| `labkit.ui.view` | Semantic UI 4.0 registry updates and preview rendering helpers. | `setValue`, `getValue`, `getFiles`, `setFileSelection`, `setEnabled`, `setLimits`, `appendLog`, `setListItems`, `setListSelection`, `fileLabels`, `filePaths`, `fileIndices`, `drawImage`, `resetAxes`, `clearAxes`. |
+| `labkit.ui.spec` | UI 4.1 data-only workbench specs. | `app`, `workspace`, `tab`, `section`, `group`, `field`, `rangeField`, `panner`, `action`, `filePanel`, `toolPanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `usagePanel`. |
+| `labkit.ui.view` | Semantic UI 4.1 registry updates and preview rendering helpers. | `setValue`, `getValue`, `getFiles`, `setFileSelection`, `setEnabled`, `setLimits`, `appendLog`, `setListItems`, `setListSelection`, `fileLabels`, `filePaths`, `fileIndices`, `drawImage`, `applyAxesViewportPolicy`, `resetAxes`, `clearAxes`. |
 | `labkit.ui.tool` | Reusable composed preview tools and interaction runtime. | `createRuntime`, `anchorEditor`, `scaleBar`, `scaleBarCalibration`, `enableAxesPopout`, `popoutAxes`, `zoomAxesAtPoint`. |
 | `labkit.ui.diag` | Debug launch context, visible trace, callback instrumentation, and crash reports. | `createContext`. |
 
@@ -277,7 +277,7 @@ framework readiness flags, or manage loading controls directly.
 Every `labkit.ui.spec.action` callback runs as an app-wide action transaction.
 The framework marks the app busy before invoking the app callback and clears
 that busy state after the callback returns or errors. While the figure is busy,
-other UI 4.0 semantic callbacks return without invoking app code, so repeated
+other UI 4.1 semantic callbacks return without invoking app code, so repeated
 clicks or value changes do not submit duplicate work even when the user waits
 and interacts again before the first action finishes.
 
@@ -294,7 +294,7 @@ callback runs. Use `busyMessage` only when the title text needs to differ from
 the button label.
 
 `labkit.ui.app.runBusy` remains the lower-level helper for custom synchronous
-work that is not launched from a UI 4.0 action:
+work that is not launched from a UI 4.1 action:
 
 ```matlab
 payload = labkit.ui.app.runBusy(fig, ...
@@ -333,6 +333,7 @@ labkit.ui.view.setEnabled(ui, "run", false);
 labkit.ui.view.appendLog(ui, "log", "Loaded image.");
 labkit.ui.view.drawImage(ui, "preview", imageData, ...
     "axis", "raw", "title", "Reference");
+labkit.ui.view.applyAxesViewportPolicy(ax, "curve");
 labkit.ui.view.resetAxes(ui, "preview", "Reference", true, "raw");
 labkit.ui.view.clearAxes(ui, "preview", "difference");
 ```
@@ -344,7 +345,10 @@ They do not create arbitrary controls or expose MATLAB layout primitives.
 helpers. `drawImage` preserves the current axes view when an image is redrawn
 with the same displayed bounds, so overlay refreshes do not throw away a
 user's zoomed preview. Use `resetAxes` or `clearAxes` when an app intentionally
-wants to return the preview to its home view.
+wants to return the preview to its home view. Curve plot helpers should call
+`applyAxesViewportPolicy(ax, "curve")` after redrawing data so file, cycle, or
+axis-selection changes do not keep stale X/Y limits; overlay-only or image ROI
+refreshes should preserve the current viewport.
 
 `logPanel` follows appended lines by default: `appendLog` scrolls the log to the
 bottom after adding a line. Users can use the visible follow button or the log

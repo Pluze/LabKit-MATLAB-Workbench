@@ -23,6 +23,14 @@ function text = fixtureText(filename)
         case {"cv_cyclic_voltammetry_pt_reference.DTA", ...
                 "cv_cyclic_voltammetry_pt_replicate.DTA"}
             text = cvctText();
+        case "cv_cyclic_voltammetry_1cycle.DTA"
+            text = cvctCycleCountText(1);
+        case "cv_cyclic_voltammetry_2cycle.DTA"
+            text = cvctCycleCountText(2);
+        case "cv_cyclic_voltammetry_3cycle.DTA"
+            text = cvctCycleCountText(3);
+        case "cv_cyclic_voltammetry_4cycle.DTA"
+            text = cvctCycleCountText(4);
         case "eis_potentiostatic_zcurve.DTA"
             text = eisText();
         otherwise
@@ -97,6 +105,31 @@ function text = cvctText()
         "1" + tab + "1.000000E+000" + tab + "2.000000E-001" + tab + "4.000000E-006"
         ];
     text = join(lines, newline) + newline;
+end
+
+function text = cvctCycleCountText(count)
+    cycleBlocks = cell(count, 1);
+    for k = 1:count
+        cycleBlocks{k} = cvctCycleLines(k);
+    end
+    lines = [
+        "EXPLAIN"
+        "SCANRATE" + tab + "QUANT" + tab + "1.000000E+002" + tab + "Scan Rate (mV/s)"
+        vertcat(cycleBlocks{:})
+        ];
+    text = join(lines, newline) + newline;
+end
+
+function lines = cvctCycleLines(index)
+    scale = 1 + 0.1 * (index - 1);
+    lines = [
+        "CURVE" + index + tab + "TABLE"
+        "Pt" + tab + "T" + tab + "Vf" + tab + "Im"
+        "#" + tab + "s" + tab + "V" + tab + "A"
+        "0" + tab + "0.000000E+000" + tab + "-5.000000E-001" + tab + sprintf("%.6E", -1.0e-3 * scale)
+        "1" + tab + "1.000000E+000" + tab + "0.000000E+000" + tab + sprintf("%.6E", 1.0e-3 * scale)
+        "2" + tab + "2.000000E+000" + tab + "5.000000E-001" + tab + sprintf("%.6E", 1.0e-3 * scale)
+        ];
 end
 
 function text = eisText()

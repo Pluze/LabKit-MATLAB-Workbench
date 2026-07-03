@@ -9,6 +9,8 @@ function actions = definitionActions()
         "removeSelected", @onRemoveSelected, ...
         "clearAll", @clearAllFiles, ...
         "reloadSelected", @reloadSelectedFile, ...
+        "exportResults", @onExportResults, ...
+        "exportVoltageCurrent", @onExportVoltageCurrent, ...
         "fileSelectionChanged", @onSelectFile, ...
         "curveChanged", @onCurveChanged, ...
         "refreshCompare", @refreshCompare, ...
@@ -142,6 +144,28 @@ function state = reloadSelectedFile(state, ~, services)
     state = addFiles(state, {filepath}, services);
 end
 
+function state = onExportResults(state, ~, services)
+    opts = struct( ...
+        'mode', services.ui.controls.mode.valueHandle.Value, ...
+        'area_cm2', services.ui.controls.area.valueHandle.Value, ...
+        'ignoreEdgeCycles', services.ui.controls.ignoreEdgeCycles.valueHandle.Value);
+    [ok, msg, cancelled] = csc.resultFiles.promptExportResults( ...
+        state.items, services, opts);
+    if ok && ~cancelled
+        addLog(services, msg);
+    end
+end
+
+function state = onExportVoltageCurrent(state, ~, services)
+    opts = struct( ...
+        'ignoreEdgeCycles', services.ui.controls.ignoreEdgeCycles.valueHandle.Value);
+    [ok, msg, cancelled] = csc.resultFiles.promptExportVoltageCurrent( ...
+        state.items, services, opts);
+    if ok && ~cancelled
+        addLog(services, msg);
+    end
+end
+
 function state = refreshFileList(state, services)
     ui = services.ui;
     if isempty(state.items)
@@ -171,13 +195,13 @@ function state = loadCurrentItem(state, services)
             state.current > numel(state.items)
         state.current = 1;
     end
-    state.items(state.current).currentCurve = 1;
+    state.items(state.current).currentCurve = 0;
     state.items(state.current).analysis = [];
     item = state.items(state.current);
     state.filepath = item.filepath;
     state.scanRate = item.scanRate;
     state.curves = item.curves;
-    state.currentCurve = 1;
+    state.currentCurve = 0;
     ui.controls.filePath.valueHandle.Value = item.filepath;
 
     if isnan(state.scanRate)
@@ -196,9 +220,10 @@ function state = loadCurrentItem(state, services)
         return;
     end
 
-    items = cell(1, numel(state.curves));
+    items = cell(1, numel(state.curves) + 1);
+    items{1} = allCyclesLabel();
     for k = 1:numel(state.curves)
-        items{k} = sprintf('%s (%d rows)', state.curves(k).name, ...
+        items{k + 1} = sprintf('%s (%d rows)', state.curves(k).name, ...
             size(state.curves(k).data, 1));
     end
     ui.controls.curve.valueHandle.Items = items;
@@ -220,7 +245,7 @@ function state = clearCurrentItem(state, services)
     state.scanRate = NaN;
     state.curves = struct('name', {}, 'headers', {}, 'units', {}, ...
         'data', {}, 'numericMask', {});
-    state.currentCurve = 1;
+    state.currentCurve = 0;
     ui.controls.filePath.valueHandle.Value = '';
     ui.controls.scanRate.valueHandle.Value = '';
     ui.controls.curve.valueHandle.Items = {'(none)'};
@@ -231,6 +256,9 @@ function state = clearCurrentItem(state, services)
     ui.controls.diff.valueHandle.Value = '';
     ui.controls.relativeDiff.valueHandle.Value = '';
     ui.controls.dtError.valueHandle.Value = '';
+    ui.controls.cycleResults.table.ColumnName = ...
+        csc.userInterface.cycleResultsColumnNames('Full');
+    ui.controls.cycleResults.table.Data = cell(0, 6);
 end
 
 function state = onCurveChanged(state, ~, services)
@@ -238,14 +266,17 @@ function state = onCurveChanged(state, ~, services)
     if isempty(state.curves)
         return;
     end
-    idx = find(strcmp(ui.controls.curve.valueHandle.Items, ...
-        ui.controls.curve.valueHandle.Value), 1);
+    idx = selectedCurveIndex(ui);
     if isempty(idx)
-        idx = 1;
+        idx = 0;
     end
     state.currentCurve = idx;
     state = syncSessionCurrentCurve(state);
-    addLog(services, sprintf('Selected curve %d', idx));
+    if idx == 0
+        addLog(services, 'Selected all cycles.');
+    else
+        addLog(services, sprintf('Selected curve %d', idx));
+    end
     state = updateDropdowns(state, services);
     state = autoSetDefaults(state, services);
     state = refreshAll(state, [], services);
@@ -275,7 +306,7 @@ function state = updateDropdowns(state, services)
     if isempty(state.curves)
         return;
     end
-    curve = state.curves(state.currentCurve);
+    curve = selectedCurveForColumns(state);
     cols = curve.headers(curve.numericMask);
     if isempty(cols)
         cols = {'(none)'};
@@ -316,6 +347,10 @@ function plotTop(state, services)
     if isempty(state.curves)
         return;
     end
+    if isAllCyclesSelected(state)
+        plotAllCycles(state, services, 'top');
+        return;
+    end
     ui = services.ui;
     curve = state.curves(state.currentCurve);
     opts = struct('holdPlot', ui.controls.topHold.valueHandle.Value, ...
@@ -335,6 +370,10 @@ end
 
 function plotBottom(state, services)
     if isempty(state.curves)
+        return;
+    end
+    if isAllCyclesSelected(state)
+        plotAllCycles(state, services, 'bottom');
         return;
     end
     ui = services.ui;
@@ -362,14 +401,36 @@ function state = refreshCompare(state, ~, services)
         ui.controls.diff.valueHandle.Value = '';
         ui.controls.relativeDiff.valueHandle.Value = '';
         ui.controls.dtError.valueHandle.Value = '';
+        ui.controls.cycleResults.table.Data = cell(0, 6);
         return;
     end
 
-    curve = state.curves(state.currentCurve);
     opts = struct();
     opts.mode = ui.controls.mode.valueHandle.Value;
     opts.scanRate = state.scanRate;
     opts.area_cm2 = ui.controls.area.valueHandle.Value;
+    opts.ignoreEdgeCycles = ui.controls.ignoreEdgeCycles.valueHandle.Value;
+    ui.controls.cycleResults.table.ColumnName = ...
+        csc.userInterface.cycleResultsColumnNames(opts.mode);
+    results = csc.resultFiles.buildResultsTable(state.items(state.current), opts);
+    ui.controls.cycleResults.table.Data = ...
+        csc.userInterface.cycleResultsTableData(results, opts.mode);
+
+    if isAllCyclesSelected(state)
+        clearTrim(ui.controls.plotAxes.axesById.top);
+        clearTrim(ui.controls.plotAxes.axesById.bottom);
+        ui.controls.qct.valueHandle.Value = 'See all-cycle table';
+        ui.controls.qcv.valueHandle.Value = 'See all-cycle table';
+        ui.controls.diff.valueHandle.Value = 'See all-cycle table';
+        ui.controls.relativeDiff.valueHandle.Value = 'See all-cycle table';
+        ui.controls.dtError.valueHandle.Value = maxDtErrorText(results);
+        ui.controls.status.valueHandle.Value = sprintf( ...
+            'Showing %d cycle result(s) normalized by %s', ...
+            height(results), areaStatusText(opts.area_cm2));
+        return;
+    end
+
+    curve = state.curves(state.currentCurve);
     result = csc.analysisRun.computeCSC(curve, opts);
     readout = csc.userInterface.comparisonReadout(result, ui.controls.mode.valueHandle.Value);
 
@@ -401,6 +462,91 @@ function state = refreshCompare(state, ~, services)
         addLog(services, readout.logMessage);
     end
     ui.controls.status.valueHandle.Value = readout.statusText;
+end
+
+function plotAllCycles(state, services, axisId)
+    ui = services.ui;
+    ax = ui.controls.plotAxes.axesById.(axisId);
+    xControl = [axisId 'X'];
+    yControl = [axisId 'Y'];
+    gridControl = [axisId 'Grid'];
+    xSelection = ui.controls.(xControl).valueHandle.Value;
+    ySelection = ui.controls.(yControl).valueHandle.Value;
+    showGrid = ui.controls.(gridControl).valueHandle.Value;
+    opts = struct( ...
+        'showGrid', showGrid, ...
+        'title', [upperFirst(axisId) ' Plot (all cycles)'], ...
+        'curveIndices', plottedCurveIndices(numel(state.curves), ui));
+    info = csc.userInterface.plotAllCycles(ax, state.curves, xSelection, ...
+        ySelection, opts);
+    if ~info.ok
+        addLog(services, sprintf('%s plot skipped: invalid X/Y.', upperFirst(axisId)));
+    else
+        addLog(services, sprintf('%s plot all cycles: %s vs %s.', ...
+            upperFirst(axisId), info.yName, info.xName));
+    end
+end
+
+function indices = plottedCurveIndices(count, ui)
+    indices = 1:count;
+    if ui.controls.ignoreEdgeCycles.valueHandle.Value && count > 0
+        indices = indices(indices ~= 1 & indices ~= count);
+    end
+end
+
+function idx = selectedCurveIndex(ui)
+    value = ui.controls.curve.valueHandle.Value;
+    if strcmp(value, allCyclesLabel())
+        idx = 0;
+        return;
+    end
+    position = find(strcmp(ui.controls.curve.valueHandle.Items, value), 1);
+    if isempty(position)
+        idx = [];
+    else
+        idx = position - 1;
+    end
+end
+
+function tf = isAllCyclesSelected(state)
+    tf = isempty(state.currentCurve) || state.currentCurve == 0;
+end
+
+function curve = selectedCurveForColumns(state)
+    idx = state.currentCurve;
+    if isempty(idx) || idx < 1 || idx > numel(state.curves)
+        idx = 1;
+    end
+    curve = state.curves(idx);
+end
+
+function label = allCyclesLabel()
+    label = 'All cycles';
+end
+
+function text = upperFirst(value)
+    text = char(value);
+    text(1) = upper(text(1));
+end
+
+function text = maxDtErrorText(results)
+    if isempty(results) || height(results) == 0 || all(isnan(results.DtError_s))
+        text = '';
+    else
+        text = sprintf('max %.12e s', max(results.DtError_s, [], 'omitnan'));
+    end
+end
+
+function text = areaStatusText(area)
+    parsed = str2double(strtrim(char(string(area))));
+    if isnumeric(area)
+        parsed = area;
+    end
+    if isscalar(parsed) && isfinite(parsed) && parsed > 0
+        text = sprintf('%.6g cm^2', parsed);
+    else
+        text = 'charge only (area not set)';
+    end
 end
 
 function addLog(services, msg)

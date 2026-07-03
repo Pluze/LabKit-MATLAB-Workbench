@@ -12,5 +12,5 @@ function state = createInitialState()
         'data', {}, ...
         'numericMask', {});
     state.scanRate = NaN;
-    state.currentCurve = 1;
+    state.currentCurve = 0;
 end

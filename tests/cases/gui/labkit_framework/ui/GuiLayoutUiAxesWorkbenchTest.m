@@ -113,6 +113,9 @@ function verify_gui_layout_ui_axes_workbench()
         'Same-axes image redraws should reuse the LabKit image handle and clear old overlays.');
     assert(isequal(imgAx.XLim, zoomedX) && isequal(imgAx.YLim, zoomedY), ...
         'Same-size image redraws should preserve the current zoomed view.');
+    labkit.ui.view.applyAxesViewportPolicy(imgAx, 'preserve');
+    assert(isequal(imgAx.XLim, zoomedX) && isequal(imgAx.YLim, zoomedY), ...
+        'Preserve viewport policy should leave image ROI limits unchanged.');
     labkit.ui.view.resetAxes(ui, 'plotPreview', 'Image Probe', true, 'image');
     labkit.ui.view.drawImage(ui, 'plotPreview', ...
         zeros(12, 16, 3, 'uint8'), 'axis', 'image', 'title', 'Image Probe');
@@ -123,6 +126,13 @@ function verify_gui_layout_ui_axes_workbench()
         'options', struct('xData', [-3, 12], 'yData', [-4, 7]));
     assert(isequal(imgAx.XLim, [-3.5 12.5]) && isequal(imgAx.YLim, [-4.5 7.5]), ...
         'drawImage should respect explicit image XData/YData coordinates.');
+    plotAx.XLim = [0 0.1];
+    plotAx.YLim = [0 0.1];
+    plot(plotAx, [0 10], [0 20]);
+    labkit.ui.view.applyAxesViewportPolicy(plotAx, 'curve');
+    assert(plotAx.XLim(1) <= 0 && plotAx.XLim(2) >= 10 && ...
+        plotAx.YLim(1) <= 0 && plotAx.YLim(2) >= 20, ...
+        'Curve viewport policy should fit refreshed plot data instead of preserving stale limits.');
     imageMenuItem = findall(imgAx.ContextMenu, 'Type', 'uimenu', ...
         'Tag', 'labkitAxesPopoutMenu');
     h.invokeCallback(imageMenuItem, 'MenuSelectedFcn');

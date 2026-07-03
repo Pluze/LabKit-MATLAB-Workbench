@@ -40,6 +40,7 @@ function info = plotXY(ax, x, y, labels, opts)
     title(ax, labels.title, 'Interpreter', 'none');
     xlabel(ax, labels.x, 'Interpreter', 'none');
     ylabel(ax, labels.y, 'Interpreter', 'none');
+    labkit.ui.view.applyAxesViewportPolicy(ax, 'curve');
 
     info.ok = true;
     info.message = 'OK';

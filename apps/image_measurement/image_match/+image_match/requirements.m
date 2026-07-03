@@ -3,6 +3,6 @@
 
 function req = requirements()
 
-    req = labkit.contract.requirements("ui", ">=4.0 <5", ...
+    req = labkit.contract.requirements("ui", ">=4.1 <5", ...
         "image", ">=1.0 <2");
 end
