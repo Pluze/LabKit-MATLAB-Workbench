@@ -1,4 +1,4 @@
-% Expected caller: labkit_BatchImageCrop_app. Inputs are the initial output
+% Expected caller: batch_crop.definition. Inputs are the initial output
 % folder and app-owned callback handles. Output is a data-only UI 3.0
 % workbench spec for the Batch Image Crop app.
 function spec = buildSpec(initialOutputFolder, callbacks)

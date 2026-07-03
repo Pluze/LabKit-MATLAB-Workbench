@@ -101,10 +101,19 @@ function assertCanonicalAppPackageStructure(testCase, root, appRelDir, packageNa
     appDir = fullfile(root, appRelDir);
     packageDir = fullfile(appDir, ['+' packageName]);
     uiDir = fullfile(packageDir, '+ui');
+    appLifecycleDir = fullfile(packageDir, '+appLifecycle');
+    userInterfaceDir = fullfile(packageDir, '+userInterface');
     entrypointFile = fullfile(appDir, entrypointName);
     runFile = fullfile(packageDir, 'run.m');
     definitionFile = fullfile(packageDir, 'definition.m');
-    buildSpecFile = fullfile(uiDir, 'buildSpec.m');
+    definitionActionsFile = fullfile(packageDir, 'definitionActions.m');
+    usesWorkflowFirstShape = isfolder(appLifecycleDir) || ...
+        isfolder(userInterfaceDir) || isfile(definitionActionsFile);
+    if usesWorkflowFirstShape
+        buildSpecFile = fullfile(userInterfaceDir, 'buildWorkbenchSpec.m');
+    else
+        buildSpecFile = fullfile(uiDir, 'buildSpec.m');
+    end
     appLabel = relativePath(root, appDir);
 
     testCase.verifyGreaterThan(strlength(string(packageName)), 0, ...
@@ -127,13 +136,23 @@ function assertCanonicalAppPackageStructure(testCase, root, appRelDir, packageNa
         relativePath(root, packageDir)]);
     testCase.verifyFalse(isfile(fullfile(uiDir, 'runApp.m')), ...
         [appLabel ' should not keep app lifecycle orchestration in +ui/runApp.m.']);
+    if usesWorkflowFirstShape
+        assertWorkflowFirstPackageShape(testCase, root, packageDir);
+    end
 
     orchestrationSource = appOrchestrationSource(entrypointFile, runFile, ...
         definitionFile);
-    usesBuildSpecCall = contains(orchestrationSource, [packageName '.ui.buildSpec(']) || ...
-        contains(orchestrationSource, ['@' packageName '.ui.buildSpec']);
+    if usesWorkflowFirstShape
+        usesBuildSpecCall = contains(orchestrationSource, ...
+            [packageName '.userInterface.buildWorkbenchSpec(']) || ...
+            contains(orchestrationSource, ...
+            ['@' packageName '.userInterface.buildWorkbenchSpec']);
+    else
+        usesBuildSpecCall = contains(orchestrationSource, [packageName '.ui.buildSpec(']) || ...
+            contains(orchestrationSource, ['@' packageName '.ui.buildSpec']);
+    end
     testCase.verifyTrue(usesBuildSpecCall, ...
-        [appLabel ' should call its canonical +ui/buildSpec.m file.']);
+        [appLabel ' should call its canonical UI spec builder.']);
     if isfile(definitionFile)
         testCase.verifyTrue(contains(orchestrationSource, 'labkit.ui.app.run(') && ...
             contains(orchestrationSource, [packageName '.definition()']), ...
@@ -163,6 +182,32 @@ function assertCanonicalAppPackageStructure(testCase, root, appRelDir, packageNa
     family = appFamilyFromRelativeDir(appRelDir);
     assertAppOwnedPackageCapability(testCase, root, appDir, packageDir, ...
         family, packageName);
+end
+
+function assertWorkflowFirstPackageShape(testCase, root, packageDir)
+    requiredFiles = [
+        string(fullfile(packageDir, 'definitionActions.m'))
+        string(fullfile(packageDir, '+appLifecycle', 'createInitialState.m'))
+        string(fullfile(packageDir, '+userInterface', 'buildWorkbenchSpec.m'))
+        string(fullfile(packageDir, '+userInterface', 'updateWorkbenchFromState.m'))];
+    for k = 1:numel(requiredFiles)
+        testCase.verifyTrue(isfile(requiredFiles(k)), ...
+            ['Workflow-first app packages should include ' ...
+            relativePath(root, requiredFiles(k))]);
+    end
+
+    oldBuckets = ["+actions", "+renderers", "+ops", "+io", "+export", ...
+        "+state", "+view", "+ui"];
+    conflicts = strings(1, 0);
+    for k = 1:numel(oldBuckets)
+        candidate = fullfile(packageDir, char(oldBuckets(k)));
+        if isfolder(candidate)
+            conflicts(end+1) = string(relativePath(root, candidate));
+        end
+    end
+    testCase.verifyTrue(isempty(conflicts), ...
+        ['Workflow-first app packages should not reintroduce overlapping ' ...
+        'technical role buckets: ' strjoin(cellstr(conflicts), ', ')]);
 end
 
 function source = appOrchestrationSource(entrypointFile, runFile, definitionFile)

@@ -19,7 +19,8 @@ function varargout = labkit_BatchImageCrop_app(varargin)
             'labkit_BatchImageCrop_app returns at most the app figure handle.');
     end
 
-    fig = batch_crop.run(debugLog);
+    request = struct("debug", debugLog);
+    fig = labkit.ui.app.run(batch_crop.definition(), request);
     labkit.ui.app.applyVersionTitle(fig, appVersion);
     if nargout >= 1
         varargout{1} = fig;
