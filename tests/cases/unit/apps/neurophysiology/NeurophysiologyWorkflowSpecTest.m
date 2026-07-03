@@ -5,7 +5,7 @@ classdef NeurophysiologyWorkflowSpecTest < matlab.unittest.TestCase
         function previewOwnsProtocolDraftingSurface(testCase)
             setupLabKitTestPath();
 
-            spec = rhs_preview.ui.buildSpec(struct());
+            spec = rhs_preview.userInterface.buildWorkbenchSpec(struct());
 
             testCase.verifyEqual(tabTitles(spec), ...
                 ["Setup", "Protocol", "Filter", "Review", "Log"]);
