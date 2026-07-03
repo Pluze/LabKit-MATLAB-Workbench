@@ -1,4 +1,4 @@
-% Expected caller: ecg_print.ui.runApp and direct unit tests. Inputs are the
+% Expected caller: ecg_print.definitionActions and direct unit tests. Inputs are the
 % measurement per-segment table and smoothing width in beats. Output preserves
 % existing columns and adds smoothed SignalP2P, NoiseRMS, and SNRdB columns.
 % Side effects: none.

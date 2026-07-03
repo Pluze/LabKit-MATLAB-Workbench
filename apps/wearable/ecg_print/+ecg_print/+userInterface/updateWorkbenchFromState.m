@@ -1,7 +1,7 @@
 % App-owned renderer for ECG Print. Expected caller is labkit.ui.app.run
 % after actions update state. Inputs are app state and UI registry. Side
 % effects are limited to UI controls, tables, text, and preview axes.
-function render(state, ui, ~)
+function updateWorkbenchFromState(state, ui, ~)
     renderImportState(state, ui);
     renderSummary(state, ui);
     renderPlots(state, ui);
@@ -21,7 +21,7 @@ function renderImportState(state, ui)
 end
 
 function renderSummary(state, ui)
-    ui.controls.summaryTable.table.Data = ecg_print.view.summaryRows( ...
+    ui.controls.summaryTable.table.Data = ecg_print.userInterface.summaryRows( ...
         state.signal, state.events, state.segments, state.measurements);
 end
 
@@ -31,7 +31,7 @@ function renderPlots(state, ui)
         return;
     end
 
-    request = ecg_print.view.waveformPlotRequest(state.workingSignal, ...
+    request = ecg_print.userInterface.waveformPlotRequest(state.workingSignal, ...
         state.filteredSignal, state.events);
     ax = ui.controls.previewAxes.axesById.wave;
     plot(ax, request.x, request.y, 'Color', request.lineColor, ...
@@ -52,7 +52,7 @@ function renderPlots(state, ui)
     end
 
     smoothBeats = max(1, round(ui.controls.smoothBeats.valueHandle.Value));
-    T = ecg_print.export.analysisTable(state.measurements.perSegment, ...
+    T = ecg_print.resultFiles.analysisTable(state.measurements.perSegment, ...
         smoothBeats);
 
     noiseAx = ui.controls.previewAxes.axesById.noise;
@@ -90,7 +90,7 @@ function renderTemplatePlot(state, ui)
         'Template + Residual Band', true, 'template');
     xlabel(ax, 'Time from peak (s)');
     ylabel(ax, 'Amplitude');
-    request = ecg_print.view.templatePlotRequest(state.segments, ...
+    request = ecg_print.userInterface.templatePlotRequest(state.segments, ...
         state.template, state.measurements, ...
         ui.controls.templateView.valueHandle.Value);
     if ~request.ok

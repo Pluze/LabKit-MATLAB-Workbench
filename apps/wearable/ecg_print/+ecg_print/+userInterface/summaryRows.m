@@ -1,11 +1,11 @@
-% Expected caller: ecg_print.ui.runApp and direct unit tests. Inputs are the
+% Expected caller: ecg_print.userInterface.updateWorkbenchFromState and direct unit tests. Inputs are the
 % current signal, events, segments, and measurement structs. Output is a
 % two-column cell array for the summary table. Side effects: none.
 
 function rows = summaryRows(signal, events, segments, measurements)
 %SUMMARYROWS Build ECG Print summary table rows from app state fields.
 
-    rows = ecg_print.view.initialSummaryRows();
+    rows = ecg_print.userInterface.initialSummaryRows();
     if ~isempty(signal)
         rows = [rows; {
             'Channel', char(signal.displayName);

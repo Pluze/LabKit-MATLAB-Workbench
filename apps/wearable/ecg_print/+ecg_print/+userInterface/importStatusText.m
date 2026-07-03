@@ -1,4 +1,4 @@
-% Expected caller: ecg_print.ui.runApp and direct unit tests. Inputs are a
+% Expected caller: ecg_print.definitionActions and direct unit tests. Inputs are a
 % biosignal recording struct and parsed channel count. Output is user-facing
 % status text. Side effects: none.
 

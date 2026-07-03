@@ -1,6 +1,6 @@
 % Initial state for ECG Print. Expected caller is ecg_print.definition.
 % Output is the app-owned model consumed by actions and renderers.
-function state = initial()
+function state = createInitialState()
     state = struct();
     state.recording = [];
     state.signal = [];

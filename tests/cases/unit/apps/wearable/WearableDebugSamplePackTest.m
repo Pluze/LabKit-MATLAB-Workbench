@@ -12,7 +12,7 @@ classdef WearableDebugSamplePackTest < matlab.unittest.TestCase
 
             pack = ecg_print.debug.writeSamplePack(debug);
             [recording, status] = labkit.biosignal.readRecording(char(pack.representativeFiles), ...
-                ecg_print.io.importOptions(500, 1, "Yes", "time_s", "seconds", "ECG,Motion"));
+                ecg_print.sourceFiles.importOptions(500, 1, "Yes", "time_s", "seconds", "ECG,Motion"));
             testCase.verifyTrue(status.ok, status.message);
             channels = labkit.biosignal.listChannels(recording);
             testCase.verifyTrue(any(strcmp(channels, "ECG")));
@@ -21,13 +21,13 @@ classdef WearableDebugSamplePackTest < matlab.unittest.TestCase
 
             [headerless, headerlessStatus] = labkit.biosignal.readRecording( ...
                 char(pack.boundaryFiles.validHeaderlessText), ...
-                ecg_print.io.importOptions(500, 1, "No", "1", "seconds", "2,3"));
+                ecg_print.sourceFiles.importOptions(500, 1, "No", "1", "seconds", "2,3"));
             testCase.verifyTrue(headerlessStatus.ok);
             testCase.verifyGreaterThan(numel(labkit.biosignal.listChannels(headerless)), 0);
 
             [~, malformedStatus] = labkit.biosignal.readRecording( ...
                 char(pack.boundaryFiles.malformedCsv), ...
-                ecg_print.io.importOptions(500, 1, "Yes", "time_s", "seconds", "ECG"));
+                ecg_print.sourceFiles.importOptions(500, 1, "Yes", "time_s", "seconds", "ECG"));
             testCase.verifyFalse(malformedStatus.ok, ...
                 "Malformed ECG debug sample should fail cleanly through the biosignal facade.");
         end
