@@ -1,4 +1,4 @@
-% Expected caller: labkit_FocusStack_app. Inputs are preset labels,
+% Expected caller: focus_stack.definition. Inputs are preset labels,
 % workflow-note lines, and callback handles. Output is a data-only UI 3.0
 % workbench spec for the Focus Stack app.
 function spec = buildSpec(fusionPresets, workflowNotes, callbacks)
