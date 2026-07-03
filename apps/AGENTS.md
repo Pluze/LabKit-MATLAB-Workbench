@@ -104,20 +104,17 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
   through `+userInterface/buildWorkbenchSpec.m`, visible-state updates through
   `+userInterface/updateWorkbenchFromState.m`, deterministic app-state and
   task snapshot helpers through `+appState`, and user workflows through
-  concrete app-owned packages. Existing `+state`, `+actions`, `+ui`, `+view`,
-  `+ops`, `+io`, and `+export` packages are migration debt unless the file is
-  kept temporarily to preserve an already migrated path.
+  concrete app-owned packages. Do not reintroduce `+state`, `+actions`, `+ui`,
+  `+view`, `+ops`, `+io`, or `+export` packages.
 - `definition.m` declares identity, state factory, spec builder, command
   handler registry, visible-state update function, startup phases, and
   optional hydration phases. It must not create MATLAB handles, read files,
   compute results, export data, or mutate framework lifecycle state.
 - `+userInterface/buildWorkbenchSpec.m` describes controls, sections,
   workspace, initial text/defaults, and framework-generated callback handles
-  only. Transitional `+ui/buildSpec.m` files may remain until their app is
-  moved to the workflow-first shape, but new app code should not add them.
-- Package-root `run.m` lifecycle orchestration is migration debt. Do not add
-  new eager package-root runners. Existing runners may remain only as temporary
-  compatibility shims while an app is being migrated to `definition.m`.
+  only. Do not add `+ui/buildSpec.m` adapters.
+- Package-root `run.m` lifecycle orchestration has been retired. Do not add
+  eager package-root app runners or compatibility shims.
 - Do not treat the repository line budget as a request to split every small
   action, label formatter, boolean check, or one-call framework wrapper into a
   separate file. Use `.agents/migration_guide.md` to decide which cohesive

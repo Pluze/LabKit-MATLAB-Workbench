@@ -92,10 +92,9 @@ generic `+actions`, `+renderers`, `+ops`, `+io`, `+export`, `+helpers`, and
 family-level `private/` helpers, `*Workflow.m` string dispatchers, and
 `+core/dispatch.m` routers.
 
-Existing `+state`, `+actions`, `+ui`, `+view`, `+ops`, `+io`, and `+export`
-packages are transitional migration adapters unless they are explicitly kept
-as a narrow compatibility bridge. New app work should follow the workflow-first
-shape.
+`+state`, `+actions`, `+ui`, `+view`, `+ops`, `+io`, and `+export` packages
+were retired with the workflow-first migration. Current app work should follow
+the workflow-first shape.
 
 ## UI Boundary
 

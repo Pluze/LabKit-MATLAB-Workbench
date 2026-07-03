@@ -36,7 +36,7 @@ Last audited: 2026-07-03.
 Active debt:
 
 ```text
-Declarative app runtime full migration
+none
 ```
 
 Current facts:
@@ -112,14 +112,41 @@ Current facts:
   dispatches startup and hydration phases, records phase timings, reports
   runtime action exceptions to debug context, and applies a small effect set:
   `logDebug`, `alert`, `setBusy`, and `clearBusy`.
-- Remaining runtime hardening after app package migration: complete action
-  gating semantics, normalized payload helpers for common controls, a
-  traceable readiness/busy surface for slow startup, and migration of app
-  commands away from direct UI control reads where that reduces coupling
-  without changing behavior.
-- Workflow-first app definitions still assume a complete `ui.controls`
-  registry after shell construction. Staged startup must preserve that
-  contract until an app has explicit startup and hydration phases.
+- Current profiler/debug evidence on 2026-07-03 covered two previously slow
+  apps and one ordinary app after the workflow-first migration:
+  - RHS Preview ordinary startup:
+    `artifacts/profile/current_rhs_preview_normal.json` reported no run error,
+    about 27.2 s max total time, and
+    `startupLifecycle>updateStateWithMessage` as the top editable self-time
+    row at about 0.93 s.
+  - FLIR Thermal ordinary startup:
+    `artifacts/profile/current_flir_thermal_normal.json` reported no run
+    error, about 24.8 s max total time, and the same readiness helper at about
+    0.80 s editable self-time.
+  - CIC ordinary startup:
+    `artifacts/profile/current_cic_normal.json` reported no run error, about
+    24.8 s max total time, and the same readiness helper at about 1.02 s
+    editable self-time.
+  - RHS Preview debug startup:
+    `artifacts/profile/current_rhs_preview_debug.json` reported no run error,
+    10 debug log lines, about 28.7 s max total time, `createContext` figure
+    instrumentation at about 0.16 s editable self-time, and synthetic RHS
+    sample writing at about 0.06 s editable self-time.
+  - FLIR Thermal debug startup:
+    `artifacts/profile/current_flir_thermal_debug.json` reported no run error,
+    7 debug log lines, about 27.4 s max total time, and `createContext` figure
+    instrumentation at about 0.14 s editable self-time.
+- A final readiness coalescing check in
+  `artifacts/profile/current_rhs_preview_normal_after_label_coalesce.json`
+  reported no run error and about 26.5 s max total time. The remaining startup
+  cost is dominated by MATLAB UI component creation, the framework shell
+  construction path, timer/deferred startup mechanics, and test-path setup in
+  profiled commands; no old package-root app runner or transitional adapter
+  bucket remains in that path.
+- Runtime hardening is now ordinary framework evolution, not active migration
+  debt. Future action gating, payload helpers, busy/readiness refinements, or
+  additional staged hydration should land only when a concrete app workflow or
+  profiler/debug trace shows the need.
 
 ## Reopen Triggers
 
@@ -141,264 +168,42 @@ Open a new active route here only when current scans expose concrete debt:
 - migration exposes package-boundary drift that cannot be fixed locally
   without a new `+labkit` API decision
 
-## Active Route: Declarative App Runtime
+## Retired Route: Declarative App Runtime
 
-Status: documentation alignment, runtime hydration/timing, and every
-package-root runner transitional migration are committed or in progress on the
-active branch. The app package migration is complete when this route's current
-branch validates: all supported apps use workflow-first packages and no app
-keeps transitional adapter buckets. The route remains open until final
-validation and profiler/debug startup evidence confirm the new structure.
-
-Opened 2026-07-02 after launcher/app startup traces showed blank app frames
-and delayed first render across multiple apps. Revised 2026-07-03 to make the
-fix a breaking framework/runtime migration, not an app-local loading-indicator
-patch.
-
-### Current Work Order
-
-1. Keep docs and guardrails aligned with the current migration stage.
-2. Validate that no app package retains transitional adapter buckets.
-3. Harden guardrails from the all-app workflow-first shape.
-4. Profile/debug slow startup paths, then optimize the new structure if the
-   evidence shows a concrete bottleneck.
-5. Defer CI polling until merge readiness; use local validation for touched
-   source phases.
-
-### Design Constraints
-
-Use mature toolkit patterns as constraints, not as a mandate to change
-language or toolkit:
-
-- VS Code activation events: expensive capabilities should be activated by
-  command, view, file, tab, startup-finished, or idle triggers instead of
-  eager app startup.
-- VS Code extension host: framework runtime and app behavior need a clear
-  ownership boundary.
-- Angular `@defer`, React `Suspense`, and Qt Quick `Loader`: readiness,
-  fallback UI, and activation should be explicit framework concepts.
-- React state preservation and Android UI layer guidance: app state should be
-  the stable description rendered by UI update code, not a side effect of
-  rebuilding controls.
-- Redux and Elm Architecture: callbacks and startup phases dispatch named
-  actions, actions update state, and rendering observes state.
-- Rails and Home Assistant: keep a small convention-first app shape; add role
-  files only when a real workflow needs them.
-
-LabKit principle:
-
-```text
-apps declare intent; the framework owns lifecycle, dispatch, readiness,
-busy state, staged activation, diagnostics, and safe effects
-```
-
-### Target App Shape
+Status: retired on 2026-07-03. The migration is complete in source,
+guardrails, docs, and profiler/debug evidence. Reopen only from the triggers
+above, not from this historical route.
 
 The final app unit is a plain MATLAB definition struct consumed by
-`labkit.ui.app.run`:
+`labkit.ui.app.run`. App entrypoints remain thin public wrappers around
+version/requirement checks, debug dispatch, and
+`labkit.ui.app.run(<slug>.definition(), request)`.
 
-```matlab
-function def = definition()
-def = labkit.ui.app.define( ...
-    "Id", "batch_crop", ...
-    "Title", "Microscope Batch Image Crop", ...
-    "InitialState", @batch_crop.appLifecycle.createInitialState, ...
-    "Spec", @batch_crop.userInterface.buildWorkbenchSpec, ...
-    "Actions", batch_crop.definitionActions(), ...
-    "Render", @batch_crop.userInterface.updateWorkbenchFromState, ...
-    "Startup", ["workspace", "preview"], ...
-    "Hydrate", ["tools", "debugArtifacts"]);
-end
-```
-
-Target package layout:
+The retained runtime contract is:
 
 ```text
-apps/<family>/<slug>/labkit_<Name>_app.m
-apps/<family>/<slug>/+<slug>/definition.m
-apps/<family>/<slug>/+<slug>/definitionActions.m
-apps/<family>/<slug>/+<slug>/requirements.m
-apps/<family>/<slug>/+<slug>/version.m
-apps/<family>/<slug>/+<slug>/+appLifecycle/createInitialState.m
-apps/<family>/<slug>/+<slug>/+userInterface/buildWorkbenchSpec.m
-apps/<family>/<slug>/+<slug>/+userInterface/updateWorkbenchFromState.m
-apps/<family>/<slug>/+<slug>/+sourceFiles/...
-apps/<family>/<slug>/+<slug>/+analysisRun/...
-apps/<family>/<slug>/+<slug>/+resultFiles/...
+definition -> validate -> create state -> build spec -> create shell
+  -> render -> startup actions -> hydration actions -> steady interaction
 ```
 
-Only create workflow packages the app actually needs. Do not introduce generic
-new packages such as `+actions`, `+renderers`, `+ops`, `+io`, `+export`,
-`+helpers`, `+utils`, `+manager`, or fixed `+app` packages for final-shape app
-code.
+Framework-owned responsibilities now live in `+labkit/+ui/+app`: definition
+validation, callback generation, shell construction, readiness/busy state,
+startup and hydration dispatch, debug exception reporting, phase timings, and
+small test-visible effects. App-owned responsibilities stay under workflow
+packages such as `+sourceFiles`, `+analysisRun`, `+cropGeometry`,
+`+thermalFrames`, `+debugArtifacts`, and `+resultFiles`.
 
-App entrypoints remain thin public wrappers around version/requirement checks,
-debug dispatch, and `labkit.ui.app.run(<slug>.definition(), request)`.
+The completed migration used mature UI/runtime constraints as design pressure:
+activation should be staged rather than eager; framework lifecycle and
+app-specific workflow should have a clear ownership boundary; readiness and
+fallback UI should be explicit framework concepts; state should be stable data
+rendered by update code; callbacks and startup phases should dispatch named
+actions; and the app shape should stay convention-first without generator or
+class-hierarchy overhead.
 
-### Runtime Contract
-
-`labkit.ui.app.run(definition, request)` owns this state machine:
-
-```text
-define
-  -> validateDefinition
-  -> createShell
-  -> createState
-  -> buildSpec
-  -> constructVisibleWorkbench
-  -> paintReadinessBoundary
-  -> dispatchStartupActions
-  -> firstRenderReady
-  -> idleHydration
-  -> steadyInteraction
-  -> closing
-```
-
-Framework-owned responsibilities:
-
-- validate definition fields, action ids, duplicate control ids, and phase
-  names before the UI becomes interactive
-- create shell, readiness surface, controls registry, diagnostics, close
-  guard, and appdata registry
-- generate callbacks from action ids and route user events through one
-  dispatcher
-- gate actions while startup is pending, with documented exceptions for close
-  and cancellation
-- run startup phases after the shell has had a paint opportunity
-- keep a non-modal readiness surface quiet for fast starts and visible for
-  slow starts
-- run idle hydration for nonessential work such as inactive tabs, expensive
-  tools, and debug artifacts
-- report startup/action exceptions through debug context
-- expose traceable phase timings for performance diagnosis
-
-App-owned responsibilities:
-
-- define state shape and defaults
-- define labels, choices, units, formulas, plots, exports, and workflow
-  decisions
-- implement app operations in concrete workflow packages such as
-  `+sourceFiles`, `+analysisRun`, `+cropGeometry`, `+thermalFrames`, or
-  `+resultFiles`
-- translate prepared state into existing handles in UI update functions
-- return updated state and requested effects from command handlers
-
-Target flow:
-
-```text
-event/startup phase
-  -> framework dispatch(commandId, payload)
-  -> app workflow command(state, payload, services)
-  -> next state + effects
-  -> framework applies effects
-  -> app UI update(next state, ui, services)
-```
-
-Initial framework effects should stay small and test-visible:
-`setBusy`, `clearBusy`, `alert`, file/folder/save prompts through existing
-dialog adapters, `logDebug`, `requestRender`, and framework-approved
-`runLater(phaseName)`.
-
-### Migration Policy
-
-This may be a breaking internal app-structure migration, but public behavior
-must stay stable unless separately approved:
-
-- public app entrypoint names remain stable
-- launcher discovery remains source-based through `apps/**/labkit_*_app.m`
-- workflow outputs, formulas, plots, export schemas, labels, defaults, and
-  settings remain app-owned and behavior-compatible
-- old framework-private helper shapes may be deleted after real app paths
-  migrate
-- old package-root runner orchestration should not become permanent
-  compatibility debt
-- guardrails should reject new eager runners once the new path is available
-
-Do not migrate LabKit apps to another language/toolkit, create a monolithic
-host that hides entrypoints, move app formulas or schemas into `+labkit`,
-introduce MATLAB classes for the runtime model, expose raw timers/readiness
-flags to app code, or add a generator before the definition DSL is proven.
-
-### Required Workstreams
-
-1. Runtime foundation
-   - Preserve `labkit.ui.app.define` and `labkit.ui.app.run`.
-   - Keep lifecycle/readiness implementation private under
-     `+labkit/+ui/+app/private`.
-   - Complete action gating, normalized payload helpers, readiness/busy
-     tracing, and test-visible effects.
-   - Keep hidden/minimized GUI tests visually quiet while preserving runtime
-     readiness state.
-
-2. App migration
-   - Package-root runner orchestration has been retired; keep new work on
-     definitions and workflow-first packages.
-   - All supported apps are workflow-first packages and should be used as
-     small references for the fixed lifecycle/UI surface and direct workflow
-     package tests.
-   - Keep app-specific state, source loading, analysis, UI projection, and
-     result export logic in app-owned workflow packages.
-   - Remove obsolete runner or adapter code after behavior coverage passes
-     through the new path.
-
-3. Guardrails and tests
-   - Add validation tests for required fields, action ids, duplicate controls,
-     startup phases, hidden-mode behavior, action gating, payload
-     normalization, exception reporting, and phase timings.
-   - Reject `+actions`, `+state`, `+ui`, `+view`, `+ops`, `+io`, and
-     `+export` packages inside all app packages.
-   - Add source guardrails for direct startup timer/readiness manipulation in
-     app packages after the new runtime lands.
-
-4. Performance and debug evidence
-   - Run focused validation after executable changes.
-   - Capture phase timings or trace evidence for at least two previously slow
-     apps and one ordinary app.
-   - Use profiler/debug evidence to optimize the new structure before squash
-     merge.
-
-### Small-Commit Discipline
-
-Use small commits in this order unless a verified dependency forces a split:
-
-1. `docs:` route, human docs, scoped AGENTS, and app-builder guidance.
-2. `feat:` runtime gap closure plus focused runtime tests.
-3. `refactor:` representative app migration.
-4. `refactor:` remaining package-root runner retirement.
-5. `refactor:` workflow-first package migration by app family.
-6. `test:` guardrails and validation expansion.
-7. `perf:` measured startup improvements when lower latency is the primary
-   effect.
-
-Push every coherent small commit on this branch after creation. Defer CI
-inspection until merge readiness unless local changes require GitHub-side
-evidence.
-
-### Validation Gates
-
-- Design-only and docs-only commits do not require MATLAB validation.
-- After framework runtime source changes: run the changed-file local plan,
-  normally `matlab -batch "buildtool changed"`.
-- Before merging implementation: run the source-aligned GUI/framework task
-  selected from `docs/testing.md`, plus profile/trace evidence for slow
-  startup paths.
-- CI inspection is deferred until merge readiness according to `AGENTS.md`.
-
-### Completion Criteria
-
-- Every supported app launches through a framework-owned app definition.
-- Package-root eager runner orchestration is removed.
-- The framework owns lifecycle, generated callbacks, busy gating, readiness,
-  staged startup, idle hydration, diagnostics, exception reporting, and phase
-  timing.
-- App packages declare identity, state factory, spec builder, command handler
-  registry, visible-state update, startup/hydration phase names, and app-owned
-  workflow packages.
-- Docs, AGENTS rules, app-builder guidance, tests, and guardrails describe the
-  same architecture.
-- Representative slow apps no longer show a blank app frame while opaque
-  app-owned startup continues.
-- The active route is shrunk or retired after the migration lands.
+Do not restore package-root eager runners, `+ui/runApp.m` lifecycle adapters,
+or broad technical app buckets such as `+actions`, `+state`, `+ui`, `+view`,
+`+ops`, `+io`, and `+export`. Current tests and guardrails own that contract.
 
 ## Long-Term Compatibility Queue
 

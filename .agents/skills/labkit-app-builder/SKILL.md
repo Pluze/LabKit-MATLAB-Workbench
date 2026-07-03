@@ -138,10 +138,8 @@ The target package shape is:
 +<app_slug>/+<workflowArea>/...
 ```
 
-Existing migrated apps may still use transitional `+state`, `+actions`,
-`+ui`, or `+view` adapters. New app work should use the workflow-first shape
-above unless the task is explicitly migrating an existing transitional app in
-small compatible steps.
+Apps use the workflow-first shape above. Do not add or restore transitional
+`+state`, `+actions`, `+ui`, or `+view` adapters.
 
 ## Implementation Pattern
 
@@ -192,9 +190,9 @@ Build the app in this order:
 13. Extract production helpers into workflow-named app-owned package
    components when the app is too large for a readable single entry point:
    examples include `+sourceFiles`, `+analysisRun`, `+resultFiles`,
-   `+cropGeometry`, `+thermalFrames`, or `+debugArtifacts`. Keep transitional
-   `+state`, `+actions`, `+ui`, `+view`, `+ops`, `+io`, and `+export` packages
-   only while migrating existing apps in controlled steps.
+   `+cropGeometry`, `+thermalFrames`, or `+debugArtifacts`. Do not add
+   transitional `+state`, `+actions`, `+ui`, `+view`, `+ops`, `+io`, or
+   `+export` packages.
 14. Avoid boundary-blurring helper names such as `helpers.m`, `utils.m`,
    `common.m`, `misc.m`, `callbacks.m`, `manager.m`, `processor.m`,
    `layout.m`, and `createUI.m`; name files by stable role or output instead.

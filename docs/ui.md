@@ -70,11 +70,11 @@ visible workbench, paints a readiness surface when startup is slow, dispatches
 startup actions, and then hydrates nonessential regions when idle or on first
 interaction.
 
-Current migrated apps may still use transitional adapter packages such as
-`+state`, `+actions`, `+ui`, and `+view`. New app code should use
-`+appLifecycle`, `definitionActions.m`, and `+userInterface`; app-specific
-work belongs in concrete workflow packages such as `+sourceFiles`,
-`+analysisRun`, `+resultFiles`, or a domain-specific package.
+Apps use `+appLifecycle`, `definitionActions.m`, and `+userInterface`;
+app-specific work belongs in concrete workflow packages such as
+`+sourceFiles`, `+analysisRun`, `+resultFiles`, or a domain-specific package.
+The older `+state`, `+actions`, `+ui`, and `+view` adapter packages have been
+retired.
 
 ```matlab
 function spec = buildWorkbenchSpec(callbacks)
