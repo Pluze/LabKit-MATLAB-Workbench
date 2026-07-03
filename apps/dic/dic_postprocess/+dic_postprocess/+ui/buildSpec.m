@@ -1,4 +1,4 @@
-% Expected caller: labkit_DICPostprocess_app. Input is a callback struct whose
+% Expected caller: dic_postprocess.definition. Input is a callback struct whose
 % fields are app-owned callback handles. Output is a data-only UI 3.0 workbench
 % spec for the DIC Postprocess app.
 function spec = buildSpec(callbacks)

@@ -1,4 +1,4 @@
-% DIC Postprocess UI helper. Expected caller: labkit_DICPostprocess_app.
+% DIC Postprocess UI helper. Expected caller: dic_postprocess.view.render.
 % Inputs are the app UI registry, image data, title, and axis id. Output is
 % the drawn image handle. Side effect: updates the requested preview axes.
 function hImage = showImage(ui, imageData, titleText, axisId)
