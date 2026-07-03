@@ -92,20 +92,24 @@ function actions = definitionActions()
         state = dispatchNoEvent(state, payload, @onExportImages);
     end
     function onSourceImagesChosen(~, event)
-        paths = labkit.ui.view.filePaths(event.addedFiles);
-        if isempty(paths)
+        newFiles = labkit.ui.view.filePaths(event.addedFiles);
+        if isempty(newFiles)
             addLog('Image selection cancelled.');
             return;
         end
+        paths = labkit.ui.view.filePaths(event.files);
+        if isempty(paths)
+            paths = newFiles;
+        end
         try
-            addLog(sprintf('Starting image import for %d selected path(s).', numel(paths)));
+            addLog(sprintf('Starting image import for %d selected path(s).', numel(newFiles)));
             S.items = readOrReuseImages(paths);
         catch ME
             showException('Could not load images', ME);
             refreshAll();
             return;
         end
-        S.currentIndex = 1;
+        S.currentIndex = currentIndexForAddedPath(paths, newFiles(1));
         S.steps = repmat(image_enhance.appState.emptyStep(), 0, 1);
         S = image_enhance.appState.setActivePendingDirty(S, false);
         invalidatePreviewCache();
@@ -405,6 +409,12 @@ function actions = definitionActions()
             if ~isempty(loadedIndex)
                 items(k) = loaded(loadedIndex);
             end
+        end
+    end
+    function idx = currentIndexForAddedPath(paths, addedPath)
+        idx = find(string(paths(:)) == string(addedPath), 1);
+        if isempty(idx)
+            idx = 1;
         end
     end
     function onReadProgress(progress)

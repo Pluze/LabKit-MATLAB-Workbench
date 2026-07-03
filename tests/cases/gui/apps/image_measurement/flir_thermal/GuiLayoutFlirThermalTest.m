@@ -11,7 +11,10 @@ classdef GuiLayoutFlirThermalTest < matlab.uitest.TestCase
             cleanupFolder = onCleanup(@() removeTempFolder(folder));
             cleanupFigure = onCleanup(@() h.closeAllFigures());
             sourcePath = fullfile(folder, "synthetic_flir.jpg");
+            secondSourcePath = fullfile(folder, "synthetic_flir_second.jpg");
             writeSyntheticFlirRjpegFixture(sourcePath);
+            writeSyntheticFlirRjpegFixture(secondSourcePath, ...
+                struct("raw", uint16(18000 + [50 60; 70 80])));
 
             [fig, debug] = labkit_FLIRThermal_app("debug");
             drawnow;
@@ -51,6 +54,15 @@ classdef GuiLayoutFlirThermalTest < matlab.uitest.TestCase
             testCase.verifyEqual(scaleAxes.PlotBoxAspectRatioMode, 'auto');
             testCase.verifyEmpty(char(string(scaleAxes.Title.String)));
             testCase.verifyEqual(numel(scaleAxes.Children), 1);
+
+            driver.chooseFiles('thermalFiles', secondSourcePath);
+            h.invokeButton(fig, 'Add FLIR files or folder');
+            testCase.verifyTrue(contains(driver.fileSelection('thermalFiles'), ...
+                'synthetic_flir_second.jpg'), ...
+                'FLIR Thermal append should select the newly added image.');
+            testCase.verifyTrue(contains(string(labkit.ui.view.getValue(ui, 'fileStatus')), ...
+                'Files: 2'), ...
+                'FLIR Thermal append should preserve the existing file.');
         end
 
         function flir_shared_range_limits_manual_adjustment_to_shared_bounds(testCase)

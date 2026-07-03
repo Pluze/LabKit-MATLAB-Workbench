@@ -12,7 +12,9 @@ classdef GuiLayoutImageEnhanceTest < matlab.uitest.TestCase
             mkdir(folder);
             folderCleanup = onCleanup(@() removeTempFolder(folder));
             sourcePath = fullfile(folder, 'paper.png');
+            secondSourcePath = fullfile(folder, 'paper_second.png');
             imwrite(syntheticPaperImage(), sourcePath);
+            imwrite(rot90(syntheticPaperImage()), secondSourcePath);
 
             [fig, debug] = labkit_ImageEnhance_app("debug");
             drawnow;
@@ -55,6 +57,14 @@ classdef GuiLayoutImageEnhanceTest < matlab.uitest.TestCase
             testCase.verifyTrue(any(contains(string(driver.textAreaValue('exportDetails')), ...
                 'Last manifest')), ...
                 'Image enhance details should show the last manifest after export.');
+
+            driver.chooseFiles('sourceImages', secondSourcePath);
+            driver.click('Add images or folder');
+            testCase.verifyTrue(contains(driver.fileStatus('sourceImages'), '2'), ...
+                'Image enhance append should preserve the existing source image.');
+            testCase.verifyTrue(contains(driver.fileSelection('sourceImages'), ...
+                'paper_second.png'), ...
+                'Image enhance append should select the newly added source image.');
         end
     end
 end

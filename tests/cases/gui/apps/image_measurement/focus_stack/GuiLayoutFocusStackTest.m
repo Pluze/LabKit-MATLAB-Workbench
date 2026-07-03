@@ -14,8 +14,10 @@ classdef GuiLayoutFocusStackTest < matlab.uitest.TestCase
             [nearImage, farImage] = syntheticFocusPair();
             nearPath = fullfile(folder, 'frame_near.png');
             farPath = fullfile(folder, 'frame_far.png');
+            extraPath = fullfile(folder, 'frame_extra.png');
             imwrite(uint8(255 .* nearImage), nearPath);
             imwrite(uint8(255 .* farImage), farPath);
+            imwrite(uint8(255 .* flip(farImage, 2)), extraPath);
 
             [fig, debug] = labkit_FocusStack_app("debug");
             drawnow;
@@ -57,6 +59,13 @@ classdef GuiLayoutFocusStackTest < matlab.uitest.TestCase
                 'Focus stack result table should include the input image count metric.');
             assert(any(contains(string(driver.textAreaValue('details')), 'Selected pixel coverage by source')), ...
                 'Focus stack details panel should describe the completed fusion result.');
+
+            driver.chooseFiles('sourceImages', extraPath);
+            driver.click('Add images or folder');
+            assert(contains(driver.fileStatus('sourceImages'), '3'), ...
+                'Focus stack append should preserve the existing source stack.');
+            assert(numel(driver.fileListItems('sourceImages')) == 3, ...
+                'Focus stack append should keep prior source images in the file list.');
         end
     end
 end

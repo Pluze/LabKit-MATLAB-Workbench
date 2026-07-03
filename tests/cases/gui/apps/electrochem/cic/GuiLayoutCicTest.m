@@ -9,6 +9,7 @@ classdef GuiLayoutCicTest < matlab.uitest.TestCase
             cleanup = onCleanup(@() h.closeAllFigures());
 
             fixture = dtaFixturePath('chrono_chronopot_current_pulse_0p2ms.DTA');
+            secondFixture = dtaFixturePath('chrono_chronopot_current_pulse_1ms.DTA');
             fig = h.launchFigure('labkit_CIC_app', ...
                 'Gamry CIC GUI (Voltage Transient)');
             assertCicLayout(h, fig);
@@ -41,6 +42,14 @@ classdef GuiLayoutCicTest < matlab.uitest.TestCase
                 'CIC workflow should draw the top plot.');
             testCase.verifyGreaterThan(numel(ui.controls.plotAxes.axesById.bottom.Children), 0, ...
                 'CIC workflow should draw the bottom plot.');
+
+            driver.chooseFiles('files', secondFixture);
+            driver.click('Add DTA files');
+
+            testCase.verifyEqual(char(driver.fileStatus('files')), '2 file(s) loaded');
+            testCase.verifyTrue(contains(driver.fileSelection('files'), ...
+                'chrono_chronopot_current_pulse_1ms.DTA'), ...
+                'CIC append should select the newly added chrono file.');
         end
     end
 end

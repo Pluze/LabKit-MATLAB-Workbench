@@ -9,6 +9,7 @@ classdef GuiLayoutVtResistanceTest < matlab.uitest.TestCase
             cleanup = onCleanup(@() h.closeAllFigures());
 
             fixture = dtaFixturePath('chrono_chronopot_current_pulse_0p2ms.DTA');
+            secondFixture = dtaFixturePath('chrono_chronopot_current_pulse_1ms.DTA');
             fig = h.launchFigure('labkit_VTResistance_app', ...
                 'Gamry VT Steady Resistance GUI');
             assertVtResistanceLayout(h, fig);
@@ -37,6 +38,14 @@ classdef GuiLayoutVtResistanceTest < matlab.uitest.TestCase
                 'VT resistance workflow should draw the top plot.');
             testCase.verifyGreaterThan(numel(ui.controls.plotAxes.axesById.bottom.Children), 0, ...
                 'VT resistance workflow should draw the bottom plot.');
+
+            driver.chooseFiles('files', secondFixture);
+            driver.click('Add DTA files');
+
+            testCase.verifyEqual(char(driver.fileStatus('files')), '2 file(s) loaded');
+            testCase.verifyTrue(contains(driver.fileSelection('files'), ...
+                'chrono_chronopot_current_pulse_1ms.DTA'), ...
+                'VT resistance append should select the newly added chrono file.');
         end
     end
 end

@@ -9,6 +9,7 @@ classdef GuiLayoutCscTest < matlab.uitest.TestCase
             cleanup = onCleanup(@() h.closeAllFigures());
 
             fixture = dtaFixturePath('cv_cyclic_voltammetry_pt_reference.DTA');
+            secondFixture = dtaFixturePath('cv_cyclic_voltammetry_pt_replicate.DTA');
             fig = h.launchFigure('labkit_CSC_app', ...
                 'Gamry DTA GUI (literature CSC)');
             assertCscLayout(h, fig);
@@ -40,6 +41,14 @@ classdef GuiLayoutCscTest < matlab.uitest.TestCase
                 'CSC workflow should draw the top plot.');
             testCase.verifyGreaterThan(numel(ui.controls.plotAxes.axesById.bottom.Children), 0, ...
                 'CSC workflow should draw the bottom plot.');
+
+            driver.chooseFiles('files', secondFixture);
+            driver.click('Add DTA files');
+
+            testCase.verifyEqual(char(driver.fileStatus('files')), '2 file(s) loaded');
+            testCase.verifyTrue(contains(driver.fileSelection('files'), ...
+                'cv_cyclic_voltammetry_pt_replicate.DTA'), ...
+                'CSC append should select the newly added CV/CT file.');
         end
     end
 end

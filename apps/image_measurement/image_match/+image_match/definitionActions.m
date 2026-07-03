@@ -126,10 +126,14 @@ function actions = definitionActions()
     end
 
     function onSourceImagesChosen(~, event)
-        paths = labkit.ui.view.filePaths(event.addedFiles);
-        if isempty(paths)
+        newFiles = labkit.ui.view.filePaths(event.addedFiles);
+        if isempty(newFiles)
             addLog('Image selection cancelled.');
             return;
+        end
+        paths = labkit.ui.view.filePaths(event.files);
+        if isempty(paths)
+            paths = newFiles;
         end
         try
             S.items = readOrReuseImages(paths);
@@ -139,7 +143,7 @@ function actions = definitionActions()
             return;
         end
 
-        S.currentIndex = 1;
+        S.currentIndex = currentIndexForAddedPath(paths, newFiles(1));
         S.steps = repmat(image_match.appState.emptyStep(), 0, 1);
         S.pendingDirty = false;
         invalidatePreviewCache();
@@ -427,6 +431,13 @@ function actions = definitionActions()
             if ~isempty(loadedIndex)
                 items(k) = loaded(loadedIndex);
             end
+        end
+    end
+
+    function idx = currentIndexForAddedPath(paths, addedPath)
+        idx = find(string(paths(:)) == string(addedPath), 1);
+        if isempty(idx)
+            idx = 1;
         end
     end
 

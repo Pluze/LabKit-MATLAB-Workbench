@@ -41,6 +41,7 @@ function state = addFiles(state, filepaths, services)
     end
 
     failed = struct('filepath', {}, 'message', {});
+    lastAddedIndex = [];
     for iFile = 1:numel(filepaths)
         filepath = filepaths(iFile);
         if isLoaded(state, filepath)
@@ -58,10 +59,14 @@ function state = addFiles(state, filepaths, services)
             continue;
         end
 
+        item = prepareSessionItem(item);
         state.items = appendItem(state.items, item);
+        lastAddedIndex = numel(state.items);
         addLoadedItemLog(item, services);
     end
-    if ~isempty(state.items) && isempty(state.current)
+    if ~isempty(lastAddedIndex)
+        state.current = lastAddedIndex;
+    elseif ~isempty(state.items) && isempty(state.current)
         state.current = 1;
     end
     state = refreshFileList(state, services);
@@ -493,10 +498,20 @@ function paths = normalizePaths(paths)
 end
 
 function items = appendItem(items, item)
+    item = prepareSessionItem(item);
     if isempty(items)
         items = item;
     else
         items(end + 1) = item;
+    end
+end
+
+function item = prepareSessionItem(item)
+    if ~isfield(item, 'currentCurve')
+        item.currentCurve = 1;
+    end
+    if ~isfield(item, 'analysis')
+        item.analysis = [];
     end
 end
 

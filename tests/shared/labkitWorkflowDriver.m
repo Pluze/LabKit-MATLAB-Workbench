@@ -17,6 +17,7 @@ function driver = labkitWorkflowDriver(fig)
     driver.checkbox = @(text, value) h.invokeCheckbox(fig, text, value);
     driver.fileStatus = @fileStatus;
     driver.fileListItems = @fileListItems;
+    driver.fileSelection = @fileSelection;
     driver.tableData = @tableData;
     driver.textAreaValue = @textAreaValue;
     driver.enabled = @enabled;
@@ -46,6 +47,11 @@ function driver = labkitWorkflowDriver(fig)
     function items = fileListItems(panelId)
         control = filePanel(panelId);
         items = string(control.listbox.Items);
+    end
+
+    function value = fileSelection(panelId)
+        control = filePanel(panelId);
+        value = string(control.listbox.Value);
     end
 
     function value = textAreaValue(controlId)

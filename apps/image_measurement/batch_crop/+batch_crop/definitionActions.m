@@ -64,14 +64,18 @@ function state = onStartup(state, ~, services)
 end
 
 function state = onImagesChosen(state, payload, services)
-    paths = labkit.ui.view.filePaths(payload.event.addedFiles);
-    if isempty(paths)
+    newFiles = labkit.ui.view.filePaths(payload.event.addedFiles);
+    if isempty(newFiles)
         addLog(services, 'Image file selection cancelled.');
         return;
     end
+    paths = labkit.ui.view.filePaths(payload.event.files);
+    if isempty(paths)
+        paths = newFiles;
+    end
     items = batch_crop.appState.itemsForPaths(paths);
     state.items = batch_crop.appState.mergeChosenItems(state.items, items);
-    state.currentIndex = min(max(state.currentIndex, 1), numel(state.items));
+    state.currentIndex = currentIndexForAddedPath(paths, newFiles(1));
     state.outputFolder = string(labkit.ui.app.defaultOutputFolder( ...
         paths, "batch_crop", state.outputFolder));
     state = clearExportAndCanvas(state);
@@ -81,6 +85,13 @@ function state = onImagesChosen(state, payload, services)
     end
     addLog(services, sprintf('Selected %d image file(s); crop tasks: %d.', ...
         numel(items), numel(state.items)));
+end
+
+function idx = currentIndexForAddedPath(paths, addedPath)
+    idx = find(string(paths(:)) == string(addedPath), 1);
+    if isempty(idx)
+        idx = 1;
+    end
 end
 
 function state = onClearImages(state, ~, services)

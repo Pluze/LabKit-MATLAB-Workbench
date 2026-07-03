@@ -50,6 +50,7 @@ function state = addFiles(state, filepaths, services)
     end
 
     failed = struct('filepath', {}, 'message', {});
+    lastAddedIndex = [];
     for iFile = 1:numel(filepaths)
         filepath = filepaths(iFile);
         if isLoaded(state, filepath)
@@ -72,9 +73,12 @@ function state = addFiles(state, filepaths, services)
         end
         item = analyzeItem(item, services);
         state.items = appendItem(state.items, item);
+        lastAddedIndex = numel(state.items);
         addLog(services, ['Loaded: ' char(filepath)]);
     end
-    if ~isempty(state.items) && isempty(state.current)
+    if ~isempty(lastAddedIndex)
+        state.current = lastAddedIndex;
+    elseif ~isempty(state.items) && isempty(state.current)
         state.current = 1;
     end
 

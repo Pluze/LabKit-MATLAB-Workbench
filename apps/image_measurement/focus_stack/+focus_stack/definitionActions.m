@@ -34,7 +34,10 @@ function state = onStartup(state, ~, services)
 end
 
 function state = onOpenFilesChosen(state, payload, services)
-    paths = labkit.ui.view.filePaths(payload.event.addedFiles);
+    paths = labkit.ui.view.filePaths(payload.event.files);
+    if isempty(paths)
+        paths = labkit.ui.view.filePaths(payload.event.addedFiles);
+    end
     if isempty(paths)
         addLog(services, 'Image selection cancelled.');
         return;

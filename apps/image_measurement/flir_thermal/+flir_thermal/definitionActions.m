@@ -108,7 +108,7 @@ function actions = definitionActions()
         if isempty(S.items)
             S.currentIndex = 0;
         else
-            S.currentIndex = 1;
+            S.currentIndex = flir_thermal.appState.currentIndexForAddedFiles(event.addedFiles, S.items);
             syncRangeControlsFromCurrentItem();
             loadedPaths = string({S.items.path});
             S.outputFolder = string(labkit.ui.app.defaultOutputFolder( ...

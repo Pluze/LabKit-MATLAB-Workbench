@@ -13,8 +13,10 @@ classdef GuiLayoutImageMatchTest < matlab.uitest.TestCase
             folderCleanup = onCleanup(@() removeTempFolder(folder));
             referencePath = fullfile(folder, 'reference.png');
             sourcePath = fullfile(folder, 'source.png');
+            secondSourcePath = fullfile(folder, 'source_second.png');
             imwrite(syntheticReferenceImage(), referencePath);
             imwrite(syntheticSourceImage(), sourcePath);
+            imwrite(rot90(syntheticSourceImage()), secondSourcePath);
 
             fig = h.launchFigure('labkit_ImageMatch_app', 'Paper Image Match');
             assertImageMatchLayout(h, fig);
@@ -55,6 +57,14 @@ classdef GuiLayoutImageMatchTest < matlab.uitest.TestCase
             testCase.verifyTrue(any(contains(string(driver.textAreaValue('exportDetails')), ...
                 'Last manifest')), ...
                 'Image match details should show the last manifest after export.');
+
+            driver.chooseFiles('sourceImages', secondSourcePath);
+            driver.click('Add images or folder');
+            testCase.verifyTrue(contains(driver.fileStatus('sourceImages'), '2'), ...
+                'Image match append should preserve the existing source image.');
+            testCase.verifyTrue(contains(driver.fileSelection('sourceImages'), ...
+                'source_second.png'), ...
+                'Image match append should select the newly added source image.');
         end
     end
 end

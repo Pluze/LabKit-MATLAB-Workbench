@@ -12,7 +12,9 @@ classdef GuiLayoutBatchCropTest < matlab.uitest.TestCase
             mkdir(folder);
             folderCleanup = onCleanup(@() removeTempFolder(folder));
             sourcePath = fullfile(folder, 'source.png');
+            secondSourcePath = fullfile(folder, 'source_second.png');
             imwrite(syntheticCropImage(), sourcePath);
+            imwrite(rot90(syntheticCropImage()), secondSourcePath);
 
             [fig, debug] = labkit_BatchImageCrop_app("debug");
             drawnow;
@@ -82,6 +84,13 @@ classdef GuiLayoutBatchCropTest < matlab.uitest.TestCase
                 'Batch crop workflow should write a cropped image.');
             assert(any(contains(string(driver.textAreaValue('details')), 'Last manifest')), ...
                 'Batch crop details should show the last manifest after export.');
+
+            driver.chooseFiles('images', secondSourcePath);
+            driver.click('Add images or folder');
+            assert(contains(driver.fileStatus('images'), '2'), ...
+                'Batch crop append should preserve the existing crop task.');
+            assert(contains(driver.fileSelection('images'), 'source_second.png'), ...
+                'Batch crop append should select the newly added image.');
         end
     end
 end
