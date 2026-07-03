@@ -61,7 +61,8 @@ Common choices:
 
 | Change area | Build task |
 | --- | --- |
-| Local iteration while files are changing | `buildtool changedFast` |
+| Tight local iteration on one known component | Focused `runLabKitTests("Suites", ...)` |
+| Coherent local checkpoint while files are still changing | `buildtool changedFast` |
 | Before commit, PR, or handoff | `buildtool changed` |
 | Full broad non-GUI validation | `buildtool headless` |
 | Full automated GUI validation | `buildtool gui` |
@@ -77,6 +78,31 @@ UI changes map to reusable UI coverage plus downstream GUI coverage; docs,
 AGENTS, tools, and runner support files map to project guardrails unless their
 own tests require broader coverage. The printed plan includes the selected
 suites, test-name selectors, GUI mode, and reason for each step.
+
+## Validation Cadence
+
+Prefer a staged validation cadence so small follow-up edits do not repeatedly
+pay the cost of broad changed-file planning:
+
+1. While actively editing one known component, run the smallest direct
+   `runLabKitTests("Suites", ...)` selection that covers the behavior being
+   changed. For GUI wiring, use the affected app GUI suite with
+   `IncludeGui=true`, `GuiMode="hidden"`, and `HtmlReport=false` during
+   iteration.
+2. After a coherent checkpoint, run `buildtool changedFast` once to verify the
+   diff-based plan before broader cleanup or review.
+3. Before commit, PR, or direct-main handoff, run `buildtool changed` unless a
+   recently completed broader gate fully covers the current diff.
+4. After push, inspect CI for the final pushed commit. If another user-requested
+   follow-up supersedes an in-progress run, continue the follow-up locally and
+   inspect CI for the newest pushed commit instead of waiting for the
+   superseded run.
+
+Do not rerun `changedFast`, `changed`, or CI after every small edit when the
+same focused suite can validate the changed behavior more directly. Escalate
+back to a changed-file build task when the fix touches additional ownership
+areas, changes validation routing, updates docs/AGENTS, or is ready for final
+handoff.
 
 ## CI Scope
 

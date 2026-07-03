@@ -122,10 +122,16 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
 
 ## Validation Scope Discipline
 
-- Use the fast changed-file build task for local iteration and the
-  conservative changed-file build task for pre-handoff validation when git
-  state is available. These tasks should route from the current diff and print
-  why each selected scope is being run.
+- Use focused `runLabKitTests("Suites", ...)` selections for active iteration
+  on one known component. Use the fast changed-file build task once at a
+  coherent checkpoint, and the conservative changed-file build task for
+  pre-handoff validation when git state is available. These tasks should route
+  from the current diff and print why each selected scope is being run.
+- Do not rerun changed-file build tasks after every small source edit when the
+  same focused suite directly covers the behavior. Escalate back to
+  `changedFast` or `changed` when the fix touches additional ownership areas,
+  changes validation routing, updates docs/AGENTS, or is ready for final
+  handoff.
 - If a changed-file plan fails, fix the specific failure and rerun the
   narrowest failing scope or suite directly; do not rerun the changed-file
   planner just to rediscover the same plan.

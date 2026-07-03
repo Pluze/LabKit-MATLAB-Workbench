@@ -109,31 +109,37 @@ When using local lab files to reproduce a bug:
 
 ## Validation
 
-Run relevant automated checks after executable MATLAB, test, fixture, package, or validation-rule changes. Use focused checks during iteration and the default non-GUI build task for broad changes.
+Run relevant automated checks after executable MATLAB, test, fixture, package, or validation-rule changes. Use the smallest source-aligned checks during iteration and reserve broader changed-file or default non-GUI gates for coherent checkpoints, handoff, release work, or changes whose ownership is unclear.
 
 Use `docs/testing.md` as the canonical command matrix for build tasks, CI
 scope, fixture expectations, and GUI validation limits. Scoped
 `AGENTS.md` files should only route by ownership and should not duplicate the
 full task list.
 
-For dirty worktrees, let the changed-file validation route choose the focused
-test plan before hand-selecting broader gates. Prefer non-disruptive validation
-while the user is actively working; local GUI gates can steal keyboard focus
-and should be run only when necessary or explicitly requested.
+For dirty worktrees, use a staged validation cadence. While actively editing a
+known component, prefer the smallest direct `runLabKitTests("Suites", ...)`
+selection that covers the behavior being changed. Run the fast changed-file
+gate once at a coherent local checkpoint, and run the conservative
+changed-file gate before commit, PR handoff, or direct-main push unless a
+broader completed gate already covers the current diff. Do not rerun
+changed-file build tasks after every small edit when a focused suite can
+validate the same behavior. Prefer non-disruptive validation while the user is
+actively working; local GUI gates can steal keyboard focus and should be run
+only when necessary or explicitly requested.
 
-In noninteractive agent shells, run MATLAB build tasks directly, for example
-`buildtool headless`. If the shell cannot find `buildtool`, locate MATLAB
-without adding a repository wrapper, for example:
+In noninteractive agent shells, run the selected MATLAB build task directly.
+If the shell cannot find `buildtool`, locate MATLAB without adding a
+repository wrapper, for example:
 
 ```bash
 ls /Applications/MATLAB_*.app/bin/matlab
 export PATH="/Applications/MATLAB_R2025a.app/bin:$PATH"
 ```
 
-Then rerun the same build task. If MATLAB exits before printing a build-task
-banner such as `** Starting headless`, treat that as a MATLAB launcher or
-runtime-access failure first. Do not diagnose source or test failures from an
-empty launcher result.
+Then rerun the same build task. If MATLAB exits before printing the selected
+build-task banner or a LabKit test-run banner, treat that as a MATLAB launcher
+or runtime-access failure first. Do not diagnose source or test failures from
+an empty launcher result.
 
 For commands that are known to require host runtime or network/keychain access,
 use escalated sandbox permissions on the first run instead of probing in the
@@ -178,11 +184,14 @@ Interactive GUI workflows are checked manually by the user. Do not run interacti
     run once because there is no later merge gate. When CI inspection is
     required, prefer low-output status checks such as `gh run list` or
     `gh run view --json status,conclusion,jobs`; use streaming `gh run watch`
-    only when concise status polling is insufficient. If CI fails, read only
-    the failing job logs, fix the underlying issue, rerun the relevant local
-    checks, push the fix, and repeat until required CI passes. A task is not
-    complete while required CI is red, unless CI access or infrastructure is
-    blocked and the blocker is reported explicitly.
+    only when concise status polling is insufficient. If the user requests a
+    follow-up while a previous direct-main CI run is still in progress, continue
+    the follow-up locally and inspect CI for the newest pushed commit instead
+    of waiting for a superseded run. If CI fails, read only the failing job
+    logs, fix the underlying issue, rerun the relevant local checks, push the
+    fix, and repeat until required CI passes. A task is not complete while
+    required CI for the latest pushed commit is red, unless CI access or
+    infrastructure is blocked and the blocker is reported explicitly.
 11. Before merging a PR, inspect required CI. If a status read needs waiting,
     find the most recent successful run for the same workflow/branch and wait
     at least that run's total elapsed duration; use the same duration as the

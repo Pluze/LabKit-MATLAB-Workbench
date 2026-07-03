@@ -29,15 +29,15 @@ command examples. Keep the public build-task set small: improve changed-file
 planner routing, representative selectors, printed plan reasons, or focused
 runner selectors before adding a new public task.
 
-Use the fast changed-file build task for tight local iteration when git state
-is available, and the conservative changed-file build task before handoff.
-These tasks inspect the current diff and print why each selected scope is
-being run. Use
-`runLabKitTests("Suites", ...)` for component, app-family, or focused GUI
-diagnosis after a scope is known. For local GUI edits that only touch one app,
-prefer the app-level GUI folder, for example a `Suites` value such as
-`gui/apps/image_measurement/batch_crop` with `IncludeGui=true` and
-`GuiMode="hidden"`.
+Use focused `runLabKitTests("Suites", ...)` selections for tight local
+iteration after the affected scope is known. Use the fast changed-file build
+task once at a coherent checkpoint, and the conservative changed-file build
+task before handoff. Changed-file tasks inspect the current diff and print why
+each selected scope is being run, but they should not be rerun after every
+small source edit when a focused suite covers the same behavior. For local GUI
+edits that only touch one app, prefer the app-level GUI folder, for example a
+`Suites` value such as `gui/apps/image_measurement/batch_crop` with
+`IncludeGui=true`, `GuiMode="hidden"`, and `HtmlReport=false` during iteration.
 
 For broad validation, prefer public buildfile tasks and let the buildfile own
 whether a large selected test set should run serially or through internal
@@ -47,13 +47,13 @@ combined shards must cover the same selected suite. On GitHub Actions, keep the
 public CI entry as `buildtool headless` and let the buildfile choose serial
 execution unless independent child MATLAB licensing has been proven.
 
-For a dirty worktree, route through the changed-file validation planner before
-manually choosing tests. The focused planner maps the current diff to the
-affected plan; do not skip that planning step and hand-pick broad or low-level
-suites just because the likely answer seems obvious. If release validation or
-an explicit user request requires broader gates, run them after the focused
-plan or state why a completed broader gate fully covers the affected plan
-instead of rerunning narrower tests for ceremony.
+For a dirty worktree with unclear ownership, route through the changed-file
+validation planner before manually choosing tests. When ownership is clear,
+start with the smallest direct suite that covers the edited behavior, then use
+`changedFast` for a coherent checkpoint and `changed` for final handoff. If
+release validation or an explicit user request requires broader gates, run
+them after focused iteration or state why a completed broader gate fully covers
+the affected plan instead of rerunning narrower tests for ceremony.
 
 After a planned run fails, do not rerun the planner just to discover the same
 scope again. Fix the root cause and rerun the narrowest failed suite or test
