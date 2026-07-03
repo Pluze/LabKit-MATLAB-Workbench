@@ -21,7 +21,8 @@ function verify_gui_layout_ui_app_runtime()
 
     actions = struct( ...
         'startup', @startupAction, ...
-        'increment', @incrementAction);
+        'increment', @incrementAction, ...
+        'applyPayload', @applyPayloadAction);
     def = labkit.ui.app.define( ...
         "Id", "runtime_probe", ...
         "Title", "Runtime Probe", ...
@@ -47,11 +48,19 @@ function verify_gui_layout_ui_app_runtime()
     assert(contains(string(ui.controls.status.textArea.Value), "Count: 11"), ...
         'Action dispatch should render the updated app state.');
 
+    dispatch = getappdata(fig, 'runtimeProbeDispatch');
+    dispatch("applyPayload", struct("amount", 4));
+    runtime = getappdata(fig, 'labkitUiAppRuntime');
+    assert(runtime.state.count == 15, ...
+        'Services dispatch should accept app payload structs.');
+    assert(runtime.state.lastPayload == "4", ...
+        'Services dispatch should deliver custom payload fields.');
+
     clear cleanupFigures cleanupMode;
 end
 
 function state = initialState()
-    state = struct('count', 0);
+    state = struct('count', 0, 'lastPayload', "");
 end
 
 function spec = buildSpec(callbacks, ~)
@@ -71,6 +80,12 @@ function state = incrementAction(state, ~, ~)
     state.count = state.count + 1;
 end
 
-function renderState(state, ui, ~)
+function state = applyPayloadAction(state, payload, ~)
+    state.count = state.count + payload.event.amount;
+    state.lastPayload = string(payload.event.amount);
+end
+
+function renderState(state, ui, services)
     labkit.ui.view.setValue(ui, "status", "Count: " + state.count);
+    setappdata(services.figure, 'runtimeProbeDispatch', services.dispatch);
 end

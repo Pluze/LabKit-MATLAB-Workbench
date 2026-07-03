@@ -189,8 +189,27 @@ function services = runtimeServices(fig, runtime)
     services.figure = fig;
     services.ui = runtime.ui;
     services.debug = runtime.debug;
-    services.dispatch = @(id) dispatchRuntimeAction(fig, id, [], ...
-        struct('id', string(id), 'kind', "programmatic", 'source', "app"));
+    services.dispatch = @(id, varargin) dispatchProgrammaticAction( ...
+        fig, id, varargin{:});
+end
+
+function dispatchProgrammaticAction(fig, id, event)
+    if nargin < 3
+        event = struct();
+    end
+    if isstruct(event)
+        event.id = string(id);
+        if ~isfield(event, 'kind')
+            event.kind = "programmatic";
+        end
+        if ~isfield(event, 'source')
+            event.source = "app";
+        end
+    else
+        event = struct('id', string(id), 'kind', "programmatic", ...
+            'source', "app", 'value', event);
+    end
+    dispatchRuntimeAction(fig, id, [], event);
 end
 
 function applyRuntimeEffects(fig, effects)
