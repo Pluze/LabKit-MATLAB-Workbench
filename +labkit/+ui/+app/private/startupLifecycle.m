@@ -97,13 +97,19 @@ function state = updateStateWithMessage(state, message, forceVisible)
         state = showStatus(state);
         becameVisible = state.visible;
     end
-    if state.visible && isLiveHandle(state.label)
+    if shouldUpdateStatusLabel(state, becameVisible) && isLiveHandle(state.label)
         state.label.Text = char(state.message);
+        state.statusLabelUpdated = true;
     end
     if shouldFlushStatus(state, becameVisible)
         drawnow limitrate;
         state.statusFlushed = true;
     end
+end
+
+function tf = shouldUpdateStatusLabel(state, becameVisible)
+    tf = state.visible && (becameVisible || ~state.statusLabelUpdated || ...
+        isFailureMessage(state.message));
 end
 
 function tf = shouldShowStatus(state, forceVisible)
@@ -235,6 +241,7 @@ function state = defaultState(fig)
     state.mainGrid = [];
     state.panel = [];
     state.label = [];
+    state.statusLabelUpdated = false;
     state.statusFlushed = false;
     state.oldBusy = struct('hadValue', false, 'value', []);
 end
