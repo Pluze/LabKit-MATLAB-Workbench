@@ -57,8 +57,8 @@ Current facts:
   `definitionActions.m`, `+appLifecycle/createInitialState.m`, and
   `+userInterface/buildWorkbenchSpec.m`. Treat that shape as the next target,
   not as current behavior.
-- Package-root app `run.m` files are active debt because they own lifecycle
-  orchestration, not because they exceed the file budget.
+- Package-root app `run.m` orchestration has been retired. App structure
+  guardrails now require `definition.m` and reject package-root app runners.
 - `+labkit` implementation hotspots near the file budget:
   - `+labkit/+ui/+diag/createContext.m` at 649 lines
   - `+labkit/+ui/+tool/createRuntime.m` at 636 lines
@@ -106,8 +106,8 @@ Current facts:
 
 Open a new active route here only when current scans expose concrete debt:
 
-- an app `run.m` exceeds the 650-line hard budget, or a substantive change
-  would add unrelated behavior to a budget-watchlist runner without a
+- a package-root app `run.m` reappears, or a substantive change would add
+  unrelated behavior to a budget-watchlist transitional action table without a
   responsibility audit
 - helper-quality audit reports new `inline-or-merge-candidate` rows after
   excluding valid contracts such as app entrypoints, `requirements.m`,
