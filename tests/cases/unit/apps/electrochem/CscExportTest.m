@@ -92,17 +92,31 @@ function verify_cscExport()
     [ok, msg, info] = csc.resultFiles.writeVoltageCurrentCSV(fourCycleItem, ...
         cvDataPath, struct('ignoreEdgeCycles', true));
     assert(ok, msg);
-    assert(info.rows > height(T), ...
-        'CSC CV data export should write point-level rows, not summary rows.');
-    cvData = readtable(cvDataPath);
-    expectedCvNames = {'File', 'CycleIndex', 'PointIndex', ...
-        'Potential_V', 'Current_A', 'ScanRate_V_s', 'IncludeInCSC'};
-    assert(isequal(cvData.Properties.VariableNames, expectedCvNames), ...
-        'CSC CV data CSV should keep the minimal plotting/recalculation schema.');
-    assert(all(cvData.ScanRate_V_s == fourCycleItem.scanRate), ...
-        'CSC CV data CSV should include scan rate for recalculation.');
-    assert(any(~cvData.IncludeInCSC) && any(cvData.IncludeInCSC), ...
-        'CSC CV data CSV should mark ignored edge cycles without deleting raw points.');
+    assert(numel(info.files) == 1 && isfile(cvDataPath), ...
+        'CSC CV data export should write one CSV when voltage grids match.');
+    cvData = readcell(cvDataPath);
+    assert(strcmp(cvData{1, 1}, 'Potential_V'), ...
+        'CSC CV data CSV should use a voltage column first.');
+    assert(size(cvData, 2) == 5, ...
+        'CSC CV data CSV should export one current and one scan-rate column per kept cycle.');
+    assert(contains(string(cvData{1, 2}), 'Cycle2_Current_A') && ...
+            contains(string(cvData{1, 4}), 'Cycle3_Current_A'), ...
+        'CSC CV data CSV should omit ignored edge cycles and keep middle cycles as columns.');
+    assert(all(cell2mat(cvData(2:end, 3)) == fourCycleItem.scanRate) && ...
+            all(cell2mat(cvData(2:end, 5)) == fourCycleItem.scanRate), ...
+        'CSC CV data CSV should include per-cycle scan-rate columns.');
+
+    splitBase = [tempname '.csv'];
+    splitCleaner = onCleanup(@() deleteSplitCsvs(splitBase, fourCycleItem.name));
+    shiftedItem = fourCycleItem;
+    shiftedItem.name = 'shifted.DTA';
+    shiftedItem.curves(1).data(:, strcmp(shiftedItem.curves(1).headers, 'Vf')) = ...
+        shiftedItem.curves(1).data(:, strcmp(shiftedItem.curves(1).headers, 'Vf')) + 1e-3;
+    [ok, msg, splitInfo] = csc.resultFiles.writeVoltageCurrentCSV( ...
+        [fourCycleItem shiftedItem], splitBase, struct());
+    assert(ok, msg);
+    assert(numel(splitInfo.files) == 2 && all(isfile(splitInfo.files)), ...
+        'CSC CV data export should split by DTA when voltage grids differ.');
 end
 
 function checkIgnoreEdgeCycleCounts()
@@ -130,4 +144,16 @@ function deleteIfExists(filepath)
     if exist(filepath, 'file') == 2
         delete(filepath);
     end
+end
+
+function deleteSplitCsvs(basePath, itemName)
+    [folder, stem, ext] = fileparts(basePath);
+    deleteIfExists(fullfile(folder, sprintf('%s_%s%s', stem, ...
+        safeStem(itemName), ext)));
+    deleteIfExists(fullfile(folder, sprintf('%s_shifted_DTA%s', stem, ext)));
+end
+
+function stem = safeStem(value)
+    stem = regexprep(char(string(value)), '[^A-Za-z0-9_-]+', '_');
+    stem = regexprep(stem, '^_+|_+$', '');
 end

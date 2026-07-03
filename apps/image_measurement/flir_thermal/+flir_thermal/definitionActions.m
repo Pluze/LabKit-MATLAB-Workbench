@@ -357,10 +357,10 @@ function actions = definitionActions()
             resetPreviewAxes();
             return;
         end
-        [values, units, label] = previewValues(item);
+        [values, units, label] = flir_thermal.userInterface.valueMatrix(item);
         range = currentRange();
-        rgb = labkit.thermal.renderImage(values, ...
-            struct('Limits', range, 'Palette', currentPalette()));
+        rgb = flir_thermal.userInterface.renderThermalImage(values, ...
+            range, currentPalette(), string(labkit.ui.view.getValue(ui, 'colorMapping')));
         imageHandle = labkit.ui.view.drawImage(ui, 'preview', rgb, ...
             'axis', 'thermalImage', ...
             'title', char(label), ...
@@ -407,9 +407,6 @@ function actions = definitionActions()
         refreshSummary();
         refreshDetails();
         syncRuntimeState();
-    end
-    function [values, units, label] = previewValues(item)
-        [values, units, label] = flir_thermal.userInterface.valueMatrix(item);
     end
     function refreshSummary()
         item = currentItem();
@@ -548,8 +545,9 @@ function actions = definitionActions()
     end
     function drawTemperatureScale(range, units)
         values = linspace(range(1), range(2), 256).';
-        imageData = labkit.thermal.renderImage(repmat(values, 1, 12), ...
-            struct('Limits', range, 'Palette', currentPalette()));
+        imageData = flir_thermal.userInterface.renderThermalImage( ...
+            repmat(values, 1, 12), range, currentPalette(), ...
+            string(labkit.ui.view.getValue(ui, 'colorMapping')));
         ax = ui.controls.preview.axesById.temperatureScale;
         cla(ax);
         image(ax, 'CData', imageData, 'XData', [0 1], 'YData', range);
@@ -601,6 +599,7 @@ function actions = definitionActions()
         opts.outputFolder = S.outputFolder;
         opts.format = string(labkit.ui.view.getValue(ui, 'exportFormat'));
         opts.palette = currentPalette();
+        opts.colorMapping = string(labkit.ui.view.getValue(ui, 'colorMapping'));
         opts.range = [];
     end
     function addLog(message)

@@ -22,6 +22,7 @@ classdef FlirThermalTest < matlab.unittest.TestCase
                 "outputFolder", folder, ...
                 "format", "PNG", ...
                 "palette", "iron", ...
+                "colorMapping", "Log", ...
                 "range", []));
             labels = flir_thermal.userInterface.rangeControlLabels();
 
@@ -47,6 +48,7 @@ classdef FlirThermalTest < matlab.unittest.TestCase
             testCase.verifyTrue(any(contains(string(details), "Current file: synthetic_flir.jpg")));
             testCase.verifyTrue(any(contains(string(details), "Range status: needs range")));
             testCase.verifyEqual(payload.results.status, "saved");
+            testCase.verifyEqual(payload.results.colorMapping, "Log");
             testCase.verifyEqual(payload.results.rangeMin, range(1));
             testCase.verifyEqual(payload.results.rangeMax, range(2));
             testCase.verifyTrue(isfile(payload.results.thermalImagePath));
@@ -66,6 +68,17 @@ classdef FlirThermalTest < matlab.unittest.TestCase
             testCase.verifySize(exportedTemperature, size(items(1).temperatureC));
             testCase.verifyEqual(exportedTemperature, items(1).temperatureC, ...
                 "AbsTol", 1e-10);
+
+            gradient = [10 20; 40 90];
+            unchanged = gradient;
+            linearRgb = flir_thermal.userInterface.renderThermalImage( ...
+                gradient, [10 90], "turbo", "Linear");
+            logRgb = flir_thermal.userInterface.renderThermalImage( ...
+                gradient, [10 90], "turbo", "Log");
+            testCase.verifyEqual(gradient, unchanged, ...
+                'Log color mapping should not mutate source temperature data.');
+            testCase.verifyGreaterThan(max(abs(linearRgb(:) - logRgb(:))), 0, ...
+                'Log color mapping should affect only rendered RGB colors.');
 
         end
 

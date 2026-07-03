@@ -26,6 +26,12 @@ function [ok, msg, cancelled] = promptExportVoltageCurrent(items, services, opts
         labkit.ui.app.showAlert(services.figure, msg, 'Export');
         return;
     end
-    msg = sprintf('Exported CV data CSV: %s (%d point rows)', ...
-        char(info.files(1)), info.rows);
+    if numel(info.files) == 1
+        msg = sprintf('Exported CV data CSV: %s (%d voltage rows)', ...
+            char(info.files(1)), info.rows);
+    else
+        folder = fileparts(char(info.files(1)));
+        msg = sprintf('Exported %d CV data CSV files in %s (%d voltage rows)', ...
+            numel(info.files), folder, info.rows);
+    end
 end
