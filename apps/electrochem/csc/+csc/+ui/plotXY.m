@@ -1,4 +1,4 @@
-% App-owned CSC plotting helper. Expected caller: csc.ui.runApp plot callbacks.
+% App-owned CSC plotting helper. Expected caller: CSC action/render callbacks.
 % Inputs are a target axes, prepared X/Y vectors, label struct, and display
 % options. Output is a status struct for runner logging. Side effects are
 % limited to drawing on the supplied axes; assumes csc.view.plotRequest prepared

@@ -1,4 +1,4 @@
-% Expected caller: csc.run during debug launch and unit tests. Input is a
+% Expected caller: csc.actions.table during debug launch and unit tests. Input is a
 % LabKit debug context. Output is a deterministic synthetic CV/CT DTA sample
 % pack. Side effects: writes anonymous debug input files and records a session
 % manifest when available.

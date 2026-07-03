@@ -50,12 +50,11 @@ Current facts:
   - `labkit_launcher.m`: 1,547 lines and intentionally exempt
 - Tracked files over the 650-line repository file budget:
   `labkit_launcher.m` only, by design.
-- There are 17 supported app packages. Ten currently launch through
+- There are 17 supported app packages. Eleven currently launch through
   `labkit.ui.app.run(<slug>.definition(), request)` using transitional
-  `+state`, `+actions`, `+ui`, and `+view` adapters. Seven still launch
+  `+state`, `+actions`, `+ui`, and `+view` adapters. Six still launch
   through package-root `run.m` orchestration:
   - `apps/dic/dic_preprocess/+dic_preprocess/run.m`
-  - `apps/electrochem/csc/+csc/run.m`
   - `apps/image_measurement/curvature/+curvature/run.m`
   - `apps/image_measurement/flir_thermal/+flir_thermal/run.m`
   - `apps/image_measurement/image_enhance/+image_enhance/run.m`
@@ -133,9 +132,10 @@ Open a new active route here only when current scans expose concrete debt:
 ## Active Route: Declarative App Runtime
 
 Status: documentation alignment, runtime hydration/timing, and the Batch Image
-Crop transitional migration are committed on the active branch. This is not a
-final state. The route remains open until every app launches through a
-framework-owned definition and package-root eager orchestration is removed.
+Crop and CSC transitional migrations are committed or in progress on the
+active branch. This is not a final state. The route remains open until every
+app launches through a framework-owned definition and package-root eager
+orchestration is removed.
 
 Opened 2026-07-02 after launcher/app startup traces showed blank app frames
 and delayed first render across multiple apps. Revised 2026-07-03 to make the
@@ -146,7 +146,7 @@ patch.
 
 1. Keep docs and guardrails aligned with the current migration stage.
 2. Close remaining runtime gaps in `labkit.ui.app.run`.
-3. Migrate the seven remaining package-root runners to transitional
+3. Migrate the six remaining package-root runners to transitional
    definitions.
 4. Migrate all transitional definitions to workflow-first packages.
 5. Harden guardrails after at least one representative app proves the final
@@ -321,9 +321,9 @@ flags to app code, or add a generator before the definition DSL is proven.
      readiness state.
 
 2. App migration
-   - Finish retiring the seven remaining package-root runners.
+   - Finish retiring the six remaining package-root runners.
    - Start with FLIR Thermal, Curvature Measurement, Image Enhance, Image
-     Match, RHS Preview, DIC Preprocess, and CSC.
+     Match, RHS Preview, and DIC Preprocess.
    - After runtime gaps are closed, migrate transitional definitions from
      `+state/+actions/+ui/+view` to workflow-first packages by app family.
    - Remove obsolete runner or adapter code after behavior coverage passes

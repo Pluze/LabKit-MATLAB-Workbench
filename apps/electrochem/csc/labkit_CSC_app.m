@@ -37,9 +37,8 @@ function varargout = labkit_CSC_app(varargin)
         error('labkit_CSC_app:TooManyOutputs', 'labkit_CSC_app returns at most the app figure handle.');
     end
 
-    % Application state container
-
-    fig = csc.run(debugLog);
+    request = struct("debug", debugLog);
+    fig = labkit.ui.app.run(csc.definition(), request);
     labkit.ui.app.applyVersionTitle(fig, appVersion);
     if nargout >= 1
         varargout{1} = fig;
