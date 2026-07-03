@@ -1,4 +1,4 @@
-% Expected caller: vt_resistance.ui.runApp. Input is a callback struct whose
+% Expected caller: vt_resistance.definition. Input is a callback struct whose
 % fields are app-owned callback handles. Output is a data-only UI 3.0 workbench
 % spec for the VT Resistance app.
 function spec = buildSpec(callbacks)

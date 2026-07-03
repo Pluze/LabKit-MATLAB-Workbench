@@ -1,4 +1,4 @@
-% Expected caller: vt_resistance.run during debug launch and unit tests.
+% Expected caller: vt_resistance.actions.table startup action and unit tests.
 % Input is a LabKit debug context. Output is a deterministic synthetic chrono
 % DTA sample pack. Side effects: writes anonymous debug input files and records
 % a session manifest when available.
