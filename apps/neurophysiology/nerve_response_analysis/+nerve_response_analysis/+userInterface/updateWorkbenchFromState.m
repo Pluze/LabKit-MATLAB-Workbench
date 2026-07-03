@@ -1,7 +1,7 @@
 % App-owned renderer for Nerve Response Analysis. Expected caller is
 % labkit.ui.app.run after actions update state. Inputs are app state and UI
 % registry. Side effects are limited to UI control, table, and axes updates.
-function render(state, ui, ~)
+function updateWorkbenchFromState(state, ui, ~)
     labkit.ui.view.setValue(ui, "sessionFile", fileValue(state.sessionFile));
     labkit.ui.view.setValue(ui, "protocolFile", fileValue(state.protocolFile));
     labkit.ui.view.setValue(ui, "maxRecordings", state.maxRecordings);
@@ -14,10 +14,10 @@ function render(state, ui, ~)
         ~isempty(state.analysis) && strlength(state.outputFolder) > 0);
     labkit.ui.view.setValue(ui, "statusField", char(state.statusMessage));
     ui.controls.summaryTable.table.Data = ...
-        nerve_response_analysis.view.summaryTableData(state);
+        nerve_response_analysis.userInterface.summaryTableData(state);
     ui.controls.details.textArea.Value = ...
-        nerve_response_analysis.view.detailLines(state);
-    nerve_response_analysis.view.drawAnalysisPreview( ...
+        nerve_response_analysis.userInterface.detailLines(state);
+    nerve_response_analysis.userInterface.drawAnalysisPreview( ...
         ui.controls.preview.primaryAxes, state);
 end
 

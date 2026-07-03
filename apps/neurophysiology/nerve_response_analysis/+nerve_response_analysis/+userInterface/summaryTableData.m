@@ -1,4 +1,5 @@
-% Expected caller: nerve_response_analysis.run/buildSpec. Input is app
+% Expected caller: nerve_response_analysis.userInterface.updateWorkbenchFromState
+% or buildWorkbenchSpec. Input is app
 % state. Output is a two-column result-table cell array.
 function data = summaryTableData(S)
 %SUMMARYTABLEDATA Build nerve-response analysis summary rows.

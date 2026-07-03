@@ -53,14 +53,15 @@ Current facts:
 - There are 17 supported app packages. All currently launch through
   `labkit.ui.app.run(<slug>.definition(), request)`.
 - Chrono Overlay, EIS, VT Resistance, CIC, CSC, Response Review Stats, ECG
-  Print, and RHS Preview now prove the final workflow-first app package shape:
+  Print, RHS Preview, and Nerve Response Analysis now prove the final
+  workflow-first app package shape:
   `definitionActions.m`, `+appLifecycle/createInitialState.m`,
   `+userInterface/buildWorkbenchSpec.m`,
   `+userInterface/updateWorkbenchFromState.m`, workflow packages such as
   `+sourceFiles`, `+analysisRun`, and `+resultFiles`, with no legacy
   `+actions`, `+state`, `+ui`, `+view`, `+ops`, `+io`, or `+export`
   buckets.
-- The other 9 app packages still use transitional `+state`, `+actions`,
+- The other 8 app packages still use transitional `+state`, `+actions`,
   `+ui`, and `+view` adapters. Treat those adapters as the next migration
   target, not as final behavior.
 - Package-root app `run.m` orchestration has been retired. App structure
@@ -331,9 +332,9 @@ flags to app code, or add a generator before the definition DSL is proven.
    - Package-root runner orchestration has been retired; keep new work on
      definitions and workflow-first packages.
    - Chrono Overlay, EIS, VT Resistance, CIC, CSC, Response Review Stats, ECG
-     Print, and RHS Preview are representative workflow-first packages and
-     should be used as small app references for the fixed lifecycle/UI surface
-     and direct workflow package tests.
+     Print, RHS Preview, and Nerve Response Analysis are representative
+     workflow-first packages and should be used as small app references for
+     the fixed lifecycle/UI surface and direct workflow package tests.
    - After runtime gaps are closed, migrate transitional definitions from
      `+state/+actions/+ui/+view` to workflow-first packages by app family.
    - Remove obsolete runner or adapter code after behavior coverage passes

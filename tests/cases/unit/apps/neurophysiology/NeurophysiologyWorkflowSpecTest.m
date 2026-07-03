@@ -22,7 +22,7 @@ classdef NeurophysiologyWorkflowSpecTest < matlab.unittest.TestCase
         function analysisWorkflowKeepsHeavyAnalyzeExplicit(testCase)
             setupLabKitTestPath();
 
-            spec = nerve_response_analysis.ui.buildSpec(struct());
+            spec = nerve_response_analysis.userInterface.buildWorkbenchSpec(struct());
 
             testCase.verifyEqual(tabTitles(spec), ...
                 ["Setup", "Protocol", "Review", "Export", "Log"]);

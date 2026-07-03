@@ -1,4 +1,4 @@
-% Expected caller: nerve_response_analysis.ops.analyzeRecording or tests.
+% Expected caller: nerve_response_analysis.analysisRun.analyzeRecording or tests.
 % Input signalSet has timeSec, channelNames, values, and optional roles map.
 % Output is pair-wise positive-minus-negative signals. No side effects.
 function derived = computeDifferentials(signalSet, pairs)

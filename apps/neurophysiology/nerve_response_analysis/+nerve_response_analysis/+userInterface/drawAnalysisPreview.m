@@ -1,4 +1,4 @@
-% Expected caller: nerve_response_analysis.run. Inputs are a UI axes handle
+% Expected caller: nerve_response_analysis.userInterface.updateWorkbenchFromState. Inputs are a UI axes handle
 % and app state. Side effect is redrawing the axes with analysis counts.
 function drawAnalysisPreview(ax, S)
 %DRAWANALYSISPREVIEW Draw a compact nerve-response analysis preview.

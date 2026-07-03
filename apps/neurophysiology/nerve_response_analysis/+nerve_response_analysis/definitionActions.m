@@ -2,7 +2,7 @@
 % nerve_response_analysis.definition. Output maps semantic action ids to
 % handlers used by labkit.ui.app.run. Handlers own workflow transitions,
 % analysis, and export side effects.
-function actions = table()
+function actions = definitionActions()
     actions = struct( ...
         "startup", @onStartup, ...
         "sessionChosen", @onSessionChosen, ...
@@ -126,7 +126,7 @@ function state = onRunAnalysis(state, ~, services)
         if state.maxDurationSec > 0
             opts.maxDurationSec = state.maxDurationSec;
         end
-        state.analysis = nerve_response_analysis.ops.analyzeSession( ...
+        state.analysis = nerve_response_analysis.analysisRun.analyzeSession( ...
             session, protocol, opts);
     catch ME
         services.debug.reportException('nerveResponseAnalysis', ...
@@ -154,14 +154,14 @@ function state = onExportAnalysis(state, ~, services)
     end
     outputPath = fullfile(char(state.outputFolder), ...
         "nerve_response_analysis.json");
-    nerve_response_analysis.export.writeAnalysisJson(state.analysis, outputPath);
+    nerve_response_analysis.resultFiles.writeAnalysisJson(state.analysis, outputPath);
     state.statusMessage = "Exported nerve-response analysis.";
     state.lastAction = "Exported analysis";
     addLog(services, "Exported analysis JSON: " + displayPath(outputPath));
 end
 
 function state = onResetWorkflow(~, ~, services)
-    state = nerve_response_analysis.state.initial();
+    state = nerve_response_analysis.appLifecycle.createInitialState();
     addLog(services, "Reset Nerve Response Analysis state.");
 end
 

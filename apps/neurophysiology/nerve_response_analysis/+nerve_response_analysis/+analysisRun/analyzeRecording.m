@@ -1,4 +1,4 @@
-% Expected caller: nerve_response_analysis.ops.analyzeSession or tests.
+% Expected caller: nerve_response_analysis.analysisRun.analyzeSession or tests.
 % Inputs are one RHS path, one protocol struct, and options. Output is a
 % recording analysis struct. Side effects are lazy RHS window reads only.
 function analysis = analyzeRecording(filepath, protocol, opts)
@@ -40,7 +40,7 @@ function analysis = analyzeRecording(filepath, protocol, opts)
 
     eventOpts = fieldOrDefault(opts, "eventDetection", struct());
     eventOpts.sourceId = sourceId;
-    [events, trains] = nerve_response_analysis.ops.detectEventTrains( ...
+    [events, trains] = nerve_response_analysis.analysisRun.detectEventTrains( ...
         eventTime, eventSignal, eventOpts);
     analysis.events = addRecordingId(events, recordingId);
     analysis.trains = addRecordingId(trains, recordingId);
@@ -307,9 +307,9 @@ function result = analyzePair(filepath, pair, roles, protocol, ...
     end
 
     commonOpts = struct();
-    corrected = nerve_response_analysis.ops.commonModeCorrect(timeSec, ...
+    corrected = nerve_response_analysis.analysisRun.commonModeCorrect(timeSec, ...
         positive, negative, common, commonOpts);
-    metrics = nerve_response_analysis.ops.measureCapMetrics(timeSec, ...
+    metrics = nerve_response_analysis.analysisRun.measureCapMetrics(timeSec, ...
         corrected.corrected, eventTimesSec, struct());
     metrics.recordingId = repmat(recordingId, height(metrics), 1);
     metrics.pairId = repmat(pairId, height(metrics), 1);

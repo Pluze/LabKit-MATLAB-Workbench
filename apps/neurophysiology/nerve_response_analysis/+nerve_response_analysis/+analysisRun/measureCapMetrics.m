@@ -1,4 +1,4 @@
-% Expected caller: nerve_response_analysis.ops.analyzeRecording or tests.
+% Expected caller: nerve_response_analysis.analysisRun.analyzeRecording or tests.
 % Inputs are one time vector, one response signal, event times, and analysis
 % metric options. Output is one CAP metric table. No side effects.
 function metrics = measureCapMetrics(timeSec, signal, eventTimesSec, opts)

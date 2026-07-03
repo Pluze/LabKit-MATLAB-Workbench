@@ -1,7 +1,7 @@
 % Expected caller: nerve_response_analysis.definition. Inputs are app callback
 % handles. Output is a data-only UI 3.0 workbench spec.
-function spec = buildSpec(callbacks)
-%BUILDSPEC Build the Nerve Response Analysis UI spec.
+function spec = buildWorkbenchSpec(callbacks)
+%BUILDWORKBENCHSPEC Build the Nerve Response Analysis UI spec.
 
     spec = labkit.ui.spec.app("nerve_response_analysis", ...
         "Nerve Response Analysis", ...
@@ -118,13 +118,13 @@ function section = summarySection()
         labkit.ui.spec.resultTable("summaryTable", ...
             "Nerve Response Analysis Summary", ...
             "columns", {"Field", "Value"}, ...
-            "data", nerve_response_analysis.view.summaryTableData(struct()))});
+            "data", nerve_response_analysis.userInterface.summaryTableData(struct()))});
 end
 
 function section = detailsSection()
     section = labkit.ui.spec.section("detailsSection", "Details", { ...
         labkit.ui.spec.statusPanel("details", "Details", ...
-            "value", nerve_response_analysis.view.detailLines(struct()))});
+            "value", nerve_response_analysis.userInterface.detailLines(struct()))});
 end
 
 function workspace = previewWorkspace(callbacks)

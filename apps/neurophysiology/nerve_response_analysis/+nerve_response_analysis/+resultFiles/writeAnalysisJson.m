@@ -1,4 +1,4 @@
-% Expected caller: nerve_response_analysis.run. Input is an analysis struct
+% Expected caller: nerve_response_analysis.definitionActions. Input is an analysis struct
 % and target JSON path. Output is the written path. Side effect is one file.
 function outputPath = writeAnalysisJson(analysis, outputPath)
 %WRITEANALYSISJSON Write nerve-response analysis JSON.
@@ -8,7 +8,7 @@ function outputPath = writeAnalysisJson(analysis, outputPath)
         error("nerve_response_analysis:InvalidOutput", ...
             "Analysis export requires an output path.");
     end
-    payload = nerve_response_analysis.export.analysisJsonStruct(analysis);
+    payload = nerve_response_analysis.resultFiles.analysisJsonStruct(analysis);
     text = jsonencode(payload, "PrettyPrint", true);
     fid = fopen(char(outputPath), "w");
     if fid < 0

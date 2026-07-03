@@ -1,4 +1,4 @@
-% Expected caller: nerve_response_analysis.run or tests. Input is a
+% Expected caller: nerve_response_analysis.definitionActions or tests. Input is a
 % RHS filter/session struct plus protocol and options. Output is a combined
 % analysis struct. Side effects are lazy RHS reads through analyzeRecording.
 function analysis = analyzeSession(session, protocol, opts)
@@ -34,7 +34,7 @@ function analysis = analyzeSession(session, protocol, opts)
         recordingOpts = opts;
         recordingOpts.recordingId = string(accepted.recordingId(k));
         try
-            item = nerve_response_analysis.ops.analyzeRecording( ...
+            item = nerve_response_analysis.analysisRun.analyzeRecording( ...
                 accepted.filePath(k), protocol, recordingOpts);
             analysis.events = appendTable(analysis.events, item.events);
             analysis.trains = appendTable(analysis.trains, item.trains);

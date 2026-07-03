@@ -1,4 +1,4 @@
-% Expected caller: nerve_response_analysis.ops.analyzeRecording or tests.
+% Expected caller: nerve_response_analysis.analysisRun.analyzeRecording or tests.
 % Inputs are one time vector, one event-source signal, and optional analysis
 % event-detection options. Outputs are event and train tables. No side effects.
 function [events, trains] = detectEventTrains(timeSec, signal, opts)

@@ -1,4 +1,4 @@
-% Expected caller: nerve_response_analysis.export.writeAnalysisJson and
+% Expected caller: nerve_response_analysis.resultFiles.writeAnalysisJson and
 % tests. Input is a session analysis struct. Output is JSON-safe data.
 function payload = analysisJsonStruct(analysis)
 %ANALYSISJSONSTRUCT Convert analysis tables to JSON-safe struct arrays.

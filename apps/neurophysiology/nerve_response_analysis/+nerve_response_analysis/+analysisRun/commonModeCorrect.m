@@ -1,4 +1,4 @@
-% Expected caller: nerve_response_analysis.ops.analyzeRecording or tests.
+% Expected caller: nerve_response_analysis.analysisRun.analyzeRecording or tests.
 % Inputs are matched time, positive, negative, optional common-mode signal,
 % and analysis options. Output is corrected differential signal.
 function result = commonModeCorrect(timeSec, positive, negative, common, opts)

@@ -24,7 +24,7 @@ classdef NeurophysiologyDebugSamplePackTest < matlab.unittest.TestCase
             analysisPack = nerve_response_analysis.debug.writeSamplePack(debug);
             session = jsondecode(fileread(char(analysisPack.representativeFiles.filterRecordJson)));
             protocol = jsondecode(fileread(char(analysisPack.representativeFiles.protocolJson)));
-            analysis = nerve_response_analysis.ops.analyzeSession(session, protocol, ...
+            analysis = nerve_response_analysis.analysisRun.analyzeSession(session, protocol, ...
                 struct("maxRecordings", 1, "maxDurationSec", 0.08));
             testCase.verifyEqual(analysis.recordingCount, 2);
             testCase.verifyGreaterThanOrEqual(analysis.analyzedCount, 1);
