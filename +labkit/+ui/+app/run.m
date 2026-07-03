@@ -16,8 +16,9 @@ function fig = run(def, request)
 % Runtime behavior:
 %   The framework validates the definition, creates initial state, generates
 %   semantic callbacks from action ids, builds the UI, stores runtime state,
-%   calls render, and dispatches declared startup actions through private
-%   startup readiness machinery.
+%   calls render, dispatches declared startup actions, records phase timings,
+%   reports action exceptions through debug diagnostics, and dispatches
+%   declared hydration actions through private startup readiness machinery.
 
     if nargin < 2
         request = struct();
@@ -38,7 +39,7 @@ function fig = run(def, request)
         'debug', debug);
     setappdata(fig, runtimeKey(), runtime);
     invokeRuntimeRender(fig);
-    dispatchStartup(fig, def.startup);
+    dispatchStartup(fig, def.startup, def.hydrate);
 end
 
 function debug = requestDebugContext(request)
@@ -96,23 +97,48 @@ function spec = buildRuntimeSpec(specFcn, callbacks, state)
     end
 end
 
-function dispatchStartup(fig, startupIds)
+function dispatchStartup(fig, startupIds, hydrateIds)
     startupIds = string(startupIds);
     startupIds = startupIds(startupIds ~= "");
     if isempty(startupIds)
+        dispatchHydration(fig, hydrateIds);
         return;
     end
     runtime = getRuntime(fig);
     message = "Preparing " + runtime.definition.title + "...";
-    startupLifecycle(fig, 'defer', message, @() runStartupActions(fig, startupIds));
+    startupLifecycle(fig, 'defer', message, ...
+        @() runStartupActions(fig, startupIds, hydrateIds));
 end
 
-function runStartupActions(fig, startupIds)
+function runStartupActions(fig, startupIds, hydrateIds)
     for k = 1:numel(startupIds)
         startupLifecycle(fig, 'update', "Starting " + startupIds(k) + "...");
         payload = struct('id', startupIds(k), 'kind', "startup", ...
             'source', "framework");
         dispatchRuntimeAction(fig, startupIds(k), [], payload);
+    end
+    startupLifecycle(fig, 'finish', "Ready.");
+    dispatchHydration(fig, hydrateIds);
+end
+
+function dispatchHydration(fig, hydrateIds)
+    hydrateIds = string(hydrateIds);
+    hydrateIds = hydrateIds(hydrateIds ~= "");
+    if isempty(hydrateIds)
+        return;
+    end
+    runtime = getRuntime(fig);
+    message = "Hydrating " + runtime.definition.title + "...";
+    startupLifecycle(fig, 'defer', message, ...
+        @() runHydrationActions(fig, hydrateIds));
+end
+
+function runHydrationActions(fig, hydrateIds)
+    for k = 1:numel(hydrateIds)
+        startupLifecycle(fig, 'update', "Hydrating " + hydrateIds(k) + "...");
+        payload = struct('id', hydrateIds(k), 'kind', "hydrate", ...
+            'source', "framework");
+        dispatchRuntimeAction(fig, hydrateIds(k), [], payload);
     end
     startupLifecycle(fig, 'finish', "Ready.");
 end
@@ -126,16 +152,24 @@ function dispatchRuntimeAction(fig, id, control, event)
             'App definition action "%s" is not registered.', id);
     end
     payload = actionPayload(id, control, event);
-    services = runtimeServices(fig, runtime);
-    handler = runtime.actions.(field);
-    [nextState, effects, hasState] = invokeAction(handler, ...
-        runtime.state, payload, services);
-    if hasState
-        runtime.state = nextState;
-        setappdata(fig, runtimeKey(), runtime);
+    startedAt = tic;
+    try
+        services = runtimeServices(fig, runtime);
+        handler = runtime.actions.(field);
+        [nextState, effects, hasState] = invokeAction(handler, ...
+            runtime.state, payload, services);
+        if hasState
+            runtime.state = nextState;
+            setappdata(fig, runtimeKey(), runtime);
+        end
+        applyRuntimeEffects(fig, effects);
+        invokeRuntimeRender(fig);
+    catch ME
+        appendPhaseTiming(fig, payload, "failed", toc(startedAt), ME);
+        reportRuntimeException(fig, payload, ME);
+        rethrow(ME);
     end
-    applyRuntimeEffects(fig, effects);
-    invokeRuntimeRender(fig);
+    appendPhaseTiming(fig, payload, "completed", toc(startedAt), []);
 end
 
 function payload = actionPayload(id, control, event)
@@ -252,6 +286,62 @@ function applyOneEffect(fig, effect)
     end
 end
 
+function appendPhaseTiming(fig, payload, status, elapsedSeconds, exception)
+    if isempty(fig) || ~isvalid(fig)
+        return;
+    end
+    record = struct();
+    record.kind = string(payload.kind);
+    record.id = string(payload.id);
+    record.source = string(payload.source);
+    record.status = string(status);
+    record.elapsedSeconds = elapsedSeconds;
+    if nargin >= 5 && isa(exception, 'MException')
+        record.errorIdentifier = string(exception.identifier);
+        record.errorMessage = string(exception.message);
+    else
+        record.errorIdentifier = "";
+        record.errorMessage = "";
+    end
+    key = phaseTimingKey();
+    if isappdata(fig, key)
+        records = getappdata(fig, key);
+        records(end + 1) = record;
+    else
+        records = record;
+    end
+    setappdata(fig, key, records);
+    traceRuntimePhase(fig, record);
+end
+
+function traceRuntimePhase(fig, record)
+    try
+        runtime = getRuntime(fig);
+        debug = runtime.debug;
+        if isstruct(debug) && isfield(debug, 'trace') && ...
+                isa(debug.trace, 'function_handle')
+            debug.trace(sprintf(['runtime phase kind=%s id=%s status=%s ' ...
+                'elapsed=%.6f'], char(record.kind), char(record.id), ...
+                char(record.status), record.elapsedSeconds));
+        end
+    catch
+    end
+end
+
+function reportRuntimeException(fig, payload, exception)
+    try
+        runtime = getRuntime(fig);
+        debug = runtime.debug;
+        if isstruct(debug) && isfield(debug, 'reportException') && ...
+                isa(debug.reportException, 'function_handle')
+            debug.reportException('runtime', ...
+                sprintf('%s action %s failed', char(payload.kind), ...
+                char(payload.id)), exception);
+        end
+    catch
+    end
+end
+
 function runtime = getRuntime(fig)
     if isempty(fig) || ~isvalid(fig) || ~isappdata(fig, runtimeKey())
         error('labkit:ui:app:MissingRuntime', ...
@@ -262,6 +352,10 @@ end
 
 function key = runtimeKey()
     key = 'labkitUiAppRuntime';
+end
+
+function key = phaseTimingKey()
+    key = 'labkitUiAppRuntimePhases';
 end
 
 function n = narginOf(fcn)
