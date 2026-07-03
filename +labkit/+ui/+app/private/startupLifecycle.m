@@ -92,13 +92,18 @@ function state = updateStateWithMessage(state, message, forceVisible)
         return;
     end
     state.message = string(message);
+    becameVisible = false;
     if shouldShowStatus(state, forceVisible)
         state = showStatus(state);
+        becameVisible = state.visible;
     end
     if state.visible && isLiveHandle(state.label)
         state.label.Text = char(state.message);
     end
-    drawnow limitrate;
+    if shouldFlushStatus(state, becameVisible)
+        drawnow limitrate;
+        state.statusFlushed = true;
+    end
 end
 
 function tf = shouldShowStatus(state, forceVisible)
@@ -121,6 +126,15 @@ function state = showStatus(state)
         state.visibleAt = tic;
     catch
     end
+end
+
+function tf = shouldFlushStatus(state, becameVisible)
+    tf = becameVisible || isFailureMessage(state.message) || ...
+        (state.visible && ~state.statusFlushed);
+end
+
+function tf = isFailureMessage(message)
+    tf = startsWith(lower(string(message)), "startup failed");
 end
 
 function runDeferredTask(fig, taskTimer, message, workFcn)
@@ -221,6 +235,7 @@ function state = defaultState(fig)
     state.mainGrid = [];
     state.panel = [];
     state.label = [];
+    state.statusFlushed = false;
     state.oldBusy = struct('hadValue', false, 'value', []);
 end
 

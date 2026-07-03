@@ -87,6 +87,16 @@ Current facts:
   user-facing startup debt: launcher double-click can produce a blank visible
   app frame while shared `labkit.ui.app.create`, app-owned initialization,
   tool attachment, and initial axes rendering continue on the UI thread.
+- Follow-up startup profiling on 2026-07-03 after package-root runner
+  retirement showed repeated readiness message flushes as the largest
+  framework-owned startup hotspot in ordinary app launch. RHS Preview ordinary
+  startup improved from about 27.5 s total with
+  `startupLifecycle>updateStateWithMessage` at about 14.5 s to about 20.0 s
+  total with that helper at about 8.3 s after limiting readiness UI flushes to
+  the first visible status update and failure messages. Evidence artifacts:
+  `artifacts/profile/profile_addpath(fullfile('tests','runner')); setupLabKitTestPath(); fig=labkit_RHSPreview_app; drawnow; pause(0_20260703_042616.json`
+  and
+  `artifacts/profile/profile_addpath(fullfile('tests','runner')); setupLabKitTestPath(); fig=labkit_RHSPreview_app; drawnow; pause(0_20260703_043156.json`.
 - `labkit.ui.app.define` and `labkit.ui.app.run` exist. The current runtime
   validates definitions, creates state, generates callbacks, builds through
   `labkit.ui.app.create`, stores runtime state, renders after actions,
