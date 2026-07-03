@@ -170,8 +170,24 @@ Interactive GUI workflows are checked manually by the user. Do not run interacti
    `origin` and verify local `main` still matches `origin/main`. For branch
    work, push the completed branch, open a PR, and include the change scope,
    test results, unverified behavior, and any intentional follow-up work.
-10. After any push that is meant to complete work, inspect the triggered CI run. Before the first status read, find the most recent successful run for the same workflow/branch and wait at least that run's total elapsed duration; use the same duration as the minimum interval between later status reads so CI polling does not become noisy. Prefer low-output status checks such as `gh run list` or `gh run view --json status,conclusion,jobs`; use streaming `gh run watch` only when concise status polling is insufficient. If CI fails, read only the failing job logs, fix the underlying issue, rerun the relevant local checks, push the fix, and repeat until required CI passes. A task is not complete while required CI is red, unless CI access or infrastructure is blocked and the blocker is reported explicitly.
-11. After required CI passes and no blocking review remains, merge the PR with
+10. For branch/PR work, do not inspect or poll CI after every push unless the
+    user explicitly asks, a local validation result needs remote confirmation,
+    or GitHub reports an obvious failure that must be triaged before more work.
+    Record the pushed branch and PR, then defer CI inspection until the branch
+    is ready to merge. For direct-`main` work, inspect the final triggered CI
+    run once because there is no later merge gate. When CI inspection is
+    required, prefer low-output status checks such as `gh run list` or
+    `gh run view --json status,conclusion,jobs`; use streaming `gh run watch`
+    only when concise status polling is insufficient. If CI fails, read only
+    the failing job logs, fix the underlying issue, rerun the relevant local
+    checks, push the fix, and repeat until required CI passes. A task is not
+    complete while required CI is red, unless CI access or infrastructure is
+    blocked and the blocker is reported explicitly.
+11. Before merging a PR, inspect required CI. If a status read needs waiting,
+    find the most recent successful run for the same workflow/branch and wait
+    at least that run's total elapsed duration; use the same duration as the
+    minimum interval between later status reads so CI polling does not become
+    noisy. After required CI passes and no blocking review remains, merge the PR with
     an allowed repository merge method and delete the remote development
     branch.
 12. After a successful merge, keep the local checkout aligned with the remote
