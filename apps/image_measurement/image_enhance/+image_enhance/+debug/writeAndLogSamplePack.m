@@ -1,4 +1,4 @@
-% Expected caller: image_enhance.run during debug launch. Inputs are a debug
+% Expected caller: image_enhance.actions.table during debug launch. Inputs are a debug
 % context and app log callback. Side effects: writes debug samples and logs
 % their artifact locations without mutating app state.
 function writeAndLogSamplePack(debugLog, addLog)
