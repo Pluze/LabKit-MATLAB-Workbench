@@ -503,6 +503,12 @@ Use small commits in this order unless a verified dependency forces a split:
 Each commit message must use exactly one approved lowercase Conventional
 Commit prefix from `AGENTS.md`.
 
+For this active branch, push every coherent small commit after it is created so
+the remote branch is never far behind the local execution state. Do not wait
+for the final implementation to publish design or documentation commits.
+Pushing does not change the CI policy for this route: defer CI inspection until
+merge readiness unless a local change explicitly needs GitHub-side evidence.
+
 ### Non-Goals
 
 - Do not migrate LabKit apps to web, Python, JavaScript, App Designer, or a
