@@ -14,9 +14,14 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
 ## App Ownership
 
 - Keep domain formulas, thresholds, integration rules, option defaults, plot labels, result fields, export columns, failed-row behavior, alert wording/trigger decisions, and log wording app-local unless the user explicitly approves a boundary change.
-- For a new app cold start, create the standard app shape directly and use the
-  smallest genuinely similar app as a reference. Keep the first version focused
-  on the real workflow rather than placeholder behavior.
+- For a new app cold start, use the LabKit app template/scaffold when
+  available. App authors should primarily edit the author-facing shape
+  (`app.m`, `ui.m`, `model.m`, `actions.m`, `render.m`, and optional
+  `actions/`, `views/`, `ops/`, `io/`, `export/`, `debug/` role folders).
+  The `+<app_slug>` runtime package is an adapter for MATLAB package
+  resolution and framework execution, not the shape authors should have to
+  learn first. Use the smallest genuinely similar app only as a workflow
+  reference, not as a directory tree to copy.
 - When a documented UI tool owns app-neutral controls or interaction mechanics, consume it instead of reimplementing widget state or normalization. Keep app calculations, summaries, alert text, and exports local.
 - Use `labkit.ui.app.define` and `labkit.ui.app.run` with
   `labkit.ui.spec.*` for app GUIs. `labkit.ui.app.create` is a legacy
@@ -84,10 +89,13 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
   `+state`, `+ops`, `+view`, `+export`, and `+io` as needed. Do not use a fixed
   `+app` namespace; the app folder already provides ownership context, while a
   shared `+app` package name creates MATLAB package-resolution ambiguity.
-- Apps put their runtime declaration in `+<app_slug>/definition.m`, initial
-  state in `+state/initial.m`, action mapping in `+actions/table.m`, render
-  behavior in `+view/render.m`, and the data-only spec in
-  `+<app_slug>/+ui/buildSpec.m`.
+- Apps expose their runtime declaration through `+<app_slug>/definition.m`,
+  initial state through `+state/initial.m`, action mapping through
+  `+actions/table.m`, render behavior through `+view/render.m`, and the
+  data-only spec through `+<app_slug>/+ui/buildSpec.m`. For new authoring work,
+  prefer thin adapters that call the simpler app-layer files (`app.m`, `ui.m`,
+  `model.m`, `actions.m`, and `render.m`) so ordinary app authors do not need
+  to start from MATLAB package mechanics.
 - `definition.m` declares identity, state factory, spec builder, actions,
   render function, startup phases, and optional hydration phases. It must not
   create MATLAB handles, read files, compute results, export data, or mutate
@@ -130,9 +138,10 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
   LabKit framework owns concrete layout. When an app needs a control that
   cannot be expressed with the ordinary spec grammar, add a named spec/tool
   contract instead of custom layout code.
-- Route helper files by role: `+state` for defaults/factories, `+io` for file
-  discovery/readers/filters, `+ops` for GUI-free transforms, `+view` for table
-  rows/detail lines/display data, and `+export` for output writers/manifests.
+- Route helper files by role: `model.m` or `+state` for defaults/factories,
+  `io/` or `+io` for file discovery/readers/filters, `ops/` or `+ops` for
+  GUI-free transforms, `views/` or `+view` for table rows/detail lines/display
+  data, and `export/` or `+export` for output writers/manifests.
   Do not add boundary-blurring files named `helpers.m`, `utils.m`, `common.m`,
   `misc.m`, `callbacks.m`, `manager.m`, `processor.m`, `layout.m`, or
   `createUI.m`.

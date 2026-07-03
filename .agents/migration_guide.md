@@ -221,6 +221,22 @@ to change languages or rebuild LabKit around another stack:
   and rendering observes state. Sources:
   https://redux.js.org/tutorials/fundamentals/part-2-concepts-data-flow and
   https://guide.elm-lang.org/architecture/.
+- Rails uses convention over configuration and generator-backed project
+  creation so authors start from a known shape instead of assembling framework
+  wiring by hand. LabKit should provide an app scaffold and keep generated
+  runtime adapters out of the author's main line of sight. Source:
+  https://guides.rubyonrails.org/getting_started.html.
+- Home Assistant integrations are organized by a unique domain folder with a
+  small manifest/entrypoint minimum, then add platform, service, coordinator,
+  and brand files only when the integration needs those roles. LabKit app
+  folders should follow the same "small minimum, role files on demand"
+  principle. Source:
+  https://developers.home-assistant.io/docs/creating_integration_file_structure/.
+- VS Code extension anatomy separates static contribution declarations from
+  runtime code and keeps the starter extension source small. LabKit should
+  separate app declarations from runtime adapters and keep new app starter
+  files focused on author-owned behavior. Source:
+  https://code.visualstudio.com/api/get-started/extension-anatomy.
 
 The design principle for LabKit is:
 
@@ -284,6 +300,87 @@ App authors do not declare or call:
 - first-render completion
 - hidden/minimized test behavior
 - profiler/browser wakeup behavior
+
+### Author-Facing App Shape
+
+The current `+<slug>/definition.m`, `+state/initial.m`,
+`+actions/table.m`, and `+view/render.m` structure is a runtime adapter shape,
+not the desired mental model for ordinary app authors. It is useful to MATLAB
+package resolution and guardrails, but it exposes too much framework machinery
+when someone wants to create a new app.
+
+The future author-facing minimum should be:
+
+```text
+apps/<family>/<slug>/
+  labkit_<Name>_app.m
+  app.m
+  ui.m
+  model.m
+  actions.m
+  render.m
+  ops/
+  io/
+  export/
+  debug/
+```
+
+Small apps may keep `actions.m` and `render.m` as single files. Larger apps
+may expand only the roles they need:
+
+```text
+actions/files.m
+actions/edit.m
+actions/analyze.m
+actions/tools.m
+actions/export.m
+views/summary.m
+views/plots.m
+views/preview.m
+views/controls.m
+```
+
+The generated or thin adapter layer remains:
+
+```text
++<slug>/definition.m
++<slug>/requirements.m
++<slug>/version.m
++<slug>/+state/initial.m
++<slug>/+actions/table.m
++<slug>/+ui/buildSpec.m
++<slug>/+view/render.m
+```
+
+Design rules:
+
+- app authors start from `app/ui/model/actions/render`, not from package-root
+  `run.m` or framework appdata/callback plumbing
+- the `+<slug>` package adapts author files to `labkit.ui.app.run`
+- `ui.m` declares controls and workspace, not MATLAB handles or layout
+  mechanics
+- `model.m` returns pure state and cannot depend on `labkit.ui`
+- actions own workflow transitions and side effects, grouped by user intent
+  when the app grows
+- render translates prepared state to existing controls and axes, without file
+  IO, export writes, or heavy computation
+- optional role folders are created on demand, not as mandatory boilerplate
+
+`labkit.app.new` or an equivalent script should generate this shape from
+templates such as:
+
+```text
+blank
+image-preview-export
+dta-table-plots-export
+biosignal-analysis-export
+```
+
+The scaffold should also generate starter GUI/layout tests, action/model unit
+tests, app version/requirements metadata, debug sample-pack stubs, and the
+runtime adapter files. The generator should make the easy path the correct
+path, following the same convention-first lesson from Rails and the
+manifest-plus-role-file lesson from Home Assistant and VS Code.
 
 ### Framework Runtime Contract
 
