@@ -1,4 +1,4 @@
-% DIC Postprocess ops helper. Expected caller: dic_postprocess.ops.makeStrainOverlay.
+% DIC Postprocess ops helper. Expected caller: dic_postprocess.analysisRun.makeStrainOverlay.
 % Inputs are strain map, optional ROI mask, and display mask. Output is logical
 % valid strain map. Side effects: none.
 function validMap = strainValidMask(strainMap, roiMask, displayMask, edgeTrim)
@@ -12,5 +12,5 @@ function validMap = strainValidMask(strainMap, roiMask, displayMask, edgeTrim)
     else
         validMap = validMap & imresize(logical(displayMask), size(strainMap), 'nearest');
     end
-    validMap = dic_postprocess.ops.trimStrainEdgeMask(validMap, edgeTrim);
+    validMap = dic_postprocess.analysisRun.trimStrainEdgeMask(validMap, edgeTrim);
 end

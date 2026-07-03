@@ -1,8 +1,8 @@
-% App-owned action table for DIC Postprocess. Expected caller is
+% App-owned action registry for DIC Postprocess. Expected caller is
 % dic_postprocess.definition. Output maps semantic action ids to handlers
 % used by labkit.ui.app.run. Handlers own workflow transitions, overlay
 % generation, and export side effects.
-function actions = table()
+function actions = definitionActions()
     actions = struct( ...
         "startup", @onStartup, ...
         "matChosen", @onMatChosen, ...
@@ -105,7 +105,7 @@ function state = onGenerate(state, ~, services)
     end
 
     try
-        state.strain = dic_postprocess.io.loadNcorrStrain(char(state.matPath));
+        state.strain = dic_postprocess.sourceFiles.loadNcorrStrain(char(state.matPath));
         state = renderOverlays(state, opts);
         addLog(services, 'Generated EXX/EYY overlays and ROI summary.');
     catch ME
@@ -143,11 +143,11 @@ function state = onSaveOverlays(state, ~, services)
         return;
     end
 
-    tag = dic_postprocess.view.tagFromPath(char(state.matPath));
+    tag = dic_postprocess.userInterface.tagFromPath(char(state.matPath));
     exxFile = fullfile(folder, sprintf('overlay_exx_%s.png', tag));
     eyyFile = fullfile(folder, sprintf('overlay_eyy_%s.png', tag));
-    dic_postprocess.export.exportOverlayImage(state.overlayExx, exxFile);
-    dic_postprocess.export.exportOverlayImage(state.overlayEyy, eyyFile);
+    dic_postprocess.resultFiles.exportOverlayImage(state.overlayExx, exxFile);
+    dic_postprocess.resultFiles.exportOverlayImage(state.overlayEyy, eyyFile);
     addLog(services, sprintf('Saved clean overlay PNGs: %s and %s', ...
         exxFile, eyyFile));
 end
@@ -174,16 +174,16 @@ function state = onExportSummary(state, ~, services)
 end
 
 function state = renderOverlays(state, opts)
-    overlayMask = dic_postprocess.ops.imageMask(state.maskImage, ...
-        dic_postprocess.ops.imageHeightWidth(state.referenceImage));
-    state.overlayExx = dic_postprocess.ops.makeStrainOverlay( ...
+    overlayMask = dic_postprocess.analysisRun.imageMask(state.maskImage, ...
+        dic_postprocess.analysisRun.imageHeightWidth(state.referenceImage));
+    state.overlayExx = dic_postprocess.analysisRun.makeStrainOverlay( ...
         state.referenceImage, state.strain.exx, overlayMask, ...
         state.strain.roiMask, opts);
-    state.overlayEyy = dic_postprocess.ops.makeStrainOverlay( ...
+    state.overlayEyy = dic_postprocess.analysisRun.makeStrainOverlay( ...
         state.referenceImage, state.strain.eyy, overlayMask, ...
         state.strain.roiMask, opts);
-    summaryMask = dic_postprocess.ops.summaryMaskForStrain(state.strain);
-    state.summaryTable = dic_postprocess.ops.summarizeStrain( ...
+    summaryMask = dic_postprocess.analysisRun.summaryMaskForStrain(state.strain);
+    state.summaryTable = dic_postprocess.analysisRun.summarizeStrain( ...
         state.strain, summaryMask);
 end
 

@@ -2,7 +2,7 @@
 % Inputs are strain map, valid-map, target size, and overlay options. Outputs
 % are RGB strain colors and resized validity mask. Side effects: none.
 function [rgb, validMask] = strainToRgb(strainMap, validMap, targetSize, opts)
-    S = dic_postprocess.ops.extendStrainMapToRoi(double(strainMap), validMap);
+    S = dic_postprocess.analysisRun.extendStrainMapToRoi(double(strainMap), validMap);
     if opts.sigmaSmooth > 0
         S = imgaussfilt(S, opts.sigmaSmooth);
     end

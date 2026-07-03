@@ -2,12 +2,12 @@
 % Inputs are reference image, strain map, display mask, ROI mask, and overlay
 % options. Output is the rendered overlay image. Side effects: none.
 function overlay = makeStrainOverlay(referenceImage, strainMap, mask, roiMask, opts)
-    orig = dic_postprocess.ops.enhanceReferenceImage(referenceImage, opts);
+    orig = dic_postprocess.analysisRun.enhanceReferenceImage(referenceImage, opts);
     [H, W, ~] = size(orig);
     mask = imresize(logical(mask), [H W], 'nearest');
-    validMap = dic_postprocess.ops.strainValidMask( ...
+    validMap = dic_postprocess.analysisRun.strainValidMask( ...
         strainMap, roiMask, mask, edgeTrimFromOptions(opts));
-    [strainRgb, validStrain] = dic_postprocess.ops.strainToRgb( ...
+    [strainRgb, validStrain] = dic_postprocess.analysisRun.strainToRgb( ...
         strainMap, validMap, [H W], opts);
     overlayMask = mask & validStrain;
     mask3 = repmat(overlayMask, [1 1 3]);

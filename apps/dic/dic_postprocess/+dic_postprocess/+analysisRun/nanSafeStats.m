@@ -1,4 +1,4 @@
-% DIC Postprocess ops helper. Expected caller: dic_postprocess.ops.summarizeStrain.
+% DIC Postprocess ops helper. Expected caller: dic_postprocess.analysisRun.summarizeStrain.
 % Input is numeric data. Output is [mean; std; median; min; max] ignoring NaN
 % and Inf, or NaNs when empty. Side effects: none.
 function values = nanSafeStats(x)

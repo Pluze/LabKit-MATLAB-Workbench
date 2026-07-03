@@ -5,8 +5,8 @@ function T = summarizeStrain(strain, mask)
     exx = strain.exx(mask);
     eyy = strain.eyy(mask);
     metric = ["Mean"; "Std"; "Median"; "Min"; "Max"];
-    exxValues = dic_postprocess.ops.nanSafeStats(exx);
-    eyyValues = dic_postprocess.ops.nanSafeStats(eyy);
+    exxValues = dic_postprocess.analysisRun.nanSafeStats(exx);
+    eyyValues = dic_postprocess.analysisRun.nanSafeStats(eyy);
     T = table(metric, exxValues, eyyValues, ...
         'VariableNames', {'Metric', 'EXX', 'EYY'});
 end

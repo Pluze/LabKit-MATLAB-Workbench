@@ -5,15 +5,15 @@ classdef DicPostprocessViewTest < matlab.unittest.TestCase
         function displayPathReportsLoadedAndMissingPaths(testCase)
             setupLabKitTestPath();
 
-            testCase.verifyEqual(dic_postprocess.view.displayPath(""), 'none');
-            testCase.verifyEqual(dic_postprocess.view.displayPath("sample.mat"), 'sample.mat');
+            testCase.verifyEqual(dic_postprocess.userInterface.displayPath(""), 'none');
+            testCase.verifyEqual(dic_postprocess.userInterface.displayPath("sample.mat"), 'sample.mat');
         end
 
         function tagFromPathPreservesLastMillimeterToken(testCase)
             setupLabKitTestPath();
 
-            tag = dic_postprocess.view.tagFromPath("run_0.5mm_repeat_1.25mm.mat");
-            fallback = dic_postprocess.view.tagFromPath("run_without_dimension.mat");
+            tag = dic_postprocess.userInterface.tagFromPath("run_0.5mm_repeat_1.25mm.mat");
+            fallback = dic_postprocess.userInterface.tagFromPath("run_without_dimension.mat");
 
             testCase.verifyEqual(tag, '1.25mm');
             testCase.verifyEqual(fallback, 'unknown_mm');
@@ -28,8 +28,8 @@ classdef DicPostprocessViewTest < matlab.unittest.TestCase
             summary = table(metric, exx, eyy, ...
                 'VariableNames', {'Metric', 'EXX', 'EYY'});
 
-            data = dic_postprocess.view.summaryTableData(summary);
-            emptyData = dic_postprocess.view.summaryTableData(table());
+            data = dic_postprocess.userInterface.summaryTableData(summary);
+            emptyData = dic_postprocess.userInterface.summaryTableData(table());
 
             testCase.verifyEqual(data, {'Mean', 1.25, -2; 'Std', 0.5, 0.25});
             testCase.verifyEqual(emptyData, {});
@@ -38,8 +38,8 @@ classdef DicPostprocessViewTest < matlab.unittest.TestCase
         function ternarySelectsDisplayText(testCase)
             setupLabKitTestPath();
 
-            testCase.verifyEqual(dic_postprocess.view.ternary(true, 'yes', 'no'), 'yes');
-            testCase.verifyEqual(dic_postprocess.view.ternary(false, 'yes', 'no'), 'no');
+            testCase.verifyEqual(dic_postprocess.userInterface.ternary(true, 'yes', 'no'), 'yes');
+            testCase.verifyEqual(dic_postprocess.userInterface.ternary(false, 'yes', 'no'), 'no');
         end
     end
 end

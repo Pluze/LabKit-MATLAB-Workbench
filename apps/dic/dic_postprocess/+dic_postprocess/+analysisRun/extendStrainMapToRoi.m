@@ -1,4 +1,4 @@
-% DIC Postprocess ops helper. Expected caller: dic_postprocess.ops.strainToRgb.
+% DIC Postprocess ops helper. Expected caller: dic_postprocess.analysisRun.strainToRgb.
 % Inputs are a strain map and valid map. Output fills invalid ROI pixels from
 % nearest valid strain samples. Side effects: none.
 function Sfilled = extendStrainMapToRoi(S, validMap)

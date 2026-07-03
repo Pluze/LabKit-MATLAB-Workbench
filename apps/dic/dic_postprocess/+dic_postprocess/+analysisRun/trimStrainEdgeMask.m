@@ -1,4 +1,4 @@
-% DIC Postprocess ops helper. Expected caller: dic_postprocess.ops helpers.
+% DIC Postprocess analysis helper. Expected caller: dic_postprocess.analysisRun helpers.
 % Input is a logical strain-validity mask and optional trim width in strain
 % pixels. Output removes unreliable boundary pixels when doing so keeps at
 % least one valid pixel. Side effects: none.

@@ -8,15 +8,15 @@ function img = enhanceReferenceImage(referenceImage, opts)
     end
     gains = reshape(opts.rgbGain, 1, 1, 3);
     img = img .* gains;
-    img = dic_postprocess.ops.clamp01(img);
+    img = dic_postprocess.analysisRun.clamp01(img);
 
     hsvImage = rgb2hsv(img);
-    hsvImage(:, :, 2) = dic_postprocess.ops.clamp01( ...
+    hsvImage(:, :, 2) = dic_postprocess.analysisRun.clamp01( ...
         hsvImage(:, :, 2) .* opts.saturation);
     img = hsv2rgb(hsvImage);
 
     img = (img - 0.5) .* opts.contrast + 0.5 + opts.brightness;
-    img = dic_postprocess.ops.clamp01(img);
+    img = dic_postprocess.analysisRun.clamp01(img);
     img = img .^ opts.gamma;
-    img = dic_postprocess.ops.clamp01(img);
+    img = dic_postprocess.analysisRun.clamp01(img);
 end
