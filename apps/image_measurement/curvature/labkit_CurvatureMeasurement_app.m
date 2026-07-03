@@ -19,7 +19,8 @@ function varargout = labkit_CurvatureMeasurement_app(varargin)
             'labkit_CurvatureMeasurement_app returns at most the app figure handle.');
     end
 
-    fig = curvature.run(debugLog);
+    request = struct("debug", debugLog);
+    fig = labkit.ui.app.run(curvature.definition(), request);
     labkit.ui.app.applyVersionTitle(fig, appVersion);
     if nargout >= 1
         varargout{1} = fig;

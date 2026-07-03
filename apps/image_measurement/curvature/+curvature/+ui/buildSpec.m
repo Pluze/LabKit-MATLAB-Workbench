@@ -1,4 +1,4 @@
-% Expected caller: curvature.run. Input is a callback struct whose fields are
+% Expected caller: curvature.definition. Input is a callback struct whose fields are
 % app-owned callback handles. Output is a data-only UI 3.0 workbench spec for
 % the Curvature Measurement app.
 function spec = buildSpec(callbacks)

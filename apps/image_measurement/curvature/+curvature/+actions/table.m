@@ -1,73 +1,130 @@
-% Expected caller: labkit_CurvatureMeasurement_app. Input is the debug context
-% prepared by the public launcher. Output is the app figure. Side effects are
-% GUI creation, user-driven file I/O, exports, and debug trace attachment.
-function fig = run(debugLog)
-%RUN Build and run the image curvature measurement app body.
+% App-owned action table for Curvature Measurement. Expected caller is
+% curvature.definition. Output maps semantic action ids to handlers used by
+% labkit.ui.app.run while preserving the existing curve-edit workflow.
+function actions = table()
+%TABLE Build the Curvature Measurement runtime action map.
 
-    S = struct();
-    S.imagePath = "";
-    S.image = [];
-    S.xPix = [];
-    S.yPix = [];
-    S.curveEditor = [];
-    S.curveEditActive = false;
-    S.fit = curvature.state.emptyFitResult();
-    S.length = curvature.state.emptyLengthResult();
-    S.lastFitFingerprint = "";
-    S.lastLengthFingerprint = "";
+    S = [];
+    ui = [];
+    fig = [];
+    debugLog = [];
+    imageRuntime = [];
+    scaleTool = [];
+    controls = [];
+    txtPointCount = [];
+    btnStartCurve = [];
+    btnUndoPoint = [];
+    btnClearCurve = [];
+    chkDensify = [];
+    edtDenseN = [];
+    chkShowDense = [];
+    btnFit = [];
+    btnMeasureLength = [];
+    btnExportCSV = [];
+    btnExportOverlay = [];
+    resultTable = [];
+    txtDetails = [];
+    txtLog = [];
 
-    callbacks = struct( ...
-        'onImageChosen', @onImageChosen, ...
-        'onImageCleared', @(~, ~) onImageCleared(), ...
-        'onStartCurveEdit', @onStartCurveEdit, ...
-        'onUndoCurvePoint', @onUndoCurvePoint, ...
-        'onClearCurve', @onClearCurve, ...
-        'onShowDenseChanged', @refreshImageOverlayCallback, ...
-        'onFitCurvature', @onFitCurvature, ...
-        'onMeasureCurveLength', @onMeasureCurveLength, ...
-        'onExportCSV', @onExportCSV, ...
-        'onExportOverlay', @onExportOverlay);
-    spec = curvature.ui.buildSpec(callbacks);
-    ui = labkit.ui.app.create(spec, "debug", debugLog);
-    fig = ui.fig;
-    ui.topAxes = ui.controls.imageAxes.primaryAxes;
-    imageRuntime = labkit.ui.tool.createRuntime(ui.topAxes, ...
-        struct('figure', fig, ...
-        'onTrace', debugLog.trace));
+    actions = struct( ...
+        'startup', @onStartup, ...
+        'onImageChosen', @dispatchImageChosen, ...
+        'onImageCleared', @dispatchImageCleared, ...
+        'onStartCurveEdit', @dispatchStartCurveEdit, ...
+        'onUndoCurvePoint', @dispatchUndoCurvePoint, ...
+        'onClearCurve', @dispatchClearCurve, ...
+        'onShowDenseChanged', @dispatchShowDenseChanged, ...
+        'onFitCurvature', @dispatchFitCurvature, ...
+        'onMeasureCurveLength', @dispatchMeasureCurveLength, ...
+        'onExportCSV', @dispatchExportCSV, ...
+        'onExportOverlay', @dispatchExportOverlay);
 
-    scaleTool = labkit.ui.tool.scaleBar(ui.controls.scaleBarHost.grid, ...
-        1, imageRuntime, struct( ...
-        'onBeforeReferenceEdit', @onBeforeReferenceEdit, ...
-        'onReferenceEditChanged', @onReferenceEditChanged, ...
-        'onCalibrationChanged', @onCalibrationSettingsChanged, ...
-        'onScaleBarChanged', @onScaleBarSettingsChanged, ...
-        'onScaleBarPlaced', @onScaleBarPlaced, ...
-        'onError', @onScaleToolError, ...
-        'onTrace', debugLog.trace));
-    controls = curvature.ui.mapControlHandles(ui, scaleTool);
-    txtPointCount = controls.txtPointCount;
-    btnStartCurve = controls.btnStartCurve;
-    btnUndoPoint = controls.btnUndoPoint;
-    btnClearCurve = controls.btnClearCurve;
-    scaleTool = controls.scaleTool;
-    chkDensify = controls.chkDensify;
-    edtDenseN = controls.edtDenseN;
-    chkShowDense = controls.chkShowDense;
-    btnFit = controls.btnFit;
-    btnMeasureLength = controls.btnMeasureLength;
-    btnExportCSV = controls.btnExportCSV;
-    btnExportOverlay = controls.btnExportOverlay;
-    resultTable = controls.resultTable;
-    txtDetails = controls.txtDetails;
-    txtLog = controls.txtLog;
+    function state = onStartup(state, ~, services)
+        S = state;
+        ui = services.ui;
+        fig = services.figure;
+        debugLog = services.debug;
+        ui.topAxes = ui.controls.imageAxes.primaryAxes;
+        imageRuntime = labkit.ui.tool.createRuntime(ui.topAxes, ...
+            struct('figure', fig, ...
+            'onTrace', debugLog.trace));
 
-    if debugLog.enabled
-        debugLog.trace('Curvature measurement debug trace enabled.');
-        setupDebugSamples();
+        scaleTool = labkit.ui.tool.scaleBar(ui.controls.scaleBarHost.grid, ...
+            1, imageRuntime, struct( ...
+            'onBeforeReferenceEdit', @onBeforeReferenceEdit, ...
+            'onReferenceEditChanged', @onReferenceEditChanged, ...
+            'onCalibrationChanged', @onCalibrationSettingsChanged, ...
+            'onScaleBarChanged', @onScaleBarSettingsChanged, ...
+            'onScaleBarPlaced', @onScaleBarPlaced, ...
+            'onError', @onScaleToolError, ...
+            'onTrace', debugLog.trace));
+        controls = curvature.ui.mapControlHandles(ui, scaleTool);
+        txtPointCount = controls.txtPointCount;
+        btnStartCurve = controls.btnStartCurve;
+        btnUndoPoint = controls.btnUndoPoint;
+        btnClearCurve = controls.btnClearCurve;
+        scaleTool = controls.scaleTool;
+        chkDensify = controls.chkDensify;
+        edtDenseN = controls.edtDenseN;
+        chkShowDense = controls.chkShowDense;
+        btnFit = controls.btnFit;
+        btnMeasureLength = controls.btnMeasureLength;
+        btnExportCSV = controls.btnExportCSV;
+        btnExportOverlay = controls.btnExportOverlay;
+        resultTable = controls.resultTable;
+        txtDetails = controls.txtDetails;
+        txtLog = controls.txtLog;
+
+        if debugLog.enabled
+            debugLog.trace('Curvature measurement debug trace enabled.');
+            setupDebugSamples();
+        end
+
+        resetAxes();
+        refreshScaleReadout();
+        state = S;
     end
 
-    resetAxes();
-    refreshScaleReadout();
+    function state = dispatchWithEvent(~, payload, callback)
+        callback([], payload.event);
+        state = S;
+    end
+
+    function state = dispatchNoEvent(~, ~, callback)
+        callback([], []);
+        state = S;
+    end
+
+    function state = dispatchImageChosen(state, payload, ~)
+        state = dispatchWithEvent(state, payload, @onImageChosen);
+    end
+    function state = dispatchImageCleared(state, payload, ~)
+        state = dispatchNoEvent(state, payload, @onImageCleared);
+    end
+    function state = dispatchStartCurveEdit(state, payload, ~)
+        state = dispatchNoEvent(state, payload, @onStartCurveEdit);
+    end
+    function state = dispatchUndoCurvePoint(state, payload, ~)
+        state = dispatchNoEvent(state, payload, @onUndoCurvePoint);
+    end
+    function state = dispatchClearCurve(state, payload, ~)
+        state = dispatchNoEvent(state, payload, @onClearCurve);
+    end
+    function state = dispatchShowDenseChanged(state, payload, ~)
+        state = dispatchNoEvent(state, payload, @refreshImageOverlayCallback);
+    end
+    function state = dispatchFitCurvature(state, payload, ~)
+        state = dispatchNoEvent(state, payload, @onFitCurvature);
+    end
+    function state = dispatchMeasureCurveLength(state, payload, ~)
+        state = dispatchNoEvent(state, payload, @onMeasureCurveLength);
+    end
+    function state = dispatchExportCSV(state, payload, ~)
+        state = dispatchNoEvent(state, payload, @onExportCSV);
+    end
+    function state = dispatchExportOverlay(state, payload, ~)
+        state = dispatchNoEvent(state, payload, @onExportOverlay);
+    end
 
     function onImageChosen(~, event)
         paths = labkit.ui.view.filePaths(event.addedFiles);
@@ -155,6 +212,7 @@ function fig = run(debugLog)
         if any(strcmp(reason, {'add point', 'delete point', 'move point'}))
             addLog(sprintf('Curve edit updated: %d point(s).', numel(S.xPix)));
         end
+        syncRuntimeState();
     end
 
     function onUndoCurvePoint(~, ~)
@@ -182,6 +240,7 @@ function fig = run(debugLog)
         if ~isempty(S.curveEditor)
             S.curveEditor.setActive(false);
         end
+        syncRuntimeState();
     end
 
     function onReferenceEditChanged(~, reason)
@@ -196,6 +255,7 @@ function fig = run(debugLog)
         end
         refreshScaleReadout();
         refreshSummary();
+        syncRuntimeState();
     end
 
     function onScaleBarPlaced(~, ~)
@@ -204,6 +264,7 @@ function fig = run(debugLog)
         addLog(sprintf('Placed scale bar: %.6g %s (%.6g px).', ...
             scaleBar.barLength, cal.unit, scaleBar.barLength * cal.pixelsPerUnit));
         refreshAll();
+        syncRuntimeState();
     end
 
     function onScaleToolError(titleText, message)
@@ -358,10 +419,12 @@ function fig = run(debugLog)
         else
             refreshAll();
         end
+        syncRuntimeState();
     end
 
     function onScaleBarSettingsChanged(~, ~)
         refreshAll();
+        syncRuntimeState();
     end
 
     function refreshImageOverlayCallback(~, ~)
@@ -399,6 +462,16 @@ function fig = run(debugLog)
 
     function refreshScaleReadout()
         scaleTool.updateReadout();
+    end
+
+    function syncRuntimeState()
+        if isempty(fig) || ~isvalid(fig) || ...
+                ~isappdata(fig, 'labkitUiAppRuntime')
+            return;
+        end
+        runtime = getappdata(fig, 'labkitUiAppRuntime');
+        runtime.state = S;
+        setappdata(fig, 'labkitUiAppRuntime', runtime);
     end
 
     function updateModeControls()

@@ -1,4 +1,4 @@
-% Expected caller: curvature.run after labkit.ui.app.create. Inputs are the
+% Expected caller: curvature.actions.table after labkit.ui.app.create. Inputs are the
 % UI 3.0 registry and the scale-bar tool. Output is the app's control handle
 % struct used by the existing runner logic. Side effects: none.
 function controls = mapControlHandles(ui, scaleTool)
