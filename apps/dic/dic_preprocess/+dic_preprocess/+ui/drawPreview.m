@@ -1,4 +1,4 @@
-% Expected caller: DIC preprocess runner. Inputs are the app UI handle struct
+% Expected caller: DIC preprocess action table. Inputs are the app UI handle struct
 % and a preview request from dic_preprocess.view.previewRequest. Side effects:
 % clears and redraws the preview axes.
 

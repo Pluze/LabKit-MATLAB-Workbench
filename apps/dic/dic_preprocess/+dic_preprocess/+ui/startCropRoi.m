@@ -1,4 +1,4 @@
-% Expected caller: DIC preprocess runner. Inputs are preview axes, current image
+% Expected caller: DIC preprocess action table. Inputs are preview axes, current image
 % pair, square rectangle, and ROI movement callback. Output is ROI handles and
 % listeners. Side effects: draws images and crop graphics in the preview axes.
 

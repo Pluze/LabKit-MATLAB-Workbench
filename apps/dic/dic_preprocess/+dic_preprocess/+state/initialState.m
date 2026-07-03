@@ -1,4 +1,4 @@
-% Expected caller: DIC preprocess runner. Output is the app state struct with
+% Expected caller: dic_preprocess.definition. Output is the app state struct with
 % default image, crop, mask, and undo-history fields. Side effects: none.
 
 function S = initialState()

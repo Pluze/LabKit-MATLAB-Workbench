@@ -1,4 +1,4 @@
-% Expected caller: DIC preprocess runner after labkit.ui.app.create. Input is
+% Expected caller: DIC preprocess startup action after framework UI creation. Input is
 % the UI 3.0 registry. Output is the app's legacy-named control handle struct
 % used by existing app-owned interaction helpers. Side effects: none.
 function controls = mapControlHandles(ui)

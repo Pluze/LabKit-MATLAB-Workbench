@@ -1,56 +1,155 @@
-% App-owned DIC preprocess runner. Expected caller: labkit_DICPreprocess_app.
-% Input is the debug context prepared by the public launcher. Output is the app
-% figure. Side effects are GUI creation, user-driven file I/O, and debug trace
-% attachment exactly as in the original entrypoint body.
-function fig = run(debugLog)
-%RUN Build and run the DIC preprocess app body.
+% App-owned action table for DIC preprocess. Expected caller is
+% dic_preprocess.definition. Output maps semantic action ids to handlers used
+% by labkit.ui.app.run. The handlers preserve the existing ROI-edit workflow
+% while moving package-root lifecycle orchestration into the runtime.
+function actions = table()
+%TABLE Build the DIC preprocess runtime action map.
 
-    S = dic_preprocess.state.initialState();
-    callbacks = struct( ...
-        'referenceChosen', @onReferenceChosen, ...
-        'referenceCleared', @(~, ~) onReferenceCleared(), ...
-        'movingChosen', @onMovingChosen, ...
-        'movingCleared', @(~, ~) onMovingCleared(), ...
-        'previewChanged', @(~,~) refreshPreview(), ...
-        'align', @onAlign, ...
-        'autoAlign', @onAutoAlign, ...
-        'startCropRoi', @onStartCropRoi, ...
-        'applyCropRoi', @onApplyCropRoi, ...
-        'cancelCropRoi', @onCancelCropRoi, ...
-        'undoEdit', @onUndoEdit, ...
-        'saveCurrentImages', @onSaveCurrentImages, ...
-        'resetToOriginals', @onResetToOriginals, ...
-        'startMaskEdit', @onStartMaskEdit, ...
-        'boundaryStyleChanged', @onBoundaryStyleChanged, ...
-        'previewMaskRoi', @onPreviewMaskRoi, ...
-        'addBoundaryToMask', @onAddBoundaryToMask, ...
-        'subtractBoundaryFromMask', @onSubtractBoundaryFromMask, ...
-        'undoMaskAnchor', @onUndoMaskAnchor, ...
-        'undoMaskEdit', @onUndoMaskEdit, ...
-        'clearMaskBoundary', @onClearMaskBoundary, ...
-        'clearMaskCanvas', @onClearMaskCanvas, ...
-        'saveMask', @onSaveMask);
-    spec = dic_preprocess.ui.buildSpec(callbacks);
-    ui = labkit.ui.app.create(spec, "debug", debugLog);
-    fig = ui.fig;
-    ui.topAxes = ui.controls.previewAxes.axesById.reference;
-    ui.bottomAxes = ui.controls.previewAxes.axesById.current;
-    imageRuntime = labkit.ui.tool.createRuntime(ui.topAxes, ...
-        struct('figure', fig));
-    ui.imageRuntime = imageRuntime;
-    controls = dic_preprocess.ui.mapControlHandles(ui);
-    txtSummary = ui.controls.summaryText.textArea;
-    txtDetails = ui.controls.detailsText.textArea;
-    ddPreview = controls.ddPreview;
-    ddBoundaryStyle = controls.ddBoundaryStyle;
-    btnApplyCrop = controls.btnApplyCrop;
-    btnCancelCrop = controls.btnCancelCrop;
-    if debugLog.enabled
-        debugLog.trace('DIC preprocess debug trace enabled.');
-        setupDebugSamples();
+    S = [];
+    ui = [];
+    controls = [];
+    txtSummary = [];
+    txtDetails = [];
+    ddPreview = [];
+    ddBoundaryStyle = [];
+    btnApplyCrop = [];
+    btnCancelCrop = [];
+    debugLog = [];
+    imageRuntime = [];
+    fig = [];
+
+    actions = struct( ...
+        'startup', @onStartup, ...
+        'referenceChosen', @dispatchReferenceChosen, ...
+        'referenceCleared', @dispatchReferenceCleared, ...
+        'movingChosen', @dispatchMovingChosen, ...
+        'movingCleared', @dispatchMovingCleared, ...
+        'previewChanged', @dispatchPreviewChanged, ...
+        'align', @dispatchAlign, ...
+        'autoAlign', @dispatchAutoAlign, ...
+        'startCropRoi', @dispatchStartCropRoi, ...
+        'applyCropRoi', @dispatchApplyCropRoi, ...
+        'cancelCropRoi', @dispatchCancelCropRoi, ...
+        'undoEdit', @dispatchUndoEdit, ...
+        'saveCurrentImages', @dispatchSaveCurrentImages, ...
+        'resetToOriginals', @dispatchResetToOriginals, ...
+        'startMaskEdit', @dispatchStartMaskEdit, ...
+        'boundaryStyleChanged', @dispatchBoundaryStyleChanged, ...
+        'previewMaskRoi', @dispatchPreviewMaskRoi, ...
+        'addBoundaryToMask', @dispatchAddBoundaryToMask, ...
+        'subtractBoundaryFromMask', @dispatchSubtractBoundaryFromMask, ...
+        'undoMaskAnchor', @dispatchUndoMaskAnchor, ...
+        'undoMaskEdit', @dispatchUndoMaskEdit, ...
+        'clearMaskBoundary', @dispatchClearMaskBoundary, ...
+        'clearMaskCanvas', @dispatchClearMaskCanvas, ...
+        'saveMask', @dispatchSaveMask);
+
+    function state = onStartup(state, ~, services)
+        S = state;
+        ui = services.ui;
+        fig = services.figure;
+        debugLog = services.debug;
+        ui.topAxes = ui.controls.previewAxes.axesById.reference;
+        ui.bottomAxes = ui.controls.previewAxes.axesById.current;
+        imageRuntime = labkit.ui.tool.createRuntime(ui.topAxes, ...
+            struct('figure', fig));
+        ui.imageRuntime = imageRuntime;
+        controls = dic_preprocess.ui.mapControlHandles(ui);
+        txtSummary = ui.controls.summaryText.textArea;
+        txtDetails = ui.controls.detailsText.textArea;
+        ddPreview = controls.ddPreview;
+        ddBoundaryStyle = controls.ddBoundaryStyle;
+        btnApplyCrop = controls.btnApplyCrop;
+        btnCancelCrop = controls.btnCancelCrop;
+        if debugLog.enabled
+            debugLog.trace('DIC preprocess debug trace enabled.');
+            setupDebugSamples();
+        end
+        refreshPreview();
+        state = S;
     end
 
-    refreshPreview();
+    function state = dispatchWithEvent(state, payload, callback)
+        S = state;
+        callback([], payload.event);
+        state = S;
+    end
+
+    function state = dispatchNoEvent(state, ~, callback)
+        S = state;
+        callback();
+        state = S;
+    end
+
+    function state = dispatchReferenceChosen(state, payload, ~)
+        state = dispatchWithEvent(state, payload, @onReferenceChosen);
+    end
+    function state = dispatchReferenceCleared(state, payload, ~)
+        state = dispatchNoEvent(state, payload, @onReferenceCleared);
+    end
+    function state = dispatchMovingChosen(state, payload, ~)
+        state = dispatchWithEvent(state, payload, @onMovingChosen);
+    end
+    function state = dispatchMovingCleared(state, payload, ~)
+        state = dispatchNoEvent(state, payload, @onMovingCleared);
+    end
+    function state = dispatchPreviewChanged(state, payload, ~)
+        state = dispatchNoEvent(state, payload, @refreshPreview);
+    end
+    function state = dispatchAlign(state, payload, ~)
+        state = dispatchWithEvent(state, payload, @onAlign);
+    end
+    function state = dispatchAutoAlign(state, payload, ~)
+        state = dispatchWithEvent(state, payload, @onAutoAlign);
+    end
+    function state = dispatchStartCropRoi(state, payload, ~)
+        state = dispatchWithEvent(state, payload, @onStartCropRoi);
+    end
+    function state = dispatchApplyCropRoi(state, payload, ~)
+        state = dispatchWithEvent(state, payload, @onApplyCropRoi);
+    end
+    function state = dispatchCancelCropRoi(state, payload, ~)
+        state = dispatchWithEvent(state, payload, @onCancelCropRoi);
+    end
+    function state = dispatchUndoEdit(state, payload, ~)
+        state = dispatchWithEvent(state, payload, @onUndoEdit);
+    end
+    function state = dispatchSaveCurrentImages(state, payload, ~)
+        state = dispatchWithEvent(state, payload, @onSaveCurrentImages);
+    end
+    function state = dispatchResetToOriginals(state, payload, ~)
+        state = dispatchWithEvent(state, payload, @onResetToOriginals);
+    end
+    function state = dispatchStartMaskEdit(state, payload, ~)
+        state = dispatchWithEvent(state, payload, @onStartMaskEdit);
+    end
+    function state = dispatchBoundaryStyleChanged(state, payload, ~)
+        state = dispatchWithEvent(state, payload, @onBoundaryStyleChanged);
+    end
+    function state = dispatchPreviewMaskRoi(state, payload, ~)
+        state = dispatchWithEvent(state, payload, @onPreviewMaskRoi);
+    end
+    function state = dispatchAddBoundaryToMask(state, payload, ~)
+        state = dispatchWithEvent(state, payload, @onAddBoundaryToMask);
+    end
+    function state = dispatchSubtractBoundaryFromMask(state, payload, ~)
+        state = dispatchWithEvent(state, payload, @onSubtractBoundaryFromMask);
+    end
+    function state = dispatchUndoMaskAnchor(state, payload, ~)
+        state = dispatchWithEvent(state, payload, @onUndoMaskAnchor);
+    end
+    function state = dispatchUndoMaskEdit(state, payload, ~)
+        state = dispatchWithEvent(state, payload, @onUndoMaskEdit);
+    end
+    function state = dispatchClearMaskBoundary(state, payload, ~)
+        state = dispatchWithEvent(state, payload, @onClearMaskBoundary);
+    end
+    function state = dispatchClearMaskCanvas(state, payload, ~)
+        state = dispatchWithEvent(state, payload, @onClearMaskCanvas);
+    end
+    function state = dispatchSaveMask(state, payload, ~)
+        state = dispatchWithEvent(state, payload, @onSaveMask);
+    end
 
 
     function onReferenceChosen(~, event)

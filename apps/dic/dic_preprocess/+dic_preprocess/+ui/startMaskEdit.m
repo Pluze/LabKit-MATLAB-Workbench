@@ -1,4 +1,4 @@
-% Expected caller: DIC preprocess runner. Inputs are app UI/runtime handles,
+% Expected caller: DIC preprocess action table. Inputs are app UI/runtime handles,
 % reference image, existing points, boundary style, and edit callback. Outputs
 % are the anchor editor handle. Side effects: redraws mask edit axes and starts
 % the app-neutral anchor editor tool.
