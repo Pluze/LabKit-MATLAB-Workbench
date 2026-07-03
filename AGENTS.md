@@ -187,6 +187,16 @@ Interactive GUI workflows are checked manually by the user. Do not run interacti
     stop and report the exact blocker instead of working around it.
 14. Do not force-push unless explicitly approved.
 
+Any text that can become a commit subject must satisfy the same Conventional
+Commit prefix rule below. This includes local `git commit -m` subjects,
+`git commit --amend` subjects, PR titles when the repository may squash-merge
+from the title, `gh pr merge --squash --subject ...`, auto-merge subjects, and
+any manual merge, backport, or release commit subject. Never rely on GitHub or
+`gh` defaults for squash commits; pass an explicit compliant `--subject` or
+rename the PR title before merging. Do not use `[codex]`, ticket labels, branch
+labels, or other non-Conventional prefixes in any subject that may land in git
+history.
+
 Use exactly one lowercase Conventional Commit type prefix from this list:
 
 - `feat:` for a user-visible capability, public API, app workflow, supported
