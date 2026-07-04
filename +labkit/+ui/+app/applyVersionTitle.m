@@ -17,4 +17,5 @@ function titleText = applyVersionTitle(fig, info)
     end
     titleText = labkit.ui.app.appVersionTitle(string(fig.Name), info);
     fig.Name = char(titleText);
+    setappdata(fig, 'labkitUiAppVersion', info);
 end

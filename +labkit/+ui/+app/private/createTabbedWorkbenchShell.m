@@ -2,7 +2,7 @@
 % code. Inputs and outputs are internal uifigure, grid, tab, or resize handle
 % values. Side effects are limited to UI object creation or callback wiring on
 % supplied parents; assumes the caller owns component lifecycle.
-function ui = createTabbedWorkbenchShell(figName, figPosition, leftWidth, labels, tabSpecs, rightGridSize, rightRowHeight, rightRowSpacing, debug)
+function ui = createTabbedWorkbenchShell(figName, figPosition, leftWidth, labels, tabSpecs, rightGridSize, rightRowHeight, rightRowSpacing, debug, utilities)
 %CREATETABBEDWORKBENCHSHELL Build the private tabbed workbench skeleton.
 %
 % Called by:
@@ -30,6 +30,9 @@ function ui = createTabbedWorkbenchShell(figName, figPosition, leftWidth, labels
     if nargin < 9
         debug = [];
     end
+    if nargin < 10
+        utilities = struct();
+    end
 
     ui = struct();
     figArgs = {'Name', figName, 'Position', figPosition};
@@ -40,18 +43,22 @@ function ui = createTabbedWorkbenchShell(figName, figPosition, leftWidth, labels
     applyGuiTestMode(ui.fig);
     paintVisibleFigure();
 
-    ui.main = uigridlayout(ui.fig, [2 3]);
+    ui.main = uigridlayout(ui.fig, [3 3]);
     ui.main.ColumnWidth = {leftWidth, 6, '1x'};
-    ui.main.RowHeight = {0, '1x'};
+    ui.main.RowHeight = {utilityRowHeight(utilities), 0, '1x'};
     ui.main.Padding = [10 10 10 10];
     ui.main.ColumnSpacing = 0;
     ui.main.RowSpacing = 6;
+
+    ui.utilityBarPanel = createUtilityBar(ui.fig, ui.main, utilities);
+    ui.utilityBarPanel.Layout.Row = 1;
+    ui.utilityBarPanel.Layout.Column = [1 3];
 
     ui.startupStatusPanel = uipanel(ui.main, ...
         'BackgroundColor', [0.94 0.97 1.00], ...
         'BorderType', 'none', ...
         'Visible', 'off');
-    ui.startupStatusPanel.Layout.Row = 1;
+    ui.startupStatusPanel.Layout.Row = 2;
     ui.startupStatusPanel.Layout.Column = [1 3];
 
     startupGrid = uigridlayout(ui.startupStatusPanel, [1 1]);
@@ -67,11 +74,11 @@ function ui = createTabbedWorkbenchShell(figName, figPosition, leftWidth, labels
     ui.separator = uipanel(ui.main, ...
         'BackgroundColor', [0.75 0.75 0.75], ...
         'BorderType', 'none');
-    ui.separator.Layout.Row = 2;
+    ui.separator.Layout.Row = 3;
     ui.separator.Layout.Column = 2;
 
     ui.leftPanel = uipanel(ui.main, 'Title', labels.controlsPanel);
-    ui.leftPanel.Layout.Row = 2;
+    ui.leftPanel.Layout.Row = 3;
     ui.leftPanel.Layout.Column = 1;
 
     ui.leftHost = uigridlayout(ui.leftPanel, [1 1]);
@@ -108,7 +115,7 @@ function ui = createTabbedWorkbenchShell(figName, figPosition, leftWidth, labels
     end
 
     ui.rightPanel = uipanel(ui.main, 'Title', labels.rightPanel);
-    ui.rightPanel.Layout.Row = 2;
+    ui.rightPanel.Layout.Row = 3;
     ui.rightPanel.Layout.Column = 3;
 
     ui.rightGrid = uigridlayout(ui.rightPanel, rightGridSize);
@@ -120,6 +127,14 @@ function ui = createTabbedWorkbenchShell(figName, figPosition, leftWidth, labels
     attachColumnResize(ui.fig, ui.main, 1, 2, ...
         struct('minWidth', 260, 'rightReserve', 360, 'separatorWidth', 6, ...
         'onTrace', debugTrace(debug)));
+end
+
+function height = utilityRowHeight(utilities)
+    height = 30;
+    if isstruct(utilities) && isfield(utilities, 'Visible') && ...
+            ~logical(utilities.Visible)
+        height = 0;
+    end
 end
 
 function mode = guiTestMode()

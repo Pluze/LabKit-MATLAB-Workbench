@@ -1,23 +1,34 @@
-function newFig = popoutAxes(srcAx)
+function newFig = popoutAxes(srcAx, varargin)
 %POPOUTAXES Copy a UI axes into an editable MATLAB figure.
 %
 % App-facing contract:
 %   newFig = labkit.ui.tool.popoutAxes(srcAx)
+%   newFig = labkit.ui.tool.popoutAxes(srcAx, "Toolbar", true)
+%   newFig = labkit.ui.tool.popoutAxes(srcAx, "Title", titleText)
 %
 % Inputs:
 %   srcAx - source UI axes or axes handle.
+%   Toolbar - optional logical scalar. When true, the copied figure gets
+%       LabKit publication-cleanup tools for copied-figure styling, copy,
+%       export, visible-data export, and recreate-script generation. Default
+%       is true.
+%   Title - optional scalar text used for the standalone figure name.
 %
 % Output:
 %   newFig - standalone MATLAB figure containing copied axes content. Plot
 %       axes are freely resizable; image axes preserve data aspect ratio.
 
+    opts = parseOptions(varargin);
     if isempty(srcAx) || ~isvalid(srcAx)
         error('labkit:ui:InvalidAxes', 'Source axes is not valid.');
     end
 
-    titleText = axisLabelText(srcAx.Title);
+    titleText = string(opts.Title);
     if strlength(titleText) == 0
-        titleText = "LabKit Plot";
+        titleText = axisLabelText(srcAx.Title);
+        if strlength(titleText) == 0
+            titleText = "LabKit Plot";
+        end
     end
 
     figArgs = {'Name', char(titleText), 'Color', 'w'};
@@ -34,6 +45,41 @@ function newFig = popoutAxes(srcAx)
         copyobj(children, dstAx);
     end
     applyAxesState(srcAx, dstAx);
+    if opts.Toolbar
+        createPopoutToolbar(newFig, dstAx);
+    end
+end
+
+function opts = parseOptions(args)
+    if mod(numel(args), 2) ~= 0
+        error('labkit:ui:InvalidPopoutOptions', ...
+            'popoutAxes options must be name-value pairs.');
+    end
+    opts = struct('Toolbar', true, 'Title', "");
+    for k = 1:2:numel(args)
+        name = string(args{k});
+        switch lower(name)
+            case "toolbar"
+                opts.Toolbar = logicalScalar(args{k + 1}, "Toolbar");
+            case "title"
+                opts.Title = string(args{k + 1});
+                if ~isscalar(opts.Title)
+                    error('labkit:ui:InvalidPopoutOptions', ...
+                        'Title must be scalar text.');
+                end
+            otherwise
+                error('labkit:ui:InvalidPopoutOptions', ...
+                    'Unsupported popoutAxes option "%s".', char(name));
+        end
+    end
+end
+
+function value = logicalScalar(value, name)
+    if ~(islogical(value) || isnumeric(value)) || ~isscalar(value)
+        error('labkit:ui:InvalidPopoutOptions', ...
+            '%s must be a logical scalar.', name);
+    end
+    value = logical(value);
 end
 
 function mode = guiTestMode()

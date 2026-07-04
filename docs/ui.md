@@ -4,7 +4,7 @@
 
 | Facade | Owns | Main APIs |
 | --- | --- | --- |
-| `labkit.ui.app` | Declarative app runtime, request dispatch, readiness/busy state, safe dialog defaults, app title versioning. | `define`, `run`, `create`, `dispatchRequest`, `appVersionTitle`, `applyVersionTitle`, `defaultDialogFolder`, `defaultOutputFolder`, `promptOutputFile`, `promptOutputFolder`, `runBusy`, `setCloseGuard`, `showAlert`. |
+| `labkit.ui.app` | Declarative app runtime, request dispatch, readiness/busy state, safe dialog defaults, app title versioning, state snapshots, and shell utility commands. | `define`, `run`, `create`, `dispatchRequest`, `appVersionTitle`, `applyVersionTitle`, `defaultDialogFolder`, `defaultOutputFolder`, `promptOutputFile`, `promptOutputFolder`, `runBusy`, `saveState`, `loadState`, `setCloseGuard`, `showAlert`. |
 | `labkit.ui.spec` | UI 4.1 data-only workbench specs. | `app`, `workspace`, `tab`, `section`, `group`, `field`, `rangeField`, `panner`, `action`, `filePanel`, `toolPanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `usagePanel`. |
 | `labkit.ui.view` | Semantic UI 4.1 registry updates and preview rendering helpers. | `setValue`, `getValue`, `getFiles`, `setFileSelection`, `setEnabled`, `setLimits`, `appendLog`, `setListItems`, `setListSelection`, `fileLabels`, `filePaths`, `fileIndices`, `drawImage`, `applyAxesViewportPolicy`, `resetAxes`, `clearAxes`. |
 | `labkit.ui.tool` | Reusable composed preview tools and interaction runtime. | `createRuntime`, `anchorEditor`, `scaleBar`, `scaleBarCalibration`, `enableAxesPopout`, `popoutAxes`, `zoomAxesAtPoint`. |
@@ -58,6 +58,9 @@ def = labkit.ui.app.define( ...
     "Spec", @example.userInterface.buildWorkbenchSpec, ...
     "Actions", example.definitionActions(), ...
     "Render", @example.userInterface.updateWorkbenchFromState, ...
+    "Snapshot", example.snapshot.spec(), ...
+    "Utilities", struct("Visible", true, "Plot", true, ...
+        "Screenshot", true, "State", "auto"), ...
     "Startup", ["workspace"], ...
     "Hydrate", ["tools"]);
 end
@@ -129,7 +132,8 @@ Use these app-facing contracts:
   preview, plot, waveform, image, or canvas content on the right.
 - `definition.m` declares app identity, state factory, UI spec, command
   handler registry, visible-state update function, startup phases, and
-  optional idle hydration phases.
+  optional idle hydration phases, optional snapshot hooks, and optional shell
+  utility visibility.
 - The framework runtime owns lifecycle scheduling, readiness/loading surface,
   generated callbacks, busy gating, debug exception plumbing, close guards, and
   hidden/minimized test behavior.
@@ -202,12 +206,42 @@ Use these app-facing contracts:
   behavior, records alert payloads on the figure, and skips the modal only
   when `LABKIT_GUI_TEST_MODE=hidden` so hidden GUI workflow tests can cover
   error paths without stalling.
+- `labkit.ui.app.saveState(fig, filepath)` and
+  `labkit.ui.app.loadState(fig, filepath)` save and restore same-version app
+  state snapshots. Snapshots store one MAT variable named `snapshot` with app
+  id, optional app version, optional app snapshot schema version, LabKit UI
+  version, MATLAB release/platform, and serialized semantic app state. They do
+  not store UI handles, function handles, debug contexts, listeners, file
+  identifiers, or the full runtime appdata struct. Apps may pass
+  `define(..., "Snapshot", spec)` with optional `Serialize`, `Deserialize`,
+  and `AfterLoad` hooks to remove caches, validate restored values, or request
+  follow-up refresh work. Snapshot loading is strict: schema, app id, LabKit UI
+  version, MATLAB release/platform, app version when known, and app snapshot
+  version must match before runtime state is replaced.
+- The workbench shell includes a compact framework utility bar with current
+  plot popout/copy/save commands, whole-app screenshot export, and state
+  snapshot save/load commands. Apps can use
+  `define(..., "Utilities", struct(...))` to hide the bar or disable groups of
+  commands without adding app-local shell buttons. Utility commands operate on
+  framework-owned runtime or visible preview axes; scientific result exports
+  remain app-owned.
 - `previewArea` belongs in `workspace` by default. Its optional `viewModes`
   selector is workspace-owned, and apps can react through `onModeChange`.
 - `previewArea` axes install LabKit-managed, pointer-gated mouse-wheel zoom by
   default. Scrolling over controls, logs, or empty figure space does not zoom
   plots, and users should not need to click a preview before wheel zoom works.
   Time-series axes with a time x-label zoom the horizontal time axis only.
+  Preview axes are also registered with the workbench utility bar, which uses
+  the most recently interacted visible axes when multiple preview axes exist.
+- `labkit.ui.tool.enableAxesPopout(ax)` installs the standard axes context
+  menu action. `labkit.ui.tool.popoutAxes(ax)` copies the visible axes into a
+  standalone MATLAB figure with optional copied-figure toolbar controls for
+  font size, line width, clipboard copy, graphics export, visible data export,
+  and generated `recreate_plot.m` scripts. Popout edits and exports operate on
+  the copied figure only. Plot axes remain freely resizable, while image axes
+  preserve locked data aspect ratio. The visible-data export is a
+  graphics-object export for publication cleanup; app-owned scientific CSV/MAT
+  result exports still belong in the app package.
 - Parameter value controls (`field`, `rangeField`, and `panner`) debounce
   semantic `onChange` callbacks by default so short bursts of edits submit
   only the latest value after roughly 0.5 seconds of idle time. Explicit

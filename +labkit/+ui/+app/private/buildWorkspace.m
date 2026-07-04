@@ -59,6 +59,7 @@ function ui = buildPreviewArea(ui, previewSpec, parentGrid, row)
         axesById.(axisIds{k}) = ax;
     end
     installPreviewScrollNavigation(ui.figure, axesHandles);
+    registerWorkbenchAxes(ui.figure, axesHandles);
 
     adapter = baseAdapter(previewSpec, 'previewArea');
     adapter.panel = panel;

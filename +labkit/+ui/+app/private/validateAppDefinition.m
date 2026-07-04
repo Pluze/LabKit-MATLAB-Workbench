@@ -7,7 +7,8 @@ function validateAppDefinition(def)
             'App definition must be a scalar struct.');
     end
     required = ["type", "id", "title", "initialState", "spec", ...
-        "actions", "render", "startup", "hydrate"];
+        "actions", "render", "startup", "hydrate", "snapshot", ...
+        "utilities"];
     for k = 1:numel(required)
         if ~isfield(def, required(k))
             error('labkit:ui:app:InvalidDefinition', ...
@@ -35,6 +36,8 @@ function validateAppDefinition(def)
     validateActions(def.actions);
     validatePhaseIds(def.startup, def.actions, "Startup");
     validatePhaseIds(def.hydrate, def.actions, "Hydrate");
+    validateSnapshotSpec(def.snapshot);
+    validateUtilitiesSpec(def.utilities);
 end
 
 function validateActions(actions)
@@ -72,5 +75,41 @@ function assertScalarText(value, name)
             strlength(string(value)) == 0
         error('labkit:ui:app:InvalidDefinition', ...
             'App definition %s must be nonempty scalar text.', name);
+    end
+end
+
+function validateSnapshotSpec(spec)
+    if isempty(spec)
+        return;
+    end
+    if ~isstruct(spec) || ~isscalar(spec)
+        error('labkit:ui:app:InvalidDefinition', ...
+            'Snapshot must be a scalar struct when supplied.');
+    end
+    if isfield(spec, 'Version')
+        value = spec.Version;
+        if ~(isnumeric(value) && isscalar(value) && isfinite(value))
+            error('labkit:ui:app:InvalidDefinition', ...
+                'Snapshot.Version must be a finite numeric scalar.');
+        end
+    end
+    optionalHooks = ["Serialize", "Deserialize", "AfterLoad"];
+    for k = 1:numel(optionalHooks)
+        field = char(optionalHooks(k));
+        if isfield(spec, field) && ~isempty(spec.(field)) && ...
+                ~isa(spec.(field), 'function_handle')
+            error('labkit:ui:app:InvalidDefinition', ...
+                'Snapshot.%s must be a function handle when supplied.', field);
+        end
+    end
+end
+
+function validateUtilitiesSpec(spec)
+    if isempty(spec)
+        return;
+    end
+    if ~isstruct(spec) || ~isscalar(spec)
+        error('labkit:ui:app:InvalidDefinition', ...
+            'Utilities must be a scalar struct when supplied.');
     end
 end

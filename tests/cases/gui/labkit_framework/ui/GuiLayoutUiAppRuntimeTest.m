@@ -37,14 +37,20 @@ function verify_gui_layout_ui_app_runtime()
         "Spec", @buildSpec, ...
         "Actions", actions, ...
         "Render", @renderState, ...
+        "Snapshot", struct("Version", 1, ...
+        "Serialize", @serializeState, ...
+        "Deserialize", @deserializeState, ...
+        "AfterLoad", @afterLoadState), ...
         "Startup", "startup", ...
         "Hydrate", "hydrate");
 
     fig = labkit.ui.app.run(def, struct("debug", debug));
+    h.waitForUiIdle(fig);
     ui = getappdata(fig, 'labkitUiRegistry');
     runtime = getappdata(fig, 'labkitUiAppRuntime');
-    assert(runtime.state.count == 15, ...
-        'Startup and hydration phases should update app runtime state.');
+    assert(runtime.state.count == 15, sprintf( ...
+        'Startup and hydration phases should update app runtime state. Found count=%g.', ...
+        runtime.state.count));
     assert(isequal(runtime.state.phaseOrder, ["startup", "hydrate"]), ...
         'Hydration should run after startup phases.');
     assert(contains(string(ui.controls.status.textArea.Value), "Count: 15"), ...
@@ -76,6 +82,54 @@ function verify_gui_layout_ui_app_runtime()
     assert(any(contains(string(debugLines), ...
         'ERROR programmatic action fail failed')), ...
         'Runtime action failures should be reported through the debug context.');
+    snapshotPath = string(tempname) + ".mat";
+    setappdata(fig, 'labkitUiUtilityStateFile', snapshotPath);
+    saveStateButton = findall(fig, 'Tag', 'labkitUiUtilitySaveState');
+    loadStateButton = findall(fig, 'Tag', 'labkitUiUtilityLoadState');
+    assert(~isempty(saveStateButton) && ~isempty(loadStateButton), ...
+        'Workbench utility bar should expose state snapshot commands.');
+    h.invokeCallback(saveStateButton(1), 'ButtonPushedFcn');
+    assert(isfile(snapshotPath), utilityFailureMessage(fig, ...
+        'Utility Save State should write the configured snapshot file.'));
+    savedVariables = string(who('-file', snapshotPath));
+    assert(isequal(savedVariables, "snapshot"), ...
+        'State snapshot file should contain exactly one snapshot variable.');
+    saved = load(snapshotPath, "snapshot");
+    assert(saved.snapshot.schema == "labkit.ui.app.snapshot.v1" && ...
+        saved.snapshot.app.id == "runtime_probe" && ...
+        saved.snapshot.app.snapshotVersion == "1", ...
+        'Saved state snapshot should include schema, app id, and app snapshot version.');
+    assert(~isfield(saved.snapshot.state, 'transient'), ...
+        'Serialize hook should be able to remove transient runtime fields.');
+
+    dispatch("increment", struct());
+    runtime = getappdata(fig, 'labkitUiAppRuntime');
+    assert(runtime.state.count == 21, ...
+        'Probe state should change before snapshot restore.');
+    h.invokeCallback(loadStateButton(1), 'ButtonPushedFcn');
+    runtime = getappdata(fig, 'labkitUiAppRuntime');
+    assert(runtime.state.count == 20 && runtime.state.transient == "restored" && ...
+        runtime.state.afterLoadCount == 1, ...
+        'Snapshot load should restore saved state, run Deserialize, and run AfterLoad.');
+    assert(contains(string(ui.controls.status.textArea.Value), "Count: 20"), ...
+        'Snapshot load should rerender restored state.');
+
+    badPath = string(tempname) + ".mat";
+    snapshot = saved.snapshot;
+    snapshot.app.id = "other_app";
+    save(badPath, 'snapshot');
+    assertThrows(@() labkit.ui.app.loadState(fig, badPath), ...
+        'labkit:ui:app:IncompatibleSnapshot', ...
+        'App id mismatch should fail before mutating state.');
+    runtime = getappdata(fig, 'labkitUiAppRuntime');
+    assert(runtime.state.count == 20, ...
+        'Failed snapshot load should leave current runtime state unchanged.');
+
+    runtime.state.badHandle = fig;
+    setappdata(fig, 'labkitUiAppRuntime', runtime);
+    assertThrows(@() labkit.ui.app.saveState(fig, string(tempname) + ".mat"), ...
+        'labkit:ui:app:UnserializableState', ...
+        'Snapshot save should reject graphics handles with a path-specific diagnostic.');
 
     clear cleanupFigures cleanupMode cleanupLog;
 
@@ -86,7 +140,8 @@ end
 
 function state = initialState()
     state = struct('count', 0, 'lastPayload', "", ...
-        'phaseOrder', strings(1, 0));
+        'phaseOrder', strings(1, 0), 'transient', "runtime", ...
+        'afterLoadCount', 0);
 end
 
 function spec = buildSpec(callbacks, ~)
@@ -126,6 +181,21 @@ function renderState(state, ui, services)
     setappdata(services.figure, 'runtimeProbeDispatch', services.dispatch);
 end
 
+function state = serializeState(state, services)
+    setappdata(services.figure, 'runtimeProbeSerialized', true);
+    state = rmfield(state, 'transient');
+end
+
+function state = deserializeState(state, services)
+    setappdata(services.figure, 'runtimeProbeDeserialized', true);
+    state.transient = "restored";
+end
+
+function state = afterLoadState(state, services)
+    setappdata(services.figure, 'runtimeProbeAfterLoad', true);
+    state.afterLoadCount = state.afterLoadCount + 1;
+end
+
 function assertPhaseRecord(records, kind, id, status)
     kinds = [records.kind];
     ids = [records.id];
@@ -152,5 +222,14 @@ end
 function cleanupFile(filepath)
     if exist(filepath, 'file') == 2
         delete(filepath);
+    end
+end
+
+function message = utilityFailureMessage(fig, fallback)
+    message = fallback;
+    if isappdata(fig, 'labkitUiAlerts')
+        alerts = getappdata(fig, 'labkitUiAlerts');
+        message = sprintf('%s Last alert: %s', fallback, ...
+            char(alerts(end).message));
     end
 end

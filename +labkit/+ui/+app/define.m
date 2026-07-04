@@ -18,6 +18,9 @@ function def = define(varargin)
 %   Render - function handle called as render(state, ui, services).
 %   Startup - optional action id array dispatched after the shell paints.
 %   Hydrate - optional action id array reserved for later idle hydration.
+%   Snapshot - optional struct with Version, Serialize, Deserialize, and
+%       AfterLoad hooks for app-owned state cleanup and restore policy.
+%   Utilities - optional struct controlling framework utility-bar visibility.
 %
 % Output:
 %   def - plain scalar struct consumed by labkit.ui.app.run.
@@ -33,6 +36,8 @@ function def = define(varargin)
     def.render = requiredOption(opts, "Render");
     def.startup = string(optionValue(opts, "Startup", strings(1, 0)));
     def.hydrate = string(optionValue(opts, "Hydrate", strings(1, 0)));
+    def.snapshot = optionValue(opts, "Snapshot", struct());
+    def.utilities = optionValue(opts, "Utilities", struct());
     validateAppDefinition(def);
 end
 
