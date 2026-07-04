@@ -2,9 +2,10 @@
 
 `labkit.thermal.*` is the GUI-free facade for reusable thermal source-file
 parsing, raw thermal matrices, embedded calibration metadata,
-raw-to-temperature conversion, and thermal palette rendering. It is separate
-from `labkit.image`: ordinary image IO and filters stay in `labkit.image`,
-while radiometric source formats and thermal calibration mechanics live here.
+raw-to-temperature conversion, and linear thermal palette rendering. It is
+separate from `labkit.image`: ordinary image IO and filters stay in
+`labkit.image`, while radiometric source formats and thermal calibration
+mechanics live here.
 
 `labkit.thermal.version()` returns the thermal facade contract version used by
 app `requirements.m` declarations.
@@ -43,6 +44,13 @@ distance, reflected/atmospheric/window temperatures, humidity, transmission,
 and Planck constants when available. `"planck-basic"` applies only the embedded
 Planck constants.
 
+`renderImage` is the reusable facade renderer for linear thermal palette
+mapping over a selected numeric range. App-level display modes such as log or
+gamma color mapping belong to the owning app because they are workflow and UI
+policy: the FLIR Thermal app applies those modes only while converting a
+selected display range into RGB colors. They do not change the raw matrix,
+Celsius matrix, thermal record, or exported temperature CSV values.
+
 Use `inspectFile` or `readFiles(..., struct("SkipInvalid", true))` when a
 workflow accepts mixed selections from a file dialog. The facade owns the
 distinction between extension-compatible files and files that actually contain
@@ -59,13 +67,13 @@ The facade may own:
 - radiometric container parsing that exposes raw thermal matrices
 - embedded calibration metadata normalization
 - raw thermal signal to Celsius conversion
-- generic thermal palette rendering
+- generic linear thermal palette rendering
 - private compatibility code for vendor container variants
 
 Apps own:
 
 - file queues, selected image state, and display-range defaults
-- palette choices exposed to users and workflow wording
+- palette choices, log/gamma display mapping controls, and workflow wording
 - colorbar export placement, manifests, filenames, and failed-row policy
 - overlay-removal workflows, measurements, annotations, alerts, and logs
 - any app-specific decisions about which matrix to show or export

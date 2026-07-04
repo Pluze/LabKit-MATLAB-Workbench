@@ -15,7 +15,8 @@ LabKit gives lab users a launcher-first way to open small, purpose-built apps
 for electrochemistry, DIC, image measurement, wearable biosignals, and
 neurophysiology. Each app owns its workflow, plots, result tables, and exports.
 The reusable `+labkit` foundation stays small: GUI shell helpers, Gamry DTA
-loading, Intan RHS loading, and biosignal processing facades.
+loading, thermal source parsing, Intan RHS loading, and biosignal processing
+facades.
 
 ## Start Here
 
@@ -61,9 +62,9 @@ reviewing implementation details.
 
 | Family | Examples | Purpose |
 | --- | --- | --- |
-| Electrochemistry | `labkit_CIC_app`, `labkit_EIS_app`, `labkit_VTResistance_app` | Gamry DTA review, metrics, plots, and exports. |
+| Electrochemistry | `labkit_CSC_app`, `labkit_CIC_app`, `labkit_EIS_app`, `labkit_VTResistance_app` | Gamry DTA review, CSC/CIC/resistance metrics, plots, and exports. |
 | DIC | `labkit_DICPreprocess_app`, `labkit_DICPostprocess_app` | Image preparation, ROI masks, strain overlays, and summaries. |
-| Image measurement | `labkit_CurvatureMeasurement_app`, `labkit_FocusStack_app`, `labkit_ImageEnhance_app`, `labkit_BatchImageCrop_app` | Image measurement, microscopy utilities, and figure preparation. |
+| Image measurement | `labkit_FLIRThermal_app`, `labkit_CurvatureMeasurement_app`, `labkit_FocusStack_app`, `labkit_ImageEnhance_app`, `labkit_BatchImageCrop_app` | Thermal rendering, image measurement, microscopy utilities, and figure preparation. |
 | Wearable biosignal | `labkit_ECGPrint_app` | ECG import, filtering, peak/segment review, and exports. |
 | Neurophysiology | `labkit_RHSPreview_app`, `labkit_NerveResponseAnalysis_app`, `labkit_ResponseReviewStats_app` | Intan RHS inspection, channel protocol drafting, filter records, event-locked nerve response analysis, and aligned response statistics. |
 
@@ -98,7 +99,7 @@ validation limits.
 
 ```text
 apps/      workflow-specific MATLAB GUI apps
-+labkit/   reusable UI, image, DTA, RHS, and biosignal facades
++labkit/   reusable UI, image, thermal, DTA, RHS, and biosignal facades
 docs/      human-facing usage, API, architecture, and validation docs
 tests/     behavior tests, project contracts, GUI checks, and runner code
 ```

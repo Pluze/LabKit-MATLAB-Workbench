@@ -132,11 +132,11 @@ workflow text.
 
 Thermal workflows may use `labkit.thermal` for radiometric source reads,
 embedded calibration metadata, raw thermal matrices, Celsius conversion, and
-thermal palette rendering. Apps still own file queues, display-range defaults,
-export manifests, colorbar placement, overlay-removal workflow wording,
-measurements, and user-facing decisions. Generic image IO and filters stay in
-`labkit.image`; thermal file parsing and raw-to-temperature mechanics stay in
-`labkit.thermal`.
+linear thermal palette rendering. Apps still own file queues, display-range
+defaults, log/gamma display-mapping controls, export manifests, colorbar
+placement, overlay-removal workflow wording, measurements, and user-facing
+decisions. Generic image IO and filters stay in `labkit.image`; thermal file
+parsing and raw-to-temperature mechanics stay in `labkit.thermal`.
 
 `definition.m` returns the app runtime contract. It names the initial state
 factory, data-only spec builder, command handler registry, visible-state update

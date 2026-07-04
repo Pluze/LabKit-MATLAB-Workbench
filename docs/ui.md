@@ -232,10 +232,14 @@ Use these app-facing contracts:
 - Section height is automatic: the builder estimates height from child control
   types and framework spacing defaults. Apps declare only the page, section,
   and control order.
-- `group` composes related semantic controls inside a section. Groups whose
-  children are all `action` specs lay out commands in wrapped rows by default
-  instead of forcing every button onto one line; the framework chooses the
-  column count from the button count and label length.
+- `group` composes related semantic controls inside a section and replaces the
+  older action-only grouping concept. Apps should use `group(id, "", {...})`
+  for inline tool rows and `group(id, title, {...})` for titled subgroups.
+  With `layout="auto"`, a group whose children are all `action` specs uses the
+  action layout; mixed controls use a compact form layout. Action groups wrap
+  into at most two columns by default, collapse to one column for long labels,
+  and let a single odd final action span the row. Apps should not create
+  app-local button grids just to place several actions near each other.
 - Use app-level `usage`/`usageTitle` on `labkit.ui.spec.app` for static
   workflow instructions. The framework places that read-only usage panel at the
   bottom of the first control tab.
@@ -341,14 +345,21 @@ labkit.ui.view.clearAxes(ui, "preview", "difference");
 View helpers target semantic ids in the UI registry owned by the app runtime.
 They do not create arbitrary controls or expose MATLAB layout primitives.
 `previewArea` axes automatically receive the standard right-click action
-`Open axes in new figure`; apps redraw prepared data through the named preview
+`Open axes in new figure`; the current implementation copies the axes into a
+standalone MATLAB figure and preserves the plot/image aspect behavior already
+used by LabKit previews. Apps redraw prepared data through the named preview
 helpers. `drawImage` preserves the current axes view when an image is redrawn
 with the same displayed bounds, so overlay refreshes do not throw away a
 user's zoomed preview. Use `resetAxes` or `clearAxes` when an app intentionally
-wants to return the preview to its home view. Curve plot helpers should call
-`applyAxesViewportPolicy(ax, "curve")` after redrawing data so file, cycle, or
-axis-selection changes do not keep stale X/Y limits; overlay-only or image ROI
-refreshes should preserve the current viewport.
+wants to return the preview to its home view.
+
+Curve and image viewport behavior are intentionally different. Curve redraws
+that replace the plotted data should call `applyAxesViewportPolicy(ax,
+"curve")` after plotting; the helper fits X/Y limits to finite plotted data
+with small padding, which prevents stale limits after file, cycle, or
+axis-selection changes. Overlay-only refreshes and image ROI edits should keep
+the current viewport. Image redraws should continue to use `drawImage`, whose
+image policy preserves the current view when the displayed bounds are stable.
 
 `logPanel` follows appended lines by default: `appendLog` scrolls the log to the
 bottom after adding a line. Users can use the visible follow button or the log

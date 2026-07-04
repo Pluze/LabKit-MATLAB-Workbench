@@ -82,6 +82,45 @@ choose an older release, tag, or commit through `Versions`.
 | `labkit_NerveResponseAnalysis_app` | Neurophysiology | Filter-record-driven event train detection, differential response derivation, common-mode correction, and CAP metrics. | Filter record JSON and recommended protocol JSON | Analysis JSON with events, trains, metrics, and issues. |
 | `labkit_ResponseReviewStats_app` | Neurophysiology | Immediate metric loading, aligned response segment review, and descriptive statistics from analysis metrics or legacy segment CSV. | Analysis JSON or segment CSV | Metrics CSV and summary table. |
 
+## Current Workflow Notes
+
+### CSC App
+
+`labkit_CSC_app` loads one or more CV/CT Gamry DTA files and keeps the file
+panel selection as the active file. Selecting a file resets the curve selector,
+plot defaults, all-cycle table, and plot axes to that file's parsed curves.
+The default curve choice is `All cycles`: both plot panes draw every parsed
+cycle with per-cycle colors, and current traces split cathodic and anodic
+segments into darker/lighter variants of the same cycle color. Time plots are
+cycle-aligned by subtracting each cycle's initial time from that cycle's `T`
+column.
+
+Selecting an individual cycle switches the plots and comparison readout to
+that curve. Plot X/Y dropdown changes redraw the curve data and refit X/Y
+limits; overlay-only trim refreshes preserve the user's current plot view.
+`Ignore first/last cycle` affects the all-cycle result table, all-cycle CSC
+export, CV data export, and all-cycle plot display, so incomplete edge cycles
+can be excluded consistently.
+
+`Export all cycles CSV` writes one row per exported file cycle with cathodic,
+anodic, and full CT/CV charge and CSC columns. `Export CV data CSV` writes a
+column-oriented table for replotting CVs and recomputing CSC: one potential
+column plus paired current and scan-rate columns per file cycle when all
+exported cycles share the same voltage vector. When voltage vectors differ
+across DTA files, the app writes one CSV per source DTA item using the chosen
+output filename as the stem.
+
+### FLIR Thermal App
+
+`labkit_FLIRThermal_app` reads FLIR radiometric JPEG/RJPEG files through
+`labkit.thermal`, keeps per-image display ranges, and exports clean thermal
+images, colorbars, Celsius matrices, and a manifest. The display controls
+include linear, log, and gamma color mapping. Log and gamma modes affect only
+the color mapping from the selected display range into the palette; they do
+not transform the stored raw or Celsius matrix and do not change exported
+temperature CSV values. Gamma mode exposes a `Gamma` panner so users can tune
+the display curve interactively.
+
 ## Creating A New App
 
 Create new apps from a LabKit app template instead of copying an existing app
@@ -242,8 +281,10 @@ Image apps should use `labkit.image` for generic image filters, path
 normalization, display names, reads/writes, RGB double conversion, preview
 resizing, mean filtering, and basic enhancement primitives. Thermal image apps
 should use `labkit.thermal` for radiometric source parsing, raw thermal
-matrices, temperature conversion, and thermal palette rendering. Keep app-owned
-readers when they build app item structs or enforce workflow-specific state.
+matrices, temperature conversion, and linear thermal palette rendering.
+Display policy such as per-image ranges, log/gamma color mapping controls, and
+export manifests remains app-owned. Keep app-owned readers when they build app
+item structs or enforce workflow-specific state.
 
 Use this boundary:
 
