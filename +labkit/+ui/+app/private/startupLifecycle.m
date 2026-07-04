@@ -32,6 +32,7 @@ function state = startState(fig, ui, message)
     state.mainGrid = ui.main;
     state.panel = ui.startupStatusPanel;
     state.label = ui.startupStatusLabel;
+    state.statusRow = ui.startupStatusPanel.Layout.Row;
     rememberHandles(fig, state);
     state.oldBusy = captureBusy(fig);
     setappdata(fig, 'labkitUiBusy', true);
@@ -123,8 +124,8 @@ function state = showStatus(state)
     end
     try
         heights = state.mainGrid.RowHeight;
-        if numel(heights) >= 1
-            heights{1} = 28;
+        if numel(heights) >= state.statusRow
+            heights{state.statusRow} = 28;
             state.mainGrid.RowHeight = heights;
         end
         state.panel.Visible = 'on';
@@ -205,8 +206,8 @@ function state = hideStatus(state)
     if isLiveHandle(state.mainGrid)
         try
             heights = state.mainGrid.RowHeight;
-            if numel(heights) >= 1
-                heights{1} = 0;
+            if numel(heights) >= state.statusRow
+                heights{state.statusRow} = 0;
                 state.mainGrid.RowHeight = heights;
             end
         catch
@@ -241,6 +242,7 @@ function state = defaultState(fig)
     state.mainGrid = [];
     state.panel = [];
     state.label = [];
+    state.statusRow = 1;
     state.statusLabelUpdated = false;
     state.statusFlushed = false;
     state.oldBusy = struct('hadValue', false, 'value', []);
@@ -253,7 +255,8 @@ function rememberHandles(fig, state)
     handles = struct( ...
         'mainGrid', state.mainGrid, ...
         'panel', state.panel, ...
-        'label', state.label);
+        'label', state.label, ...
+        'statusRow', state.statusRow);
     try
         setappdata(fig, 'labkitUiStartupHandles', handles);
     catch
@@ -269,6 +272,9 @@ function state = restoreHandles(fig, state)
         state.mainGrid = handles.mainGrid;
         state.panel = handles.panel;
         state.label = handles.label;
+        if isfield(handles, 'statusRow')
+            state.statusRow = handles.statusRow;
+        end
     catch
     end
 end

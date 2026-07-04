@@ -28,7 +28,7 @@ function fig = run(def, request)
     state = createInitialState(def.initialState);
     actions = def.actions;
     callbacks = runtimeCallbacks(actions);
-    spec = buildRuntimeSpec(def.spec, callbacks, state);
+    spec = buildRuntimeSpec(def, callbacks, state);
     ui = labkit.ui.app.create(spec, "debug", debug);
     fig = ui.figure;
     runtime = struct( ...
@@ -37,7 +37,7 @@ function fig = run(def, request)
         'actions', actions, ...
         'ui', ui, ...
         'debug', debug);
-    setappdata(fig, runtimeKey(), runtime);
+    setappdata(fig, appRuntimeKey(), runtime);
     invokeRuntimeRender(fig);
     dispatchStartup(fig, def.startup, def.hydrate);
 end
@@ -86,7 +86,8 @@ function fig = runtimeFigure(control, event)
     end
 end
 
-function spec = buildRuntimeSpec(specFcn, callbacks, state)
+function spec = buildRuntimeSpec(def, callbacks, state)
+    specFcn = def.spec;
     n = narginOf(specFcn);
     if n == 0
         spec = specFcn();
@@ -95,6 +96,7 @@ function spec = buildRuntimeSpec(specFcn, callbacks, state)
     else
         spec = specFcn(callbacks, state);
     end
+    spec.props.utilities = def.utilities;
 end
 
 function dispatchStartup(fig, startupIds, hydrateIds)
@@ -160,7 +162,7 @@ function dispatchRuntimeAction(fig, id, control, event)
             runtime.state, payload, services);
         if hasState
             runtime.state = nextState;
-            setappdata(fig, runtimeKey(), runtime);
+            setappdata(fig, appRuntimeKey(), runtime);
         end
         applyRuntimeEffects(fig, effects);
         invokeRuntimeRender(fig);
@@ -343,15 +345,11 @@ function reportRuntimeException(fig, payload, exception)
 end
 
 function runtime = getRuntime(fig)
-    if isempty(fig) || ~isvalid(fig) || ~isappdata(fig, runtimeKey())
+    if isempty(fig) || ~isvalid(fig) || ~isappdata(fig, appRuntimeKey())
         error('labkit:ui:app:MissingRuntime', ...
             'The figure does not have a LabKit app runtime.');
     end
-    runtime = getappdata(fig, runtimeKey());
-end
-
-function key = runtimeKey()
-    key = 'labkitUiAppRuntime';
+    runtime = getappdata(fig, appRuntimeKey());
 end
 
 function key = phaseTimingKey()
