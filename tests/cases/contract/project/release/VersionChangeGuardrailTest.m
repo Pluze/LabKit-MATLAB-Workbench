@@ -16,7 +16,7 @@ classdef VersionChangeGuardrailTest < matlab.unittest.TestCase
             issues = changedVersionedCodeWithoutChangelogRecord(root);
 
             testCase.verifyEmpty(issues, ...
-                "Versioned code changed without matching CHANGELOG.md inventory: " + ...
+                "Versioned code changed without matching CHANGELOG.md lookup: " + ...
                 strjoin(issues, ", "));
         end
 
@@ -90,11 +90,11 @@ function issues = changedVersionedCodeWithoutChangelogRecord(root)
         if strlength(currentVersion) == 0
             continue;
         end
-        hasInventoryLine = any(contains(changelogLines, "`" + artifact.versionPath + "`") & ...
+        hasLookupLine = any(contains(changelogLines, "`" + artifact.versionPath + "`") & ...
             contains(changelogLines, "`" + currentVersion + "`"));
-        if ~hasInventoryLine
+        if ~hasLookupLine
             issues(end+1) = artifact.label + " " + currentVersion + ...
-                " missing inventory row";
+                " missing lookup row";
         end
     end
     issues = unique(issues, "stable");

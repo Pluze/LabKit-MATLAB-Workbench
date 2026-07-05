@@ -1,177 +1,638 @@
 # LabKit MATLAB Workbench Changelog
 
-This changelog records user-facing and maintainer-relevant changes for LabKit
-MATLAB Workbench. It is written for humans, but it also keeps enough commit and
-version evidence to answer which behavior shipped with each launcher, facade,
-or app version.
+This file is a version map for users and maintainers. It explains what changed
+under each release tag, launcher version, facade version, and app version. It
+does not try to replace git blame or raw commit history; it records the
+maintainer intent and user impact that are easy to lose in commit subjects.
 
-## Changelog Policy
+## How To Use This File
 
-- `CHANGELOG.md` owns component version history. GitHub release notes remain
-  shorter, release-specific summaries.
-- `Unreleased` is the staging area for branch and pull-request work whose final
-  mainline commit is not known yet.
-- `Version Bump Ledger` is the audited mainline history. Move finalized
-  `Unreleased` rows there when preparing a release or doing a changelog audit.
-- Record notable behavior, compatibility, workflow, validation, diagnostics,
+- Start with `Current Version Lookup` when you only need to identify the version
+  and metadata file for a launcher, facade, or app.
+- Use `Version History` as the main reading path. Each entry lists affected
+  versions, what changed, why it matters, compatibility notes when relevant,
+  and evidence.
+- Use `Unreleased` for branch and pull-request work before the final mainline
+  commit is known.
+- Record meaningful behavior, compatibility, workflow, validation, diagnostics,
   and public facade changes. Do not dump raw git logs.
-- For versioned components, every behavior change that bumps a `version.m` file
-  or `labkit_launcher.m` must mention the component and new version here.
-- App versions, facade versions, and launcher versions are independent.
 
 ## Unreleased
 
-No pending version rows. Add branch work here before the final mainline commit
-is known.
+No pending entries.
 
-| Date | Component(s) | Version change | Notable change | Evidence |
-|---|---|---|---|---|
-| _template_ | `labkit.ui` | `4.2.0 -> 4.3.0` | Short user-facing or maintainer-facing summary. | PR or branch commit, then main commit after merge. |
+Template for branch work before the final mainline commit is known:
 
-## Current Version Inventory
+```markdown
+### Pending - Short user-facing title
+
+Affected versions:
+- `component` `old -> new`
+
+What changed:
+- Plain-language change summary.
+
+Why it matters:
+- User or maintainer reason this version exists.
+
+Compatibility:
+- Migration or rollback note, or `No known manual migration.`
+
+Evidence:
+- PR, branch, or pending commit.
+```
+
+## Current Version Lookup
 
 Audited against `main` at `0155cd12` on 2026-07-04.
 
-### Core And Facades
+| Component | Current version | Family | Metadata location |
+|---|---:|---|---|
+| `labkit_launcher` | `1.2.3` | Launcher | `labkit_launcher.m` |
+| `labkit.ui` | `4.2.0` | Facade | `+labkit/+ui/version.m` |
+| `labkit.dta` | `2.0.0` | Facade | `+labkit/+dta/version.m` |
+| `labkit.image` | `1.1.0` | Facade | `+labkit/+image/version.m` |
+| `labkit.thermal` | `1.0.0` | Facade | `+labkit/+thermal/version.m` |
+| `labkit.rhs` | `1.0.0` | Facade | `+labkit/+rhs/version.m` |
+| `labkit.biosignal` | `1.0.0` | Facade | `+labkit/+biosignal/version.m` |
+| `labkit_ChronoOverlay_app` | `1.3.3` | Electrochem | `apps/electrochem/chrono_overlay/+chrono_overlay/version.m` |
+| `labkit_CIC_app` | `1.3.5` | Electrochem | `apps/electrochem/cic/+cic/version.m` |
+| `labkit_CSC_app` | `1.3.7` | Electrochem | `apps/electrochem/csc/+csc/version.m` |
+| `labkit_EIS_app` | `1.3.3` | Electrochem | `apps/electrochem/eis/+eis/version.m` |
+| `labkit_VTResistance_app` | `1.3.5` | Electrochem | `apps/electrochem/vt_resistance/+vt_resistance/version.m` |
+| `labkit_DICPreprocess_app` | `1.3.3` | DIC | `apps/dic/dic_preprocess/+dic_preprocess/version.m` |
+| `labkit_DICPostprocess_app` | `1.3.3` | DIC | `apps/dic/dic_postprocess/+dic_postprocess/version.m` |
+| `labkit_BatchImageCrop_app` | `1.6.5` | Image Measurement | `apps/image_measurement/batch_crop/+batch_crop/version.m` |
+| `labkit_CurvatureMeasurement_app` | `1.3.3` | Image Measurement | `apps/image_measurement/curvature/+curvature/version.m` |
+| `labkit_FLIRThermal_app` | `1.2.7` | Image Measurement | `apps/image_measurement/flir_thermal/+flir_thermal/version.m` |
+| `labkit_FocusStack_app` | `1.4.4` | Image Measurement | `apps/image_measurement/focus_stack/+focus_stack/version.m` |
+| `labkit_ImageEnhance_app` | `1.5.4` | Image Measurement | `apps/image_measurement/image_enhance/+image_enhance/version.m` |
+| `labkit_ImageMatch_app` | `1.5.4` | Image Measurement | `apps/image_measurement/image_match/+image_match/version.m` |
+| `labkit_RHSPreview_app` | `1.3.3` | Neurophysiology | `apps/neurophysiology/rhs_preview/+rhs_preview/version.m` |
+| `labkit_NerveResponseAnalysis_app` | `1.3.3` | Neurophysiology | `apps/neurophysiology/nerve_response_analysis/+nerve_response_analysis/version.m` |
+| `labkit_ResponseReviewStats_app` | `1.3.3` | Neurophysiology | `apps/neurophysiology/response_review_stats/+response_review_stats/version.m` |
+| `labkit_ECGPrint_app` | `1.3.4` | Wearable | `apps/wearable/ecg_print/+ecg_print/version.m` |
 
-| Component | Current version | Status / family | Metadata location | Current notes |
-|---|---:|---|---|---|
-| `labkit_launcher` | `1.2.3` | Launcher | `labkit_launcher.m` | Self-contained GUI selector, updater, repair path, version manager, profiler, and code-analyzer actions. |
-| `labkit.ui` | `4.2.0` | stable facade | `+labkit/+ui/version.m` | UI 4.x app/spec/view/tool/diag contract, declarative runtime, grouped actions, utility bar, state snapshots, enhanced popout tools, debug artifacts, alerts, close guard, output prompts, and text fitting. |
-| `labkit.dta` | `2.0.0` | stable facade | `+labkit/+dta/version.m` | DTA parser, file item, pulse, and curve facade after old session helper removal. |
-| `labkit.image` | `1.1.0` | stable facade | `+labkit/+image/version.m` | GUI-free image file input, display normalization, basic processing, and preview-budget helpers. |
-| `labkit.thermal` | `1.0.0` | experimental facade | `+labkit/+thermal/version.m` | GUI-free FLIR radiometric JPEG, raw matrix, temperature conversion, and thermal rendering facade. |
-| `labkit.rhs` | `1.0.0` | stable facade | `+labkit/+rhs/version.m` | RHS discovery, metadata, indexing, and waveform-window reads. |
-| `labkit.biosignal` | `1.0.0` | stable facade | `+labkit/+biosignal/version.m` | Biosignal recording, filtering, event, segmentation, and ECG measurement contracts. |
+## Version History
 
-### Apps
+### 2026-07-04 - UI utility snapshots and popout tools
 
-| App component | Family | Current version | Metadata location |
-|---|---|---:|---|
-| `labkit_ChronoOverlay_app` | Electrochem | `1.3.3` | `apps/electrochem/chrono_overlay/+chrono_overlay/version.m` |
-| `labkit_CIC_app` | Electrochem | `1.3.5` | `apps/electrochem/cic/+cic/version.m` |
-| `labkit_CSC_app` | Electrochem | `1.3.7` | `apps/electrochem/csc/+csc/version.m` |
-| `labkit_EIS_app` | Electrochem | `1.3.3` | `apps/electrochem/eis/+eis/version.m` |
-| `labkit_VTResistance_app` | Electrochem | `1.3.5` | `apps/electrochem/vt_resistance/+vt_resistance/version.m` |
-| `labkit_DICPreprocess_app` | DIC | `1.3.3` | `apps/dic/dic_preprocess/+dic_preprocess/version.m` |
-| `labkit_DICPostprocess_app` | DIC | `1.3.3` | `apps/dic/dic_postprocess/+dic_postprocess/version.m` |
-| `labkit_BatchImageCrop_app` | Image Measurement | `1.6.5` | `apps/image_measurement/batch_crop/+batch_crop/version.m` |
-| `labkit_CurvatureMeasurement_app` | Image Measurement | `1.3.3` | `apps/image_measurement/curvature/+curvature/version.m` |
-| `labkit_FLIRThermal_app` | Image Measurement | `1.2.7` | `apps/image_measurement/flir_thermal/+flir_thermal/version.m` |
-| `labkit_FocusStack_app` | Image Measurement | `1.4.4` | `apps/image_measurement/focus_stack/+focus_stack/version.m` |
-| `labkit_ImageEnhance_app` | Image Measurement | `1.5.4` | `apps/image_measurement/image_enhance/+image_enhance/version.m` |
-| `labkit_ImageMatch_app` | Image Measurement | `1.5.4` | `apps/image_measurement/image_match/+image_match/version.m` |
-| `labkit_RHSPreview_app` | Neurophysiology | `1.3.3` | `apps/neurophysiology/rhs_preview/+rhs_preview/version.m` |
-| `labkit_NerveResponseAnalysis_app` | Neurophysiology | `1.3.3` | `apps/neurophysiology/nerve_response_analysis/+nerve_response_analysis/version.m` |
-| `labkit_ResponseReviewStats_app` | Neurophysiology | `1.3.3` | `apps/neurophysiology/response_review_stats/+response_review_stats/version.m` |
-| `labkit_ECGPrint_app` | Wearable | `1.3.4` | `apps/wearable/ecg_print/+ecg_print/version.m` |
+Affected versions:
+- `labkit.ui` `4.1.0 -> 4.2.0`
 
-## Release Tag Index
+What changed:
+- Added UI state snapshot save/load APIs.
+- Added workbench utility controls.
+- Improved axes popout export and copy tools.
 
-| Tag | Date | Main commit | Notes |
-|---|---|---|---|
-| `v1.0` | 2026-06-06 | `0bb83a6e` | Early LabKit workbench release after app and runner migration cleanup. |
-| `v2.0` | 2026-06-14 | `4bc7343f` | UI 2.0 app migration line. |
-| `2.1` | 2026-06-21 | `76ddf7d0` | Legacy tag style; preserved for compatibility. |
-| `v2.2.0` | 2026-06-21 | `c904baca` | Release updater button and launcher flow. |
-| `v2.3.0` | 2026-06-21 | `f2ed23c2` | Batch crop padding and physical-scale workflow line. |
-| `v2.3.1` | 2026-06-21 | `83d03e7a` | Launcher as primary user entry. |
-| `v2.3.2` | 2026-06-22 | `29669ca6` | Image preview/export workflow hardening. |
-| `v2.3.3` | 2026-06-23 | `a7e7dfb1` | Contributor identity normalization before facade contracts. |
-| `v2.4.0` | 2026-06-23 | `d70c2607` | App and launcher version metadata baseline. |
-| `v2.4.1` | 2026-06-23 | `49d9f41b` | Release validation contract hardening. |
-| `v2.4.2` | 2026-06-23 | `7e39b558` | MATLAB CI shard routing through build tasks. |
-| `v3.0.0` | 2026-06-29 | `349a7549` | UI diagnostics, validation docs, and duplicate CI avoidance line. |
+Why it matters:
+- Users can preserve UI state and move plot outputs out of the GUI with less
+  manual work.
 
-## Notable Pre-Versioned History
+Evidence:
+- Main commit `0155cd12`.
 
-Before `d70c2607` introduced app and launcher version metadata on 2026-06-23,
-the repository still had important user-visible and architecture milestones:
+### 2026-07-03 - FLIR display tuning
 
-| Date | Main commit(s) | Notable change |
-|---|---|---|
-| 2026-05-28 | `5973bde0` through `40f46561` | Imported the old MATLAB code, extracted DTA parsers and electrochem calculations, added named fixtures, and created dedicated app entry points. |
-| 2026-05-28 to 2026-05-29 | `eb69fb1f` through `41403a8b` | Removed root legacy GUI entry points, moved electrochem apps into package-backed runners, and folded one-off helper packages back into app-owned workflows. |
-| 2026-05-29 | `88b19851` through `e04292c0` | Added the GUI-free DTA loading facade, adopted it in electrochem apps, and documented/locked parser report schemas. |
-| 2026-05-30 | `9bd8ec8f` through `1be52b9d` | Exposed app-facing DTA templates, renamed the workbench namespace to `labkit`, standardized file panels, and unified the app workbench shell. |
-| 2026-05-30 | `aa96ae88` through `d7c31369` | Added DIC workflow apps, image curvature measurement, biosignal facade, and ECG explorer workflow. |
-| 2026-05-31 | `1e9022c4` through `e94ce691` | Added axes popout, shared UI controls, ECG peak detection, public library option docs, and app regression coverage. |
-| 2026-06-04 | PRs `#2` to `#5` and direct follow-ups | Added Focus Stack, UI busy guard behavior, image measurement improvements, scale-bar tool promotion, managed image axes runtime, and app debug trace logging. |
-| 2026-06-05 to 2026-06-06 | PRs `#6` to `#19` plus migration commits | Rewrote app/test platform layout, hardened build entry points, completed app namespace migrations, cleared electrochem and DIC runner debt, and converged migration governance. |
-| 2026-06-09 to 2026-06-14 | `5443dc7b` through `4bc7343f` | Removed Code Analyzer suppression pragmas, added launcher/project metadata, migrated apps to UI 2.0, persisted app debug artifacts, and reorganized tests. |
-| 2026-06-18 to 2026-06-22 | `7ddc036f` through `1832f46a` | Added RHS neurophysiology app family, centralized UI busy/path contracts, made the launcher self-contained, added release updater support, and required reproducible release assets. |
-| 2026-06-23 | `a25b79f9` through `10ee7df7` | Introduced facade contract checks, hid automated GUI windows, added version metadata guardrails, and routed CI shards through build tasks. |
+Affected versions:
+- `labkit_FLIRThermal_app` `1.2.4 -> 1.2.7`
+- `labkit_CSC_app` `1.3.6 -> 1.3.7`
 
-## Version Bump Ledger
+What changed:
+- Refined CSC CV export.
+- Added FLIR gamma color mapping and made gamma adjustable.
 
-This ledger was rebuilt from first-parent `main` history by auditing
-`labkit_launcher.m`, `+labkit/**/version.m`, `apps/**/version.m`, and
-`+labkit/+contract/versionInfo.m`. Rows are grouped when one commit advanced
-many apps for the same user-visible or maintainer-visible reason.
+Why it matters:
+- CSC exports became clearer for downstream analysis, and FLIR display tuning
+  no longer requires code edits.
 
-| Date | Main commit | Component(s) | Version change | Notable change |
-|---|---|---|---|---|
-| 2026-06-23 | `a25b79f9` | `labkit.biosignal`, `labkit.dta`, `labkit.rhs`, `labkit.ui` | baselines: biosignal/DTA/RHS `1.0.0`, UI `2.0.0` | Added facade contract metadata and requirement checks. |
-| 2026-06-23 | `3673e548` | `labkit.ui` | `2.0.0 -> 2.1.0` | Hardened app lifecycle contracts. |
-| 2026-06-23 | `d70c2607` | launcher, all supported apps, `labkit.ui` | launcher/apps `1.0.0`, UI `2.1.0 -> 2.2.0` | Added app and launcher version metadata, versioned titles, version requests, catalog version display, and version guardrails. |
-| 2026-06-23 | `49d9f41b` | `labkit.ui`, DIC Pre/Post, Curvature | UI `2.2.0 -> 2.2.1`; listed apps `1.0.0 -> 1.0.1` | Hardened release validation contracts. |
-| 2026-06-24 | `b145c904` | `labkit.dta`, `labkit.ui`, all supported apps | DTA `1.0.0 -> 2.0.0`; UI `2.2.1 -> 3.0.0`; apps into `1.2.0` | Breaking migration from task inputs to file panels and removal of old DTA session helpers. |
-| 2026-06-25 | `fe8654c9` | launcher | `1.0.0 -> 1.1.0` | Added version manager and deliberate release/tag/main rollback flow. |
-| 2026-06-25 | `ef89cf77` | launcher | `1.1.0 -> 1.1.1` | Required managed launcher manifests. |
-| 2026-06-26 | `3d23b7f1` | `labkit.ui` | `3.0.0 -> 3.0.1` | Released stale image drag callbacks. |
-| 2026-06-28 | `61e8edd3` | `labkit.ui`, Batch Crop | UI `3.0.1 -> 3.1.0`; Batch Crop `1.2.0 -> 1.3.0` | Added selected-file title context and improved file workflow feedback. |
-| 2026-06-28 | `e966457b` | launcher, `labkit.ui`, Batch Crop, Focus Stack, Image Enhance/Match, neurophysiology apps | launcher `1.1.1 -> 1.1.2`; UI `3.1.0 -> 3.1.2`; listed apps advanced within `1.2.x`/`1.3.x` | Hardened UI workflows and app runtime behavior. |
-| 2026-06-28 | `f5bc6f98` | `labkit.ui`, Batch Crop, Image Enhance | UI `3.1.2 -> 3.1.3`; listed apps patch bumped | Added crash reports, active-operation reports, caught-error reports, and stall diagnostics. |
-| 2026-06-29 | `1768dd57` | Image Enhance, Image Match | Enhance `1.2.2 -> 1.3.0`; Match `1.2.1 -> 1.3.0` | Added protected image enhancement workflows. |
-| 2026-06-29 | `21eff4dc` | launcher, `labkit.ui` | launcher `1.1.2 -> 1.1.3`; UI `3.1.3 -> 3.2.0` | Improved UI diagnostics and validation documentation. |
-| 2026-06-29 | `f2189aef` | `labkit.ui` | `3.2.0 -> 3.2.2` | Hardened file-panel entry normalization and deterministic ID regeneration. |
-| 2026-06-29 | `77084fbe` | Image Enhance, Image Match | both `1.3.0 -> 1.3.1` | Fixed output-size reporting and White ROI responsiveness/default placement. |
-| 2026-06-29 | `871739cd` | `labkit.ui`, Batch Crop, Curvature | UI `3.2.2 -> 3.2.3`; Batch Crop `1.3.2 -> 1.3.3`; Curvature `1.2.0 -> 1.2.1` | Added semantic `toolPanel` hosts and repaired app layout section hosts. |
-| 2026-06-30 | `7f8df1cd` | `labkit.ui` | `3.2.3 -> 3.2.4` | Stabilized single file-panel layout. |
-| 2026-06-30 | `02b2f1b6` | `labkit.ui` | `3.2.4 -> 3.2.5` | Compacted single file-panel rows. |
-| 2026-06-30 | `c5055b98` | `labkit.ui`, DIC apps, Batch Crop, Focus Stack, Image Enhance/Match, Nerve Response, Response Review | UI `3.2.5 -> 3.2.6`; affected apps patch bumped | Added `promptOutputFolder` and migrated output-folder prompts with chooser injection and safe defaults. |
-| 2026-06-30 | `c0028a81` | DIC Post, Batch Crop, Curvature, Focus Stack, Image Match, neurophysiology apps, ECG Print | affected apps patch bumped | Reported caught app-runner exceptions through framework debug diagnostics. |
-| 2026-06-30 | `a81853ef` | `labkit.ui`, Batch Crop, Focus Stack, Image Enhance/Match | UI `3.2.6 -> 3.2.7`; affected image apps patch bumped | Promoted file-entry index helpers and close-guard integration. |
-| 2026-06-30 | `8d7c83b1` | `labkit.ui`, DIC apps, electrochem apps, image apps, ECG Print | UI `3.2.7 -> 3.2.8`; affected apps patch bumped | Routed app alerts through hidden-test-safe `labkit.ui.app.showAlert`. |
-| 2026-06-30 | `7f73b71b` | Image Enhance | `1.3.4 -> 1.3.5` | Merged image enhance export helpers. |
-| 2026-06-30 | `e3349af6` | Batch Crop | `1.3.7 -> 1.3.8` | Consolidated scale state. |
-| 2026-06-30 | `733fb951` | RHS Preview | `1.2.2 -> 1.2.3` | Consolidated preview window bounds. |
-| 2026-06-30 | `98a2b02c` | `labkit.ui` | `3.2.8 -> 3.2.9` | Added curvature workflow acceptance coverage and UI contract adjustment. |
-| 2026-06-30 | `391540a7` | DIC Post, Batch Crop, RHS Preview | affected apps patch bumped | Retired migration helper debt. |
-| 2026-06-30 | `7023e87e` | `labkit.image`, image measurement apps | image `1.0.0`; image apps advanced within `1.2.x` to `1.4.x` | Added shared GUI-free image facade and adopted it across image apps. |
-| 2026-07-01 | `c33d027e` | Image Enhance, Image Match | both `1.4.0 -> 1.4.1` | Removed unused image display helpers. |
-| 2026-07-01 | `ebf86cf2` | launcher | `1.1.3 -> 1.1.4` | Sped up launcher zip updates. |
-| 2026-07-01 | `becf9391` | launcher | `1.1.4 -> 1.1.5` | Simplified launcher zip replacement. |
-| 2026-07-01 | `977c9457` | `labkit.thermal`, `labkit.ui`, FLIR Thermal | thermal `1.0.0`; UI `3.2.9 -> 3.2.10`; FLIR `1.0.0` | Added thermal facade and FLIR Thermal Postprocess app. |
-| 2026-07-01 | `15a798ba` | `labkit.image`, `labkit.ui`, Batch Crop, FLIR Thermal | image `1.0.0 -> 1.1.0`; UI `3.2.10 -> 3.3.0`; affected apps minor bumped | Added preview budgets and improved range/preview controls. |
-| 2026-07-01 | `70bfcfd4` | launcher, `labkit.ui`, Batch Crop, FLIR Thermal | launcher `1.1.5 -> 1.1.6`; UI `3.3.0 -> 3.3.1`; affected apps patch bumped | Improved image measurement workflows. |
-| 2026-07-01 | `279befbc` | `labkit.ui`, all supported apps | UI `3.3.1 -> 3.4.0`; apps moved into debug-sample-pack lines | Added app-owned debug sample packs and debug artifact sample/output folders. |
-| 2026-07-01 | `8fd3ddff` | launcher | `1.1.6 -> 1.2.0` | Exported launcher Code Analyzer issues natively. |
-| 2026-07-02 | `c07dfc0a` | launcher | `1.2.0 -> 1.2.1` | Added LabKit profiling tool. |
-| 2026-07-02 | `74025fee` | ECG Print | `1.3.0 -> 1.3.1` | Sped up changed validation for ECG Print workflow coverage. |
-| 2026-07-02 | `eadcca82` | `labkit.ui` | `3.4.0 -> 3.4.1` | Compressed validation runtime with GUI idle and bounded waits. |
-| 2026-07-02 | `25912c54` | `labkit.ui`, Batch Crop | UI `3.4.1 -> 3.4.2`; Batch Crop `1.6.0 -> 1.6.1` | Reduced GUI profiling overhead and deferred Batch Crop image reads until preview/export. |
-| 2026-07-02 | `fcfc36d8` | launcher | `1.2.1 -> 1.2.2` | Added launcher profiling and build-managed test routing. |
-| 2026-07-02 | `7d4ef11e` | launcher, `labkit.ui` | launcher `1.2.2 -> 1.2.3`; UI `3.4.2 -> 3.4.4` | Painted launcher/app windows earlier and deferred launcher app discovery. |
-| 2026-07-03 | `568b3e9b` | `labkit.ui`, all supported apps | UI `3.4.4 -> 3.4.5`; all apps patch bumped | Migrated apps to declarative workflow runtime. |
-| 2026-07-03 | `6348185e` | CIC, CSC, VT Resistance, Batch Crop, FLIR, Focus Stack, Image Enhance/Match | affected apps patch bumped | Preserved appended file selections. |
-| 2026-07-03 | `674d5d4b` | CIC, CSC, VT Resistance | affected apps patch bumped | Removed electrochem manual plot controls. |
-| 2026-07-03 | `e81243a3` | `labkit.ui`, all supported apps | UI `3.4.5 -> 4.0.0`; all apps patch bumped | Replaced action groups with UI groups and moved UI contract into the 4.x line. |
-| 2026-07-03 | `a69829c6` | `labkit.ui`, all supported apps | UI `4.0.0 -> 4.1.0`; all apps patch bumped | Added CSC all-cycle export and viewport policy while aligning affected app contracts. |
-| 2026-07-03 | `ee5b8f79` | CSC, FLIR Thermal | CSC `1.3.6 -> 1.3.7`; FLIR `1.2.4 -> 1.2.5` | Refined CSC CV export and FLIR color mapping. |
-| 2026-07-03 | `65dbf5ae` | FLIR Thermal | `1.2.5 -> 1.2.6` | Added FLIR gamma color mapping. |
-| 2026-07-03 | `f076561e` | FLIR Thermal | `1.2.6 -> 1.2.7` | Made FLIR gamma mapping adjustable. |
-| 2026-07-04 | `0155cd12` | `labkit.ui` | `4.1.0 -> 4.2.0` | Added state snapshot save/load APIs, workbench utility controls, and enhanced axes popout export/copy tooling. |
+Evidence:
+- Main commits `ee5b8f79`, `65dbf5ae`, and `f076561e`.
+
+### 2026-07-03 - CSC export and viewport policy
+
+Affected versions:
+- `labkit.ui` `4.0.0 -> 4.1.0`
+- All supported apps received aligned patch bumps.
+
+What changed:
+- Added CSC all-cycle export.
+- Added viewport policy support and aligned app contracts with the UI 4.x line.
+
+Why it matters:
+- Users can export more complete CSC cycle data, and app layouts share the same
+  viewport assumptions.
+
+Evidence:
+- Main commit `a69829c6`.
+
+### 2026-07-03 - UI groups migration
+
+Affected versions:
+- `labkit.ui` `3.4.5 -> 4.0.0`
+- All supported apps received patch bumps.
+
+What changed:
+- Replaced action groups with UI groups.
+- Moved the reusable UI contract into the 4.x line.
+
+Why it matters:
+- This is the point where app action layout became a grouped UI contract instead
+  of a looser action-list convention.
+
+Compatibility:
+- App workflow definitions had to align with the new grouped UI contract.
+
+Evidence:
+- Main commit `e81243a3`.
+
+### 2026-07-03 - App file-selection and electrochem control fixes
+
+Affected versions:
+- CIC, CSC, VT Resistance, Batch Crop, FLIR Thermal, Focus Stack, Image Enhance,
+  and Image Match patch bumped for appended file selections.
+- CIC, CSC, and VT Resistance patch bumped again for manual plot-control
+  removal.
+
+What changed:
+- Preserved appended file selections.
+- Removed electrochem manual plot controls that no longer matched the workflow.
+
+Why it matters:
+- Multi-file workflows stopped losing appended selections, and electrochem app
+  controls became less misleading.
+
+Evidence:
+- Main commits `6348185e` and `674d5d4b`.
+
+### 2026-07-03 - Declarative app runtime
+
+Affected versions:
+- `labkit.ui` `3.4.4 -> 3.4.5`
+- All supported apps received patch bumps.
+
+What changed:
+- Migrated apps to declarative workflow runtime.
+
+Why it matters:
+- Maintainers can reason about app wiring through workflow definitions instead
+  of hand-following callback construction.
+
+Evidence:
+- Main commit `568b3e9b`.
+
+### 2026-07-02 - Startup responsiveness
+
+Affected versions:
+- `labkit_launcher` `1.2.2 -> 1.2.3`
+- `labkit.ui` `3.4.2 -> 3.4.4`
+
+What changed:
+- Painted launcher and app windows earlier.
+- Deferred launcher app discovery and lazy preview scroll setup.
+
+Why it matters:
+- Users see responsive windows sooner instead of waiting on discovery and setup
+  work before the GUI appears.
+
+Evidence:
+- Main commit `7d4ef11e`.
+
+### 2026-07-02 - Profiling and validation speedups
+
+Affected versions:
+- `labkit_launcher` `1.2.0 -> 1.2.2`
+- `labkit.ui` `3.4.0 -> 3.4.2`
+- `labkit_BatchImageCrop_app` `1.6.0 -> 1.6.1`
+- `labkit_ECGPrint_app` `1.3.0 -> 1.3.1`
+
+What changed:
+- Added LabKit profiling and build-managed test routing to the launcher.
+- Reduced GUI profiling overhead and deferred Batch Crop image reads until
+  preview/export.
+- Compressed validation runtime with bounded GUI waits.
+
+Why it matters:
+- Maintainers get faster diagnosis and faster validation without changing app
+  behavior.
+
+Evidence:
+- Main commits `c07dfc0a`, `74025fee`, `eadcca82`, `25912c54`, and `fcfc36d8`.
+
+### 2026-07-01 - Launcher code-analysis export
+
+Affected versions:
+- `labkit_launcher` `1.1.6 -> 1.2.0`
+
+What changed:
+- Exported launcher Code Analyzer issues natively.
+
+Why it matters:
+- Maintainers can inspect launcher code issues through the workbench tooling
+  without a separate manual MATLAB setup.
+
+Evidence:
+- Main commit `8fd3ddff`.
+
+### 2026-07-01 - Debug sample packs
+
+Affected versions:
+- `labkit.ui` `3.3.1 -> 3.4.0`
+- All supported apps moved into the `1.3.x`, `1.4.x`, `1.5.x`, or `1.6.x`
+  debug-sample-pack lines.
+
+What changed:
+- Added app-owned debug sample packs.
+- Added debug artifact sample and output folders.
+
+Why it matters:
+- Reproducing app failures became a maintained workflow instead of an ad hoc
+  collection of local files.
+
+Evidence:
+- Main commit `279befbc`.
+
+### 2026-07-01 - Image app workflow improvements
+
+Affected versions:
+- `labkit.image` `1.0.0 -> 1.1.0`
+- `labkit.ui` `3.2.10 -> 3.3.1`
+- Batch Crop `1.4.0 -> 1.5.1`
+- FLIR Thermal `1.0.0 -> 1.1.2`
+- `labkit_launcher` `1.1.5 -> 1.1.6`
+
+What changed:
+- Added preview-budget helpers.
+- Improved image app range and preview controls.
+- Improved image measurement workflows.
+
+Why it matters:
+- Large image workflows became more predictable and less likely to spend time on
+  unnecessary preview work.
+
+Evidence:
+- Main commits `15a798ba` and `70bfcfd4`.
+
+### 2026-07-01 - Thermal facade and FLIR app
+
+Affected versions:
+- `labkit.thermal` `1.0.0`
+- `labkit.ui` `3.2.9 -> 3.2.10`
+- `labkit_FLIRThermal_app` `1.0.0`
+
+What changed:
+- Added the thermal facade.
+- Added the FLIR Thermal Postprocess app.
+
+Why it matters:
+- Thermal image parsing and rendering became a reusable LabKit contract instead
+  of app-local logic.
+
+Evidence:
+- Main commit `977c9457`.
+
+### 2026-07-01 - Launcher update reliability
+
+Affected versions:
+- `labkit_launcher` `1.1.3 -> 1.1.5`
+
+What changed:
+- Sped up launcher zip updates.
+- Simplified launcher zip replacement.
+
+Why it matters:
+- Updating the self-contained launcher became less fragile.
+
+Evidence:
+- Main commits `ebf86cf2` and `becf9391`.
+
+### 2026-06-30 - Shared image facade
+
+Affected versions:
+- `labkit.image` `1.0.0`
+- Batch Crop, Curvature, Focus Stack, Image Enhance, and Image Match advanced
+  within their image-facade adoption lines.
+
+What changed:
+- Added a GUI-free image facade for file input, display normalization, basic
+  processing, and preview support.
+- Adopted that facade across image-measurement apps.
+
+Why it matters:
+- Image app behavior became more consistent, and reusable image IO stopped
+  living inside individual GUI workflows.
+
+Evidence:
+- Main commit `7023e87e`.
+
+### 2026-06-30 - Migration helper cleanup
+
+Affected versions:
+- DIC Post, Batch Crop, and RHS Preview patch bumped.
+
+What changed:
+- Retired migration helper debt.
+- Consolidated RHS preview window bounds, Batch Crop scale state, and Image
+  Enhance export helpers.
+
+Why it matters:
+- Maintainers no longer need to route through temporary migration helpers to
+  understand these workflows.
+
+Evidence:
+- Main commits `7f73b71b`, `e3349af6`, `733fb951`, `98a2b02c`, and `391540a7`.
+
+### 2026-06-30 - App alerts through UI facade
+
+Affected versions:
+- `labkit.ui` `3.2.7 -> 3.2.8`
+- DIC, electrochem, image-measurement, and ECG apps patch bumped where alert
+  routing changed.
+
+What changed:
+- Routed app alerts through hidden-test-safe `labkit.ui.app.showAlert`.
+
+Why it matters:
+- App error reporting became testable without each app inventing its own alert
+  mechanics.
+
+Evidence:
+- Main commit `8d7c83b1`.
+
+### 2026-06-30 - Close guards and caught-exception diagnostics
+
+Affected versions:
+- `labkit.ui` `3.2.6 -> 3.2.7`
+- DIC, Batch Crop, Curvature, Focus Stack, Image Match, neurophysiology apps,
+  and ECG Print patch bumped for diagnostics or close-guard work.
+
+What changed:
+- Reported caught app-runner exceptions through framework debug diagnostics.
+- Promoted file-entry index helpers.
+- Connected dirty/incomplete workflow state to close guards.
+
+Why it matters:
+- Crashes and interrupted workflows leave better evidence for maintainers, and
+  users get safer close behavior around incomplete image workflows.
+
+Evidence:
+- Main commits `c0028a81` and `a81853ef`.
+
+### 2026-06-30 - Output folder prompts
+
+Affected versions:
+- `labkit.ui` `3.2.5 -> 3.2.6`
+- DIC apps, Batch Crop, Focus Stack, Image Enhance/Match, Nerve Response, and
+  Response Review patch bumped.
+
+What changed:
+- Added `promptOutputFolder`.
+- Migrated output-folder prompts with chooser injection and safe defaults.
+
+Why it matters:
+- Apps gained consistent output-folder behavior without hard-coding dialog
+  mechanics into each workflow.
+
+Evidence:
+- Main commit `c5055b98`.
+
+### 2026-06-30 - File-panel layout stabilization
+
+Affected versions:
+- `labkit.ui` `3.2.3 -> 3.2.5`
+
+What changed:
+- Stabilized and compacted single file-panel layout.
+
+Why it matters:
+- File-heavy app workflows became easier to scan and less layout-fragile.
+
+Evidence:
+- Main commits `7f8df1cd` and `02b2f1b6`.
+
+### 2026-06-29 - Tool-panel hosts and image app fixes
+
+Affected versions:
+- `labkit.ui` `3.2.0 -> 3.2.3`
+- Batch Crop, Curvature, Image Enhance, and Image Match patch bumped where
+  layouts or image-app behavior changed.
+
+What changed:
+- Hardened file-panel entry normalization and deterministic ID regeneration.
+- Fixed output-size reporting and White ROI responsiveness.
+- Added semantic `toolPanel` hosts.
+
+Why it matters:
+- Reusable tools gained a real layout host, and image app reports/ROI controls
+  became less surprising.
+
+Evidence:
+- Main commits `f2189aef`, `77084fbe`, and `871739cd`.
+
+### 2026-06-29 - UI diagnostics and release v3.0.0
+
+Affected versions:
+- Release tag `v3.0.0`
+- `labkit.ui` `3.1.3 -> 3.2.0`
+- `labkit_launcher` `1.1.2 -> 1.1.3`
+
+What changed:
+- Improved UI diagnostics and validation documentation.
+- Published the v3.0.0 release line around UI diagnostics, validation docs, and
+  duplicate CI avoidance.
+
+Why it matters:
+- Maintainers got better evidence when app callbacks failed, and users got a
+  clearer release line to roll back to.
+
+Evidence:
+- Main commits `21eff4dc` and release tag commit `349a7549`.
+
+### 2026-06-29 - Protected image enhancement workflows
+
+Affected versions:
+- Image Enhance `1.2.2 -> 1.3.0`
+- Image Match `1.2.1 -> 1.3.0`
+
+What changed:
+- Added protected image enhancement workflows.
+
+Why it matters:
+- The image enhancement apps gained a more deliberate workflow boundary before
+  later image-facade adoption.
+
+Evidence:
+- Main commit `1768dd57`.
+
+### 2026-06-28 - App diagnostics and hardened UI workflows
+
+Affected versions:
+- `labkit.ui` `3.1.0 -> 3.1.3`
+- Batch Crop, Focus Stack, Image Enhance/Match, neurophysiology apps, and the
+  launcher patch bumped where runtime behavior changed.
+
+What changed:
+- Hardened LabKit UI workflows.
+- Added crash reports, active-operation reports, caught-error reports, and stall
+  diagnostics.
+
+Why it matters:
+- Maintainers get structured failure evidence instead of relying on screenshots
+  or vague crash reports.
+
+Evidence:
+- Main commits `e966457b` and `f5bc6f98`.
+
+### 2026-06-28 - Batch Crop file workflow feedback
+
+Affected versions:
+- `labkit.ui` `3.0.1 -> 3.1.0`
+- Batch Crop `1.2.0 -> 1.3.0`
+
+What changed:
+- Added selected-file title context.
+- Improved Batch Crop file workflow feedback.
+
+Why it matters:
+- Users can see which selected file a preview or result belongs to.
+
+Evidence:
+- Main commit `61e8edd3`.
+
+### 2026-06-25 to 2026-06-26 - Launcher manager and stale callback fix
+
+Affected versions:
+- `labkit_launcher` `1.0.0 -> 1.1.1`
+- `labkit.ui` `3.0.0 -> 3.0.1`
+
+What changed:
+- Added the launcher version manager and managed-manifest requirement.
+- Released stale image drag callbacks.
+
+Why it matters:
+- Users gained a deliberate path to choose recent releases, tags, or main
+  commits, and image interactions stopped carrying stale callback state.
+
+Evidence:
+- Main commits `fe8654c9`, `ef89cf77`, and `3d23b7f1`.
+
+### 2026-06-24 - File-panel migration
+
+Affected versions:
+- `labkit.dta` `1.0.0 -> 2.0.0`
+- `labkit.ui` `2.2.1 -> 3.0.0`
+- All supported apps moved from `1.0.x` into the `1.2.0` workflow line.
+
+What changed:
+- Replaced task inputs with file panels.
+- Removed the old DTA session helper surface.
+
+Why it matters:
+- File selection became a shared UI workflow instead of app-specific task-input
+  plumbing.
+
+Compatibility:
+- This was a breaking workflow migration. Older app code expecting task inputs
+  or the removed DTA session helpers needed migration.
+
+Evidence:
+- Main commit `b145c904`.
+
+### 2026-06-23 - Version metadata baseline
+
+Affected versions:
+- Release tag `v2.4.0`
+- `labkit_launcher` `1.0.0`
+- All supported apps `1.0.0`
+- `labkit.ui` `2.1.0 -> 2.2.0`
+
+What changed:
+- Added app and launcher version metadata.
+- Added versioned titles, lightweight version requests, launcher catalog version
+  display, and version guardrails.
+
+Why it matters:
+- This is the first point where app and launcher versions became first-class
+  user-facing metadata.
+
+Evidence:
+- Main commit `d70c2607`.
+
+### 2026-06-23 - Facade contract baseline and release validation hardening
+
+Affected versions:
+- `labkit.biosignal` `1.0.0`
+- `labkit.dta` `1.0.0`
+- `labkit.rhs` `1.0.0`
+- `labkit.ui` `2.0.0 -> 2.2.1`
+- DIC Pre/Post and Curvature `1.0.0 -> 1.0.1`
+- Release tags `v2.4.1` and `v2.4.2`
+
+What changed:
+- Added facade contract metadata and requirement checks.
+- Hardened app lifecycle and release validation contracts.
+- Routed MATLAB CI shards through build tasks.
+
+Why it matters:
+- Reusable facades gained explicit compatibility contracts before the later
+  app-version and launcher-version work.
+
+Evidence:
+- Main commits `a25b79f9`, `3673e548`, `49d9f41b`, and `7e39b558`.
+
+### Before component versions - 2026-05-28 to 2026-06-23
+
+Affected versions:
+- Release tags `v1.0`, `v2.0`, legacy `2.1`, `v2.2.0`, `v2.3.0`, `v2.3.1`,
+  `v2.3.2`, and `v2.3.3`.
+
+What changed:
+- Imported legacy MATLAB code and split it into app entry points.
+- Extracted DTA parsers, electrochem calculations, DIC workflows, image
+  measurement workflows, biosignal support, and ECG workflows.
+- Replaced root legacy GUI entry points with package-backed runners.
+- Added app shell behavior, axes popout, shared UI controls, debug trace
+  logging, launcher/project metadata, release updater support, and reproducible
+  release-asset rules.
+
+Why it matters:
+- This is the period where LabKit changed from loose scripts into an app
+  workbench with a small reusable foundation.
+
+Compatibility:
+- Component/app version files did not exist yet, so this era is tracked by
+  release tags, commit ranges, and workflow milestones rather than per-app
+  version numbers.
+
+Evidence:
+- Main history from `5973bde0` through `a7e7dfb1`.
+- Release tags: `v1.0`, `v2.0`, `2.1`, `v2.2.0`, `v2.3.0`, `v2.3.1`,
+  `v2.3.2`, `v2.3.3`.
 
 ## Maintenance Template
 
-Use this row format for new versioned changes:
+Use this format for new versioned changes:
 
 ```markdown
-| YYYY-MM-DD | `main-or-pending-sha` | `component` | `old -> new` | User-facing or maintainer-facing reason. |
+### YYYY-MM-DD - Short user-facing title
+
+Affected versions:
+- `component` `old -> new`
+
+What changed:
+- Plain-language change summary.
+
+Why it matters:
+- User or maintainer reason this version exists.
+
+Compatibility:
+- Migration or rollback note, when relevant.
+
+Evidence:
+- Main commit `sha`.
 ```
 
-For branch work before the final mainline SHA is known, place the row in
+For branch work before the final mainline SHA is known, place the entry in
 `Unreleased` with PR or branch evidence. During release preparation or a
-changelog audit, replace the evidence with the mainline commit and move the row
-into `Version Bump Ledger`.
+changelog audit, move the finalized entry into `Version History` with the
+mainline commit SHA.

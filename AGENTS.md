@@ -255,13 +255,14 @@ one type would hide a distinct behavior, test, documentation, or CI change.
 Use `docs/release.md` as the human-facing source of truth for version-number
 selection, release tag naming, and GitHub release note format.
 
-Use `CHANGELOG.md` as the component version ledger. When a change bumps
+Use `CHANGELOG.md` as the user-facing version map. When a change bumps
 `labkit_launcher.m`, a `+labkit/**/version.m` facade, or an
-`apps/**/version.m` app metadata file, update `CHANGELOG.md` in the same
-change with the affected component, old/new version, and reason. For branch or
-PR work before the final mainline SHA is known, stage the row under
-`Unreleased`; during release preparation or changelog audit, move finalized
-rows into the version bump ledger with the mainline commit SHA.
+`apps/**/version.m` app metadata file, update `CHANGELOG.md` in the same change
+with the affected versions, what changed, why it matters, compatibility notes
+when relevant, and evidence. For branch or PR work before the final mainline
+SHA is known, stage the entry under `Unreleased`; during release preparation or
+changelog audit, move finalized entries into `Version History` with the
+mainline commit SHA. Do not reduce changelog entries to raw commit-log dumps.
 
 For new releases, use `vX.Y.Z` tags, for example `v2.2.0`. Do not rename or
 delete already published historical tags only to normalize naming; preserve

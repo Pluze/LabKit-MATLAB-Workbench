@@ -60,27 +60,30 @@ an older release when the newest build is unsuitable for their workflow.
 
 ## Changelog Maintenance
 
-`CHANGELOG.md` is the component version ledger. It is separate from GitHub
+`CHANGELOG.md` is the user-facing version map. It is separate from GitHub
 release notes: release notes summarize one public release, while the changelog
-tracks launcher, facade, and app version history across mainline commits.
+explains what changed under each release tag, launcher version, facade version,
+and app version.
 
 The format combines common open-source practices:
 
 - Keep a top `Unreleased` section for branch and pull-request work before the
   final mainline commit is known, following the Keep a Changelog pattern.
-- Keep a current version inventory so users can quickly map each app, facade,
-  and launcher to its metadata file.
-- Keep an audited version bump ledger for mainline history, closer to the
-  component and release-line ledgers used by large projects such as Node.js and
-  Kubernetes.
+- Keep a current version lookup so users can quickly map each app, facade, and
+  launcher to its metadata file.
+- Keep one `Version History` reading path. Entries should lead with affected
+  versions, then explain what changed, why it matters, compatibility notes when
+  relevant, and evidence.
 - Keep release notes shorter and user-focused, similar to Django and VS Code
   release pages.
 
 When a change bumps `labkit_launcher.m`, a `+labkit/**/version.m` facade, or an
-`apps/**/version.m` app metadata file, add a changelog row in the same change.
-Before the final mainline SHA is known, add it under `Unreleased` with PR or
-branch evidence. During release preparation or a changelog audit, move finalized
-rows into the version bump ledger with the mainline commit SHA.
+`apps/**/version.m` app metadata file, add a changelog entry in the same
+change. Before the final mainline SHA is known, add it under `Unreleased` with
+PR or branch evidence. During release preparation or a changelog audit, move
+finalized entries into `Version History` with the mainline commit SHA. Do not
+write the entry as a raw commit-log dump; explain the maintainer intent and user
+impact that are not obvious from blame history.
 
 Before tagging a release that adds, renames, or removes release-blocking
 guardrail tests, verify that the buildfile CI shard tasks still discover the
