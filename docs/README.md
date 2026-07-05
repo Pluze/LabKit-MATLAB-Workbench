@@ -18,6 +18,8 @@ the app catalog; maintainer references are grouped separately.
   changed-file routing, CI scope, fixtures, and GUI validation limits.
 - [release.md](release.md): version selection, tag naming, and GitHub release
   note format.
+- [Component changelog](../CHANGELOG.md): current component versions and
+  audited launcher, facade, and app version history.
 - [workflow-assets.md](workflow-assets.md): command-line generation of real app
   screenshots and example outputs for SOPs and onboarding guides.
 

@@ -11,6 +11,15 @@ classdef VersionChangeGuardrailTest < matlab.unittest.TestCase
                 strjoin(issues, ", "));
         end
 
+        function changedVersionedCodeUpdatesChangelog(testCase)
+            root = setupLabKitTestPath();
+            issues = changedVersionedCodeWithoutChangelogRecord(root);
+
+            testCase.verifyEmpty(issues, ...
+                "Versioned code changed without matching CHANGELOG.md inventory: " + ...
+                strjoin(issues, ", "));
+        end
+
         function featureBranchIntermediateWorkDoesNotRequirePerCommitBumps(testCase)
             changeSet = struct( ...
                 "branchName", "codex/test-performance-route", ...
@@ -46,6 +55,54 @@ classdef VersionChangeGuardrailTest < matlab.unittest.TestCase
             testCase.verifyTrue(shouldEnforceVersionBumps(strictChangeSet), ...
                 "Final branch cleanup can opt into aggregate version checks before squash or handoff.");
         end
+    end
+end
+
+function issues = changedVersionedCodeWithoutChangelogRecord(root)
+    changeSet = gitChangeSet(root);
+    if ~shouldEnforceVersionBumps(changeSet)
+        issues = strings(1, 0);
+        return;
+    end
+
+    artifacts = versionedArtifactsForPaths(root, changeSet.paths);
+    if isempty(artifacts)
+        issues = strings(1, 0);
+        return;
+    end
+
+    changelogPath = fullfile(root, "CHANGELOG.md");
+    if exist(changelogPath, "file") ~= 2
+        issues = "CHANGELOG.md missing";
+        return;
+    end
+
+    changelogLines = splitlines(string(fileread(changelogPath)));
+    issues = strings(1, 0);
+    changedPaths = normalizePaths(changeSet.paths);
+    if ~any(changedPaths == "CHANGELOG.md")
+        issues(end+1) = "CHANGELOG.md not changed";
+    end
+
+    for k = 1:numel(artifacts)
+        artifact = artifacts(k);
+        currentVersion = versionInWorkingTree(root, artifact.versionPath);
+        if strlength(currentVersion) == 0
+            continue;
+        end
+        hasInventoryLine = any(contains(changelogLines, "`" + artifact.versionPath + "`") & ...
+            contains(changelogLines, "`" + currentVersion + "`"));
+        if ~hasInventoryLine
+            issues(end+1) = artifact.label + " " + currentVersion + ...
+                " missing inventory row";
+        end
+    end
+    issues = unique(issues, "stable");
+end
+
+function paths = normalizePaths(paths)
+    for k = 1:numel(paths)
+        paths(k) = normalizePath(paths(k));
     end
 end
 
