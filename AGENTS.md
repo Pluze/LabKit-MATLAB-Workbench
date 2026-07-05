@@ -156,6 +156,11 @@ source, tests, fixtures, or generated MATLAB files. Refactor the code or test
 helper shape instead; the project guardrails intentionally reject suppression
 pragmas.
 
+Do not track files under `artifacts/`. That tree is for ignored generated
+outputs, local scratch evidence, and temporary design notes for one work round
+only. Move durable design decisions into the relevant docs, source, tests, or
+scoped agent rules.
+
 Interactive GUI workflows are checked manually by the user. Do not run interactive GUI workflows in MATLAB `-batch` mode. If MATLAB cannot run, report the blocker and do not claim tests passed.
 
 ## Git Workflow

@@ -47,6 +47,17 @@ classdef TestCompatibilityGuardrailTest < matlab.unittest.TestCase
                 ['Tracked editor or OS noise files are not allowed: ' ...
                 strjoin(cellstr(noise), ', ')]);
         end
+
+        function trackedArtifactsAreForbidden(testCase)
+            root = setupLabKitTestPath();
+            files = gitTrackedFiles(root);
+            artifacts = files(startsWith(files, "artifacts/"));
+            testCase.verifyTrue(isempty(artifacts), ...
+                ['artifacts/ is for ignored generated outputs, local scratch ' ...
+                'evidence, and temporary design notes only. Move durable ' ...
+                'content into docs, source, tests, or scoped agent rules. Files: ' ...
+                strjoin(cellstr(artifacts), ', ')]);
+        end
     end
 end
 

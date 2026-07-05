@@ -266,6 +266,11 @@ conversion, and document why the looser tolerance is valid.
 
 ## Artifacts
 
+The `artifacts/` tree is ignored and reserved for generated outputs, local
+scratch evidence, and temporary design notes that support one improvement
+round. Do not track files under `artifacts/`; durable design decisions belong
+in the relevant human doc, source comment, test, or scoped agent rule instead.
+
 Test artifacts are written under:
 
 ```text
