@@ -26,9 +26,9 @@ classdef GuiLayoutFlirThermalTest < matlab.uitest.TestCase
             ui = getappdata(fig, 'labkitUiRegistry');
             testCase.verifyTrue(isfile(debug.manifestFile), ...
                 'FLIR Thermal debug launch should record a sample manifest.');
-            testCase.verifyEqual(char(labkit.ui.view.getValue(ui, 'fileStatus')), 'Files: 0', ...
+            testCase.verifyEqual(char(labkit.ui.control.getValue(ui, 'fileStatus')), 'Files: 0', ...
                 'FLIR Thermal debug launch should not preload generated samples.');
-            testCase.verifyEqual(char(labkit.ui.view.getValue(ui, 'currentImage')), 'No FLIR image loaded', ...
+            testCase.verifyEqual(char(labkit.ui.control.getValue(ui, 'currentImage')), 'No FLIR image loaded', ...
                 'FLIR Thermal debug launch should not preload generated samples.');
 
             driver = labkitWorkflowDriver(fig);
@@ -40,7 +40,7 @@ classdef GuiLayoutFlirThermalTest < matlab.uitest.TestCase
             scaleAxes = ui.controls.preview.axesById.temperatureScale;
             labels = flir_thermal.userInterface.rangeControlLabels();
 
-            testCase.verifyEqual(string(labkit.ui.view.getValue(ui, 'rangePreset')), ...
+            testCase.verifyEqual(string(labkit.ui.control.getValue(ui, 'rangePreset')), ...
                 labels.defaultPreset);
             testCase.verifyTrue(isempty(ui.controls.thermalFiles.status));
             testCase.verifyTrue(driver.enabled('rangePreset'));
@@ -63,7 +63,7 @@ classdef GuiLayoutFlirThermalTest < matlab.uitest.TestCase
             testCase.verifyTrue(contains(driver.fileSelection('thermalFiles'), ...
                 'synthetic_flir_second.jpg'), ...
                 'FLIR Thermal append should select the newly added image.');
-            testCase.verifyTrue(contains(string(labkit.ui.view.getValue(ui, 'fileStatus')), ...
+            testCase.verifyTrue(contains(string(labkit.ui.control.getValue(ui, 'fileStatus')), ...
                 'Files: 2'), ...
                 'FLIR Thermal append should preserve the existing file.');
         end
@@ -93,8 +93,8 @@ classdef GuiLayoutFlirThermalTest < matlab.uitest.TestCase
             ui = getappdata(fig, 'labkitUiRegistry');
             minLimits = ui.controls.temperatureMin.slider.Limits;
             maxLimits = ui.controls.temperatureMax.slider.Limits;
-            currentMin = labkit.ui.view.getValue(ui, 'temperatureMin');
-            currentMax = labkit.ui.view.getValue(ui, 'temperatureMax');
+            currentMin = labkit.ui.control.getValue(ui, 'temperatureMin');
+            currentMax = labkit.ui.control.getValue(ui, 'temperatureMax');
             testCase.verifyLessThanOrEqual(max(abs(minLimits - [currentMin currentMax])), 0.05);
             testCase.verifyLessThanOrEqual(max(abs(maxLimits - [currentMin currentMax])), 0.05);
         end

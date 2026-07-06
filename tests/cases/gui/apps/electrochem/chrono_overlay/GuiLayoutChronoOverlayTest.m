@@ -57,9 +57,26 @@ classdef GuiLayoutChronoOverlayTest < matlab.uitest.TestCase
             testCase.verifyGreaterThan(numel(axCurrent.Children), 0, ...
                 'Chrono overlay workflow should draw current traces.');
 
+            axVoltage.XLim = [-1 0];
+            axVoltage.YLim = [-0.01 0.01];
             driver.dropdown('Time (ms)');
             testCase.verifyTrue(contains(string(axVoltage.XLabel.String), "Time (ms)"));
             testCase.verifyTrue(contains(string(axCurrent.XLabel.String), "Time (ms)"));
+            testCase.verifyFalse(isequal(axVoltage.XLim, [-1 0]), ...
+                'Chrono overlay option redraw should replace stale manual X limits.');
+            testCase.verifyFalse(isequal(axVoltage.YLim, [-0.01 0.01]), ...
+                'Chrono overlay option redraw should replace stale manual Y limits.');
+
+            driver.click('Clear all');
+            testCase.verifyEqual(char(driver.fileStatus('files')), 'No files loaded');
+            testCase.verifyEmpty(axVoltage.Children, ...
+                'Chrono overlay clear-all should remove stale voltage plots and legends.');
+            testCase.verifyEmpty(axCurrent.Children, ...
+                'Chrono overlay clear-all should remove stale current plots and legends.');
+            testCase.verifyEqual(axVoltage.XLimMode, 'auto', ...
+                'Chrono overlay clear-all should restore automatic X limits.');
+            testCase.verifyEqual(axVoltage.YLimMode, 'auto', ...
+                'Chrono overlay clear-all should restore automatic Y limits.');
         end
     end
 end

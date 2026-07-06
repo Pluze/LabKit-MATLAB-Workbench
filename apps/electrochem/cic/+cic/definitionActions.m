@@ -1,5 +1,5 @@
 % App-owned action table for CIC. Expected caller is cic.definition. Output
-% maps semantic action ids to handlers used by labkit.ui.app.run. Handlers
+% maps semantic action ids to handlers used by labkit.ui.runtime.run. Handlers
 % own workflow transitions, DTA loading, analysis, and export side effects.
 function actions = definitionActions()
     actions = struct( ...
@@ -35,17 +35,17 @@ end
 function state = onPresetChanged(state, ~, services)
     switch services.ui.controls.preset.valueHandle.Value
         case 'Pt (-0.6 to 0.8 V)'
-            labkit.ui.view.setValue(services.ui, "cathLimit", -0.6);
-            labkit.ui.view.setValue(services.ui, "anodLimit", 0.8);
+            labkit.ui.control.setValue(services.ui, "cathLimit", -0.6);
+            labkit.ui.control.setValue(services.ui, "anodLimit", 0.8);
         case 'PEDOT:PSS (-0.9 to 0.6 V)'
-            labkit.ui.view.setValue(services.ui, "cathLimit", -0.9);
-            labkit.ui.view.setValue(services.ui, "anodLimit", 0.6);
+            labkit.ui.control.setValue(services.ui, "cathLimit", -0.9);
+            labkit.ui.control.setValue(services.ui, "anodLimit", 0.6);
     end
     state = analyzeCurrentFile(state, services);
 end
 
 function state = onOpenFilesChosen(state, payload, services)
-    paths = labkit.ui.view.filePaths(payload.event.addedFiles);
+    paths = labkit.ui.control.filePaths(payload.event.addedFiles);
     if isempty(paths)
         addLog(services, 'Open cancelled.');
         return;
@@ -96,7 +96,7 @@ function state = loadDTAFiles(state, filepaths, services)
 
     if ~isempty(failed)
         firstError = failed(1);
-        labkit.ui.app.showAlert(services.figure, ...
+        labkit.ui.runtime.showAlert(services.figure, ...
             sprintf('Failed to load:\n%s\n\n%s', ...
             firstError.filepath, firstError.message), ...
             'Load error');
@@ -136,8 +136,8 @@ function item = analyzeItem(item, services)
 end
 
 function state = onFileSelectionChanged(state, ~, services)
-    files = labkit.ui.view.getValue(services.ui, 'files');
-    paths = labkit.ui.view.filePaths(files);
+    files = labkit.ui.control.getValue(services.ui, 'files');
+    paths = labkit.ui.control.filePaths(files);
     if isempty(paths) || isempty(state.items)
         state.current = [];
         restoreDefaultPlotSelections(services.ui);
@@ -157,7 +157,7 @@ function state = onRemoveSelected(state, payload, services)
     if isempty(state.items)
         return;
     end
-    paths = labkit.ui.view.filePaths(payload.event.removedFiles);
+    paths = labkit.ui.control.filePaths(payload.event.removedFiles);
     if isempty(paths)
         return;
     end
@@ -181,11 +181,11 @@ end
 
 function state = onExportResults(state, ~, services)
     if isempty(state.items)
-        labkit.ui.app.showAlert(services.figure, ...
+        labkit.ui.runtime.showAlert(services.figure, ...
             'No results to export.', 'Export');
         return;
     end
-    [out, cancelled] = labkit.ui.app.promptOutputFile( ...
+    [out, cancelled] = labkit.ui.runtime.promptOutputFile( ...
         'cic_results.csv', 'Save results CSV', 'cic_results.csv');
     if cancelled
         return;
@@ -194,7 +194,7 @@ function state = onExportResults(state, ~, services)
         services.ui.controls.cicUnit.valueHandle.Value);
     [ok, msg] = cic.resultFiles.writeResultsCSV(state.items, out, unitLabel);
     if ~ok
-        labkit.ui.app.showAlert(services.figure, msg, 'Export');
+        labkit.ui.runtime.showAlert(services.figure, msg, 'Export');
         return;
     end
     addLog(services, ['Exported CSV: ' char(out)]);
@@ -255,7 +255,7 @@ function items = appendItem(items, item)
 end
 
 function addLog(services, msg)
-    labkit.ui.view.appendLog(services.ui, 'appLog', msg);
+    labkit.ui.control.appendLog(services.ui, 'appLog', msg);
     if isDebugEnabled(services.debug)
         services.debug.append(msg);
     end

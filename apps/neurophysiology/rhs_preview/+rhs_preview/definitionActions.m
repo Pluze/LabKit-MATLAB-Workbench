@@ -1,6 +1,6 @@
 % App-owned action table for RHS Preview. Expected caller is
 % rhs_preview.definition. Output maps semantic action ids to handlers used by
-% labkit.ui.app.run while preserving lazy RHS indexing and preview behavior.
+% labkit.ui.runtime.run while preserving lazy RHS indexing and preview behavior.
 function actions = definitionActions()
 %DEFINITIONACTIONS Build the RHS Preview runtime action map.
     S = [];
@@ -38,7 +38,7 @@ function actions = definitionActions()
         ui = services.ui;
         fig = services.figure;
         debugLog = services.debug;
-        previewRuntime = labkit.ui.tool.createRuntime( ...
+        previewRuntime = labkit.ui.interaction.runtime( ...
             ui.controls.preview.primaryAxes, ...
             struct("figure", fig, "defaultScrollFcn", @onPreviewScrollWheel));
         previewSession = previewRuntime.createSession(struct( ...
@@ -70,7 +70,7 @@ function actions = definitionActions()
         state = S;
     end
     function onRhsChosen(~, event)
-        paths = labkit.ui.view.filePaths(event.addedFiles);
+        paths = labkit.ui.control.filePaths(event.addedFiles);
         if isempty(paths)
             return;
         end
@@ -96,7 +96,7 @@ function actions = definitionActions()
         refreshAll();
     end
     function onFolderChosen(~, event)
-        paths = labkit.ui.view.filePaths(event.addedFiles);
+        paths = labkit.ui.control.filePaths(event.addedFiles);
         if isempty(paths)
             return;
         end
@@ -105,7 +105,7 @@ function actions = definitionActions()
         refreshAll();
     end
     function onFolderRemoved(~, event)
-        paths = labkit.ui.view.filePaths(event.removedFiles);
+        paths = labkit.ui.control.filePaths(event.removedFiles);
         if isempty(paths) || isempty(S.filterRows) || height(S.filterRows) == 0
             return;
         end
@@ -133,7 +133,7 @@ function actions = definitionActions()
         refreshAll();
     end
     function onProtocolChosen(~, event)
-        paths = labkit.ui.view.filePaths(event.addedFiles);
+        paths = labkit.ui.control.filePaths(event.addedFiles);
         if isempty(paths)
             return;
         end
@@ -155,12 +155,12 @@ function actions = definitionActions()
         previousFamily = S.family;
         previousMaxChannels = S.maxPreviewChannels;
         changedId = eventId(event);
-        S.family = string(labkit.ui.view.getValue(ui, "channelFamily"));
+        S.family = string(labkit.ui.control.getValue(ui, "channelFamily"));
         if changedId == "windowStartPanner"
-            S.windowStartSec = numericScalar(labkit.ui.view.getValue(ui, ...
+            S.windowStartSec = numericScalar(labkit.ui.control.getValue(ui, ...
                 "windowStartPanner"), S.windowStartSec);
         end
-        S.maxPreviewChannels = max(1, floor(numericScalar(labkit.ui.view.getValue(ui, ...
+        S.maxPreviewChannels = max(1, floor(numericScalar(labkit.ui.control.getValue(ui, ...
             "maxPreviewChannels"), S.maxPreviewChannels)));
         if S.family ~= previousFamily || S.maxPreviewChannels ~= previousMaxChannels
             S = rhs_preview.analysisRun.normalizeChannelSelection(S);
@@ -177,7 +177,7 @@ function actions = definitionActions()
         refreshAll();
     end
     function onPreviewChannelEdited(~, event)
-        data = labkit.ui.view.getValue(ui, "previewChannelsTable");
+        data = labkit.ui.control.getValue(ui, "previewChannelsTable");
         S.previewChannelRows = rhs_preview.analysisRun.applyPreviewChannelsTableData( ...
             S.previewChannelRows, data);
         S.lastAction = "Updated preview channels";
@@ -190,7 +190,7 @@ function actions = definitionActions()
         refreshAll();
     end
     function onFileFilterEdited(~, ~)
-        data = labkit.ui.view.getValue(ui, "fileFilterTable");
+        data = labkit.ui.control.getValue(ui, "fileFilterTable");
         S.filterRows = rhs_preview.analysisRun.applyFileFilterTableData( ...
             S.filterRows, data);
         S.statusMessage = "File filter updated.";
@@ -324,7 +324,7 @@ function actions = definitionActions()
             return;
         end
         outputPath = rhs_preview.resultFiles.promptProtocolOutput( ...
-            labkit.ui.app.defaultOutputFolder(defaultOutputSources(), "rhs_preview"));
+            labkit.ui.runtime.defaultOutputFolder(defaultOutputSources(), "rhs_preview"));
         if strlength(outputPath) == 0
             return;
         end
@@ -342,10 +342,10 @@ function actions = definitionActions()
             refreshAll();
             return;
         end
-        data = labkit.ui.view.getValue(ui, "fileFilterTable");
+        data = labkit.ui.control.getValue(ui, "fileFilterTable");
         S.filterRows = rhs_preview.analysisRun.applyFileFilterTableData(S.filterRows, data);
         outputPath = rhs_preview.resultFiles.promptFilterRecordOutput( ...
-            labkit.ui.app.defaultOutputFolder(defaultOutputSources(), "rhs_preview"));
+            labkit.ui.runtime.defaultOutputFolder(defaultOutputSources(), "rhs_preview"));
         if strlength(outputPath) == 0
             return;
         end
@@ -357,8 +357,8 @@ function actions = definitionActions()
     end
     function onResetWorkflow(~, ~)
         S = rhs_preview.appLifecycle.createInitialState();
-        labkit.ui.view.setValue(ui, "windowStartPanner", S.windowStartSec);
-        labkit.ui.view.setValue(ui, "maxPreviewChannels", S.maxPreviewChannels);
+        labkit.ui.control.setValue(ui, "windowStartPanner", S.windowStartSec);
+        labkit.ui.control.setValue(ui, "maxPreviewChannels", S.maxPreviewChannels);
         addLog("Reset RHS Preview state.");
         refreshAll();
     end
@@ -434,28 +434,28 @@ function actions = definitionActions()
         end
     end
     function refreshAll()
-        labkit.ui.view.setValue(ui, "rhsFile", fileValue(S.rhsFile));
-        labkit.ui.view.setValue(ui, "rhsFolder", filterTaskPaths(S.filterRows));
-        labkit.ui.view.setValue(ui, "protocolFile", fileValue(S.protocolFile));
+        labkit.ui.control.setValue(ui, "rhsFile", fileValue(S.rhsFile));
+        labkit.ui.control.setValue(ui, "rhsFolder", filterTaskPaths(S.filterRows));
+        labkit.ui.control.setValue(ui, "protocolFile", fileValue(S.protocolFile));
         refreshChannelControls();
         refreshWindowControls();
-        labkit.ui.view.setEnabled(ui, "refreshPreviewWindow", ...
+        labkit.ui.control.setEnabled(ui, "refreshPreviewWindow", ...
             rhs_preview.analysisRun.hasReadableChannel(S));
-        labkit.ui.view.setEnabled(ui, "zoomToRoiWindow", ...
+        labkit.ui.control.setEnabled(ui, "zoomToRoiWindow", ...
             rhs_preview.analysisRun.hasReadableChannel(S) && ...
             rhs_preview.analysisRun.hasValidRoi(S));
-        labkit.ui.view.setEnabled(ui, "saveProtocol", ~isempty(S.previewChannelRows) && ...
+        labkit.ui.control.setEnabled(ui, "saveProtocol", ~isempty(S.previewChannelRows) && ...
             height(S.previewChannelRows) > 0);
-        labkit.ui.view.setEnabled(ui, "refreshFolderFiles", ...
+        labkit.ui.control.setEnabled(ui, "refreshFolderFiles", ...
             strlength(S.rhsFolder) > 0);
-        labkit.ui.view.setEnabled(ui, "saveFilterRecord", ...
+        labkit.ui.control.setEnabled(ui, "saveFilterRecord", ...
             ~isempty(S.filterRows) && height(S.filterRows) > 0);
-        labkit.ui.view.setValue(ui, "statusField", char(S.statusMessage));
-        labkit.ui.view.setValue(ui, "summaryTable", ...
+        labkit.ui.control.setValue(ui, "statusField", char(S.statusMessage));
+        labkit.ui.control.setValue(ui, "summaryTable", ...
             rhs_preview.userInterface.summaryTableData(S));
-        labkit.ui.view.setValue(ui, "previewChannelsTable", ...
+        labkit.ui.control.setValue(ui, "previewChannelsTable", ...
             rhs_preview.userInterface.previewChannelsTableData(S));
-        labkit.ui.view.setValue(ui, "fileFilterTable", ...
+        labkit.ui.control.setValue(ui, "fileFilterTable", ...
             rhs_preview.userInterface.fileFilterTableData(S));
         ui.controls.details.textArea.Value = rhs_preview.userInterface.detailLines(S);
         refreshPreview();
@@ -486,20 +486,20 @@ function actions = definitionActions()
     function refreshWindowControls()
         bounds = rhs_preview.analysisRun.previewWindowBounds(S);
         if ~bounds.hasIndexedDuration
-            labkit.ui.view.setLimits(ui, "windowStartPanner", [0 1]);
-            labkit.ui.view.setValue(ui, "windowStartPanner", 0);
-            labkit.ui.view.setEnabled(ui, "windowStartPanner", false);
-            labkit.ui.view.setValue(ui, "windowSummary", ...
+            labkit.ui.control.setLimits(ui, "windowStartPanner", [0 1]);
+            labkit.ui.control.setValue(ui, "windowStartPanner", 0);
+            labkit.ui.control.setEnabled(ui, "windowStartPanner", false);
+            labkit.ui.control.setValue(ui, "windowSummary", ...
                 "Select RHS to estimate preview length.");
             return;
         end
         maxStartSec = bounds.maxStartSec;
         sliderMax = max(maxStartSec, eps);
         S.windowStartSec = rhs_preview.analysisRun.clampWindowStartSec(S.windowStartSec, S);
-        labkit.ui.view.setLimits(ui, "windowStartPanner", [0 sliderMax]);
-        labkit.ui.view.setValue(ui, "windowStartPanner", S.windowStartSec);
-        labkit.ui.view.setEnabled(ui, "windowStartPanner", maxStartSec > 0);
-        labkit.ui.view.setValue(ui, "windowSummary", ...
+        labkit.ui.control.setLimits(ui, "windowStartPanner", [0 sliderMax]);
+        labkit.ui.control.setValue(ui, "windowStartPanner", S.windowStartSec);
+        labkit.ui.control.setEnabled(ui, "windowStartPanner", maxStartSec > 0);
+        labkit.ui.control.setValue(ui, "windowSummary", ...
             rhs_preview.analysisRun.windowSummaryText(S));
     end
     function selected = selectedPreviewChannels()
@@ -516,7 +516,7 @@ function actions = definitionActions()
         end
     end
     function addLog(message)
-        labkit.ui.view.appendLog(ui, "logPanel", message);
+        labkit.ui.control.appendLog(ui, "logPanel", message);
         debugLog.append(message);
     end
     function paths = defaultOutputSources()

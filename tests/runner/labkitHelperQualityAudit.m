@@ -98,7 +98,8 @@ function tf = isCandidateHelper(root, path, maxLines)
         tf = false;
         return;
     end
-    if contains(path, "/+ui/buildSpec.m")
+    if contains(path, "/+ui/buildSpec.m") || ...
+            contains(path, "/+userInterface/buildWorkbenchLayout.m")
         tf = false;
         return;
     end

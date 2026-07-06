@@ -1,5 +1,5 @@
 % Create initial Image Enhance app state. Expected caller is
-% image_enhance.definition via labkit.ui.app.define. Output is the mutable
+% image_enhance.definition via labkit.ui.runtime.define. Output is the mutable
 % app session struct; side effects are none.
 function S = createInitialState()
     S = struct();
@@ -7,7 +7,7 @@ function S = createInitialState()
     S.currentIndex = 0;
     S.steps = repmat(image_enhance.appState.emptyStep(), 0, 1);
     S.batchMode = true;
-    S.outputFolder = string(labkit.ui.app.defaultDialogFolder("output"));
+    S.outputFolder = string(labkit.ui.runtime.defaultDialogFolder("output"));
     S.lastExport = [];
     S.lastExportFingerprint = "";
     S.pendingDirty = false;

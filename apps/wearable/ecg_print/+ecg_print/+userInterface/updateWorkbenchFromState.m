@@ -1,4 +1,4 @@
-% App-owned renderer for ECG Print. Expected caller is labkit.ui.app.run
+% App-owned renderer for ECG Print. Expected caller is labkit.ui.runtime.run
 % after actions update state. Inputs are app state and UI registry. Side
 % effects are limited to UI controls, tables, text, and preview axes.
 function updateWorkbenchFromState(state, ui, ~)
@@ -86,7 +86,7 @@ end
 
 function renderTemplatePlot(state, ui)
     ax = ui.controls.previewAxes.axesById.template;
-    labkit.ui.view.resetAxes(ui, 'previewAxes', ...
+    labkit.ui.plot.reset(ui, 'previewAxes', ...
         'Template + Residual Band', true, 'template');
     xlabel(ax, 'Time from peak (s)');
     ylabel(ax, 'Amplitude');
@@ -141,19 +141,19 @@ function h = drawWindow(ax, windowSec, yl, color, alpha)
 end
 
 function resetAxes(ui)
-    labkit.ui.view.resetAxes(ui, 'previewAxes', ...
+    labkit.ui.plot.reset(ui, 'previewAxes', ...
         'Waveform + Peaks', true, 'wave');
     xlabel(ui.controls.previewAxes.axesById.wave, 'Time (s)');
     ylabel(ui.controls.previewAxes.axesById.wave, 'Amplitude');
-    labkit.ui.view.resetAxes(ui, 'previewAxes', ...
+    labkit.ui.plot.reset(ui, 'previewAxes', ...
         'Template Noise RMS Over Time', true, 'noise');
     xlabel(ui.controls.previewAxes.axesById.noise, 'Time (s)');
     ylabel(ui.controls.previewAxes.axesById.noise, 'Noise RMS');
-    labkit.ui.view.resetAxes(ui, 'previewAxes', ...
+    labkit.ui.plot.reset(ui, 'previewAxes', ...
         'Template SNR Over Time', true, 'snr');
     xlabel(ui.controls.previewAxes.axesById.snr, 'Time (s)');
     ylabel(ui.controls.previewAxes.axesById.snr, 'SNR (dB)');
-    labkit.ui.view.resetAxes(ui, 'previewAxes', ...
+    labkit.ui.plot.reset(ui, 'previewAxes', ...
         'Template + Residual Band', true, 'template');
     xlabel(ui.controls.previewAxes.axesById.template, 'Time from peak (s)');
     ylabel(ui.controls.previewAxes.axesById.template, 'Amplitude');

@@ -84,7 +84,7 @@ function n = tableHeight(value)
 end
 
 function resetAxes(ax)
-    cla(ax);
+    labkit.ui.plot.clear(ax, "ResetScale", true);
     ax.Color = "white";
     ax.Box = "off";
     ax.XGrid = "on";

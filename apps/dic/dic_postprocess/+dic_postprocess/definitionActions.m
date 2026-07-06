@@ -1,6 +1,6 @@
 % App-owned action registry for DIC Postprocess. Expected caller is
 % dic_postprocess.definition. Output maps semantic action ids to handlers
-% used by labkit.ui.app.run. Handlers own workflow transitions, overlay
+% used by labkit.ui.runtime.run. Handlers own workflow transitions, overlay
 % generation, and export side effects.
 function actions = definitionActions()
     actions = struct( ...
@@ -35,7 +35,7 @@ function state = onStartup(state, ~, services)
 end
 
 function state = onMatChosen(state, payload, services)
-    paths = labkit.ui.view.filePaths(payload.event.addedFiles);
+    paths = labkit.ui.control.filePaths(payload.event.addedFiles);
     if isempty(paths)
         addLog(services, 'DIC MAT selection cancelled.');
         return;
@@ -52,7 +52,7 @@ function state = onMatCleared(state, ~, services)
 end
 
 function state = onReferenceChosen(state, payload, services)
-    paths = labkit.ui.view.filePaths(payload.event.addedFiles);
+    paths = labkit.ui.control.filePaths(payload.event.addedFiles);
     if isempty(paths)
         addLog(services, 'Reference image selection cancelled.');
         return;
@@ -71,7 +71,7 @@ function state = onReferenceCleared(state, ~, services)
 end
 
 function state = onMaskChosen(state, payload, services)
-    paths = labkit.ui.view.filePaths(payload.event.addedFiles);
+    paths = labkit.ui.control.filePaths(payload.event.addedFiles);
     if isempty(paths)
         addLog(services, 'Mask image selection cancelled.');
         return;
@@ -92,14 +92,14 @@ end
 function state = onGenerate(state, ~, services)
     if strlength(state.matPath) == 0 || isempty(state.referenceImage) || ...
             isempty(state.maskImage)
-        labkit.ui.app.showAlert(services.figure, ...
+        labkit.ui.runtime.showAlert(services.figure, ...
             'Load the DIC MAT file, reference image, and mask image first.', ...
             'Missing inputs');
         return;
     end
     opts = overlayOptionsFromControls(services.ui);
     if opts.colorRange(2) <= opts.colorRange(1)
-        labkit.ui.app.showAlert(services.figure, ...
+        labkit.ui.runtime.showAlert(services.figure, ...
             'Color max must be greater than color min.', 'Invalid color range');
         return;
     end
@@ -110,7 +110,7 @@ function state = onGenerate(state, ~, services)
         addLog(services, 'Generated EXX/EYY overlays and ROI summary.');
     catch ME
         services.debug.reportException('dicPostprocess', 'Generate failed', ME);
-        labkit.ui.app.showAlert(services.figure, ME.message, ...
+        labkit.ui.runtime.showAlert(services.figure, ME.message, ...
             'DIC postprocess error');
         addLog(services, sprintf('Generate failed: %s', ME.message));
     end
@@ -131,12 +131,12 @@ end
 
 function state = onSaveOverlays(state, ~, services)
     if isempty(state.overlayExx) || isempty(state.overlayEyy)
-        labkit.ui.app.showAlert(services.figure, ...
+        labkit.ui.runtime.showAlert(services.figure, ...
             'Generate overlays before saving.', 'Save overlays');
         return;
     end
 
-    [folder, cancelled] = labkit.ui.app.promptOutputFolder( ...
+    [folder, cancelled] = labkit.ui.runtime.promptOutputFolder( ...
         'Select folder for overlay PNGs', "");
     if cancelled
         addLog(services, 'Save overlay PNGs cancelled.');
@@ -154,15 +154,15 @@ end
 
 function state = onExportSummary(state, ~, services)
     if isempty(state.summaryTable) || height(state.summaryTable) == 0
-        labkit.ui.app.showAlert(services.figure, ...
+        labkit.ui.runtime.showAlert(services.figure, ...
             'Generate a summary before exporting.', 'Export summary');
         return;
     end
 
     [folder, name] = fileparts(char(state.matPath));
-    folder = labkit.ui.app.defaultDialogFolder("output", folder);
+    folder = labkit.ui.runtime.defaultDialogFolder("output", folder);
     defaultName = fullfile(folder, [name '_strain_summary.csv']);
-    [out, cancelled] = labkit.ui.app.promptOutputFile( ...
+    [out, cancelled] = labkit.ui.runtime.promptOutputFile( ...
         '*.csv', 'Save strain summary CSV', defaultName);
     if cancelled
         addLog(services, 'Export summary cancelled.');
@@ -212,7 +212,7 @@ function state = clearOutputs(state)
 end
 
 function addLog(services, msg)
-    labkit.ui.view.appendLog(services.ui, 'appLog', msg);
+    labkit.ui.control.appendLog(services.ui, 'appLog', msg);
     if isDebugEnabled(services.debug)
         services.debug.append(msg);
     end

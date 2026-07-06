@@ -299,7 +299,7 @@ launch-only suite:
 - `AppPackageStructureGuardrailTest` discovers every `apps/**/labkit_*_app.m`
   entrypoint, requires the canonical `definition.m`,
   `definitionActions.m`, `+appLifecycle/createInitialState.m`,
-  `+userInterface/buildWorkbenchSpec.m`, and
+  `+userInterface/buildWorkbenchLayout.m`, and
   `+userInterface/updateWorkbenchFromState.m` files, and rejects retired
   package-root app runners and broad app buckets such as `+actions`, `+state`,
   `+ui`, `+view`, `+ops`, `+io`, and `+export`.

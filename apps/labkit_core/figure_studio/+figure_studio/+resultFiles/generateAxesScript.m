@@ -89,7 +89,7 @@ function writeLocalFunctions(fid)
     fprintf(fid, '    safeSet(ax, "ZLim", meta.zLim);\n');
     fprintf(fid, 'end\n');
     fprintf(fid, 'safeSet(ax, "CLim", meta.cLim);\n');
-    fprintf(fid, 'safeSet(ax, "View", meta.view);\n');
+    fprintf(fid, 'safeSet(ax, "Layer", meta.view);\n');
     fprintf(fid, 'safeSet(ax, "Color", meta.color);\n');
     fprintf(fid, 'safeSetIfField(ax, meta, "Box", "box");\n');
     fprintf(fid, 'safeSetIfField(ax, meta, "Layer", "layer");\n');

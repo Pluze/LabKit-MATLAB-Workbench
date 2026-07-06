@@ -42,6 +42,11 @@ classdef GuiLayoutCicTest < matlab.uitest.TestCase
                 'CIC workflow should draw the top plot.');
             testCase.verifyGreaterThan(numel(ui.controls.plotAxes.axesById.bottom.Children), 0, ...
                 'CIC workflow should draw the bottom plot.');
+            topAxes = ui.controls.plotAxes.axesById.top;
+            bottomAxes = ui.controls.plotAxes.axesById.bottom;
+            assertExtremaLabelsAreReadable(topAxes);
+            topAxes.XLim = [-1 0];
+            topAxes.YLim = [-0.01 0.01];
 
             driver.chooseFiles('files', secondFixture);
             driver.click('Add DTA files');
@@ -50,6 +55,21 @@ classdef GuiLayoutCicTest < matlab.uitest.TestCase
             testCase.verifyTrue(contains(driver.fileSelection('files'), ...
                 'chrono_chronopot_current_pulse_1ms.DTA'), ...
                 'CIC append should select the newly added chrono file.');
+            testCase.verifyFalse(isequal(topAxes.XLim, [-1 0]), ...
+                'CIC append redraw should replace stale manual X limits.');
+            testCase.verifyFalse(isequal(topAxes.YLim, [-0.01 0.01]), ...
+                'CIC append redraw should replace stale manual Y limits.');
+
+            driver.click('Clear all');
+            testCase.verifyEqual(char(driver.fileStatus('files')), 'No files loaded');
+            testCase.verifyEmpty(topAxes.Children, ...
+                'CIC clear-all should remove stale plot markers and annotations.');
+            testCase.verifyEmpty(bottomAxes.Children, ...
+                'CIC clear-all should remove stale bottom plot markers and annotations.');
+            testCase.verifyEqual(topAxes.XLimMode, 'auto', ...
+                'CIC clear-all should restore automatic X limits.');
+            testCase.verifyEqual(topAxes.YLimMode, 'auto', ...
+                'CIC clear-all should restore automatic Y limits.');
         end
     end
 end
@@ -75,4 +95,30 @@ function assertCicLayout(h, fig)
         h.dropdownGroup({'Time (s)', 'Sample #'}, 2), ...
         h.dropdownGroup({'VT: Vf vs time', 'IT: Im vs time'}, 2)]);
     h.assertDropdownCallbacksPresent(fig);
+end
+
+function assertExtremaLabelsAreReadable(ax)
+    texts = findall(ax, 'Type', 'text');
+    labels = string(get(texts, 'String'));
+    if isscalar(texts)
+        labels = string(texts.String);
+    end
+    emc = texts(contains(labels, "Emc ="));
+    ema = texts(contains(labels, "Ema ="));
+    assert(~isempty(emc) && ~isempty(ema), ...
+        'CIC VT plot should label Emc and Ema markers.');
+    assert(isWhiteBackground(emc(1)) && isWhiteBackground(ema(1)), ...
+        'CIC Emc/Ema labels should have a readable background.');
+    assert(~strcmp(emc(1).HorizontalAlignment, ema(1).HorizontalAlignment), ...
+        'CIC Emc/Ema labels should be staggered to reduce overlap.');
+end
+
+function tf = isWhiteBackground(textHandle)
+    color = textHandle.BackgroundColor;
+    if ischar(color) || isstring(color)
+        tf = strcmp(char(color), 'w');
+    else
+        tf = isnumeric(color) && isequal(size(color), [1 3]) && ...
+            all(abs(color - [1 1 1]) < 1e-12);
+    end
 end

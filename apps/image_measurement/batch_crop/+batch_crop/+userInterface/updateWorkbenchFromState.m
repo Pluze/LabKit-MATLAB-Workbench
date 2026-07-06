@@ -1,5 +1,5 @@
 % App-owned renderer for Batch Image Crop. Expected caller is
-% labkit.ui.app.run after actions update state. Inputs are app state and UI
+% labkit.ui.runtime.run after actions update state. Inputs are app state and UI
 % registry. Side effects are limited to UI controls, preview axes, scale-bar
 % tool state, tables, and status text.
 function updateWorkbenchFromState(state, ui, services)
@@ -11,17 +11,17 @@ end
 
 function renderList(state, ui)
     if isempty(state.items)
-        labkit.ui.view.setListItems(ui, 'images', {});
+        labkit.ui.control.setListItems(ui, 'images', {});
         ui.controls.imageSource.valueHandle.Value = 'No images loaded';
         ui.controls.imageStatus.valueHandle.Value = 'Images: 0';
         return;
     end
 
-    labkit.ui.view.setValue(ui, 'images', batch_crop.userInterface.filePanelEntries( ...
+    labkit.ui.control.setValue(ui, 'images', batch_crop.userInterface.filePanelEntries( ...
         state.items, string(ui.controls.scaleMode.valueHandle.Value)));
     currentIndex = currentIndexOrOne(state);
-    files = labkit.ui.view.getFiles(ui, 'images');
-    labkit.ui.view.setFileSelection(ui, 'images', files(currentIndex));
+    files = labkit.ui.control.getFiles(ui, 'images');
+    labkit.ui.control.setFileSelection(ui, 'images', files(currentIndex));
     ui.controls.imageSource.valueHandle.Value = ...
         char(state.items(currentIndex).path);
     if strcmpi(string(ui.controls.scaleMode.valueHandle.Value), "Physical")
@@ -49,56 +49,56 @@ function renderControls(state, ui, services)
         hasImage && state.currentIndex > 1, 'on', 'off');
     ui.controls.nextImage.button.Enable = batch_crop.userInterface.ternary( ...
         hasImage && state.currentIndex < numel(state.items), 'on', 'off');
-    labkit.ui.view.setEnabled(ui, "cropWidth", hasImage && ~physicalMode);
-    labkit.ui.view.setEnabled(ui, "cropHeight", hasImage && ~physicalMode);
-    labkit.ui.view.setEnabled(ui, "rotation", hasImage);
-    labkit.ui.view.setEnabled(ui, "paddingPercent", hasImage);
-    labkit.ui.view.setEnabled(ui, "centerX", hasImage);
-    labkit.ui.view.setEnabled(ui, "centerY", hasImage);
+    labkit.ui.control.setEnabled(ui, "cropWidth", hasImage && ~physicalMode);
+    labkit.ui.control.setEnabled(ui, "cropHeight", hasImage && ~physicalMode);
+    labkit.ui.control.setEnabled(ui, "rotation", hasImage);
+    labkit.ui.control.setEnabled(ui, "paddingPercent", hasImage);
+    labkit.ui.control.setEnabled(ui, "centerX", hasImage);
+    labkit.ui.control.setEnabled(ui, "centerY", hasImage);
     ui.controls.useImageCenter.button.Enable = enabled;
     ui.controls.useImageXCenter.button.Enable = enabled;
     ui.controls.useImageYCenter.button.Enable = enabled;
     ui.controls.scaleUnit.valueHandle.Enable = ...
         batch_crop.userInterface.ternary(physicalMode, 'on', 'off');
-    labkit.ui.view.setEnabled(ui, "physicalWidth", hasImage && physicalMode);
-    labkit.ui.view.setEnabled(ui, "physicalHeight", hasImage && physicalMode);
-    labkit.ui.view.setEnabled(ui, "targetPixelsPerUnit", ...
+    labkit.ui.control.setEnabled(ui, "physicalWidth", hasImage && physicalMode);
+    labkit.ui.control.setEnabled(ui, "physicalHeight", hasImage && physicalMode);
+    labkit.ui.control.setEnabled(ui, "targetPixelsPerUnit", ...
         hasImage && physicalMode);
-    labkit.ui.view.setEnabled(ui, "maxUpsamplePercent", ...
+    labkit.ui.control.setEnabled(ui, "maxUpsamplePercent", ...
         hasImage && physicalMode);
 
     if hasImage
         item = state.items(state.currentIndex);
         cropLimit = batch_crop.cropGeometry.cropSizeUpperLimit(item.image);
-        labkit.ui.view.setLimits(ui, "cropWidth", [1, cropLimit]);
-        labkit.ui.view.setLimits(ui, "cropHeight", [1, cropLimit]);
+        labkit.ui.control.setLimits(ui, "cropWidth", [1, cropLimit]);
+        labkit.ui.control.setLimits(ui, "cropHeight", [1, cropLimit]);
         if ~state.cropDefaultsInitialized
-            labkit.ui.view.setValue(ui, "cropWidth", ...
+            labkit.ui.control.setValue(ui, "cropWidth", ...
                 max(1, round(size(item.image, 2) * 0.7)));
-            labkit.ui.view.setValue(ui, "cropHeight", ...
+            labkit.ui.control.setValue(ui, "cropHeight", ...
                 max(1, round(size(item.image, 1) * 0.7)));
         end
         geometry = currentGeometry(state, ui);
         centerLimits = batch_crop.userInterface.centerCoordinateLimits(geometry);
-        labkit.ui.view.setLimits(ui, "centerX", centerLimits.x);
-        labkit.ui.view.setLimits(ui, "centerY", centerLimits.y);
-        labkit.ui.view.setValue(ui, "rotation", item.angleDeg);
-        labkit.ui.view.setValue(ui, "paddingPercent", ...
+        labkit.ui.control.setLimits(ui, "centerX", centerLimits.x);
+        labkit.ui.control.setLimits(ui, "centerY", centerLimits.y);
+        labkit.ui.control.setValue(ui, "rotation", item.angleDeg);
+        labkit.ui.control.setValue(ui, "paddingPercent", ...
             batch_crop.appState.itemPaddingPercent(item, ...
             ui.controls.paddingPercent.valueHandle.Value));
         if ~isempty(item.centerXY) && all(isfinite(item.centerXY))
-            labkit.ui.view.setValue(ui, "centerX", item.centerXY(1));
-            labkit.ui.view.setValue(ui, "centerY", item.centerXY(2));
+            labkit.ui.control.setValue(ui, "centerX", item.centerXY(1));
+            labkit.ui.control.setValue(ui, "centerY", item.centerXY(2));
         end
     else
-        labkit.ui.view.setLimits(ui, "cropWidth", [1, 100000]);
-        labkit.ui.view.setLimits(ui, "cropHeight", [1, 100000]);
-        labkit.ui.view.setValue(ui, "rotation", 0);
-        labkit.ui.view.setValue(ui, "paddingPercent", 0);
-        labkit.ui.view.setLimits(ui, "centerX", [1, 100000]);
-        labkit.ui.view.setLimits(ui, "centerY", [1, 100000]);
-        labkit.ui.view.setValue(ui, "centerX", 1);
-        labkit.ui.view.setValue(ui, "centerY", 1);
+        labkit.ui.control.setLimits(ui, "cropWidth", [1, 100000]);
+        labkit.ui.control.setLimits(ui, "cropHeight", [1, 100000]);
+        labkit.ui.control.setValue(ui, "rotation", 0);
+        labkit.ui.control.setValue(ui, "paddingPercent", 0);
+        labkit.ui.control.setLimits(ui, "centerX", [1, 100000]);
+        labkit.ui.control.setLimits(ui, "centerY", [1, 100000]);
+        labkit.ui.control.setValue(ui, "centerX", 1);
+        labkit.ui.control.setValue(ui, "centerY", 1);
     end
 
     ui.controls.outputFolder.valueHandle.Value = char(state.outputFolder);
@@ -151,7 +151,7 @@ function refreshScaleControls(state, ui, ~, statusControl)
 end
 
 function resetPreviewAxes(ui)
-    labkit.ui.view.resetAxes(ui, 'preview', ...
+    labkit.ui.plot.reset(ui, 'preview', ...
         'Padded rotation preview + fixed crop', true, 'crop');
 end
 

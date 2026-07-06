@@ -10,7 +10,7 @@ function info = plotAllCycles(ax, curves, xSelection, ySelection, opts)
     end
     opts = fillOptions(opts, numel(curves));
 
-    cla(ax);
+    labkit.ui.plot.clear(ax, "ResetScale", true);
     hold(ax, 'on');
     colors = lines(max(1, numel(curves)));
     labels = struct('x', char(string(xSelection)), 'y', char(string(ySelection)));
@@ -38,7 +38,7 @@ function info = plotAllCycles(ax, curves, xSelection, ySelection, opts)
     title(ax, opts.title, 'Interpreter', 'none');
     xlabel(ax, labels.x, 'Interpreter', 'none');
     ylabel(ax, labels.y, 'Interpreter', 'none');
-    labkit.ui.view.applyAxesViewportPolicy(ax, 'curve');
+    labkit.ui.plot.fit(ax);
 
     info = struct('ok', plotted > 0, 'plotted', plotted, ...
         'xName', labels.x, 'yName', labels.y);

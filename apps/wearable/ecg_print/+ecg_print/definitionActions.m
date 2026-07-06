@@ -1,6 +1,6 @@
 % App-owned action table for ECG Print. Expected caller is
 % ecg_print.definition. Output maps semantic action ids to handlers used by
-% labkit.ui.app.run. Handlers own recording import, analysis, exports, and
+% labkit.ui.runtime.run. Handlers own recording import, analysis, exports, and
 % debug sample setup.
 function actions = definitionActions()
     actions = struct( ...
@@ -34,7 +34,7 @@ function state = onStartup(state, ~, services)
 end
 
 function state = onRecordingChosen(state, payload, services)
-    paths = labkit.ui.view.filePaths(payload.event.addedFiles);
+    paths = labkit.ui.control.filePaths(payload.event.addedFiles);
     if isempty(paths)
         addLog(services, 'Recording selection cancelled.');
         return;
@@ -49,8 +49,8 @@ end
 
 function state = onClearRecording(state, ~, services)
     state = ecg_print.appLifecycle.createInitialState();
-    labkit.ui.view.setValue(services.ui, "roiStart", 0);
-    labkit.ui.view.setValue(services.ui, "roiEnd", 0);
+    labkit.ui.control.setValue(services.ui, "roiStart", 0);
+    labkit.ui.control.setValue(services.ui, "roiEnd", 0);
     addLog(services, 'Cleared recording.');
 end
 
@@ -172,8 +172,8 @@ function state = setCurrentChannel(state, channelName, services)
     state.template = [];
     state.measurements = [];
     if ~isempty(state.signal.time)
-        labkit.ui.view.setValue(services.ui, "roiStart", 0);
-        labkit.ui.view.setValue(services.ui, "roiEnd", max(state.signal.time));
+        labkit.ui.control.setValue(services.ui, "roiStart", 0);
+        labkit.ui.control.setValue(services.ui, "roiEnd", max(state.signal.time));
     end
 end
 
@@ -234,7 +234,7 @@ function state = onExportSegments(state, ~, services)
             'Analyze a signal before exporting segment SNR.');
         return;
     end
-    [out, cancelled] = labkit.ui.app.promptOutputFile( ...
+    [out, cancelled] = labkit.ui.runtime.promptOutputFile( ...
         'ecg_segment_snr.csv', 'Export segment SNR CSV', ...
         'ecg_segment_snr.csv');
     if cancelled
@@ -247,7 +247,7 @@ function state = onExportSegments(state, ~, services)
 end
 
 function state = onExportWaveform(state, ~, services)
-    [out, cancelled] = labkit.ui.app.promptOutputFile( ...
+    [out, cancelled] = labkit.ui.runtime.promptOutputFile( ...
         'ecg_waveform.png', 'Export waveform PNG', 'ecg_waveform.png');
     if cancelled
         addLog(services, 'Waveform export cancelled.');
@@ -262,7 +262,7 @@ function state = onRefreshOnly(state, ~, ~)
 end
 
 function showError(services, titleText, message)
-    labkit.ui.app.showAlert(services.figure, char(message), titleText);
+    labkit.ui.runtime.showAlert(services.figure, char(message), titleText);
     addLog(services, sprintf('%s: %s', titleText, message));
 end
 
@@ -274,7 +274,7 @@ function showException(services, titleText, exception)
 end
 
 function addLog(services, message)
-    labkit.ui.view.appendLog(services.ui, 'appLog', message);
+    labkit.ui.control.appendLog(services.ui, 'appLog', message);
     if isDebugEnabled(services.debug)
         services.debug.append(message);
     end

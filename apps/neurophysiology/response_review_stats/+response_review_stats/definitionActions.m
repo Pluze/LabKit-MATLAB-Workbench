@@ -1,6 +1,6 @@
 % App-owned action table for Response Review Stats. Expected caller is
 % response_review_stats.definition. Output maps semantic action ids to
-% handlers used by labkit.ui.app.run. Handlers own workflow transitions,
+% handlers used by labkit.ui.runtime.run. Handlers own workflow transitions,
 % metric loading, and export side effects.
 function actions = definitionActions()
     actions = struct( ...
@@ -32,7 +32,7 @@ function state = onInputChosen(state, payload, services)
         return;
     end
     state.inputFile = paths(1);
-    state.outputFolder = string(labkit.ui.app.defaultOutputFolder( ...
+    state.outputFolder = string(labkit.ui.runtime.defaultOutputFolder( ...
         paths, "response_review_stats", state.outputFolder));
     state.statusMessage = "Input selected.";
     state.lastAction = "Selected input";
@@ -50,7 +50,7 @@ function state = onInputCleared(state, ~, ~)
 end
 
 function state = onOutputFolderChosen(state, ~, services)
-    [folder, cancelled] = labkit.ui.app.promptOutputFolder( ...
+    [folder, cancelled] = labkit.ui.runtime.promptOutputFolder( ...
         "Select metrics output folder", state.outputFolder);
     if cancelled
         state.lastAction = "Output folder selection cancelled";
@@ -67,9 +67,9 @@ function state = onOutputFolderCleared(state, ~, ~)
 end
 
 function state = onSettingChanged(state, ~, services)
-    state.baselineWindowSec = numericScalar(labkit.ui.view.getValue( ...
+    state.baselineWindowSec = numericScalar(labkit.ui.control.getValue( ...
         services.ui, "baselineWindowSec"), state.baselineWindowSec);
-    state.noiseWindowSec = numericScalar(labkit.ui.view.getValue( ...
+    state.noiseWindowSec = numericScalar(labkit.ui.control.getValue( ...
         services.ui, "noiseWindowSec"), state.noiseWindowSec);
     state.lastAction = "Updated metric windows";
     if strlength(state.inputFile) > 0
@@ -203,7 +203,7 @@ function paths = eventPaths(event)
     elseif isobject(event) && isprop(event, "selectedFiles")
         files = event.selectedFiles;
     end
-    paths = labkit.ui.view.filePaths(files);
+    paths = labkit.ui.control.filePaths(files);
     if ~(isstring(paths) && iscolumn(paths))
         error('response_review_stats:InvalidPathEvent', ...
             'filePanel event file paths must be a string column.');
@@ -232,7 +232,7 @@ function text = displayPath(pathValue)
 end
 
 function addLog(services, message)
-    labkit.ui.view.appendLog(services.ui, "logPanel", message);
+    labkit.ui.control.appendLog(services.ui, "logPanel", message);
     if isDebugEnabled(services.debug)
         services.debug.append(message);
     end

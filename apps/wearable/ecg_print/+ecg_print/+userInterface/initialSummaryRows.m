@@ -1,4 +1,4 @@
-% Expected caller: ecg_print.userInterface.buildWorkbenchSpec,
+% Expected caller: ecg_print.userInterface.buildWorkbenchLayout,
 % ecg_print.userInterface.summaryRows, and direct
 % unit tests. Output is a two-column cell array for the summary table. Side
 % effects: none.

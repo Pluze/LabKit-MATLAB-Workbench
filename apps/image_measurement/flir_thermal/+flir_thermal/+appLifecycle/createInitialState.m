@@ -5,7 +5,7 @@ function S = createInitialState()
     S = struct();
     S.items = repmat(flir_thermal.appState.emptyItem(), 0, 1);
     S.currentIndex = 0;
-    S.outputFolder = string(labkit.ui.app.defaultDialogFolder("output"));
+    S.outputFolder = string(labkit.ui.runtime.defaultDialogFolder("output"));
     S.lastExport = [];
     S.roiMode = "mean";
 end

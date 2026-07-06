@@ -19,8 +19,8 @@ function plotVTIT(axV, axI, items, opts)
         opts.showLegend = true;
     end
 
-    cla(axV);
-    cla(axI);
+    labkit.ui.plot.clear(axV, "ResetScale", true);
+    labkit.ui.plot.clear(axI, "ResetScale", true);
 
     if isempty(items)
         title(axV, 'Voltage');
@@ -37,16 +37,22 @@ function plotVTIT(axV, axI, items, opts)
     hold(axI, 'on');
 
     labels = cell(1, numel(items));
+    voltageLines = gobjects(1, numel(items));
+    currentLines = gobjects(1, numel(items));
     for k = 1:numel(items)
         item = items(k);
         x = chooseX(item, opts.xAxis);
-        plot(axV, x, chronoVoltage(item), 'LineWidth', opts.lineWidth, 'Color', cmap(k, :));
-        plot(axI, x, chronoCurrent(item), 'LineWidth', opts.lineWidth, 'Color', cmap(k, :));
+        voltageLines(k) = plot(axV, x, chronoVoltage(item), ...
+            'LineWidth', opts.lineWidth, 'Color', cmap(k, :));
+        currentLines(k) = plot(axI, x, chronoCurrent(item), ...
+            'LineWidth', opts.lineWidth, 'Color', cmap(k, :));
         labels{k} = char(item.name);
     end
 
     hold(axV, 'off');
     hold(axI, 'off');
+    labkit.ui.plot.fit(axV, voltageLines(isgraphics(voltageLines)));
+    labkit.ui.plot.fit(axI, currentLines(isgraphics(currentLines)));
 
     xlabelText = axisLabel(opts.xAxis);
     xlabel(axV, xlabelText);

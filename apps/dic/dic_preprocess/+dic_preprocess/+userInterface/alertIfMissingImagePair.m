@@ -7,6 +7,6 @@ function shown = alertIfMissingImagePair(fig, S, messageText, titleText)
 
     shown = ~dic_preprocess.appState.hasImagePair(S);
     if shown
-        labkit.ui.app.showAlert(fig, messageText, titleText);
+        labkit.ui.runtime.showAlert(fig, messageText, titleText);
     end
 end

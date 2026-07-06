@@ -1,6 +1,6 @@
 % App-owned action table for Image Enhance. Expected caller is
 % image_enhance.definition. Output maps semantic action ids to handlers used
-% by labkit.ui.app.run. Handlers preserve the enhancement workflow while
+% by labkit.ui.runtime.run. Handlers preserve the enhancement workflow while
 % moving package-root lifecycle orchestration into the framework runtime.
 function actions = definitionActions()
 %DEFINITIONACTIONS Build the Image Enhance runtime action map.
@@ -92,12 +92,12 @@ function actions = definitionActions()
         state = dispatchNoEvent(state, payload, @onExportImages);
     end
     function onSourceImagesChosen(~, event)
-        newFiles = labkit.ui.view.filePaths(event.addedFiles);
+        newFiles = labkit.ui.control.filePaths(event.addedFiles);
         if isempty(newFiles)
             addLog('Image selection cancelled.');
             return;
         end
-        paths = labkit.ui.view.filePaths(event.files);
+        paths = labkit.ui.control.filePaths(event.files);
         if isempty(paths)
             paths = newFiles;
         end
@@ -113,7 +113,7 @@ function actions = definitionActions()
         S.steps = repmat(image_enhance.appState.emptyStep(), 0, 1);
         S = image_enhance.appState.setActivePendingDirty(S, false);
         invalidatePreviewCache();
-        S.outputFolder = string(labkit.ui.app.defaultOutputFolder( ...
+        S.outputFolder = string(labkit.ui.runtime.defaultOutputFolder( ...
             paths, "image_enhance", S.outputFolder));
         markExportDirty();
         addLog(sprintf('Loaded %d image(s).', numel(S.items)));
@@ -133,7 +133,7 @@ function actions = definitionActions()
         if isempty(S.items)
             return;
         end
-        removeIdx = labkit.ui.view.fileIndices(event.removedFiles, numel(S.items));
+        removeIdx = labkit.ui.control.fileIndices(event.removedFiles, numel(S.items));
         if isempty(removeIdx)
             refreshAll();
             return;
@@ -154,7 +154,7 @@ function actions = definitionActions()
         if isempty(S.items)
             return;
         end
-        idx = labkit.ui.view.fileIndices(event.selectedFiles, numel(S.items));
+        idx = labkit.ui.control.fileIndices(event.selectedFiles, numel(S.items));
         if isempty(idx)
             return;
         end
@@ -236,7 +236,7 @@ function actions = definitionActions()
         refreshAll();
     end
     function onChooseOutputFolder(~, ~)
-        [folder, cancelled] = labkit.ui.app.promptOutputFolder( ...
+        [folder, cancelled] = labkit.ui.runtime.promptOutputFolder( ...
             'Select image enhancement export folder', S.outputFolder);
         if cancelled
             addLog('Export folder selection cancelled.');
@@ -285,23 +285,23 @@ function actions = definitionActions()
     end
     function refreshSourceLibrary()
         if isempty(S.items)
-            labkit.ui.view.setValue(ui, 'sourceImages', {});
-            labkit.ui.view.setValue(ui, 'imageStatus', 'Images: 0');
-            labkit.ui.view.setValue(ui, 'batchModeStatus', image_enhance.appState.modeStatusText(S));
+            labkit.ui.control.setValue(ui, 'sourceImages', {});
+            labkit.ui.control.setValue(ui, 'imageStatus', 'Images: 0');
+            labkit.ui.control.setValue(ui, 'batchModeStatus', image_enhance.appState.modeStatusText(S));
             return;
         end
         paths = cellstr(string({S.items.path}));
-        labkit.ui.view.setValue(ui, 'sourceImages', paths);
-        labkit.ui.view.setValue(ui, 'imageStatus', sprintf( ...
+        labkit.ui.control.setValue(ui, 'sourceImages', paths);
+        labkit.ui.control.setValue(ui, 'imageStatus', sprintf( ...
             'Images: %d | current steps: %d', numel(S.items), numel(image_enhance.appState.activeSteps(S))));
-        labkit.ui.view.setValue(ui, 'batchModeStatus', image_enhance.appState.modeStatusText(S));
+        labkit.ui.control.setValue(ui, 'batchModeStatus', image_enhance.appState.modeStatusText(S));
     end
     function refreshSelection()
         if isempty(S.items)
             return;
         end
-        files = labkit.ui.view.getFiles(ui, 'sourceImages');
-        labkit.ui.view.setFileSelection( ...
+        files = labkit.ui.control.getFiles(ui, 'sourceImages');
+        labkit.ui.control.setFileSelection( ...
             ui, 'sourceImages', files(currentSelectionIndex()));
     end
     function refreshControls()
@@ -310,14 +310,14 @@ function actions = definitionActions()
         availability = currentToolAvailability();
         ui.controls.sourceImages.clearButton.Enable = image_enhance.userInterface.onOff(hasImages);
         ui.controls.sourceImages.listbox.Enable = image_enhance.userInterface.onOff(hasImages);
-        labkit.ui.view.setEnabled(ui, 'applyTool', availability.canApply);
-        labkit.ui.view.setEnabled(ui, 'setWhiteRoi', availability.canSetWhiteRoi);
-        labkit.ui.view.setEnabled(ui, 'undoHistory', hasSteps);
-        labkit.ui.view.setEnabled(ui, 'resetHistory', hasSteps);
-        labkit.ui.view.setEnabled(ui, 'exportImages', hasImages);
+        labkit.ui.control.setEnabled(ui, 'applyTool', availability.canApply);
+        labkit.ui.control.setEnabled(ui, 'setWhiteRoi', availability.canSetWhiteRoi);
+        labkit.ui.control.setEnabled(ui, 'undoHistory', hasSteps);
+        labkit.ui.control.setEnabled(ui, 'resetHistory', hasSteps);
+        labkit.ui.control.setEnabled(ui, 'exportImages', hasImages);
     end
     function refreshExportControls()
-        labkit.ui.view.setValue(ui, 'outputFolder', char(S.outputFolder));
+        labkit.ui.control.setValue(ui, 'outputFolder', char(S.outputFolder));
     end
     function refreshPreview()
         if isempty(S.items)
@@ -325,20 +325,20 @@ function actions = definitionActions()
             return;
         end
         original = currentPreviewSourceImage();
-        switch string(labkit.ui.view.getValue(ui, 'preview'))
+        switch string(labkit.ui.control.getValue(ui, 'preview'))
             case 'Original'
-                labkit.ui.view.drawImage(ui, 'preview', original, ...
+                labkit.ui.plot.image(ui, 'preview', original, ...
                     'title', 'Original Preview');
                 refreshWhiteRoiOverlay();
             case 'Before | After'
                 enhanced = currentPreviewImage(image_enhance.appState.activePendingDirty(S));
-                labkit.ui.view.drawImage(ui, 'preview', ...
+                labkit.ui.plot.image(ui, 'preview', ...
                     image_enhance.userInterface.beforeAfterImage(original, enhanced), ...
                     'title', 'Before | After');
                 clearWhiteRoiOverlay();
             otherwise
                 enhanced = currentPreviewImage(image_enhance.appState.activePendingDirty(S));
-                labkit.ui.view.drawImage(ui, 'preview', enhanced, ...
+                labkit.ui.plot.image(ui, 'preview', enhanced, ...
                     'title', 'Enhanced Preview');
                 refreshWhiteRoiOverlay();
         end
@@ -356,24 +356,24 @@ function actions = definitionActions()
     end
     function refreshHistory()
         ui.controls.historyTable.table.Data = image_enhance.userInterface.historyTableData(image_enhance.appState.activeSteps(S));
-        labkit.ui.view.setValue(ui, 'historyStatus', ...
+        labkit.ui.control.setValue(ui, 'historyStatus', ...
             sprintf('History steps: %d', numel(image_enhance.appState.activeSteps(S))));
     end
     function refreshDetails()
-        labkit.ui.view.setValue(ui, 'exportDetails', image_enhance.userInterface.detailLines( ...
+        labkit.ui.control.setValue(ui, 'exportDetails', image_enhance.userInterface.detailLines( ...
             S.items, max(currentSelectionIndex(), 1), image_enhance.appState.activeSteps(S), S.lastExport));
         updateCloseGuard();
     end
     function refreshToolStatus()
         if isempty(S.items)
-            labkit.ui.view.setValue(ui, 'toolStatus', ...
+            labkit.ui.control.setValue(ui, 'toolStatus', ...
                 'Select an image, choose a tool, then apply it to history.');
             return;
         end
         availability = currentToolAvailability();
         step = currentToolStep();
         if availability.isWhiteRoi
-            labkit.ui.view.setValue(ui, 'toolStatus', availability.status);
+            labkit.ui.control.setValue(ui, 'toolStatus', availability.status);
             return;
         end
         if image_enhance.appState.activePendingDirty(S)
@@ -381,7 +381,7 @@ function actions = definitionActions()
         else
             prefix = 'Ready: ';
         end
-        labkit.ui.view.setValue(ui, 'toolStatus', ...
+        labkit.ui.control.setValue(ui, 'toolStatus', ...
             [prefix char(step.label) ' | ' availability.status]);
     end
     function items = readOrReuseImages(paths)
@@ -503,12 +503,12 @@ function actions = definitionActions()
             dirty = image_enhance.appState.activePendingDirty(S) || ...
                 S.lastExportFingerprint ~= task.fingerprint;
         end
-        labkit.ui.app.setCloseGuard(fig, dirty, ...
+        labkit.ui.runtime.setCloseGuard(fig, dirty, ...
             "Image enhance has unexported changes. Close anyway?");
     end
     function [task, opts, steps] = currentExportTask()
         opts = struct('outputFolder', S.outputFolder, ...
-            'format', labkit.ui.view.getValue(ui, 'exportFormat'));
+            'format', labkit.ui.control.getValue(ui, 'exportFormat'));
         [task, opts, steps] = image_enhance.appState.exportTask(S, opts);
     end
     function scale = currentPreviewScale()
@@ -539,9 +539,9 @@ function actions = definitionActions()
     end
     function step = currentToolStep()
         step = image_enhance.analysisRun.makeStep( ...
-            labkit.ui.view.getValue(ui, 'toolKind'), ...
-            labkit.ui.view.getValue(ui, 'toolAmount'), ...
-            labkit.ui.view.getValue(ui, 'toolSecondary'), 0);
+            labkit.ui.control.getValue(ui, 'toolKind'), ...
+            labkit.ui.control.getValue(ui, 'toolAmount'), ...
+            labkit.ui.control.getValue(ui, 'toolSecondary'), 0);
     end
     function onSetWhiteRoi(~, ~)
         if isempty(S.items) || S.batchMode
@@ -562,7 +562,7 @@ function actions = definitionActions()
     end
     function availability = currentToolAvailability()
         availability = image_enhance.userInterface.toolAvailability( ...
-            S, labkit.ui.view.getValue(ui, 'toolKind'));
+            S, labkit.ui.control.getValue(ui, 'toolKind'));
     end
     function storeWhiteRoi(position)
         if isempty(S.items)
@@ -575,7 +575,7 @@ function actions = definitionActions()
         refreshToolStatus();
     end
     function refreshWhiteRoiOverlay()
-        if ~image_enhance.userInterface.whiteRoiHelpers("isTool", labkit.ui.view.getValue(ui, 'toolKind')) || S.batchMode || ~image_enhance.userInterface.whiteRoiHelpers("hasRoi", S.items(currentSelectionIndex()))
+        if ~image_enhance.userInterface.whiteRoiHelpers("isTool", labkit.ui.control.getValue(ui, 'toolKind')) || S.batchMode || ~image_enhance.userInterface.whiteRoiHelpers("hasRoi", S.items(currentSelectionIndex()))
             clearWhiteRoiOverlay();
             return;
         end
@@ -599,7 +599,7 @@ function actions = definitionActions()
     end
     function updateToolControls(resetToDefaults)
         values = image_enhance.analysisRun.defaultStepValues( ...
-            labkit.ui.view.getValue(ui, 'toolKind'));
+            labkit.ui.control.getValue(ui, 'toolKind'));
         amountHandle = ui.controls.toolAmount.handle;
         secondaryHandle = ui.controls.toolSecondary.handle;
         ui.controls.toolAmount.label.Text = char(values.amountLabel);
@@ -611,8 +611,8 @@ function actions = definitionActions()
         secondaryHandle.Value = image_enhance.appState.clampValue( ...
             secondaryHandle.Value, values.secondaryLimits);
         if resetToDefaults
-            labkit.ui.view.setValue(ui, 'toolAmount', values.amount);
-            labkit.ui.view.setValue(ui, 'toolSecondary', values.secondary);
+            labkit.ui.control.setValue(ui, 'toolAmount', values.amount);
+            labkit.ui.control.setValue(ui, 'toolSecondary', values.secondary);
         end
     end
     function index = currentSelectionIndex()
@@ -624,17 +624,17 @@ function actions = definitionActions()
         index = S.currentIndex;
     end
     function resetPreviewAxes()
-        labkit.ui.view.resetAxes(ui, 'preview', 'Enhanced Preview', true);
+        labkit.ui.plot.reset(ui, 'preview', 'Enhanced Preview', true);
     end
     function addLog(message)
-        labkit.ui.view.appendLog(ui, 'logPanel', message);
+        labkit.ui.control.appendLog(ui, 'logPanel', message);
         if debugLog.enabled
             debugLog.append(message);
         end
     end
     function showError(titleText, message)
         addLog(sprintf('%s: %s', titleText, message));
-        labkit.ui.app.showAlert(fig, message, titleText);
+        labkit.ui.runtime.showAlert(fig, message, titleText);
     end
     function showException(titleText, exception)
         if debugLog.enabled && isfield(debugLog, 'reportException')

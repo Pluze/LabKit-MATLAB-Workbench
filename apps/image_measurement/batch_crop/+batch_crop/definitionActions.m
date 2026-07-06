@@ -1,6 +1,6 @@
 % App-owned action registry for Batch Image Crop. Expected caller is
 % batch_crop.definition. Output maps semantic action ids to handlers used by
-% labkit.ui.app.run. Handlers own file queue changes, crop state, scale
+% labkit.ui.runtime.run. Handlers own file queue changes, crop state, scale
 % calibration, and export side effects.
 function actions = definitionActions()
     actions = struct( ...
@@ -33,13 +33,13 @@ function state = onStartup(state, ~, services)
     fig = services.figure;
     debugLog = services.debug;
     previewAxes = ui.controls.preview.primaryAxes;
-    imageRuntime = labkit.ui.tool.createRuntime(previewAxes, ...
+    imageRuntime = labkit.ui.interaction.runtime(previewAxes, ...
         struct('figure', fig, 'onTrace', traceFcn(debugLog)));
     cropSession = imageRuntime.createSession(struct( ...
         'name', 'batchCropCenter', ...
         'onPointerDown', @(~, ~) services.dispatch("previewPointerDown"), ...
         'installScrollWheel', false));
-    scaleTool = labkit.ui.tool.scaleBar(ui.controls.scaleBarHost.grid, 1, ...
+    scaleTool = labkit.ui.interaction.scaleBar(ui.controls.scaleBarHost.grid, 1, ...
         imageRuntime, struct( ...
         'title', 'Current Image Scale', ...
         'defaultUnit', 'um', ...
@@ -53,7 +53,7 @@ function state = onStartup(state, ~, services)
         'cropSession', cropSession, ...
         'scaleTool', scaleTool);
     if strlength(state.outputFolder) == 0
-        state.outputFolder = string(labkit.ui.app.defaultDialogFolder("output"));
+        state.outputFolder = string(labkit.ui.runtime.defaultDialogFolder("output"));
     end
 
     if isDebugEnabled(debugLog)
@@ -64,19 +64,19 @@ function state = onStartup(state, ~, services)
 end
 
 function state = onImagesChosen(state, payload, services)
-    newFiles = labkit.ui.view.filePaths(payload.event.addedFiles);
+    newFiles = labkit.ui.control.filePaths(payload.event.addedFiles);
     if isempty(newFiles)
         addLog(services, 'Image file selection cancelled.');
         return;
     end
-    paths = labkit.ui.view.filePaths(payload.event.files);
+    paths = labkit.ui.control.filePaths(payload.event.files);
     if isempty(paths)
         paths = newFiles;
     end
     items = batch_crop.appState.itemsForPaths(paths);
     state.items = batch_crop.appState.mergeChosenItems(state.items, items);
     state.currentIndex = currentIndexForAddedPath(paths, newFiles(1));
-    state.outputFolder = string(labkit.ui.app.defaultOutputFolder( ...
+    state.outputFolder = string(labkit.ui.runtime.defaultOutputFolder( ...
         paths, "batch_crop", state.outputFolder));
     state = clearExportAndCanvas(state);
     [state, loaded] = ensureCurrentImageLoaded(state, services);
@@ -108,7 +108,7 @@ function state = onRemoveImages(state, payload, services)
             isempty(event.removedFiles)
         return;
     end
-    removeIdx = labkit.ui.view.fileIndices(event.removedFiles, ...
+    removeIdx = labkit.ui.control.fileIndices(event.removedFiles, ...
         numel(state.items));
     if isempty(removeIdx)
         return;
@@ -148,7 +148,7 @@ function state = onImageSelectionChanged(state, payload, services)
     if isempty(state.items)
         return;
     end
-    idx = labkit.ui.view.fileIndices(payload.event.selectedFiles, ...
+    idx = labkit.ui.control.fileIndices(payload.event.selectedFiles, ...
         numel(state.items));
     if isempty(idx)
         return;
@@ -184,9 +184,9 @@ end
 
 function state = onCropGeometryChanged(state, ~, services)
     ui = services.ui;
-    labkit.ui.view.setValue(ui, "cropWidth", round(max(1, ...
+    labkit.ui.control.setValue(ui, "cropWidth", round(max(1, ...
         ui.controls.cropWidth.valueHandle.Value)));
-    labkit.ui.view.setValue(ui, "cropHeight", round(max(1, ...
+    labkit.ui.control.setValue(ui, "cropHeight", round(max(1, ...
         ui.controls.cropHeight.valueHandle.Value)));
     state.cropDefaultsInitialized = true;
     [state, ok] = ensureCurrentReady(state, services);
@@ -212,7 +212,7 @@ end
 
 function state = onPaddingChanged(state, ~, services)
     ui = services.ui;
-    labkit.ui.view.setValue(ui, "paddingPercent", ...
+    labkit.ui.control.setValue(ui, "paddingPercent", ...
         min(max(double(ui.controls.paddingPercent.valueHandle.Value), 0), 200));
     [state, ok] = ensureCurrentReady(state, services);
     if ~ok
@@ -238,8 +238,8 @@ function state = onCenterChanged(state, ~, services)
         services.ui.controls.centerY.valueHandle.Value]);
     state.items(state.currentIndex).centerXY = centerXY;
     state.items(state.currentIndex).centerSet = true;
-    labkit.ui.view.setValue(services.ui, "centerX", centerXY(1));
-    labkit.ui.view.setValue(services.ui, "centerY", centerXY(2));
+    labkit.ui.control.setValue(services.ui, "centerX", centerXY(1));
+    labkit.ui.control.setValue(services.ui, "centerY", centerXY(2));
     state = batch_crop.appState.clearExportState(state);
     addLog(services, sprintf('Set crop center for image %d: x=%.1f, y=%.1f.', ...
         state.currentIndex, centerXY(1), centerXY(2)));
@@ -280,9 +280,9 @@ function state = onUseImageCenter(state, ~, services, mode)
     state.items(state.currentIndex).centerXY = ...
         adjustedCropCenter(state, services, current);
     state.items(state.currentIndex).centerSet = true;
-    labkit.ui.view.setValue(services.ui, "centerX", ...
+    labkit.ui.control.setValue(services.ui, "centerX", ...
         state.items(state.currentIndex).centerXY(1));
-    labkit.ui.view.setValue(services.ui, "centerY", ...
+    labkit.ui.control.setValue(services.ui, "centerY", ...
         state.items(state.currentIndex).centerXY(2));
     state = batch_crop.appState.clearExportState(state);
     addLog(services, sprintf('Set image %d crop %s center.', ...
@@ -291,13 +291,13 @@ end
 
 function state = onScaleSettingChanged(state, ~, services)
     ui = services.ui;
-    labkit.ui.view.setValue(ui, "physicalWidth", ...
+    labkit.ui.control.setValue(ui, "physicalWidth", ...
         max(eps, double(ui.controls.physicalWidth.valueHandle.Value)));
-    labkit.ui.view.setValue(ui, "physicalHeight", ...
+    labkit.ui.control.setValue(ui, "physicalHeight", ...
         max(eps, double(ui.controls.physicalHeight.valueHandle.Value)));
-    labkit.ui.view.setValue(ui, "targetPixelsPerUnit", ...
+    labkit.ui.control.setValue(ui, "targetPixelsPerUnit", ...
         max(0, double(ui.controls.targetPixelsPerUnit.valueHandle.Value)));
-    labkit.ui.view.setValue(ui, "maxUpsamplePercent", ...
+    labkit.ui.control.setValue(ui, "maxUpsamplePercent", ...
         max(0, double(ui.controls.maxUpsamplePercent.valueHandle.Value)));
     if strcmpi(string(ui.controls.scaleMode.valueHandle.Value), "Physical") && ...
             hasTools(state)
@@ -330,7 +330,7 @@ function state = onExportSettingChanged(state, ~, ~)
 end
 
 function state = onChooseOutputFolder(state, ~, services)
-    [folder, cancelled] = labkit.ui.app.promptOutputFolder( ...
+    [folder, cancelled] = labkit.ui.runtime.promptOutputFolder( ...
         'Select crop export folder', state.outputFolder);
     if cancelled
         addLog(services, 'Export folder selection cancelled.');
@@ -356,8 +356,8 @@ function state = onPreviewPointerDown(state, ~, services)
     centerXY = adjustedCropCenter(state, services, centerXY);
     state.items(state.currentIndex).centerXY = centerXY;
     state.items(state.currentIndex).centerSet = true;
-    labkit.ui.view.setValue(services.ui, "centerX", centerXY(1));
-    labkit.ui.view.setValue(services.ui, "centerY", centerXY(2));
+    labkit.ui.control.setValue(services.ui, "centerX", centerXY(1));
+    labkit.ui.control.setValue(services.ui, "centerY", centerXY(2));
     state = batch_crop.appState.clearExportState(state);
     addLog(services, sprintf('Picked crop center for image %d: x=%.1f, y=%.1f.', ...
         state.currentIndex, centerXY(1), centerXY(2)));
@@ -428,9 +428,9 @@ function state = initializeCropSizeDefaultsIfNeeded(state, services)
         return;
     end
     imageData = state.items(state.currentIndex).image;
-    labkit.ui.view.setValue(services.ui, "cropWidth", ...
+    labkit.ui.control.setValue(services.ui, "cropWidth", ...
         max(1, round(size(imageData, 2) * 0.7)));
-    labkit.ui.view.setValue(services.ui, "cropHeight", ...
+    labkit.ui.control.setValue(services.ui, "cropHeight", ...
         max(1, round(size(imageData, 1) * 0.7)));
     state.cropDefaultsInitialized = true;
 end
@@ -567,11 +567,11 @@ end
 
 function showError(services, titleText, message)
     addLog(services, sprintf('%s: %s', titleText, message));
-    labkit.ui.app.showAlert(services.figure, message, titleText);
+    labkit.ui.runtime.showAlert(services.figure, message, titleText);
 end
 
 function addLog(services, message)
-    labkit.ui.view.appendLog(services.ui, 'appLog', message);
+    labkit.ui.control.appendLog(services.ui, 'appLog', message);
     if isDebugEnabled(services.debug)
         services.debug.append(message);
     end

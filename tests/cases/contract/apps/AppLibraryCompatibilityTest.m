@@ -34,7 +34,7 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
                 'index', {2, [], 99, []}, ...
                 'id', {'file1', 'file3', 'file4', 'file2'});
 
-            idx = labkit.ui.view.fileIndices(files, 3);
+            idx = labkit.ui.control.fileIndices(files, 3);
 
             testCase.verifyEqual(idx, [2; 3], ...
                 'filePanel index helpers should prefer valid index values, fall back from missing indices, and drop duplicates or out-of-range values.');
@@ -189,7 +189,7 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
                 "event\.selection"
                 "addedPaths"
                 "removedPaths"
-                "labkit\.ui\.spec\.taskPanel"
+                "labkit\.ui\.layout\.taskPanel"
                 "labkit\.ui\.view\.getTasks"
                 "labkit\.ui\.view\.setTaskSelection"
                 "labkit\.ui\.view\.taskLabels"
@@ -209,7 +209,7 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
 
             testCase.verifyEmpty(findings, ...
                 "Apps should consume filePanel file entries and extract paths with " + ...
-                "labkit.ui.view.filePaths; task/path events are retired: " + ...
+                "labkit.ui.control.filePaths; task/path events are retired: " + ...
                 strjoin(findings, "; "));
         end
 
@@ -235,8 +235,8 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
 
             testCase.verifyEmpty(findings, ...
                 "Apps should not default file dialogs or exports into the LabKit " + ...
-                "runtime folder; use filePanel, labkit.ui.app.defaultDialogFolder, " + ...
-                "labkit.ui.app.promptOutputFile, or labkit.ui.app.promptOutputFolder: " + ...
+                "runtime folder; use filePanel, labkit.ui.runtime.defaultDialogFolder, " + ...
+                "labkit.ui.runtime.promptOutputFile, or labkit.ui.runtime.promptOutputFolder: " + ...
                 strjoin(findings, "; "));
         end
 
@@ -253,7 +253,7 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
             end
 
             testCase.verifyEmpty(findings, ...
-                "Apps should route alerts through labkit.ui.app.showAlert " + ...
+                "Apps should route alerts through labkit.ui.runtime.showAlert " + ...
                 "so hidden GUI workflow tests can record error paths without modal stalls: " + ...
                 strjoin(findings, "; "));
         end
@@ -298,7 +298,7 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
 
             for k = 1:numel(guardedPackageDirs)
                 content = readPackageSource(guardedPackageDirs(k));
-                if ~contains(content, "labkit.ui.app.setCloseGuard")
+                if ~contains(content, "labkit.ui.runtime.setCloseGuard")
                     findings(end+1, 1) = string(localRelativePath(root, guardedPackageDirs(k)));
                 end
             end
@@ -322,7 +322,7 @@ function findings = bareUigetfileFindings(root, files)
                 'labkit\.ui\.app\.defaultDialogFolder\s*\(\s*["'']input["'']\s*\)', 'once'));
             if ~hasSafeInputDefault
                 findings(end+1, 1) = string(localRelativePath(root, files(k))) + ...
-                    " has uigetfile without labkit.ui.app.defaultDialogFolder(""input"")";
+                    " has uigetfile without labkit.ui.runtime.defaultDialogFolder(""input"")";
             end
         end
     end

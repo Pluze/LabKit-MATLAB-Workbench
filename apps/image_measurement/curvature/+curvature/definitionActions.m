@@ -1,6 +1,6 @@
 % App-owned action registry for Curvature Measurement. Expected caller is
 % curvature.definition. Output maps semantic action ids to handlers used by
-% labkit.ui.app.run while preserving the existing curve-edit workflow.
+% labkit.ui.runtime.run while preserving the existing curve-edit workflow.
 function actions = definitionActions()
 %DEFINITIONACTIONS Build the Curvature Measurement runtime action map.
 
@@ -45,11 +45,11 @@ function actions = definitionActions()
         fig = services.figure;
         debugLog = services.debug;
         ui.topAxes = ui.controls.imageAxes.primaryAxes;
-        imageRuntime = labkit.ui.tool.createRuntime(ui.topAxes, ...
+        imageRuntime = labkit.ui.interaction.runtime(ui.topAxes, ...
             struct('figure', fig, ...
             'onTrace', debugLog.trace));
 
-        scaleTool = labkit.ui.tool.scaleBar(ui.controls.scaleBarHost.grid, ...
+        scaleTool = labkit.ui.interaction.scaleBar(ui.controls.scaleBarHost.grid, ...
             1, imageRuntime, struct( ...
             'onBeforeReferenceEdit', @onBeforeReferenceEdit, ...
             'onReferenceEditChanged', @onReferenceEditChanged, ...
@@ -127,7 +127,7 @@ function actions = definitionActions()
     end
 
     function onImageChosen(~, event)
-        paths = labkit.ui.view.filePaths(event.addedFiles);
+        paths = labkit.ui.control.filePaths(event.addedFiles);
         if isempty(paths)
             addLog('Image selection cancelled.');
             return;
@@ -345,7 +345,7 @@ function actions = definitionActions()
             return;
         end
 
-        [filepath, cancelled] = labkit.ui.app.promptOutputFile( ...
+        [filepath, cancelled] = labkit.ui.runtime.promptOutputFile( ...
             '*.csv', 'Export curvature result CSV', 'curvature_result.csv');
         if cancelled
             addLog('Export result CSV cancelled.');
@@ -368,7 +368,7 @@ function actions = definitionActions()
             return;
         end
 
-        [filepath, cancelled] = labkit.ui.app.promptOutputFile( ...
+        [filepath, cancelled] = labkit.ui.runtime.promptOutputFile( ...
             '*.png', 'Export overlay PNG', 'curvature_overlay.png');
         if cancelled
             addLog('Export overlay PNG cancelled.');
@@ -386,7 +386,7 @@ function actions = definitionActions()
     end
 
     function refreshAll()
-        labkit.ui.view.setValue(ui, 'imageFile', fileValue(S.imagePath));
+        labkit.ui.control.setValue(ui, 'imageFile', fileValue(S.imagePath));
         refreshScaleReadout();
         refreshImageOverlay();
         refreshSummary();
@@ -397,7 +397,7 @@ function actions = definitionActions()
             return;
         end
         if isempty(S.curveEditor)
-            S.curveEditor = labkit.ui.tool.anchorEditor(imageRuntime, size(S.image), ...
+            S.curveEditor = labkit.ui.interaction.anchorEditor(imageRuntime, size(S.image), ...
                 struct('closed', false, ...
                 'style', 'Curve', ...
                 'onTrace', debugLog.trace, ...
@@ -501,8 +501,7 @@ function actions = definitionActions()
 
     function refreshImageOverlay()
         ax = ui.topAxes;
-        cla(ax);
-        hold(ax, 'off');
+        labkit.ui.plot.clear(ax, "ResetScale", true);
 
         if isempty(S.image)
             title(ax, 'Image + Circle Fit');
@@ -512,7 +511,7 @@ function actions = definitionActions()
             return;
         end
 
-        hImage = labkit.ui.view.drawImage(ui, 'imageAxes', S.image, ...
+        hImage = labkit.ui.plot.image(ui, 'imageAxes', S.image, ...
             "title", "Image + Circle Fit", ...
             "options", struct('clearAxes', false));
         hold(ax, 'on');
@@ -574,7 +573,7 @@ function actions = definitionActions()
     end
 
     function addLog(message)
-        labkit.ui.view.appendLog(ui, 'appLog', message);
+        labkit.ui.control.appendLog(ui, 'appLog', message);
         debugLog.append(message);
     end
 
@@ -591,7 +590,7 @@ function actions = definitionActions()
 
     function showError(titleText, message)
         addLog(sprintf('%s: %s', titleText, message));
-        labkit.ui.app.showAlert(fig, message, titleText);
+        labkit.ui.runtime.showAlert(fig, message, titleText);
     end
 
     function showException(titleText, exception)

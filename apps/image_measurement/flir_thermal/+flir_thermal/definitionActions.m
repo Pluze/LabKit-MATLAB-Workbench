@@ -91,7 +91,7 @@ function actions = definitionActions()
         state = S;
     end
     function onFilesChosen(~, event)
-        paths = labkit.ui.view.filePaths(event.files);
+        paths = labkit.ui.control.filePaths(event.files);
         if isempty(paths)
             addLog('FLIR file selection cancelled.');
             return;
@@ -111,7 +111,7 @@ function actions = definitionActions()
             S.currentIndex = flir_thermal.appState.currentIndexForAddedFiles(event.addedFiles, S.items);
             syncRangeControlsFromCurrentItem();
             loadedPaths = string({S.items.path});
-            S.outputFolder = string(labkit.ui.app.defaultOutputFolder( ...
+            S.outputFolder = string(labkit.ui.runtime.defaultOutputFolder( ...
                 loadedPaths, "flir_thermal", S.outputFolder));
         end
         addLog(sprintf('Loaded %d/%d FLIR radiometric image(s).', ...
@@ -133,7 +133,7 @@ function actions = definitionActions()
         if isempty(S.items)
             return;
         end
-        removeIdx = labkit.ui.view.fileIndices(event.removedFiles, numel(S.items));
+        removeIdx = labkit.ui.control.fileIndices(event.removedFiles, numel(S.items));
         if isempty(removeIdx)
             refreshAll();
             return;
@@ -154,7 +154,7 @@ function actions = definitionActions()
         refreshAll();
     end
     function onSelectionChanged(~, event)
-        idx = labkit.ui.view.fileIndices(event.selectedFiles, numel(S.items));
+        idx = labkit.ui.control.fileIndices(event.selectedFiles, numel(S.items));
         if isempty(idx)
             return;
         end
@@ -255,7 +255,7 @@ function actions = definitionActions()
         if ~hasCurrentItem()
             return;
         end
-        preset = string(labkit.ui.view.getValue(ui, 'rangePreset'));
+        preset = string(labkit.ui.control.getValue(ui, 'rangePreset'));
         bounds = flir_thermal.userInterface.rangeControlBounds( ...
             S.items(S.currentIndex), preset, currentControlBounds());
         S.items(S.currentIndex).rangePreset = preset;
@@ -280,7 +280,7 @@ function actions = definitionActions()
         refreshDetails();
     end
     function onChooseOutputFolder(~, ~)
-        [folder, cancelled] = labkit.ui.app.promptOutputFolder( ...
+        [folder, cancelled] = labkit.ui.runtime.promptOutputFolder( ...
             'Select FLIR thermal export folder', S.outputFolder);
         if cancelled
             addLog('Export folder selection cancelled.');
@@ -330,24 +330,24 @@ function actions = definitionActions()
     end
     function refreshFileStatus()
         if isempty(S.items)
-            labkit.ui.view.setValue(ui, 'thermalFiles', {});
+            labkit.ui.control.setValue(ui, 'thermalFiles', {});
         else
-            labkit.ui.view.setValue(ui, 'thermalFiles', ...
+            labkit.ui.control.setValue(ui, 'thermalFiles', ...
                 flir_thermal.userInterface.filePanelEntries(S.items));
-            files = labkit.ui.view.getFiles(ui, 'thermalFiles');
+            files = labkit.ui.control.getFiles(ui, 'thermalFiles');
             if ~isempty(files) && S.currentIndex >= 1 && S.currentIndex <= numel(files)
-                labkit.ui.view.setFileSelection(ui, 'thermalFiles', files(S.currentIndex));
+                labkit.ui.control.setFileSelection(ui, 'thermalFiles', files(S.currentIndex));
             end
         end
         if isempty(S.items)
-            labkit.ui.view.setValue(ui, 'fileStatus', 'Files: 0');
-            labkit.ui.view.setValue(ui, 'currentImage', 'No FLIR image loaded');
+            labkit.ui.control.setValue(ui, 'fileStatus', 'Files: 0');
+            labkit.ui.control.setValue(ui, 'currentImage', 'No FLIR image loaded');
         else
             status = rangeStatus(S.items(S.currentIndex));
-            labkit.ui.view.setValue(ui, 'fileStatus', ...
+            labkit.ui.control.setValue(ui, 'fileStatus', ...
                 sprintf('Files: %d | Current: %d/%d | %s', ...
                 numel(S.items), S.currentIndex, numel(S.items), status));
-            labkit.ui.view.setValue(ui, 'currentImage', ...
+            labkit.ui.control.setValue(ui, 'currentImage', ...
                 sprintf('%s (%s)', char(S.items(S.currentIndex).name), status));
         end
     end
@@ -361,8 +361,8 @@ function actions = definitionActions()
         range = currentRange();
         rgb = flir_thermal.userInterface.renderThermalImage(values, ...
             range, currentPalette(), ...
-            string(labkit.ui.view.getValue(ui, 'colorMapping')), currentGamma());
-        imageHandle = labkit.ui.view.drawImage(ui, 'preview', rgb, ...
+            string(labkit.ui.control.getValue(ui, 'colorMapping')), currentGamma());
+        imageHandle = labkit.ui.plot.image(ui, 'preview', rgb, ...
             'axis', 'thermalImage', ...
             'title', char(label), ...
             'options', struct('hitTest', 'on', ...
@@ -372,7 +372,7 @@ function actions = definitionActions()
         readingTool.activate();
         flir_thermal.userInterface.drawTemperatureReadings(ax, item);
         flir_thermal.userInterface.drawTemperatureScale(ui, range, units, ...
-            currentPalette(), string(labkit.ui.view.getValue(ui, 'colorMapping')), ...
+            currentPalette(), string(labkit.ui.control.getValue(ui, 'colorMapping')), ...
             currentGamma());
     end
     function setManualTemperaturePoint(pointXY)
@@ -414,29 +414,29 @@ function actions = definitionActions()
     function refreshSummary()
         item = currentItem();
         range = currentRange();
-        labkit.ui.view.setValue(ui, 'summaryTable', ...
+        labkit.ui.control.setValue(ui, 'summaryTable', ...
             flir_thermal.userInterface.summaryTableData(item, range, currentPalette()));
     end
     function refreshExportControls()
         hasItems = ~isempty(S.items);
-        labkit.ui.view.setValue(ui, 'outputFolder', char(S.outputFolder));
-        labkit.ui.view.setEnabled(ui, 'previousImage', hasItems && S.currentIndex > 1);
-        labkit.ui.view.setEnabled(ui, 'nextImage', hasItems && S.currentIndex < numel(S.items));
-        labkit.ui.view.setEnabled(ui, 'autoRange', hasItems && S.currentIndex >= 1);
-        labkit.ui.view.setEnabled(ui, 'groupRange', hasItems);
-        labkit.ui.view.setEnabled(ui, 'perImageRange', hasItems);
-        labkit.ui.view.setEnabled(ui, 'roundRange', hasItems && anyRangeAdjusted());
-        labkit.ui.view.setEnabled(ui, 'rangePreset', hasItems && S.currentIndex >= 1);
-        labkit.ui.view.setEnabled(ui, 'temperatureMin', hasItems && S.currentIndex >= 1);
-        labkit.ui.view.setEnabled(ui, 'temperatureMax', hasItems && S.currentIndex >= 1);
-        labkit.ui.view.setEnabled(ui, 'roiHotMode', hasItems && S.currentIndex >= 1);
-        labkit.ui.view.setEnabled(ui, 'roiColdMode', hasItems && S.currentIndex >= 1);
-        labkit.ui.view.setEnabled(ui, 'roiMeanMode', hasItems && S.currentIndex >= 1);
-        labkit.ui.view.setEnabled(ui, 'exportCurrent', hasItems && S.currentIndex >= 1);
-        labkit.ui.view.setEnabled(ui, 'exportAll', hasItems);
+        labkit.ui.control.setValue(ui, 'outputFolder', char(S.outputFolder));
+        labkit.ui.control.setEnabled(ui, 'previousImage', hasItems && S.currentIndex > 1);
+        labkit.ui.control.setEnabled(ui, 'nextImage', hasItems && S.currentIndex < numel(S.items));
+        labkit.ui.control.setEnabled(ui, 'autoRange', hasItems && S.currentIndex >= 1);
+        labkit.ui.control.setEnabled(ui, 'groupRange', hasItems);
+        labkit.ui.control.setEnabled(ui, 'perImageRange', hasItems);
+        labkit.ui.control.setEnabled(ui, 'roundRange', hasItems && anyRangeAdjusted());
+        labkit.ui.control.setEnabled(ui, 'rangePreset', hasItems && S.currentIndex >= 1);
+        labkit.ui.control.setEnabled(ui, 'temperatureMin', hasItems && S.currentIndex >= 1);
+        labkit.ui.control.setEnabled(ui, 'temperatureMax', hasItems && S.currentIndex >= 1);
+        labkit.ui.control.setEnabled(ui, 'roiHotMode', hasItems && S.currentIndex >= 1);
+        labkit.ui.control.setEnabled(ui, 'roiColdMode', hasItems && S.currentIndex >= 1);
+        labkit.ui.control.setEnabled(ui, 'roiMeanMode', hasItems && S.currentIndex >= 1);
+        labkit.ui.control.setEnabled(ui, 'exportCurrent', hasItems && S.currentIndex >= 1);
+        labkit.ui.control.setEnabled(ui, 'exportAll', hasItems);
     end
     function refreshDetails()
-        labkit.ui.view.setValue(ui, 'details', ...
+        labkit.ui.control.setValue(ui, 'details', ...
             flir_thermal.userInterface.detailLines(S.items, S.currentIndex, S.outputFolder));
     end
     function item = currentItem()
@@ -460,19 +460,19 @@ function actions = definitionActions()
             return;
         end
         range = normalizeRange([
-            double(labkit.ui.view.getValue(ui, 'temperatureMin'))
-            double(labkit.ui.view.getValue(ui, 'temperatureMax'))]);
+            double(labkit.ui.control.getValue(ui, 'temperatureMin'))
+            double(labkit.ui.control.getValue(ui, 'temperatureMax'))]);
         S.items(S.currentIndex).displayRange = range;
         S.items(S.currentIndex).rangeAdjusted = true;
     end
     function syncRangeControlsFromCurrentItem()
         range = currentRange();
         bounds = currentControlBounds();
-        labkit.ui.view.setLimits(ui, 'temperatureMin', bounds);
-        labkit.ui.view.setLimits(ui, 'temperatureMax', bounds);
-        labkit.ui.view.setValue(ui, 'rangePreset', currentRangePreset());
-        labkit.ui.view.setValue(ui, 'temperatureMin', round(range(1) * 100) / 100);
-        labkit.ui.view.setValue(ui, 'temperatureMax', round(range(2) * 100) / 100);
+        labkit.ui.control.setLimits(ui, 'temperatureMin', bounds);
+        labkit.ui.control.setLimits(ui, 'temperatureMax', bounds);
+        labkit.ui.control.setValue(ui, 'rangePreset', currentRangePreset());
+        labkit.ui.control.setValue(ui, 'temperatureMin', round(range(1) * 100) / 100);
+        labkit.ui.control.setValue(ui, 'temperatureMax', round(range(2) * 100) / 100);
     end
     function preset = currentRangePreset()
         labels = flir_thermal.userInterface.rangeControlLabels();
@@ -541,9 +541,9 @@ function actions = definitionActions()
         end
     end
     function resetPreviewAxes()
-        labkit.ui.view.resetAxes(ui, 'preview', 'Clean thermal image', false, ...
+        labkit.ui.plot.reset(ui, 'preview', 'Clean thermal image', false, ...
             'thermalImage');
-        labkit.ui.view.resetAxes(ui, 'preview', 'Scale', false, ...
+        labkit.ui.plot.reset(ui, 'preview', 'Scale', false, ...
             'temperatureScale');
     end
     function syncRuntimeState()
@@ -556,11 +556,11 @@ function actions = definitionActions()
         setappdata(fig, 'labkitUiAppRuntime', runtime);
     end
     function palette = currentPalette()
-        palette = string(labkit.ui.view.getValue(ui, 'palette'));
+        palette = string(labkit.ui.control.getValue(ui, 'palette'));
     end
     function value = currentGamma()
         value = flir_thermal.userInterface.normalizeGammaValue( ...
-            labkit.ui.view.getValue(ui, 'gammaValue'));
+            labkit.ui.control.getValue(ui, 'gammaValue'));
     end
     function range = clampRangeToBounds(range, bounds)
         range = normalizeRange(range);
@@ -581,14 +581,14 @@ function actions = definitionActions()
     function opts = exportOptions()
         opts = struct();
         opts.outputFolder = S.outputFolder;
-        opts.format = string(labkit.ui.view.getValue(ui, 'exportFormat'));
+        opts.format = string(labkit.ui.control.getValue(ui, 'exportFormat'));
         opts.palette = currentPalette();
-        opts.colorMapping = string(labkit.ui.view.getValue(ui, 'colorMapping'));
+        opts.colorMapping = string(labkit.ui.control.getValue(ui, 'colorMapping'));
         opts.gammaValue = currentGamma();
         opts.range = [];
     end
     function addLog(message)
-        labkit.ui.view.appendLog(ui, 'logPanel', message);
+        labkit.ui.control.appendLog(ui, 'logPanel', message);
     end
     function showImportReport(report)
         if report.skipped == 0
@@ -600,7 +600,7 @@ function actions = definitionActions()
             titleText = 'Some files were skipped';
         end
         message = importReportMessage(report);
-        labkit.ui.app.showAlert(fig, message, titleText);
+        labkit.ui.runtime.showAlert(fig, message, titleText);
         addLog([char(titleText) ': ' char(message)]);
     end
     function message = importReportMessage(report)
@@ -623,12 +623,12 @@ function actions = definitionActions()
         end
     end
     function showError(titleText, message)
-        labkit.ui.app.showAlert(fig, message, titleText);
+        labkit.ui.runtime.showAlert(fig, message, titleText);
         addLog([char(titleText) ': ' char(message)]);
     end
     function showException(titleText, ME)
         debugLog.reportException('flir_thermal', titleText, ME);
-        labkit.ui.app.showAlert(fig, ME.message, titleText);
+        labkit.ui.runtime.showAlert(fig, ME.message, titleText);
         addLog([char(titleText) ': ' ME.message]);
     end
 end

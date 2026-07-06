@@ -32,15 +32,19 @@ function info = plotXY(ax, x, y, labels, opts)
     y = y(:);
 
     if ~opts.holdPlot
-        cla(ax);
+        labkit.ui.plot.clear(ax, "ResetScale", true);
     end
 
-    plot(ax, x, y, 'LineWidth', opts.lineWidth);
+    hLine = plot(ax, x, y, 'LineWidth', opts.lineWidth);
     grid(ax, opts.showGrid);
     title(ax, labels.title, 'Interpreter', 'none');
     xlabel(ax, labels.x, 'Interpreter', 'none');
     ylabel(ax, labels.y, 'Interpreter', 'none');
-    labkit.ui.view.applyAxesViewportPolicy(ax, 'curve');
+    if opts.holdPlot
+        labkit.ui.plot.fit(ax);
+    else
+        labkit.ui.plot.fit(ax, hLine);
+    end
 
     info.ok = true;
     info.message = 'OK';

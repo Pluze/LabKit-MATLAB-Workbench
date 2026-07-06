@@ -275,32 +275,13 @@ end
 
 function tf = applyGridCanvasFrame(ax, width, height)
     tf = false;
-    parent = ax.Parent;
-    if isempty(parent) || ~isvalid(parent) || ...
-            ~contains(class(parent), 'GridLayout')
-        return;
-    end
     try
-        drawnow;
-        parentPixels = getpixelposition(parent, true);
-        margin = 24;
-        availableWidth = max(1, parentPixels(3) - 2 * margin);
-        availableHeight = max(1, parentPixels(4) - 2 * margin);
-        if availableWidth < 240 || availableHeight < 180
+        [tf, frame] = labkit.ui.plot.fitCanvas(ax, width, height);
+        if ~tf
             return;
         end
-        scale = min(1, min(availableWidth / width, availableHeight / height));
-        frameWidth = max(1, round(width * scale));
-        frameHeight = max(1, round(height * scale));
-        parent.RowHeight = {'1x', frameHeight, '1x'};
-        parent.ColumnWidth = {'1x', frameWidth, '1x'};
         setappdata(ax, 'labkitFigureStudioCanvasFrame', ...
-            struct('width', width, 'height', height, ...
-            'ratio', width / height, ...
-            'position', [NaN NaN frameWidth frameHeight], ...
-            'scale', scale, ...
-            'pixelPosition', [NaN NaN frameWidth frameHeight]));
-        tf = true;
+            frame);
     catch
         tf = false;
     end

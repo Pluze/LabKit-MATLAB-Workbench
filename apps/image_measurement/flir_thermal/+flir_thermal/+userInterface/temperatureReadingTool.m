@@ -1,10 +1,10 @@
 % Expected caller: FLIR thermal runner. Inputs are the app figure, thermal
 % axes, and callbacks with onPoint/onRoi fields. Output is a small tool that
-% wires image-click and drag ROI reading through labkit.ui.tool runtime.
+% wires image-click and drag ROI reading through labkit.ui.interaction runtime.
 function tool = temperatureReadingTool(fig, ax, callbacks)
 
     state = struct('startXY', [], 'dragRect', []);
-    runtime = labkit.ui.tool.createRuntime(ax, struct('figure', fig));
+    runtime = labkit.ui.interaction.runtime(ax, struct('figure', fig));
     session = runtime.createSession(struct( ...
         'name', 'flirTemperatureReading', ...
         'onPointerDown', @onPointerDown, ...

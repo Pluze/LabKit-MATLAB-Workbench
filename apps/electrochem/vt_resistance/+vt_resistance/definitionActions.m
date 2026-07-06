@@ -1,6 +1,6 @@
 % App-owned action table for VT Resistance. Expected caller is
 % vt_resistance.definition. Output maps semantic action ids to handlers used
-% by labkit.ui.app.run. Handlers own workflow transitions, DTA loading,
+% by labkit.ui.runtime.run. Handlers own workflow transitions, DTA loading,
 % analysis, and export side effects.
 function actions = definitionActions()
     actions = struct( ...
@@ -32,7 +32,7 @@ function state = onStartup(state, ~, services)
 end
 
 function state = onOpenFilesChosen(state, payload, services)
-    paths = labkit.ui.view.filePaths(payload.event.addedFiles);
+    paths = labkit.ui.control.filePaths(payload.event.addedFiles);
     if isempty(paths)
         addLog(services, 'Open cancelled.');
         return;
@@ -81,7 +81,7 @@ function state = addFiles(state, filepaths, services)
 
     if ~isempty(failed)
         firstError = failed(1);
-        labkit.ui.app.showAlert(services.figure, ...
+        labkit.ui.runtime.showAlert(services.figure, ...
             sprintf('Failed to load:\n%s\n\n%s', ...
             firstError.filepath, firstError.message), ...
             'Load error');
@@ -115,8 +115,8 @@ function item = analyzeItem(item, services)
 end
 
 function state = onFileSelectionChanged(state, ~, services)
-    files = labkit.ui.view.getValue(services.ui, 'files');
-    paths = labkit.ui.view.filePaths(files);
+    files = labkit.ui.control.getValue(services.ui, 'files');
+    paths = labkit.ui.control.filePaths(files);
     if isempty(paths) || isempty(state.items)
         state.current = [];
         return;
@@ -135,7 +135,7 @@ function state = onRemoveSelected(state, payload, services)
     if isempty(state.items)
         return;
     end
-    paths = labkit.ui.view.filePaths(payload.event.removedFiles);
+    paths = labkit.ui.control.filePaths(payload.event.removedFiles);
     if isempty(paths)
         return;
     end
@@ -159,11 +159,11 @@ end
 
 function state = onExportResults(state, ~, services)
     if isempty(state.items)
-        labkit.ui.app.showAlert(services.figure, ...
+        labkit.ui.runtime.showAlert(services.figure, ...
             'No results to export.', 'Export');
         return;
     end
-    [out, cancelled] = labkit.ui.app.promptOutputFile( ...
+    [out, cancelled] = labkit.ui.runtime.promptOutputFile( ...
         'vt_steady_resistance_results.csv', 'Save results CSV', ...
         'vt_steady_resistance_results.csv');
     if cancelled
@@ -171,7 +171,7 @@ function state = onExportResults(state, ~, services)
     end
     [ok, msg] = vt_resistance.resultFiles.writeResultsCSV(state.items, out);
     if ~ok
-        labkit.ui.app.showAlert(services.figure, msg, 'Export');
+        labkit.ui.runtime.showAlert(services.figure, msg, 'Export');
         return;
     end
     addLog(services, ['Exported CSV: ' char(out)]);
@@ -232,7 +232,7 @@ function items = appendItem(items, item)
 end
 
 function addLog(services, msg)
-    labkit.ui.view.appendLog(services.ui, 'appLog', msg);
+    labkit.ui.control.appendLog(services.ui, 'appLog', msg);
     if isDebugEnabled(services.debug)
         services.debug.append(msg);
     end

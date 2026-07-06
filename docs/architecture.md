@@ -47,7 +47,7 @@ runtime entry points for launcher users and are not dependencies of
 | --- | --- |
 | App entry point | Public launch name plus requirements/version/debug request routing. |
 | App package | App definition, workflow state, command handlers, visible-state updates, calculations, summaries, exports, and app-local helpers. |
-| `labkit.ui` | Declarative app runtime, app shell, readiness/busy state, data-only UI specs, semantic view updates, reusable tools, and diagnostics. |
+| `labkit.ui` | Declarative app runtime, app shell, readiness/busy state, data-only workbench layouts, semantic view updates, reusable tools, and diagnostics. |
 | `labkit.image` | GUI-free image file IO, display normalization, resizing, mean filtering, and basic enhancement primitives. |
 | `labkit.thermal` | GUI-free thermal source-file parsing, raw thermal matrices, embedded calibration metadata, raw-to-temperature conversion, and thermal colormap rendering. |
 | `labkit.dta` | GUI-free Gamry DTA discovery, loading, parsed curves, and pulse helpers. |
@@ -70,7 +70,7 @@ apps/<family>/<app_slug>/+<app_slug>/requirements.m
 apps/<family>/<app_slug>/+<app_slug>/version.m
 apps/<family>/<app_slug>/+<app_slug>/definitionActions.m
 apps/<family>/<app_slug>/+<app_slug>/+appLifecycle/createInitialState.m
-apps/<family>/<app_slug>/+<app_slug>/+userInterface/buildWorkbenchSpec.m
+apps/<family>/<app_slug>/+<app_slug>/+userInterface/buildWorkbenchLayout.m
 apps/<family>/<app_slug>/+<app_slug>/+userInterface/updateWorkbenchFromState.m
 ```
 
@@ -102,11 +102,12 @@ App GUIs use the layered UI foundation:
 
 | Layer | App-facing API |
 | --- | --- |
-| App | `labkit.ui.app.define`, `run`, `create`, `dispatchRequest`, `appVersionTitle`, `applyVersionTitle`, `defaultDialogFolder`, `defaultOutputFolder`, `promptOutputFile`, `promptOutputFolder`, `runBusy` |
-| Spec | `labkit.ui.spec.app`, `workspace`, `tab`, `section`, `group`, `field`, `rangeField`, `panner`, `action`, `filePanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `usagePanel` |
-| View | `labkit.ui.view.setValue`, `getValue`, `getFiles`, `setFileSelection`, `setEnabled`, `setLimits`, `appendLog`, `setListItems`, `setListSelection`, `fileLabels`, `filePaths`, `drawImage`, `applyAxesViewportPolicy`, `resetAxes`, `clearAxes` |
-| Tool | `labkit.ui.tool.createRuntime`, `anchorEditor`, `scaleBar`, `scaleBarCalibration`, `zoomAxesAtPoint` |
-| Diagnostics | `labkit.ui.diag.createContext` |
+| Runtime | `labkit.ui.runtime.define`, `run`, `create`, `dispatchRequest`, `appVersionTitle`, `applyVersionTitle`, `defaultDialogFolder`, `defaultOutputFolder`, `promptOutputFile`, `promptOutputFolder`, `runBusy` |
+| Layout | `labkit.ui.layout.workbench`, `workspace`, `tab`, `section`, `group`, `field`, `rangeField`, `panner`, `action`, `filePanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `usagePanel` |
+| Control | `labkit.ui.control.setValue`, `getValue`, `getFiles`, `setFileSelection`, `setEnabled`, `setLimits`, `appendLog`, `setListItems`, `setListSelection`, `fileLabels`, `filePaths`, `fileIndices` |
+| Plot | `labkit.ui.plot.getAxes`, `clear`, `clearPreview`, `reset`, `image`, `fit`, `fitCanvas`, `dataToFraction`, `fractionToData`, `offsetData`, `clampData`, `message` |
+| Interaction | `labkit.ui.interaction.runtime`, `anchorEditor`, `scaleBar`, `scaleBarCalibration`, `enablePopout`, `popout`, `zoomAtPoint` |
+| Debug | `labkit.ui.debug.context` |
 
 Reusable facades publish MATLAB-native contract versions through their
 `version()` APIs. Apps declare required facade ranges through app-local
@@ -139,13 +140,13 @@ decisions. Generic image IO and filters stay in `labkit.image`; thermal file
 parsing and raw-to-temperature mechanics stay in `labkit.thermal`.
 
 `definition.m` returns the app runtime contract. It names the initial state
-factory, data-only spec builder, command handler registry, visible-state update
+factory, data-only layout builder, command handler registry, visible-state update
 function, startup phases, and optional hydration phases. The framework runtime
 validates the definition, generates semantic callbacks, builds the shell, owns
 readiness/busy state, schedules startup and hydration, routes diagnostics, and
 protects hidden test behavior.
 
-`+userInterface/buildWorkbenchSpec.m` returns a data-only `labkit.ui.spec.*`
+`+userInterface/buildWorkbenchLayout.m` returns a data-only `labkit.ui.layout.*`
 tree. It should not create MATLAB UI handles, mutate app state, perform IO,
 run calculations, write exports, schedule startup, or set row/column layout
 mechanics. App command handlers own app-specific state changes, alerts, refresh

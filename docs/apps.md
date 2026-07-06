@@ -151,7 +151,7 @@ apps/<family>/<app_slug>/+<app_slug>/definitionActions.m
 apps/<family>/<app_slug>/+<app_slug>/requirements.m
 apps/<family>/<app_slug>/+<app_slug>/version.m
 apps/<family>/<app_slug>/+<app_slug>/+appLifecycle/createInitialState.m
-apps/<family>/<app_slug>/+<app_slug>/+userInterface/buildWorkbenchSpec.m
+apps/<family>/<app_slug>/+<app_slug>/+userInterface/buildWorkbenchLayout.m
 apps/<family>/<app_slug>/+<app_slug>/+userInterface/updateWorkbenchFromState.m
 ```
 
@@ -204,15 +204,15 @@ file in the latest `main` commit, not against intermediate local edits in the
 current working tree.
 
 `definition.m` declares the app's runtime contract. It returns a plain struct
-created with `labkit.ui.app.define`, naming the app id, title, initial state
-factory, data-only UI spec builder, command handler registry, visible-state
+created with `labkit.ui.runtime.define`, naming the app id, title, initial state
+factory, data-only workbench layout builder, command handler registry, visible-state
 update function, startup phases, and optional idle hydration phases. The
 framework runtime validates the definition, generates callbacks, schedules
 startup, gates busy/ready state, and routes diagnostics. App code should not
 own loading controls, startup timers, callback wrappers, or framework
 readiness flags.
 
-For nontrivial apps, `+userInterface/buildWorkbenchSpec.m` should make the
+For nontrivial apps, `+userInterface/buildWorkbenchLayout.m` should make the
 page hierarchy obvious at the top of the file. Keep the app constructor
 shallow, then use local builder functions for tabs, sections, and the
 workspace. Put section builders in the same order the user sees them, and keep
@@ -233,7 +233,7 @@ Do not add family-level `private/` helper folders.
 
 ## App Definition And Helper Shape
 
-The app definition is the runtime boundary. It names initial state, UI spec,
+The app definition is the runtime boundary. It names initial state, UI layout,
 registered command handlers, visible-state update, startup, and hydration. The
 framework owns lifecycle orchestration: launch/debug wiring, callback adapters,
 readiness, busy gating, close guards, startup phase timing, and
@@ -259,7 +259,7 @@ the same workflow package when they are worth testing directly.
 
 Visible UI update functions translate prepared app state into existing UI
 handles. They should not perform file IO, heavy computation, export writes, or
-state mutation. `+userInterface/buildWorkbenchSpec.m` declares the
+state mutation. `+userInterface/buildWorkbenchLayout.m` declares the
 control/workspace tree, while `+userInterface/updateWorkbenchFromState.m`
 updates that tree from state and delegates workflow-specific display updates.
 

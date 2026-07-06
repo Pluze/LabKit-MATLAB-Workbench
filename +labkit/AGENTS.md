@@ -40,7 +40,7 @@
   checks, and app requirement assertions. It must stay domain-neutral and must
   not become a package manager, plugin registry, or app metadata store.
 - App version display belongs to app-owned `version.m` files plus
-  `labkit.ui.app` title formatting; do not move app metadata into
+  `labkit.ui.runtime` title formatting; do not move app metadata into
   `labkit.contract` or a central registry.
 - When app-facing facade code changes under `+labkit/+ui`, `+image`, `+thermal`, `+dta`,
   `+rhs`, or `+biosignal`, update the owning facade `version()` contract before
@@ -49,8 +49,8 @@
   before squash or handoff, choosing the next `X.Y.Z` value from the latest
   `main` version file.
 - Reusable UI tools may own domain-neutral interaction workflows such as image scale-bar controls, reference editing, unit normalization, and overlay placement. Keep those tools independent from app result schemas, scientific formulas, file formats, and workflow wording.
-- App-facing UI APIs live under `labkit.ui.app.*`, `labkit.ui.spec.*`, `labkit.ui.view.*`, `labkit.ui.tool.*`, and `labkit.ui.diag.*`. Do not reintroduce flat `labkit.ui.*` helper files.
-- `labkit.ui.app` owns the declarative app runtime: app definition validation,
+- App-facing UI APIs live under `labkit.ui.runtime.*`, `labkit.ui.layout.*`, `labkit.ui.control.*`, `labkit.ui.plot.*`, `labkit.ui.interaction.*`, and `labkit.ui.debug.*`. Do not reintroduce flat `labkit.ui.*` helper files or the retired `app/spec/view/tool/diag` UI package names.
+- `labkit.ui.runtime` owns the declarative app runtime: app definition validation,
   generated semantic callbacks, startup readiness, busy gating, staged
   hydration, close guards, debug exception routing, and startup phase timing.
   Public app-facing runtime growth should favor stable definition/run
@@ -59,8 +59,8 @@
   use it as the new app lifecycle API. Do not expose raw startup timers,
   loading controls, readiness flags, or `defer/update/finish` lifecycle
   mutation helpers to app code.
-- Preview-axis tools that need pointer, drag, scroll, or hit-test ownership must use `labkit.ui.tool.createRuntime` sessions instead of each helper managing figure/axes callbacks independently.
-- Tool callbacks must keep user-facing semantic callbacks separate from internal refresh/sync callbacks, no-op when a setter receives the current value, and trace callback reason/source when a tool exposes debug trace.
+- Preview-axis tools that need pointer, drag, scroll, or hit-test ownership must use `labkit.ui.interaction.runtime` sessions instead of each helper managing figure/axes callbacks independently.
+- Interaction callbacks must keep user-facing semantic callbacks separate from internal refresh/sync callbacks, no-op when a setter receives the current value, and trace callback reason/source when a tool exposes debug trace.
 - Debug traces are diagnostic probes for GUI interaction failures, callback errors, stalled file loads, and environment-sensitive launch problems; do not turn them into workflow narration or log sensitive paths/data.
 - Debug contexts own framework crash reports, active-operation files, and
   caught-exception reporting. Keep report fields app-neutral and sanitized;

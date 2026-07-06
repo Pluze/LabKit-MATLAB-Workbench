@@ -186,9 +186,9 @@ function captureImageEnhanceParameters(assetDir)
         prepareFigure(fig);
         ui = getappdata(fig, "labkitUiRegistry");
         selectControlTab(ui, "toolsHistoryTab");
-        labkit.ui.view.setValue(ui, "toolKind", "Brightness/contrast");
-        labkit.ui.view.setValue(ui, "toolAmount", 18);
-        labkit.ui.view.setValue(ui, "toolSecondary", 26);
+        labkit.ui.control.setValue(ui, "toolKind", "Brightness/contrast");
+        labkit.ui.control.setValue(ui, "toolAmount", 18);
+        labkit.ui.control.setValue(ui, "toolSecondary", 26);
         drawnow;
         pause(0.6);
         exportapp(fig, fullfile(assetDir, ...
@@ -207,10 +207,10 @@ function captureImageMatchParameters(assetDir)
         prepareFigure(fig);
         ui = getappdata(fig, "labkitUiRegistry");
         selectControlTab(ui, "matchHistoryTab");
-        labkit.ui.view.setValue(ui, "matchMethod", "Balanced");
-        labkit.ui.view.setValue(ui, "matchStrength", 85);
-        labkit.ui.view.setValue(ui, "toneStrength", 70);
-        labkit.ui.view.setValue(ui, "colorStrength", 80);
+        labkit.ui.control.setValue(ui, "matchMethod", "Balanced");
+        labkit.ui.control.setValue(ui, "matchStrength", 85);
+        labkit.ui.control.setValue(ui, "toneStrength", 70);
+        labkit.ui.control.setValue(ui, "colorStrength", 80);
         drawnow;
         pause(0.6);
         exportapp(fig, fullfile(assetDir, ...
@@ -229,12 +229,12 @@ function captureBatchCropParameters(assetDir)
         prepareFigure(fig);
         ui = getappdata(fig, "labkitUiRegistry");
         selectControlTab(ui, "filesAnalysisTab");
-        labkit.ui.view.setValue(ui, "cropWidth", 420);
-        labkit.ui.view.setValue(ui, "cropHeight", 320);
-        labkit.ui.view.setValue(ui, "rotation", 3);
-        labkit.ui.view.setValue(ui, "paddingPercent", 18);
-        labkit.ui.view.setValue(ui, "centerX", 515);
-        labkit.ui.view.setValue(ui, "centerY", 350);
+        labkit.ui.control.setValue(ui, "cropWidth", 420);
+        labkit.ui.control.setValue(ui, "cropHeight", 320);
+        labkit.ui.control.setValue(ui, "rotation", 3);
+        labkit.ui.control.setValue(ui, "paddingPercent", 18);
+        labkit.ui.control.setValue(ui, "centerX", 515);
+        labkit.ui.control.setValue(ui, "centerY", 350);
         drawnow;
         pause(0.6);
         exportapp(fig, fullfile(assetDir, ...

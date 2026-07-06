@@ -1,4 +1,4 @@
-% Expected caller: response_review_stats.run/buildSpec. Input is app state.
+% Expected caller: response_review_stats.run/buildWorkbenchLayout. Input is app state.
 % Output is compact status-panel text.
 function lines = detailLines(S)
 %DETAILLINES Build review/stat detail lines.

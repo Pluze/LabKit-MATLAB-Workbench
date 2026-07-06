@@ -8,12 +8,10 @@ function labels = plotOverlay(ax, items, opts)
     end
     opts = fillPlotOptions(opts);
 
-    cla(ax);
-    resetPlotView(ax);
+    labkit.ui.plot.clear(ax, "ResetScale", true);
     ax.XScale = ternary(opts.logX, 'log', 'linear');
     ax.YScale = ternary(opts.logY, 'log', 'linear');
     axis(ax, 'normal');
-    resetPlotView(ax);
 
     cmap = lines(numel(items));
     labels = cell(1, numel(items));
@@ -23,9 +21,10 @@ function labels = plotOverlay(ax, items, opts)
     end
 
     hold(ax, 'on');
+    plottedLines = gobjects(1, numel(items));
     for k = 1:numel(items)
         [x, y] = filteredXY(items(k), opts.xName, opts.yName, opts.logX, opts.logY);
-        plot(ax, x, y, ...
+        plottedLines(k) = plot(ax, x, y, ...
             'LineWidth', opts.lineWidth, ...
             'Marker', marker, ...
             'MarkerSize', opts.markerSize, ...
@@ -33,6 +32,7 @@ function labels = plotOverlay(ax, items, opts)
         labels{k} = items(k).name;
     end
     hold(ax, 'off');
+    labkit.ui.plot.fit(ax, plottedLines(isgraphics(plottedLines)));
 
     xlabel(ax, labelForAxis(opts.xName));
     ylabel(ax, labelForAxis(opts.yName));
@@ -123,11 +123,4 @@ function txt = ternary(cond, a, b)
     else
         txt = b;
     end
-end
-
-function resetPlotView(ax)
-    ax.XLimMode = 'auto';
-    ax.YLimMode = 'auto';
-    ax.ZLimMode = 'auto';
-    ax.CLimMode = 'auto';
 end

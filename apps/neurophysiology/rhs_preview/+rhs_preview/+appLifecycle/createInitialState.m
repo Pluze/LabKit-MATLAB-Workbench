@@ -1,7 +1,7 @@
-% Expected caller: rhs_preview.definitionActions. Output is the initial mutable app state
+% Expected caller: rhs_preview.definition. Output is the initial mutable app state
 % struct. No UI handles, files, or RHS data are touched.
-function S = defaultState()
-%DEFAULTSTATE Initial RHS Preview state.
+function S = createInitialState()
+%CREATEINITIALSTATE Initial RHS Preview state.
 
     S = struct( ...
         "rhsFile", "", ...

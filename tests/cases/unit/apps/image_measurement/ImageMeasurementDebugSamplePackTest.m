@@ -7,7 +7,7 @@ classdef ImageMeasurementDebugSamplePackTest < matlab.unittest.TestCase
             root = string(tempname);
             cleanup = onCleanup(@() cleanupFolder(root));
             mkdir(char(root));
-            debug = labkit.ui.diag.createContext("image_debug_sample_test", struct( ...
+            debug = labkit.ui.debug.context("image_debug_sample_test", struct( ...
                 "logFile", fullfile(char(root), "trace.log")));
 
             batch = batch_crop.debug.writeSamplePack(debug);

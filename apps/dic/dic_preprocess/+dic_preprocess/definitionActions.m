@@ -1,6 +1,6 @@
 % App-owned action registry for DIC preprocess. Expected caller is
 % dic_preprocess.definition. Output maps semantic action ids to handlers used
-% by labkit.ui.app.run. The handlers preserve the existing ROI-edit workflow
+% by labkit.ui.runtime.run. The handlers preserve the existing ROI-edit workflow
 % while moving package-root lifecycle orchestration into the runtime.
 function actions = definitionActions()
 %DEFINITIONACTIONS Build the DIC preprocess runtime action map.
@@ -51,7 +51,7 @@ function actions = definitionActions()
         debugLog = services.debug;
         ui.topAxes = ui.controls.previewAxes.axesById.reference;
         ui.bottomAxes = ui.controls.previewAxes.axesById.current;
-        imageRuntime = labkit.ui.tool.createRuntime(ui.topAxes, ...
+        imageRuntime = labkit.ui.interaction.runtime(ui.topAxes, ...
             struct('figure', fig));
         ui.imageRuntime = imageRuntime;
         controls = dic_preprocess.userInterface.mapControlHandles(ui);
@@ -153,7 +153,7 @@ function actions = definitionActions()
 
 
     function onReferenceChosen(~, event)
-        paths = labkit.ui.view.filePaths(event.addedFiles);
+        paths = labkit.ui.control.filePaths(event.addedFiles);
         if isempty(paths)
             addLog('Reference image selection cancelled.');
             return;
@@ -177,7 +177,7 @@ function actions = definitionActions()
     end
 
     function onMovingChosen(~, event)
-        paths = labkit.ui.view.filePaths(event.addedFiles);
+        paths = labkit.ui.control.filePaths(event.addedFiles);
         if isempty(paths)
             addLog('Moving image selection cancelled.');
             return;
@@ -210,7 +210,7 @@ function actions = definitionActions()
         addLog('Opening point selector. Choose matching points, then accept.');
         [movingPoints, fixedPoints] = cpselect(S.currentMovingImage, S.currentReferenceImage, 'Wait', true);
         if size(movingPoints, 1) < 2
-            labkit.ui.app.showAlert(fig, 'Rigid registration requires at least two point pairs.', 'Not enough points');
+            labkit.ui.runtime.showAlert(fig, 'Rigid registration requires at least two point pairs.', 'Not enough points');
             addLog('Alignment cancelled: fewer than two point pairs.');
             return;
         end
@@ -239,7 +239,7 @@ function actions = definitionActions()
             [alignedImage, tform, method] = dic_preprocess.analysisRun.autoAlignMovingToReference( ...
                 S.currentReferenceImage, S.currentMovingImage);
         catch err
-            labkit.ui.app.showAlert(fig, sprintf('Automatic alignment failed:\n%s', err.message), 'Auto align failed');
+            labkit.ui.runtime.showAlert(fig, sprintf('Automatic alignment failed:\n%s', err.message), 'Auto align failed');
             addLog(sprintf('Automatic alignment failed: %s', err.message));
             return;
         end
@@ -283,7 +283,7 @@ function actions = definitionActions()
 
     function onApplyCropRoi(~, ~)
         if isempty(S.cropRoiTop) || ~isvalid(S.cropRoiTop)
-            labkit.ui.app.showAlert(fig, 'Start a crop ROI before applying the crop.', 'No active ROI');
+            labkit.ui.runtime.showAlert(fig, 'Start a crop ROI before applying the crop.', 'No active ROI');
             return;
         end
 
@@ -327,7 +327,7 @@ function actions = definitionActions()
 
     function onUndoEdit(~, ~)
         if isempty(S.history)
-            labkit.ui.app.showAlert(fig, 'No align or crop operation is available to undo.', 'Undo');
+            labkit.ui.runtime.showAlert(fig, 'No align or crop operation is available to undo.', 'Undo');
             return;
         end
 
@@ -345,7 +345,7 @@ function actions = definitionActions()
 
     function onResetToOriginals(~, ~)
         if isempty(S.referenceImage) || isempty(S.movingImage)
-            labkit.ui.app.showAlert(fig, 'Load both images before resetting the working pair.', 'Reset');
+            labkit.ui.runtime.showAlert(fig, 'Load both images before resetting the working pair.', 'Reset');
             return;
         end
         pushHistory('reset to originals');
@@ -368,7 +368,7 @@ function actions = definitionActions()
         [outputs, cancelled] = dic_preprocess.sourceFiles.saveCurrentImages( ...
             S.currentReferenceImage, S.currentMovingImage, ...
             S.referencePath, S.movingPath, ...
-            labkit.ui.app.defaultDialogFolder("output"));
+            labkit.ui.runtime.defaultDialogFolder("output"));
         if cancelled
             addLog('Save current images cancelled.');
             return;
@@ -380,7 +380,7 @@ function actions = definitionActions()
 
     function onStartMaskEdit(~, ~)
         if isempty(S.currentReferenceImage)
-            labkit.ui.app.showAlert(fig, 'Load a reference image before drawing an ROI mask.', 'Missing image');
+            labkit.ui.runtime.showAlert(fig, 'Load a reference image before drawing an ROI mask.', 'Missing image');
             return;
         end
 
@@ -503,7 +503,7 @@ function actions = definitionActions()
         if isempty(S.maskImage)
             [boundaryMask, ok] = currentBoundaryMask(false);
             if ~ok
-                labkit.ui.app.showAlert(fig, 'Draw a mask ROI or add a boundary to the mask canvas before saving.', 'Save ROI mask');
+                labkit.ui.runtime.showAlert(fig, 'Draw a mask ROI or add a boundary to the mask canvas before saving.', 'Save ROI mask');
                 return;
             end
             S.maskImage = boundaryMask;
@@ -511,7 +511,7 @@ function actions = definitionActions()
 
         [out, cancelled] = dic_preprocess.sourceFiles.saveMask( ...
             S.maskImage, S.referencePath, ...
-            labkit.ui.app.defaultDialogFolder("output"));
+            labkit.ui.runtime.defaultDialogFolder("output"));
         if cancelled
             addLog('Save ROI mask cancelled.');
             return;
@@ -545,7 +545,7 @@ function actions = definitionActions()
             S.maskPoints, size(S.currentReferenceImage), ...
             S.maskBoundaryStyle, S.maskEditor);
         if ~ok && showAlert
-            labkit.ui.app.showAlert(fig, 'Mask ROI needs at least three anchors.', 'Not enough anchors');
+            labkit.ui.runtime.showAlert(fig, 'Mask ROI needs at least three anchors.', 'Not enough anchors');
         end
     end
 
@@ -571,8 +571,8 @@ function actions = definitionActions()
     end
 
     function refreshSummary()
-        labkit.ui.view.setValue(ui, 'referenceFile', fileValue(S.referencePath));
-        labkit.ui.view.setValue(ui, 'movingFile', fileValue(S.movingPath));
+        labkit.ui.control.setValue(ui, 'referenceFile', fileValue(S.referencePath));
+        labkit.ui.control.setValue(ui, 'movingFile', fileValue(S.movingPath));
         txtSummary.Value = dic_preprocess.userInterface.buildSummary(S);
         dic_preprocess.userInterface.updateUndoButton(controls, S);
     end
@@ -626,7 +626,7 @@ end
     end
 
     function addLog(msg)
-        labkit.ui.view.appendLog(ui, 'appLog', msg);
+        labkit.ui.control.appendLog(ui, 'appLog', msg);
         debugLog.append(msg);
     end
 

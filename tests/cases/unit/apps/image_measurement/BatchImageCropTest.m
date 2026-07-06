@@ -375,7 +375,7 @@ function checkDuplicateItemCreatesIndependentCropTask()
     item.centerXY = [3, 4];
     item.centerSet = true;
     item.paddingPercent = 25;
-    item.scaleCalibration = labkit.ui.tool.scaleBarCalibration(80, 20, "um", ...
+    item.scaleCalibration = labkit.ui.interaction.scaleBarCalibration(80, 20, "um", ...
         struct('defaultUnit', 'um'));
 
     duplicated = batch_crop.appState.duplicateItem(item);
@@ -401,7 +401,7 @@ function checkMergeChosenItemsPreservesDuplicateCropTasks()
     duplicateA = batch_crop.appState.duplicateItem(itemA);
     duplicateA.centerXY = [8, 7];
     duplicateA.centerSet = true;
-    duplicateA.scaleCalibration = labkit.ui.tool.scaleBarCalibration(80, 10, "um", ...
+    duplicateA.scaleCalibration = labkit.ui.interaction.scaleBarCalibration(80, 10, "um", ...
         struct('defaultUnit', 'um', 'referenceLine', [1 1; 81 1]));
 
     loadedA = batch_crop.appState.emptyItem();
@@ -430,7 +430,7 @@ function item = physicalItem(pathValue, imageData, pixelsPerUnit)
     item.angleDeg = 0;
     item.centerXY = [(size(imageData, 2) + 1) / 2, (size(imageData, 1) + 1) / 2];
     item.centerSet = true;
-    item.scaleCalibration = labkit.ui.tool.scaleBarCalibration(pixelsPerUnit, 1, "um", ...
+    item.scaleCalibration = labkit.ui.interaction.scaleBarCalibration(pixelsPerUnit, 1, "um", ...
         struct('defaultUnit', 'um', 'referenceLine', [1 1; 1 + pixelsPerUnit, 1]));
 end
 

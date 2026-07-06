@@ -1,4 +1,4 @@
-% App-owned renderer for Chrono Overlay. Expected caller is labkit.ui.app.run
+% App-owned renderer for Chrono Overlay. Expected caller is labkit.ui.runtime.run
 % after actions update state. Inputs are app state, UI registry, and runtime
 % services. Side effects are limited to UI control and axes updates.
 function updateWorkbenchFromState(state, ui, ~)
@@ -8,11 +8,11 @@ end
 
 function renderFileList(state, ui)
     if isempty(state.items)
-        labkit.ui.view.setListItems(ui, 'files', {});
+        labkit.ui.control.setListItems(ui, 'files', {});
         ui.controls.files.status.Value = 'No files loaded';
         return;
     end
-    labkit.ui.view.setValue(ui, 'files', string({state.items.filepath}).');
+    labkit.ui.control.setValue(ui, 'files', string({state.items.filepath}).');
     ui.controls.files.status.Value = sprintf('%d file(s) loaded', ...
         numel(state.items));
 end
@@ -27,8 +27,7 @@ function renderPlots(state, ui)
 
     items = selectedItems(state, ui);
     if isempty(items)
-        cla(axV);
-        cla(axI);
+        chrono_overlay.userInterface.plotVTIT(axV, axI, struct([]), plotOptions(ui));
         return;
     end
 
@@ -36,8 +35,8 @@ function renderPlots(state, ui)
 end
 
 function items = selectedItems(state, ui)
-    files = labkit.ui.view.getValue(ui, 'files');
-    paths = labkit.ui.view.filePaths(files);
+    files = labkit.ui.control.getValue(ui, 'files');
+    paths = labkit.ui.control.filePaths(files);
     if isempty(paths)
         items = struct([]);
         return;

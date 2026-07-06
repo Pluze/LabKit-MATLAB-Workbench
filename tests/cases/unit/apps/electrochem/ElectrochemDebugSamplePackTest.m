@@ -8,7 +8,7 @@ classdef ElectrochemDebugSamplePackTest < matlab.unittest.TestCase
             cleanup = onCleanup(@() cleanupFolder(fixtureRoot));
             mkdir(char(fixtureRoot));
 
-            debug = labkit.ui.diag.createContext("electrochem_debug_sample_test", struct( ...
+            debug = labkit.ui.debug.context("electrochem_debug_sample_test", struct( ...
                 "logFile", fullfile(char(fixtureRoot), "trace.log")));
 
             verifyChronoOverlayPack(testCase, chrono_overlay.debug.writeSamplePack(debug));

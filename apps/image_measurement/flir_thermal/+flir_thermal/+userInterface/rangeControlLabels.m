@@ -1,4 +1,4 @@
-% Expected caller: FLIR thermal UI spec, runner, view helpers, and tests.
+% Expected caller: FLIR thermal UI layout, runner, view helpers, and tests.
 % Output is the shared display labels for range presets and reading actions.
 % Side effects: none.
 function labels = rangeControlLabels()

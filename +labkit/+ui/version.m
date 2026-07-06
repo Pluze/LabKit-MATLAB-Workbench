@@ -12,6 +12,6 @@ function info = version()
 %       compatible contract ranges implemented by this code, contract status,
 %       and a short maintainer note.
 
-    info = labkit.contract.versionInfo("ui", "4.2.1", ">=4.1 <5", ...
-        "stable", "UI 4.x app/spec/view/tool/diag contract with declarative app definitions, grouped semantic controls, framework-owned axes viewport policies, framework-owned runtime dispatch, debounced parameter callbacks, spinner-backed panners, reusable image preview redraws, compact file panels, toolPanel file entry helpers, filePanel title context, preview-area row/column sizing, visible-window early paint, startup readiness state, lazy preview scroll-interaction setup, debug trace, debug artifact sample/output folders, hidden-test-safe alerts, close guard, crash reports, output folder prompts, state snapshot save/load, workbench utility menu commands, all-preview plot utilities, enhanced axes popout styling controls with Studio handoff, and default text fitting.");
+    info = labkit.contract.versionInfo("ui", "5.0.0", ">=5 <6", ...
+        "stable", "UI 5 runtime/layout/control/plot/interaction/debug contract with declarative app definitions, data-only workbench layouts, semantic control updates, framework-owned plot clearing and limit fitting, plot coordinate conversion helpers, reusable image preview rendering, interaction tools, debug artifacts, hidden-test-safe alerts, close guards, state snapshot save/load, and app version title formatting.");
 end

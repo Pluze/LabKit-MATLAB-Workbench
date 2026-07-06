@@ -1,4 +1,4 @@
-% App-owned renderer for VT Resistance. Expected caller is labkit.ui.app.run
+% App-owned renderer for VT Resistance. Expected caller is labkit.ui.runtime.run
 % after actions update state. Inputs are app state and UI registry. Side
 % effects are limited to UI control, table, text, and axes updates.
 function updateWorkbenchFromState(state, ui, ~)
@@ -10,16 +10,16 @@ end
 
 function renderFileList(state, ui)
     if isempty(state.items)
-        labkit.ui.view.setListItems(ui, 'files', {});
+        labkit.ui.control.setListItems(ui, 'files', {});
         ui.controls.files.status.Value = 'No files loaded';
         return;
     end
 
     paths = string({state.items.filepath}).';
-    labkit.ui.view.setValue(ui, 'files', paths);
+    labkit.ui.control.setValue(ui, 'files', paths);
     current = currentIndex(state);
-    files = labkit.ui.view.getFiles(ui, 'files');
-    labkit.ui.view.setFileSelection(ui, 'files', files(current));
+    files = labkit.ui.control.getFiles(ui, 'files');
+    labkit.ui.control.setFileSelection(ui, 'files', files(current));
     ui.controls.files.status.Value = sprintf('%d file(s) loaded', ...
         numel(state.items));
 end
@@ -176,15 +176,17 @@ function plotOneAxis(ax, analysis, xChoice, yChoice, showGrid, itemName, ui)
     end
 
     if startsWith(yChoice, 'VT')
-        plot(ax, x, analysis.Vf, 'LineWidth', 1.25, ...
+        hLine = plot(ax, x, analysis.Vf, 'LineWidth', 1.25, ...
             'Color', [0 0.4470 0.7410]);
+        labkit.ui.plot.fit(ax, hLine);
         ylab = 'Vf (V vs Ref.)';
         ttl = sprintf('%s | VT | Ravg = %.6g ohm', ...
             itemName, analysis.Ravg_abs_ohm);
         hold(ax, 'on');
     else
-        plot(ax, x, analysis.Im, 'LineWidth', 1.25, ...
+        hLine = plot(ax, x, analysis.Im, 'LineWidth', 1.25, ...
             'Color', [0.8500 0.3250 0.0980]);
+        labkit.ui.plot.fit(ax, hLine);
         ylab = 'Im (A)';
         ttl = sprintf('%s | IT | Ic %.4g A, Ia %.4g A', ...
             itemName, analysis.Ic_est_A, analysis.Ia_est_A);
@@ -237,5 +239,5 @@ function idx = currentIndex(state)
 end
 
 function clearAxis(ax)
-    vt_resistance.userInterface.clearPlotAxis(ax);
+    labkit.ui.plot.clear(ax, "ResetScale", true);
 end

@@ -5,8 +5,8 @@
 function drawPreview(ui, request)
 %DRAWPREVIEW Render a prepared DIC preprocess preview request.
 
-    labkit.ui.view.resetAxes(ui, 'previewAxes', 'Reference', true, 'reference');
-    labkit.ui.view.resetAxes(ui, 'previewAxes', 'Current Preview', true, 'current');
+    labkit.ui.plot.reset(ui, 'previewAxes', 'Reference', true, 'reference');
+    labkit.ui.plot.reset(ui, 'previewAxes', 'Current Preview', true, 'current');
     if ~isempty(request.topImage)
         dic_preprocess.userInterface.showImage(ui, 'reference', ...
             request.topImage, request.topTitle);

@@ -5,7 +5,7 @@
 function idx = currentIndexForAddedFiles(addedFiles, items)
 %CURRENTINDEXFORADDEDFILES Return the current index after appending files.
 
-    idx = labkit.ui.view.fileIndices(addedFiles, numel(items));
+    idx = labkit.ui.control.fileIndices(addedFiles, numel(items));
     if isempty(idx)
         idx = 1;
         return;

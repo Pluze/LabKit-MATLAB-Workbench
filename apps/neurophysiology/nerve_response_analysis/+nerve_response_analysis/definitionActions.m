@@ -1,6 +1,6 @@
 % App-owned action table for Nerve Response Analysis. Expected caller is
 % nerve_response_analysis.definition. Output maps semantic action ids to
-% handlers used by labkit.ui.app.run. Handlers own workflow transitions,
+% handlers used by labkit.ui.runtime.run. Handlers own workflow transitions,
 % analysis, and export side effects.
 function actions = definitionActions()
     actions = struct( ...
@@ -34,7 +34,7 @@ function state = onSessionChosen(state, payload, services)
         return;
     end
     state.sessionFile = paths(1);
-    state.outputFolder = string(labkit.ui.app.defaultOutputFolder( ...
+    state.outputFolder = string(labkit.ui.runtime.defaultOutputFolder( ...
         paths, "nerve_response_analysis", state.outputFolder));
     state.analysis = [];
     state.statusMessage = "Filter record selected.";
@@ -73,7 +73,7 @@ function state = onProtocolCleared(state, ~, ~)
 end
 
 function state = onOutputFolderChosen(state, ~, services)
-    [folder, cancelled] = labkit.ui.app.promptOutputFolder( ...
+    [folder, cancelled] = labkit.ui.runtime.promptOutputFolder( ...
         "Select analysis output folder", state.outputFolder);
     if cancelled
         state.lastAction = "Output folder selection cancelled";
@@ -91,10 +91,10 @@ end
 
 function state = onSettingChanged(state, ~, services)
     state.maxRecordings = finiteNonnegativeScalar( ...
-        labkit.ui.view.getValue(services.ui, "maxRecordings"), ...
+        labkit.ui.control.getValue(services.ui, "maxRecordings"), ...
         state.maxRecordings);
     state.maxDurationSec = finiteNonnegativeScalar( ...
-        labkit.ui.view.getValue(services.ui, "maxDurationSec"), ...
+        labkit.ui.control.getValue(services.ui, "maxDurationSec"), ...
         state.maxDurationSec);
     if ~isempty(state.analysis)
         state.analysis = [];
@@ -202,7 +202,7 @@ function paths = eventPaths(event)
     elseif isobject(event) && isprop(event, "selectedFiles")
         files = event.selectedFiles;
     end
-    paths = labkit.ui.view.filePaths(files);
+    paths = labkit.ui.control.filePaths(files);
     if ~(isstring(paths) && iscolumn(paths))
         error('nerve_response_analysis:InvalidPathEvent', ...
             'filePanel event file paths must be a string column.');
@@ -240,7 +240,7 @@ function text = displayPath(pathValue)
 end
 
 function addLog(services, message)
-    labkit.ui.view.appendLog(services.ui, "logPanel", message);
+    labkit.ui.control.appendLog(services.ui, "logPanel", message);
     if isDebugEnabled(services.debug)
         services.debug.append(message);
     end

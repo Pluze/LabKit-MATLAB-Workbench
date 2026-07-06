@@ -5,6 +5,6 @@
 function hImage = showImage(ui, axisId, imageData, titleText)
 %SHOWIMAGE Draw a DIC preprocess preview image in an axes.
 
-    hImage = labkit.ui.view.drawImage(ui, 'previewAxes', imageData, ...
+    hImage = labkit.ui.plot.image(ui, 'previewAxes', imageData, ...
         "title", titleText, "axis", axisId);
 end

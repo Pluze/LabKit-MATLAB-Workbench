@@ -10,12 +10,12 @@ function [ok, msg, cancelled] = promptExportVoltageCurrent(items, services, opts
     cancelled = false;
 
     if isempty(items)
-        labkit.ui.app.showAlert(services.figure, ...
+        labkit.ui.runtime.showAlert(services.figure, ...
             'No voltage/current data to export.', 'Export');
         return;
     end
 
-    [out, cancelled] = labkit.ui.app.promptOutputFile( ...
+    [out, cancelled] = labkit.ui.runtime.promptOutputFile( ...
         'csc_cv_data.csv', 'Export CV data CSV', 'csc_cv_data.csv');
     if cancelled
         return;
@@ -23,7 +23,7 @@ function [ok, msg, cancelled] = promptExportVoltageCurrent(items, services, opts
 
     [ok, msg, info] = csc.resultFiles.writeVoltageCurrentCSV(items, out, opts);
     if ~ok
-        labkit.ui.app.showAlert(services.figure, msg, 'Export');
+        labkit.ui.runtime.showAlert(services.figure, msg, 'Export');
         return;
     end
     if numel(info.files) == 1

@@ -1,7 +1,7 @@
 % App-owned action table for Chrono Overlay. Expected caller is
 % chrono_overlay.definition. Output maps semantic action ids to handlers used
-% by labkit.ui.app.run. Handlers own app workflow transitions and IO/export
-% side effects; framework lifecycle scheduling stays in labkit.ui.app.
+% by labkit.ui.runtime.run. Handlers own app workflow transitions and IO/export
+% side effects; framework lifecycle scheduling stays in labkit.ui.runtime.
 function actions = definitionActions()
     actions = struct( ...
         "startup", @onStartup, ...
@@ -30,7 +30,7 @@ function state = onStartup(state, ~, services)
 end
 
 function state = onOpenFilesChosen(state, payload, services)
-    paths = labkit.ui.view.filePaths(payload.event.addedFiles);
+    paths = labkit.ui.control.filePaths(payload.event.addedFiles);
     if isempty(paths)
         addLog(services, 'Open cancelled.');
         return;
@@ -74,7 +74,7 @@ function state = loadFiles(state, filepaths, services)
 
     if ~isempty(failed)
         firstError = failed(1);
-        labkit.ui.app.showAlert(services.figure, ...
+        labkit.ui.runtime.showAlert(services.figure, ...
             sprintf('Failed to load:\n%s\n\n%s', ...
             firstError.filepath, firstError.message), ...
             'Load error');
@@ -85,7 +85,7 @@ function state = onRemoveSelected(state, payload, services)
     if isempty(state.items)
         return;
     end
-    paths = labkit.ui.view.filePaths(payload.event.removedFiles);
+    paths = labkit.ui.control.filePaths(payload.event.removedFiles);
     if isempty(paths)
         return;
     end
@@ -102,18 +102,18 @@ end
 
 function state = onExportCSV(state, ~, services)
     if isempty(state.items)
-        labkit.ui.app.showAlert(services.figure, 'No files loaded.', 'Export');
+        labkit.ui.runtime.showAlert(services.figure, 'No files loaded.', 'Export');
         return;
     end
 
     items = selectedItems(state, services.ui);
     if isempty(items)
-        labkit.ui.app.showAlert(services.figure, ...
+        labkit.ui.runtime.showAlert(services.figure, ...
             'No files selected for export.', 'Export');
         return;
     end
 
-    [out, cancelled] = labkit.ui.app.promptOutputFile( ...
+    [out, cancelled] = labkit.ui.runtime.promptOutputFile( ...
         'gamry_overlay_curves.csv', 'Save overlay curves CSV', ...
         'gamry_overlay_curves.csv');
     if cancelled
@@ -129,8 +129,8 @@ function state = onRefreshOnly(state, ~, ~)
 end
 
 function items = selectedItems(state, ui)
-    files = labkit.ui.view.getValue(ui, 'files');
-    paths = labkit.ui.view.filePaths(files);
+    files = labkit.ui.control.getValue(ui, 'files');
+    paths = labkit.ui.control.filePaths(files);
     if isempty(paths)
         items = struct([]);
         return;
@@ -182,7 +182,7 @@ function items = appendItem(items, item)
 end
 
 function addLog(services, msg)
-    labkit.ui.view.appendLog(services.ui, 'appLog', msg);
+    labkit.ui.control.appendLog(services.ui, 'appLog', msg);
     if isDebugEnabled(services.debug)
         services.debug.append(msg);
     end

@@ -1,4 +1,4 @@
-% Expected caller: FLIR thermal UI spec, runner, and tests. Output is the
+% Expected caller: FLIR thermal UI layout, runner, and tests. Output is the
 % ordered display-range preset labels used by the app; no side effects.
 function items = rangePresetItems()
 

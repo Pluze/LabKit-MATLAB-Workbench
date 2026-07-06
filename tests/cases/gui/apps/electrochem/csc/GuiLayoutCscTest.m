@@ -77,6 +77,19 @@ classdef GuiLayoutCscTest < matlab.uitest.TestCase
             testCase.verifyTrue(contains(driver.fileSelection('files'), ...
                 'cv_cyclic_voltammetry_pt_replicate.DTA'), ...
                 'CSC append should select the newly added CV/CT file.');
+
+            topAxes.XLim = [-0.01 0.01];
+            topAxes.YLim = [-1e-12 1e-12];
+            driver.click('Clear all');
+            testCase.verifyEqual(char(driver.fileStatus('files')), 'No files loaded');
+            testCase.verifyEmpty(topAxes.Children, ...
+                'CSC clear-all should remove stale top plot graphics.');
+            testCase.verifyEmpty(ui.controls.plotAxes.axesById.bottom.Children, ...
+                'CSC clear-all should remove stale bottom plot graphics.');
+            testCase.verifyEqual(topAxes.XLimMode, 'auto', ...
+                'CSC clear-all should restore automatic X limits.');
+            testCase.verifyEqual(topAxes.YLimMode, 'auto', ...
+                'CSC clear-all should restore automatic Y limits.');
         end
     end
 end

@@ -1,8 +1,8 @@
 function sink = createLabKitToolTraceSink(recorder)
-%CREATELABKITTOOLTRACESINK Adapt UI tool trace messages to structured events.
+%CREATELABKITTOOLTRACESINK Adapt UI interaction trace messages to structured events.
 %
 % Expected caller: GUI structural and gesture tests that pass an onTrace
-% callback into labkit.ui.tool components. Input is a trace recorder from
+% callback into labkit.ui.interaction components. Input is a trace recorder from
 % createLabKitTraceRecorder. Output is a callback(message) function handle.
 % Side effects: appends sanitized structured events to the recorder.
 

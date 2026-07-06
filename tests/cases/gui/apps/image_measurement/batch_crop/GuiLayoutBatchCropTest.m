@@ -49,13 +49,13 @@ classdef GuiLayoutBatchCropTest < matlab.uitest.TestCase
             testCase.verifyEqual(string(ui.controls.centerY.slider.Enable), "on");
             testCase.verifyEqual(ui.controls.cropWidth.slider.Limits, [1 120]);
             testCase.verifyEqual(ui.controls.cropHeight.slider.Limits, [1 120]);
-            labkit.ui.view.setValue(ui, 'cropWidth', 20);
+            labkit.ui.control.setValue(ui, 'cropWidth', 20);
             ui.controls.cropWidth.valueSpinner.ValueChangedFcn( ...
                 ui.controls.cropWidth.valueSpinner, struct('PreviousValue', 34));
             h.waitForUiIdle(fig);
-            testCase.verifyEqual(labkit.ui.view.getValue(ui, 'cropWidth'), 20, ...
+            testCase.verifyEqual(labkit.ui.control.getValue(ui, 'cropWidth'), 20, ...
                 'User crop-size edits should survive the migrated runtime render pass.');
-            labkit.ui.view.setValue(ui, 'scaleMode', 'Physical');
+            labkit.ui.control.setValue(ui, 'scaleMode', 'Physical');
             ui.controls.scaleMode.valueHandle.ValueChangedFcn( ...
                 ui.controls.scaleMode.valueHandle, struct());
             h.waitForUiIdle(fig);
@@ -63,7 +63,7 @@ classdef GuiLayoutBatchCropTest < matlab.uitest.TestCase
             testCase.verifyEqual(string(ui.controls.physicalHeight.slider.Enable), "on");
             testCase.verifyEqual(string(ui.controls.targetPixelsPerUnit.slider.Enable), "on");
             testCase.verifyEqual(string(ui.controls.maxUpsamplePercent.slider.Enable), "on");
-            labkit.ui.view.setValue(ui, 'scaleMode', 'Pixels');
+            labkit.ui.control.setValue(ui, 'scaleMode', 'Pixels');
             ui.controls.scaleMode.valueHandle.ValueChangedFcn( ...
                 ui.controls.scaleMode.valueHandle, struct());
             h.waitForUiIdle(fig);

@@ -10,12 +10,12 @@ function [ok, msg, cancelled] = promptExportResults(items, services, opts)
     cancelled = false;
 
     if isempty(items)
-        labkit.ui.app.showAlert(services.figure, ...
+        labkit.ui.runtime.showAlert(services.figure, ...
             'No results to export.', 'Export');
         return;
     end
 
-    [out, cancelled] = labkit.ui.app.promptOutputFile( ...
+    [out, cancelled] = labkit.ui.runtime.promptOutputFile( ...
         'csc_all_cycles.csv', 'Save all-cycle CSC CSV', ...
         'csc_all_cycles.csv');
     if cancelled
@@ -24,7 +24,7 @@ function [ok, msg, cancelled] = promptExportResults(items, services, opts)
 
     [ok, msg] = csc.resultFiles.writeResultsCSV(items, out, opts);
     if ~ok
-        labkit.ui.app.showAlert(services.figure, msg, 'Export');
+        labkit.ui.runtime.showAlert(services.figure, msg, 'Export');
         return;
     end
     msg = ['Exported CSC CSV: ' char(out)];

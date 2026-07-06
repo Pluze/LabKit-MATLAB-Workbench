@@ -112,7 +112,7 @@ end
 
 function checkPhysicalScaleUnitsAreConvertedWithoutMutatingCalibration()
     item = physicalItem("source_mm.png", uint8(80 * ones(120, 120)), 4);
-    item.scaleCalibration = labkit.ui.tool.scaleBarCalibration(40, 10, "mm", ...
+    item.scaleCalibration = labkit.ui.interaction.scaleBarCalibration(40, 10, "mm", ...
         struct('defaultUnit', 'mm', 'referenceLine', [1 1; 41 1]));
 
     plan = batch_crop.cropGeometry.scalePlan(item, struct( ...
@@ -321,7 +321,7 @@ function item = physicalItem(pathValue, imageData, pixelsPerUnit)
     item.angleDeg = 0;
     item.centerXY = [(size(imageData, 2) + 1) / 2, (size(imageData, 1) + 1) / 2];
     item.centerSet = true;
-    item.scaleCalibration = labkit.ui.tool.scaleBarCalibration(pixelsPerUnit, 1, "um", ...
+    item.scaleCalibration = labkit.ui.interaction.scaleBarCalibration(pixelsPerUnit, 1, "um", ...
         struct('defaultUnit', 'um', 'referenceLine', [1 1; 1 + pixelsPerUnit, 1]));
 end
 

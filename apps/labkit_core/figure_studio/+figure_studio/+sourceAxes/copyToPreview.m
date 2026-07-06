@@ -2,7 +2,7 @@
 % Expected caller is figure_studio.definitionActions; source graphics are not
 % modified and destination axes content is reset before children are copied.
 function copyToPreview(srcAx, dstAx)
-    cla(dstAx, 'reset');
+    labkit.ui.plot.clear(dstAx, "ResetScale", true);
     dstAx.Visible = 'on';
     disableDefaultAxesToolbar(dstAx);
     copyAxesState(srcAx, dstAx);
@@ -15,7 +15,7 @@ function copyToPreview(srcAx, dstAx)
     ylabel(dstAx, string(srcAx.YLabel.String), 'Interpreter', 'none');
     zlabel(dstAx, string(srcAx.ZLabel.String), 'Interpreter', 'none');
     normalizePreviewAxesLayout(dstAx);
-    labkit.ui.tool.enableAxesPopout(dstAx);
+    labkit.ui.interaction.enablePopout(dstAx);
 end
 
 function disableDefaultAxesToolbar(ax)
@@ -28,7 +28,7 @@ end
 
 function copyAxesState(srcAx, dstAx)
     props = {'XScale','YScale','ZScale','XDir','YDir','ZDir', ...
-        'XLim','YLim','ZLim','CLim','View','Box','XGrid','YGrid','ZGrid', ...
+        'XLim','YLim','ZLim','CLim','Layer','Box','XGrid','YGrid','ZGrid', ...
         'Color','XColor','YColor','ZColor','LineWidth','FontName','FontSize'};
     for k = 1:numel(props)
         try

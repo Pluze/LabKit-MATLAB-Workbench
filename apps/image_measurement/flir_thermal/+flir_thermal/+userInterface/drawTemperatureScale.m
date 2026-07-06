@@ -9,7 +9,7 @@ function drawTemperatureScale(ui, range, units, palette, colorMapping, gammaValu
     imageData = flir_thermal.userInterface.renderThermalImage( ...
         repmat(values, 1, 12), range, palette, colorMapping, gammaValue);
     ax = ui.controls.preview.axesById.temperatureScale;
-    cla(ax);
+    labkit.ui.plot.clear(ax, "ResetScale", true, "ClearLegend", false);
     image(ax, 'CData', imageData, 'XData', [0 1], 'YData', range);
     title(ax, '');
     ax.DataAspectRatioMode = 'auto';

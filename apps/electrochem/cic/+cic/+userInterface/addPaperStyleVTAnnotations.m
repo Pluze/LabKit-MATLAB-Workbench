@@ -49,8 +49,10 @@ function addPaperStyleVTAnnotations(ax, A, xChoice, cathStartX, cathEndX, anodSt
             'Color',[0.75 0.35 0.05], 'VerticalAlignment','middle', 'HorizontalAlignment','left');
     end
 
-    text(ax, emcX, A.Emc, sprintf(' Emc = %.4f V', A.Emc), 'VerticalAlignment','bottom', 'Color',[0.1 0.5 0.1]);
-    text(ax, emaX, A.Ema, sprintf(' Ema = %.4f V', A.Ema), 'VerticalAlignment','top', 'Color',[0.6 0.4 0]);
+    drawExtremaLabel(ax, emcX, A.Emc, sprintf('Emc = %.4f V', A.Emc), ...
+        [0.1 0.5 0.1], 'left', 0.04);
+    drawExtremaLabel(ax, emaX, A.Ema, sprintf('Ema = %.4f V', A.Ema), ...
+        [0.6 0.4 0], 'right', -0.04);
 
     drawDurationBracket(ax, cathStartX, cathEndX, yTop, sprintf('tc = %.3f ms', 1e3*A.tc_s));
     drawDurationBracket(ax, anodStartX, anodEndX, yTop - 0.06*dy, sprintf('ta = %.3f ms', 1e3*A.ta_s));
@@ -88,6 +90,29 @@ function drawBaselineSegment(ax, x1, x2, y, color, labelText, verticalAlignment)
     plot(ax, [xStart xEnd], [y y], '--', 'Color', color, 'LineWidth',1.4, 'HandleVisibility','off');
     text(ax, xStart, y, [' ' labelText], 'Color', color, 'VerticalAlignment', verticalAlignment, ...
         'BackgroundColor','w', 'Margin',1, 'Interpreter','none');
+end
+
+function drawExtremaLabel(ax, x, y, labelText, color, side, yOffsetFraction)
+    if ~isfinite(x) || ~isfinite(y)
+        return;
+    end
+    if strcmp(side, 'right')
+        alignment = 'left';
+        xOffset = 0.025;
+    else
+        alignment = 'right';
+        xOffset = -0.025;
+    end
+    xyText = labkit.ui.plot.offsetData(ax, [x y], [xOffset yOffsetFraction]);
+    xyText = labkit.ui.plot.clampData(ax, xyText, "Padding", 0.05);
+    text(ax, xyText(1), xyText(2), labelText, ...
+        'HorizontalAlignment', alignment, ...
+        'VerticalAlignment', 'middle', ...
+        'Color', color, ...
+        'BackgroundColor', 'w', ...
+        'Margin', 2, ...
+        'Interpreter', 'none', ...
+        'HandleVisibility', 'off');
 end
 
 function s = shortBaselineSource(sourceLabel)

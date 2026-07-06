@@ -73,7 +73,7 @@ function assertFilesAnalysisSectionsFit(fig)
         'rowSpacing', 'columnSpacing', 'padding', 'chrome', ...
         'columnWidth', 'rowHeight', 'position', 'leftWidth'};
     for k = 1:numel(sectionIds)
-        props = ui.sections.(sectionIds{k}).spec.props;
+        props = ui.sections.(sectionIds{k}).layout.props;
         for iProp = 1:numel(layoutProps)
             assert(~isfield(props, layoutProps{iProp}), ...
                 'DIC postprocess sections should use framework-owned layout.');

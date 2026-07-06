@@ -7,7 +7,7 @@ classdef DicDebugSamplePackTest < matlab.unittest.TestCase
             root = string(tempname);
             cleanup = onCleanup(@() cleanupFolder(root));
             mkdir(char(root));
-            debug = labkit.ui.diag.createContext("dic_debug_sample_test", struct( ...
+            debug = labkit.ui.debug.context("dic_debug_sample_test", struct( ...
                 "logFile", fullfile(char(root), "trace.log")));
 
             pre = dic_preprocess.debug.writeSamplePack(debug);

@@ -1,6 +1,6 @@
 % App-owned action table for Image Match. Expected caller is
 % image_match.definition. Output maps semantic action ids to handlers used
-% by labkit.ui.app.run. Handlers preserve the reference-match workflow while
+% by labkit.ui.runtime.run. Handlers preserve the reference-match workflow while
 % moving package-root lifecycle orchestration into the framework runtime.
 function actions = definitionActions()
 %DEFINITIONACTIONS Build the Image Match runtime action map.
@@ -95,7 +95,7 @@ function actions = definitionActions()
     end
 
     function onReferenceImageChosen(~, event)
-        paths = labkit.ui.view.filePaths(event.addedFiles);
+        paths = labkit.ui.control.filePaths(event.addedFiles);
         if isempty(paths)
             addLog('Reference image selection cancelled.');
             return;
@@ -126,12 +126,12 @@ function actions = definitionActions()
     end
 
     function onSourceImagesChosen(~, event)
-        newFiles = labkit.ui.view.filePaths(event.addedFiles);
+        newFiles = labkit.ui.control.filePaths(event.addedFiles);
         if isempty(newFiles)
             addLog('Image selection cancelled.');
             return;
         end
-        paths = labkit.ui.view.filePaths(event.files);
+        paths = labkit.ui.control.filePaths(event.files);
         if isempty(paths)
             paths = newFiles;
         end
@@ -147,7 +147,7 @@ function actions = definitionActions()
         S.steps = repmat(image_match.appState.emptyStep(), 0, 1);
         S.pendingDirty = false;
         invalidatePreviewCache();
-        S.outputFolder = string(labkit.ui.app.defaultOutputFolder( ...
+        S.outputFolder = string(labkit.ui.runtime.defaultOutputFolder( ...
             paths, "image_match", S.outputFolder));
         markExportDirty();
         addLog(sprintf('Loaded %d image(s).', numel(S.items)));
@@ -169,7 +169,7 @@ function actions = definitionActions()
         if isempty(S.items)
             return;
         end
-        removeIdx = labkit.ui.view.fileIndices(event.removedFiles, numel(S.items));
+        removeIdx = labkit.ui.control.fileIndices(event.removedFiles, numel(S.items));
         if isempty(removeIdx)
             refreshAll();
             return;
@@ -191,7 +191,7 @@ function actions = definitionActions()
         if isempty(S.items)
             return;
         end
-        idx = labkit.ui.view.fileIndices(event.selectedFiles, numel(S.items));
+        idx = labkit.ui.control.fileIndices(event.selectedFiles, numel(S.items));
         if isempty(idx)
             return;
         end
@@ -254,7 +254,7 @@ function actions = definitionActions()
     end
 
     function onChooseOutputFolder(~, ~)
-        [folder, cancelled] = labkit.ui.app.promptOutputFolder( ...
+        [folder, cancelled] = labkit.ui.runtime.promptOutputFolder( ...
             'Select image match export folder', S.outputFolder);
         if cancelled
             addLog('Export folder selection cancelled.');
@@ -277,7 +277,7 @@ function actions = definitionActions()
         end
         opts = struct();
         opts.outputFolder = S.outputFolder;
-        opts.format = labkit.ui.view.getValue(ui, 'exportFormat');
+        opts.format = labkit.ui.control.getValue(ui, 'exportFormat');
         task = image_match.appState.exportTask(S.items, S.referenceItem, S.steps, opts);
         if ~isempty(S.lastExport) && S.lastExportFingerprint == task.fingerprint
             addLog('Matched export is already up to date; skipped duplicate write.');
@@ -314,23 +314,23 @@ function actions = definitionActions()
 
     function refreshSourceLibrary()
         if isempty(S.items)
-            labkit.ui.view.setValue(ui, 'sourceImages', {});
-            labkit.ui.view.setValue(ui, 'imageStatus', 'Images: 0');
+            labkit.ui.control.setValue(ui, 'sourceImages', {});
+            labkit.ui.control.setValue(ui, 'imageStatus', 'Images: 0');
             return;
         end
 
         paths = cellstr(string({S.items.path}));
-        labkit.ui.view.setValue(ui, 'sourceImages', paths);
-        labkit.ui.view.setValue(ui, 'imageStatus', sprintf( ...
+        labkit.ui.control.setValue(ui, 'sourceImages', paths);
+        labkit.ui.control.setValue(ui, 'imageStatus', sprintf( ...
             'Images: %d | match steps: %d', numel(S.items), numel(S.steps)));
     end
 
     function refreshReferenceLibrary()
         if hasReference()
-            labkit.ui.view.setValue(ui, 'referenceImage', ...
+            labkit.ui.control.setValue(ui, 'referenceImage', ...
                 cellstr(S.referenceItem.path));
         else
-            labkit.ui.view.setValue(ui, 'referenceImage', {});
+            labkit.ui.control.setValue(ui, 'referenceImage', {});
         end
     end
 
@@ -338,8 +338,8 @@ function actions = definitionActions()
         if isempty(S.items)
             return;
         end
-        files = labkit.ui.view.getFiles(ui, 'sourceImages');
-        labkit.ui.view.setFileSelection( ...
+        files = labkit.ui.control.getFiles(ui, 'sourceImages');
+        labkit.ui.control.setFileSelection( ...
             ui, 'sourceImages', files(currentSelectionIndex()));
     end
 
@@ -349,14 +349,14 @@ function actions = definitionActions()
         hasSteps = ~isempty(S.steps);
         ui.controls.sourceImages.clearButton.Enable = onOff(hasImages);
         ui.controls.sourceImages.listbox.Enable = onOff(hasImages);
-        labkit.ui.view.setEnabled(ui, 'applyMatch', hasImages && refLoaded);
-        labkit.ui.view.setEnabled(ui, 'undoHistory', hasSteps);
-        labkit.ui.view.setEnabled(ui, 'resetHistory', hasSteps);
-        labkit.ui.view.setEnabled(ui, 'exportImages', hasImages && refLoaded);
+        labkit.ui.control.setEnabled(ui, 'applyMatch', hasImages && refLoaded);
+        labkit.ui.control.setEnabled(ui, 'undoHistory', hasSteps);
+        labkit.ui.control.setEnabled(ui, 'resetHistory', hasSteps);
+        labkit.ui.control.setEnabled(ui, 'exportImages', hasImages && refLoaded);
     end
 
     function refreshExportControls()
-        labkit.ui.view.setValue(ui, 'outputFolder', char(S.outputFolder));
+        labkit.ui.control.setValue(ui, 'outputFolder', char(S.outputFolder));
     end
 
     function refreshPreview()
@@ -367,16 +367,16 @@ function actions = definitionActions()
         original = currentPreviewSourceImage();
         switch currentPreviewMode()
             case 'Original'
-                labkit.ui.view.drawImage(ui, 'preview', original, ...
+                labkit.ui.plot.image(ui, 'preview', original, ...
                     'title', 'Original Preview');
             case 'Before | After'
                 matched = currentPreviewImage(S.pendingDirty);
-                labkit.ui.view.drawImage(ui, 'preview', ...
+                labkit.ui.plot.image(ui, 'preview', ...
                     image_match.userInterface.beforeAfterImage(original, matched), ...
                     'title', 'Before | After');
             otherwise
                 matched = currentPreviewImage(S.pendingDirty);
-                labkit.ui.view.drawImage(ui, 'preview', matched, ...
+                labkit.ui.plot.image(ui, 'preview', matched, ...
                     'title', 'Matched Preview');
         end
     end
@@ -395,20 +395,20 @@ function actions = definitionActions()
 
     function refreshHistory()
         ui.controls.historyTable.table.Data = image_match.userInterface.historyTableData(S.steps);
-        labkit.ui.view.setValue(ui, 'historyStatus', ...
+        labkit.ui.control.setValue(ui, 'historyStatus', ...
             sprintf('History steps: %d', numel(S.steps)));
     end
 
     function refreshDetails()
-        labkit.ui.view.setValue(ui, 'exportDetails', image_match.userInterface.detailLines( ...
+        labkit.ui.control.setValue(ui, 'exportDetails', image_match.userInterface.detailLines( ...
             S.items, max(currentSelectionIndex(), 1), S.referenceItem, ...
             S.steps, S.lastExport));
         updateCloseGuard();
     end
 
     function refreshMatchStatus()
-        labkit.ui.view.setValue(ui, 'matchFlow', ...
-            image_match.userInterface.matchFlowLines(labkit.ui.view.getValue(ui, 'matchMethod')));
+        labkit.ui.control.setValue(ui, 'matchFlow', ...
+            image_match.userInterface.matchFlowLines(labkit.ui.control.getValue(ui, 'matchMethod')));
     end
 
     function items = readOrReuseImages(paths)
@@ -532,10 +532,10 @@ function actions = definitionActions()
         if ~isempty(S.items) && hasReference()
             task = image_match.appState.exportTask(S.items, S.referenceItem, S.steps, struct( ...
                 'outputFolder', S.outputFolder, ...
-                'format', labkit.ui.view.getValue(ui, 'exportFormat')));
+                'format', labkit.ui.control.getValue(ui, 'exportFormat')));
             dirty = S.pendingDirty || S.lastExportFingerprint ~= task.fingerprint;
         end
-        labkit.ui.app.setCloseGuard(fig, dirty, ...
+        labkit.ui.runtime.setCloseGuard(fig, dirty, ...
             "Image match has unexported changes. Close anyway?");
     end
 
@@ -546,10 +546,10 @@ function actions = definitionActions()
 
     function step = currentMatchStep()
         step = image_match.analysisRun.makeStep( ...
-            labkit.ui.view.getValue(ui, 'matchMethod'), ...
-            labkit.ui.view.getValue(ui, 'matchStrength'), ...
-            labkit.ui.view.getValue(ui, 'toneStrength'), ...
-            labkit.ui.view.getValue(ui, 'colorStrength'));
+            labkit.ui.control.getValue(ui, 'matchMethod'), ...
+            labkit.ui.control.getValue(ui, 'matchStrength'), ...
+            labkit.ui.control.getValue(ui, 'toneStrength'), ...
+            labkit.ui.control.getValue(ui, 'colorStrength'));
     end
 
     function tf = hasReference()
@@ -567,7 +567,7 @@ function actions = definitionActions()
     end
 
     function mode = currentPreviewMode()
-        mode = string(labkit.ui.view.getValue(ui, 'preview'));
+        mode = string(labkit.ui.control.getValue(ui, 'preview'));
         if strlength(mode) == 0
             mode = "Matched";
         end
@@ -575,11 +575,11 @@ function actions = definitionActions()
     end
 
     function resetPreviewAxes()
-        labkit.ui.view.resetAxes(ui, 'preview', 'Matched Preview', true);
+        labkit.ui.plot.reset(ui, 'preview', 'Matched Preview', true);
     end
 
     function addLog(message)
-        labkit.ui.view.appendLog(ui, 'logPanel', message);
+        labkit.ui.control.appendLog(ui, 'logPanel', message);
         if debugLog.enabled
             debugLog.append(message);
         end
@@ -598,7 +598,7 @@ function actions = definitionActions()
 
     function showError(titleText, message)
         addLog(sprintf('%s: %s', titleText, message));
-        labkit.ui.app.showAlert(fig, message, titleText);
+        labkit.ui.runtime.showAlert(fig, message, titleText);
     end
 
     function showException(titleText, exception)

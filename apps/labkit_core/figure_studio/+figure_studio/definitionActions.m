@@ -21,11 +21,11 @@ end
 function state = onSaveFig(state, ~, services)
     ax = previewAxes(services.ui);
     if ~hasPreviewContent(ax)
-        labkit.ui.app.showAlert(services.figure, ...
+        labkit.ui.runtime.showAlert(services.figure, ...
             "No preview axes content is available to save.", "Figure Studio");
         return;
     end
-    [filepath, cancelled] = labkit.ui.app.promptOutputFile( ...
+    [filepath, cancelled] = labkit.ui.runtime.promptOutputFile( ...
         {'*.fig', 'MATLAB figure (*.fig)'}, "Save FIG", ...
         quickExportPath(state, ".fig"));
     if cancelled
@@ -155,7 +155,7 @@ function onStudioResized(fig)
 end
 
 function state = onFiguresChosen(state, payload, services)
-    paths = labkit.ui.view.filePaths(payload.event.addedFiles);
+    paths = labkit.ui.control.filePaths(payload.event.addedFiles);
     paths = paths(endsWith(lower(paths), ".fig"));
     if isempty(paths)
         addLog(services, "No FIG files selected.");
@@ -174,7 +174,7 @@ function state = onFiguresChosen(state, payload, services)
 end
 
 function state = onFiguresRemoved(state, payload, services)
-    paths = labkit.ui.view.filePaths(payload.event.removedFiles);
+    paths = labkit.ui.control.filePaths(payload.event.removedFiles);
     if isempty(paths) || isempty(state.items)
         return;
     end
@@ -185,7 +185,7 @@ function state = onFiguresRemoved(state, payload, services)
         state.currentIndex = 0;
         state.currentSource = "";
         state.status = "No FIG files loaded.";
-        cla(previewAxes(services.ui), 'reset');
+        labkit.ui.plot.reset(services.ui, 'preview', 'No figure loaded', true, 'main');
     else
         state = openCurrentItem(state, services);
     end
@@ -197,12 +197,12 @@ function state = onClearFigures(state, ~, services)
     state.currentIndex = 0;
     state.currentSource = "";
     state.status = "No FIG files loaded.";
-    cla(previewAxes(services.ui), 'reset');
+    labkit.ui.plot.reset(services.ui, 'preview', 'No figure loaded', true, 'main');
     state.summary = summaryLines(state);
 end
 
 function state = onSelectionChanged(state, payload, services)
-    paths = labkit.ui.view.filePaths(payload.event.selectedFiles);
+    paths = labkit.ui.control.filePaths(payload.event.selectedFiles);
     if isempty(paths)
         return;
     end
@@ -230,12 +230,12 @@ function state = openCurrentItem(state, services)
         addLog(services, "Opened FIG: " + string(item.path));
     catch ME
         reportException(services, "Open FIG", ME);
-        labkit.ui.app.showAlert(services.figure, ME.message, "Open FIG");
+        labkit.ui.runtime.showAlert(services.figure, ME.message, "Open FIG");
     end
 end
 
 function state = onStyleChanged(state, ~, services)
-    state.preset = string(labkit.ui.view.getValue(services.ui, "stylePreset"));
+    state.preset = string(labkit.ui.control.getValue(services.ui, "stylePreset"));
     previousStyle = state.style;
     if state.preset == "FIG default"
         state.style = state.figDefaultStyle;
@@ -252,7 +252,7 @@ end
 
 function state = onStyleParameterChanged(state, payload, services)
     changedId = changedControlId(payload);
-    state.aspectPreset = string(labkit.ui.view.getValue(services.ui, "aspectPreset"));
+    state.aspectPreset = string(labkit.ui.control.getValue(services.ui, "aspectPreset"));
     state.style = styleFromUi(state, services.ui, state.style, changedId, ...
         state.aspectPreset);
     state = applyStyleToPreviewIfReady(state, services);
@@ -270,7 +270,7 @@ function state = applyStyleToPreviewIfReady(state, services)
 end
 
 function state = onChooseOutputFolder(state, ~, services)
-    [selected, cancelled] = labkit.ui.app.promptOutputFolder( ...
+    [selected, cancelled] = labkit.ui.runtime.promptOutputFolder( ...
         "Choose Figure Studio output folder", state.outputFolder);
     if cancelled
         return;
@@ -282,7 +282,7 @@ end
 function state = onExportCurrent(state, ~, services)
     ax = previewAxes(services.ui);
     if ~hasPreviewContent(ax)
-        labkit.ui.app.showAlert(services.figure, ...
+        labkit.ui.runtime.showAlert(services.figure, ...
             "No preview axes content is available to export.", "Figure Studio");
         return;
     end
@@ -295,7 +295,7 @@ function state = onExportCurrent(state, ~, services)
         addLog(services, state.status);
     catch ME
         reportException(services, "Export package", ME);
-        labkit.ui.app.showAlert(services.figure, ME.message, "Export package");
+        labkit.ui.runtime.showAlert(services.figure, ME.message, "Export package");
     end
 end
 
@@ -311,10 +311,10 @@ function style = styleFromUi(state, ui, previousStyle, changedId, aspectPreset)
         aspectPreset = "Custom";
     end
     previousBase = finiteValue(previousStyle.baseFontSize, 12);
-    baseFontSize = finiteValue(labkit.ui.view.getValue(ui, "baseFontSize"), previousBase);
-    titleFontSize = finiteValue(labkit.ui.view.getValue(ui, "titleFontSize"), style.titleFontSize);
-    labelFontSize = finiteValue(labkit.ui.view.getValue(ui, "labelFontSize"), style.labelFontSize);
-    tickFontSize = finiteValue(labkit.ui.view.getValue(ui, "tickFontSize"), style.tickFontSize);
+    baseFontSize = finiteValue(labkit.ui.control.getValue(ui, "baseFontSize"), previousBase);
+    titleFontSize = finiteValue(labkit.ui.control.getValue(ui, "titleFontSize"), style.titleFontSize);
+    labelFontSize = finiteValue(labkit.ui.control.getValue(ui, "labelFontSize"), style.labelFontSize);
+    tickFontSize = finiteValue(labkit.ui.control.getValue(ui, "tickFontSize"), style.tickFontSize);
     baseChanged = changedId == "baseFontSize" || ...
         abs(baseFontSize - previousBase) > eps(previousBase);
     style.baseFontSize = baseFontSize;
@@ -337,27 +337,27 @@ function style = styleFromUi(state, ui, previousStyle, changedId, aspectPreset)
         style.fontOverrides.tick = abs(tickFontSize - ...
             (baseFontSize + finiteValue(style.tickFontOffset, -1))) > eps(baseFontSize);
     end
-    style.dataLineWidth = finiteValue(labkit.ui.view.getValue(ui, "dataLineWidth"), 1.5);
-    style.axesLineWidth = finiteValue(labkit.ui.view.getValue(ui, "axesLineWidth"), 1.25);
-    style.gridAlpha = min(max(finiteValue(labkit.ui.view.getValue(ui, "gridAlpha"), 0.12), 0), 1);
-    style.gridVisible = string(labkit.ui.view.getValue(ui, "gridVisible")) == "On";
-    style.canvasWidth = finiteValue(labkit.ui.view.getValue(ui, "canvasWidth"), 1200);
-    style.canvasHeight = finiteValue(labkit.ui.view.getValue(ui, "canvasHeight"), 900);
-    style.exportScale = finiteValue(labkit.ui.view.getValue(ui, "exportScale"), 2);
-    style.boundaryLines = string(labkit.ui.view.getValue(ui, "boundaryLines")) == "On";
+    style.dataLineWidth = finiteValue(labkit.ui.control.getValue(ui, "dataLineWidth"), 1.5);
+    style.axesLineWidth = finiteValue(labkit.ui.control.getValue(ui, "axesLineWidth"), 1.25);
+    style.gridAlpha = min(max(finiteValue(labkit.ui.control.getValue(ui, "gridAlpha"), 0.12), 0), 1);
+    style.gridVisible = string(labkit.ui.control.getValue(ui, "gridVisible")) == "On";
+    style.canvasWidth = finiteValue(labkit.ui.control.getValue(ui, "canvasWidth"), 1200);
+    style.canvasHeight = finiteValue(labkit.ui.control.getValue(ui, "canvasHeight"), 900);
+    style.exportScale = finiteValue(labkit.ui.control.getValue(ui, "exportScale"), 2);
+    style.boundaryLines = string(labkit.ui.control.getValue(ui, "boundaryLines")) == "On";
     style = applyAspectPreset(style, aspectPreset, changedId);
 end
 
 function state = onQuickExport(state, ~, services, format)
     ax = previewAxes(services.ui);
     if ~hasPreviewContent(ax)
-        labkit.ui.app.showAlert(services.figure, ...
+        labkit.ui.runtime.showAlert(services.figure, ...
             "No preview axes content is available to export.", "Figure Studio");
         return;
     end
     ext = "." + format;
     filepath = quickExportPath(state, ext);
-    [filepath, cancelled] = labkit.ui.app.promptOutputFile( ...
+    [filepath, cancelled] = labkit.ui.runtime.promptOutputFile( ...
         {char("*" + ext), char(upper(format) + " file")}, ...
         "Export " + upper(format), filepath);
     if cancelled
@@ -381,7 +381,7 @@ function state = onQuickExport(state, ~, services, format)
         figure_studio.resultFiles.applyFigureStyle(ax, previewStyle(state.style));
         clearFrameworkPreviewTitle(ax);
         reportException(services, "Quick export", ME);
-        labkit.ui.app.showAlert(services.figure, ME.message, "Quick export");
+        labkit.ui.runtime.showAlert(services.figure, ME.message, "Quick export");
     end
 end
 
@@ -568,7 +568,7 @@ function lines = summaryLines(state)
 end
 
 function addLog(services, msg)
-    labkit.ui.view.appendLog(services.ui, 'appLog', char(string(msg)));
+    labkit.ui.control.appendLog(services.ui, 'appLog', char(string(msg)));
     if isDebugEnabled(services.debug)
         services.debug.append(string(msg));
     end

@@ -1,10 +1,10 @@
-% App-owned renderer for DIC Postprocess. Expected caller is labkit.ui.app.run
+% App-owned renderer for DIC Postprocess. Expected caller is labkit.ui.runtime.run
 % after actions update state. Inputs are app state and UI registry. Side
 % effects are limited to UI control, table, text, and axes updates.
 function updateWorkbenchFromState(state, ui, ~)
-    labkit.ui.view.setValue(ui, "matFile", fileValue(state.matPath));
-    labkit.ui.view.setValue(ui, "referenceFile", fileValue(state.referencePath));
-    labkit.ui.view.setValue(ui, "maskFile", fileValue(state.maskPath));
+    labkit.ui.control.setValue(ui, "matFile", fileValue(state.matPath));
+    labkit.ui.control.setValue(ui, "referenceFile", fileValue(state.referencePath));
+    labkit.ui.control.setValue(ui, "maskFile", fileValue(state.maskPath));
     ui.controls.resultTable.table.Data = ...
         dic_postprocess.userInterface.summaryTableData(state.summaryTable);
     ui.controls.summaryText.textArea.Value = summaryLines(state, ui);
@@ -13,9 +13,9 @@ end
 
 function renderOverlays(state, ui)
     if isempty(state.overlayExx) || isempty(state.overlayEyy)
-        labkit.ui.view.resetAxes(ui, 'overlayAxes', ...
+        labkit.ui.plot.reset(ui, 'overlayAxes', ...
             'EXX Overlay', true, 'exx');
-        labkit.ui.view.resetAxes(ui, 'overlayAxes', ...
+        labkit.ui.plot.reset(ui, 'overlayAxes', ...
             'EYY Overlay', true, 'eyy');
         return;
     end

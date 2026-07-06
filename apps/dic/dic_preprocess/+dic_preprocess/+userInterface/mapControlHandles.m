@@ -1,8 +1,8 @@
 % Expected caller: DIC preprocess startup action after framework UI creation. Input is
-% the UI 4.0 registry. Output is the app's legacy-named control handle struct
+% the UI 5 registry. Output is the app's legacy-named control handle struct
 % used by existing app-owned interaction helpers. Side effects: none.
 function controls = mapControlHandles(ui)
-%MAPCONTROLHANDLES Map UI 4.0 adapters to DIC preprocess control handles.
+%MAPCONTROLHANDLES Map UI 5 adapters to DIC preprocess control handles.
 
     controls = struct();
     controls.ddPreview = ui.controls.previewMode.valueHandle;

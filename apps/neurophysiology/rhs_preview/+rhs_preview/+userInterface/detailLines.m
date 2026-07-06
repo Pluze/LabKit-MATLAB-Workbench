@@ -1,4 +1,4 @@
-% Expected caller: rhs_preview.definitionActions and rhs_preview.userInterface.buildWorkbenchSpec. Input is
+% Expected caller: rhs_preview.definitionActions and rhs_preview.userInterface.buildWorkbenchLayout. Input is
 % the app state struct. Output is a cell array of display lines for a status
 % panel. No UI handles or app state are mutated.
 function lines = detailLines(S)

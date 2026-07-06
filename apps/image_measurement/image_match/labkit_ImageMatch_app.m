@@ -3,7 +3,7 @@ function varargout = labkit_ImageMatch_app(varargin)
 
     requirements = image_match.requirements();
     appVersion = image_match.version();
-    [requestHandled, requestOutputs, debugLog] = labkit.ui.app.dispatchRequest( ...
+    [requestHandled, requestOutputs, debugLog] = labkit.ui.runtime.dispatchRequest( ...
         'labkit_ImageMatch_app', varargin, nargout, "Requirements", requirements, "Version", appVersion);
     if requestHandled
         varargout = requestOutputs;
@@ -20,8 +20,8 @@ function varargout = labkit_ImageMatch_app(varargin)
     end
 
     request = struct("debug", debugLog);
-    fig = labkit.ui.app.run(image_match.definition(), request);
-    labkit.ui.app.applyVersionTitle(fig, appVersion);
+    fig = labkit.ui.runtime.run(image_match.definition(), request);
+    labkit.ui.runtime.applyVersionTitle(fig, appVersion);
     if nargout >= 1
         varargout{1} = fig;
     end

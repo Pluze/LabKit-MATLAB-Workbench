@@ -1,8 +1,8 @@
 % Expected caller: curvature.definitionActions after startup. Inputs are the
-% UI 4.0 registry and the scale-bar tool. Output is the app's control handle
+% UI 5 registry and the scale-bar tool. Output is the app's control handle
 % struct used by the existing runner logic. Side effects: none.
 function controls = mapControlHandles(ui, scaleTool)
-%MAPCONTROLHANDLES Map UI 4.0 adapters to curvature control handles.
+%MAPCONTROLHANDLES Map UI 5 adapters to curvature control handles.
 
     controls = struct();
     controls.txtPointCount = ui.controls.pointCount.valueHandle;

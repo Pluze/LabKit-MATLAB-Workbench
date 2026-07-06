@@ -1,4 +1,4 @@
-% App-owned renderer for Figure Studio. Expected caller is labkit.ui.app.run.
+% App-owned renderer for Figure Studio. Expected caller is labkit.ui.runtime.run.
 % Inputs are app state and UI registry. Side effects are limited to visible
 % controls, preview axes, status text, and buttons.
 function updateWorkbenchFromState(state, ui, ~)
@@ -10,14 +10,14 @@ end
 
 function renderList(state, ui)
     if isempty(state.items)
-        labkit.ui.view.setListItems(ui, 'figFiles', {});
+        labkit.ui.control.setListItems(ui, 'figFiles', {});
         return;
     end
-    labkit.ui.view.setValue(ui, 'figFiles', fileEntries(state.items));
+    labkit.ui.control.setValue(ui, 'figFiles', fileEntries(state.items));
     idx = currentIndexOrOne(state);
-    files = labkit.ui.view.getFiles(ui, 'figFiles');
+    files = labkit.ui.control.getFiles(ui, 'figFiles');
     if ~isempty(files)
-        labkit.ui.view.setFileSelection(ui, 'figFiles', files(idx));
+        labkit.ui.control.setFileSelection(ui, 'figFiles', files(idx));
     end
 end
 
@@ -43,20 +43,20 @@ function renderControls(state, ui)
     ui.controls.outputFolder.valueHandle.Value = char(state.outputFolder);
     ui.controls.currentSource.valueHandle.Value = char(state.currentSource);
     ui.controls.statusSummary.valueHandle.Value = char(join(state.summary, " | "));
-    labkit.ui.view.setValue(ui, "stylePreset", char(state.preset));
-    labkit.ui.view.setValue(ui, "baseFontSize", state.style.baseFontSize);
-    labkit.ui.view.setValue(ui, "titleFontSize", state.style.titleFontSize);
-    labkit.ui.view.setValue(ui, "labelFontSize", state.style.labelFontSize);
-    labkit.ui.view.setValue(ui, "tickFontSize", state.style.tickFontSize);
-    labkit.ui.view.setValue(ui, "dataLineWidth", state.style.dataLineWidth);
-    labkit.ui.view.setValue(ui, "axesLineWidth", state.style.axesLineWidth);
-    labkit.ui.view.setValue(ui, "gridAlpha", state.style.gridAlpha);
-    labkit.ui.view.setValue(ui, "gridVisible", onOffText(state.style.gridVisible));
-    labkit.ui.view.setValue(ui, "canvasWidth", state.style.canvasWidth);
-    labkit.ui.view.setValue(ui, "canvasHeight", state.style.canvasHeight);
-    labkit.ui.view.setValue(ui, "exportScale", state.style.exportScale);
-    labkit.ui.view.setValue(ui, "aspectPreset", char(state.aspectPreset));
-    labkit.ui.view.setValue(ui, "boundaryLines", onOffText(state.style.boundaryLines));
+    labkit.ui.control.setValue(ui, "stylePreset", char(state.preset));
+    labkit.ui.control.setValue(ui, "baseFontSize", state.style.baseFontSize);
+    labkit.ui.control.setValue(ui, "titleFontSize", state.style.titleFontSize);
+    labkit.ui.control.setValue(ui, "labelFontSize", state.style.labelFontSize);
+    labkit.ui.control.setValue(ui, "tickFontSize", state.style.tickFontSize);
+    labkit.ui.control.setValue(ui, "dataLineWidth", state.style.dataLineWidth);
+    labkit.ui.control.setValue(ui, "axesLineWidth", state.style.axesLineWidth);
+    labkit.ui.control.setValue(ui, "gridAlpha", state.style.gridAlpha);
+    labkit.ui.control.setValue(ui, "gridVisible", onOffText(state.style.gridVisible));
+    labkit.ui.control.setValue(ui, "canvasWidth", state.style.canvasWidth);
+    labkit.ui.control.setValue(ui, "canvasHeight", state.style.canvasHeight);
+    labkit.ui.control.setValue(ui, "exportScale", state.style.exportScale);
+    labkit.ui.control.setValue(ui, "aspectPreset", char(state.aspectPreset));
+    labkit.ui.control.setValue(ui, "boundaryLines", onOffText(state.style.boundaryLines));
     renderEmptyPreview(state, ui);
 end
 
@@ -69,7 +69,8 @@ function renderEmptyPreview(state, ui)
         ax.Visible = 'on';
         return;
     end
-    cla(ax, 'reset');
+    labkit.ui.plot.reset(ui, 'preview', 'No figure loaded', true, 'main');
+    ax = ui.controls.preview.axesById.main;
     ax.Visible = 'off';
     title(ax, "No figure loaded");
 end

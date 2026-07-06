@@ -1,6 +1,6 @@
 % App-owned action registry for Focus Stack. Expected caller is
 % focus_stack.definition. Output maps semantic action ids to handlers used by
-% labkit.ui.app.run. Handlers own image loading, fusion, exports, and debug
+% labkit.ui.runtime.run. Handlers own image loading, fusion, exports, and debug
 % sample setup.
 function actions = definitionActions()
     actions = struct( ...
@@ -34,15 +34,15 @@ function state = onStartup(state, ~, services)
 end
 
 function state = onOpenFilesChosen(state, payload, services)
-    paths = labkit.ui.view.filePaths(payload.event.files);
+    paths = labkit.ui.control.filePaths(payload.event.files);
     if isempty(paths)
-        paths = labkit.ui.view.filePaths(payload.event.addedFiles);
+        paths = labkit.ui.control.filePaths(payload.event.addedFiles);
     end
     if isempty(paths)
         addLog(services, 'Image selection cancelled.');
         return;
     end
-    state = loadImagePaths(state, paths, string(labkit.ui.app.defaultOutputFolder( ...
+    state = loadImagePaths(state, paths, string(labkit.ui.runtime.defaultOutputFolder( ...
         paths, "focus_stack", state.folder)), ...
         sprintf('Selected image files from %s', char(fileparts(paths(1)))), ...
         sprintf('Loaded %d focus image file(s).', numel(paths)), services);
@@ -54,7 +54,7 @@ function state = onClearImages(state, ~, services)
 end
 
 function state = onRemoveImages(state, payload, services)
-    removeIdx = labkit.ui.view.fileIndices(payload.event.removedFiles, ...
+    removeIdx = labkit.ui.control.fileIndices(payload.event.removedFiles, ...
         numel(state.paths));
     if isempty(removeIdx)
         return;
@@ -66,7 +66,7 @@ function state = onRemoveImages(state, payload, services)
         addLog(services, 'At least two focus image files are required.');
         return;
     end
-    state = loadImagePaths(state, paths, string(labkit.ui.app.defaultOutputFolder( ...
+    state = loadImagePaths(state, paths, string(labkit.ui.runtime.defaultOutputFolder( ...
         paths, "focus_stack", state.folder)), ...
         sprintf('Selected image files from %s', char(fileparts(paths(1)))), ...
         sprintf('Removed image file(s); %d remaining.', numel(paths)), services);
@@ -100,7 +100,7 @@ function state = onRunFocusStack(state, ~, services)
     end
 
     opts = currentFusionOptions(services.ui);
-    registerStack = labkit.ui.view.getValue(services.ui, 'autoRegister');
+    registerStack = labkit.ui.control.getValue(services.ui, 'autoRegister');
     task = focus_stack.appState.runTask(state.paths, state.images, opts, ...
         registerStack);
     if state.result.ok && state.lastRunFingerprint == task.fingerprint
@@ -129,14 +129,14 @@ end
 function state = onFusionPresetChanged(state, ~, services)
     ui = services.ui;
     settings = focus_stack.appState.fusionPresetSettings( ...
-        labkit.ui.view.getValue(ui, 'fusionPreset'));
-    labkit.ui.view.setValue(ui, 'focusWindow', settings.focusWindow);
-    labkit.ui.view.setValue(ui, 'smoothRadius', settings.smoothRadius);
-    labkit.ui.view.setValue(ui, 'uncertainBlend', ...
+        labkit.ui.control.getValue(ui, 'fusionPreset'));
+    labkit.ui.control.setValue(ui, 'focusWindow', settings.focusWindow);
+    labkit.ui.control.setValue(ui, 'smoothRadius', settings.smoothRadius);
+    labkit.ui.control.setValue(ui, 'uncertainBlend', ...
         settings.minConfidencePercent);
     state = markResultDirty(state);
     addLog(services, sprintf('Fusion preset set to %s.', ...
-        labkit.ui.view.getValue(ui, 'fusionPreset')));
+        labkit.ui.control.getValue(ui, 'fusionPreset')));
 end
 
 function state = onFusionOptionsChanged(state, ~, ~)
@@ -224,17 +224,17 @@ end
 
 function opts = currentFusionOptions(ui)
     opts = struct();
-    opts.focusWindow = finiteScalar(labkit.ui.view.getValue(ui, ...
+    opts.focusWindow = finiteScalar(labkit.ui.control.getValue(ui, ...
         'focusWindow'), 7, 3, inf, true);
-    opts.smoothRadius = finiteScalar(labkit.ui.view.getValue(ui, ...
+    opts.smoothRadius = finiteScalar(labkit.ui.control.getValue(ui, ...
         'smoothRadius'), 1, 0, inf, true);
-    opts.minConfidence = finiteScalar(labkit.ui.view.getValue(ui, ...
+    opts.minConfidence = finiteScalar(labkit.ui.control.getValue(ui, ...
         'uncertainBlend'), 25, 0, 100, false) / 100;
 end
 
 function filepath = chooseSavePath(state, titleText, defaultName)
     defaultPath = fullfile(defaultSaveFolder(state), defaultName);
-    [filepath, cancelled] = labkit.ui.app.promptOutputFile( ...
+    [filepath, cancelled] = labkit.ui.runtime.promptOutputFile( ...
         {'*.png;*.csv', 'Export files'}, titleText, defaultPath);
     if cancelled
         filepath = "";
@@ -244,7 +244,7 @@ end
 function folder = defaultSaveFolder(state)
     folder = char(state.folder);
     if isempty(folder) || exist(folder, 'dir') ~= 7
-        folder = labkit.ui.app.defaultDialogFolder("output");
+        folder = labkit.ui.runtime.defaultDialogFolder("output");
     end
 end
 
@@ -259,7 +259,7 @@ end
 
 function showError(services, titleText, message)
     addLog(services, sprintf('%s: %s', titleText, message));
-    labkit.ui.app.showAlert(services.figure, message, titleText);
+    labkit.ui.runtime.showAlert(services.figure, message, titleText);
 end
 
 function showException(services, titleText, exception)
@@ -270,7 +270,7 @@ function showException(services, titleText, exception)
 end
 
 function addLog(services, message)
-    labkit.ui.view.appendLog(services.ui, 'logPanel', message);
+    labkit.ui.control.appendLog(services.ui, 'logPanel', message);
     if isDebugEnabled(services.debug)
         services.debug.append(message);
     end

@@ -1,5 +1,5 @@
 % App-owned action table for CSC. Expected caller is csc.definition. Output
-% maps semantic action ids to handlers used by labkit.ui.app.run. Handlers
+% maps semantic action ids to handlers used by labkit.ui.runtime.run. Handlers
 % preserve the legacy CSC GUI workflow while moving package-root orchestration
 % into the declarative runtime.
 function actions = definitionActions()
@@ -25,7 +25,7 @@ function state = onStartup(state, ~, services)
 end
 
 function state = onOpenFilesChosen(state, payload, services)
-    paths = labkit.ui.view.filePaths(payload.event.addedFiles);
+    paths = labkit.ui.control.filePaths(payload.event.addedFiles);
     if isempty(paths)
         addLog(services, 'Open file canceled.');
         return;
@@ -73,7 +73,7 @@ function state = addFiles(state, filepaths, services)
 
     if ~isempty(failed)
         firstError = failed(1);
-        labkit.ui.app.showAlert(services.figure, ...
+        labkit.ui.runtime.showAlert(services.figure, ...
             sprintf('Failed to load:\n%s\n\n%s', ...
             firstError.filepath, firstError.message), 'Load error');
     end
@@ -88,8 +88,8 @@ end
 
 function state = onSelectFile(state, ~, services)
     ui = services.ui;
-    files = labkit.ui.view.getValue(ui, 'files');
-    paths = labkit.ui.view.filePaths(files);
+    files = labkit.ui.control.getValue(ui, 'files');
+    paths = labkit.ui.control.filePaths(files);
     if isempty(state.items) || isempty(paths)
         return;
     end
@@ -105,7 +105,7 @@ function state = onRemoveSelected(state, payload, services)
     if isempty(state.items)
         return;
     end
-    paths = labkit.ui.view.filePaths(payload.event.removedFiles);
+    paths = labkit.ui.control.filePaths(payload.event.removedFiles);
     if isempty(paths)
         return;
     end
@@ -133,7 +133,7 @@ end
 
 function state = reloadSelectedFile(state, ~, services)
     if isempty(state.items) || isempty(state.current)
-        labkit.ui.app.showAlert(services.figure, 'No file selected.', ...
+        labkit.ui.runtime.showAlert(services.figure, 'No file selected.', ...
             'Reload');
         addLog(services, 'Reload failed: no file selected.');
         return;
@@ -169,18 +169,18 @@ end
 function state = refreshFileList(state, services)
     ui = services.ui;
     if isempty(state.items)
-        labkit.ui.view.setListItems(ui, 'files', {});
+        labkit.ui.control.setListItems(ui, 'files', {});
         ui.controls.files.status.Value = 'No files loaded';
         return;
     end
     paths = string({state.items.filepath}).';
-    labkit.ui.view.setValue(ui, 'files', paths);
+    labkit.ui.control.setValue(ui, 'files', paths);
     if isempty(state.current) || state.current < 1 || ...
             state.current > numel(paths)
         state.current = 1;
     end
-    files = labkit.ui.view.getFiles(ui, 'files');
-    labkit.ui.view.setFileSelection(ui, 'files', files(state.current));
+    files = labkit.ui.control.getFiles(ui, 'files');
+    labkit.ui.control.setFileSelection(ui, 'files', files(state.current));
     ui.controls.files.status.Value = sprintf('%d file(s) loaded', ...
         numel(state.items));
 end
@@ -284,8 +284,8 @@ end
 
 function state = clearBothAxes(state, ~, services)
     axesById = services.ui.controls.plotAxes.axesById;
-    cla(axesById.top);
-    cla(axesById.bottom);
+    labkit.ui.plot.clear(axesById.top, "ResetScale", true);
+    labkit.ui.plot.clear(axesById.bottom, "ResetScale", true);
     title(axesById.top, 'Top Plot');
     xlabel(axesById.top, 'X');
     ylabel(axesById.top, 'Y');
@@ -550,7 +550,7 @@ function text = areaStatusText(area)
 end
 
 function addLog(services, msg)
-    labkit.ui.view.appendLog(services.ui, 'appLog', msg);
+    labkit.ui.control.appendLog(services.ui, 'appLog', msg);
     services.debug.append(msg);
 end
 

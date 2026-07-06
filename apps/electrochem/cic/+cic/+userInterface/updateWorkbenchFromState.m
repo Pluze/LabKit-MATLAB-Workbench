@@ -1,4 +1,4 @@
-% App-owned renderer for CIC. Expected caller is labkit.ui.app.run after
+% App-owned renderer for CIC. Expected caller is labkit.ui.runtime.run after
 % actions update state. Inputs are app state and UI registry. Side effects
 % are limited to UI control, table, text, and axes updates.
 function updateWorkbenchFromState(state, ui, ~)
@@ -10,16 +10,16 @@ end
 
 function renderFileList(state, ui)
     if isempty(state.items)
-        labkit.ui.view.setListItems(ui, 'files', {});
+        labkit.ui.control.setListItems(ui, 'files', {});
         ui.controls.files.status.Value = 'No files loaded';
         return;
     end
 
     paths = string({state.items.filepath}).';
-    labkit.ui.view.setValue(ui, 'files', paths);
+    labkit.ui.control.setValue(ui, 'files', paths);
     current = currentIndex(state);
-    files = labkit.ui.view.getFiles(ui, 'files');
-    labkit.ui.view.setFileSelection(ui, 'files', files(current));
+    files = labkit.ui.control.getFiles(ui, 'files');
+    labkit.ui.control.setFileSelection(ui, 'files', files(current));
     ui.controls.files.status.Value = sprintf('%d file(s) loaded', ...
         numel(state.items));
 end
@@ -86,8 +86,9 @@ function plotOneAxis(ax, analysis, xChoice, yChoice, showGrid, itemName, ui)
     request = cic.userInterface.plotRequest(analysis, itemName, xChoice, yChoice);
     coords = request.coords;
 
-    plot(ax, request.x, request.y, 'LineWidth', 1.25, ...
+    hLine = plot(ax, request.x, request.y, 'LineWidth', 1.25, ...
         'Color', request.baseColor);
+    labkit.ui.plot.fit(ax, hLine);
     hold(ax, 'on');
 
     if ui.controls.showShading.valueHandle.Value
@@ -145,5 +146,5 @@ function idx = currentIndex(state)
 end
 
 function clearAxis(ax)
-    cla(ax);
+    labkit.ui.plot.clear(ax, "ResetScale", true);
 end

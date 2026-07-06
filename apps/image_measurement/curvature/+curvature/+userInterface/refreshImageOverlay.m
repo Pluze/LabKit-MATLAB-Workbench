@@ -1,5 +1,5 @@
 % Debug-compatible callback bridge for the dense-points checkbox. Expected
-% caller: curvature.userInterface.buildWorkbenchSpec. Inputs are the UI control and event from
+% caller: curvature.userInterface.buildWorkbenchLayout. Inputs are the UI control and event from
 % MATLAB. Side effects: dispatches the app-owned runtime action while keeping
 % this function name visible to debug callback instrumentation.
 function refreshImageOverlay(control, event)

@@ -3,7 +3,7 @@
 function drawStackedPreview(ax, S)
 %DRAWSTACKEDPREVIEW Draw time-aligned stacked RHS preview traces.
 
-    cla(ax);
+    labkit.ui.plot.clear(ax, "ResetScale", true);
     title(ax, 'RHS Stacked Preview');
     xlabel(ax, 'Time (s)');
     ylabel(ax, 'Channel');

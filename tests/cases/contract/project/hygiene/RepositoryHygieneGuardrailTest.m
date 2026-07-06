@@ -107,7 +107,7 @@ classdef RepositoryHygieneGuardrailTest < matlab.unittest.TestCase
             patterns = unsafeStateNumericAssignmentPatterns();
             unsafe = [
                 "step.amount = double(amount);"
-                "S.windowStartSec = double(labkit.ui.view.getValue(ui, ""windowStartPanner""));"
+                "S.windowStartSec = double(labkit.ui.control.getValue(ui, ""windowStartPanner""));"
                 "optsOut.cropWidth = double(optionValue(opts, 'cropWidth', 0));"
             ];
             safe = [
@@ -351,7 +351,7 @@ end
 function patterns = unsafeStateNumericAssignmentPatterns()
     patterns = [
         "^\s*step\.[A-Za-z]\w*\s*=\s*double\(\s*[A-Za-z]\w*\s*\)\s*;"
-        "^\s*S\.[A-Za-z]\w*\s*=\s*double\(\s*labkit\.ui\.view\.getValue\("
+        "^\s*S\.[A-Za-z]\w*\s*=\s*double\(\s*labkit\.ui\.control\.getValue\("
         "^\s*optsOut\.[A-Za-z]\w*\s*=\s*double\(\s*optionValue\("
     ];
 end
