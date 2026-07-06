@@ -129,12 +129,8 @@ function ui = createTabbedWorkbenchShell(figName, figPosition, leftWidth, labels
         'onTrace', debugTrace(debug)));
 end
 
-function height = utilityRowHeight(utilities)
-    height = 30;
-    if isstruct(utilities) && isfield(utilities, 'Visible') && ...
-            ~logical(utilities.Visible)
-        height = 0;
-    end
+function height = utilityRowHeight(~)
+    height = 0;
 end
 
 function mode = guiTestMode()

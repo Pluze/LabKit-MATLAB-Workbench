@@ -84,11 +84,11 @@ function verify_gui_layout_ui_app_runtime()
         'Runtime action failures should be reported through the debug context.');
     snapshotPath = string(tempname) + ".mat";
     setappdata(fig, 'labkitUiUtilityStateFile', snapshotPath);
-    saveStateButton = findall(fig, 'Tag', 'labkitUiUtilitySaveState');
-    loadStateButton = findall(fig, 'Tag', 'labkitUiUtilityLoadState');
-    assert(~isempty(saveStateButton) && ~isempty(loadStateButton), ...
+    saveStateMenu = findall(fig, 'Tag', 'labkitUiUtilitySaveState');
+    loadStateMenu = findall(fig, 'Tag', 'labkitUiUtilityLoadState');
+    assert(~isempty(saveStateMenu) && ~isempty(loadStateMenu), ...
         'Workbench utility bar should expose state snapshot commands.');
-    h.invokeCallback(saveStateButton(1), 'ButtonPushedFcn');
+    h.invokeCallback(saveStateMenu(1), 'MenuSelectedFcn');
     assert(isfile(snapshotPath), utilityFailureMessage(fig, ...
         'Utility Save State should write the configured snapshot file.'));
     savedVariables = string(who('-file', snapshotPath));
@@ -106,7 +106,7 @@ function verify_gui_layout_ui_app_runtime()
     runtime = getappdata(fig, 'labkitUiAppRuntime');
     assert(runtime.state.count == 21, ...
         'Probe state should change before snapshot restore.');
-    h.invokeCallback(loadStateButton(1), 'ButtonPushedFcn');
+    h.invokeCallback(loadStateMenu(1), 'MenuSelectedFcn');
     runtime = getappdata(fig, 'labkitUiAppRuntime');
     assert(runtime.state.count == 20 && runtime.state.transient == "restored" && ...
         runtime.state.afterLoadCount == 1, ...

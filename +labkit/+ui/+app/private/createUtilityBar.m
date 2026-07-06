@@ -1,47 +1,51 @@
 % Private UI app helper. Expected caller: createTabbedWorkbenchShell. Inputs
 % are the app figure, parent grid, and optional utility spec. Side effects:
-% creates framework-owned app utility controls for current-plot actions,
-% app screenshots, and state snapshot save/load.
+% creates framework-owned app utility menus for plot actions, app
+% screenshots, and state snapshot save/load.
 function panel = createUtilityBar(fig, parent, utilities)
     visible = utilityEnabled(utilities, 'Visible', true);
     panel = uipanel(parent, ...
         'BorderType', 'none', ...
         'Tag', 'labkitUiUtilityBar', ...
-        'Visible', matlabVisibility(visible));
-    grid = uigridlayout(panel, [1 7]);
-    grid.RowHeight = {'1x'};
-    grid.ColumnWidth = {'fit', 'fit', 'fit', 'fit', 'fit', 'fit', '1x'};
-    grid.Padding = [0 0 0 0];
-    grid.ColumnSpacing = 6;
+        'Visible', 'off');
+    if ~visible
+        return;
+    end
 
-    addButton(grid, 1, "Pop Out", "labkitUiUtilityPopout", ...
+    plotMenu = uimenu(fig, 'Text', 'Plot', 'Tag', 'labkitUiUtilityPlotMenu', ...
+        'Enable', matlabOnOff(utilityEnabled(utilities, 'Plot', true)));
+    addMenuItem(plotMenu, "Pop out all plots", "labkitUiUtilityPopout", ...
         utilityEnabled(utilities, 'Plot', true), ...
-        @(~,~) runUtility(fig, @() popoutCurrentPlot(fig)));
-    addButton(grid, 2, "Copy Plot", "labkitUiUtilityCopyPlot", ...
+        @(~,~) runUtility(fig, @() popoutAllPlots(fig)));
+    addMenuItem(plotMenu, "Copy all plots", "labkitUiUtilityCopyPlot", ...
         utilityEnabled(utilities, 'Plot', true), ...
-        @(~,~) runUtility(fig, @() copyCurrentPlot(fig)));
-    addButton(grid, 3, "Save Plot", "labkitUiUtilitySavePlot", ...
+        @(~,~) runUtility(fig, @() copyAllPlots(fig)));
+    addMenuItem(plotMenu, "Save all plots", "labkitUiUtilitySavePlot", ...
         utilityEnabled(utilities, 'Plot', true), ...
-        @(~,~) runUtility(fig, @() saveCurrentPlot(fig)));
-    addButton(grid, 4, "Screenshot", "labkitUiUtilityScreenshot", ...
-        utilityEnabled(utilities, 'Screenshot', true), ...
-        @(~,~) runUtility(fig, @() saveAppScreenshot(fig)));
-    addButton(grid, 5, "Save State", "labkitUiUtilitySaveState", ...
-        stateUtilityEnabled(utilities), ...
-        @(~,~) runUtility(fig, @() saveAppState(fig)));
-    addButton(grid, 6, "Load State", "labkitUiUtilityLoadState", ...
-        stateUtilityEnabled(utilities), ...
-        @(~,~) runUtility(fig, @() loadAppState(fig)));
+        @(~,~) runUtility(fig, @() saveAllPlots(fig)));
+
+    appMenu = uimenu(fig, 'Text', 'App', 'Tag', 'labkitUiUtilityAppMenu');
+    if utilityEnabled(utilities, 'Screenshot', true)
+        addMenuItem(appMenu, "Save screenshot", "labkitUiUtilityScreenshot", ...
+            true, @(~,~) runUtility(fig, @() saveAppScreenshot(fig)));
+    end
+    if stateUtilityEnabled(utilities)
+        addMenuItem(appMenu, "Save state", "labkitUiUtilitySaveState", ...
+            true, @(~,~) runUtility(fig, @() saveAppState(fig)));
+        addMenuItem(appMenu, "Load state", "labkitUiUtilityLoadState", ...
+            true, @(~,~) runUtility(fig, @() loadAppState(fig)));
+    end
+    if isempty(appMenu.Children)
+        appMenu.Enable = 'off';
+    end
 end
 
-function button = addButton(parent, column, text, tag, enabled, callback)
-    button = uibutton(parent, 'push', ...
-        'Text', char(text), ...
+function item = addMenuItem(parent, label, tag, enabled, callback)
+    item = uimenu(parent, ...
+        'Text', char(label), ...
         'Tag', char(tag), ...
         'Enable', matlabOnOff(enabled), ...
-        'ButtonPushedFcn', callback);
-    button.Layout.Row = 1;
-    button.Layout.Column = column;
+        'MenuSelectedFcn', callback);
 end
 
 function runUtility(fig, action)
@@ -52,29 +56,74 @@ function runUtility(fig, action)
     end
 end
 
-function popoutCurrentPlot(fig)
-    ax = currentWorkbenchAxes(fig);
-    labkit.ui.tool.popoutAxes(ax);
+function popoutAllPlots(fig)
+    axesHandles = allWorkbenchAxes(fig);
+    for k = 1:numel(axesHandles)
+        labkit.ui.tool.popoutAxes(axesHandles(k));
+    end
 end
 
-function copyCurrentPlot(fig)
-    ax = currentWorkbenchAxes(fig);
-    copygraphics(ax);
+function copyAllPlots(fig)
+    axesHandles = allWorkbenchAxes(fig);
+    if numel(axesHandles) == 1
+        copygraphics(axesHandles(1));
+        return;
+    end
+    tempFig = figure('Visible', 'off', 'Color', 'w');
+    cleaner = onCleanup(@() delete(tempFig));
+    layout = tiledlayout(tempFig, numel(axesHandles), 1, ...
+        'Padding', 'compact', 'TileSpacing', 'compact');
+    for k = 1:numel(axesHandles)
+        dst = nexttile(layout);
+        copyobj(flipud(axesHandles(k).Children(:)), dst);
+        title(dst, string(axesHandles(k).Title.String));
+        xlabel(dst, string(axesHandles(k).XLabel.String));
+        ylabel(dst, string(axesHandles(k).YLabel.String));
+    end
+    copygraphics(layout);
+    clear cleaner;
 end
 
-function saveCurrentPlot(fig)
-    ax = currentWorkbenchAxes(fig);
+function saveAllPlots(fig)
+    axesHandles = allWorkbenchAxes(fig);
     filepath = injectedPath(fig, 'labkitUiUtilityPlotFile');
     if strlength(filepath) == 0
         [file, path] = uiputfile( ...
             {'*.png', 'PNG image (*.png)'; '*.pdf', 'PDF file (*.pdf)'}, ...
-            'Save Current Plot');
+            'Save Plots');
         if isequal(file, 0) || isequal(path, 0)
             return;
         end
         filepath = string(fullfile(path, file));
     end
-    exportgraphics(ax, filepath);
+    for k = 1:numel(axesHandles)
+        exportgraphics(axesHandles(k), plotFilepath(filepath, axesHandles(k), k, ...
+            numel(axesHandles)));
+    end
+end
+
+function axesHandles = allWorkbenchAxes(fig)
+    axesHandles = currentWorkbenchAxes(fig, "All", true);
+end
+
+function filepath = plotFilepath(basePath, ax, index, count)
+    filepath = string(basePath);
+    if count == 1
+        return;
+    end
+    [folder, name, ext] = fileparts(filepath);
+    label = axesFileLabel(ax, index);
+    filepath = string(fullfile(folder, sprintf('%s_%02d_%s%s', ...
+        char(name), index, char(label), char(ext))));
+end
+
+function label = axesFileLabel(ax, index)
+    raw = string(ax.Title.String);
+    raw = join(raw(:), " ");
+    label = string(matlab.lang.makeValidName(char(raw)));
+    if strlength(label) == 0
+        label = "plot" + string(index);
+    end
 end
 
 function saveAppScreenshot(fig)
@@ -138,8 +187,4 @@ function value = matlabOnOff(tf)
     else
         value = 'off';
     end
-end
-
-function value = matlabVisibility(tf)
-    value = matlabOnOff(tf);
 end

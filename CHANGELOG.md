@@ -19,7 +19,33 @@ maintainer intent and user impact that are easy to lose in commit subjects.
 
 ## Unreleased
 
-No pending entries.
+### Pending - Launcher and utility feedback
+
+Affected versions:
+- `labkit_launcher` `1.2.3 -> 1.2.4`
+- `labkit.ui` `4.2.0 -> 4.2.1`
+
+What changed:
+- Added visible busy/progress feedback for launcher actions that can wait on
+  file scans, artifact cleanup, app startup, profiling, GitHub version lookup,
+  or update/install work.
+- Added launcher and version-manager busy gates so repeated clicks do not start
+  overlapping synchronous operations.
+- Replaced top workbench utility buttons with native window utility menus.
+- Changed workbench plot popout/copy/save actions to operate on every
+  registered preview axes in a multi-axes app.
+- Replaced icon-only popout figure tools with visible text buttons for font,
+  plotted-line, axes, grid, and Studio handoff controls.
+
+Why it matters:
+- Users can distinguish long launcher work from a frozen MATLAB session.
+- Multi-plot apps expose utility actions in a clearer, less repetitive flow.
+
+Compatibility:
+- No known manual migration.
+
+Evidence:
+- Branch `codex-launcher-progress-feedback`; final commit pending.
 
 Template for branch work before the final mainline commit is known:
 
@@ -44,12 +70,13 @@ Evidence:
 
 ## Current Version Lookup
 
-Audited against `main` at `0155cd12` on 2026-07-04.
+Audited against `main` baseline plus branch `codex-launcher-progress-feedback`
+on 2026-07-06.
 
 | Component | Current version | Family | Metadata location |
 |---|---:|---|---|
-| `labkit_launcher` | `1.2.3` | Launcher | `labkit_launcher.m` |
-| `labkit.ui` | `4.2.0` | Facade | `+labkit/+ui/version.m` |
+| `labkit_launcher` | `1.2.4` | Launcher | `labkit_launcher.m` |
+| `labkit.ui` | `4.2.1` | Facade | `+labkit/+ui/version.m` |
 | `labkit.dta` | `2.0.0` | Facade | `+labkit/+dta/version.m` |
 | `labkit.image` | `1.1.0` | Facade | `+labkit/+image/version.m` |
 | `labkit.thermal` | `1.0.0` | Facade | `+labkit/+thermal/version.m` |

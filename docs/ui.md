@@ -218,9 +218,11 @@ Use these app-facing contracts:
   follow-up refresh work. Snapshot loading is strict: schema, app id, LabKit UI
   version, MATLAB release/platform, app version when known, and app snapshot
   version must match before runtime state is replaced.
-- The workbench shell includes a compact framework utility bar with current
-  plot popout/copy/save commands, whole-app screenshot export, and state
-  snapshot save/load commands. Apps can use
+- The workbench shell includes native window utility menus with plot
+  popout/copy/save commands, whole-app screenshot export, and state snapshot
+  save/load commands. Plot commands operate on every registered preview axes
+  in the app, so multi-axes workspaces do not require users to repeat the same
+  command per view. Apps can use
   `define(..., "Utilities", struct(...))` to hide the bar or disable groups of
   commands without adding app-local shell buttons. Utility commands operate on
   framework-owned runtime or visible preview axes; scientific result exports
@@ -231,17 +233,17 @@ Use these app-facing contracts:
   default. Scrolling over controls, logs, or empty figure space does not zoom
   plots, and users should not need to click a preview before wheel zoom works.
   Time-series axes with a time x-label zoom the horizontal time axis only.
-  Preview axes are also registered with the workbench utility bar, which uses
-  the most recently interacted visible axes when multiple preview axes exist.
+  Preview axes are also registered with the workbench utility menus, whose plot
+  commands act on all registered visible axes.
 - `labkit.ui.tool.enableAxesPopout(ax)` installs the standard axes context
   menu action. `labkit.ui.tool.popoutAxes(ax)` copies the visible axes into a
-  standalone MATLAB figure with optional copied-figure toolbar controls for
-  font size, line width, clipboard copy, graphics export, visible data export,
-  and generated `recreate_plot.m` scripts. Popout edits and exports operate on
-  the copied figure only. Plot axes remain freely resizable, while image axes
-  preserve locked data aspect ratio. The visible-data export is a
-  graphics-object export for publication cleanup; app-owned scientific CSV/MAT
-  result exports still belong in the app package.
+  standalone MATLAB figure with optional copied-figure text buttons for font
+  size, plotted data line width, axes line width, grid visibility, and a Studio
+  handoff. Popout edits operate on the copied figure only. Plot axes remain
+  freely resizable, while image axes preserve locked data aspect ratio.
+  Data-package export and generated reconstruction scripts belong in the
+  Figure Studio workflow rather than the lightweight popout window; app-owned
+  scientific CSV/MAT result exports still belong in the app package.
 - Parameter value controls (`field`, `rangeField`, and `panner`) debounce
   semantic `onChange` callbacks by default so short bursts of edits submit
   only the latest value after roughly 0.5 seconds of idle time. Explicit

@@ -1,12 +1,23 @@
 % Private UI app helper. Expected caller: utility bar commands. Input is an
-% app figure. Output is the current valid visible preview axes, preferring the
-% most recently interacted axes and falling back to a single or first
-% registered visible axes.
-function ax = currentWorkbenchAxes(fig)
+% app figure and optional "All" logical flag. Output is the current valid
+% visible preview axes, preferring the most recently interacted axes and
+% falling back to a single or first registered visible axes. When All is true,
+% output is every registered visible axes in registration order.
+function ax = currentWorkbenchAxes(fig, varargin)
+    allAxes = false;
+    for k = 1:2:numel(varargin)
+        if string(varargin{k}) == "All"
+            allAxes = logical(varargin{k + 1});
+        end
+    end
     axesHandles = registeredAxes(fig);
     if isempty(axesHandles)
         error('labkit:ui:app:NoCurrentAxes', ...
             'No LabKit preview axes are available for this utility command.');
+    end
+    if allAxes
+        ax = axesHandles;
+        return;
     end
     if isappdata(fig, 'labkitUiActiveAxes')
         active = getappdata(fig, 'labkitUiActiveAxes');

@@ -1,83 +1,59 @@
 % Private UI tool helper. Expected caller: labkit.ui.tool.popoutAxes.
 % Inputs are a standalone MATLAB figure and its copied axes. Side effects:
-% installs toolbar push tools whose callbacks mutate or export only the copied
-% figure; source app axes and app state are not touched.
+% installs visible text buttons whose callbacks mutate only the copied figure
+% or mark it for a future Studio handoff; source app axes and app state are not
+% touched.
 function toolbar = createPopoutToolbar(fig, ax)
-    toolbar = uitoolbar(fig, 'Tag', 'labkitAxesPopoutToolbar');
-    addTool(toolbar, "Font +", "labkitAxesPopoutFontIncreaseTool", ...
-        [0.16 0.39 0.68], @(~,~) applyAxesStyleCommand(ax, "fontIncrease"));
-    addTool(toolbar, "Font -", "labkitAxesPopoutFontDecreaseTool", ...
-        [0.16 0.39 0.68], @(~,~) applyAxesStyleCommand(ax, "fontDecrease"));
-    addTool(toolbar, "Line +", "labkitAxesPopoutLineIncreaseTool", ...
-        [0.16 0.55 0.34], @(~,~) applyAxesStyleCommand(ax, "lineIncrease"));
-    addTool(toolbar, "Line -", "labkitAxesPopoutLineDecreaseTool", ...
-        [0.16 0.55 0.34], @(~,~) applyAxesStyleCommand(ax, "lineDecrease"));
-    addTool(toolbar, "Copy Plot", "labkitAxesPopoutCopyTool", ...
-        [0.43 0.28 0.61], @(~,~) copyPlot(ax));
-    addTool(toolbar, "Save Plot", "labkitAxesPopoutSaveTool", ...
-        [0.43 0.28 0.61], @(~,~) savePlot(fig, ax));
-    addTool(toolbar, "Export Data", "labkitAxesPopoutDataTool", ...
-        [0.70 0.42 0.12], @(~,~) exportData(fig, ax));
-    addTool(toolbar, "Generate Script", "labkitAxesPopoutScriptTool", ...
-        [0.70 0.42 0.12], @(~,~) exportData(fig, ax));
+    toolbar = uipanel(fig, 'Tag', 'labkitAxesPopoutToolbar', ...
+        'BorderType', 'none', 'Units', 'normalized', ...
+        'Position', [0.00 0.93 1.00 0.07], ...
+        'BackgroundColor', [0.94 0.94 0.94]);
+    set(ax, 'Units', 'normalized', 'Position', [0.10 0.10 0.84 0.70]);
+    labels = ["Font +", "Font -", "Line +", "Line -", ...
+        "Axes +", "Axes -", "Grid +", "Grid -", "Send to Studio"];
+    tags = ["labkitAxesPopoutFontIncreaseTool", ...
+        "labkitAxesPopoutFontDecreaseTool", ...
+        "labkitAxesPopoutLineIncreaseTool", ...
+        "labkitAxesPopoutLineDecreaseTool", ...
+        "labkitAxesPopoutAxesIncreaseTool", ...
+        "labkitAxesPopoutAxesDecreaseTool", ...
+        "labkitAxesPopoutGridIncreaseTool", ...
+        "labkitAxesPopoutGridDecreaseTool", ...
+        "labkitAxesPopoutStudioTool"];
+    callbacks = {
+        @(~,~) applyAxesStyleCommand(ax, "fontIncrease")
+        @(~,~) applyAxesStyleCommand(ax, "fontDecrease")
+        @(~,~) applyAxesStyleCommand(ax, "lineIncrease")
+        @(~,~) applyAxesStyleCommand(ax, "lineDecrease")
+        @(~,~) applyAxesStyleCommand(ax, "axesIncrease")
+        @(~,~) applyAxesStyleCommand(ax, "axesDecrease")
+        @(~,~) applyAxesStyleCommand(ax, "gridIncrease")
+        @(~,~) applyAxesStyleCommand(ax, "gridDecrease")
+        @(~,~) sendToStudio(fig, ax)};
+    for k = 1:numel(labels)
+        addTool(toolbar, labels(k), tags(k), k, numel(labels), callbacks{k});
+    end
 end
 
-function tool = addTool(toolbar, label, tag, color, callback)
-    cdata = icon(color);
-    tool = uipushtool(toolbar, ...
-        'Tooltip', char(label), ...
+function tool = addTool(parent, label, tag, index, count, callback)
+    width = 1 / count;
+    tool = uicontrol(parent, 'Style', 'pushbutton', ...
+        'String', char(label), ...
         'Tag', char(tag), ...
-        'CData', cdata, ...
-        'ClickedCallback', callback);
+        'Units', 'normalized', ...
+        'Position', [(index - 1) * width, 0, width, 1], ...
+        'FontSize', 10, ...
+        'FontWeight', 'normal', ...
+        'BackgroundColor', [0.96 0.96 0.96], ...
+        'Callback', callback);
 end
 
-function cdata = icon(color)
-    cdata = ones(16, 16, 3);
-    for channel = 1:3
-        cdata(:, :, channel) = color(channel);
+function sendToStudio(fig, ax)
+    if exist('labkit_FigureStudio_app', 'file') == 2
+        labkit_FigureStudio_app("axes", ax);
+        return;
     end
-    cdata(2:15, 2:15, :) = min(1, cdata(2:15, 2:15, :) + 0.18);
-    cdata(5:12, 5:12, :) = max(0, cdata(5:12, 5:12, :) - 0.18);
-end
-
-function copyPlot(ax)
-    try
-        copygraphics(ax);
-    catch ME
-        warning('labkit:ui:CopyGraphicsFailed', ...
-            'Could not copy plot graphics: %s', ME.message);
-    end
-end
-
-function savePlot(fig, ax)
-    filepath = injectedPath(fig, 'labkitAxesPopoutSaveFile');
-    if strlength(filepath) == 0
-        [file, path] = uiputfile( ...
-            {'*.png', 'PNG image (*.png)'; '*.pdf', 'PDF file (*.pdf)'}, ...
-            'Save Plot');
-        if isequal(file, 0) || isequal(path, 0)
-            return;
-        end
-        filepath = string(fullfile(path, file));
-    end
-    exportgraphics(ax, filepath);
-end
-
-function exportData(fig, ax)
-    folder = injectedPath(fig, 'labkitAxesPopoutExportFolder');
-    if strlength(folder) == 0
-        selected = uigetdir(pwd, 'Export Plot Data');
-        if isequal(selected, 0)
-            return;
-        end
-        folder = string(selected);
-    end
-    writeAxesDataExport(ax, folder);
-end
-
-function value = injectedPath(fig, key)
-    value = "";
-    if isappdata(fig, key)
-        value = string(getappdata(fig, key));
-    end
+    setappdata(fig, 'labkitFigureStudioPendingAxes', ax);
+    warning('labkit:ui:FigureStudioUnavailable', ...
+        'Figure Studio is not available yet. The copied axes were marked for Studio handoff.');
 end

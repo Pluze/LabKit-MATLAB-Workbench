@@ -86,8 +86,8 @@ function info = launcherVersion()
     info = struct( ...
         "name", "labkit_launcher", ...
         "displayName", "LabKit App Launcher", ...
-        "version", "1.2.3", ...
-        "updated", "2026-07-02");
+        "version", "1.2.4", ...
+        "updated", "2026-07-06");
 end
 
 function titleText = launcherVersionTitle()
@@ -223,7 +223,7 @@ function fig = runLauncher(root)
 
     state = struct('apps', emptyAppStruct(), 'visibleApps', emptyAppStruct(), ...
         'selectedRow', 1, 'status', "Loading app list...", ...
-        'profileNextLaunch', false);
+        'profileNextLaunch', false, 'actionBusy', false);
     appTable.Data = cell(0, 5);
     setLaunchEnabled(false);
     updateInfo("Loading app list...");
@@ -235,12 +235,25 @@ function fig = runLauncher(root)
     refreshTable();
 
     function onRefreshApps(varargin)
+        cleanupBusy = beginLauncherAction("Refreshing app list...");
+        drawnow;
+        dlg = [];
+        try
+            dlg = uiprogressdlg(fig, 'Title', 'Refresh App List', ...
+                'Message', 'Scanning app entry points...', ...
+                'Indeterminate', 'on');
+        catch
+        end
+        if ~isempty(dlg)
+            dlgCleanup = onCleanup(@() close(dlg));
+        end
         selectedCommand = currentSelectedAppCommand();
         state.apps = discoverApps(root);
         state.visibleApps = state.apps;
         state.selectedRow = appRowByCommand(state.visibleApps, selectedCommand);
         initializeLauncherPath(root);
         refreshTable();
+        clear dlgCleanup cleanupBusy;
     end
 
     function onSelectionChanged(~, event)
@@ -269,6 +282,9 @@ function fig = runLauncher(root)
     end
 
     function onArmPerformanceProfile(varargin)
+        if state.actionBusy
+            return;
+        end
         state.profileNextLaunch = true;
         btnProfile.Text = 'Profiler Armed';
         setStatus(['Performance profiler armed. Open the selected app; ' ...
@@ -276,14 +292,40 @@ function fig = runLauncher(root)
     end
 
     function onCleanArtifacts(varargin)
+        if state.actionBusy
+            return;
+        end
         if ~confirmCleanArtifacts(fig)
             setStatus('Clean artifacts canceled.');
             return;
         end
-        setStatus(cleanArtifactsStatus(cleanGeneratedArtifacts(root)));
+        cleanupBusy = beginLauncherAction("Cleaning generated artifacts...");
+        drawnow;
+        dlg = [];
+        try
+            dlg = uiprogressdlg(fig, 'Title', 'Clean Artifacts', ...
+                'Message', 'Preparing cleanup...', 'Indeterminate', 'on');
+        catch
+        end
+        if ~isempty(dlg)
+            dlgCleanup = onCleanup(@() close(dlg));
+        end
+        result = cleanGeneratedArtifacts(root, @onCleanProgress);
+        setStatus(cleanArtifactsStatus(result));
+        clear dlgCleanup cleanupBusy;
+
+        function onCleanProgress(message, value)
+            setStatus(message);
+            updateProgressDialog(dlg, message, value);
+            drawnow limitrate;
+        end
     end
 
     function onRunCodeCheck(varargin)
+        if state.actionBusy
+            return;
+        end
+        cleanupBusy = beginLauncherAction("Running MATLAB Code Analyzer...");
         setStatus('Running MATLAB Code Analyzer...');
         drawnow;
         dlg = [];
@@ -301,22 +343,20 @@ function fig = runLauncher(root)
         catch err
             setStatus(sprintf('Code Analyzer failed: %s', err.message));
         end
-        clear dlgCleanup;
+        clear dlgCleanup cleanupBusy;
 
         function onCodeCheckProgress(message, value)
             setStatus(message);
-            if ~isempty(dlg) && isvalid(dlg)
-                dlg.Message = char(message);
-                if isfinite(value)
-                    dlg.Indeterminate = 'off';
-                    dlg.Value = min(max(value, 0), 1);
-                end
-            end
+            updateProgressDialog(dlg, message, value);
             drawnow limitrate;
         end
     end
 
     function onUpdateFromMain(varargin)
+        if state.actionBusy
+            return;
+        end
+        cleanupBusy = beginLauncherAction("Updating LabKit from GitHub main...");
         setStatus('Updating LabKit from GitHub main...');
         drawnow;
         dlg = [];
@@ -335,22 +375,20 @@ function fig = runLauncher(root)
         catch err
             setStatus(sprintf('Update failed: %s', err.message));
         end
-        clear dlgCleanup;
+        clear dlgCleanup cleanupBusy;
 
         function onUpdateProgress(message, value)
             setStatus(message);
-            if ~isempty(dlg) && isvalid(dlg)
-                dlg.Message = char(message);
-                if isfinite(value)
-                    dlg.Indeterminate = 'off';
-                    dlg.Value = value;
-                end
-            end
+            updateProgressDialog(dlg, message, value);
             drawnow limitrate;
         end
     end
 
     function onUpdateFromStable(varargin)
+        if state.actionBusy
+            return;
+        end
+        cleanupBusy = beginLauncherAction("Updating LabKit from latest release/tag...");
         setStatus('Updating LabKit from latest release/tag...');
         drawnow;
         dlg = [];
@@ -369,22 +407,19 @@ function fig = runLauncher(root)
         catch err
             setStatus(sprintf('Update failed: %s', err.message));
         end
-        clear dlgCleanup;
+        clear dlgCleanup cleanupBusy;
 
         function onUpdateProgress(message, value)
             setStatus(message);
-            if ~isempty(dlg) && isvalid(dlg)
-                dlg.Message = char(message);
-                if isfinite(value)
-                    dlg.Indeterminate = 'off';
-                    dlg.Value = value;
-                end
-            end
+            updateProgressDialog(dlg, message, value);
             drawnow limitrate;
         end
     end
 
     function onOpenVersionManager(varargin)
+        if state.actionBusy
+            return;
+        end
         openVersionManager(fig, root, @onVersionManagerUpdated, @setStatus);
     end
 
@@ -399,16 +434,35 @@ function fig = runLauncher(root)
         end
         row = min(max(state.selectedRow, 1), numel(state.visibleApps));
         app = state.visibleApps(row);
+        cleanupBusy = beginLauncherAction(launchStartStatus(app, debugMode));
         setStatus(launchStartStatus(app, debugMode));
         drawnow;
         if state.profileNextLaunch
             state.profileNextLaunch = false;
             btnProfile.Text = 'Profile Next App';
             profileSelectedApp(app, debugMode);
+            clear cleanupBusy;
             return;
         end
+        dlg = [];
         try
+            dlg = uiprogressdlg(fig, 'Title', 'Open LabKit App', ...
+                'Message', char(launchStartStatus(app, debugMode)), ...
+                'Indeterminate', 'on');
+        catch
+        end
+        if ~isempty(dlg)
+            dlgCleanup = onCleanup(@() close(dlg));
+        end
+        try
+            updateProgressDialog(dlg, sprintf('Adding %s to MATLAB path...', app.command), NaN);
+            drawnow limitrate;
             initializeAppPath(app);
+            updateProgressDialog(dlg, sprintf('Opening %s...', app.command), NaN);
+            drawnow limitrate;
+            clear dlgCleanup cleanupBusy;
+            setStatus(launchHandOffStatus(app, debugMode));
+            drawnow limitrate;
             if debugMode
                 feval(app.command, "debug");
             else
@@ -420,11 +474,22 @@ function fig = runLauncher(root)
                 'or damaged, use GitHub Update to repair this install.'], ...
                 app.command, err.message));
         end
+        clear dlgCleanup cleanupBusy;
     end
 
     function profileSelectedApp(app, debugMode)
         setStatus(profileStartStatus(app, debugMode));
         drawnow;
+        dlg = [];
+        try
+            dlg = uiprogressdlg(fig, 'Title', 'Profile LabKit App', ...
+                'Message', char(profileStartStatus(app, debugMode)), ...
+                'Indeterminate', 'on');
+        catch
+        end
+        if ~isempty(dlg)
+            dlgCleanup = onCleanup(@() close(dlg));
+        end
         try
             result = runLauncherAppProfile(root, app, debugMode);
             setStatus(profileSuccessStatus(app, result));
@@ -432,6 +497,7 @@ function fig = runLauncher(root)
             setStatus(sprintf('Performance profile failed for %s: %s', ...
                 app.command, err.message));
         end
+        clear dlgCleanup;
     end
 
     function refreshTable()
@@ -471,6 +537,33 @@ function fig = runLauncher(root)
         btnOpen.Enable = stateValue;
         btnDebug.Enable = stateValue;
         btnProfile.Enable = stateValue;
+    end
+
+    function cleanupBusy = beginLauncherAction(message)
+        state.actionBusy = true;
+        setLauncherControlsEnabled(false);
+        setStatus(message);
+        cleanupBusy = onCleanup(@endLauncherAction);
+    end
+
+    function endLauncherAction()
+        state.actionBusy = false;
+        setLauncherControlsEnabled(true);
+    end
+
+    function setLauncherControlsEnabled(enabled)
+        stateValue = matlab.lang.OnOffSwitchState(enabled);
+        btnUpdate.Enable = stateValue;
+        btnRelease.Enable = stateValue;
+        btnVersions.Enable = stateValue;
+        btnRefresh.Enable = stateValue;
+        btnClean.Enable = stateValue;
+        btnCode.Enable = stateValue;
+        if enabled
+            setLaunchEnabled(~isempty(state.visibleApps));
+        else
+            setLaunchEnabled(false);
+        end
     end
 
     function setStatus(message)
@@ -548,13 +641,29 @@ function manager = openVersionManager(parentFig, root, refreshCallback, statusCa
         'Value', {'Choose a recent release, tag, or main-branch commit.'});
     statusText.Layout.Row = 4;
 
-    sourceState = struct('sources', emptyVersionSources(), 'selectedRow', 1);
+    sourceState = struct('sources', emptyVersionSources(), ...
+        'selectedRow', 1, 'actionBusy', false);
     configureTable(sourceTable, @onSourceSelection, @onSourceDoubleClicked);
     onRefreshSources();
 
     function onRefreshSources(varargin)
+        if sourceState.actionBusy
+            return;
+        end
+        cleanupBusy = beginVersionManagerAction('Fetching recent LabKit versions from GitHub...');
         setManagerStatus('Fetching recent LabKit versions from GitHub...');
+        notifyStatus(statusCallback, 'Fetching recent LabKit versions from GitHub...');
         drawnow;
+        dlg = [];
+        try
+            dlg = uiprogressdlg(manager, 'Title', 'Refresh LabKit Versions', ...
+                'Message', 'Fetching recent releases, tags, and commits...', ...
+                'Indeterminate', 'on');
+        catch
+        end
+        if ~isempty(dlg)
+            dlgCleanup = onCleanup(@() close(dlg));
+        end
         try
             sourceState.sources = recentVersionSources();
             sourceState.selectedRow = 1;
@@ -562,16 +671,22 @@ function manager = openVersionManager(parentFig, root, refreshCallback, statusCa
             btnInstall.Enable = matlab.lang.OnOffSwitchState(~isempty(sourceState.sources));
             if isempty(sourceState.sources)
                 setManagerStatus('No release, tag, or commit options were returned by GitHub.');
+                notifyStatus(statusCallback, 'No release, tag, or commit options were returned by GitHub.');
             else
-                setManagerStatus(sprintf('Loaded %d version option(s). Select one to install or roll back.', ...
-                    numel(sourceState.sources)));
+                message = sprintf('Loaded %d version option(s). Select one to install or roll back.', ...
+                    numel(sourceState.sources));
+                setManagerStatus(message);
+                notifyStatus(statusCallback, message);
             end
         catch err
             sourceState.sources = emptyVersionSources();
             sourceTable.Data = cell(0, 4);
             btnInstall.Enable = 'off';
-            setManagerStatus(sprintf('Version lookup failed: %s', err.message));
+            message = sprintf('Version lookup failed: %s', err.message);
+            setManagerStatus(message);
+            notifyStatus(statusCallback, message);
         end
+        clear dlgCleanup cleanupBusy;
     end
 
     function onSourceSelection(~, event)
@@ -586,12 +701,16 @@ function manager = openVersionManager(parentFig, root, refreshCallback, statusCa
     end
 
     function onInstallSelected(varargin)
+        if sourceState.actionBusy
+            return;
+        end
         if isempty(sourceState.sources)
             setManagerStatus('No version option is available to install.');
             return;
         end
         row = min(max(sourceState.selectedRow, 1), numel(sourceState.sources));
         source = sourceState.sources(row);
+        cleanupBusy = beginVersionManagerAction(sprintf('Preparing %s...', char(source.label)));
         setManagerStatus(sprintf('Preparing %s...', char(source.label)));
         notifyStatus(statusCallback, sprintf('Updating LabKit from %s...', char(source.label)));
         drawnow;
@@ -617,19 +736,36 @@ function manager = openVersionManager(parentFig, root, refreshCallback, statusCa
             setManagerStatus(message);
             notifyStatus(statusCallback, message);
         end
-        clear dlgCleanup;
+        clear dlgCleanup cleanupBusy;
 
         function onVersionUpdateProgress(message, value)
             setManagerStatus(message);
             notifyStatus(statusCallback, message);
-            if ~isempty(dlg) && isvalid(dlg)
-                dlg.Message = char(message);
-                if isfinite(value)
-                    dlg.Indeterminate = 'off';
-                    dlg.Value = min(max(value, 0), 1);
-                end
-            end
+            updateProgressDialog(dlg, message, value);
             drawnow limitrate;
+        end
+    end
+
+    function cleanupBusy = beginVersionManagerAction(message)
+        sourceState.actionBusy = true;
+        setVersionManagerControlsEnabled(false);
+        setManagerStatus(message);
+        cleanupBusy = onCleanup(@endVersionManagerAction);
+    end
+
+    function endVersionManagerAction()
+        sourceState.actionBusy = false;
+        setVersionManagerControlsEnabled(true);
+    end
+
+    function setVersionManagerControlsEnabled(enabled)
+        stateValue = matlab.lang.OnOffSwitchState(enabled);
+        btnRefresh.Enable = stateValue;
+        btnClose.Enable = stateValue;
+        if enabled
+            btnInstall.Enable = matlab.lang.OnOffSwitchState(~isempty(sourceState.sources));
+        else
+            btnInstall.Enable = 'off';
         end
     end
 
@@ -797,6 +933,14 @@ function message = launchSuccessStatus(app, debugMode)
         message = sprintf('Launched %s in debug mode.', app.command);
     else
         message = sprintf('Launched %s.', app.command);
+    end
+end
+
+function message = launchHandOffStatus(app, debugMode)
+    if debugMode
+        message = sprintf('Opening %s in debug mode. The app will report startup progress in its own window.', app.command);
+    else
+        message = sprintf('Opening %s. The app will report startup progress in its own window.', app.command);
     end
 end
 
@@ -988,7 +1132,11 @@ end
 
 %% Section: Clean Artifacts action
 
-function result = cleanGeneratedArtifacts(root)
+function result = cleanGeneratedArtifacts(root, progressFcn)
+    if nargin < 2
+        progressFcn = [];
+    end
+    notifyProgress(progressFcn, "Checking cleanup root...", 0.05);
     try
         root = validateCleanArtifactsRoot(root);
     catch err
@@ -997,25 +1145,36 @@ function result = cleanGeneratedArtifacts(root)
     end
 
     targets = {'artifacts'};
+    notifyProgress(progressFcn, "Finding generated artifact targets...", 0.20);
     removedCount = 0;
     errors = strings(0, 1);
     for k = 1:numel(targets)
         relativeTarget = targets{k};
         target = fullfile(root, relativeTarget);
         try
+            notifyProgress(progressFcn, ...
+                sprintf("Checking %s...", relativeTarget), 0.25);
             validateCleanArtifactsTarget(root, target, relativeTarget);
             if exist(target, 'dir') == 7
+                notifyProgress(progressFcn, ...
+                    sprintf("Removing %s...", relativeTarget), 0.55);
                 rmdir(target, 's');
                 removedCount = removedCount + 1;
             elseif exist(target, 'file') == 2
+                notifyProgress(progressFcn, ...
+                    sprintf("Removing %s...", relativeTarget), 0.55);
                 delete(target);
                 removedCount = removedCount + 1;
+            else
+                notifyProgress(progressFcn, ...
+                    sprintf("%s is already clean.", relativeTarget), 0.85);
             end
         catch err
             errors(end+1) = string(err.message);
         end
     end
     result = struct('removedCount', removedCount, 'errors', errors);
+    notifyProgress(progressFcn, "Clean Artifacts complete.", 1.00);
 end
 
 function root = validateCleanArtifactsRoot(root)
@@ -1651,6 +1810,19 @@ function notifyProgress(progressFcn, message, value)
     try
         progressFcn(string(message), value);
     catch
+    end
+end
+
+function updateProgressDialog(dlg, message, value)
+    if isempty(dlg) || ~isvalid(dlg)
+        return;
+    end
+    dlg.Message = char(message);
+    if isfinite(value)
+        dlg.Indeterminate = 'off';
+        dlg.Value = min(max(value, 0), 1);
+    else
+        dlg.Indeterminate = 'on';
     end
 end
 
