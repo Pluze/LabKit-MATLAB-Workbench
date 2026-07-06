@@ -34,7 +34,7 @@ function state = onSaveFig(state, ~, services)
     tempFig = figure('Visible', 'off', 'Color', 'w');
     cleanup = onCleanup(@() delete(tempFig));
     dst = axes('Parent', tempFig);
-    copyAxesToPreview(ax, dst);
+    figure_studio.sourceAxes.copyToPreview(ax, dst);
     figure_studio.resultFiles.applyFigureStyle(dst, state.style);
     savefig(tempFig, char(filepath));
     clear cleanup;
@@ -50,7 +50,7 @@ function state = onStartup(state, ~, services)
         ax = state.launchAxes;
         if ~isempty(ax) && isvalid(ax)
             state = adoptSourceAxes(state, ax);
-            copyAxesToPreview(ax, previewAxes(services.ui));
+            figure_studio.sourceAxes.copyToPreview(ax, previewAxes(services.ui));
             state.currentSource = "Popout axes";
             state.status = "Received copied axes from popout.";
             state = applyStyleToPreviewIfReady(state, services);
@@ -218,7 +218,8 @@ function state = openCurrentItem(state, services)
         return;
     end
     try
-        sourceStyle = importFigFile(item.path, previewAxes(services.ui));
+        sourceStyle = figure_studio.sourceAxes.importFigFile(item.path, ...
+            previewAxes(services.ui));
         state = adoptSourceStyle(state, sourceStyle);
         state.currentSource = string(item.path);
         state = applyStyleToPreviewIfReady(state, services);
@@ -472,64 +473,8 @@ function value = finiteValue(value, fallback)
     end
 end
 
-function sourceStyle = importFigFile(filepath, dstAx)
-    srcFig = openfig(char(filepath), 'invisible');
-    cleanup = onCleanup(@() delete(srcFig));
-    axesHandles = findobj(srcFig, 'Type', 'axes');
-    axesHandles = axesHandles(~strcmp(get(axesHandles, 'Tag'), 'legend'));
-    if isempty(axesHandles)
-        error('labkit_FigureStudio_app:NoAxes', ...
-            'The selected FIG file does not contain axes.');
-    end
-    srcAx = axesHandles(1);
-    sourceStyle = sourceAxesStyle(srcAx);
-    copyAxesToPreview(srcAx, dstAx);
-end
-
-function copyAxesToPreview(srcAx, dstAx)
-    cla(dstAx, 'reset');
-    dstAx.Visible = 'on';
-    disableDefaultAxesToolbar(dstAx);
-    copyAxesState(srcAx, dstAx);
-    children = flipud(srcAx.Children(:));
-    if ~isempty(children)
-        copyobj(children, dstAx);
-    end
-    title(dstAx, string(srcAx.Title.String), 'Interpreter', 'none');
-    xlabel(dstAx, string(srcAx.XLabel.String), 'Interpreter', 'none');
-    ylabel(dstAx, string(srcAx.YLabel.String), 'Interpreter', 'none');
-    zlabel(dstAx, string(srcAx.ZLabel.String), 'Interpreter', 'none');
-    labkit.ui.tool.enableAxesPopout(dstAx);
-end
-
-function disableDefaultAxesToolbar(ax)
-    try
-        ax.Toolbar.Visible = 'off';
-        disableDefaultInteractivity(ax);
-    catch
-    end
-end
-
-function copyAxesState(srcAx, dstAx)
-    props = {'XScale','YScale','ZScale','XDir','YDir','ZDir', ...
-        'XLim','YLim','ZLim','CLim','View','Box','XGrid','YGrid','ZGrid', ...
-        'Color','XColor','YColor','ZColor','LineWidth','FontName','FontSize', ...
-        'DataAspectRatio','DataAspectRatioMode', ...
-        'PlotBoxAspectRatio','PlotBoxAspectRatioMode'};
-    for k = 1:numel(props)
-        try
-            dstAx.(props{k}) = srcAx.(props{k});
-        catch
-        end
-    end
-    try
-        colormap(dstAx, colormap(srcAx));
-    catch
-    end
-end
-
 function state = adoptSourceAxes(state, srcAx)
-    state = adoptSourceStyle(state, sourceAxesStyle(srcAx));
+    state = adoptSourceStyle(state, figure_studio.sourceAxes.sourceStyle(srcAx));
 end
 
 function state = adoptSourceStyle(state, sourceStyle)
@@ -543,105 +488,6 @@ function state = adoptSourceStyle(state, sourceStyle)
         state.style.canvasWidth = sourceStyle.canvasWidth;
         state.style.canvasHeight = sourceStyle.canvasHeight;
         state.aspectPreset = "Custom";
-    end
-end
-
-function style = sourceAxesStyle(srcAx)
-    style = figure_studio.styleLibrary.styleForPreset("FIG default");
-    style.name = "FIG default";
-    if isempty(srcAx) || ~isvalid(srcAx)
-        return;
-    end
-    ratio = ratioFromVector(optionalAxesValue(srcAx, 'PlotBoxAspectRatio'));
-    if ~isfinite(ratio)
-        ratio = ratioFromPosition(srcAx);
-    end
-    width = 720;
-    height = 540;
-    if isfinite(ratio) && ratio > 0
-        height = max(300, round(width / ratio));
-    end
-    style.canvasWidth = width;
-    style.canvasHeight = height;
-    style.fontName = string(optionalAxesValue(srcAx, 'FontName'));
-    if strlength(style.fontName) == 0
-        style.fontName = "Arial";
-    end
-    style.baseFontSize = finiteValue(optionalAxesValue(srcAx, 'FontSize'), 36);
-    style.titleFontSize = sourceLabelFont(srcAx.Title, style.baseFontSize);
-    style.labelFontSize = max([sourceLabelFont(srcAx.XLabel, style.baseFontSize), ...
-        sourceLabelFont(srcAx.YLabel, style.baseFontSize), ...
-        sourceLabelFont(srcAx.ZLabel, style.baseFontSize)]);
-    style.tickFontSize = style.baseFontSize;
-    style.dataLineWidth = sourceDataLineWidth(srcAx, 1.5);
-    style.axesLineWidth = finiteValue(optionalAxesValue(srcAx, 'LineWidth'), 1.25);
-    style.gridVisible = string(optionalAxesValue(srcAx, 'XGrid')) == "on" || ...
-        string(optionalAxesValue(srcAx, 'YGrid')) == "on";
-    style.gridAlpha = finiteValue(optionalAxesValue(srcAx, 'GridAlpha'), 0.12);
-    style.boxVisible = string(optionalAxesValue(srcAx, 'Box')) == "on";
-    style.boundaryLines = style.boxVisible;
-end
-
-function value = sourceLabelFont(labelHandle, fallback)
-    value = fallback;
-    try
-        if ~isempty(labelHandle) && isvalid(labelHandle)
-            value = finiteValue(labelHandle.FontSize, fallback);
-        end
-    catch
-    end
-end
-
-function value = sourceDataLineWidth(ax, fallback)
-    value = fallback;
-    try
-        children = findall(ax, '-property', 'LineWidth');
-        widths = nan(numel(children), 1);
-        count = 0;
-        for k = 1:numel(children)
-            child = children(k);
-            if isempty(child) || ~isvalid(child) || child == ax
-                continue;
-            end
-            try
-                count = count + 1;
-                widths(count) = double(child.LineWidth);
-            catch
-            end
-        end
-        widths = widths(1:count);
-        widths = widths(isfinite(widths));
-        if ~isempty(widths)
-            value = median(widths);
-        end
-    catch
-    end
-end
-
-function ratio = ratioFromVector(value)
-    ratio = NaN;
-    if isnumeric(value) && numel(value) >= 2 && ...
-            all(isfinite(value(1:2))) && value(2) > 0
-        ratio = double(value(1)) / double(value(2));
-    end
-end
-
-function ratio = ratioFromPosition(ax)
-    ratio = NaN;
-    try
-        pos = getpixelposition(ax, true);
-        if numel(pos) >= 4 && all(isfinite(pos(3:4))) && pos(4) > 0
-            ratio = double(pos(3)) / double(pos(4));
-        end
-    catch
-    end
-end
-
-function value = optionalAxesValue(ax, prop)
-    value = [];
-    try
-        value = ax.(prop);
-    catch
     end
 end
 
