@@ -26,10 +26,20 @@ Users normally start with:
 labkit_launcher
 ```
 
-The launcher discovers `apps/**/labkit_*_app.m`. Public app command names are
-stable user entry points, for example `labkit_CIC_app`,
+The launcher discovers public `apps/**/labkit_*_app.m` entry points. Public app
+command names are stable user entry points, for example `labkit_CIC_app`,
 `labkit_DICPreprocess_app`, `labkit_ECGPrint_app`, and
 `labkit_RHSPreview_app`.
+
+Source checkouts may also keep local private apps under an ignored
+`private_apps/apps/` workspace or roots named by `LABKIT_PRIVATE_APP_ROOTS`.
+Any developer can create that local workspace for their own private apps. The
+launcher can list and launch those apps with `Visibility` set to `private`, but
+the public repository, release artifacts, and CI guardrails own only the public
+`apps/` tree. Keep each private workspace as a separate private Git repository
+rather than mixing private app files into the public repo history. The public
+structure guide is [private-apps.md](private-apps.md); private app
+documentation belongs in the private workspace.
 
 The launcher is intentionally self-contained: it uses native MATLAB UI and
 local helper functions so users can repair a damaged zip install even if

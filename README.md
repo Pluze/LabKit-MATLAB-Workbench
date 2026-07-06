@@ -80,6 +80,7 @@ and outputs.
 | Report a problem or ask for workflow support | [.github/SUPPORT.md](.github/SUPPORT.md) |
 | Change source code or run checks | [docs/testing.md](docs/testing.md) |
 | Understand package and app boundaries | [docs/architecture.md](docs/architecture.md) |
+| Build local private apps outside the public repo | [docs/private-apps.md](docs/private-apps.md) |
 | Prepare a public release | [docs/release.md](docs/release.md) |
 
 ## Development
@@ -106,6 +107,10 @@ tests/     behavior tests, project contracts, GUI checks, and runner code
 
 Apps are the deliverables. Shared code moves into `+labkit` only when it is
 domain-neutral, app-facing, tested, and useful beyond one workflow.
+
+Source checkouts may also use an ignored `private_apps/` workspace for local
+private app development. See [docs/private-apps.md](docs/private-apps.md) for
+the generic structure; private app details belong in the private app repository.
 
 ## License
 

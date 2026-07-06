@@ -14,14 +14,44 @@ classdef LauncherGuiTest < matlab.uitest.TestCase
             testCase.verifyMatches(info.version, "^\d+\.\d+\.\d+$");
             testCase.verifyMatches(info.updated, "^\d{4}-\d{2}-\d{2}$");
             testCase.verifyTrue(all(ismember( ...
-                ["Command", "DisplayName", "Family", "Folder", ...
+                ["Command", "DisplayName", "Family", "Visibility", "Folder", ...
                 "RelativePath", "Description", "Version", "Updated"], ...
                 string(apps.Properties.VariableNames))), ...
                 'labkit_launcher list mode should return the app catalog columns.');
+            testCase.verifyTrue(all(apps.Visibility == "public"), ...
+                'Default checkout app catalog entries should be public.');
             testCase.verifyTrue(all(strlength(apps.Version) > 0 & strlength(apps.Updated) > 0), ...
                 'labkit_launcher list mode should expose app version and update dates.');
             testCase.verifyGreaterThan(height(apps), 0, ...
                 'labkit_launcher list mode should discover app entry points.');
+        end
+
+        function launcher_list_mode_discovers_local_private_apps(testCase)
+            root = setupLabKitTestPath();
+
+            tempRoot = string(tempname);
+            mkdir(tempRoot);
+            testCase.addTeardown(@() removeFolderIfPresent(tempRoot));
+            copyfile(fullfile(root, "labkit_launcher.m"), ...
+                fullfile(tempRoot, "labkit_launcher.m"));
+            createMinimalLauncherApp(tempRoot, "public_family", "labkit_PublicProbe_app");
+            createMinimalPrivateLauncherApp(tempRoot, "private_family", "labkit_PrivateProbe_app");
+            originalFolder = pwd;
+            cd(tempRoot);
+            testCase.addTeardown(@() cd(originalFolder));
+            clear labkit_launcher;
+
+            apps = labkit_launcher("list");
+
+            publicRow = apps(apps.Command == "labkit_PublicProbe_app", :);
+            privateRow = apps(apps.Command == "labkit_PrivateProbe_app", :);
+            testCase.verifyEqual(publicRow.Visibility, "public");
+            testCase.verifyEqual(privateRow.Visibility, "private");
+            testCase.verifyTrue(startsWith(privateRow.RelativePath, "private_apps/"), ...
+                "Private app paths should stay under the ignored private_apps root.");
+
+            clear labkit_launcher;
+            cd(originalFolder);
         end
 
         function launcher_layout(testCase)
@@ -251,7 +281,7 @@ classdef LauncherGuiTest < matlab.uitest.TestCase
             drawnow;
             ui = getappdata(fig, 'labkitUiRegistry');
             tableHandle = ui.controls.appTable.table;
-            betaRow = find(string(tableHandle.Data(:, 5)) == "labkit_Beta_app", 1);
+            betaRow = find(string(tableHandle.Data(:, 6)) == "labkit_Beta_app", 1);
             invokeTableSelection(tableHandle, betaRow);
             createMinimalLauncherApp(tempRoot, "gamma", "labkit_Gamma_app");
             h.invokeButton(fig, 'Refresh App List');
@@ -262,7 +292,7 @@ classdef LauncherGuiTest < matlab.uitest.TestCase
             delete(fullfile(tempRoot, "apps", "beta", "labkit_Beta_app.m"));
             h.invokeButton(fig, 'Refresh App List');
             drawnow;
-            assertDetailsCommand(fig, string(tableHandle.Data{1, 5}), ...
+            assertDetailsCommand(fig, string(tableHandle.Data{1, 6}), ...
                 'Removing the selected app should fall back to the first available app.');
             clear cleanupFigures;
             h.closeAllFigures();
@@ -338,7 +368,8 @@ function verify_launcher_layout()
         'Clean Artifacts'});
     assertUpdateButtonRow(fig);
     assertMaintenanceButtonRow(fig);
-    h.assertAnyTableColumns(fig, {'Family', 'App', 'Version', 'Updated', 'Command'});
+    h.assertAnyTableColumns(fig, {'Family', 'App', 'Visibility', ...
+        'Version', 'Updated', 'Command'});
     assertLauncherTextAreasHaveRoom(fig);
     assertInfoContains(fig, "Project structure looks complete");
     assertRefreshPreservesSelectedApp(fig, h);
@@ -351,7 +382,7 @@ function assertRefreshPreservesSelectedApp(fig, h)
         return;
     end
     targetRow = 2;
-    expectedCommand = string(tableHandle.Data{targetRow, 5});
+    expectedCommand = string(tableHandle.Data{targetRow, 6});
     invokeTableSelection(tableHandle, targetRow);
     h.invokeButton(fig, 'Refresh App List');
     drawnow;
@@ -381,6 +412,18 @@ function folder = createMinimalLauncherApp(root, family, command)
     writeText(fullfile(folder, command + ".m"), sprintf([ ...
         'function varargout = %s(varargin)\n' ...
         '%%%s Minimal launcher test app.\n' ...
+        'if nargout > 0\n' ...
+        '    varargout = {[]};\n' ...
+        'end\n' ...
+        'end\n'], command, upper(command)));
+end
+
+function folder = createMinimalPrivateLauncherApp(root, family, command)
+    folder = fullfile(root, "private_apps", "apps", family);
+    mkdir(folder);
+    writeText(fullfile(folder, command + ".m"), sprintf([ ...
+        'function varargout = %s(varargin)\n' ...
+        '%%%s Minimal private launcher test app.\n' ...
         'if nargout > 0\n' ...
         '    varargout = {[]};\n' ...
         'end\n' ...
@@ -437,9 +480,10 @@ function assertLauncherTableDensity(fig)
     tables = findall(fig, 'Type', 'uitable');
     assert(numel(tables) == 1, 'Launcher should draw one app table.');
     widths = tables(1).ColumnWidth;
-    assert(numel(widths) == 5 && isequal(widths{1}, 150) && ...
-        isequal(widths{2}, 200) && isequal(widths{3}, 90) && ...
-        isequal(widths{4}, 110) && strcmp(char(string(widths{5})), 'auto'), ...
+    assert(numel(widths) == 6 && isequal(widths{1}, 140) && ...
+        isequal(widths{2}, 190) && isequal(widths{3}, 90) && ...
+        isequal(widths{4}, 90) && isequal(widths{5}, 110) && ...
+        strcmp(char(string(widths{6})), 'auto'), ...
         'Launcher table should avoid over-wide family and app columns.');
 end
 

@@ -42,6 +42,10 @@ debt for the touched area.
 - Preserve behavior unless the user explicitly asks for a behavior change.
 - Keep app-specific formulas, thresholds, plots, result schemas, exports, and workflow decisions in the owning app.
 - Keep reusable `+labkit` API growth conservative and domain-neutral.
+- Local private apps may live under ignored `private_apps/apps/` workspaces or
+  `LABKIT_PRIVATE_APP_ROOTS`; keep their code, docs, tests, and release notes
+  in their own private repositories. Public docs may describe only the generic
+  private-app structure and constraints.
 - New app-facing UI work should use `labkit.ui.runtime.*`, `labkit.ui.layout.*`, `labkit.ui.control.*`, `labkit.ui.plot.*`, `labkit.ui.interaction.*`, and `labkit.ui.debug.*`; the older flat `labkit.ui.*` helper surface and retired `app/spec/view/tool/diag` UI package names have been removed.
 - New app code must not call `labkit.io.*`, `labkit.data.*`, `labkit.analysis.*`, or `labkit.util.*`; use `labkit.dta.*`, `labkit.rhs.*`, `labkit.biosignal.*`, `labkit.image.*`, `labkit.thermal.*`, `labkit.ui.*`, or app-local helpers.
 - Do not reintroduce root-level legacy command wrappers, app-specific public helper packages, or public helper-dump packages such as `+labkit/+analysis`, `+data`, `+io`, or `+util`.

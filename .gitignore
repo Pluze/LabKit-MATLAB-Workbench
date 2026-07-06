@@ -2,6 +2,7 @@
 LabKit.prj
 .labkit-managed-files.txt
 artifacts/
+private_apps/
 resources/project/
 resources/.DS_Store
 photos/

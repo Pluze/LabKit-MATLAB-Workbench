@@ -13,6 +13,8 @@ the app catalog; maintainer references are grouped separately.
 ## App Authors And Maintainers
 
 - [apps.md](apps.md): app file shape, app ownership, and new-app guidance.
+- [private-apps.md](private-apps.md): local private app workspace structure
+  for apps kept outside the public repository.
 - [architecture.md](architecture.md): package boundaries and extraction rules.
 - [testing.md](testing.md): compact build-task entry points, automatic
   changed-file routing, CI scope, fixtures, and GUI validation limits.

@@ -14,6 +14,10 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
 ## App Ownership
 
 - Keep domain formulas, thresholds, integration rules, option defaults, plot labels, result fields, export columns, failed-row behavior, alert wording/trigger decisions, and log wording app-local unless the user explicitly approves a boundary change.
+- Private apps under `private_apps/apps/` or `LABKIT_PRIVATE_APP_ROOTS` should
+  follow the same app-owned package shape as public apps, but their app
+  details, tests, docs, and release notes belong in the private workspace repo.
+  Do not copy private app details into public docs or public tests.
 - For a new app cold start, use the LabKit app template/scaffold when
   available. App authors should primarily edit one app-owned MATLAB package
   with a small fixed lifecycle/UI surface and concrete workflow packages:

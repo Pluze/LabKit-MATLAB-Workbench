@@ -48,6 +48,12 @@ The Code Analyzer action writes a native `codeIssues` JSON export to
 The launcher sets up the app path before opening an app. App-owned packages are
 reached through their owning app entrypoint and package namespace.
 
+Local private apps can live in an ignored workspace at `private_apps/apps/`
+inside any source checkout, or in one or more roots named by
+`LABKIT_PRIVATE_APP_ROOTS`. See [private-apps.md](private-apps.md) for the
+generic structure and Git ownership model. Private app details belong in the
+private app repository, not in the public LabKit docs.
+
 The launcher update flow treats the LabKit folder as a replaceable runtime
 directory. Before copying a selected GitHub zip into place, the launcher moves
 the current top-level runtime contents into a dated `LabKit-previous-*`

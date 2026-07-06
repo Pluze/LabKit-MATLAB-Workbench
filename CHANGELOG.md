@@ -19,7 +19,31 @@ maintainer intent and user impact that are easy to lose in commit subjects.
 
 ## Unreleased
 
-No pending entries.
+### Pending - Private app workspace discovery
+
+Affected versions:
+- `labkit_launcher` `1.2.4 -> 1.2.5`
+
+What changed:
+- Added launcher discovery for local private app workspaces under
+  `private_apps/apps/` and roots named by `LABKIT_PRIVATE_APP_ROOTS`.
+- Added a `Visibility` catalog field so private app entries can be listed and
+  launched locally without becoming public app entries.
+- Documented the generic private-app workspace structure and Git ownership
+  model without recording private app details in the public repository.
+
+Why it matters:
+- Developers can keep private LabKit apps next to a public checkout, use the
+  ordinary launcher to open them, and push that workspace to a separate private
+  repository.
+
+Compatibility:
+- Public apps, public releases, and public CI remain scoped to `apps/`.
+- Existing launcher list consumers should tolerate the additional `Visibility`
+  catalog column.
+
+Evidence:
+- Pending commit.
 
 Template for branch work before the final mainline commit is known:
 
@@ -48,7 +72,7 @@ Audited against `main` UI 5 squash commit on 2026-07-06.
 
 | Component | Current version | Family | Metadata location |
 |---|---:|---|---|
-| `labkit_launcher` | `1.2.4` | Launcher | `labkit_launcher.m` |
+| `labkit_launcher` | `1.2.5` | Launcher | `labkit_launcher.m` |
 | `labkit.ui` | `5.0.0` | Facade | `+labkit/+ui/version.m` |
 | `labkit.dta` | `2.0.0` | Facade | `+labkit/+dta/version.m` |
 | `labkit.image` | `1.1.0` | Facade | `+labkit/+image/version.m` |

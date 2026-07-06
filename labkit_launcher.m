@@ -86,7 +86,7 @@ function info = launcherVersion()
     info = struct( ...
         "name", "labkit_launcher", ...
         "displayName", "LabKit App Launcher", ...
-        "version", "1.2.4", ...
+        "version", "1.2.5", ...
         "updated", "2026-07-06");
 end
 
@@ -214,10 +214,10 @@ function fig = runLauncher(root)
     tableGrid = uigridlayout(rightPanel, [1 1]);
     tableGrid.Padding = [4 4 4 4];
     appTable = uitable(tableGrid, ...
-        'ColumnName', {'Family', 'App', 'Version', 'Updated', 'Command'}, ...
-        'ColumnEditable', [false false false false false], 'RowName', {}, ...
+        'ColumnName', {'Family', 'App', 'Visibility', 'Version', 'Updated', 'Command'}, ...
+        'ColumnEditable', [false false false false false false], 'RowName', {}, ...
         'FontSize', tableFontSize);
-    appTable.ColumnWidth = {150, 200, 90, 110, 'auto'};
+    appTable.ColumnWidth = {140, 190, 90, 90, 110, 'auto'};
     configureTable(appTable, @onSelectionChanged, @onTableDoubleClicked);
 
     ui = struct();
@@ -231,7 +231,7 @@ function fig = runLauncher(root)
     state = struct('apps', emptyAppStruct(), 'visibleApps', emptyAppStruct(), ...
         'selectedRow', 1, 'status', "Loading app list...", ...
         'profileNextLaunch', false, 'actionBusy', false);
-    appTable.Data = cell(0, 5);
+    appTable.Data = cell(0, 6);
     setLaunchEnabled(false);
     updateInfo("Loading app list...");
     drawnow limitrate;
@@ -879,18 +879,20 @@ function selectTableRow(tableHandle, row, apps)
 end
 
 function rows = appDisplayRows(apps)
-    rows = cell(numel(apps), 5);
+    rows = cell(numel(apps), 6);
     for k = 1:numel(apps)
         rows{k, 1} = char(apps(k).family);
         rows{k, 2} = char(apps(k).displayName);
-        rows{k, 3} = char(apps(k).version);
-        rows{k, 4} = char(apps(k).updated);
-        rows{k, 5} = apps(k).command;
+        rows{k, 3} = char(apps(k).visibility);
+        rows{k, 4} = char(apps(k).version);
+        rows{k, 5} = char(apps(k).updated);
+        rows{k, 6} = apps(k).command;
     end
 end
 
 function rows = selectedAppDetails(app)
     rows = [{char(app.displayName)}; {['Family: ' char(app.family)]}; ...
+        {['Visibility: ' char(app.visibility)]}; ...
         {['Version: ' char(app.version)]}; {['Updated: ' char(app.updated)]}; ...
         {['Command: ' app.command]}; {['Path: ' app.relativePath]}; ...
         cellstr(wrapDescription(app.description))];
@@ -985,37 +987,40 @@ end
 %% Section: App discovery and catalog metadata
 
 function apps = discoverApps(root)
-    appRoot = fullfile(root, 'apps');
     template = emptyAppStruct();
-    if exist(appRoot, 'dir') ~= 7
-        apps = template;
-        return;
-    end
-    entries = dir(fullfile(appRoot, '**', 'labkit_*_app.m'));
-    entries = entries(~[entries.isdir]);
-    apps = repmat(template, numel(entries), 1);
+    appRoots = appDiscoveryRoots(root);
+    apps = template;
     appCount = 0;
-    for k = 1:numel(entries)
-        filepath = fullfile(entries(k).folder, entries(k).name);
-        rel = relativePath(appRoot, filepath);
-        if isHiddenImplementationPath(rel)
+    for rootIndex = 1:numel(appRoots)
+        appRoot = char(appRoots(rootIndex).appRoot);
+        if exist(appRoot, 'dir') ~= 7
             continue;
         end
-        [folder, command] = fileparts(filepath);
-        appCount = appCount + 1;
-        apps(appCount).command = command;
-        apps(appCount).displayName = displayNameFromCommand(command);
-        apps(appCount).family = appFamily(appRoot, folder);
-        apps(appCount).folder = folder;
-        apps(appCount).relativePath = relativePath(root, filepath);
-        apps(appCount).description = appDescription(filepath, command);
-        versionInfo = appVersionInfo(folder);
-        apps(appCount).version = versionInfo.version;
-        apps(appCount).updated = versionInfo.updated;
+        entries = dir(fullfile(appRoot, '**', 'labkit_*_app.m'));
+        entries = entries(~[entries.isdir]);
+        for k = 1:numel(entries)
+            filepath = fullfile(entries(k).folder, entries(k).name);
+            rel = relativePath(appRoot, filepath);
+            if isHiddenImplementationPath(rel)
+                continue;
+            end
+            [folder, command] = fileparts(filepath);
+            appCount = appCount + 1;
+            apps(appCount).command = command;
+            apps(appCount).displayName = displayNameFromCommand(command);
+            apps(appCount).family = appFamily(appRoot, folder);
+            apps(appCount).visibility = char(appRoots(rootIndex).visibility);
+            apps(appCount).folder = folder;
+            apps(appCount).relativePath = relativePath(root, filepath);
+            apps(appCount).description = appDescription(filepath, command);
+            versionInfo = appVersionInfo(folder);
+            apps(appCount).version = versionInfo.version;
+            apps(appCount).updated = versionInfo.updated;
+        end
     end
-    apps = apps(1:appCount);
     if ~isempty(apps)
-        keys = [reshape(string({apps.family}), [], 1), ...
+        keys = [reshape(string({apps.visibility}) == "private", [], 1), ...
+            reshape(string({apps.family}), [], 1), ...
             reshape(string({apps.displayName}), [], 1)];
         [~, order] = sortrows(keys);
         apps = apps(order);
@@ -1024,17 +1029,60 @@ end
 
 function app = emptyAppStruct()
     app = struct('command', {}, 'displayName', {}, 'family', {}, ...
+        'visibility', {}, ...
         'folder', {}, 'relativePath', {}, 'description', {}, ...
         'version', {}, 'updated', {});
 end
 
 function catalog = appCatalogTable(apps)
     catalog = table(string({apps.command})', string({apps.displayName})', ...
-        string({apps.family})', string({apps.folder})', ...
+        string({apps.family})', string({apps.visibility})', string({apps.folder})', ...
         string({apps.relativePath})', string({apps.description})', ...
         string({apps.version})', string({apps.updated})', ...
-        'VariableNames', {'Command', 'DisplayName', 'Family', 'Folder', ...
+        'VariableNames', {'Command', 'DisplayName', 'Family', 'Visibility', 'Folder', ...
         'RelativePath', 'Description', 'Version', 'Updated'});
+end
+
+function appRoots = appDiscoveryRoots(root)
+    roots = struct('appRoot', string(fullfile(root, 'apps')), ...
+        'visibility', "public");
+    privateRoots = privateAppRoots(root);
+    for k = 1:numel(privateRoots)
+        roots(end+1) = struct('appRoot', privateRoots(k), ...
+            'visibility', "private");
+    end
+    appRoots = roots;
+end
+
+function roots = privateAppRoots(root)
+    roots = strings(1, 0);
+    localRoot = string(fullfile(root, 'private_apps', 'apps'));
+    if exist(localRoot, 'dir') == 7
+        roots(end+1) = localRoot;
+    end
+
+    envValue = string(getenv('LABKIT_PRIVATE_APP_ROOTS'));
+    if strlength(strtrim(envValue)) > 0
+        parts = string(strsplit(char(envValue), pathsep));
+        parts = strip(parts);
+        parts = parts(strlength(parts) > 0);
+        for k = 1:numel(parts)
+            candidate = privateAppRootAppsFolder(parts(k));
+            if exist(candidate, 'dir') == 7
+                roots(end+1) = candidate;
+            end
+        end
+    end
+    roots = unique(roots, 'stable');
+end
+
+function appRoot = privateAppRootAppsFolder(root)
+    root = string(root);
+    if endsWith(strrep(root, "\", "/"), "/apps")
+        appRoot = root;
+    else
+        appRoot = string(fullfile(root, 'apps'));
+    end
 end
 
 function info = appVersionInfo(folder)
