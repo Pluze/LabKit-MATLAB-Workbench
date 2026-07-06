@@ -1,13 +1,13 @@
-% Private UI tool helper. Expected caller: popout export services. Input is
-% one copied axes. Output is a plain struct snapshot of visible graphics
-% objects and axes style metadata. It intentionally captures visible graphics,
-% not app workflow state or recalculation-grade scientific exports.
+% Expected caller: Figure Studio result-file export. Input is one copied axes.
+% Output is a plain struct snapshot of visible graphics objects and axes style
+% metadata. It captures visible graphics, not app workflow state or
+% recalculation-grade scientific exports.
 function plotData = extractAxesData(ax)
     if isempty(ax) || ~isvalid(ax)
         error('labkit:ui:InvalidAxes', 'Axes handle is not valid.');
     end
     plotData = struct();
-    plotData.schema = "labkit.ui.tool.axesData.v1";
+    plotData.schema = "figure_studio.resultFiles.axesData.v1";
     plotData.createdAt = datetime("now", "TimeZone", "local");
     plotData.axes = axesMetadata(ax);
     plotData.objects = emptyObject();
@@ -19,7 +19,7 @@ function plotData = extractAxesData(ax)
         if strlength(warningText) > 0
             plotData.warnings(end + 1, 1) = warningText;
         end
-        if ~isempty(object)
+        if isSupportedObject(object)
             plotData.objects(end + 1, 1) = object;
         end
     end
@@ -34,12 +34,31 @@ function meta = axesMetadata(ax)
     meta.xScale = string(ax.XScale);
     meta.yScale = string(ax.YScale);
     meta.zScale = string(ax.ZScale);
+    meta.xDir = string(ax.XDir);
+    meta.yDir = string(ax.YDir);
+    meta.zDir = string(ax.ZDir);
     meta.xLim = ax.XLim;
     meta.yLim = ax.YLim;
     meta.zLim = ax.ZLim;
     meta.cLim = ax.CLim;
     meta.view = ax.View;
     meta.color = ax.Color;
+    meta.box = string(ax.Box);
+    meta.layer = string(ax.Layer);
+    meta.tickDir = string(ax.TickDir);
+    meta.xGrid = string(ax.XGrid);
+    meta.yGrid = string(ax.YGrid);
+    meta.zGrid = string(ax.ZGrid);
+    meta.xMinorGrid = string(ax.XMinorGrid);
+    meta.yMinorGrid = string(ax.YMinorGrid);
+    meta.zMinorGrid = string(ax.ZMinorGrid);
+    meta.gridAlpha = ax.GridAlpha;
+    meta.minorGridAlpha = ax.MinorGridAlpha;
+    meta.dataAspectRatio = ax.DataAspectRatio;
+    meta.dataAspectRatioMode = string(ax.DataAspectRatioMode);
+    meta.plotBoxAspectRatio = ax.PlotBoxAspectRatio;
+    meta.plotBoxAspectRatioMode = string(ax.PlotBoxAspectRatioMode);
+    meta.colorOrder = ax.ColorOrder;
     meta.fontName = string(ax.FontName);
     meta.fontSize = ax.FontSize;
     meta.lineWidth = ax.LineWidth;
@@ -51,9 +70,14 @@ function meta = axesMetadata(ax)
 end
 
 function object = emptyObject()
+    object = objectTemplate();
+    object(:) = [];
+end
+
+function object = objectTemplate()
     object = struct( ...
-        'type', string.empty(0, 1), ...
-        'displayName', string.empty(0, 1), ...
+        'type', "", ...
+        'displayName', "", ...
         'x', [], ...
         'y', [], ...
         'z', [], ...
@@ -77,6 +101,12 @@ function [object, warningText] = graphicsObjectData(handle, ax)
         object = imageData(handle, ax);
     elseif isgraphics(handle, 'surface')
         object = surfaceData(handle);
+    elseif isgraphics(handle, 'patch')
+        object = patchData(handle);
+    elseif isgraphics(handle, 'text')
+        object = textData(handle);
+    elseif isgraphics(handle, 'constantline')
+        object = constantLineData(handle);
     else
         warningText = "Skipped unsupported graphics object: " + ...
             string(class(handle));
@@ -109,7 +139,8 @@ function object = imageData(handle, ax)
     object.y = optionalValue(handle, 'YData');
     object.c = handle.CData;
     object.alpha = optionalValue(handle, 'AlphaData');
-    object.style = styleProps(handle, ["AlphaDataMapping", "CDataMapping"]);
+    object.style = styleProps(handle, ["AlphaDataMapping", "CDataMapping", ...
+        "Interpolation"]);
     object.metadata.colormap = colormap(ax);
     object.metadata.cLim = ax.CLim;
 end
@@ -123,11 +154,44 @@ function object = surfaceData(handle)
     object.alpha = optionalValue(handle, 'AlphaData');
     object.style = styleProps(handle, ...
         ["FaceColor", "EdgeColor", "LineStyle", "LineWidth", ...
-        "Marker", "MarkerSize"]);
+        "Marker", "MarkerSize", "FaceAlpha", "EdgeAlpha"]);
+end
+
+function object = patchData(handle)
+    object = baseObject("patch", handle);
+    object.x = optionalValue(handle, 'XData');
+    object.y = optionalValue(handle, 'YData');
+    object.z = optionalValue(handle, 'ZData');
+    object.c = optionalValue(handle, 'CData');
+    object.alpha = optionalValue(handle, 'AlphaData');
+    object.style = styleProps(handle, ...
+        ["FaceColor", "FaceAlpha", "EdgeColor", "EdgeAlpha", ...
+        "LineStyle", "LineWidth", "Marker", "MarkerSize", ...
+        "CDataMapping", "AlphaDataMapping"]);
+end
+
+function object = textData(handle)
+    object = baseObject("text", handle);
+    object.x = optionalValue(handle, 'Position');
+    object.metadata.text = labelText(handle);
+    object.style = styleProps(handle, ...
+        ["Color", "FontName", "FontSize", "FontWeight", "FontAngle", ...
+        "HorizontalAlignment", "VerticalAlignment", "Rotation", "Interpreter"]);
+end
+
+function object = constantLineData(handle)
+    object = baseObject("constantline", handle);
+    object.metadata.value = optionalValue(handle, 'Value');
+    object.metadata.interceptAxis = string(optionalValue(handle, 'InterceptAxis'));
+    object.metadata.label = string(optionalValue(handle, 'Label'));
+    object.style = styleProps(handle, ...
+        ["Color", "LineStyle", "LineWidth", "Alpha", ...
+        "LabelHorizontalAlignment", "LabelVerticalAlignment", ...
+        "FontName", "FontSize"]);
 end
 
 function object = baseObject(type, handle)
-    object = emptyObject();
+    object = objectTemplate();
     object.type = string(type);
     object.displayName = displayName(handle);
     object.metadata.class = string(class(handle));
@@ -136,10 +200,14 @@ end
 function value = displayName(handle)
     value = "";
     if isprop(handle, 'DisplayName')
-        value = string(handle.DisplayName);
+        try
+            value = string(handle.DisplayName);
+        catch
+            value = "";
+        end
     end
     if strlength(value) == 0 || startsWith(value, "_")
-        value = string(class(handle));
+        value = "";
     end
 end
 
@@ -175,10 +243,19 @@ function style = styleProps(handle, names)
 end
 
 function text = labelText(labelHandle)
-    value = labelHandle.String;
+    if isprop(labelHandle, 'String')
+        value = labelHandle.String;
+    else
+        value = "";
+    end
     if iscell(value)
         text = string(strjoin(value, newline));
     else
         text = string(value);
     end
+end
+
+function tf = isSupportedObject(object)
+    tf = isstruct(object) && isfield(object, 'type') && ...
+        isscalar(string(object.type)) && strlength(string(object.type)) > 0;
 end

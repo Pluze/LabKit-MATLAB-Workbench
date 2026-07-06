@@ -1,7 +1,7 @@
-% Private UI tool helper. Expected caller: popout toolbar commands. Inputs
-% are one copied axes and an output folder. Side effects: creates the folder
-% when needed and writes plot_data.mat, recreate_plot.m, README.txt, and an
-% optional plot_data.csv for simple line/scatter object data.
+% Expected caller: figure_studio.resultFiles.exportAxesPackage. Inputs are one
+% copied axes and an output folder. Side effects: creates the folder when
+% needed and writes plot_data.mat, recreate_plot.m, README.txt, and optional
+% plot_data.csv for simple line/scatter object data.
 function manifest = writeAxesDataExport(ax, folder)
     folder = string(folder);
     if ~isscalar(folder) || strlength(folder) == 0
@@ -12,11 +12,11 @@ function manifest = writeAxesDataExport(ax, folder)
         mkdir(folder);
     end
 
-    plotData = extractAxesData(ax);
+    plotData = figure_studio.resultFiles.extractAxesData(ax);
     matPath = fullfile(folder, "plot_data.mat");
     save(matPath, 'plotData');
     csvPath = writeCsvIfSimple(plotData, folder);
-    scriptPath = generateAxesScript(folder, plotData);
+    scriptPath = figure_studio.resultFiles.generateAxesScript(folder, plotData);
     readmePath = writeReadme(plotData, folder, csvPath);
 
     manifest = struct();

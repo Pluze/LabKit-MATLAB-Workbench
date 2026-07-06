@@ -49,8 +49,12 @@ function tool = addTool(parent, label, tag, index, count, callback)
 end
 
 function sendToStudio(fig, ax)
-    if exist('labkit_FigureStudio_app', 'file') == 2
-        labkit_FigureStudio_app("axes", ax);
+    launcher = [];
+    if isappdata(groot, 'labkitFigureStudioLauncher')
+        launcher = getappdata(groot, 'labkitFigureStudioLauncher');
+    end
+    if isa(launcher, 'function_handle')
+        launcher(ax);
         return;
     end
     setappdata(fig, 'labkitFigureStudioPendingAxes', ax);

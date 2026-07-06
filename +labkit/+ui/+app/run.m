@@ -8,7 +8,8 @@ function fig = run(def, request)
 % Inputs:
 %   def - scalar struct returned by labkit.ui.app.define.
 %   request - optional struct. The `debug` field may contain a LabKit debug
-%       context created by labkit.ui.app.dispatchRequest.
+%       context created by labkit.ui.app.dispatchRequest. Other app-specific
+%       fields are forwarded read-only to action handlers as services.request.
 %
 % Output:
 %   fig - created app figure.
@@ -36,7 +37,8 @@ function fig = run(def, request)
         'state', state, ...
         'actions', actions, ...
         'ui', ui, ...
-        'debug', debug);
+        'debug', debug, ...
+        'request', request);
     setappdata(fig, appRuntimeKey(), runtime);
     invokeRuntimeRender(fig);
     dispatchStartup(fig, def.startup, def.hydrate);
@@ -225,6 +227,7 @@ function services = runtimeServices(fig, runtime)
     services.figure = fig;
     services.ui = runtime.ui;
     services.debug = runtime.debug;
+    services.request = runtime.request;
     services.dispatch = @(id, varargin) dispatchProgrammaticAction( ...
         fig, id, varargin{:});
 end

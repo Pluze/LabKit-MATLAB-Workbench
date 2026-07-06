@@ -99,12 +99,19 @@ end
 
 function initializeLauncherPath(root)
     addPathIfMissing(root);
+    setappdata(groot, 'labkitFigureStudioLauncher', ...
+        @(ax) launchFigureStudioFromAxes(root, ax));
 end
 
 function addPathIfMissing(folder, varargin)
     if exist(folder, 'dir') == 7 && ~pathContains(folder)
         addpath(folder, varargin{:});
     end
+end
+
+function launchFigureStudioFromAxes(root, ax)
+    addPathIfMissing(fullfile(root, 'apps', 'labkit_core', 'figure_studio'));
+    labkit_FigureStudio_app("axes", ax);
 end
 
 %% Section: Main launcher window
@@ -1084,9 +1091,19 @@ end
 function value = displayToken(token)
     words = split(strrep(string(token), '_', ' '));
     for k = 1:numel(words)
-        words(k) = upper(extractBefore(words(k), 2)) + extractAfter(words(k), 1);
+        words(k) = displayWord(words(k));
     end
     value = strjoin(cellstr(words), ' ');
+end
+
+function word = displayWord(word)
+    word = string(word);
+    switch lower(word)
+        case "labkit"
+            word = "LabKit";
+        otherwise
+            word = upper(extractBefore(word, 2)) + extractAfter(word, 1);
+    end
 end
 
 function description = appDescription(filepath, command)

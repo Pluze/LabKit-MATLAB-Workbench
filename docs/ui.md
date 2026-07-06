@@ -71,7 +71,9 @@ handles. It is not a new language, a generator, or a class hierarchy. The
 framework validates the definition, generates callback closures, builds the
 visible workbench, paints a readiness surface when startup is slow, dispatches
 startup actions, and then hydrates nonessential regions when idle or on first
-interaction.
+interaction. App-specific launch payloads may be passed to `labkit.ui.app.run`
+in the request struct; command handlers receive those values read-only as
+`services.request`.
 
 Apps use `+appLifecycle`, `definitionActions.m`, and `+userInterface`;
 app-specific work belongs in concrete workflow packages such as

@@ -66,22 +66,10 @@ end
 function copyAllPlots(fig)
     axesHandles = allWorkbenchAxes(fig);
     if numel(axesHandles) == 1
-        copygraphics(axesHandles(1));
+        copygraphics(axesHandles(1), 'ContentType', 'image');
         return;
     end
-    tempFig = figure('Visible', 'off', 'Color', 'w');
-    cleaner = onCleanup(@() delete(tempFig));
-    layout = tiledlayout(tempFig, numel(axesHandles), 1, ...
-        'Padding', 'compact', 'TileSpacing', 'compact');
-    for k = 1:numel(axesHandles)
-        dst = nexttile(layout);
-        copyobj(flipud(axesHandles(k).Children(:)), dst);
-        title(dst, string(axesHandles(k).Title.String));
-        xlabel(dst, string(axesHandles(k).XLabel.String));
-        ylabel(dst, string(axesHandles(k).YLabel.String));
-    end
-    copygraphics(layout);
-    clear cleaner;
+    copygraphics(fig, 'ContentType', 'image');
 end
 
 function saveAllPlots(fig)
@@ -97,8 +85,8 @@ function saveAllPlots(fig)
         filepath = string(fullfile(path, file));
     end
     for k = 1:numel(axesHandles)
-        exportgraphics(axesHandles(k), plotFilepath(filepath, axesHandles(k), k, ...
-            numel(axesHandles)));
+        exportgraphics(axesHandles(k), plotFilepath(filepath, axesHandles(k), ...
+            k, numel(axesHandles)), 'ContentType', 'image');
     end
 end
 
