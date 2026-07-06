@@ -11,6 +11,7 @@ function sourceStyle = importFigFile(filepath, dstAx)
             'The selected FIG file does not contain axes.');
     end
     srcAx = axesHandles(1);
-    sourceStyle = figure_studio.sourceAxes.sourceStyle(srcAx);
+    sourceStyle = figure_studio.sourceAxes.sourceStyle(srcAx, ...
+        "PreserveAspect", false);
     figure_studio.sourceAxes.copyToPreview(srcAx, dstAx);
 end

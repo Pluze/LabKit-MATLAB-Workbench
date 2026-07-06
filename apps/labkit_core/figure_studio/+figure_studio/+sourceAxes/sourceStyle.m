@@ -1,14 +1,26 @@
 % Read style defaults from a source axes for Figure Studio. Expected caller is
 % figure_studio.definitionActions; output follows the app-owned style struct.
-function style = sourceStyle(srcAx)
+function style = sourceStyle(srcAx, opts)
+    arguments
+        srcAx
+        opts.PreserveAspect (1, 1) logical = true
+    end
+
     style = figure_studio.styleLibrary.styleForPreset("FIG default");
     style.name = "FIG default";
     if isempty(srcAx) || ~isvalid(srcAx)
         return;
     end
-    ratio = ratioFromVector(optionalAxesValue(srcAx, 'PlotBoxAspectRatio'));
-    if ~isfinite(ratio)
+    if opts.PreserveAspect
+        ratio = ratioFromVector(optionalAxesValue(srcAx, 'PlotBoxAspectRatio'));
+        if ~isfinite(ratio)
+            ratio = ratioFromPosition(srcAx);
+        end
+    else
         ratio = ratioFromPosition(srcAx);
+        if ~isfinite(ratio)
+            ratio = ratioFromVector(optionalAxesValue(srcAx, 'PlotBoxAspectRatio'));
+        end
     end
     width = 720;
     height = 540;

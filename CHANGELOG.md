@@ -24,7 +24,7 @@ maintainer intent and user impact that are easy to lose in commit subjects.
 Affected versions:
 - `labkit_launcher` `1.2.3 -> 1.2.4`
 - `labkit.ui` `4.2.0 -> 4.2.1`
-- `labkit_FigureStudio_app` `0.1.0 -> 0.1.1`
+- `labkit_FigureStudio_app` `0.1.0 -> 0.1.2`
 
 What changed:
 - Added visible busy/progress feedback for launcher actions that can wait on
@@ -41,6 +41,9 @@ What changed:
   switching between the measured LabKit single-panel style and the imported
   FIG defaults, tuning font/line/grid parameters, and exporting visible
   graphics data packages with reconstruction scripts.
+- Normalized imported FIG axes before applying Studio canvas and style
+  constraints so source layout/aspect metadata and file-selection titles cannot
+  collapse the preview.
 
 Why it matters:
 - Users can distinguish long launcher work from a frozen MATLAB session.
@@ -89,7 +92,7 @@ on 2026-07-06.
 | `labkit.thermal` | `1.0.0` | Facade | `+labkit/+thermal/version.m` |
 | `labkit.rhs` | `1.0.0` | Facade | `+labkit/+rhs/version.m` |
 | `labkit.biosignal` | `1.0.0` | Facade | `+labkit/+biosignal/version.m` |
-| `labkit_FigureStudio_app` | `0.1.1` | LabKit Core | `apps/labkit_core/figure_studio/+figure_studio/version.m` |
+| `labkit_FigureStudio_app` | `0.1.2` | LabKit Core | `apps/labkit_core/figure_studio/+figure_studio/version.m` |
 | `labkit_ChronoOverlay_app` | `1.3.3` | Electrochem | `apps/electrochem/chrono_overlay/+chrono_overlay/version.m` |
 | `labkit_CIC_app` | `1.3.5` | Electrochem | `apps/electrochem/cic/+cic/version.m` |
 | `labkit_CSC_app` | `1.3.7` | Electrochem | `apps/electrochem/csc/+csc/version.m` |

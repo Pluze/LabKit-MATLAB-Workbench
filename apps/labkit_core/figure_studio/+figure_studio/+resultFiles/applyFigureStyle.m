@@ -281,10 +281,14 @@ function tf = applyGridCanvasFrame(ax, width, height)
         return;
     end
     try
+        drawnow;
         parentPixels = getpixelposition(parent, true);
         margin = 24;
         availableWidth = max(1, parentPixels(3) - 2 * margin);
         availableHeight = max(1, parentPixels(4) - 2 * margin);
+        if availableWidth < 240 || availableHeight < 180
+            return;
+        end
         scale = min(1, min(availableWidth / width, availableHeight / height));
         frameWidth = max(1, round(width * scale));
         frameHeight = max(1, round(height * scale));

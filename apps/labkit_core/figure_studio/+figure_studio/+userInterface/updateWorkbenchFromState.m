@@ -5,6 +5,7 @@ function updateWorkbenchFromState(state, ui, ~)
     renderList(state, ui);
     renderControls(state, ui);
     renderPreviewStatus(state, ui);
+    clearPreviewFileContextTitle(state, ui);
 end
 
 function renderList(state, ui)
@@ -71,6 +72,23 @@ function renderEmptyPreview(state, ui)
     cla(ax, 'reset');
     ax.Visible = 'off';
     title(ax, "No figure loaded");
+end
+
+function clearPreviewFileContextTitle(state, ui)
+    if strlength(state.currentSource) == 0 || ...
+            ~isfield(ui.controls, 'preview') || ...
+            ~isfield(ui.controls.preview, 'axesById') || ...
+            ~isfield(ui.controls.preview.axesById, 'main')
+        return;
+    end
+    ax = ui.controls.preview.axesById.main;
+    try
+        titleText = join(string(ax.Title.String), " ");
+        if contains(titleText, " | file ") || startsWith(titleText, "file ")
+            title(ax, "");
+        end
+    catch
+    end
 end
 
 function value = onOffText(tf)

@@ -59,6 +59,8 @@ classdef GuiLayoutFigureStudioTest < matlab.uitest.TestCase
                 driver.enabled('exportCurrent'), ...
                 'Figure Studio should auto-open scanned FIG files into a styleable preview.');
             ax = driver.registry().controls.preview.axesById.main;
+            assert(~contains(join(string(ax.Title.String), " "), " | file "), ...
+                'Figure Studio should not style framework file-title context as plot content.');
             assert(isappdata(ax, 'labkitFigureStudioCanvasFrame'), ...
                 'Figure Studio preview should track a fixed canvas frame.');
             frameBefore = getappdata(ax, 'labkitFigureStudioCanvasFrame');
@@ -87,6 +89,9 @@ classdef GuiLayoutFigureStudioTest < matlab.uitest.TestCase
             pbaspect(sourceAx, [2 1 1]);
 
             fig = labkit_FigureStudio_app("axes", sourceAx);
+            waitForNotBusy(fig);
+            pause(1);
+            drawnow;
             driver = labkitWorkflowDriver(fig);
             assert(driver.previewChildCount('preview') > 0 && ...
                 driver.enabled('exportCurrent'), ...
@@ -97,6 +102,29 @@ classdef GuiLayoutFigureStudioTest < matlab.uitest.TestCase
             assert(abs(canvasRatio - 2) < 0.02 && ...
                 strcmp(string(labkit.ui.view.getValue(ui, "aspectPreset")), "Custom"), ...
                 'Figure Studio axes handoff should preserve the source plot box ratio as a custom canvas.');
+        end
+
+        function figure_studio_waits_for_stable_preview_canvas(testCase)
+            setupLabKitTestPath();
+            h = guiTestHelpers();
+            h.assertUifigureAvailable();
+            cleanup = onCleanup(@() h.closeAllFigures());
+
+            fig = uifigure('Visible', 'off', 'Position', [100 100 1200 800]);
+            grid = uigridlayout(fig, [3 3]);
+            ax = uiaxes(grid);
+            ax.Layout.Row = 2;
+            ax.Layout.Column = 2;
+            plot(ax, linspace(0, 30, 200), sin(linspace(0, 30, 200)));
+
+            style = figure_studio.styleLibrary.styleForPreset("LabKit figure");
+            style.previewScale = true;
+            figure_studio.resultFiles.applyFigureStyle(ax, style);
+
+            frame = getappdata(ax, 'labkitFigureStudioCanvasFrame');
+            assert(frame.scale > 0.5 && frame.position(3) > 0.5 && ...
+                frame.position(4) > 0.5, ...
+                'Figure Studio should not freeze preview canvas size from the initial 100x100 uigridlayout measurement.');
         end
 
         function popout_send_to_studio_copies_plot_content(testCase)
@@ -120,8 +148,7 @@ classdef GuiLayoutFigureStudioTest < matlab.uitest.TestCase
             h.invokeCallback(studioTool(1), 'Callback');
             drawnow;
 
-            studioFig = findall(groot, 'Type', 'figure', 'Name', ...
-                'Figure Studio v0.1.0 (2026-07-06)');
+            studioFig = figureStudioFigures();
             assert(~isempty(studioFig), ...
                 'Popout Studio handoff should launch Figure Studio.');
             driver = labkitWorkflowDriver(studioFig(1));
@@ -136,6 +163,15 @@ function removeStudioHook()
     if isappdata(groot, 'labkitFigureStudioLauncher')
         rmappdata(groot, 'labkitFigureStudioLauncher');
     end
+end
+
+function figures = figureStudioFigures()
+    allFigures = findall(groot, 'Type', 'figure');
+    keep = false(size(allFigures));
+    for k = 1:numel(allFigures)
+        keep(k) = contains(string(allFigures(k).Name), "Figure Studio");
+    end
+    figures = allFigures(keep);
 end
 
 function waitForNotBusy(fig)

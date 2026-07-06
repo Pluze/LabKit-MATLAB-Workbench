@@ -112,6 +112,7 @@ function pollStudioResize(timerObj, fig)
         setappdata(fig, key, pos);
         if hasPreviewContent(ax)
             figure_studio.resultFiles.applyFigureStyle(ax, previewStyle(runtime.state.style));
+            clearFrameworkPreviewTitle(ax);
         end
     catch
     end
@@ -147,6 +148,7 @@ function onStudioResized(fig)
         ax = runtime.ui.controls.preview.axesById.main;
         if hasPreviewContent(ax)
             figure_studio.resultFiles.applyFigureStyle(ax, previewStyle(runtime.state.style));
+            clearFrameworkPreviewTitle(ax);
         end
     catch
     end
@@ -263,6 +265,7 @@ function state = applyStyleToPreviewIfReady(state, services)
         return;
     end
     figure_studio.resultFiles.applyFigureStyle(ax, previewStyle(state.style));
+    clearFrameworkPreviewTitle(ax);
     state.status = "Styled with " + state.preset + ".";
 end
 
@@ -362,6 +365,7 @@ function state = onQuickExport(state, ~, services, format)
     end
     try
         figure_studio.resultFiles.applyFigureStyle(ax, state.style);
+        clearFrameworkPreviewTitle(ax);
         if format == "svg"
             exportgraphics(ax, filepath, "ContentType", "vector");
         else
@@ -372,10 +376,22 @@ function state = onQuickExport(state, ~, services, format)
         state.summary = summaryLines(state);
         addLog(services, state.status);
         figure_studio.resultFiles.applyFigureStyle(ax, previewStyle(state.style));
+        clearFrameworkPreviewTitle(ax);
     catch ME
         figure_studio.resultFiles.applyFigureStyle(ax, previewStyle(state.style));
+        clearFrameworkPreviewTitle(ax);
         reportException(services, "Quick export", ME);
         labkit.ui.app.showAlert(services.figure, ME.message, "Quick export");
+    end
+end
+
+function clearFrameworkPreviewTitle(ax)
+    try
+        titleText = join(string(ax.Title.String), " ");
+        if contains(titleText, " | file ") || startsWith(titleText, "file ")
+            title(ax, "");
+        end
+    catch
     end
 end
 
