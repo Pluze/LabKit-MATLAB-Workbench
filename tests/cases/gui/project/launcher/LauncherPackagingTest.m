@@ -1,0 +1,38 @@
+classdef LauncherPackagingTest < matlab.uitest.TestCase
+    %LAUNCHERPACKAGINGTEST Verify launcher single-app package wiring.
+
+    methods (Test, TestTags = {'GUI', 'Structural'})
+        function package_action_uses_deployment_tool(testCase)
+            root = setupLabKitTestPath();
+            source = fileread(fullfile(root, "labkit_launcher.m"));
+            body = launcherFunctionBlock(source, ...
+                '%% Section: Single app package action', ...
+                '%% Section: Update entrypoints and install transaction');
+
+            testCase.verifyFalse(isempty(strfind(body, ...
+                'tools'', ''deployment'', ''packageLabKitApp')), ...
+                'Launcher app packaging should be delegated to tools/deployment/packageLabKitApp.');
+            testCase.verifyFalse(isempty(strfind(body, 'packageLabKitApp(app')), ...
+                'Launcher should pass the selected discovered app to the deployment package tool.');
+            testCase.verifyFalse(isempty(strfind(body, ...
+                '''artifacts'', ''deployment''')), ...
+                'Launcher-created app packages should land under artifacts/deployment.');
+            testCase.verifyFalse(isempty(strfind(source, 'Package App')), ...
+                'Launcher should expose a source package button.');
+            testCase.verifyFalse(isempty(strfind(source, 'Package P-code')), ...
+                'Launcher should expose a P-code package button.');
+            testCase.verifyFalse(isempty(strfind(body, '''CodeFormat'', packageCodeFormat(usePcode)')), ...
+                'Launcher should pass the source vs P-code format choice to the package tool.');
+        end
+    end
+end
+
+function block = launcherFunctionBlock(source, startMarker, endMarker)
+    startIndex = strfind(source, startMarker);
+    endIndex = strfind(source, endMarker);
+    assert(~isempty(startIndex), 'Launcher source block start not found: %s', startMarker);
+    assert(~isempty(endIndex), 'Launcher source block end not found: %s', endMarker);
+    assert(startIndex(1) < endIndex(1), ...
+        'Launcher source block markers are out of order.');
+    block = source(startIndex(1):endIndex(1)-1);
+end

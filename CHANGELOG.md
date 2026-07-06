@@ -19,6 +19,35 @@ maintainer intent and user impact that are easy to lose in commit subjects.
 
 ## Unreleased
 
+### Pending - Single app deployment packages
+
+Affected versions:
+- `labkit_launcher` `1.2.5 -> 1.2.6`
+
+What changed:
+- Added launcher actions and a deployment tool that package one selected LabKit
+  app into a standalone zip, either as source `.m` files or encoded `.p` files.
+- The generated package includes the selected app and its assets, `+labkit/`,
+  `labkit_launcher.m`, the launcher-needed deployment/profiling tool folders,
+  a manifest, and a direct `run_<app_command>.m` entry file.
+- Private apps can be packaged from `private_apps/apps/` or
+  `LABKIT_PRIVATE_APP_ROOTS`; inside the zip they remain under
+  `private_apps/apps/...`.
+
+Why it matters:
+- A single lab workflow can be distributed into a fixed production or offline
+  deployment step without shipping unrelated apps, tests, docs, or repository
+  metadata.
+
+Compatibility:
+- Full LabKit checkout installs are unchanged.
+- Single-app packages can start through either the packaged launcher or the
+  direct run file; P-code packages require MATLAB to run the generated `.p`
+  files.
+
+Evidence:
+- Pending commit.
+
 ### Pending - Private app workspace discovery
 
 Affected versions:
@@ -72,7 +101,7 @@ Audited against `main` UI 5 squash commit on 2026-07-06.
 
 | Component | Current version | Family | Metadata location |
 |---|---:|---|---|
-| `labkit_launcher` | `1.2.5` | Launcher | `labkit_launcher.m` |
+| `labkit_launcher` | `1.2.6` | Launcher | `labkit_launcher.m` |
 | `labkit.ui` | `5.0.0` | Facade | `+labkit/+ui/version.m` |
 | `labkit.dta` | `2.0.0` | Facade | `+labkit/+dta/version.m` |
 | `labkit.image` | `1.1.0` | Facade | `+labkit/+image/version.m` |

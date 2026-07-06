@@ -11,7 +11,7 @@ apps/      workflow-specific GUI apps and app-owned helpers
 tests/     behavior tests, project contracts, GUI checks, shared helpers, and runner code
 docs/      human-facing usage, API, architecture, and validation docs
 scripts/   CI helper scripts
-tools/     maintainer-only MATLAB diagnostics and report generators
+tools/     maintainer diagnostics, deployment packagers, and report generators
 ```
 
 Apps should remain independently launchable. The reusable library should grow
@@ -41,15 +41,17 @@ rather than mixing private app files into the public repo history. The public
 structure guide is [private-apps.md](private-apps.md); private app
 documentation belongs in the private workspace.
 
-The launcher is intentionally self-contained: it uses native MATLAB UI and
-local helper functions so users can repair a damaged zip install even if
-packages, apps, docs, or scripts have been deleted. It configures the MATLAB
-path for app entry points. MATLAB desktop project metadata belongs to each
-developer's local workspace.
+The launcher keeps update, discovery, and repair logic self-contained: it uses
+native MATLAB UI and local helper functions so users can repair a damaged zip
+install even if packages, apps, docs, or scripts have been deleted. It
+configures the MATLAB path for app entry points. MATLAB desktop project
+metadata belongs to each developer's local workspace.
 
-Tools under `tools/` are source-checkout maintainer diagnostics. They are not
-runtime entry points for launcher users and are not dependencies of
-`labkit_launcher.m`.
+Tools under `tools/` are source-checkout support utilities rather than app
+runtime APIs. The launcher may call a small, explicit subset for maintenance
+and deployment actions, such as profiling a selected app or packaging a single
+app for offline deployment. Single-app deployment packages include the launcher
+and only those launcher-needed tool folders, not the whole source checkout.
 
 ## Ownership Boundaries
 

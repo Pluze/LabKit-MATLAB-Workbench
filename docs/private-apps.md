@@ -49,6 +49,14 @@ Private entries appear in the app catalog with `Visibility` set to `private`.
 They launch like ordinary LabKit apps after the launcher adds the app folder to
 the MATLAB path.
 
+The launcher can also package a selected private app for offline deployment as
+either source `.m` files or encoded `.p` files. The generated zip preserves the
+private app under `private_apps/apps/...` and includes the packaged launcher
+plus the deployment/profiling tool folders it uses. Private apps discovered
+through `LABKIT_PRIVATE_APP_ROOTS` are copied into that same
+`private_apps/apps/...` package shape so the zip does not depend on the source
+machine's environment variable or private workspace path.
+
 ## Git Ownership
 
 Keep `private_apps/` as a separate private Git repository:
@@ -90,3 +98,12 @@ assumptions into `+labkit`.
 The public repository should contain only this generic private-app structure
 guide. Put private app catalogs, SOPs, validation commands, sample notes,
 deployment notes, and release history in the private app repository.
+
+Private app repositories own their own tests and validation runners. They do
+not need to add app-specific suites, fixtures, build tasks, or sample assets to
+the public LabKit repository. Private app internals may be looser than public
+apps when a local workflow needs it, but the launcher-facing surface should
+remain compatible with LabKit discovery and guardrails: keep launch commands,
+`requirements` and `version` lightweight requests, path setup, and private
+sample hygiene valid when the private workspace is present next to a public
+checkout.

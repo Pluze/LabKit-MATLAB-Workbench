@@ -23,6 +23,7 @@ function varargout = labkit_launcher(varargin)
 %   Section: Clean Artifacts action
 %   Section: Code Analyzer action
 %   Section: Performance profile action
+%   Section: Single app package action
 %   Section: Update entrypoints and install transaction
 %   Section: GitHub update source discovery
 %   Section: Update validation and launcher window helpers
@@ -86,7 +87,7 @@ function info = launcherVersion()
     info = struct( ...
         "name", "labkit_launcher", ...
         "displayName", "LabKit App Launcher", ...
-        "version", "1.2.5", ...
+        "version", "1.2.6", ...
         "updated", "2026-07-06");
 end
 
@@ -148,8 +149,8 @@ function fig = runLauncher(root)
     rightPanel.Layout.Row = 1;
     rightPanel.Layout.Column = 3;
 
-    controlsGrid = uigridlayout(leftPanel, [7 1]);
-    controlsGrid.RowHeight = {34, 34, 34, 34, 34, 34, '1x'};
+    controlsGrid = uigridlayout(leftPanel, [8 1]);
+    controlsGrid.RowHeight = {34, 34, 34, 34, 34, 34, 34, '1x'};
     controlsGrid.Padding = [6 6 6 6];
     controlsGrid.RowSpacing = 6;
 
@@ -187,10 +188,25 @@ function fig = runLauncher(root)
         'ButtonPushedFcn', @onLaunchSelected);
     btnDebug = uibutton(controlsGrid, 'Text', 'Open Debug', ...
         'ButtonPushedFcn', @onLaunchSelectedDebug);
+    packageGrid = uigridlayout(controlsGrid, [1 2]);
+    packageGrid.Layout.Row = 5;
+    packageGrid.Layout.Column = 1;
+    packageGrid.ColumnWidth = {'1x', '1x'};
+    packageGrid.RowHeight = {'1x'};
+    packageGrid.Padding = [0 0 0 0];
+    packageGrid.ColumnSpacing = 6;
+    btnPackage = uibutton(packageGrid, 'Text', 'Package App', ...
+        'ButtonPushedFcn', @(~, ~) onPackageSelectedApp(false));
+    btnPackage.Layout.Row = 1;
+    btnPackage.Layout.Column = 1;
+    btnPackagePcode = uibutton(packageGrid, 'Text', 'Package P-code', ...
+        'ButtonPushedFcn', @(~, ~) onPackageSelectedApp(true));
+    btnPackagePcode.Layout.Row = 1;
+    btnPackagePcode.Layout.Column = 2;
     btnClean = uibutton(controlsGrid, 'Text', 'Clean Artifacts', ...
         'ButtonPushedFcn', @onCleanArtifacts);
     maintenanceGrid = uigridlayout(controlsGrid, [1 2]);
-    maintenanceGrid.Layout.Row = 6;
+    maintenanceGrid.Layout.Row = 7;
     maintenanceGrid.Layout.Column = 1;
     maintenanceGrid.ColumnWidth = {'1x', '1x'};
     maintenanceGrid.RowHeight = {'1x'};
@@ -208,6 +224,12 @@ function fig = runLauncher(root)
     if isprop(btnProfile, 'Tooltip')
         btnProfile.Tooltip = ['Profile the next app launched from this launcher ' ...
             'until that app window closes. Saves the report without opening a browser.'];
+    end
+    if isprop(btnPackage, 'Tooltip')
+        btnPackage.Tooltip = ['Create a standalone zip containing the selected app, ' ...
+            'its assets, the shared +labkit library, the launcher, and deployment tools.'];
+        btnPackagePcode.Tooltip = ['Create the same standalone zip with MATLAB code ' ...
+            'encoded as .p files instead of source .m files.'];
     end
     txtInfo = uitextarea(controlsGrid, 'Editable', 'off', 'Value', {'Ready.'});
 
@@ -296,6 +318,43 @@ function fig = runLauncher(root)
         btnProfile.Text = 'Profiler Armed';
         setStatus(['Performance profiler armed. Open the selected app; ' ...
             'the report will be written after the app closes.']);
+    end
+
+    function onPackageSelectedApp(usePcode)
+        if state.actionBusy
+            return;
+        end
+        if isempty(state.visibleApps)
+            setStatus('No app entry point is selected to package.');
+            return;
+        end
+        row = min(max(state.selectedRow, 1), numel(state.visibleApps));
+        app = state.visibleApps(row);
+        cleanupBusy = beginLauncherAction(sprintf('Packaging %s...', app.command));
+        setStatus(sprintf('Packaging %s...', app.command));
+        drawnow;
+        dlg = [];
+        try
+            dlg = uiprogressdlg(fig, 'Title', 'Package LabKit App', ...
+                'Message', 'Preparing package...', 'Indeterminate', 'on');
+        catch
+        end
+        if ~isempty(dlg)
+            dlgCleanup = onCleanup(@() close(dlg));
+        end
+        try
+            result = packageSelectedLabKitApp(root, app, logical(usePcode), @onPackageProgress);
+            setStatus(packageSuccessStatus(app, result));
+        catch err
+            setStatus(sprintf('Package failed for %s: %s', app.command, err.message));
+        end
+        clear dlgCleanup cleanupBusy;
+
+        function onPackageProgress(message, value)
+            setStatus(message);
+            updateProgressDialog(dlg, message, value);
+            drawnow limitrate;
+        end
     end
 
     function onCleanArtifacts(varargin)
@@ -544,6 +603,8 @@ function fig = runLauncher(root)
         btnOpen.Enable = stateValue;
         btnDebug.Enable = stateValue;
         btnProfile.Enable = stateValue;
+        btnPackage.Enable = stateValue;
+        btnPackagePcode.Enable = stateValue;
     end
 
     function cleanupBusy = beginLauncherAction(message)
@@ -906,7 +967,16 @@ end
 
 function message = integrityStatus(root, apps)
     missing = missingManagedProjectParts(root);
-    if isempty(apps)
+    packageInfo = singleAppPackageInfo(root);
+    if packageInfo.isPackage && isempty(apps)
+        message = "Single app package is missing its app entry point.";
+    elseif packageInfo.isPackage && isempty(missing)
+        message = sprintf('Single app package ready: %d app(s) available.', numel(apps));
+    elseif packageInfo.isPackage
+        message = sprintf(['Single app package has %d app(s), but package parts are ' ...
+            'missing: %s. Recreate the package from a complete LabKit checkout.'], ...
+            numel(apps), strjoin(cellstr(missing), ', '));
+    elseif isempty(apps)
         message = "No app entry points found. Use GitHub Update to repair this install.";
     elseif isempty(missing)
         message = sprintf('%d app(s) available. Project structure looks complete.', numel(apps));
@@ -918,13 +988,48 @@ function message = integrityStatus(root, apps)
 end
 
 function missing = missingManagedProjectParts(root)
-    required = ["+labkit", "apps", "docs", "tests", "buildfile.m", ...
-        "README.md", "AGENTS.md"];
+    packageInfo = singleAppPackageInfo(root);
+    if packageInfo.isPackage
+        required = [packageInfo.launcherFile, "+labkit", packageInfo.appFolder, ...
+            "tools/deployment", "tools/profiling", "packaged_app_manifest.json"];
+    else
+        required = ["+labkit", "apps", "docs", "tests", "buildfile.m", ...
+            "README.md", "AGENTS.md"];
+    end
     missing = strings(1, 0);
     for k = 1:numel(required)
         path = fullfile(root, char(required(k)));
         if exist(path, "file") ~= 2 && exist(path, "dir") ~= 7
             missing(end+1) = required(k);
+        end
+    end
+end
+
+function info = singleAppPackageInfo(root)
+    info = struct('isPackage', false, 'appCommand', "", ...
+        'appFolder', "apps", 'codeFormat', "source", 'launcherFile', "labkit_launcher.m");
+    manifestFile = fullfile(root, "packaged_app_manifest.json");
+    if exist(manifestFile, "file") ~= 2
+        return;
+    end
+    try
+        raw = jsondecode(fileread(manifestFile));
+    catch
+        return;
+    end
+    if isfield(raw, "type") && string(raw.type) == "labkit.single_app_package"
+        info.isPackage = true;
+        if isfield(raw, "appCommand")
+            info.appCommand = string(raw.appCommand);
+        end
+        if isfield(raw, "appFolder")
+            info.appFolder = string(raw.appFolder);
+        end
+        if isfield(raw, "codeFormat")
+            info.codeFormat = string(raw.codeFormat);
+        end
+        if info.codeFormat == "pcode"
+            info.launcherFile = "labkit_launcher.p";
         end
     end
 end
@@ -996,8 +1101,7 @@ function apps = discoverApps(root)
         if exist(appRoot, 'dir') ~= 7
             continue;
         end
-        entries = dir(fullfile(appRoot, '**', 'labkit_*_app.m'));
-        entries = entries(~[entries.isdir]);
+        entries = appEntryFiles(appRoot);
         for k = 1:numel(entries)
             filepath = fullfile(entries(k).folder, entries(k).name);
             rel = relativePath(appRoot, filepath);
@@ -1032,6 +1136,28 @@ function app = emptyAppStruct()
         'visibility', {}, ...
         'folder', {}, 'relativePath', {}, 'description', {}, ...
         'version', {}, 'updated', {});
+end
+
+function entries = appEntryFiles(appRoot)
+    entries = [dir(fullfile(appRoot, '**', 'labkit_*_app.m')); ...
+        dir(fullfile(appRoot, '**', 'labkit_*_app.p'))];
+    entries = entries(~[entries.isdir]);
+    if isempty(entries)
+        return;
+    end
+    paths = strings(numel(entries), 1);
+    commands = strings(numel(entries), 1);
+    isSource = false(numel(entries), 1);
+    for k = 1:numel(entries)
+        paths(k) = string(fullfile(entries(k).folder, entries(k).name));
+        [~, commands(k), ext] = fileparts(paths(k));
+        isSource(k) = string(ext) == ".m";
+    end
+    [~, order] = sortrows([commands, string(~isSource), paths]);
+    entries = entries(order);
+    commands = commands(order);
+    [~, keep] = unique(commands, "stable");
+    entries = entries(keep);
 end
 
 function catalog = appCatalogTable(apps)
@@ -1323,8 +1449,8 @@ end
 %% Section: Performance profile action
 
 function result = runLauncherAppProfile(root, app, debugMode)
-    profileTool = fullfile(root, 'tools', 'profiling', 'profileLabKitTarget.m');
-    if exist(profileTool, 'file') ~= 2
+    profileTool = profileToolFile(root);
+    if strlength(string(profileTool)) == 0
         error('labkit_launcher:ProfilerUnavailable', ...
             ['Performance profiler tools are missing. Restore tools/profiling ' ...
             'or update the LabKit install.']);
@@ -1357,6 +1483,10 @@ function result = runLauncherAppProfile(root, app, debugMode)
     result.jsonFile = string(artifacts.jsonFile);
     result.relativeHtmlFile = string(relativePath(root, htmlFile));
     result.relativeJsonFile = string(relativePath(root, artifacts.jsonFile));
+end
+
+function toolFile = profileToolFile(root)
+    toolFile = matlabCodeFile(fullfile(root, 'tools', 'profiling', 'profileLabKitTarget'));
 end
 
 function launchProfileTarget(app, debugMode)
@@ -1406,6 +1536,61 @@ function line = firstTextLine(text)
     else
         line = parts(1);
     end
+end
+
+%% Section: Single app package action
+
+function result = packageSelectedLabKitApp(root, app, usePcode, progressFcn)
+    packageTool = packageToolFile(root);
+    if strlength(string(packageTool)) == 0
+        error('labkit_launcher:PackageToolUnavailable', ...
+            ['Deployment package tools are missing. Restore tools/deployment ' ...
+            'or update the LabKit install.']);
+    end
+    packageFolder = fileparts(packageTool);
+    addedPackagePath = ~pathContains(packageFolder);
+    addPathIfMissing(packageFolder);
+    if addedPackagePath
+        packagePathCleanup = onCleanup(@() rmpath(packageFolder));
+    end
+
+    outputRoot = fullfile(root, 'artifacts', 'deployment');
+    ensureFolder(outputRoot);
+    result = packageLabKitApp(app, [], ...
+        'Root', root, ...
+        'OutputRoot', outputRoot, ...
+        'CodeFormat', packageCodeFormat(usePcode), ...
+        'ProgressFcn', progressFcn);
+    result.relativeZipFile = string(relativePath(root, result.zipFile));
+    clear packagePathCleanup;
+end
+
+function toolFile = packageToolFile(root)
+    toolFile = matlabCodeFile(fullfile(root, 'tools', 'deployment', 'packageLabKitApp'));
+end
+
+function file = matlabCodeFile(baseFile)
+    candidates = string(baseFile) + [".m", ".p"];
+    file = "";
+    for k = 1:numel(candidates)
+        if exist(candidates(k), 'file') == 2
+            file = char(candidates(k));
+            return;
+        end
+    end
+end
+
+function codeFormat = packageCodeFormat(usePcode)
+    if usePcode
+        codeFormat = "pcode";
+    else
+        codeFormat = "source";
+    end
+end
+
+function message = packageSuccessStatus(app, result)
+    message = sprintf('Packaged %s as %s. Run %s after unzipping.', ...
+        app.command, char(result.relativeZipFile), char(result.entryFile));
 end
 
 %% Section: Update entrypoints and install transaction
@@ -1780,7 +1965,7 @@ function removed = removedAppEntrypoints(currentRoot, sourceRoot)
 end
 
 function apps = collectAppEntrypoints(root)
-    entries = dir(fullfile(root, "apps", "**", "labkit_*_app.m"));
+    entries = appEntryFiles(fullfile(root, "apps"));
     apps = strings(1, 0);
     for k = 1:numel(entries)
         if entries(k).isdir

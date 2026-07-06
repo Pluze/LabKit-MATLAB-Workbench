@@ -45,6 +45,16 @@ artifacts under `artifacts/`.
 The Code Analyzer action writes a native `codeIssues` JSON export to
 `artifacts/code-check/matlab_code_issues.json` for manual maintenance review.
 
+The `Package App` launcher action creates a single-app source zip under
+`artifacts/deployment/`. `Package P-code` creates the same standalone package
+shape with MATLAB code encoded as `.p` files instead of source `.m` files. The
+zip expands to a standalone directory containing the selected app folder and
+its assets, `+labkit/`, the launcher, the launcher-needed deployment/profiling
+tool folders, a `packaged_app_manifest.json`, and a direct
+`run_<app_command>` entry file. Users can run either the direct entry file or
+`labkit_launcher` from the unzipped folder. The package intentionally omits
+unrelated public apps, tests, docs, CI files, and source-checkout metadata.
+
 The launcher sets up the app path before opening an app. App-owned packages are
 reached through their owning app entrypoint and package namespace.
 
