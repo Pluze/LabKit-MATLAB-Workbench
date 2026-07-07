@@ -61,6 +61,38 @@ classdef DicPreprocessOpsTest < matlab.unittest.TestCase
             testCase.verifyGreaterThan(nnz(mask), 0);
         end
 
+        function boundaryMaskFromEditorPrefersLiveEditorPoints(testCase)
+            setupLabKitTestPath();
+
+            stalePoints = zeros(0, 2);
+            editorPoints = [3 3; 9 3; 9 9; 3 9];
+            editor = struct( ...
+                'getPoints', @() editorPoints, ...
+                'curvePoints', @() [editorPoints; editorPoints(1, :)]);
+
+            [mask, ok] = dic_preprocess.analysisRun.boundaryMaskFromEditor( ...
+                stalePoints, [12 12], 'Straight lines', editor);
+
+            testCase.verifyTrue(ok);
+            testCase.verifyClass(mask, 'uint8');
+            testCase.verifyGreaterThan(nnz(mask), 0);
+        end
+
+        function boundaryMaskFromEditorToleratesPointOnlyEditor(testCase)
+            setupLabKitTestPath();
+
+            stalePoints = zeros(0, 2);
+            editorPoints = [3 3; 9 3; 9 9; 3 9];
+            editor = struct('getPoints', @() editorPoints);
+
+            [mask, ok] = dic_preprocess.analysisRun.boundaryMaskFromEditor( ...
+                stalePoints, [12 12], 'Curve', editor);
+
+            testCase.verifyTrue(ok);
+            testCase.verifyClass(mask, 'uint8');
+            testCase.verifyGreaterThan(nnz(mask), 0);
+        end
+
         function squareCropGeometryStaysInsideImage(testCase)
             setupLabKitTestPath();
 

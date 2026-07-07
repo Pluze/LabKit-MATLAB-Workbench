@@ -8,15 +8,38 @@ function [boundaryMask, ok] = boundaryMaskFromEditor(maskPoints, imageSize, boun
 
     ok = false;
     boundaryMask = [];
+    [maskPoints, hasLiveEditorPoints] = currentEditorPoints(maskPoints, maskEditor);
     if size(maskPoints, 1) < 3
         return;
     end
-    if ~isempty(maskEditor)
-        curve = maskEditor.curvePoints();
+    [curve, hasEditorCurve] = currentEditorCurve(maskEditor);
+    if hasLiveEditorPoints && hasEditorCurve && ~isempty(curve)
         boundaryMask = dic_preprocess.analysisRun.maskFromCurve(curve, imageSize);
     else
         boundaryMask = dic_preprocess.analysisRun.boundaryMaskImage( ...
             maskPoints, imageSize, boundaryStyle);
     end
+    ok = true;
+end
+
+function [points, ok] = currentEditorPoints(fallbackPoints, maskEditor)
+    ok = false;
+    points = fallbackPoints;
+    if isempty(maskEditor) || ~isstruct(maskEditor) || ...
+            ~isfield(maskEditor, 'getPoints') || ~isa(maskEditor.getPoints, 'function_handle')
+        return;
+    end
+    points = maskEditor.getPoints();
+    ok = true;
+end
+
+function [curve, ok] = currentEditorCurve(maskEditor)
+    ok = false;
+    curve = [];
+    if isempty(maskEditor) || ~isstruct(maskEditor) || ...
+            ~isfield(maskEditor, 'curvePoints') || ~isa(maskEditor.curvePoints, 'function_handle')
+        return;
+    end
+    curve = maskEditor.curvePoints();
     ok = true;
 end

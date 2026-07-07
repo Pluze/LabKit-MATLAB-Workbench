@@ -19,6 +19,44 @@ maintainer intent and user impact that are easy to lose in commit subjects.
 
 ## Unreleased
 
+### Pending - Debug-session app workflow fixes
+
+Affected versions:
+- `labkit.ui` `5.0.1 -> 5.0.2`
+- `labkit_FigureStudio_app` `0.1.4 -> 0.1.5`
+- `labkit_DICPreprocess_app` `1.3.4 -> 1.3.5`
+- `labkit_BatchImageCrop_app` `1.6.6 -> 1.6.7`
+- `labkit_FocusStack_app` `1.4.5 -> 1.4.6`
+
+What changed:
+- DIC Preprocess ROI mask export now reads the live ROI editor anchors when
+  building a mask, so preview/save do not misreport a drawn ROI as empty when
+  editor state is newer than the app state snapshot.
+- DIC Preprocess keeps the double-click ROI anchor workflow and makes the
+  double-click requirement explicit in the visible details text.
+- Batch Image Crop duplicate tasks now redraw with finite preview overlay
+  coordinates while still requiring users to confirm the duplicated crop
+  center before export.
+- Figure Studio quick PNG/JPG/SVG export actions use runtime-compatible
+  handler signatures.
+- Focus Stack exposes a direct `Choose folder` action for loading all supported
+  images from a focus-stack folder.
+- Debug trace diagnostics no longer write stalled-callback crash reports while
+  a file chooser modal is active.
+
+Why it matters:
+- The debug sample workflows can be exercised without false crash reports or
+  disabled-looking app paths when the required user action is folder loading,
+  ROI anchor completion, or crop-center confirmation.
+
+Compatibility:
+- DIC ROI editing still uses double-click to add anchors; no interaction-mode
+  migration is required.
+- Existing file-panel image selection remains available in Focus Stack.
+
+Evidence:
+- Pending commit.
+
 ### Pending - Code Analyzer reports and optional launcher tools
 
 Affected versions:
@@ -142,24 +180,24 @@ Audited against `main` UI 5 squash commit on 2026-07-06.
 | Component | Current version | Family | Metadata location |
 |---|---:|---|---|
 | `labkit_launcher` | `1.2.7` | Launcher | `labkit_launcher.m` |
-| `labkit.ui` | `5.0.1` | Facade | `+labkit/+ui/version.m` |
+| `labkit.ui` | `5.0.2` | Facade | `+labkit/+ui/version.m` |
 | `labkit.dta` | `2.0.0` | Facade | `+labkit/+dta/version.m` |
 | `labkit.image` | `1.1.0` | Facade | `+labkit/+image/version.m` |
 | `labkit.thermal` | `1.0.0` | Facade | `+labkit/+thermal/version.m` |
 | `labkit.rhs` | `1.0.0` | Facade | `+labkit/+rhs/version.m` |
 | `labkit.biosignal` | `1.0.0` | Facade | `+labkit/+biosignal/version.m` |
-| `labkit_FigureStudio_app` | `0.1.4` | LabKit Core | `apps/labkit_core/figure_studio/+figure_studio/version.m` |
+| `labkit_FigureStudio_app` | `0.1.5` | LabKit Core | `apps/labkit_core/figure_studio/+figure_studio/version.m` |
 | `labkit_ChronoOverlay_app` | `1.3.5` | Electrochem | `apps/electrochem/chrono_overlay/+chrono_overlay/version.m` |
 | `labkit_CIC_app` | `1.3.7` | Electrochem | `apps/electrochem/cic/+cic/version.m` |
 | `labkit_CSC_app` | `1.3.9` | Electrochem | `apps/electrochem/csc/+csc/version.m` |
 | `labkit_EIS_app` | `1.3.4` | Electrochem | `apps/electrochem/eis/+eis/version.m` |
 | `labkit_VTResistance_app` | `1.3.7` | Electrochem | `apps/electrochem/vt_resistance/+vt_resistance/version.m` |
-| `labkit_DICPreprocess_app` | `1.3.4` | DIC | `apps/dic/dic_preprocess/+dic_preprocess/version.m` |
+| `labkit_DICPreprocess_app` | `1.3.5` | DIC | `apps/dic/dic_preprocess/+dic_preprocess/version.m` |
 | `labkit_DICPostprocess_app` | `1.3.4` | DIC | `apps/dic/dic_postprocess/+dic_postprocess/version.m` |
-| `labkit_BatchImageCrop_app` | `1.6.6` | Image Measurement | `apps/image_measurement/batch_crop/+batch_crop/version.m` |
+| `labkit_BatchImageCrop_app` | `1.6.7` | Image Measurement | `apps/image_measurement/batch_crop/+batch_crop/version.m` |
 | `labkit_CurvatureMeasurement_app` | `1.3.4` | Image Measurement | `apps/image_measurement/curvature/+curvature/version.m` |
 | `labkit_FLIRThermal_app` | `1.2.8` | Image Measurement | `apps/image_measurement/flir_thermal/+flir_thermal/version.m` |
-| `labkit_FocusStack_app` | `1.4.5` | Image Measurement | `apps/image_measurement/focus_stack/+focus_stack/version.m` |
+| `labkit_FocusStack_app` | `1.4.6` | Image Measurement | `apps/image_measurement/focus_stack/+focus_stack/version.m` |
 | `labkit_ImageEnhance_app` | `1.5.5` | Image Measurement | `apps/image_measurement/image_enhance/+image_enhance/version.m` |
 | `labkit_ImageMatch_app` | `1.5.5` | Image Measurement | `apps/image_measurement/image_match/+image_match/version.m` |
 | `labkit_RHSPreview_app` | `1.3.4` | Neurophysiology | `apps/neurophysiology/rhs_preview/+rhs_preview/version.m` |

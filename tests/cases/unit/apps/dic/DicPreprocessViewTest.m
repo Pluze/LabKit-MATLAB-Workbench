@@ -122,7 +122,7 @@ classdef DicPreprocessViewTest < matlab.unittest.TestCase
             testCase.verifyEqual(boundaryState.addBoundary, 'on');
             testCase.verifyEqual(boundaryState.undoMaskEdit, 'on');
             testCase.verifyEqual(emptyDetails, { ...
-                'Mask ROI anchors: 0. Need at least 3 anchors to form a closed ROI boundary.'});
+                'Mask ROI anchors: 0. Double-click the reference preview to add anchors; at least 3 anchors are required.'});
             testCase.verifyEqual(boundaryDetails, { ...
                 'Mask ROI anchors: 3. Preview, Add to mask, or Subtract from mask.'});
             testCase.verifyEqual(dic_preprocess.userInterface.onOff(true), 'on');

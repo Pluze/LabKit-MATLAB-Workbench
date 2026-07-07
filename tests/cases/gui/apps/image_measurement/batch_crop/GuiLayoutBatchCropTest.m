@@ -91,6 +91,11 @@ classdef GuiLayoutBatchCropTest < matlab.uitest.TestCase
                 'Batch crop append should preserve the existing crop task.');
             assert(contains(driver.fileSelection('images'), 'source_second.png'), ...
                 'Batch crop append should select the newly added image.');
+
+            driver.click('Duplicate image');
+            h.waitForUiIdle(fig);
+            assert(contains(driver.fileStatus('images'), '3'), ...
+                'Duplicating the current crop task should redraw without invalid overlay coordinates.');
         end
     end
 end
