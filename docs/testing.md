@@ -72,6 +72,15 @@ Common choices:
 packaged copies, or environments without git state, use `headless` or an
 explicit `runLabKitTests` suite selection instead.
 
+Project style and code-quality guardrails normally scan only public repository
+files. A private app workspace can opt in by placing an empty
+`.labkit-accept-main-guardrails` file at the private workspace root. Accepted
+roots under `private_apps/apps/` or `LABKIT_PRIVATE_APP_ROOTS` are included in
+source-text quality scans and Code Analyzer reports without adding private
+source to the public repository. For temporary local checks,
+`LABKIT_GUARD_PRIVATE_APPS=1` includes configured private roots even without
+the sentinel file.
+
 The changed-file planner routes by source ownership. For example, a single app
 change maps to that app family plus its GUI folder when one exists; reusable
 UI changes map to reusable UI coverage plus downstream GUI coverage; docs,

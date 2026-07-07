@@ -83,6 +83,7 @@ function verify_gui_layout_ui_busy_state()
     verifyDebouncedParameterWrappers();
     verifyHiddenModeAlertRecording();
     verifyCloseGuard();
+    verifyCloseKeyboardShortcut();
 
     function value = probeWork()
         assert(strcmp(btnRun.Enable, 'on'), ...
@@ -153,6 +154,44 @@ function verifyHiddenModeAlertRecording()
         contains(lines, 'reason=skipped-hidden-gui')), ...
         'showAlert should trace hidden-mode alert skips through the debug context.');
     clear cleanupMode;
+end
+
+function verifyCloseKeyboardShortcut()
+    confirmCalls = 0;
+    layout = labkit.ui.layout.workbench('closeShortcutProbe', 'Close Shortcut Probe', ...
+        'controlTabs', {labkit.ui.layout.tab('main', 'Main', { ...
+        labkit.ui.layout.section('actions', 'Actions', { ...
+        labkit.ui.layout.action('noop', 'Noop', @(~, ~) [])})})}, ...
+        'workspace', labkit.ui.layout.workspace('workspace', 'Preview', { ...
+        labkit.ui.layout.statusPanel('status', 'Status')}));
+    ui = labkit.ui.runtime.create(layout);
+    cleaner = onCleanup(@() deleteIfValid(ui.figure));
+    keyFcn = ui.figure.WindowKeyPressFcn;
+    assert(isa(keyFcn, 'function_handle'), ...
+        'LabKit runtime figures should install a close keyboard shortcut callback.');
+
+    labkit.ui.runtime.setCloseGuard(ui.figure, true, "Shortcut probe work.");
+    setappdata(ui.figure, 'labkitUiCloseConfirmFcn', @confirmCancel);
+    keyFcn(ui.figure, struct('Key', 'w', 'Modifier', {{'command'}}));
+    assert(isvalid(ui.figure), ...
+        'Cmd+W should use close guard and keep the figure open when close is cancelled.');
+    assert(confirmCalls == 1, ...
+        'Cmd+W should call the close confirmation path.');
+
+    setappdata(ui.figure, 'labkitUiCloseConfirmFcn', @confirmClose);
+    keyFcn(ui.figure, struct('Key', 'w', 'Modifier', {{'control'}}));
+    assert(~isvalid(ui.figure), ...
+        'Ctrl+W should use the same close shortcut path and close when confirmed.');
+
+    function response = confirmCancel(~, ~)
+        confirmCalls = confirmCalls + 1;
+        response = "Cancel";
+    end
+
+    function response = confirmClose(~, ~)
+        confirmCalls = confirmCalls + 1;
+        response = "Close";
+    end
 end
 
 function verifyCloseGuard()

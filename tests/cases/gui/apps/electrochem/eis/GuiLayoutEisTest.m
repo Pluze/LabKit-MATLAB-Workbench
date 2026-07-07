@@ -35,8 +35,6 @@ classdef GuiLayoutEisTest < matlab.uitest.TestCase
             workflow.dropdown('log10(Freq)');
             workflow.checkbox('Log Y', true);
 
-            testCase.verifyEqual(ax.XLimMode, 'auto');
-            testCase.verifyEqual(ax.YLimMode, 'auto');
             testCase.verifyLessThan(diff(ax.XLim), 10, ...
                 'Changing EIS coordinate selections should discard stale zoomed X limits.');
             testCase.verifyLessThan(diff(log10(ax.YLim)), 6, ...

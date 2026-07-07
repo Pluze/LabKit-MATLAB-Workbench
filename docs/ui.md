@@ -356,6 +356,9 @@ their own pointer and callback state in place.
 LabKit-created app figures install a framework close guard. If the user tries
 to close an app while a semantic action or `runBusy` operation is active, the
 framework asks for confirmation instead of immediately deleting the figure.
+The app-window close shortcut uses the same path: Command-W on macOS and
+Control-W elsewhere request a guarded close rather than bypassing unfinished
+work prompts.
 Apps with unfinished workflow state should call
 `labkit.ui.runtime.setCloseGuard(fig, true, message)` during refresh or dirty-state
 updates, then clear it with `setCloseGuard(fig, false)` after the workflow is

@@ -19,6 +19,46 @@ maintainer intent and user impact that are easy to lose in commit subjects.
 
 ## Unreleased
 
+### Pending - Code Analyzer reports and optional launcher tools
+
+Affected versions:
+- `labkit_launcher` `1.2.6 -> 1.2.7`
+- `labkit.ui` `5.0.0 -> 5.0.1`
+
+What changed:
+- Moved the launcher Code Analyzer scan into `tools/codecheck`, which now
+  writes a timestamped JSON/HTML report pair under `artifacts/code-check/`
+  without overwriting earlier runs.
+- The HTML report supports active/suppressed/all issue views, severity and
+  CheckID filters, file and CheckID summaries, selected-issue details, and
+  embedded source text for issue files.
+- Code Analyzer reports and project style/code-quality guardrails can include
+  local private app workspaces from `private_apps/apps/` and
+  `LABKIT_PRIVATE_APP_ROOTS` when the private workspace opts in with
+  `.labkit-accept-main-guardrails`.
+- The visible launcher opens Code Analyzer and profiler HTML reports after
+  manual tool actions; hidden automated GUI tests suppress browser launch.
+- Optional maintenance buttons are disabled when their tool folders are missing,
+  while app launch and version update actions remain available.
+- Cleaned duplicate Code Analyzer branches in reusable UI helpers and adjusted
+  launcher busy-state cleanup so MATLAB Code Analyzer no longer reports those
+  error-level findings.
+
+Why it matters:
+- Code Analyzer cleanup can be reviewed from an interactive local HTML report
+  without making the launcher own a growing maintenance workflow.
+- Damaged or slimmed-down installs keep core launcher behavior available even
+  when optional maintenance tools are absent.
+
+Compatibility:
+- Code Analyzer report consumers should read the timestamped
+  `artifacts/code-check/matlab_code_issues_*.json` files.
+- The HTML report is an additional timestamped artifact under `artifacts/` and
+  is not tracked.
+
+Evidence:
+- Pending commit.
+
 ### Pending - Single app deployment packages
 
 Affected versions:
@@ -101,8 +141,8 @@ Audited against `main` UI 5 squash commit on 2026-07-06.
 
 | Component | Current version | Family | Metadata location |
 |---|---:|---|---|
-| `labkit_launcher` | `1.2.6` | Launcher | `labkit_launcher.m` |
-| `labkit.ui` | `5.0.0` | Facade | `+labkit/+ui/version.m` |
+| `labkit_launcher` | `1.2.7` | Launcher | `labkit_launcher.m` |
+| `labkit.ui` | `5.0.1` | Facade | `+labkit/+ui/version.m` |
 | `labkit.dta` | `2.0.0` | Facade | `+labkit/+dta/version.m` |
 | `labkit.image` | `1.1.0` | Facade | `+labkit/+image/version.m` |
 | `labkit.thermal` | `1.0.0` | Facade | `+labkit/+thermal/version.m` |

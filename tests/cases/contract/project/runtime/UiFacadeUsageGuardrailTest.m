@@ -57,17 +57,8 @@ classdef UiFacadeUsageGuardrailTest < matlab.unittest.TestCase
 end
 
 function files = appSourceFiles(root)
-    entries = dir(fullfile(root, 'apps', '**', '*.m'));
-    files = strings(0, 1);
-    for k = 1:numel(entries)
-        pathValue = string(fullfile(entries(k).folder, entries(k).name));
-        if contains(pathValue, filesep + "private" + filesep)
-            files(end+1, 1) = pathValue;
-            continue;
-        end
-        files(end+1, 1) = pathValue;
-    end
-    files = sort(files);
+    scope = labkitQualityScanScope(root);
+    files = scope.appMFiles;
 end
 
 function rel = relativePath(root, filepath)

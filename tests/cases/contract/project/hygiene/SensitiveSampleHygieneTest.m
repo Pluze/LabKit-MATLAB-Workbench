@@ -13,7 +13,8 @@ function verify_sensitive_sample_hygiene()
 %TEST_SENSITIVE_SAMPLE_HYGIENE Guard tracked text against local sample-data leaks.
 
     root = testRepoRoot();
-    files = collectTrackedTextScope(root);
+    scope = labkitQualityScanScope(root);
+    files = cellstr(scope.textFiles);
     assert(~isempty(files), 'Sensitive sample hygiene test should scan tracked text files.');
 
     for k = 1:numel(files)
@@ -24,48 +25,6 @@ function verify_sensitive_sample_hygiene()
         assertNoCurrentHomePath(content, rel);
         assertNoSampleTimestampToken(content, rel);
     end
-end
-
-function files = collectTrackedTextScope(root)
-    entries = {'README.md', 'AGENTS.md', 'docs', 'scripts', ...
-        'tests', 'apps', '+labkit', '.github'};
-    files = {};
-    for k = 1:numel(entries)
-        path = fullfile(root, entries{k});
-        if exist(path, 'dir') == 7
-            files = [files, collectTextFiles(path)];
-        elseif exist(path, 'file') == 2 && isTextFile(path)
-            files{end+1} = path;
-        end
-    end
-end
-
-function files = collectTextFiles(folder)
-    files = {};
-    entries = dir(folder);
-    [~, order] = sort({entries.name});
-    entries = entries(order);
-
-    for k = 1:numel(entries)
-        entry = entries(k);
-        if entry.isdir
-            if any(strcmp(entry.name, {'.', '..'}))
-                continue;
-            end
-            files = [files, collectTextFiles(fullfile(folder, entry.name))];
-        else
-            filepath = fullfile(folder, entry.name);
-            if isTextFile(filepath)
-                files{end+1} = filepath;
-            end
-        end
-    end
-end
-
-function tf = isTextFile(filepath)
-    [~, ~, ext] = fileparts(filepath);
-    tf = any(strcmpi(ext, {'.m', '.md', '.ps1', '.sh', '.yml', '.yaml', ...
-        '.json', '.txt', '.csv', '.tsv'}));
 end
 
 function rel = relativeRepoPath(root, filepath)

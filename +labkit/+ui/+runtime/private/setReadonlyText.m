@@ -19,9 +19,5 @@ function setReadonlyText(control, value)
 end
 
 function text = readonlyValueText(value)
-    if iscell(value)
-        text = char(join(string(value(:)), newline));
-    else
-        text = char(join(string(value(:)), newline));
-    end
+    text = char(join(string(value(:)), newline));
 end

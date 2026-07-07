@@ -87,7 +87,7 @@ function info = launcherVersion()
     info = struct( ...
         "name", "labkit_launcher", ...
         "displayName", "LabKit App Launcher", ...
-        "version", "1.2.6", ...
+        "version", "1.2.7", ...
         "updated", "2026-07-06");
 end
 
@@ -252,7 +252,9 @@ function fig = runLauncher(root)
 
     state = struct('apps', emptyAppStruct(), 'visibleApps', emptyAppStruct(), ...
         'selectedRow', 1, 'status', "Loading app list...", ...
-        'profileNextLaunch', false, 'actionBusy', false);
+        'profileNextLaunch', false, 'actionBusy', false, ...
+        'tools', launcherToolAvailability(root));
+    applyToolButtonTooltips();
     appTable.Data = cell(0, 6);
     setLaunchEnabled(false);
     updateInfo("Loading app list...");
@@ -264,7 +266,7 @@ function fig = runLauncher(root)
     refreshTable();
 
     function onRefreshApps(varargin)
-        cleanupBusy = beginLauncherAction("Refreshing app list...");
+        beginLauncherAction("Refreshing app list...");
         drawnow;
         dlg = [];
         try
@@ -276,13 +278,20 @@ function fig = runLauncher(root)
         if ~isempty(dlg)
             dlgCleanup = onCleanup(@() close(dlg));
         end
-        selectedCommand = currentSelectedAppCommand();
-        state.apps = discoverApps(root);
-        state.visibleApps = state.apps;
-        state.selectedRow = appRowByCommand(state.visibleApps, selectedCommand);
-        initializeLauncherPath(root);
-        refreshTable();
-        clear dlgCleanup cleanupBusy;
+        try
+            selectedCommand = currentSelectedAppCommand();
+            state.tools = launcherToolAvailability(root);
+            applyToolButtonTooltips();
+            state.apps = discoverApps(root);
+            state.visibleApps = state.apps;
+            state.selectedRow = appRowByCommand(state.visibleApps, selectedCommand);
+            initializeLauncherPath(root);
+            refreshTable();
+        catch err
+            setStatus(sprintf('Refresh app list failed: %s', err.message));
+        end
+        clear dlgCleanup;
+        endLauncherAction();
     end
 
     function onSelectionChanged(~, event)
@@ -330,7 +339,7 @@ function fig = runLauncher(root)
         end
         row = min(max(state.selectedRow, 1), numel(state.visibleApps));
         app = state.visibleApps(row);
-        cleanupBusy = beginLauncherAction(sprintf('Packaging %s...', app.command));
+        beginLauncherAction(sprintf('Packaging %s...', app.command));
         setStatus(sprintf('Packaging %s...', app.command));
         drawnow;
         dlg = [];
@@ -348,7 +357,8 @@ function fig = runLauncher(root)
         catch err
             setStatus(sprintf('Package failed for %s: %s', app.command, err.message));
         end
-        clear dlgCleanup cleanupBusy;
+        clear dlgCleanup;
+        endLauncherAction();
 
         function onPackageProgress(message, value)
             setStatus(message);
@@ -365,7 +375,7 @@ function fig = runLauncher(root)
             setStatus('Clean artifacts canceled.');
             return;
         end
-        cleanupBusy = beginLauncherAction("Cleaning generated artifacts...");
+        beginLauncherAction("Cleaning generated artifacts...");
         drawnow;
         dlg = [];
         try
@@ -376,9 +386,14 @@ function fig = runLauncher(root)
         if ~isempty(dlg)
             dlgCleanup = onCleanup(@() close(dlg));
         end
-        result = cleanGeneratedArtifacts(root, @onCleanProgress);
-        setStatus(cleanArtifactsStatus(result));
-        clear dlgCleanup cleanupBusy;
+        try
+            result = cleanGeneratedArtifacts(root, @onCleanProgress);
+            setStatus(cleanArtifactsStatus(result));
+        catch err
+            setStatus(sprintf('Clean artifacts failed: %s', err.message));
+        end
+        clear dlgCleanup;
+        endLauncherAction();
 
         function onCleanProgress(message, value)
             setStatus(message);
@@ -391,7 +406,7 @@ function fig = runLauncher(root)
         if state.actionBusy
             return;
         end
-        cleanupBusy = beginLauncherAction("Running MATLAB Code Analyzer...");
+        beginLauncherAction("Running MATLAB Code Analyzer...");
         setStatus('Running MATLAB Code Analyzer...');
         drawnow;
         dlg = [];
@@ -409,7 +424,8 @@ function fig = runLauncher(root)
         catch err
             setStatus(sprintf('Code Analyzer failed: %s', err.message));
         end
-        clear dlgCleanup cleanupBusy;
+        clear dlgCleanup;
+        endLauncherAction();
 
         function onCodeCheckProgress(message, value)
             setStatus(message);
@@ -422,7 +438,7 @@ function fig = runLauncher(root)
         if state.actionBusy
             return;
         end
-        cleanupBusy = beginLauncherAction("Updating LabKit from GitHub main...");
+        beginLauncherAction("Updating LabKit from GitHub main...");
         setStatus('Updating LabKit from GitHub main...');
         drawnow;
         dlg = [];
@@ -441,7 +457,8 @@ function fig = runLauncher(root)
         catch err
             setStatus(sprintf('Update failed: %s', err.message));
         end
-        clear dlgCleanup cleanupBusy;
+        clear dlgCleanup;
+        endLauncherAction();
 
         function onUpdateProgress(message, value)
             setStatus(message);
@@ -454,7 +471,7 @@ function fig = runLauncher(root)
         if state.actionBusy
             return;
         end
-        cleanupBusy = beginLauncherAction("Updating LabKit from latest release/tag...");
+        beginLauncherAction("Updating LabKit from latest release/tag...");
         setStatus('Updating LabKit from latest release/tag...');
         drawnow;
         dlg = [];
@@ -473,7 +490,8 @@ function fig = runLauncher(root)
         catch err
             setStatus(sprintf('Update failed: %s', err.message));
         end
-        clear dlgCleanup cleanupBusy;
+        clear dlgCleanup;
+        endLauncherAction();
 
         function onUpdateProgress(message, value)
             setStatus(message);
@@ -500,14 +518,14 @@ function fig = runLauncher(root)
         end
         row = min(max(state.selectedRow, 1), numel(state.visibleApps));
         app = state.visibleApps(row);
-        cleanupBusy = beginLauncherAction(launchStartStatus(app, debugMode));
+        beginLauncherAction(launchStartStatus(app, debugMode));
         setStatus(launchStartStatus(app, debugMode));
         drawnow;
         if state.profileNextLaunch
             state.profileNextLaunch = false;
             btnProfile.Text = 'Profile Next App';
             profileSelectedApp(app, debugMode);
-            clear cleanupBusy;
+            endLauncherAction();
             return;
         end
         dlg = [];
@@ -526,7 +544,8 @@ function fig = runLauncher(root)
             initializeAppPath(app);
             updateProgressDialog(dlg, sprintf('Opening %s...', app.command), NaN);
             drawnow limitrate;
-            clear dlgCleanup cleanupBusy;
+            clear dlgCleanup;
+            endLauncherAction();
             setStatus(launchHandOffStatus(app, debugMode));
             drawnow limitrate;
             if debugMode
@@ -540,7 +559,8 @@ function fig = runLauncher(root)
                 'or damaged, use GitHub Update to repair this install.'], ...
                 app.command, err.message));
         end
-        clear dlgCleanup cleanupBusy;
+        clear dlgCleanup;
+        endLauncherAction();
     end
 
     function profileSelectedApp(app, debugMode)
@@ -569,6 +589,8 @@ function fig = runLauncher(root)
     function refreshTable()
         state.visibleApps = state.apps;
         appTable.Data = appDisplayRows(state.visibleApps);
+        adjustLauncherWidthForAppTable();
+        adjustAppTableColumns();
         state.selectedRow = min(max(state.selectedRow, 1), max(numel(state.visibleApps), 1));
         selectTableRow(appTable, state.selectedRow, state.visibleApps);
         setLaunchEnabled(~isempty(state.visibleApps));
@@ -602,16 +624,16 @@ function fig = runLauncher(root)
         stateValue = matlab.lang.OnOffSwitchState(enabled);
         btnOpen.Enable = stateValue;
         btnDebug.Enable = stateValue;
-        btnProfile.Enable = stateValue;
-        btnPackage.Enable = stateValue;
-        btnPackagePcode.Enable = stateValue;
+        btnProfile.Enable = matlab.lang.OnOffSwitchState(enabled && state.tools.profile);
+        btnPackage.Enable = matlab.lang.OnOffSwitchState(enabled && state.tools.package);
+        btnPackagePcode.Enable = matlab.lang.OnOffSwitchState(enabled && state.tools.package);
+        btnCode.Enable = matlab.lang.OnOffSwitchState(state.tools.codecheck);
     end
 
-    function cleanupBusy = beginLauncherAction(message)
+    function beginLauncherAction(message)
         state.actionBusy = true;
         setLauncherControlsEnabled(false);
         setStatus(message);
-        cleanupBusy = onCleanup(@endLauncherAction);
     end
 
     function endLauncherAction()
@@ -626,11 +648,39 @@ function fig = runLauncher(root)
         btnVersions.Enable = stateValue;
         btnRefresh.Enable = stateValue;
         btnClean.Enable = stateValue;
-        btnCode.Enable = stateValue;
         if enabled
             setLaunchEnabled(~isempty(state.visibleApps));
         else
             setLaunchEnabled(false);
+            btnCode.Enable = 'off';
+        end
+    end
+
+    function applyToolButtonTooltips()
+        if ~isprop(btnCode, 'Tooltip')
+            return;
+        end
+        if state.tools.codecheck
+            btnCode.Tooltip = ['Run MATLAB Code Analyzer, write the JSON report, ' ...
+                'then open the HTML viewer from tools/codecheck.'];
+        else
+            btnCode.Tooltip = missingToolTooltip('tools/codecheck/runCodecheckReport.m or .p');
+        end
+        if state.tools.profile
+            btnProfile.Tooltip = ['Profile the next app launched from this launcher ' ...
+                'until that app window closes. Saves the report without opening a browser.'];
+        else
+            btnProfile.Tooltip = missingToolTooltip('tools/profiling/profileLabKitTarget.m or .p');
+        end
+        if state.tools.package
+            btnPackage.Tooltip = ['Create a standalone zip containing the selected app, ' ...
+                'its assets, the shared +labkit library, the launcher, and deployment tools.'];
+            btnPackagePcode.Tooltip = ['Create the same standalone zip with MATLAB code ' ...
+                'encoded as .p files instead of source .m files.'];
+        else
+            tooltip = missingToolTooltip('tools/deployment/packageLabKitApp.m or .p');
+            btnPackage.Tooltip = tooltip;
+            btnPackagePcode.Tooltip = tooltip;
         end
     end
 
@@ -642,6 +692,23 @@ function fig = runLauncher(root)
     function updateInfo(detailRows)
         rows = reshape(cellstr(string(detailRows(:))), [], 1);
         txtInfo.Value = [{['Status: ' char(state.status)]}; {''}; rows];
+    end
+
+    function adjustLauncherWidthForAppTable()
+        preferredTableWidth = launcherTablePreferredWidth(appTable.Data);
+        requiredWidth = 360 + 5 + preferredTableWidth + 34;
+        if fig.Position(3) >= requiredWidth
+            return;
+        end
+        fig.Position(3) = min(max(requiredWidth, 1260), 1700);
+    end
+
+    function adjustAppTableColumns()
+        if ~isvalid(appTable)
+            return;
+        end
+        tableWidth = max(700, fig.Position(3) - 360 - 5 - 34);
+        appTable.ColumnWidth = launcherTableColumnWidths(appTable.Data, tableWidth);
     end
 end
 
@@ -718,7 +785,7 @@ function manager = openVersionManager(parentFig, root, refreshCallback, statusCa
         if sourceState.actionBusy
             return;
         end
-        cleanupBusy = beginVersionManagerAction('Fetching recent LabKit versions from GitHub...');
+        beginVersionManagerAction('Fetching recent LabKit versions from GitHub...');
         setManagerStatus('Fetching recent LabKit versions from GitHub...');
         notifyStatus(statusCallback, 'Fetching recent LabKit versions from GitHub...');
         drawnow;
@@ -754,7 +821,8 @@ function manager = openVersionManager(parentFig, root, refreshCallback, statusCa
             setManagerStatus(message);
             notifyStatus(statusCallback, message);
         end
-        clear dlgCleanup cleanupBusy;
+        clear dlgCleanup;
+        endVersionManagerAction();
     end
 
     function onSourceSelection(~, event)
@@ -778,7 +846,7 @@ function manager = openVersionManager(parentFig, root, refreshCallback, statusCa
         end
         row = min(max(sourceState.selectedRow, 1), numel(sourceState.sources));
         source = sourceState.sources(row);
-        cleanupBusy = beginVersionManagerAction(sprintf('Preparing %s...', char(source.label)));
+        beginVersionManagerAction(sprintf('Preparing %s...', char(source.label)));
         setManagerStatus(sprintf('Preparing %s...', char(source.label)));
         notifyStatus(statusCallback, sprintf('Updating LabKit from %s...', char(source.label)));
         drawnow;
@@ -804,7 +872,8 @@ function manager = openVersionManager(parentFig, root, refreshCallback, statusCa
             setManagerStatus(message);
             notifyStatus(statusCallback, message);
         end
-        clear dlgCleanup cleanupBusy;
+        clear dlgCleanup;
+        endVersionManagerAction();
 
         function onVersionUpdateProgress(message, value)
             setManagerStatus(message);
@@ -814,11 +883,10 @@ function manager = openVersionManager(parentFig, root, refreshCallback, statusCa
         end
     end
 
-    function cleanupBusy = beginVersionManagerAction(message)
+    function beginVersionManagerAction(message)
         sourceState.actionBusy = true;
         setVersionManagerControlsEnabled(false);
         setManagerStatus(message);
-        cleanupBusy = onCleanup(@endVersionManagerAction);
     end
 
     function endVersionManagerAction()
@@ -949,6 +1017,47 @@ function rows = appDisplayRows(apps)
         rows{k, 5} = char(apps(k).updated);
         rows{k, 6} = apps(k).command;
     end
+end
+
+function width = launcherTablePreferredWidth(rows)
+    columns = launcherTableColumnWidths(rows, inf);
+    width = sum(cell2mat(columns)) + 24;
+end
+
+function widths = launcherTableColumnWidths(rows, tableWidth)
+    desired = [ ...
+        textColumnWidth(rows, 1, 130, 220), ...
+        textColumnWidth(rows, 2, 220, 380), ...
+        96, ...
+        96, ...
+        122, ...
+        textColumnWidth(rows, 6, 320, 580)];
+
+    if isfinite(tableWidth)
+        spare = tableWidth - sum(desired);
+        if spare > 0
+            desired(2) = desired(2) + round(spare * 0.35);
+            desired(6) = desired(6) + round(spare * 0.65);
+        elseif spare < 0
+            deficit = abs(spare);
+            shrink = min(deficit, max(0, desired(6) - 320));
+            desired(6) = desired(6) - shrink;
+            deficit = deficit - shrink;
+            shrink = min(deficit, max(0, desired(2) - 220));
+            desired(2) = desired(2) - shrink;
+        end
+    end
+
+    widths = num2cell(max(round(desired), [120 190 90 90 110 260]));
+end
+
+function width = textColumnWidth(rows, columnIndex, minWidth, maxWidth)
+    values = strings(0, 1);
+    if ~isempty(rows)
+        values = string(rows(:, columnIndex));
+    end
+    maxChars = max(strlength([""; values]));
+    width = min(maxWidth, max(minWidth, double(maxChars) * 10 + 34));
 end
 
 function rows = selectedAppDetails(app)
@@ -1084,9 +1193,10 @@ end
 
 function message = codeCheckStatus(report)
     message = sprintf(['codeIssues report complete: %d issue(s), ' ...
-        '%d suppressed issue(s), %d file(s): %s'], ...
+        '%d suppressed issue(s), %d file(s): %s; HTML: %s'], ...
         report.issueCount, report.suppressedIssueCount, ...
-        report.fileCount, char(report.output));
+        report.fileCount, char(report.relativeJsonFile), ...
+        char(report.relativeHtmlFile));
 end
 
 %% Section: App discovery and catalog metadata
@@ -1423,27 +1533,29 @@ end
 %% Section: Code Analyzer action
 
 function report = runCodeAnalyzerReport(root, progressFcn)
-    if nargin < 2
-        progressFcn = [];
+    codecheckTool = codecheckToolFile(root);
+    if strlength(string(codecheckTool)) == 0
+        error('labkit_launcher:CodecheckToolUnavailable', ...
+            ['Code Analyzer tools are missing. Restore tools/codecheck ' ...
+            'or update the LabKit install.']);
     end
-    excludedFolders = [".git", ".github", ".vscode", ".codes", ...
-        "artifacts", "node_modules", "photos"];
-    notifyProgress(progressFcn, "Finding MATLAB files...", 0.02);
-    files = sort(collectFiles(root, "*.m", excludedFolders));
-    notifyProgress(progressFcn, ...
-        sprintf("Running codeIssues on %d MATLAB file(s)...", numel(files)), ...
-        0.08);
-    issues = codeIssues(files(:));
-    output = fullfile(root, 'artifacts', 'code-check', 'matlab_code_issues.json');
-    notifyProgress(progressFcn, "Writing native codeIssues report...", 0.96);
-    ensureFolder(fileparts(output));
-    export(issues, output, 'FileFormat', 'json', 'SourceRoot', root);
-    report = struct();
-    report.output = string(relativePath(root, output));
-    report.fileCount = numel(files);
-    report.issueCount = height(issues.Issues);
-    report.suppressedIssueCount = height(issues.SuppressedIssues);
-    notifyProgress(progressFcn, "codeIssues report complete.", 1.00);
+    codecheckFolder = fileparts(codecheckTool);
+    addedCodecheckPath = ~pathContains(codecheckFolder);
+    addPathIfMissing(codecheckFolder);
+    if addedCodecheckPath
+        codecheckPathCleanup = onCleanup(@() rmpath(codecheckFolder));
+    end
+
+    report = runCodecheckReport(root, ...
+        'ProgressFcn', progressFcn, ...
+        'OpenReport', launcherGuiTestMode() ~= "hidden");
+    report.relativeJsonFile = string(relativePath(root, report.jsonFile));
+    report.relativeHtmlFile = string(relativePath(root, report.htmlFile));
+    clear codecheckPathCleanup;
+end
+
+function toolFile = codecheckToolFile(root)
+    toolFile = matlabCodeFile(fullfile(root, 'tools', 'codecheck', 'runCodecheckReport'));
 end
 
 %% Section: Performance profile action
@@ -1470,7 +1582,7 @@ function result = runLauncherAppProfile(root, app, debugMode)
     targetFile = fullfile(root, char(app.relativePath));
     target = @() launchProfileTarget(app, debugMode);
     [htmlFile, artifacts] = profileLabKitTarget(target, htmlFile, ...
-        'OpenReport', false, ...
+        'OpenReport', launcherGuiTestMode() ~= "hidden", ...
         'WaitForGuiClose', true, ...
         'CloseFiguresAfterRun', false, ...
         'ProjectRoot', root, ...
@@ -1586,6 +1698,18 @@ function codeFormat = packageCodeFormat(usePcode)
     else
         codeFormat = "source";
     end
+end
+
+function tools = launcherToolAvailability(root)
+    tools = struct();
+    tools.codecheck = strlength(string(codecheckToolFile(root))) > 0;
+    tools.profile = strlength(string(profileToolFile(root))) > 0;
+    tools.package = strlength(string(packageToolFile(root))) > 0;
+end
+
+function tooltip = missingToolTooltip(relativeToolPath)
+    tooltip = sprintf('Disabled because the optional tool is missing: %s', ...
+        char(relativeToolPath));
 end
 
 function message = packageSuccessStatus(app, result)

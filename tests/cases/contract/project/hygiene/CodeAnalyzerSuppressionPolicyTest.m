@@ -4,7 +4,8 @@ classdef CodeAnalyzerSuppressionPolicyTest < matlab.unittest.TestCase
     methods (Test, TestTags = {'Integration', 'Style'})
         function noCodeAnalyzerSuppressionPragmas(testCase)
             root = testRepoRoot();
-            files = collectTrackedMFiles(root);
+            scope = labkitQualityScanScope(root);
+            files = scope.matlabFiles;
             findings = findSuppressionPragmas(root, files);
 
             testCase.verifyEmpty(findings, ...
@@ -50,19 +51,6 @@ classdef CodeAnalyzerSuppressionPolicyTest < matlab.unittest.TestCase
     end
 end
 
-function files = collectTrackedMFiles(root)
-    command = "git -C " + shellDoubleQuote(root) + " ls-files " + shellDoubleQuote("*.m");
-    [status, output] = system(char(command));
-    assert(status == 0, "Could not list tracked MATLAB files with git.");
-    relativeFiles = splitlines(string(output));
-    relativeFiles = relativeFiles(strlength(relativeFiles) > 0);
-    files = strings(numel(relativeFiles), 1);
-    for k = 1:numel(relativeFiles)
-        files(k) = string(fullfile(root, char(relativeFiles(k))));
-    end
-    files = files(isfile(files));
-end
-
 function findings = findSuppressionPragmas(root, files)
     findings = strings(1, 0);
 
@@ -84,15 +72,6 @@ function findings = findSuppressionPragmas(root, files)
             end
         end
     end
-end
-
-function quoted = shellDoubleQuote(value)
-    quoted = string(value);
-    if contains(quoted, """")
-        error("LabKit:CodeAnalyzerPolicy:InvalidShellValue", ...
-            "Shell-quoted values cannot contain double-quote characters.");
-    end
-    quoted = """" + quoted + """";
 end
 
 function tf = hasSuppressionPragma(line)

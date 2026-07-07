@@ -340,28 +340,13 @@ function rel = localRelativePath(root, pathValue)
 end
 
 function files = collectAppMFiles(root)
-    listing = dir(fullfile(root, "apps", "**", "*.m"));
-    files = strings(0, 1);
-    for k = 1:numel(listing)
-        if ~listing(k).isdir
-            files(end+1, 1) = string(fullfile(listing(k).folder, listing(k).name));
-        end
-    end
+    scope = labkitQualityScanScope(root);
+    files = scope.appMFiles;
 end
 
 function files = collectAppRunFiles(root)
-    listing = dir(fullfile(root, "apps", "**", "run.m"));
-    files = strings(0, 1);
-    packageMarker = filesep + "+";
-    for k = 1:numel(listing)
-        if listing(k).isdir
-            continue;
-        end
-        pathValue = string(fullfile(listing(k).folder, listing(k).name));
-        if contains(pathValue, packageMarker)
-            files(end+1, 1) = pathValue;
-        end
-    end
+    scope = labkitQualityScanScope(root);
+    files = scope.appRunFiles;
 end
 
 function source = readPackageSource(packageDir)

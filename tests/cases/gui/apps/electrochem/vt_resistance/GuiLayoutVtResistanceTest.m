@@ -76,7 +76,7 @@ function verifyVtPlotAxisClearRemovesAnnotations()
     hold(ax, 'on');
     xline(ax, 2, ':', 'marker');
     text(ax, 2, 3, 'annotation', 'HandleVisibility', 'off');
-    vt_resistance.userInterface.clearPlotAxis(ax);
+    labkit.ui.plot.clear(ax, "ResetScale", true);
     assert(isempty(ax.Children), ...
         'VT plot refresh should remove previous hidden markers and annotations.');
     assert(strcmp(ax.XLimMode, 'auto') && strcmp(ax.YLimMode, 'auto'), ...

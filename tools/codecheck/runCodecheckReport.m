@@ -1,0 +1,250 @@
+function report = runCodecheckReport(root, varargin)
+%RUNCODECHECKREPORT Run MATLAB codeIssues and write LabKit report artifacts.
+%
+% Expected caller: LabKit launcher or a maintainer command line. Inputs are a
+% LabKit root folder and optional ProgressFcn/OpenReport values. Output is a
+% struct describing the JSON and HTML artifacts. Side effects are limited to
+% scanning MATLAB source files, writing artifacts/code-check reports, and
+% optionally opening the generated HTML report.
+
+    p = inputParser;
+    p.addRequired("root", @isTextScalar);
+    p.addParameter("ProgressFcn", [], @(value) isempty(value) || isa(value, "function_handle"));
+    p.addParameter("OpenReport", true, @islogicalScalar);
+    p.parse(root, varargin{:});
+
+    root = char(string(p.Results.root));
+    progressFcn = p.Results.ProgressFcn;
+    excludedFolders = [".git", ".github", ".vscode", ".codes", ...
+        "artifacts", "node_modules", "photos"];
+    scanRoots = codecheckScanRoots(root);
+
+    notifyProgress(progressFcn, "Finding MATLAB files...", 0.02);
+    filesByRoot = cell(numel(scanRoots), 1);
+    for k = 1:numel(scanRoots)
+        filesByRoot{k} = collectFiles(scanRoots(k), "*.m", excludedFolders);
+    end
+    files = [filesByRoot{:}];
+    files = sort(unique(files, "stable"));
+    notifyProgress(progressFcn, ...
+        sprintf("Running codeIssues on %d MATLAB file(s)...", numel(files)), ...
+        0.08);
+    issues = codeIssues(files(:));
+
+    outputRoot = fullfile(root, "artifacts", "code-check");
+    reportBase = uniqueReportBase(outputRoot);
+    output = reportBase + ".json";
+    notifyProgress(progressFcn, "Writing native codeIssues report...", 0.96);
+    ensureFolder(fileparts(output));
+    sourceRoot = commonSourceRoot([string(root), files]);
+    export(issues, output, "FileFormat", "json", "SourceRoot", sourceRoot);
+
+    notifyProgress(progressFcn, "Writing Code Analyzer HTML report...", 0.98);
+    htmlOutput = reportBase + ".html";
+    writeCodecheckReport(output, htmlOutput);
+    if p.Results.OpenReport
+        openHtmlReport(htmlOutput);
+    end
+
+    report = struct();
+    report.jsonFile = string(output);
+    report.htmlFile = string(htmlOutput);
+    report.fileCount = numel(files);
+    report.issueCount = height(issues.Issues);
+    report.suppressedIssueCount = height(issues.SuppressedIssues);
+    notifyProgress(progressFcn, "codeIssues report complete.", 1.00);
+end
+
+function reportBase = uniqueReportBase(outputRoot)
+    ensureFolder(outputRoot);
+    stamp = datestr(now, "yyyymmdd_HHMMSS");
+    reportBase = fullfile(outputRoot, "matlab_code_issues_" + string(stamp));
+    suffix = 1;
+    while exist(reportBase + ".json", "file") == 2 || exist(reportBase + ".html", "file") == 2
+        reportBase = fullfile(outputRoot, ...
+            "matlab_code_issues_" + string(stamp) + "_" + string(suffix));
+        suffix = suffix + 1;
+    end
+end
+
+function openHtmlReport(htmlOutput)
+    try
+        web(htmlOutput, "-browser");
+    catch
+    end
+end
+
+function sourceRoot = commonSourceRoot(paths)
+    paths = string(paths);
+    paths = paths(strlength(paths) > 0);
+    if isempty(paths)
+        sourceRoot = pwd;
+        return;
+    end
+
+    folders = strings(numel(paths), 1);
+    for k = 1:numel(paths)
+        if isfolder(paths(k))
+            folders(k) = paths(k);
+        else
+            folders(k) = string(fileparts(char(paths(k))));
+        end
+    end
+
+    splitFolders = cell(numel(folders), 1);
+    for k = 1:numel(folders)
+        splitFolders{k} = splitPathParts(folders(k));
+    end
+
+    common = splitFolders{1};
+    for k = 2:numel(splitFolders)
+        common = commonPrefix(common, splitFolders{k});
+    end
+    if isempty(common)
+        sourceRoot = filesep;
+    else
+        sourceRoot = fullfile(common{:});
+        if startsWith(char(folders(1)), filesep)
+            sourceRoot = [filesep sourceRoot];
+        end
+    end
+end
+
+function parts = splitPathParts(pathValue)
+    text = char(strrep(string(pathValue), "\", filesep));
+    parts = strsplit(text, filesep);
+    parts = parts(~cellfun("isempty", parts));
+end
+
+function prefix = commonPrefix(left, right)
+    n = min(numel(left), numel(right));
+    keep = false(1, n);
+    for k = 1:n
+        keep(k) = strcmp(left{k}, right{k});
+    end
+    firstMismatch = find(~keep, 1, "first");
+    if isempty(firstMismatch)
+        prefix = left(1:n);
+    else
+        prefix = left(1:firstMismatch-1);
+    end
+end
+
+function roots = codecheckScanRoots(root)
+    roots = string(root);
+    privateRoots = acceptedPrivateAppRoots(root);
+    roots = unique([roots; privateRoots], "stable");
+end
+
+function roots = acceptedPrivateAppRoots(root)
+    candidates = configuredPrivateAppRoots(root);
+    if forcePrivateAppGuardsEnabled()
+        roots = candidates;
+        return;
+    end
+
+    roots = strings(0, 1);
+    for k = 1:numel(candidates)
+        if privateRootAcceptsMainGuardrails(candidates(k))
+            roots(end+1, 1) = candidates(k);
+        end
+    end
+end
+
+function tf = forcePrivateAppGuardsEnabled()
+    value = lower(strtrim(string(getenv("LABKIT_GUARD_PRIVATE_APPS"))));
+    tf = any(value == ["1", "true", "yes", "on"]);
+end
+
+function roots = configuredPrivateAppRoots(root)
+    roots = strings(0, 1);
+    localPrivateRoot = string(fullfile(root, "private_apps", "apps"));
+    if exist(localPrivateRoot, "dir") == 7
+        roots(end+1) = localPrivateRoot;
+    end
+
+    envValue = string(getenv("LABKIT_PRIVATE_APP_ROOTS"));
+    if strlength(strtrim(envValue)) > 0
+        parts = string(strsplit(char(envValue), pathsep));
+        parts = strip(parts);
+        parts = parts(strlength(parts) > 0);
+        for k = 1:numel(parts)
+            candidate = privateAppRootAppsFolder(parts(k));
+            if exist(candidate, "dir") == 7
+                roots(end+1) = candidate;
+            end
+        end
+    end
+    roots = unique(roots, "stable");
+end
+
+function appRoot = privateAppRootAppsFolder(root)
+    root = string(root);
+    if endsWith(strrep(root, "\", "/"), "/apps")
+        appRoot = root;
+    else
+        appRoot = string(fullfile(root, "apps"));
+    end
+end
+
+function tf = privateRootAcceptsMainGuardrails(appRoot)
+    workspaceRoot = privateWorkspaceRoot(appRoot);
+    tf = isfile(fullfile(workspaceRoot, ".labkit-accept-main-guardrails"));
+end
+
+function root = privateWorkspaceRoot(appRoot)
+    appRoot = string(appRoot);
+    if endsWith(strrep(appRoot, "\", "/"), "/apps")
+        root = string(fileparts(char(appRoot)));
+    else
+        root = appRoot;
+    end
+end
+
+function files = collectFiles(root, pattern, excludedFolders)
+    entries = dir(fullfile(root, "**", pattern));
+    files = strings(1, 0);
+    for k = 1:numel(entries)
+        if entries(k).isdir
+            continue;
+        end
+        filepath = string(fullfile(entries(k).folder, entries(k).name));
+        rel = relativePath(root, filepath);
+        parts = split(strrep(rel, filesep, "/"), "/");
+        if any(ismember(parts, excludedFolders))
+            continue;
+        end
+        files(end+1) = filepath;
+    end
+end
+
+function rel = relativePath(root, filepath)
+    rel = char(filepath);
+    prefix = [char(root) filesep];
+    if startsWith(rel, prefix)
+        rel = extractAfter(rel, strlength(prefix));
+    end
+    rel = string(rel);
+end
+
+function notifyProgress(progressFcn, message, value)
+    if isempty(progressFcn)
+        return;
+    end
+    progressFcn(message, value);
+end
+
+function ensureFolder(folder)
+    if strlength(string(folder)) > 0 && exist(folder, "dir") ~= 7
+        mkdir(folder);
+    end
+end
+
+function tf = isTextScalar(value)
+    tf = (ischar(value) && (isrow(value) || isempty(value))) || ...
+        (isstring(value) && isscalar(value));
+end
+
+function tf = islogicalScalar(value)
+    tf = islogical(value) && isscalar(value);
+end

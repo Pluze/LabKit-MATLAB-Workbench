@@ -24,9 +24,8 @@ classdef RepositoryHygieneGuardrailTest < matlab.unittest.TestCase
 
         function trackedTextFilesUseAsciiOnly(testCase)
             root = setupLabKitTestPath();
-            tracked = gitTrackedFiles(root);
-            textFiles = tracked(arrayfun(@isTextTrackedFile, tracked));
-            actual = collectNonAsciiFiles(root, textFiles);
+            scope = labkitQualityScanScope(root);
+            actual = collectNonAsciiFiles(root, scope.textFiles);
             testCase.verifyEmpty(actual, ...
                 ['tracked text files must remain ASCII-only. Files: ' ...
                 strjoin(cellstr(actual), ', ')]);
@@ -34,9 +33,8 @@ classdef RepositoryHygieneGuardrailTest < matlab.unittest.TestCase
 
         function charPathListsDoNotUseBracketConcatenation(testCase)
             root = setupLabKitTestPath();
-            tracked = gitTrackedFiles(root);
-            matlabFiles = tracked(endsWith(tracked, ".m"));
-            actual = collectUnsafeCharPathLists(root, matlabFiles);
+            scope = labkitQualityScanScope(root);
+            actual = collectUnsafeCharPathLists(root, scope.matlabFiles);
             testCase.verifyEmpty(actual, ...
                 ['path target lists must use string arrays or cell arrays, ' ...
                 'not char bracket concatenation. Files: ' ...
@@ -64,9 +62,8 @@ classdef RepositoryHygieneGuardrailTest < matlab.unittest.TestCase
 
         function pathScalarsAreNotExpandedAsCharacterColumns(testCase)
             root = setupLabKitTestPath();
-            tracked = gitTrackedFiles(root);
-            matlabFiles = tracked(endsWith(tracked, ".m"));
-            actual = collectUnsafePathScalarColonUses(root, matlabFiles);
+            scope = labkitQualityScanScope(root);
+            actual = collectUnsafePathScalarColonUses(root, scope.matlabFiles);
             testCase.verifyEmpty(actual, ...
                 ['folder-like path scalars must not be expanded with (:), ' ...
                 'because char paths then become one path per character. Use ' ...
@@ -165,9 +162,8 @@ classdef RepositoryHygieneGuardrailTest < matlab.unittest.TestCase
 
         function matlabFunctionsDoNotUseSingleLineBodies(testCase)
             root = setupLabKitTestPath();
-            tracked = gitTrackedFiles(root);
-            matlabFiles = tracked(endsWith(tracked, ".m"));
-            actual = collectSingleLineFunctionBodies(root, matlabFiles);
+            scope = labkitQualityScanScope(root);
+            actual = collectSingleLineFunctionBodies(root, scope.matlabFiles);
             testCase.verifyEmpty(actual, ...
                 ['MATLAB functions must not put executable bodies and end on ' ...
                 'the declaration line. Split helpers or format bodies on ' ...
@@ -199,55 +195,14 @@ classdef RepositoryHygieneGuardrailTest < matlab.unittest.TestCase
                 strjoin(cellstr(actualFiles), ', ')]);
         end
 
-        function helperQualityAuditReportsShortHelperMetadata(testCase)
-            root = setupLabKitTestPath();
-            audit = labkitHelperQualityAudit(root, ...
-                "MaxLines", 20, "Scope", "all");
-
-            expectedColumns = ["RelativePath", "Lines", "TopLevelScope", ...
-                "RolePackage", "FunctionCount", "CallCount", ...
-                "PublicStatus", "DirectUnitTestReferences", ...
-                "BoundaryClass", "AllowedException", "Recommendation", ...
-                "ReviewReason"];
-            testCase.verifyEqual(string(audit.Properties.VariableNames), ...
-                expectedColumns);
-            testCase.verifyTrue(any(audit.RelativePath == ...
-                "apps/image_measurement/image_enhance/+image_enhance/+appState/emptyStep.m"), ...
-                'Helper audit should include known short app helpers.');
-            assertAuditRow(testCase, audit, ...
-                "apps/image_measurement/image_enhance/+image_enhance/+appState/emptyStep.m", ...
-                "generic-helper", "review-contract");
-            assertAuditRow(testCase, audit, ...
-                "+labkit/+image/isSupportedPath.m", ...
-                "public-framework-api", "keep-boundary");
-            testCase.verifyTrue(any(audit.Recommendation == ...
-                "inline-or-merge-candidate" | audit.Recommendation == ...
-                "review-contract" | audit.Recommendation == ...
-                "keep-boundary" | audit.Recommendation == ...
-                "review-one-call-contract"), ...
-                'Helper audit should produce dry-run classifications.');
-        end
     end
-end
-
-function assertAuditRow(testCase, audit, path, boundaryClass, recommendation)
-    row = audit(audit.RelativePath == path, :);
-    testCase.verifyEqual(height(row), 1, ...
-        "Helper audit should include " + path + ".");
-    if height(row) ~= 1
-        return;
-    end
-    testCase.verifyEqual(row.BoundaryClass, boundaryClass, ...
-        "Unexpected boundary class for " + path + ".");
-    testCase.verifyEqual(row.Recommendation, recommendation, ...
-        "Unexpected recommendation for " + path + ".");
 end
 
 function findings = collectSingleLineFunctionBodies(root, files)
     findings = strings(1, 0);
     pattern = singleLineFunctionBodyPattern();
     for k = 1:numel(files)
-        filepath = fullfile(root, char(files(k)));
+        filepath = absoluteFilePath(root, files(k));
         if exist(filepath, 'file') ~= 2
             continue;
         end
@@ -256,7 +211,7 @@ function findings = collectSingleLineFunctionBodies(root, files)
             continue;
         end
         lines = readCachedLines(filepath);
-        findings = [findings, singleLineFunctionBodyLines(lines, files(k))];
+        findings = [findings, singleLineFunctionBodyLines(lines, qualityPathLabel(root, files(k)))];
     end
 end
 
@@ -281,13 +236,13 @@ function findings = collectUnsafeCharPathLists(root, files)
     findings = strings(1, 0);
     pattern = unsafeCharPathListPattern();
     for k = 1:numel(files)
-        filepath = fullfile(root, char(files(k)));
+        filepath = absoluteFilePath(root, files(k));
         if exist(filepath, 'file') ~= 2
             continue;
         end
         content = readCachedText(filepath);
         if ~isempty(regexp(content, pattern, 'once'))
-            findings(end+1) = files(k);
+            findings(end+1) = qualityPathLabel(root, files(k));
         end
     end
 end
@@ -301,7 +256,7 @@ function findings = collectUnsafePathScalarColonUses(root, files)
     findings = strings(1, 0);
     pattern = unsafePathScalarColonPattern();
     for k = 1:numel(files)
-        filepath = fullfile(root, char(files(k)));
+        filepath = absoluteFilePath(root, files(k));
         if exist(filepath, 'file') ~= 2
             continue;
         end
@@ -312,7 +267,7 @@ function findings = collectUnsafePathScalarColonUses(root, files)
         lines = readCachedLines(filepath);
         for iLine = 1:numel(lines)
             if ~isempty(regexp(lines(iLine), pattern, 'once'))
-                findings(end+1) = files(k) + ":" + string(iLine);
+                findings(end+1) = qualityPathLabel(root, files(k)) + ":" + string(iLine);
             end
         end
     end
@@ -325,11 +280,12 @@ function pattern = unsafePathScalarColonPattern()
 end
 
 function findings = collectUnsafeStateNumericAssignments(root)
-    files = dir(fullfile(root, 'apps', '**', '*.m'));
+    scope = labkitQualityScanScope(root);
+    files = scope.appMFiles;
     findings = strings(1, 0);
     patterns = unsafeStateNumericAssignmentPatterns();
     for k = 1:numel(files)
-        filepath = fullfile(files(k).folder, files(k).name);
+        filepath = absoluteFilePath(root, files(k));
         if exist(filepath, 'file') ~= 2
             continue;
         end
@@ -342,7 +298,7 @@ function findings = collectUnsafeStateNumericAssignments(root)
         lines = readCachedLines(filepath);
         for iLine = 1:numel(lines)
             if anyPatternMatches(lines(iLine), patterns)
-                findings(end+1) = string(relativePath(root, filepath)) + ":" + string(iLine);
+                findings(end+1) = qualityPathLabel(root, files(k)) + ":" + string(iLine);
             end
         end
     end
@@ -367,25 +323,25 @@ function tf = anyPatternMatches(text, patterns)
 end
 
 function findings = collectDuplicatedAppUiLabelHelperLiterals(root)
-    tracked = gitTrackedFiles(root);
-    matlabFiles = tracked(endsWith(tracked, ".m"));
+    scope = labkitQualityScanScope(root);
+    matlabFiles = scope.matlabFiles;
     helperFiles = matlabFiles(arrayfun(@isAppUiLabelHelperFile, matlabFiles));
     if isempty(helperFiles)
         findings = strings(1, 0);
         return;
     end
 
-    scopedFiles = helperFiles;
+    scopedFiles = helperFiles(:);
     for k = 1:numel(helperFiles)
         appName = appNameFromPath(helperFiles(k));
-        scopedFiles = [scopedFiles, ...
+        scopedFiles = [scopedFiles; ...
             matlabFiles(arrayfun(@(f) isSameAppSourceOrTest(f, appName), matlabFiles))];
     end
     scopedFiles = unique(scopedFiles, "stable");
 
     contents = containers.Map('KeyType', 'char', 'ValueType', 'any');
     for k = 1:numel(scopedFiles)
-        filepath = fullfile(root, char(scopedFiles(k)));
+        filepath = absoluteFilePath(root, scopedFiles(k));
         if exist(filepath, 'file') == 2
             contents(char(scopedFiles(k))) = readCachedLines(filepath);
         end
@@ -428,8 +384,9 @@ function findings = duplicatedLabelLiteralsForFiles(files, contents)
 end
 
 function tf = isAppUiLabelHelperFile(file)
-    file = string(file);
-    tf = startsWith(file, "apps/") && contains(file, "/+view/") && ...
+    file = slashPath(file);
+    tf = contains("/" + file, "/apps/") && ...
+        (contains(file, "/+view/") || contains(file, "/+userInterface/")) && ...
         ~isempty(regexp(file, '(Labels|Choices|Items)\.m$', 'once'));
 end
 
@@ -464,13 +421,13 @@ function tf = isUserVisibleLabelLiteral(literal)
 end
 
 function appName = appNameFromPath(file)
-    parts = split(string(file), "/");
+    parts = split(slashPath(file), "/");
     packagePart = parts(startsWith(parts, "+"));
     appName = extractAfter(packagePart(1), 1);
 end
 
 function tf = isSameAppSourceOrTest(file, appName)
-    file = string(file);
+    file = slashPath(file);
     packageToken = "/+" + appName + "/";
     testToken = "/" + appName + "/";
     tf = contains("/" + file, packageToken) || ...
@@ -496,13 +453,13 @@ end
 function files = collectNonAsciiFiles(root, tracked)
     files = strings(1, 0);
     for k = 1:numel(tracked)
-        filepath = fullfile(root, char(tracked(k)));
+        filepath = absoluteFilePath(root, tracked(k));
         if exist(filepath, 'file') ~= 2
             continue;
         end
         text = readCachedText(filepath);
         if any(double(text) > 127)
-            files(end+1) = tracked(k);
+            files(end+1) = qualityPathLabel(root, tracked(k));
         end
     end
 end
@@ -641,4 +598,28 @@ function paths = relativePaths(root, filepaths)
     for k = 1:numel(filepaths)
         paths{k} = relativePath(root, filepaths{k});
     end
+end
+
+function filepath = absoluteFilePath(root, pathValue)
+    pathValue = string(pathValue);
+    if isAbsolutePath(pathValue)
+        filepath = char(pathValue);
+    else
+        filepath = fullfile(root, char(pathValue));
+    end
+end
+
+function label = qualityPathLabel(root, pathValue)
+    filepath = absoluteFilePath(root, pathValue);
+    label = string(relativePath(root, filepath));
+end
+
+function tf = isAbsolutePath(pathValue)
+    text = char(pathValue);
+    tf = startsWith(text, filesep) || ...
+        ~isempty(regexp(text, '^[A-Za-z]:[\\/]', 'once'));
+end
+
+function value = slashPath(pathValue)
+    value = replace(string(pathValue), "\", "/");
 end

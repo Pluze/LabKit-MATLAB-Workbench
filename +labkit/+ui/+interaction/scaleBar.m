@@ -471,11 +471,7 @@ end
 function txt = fieldText(s, name)
     if isstruct(s) && isfield(s, name)
         value = s.(name);
-        if islogical(value) || isnumeric(value)
-            txt = char(string(value));
-        else
-            txt = char(string(value));
-        end
+        txt = char(string(value));
     else
         txt = 'unset';
     end

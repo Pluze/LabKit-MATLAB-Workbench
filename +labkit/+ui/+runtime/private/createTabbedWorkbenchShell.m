@@ -40,6 +40,7 @@ function ui = createTabbedWorkbenchShell(figName, figPosition, leftWidth, labels
         figArgs = [figArgs, {'Visible', 'off'}];
     end
     ui.fig = uifigure(figArgs{:});
+    installCloseKeyboardShortcut(ui.fig);
     applyGuiTestMode(ui.fig);
     paintVisibleFigure();
 
@@ -257,6 +258,81 @@ function callback = debugTrace(debug)
     if isstruct(debug) && isfield(debug, 'trace') && ...
             isa(debug.trace, 'function_handle')
         callback = debug.trace;
+    end
+end
+
+function installCloseKeyboardShortcut(fig)
+    if ~isprop(fig, 'WindowKeyPressFcn')
+        return;
+    end
+    previous = fig.WindowKeyPressFcn;
+    setappdata(fig, 'labkitUiCloseShortcutPreviousKeyFcn', previous);
+    fig.WindowKeyPressFcn = @(source, event) closeShortcutKeyPress(source, event);
+end
+
+function closeShortcutKeyPress(fig, event)
+    if isCloseShortcut(event)
+        requestFigureClose(fig, event);
+        return;
+    end
+
+    previous = [];
+    if isvalid(fig) && isappdata(fig, 'labkitUiCloseShortcutPreviousKeyFcn')
+        previous = getappdata(fig, 'labkitUiCloseShortcutPreviousKeyFcn');
+    end
+    runPreviousKeyPress(previous, fig, event);
+end
+
+function tf = isCloseShortcut(event)
+    tf = false;
+    if ~hasEventValue(event, 'Key')
+        return;
+    end
+    key = lower(string(eventValue(event, 'Key')));
+    if key ~= "w"
+        return;
+    end
+    modifiers = strings(0, 1);
+    if hasEventValue(event, 'Modifier')
+        modifiers = lower(string(eventValue(event, 'Modifier')));
+    end
+    tf = any(modifiers == "command") || any(modifiers == "control");
+end
+
+function tf = hasEventValue(event, name)
+    if isstruct(event)
+        tf = isfield(event, name);
+    else
+        tf = isprop(event, name);
+    end
+end
+
+function value = eventValue(event, name)
+    value = event.(name);
+end
+
+function requestFigureClose(fig, event)
+    if ~isvalid(fig)
+        return;
+    end
+    closeFcn = fig.CloseRequestFcn;
+    if isa(closeFcn, 'function_handle')
+        closeFcn(fig, event);
+    elseif ischar(closeFcn) || (isstring(closeFcn) && isscalar(closeFcn))
+        eval(char(closeFcn));
+    else
+        delete(fig);
+    end
+end
+
+function runPreviousKeyPress(previous, fig, event)
+    if isempty(previous)
+        return;
+    end
+    if isa(previous, 'function_handle')
+        previous(fig, event);
+    elseif ischar(previous) || (isstring(previous) && isscalar(previous))
+        eval(char(previous));
     end
 end
 

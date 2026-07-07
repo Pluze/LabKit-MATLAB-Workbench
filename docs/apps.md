@@ -42,8 +42,23 @@ The launcher also provides debug launch, generated-artifact cleanup, and MATLAB
 Code Analyzer actions for maintenance work. Cleanup removes generated LabKit
 artifacts under `artifacts/`.
 
-The Code Analyzer action writes a native `codeIssues` JSON export to
-`artifacts/code-check/matlab_code_issues.json` for manual maintenance review.
+The Code Analyzer action delegates to `tools/codecheck`, writes both a native
+`codeIssues` JSON export and a self-contained HTML viewer under
+`artifacts/code-check/`, and opens the HTML report when run from the visible
+launcher. Each run writes a new timestamped JSON/HTML pair such as
+`matlab_code_issues_YYYYMMDD_HHMMSS.json` and
+`matlab_code_issues_YYYYMMDD_HHMMSS.html` so earlier reports are not
+overwritten.
+The scan includes the public checkout plus local private app workspaces that
+opt in by placing `.labkit-accept-main-guardrails` at the private workspace
+root. Accepted private workspaces can live under `private_apps/apps/` or
+`LABKIT_PRIVATE_APP_ROOTS`; private source remains ignored by the public
+repository, but its local analyzer findings appear in the same generated
+report.
+
+Maintenance buttons that depend on optional tool folders are disabled when
+those tool folders are missing. Core launcher actions, including app launch and
+GitHub version update, remain available.
 
 The `Package App` launcher action creates a single-app source zip under
 `artifacts/deployment/`. `Package P-code` creates the same standalone package

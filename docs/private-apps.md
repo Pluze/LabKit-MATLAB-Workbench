@@ -107,3 +107,14 @@ remain compatible with LabKit discovery and guardrails: keep launch commands,
 `requirements` and `version` lightweight requests, path setup, and private
 sample hygiene valid when the private workspace is present next to a public
 checkout.
+
+The public launcher's Code Analyzer tool includes configured private app
+workspaces in local reports only after the private workspace opts in. Put an
+empty `.labkit-accept-main-guardrails` file at the private workspace root to
+accept the public repository's style and code-quality guardrails for that
+workspace. When `private_apps/apps/` exists or `LABKIT_PRIVATE_APP_ROOTS`
+points at an accepted private workspace, the generated
+`artifacts/code-check/matlab_code_issues_*.json` and `.html` files include
+those private app findings without adding private source to the public repo.
+For one-off local checks, `LABKIT_GUARD_PRIVATE_APPS=1` temporarily includes
+configured private roots even without the sentinel file.
