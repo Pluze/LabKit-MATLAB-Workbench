@@ -1,83 +1,56 @@
 # LabKit MATLAB Workbench Changelog
 
-This file is a version map for users and maintainers. It explains what changed
-under each release tag, launcher version, facade version, and app version. It
-does not try to replace git blame or raw commit history; it records the
-maintainer intent and user impact that are easy to lose in commit subjects.
+This file is the project evolution map for users, maintainers, and agents. It
+explains how LabKit changed over time, why each iteration exists, which
+versions carry the change, and where to find evidence when auditing or
+debugging.
+
+The primary unit is a user-facing evolution entry, not a tag, commit, or raw
+feature list. Release tags are public anchors for delivered builds. Component
+versions identify the launcher, facade, or app metadata affected by an entry.
+Commits and PRs belong in `Evidence`, not in the navigation structure.
 
 ## How To Use This File
 
 - Start with `Current Version Lookup` when you only need to identify the version
   and metadata file for a launcher, facade, or app.
-- Use `Version History` as the main reading path. Each entry lists affected
-  versions, what changed, why it matters, compatibility notes when relevant,
-  and evidence.
-- Use `Unreleased` for branch and pull-request work before the final mainline
-  commit is known.
+- Use `Unreleased` for branch, pull-request, and release-preparation work
+  before the final mainline commit or tag evidence is known.
+- Use `Version History` as the main reading path for project evolution. Entries
+  are ordered by date and grouped by reader-facing theme: a release-line entry
+  summarizes a public tag, while a feature or maintenance entry summarizes one
+  coherent improvement direction.
+- Read `Affected versions` as the index from an evolution entry to release
+  tags, launcher versions, facade versions, and app versions.
 - Record meaningful behavior, compatibility, workflow, validation, diagnostics,
   and public facade changes. Do not dump raw git logs.
 
+## Changelog Model
+
+- `Current Version Lookup` is a state table. Keep it current with metadata
+  files, but do not use it to explain history.
+- `Unreleased` is a staging area. Use it for pending evolution entries until
+  the final mainline commit and, when applicable, release tag are known.
+- `Version History` is the narrative timeline. Prefer one entry per coherent
+  user-facing or maintainer-facing evolution: a release, a facade migration, an
+  app workflow improvement, a validation/release-system improvement, or a
+  compatibility change.
+- Release entries may roll up several related improvements when the tag is the
+  useful reader anchor. Non-release entries should be based on the capability,
+  workflow, or maintenance direction they explain, even when they also list
+  version bumps.
+- Every entry should answer four questions: what changed, why it mattered, what
+  compatibility or upgrade risk exists, and what evidence proves the entry.
+- Optional direction or follow-up notes are allowed when they help future
+  maintainers and agents understand where the project is moving. Keep them
+  short and concrete.
+
 ## Unreleased
 
-Template for branch work before the final mainline commit is known:
-
-```markdown
-### Pending - Short user-facing title
+### Pending - v3.1.0 debug workflows and launcher tools
 
 Affected versions:
-- `component` `old -> new`
-
-What changed:
-- Plain-language change summary.
-
-Why it matters:
-- User or maintainer reason this version exists.
-
-Compatibility:
-- Migration or rollback note, or `No known manual migration.`
-
-Evidence:
-- PR, branch, or pending commit.
-```
-
-## Current Version Lookup
-
-Audited against `main` UI 5 squash commit on 2026-07-06.
-
-| Component | Current version | Family | Metadata location |
-|---|---:|---|---|
-| `labkit_launcher` | `1.2.7` | Launcher | `labkit_launcher.m` |
-| `labkit.ui` | `5.0.2` | Facade | `+labkit/+ui/version.m` |
-| `labkit.dta` | `2.0.0` | Facade | `+labkit/+dta/version.m` |
-| `labkit.image` | `1.1.0` | Facade | `+labkit/+image/version.m` |
-| `labkit.thermal` | `1.0.0` | Facade | `+labkit/+thermal/version.m` |
-| `labkit.rhs` | `1.0.0` | Facade | `+labkit/+rhs/version.m` |
-| `labkit.biosignal` | `1.0.0` | Facade | `+labkit/+biosignal/version.m` |
-| `labkit_FigureStudio_app` | `0.1.5` | LabKit Core | `apps/labkit_core/figure_studio/+figure_studio/version.m` |
-| `labkit_ChronoOverlay_app` | `1.3.5` | Electrochem | `apps/electrochem/chrono_overlay/+chrono_overlay/version.m` |
-| `labkit_CIC_app` | `1.3.7` | Electrochem | `apps/electrochem/cic/+cic/version.m` |
-| `labkit_CSC_app` | `1.3.9` | Electrochem | `apps/electrochem/csc/+csc/version.m` |
-| `labkit_EIS_app` | `1.3.4` | Electrochem | `apps/electrochem/eis/+eis/version.m` |
-| `labkit_VTResistance_app` | `1.3.7` | Electrochem | `apps/electrochem/vt_resistance/+vt_resistance/version.m` |
-| `labkit_DICPreprocess_app` | `1.3.5` | DIC | `apps/dic/dic_preprocess/+dic_preprocess/version.m` |
-| `labkit_DICPostprocess_app` | `1.3.4` | DIC | `apps/dic/dic_postprocess/+dic_postprocess/version.m` |
-| `labkit_BatchImageCrop_app` | `1.6.7` | Image Measurement | `apps/image_measurement/batch_crop/+batch_crop/version.m` |
-| `labkit_CurvatureMeasurement_app` | `1.3.4` | Image Measurement | `apps/image_measurement/curvature/+curvature/version.m` |
-| `labkit_FLIRThermal_app` | `1.2.8` | Image Measurement | `apps/image_measurement/flir_thermal/+flir_thermal/version.m` |
-| `labkit_FocusStack_app` | `1.4.6` | Image Measurement | `apps/image_measurement/focus_stack/+focus_stack/version.m` |
-| `labkit_ImageEnhance_app` | `1.5.5` | Image Measurement | `apps/image_measurement/image_enhance/+image_enhance/version.m` |
-| `labkit_ImageMatch_app` | `1.5.5` | Image Measurement | `apps/image_measurement/image_match/+image_match/version.m` |
-| `labkit_RHSPreview_app` | `1.3.4` | Neurophysiology | `apps/neurophysiology/rhs_preview/+rhs_preview/version.m` |
-| `labkit_NerveResponseAnalysis_app` | `1.3.4` | Neurophysiology | `apps/neurophysiology/nerve_response_analysis/+nerve_response_analysis/version.m` |
-| `labkit_ResponseReviewStats_app` | `1.3.4` | Neurophysiology | `apps/neurophysiology/response_review_stats/+response_review_stats/version.m` |
-| `labkit_ECGPrint_app` | `1.3.5` | Wearable | `apps/wearable/ecg_print/+ecg_print/version.m` |
-
-## Version History
-
-### 2026-07-07 - Release v3.1.0 debug workflows and launcher tools
-
-Affected versions:
-- Release tag `v3.1.0`
+- Pending release tag `v3.1.0`
 - `labkit_launcher` `1.2.4 -> 1.2.7`
 - `labkit.ui` `5.0.1 -> 5.0.2`
 - `labkit_FigureStudio_app` `0.1.4 -> 0.1.5`
@@ -132,8 +105,72 @@ Compatibility:
   require MATLAB to run the generated `.p` files.
 - Public apps, public releases, and public CI remain scoped to `apps/`.
 
+Direction:
+- Keep debug fixes moving into shared callback and editor contracts when the
+  failure pattern is reusable, but keep app-specific workflow decisions in the
+  owning app.
+
 Evidence:
-- PR #34 and release tag `v3.1.0`.
+- PR #34 and branch `codex-fix-debug-results-07072026`; final main commit and
+  release tag evidence pending.
+
+Template for branch work before the final mainline commit is known:
+
+```markdown
+### Pending - Short user-facing title
+
+Affected versions:
+- `component` `old -> new`
+
+What changed:
+- Plain-language change summary.
+
+Why it matters:
+- User or maintainer reason this version exists.
+
+Compatibility:
+- Migration or rollback note, or `No known manual migration.`
+
+Direction:
+- Optional short note about the improvement direction or follow-up boundary.
+
+Evidence:
+- PR, branch, or pending commit.
+```
+
+## Current Version Lookup
+
+Audited against `main` UI 5 squash commit on 2026-07-06.
+
+| Component | Current version | Family | Metadata location |
+|---|---:|---|---|
+| `labkit_launcher` | `1.2.7` | Launcher | `labkit_launcher.m` |
+| `labkit.ui` | `5.0.2` | Facade | `+labkit/+ui/version.m` |
+| `labkit.dta` | `2.0.0` | Facade | `+labkit/+dta/version.m` |
+| `labkit.image` | `1.1.0` | Facade | `+labkit/+image/version.m` |
+| `labkit.thermal` | `1.0.0` | Facade | `+labkit/+thermal/version.m` |
+| `labkit.rhs` | `1.0.0` | Facade | `+labkit/+rhs/version.m` |
+| `labkit.biosignal` | `1.0.0` | Facade | `+labkit/+biosignal/version.m` |
+| `labkit_FigureStudio_app` | `0.1.5` | LabKit Core | `apps/labkit_core/figure_studio/+figure_studio/version.m` |
+| `labkit_ChronoOverlay_app` | `1.3.5` | Electrochem | `apps/electrochem/chrono_overlay/+chrono_overlay/version.m` |
+| `labkit_CIC_app` | `1.3.7` | Electrochem | `apps/electrochem/cic/+cic/version.m` |
+| `labkit_CSC_app` | `1.3.9` | Electrochem | `apps/electrochem/csc/+csc/version.m` |
+| `labkit_EIS_app` | `1.3.4` | Electrochem | `apps/electrochem/eis/+eis/version.m` |
+| `labkit_VTResistance_app` | `1.3.7` | Electrochem | `apps/electrochem/vt_resistance/+vt_resistance/version.m` |
+| `labkit_DICPreprocess_app` | `1.3.5` | DIC | `apps/dic/dic_preprocess/+dic_preprocess/version.m` |
+| `labkit_DICPostprocess_app` | `1.3.4` | DIC | `apps/dic/dic_postprocess/+dic_postprocess/version.m` |
+| `labkit_BatchImageCrop_app` | `1.6.7` | Image Measurement | `apps/image_measurement/batch_crop/+batch_crop/version.m` |
+| `labkit_CurvatureMeasurement_app` | `1.3.4` | Image Measurement | `apps/image_measurement/curvature/+curvature/version.m` |
+| `labkit_FLIRThermal_app` | `1.2.8` | Image Measurement | `apps/image_measurement/flir_thermal/+flir_thermal/version.m` |
+| `labkit_FocusStack_app` | `1.4.6` | Image Measurement | `apps/image_measurement/focus_stack/+focus_stack/version.m` |
+| `labkit_ImageEnhance_app` | `1.5.5` | Image Measurement | `apps/image_measurement/image_enhance/+image_enhance/version.m` |
+| `labkit_ImageMatch_app` | `1.5.5` | Image Measurement | `apps/image_measurement/image_match/+image_match/version.m` |
+| `labkit_RHSPreview_app` | `1.3.4` | Neurophysiology | `apps/neurophysiology/rhs_preview/+rhs_preview/version.m` |
+| `labkit_NerveResponseAnalysis_app` | `1.3.4` | Neurophysiology | `apps/neurophysiology/nerve_response_analysis/+nerve_response_analysis/version.m` |
+| `labkit_ResponseReviewStats_app` | `1.3.4` | Neurophysiology | `apps/neurophysiology/response_review_stats/+response_review_stats/version.m` |
+| `labkit_ECGPrint_app` | `1.3.5` | Wearable | `apps/wearable/ecg_print/+ecg_print/version.m` |
+
+## Version History
 
 ### 2026-07-06 - UI 5 facade redesign, app migration, and plot refresh
 

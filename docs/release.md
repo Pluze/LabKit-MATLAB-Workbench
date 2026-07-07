@@ -60,20 +60,27 @@ an older release when the newest build is unsuitable for their workflow.
 
 ## Changelog Maintenance
 
-`CHANGELOG.md` is the user-facing version map. It is separate from GitHub
-release notes: release notes summarize one public release, while the changelog
-explains what changed under each release tag, launcher version, facade version,
-and app version.
+`CHANGELOG.md` is the user-facing version map and project evolution map for
+users, maintainers, and agents. It is separate from GitHub release notes:
+release notes summarize one public release, while the changelog explains how
+LabKit changed over time, why each iteration exists, which release tag or
+component versions carry it, and where the audit evidence lives.
 
 The format combines common open-source practices:
 
-- Keep a top `Unreleased` section for branch and pull-request work before the
-  final mainline commit is known, following the Keep a Changelog pattern.
+- Keep a top `Unreleased` section for branch, pull-request, and
+  release-preparation work before the final mainline commit or tag evidence is
+  known, following the Keep a Changelog pattern.
 - Keep a current version lookup so users can quickly map each app, facade, and
   launcher to its metadata file.
-- Keep one `Version History` reading path. Entries should lead with affected
-  versions, then explain what changed, why it matters, compatibility notes when
-  relevant, and evidence.
+- Keep one `Version History` reading path. Entries are user-facing evolution
+  entries, not raw tag rows or commit-log rows. Use release-line entries when a
+  public tag is the useful reader anchor, and use feature or maintenance
+  entries when the capability, workflow, compatibility, or project direction is
+  the useful reader anchor.
+- Entries should lead with affected versions, then explain what changed,
+  why it matters, compatibility notes when relevant, optional direction notes,
+  and evidence.
 - Keep release notes shorter and user-focused, similar to Django and VS Code
   release pages.
 

@@ -31,11 +31,12 @@ runner selectors before adding a new public task.
 
 Use focused `runLabKitTests("Suites", ...)` selections for tight local
 iteration after the affected scope is known. Use the fast changed-file build
-task once at a coherent checkpoint, and the conservative changed-file build
-task before handoff. Changed-file tasks inspect the current diff and print why
-each selected scope is being run, but they should not be rerun after every
-small source edit when a focused suite covers the same behavior. For local GUI
-edits that only touch one app, prefer the app-level GUI folder, for example a
+task once at a coherent checkpoint, and reserve the conservative
+`buildtool changed` task as the final changed-file gate for one logical commit
+or handoff. Changed-file tasks inspect the current diff and print why each
+selected scope is being run, but they should not be rerun after every small
+source edit when a focused suite covers the same behavior. For local GUI edits
+that only touch one app, prefer the app-level GUI folder, for example a
 `Suites` value such as `gui/apps/image_measurement/batch_crop` with
 `IncludeGui=true`, `GuiMode="hidden"`, and `HtmlReport=false` during iteration.
 
@@ -44,14 +45,15 @@ whether a large selected test set should run serially or through internal
 worker shards. Use runner-level shard arguments only when developing or
 debugging the runner itself; every shard must have a distinct `RunName` and the
 combined shards must cover the same selected suite. On GitHub Actions, keep the
-public CI entry as `buildtool headless` and let the buildfile choose serial
-execution unless independent child MATLAB licensing has been proven.
+public CI entry as the documented headless build task and let the buildfile
+choose serial execution unless independent child MATLAB licensing has been
+proven.
 
 For a dirty worktree with unclear ownership, route through the changed-file
 validation planner before manually choosing tests. When ownership is clear,
 start with the smallest direct suite that covers the edited behavior, then use
-`changedFast` for a coherent checkpoint and `changed` for final handoff. If
-release validation or an explicit user request requires broader gates, run
+`changedFast` for a coherent checkpoint and `changed` only for final handoff.
+If release validation or an explicit user request requires broader gates, run
 them after focused iteration or state why a completed broader gate fully covers
 the affected plan instead of rerunning narrower tests for ceremony.
 
@@ -60,7 +62,8 @@ scope again. Fix the root cause and rerun the narrowest failed suite or test
 directly, for example `runLabKitTests("Suites", "project")` after a project
 guardrail failure. Escalate back to the changed-file, headless, or GUI build
 task only when the fix touches additional areas, changes validation routing,
-or the user explicitly asks for a broader/release gate.
+the final stable diff needs its one `buildtool changed` handoff gate, or the
+user explicitly asks for a broader/release gate.
 
 ```text
 project                    startup, architecture, package surface, sample-data hygiene

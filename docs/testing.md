@@ -100,8 +100,10 @@ pay the cost of broad changed-file planning:
    iteration.
 2. After a coherent checkpoint, run `buildtool changedFast` once to verify the
    diff-based plan before broader cleanup or review.
-3. Before commit, PR, or direct-main handoff, run `buildtool changed` unless a
-   recently completed broader gate fully covers the current diff.
+3. Treat `buildtool changed` as the final changed-file gate for a logical
+   commit or handoff. Run it once when the diff is stable before commit, PR,
+   release, or direct-main handoff unless a recently completed broader gate
+   fully covers the current diff.
 4. After push, inspect CI for the final pushed commit. If another user-requested
    follow-up supersedes an in-progress run, continue the follow-up locally and
    inspect CI for the newest pushed commit instead of waiting for the
@@ -111,7 +113,10 @@ Do not rerun `changedFast`, `changed`, or CI after every small edit when the
 same focused suite can validate the changed behavior more directly. Escalate
 back to a changed-file build task when the fix touches additional ownership
 areas, changes validation routing, updates docs/AGENTS, or is ready for final
-handoff.
+handoff. After a final `buildtool changed` run exposes a failure, repair with
+the narrowest failed suite or test selector, then reserve another
+`buildtool changed` run for the final stable diff instead of using it as the
+iteration loop.
 
 ## CI Scope
 
