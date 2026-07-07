@@ -140,6 +140,7 @@ function state = onDuplicateImage(state, ~, services)
         duplicated; state.items(insertAt:end)];
     state.currentIndex = insertAt;
     state = clearExportAndCanvas(state);
+    state = ensureCurrentCenter(state, services);
     addLog(services, sprintf(['Duplicated image %d as crop task %d. ' ...
         'Pick a new crop center.'], insertAt - 1, insertAt));
 end

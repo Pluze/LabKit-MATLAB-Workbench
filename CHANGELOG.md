@@ -1,118 +1,51 @@
 # LabKit MATLAB Workbench Changelog
 
-This file is a version map for users and maintainers. It explains what changed
-under each release tag, launcher version, facade version, and app version. It
-does not try to replace git blame or raw commit history; it records the
-maintainer intent and user impact that are easy to lose in commit subjects.
+This file is the project evolution map for users, maintainers, and agents. It
+explains how LabKit changed over time, why each iteration exists, which
+versions carry the change, and where to find evidence when auditing or
+debugging.
+
+The primary unit is a user-facing evolution entry, not a tag, commit, or raw
+feature list. Release tags are public anchors for delivered builds. Component
+versions identify the launcher, facade, or app metadata affected by an entry.
+Commits and PRs belong in `Evidence`, not in the navigation structure.
 
 ## How To Use This File
 
 - Start with `Current Version Lookup` when you only need to identify the version
   and metadata file for a launcher, facade, or app.
-- Use `Version History` as the main reading path. Each entry lists affected
-  versions, what changed, why it matters, compatibility notes when relevant,
-  and evidence.
-- Use `Unreleased` for branch and pull-request work before the final mainline
-  commit is known.
+- Use `Unreleased` for branch, pull-request, and release-preparation work
+  before the final mainline commit or tag evidence is known.
+- Use `Version History` as the main reading path for project evolution. Entries
+  are ordered by date and grouped by reader-facing theme: a release-line entry
+  summarizes a public tag, while a feature or maintenance entry summarizes one
+  coherent improvement direction.
+- Read `Affected versions` as the index from an evolution entry to release
+  tags, launcher versions, facade versions, and app versions.
 - Record meaningful behavior, compatibility, workflow, validation, diagnostics,
   and public facade changes. Do not dump raw git logs.
 
+## Changelog Model
+
+- `Current Version Lookup` is a state table. Keep it current with metadata
+  files, but do not use it to explain history.
+- `Unreleased` is a staging area. Use it for pending evolution entries until
+  the final mainline commit and, when applicable, release tag are known.
+- `Version History` is the narrative timeline. Prefer one entry per coherent
+  user-facing or maintainer-facing evolution: a release, a facade migration, an
+  app workflow improvement, a validation/release-system improvement, or a
+  compatibility change.
+- Release entries may roll up several related improvements when the tag is the
+  useful reader anchor. Non-release entries should be based on the capability,
+  workflow, or maintenance direction they explain, even when they also list
+  version bumps.
+- Every entry should answer four questions: what changed, why it mattered, what
+  compatibility or upgrade risk exists, and what evidence proves the entry.
+- Optional direction or follow-up notes are allowed when they help future
+  maintainers and agents understand where the project is moving. Keep them
+  short and concrete.
+
 ## Unreleased
-
-### Pending - Code Analyzer reports and optional launcher tools
-
-Affected versions:
-- `labkit_launcher` `1.2.6 -> 1.2.7`
-- `labkit.ui` `5.0.0 -> 5.0.1`
-
-What changed:
-- Moved the launcher Code Analyzer scan into `tools/codecheck`, which now
-  writes a timestamped JSON/HTML report pair under `artifacts/code-check/`
-  without overwriting earlier runs.
-- The HTML report supports active/suppressed/all issue views, severity and
-  CheckID filters, file and CheckID summaries, selected-issue details, and
-  embedded source text for issue files.
-- Code Analyzer reports and project style/code-quality guardrails can include
-  local private app workspaces from `private_apps/apps/` and
-  `LABKIT_PRIVATE_APP_ROOTS` when the private workspace opts in with
-  `.labkit-accept-main-guardrails`.
-- The visible launcher opens Code Analyzer and profiler HTML reports after
-  manual tool actions; hidden automated GUI tests suppress browser launch.
-- Optional maintenance buttons are disabled when their tool folders are missing,
-  while app launch and version update actions remain available.
-- Cleaned duplicate Code Analyzer branches in reusable UI helpers and adjusted
-  launcher busy-state cleanup so MATLAB Code Analyzer no longer reports those
-  error-level findings.
-
-Why it matters:
-- Code Analyzer cleanup can be reviewed from an interactive local HTML report
-  without making the launcher own a growing maintenance workflow.
-- Damaged or slimmed-down installs keep core launcher behavior available even
-  when optional maintenance tools are absent.
-
-Compatibility:
-- Code Analyzer report consumers should read the timestamped
-  `artifacts/code-check/matlab_code_issues_*.json` files.
-- The HTML report is an additional timestamped artifact under `artifacts/` and
-  is not tracked.
-
-Evidence:
-- Pending commit.
-
-### Pending - Single app deployment packages
-
-Affected versions:
-- `labkit_launcher` `1.2.5 -> 1.2.6`
-
-What changed:
-- Added launcher actions and a deployment tool that package one selected LabKit
-  app into a standalone zip, either as source `.m` files or encoded `.p` files.
-- The generated package includes the selected app and its assets, `+labkit/`,
-  `labkit_launcher.m`, the launcher-needed deployment/profiling tool folders,
-  a manifest, and a direct `run_<app_command>.m` entry file.
-- Private apps can be packaged from `private_apps/apps/` or
-  `LABKIT_PRIVATE_APP_ROOTS`; inside the zip they remain under
-  `private_apps/apps/...`.
-
-Why it matters:
-- A single lab workflow can be distributed into a fixed production or offline
-  deployment step without shipping unrelated apps, tests, docs, or repository
-  metadata.
-
-Compatibility:
-- Full LabKit checkout installs are unchanged.
-- Single-app packages can start through either the packaged launcher or the
-  direct run file; P-code packages require MATLAB to run the generated `.p`
-  files.
-
-Evidence:
-- Pending commit.
-
-### Pending - Private app workspace discovery
-
-Affected versions:
-- `labkit_launcher` `1.2.4 -> 1.2.5`
-
-What changed:
-- Added launcher discovery for local private app workspaces under
-  `private_apps/apps/` and roots named by `LABKIT_PRIVATE_APP_ROOTS`.
-- Added a `Visibility` catalog field so private app entries can be listed and
-  launched locally without becoming public app entries.
-- Documented the generic private-app workspace structure and Git ownership
-  model without recording private app details in the public repository.
-
-Why it matters:
-- Developers can keep private LabKit apps next to a public checkout, use the
-  ordinary launcher to open them, and push that workspace to a separate private
-  repository.
-
-Compatibility:
-- Public apps, public releases, and public CI remain scoped to `apps/`.
-- Existing launcher list consumers should tolerate the additional `Visibility`
-  catalog column.
-
-Evidence:
-- Pending commit.
 
 Template for branch work before the final mainline commit is known:
 
@@ -131,6 +64,9 @@ Why it matters:
 Compatibility:
 - Migration or rollback note, or `No known manual migration.`
 
+Direction:
+- Optional short note about the improvement direction or follow-up boundary.
+
 Evidence:
 - PR, branch, or pending commit.
 ```
@@ -142,24 +78,24 @@ Audited against `main` UI 5 squash commit on 2026-07-06.
 | Component | Current version | Family | Metadata location |
 |---|---:|---|---|
 | `labkit_launcher` | `1.2.7` | Launcher | `labkit_launcher.m` |
-| `labkit.ui` | `5.0.1` | Facade | `+labkit/+ui/version.m` |
+| `labkit.ui` | `5.0.2` | Facade | `+labkit/+ui/version.m` |
 | `labkit.dta` | `2.0.0` | Facade | `+labkit/+dta/version.m` |
 | `labkit.image` | `1.1.0` | Facade | `+labkit/+image/version.m` |
 | `labkit.thermal` | `1.0.0` | Facade | `+labkit/+thermal/version.m` |
 | `labkit.rhs` | `1.0.0` | Facade | `+labkit/+rhs/version.m` |
 | `labkit.biosignal` | `1.0.0` | Facade | `+labkit/+biosignal/version.m` |
-| `labkit_FigureStudio_app` | `0.1.4` | LabKit Core | `apps/labkit_core/figure_studio/+figure_studio/version.m` |
+| `labkit_FigureStudio_app` | `0.1.5` | LabKit Core | `apps/labkit_core/figure_studio/+figure_studio/version.m` |
 | `labkit_ChronoOverlay_app` | `1.3.5` | Electrochem | `apps/electrochem/chrono_overlay/+chrono_overlay/version.m` |
 | `labkit_CIC_app` | `1.3.7` | Electrochem | `apps/electrochem/cic/+cic/version.m` |
 | `labkit_CSC_app` | `1.3.9` | Electrochem | `apps/electrochem/csc/+csc/version.m` |
 | `labkit_EIS_app` | `1.3.4` | Electrochem | `apps/electrochem/eis/+eis/version.m` |
 | `labkit_VTResistance_app` | `1.3.7` | Electrochem | `apps/electrochem/vt_resistance/+vt_resistance/version.m` |
-| `labkit_DICPreprocess_app` | `1.3.4` | DIC | `apps/dic/dic_preprocess/+dic_preprocess/version.m` |
+| `labkit_DICPreprocess_app` | `1.3.5` | DIC | `apps/dic/dic_preprocess/+dic_preprocess/version.m` |
 | `labkit_DICPostprocess_app` | `1.3.4` | DIC | `apps/dic/dic_postprocess/+dic_postprocess/version.m` |
-| `labkit_BatchImageCrop_app` | `1.6.6` | Image Measurement | `apps/image_measurement/batch_crop/+batch_crop/version.m` |
+| `labkit_BatchImageCrop_app` | `1.6.7` | Image Measurement | `apps/image_measurement/batch_crop/+batch_crop/version.m` |
 | `labkit_CurvatureMeasurement_app` | `1.3.4` | Image Measurement | `apps/image_measurement/curvature/+curvature/version.m` |
 | `labkit_FLIRThermal_app` | `1.2.8` | Image Measurement | `apps/image_measurement/flir_thermal/+flir_thermal/version.m` |
-| `labkit_FocusStack_app` | `1.4.5` | Image Measurement | `apps/image_measurement/focus_stack/+focus_stack/version.m` |
+| `labkit_FocusStack_app` | `1.4.6` | Image Measurement | `apps/image_measurement/focus_stack/+focus_stack/version.m` |
 | `labkit_ImageEnhance_app` | `1.5.5` | Image Measurement | `apps/image_measurement/image_enhance/+image_enhance/version.m` |
 | `labkit_ImageMatch_app` | `1.5.5` | Image Measurement | `apps/image_measurement/image_match/+image_match/version.m` |
 | `labkit_RHSPreview_app` | `1.3.4` | Neurophysiology | `apps/neurophysiology/rhs_preview/+rhs_preview/version.m` |
@@ -168,6 +104,79 @@ Audited against `main` UI 5 squash commit on 2026-07-06.
 | `labkit_ECGPrint_app` | `1.3.5` | Wearable | `apps/wearable/ecg_print/+ecg_print/version.m` |
 
 ## Version History
+
+### 2026-07-07 - Debug workflows, launcher tools, and changelog governance
+
+Affected versions:
+- Release tag `v3.1.0`
+- `labkit_launcher` `1.2.4 -> 1.2.7`
+- `labkit.ui` `5.0.1 -> 5.0.2`
+- `labkit_FigureStudio_app` `0.1.4 -> 0.1.5`
+- `labkit_DICPreprocess_app` `1.3.4 -> 1.3.5`
+- `labkit_BatchImageCrop_app` `1.6.6 -> 1.6.7`
+- `labkit_FocusStack_app` `1.4.5 -> 1.4.6`
+
+What changed:
+- DIC Preprocess ROI mask export now reads the live ROI editor anchors when
+  building a mask, so preview/save do not misreport a drawn ROI as empty when
+  editor state is newer than the app state snapshot.
+- DIC Preprocess keeps the double-click ROI anchor workflow and makes the
+  double-click requirement explicit in the visible details text.
+- Batch Image Crop duplicate tasks now redraw with finite preview overlay
+  coordinates while still requiring users to confirm the duplicated crop
+  center before export.
+- Figure Studio quick PNG/JPG/SVG export actions use runtime-compatible
+  handler signatures.
+- Focus Stack exposes a direct `Choose folder` action for loading all supported
+  images from a focus-stack folder.
+- Debug trace diagnostics no longer write stalled-callback crash reports while
+  a file chooser modal is active.
+- Moved the launcher Code Analyzer scan into `tools/codecheck`, which writes
+  timestamped JSON/HTML report pairs under `artifacts/code-check/` without
+  overwriting earlier runs.
+- Added launcher actions and a deployment tool that package one selected LabKit
+  app into a standalone zip, either as source `.m` files or encoded `.p` files.
+- Added launcher discovery for local private app workspaces under
+  `private_apps/apps/` and roots named by `LABKIT_PRIVATE_APP_ROOTS`.
+- Clarified the public changelog model as a project evolution map organized by
+  reader-facing evolution entries, with release tags and commits kept as
+  anchors and evidence rather than the primary structure.
+
+Why it matters:
+- The debug sample workflows can be exercised without false crash reports or
+  disabled-looking app paths when the required user action is folder loading,
+  ROI anchor completion, or crop-center confirmation.
+- Code Analyzer cleanup can be reviewed from an interactive local HTML report
+  without making the launcher own a growing maintenance workflow.
+- A single lab workflow can be distributed into a fixed production or offline
+  deployment step without shipping unrelated apps, tests, docs, or repository
+  metadata.
+- Developers can keep private LabKit apps next to a public checkout, use the
+  ordinary launcher to open them, and push that workspace to a separate private
+  repository.
+- Maintainers and agents can understand project direction from the changelog
+  without reconstructing intent from raw git history.
+
+Compatibility:
+- DIC ROI editing still uses double-click to add anchors; no interaction-mode
+  migration is required.
+- Existing file-panel image selection remains available in Focus Stack.
+- Code Analyzer report consumers should read the timestamped
+  `artifacts/code-check/matlab_code_issues_*.json` files.
+- Full LabKit checkout installs are unchanged. Single-app packages can start
+  through either the packaged launcher or the direct run file; P-code packages
+  require MATLAB to run the generated `.p` files.
+- Public apps, public releases, and public CI remain scoped to `apps/`.
+
+Direction:
+- Keep debug fixes moving into shared callback and editor contracts when the
+  failure pattern is reusable, but keep app-specific workflow decisions in the
+  owning app.
+- Keep changelog entries organized around evolution themes and release lines,
+  not raw tag rows or issue lists.
+
+Evidence:
+- PR #34 squash merge and release tag `v3.1.0`.
 
 ### 2026-07-06 - UI 5 facade redesign, app migration, and plot refresh
 

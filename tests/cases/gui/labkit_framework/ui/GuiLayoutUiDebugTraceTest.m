@@ -186,6 +186,17 @@ function checkDiagnosticReports()
         contains(report, 'error_id=probe:ExpectedFailure'), ...
         'Caught app exceptions should be reportable through the debug context.');
 
+    modalCrashFile = fullfile(folder, 'modal_crash.txt');
+    modalDebug = labkit.ui.debug.context('probe_app', struct( ...
+        'logFile', fullfile(folder, 'modal.log'), ...
+        'crashReportFile', modalCrashFile, ...
+        'activeOperationFile', fullfile(folder, 'modal_active.txt'), ...
+        'stallTimeoutSeconds', 0.1));
+    wrappedModal = modalDebug.wrapCallback('modal file chooser callback', @modalFileChooserCallback);
+    wrappedModal();
+    assert(exist(modalCrashFile, 'file') ~= 2, ...
+        'File chooser modal time should not be reported as a stalled app callback.');
+
     function normalCallback()
         assert(exist(activeFile, 'file') == 2, ...
             'Running callbacks should leave an active-operation report on disk.');
@@ -193,6 +204,13 @@ function checkDiagnosticReports()
 
     function failingCallback()
         error('probe:ExpectedFailure', 'Expected diagnostic failure.');
+    end
+
+    function modalFileChooserCallback()
+        modalDebug.trace('filePanel', 'inputs file chooser start', 'mode=multi');
+        pause(0.2);
+        drawnow;
+        modalDebug.trace('filePanel', 'inputs file chooser end', 'count=1');
     end
 end
 

@@ -58,6 +58,7 @@ function debugContext = context(appName, opts)
     stallTimeoutSeconds = normalizePositiveScalar( ...
         optionValue(opts, 'stallTimeoutSeconds', 30), 30);
     lines = {};
+    modalDialogDepth = 0;
 
     if enabled && strlength(logFile) > 0
         initializeLogFile(logFile, appName);
@@ -101,6 +102,7 @@ function debugContext = context(appName, opts)
         if nargin < 3 || isempty(reason)
             reason = "internal";
         end
+        updateModalDialogState(component, event);
         line = appendLineValue(sprintf('[debug] app=%s component=%s event=%s reason=%s', ...
             traceValue(appName), traceValue(component), ...
             traceValue(event), traceValue(reason)));
@@ -223,7 +225,7 @@ function debugContext = context(appName, opts)
             end
         end
         trace(sprintf('instrumented figure %d callback(s) on %s', ...
-            count, handleLabel(fig)));
+            count, debugHandleLabel(fig)));
     end
 
     function line = appendLineValue(message)
@@ -270,6 +272,7 @@ function debugContext = context(appName, opts)
             return;
         end
         stopStallTimer(op);
+        modalDialogDepth = 0;
         if status == "error"
             writeOperationReport("error", op, exception);
         end
@@ -286,11 +289,20 @@ function debugContext = context(appName, opts)
                 'ExecutionMode', 'singleShot', ...
                 'StartDelay', stallTimeoutSeconds, ...
                 'Name', sprintf('labkit_stall_%s', op.id), ...
-                'TimerFcn', @(~,~) writeOperationReport("stalled", op, []));
+                'TimerFcn', @(~,~) writeStallReportIfNotModal(op));
             start(timerObj);
         catch
             timerObj = [];
         end
+    end
+
+    function writeStallReportIfNotModal(op)
+        if modalDialogDepth > 0
+            appendLineValue(sprintf('[debug] app=%s component=debug event=stall timer skipped during modal dialog operation=%s reason=internal', ...
+                traceValue(appName), traceValue(op.label)));
+            return;
+        end
+        writeOperationReport("stalled", op, []);
     end
 
     function stopStallTimer(op)
@@ -371,6 +383,22 @@ function debugContext = context(appName, opts)
         first = max(1, numel(recent) - maxCount + 1);
         recent = recent(first:end);
     end
+
+    function updateModalDialogState(component, event)
+        if string(component) ~= "filePanel"
+            return;
+        end
+        eventText = string(event);
+        if contains(eventText, "file chooser start") || ...
+                contains(eventText, "dialog provider start") || ...
+                contains(eventText, "large folder prompt")
+            modalDialogDepth = modalDialogDepth + 1;
+        elseif contains(eventText, "file chooser end") || ...
+                contains(eventText, "dialog provider end") || ...
+                contains(eventText, "paths selected")
+            modalDialogDepth = max(0, modalDialogDepth - 1);
+        end
+    end
 end
 
 function appendTextLog(textArea, msg)
@@ -403,111 +431,6 @@ end
 
 function key = logFollowKey()
     key = 'labkitLogFollowLatest';
-end
-
-function wrapped = callbackWrapperForHandle(handle, propName, callback, traceFcn, startOperationFcn, finishOperationFcn)
-    if isa(callback, 'function_handle')
-        wrapped = @wrappedFunctionHandle;
-    elseif iscell(callback) && ~isempty(callback) && isa(callback{1}, 'function_handle')
-        wrapped = @wrappedCellCallback;
-    else
-        wrapped = [];
-    end
-
-    function varargout = wrappedFunctionHandle(varargin)
-        label = callbackTraceLabel(handle, propName, callback);
-        op = startOperationFcn(label);
-        traceFcn(sprintf('BEGIN %s', label));
-        try
-            if nargout == 0
-                callback(varargin{:});
-                traceFcn(sprintf('END %s', label));
-                finishOperationFcn(op, "completed", []);
-            else
-                [varargout{1:nargout}] = callback(varargin{:});
-                traceFcn(sprintf('END %s', label));
-                finishOperationFcn(op, "completed", []);
-            end
-        catch ME
-            traceFcn(sprintf('ERROR %s: %s %s', label, ME.identifier, ME.message));
-            finishOperationFcn(op, "error", ME);
-            rethrow(ME);
-        end
-    end
-
-    function varargout = wrappedCellCallback(varargin)
-        callbackFcn = callback{1};
-        callbackArgs = callback(2:end);
-        label = callbackTraceLabel(handle, propName, callbackFcn);
-        op = startOperationFcn(label);
-        traceFcn(sprintf('BEGIN %s', label));
-        try
-            if nargout == 0
-                callbackFcn(varargin{:}, callbackArgs{:});
-                traceFcn(sprintf('END %s', label));
-                finishOperationFcn(op, "completed", []);
-            else
-                [varargout{1:nargout}] = callbackFcn(varargin{:}, callbackArgs{:});
-                traceFcn(sprintf('END %s', label));
-                finishOperationFcn(op, "completed", []);
-            end
-        catch ME
-            traceFcn(sprintf('ERROR %s: %s %s', label, ME.identifier, ME.message));
-            finishOperationFcn(op, "error", ME);
-            rethrow(ME);
-        end
-    end
-end
-
-function label = callbackTraceLabel(handle, propName, callback)
-    label = sprintf('%s %s', char(string(propName)), handleLabel(handle));
-    callbackName = originalCallbackName(handle);
-    if strlength(callbackName) == 0
-        callbackName = callbackNameText(callback);
-    end
-    if strlength(callbackName) > 0
-        label = sprintf('%s -> %s', label, char(callbackName));
-    end
-end
-
-function txt = originalCallbackName(handle)
-    txt = "";
-    try
-        if isappdata(handle, 'labkit_ui_original_callback_name')
-            txt = string(getappdata(handle, 'labkit_ui_original_callback_name'));
-        end
-    catch
-        txt = "";
-    end
-end
-
-function label = handleLabel(handle)
-    label = class(handle);
-    for propName = {'Text', 'Title', 'Name', 'Tag'}
-        prop = propName{1};
-        if isprop(handle, prop)
-            try
-                value = handle.(prop);
-                if ~(isempty(value) || (isstring(value) && strlength(value) == 0))
-                    label = sprintf('%s "%s"', class(handle), char(string(value)));
-                    return;
-                end
-            catch
-            end
-        end
-    end
-end
-
-function txt = callbackNameText(callback)
-    txt = "";
-    if ~isa(callback, 'function_handle')
-        return;
-    end
-    try
-        txt = string(func2str(callback));
-    catch
-        txt = "";
-    end
 end
 
 function tf = isAlreadyInstrumented(handle, propName)

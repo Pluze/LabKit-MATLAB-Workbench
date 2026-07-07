@@ -395,7 +395,7 @@ function actions = definitionActions()
             S.maskBoundaryStyle, @onMaskEditorChanged);
         S = dic_preprocess.userInterface.setMaskEditControls(S, controls, true);
         addLog('Started mask ROI canvas. Add/insert, move, or delete anchors; add/subtract boundaries on the mask canvas.');
-        txtDetails.Value = {'ROI edit started. Double-click blank space to add/insert points, drag points to move them, double-click points to delete them.'};
+        txtDetails.Value = {'ROI edit started. Double-click the reference preview to add anchors, drag points to move them, double-click points to delete them.'};
         dic_preprocess.userInterface.updateMaskEditControls(controls, S);
     end
 
@@ -541,6 +541,10 @@ function actions = definitionActions()
     end
 
     function [boundaryMask, ok] = currentBoundaryMask(showAlert)
+        if ~isempty(S.maskEditor) && isstruct(S.maskEditor) && ...
+                isfield(S.maskEditor, 'getPoints') && isa(S.maskEditor.getPoints, 'function_handle')
+            S.maskPoints = S.maskEditor.getPoints();
+        end
         [boundaryMask, ok] = dic_preprocess.analysisRun.boundaryMaskFromEditor( ...
             S.maskPoints, size(S.currentReferenceImage), ...
             S.maskBoundaryStyle, S.maskEditor);

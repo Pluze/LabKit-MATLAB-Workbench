@@ -123,12 +123,14 @@ full task list.
 For dirty worktrees, use a staged validation cadence. While actively editing a
 known component, prefer the smallest direct `runLabKitTests("Suites", ...)`
 selection that covers the behavior being changed. Run the fast changed-file
-gate once at a coherent local checkpoint, and run the conservative
-changed-file gate before commit, PR handoff, or direct-main push unless a
-broader completed gate already covers the current diff. Do not rerun
-changed-file build tasks after every small edit when a focused suite can
-validate the same behavior. Prefer non-disruptive validation while the user is
-actively working; local GUI gates can steal keyboard focus and should be run
+gate once at a coherent local checkpoint, and treat `buildtool changed` as the
+final changed-file gate for one logical commit or handoff. Run it once when the
+diff is stable before commit, PR handoff, release, or direct-main push unless a
+broader completed gate already covers the current diff. If that final gate
+finds a failure, analyze the selected scope and rerun the narrowest failed
+suite or test while repairing; do not keep rerunning `buildtool changed` until
+the final diff is stable again. Prefer non-disruptive validation while the user
+is actively working; local GUI gates can steal keyboard focus and should be run
 only when necessary or explicitly requested.
 
 In noninteractive agent shells, run the selected MATLAB build task directly.
@@ -264,14 +266,18 @@ one type would hide a distinct behavior, test, documentation, or CI change.
 Use `docs/release.md` as the human-facing source of truth for version-number
 selection, release tag naming, and GitHub release note format.
 
-Use `CHANGELOG.md` as the user-facing version map. When a change bumps
-`labkit_launcher.m`, a `+labkit/**/version.m` facade, or an
-`apps/**/version.m` app metadata file, update `CHANGELOG.md` in the same change
-with the affected versions, what changed, why it matters, compatibility notes
-when relevant, and evidence. For branch or PR work before the final mainline
-SHA is known, stage the entry under `Unreleased`; during release preparation or
-changelog audit, move finalized entries into `Version History` with the
-mainline commit SHA. Do not reduce changelog entries to raw commit-log dumps.
+Use `CHANGELOG.md` as the project evolution map for users, maintainers, and
+agents. When a change bumps `labkit_launcher.m`, a `+labkit/**/version.m`
+facade, or an `apps/**/version.m` app metadata file, update `CHANGELOG.md` in
+the same change with the affected versions, what changed, why it matters,
+compatibility notes when relevant, optional direction notes, and evidence.
+Organize entries by coherent user-facing or maintainer-facing evolution, not
+by raw tag rows, commit rows, or issue lists. Release tags are public anchors
+inside affected versions and evidence; commits are evidence. For branch or PR
+work before the final mainline SHA is known, stage the entry under
+`Unreleased`; during release preparation or changelog audit, move finalized
+entries into `Version History` with the mainline commit SHA. Do not reduce
+changelog entries to raw commit-log dumps.
 
 For new releases, use `vX.Y.Z` tags, for example `v2.2.0`. Do not rename or
 delete already published historical tags only to normalize naming; preserve
