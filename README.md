@@ -112,6 +112,12 @@ Source checkouts may also use an ignored `private_apps/` workspace for local
 private app development. See [docs/private-apps.md](docs/private-apps.md) for
 the generic structure; private app details belong in the private app repository.
 
+## Citation
+
+For citation metadata, see the
+[Zenodo archive](https://zenodo.org/records/21250089) and
+[DOI: 10.5281/zenodo.21250088](https://doi.org/10.5281/zenodo.21250088).
+
 ## License
 
 This project is open source under the MIT License. See [LICENSE](LICENSE).
