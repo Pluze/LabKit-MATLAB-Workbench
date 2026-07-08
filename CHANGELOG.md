@@ -47,6 +47,32 @@ Commits and PRs belong in `Evidence`, not in the navigation structure.
 
 ## Unreleased
 
+### Pending - Runtime-only P-code app packages
+
+Affected versions:
+- Project deployment tooling, no component version change.
+
+What changed:
+- `Package P-code` now creates a runtime-only single-app package instead of
+  shipping a P-coded LabKit launcher and launcher maintenance tools.
+- P-code package manifests and README instructions point users to the direct
+  `run_<app_command>` entry file.
+- P-code packaging no longer requires `labkit_launcher.m` or `labkit_launcher.p`
+  to exist in the package root being used as the runtime source.
+
+Why it matters:
+- P-code distributions no longer expose or depend on launcher behavior that is
+  source-checkout oriented, including launcher version/date metadata and
+  follow-on packaging actions.
+
+Compatibility:
+- Users of P-code packages should run `run_<app_command>` from the unzipped
+  package instead of `labkit_launcher`. Source packages still include and
+  support the launcher.
+
+Evidence:
+- Pending direct-main commit.
+
 ### Pending - Release validation gate and GUI CI hardening
 
 Affected versions:

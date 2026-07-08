@@ -12,7 +12,8 @@ function result = packageLabKitApp(appSelector, zipFile, varargin)
 %   Root        LabKit source/runtime root. Defaults to the current repo root.
 %   OutputRoot  default folder for generated zip files.
 %   ProgressFcn function handle called as fcn(message, value), where value is 0..1.
-%   CodeFormat  "source" keeps .m files; "pcode" ships .p files instead.
+%   CodeFormat  "source" keeps .m files and launcher tools; "pcode" ships a
+%               runtime-only package with .p files and no launcher.
 %
 % Examples:
 %   addpath(fullfile("tools", "deployment"))
@@ -47,12 +48,14 @@ function result = packageLabKitApp(appSelector, zipFile, varargin)
     packageRoot = fullfile(stageParent, packageRootName);
     mkdir(packageRoot);
 
-    notifyProgress(opt.ProgressFcn, "Copying launcher and tools...", 0.18);
-    launcherFile = matlabCodeFile(fullfile(root, "labkit_launcher"));
-    [~, launcherName, launcherExt] = fileparts(launcherFile);
-    copyfile(launcherFile, fullfile(packageRoot, string(launcherName) + string(launcherExt)));
-    copyRequiredToolFolder(root, packageRoot, "deployment");
-    copyRequiredToolFolder(root, packageRoot, "profiling");
+    notifyProgress(opt.ProgressFcn, "Copying package support files...", 0.18);
+    if codeFormat == "source"
+        launcherFile = matlabCodeFile(fullfile(root, "labkit_launcher"));
+        [~, launcherName, launcherExt] = fileparts(launcherFile);
+        copyfile(launcherFile, fullfile(packageRoot, string(launcherName) + string(launcherExt)));
+        copyRequiredToolFolder(root, packageRoot, "deployment");
+        copyRequiredToolFolder(root, packageRoot, "profiling");
+    end
 
     notifyProgress(opt.ProgressFcn, "Copying LabKit library...", 0.30);
     copyfile(fullfile(root, "+labkit"), fullfile(packageRoot, "+labkit"));
@@ -327,7 +330,8 @@ function entryFile = uniqueAppEntryInFolder(folder)
 end
 
 function validatePackageInputs(root, app, codeFormat)
-    if strlength(string(matlabCodeFile(fullfile(root, "labkit_launcher")))) == 0
+    if string(codeFormat) == "source" && ...
+            strlength(string(matlabCodeFile(fullfile(root, "labkit_launcher")))) == 0
         error("packageLabKitApp:MissingLauncher", ...
             "Cannot package app because labkit_launcher.m or labkit_launcher.p was not found under: %s", root);
     end
@@ -335,12 +339,14 @@ function validatePackageInputs(root, app, codeFormat)
         error("packageLabKitApp:MissingLabKit", ...
             "Cannot package app because +labkit was not found under: %s", root);
     end
-    requiredToolFolders = ["deployment", "profiling"];
-    for k = 1:numel(requiredToolFolders)
-        toolFolder = fullfile(root, "tools", requiredToolFolders(k));
-        if exist(toolFolder, "dir") ~= 7
-            error("packageLabKitApp:MissingTool", ...
-                "Cannot package app because %s was not found.", toolFolder);
+    if string(codeFormat) == "source"
+        requiredToolFolders = ["deployment", "profiling"];
+        for k = 1:numel(requiredToolFolders)
+            toolFolder = fullfile(root, "tools", requiredToolFolders(k));
+            if exist(toolFolder, "dir") ~= 7
+                error("packageLabKitApp:MissingTool", ...
+                    "Cannot package app because %s was not found.", toolFolder);
+            end
         end
     end
     if exist(app.folder, "dir") ~= 7 || exist(app.entryFile, "file") ~= 2
@@ -412,6 +418,18 @@ function text = entryFileText(app)
 end
 
 function text = readmeText(app, entryFileName, codeFormat)
+    if string(codeFormat) == "pcode"
+        contentsLine = ['This P-code package intentionally includes only the selected app folder, its assets, ' ...
+            'the shared +labkit library, and the direct app entry file.'];
+        launcherLines = "";
+    else
+        contentsLine = ['This package intentionally includes only the selected app folder, the LabKit launcher, ' ...
+            'selected launcher tools, and the shared +labkit library.'];
+        launcherLines = sprintf([ ...
+            '\n' ...
+            'You can also start from the packaged launcher by running:\n' ...
+            'labkit_launcher\n']);
+    end
     text = sprintf([ ...
         'LabKit single-app package\n' ...
         '\n' ...
@@ -422,18 +440,18 @@ function text = readmeText(app, entryFileName, codeFormat)
         'To run this app, unzip the package, open MATLAB in this folder, and run:\n' ...
         '%s\n' ...
         '\n' ...
-        'You can also start from the packaged launcher by running:\n' ...
-        'labkit_launcher\n' ...
-        '\n' ...
-        'This package intentionally includes only the selected app folder, the LabKit launcher, selected launcher tools, and the shared +labkit library.\n'], ...
-        app.command, entryFileName, codeFormat, erase(erase(entryFileName, ".m"), ".p"));
+        '%s' ...
+        '%s\n'], ...
+        app.command, entryFileName, codeFormat, erase(erase(entryFileName, ".m"), ".p"), ...
+        launcherLines, contentsLine);
 end
 
 function text = manifestText(app, entryRelativeFile, codeFormat)
     if string(codeFormat) == "pcode"
-        launcherFile = "labkit_launcher.p";
+        includes = ["+labkit", string(strrep(app.packageRelativeFolder, "\", "/"))];
     else
-        launcherFile = "labkit_launcher.m";
+        includes = ["labkit_launcher.m", "+labkit", "tools/deployment", ...
+            "tools/profiling", string(strrep(app.packageRelativeFolder, "\", "/"))];
     end
     manifest = struct( ...
         "type", "labkit.single_app_package", ...
@@ -442,8 +460,7 @@ function text = manifestText(app, entryRelativeFile, codeFormat)
         "appFolder", string(strrep(app.packageRelativeFolder, "\", "/")), ...
         "visibility", string(app.visibility), ...
         "codeFormat", string(codeFormat), ...
-        "includes", [launcherFile, "+labkit", "tools/deployment", ...
-        "tools/profiling", string(strrep(app.packageRelativeFolder, "\", "/"))]);
+        "includes", includes);
     try
         text = jsonencode(manifest, "PrettyPrint", true);
     catch

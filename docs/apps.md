@@ -61,14 +61,22 @@ those tool folders are missing. Core launcher actions, including app launch and
 GitHub version update, remain available.
 
 The `Package App` launcher action creates a single-app source zip under
-`artifacts/deployment/`. `Package P-code` creates the same standalone package
-shape with MATLAB code encoded as `.p` files instead of source `.m` files. The
-zip expands to a standalone directory containing the selected app folder and
-its assets, `+labkit/`, the launcher, the launcher-needed deployment/profiling
-tool folders, a `packaged_app_manifest.json`, and a direct
-`run_<app_command>` entry file. Users can run either the direct entry file or
-`labkit_launcher` from the unzipped folder. The package intentionally omits
-unrelated public apps, tests, docs, CI files, and source-checkout metadata.
+`artifacts/deployment/`. The source zip expands to a standalone directory
+containing the selected app folder and its assets, `+labkit/`, the launcher,
+launcher-needed deployment/profiling tool folders, a
+`packaged_app_manifest.json`, and a direct `run_<app_command>` entry file.
+Users can run either the direct entry file or `labkit_launcher` from the
+unzipped source package.
+
+`Package P-code` creates a runtime-only package with MATLAB code encoded as
+`.p` files instead of source `.m` files. It includes the selected app folder and
+assets, `+labkit/`, a `packaged_app_manifest.json`, and the direct
+`run_<app_command>` entry file. It intentionally does not include
+`labkit_launcher` or launcher maintenance tools, so users start the app through
+the direct entry file from the unzipped folder.
+
+Both package formats intentionally omit unrelated public apps, tests, docs, CI
+files, and source-checkout metadata.
 
 The launcher sets up the app path before opening an app. App-owned packages are
 reached through their owning app entrypoint and package namespace.

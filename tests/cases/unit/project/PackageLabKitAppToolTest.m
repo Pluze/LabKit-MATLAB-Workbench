@@ -87,13 +87,12 @@ classdef PackageLabKitAppToolTest < matlab.unittest.TestCase
 
             testCase.verifyEqual(result.codeFormat, "pcode");
             testCase.verifyEqual(result.entryFile, "run_labkit_PcodeProbe_app.p");
-            testCase.verifyTrue(isfile(fullfile(packageRoot, "labkit_launcher.p")));
             testCase.verifyTrue(isfile(fullfile(packageRoot, "run_labkit_PcodeProbe_app.p")));
             testCase.verifyTrue(isfile(fullfile(packageRoot, "apps", "public_family", ...
                 "pcode_probe", "labkit_PcodeProbe_app.p")));
-            testCase.verifyTrue(isfile(fullfile(packageRoot, "tools", "deployment", "packageLabKitApp.p")));
-            testCase.verifyTrue(isfile(fullfile(packageRoot, "tools", "profiling", "profileLabKitTarget.p")));
             testCase.verifyFalse(isfile(fullfile(packageRoot, "labkit_launcher.m")));
+            testCase.verifyFalse(isfile(fullfile(packageRoot, "labkit_launcher.p")));
+            testCase.verifyFalse(isfolder(fullfile(packageRoot, "tools")));
             testCase.verifyFalse(isfile(fullfile(packageRoot, "run_labkit_PcodeProbe_app.m")));
             testCase.verifyFalse(isfile(fullfile(packageRoot, "apps", "public_family", ...
                 "pcode_probe", "labkit_PcodeProbe_app.m")));
@@ -103,16 +102,28 @@ classdef PackageLabKitAppToolTest < matlab.unittest.TestCase
             manifest = jsondecode(fileread(fullfile(packageRoot, "packaged_app_manifest.json")));
             testCase.verifyEqual(string(manifest.codeFormat), "pcode");
             testCase.verifyEqual(string(manifest.entryFile), "run_labkit_PcodeProbe_app.p");
+            testCase.verifyFalse(any(contains(string(manifest.includes), "labkit_launcher")));
+            testCase.verifyFalse(any(startsWith(string(manifest.includes), "tools/")));
+        end
 
-            originalFolder = pwd;
-            cd(packageRoot);
-            testCase.addTeardown(@() cd(originalFolder));
-            clear labkit_launcher;
-            apps = labkit_launcher("list");
-            testCase.verifyEqual(apps.Command, "labkit_PcodeProbe_app");
-            testCase.verifyEqual(apps.Visibility, "public");
-            clear labkit_launcher;
-            cd(originalFolder);
+        function pcode_package_does_not_require_launcher_file(testCase)
+            sourceRoot = setupLabKitTestPath();
+            addDeploymentToolPathForTest(testCase, sourceRoot);
+            runtimeRoot = createMinimalRuntime(testCase, sourceRoot);
+            outputRoot = createTempFolder(testCase);
+            delete(fullfile(runtimeRoot, "labkit_launcher.m"));
+            createMinimalApp(runtimeRoot, fullfile("apps", "public_family", "pcode_probe"), ...
+                "labkit_PcodeProbe_app");
+
+            result = packageLabKitApp(fullfile(runtimeRoot, "apps", "public_family", "pcode_probe"), [], ...
+                "Root", runtimeRoot, ...
+                "OutputRoot", outputRoot, ...
+                "CodeFormat", "pcode");
+            packageRoot = unzipPackage(testCase, result);
+
+            testCase.verifyEqual(result.codeFormat, "pcode");
+            testCase.verifyTrue(isfile(fullfile(packageRoot, "run_labkit_PcodeProbe_app.p")));
+            testCase.verifyFalse(isfile(fullfile(packageRoot, "labkit_launcher.p")));
         end
     end
 end
