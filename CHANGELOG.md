@@ -47,6 +47,30 @@ Commits and PRs belong in `Evidence`, not in the navigation structure.
 
 ## Unreleased
 
+### Pending - Release validation gate and GUI CI hardening
+
+Affected versions:
+- Project validation workflow, no component version change.
+
+What changed:
+- Release candidate tags now run the full MATLAB test workflow gate before
+  publication: headless tests, coverage, GUI tests, and a release summary gate.
+- GUI layout tests now assert structural grid contracts instead of
+  platform-dependent flattened pixel ordering or width comparisons.
+- Shared GUI test idle waiting allows slower CI display backends more time to
+  finish registered UI work.
+
+Why it matters:
+- Maintainers get a concrete pre-publication release signal that covers all
+  supported automated test projects, and GUI CI should fail on contract drift
+  rather than platform layout rounding.
+
+Compatibility:
+- No known manual migration.
+
+Evidence:
+- Pending direct-main commit.
+
 Template for branch work before the final mainline commit is known:
 
 ```markdown

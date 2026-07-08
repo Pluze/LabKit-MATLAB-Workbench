@@ -287,7 +287,7 @@ function invokeCallback(h, callbackProperty)
 end
 
 function waitForUiIdle(fig)
-    timeoutSeconds = 2.0;
+    timeoutSeconds = 5.0;
     startTime = tic;
     drawnow;
     while isvalid(fig) && uiHasPendingWork(fig) && toc(startTime) < timeoutSeconds

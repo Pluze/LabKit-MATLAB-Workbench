@@ -36,6 +36,10 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
   Workflow YAML must not call `tests/runLabKitTests.m`, maintain test-class
   selector lists, expose shard environment variables, or add the runner path by
   hand.
+- Release candidate tag CI must run the public `headless`, `coverage`, and
+  `gui` build tasks before a GitHub release is published. Keep the gate as
+  workflow orchestration around public tasks instead of creating CI-only test
+  selectors.
 - Keep multi-process routing inside `buildfile.m` or the runner. If a build
   task uses worker shards, it must first probe the selected test set and then
   launch deterministic shards with distinct `RunName` values so artifact

@@ -365,10 +365,8 @@ function verify_launcher_layout()
     h.assertButtonContract(fig, {'Open Selected App', 'Open Debug', ...
         'Latest', 'Release', 'Versions', 'Run Code Analyzer', 'Profile Next App', ...
         'Package App', 'Package P-code', 'Clean Artifacts', 'Refresh App List'});
-    assertLauncherButtonOrder(fig, {'Latest', 'Release', 'Versions', ...
-        'Refresh App List', 'Open Selected App', 'Open Debug', ...
-        'Package App', 'Package P-code', 'Clean Artifacts'});
     assertUpdateButtonRow(fig);
+    assertLauncherActionRows(fig);
     assertMaintenanceButtonRow(fig);
     h.assertAnyTableColumns(fig, {'Family', 'App', 'Visibility', ...
         'Version', 'Updated', 'Command'});
@@ -497,24 +495,6 @@ function assertNoLauncherTabs(fig)
         'Launcher controls should use a single-page layout without tabs.');
 end
 
-function assertLauncherButtonOrder(fig, expectedTexts)
-    drawnow;
-    pause(0.5);
-    drawnow;
-    buttons = findall(fig, 'Type', 'uibutton');
-    texts = string(get(buttons, 'Text'));
-    positions = zeros(numel(buttons), 4);
-    for k = 1:numel(buttons)
-        positions(k, :) = absolutePosition(buttons(k));
-    end
-    [~, order] = sortrows([-round(positions(:, 2), 3), round(positions(:, 1), 3)]);
-    orderedTexts = texts(order);
-    actual = orderedTexts(ismember(orderedTexts, string(expectedTexts)));
-    assert(isequal(actual(:), string(expectedTexts(:))), ...
-        'Launcher action buttons should stay together in the requested order. Actual: %s', ...
-        strjoin(actual(:).', " | "));
-end
-
 function assertUpdateButtonRow(fig)
     buttons = findall(fig, 'Type', 'uibutton');
     texts = string(get(buttons, 'Text'));
@@ -538,6 +518,31 @@ function assertUpdateButtonRow(fig)
         'Versions update button should occupy the fourth column.');
 end
 
+function assertLauncherActionRows(fig)
+    buttons = arrayfun(@(text) findLauncherButton(fig, text), ...
+        ["Refresh App List", "Open Selected App", "Open Debug", ...
+        "Clean Artifacts", "Package App", "Package P-code"]);
+    controlsGrid = buttons(1).Parent;
+    assert(isequal(controlsGrid, buttons(2).Parent) && ...
+        isequal(controlsGrid, buttons(3).Parent) && ...
+        isequal(controlsGrid, buttons(4).Parent), ...
+        'Primary launcher actions should remain in the main controls grid.');
+    rows = arrayfun(@(button) button.Layout.Row, buttons(1:4));
+    assert(isequal(rows, [2 3 4 6]), ...
+        'Primary launcher actions should keep their compact vertical order.');
+    packageGrid = buttons(5).Parent;
+    assert(isequal(packageGrid, buttons(6).Parent), ...
+        'Package actions should share one compact row.');
+    assert(isequal(packageGrid.Parent, controlsGrid) && ...
+        isequal(packageGrid.Layout.Row, 5), ...
+        'Package actions should sit between debug and clean actions.');
+    columns = packageGrid.ColumnWidth;
+    assert(numel(columns) == 2 && all(strcmp(string(columns), "1x")), ...
+        'Package row should split package actions evenly.');
+    columns = arrayfun(@(button) button.Layout.Column, buttons(5:6));
+    assert(isequal(columns, [1 2]), ...
+        'Package actions should keep Package App before Package P-code.');
+end
 function assertMaintenanceButtonRow(fig)
     buttons = findall(fig, 'Type', 'uibutton');
     texts = string(get(buttons, 'Text'));
@@ -555,17 +560,12 @@ function assertMaintenanceButtonRow(fig)
     assert(isequal(profileButton.Layout.Column, 2), ...
         'Performance profile should occupy the right maintenance column.');
 end
-
-function pos = absolutePosition(control)
-    pos = control.Position;
-    parent = control.Parent;
-    while ~isempty(parent) && ~isa(parent, 'matlab.ui.Figure')
-        if isprop(parent, 'Position')
-            parentPos = parent.Position;
-            pos(1:2) = pos(1:2) + parentPos(1:2);
-        end
-        parent = parent.Parent;
-    end
+function button = findLauncherButton(fig, text)
+    buttons = findall(fig, 'Type', 'uibutton');
+    texts = string(get(buttons, 'Text'));
+    button = buttons(texts == string(text));
+    assert(numel(button) == 1, ...
+        'Launcher should draw exactly one "%s" button.', text);
 end
 
 function assertInfoContains(fig, expectedText)

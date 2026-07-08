@@ -125,9 +125,10 @@ The buildfile probes the selected test count and may run deterministic
 zero-based internal shards when the broad non-GUI suite is large enough.
 Feature-branch pushes do not run the same MATLAB workflow until a pull request
 targets `main`, which avoids duplicate branch-push and PR runs for the same
-commit. Release tag pushes do not rerun the same SHA, which avoids duplicate
-CI after a commit has already run on `main` or in a PR. Workflow YAML calls
-public buildfile tasks through `matlab-actions/run-build`; it must not
+commit. Release candidate tag pushes matching `vX.Y.Z` run the full release
+gate before publishing: `headless`, `coverage`, and `gui` must pass, followed
+by the `Release Test Gate` summary job. Workflow YAML calls public buildfile
+tasks through `matlab-actions/run-build`; it must not
 maintain test-class lists, owner shard lists, CI-only build tasks, shard
 environment variables, or call the lower-level runner directly. The buildfile
 task still publishes JUnit summaries and logs.
@@ -142,9 +143,10 @@ shape. CI membership should follow from the public `headless` task and the
 runner's default non-GUI selection; ordinary test additions should not require
 editing `.github/workflows/matlab-tests.yml`.
 
-Manual and scheduled workflows keep the broader report jobs available:
-coverage runs separately, and GUI validation remains opt-in because automated
-GUI checks use hidden synthetic workflows rather than full manual interaction.
+Manual, scheduled, and release-candidate workflows keep the broader report jobs
+available: coverage runs separately, and GUI validation remains opt-in for
+ordinary PR and main-push CI because automated GUI checks use hidden synthetic
+workflows rather than full manual interaction.
 
 ## Test Layout
 
