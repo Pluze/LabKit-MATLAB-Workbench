@@ -285,27 +285,21 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
                 strjoin(findings, "; "));
         end
 
-        function dirtyImageWorkflowAppsUseCloseGuard(testCase)
+        function appPackagesDoNotOwnCloseGuardState(testCase)
             root = setupLabKitTestPath();
-            guardedPackageDirs = [
-                fullfile(root, "apps", "image_measurement", "focus_stack", ...
-                    "+focus_stack")
-                fullfile(root, "apps", "image_measurement", "image_enhance", ...
-                    "+image_enhance")
-                fullfile(root, "apps", "image_measurement", "image_match", ...
-                    "+image_match")];
+            appFiles = collectAppMFiles(root);
             findings = strings(0, 1);
 
-            for k = 1:numel(guardedPackageDirs)
-                content = readPackageSource(guardedPackageDirs(k));
-                if ~contains(content, "labkit.ui.runtime.setCloseGuard")
-                    findings(end+1, 1) = string(localRelativePath(root, guardedPackageDirs(k)));
+            for k = 1:numel(appFiles)
+                content = string(fileread(appFiles(k)));
+                if contains(content, "labkit.ui.runtime.setCloseGuard")
+                    findings(end+1, 1) = string(localRelativePath(root, appFiles(k)));
                 end
             end
 
             testCase.verifyEmpty(findings, ...
-                "Image workflow apps with dirty/export fingerprints should " + ...
-                "connect meaningful unfinished state to the framework close guard: " + ...
+                "Close confirmation is framework-owned; app files must not " + ...
+                "maintain close guard dirty state through removed runtime APIs: " + ...
                 strjoin(findings, "; "));
         end
     end
@@ -348,15 +342,6 @@ end
 function files = collectAppRunFiles(root)
     scope = labkitQualityScanScope(root);
     files = scope.appRunFiles;
-end
-
-function source = readPackageSource(packageDir)
-    files = dir(fullfile(packageDir, "**", "*.m"));
-    parts = cell(1, numel(files));
-    for k = 1:numel(files)
-        parts{k} = fileread(fullfile(files(k).folder, files(k).name));
-    end
-    source = string(strjoin(parts, newline));
 end
 
 function removeTempFolder(folder)

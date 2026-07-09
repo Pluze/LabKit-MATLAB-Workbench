@@ -1,13 +1,11 @@
 % App-owned renderer for Focus Stack. Expected caller is labkit.ui.runtime.run
 % after actions update state. Inputs are app state and UI registry. Side
-% effects are limited to UI controls, preview axes, summary table, and close
-% guard updates.
+% effects are limited to UI controls, preview axes, and summary table.
 function updateWorkbenchFromState(state, ui, services)
     renderSourcePanel(state, ui);
     renderPreview(state, ui);
     renderSummary(state, ui);
     updateControls(state, ui);
-    updateCloseGuard(state, ui, services.figure);
 end
 
 function renderSourcePanel(state, ui)
@@ -75,18 +73,6 @@ function updateControls(state, ui)
     labkit.ui.control.setEnabled(ui, 'exportSummary', hasResult);
 end
 
-function updateCloseGuard(state, ui, fig)
-    dirty = false;
-    if numel(state.images) >= 2
-        task = focus_stack.appState.runTask(state.paths, state.images, ...
-            currentFusionOptions(ui), labkit.ui.control.getValue(ui, ...
-            'autoRegister'));
-        dirty = ~state.result.ok || state.lastRunFingerprint ~= task.fingerprint;
-    end
-    labkit.ui.runtime.setCloseGuard(fig, dirty, ...
-        "Focus stack has unrun changes. Close anyway?");
-end
-
 function resetPreviewAxes(ui)
     labkit.ui.plot.reset(ui, 'preview', 'Fused all-in-focus image', ...
         true, 'fused');
@@ -98,16 +84,6 @@ function resetFocusMapAxis(ui)
         true, 'focusMap');
 end
 
-function opts = currentFusionOptions(ui)
-    opts = struct();
-    opts.focusWindow = finiteScalar(labkit.ui.control.getValue(ui, ...
-        'focusWindow'), 7, 3, inf, true);
-    opts.smoothRadius = finiteScalar(labkit.ui.control.getValue(ui, ...
-        'smoothRadius'), 1, 0, inf, true);
-    opts.minConfidence = finiteScalar(labkit.ui.control.getValue(ui, ...
-        'uncertainBlend'), 25, 0, 100, false) / 100;
-end
-
 function text = onOff(value)
     if islogical(value) && isscalar(value)
         if value
@@ -117,16 +93,5 @@ function text = onOff(value)
         end
     else
         text = char(string(value));
-    end
-end
-
-function value = finiteScalar(value, fallback, minValue, maxValue, roundValue)
-    value = double(value);
-    if isempty(value) || ~isscalar(value) || ~isfinite(value)
-        value = fallback;
-    end
-    value = min(max(value, minValue), maxValue);
-    if roundValue
-        value = round(value);
     end
 end

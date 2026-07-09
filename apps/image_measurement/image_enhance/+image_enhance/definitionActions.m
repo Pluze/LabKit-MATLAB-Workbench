@@ -362,7 +362,6 @@ function actions = definitionActions()
     function refreshDetails()
         labkit.ui.control.setValue(ui, 'exportDetails', image_enhance.userInterface.detailLines( ...
             S.items, max(currentSelectionIndex(), 1), image_enhance.appState.activeSteps(S), S.lastExport));
-        updateCloseGuard();
     end
     function refreshToolStatus()
         if isempty(S.items)
@@ -495,16 +494,6 @@ function actions = definitionActions()
         S.lastExportFingerprint = "";
         S.previewResultImage = [];
         S.previewResultKey = "";
-    end
-    function updateCloseGuard()
-        dirty = false;
-        if ~isempty(S.items)
-            task = currentExportTask();
-            dirty = image_enhance.appState.activePendingDirty(S) || ...
-                S.lastExportFingerprint ~= task.fingerprint;
-        end
-        labkit.ui.runtime.setCloseGuard(fig, dirty, ...
-            "Image enhance has unexported changes. Close anyway?");
     end
     function [task, opts, steps] = currentExportTask()
         opts = struct('outputFolder', S.outputFolder, ...

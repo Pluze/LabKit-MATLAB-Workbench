@@ -82,8 +82,10 @@ function verify_gui_layout_ui_busy_state()
     verifyBusyNonActionWrappers();
     verifyDebouncedParameterWrappers();
     verifyHiddenModeAlertRecording();
-    verifyCloseGuard();
+    verifyDefaultCloseGuard();
+    verifyBusyCloseGuard();
     verifyCloseKeyboardShortcut();
+    verifyDefaultClosePromptShortcut();
 
     function value = probeWork()
         assert(strcmp(btnRun.Enable, 'on'), ...
@@ -156,6 +158,45 @@ function verifyHiddenModeAlertRecording()
     clear cleanupMode;
 end
 
+function verifyDefaultCloseGuard()
+    confirmCalls = 0;
+    lastMessage = "";
+    layout = labkit.ui.layout.workbench('defaultCloseGuardProbe', ...
+        'Default Close Guard Probe', ...
+        'controlTabs', {labkit.ui.layout.tab('main', 'Main', { ...
+        labkit.ui.layout.section('actions', 'Actions', { ...
+        labkit.ui.layout.action('noop', 'Noop', @(~, ~) [])})})}, ...
+        'workspace', labkit.ui.layout.workspace('workspace', 'Preview', { ...
+        labkit.ui.layout.statusPanel('status', 'Status')}));
+    ui = labkit.ui.runtime.create(layout);
+    cleaner = onCleanup(@() deleteIfValid(ui.figure));
+    setappdata(ui.figure, 'labkitUiCloseConfirmFcn', @confirmCancel);
+    closeFcn = ui.figure.CloseRequestFcn;
+
+    closeFcn(ui.figure, struct());
+    assert(isvalid(ui.figure), ...
+        'LabKit runtime figures should keep the figure open when default close confirmation is cancelled.');
+    assert(confirmCalls == 1 && lastMessage == "Close this LabKit app?", ...
+        'Default close guard should confirm even when the app has not marked dirty state.');
+
+    setappdata(ui.figure, 'labkitUiCloseConfirmFcn', @confirmClose);
+    closeFcn(ui.figure, struct());
+    assert(~isvalid(ui.figure), ...
+        'Default close guard should close the figure when the user confirms.');
+
+    function response = confirmCancel(~, message)
+        confirmCalls = confirmCalls + 1;
+        lastMessage = string(message);
+        response = "Cancel";
+    end
+
+    function response = confirmClose(~, message)
+        confirmCalls = confirmCalls + 1;
+        lastMessage = string(message);
+        response = "Close";
+    end
+end
+
 function verifyCloseKeyboardShortcut()
     confirmCalls = 0;
     layout = labkit.ui.layout.workbench('closeShortcutProbe', 'Close Shortcut Probe', ...
@@ -170,7 +211,6 @@ function verifyCloseKeyboardShortcut()
     assert(isa(keyFcn, 'function_handle'), ...
         'LabKit runtime figures should install a close keyboard shortcut callback.');
 
-    labkit.ui.runtime.setCloseGuard(ui.figure, true, "Shortcut probe work.");
     setappdata(ui.figure, 'labkitUiCloseConfirmFcn', @confirmCancel);
     keyFcn(ui.figure, struct('Key', 'w', 'Modifier', {{'command'}}));
     assert(isvalid(ui.figure), ...
@@ -194,7 +234,33 @@ function verifyCloseKeyboardShortcut()
     end
 end
 
-function verifyCloseGuard()
+function verifyDefaultClosePromptShortcut()
+    layout = labkit.ui.layout.workbench('defaultClosePromptShortcutProbe', ...
+        'Default Close Prompt Shortcut Probe', ...
+        'controlTabs', {labkit.ui.layout.tab('main', 'Main', { ...
+        labkit.ui.layout.section('actions', 'Actions', { ...
+        labkit.ui.layout.action('noop', 'Noop', @(~, ~) [])})})}, ...
+        'workspace', labkit.ui.layout.workspace('workspace', 'Preview', { ...
+        labkit.ui.layout.statusPanel('status', 'Status')}));
+    ui = labkit.ui.runtime.create(layout);
+    cleaner = onCleanup(@() deleteIfValid(ui.figure));
+    keyFcn = ui.figure.WindowKeyPressFcn;
+
+    keyFcn(ui.figure, struct('Key', 'w', 'Modifier', {{'command'}}));
+    prompt = findall(ui.figure, 'Tag', 'labkitUiClosePrompt');
+    assert(isvalid(ui.figure) && ~isempty(prompt), ...
+        'First Cmd+W should show an in-window close prompt and keep the figure open.');
+
+    keyFcn(ui.figure, struct('Key', 'w', 'Modifier', {{'command'}}));
+    assert(~isvalid(ui.figure), ...
+        'Default close prompt should treat repeated Cmd+W as close confirmation.');
+    drawnow;
+    prompt = findall(groot, 'Tag', 'labkitUiClosePrompt');
+    assert(isempty(prompt), ...
+        'Default close prompt should be deleted after shortcut-confirmed close.');
+end
+
+function verifyBusyCloseGuard()
     confirmCalls = 0;
     lastMessage = "";
     layout = labkit.ui.layout.workbench('closeGuardProbe', 'Close Guard Probe', ...
@@ -208,20 +274,19 @@ function verifyCloseGuard()
     setappdata(ui.figure, 'labkitUiCloseConfirmFcn', @confirmCancel);
     closeFcn = ui.figure.CloseRequestFcn;
 
-    labkit.ui.runtime.setCloseGuard(ui.figure, true, "Unfinished probe work.");
+    setappdata(ui.figure, 'labkitUiBusy', true);
     closeFcn(ui.figure, struct());
     assert(isvalid(ui.figure), ...
-        'Close guard should keep the figure open when the user cancels.');
-    assert(confirmCalls == 1 && lastMessage == "Unfinished probe work.", ...
-        'Close guard should use the app-provided dirty-state message.');
+        'Busy close guard should keep the figure open when the user cancels.');
+    assert(confirmCalls == 1 && contains(lastMessage, "still working"), ...
+        'Close guard should prefer the framework busy message while busy.');
 
-    setappdata(ui.figure, 'labkitUiBusy', true);
     setappdata(ui.figure, 'labkitUiCloseConfirmFcn', @confirmClose);
     closeFcn(ui.figure, struct());
     assert(~isvalid(ui.figure), ...
         'Close guard should close the figure when the user confirms.');
-    assert(confirmCalls == 2 && contains(lastMessage, "still working"), ...
-        'Close guard should prefer the framework busy message while busy.');
+    assert(confirmCalls == 2, ...
+        'Busy close guard should call the confirmation path again before closing.');
 
     function response = confirmCancel(~, message)
         confirmCalls = confirmCalls + 1;

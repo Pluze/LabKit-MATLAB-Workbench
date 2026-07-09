@@ -403,7 +403,6 @@ function actions = definitionActions()
         labkit.ui.control.setValue(ui, 'exportDetails', image_match.userInterface.detailLines( ...
             S.items, max(currentSelectionIndex(), 1), S.referenceItem, ...
             S.steps, S.lastExport));
-        updateCloseGuard();
     end
 
     function refreshMatchStatus()
@@ -525,18 +524,6 @@ function actions = definitionActions()
         S.lastExportFingerprint = "";
         S.previewResultImage = [];
         S.previewResultKey = "";
-    end
-
-    function updateCloseGuard()
-        dirty = false;
-        if ~isempty(S.items) && hasReference()
-            task = image_match.appState.exportTask(S.items, S.referenceItem, S.steps, struct( ...
-                'outputFolder', S.outputFolder, ...
-                'format', labkit.ui.control.getValue(ui, 'exportFormat')));
-            dirty = S.pendingDirty || S.lastExportFingerprint ~= task.fingerprint;
-        end
-        labkit.ui.runtime.setCloseGuard(fig, dirty, ...
-            "Image match has unexported changes. Close anyway?");
     end
 
     function key = previewImageKey(item)

@@ -4,7 +4,7 @@
 
 | Facade | Owns | Main APIs |
 | --- | --- | --- |
-| `labkit.ui.runtime` | Declarative app runtime, request dispatch, readiness/busy state, safe dialog defaults, app title versioning, state snapshots, and shell utility commands. | `define`, `run`, `create`, `dispatchRequest`, `appVersionTitle`, `applyVersionTitle`, `defaultDialogFolder`, `defaultOutputFolder`, `promptOutputFile`, `promptOutputFolder`, `runBusy`, `saveState`, `loadState`, `setCloseGuard`, `showAlert`. |
+| `labkit.ui.runtime` | Declarative app runtime, request dispatch, readiness/busy state, safe dialog defaults, app title versioning, state snapshots, and shell utility commands. | `define`, `run`, `create`, `dispatchRequest`, `appVersionTitle`, `applyVersionTitle`, `defaultDialogFolder`, `defaultOutputFolder`, `promptOutputFile`, `promptOutputFolder`, `runBusy`, `saveState`, `loadState`, `showAlert`. |
 | `labkit.ui.layout` | UI 5 data-only workbench layouts. | `workbench`, `workspace`, `tab`, `section`, `group`, `field`, `rangeField`, `panner`, `action`, `filePanel`, `toolPanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `usagePanel`. |
 | `labkit.ui.control` | Semantic registry updates, file-panel values, list selections, numeric limits, enable state, and log appends. | `setValue`, `getValue`, `getFiles`, `setFileSelection`, `setEnabled`, `setLimits`, `appendLog`, `setListItems`, `setListSelection`, `fileLabels`, `filePaths`, `fileIndices`. |
 | `labkit.ui.plot` | Preview axes lookup, plot clearing, image drawing, fitted limits, canvas framing, empty-state messages, and data/axes coordinate conversion. | `getAxes`, `clear`, `clearPreview`, `reset`, `image`, `fit`, `fitCanvas`, `dataToFraction`, `fractionToData`, `offsetData`, `clampData`, `message`. |
@@ -353,16 +353,18 @@ callbacks and turn graphics hit testing off by default. Action transactions use
 a non-invasive mode so actions that start editors or plotting tools can leave
 their own pointer and callback state in place.
 
-LabKit-created app figures install a framework close guard. If the user tries
-to close an app while a semantic action or `runBusy` operation is active, the
-framework asks for confirmation instead of immediately deleting the figure.
+LabKit-created app figures install a framework close guard. Closing any LabKit
+app shows an in-window confirmation prompt before deleting the figure. If the
+user tries to close an app while a semantic action or `runBusy` operation is
+active, the prompt uses busy-state wording.
+
 The app-window close shortcut uses the same path: Command-W on macOS and
 Control-W elsewhere request a guarded close rather than bypassing unfinished
-work prompts.
-Apps with unfinished workflow state should call
-`labkit.ui.runtime.setCloseGuard(fig, true, message)` during refresh or dirty-state
-updates, then clear it with `setCloseGuard(fig, false)` after the workflow is
-complete.
+work prompts. When a close shortcut opens the confirmation prompt, repeating or
+holding the same close shortcut confirms the close.
+
+Apps should not maintain close-guard dirty state. The framework owns close
+confirmation for public and private LabKit apps.
 
 `runBusy` intentionally does not create modal progress dialogs. Apps should not
 maintain their own busy-control lists, and `runBusy` does not mutate control

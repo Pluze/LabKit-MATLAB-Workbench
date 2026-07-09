@@ -47,6 +47,35 @@ Commits and PRs belong in `Evidence`, not in the navigation structure.
 
 ## Unreleased
 
+### Pending - Default LabKit close protection
+
+Affected versions:
+- `labkit.ui` `5.0.2 -> 5.0.3`
+- `labkit_FocusStack_app` `1.4.6 -> 1.4.7`
+- `labkit_ImageEnhance_app` `1.5.5 -> 1.5.6`
+- `labkit_ImageMatch_app` `1.5.5 -> 1.5.6`
+
+What changed:
+- LabKit runtime figures now show an in-window confirmation prompt before any
+  framework-owned app window closes, even when the app has not marked itself
+  dirty.
+- Removed the app-facing `labkit.ui.runtime.setCloseGuard` API and migrated
+  existing app close-guard dirty checks to the framework default behavior.
+- Repeating or holding the app close shortcut while the in-window prompt is
+  active confirms the close.
+
+Why it matters:
+- Public and private apps get a baseline close-safety prompt from the framework,
+  without app-owned dirty-state close logic.
+
+Compatibility:
+- Closing LabKit apps now requires one confirmation step by default. App code
+  that calls `labkit.ui.runtime.setCloseGuard` must remove that call; close
+  confirmation is framework-owned.
+
+Evidence:
+- Pending direct-main commit.
+
 ### Pending - Multi-app launcher packages
 
 Affected versions:
@@ -154,7 +183,7 @@ Audited against `main` UI 5 squash commit on 2026-07-06.
 | Component | Current version | Family | Metadata location |
 |---|---:|---|---|
 | `labkit_launcher` | `1.3.0` | Launcher | `labkit_launcher.m` |
-| `labkit.ui` | `5.0.2` | Facade | `+labkit/+ui/version.m` |
+| `labkit.ui` | `5.0.3` | Facade | `+labkit/+ui/version.m` |
 | `labkit.dta` | `2.0.0` | Facade | `+labkit/+dta/version.m` |
 | `labkit.image` | `1.1.0` | Facade | `+labkit/+image/version.m` |
 | `labkit.thermal` | `1.0.0` | Facade | `+labkit/+thermal/version.m` |
@@ -171,9 +200,9 @@ Audited against `main` UI 5 squash commit on 2026-07-06.
 | `labkit_BatchImageCrop_app` | `1.6.7` | Image Measurement | `apps/image_measurement/batch_crop/+batch_crop/version.m` |
 | `labkit_CurvatureMeasurement_app` | `1.3.4` | Image Measurement | `apps/image_measurement/curvature/+curvature/version.m` |
 | `labkit_FLIRThermal_app` | `1.2.8` | Image Measurement | `apps/image_measurement/flir_thermal/+flir_thermal/version.m` |
-| `labkit_FocusStack_app` | `1.4.6` | Image Measurement | `apps/image_measurement/focus_stack/+focus_stack/version.m` |
-| `labkit_ImageEnhance_app` | `1.5.5` | Image Measurement | `apps/image_measurement/image_enhance/+image_enhance/version.m` |
-| `labkit_ImageMatch_app` | `1.5.5` | Image Measurement | `apps/image_measurement/image_match/+image_match/version.m` |
+| `labkit_FocusStack_app` | `1.4.7` | Image Measurement | `apps/image_measurement/focus_stack/+focus_stack/version.m` |
+| `labkit_ImageEnhance_app` | `1.5.6` | Image Measurement | `apps/image_measurement/image_enhance/+image_enhance/version.m` |
+| `labkit_ImageMatch_app` | `1.5.6` | Image Measurement | `apps/image_measurement/image_match/+image_match/version.m` |
 | `labkit_RHSPreview_app` | `1.3.4` | Neurophysiology | `apps/neurophysiology/rhs_preview/+rhs_preview/version.m` |
 | `labkit_NerveResponseAnalysis_app` | `1.3.4` | Neurophysiology | `apps/neurophysiology/nerve_response_analysis/+nerve_response_analysis/version.m` |
 | `labkit_ResponseReviewStats_app` | `1.3.4` | Neurophysiology | `apps/neurophysiology/response_review_stats/+response_review_stats/version.m` |
