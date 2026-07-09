@@ -81,6 +81,14 @@ source to the public repository. For temporary local checks,
 `LABKIT_GUARD_PRIVATE_APPS=1` includes configured private roots even without
 the sentinel file.
 
+Private workspaces under `private_apps/` are separate Git repositories, so the
+public `changed` and `changedFast` tasks do not discover their diffs. Validate a
+private change with that workspace's own test entry point, such as
+`run_private_tests()`, which can reuse the public runner and shared guardrails.
+Do not substitute the full public `headless` task only because the public
+checkout has no changed paths. The `.labkit-accept-main-guardrails` sentinel
+controls quality-scan inclusion; it does not change Git diff discovery.
+
 The changed-file planner routes by source ownership. For example, a single app
 change maps to that app family plus its GUI folder when one exists; reusable
 UI changes map to reusable UI coverage plus downstream GUI coverage; launcher,

@@ -133,6 +133,15 @@ the final diff is stable again. Prefer non-disruptive validation while the user
 is actively working; local GUI gates can steal keyboard focus and should be run
 only when necessary or explicitly requested.
 
+For changes inside a nested private-app repository, do not run the public
+`headless` task merely because the public changed-file planner cannot see the
+nested repository diff. Run that workspace's private test entry point first;
+it may reuse the public runner and shared guardrails. Use explicit public
+suites or guardrails only when the change requires them. A private workspace's
+`.labkit-accept-main-guardrails` sentinel expands public quality scans to its
+source files, but it does not add the nested Git diff to public `changed` or
+`changedFast` path detection.
+
 In noninteractive agent shells, run the selected MATLAB build task directly.
 If the shell cannot find `buildtool`, locate MATLAB without adding a
 repository wrapper, for example:
