@@ -50,7 +50,18 @@ function installPreviewScrollNavigation(fig, axesHandles)
         end
         navState = prepareAxesForWheelNavigation(src, key, navState, ax);
         point = ax.CurrentPoint;
-        labkit.ui.interaction.zoomAtPoint(ax, point(1, 1:2), scrollCount);
+        labkit.ui.interaction.zoomAtPoint(ax, point(1, 1:2), scrollCount, ...
+            "ZoomAxes", scrollZoomAxes(ax));
+    end
+end
+
+function zoomAxes = scrollZoomAxes(ax)
+    zoomAxes = "xy";
+    try
+        if isappdata(ax, 'labkitPreviewScrollZoomAxes')
+            zoomAxes = string(getappdata(ax, 'labkitPreviewScrollZoomAxes'));
+        end
+    catch
     end
 end
 

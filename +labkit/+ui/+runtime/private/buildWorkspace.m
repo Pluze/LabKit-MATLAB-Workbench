@@ -58,6 +58,7 @@ function ui = buildPreviewArea(ui, previewSpec, parentGrid, row)
         axesHandles(k) = ax;
         axesById.(axisIds{k}) = ax;
     end
+    tagPreviewScrollZoomAxes(axesHandles, props);
     installPreviewScrollNavigation(ui.figure, axesHandles);
     registerWorkbenchAxes(ui.figure, axesHandles);
 
@@ -73,6 +74,30 @@ function ui = buildPreviewArea(ui, previewSpec, parentGrid, row)
         adapter.valueHandle = modeDropDown;
     end
     ui.controls.(previewSpec.id) = adapter;
+end
+
+function tagPreviewScrollZoomAxes(axesHandles, props)
+    if isempty(axesHandles)
+        return;
+    end
+    zoomAxes = layoutSizes(props, 'scrollZoomAxes', numel(axesHandles), ...
+        repmat({'xy'}, 1, numel(axesHandles)));
+    for k = 1:numel(axesHandles)
+        value = normalizeScrollZoomAxes(zoomAxes{k});
+        if isvalid(axesHandles(k)) && value ~= "xy"
+            setappdata(axesHandles(k), 'labkitPreviewScrollZoomAxes', value);
+        end
+    end
+end
+
+function value = normalizeScrollZoomAxes(value)
+    value = lower(strtrim(string(value)));
+    if value == "both"
+        value = "xy";
+    end
+    if ~isscalar(value) || ~ismember(value, ["xy", "x", "y"])
+        value = "xy";
+    end
 end
 
 function grid = previewAxesGrid(parent, props, count)

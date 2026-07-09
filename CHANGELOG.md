@@ -47,6 +47,28 @@ Commits and PRs belong in `Evidence`, not in the navigation structure.
 
 ## Unreleased
 
+### Pending - Preview-area per-axis wheel zoom
+
+Affected versions:
+- `labkit.ui` `5.0.3 -> 5.0.4`
+
+What changed:
+- Added a `scrollZoomAxes` preview-area layout option so apps can declare
+  whether each preview axis should mouse-wheel zoom in `xy`, `x`, or `y`.
+- Preview-area side axes can now remain horizontally stable while still
+  allowing app-selected vertical wheel zoom.
+
+Why it matters:
+- App-owned side panels such as color scales and histograms can remain compact
+  and stable without disabling useful wheel interaction.
+
+Compatibility:
+- Existing preview areas keep default `xy` wheel zoom unless they opt into
+  another per-axis setting.
+
+Evidence:
+- Pending local workspace changes on `main`.
+
 ### Pending - Default LabKit close protection
 
 Affected versions:
@@ -183,7 +205,7 @@ Audited against `main` UI 5 squash commit on 2026-07-06.
 | Component | Current version | Family | Metadata location |
 |---|---:|---|---|
 | `labkit_launcher` | `1.3.0` | Launcher | `labkit_launcher.m` |
-| `labkit.ui` | `5.0.3` | Facade | `+labkit/+ui/version.m` |
+| `labkit.ui` | `5.0.4` | Facade | `+labkit/+ui/version.m` |
 | `labkit.dta` | `2.0.0` | Facade | `+labkit/+dta/version.m` |
 | `labkit.image` | `1.1.0` | Facade | `+labkit/+image/version.m` |
 | `labkit.thermal` | `1.0.0` | Facade | `+labkit/+thermal/version.m` |

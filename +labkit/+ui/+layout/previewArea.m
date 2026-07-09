@@ -15,6 +15,8 @@ function layout = previewArea(id, titleText, varargin)
 %   axisTitles, xLabels, yLabels - optional axis label cell arrays.
 %   columnWidths - optional uigridlayout ColumnWidth cell for pair layouts.
 %   rowHeights - optional uigridlayout RowHeight cell for stack layouts.
+%   scrollZoomAxes - optional cell array with one of "xy", "x", or "y" per
+%       axis, controlling mouse-wheel zoom axes for that preview axis.
 %   count - optional axes count for stack layouts.
 %
 % Output:

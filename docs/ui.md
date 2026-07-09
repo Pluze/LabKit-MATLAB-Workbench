@@ -236,6 +236,9 @@ Use these app-facing contracts:
   default. Scrolling over controls, logs, or empty figure space does not zoom
   plots, and users should not need to click a preview before wheel zoom works.
   Time-series axes with a time x-label zoom the horizontal time axis only.
+  Apps can set per-axis `scrollZoomAxes` values of `xy`, `x`, or `y` when a
+  secondary fixed-width scale or histogram axis should receive wheel events
+  without changing its horizontal span.
   Preview axes are also registered with the workbench utility menus, whose plot
   commands act on all registered visible axes.
 - `labkit.ui.interaction.enablePopout(ax)` installs the standard axes context
