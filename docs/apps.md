@@ -60,22 +60,22 @@ Maintenance buttons that depend on optional tool folders are disabled when
 those tool folders are missing. Core launcher actions, including app launch and
 GitHub version update, remain available.
 
-The `Package App` launcher action creates a single-app source zip under
-`artifacts/deployment/`. The source zip expands to a standalone directory
-containing the selected app folder and its assets, `+labkit/`, the launcher,
-launcher-needed deployment/profiling tool folders, a
-`packaged_app_manifest.json`, and a direct `run_<app_command>` entry file.
-Users can run either the direct entry file or `labkit_launcher` from the
-unzipped source package.
+The launcher app table has a `Package` checkbox column independent of the
+single highlighted row used by Open and Debug. `Package Checked` creates one
+source zip under `artifacts/deployment/` containing every checked app folder
+and its assets, `+labkit/`, the launcher, launcher-needed
+deployment/profiling tool folders, a `packaged_app_manifest.json`, and one
+direct `run_<app_command>` entry file per app. Users can run any direct entry
+file or `labkit_launcher` from the unzipped source package.
 
-`Package P-code` creates a runtime-only package with MATLAB code encoded as
-`.p` files instead of source `.m` files. It includes the selected app folder and
-assets, `+labkit/`, a `packaged_app_manifest.json`, and the direct
-`run_<app_command>` entry file. It intentionally does not include
+`Checked P-code` creates a runtime-only package with MATLAB code encoded as
+`.p` files instead of source `.m` files. It includes the checked app folders
+and assets, `+labkit/`, a `packaged_app_manifest.json`, and one direct
+`run_<app_command>` entry file per app. It intentionally does not include
 `labkit_launcher` or launcher maintenance tools, so users start the app through
 the direct entry file from the unzipped folder.
 
-Both package formats intentionally omit unrelated public apps, tests, docs, CI
+Both package formats intentionally omit unchecked public apps, tests, docs, CI
 files, and source-checkout metadata.
 
 The launcher sets up the app path before opening an app. App-owned packages are

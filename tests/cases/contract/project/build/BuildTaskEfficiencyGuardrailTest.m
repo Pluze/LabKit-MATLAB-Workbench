@@ -74,11 +74,40 @@ classdef BuildTaskEfficiencyGuardrailTest < matlab.unittest.TestCase
 
             steps = labkitValidationPlanForChangedPaths(root, "labkit_launcher.m");
             signatures = validationStepSignatures(steps);
+            selectors = validationStepTestSelectors(steps);
 
             testCase.verifyTrue(any(signatures == "project|false"), ...
                 "Launcher source changes should keep project guardrail coverage.");
             testCase.verifyTrue(any(signatures == "gui/project/launcher|true"), ...
                 "Launcher source changes should run project launcher GUI coverage.");
+            projectSelectors = selectors(signatures == "project|false");
+            testCase.verifyTrue(any(contains(projectSelectors, "StartupBoundariesTest") & ...
+                contains(projectSelectors, "PackageLabKitAppToolTest")), ...
+                "Launcher project coverage should target its direct non-GUI contracts.");
+        end
+
+        function changedValidationPlanRoutesLauncherSupportByOwner(testCase)
+            root = setupLabKitTestPath();
+
+            steps = labkitValidationPlanForChangedPaths(root, [ ...
+                "CHANGELOG.md"
+                "docs/apps.md"
+                "tools/deployment/packageLabKitApp.m"
+                "tools/deployment/private/packageManifestText.m"
+                "tests/shared/assertLauncherPackageCheckboxSelection.m"]);
+            signatures = validationStepSignatures(steps);
+            selectors = validationStepTestSelectors(steps);
+
+            testCase.verifyTrue(any(signatures == "project/release|false"), ...
+                "CHANGELOG changes should route to release guardrails instead of full headless.");
+            testCase.verifyTrue(any(signatures == "project/docs|false"), ...
+                "Human docs should route to documentation guardrails.");
+            packageStep = signatures == "project|false";
+            testCase.verifyTrue(any(contains(selectors(packageStep), ...
+                "PackageLabKitAppToolTest")), ...
+                "Deployment tools should route to package tool tests.");
+            testCase.verifyTrue(any(signatures == "gui/project/launcher|true"), ...
+                "Shared launcher helpers should route to launcher GUI tests.");
         end
 
         function changedValidationPlanRoutesProjectGuiTestsByOwner(testCase)
@@ -90,6 +119,20 @@ classdef BuildTaskEfficiencyGuardrailTest < matlab.unittest.TestCase
 
             testCase.verifyEqual(signatures, "gui/project/launcher|true", ...
                 "Project GUI test changes should rerun the owning project GUI suite.");
+        end
+
+        function changedValidationPlanTargetsChangedProjectTest(testCase)
+            root = setupLabKitTestPath();
+
+            steps = labkitValidationPlanForChangedPaths(root, ...
+                "tests/cases/unit/project/PackageLabKitAppToolTest.m");
+            signatures = validationStepSignatures(steps);
+            selectors = validationStepTestSelectors(steps);
+
+            testCase.verifyEqual(signatures, "project|false", ...
+                "Project unit tests should remain in the project suite.");
+            testCase.verifyEqual(selectors, "PackageLabKitAppToolTest", ...
+                "A changed project unit test should rerun only its owning class.");
         end
 
         function changedValidationPlanRoutesFrameworkGuiTestsByOwner(testCase)

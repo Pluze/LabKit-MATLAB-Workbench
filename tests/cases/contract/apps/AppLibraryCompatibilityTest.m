@@ -319,7 +319,8 @@ function findings = bareUigetfileFindings(root, files)
         for c = 1:numel(calls)
             callText = string(calls{c}{1});
             hasSafeInputDefault = ~isempty(regexp(callText, ...
-                'labkit\.ui\.app\.defaultDialogFolder\s*\(\s*["'']input["'']\s*\)', 'once'));
+                'labkit\.ui\.runtime\.defaultDialogFolder\s*\(\s*["'']input["''](?:\s*,[\s\S]*?)?\)', ...
+                'once'));
             if ~hasSafeInputDefault
                 findings(end+1, 1) = string(localRelativePath(root, files(k))) + ...
                     " has uigetfile without labkit.ui.runtime.defaultDialogFolder(""input"")";

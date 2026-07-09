@@ -1,7 +1,73 @@
 classdef PackageLabKitAppToolTest < matlab.unittest.TestCase
-    %PACKAGELABKITAPPTOOLTEST Verify single-app deployment packaging.
+    %PACKAGELABKITAPPTOOLTEST Verify single- and multi-app deployment packaging.
 
     methods (Test, TestTags = {'Unit'})
+        function package_contains_multiple_selected_apps_and_entries(testCase)
+            sourceRoot = setupLabKitTestPath();
+            addDeploymentToolPathForTest(testCase, sourceRoot);
+            runtimeRoot = createMinimalRuntime(testCase, sourceRoot);
+            outputRoot = createTempFolder(testCase);
+            createMinimalApp(runtimeRoot, fullfile("apps", "public_family", "first_probe"), ...
+                "labkit_FirstProbe_app");
+            createMinimalApp(runtimeRoot, fullfile("apps", "public_family", "second_probe"), ...
+                "labkit_SecondProbe_app");
+            createMinimalApp(runtimeRoot, fullfile("apps", "public_family", "excluded_probe"), ...
+                "labkit_ExcludedProbe_app");
+
+            result = packageLabKitApp( ...
+                ["labkit_FirstProbe_app", "labkit_SecondProbe_app"], [], ...
+                "Root", runtimeRoot, ...
+                "OutputRoot", outputRoot);
+            packageRoot = unzipPackage(testCase, result);
+
+            testCase.verifyEqual(result.appCommands, ...
+                ["labkit_FirstProbe_app"; "labkit_SecondProbe_app"]);
+            testCase.verifyEqual(numel(result.entryFiles), 2);
+            testCase.verifyTrue(isfile(fullfile(packageRoot, ...
+                "run_labkit_FirstProbe_app.m")));
+            testCase.verifyTrue(isfile(fullfile(packageRoot, ...
+                "run_labkit_SecondProbe_app.m")));
+            testCase.verifyTrue(isfile(fullfile(packageRoot, "apps", ...
+                "public_family", "first_probe", "labkit_FirstProbe_app.m")));
+            testCase.verifyTrue(isfile(fullfile(packageRoot, "apps", ...
+                "public_family", "second_probe", "labkit_SecondProbe_app.m")));
+            testCase.verifyFalse(isfile(fullfile(packageRoot, "apps", ...
+                "public_family", "excluded_probe", "labkit_ExcludedProbe_app.m")));
+
+            manifest = jsondecode(fileread(fullfile(packageRoot, ...
+                "packaged_app_manifest.json")));
+            testCase.verifyEqual(string(manifest.type), "labkit.multi_app_package");
+            testCase.verifyEqual(string(manifest.appCommands), result.appCommands);
+            testCase.verifyEqual(string(manifest.entryFiles), result.entryFiles);
+        end
+
+        function multi_app_package_can_encode_direct_entries_as_pcode(testCase)
+            sourceRoot = setupLabKitTestPath();
+            addDeploymentToolPathForTest(testCase, sourceRoot);
+            runtimeRoot = createMinimalRuntime(testCase, sourceRoot);
+            outputRoot = createTempFolder(testCase);
+            createMinimalApp(runtimeRoot, fullfile("apps", "public_family", "first_pcode"), ...
+                "labkit_FirstPcode_app");
+            createMinimalApp(runtimeRoot, fullfile("apps", "public_family", "second_pcode"), ...
+                "labkit_SecondPcode_app");
+
+            result = packageLabKitApp( ...
+                ["labkit_FirstPcode_app", "labkit_SecondPcode_app"], [], ...
+                "Root", runtimeRoot, ...
+                "OutputRoot", outputRoot, ...
+                "CodeFormat", "pcode");
+            packageRoot = unzipPackage(testCase, result);
+
+            testCase.verifyEqual(result.entryFiles, ...
+                ["run_labkit_FirstPcode_app.p"; "run_labkit_SecondPcode_app.p"]);
+            testCase.verifyTrue(isfile(fullfile(packageRoot, ...
+                "run_labkit_FirstPcode_app.p")));
+            testCase.verifyTrue(isfile(fullfile(packageRoot, ...
+                "run_labkit_SecondPcode_app.p")));
+            testCase.verifyFalse(isfile(fullfile(packageRoot, "labkit_launcher.m")));
+            testCase.verifyFalse(isfolder(fullfile(packageRoot, "tools")));
+        end
+
         function package_contains_launcher_tools_library_and_one_public_app(testCase)
             sourceRoot = setupLabKitTestPath();
             addDeploymentToolPathForTest(testCase, sourceRoot);

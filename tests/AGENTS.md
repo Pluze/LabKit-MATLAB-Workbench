@@ -134,6 +134,9 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
   coherent checkpoint, and the conservative changed-file build task for
   pre-handoff validation when git state is available. These tasks should route
   from the current diff and print why each selected scope is being run.
+- Prefer owner-specific suites or test selectors for known launcher, tool,
+  documentation, release, and shared-helper paths. Reserve full headless
+  fallback for unknown paths and runner infrastructure.
 - Do not rerun changed-file build tasks after every small source edit when the
   same focused suite directly covers the behavior. Escalate back to
   `changedFast` or `changed` when the fix touches additional ownership areas,

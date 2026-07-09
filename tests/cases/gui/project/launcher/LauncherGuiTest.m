@@ -283,7 +283,7 @@ classdef LauncherGuiTest < matlab.uitest.TestCase
             drawnow;
             ui = getappdata(fig, 'labkitUiRegistry');
             tableHandle = ui.controls.appTable.table;
-            betaRow = find(string(tableHandle.Data(:, 6)) == "labkit_Beta_app", 1);
+            betaRow = find(string(tableHandle.Data(:, 7)) == "labkit_Beta_app", 1);
             invokeTableSelection(tableHandle, betaRow);
             createMinimalLauncherApp(tempRoot, "gamma", "labkit_Gamma_app");
             h.invokeButton(fig, 'Refresh App List');
@@ -294,7 +294,7 @@ classdef LauncherGuiTest < matlab.uitest.TestCase
             delete(fullfile(tempRoot, "apps", "beta", "labkit_Beta_app.m"));
             h.invokeButton(fig, 'Refresh App List');
             drawnow;
-            assertDetailsCommand(fig, string(tableHandle.Data{1, 6}), ...
+            assertDetailsCommand(fig, string(tableHandle.Data{1, 7}), ...
                 'Removing the selected app should fall back to the first available app.');
             clear cleanupFigures;
             h.closeAllFigures();
@@ -364,14 +364,15 @@ function verify_launcher_layout()
     assertLauncherTableDensity(fig);
     h.assertButtonContract(fig, {'Open Selected App', 'Open Debug', ...
         'Latest', 'Release', 'Versions', 'Run Code Analyzer', 'Profile Next App', ...
-        'Package App', 'Package P-code', 'Clean Artifacts', 'Refresh App List'});
+        'Package Checked', 'Checked P-code', 'Clean Artifacts', 'Refresh App List'});
     assertUpdateButtonRow(fig);
     assertLauncherActionRows(fig);
     assertMaintenanceButtonRow(fig);
-    h.assertAnyTableColumns(fig, {'Family', 'App', 'Visibility', ...
+    h.assertAnyTableColumns(fig, {'Package', 'Family', 'App', 'Visibility', ...
         'Version', 'Updated', 'Command'});
     assertLauncherTextAreasHaveRoom(fig);
     assertInfoContains(fig, "Project structure looks complete");
+    assertLauncherPackageCheckboxSelection(fig, h);
     assertRefreshPreservesSelectedApp(fig, h);
 end
 
@@ -382,7 +383,7 @@ function assertRefreshPreservesSelectedApp(fig, h)
         return;
     end
     targetRow = 2;
-    expectedCommand = string(tableHandle.Data{targetRow, 6});
+    expectedCommand = string(tableHandle.Data{targetRow, 7});
     invokeTableSelection(tableHandle, targetRow);
     h.invokeButton(fig, 'Refresh App List');
     drawnow;
@@ -390,7 +391,6 @@ function assertRefreshPreservesSelectedApp(fig, h)
     assert(any(contains(details, "Command: " + expectedCommand)), ...
         'Refreshing the launcher app list should preserve the selected app when it still exists.');
 end
-
 function assertDetailsCommand(fig, expectedCommand, message)
     ui = getappdata(fig, 'labkitUiRegistry');
     details = string(ui.controls.selectedDetails.textArea.Value);
@@ -480,12 +480,12 @@ function assertLauncherTableDensity(fig)
     tables = findall(fig, 'Type', 'uitable');
     assert(numel(tables) == 1, 'Launcher should draw one app table.');
     widths = tables(1).ColumnWidth;
-    assert(numel(widths) == 6 && all(cellfun(@isnumeric, widths)), ...
+    assert(numel(widths) == 7 && all(cellfun(@isnumeric, widths)), ...
         'Launcher table should use calculated numeric column widths.');
     numericWidths = cell2mat(widths);
-    assert(numericWidths(2) >= 220 && numericWidths(6) >= 320, ...
+    assert(numericWidths(1) >= 64 && numericWidths(3) >= 220 && numericWidths(7) >= 320, ...
         'Launcher table should reserve wider App and Command columns for scanning.');
-    assert(numericWidths(3) >= 90 && numericWidths(4) >= 90 && numericWidths(5) >= 110, ...
+    assert(numericWidths(4) >= 90 && numericWidths(5) >= 90 && numericWidths(6) >= 110, ...
         'Launcher table should keep metadata columns readable.');
 end
 
@@ -521,7 +521,7 @@ end
 function assertLauncherActionRows(fig)
     buttons = arrayfun(@(text) findLauncherButton(fig, text), ...
         ["Refresh App List", "Open Selected App", "Open Debug", ...
-        "Clean Artifacts", "Package App", "Package P-code"]);
+        "Clean Artifacts", "Package Checked", "Checked P-code"]);
     controlsGrid = buttons(1).Parent;
     assert(isequal(controlsGrid, buttons(2).Parent) && ...
         isequal(controlsGrid, buttons(3).Parent) && ...
@@ -541,7 +541,7 @@ function assertLauncherActionRows(fig)
         'Package row should split package actions evenly.');
     columns = arrayfun(@(button) button.Layout.Column, buttons(5:6));
     assert(isequal(columns, [1 2]), ...
-        'Package actions should keep Package App before Package P-code.');
+        'Package actions should keep source packaging before P-code packaging.');
 end
 function assertMaintenanceButtonRow(fig)
     buttons = findall(fig, 'Type', 'uibutton');

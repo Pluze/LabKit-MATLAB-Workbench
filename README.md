@@ -50,6 +50,7 @@ before copying the selected LabKit zip into place.
 
 - A single launcher that can start from a folder containing only
   `labkit_launcher.m`.
+- Checkbox-based multi-app source or P-code packaging from one launcher action.
 - Independent apps with stable public commands and app-owned workflow logic.
 - A small shared foundation for GUI shells, DTA loading, RHS loading, and
   biosignal processing.

@@ -23,7 +23,7 @@ function varargout = labkit_launcher(varargin)
 %   Section: Clean Artifacts action
 %   Section: Code Analyzer action
 %   Section: Performance profile action
-%   Section: Single app package action
+%   Section: App package action
 %   Section: Update entrypoints and install transaction
 %   Section: GitHub update source discovery
 %   Section: Update validation and launcher window helpers
@@ -87,8 +87,8 @@ function info = launcherVersion()
     info = struct( ...
         "name", "labkit_launcher", ...
         "displayName", "LabKit App Launcher", ...
-        "version", "1.2.7", ...
-        "updated", "2026-07-06");
+        "version", "1.3.0", ...
+        "updated", "2026-07-09");
 end
 
 function titleText = launcherVersionTitle()
@@ -195,12 +195,12 @@ function fig = runLauncher(root)
     packageGrid.RowHeight = {'1x'};
     packageGrid.Padding = [0 0 0 0];
     packageGrid.ColumnSpacing = 6;
-    btnPackage = uibutton(packageGrid, 'Text', 'Package App', ...
-        'ButtonPushedFcn', @(~, ~) onPackageSelectedApp(false));
+    btnPackage = uibutton(packageGrid, 'Text', 'Package Checked', ...
+        'ButtonPushedFcn', @(~, ~) onPackageCheckedApps(false));
     btnPackage.Layout.Row = 1;
     btnPackage.Layout.Column = 1;
-    btnPackagePcode = uibutton(packageGrid, 'Text', 'Package P-code', ...
-        'ButtonPushedFcn', @(~, ~) onPackageSelectedApp(true));
+    btnPackagePcode = uibutton(packageGrid, 'Text', 'Checked P-code', ...
+        'ButtonPushedFcn', @(~, ~) onPackageCheckedApps(true));
     btnPackagePcode.Layout.Row = 1;
     btnPackagePcode.Layout.Column = 2;
     btnClean = uibutton(controlsGrid, 'Text', 'Clean Artifacts', ...
@@ -226,9 +226,9 @@ function fig = runLauncher(root)
             'until that app window closes. Saves the report without opening a browser.'];
     end
     if isprop(btnPackage, 'Tooltip')
-        btnPackage.Tooltip = ['Create a standalone zip containing the selected app, ' ...
-            'its assets, the shared +labkit library, the launcher, and deployment tools.'];
-        btnPackagePcode.Tooltip = ['Create the same standalone zip with MATLAB code ' ...
+        btnPackage.Tooltip = ['Create one standalone zip containing every checked app, ' ...
+            'their assets, the shared +labkit library, the launcher, and deployment tools.'];
+        btnPackagePcode.Tooltip = ['Create the same multi-app zip with MATLAB code ' ...
             'encoded as .p files instead of source .m files.'];
     end
     txtInfo = uitextarea(controlsGrid, 'Editable', 'off', 'Value', {'Ready.'});
@@ -236,11 +236,15 @@ function fig = runLauncher(root)
     tableGrid = uigridlayout(rightPanel, [1 1]);
     tableGrid.Padding = [4 4 4 4];
     appTable = uitable(tableGrid, ...
-        'ColumnName', {'Family', 'App', 'Visibility', 'Version', 'Updated', 'Command'}, ...
-        'ColumnEditable', [false false false false false false], 'RowName', {}, ...
+        'ColumnName', {'Package', 'Family', 'App', 'Visibility', 'Version', 'Updated', 'Command'}, ...
+        'ColumnEditable', [true false false false false false false], 'RowName', {}, ...
         'FontSize', tableFontSize);
-    appTable.ColumnWidth = {140, 190, 90, 90, 110, 'auto'};
+    if isprop(appTable, 'ColumnFormat')
+        appTable.ColumnFormat = {'logical', 'char', 'char', 'char', 'char', 'char', 'char'};
+    end
+    appTable.ColumnWidth = {72, 140, 190, 90, 90, 110, 'auto'};
     configureTable(appTable, @onSelectionChanged, @onTableDoubleClicked);
+    appTable.CellEditCallback = @onPackageCheckChanged;
 
     ui = struct();
     ui.figure = fig;
@@ -252,10 +256,11 @@ function fig = runLauncher(root)
 
     state = struct('apps', emptyAppStruct(), 'visibleApps', emptyAppStruct(), ...
         'selectedRow', 1, 'status', "Loading app list...", ...
+        'packageCommands', strings(0, 1), ...
         'profileNextLaunch', false, 'actionBusy', false, ...
         'tools', launcherToolAvailability(root));
     applyToolButtonTooltips();
-    appTable.Data = cell(0, 6);
+    appTable.Data = cell(0, 7);
     setLaunchEnabled(false);
     updateInfo("Loading app list...");
     drawnow limitrate;
@@ -302,6 +307,22 @@ function fig = runLauncher(root)
         end
     end
 
+    function onPackageCheckChanged(~, event)
+        if isempty(event.Indices) || isempty(state.visibleApps)
+            return;
+        end
+        row = event.Indices(1, 1);
+        if row < 1 || row > numel(state.visibleApps)
+            return;
+        end
+        command = string(state.visibleApps(row).command);
+        state.packageCommands(state.packageCommands == command) = [];
+        if logical(event.NewData)
+            state.packageCommands(end+1, 1) = command;
+        end
+        refreshSelection();
+    end
+
     function onTableDoubleClicked(~, event)
         row = eventRow(event);
         if ~isnan(row)
@@ -329,18 +350,18 @@ function fig = runLauncher(root)
             'the report will be written after the app closes.']);
     end
 
-    function onPackageSelectedApp(usePcode)
+    function onPackageCheckedApps(usePcode)
         if state.actionBusy
             return;
         end
-        if isempty(state.visibleApps)
-            setStatus('No app entry point is selected to package.');
+        apps = checkedPackageApps(state.visibleApps, state.packageCommands);
+        if isempty(apps)
+            setStatus('Check one or more apps in the Package column first.');
             return;
         end
-        row = min(max(state.selectedRow, 1), numel(state.visibleApps));
-        app = state.visibleApps(row);
-        beginLauncherAction(sprintf('Packaging %s...', app.command));
-        setStatus(sprintf('Packaging %s...', app.command));
+        summary = packageAppSummary(apps);
+        beginLauncherAction(sprintf('Packaging %s...', summary));
+        setStatus(sprintf('Packaging %s...', summary));
         drawnow;
         dlg = [];
         try
@@ -352,10 +373,10 @@ function fig = runLauncher(root)
             dlgCleanup = onCleanup(@() close(dlg));
         end
         try
-            result = packageSelectedLabKitApp(root, app, logical(usePcode), @onPackageProgress);
-            setStatus(packageSuccessStatus(app, result));
+            result = packageSelectedLabKitApps(root, apps, logical(usePcode), @onPackageProgress);
+            setStatus(packageSuccessStatus(apps, result));
         catch err
-            setStatus(sprintf('Package failed for %s: %s', app.command, err.message));
+            setStatus(sprintf('Package failed for %s: %s', summary, err.message));
         end
         clear dlgCleanup;
         endLauncherAction();
@@ -588,7 +609,9 @@ function fig = runLauncher(root)
 
     function refreshTable()
         state.visibleApps = state.apps;
-        appTable.Data = appDisplayRows(state.visibleApps);
+        state.packageCommands = retainedPackageCommands( ...
+            state.visibleApps, state.packageCommands);
+        appTable.Data = appDisplayRows(state.visibleApps, state.packageCommands);
         adjustLauncherWidthForAppTable();
         adjustAppTableColumns();
         state.selectedRow = min(max(state.selectedRow, 1), max(numel(state.visibleApps), 1));
@@ -608,7 +631,10 @@ function fig = runLauncher(root)
             return;
         end
         row = min(max(state.selectedRow, 1), numel(state.visibleApps));
-        updateInfo(selectedAppDetails(state.visibleApps(row)));
+        details = selectedAppDetails(state.visibleApps(row));
+        details{end+1, 1} = sprintf('Checked for package: %d app(s)', ...
+            numel(state.packageCommands));
+        updateInfo(details);
     end
 
     function command = currentSelectedAppCommand()
@@ -673,9 +699,9 @@ function fig = runLauncher(root)
             btnProfile.Tooltip = missingToolTooltip('tools/profiling/profileLabKitTarget.m or .p');
         end
         if state.tools.package
-            btnPackage.Tooltip = ['Create a standalone zip containing the selected app, ' ...
-                'its assets, the shared +labkit library, the launcher, and deployment tools.'];
-            btnPackagePcode.Tooltip = ['Create the same standalone zip with MATLAB code ' ...
+            btnPackage.Tooltip = ['Create one standalone zip containing every checked app, ' ...
+                'their assets, the shared +labkit library, the launcher, and deployment tools.'];
+            btnPackagePcode.Tooltip = ['Create the same multi-app zip with MATLAB code ' ...
                 'encoded as .p files instead of source .m files.'];
         else
             tooltip = missingToolTooltip('tools/deployment/packageLabKitApp.m or .p');
@@ -1007,15 +1033,40 @@ function selectTableRow(tableHandle, row, apps)
     end
 end
 
-function rows = appDisplayRows(apps)
-    rows = cell(numel(apps), 6);
+function rows = appDisplayRows(apps, packageCommands)
+    rows = cell(numel(apps), 7);
+    checked = ismember(string({apps.command}), string(packageCommands));
     for k = 1:numel(apps)
-        rows{k, 1} = char(apps(k).family);
-        rows{k, 2} = char(apps(k).displayName);
-        rows{k, 3} = char(apps(k).visibility);
-        rows{k, 4} = char(apps(k).version);
-        rows{k, 5} = char(apps(k).updated);
-        rows{k, 6} = apps(k).command;
+        rows{k, 1} = checked(k);
+        rows{k, 2} = char(apps(k).family);
+        rows{k, 3} = char(apps(k).displayName);
+        rows{k, 4} = char(apps(k).visibility);
+        rows{k, 5} = char(apps(k).version);
+        rows{k, 6} = char(apps(k).updated);
+        rows{k, 7} = apps(k).command;
+    end
+end
+
+function commands = retainedPackageCommands(apps, commands)
+    available = string({apps.command});
+    commands = string(commands(:));
+    commands = commands(ismember(commands, available));
+end
+
+function apps = checkedPackageApps(visibleApps, commands)
+    if isempty(visibleApps)
+        apps = visibleApps;
+        return;
+    end
+    selected = ismember(string({visibleApps.command}), string(commands));
+    apps = visibleApps(selected);
+end
+
+function summary = packageAppSummary(apps)
+    if numel(apps) == 1
+        summary = string(apps.command);
+    else
+        summary = string(numel(apps)) + " checked apps";
     end
 end
 
@@ -1026,29 +1077,30 @@ end
 
 function widths = launcherTableColumnWidths(rows, tableWidth)
     desired = [ ...
-        textColumnWidth(rows, 1, 130, 220), ...
-        textColumnWidth(rows, 2, 220, 380), ...
+        72, ...
+        textColumnWidth(rows, 2, 130, 220), ...
+        textColumnWidth(rows, 3, 220, 380), ...
         96, ...
         96, ...
         122, ...
-        textColumnWidth(rows, 6, 320, 580)];
+        textColumnWidth(rows, 7, 320, 580)];
 
     if isfinite(tableWidth)
         spare = tableWidth - sum(desired);
         if spare > 0
-            desired(2) = desired(2) + round(spare * 0.35);
-            desired(6) = desired(6) + round(spare * 0.65);
+            desired(3) = desired(3) + round(spare * 0.35);
+            desired(7) = desired(7) + round(spare * 0.65);
         elseif spare < 0
             deficit = abs(spare);
-            shrink = min(deficit, max(0, desired(6) - 320));
-            desired(6) = desired(6) - shrink;
+            shrink = min(deficit, max(0, desired(7) - 320));
+            desired(7) = desired(7) - shrink;
             deficit = deficit - shrink;
-            shrink = min(deficit, max(0, desired(2) - 220));
-            desired(2) = desired(2) - shrink;
+            shrink = min(deficit, max(0, desired(3) - 220));
+            desired(3) = desired(3) - shrink;
         end
     end
 
-    widths = num2cell(max(round(desired), [120 190 90 90 110 260]));
+    widths = num2cell(max(round(desired), [64 120 190 90 90 110 260]));
 end
 
 function width = textColumnWidth(rows, columnIndex, minWidth, maxWidth)
@@ -1078,11 +1130,11 @@ function message = integrityStatus(root, apps)
     missing = missingManagedProjectParts(root);
     packageInfo = singleAppPackageInfo(root);
     if packageInfo.isPackage && isempty(apps)
-        message = "Single app package is missing its app entry point.";
+        message = "App package is missing its app entry point.";
     elseif packageInfo.isPackage && isempty(missing)
-        message = sprintf('Single app package ready: %d app(s) available.', numel(apps));
+        message = sprintf('App package ready: %d app(s) available.', numel(apps));
     elseif packageInfo.isPackage
-        message = sprintf(['Single app package has %d app(s), but package parts are ' ...
+        message = sprintf(['App package has %d app(s), but package parts are ' ...
             'missing: %s. Recreate the package from a complete LabKit checkout.'], ...
             numel(apps), strjoin(cellstr(missing), ', '));
     elseif isempty(apps)
@@ -1099,7 +1151,7 @@ end
 function missing = missingManagedProjectParts(root)
     packageInfo = singleAppPackageInfo(root);
     if packageInfo.isPackage
-        required = [packageInfo.launcherFile, "+labkit", packageInfo.appFolder, ...
+        required = [packageInfo.launcherFile, "+labkit", packageInfo.appFolders, ...
             "tools/deployment", "tools/profiling", "packaged_app_manifest.json"];
     else
         required = ["+labkit", "apps", "docs", "tests", "buildfile.m", ...
@@ -1116,7 +1168,8 @@ end
 
 function info = singleAppPackageInfo(root)
     info = struct('isPackage', false, 'appCommand', "", ...
-        'appFolder', "apps", 'codeFormat', "source", 'launcherFile', "labkit_launcher.m");
+        'appFolder', "apps", 'appFolders', "apps", ...
+        'codeFormat', "source", 'launcherFile', "labkit_launcher.m");
     manifestFile = fullfile(root, "packaged_app_manifest.json");
     if exist(manifestFile, "file") ~= 2
         return;
@@ -1126,13 +1179,20 @@ function info = singleAppPackageInfo(root)
     catch
         return;
     end
-    if isfield(raw, "type") && string(raw.type) == "labkit.single_app_package"
+    if isfield(raw, "type") && any(string(raw.type) == ...
+            ["labkit.single_app_package", "labkit.multi_app_package"])
         info.isPackage = true;
         if isfield(raw, "appCommand")
             info.appCommand = string(raw.appCommand);
         end
         if isfield(raw, "appFolder")
             info.appFolder = string(raw.appFolder);
+            info.appFolders = info.appFolder;
+        elseif isfield(raw, "appFolders")
+            info.appFolders = string(raw.appFolders(:)).';
+            if ~isempty(info.appFolders)
+                info.appFolder = info.appFolders(1);
+            end
         end
         if isfield(raw, "codeFormat")
             info.codeFormat = string(raw.codeFormat);
@@ -1650,9 +1710,9 @@ function line = firstTextLine(text)
     end
 end
 
-%% Section: Single app package action
+%% Section: App package action
 
-function result = packageSelectedLabKitApp(root, app, usePcode, progressFcn)
+function result = packageSelectedLabKitApps(root, apps, usePcode, progressFcn)
     packageTool = packageToolFile(root);
     if strlength(string(packageTool)) == 0
         error('labkit_launcher:PackageToolUnavailable', ...
@@ -1668,7 +1728,7 @@ function result = packageSelectedLabKitApp(root, app, usePcode, progressFcn)
 
     outputRoot = fullfile(root, 'artifacts', 'deployment');
     ensureFolder(outputRoot);
-    result = packageLabKitApp(app, [], ...
+    result = packageLabKitApp(apps, [], ...
         'Root', root, ...
         'OutputRoot', outputRoot, ...
         'CodeFormat', packageCodeFormat(usePcode), ...
@@ -1712,9 +1772,15 @@ function tooltip = missingToolTooltip(relativeToolPath)
         char(relativeToolPath));
 end
 
-function message = packageSuccessStatus(app, result)
-    message = sprintf('Packaged %s as %s. Run %s after unzipping.', ...
-        app.command, char(result.relativeZipFile), char(result.entryFile));
+function message = packageSuccessStatus(apps, result)
+    if numel(apps) == 1
+        message = sprintf('Packaged %s as %s. Run %s after unzipping.', ...
+            apps.command, char(result.relativeZipFile), char(result.entryFile));
+    else
+        message = sprintf('Packaged %d apps as %s. Direct entries: %s.', ...
+            numel(apps), char(result.relativeZipFile), ...
+            strjoin(cellstr(result.entryFiles), ', '));
+    end
 end
 
 %% Section: Update entrypoints and install transaction

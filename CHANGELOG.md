@@ -47,6 +47,32 @@ Commits and PRs belong in `Evidence`, not in the navigation structure.
 
 ## Unreleased
 
+### Pending - Multi-app launcher packages
+
+Affected versions:
+- `labkit_launcher` `1.2.7 -> 1.3.0`
+- Project deployment tooling, multi-app bundle support.
+
+What changed:
+- Added an independent `Package` checkbox column to the launcher app table so
+  users can choose multiple apps without changing the row selected for Open or
+  Debug.
+- `Package Checked` and `Checked P-code` now create one zip containing every
+  checked app, one direct entry file per app, and a multi-app manifest.
+- Kept single-app package names, result fields, and manifest schema compatible
+  when only one app is supplied to `packageLabKitApp`.
+
+Why it matters:
+- Related LabKit apps can be distributed together without shipping unrelated
+  apps or manually combining separate packages.
+
+Compatibility:
+- Existing direct calls that package one app continue to produce the original
+  single-app package contract.
+
+Evidence:
+- Pending local workspace changes on `main`.
+
 ### Pending - Runtime-only P-code app packages
 
 Affected versions:
@@ -127,7 +153,7 @@ Audited against `main` UI 5 squash commit on 2026-07-06.
 
 | Component | Current version | Family | Metadata location |
 |---|---:|---|---|
-| `labkit_launcher` | `1.2.7` | Launcher | `labkit_launcher.m` |
+| `labkit_launcher` | `1.3.0` | Launcher | `labkit_launcher.m` |
 | `labkit.ui` | `5.0.2` | Facade | `+labkit/+ui/version.m` |
 | `labkit.dta` | `2.0.0` | Facade | `+labkit/+dta/version.m` |
 | `labkit.image` | `1.1.0` | Facade | `+labkit/+image/version.m` |

@@ -83,10 +83,11 @@ the sentinel file.
 
 The changed-file planner routes by source ownership. For example, a single app
 change maps to that app family plus its GUI folder when one exists; reusable
-UI changes map to reusable UI coverage plus downstream GUI coverage; docs,
-AGENTS, tools, and runner support files map to project guardrails unless their
-own tests require broader coverage. The printed plan includes the selected
-suites, test-name selectors, GUI mode, and reason for each step.
+UI changes map to reusable UI coverage plus downstream GUI coverage; launcher,
+deployment, profiling, documentation, and release files map to their direct
+project or GUI contracts. Unknown files and runner infrastructure still fall
+back conservatively. The printed plan includes the selected suites, test-name
+selectors, GUI mode, and reason for each step.
 
 ## Validation Cadence
 
