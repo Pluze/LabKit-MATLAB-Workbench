@@ -57,6 +57,14 @@ If release validation or an explicit user request requires broader gates, run
 them after focused iteration or state why a completed broader gate fully covers
 the affected plan instead of rerunning narrower tests for ceremony.
 
+For a nested private app repository, run that workspace's private tests first.
+If the private workspace contains `.labkit-accept-main-guardrails` and has
+unpushed source, test, documentation, changelog, or version changes, also run
+the public checkout's `buildtool changed` guardrail before commit or handoff.
+The sentinel opts private source into public quality scans, but the public
+changed-file planner cannot see the nested Git diff, so this public guardrail
+must be invoked intentionally.
+
 After a planned run fails, do not rerun the planner just to discover the same
 scope again. Fix the root cause and rerun the narrowest failed suite or test
 directly, for example `runLabKitTests("Suites", "project")` after a project

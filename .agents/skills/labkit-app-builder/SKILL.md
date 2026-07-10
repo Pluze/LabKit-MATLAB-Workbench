@@ -133,7 +133,7 @@ The target package shape is:
 +<app_slug>/requirements.m
 +<app_slug>/version.m
 +<app_slug>/+appLifecycle/createInitialState.m
-+<app_slug>/+userInterface/buildWorkbenchSpec.m
++<app_slug>/+userInterface/buildWorkbenchLayout.m
 +<app_slug>/+userInterface/updateWorkbenchFromState.m
 +<app_slug>/+<workflowArea>/...
 ```
@@ -151,16 +151,16 @@ Build the app in this order:
    `labkit.ui.app.run(<app_slug>.definition(), request)`, and apply the app
    version title to the returned figure.
 2. Add `+<app_slug>/definition.m` using `labkit.ui.app.define`. It should name
-   app id/title, initial state factory, data-only spec builder, command
+   app id/title, initial state factory, data-only layout builder, command
    registry, visible-state update function, startup phases, and optional
    hydration phases. Do not put IO, computation, MATLAB handle creation,
    timers, loading controls, or framework readiness mutation in
    `definition.m`.
 3. Put the state factory in
    `+<app_slug>/+appLifecycle/createInitialState.m`.
-4. Put the data-only spec in
-   `+<app_slug>/+userInterface/buildWorkbenchSpec.m`; the framework runtime
-   generates callback handles and passes them into the spec builder.
+4. Put the data-only layout in
+   `+<app_slug>/+userInterface/buildWorkbenchLayout.m`; the framework runtime
+   generates callback handles and passes them into the layout builder.
 5. Add `+<app_slug>/definitionActions.m` and focused command handlers. Commands
    update app state and request framework effects; handlers should not create
    UI handles, write exports directly unless the command is an export command,
@@ -168,15 +168,15 @@ Build the app in this order:
 6. Add `+<app_slug>/+userInterface/updateWorkbenchFromState.m`. Visible-state
    update helpers should update existing controls from prepared state without
    IO, heavy computation, or exports.
-7. Keep the top of nontrivial `buildWorkbenchSpec.m` files shallow: the app constructor
+7. Keep the top of nontrivial `buildWorkbenchLayout.m` files shallow: the app constructor
    should name the control-tab tree and workspace, while local builder
    functions define each tab, section, and workspace region. Prefer this
    source shape over adding formatter scripts or shared UI templates; the
    purpose is to make the page hierarchy readable without turning app-owned UI
    wording into framework configuration. Order functions as
-   `buildWorkbenchSpec`, tab tree, tab builders, section builders in visual
+   `buildWorkbenchLayout`, tab tree, tab builders, section builders in visual
    order, workspace builder, small helper builders, then `callbackValue`.
-8. Keep `buildWorkbenchSpec.m` free of MATLAB handle creation,
+8. Keep `buildWorkbenchLayout.m` free of MATLAB handle creation,
    `labkit.ui.app.create`, state mutation, IO, computation, export writing,
    nested callback implementations, and row/column layout mechanics. Use a
    named `+userInterface/build<Thing>.m` custom builder only for a justified
@@ -201,8 +201,8 @@ Build the app in this order:
 16. Do not add new package-root eager `run.m` orchestration, `private/`
    runners, `*Workflow.m` string-dispatch adapters, fixed `+app` package
    names, or app-local public helper packages.
-17. Render prepared data through named `labkit.ui.view.*` helpers or existing
-   `labkit.ui.tool.*` helpers; keep analysis out of UI helpers.
+17. Render prepared data through `labkit.ui.plot.*`, `labkit.ui.control.*`, or
+   app-owned `+userInterface` helpers; keep analysis out of UI helpers.
 18. Add export builders before CSV/PNG writing so output contracts can be tested.
 19. Add focused tests with synthetic fixtures or minimal generated data.
 20. Update human docs for user-facing behavior and scoped `AGENTS.md` only when rules change.

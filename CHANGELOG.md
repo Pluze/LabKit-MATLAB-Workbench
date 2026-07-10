@@ -15,7 +15,8 @@ Commits and PRs belong in `Evidence`, not in the navigation structure.
 - Start with `Current Version Lookup` when you only need to identify the version
   and metadata file for a launcher, facade, or app.
 - Use `Unreleased` for branch, pull-request, and release-preparation work
-  before the final mainline commit or tag evidence is known.
+  before the final mainline commit or tag evidence is known. Move finalized
+  direct-main work into `Version History`.
 - Use `Version History` as the main reading path for project evolution. Entries
   are ordered by date and grouped by reader-facing theme: a release-line entry
   summarizes a public tag, while a feature or maintenance entry summarizes one
@@ -30,7 +31,8 @@ Commits and PRs belong in `Evidence`, not in the navigation structure.
 - `Current Version Lookup` is a state table. Keep it current with metadata
   files, but do not use it to explain history.
 - `Unreleased` is a staging area. Use it for pending evolution entries until
-  the final mainline commit and, when applicable, release tag are known.
+  the final mainline commit and, when applicable, release tag are known; do not
+  leave version-finalized entries there.
 - `Version History` is the narrative timeline. Prefer one entry per coherent
   user-facing or maintainer-facing evolution: a release, a facade migration, an
   app workflow improvement, a validation/release-system improvement, or a
@@ -47,132 +49,7 @@ Commits and PRs belong in `Evidence`, not in the navigation structure.
 
 ## Unreleased
 
-### Pending - Preview-area per-axis wheel zoom
-
-Affected versions:
-- `labkit.ui` `5.0.3 -> 5.0.4`
-
-What changed:
-- Added a `scrollZoomAxes` preview-area layout option so apps can declare
-  whether each preview axis should mouse-wheel zoom in `xy`, `x`, or `y`.
-- Preview-area side axes can now remain horizontally stable while still
-  allowing app-selected vertical wheel zoom.
-
-Why it matters:
-- App-owned side panels such as color scales and histograms can remain compact
-  and stable without disabling useful wheel interaction.
-
-Compatibility:
-- Existing preview areas keep default `xy` wheel zoom unless they opt into
-  another per-axis setting.
-
-Evidence:
-- Pending local workspace changes on `main`.
-
-### Pending - Default LabKit close protection
-
-Affected versions:
-- `labkit.ui` `5.0.2 -> 5.0.3`
-- `labkit_FocusStack_app` `1.4.6 -> 1.4.7`
-- `labkit_ImageEnhance_app` `1.5.5 -> 1.5.6`
-- `labkit_ImageMatch_app` `1.5.5 -> 1.5.6`
-
-What changed:
-- LabKit runtime figures now show an in-window confirmation prompt before any
-  framework-owned app window closes, even when the app has not marked itself
-  dirty.
-- Removed the app-facing `labkit.ui.runtime.setCloseGuard` API and migrated
-  existing app close-guard dirty checks to the framework default behavior.
-- Repeating or holding the app close shortcut while the in-window prompt is
-  active confirms the close.
-
-Why it matters:
-- Public and private apps get a baseline close-safety prompt from the framework,
-  without app-owned dirty-state close logic.
-
-Compatibility:
-- Closing LabKit apps now requires one confirmation step by default. App code
-  that calls `labkit.ui.runtime.setCloseGuard` must remove that call; close
-  confirmation is framework-owned.
-
-Evidence:
-- Pending direct-main commit.
-
-### Pending - Multi-app launcher packages
-
-Affected versions:
-- `labkit_launcher` `1.2.7 -> 1.3.0`
-- Project deployment tooling, multi-app bundle support.
-
-What changed:
-- Added an independent `Package` checkbox column to the launcher app table so
-  users can choose multiple apps without changing the row selected for Open or
-  Debug.
-- `Package Checked` and `Checked P-code` now create one zip containing every
-  checked app, one direct entry file per app, and a multi-app manifest.
-- Kept single-app package names, result fields, and manifest schema compatible
-  when only one app is supplied to `packageLabKitApp`.
-
-Why it matters:
-- Related LabKit apps can be distributed together without shipping unrelated
-  apps or manually combining separate packages.
-
-Compatibility:
-- Existing direct calls that package one app continue to produce the original
-  single-app package contract.
-
-Evidence:
-- Pending local workspace changes on `main`.
-
-### Pending - Runtime-only P-code app packages
-
-Affected versions:
-- Project deployment tooling, no component version change.
-
-What changed:
-- `Package P-code` now creates a runtime-only single-app package instead of
-  shipping a P-coded LabKit launcher and launcher maintenance tools.
-- P-code package manifests and README instructions point users to the direct
-  `run_<app_command>` entry file.
-- P-code packaging no longer requires `labkit_launcher.m` or `labkit_launcher.p`
-  to exist in the package root being used as the runtime source.
-
-Why it matters:
-- P-code distributions no longer expose or depend on launcher behavior that is
-  source-checkout oriented, including launcher version/date metadata and
-  follow-on packaging actions.
-
-Compatibility:
-- Users of P-code packages should run `run_<app_command>` from the unzipped
-  package instead of `labkit_launcher`. Source packages still include and
-  support the launcher.
-
-Evidence:
-- Pending direct-main commit.
-
-### Pending - Release validation gate and GUI CI hardening
-
-Affected versions:
-- Project validation workflow, no component version change.
-
-What changed:
-- Release candidate tags now run the full MATLAB test workflow gate before
-  publication: headless tests, coverage, GUI tests, and a release summary gate.
-- GUI layout tests now assert structural grid contracts instead of
-  platform-dependent flattened pixel ordering or width comparisons.
-- Shared GUI test idle waiting allows slower CI display backends more time to
-  finish registered UI work.
-
-Why it matters:
-- Maintainers get a concrete pre-publication release signal that covers all
-  supported automated test projects, and GUI CI should fail on contract drift
-  rather than platform layout rounding.
-
-Compatibility:
-- No known manual migration.
-
-Evidence:
-- Pending direct-main commit.
+No pending project entries.
 
 Template for branch work before the final mainline commit is known:
 
@@ -200,7 +77,7 @@ Evidence:
 
 ## Current Version Lookup
 
-Audited against `main` UI 5 squash commit on 2026-07-06.
+Audited against `main` metadata on 2026-07-10.
 
 | Component | Current version | Family | Metadata location |
 |---|---:|---|---|
@@ -231,6 +108,133 @@ Audited against `main` UI 5 squash commit on 2026-07-06.
 | `labkit_ECGPrint_app` | `1.3.5` | Wearable | `apps/wearable/ecg_print/+ecg_print/version.m` |
 
 ## Version History
+
+### 2026-07-09 - Preview-area per-axis wheel zoom
+
+Affected versions:
+- `labkit.ui` `5.0.3 -> 5.0.4`
+
+What changed:
+- Added a `scrollZoomAxes` preview-area layout option so apps can declare
+  whether each preview axis should mouse-wheel zoom in `xy`, `x`, or `y`.
+- Preview-area side axes can now remain horizontally stable while still
+  allowing app-selected vertical wheel zoom.
+
+Why it matters:
+- App-owned side panels such as color scales and histograms can remain compact
+  and stable without disabling useful wheel interaction.
+
+Compatibility:
+- Existing preview areas keep default `xy` wheel zoom unless they opt into
+  another per-axis setting.
+
+Evidence:
+- Mainline commit `3c143eb`.
+
+### 2026-07-09 - Default LabKit close protection
+
+Affected versions:
+- `labkit.ui` `5.0.2 -> 5.0.3`
+- `labkit_FocusStack_app` `1.4.6 -> 1.4.7`
+- `labkit_ImageEnhance_app` `1.5.5 -> 1.5.6`
+- `labkit_ImageMatch_app` `1.5.5 -> 1.5.6`
+
+What changed:
+- LabKit runtime figures now show an in-window confirmation prompt before any
+  framework-owned app window closes, even when the app has not marked itself
+  dirty.
+- Removed the app-facing `labkit.ui.runtime.setCloseGuard` API and migrated
+  existing app close-guard dirty checks to the framework default behavior.
+- Repeating or holding the app close shortcut while the in-window prompt is
+  active confirms the close.
+
+Why it matters:
+- Public and private apps get a baseline close-safety prompt from the framework,
+  without app-owned dirty-state close logic.
+
+Compatibility:
+- Closing LabKit apps now requires one confirmation step by default. App code
+  that calls `labkit.ui.runtime.setCloseGuard` must remove that call; close
+  confirmation is framework-owned.
+
+Evidence:
+- Mainline commit `0c9f472`.
+
+### 2026-07-09 - Multi-app launcher packages
+
+Affected versions:
+- `labkit_launcher` `1.2.7 -> 1.3.0`
+- Project deployment tooling, multi-app bundle support.
+
+What changed:
+- Added an independent `Package` checkbox column to the launcher app table so
+  users can choose multiple apps without changing the row selected for Open or
+  Debug.
+- `Package Checked` and `Checked P-code` now create one zip containing every
+  checked app, one direct entry file per app, and a multi-app manifest.
+- Kept single-app package names, result fields, and manifest schema compatible
+  when only one app is supplied to `packageLabKitApp`.
+
+Why it matters:
+- Related LabKit apps can be distributed together without shipping unrelated
+  apps or manually combining separate packages.
+
+Compatibility:
+- Existing direct calls that package one app continue to produce the original
+  single-app package contract.
+
+Evidence:
+- Mainline commit `8a23a52`.
+
+### 2026-07-08 - Runtime-only P-code app packages
+
+Affected versions:
+- Project deployment tooling, no component version change.
+
+What changed:
+- `Package P-code` now creates a runtime-only single-app package instead of
+  shipping a P-coded LabKit launcher and launcher maintenance tools.
+- P-code package manifests and README instructions point users to the direct
+  `run_<app_command>` entry file.
+- P-code packaging no longer requires `labkit_launcher.m` or `labkit_launcher.p`
+  to exist in the package root being used as the runtime source.
+
+Why it matters:
+- P-code distributions no longer expose or depend on launcher behavior that is
+  source-checkout oriented, including launcher version/date metadata and
+  follow-on packaging actions.
+
+Compatibility:
+- Users of P-code packages should run `run_<app_command>` from the unzipped
+  package instead of `labkit_launcher`. Source packages still include and
+  support the launcher.
+
+Evidence:
+- Mainline commit `75f63f1`.
+
+### 2026-07-08 - Release validation gate and GUI CI hardening
+
+Affected versions:
+- Project validation workflow, no component version change.
+
+What changed:
+- Release candidate tags now run the full MATLAB test workflow gate before
+  publication: headless tests, coverage, GUI tests, and a release summary gate.
+- GUI layout tests now assert structural grid contracts instead of
+  platform-dependent flattened pixel ordering or width comparisons.
+- Shared GUI test idle waiting allows slower CI display backends more time to
+  finish registered UI work.
+
+Why it matters:
+- Maintainers get a concrete pre-publication release signal that covers all
+  supported automated test projects, and GUI CI should fail on contract drift
+  rather than platform layout rounding.
+
+Compatibility:
+- No known manual migration.
+
+Evidence:
+- Mainline commit `f359518`.
 
 ### 2026-07-07 - Debug workflows, launcher tools, and changelog governance
 

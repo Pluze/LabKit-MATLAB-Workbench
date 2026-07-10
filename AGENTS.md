@@ -139,8 +139,13 @@ nested repository diff. Run that workspace's private test entry point first;
 it may reuse the public runner and shared guardrails. Use explicit public
 suites or guardrails only when the change requires them. A private workspace's
 `.labkit-accept-main-guardrails` sentinel expands public quality scans to its
-source files, but it does not add the nested Git diff to public `changed` or
-`changedFast` path detection.
+source files. When a nested private workspace with that sentinel has unpushed
+source, test, documentation, changelog, or version changes, run the relevant
+private tests and the public `buildtool changed` guardrail before commit or
+handoff, or report the exact blocker if MATLAB cannot run. The sentinel does
+not add the nested Git diff to public `changed` or `changedFast` path detection,
+so agents must invoke the public guardrail intentionally instead of assuming the
+private test entry point covered it.
 
 In noninteractive agent shells, run the selected MATLAB build task directly.
 If the shell cannot find `buildtool`, locate MATLAB without adding a
@@ -284,9 +289,11 @@ Organize entries by coherent user-facing or maintainer-facing evolution, not
 by raw tag rows, commit rows, or issue lists. Release tags are public anchors
 inside affected versions and evidence; commits are evidence. For branch or PR
 work before the final mainline SHA is known, stage the entry under
-`Unreleased`; during release preparation or changelog audit, move finalized
-entries into `Version History` with the mainline commit SHA. Do not reduce
-changelog entries to raw commit-log dumps.
+`Unreleased`; for direct-main work with a decided version or any finalized
+entry, write it directly under `Version History`. During release preparation or
+changelog audit, move finalized entries out of `Unreleased`, remove stale
+pending drafts, and include the mainline commit SHA when it is known. Do not
+reduce changelog entries to raw commit-log dumps.
 
 For new releases, use `vX.Y.Z` tags, for example `v2.2.0`. Do not rename or
 delete already published historical tags only to normalize naming; preserve

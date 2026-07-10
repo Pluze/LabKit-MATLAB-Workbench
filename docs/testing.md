@@ -84,10 +84,17 @@ the sentinel file.
 Private workspaces under `private_apps/` are separate Git repositories, so the
 public `changed` and `changedFast` tasks do not discover their diffs. Validate a
 private change with that workspace's own test entry point, such as
-`run_private_tests()`, which can reuse the public runner and shared guardrails.
+`addpath('private_apps/tests'); run_private_tests`, which can reuse the public
+runner and shared guardrails.
 Do not substitute the full public `headless` task only because the public
 checkout has no changed paths. The `.labkit-accept-main-guardrails` sentinel
-controls quality-scan inclusion; it does not change Git diff discovery.
+controls quality-scan inclusion; it does not change Git diff discovery. When an
+accepted private workspace has unpushed source, test, documentation, changelog,
+or version changes, run that workspace's private tests and the public
+`buildtool changed` guardrail before commit or handoff, or record the exact
+MATLAB/runtime blocker. The public guardrail must be invoked intentionally from
+the public checkout because the private Git diff is invisible to the public
+changed-file planner.
 
 The changed-file planner routes by source ownership. For example, a single app
 change maps to that app family plus its GUI folder when one exists; reusable

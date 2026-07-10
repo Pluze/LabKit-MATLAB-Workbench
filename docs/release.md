@@ -75,7 +75,8 @@ The format combines common open-source practices:
 
 - Keep a top `Unreleased` section for branch, pull-request, and
   release-preparation work before the final mainline commit or tag evidence is
-  known, following the Keep a Changelog pattern.
+  known, following the Keep a Changelog pattern. Do not leave direct-main work
+  or version-finalized entries there.
 - Keep a current version lookup so users can quickly map each app, facade, and
   launcher to its metadata file.
 - Keep one `Version History` reading path. Entries are user-facing evolution
@@ -92,9 +93,11 @@ The format combines common open-source practices:
 When a change bumps `labkit_launcher.m`, a `+labkit/**/version.m` facade, or an
 `apps/**/version.m` app metadata file, add a changelog entry in the same
 change. Before the final mainline SHA is known, add it under `Unreleased` with
-PR or branch evidence. During release preparation or a changelog audit, move
-finalized entries into `Version History` with the mainline commit SHA. Do not
-write the entry as a raw commit-log dump; explain the maintainer intent and user
+PR or branch evidence. For direct-main work with a decided version, write the
+entry directly under `Version History`. During release preparation or a
+changelog audit, move finalized entries out of `Unreleased`, remove stale
+pending drafts, and add the mainline commit SHA when it is known. Do not write
+the entry as a raw commit-log dump; explain the maintainer intent and user
 impact that are not obvious from blame history.
 
 Before tagging a release that adds, renames, or removes release-blocking

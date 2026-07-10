@@ -65,8 +65,10 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
   time; before squash, PR handoff, or direct `main` push, choose the next
   version from the latest `main` version file and make the aggregate bump once.
   The same aggregate version bump must be recorded in `CHANGELOG.md` with user
-  impact and evidence; branch work may use the `Unreleased` section until the
-  final mainline commit is known.
+  impact and evidence. Branch work may use the `Unreleased` section until the
+  final mainline commit is known; direct `main` work or any finalized version
+  entry belongs under `Version History`, and stale pending drafts should be
+  moved or removed during changelog audits.
 - Boundary tests may require app-owned logic to stay under the owning app tree, but should not require GUI-free helpers to remain inside the public app entry-point file or assert exact app-private helper file lists.
 - App-owned workflow packages need direct unit coverage for non-UI functions;
   GUI structural tests only prove launch/layout wiring.

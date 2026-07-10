@@ -49,7 +49,7 @@ git status --short --branch
 git log --oneline -n 40
 find apps -path '*+ui/runApp.m' -print | sort
 find apps -path '*/+*/run.m' -print | sort
-find apps -path '*+userInterface/buildWorkbenchSpec.m' -print | sort
+find apps -path '*+userInterface/buildWorkbenchLayout.m' -print | sort
 find apps -path '*/private/*' -type f -print | sort
 rg -n "expected\\w*Debt\\w*" tests/contract
 ```
@@ -64,7 +64,7 @@ For runner-complexity work, scan helper quality as well as file length:
 - count package-root `run.m` files and sort by line count
 - count short app helpers, excluding public entrypoints, `requirements.m`,
   `version.m`, package-root `run.m`, and target
-  `+userInterface/buildWorkbenchSpec.m`
+  `+userInterface/buildWorkbenchLayout.m`
 - identify repeated micro-helper families and one-call pass-through wrappers
 - classify short helpers by boundary signal before proposing new extraction:
   public framework API, framework-private implementation, app state contract,
@@ -168,7 +168,7 @@ For each proposed migration, classify work as:
 
 - app-owned deterministic behavior: extract under the owning app package
 - ordinary UI: keep the data-only spec in
-  `+<app_slug>/+userInterface/buildWorkbenchSpec.m`; use app-local custom
+  `+<app_slug>/+userInterface/buildWorkbenchLayout.m`; use app-local custom
   builders only for justified interactions
 - runtime orchestration: prefer `labkit.ui.app.define` plus
   `labkit.ui.app.run`; public entrypoints stay thin dispatch wrappers
