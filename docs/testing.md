@@ -40,6 +40,7 @@ Use MATLAB build tasks for the stable official entry points:
 ```bash
 buildtool changed
 buildtool changedFast
+buildtool baseMatlab
 buildtool headless
 buildtool gui
 buildtool coverage
@@ -50,6 +51,7 @@ buildtool listTasks
 | --- | --- |
 | `changedFast` | Tight local iteration from the current diff; substitutes representative GUI coverage for expensive broad GUI scopes. |
 | `changed` | Conservative pre-handoff validation from the current diff. |
+| `baseMatlab` | Explicit compatibility gate: static toolbox-call scan, MATLAB product-ownership analysis, and representative workflows with toolbox helpers shadowed. |
 | `headless` | Full non-GUI validation. |
 | `gui` | Full automated GUI validation with hidden figures. |
 
@@ -71,6 +73,7 @@ Common choices:
 | Tight local iteration on one known component | Focused `runLabKitTests("Suites", ...)` |
 | Coherent local checkpoint while files are still changing | `buildtool changedFast` |
 | Before commit, PR, or handoff | `buildtool changed` |
+| Verify the repository on a machine that has toolboxes installed | `buildtool baseMatlab` |
 | Full broad non-GUI validation | `buildtool headless` |
 | Full automated GUI validation | `buildtool gui` |
 | Coverage report | `buildtool coverage` |
@@ -89,10 +92,11 @@ source to the public repository. For temporary local checks,
 the sentinel file.
 
 Toolbox compatibility guardrails protect the base-MATLAB user path. They
-reject unguarded hard calls to common non-base MATLAB toolbox helpers under
-`apps/` and `+labkit/`, and run representative workflows with those helper
-names shadowed on the MATLAB path so local machines with toolboxes still
-exercise fallback paths.
+reject non-base calls under `apps/` and `+labkit/`, verify MATLAB's dependency
+analysis resolves source only to the `MATLAB` product, and run representative
+workflows with known toolbox helper names shadowed on the MATLAB path. App
+workflows use the same base-MATLAB implementation whether or not optional
+toolboxes happen to be installed.
 
 Private workspaces under `private_apps/` are separate Git repositories, so the
 public `changed` and `changedFast` tasks do not discover their diffs. Validate a

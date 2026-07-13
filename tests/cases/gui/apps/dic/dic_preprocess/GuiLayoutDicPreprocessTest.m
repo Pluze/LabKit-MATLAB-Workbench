@@ -51,6 +51,50 @@ classdef GuiLayoutDicPreprocessTest < matlab.unittest.TestCase
             testCase.verifyGreaterThan(numel(ui.controls.previewAxes.axesById.current.Children), 0, ...
                 'DIC preprocess workflow should draw the current preview.');
         end
+
+        function manualPointPairSelectorCancelsWithoutToolbox(testCase)
+            setupLabKitTestPath();
+            h = guiTestHelpers();
+            h.assertUifigureAvailable();
+            cleanup = onCleanup(@() h.closeAllFigures());
+            cancelTimer = timer('StartDelay', 0.5, ...
+                'TimerFcn', @(~, ~) cancelPointPairDialog());
+            timerCleanup = onCleanup(@() deleteTimer(cancelTimer));
+            start(cancelTimer);
+
+            [movingPoints, fixedPoints] = ...
+                dic_preprocess.userInterface.selectRigidPointPairs( ...
+                zeros(20, 24), zeros(20, 24));
+
+            testCase.verifyEmpty(movingPoints, ...
+                'Cancelled manual alignment should return no moving points.');
+            testCase.verifyEmpty(fixedPoints, ...
+                'Cancelled manual alignment should return no fixed points.');
+            clear timerCleanup cleanup
+        end
+    end
+end
+
+function cancelPointPairDialog()
+    figures = findall(groot, 'Type', 'figure', 'Name', 'DIC Manual Alignment');
+    if isempty(figures)
+        return;
+    end
+    controls = findall(figures(1), '-property', 'Text');
+    for iControl = 1:numel(controls)
+        if isprop(controls(iControl), 'ButtonPushedFcn') && ...
+                string(controls(iControl).Text) == "Cancel"
+            callback = controls(iControl).ButtonPushedFcn;
+            callback(controls(iControl), struct());
+            return;
+        end
+    end
+end
+
+function deleteTimer(timerHandle)
+    if isvalid(timerHandle)
+        stop(timerHandle);
+        delete(timerHandle);
     end
 end
 

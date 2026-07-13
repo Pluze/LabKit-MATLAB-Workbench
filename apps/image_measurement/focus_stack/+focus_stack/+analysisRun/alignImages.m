@@ -45,51 +45,18 @@ function [alignedImage, method] = alignImageToReference(referenceImage, movingIm
     movingGray = alignmentGray(movingImage);
 
     try
-        [alignedImage, method] = alignImageWithImregcorr( ...
-            movingImage, movingGray, fixedGray);
+        [rowShift, colShift] = estimateTranslationByPhaseCorrelation( ...
+            fixedGray, movingGray);
+        alignedImage = translateImageByIntegerShift( ...
+            movingImage, rowShift, colShift, backgroundFillValues(movingImage));
         alignedImage = cast(alignedImage, origClass);
-        return;
+        method = sprintf('FFT translation (row %+d, col %+d)', ...
+            rowShift, colShift);
     catch registrationErr
-        try
-            [rowShift, colShift] = estimateTranslationByPhaseCorrelation( ...
-                fixedGray, movingGray);
-            alignedImage = translateImageByIntegerShift( ...
-                movingImage, rowShift, colShift, backgroundFillValues(movingImage));
-            alignedImage = cast(alignedImage, origClass);
-            method = sprintf('FFT translation fallback (row %+d, col %+d)', ...
-                rowShift, colShift);
-            return;
-        catch fallbackErr
-            error('labkit_FocusStack_app:RegistrationFailed', ...
-                'Image registration failed: %s Fallback failed: %s', ...
-                registrationErr.message, fallbackErr.message);
-        end
+        error('labkit_FocusStack_app:RegistrationFailed', ...
+            'Base-MATLAB phase-correlation registration failed: %s', ...
+            registrationErr.message);
     end
-end
-
-function [alignedImage, method] = alignImageWithImregcorr(movingImage, movingGray, fixedGray)
-    try
-        tform = imregcorr(movingGray, fixedGray, 'similarity');
-        method = 'phase-correlation similarity registration';
-    catch similarityErr
-        try
-            tform = imregcorr(movingGray, fixedGray, 'rigid');
-            method = 'phase-correlation rigid registration';
-        catch rigidErr
-            try
-                tform = imregcorr(movingGray, fixedGray, 'translation');
-                method = 'phase-correlation translation registration';
-            catch translationErr
-                error('labkit_FocusStack_app:RegistrationFailed', ...
-                    'Similarity failed: %s Rigid failed: %s Translation failed: %s', ...
-                    similarityErr.message, rigidErr.message, translationErr.message);
-            end
-        end
-    end
-
-    fixedRef = imref2d(size(fixedGray));
-    alignedImage = imwarp(movingImage, tform, ...
-        'OutputView', fixedRef, 'FillValues', backgroundFillValues(movingImage));
 end
 
 function gray = alignmentGray(imageData)

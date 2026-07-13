@@ -4,6 +4,7 @@ function plan = buildfile
 % User-facing commands:
 %   buildtool changed       conservative validation routed from the git diff
 %   buildtool changedFast   faster local iteration routed from the git diff
+%   buildtool baseMatlab    verify source workflows require only base MATLAB
 %   buildtool headless      full non-GUI validation
 %   buildtool gui           full automated GUI validation with hidden figures
 %   buildtool coverage      coverage report for manual or scheduled runs
@@ -31,6 +32,14 @@ function changedFastTask(~)
     runCatalogTask("changedFast");
 end
 
+function baseMatlabTask(~)
+    previous = getenv("LABKIT_VERIFY_TOOLBOX_PRODUCTS");
+    setenv("LABKIT_VERIFY_TOOLBOX_PRODUCTS", "1");
+    cleanup = onCleanup(@() setenv("LABKIT_VERIFY_TOOLBOX_PRODUCTS", previous));
+    runCatalogTask("baseMatlab");
+    clear cleanup
+end
+
 function headlessTask(~)
     runCatalogTask("headless");
 end
@@ -51,6 +60,7 @@ function catalog = taskCatalog()
     catalog = [ ...
         taskSpec("changed", "Run conservative changed-file validation.", "Plan", "changed", "HtmlReport", false), ...
         taskSpec("changedFast", "Run fast changed-file validation for local iteration.", "Plan", "changedFast", "HtmlReport", false), ...
+        taskSpec("baseMatlab", "Verify source workflows require only base MATLAB.", "Suites", "project/hygiene", "Tests", "ToolboxDependencyGuardrailTest", "HtmlReport", false), ...
         taskSpec("headless", "Run the full non-GUI validation set.", "IncludeGui", false), ...
         taskSpec("gui", "Run noninteractive GUI launch, layout, and gesture checks.", "Suites", "gui", "IncludeGui", true, "GuiMode", "hidden"), ...
         taskSpec("coverage", "Run official tests with coverage artifacts.", "Tags", ["Unit", "Integration"], "IncludeCoverage", true), ...
@@ -62,6 +72,7 @@ function spec = taskSpec(name, description, varargin)
     p.FunctionName = "taskSpec";
     p.addParameter("RunTests", true, @isLogicalScalar);
     p.addParameter("Suites", strings(1, 0), @isStringLikeList);
+    p.addParameter("Tests", strings(1, 0), @isStringLikeList);
     p.addParameter("Plan", "", @isTextScalar);
     p.addParameter("Tags", strings(1, 0), @isStringLikeList);
     p.addParameter("IncludeGui", [], @isEmptyOrLogicalScalar);
@@ -79,6 +90,7 @@ function spec = taskSpec(name, description, varargin)
         "Visibility", string(p.Results.Visibility), ...
         "RunTests", runTests, ...
         "Suites", normalizeTextList(p.Results.Suites), ...
+        "Tests", normalizeTextList(p.Results.Tests), ...
         "Plan", string(p.Results.Plan), ...
         "Tags", normalizeTextList(p.Results.Tags), ...
         "IncludeGui", normalizeOptionalLogical(p.Results.IncludeGui), ...
@@ -116,6 +128,9 @@ function args = taskRunArguments(spec)
     args = {};
     if ~isempty(spec.Suites)
         args = [args, {"Suites", spec.Suites}];
+    end
+    if ~isempty(spec.Tests)
+        args = [args, {"Tests", spec.Tests}];
     end
     if strlength(spec.Plan) > 0
         args = [args, {"Plan", spec.Plan}];

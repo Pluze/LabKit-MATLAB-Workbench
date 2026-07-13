@@ -208,7 +208,9 @@ function actions = definitionActions()
         end
 
         addLog('Opening point selector. Choose matching points, then accept.');
-        [movingPoints, fixedPoints] = cpselect(S.currentMovingImage, S.currentReferenceImage, 'Wait', true);
+        [movingPoints, fixedPoints] = ...
+            dic_preprocess.userInterface.selectRigidPointPairs( ...
+            S.currentMovingImage, S.currentReferenceImage);
         if size(movingPoints, 1) < 2
             labkit.ui.runtime.showAlert(fig, 'Rigid registration requires at least two point pairs.', 'Not enough points');
             addLog('Alignment cancelled: fewer than two point pairs.');
@@ -269,7 +271,7 @@ function actions = definitionActions()
         S.cropMoving = [];
         rect = dic_preprocess.analysisRun.defaultSquareRect(size(S.currentReferenceImage));
         S.cropRect = rect;
-        cropUi = dic_preprocess.userInterface.startCropRoi(ui, ...
+        cropUi = dic_preprocess.userInterface.startCropRoi(ui, imageRuntime, ...
             S.currentReferenceImage, S.currentMovingImage, rect, @onCropRoiMoved);
         S.cropRoiTop = cropUi.top;
         S.cropRoiBottom = cropUi.bottom;
@@ -282,16 +284,19 @@ function actions = definitionActions()
     end
 
     function onApplyCropRoi(~, ~)
-        if isempty(S.cropRoiTop) || ~isvalid(S.cropRoiTop)
+        if isempty(S.cropRoiTop) || ~S.cropRoiTop.isValid()
             labkit.ui.runtime.showAlert(fig, 'Start a crop ROI before applying the crop.', 'No active ROI');
             return;
         end
 
-        rect = dic_preprocess.analysisRun.squareRectInsideImage(S.cropRoiTop.Position, size(S.currentReferenceImage));
+        rect = dic_preprocess.analysisRun.squareRectInsideImage( ...
+            S.cropRoiTop.getPosition(), size(S.currentReferenceImage));
         pushHistory('crop');
         S.cropRect = rect;
-        S.currentReferenceImage = imcrop(S.currentReferenceImage, rect);
-        S.currentMovingImage = imcrop(S.currentMovingImage, rect);
+        S.currentReferenceImage = dic_preprocess.analysisRun.cropImage( ...
+            S.currentReferenceImage, rect);
+        S.currentMovingImage = dic_preprocess.analysisRun.cropImage( ...
+            S.currentMovingImage, rect);
         S.cropReference = S.currentReferenceImage;
         S.cropMoving = S.currentMovingImage;
         clearDerivedStateAndMaskEditor();
@@ -311,12 +316,7 @@ function actions = definitionActions()
         refreshPreview();
     end
 
-    function onCropRoiMoved(~, evt)
-        if isprop(evt, 'CurrentPosition')
-            pos = evt.CurrentPosition;
-        else
-            pos = S.cropRoiTop.Position;
-        end
+    function onCropRoiMoved(pos)
         rect = dic_preprocess.analysisRun.squareRectInsideImage(pos, size(S.currentReferenceImage));
         S.cropRect = rect;
         if ~isempty(S.cropRoiBottom) && isvalid(S.cropRoiBottom)

@@ -110,8 +110,7 @@ function renderPreview(state, ui)
     if ~hasCurrentImage(state) || ~hasTools(state)
         resetPreviewAxes(ui);
         if hasTools(state)
-            state.tools.cropSession.setBackground([]);
-            state.tools.cropSession.setGraphics([]);
+            state.tools.cropEditor.setBackground([]);
             state.tools.scaleTool.setBackground([]);
             state.tools.scaleTool.setImageSize([]);
         end
@@ -121,7 +120,7 @@ function renderPreview(state, ui)
     placement = batch_crop.userInterface.previewPlacement(geometry);
     item = state.items(state.currentIndex);
     tools = struct('scaleTool', state.tools.scaleTool, ...
-        'cropSession', state.tools.cropSession);
+        'cropEditor', state.tools.cropEditor);
     batch_crop.userInterface.drawPreview(ui, state.tools.previewAxes, geometry, ...
         placement, item, currentCropSize(state, ui), tools, ...
         state.previewView);

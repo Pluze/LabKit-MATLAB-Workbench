@@ -261,11 +261,11 @@ function exportPairImage(leftImage, rightImage, outputPath, leftTitle, rightTitl
         "Position", [100 100 1200 520]);
     tiledlayout(fig, 1, 2, "Padding", "compact", ...
         "TileSpacing", "compact");
-    nexttile;
-    imshow(leftImage);
+    ax = nexttile;
+    displayImage(ax, leftImage);
     title(leftTitle, "FontWeight", "bold");
-    nexttile;
-    imshow(rightImage);
+    ax = nexttile;
+    displayImage(ax, rightImage);
     title(rightTitle, "FontWeight", "bold");
     exportgraphics(fig, outputPath, "Resolution", 180);
     close(fig);
@@ -277,17 +277,23 @@ function exportTriptychImage(firstImage, secondImage, thirdImage, outputPath, ..
         "Position", [100 100 1440 520]);
     tiledlayout(fig, 1, 3, "Padding", "compact", ...
         "TileSpacing", "compact");
-    nexttile;
-    imshow(firstImage);
+    ax = nexttile;
+    displayImage(ax, firstImage);
     title(firstTitle, "FontWeight", "bold");
-    nexttile;
-    imshow(secondImage);
+    ax = nexttile;
+    displayImage(ax, secondImage);
     title(secondTitle, "FontWeight", "bold");
-    nexttile;
-    imshow(thirdImage);
+    ax = nexttile;
+    displayImage(ax, thirdImage);
     title(thirdTitle, "FontWeight", "bold");
     exportgraphics(fig, outputPath, "Resolution", 180);
     close(fig);
+end
+
+function displayImage(ax, imageData)
+    image(ax, imageData);
+    axis(ax, "image");
+    axis(ax, "off");
 end
 
 function marked = drawCropBox(imageData, centerXY, widthPx, heightPx)

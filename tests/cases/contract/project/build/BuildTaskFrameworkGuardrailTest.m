@@ -264,7 +264,7 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
             root = setupLabKitTestPath();
             catalog = extractBuildfileCatalog(root);
 
-            expectedTasks = ["changed", "changedFast", "headless", "gui", ...
+            expectedTasks = ["changed", "changedFast", "baseMatlab", "headless", "gui", ...
                 "coverage", "listTasks"];
             publicTasks = catalog.Name(catalog.Visibility == "public").';
             testCase.verifyEqual(publicTasks, expectedTasks, ...
@@ -440,6 +440,7 @@ end
 function args = taskSpecArguments(line)
     args = {};
     args = appendStringListArgument(args, line, "Suites");
+    args = appendStringListArgument(args, line, "Tests");
     args = appendStringListArgument(args, line, "Plan");
     args = appendStringListArgument(args, line, "Tags");
     args = appendStringListArgument(args, line, "GuiMode");
@@ -455,10 +456,18 @@ function tf = taskSpecMapsToKnownTests(root, spec)
     end
 
     suites = lower(taskSpecStringValues(spec, "Suites"));
+    tests = taskSpecStringValues(spec, "Tests");
     tags = taskSpecStringValues(spec, "Tags");
     suiteOk = isempty(suites) || all(ismember(suites, knownSuiteTargets(root)));
+    testOk = isempty(tests) || taskSelectorsExist(root, suites, tests);
     tagOk = isempty(tags) || all(ismember(tags, knownRunnerTags()));
-    tf = suiteOk && tagOk;
+    tf = suiteOk && testOk && tagOk;
+end
+
+function tf = taskSelectorsExist(root, suites, tests)
+    output = listLabKitTestsQuietly( ...
+        "Suites", suites, "Tests", tests, "RunName", "task_spec_probe");
+    tf = output.count > 0;
 end
 
 function tf = taskSpecUsesKnownPlan(spec)

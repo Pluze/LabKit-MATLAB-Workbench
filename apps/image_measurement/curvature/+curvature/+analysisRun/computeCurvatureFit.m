@@ -146,24 +146,9 @@ function [xc, yc, R, rmse] = fitCircleGeomWithFallback(x, y, xc0, yc0, R0)
     p0 = [xc0; yc0; R0];
     residual = @(p) sqrt((x - p(1)).^2 + (y - p(2)).^2) - abs(p(3));
 
-    useLSQ = exist('lsqnonlin', 'file') == 2;
-    if useLSQ
-        try
-            opts = optimoptions('lsqnonlin', ...
-                'Display', 'off', ...
-                'MaxFunctionEvaluations', 2e4, ...
-                'MaxIterations', 2e4);
-            p = lsqnonlin(residual, p0, [], [], opts);
-        catch
-            useLSQ = false;
-        end
-    end
-
-    if ~useLSQ
-        f = @(p) sum(residual(p).^2);
-        opts = optimset('Display', 'off', 'MaxFunEvals', 2e4, 'MaxIter', 2e4);
-        p = fminsearch(f, p0, opts);
-    end
+    f = @(p) sum(residual(p).^2);
+    opts = optimset('Display', 'off', 'MaxFunEvals', 2e4, 'MaxIter', 2e4);
+    p = fminsearch(f, p0, opts);
 
     xc = p(1);
     yc = p(2);

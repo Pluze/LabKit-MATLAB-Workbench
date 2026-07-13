@@ -279,21 +279,11 @@ function gray = luma(imageData)
 end
 
 function outputImage = labToRgb(labImage)
-    if exist('lab2rgb', 'file') == 2
-        outputImage = min(max(lab2rgb(labImage), 0), 1);
-        return;
-    end
-
     xyzImage = labToXyz(labImage);
     outputImage = xyzToRgb(xyzImage);
 end
 
 function labImage = rgbToLab(rgbImage)
-    if exist('rgb2lab', 'file') == 2
-        labImage = rgb2lab(rgbImage);
-        return;
-    end
-
     xyzImage = rgbToXyz(rgbImage);
     labImage = xyzToLab(xyzImage);
 end

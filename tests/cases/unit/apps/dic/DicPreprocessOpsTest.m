@@ -12,6 +12,18 @@ classdef DicPreprocessOpsTest < matlab.unittest.TestCase
             testCase.verifyEqual(mask, zeros(4, 5, 'uint8'));
         end
 
+
+        function maskFromCurveRasterizesPolygonWithBaseMatlab(testCase)
+            setupLabKitTestPath();
+            curve = [2 2; 5 2; 5 4; 2 4; 2 2];
+
+            mask = dic_preprocess.analysisRun.maskFromCurve(curve, [6 7]);
+
+            testCase.verifyClass(mask, 'uint8');
+            testCase.verifyEqual(mask(3, 3), uint8(255));
+            testCase.verifyEqual(mask(1, 1), uint8(0));
+        end
+
         function straightLineBoundaryClosesAndClampsPoints(testCase)
             setupLabKitTestPath();
 
@@ -106,6 +118,17 @@ classdef DicPreprocessOpsTest < matlab.unittest.TestCase
             testCase.verifyGreaterThanOrEqual(clampedRect(2), 1);
             testCase.verifyLessThanOrEqual(clampedRect(1) + clampedRect(3), 80);
             testCase.verifyLessThanOrEqual(clampedRect(2) + clampedRect(4), 100);
+        end
+
+        function cropImageUsesInclusiveImcropRectangleContract(testCase)
+            setupLabKitTestPath();
+            imageData = reshape(uint8(1:60), 5, 6, 2);
+
+            cropped = dic_preprocess.analysisRun.cropImage( ...
+                imageData, [2 2 3 2]);
+
+            testCase.verifySize(cropped, [3 4 2]);
+            testCase.verifyEqual(cropped, imageData(2:4, 2:5, :));
         end
 
         function falseColorAndMaskPreviewsPreserveImageShape(testCase)
