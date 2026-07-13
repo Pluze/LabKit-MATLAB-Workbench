@@ -14,15 +14,11 @@ Commits and PRs belong in `Evidence`, not in the navigation structure.
 
 - Start with `Current Version Lookup` when you only need to identify the version
   and metadata file for a launcher, facade, or app.
-- Use `Unreleased` for branch, pull-request, and release-preparation work
-  before the final mainline commit or tag evidence is known. Move finalized
-  direct-main work into `Version History`.
-- Use `Version History` as the main reading path for project evolution. Entries
-  are ordered by date and grouped by reader-facing theme: a release-line entry
-  summarizes a public tag, while a feature or maintenance entry summarizes one
-  coherent improvement direction.
-- Read `Affected versions` as the index from an evolution entry to release
-  tags, launcher versions, facade versions, and app versions.
+- Search `Structured Change Records` by Change ID, component, date, or title
+  when investigating why behavior exists. Branch records use the same schema
+  as mainline records; their location in Git already supplies delivery state.
+- Read each record's metadata block for machine routing, then its narrative for
+  context, rationale, impact, migration, validation, evidence, and limitations.
 - Record meaningful behavior, compatibility, workflow, validation, diagnostics,
   and public facade changes. Do not dump raw git logs.
 
@@ -30,146 +26,461 @@ Commits and PRs belong in `Evidence`, not in the navigation structure.
 
 - `Current Version Lookup` is a state table. Keep it current with metadata
   files, but do not use it to explain history.
-- `Unreleased` is a staging area. Use it for pending evolution entries until
-  the final mainline commit and, when applicable, release tag are known; do not
-  leave version-finalized entries there.
-- `Version History` is the narrative timeline. Prefer one entry per coherent
-  user-facing or maintainer-facing evolution: a release, a facade migration, an
-  app workflow improvement, a validation/release-system improvement, or a
-  compatibility change.
-- Release entries may roll up several related improvements when the tag is the
-  useful reader anchor. Non-release entries should be based on the capability,
-  workflow, or maintenance direction they explain, even when they also list
-  version bumps.
-- Every entry should answer four questions: what changed, why it mattered, what
-  compatibility or upgrade risk exists, and what evidence proves the entry.
-- Optional direction or follow-up notes are allowed when they help future
-  maintainers and agents understand where the project is moving. Keep them
-  short and concrete.
+- A structured record has one stable Change ID and one ISO date. It may list
+  versioned `component` transitions, unversioned repository `scope` values, or
+  both. Component transitions always compare directly with the mainline
+  baseline rather than another commit on the development branch.
+- `type` uses the repository's Conventional Commit vocabulary.
+  `compatibility` is `compatible`, `additive`, or `breaking`.
+- Narrative sections are required because metadata alone cannot explain the
+  scientific, workflow, or maintenance decision that Git history obscures.
+- `tools/release/parseLabKitChangelog.m` parses schema-v1 records and rejects
+  duplicate IDs, malformed dates or versions, unknown metadata, missing
+  narrative sections, and records out of reverse chronological order.
+- A branch does not need a separate pending state. The same record is useful
+  before and after merge; evidence can name tests, a PR, a release tag, source
+  anchors, or the stable Change ID used to locate the carrying commit.
 
-## Unreleased
+## Structured Change Records
 
-### Pending - Consistent electrochemistry batch analysis
+### Structured evolution records
 
-Affected versions:
-- `labkit_CIC_app` `1.3.7 -> 1.3.8`
-- `labkit_VTResistance_app` `1.3.7 -> 1.3.8`
-
-What changed:
-- CIC and VT Resistance now recompute every loaded file under one shared set
-  of analysis controls, including a final recomputation before CSV export.
-- CIC labels delay values in microseconds, rejects sampling outside the
-  recorded time range instead of extrapolating, and exports the area and delay
-  used for each result.
-- Added family-level regression coverage for whole-batch recomputation; CSC,
-  EIS, and Chrono Overlay remain safe because they calculate from current
-  settings at export or do not cache derived batch analysis.
-
-Why it matters:
-- Batch CSV rows can no longer silently mix stale and current area, delay,
-  pulse-detection, resistance-window, or voltage-mode settings.
-
-Compatibility:
-- CIC CSV adds trailing `Area_cm2` and `Delay_us` columns. Existing columns
-  retain their names and order.
-
-Evidence:
-- Current development branch; final mainline commit pending.
-
-### Pending - MATLAB-compatible image conversion API
-
-Affected versions:
-- `labkit.image` `1.2.0 -> 2.0.0`
-- `labkit_DICPreprocess_app` `1.3.6 -> 1.3.7`
-- `labkit_DICPostprocess_app` `1.3.5 -> 1.3.6`
-- `labkit_BatchImageCrop_app` `1.6.7 -> 1.6.8`
-- `labkit_CurvatureMeasurement_app` `1.3.4 -> 1.3.5`
-- `labkit_FLIRThermal_app` `1.2.8 -> 1.2.9`
-- `labkit_FocusStack_app` `1.4.8 -> 1.4.9`
-- `labkit_ImageEnhance_app` `1.5.7 -> 1.5.8`
-- `labkit_ImageMatch_app` `1.5.7 -> 1.5.8`
-
-What changed:
-- Replaced the LabKit-specific `toDouble`, `toLuma`, and `toRgbDouble` surface
-  with MATLAB-contract-compatible `labkit.image.im2double` and
-  `labkit.image.rgb2gray` functions plus the shape-only `ensureRgb` helper.
-- Image pipelines now state class conversion, RGB shaping, and clipping as
-  separate operations, and Rec.601 coefficients have one documented owner.
-- DIC now declares its existing dependency on the image facade.
-
-Why it matters:
-- Base-MATLAB users can apply familiar MATLAB image conversion contracts
-  without learning a composite LabKit normalization API or accepting hidden
-  channel and value changes.
-
-Compatibility:
-- This is a major image-facade change. Callers must replace the removed helper
-  names with the explicit compatible conversion and shaping operations.
-
-Evidence:
-- Current development branch; final mainline commit pending.
-
-Template for branch work before the final mainline commit is known:
-
-```markdown
-### Pending - Short user-facing title
-
-Affected versions:
-- `component` `old -> new`
-
-What changed:
-- Plain-language change summary.
-
-Why it matters:
-- User or maintainer reason this version exists.
-
-Compatibility:
-- Migration or rollback note, or `No known manual migration.`
-
-Direction:
-- Optional short note about the improvement direction or follow-up boundary.
-
-Evidence:
-- PR, branch, or pending commit.
+```labkit-change
+schema: 1
+id: LK-20260713-structured-evolution-records
+date: 2026-07-13
+type: docs
+compatibility: additive
+scope: repository changelog and release governance
 ```
 
-## Current Version Lookup
+#### Context
 
-Audited against `main` metadata on 2026-07-13.
+The previous `Unreleased` and `Pending` model mixed delivery state with
+historical meaning and required records to be moved after merge. Its prose was
+useful to humans but had no reliable machine contract.
 
-| Component | Current version | Family | Metadata location |
-|---|---:|---|---|
-| `labkit_launcher` | `1.3.0` | Launcher | `labkit_launcher.m` |
-| `labkit.ui` | `5.0.4` | Facade | `+labkit/+ui/version.m` |
-| `labkit.dta` | `2.0.0` | Facade | `+labkit/+dta/version.m` |
-| `labkit.image` | `2.0.0` | Facade | `+labkit/+image/version.m` |
-| `labkit.thermal` | `1.0.0` | Facade | `+labkit/+thermal/version.m` |
-| `labkit.rhs` | `1.0.0` | Facade | `+labkit/+rhs/version.m` |
-| `labkit.biosignal` | `1.0.0` | Facade | `+labkit/+biosignal/version.m` |
-| `labkit_FigureStudio_app` | `0.1.5` | LabKit Core | `apps/labkit_core/figure_studio/+figure_studio/version.m` |
-| `labkit_ChronoOverlay_app` | `1.3.5` | Electrochem | `apps/electrochem/chrono_overlay/+chrono_overlay/version.m` |
-| `labkit_CIC_app` | `1.3.8` | Electrochem | `apps/electrochem/cic/+cic/version.m` |
-| `labkit_CSC_app` | `1.3.9` | Electrochem | `apps/electrochem/csc/+csc/version.m` |
-| `labkit_EIS_app` | `1.3.4` | Electrochem | `apps/electrochem/eis/+eis/version.m` |
-| `labkit_VTResistance_app` | `1.3.8` | Electrochem | `apps/electrochem/vt_resistance/+vt_resistance/version.m` |
-| `labkit_DICPreprocess_app` | `1.3.7` | DIC | `apps/dic/dic_preprocess/+dic_preprocess/version.m` |
-| `labkit_DICPostprocess_app` | `1.3.6` | DIC | `apps/dic/dic_postprocess/+dic_postprocess/version.m` |
-| `labkit_BatchImageCrop_app` | `1.6.8` | Image Measurement | `apps/image_measurement/batch_crop/+batch_crop/version.m` |
-| `labkit_CurvatureMeasurement_app` | `1.3.5` | Image Measurement | `apps/image_measurement/curvature/+curvature/version.m` |
-| `labkit_FLIRThermal_app` | `1.2.9` | Image Measurement | `apps/image_measurement/flir_thermal/+flir_thermal/version.m` |
-| `labkit_FocusStack_app` | `1.4.9` | Image Measurement | `apps/image_measurement/focus_stack/+focus_stack/version.m` |
-| `labkit_ImageEnhance_app` | `1.5.8` | Image Measurement | `apps/image_measurement/image_enhance/+image_enhance/version.m` |
-| `labkit_ImageMatch_app` | `1.5.8` | Image Measurement | `apps/image_measurement/image_match/+image_match/version.m` |
-| `labkit_RHSPreview_app` | `1.3.4` | Neurophysiology | `apps/neurophysiology/rhs_preview/+rhs_preview/version.m` |
-| `labkit_NerveResponseAnalysis_app` | `1.3.4` | Neurophysiology | `apps/neurophysiology/nerve_response_analysis/+nerve_response_analysis/version.m` |
-| `labkit_ResponseReviewStats_app` | `1.3.4` | Neurophysiology | `apps/neurophysiology/response_review_stats/+response_review_stats/version.m` |
-| `labkit_ECGPrint_app` | `1.3.5` | Wearable | `apps/wearable/ecg_print/+ecg_print/version.m` |
+#### Decision and rationale
 
-## Version History
+Use stable, status-free records with a small parseable metadata header and
+required explanatory sections. Git branches, PRs, tags, and evidence identify
+delivery state without duplicating it in the changelog.
 
-### 2026-07-13 - Base-MATLAB image compatibility
+#### Changes
 
-Affected versions:
+- Added schema-v1 metadata for Change ID, date, type, compatibility, component
+  version transitions, and unversioned repository scopes.
+- Added a base-MATLAB parser and release guardrail for schema integrity.
+- Normalized every historical entry into the same schema-v1 record contract.
+
+#### User and data impact
+
+Users and maintainers can search one durable ID and obtain the reason, impact,
+compatibility, validation, and evidence for a change without reconstructing it
+from commit messages. No scientific data or runtime behavior changes.
+
+#### Compatibility and migration
+
+Existing links to `CHANGELOG.md` remain valid. Automation that searched the old
+`Unreleased` or `Version History` headings must use the parser and stable
+Change IDs.
+
+#### Validation
+
+`ChangelogGuardrailTest` parses every schema-v1 record and checks current
+version lookup coverage and release-policy documentation.
+
+#### Evidence
+
+The parser lives at `tools/release/parseLabKitChangelog.m`; the normalized
+historical baseline was checked against the dated mainline log and release tags.
+
+#### Known limitations and follow-up
+
+Some older records do not name exact test commands because that evidence was
+not recorded at the time; they state that limitation instead of inventing it.
+
+### Single-click DIC rigid point matching
+
+```labkit-change
+schema: 1
+id: LK-20260713-dic-rigid-point-editor
+date: 2026-07-13
+type: feat
+compatibility: additive
+component: `labkit.ui` | `5.0.4 -> 5.1.0`
+component: `labkit_DICPreprocess_app` | `1.3.6 -> 1.4.0`
+```
+
+#### Context
+
+DIC manual rigid matching had draggable points but maintained a separate
+pointer implementation and required a less consistent placement workflow than
+the ROI-center anchors used by Imager Reconstruction.
+
+#### Decision and rationale
+
+Extend the existing app-neutral anchor editor with a discrete point mode, then
+keep moving/fixed pair order, numbering, minimum pair count, and rigid-fit
+policy inside DIC.
+
+#### Changes
+
+- Added `mode="points"`: one blank click appends a point, dragging refines it,
+  no connecting curve is drawn, and deletion remains under explicit controls.
+- Migrated the DIC modal to two shared point-mode editors while preserving
+  ordered moving/fixed pairs, labels, undo, cancel, and acceptance rules.
+- Retained toolbox-free image display and rigid alignment behavior.
+
+#### User and data impact
+
+Feature placement now follows the same direct click-and-drag model as Imager
+ROI anchors. Point coordinates and the resulting rigid transform keep their
+existing N-by-2 pixel-coordinate contract.
+
+#### Compatibility and migration
+
+The default anchor-editor curve mode is unchanged. DIC exports and transform
+math are unchanged; this is an additive interaction improvement.
+
+#### Validation
+
+UI anchor-editor tests cover discrete point append and no-path behavior. The
+DIC GUI workflow covers toolbox-free modal cancellation and app launch wiring.
+
+#### Evidence
+
+Primary sources are `labkit.ui.interaction.anchorEditor` and
+`dic_preprocess.userInterface.selectRigidPointPairs`; branch checkpoint
+`392a073e` carries the implementation before the final squash merge.
+
+#### Known limitations and follow-up
+
+Automated hidden-GUI tests cannot judge pointing ergonomics; final interaction
+feel still requires a short manual placement-and-drag check.
+
+### MATLAB-compatible image conversion API
+
+```labkit-change
+schema: 1
+id: LK-20260713-matlab-compatible-image-conversion
+date: 2026-07-13
+type: refactor
+compatibility: breaking
+component: `labkit.image` | `1.2.0 -> 2.0.0`
+component: `labkit_DICPostprocess_app` | `1.3.5 -> 1.3.6`
+component: `labkit_BatchImageCrop_app` | `1.6.7 -> 1.6.8`
+component: `labkit_CurvatureMeasurement_app` | `1.3.4 -> 1.3.5`
+component: `labkit_FocusStack_app` | `1.4.8 -> 1.4.9`
+component: `labkit_ImageEnhance_app` | `1.5.7 -> 1.5.8`
+component: `labkit_ImageMatch_app` | `1.5.7 -> 1.5.8`
+```
+
+#### Context
+
+The `toDouble`, `toLuma`, and `toRgbDouble` names combined class conversion,
+channel shaping, and clipping in ways that differed from familiar MATLAB APIs.
+
+#### Decision and rationale
+
+Use MATLAB-compatible names and call contracts for replacement functions, and
+keep orthogonal RGB shaping explicit so users do not need to learn a composite
+LabKit normalization rule.
+
+#### Changes
+
+- Added base-MATLAB `labkit.image.im2double` and `labkit.image.rgb2gray`.
+- Kept channel shaping in `ensureRgb` and made clipping explicit at call sites.
+- Removed the ambiguous conversion helpers and centralized Rec.601 ownership.
+
+#### User and data impact
+
+Base-MATLAB users receive familiar image conversion behavior without hidden
+toolbox requirements. Existing app image results retain their intended ranges
+and channel shapes through explicit pipelines.
+
+#### Compatibility and migration
+
+This is a breaking facade rename. External callers replace removed helper names
+with `im2double`, `rgb2gray`, and `ensureRgb` as separately needed.
+
+#### Validation
+
+Image facade, downstream app, toolbox-shadow, and base-MATLAB ownership tests
+cover class conversion, luma values, and representative workflows.
+
+#### Evidence
+
+The API contracts are documented in `docs/image.md`; branch checkpoint
+`e3f71c2d` carries the migration before the final squash merge.
+
+#### Known limitations and follow-up
+
+The compatibility layer intentionally covers the LabKit-used MATLAB contracts,
+not every Image Processing Toolbox function.
+
+### Traceable FLIR temperature calibration
+
+```labkit-change
+schema: 1
+id: LK-20260713-flir-calibration-provenance
+date: 2026-07-13
+type: feat
+compatibility: additive
+component: `labkit.thermal` | `1.0.0 -> 1.1.0`
+component: `labkit_FLIRThermal_app` | `1.2.8 -> 1.3.0`
+```
+
+#### Context
+
+A successful Celsius conversion did not reveal whether emissivity and
+environmental values came from the file or from model defaults, which could
+make an absolute temperature appear more certain than its metadata justified.
+
+#### Decision and rationale
+
+Preserve conversion provenance with the thermal record and show fallback use
+in the app, rather than silently treating every parameter as measured.
+
+#### Changes
+
+- Added optional conversion diagnostics with correction mode, defaulted fields,
+  parameter sources, and fallback status.
+- Stored diagnostics in thermal record metadata and surfaced warnings in FLIR
+  file status and details.
+- Documented embedded calibration requirements and environmental fallbacks.
+
+#### User and data impact
+
+Users can distinguish radiometric values based entirely on embedded metadata
+from values affected by fallback assumptions before interpreting temperatures.
+
+#### Compatibility and migration
+
+Existing one-output conversion calls remain valid. The diagnostics output and
+record metadata are additive; app workflows need no migration.
+
+#### Validation
+
+Thermal facade and FLIR app tests cover metadata sources, fallback reporting,
+and one-output compatibility.
+
+#### Evidence
+
+The model and provenance contract are documented in `docs/thermal.md`; branch
+checkpoint `7391e293` carries the implementation before the final squash merge.
+
+#### Known limitations and follow-up
+
+Diagnostics describe source and fallback use; they do not estimate a physical
+uncertainty interval for a particular camera, surface, or environment.
+
+### Consistent electrochemistry batch analysis
+
+```labkit-change
+schema: 1
+id: LK-20260713-electrochem-batch-consistency
+date: 2026-07-13
+type: fix
+compatibility: additive
+component: `labkit_CIC_app` | `1.3.7 -> 1.3.8`
+component: `labkit_VTResistance_app` | `1.3.7 -> 1.3.8`
+```
+
+#### Context
+
+CIC and VT Resistance could retain per-file derived values from different
+control settings, and CIC could sample outside the recorded time range while
+displaying a delay without units.
+
+#### Decision and rationale
+
+Treat analysis controls as one batch contract and recompute every file before
+display/export so rows cannot silently mix stale and current parameters.
+
+#### Changes
+
+- Recompute all loaded files when shared controls change and once more before
+  CSV export.
+- Label CIC delay in microseconds, reject out-of-range sampling, and export the
+  area and delay used for each result.
+- Added family regression coverage and audited sibling electrochem apps.
+
+#### User and data impact
+
+Batch rows now represent one consistent area, delay, pulse-detection,
+resistance-window, and voltage-mode configuration. Invalid delay choices fail
+instead of extrapolating a misleading value.
+
+#### Compatibility and migration
+
+CIC CSV adds trailing `Area_cm2` and `Delay_us` columns. Existing columns keep
+their names and order; VT Resistance exports remain schema-compatible.
+
+#### Validation
+
+Electrochem unit and GUI tests cover batch recomputation, display units,
+out-of-range handling, and export-time refresh.
+
+#### Evidence
+
+The guarded calculations and export builders are app-owned; branch checkpoint
+`67ea2286` carries the fix before the final squash merge.
+
+#### Known limitations and follow-up
+
+The fix enforces internal batch consistency but does not choose scientifically
+appropriate area, delay, or resistance windows for the user.
+
+### Managed scientific and conversion constants
+
+```labkit-change
+schema: 1
+id: LK-20260713-managed-calculation-constants
+date: 2026-07-13
+type: refactor
+compatibility: compatible
+component: `labkit.dta` | `2.0.0 -> 2.0.1`
+component: `labkit.rhs` | `1.0.0 -> 1.0.1`
+component: `labkit.biosignal` | `1.0.0 -> 1.0.1`
+component: `labkit_ChronoOverlay_app` | `1.3.5 -> 1.3.6`
+component: `labkit_CSC_app` | `1.3.9 -> 1.3.10`
+component: `labkit_NerveResponseAnalysis_app` | `1.3.4 -> 1.3.5`
+component: `labkit_ResponseReviewStats_app` | `1.3.4 -> 1.3.5`
+```
+
+#### Context
+
+Scientific coefficients, device-format gains, unit conversions, and numeric
+tolerances were sometimes left as unexplained literals or repeated across
+callers, making origin and change impact difficult to audit.
+
+#### Decision and rationale
+
+Give each semantic calculation constant one named owner and a nearby source or
+purpose comment, while exempting ordinary indices and explicit UI geometry
+that do not encode scientific meaning.
+
+#### Changes
+
+- Named and documented Rec.601, sRGB/CIE, DTA/RHS gains, SI conversions,
+  tolerances, and empirical policies across facades and apps.
+- Centralized repeated CSC charge-density, CIC display-unit, and curvature
+  tolerance contracts.
+- Added repository-wide magic-number and rectangle-interaction guardrails.
+
+#### User and data impact
+
+Calculation results are preserved, but future changes now expose the constant's
+meaning and provenance instead of silently editing an unexplained literal.
+
+#### Compatibility and migration
+
+No user migration is required. Public function call contracts and output
+schemas are unchanged by this record.
+
+#### Validation
+
+`MagicNumberGovernanceTest`, rectangle governance, facade tests, and affected
+app tests cover centralized ownership and preserved numeric behavior.
+
+#### Evidence
+
+Source comments use the `Constant:` marker and guardrail diagnostics name the
+unmanaged file and line. Branch checkpoint `125338c0` carries the governance
+work before the final squash merge.
+
+#### Known limitations and follow-up
+
+The scanner targets semantically suspicious precision and notation; review is
+still required for simple integers or short decimals whose meaning is hidden.
+
+### Traceable and base-MATLAB CI validation
+
+```labkit-change
+schema: 1
+id: LK-20260713-traceable-base-matlab-ci
+date: 2026-07-13
+type: ci
+compatibility: compatible
+scope: GitHub Actions and MATLAB validation routing
+```
+
+#### Context
+
+CI failures and stalls could end without enough information to identify the
+active test, and ordinary success on a toolbox-rich development machine did
+not prove that base-MATLAB users could run representative workflows.
+
+#### Decision and rationale
+
+Make the existing official runner publish progress and active-test state, and
+add a distinct compatibility gate that combines static calls, product
+ownership, and toolbox-shadowed behavior.
+
+#### Changes
+
+- Added per-test progress, heartbeat, active-test, timeout-summary, and artifact
+  publication behavior to CI.
+- Added `buildtool baseMatlab` and representative toolbox-shadow workflows.
+- Improved changed-file routing to target direct consumers while retaining
+  explicit owners such as the launcher GUI suite.
+
+#### User and data impact
+
+Base-MATLAB compatibility is now an explicit supported path, and failed or
+stalled CI runs provide enough state to identify the last active test. Runtime
+scientific outputs are not changed by this record.
+
+#### Compatibility and migration
+
+Existing build tasks remain available. Maintainers can add `baseMatlab` to
+local validation without installing or uninstalling toolboxes.
+
+#### Validation
+
+CI policy, build-task framework, changed-routing, toolbox dependency, and
+representative workflow tests guard the new behavior.
+
+#### Evidence
+
+The command matrix is in `docs/testing.md`; CI uploads official runner logs and
+active-test artifacts. Branch checkpoints `28ff8edb`, `37bd7fd5`, and
+`2c9b8792` carry the implementation before the final squash merge.
+
+#### Known limitations and follow-up
+
+Shadow tests cover known dependency risks and cannot simulate every licensed
+toolbox combination; MATLAB product-ownership analysis remains the broad check.
+
+### Base-MATLAB image compatibility
+
+```labkit-change
+schema: 1
+id: LK-20260713-base-matlab-image-compatibility
+date: 2026-07-13
+type: feat
+compatibility: compatible
+component: `labkit.image` | `1.1.0 -> 1.2.0`
+component: `labkit_DICPreprocess_app` | `1.3.5 -> 1.3.6`
+component: `labkit_DICPostprocess_app` | `1.3.4 -> 1.3.5`
+component: `labkit_FocusStack_app` | `1.4.7 -> 1.4.8`
+component: `labkit_ImageEnhance_app` | `1.5.6 -> 1.5.7`
+component: `labkit_ImageMatch_app` | `1.5.6 -> 1.5.7`
+```
+
+#### Context
+
+- CI now protects the base-MATLAB user path instead of passing only on
+  machines that happen to have Image Processing Toolbox installed.
+
+#### Decision and rationale
+
+Treat this as one coherent evolution record because the listed versions and
+evidence changed together to address the stated user or maintainer need.
+
+#### Changes
+
 - `labkit.image` `1.1.0 -> 1.2.0`
 - `labkit_DICPreprocess_app` `1.3.5 -> 1.3.6`
 - `labkit_DICPostprocess_app` `1.3.4 -> 1.3.5`
@@ -177,7 +488,6 @@ Affected versions:
 - `labkit_ImageEnhance_app` `1.5.6 -> 1.5.7`
 - `labkit_ImageMatch_app` `1.5.6 -> 1.5.7`
 
-What changed:
 - Added `labkit.image.toDouble` and `labkit.image.toLuma`, and replaced hard
   Image Processing Toolbox calls in shared image facade code and image-app
   workflow paths with base-MATLAB implementations.
@@ -191,48 +501,115 @@ What changed:
   helper calls under `apps/` and `+labkit/`, while still allowing explicit
   optional toolbox paths with fallbacks.
 
-Why it matters:
+#### User and data impact
+
 - CI now protects the base-MATLAB user path instead of passing only on
   machines that happen to have Image Processing Toolbox installed.
 
-Compatibility:
+#### Compatibility and migration
+
 - Existing app workflows and exported schemas are preserved. Optional toolbox
   acceleration paths remain allowed only when a base-MATLAB fallback is present.
 
-Evidence:
-- Mainline commit recorded by this change.
+#### Validation
 
-### 2026-07-09 - Preview-area per-axis wheel zoom
+Historical test commands were not recorded consistently. The carrying
+mainline commits and release tags below are the authoritative evidence;
+current guardrails protect the surviving contracts.
 
-Affected versions:
+#### Evidence
+
+- Mainline commit `bcd5f51f`.
+
+#### Known limitations and follow-up
+
+This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+
+### Preview-area per-axis wheel zoom
+
+```labkit-change
+schema: 1
+id: LK-20260709-preview-area-per-axis-wheel-zoom
+date: 2026-07-09
+type: feat
+compatibility: compatible
+component: `labkit.ui` | `5.0.3 -> 5.0.4`
+```
+
+#### Context
+
+- App-owned side panels such as color scales and histograms can remain compact
+  and stable without disabling useful wheel interaction.
+
+#### Decision and rationale
+
+Treat this as one coherent evolution record because the listed versions and
+evidence changed together to address the stated user or maintainer need.
+
+#### Changes
+
 - `labkit.ui` `5.0.3 -> 5.0.4`
 
-What changed:
 - Added a `scrollZoomAxes` preview-area layout option so apps can declare
   whether each preview axis should mouse-wheel zoom in `xy`, `x`, or `y`.
 - Preview-area side axes can now remain horizontally stable while still
   allowing app-selected vertical wheel zoom.
 
-Why it matters:
+#### User and data impact
+
 - App-owned side panels such as color scales and histograms can remain compact
   and stable without disabling useful wheel interaction.
 
-Compatibility:
+#### Compatibility and migration
+
 - Existing preview areas keep default `xy` wheel zoom unless they opt into
   another per-axis setting.
 
-Evidence:
+#### Validation
+
+Historical test commands were not recorded consistently. The carrying
+mainline commits and release tags below are the authoritative evidence;
+current guardrails protect the surviving contracts.
+
+#### Evidence
+
 - Mainline commit `3c143eb`.
 
-### 2026-07-09 - Default LabKit close protection
+#### Known limitations and follow-up
 
-Affected versions:
+This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+
+### Default LabKit close protection
+
+```labkit-change
+schema: 1
+id: LK-20260709-default-labkit-close-protection
+date: 2026-07-09
+type: fix
+compatibility: compatible
+component: `labkit.ui` | `5.0.2 -> 5.0.3`
+component: `labkit_FocusStack_app` | `1.4.6 -> 1.4.7`
+component: `labkit_ImageEnhance_app` | `1.5.5 -> 1.5.6`
+component: `labkit_ImageMatch_app` | `1.5.5 -> 1.5.6`
+```
+
+#### Context
+
+- Public and private apps get a baseline close-safety prompt from the framework,
+  without app-owned dirty-state close logic.
+
+#### Decision and rationale
+
+Treat this as one coherent evolution record because the listed versions and
+evidence changed together to address the stated user or maintainer need.
+
+#### Changes
+
 - `labkit.ui` `5.0.2 -> 5.0.3`
 - `labkit_FocusStack_app` `1.4.6 -> 1.4.7`
 - `labkit_ImageEnhance_app` `1.5.5 -> 1.5.6`
 - `labkit_ImageMatch_app` `1.5.5 -> 1.5.6`
 
-What changed:
 - LabKit runtime figures now show an in-window confirmation prompt before any
   framework-owned app window closes, even when the app has not marked itself
   dirty.
@@ -241,25 +618,57 @@ What changed:
 - Repeating or holding the app close shortcut while the in-window prompt is
   active confirms the close.
 
-Why it matters:
+#### User and data impact
+
 - Public and private apps get a baseline close-safety prompt from the framework,
   without app-owned dirty-state close logic.
 
-Compatibility:
+#### Compatibility and migration
+
 - Closing LabKit apps now requires one confirmation step by default. App code
   that calls `labkit.ui.runtime.setCloseGuard` must remove that call; close
   confirmation is framework-owned.
 
-Evidence:
+#### Validation
+
+Historical test commands were not recorded consistently. The carrying
+mainline commits and release tags below are the authoritative evidence;
+current guardrails protect the surviving contracts.
+
+#### Evidence
+
 - Mainline commit `0c9f472`.
 
-### 2026-07-09 - Multi-app launcher packages
+#### Known limitations and follow-up
 
-Affected versions:
+This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+
+### Multi-app launcher packages
+
+```labkit-change
+schema: 1
+id: LK-20260709-multi-app-launcher-packages
+date: 2026-07-09
+type: feat
+compatibility: compatible
+component: `labkit_launcher` | `1.2.7 -> 1.3.0`
+```
+
+#### Context
+
+- Related LabKit apps can be distributed together without shipping unrelated
+  apps or manually combining separate packages.
+
+#### Decision and rationale
+
+Treat this as one coherent evolution record because the listed versions and
+evidence changed together to address the stated user or maintainer need.
+
+#### Changes
+
 - `labkit_launcher` `1.2.7 -> 1.3.0`
 - Project deployment tooling, multi-app bundle support.
 
-What changed:
 - Added an independent `Package` checkbox column to the launcher app table so
   users can choose multiple apps without changing the row selected for Open or
   Debug.
@@ -268,23 +677,56 @@ What changed:
 - Kept single-app package names, result fields, and manifest schema compatible
   when only one app is supplied to `packageLabKitApp`.
 
-Why it matters:
+#### User and data impact
+
 - Related LabKit apps can be distributed together without shipping unrelated
   apps or manually combining separate packages.
 
-Compatibility:
+#### Compatibility and migration
+
 - Existing direct calls that package one app continue to produce the original
   single-app package contract.
 
-Evidence:
+#### Validation
+
+Historical test commands were not recorded consistently. The carrying
+mainline commits and release tags below are the authoritative evidence;
+current guardrails protect the surviving contracts.
+
+#### Evidence
+
 - Mainline commit `8a23a52`.
 
-### 2026-07-08 - Runtime-only P-code app packages
+#### Known limitations and follow-up
 
-Affected versions:
+This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+
+### Runtime-only P-code app packages
+
+```labkit-change
+schema: 1
+id: LK-20260708-runtime-only-p-code-app-packages
+date: 2026-07-08
+type: refactor
+compatibility: compatible
+scope: historical project evolution
+```
+
+#### Context
+
+- P-code distributions no longer expose or depend on launcher behavior that is
+  source-checkout oriented, including launcher version/date metadata and
+  follow-on packaging actions.
+
+#### Decision and rationale
+
+Treat this as one coherent evolution record because the listed versions and
+evidence changed together to address the stated user or maintainer need.
+
+#### Changes
+
 - Project deployment tooling, no component version change.
 
-What changed:
 - `Package P-code` now creates a runtime-only single-app package instead of
   shipping a P-coded LabKit launcher and launcher maintenance tools.
 - P-code package manifests and README instructions point users to the direct
@@ -292,25 +734,58 @@ What changed:
 - P-code packaging no longer requires `labkit_launcher.m` or `labkit_launcher.p`
   to exist in the package root being used as the runtime source.
 
-Why it matters:
+#### User and data impact
+
 - P-code distributions no longer expose or depend on launcher behavior that is
   source-checkout oriented, including launcher version/date metadata and
   follow-on packaging actions.
 
-Compatibility:
+#### Compatibility and migration
+
 - Users of P-code packages should run `run_<app_command>` from the unzipped
   package instead of `labkit_launcher`. Source packages still include and
   support the launcher.
 
-Evidence:
+#### Validation
+
+Historical test commands were not recorded consistently. The carrying
+mainline commits and release tags below are the authoritative evidence;
+current guardrails protect the surviving contracts.
+
+#### Evidence
+
 - Mainline commit `75f63f1`.
 
-### 2026-07-08 - Release validation gate and GUI CI hardening
+#### Known limitations and follow-up
 
-Affected versions:
+This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+
+### Release validation gate and GUI CI hardening
+
+```labkit-change
+schema: 1
+id: LK-20260708-release-validation-gate-and-gui-ci-hardening
+date: 2026-07-08
+type: ci
+compatibility: compatible
+scope: historical project evolution
+```
+
+#### Context
+
+- Maintainers get a concrete pre-publication release signal that covers all
+  supported automated test projects, and GUI CI should fail on contract drift
+  rather than platform layout rounding.
+
+#### Decision and rationale
+
+Treat this as one coherent evolution record because the listed versions and
+evidence changed together to address the stated user or maintainer need.
+
+#### Changes
+
 - Project validation workflow, no component version change.
 
-What changed:
 - Release candidate tags now run the full MATLAB test workflow gate before
   publication: headless tests, coverage, GUI tests, and a release summary gate.
 - GUI layout tests now assert structural grid contracts instead of
@@ -318,20 +793,69 @@ What changed:
 - Shared GUI test idle waiting allows slower CI display backends more time to
   finish registered UI work.
 
-Why it matters:
+#### User and data impact
+
 - Maintainers get a concrete pre-publication release signal that covers all
   supported automated test projects, and GUI CI should fail on contract drift
   rather than platform layout rounding.
 
-Compatibility:
+#### Compatibility and migration
+
 - No known manual migration.
 
-Evidence:
+#### Validation
+
+Historical test commands were not recorded consistently. The carrying
+mainline commits and release tags below are the authoritative evidence;
+current guardrails protect the surviving contracts.
+
+#### Evidence
+
 - Mainline commit `f359518`.
 
-### 2026-07-07 - Debug workflows, launcher tools, and changelog governance
+#### Known limitations and follow-up
 
-Affected versions:
+This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+
+### Debug workflows, launcher tools, and changelog governance
+
+```labkit-change
+schema: 1
+id: LK-20260707-debug-workflows-launcher-tools-and-changelog-governance
+date: 2026-07-07
+type: feat
+compatibility: compatible
+component: `labkit_launcher` | `1.2.4 -> 1.2.7`
+component: `labkit.ui` | `5.0.1 -> 5.0.2`
+component: `labkit_FigureStudio_app` | `0.1.4 -> 0.1.5`
+component: `labkit_DICPreprocess_app` | `1.3.4 -> 1.3.5`
+component: `labkit_BatchImageCrop_app` | `1.6.6 -> 1.6.7`
+component: `labkit_FocusStack_app` | `1.4.5 -> 1.4.6`
+```
+
+#### Context
+
+- The debug sample workflows can be exercised without false crash reports or
+  disabled-looking app paths when the required user action is folder loading,
+  ROI anchor completion, or crop-center confirmation.
+- Code Analyzer cleanup can be reviewed from an interactive local HTML report
+  without making the launcher own a growing maintenance workflow.
+- A single lab workflow can be distributed into a fixed production or offline
+  deployment step without shipping unrelated apps, tests, docs, or repository
+  metadata.
+- Developers can keep private LabKit apps next to a public checkout, use the
+  ordinary launcher to open them, and push that workspace to a separate private
+  repository.
+- Maintainers and agents can understand project direction from the changelog
+  without reconstructing intent from raw git history.
+
+#### Decision and rationale
+
+Treat this as one coherent evolution record because the listed versions and
+evidence changed together to address the stated user or maintainer need.
+
+#### Changes
+
 - Release tag `v3.1.0`
 - `labkit_launcher` `1.2.4 -> 1.2.7`
 - `labkit.ui` `5.0.1 -> 5.0.2`
@@ -340,7 +864,6 @@ Affected versions:
 - `labkit_BatchImageCrop_app` `1.6.6 -> 1.6.7`
 - `labkit_FocusStack_app` `1.4.5 -> 1.4.6`
 
-What changed:
 - DIC Preprocess ROI mask export now reads the live ROI editor anchors when
   building a mask, so preview/save do not misreport a drawn ROI as empty when
   editor state is newer than the app state snapshot.
@@ -366,7 +889,8 @@ What changed:
   reader-facing evolution entries, with release tags and commits kept as
   anchors and evidence rather than the primary structure.
 
-Why it matters:
+#### User and data impact
+
 - The debug sample workflows can be exercised without false crash reports or
   disabled-looking app paths when the required user action is folder loading,
   ROI anchor completion, or crop-center confirmation.
@@ -381,7 +905,8 @@ Why it matters:
 - Maintainers and agents can understand project direction from the changelog
   without reconstructing intent from raw git history.
 
-Compatibility:
+#### Compatibility and migration
+
 - DIC ROI editing still uses double-click to add anchors; no interaction-mode
   migration is required.
 - Existing file-panel image selection remains available in Focus Stack.
@@ -392,19 +917,75 @@ Compatibility:
   require MATLAB to run the generated `.p` files.
 - Public apps, public releases, and public CI remain scoped to `apps/`.
 
-Direction:
+#### Validation
+
+Historical test commands were not recorded consistently. The carrying
+mainline commits and release tags below are the authoritative evidence;
+current guardrails protect the surviving contracts.
+
+#### Evidence
+
+- PR #34 squash merge and release tag `v3.1.0`.
+
+#### Known limitations and follow-up
+
 - Keep debug fixes moving into shared callback and editor contracts when the
   failure pattern is reusable, but keep app-specific workflow decisions in the
   owning app.
 - Keep changelog entries organized around evolution themes and release lines,
   not raw tag rows or issue lists.
 
-Evidence:
-- PR #34 squash merge and release tag `v3.1.0`.
+### UI 5 facade redesign, app migration, and plot refresh
 
-### 2026-07-06 - UI 5 facade redesign, app migration, and plot refresh
+```labkit-change
+schema: 1
+id: LK-20260706-ui-5-facade-redesign-app-migration-and-plot-refresh
+date: 2026-07-06
+type: refactor
+compatibility: breaking
+component: `labkit_launcher` | `1.2.3 -> 1.2.4`
+component: `labkit.ui` | `4.2.0 -> 5.0.0`
+component: `labkit_FigureStudio_app` | `0.1.0 -> 0.1.4`
+component: `labkit_ChronoOverlay_app` | `1.3.3 -> 1.3.5`
+component: `labkit_CIC_app` | `1.3.5 -> 1.3.7`
+component: `labkit_CSC_app` | `1.3.7 -> 1.3.9`
+component: `labkit_EIS_app` | `1.3.3 -> 1.3.4`
+component: `labkit_VTResistance_app` | `1.3.5 -> 1.3.7`
+component: `labkit_DICPreprocess_app` | `1.3.3 -> 1.3.4`
+component: `labkit_DICPostprocess_app` | `1.3.3 -> 1.3.4`
+component: `labkit_BatchImageCrop_app` | `1.6.5 -> 1.6.6`
+component: `labkit_CurvatureMeasurement_app` | `1.3.3 -> 1.3.4`
+component: `labkit_FLIRThermal_app` | `1.2.7 -> 1.2.8`
+component: `labkit_FocusStack_app` | `1.4.4 -> 1.4.5`
+component: `labkit_ImageEnhance_app` | `1.5.4 -> 1.5.5`
+component: `labkit_ImageMatch_app` | `1.5.4 -> 1.5.5`
+component: `labkit_RHSPreview_app` | `1.3.3 -> 1.3.4`
+component: `labkit_NerveResponseAnalysis_app` | `1.3.3 -> 1.3.4`
+component: `labkit_ResponseReviewStats_app` | `1.3.3 -> 1.3.4`
+component: `labkit_ECGPrint_app` | `1.3.4 -> 1.3.5`
+```
 
-Affected versions:
+#### Context
+
+- App authors now use a smaller set of responsibility-named UI packages instead
+  of learning old mixed app/spec/view/tool/diag buckets.
+- Shared plot-area mechanics live in the framework, so app code can focus on
+  domain plotting while the framework handles stale axes state, fitted ranges,
+  empty previews, coordinate offsets, and registered preview utilities.
+- Electrochem apps now match the active file selection after add/remove/clear
+  workflows, and CIC keeps the critical Emc/Ema readout visible on dense plots.
+- Users can distinguish long launcher work from a frozen MATLAB session.
+- Multi-plot apps expose utility actions in a clearer, less repetitive flow.
+- Figure cleanup and data/script export move into a dedicated reusable workflow
+  instead of crowding every popout plot window.
+
+#### Decision and rationale
+
+Treat this as one coherent evolution record because the listed versions and
+evidence changed together to address the stated user or maintainer need.
+
+#### Changes
+
 - `labkit_launcher` `1.2.3 -> 1.2.4`
 - `labkit.ui` `4.2.0 -> 5.0.0`
 - `labkit_FigureStudio_app` `0.1.0 -> 0.1.4`
@@ -426,7 +1007,6 @@ Affected versions:
 - `labkit_ResponseReviewStats_app` `1.3.3 -> 1.3.4`
 - `labkit_ECGPrint_app` `1.3.4 -> 1.3.5`
 
-What changed:
 - Reorganized the UI facade into `labkit.ui.runtime`, `layout`, `control`,
   `plot`, `interaction`, and `debug` so app authors can find lifecycle,
   data-only layout, control update, plot-area, pointer/tooling, and diagnostic
@@ -470,7 +1050,8 @@ What changed:
   axes use the framework-owned preview grid policy instead of app-owned
   row/column layout code.
 
-Why it matters:
+#### User and data impact
+
 - App authors now use a smaller set of responsibility-named UI packages instead
   of learning old mixed app/spec/view/tool/diag buckets.
 - Shared plot-area mechanics live in the framework, so app code can focus on
@@ -483,499 +1064,1477 @@ Why it matters:
 - Figure cleanup and data/script export move into a dedicated reusable workflow
   instead of crowding every popout plot window.
 
-Compatibility:
+#### Compatibility and migration
+
 - Breaking UI facade migration: app code must use the UI 5 package paths and
   require `labkit.ui >=5 <6`.
 
-Evidence:
+#### Validation
+
+Historical test commands were not recorded consistently. The carrying
+mainline commits and release tags below are the authoritative evidence;
+current guardrails protect the surviving contracts.
+
+#### Evidence
+
 - Main UI 5 squash commit.
 
-### 2026-07-04 - UI utility snapshots and popout tools
+#### Known limitations and follow-up
 
-Affected versions:
+This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+
+### UI utility snapshots and popout tools
+
+```labkit-change
+schema: 1
+id: LK-20260704-ui-utility-snapshots-and-popout-tools
+date: 2026-07-04
+type: feat
+compatibility: compatible
+component: `labkit.ui` | `4.1.0 -> 4.2.0`
+```
+
+#### Context
+
+- Users can preserve UI state and move plot outputs out of the GUI with less
+  manual work.
+
+#### Decision and rationale
+
+Treat this as one coherent evolution record because the listed versions and
+evidence changed together to address the stated user or maintainer need.
+
+#### Changes
+
 - `labkit.ui` `4.1.0 -> 4.2.0`
 
-What changed:
 - Added UI state snapshot save/load APIs.
 - Added workbench utility controls.
 - Improved axes popout export and copy tools.
 
-Why it matters:
+#### User and data impact
+
 - Users can preserve UI state and move plot outputs out of the GUI with less
   manual work.
 
-Evidence:
+#### Compatibility and migration
+
+No manual migration was recorded for this historical change.
+
+#### Validation
+
+Historical test commands were not recorded consistently. The carrying
+mainline commits and release tags below are the authoritative evidence;
+current guardrails protect the surviving contracts.
+
+#### Evidence
+
 - Main commit `0155cd12`.
 
-### 2026-07-03 - FLIR display tuning
+#### Known limitations and follow-up
 
-Affected versions:
-- `labkit_FLIRThermal_app` `1.2.4 -> 1.2.7`
-- `labkit_CSC_app` `1.3.6 -> 1.3.7`
+This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
 
-What changed:
-- Refined CSC CV export.
-- Added FLIR gamma color mapping and made gamma adjustable.
+### FLIR display tuning
 
-Why it matters:
+```labkit-change
+schema: 1
+id: LK-20260703-flir-display-tuning
+date: 2026-07-03
+type: feat
+compatibility: compatible
+component: `labkit_FLIRThermal_app` | `1.2.4 -> 1.2.7`
+component: `labkit_CSC_app` | `1.3.6 -> 1.3.7`
+```
+
+#### Context
+
 - CSC exports became clearer for downstream analysis, and FLIR display tuning
   no longer requires code edits.
 
-Evidence:
+#### Decision and rationale
+
+Treat this as one coherent evolution record because the listed versions and
+evidence changed together to address the stated user or maintainer need.
+
+#### Changes
+
+- `labkit_FLIRThermal_app` `1.2.4 -> 1.2.7`
+- `labkit_CSC_app` `1.3.6 -> 1.3.7`
+
+- Refined CSC CV export.
+- Added FLIR gamma color mapping and made gamma adjustable.
+
+#### User and data impact
+
+- CSC exports became clearer for downstream analysis, and FLIR display tuning
+  no longer requires code edits.
+
+#### Compatibility and migration
+
+No manual migration was recorded for this historical change.
+
+#### Validation
+
+Historical test commands were not recorded consistently. The carrying
+mainline commits and release tags below are the authoritative evidence;
+current guardrails protect the surviving contracts.
+
+#### Evidence
+
 - Main commits `ee5b8f79`, `65dbf5ae`, and `f076561e`.
 
-### 2026-07-03 - CSC export and viewport policy
+#### Known limitations and follow-up
 
-Affected versions:
-- `labkit.ui` `4.0.0 -> 4.1.0`
-- All supported apps received aligned patch bumps.
+This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
 
-What changed:
-- Added CSC all-cycle export.
-- Added viewport policy support and aligned app contracts with the UI 4.x line.
+### CSC export and viewport policy
 
-Why it matters:
+```labkit-change
+schema: 1
+id: LK-20260703-csc-export-and-viewport-policy
+date: 2026-07-03
+type: feat
+compatibility: compatible
+component: `labkit.ui` | `4.0.0 -> 4.1.0`
+```
+
+#### Context
+
 - Users can export more complete CSC cycle data, and app layouts share the same
   viewport assumptions.
 
-Evidence:
+#### Decision and rationale
+
+Treat this as one coherent evolution record because the listed versions and
+evidence changed together to address the stated user or maintainer need.
+
+#### Changes
+
+- `labkit.ui` `4.0.0 -> 4.1.0`
+- All supported apps received aligned patch bumps.
+
+- Added CSC all-cycle export.
+- Added viewport policy support and aligned app contracts with the UI 4.x line.
+
+#### User and data impact
+
+- Users can export more complete CSC cycle data, and app layouts share the same
+  viewport assumptions.
+
+#### Compatibility and migration
+
+No manual migration was recorded for this historical change.
+
+#### Validation
+
+Historical test commands were not recorded consistently. The carrying
+mainline commits and release tags below are the authoritative evidence;
+current guardrails protect the surviving contracts.
+
+#### Evidence
+
 - Main commit `a69829c6`.
 
-### 2026-07-03 - UI groups migration
+#### Known limitations and follow-up
 
-Affected versions:
-- `labkit.ui` `3.4.5 -> 4.0.0`
-- All supported apps received patch bumps.
+This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
 
-What changed:
-- Replaced action groups with UI groups.
-- Moved the reusable UI contract into the 4.x line.
+### UI groups migration
 
-Why it matters:
+```labkit-change
+schema: 1
+id: LK-20260703-ui-groups-migration
+date: 2026-07-03
+type: refactor
+compatibility: compatible
+component: `labkit.ui` | `3.4.5 -> 4.0.0`
+```
+
+#### Context
+
 - This is the point where app action layout became a grouped UI contract instead
   of a looser action-list convention.
 
-Compatibility:
+#### Decision and rationale
+
+Treat this as one coherent evolution record because the listed versions and
+evidence changed together to address the stated user or maintainer need.
+
+#### Changes
+
+- `labkit.ui` `3.4.5 -> 4.0.0`
+- All supported apps received patch bumps.
+
+- Replaced action groups with UI groups.
+- Moved the reusable UI contract into the 4.x line.
+
+#### User and data impact
+
+- This is the point where app action layout became a grouped UI contract instead
+  of a looser action-list convention.
+
+#### Compatibility and migration
+
 - App workflow definitions had to align with the new grouped UI contract.
 
-Evidence:
+#### Validation
+
+Historical test commands were not recorded consistently. The carrying
+mainline commits and release tags below are the authoritative evidence;
+current guardrails protect the surviving contracts.
+
+#### Evidence
+
 - Main commit `e81243a3`.
 
-### 2026-07-03 - App file-selection and electrochem control fixes
+#### Known limitations and follow-up
 
-Affected versions:
+This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+
+### App file-selection and electrochem control fixes
+
+```labkit-change
+schema: 1
+id: LK-20260703-app-file-selection-and-electrochem-control-fixes
+date: 2026-07-03
+type: fix
+compatibility: compatible
+scope: historical project evolution
+```
+
+#### Context
+
+- Multi-file workflows stopped losing appended selections, and electrochem app
+  controls became less misleading.
+
+#### Decision and rationale
+
+Treat this as one coherent evolution record because the listed versions and
+evidence changed together to address the stated user or maintainer need.
+
+#### Changes
+
 - CIC, CSC, VT Resistance, Batch Crop, FLIR Thermal, Focus Stack, Image Enhance,
   and Image Match patch bumped for appended file selections.
 - CIC, CSC, and VT Resistance patch bumped again for manual plot-control
   removal.
 
-What changed:
 - Preserved appended file selections.
 - Removed electrochem manual plot controls that no longer matched the workflow.
 
-Why it matters:
+#### User and data impact
+
 - Multi-file workflows stopped losing appended selections, and electrochem app
   controls became less misleading.
 
-Evidence:
+#### Compatibility and migration
+
+No manual migration was recorded for this historical change.
+
+#### Validation
+
+Historical test commands were not recorded consistently. The carrying
+mainline commits and release tags below are the authoritative evidence;
+current guardrails protect the surviving contracts.
+
+#### Evidence
+
 - Main commits `6348185e` and `674d5d4b`.
 
-### 2026-07-03 - Declarative app runtime
+#### Known limitations and follow-up
 
-Affected versions:
-- `labkit.ui` `3.4.4 -> 3.4.5`
-- All supported apps received patch bumps.
+This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
 
-What changed:
-- Migrated apps to declarative workflow runtime.
+### Declarative app runtime
 
-Why it matters:
+```labkit-change
+schema: 1
+id: LK-20260703-declarative-app-runtime
+date: 2026-07-03
+type: refactor
+compatibility: compatible
+component: `labkit.ui` | `3.4.4 -> 3.4.5`
+```
+
+#### Context
+
 - Maintainers can reason about app wiring through workflow definitions instead
   of hand-following callback construction.
 
-Evidence:
+#### Decision and rationale
+
+Treat this as one coherent evolution record because the listed versions and
+evidence changed together to address the stated user or maintainer need.
+
+#### Changes
+
+- `labkit.ui` `3.4.4 -> 3.4.5`
+- All supported apps received patch bumps.
+
+- Migrated apps to declarative workflow runtime.
+
+#### User and data impact
+
+- Maintainers can reason about app wiring through workflow definitions instead
+  of hand-following callback construction.
+
+#### Compatibility and migration
+
+No manual migration was recorded for this historical change.
+
+#### Validation
+
+Historical test commands were not recorded consistently. The carrying
+mainline commits and release tags below are the authoritative evidence;
+current guardrails protect the surviving contracts.
+
+#### Evidence
+
 - Main commit `568b3e9b`.
 
-### 2026-07-02 - Startup responsiveness
+#### Known limitations and follow-up
 
-Affected versions:
-- `labkit_launcher` `1.2.2 -> 1.2.3`
-- `labkit.ui` `3.4.2 -> 3.4.4`
+This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
 
-What changed:
-- Painted launcher and app windows earlier.
-- Deferred launcher app discovery and lazy preview scroll setup.
+### Startup responsiveness
 
-Why it matters:
+```labkit-change
+schema: 1
+id: LK-20260702-startup-responsiveness
+date: 2026-07-02
+type: perf
+compatibility: compatible
+component: `labkit_launcher` | `1.2.2 -> 1.2.3`
+component: `labkit.ui` | `3.4.2 -> 3.4.4`
+```
+
+#### Context
+
 - Users see responsive windows sooner instead of waiting on discovery and setup
   work before the GUI appears.
 
-Evidence:
+#### Decision and rationale
+
+Treat this as one coherent evolution record because the listed versions and
+evidence changed together to address the stated user or maintainer need.
+
+#### Changes
+
+- `labkit_launcher` `1.2.2 -> 1.2.3`
+- `labkit.ui` `3.4.2 -> 3.4.4`
+
+- Painted launcher and app windows earlier.
+- Deferred launcher app discovery and lazy preview scroll setup.
+
+#### User and data impact
+
+- Users see responsive windows sooner instead of waiting on discovery and setup
+  work before the GUI appears.
+
+#### Compatibility and migration
+
+No manual migration was recorded for this historical change.
+
+#### Validation
+
+Historical test commands were not recorded consistently. The carrying
+mainline commits and release tags below are the authoritative evidence;
+current guardrails protect the surviving contracts.
+
+#### Evidence
+
 - Main commit `7d4ef11e`.
 
-### 2026-07-02 - Profiling and validation speedups
+#### Known limitations and follow-up
 
-Affected versions:
+This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+
+### Profiling and validation speedups
+
+```labkit-change
+schema: 1
+id: LK-20260702-profiling-and-validation-speedups
+date: 2026-07-02
+type: ci
+compatibility: compatible
+component: `labkit_launcher` | `1.2.0 -> 1.2.2`
+component: `labkit.ui` | `3.4.0 -> 3.4.2`
+component: `labkit_BatchImageCrop_app` | `1.6.0 -> 1.6.1`
+component: `labkit_ECGPrint_app` | `1.3.0 -> 1.3.1`
+```
+
+#### Context
+
+- Maintainers get faster diagnosis and faster validation without changing app
+  behavior.
+
+#### Decision and rationale
+
+Treat this as one coherent evolution record because the listed versions and
+evidence changed together to address the stated user or maintainer need.
+
+#### Changes
+
 - `labkit_launcher` `1.2.0 -> 1.2.2`
 - `labkit.ui` `3.4.0 -> 3.4.2`
 - `labkit_BatchImageCrop_app` `1.6.0 -> 1.6.1`
 - `labkit_ECGPrint_app` `1.3.0 -> 1.3.1`
 
-What changed:
 - Added LabKit profiling and build-managed test routing to the launcher.
 - Reduced GUI profiling overhead and deferred Batch Crop image reads until
   preview/export.
 - Compressed validation runtime with bounded GUI waits.
 
-Why it matters:
+#### User and data impact
+
 - Maintainers get faster diagnosis and faster validation without changing app
   behavior.
 
-Evidence:
+#### Compatibility and migration
+
+No manual migration was recorded for this historical change.
+
+#### Validation
+
+Historical test commands were not recorded consistently. The carrying
+mainline commits and release tags below are the authoritative evidence;
+current guardrails protect the surviving contracts.
+
+#### Evidence
+
 - Main commits `c07dfc0a`, `74025fee`, `eadcca82`, `25912c54`, and `fcfc36d8`.
 
-### 2026-07-01 - Launcher code-analysis export
+#### Known limitations and follow-up
 
-Affected versions:
-- `labkit_launcher` `1.1.6 -> 1.2.0`
+This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
 
-What changed:
-- Exported launcher Code Analyzer issues natively.
+### Launcher code-analysis export
 
-Why it matters:
+```labkit-change
+schema: 1
+id: LK-20260701-launcher-code-analysis-export
+date: 2026-07-01
+type: feat
+compatibility: compatible
+component: `labkit_launcher` | `1.1.6 -> 1.2.0`
+```
+
+#### Context
+
 - Maintainers can inspect launcher code issues through the workbench tooling
   without a separate manual MATLAB setup.
 
-Evidence:
+#### Decision and rationale
+
+Treat this as one coherent evolution record because the listed versions and
+evidence changed together to address the stated user or maintainer need.
+
+#### Changes
+
+- `labkit_launcher` `1.1.6 -> 1.2.0`
+
+- Exported launcher Code Analyzer issues natively.
+
+#### User and data impact
+
+- Maintainers can inspect launcher code issues through the workbench tooling
+  without a separate manual MATLAB setup.
+
+#### Compatibility and migration
+
+No manual migration was recorded for this historical change.
+
+#### Validation
+
+Historical test commands were not recorded consistently. The carrying
+mainline commits and release tags below are the authoritative evidence;
+current guardrails protect the surviving contracts.
+
+#### Evidence
+
 - Main commit `8fd3ddff`.
 
-### 2026-07-01 - Debug sample packs
+#### Known limitations and follow-up
 
-Affected versions:
+This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+
+### Debug sample packs
+
+```labkit-change
+schema: 1
+id: LK-20260701-debug-sample-packs
+date: 2026-07-01
+type: feat
+compatibility: compatible
+component: `labkit.ui` | `3.3.1 -> 3.4.0`
+```
+
+#### Context
+
+- Reproducing app failures became a maintained workflow instead of an ad hoc
+  collection of local files.
+
+#### Decision and rationale
+
+Treat this as one coherent evolution record because the listed versions and
+evidence changed together to address the stated user or maintainer need.
+
+#### Changes
+
 - `labkit.ui` `3.3.1 -> 3.4.0`
 - All supported apps moved into the `1.3.x`, `1.4.x`, `1.5.x`, or `1.6.x`
   debug-sample-pack lines.
 
-What changed:
 - Added app-owned debug sample packs.
 - Added debug artifact sample and output folders.
 
-Why it matters:
+#### User and data impact
+
 - Reproducing app failures became a maintained workflow instead of an ad hoc
   collection of local files.
 
-Evidence:
+#### Compatibility and migration
+
+No manual migration was recorded for this historical change.
+
+#### Validation
+
+Historical test commands were not recorded consistently. The carrying
+mainline commits and release tags below are the authoritative evidence;
+current guardrails protect the surviving contracts.
+
+#### Evidence
+
 - Main commit `279befbc`.
 
-### 2026-07-01 - Image app workflow improvements
+#### Known limitations and follow-up
 
-Affected versions:
+This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+
+### Image app workflow improvements
+
+```labkit-change
+schema: 1
+id: LK-20260701-image-app-workflow-improvements
+date: 2026-07-01
+type: feat
+compatibility: compatible
+component: `labkit.image` | `1.0.0 -> 1.1.0`
+component: `labkit.ui` | `3.2.10 -> 3.3.1`
+component: `labkit_launcher` | `1.1.5 -> 1.1.6`
+```
+
+#### Context
+
+- Large image workflows became more predictable and less likely to spend time on
+  unnecessary preview work.
+
+#### Decision and rationale
+
+Treat this as one coherent evolution record because the listed versions and
+evidence changed together to address the stated user or maintainer need.
+
+#### Changes
+
 - `labkit.image` `1.0.0 -> 1.1.0`
 - `labkit.ui` `3.2.10 -> 3.3.1`
 - Batch Crop `1.4.0 -> 1.5.1`
 - FLIR Thermal `1.0.0 -> 1.1.2`
 - `labkit_launcher` `1.1.5 -> 1.1.6`
 
-What changed:
 - Added preview-budget helpers.
 - Improved image app range and preview controls.
 - Improved image measurement workflows.
 
-Why it matters:
+#### User and data impact
+
 - Large image workflows became more predictable and less likely to spend time on
   unnecessary preview work.
 
-Evidence:
+#### Compatibility and migration
+
+No manual migration was recorded for this historical change.
+
+#### Validation
+
+Historical test commands were not recorded consistently. The carrying
+mainline commits and release tags below are the authoritative evidence;
+current guardrails protect the surviving contracts.
+
+#### Evidence
+
 - Main commits `15a798ba` and `70bfcfd4`.
 
-### 2026-07-01 - Thermal facade and FLIR app
+#### Known limitations and follow-up
 
-Affected versions:
+This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+
+### Thermal facade and FLIR app
+
+```labkit-change
+schema: 1
+id: LK-20260701-thermal-facade-and-flir-app
+date: 2026-07-01
+type: feat
+compatibility: compatible
+component: `labkit.ui` | `3.2.9 -> 3.2.10`
+```
+
+#### Context
+
+- Thermal image parsing and rendering became a reusable LabKit contract instead
+  of app-local logic.
+
+#### Decision and rationale
+
+Treat this as one coherent evolution record because the listed versions and
+evidence changed together to address the stated user or maintainer need.
+
+#### Changes
+
 - `labkit.thermal` `1.0.0`
 - `labkit.ui` `3.2.9 -> 3.2.10`
 - `labkit_FLIRThermal_app` `1.0.0`
 
-What changed:
 - Added the thermal facade.
 - Added the FLIR Thermal Postprocess app.
 
-Why it matters:
+#### User and data impact
+
 - Thermal image parsing and rendering became a reusable LabKit contract instead
   of app-local logic.
 
-Evidence:
+#### Compatibility and migration
+
+No manual migration was recorded for this historical change.
+
+#### Validation
+
+Historical test commands were not recorded consistently. The carrying
+mainline commits and release tags below are the authoritative evidence;
+current guardrails protect the surviving contracts.
+
+#### Evidence
+
 - Main commit `977c9457`.
 
-### 2026-07-01 - Launcher update reliability
+#### Known limitations and follow-up
 
-Affected versions:
+This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+
+### Launcher update reliability
+
+```labkit-change
+schema: 1
+id: LK-20260701-launcher-update-reliability
+date: 2026-07-01
+type: fix
+compatibility: compatible
+component: `labkit_launcher` | `1.1.3 -> 1.1.5`
+```
+
+#### Context
+
+- Updating the self-contained launcher became less fragile.
+
+#### Decision and rationale
+
+Treat this as one coherent evolution record because the listed versions and
+evidence changed together to address the stated user or maintainer need.
+
+#### Changes
+
 - `labkit_launcher` `1.1.3 -> 1.1.5`
 
-What changed:
 - Sped up launcher zip updates.
 - Simplified launcher zip replacement.
 
-Why it matters:
+#### User and data impact
+
 - Updating the self-contained launcher became less fragile.
 
-Evidence:
+#### Compatibility and migration
+
+No manual migration was recorded for this historical change.
+
+#### Validation
+
+Historical test commands were not recorded consistently. The carrying
+mainline commits and release tags below are the authoritative evidence;
+current guardrails protect the surviving contracts.
+
+#### Evidence
+
 - Main commits `ebf86cf2` and `becf9391`.
 
-### 2026-06-30 - Shared image facade
+#### Known limitations and follow-up
 
-Affected versions:
+This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+
+### Shared image facade
+
+```labkit-change
+schema: 1
+id: LK-20260630-shared-image-facade
+date: 2026-06-30
+type: feat
+compatibility: compatible
+scope: historical project evolution
+```
+
+#### Context
+
+- Image app behavior became more consistent, and reusable image IO stopped
+  living inside individual GUI workflows.
+
+#### Decision and rationale
+
+Treat this as one coherent evolution record because the listed versions and
+evidence changed together to address the stated user or maintainer need.
+
+#### Changes
+
 - `labkit.image` `1.0.0`
 - Batch Crop, Curvature, Focus Stack, Image Enhance, and Image Match advanced
   within their image-facade adoption lines.
 
-What changed:
 - Added a GUI-free image facade for file input, display normalization, basic
   processing, and preview support.
 - Adopted that facade across image-measurement apps.
 
-Why it matters:
+#### User and data impact
+
 - Image app behavior became more consistent, and reusable image IO stopped
   living inside individual GUI workflows.
 
-Evidence:
+#### Compatibility and migration
+
+No manual migration was recorded for this historical change.
+
+#### Validation
+
+Historical test commands were not recorded consistently. The carrying
+mainline commits and release tags below are the authoritative evidence;
+current guardrails protect the surviving contracts.
+
+#### Evidence
+
 - Main commit `7023e87e`.
 
-### 2026-06-30 - Migration helper cleanup
+#### Known limitations and follow-up
 
-Affected versions:
+This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+
+### Migration helper cleanup
+
+```labkit-change
+schema: 1
+id: LK-20260630-migration-helper-cleanup
+date: 2026-06-30
+type: refactor
+compatibility: compatible
+scope: historical project evolution
+```
+
+#### Context
+
+- Maintainers no longer need to route through temporary migration helpers to
+  understand these workflows.
+
+#### Decision and rationale
+
+Treat this as one coherent evolution record because the listed versions and
+evidence changed together to address the stated user or maintainer need.
+
+#### Changes
+
 - DIC Post, Batch Crop, and RHS Preview patch bumped.
 
-What changed:
 - Retired migration helper debt.
 - Consolidated RHS preview window bounds, Batch Crop scale state, and Image
   Enhance export helpers.
 
-Why it matters:
+#### User and data impact
+
 - Maintainers no longer need to route through temporary migration helpers to
   understand these workflows.
 
-Evidence:
+#### Compatibility and migration
+
+No manual migration was recorded for this historical change.
+
+#### Validation
+
+Historical test commands were not recorded consistently. The carrying
+mainline commits and release tags below are the authoritative evidence;
+current guardrails protect the surviving contracts.
+
+#### Evidence
+
 - Main commits `7f73b71b`, `e3349af6`, `733fb951`, `98a2b02c`, and `391540a7`.
 
-### 2026-06-30 - App alerts through UI facade
+#### Known limitations and follow-up
 
-Affected versions:
+This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+
+### App alerts through UI facade
+
+```labkit-change
+schema: 1
+id: LK-20260630-app-alerts-through-ui-facade
+date: 2026-06-30
+type: feat
+compatibility: compatible
+component: `labkit.ui` | `3.2.7 -> 3.2.8`
+```
+
+#### Context
+
+- App error reporting became testable without each app inventing its own alert
+  mechanics.
+
+#### Decision and rationale
+
+Treat this as one coherent evolution record because the listed versions and
+evidence changed together to address the stated user or maintainer need.
+
+#### Changes
+
 - `labkit.ui` `3.2.7 -> 3.2.8`
 - DIC, electrochem, image-measurement, and ECG apps patch bumped where alert
   routing changed.
 
-What changed:
 - Routed app alerts through hidden-test-safe `labkit.ui.app.showAlert`.
 
-Why it matters:
+#### User and data impact
+
 - App error reporting became testable without each app inventing its own alert
   mechanics.
 
-Evidence:
+#### Compatibility and migration
+
+No manual migration was recorded for this historical change.
+
+#### Validation
+
+Historical test commands were not recorded consistently. The carrying
+mainline commits and release tags below are the authoritative evidence;
+current guardrails protect the surviving contracts.
+
+#### Evidence
+
 - Main commit `8d7c83b1`.
 
-### 2026-06-30 - Close guards and caught-exception diagnostics
+#### Known limitations and follow-up
 
-Affected versions:
+This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+
+### Close guards and caught-exception diagnostics
+
+```labkit-change
+schema: 1
+id: LK-20260630-close-guards-and-caught-exception-diagnostics
+date: 2026-06-30
+type: feat
+compatibility: compatible
+component: `labkit.ui` | `3.2.6 -> 3.2.7`
+```
+
+#### Context
+
+- Crashes and interrupted workflows leave better evidence for maintainers, and
+  users get safer close behavior around incomplete image workflows.
+
+#### Decision and rationale
+
+Treat this as one coherent evolution record because the listed versions and
+evidence changed together to address the stated user or maintainer need.
+
+#### Changes
+
 - `labkit.ui` `3.2.6 -> 3.2.7`
 - DIC, Batch Crop, Curvature, Focus Stack, Image Match, neurophysiology apps,
   and ECG Print patch bumped for diagnostics or close-guard work.
 
-What changed:
 - Reported caught app-runner exceptions through framework debug diagnostics.
 - Promoted file-entry index helpers.
 - Connected dirty/incomplete workflow state to close guards.
 
-Why it matters:
+#### User and data impact
+
 - Crashes and interrupted workflows leave better evidence for maintainers, and
   users get safer close behavior around incomplete image workflows.
 
-Evidence:
+#### Compatibility and migration
+
+No manual migration was recorded for this historical change.
+
+#### Validation
+
+Historical test commands were not recorded consistently. The carrying
+mainline commits and release tags below are the authoritative evidence;
+current guardrails protect the surviving contracts.
+
+#### Evidence
+
 - Main commits `c0028a81` and `a81853ef`.
 
-### 2026-06-30 - Output folder prompts
+#### Known limitations and follow-up
 
-Affected versions:
+This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+
+### Output folder prompts
+
+```labkit-change
+schema: 1
+id: LK-20260630-output-folder-prompts
+date: 2026-06-30
+type: feat
+compatibility: compatible
+component: `labkit.ui` | `3.2.5 -> 3.2.6`
+```
+
+#### Context
+
+- Apps gained consistent output-folder behavior without hard-coding dialog
+  mechanics into each workflow.
+
+#### Decision and rationale
+
+Treat this as one coherent evolution record because the listed versions and
+evidence changed together to address the stated user or maintainer need.
+
+#### Changes
+
 - `labkit.ui` `3.2.5 -> 3.2.6`
 - DIC apps, Batch Crop, Focus Stack, Image Enhance/Match, Nerve Response, and
   Response Review patch bumped.
 
-What changed:
 - Added `promptOutputFolder`.
 - Migrated output-folder prompts with chooser injection and safe defaults.
 
-Why it matters:
+#### User and data impact
+
 - Apps gained consistent output-folder behavior without hard-coding dialog
   mechanics into each workflow.
 
-Evidence:
+#### Compatibility and migration
+
+No manual migration was recorded for this historical change.
+
+#### Validation
+
+Historical test commands were not recorded consistently. The carrying
+mainline commits and release tags below are the authoritative evidence;
+current guardrails protect the surviving contracts.
+
+#### Evidence
+
 - Main commit `c5055b98`.
 
-### 2026-06-30 - File-panel layout stabilization
+#### Known limitations and follow-up
 
-Affected versions:
-- `labkit.ui` `3.2.3 -> 3.2.5`
+This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
 
-What changed:
-- Stabilized and compacted single file-panel layout.
+### File-panel layout stabilization
 
-Why it matters:
+```labkit-change
+schema: 1
+id: LK-20260630-file-panel-layout-stabilization
+date: 2026-06-30
+type: fix
+compatibility: compatible
+component: `labkit.ui` | `3.2.3 -> 3.2.5`
+```
+
+#### Context
+
 - File-heavy app workflows became easier to scan and less layout-fragile.
 
-Evidence:
+#### Decision and rationale
+
+Treat this as one coherent evolution record because the listed versions and
+evidence changed together to address the stated user or maintainer need.
+
+#### Changes
+
+- `labkit.ui` `3.2.3 -> 3.2.5`
+
+- Stabilized and compacted single file-panel layout.
+
+#### User and data impact
+
+- File-heavy app workflows became easier to scan and less layout-fragile.
+
+#### Compatibility and migration
+
+No manual migration was recorded for this historical change.
+
+#### Validation
+
+Historical test commands were not recorded consistently. The carrying
+mainline commits and release tags below are the authoritative evidence;
+current guardrails protect the surviving contracts.
+
+#### Evidence
+
 - Main commits `7f8df1cd` and `02b2f1b6`.
 
-### 2026-06-29 - Tool-panel hosts and image app fixes
+#### Known limitations and follow-up
 
-Affected versions:
+This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+
+### Tool-panel hosts and image app fixes
+
+```labkit-change
+schema: 1
+id: LK-20260629-tool-panel-hosts-and-image-app-fixes
+date: 2026-06-29
+type: fix
+compatibility: compatible
+component: `labkit.ui` | `3.2.0 -> 3.2.3`
+```
+
+#### Context
+
+- Reusable tools gained a real layout host, and image app reports/ROI controls
+  became less surprising.
+
+#### Decision and rationale
+
+Treat this as one coherent evolution record because the listed versions and
+evidence changed together to address the stated user or maintainer need.
+
+#### Changes
+
 - `labkit.ui` `3.2.0 -> 3.2.3`
 - Batch Crop, Curvature, Image Enhance, and Image Match patch bumped where
   layouts or image-app behavior changed.
 
-What changed:
 - Hardened file-panel entry normalization and deterministic ID regeneration.
 - Fixed output-size reporting and White ROI responsiveness.
 - Added semantic `toolPanel` hosts.
 
-Why it matters:
+#### User and data impact
+
 - Reusable tools gained a real layout host, and image app reports/ROI controls
   became less surprising.
 
-Evidence:
+#### Compatibility and migration
+
+No manual migration was recorded for this historical change.
+
+#### Validation
+
+Historical test commands were not recorded consistently. The carrying
+mainline commits and release tags below are the authoritative evidence;
+current guardrails protect the surviving contracts.
+
+#### Evidence
+
 - Main commits `f2189aef`, `77084fbe`, and `871739cd`.
 
-### 2026-06-29 - UI diagnostics and release v3.0.0
+#### Known limitations and follow-up
 
-Affected versions:
+This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+
+### UI diagnostics and release v3.0.0
+
+```labkit-change
+schema: 1
+id: LK-20260629-ui-diagnostics-and-release-v3-0-0
+date: 2026-06-29
+type: feat
+compatibility: compatible
+component: `labkit.ui` | `3.1.3 -> 3.2.0`
+component: `labkit_launcher` | `1.1.2 -> 1.1.3`
+```
+
+#### Context
+
+- Maintainers got better evidence when app callbacks failed, and users got a
+  clearer release line to roll back to.
+
+#### Decision and rationale
+
+Treat this as one coherent evolution record because the listed versions and
+evidence changed together to address the stated user or maintainer need.
+
+#### Changes
+
 - Release tag `v3.0.0`
 - `labkit.ui` `3.1.3 -> 3.2.0`
 - `labkit_launcher` `1.1.2 -> 1.1.3`
 
-What changed:
 - Improved UI diagnostics and validation documentation.
 - Published the v3.0.0 release line around UI diagnostics, validation docs, and
   duplicate CI avoidance.
 
-Why it matters:
+#### User and data impact
+
 - Maintainers got better evidence when app callbacks failed, and users got a
   clearer release line to roll back to.
 
-Evidence:
+#### Compatibility and migration
+
+No manual migration was recorded for this historical change.
+
+#### Validation
+
+Historical test commands were not recorded consistently. The carrying
+mainline commits and release tags below are the authoritative evidence;
+current guardrails protect the surviving contracts.
+
+#### Evidence
+
 - Main commits `21eff4dc` and release tag commit `349a7549`.
 
-### 2026-06-29 - Protected image enhancement workflows
+#### Known limitations and follow-up
 
-Affected versions:
-- Image Enhance `1.2.2 -> 1.3.0`
-- Image Match `1.2.1 -> 1.3.0`
+This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
 
-What changed:
-- Added protected image enhancement workflows.
+### Protected image enhancement workflows
 
-Why it matters:
+```labkit-change
+schema: 1
+id: LK-20260629-protected-image-enhancement-workflows
+date: 2026-06-29
+type: feat
+compatibility: compatible
+scope: historical project evolution
+```
+
+#### Context
+
 - The image enhancement apps gained a more deliberate workflow boundary before
   later image-facade adoption.
 
-Evidence:
+#### Decision and rationale
+
+Treat this as one coherent evolution record because the listed versions and
+evidence changed together to address the stated user or maintainer need.
+
+#### Changes
+
+- Image Enhance `1.2.2 -> 1.3.0`
+- Image Match `1.2.1 -> 1.3.0`
+
+- Added protected image enhancement workflows.
+
+#### User and data impact
+
+- The image enhancement apps gained a more deliberate workflow boundary before
+  later image-facade adoption.
+
+#### Compatibility and migration
+
+No manual migration was recorded for this historical change.
+
+#### Validation
+
+Historical test commands were not recorded consistently. The carrying
+mainline commits and release tags below are the authoritative evidence;
+current guardrails protect the surviving contracts.
+
+#### Evidence
+
 - Main commit `1768dd57`.
 
-### 2026-06-28 - App diagnostics and hardened UI workflows
+#### Known limitations and follow-up
 
-Affected versions:
+This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+
+### App diagnostics and hardened UI workflows
+
+```labkit-change
+schema: 1
+id: LK-20260628-app-diagnostics-and-hardened-ui-workflows
+date: 2026-06-28
+type: feat
+compatibility: compatible
+component: `labkit.ui` | `3.1.0 -> 3.1.3`
+```
+
+#### Context
+
+- Maintainers get structured failure evidence instead of relying on screenshots
+  or vague crash reports.
+
+#### Decision and rationale
+
+Treat this as one coherent evolution record because the listed versions and
+evidence changed together to address the stated user or maintainer need.
+
+#### Changes
+
 - `labkit.ui` `3.1.0 -> 3.1.3`
 - Batch Crop, Focus Stack, Image Enhance/Match, neurophysiology apps, and the
   launcher patch bumped where runtime behavior changed.
 
-What changed:
 - Hardened LabKit UI workflows.
 - Added crash reports, active-operation reports, caught-error reports, and stall
   diagnostics.
 
-Why it matters:
+#### User and data impact
+
 - Maintainers get structured failure evidence instead of relying on screenshots
   or vague crash reports.
 
-Evidence:
+#### Compatibility and migration
+
+No manual migration was recorded for this historical change.
+
+#### Validation
+
+Historical test commands were not recorded consistently. The carrying
+mainline commits and release tags below are the authoritative evidence;
+current guardrails protect the surviving contracts.
+
+#### Evidence
+
 - Main commits `e966457b` and `f5bc6f98`.
 
-### 2026-06-28 - Batch Crop file workflow feedback
+#### Known limitations and follow-up
 
-Affected versions:
+This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+
+### Batch Crop file workflow feedback
+
+```labkit-change
+schema: 1
+id: LK-20260628-batch-crop-file-workflow-feedback
+date: 2026-06-28
+type: feat
+compatibility: compatible
+component: `labkit.ui` | `3.0.1 -> 3.1.0`
+```
+
+#### Context
+
+- Users can see which selected file a preview or result belongs to.
+
+#### Decision and rationale
+
+Treat this as one coherent evolution record because the listed versions and
+evidence changed together to address the stated user or maintainer need.
+
+#### Changes
+
 - `labkit.ui` `3.0.1 -> 3.1.0`
 - Batch Crop `1.2.0 -> 1.3.0`
 
-What changed:
 - Added selected-file title context.
 - Improved Batch Crop file workflow feedback.
 
-Why it matters:
+#### User and data impact
+
 - Users can see which selected file a preview or result belongs to.
 
-Evidence:
+#### Compatibility and migration
+
+No manual migration was recorded for this historical change.
+
+#### Validation
+
+Historical test commands were not recorded consistently. The carrying
+mainline commits and release tags below are the authoritative evidence;
+current guardrails protect the surviving contracts.
+
+#### Evidence
+
 - Main commit `61e8edd3`.
 
-### 2026-06-25 to 2026-06-26 - Launcher manager and stale callback fix
+#### Known limitations and follow-up
 
-Affected versions:
-- `labkit_launcher` `1.0.0 -> 1.1.1`
-- `labkit.ui` `3.0.0 -> 3.0.1`
+This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
 
-What changed:
-- Added the launcher version manager and managed-manifest requirement.
-- Released stale image drag callbacks.
+### Launcher manager and stale callback fix
 
-Why it matters:
+```labkit-change
+schema: 1
+id: LK-20260626-launcher-manager-and-stale-callback-fix
+date: 2026-06-26
+type: fix
+compatibility: compatible
+component: `labkit_launcher` | `1.0.0 -> 1.1.1`
+component: `labkit.ui` | `3.0.0 -> 3.0.1`
+```
+
+#### Context
+
 - Users gained a deliberate path to choose recent releases, tags, or main
   commits, and image interactions stopped carrying stale callback state.
 
-Evidence:
+#### Decision and rationale
+
+Treat this as one coherent evolution record because the listed versions and
+evidence changed together to address the stated user or maintainer need.
+
+#### Changes
+
+- `labkit_launcher` `1.0.0 -> 1.1.1`
+- `labkit.ui` `3.0.0 -> 3.0.1`
+
+- Added the launcher version manager and managed-manifest requirement.
+- Released stale image drag callbacks.
+
+#### User and data impact
+
+- Users gained a deliberate path to choose recent releases, tags, or main
+  commits, and image interactions stopped carrying stale callback state.
+
+#### Compatibility and migration
+
+No manual migration was recorded for this historical change.
+
+#### Validation
+
+Historical test commands were not recorded consistently. The carrying
+mainline commits and release tags below are the authoritative evidence;
+current guardrails protect the surviving contracts.
+
+#### Evidence
+
 - Main commits `fe8654c9`, `ef89cf77`, and `3d23b7f1`.
 
-### 2026-06-24 - File-panel migration
+#### Known limitations and follow-up
 
-Affected versions:
+This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+
+### File-panel migration
+
+```labkit-change
+schema: 1
+id: LK-20260624-file-panel-migration
+date: 2026-06-24
+type: refactor
+compatibility: breaking
+component: `labkit.dta` | `1.0.0 -> 2.0.0`
+component: `labkit.ui` | `2.2.1 -> 3.0.0`
+```
+
+#### Context
+
+- File selection became a shared UI workflow instead of app-specific task-input
+  plumbing.
+
+#### Decision and rationale
+
+Treat this as one coherent evolution record because the listed versions and
+evidence changed together to address the stated user or maintainer need.
+
+#### Changes
+
 - `labkit.dta` `1.0.0 -> 2.0.0`
 - `labkit.ui` `2.2.1 -> 3.0.0`
 - All supported apps moved from `1.0.x` into the `1.2.0` workflow line.
 
-What changed:
 - Replaced task inputs with file panels.
 - Removed the old DTA session helper surface.
 
-Why it matters:
+#### User and data impact
+
 - File selection became a shared UI workflow instead of app-specific task-input
   plumbing.
 
-Compatibility:
+#### Compatibility and migration
+
 - This was a breaking workflow migration. Older app code expecting task inputs
   or the removed DTA session helpers needed migration.
 
-Evidence:
+#### Validation
+
+Historical test commands were not recorded consistently. The carrying
+mainline commits and release tags below are the authoritative evidence;
+current guardrails protect the surviving contracts.
+
+#### Evidence
+
 - Main commit `b145c904`.
 
-### 2026-06-23 - Version metadata baseline
+#### Known limitations and follow-up
 
-Affected versions:
+This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+
+### Version metadata baseline
+
+```labkit-change
+schema: 1
+id: LK-20260623-version-metadata-baseline
+date: 2026-06-23
+type: feat
+compatibility: compatible
+component: `labkit.ui` | `2.1.0 -> 2.2.0`
+```
+
+#### Context
+
+- This is the first point where app and launcher versions became first-class
+  user-facing metadata.
+
+#### Decision and rationale
+
+Treat this as one coherent evolution record because the listed versions and
+evidence changed together to address the stated user or maintainer need.
+
+#### Changes
+
 - Release tag `v2.4.0`
 - `labkit_launcher` `1.0.0`
 - All supported apps `1.0.0`
 - `labkit.ui` `2.1.0 -> 2.2.0`
 
-What changed:
 - Added app and launcher version metadata.
 - Added versioned titles, lightweight version requests, launcher catalog version
   display, and version guardrails.
 
-Why it matters:
+#### User and data impact
+
 - This is the first point where app and launcher versions became first-class
   user-facing metadata.
 
-Evidence:
+#### Compatibility and migration
+
+No manual migration was recorded for this historical change.
+
+#### Validation
+
+Historical test commands were not recorded consistently. The carrying
+mainline commits and release tags below are the authoritative evidence;
+current guardrails protect the surviving contracts.
+
+#### Evidence
+
 - Main commit `d70c2607`.
 
-### 2026-06-23 - Facade contract baseline and release validation hardening
+#### Known limitations and follow-up
 
-Affected versions:
+This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+
+### Facade contract baseline and release validation hardening
+
+```labkit-change
+schema: 1
+id: LK-20260623-facade-contract-baseline-and-release-validation-hardening
+date: 2026-06-23
+type: ci
+compatibility: compatible
+component: `labkit.ui` | `2.0.0 -> 2.2.1`
+```
+
+#### Context
+
+- Reusable facades gained explicit compatibility contracts before the later
+  app-version and launcher-version work.
+
+#### Decision and rationale
+
+Treat this as one coherent evolution record because the listed versions and
+evidence changed together to address the stated user or maintainer need.
+
+#### Changes
+
 - `labkit.biosignal` `1.0.0`
 - `labkit.dta` `1.0.0`
 - `labkit.rhs` `1.0.0`
@@ -983,25 +2542,59 @@ Affected versions:
 - DIC Pre/Post and Curvature `1.0.0 -> 1.0.1`
 - Release tags `v2.4.1` and `v2.4.2`
 
-What changed:
 - Added facade contract metadata and requirement checks.
 - Hardened app lifecycle and release validation contracts.
 - Routed MATLAB CI shards through build tasks.
 
-Why it matters:
+#### User and data impact
+
 - Reusable facades gained explicit compatibility contracts before the later
   app-version and launcher-version work.
 
-Evidence:
+#### Compatibility and migration
+
+No manual migration was recorded for this historical change.
+
+#### Validation
+
+Historical test commands were not recorded consistently. The carrying
+mainline commits and release tags below are the authoritative evidence;
+current guardrails protect the surviving contracts.
+
+#### Evidence
+
 - Main commits `a25b79f9`, `3673e548`, `49d9f41b`, and `7e39b558`.
 
-### Before component versions - 2026-05-28 to 2026-06-23
+#### Known limitations and follow-up
 
-Affected versions:
+This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+
+### Initial app workbench foundation
+
+```labkit-change
+schema: 1
+id: LK-20260528-initial-app-workbench-foundation
+date: 2026-05-28
+type: feat
+compatibility: compatible
+scope: historical project evolution
+```
+
+#### Context
+
+- This is the period where LabKit changed from loose scripts into an app
+  workbench with a small reusable foundation.
+
+#### Decision and rationale
+
+Treat this as one coherent evolution record because the listed versions and
+evidence changed together to address the stated user or maintainer need.
+
+#### Changes
+
 - Release tags `v1.0`, `v2.0`, legacy `2.1`, `v2.2.0`, `v2.3.0`, `v2.3.1`,
   `v2.3.2`, and `v2.3.3`.
 
-What changed:
 - Imported legacy MATLAB code and split it into app entry points.
 - Extracted DTA parsers, electrochem calculations, DIC workflows, image
   measurement workflows, biosignal support, and ECG workflows.
@@ -1010,44 +2603,62 @@ What changed:
   logging, launcher/project metadata, release updater support, and reproducible
   release-asset rules.
 
-Why it matters:
+#### User and data impact
+
 - This is the period where LabKit changed from loose scripts into an app
   workbench with a small reusable foundation.
 
-Compatibility:
+#### Compatibility and migration
+
 - Component/app version files did not exist yet, so this era is tracked by
   release tags, commit ranges, and workflow milestones rather than per-app
   version numbers.
 
-Evidence:
+#### Validation
+
+Historical test commands were not recorded consistently. The carrying
+mainline commits and release tags below are the authoritative evidence;
+current guardrails protect the surviving contracts.
+
+#### Evidence
+
 - Main history from `5973bde0` through `a7e7dfb1`.
 - Release tags: `v1.0`, `v2.0`, `2.1`, `v2.2.0`, `v2.3.0`, `v2.3.1`,
   `v2.3.2`, `v2.3.3`.
 
-## Maintenance Template
+#### Known limitations and follow-up
 
-Use this format for new versioned changes:
+This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
 
-```markdown
-### YYYY-MM-DD - Short user-facing title
+## Current Version Lookup
 
-Affected versions:
-- `component` `old -> new`
+Audited against working-tree metadata on 2026-07-13; version transitions use
+the `origin/main` merge-base values.
 
-What changed:
-- Plain-language change summary.
-
-Why it matters:
-- User or maintainer reason this version exists.
-
-Compatibility:
-- Migration or rollback note, when relevant.
-
-Evidence:
-- Main commit `sha`.
-```
-
-For branch work before the final mainline SHA is known, place the entry in
-`Unreleased` with PR or branch evidence. During release preparation or a
-changelog audit, move the finalized entry into `Version History` with the
-mainline commit SHA.
+| Component | Current version | Family | Metadata location |
+|---|---:|---|---|
+| `labkit_launcher` | `1.3.0` | Launcher | `labkit_launcher.m` |
+| `labkit.ui` | `5.1.0` | Facade | `+labkit/+ui/version.m` |
+| `labkit.dta` | `2.0.1` | Facade | `+labkit/+dta/version.m` |
+| `labkit.image` | `2.0.0` | Facade | `+labkit/+image/version.m` |
+| `labkit.thermal` | `1.1.0` | Facade | `+labkit/+thermal/version.m` |
+| `labkit.rhs` | `1.0.1` | Facade | `+labkit/+rhs/version.m` |
+| `labkit.biosignal` | `1.0.1` | Facade | `+labkit/+biosignal/version.m` |
+| `labkit_FigureStudio_app` | `0.1.5` | LabKit Core | `apps/labkit_core/figure_studio/+figure_studio/version.m` |
+| `labkit_ChronoOverlay_app` | `1.3.6` | Electrochem | `apps/electrochem/chrono_overlay/+chrono_overlay/version.m` |
+| `labkit_CIC_app` | `1.3.8` | Electrochem | `apps/electrochem/cic/+cic/version.m` |
+| `labkit_CSC_app` | `1.3.10` | Electrochem | `apps/electrochem/csc/+csc/version.m` |
+| `labkit_EIS_app` | `1.3.4` | Electrochem | `apps/electrochem/eis/+eis/version.m` |
+| `labkit_VTResistance_app` | `1.3.8` | Electrochem | `apps/electrochem/vt_resistance/+vt_resistance/version.m` |
+| `labkit_DICPreprocess_app` | `1.4.0` | DIC | `apps/dic/dic_preprocess/+dic_preprocess/version.m` |
+| `labkit_DICPostprocess_app` | `1.3.6` | DIC | `apps/dic/dic_postprocess/+dic_postprocess/version.m` |
+| `labkit_BatchImageCrop_app` | `1.6.8` | Image Measurement | `apps/image_measurement/batch_crop/+batch_crop/version.m` |
+| `labkit_CurvatureMeasurement_app` | `1.3.5` | Image Measurement | `apps/image_measurement/curvature/+curvature/version.m` |
+| `labkit_FLIRThermal_app` | `1.3.0` | Image Measurement | `apps/image_measurement/flir_thermal/+flir_thermal/version.m` |
+| `labkit_FocusStack_app` | `1.4.9` | Image Measurement | `apps/image_measurement/focus_stack/+focus_stack/version.m` |
+| `labkit_ImageEnhance_app` | `1.5.8` | Image Measurement | `apps/image_measurement/image_enhance/+image_enhance/version.m` |
+| `labkit_ImageMatch_app` | `1.5.8` | Image Measurement | `apps/image_measurement/image_match/+image_match/version.m` |
+| `labkit_RHSPreview_app` | `1.3.4` | Neurophysiology | `apps/neurophysiology/rhs_preview/+rhs_preview/version.m` |
+| `labkit_NerveResponseAnalysis_app` | `1.3.5` | Neurophysiology | `apps/neurophysiology/nerve_response_analysis/+nerve_response_analysis/version.m` |
+| `labkit_ResponseReviewStats_app` | `1.3.5` | Neurophysiology | `apps/neurophysiology/response_review_stats/+response_review_stats/version.m` |
+| `labkit_ECGPrint_app` | `1.3.5` | Wearable | `apps/wearable/ecg_print/+ecg_print/version.m` |

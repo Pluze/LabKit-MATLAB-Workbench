@@ -299,13 +299,14 @@ the same change with the affected versions, what changed, why it matters,
 compatibility notes when relevant, optional direction notes, and evidence.
 Organize entries by coherent user-facing or maintainer-facing evolution, not
 by raw tag rows, commit rows, or issue lists. Release tags are public anchors
-inside affected versions and evidence; commits are evidence. For branch or PR
-work before the final mainline SHA is known, stage the entry under
-`Unreleased`; for direct-main work with a decided version or any finalized
-entry, write it directly under `Version History`. During release preparation or
-changelog audit, move finalized entries out of `Unreleased`, remove stale
-pending drafts, and include the mainline commit SHA when it is known. Do not
-reduce changelog entries to raw commit-log dumps.
+inside affected versions and evidence; commits are evidence. Every entry uses
+the schema-v1 `labkit-change` metadata block and required narrative sections
+under `Structured Change Records`. Use one stable Change ID on branches and
+main; do not add delivery-status sections such as Unreleased or Pending.
+Branch evidence may name checkpoint commits or a PR, then a later audit may
+add the mainline SHA without moving the record. Validate the file with
+`tools/release/parseLabKitChangelog.m`. Do not reduce entries to raw commit-log
+dumps.
 
 For new releases, use `vX.Y.Z` tags, for example `v2.2.0`. Do not rename or
 delete already published historical tags only to normalize naming; preserve
