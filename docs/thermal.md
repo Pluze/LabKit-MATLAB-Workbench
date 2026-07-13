@@ -36,13 +36,36 @@ embedded FFF RawThermalImage record. `readFile` returns a struct with:
   `NaN` values when conversion is unavailable
 - `units`: `"C"` or `"raw"`
 - `metadata`: reader name, raw image type, byte-order normalization, embedded
-  calibration fields, and parsed FFF records
+  calibration fields, parsed FFF records, and `temperatureConversion`
+  diagnostics describing correction mode and parameter provenance
 - `message`: short conversion status text
 
 `rawToTemperatureC` supports `"environment"` correction, which uses emissivity,
 distance, reflected/atmospheric/window temperatures, humidity, transmission,
 and Planck constants when available. `"planck-basic"` applies only the embedded
 Planck constants.
+
+Call `rawToTemperatureC` with two outputs to inspect conversion provenance:
+
+```matlab
+[temperatureC, diagnostics] = labkit.thermal.rawToTemperatureC( ...
+    raw, calibration);
+```
+
+`diagnostics.usedDefaults` indicates that one or more environmental fields were
+missing or invalid, `defaultedFields` names them, and `parameterSources` maps
+each environmental field to `"calibration"` or `"default"`. Records returned
+by `readFile` expose the same struct as
+`record.metadata.temperatureConversion`. Planck constants are mandatory and
+never receive generic fallback values.
+
+Environment mode falls back to defined FLIR-model settings only when necessary,
+including emissivity `1`, object distance `1 m`, reflected and atmospheric
+temperature `20 C`, relative humidity `0.5`, and the standard atmospheric
+transmission coefficients. These values make conversion possible but do not
+establish measurement accuracy for the photographed material or environment.
+Apps should visibly warn users whenever defaults were used. The FLIR Thermal
+app shows that warning in both the file status and detail panel.
 
 `renderImage` is the reusable facade renderer for linear thermal palette
 mapping over a selected numeric range. App-level display modes such as log or

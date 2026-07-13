@@ -23,6 +23,12 @@ classdef ThermalFacadeTest < matlab.unittest.TestCase
             testCase.verifyEqual(records.metadata.rawByteOrder, "native");
             testCase.verifyEqual(records.metadata.calibration.ImageWidth, 3);
             testCase.verifyEqual(records.metadata.calibration.ImageHeight, 2);
+            conversion = records.metadata.temperatureConversion;
+            testCase.verifyTrue(conversion.available);
+            testCase.verifyFalse(conversion.usedDefaults);
+            testCase.verifyEmpty(conversion.defaultedFields);
+            testCase.verifyEqual(conversion.parameterSources.Emissivity, ...
+                "calibration");
             testCase.verifyEqual(records.units, "C");
             testCase.verifyTrue(all(isfinite(records.temperatureC), "all"));
             testCase.verifyEqual(size(records.temperatureC), size(fixture.raw));
@@ -89,14 +95,23 @@ classdef ThermalFacadeTest < matlab.unittest.TestCase
             cleanup = onCleanup(@() deleteIfExists(calibrationPath));
             calibration = writeSyntheticFlirRjpegFixture(calibrationPath).calibration;
 
-            basic = labkit.thermal.rawToTemperatureC(raw, calibration, ...
+            [basic, basicDiagnostics] = labkit.thermal.rawToTemperatureC(raw, calibration, ...
                 struct("Correction", "planck-basic"));
-            corrected = labkit.thermal.rawToTemperatureC(raw, calibration, ...
+            [corrected, correctedDiagnostics] = labkit.thermal.rawToTemperatureC(raw, calibration, ...
                 struct("Correction", "environment"));
+            incomplete = rmfield(calibration, "Emissivity");
+            [~, fallbackDiagnostics] = labkit.thermal.rawToTemperatureC( ...
+                raw, incomplete, struct("Correction", "environment"));
 
             testCase.verifyTrue(all(isfinite(basic), "all"));
             testCase.verifyTrue(all(isfinite(corrected), "all"));
             testCase.verifyEqual(size(basic), size(raw));
+            testCase.verifyFalse(basicDiagnostics.usedDefaults);
+            testCase.verifyFalse(correctedDiagnostics.usedDefaults);
+            testCase.verifyTrue(fallbackDiagnostics.usedDefaults);
+            testCase.verifyEqual(fallbackDiagnostics.defaultedFields, "Emissivity");
+            testCase.verifyEqual( ...
+                fallbackDiagnostics.parameterSources.Emissivity, "default");
             testCase.verifyError(@() labkit.thermal.rawToTemperatureC(raw, ...
                 rmfield(calibration, "PlanckR2")), ...
                 "labkit:thermal:MissingCalibration");

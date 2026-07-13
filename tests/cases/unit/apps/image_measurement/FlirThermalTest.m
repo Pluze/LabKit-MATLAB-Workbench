@@ -48,6 +48,8 @@ classdef FlirThermalTest < matlab.unittest.TestCase
             testCase.verifyTrue(any(strcmp(string(rows(:, 1)), "Range status")));
             testCase.verifyTrue(any(contains(string(details), "Current file: synthetic_flir.jpg")));
             testCase.verifyTrue(any(contains(string(details), "Range status: needs range")));
+            testCase.verifyTrue(any(contains(string(details), ...
+                "no correction defaults used")));
             testCase.verifyEqual(payload.results.status, "saved");
             testCase.verifyEqual(payload.results.colorMapping, "Gamma");
             testCase.verifyEqual(payload.results.gammaValue, 1.6, "AbsTol", 1e-12);
@@ -115,11 +117,34 @@ classdef FlirThermalTest < matlab.unittest.TestCase
             testCase.verifyEqual(units, "raw");
             testCase.verifyEqual(label, "Raw thermal signal");
             testCase.verifyTrue(any(contains(string(rows(:, 2)), "1 to 4 raw")));
-            testCase.verifyEqual(entries.status, "needs range");
+            testCase.verifyEqual(entries.status, ...
+                "needs range; temperature unavailable");
 
             item.rangeAdjusted = true;
             entries = flir_thermal.userInterface.filePanelEntries(item);
-            testCase.verifyEqual(entries.status, "range set");
+            testCase.verifyEqual(entries.status, ...
+                "range set; temperature unavailable");
+        end
+
+        function flirThermalWarnsWhenCorrectionUsesDefaults(testCase)
+            setupLabKitTestPath();
+            folder = tempname;
+            mkdir(folder);
+            cleanup = onCleanup(@() removeTempFolder(folder));
+            sourcePath = fullfile(folder, "defaulted_calibration.jpg");
+            writeSyntheticFlirRjpegFixture(sourcePath, struct("emissivity", 0));
+
+            items = flir_thermal.sourceFiles.readImages(sourcePath);
+            details = flir_thermal.userInterface.detailLines(items, 1, folder);
+            entries = flir_thermal.userInterface.filePanelEntries(items);
+
+            conversion = items.metadata.temperatureConversion;
+            testCase.verifyTrue(conversion.usedDefaults);
+            testCase.verifyTrue(any(conversion.defaultedFields == "Emissivity"));
+            testCase.verifyTrue(any(contains(string(details), ...
+                "Warning: default thermal correction parameters used: Emissivity")));
+            testCase.verifyEqual(entries.status, ...
+                "needs range; calibration defaults used");
         end
 
         function flirThermalRangeControlBoundsPresets(testCase)

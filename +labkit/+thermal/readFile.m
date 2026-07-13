@@ -20,7 +20,8 @@ function record = readFile(path, opts)
 % Outputs:
 %   record - struct with path, name, format, raw, temperatureC, units,
 %       metadata, and message fields. temperatureC is NaN when the file has raw
-%       data but lacks enough calibration constants.
+%       data but lacks enough calibration constants. metadata.temperatureConversion
+%       records correction mode, parameter sources, and any defaulted fields.
 
     if nargin < 2 || isempty(opts)
         opts = struct();
