@@ -297,6 +297,8 @@ agents. When a change bumps `labkit_launcher.m`, a `+labkit/**/version.m`
 facade, or an `apps/**/version.m` app metadata file, update `CHANGELOG.md` in
 the same change with the affected versions, what changed, why it matters,
 compatibility notes when relevant, optional direction notes, and evidence.
+When adding a newly versioned component, record its first version as an
+`introduced` event and preserve one continuous chain through current metadata.
 Organize entries by coherent user-facing or maintainer-facing evolution, not
 by raw tag rows, commit rows, or issue lists. Release tags are public anchors
 inside affected versions and evidence; commits are evidence. Every entry uses

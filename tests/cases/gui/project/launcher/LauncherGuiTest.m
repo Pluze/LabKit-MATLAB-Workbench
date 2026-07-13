@@ -28,6 +28,52 @@ classdef LauncherGuiTest < matlab.unittest.TestCase
                 'labkit_launcher list mode should discover app entry points.');
         end
 
+        function launcher_history_mode_returns_structured_app_records(testCase)
+            setupLabKitTestPath();
+
+            records = labkit_launcher("history", "labkit_DICPreprocess_app");
+
+            testCase.verifyNotEmpty(records);
+            testCase.verifyTrue(all(string({records.schema}) == "1"));
+            testCase.verifyTrue(any(string({records.id}) == ...
+                "LK-20260713-dic-rigid-point-editor"));
+            transitions = strings(1, 0);
+            for k = 1:numel(records)
+                components = records(k).components;
+                index = find(string({components.name}) == ...
+                    "labkit_DICPreprocess_app", 1);
+                if ~isempty(index)
+                    transitions(end + 1) = components(index).fromVersion + ...
+                        " -> " + components(index).toVersion;
+                end
+            end
+            testCase.verifyTrue(any(transitions == "1.3.6 -> 1.4.0"));
+        end
+
+        function launcher_opens_selected_app_version_history(testCase)
+            setupLabKitTestPath();
+            h = guiTestHelpers();
+            h.assertUifigureAvailable();
+            cleanup = onCleanup(@() h.closeAllFigures());
+
+            fig = labkit_launcher();
+            drawnow;
+            h.invokeButton(fig, 'Version History');
+            drawnow;
+
+            viewers = findall(groot, 'Type', 'figure', '-regexp', ...
+                'Name', 'Version History$');
+            testCase.verifyNotEmpty(viewers, ...
+                'Version History should open for the selected launcher app.');
+            tables = findall(viewers(1), 'Type', 'uitable');
+            textAreas = findall(viewers(1), 'Type', 'uitextarea');
+            testCase.verifyNotEmpty(tables);
+            testCase.verifyGreaterThan(size(tables(1).Data, 1), 0);
+            testCase.verifyTrue(any(contains(string(textAreas(1).Value), ...
+                'Change ID:')));
+            clear cleanup
+        end
+
         function launcher_list_mode_discovers_local_private_apps(testCase)
             root = setupLabKitTestPath();
 
@@ -251,7 +297,7 @@ classdef LauncherGuiTest < matlab.unittest.TestCase
             testCase.verifyEqual(string(fig.Name), ...
                 info.displayName + " v" + info.version + " (" + info.updated + ")");
             h.assertButtonContract(fig, {'Latest', 'Release', 'Versions', ...
-                'Refresh App List'});
+                'Refresh App List', 'Version History'});
             assertNoLauncherTabs(fig);
             assertInfoContains(fig, "Use GitHub Update to repair");
             clear cleanupFigures;
@@ -364,7 +410,8 @@ function verify_launcher_layout()
     assertLauncherTableDensity(fig);
     h.assertButtonContract(fig, {'Open Selected App', 'Open Debug', ...
         'Latest', 'Release', 'Versions', 'Run Code Analyzer', 'Profile Next App', ...
-        'Package Checked', 'Checked P-code', 'Clean Artifacts', 'Refresh App List'});
+        'Version History', 'Package Checked', 'Checked P-code', ...
+        'Clean Artifacts', 'Refresh App List'});
     assertUpdateButtonRow(fig);
     assertLauncherActionRows(fig);
     assertMaintenanceButtonRow(fig);
@@ -520,26 +567,27 @@ end
 
 function assertLauncherActionRows(fig)
     buttons = arrayfun(@(text) findLauncherButton(fig, text), ...
-        ["Refresh App List", "Open Selected App", "Open Debug", ...
+        ["Refresh App List", "Open Selected App", "Open Debug", "Version History", ...
         "Clean Artifacts", "Package Checked", "Checked P-code"]);
     controlsGrid = buttons(1).Parent;
     assert(isequal(controlsGrid, buttons(2).Parent) && ...
         isequal(controlsGrid, buttons(3).Parent) && ...
-        isequal(controlsGrid, buttons(4).Parent), ...
+        isequal(controlsGrid, buttons(4).Parent) && ...
+        isequal(controlsGrid, buttons(5).Parent), ...
         'Primary launcher actions should remain in the main controls grid.');
-    rows = arrayfun(@(button) button.Layout.Row, buttons(1:4));
-    assert(isequal(rows, [2 3 4 6]), ...
+    rows = arrayfun(@(button) button.Layout.Row, buttons(1:5));
+    assert(isequal(rows, [2 3 4 5 7]), ...
         'Primary launcher actions should keep their compact vertical order.');
-    packageGrid = buttons(5).Parent;
-    assert(isequal(packageGrid, buttons(6).Parent), ...
+    packageGrid = buttons(6).Parent;
+    assert(isequal(packageGrid, buttons(7).Parent), ...
         'Package actions should share one compact row.');
     assert(isequal(packageGrid.Parent, controlsGrid) && ...
-        isequal(packageGrid.Layout.Row, 5), ...
-        'Package actions should sit between debug and clean actions.');
+        isequal(packageGrid.Layout.Row, 6), ...
+        'Package actions should sit between history and clean actions.');
     columns = packageGrid.ColumnWidth;
     assert(numel(columns) == 2 && all(strcmp(string(columns), "1x")), ...
         'Package row should split package actions evenly.');
-    columns = arrayfun(@(button) button.Layout.Column, buttons(5:6));
+    columns = arrayfun(@(button) button.Layout.Column, buttons(6:7));
     assert(isequal(columns, [1 2]), ...
         'Package actions should keep source packaging before P-code packaging.');
 end

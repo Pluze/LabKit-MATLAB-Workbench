@@ -5,6 +5,7 @@ function varargout = labkit_launcher(varargin)
 %   labkit_launcher
 %   apps = labkit_launcher("list")
 %   info = labkit_launcher("version")
+%   records = labkit_launcher("history", appCommand)
 %
 % This launcher intentionally avoids dependencies on other LabKit .m files so
 % it can still restore a damaged zip install when packages, apps, or scripts
@@ -15,6 +16,7 @@ function varargout = labkit_launcher(varargin)
 %   Section: Public entrypoint and version
 %   Section: Path setup
 %   Section: Main launcher window
+%   Section: App version history window
 %   Section: Version manager window
 %   Section: Version manager support
 %   Section: Table selection and display helpers
@@ -30,7 +32,7 @@ function varargout = labkit_launcher(varargin)
 %   Section: Update install file operations
 %   Section: Shared filesystem and path helpers
 
-    mode = parseMode(varargin);
+    [mode, modeArgs] = parseMode(varargin);
     if mode == "version"
         varargout = {launcherVersion()};
         return;
@@ -40,6 +42,11 @@ function varargout = labkit_launcher(varargin)
         root = fileparts(mfilename('fullpath'));
         apps = discoverApps(root);
         varargout = {appCatalogTable(apps)};
+        return;
+    end
+    if mode == "history"
+        root = fileparts(mfilename('fullpath'));
+        varargout = {launcherAppHistory(root, modeArgs(1))};
         return;
     end
     if nargout > 1
@@ -57,16 +64,33 @@ end
 
 %% Section: Public entrypoint and version
 
-function mode = parseMode(args)
+function [mode, modeArgs] = parseMode(args)
     mode = "gui";
+    modeArgs = strings(1, 0);
     if isempty(args)
+        return;
+    end
+    first = string(args{1});
+    if numel(args) == 2 && isscalar(first) && strcmpi(first, "history")
+        command = string(args{2});
+        if ~isscalar(command) || strlength(strtrim(command)) == 0
+            error('labkit_launcher:InvalidInput', ...
+                'History mode requires one nonempty app command.');
+        end
+        mode = "history";
+        modeArgs = command;
         return;
     end
     if numel(args) ~= 1
         error('labkit_launcher:InvalidInput', ...
-            'labkit_launcher accepts no inputs or the string "list" or "version".');
+            ['labkit_launcher accepts no inputs, "list", "version", or ' ...
+            '"history" plus one app command.']);
     end
     value = string(args{1});
+    if ~isscalar(value)
+        error('labkit_launcher:InvalidInput', ...
+            'labkit_launcher mode must be a string scalar.');
+    end
     if strlength(strtrim(value)) == 0
         error('labkit_launcher:InvalidInput', ...
             'Unsupported labkit_launcher mode: empty string.');
@@ -87,8 +111,8 @@ function info = launcherVersion()
     info = struct( ...
         "name", "labkit_launcher", ...
         "displayName", "LabKit App Launcher", ...
-        "version", "1.3.0", ...
-        "updated", "2026-07-09");
+        "version", "1.4.0", ...
+        "updated", "2026-07-13");
 end
 
 function titleText = launcherVersionTitle()
@@ -149,8 +173,8 @@ function fig = runLauncher(root)
     rightPanel.Layout.Row = 1;
     rightPanel.Layout.Column = 3;
 
-    controlsGrid = uigridlayout(leftPanel, [8 1]);
-    controlsGrid.RowHeight = {34, 34, 34, 34, 34, 34, 34, '1x'};
+    controlsGrid = uigridlayout(leftPanel, [9 1]);
+    controlsGrid.RowHeight = {34, 34, 34, 34, 34, 34, 34, 34, '1x'};
     controlsGrid.Padding = [6 6 6 6];
     controlsGrid.RowSpacing = 6;
 
@@ -188,8 +212,13 @@ function fig = runLauncher(root)
         'ButtonPushedFcn', @onLaunchSelected);
     btnDebug = uibutton(controlsGrid, 'Text', 'Open Debug', ...
         'ButtonPushedFcn', @onLaunchSelectedDebug);
+    btnHistory = uibutton(controlsGrid, 'Text', 'Version History', ...
+        'ButtonPushedFcn', @onOpenSelectedHistory);
+    if isprop(btnHistory, 'Tooltip')
+        btnHistory.Tooltip = 'Show structured changelog records for the selected app.';
+    end
     packageGrid = uigridlayout(controlsGrid, [1 2]);
-    packageGrid.Layout.Row = 5;
+    packageGrid.Layout.Row = 6;
     packageGrid.Layout.Column = 1;
     packageGrid.ColumnWidth = {'1x', '1x'};
     packageGrid.RowHeight = {'1x'};
@@ -206,7 +235,7 @@ function fig = runLauncher(root)
     btnClean = uibutton(controlsGrid, 'Text', 'Clean Artifacts', ...
         'ButtonPushedFcn', @onCleanArtifacts);
     maintenanceGrid = uigridlayout(controlsGrid, [1 2]);
-    maintenanceGrid.Layout.Row = 7;
+    maintenanceGrid.Layout.Row = 8;
     maintenanceGrid.Layout.Column = 1;
     maintenanceGrid.ColumnWidth = {'1x', '1x'};
     maintenanceGrid.RowHeight = {'1x'};
@@ -338,6 +367,29 @@ function fig = runLauncher(root)
 
     function onLaunchSelectedDebug(varargin)
         launchSelectedApp(true);
+    end
+
+    function onOpenSelectedHistory(varargin)
+        if isempty(state.visibleApps)
+            setStatus('No app is available for version history.');
+            return;
+        end
+        row = min(max(state.selectedRow, 1), numel(state.visibleApps));
+        app = state.visibleApps(row);
+        try
+            records = launcherAppHistory(root, app.command);
+            if isempty(records)
+                setStatus(sprintf('No structured version history found for %s.', ...
+                    app.command));
+                return;
+            end
+            openAppHistoryViewer(fig, app, records);
+            setStatus(sprintf('Opened %d version history record(s) for %s.', ...
+                numel(records), app.command));
+        catch err
+            setStatus(sprintf('Version history unavailable for %s: %s', ...
+                app.command, err.message));
+        end
     end
 
     function onArmPerformanceProfile(varargin)
@@ -650,6 +702,7 @@ function fig = runLauncher(root)
         stateValue = matlab.lang.OnOffSwitchState(enabled);
         btnOpen.Enable = stateValue;
         btnDebug.Enable = stateValue;
+        btnHistory.Enable = stateValue;
         btnProfile.Enable = matlab.lang.OnOffSwitchState(enabled && state.tools.profile);
         btnPackage.Enable = matlab.lang.OnOffSwitchState(enabled && state.tools.package);
         btnPackagePcode.Enable = matlab.lang.OnOffSwitchState(enabled && state.tools.package);
@@ -674,6 +727,7 @@ function fig = runLauncher(root)
         btnVersions.Enable = stateValue;
         btnRefresh.Enable = stateValue;
         btnClean.Enable = stateValue;
+        btnHistory.Enable = stateValue;
         if enabled
             setLaunchEnabled(~isempty(state.visibleApps));
         else
@@ -740,6 +794,160 @@ end
 
 function initializeAppPath(app)
     addPathIfMissing(app.folder, '-end');
+end
+
+%% Section: App version history window
+
+function records = launcherAppHistory(root, appCommand)
+    changelogFile = fullfile(root, 'CHANGELOG.md');
+    if exist(changelogFile, 'file') ~= 2
+        error('labkit_launcher:ChangelogUnavailable', ...
+            'CHANGELOG.md is missing. Update or repair the LabKit install.');
+    end
+    parserFile = matlabCodeFile(fullfile(root, 'tools', 'release', ...
+        'parseLabKitChangelog'));
+    if strlength(string(parserFile)) == 0
+        error('labkit_launcher:ChangelogParserUnavailable', ...
+            ['Changelog parser is missing. Restore tools/release or update ' ...
+            'the LabKit install.']);
+    end
+    parserFolder = fileparts(parserFile);
+    addedParserPath = ~pathContains(parserFolder);
+    addPathIfMissing(parserFolder);
+    if addedParserPath
+        parserPathCleanup = onCleanup(@() rmpath(parserFolder));
+    end
+
+    records = parseLabKitChangelog(changelogFile);
+    command = string(appCommand);
+    keep = false(1, numel(records));
+    for k = 1:numel(records)
+        components = records(k).components;
+        if ~isempty(components)
+            keep(k) = any(string({components.name}) == command);
+        end
+    end
+    records = records(keep);
+    clear parserPathCleanup;
+end
+
+function viewer = openAppHistoryViewer(parentFig, app, records)
+    % A stable desktop-sized surface keeps five table columns and narrative
+    % details readable without resizing when records change.
+    viewerArgs = {'Name', sprintf('%s Version History', app.displayName), ...
+        'Position', centeredChildPosition(parentFig, [980 640]), ...
+        'Color', [0.97 0.98 0.99]};
+    if launcherGuiTestMode() == "hidden"
+        viewerArgs = [viewerArgs, {'Visible', 'off'}];
+    end
+    viewer = uifigure(viewerArgs{:});
+    applyLauncherGuiTestMode(viewer);
+    grid = uigridlayout(viewer, [4 1]);
+    % Fixed header, table, and command rows leave remaining height to details.
+    grid.RowHeight = {32, 230, '1x', 34};
+    grid.Padding = [8 8 8 8];
+    grid.RowSpacing = 6;
+
+    uilabel(grid, 'Text', sprintf('%s | current version %s | %d record(s)', ...
+        app.displayName, app.version, numel(records)), ...
+        'FontWeight', 'bold', 'FontSize', 14);
+    historyTable = uitable(grid, ...
+        'ColumnName', {'Date', 'Version change', 'Type', 'Compatibility', 'Change'}, ...
+        'ColumnEditable', false(1, 5), 'RowName', {}, ...
+        'Data', appHistoryRows(records, app.command));
+    historyTable.ColumnWidth = {100, 150, 90, 110, '1x'};
+    details = uitextarea(grid, 'Editable', 'off');
+    uibutton(grid, 'Text', 'Close', ...
+        'ButtonPushedFcn', @(~, ~) close(viewer));
+    configureTable(historyTable, @onHistorySelection, @onHistorySelection);
+    selectTableRow(historyTable, 1, records);
+    showRecord(1);
+
+    function onHistorySelection(~, event)
+        row = eventRow(event);
+        if ~isnan(row)
+            showRecord(row);
+        end
+    end
+
+    function showRecord(row)
+        row = min(max(round(row), 1), numel(records));
+        details.Value = cellstr(historyRecordDetails(records(row), app.command));
+    end
+end
+
+function rows = appHistoryRows(records, appCommand)
+    rows = cell(numel(records), 5);
+    for k = 1:numel(records)
+        rows{k, 1} = char(records(k).date);
+        rows{k, 2} = char(appHistoryTransition(records(k), appCommand));
+        rows{k, 3} = char(records(k).type);
+        rows{k, 4} = char(records(k).compatibility);
+        rows{k, 5} = char(records(k).title);
+    end
+end
+
+function transition = appHistoryTransition(record, appCommand)
+    transition = "";
+    components = record.components;
+    if isempty(components)
+        return;
+    end
+    indices = find(string({components.name}) == string(appCommand));
+    values = strings(1, numel(indices));
+    for k = 1:numel(indices)
+        component = components(indices(k));
+        if component.kind == "introduced"
+            values(k) = "Introduced at " + component.toVersion;
+        else
+            values(k) = component.fromVersion + " -> " + component.toVersion;
+        end
+    end
+    transition = strjoin(values, ", ");
+end
+
+function lines = historyRecordDetails(record, appCommand)
+    transition = appHistoryTransition(record, appCommand);
+    sections = record.sections;
+    lines = [ ...
+        record.title
+        "Change ID: " + record.id
+        "Date: " + record.date
+        "Version: " + transition
+        "Type: " + record.type + " | Compatibility: " + record.compatibility
+        ""
+        "Context"
+        string(sections.context)
+        ""
+        "Decision and rationale"
+        string(sections.decisionAndRationale)
+        ""
+        "Changes"
+        string(sections.changes)
+        ""
+        "User and data impact"
+        string(sections.userAndDataImpact)
+        ""
+        "Compatibility and migration"
+        string(sections.compatibilityAndMigration)
+        ""
+        "Validation"
+        string(sections.validation)
+        ""
+        "Evidence"
+        string(sections.evidence)
+        ""
+        "Known limitations and follow-up"
+        string(sections.knownLimitationsAndFollowUp)];
+    lines = splitlines(strjoin(lines, newline));
+end
+
+function position = centeredChildPosition(parentFig, childSize)
+    parentPosition = parentFig.Position;
+    position = [ ...
+        parentPosition(1) + max(20, (parentPosition(3) - childSize(1)) / 2), ...
+        parentPosition(2) + max(20, (parentPosition(4) - childSize(2)) / 2), ...
+        childSize];
 end
 
 %% Section: Version manager window

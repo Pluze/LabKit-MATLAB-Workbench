@@ -83,8 +83,9 @@ component versions carry it, and where the audit evidence lives.
 The changelog has one format for current and historical records:
 
 - Keep every entry under `Structured Change Records` with a stable Change ID,
-  ISO date, Conventional Commit type, compatibility value, and either exact
-  component version transitions or an unversioned repository scope.
+  ISO date, Conventional Commit type, compatibility value, and exact component
+  introduction or version-transition events, an unversioned repository scope,
+  or both.
 - Keep the required narrative sections for context, decision and rationale,
   changes, user and data impact, compatibility and migration, validation,
   evidence, and known limitations or follow-up.
@@ -95,6 +96,9 @@ The changelog has one format for current and historical records:
 - Keep the current version lookup synchronized with every launcher, facade, and
   app metadata file. Development-branch transitions compare directly with the
   merge base from `origin/main`, not with intermediate branch versions.
+- Keep one `introduced` event and a continuous transition chain for every
+  versioned component. Do not invent versions for source history that predates
+  the component's first tracked metadata.
 - Parse and validate the complete history with
   `addpath("tools/release"); parseLabKitChangelog()`. Do not maintain a second
   unstructured history or duplicate the parser grammar in another document.

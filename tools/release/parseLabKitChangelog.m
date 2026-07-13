@@ -12,8 +12,8 @@ function records = parseLabKitChangelog(filepath)
 % Outputs:
 %   records - struct array with title, id, date, type, compatibility,
 %             components, scopes, sections, and sourceLine fields. Component
-%             entries contain name, fromVersion, and toVersion; scopes name
-%             unversioned repository surfaces such as CI or documentation.
+%             entries contain name, kind, fromVersion, and toVersion; scopes
+%             name unversioned repository surfaces such as CI or documentation.
 %
 % The parser reads every entry under `## Structured Change Records`; the
 % changelog intentionally has no parallel unstructured history section.
@@ -75,6 +75,8 @@ function record = parseRecord(lines, headingLine, recordEnd)
                         record.compatibility, value, key, record);
                 case "component"
                     record.components(end + 1) = componentTransition(value, record);
+                case "introduced"
+                    record.components(end + 1) = introducedComponent(value, record);
                 case "scope"
                     record.scopes(end + 1) = value;
                 otherwise
@@ -115,8 +117,23 @@ function component = componentTransition(value, record)
     end
     component = struct( ...
         "name", string(tokens{1}), ...
+        "kind", "transition", ...
         "fromVersion", string(tokens{2}), ...
         "toVersion", string(tokens{3}));
+end
+
+function component = introducedComponent(value, record)
+    tokens = regexp(value, '^`([^`]+)`\s*\|\s*`(\d+\.\d+\.\d+)`$', ...
+        'tokens', 'once');
+    if isempty(tokens)
+        invalidRecord(record, ...
+            'has invalid introduced metadata; expected `name` | `X.Y.Z`');
+    end
+    component = struct( ...
+        "name", string(tokens{1}), ...
+        "kind", "introduced", ...
+        "fromVersion", "", ...
+        "toVersion", string(tokens{2}));
 end
 
 function sections = parseSections(lines, firstLine, lastLine, record)
@@ -195,6 +212,46 @@ function validateRecordSet(records)
         error('LabKit:Changelog:DateOrder', ...
             'Structured changelog records must use reverse chronological date order.');
     end
+    validateComponentHistories(records);
+end
+
+function validateComponentHistories(records)
+    components = [records.components];
+    if isempty(components)
+        return;
+    end
+    names = unique(string({components.name}), "stable");
+    for k = 1:numel(names)
+        name = names(k);
+        events = components(string({components.name}) == name);
+        introductions = events(string({events.kind}) == "introduced");
+        transitions = events(string({events.kind}) == "transition");
+        if numel(introductions) ~= 1
+            error('LabKit:Changelog:ComponentIntroduction', ...
+                'Component %s must have exactly one introduced event.', name);
+        end
+        fromVersions = string({transitions.fromVersion});
+        if numel(unique(fromVersions)) ~= numel(fromVersions)
+            error('LabKit:Changelog:ComponentBranch', ...
+                'Component %s has multiple transitions from the same version.', name);
+        end
+
+        current = introductions.toVersion;
+        consumed = false(size(transitions));
+        while true
+            next = find(~consumed & fromVersions == current);
+            if isempty(next)
+                break;
+            end
+            consumed(next) = true;
+            current = transitions(next).toVersion;
+        end
+        if any(~consumed)
+            error('LabKit:Changelog:ComponentHistoryGap', ...
+                'Component %s has a disconnected, cyclic, or out-of-sequence version transition.', ...
+                name);
+        end
+    end
 end
 
 function line = nextContentLine(lines, line, lastLine)
@@ -212,7 +269,8 @@ function record = emptyRecord()
         "type", "", ...
         "compatibility", "", ...
         "components", repmat(struct( ...
-        "name", "", "fromVersion", "", "toVersion", ""), 1, 0), ...
+        "name", "", "kind", "", "fromVersion", "", ...
+        "toVersion", ""), 1, 0), ...
         "scopes", strings(1, 0), ...
         "sections", struct(), ...
         "sourceLine", 0);

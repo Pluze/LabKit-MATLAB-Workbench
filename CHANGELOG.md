@@ -27,9 +27,10 @@ Commits and PRs belong in `Evidence`, not in the navigation structure.
 - `Current Version Lookup` is a state table. Keep it current with metadata
   files, but do not use it to explain history.
 - A structured record has one stable Change ID and one ISO date. It may list
-  versioned `component` transitions, unversioned repository `scope` values, or
-  both. Component transitions always compare directly with the mainline
-  baseline rather than another commit on the development branch.
+  versioned `introduced` events, later `component` transitions, unversioned
+  repository `scope` values, or a combination. Historical events follow the
+  committed version chain; current branch transitions compare directly with
+  the mainline baseline rather than intermediate development commits.
 - `type` uses the repository's Conventional Commit vocabulary.
   `compatibility` is `compatible`, `additive`, or `breaking`.
 - Narrative sections are required because metadata alone cannot explain the
@@ -42,6 +43,69 @@ Commits and PRs belong in `Evidence`, not in the navigation structure.
   anchors, or the stable Change ID used to locate the carrying commit.
 
 ## Structured Change Records
+
+### Launcher app version history
+
+```labkit-change
+schema: 1
+id: LK-20260713-launcher-app-version-history
+date: 2026-07-13
+type: feat
+compatibility: additive
+component: `labkit_launcher` | `1.3.0 -> 1.4.0`
+```
+
+#### Context
+
+The structured changelog could be parsed by maintainers, but launcher users
+could not inspect the history of the selected app. Earlier normalization also
+attached broad release descriptions without recording every app version event,
+which made histories such as CIC appear to begin years of versions too late.
+
+#### Decision and rationale
+
+Expose component-filtered history in the launcher and make exact component
+events the durable lookup key. A user should be able to move from the current
+app catalog directly to its evolution record without reading Git history or
+understanding changelog internals.
+
+#### Changes
+
+- Added `labkit_launcher("history", appCommand)` for programmatic history
+  lookup and a Version History viewer for the selected launcher app.
+- Added explicit component introduction events and reconstructed every tracked
+  launcher, facade, and app version transition from `origin/main` history.
+- Added continuous-history validation so missing introductions, gaps, and
+  current-version mismatches fail the release guardrail.
+
+#### User and data impact
+
+Launcher users can inspect dated version transitions, compatibility, rationale,
+impact, and evidence for the selected app. App calculations and user data are
+unchanged.
+
+#### Compatibility and migration
+
+The launcher command and button are additive. Existing list, version, package,
+maintenance, and app-launch workflows remain available.
+
+#### Validation
+
+`LauncherGuiTest` covers programmatic filtering and the hidden GUI viewer;
+`ChangelogGuardrailTest` validates complete version chains against current
+metadata.
+
+#### Evidence
+
+The carrying commit is located by Change ID
+`LK-20260713-launcher-app-version-history`; historical component events were
+reconstructed from version-file changes on `origin/main`.
+
+#### Known limitations and follow-up
+
+History begins when version metadata was first tracked for each component.
+Behavior before that point can only be inferred from older source commits and
+is not assigned invented version numbers.
 
 ### Structured evolution records
 
@@ -69,7 +133,7 @@ delivery state without duplicating it in the changelog.
 #### Changes
 
 - Added schema-v1 metadata for Change ID, date, type, compatibility, component
-  version transitions, and unversioned repository scopes.
+  introductions and version transitions, and unversioned repository scopes.
 - Added a base-MATLAB parser and release guardrail for schema integrity.
 - Normalized every historical entry into the same schema-v1 record contract.
 
@@ -462,8 +526,8 @@ date: 2026-07-13
 type: feat
 compatibility: compatible
 component: `labkit.image` | `1.1.0 -> 1.2.0`
-component: `labkit_DICPreprocess_app` | `1.3.5 -> 1.3.6`
 component: `labkit_DICPostprocess_app` | `1.3.4 -> 1.3.5`
+component: `labkit_DICPreprocess_app` | `1.3.5 -> 1.3.6`
 component: `labkit_FocusStack_app` | `1.4.7 -> 1.4.8`
 component: `labkit_ImageEnhance_app` | `1.5.6 -> 1.5.7`
 component: `labkit_ImageMatch_app` | `1.5.6 -> 1.5.7`
@@ -825,12 +889,15 @@ id: LK-20260707-debug-workflows-launcher-tools-and-changelog-governance
 date: 2026-07-07
 type: feat
 compatibility: compatible
-component: `labkit_launcher` | `1.2.4 -> 1.2.7`
+component: `labkit_launcher` | `1.2.4 -> 1.2.5`
+component: `labkit_launcher` | `1.2.5 -> 1.2.6`
+component: `labkit_launcher` | `1.2.6 -> 1.2.7`
+component: `labkit.ui` | `5.0.0 -> 5.0.1`
 component: `labkit.ui` | `5.0.1 -> 5.0.2`
-component: `labkit_FigureStudio_app` | `0.1.4 -> 0.1.5`
 component: `labkit_DICPreprocess_app` | `1.3.4 -> 1.3.5`
 component: `labkit_BatchImageCrop_app` | `1.6.6 -> 1.6.7`
 component: `labkit_FocusStack_app` | `1.4.5 -> 1.4.6`
+component: `labkit_FigureStudio_app` | `0.1.4 -> 0.1.5`
 ```
 
 #### Context
@@ -944,24 +1011,28 @@ date: 2026-07-06
 type: refactor
 compatibility: breaking
 component: `labkit_launcher` | `1.2.3 -> 1.2.4`
-component: `labkit.ui` | `4.2.0 -> 5.0.0`
-component: `labkit_FigureStudio_app` | `0.1.0 -> 0.1.4`
+component: `labkit.ui` | `4.2.0 -> 4.2.1`
+component: `labkit.ui` | `4.2.1 -> 5.0.0`
+component: `labkit_DICPostprocess_app` | `1.3.3 -> 1.3.4`
+component: `labkit_DICPreprocess_app` | `1.3.3 -> 1.3.4`
 component: `labkit_ChronoOverlay_app` | `1.3.3 -> 1.3.5`
 component: `labkit_CIC_app` | `1.3.5 -> 1.3.7`
 component: `labkit_CSC_app` | `1.3.7 -> 1.3.9`
 component: `labkit_EIS_app` | `1.3.3 -> 1.3.4`
 component: `labkit_VTResistance_app` | `1.3.5 -> 1.3.7`
-component: `labkit_DICPreprocess_app` | `1.3.3 -> 1.3.4`
-component: `labkit_DICPostprocess_app` | `1.3.3 -> 1.3.4`
 component: `labkit_BatchImageCrop_app` | `1.6.5 -> 1.6.6`
 component: `labkit_CurvatureMeasurement_app` | `1.3.3 -> 1.3.4`
 component: `labkit_FLIRThermal_app` | `1.2.7 -> 1.2.8`
 component: `labkit_FocusStack_app` | `1.4.4 -> 1.4.5`
 component: `labkit_ImageEnhance_app` | `1.5.4 -> 1.5.5`
 component: `labkit_ImageMatch_app` | `1.5.4 -> 1.5.5`
-component: `labkit_RHSPreview_app` | `1.3.3 -> 1.3.4`
+introduced: `labkit_FigureStudio_app` | `0.1.0`
+component: `labkit_FigureStudio_app` | `0.1.0 -> 0.1.1`
+component: `labkit_FigureStudio_app` | `0.1.1 -> 0.1.2`
+component: `labkit_FigureStudio_app` | `0.1.2 -> 0.1.4`
 component: `labkit_NerveResponseAnalysis_app` | `1.3.3 -> 1.3.4`
 component: `labkit_ResponseReviewStats_app` | `1.3.3 -> 1.3.4`
+component: `labkit_RHSPreview_app` | `1.3.3 -> 1.3.4`
 component: `labkit_ECGPrint_app` | `1.3.4 -> 1.3.5`
 ```
 
@@ -1143,8 +1214,10 @@ id: LK-20260703-flir-display-tuning
 date: 2026-07-03
 type: feat
 compatibility: compatible
-component: `labkit_FLIRThermal_app` | `1.2.4 -> 1.2.7`
 component: `labkit_CSC_app` | `1.3.6 -> 1.3.7`
+component: `labkit_FLIRThermal_app` | `1.2.4 -> 1.2.5`
+component: `labkit_FLIRThermal_app` | `1.2.5 -> 1.2.6`
+component: `labkit_FLIRThermal_app` | `1.2.6 -> 1.2.7`
 ```
 
 #### Context
@@ -1197,6 +1270,23 @@ date: 2026-07-03
 type: feat
 compatibility: compatible
 component: `labkit.ui` | `4.0.0 -> 4.1.0`
+component: `labkit_DICPostprocess_app` | `1.3.2 -> 1.3.3`
+component: `labkit_DICPreprocess_app` | `1.3.2 -> 1.3.3`
+component: `labkit_ChronoOverlay_app` | `1.3.2 -> 1.3.3`
+component: `labkit_CIC_app` | `1.3.4 -> 1.3.5`
+component: `labkit_CSC_app` | `1.3.4 -> 1.3.6`
+component: `labkit_EIS_app` | `1.3.2 -> 1.3.3`
+component: `labkit_VTResistance_app` | `1.3.4 -> 1.3.5`
+component: `labkit_BatchImageCrop_app` | `1.6.4 -> 1.6.5`
+component: `labkit_CurvatureMeasurement_app` | `1.3.2 -> 1.3.3`
+component: `labkit_FLIRThermal_app` | `1.2.3 -> 1.2.4`
+component: `labkit_FocusStack_app` | `1.4.3 -> 1.4.4`
+component: `labkit_ImageEnhance_app` | `1.5.3 -> 1.5.4`
+component: `labkit_ImageMatch_app` | `1.5.3 -> 1.5.4`
+component: `labkit_NerveResponseAnalysis_app` | `1.3.2 -> 1.3.3`
+component: `labkit_ResponseReviewStats_app` | `1.3.2 -> 1.3.3`
+component: `labkit_RHSPreview_app` | `1.3.2 -> 1.3.3`
+component: `labkit_ECGPrint_app` | `1.3.3 -> 1.3.4`
 ```
 
 #### Context
@@ -1249,6 +1339,23 @@ date: 2026-07-03
 type: refactor
 compatibility: compatible
 component: `labkit.ui` | `3.4.5 -> 4.0.0`
+component: `labkit_DICPostprocess_app` | `1.3.1 -> 1.3.2`
+component: `labkit_DICPreprocess_app` | `1.3.1 -> 1.3.2`
+component: `labkit_ChronoOverlay_app` | `1.3.1 -> 1.3.2`
+component: `labkit_CIC_app` | `1.3.3 -> 1.3.4`
+component: `labkit_CSC_app` | `1.3.3 -> 1.3.4`
+component: `labkit_EIS_app` | `1.3.1 -> 1.3.2`
+component: `labkit_VTResistance_app` | `1.3.3 -> 1.3.4`
+component: `labkit_BatchImageCrop_app` | `1.6.3 -> 1.6.4`
+component: `labkit_CurvatureMeasurement_app` | `1.3.1 -> 1.3.2`
+component: `labkit_FLIRThermal_app` | `1.2.2 -> 1.2.3`
+component: `labkit_FocusStack_app` | `1.4.2 -> 1.4.3`
+component: `labkit_ImageEnhance_app` | `1.5.2 -> 1.5.3`
+component: `labkit_ImageMatch_app` | `1.5.2 -> 1.5.3`
+component: `labkit_NerveResponseAnalysis_app` | `1.3.1 -> 1.3.2`
+component: `labkit_ResponseReviewStats_app` | `1.3.1 -> 1.3.2`
+component: `labkit_RHSPreview_app` | `1.3.1 -> 1.3.2`
+component: `labkit_ECGPrint_app` | `1.3.2 -> 1.3.3`
 ```
 
 #### Context
@@ -1300,6 +1407,17 @@ id: LK-20260703-app-file-selection-and-electrochem-control-fixes
 date: 2026-07-03
 type: fix
 compatibility: compatible
+component: `labkit_CIC_app` | `1.3.1 -> 1.3.2`
+component: `labkit_CIC_app` | `1.3.2 -> 1.3.3`
+component: `labkit_CSC_app` | `1.3.1 -> 1.3.2`
+component: `labkit_CSC_app` | `1.3.2 -> 1.3.3`
+component: `labkit_VTResistance_app` | `1.3.1 -> 1.3.2`
+component: `labkit_VTResistance_app` | `1.3.2 -> 1.3.3`
+component: `labkit_BatchImageCrop_app` | `1.6.2 -> 1.6.3`
+component: `labkit_FLIRThermal_app` | `1.2.1 -> 1.2.2`
+component: `labkit_FocusStack_app` | `1.4.1 -> 1.4.2`
+component: `labkit_ImageEnhance_app` | `1.5.1 -> 1.5.2`
+component: `labkit_ImageMatch_app` | `1.5.1 -> 1.5.2`
 scope: historical project evolution
 ```
 
@@ -1355,6 +1473,23 @@ date: 2026-07-03
 type: refactor
 compatibility: compatible
 component: `labkit.ui` | `3.4.4 -> 3.4.5`
+component: `labkit_DICPostprocess_app` | `1.3.0 -> 1.3.1`
+component: `labkit_DICPreprocess_app` | `1.3.0 -> 1.3.1`
+component: `labkit_ChronoOverlay_app` | `1.3.0 -> 1.3.1`
+component: `labkit_CIC_app` | `1.3.0 -> 1.3.1`
+component: `labkit_CSC_app` | `1.3.0 -> 1.3.1`
+component: `labkit_EIS_app` | `1.3.0 -> 1.3.1`
+component: `labkit_VTResistance_app` | `1.3.0 -> 1.3.1`
+component: `labkit_BatchImageCrop_app` | `1.6.1 -> 1.6.2`
+component: `labkit_CurvatureMeasurement_app` | `1.3.0 -> 1.3.1`
+component: `labkit_FLIRThermal_app` | `1.2.0 -> 1.2.1`
+component: `labkit_FocusStack_app` | `1.4.0 -> 1.4.1`
+component: `labkit_ImageEnhance_app` | `1.5.0 -> 1.5.1`
+component: `labkit_ImageMatch_app` | `1.5.0 -> 1.5.1`
+component: `labkit_NerveResponseAnalysis_app` | `1.3.0 -> 1.3.1`
+component: `labkit_ResponseReviewStats_app` | `1.3.0 -> 1.3.1`
+component: `labkit_RHSPreview_app` | `1.3.0 -> 1.3.1`
+component: `labkit_ECGPrint_app` | `1.3.1 -> 1.3.2`
 ```
 
 #### Context
@@ -1458,8 +1593,10 @@ id: LK-20260702-profiling-and-validation-speedups
 date: 2026-07-02
 type: ci
 compatibility: compatible
-component: `labkit_launcher` | `1.2.0 -> 1.2.2`
-component: `labkit.ui` | `3.4.0 -> 3.4.2`
+component: `labkit_launcher` | `1.2.0 -> 1.2.1`
+component: `labkit_launcher` | `1.2.1 -> 1.2.2`
+component: `labkit.ui` | `3.4.0 -> 3.4.1`
+component: `labkit.ui` | `3.4.1 -> 3.4.2`
 component: `labkit_BatchImageCrop_app` | `1.6.0 -> 1.6.1`
 component: `labkit_ECGPrint_app` | `1.3.0 -> 1.3.1`
 ```
@@ -1568,6 +1705,23 @@ date: 2026-07-01
 type: feat
 compatibility: compatible
 component: `labkit.ui` | `3.3.1 -> 3.4.0`
+component: `labkit_DICPostprocess_app` | `1.2.4 -> 1.3.0`
+component: `labkit_DICPreprocess_app` | `1.2.2 -> 1.3.0`
+component: `labkit_ChronoOverlay_app` | `1.2.1 -> 1.3.0`
+component: `labkit_CIC_app` | `1.2.1 -> 1.3.0`
+component: `labkit_CSC_app` | `1.2.1 -> 1.3.0`
+component: `labkit_EIS_app` | `1.2.1 -> 1.3.0`
+component: `labkit_VTResistance_app` | `1.2.1 -> 1.3.0`
+component: `labkit_BatchImageCrop_app` | `1.5.1 -> 1.6.0`
+component: `labkit_CurvatureMeasurement_app` | `1.2.4 -> 1.3.0`
+component: `labkit_FLIRThermal_app` | `1.1.2 -> 1.2.0`
+component: `labkit_FocusStack_app` | `1.3.0 -> 1.4.0`
+component: `labkit_ImageEnhance_app` | `1.4.1 -> 1.5.0`
+component: `labkit_ImageMatch_app` | `1.4.1 -> 1.5.0`
+component: `labkit_NerveResponseAnalysis_app` | `1.2.4 -> 1.3.0`
+component: `labkit_ResponseReviewStats_app` | `1.2.3 -> 1.3.0`
+component: `labkit_RHSPreview_app` | `1.2.4 -> 1.3.0`
+component: `labkit_ECGPrint_app` | `1.2.2 -> 1.3.0`
 ```
 
 #### Context
@@ -1620,9 +1774,16 @@ id: LK-20260701-image-app-workflow-improvements
 date: 2026-07-01
 type: feat
 compatibility: compatible
-component: `labkit.image` | `1.0.0 -> 1.1.0`
-component: `labkit.ui` | `3.2.10 -> 3.3.1`
 component: `labkit_launcher` | `1.1.5 -> 1.1.6`
+component: `labkit.image` | `1.0.0 -> 1.1.0`
+component: `labkit.ui` | `3.2.10 -> 3.3.0`
+component: `labkit.ui` | `3.3.0 -> 3.3.1`
+component: `labkit_BatchImageCrop_app` | `1.4.0 -> 1.5.0`
+component: `labkit_BatchImageCrop_app` | `1.5.0 -> 1.5.1`
+component: `labkit_FLIRThermal_app` | `1.0.0 -> 1.1.0`
+component: `labkit_FLIRThermal_app` | `1.1.0 -> 1.1.2`
+component: `labkit_ImageEnhance_app` | `1.4.0 -> 1.4.1`
+component: `labkit_ImageMatch_app` | `1.4.0 -> 1.4.1`
 ```
 
 #### Context
@@ -1678,7 +1839,9 @@ id: LK-20260701-thermal-facade-and-flir-app
 date: 2026-07-01
 type: feat
 compatibility: compatible
+introduced: `labkit.thermal` | `1.0.0`
 component: `labkit.ui` | `3.2.9 -> 3.2.10`
+introduced: `labkit_FLIRThermal_app` | `1.0.0`
 ```
 
 #### Context
@@ -1731,7 +1894,8 @@ id: LK-20260701-launcher-update-reliability
 date: 2026-07-01
 type: fix
 compatibility: compatible
-component: `labkit_launcher` | `1.1.3 -> 1.1.5`
+component: `labkit_launcher` | `1.1.3 -> 1.1.4`
+component: `labkit_launcher` | `1.1.4 -> 1.1.5`
 ```
 
 #### Context
@@ -1780,6 +1944,12 @@ id: LK-20260630-shared-image-facade
 date: 2026-06-30
 type: feat
 compatibility: compatible
+introduced: `labkit.image` | `1.0.0`
+component: `labkit_BatchImageCrop_app` | `1.3.9 -> 1.4.0`
+component: `labkit_CurvatureMeasurement_app` | `1.2.3 -> 1.2.4`
+component: `labkit_FocusStack_app` | `1.2.5 -> 1.3.0`
+component: `labkit_ImageEnhance_app` | `1.3.5 -> 1.4.0`
+component: `labkit_ImageMatch_app` | `1.3.5 -> 1.4.0`
 scope: historical project evolution
 ```
 
@@ -1834,6 +2004,13 @@ id: LK-20260630-migration-helper-cleanup
 date: 2026-06-30
 type: refactor
 compatibility: compatible
+component: `labkit.ui` | `3.2.8 -> 3.2.9`
+component: `labkit_DICPostprocess_app` | `1.2.3 -> 1.2.4`
+component: `labkit_BatchImageCrop_app` | `1.3.7 -> 1.3.8`
+component: `labkit_BatchImageCrop_app` | `1.3.8 -> 1.3.9`
+component: `labkit_ImageEnhance_app` | `1.3.4 -> 1.3.5`
+component: `labkit_RHSPreview_app` | `1.2.2 -> 1.2.3`
+component: `labkit_RHSPreview_app` | `1.2.3 -> 1.2.4`
 scope: historical project evolution
 ```
 
@@ -1887,6 +2064,19 @@ date: 2026-06-30
 type: feat
 compatibility: compatible
 component: `labkit.ui` | `3.2.7 -> 3.2.8`
+component: `labkit_DICPostprocess_app` | `1.2.2 -> 1.2.3`
+component: `labkit_DICPreprocess_app` | `1.2.1 -> 1.2.2`
+component: `labkit_ChronoOverlay_app` | `1.2.0 -> 1.2.1`
+component: `labkit_CIC_app` | `1.2.0 -> 1.2.1`
+component: `labkit_CSC_app` | `1.2.0 -> 1.2.1`
+component: `labkit_EIS_app` | `1.2.0 -> 1.2.1`
+component: `labkit_VTResistance_app` | `1.2.0 -> 1.2.1`
+component: `labkit_BatchImageCrop_app` | `1.3.6 -> 1.3.7`
+component: `labkit_CurvatureMeasurement_app` | `1.2.2 -> 1.2.3`
+component: `labkit_FocusStack_app` | `1.2.4 -> 1.2.5`
+component: `labkit_ImageEnhance_app` | `1.3.3 -> 1.3.4`
+component: `labkit_ImageMatch_app` | `1.3.4 -> 1.3.5`
+component: `labkit_ECGPrint_app` | `1.2.1 -> 1.2.2`
 ```
 
 #### Context
@@ -1939,6 +2129,19 @@ date: 2026-06-30
 type: feat
 compatibility: compatible
 component: `labkit.ui` | `3.2.6 -> 3.2.7`
+component: `labkit_DICPostprocess_app` | `1.2.1 -> 1.2.2`
+component: `labkit_BatchImageCrop_app` | `1.3.4 -> 1.3.5`
+component: `labkit_BatchImageCrop_app` | `1.3.5 -> 1.3.6`
+component: `labkit_CurvatureMeasurement_app` | `1.2.1 -> 1.2.2`
+component: `labkit_FocusStack_app` | `1.2.2 -> 1.2.3`
+component: `labkit_FocusStack_app` | `1.2.3 -> 1.2.4`
+component: `labkit_ImageEnhance_app` | `1.3.2 -> 1.3.3`
+component: `labkit_ImageMatch_app` | `1.3.2 -> 1.3.3`
+component: `labkit_ImageMatch_app` | `1.3.3 -> 1.3.4`
+component: `labkit_NerveResponseAnalysis_app` | `1.2.3 -> 1.2.4`
+component: `labkit_ResponseReviewStats_app` | `1.2.2 -> 1.2.3`
+component: `labkit_RHSPreview_app` | `1.2.1 -> 1.2.2`
+component: `labkit_ECGPrint_app` | `1.2.0 -> 1.2.1`
 ```
 
 #### Context
@@ -1993,6 +2196,14 @@ date: 2026-06-30
 type: feat
 compatibility: compatible
 component: `labkit.ui` | `3.2.5 -> 3.2.6`
+component: `labkit_DICPostprocess_app` | `1.2.0 -> 1.2.1`
+component: `labkit_DICPreprocess_app` | `1.2.0 -> 1.2.1`
+component: `labkit_BatchImageCrop_app` | `1.3.3 -> 1.3.4`
+component: `labkit_FocusStack_app` | `1.2.1 -> 1.2.2`
+component: `labkit_ImageEnhance_app` | `1.3.1 -> 1.3.2`
+component: `labkit_ImageMatch_app` | `1.3.1 -> 1.3.2`
+component: `labkit_NerveResponseAnalysis_app` | `1.2.1 -> 1.2.3`
+component: `labkit_ResponseReviewStats_app` | `1.2.1 -> 1.2.2`
 ```
 
 #### Context
@@ -2045,7 +2256,8 @@ id: LK-20260630-file-panel-layout-stabilization
 date: 2026-06-30
 type: fix
 compatibility: compatible
-component: `labkit.ui` | `3.2.3 -> 3.2.5`
+component: `labkit.ui` | `3.2.3 -> 3.2.4`
+component: `labkit.ui` | `3.2.4 -> 3.2.5`
 ```
 
 #### Context
@@ -2093,7 +2305,12 @@ id: LK-20260629-tool-panel-hosts-and-image-app-fixes
 date: 2026-06-29
 type: fix
 compatibility: compatible
-component: `labkit.ui` | `3.2.0 -> 3.2.3`
+component: `labkit.ui` | `3.2.0 -> 3.2.2`
+component: `labkit.ui` | `3.2.2 -> 3.2.3`
+component: `labkit_BatchImageCrop_app` | `1.3.2 -> 1.3.3`
+component: `labkit_CurvatureMeasurement_app` | `1.2.0 -> 1.2.1`
+component: `labkit_ImageEnhance_app` | `1.3.0 -> 1.3.1`
+component: `labkit_ImageMatch_app` | `1.3.0 -> 1.3.1`
 ```
 
 #### Context
@@ -2147,8 +2364,8 @@ id: LK-20260629-ui-diagnostics-and-release-v3-0-0
 date: 2026-06-29
 type: feat
 compatibility: compatible
-component: `labkit.ui` | `3.1.3 -> 3.2.0`
 component: `labkit_launcher` | `1.1.2 -> 1.1.3`
+component: `labkit.ui` | `3.1.3 -> 3.2.0`
 ```
 
 #### Context
@@ -2202,6 +2419,8 @@ id: LK-20260629-protected-image-enhancement-workflows
 date: 2026-06-29
 type: feat
 compatibility: compatible
+component: `labkit_ImageEnhance_app` | `1.2.2 -> 1.3.0`
+component: `labkit_ImageMatch_app` | `1.2.1 -> 1.3.0`
 scope: historical project evolution
 ```
 
@@ -2253,7 +2472,18 @@ id: LK-20260628-app-diagnostics-and-hardened-ui-workflows
 date: 2026-06-28
 type: feat
 compatibility: compatible
-component: `labkit.ui` | `3.1.0 -> 3.1.3`
+component: `labkit_launcher` | `1.1.1 -> 1.1.2`
+component: `labkit.ui` | `3.1.0 -> 3.1.2`
+component: `labkit.ui` | `3.1.2 -> 3.1.3`
+component: `labkit_BatchImageCrop_app` | `1.3.0 -> 1.3.1`
+component: `labkit_BatchImageCrop_app` | `1.3.1 -> 1.3.2`
+component: `labkit_FocusStack_app` | `1.2.0 -> 1.2.1`
+component: `labkit_ImageEnhance_app` | `1.2.0 -> 1.2.1`
+component: `labkit_ImageEnhance_app` | `1.2.1 -> 1.2.2`
+component: `labkit_ImageMatch_app` | `1.2.0 -> 1.2.1`
+component: `labkit_NerveResponseAnalysis_app` | `1.2.0 -> 1.2.1`
+component: `labkit_ResponseReviewStats_app` | `1.2.0 -> 1.2.1`
+component: `labkit_RHSPreview_app` | `1.2.0 -> 1.2.1`
 ```
 
 #### Context
@@ -2308,6 +2538,7 @@ date: 2026-06-28
 type: feat
 compatibility: compatible
 component: `labkit.ui` | `3.0.1 -> 3.1.0`
+component: `labkit_BatchImageCrop_app` | `1.2.0 -> 1.3.0`
 ```
 
 #### Context
@@ -2357,7 +2588,8 @@ id: LK-20260626-launcher-manager-and-stale-callback-fix
 date: 2026-06-26
 type: fix
 compatibility: compatible
-component: `labkit_launcher` | `1.0.0 -> 1.1.1`
+component: `labkit_launcher` | `1.0.0 -> 1.1.0`
+component: `labkit_launcher` | `1.1.0 -> 1.1.1`
 component: `labkit.ui` | `3.0.0 -> 3.0.1`
 ```
 
@@ -2412,6 +2644,22 @@ type: refactor
 compatibility: breaking
 component: `labkit.dta` | `1.0.0 -> 2.0.0`
 component: `labkit.ui` | `2.2.1 -> 3.0.0`
+component: `labkit_DICPostprocess_app` | `1.0.1 -> 1.2.0`
+component: `labkit_DICPreprocess_app` | `1.0.1 -> 1.2.0`
+component: `labkit_ChronoOverlay_app` | `1.0.0 -> 1.2.0`
+component: `labkit_CIC_app` | `1.0.0 -> 1.2.0`
+component: `labkit_CSC_app` | `1.0.0 -> 1.2.0`
+component: `labkit_EIS_app` | `1.0.0 -> 1.2.0`
+component: `labkit_VTResistance_app` | `1.0.0 -> 1.2.0`
+component: `labkit_BatchImageCrop_app` | `1.0.0 -> 1.2.0`
+component: `labkit_CurvatureMeasurement_app` | `1.0.1 -> 1.2.0`
+component: `labkit_FocusStack_app` | `1.0.0 -> 1.2.0`
+component: `labkit_ImageEnhance_app` | `1.0.0 -> 1.2.0`
+component: `labkit_ImageMatch_app` | `1.0.0 -> 1.2.0`
+component: `labkit_NerveResponseAnalysis_app` | `1.0.0 -> 1.2.0`
+component: `labkit_ResponseReviewStats_app` | `1.0.0 -> 1.2.0`
+component: `labkit_RHSPreview_app` | `1.0.0 -> 1.2.0`
+component: `labkit_ECGPrint_app` | `1.0.0 -> 1.2.0`
 ```
 
 #### Context
@@ -2465,7 +2713,24 @@ id: LK-20260623-version-metadata-baseline
 date: 2026-06-23
 type: feat
 compatibility: compatible
+introduced: `labkit_launcher` | `1.0.0`
 component: `labkit.ui` | `2.1.0 -> 2.2.0`
+introduced: `labkit_DICPostprocess_app` | `1.0.0`
+introduced: `labkit_DICPreprocess_app` | `1.0.0`
+introduced: `labkit_ChronoOverlay_app` | `1.0.0`
+introduced: `labkit_CIC_app` | `1.0.0`
+introduced: `labkit_CSC_app` | `1.0.0`
+introduced: `labkit_EIS_app` | `1.0.0`
+introduced: `labkit_VTResistance_app` | `1.0.0`
+introduced: `labkit_BatchImageCrop_app` | `1.0.0`
+introduced: `labkit_CurvatureMeasurement_app` | `1.0.0`
+introduced: `labkit_FocusStack_app` | `1.0.0`
+introduced: `labkit_ImageEnhance_app` | `1.0.0`
+introduced: `labkit_ImageMatch_app` | `1.0.0`
+introduced: `labkit_NerveResponseAnalysis_app` | `1.0.0`
+introduced: `labkit_ResponseReviewStats_app` | `1.0.0`
+introduced: `labkit_RHSPreview_app` | `1.0.0`
+introduced: `labkit_ECGPrint_app` | `1.0.0`
 ```
 
 #### Context
@@ -2520,7 +2785,15 @@ id: LK-20260623-facade-contract-baseline-and-release-validation-hardening
 date: 2026-06-23
 type: ci
 compatibility: compatible
-component: `labkit.ui` | `2.0.0 -> 2.2.1`
+introduced: `labkit.biosignal` | `1.0.0`
+introduced: `labkit.dta` | `1.0.0`
+introduced: `labkit.rhs` | `1.0.0`
+introduced: `labkit.ui` | `2.0.0`
+component: `labkit.ui` | `2.0.0 -> 2.1.0`
+component: `labkit.ui` | `2.2.0 -> 2.2.1`
+component: `labkit_DICPostprocess_app` | `1.0.0 -> 1.0.1`
+component: `labkit_DICPreprocess_app` | `1.0.0 -> 1.0.1`
+component: `labkit_CurvatureMeasurement_app` | `1.0.0 -> 1.0.1`
 ```
 
 #### Context
@@ -2637,7 +2910,7 @@ the `origin/main` merge-base values.
 
 | Component | Current version | Family | Metadata location |
 |---|---:|---|---|
-| `labkit_launcher` | `1.3.0` | Launcher | `labkit_launcher.m` |
+| `labkit_launcher` | `1.4.0` | Launcher | `labkit_launcher.m` |
 | `labkit.ui` | `5.1.0` | Facade | `+labkit/+ui/version.m` |
 | `labkit.dta` | `2.0.1` | Facade | `+labkit/+dta/version.m` |
 | `labkit.image` | `2.0.0` | Facade | `+labkit/+image/version.m` |

@@ -76,6 +76,43 @@ classdef ChangelogGuardrailTest < matlab.unittest.TestCase
                 'file with its current version: ' strjoin(cellstr(missing), ', ')]);
         end
 
+        function structuredHistoryCoversEveryVersionedComponent(testCase)
+            root = setupLabKitTestPath();
+            toolFolder = fullfile(root, "tools", "release");
+            addpath(toolFolder);
+            cleanup = onCleanup(@() rmpath(toolFolder));
+            history = parseLabKitChangelog(fullfile(root, "CHANGELOG.md"));
+            events = [history.components];
+            metadata = collectVersionMetadataRecords(root);
+
+            missing = strings(1, 0);
+            for k = 1:numel(metadata)
+                record = metadata(k);
+                componentEvents = events(string({events.name}) == record.component);
+                introductions = componentEvents( ...
+                    string({componentEvents.kind}) == "introduced");
+                transitions = componentEvents( ...
+                    string({componentEvents.kind}) == "transition");
+                if numel(introductions) ~= 1
+                    missing(end + 1) = record.component + " introduction";
+                    continue;
+                end
+                fromVersions = string({transitions.fromVersion});
+                toVersions = [introductions.toVersion, ...
+                    string({transitions.toVersion})];
+                terminal = toVersions(~ismember(toVersions, fromVersions));
+                if numel(terminal) ~= 1 || terminal ~= record.version
+                    missing(end + 1) = record.component + " terminal " + ...
+                        strjoin(terminal, ",") + " != " + record.version;
+                end
+            end
+
+            testCase.verifyEmpty(missing, ...
+                "Every versioned component needs a continuous history ending at metadata: " + ...
+                strjoin(missing, "; "));
+            clear cleanup
+        end
+
         function releaseDocsDefineChangelogContract(testCase)
             root = setupLabKitTestPath();
             releaseDoc = string(fileread(fullfile(root, "docs", "release.md")));
@@ -88,6 +125,7 @@ classdef ChangelogGuardrailTest < matlab.unittest.TestCase
                 "stable Change ID", ...
                 "current version lookup", ...
                 "parseLabKitChangelog", ...
+                "continuous transition chain", ...
                 "decision and rationale", ...
                 "When a change bumps `labkit_launcher.m`" ...
             ];
@@ -107,7 +145,7 @@ function records = collectVersionMetadataRecords(root)
     files = [string(fullfile(root, "labkit_launcher.m")), ...
         collectFiles(fullfile(root, "+labkit"), "version.m"), ...
         collectFiles(fullfile(root, "apps"), "version.m")];
-    records = repmat(struct("path", "", "version", ""), 1, 0);
+    records = repmat(struct("path", "", "component", "", "version", ""), 1, 0);
     for k = 1:numel(files)
         filepath = files(k);
         rel = string(relativePath(root, filepath));
@@ -115,7 +153,25 @@ function records = collectVersionMetadataRecords(root)
         if strlength(version) == 0
             continue;
         end
-        records(end+1) = struct("path", rel, "version", version);
+        component = componentInText(string(fileread(filepath)), rel);
+        records(end+1) = struct( ...
+            "path", rel, "component", component, "version", version);
+    end
+end
+
+function component = componentInText(text, path)
+    if path == "labkit_launcher.m"
+        component = "labkit_launcher";
+        return;
+    end
+    value = regexp(text, '["'']name["'']\s*,\s*["'']([^"'']+)["'']', ...
+        "tokens", "once");
+    if isempty(value)
+        value = regexp(text, 'versionInfo\(\s*["'']([^"'']+)["'']', ...
+            "tokens", "once");
+        component = "labkit." + string(value{1});
+    else
+        component = string(value{1});
     end
 end
 
