@@ -157,6 +157,24 @@ classdef BuildTaskEfficiencyGuardrailTest < matlab.unittest.TestCase
             testCase.verifyEmpty(blocked, ...
                 "Test paths should use explicit owners: apps, labkit_framework, or project.");
         end
+
+        function hiddenGuiTestsAvoidUiAutomationDriver(testCase)
+            root = setupLabKitTestPath();
+            files = trackedTestCaseFiles(root);
+            files = files(contains(files, "/tests/cases/gui/"));
+            offenders = strings(1, 0);
+            for k = 1:numel(files)
+                source = string(fileread(fullfile(root, extractAfter(files(k), 1))));
+                if contains(source, "< matlab.uitest.TestCase")
+                    offenders(end + 1) = files(k);
+                end
+            end
+            testCase.verifyEmpty(offenders, ...
+                ["Hidden GUI tests must use matlab.unittest.TestCase. " + ...
+                "matlab.uitest.TestCase installs a display-only automation driver " + ...
+                "that emits ViewReady callback errors for hidden figures. Findings: " + ...
+                strjoin(offenders, ", ")]);
+        end
     end
 end
 

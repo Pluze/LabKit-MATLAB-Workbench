@@ -1,4 +1,4 @@
-classdef GuiLayoutUiAnchorCurveEditorTest < matlab.uitest.TestCase
+classdef GuiLayoutUiAnchorCurveEditorTest < matlab.unittest.TestCase
     %GUILAYOUTUIANCHORCURVEEDITORTEST Verify LabKit behavior through official MATLAB tests.
 
     methods (Test, TestTags = {'GUI', 'Structural'})

@@ -1,4 +1,4 @@
-classdef LauncherGuiTest < matlab.uitest.TestCase
+classdef LauncherGuiTest < matlab.unittest.TestCase
     %LAUNCHERGUITEST Verify the root launcher without launching every app.
 
     methods (Test, TestTags = {'GUI', 'Structural'})

@@ -26,6 +26,13 @@ If MATLAB exits before printing a build-task banner such as
 MATLAB launcher or runtime access failure before diagnosing source or test
 failures.
 
+Every official run writes `test-progress.jsonl` and `active-test.json` under
+its `artifacts/logs/<run-name>/` folder. The first file records suite, test,
+and long-test heartbeat events; the second records the last active test and
+elapsed time. CI gives the MATLAB execution step a shorter timeout than the
+containing job so the always-run summary and artifact upload steps can still
+publish these diagnostics when a test stalls before JUnit is complete.
+
 ## Build Tasks
 
 Use MATLAB build tasks for the stable official entry points:
@@ -233,6 +240,11 @@ Automated GUI tests check:
 - debug trace plumbing
 - reusable tool lifecycle
 - hidden synthetic app workflows
+
+Hidden GUI tests use `matlab.unittest.TestCase` while still constructing real
+figures and controls. `matlab.uitest.TestCase` is reserved for visible UI
+automation because its display driver emits `ViewReady` callback errors for
+hidden figures on CI runners.
 
 App GUI layout tests should express user-facing and app-facing contracts:
 expected command buttons, dropdown choices, tabs, table columns, axes, callback

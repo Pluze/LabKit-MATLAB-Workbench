@@ -1,4 +1,4 @@
-classdef GuiLayoutCicTest < matlab.uitest.TestCase
+classdef GuiLayoutCicTest < matlab.unittest.TestCase
     %GUILAYOUTCICTEST Verify CIC GUI layout contracts.
 
     methods (Test, TestTags = {'GUI', 'Structural', 'Workflow'})

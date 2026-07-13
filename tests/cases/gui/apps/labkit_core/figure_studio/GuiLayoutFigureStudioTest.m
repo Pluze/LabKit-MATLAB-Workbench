@@ -1,4 +1,4 @@
-classdef GuiLayoutFigureStudioTest < matlab.uitest.TestCase
+classdef GuiLayoutFigureStudioTest < matlab.unittest.TestCase
     %GUILAYOUTFIGURESTUDIOTEST Verify Figure Studio launch and controls.
 
     methods (Test, TestTags = {'GUI', 'Structural', 'Workflow'})

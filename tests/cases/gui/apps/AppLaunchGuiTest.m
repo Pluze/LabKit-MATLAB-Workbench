@@ -1,4 +1,4 @@
-classdef AppLaunchGuiTest < matlab.uitest.TestCase
+classdef AppLaunchGuiTest < matlab.unittest.TestCase
     %APPLAUNCHGUITEST Guard supported apps against missing dedicated GUI tests.
 
     methods (Test, TestTags = {'GUI', 'Structural'})

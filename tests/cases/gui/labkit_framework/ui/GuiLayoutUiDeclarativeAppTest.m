@@ -1,4 +1,4 @@
-classdef GuiLayoutUiDeclarativeAppTest < matlab.uitest.TestCase
+classdef GuiLayoutUiDeclarativeAppTest < matlab.unittest.TestCase
     %GUILAYOUTUIDECLARATIVEAPPTEST Verify UI 5 app builder contracts.
 
     methods (Test, TestTags = {'GUI', 'Structural'})

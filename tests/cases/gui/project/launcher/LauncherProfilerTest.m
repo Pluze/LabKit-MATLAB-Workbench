@@ -1,4 +1,4 @@
-classdef LauncherProfilerTest < matlab.uitest.TestCase
+classdef LauncherProfilerTest < matlab.unittest.TestCase
     %LAUNCHERPROFILERTEST Verify launcher-managed app profiling.
 
     methods (Test, TestTags = {'GUI', 'Structural'})

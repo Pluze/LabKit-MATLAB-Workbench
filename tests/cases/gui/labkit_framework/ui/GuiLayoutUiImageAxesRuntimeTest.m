@@ -1,4 +1,4 @@
-classdef GuiLayoutUiImageAxesRuntimeTest < matlab.uitest.TestCase
+classdef GuiLayoutUiImageAxesRuntimeTest < matlab.unittest.TestCase
     %GUILAYOUTUIIMAGEAXESRUNTIMETEST Verify LabKit behavior through official MATLAB tests.
 
     methods (Test, TestTags = {'GUI', 'Structural'})

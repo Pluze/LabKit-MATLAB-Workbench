@@ -1,4 +1,4 @@
-classdef RuntimeGestureTest < matlab.uitest.TestCase
+classdef RuntimeGestureTest < matlab.unittest.TestCase
     %RUNTIMEGESTURETEST Gesture-level checks for image axes runtime ownership.
 
     methods (Test, TestTags = {'GUI', 'Gesture'})

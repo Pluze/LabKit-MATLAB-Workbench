@@ -1,4 +1,4 @@
-classdef GuiLayoutCscTest < matlab.uitest.TestCase
+classdef GuiLayoutCscTest < matlab.unittest.TestCase
     %GUILAYOUTCSCTEST Verify CSC GUI layout contracts.
 
     methods (Test, TestTags = {'GUI', 'Structural', 'Workflow'})

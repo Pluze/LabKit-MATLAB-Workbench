@@ -1,4 +1,4 @@
-classdef GuiLayoutVtResistanceTest < matlab.uitest.TestCase
+classdef GuiLayoutVtResistanceTest < matlab.unittest.TestCase
     %GUILAYOUTVTRESISTANCETEST Verify VT resistance GUI layout contracts.
 
     methods (Test, TestTags = {'GUI', 'Structural', 'Workflow'})

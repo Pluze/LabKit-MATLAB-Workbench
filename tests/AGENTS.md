@@ -163,6 +163,11 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
   Hidden mode must still create real MATLAB figures and controls rather than
   mock GUI objects; visible or minimized GUI mode is for observing the same
   automated checks during local diagnosis.
+- Hidden GUI tests that invoke semantic callbacks or inspect real controls must
+  inherit from `matlab.unittest.TestCase`. Use `matlab.uitest.TestCase` only
+  for a visible automation workflow that actually calls its press, choose,
+  drag, scroll, or type methods; its display driver is incompatible with
+  hidden CI figures.
 
 ## Fixture and Hygiene Rules
 

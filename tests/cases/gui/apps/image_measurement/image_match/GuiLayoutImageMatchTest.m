@@ -1,4 +1,4 @@
-classdef GuiLayoutImageMatchTest < matlab.uitest.TestCase
+classdef GuiLayoutImageMatchTest < matlab.unittest.TestCase
     %GUILAYOUTIMAGEMATCHTEST Verify image match GUI layout contracts.
 
     methods (Test, TestTags = {'GUI', 'Structural', 'Workflow'})

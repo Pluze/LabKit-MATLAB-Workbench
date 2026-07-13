@@ -1,4 +1,4 @@
-classdef GuiLayoutEisTest < matlab.uitest.TestCase
+classdef GuiLayoutEisTest < matlab.unittest.TestCase
     %GUILAYOUTEISTEST Verify EIS GUI layout and workflow contracts.
 
     methods (Test, TestTags = {'GUI', 'Structural', 'Workflow'})

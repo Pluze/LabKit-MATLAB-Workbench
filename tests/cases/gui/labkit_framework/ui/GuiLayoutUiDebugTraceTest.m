@@ -1,4 +1,4 @@
-classdef GuiLayoutUiDebugTraceTest < matlab.uitest.TestCase
+classdef GuiLayoutUiDebugTraceTest < matlab.unittest.TestCase
     %GUILAYOUTUIDEBUGTRACETEST Verify LabKit behavior through official MATLAB tests.
 
     methods (Test, TestTags = {'GUI', 'Structural'})

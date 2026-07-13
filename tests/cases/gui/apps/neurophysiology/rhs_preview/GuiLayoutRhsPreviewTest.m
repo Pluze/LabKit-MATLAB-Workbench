@@ -1,4 +1,4 @@
-classdef GuiLayoutRhsPreviewTest < matlab.uitest.TestCase
+classdef GuiLayoutRhsPreviewTest < matlab.unittest.TestCase
     %GUILAYOUTRHSPREVIEWTEST Verify RHS Preview GUI workflow contracts.
 
     methods (Test, TestTags = {'GUI', 'Workflow'})
