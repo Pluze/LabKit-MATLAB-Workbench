@@ -14,7 +14,7 @@ function imageOut = beforeAfterImage(original, matchedImage)
 end
 
 function imageOut = normalizePreviewImage(imageIn)
-    imageOut = min(max(labkit.image.toDouble(imageIn), 0), 1);
+    imageOut = min(max(labkit.image.im2double(imageIn), 0), 1);
     if ndims(imageOut) == 2
         imageOut = repmat(imageOut, 1, 1, 3);
     end

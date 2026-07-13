@@ -12,6 +12,6 @@ function info = version()
 %       compatible contract ranges implemented by this code, contract status,
 %       and a short maintainer note.
 
-    info = labkit.contract.versionInfo("image", "1.2.0", ">=1.0 <2", ...
+    info = labkit.contract.versionInfo("image", "2.0.0", ">=2.0 <3", ...
         "stable", "GUI-free image file input, basic processing, and preview-budget helpers for responsive image apps.");
 end

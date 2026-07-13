@@ -3,13 +3,15 @@
 % Output is a display-ready RGB double image in [0, 1].
 function outputImage = applyMatch(inputImage, referenceImage, step)
 
-    inputImage = labkit.image.toRgbDouble(inputImage);
+    inputImage = labkit.image.ensureRgb(labkit.image.im2double(inputImage));
+    inputImage = min(max(inputImage, 0), 1);
     if isempty(referenceImage)
         outputImage = inputImage;
         return;
     end
 
-    referenceImage = labkit.image.toRgbDouble(referenceImage);
+    referenceImage = labkit.image.ensureRgb(labkit.image.im2double(referenceImage));
+    referenceImage = min(max(referenceImage, 0), 1);
     strength = clamp01(double(step.amount) / 100);
     toneStrength = clamp01(double(step.secondary) / 100);
     colorStrength = clamp01(double(step.colorStrength) / 100);
@@ -265,17 +267,12 @@ function value = percentileValue(data, pct)
 end
 
 function imageData = normalizeImage(imageData)
-    imageData = labkit.image.toDouble(imageData);
-    if ndims(imageData) == 2
-        imageData = repmat(imageData, 1, 1, 3);
-    elseif size(imageData, 3) > 3
-        imageData = imageData(:, :, 1:3);
-    end
+    imageData = labkit.image.ensureRgb(labkit.image.im2double(imageData));
     imageData = min(max(imageData, 0), 1);
 end
 
 function gray = luma(imageData)
-    gray = labkit.image.toLuma(imageData);
+    gray = labkit.image.rgb2gray(imageData);
 end
 
 function outputImage = labToRgb(labImage)

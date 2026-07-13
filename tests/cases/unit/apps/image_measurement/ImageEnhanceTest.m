@@ -267,7 +267,7 @@ function checkManifestAndExportContract()
         'Batch export should avoid overwriting existing enhanced outputs.');
     assert(isfile(payload.results(1).outputPath), ...
         'Batch export should write enhanced image output.');
-    written = labkit.image.toDouble(imread(payload.results(1).outputPath));
+    written = labkit.image.im2double(imread(payload.results(1).outputPath));
     assert(isequal(size(written), [10 12 3]), ...
         'Batch export should process and write full-size enhanced images.');
     assert(isfile(payload.manifestPath), ...
@@ -303,8 +303,8 @@ function checkPerImageExportSteps()
     T = image_enhance.resultFiles.buildManifest(payload.results);
     assert(all(T.StepCount == [1; 1]), ...
         'Per-image enhancement exports should report each image history length.');
-    firstWritten = labkit.image.toDouble(imread(payload.results(1).outputPath));
-    secondWritten = labkit.image.toDouble(imread(payload.results(2).outputPath));
+    firstWritten = labkit.image.im2double(imread(payload.results(1).outputPath));
+    secondWritten = labkit.image.im2double(imread(payload.results(2).outputPath));
     assert(mean(firstWritten(:)) > mean(items(1).image(:)) && ...
         mean(secondWritten(:)) < mean(items(2).image(:)), ...
         'Per-image enhancement exports should apply each image-specific history.');
@@ -372,7 +372,7 @@ function checkExportTaskBuildsStateDrivenInputs()
 end
 
 function gray = testLuma(imageIn)
-    gray = labkit.image.toLuma(imageIn);
+    gray = labkit.image.rgb2gray(imageIn);
 end
 
 function checkPreviewImageDownsamplesLargeInputs()

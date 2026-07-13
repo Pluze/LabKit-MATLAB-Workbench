@@ -195,7 +195,8 @@ function background = drawImage(ax, imageData, titleText)
         background = imagesc(ax, double(imageData));
         colormap(ax, gray(256));
     else
-        background = image(ax, labkit.image.toRgbDouble(imageData));
+        rgb = labkit.image.ensureRgb(labkit.image.im2double(imageData));
+        background = image(ax, min(max(rgb, 0), 1));
     end
     axis(ax, 'image');
     ax.YDir = 'reverse';

@@ -62,13 +62,14 @@ classdef LabKitImageFacadeTest < matlab.unittest.TestCase
             image(:, :, 2) = repmat(linspace(0.1, 0.9, 20), 12, 1);
             image(:, :, 3) = 0.55;
 
-            normalized = labkit.image.toDouble(uint8([0 255]));
-            signedNormalized = labkit.image.toDouble(int16([-32768 0 32767]));
-            logicalNormalized = labkit.image.toDouble([false true]);
-            rgb = labkit.image.toRgbDouble(uint8(100 * ones(4, 5)));
-            redLuma = mean(labkit.image.toLuma(cat(3, ones(2), zeros(2), zeros(2))), "all");
-            greenLuma = mean(labkit.image.toLuma(cat(3, zeros(2), ones(2), zeros(2))), "all");
-            blueLuma = mean(labkit.image.toLuma(cat(3, zeros(2), zeros(2), ones(2))), "all");
+            normalized = labkit.image.im2double(uint8([0 255]));
+            signedNormalized = labkit.image.im2double(int16([-32768 0 32767]));
+            logicalNormalized = labkit.image.im2double([false true]);
+            rgb = labkit.image.ensureRgb( ...
+                labkit.image.im2double(uint8(100 * ones(4, 5))));
+            redLuma = mean(labkit.image.rgb2gray(cat(3, ones(2), zeros(2), zeros(2))), "all");
+            greenLuma = mean(labkit.image.rgb2gray(cat(3, zeros(2), ones(2), zeros(2))), "all");
+            blueLuma = mean(labkit.image.rgb2gray(cat(3, zeros(2), zeros(2), ones(2))), "all");
             [preview, scale] = labkit.image.resizeToFit(image, "MaxHeight", 6);
             [budgetPreview, budgetInfo] = labkit.image.previewBudget(image, ...
                 "MaxPixels", 40, ...
@@ -88,6 +89,13 @@ classdef LabKitImageFacadeTest < matlab.unittest.TestCase
             testCase.verifyEqual(signedNormalized, expectedSigned, "AbsTol", 1e-12);
             testCase.verifyEqual(logicalNormalized, [0 1]);
             testCase.verifyEqual(size(rgb), [4 5 3]);
+            testCase.verifyEqual(labkit.image.im2double(uint8([0 1]), "indexed"), [1 2]);
+            grayUint8 = labkit.image.rgb2gray(uint8(cat(3, ...
+                255 * ones(2), zeros(2), zeros(2))));
+            testCase.verifyClass(grayUint8, "uint8");
+            testCase.verifyEqual(grayUint8, uint8(76 * ones(2)));
+            grayMap = labkit.image.rgb2gray([1 0 0; 0 1 0]);
+            testCase.verifyEqual(size(grayMap), [2 3]);
             testCase.verifyTrue(greenLuma > redLuma && redLuma > blueLuma);
             testCase.verifyEqual(size(preview), [6 10 3]);
             testCase.verifyEqual(scale, 0.5, "AbsTol", 1e-12);
@@ -114,7 +122,7 @@ classdef LabKitImageFacadeTest < matlab.unittest.TestCase
             labkit.image.writeFile(0.5 .* ones(4, 5, 3), filepath);
 
             testCase.verifyTrue(isfile(filepath));
-            written = labkit.image.toDouble(imread(filepath));
+            written = labkit.image.im2double(imread(filepath));
             testCase.verifyEqual(size(written), [4 5 3]);
         end
 

@@ -3,7 +3,8 @@
 % image for match-reference steps. Output is RGB double image data in [0, 1].
 function outputImage = applyStep(inputImage, step, referenceImage)
 
-    inputImage = labkit.image.toRgbDouble(inputImage);
+    inputImage = labkit.image.ensureRgb(labkit.image.im2double(inputImage));
+    inputImage = min(max(inputImage, 0), 1);
     key = normalizeKind(step.kind);
     switch key
         case 'brightnesscontrast'
@@ -137,7 +138,7 @@ function out = weightedMean(values, weights)
 end
 
 function gray = luma(imageData)
-    gray = labkit.image.toLuma(imageData);
+    gray = labkit.image.rgb2gray(imageData);
 end
 
 function y = smoothstep(edge0, edge1, x)

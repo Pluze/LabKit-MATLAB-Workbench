@@ -15,9 +15,10 @@ filter = labkit.image.fileDialogFilter("IncludeAll", true);
 paths = labkit.image.normalizePaths(rawPaths);
 records = labkit.image.readFiles(paths);
 
-source = labkit.image.toDouble(records(1).image);
-preview = labkit.image.toRgbDouble(source);
-luma = labkit.image.toLuma(preview);
+source = labkit.image.im2double(records(1).image);
+preview = labkit.image.ensureRgb(source);
+preview = min(max(preview, 0), 1);
+luma = labkit.image.rgb2gray(preview);
 [preview, scale] = labkit.image.resizeToFit(preview, "MaxHeight", 1500);
 [preview, budget] = labkit.image.previewBudget(preview, "MaxPixels", 1.2e6);
 
@@ -32,16 +33,16 @@ labkit.image.writeFile(enhanced, outputPath);
 
 ## Normalization Helpers
 
-`labkit.image.toDouble` is the base-MATLAB replacement for `im2double` for
-LabKit-supported image classes. Use it when code would otherwise call
-`im2double`.
+`labkit.image.im2double` follows the MATLAB `im2double` call contract for
+supported numeric image classes, including the optional `"indexed"` mode.
 
-`labkit.image.toLuma` is the base-MATLAB replacement for `rgb2gray`-style
-luminance conversion. Use it when code needs a grayscale analysis plane.
+`labkit.image.rgb2gray` follows the MATLAB `rgb2gray` call contract for RGB
+images and colormaps while using the documented Rec.601 luma transform.
 
-`labkit.image.toRgbDouble` is LabKit display glue, not a MATLAB API clone. It
-normalizes with `toDouble`, expands grayscale images to RGB, drops channels
-beyond RGB, and clamps to `[0, 1]` for previews and RGB enhancement pipelines.
+`labkit.image.ensureRgb` changes channel shape only. It expands grayscale data
+to three channels or drops channels after RGB without changing class or sample
+values. Callers that need display-ready RGB data explicitly compose
+`im2double`, `ensureRgb`, and `[0, 1]` clamping as shown above.
 
 ## Ownership
 
@@ -50,7 +51,7 @@ The facade may own:
 - supported source-image extension lists and file-dialog filters
 - path normalization and display names
 - `imread`/`imwrite` wrappers that normalize app-facing edge behavior
-- base-MATLAB image normalization, RGB double conversion, preview-size fitting,
+- MATLAB-compatible image conversion, explicit RGB shaping, preview-size fitting,
   and edge-normalized mean filtering
 - display-pixel budget helpers for responsive previews while preserving a
   documented integer coordinate scale

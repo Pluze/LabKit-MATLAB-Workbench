@@ -74,7 +74,7 @@ classdef ToolboxDependencyGuardrailTest < matlab.unittest.TestCase
             files = trackedMatlabFiles(root);
             findings = collectRec601LumaWeightCopies(root, files);
             testCase.verifyEmpty(findings, ...
-                ['Rec.601 luma weights should be owned by labkit.image.toLuma ' ...
+                ['Rec.601 luma weights should be owned by labkit.image.rgb2gray ' ...
                 'instead of copied into app or test code. Findings: ' ...
                 strjoin(cellstr(findings), ', ')]);
         end
@@ -83,13 +83,13 @@ end
 
 function smokeLabkitImageFacade()
     imageData = uint8(repmat(reshape(0:15, 4, 4), 1, 1, 3));
-    rgb = labkit.image.toRgbDouble(imageData);
-    luma = labkit.image.toLuma(imageData);
+    rgb = labkit.image.ensureRgb(labkit.image.im2double(imageData));
+    luma = labkit.image.rgb2gray(rgb);
     resized = labkit.image.resizeToFit(rgb, "MaxHeight", 2);
     assert(isequal(size(rgb), [4 4 3]), ...
-        'labkit.image.toRgbDouble should return RGB double image data.');
+        'Explicit image conversion and RGB shaping should return RGB double data.');
     assert(isequal(size(luma), [4 4]), ...
-        'labkit.image.toLuma should return one luminance plane.');
+        'labkit.image.rgb2gray should return one luminance plane.');
     assert(size(resized, 1) == 2, ...
         'labkit.image.resizeToFit should use the base-MATLAB resize path.');
 end
@@ -185,7 +185,7 @@ function findings = collectRec601LumaWeightCopies(root, files)
     weightPatterns = ["0.2989", "0.5870", "0.1140"];
     for k = 1:numel(files)
         file = slashPath(files(k));
-        if file == "+labkit/+image/toLuma.m" || ...
+        if file == "+labkit/+image/rgb2gray.m" || ...
                 file == "tests/cases/contract/project/hygiene/ToolboxDependencyGuardrailTest.m"
             continue;
         end
@@ -206,7 +206,7 @@ end
 function findings = collectHardToolboxCallsFromContents(~, files, contents)
     findings = strings(1, 0);
     names = guardedToolboxFunctionNames();
-    pattern = ['(^|[^\w])(' char(strjoin(names, "|")) ')\s*\('];
+    pattern = ['(^|[^\w.])(' char(strjoin(names, "|")) ')\s*\('];
     for k = 1:numel(files)
         file = slashPath(files(k));
         if ~isKey(contents, char(files(k)))
@@ -215,7 +215,9 @@ function findings = collectHardToolboxCallsFromContents(~, files, contents)
         lines = contents(char(files(k)));
         for iLine = 1:numel(lines)
             line = string(lines(iLine));
-            if startsWith(strtrim(line), "%") || isempty(regexp(char(line), pattern, 'once'))
+        trimmed = strtrim(line);
+        if startsWith(trimmed, "%") || startsWith(trimmed, "function") || ...
+                isempty(regexp(char(line), pattern, 'once'))
                 continue;
             end
             findings(end + 1) = file + ":" + string(iLine);

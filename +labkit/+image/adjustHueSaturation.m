@@ -5,14 +5,16 @@ function imageOut = adjustHueSaturation(imageIn, hueDeg, saturationPct)
 %   imageOut = labkit.image.adjustHueSaturation(imageIn, hueDeg, saturationPct)
 %
 % Inputs:
-%   imageIn - numeric image data, normalized internally with toRgbDouble.
+%   imageIn - numeric image data, normalized internally to RGB double.
 %   hueDeg - hue rotation in degrees.
 %   saturationPct - saturation scale delta in percent.
 %
 % Outputs:
 %   imageOut - RGB double image clamped to [0, 1].
 
-    hsvImage = rgb2hsv(labkit.image.toRgbDouble(imageIn));
+    imageIn = labkit.image.ensureRgb(labkit.image.im2double(imageIn));
+    imageIn = min(max(imageIn, 0), 1);
+    hsvImage = rgb2hsv(imageIn);
     hsvImage(:, :, 1) = mod(hsvImage(:, :, 1) + double(hueDeg) / 360, 1);
     hsvImage(:, :, 2) = hsvImage(:, :, 2) .* (1 + double(saturationPct) / 100);
     hsvImage(:, :, 2) = min(max(hsvImage(:, :, 2), 0), 1);
