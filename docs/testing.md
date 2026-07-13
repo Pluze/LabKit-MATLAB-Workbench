@@ -212,7 +212,9 @@ test class names, not extra ownership paths.
 `tests/shared/` intentionally keeps ordinary MATLAB helper functions as
 one-function files because those helpers are called directly by tests. Prefer a
 plain function file there over a larger registry object unless repeated call
-patterns justify a grouped API.
+patterns justify a grouped API. Changed-file validation resolves direct test
+consumers of a shared helper and reruns those test classes instead of expanding
+every shared GUI helper change to the full GUI suite.
 
 Build tasks are the supported human and CI entry points. The lower-level runner
 is an implementation detail used by the buildfile.

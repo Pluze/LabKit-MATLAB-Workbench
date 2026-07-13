@@ -146,6 +146,34 @@ classdef BuildTaskEfficiencyGuardrailTest < matlab.unittest.TestCase
                 "LabKit framework GUI test changes should rerun the owning framework GUI suite.");
         end
 
+        function changedValidationPlanTargetsSharedHelperConsumers(testCase)
+            root = setupLabKitTestPath();
+
+            guiSteps = labkitValidationPlanForChangedPaths(root, ...
+                "tests/shared/guiTestHelpers.m");
+            guiSignatures = validationStepSignatures(guiSteps);
+            guiSelectors = split(validationStepTestSelectors(guiSteps), ",");
+            testCase.verifyEqual(guiSignatures, "gui|true", ...
+                "Shared GUI helpers should route to direct GUI consumers.");
+            testCase.verifyGreaterThan(numel(guiSelectors), 1, ...
+                "Shared GUI helper routing should retain multiple consumers.");
+            testCase.verifyLessThan(numel(guiSelectors), ...
+                officialGuiClassCount(root), ...
+                "Shared GUI helper routing should avoid the full GUI suite.");
+            testCase.verifyTrue(any(guiSelectors == "GuiLayoutDicPreprocessTest"), ...
+                "Shared GUI helper routing should include real app consumers.");
+
+            workflowSteps = labkitValidationPlanForChangedPaths(root, ...
+                "tests/shared/labkitWorkflowDriver.m");
+            workflowSelectors = split( ...
+                validationStepTestSelectors(workflowSteps), ",");
+            testCase.verifyLessThan(numel(workflowSelectors), ...
+                numel(guiSelectors), ...
+                "Workflow-driver changes should run only direct consumers.");
+            testCase.verifyTrue(any(workflowSelectors == "GuiLayoutBatchCropTest"), ...
+                "Workflow-driver routing should include app workflow consumers.");
+        end
+
         function testCasePathsUseExplicitOwners(testCase)
             root = setupLabKitTestPath();
             caseFiles = trackedTestCaseFiles(root);
@@ -228,4 +256,9 @@ function files = trackedTestCaseFiles(root)
     exists = arrayfun(@(f) isfile(fullfile(root, f)), files);
     files = files(exists);
     files = "/" + replace(files, filesep, "/");
+end
+
+function count = officialGuiClassCount(root)
+    entries = dir(fullfile(root, "tests", "cases", "gui", "**", "*.m"));
+    count = numel(entries);
 end
