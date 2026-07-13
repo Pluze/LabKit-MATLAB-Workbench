@@ -464,7 +464,19 @@ when a tool has stricter data limits. Generic plots zoom both axes by default;
 time-labeled x-axes zoom only the horizontal axis unless `"ZoomAxes"` is
 provided explicitly.
 
-Use `labkit.ui.interaction.anchorEditor(runtime, imageSize, opts)` for generic anchor editing. Use `labkit.ui.interaction.rectangleEditor(runtime, imageSize, position, opts)` for a toolbox-free draggable and resizable rectangular overlay. Use `labkit.ui.interaction.scaleBar(parent, row, runtime, opts)` for calibration controls, reference-pixel editing, unit normalization, final scale-bar placement, and overlay drawing. Apps can persist `tool.calibration()` per image and restore it with `tool.setCalibration(cal)`. Apps still own image loading, redraw order, scientific calculations, result summaries, alerts, logs, and exports.
+Use `labkit.ui.interaction.anchorEditor(runtime, imageSize, opts)` for generic
+anchor editing. Its default `mode="curve"` uses double-click insertion and a
+visible path for boundaries and traced curves. `mode="points"` uses the
+single-click placement and drag-to-refine behavior suited to ordered feature
+points and ROI centers, without drawing a connecting path or assigning
+double-click deletion. Use `labkit.ui.interaction.rectangleEditor(runtime,
+imageSize, position, opts)` for a toolbox-free draggable and resizable
+rectangular overlay. Use `labkit.ui.interaction.scaleBar(parent, row, runtime,
+opts)` for calibration controls, reference-pixel editing, unit normalization,
+final scale-bar placement, and overlay drawing. Apps can persist
+`tool.calibration()` per image and restore it with `tool.setCalibration(cal)`.
+Apps still own image loading, redraw order, scientific calculations, result
+summaries, alerts, logs, and exports.
 
 `labkit.ui.interaction.scaleBarCalibration(referencePixels, referenceLength, unitName, opts)` is the GUI-free calibration struct helper used by apps and app-private calculations.
 

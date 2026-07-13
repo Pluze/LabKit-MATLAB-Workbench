@@ -13,6 +13,9 @@ function editor = anchorEditor(runtime, imageSize, opts)
 %   opts - optional struct.
 %
 % Options:
+%   mode - "curve" (default) or "points". Point mode uses a single blank
+%          click to append an anchor, draws no connecting path, and leaves
+%          deletion to the caller's explicit undo/clear controls.
 %   closed - logical, default false; close preview path for ROI boundaries.
 %   style - "Curve" (default) or "Straight lines".
 %   installScrollWheel - logical, default true; temporarily use editor zoom
@@ -32,6 +35,8 @@ function editor = anchorEditor(runtime, imageSize, opts)
 % Interaction:
 %   Double-click blank space to add/insert anchors, drag anchors to move,
 %   double-click anchors to delete, and use scroll wheel to zoom when enabled.
+%   In point mode, single-click blank space to append anchors and drag anchors
+%   to refine them; double-click does not delete an anchor.
 %   Open paths extend endpoints for natural tracing, but clicks close to an
 %   existing visible segment insert correction anchors. Endpoint extensions
 %   that would self-intersect the visible path are treated as insertions.
@@ -53,6 +58,7 @@ function editor = anchorEditor(runtime, imageSize, opts)
     state.ax = runtime.axes();
     state.fig = runtime.figure();
     state.imageSize = imageSize;
+    state.mode = editorMode(optionValue(opts, 'mode', 'curve'));
     state.closed = optionValue(opts, 'closed', false);
     state.style = string(optionValue(opts, 'style', 'Curve'));
     state.installScrollWheel = optionValue(opts, 'installScrollWheel', true);
@@ -143,8 +149,7 @@ function editor = anchorEditor(runtime, imageSize, opts)
 
     function insertPoint(point)
         trace(sprintf('insertPoint %.6g %.6g', point(1), point(2)));
-        state.points = addOrInsertAnchor(state.points, point, state.ax, ...
-            state.imageSize, state.style, state.closed, state.maxPoints);
+        state.points = addPoint(state.points, point);
         refresh();
         notifyChanged('add point');
     end
@@ -202,6 +207,10 @@ function editor = anchorEditor(runtime, imageSize, opts)
     end
 
     function curve = curvePointsForCurrentState()
+        if state.mode == "points"
+            curve = zeros(0, 2);
+            return;
+        end
         curve = anchorCurvePoints(state.points, state.imageSize, state.style, state.closed);
     end
 
@@ -238,7 +247,8 @@ function editor = anchorEditor(runtime, imageSize, opts)
         end
 
         idx = nearestAnchor(x, y);
-        if strcmp(state.fig.SelectionType, 'open')
+        selectionType = string(state.fig.SelectionType);
+        if selectionType == "open" && state.mode == "curve"
             if ~isempty(idx)
                 trace(sprintf('onAxesClicked double-delete idx=%d', idx));
                 state.points(idx, :) = [];
@@ -246,11 +256,18 @@ function editor = anchorEditor(runtime, imageSize, opts)
                 notifyChanged('delete point');
             else
                 trace(sprintf('onAxesClicked double-add x=%.6g y=%.6g', x, y));
-                state.points = addOrInsertAnchor(state.points, [x y], state.ax, ...
-                    state.imageSize, state.style, state.closed, state.maxPoints);
+                state.points = addPoint(state.points, [x y]);
                 refresh();
                 notifyChanged('add point');
             end
+            return;
+        end
+
+        if isempty(idx) && state.mode == "points" && selectionType == "normal"
+            trace(sprintf('onAxesClicked single-add x=%.6g y=%.6g', x, y));
+            state.points = addPoint(state.points, [x y]);
+            refresh();
+            notifyChanged('add point');
             return;
         end
 
@@ -345,6 +362,17 @@ function editor = anchorEditor(runtime, imageSize, opts)
         end
     end
 
+    function points = addPoint(points, point)
+        if state.mode == "points"
+            if size(points, 1) < state.maxPoints
+                points(end + 1, :) = double(point(1:2));
+            end
+            return;
+        end
+        points = addOrInsertAnchor(points, point, state.ax, ...
+            state.imageSize, state.style, state.closed, state.maxPoints);
+    end
+
     function applyStoredView()
         if isempty(state.imageSize) || ~isvalid(state.ax)
             return;
@@ -412,6 +440,12 @@ function editor = anchorEditor(runtime, imageSize, opts)
         end
         state.onTrace(sprintf('anchorCurveEditor: %s', char(message)));
     end
+end
+
+function mode = editorMode(value)
+    mode = lower(string(value));
+    assert(isscalar(mode) && any(mode == ["curve", "points"]), ...
+        'Anchor editor mode must be "curve" or "points".');
 end
 
 function points = normalizePoints(points)

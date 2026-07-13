@@ -7,129 +7,115 @@ function [movingPoints, fixedPoints] = selectRigidPointPairs(movingImage, fixedI
 
     movingPoints = zeros(0, 2);
     fixedPoints = zeros(0, 2);
-    pendingMoving = [];
     accepted = false;
-    dragSide = "";
-    dragIndex = [];
+    updatingEditors = false;
+    editorsReady = false;
 
     fig = uifigure('Name', 'DIC Manual Alignment', ...
         'Position', [100 100 1120 680], ...
         'CloseRequestFcn', @cancelSelection);
     cleanup = onCleanup(@() closeIfValid(fig));
-    root = uigridlayout(fig, [3 2], ...
-        'RowHeight', {34, '1x', 42}, ...
-        'ColumnWidth', {'1x', '1x'}, ...
-        'Padding', [10 10 10 10]);
-    status = uilabel(root, ...
-        'Text', 'Click a point in the moving image.', ...
+    status = uilabel(fig, ...
+        'Text', ['Single-click a feature in the moving image; ' ...
+        'drag any existing anchor to refine it.'], ...
         'HorizontalAlignment', 'center', ...
-        'FontWeight', 'bold');
-    status.Layout.Row = 1;
-    status.Layout.Column = [1 2];
-    movingAxes = uiaxes(root);
-    movingAxes.Layout.Row = 2;
-    movingAxes.Layout.Column = 1;
-    fixedAxes = uiaxes(root);
-    fixedAxes.Layout.Row = 2;
-    fixedAxes.Layout.Column = 2;
+        'FontWeight', 'bold', ...
+        'Position', [20 638 1080 28]);
+    movingAxes = uiaxes(fig, 'Position', [25 100 525 525]);
+    fixedAxes = uiaxes(fig, 'Position', [570 100 525 525]);
     movingBackground = drawImage(movingAxes, movingImage, 'Moving image');
     fixedBackground = drawImage(fixedAxes, fixedImage, 'Fixed image');
 
-    buttonGrid = uigridlayout(root, [1 4], ...
-        'ColumnWidth', {'1x', 110, 110, 110}, ...
-        'Padding', [0 0 0 0]);
-    buttonGrid.Layout.Row = 3;
-    buttonGrid.Layout.Column = [1 2];
-    countLabel = uilabel(buttonGrid, 'Text', 'Point pairs: 0');
-    undoButton = uibutton(buttonGrid, 'Text', 'Undo last', ...
+    countLabel = uilabel(fig, 'Text', 'Point pairs: 0', ...
+        'Position', [25 35 650 30]);
+    undoButton = uibutton(fig, 'Text', 'Undo last', ...
+        'Position', [720 32 110 34], ...
         'Enable', 'off', 'ButtonPushedFcn', @undoLast);
-    cancelButton = uibutton(buttonGrid, 'Text', 'Cancel', ...
+    cancelButton = uibutton(fig, 'Text', 'Cancel', ...
+        'Position', [845 32 110 34], ...
         'ButtonPushedFcn', @cancelSelection);
-    acceptButton = uibutton(buttonGrid, 'Text', 'Accept pairs', ...
+    acceptButton = uibutton(fig, 'Text', 'Accept pairs', ...
+        'Position', [970 32 110 34], ...
         'Enable', 'off', 'ButtonPushedFcn', @acceptSelection);
 
     movingRuntime = labkit.ui.interaction.runtime(movingAxes, struct('figure', fig));
     fixedRuntime = labkit.ui.interaction.runtime(fixedAxes, struct('figure', fig));
-    movingSession = movingRuntime.createSession(struct( ...
-        'name', 'dicMovingControlPoints', ...
-        'onPointerDown', @(src, event) onPointerDown("moving", src, event), ...
-        'installScrollWheel', false));
-    fixedSession = fixedRuntime.createSession(struct( ...
-        'name', 'dicFixedControlPoints', ...
-        'onPointerDown', @(src, event) onPointerDown("fixed", src, event), ...
-        'installScrollWheel', false));
-    movingSession.setBackground(movingBackground);
-    fixedSession.setBackground(fixedBackground);
-    movingSession.activate();
-    fixedSession.activate();
-    redrawPoints();
+    pointOptions = struct('mode', 'points', 'installScrollWheel', false);
+    movingOptions = pointOptions;
+    movingOptions.onChanged = @onMovingChanged;
+    fixedOptions = pointOptions;
+    fixedOptions.onChanged = @onFixedChanged;
+    movingEditor = labkit.ui.interaction.anchorEditor( ...
+        movingRuntime, size(movingImage), movingOptions);
+    fixedEditor = labkit.ui.interaction.anchorEditor( ...
+        fixedRuntime, size(fixedImage), fixedOptions);
+    movingEditor.setBackground(movingBackground);
+    fixedEditor.setBackground(fixedBackground);
+    movingEditor.start(movingPoints);
+    fixedEditor.start(fixedPoints);
+    editorsReady = true;
+    refreshPointDisplay();
 
     uiwait(fig);
+    movingEditor.delete();
+    fixedEditor.delete();
     if ~accepted
         movingPoints = zeros(0, 2);
         fixedPoints = zeros(0, 2);
     end
     clear cleanup
 
-    function onPointerDown(side, source, ~)
-        if isgraphics(source) && isprop(source, 'UserData') && ...
-                isstruct(source.UserData) && isfield(source.UserData, 'pointIndex')
-            dragSide = side;
-            dragIndex = source.UserData.pointIndex;
-            activeSession = sessionForSide(side);
-            activeSession.captureDrag(@onDrag, @onDragReleased);
+    function onMovingChanged(points, reason)
+        if ~editorsReady || updatingEditors
             return;
         end
-
-        point = currentPoint(side);
-        if side == "moving" && isempty(pendingMoving)
-            pendingMoving = point;
-            status.Text = 'Click the matching point in the fixed image.';
-        elseif side == "fixed" && ~isempty(pendingMoving)
-            movingPoints(end + 1, :) = pendingMoving;
-            fixedPoints(end + 1, :) = point;
-            pendingMoving = [];
-            status.Text = 'Pair added. Click another point in the moving image.';
-        else
-            status.Text = char("Next expected click: " + expectedSide() + " image.");
-        end
-        redrawPoints();
-    end
-
-    function onDrag(~, ~)
-        if isempty(dragIndex)
+        if string(reason) == "add point" && ...
+                size(movingPoints, 1) ~= size(fixedPoints, 1)
+            restoreEditorPoints(movingEditor, movingPoints);
+            status.Text = 'Place the matching point in the fixed image first.';
             return;
         end
-        point = currentPoint(dragSide);
-        if dragIndex == 0
-            pendingMoving = point;
-        elseif dragSide == "moving"
-            movingPoints(dragIndex, :) = point;
-        else
-            fixedPoints(dragIndex, :) = point;
+        movingPoints = points;
+        if size(movingPoints, 1) > size(fixedPoints, 1)
+            status.Text = 'Now single-click the matching point in the fixed image.';
         end
-        redrawPoints();
+        refreshPointDisplay();
     end
 
-    function onDragReleased(~, ~)
-        onDrag([], []);
-        dragSide = "";
-        dragIndex = [];
+    function onFixedChanged(points, reason)
+        if ~editorsReady || updatingEditors
+            return;
+        end
+        if string(reason) == "add point" && ...
+                size(movingPoints, 1) ~= size(fixedPoints, 1) + 1
+            restoreEditorPoints(fixedEditor, fixedPoints);
+            status.Text = 'Start the next pair in the moving image.';
+            return;
+        end
+        fixedPoints = points;
+        if size(movingPoints, 1) == size(fixedPoints, 1)
+            status.Text = ['Pair added. Single-click another moving feature, ' ...
+                'or drag any anchor to refine it.'];
+        end
+        refreshPointDisplay();
     end
 
     function undoLast(~, ~)
-        if ~isempty(pendingMoving)
-            pendingMoving = [];
+        if size(movingPoints, 1) > size(fixedPoints, 1)
+            movingPoints(end, :) = [];
         elseif ~isempty(movingPoints)
             movingPoints(end, :) = [];
             fixedPoints(end, :) = [];
         end
-        status.Text = 'Click a point in the moving image.';
-        redrawPoints();
+        updateEditorPoints();
+        status.Text = ['Single-click a feature in the moving image; ' ...
+            'drag any existing anchor to refine it.'];
+        refreshPointDisplay();
     end
 
     function acceptSelection(~, ~)
-        if size(movingPoints, 1) < 2
+        if size(movingPoints, 1) < 2 || ...
+                size(movingPoints, 1) ~= size(fixedPoints, 1)
             return;
         end
         accepted = true;
@@ -143,50 +129,26 @@ function [movingPoints, fixedPoints] = selectRigidPointPairs(movingImage, fixedI
         end
     end
 
-    function redrawPoints()
-        movingGraphics = drawPointSet(movingAxes, movingPoints, "moving");
-        if ~isempty(pendingMoving)
-            pendingGraphic = drawPoint(movingAxes, pendingMoving, ...
-                size(movingPoints, 1) + 1, "moving", 0, [1 0.85 0]);
-            movingGraphics = [movingGraphics; pendingGraphic];
-        end
-        fixedGraphics = drawPointSet(fixedAxes, fixedPoints, "fixed");
-        movingSession.setGraphics(movingGraphics);
-        fixedSession.setGraphics(fixedGraphics);
-        movingSession.refresh();
-        fixedSession.refresh();
+    function refreshPointDisplay()
+        drawPointLabels(movingAxes, movingPoints);
+        drawPointLabels(fixedAxes, fixedPoints);
         countLabel.Text = sprintf('Point pairs: %d', size(movingPoints, 1));
-        undoButton.Enable = enabledText(~isempty(pendingMoving) || ~isempty(movingPoints));
-        acceptButton.Enable = enabledText(size(movingPoints, 1) >= 2);
+        undoButton.Enable = enabledText(~isempty(movingPoints));
+        acceptButton.Enable = enabledText(size(movingPoints, 1) >= 2 && ...
+            size(movingPoints, 1) == size(fixedPoints, 1));
     end
 
-    function point = currentPoint(side)
-        if side == "moving"
-            ax = movingAxes;
-            imageSize = size(movingImage);
-        else
-            ax = fixedAxes;
-            imageSize = size(fixedImage);
-        end
-        value = double(ax.CurrentPoint);
-        point = value(1, 1:2);
-        point(1) = min(max(point(1), 1), imageSize(2));
-        point(2) = min(max(point(2), 1), imageSize(1));
+    function restoreEditorPoints(editor, points)
+        updatingEditors = true;
+        editor.setPoints(points);
+        updatingEditors = false;
     end
 
-    function session = sessionForSide(side)
-        if side == "moving"
-            session = movingSession;
-        else
-            session = fixedSession;
-        end
-    end
-
-    function side = expectedSide()
-        side = "moving";
-        if ~isempty(pendingMoving)
-            side = "fixed";
-        end
+    function updateEditorPoints()
+        updatingEditors = true;
+        movingEditor.setPoints(movingPoints);
+        fixedEditor.setPoints(fixedPoints);
+        updatingEditors = false;
     end
 end
 
@@ -205,24 +167,14 @@ function background = drawImage(ax, imageData, titleText)
     ax.YLabel.String = 'y (px)';
 end
 
-function graphics = drawPointSet(ax, points, side)
-    delete(findobj(ax, 'Tag', 'dicControlPoint'));
-    graphics = gobjects(0);
+function drawPointLabels(ax, points)
+    delete(findobj(ax, 'Tag', 'dicControlPointLabel'));
     for iPoint = 1:size(points, 1)
-        graphics(end + 1, 1) = drawPoint(ax, points(iPoint, :), ...
-            iPoint, side, iPoint, [0 0.85 1]);
+        text(ax, points(iPoint, 1) + 4, points(iPoint, 2), string(iPoint), ...
+            'Color', [0 0.85 1], 'FontWeight', 'bold', ...
+            'HitTest', 'off', 'PickableParts', 'none', ...
+            'Tag', 'dicControlPointLabel');
     end
-end
-
-function graphic = drawPoint(ax, point, labelIndex, side, pointIndex, color)
-    graphic = line(ax, point(1), point(2), ...
-        'LineStyle', 'none', 'Marker', '+', 'MarkerSize', 12, ...
-        'LineWidth', 2, 'Color', color, 'Tag', 'dicControlPoint', ...
-        'UserData', struct('side', side, 'pointIndex', pointIndex));
-    text(ax, point(1) + 4, point(2), string(labelIndex), ...
-        'Color', color, 'FontWeight', 'bold', ...
-        'HitTest', 'off', 'PickableParts', 'none', ...
-        'Tag', 'dicControlPoint');
 end
 
 function value = enabledText(condition)
