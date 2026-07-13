@@ -156,6 +156,9 @@ iteration loop.
 Main-branch push and pull-request CI runs the public `headless` build task.
 The buildfile probes the selected test count and may run deterministic
 zero-based internal shards when the broad non-GUI suite is large enough.
+Assumption-filtered tests remain visible as skipped or incomplete but do not
+fail their shard. Actual test failures still fail the owning shard and retain
+the progress, JUnit, HTML, and worker-log evidence used for diagnosis.
 Feature-branch pushes do not run the same MATLAB workflow until a pull request
 targets `main`, which avoids duplicate branch-push and PR runs for the same
 commit. Release candidate tag pushes matching `vX.Y.Z` run the full release

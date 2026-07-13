@@ -89,7 +89,7 @@ function output = runLabKitTests(varargin)
     end
 
     officialResults = runner.run(suite);
-    if ~isempty(officialResults) && ~all([officialResults.Passed])
+    if labkitOfficialResultsHaveFailures(officialResults)
         error("LabKit:Tests:OfficialFailure", ...
             "One or more official matlab.unittest tests failed.");
     end

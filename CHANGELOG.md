@@ -489,6 +489,8 @@ ownership, and toolbox-shadowed behavior.
 - Added `buildtool baseMatlab` and representative toolbox-shadow workflows.
 - Improved changed-file routing to target direct consumers while retaining
   explicit owners such as the launcher GUI suite.
+- Corrected result aggregation so assumption-filtered tests remain visible as
+  skipped without being misreported as shard failures.
 
 #### User and data impact
 

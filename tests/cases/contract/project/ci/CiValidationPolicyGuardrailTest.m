@@ -85,6 +85,17 @@ classdef CiValidationPolicyGuardrailTest < matlab.unittest.TestCase
                 "LabKit:Tests:UnmatchedTestSelector");
         end
 
+        function runnerDoesNotTreatAssumptionSkipsAsFailures(testCase)
+            setupLabKitTestPath();
+            skipped = struct("Passed", false, "Failed", false, "Incomplete", true);
+            failed = struct("Passed", false, "Failed", true, "Incomplete", true);
+
+            testCase.verifyFalse(labkitOfficialResultsHaveFailures(skipped), ...
+                "A filtered assumption is incomplete but should not fail its shard.");
+            testCase.verifyTrue(labkitOfficialResultsHaveFailures(failed), ...
+                "A genuine failed result must still fail its shard.");
+        end
+
         function ciTriggersAvoidDuplicateBranchPrRuns(testCase)
             root = setupLabKitTestPath();
             workflowPath = fullfile(root, ".github", "workflows", ...
