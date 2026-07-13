@@ -10,7 +10,7 @@ function actions = definitionActions()
         "clearAll", @onClearAll, ...
         "exportResults", @onExportResults, ...
         "fileSelectionChanged", @onFileSelectionChanged, ...
-        "analysisChanged", @onAnalyzeCurrentFile, ...
+        "analysisChanged", @onAnalyzeAllFiles, ...
         "refreshPlots", @onRefreshOnly);
 end
 
@@ -88,21 +88,22 @@ function state = addFiles(state, filepaths, services)
     end
 end
 
-function state = onAnalyzeCurrentFile(state, ~, services)
-    if isempty(state.items) || isempty(state.current) || ...
-            state.current < 1 || state.current > numel(state.items)
+function state = onAnalyzeAllFiles(state, ~, services)
+    state = analyzeAllFiles(state, services);
+end
+
+function state = analyzeAllFiles(state, services)
+    if isempty(state.items)
         return;
     end
-    state.items(state.current) = analyzeItem(state.items(state.current), services);
+    opts = analysisOptions(services.ui);
+    state.items = vt_resistance.analysisRun.recomputeItems(state.items, opts);
+    addLog(services, sprintf('Reanalyzed %d loaded file(s) with shared analysis settings.', ...
+        numel(state.items)));
 end
 
 function item = analyzeItem(item, services)
-    ui = services.ui;
-    opts = struct();
-    opts.windowMode = ui.controls.steadyWindow.valueHandle.Value;
-    opts.voltageMode = ui.controls.voltageMode.valueHandle.Value;
-    opts.pulseMode = ui.controls.pulseMode.valueHandle.Value;
-
+    opts = analysisOptions(services.ui);
     analysis = vt_resistance.analysisRun.computeResistance(item, opts);
     if analysis.ok
         addLog(services, sprintf('%s: Rc=%.6g ohm, Ra=%.6g ohm, Ravg=%.6g ohm', ...
@@ -112,6 +113,13 @@ function item = analyzeItem(item, services)
         addLog(services, sprintf('%s: %s', item.name, analysis.message));
     end
     item.analysis = analysis;
+end
+
+function opts = analysisOptions(ui)
+    opts = struct();
+    opts.windowMode = ui.controls.steadyWindow.valueHandle.Value;
+    opts.voltageMode = ui.controls.voltageMode.valueHandle.Value;
+    opts.pulseMode = ui.controls.pulseMode.valueHandle.Value;
 end
 
 function state = onFileSelectionChanged(state, ~, services)
@@ -163,6 +171,7 @@ function state = onExportResults(state, ~, services)
             'No results to export.', 'Export');
         return;
     end
+    state = analyzeAllFiles(state, services);
     [out, cancelled] = labkit.ui.runtime.promptOutputFile( ...
         'vt_steady_resistance_results.csv', 'Save results CSV', ...
         'vt_steady_resistance_results.csv');

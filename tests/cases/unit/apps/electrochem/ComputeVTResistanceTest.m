@@ -58,6 +58,16 @@ function verify_computeVTResistance()
     assertClose(C.Ra_abs_ohm, 100, 1e-10, 'Raw-mode anodic resistance');
     assertClose(C.Ravg_abs_ohm, 100, 1e-10, 'Raw-mode average resistance');
 
+    batch = [item item];
+    batch(1).analysis = struct('ok', false);
+    batch(2).analysis = struct('ok', false);
+    batch = vt_resistance.analysisRun.recomputeItems(batch, opts);
+    analyses = [batch.analysis];
+    assert(all([analyses.ok]), ...
+        'Shared VT resistance settings should recompute every loaded item.');
+    assert(all(strcmp({analyses.voltageMode}, opts.voltageMode)), ...
+        'Every recomputed resistance item should use the same voltage mode.');
+
     bad = struct('meta', struct(), 'tables', struct([]));
     D = computeVTResistance(bad, struct());
     assert(~D.ok, 'Missing curve should fail.');

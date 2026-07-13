@@ -70,6 +70,11 @@ function A = computeCIC(item, opts)
 
     V = computeVoltageTransientMetrics(t, Vf, pulse, A.delay_s);
     A = mergeStructs(A, V);
+    if ~V.ok
+        A.message = V.message;
+        A.logOnFailure = true;
+        return;
+    end
 
     Q = computeInjectedCharge(t, Im, pulse, A.usedMeasuredCurrent);
     A = mergeStructs(A, Q);
@@ -175,6 +180,14 @@ function V = computeVoltageTransientMetrics(t, Vf, pulse, delay_s)
     V = struct();
     V.t_emc = pulse.cath_end + delay_s;
     V.t_ema = pulse.anod_end + delay_s;
+    V.ok = V.t_emc >= min(t) && V.t_emc <= max(t) && ...
+        V.t_ema >= min(t) && V.t_ema <= max(t);
+    if ~V.ok
+        V.message = sprintf(['Sample delay %.6g us places Emc or Ema outside ' ...
+            'the recorded time range.'], 1e6 * delay_s);
+        return;
+    end
+    V.message = 'OK';
     V.emc_idx = nearestIndex(t, V.t_emc);
     V.ema_idx = nearestIndex(t, V.t_ema);
     V.Emc = interp1Safe(t, Vf, V.t_emc);
@@ -220,13 +233,14 @@ function [v, sourceLabel, window] = chooseBaselineCandidate(candidates, sourceLa
 end
 
 function v = interp1Safe(x, y, xq)
-    if numel(x) < 2 || any(~isfinite([x(:); y(:)]))
+    if numel(x) < 2 || any(~isfinite([x(:); y(:)])) || ...
+            xq < min(x) || xq > max(x)
         v = NaN;
         return;
     end
 
     try
-        v = interp1(x, y, xq, 'linear', 'extrap');
+        v = interp1(x, y, xq, 'linear');
     catch
         idx = nearestIndex(x, xq);
         v = y(idx);

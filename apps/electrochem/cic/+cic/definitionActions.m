@@ -10,7 +10,7 @@ function actions = definitionActions()
         "exportResults", @onExportResults, ...
         "fileSelectionChanged", @onFileSelectionChanged, ...
         "presetChanged", @onPresetChanged, ...
-        "analyzeCurrentFile", @onAnalyzeCurrentFile, ...
+        "analysisChanged", @onAnalyzeAllFiles, ...
         "refreshResultsSummary", @onRefreshOnly, ...
         "refreshCICUnitDisplays", @onRefreshOnly, ...
         "refreshPlots", @onRefreshOnly);
@@ -41,7 +41,7 @@ function state = onPresetChanged(state, ~, services)
             labkit.ui.control.setValue(services.ui, "cathLimit", -0.9);
             labkit.ui.control.setValue(services.ui, "anodLimit", 0.6);
     end
-    state = analyzeCurrentFile(state, services);
+    state = analyzeAllFiles(state, services);
 end
 
 function state = onOpenFilesChosen(state, payload, services)
@@ -103,28 +103,22 @@ function state = loadDTAFiles(state, filepaths, services)
     end
 end
 
-function state = onAnalyzeCurrentFile(state, ~, services)
-    state = analyzeCurrentFile(state, services);
+function state = onAnalyzeAllFiles(state, ~, services)
+    state = analyzeAllFiles(state, services);
 end
 
-function state = analyzeCurrentFile(state, services)
-    if isempty(state.items) || isempty(state.current) || ...
-            state.current < 1 || state.current > numel(state.items)
+function state = analyzeAllFiles(state, services)
+    if isempty(state.items)
         return;
     end
-    state.items(state.current) = analyzeItem(state.items(state.current), services);
+    opts = analysisOptions(services.ui);
+    state.items = cic.analysisRun.recomputeItems(state.items, opts);
+    addLog(services, sprintf('Reanalyzed %d loaded file(s) with shared analysis settings.', ...
+        numel(state.items)));
 end
 
 function item = analyzeItem(item, services)
-    ui = services.ui;
-    opts = struct();
-    opts.delay_s = ui.controls.delayUs.valueHandle.Value * 1e-6;
-    opts.cathLimit = ui.controls.cathLimit.valueHandle.Value;
-    opts.anodLimit = ui.controls.anodLimit.valueHandle.Value;
-    opts.areaOverride = ui.controls.area.valueHandle.Value;
-    opts.pulseMode = ui.controls.pulseMode.valueHandle.Value;
-    opts.usedMeasuredCurrent = ui.controls.useMeasuredCurrent.valueHandle.Value;
-
+    opts = analysisOptions(services.ui);
     analysis = cic.analysisRun.computeCIC(item, opts);
     item.analysis = analysis;
     if analysis.ok
@@ -132,6 +126,23 @@ function item = analyzeItem(item, services)
             item.name, analysis.Emc, analysis.Ema, analysis.safe));
     elseif isfield(analysis, 'logOnFailure') && analysis.logOnFailure
         addLog(services, sprintf('%s: %s', item.name, analysis.message));
+    end
+end
+
+function opts = analysisOptions(ui)
+    opts = struct();
+    opts.delay_s = finiteScalar(ui.controls.delayUs.valueHandle.Value, 10) * 1e-6;
+    opts.cathLimit = finiteScalar(ui.controls.cathLimit.valueHandle.Value, -0.6);
+    opts.anodLimit = finiteScalar(ui.controls.anodLimit.valueHandle.Value, 0.8);
+    opts.areaOverride = ui.controls.area.valueHandle.Value;
+    opts.pulseMode = ui.controls.pulseMode.valueHandle.Value;
+    opts.usedMeasuredCurrent = ui.controls.useMeasuredCurrent.valueHandle.Value;
+end
+
+function value = finiteScalar(value, fallback)
+    value = double(value);
+    if isempty(value) || ~isscalar(value) || ~isfinite(value)
+        value = fallback;
     end
 end
 
@@ -185,6 +196,7 @@ function state = onExportResults(state, ~, services)
             'No results to export.', 'Export');
         return;
     end
+    state = analyzeAllFiles(state, services);
     [out, cancelled] = labkit.ui.runtime.promptOutputFile( ...
         'cic_results.csv', 'Save results CSV', 'cic_results.csv');
     if cancelled

@@ -49,7 +49,32 @@ Commits and PRs belong in `Evidence`, not in the navigation structure.
 
 ## Unreleased
 
-No pending project entries.
+### Pending - Consistent electrochemistry batch analysis
+
+Affected versions:
+- `labkit_CIC_app` `1.3.7 -> 1.3.8`
+- `labkit_VTResistance_app` `1.3.7 -> 1.3.8`
+
+What changed:
+- CIC and VT Resistance now recompute every loaded file under one shared set
+  of analysis controls, including a final recomputation before CSV export.
+- CIC labels delay values in microseconds, rejects sampling outside the
+  recorded time range instead of extrapolating, and exports the area and delay
+  used for each result.
+- Added family-level regression coverage for whole-batch recomputation; CSC,
+  EIS, and Chrono Overlay remain safe because they calculate from current
+  settings at export or do not cache derived batch analysis.
+
+Why it matters:
+- Batch CSV rows can no longer silently mix stale and current area, delay,
+  pulse-detection, resistance-window, or voltage-mode settings.
+
+Compatibility:
+- CIC CSV adds trailing `Area_cm2` and `Delay_us` columns. Existing columns
+  retain their names and order.
+
+Evidence:
+- Current development branch; final mainline commit pending.
 
 Template for branch work before the final mainline commit is known:
 
@@ -90,10 +115,10 @@ Audited against `main` metadata on 2026-07-13.
 | `labkit.biosignal` | `1.0.0` | Facade | `+labkit/+biosignal/version.m` |
 | `labkit_FigureStudio_app` | `0.1.5` | LabKit Core | `apps/labkit_core/figure_studio/+figure_studio/version.m` |
 | `labkit_ChronoOverlay_app` | `1.3.5` | Electrochem | `apps/electrochem/chrono_overlay/+chrono_overlay/version.m` |
-| `labkit_CIC_app` | `1.3.7` | Electrochem | `apps/electrochem/cic/+cic/version.m` |
+| `labkit_CIC_app` | `1.3.8` | Electrochem | `apps/electrochem/cic/+cic/version.m` |
 | `labkit_CSC_app` | `1.3.9` | Electrochem | `apps/electrochem/csc/+csc/version.m` |
 | `labkit_EIS_app` | `1.3.4` | Electrochem | `apps/electrochem/eis/+eis/version.m` |
-| `labkit_VTResistance_app` | `1.3.7` | Electrochem | `apps/electrochem/vt_resistance/+vt_resistance/version.m` |
+| `labkit_VTResistance_app` | `1.3.8` | Electrochem | `apps/electrochem/vt_resistance/+vt_resistance/version.m` |
 | `labkit_DICPreprocess_app` | `1.3.6` | DIC | `apps/dic/dic_preprocess/+dic_preprocess/version.m` |
 | `labkit_DICPostprocess_app` | `1.3.5` | DIC | `apps/dic/dic_postprocess/+dic_postprocess/version.m` |
 | `labkit_BatchImageCrop_app` | `1.6.7` | Image Measurement | `apps/image_measurement/batch_crop/+batch_crop/version.m` |

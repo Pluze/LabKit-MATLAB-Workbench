@@ -22,6 +22,8 @@ function T = buildResultsTable(items, unitLabel)
     CICt = NaN(numel(items), 1);
     safe = zeros(numel(items), 1);
     detection = cell(numel(items), 1);
+    area_cm2 = NaN(numel(items), 1);
+    delay_us = NaN(numel(items), 1);
 
     for i = 1:numel(items)
         item = items(i);
@@ -43,11 +45,15 @@ function T = buildResultsTable(items, unitLabel)
         CICt(i) = scale * A.CICt_mCcm2;
         safe(i) = A.safe;
         detection{i} = A.detectMode;
+        area_cm2(i) = A.area_cm2;
+        delay_us(i) = 1e6 * A.delay_s;
     end
 
-    T = table(file, amp_A, Emc_V, Ema_V, Qc_C, Qa_C, Qt_C, CICc, CICa, CICt, safe, detection, ...
+    T = table(file, amp_A, Emc_V, Ema_V, Qc_C, Qa_C, Qt_C, CICc, CICa, CICt, ...
+        safe, detection, area_cm2, delay_us, ...
         'VariableNames', {'File', 'Amp_A', 'Emc_V', 'Ema_V', 'Qc_C', 'Qa_C', 'Qt_C', ...
-        ['CICc_' unitSuffix], ['CICa_' unitSuffix], ['CICt_' unitSuffix], 'Safe', 'Detection'});
+        ['CICc_' unitSuffix], ['CICa_' unitSuffix], ['CICt_' unitSuffix], ...
+        'Safe', 'Detection', 'Area_cm2', 'Delay_us'});
 end
 
 function [scale, unitSuffix] = displayScaleSuffix(unitLabel)

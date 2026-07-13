@@ -55,6 +55,20 @@ classdef GuiLayoutCicTest < matlab.unittest.TestCase
             testCase.verifyTrue(contains(driver.fileSelection('files'), ...
                 'chrono_chronopot_current_pulse_1ms.DTA'), ...
                 'CIC append should select the newly added chrono file.');
+            beforeAreaChange = driver.tableData('results');
+            ui = driver.registry();
+            ui.controls.area.valueHandle.Value = '2';
+            h.invokeCallback(ui.controls.area.valueHandle, 'ValueChangedFcn');
+            [updated, detail] = h.waitForCondition(fig, ...
+                @() allRowsAreHalf(driver.tableData('results'), beforeAreaChange), 5);
+            testCase.verifyTrue(updated, h.waitDiagnostic(detail, ...
+                'operation', 'CIC whole-batch area recomputation'));
+            afterAreaChange = driver.tableData('results');
+            for row = 1:2
+                testCase.verifyEqual(afterAreaChange{row, 7}, ...
+                    0.5 * beforeAreaChange{row, 7}, 'RelTol', 1e-12, ...
+                    'A shared CIC area change should recompute every loaded file.');
+            end
             testCase.verifyFalse(isequal(topAxes.XLim, [-1 0]), ...
                 'CIC append redraw should replace stale manual X limits.');
             testCase.verifyFalse(isequal(topAxes.YLim, [-0.01 0.01]), ...
@@ -71,6 +85,14 @@ classdef GuiLayoutCicTest < matlab.unittest.TestCase
             testCase.verifyEqual(topAxes.YLimMode, 'auto', ...
                 'CIC clear-all should restore automatic Y limits.');
         end
+    end
+end
+
+function tf = allRowsAreHalf(actual, previous)
+    tf = size(actual, 1) == 2 && size(previous, 1) == 2;
+    for row = 1:2
+        tf = tf && abs(actual{row, 7} - 0.5 * previous{row, 7}) <= ...
+            1e-12 * max(1, abs(previous{row, 7}));
     end
 end
 
@@ -95,6 +117,10 @@ function assertCicLayout(h, fig)
         h.dropdownGroup({'Time (s)', 'Sample #'}, 2), ...
         h.dropdownGroup({'VT: Vf vs time', 'IT: Im vs time'}, 2)]);
     h.assertDropdownCallbacksPresent(fig);
+    labels = string(get(findall(fig, '-property', 'Text'), 'Text'));
+    testLabel = "Delay after pulse end (us):";
+    assert(any(labels == testLabel), ...
+        'CIC delay control should state that its value is measured in microseconds.');
 end
 
 function assertExtremaLabelsAreReadable(ax)
