@@ -1,9 +1,16 @@
 % Expected caller: DIC preprocess manual-alignment action. Inputs are moving
-% and fixed images. Outputs are matching N-by-2 [x y] point arrays. Side
-% effects: opens a modal point-pair editor until the user accepts or cancels.
+% and fixed images. An optional options.onReady callback receives the completed
+% editor figure immediately before the modal wait. Outputs are matching N-by-2
+% [x y] point arrays. Side effects: opens a modal point-pair editor until the
+% user accepts or cancels.
 
-function [movingPoints, fixedPoints] = selectRigidPointPairs(movingImage, fixedImage)
+function [movingPoints, fixedPoints] = selectRigidPointPairs( ...
+        movingImage, fixedImage, options)
 %SELECTRIGIDPOINTPAIRS Select draggable matching points without toolboxes.
+
+    if nargin < 3
+        options = struct();
+    end
 
     movingPoints = zeros(0, 2);
     fixedPoints = zeros(0, 2);
@@ -55,6 +62,7 @@ function [movingPoints, fixedPoints] = selectRigidPointPairs(movingImage, fixedI
     fixedEditor.start(fixedPoints);
     editorsReady = true;
     refreshPointDisplay();
+    notifyReady(options, fig);
 
     uiwait(fig);
     movingEditor.delete();
@@ -150,6 +158,17 @@ function [movingPoints, fixedPoints] = selectRigidPointPairs(movingImage, fixedI
         fixedEditor.setPoints(fixedPoints);
         updatingEditors = false;
     end
+end
+
+function notifyReady(options, fig)
+    if ~isfield(options, 'onReady') || isempty(options.onReady)
+        return;
+    end
+    if ~isa(options.onReady, 'function_handle')
+        error('LabKit:DIC:InvalidPointSelectorReadyCallback', ...
+            'options.onReady must be a function handle.');
+    end
+    options.onReady(fig);
 end
 
 function background = drawImage(ax, imageData, titleText)

@@ -57,14 +57,17 @@ classdef GuiLayoutDicPreprocessTest < matlab.unittest.TestCase
             h = guiTestHelpers();
             h.assertUifigureAvailable();
             cleanup = onCleanup(@() h.closeAllFigures());
-            cancelTimer = timer('StartDelay', 0.5, ...
-                'TimerFcn', @(~, ~) cancelPointPairDialog());
+            % Retry for up to 10 seconds because editor construction time
+            % varies across local and hosted MATLAB graphics runtimes.
+            cancelTimer = timer('ExecutionMode', 'fixedSpacing', ...
+                'StartDelay', 0.25, 'Period', 0.25, 'TasksToExecute', 40, ...
+                'TimerFcn', @cancelPointPairDialog);
             timerCleanup = onCleanup(@() deleteTimer(cancelTimer));
-            start(cancelTimer);
 
             [movingPoints, fixedPoints] = ...
                 dic_preprocess.userInterface.selectRigidPointPairs( ...
-                zeros(20, 24), zeros(20, 24));
+                zeros(20, 24), zeros(20, 24), ...
+                struct('onReady', @(~) start(cancelTimer)));
 
             testCase.verifyEmpty(movingPoints, ...
                 'Cancelled manual alignment should return no moving points.');
@@ -75,20 +78,13 @@ classdef GuiLayoutDicPreprocessTest < matlab.unittest.TestCase
     end
 end
 
-function cancelPointPairDialog()
+function cancelPointPairDialog(timerHandle, ~)
     figures = findall(groot, 'Type', 'figure', 'Name', 'DIC Manual Alignment');
     if isempty(figures)
         return;
     end
-    controls = findall(figures(1), '-property', 'Text');
-    for iControl = 1:numel(controls)
-        if isprop(controls(iControl), 'ButtonPushedFcn') && ...
-                string(controls(iControl).Text) == "Cancel"
-            callback = controls(iControl).ButtonPushedFcn;
-            callback(controls(iControl), struct());
-            return;
-        end
-    end
+    close(figures(1));
+    stop(timerHandle);
 end
 
 function deleteTimer(timerHandle)
