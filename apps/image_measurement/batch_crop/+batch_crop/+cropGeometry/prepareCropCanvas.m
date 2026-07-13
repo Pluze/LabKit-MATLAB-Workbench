@@ -73,7 +73,10 @@ function expansion = estimatedPaddingExpansion(paddingPercent)
 end
 
 function tf = isIdentityRotation(angleDeg)
-    tf = abs(mod(double(angleDeg), 360)) < 1e-12;
+    % Constant: this degree tolerance absorbs floating-point roundoff when
+    % users enter rotations equivalent to a full turn.
+    identityAngleToleranceDeg = 1e-12;
+    tf = abs(mod(double(angleDeg), 360)) < identityAngleToleranceDeg;
 end
 
 function value = optionValue(opts, name, defaultValue)

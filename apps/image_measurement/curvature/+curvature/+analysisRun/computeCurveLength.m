@@ -18,7 +18,9 @@ function lengthResult = computeCurveLength(xPix, yPix, calibration)
     lengthResult = curvature.appState.emptyLengthResult();
     xPix = xPix(:);
     yPix = yPix(:);
-    [xPix, yPix] = curvature.analysisRun.removeDuplicateNeighbors(xPix, yPix, 1e-9);
+    pointTolerancePx = curvature.analysisRun.curvePointTolerance();
+    [xPix, yPix] = curvature.analysisRun.removeDuplicateNeighbors( ...
+        xPix, yPix, pointTolerancePx);
 
     if numel(xPix) < 2
         error('labkit_CurvatureMeasurement_app:NotEnoughLengthPoints', ...

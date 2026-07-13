@@ -131,7 +131,10 @@ end
 
 function opts = analysisOptions(ui)
     opts = struct();
-    opts.delay_s = finiteScalar(ui.controls.delayUs.valueHandle.Value, 10) * 1e-6;
+    % Constant: one microsecond is 1e-6 seconds; UI delay is entered in us.
+    secondsPerMicrosecond = 1e-6;
+    opts.delay_s = finiteScalar(ui.controls.delayUs.valueHandle.Value, 10) * ...
+        secondsPerMicrosecond;
     opts.cathLimit = finiteScalar(ui.controls.cathLimit.valueHandle.Value, -0.6);
     opts.anodLimit = finiteScalar(ui.controls.anodLimit.valueHandle.Value, 0.8);
     opts.areaOverride = ui.controls.area.valueHandle.Value;

@@ -15,7 +15,10 @@ function aligned = alignSegments(segments, opts)
 
     dt = double(fieldOrDefault(opts, "sampleIntervalSec", estimateDt(segments)));
     if ~isfinite(dt) || dt <= 0
-        dt = 1e-4;
+        % Constant: 100 microseconds provides a 10 kHz fallback grid when
+        % segment timestamps cannot supply a valid sample interval.
+        fallbackSampleIntervalSec = 1e-4;
+        dt = fallbackSampleIntervalSec;
     end
     windowSec = fieldOrDefault(opts, "windowSec", []);
     if isempty(windowSec)

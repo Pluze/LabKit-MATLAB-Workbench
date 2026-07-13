@@ -44,6 +44,9 @@ function detector = detectorOptions(opts)
         "train", struct()));
     source = firstAnalogSource(eventDetection);
 
+    % Constant: shifting detected stimulation events 0.5 ms earlier aligns
+    % derivative peaks with the protocol's physical stimulus onset.
+    defaultStimShiftSec = -0.0005;
     detector = struct( ...
         "sourceId", string(fieldOrDefault(opts, "sourceId", ...
             fieldOrDefault(source, "id", "analog_derivative"))), ...
@@ -62,7 +65,7 @@ function detector = detectorOptions(opts)
         "requireIsolation", logical(fieldOrDefault(train, ...
             "requireIsolation", false)), ...
         "stimShiftSec", double(fieldOrDefault(train, "stimShiftSec", ...
-            fieldOrDefault(opts, "stimShiftSec", -0.0005))));
+            fieldOrDefault(opts, "stimShiftSec", defaultStimShiftSec))));
 end
 
 function source = firstAnalogSource(eventDetection)
@@ -115,7 +118,10 @@ function value = robustStd(x)
         return;
     end
     center = median(x);
-    value = median(abs(x - center)) / 0.6745;
+    % Constant: 0.6745 is the Gaussian median absolute deviation at one
+    % standard deviation and converts MAD to a robust sigma estimate.
+    gaussianMadQuantile = 0.6745;
+    value = median(abs(x - center)) / gaussianMadQuantile;
     if value == 0 || ~isfinite(value)
         value = std(x);
     end

@@ -46,7 +46,9 @@ function T = buildResultsTable(items, unitLabel)
         safe(i) = A.safe;
         detection{i} = A.detectMode;
         area_cm2(i) = A.area_cm2;
-        delay_us(i) = 1e6 * A.delay_s;
+        % Constant: one million converts seconds to microseconds for export.
+        microsecondsPerSecond = 1e6;
+        delay_us(i) = microsecondsPerSecond * A.delay_s;
     end
 
     T = table(file, amp_A, Emc_V, Ema_V, Qc_C, Qa_C, Qt_C, CICc, CICa, CICt, ...
@@ -62,13 +64,7 @@ function [scale, unitSuffix] = displayScaleSuffix(unitLabel)
 end
 
 function [scale, unitLabel] = displayScale(unitLabel)
-    switch unitLabel
-        case 'uC/cm^2'
-            scale = 1e3;
-        otherwise
-            scale = 1;
-            unitLabel = 'mC/cm^2';
-    end
+    [scale, unitLabel] = cic.userInterface.displayUnit(unitLabel);
 end
 
 function name = itemName(item)

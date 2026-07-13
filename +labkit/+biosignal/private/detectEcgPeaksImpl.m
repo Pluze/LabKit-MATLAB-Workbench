@@ -339,7 +339,10 @@ function sigma = robustSigma(x)
         return;
     end
     med = median(x, 'omitnan');
-    sigma = 1.4826 * median(abs(x - med), 'omitnan');
+    % Constant: 1.4826 makes median absolute deviation consistent with the
+    % standard deviation of a Gaussian distribution.
+    gaussianMadScale = 1.4826;
+    sigma = gaussianMadScale * median(abs(x - med), 'omitnan');
     if ~isfinite(sigma) || sigma <= 0
         sigma = std(x, 'omitnan');
     end

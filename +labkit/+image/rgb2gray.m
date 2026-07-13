@@ -23,7 +23,7 @@ function gray = rgb2gray(rgb)
             'Input must be an M-by-N-by-3 RGB image or an M-by-3 colormap.');
     end
 
-    % ITU-R BT.601 luma coefficients are the documented MATLAB rgb2gray
+    % Constant: ITU-R BT.601 luma coefficients are the documented MATLAB rgb2gray
     % transform; naming the source keeps these scientific constants auditable.
     rec601LumaWeights = [0.2989 0.5870 0.1140];
     if isColorMap

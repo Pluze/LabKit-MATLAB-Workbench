@@ -18,17 +18,23 @@ function pixelsPerUnit = pixelsPerUnitForUnit(cal, targetUnit)
 end
 
 function value = metersPerUnit(unitName)
+    % Constant: SI prefix factors convert supported physical length units
+    % to meters before calibration densities are compared.
+    centimetersToMeters = 1e-2;
+    millimetersToMeters = 1e-3;
+    micrometersToMeters = 1e-6;
+    nanometersToMeters = 1e-9;
     switch string(unitName)
         case "m"
             value = 1;
         case "cm"
-            value = 1e-2;
+            value = centimetersToMeters;
         case "mm"
-            value = 1e-3;
+            value = millimetersToMeters;
         case "um"
-            value = 1e-6;
+            value = micrometersToMeters;
         case "nm"
-            value = 1e-9;
+            value = nanometersToMeters;
         otherwise
             error('labkit_BatchImageCrop_app:InvalidScaleUnit', ...
                 'Unsupported physical scale unit: %s.', char(string(unitName)));

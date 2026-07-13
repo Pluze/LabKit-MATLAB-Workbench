@@ -93,9 +93,9 @@ function A = computeCSC(curve, opts)
     end
 
     if isfinite(A.area_cm2) && A.area_cm2 > 0
-        A.Qct_mC_cm2 = 1e3 * A.Qct / A.area_cm2;
-        A.Qcv_mC_cm2 = 1e3 * A.Qcv / A.area_cm2;
-        A.diff_mC_cm2 = 1e3 * A.diff_C / A.area_cm2;
+        A.Qct_mC_cm2 = csc.analysisRun.chargeDensity(A.Qct, A.area_cm2);
+        A.Qcv_mC_cm2 = csc.analysisRun.chargeDensity(A.Qcv, A.area_cm2);
+        A.diff_mC_cm2 = csc.analysisRun.chargeDensity(A.diff_C, A.area_cm2);
     else
         A.Qct_mC_cm2 = NaN;
         A.Qcv_mC_cm2 = NaN;

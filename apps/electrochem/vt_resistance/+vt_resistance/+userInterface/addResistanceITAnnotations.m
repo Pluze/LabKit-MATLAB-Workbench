@@ -3,6 +3,8 @@
 
 function addResistanceITAnnotations(ax, A, cSteadyStartX, cSteadyEndX, aSteadyStartX, aSteadyEndX, ...
     cathStartX, cathEndX, anodStartX, anodEndX)
+    % Constant: 1000 converts amperes to milliamperes for annotation text.
+    milliampsPerAmp = 1e3;
     drawLevelSegment(ax, cSteadyStartX, cSteadyEndX, A.Ic_est_A, [0.10 0.35 0.80], '--');
     drawLevelSegment(ax, aSteadyStartX, aSteadyEndX, A.Ia_est_A, [0.80 0.35 0.10], '--');
 
@@ -11,9 +13,9 @@ function addResistanceITAnnotations(ax, A, cSteadyStartX, cSteadyEndX, aSteadySt
     plot(ax, aSteadyEndX, A.Ia_est_A, 'o', 'MarkerFaceColor',[0.80 0.35 0.10], ...
         'MarkerEdgeColor','k', 'MarkerSize',6, 'HandleVisibility','off');
 
-    text(ax, cSteadyEndX, A.Ic_est_A, sprintf('  Cath current = %.3f mA', 1e3 * A.Ic_est_A), ...
+    text(ax, cSteadyEndX, A.Ic_est_A, sprintf('  Cath current = %.3f mA', milliampsPerAmp * A.Ic_est_A), ...
         'Color',[0.10 0.35 0.80], 'VerticalAlignment','bottom', 'Interpreter','tex');
-    text(ax, aSteadyEndX, A.Ia_est_A, sprintf('  Anod current = %.3f mA', 1e3 * A.Ia_est_A), ...
+    text(ax, aSteadyEndX, A.Ia_est_A, sprintf('  Anod current = %.3f mA', milliampsPerAmp * A.Ia_est_A), ...
         'Color',[0.80 0.35 0.10], 'VerticalAlignment','top', 'Interpreter','tex');
 
     yl = ylim(ax);

@@ -55,6 +55,18 @@ debt for the touched area.
 - Folder/path scalars must not be reshaped with `(:)`, because char paths become one element per character. Use `string(folder)` for one selected folder/path and reserve `paths(:)` for values already known to be string arrays or cell arrays of paths.
 - UI numeric control values must be sanitized to finite scalars before they are assigned into app state, step structs, or task structs. Do not write `step.amount = double(amount)` or similar directly from callback values; use a small scalar-normalization helper with a fallback.
 - User-visible UI text that also acts as a state enum, branch key, dropdown value, action label, or test contract must have one app-local source of truth, such as a `+userInterface/*Labels.m`, `+userInterface/*Choices.m`, or workflow-owned `*Items.m` helper. Do not repeat those literals in runners, view helpers, or tests; callers and tests should reference the helper. One-off section labels that are only displayed in `+userInterface/buildWorkbenchLayout.m` may stay inline.
+- Interactive image rectangles must use `labkit.ui.interaction.rectangleEditor`
+  or an interaction-runtime drag session. Direct `rectangle(...)` calls in apps
+  are only for non-pickable display/mirror overlays; they must disable hit
+  testing so users are not presented with a rectangle that looks interactive
+  but cannot be dragged.
+- Nontrivial numeric constants in production calculations must have a semantic
+  variable name and a nearby `% Constant:` comment that states the standard,
+  physical conversion, numerical-stability purpose, or empirical policy behind
+  the value. Structural indices and dimensions, explicit UI geometry/colors,
+  version metadata, and synthetic test/debug fixture values are not calculation
+  magic numbers. Keep one owner for standardized coefficient sets and unit
+  conversions instead of copying their literals across apps.
 
 Default principle:
 

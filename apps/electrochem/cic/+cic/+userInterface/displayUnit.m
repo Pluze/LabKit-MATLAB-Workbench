@@ -11,7 +11,9 @@ function [scale, unitLabel, unitSuffix] = displayUnit(unitLabel)
 
     switch unitLabel
         case 'uC/cm^2'
-            scale = 1e3;
+            % Constant: 1000 converts mC/cm^2 to uC/cm^2 for display.
+            microcoulombsPerMillicoulomb = 1e3;
+            scale = microcoulombsPerMillicoulomb;
             unitLabel = 'uC/cm^2';
         otherwise
             scale = 1;

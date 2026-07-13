@@ -182,11 +182,7 @@ function area = parsedArea(value)
 end
 
 function value = normalizeCharge(charge_C, area_cm2)
-    if isfinite(area_cm2) && area_cm2 > 0
-        value = 1e3 * charge_C / area_cm2;
-    else
-        value = NaN;
-    end
+    value = csc.analysisRun.chargeDensity(charge_C, area_cm2);
 end
 
 function value = relativePct(diff_C, qct_C, qcv_C)

@@ -100,9 +100,11 @@ function i = chronoCurrent(item)
 end
 
 function x = chooseX(item, mode)
+    % Constant: 1000 converts seconds to milliseconds for the selected axis.
+    millisecondsPerSecond = 1e3;
     switch mode
         case 'Time (ms)'
-            x = 1e3 * chronoAlignedTime(item);
+            x = millisecondsPerSecond * chronoAlignedTime(item);
         case 'Sample #'
             x = samplePoint(item);
         otherwise
