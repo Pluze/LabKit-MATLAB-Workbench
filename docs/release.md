@@ -13,6 +13,15 @@ compatibility, choose a major version. If the implementation changes a user
 workflow without intentionally breaking compatibility, describe it in the
 release notes so launcher users can choose or roll back versions deliberately.
 
+On a development branch, choose each component's final version directly from
+the merge base with `origin/main`, not from intermediate branch commits. A
+branch may edit version metadata while work is evolving, but its merge-ready
+state must be exactly one semantic-version step from the mainline baseline:
+the next patch, the next minor with patch zero, or the next major with minor
+and patch zero. `CHANGELOG.md` affected-version lines must record that direct
+`main baseline -> branch final` transition. This prevents temporary branch
+versions from accumulating into artificial public version jumps.
+
 ## Tags
 
 Use `vX.Y.Z` for new release tags, for example `v2.2.0`.
