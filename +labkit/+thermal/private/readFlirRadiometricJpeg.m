@@ -19,7 +19,8 @@ function record = readFlirRadiometricJpeg(path, opts)
     end
 
     [raw, rawByteOrder] = decodeRawThermalImage(rawBytes, cameraInfo);
-    [temperatureC, units, message] = convertTemperature(raw, cameraInfo, opts);
+    [temperatureC, units, message, conversion] = ...
+        convertTemperature(raw, cameraInfo, opts);
     [~, base, ext] = fileparts(char(path));
 
     metadata = struct();
@@ -27,6 +28,7 @@ function record = readFlirRadiometricJpeg(path, opts)
     metadata.rawImageType = embeddedImageType(rawBytes);
     metadata.rawByteOrder = rawByteOrder;
     metadata.calibration = cameraInfo;
+    metadata.temperatureConversion = conversion;
     metadata.records = directory;
 
     record = struct( ...
@@ -276,23 +278,42 @@ function info = parseCameraInfo(bytes)
     info.PlanckR2 = readF32le(bytes, base + hex2dec('30c'));
 end
 
-function [temperatureC, units, message] = convertTemperature(raw, cameraInfo, opts)
+function [temperatureC, units, message, conversion] = ...
+        convertTemperature(raw, cameraInfo, opts)
     units = "raw";
     message = "Raw thermal signal only; Planck calibration is incomplete.";
     temperatureC = NaN(size(raw));
+    conversion = unavailableConversion(opts.TemperatureCorrection, message);
     if isempty(fieldnames(cameraInfo))
         return;
     end
     try
-        temperatureC = labkit.thermal.rawToTemperatureC(raw, cameraInfo, ...
+        [temperatureC, conversion] = labkit.thermal.rawToTemperatureC( ...
+            raw, cameraInfo, ...
             struct('Correction', opts.TemperatureCorrection));
         units = "C";
-        message = "Temperature converted from FLIR raw signal using embedded calibration.";
+        if conversion.usedDefaults
+            message = "Temperature converted using embedded FLIR calibration; " + ...
+                "warning: default correction parameters used for " + ...
+                strjoin(conversion.defaultedFields, ", ") + ".";
+        else
+            message = "Temperature converted from FLIR raw signal using embedded calibration.";
+        end
     catch ME
         if ~strcmp(ME.identifier, 'labkit:thermal:MissingCalibration')
             rethrow(ME);
         end
     end
+end
+
+function conversion = unavailableConversion(correction, message)
+    conversion = struct( ...
+        'available', false, ...
+        'correction', string(correction), ...
+        'usedDefaults', false, ...
+        'defaultedFields', strings(0, 1), ...
+        'parameterSources', struct(), ...
+        'message', string(message));
 end
 
 function value = readU16be(bytes, startIndex)
@@ -330,6 +351,8 @@ end
 
 function value = kelvinToCelsius(value)
     if isfinite(value)
-        value = value - 273.15;
+        % Constant: 273.15 is the exact Celsius-to-Kelvin zero-point offset.
+        kelvinOffsetC = 273.15;
+        value = value - kelvinOffsetC;
     end
 end

@@ -1,4 +1,4 @@
-classdef GuiLayoutFlirThermalTest < matlab.uitest.TestCase
+classdef GuiLayoutFlirThermalTest < matlab.unittest.TestCase
     %GUILAYOUTFLIRTHERMALTEST Verify FLIR thermal GUI layout contracts.
 
     methods (Test, TestTags = {'GUI', 'Structural', 'Workflow'})

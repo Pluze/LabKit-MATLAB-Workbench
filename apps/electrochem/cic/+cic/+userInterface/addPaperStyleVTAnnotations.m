@@ -2,6 +2,10 @@
 % annotation helper. Side effects are limited to annotating the supplied axes.
 
 function addPaperStyleVTAnnotations(ax, A, xChoice, cathStartX, cathEndX, anodStartX, anodEndX, emcX, emaX)
+    % Constant: SI display conversions express pulse duration in ms and
+    % interpulse duration in us while analysis remains in seconds.
+    millisecondsPerSecond = 1e3;
+    microsecondsPerSecond = 1e6;
     yl = ylim(ax);
     dy = yl(2) - yl(1);
     yTop = yl(2) - 0.07*dy;
@@ -54,10 +58,10 @@ function addPaperStyleVTAnnotations(ax, A, xChoice, cathStartX, cathEndX, anodSt
     drawExtremaLabel(ax, emaX, A.Ema, sprintf('Ema = %.4f V', A.Ema), ...
         [0.6 0.4 0], 'right', -0.04);
 
-    drawDurationBracket(ax, cathStartX, cathEndX, yTop, sprintf('tc = %.3f ms', 1e3*A.tc_s));
-    drawDurationBracket(ax, anodStartX, anodEndX, yTop - 0.06*dy, sprintf('ta = %.3f ms', 1e3*A.ta_s));
+    drawDurationBracket(ax, cathStartX, cathEndX, yTop, sprintf('tc = %.3f ms', millisecondsPerSecond*A.tc_s));
+    drawDurationBracket(ax, anodStartX, anodEndX, yTop - 0.06*dy, sprintf('ta = %.3f ms', millisecondsPerSecond*A.ta_s));
     if A.tip_s > 0 && anodStartX > cathEndX
-        drawDurationBracket(ax, cathEndX, anodStartX, yLow, sprintf('tip = %.1f us', 1e6*A.tip_s));
+        drawDurationBracket(ax, cathEndX, anodStartX, yLow, sprintf('tip = %.1f us', microsecondsPerSecond*A.tip_s));
     end
     yline(ax, yMid, ':', 'Color',[0.8 0.8 0.8], 'HandleVisibility','off');
 end

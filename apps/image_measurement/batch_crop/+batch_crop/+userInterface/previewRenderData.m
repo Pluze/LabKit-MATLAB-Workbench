@@ -9,9 +9,10 @@ function render = previewRenderData(geometry, placement, opts)
         opts = struct();
     end
 
-    maxPreviewPixels = double(optionValue(opts, 'MaxPreviewPixels', 1.2e6));
+    maxPreviewPixels = double(optionValue(opts, 'MaxPreviewPixels', ...
+        defaultPreviewPixels()));
     if ~isfinite(maxPreviewPixels) || maxPreviewPixels < 1
-        maxPreviewPixels = 1.2e6;
+        maxPreviewPixels = defaultPreviewPixels();
     end
 
     [canvas, info] = labkit.image.previewBudget(geometry.canvas, ...
@@ -22,6 +23,12 @@ function render = previewRenderData(geometry, placement, opts)
         'xData', placement.xData, ...
         'yData', placement.yData, ...
         'scaleFactor', info.scaleFactor);
+end
+
+function value = defaultPreviewPixels()
+    % Constant: 1.2 megapixels balances draggable preview responsiveness
+    % with sufficient crop-placement detail.
+    value = 1.2e6;
 end
 
 function value = optionValue(opts, name, defaultValue)

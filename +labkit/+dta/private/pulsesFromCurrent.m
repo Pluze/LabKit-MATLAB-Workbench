@@ -25,7 +25,11 @@ function [pulse, ok, msg] = pulsesFromCurrent(t, Im)
     ok = false;
 
     Iabs = abs(Im);
-    thr = max(1e-12, 0.25 * max(Iabs));
+    % Constant: the 1e-12 A floor avoids a zero detector threshold for
+    % numerically quiet traces; 25 percent selects dominant pulse segments.
+    currentFloorA = 1e-12;
+    dominantPulseFraction = 0.25;
+    thr = max(currentFloorA, dominantPulseFraction * max(Iabs));
     cathMask = Im <= -thr;
     anodMask = Im >= thr;
 

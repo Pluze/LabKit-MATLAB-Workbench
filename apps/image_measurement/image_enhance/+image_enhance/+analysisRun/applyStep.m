@@ -3,7 +3,8 @@
 % image for match-reference steps. Output is RGB double image data in [0, 1].
 function outputImage = applyStep(inputImage, step, referenceImage)
 
-    inputImage = labkit.image.toRgbDouble(inputImage);
+    inputImage = labkit.image.ensureRgb(labkit.image.im2double(inputImage));
+    inputImage = min(max(inputImage, 0), 1);
     key = normalizeKind(step.kind);
     switch key
         case 'brightnesscontrast'
@@ -36,45 +37,8 @@ function outputImage = protectedBackgroundEnhance(inputImage, step, context, req
     strength = clamp01(double(step.amount) / 100);
     targetWhite = min(max(double(step.secondary) / 100, 0.70), 0.98);
     backgroundMask = backgroundMaskFromContext(inputImage, context, requireRoi);
-
-    if exist('rgb2lab', 'file') ~= 2 || exist('lab2rgb', 'file') ~= 2
-        outputImage = protectedRgbFallback(inputImage, strength, targetWhite, backgroundMask);
-        return;
-    end
-
-    labImage = rgb2lab(inputImage);
-    sourceL = labImage(:, :, 1) ./ 100;
-    hsvImage = rgb2hsv(inputImage);
-    sat = hsvImage(:, :, 2);
-    stats = luminanceStats(sourceL);
-
-    contrastScale = min(1.18, max(0.92, 0.30 ./ max(stats.contrast, 0.08)));
-    tonedL = (sourceL - stats.mid) .* contrastScale + stats.mid;
-    backgroundLevel = weightedMean(tonedL, backgroundMask);
-    maxLift = 0.22 + 0.23 .* double(requireRoi);
-    sourceBlend = 0.28 - 0.20 .* double(requireRoi);
-    lift = min(maxLift, max(0, targetWhite - backgroundLevel));
-    brightMask = smoothstep(0.18, 0.74, sourceL);
-    saturationGuard = 1 - 0.42 .* smoothstep(0.18, 0.58, sat);
-    tonedL = tonedL + lift .* (0.35 + 0.65 .* brightMask) .* saturationGuard;
-    tonedL = min(max((1 - sourceBlend) .* tonedL + sourceBlend .* sourceL, 0), 1);
-
-    detail = tonedL - labkit.image.meanFilter2(tonedL, 3);
-    tonedL = tonedL + (0.08 + 0.05 .* double(stats.contrast < 0.24)) .* detail;
-    shadowMask = smoothstep(0.24, 0.08, sourceL);
-    highlightMask = smoothstep(0.88, 0.99, tonedL);
-    tonedL = tonedL .* (1 - 0.55 .* shadowMask) + sourceL .* (0.55 .* shadowMask);
-    tonedL = tonedL .* (1 - 0.40 .* highlightMask) + min(tonedL, 0.965) .* (0.40 .* highlightMask);
-    tonedL = min(max(tonedL, 0.015), 0.99);
-
-    labOut = labImage;
-    labOut(:, :, 1) = ((1 - strength) .* sourceL + strength .* tonedL) .* 100;
-    labOut = correctBackgroundLabCast(labOut, backgroundMask, strength);
-    outputImage = lab2rgb(labOut, 'OutputType', 'double');
-    finishLift = 0.08 + 0.14 .* double(requireRoi);
-    outputImage = finishBackgroundLuma(outputImage, inputImage, ...
-        backgroundMask, targetWhite, strength, finishLift);
-    outputImage = min(max(outputImage, 0), 1);
+    outputImage = protectedRgbFallback( ...
+        inputImage, strength, targetWhite, backgroundMask);
 end
 
 function roi = roiFromContext(context)
@@ -128,19 +92,6 @@ function mask = backgroundMaskFromContext(inputImage, context, requireRoi)
     mask = min(max(labkit.image.meanFilter2(mask, 7), 0), 1);
 end
 
-function labImage = correctBackgroundLabCast(labImage, backgroundMask, strength)
-    if nnz(backgroundMask > 0.35) < 16
-        return;
-    end
-    meanA = weightedMean(labImage(:, :, 2), backgroundMask);
-    meanB = weightedMean(labImage(:, :, 3), backgroundMask);
-    shiftA = min(2.2, max(-2.2, -meanA));
-    shiftB = min(2.2, max(-2.2, -meanB));
-    correction = 0.55 .* strength .* backgroundMask;
-    labImage(:, :, 2) = labImage(:, :, 2) + correction .* shiftA;
-    labImage(:, :, 3) = labImage(:, :, 3) + correction .* shiftB;
-end
-
 function outputImage = protectedRgbFallback(inputImage, strength, targetWhite, backgroundMask)
     lumaImage = luma(inputImage);
     stats = luminanceStats(lumaImage);
@@ -150,21 +101,6 @@ function outputImage = protectedRgbFallback(inputImage, strength, targetWhite, b
     toned = min(max(toned + lift .* (0.35 + 0.65 .* smoothstep(0.18, 0.74, lumaImage)), 0), 1);
     ratio = min(1.18, max(0.88, toned ./ max(lumaImage, 0.04)));
     outputImage = (1 - strength) .* inputImage + strength .* (inputImage .* ratio);
-end
-
-function outputImage = finishBackgroundLuma(outputImage, inputImage, backgroundMask, targetWhite, strength, maxLift)
-    lumaImage = luma(outputImage);
-    backgroundLevel = weightedMean(lumaImage, backgroundMask);
-    lift = min(maxLift, max(0, targetWhite - backgroundLevel));
-    if lift <= 0
-        return;
-    end
-    hsvImage = rgb2hsv(inputImage);
-    sourceLuma = luma(inputImage);
-    saturationGuard = 1 - 0.58 .* smoothstep(0.18, 0.58, hsvImage(:, :, 2));
-    brightMask = smoothstep(0.18, 0.74, sourceLuma);
-    correction = strength .* lift .* (0.35 + 0.65 .* brightMask) .* saturationGuard;
-    outputImage = outputImage + repmat(correction, 1, 1, 3);
 end
 
 function stats = luminanceStats(value)
@@ -202,7 +138,7 @@ function out = weightedMean(values, weights)
 end
 
 function gray = luma(imageData)
-    gray = labkit.image.toLuma(imageData);
+    gray = labkit.image.rgb2gray(imageData);
 end
 
 function y = smoothstep(edge0, edge1, x)

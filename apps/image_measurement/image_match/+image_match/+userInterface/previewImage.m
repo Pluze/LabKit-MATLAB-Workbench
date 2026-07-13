@@ -7,6 +7,7 @@ function imageOut = previewImage(imageIn, maxHeight)
     if nargin < 2 || isempty(maxHeight)
         maxHeight = 1500;
     end
-    imageOut = labkit.image.toRgbDouble(imageIn);
+    imageOut = labkit.image.ensureRgb(labkit.image.im2double(imageIn));
+    imageOut = min(max(imageOut, 0), 1);
     imageOut = labkit.image.resizeToFit(imageOut, "MaxHeight", maxHeight);
 end

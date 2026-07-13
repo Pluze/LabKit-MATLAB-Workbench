@@ -1,4 +1,4 @@
-classdef GuiLayoutFocusStackTest < matlab.uitest.TestCase
+classdef GuiLayoutFocusStackTest < matlab.unittest.TestCase
     %GUILAYOUTFOCUSSTACKTEST Verify focus stack GUI layout contracts.
 
     methods (Test, TestTags = {'GUI', 'Structural', 'Workflow'})

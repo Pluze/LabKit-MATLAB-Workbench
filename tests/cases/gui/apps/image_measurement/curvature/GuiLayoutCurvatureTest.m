@@ -1,4 +1,4 @@
-classdef GuiLayoutCurvatureTest < matlab.uitest.TestCase
+classdef GuiLayoutCurvatureTest < matlab.unittest.TestCase
     %GUILAYOUTCURVATURETEST Verify curvature measurement GUI layout contracts.
 
     methods (Test, TestTags = {'GUI', 'Structural', 'Workflow'})

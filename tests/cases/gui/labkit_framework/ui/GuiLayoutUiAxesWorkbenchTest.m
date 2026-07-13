@@ -1,4 +1,4 @@
-classdef GuiLayoutUiAxesWorkbenchTest < matlab.uitest.TestCase
+classdef GuiLayoutUiAxesWorkbenchTest < matlab.unittest.TestCase
     %GUILAYOUTUIAXESWORKBENCHTEST Verify UI 5 shell and axes behavior.
 
     methods (Test, TestTags = {'GUI', 'Structural'})

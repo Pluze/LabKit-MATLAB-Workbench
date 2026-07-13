@@ -51,6 +51,46 @@ classdef GuiLayoutDicPreprocessTest < matlab.unittest.TestCase
             testCase.verifyGreaterThan(numel(ui.controls.previewAxes.axesById.current.Children), 0, ...
                 'DIC preprocess workflow should draw the current preview.');
         end
+
+        function manualPointPairSelectorCancelsWithoutToolbox(testCase)
+            setupLabKitTestPath();
+            h = guiTestHelpers();
+            h.assertUifigureAvailable();
+            cleanup = onCleanup(@() h.closeAllFigures());
+            % Retry for up to 10 seconds because editor construction time
+            % varies across local and hosted MATLAB graphics runtimes.
+            cancelTimer = timer('ExecutionMode', 'fixedSpacing', ...
+                'StartDelay', 0.25, 'Period', 0.25, 'TasksToExecute', 40, ...
+                'TimerFcn', @cancelPointPairDialog);
+            timerCleanup = onCleanup(@() deleteTimer(cancelTimer));
+
+            [movingPoints, fixedPoints] = ...
+                dic_preprocess.userInterface.selectRigidPointPairs( ...
+                zeros(20, 24), zeros(20, 24), ...
+                struct('onReady', @(~) start(cancelTimer)));
+
+            testCase.verifyEmpty(movingPoints, ...
+                'Cancelled manual alignment should return no moving points.');
+            testCase.verifyEmpty(fixedPoints, ...
+                'Cancelled manual alignment should return no fixed points.');
+            clear timerCleanup cleanup
+        end
+    end
+end
+
+function cancelPointPairDialog(timerHandle, ~)
+    figures = findall(groot, 'Type', 'figure', 'Name', 'DIC Manual Alignment');
+    if isempty(figures)
+        return;
+    end
+    close(figures(1));
+    stop(timerHandle);
+end
+
+function deleteTimer(timerHandle)
+    if isvalid(timerHandle)
+        stop(timerHandle);
+        delete(timerHandle);
     end
 end
 

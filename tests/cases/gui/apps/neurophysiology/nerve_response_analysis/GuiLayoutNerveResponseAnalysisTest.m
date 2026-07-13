@@ -1,4 +1,4 @@
-classdef GuiLayoutNerveResponseAnalysisTest < matlab.uitest.TestCase
+classdef GuiLayoutNerveResponseAnalysisTest < matlab.unittest.TestCase
     %GUILAYOUTNERVERESPONSEANALYSISTEST Verify nerve-response GUI workflow.
 
     methods (Test, TestTags = {'GUI', 'Workflow'})

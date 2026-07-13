@@ -70,6 +70,11 @@ function A = computeCIC(item, opts)
 
     V = computeVoltageTransientMetrics(t, Vf, pulse, A.delay_s);
     A = mergeStructs(A, V);
+    if ~V.ok
+        A.message = V.message;
+        A.logOnFailure = true;
+        return;
+    end
 
     Q = computeInjectedCharge(t, Im, pulse, A.usedMeasuredCurrent);
     A = mergeStructs(A, Q);
@@ -79,9 +84,11 @@ function A = computeCIC(item, opts)
     end
 
     if isfinite(A.area_cm2) && A.area_cm2 > 0
-        A.CICc_mCcm2 = 1e3 * A.Qc_C / A.area_cm2;
-        A.CICa_mCcm2 = 1e3 * A.Qa_C / A.area_cm2;
-        A.CICt_mCcm2 = 1e3 * A.Qt_C / A.area_cm2;
+        % Constant: 1000 converts coulombs to millicoulombs for CIC density.
+        millicoulombsPerCoulomb = 1e3;
+        A.CICc_mCcm2 = millicoulombsPerCoulomb * A.Qc_C / A.area_cm2;
+        A.CICa_mCcm2 = millicoulombsPerCoulomb * A.Qa_C / A.area_cm2;
+        A.CICt_mCcm2 = millicoulombsPerCoulomb * A.Qt_C / A.area_cm2;
     else
         A.CICc_mCcm2 = NaN;
         A.CICa_mCcm2 = NaN;
@@ -97,7 +104,10 @@ end
 
 function opts = fillCICOptions(opts)
     if ~isfield(opts, 'delay_s')
-        opts.delay_s = 10e-6;
+        % Constant: 10 microseconds is the app's default post-pulse sampling
+        % delay for estimating maximum polarization voltage.
+        defaultDelaySeconds = 10e-6;
+        opts.delay_s = defaultDelaySeconds;
     end
     if ~isfield(opts, 'cathLimit')
         opts.cathLimit = -0.6;
@@ -175,6 +185,16 @@ function V = computeVoltageTransientMetrics(t, Vf, pulse, delay_s)
     V = struct();
     V.t_emc = pulse.cath_end + delay_s;
     V.t_ema = pulse.anod_end + delay_s;
+    V.ok = V.t_emc >= min(t) && V.t_emc <= max(t) && ...
+        V.t_ema >= min(t) && V.t_ema <= max(t);
+    if ~V.ok
+        % Constant: one million converts seconds to microseconds for UI text.
+        microsecondsPerSecond = 1e6;
+        V.message = sprintf(['Sample delay %.6g us places Emc or Ema outside ' ...
+            'the recorded time range.'], microsecondsPerSecond * delay_s);
+        return;
+    end
+    V.message = 'OK';
     V.emc_idx = nearestIndex(t, V.t_emc);
     V.ema_idx = nearestIndex(t, V.t_ema);
     V.Emc = interp1Safe(t, Vf, V.t_emc);
@@ -220,13 +240,14 @@ function [v, sourceLabel, window] = chooseBaselineCandidate(candidates, sourceLa
 end
 
 function v = interp1Safe(x, y, xq)
-    if numel(x) < 2 || any(~isfinite([x(:); y(:)]))
+    if numel(x) < 2 || any(~isfinite([x(:); y(:)])) || ...
+            xq < min(x) || xq > max(x)
         v = NaN;
         return;
     end
 
     try
-        v = interp1(x, y, xq, 'linear', 'extrap');
+        v = interp1(x, y, xq, 'linear');
     catch
         idx = nearestIndex(x, xq);
         v = y(idx);

@@ -1,4 +1,4 @@
-classdef ScaleBarGestureTest < matlab.uitest.TestCase
+classdef ScaleBarGestureTest < matlab.unittest.TestCase
     %SCALEBARGESTURETEST Gesture-level scale-bar lifecycle coverage.
 
     methods (Test, TestTags = {'GUI', 'Gesture'})

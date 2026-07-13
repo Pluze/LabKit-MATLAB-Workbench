@@ -173,7 +173,7 @@ function steps = testPathSteps(root, parts)
     elseif numel(parts) >= 2 && parts(2) == "runner"
         steps = fullNonGuiStep();
     elseif numel(parts) >= 2 && parts(2) == "shared"
-        steps = sharedTestPathSteps(parts);
+        steps = sharedTestPathSteps(root, parts);
     else
         steps = planStep("project", "project", false, ...
             "Reason", "test support or policy file changed");
@@ -252,14 +252,27 @@ function steps = toolPathSteps(parts)
     end
 end
 
-function steps = sharedTestPathSteps(parts)
+function steps = sharedTestPathSteps(root, parts)
     filename = "";
     if ~isempty(parts)
         filename = lower(parts(end));
     end
+    consumers = sharedHelperConsumers(root, filename);
     if contains(filename, "launcher")
         steps = planStep("gui_project_launcher", "gui/project/launcher", true, ...
             "Reason", "shared launcher test helper changed");
+    elseif ~isempty(consumers.guiTests) || ~isempty(consumers.nonGuiTests)
+        steps = emptyPlanSteps();
+        if ~isempty(consumers.nonGuiTests)
+            steps(end + 1) = planStep("shared_consumers", strings(1, 0), false, ...
+                "Tests", consumers.nonGuiTests, ...
+                "Reason", "shared test helper change reruns direct non-GUI consumers");
+        end
+        if ~isempty(consumers.guiTests)
+            steps(end + 1) = planStep("gui_shared_consumers", "gui", true, ...
+                "Tests", consumers.guiTests, ...
+                "Reason", "shared test helper change reruns direct GUI consumers");
+        end
     elseif contains(filename, "gui") || contains(filename, "uispec") || ...
             contains(filename, "snapshot")
         steps = planStep("gui", "gui", true, ...
@@ -267,6 +280,36 @@ function steps = sharedTestPathSteps(parts)
     else
         steps = fullNonGuiStep();
     end
+end
+
+function consumers = sharedHelperConsumers(root, filename)
+    consumers = struct( ...
+        "guiTests", strings(1, 0), ...
+        "nonGuiTests", strings(1, 0));
+    [~, helperName] = fileparts(char(filename));
+    if strlength(string(helperName)) == 0
+        return;
+    end
+    casesRoot = fullfile(root, "tests", "cases");
+    entries = dir(fullfile(casesRoot, "**", "*.m"));
+    callPattern = ['(^|[^A-Za-z0-9_])' ...
+        regexptranslate('escape', helperName) '\s*\('];
+    for iFile = 1:numel(entries)
+        filepath = fullfile(entries(iFile).folder, entries(iFile).name);
+        source = fileread(filepath);
+        if isempty(regexpi(source, callPattern, 'once'))
+            continue;
+        end
+        selector = string(erase(entries(iFile).name, ".m"));
+        relativePath = replace(string(filepath), "\", "/");
+        if contains(relativePath, "/tests/cases/gui/")
+            consumers.guiTests(end + 1) = selector;
+        else
+            consumers.nonGuiTests(end + 1) = selector;
+        end
+    end
+    consumers.guiTests = unique(consumers.guiTests, "stable");
+    consumers.nonGuiTests = unique(consumers.nonGuiTests, "stable");
 end
 
 function tf = isHeadlessRoutingPath(path)

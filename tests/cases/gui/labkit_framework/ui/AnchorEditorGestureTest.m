@@ -1,4 +1,4 @@
-classdef AnchorEditorGestureTest < matlab.uitest.TestCase
+classdef AnchorEditorGestureTest < matlab.unittest.TestCase
     %ANCHOREDITORGESTURETEST Gesture-level anchor editor operation coverage.
 
     methods (Test, TestTags = {'GUI', 'Gesture'})

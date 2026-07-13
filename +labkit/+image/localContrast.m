@@ -5,14 +5,15 @@ function imageOut = localContrast(imageIn, amountPct, radiusPx)
 %   imageOut = labkit.image.localContrast(imageIn, amountPct, radiusPx)
 %
 % Inputs:
-%   imageIn - numeric image data, normalized internally with toRgbDouble.
+%   imageIn - numeric image data, normalized internally to RGB double.
 %   amountPct - nonnegative effect strength in percent.
 %   radiusPx - local neighborhood radius in pixels.
 %
 % Outputs:
 %   imageOut - RGB double image clamped to [0, 1].
 
-    imageIn = labkit.image.toRgbDouble(imageIn);
+    imageIn = labkit.image.ensureRgb(labkit.image.im2double(imageIn));
+    imageIn = min(max(imageIn, 0), 1);
     amount = max(0, double(amountPct)) / 100;
     radius = max(1, round(double(radiusPx)));
     hsvImage = rgb2hsv(imageIn);

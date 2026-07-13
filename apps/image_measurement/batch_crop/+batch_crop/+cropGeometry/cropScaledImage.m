@@ -35,11 +35,6 @@ function result = cropScaledImage(imageData, opts, plan, itemIndex)
 end
 
 function out = resizeImage(imageData, outputSize)
-    if exist('imresize', 'file') == 2
-        out = imresize(imageData, outputSize, 'bicubic');
-        return;
-    end
-
     inHeight = size(imageData, 1);
     inWidth = size(imageData, 2);
     y = linspace(1, inHeight, outputSize(1));

@@ -1,4 +1,4 @@
-classdef GuiLayoutUiBasicControlsTest < matlab.uitest.TestCase
+classdef GuiLayoutUiBasicControlsTest < matlab.unittest.TestCase
     %GUILAYOUTUIBASICCONTROLSTEST Verify UI 5 control and plot helper contracts.
 
     methods (Test, TestTags = {'GUI', 'Structural'})

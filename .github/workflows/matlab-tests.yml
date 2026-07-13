@@ -43,6 +43,7 @@ jobs:
         run: mkdir -p artifacts/logs/headless
 
       - name: Run headless tests
+        timeout-minutes: 20
         uses: matlab-actions/run-build@v3
         with:
           tasks: headless
@@ -63,13 +64,15 @@ jobs:
             python scripts/summarize_junit.py "$junit" \
               --run-name "$run_name" \
               --html "artifacts/test-results/${run_name}/html/index.html" \
-              --log "$log_path"
+              --log "$log_path" \
+              --active-test "artifacts/logs/${run_name}/active-test.json"
           done
           if [ "$found" -eq 0 ]; then
             python scripts/summarize_junit.py artifacts/test-results/headless/junit.xml \
               --run-name headless \
               --html artifacts/test-results/headless/html/index.html \
-              --log artifacts/logs/headless/matlab.log
+              --log artifacts/logs/headless/matlab.log \
+              --active-test artifacts/logs/headless/active-test.json
           fi
 
       - name: Upload headless artifacts
@@ -107,6 +110,7 @@ jobs:
         run: mkdir -p artifacts/logs/coverage
 
       - name: Run coverage report
+        timeout-minutes: 30
         uses: matlab-actions/run-build@v3
         with:
           tasks: coverage
@@ -120,6 +124,7 @@ jobs:
           --run-name coverage
           --html artifacts/test-results/coverage/html/index.html
           --log artifacts/logs/coverage/matlab.log
+          --active-test artifacts/logs/coverage/active-test.json
 
       - name: Upload coverage artifacts
         if: always()
@@ -157,6 +162,7 @@ jobs:
         run: mkdir -p artifacts/logs/gui
 
       - name: Run GUI tests
+        timeout-minutes: 20
         uses: matlab-actions/run-build@v3
         with:
           tasks: gui
@@ -170,6 +176,7 @@ jobs:
           --run-name gui
           --html artifacts/test-results/gui/html/index.html
           --log artifacts/logs/gui/matlab.log
+          --active-test artifacts/logs/gui/active-test.json
 
       - name: Upload GUI artifacts
         if: always()

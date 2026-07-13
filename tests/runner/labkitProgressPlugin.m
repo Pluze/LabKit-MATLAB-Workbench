@@ -9,6 +9,21 @@ classdef labkitProgressPlugin < matlab.unittest.plugins.TestRunnerPlugin
         StartedTests = 0
         CompletedTests = 0
         SuiteTimer = []
+        TestTimer = []
+        ActiveTestName = ""
+        ProgressFile = ""
+        ActiveTestFile = ""
+        HeartbeatTimer = []
+    end
+
+    methods
+        function plugin = labkitProgressPlugin(logFolder)
+            if nargin < 1 || strlength(string(logFolder)) == 0
+                return;
+            end
+            plugin.ProgressFile = fullfile(string(logFolder), "test-progress.jsonl");
+            plugin.ActiveTestFile = fullfile(string(logFolder), "active-test.json");
+        end
     end
 
     methods (Access = protected)
@@ -19,7 +34,12 @@ classdef labkitProgressPlugin < matlab.unittest.plugins.TestRunnerPlugin
             plugin.SuiteTimer = tic;
             fprintf("LabKit test progress: 0/%d elapsed=00:00:00 eta=unknown\n", ...
                 plugin.TotalTests);
+            plugin.recordEvent("suite_start", "", 0);
+            plugin.startHeartbeat();
+            cleanup = onCleanup(@() plugin.stopHeartbeat());
             runTestSuite@matlab.unittest.plugins.TestRunnerPlugin(plugin, pluginData);
+            plugin.recordEvent("suite_done", "", toc(plugin.SuiteTimer));
+            clear cleanup
         end
 
         function runTest(plugin, pluginData)
@@ -27,15 +47,24 @@ classdef labkitProgressPlugin < matlab.unittest.plugins.TestRunnerPlugin
             testIndex = plugin.StartedTests;
             testName = string(pluginData.Name);
             testTimer = tic;
+            plugin.ActiveTestName = testName;
+            plugin.TestTimer = testTimer;
+            plugin.recordEvent("test_start", testName, 0);
+            plugin.writeActiveTest("running", testName, 0);
             fprintf("START [%d/%d %5.1f%% elapsed=%s eta=%s] %s\n", ...
                 testIndex, plugin.TotalTests, plugin.percentStarted(), ...
                 plugin.elapsedText(), plugin.etaText(), testName);
             runTest@matlab.unittest.plugins.TestRunnerPlugin(plugin, pluginData);
             plugin.CompletedTests = plugin.CompletedTests + 1;
+            testElapsed = toc(testTimer);
             fprintf("DONE  [%d/%d %5.1f%% elapsed=%s eta=%s +%s] %s\n", ...
                 plugin.CompletedTests, plugin.TotalTests, plugin.percentComplete(), ...
                 plugin.elapsedText(), plugin.etaText(), ...
-                labkitProgressPlugin.formatSeconds(toc(testTimer)), testName);
+                labkitProgressPlugin.formatSeconds(testElapsed), testName);
+            plugin.recordEvent("test_done", testName, testElapsed);
+            plugin.writeActiveTest("completed", testName, testElapsed);
+            plugin.ActiveTestName = "";
+            plugin.TestTimer = [];
         end
     end
 
@@ -76,6 +105,97 @@ classdef labkitProgressPlugin < matlab.unittest.plugins.TestRunnerPlugin
                 value = 100;
             else
                 value = 100 * double(plugin.CompletedTests) / double(plugin.TotalTests);
+            end
+        end
+
+        function startHeartbeat(plugin)
+            plugin.stopHeartbeat();
+            try
+                plugin.HeartbeatTimer = timer( ...
+                    "ExecutionMode", "fixedSpacing", ...
+                    "Period", 30, ...
+                    "BusyMode", "drop", ...
+                    "TimerFcn", @(~, ~) plugin.emitHeartbeat());
+                start(plugin.HeartbeatTimer);
+            catch
+                plugin.HeartbeatTimer = [];
+            end
+        end
+
+        function stopHeartbeat(plugin)
+            timerObj = plugin.HeartbeatTimer;
+            plugin.HeartbeatTimer = [];
+            if isempty(timerObj)
+                return;
+            end
+            try
+                if isvalid(timerObj)
+                    stop(timerObj);
+                    delete(timerObj);
+                end
+            catch
+            end
+        end
+
+        function emitHeartbeat(plugin)
+            if strlength(plugin.ActiveTestName) == 0 || isempty(plugin.TestTimer)
+                return;
+            end
+            elapsed = toc(plugin.TestTimer);
+            fprintf("HEARTBEAT [%d/%d elapsed=%s test_elapsed=%s] %s\n", ...
+                plugin.StartedTests, plugin.TotalTests, plugin.elapsedText(), ...
+                labkitProgressPlugin.formatSeconds(elapsed), plugin.ActiveTestName);
+            plugin.recordEvent("heartbeat", plugin.ActiveTestName, elapsed);
+            plugin.writeActiveTest("running", plugin.ActiveTestName, elapsed);
+        end
+
+        function recordEvent(plugin, eventName, testName, testElapsed)
+            if strlength(plugin.ProgressFile) == 0
+                return;
+            end
+            payload = plugin.progressPayload(eventName, testName, testElapsed);
+            plugin.writeJson(plugin.ProgressFile, payload, "a");
+        end
+
+        function writeActiveTest(plugin, status, testName, testElapsed)
+            if strlength(plugin.ActiveTestFile) == 0
+                return;
+            end
+            payload = plugin.progressPayload(status, testName, testElapsed);
+            plugin.writeJson(plugin.ActiveTestFile, payload, "w");
+        end
+
+        function payload = progressPayload(plugin, eventName, testName, testElapsed)
+            payload = struct( ...
+                "timestamp", char(datetime("now", "TimeZone", "UTC", ...
+                    "Format", "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")), ...
+                "event", char(string(eventName)), ...
+                "test", char(string(testName)), ...
+                "started", plugin.StartedTests, ...
+                "completed", plugin.CompletedTests, ...
+                "total", plugin.TotalTests, ...
+                "suiteElapsedSeconds", plugin.suiteElapsedSeconds(), ...
+                "testElapsedSeconds", double(testElapsed));
+        end
+
+        function elapsed = suiteElapsedSeconds(plugin)
+            if isempty(plugin.SuiteTimer)
+                elapsed = 0;
+            else
+                elapsed = toc(plugin.SuiteTimer);
+            end
+        end
+
+        function writeJson(~, filepath, payload, mode)
+            try
+                fid = fopen(filepath, mode);
+                if fid < 0
+                    return;
+                end
+                cleanup = onCleanup(@() fclose(fid));
+                fprintf(fid, "%s\n", jsonencode(payload));
+                clear cleanup
+            catch
             end
         end
     end

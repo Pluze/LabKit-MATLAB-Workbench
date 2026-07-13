@@ -22,7 +22,7 @@ function [preview, info] = previewBudget(imageData, varargin)
 
     opts = parseOptions(varargin);
     validateImageData(imageData);
-    maxPixels = positiveScalar(opts.MaxPixels, 1.2e6);
+    maxPixels = positiveScalar(opts.MaxPixels, defaultMaxPixels());
     expansion = positiveScalar(opts.Expansion, 1);
 
     estimatedPixels = double(size(imageData, 1)) * ...
@@ -39,7 +39,7 @@ function [preview, info] = previewBudget(imageData, varargin)
 end
 
 function opts = parseOptions(args)
-    opts = struct('MaxPixels', 1.2e6, 'Expansion', 1);
+    opts = struct('MaxPixels', defaultMaxPixels(), 'Expansion', 1);
     if isempty(args)
         return;
     end
@@ -55,6 +55,12 @@ function opts = parseOptions(args)
         end
         opts.(name) = args{k + 1};
     end
+end
+
+function value = defaultMaxPixels()
+    % Constant: 1.2 megapixels balances interactive preview responsiveness
+    % with enough spatial detail for image measurement workflows.
+    value = 1.2e6;
 end
 
 function validateImageData(imageData)

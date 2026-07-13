@@ -11,7 +11,10 @@ function [canvas, mask, info] = rotateCanvas(imageData, angleDeg, fillValue)
         fillValue = 0;
     end
 
-    if abs(mod(double(angleDeg), 360)) < 1e-12
+    % Constant: this degree tolerance absorbs floating-point roundoff when
+    % users enter rotations equivalent to a full turn.
+    identityAngleToleranceDeg = 1e-12;
+    if abs(mod(double(angleDeg), 360)) < identityAngleToleranceDeg
         canvas = imageData;
         mask = true(size(imageData, 1), size(imageData, 2));
         info = struct( ...

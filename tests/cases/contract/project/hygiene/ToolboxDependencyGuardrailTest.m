@@ -8,10 +8,21 @@ classdef ToolboxDependencyGuardrailTest < matlab.unittest.TestCase
             actual = collectHardToolboxCalls(root, files);
             testCase.verifyEmpty(actual, ...
                 ['apps, LabKit facades, and maintainer scripts must not hard-depend on non-base ' ...
-                'MATLAB toolbox helpers. Use LabKit primitives, app-local ' ...
-                'base-MATLAB implementations, or explicit optional ' ...
-                'toolbox paths with fallback. Findings: ' ...
+                'MATLAB toolbox helpers. Use LabKit primitives or app-local ' ...
+                'base-MATLAB implementations so every installation follows ' ...
+                'the same execution path. Findings: ' ...
                 strjoin(cellstr(actual), ', ')]);
+        end
+
+        function sourceDependenciesResolveToBaseMatlab(testCase)
+            testCase.assumeEqual(string(getenv("LABKIT_VERIFY_TOOLBOX_PRODUCTS")), "1", ...
+                "Product ownership scan runs through buildtool baseMatlab.");
+            root = setupLabKitTestPath();
+            files = trackedSourceFiles(root);
+            findings = dependencyProductFindings(root, files);
+            testCase.verifyEmpty(findings, ...
+                ["Each source ownership domain must resolve only to base MATLAB. " + ...
+                "Findings: " + strjoin(findings, ", ")]);
         end
 
         function hardDependencyPatternCatchesUnguardedCalls(testCase)
@@ -32,6 +43,7 @@ classdef ToolboxDependencyGuardrailTest < matlab.unittest.TestCase
             testCase.verifyEqual(actual(:), [
                 "apps/example/run.m:1"
                 "apps/example/run.m:2"
+                "apps/example/run.m:4"
                 "+labkit/+image/helper.m:1"
             ]);
         end
@@ -62,7 +74,7 @@ classdef ToolboxDependencyGuardrailTest < matlab.unittest.TestCase
             files = trackedMatlabFiles(root);
             findings = collectRec601LumaWeightCopies(root, files);
             testCase.verifyEmpty(findings, ...
-                ['Rec.601 luma weights should be owned by labkit.image.toLuma ' ...
+                ['Rec.601 luma weights should be owned by labkit.image.rgb2gray ' ...
                 'instead of copied into app or test code. Findings: ' ...
                 strjoin(cellstr(findings), ', ')]);
         end
@@ -71,13 +83,13 @@ end
 
 function smokeLabkitImageFacade()
     imageData = uint8(repmat(reshape(0:15, 4, 4), 1, 1, 3));
-    rgb = labkit.image.toRgbDouble(imageData);
-    luma = labkit.image.toLuma(imageData);
+    rgb = labkit.image.ensureRgb(labkit.image.im2double(imageData));
+    luma = labkit.image.rgb2gray(rgb);
     resized = labkit.image.resizeToFit(rgb, "MaxHeight", 2);
     assert(isequal(size(rgb), [4 4 3]), ...
-        'labkit.image.toRgbDouble should return RGB double image data.');
+        'Explicit image conversion and RGB shaping should return RGB double data.');
     assert(isequal(size(luma), [4 4]), ...
-        'labkit.image.toLuma should return one luminance plane.');
+        'labkit.image.rgb2gray should return one luminance plane.');
     assert(size(resized, 1) == 2, ...
         'labkit.image.resizeToFit should use the base-MATLAB resize path.');
 end
@@ -173,7 +185,7 @@ function findings = collectRec601LumaWeightCopies(root, files)
     weightPatterns = ["0.2989", "0.5870", "0.1140"];
     for k = 1:numel(files)
         file = slashPath(files(k));
-        if file == "+labkit/+image/toLuma.m" || ...
+        if file == "+labkit/+image/rgb2gray.m" || ...
                 file == "tests/cases/contract/project/hygiene/ToolboxDependencyGuardrailTest.m"
             continue;
         end
@@ -194,7 +206,7 @@ end
 function findings = collectHardToolboxCallsFromContents(~, files, contents)
     findings = strings(1, 0);
     names = guardedToolboxFunctionNames();
-    pattern = ['(^|[^\w])(' char(strjoin(names, "|")) ')\s*\('];
+    pattern = ['(^|[^\w.])(' char(strjoin(names, "|")) ')\s*\('];
     for k = 1:numel(files)
         file = slashPath(files(k));
         if ~isKey(contents, char(files(k)))
@@ -203,44 +215,13 @@ function findings = collectHardToolboxCallsFromContents(~, files, contents)
         lines = contents(char(files(k)));
         for iLine = 1:numel(lines)
             line = string(lines(iLine));
-            if startsWith(strtrim(line), "%") || isempty(regexp(char(line), pattern, 'once'))
-                continue;
-            end
-            if iLine > 1
-                previousLine = string(lines(iLine - 1));
-            else
-                previousLine = "";
-            end
-            if isAllowedOptionalToolboxCall(file, line, previousLine)
+        trimmed = strtrim(line);
+        if startsWith(trimmed, "%") || startsWith(trimmed, "function") || ...
+                isempty(regexp(char(line), pattern, 'once'))
                 continue;
             end
             findings(end + 1) = file + ":" + string(iLine);
         end
-    end
-end
-
-function tf = isAllowedOptionalToolboxCall(file, line, previousLine)
-    line = string(line);
-    previousLine = string(previousLine);
-    tf = false;
-    if contains(line, "exist('") || contains(line, 'exist("') || ...
-            contains(previousLine, "exist('") || contains(previousLine, 'exist("')
-        tf = true;
-        return;
-    end
-    if contains(file, "apps/image_measurement/focus_stack/") && ...
-            any(contains(line, ["imregcorr(", "imref2d(", "imwarp("]))
-        tf = true;
-        return;
-    end
-    if contains(file, "apps/image_measurement/batch_crop/") && ...
-            contains(line, "imresize(")
-        tf = true;
-        return;
-    end
-    if contains(file, "apps/image_measurement/curvature/") && ...
-            any(contains(line, ["optimoptions(", "lsqnonlin("]))
-        tf = true;
     end
 end
 
@@ -267,13 +248,48 @@ end
 function names = guardedToolboxFunctionNames()
     names = [ ...
         "imresize", "imgaussfilt", "imregcorr", "imwarp", "imref2d", ...
-        "rgb2gray", "im2double", "affine2d", "procrustes", ...
+        "drawrectangle", "poly2mask", "imshow", "cpselect", ...
+        "rgb2gray", "rgb2lab", "lab2rgb", "im2double", "imcrop", ...
+        "affine2d", "procrustes", ...
         "bwlabel", "regionprops", "graythresh", "imbinarize", "medfilt2", ...
         "fspecial", "imfilter", ...
         "fitcsvm", "fitcecoc", "fitcknn", "fitctree", "fitlm", "fitnlm", ...
         "pca", "kmeans", ...
         "findpeaks", "butter", "filtfilt", "designfilt", "spectrogram", "cwt", ...
         "parpool", "gpuArray", "optimoptions", "fmincon", "lsqcurvefit", "lsqnonlin"];
+end
+
+function findings = dependencyProductFindings(root, files)
+    groups = [ ...
+        "+labkit"
+        "apps/dic/dic_preprocess"
+        "apps/dic/dic_postprocess"
+        "apps/electrochem"
+        "apps/image_measurement"
+        "apps/labkit_core"
+        "apps/neurophysiology"
+        "apps/wearable"
+        "docs/tools"];
+    findings = strings(1, 0);
+    assigned = false(size(files));
+    for iGroup = 1:numel(groups)
+        inGroup = startsWith(files, groups(iGroup) + "/");
+        assigned = assigned | inGroup;
+        if ~any(inGroup)
+            continue;
+        end
+        absoluteFiles = fullfile(root, files(inGroup));
+        [~, products] = matlab.codetools.requiredFilesAndProducts( ...
+            cellstr(absoluteFiles));
+        certain = logical([products.Certain]);
+        productNames = string({products.Name});
+        nonBase = productNames(certain & productNames ~= "MATLAB");
+        for iProduct = 1:numel(nonBase)
+            findings(end + 1) = groups(iGroup) + ": " + nonBase(iProduct);
+        end
+    end
+    assert(all(assigned), ...
+        'Every tracked source file must belong to a product-ownership scan group.');
 end
 
 function cleanupShadowFolder(folder)

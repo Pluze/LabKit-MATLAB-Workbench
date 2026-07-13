@@ -112,7 +112,7 @@ function runImageEnhanceWorkflow(inputs, assetDir, exportRoot)
         image_enhance.analysisRun.makeStep("Sharpen", 22, 1.5, 0)];
     opts = struct("outputFolder", string(outputFolder), "format", "PNG");
     payload = image_enhance.resultFiles.writeOutputs(items, steps, opts);
-    processed = labkit.image.toDouble(imread(char(payload.results(1).outputPath)));
+    processed = labkit.image.im2double(imread(char(payload.results(1).outputPath)));
 
     exportPairImage(items(1).image, processed, ...
         fullfile(assetDir, "workflow_image_enhance_before_after.png"), ...
@@ -129,7 +129,7 @@ function runImageMatchWorkflow(inputs, assetDir, exportRoot)
     steps = image_match.analysisRun.makeStep("Balanced", 85, 70, 80);
     opts = struct("outputFolder", string(outputFolder), "format", "PNG");
     payload = image_match.resultFiles.writeOutputs(items, reference, steps, opts);
-    matched = labkit.image.toDouble(imread(char(payload.results(1).outputPath)));
+    matched = labkit.image.im2double(imread(char(payload.results(1).outputPath)));
 
     exportTriptychImage(reference(1).image, items(1).image, matched, ...
         fullfile(assetDir, ...
@@ -154,8 +154,8 @@ function runBatchCropWorkflow(inputs, assetDir, exportRoot)
         "cropHeight", 320, ...
         "paddingPercent", 18);
     payload = batch_crop.resultFiles.writeOutputs(items, opts);
-    cropped = labkit.image.toDouble(imread(char(payload.results(1).outputPath)));
-    source = labkit.image.toDouble(imread(inputs.cropSource));
+    cropped = labkit.image.im2double(imread(char(payload.results(1).outputPath)));
+    source = labkit.image.im2double(imread(inputs.cropSource));
     marked = drawCropBox(source, items(1).centerXY, ...
         opts.cropWidth, opts.cropHeight);
 
@@ -261,11 +261,11 @@ function exportPairImage(leftImage, rightImage, outputPath, leftTitle, rightTitl
         "Position", [100 100 1200 520]);
     tiledlayout(fig, 1, 2, "Padding", "compact", ...
         "TileSpacing", "compact");
-    nexttile;
-    imshow(leftImage);
+    ax = nexttile;
+    displayImage(ax, leftImage);
     title(leftTitle, "FontWeight", "bold");
-    nexttile;
-    imshow(rightImage);
+    ax = nexttile;
+    displayImage(ax, rightImage);
     title(rightTitle, "FontWeight", "bold");
     exportgraphics(fig, outputPath, "Resolution", 180);
     close(fig);
@@ -277,21 +277,27 @@ function exportTriptychImage(firstImage, secondImage, thirdImage, outputPath, ..
         "Position", [100 100 1440 520]);
     tiledlayout(fig, 1, 3, "Padding", "compact", ...
         "TileSpacing", "compact");
-    nexttile;
-    imshow(firstImage);
+    ax = nexttile;
+    displayImage(ax, firstImage);
     title(firstTitle, "FontWeight", "bold");
-    nexttile;
-    imshow(secondImage);
+    ax = nexttile;
+    displayImage(ax, secondImage);
     title(secondTitle, "FontWeight", "bold");
-    nexttile;
-    imshow(thirdImage);
+    ax = nexttile;
+    displayImage(ax, thirdImage);
     title(thirdTitle, "FontWeight", "bold");
     exportgraphics(fig, outputPath, "Resolution", 180);
     close(fig);
 end
 
+function displayImage(ax, imageData)
+    image(ax, imageData);
+    axis(ax, "image");
+    axis(ax, "off");
+end
+
 function marked = drawCropBox(imageData, centerXY, widthPx, heightPx)
-    marked = labkit.image.toDouble(imageData);
+    marked = labkit.image.im2double(imageData);
     x1 = max(1, round(centerXY(1) - widthPx / 2));
     x2 = min(size(marked, 2), round(centerXY(1) + widthPx / 2));
     y1 = max(1, round(centerXY(2) - heightPx / 2));

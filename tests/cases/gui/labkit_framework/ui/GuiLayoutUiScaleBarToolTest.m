@@ -1,4 +1,4 @@
-classdef GuiLayoutUiScaleBarToolTest < matlab.uitest.TestCase
+classdef GuiLayoutUiScaleBarToolTest < matlab.unittest.TestCase
     %GUILAYOUTUISCALEBARTOOLTEST Verify LabKit behavior through official MATLAB tests.
 
     methods (Test, TestTags = {'GUI', 'Structural'})

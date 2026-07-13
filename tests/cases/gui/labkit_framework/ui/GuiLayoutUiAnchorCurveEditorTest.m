@@ -1,4 +1,4 @@
-classdef GuiLayoutUiAnchorCurveEditorTest < matlab.uitest.TestCase
+classdef GuiLayoutUiAnchorCurveEditorTest < matlab.unittest.TestCase
     %GUILAYOUTUIANCHORCURVEEDITORTEST Verify LabKit behavior through official MATLAB tests.
 
     methods (Test, TestTags = {'GUI', 'Structural'})
@@ -67,6 +67,13 @@ function verify_gui_layout_ui_anchor_curve_editor()
     points = openEditor.getPoints();
     assert(isequal(points(2, :), [25 20]), ...
         'Open anchor editor should insert points that are close to an existing segment.');
+    pointEditor = labkit.ui.interaction.anchorEditor(runtime, [40 60 3], ...
+        struct('mode', 'points', 'installScrollWheel', false));
+    pointEditor.start([10 10; 40 30]);
+    pointEditor.insertPoint([25 20]);
+    points = pointEditor.getPoints();
+    assert(isequal(points(end, :), [25 20]) && isempty(pointEditor.curvePoints()), ...
+        'Point-mode anchors should append discrete points without a connecting path.');
     spiralEditor = labkit.ui.interaction.anchorEditor(runtime, [60 70 3], ...
         struct('closed', false, 'style', 'Straight lines'));
     spiralEditor.start([20 20; 55 20; 55 55; 35 55; 35 35; 48 35]);

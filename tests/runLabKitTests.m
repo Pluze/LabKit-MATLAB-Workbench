@@ -57,10 +57,11 @@ function output = runLabKitTests(varargin)
         "RunName", opts.RunName, ...
         "Create", false);
     ensureDirectory(paths.testResults);
+    ensureDirectory(paths.logs);
     runner = matlab.unittest.TestRunner.withTextOutput( ...
         "OutputDetail", opts.OutputDetail, ...
         "LoggingLevel", opts.LoggingLevel);
-    runner.addPlugin(labkitProgressPlugin);
+    runner.addPlugin(labkitProgressPlugin(paths.logs));
     runner.addPlugin(matlab.unittest.plugins.XMLPlugin.producingJUnitFormat( ...
         paths.junitXml));
     if opts.HtmlReport
@@ -88,7 +89,7 @@ function output = runLabKitTests(varargin)
     end
 
     officialResults = runner.run(suite);
-    if ~isempty(officialResults) && ~all([officialResults.Passed])
+    if labkitOfficialResultsHaveFailures(officialResults)
         error("LabKit:Tests:OfficialFailure", ...
             "One or more official matlab.unittest tests failed.");
     end

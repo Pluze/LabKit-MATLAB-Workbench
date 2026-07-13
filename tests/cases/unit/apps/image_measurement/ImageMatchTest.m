@@ -185,7 +185,7 @@ function checkManifestAndExportContract()
         'Batch export should avoid overwriting existing matched outputs.');
     assert(isfile(payload.results(1).outputPath), ...
         'Batch export should write matched image output.');
-    written = labkit.image.toDouble(imread(payload.results(1).outputPath));
+    written = labkit.image.im2double(imread(payload.results(1).outputPath));
     assert(isequal(size(written), [10 12 3]), ...
         'Batch export should process and write full-size matched images.');
     assert(isfile(payload.manifestPath), ...
@@ -243,7 +243,7 @@ function checkPreviewImageDownsamplesLargeInputs()
 end
 
 function gray = testLuma(imageIn)
-    gray = labkit.image.toLuma(imageIn);
+    gray = labkit.image.rgb2gray(imageIn);
 end
 
 function img = syntheticGradientImage()

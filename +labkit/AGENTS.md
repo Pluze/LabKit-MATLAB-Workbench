@@ -17,6 +17,12 @@
 
 - Public API growth must be conservative.
 - New public helpers must be domain-neutral, independently testable, useful beyond one workflow, and clearer as an API than as app-local code.
+- When replacing a MATLAB toolbox function with a base-MATLAB implementation,
+  use the MATLAB function name and preserve its documented call contract under
+  the owning `labkit.*` namespace. Keep orthogonal shaping or validation steps
+  in explicitly named helpers; do not bundle them into convenience APIs such
+  as `toRgbDouble` that silently combine conversion, channel changes, and
+  clipping.
 - Do not encode experiment-specific units, thresholds, result columns, plot wording, or export schemas in reusable helpers.
 - Do not add public `+labkit/+analysis`, `+data`, `+io`, or `+util` app-facing surfaces.
 - `labkit.dta` stays GUI-free and app-free.

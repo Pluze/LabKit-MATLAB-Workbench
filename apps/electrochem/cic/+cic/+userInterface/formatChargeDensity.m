@@ -12,12 +12,5 @@ function out = formatChargeDensity(Q_C, cic_mCcm2, unitLabel)
 end
 
 function [scale, unitLabel] = displayScale(unitLabel)
-    switch unitLabel
-        case 'uC/cm^2'
-            scale = 1e3;
-            unitLabel = 'uC/cm^2';
-        otherwise
-            scale = 1;
-            unitLabel = 'mC/cm^2';
-    end
+    [scale, unitLabel] = cic.userInterface.displayUnit(unitLabel);
 end

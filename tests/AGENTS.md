@@ -65,10 +65,11 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
   time; before squash, PR handoff, or direct `main` push, choose the next
   version from the latest `main` version file and make the aggregate bump once.
   The same aggregate version bump must be recorded in `CHANGELOG.md` with user
-  impact and evidence. Branch work may use the `Unreleased` section until the
-  final mainline commit is known; direct `main` work or any finalized version
-  entry belongs under `Version History`, and stale pending drafts should be
-  moved or removed during changelog audits.
+  impact and evidence. Branch and mainline records use the same schema-v1
+  `labkit-change` block and stable Change ID under `Structured Change Records`;
+  do not create Unreleased or Pending lifecycle sections. Changelog guardrails
+  should parse records through `tools/release/parseLabKitChangelog.m` instead
+  of duplicating the file grammar in tests.
 - Boundary tests may require app-owned logic to stay under the owning app tree, but should not require GUI-free helpers to remain inside the public app entry-point file or assert exact app-private helper file lists.
 - App-owned workflow packages need direct unit coverage for non-UI functions;
   GUI structural tests only prove launch/layout wiring.
@@ -163,6 +164,11 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
   Hidden mode must still create real MATLAB figures and controls rather than
   mock GUI objects; visible or minimized GUI mode is for observing the same
   automated checks during local diagnosis.
+- Hidden GUI tests that invoke semantic callbacks or inspect real controls must
+  inherit from `matlab.unittest.TestCase`. Use `matlab.uitest.TestCase` only
+  for a visible automation workflow that actually calls its press, choose,
+  drag, scroll, or type methods; its display driver is incompatible with
+  hidden CI figures.
 
 ## Fixture and Hygiene Rules
 

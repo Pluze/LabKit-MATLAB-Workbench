@@ -43,7 +43,8 @@ function records = readFiles(paths, opts)
         reportProgress(opts.progressFcn, "beforeRead", k, numel(paths), path);
         imageData = imread(char(path));
         if opts.Normalize
-            imageData = labkit.image.toRgbDouble(imageData);
+            imageData = labkit.image.ensureRgb(labkit.image.im2double(imageData));
+            imageData = min(max(imageData, 0), 1);
         end
         records(k) = struct( ...
             'path', path, ...

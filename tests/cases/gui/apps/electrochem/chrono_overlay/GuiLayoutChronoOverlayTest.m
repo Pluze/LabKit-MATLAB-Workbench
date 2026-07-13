@@ -1,4 +1,4 @@
-classdef GuiLayoutChronoOverlayTest < matlab.uitest.TestCase
+classdef GuiLayoutChronoOverlayTest < matlab.unittest.TestCase
     %GUILAYOUTCHRONOOVERLAYTEST Verify chrono overlay GUI layout contracts.
 
     methods (Test, TestTags = {'GUI', 'Structural', 'Workflow'})

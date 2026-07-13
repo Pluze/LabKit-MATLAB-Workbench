@@ -1,4 +1,4 @@
-classdef GuiLayoutEcgPrintTest < matlab.uitest.TestCase
+classdef GuiLayoutEcgPrintTest < matlab.unittest.TestCase
     %GUILAYOUTECGPRINTTEST Verify ECG Print GUI layout contracts.
 
     methods (Test, TestTags = {'GUI', 'Structural', 'Workflow'})

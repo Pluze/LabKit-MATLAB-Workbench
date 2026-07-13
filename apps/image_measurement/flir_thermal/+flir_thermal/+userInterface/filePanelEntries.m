@@ -11,5 +11,11 @@ function entries = filePanelEntries(items)
         else
             entries(k).status = "needs range";
         end
+        calibration = flir_thermal.userInterface.calibrationStatus(items(k));
+        if calibration.severity == "warning"
+            entries(k).status = entries(k).status + "; calibration defaults used";
+        elseif calibration.severity == "unavailable"
+            entries(k).status = entries(k).status + "; temperature unavailable";
+        end
     end
 end

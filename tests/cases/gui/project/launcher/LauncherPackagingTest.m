@@ -1,4 +1,4 @@
-classdef LauncherPackagingTest < matlab.uitest.TestCase
+classdef LauncherPackagingTest < matlab.unittest.TestCase
     %LAUNCHERPACKAGINGTEST Verify launcher multi-app package wiring.
 
     methods (Test, TestTags = {'GUI', 'Structural'})

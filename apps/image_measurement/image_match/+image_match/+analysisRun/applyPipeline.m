@@ -35,5 +35,6 @@ function imageData = normalizeImage(imageData)
     if isempty(imageData)
         return;
     end
-    imageData = labkit.image.toRgbDouble(imageData);
+    imageData = labkit.image.ensureRgb(labkit.image.im2double(imageData));
+    imageData = min(max(imageData, 0), 1);
 end

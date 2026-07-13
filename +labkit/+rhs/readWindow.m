@@ -248,6 +248,14 @@ function [timeSec, values] = readSamples(filepath, index, spec, channelIdx, ...
 end
 
 function values = readBlockFamily(fid, info, spec, channelIdx)
+    % Constant: Intan RHS data-file conversion gains and unsigned offsets
+    % convert stored ADC codes to the physical units documented by the format.
+    amplifierMicrovoltsPerBit = 0.195;
+    amplifierCodeOffset = 32768;
+    dcMillivoltsPerBit = -0.01923;
+    dcCodeOffset = 512;
+    boardVoltsPerBit = 312.5e-6;
+    boardCodeOffset = 32768;
     nAmp = numel(info.channelFamilies.amplifier);
     nAdc = numel(info.channelFamilies.boardAdc);
     nDac = numel(info.channelFamilies.boardDac);
@@ -259,12 +267,14 @@ function values = readBlockFamily(fid, info, spec, channelIdx)
     if nAmp > 0
         ampRaw = readUint16Matrix(fid, nAmp, spb);
         if spec.family == "amplifier"
-            values = 0.195 .* (ampRaw(channelIdx, :) - 32768);
+            values = amplifierMicrovoltsPerBit .* ...
+                (ampRaw(channelIdx, :) - amplifierCodeOffset);
         end
         if info.dcAmplifierSaved
             dcRaw = readUint16Matrix(fid, nAmp, spb);
             if spec.family == "dcAmplifier"
-                values = -0.01923 .* (dcRaw(channelIdx, :) - 512);
+                values = dcMillivoltsPerBit .* ...
+                    (dcRaw(channelIdx, :) - dcCodeOffset);
             end
         end
         stimRaw = readUint16Matrix(fid, nAmp, spb);
@@ -276,13 +286,15 @@ function values = readBlockFamily(fid, info, spec, channelIdx)
     if nAdc > 0
         adcRaw = readUint16Matrix(fid, nAdc, spb);
         if spec.family == "boardAdc"
-            values = 312.5e-6 .* (adcRaw(channelIdx, :) - 32768);
+            values = boardVoltsPerBit .* ...
+                (adcRaw(channelIdx, :) - boardCodeOffset);
         end
     end
     if nDac > 0
         dacRaw = readUint16Matrix(fid, nDac, spb);
         if spec.family == "boardDac"
-            values = 312.5e-6 .* (dacRaw(channelIdx, :) - 32768);
+            values = boardVoltsPerBit .* ...
+                (dacRaw(channelIdx, :) - boardCodeOffset);
         end
     end
     if nDigIn > 0
@@ -316,7 +328,10 @@ function values = scaleStim(raw, stepSize)
     polarity = raw >= 2^8;
     raw = raw - polarity .* 2^8;
     polarity = 1 - 2 .* polarity;
-    values = stepSize .* raw .* polarity ./ 1.0e-6;
+    % Constant: one microampere converts stimulation amplitude from amperes
+    % to the RHS facade's documented microampere output unit.
+    amperesPerMicroampere = 1.0e-6;
+    values = stepSize .* raw .* polarity ./ amperesPerMicroampere;
 end
 
 function values = decodeDigital(raw, channels, channelIdx)

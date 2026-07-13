@@ -18,7 +18,9 @@ function fit = computeCurvatureFit(xPix, yPix, calibration, doDensify, denseN, f
     fit = curvature.appState.emptyFitResult();
     xPix = xPix(:);
     yPix = yPix(:);
-    [xPix, yPix] = curvature.analysisRun.removeDuplicateNeighbors(xPix, yPix, 1e-9);
+    pointTolerancePx = curvature.analysisRun.curvePointTolerance();
+    [xPix, yPix] = curvature.analysisRun.removeDuplicateNeighbors( ...
+        xPix, yPix, pointTolerancePx);
 
     if numel(xPix) < 3
         error('labkit_CurvatureMeasurement_app:NotEnoughPoints', ...
@@ -46,7 +48,8 @@ function fit = computeCurvatureFit(xPix, yPix, calibration, doDensify, denseN, f
         fitPathX = fitPathX(:);
         fitPathY = fitPathY(:);
         if numel(fitPathX) == numel(fitPathY)
-            [fitPathX, fitPathY] = curvature.analysisRun.removeDuplicateNeighbors(fitPathX, fitPathY, 1e-9);
+            [fitPathX, fitPathY] = curvature.analysisRun.removeDuplicateNeighbors( ...
+                fitPathX, fitPathY, pointTolerancePx);
             if numel(fitPathX) >= 3
                 fitSourceX = fitPathX;
                 fitSourceY = fitPathY;
@@ -146,24 +149,14 @@ function [xc, yc, R, rmse] = fitCircleGeomWithFallback(x, y, xc0, yc0, R0)
     p0 = [xc0; yc0; R0];
     residual = @(p) sqrt((x - p(1)).^2 + (y - p(2)).^2) - abs(p(3));
 
-    useLSQ = exist('lsqnonlin', 'file') == 2;
-    if useLSQ
-        try
-            opts = optimoptions('lsqnonlin', ...
-                'Display', 'off', ...
-                'MaxFunctionEvaluations', 2e4, ...
-                'MaxIterations', 2e4);
-            p = lsqnonlin(residual, p0, [], [], opts);
-        catch
-            useLSQ = false;
-        end
-    end
-
-    if ~useLSQ
-        f = @(p) sum(residual(p).^2);
-        opts = optimset('Display', 'off', 'MaxFunEvals', 2e4, 'MaxIter', 2e4);
-        p = fminsearch(f, p0, opts);
-    end
+    f = @(p) sum(residual(p).^2);
+    % Constant: 20,000 evaluations/iterations retain the legacy convergence
+    % budget for difficult hand-traced circle fits.
+    optimizerIterationLimit = 2e4;
+    opts = optimset('Display', 'off', ...
+        'MaxFunEvals', optimizerIterationLimit, ...
+        'MaxIter', optimizerIterationLimit);
+    p = fminsearch(f, p0, opts);
 
     xc = p(1);
     yc = p(2);

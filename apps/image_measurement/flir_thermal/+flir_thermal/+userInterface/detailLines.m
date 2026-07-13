@@ -13,6 +13,7 @@ function lines = detailLines(items, currentIndex, outputFolder)
     item = items(currentIndex);
     range = double(item.displayRange(:)).';
     labels = flir_thermal.userInterface.rangeControlLabels();
+    calibration = flir_thermal.userInterface.calibrationStatus(item);
     lines = {
         sprintf('Loaded files: %d', numel(items))
         sprintf('Current file: %s', char(item.name))
@@ -28,6 +29,7 @@ function lines = detailLines(items, currentIndex, outputFolder)
         sprintf('Temperature differences: %s', differenceSummary(item))
         sprintf('Reader: %s', metadataText(item, 'reader'))
         sprintf('Raw byte order: %s', metadataText(item, 'rawByteOrder'))
+        char(calibration.detailText)
         sprintf('Message: %s', char(string(item.message)))
         ['Output folder: ' char(string(outputFolder))]};
 end

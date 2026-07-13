@@ -36,10 +36,14 @@ function summary = buildCurrentSummary(items, currentIndex, modeLabel, unitLabel
     end
 
     summary.detect = sprintf('%s | %s', A.detectMode, A.detectMsg);
-    summary.delay = sprintf('%.3f us', 1e6 * A.delay_s);
+    % Constant: one million converts seconds to microseconds for display.
+    microsecondsPerSecond = 1e6;
+    summary.delay = sprintf('%.3f us', microsecondsPerSecond * A.delay_s);
     summary.area = formatMaybeNumText(A.area_cm2, '%.8g cm^2');
-    summary.emc = sprintf('%.6f V @ %.6fus', A.Emc, 1e6 * A.t_emc);
-    summary.ema = sprintf('%.6f V @ %.6fus', A.Ema, 1e6 * A.t_ema);
+    summary.emc = sprintf('%.6f V @ %.6fus', A.Emc, ...
+        microsecondsPerSecond * A.t_emc);
+    summary.ema = sprintf('%.6f V @ %.6fus', A.Ema, ...
+        microsecondsPerSecond * A.t_ema);
     summary.qc = formatChargeDensityText(A.Qc_C, A.CICc_mCcm2, unitLabel);
     summary.qa = formatChargeDensityText(A.Qa_C, A.CICa_mCcm2, unitLabel);
     summary.qt = formatChargeDensityText(A.Qt_C, A.CICt_mCcm2, unitLabel);
@@ -164,12 +168,5 @@ function out = formatChargeDensityText(Q_C, cic_mCcm2, unitLabel)
 end
 
 function [scale, unitLabel] = displayScale(unitLabel)
-    switch unitLabel
-        case 'uC/cm^2'
-            scale = 1e3;
-            unitLabel = 'uC/cm^2';
-        otherwise
-            scale = 1;
-            unitLabel = 'mC/cm^2';
-    end
+    [scale, unitLabel] = cic.userInterface.displayUnit(unitLabel);
 end

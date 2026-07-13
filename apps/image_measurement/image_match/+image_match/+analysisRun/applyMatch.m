@@ -3,13 +3,15 @@
 % Output is a display-ready RGB double image in [0, 1].
 function outputImage = applyMatch(inputImage, referenceImage, step)
 
-    inputImage = labkit.image.toRgbDouble(inputImage);
+    inputImage = labkit.image.ensureRgb(labkit.image.im2double(inputImage));
+    inputImage = min(max(inputImage, 0), 1);
     if isempty(referenceImage)
         outputImage = inputImage;
         return;
     end
 
-    referenceImage = labkit.image.toRgbDouble(referenceImage);
+    referenceImage = labkit.image.ensureRgb(labkit.image.im2double(referenceImage));
+    referenceImage = min(max(referenceImage, 0), 1);
     strength = clamp01(double(step.amount) / 100);
     toneStrength = clamp01(double(step.secondary) / 100);
     colorStrength = clamp01(double(step.colorStrength) / 100);
@@ -230,8 +232,11 @@ function matched = covarianceMatch(sourceLab, referenceLab)
     referencePixels = reshape(referenceLab, [], sourceSize(3));
     sourceMean = mean(sourcePixels, 1);
     referenceMean = mean(referencePixels, 1);
-    sourceCov = cov(sourcePixels) + 1e-6 .* eye(sourceSize(3));
-    referenceCov = cov(referencePixels) + 1e-6 .* eye(sourceSize(3));
+    % Constant: this small diagonal term regularizes singular covariance
+    % matrices from flat or nearly single-color images.
+    covarianceRegularization = 1e-6;
+    sourceCov = cov(sourcePixels) + covarianceRegularization .* eye(sourceSize(3));
+    referenceCov = cov(referencePixels) + covarianceRegularization .* eye(sourceSize(3));
     transform = real(sqrtm(referenceCov)) / real(sqrtm(sourceCov));
     matchedPixels = (sourcePixels - sourceMean) * transform.' + referenceMean;
     matched = reshape(matchedPixels, sourceSize);
@@ -265,72 +270,54 @@ function value = percentileValue(data, pct)
 end
 
 function imageData = normalizeImage(imageData)
-    imageData = labkit.image.toDouble(imageData);
-    if ndims(imageData) == 2
-        imageData = repmat(imageData, 1, 1, 3);
-    elseif size(imageData, 3) > 3
-        imageData = imageData(:, :, 1:3);
-    end
+    imageData = labkit.image.ensureRgb(labkit.image.im2double(imageData));
     imageData = min(max(imageData, 0), 1);
 end
 
 function gray = luma(imageData)
-    gray = labkit.image.toLuma(imageData);
+    gray = labkit.image.rgb2gray(imageData);
 end
 
 function outputImage = labToRgb(labImage)
-    if exist('lab2rgb', 'file') == 2
-        outputImage = min(max(lab2rgb(labImage), 0), 1);
-        return;
-    end
-
     xyzImage = labToXyz(labImage);
     outputImage = xyzToRgb(xyzImage);
 end
 
 function labImage = rgbToLab(rgbImage)
-    if exist('rgb2lab', 'file') == 2
-        labImage = rgb2lab(rgbImage);
-        return;
-    end
-
     xyzImage = rgbToXyz(rgbImage);
     labImage = xyzToLab(xyzImage);
 end
 
 function xyzImage = rgbToXyz(rgbImage)
+    constants = cieColorConstants();
     rgbImage = min(max(double(rgbImage), 0), 1);
     linearRgb = rgbImage;
-    lowMask = linearRgb <= 0.04045;
-    linearRgb(lowMask) = linearRgb(lowMask) ./ 12.92;
-    linearRgb(~lowMask) = ((linearRgb(~lowMask) + 0.055) ./ 1.055) .^ 2.4;
+    lowMask = linearRgb <= constants.srgbDecodeThreshold;
+    linearRgb(lowMask) = linearRgb(lowMask) ./ constants.srgbLinearScale;
+    linearRgb(~lowMask) = ((linearRgb(~lowMask) + constants.srgbOffset) ./ ...
+        constants.srgbSlope) .^ constants.srgbGamma;
 
-    transform = [ ...
-        0.4124564 0.3575761 0.1804375; ...
-        0.2126729 0.7151522 0.0721750; ...
-        0.0193339 0.1191920 0.9503041];
-    pixels = reshape(linearRgb, [], 3) * transform.';
+    pixels = reshape(linearRgb, [], 3) * constants.rgbToXyz.';
     xyzImage = reshape(pixels, size(linearRgb));
 end
 
 function rgbImage = xyzToRgb(xyzImage)
-    transform = [ ...
-         3.2404542 -1.5371385 -0.4985314; ...
-        -0.9692660  1.8760108  0.0415560; ...
-         0.0556434 -0.2040259  1.0572252];
-    linearPixels = reshape(double(xyzImage), [], 3) * transform.';
+    constants = cieColorConstants();
+    linearPixels = reshape(double(xyzImage), [], 3) * constants.xyzToRgb.';
     linearRgb = reshape(linearPixels, size(xyzImage));
     linearRgb = min(max(linearRgb, 0), 1);
 
     rgbImage = linearRgb;
-    lowMask = rgbImage <= 0.0031308;
-    rgbImage(lowMask) = 12.92 .* rgbImage(lowMask);
-    rgbImage(~lowMask) = 1.055 .* (rgbImage(~lowMask) .^ (1 / 2.4)) - 0.055;
+    lowMask = rgbImage <= constants.srgbEncodeThreshold;
+    rgbImage(lowMask) = constants.srgbLinearScale .* rgbImage(lowMask);
+    rgbImage(~lowMask) = constants.srgbSlope .* ...
+        (rgbImage(~lowMask) .^ (1 / constants.srgbGamma)) - constants.srgbOffset;
     rgbImage = min(max(rgbImage, 0), 1);
 end
 
 function labImage = xyzToLab(xyzImage)
-    white = reshape([0.95047 1.00000 1.08883], 1, 1, 3);
+    constants = cieColorConstants();
+    white = reshape(constants.d65WhitePoint, 1, 1, 3);
     scaled = double(xyzImage) ./ white;
     f = labPivotForward(scaled);
 
@@ -341,7 +328,8 @@ function labImage = xyzToLab(xyzImage)
 end
 
 function xyzImage = labToXyz(labImage)
-    white = reshape([0.95047 1.00000 1.08883], 1, 1, 3);
+    constants = cieColorConstants();
+    white = reshape(constants.d65WhitePoint, 1, 1, 3);
     fy = (double(labImage(:, :, 1)) + 16) ./ 116;
     fx = fy + double(labImage(:, :, 2)) ./ 500;
     fz = fy - double(labImage(:, :, 3)) ./ 200;
@@ -355,6 +343,31 @@ function value = labPivotForward(value)
     highMask = value > delta ^ 3;
     value(highMask) = value(highMask) .^ (1 / 3);
     value(~highMask) = value(~highMask) ./ (3 * delta ^ 2) + 4 / 29;
+end
+
+function constants = cieColorConstants()
+    % Constant: IEC 61966-2-1 sRGB transfer values, the IEC/CIE sRGB-D65
+    % conversion matrices, and the CIE D65 2-degree reference white define
+    % the app's toolbox-free RGB/XYZ/Lab conversion contract.
+    constants = struct( ...
+        'srgbDecodeThreshold', 0.04045, ...
+        'srgbEncodeThreshold', 0.0031308, ...
+        'srgbLinearScale', 12.92, ...
+        'srgbOffset', 0.055, ...
+        'srgbSlope', 1.055, ...
+        'srgbGamma', 2.4);
+    % Constant: IEC/CIE sRGB-D65 forward conversion matrix.
+    constants.rgbToXyz = [ ...
+        0.4124564 0.3575761 0.1804375; ...
+        0.2126729 0.7151522 0.0721750; ...
+        0.0193339 0.1191920 0.9503041];
+    % Constant: IEC/CIE sRGB-D65 inverse conversion matrix.
+    constants.xyzToRgb = [ ...
+         3.2404542 -1.5371385 -0.4985314; ...
+        -0.9692660  1.8760108  0.0415560; ...
+         0.0556434 -0.2040259  1.0572252];
+    % Constant: CIE D65 2-degree normalized reference white.
+    constants.d65WhitePoint = [0.95047 1.00000 1.08883];
 end
 
 function value = labPivotInverse(value)

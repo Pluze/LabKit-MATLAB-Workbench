@@ -70,6 +70,23 @@ function verify_computeCIC()
     assert(D.cathOK && D.anodOK && D.safe, 'Relaxed water window should be safe.');
     assert(strcmp(D.limitSide, 'safe'), 'Safe status text should match stable wording.');
 
+    batch = [item item];
+    batch(1).analysis = struct('ok', false);
+    batch(2).analysis = struct('ok', false);
+    batch = cic.analysisRun.recomputeItems(batch, opts);
+    analyses = [batch.analysis];
+    assert(all([analyses.ok]), ...
+        'Shared CIC settings should recompute every loaded item.');
+    assert(all(abs([analyses.area_cm2] - 2) < 1e-15), ...
+        'Every recomputed CIC item should use the same area override.');
+
+    opts.delay_s = 1e6;
+    outside = computeCIC(item, opts);
+    assert(~outside.ok, ...
+        'A delay outside the recorded time range should fail instead of extrapolating.');
+    assert(contains(outside.message, 'outside the recorded time range'), ...
+        'Out-of-range CIC delay failures should explain the invalid sampling window.');
+
     bad = struct('meta', struct(), 'tables', struct([]));
     E = computeCIC(bad, struct());
     assert(~E.ok, 'Missing curve should fail.');

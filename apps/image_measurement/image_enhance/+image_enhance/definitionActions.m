@@ -8,6 +8,7 @@ function actions = definitionActions()
     ui = [];
     fig = [];
     debugLog = [];
+    imageRuntime = [];
     actions = struct( ...
         'startup', @onStartup, ...
         'sourceImagesChosen', @dispatchSourceImagesChosen, ...
@@ -29,6 +30,8 @@ function actions = definitionActions()
         ui = services.ui;
         fig = services.figure;
         debugLog = services.debug;
+        imageRuntime = labkit.ui.interaction.runtime( ...
+            ui.controls.preview.primaryAxes, struct('figure', fig));
         if debugLog.enabled
             debugLog.trace('Image enhance debug trace enabled.');
             debugLog.instrumentFigure(fig);
@@ -543,11 +546,8 @@ function actions = definitionActions()
         if image_enhance.userInterface.whiteRoiHelpers("hasRoi", S.items(currentSelectionIndex()))
             position = S.items(currentSelectionIndex()).whiteRoi .* currentPreviewScale();
         end
-        S.whiteRoiHandle = drawrectangle(ui.controls.preview.primaryAxes, ...
-            'Position', position, 'Color', [1 1 1], 'StripeColor', [0 0 0]);
-        S.whiteRoiListener = addlistener(S.whiteRoiHandle, 'ROIMoved', ...
-            @(~, event) storeWhiteRoi(event.CurrentPosition));
-        storeWhiteRoi(S.whiteRoiHandle.Position);
+        S.whiteRoiHandle = createWhiteRoiEditor(position);
+        storeWhiteRoi(S.whiteRoiHandle.getPosition());
     end
     function availability = currentToolAvailability()
         availability = image_enhance.userInterface.toolAvailability( ...
@@ -568,23 +568,26 @@ function actions = definitionActions()
             clearWhiteRoiOverlay();
             return;
         end
-        if isempty(S.whiteRoiHandle) || ~isvalid(S.whiteRoiHandle)
-            S.whiteRoiHandle = drawrectangle(ui.controls.preview.primaryAxes, ...
-                'Position', S.items(currentSelectionIndex()).whiteRoi .* currentPreviewScale(), ...
-                'Color', [1 1 1], 'StripeColor', [0 0 0]);
-            S.whiteRoiListener = addlistener(S.whiteRoiHandle, 'ROIMoved', ...
-                @(~, event) storeWhiteRoi(event.CurrentPosition));
+        if isempty(S.whiteRoiHandle) || ~S.whiteRoiHandle.isValid()
+            if ~isempty(S.whiteRoiHandle) && isstruct(S.whiteRoiHandle)
+                S.whiteRoiHandle.delete();
+            end
+            S.whiteRoiHandle = createWhiteRoiEditor( ...
+                S.items(currentSelectionIndex()).whiteRoi .* currentPreviewScale());
         end
     end
     function clearWhiteRoiOverlay()
-        if ~isempty(S.whiteRoiListener)
-            delete(S.whiteRoiListener);
-            S.whiteRoiListener = [];
-        end
-        if ~isempty(S.whiteRoiHandle) && isvalid(S.whiteRoiHandle)
-            delete(S.whiteRoiHandle);
+        if ~isempty(S.whiteRoiHandle) && isstruct(S.whiteRoiHandle)
+            S.whiteRoiHandle.delete();
         end
         S.whiteRoiHandle = [];
+        S.whiteRoiListener = [];
+    end
+    function editor = createWhiteRoiEditor(position)
+        editor = labkit.ui.interaction.rectangleEditor(imageRuntime, ...
+            size(currentPreviewSourceImage()), position, struct( ...
+            'color', [1 1 1], ...
+            'onMoved', @storeWhiteRoi));
     end
     function updateToolControls(resetToDefaults)
         values = image_enhance.analysisRun.defaultStepValues( ...

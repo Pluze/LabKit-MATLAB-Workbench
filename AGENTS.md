@@ -55,6 +55,18 @@ debt for the touched area.
 - Folder/path scalars must not be reshaped with `(:)`, because char paths become one element per character. Use `string(folder)` for one selected folder/path and reserve `paths(:)` for values already known to be string arrays or cell arrays of paths.
 - UI numeric control values must be sanitized to finite scalars before they are assigned into app state, step structs, or task structs. Do not write `step.amount = double(amount)` or similar directly from callback values; use a small scalar-normalization helper with a fallback.
 - User-visible UI text that also acts as a state enum, branch key, dropdown value, action label, or test contract must have one app-local source of truth, such as a `+userInterface/*Labels.m`, `+userInterface/*Choices.m`, or workflow-owned `*Items.m` helper. Do not repeat those literals in runners, view helpers, or tests; callers and tests should reference the helper. One-off section labels that are only displayed in `+userInterface/buildWorkbenchLayout.m` may stay inline.
+- Interactive image rectangles must use `labkit.ui.interaction.rectangleEditor`
+  or an interaction-runtime drag session. Direct `rectangle(...)` calls in apps
+  are only for non-pickable display/mirror overlays; they must disable hit
+  testing so users are not presented with a rectangle that looks interactive
+  but cannot be dragged.
+- Nontrivial numeric constants in production calculations must have a semantic
+  variable name and a nearby `% Constant:` comment that states the standard,
+  physical conversion, numerical-stability purpose, or empirical policy behind
+  the value. Structural indices and dimensions, explicit UI geometry/colors,
+  version metadata, and synthetic test/debug fixture values are not calculation
+  magic numbers. Keep one owner for standardized coefficient sets and unit
+  conversions instead of copying their literals across apps.
 
 Default principle:
 
@@ -285,15 +297,18 @@ agents. When a change bumps `labkit_launcher.m`, a `+labkit/**/version.m`
 facade, or an `apps/**/version.m` app metadata file, update `CHANGELOG.md` in
 the same change with the affected versions, what changed, why it matters,
 compatibility notes when relevant, optional direction notes, and evidence.
+When adding a newly versioned component, record its first version as an
+`introduced` event and preserve one continuous chain through current metadata.
 Organize entries by coherent user-facing or maintainer-facing evolution, not
 by raw tag rows, commit rows, or issue lists. Release tags are public anchors
-inside affected versions and evidence; commits are evidence. For branch or PR
-work before the final mainline SHA is known, stage the entry under
-`Unreleased`; for direct-main work with a decided version or any finalized
-entry, write it directly under `Version History`. During release preparation or
-changelog audit, move finalized entries out of `Unreleased`, remove stale
-pending drafts, and include the mainline commit SHA when it is known. Do not
-reduce changelog entries to raw commit-log dumps.
+inside affected versions and evidence; commits are evidence. Every entry uses
+the schema-v1 `labkit-change` metadata block and required narrative sections
+under `Structured Change Records`. Use one stable Change ID on branches and
+main; do not add delivery-status sections such as Unreleased or Pending.
+Branch evidence may name checkpoint commits or a PR, then a later audit may
+add the mainline SHA without moving the record. Validate the file with
+`tools/release/parseLabKitChangelog.m`. Do not reduce entries to raw commit-log
+dumps.
 
 For new releases, use `vX.Y.Z` tags, for example `v2.2.0`. Do not rename or
 delete already published historical tags only to normalize naming; preserve

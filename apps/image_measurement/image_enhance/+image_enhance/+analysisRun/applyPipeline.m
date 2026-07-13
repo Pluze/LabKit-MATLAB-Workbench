@@ -26,6 +26,7 @@ function images = normalizeImages(images)
     end
     images = images(:);
     for k = 1:numel(images)
-        images{k} = labkit.image.toRgbDouble(images{k});
+        images{k} = labkit.image.ensureRgb(labkit.image.im2double(images{k}));
+        images{k} = min(max(images{k}, 0), 1);
     end
 end

@@ -11,11 +11,7 @@ function mask = maskFromCurve(curve, imageSize)
         mask = uint8(false(H, W));
         return;
     end
-    if exist('poly2mask', 'file') == 2
-        inside = poly2mask(curve(:, 1), curve(:, 2), H, W);
-    else
-        [x, y] = meshgrid(1:W, 1:H);
-        inside = inpolygon(x, y, curve(:, 1), curve(:, 2));
-    end
+    [x, y] = meshgrid(1:W, 1:H);
+    inside = inpolygon(x, y, curve(:, 1), curve(:, 2));
     mask = uint8(inside) .* uint8(255);
 end

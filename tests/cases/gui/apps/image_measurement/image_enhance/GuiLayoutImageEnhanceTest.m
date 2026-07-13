@@ -1,4 +1,4 @@
-classdef GuiLayoutImageEnhanceTest < matlab.uitest.TestCase
+classdef GuiLayoutImageEnhanceTest < matlab.unittest.TestCase
     %GUILAYOUTIMAGEENHANCETEST Verify image enhance GUI layout contracts.
 
     methods (Test, TestTags = {'GUI', 'Structural', 'Workflow'})

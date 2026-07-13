@@ -22,6 +22,8 @@ function T = buildResultsTable(items, unitLabel)
     CICt = NaN(numel(items), 1);
     safe = zeros(numel(items), 1);
     detection = cell(numel(items), 1);
+    area_cm2 = NaN(numel(items), 1);
+    delay_us = NaN(numel(items), 1);
 
     for i = 1:numel(items)
         item = items(i);
@@ -43,11 +45,17 @@ function T = buildResultsTable(items, unitLabel)
         CICt(i) = scale * A.CICt_mCcm2;
         safe(i) = A.safe;
         detection{i} = A.detectMode;
+        area_cm2(i) = A.area_cm2;
+        % Constant: one million converts seconds to microseconds for export.
+        microsecondsPerSecond = 1e6;
+        delay_us(i) = microsecondsPerSecond * A.delay_s;
     end
 
-    T = table(file, amp_A, Emc_V, Ema_V, Qc_C, Qa_C, Qt_C, CICc, CICa, CICt, safe, detection, ...
+    T = table(file, amp_A, Emc_V, Ema_V, Qc_C, Qa_C, Qt_C, CICc, CICa, CICt, ...
+        safe, detection, area_cm2, delay_us, ...
         'VariableNames', {'File', 'Amp_A', 'Emc_V', 'Ema_V', 'Qc_C', 'Qa_C', 'Qt_C', ...
-        ['CICc_' unitSuffix], ['CICa_' unitSuffix], ['CICt_' unitSuffix], 'Safe', 'Detection'});
+        ['CICc_' unitSuffix], ['CICa_' unitSuffix], ['CICt_' unitSuffix], ...
+        'Safe', 'Detection', 'Area_cm2', 'Delay_us'});
 end
 
 function [scale, unitSuffix] = displayScaleSuffix(unitLabel)
@@ -56,13 +64,7 @@ function [scale, unitSuffix] = displayScaleSuffix(unitLabel)
 end
 
 function [scale, unitLabel] = displayScale(unitLabel)
-    switch unitLabel
-        case 'uC/cm^2'
-            scale = 1e3;
-        otherwise
-            scale = 1;
-            unitLabel = 'mC/cm^2';
-    end
+    [scale, unitLabel] = cic.userInterface.displayUnit(unitLabel);
 end
 
 function name = itemName(item)

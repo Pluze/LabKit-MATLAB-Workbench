@@ -216,7 +216,7 @@ function [stack, resizedCount] = stackImagesAsDouble(images)
             img = focus_stack.analysisRun.resizeImageToReference(img, refSize);
             resizedCount = resizedCount + 1;
         end
-        img = convertChannels(labkit.image.toDouble(img), channels);
+        img = convertChannels(labkit.image.im2double(img), channels);
         stack(:, :, :, k) = img;
     end
 end
@@ -265,7 +265,11 @@ function [focusIndex, bestScore, secondScore] = bestFocusIndex(scoreStack)
 end
 
 function gray = grayImage(imageData)
-    gray = labkit.image.toLuma(imageData);
+    if ismatrix(imageData) || size(imageData, 3) == 1
+        gray = imageData(:, :, 1);
+    else
+        gray = labkit.image.rgb2gray(labkit.image.ensureRgb(imageData));
+    end
 end
 
 function imageOut = gaussianBlurImage(imageIn, sigma)

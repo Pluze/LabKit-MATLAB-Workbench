@@ -12,6 +12,6 @@ function info = version()
 %       compatible contract ranges implemented by this code, contract status,
 %       and a short maintainer note.
 
-    info = labkit.contract.versionInfo("ui", "5.0.4", ">=5 <6", ...
-        "stable", "UI 5 runtime/layout/control/plot/interaction/debug contract with declarative app definitions, data-only workbench layouts, semantic control updates, framework-owned plot clearing and limit fitting, plot coordinate conversion helpers, reusable image preview rendering, interaction tools, debug artifacts, hidden-test-safe alerts, default close guards, state snapshot save/load, and app version title formatting.");
+    info = labkit.contract.versionInfo("ui", "5.1.0", ">=5 <6", ...
+        "stable", "UI 5 runtime/layout/control/plot/interaction/debug contract with declarative app definitions, data-only workbench layouts, semantic control updates, framework-owned plot clearing and limit fitting, plot coordinate conversion helpers, reusable image preview rendering, curve and discrete-point anchor editing, interaction tools, debug artifacts, hidden-test-safe alerts, default close guards, state snapshot save/load, and app version title formatting.");
 end

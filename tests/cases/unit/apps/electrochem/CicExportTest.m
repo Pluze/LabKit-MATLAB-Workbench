@@ -35,13 +35,16 @@ function verify_cicExport()
 
     T = buildCICResultsTable(items, 'mC/cm^2');
     expectedNames = {'File', 'Amp_A', 'Emc_V', 'Ema_V', 'Qc_C', 'Qa_C', 'Qt_C', ...
-        'CICc_mCcm2', 'CICa_mCcm2', 'CICt_mCcm2', 'Safe', 'Detection'};
+        'CICc_mCcm2', 'CICa_mCcm2', 'CICt_mCcm2', 'Safe', 'Detection', ...
+        'Area_cm2', 'Delay_us'};
     assert(isequal(T.Properties.VariableNames, expectedNames), ...
         'CIC export table headers should preserve stable mC CSV names.');
     assertClose(T.Amp_A(1), item.analysis.ampEstimate_A, 1e-15, 'CIC amp export value');
     assertClose(T.CICc_mCcm2(1), item.analysis.CICc_mCcm2, 1e-15, 'CIC mC cathodic value');
     assert(T.Safe(1) == item.analysis.safe, 'CIC safe flag should be preserved.');
     assert(strcmp(T.Detection{1}, item.analysis.detectMode), 'CIC detection mode should be preserved.');
+    assertClose(T.Area_cm2(1), item.analysis.area_cm2, 1e-15, 'CIC area audit value');
+    assertClose(T.Delay_us(1), 10, 1e-12, 'CIC delay audit value');
     assert(isnan(T.Amp_A(2)) && isnan(T.CICt_mCcm2(2)), 'Failed CIC rows should use NaN numeric values.');
     assert(T.Safe(2) == 0, 'Failed CIC rows should preserve stable Safe=0.');
     assert(strcmp(T.Detection{2}, 'failed'), 'Failed CIC rows should preserve stable failed detection label.');
@@ -63,11 +66,12 @@ function verify_cicExport()
     cleaner = onCleanup(@() deleteIfExists(tmp));
     writeCICResultsCSV(items, tmp, 'mC/cm^2');
     txt = fileread(tmp);
-    header = 'File,Amp_A,Emc_V,Ema_V,Qc_C,Qa_C,Qt_C,CICc_mCcm2,CICa_mCcm2,CICt_mCcm2,Safe,Detection';
+    header = ['File,Amp_A,Emc_V,Ema_V,Qc_C,Qa_C,Qt_C,CICc_mCcm2,' ...
+        'CICa_mCcm2,CICt_mCcm2,Safe,Detection,Area_cm2,Delay_us'];
     assert(startsWith(string(txt), header), 'CIC CSV header should preserve stable spelling and order.');
     assert(contains(string(txt), '"chrono "cic".DTA"'), 'CIC CSV should preserve stable unescaped quoted file text.');
     assert(contains(string(txt), '"metadata-current"'), 'CIC CSV should preserve detection field.');
-    assert(contains(string(txt), '"failed "file".DTA",,,,,,,,,,0,"failed"'), ...
+    assert(contains(string(txt), '"failed "file".DTA",,,,,,,,,,0,"failed",,'), ...
         'CIC CSV failed rows should preserve stable empty fields and failed marker.');
 end
 

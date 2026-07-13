@@ -1,4 +1,4 @@
-classdef GuiLayoutVtResistanceTest < matlab.uitest.TestCase
+classdef GuiLayoutVtResistanceTest < matlab.unittest.TestCase
     %GUILAYOUTVTRESISTANCETEST Verify VT resistance GUI layout contracts.
 
     methods (Test, TestTags = {'GUI', 'Structural', 'Workflow'})
@@ -46,6 +46,14 @@ classdef GuiLayoutVtResistanceTest < matlab.uitest.TestCase
             testCase.verifyTrue(contains(driver.fileSelection('files'), ...
                 'chrono_chronopot_current_pulse_1ms.DTA'), ...
                 'VT resistance append should select the newly added chrono file.');
+            ui = driver.registry();
+            ui.controls.voltageMode.valueHandle.Value = 'Raw Vf/I';
+            h.invokeCallback(ui.controls.voltageMode.valueHandle, 'ValueChangedFcn');
+            [updated, detail] = h.waitForCondition(fig, ...
+                @() any(contains(string(driver.logValue('appLog')), ...
+                'Reanalyzed 2 loaded file(s) with shared analysis settings.')), 5);
+            testCase.verifyTrue(updated, h.waitDiagnostic(detail, ...
+                'operation', 'VT resistance whole-batch recomputation'));
         end
     end
 end

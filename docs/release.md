@@ -13,6 +13,15 @@ compatibility, choose a major version. If the implementation changes a user
 workflow without intentionally breaking compatibility, describe it in the
 release notes so launcher users can choose or roll back versions deliberately.
 
+On a development branch, choose each component's final version directly from
+the merge base with `origin/main`, not from intermediate branch commits. A
+branch may edit version metadata while work is evolving, but its merge-ready
+state must be exactly one semantic-version step from the mainline baseline:
+the next patch, the next minor with patch zero, or the next major with minor
+and patch zero. `CHANGELOG.md` affected-version lines must record that direct
+`main baseline -> branch final` transition. This prevents temporary branch
+versions from accumulating into artificial public version jumps.
+
 ## Tags
 
 Use `vX.Y.Z` for new release tags, for example `v2.2.0`.
@@ -71,34 +80,35 @@ release notes summarize one public release, while the changelog explains how
 LabKit changed over time, why each iteration exists, which release tag or
 component versions carry it, and where the audit evidence lives.
 
-The format combines common open-source practices:
+The changelog has one format for current and historical records:
 
-- Keep a top `Unreleased` section for branch, pull-request, and
-  release-preparation work before the final mainline commit or tag evidence is
-  known, following the Keep a Changelog pattern. Do not leave direct-main work
-  or version-finalized entries there.
-- Keep a current version lookup so users can quickly map each app, facade, and
-  launcher to its metadata file.
-- Keep one `Version History` reading path. Entries are user-facing evolution
-  entries, not raw tag rows or commit-log rows. Use release-line entries when a
-  public tag is the useful reader anchor, and use feature or maintenance
-  entries when the capability, workflow, compatibility, or project direction is
-  the useful reader anchor.
-- Entries should lead with affected versions, then explain what changed,
-  why it matters, compatibility notes when relevant, optional direction notes,
-  and evidence.
-- Keep release notes shorter and user-focused, similar to Django and VS Code
-  release pages.
+- Keep every entry under `Structured Change Records` with a stable Change ID,
+  ISO date, Conventional Commit type, compatibility value, and exact component
+  introduction or version-transition events, an unversioned repository scope,
+  or both.
+- Keep the required narrative sections for context, decision and rationale,
+  changes, user and data impact, compatibility and migration, validation,
+  evidence, and known limitations or follow-up.
+- Do not add `Unreleased`, `Pending`, or another delivery-status hierarchy.
+  Git branches, PRs, mainline commits, and release tags already express
+  delivery state. A branch record can cite checkpoint commits or a PR and keep
+  the same Change ID after merge.
+- Keep the current version lookup synchronized with every launcher, facade, and
+  app metadata file. Development-branch transitions compare directly with the
+  merge base from `origin/main`, not with intermediate branch versions.
+- Keep one `introduced` event and a continuous transition chain for every
+  versioned component. Do not invent versions for source history that predates
+  the component's first tracked metadata.
+- Parse and validate the complete history with
+  `addpath("tools/release"); parseLabKitChangelog()`. Do not maintain a second
+  unstructured history or duplicate the parser grammar in another document.
 
 When a change bumps `labkit_launcher.m`, a `+labkit/**/version.m` facade, or an
 `apps/**/version.m` app metadata file, add a changelog entry in the same
-change. Before the final mainline SHA is known, add it under `Unreleased` with
-PR or branch evidence. For direct-main work with a decided version, write the
-entry directly under `Version History`. During release preparation or a
-changelog audit, move finalized entries out of `Unreleased`, remove stale
-pending drafts, and add the mainline commit SHA when it is known. Do not write
-the entry as a raw commit-log dump; explain the maintainer intent and user
-impact that are not obvious from blame history.
+change. Record the direct mainline-to-final version transition and evidence
+available at that time. Do not write the entry as a raw commit-log dump;
+explain the context, decision, user or data impact, migration risk, validation,
+and limitations that are not obvious from blame history.
 
 Before tagging a release that adds, renames, or removes release-blocking
 guardrail tests, verify that the buildfile CI shard tasks still discover the

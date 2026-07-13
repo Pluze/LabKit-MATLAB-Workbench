@@ -189,6 +189,11 @@ function idx = inferFirstNumericTimeColumn(T)
 end
 
 function scale = unitScale(explicitUnit, name)
+    % Constant: SI prefixes convert milliseconds, microseconds, and
+    % nanoseconds to the facade's canonical seconds unit.
+    millisecondsToSeconds = 1e-3;
+    microsecondsToSeconds = 1e-6;
+    nanosecondsToSeconds = 1e-9;
     if ~isempty(explicitUnit)
         unit = lower(string(explicitUnit));
     elseif strcmpi(char(name), 'I0')
@@ -201,11 +206,11 @@ function scale = unitScale(explicitUnit, name)
         case {"s", "sec", "secs", "second", "seconds"}
             scale = 1;
         case {"ms", "msec", "millisecond", "milliseconds"}
-            scale = 1e-3;
+            scale = millisecondsToSeconds;
         case {"us", "usec", "microsecond", "microseconds"}
-            scale = 1e-6;
+            scale = microsecondsToSeconds;
         case {"ns", "nsec", "nanosecond", "nanoseconds"}
-            scale = 1e-9;
+            scale = nanosecondsToSeconds;
         case {"samples", "sample", "index", "sample_index"}
             scale = 1;
         otherwise
@@ -229,13 +234,18 @@ function unit = unitFromName(name)
 end
 
 function label = unitLabel(scale)
+    % Constant: SI prefixes identify the source time unit after conversion
+    % to the facade's canonical seconds unit.
+    millisecondsToSeconds = 1e-3;
+    microsecondsToSeconds = 1e-6;
+    nanosecondsToSeconds = 1e-9;
     if scale == 1
         label = "seconds";
-    elseif scale == 1e-3
+    elseif scale == millisecondsToSeconds
         label = "milliseconds";
-    elseif scale == 1e-6
+    elseif scale == microsecondsToSeconds
         label = "microseconds";
-    elseif scale == 1e-9
+    elseif scale == nanosecondsToSeconds
         label = "nanoseconds";
     else
         label = "custom";

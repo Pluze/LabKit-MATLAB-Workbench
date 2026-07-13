@@ -11,6 +11,7 @@ GitHub job summary and annotations.
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import re
 import sys
@@ -21,7 +22,8 @@ from typing import Iterable
 
 def main() -> int:
     args = parse_args()
-    summary_path = Path(os.environ.get("GITHUB_STEP_SUMMARY", ""))
+    summary_value = os.environ.get("GITHUB_STEP_SUMMARY", "")
+    summary_path = Path(summary_value) if summary_value else None
     junit_path = Path(args.junit_xml)
     run_name = args.run_name
 
@@ -35,6 +37,7 @@ def main() -> int:
             artifact_lines(args),
             "",
         ]
+        lines += active_test_lines(args.active_test)
         lines += log_tail_summary(args.log, args.summary_log_tail_lines)
         write_summary(summary_path, lines)
         print_annotation("warning", f"{run_name} report missing", message)
@@ -93,6 +96,7 @@ def main() -> int:
             )
         lines.append("")
         lines += failure_detail_lines(failed_cases, args.max_failure_details)
+        lines += active_test_lines(args.active_test)
         lines += log_tail_summary(args.log, args.summary_log_tail_lines)
 
         for case in failed_cases[: args.max_annotations]:
@@ -123,6 +127,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--run-name", required=True, help="Display name in GitHub summaries.")
     parser.add_argument("--html", default="", help="Path to the MATLAB HTML test report.")
     parser.add_argument("--log", default="", help="Path to the MATLAB log file.")
+    parser.add_argument(
+        "--active-test",
+        default="",
+        help="Path to the runner's active-test JSON diagnostic.",
+    )
     parser.add_argument("--max-failures", type=int, default=20)
     parser.add_argument("--max-annotations", type=int, default=20)
     parser.add_argument("--max-failure-details", type=int, default=5)
@@ -190,8 +199,36 @@ def artifact_lines(args: argparse.Namespace) -> str:
         )
     if args.log:
         rows.append(f"- MATLAB log: `{args.log}`")
+    if args.active_test:
+        rows.append(f"- Active-test diagnostic: `{args.active_test}`")
     rows.append(f"- JUnit XML: `{args.junit_xml}`")
     return "\n".join(rows)
+
+
+def active_test_lines(active_test_path: str) -> list[str]:
+    if not active_test_path:
+        return []
+    path = Path(active_test_path)
+    if not path.is_file():
+        return [f"> Active-test diagnostic not found: `{path}`", ""]
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        return [f"> Could not read active-test diagnostic `{path}`: {exc}", ""]
+
+    test_name = str(payload.get("test", "unknown"))
+    state = str(payload.get("event", "unknown"))
+    elapsed = to_float(payload.get("testElapsedSeconds"))
+    timestamp = str(payload.get("timestamp", "unknown"))
+    return [
+        "#### Last active test",
+        "",
+        f"- Test: `{markdown_escape(test_name)}`",
+        f"- State: `{markdown_escape(state)}`",
+        f"- Test elapsed at last update: `{elapsed:.2f}s`",
+        f"- Last update: `{markdown_escape(timestamp)}`",
+        "",
+    ]
 
 
 def github_artifacts_url() -> str:
@@ -374,8 +411,8 @@ def print_annotation(level: str, title: str, message: str) -> None:
     print(f"::{level} title={escape_command(title)}::{escape_command(message)}")
 
 
-def write_summary(path: Path, lines: Iterable[str]) -> None:
-    if not str(path):
+def write_summary(path: Path | None, lines: Iterable[str]) -> None:
+    if path is None:
         return
     with path.open("a", encoding="utf-8") as handle:
         handle.write("\n".join(lines))

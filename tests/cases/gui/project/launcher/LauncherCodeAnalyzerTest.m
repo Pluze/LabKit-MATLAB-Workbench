@@ -1,4 +1,4 @@
-classdef LauncherCodeAnalyzerTest < matlab.uitest.TestCase
+classdef LauncherCodeAnalyzerTest < matlab.unittest.TestCase
     %LAUNCHERCODEANALYZERTEST Verify launcher Code Analyzer action.
 
     methods (Test, TestTags = {'GUI', 'Structural'})

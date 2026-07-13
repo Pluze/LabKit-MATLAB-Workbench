@@ -1,4 +1,4 @@
-classdef GuiLayoutUiPlotHelpersTest < matlab.uitest.TestCase
+classdef GuiLayoutUiPlotHelpersTest < matlab.unittest.TestCase
     %GUILAYOUTUIPLOTHELPERSTEST Verify UI 5 plot helper contracts.
 
     methods (Test, TestTags = {'GUI', 'Structural'})

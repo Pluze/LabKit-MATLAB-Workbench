@@ -1,4 +1,4 @@
-classdef GuiLayoutBatchCropTest < matlab.uitest.TestCase
+classdef GuiLayoutBatchCropTest < matlab.unittest.TestCase
     %GUILAYOUTBATCHCROPTEST Verify batch crop GUI layout contracts.
 
     methods (Test, TestTags = {'GUI', 'Structural', 'Workflow'})

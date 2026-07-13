@@ -7,6 +7,10 @@ function clearCropRoi(listeners, topRoi, bottomRoi)
     for iListener = 1:numel(listeners)
         dic_preprocess.userInterface.deleteIfValid(listeners{iListener});
     end
-    dic_preprocess.userInterface.deleteIfValid(topRoi);
+    if isstruct(topRoi) && isfield(topRoi, 'delete')
+        topRoi.delete();
+    else
+        dic_preprocess.userInterface.deleteIfValid(topRoi);
+    end
     dic_preprocess.userInterface.deleteIfValid(bottomRoi);
 end

@@ -19,11 +19,11 @@ end
 
 function gray = normalizeGray(imageData)
     if ndims(imageData) == 3
-        gray = labkit.image.toLuma(imageData);
+        rgb = labkit.image.ensureRgb(labkit.image.im2double(imageData));
+        gray = labkit.image.rgb2gray(rgb);
     else
-        gray = imageData;
+        gray = labkit.image.im2double(imageData);
     end
-    gray = localIm2double(gray);
     values = gray(:);
     values = values(~isnan(values));
     if isempty(values)
@@ -33,21 +33,6 @@ function gray = normalizeGray(imageData)
     mx = max(values);
     if isfinite(mn) && isfinite(mx) && mx > mn
         gray = (gray - mn) ./ (mx - mn);
-    end
-end
-
-function imageOut = localIm2double(imageIn)
-    if isfloat(imageIn)
-        imageOut = double(imageIn);
-    elseif isa(imageIn, 'uint8')
-        imageOut = double(imageIn) ./ double(intmax('uint8'));
-    elseif isa(imageIn, 'uint16')
-        imageOut = double(imageIn) ./ double(intmax('uint16'));
-    elseif isa(imageIn, 'int16')
-        imageOut = (double(imageIn) - double(intmin('int16'))) ./ ...
-            double(intmax('int16') - intmin('int16'));
-    else
-        imageOut = double(imageIn);
     end
 end
 

@@ -1,4 +1,4 @@
-classdef GuiLayoutResponseReviewStatsTest < matlab.uitest.TestCase
+classdef GuiLayoutResponseReviewStatsTest < matlab.unittest.TestCase
     %GUILAYOUTRESPONSEREVIEWSTATSTEST Verify response-review GUI workflow.
 
     methods (Test, TestTags = {'GUI', 'Workflow'})

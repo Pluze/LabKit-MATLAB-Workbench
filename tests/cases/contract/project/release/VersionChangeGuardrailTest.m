@@ -55,6 +55,16 @@ classdef VersionChangeGuardrailTest < matlab.unittest.TestCase
             testCase.verifyTrue(shouldEnforceVersionBumps(strictChangeSet), ...
                 "Final branch cleanup can opt into aggregate version checks before squash or handoff.");
         end
+
+        function finalVersionsUseOneStepFromMainlineBaseline(testCase)
+            testCase.verifyTrue(isSingleSemverStep("1.2.8", "1.2.9"));
+            testCase.verifyTrue(isSingleSemverStep("1.2.8", "1.3.0"));
+            testCase.verifyTrue(isSingleSemverStep("1.2.8", "2.0.0"));
+            testCase.verifyFalse(isSingleSemverStep("1.2.8", "1.2.10"));
+            testCase.verifyFalse(isSingleSemverStep("1.2.8", "1.3.1"));
+            testCase.verifyFalse(isSingleSemverStep("1.2.8", "1.4.0"));
+            testCase.verifyFalse(isSingleSemverStep("1.2.8", "2.1.0"));
+        end
     end
 end
 
@@ -87,6 +97,7 @@ function issues = changedVersionedCodeWithoutChangelogRecord(root)
     for k = 1:numel(artifacts)
         artifact = artifacts(k);
         currentVersion = versionInWorkingTree(root, artifact.versionPath);
+        baseVersion = versionInGit(root, changeSet.baseRef, artifact.versionPath);
         if strlength(currentVersion) == 0
             continue;
         end
@@ -95,6 +106,16 @@ function issues = changedVersionedCodeWithoutChangelogRecord(root)
         if ~hasLookupLine
             issues(end+1) = artifact.label + " " + currentVersion + ...
                 " missing lookup row";
+        end
+        if strlength(baseVersion) > 0
+            component = changelogComponentName(root, artifact);
+            transition = "`" + baseVersion + " -> " + currentVersion + "`";
+            hasTransition = any(contains(changelogLines, "`" + component + "`") & ...
+                contains(changelogLines, transition));
+            if ~hasTransition
+                issues(end+1) = component + " missing direct baseline transition " + ...
+                    baseVersion + " -> " + currentVersion;
+            end
         end
     end
     issues = unique(issues, "stable");
@@ -129,6 +150,10 @@ function issues = changedVersionedCodeWithoutVersionBump(root)
         elseif strlength(baseVersion) > 0 && compareSemver(currentVersion, baseVersion) <= 0
             issues(end+1) = artifact.label + " " + currentVersion + ...
                 " must be greater than " + baseVersion;
+        elseif strlength(baseVersion) > 0 && ...
+                ~isSingleSemverStep(baseVersion, currentVersion)
+            issues(end+1) = artifact.label + " " + currentVersion + ...
+                " must be one semver step from baseline " + baseVersion;
         end
     end
     issues = unique(issues, "stable");
@@ -147,10 +172,20 @@ function changeSet = gitChangeSet(root)
     end
 
     changeSet.branchName = gitCurrentBranch(root);
-    paths = [gitChangedPaths(root, "HEAD"), gitUntrackedPaths(root)];
-    if isempty(paths) && gitRefExists(root, "HEAD^")
+    dirtyPaths = [gitChangedPaths(root, "HEAD"), gitUntrackedPaths(root)];
+    if shouldEnforceVersionBumps(changeSet) && ...
+            changeSet.branchName ~= "main" && gitRefExists(root, "origin/main")
         changeSet.baseRef = versionBaselineRef(root, changeSet);
         paths = gitChangedPaths(root, changeSet.baseRef);
+        paths = [paths, gitUntrackedPaths(root)];
+    elseif ~isempty(dirtyPaths)
+        changeSet.baseRef = "HEAD";
+        paths = dirtyPaths;
+    elseif gitRefExists(root, "HEAD^")
+        changeSet.baseRef = versionBaselineRef(root, changeSet);
+        paths = gitChangedPaths(root, changeSet.baseRef);
+    else
+        paths = strings(1, 0);
     end
     changeSet.paths = unique(paths, "stable");
 end
@@ -251,6 +286,22 @@ function version = versionInWorkingTree(root, relPath)
     version = versionInText(string(fileread(filepath)));
 end
 
+function component = changelogComponentName(root, artifact)
+    if startsWith(artifact.label, "labkit.") || artifact.label == "labkit_launcher"
+        component = artifact.label;
+        return;
+    end
+    parts = [{char(root)}; cellstr(split(artifact.versionPath, "/"))];
+    source = string(fileread(fullfile(parts{:})));
+    name = regexp(source, ...
+        '["'']name["'']\s*,\s*["'']([^"'']+)["'']', "tokens", "once");
+    if isempty(name)
+        component = artifact.label;
+    else
+        component = string(name{1});
+    end
+end
+
 function version = versionInGit(root, ref, relPath)
     command = gitCommand(root, "show " + ...
         shellDoubleQuote(validateGitRef(ref) + ":" + normalizePath(relPath)));
@@ -294,6 +345,20 @@ function result = compareSemver(left, right)
             return;
         end
     end
+end
+
+function tf = isSingleSemverStep(baseVersion, currentVersion)
+    if ~isSemver(baseVersion) || ~isSemver(currentVersion)
+        tf = false;
+        return;
+    end
+    base = sscanf(char(baseVersion), '%d.%d.%d').';
+    current = sscanf(char(currentVersion), '%d.%d.%d').';
+    nextPatch = [base(1) base(2) base(3) + 1];
+    nextMinor = [base(1) base(2) + 1 0];
+    nextMajor = [base(1) + 1 0 0];
+    tf = isequal(current, nextPatch) || isequal(current, nextMinor) || ...
+        isequal(current, nextMajor);
 end
 
 function tf = isGitCheckout(root)

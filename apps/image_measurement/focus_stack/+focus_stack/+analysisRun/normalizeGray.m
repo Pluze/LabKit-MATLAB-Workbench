@@ -17,7 +17,12 @@ function gray = normalizeGray(imageData)
     if ndims(imageData) == 4
         imageData = imageData(:, :, :, 1);
     end
-    gray = labkit.image.toLuma(imageData);
+    imageData = labkit.image.im2double(imageData);
+    if ismatrix(imageData) || size(imageData, 3) == 1
+        gray = imageData(:, :, 1);
+    else
+        gray = labkit.image.rgb2gray(labkit.image.ensureRgb(imageData));
+    end
     values = gray(:);
     values = values(isfinite(values));
     if isempty(values)

@@ -1,4 +1,4 @@
-classdef GuiLayoutUiAppRuntimeTest < matlab.uitest.TestCase
+classdef GuiLayoutUiAppRuntimeTest < matlab.unittest.TestCase
     %GUILAYOUTUIAPPRUNTIMETEST Verify declarative app runtime contracts.
 
     methods (Test, TestTags = {'GUI', 'Structural'})

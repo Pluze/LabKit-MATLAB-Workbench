@@ -26,6 +26,13 @@ If MATLAB exits before printing a build-task banner such as
 MATLAB launcher or runtime access failure before diagnosing source or test
 failures.
 
+Every official run writes `test-progress.jsonl` and `active-test.json` under
+its `artifacts/logs/<run-name>/` folder. The first file records suite, test,
+and long-test heartbeat events; the second records the last active test and
+elapsed time. CI gives the MATLAB execution step a shorter timeout than the
+containing job so the always-run summary and artifact upload steps can still
+publish these diagnostics when a test stalls before JUnit is complete.
+
 ## Build Tasks
 
 Use MATLAB build tasks for the stable official entry points:
@@ -33,6 +40,7 @@ Use MATLAB build tasks for the stable official entry points:
 ```bash
 buildtool changed
 buildtool changedFast
+buildtool baseMatlab
 buildtool headless
 buildtool gui
 buildtool coverage
@@ -43,6 +51,7 @@ buildtool listTasks
 | --- | --- |
 | `changedFast` | Tight local iteration from the current diff; substitutes representative GUI coverage for expensive broad GUI scopes. |
 | `changed` | Conservative pre-handoff validation from the current diff. |
+| `baseMatlab` | Explicit compatibility gate: static toolbox-call scan, MATLAB product-ownership analysis, and representative workflows with toolbox helpers shadowed. |
 | `headless` | Full non-GUI validation. |
 | `gui` | Full automated GUI validation with hidden figures. |
 
@@ -64,6 +73,7 @@ Common choices:
 | Tight local iteration on one known component | Focused `runLabKitTests("Suites", ...)` |
 | Coherent local checkpoint while files are still changing | `buildtool changedFast` |
 | Before commit, PR, or handoff | `buildtool changed` |
+| Verify the repository on a machine that has toolboxes installed | `buildtool baseMatlab` |
 | Full broad non-GUI validation | `buildtool headless` |
 | Full automated GUI validation | `buildtool gui` |
 | Coverage report | `buildtool coverage` |
@@ -82,10 +92,11 @@ source to the public repository. For temporary local checks,
 the sentinel file.
 
 Toolbox compatibility guardrails protect the base-MATLAB user path. They
-reject unguarded hard calls to common non-base MATLAB toolbox helpers under
-`apps/` and `+labkit/`, and run representative workflows with those helper
-names shadowed on the MATLAB path so local machines with toolboxes still
-exercise fallback paths.
+reject non-base calls under `apps/` and `+labkit/`, verify MATLAB's dependency
+analysis resolves source only to the `MATLAB` product, and run representative
+workflows with known toolbox helper names shadowed on the MATLAB path. App
+workflows use the same base-MATLAB implementation whether or not optional
+toolboxes happen to be installed.
 
 Private workspaces under `private_apps/` are separate Git repositories, so the
 public `changed` and `changedFast` tasks do not discover their diffs. Validate a
@@ -145,6 +156,9 @@ iteration loop.
 Main-branch push and pull-request CI runs the public `headless` build task.
 The buildfile probes the selected test count and may run deterministic
 zero-based internal shards when the broad non-GUI suite is large enough.
+Assumption-filtered tests remain visible as skipped or incomplete but do not
+fail their shard. Actual test failures still fail the owning shard and retain
+the progress, JUnit, HTML, and worker-log evidence used for diagnosis.
 Feature-branch pushes do not run the same MATLAB workflow until a pull request
 targets `main`, which avoids duplicate branch-push and PR runs for the same
 commit. Release candidate tag pushes matching `vX.Y.Z` run the full release
@@ -201,7 +215,9 @@ test class names, not extra ownership paths.
 `tests/shared/` intentionally keeps ordinary MATLAB helper functions as
 one-function files because those helpers are called directly by tests. Prefer a
 plain function file there over a larger registry object unless repeated call
-patterns justify a grouped API.
+patterns justify a grouped API. Changed-file validation resolves direct test
+consumers of a shared helper and reruns those test classes instead of expanding
+every shared GUI helper change to the full GUI suite.
 
 Build tasks are the supported human and CI entry points. The lower-level runner
 is an implementation detail used by the buildfile.
@@ -233,6 +249,11 @@ Automated GUI tests check:
 - debug trace plumbing
 - reusable tool lifecycle
 - hidden synthetic app workflows
+
+Hidden GUI tests use `matlab.unittest.TestCase` while still constructing real
+figures and controls. `matlab.uitest.TestCase` is reserved for visible UI
+automation because its display driver emits `ViewReady` callback errors for
+hidden figures on CI runners.
 
 App GUI layout tests should express user-facing and app-facing contracts:
 expected command buttons, dropdown choices, tabs, table columns, axes, callback
