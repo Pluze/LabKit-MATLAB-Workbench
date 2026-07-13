@@ -258,7 +258,10 @@ function steps = sharedTestPathSteps(root, parts)
         filename = lower(parts(end));
     end
     consumers = sharedHelperConsumers(root, filename);
-    if ~isempty(consumers.guiTests) || ~isempty(consumers.nonGuiTests)
+    if contains(filename, "launcher")
+        steps = planStep("gui_project_launcher", "gui/project/launcher", true, ...
+            "Reason", "shared launcher test helper changed");
+    elseif ~isempty(consumers.guiTests) || ~isempty(consumers.nonGuiTests)
         steps = emptyPlanSteps();
         if ~isempty(consumers.nonGuiTests)
             steps(end + 1) = planStep("shared_consumers", strings(1, 0), false, ...
@@ -270,9 +273,6 @@ function steps = sharedTestPathSteps(root, parts)
                 "Tests", consumers.guiTests, ...
                 "Reason", "shared test helper change reruns direct GUI consumers");
         end
-    elseif contains(filename, "launcher")
-        steps = planStep("gui_project_launcher", "gui/project/launcher", true, ...
-            "Reason", "shared launcher test helper changed");
     elseif contains(filename, "gui") || contains(filename, "uispec") || ...
             contains(filename, "snapshot")
         steps = planStep("gui", "gui", true, ...
