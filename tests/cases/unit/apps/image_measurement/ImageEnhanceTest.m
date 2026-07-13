@@ -76,7 +76,7 @@ function checkWhiteRoiCalibrationAvoidsWashedHighlights()
     subjectBefore = img(18:36, 24:56, :);
     subjectAfter = out(18:36, 24:56, :);
 
-    bgLuma = mean(rgb2gray(bg), 'all');
+    bgLuma = mean(testLuma(bg), 'all');
     assert(bgLuma > 0.86 && bgLuma < 0.985, ...
         'White ROI calibration should move the sampled background near white without clipping.');
     bgBeforeMean = squeeze(mean(img(2:15, 2:19, :), [1 2])).';
@@ -114,9 +114,9 @@ function checkSubjectPreservingEnhanceLiftsBackgroundWithoutHueDrift()
     weakStep = image_enhance.analysisRun.makeStep('Subject-preserving enhance', 20, 70, 0);
     out = image_enhance.analysisRun.applyStep(img, step, []);
     weakOut = image_enhance.analysisRun.applyStep(img, weakStep, []);
-    backgroundBefore = rgb2gray(img(1:12, 1:20, :));
-    backgroundAfter = rgb2gray(out(1:12, 1:20, :));
-    weakBackgroundAfter = rgb2gray(weakOut(1:12, 1:20, :));
+    backgroundBefore = testLuma(img(1:12, 1:20, :));
+    backgroundAfter = testLuma(out(1:12, 1:20, :));
+    weakBackgroundAfter = testLuma(weakOut(1:12, 1:20, :));
     subjectBefore = img(18:35, 24:52, :);
     subjectAfter = out(18:35, 24:52, :);
     beforeHsv = rgb2hsv(subjectBefore);
@@ -267,7 +267,7 @@ function checkManifestAndExportContract()
         'Batch export should avoid overwriting existing enhanced outputs.');
     assert(isfile(payload.results(1).outputPath), ...
         'Batch export should write enhanced image output.');
-    written = im2double(imread(payload.results(1).outputPath));
+    written = labkit.image.toDouble(imread(payload.results(1).outputPath));
     assert(isequal(size(written), [10 12 3]), ...
         'Batch export should process and write full-size enhanced images.');
     assert(isfile(payload.manifestPath), ...
@@ -303,8 +303,8 @@ function checkPerImageExportSteps()
     T = image_enhance.resultFiles.buildManifest(payload.results);
     assert(all(T.StepCount == [1; 1]), ...
         'Per-image enhancement exports should report each image history length.');
-    firstWritten = im2double(imread(payload.results(1).outputPath));
-    secondWritten = im2double(imread(payload.results(2).outputPath));
+    firstWritten = labkit.image.toDouble(imread(payload.results(1).outputPath));
+    secondWritten = labkit.image.toDouble(imread(payload.results(2).outputPath));
     assert(mean(firstWritten(:)) > mean(items(1).image(:)) && ...
         mean(secondWritten(:)) < mean(items(2).image(:)), ...
         'Per-image enhancement exports should apply each image-specific history.');
@@ -369,6 +369,10 @@ function checkExportTaskBuildsStateDrivenInputs()
         'Per-image state export tasks should preserve individual histories.');
     assert(contains(task.fingerprint, "itemStepCount[2]=1"), ...
         'Per-image state export tasks should include item-step fingerprints.');
+end
+
+function gray = testLuma(imageIn)
+    gray = labkit.image.toLuma(imageIn);
 end
 
 function checkPreviewImageDownsamplesLargeInputs()

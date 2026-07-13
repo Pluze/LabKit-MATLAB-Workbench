@@ -4,11 +4,14 @@
 function [rgb, validMask] = strainToRgb(strainMap, validMap, targetSize, opts)
     S = dic_postprocess.analysisRun.extendStrainMapToRoi(double(strainMap), validMap);
     if opts.sigmaSmooth > 0
-        S = imgaussfilt(S, opts.sigmaSmooth);
+        S = dic_postprocess.analysisRun.gaussianSmooth(S, opts.sigmaSmooth);
     end
-    Sbig = imresize(S, opts.oversample, 'lanczos3');
-    Shr = imresize(Sbig, targetSize, 'lanczos3');
-    validMask = imresize(logical(validMap), targetSize, 'nearest') & isfinite(Shr);
+    oversample = max(1, round(opts.oversample));
+    Sbig = dic_postprocess.analysisRun.resizeLinear( ...
+        S, size(S) .* oversample);
+    Shr = dic_postprocess.analysisRun.resizeLinear(Sbig, targetSize);
+    validMask = dic_postprocess.analysisRun.resizeNearest( ...
+        logical(validMap), targetSize) & isfinite(Shr);
     smin = opts.colorRange(1);
     smax = opts.colorRange(2);
     Snorm = (Shr - smin) ./ (smax - smin);

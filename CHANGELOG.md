@@ -77,14 +77,14 @@ Evidence:
 
 ## Current Version Lookup
 
-Audited against `main` metadata on 2026-07-10.
+Audited against `main` metadata on 2026-07-13.
 
 | Component | Current version | Family | Metadata location |
 |---|---:|---|---|
 | `labkit_launcher` | `1.3.0` | Launcher | `labkit_launcher.m` |
 | `labkit.ui` | `5.0.4` | Facade | `+labkit/+ui/version.m` |
 | `labkit.dta` | `2.0.0` | Facade | `+labkit/+dta/version.m` |
-| `labkit.image` | `1.1.0` | Facade | `+labkit/+image/version.m` |
+| `labkit.image` | `1.2.0` | Facade | `+labkit/+image/version.m` |
 | `labkit.thermal` | `1.0.0` | Facade | `+labkit/+thermal/version.m` |
 | `labkit.rhs` | `1.0.0` | Facade | `+labkit/+rhs/version.m` |
 | `labkit.biosignal` | `1.0.0` | Facade | `+labkit/+biosignal/version.m` |
@@ -94,20 +94,55 @@ Audited against `main` metadata on 2026-07-10.
 | `labkit_CSC_app` | `1.3.9` | Electrochem | `apps/electrochem/csc/+csc/version.m` |
 | `labkit_EIS_app` | `1.3.4` | Electrochem | `apps/electrochem/eis/+eis/version.m` |
 | `labkit_VTResistance_app` | `1.3.7` | Electrochem | `apps/electrochem/vt_resistance/+vt_resistance/version.m` |
-| `labkit_DICPreprocess_app` | `1.3.5` | DIC | `apps/dic/dic_preprocess/+dic_preprocess/version.m` |
-| `labkit_DICPostprocess_app` | `1.3.4` | DIC | `apps/dic/dic_postprocess/+dic_postprocess/version.m` |
+| `labkit_DICPreprocess_app` | `1.3.6` | DIC | `apps/dic/dic_preprocess/+dic_preprocess/version.m` |
+| `labkit_DICPostprocess_app` | `1.3.5` | DIC | `apps/dic/dic_postprocess/+dic_postprocess/version.m` |
 | `labkit_BatchImageCrop_app` | `1.6.7` | Image Measurement | `apps/image_measurement/batch_crop/+batch_crop/version.m` |
 | `labkit_CurvatureMeasurement_app` | `1.3.4` | Image Measurement | `apps/image_measurement/curvature/+curvature/version.m` |
 | `labkit_FLIRThermal_app` | `1.2.8` | Image Measurement | `apps/image_measurement/flir_thermal/+flir_thermal/version.m` |
-| `labkit_FocusStack_app` | `1.4.7` | Image Measurement | `apps/image_measurement/focus_stack/+focus_stack/version.m` |
-| `labkit_ImageEnhance_app` | `1.5.6` | Image Measurement | `apps/image_measurement/image_enhance/+image_enhance/version.m` |
-| `labkit_ImageMatch_app` | `1.5.6` | Image Measurement | `apps/image_measurement/image_match/+image_match/version.m` |
+| `labkit_FocusStack_app` | `1.4.8` | Image Measurement | `apps/image_measurement/focus_stack/+focus_stack/version.m` |
+| `labkit_ImageEnhance_app` | `1.5.7` | Image Measurement | `apps/image_measurement/image_enhance/+image_enhance/version.m` |
+| `labkit_ImageMatch_app` | `1.5.7` | Image Measurement | `apps/image_measurement/image_match/+image_match/version.m` |
 | `labkit_RHSPreview_app` | `1.3.4` | Neurophysiology | `apps/neurophysiology/rhs_preview/+rhs_preview/version.m` |
 | `labkit_NerveResponseAnalysis_app` | `1.3.4` | Neurophysiology | `apps/neurophysiology/nerve_response_analysis/+nerve_response_analysis/version.m` |
 | `labkit_ResponseReviewStats_app` | `1.3.4` | Neurophysiology | `apps/neurophysiology/response_review_stats/+response_review_stats/version.m` |
 | `labkit_ECGPrint_app` | `1.3.5` | Wearable | `apps/wearable/ecg_print/+ecg_print/version.m` |
 
 ## Version History
+
+### 2026-07-13 - Base-MATLAB image compatibility
+
+Affected versions:
+- `labkit.image` `1.1.0 -> 1.2.0`
+- `labkit_DICPreprocess_app` `1.3.5 -> 1.3.6`
+- `labkit_DICPostprocess_app` `1.3.4 -> 1.3.5`
+- `labkit_FocusStack_app` `1.4.7 -> 1.4.8`
+- `labkit_ImageEnhance_app` `1.5.6 -> 1.5.7`
+- `labkit_ImageMatch_app` `1.5.6 -> 1.5.7`
+
+What changed:
+- Added `labkit.image.toDouble` and `labkit.image.toLuma`, and replaced hard
+  Image Processing Toolbox calls in shared image facade code and image-app
+  workflow paths with base-MATLAB implementations.
+- DIC preprocessing now uses a toolbox-free phase-correlation translation
+  path for automatic alignment and a base-MATLAB rigid warp for control-point
+  alignment.
+- DIC postprocessing, Focus Stack, Image Enhance, and Image Match now use
+  app-local or facade-owned image normalization, resizing, smoothing, and luma
+  helpers instead of requiring toolbox functions.
+- Added a project hygiene guardrail that rejects unguarded toolbox image
+  helper calls under `apps/` and `+labkit/`, while still allowing explicit
+  optional toolbox paths with fallbacks.
+
+Why it matters:
+- CI now protects the base-MATLAB user path instead of passing only on
+  machines that happen to have Image Processing Toolbox installed.
+
+Compatibility:
+- Existing app workflows and exported schemas are preserved. Optional toolbox
+  acceleration paths remain allowed only when a base-MATLAB fallback is present.
+
+Evidence:
+- Mainline commit recorded by this change.
 
 ### 2026-07-09 - Preview-area per-axis wheel zoom
 

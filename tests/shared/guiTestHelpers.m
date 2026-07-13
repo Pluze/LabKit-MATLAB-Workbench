@@ -30,6 +30,7 @@ function h = guiTestHelpers()
     h.invokeCallback = @invokeCallback;
     h.waitForUiIdle = @waitForUiIdle;
     h.waitForCondition = @waitForCondition;
+    h.waitDiagnostic = @waitDiagnostic;
     h.assertCallbackPresent = @assertCallbackPresent;
     h.sameStringCell = @sameStringCell;
 end
@@ -298,24 +299,52 @@ function waitForUiIdle(fig)
     drawnow limitrate;
 end
 
-function tf = waitForCondition(fig, predicate, timeoutSeconds)
+function [tf, detail] = waitForCondition(fig, predicate, timeoutSeconds)
     if nargin < 3
         timeoutSeconds = 5.0;
     end
     startTime = tic;
-    tf = safePredicate(predicate);
+    lastError = "";
+    [tf, predicateError] = safePredicate(predicate);
+    if strlength(predicateError) > 0
+        lastError = predicateError;
+    end
     while isvalid(fig) && ~tf && toc(startTime) < timeoutSeconds
         pause(0.05);
         drawnow limitrate;
-        tf = safePredicate(predicate);
+        [tf, predicateError] = safePredicate(predicate);
+        if strlength(predicateError) > 0
+            lastError = predicateError;
+        end
+    end
+    detail = struct( ...
+        'elapsedSeconds', toc(startTime), ...
+        'timeoutSeconds', timeoutSeconds, ...
+        'figureValid', isvalid(fig), ...
+        'lastPredicateError', lastError);
+end
+
+function [tf, errorText] = safePredicate(predicate)
+    errorText = "";
+    try
+        tf = logical(predicate());
+    catch ME
+        tf = false;
+        errorText = string(ME.identifier) + ": " + string(ME.message);
     end
 end
 
-function tf = safePredicate(predicate)
-    try
-        tf = logical(predicate());
-    catch
-        tf = false;
+function text = waitDiagnostic(detail, varargin)
+    text = sprintf('wait %.2fs/%.2fs, figureValid=%d', ...
+        detail.elapsedSeconds, detail.timeoutSeconds, detail.figureValid);
+    if strlength(string(detail.lastPredicateError)) > 0
+        text = sprintf('%s, lastPredicateError=%s', text, ...
+            char(string(detail.lastPredicateError)));
+    end
+    for k = 1:2:numel(varargin)
+        label = char(string(varargin{k}));
+        value = char(string(varargin{k + 1}));
+        text = sprintf('%s, %s=%s', text, label, value);
     end
 end
 

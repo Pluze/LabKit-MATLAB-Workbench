@@ -17,16 +17,7 @@ function gray = normalizeGray(imageData)
     if ndims(imageData) == 4
         imageData = imageData(:, :, :, 1);
     end
-    if ndims(imageData) == 3
-        if size(imageData, 3) >= 3
-            gray = rgb2gray(imageData(:, :, 1:3));
-        else
-            gray = imageData(:, :, 1);
-        end
-    else
-        gray = imageData;
-    end
-    gray = im2double(gray);
+    gray = labkit.image.toLuma(imageData);
     values = gray(:);
     values = values(isfinite(values));
     if isempty(values)

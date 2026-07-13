@@ -10,7 +10,8 @@ function validMap = strainValidMask(strainMap, roiMask, displayMask, edgeTrim)
     if ~isempty(roiMask)
         validMap = validMap & logical(roiMask);
     else
-        validMap = validMap & imresize(logical(displayMask), size(strainMap), 'nearest');
+        validMap = validMap & dic_postprocess.analysisRun.resizeNearest( ...
+            logical(displayMask), size(strainMap));
     end
     validMap = dic_postprocess.analysisRun.trimStrainEdgeMask(validMap, edgeTrim);
 end

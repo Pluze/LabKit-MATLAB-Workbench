@@ -172,7 +172,7 @@ end
 
 function mask = backgroundMask(imageData)
     hsvImage = rgb2hsv(imageData);
-    value = rgb2gray(imageData);
+    value = luma(imageData);
     sat = hsvImage(:, :, 2);
     mask = smoothstep(0.22, 0.03, sat) .* smoothstep(0.30, 0.78, value);
     if nnz(mask > 0.45) < 100
@@ -265,13 +265,17 @@ function value = percentileValue(data, pct)
 end
 
 function imageData = normalizeImage(imageData)
-    imageData = im2double(imageData);
+    imageData = labkit.image.toDouble(imageData);
     if ndims(imageData) == 2
         imageData = repmat(imageData, 1, 1, 3);
     elseif size(imageData, 3) > 3
         imageData = imageData(:, :, 1:3);
     end
     imageData = min(max(imageData, 0), 1);
+end
+
+function gray = luma(imageData)
+    gray = labkit.image.toLuma(imageData);
 end
 
 function outputImage = labToRgb(labImage)

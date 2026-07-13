@@ -15,7 +15,7 @@ function imageOut = toRgbDouble(imageIn)
         imageOut = [];
         return;
     end
-    imageOut = im2double(imageIn);
+    imageOut = labkit.image.toDouble(imageIn);
     if ndims(imageOut) == 2
         imageOut = repmat(imageOut, 1, 1, 3);
     elseif size(imageOut, 3) > 3

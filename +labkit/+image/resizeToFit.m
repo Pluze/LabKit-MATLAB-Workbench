@@ -40,7 +40,87 @@ function [imageOut, scale] = resizeToFit(imageIn, varargin)
     end
 
     targetSize = max(1, round([rows, cols] .* scale));
-    imageOut = imresize(imageIn, targetSize, char(opts.Method));
+    imageOut = resizeImage(imageIn, targetSize, opts.Method);
+end
+
+function imageOut = resizeImage(imageIn, targetSize, method)
+    method = lower(string(method));
+    if method == "nearest"
+        imageOut = resizeNearest(imageIn, targetSize);
+    else
+        imageOut = resizeLinear(imageIn, targetSize);
+    end
+end
+
+function imageOut = resizeNearest(imageIn, targetSize)
+    targetRows = max(1, round(targetSize(1)));
+    targetCols = max(1, round(targetSize(2)));
+    rowIdx = nearestIndices(size(imageIn, 1), targetRows);
+    colIdx = nearestIndices(size(imageIn, 2), targetCols);
+    imageOut = imageIn(rowIdx, colIdx, :);
+end
+
+function imageOut = resizeLinear(imageIn, targetSize)
+    targetRows = max(1, round(targetSize(1)));
+    targetCols = max(1, round(targetSize(2)));
+    if isempty(imageIn)
+        imageOut = zeros([targetRows targetCols size(imageIn, 3)], 'like', imageIn);
+        return;
+    end
+    queryRows = scaledPositions(size(imageIn, 1), targetRows);
+    queryCols = scaledPositions(size(imageIn, 2), targetCols);
+    [colGrid, rowGrid] = meshgrid(queryCols, queryRows);
+    imageOut = zeros([targetRows targetCols size(imageIn, 3)]);
+    for channel = 1:size(imageIn, 3)
+        imageOut(:, :, channel) = interp2( ...
+            1:size(imageIn, 2), 1:size(imageIn, 1), ...
+            double(imageIn(:, :, channel)), colGrid, rowGrid, ...
+            'linear', NaN);
+    end
+    if ndims(imageIn) <= 2
+        imageOut = imageOut(:, :, 1);
+    end
+    imageOut = castResizeOutput(imageOut, imageIn);
+end
+
+function imageOut = castResizeOutput(imageOut, imageIn)
+    if isfloat(imageIn)
+        imageOut = cast(imageOut, class(imageIn));
+        return;
+    end
+    limits = classLimits(imageIn);
+    imageOut = min(max(imageOut, limits(1)), limits(2));
+    imageOut = cast(round(imageOut), class(imageIn));
+end
+
+function limits = classLimits(imageIn)
+    if isa(imageIn, 'uint8')
+        limits = [0 double(intmax('uint8'))];
+    elseif isa(imageIn, 'uint16')
+        limits = [0 double(intmax('uint16'))];
+    elseif isa(imageIn, 'int16')
+        limits = [double(intmin('int16')) double(intmax('int16'))];
+    else
+        values = double(imageIn(:));
+        limits = [min(values) max(values)];
+    end
+end
+
+function idx = nearestIndices(inputLength, outputLength)
+    if outputLength <= 1
+        idx = 1;
+        return;
+    end
+    positions = linspace(1, inputLength, outputLength);
+    idx = min(max(round(positions), 1), inputLength);
+end
+
+function positions = scaledPositions(inputLength, outputLength)
+    if outputLength <= 1
+        positions = 1;
+    else
+        positions = linspace(1, inputLength, outputLength);
+    end
 end
 
 function opts = parseOptions(varargin)

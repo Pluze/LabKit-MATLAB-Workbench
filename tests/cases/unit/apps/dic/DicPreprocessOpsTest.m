@@ -125,5 +125,23 @@ classdef DicPreprocessOpsTest < matlab.unittest.TestCase
             testCase.verifyEqual(rgb(:, :, 2), mask);
             testCase.verifyEqual(rgb(:, :, 3), mask);
         end
+
+        function autoAlignUsesToolboxFreeTranslation(testCase)
+            setupLabKitTestPath();
+
+            reference = zeros(16, 18);
+            reference(5:8, 7:11) = 1;
+            moving = zeros(size(reference));
+            moving(7:10, 4:8) = 1;
+
+            [aligned, tform, method] = ...
+                dic_preprocess.analysisRun.autoAlignMovingToReference( ...
+                reference, moving);
+
+            testCase.verifyEqual(aligned, reference, ...
+                'Toolbox-free auto alignment should recover integer translation.');
+            testCase.verifyEqual(tform, [1 0 0; 0 1 0; 3 -2 1]);
+            testCase.verifyTrue(contains(method, 'toolbox-free'));
+        end
     end
 end

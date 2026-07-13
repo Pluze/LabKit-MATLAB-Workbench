@@ -114,7 +114,8 @@ function [gaussPyramid, lapPyramid] = buildLaplacianPyramid(imageData, levels)
     gaussPyramid{1} = imageData;
     for level = 1:levels
         blurred = gaussianBlurImage(gaussPyramid{level}, 1);
-        gaussPyramid{level + 1} = imresize(blurred, 0.5, 'bilinear');
+        gaussPyramid{level + 1} = focus_stack.analysisRun.resizeImageToSize( ...
+            blurred, max(1, round([size(blurred, 1), size(blurred, 2)] .* 0.5)));
         expanded = focus_stack.analysisRun.resizeImageToSize(gaussPyramid{level + 1}, size(gaussPyramid{level}));
         lapPyramid{level} = gaussPyramid{level} - expanded;
     end
@@ -215,7 +216,7 @@ function [stack, resizedCount] = stackImagesAsDouble(images)
             img = focus_stack.analysisRun.resizeImageToReference(img, refSize);
             resizedCount = resizedCount + 1;
         end
-        img = convertChannels(im2double(img), channels);
+        img = convertChannels(labkit.image.toDouble(img), channels);
         stack(:, :, :, k) = img;
     end
 end
@@ -264,27 +265,10 @@ function [focusIndex, bestScore, secondScore] = bestFocusIndex(scoreStack)
 end
 
 function gray = grayImage(imageData)
-    imageData = double(imageData);
-    if ndims(imageData) == 3
-        if size(imageData, 3) >= 3
-            gray = 0.2989 .* imageData(:, :, 1) + ...
-                0.5870 .* imageData(:, :, 2) + ...
-                0.1140 .* imageData(:, :, 3);
-        else
-            gray = imageData(:, :, 1);
-        end
-    else
-        gray = imageData;
-    end
+    gray = labkit.image.toLuma(imageData);
 end
 
 function imageOut = gaussianBlurImage(imageIn, sigma)
-    try
-        imageOut = imgaussfilt(imageIn, sigma, 'Padding', 'replicate');
-        return;
-    catch
-    end
-
     radius = max(1, ceil(3 * sigma));
     x = -radius:radius;
     kernel = exp(-(x .^ 2) ./ (2 * sigma ^ 2));

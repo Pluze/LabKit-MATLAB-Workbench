@@ -19,5 +19,5 @@ function imageOut = resizeImageToReference(imageIn, referenceSize)
         imageOut = imageIn;
         return;
     end
-    imageOut = imresize(imageIn, targetSize);
+    imageOut = focus_stack.analysisRun.resizeImageToSize(imageIn, targetSize);
 end

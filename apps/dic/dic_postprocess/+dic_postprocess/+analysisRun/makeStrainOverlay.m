@@ -4,7 +4,7 @@
 function overlay = makeStrainOverlay(referenceImage, strainMap, mask, roiMask, opts)
     orig = dic_postprocess.analysisRun.enhanceReferenceImage(referenceImage, opts);
     [H, W, ~] = size(orig);
-    mask = imresize(logical(mask), [H W], 'nearest');
+    mask = dic_postprocess.analysisRun.resizeNearest(logical(mask), [H W]);
     validMap = dic_postprocess.analysisRun.strainValidMask( ...
         strainMap, roiMask, mask, edgeTrimFromOptions(opts));
     [strainRgb, validStrain] = dic_postprocess.analysisRun.strainToRgb( ...

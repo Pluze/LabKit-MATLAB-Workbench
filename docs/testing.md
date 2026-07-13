@@ -81,6 +81,12 @@ source to the public repository. For temporary local checks,
 `LABKIT_GUARD_PRIVATE_APPS=1` includes configured private roots even without
 the sentinel file.
 
+Toolbox compatibility guardrails protect the base-MATLAB user path. They
+reject unguarded hard calls to common non-base MATLAB toolbox helpers under
+`apps/` and `+labkit/`, and run representative workflows with those helper
+names shadowed on the MATLAB path so local machines with toolboxes still
+exercise fallback paths.
+
 Private workspaces under `private_apps/` are separate Git repositories, so the
 public `changed` and `changedFast` tasks do not discover their diffs. Validate a
 private change with that workspace's own test entry point, such as

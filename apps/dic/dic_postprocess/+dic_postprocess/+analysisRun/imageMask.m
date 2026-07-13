@@ -2,9 +2,13 @@
 % Inputs are mask image data and target size. Output is resized logical mask.
 % Side effects: none.
 function mask = imageMask(maskImage, targetSize)
+    maskImage = labkit.image.toDouble(maskImage);
     if ndims(maskImage) == 3
-        maskImage = rgb2gray(maskImage);
+        maskImage = labkit.image.toLuma(maskImage);
     end
-    mask = maskImage > 128;
-    mask = imresize(mask, targetSize, 'nearest');
+    % Preserve the legacy uint8 mask contract of "pixel value > 128" after
+    % normalizing through labkit.image.toDouble.
+    normalizedBinaryMaskThreshold = double(128) / double(intmax('uint8'));
+    mask = maskImage > normalizedBinaryMaskThreshold;
+    mask = dic_postprocess.analysisRun.resizeNearest(mask, targetSize);
 end

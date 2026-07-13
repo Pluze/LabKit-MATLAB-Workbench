@@ -116,7 +116,7 @@ function mask = backgroundMaskFromContext(inputImage, context, requireRoi)
     end
 
     hsvImage = rgb2hsv(inputImage);
-    value = rgb2gray(inputImage);
+    value = luma(inputImage);
     sat = hsvImage(:, :, 2);
     mask = smoothstep(0.22, 0.03, sat) .* smoothstep(0.30, 0.78, value);
     if nnz(mask > 0.45) < 100
@@ -142,25 +142,25 @@ function labImage = correctBackgroundLabCast(labImage, backgroundMask, strength)
 end
 
 function outputImage = protectedRgbFallback(inputImage, strength, targetWhite, backgroundMask)
-    luma = rgb2gray(inputImage);
-    stats = luminanceStats(luma);
+    lumaImage = luma(inputImage);
+    stats = luminanceStats(lumaImage);
     contrastScale = min(1.12, max(0.92, 0.28 ./ max(stats.contrast, 0.08)));
-    toned = (luma - stats.mid) .* contrastScale + stats.mid;
+    toned = (lumaImage - stats.mid) .* contrastScale + stats.mid;
     lift = min(0.16, max(0, targetWhite - weightedMean(toned, backgroundMask)));
-    toned = min(max(toned + lift .* (0.35 + 0.65 .* smoothstep(0.18, 0.74, luma)), 0), 1);
-    ratio = min(1.18, max(0.88, toned ./ max(luma, 0.04)));
+    toned = min(max(toned + lift .* (0.35 + 0.65 .* smoothstep(0.18, 0.74, lumaImage)), 0), 1);
+    ratio = min(1.18, max(0.88, toned ./ max(lumaImage, 0.04)));
     outputImage = (1 - strength) .* inputImage + strength .* (inputImage .* ratio);
 end
 
 function outputImage = finishBackgroundLuma(outputImage, inputImage, backgroundMask, targetWhite, strength, maxLift)
-    luma = rgb2gray(outputImage);
-    backgroundLevel = weightedMean(luma, backgroundMask);
+    lumaImage = luma(outputImage);
+    backgroundLevel = weightedMean(lumaImage, backgroundMask);
     lift = min(maxLift, max(0, targetWhite - backgroundLevel));
     if lift <= 0
         return;
     end
     hsvImage = rgb2hsv(inputImage);
-    sourceLuma = rgb2gray(inputImage);
+    sourceLuma = luma(inputImage);
     saturationGuard = 1 - 0.58 .* smoothstep(0.18, 0.58, hsvImage(:, :, 2));
     brightMask = smoothstep(0.18, 0.74, sourceLuma);
     correction = strength .* lift .* (0.35 + 0.65 .* brightMask) .* saturationGuard;
@@ -199,6 +199,10 @@ function out = weightedMean(values, weights)
         return;
     end
     out = sum(values(valid) .* weights(valid)) ./ sum(weights(valid));
+end
+
+function gray = luma(imageData)
+    gray = labkit.image.toLuma(imageData);
 end
 
 function y = smoothstep(edge0, edge1, x)

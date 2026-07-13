@@ -62,7 +62,13 @@ classdef LabKitImageFacadeTest < matlab.unittest.TestCase
             image(:, :, 2) = repmat(linspace(0.1, 0.9, 20), 12, 1);
             image(:, :, 3) = 0.55;
 
+            normalized = labkit.image.toDouble(uint8([0 255]));
+            signedNormalized = labkit.image.toDouble(int16([-32768 0 32767]));
+            logicalNormalized = labkit.image.toDouble([false true]);
             rgb = labkit.image.toRgbDouble(uint8(100 * ones(4, 5)));
+            redLuma = mean(labkit.image.toLuma(cat(3, ones(2), zeros(2), zeros(2))), "all");
+            greenLuma = mean(labkit.image.toLuma(cat(3, zeros(2), ones(2), zeros(2))), "all");
+            blueLuma = mean(labkit.image.toLuma(cat(3, zeros(2), zeros(2), ones(2))), "all");
             [preview, scale] = labkit.image.resizeToFit(image, "MaxHeight", 6);
             [budgetPreview, budgetInfo] = labkit.image.previewBudget(image, ...
                 "MaxPixels", 40, ...
@@ -74,7 +80,15 @@ classdef LabKitImageFacadeTest < matlab.unittest.TestCase
             local = labkit.image.localContrast(image, 50, 2);
             sharp = labkit.image.sharpen(image, 50, 1);
 
+            testCase.verifyEqual(normalized, [0 1]);
+            expectedSigned = [0 ...
+                (double(0) - double(intmin('int16'))) / ...
+                (double(intmax('int16')) - double(intmin('int16'))) ...
+                1];
+            testCase.verifyEqual(signedNormalized, expectedSigned, "AbsTol", 1e-12);
+            testCase.verifyEqual(logicalNormalized, [0 1]);
             testCase.verifyEqual(size(rgb), [4 5 3]);
+            testCase.verifyTrue(greenLuma > redLuma && redLuma > blueLuma);
             testCase.verifyEqual(size(preview), [6 10 3]);
             testCase.verifyEqual(scale, 0.5, "AbsTol", 1e-12);
             testCase.verifyLessThan(size(budgetPreview, 1), size(image, 1));
@@ -100,7 +114,7 @@ classdef LabKitImageFacadeTest < matlab.unittest.TestCase
             labkit.image.writeFile(0.5 .* ones(4, 5, 3), filepath);
 
             testCase.verifyTrue(isfile(filepath));
-            written = im2double(imread(filepath));
+            written = labkit.image.toDouble(imread(filepath));
             testCase.verifyEqual(size(written), [4 5 3]);
         end
 

@@ -152,6 +152,28 @@ classdef DicPostprocessOpsTest < matlab.unittest.TestCase
                 [1 0 0], 'AbsTol', 1e-12);
         end
 
+        function overlayPipelineSupportsSmoothingAndOversampleWithoutToolboxes(testCase)
+            setupLabKitTestPath();
+
+            reference = uint8(repmat(reshape(1:16, 4, 4), [1 1 3]));
+            strainMap = reshape(linspace(-0.1, 0.1, 16), 4, 4);
+            opts = postprocessOverlayOptions();
+            opts.alpha = 0.75;
+            opts.colorRange = [-0.1 0.1];
+            opts.sigmaSmooth = 0.8;
+            opts.oversample = 3;
+            opts.edgeTrim = 0;
+
+            overlay = dic_postprocess.analysisRun.makeStrainOverlay( ...
+                reference, strainMap, true(6), true(4), opts);
+
+            testCase.verifySize(overlay, [4 4 3]);
+            testCase.verifyClass(overlay, 'double');
+            testCase.verifyTrue(all(isfinite(overlay), 'all'));
+            testCase.verifyGreaterThan(max(overlay, [], 'all'), ...
+                min(overlay, [], 'all'));
+        end
+
         function extendStrainMapHandlesEmptyValidMap(testCase)
             setupLabKitTestPath();
 

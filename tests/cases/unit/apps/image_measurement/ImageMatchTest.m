@@ -73,9 +73,9 @@ function checkProtectedToneMatchesBackgroundWithoutSubjectHueDrift()
     step = image_match.analysisRun.makeStep('Protected tone', 100, 100, 100);
     processed = image_match.analysisRun.applyPipeline({source}, step, reference);
     out = processed{1};
-    sourceBackground = mean(rgb2gray(source(1:12, 1:20, :)), 'all');
-    outputBackground = mean(rgb2gray(out(1:12, 1:20, :)), 'all');
-    referenceBackground = mean(rgb2gray(reference(1:12, 1:20, :)), 'all');
+    sourceBackground = mean(testLuma(source(1:12, 1:20, :)), 'all');
+    outputBackground = mean(testLuma(out(1:12, 1:20, :)), 'all');
+    referenceBackground = mean(testLuma(reference(1:12, 1:20, :)), 'all');
     subjectBefore = source(18:35, 24:52, :);
     subjectAfter = out(18:35, 24:52, :);
     beforeHsv = rgb2hsv(subjectBefore);
@@ -185,7 +185,7 @@ function checkManifestAndExportContract()
         'Batch export should avoid overwriting existing matched outputs.');
     assert(isfile(payload.results(1).outputPath), ...
         'Batch export should write matched image output.');
-    written = im2double(imread(payload.results(1).outputPath));
+    written = labkit.image.toDouble(imread(payload.results(1).outputPath));
     assert(isequal(size(written), [10 12 3]), ...
         'Batch export should process and write full-size matched images.');
     assert(isfile(payload.manifestPath), ...
@@ -240,6 +240,10 @@ function checkPreviewImageDownsamplesLargeInputs()
         'Image-match preview should downsample large display images by height.');
     assert(all(preview(:) >= 0 & preview(:) <= 1), ...
         'Image-match preview should stay in display range.');
+end
+
+function gray = testLuma(imageIn)
+    gray = labkit.image.toLuma(imageIn);
 end
 
 function img = syntheticGradientImage()
