@@ -20,6 +20,7 @@ function driver = labkitWorkflowDriver(fig)
     driver.fileSelection = @fileSelection;
     driver.tableData = @tableData;
     driver.textAreaValue = @textAreaValue;
+    driver.logValue = @logValue;
     driver.enabled = @enabled;
     driver.previewChildCount = @previewChildCount;
     driver.setAnchorPoints = @setAnchorPoints;
@@ -60,6 +61,10 @@ function driver = labkitWorkflowDriver(fig)
         assert(isfield(ui.controls, id) && isfield(ui.controls.(id), 'textArea'), ...
             'Workflow text area id not found: %s.', id);
         value = ui.controls.(id).textArea.Value;
+    end
+
+    function value = logValue(controlId)
+        value = textAreaValue(controlId);
     end
 
     function data = tableData(controlId)

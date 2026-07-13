@@ -29,6 +29,7 @@ function h = guiTestHelpers()
     h.findControlByText = @findControlByText;
     h.invokeCallback = @invokeCallback;
     h.waitForUiIdle = @waitForUiIdle;
+    h.waitForCondition = @waitForCondition;
     h.assertCallbackPresent = @assertCallbackPresent;
     h.sameStringCell = @sameStringCell;
 end
@@ -234,7 +235,6 @@ function assertDropdownCallbacksPresent(fig)
 end
 
 function invokeDropdownValue(fig, value)
-    waitForUiIdle(fig);
     controls = allGuiObjects(fig);
     for k = 1:numel(controls)
         control = controls{k};
@@ -249,7 +249,6 @@ function invokeDropdownValue(fig, value)
 end
 
 function invokeCheckbox(fig, text, value)
-    waitForUiIdle(fig);
     control = findControlByText(fig, text, 'Value');
     control.Value = value;
     invokeCallback(control, 'ValueChangedFcn');
@@ -257,7 +256,6 @@ function invokeCheckbox(fig, text, value)
 end
 
 function invokeButton(fig, text)
-    waitForUiIdle(fig);
     control = findControlByText(fig, text, 'ButtonPushedFcn');
     invokeCallback(control, 'ButtonPushedFcn');
     waitForUiIdle(fig);
@@ -292,12 +290,33 @@ end
 function waitForUiIdle(fig)
     timeoutSeconds = 5.0;
     startTime = tic;
-    drawnow;
+    drawnow limitrate;
     while isvalid(fig) && uiHasPendingWork(fig) && toc(startTime) < timeoutSeconds
         pause(0.05);
-        drawnow;
+        drawnow limitrate;
     end
-    drawnow;
+    drawnow limitrate;
+end
+
+function tf = waitForCondition(fig, predicate, timeoutSeconds)
+    if nargin < 3
+        timeoutSeconds = 5.0;
+    end
+    startTime = tic;
+    tf = safePredicate(predicate);
+    while isvalid(fig) && ~tf && toc(startTime) < timeoutSeconds
+        pause(0.05);
+        drawnow limitrate;
+        tf = safePredicate(predicate);
+    end
+end
+
+function tf = safePredicate(predicate)
+    try
+        tf = logical(predicate());
+    catch
+        tf = false;
+    end
 end
 
 function tf = uiHasPendingWork(fig)

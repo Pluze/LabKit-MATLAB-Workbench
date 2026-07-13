@@ -30,6 +30,8 @@ classdef GuiLayoutDicPostprocessTest < matlab.unittest.TestCase
             driver.click('Choose reference');
             driver.click('Choose mask');
             driver.click('Generate overlays + summary');
+            generated = h.waitForCondition(fig, ...
+                @() dicPostprocessGenerated(driver), 15);
 
             ui = driver.registry();
             testCase.verifyTrue(contains(string(ui.controls.matFile.status.Value), ...
@@ -41,6 +43,8 @@ classdef GuiLayoutDicPostprocessTest < matlab.unittest.TestCase
             testCase.verifyTrue(contains(string(ui.controls.maskFile.status.Value), ...
                 'mask.png'), ...
                 'DIC postprocess workflow should show the loaded mask image.');
+            testCase.verifyTrue(generated, sprintf(['DIC postprocess workflow should ' ...
+                'generate overlays and summary. App log: %s'], appLog(driver)));
             data = driver.tableData('resultTable');
             testCase.verifyGreaterThan(size(data, 1), 0, ...
                 'DIC postprocess workflow should populate the strain summary table.');
@@ -53,6 +57,20 @@ classdef GuiLayoutDicPostprocessTest < matlab.unittest.TestCase
                 'DIC postprocess workflow should draw the EYY overlay.');
         end
     end
+end
+
+function tf = dicPostprocessGenerated(driver)
+    ui = driver.registry();
+    data = driver.tableData('resultTable');
+    tf = size(data, 1) > 0 && ...
+        any(contains(string(driver.textAreaValue('summaryText')), ...
+        'Overlays: available')) && ...
+        numel(ui.controls.overlayAxes.axesById.exx.Children) > 0 && ...
+        numel(ui.controls.overlayAxes.axesById.eyy.Children) > 0;
+end
+
+function text = appLog(driver)
+    text = strjoin(string(driver.logValue('appLog')), ' | ');
 end
 
 function assertDicPostprocessLayout(h, fig)

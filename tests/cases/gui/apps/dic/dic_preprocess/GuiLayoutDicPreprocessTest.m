@@ -27,6 +27,8 @@ classdef GuiLayoutDicPreprocessTest < matlab.unittest.TestCase
             driver.click('Choose reference');
             driver.click('Choose moving');
             driver.click('Auto align current pair');
+            aligned = h.waitForCondition(fig, ...
+                @() dicPreprocessAlignmentReady(driver), 15);
 
             ui = driver.registry();
             testCase.verifyTrue(contains(string(ui.controls.referenceFile.status.Value), ...
@@ -41,15 +43,24 @@ classdef GuiLayoutDicPreprocessTest < matlab.unittest.TestCase
             testCase.verifyTrue(any(contains(string(driver.textAreaValue('summaryText')), ...
                 'Reference')), ...
                 'DIC preprocess workflow should refresh the summary after loading images.');
-            testCase.verifyTrue(any(contains(lower(string(driver.textAreaValue('detailsText'))), ...
-                'transform matrix')), ...
-                'DIC preprocess workflow should refresh alignment details after auto align.');
+            testCase.verifyTrue(aligned, sprintf(['DIC preprocess workflow should ' ...
+                'refresh alignment details after auto align. App log: %s'], ...
+                appLog(driver)));
             testCase.verifyGreaterThan(numel(ui.controls.previewAxes.axesById.reference.Children), 0, ...
                 'DIC preprocess workflow should draw the reference preview.');
             testCase.verifyGreaterThan(numel(ui.controls.previewAxes.axesById.current.Children), 0, ...
                 'DIC preprocess workflow should draw the current preview.');
         end
     end
+end
+
+function tf = dicPreprocessAlignmentReady(driver)
+    details = lower(string(driver.textAreaValue('detailsText')));
+    tf = any(contains(details, 'transform matrix'));
+end
+
+function text = appLog(driver)
+    text = strjoin(string(driver.logValue('appLog')), ' | ');
 end
 
 function assertDicPreprocessLayout(h, fig)
