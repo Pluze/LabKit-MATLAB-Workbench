@@ -1,4 +1,4 @@
-classdef GuiLayoutDicPostprocessTest < matlab.uitest.TestCase
+classdef GuiLayoutDicPostprocessTest < matlab.unittest.TestCase
     %GUILAYOUTDICPOSTPROCESSTEST Verify DIC postprocess GUI layout contracts.
 
     methods (Test, TestTags = {'GUI', 'Structural', 'Workflow'})

@@ -1,4 +1,4 @@
-classdef GuiLayoutDicPreprocessTest < matlab.uitest.TestCase
+classdef GuiLayoutDicPreprocessTest < matlab.unittest.TestCase
     %GUILAYOUTDICPREPROCESSTEST Verify DIC preprocess GUI layout contracts.
 
     methods (Test, TestTags = {'GUI', 'Structural', 'Workflow'})
