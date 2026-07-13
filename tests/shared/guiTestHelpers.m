@@ -234,6 +234,7 @@ function assertDropdownCallbacksPresent(fig)
 end
 
 function invokeDropdownValue(fig, value)
+    waitForUiIdle(fig);
     controls = allGuiObjects(fig);
     for k = 1:numel(controls)
         control = controls{k};
@@ -248,6 +249,7 @@ function invokeDropdownValue(fig, value)
 end
 
 function invokeCheckbox(fig, text, value)
+    waitForUiIdle(fig);
     control = findControlByText(fig, text, 'Value');
     control.Value = value;
     invokeCallback(control, 'ValueChangedFcn');
@@ -255,6 +257,7 @@ function invokeCheckbox(fig, text, value)
 end
 
 function invokeButton(fig, text)
+    waitForUiIdle(fig);
     control = findControlByText(fig, text, 'ButtonPushedFcn');
     invokeCallback(control, 'ButtonPushedFcn');
     waitForUiIdle(fig);
