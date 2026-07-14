@@ -1,0 +1,61 @@
+%FROMTEXT Build a keypoint and edge definition from user text.
+% Expected caller: skeleton update action and tests. Inputs are comma/newline
+% separated point names and edge tokens "name-name" or "name,name".
+function skeleton = fromText(pointText, edgeText)
+    names = splitTokens(pointText);
+    names = names(strlength(names) > 0);
+    if isempty(names)
+        error('labkit_VideoMarker_app:NoKeypoints', 'Define at least one keypoint.');
+    end
+    if numel(unique(lower(names))) ~= numel(names)
+        error('labkit_VideoMarker_app:DuplicateKeypoint', 'Keypoint names must be unique.');
+    end
+    ids = matlab.lang.makeValidName(cellstr(names), "ReplacementStyle", "delete");
+    ids = string(matlab.lang.makeUniqueStrings(ids));
+
+    nameToIndex = containers.Map(cellstr(lower(names)), num2cell(1:numel(names)));
+    edges = zeros(0, 2);
+    edgeTokens = splitTokens(edgeText);
+    for k = 1:numel(edgeTokens)
+        token = string(edgeTokens(k));
+        if strlength(token) == 0
+            continue;
+        end
+        parts = split(token, ["-", ">", ":"]);
+        parts = strtrim(parts);
+        parts = parts(strlength(parts) > 0);
+        if numel(parts) ~= 2
+            error('labkit_VideoMarker_app:InvalidEdge', ...
+                'Edges must use two keypoint names such as hip-knee.');
+        end
+        a = lookupPoint(nameToIndex, parts(1));
+        b = lookupPoint(nameToIndex, parts(2));
+        if a == b
+            error('labkit_VideoMarker_app:InvalidEdge', 'An edge cannot connect a keypoint to itself.');
+        end
+        edges(end+1, :) = sort([a b]); %#ok<AGROW>
+    end
+    edges = unique(edges, "rows", "stable");
+
+    skeleton = struct();
+    skeleton.schemaVersion = 1;
+    skeleton.pointIds = ids(:);
+    skeleton.pointNames = names(:);
+    skeleton.edges = edges;
+end
+
+function tokens = splitTokens(textValue)
+    textValue = string(textValue);
+    textValue = replace(textValue, newline, ",");
+    textValue = replace(textValue, ";", ",");
+    tokens = strtrim(split(textValue, ","));
+end
+
+function idx = lookupPoint(map, name)
+    key = char(lower(string(name)));
+    if ~isKey(map, key)
+        error('labkit_VideoMarker_app:UnknownEdgePoint', ...
+            'Every edge endpoint must name a defined keypoint.');
+    end
+    idx = map(key);
+end

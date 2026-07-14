@@ -45,6 +45,12 @@ classdef ImageMeasurementDebugSamplePackTest < matlab.unittest.TestCase
             testCase.verifyEqual(edgeReport.loaded, 1);
             [~, badReport] = flir_thermal.sourceFiles.readImages(flir.boundaryFiles.malformedPlainJpeg);
             testCase.verifyEqual(badReport.loaded, 0);
+
+            video = video_marker.debug.writeSamplePack(debug);
+            [reader, info] = video_marker.videoSource.openVideo(video.representativeFiles);
+            frame = video_marker.videoSource.readFrame(reader, 1);
+            testCase.verifyEqual(info.frameCount, 6);
+            testCase.verifySize(frame, [72 96 3]);
         end
     end
 end

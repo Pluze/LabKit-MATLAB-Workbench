@@ -1,0 +1,16 @@
+%OPTIONS Default coordinate CSV export options.
+% Expected caller: state factory, UI action, and tests.
+function opts = options(varargin)
+    opts = struct( ...
+        "startFrame", 1, ...
+        "endFrame", inf, ...
+        "unitMode", "pixels", ...
+        "originMode", "top_left_pixel_center", ...
+        "yAxisMode", "up");
+    if mod(numel(varargin), 2) ~= 0
+        error('labkit_VideoMarker_app:InvalidOptions', 'Options must be name/value pairs.');
+    end
+    for k = 1:2:numel(varargin)
+        opts.(char(varargin{k})) = varargin{k+1};
+    end
+end
