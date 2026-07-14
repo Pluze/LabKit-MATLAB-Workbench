@@ -203,27 +203,39 @@ skeleton definition.
 
 Point marking is continuously active while a video is open: a blank click adds
 the next ordered keypoint, dragging a displayed point refines it, and moving to
-another frame saves the current coordinates automatically. A complete frame is
-recorded as confirmed; a newly visited frame inherits the latest confirmed
-coordinates as a draft for local adjustment. `New setup (clear current)` starts
+another frame saves the current coordinates automatically. A complete edited
+frame is a manual anchor. Moving forward predicts every ordered point with
+cropped pyramidal KLT tracking and forward/backward reliability checks; a
+constant-velocity estimate is used only for rejected points. Predicted frames
+remain editable drafts, and dragging any point turns that complete frame into
+a new manual anchor for subsequent prediction. Jumping forward propagates
+through intermediate frames and preserves existing manual anchors.
+`New setup (clear current)` starts
 a different skeleton definition without retaining the current annotation
 session. Frame navigation preserves the current zoomed ROI; opening a new
 video or project starts from its home view. Marker CSV remains the round-trip editing format, while coordinate CSV
 is the plotting-oriented export with optional calibration and origin choices.
 
-Two optional marking assists create editable drafts rather than confirmed
-annotations. Interpolation uses the nearest confirmed frames bracketing the
-current frame. Previous-frame tracking uses lightweight local grayscale block
-matching around each confirmed keypoint and is intended as a small-motion
-starting estimate, not an automatic pose result.
+Prediction is part of forward frame navigation rather than a separate Track or
+Interpolate command. The implementation uses MATLAB's KLT point tracker when
+available and does not install third-party packages or download model assets.
+The intended workflow is short automatic propagation followed by occasional
+human correction, not unattended long-term tracking through arbitrary
+occlusion.
 
 After a video session starts, durable annotation changes are atomically saved
 to `Video Marker Autosaves` under the source video's folder. These visible MAT
 files use the same project payload as explicit project saves, so they can be
-backed up or opened manually. Reopening the same video detects matching
-recovery data and asks whether to restore it or start a new session. Starting
-a new setup or declining recovery discards that video's autosave; explicit
-project saves and CSV exports remain separate outputs.
+backed up or opened manually. Both payloads store a portable video reference:
+the path relative to the MAT file is preferred, with the original path and
+same-folder filename as fallbacks. This lets a synchronized project/video
+directory tree move between Google Drive roots, users, and operating systems.
+If no candidate exists or the saved reference is malformed, project open asks
+the user to locate the source video without discarding the skeleton or
+annotations. Reopening the video detects its adjacent recovery data and asks
+whether to restore it or start a new session. Starting a new setup or declining
+recovery discards that video's autosave; explicit project saves and CSV exports
+remain separate outputs.
 
 ## Creating A New App
 

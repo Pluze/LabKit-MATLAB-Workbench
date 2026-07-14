@@ -3,12 +3,14 @@
 function saveProject(filepath, state)
     filepath = string(filepath);
     wrapper = struct();
-    wrapper.videoMarkerProject = serializableState(state);
+    wrapper.videoMarkerProject = serializableState(state, filepath);
     save(filepath, '-struct', 'wrapper');
 end
 
-function project = serializableState(state)
+function project = serializableState(state, filepath)
     project = state;
+    project.videoReference = labkit.ui.runtime.createPortableFileReference( ...
+        filepath, project.videoPath);
     if isfield(project, 'currentImage')
         project.currentImage = [];
     end

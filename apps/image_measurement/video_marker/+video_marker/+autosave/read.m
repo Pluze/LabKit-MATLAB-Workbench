@@ -12,8 +12,23 @@ function [state, found] = read(videoPath, root)
         return;
     end
     state = video_marker.projectFiles.loadProject(pathValue);
-    if string(state.videoPath) ~= string(videoPath)
-        error('labkit_VideoMarker_app:AutosaveVideoMismatch', ...
-            'Recovery data does not match the selected video path.');
+    if canonicalExistingPath(state.videoPath) ~= canonicalExistingPath(videoPath)
+        [~, savedName, savedExtension] = fileparts(string(state.videoPath));
+        [~, selectedName, selectedExtension] = fileparts(string(videoPath));
+        if ~strcmpi(savedName + savedExtension, selectedName + selectedExtension)
+            error('labkit_VideoMarker_app:AutosaveVideoMismatch', ...
+                'Recovery data does not match the selected video path.');
+        end
+        state.videoPath = canonicalExistingPath(videoPath);
+        state.videoInfo.path = state.videoPath;
+    end
+end
+
+function pathValue = canonicalExistingPath(pathValue)
+    [exists, attributes] = fileattrib(char(pathValue));
+    if exists
+        pathValue = string(attributes.Name);
+    else
+        pathValue = string(pathValue);
     end
 end

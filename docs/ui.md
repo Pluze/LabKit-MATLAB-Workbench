@@ -4,7 +4,7 @@
 
 | Facade | Owns | Main APIs |
 | --- | --- | --- |
-| `labkit.ui.runtime` | Declarative app runtime, request dispatch, readiness/busy state, safe dialogs and defaults, app title versioning, state snapshots, and shell utility commands. | `define`, `run`, `create`, `dispatchRequest`, `appVersionTitle`, `applyVersionTitle`, `confirm`, `defaultDialogFolder`, `defaultOutputFolder`, `promptOutputFile`, `promptOutputFolder`, `runBusy`, `saveState`, `loadState`, `showAlert`. |
+| `labkit.ui.runtime` | Declarative app runtime, request dispatch, readiness/busy state, safe dialogs and defaults, app title versioning, state snapshots, portable external-file references, and shell utility commands. | `define`, `run`, `create`, `dispatchRequest`, `appVersionTitle`, `applyVersionTitle`, `confirm`, `createPortableFileReference`, `resolvePortableFileReference`, `resolveOrPromptForFileReference`, `defaultDialogFolder`, `defaultOutputFolder`, `promptOutputFile`, `promptOutputFolder`, `runBusy`, `saveState`, `loadState`, `showAlert`. |
 | `labkit.ui.layout` | UI 5 data-only workbench layouts. | `workbench`, `workspace`, `tab`, `section`, `group`, `field`, `rangeField`, `panner`, `action`, `filePanel`, `toolPanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `usagePanel`. |
 | `labkit.ui.control` | Semantic registry updates, selectable items, file-panel values, list selections, numeric limits, enable state, and log appends. | `setValue`, `getValue`, `getFiles`, `setFileSelection`, `setItems`, `setEnabled`, `setLimits`, `appendLog`, `setListItems`, `setListSelection`, `fileLabels`, `filePaths`, `fileIndices`. |
 | `labkit.ui.plot` | Preview axes lookup, plot clearing, layer-safe overlays, image drawing, fitted limits, canvas framing, empty-state messages, and data/axes coordinate conversion. | `getAxes`, `clear`, `clearPreview`, `reset`, `replaceOverlay`, `image`, `fit`, `fitCanvas`, `dataToFraction`, `fractionToData`, `offsetData`, `clampData`, `message`. |
@@ -221,6 +221,22 @@ Use these app-facing contracts:
   values, or request follow-up refresh work. Snapshot loading is strict: schema, app id, LabKit UI
   version, MATLAB release/platform, app version when known, and app snapshot
   version must match before runtime state is replaced.
+- Apps whose saved state refers to external source files should store
+  `labkit.ui.runtime.createPortableFileReference(anchorFile, targetFile)` in
+  their app-owned project schema. On load,
+  `resolvePortableFileReference(anchorFile, reference)` checks the path
+  relative to the loaded project first, then the original absolute path, then
+  the saved filename beside the project. Relative references use `/` inside
+  MAT payloads, so a project/source directory tree can move between cloud-drive
+  roots and operating systems. Resolution is GUI-free; each app still decides
+  whether to prompt for a missing file and how to validate a user-selected
+  replacement against its saved metadata.
+- Interactive imports should call `resolveOrPromptForFileReference` for every
+  external-file field. It converts malformed or unresolved saved paths into a
+  field-labeled file chooser instead of failing the entire import. The return
+  metadata distinguishes automatic matches, manual selections, cancellation,
+  and invalid selections. Direct one-file imports already begin with a chooser
+  and do not need a redundant reference fallback.
 - The workbench shell includes native window utility menus with plot
   popout/copy/save commands, whole-app screenshot export, and state snapshot
   save/load commands. Plot commands operate on every registered preview axes
