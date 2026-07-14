@@ -11,6 +11,7 @@ function h = architectureTestHelpers()
     h.assertDTAFacadeUsage = @assertDTAFacadeUsage;
     h.assertDICAppBoundary = @assertDICAppBoundary;
     h.assertImageMeasurementAppBoundary = @assertImageMeasurementAppBoundary;
+    h.assertGaitAppBoundary = @assertGaitAppBoundary;
     h.assertWearableAppBoundary = @assertWearableAppBoundary;
     h.assertUsesGuiFoundation = @assertUsesGuiFoundation;
     h.guiWords = @guiWords;
@@ -225,6 +226,20 @@ function assertWearableAppBoundary(source, appName)
         [appName ' should use the GUI-free biosignal facade for signal operations.']);
     assert(~contains(source, '+labkit/+ecg'), ...
         [appName ' should not depend on a separate ECG package.']);
+end
+
+function assertGaitAppBoundary(source, appName)
+    assert(~contains(source, 'labkit.dta.'), ...
+        [appName ' should not use the electrochemistry DTA facade.']);
+    assert(~contains(source, 'labkit.rhs.'), ...
+        [appName ' should not use the RHS facade.']);
+    assert(~contains(source, 'labkit.biosignal.'), ...
+        [appName ' should not use the biosignal facade.']);
+    assertUsesGuiFoundation(source, appName);
+    assert(contains(source, 'gait_analysis.'), ...
+        [appName ' should keep gait workflow behavior in its app-owned package.']);
+    assert(~contains(source, '+labkit/+gait'), ...
+        [appName ' should not promote gait metrics into a reusable +labkit package yet.']);
 end
 
 function assertUsesGuiFoundation(source, appName)

@@ -37,6 +37,8 @@ function assertFamilyBoundary(h, source, appName, family)
         h.assertDICAppBoundary(source, appName);
     elseif family == "Image Measurement"
         h.assertImageMeasurementAppBoundary(source, appName);
+    elseif family == "Gait"
+        h.assertGaitAppBoundary(source, appName);
     elseif family == "Wearable"
         h.assertWearableAppBoundary(source, appName);
     elseif family == "Neurophysiology"
