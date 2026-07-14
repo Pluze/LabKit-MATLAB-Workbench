@@ -30,31 +30,465 @@ tests, docs, or guardrails, not permanent roadmap prose.
 
 ## Current Debt Snapshot
 
-Last audited: 2026-07-10.
+Last audited: 2026-07-14.
 
 Active migration debt:
 
 ```text
-none
+ui-runtime-v2: active
+app-project-and-result-contracts: active
 ```
 
-Current facts from a lightweight source scan:
+Current facts from the architecture audit:
 
 - Package-root app `run.m` orchestration and `+ui/runApp.m` lifecycle adapters
   are retired.
-- Workflow-first public apps use `definition.m`, `definitionActions.m`,
-  `+appLifecycle/createInitialState.m`,
-  `+userInterface/buildWorkbenchLayout.m`, and app-owned workflow packages such
-  as `+appState`, `+sourceFiles`, `+analysisRun`, `+cropGeometry`, and
-  `+resultFiles`.
-- Transitional app buckets such as `+state`, `+actions`, `+ui`, `+view`,
-  `+ops`, `+io`, and `+export` should not be reintroduced.
-- Source inventory at this audit: 920 tracked MATLAB files across `apps/`,
-  `+labkit/`, and `tests/`; the largest app file is 644 lines, the largest
-  `+labkit` file is 636 lines, and the largest test file is 650 lines.
-- Current hotspots are watchlist facts, not active migration routes by
-  themselves. Open a route only when the next change would add unrelated
-  behavior or a concrete responsibility split is found.
+- The current UI facade has 69 public functions under its six subpackages plus
+  `labkit.ui.version`. Runtime has 62 files/7,432 lines and interaction has 21
+  files/4,022 lines.
+- Seven production apps use closure-owned semantic state, seven have a no-op
+  visible-state update, and twelve mutate controls directly from actions.
+- Production apps do not use the current Hydrate, Snapshot, or action-effects
+  contracts. All definitions repeat the same `Startup="startup"` pattern.
+- Interaction runtimes are axes-scoped but own figure callbacks. Multi-axes
+  behavior therefore depends on construction/fallback order and app-owned
+  coordination.
+- Only Video Marker has a durable project format. Several apps keep graphics,
+  listeners, editors, tools, or view objects in app state.
+- Current result writers use incompatible payload/manifest shapes. They do not
+  share a versioned producer/input/parameter/output/provenance envelope.
+- The current generic snapshot requires exact UI, MATLAB release, platform,
+  app, and snapshot versions. It remains a compatibility format, not the target
+  durable project contract.
+- `docs/ui-runtime-redesign.md` is the target architecture. `docs/ui.md`,
+  `docs/apps.md`, and `docs/architecture.md` continue to describe current
+  production behavior until each target contract lands.
+
+## Goal Prompt: Migrate All Apps To UI Runtime V2
+
+### Objective
+
+Implement the target architecture in `docs/ui-runtime-redesign.md`, migrate
+every public app, and retire the superseded public UI surface. Continue by
+phase until all completion criteria are met or a real blocker below is reached.
+
+The result must reduce app-author complexity and improve behavior, not merely
+rename packages or move callback code into new wrappers.
+
+### Required Read Set
+
+Before executing this route, read:
+
+1. `AGENTS.md`
+2. the nearest scoped `AGENTS.md` for every touched source/test path
+3. `docs/ui-runtime-redesign.md` completely
+4. current `docs/ui.md`, `docs/apps.md`, and `docs/architecture.md` sections
+   affected by the current phase
+5. `docs/testing.md` only when selecting validation
+
+Use `labkit-boundary-guard` for every proposed public API addition and
+`labkit-test-planner` for validation routing. Do not add another migration
+roadmap or agent handbook.
+
+### Operating Principles
+
+- Preserve scientific behavior, accepted inputs, formulas, defaults, plot
+  meaning, workflow wording, result columns, and existing output filenames
+  unless the user explicitly approves a behavior/format change.
+- Framework owns mechanics; apps own domain decisions.
+- Maintain one semantic state root: `state.project` plus `state.session`.
+- Persist an explicit project allowlist. Never serialize a whole runtime and
+  then blacklist handles one field at a time.
+- Use a queued event transaction. Never solve ordering by adding another
+  `updating`, `refreshing`, or `activeAxes` flag in an app.
+- Use a single figure interaction hub. Apps must not restore figure callbacks.
+- Keep `saveState/loadState` as the stable public persistence facade. Separate
+  codec/migration, storage policy, and dialogs internally.
+- Replace loaded project state after migration; do not shallow/deep merge an
+  old payload with current defaults.
+- Keep layout constructors readable. API reduction targets control, runtime
+  utility, plot-mechanics, interaction-runtime, and debug exposure rather than
+  collapsing layout into a string router.
+- Do not introduce MATLAB classes, third-party runtimes, code generation, a
+  global event bus, or new package naming churn.
+- Do not create app-specific branches under `+labkit`.
+- Work in small coherent commits. Defer broad version/changelog/test closure
+  until the stable pre-PR phase as requested, but never omit that closure.
+
+### Target Runtime Contract
+
+All migrated definitions declare:
+
+```text
+Id
+Title
+Project: Version, Create, Validate, ordered Migrations, optional legacy import
+CreateSession (optional)
+Layout
+Actions
+Present
+Renderers (optional)
+Start (optional)
+```
+
+All migrated handlers use:
+
+```matlab
+state = handler(state, event, services)
+```
+
+All migrated state uses:
+
+```text
+state.project.inputs
+state.project.parameters
+state.project.annotations
+state.project.results
+state.project.extensions
+state.session.selection
+state.session.workflow
+state.session.view
+state.session.cache
+```
+
+No other state root fields are allowed. Project and session contain plain
+serializable MATLAB data only. Runtime resources live in the framework
+resource registry.
+
+### Phase 0: Freeze And Baseline
+
+Deliverables:
+
+- Verify the audit metrics and all 20 public app definitions dynamically.
+- Record public UI API calls by app and classify each API as target core,
+  advanced compatibility, internalize, or remove.
+- Record each app's current state fields, resource-like fields, project/import
+  formats, exports, and GUI tests.
+- Add no new public UI function during this phase.
+- Treat `docs/ui-runtime-redesign.md` as the design source and this section as
+  the only execution state.
+
+Exit condition: inventories match current source, and any discrepancy is
+resolved in the design/route before framework implementation begins.
+
+### Phase 1: Runtime Kernel
+
+Implement a v2 path alongside v1 definitions so apps can migrate one at a time.
+
+Required work:
+
+- Add `runtime.launch` and keep old entrypoint behavior compatible.
+- Add one non-recursive FIFO event queue per figure.
+- Make nested `services.dispatch` enqueue instead of invoke immediately.
+- Add canonical project/session state construction and validation.
+- Add `Present` reconciliation and semantic layout bindings.
+- Suppress user semantic callbacks during programmatic presentation commits.
+- Add renderer registration so apps pass plot models, not UI registry handles.
+- Add a scoped resource registry with idempotent cleanup.
+- Infer utility availability from definition capabilities.
+- Keep v1 `InitialState/Render/Startup` definitions operational during the
+  migration; do not make a repository-wide flag day.
+
+Minimum focused tests:
+
+- queued nested dispatch order
+- one state commit and one presentation commit per event
+- rollback after action/presenter error
+- bound-control normalization and callback suppression
+- project-only dirty tracking
+- resource cleanup on replacement/error/figure close
+- v1 and v2 definition coexistence
+
+Exit condition: a synthetic v2 app proves the kernel without changing a
+production app.
+
+### Phase 2: Figure Interaction Hub
+
+Required work:
+
+- Create one hub per app figure and register preview targets by semantic id.
+- Route wheel input to the pointer target without click activation.
+- Own drag capture/release and all figure `Window*Fcn` callbacks centrally.
+- Reconcile controlled interaction specs from presentation state.
+- Support atomic grouped targets for paired/multi-axes tools.
+- Ensure programmatic value synchronization never emits user edit events.
+- Keep transient pointer motion hub-local and dispatch configured preview or
+  commit events only.
+- Adapt existing anchor, rectangle, scale-bar, popout, and zoom behavior to the
+  hub before deleting their compatibility wrappers.
+
+Minimum focused tests:
+
+- two and three preview axes with hover wheel routing
+- controls/empty figure areas do not consume axes wheel behavior
+- grouped two-axes acquire/release and fallback behavior
+- drag error cleanup and callback restoration
+- controlled tool update versus user edit event
+- target deletion and figure close disposal
+
+Exit condition: framework GUI tests prove multi-axes behavior without an app
+fallback callback chain.
+
+### Phase 3: State Persistence And Result Manifests
+
+Required work:
+
+- Keep `runtime.saveState/loadState` signatures as the stable public facade.
+- Implement safe MAT inventory detection for `labkitProject`, `snapshot`, and
+  app-declared legacy variables.
+- Add the versioned `labkitProject` envelope and app payload migrations.
+- Persist only project plus optional non-authoritative resume data.
+- Separate explicit-file, recovery, and test-memory storage policies from the
+  project codec and dialogs.
+- Validate, migrate, resolve sources, and construct a fresh session before one
+  live-state commit.
+- Add atomic write/readback/replace behavior.
+- Add dirty title/close guard, debounced autosave, bounded recovery generations,
+  and recovery discovery/confirmation.
+- Do not silently reopen the last explicit project by default.
+- Add a read-only v1 snapshot adapter path.
+- Add a read-only Video Marker legacy project adapter path.
+- Add the JSON-safe `labkit.result` manifest and standard output-resource
+  records based on the target design.
+
+Minimum focused tests:
+
+- current project round trip
+- every ordered payload migration step
+- newer supported minor fields survive read-save
+- newer major and wrong app id reject before mutation
+- migration/validation/relink cancellation leaves live state unchanged
+- no shallow merge with current defaults
+- legacy snapshot and Video Marker fixture imports
+- atomic-write failure preserves the prior project
+- autosave runs only after idle successful commits and never during drag/load/export
+- recovery does not overwrite an explicit project
+- result resource path traversal rejection, relative path normalization, size,
+  hash, success, and partial failure records
+
+Exit condition: the persistence engine is app-neutral and one synthetic app can
+save/open/recover/migrate without app-owned dialog or autosave code.
+
+### Phase 4: Archetype Pilots
+
+Migrate these apps in order. Do not start the full fleet until all five expose
+and resolve framework gaps without adding app-id branches:
+
+1. `chrono_overlay`: simple functional state, ordinary plot, single-file export
+2. `dic_postprocess`: multiple sources, image/overlay rendering, table/image export
+3. `batch_crop`: state-driven batch workflow, rectangle/scale tools, multi-file export
+4. `dic_preprocess`: paired axes, point matching, crop/mask tools, hover wheel routing
+5. `video_marker`: long-lived annotations, autosave/recovery, legacy project import
+
+Each pilot must use the exact per-app checklist below. If a pilot needs a
+framework mechanic, implement it app-neutrally and retest the earlier pilots.
+Do not add a pilot-only compatibility surface to the final authoring API.
+
+Exit condition: the simple, plot-heavy, batch-interaction, multi-axes, and
+durable-project archetypes all work through the same target contracts.
+
+### Phase 5: Full App Migration Waves
+
+Apps already completed as pilots are not repeated. Migrate remaining apps by
+archetype so one framework issue is solved once per wave.
+
+| Wave | App | Durable project focus | Resource/session focus |
+| --- | --- | --- | --- |
+| Electrochem | `cic` | DTA source records, selected curves, integration parameters/results | current curve and axes view |
+| Electrochem | `csc` | DTA sources, scan rate, curve/result settings | remove direct control mutation/no-op render |
+| Electrochem | `eis` | DTA sources and plot/export parameters | axis choice and zoom view |
+| Electrochem | `vt_resistance` | DTA sources, fit parameters/results | current item and plot view |
+| Neuro/wearable | `rhs_preview` | RHS source records, protocol/filter definitions | channel/time selection; remove closure state |
+| Neuro/wearable | `nerve_response_analysis` | source records, analysis parameters, annotations/results | review selection and preview cache |
+| Neuro/wearable | `response_review_stats` | source records, review/statistics parameters/results | review selection |
+| Neuro/wearable | `ecg_print` | recording source, import/filter/segment settings, events/measurements | selected channel/segment and plot view |
+| Gait | `gait_analysis` | pose source, analysis options and reproducible results | preview mode and current selection |
+| Image | `curvature` | image source, curve points, calibration, fit/length results | controlled curve editor; remove handle state |
+| Image | `image_enhance` | source records, ordered steps, per-item settings, export preferences | preview caches; remove ROI/listener state |
+| Image | `image_match` | source/reference records, ordered match steps, export preferences | preview caches and current item |
+| Image | `flir_thermal` | thermal sources, display parameters, measurements/ROIs | current item and controlled ROI resources |
+| Image | `focus_stack` | image source records, alignment/stack settings and results | preview caches/mode |
+| Special | `figure_studio` | imported figure reference or extracted plot model plus style | axes/graphics resources outside state |
+
+Pilot durable/resource focus:
+
+| App | Durable project focus | Resource/session focus |
+| --- | --- | --- |
+| `chrono_overlay` | DTA sources and plot/export parameters | current selection and plot view |
+| `dic_postprocess` | MAT/reference/mask sources and display/export parameters | prepared overlays and preview selection |
+| `batch_crop` | source records, crop centers/angles/scales/output preferences | canvas cache and controlled tools outside state |
+| `dic_preprocess` | image sources, alignment/crop/mask/match annotations | paired/mask/crop resources outside state |
+| `video_marker` | video source, skeleton, annotations, calibration, export preferences | current frame/image cache and controlled editors |
+
+### Per-App Migration Checklist
+
+Execute every item for one app before marking it migrated:
+
+1. Read its definition, initial state, actions, layout, visible update,
+   workflow helpers, result writers, unit tests, and GUI workflow tests.
+2. Record current behavior and export names. Do not infer scientific intent
+   from another app.
+3. Classify every state field as durable project, ephemeral session, derived
+   cache, or runtime resource. A field may have exactly one owner.
+4. Create the five required project buckets and four required session buckets.
+5. Move handles, listeners, editors, timers, figures/axes, debug/services, and
+   tool structs into managed resources.
+6. Add the app project spec: current payload version, create, validate, ordered
+   migrations, source records, and any justified legacy import.
+7. Convert closure/nested state handlers to named
+   `(state,event,services)->state` handlers.
+8. Replace trivial control get/set callbacks with layout bindings.
+9. Replace direct control mutations and `refreshAll` with one deterministic
+   presenter.
+10. Register prepared plot renderers; do not pass app UI registries into
+    calculations or project helpers.
+11. Express active tools as controlled presentation interaction specs.
+12. Route save/open/autosave/recovery through `saveState/loadState` services;
+    remove app-owned persistence controllers after compatibility tests pass.
+13. Preserve existing result files and add one standard result manifest.
+14. Add project round-trip, migration/legacy, presenter, and result-manifest
+    unit tests using synthetic non-sensitive data.
+15. Update the existing hidden GUI workflow test to exercise the real v2 path.
+16. Search the app for old control/runtime/interaction calls and delete unused
+    adapters only after the new path is covered.
+17. Review the diff for thresholds, labels, filenames, columns, or workflow
+    changes. Revert any unapproved drift.
+18. Record the app as complete in the phase checkpoint only when focused tests
+    pass or an exact deferred-validation reason is recorded.
+
+### Phase 6: Surface Reduction And Current Documentation
+
+After every public app and test uses v2:
+
+- Recompute public API usage dynamically.
+- Internalize or delete normal app-facing `control.*` setters/getters.
+- Remove app construction of interaction runtimes and obsolete callback-chain
+  compatibility code.
+- Fold runtime dialogs, titles, dispatch, busy, portable references, project,
+  result, and debug mechanics behind launch/services while retaining the stable
+  `saveState/loadState` facade.
+- Keep only proven advanced plot/interaction helpers.
+- Remove unused `Startup`, `Hydrate`, `Snapshot`, action effects, v1 definition,
+  and v1 render paths after compatibility fixtures cover supported imports.
+- Update `docs/ui.md`, `docs/apps.md`, and `docs/architecture.md` to describe
+  the landed contract.
+- Merge any durable rationale from `docs/ui-runtime-redesign.md` into the
+  current docs, then delete or relabel the proposal so two architectures are
+  not presented as current.
+- Update scoped `AGENTS.md` and skills only where the target authoring contract
+  changes their execution rules.
+- Shrink this guide back to a compact ledger after all completion criteria pass.
+
+Target final public surface: at most 32 `labkit.ui` public function files and
+at most 20 concepts in the new-app quick-start path. Do not meet the number by
+combining unrelated behavior into vague string dispatchers.
+
+### Validation Cadence
+
+Honor the requested staged cadence:
+
+- Do not run broad checks after every helper or callback edit.
+- During framework phases, run the smallest reusable UI unit/GUI selection that
+  proves the new invariant.
+- During an app wave, run focused app-owned unit and hidden GUI suites after a
+  coherent app or wave checkpoint, not every file edit.
+- Run `buildtool changedFast` at stable framework/pilot/wave checkpoints only
+  when its broader routing adds information.
+- Treat `buildtool changed` as the final stable changed-file gate, not the
+  iteration loop.
+- Before the final PR, run `buildtool changed`, `buildtool baseMatlab`,
+  `buildtool headless`, and `buildtool gui` unless a broader completed gate
+  demonstrably covers one of them. Diagnose failures with the narrowest owning
+  suite before rerunning a final broad gate.
+- Manually validate pointer/wheel/drag behavior for DIC Preprocess, Batch Crop,
+  Curvature, Image Enhance/Match, Video Marker, and Figure Studio. Do not claim
+  hidden GUI tests prove visual feel or interactive scientific correctness.
+- Run MATLAB and GitHub/CI commands with host escalation as required by
+  `AGENTS.md`.
+
+### Version And Changelog Closure
+
+Per the user's instruction, do not spend every intermediate commit resolving
+all app versions, changelog records, and broad gates while the architecture is
+still moving. Before the final PR:
+
+- bump the UI facade version according to the final public contract change
+- bump every changed app version from the latest mainline baseline
+- update `CHANGELOG.md` with coherent framework/app evolution records and
+  compatibility notes
+- validate changelog metadata with the canonical release parser
+- make no claim that interim version guardrails pass until this closure lands
+
+Do not publish a release or remove a supported legacy reader as part of the
+migration unless the user separately requests it.
+
+### Non-Goals
+
+- No scientific redesign.
+- No output-column or filename cleanup hidden inside the migration.
+- No new third-party dependency.
+- No conversion of structs to MATLAB classes.
+- No monolithic app or single launcher replacement.
+- No public helper promoted from one app without the boundary test.
+- No line-count-only extraction campaign.
+- No deletion of old readers before real compatibility fixtures pass.
+
+### Real Blockers
+
+Stop and request direction only when:
+
+- preserving a published project/result format conflicts with the target and
+  source/tests cannot determine the intended compatibility behavior
+- a change would alter scientific results or user-facing workflow meaning
+- MATLAB behavior proves a framework invariant impossible after a minimal
+  reproducible framework test and documented alternatives
+- a required source format or private compatibility fixture is unavailable and
+  cannot be represented synthetically
+- permissions/runtime access prevent required final validation or git handoff
+
+Large scope, hard code, temporary test failures, or an incomplete migration
+wave are not blockers.
+
+### Completion Criteria
+
+All conditions are required:
+
+- all 20 public apps use v2 definitions and the canonical state root
+- zero closure-owned duplicate semantic state
+- zero no-op presenter contract
+- zero UI handles/listeners/tools/services in semantic app state
+- zero production app calls to `labkit.ui.control.*`
+- zero production app construction of `labkit.ui.interaction.runtime`
+- zero app-owned figure callback restoration
+- one queued event loop and one interaction hub per figure
+- DIC paired matching stays on the main page and wheel target follows hover
+- every app saves and reopens a current project through `saveState/loadState`
+- every app has current payload validation and required migration tests
+- supported v1 snapshots and legacy Video Marker projects import read-only
+- every result export has a valid standard manifest while preserving prior files
+- public UI surface meets the target without vague API consolidation
+- current human docs and agent rules describe only the landed architecture
+- final version/changelog closure is complete
+- required focused, changed, base-MATLAB, headless, GUI, manual, and CI evidence
+  is recorded without overstating coverage
+- this active route is removed or reduced to exact remaining debt
+
+### Phase Checkpoint Format
+
+At the end of a phase, update this route with only:
+
+```text
+phase: <number/name>
+status: complete | active | blocked
+completed contracts: <short list>
+migrated apps: <dynamic list>
+compatibility retained: <short list>
+tests: <commands and result or exact deferral>
+next phase: <one line>
+blocker: <only when real>
+```
+
+Do not append chronological diary entries or per-file logs.
 
 ## Reopen Triggers
 

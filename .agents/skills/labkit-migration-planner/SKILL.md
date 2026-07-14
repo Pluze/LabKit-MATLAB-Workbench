@@ -170,8 +170,10 @@ For each proposed migration, classify work as:
 - ordinary UI: keep the data-only spec in
   `+<app_slug>/+userInterface/buildWorkbenchLayout.m`; use app-local custom
   builders only for justified interactions
-- runtime orchestration: prefer `labkit.ui.app.define` plus
-  `labkit.ui.app.run`; public entrypoints stay thin dispatch wrappers
+- runtime orchestration: prefer the current `labkit.ui.runtime.define` plus
+  `labkit.ui.runtime.run`; active replacement contracts must come from the
+  executable route in `.agents/migration_guide.md`, and public entrypoints stay
+  thin dispatch wrappers until that route lands
 - reusable foundation: use `labkit-boundary-guard` before touching `+labkit`
 - validation routing: use `labkit-test-planner`
 - documentation drift: update only the source that owns the changed contract

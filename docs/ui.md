@@ -1,5 +1,11 @@
 # UI Library
 
+This page documents the current supported UI contract. The proposed
+framework-wide replacement for callback ordering, semantic state, managed
+interactions, project documents, and result manifests is described in
+[UI Runtime And App Data Redesign](ui-runtime-redesign.md); it is not yet the
+production API.
+
 `labkit.ui` is the reusable MATLAB GUI foundation. It is split into app-facing facade packages:
 
 | Facade | Owns | Main APIs |

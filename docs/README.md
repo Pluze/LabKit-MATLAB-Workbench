@@ -16,6 +16,9 @@ the app catalog; maintainer references are grouped separately.
 - [private-apps.md](private-apps.md): local private app workspace structure
   for apps kept outside the public repository.
 - [architecture.md](architecture.md): package boundaries and extraction rules.
+- [ui-runtime-redesign.md](ui-runtime-redesign.md): proposed next-generation UI
+  runtime, project-document, and result-manifest architecture. Current APIs
+  remain in `ui.md` until the migration lands.
 - [testing.md](testing.md): compact build-task entry points, automatic
   changed-file routing, CI scope, fixtures, and GUI validation limits.
 - [release.md](release.md): version selection, tag naming, and GitHub release
