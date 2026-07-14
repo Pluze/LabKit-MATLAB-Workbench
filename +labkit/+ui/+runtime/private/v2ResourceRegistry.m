@@ -15,9 +15,25 @@ function varargout = v2ResourceRegistry(fig, command, varargin)
             clearScope(fig, varargin{:});
         case "clearAll"
             clearAll(fig);
+        case "listIds"
+            varargout{1} = listIds(fig, varargin{1});
         otherwise
             error('labkit:ui:runtime:InvalidResourceCommand', ...
                 'Unsupported resource registry command "%s".', command);
+    end
+end
+
+function ids = listIds(fig, scope)
+    runtime = runtimeFromFigure(fig);
+    if isempty(runtime.resources)
+        ids = strings(1, 0);
+        return;
+    end
+    matches = [runtime.resources.scope] == string(scope);
+    if ~any(matches)
+        ids = strings(1, 0);
+    else
+        ids = string({runtime.resources(matches).id});
     end
 end
 

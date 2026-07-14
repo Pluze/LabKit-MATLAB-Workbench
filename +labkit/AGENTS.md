@@ -71,7 +71,12 @@
   queued events, `Present`, registered renderers, and managed resources. Do
   not expose the v2 private queue, store, presentation, or resource-registry
   helpers as public APIs.
-- Preview-axis tools that need pointer, drag, scroll, or hit-test ownership must use `labkit.ui.interaction.runtime` sessions instead of each helper managing figure/axes callbacks independently.
+- Runtime v2 owns one private figure interaction hub. V2 apps declare
+  controlled interaction specs from `Present` and must not construct
+  `labkit.ui.interaction.runtime` or restore figure callbacks. Existing v1
+  apps and reusable compatibility tools continue to use interaction-runtime
+  sessions until their migration wave; they must not manage figure/axes
+  callbacks independently.
 - Interaction callbacks must keep user-facing semantic callbacks separate from internal refresh/sync callbacks, no-op when a setter receives the current value, and trace callback reason/source when a tool exposes debug trace.
 - Debug traces are diagnostic probes for GUI interaction failures, callback errors, stalled file loads, and environment-sensitive launch problems; do not turn them into workflow narration or log sensitive paths/data.
 - Debug contexts own framework crash reports, active-operation files, and

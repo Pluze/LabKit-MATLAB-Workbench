@@ -251,6 +251,17 @@ Minimum focused tests:
 Exit condition: framework GUI tests prove multi-axes behavior without an app
 fallback callback chain.
 
+```text
+phase: 2/figure-interaction-hub
+status: complete
+completed contracts: one hub per v2 figure; semantic preview targets; hover wheel routing and default zoom; central pointer/drag callbacks; atomic grouped sessions; controlled anchors, paired anchors, rectangle, and scale-bar reference reconciliation; programmatic callback suppression; scoped disposal
+migrated apps: none
+compatibility retained: v1 axes-scoped interaction runtime and existing anchor, rectangle, scale-bar, popout, and zoom helpers
+tests: focused Runtime V2 kernel and interaction-hub tests passed; full framework UI suite passed 20/20, including three-target routing, grouped routing/release, empty-area fallback, drag error cleanup, controlled update versus user edit, target deletion, figure disposal, and all v1 interaction compatibility tests; final buildtool changedFast passed all routed UI unit, representative app GUI, project, and framework UI GUI checks
+next phase: state persistence and result manifests
+blocker:
+```
+
 ### Phase 3: State Persistence And Result Manifests
 
 Required work:

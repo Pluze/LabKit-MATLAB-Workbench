@@ -23,11 +23,20 @@ function fig = runV2App(def, request)
         "processing", false, ...
         "resources", emptyResources(), ...
         "resourceListener", [], ...
+        "interactionHub", [], ...
         "lastPresentation", struct(), ...
         "metrics", struct("stateCommits", 0, ...
             "presentationCommits", 0, "eventsCompleted", 0));
     setappdata(fig, appRuntimeKey(), runtime);
     installResourceCleanup(fig);
+    runtime = getAppRuntime(fig);
+    runtime.interactionHub = v2FigureInteractionHub( ...
+        ui, @(event) enqueueEvent(fig, event), ...
+        @(target) disposeInteractionsForTarget(fig, target));
+    setappdata(fig, appRuntimeKey(), runtime);
+    v2ResourceRegistry(fig, "set", "figure", ...
+        "interactionHub", runtime.interactionHub, ...
+        @(hub) hub.delete());
     presentation = commitV2Presentation(getAppRuntime(fig), state);
     runtime = getAppRuntime(fig);
     runtime.lastPresentation = presentation;
@@ -39,6 +48,18 @@ function fig = runV2App(def, request)
         canonical = canonicalEvent(eventId, control.id, event, "user");
         canonical.meta.bindingPath = path;
         enqueueEvent(fig, canonical);
+    end
+end
+
+function disposeInteractionsForTarget(fig, target)
+    ids = v2ResourceRegistry(fig, "listIds", "interaction");
+    for k = 1:numel(ids)
+        controlled = v2ResourceRegistry(fig, "get", ...
+            "interaction", ids(k));
+        if ~isempty(controlled) && isfield(controlled, 'spec') && ...
+                any(controlled.spec.Targets == string(target))
+            v2ResourceRegistry(fig, "remove", "interaction", ids(k));
+        end
     end
 end
 

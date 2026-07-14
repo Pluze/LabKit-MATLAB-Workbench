@@ -18,6 +18,11 @@ function presentation = commitV2Presentation(runtime, state)
     if isfield(presentation, 'previews')
         applyPreviews(runtime, presentation.previews);
     end
+    if isfield(presentation, 'interactions')
+        reconcileV2Interactions(runtime, presentation.interactions);
+    else
+        reconcileV2Interactions(runtime, struct());
+    end
 end
 
 function applyBindings(ui, bindings, state)
