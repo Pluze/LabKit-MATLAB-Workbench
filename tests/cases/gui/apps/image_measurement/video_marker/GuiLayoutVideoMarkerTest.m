@@ -15,7 +15,6 @@ classdef GuiLayoutVideoMarkerTest < matlab.unittest.TestCase
             h.assertStandardWorkbenchLayout(fig);
             h.assertButtonContract(fig, {'Open video', 'Previous frame', ...
                 'Next frame', 'Undo last point', 'Clear frame points', ...
-                'Interpolate frame', 'Track from previous', ...
                 'Add keypoint', 'Remove keypoint', 'Move up', 'Move down', ...
                 'Use preset', 'Add connection', 'Connect in order', ...
                 'Remove connection', 'Open project', ...
@@ -35,6 +34,8 @@ classdef GuiLayoutVideoMarkerTest < matlab.unittest.TestCase
             h.assertTabTitles(fig, {'Setup + Scale', 'Video', 'Import + Export', 'Log'});
             testCase.verifyEmpty(findall(fig, 'Type', 'uibutton', 'Text', 'Start point edit'));
             testCase.verifyEmpty(findall(fig, 'Type', 'uibutton', 'Text', 'Confirm frame'));
+            testCase.verifyEmpty(findall(fig, 'Type', 'uibutton', 'Text', 'Interpolate frame'));
+            testCase.verifyEmpty(findall(fig, 'Type', 'uibutton', 'Text', 'Track from previous'));
             testCase.verifyTrue(debug.enabled && debug.traceEnabled);
             assertAnyTextAreaContains(h, fig, 'Video marker debug trace enabled', ...
                 'Debug trace should be mirrored into the visible Log tab.');
@@ -100,15 +101,29 @@ classdef GuiLayoutVideoMarkerTest < matlab.unittest.TestCase
 
             runtime = getappdata(fig, 'labkitUiAppRuntime');
             testCase.verifyEqual(runtime.state.currentFrame, 2);
-            testCase.verifyEqual(string(ui.controls.trackFromPrevious.button.Enable), "on");
             testCase.verifyEqual(runtime.state.skeleton.pointNames, ["hip"; "knee"]);
             testCase.verifyEqual(runtime.state.skeleton.edges, [1 2]);
-            testCase.verifyEqual(video_marker.frameAnnotations.framePoints( ...
-                runtime.state.annotations, 2), [20 30; 40 50]);
+            predicted = video_marker.frameAnnotations.framePoints( ...
+                runtime.state.annotations, 2);
+            testCase.verifySize(predicted, [2 2]);
+            testCase.verifyTrue(all(isfinite(predicted), 'all'));
             testCase.verifyEqual(video_marker.frameAnnotations.statusName( ...
                 runtime.state.annotations.frameStatus(1)), "confirmed");
             testCase.verifyEqual(video_marker.frameAnnotations.statusName( ...
                 runtime.state.annotations.frameStatus(2)), "draft");
+            testCase.verifyEqual(video_marker.frameAnnotations.sourceName( ...
+                runtime.state.annotations.frameSource(1)), "manual");
+            testCase.verifyEqual(video_marker.frameAnnotations.sourceName( ...
+                runtime.state.annotations.frameSource(2)), "predicted");
+
+            predictedRevision = runtime.state.annotations.anchorRevision(2);
+            invoke(ui.controls.previousFrame.button);
+            invoke(ui.controls.nextFrame.button);
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            testCase.verifyEqual(video_marker.frameAnnotations.framePoints( ...
+                runtime.state.annotations, 2), predicted, 'AbsTol', 1e-12);
+            testCase.verifyEqual(runtime.state.annotations.anchorRevision(2), ...
+                predictedRevision);
         end
 
 

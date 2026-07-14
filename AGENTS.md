@@ -42,6 +42,12 @@ debt for the touched area.
 - Preserve behavior unless the user explicitly asks for a behavior change.
 - Keep app-specific formulas, thresholds, plots, result schemas, exports, and workflow decisions in the owning app.
 - Keep reusable `+labkit` API growth conservative and domain-neutral.
+- Production apps and reusable facades must not introduce third-party runtime
+  packages, Python/Conda environments, downloaded model weights, or first-run
+  network installation. Use MATLAB, explicitly declared MathWorks products,
+  and repository-owned LabKit code. A new third-party runtime dependency needs
+  explicit user approval plus an architecture, deployment, and offline-use
+  review; it must never arrive as an incidental implementation detail.
 - Local private apps may live under ignored `private_apps/apps/` workspaces or
   `LABKIT_PRIVATE_APP_ROOTS`; keep their code, docs, tests, and release notes
   in their own private repositories. Public docs may describe only the generic
@@ -51,6 +57,11 @@ debt for the touched area.
 - Do not reintroduce root-level legacy command wrappers, app-specific public helper packages, or public helper-dump packages such as `+labkit/+analysis`, `+data`, `+io`, or `+util`.
 - Do not convert struct models to MATLAB classes, rewrite all GUIs, replace separate app entry points with one launcher, or migrate code to another language without explicit approval.
 - Treat file line budgets as maintainability backstops, not extraction goals. Do not create or preserve tiny app helpers solely to lower a `run.m` line count; keep callback-local glue local when that makes workflow order clearer, and extract only cohesive app-owned contracts or reusable framework mechanics.
+- Name functions for the specific action and object they own so callers can
+  understand intent without opening the implementation. Avoid context-free
+  names such as `normalize`, `process`, `handle`, or `manage` when a concrete
+  name such as `upgradeAnnotationSchema` or `readFrameCached` expresses the
+  actual contract.
 - Path or file-target collections must use string arrays or cell arrays. Never build multiple paths with char bracket concatenation such as `[fullfile(...), fullfile(...)]`.
 - Folder/path scalars must not be reshaped with `(:)`, because char paths become one element per character. Use `string(folder)` for one selected folder/path and reserve `paths(:)` for values already known to be string arrays or cell arrays of paths.
 - UI numeric control values must be sanitized to finite scalars before they are assigned into app state, step structs, or task structs. Do not write `step.amount = double(amount)` or similar directly from callback values; use a small scalar-normalization helper with a fallback.

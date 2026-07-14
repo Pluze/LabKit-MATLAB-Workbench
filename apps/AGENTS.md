@@ -13,6 +13,11 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
 
 ## App Ownership
 
+- Apps follow the root dependency boundary: do not add package-manager setup,
+  Python environments, third-party runtime libraries, downloaded model
+  weights, or network-installed inference assets. Additional MathWorks product
+  use must be deliberate, visible in app behavior or requirements, and must
+  not trigger installation from an app callback.
 - Keep domain formulas, thresholds, integration rules, option defaults, plot labels, result fields, export columns, failed-row behavior, alert wording/trigger decisions, and log wording app-local unless the user explicitly approves a boundary change.
 - Private apps under `private_apps/apps/` or `LABKIT_PRIVATE_APP_ROOTS` should
   follow the same app-owned package shape as public apps, but their app
@@ -93,6 +98,12 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
 - App-local file dialogs that remain outside `filePanel` must use
   `labkit.ui.runtime.defaultDialogFolder("input")` or `"output"` instead of `pwd`
   or bare output filenames.
+- Project, snapshot, manifest, and autosave imports that contain external file
+  fields must store `labkit.ui.runtime.createPortableFileReference` values and
+  resolve each field through `resolveOrPromptForFileReference`. Missing or
+  malformed saved paths must offer manual relinking with a field-specific
+  label; do not silently clear the field or make an old absolute path the only
+  recovery route. Apps still validate the selected file's format and content.
 - Do not create app-specific helper packages outside the owning app tree, and do not move app-specific helper code into `+labkit`.
 - When an app needs extracted helpers, prefer an app-owned package under the app folder. The package name should match the app folder slug, such as `apps/image_measurement/batch_crop/+batch_crop/`.
 - New extracted app helper code should use concrete workflow packages named

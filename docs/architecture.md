@@ -18,6 +18,20 @@ Apps should remain independently launchable. The reusable library should grow
 only when a helper is domain-neutral, app-facing, tested, and useful beyond one
 workflow.
 
+## Runtime Dependency Boundary
+
+LabKit apps run from MATLAB and repository-owned code. Production apps and
+facades do not create Python or Conda environments, install third-party runtime
+packages, download model weights, or require a network connection on first
+use. This keeps source checkouts, offline packages, and restored lab systems
+reproducible.
+
+An app may use a MathWorks product already available in the MATLAB installation
+when the capability is deliberate and its unavailable state remains
+understandable. Adding any third-party runtime is an architecture and deployment
+decision requiring explicit approval; it is not an ordinary app-local
+implementation choice.
+
 ## Runtime Entrypoints
 
 Users normally start with:

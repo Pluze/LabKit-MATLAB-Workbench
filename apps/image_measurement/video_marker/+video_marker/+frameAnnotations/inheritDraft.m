@@ -19,5 +19,6 @@ function annotations = inheritDraft(annotations, frameIndex, force)
         return;
     end
     annotations = video_marker.frameAnnotations.setFramePoints( ...
-        annotations, frameIndex, points, "draft");
+        annotations, frameIndex, points, "draft", "predicted", ...
+        zeros(size(points, 1), 1));
 end

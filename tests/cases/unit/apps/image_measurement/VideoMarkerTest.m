@@ -53,6 +53,10 @@ classdef VideoMarkerTest < matlab.unittest.TestCase
             annotations = video_marker.frameAnnotations.inheritDraft(annotations, 2);
             testCase.verifyEqual(video_marker.frameAnnotations.statusName( ...
                 annotations.frameStatus(2)), "draft");
+            testCase.verifyEqual(video_marker.frameAnnotations.sourceName( ...
+                annotations.frameSource(1)), "manual");
+            testCase.verifyEqual(video_marker.frameAnnotations.sourceName( ...
+                annotations.frameSource(2)), "predicted");
             testCase.verifyEqual(video_marker.frameAnnotations.framePoints(annotations, 2), ...
                 [10 20; 30 40; 50 60]);
 
@@ -69,29 +73,77 @@ classdef VideoMarkerTest < matlab.unittest.TestCase
             testCase.verifyEqual(payload.annotations.frameStatus, annotations.frameStatus);
         end
 
-        function interpolation_uses_nearest_bracketing_confirmed_frames(testCase)
+        function legacy_annotations_upgrade_with_manual_and_predicted_sources(testCase)
             setupLabKitTestPath();
-            annotations = video_marker.frameAnnotations.emptyAnnotations(7, 2);
-            annotations = video_marker.frameAnnotations.setFramePoints( ...
-                annotations, 2, [10 20; 30 40], "confirmed");
-            annotations = video_marker.frameAnnotations.setFramePoints( ...
-                annotations, 6, [18 28; 46 56], "confirmed");
-            [points, bounds] = video_marker.frameAnnotations.interpolatedPoints( ...
-                annotations, 4);
-            testCase.verifyEqual(bounds, [2 6]);
-            testCase.verifyEqual(points, [14 24; 38 48], 'AbsTol', 1e-12);
+            legacy = struct('schemaVersion', 1, ...
+                'coords', NaN(3, 1, 2), ...
+                'frameStatus', uint8([2; 1; 0]));
+            upgraded = video_marker.frameAnnotations.upgradeAnnotationSchema(legacy);
+            testCase.verifyEqual(upgraded.schemaVersion, 2);
+            testCase.verifyEqual(upgraded.frameSource, uint8([1; 2; 0]));
+            testCase.verifyEqual(upgraded.trackingConfidence(1), 1);
+            testCase.verifyTrue(isnan(upgraded.trackingConfidence(2)));
         end
 
-        function local_block_matching_tracks_translated_point(testCase)
+        function pyramidal_klt_tracks_translated_point(testCase)
             setupLabKitTestPath();
-            previous = zeros(50, 60);
-            patch = reshape(mod(1:81, 17), 9, 9) ./ 17;
-            previous(21:29, 26:34) = patch;
-            current = zeros(50, 60);
-            current(19:27, 29:37) = patch;
-            points = video_marker.motionEstimate.trackPoints( ...
-                previous, current, [30 25]);
-            testCase.verifyEqual(points, [33 23]);
+            testCase.assumeEqual(exist('vision.PointTracker', 'class'), 8, ...
+                'Computer Vision Toolbox is unavailable.');
+            rng(7);
+            previous = rand(80, 100);
+            current = zeros(size(previous));
+            current(1:78, 4:100) = previous(3:80, 1:97);
+            [points, confidence, diagnostics] = ...
+                video_marker.motionEstimate.trackPoints( ...
+                previous, current, [50 40]);
+            testCase.verifyEqual(points, [53 38], 'AbsTol', 0.35);
+            testCase.verifyGreaterThan(confidence, 0.5);
+            testCase.verifyTrue(diagnostics.valid);
+            testCase.verifyEqual(diagnostics.engine, "pyramidal_klt");
+        end
+
+        function forward_prediction_reuses_cache_until_manual_anchor_changes(testCase)
+            setupLabKitTestPath();
+            testCase.assumeEqual(exist('vision.PointTracker', 'class'), 8, ...
+                'Computer Vision Toolbox is unavailable.');
+            rng(11);
+            frame = rand(60, 80);
+            frames = {frame, frame, frame};
+            readCount = 0;
+            reader = @readCounted;
+            annotations = video_marker.frameAnnotations.emptyAnnotations(3, 1);
+            annotations = video_marker.frameAnnotations.setFramePoints( ...
+                annotations, 1, [40 30], "confirmed");
+
+            [annotations, ~, first] = video_marker.motionEstimate.predictForward( ...
+                reader, annotations, 1, 3, frame);
+            testCase.verifyEqual(first.predictedFrames, 2);
+            testCase.verifyEqual(first.cachedFrames, 0);
+            testCase.verifyEqual(readCount, 2);
+            revision = annotations.anchorRevision(1);
+            testCase.verifyEqual(annotations.anchorRevision(2:3), ...
+                repmat(revision, 2, 1));
+
+            [annotations, ~, second] = video_marker.motionEstimate.predictForward( ...
+                reader, annotations, 1, 3, frame);
+            testCase.verifyEqual(second.predictedFrames, 0);
+            testCase.verifyEqual(second.cachedFrames, 2);
+            testCase.verifyEqual(readCount, 3, ...
+                'A valid prediction chain should decode only its target frame.');
+
+            annotations = video_marker.frameAnnotations.setFramePoints( ...
+                annotations, 1, [41 30], "confirmed", "manual", 1);
+            [annotations, ~, third] = video_marker.motionEstimate.predictForward( ...
+                reader, annotations, 1, 3, frame);
+            testCase.verifyEqual(third.predictedFrames, 2);
+            testCase.verifyEqual(third.cachedFrames, 0);
+            testCase.verifyNotEqual(annotations.anchorRevision(2), revision);
+            testCase.verifyEqual(readCount, 5);
+
+            function image = readCounted(index)
+                readCount = readCount + 1;
+                image = frames{index};
+            end
         end
 
         function coordinate_export_applies_scale_origin_and_y_axis(testCase)
@@ -146,6 +198,33 @@ classdef VideoMarkerTest < matlab.unittest.TestCase
             testCase.verifyEqual(size(loaded.annotations.coords), [1 5 2]);
         end
 
+        function project_video_reference_survives_bundle_move(testCase)
+            setupLabKitTestPath();
+            sourceRoot = string(tempname);
+            movedRoot = string(tempname);
+            mkdir(fullfile(sourceRoot, "projects"));
+            mkdir(fullfile(sourceRoot, "media"));
+            cleanup = onCleanup(@() cleanupTwoFolders(sourceRoot, movedRoot));
+            videoPath = fullfile(sourceRoot, "media", "sample.avi");
+            fileId = fopen(videoPath, 'w');
+            fclose(fileId);
+
+            state = video_marker.appLifecycle.createInitialState();
+            state.videoPath = videoPath;
+            state.videoInfo.path = videoPath;
+            projectPath = fullfile(sourceRoot, "projects", "project.mat");
+            state.projectPath = projectPath;
+            video_marker.projectFiles.saveProject(projectPath, state);
+            movefile(sourceRoot, movedRoot);
+
+            movedProject = fullfile(movedRoot, "projects", "project.mat");
+            movedVideo = fullfile(movedRoot, "media", "sample.avi");
+            loaded = video_marker.projectFiles.loadProject(movedProject);
+            expectedVideo = canonicalExistingPath(movedVideo);
+            testCase.verifyEqual(string(loaded.videoPath), expectedVideo);
+            testCase.verifyEqual(string(loaded.videoInfo.path), expectedVideo);
+        end
+
         function autosave_round_trip_is_atomic_and_discardable(testCase)
             setupLabKitTestPath();
             folder = string(tempname);
@@ -185,4 +264,15 @@ function cleanupFolder(folder)
     if strlength(string(folder)) > 0 && exist(char(folder), "dir") == 7
         rmdir(char(folder), "s");
     end
+end
+
+function cleanupTwoFolders(first, second)
+    cleanupFolder(first);
+    cleanupFolder(second);
+end
+
+function pathValue = canonicalExistingPath(pathValue)
+    [exists, attributes] = fileattrib(char(pathValue));
+    assert(exists, 'Expected test file does not exist.');
+    pathValue = string(attributes.Name);
 end
