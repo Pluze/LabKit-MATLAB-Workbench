@@ -20,6 +20,7 @@ function h = guiTestHelpers()
     h.assertTableColumns = @assertTableColumns;
     h.assertAnyTableColumns = @assertAnyTableColumns;
     h.assertFigureMinimumSize = @assertFigureMinimumSize;
+    h.assertStartupSucceeded = @assertStartupSucceeded;
     h.assertStandardWorkbenchLayout = @assertStandardWorkbenchLayout;
     h.findControlsByClass = @findControlsByClass;
     h.assertDropdownCallbacksPresent = @assertDropdownCallbacksPresent;
@@ -199,6 +200,7 @@ function assertFigureMinimumSize(fig, minWidth, minHeight)
 end
 
 function assertStandardWorkbenchLayout(fig)
+    assertStartupSucceeded(fig);
     assertFigureMinimumSize(fig, 1500, 900);
     mainGrid = findall(fig, 'Type', 'uigridlayout');
     hasWorkbenchColumns = false;
@@ -213,6 +215,39 @@ function assertStandardWorkbenchLayout(fig)
     end
     assert(hasWorkbenchColumns, ...
         'App should use the shared LabKit workbench shell layout.');
+end
+
+function assertStartupSucceeded(fig)
+    [settled, detail] = waitForCondition(fig, @() startupSettled(fig), 5.0);
+    if ~settled
+        error('LabKit:Tests:GuiStartupTimeout', ...
+            'App startup did not settle. %s', waitDiagnostic(detail));
+    end
+    if ~isappdata(fig, 'labkitUiStartup')
+        return;
+    end
+    state = getappdata(fig, 'labkitUiStartup');
+    if isstruct(state) && isfield(state, 'failed') && logical(state.failed)
+        message = "Startup failed without a diagnostic message.";
+        if isfield(state, 'message') && strlength(string(state.message)) > 0
+            message = string(state.message);
+        end
+        error('LabKit:Tests:GuiStartupFailed', '%s', char(message));
+    end
+end
+
+function tf = startupSettled(fig)
+    tf = false;
+    if ~isvalid(fig)
+        return;
+    end
+    if ~isappdata(fig, 'labkitUiStartup')
+        tf = true;
+        return;
+    end
+    state = getappdata(fig, 'labkitUiStartup');
+    tf = isstruct(state) && isfield(state, 'failed') && ...
+        isscalar(state.failed) && logical(state.failed);
 end
 
 function controls = findControlsByClass(fig, classNamePart)

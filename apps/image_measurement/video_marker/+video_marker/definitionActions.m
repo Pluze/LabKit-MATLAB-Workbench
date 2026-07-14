@@ -463,7 +463,7 @@ function actions = definitionActions()
             labkit.ui.control.setValue(ui, 'coordinateEndFrame', S.videoInfo.frameCount);
             refreshPreview();
         else
-            labkit.ui.plot.reset(ui, 'videoAxes', 'Frame + Skeleton', true, 'raw');
+            labkit.ui.plot.reset(ui, 'videoAxes', 'Frame + Skeleton', true, 'video');
         end
         labkit.ui.control.setValue(ui, 'keypointNames', strjoin(S.skeleton.pointNames, ", "));
         labkit.ui.control.setValue(ui, 'skeletonEdges', edgeText(S.skeleton));

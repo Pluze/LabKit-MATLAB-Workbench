@@ -259,6 +259,9 @@ App GUI layout tests should express user-facing and app-facing contracts:
 expected command buttons, dropdown choices, tabs, table columns, axes, callback
 wiring, and debug trace behavior. They should not assert raw MATLAB component
 class counts, because those counts are framework implementation details.
+The shared standard-workbench assertion waits for the startup lifecycle and
+fails on deferred startup errors, so a constructed shell is not mistaken for
+a successfully launched app.
 Reusable LabKit GUI tests may assert low-level control shape only when that
 shape is the framework behavior under test.
 Avoid duplicating expensive figure launches for the same contract. If an app

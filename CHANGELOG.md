@@ -44,6 +44,66 @@ Commits and PRs belong in `Evidence`, not in the navigation structure.
 
 ## Structured Change Records
 
+### Video Marker startup validation
+
+```labkit-change
+schema: 1
+id: LK-20260714-video-marker-startup-fix
+date: 2026-07-14
+type: fix
+compatibility: compatible
+component: `labkit_VideoMarker_app` | `1.0.0 -> 1.0.1`
+scope: `tests/shared/guiTestHelpers.m`
+```
+
+#### Context
+
+Video Marker declared its preview axes as `video` but reset an empty preview
+through the nonexistent `raw` axes id. The runtime correctly converted that
+deferred startup exception into a visible failure status, but the structural
+GUI test continued because it checked controls before asserting that startup
+had completed successfully.
+
+#### Decision and rationale
+
+Use the declared `video` axes id in the app and make the shared standard
+workbench assertion wait for the startup lifecycle. A startup failure now
+fails the GUI test with the runtime diagnostic instead of leaving the test
+green after only verifying that the shell was constructed.
+
+#### Changes
+
+- Corrected the empty-preview reset to target `videoAxes/video`.
+- Added a shared startup-success assertion to standard workbench GUI checks.
+- Added a synthetic regression proving deferred startup failures are rejected.
+
+#### User and data impact
+
+Video Marker opens normally before a video is selected. This change does not
+alter marker projects, coordinate exports, annotations, or measurement data.
+
+#### Compatibility and migration
+
+The fix is compatible with existing Video Marker projects and exported files.
+No user migration is required.
+
+#### Validation
+
+The Video Marker hidden GUI test covers the corrected initial preview path.
+The reusable declarative UI GUI test covers startup-failure detection in the
+shared helper. Final changed-file and GUI validation are recorded in the
+carrying commit and CI run.
+
+#### Evidence
+
+The carrying commit is located by Change ID
+`LK-20260714-video-marker-startup-fix`.
+
+#### Known limitations and follow-up
+
+Automated startup checks validate lifecycle completion and diagnostics; they
+do not replace manual review of video rendering or point-drag interaction.
+
 ### Gait Analysis app
 
 ```labkit-change
@@ -3072,7 +3132,7 @@ the `origin/main` merge-base values.
 | `labkit_FocusStack_app` | `1.4.9` | Image Measurement | `apps/image_measurement/focus_stack/+focus_stack/version.m` |
 | `labkit_ImageEnhance_app` | `1.5.8` | Image Measurement | `apps/image_measurement/image_enhance/+image_enhance/version.m` |
 | `labkit_ImageMatch_app` | `1.5.8` | Image Measurement | `apps/image_measurement/image_match/+image_match/version.m` |
-| `labkit_VideoMarker_app` | `1.0.0` | Image Measurement | `apps/image_measurement/video_marker/+video_marker/version.m` |
+| `labkit_VideoMarker_app` | `1.0.1` | Image Measurement | `apps/image_measurement/video_marker/+video_marker/version.m` |
 | `labkit_GaitAnalysis_app` | `1.0.0` | Gait | `apps/gait/gait_analysis/+gait_analysis/version.m` |
 | `labkit_RHSPreview_app` | `1.3.4` | Neurophysiology | `apps/neurophysiology/rhs_preview/+rhs_preview/version.m` |
 | `labkit_NerveResponseAnalysis_app` | `1.3.5` | Neurophysiology | `apps/neurophysiology/nerve_response_analysis/+nerve_response_analysis/version.m` |
