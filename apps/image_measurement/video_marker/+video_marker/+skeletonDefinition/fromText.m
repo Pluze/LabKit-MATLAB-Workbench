@@ -7,11 +7,6 @@ function skeleton = fromText(pointText, edgeText)
     if isempty(names)
         error('labkit_VideoMarker_app:NoKeypoints', 'Define at least one keypoint.');
     end
-    if numel(unique(lower(names))) ~= numel(names)
-        error('labkit_VideoMarker_app:DuplicateKeypoint', 'Keypoint names must be unique.');
-    end
-    ids = matlab.lang.makeValidName(cellstr(names), "ReplacementStyle", "delete");
-    ids = string(matlab.lang.makeUniqueStrings(ids));
 
     nameToIndex = containers.Map(cellstr(lower(names)), num2cell(1:numel(names)));
     edgeTokens = splitTokens(edgeText);
@@ -40,11 +35,7 @@ function skeleton = fromText(pointText, edgeText)
     edges = edges(1:edgeCount, :);
     edges = unique(edges, "rows", "stable");
 
-    skeleton = struct();
-    skeleton.schemaVersion = 1;
-    skeleton.pointIds = ids(:);
-    skeleton.pointNames = names(:);
-    skeleton.edges = edges;
+    skeleton = video_marker.skeletonDefinition.fromParts(names, edges);
 end
 
 function tokens = splitTokens(textValue)

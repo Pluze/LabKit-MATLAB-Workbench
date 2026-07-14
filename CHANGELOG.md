@@ -44,6 +44,91 @@ Commits and PRs belong in `Evidence`, not in the navigation structure.
 
 ## Structured Change Records
 
+### Video Marker visual skeleton setup and continuous marking
+
+```labkit-change
+schema: 1
+id: LK-20260714-video-marker-continuous-marking
+date: 2026-07-14
+type: feat
+compatibility: compatible
+component: `labkit.ui` | `5.1.0 -> 5.1.1`
+component: `labkit_VideoMarker_app` | `1.0.1 -> 1.1.0`
+```
+
+#### Context
+
+Video Marker required comma-separated keypoint names, manually encoded edge
+text, a start/finish edit toggle, and a separate confirm action. Those controls
+made skeleton setup error-prone and added modes that did not match the direct
+click-and-drag interaction already supported by the point editor.
+
+#### Decision and rationale
+
+Make skeleton definition the first explicit step, represent keypoints and
+connections as structured controls, and keep point editing active for the
+whole video session. Frame navigation is the save boundary; complete frames
+confirm automatically and inherited frames remain drafts until edited.
+
+#### Changes
+
+- Replaced long skeleton strings with an editable ordered-keypoint table,
+  mutually filtered connection endpoint selectors, and add/remove/reorder actions.
+- Added editable skeleton presets led by the legacy iliac-to-foot five-point
+  leg chain, while keeping blank custom construction available.
+- Added a connect-in-order shortcut that fills all adjacent point connections
+  without removing other user-defined edges.
+- Added the domain-neutral `labkit.ui.control.setItems` API for dynamically
+  updating selectable control choices without firing app callbacks.
+- Added `labkit.ui.plot.replaceOverlay` so image apps can replace one named
+  overlay layer without clearing peer graphics, view limits, or callbacks.
+- Added hidden-test-safe `labkit.ui.runtime.confirm` for app-owned two-choice
+  recovery and confirmation workflows.
+- Removed start/finish and confirm controls; blank clicks add points in order,
+  dragging refines them, and frame changes save and inherit coordinates.
+- Made point edits refresh only the skeleton overlay so zoom, wheel handling,
+  and the active continuous-marking session survive each placed point.
+- Preserved the current X/Y viewport across frame navigation so users can mark
+  the same zoomed ROI through consecutive frames.
+- Added draft-only marking assists for temporal interpolation between nearest
+  confirmed frames and lightweight local block matching from the immediately
+  previous confirmed frame.
+- Added atomic change-driven project-compatible autosave in a visible subfolder
+  beside the source video, plus matching-video restore/start-new choices.
+- Added a new-setup action that explicitly clears the current session before a
+  different skeleton is declared.
+
+#### User and data impact
+
+Skeleton setup is visible and validated before video loading. Existing marker
+CSV, coordinate CSV, and project MAT schemas remain unchanged. Point order is
+still the coordinate-column identity contract.
+
+#### Compatibility and migration
+
+Existing marker CSV and project files remain readable. The workflow changes
+are UI-only; users no longer press Apply skeleton, Start point edit, or Confirm
+frame. Video Marker now requires `labkit.ui >=5.1.1 <6`.
+
+#### Validation
+
+Unit tests cover skeleton presets, edits, and edge remapping. Hidden GUI workflow tests
+cover preset application, table-based setup, mutually filtered connection choices, automatic editor
+activation, consecutive point placement with preserved zoom/scroll callbacks,
+complete-frame confirmation, frame inheritance, and draft-state
+preservation. UI framework tests cover dynamic selectable items.
+
+#### Evidence
+
+The carrying commit is located by Change ID
+`LK-20260714-video-marker-continuous-marking`.
+
+#### Known limitations and follow-up
+
+Automated hidden-GUI tests verify callbacks and state transitions but cannot
+judge visual density or pointer ergonomics; those still need a short manual
+review with a representative video.
+
 ### Video Marker startup validation
 
 ```labkit-change
@@ -3112,7 +3197,7 @@ the `origin/main` merge-base values.
 | Component | Current version | Family | Metadata location |
 |---|---:|---|---|
 | `labkit_launcher` | `1.4.0` | Launcher | `labkit_launcher.m` |
-| `labkit.ui` | `5.1.0` | Facade | `+labkit/+ui/version.m` |
+| `labkit.ui` | `5.1.1` | Facade | `+labkit/+ui/version.m` |
 | `labkit.dta` | `2.0.1` | Facade | `+labkit/+dta/version.m` |
 | `labkit.image` | `2.0.0` | Facade | `+labkit/+image/version.m` |
 | `labkit.thermal` | `1.1.0` | Facade | `+labkit/+thermal/version.m` |
@@ -3132,7 +3217,7 @@ the `origin/main` merge-base values.
 | `labkit_FocusStack_app` | `1.4.9` | Image Measurement | `apps/image_measurement/focus_stack/+focus_stack/version.m` |
 | `labkit_ImageEnhance_app` | `1.5.8` | Image Measurement | `apps/image_measurement/image_enhance/+image_enhance/version.m` |
 | `labkit_ImageMatch_app` | `1.5.8` | Image Measurement | `apps/image_measurement/image_match/+image_match/version.m` |
-| `labkit_VideoMarker_app` | `1.0.1` | Image Measurement | `apps/image_measurement/video_marker/+video_marker/version.m` |
+| `labkit_VideoMarker_app` | `1.1.0` | Image Measurement | `apps/image_measurement/video_marker/+video_marker/version.m` |
 | `labkit_GaitAnalysis_app` | `1.0.0` | Gait | `apps/gait/gait_analysis/+gait_analysis/version.m` |
 | `labkit_RHSPreview_app` | `1.3.4` | Neurophysiology | `apps/neurophysiology/rhs_preview/+rhs_preview/version.m` |
 | `labkit_NerveResponseAnalysis_app` | `1.3.5` | Neurophysiology | `apps/neurophysiology/nerve_response_analysis/+nerve_response_analysis/version.m` |

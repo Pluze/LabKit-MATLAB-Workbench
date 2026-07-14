@@ -8,8 +8,9 @@ function state = createInitialState()
     state.videoInfo = video_marker.videoSource.emptyInfo();
     state.currentFrame = 1;
     state.currentImage = [];
-    state.pointEditActive = false;
     state.skeleton = video_marker.skeletonDefinition.defaultSkeleton();
+    state.selectedPointIndex = 0;
+    state.selectedEdgeIndex = 0;
     state.annotations = video_marker.frameAnnotations.emptyAnnotations(0, 0);
     state.calibration = labkit.ui.interaction.scaleBarCalibration([], [], "px");
     state.exportPreferences = struct( ...
@@ -20,5 +21,5 @@ function state = createInitialState()
         "endFrame", 1);
     state.projectPath = "";
     state.outputFolder = "";
-    state.statusMessage = "Open a video to start marking.";
+    state.statusMessage = "Define keypoints and connections before opening a video.";
 end

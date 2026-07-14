@@ -1,7 +1,5 @@
-%DEFAULTSKELETON Return the generic starter keypoint chain.
+%DEFAULTSKELETON Return an empty skeleton for user configuration.
 % Expected caller: app state factory and reset actions. Side effects are none.
 function skeleton = defaultSkeleton()
-    skeleton = video_marker.skeletonDefinition.fromText( ...
-        "point_1, point_2, point_3, point_4, point_5", ...
-        "point_1-point_2, point_2-point_3, point_3-point_4, point_4-point_5");
+    skeleton = video_marker.skeletonDefinition.fromParts(strings(0, 1), zeros(0, 2));
 end
