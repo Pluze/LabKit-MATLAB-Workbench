@@ -1,6 +1,6 @@
 %WRITESAMPLEPACK Create synthetic debug files for labkit_GaitAnalysis_app.
-% Expected caller: debug startup and tests. Files contain synthetic pose data
-% only and no lab sample identifiers.
+% Expected caller: debug startup and debug sample-pack tests. Files contain
+% synthetic pose data only and no lab sample identifiers.
 function pack = writeSamplePack(debugLog)
     root = fullfile(tempdir, "labkit_gait_analysis_debug");
     if exist(root, "dir") ~= 7

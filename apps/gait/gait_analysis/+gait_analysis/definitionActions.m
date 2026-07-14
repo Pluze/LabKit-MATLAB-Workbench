@@ -18,7 +18,7 @@ function state = onStartup(state, ~, services)
         debugLog.trace('Gait analysis debug trace enabled.');
         debugLog.instrumentFigure(services.figure);
         try
-            pack = gait_analysis.debugArtifacts.writeSamplePack(debugLog);
+            pack = gait_analysis.debug.writeSamplePack(debugLog);
             addLog(services, sprintf('Debug sample file: %s', char(pack.representativeFiles)));
         catch ME
             debugLog.reportException('gaitAnalysis', 'Debug sample setup failed', ME);
