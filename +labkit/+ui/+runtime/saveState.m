@@ -29,8 +29,27 @@ function filepath = saveState(fig, filepath)
         filepath = string(filepath);
     end
     runtime = getAppRuntime(fig);
-    snapshot = createSnapshot(runtime);
-    save(filepath, 'snapshot');
+    if isfield(runtime.definition, 'contractVersion') && ...
+            runtime.definition.contractVersion == 2
+        labkitProject = createV2ProjectEnvelope(runtime);
+        beforeReplace = [];
+        if isstruct(runtime.request) && ...
+                isfield(runtime.request, 'projectBeforeReplace')
+            beforeReplace = runtime.request.projectBeforeReplace;
+        end
+        writeV2ProjectFile(filepath, labkitProject, beforeReplace);
+        runtime = getAppRuntime(fig);
+        runtime.document.path = filepath;
+        runtime.document.dirty = false;
+        runtime.document.modifiedAtUtc = ...
+            labkitProject.document.modifiedAtUtc;
+        runtime.document.envelope = labkitProject;
+        setappdata(fig, appRuntimeKey(), runtime);
+        updateV2DocumentTitle(fig);
+    else
+        snapshot = createSnapshot(runtime);
+        save(filepath, 'snapshot');
+    end
 end
 
 function filepath = chooseSnapshotOutput()

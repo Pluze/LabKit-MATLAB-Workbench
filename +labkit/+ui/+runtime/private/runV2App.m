@@ -24,6 +24,7 @@ function fig = runV2App(def, request)
         "resources", emptyResources(), ...
         "resourceListener", [], ...
         "interactionHub", [], ...
+        "document", createV2DocumentState(), ...
         "lastPresentation", struct(), ...
         "metrics", struct("stateCommits", 0, ...
             "presentationCommits", 0, "eventsCompleted", 0));
@@ -43,12 +44,32 @@ function fig = runV2App(def, request)
     runtime.metrics.presentationCommits = 1;
     setappdata(fig, appRuntimeKey(), runtime);
     dispatchStart(fig, def.start);
+    restoreRequestedRecovery(fig, request);
 
     function dispatchBindingCallback(control, event, path, eventId)
         canonical = canonicalEvent(eventId, control.id, event, "user");
         canonical.meta.bindingPath = path;
         enqueueEvent(fig, canonical);
     end
+end
+
+function restoreRequestedRecovery(fig, request)
+    runtime = getAppRuntime(fig);
+    candidate = discoverV2RecoveryFile(runtime.definition, request);
+    if strlength(candidate) > 0
+        setappdata(fig, 'labkitV2RecoveryCandidate', candidate);
+    end
+    requested = "";
+    if isstruct(request) && isfield(request, 'recoveryFile')
+        requested = string(request.recoveryFile);
+    elseif isstruct(request) && isfield(request, 'recover') && ...
+            logical(request.recover)
+        requested = candidate;
+    end
+    if strlength(requested) == 0
+        return;
+    end
+    restoreV2Project(fig, requested, true);
 end
 
 function disposeInteractionsForTarget(fig, target)
@@ -189,7 +210,16 @@ function processEvent(fig, event)
         latest.metrics.presentationCommits = ...
             latest.metrics.presentationCommits + 1;
         latest.metrics.eventsCompleted = latest.metrics.eventsCompleted + 1;
+        if event.source ~= "startup" && ...
+                ~isequaln(previous.project, next.project)
+            latest.document.dirty = true;
+            latest.document.revision = latest.document.revision + uint64(1);
+        end
         setappdata(fig, appRuntimeKey(), latest);
+        updateV2DocumentTitle(fig);
+        if latest.document.dirty
+            scheduleV2Autosave(fig);
+        end
         v2ResourceRegistry(fig, "clearScope", "event");
         appendPhaseTiming(fig, event, "completed", toc(startedAt), []);
     catch ME
@@ -285,6 +315,27 @@ function services = runtimeServices(fig, runtime)
         "get", @(scope, id) v2ResourceRegistry(fig, "get", scope, id), ...
         "remove", @(scope, id) v2ResourceRegistry(fig, "remove", scope, id), ...
         "clearScope", @(scope) v2ResourceRegistry(fig, "clearScope", scope));
+    services.results = struct( ...
+        "writeManifest", @(folder, spec) writeResultManifest( ...
+            fig, folder, spec));
+end
+
+function varargout = writeResultManifest(fig, folder, spec)
+    runtime = getAppRuntime(fig);
+    runtime.document.exporting = true;
+    setappdata(fig, appRuntimeKey(), runtime);
+    cleanup = onCleanup(@() clearExporting(fig));
+    [varargout{1:nargout}] = writeV2ResultManifest(runtime, folder, spec);
+    clear cleanup;
+end
+
+function clearExporting(fig)
+    if isempty(fig) || ~isvalid(fig) || ~isappdata(fig, appRuntimeKey())
+        return;
+    end
+    runtime = getAppRuntime(fig);
+    runtime.document.exporting = false;
+    setappdata(fig, appRuntimeKey(), runtime);
 end
 
 function dispatchProgrammatic(fig, event, varargin)

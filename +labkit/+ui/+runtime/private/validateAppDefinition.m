@@ -115,6 +115,30 @@ function validateProjectSpec(spec)
                 'Project.Migrations must be a cell array of function handles.');
         end
     end
+    migrations = {};
+    if isfield(spec, 'Migrations')
+        migrations = spec.Migrations;
+    end
+    if numel(migrations) ~= double(version) - 1
+        error('labkit:ui:runtime:InvalidDefinition', ...
+            'Project.Migrations must define every ordered version step.');
+    end
+    if isfield(spec, 'LegacyImports') && ...
+            (~isstruct(spec.LegacyImports) || ~isscalar(spec.LegacyImports) || ...
+            ~all(structfun(@(f) isa(f, 'function_handle'), spec.LegacyImports)))
+        error('labkit:ui:runtime:InvalidDefinition', ...
+            'Project.LegacyImports must map variable names to import functions.');
+    end
+    if isfield(spec, 'ApplyResume') && ...
+            ~isa(spec.ApplyResume, 'function_handle')
+        error('labkit:ui:runtime:InvalidDefinition', ...
+            'Project.ApplyResume must be a function handle.');
+    end
+    if isfield(spec, 'RelinkSources') && ...
+            ~isa(spec.RelinkSources, 'function_handle')
+        error('labkit:ui:runtime:InvalidDefinition', ...
+            'Project.RelinkSources must be a function handle.');
+    end
 end
 
 function validateRenderers(renderers)

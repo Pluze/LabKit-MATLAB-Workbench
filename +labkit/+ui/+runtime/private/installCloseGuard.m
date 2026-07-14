@@ -67,7 +67,21 @@ function message = closeMessage(fig)
         message = "LabKit is still working. Close anyway?";
         return;
     end
+    if isDirtyProject(fig)
+        message = "This project has unsaved changes. Close anyway?";
+        return;
+    end
     message = "Close this LabKit app?";
+end
+
+function tf = isDirtyProject(fig)
+    tf = false;
+    if ~isappdata(fig, 'labkitUiAppRuntime')
+        return;
+    end
+    runtime = getappdata(fig, 'labkitUiAppRuntime');
+    tf = isstruct(runtime) && isfield(runtime, 'document') && ...
+        logical(runtime.document.dirty);
 end
 
 function tf = normalizeResponse(confirmFcn, fig, message)

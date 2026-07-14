@@ -28,7 +28,13 @@ function filepath = loadState(fig, filepath)
     else
         filepath = string(filepath);
     end
-    restoreSnapshot(fig, filepath);
+    runtime = getAppRuntime(fig);
+    if isfield(runtime.definition, 'contractVersion') && ...
+            runtime.definition.contractVersion == 2
+        restoreV2Project(fig, filepath);
+    else
+        restoreSnapshot(fig, filepath);
+    end
 end
 
 function filepath = chooseSnapshotInput()

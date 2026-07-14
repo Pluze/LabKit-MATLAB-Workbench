@@ -302,6 +302,17 @@ Minimum focused tests:
 Exit condition: the persistence engine is app-neutral and one synthetic app can
 save/open/recover/migrate without app-owned dialog or autosave code.
 
+```text
+phase: 3/state-persistence-and-result-manifests
+status: complete
+completed contracts: stable dual-path saveState/loadState facade; MAT inventory detection; versioned labkitProject envelope; ordered app payload migrations; full project replacement plus fresh session; additive field preservation; source resolution and cancellable relinking; atomic readback/replace writes; dirty title and close wording; debounced two-generation recovery with explicit confirmed reopen; read-only snapshot and declared legacy-variable adapters; JSON-safe labkit.result manifests with normalized relative paths, file size, SHA-256, partial failures, and project provenance
+migrated apps: none
+compatibility retained: strict v1 snapshots; app-declared legacy adapters are read-only and all subsequent v2 writes use labkitProject
+tests: focused Runtime V2 persistence test passed for current round trip, sequential migration, newer minor preservation, newer major/wrong app rejection, no default merge, snapshot import, relink cancellation, atomic-write preservation, recovery, result traversal rejection, size/hash, and partial failure records; full framework UI suite passed 21/21; final buildtool changedFast passed all routed UI unit, representative app GUI, project, and framework UI GUI checks
+next phase: archetype pilots
+blocker:
+```
+
 ### Phase 4: Archetype Pilots
 
 Migrate these apps in order. Do not start the full fleet until all five expose

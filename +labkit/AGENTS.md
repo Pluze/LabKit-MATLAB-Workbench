@@ -77,6 +77,13 @@
   apps and reusable compatibility tools continue to use interaction-runtime
   sessions until their migration wave; they must not manage figure/axes
   callbacks independently.
+- Runtime v2 persistence keeps document metadata outside semantic state,
+  writes only the project allowlist through the `labkitProject` codec, and
+  replaces project plus a fresh session only after migration, validation, and
+  source resolution succeed. Keep explicit save, recovery, and result-export
+  storage mechanics private; app handlers use runtime services and may declare
+  app-owned ordered migrations, resume application, and legacy import/relink
+  hooks without adding app-id branches under `+labkit`.
 - Interaction callbacks must keep user-facing semantic callbacks separate from internal refresh/sync callbacks, no-op when a setter receives the current value, and trace callback reason/source when a tool exposes debug trace.
 - Debug traces are diagnostic probes for GUI interaction failures, callback errors, stalled file loads, and environment-sensitive launch problems; do not turn them into workflow narration or log sensitive paths/data.
 - Debug contexts own framework crash reports, active-operation files, and

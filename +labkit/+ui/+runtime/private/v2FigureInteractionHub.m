@@ -28,6 +28,7 @@ function hub = v2FigureInteractionHub(ui, dispatchEvent, cleanupTarget)
         "setSuppressed", @setSuppressed, ...
         "targetIds", @targetIds, ...
         "activeGroup", @activeGroup, ...
+        "isDragging", @isDragging, ...
         "routeWheel", @routeWheel, ...
         "delete", @deleteHub);
 
@@ -228,6 +229,10 @@ function hub = v2FigureInteractionHub(ui, dispatchEvent, cleanupTarget)
 
     function value = activeGroup()
         value = state.activeGroup;
+    end
+
+    function tf = isDragging()
+        tf = ~isempty(state.drag.token);
     end
 
     function deleteHub()

@@ -216,18 +216,17 @@ Use these app-facing contracts:
   behavior, records alert payloads on the figure, and skips the modal only
   when `LABKIT_GUI_TEST_MODE=hidden` so hidden GUI workflow tests can cover
   error paths without stalling.
-- `labkit.ui.runtime.saveState(fig, filepath)` and
-  `labkit.ui.runtime.loadState(fig, filepath)` save and restore same-version app
-  state snapshots. Snapshots store one MAT variable named `snapshot` with app
-  id, optional app version, optional app snapshot schema version, LabKit UI
-  version, MATLAB release/platform, and serialized semantic app state. They do
-  not store UI handles, function handles, debug contexts, listeners, file
-  identifiers, or the full runtime appdata struct. Apps may pass
-  `define(..., "Snapshot", snapshotOptions)` with optional `Serialize`,
-  `Deserialize`, and `AfterLoad` hooks to remove caches, validate restored
-  values, or request follow-up refresh work. Snapshot loading is strict: schema, app id, LabKit UI
-  version, MATLAB release/platform, app version when known, and app snapshot
-  version must match before runtime state is replaced.
+- `labkit.ui.runtime.saveState/loadState` retain one stable public signature.
+  V1 apps keep strict same-build `snapshot` files and their existing
+  `Snapshot` hooks. V2 apps write a versioned `labkitProject` envelope with
+  only durable project buckets, ordered app payload migrations, producer
+  provenance, optional resume data, and additive extension preservation.
+  V2 loads inventory the MAT file before loading a recognized variable,
+  migrate and validate off to the side, resolve required sources, create a
+  fresh session, and then replace live state once. Saves use temporary-file
+  readback plus atomic replacement. Project edits drive the dirty title,
+  debounced bounded recovery, and unsaved-close wording; recovery never owns
+  or overwrites an explicit project path.
 - Apps whose saved state refers to external source files should store
   `labkit.ui.runtime.createPortableFileReference(anchorFile, targetFile)` in
   their app-owned project schema. On load,
