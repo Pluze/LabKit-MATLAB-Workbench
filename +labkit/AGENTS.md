@@ -65,6 +65,12 @@
   use it as the new app lifecycle API. Do not expose raw startup timers,
   loading controls, readiness flags, or `defer/update/finish` lifecycle
   mutation helpers to app code.
+- The active UI runtime v2 route adds `labkit.ui.runtime.launch` plus the v2
+  `define` contract alongside v1. Keep existing apps on their current v1 path
+  until their migration wave; v2 apps use canonical project/session state,
+  queued events, `Present`, registered renderers, and managed resources. Do
+  not expose the v2 private queue, store, presentation, or resource-registry
+  helpers as public APIs.
 - Preview-axis tools that need pointer, drag, scroll, or hit-test ownership must use `labkit.ui.interaction.runtime` sessions instead of each helper managing figure/axes callbacks independently.
 - Interaction callbacks must keep user-facing semantic callbacks separate from internal refresh/sync callbacks, no-op when a setter receives the current value, and trace callback reason/source when a tool exposes debug trace.
 - Debug traces are diagnostic probes for GUI interaction failures, callback errors, stalled file loads, and environment-sensitive launch problems; do not turn them into workflow narration or log sensitive paths/data.

@@ -24,10 +24,26 @@ function def = define(varargin)
 %
 % Output:
 %   def - plain scalar struct consumed by labkit.ui.runtime.run.
+%
+% V2 app-facing contract:
+%   def = labkit.ui.runtime.define("Id", id, "Title", title, ...
+%       "Project", projectSpec, "CreateSession", sessionFcn, ...
+%       "Layout", layoutFcn, "Actions", actions, ...
+%       "Present", presentFcn, "Renderers", renderers, "Start", startFcn)
+%
+% Project is a struct with Version, Create, Validate, and optional ordered
+% Migrations fields. CreateSession, Renderers, and Start are optional. V1 and
+% V2 definitions intentionally coexist while production apps migrate.
 
     opts = parseOptions(varargin);
+    if isfield(opts, 'Project') || isfield(opts, 'Present')
+        def = createV2Definition(opts);
+        validateAppDefinition(def);
+        return;
+    end
     def = struct();
     def.type = "labkit.ui.runtime.definition";
+    def.contractVersion = 1;
     def.id = string(requiredOption(opts, "Id"));
     def.title = string(requiredOption(opts, "Title"));
     def.initialState = requiredOption(opts, "InitialState");
@@ -39,6 +55,22 @@ function def = define(varargin)
     def.snapshot = optionValue(opts, "Snapshot", struct());
     def.utilities = optionValue(opts, "Utilities", struct());
     validateAppDefinition(def);
+end
+
+function def = createV2Definition(opts)
+    def = struct();
+    def.type = "labkit.ui.runtime.definition";
+    def.contractVersion = 2;
+    def.id = string(requiredOption(opts, "Id"));
+    def.title = string(requiredOption(opts, "Title"));
+    def.project = requiredOption(opts, "Project");
+    def.createSession = optionValue(opts, "CreateSession", []);
+    def.layout = requiredOption(opts, "Layout");
+    def.actions = requiredOption(opts, "Actions");
+    def.present = requiredOption(opts, "Present");
+    def.renderers = optionValue(opts, "Renderers", struct());
+    def.start = optionValue(opts, "Start", []);
+    def.utilities = optionValue(opts, "Utilities", struct());
 end
 
 function opts = parseOptions(args)

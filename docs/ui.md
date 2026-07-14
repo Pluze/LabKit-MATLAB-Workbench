@@ -1,16 +1,17 @@
 # UI Library
 
-This page documents the current supported UI contract. The proposed
-framework-wide replacement for callback ordering, semantic state, managed
-interactions, project documents, and result manifests is described in
-[UI Runtime And App Data Redesign](ui-runtime-redesign.md); it is not yet the
-production API.
+This page documents the current supported UI contract. The v2 migration kernel
+for queued callback ordering, canonical semantic state, bindings,
+presentation, registered renderers, and managed runtime resources now coexists
+with the v1 app definition path. The remaining target for figure-wide
+interactions, durable project documents, result manifests, and fleet migration
+is described in [UI Runtime And App Data Redesign](ui-runtime-redesign.md).
 
 `labkit.ui` is the reusable MATLAB GUI foundation. It is split into app-facing facade packages:
 
 | Facade | Owns | Main APIs |
 | --- | --- | --- |
-| `labkit.ui.runtime` | Declarative app runtime, request dispatch, readiness/busy state, safe dialogs and defaults, app title versioning, state snapshots, portable external-file references, and shell utility commands. | `define`, `run`, `create`, `dispatchRequest`, `appVersionTitle`, `applyVersionTitle`, `confirm`, `createPortableFileReference`, `resolvePortableFileReference`, `resolveOrPromptForFileReference`, `defaultDialogFolder`, `defaultOutputFolder`, `promptOutputFile`, `promptOutputFolder`, `runBusy`, `saveState`, `loadState`, `showAlert`. |
+| `labkit.ui.runtime` | Declarative app runtime, request dispatch, readiness/busy state, safe dialogs and defaults, app title versioning, state snapshots, portable external-file references, and shell utility commands. | `launch`, `define`, `run`, `create`, `dispatchRequest`, `appVersionTitle`, `applyVersionTitle`, `confirm`, `createPortableFileReference`, `resolvePortableFileReference`, `resolveOrPromptForFileReference`, `defaultDialogFolder`, `defaultOutputFolder`, `promptOutputFile`, `promptOutputFolder`, `runBusy`, `saveState`, `loadState`, `showAlert`. |
 | `labkit.ui.layout` | UI 5 data-only workbench layouts. | `workbench`, `workspace`, `tab`, `section`, `group`, `field`, `rangeField`, `panner`, `action`, `filePanel`, `toolPanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `usagePanel`. |
 | `labkit.ui.control` | Semantic registry updates, selectable items, file-panel values, list selections, numeric limits, enable state, and log appends. | `setValue`, `getValue`, `getFiles`, `setFileSelection`, `setItems`, `setEnabled`, `setLimits`, `appendLog`, `setListItems`, `setListSelection`, `fileLabels`, `filePaths`, `fileIndices`. |
 | `labkit.ui.plot` | Preview axes lookup, plot clearing, layer-safe overlays, image drawing, fitted limits, canvas framing, empty-state messages, and data/axes coordinate conversion. | `getAxes`, `clear`, `clearPreview`, `reset`, `replaceOverlay`, `image`, `fit`, `fitCanvas`, `dataToFraction`, `fractionToData`, `offsetData`, `clampData`, `message`. |
@@ -322,6 +323,38 @@ MATLAB layout code in `buildWorkbenchLayout.m`.
 Control tabs with more than one section include draggable horizontal
 separators by default. A tab may opt out with `resize="none"` when a fixed
 stack is intentional.
+
+### Runtime V2 Migration Kernel
+
+`labkit.ui.runtime.define` accepts both the current production v1 contract and
+the v2 migration contract. Existing apps continue to use
+`InitialState/Render/Startup` until their planned migration wave. A v2
+definition declares `Project`, optional `CreateSession`, `Actions`, `Present`,
+optional `Renderers`, and optional `Start`. It launches through
+`labkit.ui.runtime.launch`, which owns lightweight request dispatch, contract
+checks, runtime creation, output normalization, and the versioned title.
+
+V2 state has exactly two roots, `project` and `session`. Project contains
+`inputs`, `parameters`, `annotations`, `results`, and `extensions`; session
+contains `selection`, `workflow`, `view`, and `cache`. Both slices contain only
+plain serializable MATLAB data. Graphics, listeners, timers, tools, callbacks,
+services, and debug contexts stay in the framework resource registry.
+
+V2 events run through one non-recursive FIFO queue per figure. A handler has
+the signature `state = handler(state, event, services)`. Nested
+`services.dispatch` calls enqueue a later transaction, so the current handler
+finishes one state commit and one presentation commit first. A failed handler,
+validator, or presenter restores the last committed state and visible
+presentation.
+
+Ordinary value controls may use a semantic binding such as
+`"Bind", "project.parameters.gamma"` and may name an optional `Event` to run
+after the value is staged. `Present(state)` returns control properties and
+prepared preview models by semantic id. Registered renderers receive an axes
+and model; presenters and actions do not receive the raw UI registry on the v2
+path. Plot utilities are inferred from the layout. V2 state save/open remains
+hidden until the durable project codec phase lands; v1 snapshots continue to
+work unchanged.
 
 ## Startup Readiness
 

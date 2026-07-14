@@ -1,5 +1,7 @@
+% Expected callers: DIC preprocess layout, actions, and GUI tests. Input is
+% none. Output is the single app-owned registration action-label contract.
+% Side effects: none.
 function labels = registrationLabels()
-%REGISTRATIONLABELS Return the DIC registration action-label contract.
 
     labels = struct( ...
         'startPointMatching', 'Start point matching', ...

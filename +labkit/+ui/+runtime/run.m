@@ -25,6 +25,10 @@ function fig = run(def, request)
         request = struct();
     end
     validateAppDefinition(def);
+    if isfield(def, 'contractVersion') && def.contractVersion == 2
+        fig = runV2App(def, request);
+        return;
+    end
     debug = requestDebugContext(request);
     state = createInitialState(def.initialState);
     actions = def.actions;

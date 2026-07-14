@@ -6,6 +6,10 @@ function validateAppDefinition(def)
         error('labkit:ui:runtime:InvalidDefinition', ...
             'App definition must be a scalar struct.');
     end
+    if isfield(def, 'contractVersion') && def.contractVersion == 2
+        validateV2Definition(def);
+        return;
+    end
     required = ["type", "id", "title", "initialState", "layout", ...
         "actions", "render", "startup", "hydrate", "snapshot", ...
         "utilities"];
@@ -38,6 +42,93 @@ function validateAppDefinition(def)
     validatePhaseIds(def.hydrate, def.actions, "Hydrate");
     validateSnapshotSpec(def.snapshot);
     validateUtilitiesSpec(def.utilities);
+end
+
+function validateV2Definition(def)
+    required = ["type", "contractVersion", "id", "title", "project", ...
+        "createSession", "layout", "actions", "present", "renderers", ...
+        "start", "utilities"];
+    requireFields(def, required);
+    if string(def.type) ~= "labkit.ui.runtime.definition"
+        error('labkit:ui:runtime:InvalidDefinition', ...
+            'App definition has unsupported type "%s".', string(def.type));
+    end
+    assertScalarText(def.id, "id");
+    assertScalarText(def.title, "title");
+    validateProjectSpec(def.project);
+    if ~isempty(def.createSession) && ~isa(def.createSession, 'function_handle')
+        error('labkit:ui:runtime:InvalidDefinition', ...
+            'CreateSession must be a function handle when supplied.');
+    end
+    if ~isa(def.layout, 'function_handle')
+        error('labkit:ui:runtime:InvalidDefinition', ...
+            'Layout must be a function handle.');
+    end
+    validateActions(def.actions);
+    if ~isa(def.present, 'function_handle')
+        error('labkit:ui:runtime:InvalidDefinition', ...
+            'Present must be a function handle.');
+    end
+    validateRenderers(def.renderers);
+    if ~isempty(def.start) && ~isa(def.start, 'function_handle') && ...
+            ~(ischar(def.start) || (isstring(def.start) && isscalar(def.start)))
+        error('labkit:ui:runtime:InvalidDefinition', ...
+            'Start must be a function handle or scalar action id when supplied.');
+    end
+    if ischar(def.start) || isstring(def.start)
+        validatePhaseIds(string(def.start), def.actions, "Start");
+    end
+    validateUtilitiesSpec(def.utilities);
+end
+
+function requireFields(value, required)
+    for k = 1:numel(required)
+        if ~isfield(value, required(k))
+            error('labkit:ui:runtime:InvalidDefinition', ...
+                'App definition is missing field "%s".', required(k));
+        end
+    end
+end
+
+function validateProjectSpec(spec)
+    if ~isstruct(spec) || ~isscalar(spec)
+        error('labkit:ui:runtime:InvalidDefinition', ...
+            'Project must be a scalar struct.');
+    end
+    requireFields(spec, ["Version", "Create", "Validate"]);
+    version = spec.Version;
+    if ~(isnumeric(version) && isscalar(version) && isfinite(version) && ...
+            version >= 1 && version == fix(version))
+        error('labkit:ui:runtime:InvalidDefinition', ...
+            'Project.Version must be a positive integer scalar.');
+    end
+    if ~isa(spec.Create, 'function_handle') || ...
+            ~isa(spec.Validate, 'function_handle')
+        error('labkit:ui:runtime:InvalidDefinition', ...
+            'Project.Create and Project.Validate must be function handles.');
+    end
+    if isfield(spec, 'Migrations') && ~isempty(spec.Migrations)
+        migrations = spec.Migrations;
+        if ~iscell(migrations) || ...
+                ~all(cellfun(@(f) isa(f, 'function_handle'), migrations))
+            error('labkit:ui:runtime:InvalidDefinition', ...
+                'Project.Migrations must be a cell array of function handles.');
+        end
+    end
+end
+
+function validateRenderers(renderers)
+    if ~isstruct(renderers) || ~isscalar(renderers)
+        error('labkit:ui:runtime:InvalidDefinition', ...
+            'Renderers must be a scalar struct of function handles.');
+    end
+    names = fieldnames(renderers);
+    for k = 1:numel(names)
+        if ~isa(renderers.(names{k}), 'function_handle')
+            error('labkit:ui:runtime:InvalidDefinition', ...
+                'Renderer "%s" must be a function handle.', names{k});
+        end
+    end
 end
 
 function validateActions(actions)

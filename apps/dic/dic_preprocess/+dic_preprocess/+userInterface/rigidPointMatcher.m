@@ -1,9 +1,9 @@
+% Expected caller: DIC preprocess registration actions. Inputs are the two
+% axes interaction runtimes, matching preview axes, and callback options.
+% Output owns paired point editors, ordering, labels, and cleanup; caller-owned
+% images and axes graphics remain unchanged until explicit matcher actions.
 function matcher = rigidPointMatcher(referenceRuntime, movingRuntime, ...
         referenceAxes, movingAxes, opts)
-%RIGIDPOINTMATCHER Coordinate paired point editing across two preview axes.
-% Expected caller: DIC preprocess registration actions. The returned tool
-% owns two point-mode anchor editors, alternating pair order, numbered labels,
-% and cleanup. Images and axes graphics remain owned by the caller.
 
     if nargin < 5
         opts = struct();

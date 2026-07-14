@@ -43,9 +43,9 @@ Current facts from the architecture audit:
 
 - Package-root app `run.m` orchestration and `+ui/runApp.m` lifecycle adapters
   are retired.
-- The current UI facade has 69 public functions under its six subpackages plus
-  `labkit.ui.version`. Runtime has 62 files/7,432 lines and interaction has 21
-  files/4,022 lines.
+- The current UI facade has 70 public functions under its six subpackages plus
+  `labkit.ui.version`; the one Phase 1 addition is `runtime.launch`. Runtime has
+  69 files/8,541 lines and interaction has 21 files/4,022 lines.
 - Seven production apps use closure-owned semantic state, seven have a no-op
   visible-state update, and twelve mutate controls directly from actions.
 - Production apps do not use the current Hydrate, Snapshot, or action-effects
@@ -171,6 +171,17 @@ Deliverables:
 Exit condition: inventories match current source, and any discrepancy is
 resolved in the design/route before framework implementation begins.
 
+```text
+phase: 0/freeze-and-baseline
+status: complete
+completed contracts: 20 v1 definitions inventoried; 69-function UI surface and app call patterns reverified; state/resource/project/result/test inventories matched the 2026-07-14 design audit
+migrated apps: none
+compatibility retained: all production apps remain on v1
+tests: source audit only; no executable behavior changed in phase 0
+next phase: runtime kernel
+blocker:
+```
+
 ### Phase 1: Runtime Kernel
 
 Implement a v2 path alongside v1 definitions so apps can migrate one at a time.
@@ -201,6 +212,17 @@ Minimum focused tests:
 
 Exit condition: a synthetic v2 app proves the kernel without changing a
 production app.
+
+```text
+phase: 1/runtime-kernel
+status: complete
+completed contracts: launch; v1/v2 definition coexistence; canonical project/session state; non-recursive FIFO dispatch; binding and presentation commits; renderer registration; scoped resource cleanup; capability-derived utilities
+migrated apps: none
+compatibility retained: v1 run, startup, hydration, render, and strict snapshot behavior
+tests: focused v2 and v1 runtime tests passed; buildtool changedFast passed (UI unit, representative app GUI, project, DIC unit, full framework UI GUI)
+next phase: figure interaction hub
+blocker:
+```
 
 ### Phase 2: Figure Interaction Hub
 
