@@ -52,45 +52,44 @@ classdef GuiLayoutDicPreprocessTest < matlab.unittest.TestCase
                 'DIC preprocess workflow should draw the current preview.');
         end
 
-        function manualPointPairSelectorCancelsWithoutToolbox(testCase)
+        function pointMatchingStaysInMainWorkbench(testCase)
             setupLabKitTestPath();
             h = guiTestHelpers();
             h.assertUifigureAvailable();
             cleanup = onCleanup(@() h.closeAllFigures());
-            % Retry for up to 10 seconds because editor construction time
-            % varies across local and hosted MATLAB graphics runtimes.
-            cancelTimer = timer('ExecutionMode', 'fixedSpacing', ...
-                'StartDelay', 0.25, 'Period', 0.25, 'TasksToExecute', 40, ...
-                'TimerFcn', @cancelPointPairDialog);
-            timerCleanup = onCleanup(@() deleteTimer(cancelTimer));
 
-            [movingPoints, fixedPoints] = ...
-                dic_preprocess.userInterface.selectRigidPointPairs( ...
-                zeros(20, 24), zeros(20, 24), ...
-                struct('onReady', @(~) start(cancelTimer)));
+            folder = tempname;
+            mkdir(folder);
+            folderCleanup = onCleanup(@() removeTempFolder(folder));
+            referencePath = fullfile(folder, 'reference.png');
+            movingPath = fullfile(folder, 'moving.png');
+            imageData = syntheticDicImage();
+            imwrite(imageData, referencePath);
+            imwrite(imageData, movingPath);
 
-            testCase.verifyEmpty(movingPoints, ...
-                'Cancelled manual alignment should return no moving points.');
-            testCase.verifyEmpty(fixedPoints, ...
-                'Cancelled manual alignment should return no fixed points.');
-            clear timerCleanup cleanup
+            fig = h.launchFigure('labkit_DICPreprocess_app', ...
+                'DIC Image Preprocess');
+            driver = labkitWorkflowDriver(fig);
+            driver.chooseFiles('referenceFile', referencePath);
+            driver.chooseFiles('movingFile', movingPath);
+            driver.click('Choose reference');
+            driver.click('Choose moving');
+            labels = dic_preprocess.userInterface.registrationLabels();
+            driver.click(labels.startPointMatching);
+
+            ui = driver.registry();
+            testCase.verifyEmpty(findall(groot, 'Type', 'figure', ...
+                'Name', 'DIC Manual Alignment'), ...
+                'Point matching should remain inside the main DIC workbench.');
+            testCase.verifyEqual(ui.controls.applyPointAlignment.button.Enable, ...
+                'off', 'Alignment should wait for at least two complete pairs.');
+            testCase.verifyEqual(ui.controls.cancelPointMatching.button.Enable, ...
+                'on', 'The active in-place point matcher should be cancellable.');
+            driver.click(labels.cancelPointMatching);
+            testCase.verifyEqual(ui.controls.startPointMatching.button.Enable, ...
+                'on', 'Cancelling should restore the point-matching start action.');
+            clear folderCleanup cleanup
         end
-    end
-end
-
-function cancelPointPairDialog(timerHandle, ~)
-    figures = findall(groot, 'Type', 'figure', 'Name', 'DIC Manual Alignment');
-    if isempty(figures)
-        return;
-    end
-    close(figures(1));
-    stop(timerHandle);
-end
-
-function deleteTimer(timerHandle)
-    if isvalid(timerHandle)
-        stop(timerHandle);
-        delete(timerHandle);
     end
 end
 
@@ -104,9 +103,11 @@ function text = appLog(driver)
 end
 
 function assertDicPreprocessLayout(h, fig)
+    labels = dic_preprocess.userInterface.registrationLabels();
     h.assertStandardWorkbenchLayout(fig);
     h.assertButtonContract(fig, {'Choose reference', 'Choose moving', ...
-        'Select points + align', 'Auto align current pair', ...
+        labels.startPointMatching, labels.applyPointAlignment, ...
+        labels.cancelPointMatching, labels.undoPointPair, labels.autoAlign, ...
         'Start/reset crop ROI', 'Apply ROI crop', 'Cancel ROI', ...
         'Undo align/crop', 'Save current images', 'Reset to originals', ...
         'Start ROI edit', 'Preview ROI mask', 'Add to mask', ...

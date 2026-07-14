@@ -6,7 +6,10 @@ function controls = mapControlHandles(ui)
 
     controls = struct();
     controls.ddPreview = ui.controls.previewMode.valueHandle;
-    controls.btnAlign = ui.controls.align.button;
+    controls.btnStartPointMatching = ui.controls.startPointMatching.button;
+    controls.btnApplyPointAlignment = ui.controls.applyPointAlignment.button;
+    controls.btnCancelPointMatching = ui.controls.cancelPointMatching.button;
+    controls.btnUndoPointPair = ui.controls.undoPointPair.button;
     controls.btnAutoAlign = ui.controls.autoAlign.button;
     controls.btnCrop = ui.controls.startCropRoi.button;
     controls.btnApplyCrop = ui.controls.applyCropRoi.button;

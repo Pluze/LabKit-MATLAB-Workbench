@@ -133,6 +133,16 @@ range fail instead of extrapolating. CIC CSV exports include `Area_cm2` and
 
 ## Current Workflow Notes
 
+### DIC Preprocess App
+
+`labkit_DICPreprocess_app` performs manual point matching directly in its main
+stacked preview. Start point matching, select a reference feature followed by
+the corresponding moving-image feature, and repeat for at least two pairs.
+Points can be dragged to refine them, the most recent pair can be undone, and
+applying the alignment immediately switches the main preview to the false-color
+registration overlay. Point matching can be cancelled without changing the
+current working image pair.
+
 ### CSC App
 
 `labkit_CSC_app` loads one or more CV/CT Gamry DTA files and keeps the file

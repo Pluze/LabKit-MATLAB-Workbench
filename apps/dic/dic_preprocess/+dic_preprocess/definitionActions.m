@@ -16,33 +16,38 @@ function actions = definitionActions()
     btnCancelCrop = [];
     debugLog = [];
     imageRuntime = [];
+    movingImageRuntime = [];
+    pointMatcher = [];
     fig = [];
 
     actions = struct( ...
         'startup', @onStartup, ...
-        'referenceChosen', @dispatchReferenceChosen, ...
-        'referenceCleared', @dispatchReferenceCleared, ...
-        'movingChosen', @dispatchMovingChosen, ...
-        'movingCleared', @dispatchMovingCleared, ...
-        'previewChanged', @dispatchPreviewChanged, ...
-        'align', @dispatchAlign, ...
-        'autoAlign', @dispatchAutoAlign, ...
-        'startCropRoi', @dispatchStartCropRoi, ...
-        'applyCropRoi', @dispatchApplyCropRoi, ...
-        'cancelCropRoi', @dispatchCancelCropRoi, ...
-        'undoEdit', @dispatchUndoEdit, ...
-        'saveCurrentImages', @dispatchSaveCurrentImages, ...
-        'resetToOriginals', @dispatchResetToOriginals, ...
-        'startMaskEdit', @dispatchStartMaskEdit, ...
-        'boundaryStyleChanged', @dispatchBoundaryStyleChanged, ...
-        'previewMaskRoi', @dispatchPreviewMaskRoi, ...
-        'addBoundaryToMask', @dispatchAddBoundaryToMask, ...
-        'subtractBoundaryFromMask', @dispatchSubtractBoundaryFromMask, ...
-        'undoMaskAnchor', @dispatchUndoMaskAnchor, ...
-        'undoMaskEdit', @dispatchUndoMaskEdit, ...
-        'clearMaskBoundary', @dispatchClearMaskBoundary, ...
-        'clearMaskCanvas', @dispatchClearMaskCanvas, ...
-        'saveMask', @dispatchSaveMask);
+        'referenceChosen', eventAction(@(~, event) onImageChosen('reference', event)), ...
+        'referenceCleared', noEventAction(@() onImageCleared('reference')), ...
+        'movingChosen', eventAction(@(~, event) onImageChosen('moving', event)), ...
+        'movingCleared', noEventAction(@() onImageCleared('moving')), ...
+        'previewChanged', noEventAction(@onPreviewChanged), ...
+        'startPointMatching', eventAction(@onStartPointMatching), ...
+        'applyPointAlignment', eventAction(@onApplyPointAlignment), ...
+        'cancelPointMatching', eventAction(@onCancelPointMatching), ...
+        'undoPointPair', eventAction(@onUndoPointPair), ...
+        'autoAlign', eventAction(@onAutoAlign), ...
+        'startCropRoi', eventAction(@onStartCropRoi), ...
+        'applyCropRoi', eventAction(@onApplyCropRoi), ...
+        'cancelCropRoi', eventAction(@onCancelCropRoi), ...
+        'undoEdit', eventAction(@onUndoEdit), ...
+        'saveCurrentImages', eventAction(@onSaveCurrentImages), ...
+        'resetToOriginals', eventAction(@onResetToOriginals), ...
+        'startMaskEdit', eventAction(@onStartMaskEdit), ...
+        'boundaryStyleChanged', eventAction(@onBoundaryStyleChanged), ...
+        'previewMaskRoi', eventAction(@onPreviewMaskRoi), ...
+        'addBoundaryToMask', eventAction(@onAddBoundaryToMask), ...
+        'subtractBoundaryFromMask', eventAction(@onSubtractBoundaryFromMask), ...
+        'undoMaskAnchor', eventAction(@onUndoMaskAnchor), ...
+        'undoMaskEdit', eventAction(@onUndoMaskEdit), ...
+        'clearMaskBoundary', eventAction(@onClearMaskBoundary), ...
+        'clearMaskCanvas', eventAction(@onClearMaskCanvas), ...
+        'saveMask', eventAction(@onSaveMask));
 
     function state = onStartup(state, ~, services)
         S = state;
@@ -51,8 +56,18 @@ function actions = definitionActions()
         debugLog = services.debug;
         ui.topAxes = ui.controls.previewAxes.axesById.reference;
         ui.bottomAxes = ui.controls.previewAxes.axesById.current;
+        movingImageRuntime = labkit.ui.interaction.runtime(ui.bottomAxes, ...
+            struct('figure', fig, 'defaultScrollFcn', @(~, event) ...
+            dic_preprocess.userInterface.zoomPreviewAtPointer( ...
+            ui.bottomAxes, event)));
         imageRuntime = labkit.ui.interaction.runtime(ui.topAxes, ...
-            struct('figure', fig));
+            struct('figure', fig, 'defaultScrollFcn', @(~, event) ...
+            dic_preprocess.userInterface.zoomPreviewAtPointer( ...
+            ui.topAxes, event)));
+        pointMatcher = dic_preprocess.userInterface.rigidPointMatcher( ...
+            imageRuntime, movingImageRuntime, ui.topAxes, ui.bottomAxes, ...
+            struct('onChanged', @onPointMatchingChanged, ...
+            'onTrace', debugLog.trace));
         ui.imageRuntime = imageRuntime;
         controls = dic_preprocess.userInterface.mapControlHandles(ui);
         txtSummary = ui.controls.summaryText.textArea;
@@ -69,165 +84,119 @@ function actions = definitionActions()
         state = S;
     end
 
-    function state = dispatchWithEvent(state, payload, callback)
+    function handler = eventAction(callback)
+        handler = @(state, payload, services) runEventAction( ...
+            state, payload, services, callback);
+    end
+
+    function state = runEventAction(state, payload, ~, callback)
         S = state;
         callback([], payload.event);
         state = S;
     end
 
-    function state = dispatchNoEvent(state, ~, callback)
+    function handler = noEventAction(callback)
+        handler = @(state, payload, services) runNoEventAction( ...
+            state, payload, services, callback);
+    end
+
+    function state = runNoEventAction(state, ~, ~, callback)
         S = state;
         callback();
         state = S;
     end
 
-    function state = dispatchReferenceChosen(state, payload, ~)
-        state = dispatchWithEvent(state, payload, @onReferenceChosen);
-    end
-    function state = dispatchReferenceCleared(state, payload, ~)
-        state = dispatchNoEvent(state, payload, @onReferenceCleared);
-    end
-    function state = dispatchMovingChosen(state, payload, ~)
-        state = dispatchWithEvent(state, payload, @onMovingChosen);
-    end
-    function state = dispatchMovingCleared(state, payload, ~)
-        state = dispatchNoEvent(state, payload, @onMovingCleared);
-    end
-    function state = dispatchPreviewChanged(state, payload, ~)
-        state = dispatchNoEvent(state, payload, @refreshPreview);
-    end
-    function state = dispatchAlign(state, payload, ~)
-        state = dispatchWithEvent(state, payload, @onAlign);
-    end
-    function state = dispatchAutoAlign(state, payload, ~)
-        state = dispatchWithEvent(state, payload, @onAutoAlign);
-    end
-    function state = dispatchStartCropRoi(state, payload, ~)
-        state = dispatchWithEvent(state, payload, @onStartCropRoi);
-    end
-    function state = dispatchApplyCropRoi(state, payload, ~)
-        state = dispatchWithEvent(state, payload, @onApplyCropRoi);
-    end
-    function state = dispatchCancelCropRoi(state, payload, ~)
-        state = dispatchWithEvent(state, payload, @onCancelCropRoi);
-    end
-    function state = dispatchUndoEdit(state, payload, ~)
-        state = dispatchWithEvent(state, payload, @onUndoEdit);
-    end
-    function state = dispatchSaveCurrentImages(state, payload, ~)
-        state = dispatchWithEvent(state, payload, @onSaveCurrentImages);
-    end
-    function state = dispatchResetToOriginals(state, payload, ~)
-        state = dispatchWithEvent(state, payload, @onResetToOriginals);
-    end
-    function state = dispatchStartMaskEdit(state, payload, ~)
-        state = dispatchWithEvent(state, payload, @onStartMaskEdit);
-    end
-    function state = dispatchBoundaryStyleChanged(state, payload, ~)
-        state = dispatchWithEvent(state, payload, @onBoundaryStyleChanged);
-    end
-    function state = dispatchPreviewMaskRoi(state, payload, ~)
-        state = dispatchWithEvent(state, payload, @onPreviewMaskRoi);
-    end
-    function state = dispatchAddBoundaryToMask(state, payload, ~)
-        state = dispatchWithEvent(state, payload, @onAddBoundaryToMask);
-    end
-    function state = dispatchSubtractBoundaryFromMask(state, payload, ~)
-        state = dispatchWithEvent(state, payload, @onSubtractBoundaryFromMask);
-    end
-    function state = dispatchUndoMaskAnchor(state, payload, ~)
-        state = dispatchWithEvent(state, payload, @onUndoMaskAnchor);
-    end
-    function state = dispatchUndoMaskEdit(state, payload, ~)
-        state = dispatchWithEvent(state, payload, @onUndoMaskEdit);
-    end
-    function state = dispatchClearMaskBoundary(state, payload, ~)
-        state = dispatchWithEvent(state, payload, @onClearMaskBoundary);
-    end
-    function state = dispatchClearMaskCanvas(state, payload, ~)
-        state = dispatchWithEvent(state, payload, @onClearMaskCanvas);
-    end
-    function state = dispatchSaveMask(state, payload, ~)
-        state = dispatchWithEvent(state, payload, @onSaveMask);
-    end
-
-
-    function onReferenceChosen(~, event)
+    function onImageChosen(role, event)
+        stopPointMatching();
         paths = labkit.ui.control.filePaths(event.addedFiles);
         if isempty(paths)
-            addLog('Reference image selection cancelled.');
+            addLog(sprintf('%s image selection cancelled.', titleCase(role)));
             return;
         end
         filepath = paths(1);
         S = dic_preprocess.appState.setLoadedImage( ...
-            S, 'reference', filepath, imread(filepath));
+            S, role, filepath, imread(filepath));
         resetWorkflowStateForNewInput();
-        addLog(sprintf('Loaded reference image: %s', filepath));
+        addLog(sprintf('Loaded %s image: %s', role, filepath));
         chooseDefaultPreviewAfterLoad();
         refreshPreview();
     end
 
-    function onReferenceCleared()
-        S.referencePath = "";
-        S.referenceImage = [];
-        S.currentReferenceImage = [];
+    function onImageCleared(role)
+        stopPointMatching();
+        S.([role 'Path']) = "";
+        S.([role 'Image']) = [];
+        S.(['current' titleCase(role) 'Image']) = [];
         resetWorkflowStateForNewInput();
-        addLog('Cleared reference image file.');
+        addLog(sprintf('Cleared %s image file.', role));
         refreshPreview();
     end
 
-    function onMovingChosen(~, event)
-        paths = labkit.ui.control.filePaths(event.addedFiles);
-        if isempty(paths)
-            addLog('Moving image selection cancelled.');
-            return;
-        end
-        filepath = paths(1);
-        S = dic_preprocess.appState.setLoadedImage( ...
-            S, 'moving', filepath, imread(filepath));
-        resetWorkflowStateForNewInput();
-        addLog(sprintf('Loaded moving image: %s', filepath));
-        chooseDefaultPreviewAfterLoad();
+    function onPreviewChanged()
+        stopPointMatching();
         refreshPreview();
     end
 
-    function onMovingCleared()
-        S.movingPath = "";
-        S.movingImage = [];
-        S.currentMovingImage = [];
-        resetWorkflowStateForNewInput();
-        addLog('Cleared moving image file.');
-        refreshPreview();
-    end
-
-    function onAlign(~, ~)
+    function onStartPointMatching(~, ~)
         if dic_preprocess.userInterface.alertIfMissingImagePair(fig, S, ...
                 'Load both reference and moving images before alignment.', ...
                 'Missing images')
             return;
         end
 
-        addLog('Opening point selector. Choose matching points, then accept.');
-        [movingPoints, fixedPoints] = ...
-            dic_preprocess.userInterface.selectRigidPointPairs( ...
-            S.currentMovingImage, S.currentReferenceImage);
-        if size(movingPoints, 1) < 2
-            labkit.ui.runtime.showAlert(fig, 'Rigid registration requires at least two point pairs.', 'Not enough points');
-            addLog('Alignment cancelled: fewer than two point pairs.');
+        stopPointMatching();
+        S = dic_preprocess.userInterface.clearCropRoiState(S, controls);
+        S = dic_preprocess.userInterface.clearMaskRoiState(S, controls);
+        ddPreview.Value = 'Current pair';
+        request = dic_preprocess.userInterface.previewRequest(S, ddPreview.Value);
+        dic_preprocess.userInterface.drawPreview(ui, request);
+
+        pointMatcher.start(S.currentReferenceImage, S.currentMovingImage, ...
+            findPreviewImage(ui.topAxes), findPreviewImage(ui.bottomAxes));
+        updatePointMatchingControls();
+        txtDetails.Value = {['Point matching active. Select a feature in the ' ...
+            'reference image, then its match in the moving image. Drag points ' ...
+            'to refine them; at least two pairs are required.']};
+        addLog('Started point matching in the main reference and moving previews.');
+    end
+
+    function onApplyPointAlignment(~, ~)
+        if ~pointMatcher.hasCompleteAlignment()
+            labkit.ui.runtime.showAlert(fig, ...
+                'Rigid registration requires at least two complete point pairs.', ...
+                'Not enough points');
             return;
         end
 
+        [referencePoints, movingPoints] = pointMatcher.points();
         pushHistory('manual alignment');
         [alignedImage, tform] = dic_preprocess.analysisRun.alignMovingToReference( ...
-            S.currentReferenceImage, S.currentMovingImage, fixedPoints, movingPoints);
+            S.currentReferenceImage, S.currentMovingImage, ...
+            referencePoints, movingPoints);
+        pairCount = size(referencePoints, 1);
+        stopPointMatching();
         S.currentMovingImage = alignedImage;
         S.alignedImage = alignedImage;
         clearDerivedStateAndMaskEditor();
         ddPreview.Value = 'False-color overlay';
-        addLog(sprintf('Aligned image using %d point pair(s).', size(movingPoints, 1)));
+        addLog(sprintf('Aligned image using %d point pair(s).', pairCount));
         txtDetails.Value = dic_preprocess.userInterface.transformSummary( ...
             tform, size(S.currentReferenceImage), size(S.currentMovingImage));
         refreshPreview();
+    end
+
+    function onCancelPointMatching(~, ~)
+        if ~pointMatcher.isActive()
+            return;
+        end
+        stopPointMatching();
+        addLog('Cancelled point matching.');
+        txtDetails.Value = {'Point matching cancelled.'};
+        refreshPreview();
+    end
+
+    function onUndoPointPair(~, ~)
+        pointMatcher.undoLast();
     end
 
     function onAutoAlign(~, ~)
@@ -237,6 +206,7 @@ function actions = definitionActions()
             return;
         end
 
+        stopPointMatching();
         try
             [alignedImage, tform, method] = dic_preprocess.analysisRun.autoAlignMovingToReference( ...
                 S.currentReferenceImage, S.currentMovingImage);
@@ -264,6 +234,7 @@ function actions = definitionActions()
             return;
         end
 
+        stopPointMatching();
         S = dic_preprocess.userInterface.clearCropRoiState(S, controls);
         S = dic_preprocess.userInterface.clearMaskRoiState(S, controls);
 
@@ -331,6 +302,7 @@ function actions = definitionActions()
             return;
         end
 
+        stopPointMatching();
         snapshot = S.history(end);
         S.history(end) = [];
         S = dic_preprocess.userInterface.clearCropRoiState(S, controls);
@@ -348,6 +320,7 @@ function actions = definitionActions()
             labkit.ui.runtime.showAlert(fig, 'Load both images before resetting the working pair.', 'Reset');
             return;
         end
+        stopPointMatching();
         pushHistory('reset to originals');
         S = dic_preprocess.userInterface.clearCropRoiState(S, controls);
         S = dic_preprocess.userInterface.clearMaskRoiState(S, controls);
@@ -384,6 +357,7 @@ function actions = definitionActions()
             return;
         end
 
+        stopPointMatching();
         S = dic_preprocess.userInterface.clearCropRoiState(S, controls);
         S = dic_preprocess.userInterface.clearMaskRoiState(S, controls);
         S.maskImage = [];
@@ -566,6 +540,33 @@ function actions = definitionActions()
         dic_preprocess.userInterface.updateMaskEditControls(controls, S);
     end
 
+    function onPointMatchingChanged(referencePoints, movingPoints, instruction)
+        updatePointMatchingControls();
+        completePairs = min(size(referencePoints, 1), size(movingPoints, 1));
+        txtDetails.Value = {sprintf('Complete point pairs: %d. %s', ...
+            completePairs, instruction)};
+    end
+
+    function updatePointMatchingControls()
+        active = ~isempty(pointMatcher) && pointMatcher.isActive();
+        complete = active && pointMatcher.hasCompleteAlignment();
+        controls.btnStartPointMatching.Enable = ...
+            dic_preprocess.userInterface.onOff(~active);
+        controls.btnApplyPointAlignment.Enable = ...
+            dic_preprocess.userInterface.onOff(active && complete);
+        controls.btnCancelPointMatching.Enable = ...
+            dic_preprocess.userInterface.onOff(active);
+        controls.btnUndoPointPair.Enable = dic_preprocess.userInterface.onOff( ...
+            active && pointMatcher.hasPoints());
+    end
+
+    function stopPointMatching()
+        if ~isempty(pointMatcher)
+            pointMatcher.stop();
+        end
+        updatePointMatchingControls();
+    end
+
     function refreshPreview()
         S = dic_preprocess.userInterface.clearCropRoiState(S, controls);
         S = dic_preprocess.userInterface.clearMaskRoiState(S, controls);
@@ -594,6 +595,18 @@ function actions = definitionActions()
         else
             ddPreview.Value = 'Current pair';
     end
+end
+
+function hImage = findPreviewImage(ax)
+    hImage = findobj(ax, 'Type', 'Image');
+    if ~isempty(hImage)
+        hImage = hImage(1);
+    end
+end
+
+function value = titleCase(value)
+    value = char(value);
+    value(1) = upper(value(1));
 end
 
     function setupDebugSamples()
