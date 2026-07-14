@@ -114,10 +114,10 @@ App GUIs use the layered UI foundation:
 
 | Layer | App-facing API |
 | --- | --- |
-| Runtime | `labkit.ui.runtime.define`, `run`, `create`, `dispatchRequest`, `appVersionTitle`, `applyVersionTitle`, `defaultDialogFolder`, `defaultOutputFolder`, `promptOutputFile`, `promptOutputFolder`, `runBusy` |
+| Runtime | `labkit.ui.runtime.define`, `run`, `create`, `dispatchRequest`, `appVersionTitle`, `applyVersionTitle`, `confirm`, `defaultDialogFolder`, `defaultOutputFolder`, `promptOutputFile`, `promptOutputFolder`, `runBusy` |
 | Layout | `labkit.ui.layout.workbench`, `workspace`, `tab`, `section`, `group`, `field`, `rangeField`, `panner`, `action`, `filePanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `usagePanel` |
-| Control | `labkit.ui.control.setValue`, `getValue`, `getFiles`, `setFileSelection`, `setEnabled`, `setLimits`, `appendLog`, `setListItems`, `setListSelection`, `fileLabels`, `filePaths`, `fileIndices` |
-| Plot | `labkit.ui.plot.getAxes`, `clear`, `clearPreview`, `reset`, `image`, `fit`, `fitCanvas`, `dataToFraction`, `fractionToData`, `offsetData`, `clampData`, `message` |
+| Control | `labkit.ui.control.setValue`, `getValue`, `getFiles`, `setFileSelection`, `setItems`, `setEnabled`, `setLimits`, `appendLog`, `setListItems`, `setListSelection`, `fileLabels`, `filePaths`, `fileIndices` |
+| Plot | `labkit.ui.plot.getAxes`, `clear`, `clearPreview`, `reset`, `replaceOverlay`, `image`, `fit`, `fitCanvas`, `dataToFraction`, `fractionToData`, `offsetData`, `clampData`, `message` |
 | Interaction | `labkit.ui.interaction.runtime`, `anchorEditor`, `scaleBar`, `scaleBarCalibration`, `enablePopout`, `popout`, `zoomAtPoint` |
 | Debug | `labkit.ui.debug.context` |
 

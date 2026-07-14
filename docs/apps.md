@@ -112,7 +112,7 @@ choose an older release, tag, or commit through `Versions`.
 | `labkit_DICPreprocess_app` | DIC | Image registration, paired crop preparation, and ROI mask drawing. | Reference/current images | Aligned images, crop PNGs, ROI mask. |
 | `labkit_DICPostprocess_app` | DIC | Ncorr strain overlay and MAT-domain strain summary. | Ncorr MAT, reference image, mask | Clean same-size EXX/EYY overlay PNGs and summary CSV. |
 | `labkit_CurvatureMeasurement_app` | Image measurement | Editable curve fit, calibrated scale bar, curvature, and length. | Image | Overlay PNG and curvature/length CSV. |
-| `labkit_VideoMarker_app` | Image measurement | Ordered video keypoint and skeleton annotation with frame inheritance. | Video | Round-trip marker CSV, derived coordinate CSV, and project MAT. |
+| `labkit_VideoMarker_app` | Image measurement | Visual skeleton setup followed by continuous ordered video keypoint annotation with frame inheritance. | Video | Round-trip marker CSV, derived coordinate CSV, and project MAT. |
 | `labkit_FocusStack_app` | Image measurement | Focus-stack fusion into one all-in-focus image. | Image folder or selected image files | Fused PNG, focus map PNG, summary CSV. |
 | `labkit_ImageEnhance_app` | Image measurement | Brightness, contrast, clarity, color, and white-balance processing. | Image files | Enhanced images and manifest CSV. |
 | `labkit_ImageMatch_app` | Image measurement | Reference-based tone, white-balance, Lab style, and histogram matching. | Source image files and separate reference image | Matched images and manifest CSV. |
@@ -188,6 +188,42 @@ metrics, and a compact summary table. The coordinate CSV keeps raw
 `point__x_px`/`point__y_px` columns for overlay or editing and writes
 scaled/origin-shifted `point__x`/`point__y` columns for plotting in external
 programs.
+
+### Video Marker App
+
+`labkit_VideoMarker_app` starts with a visual skeleton setup. Users can apply
+an editable preset, including the legacy five-point leg chain, or add and
+rename ordered keypoints in a table. They can then reorder or remove selected
+points and create connections from endpoint selectors that exclude self-links.
+An additional action connects every adjacent pair in the current point order.
+A new annotation session cannot begin until at least one keypoint exists, and
+the skeleton is locked after the video opens. The video picker remains
+available from an empty setup so matching autosave data can restore its own
+skeleton definition.
+
+Point marking is continuously active while a video is open: a blank click adds
+the next ordered keypoint, dragging a displayed point refines it, and moving to
+another frame saves the current coordinates automatically. A complete frame is
+recorded as confirmed; a newly visited frame inherits the latest confirmed
+coordinates as a draft for local adjustment. `New setup (clear current)` starts
+a different skeleton definition without retaining the current annotation
+session. Frame navigation preserves the current zoomed ROI; opening a new
+video or project starts from its home view. Marker CSV remains the round-trip editing format, while coordinate CSV
+is the plotting-oriented export with optional calibration and origin choices.
+
+Two optional marking assists create editable drafts rather than confirmed
+annotations. Interpolation uses the nearest confirmed frames bracketing the
+current frame. Previous-frame tracking uses lightweight local grayscale block
+matching around each confirmed keypoint and is intended as a small-motion
+starting estimate, not an automatic pose result.
+
+After a video session starts, durable annotation changes are atomically saved
+to `Video Marker Autosaves` under the source video's folder. These visible MAT
+files use the same project payload as explicit project saves, so they can be
+backed up or opened manually. Reopening the same video detects matching
+recovery data and asks whether to restore it or start a new session. Starting
+a new setup or declining recovery discards that video's autosave; explicit
+project saves and CSV exports remain separate outputs.
 
 ## Creating A New App
 

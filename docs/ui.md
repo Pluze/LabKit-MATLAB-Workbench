@@ -4,10 +4,10 @@
 
 | Facade | Owns | Main APIs |
 | --- | --- | --- |
-| `labkit.ui.runtime` | Declarative app runtime, request dispatch, readiness/busy state, safe dialog defaults, app title versioning, state snapshots, and shell utility commands. | `define`, `run`, `create`, `dispatchRequest`, `appVersionTitle`, `applyVersionTitle`, `defaultDialogFolder`, `defaultOutputFolder`, `promptOutputFile`, `promptOutputFolder`, `runBusy`, `saveState`, `loadState`, `showAlert`. |
+| `labkit.ui.runtime` | Declarative app runtime, request dispatch, readiness/busy state, safe dialogs and defaults, app title versioning, state snapshots, and shell utility commands. | `define`, `run`, `create`, `dispatchRequest`, `appVersionTitle`, `applyVersionTitle`, `confirm`, `defaultDialogFolder`, `defaultOutputFolder`, `promptOutputFile`, `promptOutputFolder`, `runBusy`, `saveState`, `loadState`, `showAlert`. |
 | `labkit.ui.layout` | UI 5 data-only workbench layouts. | `workbench`, `workspace`, `tab`, `section`, `group`, `field`, `rangeField`, `panner`, `action`, `filePanel`, `toolPanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `usagePanel`. |
-| `labkit.ui.control` | Semantic registry updates, file-panel values, list selections, numeric limits, enable state, and log appends. | `setValue`, `getValue`, `getFiles`, `setFileSelection`, `setEnabled`, `setLimits`, `appendLog`, `setListItems`, `setListSelection`, `fileLabels`, `filePaths`, `fileIndices`. |
-| `labkit.ui.plot` | Preview axes lookup, plot clearing, image drawing, fitted limits, canvas framing, empty-state messages, and data/axes coordinate conversion. | `getAxes`, `clear`, `clearPreview`, `reset`, `image`, `fit`, `fitCanvas`, `dataToFraction`, `fractionToData`, `offsetData`, `clampData`, `message`. |
+| `labkit.ui.control` | Semantic registry updates, selectable items, file-panel values, list selections, numeric limits, enable state, and log appends. | `setValue`, `getValue`, `getFiles`, `setFileSelection`, `setItems`, `setEnabled`, `setLimits`, `appendLog`, `setListItems`, `setListSelection`, `fileLabels`, `filePaths`, `fileIndices`. |
+| `labkit.ui.plot` | Preview axes lookup, plot clearing, layer-safe overlays, image drawing, fitted limits, canvas framing, empty-state messages, and data/axes coordinate conversion. | `getAxes`, `clear`, `clearPreview`, `reset`, `replaceOverlay`, `image`, `fit`, `fitCanvas`, `dataToFraction`, `fractionToData`, `offsetData`, `clampData`, `message`. |
 | `labkit.ui.interaction` | Reusable composed preview tools and pointer/scroll interaction runtime. | `runtime`, `anchorEditor`, `rectangleEditor`, `scaleBar`, `scaleBarCalibration`, `enablePopout`, `popout`, `zoomAtPoint`. |
 | `labkit.ui.debug` | Debug launch context, visible trace, callback instrumentation, and crash reports. | `context`. |
 
@@ -287,6 +287,9 @@ Use these app-facing contracts:
   bottom of the first control tab.
 - `labkit.ui.control.setLimits` updates numeric limits and clamps existing values
   without firing synchronous value-change callbacks.
+- `labkit.ui.control.setItems` replaces the choices of dropdown-like value
+  controls, preserves a still-valid selection, and otherwise selects the first
+  new item without firing the app callback.
 
 The public layout-node grammar is semantic: pages, sections, controls, order,
 values, and callbacks. When a workflow needs a control that cannot be expressed
@@ -381,6 +384,7 @@ labkit.ui.control.setValue(ui, "sourceImages", ["a.png"; "b.png"]);
 files = labkit.ui.control.getFiles(ui, "sourceImages");
 labkit.ui.control.setFileSelection(ui, "sourceImages", files(1));
 paths = labkit.ui.control.filePaths(labkit.ui.control.getValue(ui, "sourceImages"));
+labkit.ui.control.setItems(ui, "displayMode", {"Raw", "Processed"});
 labkit.ui.control.setEnabled(ui, "run", false);
 labkit.ui.control.appendLog(ui, "log", "Loaded image.");
 labkit.ui.plot.image(ui, "preview", imageData, ...
@@ -409,6 +413,12 @@ redrawn with the same displayed bounds, so overlay refreshes do not throw away
 a user's zoomed preview. Use `labkit.ui.plot.reset` or
 `labkit.ui.plot.clearPreview` when an app intentionally wants to return the
 preview to its home view.
+
+Use `labkit.ui.plot.replaceOverlay` for live annotations, guides, labels, or
+measurement graphics layered over an existing image. Replacing a named layer
+deletes only that layer's prior graphics and preserves the current axes view,
+peer graphics, and interaction callbacks; do not clear and redraw the whole
+axes for an overlay-only state change.
 
 `labkit.ui.plot.fitCanvas` lets an app request a fixed pixel canvas inside a
 `previewArea` axes host while the UI facade owns the row/column grid policy.

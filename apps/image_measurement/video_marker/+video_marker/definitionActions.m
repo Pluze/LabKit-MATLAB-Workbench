@@ -2,6 +2,7 @@
 % video_marker.definition. Handlers own video loading, frame navigation,
 % marker editing, project files, and CSV exports.
 function actions = definitionActions()
+    setupActions = video_marker.userInterface.skeletonSetupActions();
     S = [];
     ui = [];
     fig = [];
@@ -10,38 +11,55 @@ function actions = definitionActions()
     pointEditor = [];
     scaleTool = [];
     videoReader = [];
-
+    autosaveService = [];
     actions = struct( ...
         "startup", @onStartup, ...
         "openVideo", @onOpenVideo, ...
         "frameChanged", @onFrameChanged, ...
         "previousFrame", @onPreviousFrame, ...
         "nextFrame", @onNextFrame, ...
-        "startPointEdit", @onStartPointEdit, ...
         "undoPoint", @onUndoPoint, ...
         "clearFramePoints", @onClearFramePoints, ...
-        "confirmFrame", @onConfirmFrame, ...
-        "applySkeleton", @onApplySkeleton, ...
+        "interpolateFrame", @(state, ~, services) ...
+            onMarkingAssist(state, services, "interpolate"), ...
+        "trackFromPrevious", @(state, ~, services) ...
+            onMarkingAssist(state, services, "trackPrevious"), ...
+        "useSkeletonPreset", setupActions.useSkeletonPreset, ...
+        "keypointEdited", setupActions.keypointEdited, ...
+        "keypointSelected", setupActions.keypointSelected, ...
+        "addKeypoint", setupActions.addKeypoint, ...
+        "removeKeypoint", setupActions.removeKeypoint, ...
+        "moveKeypointUp", setupActions.moveKeypointUp, ...
+        "moveKeypointDown", setupActions.moveKeypointDown, ...
+        "connectionSelected", setupActions.connectionSelected, ...
+        "connectionEndpointChanged", setupActions.connectionEndpointChanged, ...
+        "addConnection", setupActions.addConnection, ...
+        "connectInOrder", setupActions.connectInOrder, ...
+        "removeConnection", setupActions.removeConnection, ...
         "importMarkerCsv", @onImportMarkerCsv, ...
         "exportMarkerCsv", @onExportMarkerCsv, ...
         "exportCoordinateCsv", @onExportCoordinateCsv, ...
         "openProject", @onOpenProject, ...
-        "saveProject", @onSaveProject);
+        "saveProject", @onSaveProject, ...
+        "newSetup", @onNewSetup);
 
     function state = onStartup(state, ~, services)
         S = state;
         ui = services.ui;
         fig = services.figure;
         debugLog = services.debug;
+        autosaveService = video_marker.autosave.controller(fig, debugLog, @addLog);
         ax = ui.controls.videoAxes.primaryAxes;
         imageRuntime = labkit.ui.interaction.runtime(ax, struct( ...
             'figure', fig, ...
             'onTrace', debugLog.trace));
         scaleTool = labkit.ui.interaction.scaleBar(ui.controls.scaleBarHost.grid, ...
             1, imageRuntime, struct( ...
-            'onBeforeReferenceEdit', @onBeforeReferenceEdit, ...
-            'onCalibrationChanged', @onCalibrationChanged, ...
-            'onError', @onScaleToolError, ...
+                'onBeforeReferenceEdit', @onBeforeReferenceEdit, ...
+                'onReferenceEditChanged', @onReferenceEditChanged, ...
+                'onCalibrationChanged', @onCalibrationChanged, ...
+                'onScaleBarPlaced', @onScaleInteractionFinished, ...
+                'onError', @onScaleToolError, ...
             'onTrace', debugLog.trace));
         if debugLog.enabled
             debugLog.trace('Video marker debug trace enabled.');
@@ -51,7 +69,6 @@ function actions = definitionActions()
         refreshAll();
         state = S;
     end
-
     function state = onOpenVideo(state, payload, services)
         capture(state, services);
         paths = labkit.ui.control.filePaths(payload.event.files);
@@ -66,7 +83,6 @@ function actions = definitionActions()
         openVideoPath(paths(1));
         state = S;
     end
-
     function state = onFrameChanged(state, ~, services)
         capture(state, services);
         if ~hasVideo()
@@ -90,30 +106,6 @@ function actions = definitionActions()
         state = S;
     end
 
-    function state = onStartPointEdit(state, ~, services)
-        capture(state, services);
-        if ~hasVideo()
-            showError('No video loaded', 'Open a video before editing points.');
-            state = S;
-            return;
-        end
-        if S.pointEditActive
-            pointEditor.setActive(false);
-            S.pointEditActive = false;
-            addLog('Finished point edit.');
-            refreshAll();
-            state = S;
-            return;
-        end
-        scaleTool.finishReferenceEdit(false);
-        ensurePointEditor();
-        S.pointEditActive = true;
-        pointEditor.start(video_marker.frameAnnotations.framePoints(S.annotations, S.currentFrame));
-        addLog('Started point edit. Click keypoints in order; drag points to refine.');
-        refreshAll();
-        state = S;
-    end
-
     function state = onUndoPoint(state, ~, services)
         capture(state, services);
         if ~isempty(pointEditor)
@@ -126,7 +118,6 @@ function actions = definitionActions()
         capture(state, services);
         S.annotations = video_marker.frameAnnotations.setFramePoints( ...
             S.annotations, S.currentFrame, zeros(0, 2), "empty");
-        S.pointEditActive = false;
         if ~isempty(pointEditor)
             pointEditor.clearPoints();
         end
@@ -135,40 +126,18 @@ function actions = definitionActions()
         state = S;
     end
 
-    function state = onConfirmFrame(state, ~, services)
-        capture(state, services);
-        points = currentEditorOrFramePoints();
-        if size(points, 1) ~= numel(S.skeleton.pointIds)
-            showError('Incomplete frame', 'Place every keypoint before confirming the frame.');
-            state = S;
-            return;
-        end
-        S.annotations = video_marker.frameAnnotations.setFramePoints( ...
-            S.annotations, S.currentFrame, points, "confirmed");
-        addLog(sprintf('Confirmed frame %d.', S.currentFrame));
-        refreshAll();
-        state = S;
-    end
-
-    function state = onApplySkeleton(state, ~, services)
+    function state = onMarkingAssist(state, services, mode)
         capture(state, services);
         try
-            skeleton = video_marker.skeletonDefinition.fromText( ...
-                labkit.ui.control.getValue(ui, 'keypointNames'), ...
-                labkit.ui.control.getValue(ui, 'skeletonEdges'));
+            [points, message] = video_marker.markingAssist.suggest( ...
+                mode, S, videoReader);
         catch ME
-            showException('Invalid skeleton', ME);
+            showException('Marking assist unavailable', ME);
             state = S;
             return;
         end
-        S.skeleton = skeleton;
-        S.annotations = video_marker.frameAnnotations.emptyAnnotations( ...
-            S.videoInfo.frameCount, numel(S.skeleton.pointIds));
-        S.pointEditActive = false;
-        deletePointEditor();
-        addLog(sprintf('Applied skeleton with %d keypoint(s). Existing frame marks were reset.', ...
-            numel(S.skeleton.pointIds)));
-        refreshAll();
+        applySuggestedPoints(points);
+        addLog(message);
         state = S;
     end
 
@@ -189,6 +158,8 @@ function actions = definitionActions()
             return;
         end
         S.skeleton = payload.skeleton;
+        S.selectedPointIndex = 0;
+        S.selectedEdgeIndex = 0;
         S.annotations = payload.annotations;
         S.videoInfo = payload.videoInfo;
         S.videoPath = string(payload.videoInfo.path);
@@ -205,10 +176,11 @@ function actions = definitionActions()
                 S.currentImage = [];
             end
         end
-        S.pointEditActive = false;
         deletePointEditor();
+        activatePointEditorForCurrentFrame();
         addLog(sprintf('Imported marker CSV: %s', fullfile(folder, file)));
-        refreshAll();
+        refreshAll(false);
+        autosaveService.save(S, 'marker CSV import');
         state = S;
     end
 
@@ -289,6 +261,8 @@ function actions = definitionActions()
             return;
         end
         S = loaded;
+        S.selectedPointIndex = 0;
+        S.selectedEdgeIndex = 0;
         S.projectPath = string(fullfile(folder, file));
         if strlength(S.videoPath) > 0 && exist(S.videoPath, 'file') == 2
             try
@@ -301,10 +275,11 @@ function actions = definitionActions()
         end
         scaleTool.resetForNewImage(size(S.currentImage));
         scaleTool.setCalibration(S.calibration);
-        S.pointEditActive = false;
         deletePointEditor();
+        activatePointEditorForCurrentFrame();
         addLog(sprintf('Opened project: %s', S.projectPath));
-        refreshAll();
+        refreshAll(false);
+        autosaveService.save(S, 'project open');
         state = S;
     end
 
@@ -331,10 +306,24 @@ function actions = definitionActions()
         state = S;
     end
 
-    function capture(state, services)
-        if isempty(S)
-            S = state;
+    function state = onNewSetup(state, ~, services)
+        capture(state, services);
+        previousVideoPath = S.videoPath;
+        deletePointEditor();
+        videoReader = [];
+        scaleTool.resetForNewImage();
+        if strlength(previousVideoPath) > 0
+            autosaveService.discard(previousVideoPath);
         end
+        S = video_marker.appLifecycle.createInitialState();
+        labkit.ui.control.setValue(ui, 'videoFile', "");
+        addLog('Started a new skeleton setup and cleared the current annotation session.');
+        refreshAll();
+        state = S;
+    end
+
+    function capture(state, services)
+        S = state;
         if isempty(ui) && isfield(services, 'ui')
             ui = services.ui;
         end
@@ -347,6 +336,14 @@ function actions = definitionActions()
     end
 
     function openVideoPath(pathValue)
+        if restoreAutosaveIfAccepted(pathValue)
+            return;
+        end
+        if isempty(S.skeleton.pointNames)
+            showError('Skeleton required', ...
+                'Add and name at least one keypoint before opening a video.');
+            return;
+        end
         try
             [videoReader, info] = video_marker.videoSource.openVideo(pathValue);
             frame = video_marker.videoSource.readFrame(videoReader, 1);
@@ -362,10 +359,11 @@ function actions = definitionActions()
             info.frameCount, numel(S.skeleton.pointIds));
         S.outputFolder = string(labkit.ui.runtime.defaultOutputFolder(S.videoPath, "video_marker"));
         scaleTool.resetForNewImage(size(frame));
-        S.pointEditActive = false;
         deletePointEditor();
+        activatePointEditorForCurrentFrame();
         addLog(sprintf('Opened video: %s', S.videoPath));
-        refreshAll();
+        refreshAll(false);
+        autosaveService.save(S, 'video open');
     end
 
     function goToFrame(frameIndex)
@@ -377,6 +375,8 @@ function actions = definitionActions()
             refreshAll();
             return;
         end
+        saveCurrentEditorPoints();
+        scaleTool.finishReferenceEdit(false);
         try
             frame = video_marker.videoSource.readFrame(videoReader, frameIndex);
         catch ME
@@ -389,10 +389,10 @@ function actions = definitionActions()
         if S.annotations.frameStatus(frameIndex) == video_marker.frameAnnotations.statusCode("empty")
             S.annotations = video_marker.frameAnnotations.inheritDraft(S.annotations, frameIndex);
         end
-        S.pointEditActive = false;
-        deletePointEditor();
+        activatePointEditorForCurrentFrame();
         addLog(sprintf('Moved to frame %d.', frameIndex));
         refreshAll();
+        autosaveService.save(S, 'frame change');
     end
 
     function ensurePointEditor()
@@ -407,14 +407,58 @@ function actions = definitionActions()
         end
     end
 
-    function onPointEditorChanged(points, reason)
+    function activatePointEditorForCurrentFrame()
+        if ~hasVideo()
+            return;
+        end
+        ensurePointEditor();
+        points = video_marker.frameAnnotations.framePoints(S.annotations, S.currentFrame);
+        pointEditor.setPoints(points);
+        pointEditor.setActive(true);
+    end
+
+    function saveCurrentEditorPoints()
+        if isempty(pointEditor)
+            return;
+        end
+        points = pointEditor.getPoints();
+        statusName = "draft";
+        if size(points, 1) == numel(S.skeleton.pointIds)
+            statusName = "confirmed";
+        end
+        S.annotations = video_marker.frameAnnotations.setFramePoints( ...
+            S.annotations, S.currentFrame, points, statusName);
+    end
+
+    function applySuggestedPoints(points)
         S.annotations = video_marker.frameAnnotations.setFramePoints( ...
             S.annotations, S.currentFrame, points, "draft");
+        ensurePointEditor();
+        pointEditor.setPoints(points);
+        pointEditor.setActive(true);
+        refreshPointOverlay();
+        refreshSummaryControls();
+        autosaveService.save(S, 'suggested points');
+        syncRuntimeState();
+    end
+
+    function onPointEditorChanged(points, reason)
+        if string(reason) == "set points"
+            return;
+        end
+        statusName = "draft";
+        if size(points, 1) == numel(S.skeleton.pointIds)
+            statusName = "confirmed";
+        end
+        S.annotations = video_marker.frameAnnotations.setFramePoints( ...
+            S.annotations, S.currentFrame, points, statusName);
         if any(strcmp(string(reason), ["add point", "undo point", "clear points", "move point", "set points"]))
             addLog(sprintf('Frame %d draft points: %d / %d.', ...
                 S.currentFrame, size(points, 1), numel(S.skeleton.pointIds)));
         end
+        refreshPointOverlay();
         refreshSummaryControls();
+        autosaveService.save(S, 'point edit');
         syncRuntimeState();
     end
 
@@ -422,13 +466,27 @@ function actions = definitionActions()
         if ~isempty(pointEditor)
             pointEditor.setActive(false);
         end
-        S.pointEditActive = false;
+        syncRuntimeState();
+    end
+
+    function onReferenceEditChanged(~, reason)
+        if string(reason) == "finish"
+            onScaleInteractionFinished();
+        end
+    end
+
+    function onScaleInteractionFinished(varargin)
+        if hasVideo() && ~isempty(pointEditor)
+            pointEditor.setActive(true);
+            refreshPreview();
+        end
         syncRuntimeState();
     end
 
     function onCalibrationChanged(~, ~)
         S.calibration = scaleTool.calibration();
         refreshAll();
+        autosaveService.save(S, 'calibration change');
         syncRuntimeState();
     end
 
@@ -436,11 +494,24 @@ function actions = definitionActions()
         showError(titleText, message);
     end
 
-    function points = currentEditorOrFramePoints()
-        if ~isempty(pointEditor)
-            points = pointEditor.getPoints();
-        else
-            points = video_marker.frameAnnotations.framePoints(S.annotations, S.currentFrame);
+    function restored = restoreAutosaveIfAccepted(pathValue)
+        restored = false;
+        [saved, decision] = autosaveService.offer(pathValue);
+        if decision ~= "restore"
+            return;
+        end
+        restored = true;
+        try
+            [videoReader, S] = video_marker.autosave.restoreSession(saved, pathValue);
+            scaleTool.resetForNewImage(size(S.currentImage));
+            scaleTool.setCalibration(S.calibration);
+            deletePointEditor();
+            activatePointEditorForCurrentFrame();
+            refreshAll(false);
+            autosaveService.save(S, 'recovery restore');
+            addLog(sprintf('Restored autosave at frame %d.', S.currentFrame));
+        catch ME
+            showException('Could not restore autosave', ME);
         end
     end
 
@@ -455,35 +526,45 @@ function actions = definitionActions()
         pointEditor = [];
     end
 
-    function refreshAll()
+    function refreshAll(preserveView)
+        if nargin < 1
+            preserveView = true;
+        end
         if hasVideo()
             labkit.ui.control.setValue(ui, 'videoFile', S.videoPath);
             labkit.ui.control.setLimits(ui, 'currentFrame', [1 max(2, S.videoInfo.frameCount)]);
             labkit.ui.control.setValue(ui, 'currentFrame', S.currentFrame);
             labkit.ui.control.setValue(ui, 'coordinateEndFrame', S.videoInfo.frameCount);
-            refreshPreview();
+            refreshPreview(preserveView);
         else
             labkit.ui.plot.reset(ui, 'videoAxes', 'Frame + Skeleton', true, 'video');
         end
-        labkit.ui.control.setValue(ui, 'keypointNames', strjoin(S.skeleton.pointNames, ", "));
-        labkit.ui.control.setValue(ui, 'skeletonEdges', edgeText(S.skeleton));
         refreshSummaryControls();
         syncRuntimeState();
     end
 
-    function refreshPreview()
+    function refreshPreview(preserveView)
+        if nargin < 1
+            preserveView = true;
+        end
         ax = ui.controls.videoAxes.primaryAxes;
-        labkit.ui.plot.clear(ax, "ResetScale", true);
         hImage = video_marker.annotationCanvas.drawFrame( ...
-            ui, 'videoAxes', S.currentImage, S.skeleton, S.annotations, S.currentFrame);
-        if ~isempty(pointEditor)
-            pointEditor.setBackground(hImage);
-            pointEditor.refresh();
-        elseif scaleTool.isReferenceEditActive()
+            ui, 'videoAxes', S.currentImage, S.skeleton, S.annotations, ...
+            S.currentFrame, preserveView);
+        if scaleTool.isReferenceEditActive()
             scaleTool.setBackground(hImage);
             scaleTool.refresh();
+        elseif ~isempty(pointEditor)
+            pointEditor.setBackground(hImage);
+            pointEditor.refresh();
         end
         scaleTool.renderOverlay(ax);
+    end
+
+    function refreshPointOverlay()
+        ax = ui.controls.videoAxes.primaryAxes;
+        video_marker.annotationCanvas.refreshOverlay( ...
+            ax, S.skeleton, S.annotations, S.currentFrame);
     end
 
     function refreshSummaryControls()
@@ -516,19 +597,18 @@ function actions = definitionActions()
 
     function updateEnabledControls(currentPointCount)
         has = hasVideo();
-        pointCount = numel(S.skeleton.pointIds);
+        assist = video_marker.markingAssist.availability(S);
         labkit.ui.control.setEnabled(ui, 'previousFrame', has && S.currentFrame > 1);
         labkit.ui.control.setEnabled(ui, 'nextFrame', has && S.currentFrame < S.videoInfo.frameCount);
-        labkit.ui.control.setEnabled(ui, 'startPointEdit', has);
         labkit.ui.control.setEnabled(ui, 'undoPoint', has && currentPointCount > 0);
         labkit.ui.control.setEnabled(ui, 'clearFramePoints', has && currentPointCount > 0);
-        labkit.ui.control.setEnabled(ui, 'confirmFrame', has && currentPointCount == pointCount);
+        labkit.ui.control.setEnabled(ui, 'interpolateFrame', has && assist.interpolate);
+        labkit.ui.control.setEnabled(ui, 'trackFromPrevious', has && assist.trackPrevious);
         labkit.ui.control.setEnabled(ui, 'exportMarkerCsv', has);
         labkit.ui.control.setEnabled(ui, 'exportCoordinateCsv', has);
         labkit.ui.control.setEnabled(ui, 'saveProject', has);
         scaleTool.setEnabled(struct('hasImage', has, ...
-            'blockInputs', S.pointEditActive, ...
-            'blockPlacement', S.pointEditActive));
+            'blockInputs', false, 'blockPlacement', false));
         scaleTool.updateReadout();
     end
 
@@ -566,13 +646,4 @@ function actions = definitionActions()
         debugLog.reportException('videoMarker', titleText, exception);
         showError(titleText, exception.message);
     end
-end
-
-function textValue = edgeText(skeleton)
-    parts = strings(size(skeleton.edges, 1), 1);
-    for k = 1:size(skeleton.edges, 1)
-        parts(k) = skeleton.pointNames(skeleton.edges(k, 1)) + "-" + ...
-            skeleton.pointNames(skeleton.edges(k, 2));
-    end
-    textValue = strjoin(parts, ", ");
 end
