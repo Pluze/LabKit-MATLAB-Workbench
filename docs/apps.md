@@ -118,6 +118,7 @@ choose an older release, tag, or commit through `Versions`.
 | `labkit_ImageMatch_app` | Image measurement | Reference-based tone, white-balance, Lab style, and histogram matching. | Source image files and separate reference image | Matched images and manifest CSV. |
 | `labkit_BatchImageCrop_app` | Image measurement | Fixed-size batch microscope crops with edge-continuous padding, rotation, duplicate crop tasks, responsive downsampled preview rendering, and optional per-image physical scale normalization with independent crop and calibration units. | Microscope images, optional scale calibration per image | Cropped same-size images and crop manifest CSV. |
 | `labkit_FLIRThermal_app` | Image measurement | FLIR radiometric JPEG/RJPEG thermal postprocessing with per-image display ranges, range-bound presets, linear/log/adjustable-gamma color mapping, clean heatmap rendering, and scale bars. | FLIR radiometric image files | Thermal image exports, colorbar PNGs, and manifest CSV. |
+| `labkit_GaitAnalysis_app` | Gait | Pose-coordinate gait analysis with keypoint role mapping, smoothing, step-event detection, joint angles, translations, ROM, and QC previews. | Pose CSV/TSV/TXT or MAT coordinate files | Frame metrics CSV, coordinate CSV with raw pixel and scaled/origin-shifted columns, step metrics CSV, and summary CSV. |
 | `labkit_ECGPrint_app` | Wearable biosignal | ECG waveform preview, ROI filtering, peak/segment SNR, and SNR-over-time display. | MAT timetable or CSV/TSV table | Segment SNR CSV and waveform PNG. |
 
 Electrochemistry analysis controls above a batch result table apply to the
@@ -168,6 +169,25 @@ the color mapping from the selected display range into the palette; they do
 not transform the stored raw or Celsius matrix and do not change exported
 temperature CSV values. Gamma mode exposes a `Gamma` panner so users can tune
 the display curve interactively.
+
+### Gait Analysis App
+
+`labkit_GaitAnalysis_app` analyzes pose-coordinate tables after keypoints have
+already been tracked or manually marked. It accepts generic wide coordinate
+CSV/TSV/TXT files, LabKit coordinate CSV shapes with `point__x` and `point__y`
+columns, and MAT pose files with `coords` plus `pointNames`.
+
+Users map the iliac, hip, knee, ankle, and foot roles, optionally set frame
+rate, scale calibration, and whether exported coordinates should use the first
+frame's first point as the origin, tune smoothing and step-detection
+thresholds, and then run the analysis. The app detects contact/lift-off events
+from foot motion relative to the hip, computes hip/knee/ankle angles, bone
+segment lengths, per-step point translations, stride length, step time, and
+angle ROM. Exports are plain CSV files for frame metrics, coordinates, step
+metrics, and a compact summary table. The coordinate CSV keeps raw
+`point__x_px`/`point__y_px` columns for overlay or editing and writes
+scaled/origin-shifted `point__x`/`point__y` columns for plotting in external
+programs.
 
 ## Creating A New App
 
