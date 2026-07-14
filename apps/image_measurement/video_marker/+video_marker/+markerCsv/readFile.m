@@ -36,12 +36,14 @@ function payload = readFile(filepath)
                 'Frame indices must be contiguous and 1-based.');
         end
         status = string(T.frame_status(f));
-        points = zeros(0, 2);
+        points = NaN(pointCount, 2);
+        pointRow = 0;
         for p = 1:pointCount
             x = T.(char(skeleton.pointIds(p) + "__x_px"))(f);
             y = T.(char(skeleton.pointIds(p) + "__y_px"))(f);
             if isfinite(x) && isfinite(y)
-                points(end+1, :) = [x y]; %#ok<AGROW>
+                pointRow = pointRow + 1;
+                points(pointRow, :) = [x y];
             elseif isfinite(x) || isfinite(y)
                 error('labkit_VideoMarker_app:InvalidMarkerCsv', ...
                     'Point coordinate pairs must be both finite or both blank.');
@@ -54,6 +56,7 @@ function payload = readFile(filepath)
                 break;
             end
         end
+        points = points(1:pointRow, :);
         annotations = video_marker.frameAnnotations.setFramePoints(annotations, f, points, status);
     end
 
@@ -83,11 +86,15 @@ function info = normalizeVideoInfo(raw)
 end
 
 function header = markerHeader(skeleton)
-    header = ["frame_index", "time_s", "frame_status"];
+    pointCount = numel(skeleton.pointIds);
+    header = strings(1, 3 + 2 * pointCount);
+    header(1:3) = ["frame_index", "time_s", "frame_status"];
+    col = 4;
     for p = 1:numel(skeleton.pointIds)
         base = string(skeleton.pointIds(p));
-        header(end+1) = base + "__x_px"; %#ok<AGROW>
-        header(end+1) = base + "__y_px"; %#ok<AGROW>
+        header(col) = base + "__x_px";
+        header(col + 1) = base + "__y_px";
+        col = col + 2;
     end
 end
 

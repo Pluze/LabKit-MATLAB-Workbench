@@ -2,8 +2,9 @@
 % Expected caller: project save action. The saved variable is videoMarkerProject.
 function saveProject(filepath, state)
     filepath = string(filepath);
-    videoMarkerProject = serializableState(state); %#ok<NASGU>
-    save(filepath, 'videoMarkerProject');
+    wrapper = struct();
+    wrapper.videoMarkerProject = serializableState(state);
+    save(filepath, '-struct', 'wrapper');
 end
 
 function project = serializableState(state)

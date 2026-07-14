@@ -36,11 +36,15 @@ function writeFile(filepath, annotations, skeleton, videoInfo, calibration)
 end
 
 function header = markerHeader(skeleton)
-    header = ["frame_index", "time_s", "frame_status"];
+    pointCount = numel(skeleton.pointIds);
+    header = strings(1, 3 + 2 * pointCount);
+    header(1:3) = ["frame_index", "time_s", "frame_status"];
+    col = 4;
     for p = 1:numel(skeleton.pointIds)
         base = string(skeleton.pointIds(p));
-        header(end+1) = base + "__x_px"; %#ok<AGROW>
-        header(end+1) = base + "__y_px"; %#ok<AGROW>
+        header(col) = base + "__x_px";
+        header(col + 1) = base + "__y_px";
+        col = col + 2;
     end
 end
 

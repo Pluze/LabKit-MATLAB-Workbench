@@ -14,8 +14,9 @@ function skeleton = fromText(pointText, edgeText)
     ids = string(matlab.lang.makeUniqueStrings(ids));
 
     nameToIndex = containers.Map(cellstr(lower(names)), num2cell(1:numel(names)));
-    edges = zeros(0, 2);
     edgeTokens = splitTokens(edgeText);
+    edges = zeros(numel(edgeTokens), 2);
+    edgeCount = 0;
     for k = 1:numel(edgeTokens)
         token = string(edgeTokens(k));
         if strlength(token) == 0
@@ -33,8 +34,10 @@ function skeleton = fromText(pointText, edgeText)
         if a == b
             error('labkit_VideoMarker_app:InvalidEdge', 'An edge cannot connect a keypoint to itself.');
         end
-        edges(end+1, :) = sort([a b]); %#ok<AGROW>
+        edgeCount = edgeCount + 1;
+        edges(edgeCount, :) = sort([a b]);
     end
+    edges = edges(1:edgeCount, :);
     edges = unique(edges, "rows", "stable");
 
     skeleton = struct();
