@@ -182,7 +182,7 @@ function assertImageMeasurementAppBoundary(source, appName)
     assert(contains(source, [packageName '.']), ...
         [appName ' should use its app-owned package namespace.']);
     allPackageNames = {'batch_crop', 'curvature', 'flir_thermal', ...
-        'focus_stack', 'image_enhance', 'image_match'};
+        'focus_stack', 'image_enhance', 'image_match', 'video_marker'};
     otherPackageNames = setdiff(allPackageNames, {packageName});
     for iPackage = 1:numel(otherPackageNames)
         assert(~contains(source, [otherPackageNames{iPackage} '.']), ...
@@ -210,6 +210,8 @@ function packageName = imageMeasurementPackageForApp(appName)
             packageName = 'image_enhance';
         case 'labkit_ImageMatch_app'
             packageName = 'image_match';
+        case 'labkit_VideoMarker_app'
+            packageName = 'video_marker';
         otherwise
             error('Unknown image-measurement app entrypoint: %s', appName);
     end
