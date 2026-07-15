@@ -1,4 +1,4 @@
-% Expected caller: response_review_stats.run/buildWorkbenchLayout. Input is app state.
+% Expected caller: presentWorkbench/buildWorkbenchLayout. Input is presentation state.
 % Output is a two-column result-table cell array.
 function data = summaryTableData(S)
 %SUMMARYTABLEDATA Build review/stat summary rows.

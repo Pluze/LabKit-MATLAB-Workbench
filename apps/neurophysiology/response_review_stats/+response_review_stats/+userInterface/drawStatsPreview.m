@@ -1,5 +1,5 @@
-% Expected caller: response_review_stats.run. Inputs are a UI axes handle
-% and app state. Side effect is redrawing a summary or aligned waveform plot.
+% Expected caller: Runtime V2 registered renderer. Inputs are a UI axes handle
+% and presentation model. Side effect is redrawing summary/aligned waveforms.
 function drawStatsPreview(ax, S)
 %DRAWSTATSPREVIEW Draw response-review metrics or aligned segments.
 
