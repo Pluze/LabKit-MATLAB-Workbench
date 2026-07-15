@@ -17,7 +17,7 @@ function state = onChooseOutputFolder(state, ~, services)
         'Select crop export folder', ...
         state.project.parameters.outputFolder);
     if cancelled
-        state = addLog(state, services, "Export folder selection cancelled.");
+        state = services.workflow.log(state, "Export folder selection cancelled.");
         return;
     end
     state.project.parameters.outputFolder = string(folder);
@@ -48,7 +48,7 @@ function state = onExportCrops(state, ~, services)
     try
         items = batch_crop.appState.loadMissingImages(items);
     catch ME
-        reportException(services, 'Could not load image', ME);
+        services.diagnostics.report('Could not load image', ME);
         services.dialogs.alert(ME.message, 'Could not load image');
         return;
     end
@@ -59,7 +59,7 @@ function state = onExportCrops(state, ~, services)
     results = state.project.results;
     if ~isempty(results.lastExport) && ...
             results.lastExportFingerprint == plan.fingerprint
-        state = addLog(state, services, ...
+        state = services.workflow.log(state, ...
             "Crop export is already up to date; skipped duplicate write.");
         return;
     end
@@ -69,7 +69,7 @@ function state = onExportCrops(state, ~, services)
         [manifestPath, ~] = services.results.writeManifest( ...
             opts.outputFolder, spec);
     catch ME
-        reportException(services, 'Export failed', ME);
+        services.diagnostics.report('Export failed', ME);
         services.dialogs.alert(ME.message, 'Export failed');
         return;
     end
@@ -80,7 +80,7 @@ function state = onExportCrops(state, ~, services)
     statuses = string({payload.results.status});
     savedCount = sum(statuses == "saved");
     failedCount = sum(statuses == "failed");
-    state = addLog(state, services, sprintf( ...
+    state = services.workflow.log(state, sprintf( ...
         'Exported %d crop(s), %d failed. Manifest: %s', ...
         savedCount, failedCount, char(payload.manifestPath)));
     if failedCount > 0
@@ -154,20 +154,5 @@ function type = mediaType(extension)
             type = "image/tiff";
         otherwise
             type = "image/jpeg";
-    end
-end
-
-function state = addLog(state, services, message)
-    line = string(message);
-    state.session.workflow.statusMessage = line;
-    state.session.workflow.logLines(end + 1, 1) = line;
-    if isstruct(services.debug) && isfield(services.debug, 'append')
-        services.debug.append(char(line));
-    end
-end
-
-function reportException(services, context, exception)
-    if isstruct(services.debug) && isfield(services.debug, 'reportException')
-        services.debug.reportException(context, exception);
     end
 end

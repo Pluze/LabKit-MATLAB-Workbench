@@ -15,7 +15,7 @@ end
 function state = onMatChosen(state, event, services)
     filepath = firstEventPath(event, services);
     if strlength(filepath) == 0
-        state = addLog(state, services, "DIC MAT selection cancelled.");
+        state = services.workflow.log(state, "DIC MAT selection cancelled.");
         return;
     end
     state.project.inputs.matPath = filepath;
@@ -23,13 +23,13 @@ function state = onMatChosen(state, event, services)
     state.project.inputs.sources = setSource( ...
         state.project.inputs.sources, "dicMat", "strain", filepath, services);
     state = clearPreparedOutputs(state);
-    state = addLog(state, services, "Selected DIC MAT: " + filepath);
+    state = services.workflow.log(state, "Selected DIC MAT: " + filepath);
 end
 
 function state = onReferenceChosen(state, event, services)
     filepath = firstEventPath(event, services);
     if strlength(filepath) == 0
-        state = addLog(state, services, ...
+        state = services.workflow.log(state, ...
             "Reference image selection cancelled.");
         return;
     end
@@ -39,13 +39,13 @@ function state = onReferenceChosen(state, event, services)
         state.project.inputs.sources, "referenceImage", "reference", ...
         filepath, services);
     state = clearPreparedOutputs(state);
-    state = addLog(state, services, "Loaded reference image: " + filepath);
+    state = services.workflow.log(state, "Loaded reference image: " + filepath);
 end
 
 function state = onMaskChosen(state, event, services)
     filepath = firstEventPath(event, services);
     if strlength(filepath) == 0
-        state = addLog(state, services, "Mask image selection cancelled.");
+        state = services.workflow.log(state, "Mask image selection cancelled.");
         return;
     end
     state.project.inputs.maskPath = filepath;
@@ -53,7 +53,7 @@ function state = onMaskChosen(state, event, services)
     state.project.inputs.sources = setSource( ...
         state.project.inputs.sources, "maskImage", "mask", filepath, services);
     state = clearPreparedOutputs(state);
-    state = addLog(state, services, "Loaded mask image: " + filepath);
+    state = services.workflow.log(state, "Loaded mask image: " + filepath);
 end
 
 function state = onGenerate(state, ~, services)
@@ -74,13 +74,13 @@ function state = onGenerate(state, ~, services)
         state.project.inputs.strain = ...
             dic_postprocess.sourceFiles.loadNcorrStrain(char(inputs.matPath));
         state = prepareOutputs(state);
-        state = addLog(state, services, ...
+        state = services.workflow.log(state, ...
             "Generated EXX/EYY overlays and ROI summary.");
     catch ME
-        reportException(services, 'Generate failed', ME);
+        services.diagnostics.report('Generate failed', ME);
         services.dialogs.alert(ME.message, ...
             'DIC postprocess error');
-        state = addLog(state, services, "Generate failed: " + ME.message);
+        state = services.workflow.log(state, "Generate failed: " + ME.message);
     end
 end
 
@@ -89,15 +89,15 @@ function state = onOptionsChanged(state, ~, services)
         return;
     end
     if ~validColorRange(state.project.parameters)
-        state = addLog(state, services, ...
+        state = services.workflow.log(state, ...
             "Option update skipped: Color max must exceed color min.");
         return;
     end
     try
         state = prepareOutputs(state);
     catch ME
-        reportException(services, 'Option update skipped', ME);
-        state = addLog(state, services, ...
+        services.diagnostics.report('Option update skipped', ME);
+        state = services.workflow.log(state, ...
             "Option update skipped: " + ME.message);
     end
 end
@@ -112,7 +112,7 @@ function state = onSaveOverlays(state, ~, services)
     [folder, cancelled] = services.dialogs.outputFolder( ...
         'Select folder for overlay PNGs', "");
     if cancelled
-        state = addLog(state, services, "Save overlay PNGs cancelled.");
+        state = services.workflow.log(state, "Save overlay PNGs cancelled.");
         return;
     end
     tag = string(dic_postprocess.userInterface.tagFromPath( ...
@@ -133,7 +133,7 @@ function state = onSaveOverlays(state, ~, services)
     spec.ManifestName = "dic_overlays_" + tag + ".labkit.json";
     [manifestPath, ~] = services.results.writeManifest(folder, spec);
     state.project.results.overlayManifestPath = string(manifestPath);
-    state = addLog(state, services, ...
+    state = services.workflow.log(state, ...
         "Saved clean overlay PNGs: " + exxFile + " and " + eyyFile);
 end
 
@@ -150,7 +150,7 @@ function state = onExportSummary(state, ~, services)
     [out, cancelled] = services.dialogs.outputFile( ...
         '*.csv', 'Save strain summary CSV', defaultName);
     if cancelled
-        state = addLog(state, services, "Export summary cancelled.");
+        state = services.workflow.log(state, "Export summary cancelled.");
         return;
     end
     writetable(summary, out);
@@ -161,7 +161,7 @@ function state = onExportSummary(state, ~, services)
     spec.ManifestName = string(base) + ".labkit.json";
     [manifestPath, ~] = services.results.writeManifest(folder, spec);
     state.project.results.summaryManifestPath = string(manifestPath);
-    state = addLog(state, services, "Exported summary CSV: " + string(out));
+    state = services.workflow.log(state, "Exported summary CSV: " + string(out));
 end
 
 function state = prepareOutputs(state)
@@ -217,23 +217,4 @@ function spec = resultSpec(state, outputs)
     spec.Parameters = state.project.parameters;
     spec.Summary = struct("metricCount", ...
         height(state.project.results.summaryTable));
-end
-
-function state = addLog(state, services, message)
-    message = string(message);
-    state.session.workflow.logLines(end + 1, 1) = message;
-    if isDebugEnabled(services.debug)
-        services.debug.append(char(message));
-    end
-end
-
-function reportException(services, context, exception)
-    if isstruct(services.debug) && isfield(services.debug, 'reportException')
-        services.debug.reportException('dicPostprocess', context, exception);
-    end
-end
-
-function tf = isDebugEnabled(debugLog)
-    tf = isstruct(debugLog) && isfield(debugLog, 'enabled') && ...
-        logical(debugLog.enabled);
 end

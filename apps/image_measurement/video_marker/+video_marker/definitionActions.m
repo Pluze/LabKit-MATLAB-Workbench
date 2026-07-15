@@ -30,7 +30,7 @@ function state = onOpenVideo(state, event, services)
         paths = services.events.paths(event, "files");
     end
     if isempty(paths)
-        state = addLog(state, services, "Video selection cancelled.");
+        state = services.workflow.log(state, "Video selection cancelled.");
         return;
     end
     if isempty(state.project.annotations.skeleton.pointNames)
@@ -44,7 +44,7 @@ function state = onOpenVideo(state, event, services)
         resource.cache.reset(1, firstFrame);
         setVideoResource(services, resource);
     catch ME
-        reportException(services, 'Could not open video', ME);
+        services.diagnostics.report('Could not open video', ME);
         showError(services, 'Could not open video', ME.message);
         return;
     end
@@ -68,7 +68,7 @@ function state = onOpenVideo(state, event, services)
     state.session.cache.currentImage = firstFrame;
     state.session.cache.frameIndex = 1;
     state = clearResults(state);
-    state = addLog(state, services, "Opened video: " + paths(1));
+    state = services.workflow.log(state, "Opened video: " + paths(1));
 end
 
 function state = onFrameChanged(state, event, services)
@@ -107,7 +107,7 @@ function state = goToFrame(state, target, services)
             startFrame, target, state.session.cache.currentImage, ...
             numel(state.project.annotations.skeleton.pointIds));
     catch ME
-        reportException(services, 'Could not read frame', ME);
+        services.diagnostics.report('Could not read frame', ME);
         showError(services, 'Could not read frame', ME.message);
         state.session.selection.currentFrame = startFrame;
         return;
@@ -130,7 +130,7 @@ function state = goToFrame(state, target, services)
     else
         message = sprintf('Moved to frame %d.', target);
     end
-    state = addLog(state, services, message);
+    state = services.workflow.log(state, message);
 end
 
 function state = onPointsEdited(state, event, services)
@@ -157,7 +157,7 @@ function state = onPointsEdited(state, event, services)
         state.project.annotations.frames, frame, points, status, ...
         "manual", ones(size(points, 1), 1));
     state = clearResults(state);
-    state = addLog(state, services, sprintf( ...
+    state = services.workflow.log(state, sprintf( ...
         'Frame %d points: %d / %d.', frame, size(points, 1), total));
 end
 
@@ -168,7 +168,7 @@ function state = onUndoPoint(state, ~, services)
     end
     points(end, :) = [];
     state = setCurrentPoints(state, points);
-    state = addLog(state, services, sprintf( ...
+    state = services.workflow.log(state, sprintf( ...
         'Undid last point on frame %d.', state.session.cache.frameIndex));
 end
 
@@ -177,7 +177,7 @@ function state = onClearFramePoints(state, ~, services)
         return;
     end
     state = setCurrentPoints(state, zeros(0, 2));
-    state = addLog(state, services, sprintf( ...
+    state = services.workflow.log(state, sprintf( ...
         'Cleared frame %d points.', state.session.cache.frameIndex));
 end
 
@@ -268,7 +268,7 @@ function state = onPlaceScaleBar(state, ~, services)
             state.project.parameters.scaleBarColor);
         state.session.workflow.scaleReferenceEditing = false;
     catch ME
-        reportException(services, 'Could not place scale bar', ME);
+        services.diagnostics.report('Could not place scale bar', ME);
         showError(services, 'Could not place scale bar', ME.message);
     end
 end
@@ -278,13 +278,13 @@ function state = onImportMarkerCsv(state, ~, services)
         {'*.csv', 'Marker CSV'}, 'Import marker CSV', ...
         services.dialogs.defaultFolder("input"));
     if cancelled
-        state = addLog(state, services, "Marker CSV import cancelled.");
+        state = services.workflow.log(state, "Marker CSV import cancelled.");
         return;
     end
     try
         payload = video_marker.markerCsv.readFile(filepath);
     catch ME
-        reportException(services, 'Could not import marker CSV', ME);
+        services.diagnostics.report('Could not import marker CSV', ME);
         showError(services, 'Could not import marker CSV', ME.message);
         return;
     end
@@ -314,7 +314,7 @@ function state = onImportMarkerCsv(state, ~, services)
             state.session.cache.frameIndex = 1;
             state.session.selection.currentFrame = 1;
         catch ME
-            reportException(services, 'Could not reopen marker CSV video', ME);
+            services.diagnostics.report('Could not reopen marker CSV video', ME);
             state.session.cache.videoInfo = payload.videoInfo;
             state.session.cache.currentImage = [];
         end
@@ -326,7 +326,7 @@ function state = onImportMarkerCsv(state, ~, services)
     state.project.parameters.coordinateEndFrame = ...
         max(1, payload.videoInfo.frameCount);
     state = clearResults(state);
-    state = addLog(state, services, "Imported marker CSV: " + filepath);
+    state = services.workflow.log(state, "Imported marker CSV: " + filepath);
 end
 
 function state = onExportMarkerCsv(state, ~, services)
@@ -340,7 +340,7 @@ function state = onExportMarkerCsv(state, ~, services)
         fullfile(defaultOutputFolder(state, services), ...
         'video_marker_markers.csv'));
     if cancelled
-        state = addLog(state, services, "Marker CSV export cancelled.");
+        state = services.workflow.log(state, "Marker CSV export cancelled.");
         return;
     end
     try
@@ -352,12 +352,12 @@ function state = onExportMarkerCsv(state, ~, services)
         manifestPath = writeResultManifest(state, services, filepath, ...
             "markerCsv", "text/csv", "video_marker_markers.labkit.json");
     catch ME
-        reportException(services, 'Could not export marker CSV', ME);
+        services.diagnostics.report('Could not export marker CSV', ME);
         showError(services, 'Could not export marker CSV', ME.message);
         return;
     end
     state.project.results.markerManifestPath = string(manifestPath);
-    state = addLog(state, services, "Exported marker CSV: " + filepath);
+    state = services.workflow.log(state, "Exported marker CSV: " + filepath);
 end
 
 function state = onExportSettingChanged(state, ~, ~)
@@ -387,7 +387,7 @@ function state = onExportCoordinateCsv(state, ~, services)
         fullfile(defaultOutputFolder(state, services), ...
         'video_marker_coordinates.csv'));
     if cancelled
-        state = addLog(state, services, "Coordinate CSV export cancelled.");
+        state = services.workflow.log(state, "Coordinate CSV export cancelled.");
         return;
     end
     try
@@ -401,12 +401,12 @@ function state = onExportCoordinateCsv(state, ~, services)
             "coordinateCsv", "text/csv", ...
             "video_marker_coordinates.labkit.json");
     catch ME
-        reportException(services, 'Could not export coordinate CSV', ME);
+        services.diagnostics.report('Could not export coordinate CSV', ME);
         showError(services, 'Could not export coordinate CSV', ME.message);
         return;
     end
     state.project.results.coordinateManifestPath = string(manifestPath);
-    state = addLog(state, services, ...
+    state = services.workflow.log(state, ...
         "Exported coordinate CSV: " + filepath);
 end
 
@@ -415,7 +415,7 @@ function state = onNewSetup(~, ~, services)
     project = video_marker.appLifecycle.createProject();
     session = video_marker.appLifecycle.createSession(project);
     state = struct("project", project, "session", session);
-    state = addLog(state, services, ...
+    state = services.workflow.log(state, ...
         "Started a new skeleton setup and cleared the annotation session.");
 end
 
@@ -503,23 +503,8 @@ function verifyImportedShape(frames, skeleton, info)
     end
 end
 
-function state = addLog(state, services, message)
-    message = string(message);
-    state.session.workflow.logLines(end + 1, 1) = message;
-    if isstruct(services.debug) && isfield(services.debug, 'enabled') && ...
-            logical(services.debug.enabled)
-        services.debug.append(char(message));
-    end
-end
-
 function showError(services, titleText, message)
     services.dialogs.alert(message, titleText);
-end
-
-function reportException(services, context, exception)
-    if isstruct(services.debug) && isfield(services.debug, 'reportException')
-        services.debug.reportException('videoMarker', context, exception);
-    end
 end
 
 function value = finiteScalar(value, fallback)

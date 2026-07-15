@@ -9,17 +9,12 @@ function state = startup(state, ~, services)
     debugLog.trace('DIC postprocess debug trace enabled.');
     try
         pack = dic_postprocess.debug.writeSamplePack(debugLog);
-        state = appendLog(state, "Debug sample files: " + pack.sampleFolder);
-        state = appendLog(state, "Debug output folder: " + pack.outputFolder);
+        state = services.workflow.log(state, "Debug sample files: " + pack.sampleFolder);
+        state = services.workflow.log(state, "Debug output folder: " + pack.outputFolder);
     catch ME
-        debugLog.reportException('dicPostprocess', ...
-            'Debug sample setup failed', ME);
-        state = appendLog(state, "Debug sample setup failed: " + ME.message);
+        services.diagnostics.report('Debug sample setup failed', ME);
+        state = services.workflow.log(state, "Debug sample setup failed: " + ME.message);
     end
-end
-
-function state = appendLog(state, message)
-    state.session.workflow.logLines(end + 1, 1) = string(message);
 end
 
 function tf = isDebugEnabled(debugLog)

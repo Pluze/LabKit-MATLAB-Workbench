@@ -8,6 +8,12 @@ function services = buildV2RuntimeServices(fig, runtime, dispatch)
     services.debug = runtime.debug;
     services.request = runtime.request;
     services.dispatch = dispatch;
+    services.workflow = struct( ...
+        "log", @(state, message) appendWorkflowLog( ...
+            state, runtime.debug, message));
+    services.diagnostics = struct( ...
+        "report", @(context, exception) reportException( ...
+            runtime.debug, runtime.definition.id, context, exception));
     services.events = struct( ...
         "entries", @eventEntries, ...
         "paths", @eventPaths, ...
@@ -35,6 +41,35 @@ function services = buildV2RuntimeServices(fig, runtime, dispatch)
         "output", @resultOutput, ...
         "writeManifest", @(folder, spec) writeResultManifest( ...
             fig, folder, spec));
+end
+
+function state = appendWorkflowLog(state, debugLog, message)
+    line = string(message);
+    if ~isscalar(line)
+        line = join(line(:), newline);
+    end
+    if ~isfield(state.session.workflow, 'logLines')
+        state.session.workflow.logLines = strings(0, 1);
+    end
+    state.session.workflow.logLines(end + 1, 1) = line;
+    if isfield(state.session.workflow, 'statusMessage')
+        state.session.workflow.statusMessage = line;
+    end
+    if isDebugEnabled(debugLog) && isfield(debugLog, 'append')
+        debugLog.append(char(line));
+    end
+end
+
+function reportException(debugLog, appId, context, exception)
+    if isstruct(debugLog) && isfield(debugLog, 'reportException')
+        debugLog.reportException(char(string(appId)), ...
+            char(string(context)), exception);
+    end
+end
+
+function tf = isDebugEnabled(debugLog)
+    tf = isstruct(debugLog) && isfield(debugLog, 'enabled') && ...
+        logical(debugLog.enabled);
 end
 
 function values = eventEntries(event, fieldName)

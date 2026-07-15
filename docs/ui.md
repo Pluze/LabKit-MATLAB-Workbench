@@ -351,8 +351,8 @@ variables import read-only. V1 snapshots remain for unmigrated apps.
 
 After the shell, state, first presentation, and interaction hub exist, the
 runtime queues optional `Start`. Like every action, it receives injected
-`services` for events, dialogs, project sources, results, resources, debug,
-dispatch, and the launch request. Services are capabilities, not UI or state.
+`services` for events, dialogs, sources, results, resources, workflow logging,
+diagnostics, dispatch, and launch request. They are capabilities, not UI/state.
 
 Each v2 figure owns one private interaction hub. Preview targets register as
 `previewId` or `previewId.axisId`; the hub owns hover wheel/zoom routing,

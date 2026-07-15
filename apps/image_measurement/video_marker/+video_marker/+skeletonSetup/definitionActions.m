@@ -36,7 +36,7 @@ function state = onUseSkeletonPreset(state, ~, services)
         video_marker.skeletonDefinition.fromParts( ...
         presets(match).pointNames, presets(match).edges);
     state = video_marker.skeletonSetup.normalizeSelection(state, true);
-    state = addLog(state, services, ...
+    state = services.workflow.log(state, ...
         "Applied skeleton preset: " + selected + ".");
 end
 
@@ -54,10 +54,10 @@ function state = onKeypointEdited(state, event, services)
             video_marker.skeletonDefinition.renamePoint( ...
             state.project.annotations.skeleton, indices(1), value);
         state = video_marker.skeletonSetup.normalizeSelection(state);
-        state = addLog(state, services, sprintf( ...
+        state = services.workflow.log(state, sprintf( ...
             'Renamed keypoint %d.', indices(1)));
     catch ME
-        reportException(services, 'Invalid keypoint name', ME);
+        services.diagnostics.report('Invalid keypoint name', ME);
         services.dialogs.alert(ME.message, 'Invalid keypoint name');
     end
 end
@@ -76,7 +76,7 @@ function state = onAddKeypoint(state, ~, services)
         state.project.annotations.skeleton);
     state.session.selection.selectedPointIndex = index;
     state = video_marker.skeletonSetup.normalizeSelection(state);
-    state = addLog(state, services, ...
+    state = services.workflow.log(state, ...
         "Added keypoint " + ...
         state.project.annotations.skeleton.pointNames(index) + ".");
 end
@@ -94,7 +94,7 @@ function state = onRemoveKeypoint(state, ~, services)
         index, numel(state.project.annotations.skeleton.pointNames));
     state.session.selection.selectedEdgeIndex = 0;
     state = video_marker.skeletonSetup.normalizeSelection(state);
-    state = addLog(state, services, sprintf( ...
+    state = services.workflow.log(state, sprintf( ...
         'Removed keypoint %d.', index));
 end
 
@@ -109,7 +109,7 @@ function state = moveKeypoint(state, ~, services, delta)
         state.project.annotations.skeleton, index, delta);
     state.session.selection.selectedPointIndex = index;
     state = video_marker.skeletonSetup.normalizeSelection(state);
-    state = addLog(state, services, sprintf( ...
+    state = services.workflow.log(state, sprintf( ...
         'Moved keypoint to position %d.', index));
 end
 
@@ -145,7 +145,7 @@ function state = onAddConnection(state, ~, services)
         state.project.annotations.skeleton, a, b);
     state.session.selection.selectedEdgeIndex = ...
         size(state.project.annotations.skeleton.edges, 1);
-    state = addLog(state, services, ...
+    state = services.workflow.log(state, ...
         "Connected " + names(a) + " to " + names(b) + ".");
 end
 
@@ -158,7 +158,7 @@ function state = onConnectInOrder(state, ~, services)
         video_marker.skeletonDefinition.connectInOrder( ...
         state.project.annotations.skeleton);
     state.session.selection.selectedEdgeIndex = 0;
-    state = addLog(state, services, ...
+    state = services.workflow.log(state, ...
         "Connected adjacent keypoints in order.");
 end
 
@@ -173,7 +173,7 @@ function state = onRemoveConnection(state, ~, services)
         state.project.annotations.skeleton, index);
     state.session.selection.selectedEdgeIndex = min( ...
         index, size(state.project.annotations.skeleton.edges, 1));
-    state = addLog(state, services, sprintf( ...
+    state = services.workflow.log(state, sprintf( ...
         'Removed connection %d.', index));
 end
 
@@ -186,19 +186,4 @@ end
 
 function tf = skeletonLocked(state)
     tf = state.session.cache.videoInfo.frameCount > 0;
-end
-
-function state = addLog(state, services, message)
-    line = string(message);
-    state.session.workflow.statusMessage = line;
-    state.session.workflow.logLines(end + 1, 1) = line;
-    if isstruct(services.debug) && isfield(services.debug, 'append')
-        services.debug.append(char(line));
-    end
-end
-
-function reportException(services, context, exception)
-    if isstruct(services.debug) && isfield(services.debug, 'reportException')
-        services.debug.reportException(context, exception);
-    end
 end

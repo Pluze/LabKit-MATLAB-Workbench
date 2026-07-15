@@ -12,14 +12,14 @@ end
 function state = onOpenFilesChosen(state, event, services)
     paths = services.events.paths(event, "addedFiles");
     if isempty(paths)
-        state = addLog(state, services, "Open cancelled.");
+        state = services.workflow.log(state, "Open cancelled.");
         return;
     end
     failed = struct('filepath', {}, 'message', {});
     for k = 1:numel(paths)
         filepath = paths(k);
         if isLoaded(state.project.inputs.items, filepath)
-            state = addLog(state, services, ...
+            state = services.workflow.log(state, ...
                 "Skipped already loaded: " + filepath);
             continue;
         end
@@ -27,7 +27,7 @@ function state = onOpenFilesChosen(state, event, services)
         if ~status.ok
             failed(end + 1) = struct( ...
                 'filepath', char(filepath), 'message', char(status.message));
-            state = addLog(state, services, ...
+            state = services.workflow.log(state, ...
                 "Failed: " + filepath + " | " + status.message);
             continue;
         end
@@ -37,12 +37,12 @@ function state = onOpenFilesChosen(state, event, services)
         state.project.inputs.sources = appendSource( ...
             state.project.inputs.sources, filepath, services);
         state.session.selection.paths(end + 1, 1) = filepath;
-        state = addLog(state, services, alignMessage);
+        state = services.workflow.log(state, alignMessage);
         for iMessage = 1:numel(item.logmsg)
-            state = addLog(state, services, item.logmsg{iMessage});
+            state = services.workflow.log(state, item.logmsg{iMessage});
         end
-        state = addLog(state, services, string(item.name) + ": " + item.message);
-        state = addLog(state, services, "Loaded: " + filepath);
+        state = services.workflow.log(state, string(item.name) + ": " + item.message);
+        state = services.workflow.log(state, "Loaded: " + filepath);
     end
     if ~isempty(failed)
         firstError = failed(1);
@@ -64,7 +64,7 @@ function state = onRemoveSelected(state, event, services)
     state.session.selection.paths = setdiff( ...
         state.session.selection.paths, paths, 'stable');
     for k = 1:numel(removed)
-        state = addLog(state, services, "Removed: " + removed(k));
+        state = services.workflow.log(state, "Removed: " + removed(k));
     end
 end
 
@@ -72,7 +72,7 @@ function state = onClearAll(state, ~, services)
     state.project.inputs.items = struct([]);
     state.project.inputs.sources = emptySources();
     state.session.selection.paths = strings(0, 1);
-    state = addLog(state, services, "Cleared all files.");
+    state = services.workflow.log(state, "Cleared all files.");
 end
 
 function state = onSelectionChanged(state, event, services)
@@ -112,7 +112,7 @@ function state = onExportCSV(state, ~, services)
     [manifestPath, ~] = services.results.writeManifest(folder, spec);
     state.project.results.lastExport = struct( ...
         "csvPath", string(out), "manifestPath", string(manifestPath));
-    state = addLog(state, services, "Exported CSV: " + string(out));
+    state = services.workflow.log(state, "Exported CSV: " + string(out));
 end
 
 function items = selectedItems(state)
@@ -173,13 +173,4 @@ end
 function sources = emptySources()
     sources = struct("id", {}, "required", {}, "role", {}, ...
         "reference", {});
-end
-
-function state = addLog(state, services, message)
-    message = string(message);
-    state.session.workflow.logLines(end + 1, 1) = message;
-    if isstruct(services.debug) && isfield(services.debug, 'enabled') && ...
-            logical(services.debug.enabled)
-        services.debug.append(char(message));
-    end
 end

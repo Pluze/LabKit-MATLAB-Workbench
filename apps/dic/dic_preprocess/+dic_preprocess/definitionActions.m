@@ -45,7 +45,7 @@ end
 function state = onImageChosen(state, event, services, role)
     paths = services.events.paths(event, "addedFiles");
     if isempty(paths)
-        state = addLog(state, services, titleCase(role) + ...
+        state = services.workflow.log(state, titleCase(role) + ...
             " image selection cancelled.");
         return;
     end
@@ -53,7 +53,7 @@ function state = onImageChosen(state, event, services, role)
     try
         imageData = imread(filepath);
     catch ME
-        reportException(services, 'Image load failed', ME);
+        services.diagnostics.report('Image load failed', ME);
         services.dialogs.alert(ME.message, ...
             'Image load failed');
         return;
@@ -68,7 +68,7 @@ function state = onImageChosen(state, event, services, role)
     state.project.parameters.previewMode = defaultPreviewMode(state);
     state.session.workflow.details = {sprintf('Loaded %s image.', role)};
     state = clearResults(state);
-    state = addLog(state, services, ...
+    state = services.workflow.log(state, ...
         "Loaded " + role + " image: " + filepath);
 end
 
@@ -89,7 +89,7 @@ function state = onImageCleared(state, services, role)
     state = stopEditors(state);
     state.project.parameters.previewMode = defaultPreviewMode(state);
     state = clearResults(state);
-    state = addLog(state, services, "Cleared " + role + " image file.");
+    state = services.workflow.log(state, "Cleared " + role + " image file.");
 end
 
 function state = onPreviewChanged(state, ~, ~)
@@ -110,7 +110,7 @@ function state = onStartPointMatching(state, ~, services)
     state.session.workflow.details = { ...
         ['Point matching active. Select corresponding features in the ' ...
         'reference and moving previews; at least two pairs are required.']};
-    state = addLog(state, services, ...
+    state = services.workflow.log(state, ...
         "Started point matching in the main reference and moving previews.");
 end
 
@@ -155,7 +155,7 @@ function state = onApplyPointAlignment(state, ~, services)
             cache.currentReferenceImage, cache.currentMovingImage, ...
             referencePoints, movingPoints);
     catch ME
-        reportException(services, 'Point alignment failed', ME);
+        services.diagnostics.report('Point alignment failed', ME);
         services.dialogs.alert(ME.message, ...
             'Point alignment failed');
         return;
@@ -172,7 +172,7 @@ function state = onApplyPointAlignment(state, ~, services)
         transform, size(state.session.cache.currentReferenceImage), ...
         size(state.session.cache.currentMovingImage));
     state = clearResults(state);
-    state = addLog(state, services, sprintf( ...
+    state = services.workflow.log(state, sprintf( ...
         'Aligned image using %d point pair(s).', size(referencePoints, 1)));
 end
 
@@ -182,7 +182,7 @@ function state = onCancelPointMatching(state, ~, services)
     end
     state = stopEditors(state);
     state.session.workflow.details = {'Point matching cancelled.'};
-    state = addLog(state, services, "Cancelled point matching.");
+    state = services.workflow.log(state, "Cancelled point matching.");
 end
 
 function state = onUndoPointPair(state, ~, ~)
@@ -216,11 +216,11 @@ function state = onAutoAlign(state, ~, services)
             dic_preprocess.analysisRun.autoAlignMovingToReference( ...
             cache.currentReferenceImage, cache.currentMovingImage);
     catch ME
-        reportException(services, 'Automatic alignment failed', ME);
+        services.diagnostics.report('Automatic alignment failed', ME);
         services.dialogs.alert(sprintf( ...
             'Automatic alignment failed:\n%s', ME.message), ...
             'Auto align failed');
-        state = addLog(state, services, ...
+        state = services.workflow.log(state, ...
             "Automatic alignment failed: " + ME.message);
         return;
     end
@@ -236,7 +236,7 @@ function state = onAutoAlign(state, ~, services)
         transform, size(state.session.cache.currentReferenceImage), ...
         size(state.session.cache.currentMovingImage));
     state = clearResults(state);
-    state = addLog(state, services, ...
+    state = services.workflow.log(state, ...
         "Automatically aligned current pair using " + string(method) + ".");
 end
 
@@ -255,7 +255,7 @@ function state = onStartCropRoi(state, ~, services)
     state.session.workflow.details = ...
         dic_preprocess.userInterface.cropSelectionSummary( ...
         state.project.annotations.cropRect);
-    state = addLog(state, services, ...
+    state = services.workflow.log(state, ...
         "Started crop ROI on the current pair preview.");
 end
 
@@ -291,7 +291,7 @@ function state = onApplyCropRoi(state, ~, services)
     state.project.parameters.previewMode = "Current pair";
     state.session.workflow.details = dic_preprocess.userInterface.cropSummary(rect);
     state = clearResults(state);
-    state = addLog(state, services, sprintf( ...
+    state = services.workflow.log(state, sprintf( ...
         'Cropped current pair with [%g %g %g %g].', rect));
 end
 
@@ -300,7 +300,7 @@ function state = onCancelCropRoi(state, ~, services)
         return;
     end
     state = stopEditors(state);
-    state = addLog(state, services, "Crop ROI cancelled.");
+    state = services.workflow.log(state, "Crop ROI cancelled.");
 end
 
 function state = onUndoEdit(state, ~, services)
@@ -321,7 +321,7 @@ function state = onUndoEdit(state, ~, services)
     state.session.workflow.details = {sprintf( ...
         'Restored state before %s.', snapshot.description)};
     state = clearResults(state);
-    state = addLog(state, services, "Undid " + string(snapshot.description) + ".");
+    state = services.workflow.log(state, "Undid " + string(snapshot.description) + ".");
 end
 
 function state = onResetToOriginals(state, ~, services)
@@ -338,7 +338,7 @@ function state = onResetToOriginals(state, ~, services)
     state.project.parameters.previewMode = "Current pair";
     state.session.workflow.details = {'Current working pair reset to originals.'};
     state = clearResults(state);
-    state = addLog(state, services, ...
+    state = services.workflow.log(state, ...
         "Reset current working pair to the original loaded images.");
 end
 
@@ -357,7 +357,7 @@ function state = onSaveCurrentImages(state, ~, services)
     [folder, cancelled] = services.dialogs.outputFolder( ...
         'Select folder for current images', folderDefault);
     if cancelled
-        state = addLog(state, services, "Save current images cancelled.");
+        state = services.workflow.log(state, "Save current images cancelled.");
         return;
     end
     outputs = dic_preprocess.resultFiles.writeCurrentImages( ...
@@ -374,7 +374,7 @@ function state = onSaveCurrentImages(state, ~, services)
     spec.ManifestName = "dic_preprocess_images.labkit.json";
     [manifestPath, ~] = services.results.writeManifest(folder, spec);
     state.project.results.currentImagesManifestPath = string(manifestPath);
-    state = addLog(state, services, ...
+    state = services.workflow.log(state, ...
         "Saved current images: " + string(outputs.referencePath) + ...
         " and " + string(outputs.movingPath));
 end
@@ -396,7 +396,7 @@ function state = onStartMaskEdit(state, ~, services)
     state.session.workflow.details = { ...
         ['ROI edit started. Add, move, or delete anchors in the reference ' ...
         'preview, then add/subtract the boundary on the mask canvas.']};
-    state = addLog(state, services, ...
+    state = services.workflow.log(state, ...
         "Started mask ROI canvas for controlled anchor editing.");
 end
 
@@ -418,7 +418,7 @@ function state = onPreviewMaskRoi(state, ~, services)
         state.project.parameters.previewMode = "ROI mask";
         state.session.workflow.details = { ...
             'Boundary preview updated. Add it to the mask canvas, subtract it, or keep editing anchors.'};
-        state = addLog(state, services, sprintf( ...
+        state = services.workflow.log(state, sprintf( ...
             'Previewed %s ROI boundary with %d anchors.', ...
             state.project.parameters.maskBoundaryStyle, ...
             size(state.project.annotations.maskPoints, 1)));
@@ -452,7 +452,7 @@ function state = applyBoundary(state, services, operation)
         state.session.cache.currentReferenceImage, boundaryMask, operation);
     state.project.parameters.previewMode = "ROI mask";
     state = clearResults(state);
-    state = addLog(state, services, titleCase(operation) + "ed " + ...
+    state = services.workflow.log(state, titleCase(operation) + "ed " + ...
         state.project.parameters.maskBoundaryStyle + ...
         " boundary on the ROI mask canvas.");
 end
@@ -477,13 +477,13 @@ function state = onUndoMaskEdit(state, ~, services)
         state.project, snapshot);
     state.project.parameters.previewMode = "ROI mask";
     state = clearResults(state);
-    state = addLog(state, services, ...
+    state = services.workflow.log(state, ...
         "Undid mask edit: " + string(snapshot.description) + ".");
 end
 
 function state = onClearMaskBoundary(state, ~, services)
     state.project.annotations.maskPoints = zeros(0, 2);
-    state = addLog(state, services, "Cleared mask ROI boundary anchors.");
+    state = services.workflow.log(state, "Cleared mask ROI boundary anchors.");
 end
 
 function state = onClearMaskCanvas(state, ~, services)
@@ -493,7 +493,7 @@ function state = onClearMaskCanvas(state, ~, services)
     state = pushMaskHistory(state, 'clear mask canvas');
     state.project.annotations.maskImage = [];
     state = clearResults(state);
-    state = addLog(state, services, "Cleared ROI mask canvas.");
+    state = services.workflow.log(state, "Cleared ROI mask canvas.");
 end
 
 function state = onSaveMask(state, ~, services)
@@ -515,7 +515,7 @@ function state = onSaveMask(state, ~, services)
     [outfile, cancelled] = services.dialogs.outputFile( ...
         {'*.png', 'PNG mask'}, 'Save ROI mask', defaultName);
     if cancelled
-        state = addLog(state, services, "Save ROI mask cancelled.");
+        state = services.workflow.log(state, "Save ROI mask cancelled.");
         return;
     end
     dic_preprocess.resultFiles.writeMask(mask, outfile);
@@ -530,7 +530,7 @@ function state = onSaveMask(state, ~, services)
     spec.ManifestName = string(name) + ".labkit.json";
     [manifestPath, ~] = services.results.writeManifest(folder, spec);
     state.project.results.maskManifestPath = string(manifestPath);
-    state = addLog(state, services, "Saved ROI mask: " + string(outfile));
+    state = services.workflow.log(state, "Saved ROI mask: " + string(outfile));
 end
 
 function state = pushEditHistory(state, description)
@@ -624,19 +624,4 @@ function value = titleCase(value)
     value = char(string(value));
     value(1) = upper(value(1));
     value = string(value);
-end
-
-function state = addLog(state, services, message)
-    message = string(message);
-    state.session.workflow.logLines(end + 1, 1) = message;
-    if isstruct(services.debug) && isfield(services.debug, 'enabled') && ...
-            logical(services.debug.enabled)
-        services.debug.append(char(message));
-    end
-end
-
-function reportException(services, context, exception)
-    if isstruct(services.debug) && isfield(services.debug, 'reportException')
-        services.debug.reportException('dicPreprocess', context, exception);
-    end
 end

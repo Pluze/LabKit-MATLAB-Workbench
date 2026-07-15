@@ -36,7 +36,7 @@ function state = onImagesChosen(state, event, services)
         paths = added;
     end
     if isempty(paths)
-        state = addLog(state, services, "Image file selection cancelled.");
+        state = services.workflow.log(state, "Image file selection cancelled.");
         return;
     end
     chosen = batch_crop.appState.itemsForPaths(paths);
@@ -55,7 +55,7 @@ function state = onImagesChosen(state, event, services)
         state = ensureCurrentCenter(state);
         state = initializeCropSizeDefaultsIfNeeded(state);
     end
-    state = addLog(state, services, sprintf( ...
+    state = services.workflow.log(state, sprintf( ...
         'Selected %d image file(s); crop tasks: %d.', ...
         numel(paths), numel(state.project.inputs.items)));
 end
@@ -68,7 +68,7 @@ function state = onClearImages(state, ~, services)
     state.session.workflow.scaleReferenceEditing = false;
     state.session.view.scaleBar = [];
     state = clearExportAndCanvas(state);
-    state = addLog(state, services, "Cleared loaded images.");
+    state = services.workflow.log(state, "Cleared loaded images.");
 end
 
 function state = onRemoveImages(state, event, services)
@@ -93,7 +93,7 @@ function state = onRemoveImages(state, event, services)
     if loaded
         state = ensureCurrentCenter(state);
     end
-    state = addLog(state, services, sprintf( ...
+    state = services.workflow.log(state, sprintf( ...
         'Removed %d crop task(s); remaining: %d.', ...
         numel(indices), numel(items)));
 end
@@ -114,7 +114,7 @@ function state = onDuplicateImage(state, ~, services)
     state.session.view.scaleBar = [];
     state = clearExportAndCanvas(state);
     state = ensureCurrentCenter(state);
-    state = addLog(state, services, sprintf( ...
+    state = services.workflow.log(state, sprintf( ...
         'Duplicated image %d as crop task %d. Pick a new crop center.', ...
         index, insertAt));
 end
@@ -184,7 +184,7 @@ function state = onRotationChanged(state, event, services)
     state = ensureCurrentCenter(state);
     state = clearExportAndCanvas(state);
     state.session.view.scaleBar = [];
-    state = addLog(state, services, sprintf( ...
+    state = services.workflow.log(state, sprintf( ...
         'Updated rotation for image %d: %.3g deg.', index, ...
         state.project.inputs.items(index).angleDeg));
 end
@@ -201,7 +201,7 @@ function state = onPaddingChanged(state, event, services)
     state = ensureCurrentCenter(state);
     state = clearExportAndCanvas(state);
     state.session.view.scaleBar = [];
-    state = addLog(state, services, sprintf( ...
+    state = services.workflow.log(state, sprintf( ...
         'Updated padding for image %d: %.3g%%.', index, ...
         state.project.inputs.items(index).paddingPercent));
 end
@@ -220,7 +220,7 @@ function state = onCenterChanged(state, event, services)
     end
     state = setCurrentCenter(state, center, true);
     state = clearExport(state);
-    state = addLog(state, services, sprintf( ...
+    state = services.workflow.log(state, sprintf( ...
         'Set crop center for image %d: x=%.1f, y=%.1f.', index, ...
         state.project.inputs.items(index).centerXY));
 end
@@ -258,7 +258,7 @@ function state = onUseImageCenter(state, ~, services, mode)
     end
     state = setCurrentCenter(state, center, true);
     state = clearExport(state);
-    state = addLog(state, services, sprintf( ...
+    state = services.workflow.log(state, sprintf( ...
         'Set image %d crop %s center.', index, char(upper(mode))));
 end
 
@@ -373,7 +373,7 @@ function state = onPreviewPointerDown(state, event, services)
     center = batch_crop.cropGeometry.canvasToOriginal(geometry, canvas);
     state = setCurrentCenter(state, center, true);
     state = clearExport(state);
-    state = addLog(state, services, sprintf( ...
+    state = services.workflow.log(state, sprintf( ...
         'Picked crop center for image %d: x=%.1f, y=%.1f.', ...
         currentIndex(state), state.project.inputs.items( ...
         currentIndex(state)).centerXY));
@@ -391,7 +391,7 @@ function state = onCropRectangleMoved(state, event, services)
     center = batch_crop.cropGeometry.canvasToOriginal(geometry, canvas);
     state = setCurrentCenter(state, center, true);
     state = clearExport(state);
-    state = addLog(state, services, sprintf( ...
+    state = services.workflow.log(state, sprintf( ...
         'Dragged crop center for image %d: x=%.1f, y=%.1f.', ...
         currentIndex(state), state.project.inputs.items( ...
         currentIndex(state)).centerXY));
@@ -432,8 +432,8 @@ function [state, loaded] = ensureCurrentImageLoaded(state, services)
             batch_crop.appState.loadImageForIndex( ...
             state.project.inputs.items, index);
     catch ME
-        reportException(services, 'Could not load image', ME);
-        state = addLog(state, services, sprintf( ...
+        services.diagnostics.report('Could not load image', ME);
+        state = services.workflow.log(state, sprintf( ...
             'Could not load image %d: %s', index, ME.message));
     end
 end
@@ -574,21 +574,6 @@ end
 
 function showError(services, titleText, message)
     services.dialogs.alert(message, titleText);
-end
-
-function state = addLog(state, services, message)
-    message = string(message);
-    state.session.workflow.logLines(end + 1, 1) = message;
-    if isstruct(services.debug) && isfield(services.debug, 'enabled') && ...
-            logical(services.debug.enabled)
-        services.debug.append(char(message));
-    end
-end
-
-function reportException(services, context, exception)
-    if isstruct(services.debug) && isfield(services.debug, 'reportException')
-        services.debug.reportException('batchCrop', context, exception);
-    end
 end
 
 function target = mergeActions(target, source)
