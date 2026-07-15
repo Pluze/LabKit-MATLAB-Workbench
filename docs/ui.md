@@ -317,7 +317,9 @@ Ordinary value controls may use a semantic binding such as
 after the value is staged. `Present(state)` returns control properties and
 prepared preview models by semantic id. Registered renderers receive an axes
 and model; presenters and actions do not receive the raw UI registry on the v2
-path. Plot utilities are inferred from the layout. Dynamic `Items` and `Limits`
+path. A renderer runs only when its declared renderer/model request changes;
+state-only commits preserve existing graphics and viewports. Plot utilities are
+inferred from the layout. Dynamic `Items` and `Limits`
 are applied before bound values. V2 saves one `labkitProject`; named legacy
 variables import read-only.
 
@@ -415,7 +417,8 @@ Apps do not receive the UI registry and do not call control setters. A pure
 `Present(state)` function returns semantic control properties, prepared preview
 models, and controlled interaction specs. The runtime applies dynamic items and
 limits before values, suppresses callbacks during the commit, mirrors workflow
-logs, and invokes registered renderers with only `(axes, model)`.
+logs, and invokes changed renderer/model requests with only `(axes, model)`.
+Unchanged preview requests retain their graphics handles and axes limits.
 
 Renderers may use ordinary MATLAB graphics plus the small advanced plot surface:
 `clear`, `fit`, `fitCanvas`, `message`, `offsetData`, and `clampData`.

@@ -27,7 +27,7 @@ function verify_gui_layout_ui_busy_state()
     oldPickableParts = ax.PickableParts;
     fig.Pointer = 'arrow';
     scrollCallback = @scrollProbe;
-    clickCallback = @clickProbe;
+    clickCallback = {@clickProbe, "cell callback"};
     fig.WindowScrollWheelFcn = scrollCallback;
     fig.WindowButtonDownFcn = clickCallback;
 
@@ -51,7 +51,7 @@ function verify_gui_layout_ui_busy_state()
     assert(sameCallback(fig.WindowScrollWheelFcn, scrollCallback), ...
         'Busy-state helper should restore scroll callbacks.');
     assert(sameCallback(fig.WindowButtonDownFcn, clickCallback), ...
-        'Busy-state helper should restore click callbacks.');
+        'Busy-state helper should restore cell-form click callbacks.');
     assert(strcmp(char(ax.HitTest), char(oldHitTest)), ...
         'Busy-state helper should restore axes hit testing.');
     assert(strcmp(char(ax.PickableParts), char(oldPickableParts)), ...
@@ -123,7 +123,7 @@ function verify_gui_layout_ui_busy_state()
     function scrollProbe(~, ~)
     end
 
-    function clickProbe(~, ~)
+    function clickProbe(~, ~, ~)
     end
 end
 
@@ -447,9 +447,24 @@ function assertThrows(fn, expectedIdentifier, label)
 end
 
 function tf = sameCallback(actual, expected)
+    if iscell(actual) && iscell(expected) && numel(actual) == numel(expected)
+        tf = sameCallback(actual{1}, expected{1});
+        for k = 2:numel(actual)
+            tf = tf && sameCallbackArgument(actual{k}, expected{k});
+        end
+        return;
+    end
     tf = isa(actual, 'function_handle') && ...
         isa(expected, 'function_handle') && ...
         strcmp(func2str(actual), func2str(expected));
+end
+
+function tf = sameCallbackArgument(actual, expected)
+    tf = isequaln(actual, expected);
+    if ~tf && (ischar(actual) || isstring(actual)) && ...
+            (ischar(expected) || isstring(expected))
+        tf = isequal(string(actual), string(expected));
+    end
 end
 
 function deleteIfValid(fig)

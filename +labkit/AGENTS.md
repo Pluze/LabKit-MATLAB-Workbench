@@ -73,6 +73,10 @@
   queued events, `Present`, registered renderers, and managed resources. Do
   not expose the v2 private queue, store, presentation, or resource-registry
   helpers as public APIs.
+- Runtime V2 presentation commits must not invoke unchanged preview requests.
+  Preserve existing graphics and viewports for state-only events; app renderers
+  own incremental overlay updates when their model changes but the background
+  data remains the same.
 - Runtime v2 owns one private figure interaction hub. V2 apps declare
   controlled interaction specs from `Present` and must not construct a second
   interaction runtime or restore figure callbacks.

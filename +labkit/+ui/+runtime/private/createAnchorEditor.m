@@ -305,14 +305,30 @@ function editor = createAnchorEditor(runtime, imageSize, opts)
         if isempty(state.imageSize)
             return;
         end
-        point = state.ax.CurrentPoint;
-        x = point(1, 1);
-        y = point(1, 2);
+        [x, y] = scrollPoint(event);
         if ~insideImageBounds(x, y, state.imageSize)
             return;
         end
-        zoomAxesAtPoint(state.ax, x, y, event.VerticalScrollCount, state.imageSize);
+        zoomImageAxesAtPoint( ...
+            state.ax, x, y, event.VerticalScrollCount, state.imageSize);
         rememberCurrentView();
+    end
+
+    function [x, y] = scrollPoint(event)
+        point = [];
+        if isstruct(event) && isfield(event, 'Point')
+            point = double(event.Point);
+        elseif isobject(event) && isprop(event, 'Point')
+            point = double(event.Point);
+        end
+        if numel(point) >= 2 && all(isfinite(point(1:2)))
+            x = point(1);
+            y = point(2);
+            return;
+        end
+        point = state.ax.CurrentPoint;
+        x = point(1, 1);
+        y = point(1, 2);
     end
 
     function ensureGraphics()
@@ -463,7 +479,7 @@ function tf = insideImageBounds(x, y, imageSize)
         x <= imageSize(2) + 0.5 && y <= imageSize(1) + 0.5;
 end
 
-function zoomAxesAtPoint(ax, x, y, scrollCount, imageSize)
+function zoomImageAxesAtPoint(ax, x, y, scrollCount, imageSize)
     bounds = [0.5, imageSize(2) + 0.5, 0.5, imageSize(1) + 0.5];
     zoomAxesAtPoint(ax, [x, y], scrollCount, ...
         "Bounds", bounds);

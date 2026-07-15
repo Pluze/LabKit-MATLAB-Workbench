@@ -103,13 +103,11 @@ function indices = eventIndices(event, fieldName, count)
     values = eventEntries(event, fieldName);
     indices = zeros(0, 1);
     if isstruct(values) && isfield(values, 'id')
-        tokens = regexp(string({values.id}), '^item(\d+)$', ...
-            'tokens', 'once');
-        for k = 1:numel(tokens)
-            if ~isempty(tokens{k})
-                indices(end + 1, 1) = str2double(tokens{k}{1});
-            end
-        end
+        ids = string({values.id});
+        parsed = str2double(extractAfter(ids, "item"));
+        valid = startsWith(ids, "item") & isfinite(parsed) & ...
+            parsed == fix(parsed);
+        indices = parsed(valid).';
     end
     if isempty(indices) && isstruct(values) && isfield(values, 'path')
         allValues = eventEntries(event, "files");

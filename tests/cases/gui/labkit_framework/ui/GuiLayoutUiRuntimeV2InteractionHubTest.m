@@ -12,6 +12,11 @@ classdef GuiLayoutUiRuntimeV2InteractionHubTest < matlab.unittest.TestCase
             verifyControlledInteraction();
         end
 
+        function paired_anchor_cell_payload_stays_one_semantic_event(testCase)
+            setupLabKitTestPath();
+            verifyPairedAnchorCellPayload();
+        end
+
         function controlled_interval_routes_semantic_wheel_events(testCase)
             setupLabKitTestPath();
             verifyControlledInterval();
@@ -48,6 +53,45 @@ function verifyControlledPointSlots()
         value.selectedIndex == 3 && value.changedIndex == 2 && ...
         value.reason == "place", ...
         'Point slots should fill the selected empty slot and retain its index.');
+    delete(fig);
+    clear cleanupFigures cleanupMode;
+end
+
+function verifyPairedAnchorCellPayload()
+    h = guiTestHelpers();
+    h.assertUifigureAvailable();
+    oldMode = getenv('LABKIT_GUI_TEST_MODE');
+    setenv('LABKIT_GUI_TEST_MODE', 'hidden');
+    cleanupMode = onCleanup(@() setenv('LABKIT_GUI_TEST_MODE', oldMode));
+    cleanupFigures = onCleanup(@() h.closeAllFigures());
+    fig = labkit.ui.runtime.launch( ...
+        @pairedDefinition, @requirements, @versionInfo);
+    h.waitForUiIdle(fig);
+    runtime = getappdata(fig, 'labkitUiAppRuntime');
+    resource = interactionResource(runtime.resources, "pointPairs");
+    ui = getappdata(fig, 'labkitUiRegistry');
+    leftAxes = ui.controls.pair.axesById.left;
+    leftAxes.XLim = [0.5 100.5];
+    leftAxes.YLim = [0.5 100.5];
+    beforeZoom = [leftAxes.XLim leftAxes.YLim];
+    runtime.interactionHub.routeWheel("pair.left", ...
+        struct("VerticalScrollCount", -1, "Point", [50 50]));
+    assert(~isequal(beforeZoom, [leftAxes.XLim leftAxes.YLim]), ...
+        'A paired-anchor editor should route wheel input to shared image zoom.');
+    resource.editors{1}.insertPoint([30 40]);
+    runtime = getappdata(fig, 'labkitUiAppRuntime');
+    assert(size(runtime.state.project.annotations.referencePoints, 1) == 1 && ...
+        isempty(runtime.state.project.annotations.movingPoints) && ...
+        runtime.state.project.annotations.pairEditCount == 1, ...
+        'The first paired-anchor edit should commit one scalar cell-valued event.');
+    resource = interactionResource(runtime.resources, "pointPairs");
+    resource.editors{2}.insertPoint([32 41]);
+    runtime = getappdata(fig, 'labkitUiAppRuntime');
+    assert(size(runtime.state.project.annotations.referencePoints, 1) == 1 && ...
+        size(runtime.state.project.annotations.movingPoints, 1) == 1 && ...
+        runtime.state.project.annotations.pairEditCount == 2 && ...
+        ~runtime.processing && isempty(runtime.queue), ...
+        'A complete point pair should commit without expanding the event struct.');
     delete(fig);
     clear cleanupFigures cleanupMode;
 end
@@ -222,6 +266,11 @@ function def = controlledDefinition()
     def = definitionBase(@controlledLayout, actions, @controlledPresentation);
 end
 
+function def = pairedDefinition()
+    actions = struct("pointPairsEdited", @pointPairsEdited);
+    def = definitionBase(@hubLayout, actions, @pairedPresentation);
+end
+
 function def = intervalDefinition()
     actions = struct("rangeEdited", @rangeEdited, ...
         "windowScrolled", @windowScrolled);
@@ -257,6 +306,8 @@ function project = createProject()
         "parameters", struct(), ...
         "annotations", struct("points", [10 10; 20 20], ...
             "editCount", 0, "range", [NaN NaN], "scrollCount", 0, ...
+            "referencePoints", zeros(0, 2), ...
+            "movingPoints", zeros(0, 2), "pairEditCount", 0, ...
             "slots", struct("points", [10 10; NaN NaN; NaN NaN], ...
             "selectedIndex", 2, "locked", false)), ...
         "results", struct(), ...
@@ -303,6 +354,19 @@ function view = controlledPresentation(state)
         "ChangePolicy", "commit");
 end
 
+function view = pairedPresentation(state)
+    view = struct();
+    view.interactions.pointPairs = struct( ...
+        "Kind", "pairedAnchors", ...
+        "Targets", ["pair.left", "pair.right"], ...
+        "Value", {{state.project.annotations.referencePoints, ...
+            state.project.annotations.movingPoints}}, ...
+        "Event", "pointPairsEdited", ...
+        "ImageSize", {{[100 100], [100 100]}}, ...
+        "ChangePolicy", "commit", ...
+        "Options", struct("mode", "points"));
+end
+
 function view = intervalPresentation(state)
     view = struct();
     view.interactions.timeRange = struct( ...
@@ -336,6 +400,15 @@ function state = pointsEdited(state, event, ~)
     state.project.annotations.points = event.value;
     state.project.annotations.editCount = ...
         state.project.annotations.editCount + 1;
+end
+
+function state = pointPairsEdited(state, event, ~)
+    assert(iscell(event.value) && numel(event.value) == 2, ...
+        'Paired-anchor events must retain one two-cell payload.');
+    state.project.annotations.referencePoints = event.value{1};
+    state.project.annotations.movingPoints = event.value{2};
+    state.project.annotations.pairEditCount = ...
+        state.project.annotations.pairEditCount + 1;
 end
 
 function state = rangeEdited(state, event, ~)

@@ -134,9 +134,10 @@ function callbackState = clearFigureInteractionCallbacks(fig)
         if ~isprop(fig, name)
             continue;
         end
-        callbackState(end+1) = struct( ...
-            'property', name, ...
-            'value', fig.(name));
+        entry = struct();
+        entry.property = name;
+        entry.value = fig.(name);
+        callbackState(end+1) = entry;
         try
             fig.(name) = [];
         catch

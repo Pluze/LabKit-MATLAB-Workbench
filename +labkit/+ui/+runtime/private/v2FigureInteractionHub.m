@@ -1,8 +1,8 @@
 % Private UI runtime helper. Expected caller: runV2App after layout creation.
 % Inputs are a v2 UI registry and a semantic-event callback. Output is one
 % figure-scoped interaction hub. The hub owns figure pointer, wheel, and drag
-% callbacks; registers preview axes by semantic id; and supplies compatibility
-% adapters for the existing app-neutral interaction editors.
+% callbacks; registers preview axes by semantic id; and supplies internal
+% adapters to the app-neutral controlled interaction editors.
 function hub = v2FigureInteractionHub(ui, dispatchEvent, cleanupTarget)
     fig = ui.figure;
     state = struct();
@@ -220,9 +220,12 @@ function hub = v2FigureInteractionHub(ui, dispatchEvent, cleanupTarget)
         if state.suppressed || isempty(dispatchEvent)
             return;
         end
-        event = struct("id", string(id), "source", "interaction", ...
-            "target", string(target), "value", value, ...
-            "meta", struct("phase", string(phase)));
+        event = struct();
+        event.id = string(id);
+        event.source = "interaction";
+        event.target = string(target);
+        event.value = value;
+        event.meta = struct("phase", string(phase));
         dispatchEvent(event);
     end
 

@@ -87,13 +87,58 @@ classdef GuiLayoutDicPreprocessTest < matlab.unittest.TestCase
             testCase.verifyEqual(string( ...
                 ui.controls.cancelPointMatching.button.Enable), ...
                 "on", 'The active in-place point matcher should be cancellable.');
-            driver.click(labels.cancelPointMatching);
+            referenceAxes = ui.controls.previewAxes.axesById.reference;
+            movingAxes = ui.controls.previewAxes.axesById.current;
+            referenceImage = findobj(referenceAxes, 'Type', 'Image', ...
+                'Tag', 'labkitDicPreprocessPreviewImage');
+            movingImage = findobj(movingAxes, 'Type', 'Image', ...
+                'Tag', 'labkitDicPreprocessPreviewImage');
+            referenceAxes.XLim = [10 80];
+            referenceAxes.YLim = [10 70];
+            addPointPair(fig, [20 20], [20 20]);
+            addPointPair(fig, [60 40], [60 40]);
+            ui = driver.registry();
+            testCase.verifyEqual(findobj(referenceAxes, 'Type', 'Image', ...
+                'Tag', 'labkitDicPreprocessPreviewImage'), referenceImage, ...
+                'Point edits should preserve the reference image handle.');
+            testCase.verifyEqual(findobj(movingAxes, 'Type', 'Image', ...
+                'Tag', 'labkitDicPreprocessPreviewImage'), movingImage, ...
+                'Point edits should preserve the moving image handle.');
+            testCase.verifyEqual(referenceAxes.XLim, [10 80], ...
+                'Point edits should preserve the reference zoom viewport.');
+            testCase.verifyEqual(referenceAxes.YLim, [10 70], ...
+                'Point edits should preserve the reference zoom viewport.');
+            testCase.verifyEqual(string( ...
+                ui.controls.applyPointAlignment.button.Enable), ...
+                "on", 'Two complete point pairs should enable alignment.');
+            driver.click(labels.applyPointAlignment);
+            ui = driver.registry();
             testCase.verifyEqual(string( ...
                 ui.controls.startPointMatching.button.Enable), ...
-                "on", 'Cancelling should restore the point-matching start action.');
+                "on", 'Applying matched points should leave matching mode.');
+            testCase.verifyEqual(string(ui.controls.previewMode.valueHandle.Value), ...
+                "False-color overlay", ...
+                'Point alignment should switch to the comparison preview.');
             clear folderCleanup cleanup
         end
     end
+end
+
+function addPointPair(fig, referencePoint, movingPoint)
+    runtime = getappdata(fig, 'labkitUiAppRuntime');
+    resource = pointPairResource(runtime.resources);
+    resource.editors{1}.insertPoint(referencePoint);
+    runtime = getappdata(fig, 'labkitUiAppRuntime');
+    resource = pointPairResource(runtime.resources);
+    resource.editors{2}.insertPoint(movingPoint);
+end
+
+function resource = pointPairResource(resources)
+    index = find([resources.scope] == "interaction" & ...
+        [resources.id] == "pointPairs", 1, 'first');
+    assert(~isempty(index), ...
+        'DIC point matching should own one controlled paired-anchor resource.');
+    resource = resources(index).value;
 end
 
 function tf = dicPreprocessAlignmentReady(driver)

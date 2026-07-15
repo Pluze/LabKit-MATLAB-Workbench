@@ -53,8 +53,12 @@ function setResource(fig, scope, id, value, cleanup)
         disposeEntry(runtime.resources(index));
         runtime.resources(index) = [];
     end
-    entry = struct("scope", scope, "id", id, "value", value, ...
-        "cleanup", cleanup, "disposed", false);
+    entry = struct();
+    entry.scope = scope;
+    entry.id = id;
+    entry.value = value;
+    entry.cleanup = cleanup;
+    entry.disposed = false;
     runtime.resources(end + 1) = entry;
     setappdata(fig, appRuntimeKey(), runtime);
 end

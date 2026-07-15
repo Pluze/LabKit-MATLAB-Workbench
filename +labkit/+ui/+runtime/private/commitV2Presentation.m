@@ -20,7 +20,11 @@ function presentation = commitV2Presentation(runtime, state)
     end
     applyWorkflowLog(runtime.ui, state.session.workflow);
     if isfield(presentation, 'previews')
-        applyPreviews(runtime, presentation.previews);
+        priorPreviews = struct();
+        if isfield(runtime.lastPresentation, 'previews')
+            priorPreviews = runtime.lastPresentation.previews;
+        end
+        applyPreviews(runtime, presentation.previews, priorPreviews);
     end
     if isfield(presentation, 'interactions')
         reconcileV2Interactions(runtime, presentation.interactions);
@@ -169,7 +173,7 @@ function applyFilePanelStatus(ui, id, value)
     control.status.Value = char(string(value));
 end
 
-function applyPreviews(runtime, previews)
+function applyPreviews(runtime, previews, priorPreviews)
     if ~isstruct(previews) || ~isscalar(previews)
         error('labkit:ui:runtime:InvalidPresentation', ...
             'Presentation previews must be a scalar struct.');
@@ -180,14 +184,18 @@ function applyPreviews(runtime, previews)
         spec = previews.(ids{k});
         [hasAxes, axesSpecs] = propertyValue(spec, "Axes");
         if hasAxes
-            applyPreviewAxes(runtime, id, axesSpecs);
+            priorAxes = priorAxisSpecs(priorPreviews, id);
+            applyPreviewAxes(runtime, id, axesSpecs, priorAxes);
+            continue;
+        end
+        if samePreviewRequest(priorPreviews, id, spec)
             continue;
         end
         applyPreview(runtime, id, spec);
     end
 end
 
-function applyPreviewAxes(runtime, previewId, axesSpecs)
+function applyPreviewAxes(runtime, previewId, axesSpecs, priorAxes)
     if ~isstruct(axesSpecs) || ~isscalar(axesSpecs)
         error('labkit:ui:runtime:InvalidPresentation', ...
             'Preview "%s" Axes must be a scalar struct.', previewId);
@@ -201,9 +209,32 @@ function applyPreviewAxes(runtime, previewId, axesSpecs)
                 'Preview "%s" axis "%s" must be a scalar struct.', ...
                 previewId, axisId);
         end
+        if isfield(priorAxes, char(axisId)) && ...
+                isequaln(priorAxes.(char(axisId)), spec)
+            continue;
+        end
         spec.Axis = axisId;
         applyPreview(runtime, previewId, spec);
     end
+end
+
+function axesSpecs = priorAxisSpecs(priorPreviews, previewId)
+    axesSpecs = struct();
+    if ~isstruct(priorPreviews) || ~isscalar(priorPreviews) || ...
+            ~isfield(priorPreviews, char(previewId))
+        return;
+    end
+    [found, value] = propertyValue( ...
+        priorPreviews.(char(previewId)), "Axes");
+    if found && isstruct(value) && isscalar(value)
+        axesSpecs = value;
+    end
+end
+
+function tf = samePreviewRequest(priorPreviews, previewId, spec)
+    tf = isstruct(priorPreviews) && isscalar(priorPreviews) && ...
+        isfield(priorPreviews, char(previewId)) && ...
+        isequaln(priorPreviews.(char(previewId)), spec);
 end
 
 function applyPreview(runtime, id, spec)

@@ -124,6 +124,19 @@ the earlier 32-function planning target was not forced through vague APIs.
 - Re-audited already migrated apps, removed five dead or presenter-only helper
   files, and updated helper-quality classification from retired role packages
   to the current workflow-first lifecycle/state/result/UI boundaries.
+- Corrected Runtime V2 interaction event construction so paired-anchor cell
+  payloads remain one scalar semantic event. DIC Preprocess point matching now
+  accepts alternating reference/moving points, enables alignment after two
+  complete pairs, and completes the in-workbench rigid registration flow.
+- Hardened the same scalar-envelope invariant for app-managed Runtime V2
+  resources and `runBusy` callback capture, including legitimate cell-form
+  MATLAB callbacks and cell-valued resource payloads.
+- Corrected shared file-event index decoding for R2025a string results, so CIC
+  and the other multi-file V2 apps can select and remove imported items.
+- Stopped presentation commits from rerunning unchanged preview requests, and
+  made DIC point-label updates preserve image handles and zoom viewports.
+- Routed anchor-editor wheel input to the shared image zoom implementation
+  without the retired wrapper's same-name recursion.
 
 #### User and data impact
 
@@ -142,8 +155,9 @@ project if continued editing or recovery is required.
 
 #### Validation
 
-Focused Runtime V2, project, interaction-hub, Figure Studio, app-boundary, and
-public-surface tests passed. The private Imager workspace passed 40/40 tests.
+Focused Runtime V2, project, interaction-hub, DIC point-matching, CIC, Figure
+Studio, app-boundary, and public-surface tests passed. The private Imager
+workspace passed 41/41 tests.
 The Phase-6 `buildtool changedFast` checkpoint passed 15 framework GUI tests,
 284 headless tests with one environment-assumption skip, and six representative
 GUI workflows. Final broad gates and manual pointer/visual checks are recorded
