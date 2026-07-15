@@ -1,5 +1,5 @@
-% Expected caller: nerve_response_analysis.userInterface.updateWorkbenchFromState
-% or buildWorkbenchLayout. Input is app
+% Expected caller: nerve_response_analysis.userInterface.presentWorkbench
+% or buildWorkbenchLayout. Input is an app presentation
 % state. Output is a two-column result-table cell array.
 function data = summaryTableData(S)
 %SUMMARYTABLEDATA Build nerve-response analysis summary rows.

@@ -1,5 +1,5 @@
-% Expected caller: nerve_response_analysis.userInterface.updateWorkbenchFromState
-% or buildWorkbenchLayout. Input is app
+% Expected caller: nerve_response_analysis.userInterface.presentWorkbench
+% or buildWorkbenchLayout. Input is an app presentation
 % state. Output is compact status-panel text.
 function lines = detailLines(S)
 %DETAILLINES Build nerve-response analysis detail lines.

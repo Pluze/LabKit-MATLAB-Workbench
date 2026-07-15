@@ -17,6 +17,9 @@ classdef GuiLayoutNerveResponseAnalysisTest < matlab.unittest.TestCase
             fig = h.launchFigure('labkit_NerveResponseAnalysis_app', ...
                 'Nerve Response Analysis');
             driver = labkitWorkflowDriver(fig);
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            testCase.verifyEqual(runtime.definition.contractVersion, 2, ...
+                'Nerve Response Analysis must execute through Runtime V2.');
             driver.chooseFiles('sessionFile', filterPath);
 
             driver.click('Choose filter');
@@ -53,6 +56,35 @@ classdef GuiLayoutNerveResponseAnalysisTest < matlab.unittest.TestCase
                 'nerve_response_analysis.json');
             testCase.verifyTrue(exist(outputPath, 'file') == 2, ...
                 'Nerve-response workflow should export the analysis JSON.');
+            manifestPath = fullfile(folder, 'nerve_response_analysis', ...
+                'nerve_response_analysis.labkit.json');
+            testCase.verifyTrue(exist(manifestPath, 'file') == 2, ...
+                'Nerve-response export should include a standard result manifest.');
+
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            testCase.verifyFalse(isfield( ...
+                runtime.state.project.results.lastExport, 'analysis'), ...
+                'Durable export records must not embed analysis cache data.');
+            testCase.verifyNotEmpty(runtime.state.session.cache.analysis, ...
+                'Analysis tables should remain in the rebuildable session cache.');
+            projectPath = fullfile(folder, 'nerve-response-project.mat');
+            labkit.ui.runtime.saveState(fig, projectPath);
+            saved = load(projectPath, 'labkitProject');
+            testCase.verifyEqual(saved.labkitProject.app.payloadVersion, 1);
+            testCase.verifyFalse(isfield(saved.labkitProject.payload, 'cache'));
+            driver.click('Reset');
+            labkit.ui.runtime.loadState(fig, projectPath);
+            h.waitForUiIdle(fig);
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            testCase.verifyNotEmpty(runtime.state.session.cache.filterRecord, ...
+                'Project reopen should rebuild parsed filter-record cache.');
+            testCase.verifyEmpty(runtime.state.session.cache.analysis, ...
+                'Project reopen should not restore transient analysis tables.');
+            driver.click('Analyze Filtered Files');
+            ui = driver.registry();
+            testCase.verifyTrue(contains(string( ...
+                ui.controls.statusField.valueHandle.Value), ...
+                'Analyzed 1 recording'));
         end
     end
 end
