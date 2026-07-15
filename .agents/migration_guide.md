@@ -35,8 +35,8 @@ Last audited: 2026-07-15.
 Active migration debt:
 
 ```text
-ui-runtime-v2: active
-app-project-and-result-contracts: active
+ui-runtime-v2: manual-interaction-and-pr-closure
+app-project-and-result-contracts: none
 toolbox-product-debt: none
 ```
 
@@ -63,10 +63,10 @@ Current facts from the architecture audit:
   remaining functions above it own distinct low-level framework, test-support,
   or app-facing contracts, and combining them would make the API less clear.
 - Current contracts live in `docs/ui.md`, `docs/apps.md`, and `docs/architecture.md`.
-
-Temporary MathWorks product debt is declared in `labkitToolboxDebt`; each entry
-needs fallback, idempotency, parity, replacement evidence and a matching active record here.
-
+- Final automated closure passed private 41/41, public base-MATLAB 7/7,
+  changed 290, headless, and GUI 69/69; manual interaction and PR/CI remain.
+Temporary MathWorks debt in `labkitToolboxDebt` needs fallback, idempotency,
+parity, replacement evidence, and a matching active record here.
 ## Goal Prompt: Migrate All Apps To UI Runtime V2
 
 ### Objective
