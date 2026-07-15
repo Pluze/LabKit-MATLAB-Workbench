@@ -27,7 +27,28 @@ function verify_imageEnhance()
     checkManifestAndExportContract();
     checkPerImageExportSteps();
     checkExportTaskFingerprintTracksInputsOptionsAndSteps();
-    checkExportTaskBuildsStateDrivenInputs();
+    checkExportTaskPreservesPerImageSteps();
+    checkRuntimeV2ProjectAndPresenterContracts();
+end
+
+function checkRuntimeV2ProjectAndPresenterContracts()
+    definition = image_enhance.definition();
+    assert(definition.contractVersion == 2, ...
+        'Image Enhance must use the Runtime V2 definition contract.');
+    project = definition.project.Create();
+    assert(definition.project.Validate(project), ...
+        'A new Image Enhance project should satisfy its durable contract.');
+    assert(~isfield(project, 'items') && ~isfield(project, 'previewImages'), ...
+        'The durable project must not contain decoded pixels or preview caches.');
+    session = image_enhance.appLifecycle.createSession(project);
+    state = struct('project', project, 'session', session);
+    presentation = image_enhance.userInterface.presentWorkbench(state);
+    assert(isscalar(presentation) && ...
+        isfield(presentation.previews.preview, 'Renderer'), ...
+        'The V2 presenter should return one deterministic registered preview.');
+    assert(isempty(session.cache.item) && ...
+        ~isfield(session, 'whiteRoiHandle'), ...
+        'The rebuildable session must start without pixels or ROI handles.');
 end
 
 function checkBrightnessContrastAndSharpenPipeline()
@@ -153,24 +174,26 @@ function checkEmptyNumericToolValuesStayScalar()
 end
 
 function checkWhiteRoiToolAvailabilityFollowsBatchMode()
-    item = image_enhance.appState.emptyItem();
-    item.path = "sample.png";
-    item.name = "sample.png";
-    item.image = syntheticGradientImage();
-    S = struct('items', item, 'currentIndex', 1, ...
-        'steps', repmat(image_enhance.appState.emptyStep(), 0, 1), ...
-        'batchMode', true, 'pendingDirty', false);
+    project = image_enhance.appLifecycle.createProject();
+    project.inputs.sources = struct('id', "image-1", 'required', true, ...
+        'role', "source-image", 'reference', struct());
+    annotation = image_enhance.appState.emptyAnnotation();
+    annotation.sourceId = "image-1";
+    project.annotations.items = annotation;
+    session = image_enhance.appLifecycle.createSession(project);
+    session.cache.item = image_enhance.appState.emptyItem();
+    S = struct('project', project, 'session', session);
 
     availability = image_enhance.userInterface.toolAvailability(S, 'White ROI calibration');
     assert(~availability.canSetWhiteRoi && ~availability.canApply, ...
         'White ROI controls should stay disabled in shared batch mode.');
 
-    S.batchMode = false;
+    S.project.parameters.batchMode = false;
     availability = image_enhance.userInterface.toolAvailability(S, 'White ROI calibration');
     assert(availability.canSetWhiteRoi && ~availability.canApply, ...
         'Turning off shared batch mode should immediately enable ROI selection.');
 
-    S.items.whiteRoi = [1 1 4 4];
+    S.project.annotations.items.whiteRoi = [1 1 4 4];
     availability = image_enhance.userInterface.toolAvailability(S, 'White ROI calibration');
     assert(availability.canSetWhiteRoi && availability.canApply, ...
         'A per-image white ROI should enable applying the tool for the selected image.');
@@ -179,13 +202,13 @@ function checkWhiteRoiToolAvailabilityFollowsBatchMode()
 end
 
 function checkWhiteRoiDefaultUsesImageCorner()
-    position = image_enhance.userInterface.whiteRoiHelpers("defaultPosition", [100 200 3]);
+    position = image_enhance.userInterface.defaultWhiteRoi([100 200 3]);
     assert(position(1) <= 10 && position(2) <= 10, ...
         'Default white ROI should start near the image corner instead of the center.');
     assert(position(3) == 40 && position(4) == 20, ...
         'Default white ROI should keep the existing 20 percent image-size footprint.');
 
-    smallPosition = image_enhance.userInterface.whiteRoiHelpers("defaultPosition", [6 5 3]);
+    smallPosition = image_enhance.userInterface.defaultWhiteRoi([6 5 3]);
     assert(isequal(smallPosition, [1 1 5 6]), ...
         'Default white ROI should clamp to small image bounds.');
 end
@@ -338,37 +361,23 @@ function checkExportTaskFingerprintTracksInputsOptionsAndSteps()
         'Changing enhancement steps should change the task fingerprint.');
 end
 
-function checkExportTaskBuildsStateDrivenInputs()
+function checkExportTaskPreservesPerImageSteps()
     items = repmat(image_enhance.appState.emptyItem(), 2, 1);
     for k = 1:2
         items(k).path = "sample_" + string(k) + ".png";
         items(k).name = "sample_" + string(k) + ".png";
         items(k).image = syntheticGradientImage();
     end
-    sharedStep = image_enhance.analysisRun.makeStep('Brightness/contrast', 5, 0, 0);
     firstStep = image_enhance.analysisRun.makeStep('Brightness/contrast', 6, 0, 0);
     secondStep = image_enhance.analysisRun.makeStep('Brightness/contrast', -6, 0, 0);
-
-    S = struct('items', items, 'steps', sharedStep, 'batchMode', true);
-    [task, opts, steps] = image_enhance.appState.exportTask(S, ...
-        struct('outputFolder', "out", 'format', 'PNG'));
-    assert(numel(steps) == 1 && steps.amount == sharedStep.amount, ...
-        'Batch-mode state export tasks should use the shared history.');
-    assert(isempty(opts.itemSteps) && isempty(task.itemSteps), ...
-        'Batch-mode state export tasks should not duplicate per-image histories.');
-
-    S.batchMode = false;
-    S.items(1).steps = firstStep;
-    S.items(2).steps = secondStep;
-    [task, opts, steps] = image_enhance.appState.exportTask(S, ...
-        struct('outputFolder', "out", 'format', 'PNG'));
-    assert(numel(steps) == 2 && steps(1).amount == firstStep.amount && ...
-        steps(2).amount == secondStep.amount, ...
-        'Per-image state export tasks should concatenate item histories.');
-    assert(numel(opts.itemSteps) == 2 && numel(task.itemSteps) == 2, ...
-        'Per-image state export tasks should preserve individual histories.');
+    itemSteps = {firstStep; secondStep};
+    task = image_enhance.appState.exportTask(items, ...
+        repmat(image_enhance.appState.emptyStep(), 0, 1), struct( ...
+        'outputFolder', "out", 'format', 'PNG', 'itemSteps', {itemSteps}));
+    assert(numel(task.itemSteps) == 2, ...
+        'Per-image export tasks should preserve individual histories.');
     assert(contains(task.fingerprint, "itemStepCount[2]=1"), ...
-        'Per-image state export tasks should include item-step fingerprints.');
+        'Per-image export tasks should include item-step fingerprints.');
 end
 
 function gray = testLuma(imageIn)

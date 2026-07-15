@@ -1,9 +1,10 @@
 % Expected caller: Image Enhance runner. Inputs are the app state struct.
 % Output is the active shared or per-image enhancement history.
 function steps = activeSteps(S)
-    if S.batchMode || isempty(S.items)
-        steps = S.steps;
+    if S.project.parameters.batchMode || isempty(S.project.annotations.items)
+        steps = S.project.annotations.sharedSteps;
     else
-        steps = S.items(S.currentIndex).steps;
+        index = S.session.selection.currentIndex;
+        steps = S.project.annotations.items(index).steps;
     end
 end
