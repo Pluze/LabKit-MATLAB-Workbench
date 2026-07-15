@@ -214,9 +214,9 @@ Use these app-facing contracts:
   metadata distinguishes automatic matches, manual selections, cancellation,
   and invalid selections. Direct one-file imports already begin with a chooser
   and do not need a redundant reference fallback.
-- The workbench shell includes native window utility menus with plot
-  popout/copy/save commands, whole-app screenshot export, and state snapshot
-  save/load commands. Plot commands operate on every registered preview axes
+- The workbench shell includes a native `Plot` menu plus top-level
+  `Screenshot`, `Save State`, and `Load State` entries. Plot commands operate
+  on every registered preview axes
   in the app, so multi-axes workspaces do not require users to repeat the same
   command per view. Apps can use
   `define(..., "Utilities", struct(...))` to hide the bar or disable groups of
@@ -443,7 +443,8 @@ Renderers may use ordinary MATLAB graphics plus the small advanced plot surface:
 labels, and scientific plot meaning remain app-owned.
 
 A renderer may call `labkit.ui.interaction.enablePopout(ax)` after drawing an
-axes. The workbench also installs the standard popout action automatically.
+axes. The workbench also installs the standard popout action automatically and
+restores it after a renderer resets the axes or replaces its children.
 
 ## Managed Interactions
 
@@ -454,12 +455,26 @@ constructing editor objects. Supported kinds include `anchors`,
 pointer routing, wheel zoom, drag capture/release, callback restoration, event
 enqueueing, and resource cleanup.
 
+While an anchor interaction is active, the framework writes the exact add,
+drag, and removal gesture into the preview subtitle. Curve anchors use
+double-click to add/delete, point-marking modes use a single click plus their
+explicit Undo/Clear controls, and paired matching explains that both previews
+must be clicked in corresponding order.
+
 Apps persist only semantic values such as points, rectangles, intervals, and
 calibration. `labkit.ui.interaction.anchorPath`, `scaleBarCalibration`, and
 `scaleBarGeometry` remain GUI-free advanced helpers for calculations,
 presentation models, and exports. Apps never place editor/runtime objects or
 graphics handles in project or session state.
 ## Debug
+
+Debug launches create an ignored `artifacts/debug/<app>/<run>/manifest.json`.
+This is a local index for the anonymous debug sample pack, trace log, and
+expected debug output folder; it is not project state and is safe to remove
+with the rest of that debug run. By contrast, `*.labkit.json` beside an
+exported result is a result manifest containing output status, byte counts,
+SHA-256 hashes, parameters, provenance, and summary data, and should normally
+stay with the exported files.
 
 `labkit.ui.runtime.launch` owns normal, debug, requirements, and version
 requests. A debug launch remains:

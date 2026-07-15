@@ -263,6 +263,7 @@ function applyPreview(runtime, id, spec, preserveView)
         priorView = captureManualView(ax, preserveView);
         restoreView = onCleanup(@() restoreManualView(ax, priorView));
         invokeRenderer(runtime.definition.renderers.(rendererId), ax, model);
+        labkit.ui.interaction.enablePopout(ax);
         clear restoreView;
 end
 

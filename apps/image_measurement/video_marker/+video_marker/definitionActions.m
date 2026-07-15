@@ -410,7 +410,29 @@ function state = onExportCoordinateCsv(state, ~, services)
         "Exported coordinate CSV: " + filepath);
 end
 
-function state = onNewSetup(~, ~, services)
+function state = onNewSetup(state, ~, services)
+    choices = video_marker.userInterface.sessionChoices();
+    answer = services.dialogs.choice( ...
+        ['Starting a new setup clears the current video, skeleton, and ' ...
+        'annotations. Saving the current project first is recommended.'], ...
+        'Start a new setup?', ...
+        [choices.cancel, choices.saveAndStart, choices.discardAndStart], ...
+        choices.saveAndStart, choices.cancel);
+    if answer == choices.cancel || strlength(answer) == 0
+        state = services.workflow.log(state, "New setup cancelled.");
+        return;
+    end
+    if answer == choices.saveAndStart
+        filepath = services.project.saveState();
+        if strlength(filepath) == 0
+            state = services.workflow.log(state, ...
+                "New setup cancelled because project save was cancelled.");
+            return;
+        end
+    elseif answer ~= choices.discardAndStart
+        state = services.workflow.log(state, "New setup cancelled.");
+        return;
+    end
     services.resources.clearScope("session");
     project = video_marker.appLifecycle.createProject();
     session = video_marker.appLifecycle.createSession(project);

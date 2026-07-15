@@ -52,22 +52,22 @@ id: LK-20260715-runtime-v2-app-migration
 date: 2026-07-15
 type: refactor
 compatibility: breaking
-component: `labkit.ui` | `5.2.0 -> 6.0.0`
+component: `labkit.ui` | `5.2.0 -> 6.0.1`
 component: `labkit_DICPostprocess_app` | `1.3.6 -> 1.4.0`
 component: `labkit_DICPreprocess_app` | `1.4.0 -> 1.5.0`
 component: `labkit_ChronoOverlay_app` | `1.3.6 -> 1.4.0`
-component: `labkit_CIC_app` | `1.3.8 -> 1.4.0`
+component: `labkit_CIC_app` | `1.3.8 -> 1.4.1`
 component: `labkit_CSC_app` | `1.3.10 -> 1.4.0`
 component: `labkit_EIS_app` | `1.3.4 -> 1.4.0`
-component: `labkit_VTResistance_app` | `1.3.8 -> 1.4.0`
-component: `labkit_GaitAnalysis_app` | `1.0.0 -> 1.1.0`
+component: `labkit_VTResistance_app` | `1.3.8 -> 1.4.1`
+component: `labkit_GaitAnalysis_app` | `1.0.0 -> 1.1.1`
 component: `labkit_BatchImageCrop_app` | `1.6.8 -> 1.7.0`
 component: `labkit_CurvatureMeasurement_app` | `1.3.5 -> 1.4.0`
 component: `labkit_FLIRThermal_app` | `1.3.0 -> 1.4.0`
 component: `labkit_FocusStack_app` | `1.4.9 -> 1.5.0`
 component: `labkit_ImageEnhance_app` | `1.5.8 -> 1.6.0`
 component: `labkit_ImageMatch_app` | `1.5.8 -> 1.6.0`
-component: `labkit_VideoMarker_app` | `1.2.0 -> 1.3.0`
+component: `labkit_VideoMarker_app` | `1.2.0 -> 1.3.1`
 component: `labkit_FigureStudio_app` | `0.1.5 -> 0.2.0`
 component: `labkit_NerveResponseAnalysis_app` | `1.3.5 -> 1.4.0`
 component: `labkit_ResponseReviewStats_app` | `1.3.5 -> 1.4.0`
@@ -137,6 +137,17 @@ the earlier 32-function planning target was not forced through vague APIs.
   made DIC point-label updates preserve image handles and zoom viewports.
 - Routed anchor-editor wheel input to the shared image zoom implementation
   without the retired wrapper's same-name recursion.
+- Deferred CIC and VT batch DTA decoding until a file becomes visible or the
+  batch is exported, so multi-file selection no longer blocks on every source.
+- Let Gait Analysis read current Video Marker project/recovery envelopes and
+  legacy Video/Image Marker autosaves directly as pose-coordinate inputs.
+- Added interaction-mode subtitles for curve anchors, point marking, paired
+  anchors, scale references, and fixed point slots; restored axes context
+  menus after renderer resets; and promoted screenshot/project commands to
+  top-level window entries.
+- Moved Video Marker's Session controls to the top of the Video page, added an
+  `Open MAT` project shortcut, and made New setup explicitly cancel, save, or
+  discard before clearing the current project.
 
 #### User and data impact
 
@@ -158,6 +169,11 @@ project if continued editing or recovery is required.
 Focused Runtime V2, project, interaction-hub, DIC point-matching, CIC, Figure
 Studio, app-boundary, and public-surface tests passed. The private Imager
 workspace passed 41/41 tests.
+The latest repair checkpoint additionally passed CIC/VT GUI workflows (2/2),
+Gait/app compatibility tests (21/21), Curvature and Video Marker GUI methods
+(6/6), focused framework menu/interaction tests (8/8), and three targeted
+interaction-hint methods (3/3). A real local legacy Video Marker autosave was
+read successfully without copying it into the repository.
 The Phase-6 `buildtool changedFast` checkpoint passed 15 framework GUI tests,
 284 headless tests with one environment-assumption skip, and six representative
 GUI workflows. Final broad gates and manual pointer/visual checks are recorded
@@ -3430,7 +3446,7 @@ the `origin/main` merge-base values.
 | Component | Current version | Family | Metadata location |
 |---|---:|---|---|
 | `labkit_launcher` | `1.4.0` | Launcher | `labkit_launcher.m` |
-| `labkit.ui` | `6.0.0` | Facade | `+labkit/+ui/version.m` |
+| `labkit.ui` | `6.0.1` | Facade | `+labkit/+ui/version.m` |
 | `labkit.dta` | `2.0.1` | Facade | `+labkit/+dta/version.m` |
 | `labkit.image` | `2.0.0` | Facade | `+labkit/+image/version.m` |
 | `labkit.thermal` | `1.1.0` | Facade | `+labkit/+thermal/version.m` |
@@ -3438,10 +3454,10 @@ the `origin/main` merge-base values.
 | `labkit.biosignal` | `1.0.1` | Facade | `+labkit/+biosignal/version.m` |
 | `labkit_FigureStudio_app` | `0.2.0` | LabKit Core | `apps/labkit_core/figure_studio/+figure_studio/version.m` |
 | `labkit_ChronoOverlay_app` | `1.4.0` | Electrochem | `apps/electrochem/chrono_overlay/+chrono_overlay/version.m` |
-| `labkit_CIC_app` | `1.4.0` | Electrochem | `apps/electrochem/cic/+cic/version.m` |
+| `labkit_CIC_app` | `1.4.1` | Electrochem | `apps/electrochem/cic/+cic/version.m` |
 | `labkit_CSC_app` | `1.4.0` | Electrochem | `apps/electrochem/csc/+csc/version.m` |
 | `labkit_EIS_app` | `1.4.0` | Electrochem | `apps/electrochem/eis/+eis/version.m` |
-| `labkit_VTResistance_app` | `1.4.0` | Electrochem | `apps/electrochem/vt_resistance/+vt_resistance/version.m` |
+| `labkit_VTResistance_app` | `1.4.1` | Electrochem | `apps/electrochem/vt_resistance/+vt_resistance/version.m` |
 | `labkit_DICPreprocess_app` | `1.5.0` | DIC | `apps/dic/dic_preprocess/+dic_preprocess/version.m` |
 | `labkit_DICPostprocess_app` | `1.4.0` | DIC | `apps/dic/dic_postprocess/+dic_postprocess/version.m` |
 | `labkit_BatchImageCrop_app` | `1.7.0` | Image Measurement | `apps/image_measurement/batch_crop/+batch_crop/version.m` |
@@ -3450,8 +3466,8 @@ the `origin/main` merge-base values.
 | `labkit_FocusStack_app` | `1.5.0` | Image Measurement | `apps/image_measurement/focus_stack/+focus_stack/version.m` |
 | `labkit_ImageEnhance_app` | `1.6.0` | Image Measurement | `apps/image_measurement/image_enhance/+image_enhance/version.m` |
 | `labkit_ImageMatch_app` | `1.6.0` | Image Measurement | `apps/image_measurement/image_match/+image_match/version.m` |
-| `labkit_VideoMarker_app` | `1.3.0` | Image Measurement | `apps/image_measurement/video_marker/+video_marker/version.m` |
-| `labkit_GaitAnalysis_app` | `1.1.0` | Gait | `apps/gait/gait_analysis/+gait_analysis/version.m` |
+| `labkit_VideoMarker_app` | `1.3.1` | Image Measurement | `apps/image_measurement/video_marker/+video_marker/version.m` |
+| `labkit_GaitAnalysis_app` | `1.1.1` | Gait | `apps/gait/gait_analysis/+gait_analysis/version.m` |
 | `labkit_RHSPreview_app` | `1.4.0` | Neurophysiology | `apps/neurophysiology/rhs_preview/+rhs_preview/version.m` |
 | `labkit_NerveResponseAnalysis_app` | `1.4.0` | Neurophysiology | `apps/neurophysiology/nerve_response_analysis/+nerve_response_analysis/version.m` |
 | `labkit_ResponseReviewStats_app` | `1.4.0` | Neurophysiology | `apps/neurophysiology/response_review_stats/+response_review_stats/version.m` |

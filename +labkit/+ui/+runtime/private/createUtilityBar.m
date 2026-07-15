@@ -1,7 +1,7 @@
 % Private UI runtime helper. Expected caller: createTabbedWorkbenchShell. Inputs
 % are the app figure, parent grid, and optional utility spec. Side effects:
-% creates framework-owned app utility menus for plot actions, app
-% screenshots, and state snapshot save/load.
+% creates framework-owned top-level utility menus for plot actions, app
+% screenshots, and project save/load.
 function panel = createUtilityBar(fig, parent, utilities)
     visible = utilityEnabled(utilities, 'Visible', true);
     panel = uipanel(parent, ...
@@ -24,20 +24,24 @@ function panel = createUtilityBar(fig, parent, utilities)
         utilityEnabled(utilities, 'Plot', true), ...
         @(~,~) runUtility(fig, @() saveAllPlots(fig)));
 
-    appMenu = uimenu(fig, 'Text', 'App', 'Tag', 'labkitUiUtilityAppMenu');
     if utilityEnabled(utilities, 'Screenshot', true)
-        addMenuItem(appMenu, "Save screenshot", "labkitUiUtilityScreenshot", ...
-            true, @(~,~) runUtility(fig, @() saveAppScreenshot(fig)));
+        addTopLevelMenu(fig, "Screenshot", "labkitUiUtilityScreenshot", ...
+            @(~,~) runUtility(fig, @() saveAppScreenshot(fig)));
     end
     if stateUtilityEnabled(utilities)
-        addMenuItem(appMenu, "Save state", "labkitUiUtilitySaveState", ...
-            true, @(~,~) runUtility(fig, @() saveAppState(fig)));
-        addMenuItem(appMenu, "Load state", "labkitUiUtilityLoadState", ...
-            true, @(~,~) runUtility(fig, @() loadAppState(fig)));
+        addTopLevelMenu(fig, "Save State", "labkitUiUtilitySaveState", ...
+            @(~,~) runUtility(fig, @() saveAppState(fig)));
+        addTopLevelMenu(fig, "Load State", "labkitUiUtilityLoadState", ...
+            @(~,~) runUtility(fig, @() loadAppState(fig)));
     end
-    if isempty(appMenu.Children)
-        appMenu.Enable = 'off';
-    end
+end
+
+function item = addTopLevelMenu(fig, label, tag, callback)
+    item = uimenu(fig, ...
+        'Text', char(label), ...
+        'Tag', char(tag), ...
+        'Enable', 'on', ...
+        'MenuSelectedFcn', callback);
 end
 
 function item = addMenuItem(parent, label, tag, enabled, callback)

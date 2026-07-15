@@ -224,9 +224,11 @@ constant-velocity estimate is used only for rejected points. Predicted frames
 remain editable drafts, and dragging any point turns that complete frame into
 a new manual anchor for subsequent prediction. Jumping forward propagates
 through intermediate frames and preserves existing manual anchors.
-`New setup (clear current)` starts
-a different skeleton definition without retaining the current annotation
-session. Frame navigation preserves the current zoomed ROI; opening a new
+The `Session` section appears first in the Video tab and places `Open MAT`
+beside `New setup`. `Open MAT` uses the same project loader as the window's
+top-level `Load State` entry. `New setup` asks whether to cancel, save the
+current project before starting, or discard it before starting a different
+skeleton definition. Frame navigation preserves the current zoomed ROI; opening a new
 video or project starts from its home view. Marker CSV remains the round-trip editing format, while coordinate CSV
 is the plotting-oriented export with optional calibration and origin choices.
 

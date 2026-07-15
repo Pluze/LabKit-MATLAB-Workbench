@@ -51,8 +51,15 @@ function verify_gui_layout_ui_axes_workbench()
     utilityBar = findall(ui.figure, 'Tag', 'labkitUiUtilityBar');
     utilityPlotMenu = findall(ui.figure, 'Tag', 'labkitUiUtilityPlotMenu');
     utilitySavePlot = findall(ui.figure, 'Tag', 'labkitUiUtilitySavePlot');
+    utilityScreenshot = findall(ui.figure, 'Tag', 'labkitUiUtilityScreenshot');
+    utilitySaveState = findall(ui.figure, 'Tag', 'labkitUiUtilitySaveState');
+    utilityLoadState = findall(ui.figure, 'Tag', 'labkitUiUtilityLoadState');
+    utilityAppMenu = findall(ui.figure, 'Tag', 'labkitUiUtilityAppMenu');
     assert(~isempty(utilityBar) && ~isempty(utilityPlotMenu) && ...
-        ~isempty(utilitySavePlot), ...
+        ~isempty(utilitySavePlot) && isempty(utilityAppMenu) && ...
+        isTopLevelMenu(utilityScreenshot, ui.figure) && ...
+        isTopLevelMenu(utilitySaveState, ui.figure) && ...
+        isTopLevelMenu(utilityLoadState, ui.figure), ...
         'Workbench shell should expose stable native utility menu controls.');
     utilityPlotPath = string(tempname) + ".png";
     setappdata(ui.figure, 'labkitUiUtilityPlotFile', utilityPlotPath);
@@ -202,6 +209,11 @@ function verify_gui_layout_ui_axes_workbench()
 
     function noop(varargin)
     end
+end
+
+function tf = isTopLevelMenu(menu, fig)
+    tf = isscalar(menu) && isequal(menu.Parent, fig) && ...
+        isa(menu.MenuSelectedFcn, 'function_handle');
 end
 
 function value = relativeLogPosition(anchor, limits)

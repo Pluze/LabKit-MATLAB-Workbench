@@ -100,6 +100,20 @@ function callbacks = runtimeCallbacks(actions)
         callbacks.(char(id)) = @(control, event) dispatchUiEvent( ...
             control, event, id);
     end
+    callbacks.runtimeLoadState = @dispatchRuntimeLoadState;
+end
+
+function dispatchRuntimeLoadState(control, event)
+    fig = runtimeFigure(control, event);
+    filepath = "";
+    if isappdata(fig, 'labkitUiUtilityStateFile')
+        filepath = string(getappdata(fig, 'labkitUiUtilityStateFile'));
+    end
+    if strlength(filepath) == 0
+        labkit.ui.runtime.loadState(fig);
+    else
+        labkit.ui.runtime.loadState(fig, filepath);
+    end
 end
 
 function dispatchUiEvent(control, event, id)

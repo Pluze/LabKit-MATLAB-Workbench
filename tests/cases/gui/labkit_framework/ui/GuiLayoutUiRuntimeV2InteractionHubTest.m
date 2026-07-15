@@ -59,6 +59,7 @@ function verifyControlledRectangleHitRouting()
 
     ui = getappdata(fig, 'labkitUiRegistry');
     ax = ui.controls.image.primaryAxes;
+    assertAxesContextMenuSurvivesRenderer(ax);
     ax.XLim = [25 75];
     ax.YLim = [20 70];
     expectedView = [ax.XLim ax.YLim];
@@ -73,6 +74,7 @@ function verifyControlledRectangleHitRouting()
     graphics = resource.editors{1}.graphics();
     box = graphics(find(arrayfun(@(item) isa(item, ...
         'matlab.graphics.primitive.Rectangle'), graphics), 1, 'first'));
+    assertAxesContextMenuSurvivesRenderer(ax);
 
     fig.WindowButtonDownFcn(fig, struct('HitObject', box));
     assert(runtime.interactionHub.isDragging(), ...
@@ -82,6 +84,18 @@ function verifyControlledRectangleHitRouting()
         'Releasing the pointer should finish the rectangle drag session.');
     delete(fig);
     clear cleanupFigures cleanupMode;
+end
+
+function assertAxesContextMenuSurvivesRenderer(ax)
+    menu = ax.ContextMenu;
+    assert(~isempty(menu) && isvalid(menu) && ...
+        ~isempty(findall(menu, 'Type', 'uimenu', ...
+        'Tag', 'labkitAxesPopoutMenu')), ...
+        ['A renderer that resets its axes must not remove the framework ' ...
+        'right-click popout action.']);
+    imageHandle = findobj(ax, 'Type', 'image');
+    assert(~isempty(imageHandle) && isequal(imageHandle(1).ContextMenu, menu), ...
+        'Rendered image children should route right-clicks to the axes menu.');
 end
 
 function verifyControlledPointSlots()
@@ -96,6 +110,10 @@ function verifyControlledPointSlots()
     h.waitForUiIdle(fig);
     runtime = getappdata(fig, 'labkitUiAppRuntime');
     resource = interactionResource(runtime.resources, "slots");
+    ui = getappdata(fig, 'labkitUiRegistry');
+    assert(contains(string(ui.controls.image.primaryAxes.Subtitle.String), ...
+        'place the selected marker'), ...
+        'Point slots should explain placement directly on the preview.');
     resource.editors{1}.insertPoint([30 40]);
     runtime = getappdata(fig, 'labkitUiAppRuntime');
     value = runtime.state.project.annotations.slots;
@@ -130,6 +148,9 @@ function verifyPairedAnchorCellPayload()
     resource = interactionResource(runtime.resources, "pointPairs");
     ui = getappdata(fig, 'labkitUiRegistry');
     leftAxes = ui.controls.pair.axesById.left;
+    assert(contains(string(leftAxes.Subtitle.String), ...
+        'Click each preview in matching order'), ...
+        'Paired anchors should explain their corresponding-click workflow.');
     leftAxes.XLim = [0.5 100.5];
     leftAxes.YLim = [0.5 100.5];
     beforeZoom = [leftAxes.XLim leftAxes.YLim];

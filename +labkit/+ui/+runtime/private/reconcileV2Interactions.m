@@ -88,8 +88,16 @@ function controlled = createControlledInteraction(hub, id, spec)
             error('labkit:ui:runtime:UnknownInteractionKind', ...
                 'Interaction "%s" has unsupported Kind "%s".', id, spec.Kind);
     end
+    baseUpdate = update;
+    instruction = interactionInstruction(spec);
+    update = @updateWithInstruction;
     controlled = struct("spec", spec, "update", update, ...
         "delete", @deleteEditors, "editors", {editors});
+
+    function updateWithInstruction(value)
+        baseUpdate(value);
+        applyInstruction();
+    end
 
     function updateSingleAnchors(value)
         withSuppression(@() setAnchorValue(editors{1}, value));
@@ -170,8 +178,45 @@ function controlled = createControlledInteraction(hub, id, spec)
     end
 
     function deleteEditors()
+        clearInstruction();
         for index = 1:numel(editors)
             editors{index}.delete();
+        end
+    end
+
+    function applyInstruction()
+        if strlength(instruction) == 0
+            return;
+        end
+        for index = 1:numel(spec.Targets)
+            adapter = hub.adapter(spec.Targets(index), group);
+            ax = adapter.axes();
+            if isempty(ax) || ~isvalid(ax)
+                continue;
+            end
+            try
+                subtitle(ax, instruction, 'Interpreter', 'none');
+            catch
+            end
+        end
+    end
+
+    function clearInstruction()
+        if strlength(instruction) == 0
+            return;
+        end
+        for index = 1:numel(spec.Targets)
+            adapter = hub.adapter(spec.Targets(index), group);
+            ax = adapter.axes();
+            if isempty(ax) || ~isvalid(ax)
+                continue;
+            end
+            try
+                if join(string(ax.Subtitle.String), newline) == instruction
+                    subtitle(ax, "");
+                end
+            catch
+            end
         end
     end
 end
@@ -288,11 +333,16 @@ function spec = normalizeSpec(id, value)
         value, 'ChangePolicy', 'commit'));
     spec.ImageSize = optionValue(value, 'ImageSize', []);
     spec.Options = optionValue(value, 'Options', struct());
+    spec.Instruction = string(optionValue(value, 'Instruction', ""));
     spec.Targets = spec.Targets(:).';
     if ~isscalar(spec.Kind) || strlength(spec.Kind) == 0 || ...
             isempty(spec.Targets) || any(strlength(spec.Targets) == 0)
         error('labkit:ui:runtime:InvalidInteractionSpec', ...
             'Interaction "%s" requires Kind and semantic Targets.', id);
+    end
+    if ~isscalar(spec.Instruction)
+        error('labkit:ui:runtime:InvalidInteractionSpec', ...
+            'Interaction "%s" Instruction must be scalar text.', id);
     end
     if ~isscalar(spec.Event) || strlength(spec.Event) == 0
         error('labkit:ui:runtime:InvalidInteractionSpec', ...
@@ -315,7 +365,28 @@ function tf = sameIdentity(left, right)
         left.Event == right.Event && ...
         left.BackgroundEvent == right.BackgroundEvent && ...
         left.ScrollEvent == right.ScrollEvent && ...
+        left.Instruction == right.Instruction && ...
         left.ChangePolicy == right.ChangePolicy;
+end
+
+function value = interactionInstruction(spec)
+    value = spec.Instruction;
+    if strlength(value) > 0
+        return;
+    end
+    kind = lower(spec.Kind);
+    mode = lower(string(optionValue(spec.Options, 'mode', 'curve')));
+    if kind == "pairedanchors"
+        value = "Click each preview in matching order; drag points to refine; use Undo to remove a pair.";
+    elseif any(kind == ["scalebarreference", "scalebar"])
+        value = "Double-click two reference endpoints; drag either endpoint to refine.";
+    elseif kind == "anchors" && mode == "points"
+        value = "Click blank image space to add points; drag points to refine; use Undo or Clear to remove.";
+    elseif kind == "anchors"
+        value = "Double-click blank image space to add; drag a point to move; double-click a point to delete.";
+    elseif kind == "pointslots"
+        value = "Click blank image space to place the selected marker; drag a marker to refine its position.";
+    end
 end
 
 function editor = createIntervalEditor(runtime, spec, onChanged, onScroll)

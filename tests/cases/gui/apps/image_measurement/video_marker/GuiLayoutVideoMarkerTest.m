@@ -12,11 +12,13 @@ classdef GuiLayoutVideoMarkerTest < matlab.unittest.TestCase
             drawnow;
 
             h.assertStandardWorkbenchLayout(fig);
+            sessionChoices = video_marker.userInterface.sessionChoices();
             h.assertButtonContract(fig, {'Open video', 'Previous frame', ...
                 'Next frame', 'Undo last point', 'Clear frame points', ...
                 'Add keypoint', 'Remove keypoint', 'Move up', 'Move down', ...
                 'Use preset', 'Add connection', 'Connect in order', ...
-                'Remove connection', 'New setup (clear current)', ...
+                'Remove connection', char(sessionChoices.openProject), ...
+                char(sessionChoices.newSetup), ...
                 'Measure reference pixels', ...
                 'Place scale bar', 'Import marker CSV', 'Export marker CSV', ...
                 'Export coordinate CSV'});
@@ -55,6 +57,8 @@ classdef GuiLayoutVideoMarkerTest < matlab.unittest.TestCase
             runtime = getappdata(fig, 'labkitUiAppRuntime');
             testCase.verifyEqual(runtime.state.project.annotations.skeleton.pointNames, ...
                 ["iliac"; "hip"; "knee"; "ankle"; "foot"]);
+            setChoiceAnswer(fig, ...
+                video_marker.userInterface.sessionChoices().discardAndStart);
             invoke(ui.controls.newSetup.button);
             ui = getappdata(fig, 'labkitUiRegistry');
             invoke(ui.controls.addKeypoint.button);
@@ -82,6 +86,9 @@ classdef GuiLayoutVideoMarkerTest < matlab.unittest.TestCase
             registered = getappdata(ui.controls.videoAxes.primaryAxes, ...
                 'labkit_ui_activeAnchorEditor');
             ax = ui.controls.videoAxes.primaryAxes;
+            testCase.verifyTrue(contains(string(ax.Subtitle.String), ...
+                'Click blank image space to add points'), ...
+                'Video Marker should show its point-mode gestures on the preview.');
             xlim(ax, [10 70]);
             ylim(ax, [10 60]);
             scrollCallback = fig.WindowScrollWheelFcn;
@@ -128,6 +135,59 @@ classdef GuiLayoutVideoMarkerTest < matlab.unittest.TestCase
             testCase.verifyEqual( ...
                 runtime.state.project.annotations.frames.anchorRevision(2), ...
                 predictedRevision);
+        end
+
+
+        function session_actions_confirm_save_discard_and_open_mat(testCase)
+            setupLabKitTestPath();
+            h = guiTestHelpers();
+            h.assertUifigureAvailable();
+            cleanup = onCleanup(@() h.closeAllFigures());
+            fig = labkit_VideoMarker_app();
+            drawnow;
+            ui = getappdata(fig, 'labkitUiRegistry');
+            choices = video_marker.userInterface.sessionChoices();
+            invoke(ui.controls.useSkeletonPreset.button);
+
+            setChoiceAnswer(fig, choices.cancel);
+            invoke(ui.controls.newSetup.button);
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            testCase.verifyEqual(numel( ...
+                runtime.state.project.annotations.skeleton.pointIds), 5, ...
+                'Cancel should preserve the current Video Marker project.');
+
+            folder = string(tempname);
+            mkdir(folder);
+            folderCleanup = onCleanup(@() removeTempFolder(folder));
+            projectPath = fullfile(folder, "saved-project.mat");
+            labkit.ui.runtime.saveState(fig, projectPath);
+            setChoiceAnswer(fig, choices.discardAndStart);
+            invoke(ui.controls.newSetup.button);
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            testCase.verifyEmpty( ...
+                runtime.state.project.annotations.skeleton.pointIds, ...
+                'Discard and start new should clear the project.');
+
+            setappdata(fig, 'labkitUiUtilityStateFile', projectPath);
+            ui = getappdata(fig, 'labkitUiRegistry');
+            invoke(ui.controls.openProject.button);
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            testCase.verifyEqual(numel( ...
+                runtime.state.project.annotations.skeleton.pointIds), 5, ...
+                'Open MAT should invoke the same framework load-state path.');
+
+            savedBeforeReset = fullfile(folder, "saved-before-reset.mat");
+            setChoiceAnswer(fig, choices.saveAndStart);
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            runtime.request.projectStateFile = savedBeforeReset;
+            setappdata(fig, 'labkitUiAppRuntime', runtime);
+            invoke(ui.controls.newSetup.button);
+            testCase.verifyTrue(isfile(savedBeforeReset), ...
+                'Save and start new should persist the current project first.');
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            testCase.verifyEmpty( ...
+                runtime.state.project.annotations.skeleton.pointIds);
+            clear folderCleanup;
         end
 
 
@@ -241,6 +301,12 @@ end
 
 function invoke(button)
     button.ButtonPushedFcn(button, struct());
+end
+
+function setChoiceAnswer(fig, answer)
+    runtime = getappdata(fig, 'labkitUiAppRuntime');
+    runtime.request.choiceDialog = @(varargin) answer;
+    setappdata(fig, 'labkitUiAppRuntime', runtime);
 end
 
 function editName(tableHandle, row, value)
