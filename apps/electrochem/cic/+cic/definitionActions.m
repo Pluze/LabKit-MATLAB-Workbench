@@ -22,60 +22,45 @@ function state = onOpenFilesChosen(state, event, services)
         return;
     end
 
-    failures = struct("filepath", {}, "message", {});
+    added = 0;
     for k = 1:numel(paths)
         filepath = paths(k);
-        if isLoaded(state.session.cache.items, filepath)
+        if isRegistered(state.project.inputs.sources, filepath)
             state = services.workflow.log(state, ...
                 "Skipped already loaded: " + filepath);
             continue;
         end
-        [item, status] = labkit.dta.loadFile(filepath, "chrono");
-        if ~status.ok
-            failures(end + 1) = struct( ...
-                "filepath", filepath, "message", string(status.message));
-            state = services.workflow.log(state, ...
-                "Failed: " + filepath + " | " + string(status.message));
-            continue;
-        end
-        item.analysis = cic.analysisRun.computeCIC( ...
-            item, cic.analysisRun.optionsFromParameters( ...
-            state.project.parameters));
-        state.session.cache.items = appendItem( ...
-            state.session.cache.items, item);
         source = services.project.sourceRecord( ...
             nextSourceId(state.project.inputs.sources), ...
             "chrono", filepath, true);
         state.project.inputs.sources = appendSource( ...
             state.project.inputs.sources, source);
-        state.session.selection.currentIndex = ...
-            numel(state.session.cache.items);
-        for messageIndex = 1:numel(item.logmsg)
-            state = services.workflow.log(state, item.logmsg{messageIndex});
-        end
-        state = logAnalysis(state, item);
-        state = services.workflow.log(state, "Loaded: " + filepath);
+        added = added + 1;
+        state = services.workflow.log(state, "Registered: " + filepath);
     end
+    state.session.selection.currentIndex = numel(state.project.inputs.sources);
+    state = ensureCurrentItemLoaded(state, services);
     state.project.parameters = resetPlotSelections(state.project.parameters);
     state.project.results.lastExport = [];
-    if ~isempty(failures)
-        first = failures(1);
-        services.dialogs.alert(sprintf('Failed to load:\n%s\n\n%s', ...
-            first.filepath, first.message), 'Load error');
+    if added > 1
+        state = services.workflow.log(state, sprintf( ...
+            'Deferred %d non-visible file(s) until selection or export.', ...
+            added - 1));
     end
 end
 
 function state = onRemoveSelected(state, event, services)
-    items = state.session.cache.items;
-    indices = services.events.indices(event, "removedFiles", numel(items));
+    sources = state.project.inputs.sources;
+    indices = services.events.indices(event, "removedFiles", numel(sources));
     if isempty(indices)
         return;
     end
-    removedSourceFiles = string({items(indices).filepath});
-    state.session.cache.items(indices) = [];
+    removedSourceFiles = sourcePaths(sources(indices));
+    state.session.cache.items = removeItemsByPath( ...
+        state.session.cache.items, removedSourceFiles);
     state.project.inputs.sources(indices) = [];
     state.session.selection.currentIndex = boundedCurrentIndex( ...
-        state.session.selection.currentIndex, numel(state.session.cache.items));
+        state.session.selection.currentIndex, numel(state.project.inputs.sources));
     state.project.parameters = resetPlotSelections(state.project.parameters);
     state.project.results.lastExport = [];
     for k = 1:numel(removedSourceFiles)
@@ -94,12 +79,13 @@ end
 
 function state = onFileSelectionChanged(state, event, services)
     indices = services.events.indices(event, "selectedFiles", ...
-        numel(state.session.cache.items));
+        numel(state.project.inputs.sources));
     if isempty(indices)
         state.session.selection.currentIndex = 0;
     else
         state.session.selection.currentIndex = indices(1);
     end
+    state = ensureCurrentItemLoaded(state, services);
     state.project.parameters = resetPlotSelections(state.project.parameters);
 end
 
@@ -135,8 +121,12 @@ function state = analyzeAllFiles(state, services)
 end
 
 function state = onExportResults(state, ~, services)
-    if isempty(state.session.cache.items)
+    if isempty(state.project.inputs.sources)
         services.dialogs.alert('No results to export.', 'Export');
+        return;
+    end
+    [state, ok] = ensureAllItemsLoaded(state, services);
+    if ~ok
         return;
     end
     state = analyzeAllFiles(state, services);
@@ -199,9 +189,74 @@ function index = boundedCurrentIndex(index, count)
     end
 end
 
-function tf = isLoaded(items, filepath)
-    tf = ~isempty(items) && ...
-        any(string({items.filepath}) == string(filepath));
+function tf = isRegistered(sources, filepath)
+    tf = any(sourcePaths(sources) == string(filepath));
+end
+
+function state = ensureCurrentItemLoaded(state, services)
+    index = boundedCurrentIndex(state.session.selection.currentIndex, ...
+        numel(state.project.inputs.sources));
+    if index == 0
+        return;
+    end
+    filepath = sourcePaths(state.project.inputs.sources(index));
+    if itemIsLoaded(state.session.cache.items, filepath)
+        return;
+    end
+    [item, status] = cic.sourceFiles.loadItem(filepath, state.project.parameters);
+    if ~status.ok
+        state = services.workflow.log(state, ...
+            "Failed: " + filepath + " | " + string(status.message));
+        services.dialogs.alert(sprintf('Failed to load:\n%s\n\n%s', ...
+            filepath, status.message), 'Load error');
+        return;
+    end
+    state.session.cache.items = appendItem(state.session.cache.items, item);
+    for messageIndex = 1:numel(item.logmsg)
+        state = services.workflow.log(state, item.logmsg{messageIndex});
+    end
+    state = logAnalysis(state, item);
+    state = services.workflow.log(state, "Loaded: " + filepath);
+end
+
+function [state, ok] = ensureAllItemsLoaded(state, services)
+    ok = true;
+    paths = sourcePaths(state.project.inputs.sources);
+    for k = 1:numel(paths)
+        if itemIsLoaded(state.session.cache.items, paths(k))
+            continue;
+        end
+        [item, status] = cic.sourceFiles.loadItem(paths(k), state.project.parameters);
+        if ~status.ok
+            ok = false;
+            state = services.workflow.log(state, ...
+                "Failed: " + paths(k) + " | " + string(status.message));
+            services.dialogs.alert(sprintf('Failed to load:\n%s\n\n%s', ...
+                paths(k), status.message), 'Load error');
+            return;
+        end
+        state.session.cache.items = appendItem(state.session.cache.items, item);
+    end
+end
+
+function tf = itemIsLoaded(items, filepath)
+    tf = ~isempty(items) && any(string({items.filepath}) == filepath);
+end
+
+function paths = sourcePaths(sources)
+    paths = strings(0, 1);
+    if ~isempty(sources)
+        paths = string(arrayfun(@(source) ...
+            source.reference.originalPath, sources, 'UniformOutput', false));
+        paths = paths(:);
+    end
+end
+
+function items = removeItemsByPath(items, paths)
+    if isempty(items)
+        return;
+    end
+    items(ismember(string({items.filepath}), paths(:))) = [];
 end
 
 function id = nextSourceId(sources)

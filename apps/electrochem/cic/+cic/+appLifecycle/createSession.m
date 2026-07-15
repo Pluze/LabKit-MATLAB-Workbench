@@ -2,11 +2,17 @@
 % source records are resolved. Output owns current selection, workflow log,
 % and the rebuildable decoded/analyzed DTA cache.
 function session = createSession(project)
-    items = cic.sourceFiles.loadProjectItems( ...
-        project.inputs.sources, project.parameters);
+    items = struct([]);
     currentIndex = 0;
-    if ~isempty(items)
+    if ~isempty(project.inputs.sources)
         currentIndex = 1;
+        filepath = string(project.inputs.sources(1).reference.originalPath);
+        [item, status] = cic.sourceFiles.loadItem(filepath, project.parameters);
+        if ~status.ok
+            error('cic:SourceLoadFailed', 'Could not load %s: %s', ...
+                filepath, status.message);
+        end
+        items = item;
     end
     session = struct( ...
         "selection", struct("currentIndex", currentIndex), ...

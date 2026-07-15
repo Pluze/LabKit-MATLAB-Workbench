@@ -10,6 +10,11 @@ classdef GuiLayoutVtResistanceTest < matlab.unittest.TestCase
 
             fixture = dtaFixturePath('chrono_chronopot_current_pulse_0p2ms.DTA');
             secondFixture = dtaFixturePath('chrono_chronopot_current_pulse_1ms.DTA');
+            thirdFolder = string(tempname);
+            mkdir(thirdFolder);
+            thirdCleanup = onCleanup(@() rmdir(thirdFolder, 's'));
+            thirdFixture = fullfile(thirdFolder, 'chrono_third_pulse.DTA');
+            copyfile(secondFixture, thirdFixture);
             fig = h.launchFigure('labkit_VTResistance_app', ...
                 'Gamry VT Steady Resistance GUI');
             assertVtResistanceLayout(h, fig);
@@ -19,7 +24,7 @@ classdef GuiLayoutVtResistanceTest < matlab.unittest.TestCase
 
             driver.click('Add DTA files');
 
-            testCase.verifyEqual(char(driver.fileStatus('files')), '1 file(s) loaded');
+            testCase.verifyEqual(char(driver.fileStatus('files')), '1 file(s) registered');
             testCase.verifyTrue(any(contains(driver.fileListItems('files'), ...
                 'chrono_chronopot_current_pulse_0p2ms.DTA')), ...
                 'VT resistance workflow should list the loaded chrono fixture.');
@@ -46,13 +51,19 @@ classdef GuiLayoutVtResistanceTest < matlab.unittest.TestCase
             testCase.verifyEqual(numel(runtime.state.session.cache.items), 1, ...
                 'Decoded DTA items should live in the session cache.');
 
-            driver.chooseFiles('files', secondFixture);
+            driver.chooseFiles('files', [string(secondFixture); thirdFixture]);
             driver.click('Add DTA files');
 
-            testCase.verifyEqual(char(driver.fileStatus('files')), '2 file(s) loaded');
+            testCase.verifyEqual(char(driver.fileStatus('files')), '3 file(s) registered');
             testCase.verifyTrue(contains(driver.fileSelection('files'), ...
-                'chrono_chronopot_current_pulse_1ms.DTA'), ...
+                'chrono_third_pulse.DTA'), ...
                 'VT resistance append should select the newly added chrono file.');
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            testCase.verifyEqual(numel(runtime.state.session.cache.items), 2, ...
+                ['VT resistance batch append should decode only the visible ' ...
+                'new file and defer the other selected file.']);
+            driver.selectFile('files', ...
+                'chrono_chronopot_current_pulse_1ms.DTA');
             driver.selectFile('files', ...
                 'chrono_chronopot_current_pulse_0p2ms.DTA');
             runtime = getappdata(fig, 'labkitUiAppRuntime');
@@ -67,7 +78,7 @@ classdef GuiLayoutVtResistanceTest < matlab.unittest.TestCase
             h.invokeCallback(ui.controls.voltageMode.valueHandle, 'ValueChangedFcn');
             [updated, detail] = h.waitForCondition(fig, ...
                 @() any(contains(string(driver.logValue('appLog')), ...
-                'Reanalyzed 2 loaded file(s) with shared analysis settings.')), 5);
+                'Reanalyzed 3 loaded file(s) with shared analysis settings.')), 5);
             testCase.verifyTrue(updated, h.waitDiagnostic(detail, ...
                 'operation', 'VT resistance whole-batch recomputation'));
 
@@ -98,10 +109,13 @@ classdef GuiLayoutVtResistanceTest < matlab.unittest.TestCase
             labkit.ui.runtime.loadState(fig, projectPath);
             h.waitForUiIdle(fig);
             testCase.verifyEqual(char(driver.fileStatus('files')), ...
-                '2 file(s) loaded');
+                '3 file(s) registered');
             runtime = getappdata(fig, 'labkitUiAppRuntime');
-            testCase.verifyEqual(numel(runtime.state.session.cache.items), 2);
+            testCase.verifyEqual(numel(runtime.state.session.cache.items), 1, ...
+                ['VT resistance project reopen should decode only the first ' ...
+                'visible source.']);
             clear outputCleanup;
+            clear thirdCleanup;
         end
     end
 end

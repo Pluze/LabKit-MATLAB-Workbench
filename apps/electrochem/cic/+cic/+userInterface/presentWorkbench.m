@@ -3,35 +3,38 @@
 % registry access or side effects.
 function view = presentWorkbench(state)
     items = state.session.cache.items;
+    sources = state.project.inputs.sources;
     parameters = state.project.parameters;
-    index = boundedIndex(state.session.selection.currentIndex, numel(items));
+    index = boundedIndex(state.session.selection.currentIndex, numel(sources));
+    itemIndex = loadedItemIndex(items, sources, index);
     [~, unitLabel] = cic.userInterface.displayUnit(parameters.cicUnit);
     [tableData, columns] = cic.userInterface.buildBatchTableData( ...
         items, unitLabel);
     summary = cic.userInterface.buildCurrentSummary( ...
-        items, index, parameters.cicMode, parameters.cicUnit);
+        items, itemIndex, parameters.cicMode, parameters.cicUnit);
 
     view = struct();
-    view.controls.files = filePanelSpec(items, index);
+    view.controls.files = filePanelSpec(sources, items, index);
     view.controls.results = struct();
     view.controls.results.Data = tableData;
     view.controls.results.ColumnName = columns;
     view = applySummary(view, summary);
     view.previews.plotAxes.Axes.top = struct( ...
         "Renderer", "cicAxis", ...
-        "Model", axisModel(items, index, parameters, "top"));
+        "Model", axisModel(items, itemIndex, parameters, "top"));
     view.previews.plotAxes.Axes.bottom = struct( ...
         "Renderer", "cicAxis", ...
-        "Model", axisModel(items, index, parameters, "bottom"));
+        "Model", axisModel(items, itemIndex, parameters, "bottom"));
 end
 
-function spec = filePanelSpec(items, index)
+function spec = filePanelSpec(sources, items, index)
     files = struct("id", {}, "path", {}, "status", {});
-    for k = 1:numel(items)
+    paths = sourcePaths(sources);
+    for k = 1:numel(paths)
         files(end + 1) = struct( ...
             "id", "item" + string(k), ...
-            "path", string(items(k).filepath), ...
-            "status", analysisStatus(items(k)));
+            "path", paths(k), ...
+            "status", pathStatus(items, paths(k)));
     end
     selection = strings(0, 1);
     if index > 0
@@ -40,7 +43,16 @@ function spec = filePanelSpec(items, index)
     spec = struct( ...
         "Files", files, ...
         "Selection", selection, ...
-        "Status", fileStatus(numel(items)));
+        "Status", fileStatus(numel(paths)));
+end
+
+function value = pathStatus(items, filepath)
+    itemIndex = find(string({items.filepath}) == filepath, 1);
+    if isempty(itemIndex)
+        value = "deferred";
+    else
+        value = analysisStatus(items(itemIndex));
+    end
 end
 
 function value = analysisStatus(item)
@@ -55,7 +67,7 @@ function value = fileStatus(count)
     if count == 0
         value = "No files loaded";
     else
-        value = string(count) + " file(s) loaded";
+        value = string(count) + " file(s) registered";
     end
 end
 
@@ -127,5 +139,26 @@ function index = boundedIndex(index, count)
         index = 0;
     else
         index = min(max(1, round(double(index))), count);
+    end
+end
+
+function itemIndex = loadedItemIndex(items, sources, sourceIndex)
+    itemIndex = 0;
+    if sourceIndex == 0 || isempty(items)
+        return;
+    end
+    paths = sourcePaths(sources);
+    match = find(string({items.filepath}) == paths(sourceIndex), 1);
+    if ~isempty(match)
+        itemIndex = match;
+    end
+end
+
+function paths = sourcePaths(sources)
+    paths = strings(0, 1);
+    if ~isempty(sources)
+        paths = string(arrayfun(@(source) ...
+            source.reference.originalPath, sources, 'UniformOutput', false));
+        paths = paths(:);
     end
 end
