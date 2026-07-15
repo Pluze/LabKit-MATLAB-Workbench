@@ -4,7 +4,8 @@ function sizeValue = currentCropSize(state)
     parameters = state.project.parameters;
     index = max(0, round(double(state.session.selection.currentIndex)));
     hasCurrent = index >= 1 && index <= numel(state.project.inputs.items) && ...
-        ~isempty(state.project.inputs.items(index).image);
+        index <= numel(state.session.cache.images) && ...
+        ~isempty(state.session.cache.images{index});
     if strcmpi(parameters.scaleMode, "Physical") && hasCurrent
         calibration = state.project.inputs.items(index).scaleCalibration;
         if batch_crop.appState.isScaleCalibrationSet(calibration)

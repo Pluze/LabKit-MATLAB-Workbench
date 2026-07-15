@@ -26,33 +26,35 @@ function state = onChooseOutputFolder(state, ~, services)
 end
 
 function state = onExportCrops(state, ~, services)
-    items = state.project.inputs.items;
-    if isempty(items)
+    tasks = state.project.inputs.items;
+    if isempty(tasks)
         services.dialogs.alert( ...
             'Load images before exporting crops.', 'No images loaded');
         return;
     end
-    if ~all([items.centerSet])
+    if ~all([tasks.centerSet])
         services.dialogs.alert( ...
-            batch_crop.userInterface.missingWorkflowItemsText(items, "center"), ...
+            batch_crop.userInterface.missingWorkflowItemsText(tasks, "center"), ...
             'Crop centers missing');
         return;
     end
     if strcmpi(state.project.parameters.scaleMode, "Physical") && ...
-            ~batch_crop.appState.scaleCalibrationSummary(items).allCalibrated
+            ~batch_crop.appState.scaleCalibrationSummary(tasks).allCalibrated
         services.dialogs.alert( ...
-            batch_crop.userInterface.missingWorkflowItemsText(items, "scale"), ...
+            batch_crop.userInterface.missingWorkflowItemsText(tasks, "scale"), ...
             'Scale calibration missing');
         return;
     end
     try
+        items = batch_crop.appState.workingItems( ...
+            tasks, state.session.cache.images, state.project.inputs.sources);
         items = batch_crop.appState.loadMissingImages(items);
     catch ME
         services.diagnostics.report('Could not load image', ME);
         services.dialogs.alert(ME.message, 'Could not load image');
         return;
     end
-    state.project.inputs.items = items;
+    state.session.cache.images = {items.image}.';
     state.session.cache.canvas = batch_crop.appState.emptyCanvasCache();
     opts = currentExportOptions(state);
     plan = batch_crop.appState.exportPlan(items, opts);
@@ -95,7 +97,8 @@ function opts = currentExportOptions(state)
     padding = 0;
     index = max(0, round(double(state.session.selection.currentIndex)));
     if index >= 1 && index <= numel(state.project.inputs.items) && ...
-            ~isempty(state.project.inputs.items(index).image)
+            index <= numel(state.session.cache.images) && ...
+            ~isempty(state.session.cache.images{index})
         padding = state.project.inputs.items(index).paddingPercent;
     end
     opts = batch_crop.appState.exportOptions( ...

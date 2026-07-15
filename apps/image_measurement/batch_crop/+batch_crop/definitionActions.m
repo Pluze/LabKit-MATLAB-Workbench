@@ -39,13 +39,14 @@ function state = onImagesChosen(state, event, services)
         state = services.workflow.log(state, "Image file selection cancelled.");
         return;
     end
-    chosen = batch_crop.appState.itemsForPaths(paths);
-    state.project.inputs.items = batch_crop.appState.mergeChosenItems( ...
-        state.project.inputs.items, chosen);
-    state.project.inputs.sources = sourcesForItems( ...
-        state.project.inputs.items, services);
+    [tasks, sources, images] = reconcileSelectedSources( ...
+        state.project.inputs.items, state.project.inputs.sources, ...
+        state.session.cache.images, paths, services);
+    state.project.inputs.items = tasks;
+    state.project.inputs.sources = sources;
+    state.session.cache.images = images;
     state.session.selection.currentIndex = selectedAddedIndex( ...
-        state.project.inputs.items, added);
+        tasks, sources, added);
     state.project.parameters.outputFolder = string( ...
         services.dialogs.defaultOutputFolder(paths, "batch_crop", ...
         state.project.parameters.outputFolder));
@@ -61,8 +62,9 @@ function state = onImagesChosen(state, event, services)
 end
 
 function state = onClearImages(state, ~, services)
-    state.project.inputs.items = repmat(batch_crop.appState.emptyItem(), 0, 1);
+    state.project.inputs.items = repmat(batch_crop.appState.emptyTask(), 0, 1);
     state.project.inputs.sources = emptySources();
+    state.session.cache.images = cell(0, 1);
     state.session.selection.currentIndex = 0;
     state.session.workflow.cropDefaultsInitialized = false;
     state.session.workflow.scaleReferenceEditing = false;
@@ -79,7 +81,9 @@ function state = onRemoveImages(state, event, services)
     end
     items(indices) = [];
     state.project.inputs.items = items;
-    state.project.inputs.sources = sourcesForItems(items, services);
+    state.session.cache.images(indices) = [];
+    state.project.inputs.sources = sourcesForTasks( ...
+        items, state.project.inputs.sources);
     if isempty(items)
         state.session.selection.currentIndex = 0;
     else
@@ -104,11 +108,14 @@ function state = onDuplicateImage(state, ~, services)
         return;
     end
     index = currentIndex(state);
-    duplicate = batch_crop.appState.duplicateItem( ...
-        state.project.inputs.items(index));
+    duplicate = state.project.inputs.items(index);
+    duplicate.centerXY = [NaN, NaN];
+    duplicate.centerSet = false;
     insertAt = index + 1;
     items = state.project.inputs.items;
     state.project.inputs.items = [items(1:index); duplicate; items(insertAt:end)];
+    images = state.session.cache.images;
+    state.session.cache.images = [images(1:index); images(index); images(insertAt:end)];
     state.session.selection.currentIndex = insertAt;
     state.session.workflow.scaleReferenceEditing = false;
     state.session.view.scaleBar = [];
@@ -243,7 +250,7 @@ function state = onUseImageCenter(state, ~, services, mode)
         return;
     end
     index = currentIndex(state);
-    item = state.project.inputs.items(index);
+    item = currentItem(state);
     center = item.centerXY;
     sourceCenter = batch_crop.cropGeometry.sourceCenterXY(item.image);
     if any(~isfinite(center))
@@ -428,9 +435,20 @@ function [state, loaded] = ensureCurrentImageLoaded(state, services)
         return;
     end
     try
-        [state.project.inputs.items, loaded] = ...
-            batch_crop.appState.loadImageForIndex( ...
-            state.project.inputs.items, index);
+        if index <= numel(state.session.cache.images) && ...
+                ~isempty(state.session.cache.images{index})
+            loaded = true;
+            return;
+        end
+        loadedItems = batch_crop.appState.readItems( ...
+        sourcePath(state.project.inputs.items(index), ...
+        state.project.inputs.sources));
+        if isempty(loadedItems)
+            error('labkit_BatchImageCrop_app:ImageNotLoaded', ...
+                'No image was loaded for item %d.', index);
+        end
+        state.session.cache.images{index} = loadedItems(1).image;
+        loaded = true;
     catch ME
         services.diagnostics.report('Could not load image', ME);
         state = services.workflow.log(state, sprintf( ...
@@ -481,7 +499,10 @@ function state = clearExport(state)
 end
 
 function item = currentItem(state)
-    item = state.project.inputs.items(currentIndex(state));
+    index = currentIndex(state);
+    item = batch_crop.appState.workingItems( ...
+        state.project.inputs.items(index), state.session.cache.images(index), ...
+        state.project.inputs.sources);
 end
 
 function index = currentIndex(state)
@@ -492,10 +513,11 @@ function tf = hasCurrentImage(state)
     index = currentIndex(state);
     tf = ~isempty(state.project.inputs.items) && index >= 1 && ...
         index <= numel(state.project.inputs.items) && ...
-        ~isempty(state.project.inputs.items(index).image);
+        index <= numel(state.session.cache.images) && ...
+        ~isempty(state.session.cache.images{index});
 end
 
-function index = selectedAddedIndex(items, added)
+function index = selectedAddedIndex(items, sources, added)
     index = 1;
     if isempty(items)
         index = 0;
@@ -504,25 +526,92 @@ function index = selectedAddedIndex(items, added)
     if isempty(added)
         return;
     end
-    match = find(string({items.path}) == added(1), 1, 'first');
+    source = find(sourcePaths(sources) == added(1), 1, 'first');
+    match = [];
+    if ~isempty(source)
+        match = find(string({items.sourceId}) == string(sources(source).id), ...
+            1, 'first');
+    end
     if ~isempty(match)
         index = match;
     end
 end
 
-function sources = sourcesForItems(items, services)
+function [tasks, sources, images] = reconcileSelectedSources( ...
+        existingTasks, existingSources, existingImages, paths, services)
+    tasks = repmat(batch_crop.appState.emptyTask(), 0, 1);
     sources = emptySources();
-    if isempty(items)
-        return;
-    end
-    paths = unique(string({items.path}), 'stable');
+    images = cell(0, 1);
+    paths = unique(string(paths), 'stable');
     for k = 1:numel(paths)
-        source = services.project.sourceRecord( ...
-            "image" + string(k), "cropSource", paths(k), true);
-        if isempty(sources)
-            sources = source;
+        sourceIndex = find(sourcePaths(existingSources) == paths(k), ...
+            1, 'first');
+        if isempty(sourceIndex)
+            sourceId = nextSourceId(existingSources, sources);
+            source = services.project.sourceRecord( ...
+                sourceId, "cropSource", paths(k), true);
+            matchingTasks = [];
         else
-            sources(end + 1) = source;
+            source = existingSources(sourceIndex);
+            sourceId = string(source.id);
+            matchingTasks = find(string({existingTasks.sourceId}) == sourceId);
+        end
+        sources(end + 1) = source;
+        if isempty(matchingTasks)
+            task = batch_crop.appState.emptyTask();
+            task.sourceId = sourceId;
+            tasks(end + 1, 1) = task;
+            images{end + 1, 1} = [];
+        else
+            for taskIndex = matchingTasks(:).'
+                tasks(end + 1, 1) = existingTasks(taskIndex);
+                if taskIndex <= numel(existingImages)
+                    images{end + 1, 1} = existingImages{taskIndex};
+                else
+                    images{end + 1, 1} = [];
+                end
+            end
+        end
+    end
+end
+
+function sourceId = nextSourceId(existingSources, newSources)
+    ids = [string({existingSources.id}), string({newSources.id})];
+    number = numel(ids) + 1;
+    sourceId = "image" + string(number);
+    while any(ids == sourceId)
+        number = number + 1;
+        sourceId = "image" + string(number);
+    end
+end
+
+function sources = sourcesForTasks(tasks, existingSources)
+    sources = emptySources();
+    taskIds = unique(string({tasks.sourceId}), 'stable');
+    for k = 1:numel(taskIds)
+        match = find(string({existingSources.id}) == taskIds(k), 1, 'first');
+        if ~isempty(match)
+            sources(end + 1) = existingSources(match);
+        end
+    end
+end
+
+function path = sourcePath(task, sources)
+    path = "";
+    match = find(string({sources.id}) == string(task.sourceId), 1, 'first');
+    if ~isempty(match)
+        path = sourcePaths(sources(match));
+    end
+end
+
+function paths = sourcePaths(sources)
+    paths = strings(numel(sources), 1);
+    for k = 1:numel(sources)
+        reference = sources(k).reference;
+        if isstruct(reference) && isfield(reference, 'originalPath')
+            paths(k) = string(reference.originalPath);
+        else
+            paths(k) = string(reference);
         end
     end
 end

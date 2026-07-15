@@ -2,7 +2,9 @@
 % state. Output is a deterministic control, summary, preview, and controlled
 % interaction presentation without UI registry access.
 function view = presentWorkbench(state)
-    items = state.project.inputs.items;
+    items = batch_crop.appState.workingItems( ...
+        state.project.inputs.items, state.session.cache.images, ...
+        state.project.inputs.sources);
     parameters = state.project.parameters;
     index = currentIndex(state);
     hasImage = hasCurrentImage(state);
@@ -165,7 +167,9 @@ end
 
 function [geometry, render] = previewGeometry(state)
     index = currentIndex(state);
-    item = state.project.inputs.items(index);
+    item = batch_crop.appState.workingItems( ...
+        state.project.inputs.items(index), state.session.cache.images(index), ...
+        state.project.inputs.sources);
     [geometry, ~] = batch_crop.appState.currentGeometry( ...
         state.session.cache.canvas, index, item, item.paddingPercent);
     placement = struct("offset", [0 0], ...
@@ -264,5 +268,6 @@ function tf = hasCurrentImage(state)
     index = currentIndex(state);
     tf = ~isempty(state.project.inputs.items) && index >= 1 && ...
         index <= numel(state.project.inputs.items) && ...
-        ~isempty(state.project.inputs.items(index).image);
+        index <= numel(state.session.cache.images) && ...
+        ~isempty(state.session.cache.images{index});
 end
