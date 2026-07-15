@@ -65,7 +65,7 @@ Current facts from the architecture audit:
 - Current contracts live in `docs/ui.md`, `docs/apps.md`, and `docs/architecture.md`.
 
 Temporary MathWorks product debt is declared in `labkitToolboxDebt`; each entry
-needs a matching active record here and stays statically visible until retired.
+needs fallback, idempotency, parity, replacement evidence and a matching active record here.
 
 ## Goal Prompt: Migrate All Apps To UI Runtime V2
 

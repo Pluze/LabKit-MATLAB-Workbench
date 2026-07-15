@@ -97,9 +97,11 @@ dependency analysis resolves every product, and run representative workflows
 with known toolbox helpers shadowed on the MATLAB path. A temporary MathWorks
 product path is accepted only through an exact entry in
 `tests/runner/labkitToolboxDebt.m` that names its source, symbol, product,
-owner, no-Toolbox fallback test, Toolbox parity test, and repository-owned
-replacement. Numeric or scientific replacements must also prove deterministic
-repeated results and compare the outputs consumed by the app, including
+owner, no-Toolbox fallback test, idempotency test, Toolbox parity test, and
+repository-owned replacement. Numeric or scientific replacements must also
+prove identical inputs reproduce the same app-consumed values; stateful
+operations must prove that safe repetition does not compound state or side
+effects. Compare the outputs consumed by the app, including
 downstream decisions or exports, within a documented tolerance. The same ID
 must remain active in `.agents/migration_guide.md`. This records debt without
 hiding it: dynamic invocation does not satisfy the contract, broad product

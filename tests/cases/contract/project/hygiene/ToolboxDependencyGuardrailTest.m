@@ -334,7 +334,7 @@ end
 function findings = toolboxDebtTraceabilityFindings(root, debt)
     findings = strings(1, 0);
     requiredFields = ["id", "source", "symbol", "product", "owner", ...
-        "fallbackTest", "parityTest", "replacement"];
+        "fallbackTest", "idempotencyTest", "parityTest", "replacement"];
     if isempty(debt)
         return;
     end
@@ -350,7 +350,8 @@ function findings = toolboxDebtTraceabilityFindings(root, debt)
     for iDebt = 1:numel(debt)
         entry = debt(iDebt);
         values = string({entry.id, entry.source, entry.symbol, entry.product, ...
-            entry.owner, entry.fallbackTest, entry.parityTest, entry.replacement});
+            entry.owner, entry.fallbackTest, entry.idempotencyTest, ...
+            entry.parityTest, entry.replacement});
         if any(strlength(values) == 0)
             findings(end + 1) = "registry entry " + string(iDebt) + ": empty field";
             continue;
@@ -366,6 +367,9 @@ function findings = toolboxDebtTraceabilityFindings(root, debt)
         end
         if ~testSelectorExists(entry.fallbackTest)
             findings(end + 1) = string(entry.id) + ": fallback test not found";
+        end
+        if ~testSelectorExists(entry.idempotencyTest)
+            findings(end + 1) = string(entry.id) + ": idempotency test not found";
         end
         if ~testSelectorExists(entry.parityTest)
             findings(end + 1) = string(entry.id) + ": parity test not found";

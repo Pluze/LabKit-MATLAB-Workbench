@@ -31,11 +31,13 @@ a MathWorks Toolbox only when it also ships a repository-owned base-MATLAB
 implementation with comparable user-visible behavior. The app must remain
 usable without the product, and automated tests must exercise that fallback.
 When values feed scientific interpretation, branching, exports, or later
-calculations, identical inputs must give deterministic results and a parity
+calculations, identical inputs must be idempotent: pure calculations reproduce
+the same app-consumed values, while safely repeated stateful operations do not
+compound state or side effects. A parity
 test must compare app-consumed outputs against the Toolbox reference within a
 documented tolerance. Visual similarity is not sufficient evidence.
 The exact source, symbol, product, owner, fallback evidence, and replacement
-plan plus fallback and parity evidence are recorded as active migration debt. Dependency analysis continues to
+plan plus fallback, idempotency, and parity evidence are recorded as active migration debt. Dependency analysis continues to
 report the Toolbox call; hiding it behind reflection or string dispatch is not
 an accepted compatibility technique. The debt closes by removing the Toolbox
 branch once the owned implementation replaces it.

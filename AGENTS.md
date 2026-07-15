@@ -51,15 +51,18 @@ debt for the touched area.
 - Rapid app development may temporarily use a MathWorks Toolbox capability
   only when the owning app also ships a base-MATLAB implementation with
   comparable user-visible behavior. Keep the Toolbox call statically visible,
-  declare the exact source/symbol/product/owner/fallback test/parity test/replacement in
+  declare the exact source/symbol/product/owner/fallback test/idempotency
+  test/parity test/replacement in
   `tests/runner/labkitToolboxDebt.m`, and add the same debt ID to
   `.agents/migration_guide.md`. The debt is retired only by deleting the
   Toolbox branch after the repository-owned implementation replaces it; never
   use dynamic invocation, reflection, or string dispatch to evade product scans.
 - When the repository-owned alternative affects numeric values, scientific
   meaning, branching, exports, or downstream calculations, it must be
-  deterministic for repeated identical inputs. While a Toolbox reference is
-  available, test both implementations on representative synthetic cases and
+  idempotent for repeated identical inputs: pure calculations return the same
+  app-consumed values, and stateful operations do not compound state or side
+  effects when the same operation is safely repeated. While a Toolbox reference
+  is available, test both implementations on representative synthetic cases and
   compare the app-consumed outputs within an explained tolerance. Visual or
   qualitative similarity alone is not replacement evidence.
 - Local private apps may live under ignored `private_apps/apps/` workspaces or
