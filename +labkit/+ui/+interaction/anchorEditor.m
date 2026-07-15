@@ -211,7 +211,8 @@ function editor = anchorEditor(runtime, imageSize, opts)
             curve = zeros(0, 2);
             return;
         end
-        curve = anchorCurvePoints(state.points, state.imageSize, state.style, state.closed);
+        curve = labkit.ui.interaction.anchorPath(state.points, state.imageSize, ...
+            "Style", state.style, "Closed", logical(state.closed));
     end
 
     function deleteEditor()

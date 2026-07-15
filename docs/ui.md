@@ -13,7 +13,7 @@ result manifests. V1 remains for apps awaiting migration. See
 | `labkit.ui.layout` | UI 5 data-only workbench layouts. | `workbench`, `workspace`, `tab`, `section`, `group`, `field`, `rangeField`, `panner`, `action`, `filePanel`, `toolPanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `usagePanel`. |
 | `labkit.ui.control` | Semantic registry updates, selectable items, file-panel values, list selections, numeric limits, enable state, and log appends. | `setValue`, `getValue`, `getFiles`, `setFileSelection`, `setItems`, `setEnabled`, `setLimits`, `appendLog`, `setListItems`, `setListSelection`, `fileLabels`, `filePaths`, `fileIndices`. |
 | `labkit.ui.plot` | Preview axes lookup, plot clearing, layer-safe overlays, image drawing, fitted limits, canvas framing, empty-state messages, and data/axes coordinate conversion. | `getAxes`, `clear`, `clearPreview`, `reset`, `replaceOverlay`, `image`, `fit`, `fitCanvas`, `dataToFraction`, `fractionToData`, `offsetData`, `clampData`, `message`. |
-| `labkit.ui.interaction` | Reusable composed preview tools and pointer/scroll interaction runtime. | `runtime`, `anchorEditor`, `rectangleEditor`, `scaleBar`, `scaleBarCalibration`, `scaleBarGeometry`, `enablePopout`, `popout`, `zoomAtPoint`. |
+| `labkit.ui.interaction` | Reusable composed preview tools and pointer/scroll interaction runtime. | `runtime`, `anchorEditor`, `anchorPath`, `rectangleEditor`, `scaleBar`, `scaleBarCalibration`, `scaleBarGeometry`, `enablePopout`, `popout`, `zoomAtPoint`. |
 | `labkit.ui.debug` | Debug launch context, visible trace, callback instrumentation, and crash reports. | `context`. |
 
 The root `labkit.ui.*` flat helper surface has been removed. Apps should call the facade that owns the behavior they need. Private implementation details live under each facade's `private/` folder.
@@ -537,12 +537,12 @@ time-labeled x-axes zoom only the horizontal axis unless `"ZoomAxes"` is
 provided explicitly.
 
 Use `labkit.ui.interaction.anchorEditor(runtime, imageSize, opts)` for generic
-anchor editing. Its default `mode="curve"` uses double-click insertion and a
-visible path for boundaries and traced curves. `mode="points"` uses the
+anchor editing. Default `mode="curve"` draws traced paths; `mode="points"` uses
 single-click placement and drag-to-refine behavior suited to ordered feature
 points and ROI centers, without drawing a connecting path or assigning
-double-click deletion. Use `labkit.ui.interaction.rectangleEditor(runtime,
-imageSize, position, opts)` for a toolbox-free draggable and resizable
+double-click deletion. `labkit.ui.interaction.anchorPath(...)` returns the same
+visible path for fitting or export. Use `labkit.ui.interaction.rectangleEditor`
+for a toolbox-free draggable and resizable
 rectangular overlay. Use `labkit.ui.interaction.scaleBar(parent, row, runtime,
 opts)` for calibration controls, reference-pixel editing, unit normalization,
 final scale-bar placement, and overlay drawing. Apps can persist

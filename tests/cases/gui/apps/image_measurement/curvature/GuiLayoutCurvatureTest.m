@@ -19,25 +19,21 @@ classdef GuiLayoutCurvatureTest < matlab.unittest.TestCase
             assertCurvatureLayout(h, fig);
             assert(debug.enabled && debug.traceEnabled, ...
                 'Curvature debug launch should return an enabled trace logger.');
-            assertAnyTextAreaContains(h, fig, ...
-                'Curvature measurement debug trace enabled', ...
-                'Curvature debug launch should mirror trace lines into the visible Log tab.');
-            h.invokeCheckbox(fig, 'Show dense fit points', false);
-            lines = string(debug.getLog());
-            assert(any(contains(lines, 'BEGIN ValueChangedFcn') & ...
-                contains(lines, 'Show dense fit points')), ...
-                'Curvature debug mode should instrument GUI callbacks with control labels.');
-            assert(any(contains(lines, 'ValueChangedFcn') & ...
-                contains(lines, 'refreshImageOverlay')), ...
-                'Curvature debug mode should include the original callback function name.');
-            assertAnyTextAreaContains(h, fig, 'BEGIN ValueChangedFcn', ...
-                'Curvature debug mode should mirror instrumented callback traces into the visible Log tab.');
-            h.invokeCheckbox(fig, 'Show dense fit points', true);
-
             driver = labkitWorkflowDriver(fig);
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            testCase.verifyEqual(runtime.definition.contractVersion, 2, ...
+                'Curvature must execute through Runtime V2.');
+            assertAnyTextAreaContains(h, fig, 'Debug sample generation enabled', ...
+                'Runtime debug-sample lifecycle should be mirrored into the Log tab.');
             driver.chooseFiles('imageFile', imagePath);
 
             driver.click('Choose image');
+            driver.click('Measure reference pixels');
+            driver.setAnchorPoints('imageAxes', [25 90; 125 90]);
+            driver.click('Finish reference edit');
+            testCase.verifyTrue(driver.enabled('placeScaleBar'), ...
+                'Scale-bar placement should enable after reference calibration.');
+            driver.click('Place scale bar');
             driver.click('Start curve edit');
             driver.setAnchorPoints('imageAxes', [28 70; 48 42; 84 30; 120 42; 140 70]);
 
@@ -71,6 +67,44 @@ classdef GuiLayoutCurvatureTest < matlab.unittest.TestCase
             lengthTable = driver.tableData('resultTable');
             testCase.verifyTrue(any(strcmp(string(lengthTable(:, 1)), 'Curve length')), ...
                 'Curvature workflow should keep curve length visible after measuring length.');
+
+            outputFolder = string(tempname);
+            mkdir(outputFolder);
+            outputCleanup = onCleanup(@() removeTempFolder(outputFolder));
+            outputs = ["curvature_result.csv", "curvature_overlay.png"];
+            outputIndex = 0;
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            runtime.request.outputChooser = @chooseOutput;
+            setappdata(fig, 'labkitUiAppRuntime', runtime);
+            driver.click('Export result CSV');
+            driver.click('Export overlay PNG');
+            for filepath = fullfile(outputFolder, outputs)
+                testCase.verifyTrue(isfile(filepath));
+            end
+            testCase.verifyTrue(isfile(fullfile(outputFolder, ...
+                'curvature_result.labkit.json')));
+            testCase.verifyTrue(isfile(fullfile(outputFolder, ...
+                'curvature_overlay.labkit.json')));
+
+            projectPath = fullfile(outputFolder, 'curvature-project.mat');
+            labkit.ui.runtime.saveState(fig, projectPath);
+            saved = load(projectPath, 'labkitProject');
+            testCase.verifyEqual(saved.labkitProject.app.payloadVersion, 1);
+            testCase.verifyFalse(isfield(saved.labkitProject.payload, 'image'));
+            labkit.ui.runtime.loadState(fig, projectPath);
+            h.waitForUiIdle(fig);
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            testCase.verifyNotEmpty(runtime.state.session.cache.image, ...
+                'Project reopen should rebuild the decoded image cache.');
+            testCase.verifyTrue(runtime.state.project.results.fit.ok, ...
+                'Project reopen should retain the durable curvature fit.');
+            clear outputCleanup;
+
+            function [filename, folderPath] = chooseOutput(~, ~, ~)
+                outputIndex = outputIndex + 1;
+                filename = char(outputs(outputIndex));
+                folderPath = char(outputFolder);
+            end
         end
     end
 end
@@ -89,26 +123,6 @@ function assertCurvatureLayout(h, fig)
         'Top center', 'Top left', 'Top right'}, 1), ...
         h.dropdownGroup({'Black', 'White'}, 1)]);
     h.assertTabTitles(fig, {'Files + Analysis', 'Summary + Results', 'Log'});
-    assertScaleBarPanelSpansControlTab(fig);
-end
-
-function assertScaleBarPanelSpansControlTab(fig)
-    hosts = findall(fig, 'Type', 'uipanel', 'Tag', 'LabKitToolPanel_scaleBarHost');
-    assert(numel(hosts) >= 1, 'Curvature app should include a scale-bar tool host.');
-    hostLayout = hosts(1).Layout;
-    assert(isprop(hostLayout, 'Column') && isequal(hostLayout.Column, [1 2]), ...
-        'Scale-bar tool host should span the full two-column control section.');
-
-    scalePanels = findall(fig, 'Type', 'uipanel', 'Title', 'Scale Bar');
-    assert(numel(scalePanels) >= 1, 'Curvature app should include a Scale Bar panel.');
-    for k = 1:numel(scalePanels)
-        if scalePanels(k).Parent == hosts(1).Children(1)
-            assert(scalePanels(k).Position(3) > 250, ...
-                'Scale Bar panel width should not be clipped inside the tool host.');
-            return;
-        end
-    end
-    error('Scale Bar panel should be mounted inside the semantic tool host.');
 end
 
 function img = syntheticCurvatureImage()
