@@ -1,7 +1,7 @@
 %PREDICTFORWARD Propagate points through later frames until the target frame.
 % Expected caller: Video Marker forward navigation. Manual frames are immutable
-% anchors; empty or previously predicted frames are replaced by fresh KLT
-% predictions. Returns the target image and a compact diagnostic report.
+% anchors; empty or previously predicted frames are replaced by fresh
+% multiscale patch predictions. Returns the target image and a compact report.
 function [annotations, targetImage, report] = predictForward( ...
         readFrameFcn, annotations, startFrame, targetFrame, startImage)
     annotations = video_marker.frameAnnotations.upgradeAnnotationSchema(annotations);
@@ -22,7 +22,7 @@ function [annotations, targetImage, report] = predictForward( ...
     previousImageFrame = startFrame;
     report = struct('predictedFrames', 0, 'manualAnchors', 0, ...
         'cachedFrames', 0, 'fallbackPoints', 0, ...
-        'minimumConfidence', 1, 'engine', "pyramidal_klt");
+        'minimumConfidence', 1, 'engine', "multiscale_patch");
     targetImage = [];
     manualCode = video_marker.frameAnnotations.sourceCode("manual");
     predictedCode = video_marker.frameAnnotations.sourceCode("predicted");

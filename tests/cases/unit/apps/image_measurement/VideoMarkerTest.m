@@ -86,10 +86,8 @@ classdef VideoMarkerTest < matlab.unittest.TestCase
             testCase.verifyTrue(isnan(upgraded.trackingConfidence(2)));
         end
 
-        function pyramidal_klt_tracks_translated_point(testCase)
+        function multiscale_patch_tracker_tracks_translated_point(testCase)
             setupLabKitTestPath();
-            testCase.assumeEqual(exist('vision.PointTracker', 'class'), 8, ...
-                'Computer Vision Toolbox is unavailable.');
             rng(7);
             previous = rand(80, 100);
             current = zeros(size(previous));
@@ -100,13 +98,87 @@ classdef VideoMarkerTest < matlab.unittest.TestCase
             testCase.verifyEqual(points, [53 38], 'AbsTol', 0.35);
             testCase.verifyGreaterThan(confidence, 0.5);
             testCase.verifyTrue(diagnostics.valid);
-            testCase.verifyEqual(diagnostics.engine, "pyramidal_klt");
+            testCase.verifyEqual(diagnostics.engine, "multiscale_patch");
+        end
+
+        function multiscale_patch_tracker_refines_subpixel_motion(testCase)
+            setupLabKitTestPath();
+            rng(17);
+            previous = rand(80, 100);
+            [x, y] = meshgrid(1:100, 1:80);
+            displacement = [2.4 -1.7];
+            current = interp2(previous, x - displacement(1), ...
+                y - displacement(2), 'linear', 0);
+            [point, confidence, diagnostics] = ...
+                video_marker.motionEstimate.trackPoints( ...
+                previous, current, [50 40]);
+            testCase.verifyEqual(point, [50 40] + displacement, 'AbsTol', 0.45);
+            testCase.verifyGreaterThan(confidence, 0.5);
+            testCase.verifyTrue(diagnostics.valid);
+        end
+
+        function multiscale_patch_tracker_is_deterministic(testCase)
+            setupLabKitTestPath();
+            rng(23);
+            previous = rand(64, 72);
+            current = circshift(previous, [-2 3]);
+            args = {previous, current, [36 32], [2 -1]};
+            [firstPoint, firstConfidence, firstDiagnostics] = ...
+                video_marker.motionEstimate.trackPoints(args{:});
+            [secondPoint, secondConfidence, secondDiagnostics] = ...
+                video_marker.motionEstimate.trackPoints(args{:});
+            testCase.verifyEqual(secondPoint, firstPoint);
+            testCase.verifyEqual(secondConfidence, firstConfidence);
+            testCase.verifyEqual(secondDiagnostics, firstDiagnostics);
+        end
+
+        function owned_tracker_matches_toolbox_app_coordinates(testCase)
+            setupLabKitTestPath();
+            testCase.assumeEqual(exist('vision.PointTracker', 'class'), 8, ...
+                'Computer Vision Toolbox is unavailable for parity evidence.');
+            rng(29);
+            previous = rand(80, 100);
+            current = zeros(size(previous));
+            current(1:78, 4:100) = previous(3:80, 1:97);
+            sourcePoint = [50 40];
+            [ownedPoint, ownedConfidence, ownedDiagnostics] = ...
+                video_marker.motionEstimate.trackPoints( ...
+                previous, current, sourcePoint);
+
+            tracker = vision.PointTracker( ...
+                'BlockSize', [31 31], ...
+                'NumPyramidLevels', 4, ...
+                'MaxIterations', 30, ...
+                'MaxBidirectionalError', 2.5);
+            cleanup = onCleanup(@() release(tracker));
+            initialize(tracker, sourcePoint, previous);
+            [toolboxPoint, toolboxValid, toolboxConfidence] = tracker(current);
+
+            % The app stores coordinates and uses confidence only as a quality
+            % indicator. Subpixel solvers may differ by less than one pixel;
+            % that tolerance does not change frame provenance or CSV semantics.
+            testCase.verifyTrue(toolboxValid);
+            testCase.verifyTrue(ownedDiagnostics.valid);
+            testCase.verifyEqual(ownedPoint, toolboxPoint, 'AbsTol', 0.75);
+            testCase.verifyGreaterThan(ownedConfidence, 0.5);
+            testCase.verifyGreaterThan(toolboxConfidence, 0.5);
+            clear cleanup
+        end
+
+        function multiscale_patch_tracker_rejects_flat_evidence(testCase)
+            setupLabKitTestPath();
+            image = zeros(48, 64);
+            [points, confidence, diagnostics] = ...
+                video_marker.motionEstimate.trackPoints( ...
+                image, image, [32 24], [2 -1]);
+            testCase.verifyEqual(points, [34 23]);
+            testCase.verifyEqual(confidence, 0);
+            testCase.verifyFalse(diagnostics.valid);
+            testCase.verifyNotEmpty(diagnostics.failureMessage);
         end
 
         function forward_prediction_reuses_cache_until_manual_anchor_changes(testCase)
             setupLabKitTestPath();
-            testCase.assumeEqual(exist('vision.PointTracker', 'class'), 8, ...
-                'Computer Vision Toolbox is unavailable.');
             rng(11);
             frame = rand(60, 80);
             frames = {frame, frame, frame};
