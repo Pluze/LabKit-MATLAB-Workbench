@@ -23,30 +23,6 @@ function varargout = labkit_CIC_app(varargin)
 %     reports the highest safe file among all loaded files.
 %   - By default, the evaluation point is 10 us after the end of each phase,
 %     matching the convention commonly used in the literature the user shared.
-    requirements = cic.requirements();
-    appVersion = cic.version();
-    [requestHandled, requestOutputs, debugLog] = labkit.ui.runtime.dispatchRequest( ...
-        'labkit_CIC_app', varargin, nargout, "Requirements", requirements, "Version", appVersion);
-    if requestHandled
-        varargout = requestOutputs;
-        return;
-    end
-    if debugLog.enabled
-        if nargout > 2
-            error('labkit_CIC_app:TooManyOutputs', ...
-                'labkit_CIC_app debug mode returns at most the app figure and debug log.');
-        end
-    elseif nargout > 1
-        error('labkit_CIC_app:TooManyOutputs', 'labkit_CIC_app returns at most the app figure handle.');
-    end
-
-    request = struct("debug", debugLog);
-    fig = labkit.ui.runtime.run(cic.definition(), request);
-    labkit.ui.runtime.applyVersionTitle(fig, appVersion);
-    if nargout >= 1
-        varargout{1} = fig;
-    end
-    if nargout >= 2
-        varargout{2} = debugLog;
-    end
+    [varargout{1:nargout}] = labkit.ui.runtime.launch( ...
+        @cic.definition, @cic.requirements, @cic.version, varargin{:});
 end

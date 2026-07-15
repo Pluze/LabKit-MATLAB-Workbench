@@ -1,31 +1,7 @@
 function varargout = labkit_CurvatureMeasurement_app(varargin)
 %LABKIT_CURVATUREMEASUREMENT_APP Measure curve radius and curvature from images.
 
-    requirements = curvature.requirements();
-    appVersion = curvature.version();
-    [requestHandled, requestOutputs, debugLog] = labkit.ui.runtime.dispatchRequest( ...
-        'labkit_CurvatureMeasurement_app', varargin, nargout, "Requirements", requirements, "Version", appVersion);
-    if requestHandled
-        varargout = requestOutputs;
-        return;
-    end
-    if debugLog.enabled
-        if nargout > 2
-            error('labkit_CurvatureMeasurement_app:TooManyOutputs', ...
-                'labkit_CurvatureMeasurement_app debug mode returns at most the app figure and debug log.');
-        end
-    elseif nargout > 1
-        error('labkit_CurvatureMeasurement_app:TooManyOutputs', ...
-            'labkit_CurvatureMeasurement_app returns at most the app figure handle.');
-    end
-
-    request = struct("debug", debugLog);
-    fig = labkit.ui.runtime.run(curvature.definition(), request);
-    labkit.ui.runtime.applyVersionTitle(fig, appVersion);
-    if nargout >= 1
-        varargout{1} = fig;
-    end
-    if nargout >= 2
-        varargout{2} = debugLog;
-    end
+    [varargout{1:nargout}] = labkit.ui.runtime.launch( ...
+        @curvature.definition, @curvature.requirements, ...
+        @curvature.version, varargin{:});
 end
