@@ -62,11 +62,12 @@ function txt = labelForAxis(axisName)
 end
 
 function opts = fillPlotOptions(opts)
+    items = eis.userInterface.axisItems();
     if ~isfield(opts, 'xName')
-        opts.xName = 'Zreal (ohm)';
+        opts.xName = char(items(5));
     end
     if ~isfield(opts, 'yName')
-        opts.yName = '-Zimag (ohm)';
+        opts.yName = char(items(7));
     end
     if ~isfield(opts, 'logX')
         opts.logX = false;

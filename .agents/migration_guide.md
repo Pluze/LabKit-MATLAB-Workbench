@@ -379,11 +379,11 @@ archetype so one framework issue is solved once per wave.
 ```text
 phase: 5/full-app-migration-waves
 status: in progress
-completed contracts: CIC source-only project, durable analysis/view parameters, session-owned decoded and analyzed DTA cache, native presenter and registered axis renderer, standard result manifest; CSC source-only project, bound comparison/plot settings, session-owned curve selection and decoded DTA cache, pure comparison/table/two-axis presentation, and result manifests for both export forms
-migrated apps: cic; csc
-compatibility retained: CIC calculations, threshold defaults, pulse modes, summary meanings, plot annotations, 8-column batch table, and 14-column CSV contract; CSC CV/CT parsing, all/single-cycle selection, comparison modes, edge-cycle filtering, plot/trim behavior, six-column visible table, full all-cycle CSV, and point-level CV CSV contracts
-tests: CIC export/project/presenter, view, and calculation tests plus hidden GUI load/recompute/plot/export/project-reopen workflow passed 9/9; CSC 42-test electrochem non-GUI selection and hidden GUI load/compare/plot/export/project-reopen workflow passed at the migration checkpoint
-next app: eis
+completed contracts: CIC source-only project, durable analysis/view parameters, session-owned decoded and analyzed DTA cache, native presenter and registered axis renderer, standard result manifest; CSC source-only project, bound comparison/plot settings, session-owned curve selection and decoded DTA cache, pure comparison/table/two-axis presentation, and result manifests for both export forms; EIS source-only project, bound plot/export parameters, session-owned multi-file selection and decoded cache, pure summary/overlay presentation, and standard result manifest
+migrated apps: cic; csc; eis
+compatibility retained: CIC calculations, threshold defaults, pulse modes, summary meanings, plot annotations, 8-column batch table, and 14-column CSV contract; CSC CV/CT parsing, all/single-cycle selection, comparison modes, edge-cycle filtering, plot/trim behavior, six-column visible table, full all-cycle CSV, and point-level CV CSV contracts; EIS axis choices, multi-selection, Nyquist/Bode plotting, log-axis behavior, summary, and plot-data CSV contract
+tests: CIC export/project/presenter, view, and calculation tests plus hidden GUI load/recompute/plot/export/project-reopen workflow passed 9/9; CSC 42-test electrochem non-GUI selection and hidden GUI load/compare/plot/export/project-reopen workflow passed at the migration checkpoint; EIS hidden GUI load/selection/log-plot/export/project-reopen workflow passed at its focused checkpoint
+next app: vt_resistance
 blocker:
 ```
 
@@ -393,6 +393,7 @@ Phase-5 author-cost evidence against pre-V2 commit `6bfd74c8`:
 | --- | ---: | ---: | --- |
 | `cic` | 2032 -> 2223 | 331 -> 332 | retain explicit project/session/presentation/export ownership and centralized workflow enums; revisit only mechanics repeated by later apps |
 | `csc` | 2267 -> 2271 | 644 -> 316 | retain the near-neutral total after bindings and pure presentation; deleted direct-control refresh orchestration and two dialog-only export wrappers |
+| `eis` | 903 -> 1001 | 200 -> 201 | retain explicit source/session/presenter/result contracts; removed UI-registry reads and no-op refresh actions, while axis-label ownership is centralized |
 
 Pilot durable/resource focus:
 
