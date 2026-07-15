@@ -329,6 +329,11 @@ inferred from the layout. Dynamic `Items` and `Limits`
 are applied before bound values. V2 saves one `labkitProject`; named legacy
 variables import read-only.
 
+`Event` is meaningful only on a control that also declares `Bind`. An unbound
+control must use an explicit generated `onChange` callback; the runtime rejects
+an unbound `Event` during launch so a migrated control cannot appear editable
+while silently discarding user changes.
+
 After shell, state, first presentation, and interaction hub exist, the runtime
 queues optional `Start` with injected app-neutral `services`. An optional
 `DebugSample` writer runs only for debug launches, without app startup glue.

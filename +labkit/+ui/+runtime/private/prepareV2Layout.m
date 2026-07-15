@@ -102,13 +102,19 @@ function tf = isLayoutNode(value)
 end
 
 function [node, bindings] = bindNode(node, state, callback, bindings)
-    [found, path] = propertyValue(node.props, "Bind");
-    if ~found
+    [hasBinding, path] = propertyValue(node.props, "Bind");
+    [hasEvent, eventId] = propertyValue(node.props, "Event");
+    if ~hasBinding
+        if hasEvent
+            error('labkit:ui:runtime:UnboundLayoutEvent', ...
+                ['Layout control "%s" declares Event "%s" without Bind. ' ...
+                'Add Bind or wire an explicit onChange callback.'], ...
+                string(node.id), string(eventId));
+        end
         return;
     end
     path = string(path);
     assertBindingPath(path);
-    [hasEvent, eventId] = propertyValue(node.props, "Event");
     if ~hasEvent
         eventId = "";
     end
