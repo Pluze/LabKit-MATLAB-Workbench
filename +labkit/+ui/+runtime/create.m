@@ -18,7 +18,8 @@ function ui = create(layout, varargin)
 
     opts = parseOptions(varargin);
     debug = optionValue(opts, 'debug', []);
-    ui = buildRuntimeWorkbench(layout, debug);
+    ui = buildRuntimeWorkbench(layout, debug, ...
+        startupProgressReporter(struct()));
     startupLifecycle(ui.figure, 'finish', "Ready.");
 end
 

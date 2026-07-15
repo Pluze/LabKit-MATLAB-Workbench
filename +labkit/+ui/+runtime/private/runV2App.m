@@ -4,12 +4,16 @@
 % commit canonical state/presentation transactions, and own runtime resources.
 function fig = runV2App(def, request)
     debug = requestDebugContext(request);
+    progressReporter = startupProgressReporter(request);
+    reportStartupProgress(progressReporter, "Creating app state...");
     state = createV2State(def);
     callbacks = runtimeCallbacks(def.actions);
     bindingCallback = @dispatchBindingCallback;
+    reportStartupProgress(progressReporter, "Preparing app layout...");
     [layout, bindings] = prepareV2Layout( ...
         def, callbacks, state, bindingCallback);
-    ui = buildRuntimeWorkbench(layout, debug);
+    reportStartupProgress(progressReporter, "Building app shell...");
+    ui = buildRuntimeWorkbench(layout, debug, progressReporter);
     fig = ui.figure;
     runtime = struct( ...
         "definition", def, ...
@@ -38,11 +42,13 @@ function fig = runV2App(def, request)
     v2ResourceRegistry(fig, "set", "figure", ...
         "interactionHub", runtime.interactionHub, ...
         @(hub) hub.delete());
+    startupLifecycle(fig, 'update', "Preparing first view...");
     presentation = commitV2Presentation(getAppRuntime(fig), state);
     runtime = getAppRuntime(fig);
     runtime.lastPresentation = presentation;
     runtime.metrics.presentationCommits = 1;
     setappdata(fig, appRuntimeKey(), runtime);
+    startupLifecycle(fig, 'update', "Running startup actions...");
     dispatchStart(fig, def.start);
     dispatchDebugSample(fig, def.debugSample);
     restoreRequestedRecovery(fig, request);

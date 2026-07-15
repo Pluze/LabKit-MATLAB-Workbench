@@ -618,11 +618,11 @@ function fig = runLauncher(root)
             setStatus(launchHandOffStatus(app, debugMode));
             updateProgressDialog(dlg, sprintf('Initializing %s...', app.command), NaN);
             drawnow limitrate;
-            if debugMode
-                feval(app.command, "debug");
-            else
-                feval(app.command);
-            end
+            progressFcn = @(message) updateLauncherStartupProgress( ...
+                dlg, message);
+            requestAdapter = @(args) launcherStartupRequest( ...
+                args, progressFcn, debugMode);
+            feval(app.command, "RequestAdapter", requestAdapter);
             setStatus(launchSuccessStatus(app, debugMode));
         catch err
             setStatus(sprintf(['Failed to launch %s: %s. If project files are missing ' ...
@@ -1426,9 +1426,9 @@ end
 
 function message = launchHandOffStatus(app, debugMode)
     if debugMode
-        message = sprintf('Opening %s in debug mode. The app will report startup progress in its own window.', app.command);
+        message = sprintf('Opening %s in debug mode. Startup phases appear in the progress dialog.', app.command);
     else
-        message = sprintf('Opening %s. The app will report startup progress in its own window.', app.command);
+        message = sprintf('Opening %s. Startup phases appear in the progress dialog.', app.command);
     end
 end
 
@@ -2456,6 +2456,23 @@ function notifyProgress(progressFcn, message, value)
         progressFcn(string(message), value);
     catch
     end
+end
+
+function [request, dispatchArgs] = launcherStartupRequest(args, progressFcn, debugMode)
+    if ~isempty(args)
+        error('LabKit:Launcher:UnexpectedStartupArguments', ...
+            'Launcher startup request does not accept additional arguments.');
+    end
+    request = struct('startupProgress', progressFcn);
+    dispatchArgs = {};
+    if debugMode
+        dispatchArgs = {"debug"};
+    end
+end
+
+function updateLauncherStartupProgress(dlg, message)
+    updateProgressDialog(dlg, char(string(message)), NaN);
+    drawnow limitrate;
 end
 
 function updateProgressDialog(dlg, message, value)

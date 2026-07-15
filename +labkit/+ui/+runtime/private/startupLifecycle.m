@@ -27,7 +27,7 @@ function varargout = startupLifecycle(fig, action, varargin)
     end
 end
 
-function state = startState(fig, ui, message)
+function state = startState(fig, ui, message, varargin)
     state = defaultState(fig);
     state.mainGrid = ui.main;
     state.panel = ui.startupStatusPanel;
@@ -35,6 +35,9 @@ function state = startState(fig, ui, message)
     state.statusRow = ui.startupStatusPanel.Layout.Row;
     rememberHandles(fig, state);
     state.oldBusy = captureBusy(fig);
+    if ~isempty(varargin)
+        state.progressReporter = varargin{1};
+    end
     setappdata(fig, 'labkitUiBusy', true);
     state = updateStateWithMessage(state, message, false);
 end
@@ -93,6 +96,7 @@ function state = updateStateWithMessage(state, message, forceVisible)
         return;
     end
     state.message = string(message);
+    reportStartupProgress(state.progressReporter, state.message);
     becameVisible = false;
     if shouldShowStatus(state, forceVisible)
         state = showStatus(state);
@@ -270,6 +274,7 @@ function state = defaultState(fig)
     state.statusLabelUpdated = false;
     state.statusFlushed = false;
     state.oldBusy = struct('hadValue', false, 'value', []);
+    state.progressReporter = [];
 end
 
 function rememberHandles(fig, state)

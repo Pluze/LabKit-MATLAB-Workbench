@@ -352,11 +352,13 @@ first presentation, and interaction hub, then queues the optional definition
 runtime paints a readiness boundary when this work is slow enough to be
 perceptible and clears it only after the first visible presentation commits.
 
-Fast apps should not flash a loading strip. Slow apps should never sit as an
-anonymous blank frame: the framework keeps a non-modal status surface visible
-until the current startup phase has completed and the initial visible
-workspace is rendered. Hidden or minimized GUI test modes preserve readiness
-state for assertions while avoiding disruptive visual UI.
+Fast apps should not flash a loading strip. The app window remains hidden until
+the initial workspace is ready, while the launcher progress dialog mirrors the
+current framework phase. A direct command-window launch prints the same phases
+with a `[LabKit startup]` prefix. This keeps slow or failed startup observable
+without exposing a blank or partially constructed app window. Hidden or
+minimized GUI test modes preserve readiness state for assertions while avoiding
+disruptive visual UI and command output.
 
 Nonessential work belongs behind a user event or a framework-owned managed
 resource, not an app-created startup timer. App code should express initial
