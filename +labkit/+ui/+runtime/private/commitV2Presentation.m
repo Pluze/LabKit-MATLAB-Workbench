@@ -2,7 +2,10 @@
 % commit. Inputs are a v2 runtime and semantic state. Side effects reconcile
 % bound controls, declared control presentation, and registered plot renderers
 % without exposing the raw UI registry to app presenters.
-function presentation = commitV2Presentation(runtime, state)
+function presentation = commitV2Presentation(runtime, state, preserveView)
+    if nargin < 3
+        preserveView = false;
+    end
     presentation = runtime.definition.present(state);
     if isempty(presentation)
         presentation = struct();
@@ -24,7 +27,8 @@ function presentation = commitV2Presentation(runtime, state)
         if isfield(runtime.lastPresentation, 'previews')
             priorPreviews = runtime.lastPresentation.previews;
         end
-        applyPreviews(runtime, presentation.previews, priorPreviews);
+        applyPreviews(runtime, presentation.previews, priorPreviews, ...
+            logical(preserveView));
     end
     if isfield(presentation, 'interactions')
         reconcileV2Interactions(runtime, presentation.interactions);
@@ -173,7 +177,7 @@ function applyFilePanelStatus(ui, id, value)
     control.status.Value = char(string(value));
 end
 
-function applyPreviews(runtime, previews, priorPreviews)
+function applyPreviews(runtime, previews, priorPreviews, preserveView)
     if ~isstruct(previews) || ~isscalar(previews)
         error('labkit:ui:runtime:InvalidPresentation', ...
             'Presentation previews must be a scalar struct.');
@@ -185,17 +189,17 @@ function applyPreviews(runtime, previews, priorPreviews)
         [hasAxes, axesSpecs] = propertyValue(spec, "Axes");
         if hasAxes
             priorAxes = priorAxisSpecs(priorPreviews, id);
-            applyPreviewAxes(runtime, id, axesSpecs, priorAxes);
+            applyPreviewAxes(runtime, id, axesSpecs, priorAxes, preserveView);
             continue;
         end
         if samePreviewRequest(priorPreviews, id, spec)
             continue;
         end
-        applyPreview(runtime, id, spec);
+        applyPreview(runtime, id, spec, preserveView);
     end
 end
 
-function applyPreviewAxes(runtime, previewId, axesSpecs, priorAxes)
+function applyPreviewAxes(runtime, previewId, axesSpecs, priorAxes, preserveView)
     if ~isstruct(axesSpecs) || ~isscalar(axesSpecs)
         error('labkit:ui:runtime:InvalidPresentation', ...
             'Preview "%s" Axes must be a scalar struct.', previewId);
@@ -214,7 +218,7 @@ function applyPreviewAxes(runtime, previewId, axesSpecs, priorAxes)
             continue;
         end
         spec.Axis = axisId;
-        applyPreview(runtime, previewId, spec);
+        applyPreview(runtime, previewId, spec, preserveView);
     end
 end
 
@@ -237,7 +241,7 @@ function tf = samePreviewRequest(priorPreviews, previewId, spec)
         isequaln(priorPreviews.(char(previewId)), spec);
 end
 
-function applyPreview(runtime, id, spec)
+function applyPreview(runtime, id, spec, preserveView)
         [hasRenderer, rendererId] = propertyValue(spec, "Renderer");
         [hasModel, model] = propertyValue(spec, "Model");
         if ~hasRenderer || ~hasModel
@@ -256,7 +260,35 @@ function applyPreview(runtime, id, spec)
         else
             ax = resolvePreviewAxes(runtime.ui, id);
         end
+        priorView = captureManualView(ax, preserveView);
+        restoreView = onCleanup(@() restoreManualView(ax, priorView));
         invokeRenderer(runtime.definition.renderers.(rendererId), ax, model);
+        clear restoreView;
+end
+
+function view = captureManualView(ax, preserveView)
+    view = struct('x', [], 'y', []);
+    if ~preserveView || isempty(ax) || ~isvalid(ax)
+        return;
+    end
+    if strcmp(ax.XLimMode, 'manual')
+        view.x = double(ax.XLim);
+    end
+    if strcmp(ax.YLimMode, 'manual')
+        view.y = double(ax.YLim);
+    end
+end
+
+function restoreManualView(ax, view)
+    if isempty(ax) || ~isvalid(ax)
+        return;
+    end
+    if ~isempty(view.x)
+        ax.XLim = view.x;
+    end
+    if ~isempty(view.y)
+        ax.YLim = view.y;
+    end
 end
 
 function invokeRenderer(renderer, ax, model)

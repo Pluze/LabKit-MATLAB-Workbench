@@ -341,7 +341,10 @@ drag callbacks, and atomic groups. V2 apps never set figure callbacks.
 `scaleBarReference` with semantic targets, values, events, and image sizes. `regionSelection`
 emits a dragged rectangle to `Event` or clicked point to `BackgroundEvent`.
 Kind/target changes replace or dispose resources; programmatic values suppress
-events, while user edits enqueue the declared event.
+events, while user edits enqueue the declared event. When an interaction event
+changes an overlay model and causes its renderer to run again, the runtime
+preserves any manually zoomed or panned axes limits. Ordinary file-selection,
+reset, and data-change events may still let the renderer fit a new view.
 
 ## Start And Readiness
 

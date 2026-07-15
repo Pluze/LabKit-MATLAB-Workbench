@@ -249,7 +249,8 @@ function processEvent(fig, event)
         latest = getAppRuntime(fig);
         latest.state = next;
         setappdata(fig, appRuntimeKey(), latest);
-        presentation = commitV2Presentation(latest, next);
+        presentation = commitV2Presentation( ...
+            latest, next, event.source == "interaction");
         latest = getAppRuntime(fig);
         latest.lastPresentation = presentation;
         latest.metrics.stateCommits = latest.metrics.stateCommits + 1;
@@ -274,7 +275,8 @@ function processEvent(fig, event)
             latest.state = previous;
             setappdata(fig, appRuntimeKey(), latest);
             v2ResourceRegistry(fig, "clearScope", "event");
-            restorePresentation(fig, previous);
+            restorePresentation( ...
+                fig, previous, event.source == "interaction");
         end
         appendPhaseTiming(fig, event, "failed", toc(startedAt), ME);
         reportRuntimeException(fig, event, ME);
@@ -388,10 +390,10 @@ function event = normalizeDispatchedEvent(event)
     end
 end
 
-function restorePresentation(fig, state)
+function restorePresentation(fig, state, preserveView)
     try
         runtime = getAppRuntime(fig);
-        presentation = commitV2Presentation(runtime, state);
+        presentation = commitV2Presentation(runtime, state, preserveView);
         runtime = getAppRuntime(fig);
         runtime.lastPresentation = presentation;
         setappdata(fig, appRuntimeKey(), runtime);

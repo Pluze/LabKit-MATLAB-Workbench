@@ -57,6 +57,23 @@ function verifyControlledRectangleHitRouting()
     assert(~isempty(box), ...
         'A controlled rectangle should expose its editable box graphic.');
 
+    ui = getappdata(fig, 'labkitUiRegistry');
+    ax = ui.controls.image.primaryAxes;
+    ax.XLim = [25 75];
+    ax.YLim = [20 70];
+    expectedView = [ax.XLim ax.YLim];
+    runtime.interactionHub.dispatch("cropRectMoved", ...
+        "cropRectangle", [30 30 40 40], "commit");
+    runtime = getappdata(fig, 'labkitUiAppRuntime');
+    testCaseView = [ax.XLim ax.YLim];
+    assert(isequal(testCaseView, expectedView) && ...
+        isequal(runtime.state.project.annotations.cropRect, [30 30 40 40]), ...
+        'An overlay edit should redraw its renderer without resetting zoom.');
+    resource = interactionResource(runtime.resources, "cropRectangle");
+    graphics = resource.editors{1}.graphics();
+    box = graphics(find(arrayfun(@(item) isa(item, ...
+        'matlab.graphics.primitive.Rectangle'), graphics), 1, 'first'));
+
     fig.WindowButtonDownFcn(fig, struct('HitObject', box));
     assert(runtime.interactionHub.isDragging(), ...
         'The figure hub must route the hit rectangle graphic into a drag session.');
@@ -335,7 +352,8 @@ function def = definitionBase(layout, actions, presenter)
         "CreateSession", @createSession, ...
         "Layout", layout, ...
         "Actions", actions, ...
-        "Present", presenter);
+        "Present", presenter, ...
+        "Renderers", struct("resettingImage", @renderResettingImage));
 end
 
 function project = createProject()
@@ -408,12 +426,20 @@ end
 
 function view = rectanglePresentation(state)
     view = struct();
+    view.previews.image = struct("Renderer", "resettingImage", ...
+        "Model", state.project.annotations.cropRect);
     view.interactions.cropRectangle = struct( ...
         "Kind", "rectangle", "Targets", "image", ...
         "Value", state.project.annotations.cropRect, ...
         "Event", "cropRectMoved", "ImageSize", [100 100], ...
         "ChangePolicy", "commit", ...
         "Options", struct("fixedAspectRatio", true));
+end
+
+function renderResettingImage(ax, ~)
+    cla(ax, 'reset');
+    image(ax, zeros(100, 100, 3));
+    axis(ax, 'image');
 end
 
 function view = intervalPresentation(state)
