@@ -4,7 +4,6 @@ classdef GuiLayoutVideoMarkerTest < matlab.unittest.TestCase
     methods (Test, TestTags = {'GUI', 'Structural'})
         function video_marker_launches_with_expected_controls(testCase)
             setupLabKitTestPath();
-            autosaveCleanup = isolateAutosave();
             h = guiTestHelpers();
             h.assertUifigureAvailable();
             cleanup = onCleanup(@() h.closeAllFigures());
@@ -17,8 +16,8 @@ classdef GuiLayoutVideoMarkerTest < matlab.unittest.TestCase
                 'Next frame', 'Undo last point', 'Clear frame points', ...
                 'Add keypoint', 'Remove keypoint', 'Move up', 'Move down', ...
                 'Use preset', 'Add connection', 'Connect in order', ...
-                'Remove connection', 'Open project', ...
-                'Save project', 'New setup (clear current)', 'Measure reference pixels', ...
+                'Remove connection', 'New setup (clear current)', ...
+                'Measure reference pixels', ...
                 'Place scale bar', 'Import marker CSV', 'Export marker CSV', ...
                 'Export coordinate CSV'});
             h.assertDropdownGroups(fig, [ ...
@@ -44,7 +43,6 @@ classdef GuiLayoutVideoMarkerTest < matlab.unittest.TestCase
 
         function skeleton_setup_and_frame_change_use_continuous_marking(testCase)
             setupLabKitTestPath();
-            autosaveCleanup = isolateAutosave();
             h = guiTestHelpers();
             h.assertUifigureAvailable();
             cleanup = onCleanup(@() h.closeAllFigures());
@@ -55,7 +53,7 @@ classdef GuiLayoutVideoMarkerTest < matlab.unittest.TestCase
             ui = getappdata(fig, 'labkitUiRegistry');
             invoke(ui.controls.useSkeletonPreset.button);
             runtime = getappdata(fig, 'labkitUiAppRuntime');
-            testCase.verifyEqual(runtime.state.skeleton.pointNames, ...
+            testCase.verifyEqual(runtime.state.project.annotations.skeleton.pointNames, ...
                 ["iliac"; "hip"; "knee"; "ankle"; "foot"]);
             invoke(ui.controls.newSetup.button);
             ui = getappdata(fig, 'labkitUiRegistry');
@@ -100,36 +98,41 @@ classdef GuiLayoutVideoMarkerTest < matlab.unittest.TestCase
             testCase.verifyEqual(ylim(ax), [10 60], 'AbsTol', 1e-12);
 
             runtime = getappdata(fig, 'labkitUiAppRuntime');
-            testCase.verifyEqual(runtime.state.currentFrame, 2);
-            testCase.verifyEqual(runtime.state.skeleton.pointNames, ["hip"; "knee"]);
-            testCase.verifyEqual(runtime.state.skeleton.edges, [1 2]);
+            testCase.verifyEqual(runtime.state.session.selection.currentFrame, 2);
+            testCase.verifyEqual( ...
+                runtime.state.project.annotations.skeleton.pointNames, ...
+                ["hip"; "knee"]);
+            testCase.verifyEqual( ...
+                runtime.state.project.annotations.skeleton.edges, [1 2]);
             predicted = video_marker.frameAnnotations.framePoints( ...
-                runtime.state.annotations, 2);
+                runtime.state.project.annotations.frames, 2);
             testCase.verifySize(predicted, [2 2]);
             testCase.verifyTrue(all(isfinite(predicted), 'all'));
             testCase.verifyEqual(video_marker.frameAnnotations.statusName( ...
-                runtime.state.annotations.frameStatus(1)), "confirmed");
+                runtime.state.project.annotations.frames.frameStatus(1)), "confirmed");
             testCase.verifyEqual(video_marker.frameAnnotations.statusName( ...
-                runtime.state.annotations.frameStatus(2)), "draft");
+                runtime.state.project.annotations.frames.frameStatus(2)), "draft");
             testCase.verifyEqual(video_marker.frameAnnotations.sourceName( ...
-                runtime.state.annotations.frameSource(1)), "manual");
+                runtime.state.project.annotations.frames.frameSource(1)), "manual");
             testCase.verifyEqual(video_marker.frameAnnotations.sourceName( ...
-                runtime.state.annotations.frameSource(2)), "predicted");
+                runtime.state.project.annotations.frames.frameSource(2)), "predicted");
 
-            predictedRevision = runtime.state.annotations.anchorRevision(2);
+            predictedRevision = ...
+                runtime.state.project.annotations.frames.anchorRevision(2);
             invoke(ui.controls.previousFrame.button);
             invoke(ui.controls.nextFrame.button);
             runtime = getappdata(fig, 'labkitUiAppRuntime');
             testCase.verifyEqual(video_marker.frameAnnotations.framePoints( ...
-                runtime.state.annotations, 2), predicted, 'AbsTol', 1e-12);
-            testCase.verifyEqual(runtime.state.annotations.anchorRevision(2), ...
+                runtime.state.project.annotations.frames, 2), ...
+                predicted, 'AbsTol', 1e-12);
+            testCase.verifyEqual( ...
+                runtime.state.project.annotations.frames.anchorRevision(2), ...
                 predictedRevision);
         end
 
 
-        function matching_autosave_can_restore_when_video_opens(testCase)
+        function framework_recovery_restores_annotations_and_current_frame(testCase)
             setupLabKitTestPath();
-            autosaveCleanup = isolateAutosave();
             h = guiTestHelpers();
             h.assertUifigureAvailable();
             cleanup = onCleanup(@() h.closeAllFigures());
@@ -140,30 +143,90 @@ classdef GuiLayoutVideoMarkerTest < matlab.unittest.TestCase
 
             pack = video_marker.debug.writeSamplePack(debug);
             videoPath = pack.representativeFiles(1);
-            [~, info] = video_marker.videoSource.openVideo(videoPath);
-            saved = video_marker.appLifecycle.createInitialState();
-            saved.videoPath = videoPath;
-            saved.videoInfo = info;
-            presets = video_marker.userInterface.skeletonPresets();
-            saved.skeleton = video_marker.skeletonDefinition.fromParts( ...
-                presets(1).pointNames, presets(1).edges);
-            saved.annotations = video_marker.frameAnnotations.emptyAnnotations( ...
-                info.frameCount, 5);
             expected = [10 20; 20 25; 30 30; 40 35; 50 40];
-            saved.annotations = video_marker.frameAnnotations.setFramePoints( ...
-                saved.annotations, 1, expected, "confirmed");
-            video_marker.autosave.write(videoPath, saved);
-            setappdata(fig, 'labkitUiConfirmFcn', ...
-                @(~, ~, ~, confirmText, ~) confirmText);
-
             ui = getappdata(fig, 'labkitUiRegistry');
             ui.controls.videoFile.choosePaths = @(varargin) cellstr(videoPath);
             setappdata(fig, 'labkitUiRegistry', ui);
             invoke(ui.controls.videoFile.chooseButton);
+            ui = getappdata(fig, 'labkitUiRegistry');
+            registered = getappdata(ui.controls.videoAxes.primaryAxes, ...
+                'labkit_ui_activeAnchorEditor');
+            for k = 1:size(expected, 1)
+                registered.editor.insertPoint(expected(k, :));
+            end
+            invoke(ui.controls.nextFrame.button);
+            projectPath = fullfile(string(tempname), "recovery.mat");
+            mkdir(fileparts(projectPath));
+            folderCleanup = onCleanup(@() removeTempFolder(fileparts(projectPath)));
+            labkit.ui.runtime.saveState(fig, projectPath);
+            delete(fig);
+
+            recovered = labkit.ui.runtime.run(video_marker.definition(), struct( ...
+                "debug", debug, "recoveryFile", projectPath, "autosave", false));
+            runtime = getappdata(recovered, 'labkitUiAppRuntime');
+            testCase.verifyEqual(video_marker.frameAnnotations.framePoints( ...
+                runtime.state.project.annotations.frames, 1), expected);
+            testCase.verifyEqual( ...
+                runtime.state.session.selection.currentFrame, 2);
+            testCase.verifyTrue(runtime.document.dirty, ...
+                'Recovered documents should reopen as unsaved work.');
+            clear folderCleanup
+        end
+
+        function legacy_project_loads_read_only_and_saves_current_format(testCase)
+            setupLabKitTestPath();
+            h = guiTestHelpers();
+            h.assertUifigureAvailable();
+            cleanup = onCleanup(@() h.closeAllFigures());
+            [fig, debug] = labkit_VideoMarker_app("debug");
+            pack = video_marker.debug.writeSamplePack(debug);
+            videoPath = pack.representativeFiles(1);
+            folder = string(tempname);
+            mkdir(folder);
+            folderCleanup = onCleanup(@() removeTempFolder(folder));
+            legacyPath = fullfile(folder, "legacy_video_marker.mat");
+
+            skeleton = video_marker.skeletonDefinition.fromParts( ...
+                ["iliac"; "hip"; "knee"; "ankle"; "foot"], ...
+                [1 2; 2 3; 3 4; 4 5]);
+            annotations = video_marker.frameAnnotations.emptyAnnotations(6, 5);
+            expected = [10 20; 20 25; 30 30; 40 35; 50 40];
+            annotations = video_marker.frameAnnotations.setFramePoints( ...
+                annotations, 1, expected, "confirmed");
+            videoMarkerProject = struct( ...
+                "schemaVersion", 1, ...
+                "videoPath", videoPath, ...
+                "videoReference", ...
+                labkit.ui.runtime.createPortableFileReference( ...
+                legacyPath, videoPath), ...
+                "skeleton", skeleton, ...
+                "annotations", annotations, ...
+                "calibration", ...
+                labkit.ui.interaction.scaleBarCalibration(20, 2, "mm"), ...
+                "exportPreferences", struct( ...
+                "unitMode", "calibrated_physical", ...
+                "originMode", "first_point", ...
+                "yAxisMode", "up", ...
+                "startFrame", 1, "endFrame", 6), ...
+                "currentFrame", 2);
+            save(legacyPath, 'videoMarkerProject');
+
+            labkit.ui.runtime.loadState(fig, legacyPath);
             runtime = getappdata(fig, 'labkitUiAppRuntime');
             testCase.verifyEqual(video_marker.frameAnnotations.framePoints( ...
-                runtime.state.annotations, 1), expected);
-            testCase.verifyTrue(isappdata(fig, 'labkitUiConfirmations'));
+                runtime.state.project.annotations.frames, 1), expected);
+            testCase.verifyEqual( ...
+                runtime.state.session.selection.currentFrame, 2);
+            testCase.verifyEqual(video_marker.sourceFiles.pathForId( ...
+                runtime.state.project.inputs.sources, "video"), videoPath);
+            testCase.verifyEqual(string(who('-file', legacyPath)), ...
+                "videoMarkerProject");
+
+            currentPath = fullfile(folder, "current_video_marker.mat");
+            labkit.ui.runtime.saveState(fig, currentPath);
+            testCase.verifyEqual(string(who('-file', currentPath)), ...
+                "labkitProject");
+            clear folderCleanup
         end
     end
 end
@@ -180,16 +243,7 @@ function editName(tableHandle, row, value)
         'NewData', value, 'EditData', value));
 end
 
-function cleanup = isolateAutosave()
-    previous = string(getenv('LABKIT_VIDEO_MARKER_AUTOSAVE_ROOT'));
-    folder = string(tempname);
-    mkdir(folder);
-    setenv('LABKIT_VIDEO_MARKER_AUTOSAVE_ROOT', folder);
-    cleanup = onCleanup(@() restoreAutosaveRoot(previous, folder));
-end
-
-function restoreAutosaveRoot(previous, folder)
-    setenv('LABKIT_VIDEO_MARKER_AUTOSAVE_ROOT', previous);
+function removeTempFolder(folder)
     if exist(folder, 'dir') == 7
         rmdir(folder, 's');
     end

@@ -7,7 +7,7 @@ function view = presentWorkbench(state)
     index = currentIndex(state);
     hasImage = hasCurrentImage(state);
     physicalMode = strcmpi(parameters.scaleMode, "Physical");
-    cropSize = currentCropSize(state);
+    cropSize = batch_crop.appState.currentCropSize(state);
     padding = currentPadding(state);
 
     view = struct();
@@ -186,21 +186,6 @@ function value = scaleBarOnCanvas(geometry, scaleBar)
     end
     value.labelPosition = batch_crop.cropGeometry.originalToCanvas( ...
         geometry, value.labelPosition);
-end
-
-function sizeValue = currentCropSize(state)
-    parameters = state.project.parameters;
-    if strcmpi(parameters.scaleMode, "Physical") && hasCurrentImage(state)
-        cal = state.project.inputs.items(currentIndex(state)).scaleCalibration;
-        if batch_crop.appState.isScaleCalibrationSet(cal)
-            pixelsPerUnit = batch_crop.cropGeometry.pixelsPerUnitForUnit( ...
-                cal, parameters.scaleUnit);
-            sizeValue = max(1, round([parameters.physicalWidth, ...
-                parameters.physicalHeight] * pixelsPerUnit));
-            return;
-        end
-    end
-    sizeValue = max(1, round([parameters.cropWidth, parameters.cropHeight]));
 end
 
 function value = currentPadding(state)

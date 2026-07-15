@@ -8,7 +8,7 @@ classdef RectangleInteractionGovernanceTest < matlab.unittest.TestCase
             directFiles = filesWithDirectRectangleCalls(root, files);
             expected = [
                 "+labkit/+ui/+interaction/rectangleEditor.m"
-                "apps/dic/dic_preprocess/+dic_preprocess/+userInterface/startCropRoi.m"
+                "apps/dic/dic_preprocess/+dic_preprocess/+userInterface/renderPreviewImage.m"
                 "apps/image_measurement/flir_thermal/+flir_thermal/+userInterface/drawTemperatureReadings.m"
                 "apps/image_measurement/flir_thermal/+flir_thermal/+userInterface/temperatureReadingTool.m"
             ];
@@ -29,11 +29,19 @@ classdef RectangleInteractionGovernanceTest < matlab.unittest.TestCase
 
         function knownInteractiveWorkflowsUseEditorOrDragSession(testCase)
             root = setupLabKitTestPath();
-            editorUsers = [
-                "apps/dic/dic_preprocess/+dic_preprocess/+userInterface/startCropRoi.m"
-                "apps/image_measurement/batch_crop/+batch_crop/definitionActions.m"
-                "apps/image_measurement/image_enhance/+image_enhance/definitionActions.m"
+            controlledUsers = [
+                "apps/dic/dic_preprocess/+dic_preprocess/+userInterface/presentWorkbench.m"
+                "apps/image_measurement/batch_crop/+batch_crop/+userInterface/presentWorkbench.m"
             ];
+            for k = 1:numel(controlledUsers)
+                source = fileread(fullfile(root, char(controlledUsers(k))));
+                testCase.verifyTrue(contains(source, '"Kind", "rectangle"'), ...
+                    controlledUsers(k) + ...
+                    " must declare a Runtime V2 controlled rectangle.");
+            end
+
+            editorUsers = ...
+                "apps/image_measurement/image_enhance/+image_enhance/definitionActions.m";
             for k = 1:numel(editorUsers)
                 source = fileread(fullfile(root, char(editorUsers(k))));
                 testCase.verifyTrue(contains(source, ...

@@ -43,26 +43,19 @@ Current facts from the architecture audit:
 
 - Package-root app `run.m` orchestration and `+ui/runApp.m` lifecycle adapters
   are retired.
-- The current UI facade has 70 public functions under its six subpackages plus
-  `labkit.ui.version`; the one Phase 1 addition is `runtime.launch`. Runtime has
-  69 files/8,541 lines and interaction has 21 files/4,022 lines.
-- Seven production apps use closure-owned semantic state, seven have a no-op
-  visible-state update, and twelve mutate controls directly from actions.
-- Production apps do not use the current Hydrate, Snapshot, or action-effects
-  contracts. All definitions repeat the same `Startup="startup"` pattern.
-- Interaction runtimes are axes-scoped but own figure callbacks. Multi-axes
-  behavior therefore depends on construction/fallback order and app-owned
-  coordination.
-- Only Video Marker has a durable project format. Several apps keep graphics,
-  listeners, editors, tools, or view objects in app state.
-- Current result writers use incompatible payload/manifest shapes. They do not
-  share a versioned producer/input/parameter/output/provenance envelope.
-- The current generic snapshot requires exact UI, MATLAB release, platform,
-  app, and snapshot versions. It remains a compatibility format, not the target
-  durable project contract.
-- `docs/ui-runtime-redesign.md` is the target architecture. `docs/ui.md`,
-  `docs/apps.md`, and `docs/architecture.md` continue to describe current
-  production behavior until each target contract lands.
+- Five public apps now use Runtime V2: `chrono_overlay`, `dic_postprocess`,
+  `batch_crop`, `dic_preprocess`, and `video_marker`. Fifteen public apps and
+  the nested private app still use the v1 definition path.
+- The five pilots use canonical project/session state, native presenters,
+  registered renderers, managed interactions/resources, standard project
+  persistence, and result manifests where they export files.
+- Video Marker legacy projects and v1 runtime snapshots are read-only import
+  formats on the V2 path. New V2 writes use `labkitProject`.
+- Closure-owned state, direct control mutation, app-owned interaction/runtime
+  plumbing, and no-op render paths remain migration debt only in the unmigrated
+  fleet.
+- `docs/ui-runtime-redesign.md` remains the target architecture. `docs/ui.md`,
+  `docs/apps.md`, and `docs/architecture.md` describe contracts as they land.
 
 ## Goal Prompt: Migrate All Apps To UI Runtime V2
 
@@ -330,6 +323,17 @@ Do not add a pilot-only compatibility surface to the final authoring API.
 
 Exit condition: the simple, plot-heavy, batch-interaction, multi-axes, and
 durable-project archetypes all work through the same target contracts.
+
+```text
+phase: 4/archetype-pilots
+status: in progress
+completed contracts: five app-neutral V2 functional paths; dynamic presentation constraints before bindings; optional app-owned resume creation/application; service-owned input dialogs; reusable scale-bar geometry; Video Marker framework recovery and read-only legacy project import
+migrated apps: chrono_overlay; dic_postprocess; batch_crop; dic_preprocess; video_marker
+compatibility retained: v1 runtime for the remaining public/private fleet; strict v1 snapshot imports; named Video Marker legacy project import; published scientific inputs, calculations, plots, outputs, and workflow behavior
+tests: all five pilot unit/GUI suites passed at their checkpoints; final Video Marker, reusable geometry, and Runtime V2 project validation passed 16/16
+next phase: author-cost audit and simplification of all five pilots before full app waves; include app production-line delta, largest-file delta, and remaining app-owned runtime glue in the exit evidence
+blocker:
+```
 
 ### Phase 5: Full App Migration Waves
 

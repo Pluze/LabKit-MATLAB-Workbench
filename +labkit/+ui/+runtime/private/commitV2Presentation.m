@@ -11,6 +11,9 @@ function presentation = commitV2Presentation(runtime, state)
         error('labkit:ui:runtime:InvalidPresentation', ...
             'Present must return a scalar struct.');
     end
+    if isfield(presentation, 'controls')
+        applyControlConstraints(runtime.ui, presentation.controls);
+    end
     applyBindings(runtime.ui, runtime.bindings, state);
     if isfield(presentation, 'controls')
         applyControls(runtime.ui, presentation.controls);
@@ -22,6 +25,29 @@ function presentation = commitV2Presentation(runtime, state)
         reconcileV2Interactions(runtime, presentation.interactions);
     else
         reconcileV2Interactions(runtime, struct());
+    end
+end
+
+function applyControlConstraints(ui, controls)
+    if ~isstruct(controls) || ~isscalar(controls)
+        error('labkit:ui:runtime:InvalidPresentation', ...
+            'Presentation controls must be a scalar struct.');
+    end
+    ids = fieldnames(controls);
+    for k = 1:numel(ids)
+        id = string(ids{k});
+        spec = controls.(ids{k});
+        if ~isstruct(spec) || ~isscalar(spec)
+            continue;
+        end
+        [found, value] = propertyValue(spec, "Items");
+        if found
+            labkit.ui.control.setItems(ui, id, value);
+        end
+        [found, value] = propertyValue(spec, "Limits");
+        if found
+            labkit.ui.control.setLimits(ui, id, value);
+        end
     end
 end
 

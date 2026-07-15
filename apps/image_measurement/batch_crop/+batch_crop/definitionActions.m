@@ -23,11 +23,10 @@ function actions = definitionActions()
         "scaleReferenceEdited", @onScaleReferenceEdited, ...
         "scaleBarSettingChanged", @onScaleBarSettingChanged, ...
         "placeScaleBar", @onPlaceScaleBar, ...
-        "exportSettingChanged", @onExportSettingChanged, ...
-        "chooseOutputFolder", @onChooseOutputFolder, ...
         "previewPointerDown", @onPreviewPointerDown, ...
-        "cropRectangleMoved", @onCropRectangleMoved, ...
-        "exportCrops", @onExportCrops);
+        "cropRectangleMoved", @onCropRectangleMoved);
+    actions = mergeActions(actions, ...
+        batch_crop.resultFiles.definitionActions());
 end
 
 function state = onImagesChosen(state, event, services)
@@ -351,7 +350,7 @@ function state = onPlaceScaleBar(state, ~, services)
         return;
     end
     try
-        state.session.view.scaleBar = batch_crop.userInterface.scaleBarGeometry( ...
+        state.session.view.scaleBar = labkit.ui.interaction.scaleBarGeometry( ...
             size(item.image), item.scaleCalibration, ...
             state.project.parameters.scaleBarLength, ...
             state.project.parameters.scaleBarPosition, ...
@@ -360,22 +359,6 @@ function state = onPlaceScaleBar(state, ~, services)
     catch ME
         showError(services, 'Could not place scale bar', ME.message);
     end
-end
-
-function state = onExportSettingChanged(state, ~, ~)
-    state = clearExport(state);
-end
-
-function state = onChooseOutputFolder(state, ~, services)
-    [folder, cancelled] = services.dialogs.outputFolder( ...
-        'Select crop export folder', ...
-        state.project.parameters.outputFolder);
-    if cancelled
-        state = addLog(state, services, "Export folder selection cancelled.");
-        return;
-    end
-    state.project.parameters.outputFolder = string(folder);
-    state = clearExport(state);
 end
 
 function state = onPreviewPointerDown(state, event, services)
@@ -412,64 +395,6 @@ function state = onCropRectangleMoved(state, event, services)
         'Dragged crop center for image %d: x=%.1f, y=%.1f.', ...
         currentIndex(state), state.project.inputs.items( ...
         currentIndex(state)).centerXY));
-end
-
-function state = onExportCrops(state, ~, services)
-    items = state.project.inputs.items;
-    if isempty(items)
-        showError(services, 'No images loaded', ...
-            'Load images before exporting crops.');
-        return;
-    end
-    if ~all([items.centerSet])
-        showError(services, 'Crop centers missing', ...
-            batch_crop.userInterface.missingWorkflowItemsText(items, "center"));
-        return;
-    end
-    if strcmpi(state.project.parameters.scaleMode, "Physical") && ...
-            ~batch_crop.appState.scaleCalibrationSummary(items).allCalibrated
-        showError(services, 'Scale calibration missing', ...
-            batch_crop.userInterface.missingWorkflowItemsText(items, "scale"));
-        return;
-    end
-    [state, loaded] = ensureAllImagesLoaded(state, services);
-    if ~loaded
-        return;
-    end
-    opts = currentExportOptions(state);
-    plan = batch_crop.appState.exportPlan(state.project.inputs.items, opts);
-    results = state.project.results;
-    if ~isempty(results.lastExport) && ...
-            results.lastExportFingerprint == plan.fingerprint
-        state = addLog(state, services, ...
-            "Crop export is already up to date; skipped duplicate write.");
-        return;
-    end
-    try
-        payload = batch_crop.resultFiles.writeOutputs( ...
-            state.project.inputs.items, opts);
-        spec = standardResultSpec(state, payload, services);
-        [manifestPath, ~] = services.results.writeManifest( ...
-            opts.outputFolder, spec);
-    catch ME
-        reportException(services, 'Export failed', ME);
-        showError(services, 'Export failed', ME.message);
-        return;
-    end
-    payload.resultManifestPath = string(manifestPath);
-    state.project.results.lastExport = payload;
-    state.project.results.lastExportFingerprint = plan.fingerprint;
-    state.project.results.resultManifestPath = string(manifestPath);
-    statuses = string({payload.results.status});
-    savedCount = sum(statuses == "saved");
-    failedCount = sum(statuses == "failed");
-    state = addLog(state, services, sprintf( ...
-        'Exported %d crop(s), %d failed. Manifest: %s', ...
-        savedCount, failedCount, char(payload.manifestPath)));
-    if failedCount > 0
-        showError(services, 'Some crops failed', sprintf( ...
-            '%d image(s) failed. See the manifest for details.', failedCount));
-    end
 end
 
 function state = initializeCropSizeDefaultsIfNeeded(state)
@@ -513,19 +438,6 @@ function [state, loaded] = ensureCurrentImageLoaded(state, services)
     end
 end
 
-function [state, loaded] = ensureAllImagesLoaded(state, services)
-    loaded = false;
-    try
-        state.project.inputs.items = batch_crop.appState.loadMissingImages( ...
-            state.project.inputs.items);
-        state.session.cache.canvas = batch_crop.appState.emptyCanvasCache();
-        loaded = true;
-    catch ME
-        reportException(services, 'Could not load image', ME);
-        showError(services, 'Could not load image', ME.message);
-    end
-end
-
 function state = ensureCurrentCenter(state)
     if ~hasCurrentImage(state)
         return;
@@ -542,7 +454,7 @@ function state = setCurrentCenter(state, center, confirmed)
     index = currentIndex(state);
     [geometry, ~] = currentGeometryAndPlacement(state);
     center = batch_crop.cropGeometry.clampCropCenterToCanvas( ...
-        geometry, center, currentCropSize(state));
+        geometry, center, batch_crop.appState.currentCropSize(state));
     state.project.inputs.items(index).centerXY = center;
     state.project.inputs.items(index).centerSet = logical(confirmed);
 end
@@ -555,85 +467,6 @@ function [geometry, placement] = currentGeometryAndPlacement(state)
     placement = struct("offset", [0 0], ...
         "xData", [1 size(geometry.canvas, 2)], ...
         "yData", [1 size(geometry.canvas, 1)]);
-end
-
-function sizeValue = currentCropSize(state)
-    parameters = state.project.parameters;
-    if strcmpi(parameters.scaleMode, "Physical") && hasCurrentImage(state)
-        cal = currentItem(state).scaleCalibration;
-        if batch_crop.appState.isScaleCalibrationSet(cal)
-            pixelsPerUnit = batch_crop.cropGeometry.pixelsPerUnitForUnit( ...
-                cal, parameters.scaleUnit);
-            sizeValue = max(1, round([parameters.physicalWidth, ...
-                parameters.physicalHeight] * pixelsPerUnit));
-            return;
-        end
-    end
-    sizeValue = max(1, round([parameters.cropWidth, parameters.cropHeight]));
-end
-
-function opts = currentExportOptions(state)
-    parameters = state.project.parameters;
-    padding = 0;
-    if hasCurrentImage(state)
-        padding = currentItem(state).paddingPercent;
-    end
-    opts = batch_crop.appState.exportOptions( ...
-        parameters.outputFolder, parameters.format, currentCropSize(state), ...
-        padding, parameters.scaleMode, parameters.scaleUnit, ...
-        [parameters.physicalWidth, parameters.physicalHeight], ...
-        parameters.targetPixelsPerUnit, parameters.maxUpsamplePercent);
-end
-
-function spec = standardResultSpec(state, payload, services)
-    cropOutputs = repmat(services.results.output("", "", "", ""), ...
-        numel(payload.results), 1);
-    for k = 1:numel(payload.results)
-        result = payload.results(k);
-        [~, name, extension] = fileparts(result.outputPath);
-        status = "success";
-        if string(result.status) ~= "saved"
-            status = "failed";
-            extension = formatExtension(state.project.parameters.format);
-            name = "crop" + string(k) + "_failed";
-        end
-        cropOutputs(k) = services.results.output( ...
-            "crop" + string(k), "primary", ...
-            string(name) + string(extension), mediaType(extension), status, ...
-            string(result.message));
-    end
-    [~, csvName, csvExtension] = fileparts(payload.manifestPath);
-    csvOutput = services.results.output("cropManifest", "manifest", ...
-        string(csvName) + string(csvExtension), "text/csv");
-    spec = struct();
-    spec.Outputs = [cropOutputs; csvOutput];
-    spec.Inputs = state.project.inputs.sources;
-    spec.Parameters = state.project.parameters;
-    spec.Summary = struct("taskCount", numel(payload.results), ...
-        "savedCount", sum(string({payload.results.status}) == "saved"));
-    spec.ManifestName = "batch_crop_results.labkit.json";
-end
-
-function extension = formatExtension(formatValue)
-    switch upper(string(formatValue))
-        case "PNG"
-            extension = ".png";
-        case {"TIFF", "TIF"}
-            extension = ".tif";
-        otherwise
-            extension = ".jpg";
-    end
-end
-
-function type = mediaType(extension)
-    switch lower(string(extension))
-        case ".png"
-            type = "image/png";
-        case {".tif", ".tiff"}
-            type = "image/tiff";
-        otherwise
-            type = "image/jpeg";
-    end
 end
 
 function state = clearExportAndCanvas(state)
@@ -755,5 +588,12 @@ end
 function reportException(services, context, exception)
     if isstruct(services.debug) && isfield(services.debug, 'reportException')
         services.debug.reportException('batchCrop', context, exception);
+    end
+end
+
+function target = mergeActions(target, source)
+    names = fieldnames(source);
+    for k = 1:numel(names)
+        target.(names{k}) = source.(names{k});
     end
 end

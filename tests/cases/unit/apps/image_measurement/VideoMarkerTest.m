@@ -13,10 +13,11 @@ classdef VideoMarkerTest < matlab.unittest.TestCase
 
         function visual_skeleton_setup_starts_empty_and_remaps_connections(testCase)
             setupLabKitTestPath();
-            state = video_marker.appLifecycle.createInitialState();
-            testCase.verifyEmpty(state.skeleton.pointNames);
+            project = video_marker.appLifecycle.createProject();
+            testCase.verifyEmpty(project.annotations.skeleton.pointNames);
 
-            [skeleton, first] = video_marker.skeletonDefinition.addPoint(state.skeleton);
+            [skeleton, first] = video_marker.skeletonDefinition.addPoint( ...
+                project.annotations.skeleton);
             [skeleton, second] = video_marker.skeletonDefinition.addPoint(skeleton);
             skeleton = video_marker.skeletonDefinition.renamePoint(skeleton, first, "hip");
             skeleton = video_marker.skeletonDefinition.renamePoint(skeleton, second, "knee");
@@ -174,88 +175,66 @@ classdef VideoMarkerTest < matlab.unittest.TestCase
             testCase.verifyEqual(T.origin_point_id, ["hip"; "hip"]);
         end
 
-        function project_save_load_excludes_current_frame_image(testCase)
+        function runtime_v2_project_presenter_and_resume_contracts(testCase)
             setupLabKitTestPath();
-            folder = string(tempname);
-            mkdir(folder);
-            cleanup = onCleanup(@() cleanupFolder(folder));
-
-            state = video_marker.appLifecycle.createInitialState();
-            state.skeleton = video_marker.skeletonDefinition.fromText( ...
+            definition = video_marker.definition();
+            testCase.verifyEqual(definition.contractVersion, 2);
+            project = definition.project.Create();
+            project.annotations.skeleton = video_marker.skeletonDefinition.fromText( ...
                 "a, b, c, d, e", "a-b, b-c, c-d, d-e");
-            state.videoPath = "synthetic.avi";
-            state.videoInfo = struct("path", "synthetic.avi", "frameCount", 1, ...
-                "frameRate", 10, "duration", 0.1, "height", 4, "width", 5);
-            state.annotations = video_marker.frameAnnotations.emptyAnnotations(1, 5);
-            state.currentImage = uint8(ones(4, 5, 3));
-            projectPath = fullfile(folder, "project.mat");
+            project.annotations.frames = ...
+                video_marker.frameAnnotations.emptyAnnotations(0, 5);
+            testCase.verifyTrue(definition.project.Validate(project));
+            testCase.verifyEmpty(definition.project.Migrations);
+            testCase.verifyFalse(isfield(project, 'currentImage'));
 
-            video_marker.projectFiles.saveProject(projectPath, state);
-            loaded = video_marker.projectFiles.loadProject(projectPath);
-
-            testCase.verifyEqual(loaded.videoPath, "synthetic.avi");
-            testCase.verifyEmpty(loaded.currentImage);
-            testCase.verifyEqual(size(loaded.annotations.coords), [1 5 2]);
+            session = video_marker.appLifecycle.createSession(project);
+            state = struct('project', project, 'session', session);
+            presentation = video_marker.userInterface.presentWorkbench(state);
+            testCase.verifyTrue(isscalar(presentation));
+            testCase.verifyEqual( ...
+                presentation.controls.keypointTable.Data(:, 2), ...
+                {'a'; 'b'; 'c'; 'd'; 'e'});
+            testCase.verifyEmpty( ...
+                presentation.previews.videoAxes.Axes.video.Model.imageData);
+            session.selection.currentFrame = 7;
+            resume = video_marker.appLifecycle.createResume(session, project);
+            testCase.verifyEqual(resume.currentFrame, 7);
         end
 
-        function project_video_reference_survives_bundle_move(testCase)
+        function legacy_project_import_is_read_only_and_complete(testCase)
             setupLabKitTestPath();
-            sourceRoot = string(tempname);
-            movedRoot = string(tempname);
-            mkdir(fullfile(sourceRoot, "projects"));
-            mkdir(fullfile(sourceRoot, "media"));
-            cleanup = onCleanup(@() cleanupTwoFolders(sourceRoot, movedRoot));
-            videoPath = fullfile(sourceRoot, "media", "sample.avi");
-            fileId = fopen(videoPath, 'w');
-            fclose(fileId);
-
-            state = video_marker.appLifecycle.createInitialState();
-            state.videoPath = videoPath;
-            state.videoInfo.path = videoPath;
-            projectPath = fullfile(sourceRoot, "projects", "project.mat");
-            state.projectPath = projectPath;
-            video_marker.projectFiles.saveProject(projectPath, state);
-            movefile(sourceRoot, movedRoot);
-
-            movedProject = fullfile(movedRoot, "projects", "project.mat");
-            movedVideo = fullfile(movedRoot, "media", "sample.avi");
-            loaded = video_marker.projectFiles.loadProject(movedProject);
-            expectedVideo = canonicalExistingPath(movedVideo);
-            testCase.verifyEqual(string(loaded.videoPath), expectedVideo);
-            testCase.verifyEqual(string(loaded.videoInfo.path), expectedVideo);
-        end
-
-        function autosave_round_trip_is_atomic_and_discardable(testCase)
-            setupLabKitTestPath();
-            folder = string(tempname);
-            mkdir(folder);
-            cleanup = onCleanup(@() cleanupFolder(folder));
-            videoPath = fullfile(folder, "sample.avi");
-            state = video_marker.appLifecycle.createInitialState();
-            state.videoPath = videoPath;
-            state.skeleton = video_marker.skeletonDefinition.fromParts( ...
+            legacy = struct();
+            legacy.schemaVersion = 1;
+            legacy.videoPath = "/missing/sample.avi";
+            legacy.videoReference = struct( ...
+                "schemaVersion", 1, "relativePath", "../media/sample.avi", ...
+                "originalPath", legacy.videoPath, "fileName", "sample.avi");
+            legacy.skeleton = video_marker.skeletonDefinition.fromParts( ...
                 ["hip"; "knee"], [1 2]);
-            state.videoInfo = struct("path", videoPath, "frameCount", 2, ...
-                "frameRate", 20, "duration", 0.1, "height", 40, "width", 50);
-            state.annotations = video_marker.frameAnnotations.emptyAnnotations(2, 2);
-            state.annotations = video_marker.frameAnnotations.setFramePoints( ...
-                state.annotations, 1, [10 20; 30 40], "confirmed");
-            state.currentImage = ones(40, 50, 'uint8');
+            legacy.annotations = video_marker.frameAnnotations.emptyAnnotations(2, 2);
+            legacy.annotations = video_marker.frameAnnotations.setFramePoints( ...
+                legacy.annotations, 1, [10 20; 30 40], "confirmed");
+            legacy.calibration = ...
+                labkit.ui.interaction.scaleBarCalibration(20, 2, "mm");
+            legacy.exportPreferences = struct( ...
+                "unitMode", "calibrated_physical", ...
+                "originMode", "first_point", "yAxisMode", "up", ...
+                "startFrame", 1, "endFrame", 2);
+            legacy.currentFrame = 2;
 
-            visiblePath = video_marker.autosave.filePath(videoPath);
-            testCase.verifyEqual(string(fileparts(visiblePath)), ...
-                fullfile(folder, "Video Marker Autosaves"));
-            testCase.verifyEqual(string(visiblePath), fullfile(folder, ...
-                "Video Marker Autosaves", "sample.video_marker.autosave.mat"));
-            autosavePath = video_marker.autosave.write(videoPath, state, folder);
-            [loaded, found] = video_marker.autosave.read(videoPath, folder);
-            testCase.verifyTrue(found);
-            testCase.verifyEqual(loaded.annotations.coords, state.annotations.coords);
-            testCase.verifyEmpty(loaded.currentImage);
-            testCase.verifyEqual(exist(autosavePath + ".tmp", 'file'), 0);
-            video_marker.autosave.discard(videoPath, folder);
-            [~, found] = video_marker.autosave.read(videoPath, folder);
-            testCase.verifyFalse(found);
+            [project, resume] = ...
+                video_marker.appLifecycle.importLegacyProject(legacy);
+            testCase.verifyTrue(video_marker.appLifecycle.validateProject(project));
+            testCase.verifyEqual(project.inputs.sources.reference, ...
+                legacy.videoReference);
+            testCase.verifyEqual(project.annotations.frames.coords, ...
+                legacy.annotations.coords);
+            testCase.verifyEqual( ...
+                project.parameters.coordinateUnitMode, ...
+                "calibrated_physical");
+            testCase.verifyEqual(resume.currentFrame, 2);
+            testCase.verifyFalse(isfield(project, 'videoPath'));
         end
     end
 end
@@ -264,15 +243,4 @@ function cleanupFolder(folder)
     if strlength(string(folder)) > 0 && exist(char(folder), "dir") == 7
         rmdir(char(folder), "s");
     end
-end
-
-function cleanupTwoFolders(first, second)
-    cleanupFolder(first);
-    cleanupFolder(second);
-end
-
-function pathValue = canonicalExistingPath(pathValue)
-    [exists, attributes] = fileattrib(char(pathValue));
-    assert(exists, 'Expected test file does not exist.');
-    pathValue = string(attributes.Name);
 end

@@ -1,0 +1,21 @@
+% Expected callers: Batch Crop geometry and export actions. Input is canonical
+% state. Output is the current pixel crop size after physical-scale conversion.
+function sizeValue = currentCropSize(state)
+    parameters = state.project.parameters;
+    index = max(0, round(double(state.session.selection.currentIndex)));
+    hasCurrent = index >= 1 && index <= numel(state.project.inputs.items) && ...
+        ~isempty(state.project.inputs.items(index).image);
+    if strcmpi(parameters.scaleMode, "Physical") && hasCurrent
+        calibration = state.project.inputs.items(index).scaleCalibration;
+        if batch_crop.appState.isScaleCalibrationSet(calibration)
+            pixelsPerUnit = ...
+                batch_crop.cropGeometry.pixelsPerUnitForUnit( ...
+                calibration, parameters.scaleUnit);
+            sizeValue = max(1, round([parameters.physicalWidth, ...
+                parameters.physicalHeight] * pixelsPerUnit));
+            return;
+        end
+    end
+    sizeValue = max(1, round( ...
+        [parameters.cropWidth, parameters.cropHeight]));
+end

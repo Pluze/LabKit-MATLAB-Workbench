@@ -5,6 +5,9 @@
 % live runtime changes.
 function [project, resolved] = resolveV2ProjectSources( ...
         project, sources, filepath, spec)
+    if isempty(sources)
+        sources = projectSourceRecords(project, sources);
+    end
     [resolved, unresolved] = resolveRecords(sources, filepath);
     if isempty(unresolved)
         project = applyResolvedPaths(project, resolved);

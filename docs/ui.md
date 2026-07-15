@@ -1,11 +1,9 @@
 # UI Library
 
-This page documents the current supported UI contract. The v2 migration kernel
-for queued callback ordering, canonical semantic state, bindings,
-presentation, registered renderers, and managed runtime resources now coexists
-with the v1 app definition path. The remaining target for figure-wide
-interactions, durable project documents, result manifests, and fleet migration
-is described in [UI Runtime And App Data Redesign](ui-runtime-redesign.md).
+This page documents the current supported UI contract. Runtime V2 owns queued
+events, canonical state, presentation, resources, interactions, projects, and
+result manifests. V1 remains for apps awaiting migration. See
+[UI Runtime And App Data Redesign](ui-runtime-redesign.md) for the target.
 
 `labkit.ui` is the reusable MATLAB GUI foundation. It is split into app-facing facade packages:
 
@@ -15,7 +13,7 @@ is described in [UI Runtime And App Data Redesign](ui-runtime-redesign.md).
 | `labkit.ui.layout` | UI 5 data-only workbench layouts. | `workbench`, `workspace`, `tab`, `section`, `group`, `field`, `rangeField`, `panner`, `action`, `filePanel`, `toolPanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `usagePanel`. |
 | `labkit.ui.control` | Semantic registry updates, selectable items, file-panel values, list selections, numeric limits, enable state, and log appends. | `setValue`, `getValue`, `getFiles`, `setFileSelection`, `setItems`, `setEnabled`, `setLimits`, `appendLog`, `setListItems`, `setListSelection`, `fileLabels`, `filePaths`, `fileIndices`. |
 | `labkit.ui.plot` | Preview axes lookup, plot clearing, layer-safe overlays, image drawing, fitted limits, canvas framing, empty-state messages, and data/axes coordinate conversion. | `getAxes`, `clear`, `clearPreview`, `reset`, `replaceOverlay`, `image`, `fit`, `fitCanvas`, `dataToFraction`, `fractionToData`, `offsetData`, `clampData`, `message`. |
-| `labkit.ui.interaction` | Reusable composed preview tools and pointer/scroll interaction runtime. | `runtime`, `anchorEditor`, `rectangleEditor`, `scaleBar`, `scaleBarCalibration`, `enablePopout`, `popout`, `zoomAtPoint`. |
+| `labkit.ui.interaction` | Reusable composed preview tools and pointer/scroll interaction runtime. | `runtime`, `anchorEditor`, `rectangleEditor`, `scaleBar`, `scaleBarCalibration`, `scaleBarGeometry`, `enablePopout`, `popout`, `zoomAtPoint`. |
 | `labkit.ui.debug` | Debug launch context, visible trace, callback instrumentation, and crash reports. | `context`. |
 
 The root `labkit.ui.*` flat helper surface has been removed. Apps should call the facade that owns the behavior they need. Private implementation details live under each facade's `private/` folder.
@@ -203,14 +201,6 @@ Use these app-facing contracts:
   known. Use `labkit.ui.runtime.defaultOutputFolder(sourcePaths, subfolderName)`;
   the helper uses the first source path when multiple files are loaded and
   creates the app-specific subfolder before returning it.
-- App-owned save dialogs may use `labkit.ui.runtime.promptOutputFile` when they
-  only need a safe output default and cancel normalization; apps still own
-  filenames, filters, export formats, and user-facing prompt wording.
-- App-owned output folder dialogs should use
-  `labkit.ui.runtime.promptOutputFolder` when they need a safe output default,
-  cancel normalization, remembered output folder updates, or test chooser
-  injection. Apps still own the selected folder state, exports, and workflow
-  wording.
 - App-owned alerts should use `labkit.ui.runtime.showAlert(fig, message, title)`.
   Apps still own alert text. The helper preserves normal modal `uialert`
   behavior, records alert payloads on the figure, and skips the modal only
@@ -339,6 +329,10 @@ contains `selection`, `workflow`, `view`, and `cache`. Both slices contain only
 plain serializable MATLAB data. Graphics, listeners, timers, tools, callbacks,
 services, and debug contexts stay in the framework resource registry.
 
+The V2 `Project` declaration owns its version, factory, validator, migrations,
+and named read-only legacy imports. Optional `CreateResume` and `ApplyResume`
+hooks may restore conveniences such as the current frame, never durable data.
+
 V2 events run through one non-recursive FIFO queue per figure. A handler has
 the signature `state = handler(state, event, services)`. Nested
 `services.dispatch` calls enqueue a later transaction, so the current handler
@@ -351,9 +345,14 @@ Ordinary value controls may use a semantic binding such as
 after the value is staged. `Present(state)` returns control properties and
 prepared preview models by semantic id. Registered renderers receive an axes
 and model; presenters and actions do not receive the raw UI registry on the v2
-path. Plot utilities are inferred from the layout. V2 state save/open remains
-hidden until the durable project codec phase lands; v1 snapshots continue to
-work unchanged.
+path. Plot utilities are inferred from the layout. Dynamic `Items` and `Limits`
+are applied before bound values. V2 saves one `labkitProject`; named legacy
+variables import read-only. V1 snapshots remain for unmigrated apps.
+
+After the shell, state, first presentation, and interaction hub exist, the
+runtime queues optional `Start`. Like every action, it receives injected
+`services` for events, dialogs, project sources, results, resources, debug,
+dispatch, and the launch request. Services are capabilities, not UI or state.
 
 Each v2 figure owns one private interaction hub. Preview targets register as
 `previewId` or `previewId.axisId`; the hub owns hover wheel/zoom routing,
@@ -552,6 +551,8 @@ Apps still own image loading, redraw order, scientific calculations, result
 summaries, alerts, logs, and exports.
 
 `labkit.ui.interaction.scaleBarCalibration(referencePixels, referenceLength, unitName, opts)` is the GUI-free calibration struct helper used by apps and app-private calculations.
+
+`labkit.ui.interaction.scaleBarGeometry(imageSize, calibration, barLength, position, colorName)` converts a valid calibration plus display preferences into serializable line/label geometry. V2 presenters can keep that geometry in session view state and let an app renderer draw it without constructing the legacy scale-bar tool.
 
 ## Debug
 

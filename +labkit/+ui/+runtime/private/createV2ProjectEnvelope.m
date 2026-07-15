@@ -2,8 +2,8 @@
 % the current runtime and optional resume data. Output is a validated,
 % serializable labkit.project envelope containing only durable app project data.
 function envelope = createV2ProjectEnvelope(runtime, resume)
-    if nargin < 2 || isempty(resume)
-        resume = struct();
+    if nargin < 2
+        resume = createResume(runtime);
     end
     document = runtime.document;
     document.modifiedAtUtc = utcNow();
@@ -28,6 +28,19 @@ function envelope = createV2ProjectEnvelope(runtime, resume)
         envelope.extensions = struct();
     end
     validateSerializableState(envelope);
+end
+
+function resume = createResume(runtime)
+    resume = struct();
+    spec = runtime.definition.project;
+    if ~isfield(spec, 'CreateResume') || ...
+            ~isa(spec.CreateResume, 'function_handle')
+        return;
+    end
+    resume = spec.CreateResume(runtime.state.session, runtime.state.project);
+    if isempty(resume)
+        resume = struct();
+    end
 end
 
 function envelope = preservedEnvelope(value)
