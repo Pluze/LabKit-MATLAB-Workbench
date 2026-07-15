@@ -1,10 +1,8 @@
-% App-owned action registry for Batch Image Crop. Expected caller is
-% batch_crop.definition. Output maps semantic action ids to handlers used by
-% labkit.ui.runtime.run. Handlers own file queue changes, crop state, scale
-% calibration, and export side effects.
+% App-owned V2 action registry for Batch Image Crop. Handlers receive
+% canonical state/events/services and own source queues, crop annotations,
+% scale calibration, and exports without reading or mutating UI controls.
 function actions = definitionActions()
     actions = struct( ...
-        "startup", @onStartup, ...
         "imagesChosen", @onImagesChosen, ...
         "removeImages", @onRemoveImages, ...
         "clearImages", @onClearImages, ...
@@ -20,8 +18,11 @@ function actions = definitionActions()
         "useImageXCenter", @onUseImageCenterX, ...
         "useImageYCenter", @onUseImageCenterY, ...
         "scaleSettingChanged", @onScaleSettingChanged, ...
-        "scaleCalibrationChanged", @onScaleCalibrationChanged, ...
-        "scaleReferenceEditChanged", @onScaleReferenceEditChanged, ...
+        "scaleCalibrationFieldChanged", @onScaleCalibrationFieldChanged, ...
+        "measureScaleReference", @onMeasureScaleReference, ...
+        "scaleReferenceEdited", @onScaleReferenceEdited, ...
+        "scaleBarSettingChanged", @onScaleBarSettingChanged, ...
+        "placeScaleBar", @onPlaceScaleBar, ...
         "exportSettingChanged", @onExportSettingChanged, ...
         "chooseOutputFolder", @onChooseOutputFolder, ...
         "previewPointerDown", @onPreviewPointerDown, ...
@@ -29,107 +30,72 @@ function actions = definitionActions()
         "exportCrops", @onExportCrops);
 end
 
-function state = onStartup(state, ~, services)
-    ui = services.ui;
-    fig = services.figure;
-    debugLog = services.debug;
-    previewAxes = ui.controls.preview.primaryAxes;
-    imageRuntime = labkit.ui.interaction.runtime(previewAxes, ...
-        struct('figure', fig, 'onTrace', traceFcn(debugLog)));
-    cropEditor = labkit.ui.interaction.rectangleEditor(imageRuntime, ...
-        [2 2], [1 1 1 1], struct( ...
-        'resizable', false, ...
-        'onMoved', @(position) services.dispatch( ...
-            "cropRectangleMoved", struct('position', position)), ...
-        'onBackgroundDown', @(~, ~) services.dispatch("previewPointerDown")));
-    scaleTool = labkit.ui.interaction.scaleBar(ui.controls.scaleBarHost.grid, 1, ...
-        imageRuntime, struct( ...
-        'title', 'Current Image Scale', ...
-        'defaultUnit', 'um', ...
-        'defaultReferenceLength', 100, ...
-        'onCalibrationChanged', @(~, ~) services.dispatch("scaleCalibrationChanged"), ...
-        'onReferenceEditChanged', @(~, ~) services.dispatch("scaleReferenceEditChanged"), ...
-        'onError', @(titleText, message) showError(services, titleText, message), ...
-        'onTrace', traceFcn(debugLog)));
-    state.tools = struct('previewAxes', previewAxes, ...
-        'imageRuntime', imageRuntime, ...
-        'cropEditor', cropEditor, ...
-        'scaleTool', scaleTool);
-    if strlength(state.outputFolder) == 0
-        state.outputFolder = string(labkit.ui.runtime.defaultDialogFolder("output"));
+function state = onImagesChosen(state, event, services)
+    added = eventPaths(event, "addedFiles");
+    paths = eventPaths(event, "files");
+    if isempty(paths)
+        paths = added;
     end
-
-    if isDebugEnabled(debugLog)
-        debugLog.trace('Batch image crop debug trace enabled.');
-        batch_crop.debug.writeAndLogSamplePack(debugLog, ...
-            @(message) addLog(services, message));
-    end
-end
-
-function state = onImagesChosen(state, payload, services)
-    newFiles = labkit.ui.control.filePaths(payload.event.addedFiles);
-    if isempty(newFiles)
-        addLog(services, 'Image file selection cancelled.');
+    if isempty(paths)
+        state = addLog(state, services, "Image file selection cancelled.");
         return;
     end
-    paths = labkit.ui.control.filePaths(payload.event.files);
-    if isempty(paths)
-        paths = newFiles;
-    end
-    items = batch_crop.appState.itemsForPaths(paths);
-    state.items = batch_crop.appState.mergeChosenItems(state.items, items);
-    state.currentIndex = currentIndexForAddedPath(paths, newFiles(1));
-    state.outputFolder = string(labkit.ui.runtime.defaultOutputFolder( ...
-        paths, "batch_crop", state.outputFolder));
+    chosen = batch_crop.appState.itemsForPaths(paths);
+    state.project.inputs.items = batch_crop.appState.mergeChosenItems( ...
+        state.project.inputs.items, chosen);
+    state.project.inputs.sources = sourcesForItems(state.project.inputs.items);
+    state.session.selection.currentIndex = selectedAddedIndex( ...
+        state.project.inputs.items, added);
+    state.project.parameters.outputFolder = string( ...
+        labkit.ui.runtime.defaultOutputFolder(paths, "batch_crop", ...
+        state.project.parameters.outputFolder));
     state = clearExportAndCanvas(state);
     [state, loaded] = ensureCurrentImageLoaded(state, services);
     if loaded
-        state = ensureCurrentCenter(state, services);
+        state = ensureCurrentCenter(state);
+        state = initializeCropSizeDefaultsIfNeeded(state);
     end
-    addLog(services, sprintf('Selected %d image file(s); crop tasks: %d.', ...
-        numel(items), numel(state.items)));
-end
-
-function idx = currentIndexForAddedPath(paths, addedPath)
-    idx = find(string(paths(:)) == string(addedPath), 1);
-    if isempty(idx)
-        idx = 1;
-    end
+    state = addLog(state, services, sprintf( ...
+        'Selected %d image file(s); crop tasks: %d.', ...
+        numel(paths), numel(state.project.inputs.items)));
 end
 
 function state = onClearImages(state, ~, services)
-    state.items = repmat(batch_crop.appState.emptyItem(), 0, 1);
-    state.currentIndex = 0;
+    state.project.inputs.items = repmat(batch_crop.appState.emptyItem(), 0, 1);
+    state.project.inputs.sources = emptySources();
+    state.session.selection.currentIndex = 0;
+    state.session.workflow.cropDefaultsInitialized = false;
+    state.session.workflow.scaleReferenceEditing = false;
+    state.session.view.scaleBar = [];
     state = clearExportAndCanvas(state);
-    state.cropDefaultsInitialized = false;
-    addLog(services, 'Cleared loaded images.');
+    state = addLog(state, services, "Cleared loaded images.");
 end
 
-function state = onRemoveImages(state, payload, services)
-    event = payload.event;
-    if isempty(state.items) || ~isfield(event, 'removedFiles') || ...
-            isempty(event.removedFiles)
+function state = onRemoveImages(state, event, services)
+    items = state.project.inputs.items;
+    indices = eventIndices(event, "removedFiles", numel(items));
+    if isempty(indices)
         return;
     end
-    removeIdx = labkit.ui.control.fileIndices(event.removedFiles, ...
-        numel(state.items));
-    if isempty(removeIdx)
-        return;
-    end
-    state.items(removeIdx) = [];
-    if isempty(state.items)
-        state.currentIndex = 0;
+    items(indices) = [];
+    state.project.inputs.items = items;
+    state.project.inputs.sources = sourcesForItems(items);
+    if isempty(items)
+        state.session.selection.currentIndex = 0;
     else
-        state.currentIndex = min(max(state.currentIndex, 1), ...
-            numel(state.items));
+        state.session.selection.currentIndex = min(max( ...
+            state.session.selection.currentIndex, 1), numel(items));
     end
+    state.session.workflow.scaleReferenceEditing = false;
+    state.session.view.scaleBar = [];
     state = clearExportAndCanvas(state);
     [state, loaded] = ensureCurrentImageLoaded(state, services);
     if loaded
-        state = ensureCurrentCenter(state, services);
+        state = ensureCurrentCenter(state);
     end
-    addLog(services, sprintf('Removed %d crop task(s); remaining: %d.', ...
-        numel(removeIdx), numel(state.items)));
+    state = addLog(state, services, sprintf( ...
+        'Removed %d crop task(s); remaining: %d.', ...
+        numel(indices), numel(items)));
 end
 
 function state = onDuplicateImage(state, ~, services)
@@ -137,128 +103,138 @@ function state = onDuplicateImage(state, ~, services)
     if ~ok
         return;
     end
-    duplicated = batch_crop.appState.duplicateItem(state.items(state.currentIndex));
-    insertAt = state.currentIndex + 1;
-    state.items = [state.items(1:state.currentIndex); ...
-        duplicated; state.items(insertAt:end)];
-    state.currentIndex = insertAt;
+    index = currentIndex(state);
+    duplicate = batch_crop.appState.duplicateItem( ...
+        state.project.inputs.items(index));
+    insertAt = index + 1;
+    items = state.project.inputs.items;
+    state.project.inputs.items = [items(1:index); duplicate; items(insertAt:end)];
+    state.session.selection.currentIndex = insertAt;
+    state.session.workflow.scaleReferenceEditing = false;
+    state.session.view.scaleBar = [];
     state = clearExportAndCanvas(state);
-    state = ensureCurrentCenter(state, services);
-    addLog(services, sprintf(['Duplicated image %d as crop task %d. ' ...
-        'Pick a new crop center.'], insertAt - 1, insertAt));
+    state = ensureCurrentCenter(state);
+    state = addLog(state, services, sprintf( ...
+        'Duplicated image %d as crop task %d. Pick a new crop center.', ...
+        index, insertAt));
 end
 
-function state = onImageSelectionChanged(state, payload, services)
-    if isempty(state.items)
+function state = onImageSelectionChanged(state, event, services)
+    indices = eventIndices(event, "selectedFiles", ...
+        numel(state.project.inputs.items));
+    if isempty(indices)
         return;
     end
-    idx = labkit.ui.control.fileIndices(payload.event.selectedFiles, ...
-        numel(state.items));
-    if isempty(idx)
-        return;
-    end
-    state.currentIndex = idx(1);
+    state.session.selection.currentIndex = indices(1);
+    state.session.workflow.scaleReferenceEditing = false;
+    state.session.view.scaleBar = [];
     [state, loaded] = ensureCurrentImageLoaded(state, services);
     if loaded
-        state = ensureCurrentCenter(state, services);
+        state = ensureCurrentCenter(state);
     end
 end
 
 function state = onPreviousImage(state, ~, services)
-    if isempty(state.items)
+    if isempty(state.project.inputs.items)
         return;
     end
-    state.currentIndex = max(1, state.currentIndex - 1);
-    [state, loaded] = ensureCurrentImageLoaded(state, services);
-    if loaded
-        state = ensureCurrentCenter(state, services);
-    end
+    state.session.selection.currentIndex = max(1, currentIndex(state) - 1);
+    state = selectCurrentImage(state, services);
 end
 
 function state = onNextImage(state, ~, services)
-    if isempty(state.items)
+    if isempty(state.project.inputs.items)
         return;
     end
-    state.currentIndex = min(numel(state.items), state.currentIndex + 1);
+    state.session.selection.currentIndex = min( ...
+        numel(state.project.inputs.items), currentIndex(state) + 1);
+    state = selectCurrentImage(state, services);
+end
+
+function state = selectCurrentImage(state, services)
+    state.session.workflow.scaleReferenceEditing = false;
+    state.session.view.scaleBar = [];
     [state, loaded] = ensureCurrentImageLoaded(state, services);
     if loaded
-        state = ensureCurrentCenter(state, services);
+        state = ensureCurrentCenter(state);
     end
 end
 
 function state = onCropGeometryChanged(state, ~, services)
-    ui = services.ui;
-    labkit.ui.control.setValue(ui, "cropWidth", round(max(1, ...
-        ui.controls.cropWidth.valueHandle.Value)));
-    labkit.ui.control.setValue(ui, "cropHeight", round(max(1, ...
-        ui.controls.cropHeight.valueHandle.Value)));
-    state.cropDefaultsInitialized = true;
+    parameters = state.project.parameters;
+    parameters.cropWidth = positiveInteger(parameters.cropWidth, 1);
+    parameters.cropHeight = positiveInteger(parameters.cropHeight, 1);
+    state.project.parameters = parameters;
+    state.session.workflow.cropDefaultsInitialized = true;
     [state, ok] = ensureCurrentReady(state, services);
     if ok
-        state.previewView = capturePreviewView(state, services);
+        state = ensureCurrentCenter(state);
     end
-    state = batch_crop.appState.clearExportState(state);
+    state = clearExport(state);
 end
 
-function state = onRotationChanged(state, ~, services)
+function state = onRotationChanged(state, event, services)
     [state, ok] = ensureCurrentReady(state, services);
     if ~ok
         return;
     end
-    state.previewView = capturePreviewView(state, services);
-    state.items(state.currentIndex).angleDeg = ...
-        services.ui.controls.rotation.valueHandle.Value;
-    state = ensureCurrentCenter(state, services);
+    index = currentIndex(state);
+    state.project.inputs.items(index).angleDeg = finiteScalar(event.value, ...
+        state.project.inputs.items(index).angleDeg);
+    state = ensureCurrentCenter(state);
     state = clearExportAndCanvas(state);
-    addLog(services, sprintf('Updated rotation for image %d: %.3g deg.', ...
-        state.currentIndex, state.items(state.currentIndex).angleDeg));
+    state.session.view.scaleBar = [];
+    state = addLog(state, services, sprintf( ...
+        'Updated rotation for image %d: %.3g deg.', index, ...
+        state.project.inputs.items(index).angleDeg));
 end
 
-function state = onPaddingChanged(state, ~, services)
-    ui = services.ui;
-    labkit.ui.control.setValue(ui, "paddingPercent", ...
-        min(max(double(ui.controls.paddingPercent.valueHandle.Value), 0), 200));
+function state = onPaddingChanged(state, event, services)
     [state, ok] = ensureCurrentReady(state, services);
     if ~ok
         return;
     end
-    state.previewView = capturePreviewView(state, services);
-    state.items(state.currentIndex).paddingPercent = ...
-        ui.controls.paddingPercent.valueHandle.Value;
-    state = ensureCurrentCenter(state, services);
+    index = currentIndex(state);
+    value = finiteScalar(event.value, ...
+        state.project.inputs.items(index).paddingPercent);
+    state.project.inputs.items(index).paddingPercent = min(max(value, 0), 200);
+    state = ensureCurrentCenter(state);
     state = clearExportAndCanvas(state);
-    addLog(services, sprintf('Updated padding for image %d: %.3g%%.', ...
-        state.currentIndex, state.items(state.currentIndex).paddingPercent));
+    state.session.view.scaleBar = [];
+    state = addLog(state, services, sprintf( ...
+        'Updated padding for image %d: %.3g%%.', index, ...
+        state.project.inputs.items(index).paddingPercent));
 end
 
-function state = onCenterChanged(state, ~, services)
+function state = onCenterChanged(state, event, services)
     [state, ok] = ensureCurrentReady(state, services);
     if ~ok
         return;
     end
-    state.previewView = capturePreviewView(state, services);
-    centerXY = adjustedCropCenter(state, services, ...
-        [services.ui.controls.centerX.valueHandle.Value, ...
-        services.ui.controls.centerY.valueHandle.Value]);
-    state.items(state.currentIndex).centerXY = centerXY;
-    state.items(state.currentIndex).centerSet = true;
-    labkit.ui.control.setValue(services.ui, "centerX", centerXY(1));
-    labkit.ui.control.setValue(services.ui, "centerY", centerXY(2));
-    state = batch_crop.appState.clearExportState(state);
-    addLog(services, sprintf('Set crop center for image %d: x=%.1f, y=%.1f.', ...
-        state.currentIndex, centerXY(1), centerXY(2)));
+    index = currentIndex(state);
+    center = state.project.inputs.items(index).centerXY;
+    if event.target == "centerX"
+        center(1) = finiteScalar(event.value, center(1));
+    elseif event.target == "centerY"
+        center(2) = finiteScalar(event.value, center(2));
+    end
+    state = setCurrentCenter(state, center, true);
+    state = clearExport(state);
+    state = addLog(state, services, sprintf( ...
+        'Set crop center for image %d: x=%.1f, y=%.1f.', index, ...
+        state.project.inputs.items(index).centerXY));
 end
 
-function state = onUseImageCenterXY(state, payload, services)
-    state = onUseImageCenter(state, payload, services, "xy");
+function state = onUseImageCenterXY(state, event, services)
+    state = onUseImageCenter(state, event, services, "xy");
 end
 
-function state = onUseImageCenterX(state, payload, services)
-    state = onUseImageCenter(state, payload, services, "x");
+function state = onUseImageCenterX(state, event, services)
+    state = onUseImageCenter(state, event, services, "x");
 end
 
-function state = onUseImageCenterY(state, payload, services)
-    state = onUseImageCenter(state, payload, services, "y");
+function state = onUseImageCenterY(state, event, services)
+    state = onUseImageCenter(state, event, services, "y");
 end
 
 function state = onUseImageCenter(state, ~, services, mode)
@@ -266,354 +242,574 @@ function state = onUseImageCenter(state, ~, services, mode)
     if ~ok
         return;
     end
-    state.previewView = capturePreviewView(state, services);
-    current = state.items(state.currentIndex).centerXY;
-    if isempty(current) || any(~isfinite(current))
-        current = batch_crop.cropGeometry.sourceCenterXY(state.items(state.currentIndex).image);
+    index = currentIndex(state);
+    item = state.project.inputs.items(index);
+    center = item.centerXY;
+    sourceCenter = batch_crop.cropGeometry.sourceCenterXY(item.image);
+    if any(~isfinite(center))
+        center = sourceCenter;
     end
-    sourceCenter = batch_crop.cropGeometry.sourceCenterXY( ...
-        state.items(state.currentIndex).image);
-    switch string(mode)
-        case "x"
-            current(1) = sourceCenter(1);
-        case "y"
-            current(2) = sourceCenter(2);
-        otherwise
-            current = sourceCenter;
+    if mode == "x"
+        center(1) = sourceCenter(1);
+    elseif mode == "y"
+        center(2) = sourceCenter(2);
+    else
+        center = sourceCenter;
     end
-    state.items(state.currentIndex).centerXY = ...
-        adjustedCropCenter(state, services, current);
-    state.items(state.currentIndex).centerSet = true;
-    labkit.ui.control.setValue(services.ui, "centerX", ...
-        state.items(state.currentIndex).centerXY(1));
-    labkit.ui.control.setValue(services.ui, "centerY", ...
-        state.items(state.currentIndex).centerXY(2));
-    state = batch_crop.appState.clearExportState(state);
-    addLog(services, sprintf('Set image %d crop %s center.', ...
-        state.currentIndex, char(upper(string(mode)))));
+    state = setCurrentCenter(state, center, true);
+    state = clearExport(state);
+    state = addLog(state, services, sprintf( ...
+        'Set image %d crop %s center.', index, char(upper(mode))));
 end
 
-function state = onScaleSettingChanged(state, ~, services)
-    ui = services.ui;
-    labkit.ui.control.setValue(ui, "physicalWidth", ...
-        max(eps, double(ui.controls.physicalWidth.valueHandle.Value)));
-    labkit.ui.control.setValue(ui, "physicalHeight", ...
-        max(eps, double(ui.controls.physicalHeight.valueHandle.Value)));
-    labkit.ui.control.setValue(ui, "targetPixelsPerUnit", ...
-        max(0, double(ui.controls.targetPixelsPerUnit.valueHandle.Value)));
-    labkit.ui.control.setValue(ui, "maxUpsamplePercent", ...
-        max(0, double(ui.controls.maxUpsamplePercent.valueHandle.Value)));
-    if strcmpi(string(ui.controls.scaleMode.valueHandle.Value), "Physical") && ...
-            hasTools(state)
-        state.tools.scaleTool.setEnabled(struct('hasImage', hasCurrentImage(state)));
+function state = onScaleSettingChanged(state, ~, ~)
+    parameters = state.project.parameters;
+    parameters.physicalWidth = positiveScalar(parameters.physicalWidth, eps);
+    parameters.physicalHeight = positiveScalar(parameters.physicalHeight, eps);
+    parameters.targetPixelsPerUnit = nonnegativeScalar( ...
+        parameters.targetPixelsPerUnit, 0);
+    parameters.maxUpsamplePercent = nonnegativeScalar( ...
+        parameters.maxUpsamplePercent, 0);
+    state.project.parameters = parameters;
+    if ~strcmpi(parameters.scaleMode, "Physical")
+        state.session.workflow.scaleReferenceEditing = false;
     end
-    state.previewView = capturePreviewView(state, services);
-    state = batch_crop.appState.clearExportState(state);
+    state = clearExport(state);
 end
 
-function state = onScaleCalibrationChanged(state, ~, services)
-    if ~hasCurrentImage(state) || ~hasTools(state)
+function state = onScaleCalibrationFieldChanged(state, event, ~)
+    if ~hasCurrentImage(state)
         return;
     end
-    state.items(state.currentIndex).scaleCalibration = ...
-        state.tools.scaleTool.calibration();
-    state = batch_crop.appState.clearExportState(state);
+    index = currentIndex(state);
+    cal = state.project.inputs.items(index).scaleCalibration;
+    if event.target == "scaleReferencePixels"
+        cal.referencePixels = positiveOrNaN(event.value);
+        cal.referenceLine = zeros(0, 2);
+    elseif event.target == "scaleReferenceLength"
+        cal.referenceLength = nonnegativeScalar(event.value, cal.referenceLength);
+    elseif event.target == "scaleCalibrationUnit"
+        cal.unit = char(string(event.value));
+    end
+    state.project.inputs.items(index).scaleCalibration = calibrationFrom(cal);
+    state.session.view.scaleBar = [];
+    state = clearExport(state);
 end
 
-function state = onScaleReferenceEditChanged(state, ~, services)
-    if hasTools(state) && state.tools.scaleTool.isReferenceEditActive()
-        state.tools.cropEditor.setActive(false);
+function state = onMeasureScaleReference(state, ~, services)
+    if ~hasCurrentImage(state)
+        showError(services, 'No image loaded', ...
+            'Open an image before measuring reference pixels.');
         return;
     end
-    state.previewView = capturePreviewView(state, services);
-    state = batch_crop.appState.clearExportState(state);
+    state.session.workflow.scaleReferenceEditing = ...
+        ~state.session.workflow.scaleReferenceEditing;
+    state.session.view.scaleBar = [];
+end
+
+function state = onScaleReferenceEdited(state, event, ~)
+    if ~hasCurrentImage(state)
+        return;
+    end
+    points = double(event.value);
+    if size(points, 2) ~= 2
+        return;
+    end
+    [geometry, placement] = currentGeometryAndPlacement(state);
+    original = zeros(size(points));
+    for k = 1:size(points, 1)
+        original(k, :) = batch_crop.cropGeometry.canvasToOriginal( ...
+            geometry, points(k, :) - placement.offset);
+    end
+    index = currentIndex(state);
+    cal = state.project.inputs.items(index).scaleCalibration;
+    cal.referenceLine = original;
+    cal.referencePixels = NaN;
+    state.project.inputs.items(index).scaleCalibration = calibrationFrom(cal);
+    state.session.view.scaleBar = [];
+    state = clearExport(state);
+end
+
+function state = onScaleBarSettingChanged(state, ~, ~)
+    state.project.parameters.scaleBarLength = nonnegativeScalar( ...
+        state.project.parameters.scaleBarLength, 0);
+    state.session.view.scaleBar = [];
+end
+
+function state = onPlaceScaleBar(state, ~, services)
+    if ~hasCurrentImage(state)
+        showError(services, 'No image loaded', ...
+            'Open an image before placing a scale bar.');
+        return;
+    end
+    item = currentItem(state);
+    if ~batch_crop.appState.isScaleCalibrationSet(item.scaleCalibration)
+        showError(services, 'Calibration required', ...
+            ['Measure or enter reference pixels, then enter a positive ' ...
+            'reference length and unit.']);
+        return;
+    end
+    try
+        state.session.view.scaleBar = batch_crop.userInterface.scaleBarGeometry( ...
+            size(item.image), item.scaleCalibration, ...
+            state.project.parameters.scaleBarLength, ...
+            state.project.parameters.scaleBarPosition, ...
+            state.project.parameters.scaleBarColor);
+        state.session.workflow.scaleReferenceEditing = false;
+    catch ME
+        showError(services, 'Could not place scale bar', ME.message);
+    end
 end
 
 function state = onExportSettingChanged(state, ~, ~)
-    state = batch_crop.appState.clearExportState(state);
+    state = clearExport(state);
 end
 
 function state = onChooseOutputFolder(state, ~, services)
+    promptArgs = {};
+    if isstruct(services.request) && ...
+            isfield(services.request, 'outputFolderChooser') && ...
+            isa(services.request.outputFolderChooser, 'function_handle')
+        promptArgs = {'Chooser', services.request.outputFolderChooser};
+    end
     [folder, cancelled] = labkit.ui.runtime.promptOutputFolder( ...
-        'Select crop export folder', state.outputFolder);
+        'Select crop export folder', ...
+        state.project.parameters.outputFolder, promptArgs{:});
     if cancelled
-        addLog(services, 'Export folder selection cancelled.');
+        state = addLog(state, services, "Export folder selection cancelled.");
         return;
     end
-    state.outputFolder = string(folder);
-    state = batch_crop.appState.clearExportState(state);
+    state.project.parameters.outputFolder = string(folder);
+    state = clearExport(state);
 end
 
-function state = onPreviewPointerDown(state, ~, services)
+function state = onPreviewPointerDown(state, event, services)
     [state, ok] = ensureCurrentReady(state, services);
-    if ~ok || ~hasTools(state)
+    if ~ok || isempty(event.value) || numel(event.value) < 2
         return;
     end
-    state.previewView = capturePreviewView(state, services);
-    geometry = currentGeometry(state, services);
-    placement = batch_crop.userInterface.previewPlacement(geometry);
-    pt = state.tools.previewAxes.CurrentPoint;
-    canvasXY = [pt(1, 1), pt(1, 2)] - placement.offset;
-    canvasXY(1) = min(max(canvasXY(1), 1), size(geometry.canvas, 2));
-    canvasXY(2) = min(max(canvasXY(2), 1), size(geometry.canvas, 1));
-    centerXY = batch_crop.cropGeometry.canvasToOriginal(geometry, canvasXY);
-    centerXY = adjustedCropCenter(state, services, centerXY);
-    state.items(state.currentIndex).centerXY = centerXY;
-    state.items(state.currentIndex).centerSet = true;
-    labkit.ui.control.setValue(services.ui, "centerX", centerXY(1));
-    labkit.ui.control.setValue(services.ui, "centerY", centerXY(2));
-    state = batch_crop.appState.clearExportState(state);
-    addLog(services, sprintf('Picked crop center for image %d: x=%.1f, y=%.1f.', ...
-        state.currentIndex, centerXY(1), centerXY(2)));
+    [geometry, placement] = currentGeometryAndPlacement(state);
+    canvas = double(event.value(1:2)) - placement.offset;
+    canvas(1) = min(max(canvas(1), 1), size(geometry.canvas, 2));
+    canvas(2) = min(max(canvas(2), 1), size(geometry.canvas, 1));
+    center = batch_crop.cropGeometry.canvasToOriginal(geometry, canvas);
+    state = setCurrentCenter(state, center, true);
+    state = clearExport(state);
+    state = addLog(state, services, sprintf( ...
+        'Picked crop center for image %d: x=%.1f, y=%.1f.', ...
+        currentIndex(state), state.project.inputs.items( ...
+        currentIndex(state)).centerXY));
 end
 
-function state = onCropRectangleMoved(state, payload, services)
+function state = onCropRectangleMoved(state, event, services)
     [state, ok] = ensureCurrentReady(state, services);
-    if ~ok || ~hasTools(state) || ~isfield(payload.event, 'position')
+    if ~ok || isempty(event.value) || numel(event.value) ~= 4
         return;
     end
-    state.previewView = capturePreviewView(state, services);
-    position = double(payload.event.position);
-    placement = batch_crop.userInterface.previewPlacement( ...
-        currentGeometry(state, services));
-    canvasXY = [position(1) + position(3) ./ 2, ...
-        position(2) + position(4) ./ 2] - placement.offset;
-    centerXY = batch_crop.cropGeometry.canvasToOriginal( ...
-        currentGeometry(state, services), canvasXY);
-    centerXY = adjustedCropCenter(state, services, centerXY);
-    state.items(state.currentIndex).centerXY = centerXY;
-    state.items(state.currentIndex).centerSet = true;
-    labkit.ui.control.setValue(services.ui, "centerX", centerXY(1));
-    labkit.ui.control.setValue(services.ui, "centerY", centerXY(2));
-    state = batch_crop.appState.clearExportState(state);
-    addLog(services, sprintf( ...
+    position = double(event.value);
+    [geometry, placement] = currentGeometryAndPlacement(state);
+    canvas = [position(1) + position(3) / 2, ...
+        position(2) + position(4) / 2] - placement.offset;
+    center = batch_crop.cropGeometry.canvasToOriginal(geometry, canvas);
+    state = setCurrentCenter(state, center, true);
+    state = clearExport(state);
+    state = addLog(state, services, sprintf( ...
         'Dragged crop center for image %d: x=%.1f, y=%.1f.', ...
-        state.currentIndex, centerXY(1), centerXY(2)));
+        currentIndex(state), state.project.inputs.items( ...
+        currentIndex(state)).centerXY));
 end
 
 function state = onExportCrops(state, ~, services)
-    if isempty(state.items)
+    items = state.project.inputs.items;
+    if isempty(items)
         showError(services, 'No images loaded', ...
             'Load images before exporting crops.');
         return;
     end
-    if ~all([state.items.centerSet])
+    if ~all([items.centerSet])
         showError(services, 'Crop centers missing', ...
-            batch_crop.userInterface.missingWorkflowItemsText(state.items, "center"));
+            batch_crop.userInterface.missingWorkflowItemsText(items, "center"));
         return;
     end
-    scaleSummary = batch_crop.appState.scaleCalibrationSummary(state.items);
-    if strcmpi(string(services.ui.controls.scaleMode.valueHandle.Value), ...
-            "Physical") && ~scaleSummary.allCalibrated
+    if strcmpi(state.project.parameters.scaleMode, "Physical") && ...
+            ~batch_crop.appState.scaleCalibrationSummary(items).allCalibrated
         showError(services, 'Scale calibration missing', ...
-            batch_crop.userInterface.missingWorkflowItemsText(state.items, "scale"));
+            batch_crop.userInterface.missingWorkflowItemsText(items, "scale"));
         return;
     end
     [state, loaded] = ensureAllImagesLoaded(state, services);
     if ~loaded
         return;
     end
-    opts = currentExportOptions(state, services);
-    plan = batch_crop.appState.exportPlan(state.items, opts);
-    if ~isempty(state.lastExport) && state.lastExportFingerprint == plan.fingerprint
-        addLog(services, 'Crop export is already up to date; skipped duplicate write.');
+    opts = currentExportOptions(state);
+    plan = batch_crop.appState.exportPlan(state.project.inputs.items, opts);
+    results = state.project.results;
+    if ~isempty(results.lastExport) && ...
+            results.lastExportFingerprint == plan.fingerprint
+        state = addLog(state, services, ...
+            "Crop export is already up to date; skipped duplicate write.");
         return;
     end
     try
-        payload = batch_crop.resultFiles.writeOutputs(state.items, opts);
+        payload = batch_crop.resultFiles.writeOutputs( ...
+            state.project.inputs.items, opts);
+        spec = standardResultSpec(state, payload);
+        [manifestPath, ~] = services.results.writeManifest( ...
+            opts.outputFolder, spec);
     catch ME
-        if isDebugEnabled(services.debug)
-            services.debug.reportException('batchCrop', 'Export failed', ME);
-        end
+        reportException(services, 'Export failed', ME);
         showError(services, 'Export failed', ME.message);
         return;
     end
-
-    state.lastExport = payload;
-    state.lastExportFingerprint = plan.fingerprint;
+    payload.resultManifestPath = string(manifestPath);
+    state.project.results.lastExport = payload;
+    state.project.results.lastExportFingerprint = plan.fingerprint;
+    state.project.results.resultManifestPath = string(manifestPath);
     statuses = string({payload.results.status});
     savedCount = sum(statuses == "saved");
     failedCount = sum(statuses == "failed");
-    addLog(services, sprintf('Exported %d crop(s), %d failed. Manifest: %s', ...
+    state = addLog(state, services, sprintf( ...
+        'Exported %d crop(s), %d failed. Manifest: %s', ...
         savedCount, failedCount, char(payload.manifestPath)));
     if failedCount > 0
-        showError(services, 'Some crops failed', ...
-            sprintf('%d image(s) failed. See the manifest for details.', failedCount));
+        showError(services, 'Some crops failed', sprintf( ...
+            '%d image(s) failed. See the manifest for details.', failedCount));
     end
+end
+
+function state = initializeCropSizeDefaultsIfNeeded(state)
+    if state.session.workflow.cropDefaultsInitialized || ~hasCurrentImage(state)
+        return;
+    end
+    imageData = currentItem(state).image;
+    % Constant: the legacy workflow starts with a crop spanning 70% of the
+    % source so users can reposition it without immediately hitting bounds.
+    defaultCropFraction = 0.7;
+    state.project.parameters.cropWidth = max(1, ...
+        round(size(imageData, 2) * defaultCropFraction));
+    state.project.parameters.cropHeight = max(1, ...
+        round(size(imageData, 1) * defaultCropFraction));
+    state.session.workflow.cropDefaultsInitialized = true;
 end
 
 function [state, ok] = ensureCurrentReady(state, services)
     [state, loaded] = ensureCurrentImageLoaded(state, services);
     ok = loaded && hasCurrentImage(state);
     if ok
-        state = ensureCurrentCenter(state, services);
-        state = initializeCropSizeDefaultsIfNeeded(state, services);
+        state = ensureCurrentCenter(state);
+        state = initializeCropSizeDefaultsIfNeeded(state);
     end
 end
 
-function state = initializeCropSizeDefaultsIfNeeded(state, services)
-    if state.cropDefaultsInitialized || ~hasCurrentImage(state)
-        return;
-    end
-    imageData = state.items(state.currentIndex).image;
-    labkit.ui.control.setValue(services.ui, "cropWidth", ...
-        max(1, round(size(imageData, 2) * 0.7)));
-    labkit.ui.control.setValue(services.ui, "cropHeight", ...
-        max(1, round(size(imageData, 1) * 0.7)));
-    state.cropDefaultsInitialized = true;
-end
-
-function [state, tf] = ensureCurrentImageLoaded(state, services)
-    tf = false;
-    if isempty(state.items) || state.currentIndex < 1 || ...
-            state.currentIndex > numel(state.items)
+function [state, loaded] = ensureCurrentImageLoaded(state, services)
+    loaded = false;
+    index = currentIndex(state);
+    if index < 1 || index > numel(state.project.inputs.items)
         return;
     end
     try
-        [state.items, tf] = batch_crop.appState.loadImageForIndex( ...
-            state.items, state.currentIndex);
+        [state.project.inputs.items, loaded] = ...
+            batch_crop.appState.loadImageForIndex( ...
+            state.project.inputs.items, index);
     catch ME
-        if isDebugEnabled(services.debug)
-            services.debug.reportException('batchCrop', 'Could not load image', ME);
-        end
-        addLog(services, sprintf('Could not load image %d: %s', ...
-            state.currentIndex, ME.message));
+        reportException(services, 'Could not load image', ME);
+        state = addLog(state, services, sprintf( ...
+            'Could not load image %d: %s', index, ME.message));
     end
 end
 
-function [state, tf] = ensureAllImagesLoaded(state, services)
-    tf = false;
+function [state, loaded] = ensureAllImagesLoaded(state, services)
+    loaded = false;
     try
-        state.items = batch_crop.appState.loadMissingImages(state.items);
-        state.canvasCache = batch_crop.appState.emptyCanvasCache();
-        tf = true;
+        state.project.inputs.items = batch_crop.appState.loadMissingImages( ...
+            state.project.inputs.items);
+        state.session.cache.canvas = batch_crop.appState.emptyCanvasCache();
+        loaded = true;
     catch ME
-        if isDebugEnabled(services.debug)
-            services.debug.reportException('batchCrop', 'Could not load image', ME);
-        end
+        reportException(services, 'Could not load image', ME);
         showError(services, 'Could not load image', ME.message);
     end
 end
 
-function state = ensureCurrentCenter(state, services)
+function state = ensureCurrentCenter(state)
     if ~hasCurrentImage(state)
         return;
     end
-    item = state.items(state.currentIndex);
-    if isempty(item.centerXY) || any(~isfinite(item.centerXY))
-        item.centerXY = batch_crop.cropGeometry.sourceCenterXY(item.image);
+    item = currentItem(state);
+    center = item.centerXY;
+    if isempty(center) || any(~isfinite(center))
+        center = batch_crop.cropGeometry.sourceCenterXY(item.image);
     end
-    item.centerXY = adjustedCropCenter(state, services, item.centerXY);
-    state.items(state.currentIndex) = item;
+    state = setCurrentCenter(state, center, item.centerSet);
 end
 
-function centerXY = adjustedCropCenter(state, services, centerXY)
-    geometry = currentGeometry(state, services);
-    centerXY = batch_crop.cropGeometry.clampCropCenterToCanvas(geometry, centerXY, ...
-        currentCropSize(state, services));
+function state = setCurrentCenter(state, center, confirmed)
+    index = currentIndex(state);
+    [geometry, ~] = currentGeometryAndPlacement(state);
+    center = batch_crop.cropGeometry.clampCropCenterToCanvas( ...
+        geometry, center, currentCropSize(state));
+    state.project.inputs.items(index).centerXY = center;
+    state.project.inputs.items(index).centerSet = logical(confirmed);
 end
 
-function geometry = currentGeometry(state, services)
-    item = state.items(state.currentIndex);
-    [geometry, ~] = batch_crop.appState.currentGeometry(state.canvasCache, ...
-        state.currentIndex, item, currentPaddingPercent(state, services));
+function [geometry, placement] = currentGeometryAndPlacement(state)
+    item = currentItem(state);
+    [geometry, ~] = batch_crop.appState.currentGeometry( ...
+        state.session.cache.canvas, currentIndex(state), item, ...
+        batch_crop.appState.itemPaddingPercent(item, 0));
+    placement = struct("offset", [0 0], ...
+        "xData", [1 size(geometry.canvas, 2)], ...
+        "yData", [1 size(geometry.canvas, 1)]);
 end
 
-function opts = currentExportOptions(state, services)
-    ui = services.ui;
-    opts = batch_crop.appState.exportOptions(state.outputFolder, ...
-        ui.controls.format.valueHandle.Value, currentCropSize(state, services), ...
-        currentPaddingPercent(state, services), ...
-        string(ui.controls.scaleMode.valueHandle.Value), ...
-        string(ui.controls.scaleUnit.valueHandle.Value), ...
-        [ui.controls.physicalWidth.valueHandle.Value, ...
-        ui.controls.physicalHeight.valueHandle.Value], ...
-        ui.controls.targetPixelsPerUnit.valueHandle.Value, ...
-        ui.controls.maxUpsamplePercent.valueHandle.Value);
-end
-
-function cropSize = currentCropSize(state, services)
-    ui = services.ui;
-    if strcmpi(string(ui.controls.scaleMode.valueHandle.Value), "Physical") && ...
-            hasCurrentImage(state)
-        cal = batch_crop.appState.itemScaleCalibration(state.items, ...
-            state.currentIndex);
+function sizeValue = currentCropSize(state)
+    parameters = state.project.parameters;
+    if strcmpi(parameters.scaleMode, "Physical") && hasCurrentImage(state)
+        cal = currentItem(state).scaleCalibration;
         if batch_crop.appState.isScaleCalibrationSet(cal)
-            pixelsPerUnit = batch_crop.cropGeometry.pixelsPerUnitForUnit(cal, ...
-                string(ui.controls.scaleUnit.valueHandle.Value));
-            cropSize = max(1, round([ ...
-                double(ui.controls.physicalWidth.valueHandle.Value), ...
-                double(ui.controls.physicalHeight.valueHandle.Value)] * ...
-                pixelsPerUnit));
+            pixelsPerUnit = batch_crop.cropGeometry.pixelsPerUnitForUnit( ...
+                cal, parameters.scaleUnit);
+            sizeValue = max(1, round([parameters.physicalWidth, ...
+                parameters.physicalHeight] * pixelsPerUnit));
             return;
         end
     end
-    cropSize = max(1, round([ ...
-        double(ui.controls.cropWidth.valueHandle.Value), ...
-        double(ui.controls.cropHeight.valueHandle.Value)]));
+    sizeValue = max(1, round([parameters.cropWidth, parameters.cropHeight]));
 end
 
-function percent = currentPaddingPercent(state, services)
+function opts = currentExportOptions(state)
+    parameters = state.project.parameters;
+    padding = 0;
     if hasCurrentImage(state)
-        percent = batch_crop.appState.itemPaddingPercent( ...
-            state.items(state.currentIndex), ...
-            services.ui.controls.paddingPercent.valueHandle.Value);
-        return;
+        padding = currentItem(state).paddingPercent;
     end
-    percent = min(max(double( ...
-        services.ui.controls.paddingPercent.valueHandle.Value), 0), 200);
+    opts = batch_crop.appState.exportOptions( ...
+        parameters.outputFolder, parameters.format, currentCropSize(state), ...
+        padding, parameters.scaleMode, parameters.scaleUnit, ...
+        [parameters.physicalWidth, parameters.physicalHeight], ...
+        parameters.targetPixelsPerUnit, parameters.maxUpsamplePercent);
 end
 
-function previewView = capturePreviewView(state, services)
-    previewView = struct('valid', false);
-    if ~hasCurrentImage(state) || ~hasTools(state) || ...
-            ~all(isfinite(state.tools.previewAxes.XLim)) || ...
-            ~all(isfinite(state.tools.previewAxes.YLim))
-        return;
+function spec = standardResultSpec(state, payload)
+    cropOutputs = repmat(resultOutput("", "", "", "", "", ""), ...
+        numel(payload.results), 1);
+    for k = 1:numel(payload.results)
+        result = payload.results(k);
+        [~, name, extension] = fileparts(result.outputPath);
+        status = "success";
+        if string(result.status) ~= "saved"
+            status = "failed";
+            extension = formatExtension(state.project.parameters.format);
+            name = "crop" + string(k) + "_failed";
+        end
+        cropOutputs(k) = resultOutput("crop" + string(k), "primary", ...
+            string(name) + string(extension), mediaType(extension), status, ...
+            string(result.message));
     end
-    geometry = currentGeometry(state, services);
-    placement = batch_crop.userInterface.previewPlacement(geometry);
-    previewView = batch_crop.userInterface.capturePreviewView( ...
-        state.tools.previewAxes, geometry, placement);
+    [~, csvName, csvExtension] = fileparts(payload.manifestPath);
+    csvOutput = resultOutput("cropManifest", "manifest", ...
+        string(csvName) + string(csvExtension), "text/csv", "success", "");
+    spec = struct();
+    spec.Outputs = [cropOutputs; csvOutput];
+    spec.Inputs = state.project.inputs.sources;
+    spec.Parameters = state.project.parameters;
+    spec.Summary = struct("taskCount", numel(payload.results), ...
+        "savedCount", sum(string({payload.results.status}) == "saved"));
+    spec.ManifestName = "batch_crop_results.labkit.json";
+end
+
+function extension = formatExtension(formatValue)
+    switch upper(string(formatValue))
+        case "PNG"
+            extension = ".png";
+        case {"TIFF", "TIF"}
+            extension = ".tif";
+        otherwise
+            extension = ".jpg";
+    end
+end
+
+function output = resultOutput(id, role, pathValue, type, status, message)
+    output = struct("Id", string(id), "Role", string(role), ...
+        "Path", string(pathValue), "MediaType", string(type), ...
+        "Status", string(status), "Message", string(message));
+end
+
+function type = mediaType(extension)
+    switch lower(string(extension))
+        case ".png"
+            type = "image/png";
+        case {".tif", ".tiff"}
+            type = "image/tiff";
+        otherwise
+            type = "image/jpeg";
+    end
 end
 
 function state = clearExportAndCanvas(state)
-    state = batch_crop.appState.clearExportState(state);
-    state.canvasCache = batch_crop.appState.emptyCanvasCache();
+    state = clearExport(state);
+    state.session.cache.canvas = batch_crop.appState.emptyCanvasCache();
+end
+
+function state = clearExport(state)
+    state.project.results.lastExport = [];
+    state.project.results.lastExportFingerprint = "";
+    state.project.results.resultManifestPath = "";
+end
+
+function item = currentItem(state)
+    item = state.project.inputs.items(currentIndex(state));
+end
+
+function index = currentIndex(state)
+    index = state.session.selection.currentIndex;
 end
 
 function tf = hasCurrentImage(state)
-    tf = ~isempty(state.items) && state.currentIndex >= 1 && ...
-        state.currentIndex <= numel(state.items) && ...
-        ~isempty(state.items(state.currentIndex).image);
+    index = currentIndex(state);
+    tf = ~isempty(state.project.inputs.items) && index >= 1 && ...
+        index <= numel(state.project.inputs.items) && ...
+        ~isempty(state.project.inputs.items(index).image);
 end
 
-function tf = hasTools(state)
-    tf = isfield(state, 'tools') && isstruct(state.tools) && ...
-        isfield(state.tools, 'scaleTool') && ~isempty(state.tools.scaleTool);
+function index = selectedAddedIndex(items, added)
+    index = 1;
+    if isempty(items)
+        index = 0;
+        return;
+    end
+    if isempty(added)
+        return;
+    end
+    match = find(string({items.path}) == added(1), 1, 'first');
+    if ~isempty(match)
+        index = match;
+    end
+end
+
+function indices = eventIndices(event, fieldName, count)
+    entries = eventEntries(event, fieldName);
+    indices = zeros(0, 1);
+    if isempty(entries)
+        return;
+    end
+    if isstruct(entries) && isfield(entries, 'id')
+        ids = string({entries.id});
+        values = regexp(ids, '^item(\d+)$', 'tokens', 'once');
+        for k = 1:numel(values)
+            if ~isempty(values{k})
+                indices(end + 1, 1) = str2double(values{k}{1});
+            end
+        end
+    end
+    if isempty(indices) && isstruct(entries) && isfield(entries, 'path')
+        paths = string({entries.path});
+        allPaths = string({event.meta.original.files.path});
+        [~, indices] = ismember(paths, allPaths);
+    end
+    indices = unique(indices(indices >= 1 & indices <= count), 'stable');
+end
+
+function paths = eventPaths(event, fieldName)
+    values = eventEntries(event, fieldName);
+    if isstruct(values) && isfield(values, 'path')
+        paths = string({values.path}).';
+    else
+        paths = string(values(:));
+    end
+    paths = paths(strlength(paths) > 0);
+end
+
+function values = eventEntries(event, fieldName)
+    values = [];
+    if isfield(event, 'meta') && isstruct(event.meta) && ...
+            isfield(event.meta, 'original') && ...
+            isfield(event.meta.original, char(fieldName))
+        values = event.meta.original.(char(fieldName));
+    end
+end
+
+function sources = sourcesForItems(items)
+    sources = emptySources();
+    if isempty(items)
+        return;
+    end
+    paths = unique(string({items.path}), 'stable');
+    for k = 1:numel(paths)
+        [~, name, extension] = fileparts(paths(k));
+        reference = struct("schemaVersion", 1, "relativePath", "", ...
+            "originalPath", paths(k), ...
+            "fileName", string(name) + string(extension));
+        source = struct("id", "image" + string(k), "required", true, ...
+            "role", "cropSource", "reference", reference);
+        if isempty(sources)
+            sources = source;
+        else
+            sources(end + 1) = source;
+        end
+    end
+end
+
+function sources = emptySources()
+    sources = struct("id", {}, "required", {}, "role", {}, ...
+        "reference", {});
+end
+
+function cal = calibrationFrom(value)
+    cal = labkit.ui.interaction.scaleBarCalibration( ...
+        value.referencePixels, value.referenceLength, value.unit, ...
+        struct("referenceLine", value.referenceLine, ...
+        "defaultUnit", "um"));
+end
+
+function value = finiteScalar(candidate, fallback)
+    value = fallback;
+    if isnumeric(candidate) && isscalar(candidate) && isfinite(double(candidate))
+        value = double(candidate);
+    end
+end
+
+function value = positiveInteger(candidate, fallback)
+    value = max(1, round(finiteScalar(candidate, fallback)));
+end
+
+function value = positiveScalar(candidate, fallback)
+    value = finiteScalar(candidate, fallback);
+    if value <= 0
+        value = fallback;
+    end
+end
+
+function value = nonnegativeScalar(candidate, fallback)
+    value = finiteScalar(candidate, fallback);
+    if value < 0
+        value = fallback;
+    end
+end
+
+function value = positiveOrNaN(candidate)
+    value = NaN;
+    if isnumeric(candidate) && isscalar(candidate) && ...
+            isfinite(double(candidate)) && double(candidate) > 0
+        value = double(candidate);
+    end
 end
 
 function showError(services, titleText, message)
-    addLog(services, sprintf('%s: %s', titleText, message));
     labkit.ui.runtime.showAlert(services.figure, message, titleText);
 end
 
-function addLog(services, message)
-    labkit.ui.control.appendLog(services.ui, 'appLog', message);
-    if isDebugEnabled(services.debug)
-        services.debug.append(message);
+function state = addLog(state, services, message)
+    message = string(message);
+    state.session.workflow.logLines(end + 1, 1) = message;
+    if isstruct(services.debug) && isfield(services.debug, 'enabled') && ...
+            logical(services.debug.enabled)
+        services.debug.append(char(message));
     end
 end
 
-function fcn = traceFcn(debugLog)
-    if isDebugEnabled(debugLog)
-        fcn = debugLog.trace;
-    else
-        fcn = @(varargin) [];
+function reportException(services, context, exception)
+    if isstruct(services.debug) && isfield(services.debug, 'reportException')
+        services.debug.reportException('batchCrop', context, exception);
     end
-end
-
-function tf = isDebugEnabled(debugLog)
-    tf = isstruct(debugLog) && isfield(debugLog, 'enabled') && ...
-        logical(debugLog.enabled);
 end

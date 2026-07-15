@@ -34,6 +34,39 @@ function verify_batchImageCrop()
     checkReadItemsAcceptsFilePanelCellPaths();
     checkDuplicateItemCreatesIndependentCropTask();
     checkMergeChosenItemsPreservesDuplicateCropTasks();
+    checkV2ProjectPresentationAndScaleBarGeometry();
+end
+
+function checkV2ProjectPresentationAndScaleBarGeometry()
+    definition = batch_crop.definition();
+    assert(definition.contractVersion == 2, ...
+        'Batch crop definition should use the V2 runtime contract.');
+    project = definition.project.Create();
+    assert(definition.project.Validate(project), ...
+        'Fresh batch crop projects should satisfy the app validator.');
+    item = batch_crop.appState.emptyItem();
+    item.path = "synthetic.png";
+    item.image = uint8(reshape(1:120, 10, 12));
+    item.centerXY = [6.5 5.5];
+    item.centerSet = true;
+    item.scaleCalibration = labkit.ui.interaction.scaleBarCalibration( ...
+        40, 10, "um", struct('defaultUnit', 'um', ...
+        'referenceLine', [2 2; 42 2]));
+    project.inputs.items = item;
+    session = definition.createSession(project);
+    state = struct("project", project, "session", session);
+    view = definition.present(state);
+    assert(isfield(view, 'interactions') && ...
+        isfield(view.interactions, 'cropRectangle') && ...
+        view.interactions.cropRectangle.Event == "cropRectangleMoved", ...
+        'Batch crop presenter should declare the semantic crop interaction.');
+    assert(~contains(evalc('disp(state)'), 'matlab.ui'), ...
+        'Batch crop canonical state should contain no live UI handles.');
+    geometry = batch_crop.userInterface.scaleBarGeometry( ...
+        size(item.image), item.scaleCalibration, 0.1, "Bottom center", "White");
+    assert(size(geometry.line, 1) == 2 && ...
+        isequal(geometry.color, [1 1 1]) && geometry.barLength == 0.1, ...
+        'Scale-bar geometry should be deterministic and serializable.');
 end
 
 function checkCropCenterAvoidsInvalidRotatedMaskRegions()

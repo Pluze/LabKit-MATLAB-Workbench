@@ -74,7 +74,11 @@ function applyControlSpec(ui, id, spec)
     if found
         labkit.ui.control.setEnabled(ui, id, value);
     end
-    names = ["Value", "Text", "Data"];
+    [found, value] = propertyValue(spec, "Text");
+    if found
+        applyControlText(ui, id, value);
+    end
+    names = ["Value", "Data"];
     for k = 1:numel(names)
         [found, value] = propertyValue(spec, names(k));
         if found
@@ -82,6 +86,25 @@ function applyControlSpec(ui, id, spec)
             break;
         end
     end
+end
+
+function applyControlText(ui, id, value)
+    field = char(id);
+    if ~isfield(ui.controls, field)
+        error('labkit:ui:runtime:InvalidPresentation', ...
+            'Presentation references unknown control "%s".', id);
+    end
+    control = ui.controls.(field);
+    candidates = {'button', 'valueHandle', 'handle'};
+    for k = 1:numel(candidates)
+        name = candidates{k};
+        if isfield(control, name) && isgraphics(control.(name)) && ...
+                isprop(control.(name), 'Text')
+            control.(name).Text = char(string(value));
+            return;
+        end
+    end
+    labkit.ui.control.setValue(ui, id, value);
 end
 
 function applyFilePanelStatus(ui, id, value)

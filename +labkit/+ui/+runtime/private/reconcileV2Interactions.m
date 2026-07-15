@@ -60,7 +60,7 @@ function controlled = createControlledInteraction(hub, id, spec)
             end
             update = @updatePairedAnchors;
         case "rectangle"
-            options = rectangleOptions(spec, @emitValue);
+            options = rectangleOptions(spec, @emitValue, @emitBackground);
             editor = labkit.ui.interaction.rectangleEditor( ...
                 hub.adapter(spec.Targets(1), group), spec.ImageSize, ...
                 spec.Value, options);
@@ -114,6 +114,14 @@ function controlled = createControlledInteraction(hub, id, spec)
         hub.dispatch(spec.Event, id, values, spec.ChangePolicy);
     end
 
+    function emitBackground(varargin)
+        if suppressed || strlength(spec.BackgroundEvent) == 0
+            return;
+        end
+        hub.dispatch(spec.BackgroundEvent, id, ...
+            hub.point(spec.Targets(1)), "commit");
+    end
+
     function withSuppression(callback)
         suppressed = true;
         cleanupSuppression = onCleanup(@() clearSuppression());
@@ -142,6 +150,7 @@ function spec = normalizeSpec(id, value)
         "Targets", string(requiredValue(value, 'Targets', id)), ...
         "Value", requiredValue(value, 'Value', id), ...
         "Event", string(requiredValue(value, 'Event', id)), ...
+        "BackgroundEvent", string(optionValue(value, 'BackgroundEvent', "")), ...
         "ChangePolicy", string(optionValue(value, 'ChangePolicy', 'commit')), ...
         "ImageSize", optionValue(value, 'ImageSize', []), ...
         "Options", optionValue(value, 'Options', struct()));
@@ -170,6 +179,7 @@ function tf = sameIdentity(left, right)
         isequaln(left.ImageSize, right.ImageSize) && ...
         isequaln(left.Options, right.Options) && ...
         left.Event == right.Event && ...
+        left.BackgroundEvent == right.BackgroundEvent && ...
         left.ChangePolicy == right.ChangePolicy;
 end
 
@@ -184,9 +194,12 @@ function options = anchorOptions(spec, callback)
     end
 end
 
-function options = rectangleOptions(spec, callback)
+function options = rectangleOptions(spec, callback, backgroundCallback)
     options = spec.Options;
     options.onMoved = callback;
+    if strlength(spec.BackgroundEvent) > 0
+        options.onBackgroundDown = backgroundCallback;
+    end
 end
 
 function values = pairedValues(value, targets)
