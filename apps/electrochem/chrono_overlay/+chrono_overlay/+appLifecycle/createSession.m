@@ -1,0 +1,13 @@
+% Expected caller: the LabKit V2 runtime. Input is a validated Chrono Overlay
+% project. Output owns ephemeral selection, workflow log, view, and cache data.
+function session = createSession(project)
+    selectedPaths = strings(0, 1);
+    if ~isempty(project.inputs.items)
+        selectedPaths = string({project.inputs.items.filepath}).';
+    end
+    session = struct( ...
+        "selection", struct("paths", selectedPaths), ...
+        "workflow", struct("logLines", strings(0, 1)), ...
+        "view", struct(), ...
+        "cache", struct());
+end

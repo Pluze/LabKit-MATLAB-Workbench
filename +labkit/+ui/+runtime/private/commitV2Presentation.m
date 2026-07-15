@@ -50,6 +50,18 @@ function applyControls(ui, controls)
 end
 
 function applyControlSpec(ui, id, spec)
+    [found, value] = propertyValue(spec, "Files");
+    if found
+        labkit.ui.control.setValue(ui, id, value);
+    end
+    [found, value] = propertyValue(spec, "Selection");
+    if found
+        labkit.ui.control.setFileSelection(ui, id, value);
+    end
+    [found, value] = propertyValue(spec, "Status");
+    if found
+        applyFilePanelStatus(ui, id, value);
+    end
     [found, value] = propertyValue(spec, "Items");
     if found
         labkit.ui.control.setItems(ui, id, value);
@@ -72,6 +84,22 @@ function applyControlSpec(ui, id, spec)
     end
 end
 
+function applyFilePanelStatus(ui, id, value)
+    field = char(id);
+    if ~isfield(ui.controls, field)
+        error('labkit:ui:runtime:InvalidPresentation', ...
+            'Presentation references unknown control "%s".', id);
+    end
+    control = ui.controls.(field);
+    if ~isfield(control, 'kind') || ~strcmp(control.kind, 'filePanel') || ...
+            ~isfield(control, 'status') || isempty(control.status) || ...
+            ~isvalid(control.status)
+        error('labkit:ui:runtime:InvalidPresentation', ...
+            'Control "%s" does not expose file-panel status text.', id);
+    end
+    control.status.Value = char(string(value));
+end
+
 function applyPreviews(runtime, previews)
     if ~isstruct(previews) || ~isscalar(previews)
         error('labkit:ui:runtime:InvalidPresentation', ...
@@ -81,6 +109,35 @@ function applyPreviews(runtime, previews)
     for k = 1:numel(ids)
         id = string(ids{k});
         spec = previews.(ids{k});
+        [hasAxes, axesSpecs] = propertyValue(spec, "Axes");
+        if hasAxes
+            applyPreviewAxes(runtime, id, axesSpecs);
+            continue;
+        end
+        applyPreview(runtime, id, spec);
+    end
+end
+
+function applyPreviewAxes(runtime, previewId, axesSpecs)
+    if ~isstruct(axesSpecs) || ~isscalar(axesSpecs)
+        error('labkit:ui:runtime:InvalidPresentation', ...
+            'Preview "%s" Axes must be a scalar struct.', previewId);
+    end
+    axisIds = fieldnames(axesSpecs);
+    for k = 1:numel(axisIds)
+        axisId = string(axisIds{k});
+        spec = axesSpecs.(axisIds{k});
+        if ~isstruct(spec) || ~isscalar(spec)
+            error('labkit:ui:runtime:InvalidPresentation', ...
+                'Preview "%s" axis "%s" must be a scalar struct.', ...
+                previewId, axisId);
+        end
+        spec.Axis = axisId;
+        applyPreview(runtime, previewId, spec);
+    end
+end
+
+function applyPreview(runtime, id, spec)
         [hasRenderer, rendererId] = propertyValue(spec, "Renderer");
         [hasModel, model] = propertyValue(spec, "Model");
         if ~hasRenderer || ~hasModel
@@ -100,7 +157,6 @@ function applyPreviews(runtime, previews)
             ax = labkit.ui.plot.getAxes(runtime.ui, id);
         end
         invokeRenderer(runtime.definition.renderers.(rendererId), ax, model);
-    end
 end
 
 function invokeRenderer(renderer, ax, model)

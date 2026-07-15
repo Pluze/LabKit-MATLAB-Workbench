@@ -57,6 +57,8 @@ function files = sourceFiles(root)
     assert(status == 0, 'Could not list rectangle source files.');
     files = string(splitlines(strtrim(output)));
     files = files(endsWith(files, ".m"));
+    existsNow = arrayfun(@(file) isfile(fullfile(root, file)), files);
+    files = files(existsNow);
 end
 
 function files = filesWithDirectRectangleCalls(root, candidates)

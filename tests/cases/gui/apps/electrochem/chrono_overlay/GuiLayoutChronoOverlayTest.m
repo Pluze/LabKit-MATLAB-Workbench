@@ -56,6 +56,41 @@ classdef GuiLayoutChronoOverlayTest < matlab.unittest.TestCase
                 'Chrono overlay workflow should draw voltage traces.');
             testCase.verifyGreaterThan(numel(axCurrent.Children), 0, ...
                 'Chrono overlay workflow should draw current traces.');
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            testCase.verifyEqual(runtime.definition.contractVersion, 2, ...
+                'Chrono overlay workflow must execute through runtime V2.');
+
+            outputFolder = string(tempname);
+            mkdir(outputFolder);
+            outputCleanup = onCleanup(@() rmdir(outputFolder, 's'));
+            runtime.request.outputChooser = @(~, ~, ~) deal( ...
+                'overlay.csv', char(outputFolder));
+            setappdata(fig, 'labkitUiAppRuntime', runtime);
+            driver.click('Export curves CSV');
+            csvPath = fullfile(outputFolder, 'overlay.csv');
+            manifestPath = fullfile(outputFolder, 'overlay.labkit.json');
+            testCase.verifyTrue(isfile(csvPath), ...
+                'Chrono overlay should retain its CSV export.');
+            testCase.verifyTrue(isfile(manifestPath), ...
+                'Chrono overlay should add a standard result manifest.');
+            manifest = jsondecode(fileread(manifestPath));
+            testCase.verifyEqual(string(manifest.format), "labkit.result");
+            testCase.verifyEqual(string(manifest.outputs.status), "success");
+            testCase.verifyGreaterThan(double(manifest.outputs.bytes), 0);
+
+            projectPath = fullfile(outputFolder, 'overlay-project.mat');
+            labkit.ui.runtime.saveState(fig, projectPath);
+            saved = load(projectPath, 'labkitProject');
+            testCase.verifyEqual(string(saved.labkitProject.format), ...
+                "labkit.project");
+            testCase.verifyEqual(saved.labkitProject.app.payloadVersion, 1);
+            driver.click('Clear all');
+            labkit.ui.runtime.loadState(fig, projectPath);
+            testCase.verifyEqual(char(driver.fileStatus('files')), ...
+                '2 file(s) loaded', ...
+                'Project reopen should replace and restore durable inputs.');
+            testCase.verifyGreaterThan(numel(axVoltage.Children), 0);
+            testCase.verifyGreaterThan(numel(axCurrent.Children), 0);
 
             axVoltage.XLim = [-1 0];
             axVoltage.YLim = [-0.01 0.01];
@@ -77,6 +112,7 @@ classdef GuiLayoutChronoOverlayTest < matlab.unittest.TestCase
                 'Chrono overlay clear-all should restore automatic X limits.');
             testCase.verifyEqual(axVoltage.YLimMode, 'auto', ...
                 'Chrono overlay clear-all should restore automatic Y limits.');
+            clear outputCleanup;
         end
     end
 end

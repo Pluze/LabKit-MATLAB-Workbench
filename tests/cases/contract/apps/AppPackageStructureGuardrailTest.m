@@ -140,9 +140,12 @@ function assertCanonicalAppPackageStructure(testCase, root, appRelDir, packageNa
         ['@' packageName '.userInterface.buildWorkbenchLayout']);
     testCase.verifyTrue(usesBuildLayoutCall, ...
         [appLabel ' should call its canonical UI layout builder.']);
-    testCase.verifyTrue(contains(orchestrationSource, 'labkit.ui.runtime.run(') && ...
-        contains(orchestrationSource, [packageName '.definition()']), ...
-        [appLabel ' definitions should launch through labkit.ui.runtime.run.']);
+    usesRun = contains(orchestrationSource, 'labkit.ui.runtime.run(') && ...
+        contains(orchestrationSource, [packageName '.definition()']);
+    usesLaunch = contains(orchestrationSource, 'labkit.ui.runtime.launch(') && ...
+        contains(orchestrationSource, ['@' packageName '.definition']);
+    testCase.verifyTrue(usesRun || usesLaunch, ...
+        [appLabel ' definitions should launch through the LabKit UI runtime.']);
 
     buildLayoutSource = fileread(buildLayoutFile);
     testCase.verifyTrue(contains(buildLayoutSource, 'labkit.ui.layout.workbench'), ...
@@ -165,11 +168,22 @@ function assertCanonicalAppPackageStructure(testCase, root, appRelDir, packageNa
 end
 
 function assertWorkflowFirstPackageShape(testCase, root, packageDir)
-    requiredFiles = [
-        string(fullfile(packageDir, 'definitionActions.m'))
-        string(fullfile(packageDir, '+appLifecycle', 'createInitialState.m'))
-        string(fullfile(packageDir, '+userInterface', 'buildWorkbenchLayout.m'))
-        string(fullfile(packageDir, '+userInterface', 'updateWorkbenchFromState.m'))];
+    definitionSource = string(fileread(fullfile(packageDir, 'definition.m')));
+    if contains(definitionSource, '"Project"')
+        requiredFiles = [
+            string(fullfile(packageDir, 'definitionActions.m'))
+            string(fullfile(packageDir, '+appLifecycle', 'createProject.m'))
+            string(fullfile(packageDir, '+appLifecycle', 'createSession.m'))
+            string(fullfile(packageDir, '+appLifecycle', 'validateProject.m'))
+            string(fullfile(packageDir, '+userInterface', 'buildWorkbenchLayout.m'))
+            string(fullfile(packageDir, '+userInterface', 'presentWorkbench.m'))];
+    else
+        requiredFiles = [
+            string(fullfile(packageDir, 'definitionActions.m'))
+            string(fullfile(packageDir, '+appLifecycle', 'createInitialState.m'))
+            string(fullfile(packageDir, '+userInterface', 'buildWorkbenchLayout.m'))
+            string(fullfile(packageDir, '+userInterface', 'updateWorkbenchFromState.m'))];
+    end
     for k = 1:numel(requiredFiles)
         testCase.verifyTrue(isfile(requiredFiles(k)), ...
             ['Workflow-first app packages should include ' ...
