@@ -1,264 +1,217 @@
-% App-owned action table for CIC. Expected caller is cic.definition. Output
-% maps semantic action ids to handlers used by labkit.ui.runtime.run. Handlers
-% own workflow transitions, DTA loading, analysis, and export side effects.
+% App-owned Runtime V2 action table for CIC. Handlers receive canonical
+% state/events/services and own DTA selection, CIC analysis, and result export
+% without reading or mutating UI controls.
 function actions = definitionActions()
     actions = struct( ...
-        "startup", @onStartup, ...
         "openFilesChosen", @onOpenFilesChosen, ...
         "removeSelected", @onRemoveSelected, ...
         "clearAll", @onClearAll, ...
         "exportResults", @onExportResults, ...
         "fileSelectionChanged", @onFileSelectionChanged, ...
         "presetChanged", @onPresetChanged, ...
-        "analysisChanged", @onAnalyzeAllFiles, ...
-        "refreshResultsSummary", @onRefreshOnly, ...
-        "refreshCICUnitDisplays", @onRefreshOnly, ...
-        "refreshPlots", @onRefreshOnly);
+        "analysisChanged", @onAnalysisChanged);
 end
 
-function state = onStartup(state, ~, services)
-    debugLog = services.debug;
-    if ~isDebugEnabled(debugLog)
+function state = onOpenFilesChosen(state, event, services)
+    paths = services.events.paths(event, "addedFiles");
+    if isempty(paths)
+        paths = services.events.paths(event, "files");
+    end
+    if isempty(paths)
+        state = services.workflow.log(state, "Open cancelled.");
         return;
     end
-    debugLog.trace('CIC debug trace enabled.');
-    try
-        pack = cic.debug.writeSamplePack(debugLog);
-        addLog(services, sprintf('Debug sample files: %s', char(pack.sampleFolder)));
-        addLog(services, sprintf('Debug output folder: %s', char(pack.outputFolder)));
-    catch ME
-        debugLog.reportException('cic', 'Debug sample setup failed', ME);
-        addLog(services, sprintf('Debug sample setup failed: %s', ME.message));
+
+    failures = struct("filepath", {}, "message", {});
+    for k = 1:numel(paths)
+        filepath = paths(k);
+        if isLoaded(state.session.cache.items, filepath)
+            state = services.workflow.log(state, ...
+                "Skipped already loaded: " + filepath);
+            continue;
+        end
+        [item, status] = labkit.dta.loadFile(filepath, "chrono");
+        if ~status.ok
+            failures(end + 1) = struct( ...
+                "filepath", filepath, "message", string(status.message));
+            state = services.workflow.log(state, ...
+                "Failed: " + filepath + " | " + string(status.message));
+            continue;
+        end
+        item.analysis = cic.analysisRun.computeCIC( ...
+            item, cic.analysisRun.optionsFromParameters( ...
+            state.project.parameters));
+        state.session.cache.items = appendItem( ...
+            state.session.cache.items, item);
+        source = services.project.sourceRecord( ...
+            nextSourceId(state.project.inputs.sources), ...
+            "chrono", filepath, true);
+        state.project.inputs.sources = appendSource( ...
+            state.project.inputs.sources, source);
+        state.session.selection.currentIndex = ...
+            numel(state.session.cache.items);
+        for messageIndex = 1:numel(item.logmsg)
+            state = services.workflow.log(state, item.logmsg{messageIndex});
+        end
+        state = logAnalysis(state, item);
+        state = services.workflow.log(state, "Loaded: " + filepath);
     end
+    state.project.parameters = resetPlotSelections(state.project.parameters);
+    state.project.results.lastExport = [];
+    if ~isempty(failures)
+        first = failures(1);
+        services.dialogs.alert(sprintf('Failed to load:\n%s\n\n%s', ...
+            first.filepath, first.message), 'Load error');
+    end
+end
+
+function state = onRemoveSelected(state, event, services)
+    items = state.session.cache.items;
+    indices = services.events.indices(event, "removedFiles", numel(items));
+    if isempty(indices)
+        return;
+    end
+    removedSourceFiles = string({items(indices).filepath});
+    state.session.cache.items(indices) = [];
+    state.project.inputs.sources(indices) = [];
+    state.session.selection.currentIndex = boundedCurrentIndex( ...
+        state.session.selection.currentIndex, numel(state.session.cache.items));
+    state.project.parameters = resetPlotSelections(state.project.parameters);
+    state.project.results.lastExport = [];
+    for k = 1:numel(removedSourceFiles)
+        state = services.workflow.log(state, "Removed: " + removedSourceFiles(k));
+    end
+end
+
+function state = onClearAll(state, ~, services)
+    state.project.inputs.sources = state.project.inputs.sources([]);
+    state.project.results.lastExport = [];
+    state.session.cache.items = struct([]);
+    state.session.selection.currentIndex = 0;
+    state.project.parameters = resetPlotSelections(state.project.parameters);
+    state = services.workflow.log(state, "Cleared all files.");
+end
+
+function state = onFileSelectionChanged(state, event, services)
+    indices = services.events.indices(event, "selectedFiles", ...
+        numel(state.session.cache.items));
+    if isempty(indices)
+        state.session.selection.currentIndex = 0;
+    else
+        state.session.selection.currentIndex = indices(1);
+    end
+    state.project.parameters = resetPlotSelections(state.project.parameters);
 end
 
 function state = onPresetChanged(state, ~, services)
-    switch services.ui.controls.preset.valueHandle.Value
-        case 'Pt (-0.6 to 0.8 V)'
-            labkit.ui.control.setValue(services.ui, "cathLimit", -0.6);
-            labkit.ui.control.setValue(services.ui, "anodLimit", 0.8);
-        case 'PEDOT:PSS (-0.9 to 0.6 V)'
-            labkit.ui.control.setValue(services.ui, "cathLimit", -0.9);
-            labkit.ui.control.setValue(services.ui, "anodLimit", 0.6);
+    choices = cic.userInterface.analysisChoices();
+    preset = string(state.project.parameters.preset);
+    if preset == choices.presets(1)
+        state.project.parameters.cathLimit = -0.6;
+        state.project.parameters.anodLimit = 0.8;
+    elseif preset == choices.presets(2)
+        state.project.parameters.cathLimit = -0.9;
+        state.project.parameters.anodLimit = 0.6;
     end
     state = analyzeAllFiles(state, services);
 end
 
-function state = onOpenFilesChosen(state, payload, services)
-    paths = labkit.ui.control.filePaths(payload.event.addedFiles);
-    if isempty(paths)
-        addLog(services, 'Open cancelled.');
-        return;
-    end
-    state = loadDTAFiles(state, paths, services);
-end
-
-function state = loadDTAFiles(state, filepaths, services)
-    filepaths = normalizePaths(filepaths);
-    if isempty(filepaths)
-        return;
-    end
-
-    failed = struct('filepath', {}, 'message', {});
-    lastAddedIndex = [];
-    for iFile = 1:numel(filepaths)
-        filepath = filepaths(iFile);
-        if isLoaded(state, filepath)
-            addLog(services, sprintf('Skipped already loaded: %s', char(filepath)));
-            continue;
-        end
-
-        [item, status] = labkit.dta.loadFile(filepath, "chrono");
-        if ~status.ok
-            failed(end + 1) = struct( ...
-                'filepath', char(filepath), ...
-                'message', char(status.message));
-            addLog(services, sprintf('Failed: %s | %s', ...
-                char(filepath), char(status.message)));
-            continue;
-        end
-
-        item.analysis = [];
-        for ii = 1:numel(item.logmsg)
-            addLog(services, item.logmsg{ii});
-        end
-        item = analyzeItem(item, services);
-        state.items = appendItem(state.items, item);
-        lastAddedIndex = numel(state.items);
-        addLog(services, sprintf('Loaded: %s', char(filepath)));
-    end
-    if ~isempty(lastAddedIndex)
-        state.current = lastAddedIndex;
-    elseif ~isempty(state.items) && isempty(state.current)
-        state.current = 1;
-    end
-    restoreDefaultPlotSelections(services.ui);
-
-    if ~isempty(failed)
-        firstError = failed(1);
-        labkit.ui.runtime.showAlert(services.figure, ...
-            sprintf('Failed to load:\n%s\n\n%s', ...
-            firstError.filepath, firstError.message), ...
-            'Load error');
-    end
-end
-
-function state = onAnalyzeAllFiles(state, ~, services)
+function state = onAnalysisChanged(state, ~, services)
     state = analyzeAllFiles(state, services);
 end
 
 function state = analyzeAllFiles(state, services)
-    if isempty(state.items)
+    if isempty(state.session.cache.items)
+        state.project.results.lastExport = [];
         return;
     end
-    opts = analysisOptions(services.ui);
-    state.items = cic.analysisRun.recomputeItems(state.items, opts);
-    addLog(services, sprintf('Reanalyzed %d loaded file(s) with shared analysis settings.', ...
-        numel(state.items)));
-end
-
-function item = analyzeItem(item, services)
-    opts = analysisOptions(services.ui);
-    analysis = cic.analysisRun.computeCIC(item, opts);
-    item.analysis = analysis;
-    if analysis.ok
-        addLog(services, sprintf('%s: Emc=%.6f V, Ema=%.6f V, safe=%d', ...
-            item.name, analysis.Emc, analysis.Ema, analysis.safe));
-    elseif isfield(analysis, 'logOnFailure') && analysis.logOnFailure
-        addLog(services, sprintf('%s: %s', item.name, analysis.message));
-    end
-end
-
-function opts = analysisOptions(ui)
-    opts = struct();
-    % Constant: one microsecond is 1e-6 seconds; UI delay is entered in us.
-    secondsPerMicrosecond = 1e-6;
-    opts.delay_s = finiteScalar(ui.controls.delayUs.valueHandle.Value, 10) * ...
-        secondsPerMicrosecond;
-    opts.cathLimit = finiteScalar(ui.controls.cathLimit.valueHandle.Value, -0.6);
-    opts.anodLimit = finiteScalar(ui.controls.anodLimit.valueHandle.Value, 0.8);
-    opts.areaOverride = ui.controls.area.valueHandle.Value;
-    opts.pulseMode = ui.controls.pulseMode.valueHandle.Value;
-    opts.usedMeasuredCurrent = ui.controls.useMeasuredCurrent.valueHandle.Value;
-end
-
-function value = finiteScalar(value, fallback)
-    value = double(value);
-    if isempty(value) || ~isscalar(value) || ~isfinite(value)
-        value = fallback;
-    end
-end
-
-function state = onFileSelectionChanged(state, ~, services)
-    files = labkit.ui.control.getValue(services.ui, 'files');
-    paths = labkit.ui.control.filePaths(files);
-    if isempty(paths) || isempty(state.items)
-        state.current = [];
-        restoreDefaultPlotSelections(services.ui);
-        return;
-    end
-
-    idx = find(string({state.items.filepath}) == string(paths(1)), 1);
-    if isempty(idx)
-        state.current = [];
-    else
-        state.current = idx;
-    end
-    restoreDefaultPlotSelections(services.ui);
-end
-
-function state = onRemoveSelected(state, payload, services)
-    if isempty(state.items)
-        return;
-    end
-    paths = labkit.ui.control.filePaths(payload.event.removedFiles);
-    if isempty(paths)
-        return;
-    end
-    [state, report] = removeItemsByPaths(state, paths);
-    for k = 1:numel(report.removed)
-        addLog(services, sprintf('Removed: %s', report.removed{k}));
-    end
-    state.current = min(state.current, numel(state.items));
-    if isempty(state.items)
-        state.current = [];
-    end
-    restoreDefaultPlotSelections(services.ui);
-end
-
-function state = onClearAll(state, ~, services)
-    state.items = struct([]);
-    state.current = [];
-    restoreDefaultPlotSelections(services.ui);
-    addLog(services, 'Cleared all files.');
+    opts = cic.analysisRun.optionsFromParameters(state.project.parameters);
+    state.session.cache.items = cic.analysisRun.recomputeItems( ...
+        state.session.cache.items, opts);
+    state.project.results.lastExport = [];
+    state = services.workflow.log(state, sprintf( ...
+        'Reanalyzed %d loaded file(s) with shared analysis settings.', ...
+        numel(state.session.cache.items)));
 end
 
 function state = onExportResults(state, ~, services)
-    if isempty(state.items)
-        labkit.ui.runtime.showAlert(services.figure, ...
-            'No results to export.', 'Export');
+    if isempty(state.session.cache.items)
+        services.dialogs.alert('No results to export.', 'Export');
         return;
     end
     state = analyzeAllFiles(state, services);
-    [out, cancelled] = labkit.ui.runtime.promptOutputFile( ...
+    [out, cancelled] = services.dialogs.outputFile( ...
         'cic_results.csv', 'Save results CSV', 'cic_results.csv');
     if cancelled
+        state = services.workflow.log(state, "Result export cancelled.");
         return;
     end
     [~, unitLabel] = cic.userInterface.displayUnit( ...
-        services.ui.controls.cicUnit.valueHandle.Value);
-    [ok, msg] = cic.resultFiles.writeResultsCSV(state.items, out, unitLabel);
+        state.project.parameters.cicUnit);
+    [ok, message] = cic.resultFiles.writeResultsCSV( ...
+        state.session.cache.items, out, unitLabel);
     if ~ok
-        labkit.ui.runtime.showAlert(services.figure, msg, 'Export');
+        services.dialogs.alert(message, 'Export');
         return;
     end
-    addLog(services, ['Exported CSV: ' char(out)]);
+    [folder, name, extension] = fileparts(out);
+    output = services.results.output("cicResults", "primary", ...
+        string(name) + string(extension), "text/csv");
+    spec = struct( ...
+        "Outputs", output, ...
+        "Inputs", state.project.inputs.sources, ...
+        "Parameters", state.project.parameters, ...
+        "Summary", struct("fileCount", numel(state.session.cache.items)), ...
+        "ManifestName", "cic_results.labkit.json");
+    [manifestPath, ~] = services.results.writeManifest(folder, spec);
+    state.project.results.lastExport = struct( ...
+        "csvPath", string(out), "manifestPath", string(manifestPath));
+    state = services.workflow.log(state, "Exported CSV: " + string(out));
 end
 
-function state = onRefreshOnly(state, ~, ~)
-end
-
-function restoreDefaultPlotSelections(ui)
-    ui.controls.topX.valueHandle.Value = 'Time (s)';
-    ui.controls.topY.valueHandle.Value = 'VT: Vf vs time';
-    ui.controls.topGrid.valueHandle.Value = true;
-    ui.controls.bottomX.valueHandle.Value = 'Time (s)';
-    ui.controls.bottomY.valueHandle.Value = 'IT: Im vs time';
-    ui.controls.bottomGrid.valueHandle.Value = true;
-end
-
-function [state, report] = removeItemsByPaths(state, filepaths)
-    paths = normalizePaths(filepaths);
-    report = struct('removed', {{}}, 'missing', {{}});
-    if isempty(paths)
-        return;
+function state = logAnalysis(state, item)
+    analysis = item.analysis;
+    if analysis.ok
+        state.session.workflow.logLines(end + 1, 1) = string(sprintf( ...
+            '%s: Emc=%.6f V, Ema=%.6f V, safe=%d', ...
+            item.name, analysis.Emc, analysis.Ema, analysis.safe));
+    elseif isfield(analysis, 'logOnFailure') && analysis.logOnFailure
+        state.session.workflow.logLines(end + 1, 1) = ...
+            string(item.name) + ": " + string(analysis.message);
     end
-    if isempty(state.items)
-        report.missing = cellstr(paths(:).');
-        return;
-    end
-    keep = true(1, numel(state.items));
-    itemPaths = string({state.items.filepath});
-    for k = 1:numel(paths)
-        idx = find(itemPaths == paths(k) & keep, 1, 'first');
-        if isempty(idx)
-            report.missing{end + 1} = char(paths(k));
-            continue;
-        end
-        report.removed{end + 1} = char(paths(k));
-        keep(idx) = false;
-    end
-    state.items = state.items(keep);
 end
 
-function tf = isLoaded(state, filepath)
-    tf = ~isempty(state.items) && ...
-        any(string({state.items.filepath}) == string(filepath));
+function parameters = resetPlotSelections(parameters)
+    choices = cic.userInterface.analysisChoices();
+    parameters.topX = choices.xAxes(1);
+    parameters.topY = choices.yAxes(1);
+    parameters.topGrid = true;
+    parameters.bottomX = choices.xAxes(1);
+    parameters.bottomY = choices.yAxes(2);
+    parameters.bottomGrid = true;
 end
 
-function paths = normalizePaths(paths)
-    paths = string(paths(:));
-    paths = paths(strlength(paths) > 0);
+function index = boundedCurrentIndex(index, count)
+    if count == 0
+        index = 0;
+    else
+        index = min(max(1, round(double(index))), count);
+    end
+end
+
+function tf = isLoaded(items, filepath)
+    tf = ~isempty(items) && ...
+        any(string({items.filepath}) == string(filepath));
+end
+
+function id = nextSourceId(sources)
+    ids = string({sources.id});
+    number = numel(ids) + 1;
+    id = "dta" + string(number);
+    while any(ids == id)
+        number = number + 1;
+        id = "dta" + string(number);
+    end
 end
 
 function items = appendItem(items, item)
@@ -269,14 +222,10 @@ function items = appendItem(items, item)
     end
 end
 
-function addLog(services, msg)
-    labkit.ui.control.appendLog(services.ui, 'appLog', msg);
-    if isDebugEnabled(services.debug)
-        services.debug.append(msg);
+function sources = appendSource(sources, source)
+    if isempty(sources)
+        sources = source;
+    else
+        sources(end + 1) = source;
     end
-end
-
-function tf = isDebugEnabled(debugLog)
-    tf = isstruct(debugLog) && isfield(debugLog, 'enabled') && ...
-        logical(debugLog.enabled);
 end

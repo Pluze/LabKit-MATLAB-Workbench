@@ -43,8 +43,9 @@ Current facts from the architecture audit:
 
 - Package-root app `run.m` orchestration and `+ui/runApp.m` lifecycle adapters
   are retired.
-- Five public apps now use Runtime V2: `chrono_overlay`, `dic_postprocess`,
-  `batch_crop`, `dic_preprocess`, and `video_marker`. Fifteen public apps and
+- Six public apps now use Runtime V2: `chrono_overlay`, `cic`,
+  `dic_postprocess`, `batch_crop`, `dic_preprocess`, and `video_marker`.
+  Fourteen public apps and
   the nested private app still use the v1 definition path.
 - The five pilots use canonical project/session state, native presenters,
   registered renderers, managed interactions/resources, standard project
@@ -374,6 +375,17 @@ archetype so one framework issue is solved once per wave.
 | Image | `flir_thermal` | thermal sources, display parameters, measurements/ROIs | current item and controlled ROI resources |
 | Image | `focus_stack` | image source records, alignment/stack settings and results | preview caches/mode |
 | Special | `figure_studio` | imported figure reference or extracted plot model plus style | axes/graphics resources outside state |
+
+```text
+phase: 5/full-app-migration-waves
+status: in progress
+completed contracts: CIC source-only project, durable analysis/view parameters, session-owned decoded and analyzed DTA cache, native presenter and registered axis renderer, standard result manifest
+migrated apps: cic
+compatibility retained: CIC calculations, threshold defaults, pulse modes, summary meanings, plot annotations, 8-column batch table, and 14-column CSV contract
+tests: CIC export/project/presenter, view, and calculation tests plus hidden GUI load/recompute/plot/export/project-reopen workflow passed 9/9
+next app: csc
+blocker:
+```
 
 Pilot durable/resource focus:
 
