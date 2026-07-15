@@ -86,7 +86,7 @@ and only those launcher-needed tool folders, not the whole source checkout.
 | Area | Owns |
 | --- | --- |
 | App entry point | Public launch name plus requirements/version/debug request routing. |
-| App package | App definition, workflow state, command handlers, visible-state updates, calculations, summaries, exports, and app-local helpers. |
+| App package | App definition, workflow state, command handlers, presenters, calculations, summaries, exports, and app-local helpers. |
 | `labkit.ui` | Declarative app runtime, app shell, readiness/busy state, data-only workbench layouts, semantic view updates, reusable tools, and diagnostics. |
 | `labkit.image` | GUI-free image file IO, display normalization, resizing, mean filtering, and basic enhancement primitives. |
 | `labkit.thermal` | GUI-free thermal source-file parsing, raw thermal matrices, embedded calibration metadata, raw-to-temperature conversion, and thermal colormap rendering. |

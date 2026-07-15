@@ -363,9 +363,9 @@ artifacts/debug/<RunName>/<AppName>/<SessionId>/
 
 Coverage is report-only and not part of the default local check.
 
-## App Runtime Migration Coverage
+## Runtime V2 Contract Coverage
 
-The workflow-first app migration is covered by layered tests, not by a single
+The workflow-first app contract is covered by layered tests, not by a single
 launch-only suite:
 
 - `AppPackageStructureGuardrailTest` discovers every `apps/**/labkit_*_app.m`

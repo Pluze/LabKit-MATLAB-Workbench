@@ -360,7 +360,7 @@ or manage loading controls directly.
 Every `labkit.ui.layout.action` callback runs as an app-wide action transaction.
 The framework marks the app busy before invoking the app callback and clears
 that busy state after the callback returns or errors. While the figure is busy,
-other UI 5 semantic callbacks return without invoking app code, so repeated
+other semantic callbacks return without invoking app code, so repeated
 clicks or value changes do not submit duplicate work even when the user waits
 and interacts again before the first action finishes.
 
@@ -377,7 +377,7 @@ callback runs. Use `busyMessage` only when the title text needs to differ from
 the button label.
 
 `labkit.ui.runtime.runBusy` remains the lower-level helper for custom synchronous
-work that is not launched from a UI 5 action:
+work that is not launched from a layout action:
 
 ```matlab
 payload = labkit.ui.runtime.runBusy(fig, ...

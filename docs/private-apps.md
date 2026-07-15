@@ -84,7 +84,7 @@ Private apps should follow the same app-owned package shape as public apps:
 - keep app workflow code under the owning `+<app_slug>/` package
 - use `definition.m`, `definitionActions.m`, `requirements.m`, and `version.m`
 - keep lifecycle state in `+appLifecycle`
-- keep data-only layout and visible-state updates in `+userInterface`
+- keep the data-only layout and pure presenter in `+userInterface`
 - group workflow code by concrete user capability, such as `+sourceFiles`,
   `+analysisRun`, `+resultFiles`, or another app-owned domain package
 - use shared LabKit facades such as `labkit.ui.*`, `labkit.image.*`,

@@ -16,9 +16,8 @@ the app catalog; maintainer references are grouped separately.
 - [private-apps.md](private-apps.md): local private app workspace structure
   for apps kept outside the public repository.
 - [architecture.md](architecture.md): package boundaries and extraction rules.
-- [ui-runtime-redesign.md](ui-runtime-redesign.md): implemented Runtime V2 design record
-  runtime, project-document, and result-manifest architecture. Current APIs
-  remain in `ui.md` until the migration lands.
+- [ui.md](ui.md): current Runtime V2 app, state, presentation, interaction,
+  project-document, and result-manifest contracts.
 - [testing.md](testing.md): compact build-task entry points, automatic
   changed-file routing, CI scope, fixtures, and GUI validation limits.
 - [release.md](release.md): version selection, tag naming, and GitHub release
@@ -32,7 +31,7 @@ the app catalog; maintainer references are grouped separately.
 
 | Facade | Read |
 | --- | --- |
-| GUI app shell, specs, view helpers, tools, diagnostics | [ui.md](ui.md) |
+| GUI runtime, layouts, presentation, interactions, and diagnostics | [ui.md](ui.md) |
 | Image file IO, preview normalization, and basic processing primitives | [image.md](image.md) |
 | Thermal source parsing, raw-to-temperature conversion, and thermal rendering | [thermal.md](thermal.md) |
 | Gamry DTA loading, parser outputs, pulse detection | [dta.md](dta.md) |
