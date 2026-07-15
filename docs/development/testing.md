@@ -1,6 +1,6 @@
 # Testing
 
-[Development index](README.md) · [Architecture](architecture.md)
+[Development index](README.md) | [Architecture](architecture.md)
 
 Use this page to choose the smallest supported validation entry point. The
 public build-task set is intentionally small; changed-file tasks inspect the

@@ -1,6 +1,6 @@
 # Release Policy
 
-[Development index](README.md) · [Changelog](../../CHANGELOG.md)
+[Development index](README.md) | [Changelog](../../CHANGELOG.md)
 
 Use semantic versioning for public releases.
 

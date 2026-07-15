@@ -1,6 +1,6 @@
 # Architecture
 
-[Development index](README.md) · [Public API index](../api/README.md)
+[Development index](README.md) | [Public API index](../api/README.md)
 
 LabKit is an app-first MATLAB workbench. Apps are the deliverables; `+labkit`
 is the small reusable foundation they share.

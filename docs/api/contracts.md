@@ -1,6 +1,6 @@
 # Contract API
 
-[Public API index](README.md) · [App development](../development/app-development.md)
+[Public API index](README.md) | [App development](../development/app-development.md)
 
 `labkit.contract` checks whether an app's required LabKit facade versions are
 available before launch. It is a same-repository compatibility guardrail, not

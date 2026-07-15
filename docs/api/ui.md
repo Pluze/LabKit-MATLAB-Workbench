@@ -1,6 +1,6 @@
 # UI API
 
-[Public API index](README.md) · [App development](../development/app-development.md)
+[Public API index](README.md) | [App development](../development/app-development.md)
 
 This page documents the current supported UI contract. Runtime V2 owns queued
 events, canonical project/session state, presentation, resources,

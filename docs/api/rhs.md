@@ -1,6 +1,6 @@
 # RHS API
 
-[Public API index](README.md) · [App guide](../apps/README.md)
+[Public API index](README.md) | [App guide](../apps/README.md)
 
 `labkit.rhs.*` is the GUI-free Intan RHS file facade. It provides file
 discovery, header inspection, block indexing, and lazy time-window reads for

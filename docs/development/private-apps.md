@@ -1,6 +1,6 @@
 # Private Apps
 
-[Development index](README.md) · [App development](app-development.md)
+[Development index](README.md) | [App development](app-development.md)
 
 LabKit supports local private app workspaces for apps that should not be
 published in the public repository. This page documents only the public
