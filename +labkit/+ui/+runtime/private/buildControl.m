@@ -510,8 +510,10 @@ function callback = semanticFileSelectionCallback(id, appCallback)
         end
         control = ui.controls.(id);
         setControlFileSelection(ui, id, control.currentSelectedFiles());
+        selectedFiles = control.currentSelectedFiles();
         traceFilePanelFromSource(id, source, 'selection changed', sprintf( ...
-            'selected=%d', numel(control.currentSelectedFiles())));
+            'selected=%d ids=%s', numel(selectedFiles), ...
+            char(strjoin(selectedFileIds(selectedFiles), ','))));
         if isempty(appCallback)
             return;
         end
@@ -519,6 +521,13 @@ function callback = semanticFileSelectionCallback(id, appCallback)
         traceFilePanelFromSource(id, source, 'callback start', 'action=select');
         runSemanticAppCallback(ui, control, event, appCallback, id);
         traceFilePanelFromSource(id, source, 'callback end', 'action=select');
+    end
+end
+
+function ids = selectedFileIds(files)
+    ids = strings(0, 1);
+    if isstruct(files) && isfield(files, 'id')
+        ids = string({files.id}).';
     end
 end
 

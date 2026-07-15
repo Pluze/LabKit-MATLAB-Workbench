@@ -10,6 +10,11 @@ classdef GuiLayoutCicTest < matlab.unittest.TestCase
 
             fixture = dtaFixturePath('chrono_chronopot_current_pulse_0p2ms.DTA');
             secondFixture = dtaFixturePath('chrono_chronopot_current_pulse_1ms.DTA');
+            thirdFolder = string(tempname);
+            mkdir(thirdFolder);
+            thirdCleanup = onCleanup(@() rmdir(thirdFolder, 's'));
+            thirdFixture = fullfile(thirdFolder, 'chrono_third_pulse.DTA');
+            copyfile(secondFixture, thirdFixture);
             fig = h.launchFigure('labkit_CIC_app', ...
                 'Gamry CIC GUI (Voltage Transient)');
             assertCicLayout(h, fig);
@@ -55,25 +60,19 @@ classdef GuiLayoutCicTest < matlab.unittest.TestCase
             topAxes.XLim = [-1 0];
             topAxes.YLim = [-0.01 0.01];
 
-            driver.chooseFiles('files', secondFixture);
+            driver.chooseFiles('files', [string(secondFixture); thirdFixture]);
             driver.click('Add DTA files');
 
-            testCase.verifyEqual(char(driver.fileStatus('files')), '2 file(s) loaded');
+            testCase.verifyEqual(char(driver.fileStatus('files')), '3 file(s) loaded');
             testCase.verifyTrue(contains(driver.fileSelection('files'), ...
-                'chrono_chronopot_current_pulse_1ms.DTA'), ...
-                'CIC append should select the newly added chrono file.');
-            ui = driver.registry();
-            firstItem = ui.controls.files.listbox.Items{contains( ...
-                string(ui.controls.files.listbox.Items), ...
-                'chrono_chronopot_current_pulse_0p2ms.DTA')};
-            ui.controls.files.listbox.Value = firstItem;
-            h.invokeCallback(ui.controls.files.listbox, 'ValueChangedFcn');
-            runtime = getappdata(fig, 'labkitUiAppRuntime');
-            testCase.verifyEqual(runtime.state.session.selection.currentIndex, 1, ...
-                'Selecting an imported CIC file should update canonical selection.');
-            testCase.verifyTrue(contains(driver.fileSelection('files'), ...
-                'chrono_chronopot_current_pulse_0p2ms.DTA'), ...
-                'CIC should preserve the newly selected file after presentation.');
+                'chrono_third_pulse.DTA'), ...
+                'CIC batch append should select the last newly added chrono file.');
+            assertCicFileSelection(testCase, driver, fig, ...
+                'chrono_chronopot_current_pulse_0p2ms.DTA', 1);
+            assertCicFileSelection(testCase, driver, fig, ...
+                'chrono_chronopot_current_pulse_1ms.DTA', 2);
+            assertCicFileSelection(testCase, driver, fig, ...
+                'chrono_chronopot_current_pulse_0p2ms.DTA', 1);
             beforeAreaChange = driver.tableData('results');
             ui = driver.registry();
             ui.controls.area.valueHandle.Value = '2';
@@ -83,7 +82,7 @@ classdef GuiLayoutCicTest < matlab.unittest.TestCase
             testCase.verifyTrue(updated, h.waitDiagnostic(detail, ...
                 'operation', 'CIC whole-batch area recomputation'));
             afterAreaChange = driver.tableData('results');
-            for row = 1:2
+            for row = 1:3
                 testCase.verifyEqual(afterAreaChange{row, 7}, ...
                     0.5 * beforeAreaChange{row, 7}, 'RelTol', 1e-12, ...
                     'A shared CIC area change should recompute every loaded file.');
@@ -116,10 +115,10 @@ classdef GuiLayoutCicTest < matlab.unittest.TestCase
             labkit.ui.runtime.loadState(fig, projectPath);
             h.waitForUiIdle(fig);
             testCase.verifyEqual(char(driver.fileStatus('files')), ...
-                '2 file(s) loaded', ...
+                '3 file(s) loaded', ...
                 'CIC project reopen should rebuild decoded sources.');
             runtime = getappdata(fig, 'labkitUiAppRuntime');
-            testCase.verifyEqual(numel(runtime.state.session.cache.items), 2);
+            testCase.verifyEqual(numel(runtime.state.session.cache.items), 3);
             testCase.verifyFalse(isequal(topAxes.XLim, [-1 0]), ...
                 'CIC append redraw should replace stale manual X limits.');
             testCase.verifyFalse(isequal(topAxes.YLim, [-0.01 0.01]), ...
@@ -136,16 +135,26 @@ classdef GuiLayoutCicTest < matlab.unittest.TestCase
             testCase.verifyEqual(topAxes.YLimMode, 'auto', ...
                 'CIC clear-all should restore automatic Y limits.');
             clear outputCleanup;
+            clear thirdCleanup;
         end
     end
 end
 
 function tf = allRowsAreHalf(actual, previous)
-    tf = size(actual, 1) == 2 && size(previous, 1) == 2;
-    for row = 1:2
+    tf = size(actual, 1) == 3 && size(previous, 1) == 3;
+    for row = 1:3
         tf = tf && abs(actual{row, 7} - 0.5 * previous{row, 7}) <= ...
             1e-12 * max(1, abs(previous{row, 7}));
     end
+end
+
+function assertCicFileSelection(testCase, driver, fig, fileName, index)
+    driver.selectFile('files', fileName);
+    runtime = getappdata(fig, 'labkitUiAppRuntime');
+    testCase.verifyEqual(runtime.state.session.selection.currentIndex, index, ...
+        'Selecting an imported CIC file should update canonical selection.');
+    testCase.verifyTrue(contains(driver.fileSelection('files'), fileName), ...
+        'CIC should preserve the selected file after presentation.');
 end
 
 function assertCicLayout(h, fig)
