@@ -52,7 +52,10 @@ debt for the touched area.
   `LABKIT_PRIVATE_APP_ROOTS`; keep their code, docs, tests, and release notes
   in their own private repositories. Public docs may describe only the generic
   private-app structure and constraints.
-- New app-facing UI work should use `labkit.ui.runtime.*`, `labkit.ui.layout.*`, `labkit.ui.control.*`, `labkit.ui.plot.*`, `labkit.ui.interaction.*`, and `labkit.ui.debug.*`; the older flat `labkit.ui.*` helper surface and retired `app/spec/view/tool/diag` UI package names have been removed.
+- New app-facing UI work uses `labkit.ui.runtime.launch/define`,
+  `labkit.ui.layout.*`, presenter models, injected services, and only the
+  documented advanced `labkit.ui.plot.*` or `labkit.ui.interaction.*` helpers.
+  Apps do not receive UI registries or use control setter/getter facades.
 - New app code must not call `labkit.io.*`, `labkit.data.*`, `labkit.analysis.*`, or `labkit.util.*`; use `labkit.dta.*`, `labkit.rhs.*`, `labkit.biosignal.*`, `labkit.image.*`, `labkit.thermal.*`, `labkit.ui.*`, or app-local helpers.
 - Do not reintroduce root-level legacy command wrappers, app-specific public helper packages, or public helper-dump packages such as `+labkit/+analysis`, `+data`, `+io`, or `+util`.
 - Do not convert struct models to MATLAB classes, rewrite all GUIs, replace separate app entry points with one launcher, or migrate code to another language without explicit approval.
@@ -66,8 +69,8 @@ debt for the touched area.
 - Folder/path scalars must not be reshaped with `(:)`, because char paths become one element per character. Use `string(folder)` for one selected folder/path and reserve `paths(:)` for values already known to be string arrays or cell arrays of paths.
 - UI numeric control values must be sanitized to finite scalars before they are assigned into app state, step structs, or task structs. Do not write `step.amount = double(amount)` or similar directly from callback values; use a small scalar-normalization helper with a fallback.
 - User-visible UI text that also acts as a state enum, branch key, dropdown value, action label, or test contract must have one app-local source of truth, such as a `+userInterface/*Labels.m`, `+userInterface/*Choices.m`, or workflow-owned `*Items.m` helper. Do not repeat those literals in runners, view helpers, or tests; callers and tests should reference the helper. One-off section labels that are only displayed in `+userInterface/buildWorkbenchLayout.m` may stay inline.
-- Interactive image rectangles must use `labkit.ui.interaction.rectangleEditor`
-  or an interaction-runtime drag session. Direct `rectangle(...)` calls in apps
+- Interactive image rectangles must use a presenter-owned `rectangle` or
+  `regionSelection` interaction spec. Direct `rectangle(...)` calls in apps
   are only for non-pickable display/mirror overlays; they must disable hit
   testing so users are not presented with a rectangle that looks interactive
   but cannot be dragged.

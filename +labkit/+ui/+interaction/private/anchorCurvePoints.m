@@ -1,5 +1,4 @@
-% Private anchor-editor path builder. Expected caller:
-% labkit.ui.interaction.anchorEditor and insertion helpers. Inputs are N-by-2
+% Private anchor-path builder. Expected caller: anchorPath. Inputs are N-by-2
 % image-pixel anchors, image size, curve style, and closed/open mode; outputs
 % are display curve samples and segment-owner indices. No side effects.
 function [curve, owners] = anchorCurvePoints(points, imageSize, curveStyle, closed)

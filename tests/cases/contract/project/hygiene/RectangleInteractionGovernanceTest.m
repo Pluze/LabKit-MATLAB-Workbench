@@ -7,7 +7,7 @@ classdef RectangleInteractionGovernanceTest < matlab.unittest.TestCase
             files = sourceFiles(root);
             directFiles = filesWithDirectRectangleCalls(root, files);
             expected = [
-                "+labkit/+ui/+interaction/rectangleEditor.m"
+                "+labkit/+ui/+runtime/private/createRectangleEditor.m"
                 "+labkit/+ui/+runtime/private/reconcileV2Interactions.m"
                 "apps/dic/dic_preprocess/+dic_preprocess/+userInterface/renderPreviewImage.m"
                 "apps/image_measurement/image_enhance/+image_enhance/+userInterface/renderImagePreview.m"

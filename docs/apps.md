@@ -275,9 +275,11 @@ apps/<family>/<app_slug>/+<app_slug>/definition.m
 apps/<family>/<app_slug>/+<app_slug>/definitionActions.m
 apps/<family>/<app_slug>/+<app_slug>/requirements.m
 apps/<family>/<app_slug>/+<app_slug>/version.m
-apps/<family>/<app_slug>/+<app_slug>/+appLifecycle/createInitialState.m
+apps/<family>/<app_slug>/+<app_slug>/+appLifecycle/createProject.m
+apps/<family>/<app_slug>/+<app_slug>/+appLifecycle/createSession.m
+apps/<family>/<app_slug>/+<app_slug>/+appLifecycle/validateProject.m
 apps/<family>/<app_slug>/+<app_slug>/+userInterface/buildWorkbenchLayout.m
-apps/<family>/<app_slug>/+<app_slug>/+userInterface/updateWorkbenchFromState.m
+apps/<family>/<app_slug>/+<app_slug>/+userInterface/presentWorkbench.m
 ```
 
 App-specific behavior is grouped by user-facing workflow or domain capability,
@@ -329,11 +331,11 @@ file in the latest `main` commit, not against intermediate local edits in the
 current working tree.
 
 `definition.m` declares the app's runtime contract. It returns a plain struct
-created with `labkit.ui.runtime.define`, naming the app id, title, initial state
-factory, data-only workbench layout builder, command handler registry, visible-state
-update function, startup phases, and optional idle hydration phases. The
-framework runtime validates the definition, generates callbacks, schedules
-startup, gates busy/ready state, and routes diagnostics. App code should not
+created with `labkit.ui.runtime.define`, naming the app id, title, project
+schema, optional session factory, data-only workbench layout builder, handler
+registry, presenter, prepared-data renderers, and optional `Start` event. The
+framework validates the definition, generates callbacks, queues events,
+commits presentation, gates busy/ready state, and routes diagnostics. App code should not
 own loading controls, startup timers, callback wrappers, or framework
 readiness flags.
 
@@ -342,10 +344,9 @@ page hierarchy obvious at the top of the file. Keep the app constructor
 shallow, then use local builder functions for tabs, sections, and the
 workspace. Put section builders in the same order the user sees them, and keep
 small field helpers after the workspace builder. The goal is readable MATLAB
-source, not a separate UI-generation DSL. `+userInterface/updateWorkbenchFromState.m`
-is the single top-level bridge from state to visible controls; it should call
-specific workflow display helpers such as
-`+sourceFiles/showSourceFilePreview.m` or `+analysisRun/showAnalysisResults.m`.
+source, not a separate UI-generation DSL. `+userInterface/presentWorkbench.m`
+is the single pure bridge from canonical state to semantic control properties,
+prepared preview models, and controlled interaction specs.
 
 Keep one visible structure per concept. Do not keep both singular and
 directory forms for the same concept (`sourceFiles.m` plus `+sourceFiles/`,
@@ -358,10 +359,10 @@ Do not add family-level `private/` helper folders.
 
 ## App Definition And Helper Shape
 
-The app definition is the runtime boundary. It names initial state, UI layout,
-registered command handlers, visible-state update, startup, and hydration. The
-framework owns lifecycle orchestration: launch/debug wiring, callback adapters,
-readiness, busy gating, close guards, startup phase timing, and
+The app definition is the runtime boundary. It names the project schema,
+optional session factory, UI layout, registered handlers, presenter,
+renderers, and optional `Start`. The framework owns lifecycle orchestration:
+launch/debug wiring, callback adapters, queueing, readiness, busy gating, close guards, and
 hidden-test-safe diagnostics.
 
 Workflow package functions should use concrete verb-object names:
@@ -382,11 +383,11 @@ state updates, and display refresh for one user workflow. Deterministic
 calculation and file-writing helpers should still be separate functions inside
 the same workflow package when they are worth testing directly.
 
-Visible UI update functions translate prepared app state into existing UI
-handles. They should not perform file IO, heavy computation, export writes, or
-state mutation. `+userInterface/buildWorkbenchLayout.m` declares the
-control/workspace tree, while `+userInterface/updateWorkbenchFromState.m`
-updates that tree from state and delegates workflow-specific display updates.
+Presenters translate canonical state into semantic properties and prepared
+preview models. They should not perform file IO, heavy computation, export
+writes, mutate state, or receive raw UI handles.
+`+userInterface/buildWorkbenchLayout.m` declares the control/workspace tree;
+registered renderers draw only the prepared models they receive.
 
 Keep small code local when the call site is clearer than a separate name. Move
 code into an app-owned workflow package when it owns a stable user workflow,

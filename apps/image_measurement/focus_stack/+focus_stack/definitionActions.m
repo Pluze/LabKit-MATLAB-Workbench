@@ -183,7 +183,7 @@ function state = exportResult(state, services, kind, titleText, defaultName)
             "Run focus stack before exporting results.", "No result");
         return;
     end
-    defaultPath = fullfile(char(defaultOutputFolder(state)), defaultName);
+    defaultPath = fullfile(char(defaultOutputFolder(state, services)), defaultName);
     [filepath, cancelled] = services.dialogs.outputFile( ...
         {'*.png;*.csv', 'Export files'}, titleText, defaultPath);
     if cancelled
@@ -296,10 +296,10 @@ function folder = sourceFolder(state)
     end
 end
 
-function folder = defaultOutputFolder(state)
+function folder = defaultOutputFolder(state, services)
     folder = string(state.project.parameters.outputFolder);
     if strlength(folder) == 0 || exist(char(folder), 'dir') ~= 7
-        folder = labkit.ui.runtime.defaultDialogFolder("output");
+        folder = services.dialogs.defaultFolder("output");
     end
 end
 

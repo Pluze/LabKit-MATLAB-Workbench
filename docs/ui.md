@@ -1,20 +1,18 @@
 # UI Library
 
 This page documents the current supported UI contract. Runtime V2 owns queued
-events, canonical state, presentation, resources, interactions, projects, and
-result manifests. V1 remains for apps awaiting migration. See
-[UI Runtime And App Data Redesign](ui-runtime-redesign.md) for the target.
+events, canonical project/session state, presentation, resources,
+interactions, projects, and result manifests. Old runtime snapshots remain a
+read-only import format; the V1 lifecycle is retired.
 
 `labkit.ui` is the reusable MATLAB GUI foundation. It is split into app-facing facade packages:
 
 | Facade | Owns | Main APIs |
 | --- | --- | --- |
-| `labkit.ui.runtime` | Declarative app runtime, request dispatch, readiness/busy state, safe dialogs and defaults, app title versioning, state snapshots, portable external-file references, and shell utility commands. | `launch`, `define`, `run`, `create`, `dispatchRequest`, `appVersionTitle`, `applyVersionTitle`, `confirm`, `createPortableFileReference`, `resolvePortableFileReference`, `resolveOrPromptForFileReference`, `defaultDialogFolder`, `defaultOutputFolder`, `promptOutputFile`, `promptOutputFolder`, `runBusy`, `saveState`, `loadState`, `showAlert`. |
-| `labkit.ui.layout` | UI 5 data-only workbench layouts. | `workbench`, `workspace`, `tab`, `section`, `group`, `field`, `rangeField`, `panner`, `action`, `filePanel`, `toolPanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `usagePanel`. |
-| `labkit.ui.control` | Semantic registry updates, selectable items, file-panel values, list selections, numeric limits, enable state, and log appends. | `setValue`, `getValue`, `getFiles`, `setFileSelection`, `setItems`, `setEnabled`, `setLimits`, `appendLog`, `setListItems`, `setListSelection`, `fileLabels`, `filePaths`, `fileIndices`. |
-| `labkit.ui.plot` | Preview axes lookup, plot clearing, layer-safe overlays, image drawing, fitted limits, canvas framing, empty-state messages, and data/axes coordinate conversion. | `getAxes`, `clear`, `clearPreview`, `reset`, `replaceOverlay`, `image`, `fit`, `fitCanvas`, `dataToFraction`, `fractionToData`, `offsetData`, `clampData`, `message`. |
-| `labkit.ui.interaction` | Reusable composed preview tools and pointer/scroll interaction runtime. | `runtime`, `anchorEditor`, `anchorPath`, `rectangleEditor`, `scaleBar`, `scaleBarCalibration`, `scaleBarGeometry`, `enablePopout`, `popout`, `zoomAtPoint`. |
-| `labkit.ui.debug` | Debug launch context, visible trace, callback instrumentation, and crash reports. | `context`. |
+| `labkit.ui.runtime` | Launch, canonical state, queued events, services, projects, and resources. | `launch`, `define`, `emptySourceRecords`, `saveState`, `loadState`, `createPortableFileReference`, `resolvePortableFileReference`, `defaultOutputFolder`. |
+| `labkit.ui.layout` | Data-only semantic workbench layouts. | `workbench`, `workspace`, `tab`, `section`, `group`, `field`, `rangeField`, `panner`, `action`, `filePanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`. |
+| `labkit.ui.plot` | Advanced renderer viewport and coordinate mechanics. | `clear`, `fit`, `fitCanvas`, `message`, `offsetData`, `clampData`. |
+| `labkit.ui.interaction` | Managed-interaction calculation helpers and popout enablement. | `anchorPath`, `scaleBarCalibration`, `scaleBarGeometry`, `enablePopout`. |
 
 The root `labkit.ui.*` flat helper surface has been removed. Apps should call the facade that owns the behavior they need. Private implementation details live under each facade's `private/` folder.
 
@@ -24,34 +22,21 @@ The root `labkit.ui.*` flat helper surface has been removed. Apps should call th
 ## Declarative App Runtime
 
 The UI surface makes app code read as a semantic description of a LabKit
-workflow, not as grid construction or a general MATLAB GUI DSL. New app code
-should expose an app-owned `definition.m` and launch it through
-`labkit.ui.runtime.run`. The framework runtime owns lifecycle, callback dispatch,
-readiness, busy state, diagnostics, and staged activation. App packages declare
-state factories, command handlers, visible-state updates, and data-only UI
-structure.
+workflow, not as grid construction or a general MATLAB GUI DSL. Apps expose an
+app-owned `definition.m` and launch it through `labkit.ui.runtime.launch`. The
+framework owns lifecycle, callback dispatch, readiness, busy state,
+diagnostics, persistence, and resources. App packages declare durable project
+data, transient session data, workflow handlers, presentation, and data-only
+UI structure.
 
 Public launch files stay thin. They route requests, expose requirements and
 version metadata, and delegate the GUI to the framework runtime:
 
 ```matlab
 function varargout = labkit_Example_app(varargin)
-    requirements = example.requirements();
-    appVersion = example.version();
-    [handled, outputs, debug] = labkit.ui.runtime.dispatchRequest( ...
-        "labkit_Example_app", varargin, nargout, ...
-        "Requirements", requirements, "Version", appVersion);
-    if handled
-        varargout = outputs;
-        return;
-    end
-
-    request = struct("debug", debug);
-    fig = labkit.ui.runtime.run(example.definition(), request);
-    labkit.ui.runtime.applyVersionTitle(fig, appVersion);
-    if nargout >= 1
-        varargout{1} = fig;
-    end
+    [varargout{1:nargout}] = labkit.ui.runtime.launch( ...
+        @example.definition, @example.requirements, @example.version, ...
+        varargin{:});
 end
 ```
 
@@ -60,28 +45,25 @@ function def = definition()
 def = labkit.ui.runtime.define( ...
     "Id", "example", ...
     "Title", "Example App", ...
-    "InitialState", @example.appLifecycle.createInitialState, ...
+    "Project", example.projectSpec(), ...
+    "CreateSession", @example.createSession, ...
     "Layout", @example.userInterface.buildWorkbenchLayout, ...
     "Actions", example.definitionActions(), ...
-    "Render", @example.userInterface.updateWorkbenchFromState, ...
-    "Snapshot", example.snapshot.options(), ...
-    "Utilities", struct("Visible", true, "Plot", true, ...
-        "Screenshot", true, "State", "auto"), ...
-    "Startup", ["workspace"], ...
-    "Hydrate", ["tools"]);
+    "Present", @example.userInterface.presentWorkbench, ...
+    "Renderers", example.userInterface.previewRenderers(), ...
+    "Start", "start");
 end
 ```
 
 `definition.m` is a small MATLAB-scale DSL made of structs and function
 handles. It is not a new language, a generator, or a class hierarchy. The
-framework validates the definition, generates callback closures, builds the
-visible workbench, paints a readiness surface when startup is slow, dispatches
-startup actions, and then hydrates nonessential regions when idle or on first
-interaction. App-specific launch payloads may be passed to `labkit.ui.runtime.run`
-in the request struct; command handlers receive those values read-only as
-`services.request`.
+framework validates the definition, creates canonical state, generates
+callbacks, builds the workbench, commits the first presentation, and queues
+the optional `Start` event. App-specific launch payloads are available
+read-only through injected services.
 
-Apps use `+appLifecycle`, `definitionActions.m`, and `+userInterface`;
+Apps use `projectSpec.m`, `createSession.m`, `definitionActions.m`, and
+`+userInterface`;
 app-specific work belongs in concrete workflow packages such as
 `+sourceFiles`, `+analysisRun`, `+resultFiles`, or a domain-specific package.
 The older `+state`, `+actions`, `+ui`, and `+view` adapter packages have been
@@ -138,10 +120,9 @@ Use these app-facing contracts:
 
 - The default shell is a LabKit workbench: control tabs on the left and primary
   preview, plot, waveform, image, or canvas content on the right.
-- `definition.m` declares app identity, state factory, workbench layout, command
-  handler registry, visible-state update function, startup phases, and
-  optional idle hydration phases, optional snapshot hooks, and optional shell
-  utility visibility.
+- `definition.m` declares app identity, project schema, optional session
+  factory, workbench layout, handler registry, presenter, prepared-data
+  renderers, and optional `Start` event.
 - The framework runtime owns lifecycle scheduling, readiness/loading surface,
   generated callbacks, busy gating, debug exception plumbing, close guards, and
   hidden/minimized test behavior.
@@ -160,21 +141,19 @@ Use these app-facing contracts:
 - Public callbacks use `function callback(control, event)`. Events carry
   semantic fields such as `id`, `kind`, `source`, `value`, `previousValue`,
   and `ui`.
-- App commands should be named by user intent or startup phase. They receive
-  framework payload/services, return updated app state, and request framework
-  effects instead of directly mutating lifecycle state.
+- App handlers should be named by user intent. They receive semantic events
+  and injected services, then return updated canonical state without directly
+  mutating framework lifecycle state.
 - `filePanel` owns file input mechanics: file chooser defaults, optional
   recursive folder scans, duplicate filename display, current selection, and
   file-entry events. Each file entry exposes `id`, `index`, `path`, `name`,
   `displayName`, and `status`. Callback events expose file entries through
   `event.files`, `event.addedFiles`, `event.removedFiles`,
   `event.selectedFiles`, and `event.value` for the current selection. Apps
-  that need paths call `labkit.ui.control.filePaths(files)` instead of reading
-  fields directly from the event; apps that remove or select by panel entry
-  call `labkit.ui.control.fileIndices(files, itemCount)` instead of parsing
-  `id` or `index` locally.
+  consume paths and indices through `services.events`; apps do not parse
+  control ids, UI registries, or adapter structs.
 - The active `filePanel` selection is also a framework title context. When a
-  file is selected through the panel or `labkit.ui.control.setFileSelection`, the
+  file is selected through the panel or a presentation commit, the
   app window title and preview axes titles include `file N/M: name.ext`; when
   selection is cleared, the framework removes that suffix. Apps should keep
   preview titles focused on the view or measurement being shown, not duplicate
@@ -187,36 +166,32 @@ Use these app-facing contracts:
   filenames would otherwise collide. Apps that allow duplicate source files
   should remove by file `id` or `index` from `event.removedFiles` instead of
   deleting by path. Programmatic file replacement uses
-  `labkit.ui.control.setValue`; programmatic file selection uses
-  `labkit.ui.control.setFileSelection`. Apps with their own nearby status field
-  can pass `showStatus=false` to omit the panel's internal count/status text.
+  presenter-owned `Value` and `Selection` properties. Apps with their own
+  nearby status field can pass `showStatus=false` to omit the panel's internal
+  count/status text.
 - Single-file `filePanel` mode opens one file directly, replaces the previous
   file on the next choose action, does not offer recursive folder selection,
   and displays the short filename in one read-only text field instead of a
   selectable list.
-- `filePanel` and app-owned save/open dialogs should not default to `pwd`;
-  `labkit.ui.runtime.defaultDialogFolder("input")` and `"output"` provide safe
-  remembered defaults outside the LabKit install root.
+- File and folder selection in handlers goes through `services.dialogs`, which
+  owns safe remembered defaults outside the LabKit install root.
 - App output defaults should be source-adjacent when a source file or folder is
   known. Use `labkit.ui.runtime.defaultOutputFolder(sourcePaths, subfolderName)`;
   the helper uses the first source path when multiple files are loaded and
   creates the app-specific subfolder before returning it.
-- App-owned alerts should use `labkit.ui.runtime.showAlert(fig, message, title)`.
-  Apps still own alert text. The helper preserves normal modal `uialert`
-  behavior, records alert payloads on the figure, and skips the modal only
-  when `LABKIT_GUI_TEST_MODE=hidden` so hidden GUI workflow tests can cover
-  error paths without stalling.
+- App-owned alerts use `services.dialogs.alert(message, title)`. Apps still own
+  the wording and decision; the runtime owns modal and hidden-test mechanics.
 - `labkit.ui.runtime.saveState/loadState` retain one stable public signature.
-  V1 apps keep strict same-build `snapshot` files and their existing
-  `Snapshot` hooks. V2 apps write a versioned `labkitProject` envelope with
-  only durable project buckets, ordered app payload migrations, producer
+  Apps write a versioned `labkitProject` envelope with only durable project
+  buckets, ordered app payload migrations, producer
   provenance, optional resume data, and additive extension preservation.
-  V2 loads inventory the MAT file before loading a recognized variable,
+  Loads inventory the MAT file before loading a recognized variable,
   migrate and validate off to the side, resolve required sources, create a
   fresh session, and then replace live state once. Saves use temporary-file
   readback plus atomic replacement. Project edits drive the dirty title,
   debounced bounded recovery, and unsaved-close wording; recovery never owns
-  or overwrites an explicit project path.
+  or overwrites an explicit project path. Declared old snapshots and legacy
+  app variables are import-only and are never written again.
 - Apps whose saved state refers to external source files should store
   `labkit.ui.runtime.createPortableFileReference(anchorFile, targetFile)` in
   their app-owned project schema. On load,
@@ -254,7 +229,7 @@ Use these app-facing contracts:
   Preview axes are also registered with the workbench utility menus, whose plot
   commands act on all registered visible axes.
 - `labkit.ui.interaction.enablePopout(ax)` installs the standard axes context
-  menu action. `labkit.ui.interaction.popout(ax)` copies the visible axes into a
+  menu action, which copies the visible axes into a
   standalone MATLAB figure with optional copied-figure text buttons for font
   size, plotted data line width, axes line width, grid visibility, and a Studio
   handoff. Popout edits operate on the copied figure only. Plot axes remain
@@ -297,11 +272,8 @@ Use these app-facing contracts:
 - Use app-level `usage`/`usageTitle` on `labkit.ui.layout.workbench` for static
   workflow instructions. The framework places that read-only usage panel at the
   bottom of the first control tab.
-- `labkit.ui.control.setLimits` updates numeric limits and clamps existing values
-  without firing synchronous value-change callbacks.
-- `labkit.ui.control.setItems` replaces the choices of dropdown-like value
-  controls, preserves a still-valid selection, and otherwise selects the first
-  new item without firing the app callback.
+- Presenter `Limits` and `Items` properties are committed before bound values;
+  the runtime clamps or selects safely without firing app callbacks.
 
 The public layout-node grammar is semantic: pages, sections, controls, order,
 values, and callbacks. When a workflow needs a control that cannot be expressed
@@ -313,7 +285,7 @@ Control tabs with more than one section include draggable horizontal
 separators by default. A tab may opt out with `resize="none"` when a fixed
 stack is intentional.
 
-### Runtime V2
+### Runtime State And Transactions
 
 A definition declares `Project`, optional `CreateSession`, `Actions`,
 `Present`, optional `Renderers`, and optional `Start`. It launches through
@@ -352,9 +324,9 @@ variables import read-only.
 After shell, state, first presentation, and interaction hub exist, the runtime
 queues optional `Start` with injected app-neutral `services`. An optional
 `DebugSample` writer runs only for debug launches, without app startup glue.
-V2 commits mirror `session.workflow.logLines` into semantic `logPanel` controls. Injected `services.dialogs` owns input-file, input-folder, output-file, and output-folder selection with safe defaults and test-injectable choosers; app handlers should not call `uigetfile`, `uigetdir`, or save-dialog helpers directly. Startup may resolve a registered preview with `services.previews.axes(previewId, axisId)` only to attach a framework-managed listener or timer; actions, presenters, and semantic state still use plain data and preview models.
+V2 commits mirror `session.workflow.logLines` into semantic `logPanel` controls. Injected `services.dialogs` owns input-file, input-folder, output-file, and output-folder selection with safe defaults and test-injectable choosers; app handlers should not call `uigetfile`, `uigetdir`, or save-dialog helpers directly. A `Start` handler may resolve a registered preview with `services.previews.axes(previewId, axisId)` only to attach a framework-managed listener or timer; actions, presenters, and semantic state still use plain data and preview models.
 
-Each v2 figure owns one private interaction hub. Preview targets register as
+Each figure owns one private interaction hub. Preview targets register as
 `previewId` or `previewId.axisId`; the hub owns hover wheel/zoom routing,
 drag callbacks, and atomic groups. V2 apps never set figure callbacks.
 `Present` may declare `anchors`, `pairedAnchors`, `pointSlots`, `rectangle`, `regionSelection`, or
@@ -363,13 +335,14 @@ emits a dragged rectangle to `Event` or clicked point to `BackgroundEvent`.
 Kind/target changes replace or dispose resources; programmatic values suppress
 events, while user edits enqueue the declared event.
 
-## Startup Readiness
+## Start And Readiness
 
 LabKit app startup is a framework runtime state, not an app-owned progress
-dialog convention. `labkit.ui.runtime.run` builds a named shell first, paints a
-readiness boundary when startup is slow enough to be perceptible, dispatches
-declared startup actions after the shell has a paint opportunity, and clears
-readiness only after the first visible render completes.
+dialog convention. `labkit.ui.runtime.launch` builds the shell, canonical state,
+first presentation, and interaction hub, then queues the optional definition
+`Start` handler through the same transaction queue as every later event. The
+runtime paints a readiness boundary when this work is slow enough to be
+perceptible and clears it only after the first visible presentation commits.
 
 Fast apps should not flash a loading strip. Slow apps should never sit as an
 anonymous blank frame: the framework keeps a non-modal status surface visible
@@ -377,12 +350,10 @@ until the current startup phase has completed and the initial visible
 workspace is rendered. Hidden or minimized GUI test modes preserve readiness
 state for assertions while avoiding disruptive visual UI.
 
-Nonessential work belongs in idle hydration or first-interaction activation
-when the app definition marks it that way. Typical hydration candidates are
-inactive tabs, expensive optional tools, debug artifact generation, or
-secondary previews. App code should request app-level work through declared
-startup or action phases; it should not create raw startup timers, mutate
-framework readiness flags, or manage loading controls directly.
+Nonessential work belongs behind a user event or a framework-owned managed
+resource, not an app-created startup timer. App code should express initial
+domain work in its single `Start` handler and must not mutate readiness flags
+or manage loading controls directly.
 
 ## Busy State
 
@@ -438,189 +409,58 @@ confirmation for public and private LabKit apps.
 maintain their own busy-control lists, and `runBusy` does not mutate control
 `Enable` values. App render logic still owns permanent button enablement rules.
 
-## Control and Plot Helpers
+## Presentation And Plotting
 
-```matlab
-labkit.ui.control.setValue(ui, "displayLimits", [0.1 0.9]);
-labkit.ui.control.setValue(ui, "sourceImages", ["a.png"; "b.png"]);
-files = labkit.ui.control.getFiles(ui, "sourceImages");
-labkit.ui.control.setFileSelection(ui, "sourceImages", files(1));
-paths = labkit.ui.control.filePaths(labkit.ui.control.getValue(ui, "sourceImages"));
-labkit.ui.control.setItems(ui, "displayMode", {"Raw", "Processed"});
-labkit.ui.control.setEnabled(ui, "run", false);
-labkit.ui.control.appendLog(ui, "log", "Loaded image.");
-labkit.ui.plot.image(ui, "preview", imageData, ...
-    "axis", "raw", "title", "Reference");
-[ok, frame] = labkit.ui.plot.fitCanvas(ax, 720, 540);
-labkit.ui.plot.fit(ax);
-labkit.ui.plot.reset(ui, "preview", "Reference", true, "raw");
-labkit.ui.plot.clearPreview(ui, "preview", "difference");
-```
+Apps do not receive the UI registry and do not call control setters. A pure
+`Present(state)` function returns semantic control properties, prepared preview
+models, and controlled interaction specs. The runtime applies dynamic items and
+limits before values, suppresses callbacks during the commit, mirrors workflow
+logs, and invokes registered renderers with only `(axes, model)`.
 
-Control helpers target semantic ids in the UI registry owned by the app
-runtime. Plot helpers target MATLAB axes handles or named previewArea axes.
-They do not create arbitrary controls, expose MATLAB layout primitives, or
-replace MATLAB's native plotting commands.
-`previewArea` axes automatically receive the standard right-click action
-`Open axes in new figure`; the current implementation copies the axes into a
-standalone MATLAB figure and preserves the plot/image aspect behavior already
-used by LabKit previews. Apps still draw prepared plot data with MATLAB
-commands such as `plot`, `line`, `text`, `legend`, `xline`, and `patch`; use
-`labkit.ui.plot.clear` before a full redraw, `labkit.ui.plot.fit` after the
-main data graphics are drawn, and `labkit.ui.plot.getAxes` when app code needs
-a named axes handle from a previewArea.
+Renderers may use ordinary MATLAB graphics plus the small advanced plot surface:
+`clear`, `fit`, `fitCanvas`, `message`, `offsetData`, and `clampData`.
+`clear` and `fit` own full-redraw viewport mechanics; `offsetData` and
+`clampData` honor log scales and reversed axes. Image preparation, annotations,
+labels, and scientific plot meaning remain app-owned.
 
-`labkit.ui.plot.image` preserves the current axes view when an image is
-redrawn with the same displayed bounds, so overlay refreshes do not throw away
-a user's zoomed preview. Use `labkit.ui.plot.reset` or
-`labkit.ui.plot.clearPreview` when an app intentionally wants to return the
-preview to its home view.
+A renderer may call `labkit.ui.interaction.enablePopout(ax)` after drawing an
+axes. The workbench also installs the standard popout action automatically.
 
-Use `labkit.ui.plot.replaceOverlay` for live annotations, guides, labels, or
-measurement graphics layered over an existing image. Replacing a named layer
-deletes only that layer's prior graphics and preserves the current axes view,
-peer graphics, and interaction callbacks; do not clear and redraw the whole
-axes for an overlay-only state change.
+## Managed Interactions
 
-`labkit.ui.plot.fitCanvas` lets an app request a fixed pixel canvas inside a
-`previewArea` axes host while the UI facade owns the row/column grid policy.
-The returned frame describes the applied preview scale and pixel size so apps
-can align their own font or line-width preview scaling without reading layout
-internals.
+Apps declare controlled interaction specs from their presenter rather than
+constructing editor objects. Supported kinds include `anchors`,
+`pairedAnchors`, `pointSlots`, `rectangle`, `regionSelection`,
+`interval`, and `scaleBarReference`. The figure-scoped interaction hub owns
+pointer routing, wheel zoom, drag capture/release, callback restoration, event
+enqueueing, and resource cleanup.
 
-Curve and image viewport behavior are intentionally different. Curve redraws
-that replace plotted data should call `labkit.ui.plot.clear`, draw the main
-data graphics, then call `labkit.ui.plot.fit(ax, hData)`. Passing the main
-graphics handle prevents later annotations, threshold lines, and window
-shading from stretching the data range. Overlay-only refreshes and image ROI
-edits should keep the current viewport. Image redraws should continue to use
-`labkit.ui.plot.image`, whose image policy preserves the current view when the
-displayed bounds are stable.
-
-For label placement and hit-testing, `labkit.ui.plot.dataToFraction`,
-`fractionToData`, `offsetData`, and `clampData` convert between data
-coordinates and normalized axes coordinates while honoring log scales and
-reversed axes. Apps can use them to place labels such as extrema markers
-without reimplementing coordinate math.
-
-`logPanel` follows appended lines by default: `appendLog` scrolls the log to the
-bottom after adding a line. Users can use the visible follow button or the log
-context menu to pause auto-scroll while reading older lines, then resume
-following the latest line.
-
-## Interaction Tools
-
-Preview tools that need custom scroll semantics, drag, hit-test, anchor editing, ROI-style drawing, or scale bars should create a runtime:
-
-```matlab
-runtime = labkit.ui.interaction.runtime(ax, struct( ...
-    'figure', fig, ...
-    'defaultScrollFcn', @onPreviewScroll, ...
-    'onTrace', debug.trace));
-```
-
-The runtime owns exclusive sessions, pointer callbacks, drag capture, scroll ownership, and restoration. Temporary drag callbacks are cleared on normal release and on callback errors before errors are rethrown. Apps should not set `WindowScrollWheelFcn`, `WindowButtonMotionFcn`, `WindowButtonUpFcn`, or preview-tool `ButtonDownFcn` directly.
-Default and session scroll callbacks are target-gated by default: the runtime
-dispatches wheel events only when the pointer is over the declared axes,
-background, or graphics handles. Pass `scrollScope="figure"` only when a tool
-intentionally wants whole-figure wheel behavior. When a runtime target does
-not receive the event, the pre-runtime fallback remains available, so
-app-specific tools do not block the framework previewArea navigator outside
-their declared targets.
-
-Use `labkit.ui.interaction.zoomAtPoint(ax, [x y], scrollCount)` when a custom
-tool or app needs the same cursor-centered axes-limit zoom used by default
-previewArea navigation. The helper supports generic numeric plots and infers
-image bounds for displayed image children; pass `"Bounds", [xmin xmax ymin ymax]`
-when a tool has stricter data limits. Generic plots zoom both axes by default;
-time-labeled x-axes zoom only the horizontal axis unless `"ZoomAxes"` is
-provided explicitly.
-
-Use `labkit.ui.interaction.anchorEditor(runtime, imageSize, opts)` for generic
-anchor editing. Default `mode="curve"` draws traced paths; `mode="points"` uses
-single-click placement and drag-to-refine behavior suited to ordered feature
-points and ROI centers, without drawing a connecting path or assigning
-double-click deletion. `labkit.ui.interaction.anchorPath(...)` returns the same
-visible path for fitting or export. Use `labkit.ui.interaction.rectangleEditor`
-for a toolbox-free draggable and resizable
-rectangular overlay. Use `labkit.ui.interaction.scaleBar(parent, row, runtime,
-opts)` for calibration controls, reference-pixel editing, unit normalization,
-final scale-bar placement, and overlay drawing. Apps can persist
-`tool.calibration()` per image and restore it with `tool.setCalibration(cal)`.
-Apps still own image loading, redraw order, scientific calculations, result
-summaries, alerts, logs, and exports.
-
-`labkit.ui.interaction.scaleBarCalibration(referencePixels, referenceLength, unitName, opts)` is the GUI-free calibration struct helper used by apps and app-private calculations.
-
-`labkit.ui.interaction.scaleBarGeometry(imageSize, calibration, barLength, position, colorName)` converts a valid calibration plus display preferences into serializable line/label geometry. V2 presenters can keep that geometry in session view state and let an app renderer draw it without constructing the legacy scale-bar tool.
-
+Apps persist only semantic values such as points, rectangles, intervals, and
+calibration. `labkit.ui.interaction.anchorPath`, `scaleBarCalibration`, and
+`scaleBarGeometry` remain GUI-free advanced helpers for calculations,
+presentation models, and exports. Apps never place editor/runtime objects or
+graphics handles in project or session state.
 ## Debug
 
-Apps route debug launch requests through:
-
-```matlab
-[handled, outputs, debug] = labkit.ui.runtime.dispatchRequest( ...
-    appName, varargin, nargout);
-```
-
-Debug contexts are created by dispatch for normal app entry points. Non-debug
-string inputs are rejected by the public app launch path. App launchers expose
-only the simple debug form; lower-level debug options such as log files or
-callbacks belong to direct `labkit.ui.debug.context(appName, opts)` tests
-and helpers.
-
-The same dispatch path also consumes lightweight `"requirements"` and
-`"version"` requests without launching a GUI.
-
-Debug launches support:
+`labkit.ui.runtime.launch` owns normal, debug, requirements, and version
+requests. A debug launch remains:
 
 ```matlab
 [fig, debug] = appName("debug");
 ```
 
-Apps append visible log lines through `labkit.ui.control.appendLog(ui, "log",
-message)` or the app's chosen log-panel id, then call `debug.append(message)`.
-Debug-mode apps attach the Log tab text area, emit a startup trace line, pass
-`debug.trace` into reusable tools through `onTrace`, and call
-`debug.instrumentFigure(fig)` after controls are built.
+The runtime injects diagnostics and workflow-log services. Handlers that catch
+and continue after an exception call `services.diagnostics.report`; visible
+log lines go through `services.workflow.log` and are mirrored into semantic
+`logPanel` controls on commit. Apps do not construct debug contexts, wrap UI
+callbacks, or append separately to a UI registry.
 
-Each public debug launch also writes a per-launch session folder under
-`artifacts/debug/<AppName>/<SessionId>/`. Official test runs set
-`LABKIT_ARTIFACTS` and `LABKIT_RUN_NAME`, so test-launched apps write under
-`artifacts/debug/<RunName>/<AppName>/<SessionId>/`. Each session contains
-`trace.log`, `samples/`, `outputs/`, and `manifest.json`. The trace file is
-the authoritative debug record when the GUI freezes or the app Log tab is
-inaccessible; the visible Log tab is only the human-readable mirror.
-
-Debug instrumentation writes an active-operation report next to the trace log
-when an instrumented callback starts, removes it when the callback completes,
-and writes a crash report when a callback errors or exceeds the stall timeout.
-The active-operation report records the current callback so a MATLAB process
-crash or hard UI freeze still leaves the last in-flight operation on disk.
-Crash reports include the exact MATLAB error id, message, stack, and a
-`recent_operations` section derived from semantic trace lines so a bug report
-can include both the failure and the likely reproduction path.
-MATLAB timer callbacks cannot interrupt every synchronous native or M-code
-stall while the main thread is blocked, so active-operation files and the
-normal trace log are part of the freeze report contract.
-
-Apps that intentionally catch an `MException` and continue should still call
-`debug.reportException(component, event, ME)` before showing their own alert or
-recovering. This keeps swallowed import, export, or preview failures visible in
-the same crash-report stream as uncaught callback errors.
-
-Trace is for diagnosing GUI interaction failures, callback errors, stalled file
-loads, and environment-sensitive launch problems. It is not workflow
-documentation and should not record sensitive file paths, raw sample metadata,
-or high-volume pointer movement. Trace lines include timestamp plus stable
-`app=...`, `component=...`, `event=...`, and `reason=...` fields. Default
-instrumentation wraps semantic callbacks and skips low-level pointer, drag, and
-scroll callbacks.
-`filePanel` emits framework trace lines for file choice, accepted path count,
-selection updates, and callback handoff boundaries. These traces intentionally
-record counts and semantic ids, not full local paths; app-owned readers remain
-responsible for per-file decode or parser progress.
-
+Each debug launch writes a session folder under
+`artifacts/debug/<AppName>/<SessionId>/` containing `trace.log`, `samples/`,
+`outputs/`, and `manifest.json`. The trace is authoritative when the GUI is
+unresponsive; the Log tab is its human-readable workflow mirror. Framework
+instrumentation records active operations and callback failures without adding
+app-owned lifecycle glue.
 ## Callback Policy
 
 Reusable helpers and tools keep three callback classes separate:

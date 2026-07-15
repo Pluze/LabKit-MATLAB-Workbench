@@ -99,8 +99,9 @@ function verifyProjectDocuments()
         ~runtime.document.dirty, ...
         'Open should replace project, construct a fresh session, and mark clean.');
 
-    recoveredFig = labkit.ui.runtime.run(definition(), struct( ...
-        "recoveryFile", recoveryPath, "autosave", false));
+    recoveredFig = labkit.ui.runtime.launch(@definition, @requirements, ...
+        @versionInfo, "RequestAdapter", @(args) recoveryRequest( ...
+        args, recoveryPath));
     recoveredRuntime = getappdata(recoveredFig, 'labkitUiAppRuntime');
     assert(recoveredRuntime.document.dirty && ...
         strlength(recoveredRuntime.document.path) == 0, ...
@@ -189,6 +190,11 @@ function verifyProjectDocuments()
 
     delete(fig);
     clear cleanupFolder cleanupFigures cleanupMode;
+end
+
+function [request, dispatchArgs] = recoveryRequest(~, recoveryPath)
+    request = struct("recoveryFile", recoveryPath, "autosave", false);
+    dispatchArgs = {};
 end
 
 function def = definition()

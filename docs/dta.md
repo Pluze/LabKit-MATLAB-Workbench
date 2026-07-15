@@ -39,8 +39,8 @@ Script/prototype folder:  labkit.dta.loadFolder
 ```
 
 GUI apps keep file queues, duplicate policy, current selection, result state,
-and export workflow in the owning app. A filePanel event usually passes
-`labkit.ui.control.filePaths(event.files)` into `labkit.dta.loadFile` or
+and export workflow in the owning app. A handler obtains filePanel paths from
+`services.events.paths(...)` before calling `labkit.dta.loadFile` or
 `labkit.dta.loadFiles`; DTA does not create, mutate, or save app state files.
 
 Parsed table and curve helpers:

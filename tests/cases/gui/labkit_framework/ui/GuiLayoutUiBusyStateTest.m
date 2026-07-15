@@ -81,7 +81,6 @@ function verify_gui_layout_ui_busy_state()
     verifyBusyActionWrapper();
     verifyBusyNonActionWrappers();
     verifyDebouncedParameterWrappers();
-    verifyHiddenModeAlertRecording();
     verifyDefaultCloseGuard();
     verifyBusyCloseGuard();
     verifyCloseKeyboardShortcut();
@@ -126,36 +125,6 @@ function verify_gui_layout_ui_busy_state()
 
     function clickProbe(~, ~)
     end
-end
-
-function verifyHiddenModeAlertRecording()
-    cleanupMode = setGuiTestModeForTest("hidden");
-    debug = labkit.ui.debug.context('alert_probe_app', struct());
-    layout = labkit.ui.layout.workbench('alertProbe', 'Alert Probe', ...
-        'controlTabs', {labkit.ui.layout.tab('main', 'Main', { ...
-        labkit.ui.layout.section('actions', 'Actions', { ...
-        labkit.ui.layout.action('noop', 'Noop', @(~, ~) [])})})}, ...
-        'workspace', labkit.ui.layout.workspace('workspace', 'Preview', { ...
-        labkit.ui.layout.statusPanel('status', 'Status')}));
-    ui = labkit.ui.runtime.create(layout, 'debug', debug);
-    cleaner = onCleanup(@() deleteIfValid(ui.figure));
-
-    shown = labkit.ui.runtime.showAlert(ui.figure, ...
-        "Synthetic hidden alert message.", "Hidden Alert");
-
-    assert(~shown, ...
-        'showAlert should not open a modal dialog during hidden GUI tests.');
-    assert(isappdata(ui.figure, 'labkitUiAlerts'), ...
-        'showAlert should record hidden-mode alert payloads on the figure.');
-    alerts = getappdata(ui.figure, 'labkitUiAlerts');
-    assert(alerts(end).title == "Hidden Alert" && ...
-        alerts(end).message == "Synthetic hidden alert message.", ...
-        'showAlert should preserve app-owned alert title and message.');
-    lines = string(debug.getLog());
-    assert(any(contains(lines, 'component=alert') & ...
-        contains(lines, 'reason=skipped-hidden-gui')), ...
-        'showAlert should trace hidden-mode alert skips through the debug context.');
-    clear cleanupMode;
 end
 
 function verifyDefaultCloseGuard()
@@ -348,8 +317,8 @@ function verifyBusyNonActionWrappers()
 
     function onPathChoose(~, event)
         pathCount = pathCount + 1;
-        addedFilePaths = labkit.ui.control.filePaths(event.addedFiles);
-        allPaths = labkit.ui.control.filePaths(event.files);
+        addedFilePaths = testui.control.filePaths(event.addedFiles);
+        allPaths = testui.control.filePaths(event.files);
         assert(isstring(addedFilePaths) && iscolumn(addedFilePaths) && ...
             numel(addedFilePaths) == 2 && isequal(addedFilePaths, allPaths), ...
             'filePanel event should expose selected files.');

@@ -52,14 +52,17 @@ function runUtility(fig, action)
     try
         action();
     catch ME
-        labkit.ui.runtime.showAlert(fig, string(ME.message), "LabKit Utility");
+        showAlert(fig, string(ME.message), "LabKit Utility");
     end
 end
 
 function popoutAllPlots(fig)
     axesHandles = allWorkbenchAxes(fig);
     for k = 1:numel(axesHandles)
-        labkit.ui.interaction.popout(axesHandles(k));
+        labkit.ui.interaction.enablePopout(axesHandles(k));
+        menu = findall(axesHandles(k).ContextMenu, 'Type', 'uimenu', ...
+            'Tag', 'labkitAxesPopoutMenu');
+        menu(1).MenuSelectedFcn(menu(1), []);
     end
 end
 

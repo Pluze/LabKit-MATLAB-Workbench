@@ -63,12 +63,12 @@ classdef GuiLayoutVideoMarkerTest < matlab.unittest.TestCase
             editName(ui.controls.keypointTable.table, 1, 'hip');
             editName(ui.controls.keypointTable.table, 2, 'knee');
             ui = getappdata(fig, 'labkitUiRegistry');
-            labkit.ui.control.setValue(ui, 'connectionFrom', 'hip');
+            testui.control.setValue(ui, 'connectionFrom', 'hip');
             ui.controls.connectionFrom.valueHandle.ValueChangedFcn( ...
                 ui.controls.connectionFrom.valueHandle, struct());
             ui = getappdata(fig, 'labkitUiRegistry');
             testCase.verifyFalse(any(string(ui.controls.connectionTo.valueHandle.Items) == "hip"));
-            labkit.ui.control.setValue(ui, 'connectionTo', 'knee');
+            testui.control.setValue(ui, 'connectionTo', 'knee');
             invoke(ui.controls.connectInOrder.button);
 
             pack = video_marker.debug.writeSamplePack(debug);
@@ -161,8 +161,10 @@ classdef GuiLayoutVideoMarkerTest < matlab.unittest.TestCase
             labkit.ui.runtime.saveState(fig, projectPath);
             delete(fig);
 
-            recovered = labkit.ui.runtime.run(video_marker.definition(), struct( ...
-                "debug", debug, "recoveryFile", projectPath, "autosave", false));
+            recovered = labkit.ui.runtime.launch(@video_marker.definition, ...
+                @video_marker.requirements, @video_marker.version, ...
+                "RequestAdapter", @(args) recoveryRequest( ...
+                args, debug, projectPath));
             runtime = getappdata(recovered, 'labkitUiAppRuntime');
             testCase.verifyEqual(video_marker.frameAnnotations.framePoints( ...
                 runtime.state.project.annotations.frames, 1), expected);
@@ -229,6 +231,12 @@ classdef GuiLayoutVideoMarkerTest < matlab.unittest.TestCase
             clear folderCleanup
         end
     end
+end
+
+function [request, dispatchArgs] = recoveryRequest(~, debug, projectPath)
+    request = struct("debug", debug, "recoveryFile", projectPath, ...
+        "autosave", false);
+    dispatchArgs = {};
 end
 
 function invoke(button)

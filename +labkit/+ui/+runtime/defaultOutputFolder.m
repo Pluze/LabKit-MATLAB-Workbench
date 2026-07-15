@@ -29,7 +29,7 @@ function folder = defaultOutputFolder(sourcePaths, subfolderName, fallbackFolder
 
     baseFolder = sourceBaseFolder(sourcePaths);
     if strlength(baseFolder) == 0
-        baseFolder = string(labkit.ui.runtime.defaultDialogFolder("output", fallbackFolder));
+        baseFolder = string(defaultDialogFolder("output", fallbackFolder));
     end
 
     target = string(fullfile(char(baseFolder), char(safeSubfolderName(subfolderName))));
@@ -38,7 +38,7 @@ function folder = defaultOutputFolder(sourcePaths, subfolderName, fallbackFolder
         return;
     end
 
-    folder = labkit.ui.runtime.defaultDialogFolder("output", fallbackFolder);
+    folder = defaultDialogFolder("output", fallbackFolder);
 end
 
 function folder = sourceBaseFolder(sourcePaths)

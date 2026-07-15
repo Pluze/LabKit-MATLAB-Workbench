@@ -1,5 +1,5 @@
 function filepath = loadState(fig, filepath)
-%LOADSTATE Load a compatible LabKit app state snapshot from a MAT file.
+%LOADSTATE Load a compatible Runtime V2 project or declared legacy import.
 %
 % App-facing contract:
 %   filepath = labkit.ui.runtime.loadState(fig)
@@ -15,31 +15,23 @@ function filepath = loadState(fig, filepath)
 %       cancels the open dialog.
 %
 % Runtime behavior:
-%   Loads only a variable named `snapshot`, validates schema, app id,
-%   LabKit UI version, MATLAB release/platform, and optional app snapshot
-%   version before mutating runtime state. Failed loads restore the previous
-%   app state and visible render.
+%   Validates and resolves the complete candidate before atomically replacing
+%   project/session state. Named legacy imports are read-only.
 
     if nargin < 2
-        filepath = chooseSnapshotInput();
+        filepath = chooseProjectInput();
         if strlength(filepath) == 0
             return;
         end
     else
         filepath = string(filepath);
     end
-    runtime = getAppRuntime(fig);
-    if isfield(runtime.definition, 'contractVersion') && ...
-            runtime.definition.contractVersion == 2
-        restoreV2Project(fig, filepath);
-    else
-        restoreSnapshot(fig, filepath);
-    end
+    restoreV2Project(fig, filepath);
 end
 
-function filepath = chooseSnapshotInput()
+function filepath = chooseProjectInput()
     [file, path] = uigetfile({'*.mat', 'MAT files (*.mat)'}, ...
-        'Load LabKit State Snapshot');
+        'Load LabKit Project');
     if isequal(file, 0) || isequal(path, 0)
         filepath = "";
     else

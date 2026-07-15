@@ -360,14 +360,14 @@ launch-only suite:
 
 - `AppPackageStructureGuardrailTest` discovers every `apps/**/labkit_*_app.m`
   entrypoint, requires the canonical `definition.m`,
-  `definitionActions.m`, `+appLifecycle/createInitialState.m`,
-  `+userInterface/buildWorkbenchLayout.m`, and
-  `+userInterface/updateWorkbenchFromState.m` files, and rejects retired
+  `definitionActions.m`, project/session lifecycle owners,
+  `+userInterface/buildWorkbenchLayout.m`, and the presenter, and rejects retired
   package-root app runners and broad app buckets such as `+actions`, `+state`,
   `+ui`, `+view`, `+ops`, `+io`, and `+export`.
-- `GuiLayoutUiAppRuntimeTest` owns the framework runtime contract: startup and
-  hydration actions update state, render prepared state, record phase timings,
-  expose service dispatch, and report action failures through debug context.
+- `GuiLayoutUiRuntimeV2Test` owns queued dispatch, canonical state,
+  presentation commits, service injection, rollback, and `Start` behavior.
+  `GuiLayoutUiRuntimeV2ProjectTest` owns project persistence, migrations,
+  source relinking, and read-only legacy snapshot imports.
 - `AppOwnedWorkflowBoundariesTest` and `AppLibraryCompatibilityTest` keep app
   workflow code under the owning app tree and prevent apps from depending on
   removed helper-dump or old UI surfaces.

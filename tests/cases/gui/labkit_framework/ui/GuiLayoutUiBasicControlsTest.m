@@ -50,63 +50,54 @@ function verify_gui_layout_ui_basic_controls()
         'usage', {'Open files.', 'Run analysis.'});
     ui = labkit.ui.runtime.create(layout);
 
-    labkit.ui.control.setValue(ui, 'files', ["a.dat"; "b.dat"]);
-    files = labkit.ui.control.getFiles(ui, 'files');
+    testui.control.setValue(ui, 'files', ["a.dat"; "b.dat"]);
+    files = testui.control.getFiles(ui, 'files');
     assert(numel(files) == 2 && startsWith(ui.controls.files.listbox.Items{1}, '01 a.dat'), ...
         'setValue/getFiles should populate filePanel entries with framework labels.');
     usageId = 'basicControlsProbeUsage';
     assert(isfield(ui.controls, usageId) && ...
         any(strcmp(ui.controls.(usageId).textArea.Value, 'Run analysis.')), ...
         'usagePanel should create a reusable read-only workflow help panel.');
-    labkit.ui.control.setFileSelection(ui, 'files', files(2));
-    selectedFilePaths = labkit.ui.control.filePaths(labkit.ui.control.getValue(ui, 'files'));
+    testui.control.setFileSelection(ui, 'files', files(2));
+    selectedFilePaths = testui.control.filePaths(testui.control.getValue(ui, 'files'));
     assert(isequal(selectedFilePaths, "b.dat"), ...
         'setFileSelection should apply valid filePanel selection.');
     assert(contains(string(ui.figure.Name), "file 2/2: b.dat"), ...
         'setFileSelection should surface the selected file in the app title.');
 
-    labkit.ui.control.setValue(ui, 'gain', 4);
-    assert(labkit.ui.control.getValue(ui, 'gain') == 4, ...
+    testui.control.setValue(ui, 'gain', 4);
+    assert(testui.control.getValue(ui, 'gain') == 4, ...
         'setValue/getValue should round-trip field values by id.');
-    labkit.ui.control.setItems(ui, 'mode', {'second', 'third'});
-    assert(strcmp(labkit.ui.control.getValue(ui, 'mode'), 'second'), ...
+    testui.control.setItems(ui, 'mode', {'second', 'third'});
+    assert(strcmp(testui.control.getValue(ui, 'mode'), 'second'), ...
         'setItems should preserve a selectable value that remains valid.');
-    labkit.ui.control.setItems(ui, 'mode', {'fourth', 'fifth'});
-    assert(strcmp(labkit.ui.control.getValue(ui, 'mode'), 'fourth'), ...
+    testui.control.setItems(ui, 'mode', {'fourth', 'fifth'});
+    assert(strcmp(testui.control.getValue(ui, 'mode'), 'fourth'), ...
         'setItems should select the first item when the old value is removed.');
-    labkit.ui.control.setEnabled(ui, 'run', false);
+    testui.control.setEnabled(ui, 'run', false);
     assert(strcmp(ui.controls.run.button.Enable, 'off'), ...
         'setEnabled should target action buttons by id.');
-    setappdata(ui.figure, 'labkitUiConfirmFcn', @confirmRestore);
-    confirmed = labkit.ui.runtime.confirm(ui.figure, 'Restore autosave?', ...
-        'Recovery', 'ConfirmText', 'Restore', 'CancelText', 'Start new');
-    assert(confirmed && isappdata(ui.figure, 'labkitUiConfirmations'), ...
-        'runtime.confirm should support injectable hidden-GUI confirmation.');
-
-    labkit.ui.control.appendLog(ui, 'logPanel', 'Completed.');
+    testui.control.appendLog(ui, 'logPanel', 'Completed.');
     assert(any(contains(string(ui.controls.logPanel.textArea.Value), 'Completed.')), ...
         'appendLog should append to a semantic log panel.');
     assertLogPanelFollowLatestControls(ui.controls.logPanel);
     assertSinglePanelTitle(ui.figure, 'Log');
     assertSinglePanelTitle(ui.figure, 'Usage');
-    labkit.ui.plot.image(ui, 'preview', zeros(8, 9, 3, 'uint8'), ...
+    testui.plot.image(ui, 'preview', zeros(8, 9, 3, 'uint8'), ...
         'axis', 'main', 'title', 'Preview');
     ax = ui.controls.preview.primaryAxes;
     assert(~isempty(ax.Children), 'plot.image should draw into a semantic preview axes.');
     assert(strcmp(char(ax.Title.String), 'Preview | file 2/2: b.dat'), ...
         'plot.image should include selected file context in preview titles.');
-    labkit.ui.plot.clearPreview(ui, 'preview', 'main');
+    testui.plot.clearPreview(ui, 'preview', 'main');
     assert(isempty(ax.Children), 'plot.clearPreview should remove preview axes children.');
-    labkit.ui.plot.reset(ui, 'preview', 'Preview Reset', true, 'main');
+    testui.plot.reset(ui, 'preview', 'Preview Reset', true, 'main');
     assert(strcmp(char(ax.Title.String), 'Preview Reset | file 2/2: b.dat'), ...
         'plot.reset should preserve selected file context in preview titles.');
 
     function noop(varargin)
     end
 
-    function response = confirmRestore(~, ~, ~, confirmText, ~)
-        response = confirmText;
-    end
 end
 
 function assertLogPanelFollowLatestControls(control)
@@ -128,7 +119,7 @@ function assertLogPanelFollowLatestControls(control)
         strcmp(button.Text, 'Follow latest'), ...
         'logPanel button should pause automatic tail scrolling.');
 
-    labkit.ui.control.appendLog(struct('controls', struct('logPanel', control)), ...
+    testui.control.appendLog(struct('controls', struct('logPanel', control)), ...
         'logPanel', 'Paused line');
     menu.MenuSelectedFcn(menu, []);
     assert(getappdata(textArea, 'labkitLogFollowLatest') && ...

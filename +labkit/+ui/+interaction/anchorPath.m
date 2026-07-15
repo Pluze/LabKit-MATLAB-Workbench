@@ -1,4 +1,4 @@
-function curve = anchorPath(points, imageSize, options)
+function [curve, owners] = anchorPath(points, imageSize, options)
 %ANCHORPATH Build the visible path used by a managed anchor interaction.
 %
 % Inputs:
@@ -11,6 +11,7 @@ function curve = anchorPath(points, imageSize, options)
 % Output:
 %   curve - M-by-2 visible path samples, clamped to the image bounds. Empty
 %           until enough anchors exist for the selected open/closed path.
+%   owners - optional M-by-1 anchor owner indices for insertion mechanics.
 %
 % Example:
 %   curve = labkit.ui.interaction.anchorPath(points, size(imageData), ...
@@ -29,6 +30,6 @@ function curve = anchorPath(points, imageSize, options)
         'Image size must contain positive finite height and width values.');
     assert(any(options.Style == ["Curve", "Straight lines"]), ...
         'Style must be "Curve" or "Straight lines".');
-    curve = anchorCurvePoints(points, imageSize, ...
+    [curve, owners] = anchorCurvePoints(points, imageSize, ...
         options.Style, options.Closed);
 end

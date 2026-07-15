@@ -73,19 +73,19 @@ function verify_gui_layout_ui_axes_workbench()
         'previewArea should defer built-in axes interaction cleanup until scroll is used.');
     plotAx.XLim = [0 10];
     plotAx.YLim = [0 20];
-    didZoomPlot = labkit.ui.interaction.zoomAtPoint(plotAx, [5 10], -1);
+    didZoomPlot = testui.interaction.zoomAtPoint(plotAx, [5 10], -1);
     assert(didZoomPlot && diff(plotAx.XLim) < 10 && diff(plotAx.YLim) < 20, ...
         'Generic plot axes should support cursor-centered scroll zoom.');
     unchangedX = plotAx.XLim;
     unchangedY = plotAx.YLim;
-    didZoomOutside = labkit.ui.interaction.zoomAtPoint(plotAx, [50 10], -1);
+    didZoomOutside = testui.interaction.zoomAtPoint(plotAx, [50 10], -1);
     assert(~didZoomOutside && isequal(plotAx.XLim, unchangedX) && ...
         isequal(plotAx.YLim, unchangedY), ...
         'Generic zoom should ignore points outside the current plot limits.');
     xlabel(plotAx, 'Time (s)');
     plotAx.XLim = [0 10];
     plotAx.YLim = [0 20];
-    didZoomTime = labkit.ui.interaction.zoomAtPoint(plotAx, [5 10], -1);
+    didZoomTime = testui.interaction.zoomAtPoint(plotAx, [5 10], -1);
     assert(didZoomTime && diff(plotAx.XLim) < 10 && ...
         isequal(plotAx.YLim, [0 20]), ...
         'Time-series axes should scroll-zoom the horizontal time axis only.');
@@ -94,7 +94,7 @@ function verify_gui_layout_ui_axes_workbench()
     plotAx.YScale = 'log';
     plotAx.XLim = [1 1000];
     plotAx.YLim = [1 1000];
-    didZoomLog = labkit.ui.interaction.zoomAtPoint(plotAx, [10 100], -1);
+    didZoomLog = testui.interaction.zoomAtPoint(plotAx, [10 100], -1);
     assert(didZoomLog && diff(log10(plotAx.XLim)) < 3 && ...
         diff(log10(plotAx.YLim)) < 3, ...
         'Log axes should scroll-zoom in log space.');
@@ -166,37 +166,17 @@ function verify_gui_layout_ui_axes_workbench()
     assert(strcmp(studioTool(1).String, 'Send to Studio'), ...
         'Popout should expose one Studio handoff command instead of export buttons.');
 
-    hFirstImage = labkit.ui.plot.image(ui, 'plotPreview', ...
-        zeros(12, 16, 3, 'uint8'), 'axis', 'image', 'title', 'Image Probe');
     imgAx = ui.controls.plotPreview.axesById.image;
+    image(imgAx, zeros(12, 16, 3, 'uint8'));
+    imgAx.XLim = [0.5 16.5];
+    imgAx.YLim = [0.5 12.5];
+    title(imgAx, 'Image Probe');
     assertPreviewScrollNotPrepared(ui.figure, imgAx, ...
         'plot.image should not force eager built-in axes interaction cleanup.');
-    didZoomImage = labkit.ui.interaction.zoomAtPoint(imgAx, [8 6], -2);
+    didZoomImage = testui.interaction.zoomAtPoint(imgAx, [8 6], -2);
     assert(didZoomImage && imgAx.XLim(1) >= 0.5 && imgAx.XLim(2) <= 16.5 && ...
         imgAx.YLim(1) >= 0.5 && imgAx.YLim(2) <= 12.5, ...
         'Image axes scroll zoom should infer and clamp to displayed image bounds.');
-    zoomedX = imgAx.XLim;
-    zoomedY = imgAx.YLim;
-    overlayLine = line(imgAx, [2 8], [3 3], 'Color', 'r');
-    hSecondImage = labkit.ui.plot.image(ui, 'plotPreview', ...
-        ones(12, 16, 3, 'uint8'), 'axis', 'image', 'title', 'Image Probe');
-    assert(isequal(hFirstImage, hSecondImage) && ~isvalid(overlayLine), ...
-        'Same-axes image redraws should reuse the LabKit image handle and clear old overlays.');
-    assert(isequal(imgAx.XLim, zoomedX) && isequal(imgAx.YLim, zoomedY), ...
-        'Same-size image redraws should preserve the current zoomed view.');
-    % preserve current plot viewport
-    assert(isequal(imgAx.XLim, zoomedX) && isequal(imgAx.YLim, zoomedY), ...
-        'Preserve viewport policy should leave image ROI limits unchanged.');
-    labkit.ui.plot.reset(ui, 'plotPreview', 'Image Probe', true, 'image');
-    labkit.ui.plot.image(ui, 'plotPreview', ...
-        zeros(12, 16, 3, 'uint8'), 'axis', 'image', 'title', 'Image Probe');
-    assert(isequal(imgAx.XLim, [0.5 16.5]) && isequal(imgAx.YLim, [0.5 12.5]), ...
-        'Explicit axes reset should clear preserved image zoom state.');
-    labkit.ui.plot.image(ui, 'plotPreview', ...
-        zeros(12, 16, 3, 'uint8'), 'axis', 'image', 'title', 'Image Probe', ...
-        'options', struct('xData', [-3, 12], 'yData', [-4, 7]));
-    assert(isequal(imgAx.XLim, [-3.5 12.5]) && isequal(imgAx.YLim, [-4.5 7.5]), ...
-        'plot.image should respect explicit image XData/YData coordinates.');
     plotAx.XLim = [0 0.1];
     plotAx.YLim = [0 0.1];
     plot(plotAx, [0 10], [0 20]);

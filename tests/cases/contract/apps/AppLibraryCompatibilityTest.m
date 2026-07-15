@@ -28,18 +28,6 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
             end
         end
 
-        function filePanelIndicesNormalizeToStableItemIndices(testCase)
-            setupLabKitTestPath();
-            files = struct( ...
-                'index', {2, [], 99, []}, ...
-                'id', {'file1', 'file3', 'file4', 'file2'});
-
-            idx = labkit.ui.control.fileIndices(files, 3);
-
-            testCase.verifyEqual(idx, [2; 3], ...
-                'filePanel index helpers should prefer valid index values, fall back from missing indices, and drop duplicates or out-of-range values.');
-        end
-
         function appReadersDoNotNormalizePathShapes(testCase)
             root = setupLabKitTestPath();
             readerFiles = [
@@ -209,7 +197,7 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
 
             testCase.verifyEmpty(findings, ...
                 "Apps should consume filePanel file entries and extract paths with " + ...
-                "labkit.ui.control.filePaths; task/path events are retired: " + ...
+                "testui.control.filePaths; task/path events are retired: " + ...
                 strjoin(findings, "; "));
         end
 

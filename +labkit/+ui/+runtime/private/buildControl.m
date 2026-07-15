@@ -440,7 +440,7 @@ function callback = semanticFileChooseCallback(id, appCallback)
         control = control.setFileSelection(control, addedFiles);
         ui.controls.(id) = control;
         setappdata(ui.figure, 'labkitUiRegistry', ui);
-        labkit.ui.control.setFileSelection(ui, id, control.currentSelectedFiles());
+        setControlFileSelection(ui, id, control.currentSelectedFiles());
         traceFilePanelFromSource(id, source, 'selection updated', sprintf( ...
             'total=%d added=%d selected=%d', numel(control.currentFiles()), ...
             numel(addedFiles), numel(control.currentSelectedFiles())));
@@ -464,7 +464,7 @@ function callback = semanticFileRemoveCallback(id, appCallback)
         [control, removedFiles] = control.removeSelection(control);
         ui.controls.(id) = control;
         setappdata(ui.figure, 'labkitUiRegistry', ui);
-        labkit.ui.control.setFileSelection(ui, id, control.currentSelectedFiles());
+        setControlFileSelection(ui, id, control.currentSelectedFiles());
         traceFilePanelFromSource(id, source, 'selection updated', sprintf( ...
             'total=%d removed=%d selected=%d', numel(control.currentFiles()), ...
             numel(removedFiles), numel(control.currentSelectedFiles())));
@@ -489,7 +489,7 @@ function callback = semanticFileClearCallback(id, appCallback)
         control = control.applySelection(control, {}, true);
         ui.controls.(id) = control;
         setappdata(ui.figure, 'labkitUiRegistry', ui);
-        labkit.ui.control.setFileSelection(ui, id, control.currentSelectedFiles());
+        setControlFileSelection(ui, id, control.currentSelectedFiles());
         traceFilePanelFromSource(id, source, 'selection updated', sprintf( ...
             'total=0 removed=%d selected=0', numel(previousFiles)));
         event = fileEvent(control, source, rawEvent, 'clear');
@@ -509,7 +509,7 @@ function callback = semanticFileSelectionCallback(id, appCallback)
             return;
         end
         control = ui.controls.(id);
-        labkit.ui.control.setFileSelection(ui, id, control.currentSelectedFiles());
+        setControlFileSelection(ui, id, control.currentSelectedFiles());
         traceFilePanelFromSource(id, source, 'selection changed', sprintf( ...
             'selected=%d', numel(control.currentSelectedFiles())));
         if isempty(appCallback)

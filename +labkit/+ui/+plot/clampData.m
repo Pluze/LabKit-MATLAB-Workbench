@@ -15,7 +15,7 @@ function xy = clampData(ax, xy, varargin)
 
     opts = parseAxesOptions(varargin, struct('Padding', 0.04));
     pad = max(0, min(0.49, double(opts.Padding)));
-    uv = labkit.ui.plot.dataToFraction(ax, xy);
+    uv = dataToFraction(ax, xy);
     uv = min(max(uv, pad), 1 - pad);
-    xy = labkit.ui.plot.fractionToData(ax, uv);
+    xy = fractionToData(ax, uv);
 end

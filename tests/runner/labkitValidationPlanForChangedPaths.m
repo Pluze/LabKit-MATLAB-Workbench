@@ -463,12 +463,12 @@ end
 function tests = fastUiRepresentativeTests()
     tests = [ ...
         "test_gui_layout_ui_declarative_app", ...
-        "test_gui_layout_ui_scale_bar_tool", ...
+        "controlled_interactions_suppress_programmatic_events", ...
         "test_gui_layout_ui_debug_trace"];
 end
 
 function tests = fastUiGestureRepresentativeTests()
-    tests = "referenceEditAndPlacementEmitStructuredTrace";
+    tests = "controlled_region_selection_registers_transient_gesture";
 end
 
 function mode = parseMode(varargin)

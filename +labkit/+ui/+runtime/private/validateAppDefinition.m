@@ -6,42 +6,7 @@ function validateAppDefinition(def)
         error('labkit:ui:runtime:InvalidDefinition', ...
             'App definition must be a scalar struct.');
     end
-    if isfield(def, 'contractVersion') && def.contractVersion == 2
-        validateV2Definition(def);
-        return;
-    end
-    required = ["type", "id", "title", "initialState", "layout", ...
-        "actions", "render", "startup", "hydrate", "snapshot", ...
-        "utilities"];
-    for k = 1:numel(required)
-        if ~isfield(def, required(k))
-            error('labkit:ui:runtime:InvalidDefinition', ...
-                'App definition is missing field "%s".', required(k));
-        end
-    end
-    if string(def.type) ~= "labkit.ui.runtime.definition"
-        error('labkit:ui:runtime:InvalidDefinition', ...
-            'App definition has unsupported type "%s".', string(def.type));
-    end
-    assertScalarText(def.id, "id");
-    assertScalarText(def.title, "title");
-    if ~(isa(def.initialState, 'function_handle') || isstruct(def.initialState))
-        error('labkit:ui:runtime:InvalidDefinition', ...
-            'InitialState must be a function handle or struct.');
-    end
-    if ~isa(def.layout, 'function_handle')
-        error('labkit:ui:runtime:InvalidDefinition', ...
-            'Layout must be a function handle.');
-    end
-    if ~isa(def.render, 'function_handle')
-        error('labkit:ui:runtime:InvalidDefinition', ...
-            'Render must be a function handle.');
-    end
-    validateActions(def.actions);
-    validatePhaseIds(def.startup, def.actions, "Startup");
-    validatePhaseIds(def.hydrate, def.actions, "Hydrate");
-    validateSnapshotSpec(def.snapshot);
-    validateUtilitiesSpec(def.utilities);
+    validateV2Definition(def);
 end
 
 function validateV2Definition(def)
@@ -199,32 +164,6 @@ function assertScalarText(value, name)
             strlength(string(value)) == 0
         error('labkit:ui:runtime:InvalidDefinition', ...
             'App definition %s must be nonempty scalar text.', name);
-    end
-end
-
-function validateSnapshotSpec(spec)
-    if isempty(spec)
-        return;
-    end
-    if ~isstruct(spec) || ~isscalar(spec)
-        error('labkit:ui:runtime:InvalidDefinition', ...
-            'Snapshot must be a scalar struct when supplied.');
-    end
-    if isfield(spec, 'Version')
-        value = spec.Version;
-        if ~(isnumeric(value) && isscalar(value) && isfinite(value))
-            error('labkit:ui:runtime:InvalidDefinition', ...
-                'Snapshot.Version must be a finite numeric scalar.');
-        end
-    end
-    optionalHooks = ["Serialize", "Deserialize", "AfterLoad"];
-    for k = 1:numel(optionalHooks)
-        field = char(optionalHooks(k));
-        if isfield(spec, field) && ~isempty(spec.(field)) && ...
-                ~isa(spec.(field), 'function_handle')
-            error('labkit:ui:runtime:InvalidDefinition', ...
-                'Snapshot.%s must be a function handle when supplied.', field);
-        end
     end
 end
 

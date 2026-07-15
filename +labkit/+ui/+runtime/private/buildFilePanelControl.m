@@ -232,7 +232,7 @@ function paths = chooseFilePaths(control)
         return;
     end
 
-    startPath = labkit.ui.runtime.defaultDialogFolder("input", ...
+    startPath = defaultDialogFolder("input", ...
         optionValue(props, 'startPath', ""));
     if isSingleMode(props)
         traceFilePanelControl(control, 'file chooser start', 'mode=single');
@@ -378,7 +378,7 @@ function labels = fileLabels(files)
             status(k) = string(files(k).status);
         end
     end
-    labels = labkit.ui.control.fileLabels(paths, 'status', status);
+    labels = formatFileLabels(paths, 'status', status);
 end
 
 function files = normalizeFiles(value)

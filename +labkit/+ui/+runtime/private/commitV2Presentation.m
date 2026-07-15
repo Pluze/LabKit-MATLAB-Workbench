@@ -43,7 +43,7 @@ function applyWorkflowLog(ui, workflow)
         control = ui.controls.(ids{k});
         if isstruct(control) && isfield(control, 'kind') && ...
                 strcmp(control.kind, 'logPanel')
-            labkit.ui.control.setValue(ui, ids{k}, value);
+            setControlValue(ui, ids{k}, value);
         end
     end
 end
@@ -62,11 +62,11 @@ function applyControlConstraints(ui, controls)
         end
         [found, value] = propertyValue(spec, "Items");
         if found
-            labkit.ui.control.setItems(ui, id, value);
+            setControlItems(ui, id, value);
         end
         [found, value] = propertyValue(spec, "Limits");
         if found
-            labkit.ui.control.setLimits(ui, id, value);
+            setControlLimits(ui, id, value);
         end
     end
 end
@@ -74,7 +74,7 @@ end
 function applyBindings(ui, bindings, state)
     for k = 1:numel(bindings)
         value = valueAtPath(state, bindings(k).path);
-        labkit.ui.control.setValue(ui, bindings(k).id, value);
+        setControlValue(ui, bindings(k).id, value);
     end
 end
 
@@ -88,7 +88,7 @@ function applyControls(ui, controls)
         id = string(ids{k});
         spec = controls.(ids{k});
         if ~isstruct(spec) || ~isscalar(spec)
-            labkit.ui.control.setValue(ui, id, spec);
+            setControlValue(ui, id, spec);
             continue;
         end
         applyControlSpec(ui, id, spec);
@@ -98,11 +98,11 @@ end
 function applyControlSpec(ui, id, spec)
     [found, value] = propertyValue(spec, "Files");
     if found
-        labkit.ui.control.setValue(ui, id, value);
+        setControlValue(ui, id, value);
     end
     [found, value] = propertyValue(spec, "Selection");
     if found
-        labkit.ui.control.setFileSelection(ui, id, value);
+        setControlFileSelection(ui, id, value);
     end
     [found, value] = propertyValue(spec, "Status");
     if found
@@ -110,15 +110,15 @@ function applyControlSpec(ui, id, spec)
     end
     [found, value] = propertyValue(spec, "Items");
     if found
-        labkit.ui.control.setItems(ui, id, value);
+        setControlItems(ui, id, value);
     end
     [found, value] = propertyValue(spec, "Limits");
     if found
-        labkit.ui.control.setLimits(ui, id, value);
+        setControlLimits(ui, id, value);
     end
     [found, value] = propertyValue(spec, "Enabled");
     if found
-        labkit.ui.control.setEnabled(ui, id, value);
+        setControlEnabled(ui, id, value);
     end
     [found, value] = propertyValue(spec, "Text");
     if found
@@ -128,7 +128,7 @@ function applyControlSpec(ui, id, spec)
     for k = 1:numel(names)
         [found, value] = propertyValue(spec, names(k));
         if found
-            labkit.ui.control.setValue(ui, id, value);
+            setControlValue(ui, id, value);
             break;
         end
     end
@@ -150,7 +150,7 @@ function applyControlText(ui, id, value)
             return;
         end
     end
-    labkit.ui.control.setValue(ui, id, value);
+    setControlValue(ui, id, value);
 end
 
 function applyFilePanelStatus(ui, id, value)
@@ -221,9 +221,9 @@ function applyPreview(runtime, id, spec)
         end
         [hasAxis, axisId] = propertyValue(spec, "Axis");
         if hasAxis && strlength(string(axisId)) > 0
-            ax = labkit.ui.plot.getAxes(runtime.ui, id, string(axisId));
+            ax = resolvePreviewAxes(runtime.ui, id, string(axisId));
         else
-            ax = labkit.ui.plot.getAxes(runtime.ui, id);
+            ax = resolvePreviewAxes(runtime.ui, id);
         end
         invokeRenderer(runtime.definition.renderers.(rendererId), ax, model);
 end

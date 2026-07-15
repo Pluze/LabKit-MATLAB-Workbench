@@ -95,9 +95,11 @@ apps/<family>/<app_slug>/+<app_slug>/definition.m
 apps/<family>/<app_slug>/+<app_slug>/requirements.m
 apps/<family>/<app_slug>/+<app_slug>/version.m
 apps/<family>/<app_slug>/+<app_slug>/definitionActions.m
-apps/<family>/<app_slug>/+<app_slug>/+appLifecycle/createInitialState.m
+apps/<family>/<app_slug>/+<app_slug>/+appLifecycle/createProject.m
+apps/<family>/<app_slug>/+<app_slug>/+appLifecycle/createSession.m
+apps/<family>/<app_slug>/+<app_slug>/+appLifecycle/validateProject.m
 apps/<family>/<app_slug>/+<app_slug>/+userInterface/buildWorkbenchLayout.m
-apps/<family>/<app_slug>/+<app_slug>/+userInterface/updateWorkbenchFromState.m
+apps/<family>/<app_slug>/+<app_slug>/+userInterface/presentWorkbench.m
 ```
 
 Add workflow packages only when the app has that user-facing capability:
@@ -128,12 +130,10 @@ App GUIs use the layered UI foundation:
 
 | Layer | App-facing API |
 | --- | --- |
-| Runtime | `labkit.ui.runtime.launch`, `define`, `run`, `emptySourceRecords`, `create`, `dispatchRequest`, `appVersionTitle`, `applyVersionTitle`, `confirm`, `defaultDialogFolder`, `defaultOutputFolder`, `promptOutputFile`, `promptOutputFolder`, `runBusy`; v2 privately owns its queue, resources, presentation, interactions, durable project/recovery policy, and result-manifest service. |
-| Layout | `labkit.ui.layout.workbench`, `workspace`, `tab`, `section`, `group`, `field`, `rangeField`, `panner`, `action`, `filePanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`, `usagePanel` |
-| Control | `labkit.ui.control.setValue`, `getValue`, `getFiles`, `setFileSelection`, `setItems`, `setEnabled`, `setLimits`, `appendLog`, `setListItems`, `setListSelection`, `fileLabels`, `filePaths`, `fileIndices` |
-| Plot | `labkit.ui.plot.getAxes`, `clear`, `clearPreview`, `reset`, `replaceOverlay`, `image`, `fit`, `fitCanvas`, `dataToFraction`, `fractionToData`, `offsetData`, `clampData`, `message` |
-| Interaction | `labkit.ui.interaction.runtime`, `anchorEditor`, `scaleBar`, `scaleBarCalibration`, `enablePopout`, `popout`, `zoomAtPoint` |
-| Debug | `labkit.ui.debug.context` |
+| Runtime | `labkit.ui.runtime.launch`, `define`, `emptySourceRecords`, `saveState`, `loadState`, portable source references, and source-adjacent output defaults; the runtime privately owns request dispatch, queueing, resources, presentation, interactions, recovery, diagnostics, and result manifests. |
+| Layout | `labkit.ui.layout.workbench`, `workspace`, `tab`, `section`, `group`, `field`, `rangeField`, `panner`, `action`, `filePanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel` |
+| Plot | Advanced renderer helpers: `clear`, `fit`, `fitCanvas`, `offsetData`, `clampData`, `message` |
+| Interaction | GUI-free `anchorPath`, `scaleBarCalibration`, `scaleBarGeometry`, plus `enablePopout`; editor/runtime objects are private. |
 
 Reusable facades publish MATLAB-native contract versions through their
 `version()` APIs. Apps declare required facade ranges through app-local
@@ -165,19 +165,20 @@ placement, overlay-removal workflow wording, measurements, and user-facing
 decisions. Generic image IO and filters stay in `labkit.image`; thermal file
 parsing and raw-to-temperature mechanics stay in `labkit.thermal`.
 
-`definition.m` returns the app runtime contract. It names the initial state
-factory, data-only layout builder, command handler registry, visible-state update
-function, startup phases, and optional hydration phases. The framework runtime
-validates the definition, generates semantic callbacks, builds the shell, owns
-readiness/busy state, schedules startup and hydration, routes diagnostics, and
+`definition.m` returns the app runtime contract. It names the project schema,
+optional session factory, data-only layout builder, handler registry,
+presenter, renderers, and optional `Start`. The framework runtime validates
+the definition, generates semantic callbacks, builds the shell, owns the event
+queue and readiness/busy state, routes diagnostics, and
 protects hidden test behavior.
 
 `+userInterface/buildWorkbenchLayout.m` returns a data-only `labkit.ui.layout.*`
 tree. It should not create MATLAB UI handles, mutate app state, perform IO,
 run calculations, write exports, schedule startup, or set row/column layout
 mechanics. App command handlers own app-specific state changes, alerts, refresh
-decisions, and log wording. `+userInterface/updateWorkbenchFromState.m` is the
-top-level bridge from prepared state into existing controls.
+decisions, and log wording. `+userInterface/presentWorkbench.m` is the pure
+bridge from canonical state to semantic control properties, prepared preview
+models, and controlled interaction specs.
 
 ## Reusable Extraction Rule
 

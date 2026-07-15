@@ -1,6 +1,8 @@
-# UI Runtime And App Data Redesign
+# UI Runtime V2 Design Record
 
-Status: proposed target architecture for the next LabKit-wide migration. The current supported API remains documented in [ui.md](ui.md) until each migration phase is implemented and validated.
+Status: implemented design record. The current supported contract is
+documented in [ui.md](ui.md); this page preserves the 2026-07-14 audit and the
+decisions that led to Runtime V2, and is not an alternative authoring guide.
 
 This design replaces callback-by-callback coordination with one runtime-owned event loop, one semantic state tree, one presentation commit, one figure-scoped interaction hub, and one versioned project-document contract. Apps continue to own scientific decisions, workflow order, calculations, plots, and result meaning.
 

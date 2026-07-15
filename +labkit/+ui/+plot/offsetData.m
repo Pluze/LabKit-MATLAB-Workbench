@@ -14,7 +14,7 @@ function xy = offsetData(ax, xy, offsetFraction)
 % Outputs:
 %   xyOut - N-by-2 offset data coordinates.
 
-    uv = labkit.ui.plot.dataToFraction(ax, xy);
+    uv = dataToFraction(ax, xy);
     offsetFraction = normalizePointOffsets(offsetFraction, size(uv, 1));
-    xy = labkit.ui.plot.fractionToData(ax, uv + offsetFraction);
+    xy = fractionToData(ax, uv + offsetFraction);
 end

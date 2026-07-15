@@ -24,9 +24,11 @@ LabKit-MATLAB-Workbench/
             definitionActions.m
             requirements.m
             version.m
-            +appLifecycle/createInitialState.m
+            +appLifecycle/createProject.m
+            +appLifecycle/createSession.m
+            +appLifecycle/validateProject.m
             +userInterface/buildWorkbenchLayout.m
-            +userInterface/updateWorkbenchFromState.m
+            +userInterface/presentWorkbench.m
             +sourceFiles/...
             +analysisRun/...
             +resultFiles/...

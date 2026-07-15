@@ -27,9 +27,11 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
   available. App authors should primarily edit one app-owned MATLAB package
   with a small fixed lifecycle/UI surface and concrete workflow packages:
   `apps/<family>/<app_slug>/+<app_slug>/definition.m`,
-  `apps/<family>/<app_slug>/+<app_slug>/+appLifecycle/createInitialState.m`,
+  `apps/<family>/<app_slug>/+<app_slug>/+appLifecycle/createProject.m`,
+  `apps/<family>/<app_slug>/+<app_slug>/+appLifecycle/createSession.m`,
+  `apps/<family>/<app_slug>/+<app_slug>/+appLifecycle/validateProject.m`,
   `apps/<family>/<app_slug>/+<app_slug>/+userInterface/buildWorkbenchLayout.m`,
-  `apps/<family>/<app_slug>/+<app_slug>/+userInterface/updateWorkbenchFromState.m`,
+  `apps/<family>/<app_slug>/+<app_slug>/+userInterface/presentWorkbench.m`,
   and app-specific workflow packages such as
   `apps/<family>/<app_slug>/+<app_slug>/+appState/exportPlan.m`,
   `apps/<family>/<app_slug>/+<app_slug>/+sourceFiles/readSourceFiles.m`,
@@ -38,17 +40,14 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
   Use the smallest genuinely similar app only as a workflow reference, not as a
   directory tree to copy.
 - When a documented UI tool owns app-neutral controls or interaction mechanics, consume it instead of reimplementing widget state or normalization. Keep app calculations, summaries, alert text, and exports local.
-- Use `labkit.ui.runtime.define` and `labkit.ui.runtime.run` with
-  `labkit.ui.layout.*` for app GUIs. `labkit.ui.runtime.create` is a legacy
-  compatibility surface during migration; do not use it for new app runtime
-  orchestration. Do not reintroduce the removed `labkit.ui.runtime.createShell` or
-  legacy view helpers.
-- Use `labkit.ui.runtime.dispatchRequest` for debug launch routing and `labkit.ui.debug.context` only when an app has an app-specific nonstandard request path.
-- Each public app entrypoint should call app package `requirements.m`,
-  `version.m`, and `definition.m`, pass metadata structs to
-  `labkit.ui.runtime.dispatchRequest`, launch the definition through
-  `labkit.ui.runtime.run`, and apply the version title to the returned figure.
-  Lightweight non-GUI requests are `"requirements"` and `"version"`.
+- Use `labkit.ui.runtime.define` and the standard
+  `labkit.ui.runtime.launch` entrypoint with `labkit.ui.layout.*` for app GUIs.
+  `labkit.ui.runtime.create` is framework implementation, not app lifecycle
+  orchestration. Do not reintroduce removed shell or legacy view helpers.
+- Let `labkit.ui.runtime.launch` own normal/debug/requirements/version routing,
+  runtime construction, outputs, and the version title. Use lower-level
+  dispatch or debug context APIs only for a proven nonstandard request such as
+  an in-memory handoff that the standard launch contract cannot express.
 - App package `requirements.m` must return the result of
   `labkit.contract.requirements(...)`. Do not return a plain struct, map, or
   app-authored schema; launch dispatch rejects anything whose `type` is not
@@ -69,12 +68,13 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
   logging a recovery message, or returning. Do not swallow import, export,
   preview, or tool errors without a framework debug/crash report.
 - App code must not create startup timers, loading strips, readiness flags, or
-  lifecycle mutation APIs. Startup and hydration behavior is declared in
-  `definition.m` and executed by `labkit.ui.runtime.run`.
-- App alerts must call `labkit.ui.runtime.showAlert(fig, message, titleText)`
-  instead of raw `uialert`. Apps still own the title, message, and decision to
-  alert; the framework owns hidden-test-safe modal mechanics.
-- Apps with custom preview scroll, drawing, ROI, scale-bar, or other axes interaction should create a `labkit.ui.interaction.runtime` and pass that runtime into reusable tools. Do not set preview-tool `WindowScrollWheelFcn`, `WindowButtonMotionFcn`, `WindowButtonUpFcn`, or axes `ButtonDownFcn` directly in app code.
+  lifecycle mutation APIs. Optional initial domain work is one queued `Start`
+  handler declared in `definition.m`.
+- App alerts call `services.dialogs.alert(message, titleText)`. Apps still own
+  the title, message, and decision; the framework owns modal mechanics.
+- Apps express preview scroll, drawing, ROI, scale-bar, and other axes
+  interactions as presenter-owned controlled interaction specs. Do not create
+  interaction runtimes or set figure/axes callbacks directly.
 - DTA-backed apps use `labkit.dta.*` for discovery, loading, pulse detection, and parsed curve/table access. Task queues, duplicate policy, current selection, analysis state, and export workflow stay app-owned.
 - RHS-backed apps use `labkit.rhs.*` for discovery, header inspection,
   indexing, and window reads. Channel roles, protocols, event detection,
@@ -95,9 +95,8 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
   queues, display-range defaults, export manifests, colorbar placement,
   overlay-removal workflow wording, measurements, alerts, and logs stay
   app-owned.
-- App-local file dialogs that remain outside `filePanel` must use
-  `labkit.ui.runtime.defaultDialogFolder("input")` or `"output"` instead of `pwd`
-  or bare output filenames.
+- Handler file dialogs outside `filePanel` use injected `services.dialogs`
+  instead of raw MATLAB dialogs, `pwd`, or bare output filenames.
 - Project, snapshot, manifest, and autosave imports that contain external file
   fields must store `labkit.ui.runtime.createPortableFileReference` values and
   resolve each field through `resolveOrPromptForFileReference`. Missing or
@@ -115,15 +114,16 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
   ownership context, while a shared `+app` package name creates MATLAB
   package-resolution ambiguity.
 - Apps expose their runtime declaration through `+<app_slug>/definition.m`,
-  initial state through `+appLifecycle/createInitialState.m`, UI declaration
-  through `+userInterface/buildWorkbenchLayout.m`, visible-state updates through
-  `+userInterface/updateWorkbenchFromState.m`, deterministic app-state and
+  durable and transient state through `+appLifecycle/createProject.m` and
+  `createSession.m`, project checks through `validateProject.m`, UI declaration
+  through `+userInterface/buildWorkbenchLayout.m`, presentation through
+  `+userInterface/presentWorkbench.m`, deterministic app-state and
   task snapshot helpers through `+appState`, and user workflows through
   concrete app-owned packages. Do not reintroduce `+state`, `+actions`, `+ui`,
   `+view`, `+ops`, `+io`, or `+export` packages.
-- `definition.m` declares identity, state factory, layout builder, command
-  handler registry, visible-state update function, startup phases, and
-  optional hydration phases. It must not create MATLAB handles, read files,
+- `definition.m` declares identity, project schema, optional session factory,
+  layout builder, handler registry, presenter, renderers, and optional `Start`.
+  It must not create MATLAB handles, read files,
   compute results, export data, or mutate framework lifecycle state.
 - `+userInterface/buildWorkbenchLayout.m` describes controls, sections,
   workspace, initial text/defaults, and framework-generated callback handles
@@ -194,7 +194,7 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
   every selected file in the selection command unless the app cannot render a
   useful first state without the full batch. Put path-only item factories in
   the workflow package that owns the selected files, keep lazy load/refresh
-  order in that workflow plus `+userInterface/updateWorkbenchFromState.m`, and
+  order in that workflow plus `+userInterface/presentWorkbench.m`, and
   add a unit or GUI regression that proves large selections stay deferred.
 - Apps with preview, run, or export task lifecycles should build immutable
   app-owned task snapshots in the workflow package that owns the task and
@@ -208,7 +208,7 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
   boundary rules, not the migration debt ledger.
 - Apps use `definition.m` plus the framework runtime for lifecycle
   orchestration. Keep `+userInterface` focused on workbench layouts, visible
-  state updates, UI handle mapping, and justified tool/widget glue; do not put
+  presentation models, prepared renderers, and justified tool/widget glue; do not put
   app lifecycle runners in UI packages.
 - Do not add new `*Workflow.m` files or app-owned `+core/dispatch.m` string
   routers.

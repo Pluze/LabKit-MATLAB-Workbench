@@ -212,7 +212,7 @@ function hub = v2FigureInteractionHub(ui, dispatchEvent, cleanupTarget)
             return;
         end
         point = wheelPoint(ax, event);
-        labkit.ui.interaction.zoomAtPoint(ax, point, count, ...
+        zoomAxesAtPoint(ax, point, count, ...
             "ZoomAxes", scrollZoomAxes(ax));
     end
 

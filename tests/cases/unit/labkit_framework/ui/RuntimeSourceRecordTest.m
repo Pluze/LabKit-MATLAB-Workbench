@@ -1,7 +1,7 @@
 classdef RuntimeSourceRecordTest < matlab.unittest.TestCase
     %RUNTIMESOURCERECORDTEST Verify the canonical empty source factory.
 
-    methods (Test)
+    methods (Test, TestTags = {'Unit'})
         function emptyFactoryOwnsCanonicalShape(testCase)
             setupLabKitTestPath();
             sources = labkit.ui.runtime.emptySourceRecords();

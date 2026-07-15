@@ -1,5 +1,5 @@
 function filepath = saveState(fig, filepath)
-%SAVESTATE Save a LabKit app state snapshot to a MAT file.
+%SAVESTATE Save a Runtime V2 project to a MAT file.
 %
 % App-facing contract:
 %   filepath = labkit.ui.runtime.saveState(fig)
@@ -14,14 +14,11 @@ function filepath = saveState(fig, filepath)
 %   filepath - selected or supplied MAT-file path. Empty when the user
 %       cancels the save dialog.
 %
-% Snapshot contract:
-%   Saves one variable named `snapshot`. The snapshot contains app identity,
-%   LabKit UI version, MATLAB release/platform, optional app snapshot schema
-%   version, and serialized semantic app state. Runtime handles, callbacks,
-%   UI registry structs, debug contexts, and function handles are rejected.
+% Project contract:
+%   Saves one `labkitProject` envelope containing only durable project data.
 
     if nargin < 2
-        filepath = chooseSnapshotOutput();
+        filepath = chooseProjectOutput();
         if strlength(filepath) == 0
             return;
         end
@@ -29,32 +26,25 @@ function filepath = saveState(fig, filepath)
         filepath = string(filepath);
     end
     runtime = getAppRuntime(fig);
-    if isfield(runtime.definition, 'contractVersion') && ...
-            runtime.definition.contractVersion == 2
-        labkitProject = createV2ProjectEnvelope(runtime);
-        beforeReplace = [];
-        if isstruct(runtime.request) && ...
-                isfield(runtime.request, 'projectBeforeReplace')
-            beforeReplace = runtime.request.projectBeforeReplace;
-        end
-        writeV2ProjectFile(filepath, labkitProject, beforeReplace);
-        runtime = getAppRuntime(fig);
-        runtime.document.path = filepath;
-        runtime.document.dirty = false;
-        runtime.document.modifiedAtUtc = ...
-            labkitProject.document.modifiedAtUtc;
-        runtime.document.envelope = labkitProject;
-        setappdata(fig, appRuntimeKey(), runtime);
-        updateV2DocumentTitle(fig);
-    else
-        snapshot = createSnapshot(runtime);
-        save(filepath, 'snapshot');
+    labkitProject = createV2ProjectEnvelope(runtime);
+    beforeReplace = [];
+    if isstruct(runtime.request) && ...
+            isfield(runtime.request, 'projectBeforeReplace')
+        beforeReplace = runtime.request.projectBeforeReplace;
     end
+    writeV2ProjectFile(filepath, labkitProject, beforeReplace);
+    runtime = getAppRuntime(fig);
+    runtime.document.path = filepath;
+    runtime.document.dirty = false;
+    runtime.document.modifiedAtUtc = labkitProject.document.modifiedAtUtc;
+    runtime.document.envelope = labkitProject;
+    setappdata(fig, appRuntimeKey(), runtime);
+    updateV2DocumentTitle(fig);
 end
 
-function filepath = chooseSnapshotOutput()
+function filepath = chooseProjectOutput()
     [file, path] = uiputfile({'*.mat', 'MAT files (*.mat)'}, ...
-        'Save LabKit State Snapshot');
+        'Save LabKit Project');
     if isequal(file, 0) || isequal(path, 0)
         filepath = "";
     else
