@@ -9,7 +9,7 @@ function fig = runV2App(def, request)
     bindingCallback = @dispatchBindingCallback;
     [layout, bindings] = prepareV2Layout( ...
         def, callbacks, state, bindingCallback);
-    ui = labkit.ui.runtime.create(layout, "debug", debug);
+    ui = buildRuntimeWorkbench(layout, debug);
     fig = ui.figure;
     runtime = struct( ...
         "definition", def, ...
@@ -46,6 +46,7 @@ function fig = runV2App(def, request)
     dispatchStart(fig, def.start);
     dispatchDebugSample(fig, def.debugSample);
     restoreRequestedRecovery(fig, request);
+    startupLifecycle(fig, 'finish', "Ready.");
 
     function dispatchBindingCallback(control, event, path, eventId)
         canonical = canonicalEvent(eventId, control.id, event, "user");

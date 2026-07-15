@@ -17,22 +17,8 @@ function ui = create(layout, varargin)
 %       labkit.ui.plot helpers rather than adapter internals.
 
     opts = parseOptions(varargin);
-    validateWorkbenchLayout(layout);
-
     debug = optionValue(opts, 'debug', []);
-    ui = buildShellFromLayout(layout, debug);
-    startupLifecycle(ui.figure, 'start', ui, "Building controls...");
-    installCloseGuard(ui.figure);
-    ui = buildControlTabs(ui, layout.props.controlTabs, debug);
-    startupLifecycle(ui.figure, 'update', "Preparing workspace...");
-    ui = buildWorkspace(ui, layout.props.workspace, debug);
-    startupLifecycle(ui.figure, 'update', "Preparing app...");
-
-    if isDebugEnabled(debug) && isfield(debug, 'instrumentFigure')
-        debug.instrumentFigure(ui.figure);
-    end
-    setappdata(ui.figure, 'labkitUiRegistry', ui);
-    setappdata(ui.figure, 'labkitUiDebugContext', debug);
+    ui = buildRuntimeWorkbench(layout, debug);
     startupLifecycle(ui.figure, 'finish', "Ready.");
 end
 
@@ -52,9 +38,4 @@ function value = optionValue(opts, name, defaultValue)
     if isstruct(opts) && isfield(opts, name)
         value = opts.(name);
     end
-end
-
-function tf = isDebugEnabled(debugContext)
-    tf = isstruct(debugContext) && isfield(debugContext, 'enabled') && ...
-        logical(debugContext.enabled);
 end

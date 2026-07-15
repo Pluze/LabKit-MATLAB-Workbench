@@ -615,9 +615,8 @@ function fig = runLauncher(root)
             initializeAppPath(app);
             updateProgressDialog(dlg, sprintf('Opening %s...', app.command), NaN);
             drawnow limitrate;
-            clear dlgCleanup;
-            endLauncherAction();
             setStatus(launchHandOffStatus(app, debugMode));
+            updateProgressDialog(dlg, sprintf('Initializing %s...', app.command), NaN);
             drawnow limitrate;
             if debugMode
                 feval(app.command, "debug");

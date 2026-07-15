@@ -136,8 +136,20 @@ function state = showStatus(state)
 end
 
 function tf = shouldFlushStatus(state, becameVisible)
-    tf = becameVisible || isFailureMessage(state.message) || ...
-        (state.visible && ~state.statusFlushed);
+    tf = isFigureVisible(state.fig) && (becameVisible || ...
+        isFailureMessage(state.message) || ...
+        (state.visible && ~state.statusFlushed));
+end
+
+function tf = isFigureVisible(fig)
+    tf = false;
+    if ~isLiveHandle(fig)
+        return;
+    end
+    try
+        tf = strcmp(fig.Visible, 'on');
+    catch
+    end
 end
 
 function tf = isFailureMessage(message)
@@ -184,6 +196,7 @@ function state = completeIfReady(state)
     if isempty(state) || state.failed || state.pending > 0 || ~state.finishRequested
         return;
     end
+    state = revealReadyFigure(state);
     state = hideStatus(state);
     restoreBusy(state.fig, state.oldBusy);
     if isLiveHandle(state.fig)
@@ -193,10 +206,6 @@ function state = completeIfReady(state)
 end
 
 function state = hideStatus(state)
-    if state.visible && isLiveHandle(state.panel) && ...
-            toc(state.visibleAt) < startupMinimumVisible()
-        pause(startupMinimumVisible() - toc(state.visibleAt));
-    end
     if isLiveHandle(state.panel)
         try
             state.panel.Visible = 'off';
@@ -214,6 +223,21 @@ function state = hideStatus(state)
         end
     end
     state.visible = false;
+end
+
+function state = revealReadyFigure(state)
+    if ~isLiveHandle(state.fig) || startupGuiMode() == "hidden"
+        return;
+    end
+    try
+        state.fig.Visible = 'on';
+        if startupGuiMode() == "minimized" && isprop(state.fig, 'WindowState')
+            state.fig.WindowState = 'minimized';
+        end
+        drawnow limitrate;
+        state.statusFlushed = true;
+    catch
+    end
 end
 
 function reportStartupException(fig, ME)
@@ -360,8 +384,15 @@ function key = startupKey()
 end
 
 function tf = startupStatusSuppressed()
-    mode = lower(strtrim(string(getenv('LABKIT_GUI_TEST_MODE'))));
+    mode = startupGuiMode();
     tf = mode == "hidden" || mode == "minimized";
+end
+
+function mode = startupGuiMode()
+    mode = lower(strtrim(string(getenv('LABKIT_GUI_TEST_MODE'))));
+    if strlength(mode) == 0
+        mode = "visible";
+    end
 end
 
 function tf = startupTaskRunsInline()
@@ -375,10 +406,6 @@ end
 
 function value = startupTaskDelay()
     value = 0.01;
-end
-
-function value = startupMinimumVisible()
-    value = 0.35;
 end
 
 function tf = isLiveHandle(h)

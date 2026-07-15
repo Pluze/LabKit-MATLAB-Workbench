@@ -35,14 +35,10 @@ function ui = createTabbedWorkbenchShell(figName, figPosition, leftWidth, labels
     end
 
     ui = struct();
-    figArgs = {'Name', figName, 'Position', figPosition};
-    if guiTestMode() == "hidden"
-        figArgs = [figArgs, {'Visible', 'off'}];
-    end
+    figArgs = {'Name', figName, 'Position', figPosition, 'Visible', 'off'};
     ui.fig = uifigure(figArgs{:});
     installCloseKeyboardShortcut(ui.fig);
     applyGuiTestMode(ui.fig);
-    paintVisibleFigure();
 
     ui.main = uigridlayout(ui.fig, [3 3]);
     ui.main.ColumnWidth = {leftWidth, 6, '1x'};
@@ -148,13 +144,6 @@ function applyGuiTestMode(fig)
         catch
         end
     end
-end
-
-function paintVisibleFigure()
-    if guiTestMode() ~= "visible"
-        return;
-    end
-    drawnow limitrate;
 end
 
 function [tab, panel] = createScrollableTab(parent, titleText)
