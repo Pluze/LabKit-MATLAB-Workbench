@@ -265,6 +265,7 @@ function findings = dependencyProductFindings(root, files)
         "apps/dic/dic_preprocess"
         "apps/dic/dic_postprocess"
         "apps/electrochem"
+        "apps/gait"
         "apps/image_measurement"
         "apps/labkit_core"
         "apps/neurophysiology"
