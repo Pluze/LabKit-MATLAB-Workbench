@@ -150,13 +150,34 @@ function hub = v2FigureInteractionHub(ui, dispatchEvent, cleanupTarget)
     end
 
     function onPointerDown(src, event)
-        target = targetUnderPointer();
+        hit = pointerHitObject(src, event);
+        target = targetUnderPointer(hit);
         entry = activeSessionForTarget(target);
         if isempty(entry)
             invokeCallback(state.prior.down, src, event);
             return;
         end
-        invokeCallback(entry.onPointerDown, src, event);
+        invokeCallback(entry.onPointerDown, hit, event);
+    end
+
+    function hit = pointerHitObject(fallback, event)
+        hit = [];
+        if isstruct(event) && isfield(event, 'HitObject') && ...
+                isValidHandle(event.HitObject)
+            hit = event.HitObject;
+        elseif isobject(event) && isprop(event, 'HitObject') && ...
+                isValidHandle(event.HitObject)
+            hit = event.HitObject;
+        end
+        if isempty(hit)
+            try
+                hit = hittest(fig);
+            catch
+            end
+        end
+        if isempty(hit)
+            hit = fallback;
+        end
     end
 
     function onPointerMotion(src, event)
@@ -315,15 +336,17 @@ function hub = v2FigureInteractionHub(ui, dispatchEvent, cleanupTarget)
         end
     end
 
-    function target = targetUnderPointer()
+    function target = targetUnderPointer(hit)
         target = "";
         if ~isValidHandle(fig)
             return;
         end
-        hit = [];
-        try
-            hit = hittest(fig);
-        catch
+        if nargin < 1 || isempty(hit)
+            hit = [];
+            try
+                hit = hittest(fig);
+            catch
+            end
         end
         for k = 1:numel(state.targets)
             if handleDescendsFrom(hit, state.targets(k).axes)

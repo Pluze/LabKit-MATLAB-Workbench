@@ -50,6 +50,8 @@ classdef GuiLayoutDicPreprocessTest < matlab.unittest.TestCase
                 'DIC preprocess workflow should draw the reference preview.');
             testCase.verifyGreaterThan(numel(ui.controls.previewAxes.axesById.current.Children), 0, ...
                 'DIC preprocess workflow should draw the current preview.');
+            driver.click('Start/reset crop ROI');
+            assertCropRectangleDragStarts(fig);
         end
 
         function pointMatchingStaysInMainWorkbench(testCase)
@@ -108,6 +110,12 @@ classdef GuiLayoutDicPreprocessTest < matlab.unittest.TestCase
                 'Point edits should preserve the reference zoom viewport.');
             testCase.verifyEqual(referenceAxes.YLim, [10 70], ...
                 'Point edits should preserve the reference zoom viewport.');
+            pointLabels = findobj(referenceAxes, 'Type', 'Text', ...
+                'Tag', 'labkitDicPreprocessPreviewOverlay');
+            testCase.verifyNotEmpty(pointLabels, ...
+                'Point matching should render numbered feature labels.');
+            testCase.verifyTrue(all(string({pointLabels.Clipping}) == "on"), ...
+                'Feature labels must be clipped to their owning preview axes.');
             testCase.verifyEqual(string( ...
                 ui.controls.applyPointAlignment.button.Enable), ...
                 "on", 'Two complete point pairs should enable alignment.');
@@ -134,10 +142,30 @@ function addPointPair(fig, referencePoint, movingPoint)
 end
 
 function resource = pointPairResource(resources)
+    resource = interactionResource(resources, "pointPairs");
+end
+
+function assertCropRectangleDragStarts(fig)
+    runtime = getappdata(fig, 'labkitUiAppRuntime');
+    resource = interactionResource(runtime.resources, "cropRectangle");
+    graphics = resource.editors{1}.graphics();
+    box = graphics(find(arrayfun(@(item) isa(item, ...
+        'matlab.graphics.primitive.Rectangle'), graphics), 1, 'first'));
+    assert(~isempty(box), ...
+        'DIC crop mode should create one editable rectangle graphic.');
+    fig.WindowButtonDownFcn(fig, struct('HitObject', box));
+    assert(runtime.interactionHub.isDragging(), ...
+        'DIC crop rectangle should start a drag through the Runtime V2 hub.');
+    fig.WindowButtonUpFcn(fig, struct());
+    assert(~runtime.interactionHub.isDragging(), ...
+        'DIC crop rectangle should end its drag on pointer release.');
+end
+
+function resource = interactionResource(resources, id)
     index = find([resources.scope] == "interaction" & ...
-        [resources.id] == "pointPairs", 1, 'first');
+        [resources.id] == string(id), 1, 'first');
     assert(~isempty(index), ...
-        'DIC point matching should own one controlled paired-anchor resource.');
+        'DIC workflow should own the requested controlled interaction resource.');
     resource = resources(index).value;
 end
 

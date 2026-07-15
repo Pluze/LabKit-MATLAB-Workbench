@@ -12,6 +12,11 @@ classdef GuiLayoutUiRuntimeV2InteractionHubTest < matlab.unittest.TestCase
             verifyControlledInteraction();
         end
 
+        function controlled_rectangle_receives_hit_graphic(testCase)
+            setupLabKitTestPath();
+            verifyControlledRectangleHitRouting();
+        end
+
         function paired_anchor_cell_payload_stays_one_semantic_event(testCase)
             setupLabKitTestPath();
             verifyPairedAnchorCellPayload();
@@ -32,6 +37,34 @@ classdef GuiLayoutUiRuntimeV2InteractionHubTest < matlab.unittest.TestCase
             verifyControlledPointSlots();
         end
     end
+end
+
+function verifyControlledRectangleHitRouting()
+    h = guiTestHelpers();
+    h.assertUifigureAvailable();
+    oldMode = getenv('LABKIT_GUI_TEST_MODE');
+    setenv('LABKIT_GUI_TEST_MODE', 'hidden');
+    cleanupMode = onCleanup(@() setenv('LABKIT_GUI_TEST_MODE', oldMode));
+    cleanupFigures = onCleanup(@() h.closeAllFigures());
+    fig = labkit.ui.runtime.launch( ...
+        @rectangleDefinition, @requirements, @versionInfo);
+    h.waitForUiIdle(fig);
+    runtime = getappdata(fig, 'labkitUiAppRuntime');
+    resource = interactionResource(runtime.resources, "cropRectangle");
+    graphics = resource.editors{1}.graphics();
+    box = graphics(find(arrayfun(@(item) isa(item, ...
+        'matlab.graphics.primitive.Rectangle'), graphics), 1, 'first'));
+    assert(~isempty(box), ...
+        'A controlled rectangle should expose its editable box graphic.');
+
+    fig.WindowButtonDownFcn(fig, struct('HitObject', box));
+    assert(runtime.interactionHub.isDragging(), ...
+        'The figure hub must route the hit rectangle graphic into a drag session.');
+    fig.WindowButtonUpFcn(fig, struct());
+    assert(~runtime.interactionHub.isDragging(), ...
+        'Releasing the pointer should finish the rectangle drag session.');
+    delete(fig);
+    clear cleanupFigures cleanupMode;
 end
 
 function verifyControlledPointSlots()
@@ -271,6 +304,11 @@ function def = pairedDefinition()
     def = definitionBase(@hubLayout, actions, @pairedPresentation);
 end
 
+function def = rectangleDefinition()
+    actions = struct("cropRectMoved", @cropRectMoved);
+    def = definitionBase(@controlledLayout, actions, @rectanglePresentation);
+end
+
 function def = intervalDefinition()
     actions = struct("rangeEdited", @rangeEdited, ...
         "windowScrolled", @windowScrolled);
@@ -308,6 +346,7 @@ function project = createProject()
             "editCount", 0, "range", [NaN NaN], "scrollCount", 0, ...
             "referencePoints", zeros(0, 2), ...
             "movingPoints", zeros(0, 2), "pairEditCount", 0, ...
+            "cropRect", [20 20 40 40], ...
             "slots", struct("points", [10 10; NaN NaN; NaN NaN], ...
             "selectedIndex", 2, "locked", false)), ...
         "results", struct(), ...
@@ -367,6 +406,16 @@ function view = pairedPresentation(state)
         "Options", struct("mode", "points"));
 end
 
+function view = rectanglePresentation(state)
+    view = struct();
+    view.interactions.cropRectangle = struct( ...
+        "Kind", "rectangle", "Targets", "image", ...
+        "Value", state.project.annotations.cropRect, ...
+        "Event", "cropRectMoved", "ImageSize", [100 100], ...
+        "ChangePolicy", "commit", ...
+        "Options", struct("fixedAspectRatio", true));
+end
+
 function view = intervalPresentation(state)
     view = struct();
     view.interactions.timeRange = struct( ...
@@ -409,6 +458,10 @@ function state = pointPairsEdited(state, event, ~)
     state.project.annotations.movingPoints = event.value{2};
     state.project.annotations.pairEditCount = ...
         state.project.annotations.pairEditCount + 1;
+end
+
+function state = cropRectMoved(state, event, ~)
+    state.project.annotations.cropRect = event.value;
 end
 
 function state = rangeEdited(state, event, ~)

@@ -24,10 +24,10 @@ function [R, t] = rigidTransformFromPoints(fixedPoints, movingPoints)
     movingCentered = movingPoints - movingCenter;
     H = movingCentered.' * fixedCentered;
     [U, ~, V] = svd(H);
-    R = V * U.';
+    R = U * V.';
     if det(R) < 0
         V(:, end) = -V(:, end);
-        R = V * U.';
+        R = U * V.';
     end
     t = fixedCenter - movingCenter * R;
 end
