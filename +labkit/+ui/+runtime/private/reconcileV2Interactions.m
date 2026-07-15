@@ -78,6 +78,12 @@ function controlled = createControlledInteraction(hub, id, spec)
                 @emitValue, @emitScroll);
             editors = {editor};
             update = @updateInterval;
+        case "pointslots"
+            editor = createPointSlotsEditor( ...
+                hub.adapter(spec.Targets(1), group), spec.ImageSize, ...
+                spec.Options, @emitValue);
+            editors = {editor};
+            update = @updatePointSlots;
         otherwise
             error('labkit:ui:runtime:UnknownInteractionKind', ...
                 'Interaction "%s" has unsupported Kind "%s".', id, spec.Kind);
@@ -110,6 +116,10 @@ function controlled = createControlledInteraction(hub, id, spec)
 
     function updateInterval(value)
         withSuppression(@() editors{1}.setRange(value));
+    end
+
+    function updatePointSlots(value)
+        withSuppression(@() editors{1}.setValue(value));
     end
 
     function setAnchorValue(targetEditor, value)

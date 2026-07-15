@@ -357,7 +357,7 @@ V2 commits mirror `session.workflow.logLines` into semantic `logPanel` controls.
 Each v2 figure owns one private interaction hub. Preview targets register as
 `previewId` or `previewId.axisId`; the hub owns hover wheel/zoom routing,
 drag callbacks, and atomic groups. V2 apps never set figure callbacks.
-`Present` may declare `anchors`, `pairedAnchors`, `rectangle`, `regionSelection`, or
+`Present` may declare `anchors`, `pairedAnchors`, `pointSlots`, `rectangle`, `regionSelection`, or
 `scaleBarReference` with semantic targets, values, events, and image sizes. `regionSelection`
 emits a dragged rectangle to `Event` or clicked point to `BackgroundEvent`.
 Kind/target changes replace or dispose resources; programmatic values suppress

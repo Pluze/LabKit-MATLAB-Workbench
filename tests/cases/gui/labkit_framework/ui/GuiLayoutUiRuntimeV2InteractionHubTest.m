@@ -21,7 +21,35 @@ classdef GuiLayoutUiRuntimeV2InteractionHubTest < matlab.unittest.TestCase
             setupLabKitTestPath();
             verifyControlledRegionSelection();
         end
+
+        function controlled_point_slots_preserve_fixed_indices(testCase)
+            setupLabKitTestPath();
+            verifyControlledPointSlots();
+        end
     end
+end
+
+function verifyControlledPointSlots()
+    h = guiTestHelpers();
+    h.assertUifigureAvailable();
+    oldMode = getenv('LABKIT_GUI_TEST_MODE');
+    setenv('LABKIT_GUI_TEST_MODE', 'hidden');
+    cleanupMode = onCleanup(@() setenv('LABKIT_GUI_TEST_MODE', oldMode));
+    cleanupFigures = onCleanup(@() h.closeAllFigures());
+    fig = labkit.ui.runtime.launch( ...
+        @pointSlotsDefinition, @requirements, @versionInfo);
+    h.waitForUiIdle(fig);
+    runtime = getappdata(fig, 'labkitUiAppRuntime');
+    resource = interactionResource(runtime.resources, "slots");
+    resource.editors{1}.insertPoint([30 40]);
+    runtime = getappdata(fig, 'labkitUiAppRuntime');
+    value = runtime.state.project.annotations.slots;
+    assert(isequal(value.points(2, :), [30 40]) && ...
+        value.selectedIndex == 3 && value.changedIndex == 2 && ...
+        value.reason == "place", ...
+        'Point slots should fill the selected empty slot and retain its index.');
+    delete(fig);
+    clear cleanupFigures cleanupMode;
 end
 
 function verifyControlledRegionSelection()
@@ -205,6 +233,11 @@ function def = regionDefinition()
     def = definitionBase(@controlledLayout, actions, @regionPresentation);
 end
 
+function def = pointSlotsDefinition()
+    actions = struct("slotsEdited", @slotsEdited);
+    def = definitionBase(@controlledLayout, actions, @pointSlotsPresentation);
+end
+
 function def = definitionBase(layout, actions, presenter)
     project = struct("Version", 1, "Create", @createProject, ...
         "Validate", @(~) true, "Migrations", {{}});
@@ -223,7 +256,9 @@ function project = createProject()
         "inputs", struct(), ...
         "parameters", struct(), ...
         "annotations", struct("points", [10 10; 20 20], ...
-            "editCount", 0, "range", [NaN NaN], "scrollCount", 0), ...
+            "editCount", 0, "range", [NaN NaN], "scrollCount", 0, ...
+            "slots", struct("points", [10 10; NaN NaN; NaN NaN], ...
+            "selectedIndex", 2, "locked", false)), ...
         "results", struct(), ...
         "extensions", struct());
 end
@@ -285,6 +320,18 @@ function view = regionPresentation(~)
         "ImageSize", [100 100], "ChangePolicy", "commit");
 end
 
+function view = pointSlotsPresentation(state)
+    view = struct();
+    value = state.project.annotations.slots;
+    if isfield(value, 'changedIndex')
+        value = rmfield(value, {'changedIndex', 'reason'});
+    end
+    view.interactions.slots = struct( ...
+        "Kind", "pointSlots", "Targets", "image", ...
+        "Value", value, "Event", "slotsEdited", ...
+        "ImageSize", [100 100], "ChangePolicy", "commit");
+end
+
 function state = pointsEdited(state, event, ~)
     state.project.annotations.points = event.value;
     state.project.annotations.editCount = ...
@@ -298,6 +345,10 @@ end
 function state = windowScrolled(state, ~, ~)
     state.project.annotations.scrollCount = ...
         state.project.annotations.scrollCount + 1;
+end
+
+function state = slotsEdited(state, event, ~)
+    state.project.annotations.slots = event.value;
 end
 
 function state = noop(state, ~, ~)
