@@ -16,7 +16,35 @@ classdef GuiLayoutUiRuntimeV2InteractionHubTest < matlab.unittest.TestCase
             setupLabKitTestPath();
             verifyControlledInterval();
         end
+
+        function controlled_region_selection_registers_transient_gesture(testCase)
+            setupLabKitTestPath();
+            verifyControlledRegionSelection();
+        end
     end
+end
+
+function verifyControlledRegionSelection()
+    h = guiTestHelpers();
+    h.assertUifigureAvailable();
+    oldMode = getenv('LABKIT_GUI_TEST_MODE');
+    setenv('LABKIT_GUI_TEST_MODE', 'hidden');
+    cleanupMode = onCleanup(@() setenv('LABKIT_GUI_TEST_MODE', oldMode));
+    cleanupFigures = onCleanup(@() h.closeAllFigures());
+    fig = labkit.ui.runtime.launch( ...
+        @regionDefinition, @requirements, @versionInfo);
+    h.waitForUiIdle(fig);
+    runtime = getappdata(fig, 'labkitUiAppRuntime');
+    resource = interactionResource(runtime.resources, "region");
+    assert(resource.spec.Kind == "regionSelection" && ...
+        resource.spec.Event == "regionSelected" && ...
+        resource.spec.BackgroundEvent == "pointSelected", ...
+        'Region selection should normalize drag and click semantic events.');
+    assert(isfield(resource.editors{1}, 'delete') && ...
+        ~isfield(resource.editors{1}, 'setPosition'), ...
+        'Transient region selection must not expose a durable ROI editor.');
+    delete(fig);
+    clear cleanupFigures cleanupMode;
 end
 
 function verifyControlledInterval()
@@ -172,6 +200,11 @@ function def = intervalDefinition()
     def = definitionBase(@controlledLayout, actions, @intervalPresentation);
 end
 
+function def = regionDefinition()
+    actions = struct("regionSelected", @noop, "pointSelected", @noop);
+    def = definitionBase(@controlledLayout, actions, @regionPresentation);
+end
+
 function def = definitionBase(layout, actions, presenter)
     project = struct("Version", 1, "Create", @createProject, ...
         "Validate", @(~) true, "Migrations", {{}});
@@ -241,6 +274,15 @@ function view = intervalPresentation(state)
         "Kind", "interval", "Targets", "image", ...
         "Value", state.project.annotations.range, ...
         "Event", "rangeEdited", "ScrollEvent", "windowScrolled");
+end
+
+function view = regionPresentation(~)
+    view = struct();
+    view.interactions.region = struct( ...
+        "Kind", "regionSelection", "Targets", "image", ...
+        "Value", [], "Event", "regionSelected", ...
+        "BackgroundEvent", "pointSelected", ...
+        "ImageSize", [100 100], "ChangePolicy", "commit");
 end
 
 function state = pointsEdited(state, event, ~)

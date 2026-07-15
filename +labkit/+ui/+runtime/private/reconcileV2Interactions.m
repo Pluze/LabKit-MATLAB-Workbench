@@ -66,6 +66,12 @@ function controlled = createControlledInteraction(hub, id, spec)
                 spec.Value, options);
             editors = {editor};
             update = @updateRectangle;
+        case "regionselection"
+            editor = createRegionSelection( ...
+                hub.adapter(spec.Targets(1), group), spec, ...
+                @emitValue, @emitBackground);
+            editors = {editor};
+            update = @updateRegionSelection;
         case "interval"
             editor = createIntervalEditor( ...
                 hub.adapter(spec.Targets(1), group), spec, ...
@@ -96,6 +102,10 @@ function controlled = createControlledInteraction(hub, id, spec)
 
     function updateRectangle(value)
         withSuppression(@() editors{1}.setPosition(value));
+    end
+
+    function updateRegionSelection(~)
+        % Region selection is a transient gesture and has no durable overlay.
     end
 
     function updateInterval(value)
@@ -154,6 +164,101 @@ function controlled = createControlledInteraction(hub, id, spec)
             editors{index}.delete();
         end
     end
+end
+
+function editor = createRegionSelection(runtime, spec, onSelected, onPoint)
+    ax = runtime.axes();
+    imageSize = normalizeRegionImageSize(spec.ImageSize);
+    color = optionValue(spec.Options, 'color', [1 1 1]);
+    lineWidth = optionValue(spec.Options, 'lineWidth', 1.2);
+    lineStyle = optionValue(spec.Options, 'lineStyle', '--');
+    threshold = optionValue(spec.Options, 'pointThreshold', 2);
+    startPoint = [NaN NaN];
+    overlay = gobjects(1, 0);
+    session = runtime.createSession(struct( ...
+        "name", "regionSelection", ...
+        "onPointerDown", @pointerDown, ...
+        "installScrollWheel", false));
+    session.activate();
+    editor = struct("delete", @deleteEditor);
+
+    function pointerDown(~, ~)
+        startPoint = clampedPoint();
+        if ~all(isfinite(startPoint))
+            return;
+        end
+        deleteOverlay();
+        session.captureDrag(@drag, @release);
+    end
+
+    function drag(~, ~)
+        point = clampedPoint();
+        if ~all(isfinite(point))
+            return;
+        end
+        position = rectangleFromPoints(startPoint, point);
+        if isempty(overlay) || ~isgraphics(overlay)
+            overlay = rectangle(ax, "Position", position, ...
+                "EdgeColor", color, "LineWidth", lineWidth, ...
+                "LineStyle", lineStyle, "HitTest", "off", ...
+                "PickableParts", "none");
+        else
+            overlay.Position = position;
+        end
+        session.setGraphics(overlay);
+    end
+
+    function release(~, ~)
+        point = clampedPoint();
+        position = rectangleFromPoints(startPoint, point);
+        deleteOverlay();
+        if all(isfinite(position)) && max(position(3:4)) > threshold
+            onSelected(position);
+        elseif all(isfinite(point))
+            onPoint();
+        end
+        startPoint = [NaN NaN];
+    end
+
+    function point = clampedPoint()
+        current = double(ax.CurrentPoint);
+        point = current(1, 1:2);
+        if numel(imageSize) >= 2 && all(isfinite(imageSize))
+            point = min([imageSize(2), imageSize(1)], max([1 1], point));
+        end
+    end
+
+    function deleteEditor()
+        session.delete();
+        deleteOverlay();
+    end
+
+    function deleteOverlay()
+        if ~isempty(overlay) && all(isgraphics(overlay))
+            delete(overlay);
+        end
+        overlay = gobjects(1, 0);
+    end
+end
+
+function imageSize = normalizeRegionImageSize(value)
+    imageSize = double(value(:).');
+    if numel(imageSize) < 2 || ~all(isfinite(imageSize(1:2))) || ...
+            any(imageSize(1:2) < 1)
+        imageSize = [NaN NaN];
+    else
+        imageSize = imageSize(1:2);
+    end
+end
+
+function position = rectangleFromPoints(a, b)
+    if numel(a) ~= 2 || numel(b) ~= 2 || ...
+            ~all(isfinite([a(:); b(:)]))
+        position = [NaN NaN NaN NaN];
+        return;
+    end
+    origin = min(a, b);
+    position = [origin, abs(b - a)];
 end
 
 function spec = normalizeSpec(id, value)

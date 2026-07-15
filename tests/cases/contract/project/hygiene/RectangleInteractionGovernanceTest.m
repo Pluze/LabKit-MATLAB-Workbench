@@ -8,10 +8,10 @@ classdef RectangleInteractionGovernanceTest < matlab.unittest.TestCase
             directFiles = filesWithDirectRectangleCalls(root, files);
             expected = [
                 "+labkit/+ui/+interaction/rectangleEditor.m"
+                "+labkit/+ui/+runtime/private/reconcileV2Interactions.m"
                 "apps/dic/dic_preprocess/+dic_preprocess/+userInterface/renderPreviewImage.m"
                 "apps/image_measurement/image_enhance/+image_enhance/+userInterface/renderImagePreview.m"
                 "apps/image_measurement/flir_thermal/+flir_thermal/+userInterface/drawTemperatureReadings.m"
-                "apps/image_measurement/flir_thermal/+flir_thermal/+userInterface/temperatureReadingTool.m"
             ];
             testCase.verifyEqual(sort(directFiles), sort(expected), ...
                 ['Interactive app rectangles must use rectangleEditor or an ' ...
@@ -42,11 +42,13 @@ classdef RectangleInteractionGovernanceTest < matlab.unittest.TestCase
                     " must declare a Runtime V2 controlled rectangle.");
             end
 
-            flirTool = fileread(fullfile(root, ...
+            flirPresenter = fileread(fullfile(root, ...
                 'apps/image_measurement/flir_thermal/+flir_thermal', ...
-                '+userInterface/temperatureReadingTool.m'));
-            testCase.verifyTrue(contains(flirTool, 'session.captureDrag'), ...
-                'FLIR rectangle selection must remain pointer-drag driven.');
+                '+userInterface/presentWorkbench.m'));
+            testCase.verifyTrue(contains(flirPresenter, ...
+                '"Kind", "regionSelection"'), ...
+                ['FLIR point and ROI reads must use the Runtime V2 ' ...
+                'controlled region-selection contract.']);
         end
     end
 end
