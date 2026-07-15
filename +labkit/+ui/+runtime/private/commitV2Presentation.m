@@ -18,6 +18,7 @@ function presentation = commitV2Presentation(runtime, state)
     if isfield(presentation, 'controls')
         applyControls(runtime.ui, presentation.controls);
     end
+    applyWorkflowLog(runtime.ui, state.session.workflow);
     if isfield(presentation, 'previews')
         applyPreviews(runtime, presentation.previews);
     end
@@ -25,6 +26,25 @@ function presentation = commitV2Presentation(runtime, state)
         reconcileV2Interactions(runtime, presentation.interactions);
     else
         reconcileV2Interactions(runtime, struct());
+    end
+end
+
+function applyWorkflowLog(ui, workflow)
+    if ~isstruct(workflow) || ~isscalar(workflow) || ...
+            ~isfield(workflow, 'logLines')
+        return;
+    end
+    value = cellstr(string(workflow.logLines(:)));
+    if isempty(value)
+        value = {''};
+    end
+    ids = fieldnames(ui.controls);
+    for k = 1:numel(ids)
+        control = ui.controls.(ids{k});
+        if isstruct(control) && isfield(control, 'kind') && ...
+                strcmp(control.kind, 'logPanel')
+            labkit.ui.control.setValue(ui, ids{k}, value);
+        end
     end
 end
 

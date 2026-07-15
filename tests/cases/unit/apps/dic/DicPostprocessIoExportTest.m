@@ -43,6 +43,9 @@ classdef DicPostprocessIoExportTest < matlab.unittest.TestCase
 
         function runtimeV2ProjectAndPresenterContracts(testCase)
             setupLabKitTestPath();
+            folder = tempname;
+            mkdir(folder);
+            cleanup = onCleanup(@() cleanupFolder(folder));
             definition = dic_postprocess.definition();
             testCase.verifyEqual(definition.contractVersion, 2);
             project = definition.project.Create();
@@ -53,12 +56,24 @@ classdef DicPostprocessIoExportTest < matlab.unittest.TestCase
             invalid.parameters.gamma = Inf;
             testCase.verifyFalse(definition.project.Validate(invalid));
 
-            project.inputs.referenceImage = uint8(reshape(1:48, [4 4 3]));
-            project.inputs.maskImage = true(4);
-            project.inputs.strain = struct( ...
-                'exx', zeros(4), 'eyy', ones(4), 'roiMask', true(4));
+            matPath = fullfile(folder, 'project-strain.mat');
+            referencePath = fullfile(folder, 'project-reference.png');
+            maskPath = fullfile(folder, 'project-mask.png');
+            data_dic_save = struct("strains", struct( ...
+                "plot_exx_ref_formatted", zeros(4), ...
+                "plot_eyy_ref_formatted", ones(4), ...
+                "roi_ref_formatted", struct("mask", true(4))));
+            save(matPath, 'data_dic_save');
+            imwrite(uint8(reshape(1:48, [4 4 3])), referencePath);
+            imwrite(uint8(255 .* true(4)), maskPath);
+            project.inputs.sources = [ ...
+                sourceRecord("dicMat", "strain", matPath); ...
+                sourceRecord("referenceImage", "reference", referencePath); ...
+                sourceRecord("maskImage", "mask", maskPath)];
+            cache = dic_postprocess.sourceFiles.loadProjectInputs( ...
+                project.inputs.sources, true);
             [summary, ~, ~] = dic_postprocess.analysisRun.prepareOutputs( ...
-                project.inputs, project.parameters);
+                cache, project.parameters);
             project.results.summaryTable = summary;
             session = dic_postprocess.appLifecycle.createSession(project);
             state = struct('project', project, 'session', session);
@@ -70,8 +85,23 @@ classdef DicPostprocessIoExportTest < matlab.unittest.TestCase
                 presentation.previews.overlayAxes.Axes.exx.Model.imageData);
             testCase.verifyNotEmpty( ...
                 presentation.previews.overlayAxes.Axes.eyy.Model.imageData);
+            testCase.verifyEqual(fieldnames(project.inputs), {'sources'}, ...
+                'Durable project inputs should not duplicate decoded cache data.');
         end
     end
+end
+
+function source = sourceRecord(id, role, filepath)
+    [~, name, extension] = fileparts(filepath);
+    source = struct( ...
+        "id", string(id), ...
+        "required", true, ...
+        "role", string(role), ...
+        "reference", struct( ...
+            "schemaVersion", 1, ...
+            "relativePath", "", ...
+            "originalPath", string(filepath), ...
+            "fileName", string(name) + string(extension)));
 end
 
 function cleanupFolder(folder)

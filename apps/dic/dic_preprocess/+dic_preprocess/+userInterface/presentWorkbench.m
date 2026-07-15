@@ -45,8 +45,6 @@ function view = presentWorkbench(state)
     view.controls.summaryText = valueSpec( ...
         dic_preprocess.userInterface.buildSummary(state));
     view.controls.detailsText = valueSpec(state.session.workflow.details);
-    view.controls.appLog = valueSpec(logValue( ...
-        state.session.workflow.logLines));
 
     request = previewForMode(state, mode);
     topRect = [];
@@ -163,11 +161,4 @@ end
 
 function spec = controlSpec(enabled, value)
     spec = struct("Enabled", logical(enabled), "Value", value);
-end
-
-function value = logValue(lines)
-    value = cellstr(lines(:));
-    if isempty(value)
-        value = {''};
-    end
 end

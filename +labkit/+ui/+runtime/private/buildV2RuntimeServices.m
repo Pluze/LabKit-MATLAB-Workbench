@@ -30,7 +30,8 @@ function services = buildV2RuntimeServices(fig, runtime, dispatch)
         "outputFolder", @(titleText, defaultPath) outputFolder( ...
             runtime.request, titleText, defaultPath));
     services.project = struct( ...
-        "sourceRecord", @sourceRecord);
+        "sourceRecord", @sourceRecord, ...
+        "upsertSource", @upsertSource);
     services.resources = struct( ...
         "set", @(scope, id, value, cleanup) v2ResourceRegistry( ...
             fig, "set", scope, id, value, cleanup), ...
@@ -173,6 +174,23 @@ function source = sourceRecord(id, role, filepath, required)
         "required", logical(required), ...
         "role", string(role), ...
         "reference", reference);
+end
+
+function sources = upsertSource(sources, id, role, filepath, required)
+    if nargin < 5
+        required = true;
+    end
+    source = sourceRecord(id, role, filepath, required);
+    if isempty(sources)
+        sources = source;
+        return;
+    end
+    match = find(string({sources.id}) == source.id, 1, 'first');
+    if isempty(match)
+        sources(end + 1) = source;
+    else
+        sources(match) = source;
+    end
 end
 
 function output = resultOutput(id, role, pathValue, mediaType, status, message)

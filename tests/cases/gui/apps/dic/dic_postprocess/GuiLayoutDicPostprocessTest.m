@@ -93,6 +93,9 @@ classdef GuiLayoutDicPostprocessTest < matlab.unittest.TestCase
             testCase.verifyEqual(string(saved.labkitProject.format), ...
                 "labkit.project");
             testCase.verifyEqual(saved.labkitProject.app.payloadVersion, 1);
+            testCase.verifyEqual(fieldnames(saved.labkitProject.payload.inputs), ...
+                {'sources'}, ...
+                'Saved projects should rebuild decoded DIC inputs from sources.');
             cla(ui.controls.overlayAxes.axesById.exx);
             cla(ui.controls.overlayAxes.axesById.eyy);
             labkit.ui.runtime.loadState(fig, projectPath);

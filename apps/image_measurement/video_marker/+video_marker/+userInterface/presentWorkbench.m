@@ -54,7 +54,6 @@ function view = presentWorkbench(state)
     view.controls.coordinateEndFrame = rangeSpec( ...
         project.parameters.coordinateEndFrame, info.frameCount, hasVideo);
     view.controls.summaryTable = tableSpec(summaryTable(state), true);
-    view.controls.appLog = valueSpec(logValue(session.workflow.logLines));
     view = scalePresentation(view, state, hasVideo);
 
     model = struct( ...
@@ -287,13 +286,6 @@ end
 
 function spec = controlSpec(enabled, value)
     spec = struct("Enabled", logical(enabled), "Value", value);
-end
-
-function value = logValue(lines)
-    value = cellstr(string(lines(:)));
-    if isempty(value)
-        value = {''};
-    end
 end
 
 function value = ternary(condition, trueValue, falseValue)

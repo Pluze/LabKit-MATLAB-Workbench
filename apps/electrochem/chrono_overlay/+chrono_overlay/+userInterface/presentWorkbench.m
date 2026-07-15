@@ -15,9 +15,6 @@ function view = presentWorkbench(state)
     view.controls.files.Files = files;
     view.controls.files.Selection = selectedIds;
     view.controls.files.Status = fileStatus(numel(items));
-    view.controls.appLog = struct();
-    view.controls.appLog.Value = logValue( ...
-        state.session.workflow.logLines);
     view.previews.overlayPlots.Axes.voltage = struct( ...
         "Renderer", "overlay", ...
         "Model", withSignal(model, "voltage"));
@@ -31,13 +28,6 @@ function value = fileStatus(count)
         value = "No files loaded";
     else
         value = count + " file(s) loaded";
-    end
-end
-
-function value = logValue(lines)
-    value = cellstr(lines(:));
-    if isempty(value)
-        value = {''};
     end
 end
 

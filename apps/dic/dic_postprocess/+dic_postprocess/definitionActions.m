@@ -18,10 +18,9 @@ function state = onMatChosen(state, event, services)
         state = services.workflow.log(state, "DIC MAT selection cancelled.");
         return;
     end
-    state.project.inputs.matPath = filepath;
-    state.project.inputs.strain = struct();
-    state.project.inputs.sources = setSource( ...
-        state.project.inputs.sources, "dicMat", "strain", filepath, services);
+    state.project.inputs.sources = services.project.upsertSource( ...
+        state.project.inputs.sources, "dicMat", "strain", filepath, true);
+    state.session.cache.strain = struct();
     state = clearPreparedOutputs(state);
     state = services.workflow.log(state, "Selected DIC MAT: " + filepath);
 end
@@ -33,11 +32,10 @@ function state = onReferenceChosen(state, event, services)
             "Reference image selection cancelled.");
         return;
     end
-    state.project.inputs.referencePath = filepath;
-    state.project.inputs.referenceImage = imread(filepath);
-    state.project.inputs.sources = setSource( ...
+    state.session.cache.referenceImage = imread(filepath);
+    state.project.inputs.sources = services.project.upsertSource( ...
         state.project.inputs.sources, "referenceImage", "reference", ...
-        filepath, services);
+        filepath, true);
     state = clearPreparedOutputs(state);
     state = services.workflow.log(state, "Loaded reference image: " + filepath);
 end
@@ -48,18 +46,18 @@ function state = onMaskChosen(state, event, services)
         state = services.workflow.log(state, "Mask image selection cancelled.");
         return;
     end
-    state.project.inputs.maskPath = filepath;
-    state.project.inputs.maskImage = imread(filepath);
-    state.project.inputs.sources = setSource( ...
-        state.project.inputs.sources, "maskImage", "mask", filepath, services);
+    state.session.cache.maskImage = imread(filepath);
+    state.project.inputs.sources = services.project.upsertSource( ...
+        state.project.inputs.sources, "maskImage", "mask", filepath, true);
     state = clearPreparedOutputs(state);
     state = services.workflow.log(state, "Loaded mask image: " + filepath);
 end
 
 function state = onGenerate(state, ~, services)
-    inputs = state.project.inputs;
-    if strlength(inputs.matPath) == 0 || isempty(inputs.referenceImage) || ...
-            isempty(inputs.maskImage)
+    matPath = sourcePath(state, "dicMat");
+    cache = state.session.cache;
+    if strlength(matPath) == 0 || isempty(cache.referenceImage) || ...
+            isempty(cache.maskImage)
         services.dialogs.alert( ...
             'Load the DIC MAT file, reference image, and mask image first.', ...
             'Missing inputs');
@@ -71,8 +69,8 @@ function state = onGenerate(state, ~, services)
         return;
     end
     try
-        state.project.inputs.strain = ...
-            dic_postprocess.sourceFiles.loadNcorrStrain(char(inputs.matPath));
+        state.session.cache.strain = ...
+            dic_postprocess.sourceFiles.loadNcorrStrain(matPath);
         state = prepareOutputs(state);
         state = services.workflow.log(state, ...
             "Generated EXX/EYY overlays and ROI summary.");
@@ -85,7 +83,7 @@ function state = onGenerate(state, ~, services)
 end
 
 function state = onOptionsChanged(state, ~, services)
-    if ~hasPreparedInputs(state.project.inputs)
+    if ~hasPreparedInputs(state.session.cache)
         return;
     end
     if ~validColorRange(state.project.parameters)
@@ -116,7 +114,7 @@ function state = onSaveOverlays(state, ~, services)
         return;
     end
     tag = string(dic_postprocess.userInterface.tagFromPath( ...
-        char(state.project.inputs.matPath)));
+        char(sourcePath(state, "dicMat"))));
     exxName = "overlay_exx_" + tag + ".png";
     eyyName = "overlay_eyy_" + tag + ".png";
     exxFile = fullfile(folder, exxName);
@@ -144,7 +142,7 @@ function state = onExportSummary(state, ~, services)
             'Generate a summary before exporting.', 'Export summary');
         return;
     end
-    [folder, name] = fileparts(char(state.project.inputs.matPath));
+    [folder, name] = fileparts(char(sourcePath(state, "dicMat")));
     folder = services.dialogs.defaultFolder("output", folder);
     defaultName = fullfile(folder, [name '_strain_summary.csv']);
     [out, cancelled] = services.dialogs.outputFile( ...
@@ -167,7 +165,7 @@ end
 function state = prepareOutputs(state)
     [summary, overlayExx, overlayEyy] = ...
         dic_postprocess.analysisRun.prepareOutputs( ...
-        state.project.inputs, state.project.parameters);
+        state.session.cache, state.project.parameters);
     state.project.results.summaryTable = summary;
     state.session.cache.overlayExx = overlayExx;
     state.session.cache.overlayEyy = overlayEyy;
@@ -177,6 +175,11 @@ function state = clearPreparedOutputs(state)
     state.project.results.summaryTable = table();
     state.session.cache.overlayExx = [];
     state.session.cache.overlayEyy = [];
+end
+
+function filepath = sourcePath(state, id)
+    filepath = dic_postprocess.sourceFiles.pathForId( ...
+        state.project.inputs.sources, id);
 end
 
 function tf = hasPreparedInputs(inputs)
@@ -193,20 +196,6 @@ function filepath = firstEventPath(event, services)
     filepath = "";
     if ~isempty(paths)
         filepath = paths(1);
-    end
-end
-
-function sources = setSource(sources, id, role, filepath, services)
-    source = services.project.sourceRecord(id, role, filepath, true);
-    if isempty(sources)
-        sources = source;
-        return;
-    end
-    match = find(string({sources.id}) == id, 1, 'first');
-    if isempty(match)
-        sources(end + 1) = source;
-    else
-        sources(match) = source;
     end
 end
 

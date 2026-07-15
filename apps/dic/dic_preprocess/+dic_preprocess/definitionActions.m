@@ -58,8 +58,8 @@ function state = onImageChosen(state, event, services, role)
             'Image load failed');
         return;
     end
-    state.project.inputs.sources = setSource( ...
-        state.project.inputs.sources, role, filepath, services);
+    state.project.inputs.sources = services.project.upsertSource( ...
+        state.project.inputs.sources, role + "Image", role, filepath, true);
     cacheField = char(role + "Image");
     state.session.cache.(cacheField) = imageData;
     state.project = dic_preprocess.appState.resetForNewInput(state.project);
@@ -596,21 +596,6 @@ end
 function state = clearResults(state)
     state.project.results.currentImagesManifestPath = "";
     state.project.results.maskManifestPath = "";
-end
-
-function sources = setSource(sources, role, filepath, services)
-    source = services.project.sourceRecord( ...
-        role + "Image", role, filepath, true);
-    if isempty(sources)
-        sources = source;
-        return;
-    end
-    match = find(string({sources.id}) == source.id, 1, 'first');
-    if isempty(match)
-        sources(end + 1) = source;
-    else
-        sources(match) = source;
-    end
 end
 
 function sources = removeSource(sources, role)

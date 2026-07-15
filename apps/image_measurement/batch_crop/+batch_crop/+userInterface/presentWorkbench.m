@@ -45,7 +45,6 @@ function view = presentWorkbench(state)
         cropSize(1), cropSize(2), padding, parameters.format);
     view.controls.details = valueSpec(batch_crop.userInterface.detailLines( ...
         state, index, cropSize(1), cropSize(2), padding));
-    view.controls.appLog = valueSpec(logValue(state.session.workflow.logLines));
     view = scaleControlPresentation(view, state, hasImage, physicalMode);
 
     model = emptyPreviewModel();
@@ -249,13 +248,6 @@ end
 function spec = valueSpec(value)
     spec = struct();
     spec.Value = value;
-end
-
-function value = logValue(lines)
-    value = cellstr(lines(:));
-    if isempty(value)
-        value = {''};
-    end
 end
 
 function model = emptyPreviewModel()
