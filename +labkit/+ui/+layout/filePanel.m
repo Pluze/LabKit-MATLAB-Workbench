@@ -7,11 +7,14 @@ function layout = filePanel(id, labelText, varargin)
 % Inputs:
 %   id - globally unique file-panel id.
 %   labelText - panel label.
-%   mode - "multi" or "single". Multi mode supports file multiselect and
-%       recursive folder scans. Single mode opens one file and replaces the
-%       previous file without remove/clear controls. Defaults to "multi".
+%   mode - "multi" or "single". Multi mode accumulates one or more files
+%       selected from one folder, plus direct or recursive folder scans.
+%       Single mode opens one file and replaces the previous file without
+%       remove/clear controls. Defaults to "multi".
 %   filters - uigetfile-style file filters used for file selection and
 %       recursive folder expansion in multi mode.
+%   folderLabel, recursiveFolderLabel - optional labels for adding every
+%       supported file directly under one folder or recursively below it.
 %   selectionMode - single or multiple list selection behavior in multi
 %       mode. Defaults to single.
 %   maxFiles - maximum number of file entries retained after add in multi
@@ -23,7 +26,8 @@ function layout = filePanel(id, labelText, varargin)
 %       large-folder confirmation.
 %   showStatus - logical, default true. When false, multi-file panels omit the
 %       internal count/status field so apps can provide their own summary.
-%   chooseLabel, removeLabel, clearLabel, status, emptyText, onChoose,
+%   chooseLabel, folderLabel, recursiveFolderLabel, removeLabel, clearLabel,
+%       status, emptyText, onChoose,
 %       onRemove, onSelectionChange, onClear - optional semantic props.
 %
 % Callback events:

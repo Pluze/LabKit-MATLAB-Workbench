@@ -208,6 +208,9 @@ function checkDiagnosticReports()
 
     function modalFileChooserCallback()
         modalDebug.trace('filePanel', 'inputs file chooser start', 'mode=multi');
+        nestedCallback = modalDebug.wrapCallback( ...
+            'nested key callback', @noop);
+        nestedCallback();
         pause(0.2);
         drawnow;
         modalDebug.trace('filePanel', 'inputs file chooser end', 'count=1');

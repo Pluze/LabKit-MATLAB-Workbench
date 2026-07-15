@@ -158,10 +158,16 @@ Use these app-facing contracts:
   selection is cleared, the framework removes that suffix. Apps should keep
   preview titles focused on the view or measurement being shown, not duplicate
   the selected filename in app-local title strings.
-- Multi-file `filePanel` mode uses the fixed commands Add, Remove selected,
-  and Clear. Add lets users choose files or recursively scan a folder; folder
-  scans count matching files first and ask for confirmation when the count
-  exceeds the panel warning threshold. File labels show sequence numbers plus
+- Multi-file `filePanel` mode exposes direct commands for adding one or more
+  files from one folder,
+  every supported file directly under one folder, or every supported file
+  recursively below a folder, plus Remove selected and Clear. Each command
+  opens the native file or folder navigator immediately; there is no
+  file-versus-folder question. The native file dialog supports ordinary
+  same-folder multi-selection; separate folder commands cover directory-wide
+  imports. Recursive folder scans count matching files first and ask
+  for confirmation only when the count exceeds the panel warning threshold.
+  File labels show sequence numbers plus
   short filenames, adding the nearest unique parent directory when repeated
   filenames would otherwise collide. Apps that allow duplicate source files
   should remove by file `id` or `index` from `event.removedFiles` instead of

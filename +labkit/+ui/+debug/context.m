@@ -272,7 +272,6 @@ function debugContext = context(appName, opts)
             return;
         end
         stopStallTimer(op);
-        modalDialogDepth = 0;
         if status == "error"
             writeOperationReport("error", op, exception);
         end
@@ -390,10 +389,12 @@ function debugContext = context(appName, opts)
         end
         eventText = string(event);
         if contains(eventText, "file chooser start") || ...
+                contains(eventText, "folder chooser start") || ...
                 contains(eventText, "dialog provider start") || ...
                 contains(eventText, "large folder prompt")
             modalDialogDepth = modalDialogDepth + 1;
         elseif contains(eventText, "file chooser end") || ...
+                contains(eventText, "folder chooser end") || ...
                 contains(eventText, "dialog provider end") || ...
                 contains(eventText, "paths selected")
             modalDialogDepth = max(0, modalDialogDepth - 1);

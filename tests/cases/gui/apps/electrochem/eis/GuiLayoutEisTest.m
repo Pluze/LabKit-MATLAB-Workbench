@@ -9,6 +9,11 @@ classdef GuiLayoutEisTest < matlab.unittest.TestCase
             cleanup = onCleanup(@() h.closeAllFigures());
 
             fixture = dtaFixturePath('eis_potentiostatic_zcurve.DTA');
+            secondFolder = string(tempname);
+            mkdir(secondFolder);
+            secondCleanup = onCleanup(@() rmdir(secondFolder, 's'));
+            secondFixture = fullfile(secondFolder, 'eis_replicate_zcurve.DTA');
+            copyfile(fixture, secondFixture);
             fig = h.launchFigure('labkit_EIS_app', 'Gamry EIS Multi-DTA Plot GUI');
             assertEisLayout(h, fig);
             axisItems = eis.userInterface.axisItems();
@@ -35,6 +40,15 @@ classdef GuiLayoutEisTest < matlab.unittest.TestCase
                 'EIS durable project must not own decoded DTA items.');
             testCase.verifyEqual(numel(runtime.state.session.cache.items), 1, ...
                 'EIS decoded DTA items should live in the session cache.');
+            workflow.chooseFiles('files', secondFixture);
+            workflow.click('Add DTA files');
+            workflow.selectFile('files', 'eis_potentiostatic_zcurve.DTA');
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            testCase.verifyEqual(numel(runtime.state.session.selection.paths), 1, ...
+                'EIS should commit a one-file selection subset.');
+            testCase.verifyTrue(contains(workflow.fileSelection('files'), ...
+                'eis_potentiostatic_zcurve.DTA'), ...
+                'EIS presentation should preserve the selected subset.');
             ax.XLim = [-1e4 5e4];
             ax.YLim = [4e4 13e4];
             ax.XLimMode = 'manual';
@@ -76,11 +90,12 @@ classdef GuiLayoutEisTest < matlab.unittest.TestCase
             labkit.ui.runtime.loadState(fig, projectPath);
             h.waitForUiIdle(fig);
             testCase.verifyEqual(char(workflow.fileStatus('files')), ...
-                '1 file(s) loaded', ...
+                '2 file(s) loaded', ...
                 'EIS project reopen should rebuild decoded sources.');
             runtime = getappdata(fig, 'labkitUiAppRuntime');
-            testCase.verifyEqual(numel(runtime.state.session.cache.items), 1);
+            testCase.verifyEqual(numel(runtime.state.session.cache.items), 2);
             clear outputCleanup;
+            clear secondCleanup;
         end
     end
 end

@@ -430,7 +430,8 @@ function callback = semanticFileChooseCallback(id, appCallback)
         end
         control = ui.controls.(id);
         traceFilePanelFromSource(id, source, 'choose requested', 'user');
-        paths = control.normalizePathList(control.choosePaths(control));
+        paths = control.normalizePathList(control.choosePaths( ...
+            control, fileChooserRequest(source)));
         traceFilePanelFromSource(id, source, 'paths selected', ...
             sprintf('count=%d', numel(paths)));
         if isempty(paths)
@@ -449,6 +450,17 @@ function callback = semanticFileChooseCallback(id, appCallback)
         traceFilePanelFromSource(id, source, 'callback start', 'action=choose');
         runSemanticAppCallback(ui, control, event, appCallback, id);
         traceFilePanelFromSource(id, source, 'callback end', 'action=choose');
+    end
+end
+
+function request = fileChooserRequest(source)
+    request = "file";
+    if isempty(source) || ~isprop(source, 'UserData') || isempty(source.UserData)
+        return;
+    end
+    value = string(source.UserData);
+    if ~isempty(value) && strlength(value(1)) > 0
+        request = value(1);
     end
 end
 
