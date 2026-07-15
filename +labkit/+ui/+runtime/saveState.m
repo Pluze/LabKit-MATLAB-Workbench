@@ -6,7 +6,7 @@ function filepath = saveState(fig, filepath)
 %   filepath = labkit.ui.runtime.saveState(fig, filepath)
 %
 % Inputs:
-%   fig - LabKit app figure created by labkit.ui.runtime.run.
+%   fig - LabKit app figure created by labkit.ui.runtime.launch.
 %   filepath - optional scalar text MAT-file target. When omitted, a save
 %       dialog is shown.
 %

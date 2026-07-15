@@ -1,4 +1,4 @@
-% Private UI runtime helper. Expected caller: labkit.ui.runtime.run for a v2
+% Private UI runtime helper. Expected caller: runAppDefinition for a V2
 % definition. Inputs are a validated definition and request. Output is the app
 % figure. Side effects create the workbench, install one FIFO event queue,
 % commit canonical state/presentation transactions, and own runtime resources.

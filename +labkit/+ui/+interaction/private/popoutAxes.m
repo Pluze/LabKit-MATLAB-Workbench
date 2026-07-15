@@ -1,10 +1,8 @@
 % Private UI interaction helper. Copies an axes into an editable figure.
 function newFig = popoutAxes(srcAx, varargin)
 %
-% App-facing contract:
-%   newFig = labkit.ui.interaction.popout(srcAx)
-%   newFig = labkit.ui.interaction.popout(srcAx, "Toolbar", true)
-%   newFig = labkit.ui.interaction.popout(srcAx, "Title", titleText)
+% Internal contract:
+%   newFig = popoutAxes(srcAx, "Toolbar", true, "Title", titleText)
 %
 % Inputs:
 %   srcAx - source UI axes or axes handle.

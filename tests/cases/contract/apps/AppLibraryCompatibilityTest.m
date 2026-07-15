@@ -196,18 +196,19 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
             end
 
             testCase.verifyEmpty(findings, ...
-                "Apps should consume filePanel file entries and extract paths with " + ...
-                "testui.control.filePaths; task/path events are retired: " + ...
+                "Apps should consume canonical filePanel source records; " + ...
+                "task/path-only events are retired: " + ...
                 strjoin(findings, "; "));
         end
 
-        function appDialogsAvoidLabKitRuntimeDefaults(testCase)
+        function appDialogsUseRuntimeServices(testCase)
             root = setupLabKitTestPath();
             appFiles = collectAppMFiles(root);
             forbiddenPatterns = [
                 "\bpwd\b"
-                "uigetdir\s*\(\s*pwd"
-                "uiputfile\s*\("];
+                "\buigetfile\s*\("
+                "\buigetdir\s*\("
+                "\buiputfile\s*\("];
             findings = strings(0, 1);
 
             for k = 1:numel(appFiles)
@@ -219,16 +220,13 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
                     end
                 end
             end
-            findings = [findings; bareUigetfileFindings(root, appFiles)];
-
             testCase.verifyEmpty(findings, ...
-                "Apps should not default file dialogs or exports into the LabKit " + ...
-                "runtime folder; use filePanel, labkit.ui.runtime.defaultDialogFolder, " + ...
-                "labkit.ui.runtime.promptOutputFile, or labkit.ui.runtime.promptOutputFolder: " + ...
+                "Apps should use filePanel and handler services.dialogs instead " + ...
+                "of creating MATLAB dialogs directly: " + ...
                 strjoin(findings, "; "));
         end
 
-        function appAlertsUseFrameworkShowAlert(testCase)
+        function appAlertsUseRuntimeServices(testCase)
             root = setupLabKitTestPath();
             appFiles = collectAppMFiles(root);
             findings = strings(0, 1);
@@ -241,8 +239,8 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
             end
 
             testCase.verifyEmpty(findings, ...
-                "Apps should route alerts through labkit.ui.runtime.showAlert " + ...
-                "so hidden GUI workflow tests can record error paths without modal stalls: " + ...
+                "Apps should route alerts through handler services.dialogs.alert so " + ...
+                "hidden GUI tests can record error paths without modal stalls: " + ...
                 strjoin(findings, "; "));
         end
 
@@ -289,24 +287,6 @@ classdef AppLibraryCompatibilityTest < matlab.unittest.TestCase
                 "Close confirmation is framework-owned; app files must not " + ...
                 "maintain close guard dirty state through removed runtime APIs: " + ...
                 strjoin(findings, "; "));
-        end
-    end
-end
-
-function findings = bareUigetfileFindings(root, files)
-    findings = strings(0, 1);
-    for k = 1:numel(files)
-        content = fileread(files(k));
-        calls = regexp(content, 'uigetfile\s*\(([\s\S]*?)\);', 'tokens');
-        for c = 1:numel(calls)
-            callText = string(calls{c}{1});
-            hasSafeInputDefault = ~isempty(regexp(callText, ...
-                'labkit\.ui\.runtime\.defaultDialogFolder\s*\(\s*["'']input["''](?:\s*,[\s\S]*?)?\)', ...
-                'once'));
-            if ~hasSafeInputDefault
-                findings(end+1, 1) = string(localRelativePath(root, files(k))) + ...
-                    " has uigetfile without labkit.ui.runtime.defaultDialogFolder(""input"")";
-            end
         end
     end
 end

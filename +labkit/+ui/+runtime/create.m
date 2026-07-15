@@ -13,7 +13,7 @@ function ui = create(layout, varargin)
 % Output:
 %   ui - registry struct with figure/fig, shell handles, controls, sections,
 %       tabs, workspace, original layout, and optional debug context. Stable app
-%       code should use semantic ids and named labkit.ui.control or
+%       framework code should use semantic ids and runtime-private control or
 %       labkit.ui.plot helpers rather than adapter internals.
 
     opts = parseOptions(varargin);

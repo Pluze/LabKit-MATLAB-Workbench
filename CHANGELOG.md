@@ -44,6 +44,117 @@ Commits and PRs belong in `Evidence`, not in the navigation structure.
 
 ## Structured Change Records
 
+### Runtime V2 lifecycle ownership across the app fleet
+
+```labkit-change
+schema: 1
+id: LK-20260715-runtime-v2-app-migration
+date: 2026-07-15
+type: refactor
+compatibility: breaking
+component: `labkit.ui` | `5.2.0 -> 6.0.0`
+component: `labkit_DICPostprocess_app` | `1.3.6 -> 1.4.0`
+component: `labkit_DICPreprocess_app` | `1.4.0 -> 1.5.0`
+component: `labkit_ChronoOverlay_app` | `1.3.6 -> 1.4.0`
+component: `labkit_CIC_app` | `1.3.8 -> 1.4.0`
+component: `labkit_CSC_app` | `1.3.10 -> 1.4.0`
+component: `labkit_EIS_app` | `1.3.4 -> 1.4.0`
+component: `labkit_VTResistance_app` | `1.3.8 -> 1.4.0`
+component: `labkit_GaitAnalysis_app` | `1.0.0 -> 1.1.0`
+component: `labkit_BatchImageCrop_app` | `1.6.8 -> 1.7.0`
+component: `labkit_CurvatureMeasurement_app` | `1.3.5 -> 1.4.0`
+component: `labkit_FLIRThermal_app` | `1.3.0 -> 1.4.0`
+component: `labkit_FocusStack_app` | `1.4.9 -> 1.5.0`
+component: `labkit_ImageEnhance_app` | `1.5.8 -> 1.6.0`
+component: `labkit_ImageMatch_app` | `1.5.8 -> 1.6.0`
+component: `labkit_VideoMarker_app` | `1.2.0 -> 1.3.0`
+component: `labkit_FigureStudio_app` | `0.1.5 -> 0.2.0`
+component: `labkit_NerveResponseAnalysis_app` | `1.3.5 -> 1.4.0`
+component: `labkit_ResponseReviewStats_app` | `1.3.5 -> 1.4.0`
+component: `labkit_RHSPreview_app` | `1.3.4 -> 1.4.0`
+component: `labkit_ECGPrint_app` | `1.3.5 -> 1.4.0`
+scope: `private_apps`
+scope: `docs/ui-runtime-redesign.md`
+scope: `.agents/migration_guide.md`
+```
+
+#### Context
+
+App lifecycle, callback ordering, UI-derived state, project persistence,
+graphics resources, and result packaging were implemented repeatedly across
+apps. Migrating only the lifecycle names would have preserved the main author
+cost: each app would still need to understand raw controls, figure callbacks,
+and multiple competing state copies.
+
+#### Decision and rationale
+
+Make Runtime V2 the only write path and give the framework ownership of launch,
+startup, the FIFO event queue, atomic state commits, deterministic presentation,
+dialogs, interaction resources, project persistence, and result manifests.
+Apps retain explicit project/session/presentation/result contracts and all
+domain calculations, workflow decisions, plots, schemas, and exports.
+
+This deliberately optimizes ownership and learning cost rather than total app
+line count. Explicit app contracts can add code in a large scientific app, but
+they replace hidden closure state and callback plumbing with one inspectable
+model. The remaining 36 public UI functions have distinct reviewed contracts;
+the earlier 32-function planning target was not forced through vague APIs.
+
+#### Changes
+
+- Migrated all twenty public apps and the nested private Imager app to Runtime
+  V2 definitions, standard launch, canonical project/session state, semantic
+  events, pure presentation, and managed resources.
+- Standardized current project writes and result manifests while retaining
+  app-owned payload migrations and existing output files.
+- Retired Runtime V1 writes and removed the public control-registry mutation,
+  standalone editor/runtime, preview mutation, dialog, title, and dispatch
+  compatibility surfaces.
+- Kept supported V1 snapshots and named legacy app projects as read-only import
+  formats; subsequent saves use the current project codec.
+- Updated app requirements to `labkit.ui >=6 <7` and made UI 6 the breaking
+  public facade boundary.
+
+#### User and data impact
+
+App entrypoint names, scientific calculations, workflow decisions, plots, and
+existing export filenames remain stable. Current projects have a consistent
+save/reopen path, external sources use portable references, and result exports
+include a standard manifest. Runtime errors and modal interactions now pass
+through framework services, which also makes hidden validation deterministic.
+
+#### Compatibility and migration
+
+The migrated app versions require `labkit.ui >=6 <7`; they must not be copied
+into a UI 5 checkout. Supported V1 snapshots and documented legacy projects
+remain importable but are not written again. After import, save a new current
+project if continued editing or recovery is required.
+
+#### Validation
+
+Focused Runtime V2, project, interaction-hub, Figure Studio, app-boundary, and
+public-surface tests passed. The private Imager workspace passed 40/40 tests.
+The Phase-6 `buildtool changedFast` checkpoint passed 15 framework GUI tests,
+284 headless tests with one environment-assumption skip, and six representative
+GUI workflows. Final broad gates and manual pointer/visual checks are recorded
+when the branch reaches PR handoff.
+
+#### Evidence
+
+- Runtime V2 migration checkpoints on `codex/upgrade-and-repair`, including
+  `1ef46bfd` for legacy public-surface retirement.
+- Private migration checkpoint `acce2f37` and UI 6 version closure `b064f80`
+  on `codex/ui-runtime-v2`.
+- Stable Change ID `LK-20260715-runtime-v2-app-migration` locates the carrying
+  branch and later mainline record.
+
+#### Known limitations and follow-up
+
+Explicit domain contracts mean that large apps do not necessarily have fewer
+production lines. Further extraction is justified only by repeated mechanics,
+not by file-size targets. Pointer feel, drag ergonomics, and scientific visual
+judgment still require the documented manual app review before merge.
+
 ### Video Marker predictive frame navigation
 
 ```labkit-change
@@ -3284,35 +3395,35 @@ This normalized baseline preserves the historical intent; consult the evidence f
 
 ## Current Version Lookup
 
-Audited against working-tree metadata on 2026-07-14; version transitions use
+Audited against working-tree metadata on 2026-07-15; version transitions use
 the `origin/main` merge-base values.
 
 | Component | Current version | Family | Metadata location |
 |---|---:|---|---|
 | `labkit_launcher` | `1.4.0` | Launcher | `labkit_launcher.m` |
-| `labkit.ui` | `5.2.0` | Facade | `+labkit/+ui/version.m` |
+| `labkit.ui` | `6.0.0` | Facade | `+labkit/+ui/version.m` |
 | `labkit.dta` | `2.0.1` | Facade | `+labkit/+dta/version.m` |
 | `labkit.image` | `2.0.0` | Facade | `+labkit/+image/version.m` |
 | `labkit.thermal` | `1.1.0` | Facade | `+labkit/+thermal/version.m` |
 | `labkit.rhs` | `1.0.1` | Facade | `+labkit/+rhs/version.m` |
 | `labkit.biosignal` | `1.0.1` | Facade | `+labkit/+biosignal/version.m` |
-| `labkit_FigureStudio_app` | `0.1.5` | LabKit Core | `apps/labkit_core/figure_studio/+figure_studio/version.m` |
-| `labkit_ChronoOverlay_app` | `1.3.6` | Electrochem | `apps/electrochem/chrono_overlay/+chrono_overlay/version.m` |
-| `labkit_CIC_app` | `1.3.8` | Electrochem | `apps/electrochem/cic/+cic/version.m` |
-| `labkit_CSC_app` | `1.3.10` | Electrochem | `apps/electrochem/csc/+csc/version.m` |
-| `labkit_EIS_app` | `1.3.4` | Electrochem | `apps/electrochem/eis/+eis/version.m` |
-| `labkit_VTResistance_app` | `1.3.8` | Electrochem | `apps/electrochem/vt_resistance/+vt_resistance/version.m` |
-| `labkit_DICPreprocess_app` | `1.4.0` | DIC | `apps/dic/dic_preprocess/+dic_preprocess/version.m` |
-| `labkit_DICPostprocess_app` | `1.3.6` | DIC | `apps/dic/dic_postprocess/+dic_postprocess/version.m` |
-| `labkit_BatchImageCrop_app` | `1.6.8` | Image Measurement | `apps/image_measurement/batch_crop/+batch_crop/version.m` |
-| `labkit_CurvatureMeasurement_app` | `1.3.5` | Image Measurement | `apps/image_measurement/curvature/+curvature/version.m` |
-| `labkit_FLIRThermal_app` | `1.3.0` | Image Measurement | `apps/image_measurement/flir_thermal/+flir_thermal/version.m` |
-| `labkit_FocusStack_app` | `1.4.9` | Image Measurement | `apps/image_measurement/focus_stack/+focus_stack/version.m` |
-| `labkit_ImageEnhance_app` | `1.5.8` | Image Measurement | `apps/image_measurement/image_enhance/+image_enhance/version.m` |
-| `labkit_ImageMatch_app` | `1.5.8` | Image Measurement | `apps/image_measurement/image_match/+image_match/version.m` |
-| `labkit_VideoMarker_app` | `1.2.0` | Image Measurement | `apps/image_measurement/video_marker/+video_marker/version.m` |
-| `labkit_GaitAnalysis_app` | `1.0.0` | Gait | `apps/gait/gait_analysis/+gait_analysis/version.m` |
-| `labkit_RHSPreview_app` | `1.3.4` | Neurophysiology | `apps/neurophysiology/rhs_preview/+rhs_preview/version.m` |
-| `labkit_NerveResponseAnalysis_app` | `1.3.5` | Neurophysiology | `apps/neurophysiology/nerve_response_analysis/+nerve_response_analysis/version.m` |
-| `labkit_ResponseReviewStats_app` | `1.3.5` | Neurophysiology | `apps/neurophysiology/response_review_stats/+response_review_stats/version.m` |
-| `labkit_ECGPrint_app` | `1.3.5` | Wearable | `apps/wearable/ecg_print/+ecg_print/version.m` |
+| `labkit_FigureStudio_app` | `0.2.0` | LabKit Core | `apps/labkit_core/figure_studio/+figure_studio/version.m` |
+| `labkit_ChronoOverlay_app` | `1.4.0` | Electrochem | `apps/electrochem/chrono_overlay/+chrono_overlay/version.m` |
+| `labkit_CIC_app` | `1.4.0` | Electrochem | `apps/electrochem/cic/+cic/version.m` |
+| `labkit_CSC_app` | `1.4.0` | Electrochem | `apps/electrochem/csc/+csc/version.m` |
+| `labkit_EIS_app` | `1.4.0` | Electrochem | `apps/electrochem/eis/+eis/version.m` |
+| `labkit_VTResistance_app` | `1.4.0` | Electrochem | `apps/electrochem/vt_resistance/+vt_resistance/version.m` |
+| `labkit_DICPreprocess_app` | `1.5.0` | DIC | `apps/dic/dic_preprocess/+dic_preprocess/version.m` |
+| `labkit_DICPostprocess_app` | `1.4.0` | DIC | `apps/dic/dic_postprocess/+dic_postprocess/version.m` |
+| `labkit_BatchImageCrop_app` | `1.7.0` | Image Measurement | `apps/image_measurement/batch_crop/+batch_crop/version.m` |
+| `labkit_CurvatureMeasurement_app` | `1.4.0` | Image Measurement | `apps/image_measurement/curvature/+curvature/version.m` |
+| `labkit_FLIRThermal_app` | `1.4.0` | Image Measurement | `apps/image_measurement/flir_thermal/+flir_thermal/version.m` |
+| `labkit_FocusStack_app` | `1.5.0` | Image Measurement | `apps/image_measurement/focus_stack/+focus_stack/version.m` |
+| `labkit_ImageEnhance_app` | `1.6.0` | Image Measurement | `apps/image_measurement/image_enhance/+image_enhance/version.m` |
+| `labkit_ImageMatch_app` | `1.6.0` | Image Measurement | `apps/image_measurement/image_match/+image_match/version.m` |
+| `labkit_VideoMarker_app` | `1.3.0` | Image Measurement | `apps/image_measurement/video_marker/+video_marker/version.m` |
+| `labkit_GaitAnalysis_app` | `1.1.0` | Gait | `apps/gait/gait_analysis/+gait_analysis/version.m` |
+| `labkit_RHSPreview_app` | `1.4.0` | Neurophysiology | `apps/neurophysiology/rhs_preview/+rhs_preview/version.m` |
+| `labkit_NerveResponseAnalysis_app` | `1.4.0` | Neurophysiology | `apps/neurophysiology/nerve_response_analysis/+nerve_response_analysis/version.m` |
+| `labkit_ResponseReviewStats_app` | `1.4.0` | Neurophysiology | `apps/neurophysiology/response_review_stats/+response_review_stats/version.m` |
+| `labkit_ECGPrint_app` | `1.4.0` | Wearable | `apps/wearable/ecg_print/+ecg_print/version.m` |

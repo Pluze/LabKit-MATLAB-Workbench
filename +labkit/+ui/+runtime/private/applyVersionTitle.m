@@ -1,8 +1,8 @@
 % Private UI runtime helper. Applies app version metadata to a figure title.
 function titleText = applyVersionTitle(fig, info)
 %
-% App-facing contract:
-%   titleText = labkit.ui.runtime.applyVersionTitle(fig, info)
+% Internal contract:
+%   titleText = applyVersionTitle(fig, info)
 %
 % Inputs:
 %   fig - scalar app figure handle with a Name property.

@@ -70,24 +70,6 @@ classdef plot
             title(ax, contextTitle);
         end
 
-        function uv = dataToFraction(ax, xy)
-            uv = [(xy(:, 1) - ax.XLim(1)) ./ diff(ax.XLim), ...
-                (xy(:, 2) - ax.YLim(1)) ./ diff(ax.YLim)];
-        end
-
-        function xy = fractionToData(ax, uv)
-            xy = [ax.XLim(1) + uv(:, 1) .* diff(ax.XLim), ...
-                ax.YLim(1) + uv(:, 2) .* diff(ax.YLim)];
-        end
-
-        function handles = replaceOverlay(ax, layerId, drawFcn)
-            key = ['testUiOverlay_' char(string(layerId))];
-            if isappdata(ax, key)
-                delete(getappdata(ax, key));
-            end
-            handles = drawFcn(ax);
-            setappdata(ax, key, handles);
-        end
     end
 
     methods (Static, Access = private)

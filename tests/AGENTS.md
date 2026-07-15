@@ -75,10 +75,13 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
   GUI structural tests only prove launch/layout wiring.
 - Guardrails should prevent app lifecycle orchestration from living in
   `+ui/runApp.m` or package-root eager `run.m`. Apps launch through
-  `definition.m` and `labkit.ui.runtime.run`; workflow-first apps keep data-only
+  `definition.m` and `labkit.ui.runtime.launch`; workflow-first apps keep data-only
   layouts in `+userInterface/buildWorkbenchLayout.m`. Ordinary tests should call
   package helpers directly.
-- UI public-surface tests should assert the layered `labkit.ui.runtime/layout/control/plot/interaction/debug` facade and keep low-level controls, row resize, panel internals, and popout implementation private.
+- UI public-surface tests should assert the layered
+  `labkit.ui.runtime/layout/plot/interaction/debug` facade and keep registry
+  mutation, low-level controls, row resize, panel internals, and popout
+  implementation private.
 - GUI launch/debug tests may assert that every app supports debug launch and visible startup trace, but should not claim full interactive workflow validation.
 - App GUI tests should prefer semantic contracts such as expected command
   buttons, dropdown choices, tabs, tables, axes, callbacks, workflow outcomes,

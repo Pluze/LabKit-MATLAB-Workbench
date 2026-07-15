@@ -5,7 +5,7 @@ function [curve, owners] = anchorCurvePoints(points, imageSize, curveStyle, clos
 %ANCHORCURVEPOINTS Build displayed anchor path samples for curve editors.
 %
 % Expected caller:
-%   labkit.ui.interaction.anchorEditor and sibling private insertion helpers.
+%   Runtime V2 anchor editors and sibling private insertion helpers.
 %
 % Inputs:
 %   points - N-by-2 anchor coordinates in image pixel coordinates.

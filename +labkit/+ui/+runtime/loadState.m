@@ -6,7 +6,7 @@ function filepath = loadState(fig, filepath)
 %   filepath = labkit.ui.runtime.loadState(fig, filepath)
 %
 % Inputs:
-%   fig - LabKit app figure created by labkit.ui.runtime.run.
+%   fig - LabKit app figure created by labkit.ui.runtime.launch.
 %   filepath - optional scalar text MAT-file path. When omitted, an open
 %       dialog is shown.
 %

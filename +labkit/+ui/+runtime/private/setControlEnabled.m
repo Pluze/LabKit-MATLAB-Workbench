@@ -2,8 +2,8 @@
 % Enable-bearing handles for one semantic control without invoking app code.
 function setControlEnabled(ui, id, enabled)
 %
-% App-facing contract:
-%   labkit.ui.control.setEnabled(ui, id, enabled)
+% Internal contract:
+%   setControlEnabled(ui, id, enabled)
 %
 % Inputs:
 %   ui - UI registry returned by labkit.ui.runtime.create.

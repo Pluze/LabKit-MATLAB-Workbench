@@ -2,8 +2,8 @@
 % validated numeric limits while suppressing app callbacks.
 function setControlLimits(ui, id, limits)
 %
-% App-facing contract:
-%   labkit.ui.control.setLimits(ui, id, limits)
+% Internal contract:
+%   setControlLimits(ui, id, limits)
 %
 % Inputs:
 %   ui - UI registry returned by labkit.ui.runtime.create.

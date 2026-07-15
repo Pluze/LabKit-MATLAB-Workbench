@@ -2,9 +2,8 @@
 % semantic preview and optional axis ids.
 function ax = resolvePreviewAxes(ui, id, axisId)
 %
-% App-facing contract:
-%   ax = labkit.ui.plot.getAxes(ui, id)
-%   ax = labkit.ui.plot.getAxes(ui, id, axisId)
+% Internal contract:
+%   ax = resolvePreviewAxes(ui, id, axisId)
 %
 % Inputs:
 %   ui - UI registry returned by labkit.ui.runtime.create or app runtime.
@@ -15,10 +14,6 @@ function ax = resolvePreviewAxes(ui, id, axisId)
 % Outputs:
 %   ax - MATLAB axes or uiaxes handle owned by the previewArea.
 %
-% Example:
-%   ax = labkit.ui.plot.getAxes(ui, "plotAxes", "top");
-%   plot(ax, t, y);
-
     if nargin < 3
         axisId = "";
     end

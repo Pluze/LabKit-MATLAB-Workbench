@@ -2,8 +2,8 @@
 % one semantic value while suppressing app callbacks.
 function setControlValue(ui, id, value)
 %
-% App-facing contract:
-%   labkit.ui.control.setValue(ui, id, value)
+% Internal contract:
+%   setControlValue(ui, id, value)
 %
 % Inputs:
 %   ui - UI registry returned by labkit.ui.runtime.create.

@@ -1,8 +1,8 @@
 % Private UI plot helper used by public coordinate operations.
 function xy = fractionToData(ax, uv)
 %
-% App-facing contract:
-%   xy = labkit.ui.plot.fractionToData(ax, uv)
+% Internal contract:
+%   xy = fractionToData(ax, uv)
 %
 % Inputs:
 %   ax - target MATLAB axes or uiaxes handle.

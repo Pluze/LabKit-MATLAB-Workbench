@@ -2,8 +2,8 @@
 % selectable items while suppressing app callbacks.
 function setControlItems(ui, id, items)
 %
-% App-facing contract:
-%   labkit.ui.control.setItems(ui, id, items)
+% Internal contract:
+%   setControlItems(ui, id, items)
 %
 % Inputs:
 %   ui - UI registry returned by labkit.ui.runtime.create.

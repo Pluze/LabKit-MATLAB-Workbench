@@ -1,8 +1,8 @@
 % Private UI runtime helper. Formats an app title with version metadata.
 function titleText = appVersionTitle(baseTitle, info)
 %
-% App-facing contract:
-%   titleText = labkit.ui.runtime.appVersionTitle(baseTitle, info)
+% Internal contract:
+%   titleText = appVersionTitle(baseTitle, info)
 %
 % Inputs:
 %   baseTitle - scalar text already used as the figure title.

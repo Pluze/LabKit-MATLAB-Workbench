@@ -186,9 +186,9 @@ function captureImageEnhanceParameters(assetDir)
         prepareFigure(fig);
         ui = getappdata(fig, "labkitUiRegistry");
         selectControlTab(ui, "toolsHistoryTab");
-        labkit.ui.control.setValue(ui, "toolKind", "Brightness/contrast");
-        labkit.ui.control.setValue(ui, "toolAmount", 18);
-        labkit.ui.control.setValue(ui, "toolSecondary", 26);
+        setVisualControlValue(ui, "toolKind", "Brightness/contrast");
+        setVisualControlValue(ui, "toolAmount", 18);
+        setVisualControlValue(ui, "toolSecondary", 26);
         drawnow;
         pause(0.6);
         exportapp(fig, fullfile(assetDir, ...
@@ -207,10 +207,10 @@ function captureImageMatchParameters(assetDir)
         prepareFigure(fig);
         ui = getappdata(fig, "labkitUiRegistry");
         selectControlTab(ui, "matchHistoryTab");
-        labkit.ui.control.setValue(ui, "matchMethod", "Balanced");
-        labkit.ui.control.setValue(ui, "matchStrength", 85);
-        labkit.ui.control.setValue(ui, "toneStrength", 70);
-        labkit.ui.control.setValue(ui, "colorStrength", 80);
+        setVisualControlValue(ui, "matchMethod", "Balanced");
+        setVisualControlValue(ui, "matchStrength", 85);
+        setVisualControlValue(ui, "toneStrength", 70);
+        setVisualControlValue(ui, "colorStrength", 80);
         drawnow;
         pause(0.6);
         exportapp(fig, fullfile(assetDir, ...
@@ -229,12 +229,12 @@ function captureBatchCropParameters(assetDir)
         prepareFigure(fig);
         ui = getappdata(fig, "labkitUiRegistry");
         selectControlTab(ui, "filesAnalysisTab");
-        labkit.ui.control.setValue(ui, "cropWidth", 420);
-        labkit.ui.control.setValue(ui, "cropHeight", 320);
-        labkit.ui.control.setValue(ui, "rotation", 3);
-        labkit.ui.control.setValue(ui, "paddingPercent", 18);
-        labkit.ui.control.setValue(ui, "centerX", 515);
-        labkit.ui.control.setValue(ui, "centerY", 350);
+        setVisualControlValue(ui, "cropWidth", 420);
+        setVisualControlValue(ui, "cropHeight", 320);
+        setVisualControlValue(ui, "rotation", 3);
+        setVisualControlValue(ui, "paddingPercent", 18);
+        setVisualControlValue(ui, "centerX", 515);
+        setVisualControlValue(ui, "centerY", 350);
         drawnow;
         pause(0.6);
         exportapp(fig, fullfile(assetDir, ...
@@ -254,6 +254,25 @@ function selectControlTab(ui, tabField)
     tabHandle.Parent.SelectedTab = tabHandle;
     drawnow;
     pause(0.2);
+end
+
+function setVisualControlValue(ui, id, value)
+% Set one generated-screenshot control without exposing a production facade.
+    control = ui.controls.(char(string(id)));
+    if isfield(control, 'setValue') && isa(control.setValue, 'function_handle')
+        control.setValue(value);
+        return;
+    end
+    candidates = {'valueHandle', 'handle', 'dropdown', 'listbox', ...
+        'table', 'textArea', 'displayField'};
+    for k = 1:numel(candidates)
+        if isfield(control, candidates{k}) && ~isempty(control.(candidates{k}))
+            control.(candidates{k}).Value = value;
+            return;
+        end
+    end
+    error('LabKit:GuideAssets:MissingControlValue', ...
+        'Screenshot control %s does not expose a value handle.', id);
 end
 
 function exportPairImage(leftImage, rightImage, outputPath, leftTitle, rightTitle)

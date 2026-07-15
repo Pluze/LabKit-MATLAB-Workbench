@@ -1,9 +1,8 @@
 % Private UI runtime helper. Zooms an axes around one pointer location.
 function didZoom = zoomAxesAtPoint(ax, point, scrollCount, varargin)
 %
-% App-facing contract:
-%   didZoom = labkit.ui.interaction.zoomAtPoint(ax, [x y], scrollCount)
-%   didZoom = labkit.ui.interaction.zoomAtPoint(ax, [x y], scrollCount, ...
+% Internal contract:
+%   didZoom = zoomAxesAtPoint(ax, [x y], scrollCount, ...
 %       "Bounds", [xmin xmax ymin ymax], "MinSpan", [minX minY], ...
 %       "ZoomBase", 1.20)
 %

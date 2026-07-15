@@ -6,7 +6,7 @@ function points = addOrInsertAnchor(points, newPoint, ax, imageSize, curveStyle,
 %ADDORINSERTANCHOR Apply anchor insertion policy for createAnchorCurveEditor.
 %
 % Expected caller:
-%   labkit.ui.interaction.anchorEditor when users double-click/add anchors.
+%   createAnchorEditor when users double-click/add anchors.
 %
 % Inputs:
 %   points - existing N-by-2 normalized anchor coordinates.

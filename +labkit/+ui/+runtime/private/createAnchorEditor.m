@@ -1,14 +1,13 @@
 % Private UI runtime helper. Creates a controlled image-space anchor editor.
 function editor = createAnchorEditor(runtime, imageSize, opts)
 %
-% Usage:
-%   runtime = labkit.ui.interaction.runtime(ax);
-%   editor = labkit.ui.interaction.anchorEditor(runtime, size(image), ...
+% Internal usage:
+%   editor = createAnchorEditor(interactionAdapter, size(image), ...
 %       struct('closed', true, 'style', 'Curve', 'onChanged', @onChanged));
 %   editor.start(points);
 %
 % Inputs:
-%   runtime - interaction runtime returned by labkit.ui.interaction.runtime.
+%   runtime - Runtime V2 interaction-hub adapter.
 %   imageSize - [height width] or image size used for zoom/limit clamping.
 %   opts - optional struct.
 %
@@ -52,7 +51,7 @@ function editor = createAnchorEditor(runtime, imageSize, opts)
         isa(runtime.axes, 'function_handle') && ...
         isfield(runtime, 'createSession') && ...
         isa(runtime.createSession, 'function_handle'), ...
-        'First input must be a labkit.ui.interaction.runtime result.');
+        'First input must be a Runtime V2 interaction adapter.');
 
     state.runtime = runtime;
     state.ax = runtime.axes();

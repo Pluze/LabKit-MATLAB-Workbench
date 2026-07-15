@@ -55,28 +55,27 @@
   before squash or handoff, choosing the next `X.Y.Z` value from the latest
   `main` version file.
 - Reusable UI tools may own domain-neutral interaction workflows such as image scale-bar controls, reference editing, unit normalization, and overlay placement. Keep those tools independent from app result schemas, scientific formulas, file formats, and workflow wording.
-- App-facing UI APIs live under `labkit.ui.runtime.*`, `labkit.ui.layout.*`, `labkit.ui.control.*`, `labkit.ui.plot.*`, `labkit.ui.interaction.*`, and `labkit.ui.debug.*`. Do not reintroduce flat `labkit.ui.*` helper files or the retired `app/spec/view/tool/diag` UI package names.
+- App-facing UI APIs live under `labkit.ui.runtime.*`, `labkit.ui.layout.*`,
+  `labkit.ui.plot.*`, `labkit.ui.interaction.*`, and `labkit.ui.debug.*`.
+  Control mutation and registry access are runtime-private; do not reintroduce
+  `labkit.ui.control.*`, flat `labkit.ui.*` helpers, or the retired
+  `app/spec/view/tool/diag` package names.
 - `labkit.ui.runtime` owns the declarative app runtime: app definition validation,
   generated semantic callbacks, startup readiness, busy gating, staged
   hydration, close guards, debug exception routing, and startup phase timing.
-  Public app-facing runtime growth should favor stable definition/run
-  contracts such as `define` and `run`. Keep `create` as the low-level
-  workbench construction and compatibility surface during migration; do not
-  use it as the new app lifecycle API. Do not expose raw startup timers,
+  Public app-facing runtime growth should favor stable definition/launch
+  contracts. Keep `create` as a low-level framework construction surface; app
+  entry points use `launch`. Do not expose raw startup timers,
   loading controls, readiness flags, or `defer/update/finish` lifecycle
   mutation helpers to app code.
-- The active UI runtime v2 route adds `labkit.ui.runtime.launch` plus the v2
-  `define` contract alongside v1. Keep existing apps on their current v1 path
-  until their migration wave; v2 apps use canonical project/session state,
+- Runtime V2 uses `labkit.ui.runtime.launch` plus the V2 `define` contract.
+  Apps use canonical project/session state,
   queued events, `Present`, registered renderers, and managed resources. Do
   not expose the v2 private queue, store, presentation, or resource-registry
   helpers as public APIs.
 - Runtime v2 owns one private figure interaction hub. V2 apps declare
-  controlled interaction specs from `Present` and must not construct
-  `labkit.ui.interaction.runtime` or restore figure callbacks. Existing v1
-  apps and reusable compatibility tools continue to use interaction-runtime
-  sessions until their migration wave; they must not manage figure/axes
-  callbacks independently.
+  controlled interaction specs from `Present` and must not construct a second
+  interaction runtime or restore figure callbacks.
 - Runtime v2 persistence keeps document metadata outside semantic state,
   writes only the project allowlist through the `labkitProject` codec, and
   replaces project plus a fresh session only after migration, validation, and

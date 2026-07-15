@@ -2,9 +2,8 @@
 % are source paths and optional status labels; output is stable short labels.
 function labels = formatFileLabels(paths, varargin)
 %
-% App-facing contract:
-%   labels = labkit.ui.control.fileLabels(paths)
-%   labels = labkit.ui.control.fileLabels(paths, "status", status)
+% Internal contract:
+%   labels = formatFileLabels(paths, "status", status)
 %
 % Inputs:
 %   paths - char, string array, or cell array of file paths.

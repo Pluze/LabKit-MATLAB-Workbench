@@ -1,5 +1,5 @@
 % Private UI runtime helper. Expected caller: labkit.ui.runtime.define and
-% labkit.ui.runtime.run. Input is a candidate app definition struct. Side effect:
+% Runtime V2 launch. Input is a candidate app definition struct. Side effect:
 % throws app-neutral validation errors before runtime construction begins.
 function validateAppDefinition(def)
     if ~isstruct(def) || ~isscalar(def)

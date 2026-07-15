@@ -2,8 +2,8 @@
 % Applies semantic file selection without invoking the app callback.
 function setControlFileSelection(ui, id, filesOrIds)
 %
-% App-facing contract:
-%   labkit.ui.control.setFileSelection(ui, id, filesOrIds)
+% Internal contract:
+%   setControlFileSelection(ui, id, filesOrIds)
 %
 % Inputs:
 %   ui - UI registry returned by labkit.ui.runtime.create.

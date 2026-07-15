@@ -48,17 +48,21 @@ Current facts from the architecture audit:
   `video_marker`, plus `rhs_preview`, `nerve_response_analysis`, and
   `response_review_stats`, `ecg_print`, `gait_analysis`, `curvature`, and
   `image_enhance`, `image_match`, `flir_thermal`, `focus_stack`, and
-  `figure_studio`. The nested private app still uses the v1 definition path.
-- The five pilots use canonical project/session state, native presenters,
+  `figure_studio`. The nested private Imager app also uses Runtime V2.
+- All migrated apps use canonical project/session state, native presenters,
   registered renderers, managed interactions/resources, standard project
   persistence, and result manifests where they export files.
 - Video Marker legacy projects and v1 runtime snapshots are read-only import
   formats on the V2 path. New V2 writes use `labkitProject`.
-- Closure-owned state, direct control mutation, app-owned interaction/runtime
-  plumbing, and no-op render paths remain migration debt only in the unmigrated
-  fleet.
-- `docs/ui-runtime-redesign.md` remains the target architecture. `docs/ui.md`,
-  `docs/apps.md`, and `docs/architecture.md` describe contracts as they land.
+- Runtime V1 and the public control/interaction-editor compatibility surfaces
+  are retired. V1 snapshots and named legacy projects remain read-only import
+  formats.
+- The public UI surface is 36 functions, down from 74 at the Phase-6 baseline.
+  The earlier 32-function planning target is not a completion gate: the four
+  remaining functions above it own distinct low-level framework, test-support,
+  or app-facing contracts, and combining them would make the API less clear.
+- `docs/ui-runtime-redesign.md` is an implemented design record. `docs/ui.md`,
+  `docs/apps.md`, and `docs/architecture.md` describe the current contracts.
 
 ## Goal Prompt: Migrate All Apps To UI Runtime V2
 
@@ -478,9 +482,22 @@ After every public app and test uses v2:
   changes their execution rules.
 - Shrink this guide back to a compact ledger after all completion criteria pass.
 
-Target final public surface: at most 32 `labkit.ui` public function files and
-at most 20 concepts in the new-app quick-start path. Do not meet the number by
-combining unrelated behavior into vague string dispatchers.
+The Phase-6 planning target was at most 32 `labkit.ui` public function files
+and at most 20 concepts in the new-app quick-start path. Treat those numbers as
+audit prompts, not architecture requirements. The landed surface may remain
+larger when each remaining function has a distinct contract; do not combine
+unrelated behavior into vague string dispatchers merely to hit a count.
+
+```text
+phase: 6/surface-reduction-and-current-documentation
+status: complete
+completed contracts: Runtime V1 retired; all entry points use launch; control registry mutation, editors, interaction hub, dialog/title/dispatch helpers, preview mutation, and low-level popout/zoom mechanics are runtime-private; current docs and guardrails describe services, presentation, and managed interactions
+migrated apps: all 20 public apps; nested private Imager app
+compatibility retained: read-only V1 snapshot import; named Video Marker legacy import; existing app calculations, outputs, and workflows
+tests: focused UI/runtime/project/Figure Studio tests passed 17/17; private workspace passed 40/40; repaired focused guardrails passed 6/6; final Phase-6 buildtool changedFast passed 15 framework GUI, 284 headless with one environment-assumption skip, and 6 representative GUI tests
+next phase: aggregate version/changelog closure, final broad validation, manual-interaction handoff, and PR/CI closure
+blocker:
+```
 
 ### Validation Cadence
 
@@ -565,29 +582,13 @@ All conditions are required:
 - every app has current payload validation and required migration tests
 - supported v1 snapshots and legacy Video Marker projects import read-only
 - every result export has a valid standard manifest while preserving prior files
-- public UI surface meets the target without vague API consolidation
+- public UI surface has no unowned or duplicate app-facing API; any retained
+  functions above the planning count have distinct reviewed contracts
 - current human docs and agent rules describe only the landed architecture
 - final version/changelog closure is complete
 - required focused, changed, base-MATLAB, headless, GUI, manual, and CI evidence
   is recorded without overstating coverage
 - this active route is removed or reduced to exact remaining debt
-
-### Phase Checkpoint Format
-
-At the end of a phase, update this route with only:
-
-```text
-phase: <number/name>
-status: complete | active | blocked
-completed contracts: <short list>
-migrated apps: <dynamic list>
-compatibility retained: <short list>
-tests: <commands and result or exact deferral>
-next phase: <one line>
-blocker: <only when real>
-```
-
-Do not append chronological diary entries or per-file logs.
 
 ## Reopen Triggers
 

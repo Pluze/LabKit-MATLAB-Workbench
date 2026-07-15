@@ -1,5 +1,5 @@
 % Private UI runtime helper. Expected callers are labkit.ui.runtime.create and
-% labkit.ui.runtime.run. Inputs are app figures, internal UI registry handles,
+% Runtime V2 launch. Inputs are app figures, internal UI registry handles,
 % messages, and runtime task callbacks. Side effects are limited to framework
 % startup appdata, non-modal status UI, timer scheduling, and the startup busy
 % flag used to gate callbacks during first-render initialization.
