@@ -36,7 +36,7 @@ classdef GuiLayoutVideoMarkerTest < matlab.unittest.TestCase
             testCase.verifyEmpty(findall(fig, 'Type', 'uibutton', 'Text', 'Interpolate frame'));
             testCase.verifyEmpty(findall(fig, 'Type', 'uibutton', 'Text', 'Track from previous'));
             testCase.verifyTrue(debug.enabled && debug.traceEnabled);
-            assertAnyTextAreaContains(h, fig, 'Video marker debug trace enabled', ...
+            assertAnyTextAreaContains(h, fig, 'Debug sample generation enabled', ...
                 'Debug trace should be mirrored into the visible Log tab.');
         end
 

@@ -44,6 +44,7 @@ function fig = runV2App(def, request)
     runtime.metrics.presentationCommits = 1;
     setappdata(fig, appRuntimeKey(), runtime);
     dispatchStart(fig, def.start);
+    dispatchDebugSample(fig, def.debugSample);
     restoreRequestedRecovery(fig, request);
 
     function dispatchBindingCallback(control, event, path, eventId)
@@ -148,6 +149,42 @@ function dispatchStart(fig, start)
         event.id = string(start);
     end
     enqueueEvent(fig, event);
+end
+
+function dispatchDebugSample(fig, writer)
+    if isempty(writer)
+        return;
+    end
+    runtime = getAppRuntime(fig);
+    if ~isstruct(runtime.debug) || ~isfield(runtime.debug, 'enabled') || ...
+            ~logical(runtime.debug.enabled)
+        return;
+    end
+    event = canonicalEvent("debugSample", "runtime", [], "startup");
+    event.meta.startHandler = ...
+        @(state, ~, services) writeDebugSample(state, services, writer);
+    enqueueEvent(fig, event);
+end
+
+function state = writeDebugSample(state, services, writer)
+    services.debug.trace('Runtime debug sample generation enabled.');
+    state = services.workflow.log(state, ...
+        "Debug sample generation enabled.");
+    try
+        pack = writer(services.debug);
+        if isstruct(pack) && isfield(pack, 'sampleFolder')
+            state = services.workflow.log(state, ...
+                "Debug sample files: " + string(pack.sampleFolder));
+        end
+        if isstruct(pack) && isfield(pack, 'outputFolder')
+            state = services.workflow.log(state, ...
+                "Debug output folder: " + string(pack.outputFolder));
+        end
+    catch ME
+        services.diagnostics.report('Debug sample setup failed', ME);
+        state = services.workflow.log(state, ...
+            "Debug sample setup failed: " + ME.message);
+    end
 end
 
 function enqueueEvent(fig, event)

@@ -349,10 +349,9 @@ path. Plot utilities are inferred from the layout. Dynamic `Items` and `Limits`
 are applied before bound values. V2 saves one `labkitProject`; named legacy
 variables import read-only. V1 snapshots remain for unmigrated apps.
 
-After the shell, state, first presentation, and interaction hub exist, the
-runtime queues optional `Start`. Like every action, it receives injected
-`services` for events, dialogs, sources, results, resources, workflow logging,
-diagnostics, dispatch, and launch request. They are capabilities, not UI/state.
+After shell, state, first presentation, and interaction hub exist, the runtime
+queues optional `Start` with injected app-neutral `services`. An optional
+`DebugSample` writer runs only for debug launches, without app startup glue.
 
 Each v2 figure owns one private interaction hub. Preview targets register as
 `previewId` or `previewId.axisId`; the hub owns hover wheel/zoom routing,

@@ -47,7 +47,7 @@ end
 function validateV2Definition(def)
     required = ["type", "contractVersion", "id", "title", "project", ...
         "createSession", "layout", "actions", "present", "renderers", ...
-        "start", "utilities"];
+        "start", "debugSample", "utilities"];
     requireFields(def, required);
     if string(def.type) ~= "labkit.ui.runtime.definition"
         error('labkit:ui:runtime:InvalidDefinition', ...
@@ -77,6 +77,10 @@ function validateV2Definition(def)
     end
     if ischar(def.start) || isstring(def.start)
         validatePhaseIds(string(def.start), def.actions, "Start");
+    end
+    if ~isempty(def.debugSample) && ~isa(def.debugSample, 'function_handle')
+        error('labkit:ui:runtime:InvalidDefinition', ...
+            'DebugSample must be a function handle when supplied.');
     end
     validateUtilitiesSpec(def.utilities);
 end

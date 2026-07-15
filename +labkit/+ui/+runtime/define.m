@@ -29,11 +29,13 @@ function def = define(varargin)
 %   def = labkit.ui.runtime.define("Id", id, "Title", title, ...
 %       "Project", projectSpec, "CreateSession", sessionFcn, ...
 %       "Layout", layoutFcn, "Actions", actions, ...
-%       "Present", presentFcn, "Renderers", renderers, "Start", startFcn)
+%       "Present", presentFcn, "Renderers", renderers, ...
+%       "Start", startFcn, "DebugSample", debugSampleFcn)
 %
 % Project is a struct with Version, Create, Validate, and optional ordered
-% Migrations fields. CreateSession, Renderers, and Start are optional. V1 and
-% V2 definitions intentionally coexist while production apps migrate.
+% Migrations fields. CreateSession, Renderers, Start, and DebugSample are
+% optional. DebugSample receives the runtime debug log and is called only for
+% debug launches. V1 and V2 definitions coexist while production apps migrate.
 
     opts = parseOptions(varargin);
     if isfield(opts, 'Project') || isfield(opts, 'Present')
@@ -70,6 +72,7 @@ function def = createV2Definition(opts)
     def.present = requiredOption(opts, "Present");
     def.renderers = optionValue(opts, "Renderers", struct());
     def.start = optionValue(opts, "Start", []);
+    def.debugSample = optionValue(opts, "DebugSample", []);
     def.utilities = optionValue(opts, "Utilities", struct());
 end
 

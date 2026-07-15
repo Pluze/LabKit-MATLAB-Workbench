@@ -70,7 +70,7 @@ end
 
 function state = onClearAll(state, ~, services)
     state.project.inputs.items = struct([]);
-    state.project.inputs.sources = emptySources();
+    state.project.inputs.sources = state.project.inputs.sources([]);
     state.session.selection.paths = strings(0, 1);
     state = services.workflow.log(state, "Cleared all files.");
 end
@@ -168,9 +168,4 @@ function sources = removeSources(sources, paths)
         sourcePaths(k) = string(sources(k).reference.originalPath);
     end
     sources = sources(~ismember(sourcePaths, paths(:)));
-end
-
-function sources = emptySources()
-    sources = struct("id", {}, "required", {}, "role", {}, ...
-        "reference", {});
 end

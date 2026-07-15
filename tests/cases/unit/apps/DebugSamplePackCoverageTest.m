@@ -40,7 +40,10 @@ classdef DebugSamplePackCoverageTest < matlab.unittest.TestCase
                 end
                 directCall = slug + ".debug.writeAndLogSamplePack(";
                 samplePackCall = slug + ".debug.writeSamplePack(";
-                if ~(contains(body, directCall) || contains(body, samplePackCall))
+                samplePackHandle = "@" + slug + ".debug.writeSamplePack";
+                if ~(contains(body, directCall) || ...
+                        contains(body, samplePackCall) || ...
+                        contains(body, samplePackHandle))
                     missing(end + 1, 1) = appFile + " does not call app-owned debug sample writer";
                 end
             end
