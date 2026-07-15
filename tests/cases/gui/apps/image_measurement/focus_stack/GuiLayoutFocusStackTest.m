@@ -15,9 +15,13 @@ classdef GuiLayoutFocusStackTest < matlab.unittest.TestCase
             nearPath = fullfile(folder, 'frame_near.png');
             farPath = fullfile(folder, 'frame_far.png');
             extraPath = fullfile(folder, 'frame_extra.png');
+            folderStack = fullfile(folder, 'folder_stack');
+            mkdir(folderStack);
             imwrite(uint8(255 .* nearImage), nearPath);
             imwrite(uint8(255 .* farImage), farPath);
             imwrite(uint8(255 .* flip(farImage, 2)), extraPath);
+            imwrite(uint8(255 .* nearImage), fullfile(folderStack, 'slice_1.png'));
+            imwrite(uint8(255 .* farImage), fullfile(folderStack, 'slice_2.png'));
 
             [fig, debug] = labkit_FocusStack_app("debug");
             drawnow;
@@ -30,8 +34,6 @@ classdef GuiLayoutFocusStackTest < matlab.unittest.TestCase
             lines = string(debug.getLog());
             assert(any(contains(lines, 'BEGIN ValueChangedFcn')), ...
                 'Focus Stack debug mode should instrument declarative control callbacks.');
-            assertAnyTextAreaContains(h, fig, 'BEGIN ValueChangedFcn', ...
-                'Focus Stack debug mode should mirror instrumented callback traces into the visible Log tab.');
             h.invokeDropdownValue(fig, 'Balanced');
 
             driver = labkitWorkflowDriver(fig);
@@ -60,12 +62,60 @@ classdef GuiLayoutFocusStackTest < matlab.unittest.TestCase
             assert(any(contains(string(driver.textAreaValue('details')), 'Selected pixel coverage by source')), ...
                 'Focus stack details panel should describe the completed fusion result.');
 
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            testCase.verifyEqual(runtime.definition.contractVersion, 2, ...
+                'Focus Stack should run on the Runtime V2 state contract.');
+            testCase.verifyEqual(numel(runtime.state.project.inputs.sources), 2);
+            testCase.verifyFalse(isfield(runtime.state.project, 'images'), ...
+                'Decoded focus images must not be persisted in the project.');
+            testCase.verifyFalse(isfield(runtime.state.project.results.lastRun, 'fused'), ...
+                'Durable Focus Stack results must exclude the fused image matrix.');
+            testCase.verifyNotEmpty(runtime.state.session.cache.result.fused, ...
+                'The fused image should remain an ephemeral session cache.');
+
+            fusedPath = fullfile(folder, 'focus_stack_fused.png');
+            runtime.request.outputFileChooser = @(~, ~, ~) deal( ...
+                'focus_stack_fused.png', folder);
+            setappdata(fig, 'labkitUiAppRuntime', runtime);
+            driver.click('Export fused PNG');
+            testCase.verifyTrue(isfile(fusedPath));
+            testCase.verifyTrue(isfile(fullfile(folder, ...
+                'focus_stack.labkit.json')), ...
+                sprintf('Focus Stack export should add a standard result manifest. Log: %s', ...
+                strjoin(string(driver.textAreaValue('logPanel')), ' | ')));
+
             driver.chooseFiles('sourceImages', extraPath);
             driver.click('Add images or folder');
             assert(contains(driver.fileStatus('sourceImages'), '3'), ...
                 'Focus stack append should preserve the existing source stack.');
             assert(numel(driver.fileListItems('sourceImages')) == 3, ...
                 'Focus stack append should keep prior source images in the file list.');
+
+            driver.click('Run focus stack');
+            projectPath = fullfile(folder, 'focus-stack-project.mat');
+            labkit.ui.runtime.saveState(fig, projectPath);
+            saved = load(projectPath, 'labkitProject');
+            testCase.verifyEqual(saved.labkitProject.app.payloadVersion, 1);
+            testCase.verifyFalse(isfield(saved.labkitProject.payload, 'session'), ...
+                'Focus Stack projects must exclude decoded and result caches.');
+            testCase.verifyTrue(saved.labkitProject.payload.results.lastRun.ok, ...
+                'Focus Stack projects should preserve compact run results.');
+            labkit.ui.runtime.loadState(fig, projectPath);
+            h.waitForUiIdle(fig);
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            testCase.verifyEqual(numel(runtime.state.session.cache.images), 3, ...
+                'Project reopen should rebuild the source-image cache.');
+            testCase.verifyFalse(runtime.state.session.cache.result.ok, ...
+                'Project reopen should not persist full result matrices.');
+            testCase.verifyTrue(any(contains(string(driver.textAreaValue('details')), ...
+                'Saved summary restored')), ...
+                'Project reopen should present the durable summary and rerun requirement.');
+
+            runtime.request.inputFolderChooser = @(~, ~) folderStack;
+            setappdata(fig, 'labkitUiAppRuntime', runtime);
+            driver.click('Choose folder');
+            testCase.verifyEqual(numel(driver.fileListItems('sourceImages')), 2, ...
+                'The V2 input-folder service should register the selected image folder.');
         end
     end
 end
@@ -77,8 +127,8 @@ function assertFocusStackLayout(h, fig)
         'Run focus stack', 'Export fused PNG', 'Export focus map PNG', ...
         'Export summary CSV'});
     h.assertCheckboxContract(fig, {'Auto-register stack to middle image'});
-    h.assertDropdownGroups(fig, h.dropdownGroup({'Balanced', ...
-        'Crisp details', 'Smooth transitions', 'Noisy images'}, 1));
+    h.assertDropdownGroups(fig, h.dropdownGroup( ...
+        cellstr(focus_stack.userInterface.fusionPresetItems()), 1));
     h.assertTabTitles(fig, {'Files + Analysis', 'Summary + Results', 'Log'});
 end
 

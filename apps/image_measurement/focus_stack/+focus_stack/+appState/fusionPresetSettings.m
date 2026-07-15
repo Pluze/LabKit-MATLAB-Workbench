@@ -14,15 +14,19 @@ function settings = fusionPresetSettings(preset)
 % Side effects:
 %   None.
 
-    preset = string(preset);
-    switch preset
-        case "Crisp details"
+    items = focus_stack.userInterface.fusionPresetItems();
+    index = find(items == string(preset), 1);
+    if isempty(index)
+        index = 1;
+    end
+    switch index
+        case 2
             settings = struct('focusWindow', 21, 'smoothRadius', 1, ...
                 'minConfidencePercent', 2);
-        case "Smooth transitions"
+        case 3
             settings = struct('focusWindow', 41, 'smoothRadius', 8, ...
                 'minConfidencePercent', 8);
-        case "Noisy images"
+        case 4
             settings = struct('focusWindow', 35, 'smoothRadius', 10, ...
                 'minConfidencePercent', 15);
         otherwise
