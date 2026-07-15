@@ -296,26 +296,18 @@ function [sources, annotations] = reconcileSources(state, paths, services)
     paths = labkit.image.normalizePaths(paths);
     oldSources = state.project.inputs.sources;
     oldAnnotations = state.project.annotations.items;
-    sources = emptySources();
+    sources = services.project.reconcileSources( ...
+        oldSources, paths, "source-image", "image", true);
     annotations = repmat(image_enhance.appState.emptyAnnotation(), numel(paths), 1);
     for k = 1:numel(paths)
-        oldIndex = sourceIndexForPath(oldSources, paths(k));
-        if isempty(oldIndex)
-            id = nextSourceId(oldSources, sources);
-            source = services.project.sourceRecord(id, "source-image", paths(k), true);
-            annotation = image_enhance.appState.emptyAnnotation();
-            annotation.sourceId = id;
-        else
-            source = oldSources(oldIndex);
-            annotationIndex = find(string({oldAnnotations.sourceId}) == ...
-                string(source.id), 1);
-            annotation = image_enhance.appState.emptyAnnotation();
-            annotation.sourceId = string(source.id);
-            if ~isempty(annotationIndex)
-                annotation = oldAnnotations(annotationIndex);
-            end
+        source = sources(k);
+        annotationIndex = find(string({oldAnnotations.sourceId}) == ...
+            string(source.id), 1);
+        annotation = image_enhance.appState.emptyAnnotation();
+        annotation.sourceId = string(source.id);
+        if ~isempty(annotationIndex)
+            annotation = oldAnnotations(annotationIndex);
         end
-        sources(end + 1, 1) = source;
         annotations(k) = annotation;
     end
 end
@@ -325,16 +317,6 @@ function index = sourceIndexForPath(sources, path)
     if ~isempty(sources)
         index = find(string(arrayfun(@(s) s.reference.originalPath, ...
             sources, 'UniformOutput', false)) == string(path), 1);
-    end
-end
-
-function id = nextSourceId(oldSources, newSources)
-    count = numel(oldSources) + numel(newSources) + 1;
-    ids = [string({oldSources.id}), string({newSources.id})];
-    id = "image-" + string(count);
-    while any(ids == id)
-        count = count + 1;
-        id = "image-" + string(count);
     end
 end
 

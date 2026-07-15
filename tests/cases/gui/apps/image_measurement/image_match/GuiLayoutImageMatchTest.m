@@ -54,6 +54,9 @@ classdef GuiLayoutImageMatchTest < matlab.unittest.TestCase
                 'Image match workflow should write a manifest CSV.');
             testCase.verifyFalse(isempty(outputFiles), ...
                 'Image match workflow should write a matched PNG.');
+            testCase.verifyTrue(isfile(fullfile(outputFolder, ...
+                'image_match.labkit.json')), ...
+                'Image match export should add a standard result manifest.');
             testCase.verifyTrue(any(contains(string(driver.textAreaValue('exportDetails')), ...
                 'Last manifest')), ...
                 'Image match details should show the last manifest after export.');
@@ -65,6 +68,21 @@ classdef GuiLayoutImageMatchTest < matlab.unittest.TestCase
             testCase.verifyTrue(contains(driver.fileSelection('sourceImages'), ...
                 'source_second.png'), ...
                 'Image match append should select the newly added source image.');
+
+            projectPath = fullfile(folder, 'image-match-project.mat');
+            labkit.ui.runtime.saveState(fig, projectPath);
+            saved = load(projectPath, 'labkitProject');
+            testCase.verifyEqual(saved.labkitProject.app.payloadVersion, 1);
+            testCase.verifyFalse(isfield(saved.labkitProject.payload, 'session'), ...
+                'Image Match projects must exclude rebuildable caches.');
+            labkit.ui.runtime.loadState(fig, projectPath);
+            h.waitForUiIdle(fig);
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            testCase.verifyNotEmpty(runtime.state.session.cache.currentItem.image);
+            testCase.verifyNotEmpty(runtime.state.session.cache.referenceItem.image);
+            reopenedHistory = driver.tableData('historyTable');
+            testCase.verifyEqual(size(reopenedHistory, 1), 1, ...
+                'Project reopen should preserve durable match history.');
         end
     end
 end

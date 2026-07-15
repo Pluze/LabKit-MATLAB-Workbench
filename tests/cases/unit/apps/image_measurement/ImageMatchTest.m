@@ -23,6 +23,24 @@ function verify_imageMatch()
     checkPreviewImageDownsamplesLargeInputs();
     checkManifestAndExportContract();
     checkExportTaskFingerprintTracksReferenceOptionsAndSteps();
+    checkRuntimeV2ProjectAndPresenterContracts();
+end
+
+function checkRuntimeV2ProjectAndPresenterContracts()
+    definition = image_match.definition();
+    assert(definition.contractVersion == 2, ...
+        'Image Match must use the Runtime V2 definition contract.');
+    project = definition.project.Create();
+    assert(definition.project.Validate(project), ...
+        'A new Image Match project should satisfy its durable contract.');
+    assert(~isfield(project, 'items') && ~isfield(project, 'referenceItem'), ...
+        'The durable project must exclude decoded source/reference pixels.');
+    session = image_match.appLifecycle.createSession(project);
+    state = struct('project', project, 'session', session);
+    presentation = image_match.userInterface.presentWorkbench(state);
+    assert(isscalar(presentation) && ...
+        isfield(presentation.previews.preview, 'Renderer'), ...
+        'The V2 presenter should return one deterministic registered preview.');
 end
 
 function checkWhiteBalanceMatchMovesChannelRatiosTowardReference()

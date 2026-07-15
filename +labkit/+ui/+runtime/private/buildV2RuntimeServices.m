@@ -31,7 +31,8 @@ function services = buildV2RuntimeServices(fig, runtime, dispatch)
             runtime.request, titleText, defaultPath));
     services.project = struct( ...
         "sourceRecord", @sourceRecord, ...
-        "upsertSource", @upsertSource);
+        "upsertSource", @upsertSource, ...
+        "reconcileSources", @reconcileSources);
     services.resources = struct( ...
         "set", @(scope, id, value, cleanup) v2ResourceRegistry( ...
             fig, "set", scope, id, value, cleanup), ...
@@ -190,6 +191,44 @@ function sources = upsertSource(sources, id, role, filepath, required)
         sources(end + 1) = source;
     else
         sources(match) = source;
+    end
+end
+
+function sources = reconcileSources(existing, paths, role, idPrefix, required)
+    if nargin < 5
+        required = true;
+    end
+    paths = string(paths(:));
+    sources = repmat(sourceRecord("", role, "", required), 0, 1);
+    for k = 1:numel(paths)
+        match = sourceIndexForPath(existing, paths(k));
+        if isempty(match)
+            id = nextSourceId(existing, sources, idPrefix);
+            source = sourceRecord(id, role, paths(k), required);
+        else
+            source = existing(match);
+        end
+        sources(end + 1, 1) = source;
+    end
+end
+
+function index = sourceIndexForPath(sources, filepath)
+    index = [];
+    for k = 1:numel(sources)
+        if string(sources(k).reference.originalPath) == string(filepath)
+            index = k;
+            return;
+        end
+    end
+end
+
+function id = nextSourceId(existing, added, prefix)
+    ids = [string({existing.id}), string({added.id})];
+    number = numel(existing) + numel(added) + 1;
+    id = string(prefix) + "-" + string(number);
+    while any(ids == id)
+        number = number + 1;
+        id = string(prefix) + "-" + string(number);
     end
 end
 
