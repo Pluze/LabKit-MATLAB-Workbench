@@ -1,11 +1,11 @@
-% Expected caller: DIC preprocess runner and direct unit tests. Input is the app
-% state after align/crop/reset operations. Output clears mask outputs invalidated
-% by image-pair changes. Side effects: none.
+% Expected caller: DIC preprocess V2 actions and unit tests. Input/output is the
+% canonical durable project; mask annotations invalidated by pair edits clear.
 
-function S = clearOperationDerivedState(S)
+function project = clearOperationDerivedState(project)
 %CLEAROPERATIONDERIVEDSTATE Clear DIC preprocess state derived from the pair.
 
-    S.maskImage = [];
-    S.maskPoints = [];
-    S.maskHistory = S.maskHistory([]);
+    project.annotations.maskImage = [];
+    project.annotations.maskPoints = zeros(0, 2);
+    history = project.annotations.maskHistory;
+    project.annotations.maskHistory = history([]);
 end

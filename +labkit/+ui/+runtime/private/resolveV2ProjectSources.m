@@ -7,6 +7,7 @@ function [project, resolved] = resolveV2ProjectSources( ...
         project, sources, filepath, spec)
     [resolved, unresolved] = resolveRecords(sources, filepath);
     if isempty(unresolved)
+        project = applyResolvedPaths(project, resolved);
         return;
     end
     if ~isfield(spec, 'RelinkSources') || ...
@@ -26,6 +27,26 @@ function [project, resolved] = resolveV2ProjectSources( ...
         error('labkit:ui:runtime:UnresolvedProjectSources', ...
             'Project still has unresolved required sources after relinking.');
     end
+    project = applyResolvedPaths(project, resolved);
+end
+
+function project = applyResolvedPaths(project, resolved)
+    if isempty(resolved) || ~isfield(project, 'inputs') || ...
+            ~isstruct(project.inputs) || ...
+            ~isfield(project.inputs, 'sources') || ...
+            isempty(project.inputs.sources)
+        return;
+    end
+    sources = project.inputs.sources;
+    for k = 1:numel(resolved)
+        match = find(string({sources.id}) == resolved(k).id, 1, 'first');
+        if isempty(match) || ~isfield(sources(match), 'reference') || ...
+                ~isstruct(sources(match).reference)
+            continue;
+        end
+        sources(match).reference.originalPath = resolved(k).path;
+    end
+    project.inputs.sources = sources;
 end
 
 function [resolved, unresolved] = resolveRecords(sources, filepath)

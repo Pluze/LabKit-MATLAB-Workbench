@@ -1,0 +1,173 @@
+% Expected caller: the LabKit V2 runtime. Input is canonical DIC Preprocess
+% state. Output is one deterministic control, preview, and controlled-tool
+% presentation with no UI registry or live graphics in semantic state.
+function view = presentWorkbench(state)
+    project = state.project;
+    cache = state.session.cache;
+    annotations = project.annotations;
+    mode = string(state.session.workflow.mode);
+    hasReference = ~isempty(cache.currentReferenceImage);
+    hasPair = dic_preprocess.appState.hasImagePair(cache);
+    matching = mode == "matching";
+    cropping = mode == "crop";
+    masking = mode == "mask";
+    completePairs = size(annotations.matchReferencePoints, 1) >= 2 && ...
+        size(annotations.matchReferencePoints, 1) == ...
+        size(annotations.matchMovingPoints, 1);
+
+    view = struct();
+    view.controls.referenceFile = fileSpec( ...
+        dic_preprocess.sourceFiles.pathForId( ...
+        project.inputs.sources, "referenceImage"));
+    view.controls.movingFile = fileSpec( ...
+        dic_preprocess.sourceFiles.pathForId( ...
+        project.inputs.sources, "movingImage"));
+    view.controls.previewMode = valueSpec(project.parameters.previewMode);
+    view.controls.boundaryStyle = controlSpec(masking, ...
+        project.parameters.maskBoundaryStyle);
+    view.controls.startPointMatching = enabledSpec(hasPair && ~matching);
+    view.controls.applyPointAlignment = enabledSpec(matching && completePairs);
+    view.controls.cancelPointMatching = enabledSpec(matching);
+    view.controls.undoPointPair = enabledSpec(matching && ...
+        ~isempty(annotations.matchReferencePoints));
+    view.controls.autoAlign = enabledSpec(hasPair);
+    view.controls.startCropRoi = enabledSpec(hasPair);
+    view.controls.applyCropRoi = enabledSpec(cropping);
+    view.controls.cancelCropRoi = enabledSpec(cropping);
+    view.controls.undoEdit = enabledSpec(~isempty(annotations.history));
+    view.controls.saveCurrentImages = enabledSpec(hasPair);
+    view.controls.resetToOriginals = enabledSpec( ...
+        ~isempty(cache.referenceImage) && ~isempty(cache.movingImage));
+    view.controls.startMaskEdit = enabledSpec(hasReference);
+    view = maskControlPresentation(view, annotations, masking);
+    view.controls.saveMask = enabledSpec(~isempty(annotations.maskImage) || ...
+        size(annotations.maskPoints, 1) >= 3);
+    view.controls.summaryText = valueSpec( ...
+        dic_preprocess.userInterface.buildSummary(state));
+    view.controls.detailsText = valueSpec(state.session.workflow.details);
+    view.controls.appLog = valueSpec(logValue( ...
+        state.session.workflow.logLines));
+
+    request = previewForMode(state, mode);
+    topRect = [];
+    bottomRect = [];
+    referenceLabels = zeros(0, 2);
+    movingLabels = zeros(0, 2);
+    if cropping
+        bottomRect = annotations.cropRect;
+    elseif matching
+        referenceLabels = annotations.matchReferencePoints;
+        movingLabels = annotations.matchMovingPoints;
+    end
+    view.previews.previewAxes.Axes.reference = previewSpec( ...
+        request.topImage, request.topTitle, topRect, referenceLabels);
+    view.previews.previewAxes.Axes.current = previewSpec( ...
+        request.bottomImage, request.bottomTitle, bottomRect, movingLabels);
+
+    if matching
+        view.interactions.pointPairs = struct( ...
+            "Kind", "pairedAnchors", ...
+            "Targets", ["previewAxes.reference", "previewAxes.current"], ...
+            "Value", {{annotations.matchReferencePoints, ...
+                annotations.matchMovingPoints}}, ...
+            "Event", "pointPairsEdited", ...
+            "ImageSize", {{size(cache.currentReferenceImage), ...
+                size(cache.currentMovingImage)}}, ...
+            "ChangePolicy", "commit", ...
+            "Options", struct("mode", "points", "color", [0 0.85 1]));
+    elseif cropping
+        view.interactions.cropRectangle = struct( ...
+            "Kind", "rectangle", ...
+            "Targets", "previewAxes.reference", ...
+            "Value", annotations.cropRect, ...
+            "Event", "cropRectMoved", ...
+            "ImageSize", size(cache.currentReferenceImage), ...
+            "ChangePolicy", "commit", ...
+            "Options", struct("fixedAspectRatio", true, ...
+                "color", [1 0.85 0], "lineWidth", 1.5));
+    elseif masking
+        view.interactions.maskBoundary = struct( ...
+            "Kind", "anchors", ...
+            "Targets", "previewAxes.reference", ...
+            "Value", annotations.maskPoints, ...
+            "Event", "maskPointsEdited", ...
+            "ImageSize", size(cache.currentReferenceImage), ...
+            "ChangePolicy", "commit", ...
+            "Options", struct("closed", true, ...
+                "style", project.parameters.maskBoundaryStyle, ...
+                "color", [0 0.85 1]));
+    end
+end
+
+function view = maskControlPresentation(view, annotations, active)
+    hasPoints = ~isempty(annotations.maskPoints);
+    hasBoundary = size(annotations.maskPoints, 1) >= 3;
+    hasCanvas = ~isempty(annotations.maskImage);
+    hasHistory = ~isempty(annotations.maskHistory);
+    view.controls.previewMaskRoi = enabledSpec(active && ...
+        (hasBoundary || hasCanvas));
+    view.controls.addBoundaryToMask = enabledSpec(active && hasBoundary);
+    view.controls.subtractBoundaryFromMask = enabledSpec(active && hasBoundary);
+    view.controls.undoMaskAnchor = enabledSpec(active && hasPoints);
+    view.controls.undoMaskEdit = enabledSpec(active && hasHistory);
+    view.controls.clearMaskBoundary = enabledSpec(active && hasPoints);
+    view.controls.clearMaskCanvas = enabledSpec(active && hasCanvas);
+end
+
+function request = previewForMode(state, mode)
+    if mode ~= "mask"
+        request = dic_preprocess.userInterface.previewRequest( ...
+            state, state.project.parameters.previewMode);
+        return;
+    end
+    project = state.project;
+    referenceImage = state.session.cache.currentReferenceImage;
+    maskImage = project.annotations.maskImage;
+    if isempty(maskImage) && size(project.annotations.maskPoints, 1) >= 3
+        [maskImage, ok] = dic_preprocess.analysisRun.boundaryMaskFromEditor( ...
+            project.annotations.maskPoints, size(referenceImage), ...
+            project.parameters.maskBoundaryStyle, []);
+        if ~ok
+            maskImage = [];
+        end
+    end
+    maskImage = dic_preprocess.appState.maskCanvas(maskImage, referenceImage);
+    request = struct( ...
+        "topImage", referenceImage, ...
+        "topTitle", "Current reference", ...
+        "bottomImage", dic_preprocess.analysisRun.maskRgb(maskImage), ...
+        "bottomTitle", "ROI mask preview");
+end
+
+function spec = previewSpec(imageData, titleText, rectangleValue, points)
+    model = struct( ...
+        "imageData", imageData, ...
+        "title", string(titleText), ...
+        "rectangle", rectangleValue, ...
+        "pointLabels", points);
+    spec = struct("Renderer", "image", "Model", model);
+end
+
+function spec = fileSpec(pathValue)
+    spec = struct("Files", string(pathValue));
+end
+
+function spec = valueSpec(value)
+    spec = struct();
+    spec.Value = value;
+end
+
+function spec = enabledSpec(enabled)
+    spec = struct("Enabled", logical(enabled));
+end
+
+function spec = controlSpec(enabled, value)
+    spec = struct("Enabled", logical(enabled), "Value", value);
+end
+
+function value = logValue(lines)
+    value = cellstr(lines(:));
+    if isempty(value)
+        value = {''};
+    end
+end

@@ -1,10 +1,9 @@
-% Expected caller: DIC preprocess runner and direct unit tests. Inputs are the
-% current app state and one mask-history snapshot. Output restores mask canvas
-% and anchor fields. Side effects: none.
+% Expected caller: DIC preprocess V2 actions and unit tests. Inputs are the
+% canonical durable project and one mask snapshot; output restores annotations.
 
-function S = restoreMaskSnapshot(S, snapshot)
+function project = restoreMaskSnapshot(project, snapshot)
 %RESTOREMASKSNAPSHOT Restore a DIC preprocess mask-edit undo snapshot.
 
-    S.maskImage = snapshot.maskImage;
-    S.maskPoints = snapshot.maskPoints;
+    project.annotations.maskImage = snapshot.maskImage;
+    project.annotations.maskPoints = snapshot.maskPoints;
 end

@@ -1,19 +1,22 @@
-% Expected caller: DIC preprocess runner and direct unit tests. Inputs are the
-% current mask edit history, mask image, mask points, description, and optional
-% max undo count. Output is the trimmed mask history. Side effects: none.
+% Expected callers: DIC preprocess V2 actions and unit tests. Input is the
+% canonical durable project, description, and optional undo limit. Output
+% appends a project-owned mask snapshot.
 
-function history = appendMaskHistory(history, maskImage, maskPoints, description, maxUndoSteps)
+function project = appendMaskHistory(project, description, maxUndoSteps)
 %APPENDMASKHISTORY Append a DIC preprocess mask edit undo snapshot.
 
-    if nargin < 5
+    if nargin < 3
         maxUndoSteps = 20;
     end
+    annotations = project.annotations;
     snapshot = struct( ...
-        'maskImage', maskImage, ...
-        'maskPoints', maskPoints, ...
+        'maskImage', annotations.maskImage, ...
+        'maskPoints', annotations.maskPoints, ...
         'description', description);
+    history = annotations.maskHistory;
     history(end+1) = snapshot;
     if numel(history) > maxUndoSteps
         history = history((end - maxUndoSteps + 1):end);
     end
+    project.annotations.maskHistory = history;
 end

@@ -1,20 +1,13 @@
-% Expected caller: DIC preprocess runner and direct unit tests. Input is the app
-% state after a new image path/image was assigned. Output resets current images
-% and derived edit state while preserving loaded originals. Side effects: none.
+% Expected caller: DIC preprocess V2 actions and unit tests. Input/output is the
+% canonical durable project; loaded originals remain and derived work resets.
 
-function S = resetForNewInput(S)
+function project = resetForNewInput(project)
 %RESETFORNEWINPUT Reset derived DIC preprocess state for a newly loaded image.
 
-    if ~isempty(S.referenceImage)
-        S.currentReferenceImage = S.referenceImage;
-    end
-    if ~isempty(S.movingImage)
-        S.currentMovingImage = S.movingImage;
-    end
-    S.alignedImage = [];
-    S.cropReference = [];
-    S.cropMoving = [];
-    S.cropRect = [];
-    S = dic_preprocess.appState.clearOperationDerivedState(S);
-    S.history = S.history([]);
+    project.annotations.cropRect = [];
+    steps = project.annotations.editSteps;
+    project.annotations.editSteps = steps([]);
+    project = dic_preprocess.appState.clearOperationDerivedState(project);
+    history = project.annotations.history;
+    project.annotations.history = history([]);
 end

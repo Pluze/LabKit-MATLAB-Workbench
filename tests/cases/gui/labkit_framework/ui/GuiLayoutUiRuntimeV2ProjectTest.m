@@ -68,6 +68,25 @@ function verifyProjectDocuments()
     assert(~runtime.document.dirty && runtime.document.path == currentPath, ...
         'Successful explicit save should register the path and mark clean.');
 
+    sourcePath = fullfile(folder, "portable-input.dat");
+    writeBytes(sourcePath, uint8([5 6 7]));
+    portable = stored.labkitProject;
+    source = struct("id", "requiredInput", "required", true, ...
+        "role", "input", "reference", struct( ...
+            "schemaVersion", 1, "relativePath", "portable-input.dat", ...
+            "originalPath", fullfile(folder, "old", "portable-input.dat"), ...
+            "fileName", "portable-input.dat"));
+    portable.sources = source;
+    portable.payload.inputs.sources = source;
+    portablePath = fullfile(folder, "portable.mat");
+    saveProject(portablePath, portable);
+    labkit.ui.runtime.loadState(fig, portablePath);
+    runtime = getappdata(fig, 'labkitUiAppRuntime');
+    assert(runtime.state.project.inputs.sources.reference.originalPath == ...
+        sourcePath && runtime.state.session.cache.sourcePath == sourcePath, ...
+        ['Resolved portable sources must update the durable project before ' ...
+        'the fresh session is constructed.']);
+
     invoke(ui.controls.increment.button);
     assert(getappdata(fig, 'labkitUiAppRuntime').state.project.parameters.count == 2);
     labkit.ui.runtime.loadState(fig, currentPath);
@@ -214,9 +233,15 @@ function accepted = validateProject(project)
 end
 
 function session = createSession(project)
+    sourcePath = "";
+    if isfield(project.inputs, 'sources') && ~isempty(project.inputs.sources)
+        sourcePath = string( ...
+            project.inputs.sources(1).reference.originalPath);
+    end
     session = struct("selection", struct(), "workflow", struct(), ...
         "view", struct(), "cache", struct( ...
-            "generation", project.parameters.count));
+            "generation", project.parameters.count, ...
+            "sourcePath", sourcePath));
 end
 
 function tree = layout(callbacks)

@@ -6,14 +6,13 @@
 function [alignedImage, tformRigid, method] = autoAlignMovingToReference(referenceImage, movingImage)
 %AUTOALIGNMOVINGTOREFERENCE Automatically align moving image to reference image.
 
-    origClass = class(movingImage);
     fixedGray = normalizeGray(referenceImage);
     movingGray = normalizeGray(movingImage);
 
     [rowShift, colShift] = estimateTranslation(fixedGray, movingGray);
-    alignedImage = translateImage(movingImage, rowShift, colShift);
-    alignedImage = cast(alignedImage, origClass);
     tformRigid = [1 0 0; 0 1 0; colShift rowShift 1];
+    alignedImage = dic_preprocess.analysisRun.applyRigidTransform( ...
+        referenceImage, movingImage, tformRigid);
     method = 'toolbox-free phase-correlation translation registration';
 end
 
@@ -67,20 +66,6 @@ function value = finiteMean(imageData)
     else
         value = mean(values);
     end
-end
-
-function imageOut = translateImage(imageIn, rowShift, colShift)
-    targetRows = size(imageIn, 1);
-    targetCols = size(imageIn, 2);
-    imageOut = zeros(size(imageIn), 'like', imageIn);
-    srcRows = max(1, 1 - rowShift):min(targetRows, targetRows - rowShift);
-    srcCols = max(1, 1 - colShift):min(targetCols, targetCols - colShift);
-    dstRows = srcRows + rowShift;
-    dstCols = srcCols + colShift;
-    if isempty(srcRows) || isempty(srcCols)
-        return;
-    end
-    imageOut(dstRows, dstCols, :) = imageIn(srcRows, srcCols, :);
 end
 
 function imageOut = resizeToMatch(imageIn, targetSize)

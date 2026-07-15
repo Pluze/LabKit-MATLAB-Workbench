@@ -1,15 +1,11 @@
-% Expected caller: DIC preprocess runner and direct unit tests. Input is a state
-% with loaded original images. Output restores the current pair to originals and
-% clears operation-derived outputs. Side effects: none.
+% Expected caller: DIC preprocess V2 actions and unit tests. Input/output is the
+% canonical durable project with current images restored from originals.
 
-function S = resetToOriginals(S)
+function project = resetToOriginals(project)
 %RESETTOORIGINALS Restore the DIC preprocess current pair to loaded originals.
 
-    S.currentReferenceImage = S.referenceImage;
-    S.currentMovingImage = S.movingImage;
-    S.alignedImage = [];
-    S.cropReference = [];
-    S.cropMoving = [];
-    S.cropRect = [];
-    S = dic_preprocess.appState.clearOperationDerivedState(S);
+    project.annotations.cropRect = [];
+    steps = project.annotations.editSteps;
+    project.annotations.editSteps = steps([]);
+    project = dic_preprocess.appState.clearOperationDerivedState(project);
 end
