@@ -1,4 +1,4 @@
-% Expected caller: ecg_print.userInterface.updateWorkbenchFromState and direct unit tests. Inputs are the
+% Expected caller: ecg_print.userInterface.presentWorkbench and direct unit tests. Inputs are the
 % current working/filtered signal structs and optional event struct. Output is a
 % GUI-free plot request struct; no UI handles are read or mutated.
 

@@ -18,6 +18,9 @@ classdef GuiLayoutEcgPrintTest < matlab.unittest.TestCase
                 'ECG Signal Print + SNR Explorer');
             assertEcgPrintLayout(h, fig);
             driver = labkitWorkflowDriver(fig);
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            testCase.verifyEqual(runtime.definition.contractVersion, 2, ...
+                'ECG Print must execute through Runtime V2.');
             driver.chooseFiles('recording', recordingPath);
 
             driver.click('Open recording');
@@ -50,6 +53,46 @@ classdef GuiLayoutEcgPrintTest < matlab.unittest.TestCase
                 'ECG Print workflow should draw the SNR plot.');
             testCase.verifyGreaterThan(numel(ui.controls.previewAxes.axesById.template.Children), 0, ...
                 'ECG Print workflow should draw the template plot.');
+
+            outputFolder = string(tempname);
+            mkdir(outputFolder);
+            outputCleanup = onCleanup(@() removeTempFolder(outputFolder));
+            outputs = ["ecg_segment_snr.csv", "ecg_waveform.png"];
+            outputIndex = 0;
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            runtime.request.outputChooser = @chooseOutput;
+            setappdata(fig, 'labkitUiAppRuntime', runtime);
+            driver.click('Export segment SNR CSV');
+            driver.click('Export waveform PNG');
+            testCase.verifyTrue(isfile(fullfile(outputFolder, outputs(1))));
+            testCase.verifyTrue(isfile(fullfile(outputFolder, outputs(2))));
+            testCase.verifyTrue(isfile(fullfile(outputFolder, ...
+                'ecg_segment_snr.labkit.json')));
+            testCase.verifyTrue(isfile(fullfile(outputFolder, ...
+                'ecg_waveform.labkit.json')));
+
+            projectPath = fullfile(outputFolder, 'ecg-print-project.mat');
+            labkit.ui.runtime.saveState(fig, projectPath);
+            saved = load(projectPath, 'labkitProject');
+            testCase.verifyEqual(saved.labkitProject.app.payloadVersion, 1);
+            testCase.verifyFalse(isfield(saved.labkitProject.payload, 'cache'));
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            testCase.verifyFalse(isfield( ...
+                runtime.state.project.results.lastAnalysis, 'recording'));
+            labkit.ui.runtime.loadState(fig, projectPath);
+            h.waitForUiIdle(fig);
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            testCase.verifyNotEmpty(runtime.state.session.cache.recording, ...
+                'Project reopen should rebuild the decoded recording cache.');
+            testCase.verifyNotEmpty(runtime.state.session.cache.measurements, ...
+                'Project reopen should rebuild analyzed ECG caches.');
+            clear outputCleanup;
+
+            function [filename, folderPath] = chooseOutput(~, ~, ~)
+                outputIndex = outputIndex + 1;
+                filename = char(outputs(outputIndex));
+                folderPath = char(outputFolder);
+            end
         end
     end
 end
