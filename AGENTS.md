@@ -119,6 +119,13 @@ the skill-specific decision sections needed for the current edit.
 
 Human-facing docs are for human users and maintainers. Keep `README.md` and `docs/*.md` readable, task-oriented, and free of agent-only workflow mandates, Codex-specific rules, git handoff instructions, or hidden governance process.
 
+Documentation sources are Markdown under `docs/`, navigation and catalog JSON,
+and public MATLAB help blocks. The tracked `site/` tree is generated only by
+`tools/docs/renderLabKitDocs.m`; never edit generated HTML, CSS, JavaScript, or
+search-index files directly. Regenerate and run the documentation consistency
+check whenever a source page, catalog entry, public help contract, or renderer
+changes.
+
 Agent-facing rules belong in the nearest relevant `AGENTS.md` file or repo-scoped skill. Sync documentation by contract impact, not by file count. Do not treat every code change as requiring README, human docs, scoped `AGENTS.md`, skills, and tests all at once.
 
 When behavior, package boundaries, validation strategy, or workflow rules change, update both:
@@ -141,6 +148,12 @@ Do not duplicate long policy text across human docs. Human docs may explain arch
 ## Public API Documentation
 
 Every public library function under `+labkit/+ui`, `+labkit/+image`, `+labkit/+thermal`, `+labkit/+dta`, `+labkit/+rhs`, and `+labkit/+biosignal` must document its app-facing call contract immediately after the function declaration. Include inputs, outputs, options/spec fields, defaults, legal values, and examples where useful.
+
+Detailed generated API reference covers all non-private `labkit.*` functions
+and only the app-owned functions explicitly declared in
+`docs/catalogs/api.json`. Cataloged scientific functions must be usable without
+the GUI and document syntax, units, assumptions, options, outputs, errors, a
+standalone example, and related APIs. Do not catalog `private/` helpers.
 
 Private and app-owned package helpers must include concise top-of-file implementation contracts: expected caller, input/output shapes, side effects, and non-obvious assumptions.
 

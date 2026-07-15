@@ -43,6 +43,8 @@ Use MATLAB build tasks for the stable official entry points:
 buildtool changed
 buildtool changedFast
 buildtool baseMatlab
+buildtool docs
+buildtool docsCheck
 buildtool headless
 buildtool gui
 buildtool coverage
@@ -54,6 +56,8 @@ buildtool listTasks
 | `changedFast` | Tight local iteration from the current diff; substitutes representative GUI coverage for expensive broad GUI scopes. |
 | `changed` | Conservative pre-handoff validation from the current diff. |
 | `baseMatlab` | Explicit compatibility gate: static toolbox-call scan, MATLAB product-ownership analysis, and representative workflows with toolbox helpers shadowed. |
+| `docs` | Rebuild the tracked `site/` tree from Markdown, structured catalogs, and MATLAB help contracts. |
+| `docsCheck` | Regenerate documentation in a temporary folder and compare it byte-for-byte with tracked `site/`. |
 | `headless` | Full non-GUI validation. |
 | `gui` | Full automated GUI validation with hidden figures. |
 
@@ -76,6 +80,8 @@ Common choices:
 | Coherent local checkpoint while files are still changing | `buildtool changedFast` |
 | Before commit, PR, or handoff | `buildtool changed` |
 | Verify the repository on a machine that has toolboxes installed | `buildtool baseMatlab` |
+| Rebuild documentation after editing sources or public help contracts | `buildtool docs` |
+| Verify generated documentation is current | `buildtool docsCheck` |
 | Full broad non-GUI validation | `buildtool headless` |
 | Full automated GUI validation | `buildtool gui` |
 | Coverage report | `buildtool coverage` |

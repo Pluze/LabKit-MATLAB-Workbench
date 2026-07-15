@@ -134,6 +134,56 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
                 strjoin(cellstr(missing), ', ')]);
         end
 
+        function generatedDocumentationMatchesTrackedSources(testCase)
+            root = setupLabKitTestPath();
+            toolFolder = fullfile(root, "tools", "docs");
+            addpath(toolFolder);
+            cleanup = onCleanup(@() rmpath(toolFolder));
+
+            result = checkLabKitDocs(fullfile(root, "docs"), ...
+                fullfile(root, "site"));
+
+            testCase.verifyGreaterThan(result.pageCount, 15, ...
+                "Documentation site should contain the narrative hierarchy.");
+            testCase.verifyGreaterThan(result.apiCount, 100, ...
+                "Documentation site should include library and app-owned public APIs.");
+            testCase.verifyGreaterThan(result.comparedFileCount, result.apiCount, ...
+                "Generated tree comparison should include pages and static assets.");
+            clear cleanup
+        end
+
+        function generatedSearchIncludesPublicApisAndExcludesPrivateHelpers(testCase)
+            root = setupLabKitTestPath();
+            searchFile = fullfile(root, "site", "assets", "search-index.json");
+            testCase.assertTrue(isfile(searchFile), ...
+                "Tracked site should contain a generated search index.");
+            entries = jsondecode(fileread(searchFile));
+            titles = string({entries.title});
+
+            testCase.verifyTrue(any(titles == "labkit.thermal.rawToTemperatureC"), ...
+                "Search should index reusable scientific APIs.");
+            testCase.verifyTrue(any(titles == "cic.analysisRun.computeCIC"), ...
+                "Search should index explicitly cataloged app scientific APIs.");
+            testCase.verifyFalse(any(contains(titles, ".private.")), ...
+                "Search should not publish private implementation helpers.");
+        end
+
+        function appApiCatalogIsExplicitAndContainsNoPrivatePaths(testCase)
+            root = setupLabKitTestPath();
+            catalog = jsondecode(fileread(fullfile(root, "docs", ...
+                "catalogs", "api.json")));
+            entries = normalizeDocStructArray(catalog.appApis);
+            testCase.assertGreaterThan(numel(entries), 20, ...
+                "App API catalog should identify core GUI-free workflows.");
+            for k = 1:numel(entries)
+                source = string(entries(k).source);
+                testCase.verifyFalse(contains("/" + source + "/", "/private/"), ...
+                    "Private helpers must not enter detailed API documentation.");
+                testCase.verifyTrue(isfile(fullfile(root, source)), ...
+                    "Cataloged app API should exist: " + source);
+            end
+        end
+
         function privateHelpersDocumentImplementationContracts(testCase)
             root = setupLabKitTestPath();
             actual = collectPrivateHelpersMissingContracts(root);
@@ -159,6 +209,14 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
                 ['App-owned package helpers need top-of-file implementation contracts: ' ...
                 strjoin(cellstr(missing), ', ')]);
         end
+    end
+end
+
+function values = normalizeDocStructArray(values)
+    if isempty(values)
+        values = struct([]);
+    elseif iscell(values)
+        values = [values{:}];
     end
 end
 

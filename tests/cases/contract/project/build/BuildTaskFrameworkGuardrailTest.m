@@ -264,8 +264,8 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
             root = setupLabKitTestPath();
             catalog = extractBuildfileCatalog(root);
 
-            expectedTasks = ["changed", "changedFast", "baseMatlab", "headless", "gui", ...
-                "coverage", "listTasks"];
+            expectedTasks = ["changed", "changedFast", "baseMatlab", ...
+                "docs", "docsCheck", "headless", "gui", "coverage", "listTasks"];
             publicTasks = catalog.Name(catalog.Visibility == "public").';
             testCase.verifyEqual(publicTasks, expectedTasks, ...
                 "Build task catalog should expose a compact public task set.");

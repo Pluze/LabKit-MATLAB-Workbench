@@ -5,6 +5,8 @@ function plan = buildfile
 %   buildtool changed       conservative validation routed from the git diff
 %   buildtool changedFast   faster local iteration routed from the git diff
 %   buildtool baseMatlab    verify source workflows require only base MATLAB
+%   buildtool docs          rebuild the tracked static documentation site
+%   buildtool docsCheck     verify the tracked site matches its sources
 %   buildtool headless      full non-GUI validation
 %   buildtool gui           full automated GUI validation with hidden figures
 %   buildtool coverage      coverage report for manual or scheduled runs
@@ -40,6 +42,14 @@ function baseMatlabTask(~)
     clear cleanup
 end
 
+function docsTask(~)
+    runDocumentationTask(false);
+end
+
+function docsCheckTask(~)
+    runDocumentationTask(true);
+end
+
 function headlessTask(~)
     runCatalogTask("headless");
 end
@@ -61,6 +71,8 @@ function catalog = taskCatalog()
         taskSpec("changed", "Run conservative changed-file validation.", "Plan", "changed", "HtmlReport", false), ...
         taskSpec("changedFast", "Run fast changed-file validation for local iteration.", "Plan", "changedFast", "HtmlReport", false), ...
         taskSpec("baseMatlab", "Verify source workflows require only base MATLAB.", "Suites", "project/hygiene", "Tests", "ToolboxDependencyGuardrailTest", "HtmlReport", false), ...
+        taskSpec("docs", "Rebuild the tracked static documentation site.", "RunTests", false), ...
+        taskSpec("docsCheck", "Verify tracked documentation output is current.", "RunTests", false), ...
         taskSpec("headless", "Run the full non-GUI validation set.", "IncludeGui", false), ...
         taskSpec("gui", "Run noninteractive GUI launch, layout, and gesture checks.", "Suites", "gui", "IncludeGui", true, "GuiMode", "hidden"), ...
         taskSpec("coverage", "Run official tests with coverage artifacts.", "Tags", ["Unit", "Integration"], "IncludeCoverage", true), ...
@@ -158,6 +170,23 @@ function runBuildTests(runName, varargin)
     runLabKitTests(varargin{:}, ...
         "RunName", runName, ...
         "ArtifactsRoot", fullfile(root, "artifacts"));
+end
+
+function runDocumentationTask(checkOnly)
+    root = fileparts(mfilename("fullpath"));
+    toolFolder = fullfile(root, "tools", "docs");
+    addpath(toolFolder);
+    cleanup = onCleanup(@() rmpath(toolFolder));
+    if checkOnly
+        result = checkLabKitDocs(fullfile(root, "docs"), fullfile(root, "site"));
+        fprintf("LabKit documentation is current: %d generated file(s).\n", ...
+            result.comparedFileCount);
+    else
+        result = renderLabKitDocs(fullfile(root, "docs"), fullfile(root, "site"));
+        fprintf("Generated %d narrative page(s) and %d API reference page(s) in %s.\n", ...
+            result.pageCount, result.apiCount, result.outputRoot);
+    end
+    clear cleanup
 end
 
 function handled = runWithInternalShards(spec, args)

@@ -12,6 +12,7 @@ only [Getting started](../getting-started/README.md) and the
 | Create or refactor an app | [App development](app-development.md) |
 | Work with an ignored private app repository | [Private apps](private-apps.md) |
 | Select tests, GUI checks, or profiling | [Testing](testing.md) |
+| Maintain the structured documentation and generated site | [Documentation system](documentation.md) |
 | Choose versions, tags, and release evidence | [Release process](release.md) |
 
 Reusable facade calls are documented separately in the

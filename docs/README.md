@@ -14,6 +14,7 @@ MATLAB call syntax or returned data shapes.
 | Understand ownership and package boundaries | [Architecture](development/architecture.md) |
 | Create or modify an app | [App development](development/app-development.md) |
 | Run tests or diagnose performance | [Testing](development/testing.md) |
+| Understand documentation sources and generated HTML | [Documentation system](development/documentation.md) |
 | Maintain a private app workspace | [Private apps](development/private-apps.md) |
 | Prepare a release | [Release process](development/release.md) |
 

@@ -23,6 +23,7 @@ function varargout = labkit_launcher(varargin)
 %   Section: Launcher status messages
 %   Section: App discovery and catalog metadata
 %   Section: Clean Artifacts action
+%   Section: Documentation site action
 %   Section: Code Analyzer action
 %   Section: Performance profile action
 %   Section: App package action
@@ -111,8 +112,8 @@ function info = launcherVersion()
     info = struct( ...
         "name", "labkit_launcher", ...
         "displayName", "LabKit App Launcher", ...
-        "version", "1.4.0", ...
-        "updated", "2026-07-13");
+        "version", "1.5.0", ...
+        "updated", "2026-07-15");
 end
 
 function titleText = launcherVersionTitle()
@@ -157,12 +158,12 @@ function fig = runLauncher(root)
     applyLauncherGuiTestMode(fig);
     paintVisibleLauncherFigure();
     main = uigridlayout(fig, [1 3]);
-    main.ColumnWidth = {360, 5, '1x'};
+    main.ColumnWidth = {420, 5, '1x'};
     main.RowHeight = {'1x'};
     main.Padding = [6 6 6 6];
     main.ColumnSpacing = 0;
 
-    leftPanel = uipanel(main, 'Title', 'Controls', 'FontSize', panelFontSize);
+    leftPanel = uipanel(main, 'Title', 'Launcher', 'FontSize', panelFontSize);
     leftPanel.Layout.Row = 1;
     leftPanel.Layout.Column = 1;
     divider = uipanel(main, 'BorderType', 'none', ...
@@ -173,56 +174,95 @@ function fig = runLauncher(root)
     rightPanel.Layout.Row = 1;
     rightPanel.Layout.Column = 3;
 
-    controlsGrid = uigridlayout(leftPanel, [9 1]);
-    controlsGrid.RowHeight = {34, 34, 34, 34, 34, 34, 34, 34, '1x'};
+    controlsGrid = uigridlayout(leftPanel, [5 1]);
+    controlsGrid.RowHeight = {108, 72, 108, 72, '1x'};
     controlsGrid.Padding = [6 6 6 6];
     controlsGrid.RowSpacing = 6;
 
-    updateGrid = uigridlayout(controlsGrid, [1 4]);
-    updateGrid.Layout.Row = 1;
-    updateGrid.Layout.Column = 1;
-    updateGrid.ColumnWidth = {'1.5x', '1x', '1x', '1x'};
-    updateGrid.RowHeight = {'1x'};
-    updateGrid.Padding = [0 0 0 0];
-    updateGrid.ColumnSpacing = 6;
+    runPanel = uipanel(controlsGrid, 'Title', 'Run Apps');
+    runPanel.Layout.Row = 1;
+    runGrid = uigridlayout(runPanel, [2 2]);
+    runGrid.RowHeight = {'1x', '1x'};
+    runGrid.ColumnWidth = {'1x', '1x'};
+    runGrid.Padding = [5 5 5 5];
+    runGrid.RowSpacing = 5;
+    runGrid.ColumnSpacing = 6;
+    btnOpen = uibutton(runGrid, 'Text', 'Open Selected App', ...
+        'ButtonPushedFcn', @onLaunchSelected);
+    btnOpen.Layout.Row = 1;
+    btnOpen.Layout.Column = 1;
+    btnDebug = uibutton(runGrid, 'Text', 'Open Debug', ...
+        'ButtonPushedFcn', @onLaunchSelectedDebug);
+    btnDebug.Layout.Row = 1;
+    btnDebug.Layout.Column = 2;
+    btnRefresh = uibutton(runGrid, 'Text', 'Refresh App List', ...
+        'ButtonPushedFcn', @onRefreshApps);
+    btnRefresh.Layout.Row = 2;
+    btnRefresh.Layout.Column = 1;
+    btnHistory = uibutton(runGrid, 'Text', 'Version History', ...
+        'ButtonPushedFcn', @onOpenSelectedHistory);
+    btnHistory.Layout.Row = 2;
+    btnHistory.Layout.Column = 2;
+    if isprop(btnHistory, 'Tooltip')
+        btnHistory.Tooltip = 'Show structured changelog records for the selected app.';
+    end
 
-    updateLabel = uilabel(updateGrid, 'Text', 'GitHub download');
-    updateLabel.Layout.Row = 1;
-    updateLabel.Layout.Column = 1;
+    updatePanel = uipanel(controlsGrid, 'Title', 'Versions and Install');
+    updatePanel.Layout.Row = 2;
+    updateGrid = uigridlayout(updatePanel, [1 3]);
+    updateGrid.ColumnWidth = {'1x', '1x', '1x'};
+    updateGrid.RowHeight = {'1x'};
+    updateGrid.Padding = [5 5 5 5];
+    updateGrid.ColumnSpacing = 6;
     btnUpdate = uibutton(updateGrid, 'Text', 'Latest', ...
         'ButtonPushedFcn', @onUpdateFromMain);
     btnUpdate.Layout.Row = 1;
-    btnUpdate.Layout.Column = 2;
+    btnUpdate.Layout.Column = 1;
     btnRelease = uibutton(updateGrid, 'Text', 'Release', ...
         'ButtonPushedFcn', @onUpdateFromStable);
     btnRelease.Layout.Row = 1;
-    btnRelease.Layout.Column = 3;
+    btnRelease.Layout.Column = 2;
     btnVersions = uibutton(updateGrid, 'Text', 'Versions', ...
         'ButtonPushedFcn', @onOpenVersionManager);
     btnVersions.Layout.Row = 1;
-    btnVersions.Layout.Column = 4;
+    btnVersions.Layout.Column = 3;
     if isprop(btnUpdate, 'Tooltip')
         btnUpdate.Tooltip = 'Download and apply the latest main branch zip.';
         btnRelease.Tooltip = 'Download and apply the latest GitHub release or tag zip.';
         btnVersions.Tooltip = 'Choose a recent release, tag, or main-branch commit.';
     end
-    btnRefresh = uibutton(controlsGrid, 'Text', 'Refresh App List', ...
-        'ButtonPushedFcn', @onRefreshApps);
-    btnOpen = uibutton(controlsGrid, 'Text', 'Open Selected App', ...
-        'ButtonPushedFcn', @onLaunchSelected);
-    btnDebug = uibutton(controlsGrid, 'Text', 'Open Debug', ...
-        'ButtonPushedFcn', @onLaunchSelectedDebug);
-    btnHistory = uibutton(controlsGrid, 'Text', 'Version History', ...
-        'ButtonPushedFcn', @onOpenSelectedHistory);
-    if isprop(btnHistory, 'Tooltip')
-        btnHistory.Tooltip = 'Show structured changelog records for the selected app.';
-    end
-    packageGrid = uigridlayout(controlsGrid, [1 2]);
-    packageGrid.Layout.Row = 6;
-    packageGrid.Layout.Column = 1;
+    maintenancePanel = uipanel(controlsGrid, ...
+        'Title', 'Development and Maintenance');
+    maintenancePanel.Layout.Row = 3;
+    maintenanceGrid = uigridlayout(maintenancePanel, [2 2]);
+    maintenanceGrid.ColumnWidth = {'1x', '1x'};
+    maintenanceGrid.RowHeight = {'1x', '1x'};
+    maintenanceGrid.Padding = [5 5 5 5];
+    maintenanceGrid.RowSpacing = 5;
+    maintenanceGrid.ColumnSpacing = 6;
+    btnDocs = uibutton(maintenanceGrid, 'Text', 'Update Documentation', ...
+        'ButtonPushedFcn', @onUpdateDocumentation);
+    btnDocs.Layout.Row = 1;
+    btnDocs.Layout.Column = 1;
+    btnCode = uibutton(maintenanceGrid, 'Text', 'Run Code Analyzer', ...
+        'ButtonPushedFcn', @onRunCodeCheck);
+    btnCode.Layout.Row = 1;
+    btnCode.Layout.Column = 2;
+    btnProfile = uibutton(maintenanceGrid, 'Text', 'Profile Selected App', ...
+        'ButtonPushedFcn', @onProfileSelectedApp);
+    btnProfile.Layout.Row = 2;
+    btnProfile.Layout.Column = 1;
+    btnClean = uibutton(maintenanceGrid, 'Text', 'Clean Artifacts', ...
+        'ButtonPushedFcn', @onCleanArtifacts);
+    btnClean.Layout.Row = 2;
+    btnClean.Layout.Column = 2;
+
+    packagePanel = uipanel(controlsGrid, 'Title', 'Package and Publish');
+    packagePanel.Layout.Row = 4;
+    packageGrid = uigridlayout(packagePanel, [1 2]);
     packageGrid.ColumnWidth = {'1x', '1x'};
     packageGrid.RowHeight = {'1x'};
-    packageGrid.Padding = [0 0 0 0];
+    packageGrid.Padding = [5 5 5 5];
     packageGrid.ColumnSpacing = 6;
     btnPackage = uibutton(packageGrid, 'Text', 'Package Checked', ...
         'ButtonPushedFcn', @(~, ~) onPackageCheckedApps(false));
@@ -232,24 +272,6 @@ function fig = runLauncher(root)
         'ButtonPushedFcn', @(~, ~) onPackageCheckedApps(true));
     btnPackagePcode.Layout.Row = 1;
     btnPackagePcode.Layout.Column = 2;
-    btnClean = uibutton(controlsGrid, 'Text', 'Clean Artifacts', ...
-        'ButtonPushedFcn', @onCleanArtifacts);
-    maintenanceGrid = uigridlayout(controlsGrid, [1 2]);
-    maintenanceGrid.Layout.Row = 8;
-    maintenanceGrid.Layout.Column = 1;
-    maintenanceGrid.ColumnWidth = {'1x', '1x'};
-    maintenanceGrid.RowHeight = {'1x'};
-    maintenanceGrid.Padding = [0 0 0 0];
-    maintenanceGrid.ColumnSpacing = 6;
-
-    btnCode = uibutton(maintenanceGrid, 'Text', 'Run Code Analyzer', ...
-        'ButtonPushedFcn', @onRunCodeCheck);
-    btnCode.Layout.Row = 1;
-    btnCode.Layout.Column = 1;
-    btnProfile = uibutton(maintenanceGrid, 'Text', 'Profile Selected App', ...
-        'ButtonPushedFcn', @onProfileSelectedApp);
-    btnProfile.Layout.Row = 1;
-    btnProfile.Layout.Column = 2;
     if isprop(btnProfile, 'Tooltip')
         btnProfile.Tooltip = ['Launch and profile the selected app ' ...
             'until that app window closes. Saves the report without opening a browser.'];
@@ -261,6 +283,7 @@ function fig = runLauncher(root)
             'encoded as .p files instead of source .m files.'];
     end
     txtInfo = uitextarea(controlsGrid, 'Editable', 'off', 'Value', {'Ready.'});
+    txtInfo.Layout.Row = 5;
 
     tableGrid = uigridlayout(rightPanel, [1 1]);
     tableGrid.Padding = [4 4 4 4];
@@ -474,6 +497,39 @@ function fig = runLauncher(root)
         endLauncherAction();
 
         function onCleanProgress(message, value)
+            setStatus(message);
+            updateProgressDialog(dlg, message, value);
+            drawnow limitrate;
+        end
+    end
+
+    function onUpdateDocumentation(varargin)
+        if state.actionBusy
+            return;
+        end
+        beginLauncherAction("Updating documentation site...");
+        setStatus('Updating documentation site...');
+        drawnow;
+        dlg = [];
+        try
+            dlg = uiprogressdlg(fig, 'Title', 'Update Documentation', ...
+                'Message', 'Reading documentation sources...', ...
+                'Indeterminate', 'on');
+        catch
+        end
+        if ~isempty(dlg)
+            dlgCleanup = onCleanup(@() close(dlg));
+        end
+        try
+            result = generateLauncherDocumentation(root, @onDocsProgress);
+            setStatus(documentationSuccessStatus(result));
+        catch err
+            setStatus(sprintf('Documentation update failed: %s', err.message));
+        end
+        clear dlgCleanup;
+        endLauncherAction();
+
+        function onDocsProgress(message, value)
             setStatus(message);
             updateProgressDialog(dlg, message, value);
             drawnow limitrate;
@@ -704,6 +760,7 @@ function fig = runLauncher(root)
         btnPackage.Enable = matlab.lang.OnOffSwitchState(enabled && state.tools.package);
         btnPackagePcode.Enable = matlab.lang.OnOffSwitchState(enabled && state.tools.package);
         btnCode.Enable = matlab.lang.OnOffSwitchState(state.tools.codecheck);
+        btnDocs.Enable = matlab.lang.OnOffSwitchState(state.tools.docs);
     end
 
     function beginLauncherAction(message)
@@ -730,6 +787,7 @@ function fig = runLauncher(root)
         else
             setLaunchEnabled(false);
             btnCode.Enable = 'off';
+            btnDocs.Enable = 'off';
         end
     end
 
@@ -742,6 +800,12 @@ function fig = runLauncher(root)
                 'then open the HTML viewer from tools/codecheck.'];
         else
             btnCode.Tooltip = missingToolTooltip('tools/codecheck/runCodecheckReport.m or .p');
+        end
+        if state.tools.docs
+            btnDocs.Tooltip = ['Rebuild the tracked site/ documentation from docs/ ' ...
+                'and public MATLAB help contracts, then open its home page.'];
+        else
+            btnDocs.Tooltip = missingToolTooltip('tools/docs/renderLabKitDocs.m or .p');
         end
         if state.tools.profile
             btnProfile.Tooltip = ['Launch and profile the selected app ' ...
@@ -1795,6 +1859,54 @@ function tf = confirmCleanArtifacts(fig)
     end
 end
 
+%% Section: Documentation site action
+
+function result = generateLauncherDocumentation(root, progressFcn)
+    toolFile = documentationToolFile(root);
+    if strlength(string(toolFile)) == 0
+        error('labkit_launcher:DocumentationToolUnavailable', ...
+            ['Documentation tools are missing. Restore tools/docs ' ...
+            'or update the LabKit install.']);
+    end
+    toolFolder = fileparts(toolFile);
+    addedToolPath = ~pathContains(toolFolder);
+    addPathIfMissing(toolFolder);
+    if addedToolPath
+        toolPathCleanup = onCleanup(@() rmpath(toolFolder));
+    end
+
+    reportLauncherProgress(progressFcn, ...
+        'Reading Markdown and MATLAB API contracts...', 0.15);
+    result = renderLabKitDocs(fullfile(root, 'docs'), fullfile(root, 'site'));
+    result.indexFile = string(fullfile(result.outputRoot, 'index.html'));
+    result.relativeIndexFile = string(relativePath(root, result.indexFile));
+    reportLauncherProgress(progressFcn, ...
+        sprintf('Generated %d pages and %d API references.', ...
+        result.pageCount, result.apiCount), 1);
+    if launcherGuiTestMode() ~= "hidden"
+        web(char(result.indexFile), '-browser');
+    end
+    clear toolPathCleanup;
+end
+
+function toolFile = documentationToolFile(root)
+    toolFile = matlabCodeFile(fullfile(root, 'tools', 'docs', ...
+        'renderLabKitDocs'));
+end
+
+function message = documentationSuccessStatus(result)
+    message = sprintf(['Documentation updated: %d narrative pages, %d API ' ...
+        'references, %d generated files. Opened %s.'], ...
+        result.pageCount, result.apiCount, result.fileCount, ...
+        char(result.relativeIndexFile));
+end
+
+function reportLauncherProgress(progressFcn, message, value)
+    if nargin >= 1 && ~isempty(progressFcn)
+        progressFcn(char(message), value);
+    end
+end
+
 %% Section: Code Analyzer action
 
 function report = runCodeAnalyzerReport(root, progressFcn)
@@ -1967,6 +2079,7 @@ end
 
 function tools = launcherToolAvailability(root)
     tools = struct();
+    tools.docs = strlength(string(documentationToolFile(root))) > 0;
     tools.codecheck = strlength(string(codecheckToolFile(root))) > 0;
     tools.profile = strlength(string(profileToolFile(root))) > 0;
     tools.package = strlength(string(packageToolFile(root))) > 0;
