@@ -4,7 +4,7 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
 
 ## Read Before Editing
 
-- `docs/testing.md`
+- `docs/development/testing.md`
 - affected source files
 - nearby tests under `tests/cases/unit/`, `tests/cases/contract/`, or
   `tests/cases/gui/`
@@ -163,7 +163,7 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
   planner just to rediscover the same plan.
 - For new timing strategies, first improve planner routing or representative
   selectors. Add a new public task only when the workflow cannot be expressed
-  through the compact task set listed in `docs/testing.md` or a focused
+  through the compact task set listed in `docs/development/testing.md` or a focused
   `runLabKitTests` invocation.
 - Prefer `runLabKitTests("Suites", "...")` for rerunning a failed suite such
   as `project`, `labkit_framework/ui`, `labkit_framework/image`,
@@ -196,10 +196,10 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
   External parsers may inform compatibility analysis, but tests must exercise
   LabKit's own parser code without runtime dependency on those tools.
 - Run the project guardrail task after fixture, hygiene, architecture, or
-  test-layout changes. Use `docs/testing.md` for the exact command.
+  test-layout changes. Use `docs/development/testing.md` for the exact command.
 
 ## Documentation Sync
 
-- Test layout, validation strategy, CI scope, or fixture policy changes update `docs/testing.md`.
+- Test layout, validation strategy, CI scope, or fixture policy changes update `docs/development/testing.md`.
 - Agent-specific validation routing or fixture-handling rule changes update this file.
 - Do not update this file for ordinary test additions that follow the existing layout and policies; state that docs/AGENTS were unchanged because contracts were preserved when the change is nontrivial.

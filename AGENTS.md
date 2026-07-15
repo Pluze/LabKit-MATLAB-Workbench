@@ -20,17 +20,18 @@ roadmaps:
 
 Read component docs only when relevant:
 
-- `docs/architecture.md` for package boundaries or entrypoint work
-- `docs/ui.md` for reusable GUI shell, components, or layout work
-- `docs/image.md` for image file IO, display normalization, resizing,
+- `docs/development/architecture.md` for package boundaries or entrypoint work
+- `docs/api/ui.md` for reusable GUI shell, components, or layout work
+- `docs/api/image.md` for image file IO, display normalization, resizing,
   filtering, enhancement primitives, or image facade work
-- `docs/thermal.md` for thermal image file parsing, raw-to-temperature
+- `docs/api/thermal.md` for thermal image file parsing, raw-to-temperature
   conversion, thermal rendering, or FLIR radiometric JPEG work
-- `docs/dta.md` for DTA API, parser, item, pulse, or session work
-- `docs/rhs.md` for RHS API, parser, channel metadata, indexing, or waveform window reads
-- `docs/biosignal.md` for biosignal recording, waveform processing, events, or wearable work
-- `docs/apps.md` for app entrypoints, app-owned workflow, or new app work
-- `docs/testing.md` for validation choices or test layout changes
+- `docs/api/dta.md` for DTA API, parser, item, pulse, or session work
+- `docs/api/rhs.md` for RHS API, parser, channel metadata, indexing, or waveform window reads
+- `docs/api/biosignal.md` for biosignal recording, waveform processing, events, or wearable work
+- `docs/apps/README.md` for app entrypoints and current user workflows
+- `docs/development/app-development.md` for new app or app-structure work
+- `docs/development/testing.md` for validation choices or test layout changes
 
 Read only the hot-path sections of `.agents/migration_guide.md` for app-runner
 migrations, debt burn-down planning, app `private/` debt, or future migration
@@ -130,7 +131,7 @@ Use this decision rule:
 - Internal refactors that preserve user-facing behavior and governance rules usually need source/tests only.
 - User-facing app behavior changes update the human app docs that advertise or explain that behavior.
 - Public facade or package-boundary changes update the relevant component docs and package guardrails.
-- Test layout, validation, fixture, or hygiene-policy changes update `docs/testing.md` and test agent rules when agent routing changes.
+- Test layout, validation, fixture, or hygiene-policy changes update `docs/development/testing.md` and test agent rules when agent routing changes.
 - Agent workflow or ownership-rule changes update the nearest scoped `AGENTS.md` or repo skill; update human docs only when the human-facing contract also changes.
 
 If a nontrivial change does not update human docs or scoped agent docs, say why in the handoff, for example: `Docs/AGENTS unchanged; behavior and governance contracts were preserved.`
@@ -158,7 +159,7 @@ When using local lab files to reproduce a bug:
 
 Run relevant automated checks after executable MATLAB, test, fixture, package, or validation-rule changes. Use the smallest source-aligned checks during iteration and reserve broader changed-file or default non-GUI gates for coherent checkpoints, handoff, release work, or changes whose ownership is unclear.
 
-Use `docs/testing.md` as the canonical command matrix for build tasks, CI
+Use `docs/development/testing.md` as the canonical command matrix for build tasks, CI
 scope, fixture expectations, and GUI validation limits. Scoped
 `AGENTS.md` files should only route by ownership and should not duplicate the
 full task list.
@@ -320,7 +321,7 @@ one type would hide a distinct behavior, test, documentation, or CI change.
 
 ## Release Workflow
 
-Use `docs/release.md` as the human-facing source of truth for version-number
+Use `docs/development/release.md` as the human-facing source of truth for version-number
 selection, release tag naming, and GitHub release note format.
 
 Use `CHANGELOG.md` as the project evolution map for users, maintainers, and

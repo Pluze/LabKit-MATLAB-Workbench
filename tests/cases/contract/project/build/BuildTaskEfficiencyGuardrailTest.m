@@ -91,7 +91,7 @@ classdef BuildTaskEfficiencyGuardrailTest < matlab.unittest.TestCase
 
             steps = labkitValidationPlanForChangedPaths(root, [ ...
                 "CHANGELOG.md"
-                "docs/apps.md"
+                "docs/apps/README.md"
                 "tools/deployment/packageLabKitApp.m"
                 "tools/deployment/private/packageManifestText.m"
                 "tests/shared/assertLauncherPackageCheckboxSelection.m"]);

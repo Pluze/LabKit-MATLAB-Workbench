@@ -1,4 +1,6 @@
-# Biosignal
+# Biosignal API
+
+[Public API index](README.md) · [App guide](../apps/README.md)
 
 `labkit.biosignal.*` is the GUI-free facade for physiological or wearable time-series data. It is a peer of `labkit.dta`, not a replacement for app-owned workflow logic.
 

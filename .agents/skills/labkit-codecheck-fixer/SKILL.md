@@ -29,7 +29,7 @@ produces Code Analyzer messages.
 2. nearest scoped `AGENTS.md` for the target file, if any
 3. the target source file
 4. focused tests for the target source area
-5. `docs/testing.md` only if validation routing is not obvious
+5. `docs/development/testing.md` only if validation routing is not obvious
 
 Coordinate with:
 
@@ -68,7 +68,7 @@ Coordinate with:
      same local edit naturally fixes them.
 
 5. Run focused validation for the touched area. Pick the smallest
-   source-aligned `buildtool` task from `docs/testing.md` that covers the
+   source-aligned `buildtool` task from `docs/development/testing.md` that covers the
    behavior, adding the project guardrail task when project guardrails or
    suppression policy could be affected.
 

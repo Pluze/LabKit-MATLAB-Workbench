@@ -71,20 +71,22 @@ reviewing implementation details.
 | Wearable biosignal | `labkit_ECGPrint_app` | ECG import, filtering, peak/segment review, and exports. |
 | Neurophysiology | `labkit_RHSPreview_app`, `labkit_NerveResponseAnalysis_app`, `labkit_ResponseReviewStats_app` | Intan RHS inspection, channel protocol drafting, filter records, event-locked nerve response analysis, and aligned response statistics. |
 
-See [docs/apps.md](docs/apps.md) for the full app catalog and expected inputs
+See the [app guide](docs/apps/README.md) for the full app catalog and expected inputs
 and outputs.
 
 ## Find The Right Page
 
 | I want to | Go to |
 | --- | --- |
-| Open LabKit or pick an app | [docs/apps.md](docs/apps.md) |
+| Install or update LabKit | [docs/getting-started/README.md](docs/getting-started/README.md) |
+| Open LabKit or pick an app | [docs/apps/README.md](docs/apps/README.md) |
 | Understand the documentation set | [docs/README.md](docs/README.md) |
 | Report a problem or ask for workflow support | [.github/SUPPORT.md](.github/SUPPORT.md) |
-| Change source code or run checks | [docs/testing.md](docs/testing.md) |
-| Understand package and app boundaries | [docs/architecture.md](docs/architecture.md) |
-| Build local private apps outside the public repo | [docs/private-apps.md](docs/private-apps.md) |
-| Prepare a public release | [docs/release.md](docs/release.md) |
+| Call a public LabKit function | [docs/api/README.md](docs/api/README.md) |
+| Change source code or run checks | [docs/development/testing.md](docs/development/testing.md) |
+| Understand package and app boundaries | [docs/development/architecture.md](docs/development/architecture.md) |
+| Build local private apps outside the public repo | [docs/development/private-apps.md](docs/development/private-apps.md) |
+| Prepare a public release | [docs/development/release.md](docs/development/release.md) |
 
 ## Development
 
@@ -96,7 +98,7 @@ cd LabKit-MATLAB-Workbench
 buildtool headless
 ```
 
-See [docs/testing.md](docs/testing.md) for the supported build tasks and GUI
+See [Testing](docs/development/testing.md) for the supported build tasks and GUI
 validation limits.
 
 ## Project Shape
@@ -112,7 +114,7 @@ Apps are the deliverables. Shared code moves into `+labkit` only when it is
 domain-neutral, app-facing, tested, and useful beyond one workflow.
 
 Source checkouts may also use an ignored `private_apps/` workspace for local
-private app development. See [docs/private-apps.md](docs/private-apps.md) for
+private app development. See [Private apps](docs/development/private-apps.md) for
 the generic structure; private app details belong in the private app repository.
 
 ## Citation

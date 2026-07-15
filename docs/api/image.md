@@ -1,4 +1,6 @@
-# Image Facade
+# Image API
+
+[Public API index](README.md) · [App guide](../apps/README.md)
 
 `labkit.image.*` is the GUI-free facade for reusable image file IO and basic
 image processing primitives. It is intentionally not an image-workflow engine:

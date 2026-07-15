@@ -74,6 +74,7 @@ component: `labkit_ResponseReviewStats_app` | `1.3.5 -> 1.4.0`
 component: `labkit_RHSPreview_app` | `1.3.4 -> 1.4.0`
 component: `labkit_ECGPrint_app` | `1.3.5 -> 1.4.0`
 scope: `private_apps`
+scope: `docs/`
 scope: `docs/ui-runtime-redesign.md`
 scope: `.agents/migration_guide.md`
 ```
@@ -148,6 +149,11 @@ the earlier 32-function planning target was not forced through vague APIs.
 - Moved Video Marker's Session controls to the top of the Video page, added an
   `Open MAT` project shortcut, and made New setup explicitly cancel, save, or
   discard before clearing the current project.
+- Reorganized human documentation into getting-started, app workflow, public
+  API, development, and focused-guide layers. Split app authoring from the user
+  catalog, added the missing contract API reference, and made a project
+  guardrail verify that every public `+labkit` function remains indexed under
+  its owning facade.
 
 #### User and data impact
 
@@ -174,6 +180,9 @@ Gait/app compatibility tests (21/21), Curvature and Video Marker GUI methods
 (6/6), focused framework menu/interaction tests (8/8), and three targeted
 interaction-hint methods (3/3). A real local legacy Video Marker autosave was
 read successfully without copying it into the repository.
+The documentation hierarchy checkpoint passed relative-link validation and
+44/44 focused documentation, app-structure, build-task, and changelog
+guardrails.
 The Phase-6 `buildtool changedFast` checkpoint passed 15 framework GUI tests,
 284 headless tests with one environment-assumption skip, and six representative
 GUI workflows. Final broad gates and manual pointer/visual checks are recorded
@@ -212,8 +221,8 @@ component: `labkit_VideoMarker_app` | `1.1.0 -> 1.2.0`
 component: `labkit.ui` | `5.1.1 -> 5.2.0`
 scope: `AGENTS.md`
 scope: `apps/AGENTS.md`
-scope: `docs/architecture.md`
-scope: `docs/ui.md`
+scope: `docs/development/architecture.md`
+scope: `docs/api/ui.md`
 ```
 
 #### Context
@@ -808,7 +817,7 @@ cover class conversion, luma values, and representative workflows.
 
 #### Evidence
 
-The API contracts are documented in `docs/image.md`; branch checkpoint
+The API contracts are documented in `docs/api/image.md`; branch checkpoint
 `e3f71c2d` carries the migration before the final squash merge.
 
 #### Known limitations and follow-up
@@ -864,7 +873,7 @@ and one-output compatibility.
 
 #### Evidence
 
-The model and provenance contract are documented in `docs/thermal.md`; branch
+The model and provenance contract are documented in `docs/api/thermal.md`; branch
 checkpoint `7391e293` carries the implementation before the final squash merge.
 
 #### Known limitations and follow-up
@@ -1043,7 +1052,7 @@ representative workflow tests guard the new behavior.
 
 #### Evidence
 
-The command matrix is in `docs/testing.md`; CI uploads official runner logs and
+The command matrix is in `docs/development/testing.md`; CI uploads official runner logs and
 active-test artifacts. Branch checkpoints `28ff8edb`, `37bd7fd5`, and
 `2c9b8792` carry the implementation before the final squash merge.
 

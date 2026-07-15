@@ -1,4 +1,6 @@
-# Thermal Facade
+# Thermal API
+
+[Public API index](README.md) · [App guide](../apps/README.md)
 
 `labkit.thermal.*` is the GUI-free facade for reusable thermal source-file
 parsing, raw thermal matrices, embedded calibration metadata,

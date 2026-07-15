@@ -2,7 +2,7 @@
 
 This is the single agent-facing ledger for active LabKit migration debt. It is
 not an architecture manual, validation matrix, or history. Current contracts
-live in `docs/`; validation commands live in `docs/testing.md`; completed
+live in `docs/`; validation commands live in `docs/development/testing.md`; completed
 changes live in source, tests, and `CHANGELOG.md`.
 
 ## Current Debt Snapshot
@@ -10,7 +10,7 @@ changes live in source, tests, and `CHANGELOG.md`.
 Last audited: 2026-07-15.
 
 ```text
-ui-runtime-v2: final-validation-manual-interaction-and-pr-closure
+ui-runtime-v2: full-validation-pr-ci-and-user-retest
 app-structure-debt: none
 app-project-and-result-contract-debt: none
 toolbox-product-debt: none
@@ -29,25 +29,25 @@ Landed facts:
 - The public UI surface has 36 reviewed functions. The earlier numerical
   planning target is not a completion gate; every retained function owns a
   distinct current contract.
-- Current human contracts live in `docs/ui.md`, `docs/apps.md`, and
-  `docs/architecture.md`. The temporary Runtime V2 design record is retired.
+- Current human contracts live in `docs/api/ui.md`, `docs/apps/README.md`, and
+  `docs/development/architecture.md`. The temporary Runtime V2 design record is retired.
 
 ## Exact Remaining Closure
 
-Do not reopen implementation phases. Finish only these items:
+Do not reopen implementation phases unless validation or user retesting exposes
+a concrete regression. Finish only these items:
 
-1. Run the source-aligned public documentation/package guardrails, then the
-   final changed-file and headless gates for the stable diff.
-2. Confirm the latest public PR CI is green. The private PR has no hosted CI;
-   use its repository-owned test entry point.
-3. Record manual MATLAB interaction results for pointer, wheel, drag, and
-   visual workflow feel in the interaction-heavy apps. Automated hidden GUI
-   tests do not prove this user experience.
-4. Squash-merge the private and public PRs with explicit Conventional Commit
-   subjects, delete their development branches, and align both local default
-   branches with their remotes.
-5. After merge, re-audit the four debt fields above. If no debt remains,
-   replace the first field with `none` and keep this compact ledger.
+1. Run the complete public headless and GUI gates for the stable branch diff,
+   plus the private repository's complete test entry point.
+2. Create or update the public and private PRs, then confirm all available CI
+   for the latest pushed commits is green.
+3. Stop with both PRs open and unmerged so the user can repeat manual pointer,
+   wheel, drag, file-selection, and visual workflow checks. Automated hidden
+   GUI tests do not prove this user experience.
+4. Merge and default-branch cleanup are a later user-approved step, not part of
+   the current closure. After that merge, re-audit the four debt fields above;
+   if no debt remains, replace the first field with `none` and keep this compact
+   ledger.
 
 Previous stable automated evidence before the final docs/test cleanup was:
 private 41/41, public base-MATLAB 7/7, changed 290, headless passed, and GUI

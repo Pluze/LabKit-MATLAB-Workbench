@@ -1,4 +1,6 @@
-# DTA Library
+# DTA API
+
+[Public API index](README.md) · [App guide](../apps/README.md)
 
 `labkit.dta.*` is the current electrochemistry/Gamry DTA facade. It provides GUI-free DTA discovery, loading, pulse detection, parser access, and parsed table/curve helpers for DTA-backed apps.
 

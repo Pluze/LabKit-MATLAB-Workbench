@@ -35,10 +35,10 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
 
         function testingDocOwnsBuildTaskCommandMatrix(testCase)
             root = setupLabKitTestPath();
-            canonical = fullfile(root, "docs", "testing.md");
+            canonical = fullfile(root, "docs", "development", "testing.md");
             canonicalTasks = extractBuildtoolTaskNames(fileread(canonical));
             testCase.verifyGreaterThanOrEqual(numel(canonicalTasks), 5, ...
-                'docs/testing.md should remain the canonical build-task matrix.');
+                'docs/development/testing.md should remain the canonical build-task matrix.');
 
             files = collectGuidanceFilesExceptTesting(root);
             duplicates = strings(1, 0);
@@ -51,13 +51,14 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
             end
 
             testCase.verifyTrue(isempty(duplicates), ...
-                ['Only docs/testing.md should maintain a build-task command matrix: ' ...
+                ['Only docs/development/testing.md should maintain a build-task command matrix: ' ...
                 strjoin(cellstr(duplicates), ', ')]);
         end
 
         function releaseDocsPinLauncherAssetToTagBlob(testCase)
             root = setupLabKitTestPath();
-            releaseDoc = string(fileread(fullfile(root, "docs", "release.md")));
+            releaseDoc = string(fileread(fullfile(root, "docs", ...
+                "development", "release.md")));
             agentDoc = string(fileread(fullfile(root, "AGENTS.md")));
             gitAttributes = string(fileread(fullfile(root, ".gitattributes")));
 
@@ -70,7 +71,7 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
             ];
             for k = 1:numel(requiredReleasePhrases)
                 testCase.verifyTrue(contains(releaseDoc, requiredReleasePhrases(k)), ...
-                    "docs/release.md should preserve launcher asset reproducibility rule: " + ...
+                    "docs/development/release.md should preserve launcher asset reproducibility rule: " + ...
                     requiredReleasePhrases(k));
             end
 
@@ -112,6 +113,27 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
                 'after the function declaration: ' strjoin(cellstr(missing), ', ')]);
         end
 
+        function publicApiIndexCoversPublicLibrarySurface(testCase)
+            root = setupLabKitTestPath();
+            indexText = string(fileread(fullfile(root, "docs", "api", ...
+                "README.md")));
+            publicFiles = collectPublicLibraryFiles(root);
+            missing = strings(1, 0);
+            for k = 1:numel(publicFiles)
+                [facade, functionName] = publicApiIdentity(root, publicFiles(k));
+                section = publicApiSection(indexText, facade);
+                if strlength(section) == 0 || ...
+                        ~contains(section, "`" + functionName + "`")
+                    missing(end+1) = facade + "." + functionName;
+                end
+            end
+
+            testCase.verifyTrue(isempty(missing), ...
+                ['docs/api/README.md should list every supported public ' ...
+                '+labkit function under its owning facade: ' ...
+                strjoin(cellstr(missing), ', ')]);
+        end
+
         function privateHelpersDocumentImplementationContracts(testCase)
             root = setupLabKitTestPath();
             actual = collectPrivateHelpersMissingContracts(root);
@@ -142,7 +164,7 @@ end
 
 function files = collectHumanDocFiles(root)
     files = string(fullfile(root, "README.md"));
-    entries = dir(fullfile(root, "docs", "*.md"));
+    entries = dir(fullfile(root, "docs", "**", "*.md"));
     for k = 1:numel(entries)
         files(end+1) = string(fullfile(entries(k).folder, entries(k).name));
     end
@@ -156,10 +178,10 @@ function files = collectGuidanceFilesExceptTesting(root)
         string(fullfile(root, "tests", "AGENTS.md")), ...
         string(fullfile(root, "+labkit", "AGENTS.md"))];
 
-    docEntries = dir(fullfile(root, "docs", "*.md"));
+    docEntries = dir(fullfile(root, "docs", "**", "*.md"));
     for k = 1:numel(docEntries)
         filepath = string(fullfile(docEntries(k).folder, docEntries(k).name));
-        if endsWith(filepath, fullfile("docs", "testing.md"))
+        if endsWith(filepath, fullfile("docs", "development", "testing.md"))
             continue;
         end
         files(end+1) = filepath;
@@ -190,6 +212,31 @@ function files = collectPublicLibraryFiles(root)
         if ~contains(filepath, [filesep 'private' filesep])
             files(end+1) = string(filepath);
         end
+    end
+end
+
+function [facade, functionName] = publicApiIdentity(root, filepath)
+    rel = string(relativePath(root, filepath));
+    parts = split(rel, "/");
+    facade = erase(parts(2), "+");
+    functionName = erase(parts(end), ".m");
+end
+
+function section = publicApiSection(indexText, facade)
+    title = upper(extractBefore(facade, 2)) + extractAfter(facade, 1);
+    if facade == "ui"
+        title = "UI";
+    elseif facade == "dta"
+        title = "DTA";
+    elseif facade == "rhs"
+        title = "RHS";
+    end
+    blocks = split(indexText, newline + "## ");
+    match = blocks(startsWith(blocks, title + newline));
+    if isempty(match)
+        section = "";
+    else
+        section = match(1);
     end
 end
 

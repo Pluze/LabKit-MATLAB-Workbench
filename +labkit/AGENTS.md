@@ -4,13 +4,13 @@
 
 ## Read Before Editing
 
-- `docs/architecture.md`
-- `docs/ui.md` for `+labkit/+ui`
-- `docs/image.md` for `+labkit/+image`
-- `docs/thermal.md` for `+labkit/+thermal`
-- `docs/dta.md` for `+labkit/+dta`
-- `docs/rhs.md` for `+labkit/+rhs`
-- `docs/biosignal.md` for `+labkit/+biosignal`
+- `docs/development/architecture.md`
+- `docs/api/ui.md` for `+labkit/+ui`
+- `docs/api/image.md` for `+labkit/+image`
+- `docs/api/thermal.md` for `+labkit/+thermal`
+- `docs/api/dta.md` for `+labkit/+dta`
+- `docs/api/rhs.md` for `+labkit/+rhs`
+- `docs/api/biosignal.md` for `+labkit/+biosignal`
 - affected package tests under `tests/cases/unit/labkit/` or `tests/cases/gui/labkit/`
 
 ## Boundary Rules
@@ -107,5 +107,5 @@
 Package boundary or public surface changes should include project guardrails.
 Use `runLabKitTests("Suites", ...)` for the touched DTA, RHS, biosignal, image, thermal, or UI
 facade, and add downstream app-family suite selectors when the app-facing
-contract may be affected. Use `docs/testing.md` for stable build-task names,
+contract may be affected. Use `docs/development/testing.md` for stable build-task names,
 suite selectors, and GUI/non-GUI pairings.

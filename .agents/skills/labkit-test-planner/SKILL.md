@@ -17,14 +17,14 @@ Start with a quick pass:
 2. nearest scoped `AGENTS.md`
 3. touched source, tests, and fixture files
 
-Read `docs/testing.md` only when exact build-task names, CI scope, fixture
+Read `docs/development/testing.md` only when exact build-task names, CI scope, fixture
 policy, GUI/non-GUI pairing, or validation-routing changes are needed. When
 another skill already read shared AGENTS context, do not reread it.
 
 ## Task Routing
 
 Use the smallest source-aligned validation set that covers the touched
-boundary. `docs/testing.md` owns the stable build-task names, CI scope, and
+boundary. `docs/development/testing.md` owns the stable build-task names, CI scope, and
 command examples. Keep the public build-task set small: improve changed-file
 planner routing, representative selectors, printed plan reasons, or focused
 runner selectors before adding a new public task.

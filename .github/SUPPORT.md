@@ -3,8 +3,8 @@
 Use the launcher and app docs first:
 
 - Normal use starts from the single-file launcher in the root [README](../README.md).
-- App commands, inputs, and expected outputs are listed in [docs/apps.md](../docs/apps.md).
-- Development and validation commands are listed in [docs/testing.md](../docs/testing.md).
+- App commands, inputs, and expected outputs are listed in the [app guide](../docs/apps/README.md).
+- Development and validation commands are listed in [Testing](../docs/development/testing.md).
 
 ## Report A Problem
 
@@ -36,6 +36,6 @@ in, what the user reviews, and what outputs should be produced.
 
 ## Contributing
 
-For source changes, start with [docs/testing.md](../docs/testing.md) and use
+For source changes, start with [Testing](../docs/development/testing.md) and use
 the pull request template. Keep app-specific behavior in the owning app unless
 the shared `+labkit` foundation clearly owns a domain-neutral contract.

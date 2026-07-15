@@ -4,11 +4,12 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
 
 ## Read Before Editing
 
-- `docs/apps.md`
-- `docs/ui.md` for layout, controls, axes, callbacks, or app shell changes
-- `docs/dta.md` for DTA-backed apps
-- `docs/rhs.md` for RHS-backed apps
-- `docs/biosignal.md` for wearable or biosignal-backed apps
+- `docs/apps/README.md` for current user workflows
+- `docs/development/app-development.md` for app structure and authoring
+- `docs/api/ui.md` for layout, controls, axes, callbacks, or app shell changes
+- `docs/api/dta.md` for DTA-backed apps
+- `docs/api/rhs.md` for RHS-backed apps
+- `docs/api/biosignal.md` for wearable or biosignal-backed apps
 - affected app tests under `tests/cases/unit/apps/` or `tests/cases/gui/apps/`
 
 ## App Ownership
@@ -239,7 +240,7 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
 
 ## Documentation Sync
 
-- User-facing app behavior changes update `README.md` when advertised there and `docs/apps.md` for current app behavior.
+- User-facing app behavior changes update `README.md` when advertised there and `docs/apps/README.md` for current app behavior.
 - App ownership, entrypoint, or workflow-boundary rule changes update this file.
 - Keep internal test/debug hook details out of README.
 - Do not update this file for app implementation changes that preserve the app ownership and workflow-boundary rules; state that docs/AGENTS were unchanged because contracts were preserved when the change is nontrivial.
@@ -248,6 +249,6 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
 
 Route validation by the touched app family and whether the change affects pure
 logic/export behavior, layout/callback wiring, or app-entrypoint boundaries.
-Use `docs/testing.md` for exact task names and pairings. App entrypoint,
+Use `docs/development/testing.md` for exact task names and pairings. App entrypoint,
 ownership-boundary, fixture, or validation-rule changes should include the
 project guardrail task.

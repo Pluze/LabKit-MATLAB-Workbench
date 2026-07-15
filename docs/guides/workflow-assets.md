@@ -1,5 +1,7 @@
 # Workflow Guide Assets
 
+[Guide index](README.md) · [App guide](../apps/README.md)
+
 This maintainer note explains how to generate reusable screenshots and example
 outputs for LabKit workflow guides.
 

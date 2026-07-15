@@ -8,7 +8,7 @@
 
 ## Validation
 
-- [ ] I ran the relevant check from `docs/testing.md`.
+- [ ] I ran the relevant check from `docs/development/testing.md`.
 - [ ] I did not run automated validation because:
 
 Command and result:

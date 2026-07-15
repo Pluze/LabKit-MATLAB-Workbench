@@ -28,11 +28,11 @@ Start with a quick pass:
 Use a deep pass only when the boundary decision is not already obvious from
 the touched files:
 
-- read `docs/architecture.md` for public package surfaces, allowed debt, or
+- read `docs/development/architecture.md` for public package surfaces, allowed debt, or
   app-vs-library ownership changes
 - read the relevant component doc only for the touched facade:
-  `docs/apps.md`, `docs/ui.md`, `docs/image.md`, `docs/dta.md`,
-  `docs/rhs.md`, or `docs/biosignal.md`
+  `docs/apps/README.md`, `docs/api/ui.md`, `docs/api/image.md`,
+  `docs/api/dta.md`, `docs/api/rhs.md`, or `docs/api/biosignal.md`
 
 ## Boundary Decision
 
@@ -77,7 +77,7 @@ axes builders. Do not reintroduce `createShell` or legacy
 
 Run or recommend project guardrails for package-boundary and public-surface
 changes. Add focused DTA, RHS, biosignal, image, UI, or app-family validation when that
-boundary is touched, and use `docs/testing.md` for exact task names and
+boundary is touched, and use `docs/development/testing.md` for exact task names and
 pairings.
 
 If MATLAB is unavailable, report that clearly and do not claim tests passed.

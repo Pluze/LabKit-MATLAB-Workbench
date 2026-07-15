@@ -1,4 +1,6 @@
-# UI Library
+# UI API
+
+[Public API index](README.md) · [App development](../development/app-development.md)
 
 This page documents the current supported UI contract. Runtime V2 owns queued
 events, canonical project/session state, presentation, resources,
@@ -466,6 +468,7 @@ calibration. `labkit.ui.interaction.anchorPath`, `scaleBarCalibration`, and
 `scaleBarGeometry` remain GUI-free advanced helpers for calculations,
 presentation models, and exports. Apps never place editor/runtime objects or
 graphics handles in project or session state.
+
 ## Debug
 
 Debug launches create an ignored `artifacts/debug/<app>/<run>/manifest.json`.
@@ -495,6 +498,7 @@ Each debug launch writes a session folder under
 unresponsive; the Log tab is its human-readable workflow mirror. Framework
 instrumentation records active operations and callback failures without adding
 app-owned lifecycle glue.
+
 ## Callback Policy
 
 Reusable helpers and tools keep three callback classes separate:
@@ -516,7 +520,7 @@ All `setX(value)` style APIs should no-op when the requested value is already cu
 ## Validation
 
 Reusable UI contracts are covered by the source-aligned UI and project build
-tasks listed in `docs/testing.md`.
+tasks listed in [Testing](../development/testing.md).
 
 Automated GUI tests validate launch, layout, callback wiring, trace plumbing,
 reusable tool lifecycle, and hidden synthetic app workflows. Full interactive

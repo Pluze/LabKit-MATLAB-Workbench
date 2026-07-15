@@ -30,9 +30,10 @@ Use a deep pass only when the task needs it:
 - read any `Goal Prompt:` section completely before executing or revising an
   unattended migration route
 - read debt-specific notes only if the guide records active debt for that area
-- read `docs/architecture.md` for package-boundary or debt-exception changes
-- read `docs/apps.md` for app entrypoint or app-owned package shape changes
-- read `docs/testing.md` only when validation routing or CI scope changes
+- read `docs/development/architecture.md` for package-boundary or debt-exception changes
+- read `docs/apps/README.md` for current app workflows and
+  `docs/development/app-development.md` for app-owned package shape changes
+- read `docs/development/testing.md` only when validation routing or CI scope changes
 
 Use `labkit-boundary-guard` when deciding whether code belongs in `+labkit` or
 an app-owned package. Use `labkit-test-planner` before running or reporting

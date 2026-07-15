@@ -115,7 +115,8 @@ classdef ChangelogGuardrailTest < matlab.unittest.TestCase
 
         function releaseDocsDefineChangelogContract(testCase)
             root = setupLabKitTestPath();
-            releaseDoc = string(fileread(fullfile(root, "docs", "release.md")));
+            releaseDoc = string(fileread(fullfile(root, "docs", ...
+                "development", "release.md")));
             docsIndex = string(fileread(fullfile(root, "docs", "README.md")));
 
             requiredReleasePhrases = [ ...
@@ -131,7 +132,7 @@ classdef ChangelogGuardrailTest < matlab.unittest.TestCase
             ];
             for k = 1:numel(requiredReleasePhrases)
                 testCase.verifyTrue(contains(releaseDoc, requiredReleasePhrases(k)), ...
-                    "docs/release.md should document changelog maintenance: " + ...
+                    "docs/development/release.md should document changelog maintenance: " + ...
                     requiredReleasePhrases(k));
             end
 

@@ -31,9 +31,11 @@ Use a deep pass only for the boundary being touched:
 
 - read `+labkit/AGENTS.md` if any reusable helper or facade may change
 - read `tests/AGENTS.md` if adding tests or fixtures
-- read `docs/apps.md` for public app shape or entrypoint changes
-- read `docs/ui.md` for shell, layout, controls, axes, callbacks, or debug UI
-- read `docs/image.md`, `docs/dta.md`, `docs/rhs.md`, or `docs/biosignal.md` only for those facade-backed apps
+- read `docs/apps/README.md` for public workflows and
+  `docs/development/app-development.md` for app shape or entrypoint changes
+- read `docs/api/ui.md` for shell, layout, controls, axes, callbacks, or debug UI
+- read `docs/api/image.md`, `docs/api/dta.md`, `docs/api/rhs.md`, or
+  `docs/api/biosignal.md` only for those facade-backed apps
 
 Do not copy local paths, real filenames, sample labels, subject names, timestamps, device IDs, or proprietary row values into tracked files.
 
@@ -215,7 +217,7 @@ Build the app in this order:
 ## Validation
 
 Use `labkit-test-planner` to choose source-aligned validation. It should route
-to `docs/testing.md` for exact build-task names and GUI/non-GUI pairings.
+to `docs/development/testing.md` for exact build-task names and GUI/non-GUI pairings.
 
 For reusable facade changes, also use `labkit-boundary-guard`.
 

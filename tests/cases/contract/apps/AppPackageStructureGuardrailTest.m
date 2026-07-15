@@ -47,10 +47,11 @@ classdef AppPackageStructureGuardrailTest < matlab.unittest.TestCase
                     "Task lifecycle helper should expose a deterministic fingerprint: " + expected(k));
             end
 
-            docs = string(fileread(fullfile(root, "docs", "apps.md")));
+            docs = string(fileread(fullfile(root, "docs", "development", ...
+                "app-development.md")));
             appRules = string(fileread(fullfile(root, "apps", "AGENTS.md")));
             testCase.verifyTrue(contains(docs, "Task Lifecycle"), ...
-                "docs/apps.md should document the app-owned task lifecycle boundary.");
+                "docs/development/app-development.md should document the app-owned task lifecycle boundary.");
             testCase.verifyTrue(contains(appRules, "immutable") && ...
                 contains(appRules, "fingerprints"), ...
                 "apps/AGENTS.md should preserve the task snapshot/fingerprint rule.");
