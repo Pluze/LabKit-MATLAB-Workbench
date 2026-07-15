@@ -3,8 +3,7 @@
 % cache. Output is the established algorithm-facing item struct vector.
 function items = workingItems(tasks, images, sources)
     if nargin < 3
-        sources = struct("id", {}, "required", {}, "role", {}, ...
-            "reference", {});
+        sources = labkit.ui.runtime.emptySourceRecords();
     end
     items = repmat(batch_crop.appState.emptyItem(), numel(tasks), 1);
     for k = 1:numel(tasks)

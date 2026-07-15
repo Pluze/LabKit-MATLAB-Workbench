@@ -4,7 +4,8 @@
 function project = createProject()
     choices = cic.userInterface.analysisChoices();
     project = struct();
-    project.inputs = struct("sources", emptySources());
+    project.inputs = struct("sources", ...
+        labkit.ui.runtime.emptySourceRecords());
     project.parameters = struct( ...
         "preset", choices.presets(1), ...
         "cathLimit", -0.6, ...
@@ -27,9 +28,4 @@ function project = createProject()
     project.annotations = struct();
     project.results = struct("lastExport", []);
     project.extensions = struct();
-end
-
-function sources = emptySources()
-    sources = struct("id", {}, "required", {}, "role", {}, ...
-        "reference", {});
 end

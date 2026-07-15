@@ -19,7 +19,6 @@ function view = presentWorkbench(state)
     view.controls.resultTable = dataSpec(resultTableData( ...
         cacheResult, durableResult));
     view.controls.details = valueSpec(detailLines(state, hasSources, hasStack));
-    view.controls.logPanel = valueSpec(cellstr(state.session.workflow.logLines));
     [fusedModel, mapModel] = previewModels(images, cacheResult);
     view.previews.preview.Axes.fused = struct( ...
         "Renderer", "focusImage", "Model", fusedModel);

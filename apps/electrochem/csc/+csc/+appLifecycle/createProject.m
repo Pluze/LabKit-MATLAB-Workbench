@@ -4,7 +4,8 @@
 function project = createProject()
     choices = csc.userInterface.analysisChoices();
     project = struct();
-    project.inputs = struct("sources", emptySources());
+    project.inputs = struct("sources", ...
+        labkit.ui.runtime.emptySourceRecords());
     project.parameters = struct( ...
         "mode", choices.modes(1), ...
         "area", "", ...
@@ -24,9 +25,4 @@ function project = createProject()
         "lastResultsExport", [], ...
         "lastVoltageCurrentExport", []);
     project.extensions = struct();
-end
-
-function sources = emptySources()
-    sources = struct("id", {}, "required", {}, "role", {}, ...
-        "reference", {});
 end

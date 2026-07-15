@@ -98,7 +98,7 @@ function state = onRemoveFiles(state, event, services)
 end
 
 function state = onClearFiles(state, ~, services)
-    state.project.inputs.sources = emptySources();
+    state.project.inputs.sources = labkit.ui.runtime.emptySourceRecords();
     state.project.annotations.items = repmat( ...
         flir_thermal.appState.emptyAnnotation(), 0, 1);
     state.session.selection.currentIndex = 0;
@@ -601,8 +601,4 @@ function value = mediaType(extension)
     else
         value = "image/png";
     end
-end
-
-function sources = emptySources()
-    sources = struct("id", {}, "required", {}, "role", {}, "reference", {});
 end

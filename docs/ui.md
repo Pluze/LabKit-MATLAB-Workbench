@@ -313,13 +313,10 @@ Control tabs with more than one section include draggable horizontal
 separators by default. A tab may opt out with `resize="none"` when a fixed
 stack is intentional.
 
-### Runtime V2 Migration Kernel
+### Runtime V2
 
-`labkit.ui.runtime.define` accepts both the current production v1 contract and
-the v2 migration contract. Existing apps continue to use
-`InitialState/Render/Startup` until their planned migration wave. A v2
-definition declares `Project`, optional `CreateSession`, `Actions`, `Present`,
-optional `Renderers`, and optional `Start`. It launches through
+A definition declares `Project`, optional `CreateSession`, `Actions`,
+`Present`, optional `Renderers`, and optional `Start`. It launches through
 `labkit.ui.runtime.launch`, which owns lightweight request dispatch, contract
 checks, runtime creation, output normalization, and the versioned title.
 
@@ -328,6 +325,9 @@ V2 state has exactly two roots, `project` and `session`. Project contains
 contains `selection`, `workflow`, `view`, and `cache`. Both slices contain only
 plain serializable MATLAB data. Graphics, listeners, timers, tools, callbacks,
 services, and debug contexts stay in the framework resource registry.
+
+Project factories use `labkit.ui.runtime.emptySourceRecords()`; the runtime owns
+that shape, while handlers populate it through `services.project` operations.
 
 The V2 `Project` declaration owns its version, factory, validator, migrations,
 and named read-only legacy imports. Optional `CreateResume` and `ApplyResume`
@@ -347,7 +347,7 @@ prepared preview models by semantic id. Registered renderers receive an axes
 and model; presenters and actions do not receive the raw UI registry on the v2
 path. Plot utilities are inferred from the layout. Dynamic `Items` and `Limits`
 are applied before bound values. V2 saves one `labkitProject`; named legacy
-variables import read-only. V1 snapshots remain for unmigrated apps.
+variables import read-only.
 
 After shell, state, first presentation, and interaction hub exist, the runtime
 queues optional `Start` with injected app-neutral `services`. An optional

@@ -4,7 +4,8 @@
 % working images belong to session.cache.
 function project = createProject()
     project = struct();
-    project.inputs = struct("sources", emptySources());
+    project.inputs = struct("sources", ...
+        labkit.ui.runtime.emptySourceRecords());
     project.parameters = struct( ...
         "previewMode", "Current pair", ...
         "maskBoundaryStyle", "Curve");
@@ -19,11 +20,6 @@ function project = createProject()
         "currentImagesManifestPath", "", ...
         "maskManifestPath", "");
     project.extensions = struct();
-end
-
-function sources = emptySources()
-    sources = struct("id", {}, "required", {}, "role", {}, ...
-        "reference", {});
 end
 
 function history = emptyEditHistory()

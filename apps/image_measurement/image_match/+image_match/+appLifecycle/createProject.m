@@ -2,7 +2,8 @@
 % references, durable match settings/history, and compact export results.
 function project = createProject()
     project = struct();
-    project.inputs = struct("sources", emptySources());
+    project.inputs = struct("sources", ...
+        labkit.ui.runtime.emptySourceRecords());
     project.parameters = struct( ...
         "matchMethod", "Balanced", ...
         "matchStrength", 100, ...
@@ -15,8 +16,4 @@ function project = createProject()
     project.results = struct("lastExport", [], ...
         "lastExportFingerprint", "", "resultManifestPath", "");
     project.extensions = struct();
-end
-
-function sources = emptySources()
-    sources = struct("id", {}, "required", {}, "role", {}, "reference", {});
 end

@@ -4,7 +4,8 @@ function project = createProject()
     preset = "LabKit figure";
     style = figure_studio.styleLibrary.styleForPreset(preset);
     project = struct();
-    project.inputs = struct("sources", emptySources());
+    project.inputs = struct("sources", ...
+        labkit.ui.runtime.emptySourceRecords());
     project.parameters = struct( ...
         "preset", preset, ...
         "style", style, ...
@@ -19,10 +20,6 @@ function project = createProject()
         "lastExport", [], ...
         "resultManifestPath", "");
     project.extensions = struct();
-end
-
-function sources = emptySources()
-    sources = struct("id", {}, "required", {}, "role", {}, "reference", {});
 end
 
 function value = onOff(tf)

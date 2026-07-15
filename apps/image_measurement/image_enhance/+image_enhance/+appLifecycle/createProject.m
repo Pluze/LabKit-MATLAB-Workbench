@@ -2,7 +2,8 @@
 % project: source references, processing choices, annotations, and results.
 function project = createProject()
     project = struct();
-    project.inputs = struct("sources", emptySources());
+    project.inputs = struct("sources", ...
+        labkit.ui.runtime.emptySourceRecords());
     project.parameters = struct( ...
         "batchMode", true, ...
         "exportFormat", "PNG", ...
@@ -15,8 +16,4 @@ function project = createProject()
         "lastExportFingerprint", "", ...
         "resultManifestPath", "");
     project.extensions = struct();
-end
-
-function sources = emptySources()
-    sources = struct("id", {}, "required", {}, "role", {}, "reference", {});
 end

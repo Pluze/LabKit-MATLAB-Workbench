@@ -3,7 +3,8 @@
 function project = createProject()
     axes = eis.userInterface.axisItems();
     project = struct();
-    project.inputs = struct("sources", emptySources());
+    project.inputs = struct("sources", ...
+        labkit.ui.runtime.emptySourceRecords());
     project.parameters = struct( ...
         "xName", axes(5), "yName", axes(7), ...
         "lineWidth", 1.4, "markerSize", 6, ...
@@ -12,9 +13,4 @@ function project = createProject()
     project.annotations = struct();
     project.results = struct("lastExport", []);
     project.extensions = struct();
-end
-
-function sources = emptySources()
-    sources = struct("id", {}, "required", {}, "role", {}, ...
-        "reference", {});
 end

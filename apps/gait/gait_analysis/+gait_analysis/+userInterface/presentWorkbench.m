@@ -18,7 +18,6 @@ function view = presentWorkbench(state)
         view.controls.summaryTable = tableSpec({'Status', char(result.message)});
         view.controls.stepTable = tableSpec(cell(0, 4));
     end
-    view.controls.appLog = valueSpec(cellstr(state.session.workflow.logLines));
     view.controls.gaitAxes = valueSpec(state.session.view.previewMode);
     model = struct("pose", pose, "result", result, ...
         "mode", state.session.view.previewMode);

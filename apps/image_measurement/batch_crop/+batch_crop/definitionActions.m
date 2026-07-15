@@ -63,7 +63,7 @@ end
 
 function state = onClearImages(state, ~, services)
     state.project.inputs.items = repmat(batch_crop.appState.emptyTask(), 0, 1);
-    state.project.inputs.sources = emptySources();
+    state.project.inputs.sources = labkit.ui.runtime.emptySourceRecords();
     state.session.cache.images = cell(0, 1);
     state.session.selection.currentIndex = 0;
     state.session.workflow.cropDefaultsInitialized = false;
@@ -538,7 +538,7 @@ function index = selectedAddedIndex(items, sources, added)
 end
 
 function sources = sourcesForTasks(tasks, existingSources)
-    sources = emptySources();
+    sources = labkit.ui.runtime.emptySourceRecords();
     taskIds = unique(string({tasks.sourceId}), 'stable');
     for k = 1:numel(taskIds)
         match = find(string({existingSources.id}) == taskIds(k), 1, 'first');
@@ -566,11 +566,6 @@ function paths = sourcePaths(sources)
             paths(k) = string(reference);
         end
     end
-end
-
-function sources = emptySources()
-    sources = struct("id", {}, "required", {}, "role", {}, ...
-        "reference", {});
 end
 
 function cal = calibrationFrom(value)

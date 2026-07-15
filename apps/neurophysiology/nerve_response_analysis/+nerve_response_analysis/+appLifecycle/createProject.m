@@ -4,17 +4,12 @@
 function project = createProject()
     project = struct();
     project.inputs = struct( ...
-        "filterSource", emptySources(), ...
-        "protocolSource", emptySources());
+        "filterSource", labkit.ui.runtime.emptySourceRecords(), ...
+        "protocolSource", labkit.ui.runtime.emptySourceRecords());
     project.parameters = struct( ...
         "maxRecordings", 0, ...
         "maxDurationSec", 0);
     project.annotations = struct();
     project.results = struct("lastExport", []);
     project.extensions = struct();
-end
-
-function sources = emptySources()
-    sources = struct("id", {}, "required", {}, "role", {}, ...
-        "reference", {});
 end

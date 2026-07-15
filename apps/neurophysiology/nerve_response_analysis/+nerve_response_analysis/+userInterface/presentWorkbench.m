@@ -22,7 +22,6 @@ function view = presentWorkbench(state)
         nerve_response_analysis.userInterface.summaryTableData(model));
     view.controls.details = valueSpec( ...
         nerve_response_analysis.userInterface.detailLines(model));
-    view.controls.logPanel = valueSpec(cellstr(state.session.workflow.logLines));
     view.controls.preview = valueSpec(state.session.view.previewMode);
     view.previews.preview = struct( ...
         "Renderer", "analysisPreview", "Model", model);

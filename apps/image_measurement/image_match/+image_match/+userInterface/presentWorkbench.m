@@ -30,7 +30,6 @@ function view = presentWorkbench(state)
     view.controls.exportFormat = valueSpec(p.exportFormat);
     view.controls.exportImages = enabledSpec(ready);
     view.controls.exportDetails = valueSpec(detailLines(state, sources, reference));
-    view.controls.logPanel = valueSpec(cellstr(state.session.workflow.logLines));
     view.controls.preview = valueSpec(state.session.view.previewMode);
     view.previews.preview = struct("Renderer", "imagePreview", ...
         "Model", previewModel(state));

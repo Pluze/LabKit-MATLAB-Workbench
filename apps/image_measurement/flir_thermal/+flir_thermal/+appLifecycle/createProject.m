@@ -2,7 +2,8 @@
 % references, durable display/reading annotations, and compact export results.
 function project = createProject()
     project = struct();
-    project.inputs = struct("sources", emptySources());
+    project.inputs = struct("sources", ...
+        labkit.ui.runtime.emptySourceRecords());
     project.parameters = struct( ...
         "palette", "turbo", ...
         "colorMapping", "Linear", ...
@@ -14,8 +15,4 @@ function project = createProject()
         flir_thermal.appState.emptyAnnotation(), 0, 1));
     project.results = struct("lastExport", [], "resultManifestPath", "");
     project.extensions = struct();
-end
-
-function sources = emptySources()
-    sources = struct("id", {}, "required", {}, "role", {}, "reference", {});
 end

@@ -3,7 +3,8 @@
 % runtime/session concerns and are intentionally excluded.
 function project = createProject()
     project = struct();
-    project.inputs = struct("source", emptySources());
+    project.inputs = struct("source", ...
+        labkit.ui.runtime.emptySourceRecords());
     project.parameters = struct( ...
         "densify", true, ...
         "densePointCount", 300, ...
@@ -21,9 +22,4 @@ function project = createProject()
         "lastCsvExport", [], ...
         "lastOverlayExport", []);
     project.extensions = struct();
-end
-
-function sources = emptySources()
-    sources = struct("id", {}, "required", {}, "role", {}, ...
-        "reference", {});
 end

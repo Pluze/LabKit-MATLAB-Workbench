@@ -3,7 +3,8 @@
 % and summary results. It contains no UI or runtime resources.
 function project = createProject()
     project = struct();
-    project.inputs = struct("sources", emptySources());
+    project.inputs = struct("sources", ...
+        labkit.ui.runtime.emptySourceRecords());
     project.parameters = struct( ...
         "alpha", 0.60, ...
         "colorMin", -0.15, ...
@@ -21,9 +22,4 @@ function project = createProject()
     project.annotations = struct();
     project.results = struct("summaryTable", table());
     project.extensions = struct();
-end
-
-function sources = emptySources()
-    sources = struct("id", {}, "required", {}, "role", {}, ...
-        "reference", {});
 end

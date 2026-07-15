@@ -16,7 +16,6 @@ function view = presentWorkbench(state)
         response_review_stats.userInterface.summaryTableData(model));
     view.controls.details = valueSpec( ...
         response_review_stats.userInterface.detailLines(model));
-    view.controls.logPanel = valueSpec(cellstr(state.session.workflow.logLines));
     view.controls.preview = valueSpec(state.session.view.previewMode);
     view.previews.preview = struct( ...
         "Renderer", "statsPreview", "Model", model);

@@ -21,7 +21,6 @@ function view = presentWorkbench(state)
     view.controls.pointCount = valueSpec(summary.pointCountText);
     view.controls.resultTable = tableSpec(summary.tableData);
     view.controls.detailsText = valueSpec(summary.details);
-    view.controls.appLog = valueSpec(cellstr(session.workflow.logLines));
     view.controls.startCurveEdit = struct( ...
         "Enabled", hasImage && ~referenceEditing, ...
         "Text", ternary(curveEditing, "Finish curve edit", "Start curve edit"));

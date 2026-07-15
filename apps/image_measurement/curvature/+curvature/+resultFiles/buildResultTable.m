@@ -4,9 +4,8 @@
 function T = buildResultTable(fit, imagePath, lengthResult)
 %BUILDRESULTTABLE Build export table for labkit_CurvatureMeasurement_app.
 %
-% Expected caller:
-%   labkit_CurvatureMeasurement_app export callback and temporary compatibility
-%   result-table test handler.
+% Expected callers:
+%   Runtime V2 export actions and result-table tests.
 %
 % Inputs/outputs:
 %   Fit struct, image path, and optional length-result struct. Returns the

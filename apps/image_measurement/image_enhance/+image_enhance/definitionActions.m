@@ -75,7 +75,7 @@ function state = onRemoveImages(state, event, services)
 end
 
 function state = onClearImages(state, ~, services)
-    state.project.inputs.sources = emptySources();
+    state.project.inputs.sources = labkit.ui.runtime.emptySourceRecords();
     state.project.annotations.items = repmat( ...
         image_enhance.appState.emptyAnnotation(), 0, 1);
     state.project.annotations.sharedSteps = repmat( ...
@@ -457,8 +457,4 @@ function value = finiteScalar(value, fallback)
     if isempty(value) || ~isscalar(value) || ~isfinite(value)
         value = fallback;
     end
-end
-
-function sources = emptySources()
-    sources = struct("id", {}, "required", {}, "role", {}, "reference", {});
 end

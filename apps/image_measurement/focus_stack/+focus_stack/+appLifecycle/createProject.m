@@ -2,7 +2,8 @@
 % references, durable fusion settings, and compact run/export results.
 function project = createProject()
     project = struct();
-    project.inputs = struct("sources", emptySources());
+    project.inputs = struct("sources", ...
+        labkit.ui.runtime.emptySourceRecords());
     project.parameters = struct( ...
         "fusionPreset", "Balanced", ...
         "autoRegister", false, ...
@@ -18,8 +19,4 @@ function project = createProject()
         "lastExport", [], ...
         "resultManifestPath", "");
     project.extensions = struct();
-end
-
-function sources = emptySources()
-    sources = struct("id", {}, "required", {}, "role", {}, "reference", {});
 end

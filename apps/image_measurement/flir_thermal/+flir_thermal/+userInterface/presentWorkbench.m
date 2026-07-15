@@ -36,8 +36,6 @@ function view = presentWorkbench(state)
     view.controls.exportCurrent = enabledSpec(hasItem);
     view.controls.exportAll = enabledSpec(~isempty(sources));
     view.controls.details = valueSpec(detailLines(state, item));
-    view.controls.logPanel = valueSpec(cellstr(state.session.workflow.logLines));
-
     model = previewModel(item, p, range);
     view.previews.preview.Axes.thermalImage = struct( ...
         "Renderer", "thermalPreview", "Model", model);

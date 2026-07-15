@@ -4,7 +4,8 @@
 function project = createProject()
     choices = vt_resistance.userInterface.analysisChoices();
     project = struct();
-    project.inputs = struct("sources", emptySources());
+    project.inputs = struct("sources", ...
+        labkit.ui.runtime.emptySourceRecords());
     project.parameters = struct( ...
         "pulseMode", choices.pulseModes(1), ...
         "steadyWindow", choices.steadyWindows(1), ...
@@ -20,9 +21,4 @@ function project = createProject()
     project.annotations = struct();
     project.results = struct("lastExport", []);
     project.extensions = struct();
-end
-
-function sources = emptySources()
-    sources = struct("id", {}, "required", {}, "role", {}, ...
-        "reference", {});
 end

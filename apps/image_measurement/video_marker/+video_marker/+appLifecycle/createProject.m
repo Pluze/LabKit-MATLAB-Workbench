@@ -3,7 +3,8 @@
 % editors, logs, and placed preview overlays belong to runtime/session state.
 function project = createProject()
     project = struct();
-    project.inputs = struct("sources", emptySources());
+    project.inputs = struct("sources", ...
+        labkit.ui.runtime.emptySourceRecords());
     project.parameters = struct( ...
         "coordinateUnitMode", "pixels", ...
         "coordinateOriginMode", "top_left_pixel_center", ...
@@ -21,9 +22,4 @@ function project = createProject()
         "markerManifestPath", "", ...
         "coordinateManifestPath", "");
     project.extensions = struct();
-end
-
-function sources = emptySources()
-    sources = struct("id", {}, "required", {}, "role", {}, ...
-        "reference", {});
 end

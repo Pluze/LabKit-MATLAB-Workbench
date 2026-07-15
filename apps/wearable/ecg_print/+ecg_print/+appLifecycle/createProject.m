@@ -3,7 +3,8 @@
 % analysis results, and export records without decoded waveform caches.
 function project = createProject()
     project = struct();
-    project.inputs = struct("source", emptySources());
+    project.inputs = struct("source", ...
+        labkit.ui.runtime.emptySourceRecords());
     project.parameters = struct( ...
         "fallbackFs", 2000, "headerLine", 0, "hasHeader", "Auto", ...
         "timeColumn", "", "timeUnit", "Auto", "signalColumns", "", ...
@@ -18,9 +19,4 @@ function project = createProject()
         "lastSegmentExport", [], ...
         "lastWaveformExport", []);
     project.extensions = struct();
-end
-
-function sources = emptySources()
-    sources = struct("id", {}, "required", {}, "role", {}, ...
-        "reference", {});
 end

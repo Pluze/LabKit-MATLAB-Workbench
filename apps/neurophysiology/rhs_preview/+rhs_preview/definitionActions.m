@@ -392,7 +392,7 @@ function state = storeFilterAnnotations(state)
 end
 
 function sources = sourceRecords(rows, services)
-    sources = stateEmptySources();
+    sources = labkit.ui.runtime.emptySourceRecords();
     for k = 1:height(rows)
         source = services.project.sourceRecord("filter" + string(k), ...
             "filterRecording", string(rows.filePath(k)), true);
@@ -402,10 +402,6 @@ function sources = sourceRecords(rows, services)
             sources(end + 1) = source;
         end
     end
-end
-
-function sources = stateEmptySources()
-    sources = struct("id", {}, "required", {}, "role", {}, "reference", {});
 end
 
 function paths = sourcePaths(sources)

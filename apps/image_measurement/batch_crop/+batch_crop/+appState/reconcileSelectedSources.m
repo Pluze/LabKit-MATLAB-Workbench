@@ -6,7 +6,7 @@
 function [tasks, sources, images] = reconcileSelectedSources( ...
         existingTasks, existingSources, existingImages, paths, sourceRecord)
     tasks = repmat(batch_crop.appState.emptyTask(), 0, 1);
-    sources = emptySources();
+    sources = labkit.ui.runtime.emptySourceRecords();
     images = cell(0, 1);
     paths = unique(string(paths), 'stable');
     for k = 1:numel(paths)
@@ -60,9 +60,4 @@ function paths = sourcePaths(sources)
             paths(k) = string(reference);
         end
     end
-end
-
-function sources = emptySources()
-    sources = struct("id", {}, "required", {}, "role", {}, ...
-        "reference", {});
 end

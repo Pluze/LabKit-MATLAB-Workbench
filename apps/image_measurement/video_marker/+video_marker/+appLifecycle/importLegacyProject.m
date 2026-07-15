@@ -29,8 +29,7 @@ function [project, resume] = importLegacyProject(legacy)
 end
 
 function sources = legacySources(legacy)
-    sources = struct("id", {}, "required", {}, "role", {}, ...
-        "reference", {});
+    sources = labkit.ui.runtime.emptySourceRecords();
     reference = struct();
     if isfield(legacy, 'videoReference') && isstruct(legacy.videoReference)
         reference = legacy.videoReference;

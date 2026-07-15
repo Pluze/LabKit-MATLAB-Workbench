@@ -16,7 +16,6 @@ function view = presentWorkbench(state)
     view.controls.summaryTable = tableSpec( ...
         ecg_print.userInterface.summaryRows(cache.signal, cache.events, ...
         cache.segments, cache.measurements));
-    view.controls.appLog = valueSpec(cellstr(state.session.workflow.logLines));
     view.controls.previewHeader = enabledSpec(hasSource);
     view.controls.refreshImport = enabledSpec(hasSource);
     view.controls.analyze = enabledSpec(hasSignal);
