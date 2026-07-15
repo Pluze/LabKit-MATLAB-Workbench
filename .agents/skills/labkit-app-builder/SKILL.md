@@ -179,8 +179,8 @@ Build the app in this order:
    wording into framework configuration. Order functions as
    `buildWorkbenchLayout`, tab tree, tab builders, section builders in visual
    order, workspace builder, small helper builders, then `callbackValue`.
-8. Keep `buildWorkbenchLayout.m` free of MATLAB handle creation,
-   MATLAB handle creation, state mutation, IO, computation, export writing,
+8. Keep `buildWorkbenchLayout.m` free of MATLAB handle creation, state
+   mutation, IO, computation, export writing,
    nested callback implementations, and row/column layout mechanics. Use a
    named `+userInterface/build<Thing>.m` custom builder only for a justified
    interaction that the ordinary spec grammar cannot represent.

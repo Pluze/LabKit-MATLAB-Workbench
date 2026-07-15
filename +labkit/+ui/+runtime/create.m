@@ -1,5 +1,5 @@
 function ui = create(layout, varargin)
-%CREATE Build a LabKit UI 5 workbench from a declarative layout.
+%CREATE Build a LabKit workbench from a declarative layout.
 %
 % App-facing contract:
 %   ui = labkit.ui.runtime.create(layout, "debug", debugContext)

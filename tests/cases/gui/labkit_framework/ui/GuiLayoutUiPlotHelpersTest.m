@@ -1,5 +1,5 @@
 classdef GuiLayoutUiPlotHelpersTest < matlab.unittest.TestCase
-    %GUILAYOUTUIPLOTHELPERSTEST Verify UI 5 plot helper contracts.
+    %GUILAYOUTUIPLOTHELPERSTEST Verify declarative plot helper contracts.
 
     methods (Test, TestTags = {'GUI', 'Structural'})
         function test_gui_layout_ui_plot_helpers(testCase)

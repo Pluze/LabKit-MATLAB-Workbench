@@ -13,7 +13,7 @@ function ui = createTabbedWorkbenchShell(figName, figPosition, leftWidth, labels
 %   figPosition - uifigure Position vector.
 %   leftWidth - initial fixed width of the left control panel.
 %   labels - struct with controlsPanel and rightPanel text.
-%   tabLayouts - internal tab layouts derived from UI 5 workbench layouts.
+%   tabLayouts - internal tab layouts derived from declarative workbench layouts.
 %   rightGridSize - right-side uigridlayout size.
 %   rightRowHeight - right-side grid RowHeight cell array.
 %   rightRowSpacing - right-side grid RowSpacing scalar.
@@ -24,7 +24,7 @@ function ui = createTabbedWorkbenchShell(figName, figPosition, leftWidth, labels
 %
 % Notes:
 %   Logical tab rows are expanded with physical resize-handle rows here.
-%   App code should use UI 5 layouts rather than depending on physical row
+%   App code should use declarative layouts rather than depending on physical row
 %   indices.
 
     if nargin < 9

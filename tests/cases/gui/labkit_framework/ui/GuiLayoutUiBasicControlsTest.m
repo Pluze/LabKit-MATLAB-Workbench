@@ -1,5 +1,5 @@
 classdef GuiLayoutUiBasicControlsTest < matlab.unittest.TestCase
-    %GUILAYOUTUIBASICCONTROLSTEST Verify UI 5 control and plot helper contracts.
+    %GUILAYOUTUIBASICCONTROLSTEST Verify declarative control and plot helper contracts.
 
     methods (Test, TestTags = {'GUI', 'Structural'})
         function test_gui_layout_ui_basic_controls(testCase)

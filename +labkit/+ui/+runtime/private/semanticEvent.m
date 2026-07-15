@@ -1,4 +1,4 @@
-% Private UI runtime helper. Expected callers: UI 5 callback wrappers under
+% Private UI runtime helper. Expected callers: semantic callback wrappers under
 % +labkit/+ui/+runtime/private. Inputs are a semantic control adapter, the
 % originating MATLAB UI source/raw event, and a semantic source label. Output is
 % the normalized event payload seen by app callbacks.

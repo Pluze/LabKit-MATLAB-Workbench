@@ -1,5 +1,5 @@
 % Private UI runtime helper. Expected caller: semantic presentation helpers.
-% Collects MATLAB graphics handles from a UI 5 control adapter so common
+% Collects MATLAB graphics handles from a runtime control adapter so common
 % state such as Enable can be applied across compound controls.
 function handles = controlHandles(control)
     handles = {};

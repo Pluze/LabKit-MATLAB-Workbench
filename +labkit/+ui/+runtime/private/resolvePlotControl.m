@@ -1,5 +1,5 @@
 % Private UI runtime helper. Expected caller: resolvePreviewAxes.
-% Resolves a semantic preview/control id against a UI 5 registry, or passes
+% Resolves a semantic preview/control id against a runtime registry, or passes
 % through an adapter struct already returned by the registry.
 function control = resolvePlotControl(uiOrControl, id)
     if nargin < 2

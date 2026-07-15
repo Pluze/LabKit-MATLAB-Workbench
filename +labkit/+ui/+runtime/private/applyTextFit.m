@@ -1,4 +1,4 @@
-% Private UI runtime helper. Expected caller: UI 5 control builders. Inputs are
+% Private UI runtime helper. Expected caller: declarative control builders. Inputs are
 % a MATLAB UI text-bearing handle and optional fitting limits. Output is none.
 % Side effects: enables wrapping when supported, reduces font size for long
 % text, and installs a tooltip with the full text when supported.

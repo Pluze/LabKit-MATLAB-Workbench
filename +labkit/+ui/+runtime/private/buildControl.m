@@ -29,7 +29,7 @@ function ui = buildControl(ui, controlSpec, parentGrid, row, debug)
             ui = buildToolPanelControl(ui, controlSpec, parentGrid, row);
         otherwise
             error('labkit:ui:runtime:UnsupportedControl', ...
-                'Unsupported UI 5 control kind "%s".', controlSpec.kind);
+                'Unsupported declarative control kind "%s".', controlSpec.kind);
     end
 end
 
@@ -100,7 +100,7 @@ function control = createFieldControl(parentGrid, kind, props, enabled)
             applyTextFit(control);
         otherwise
             error('labkit:ui:runtime:UnsupportedFieldKind', ...
-                'Unsupported UI 5 field kind "%s".', kind);
+                'Unsupported declarative field kind "%s".', kind);
     end
     applyCommonValueProps(control, props);
     applySliderTicks(control, props);

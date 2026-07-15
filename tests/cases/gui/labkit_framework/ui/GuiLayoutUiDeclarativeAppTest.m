@@ -1,5 +1,5 @@
 classdef GuiLayoutUiDeclarativeAppTest < matlab.unittest.TestCase
-    %GUILAYOUTUIDECLARATIVEAPPTEST Verify UI 5 app builder contracts.
+    %GUILAYOUTUIDECLARATIVEAPPTEST Verify declarative app builder contracts.
 
     methods (Test, TestTags = {'GUI', 'Structural'})
         function test_gui_layout_ui_declarative_app(testCase)
@@ -32,7 +32,7 @@ classdef GuiLayoutUiDeclarativeAppTest < matlab.unittest.TestCase
 end
 
 function verify_gui_layout_ui_declarative_app()
-%TEST_GUI_LAYOUT_UI_DECLARATIVE_APP Verify UI 5 builder and registry helpers.
+%TEST_GUI_LAYOUT_UI_DECLARATIVE_APP Verify declarative builder and registry helpers.
 
     h = guiTestHelpers();
     h.assertUifigureAvailable();

@@ -1,5 +1,5 @@
 classdef GuiLayoutUiAxesWorkbenchTest < matlab.unittest.TestCase
-    %GUILAYOUTUIAXESWORKBENCHTEST Verify UI 5 shell and axes behavior.
+    %GUILAYOUTUIAXESWORKBENCHTEST Verify declarative shell and axes behavior.
 
     methods (Test, TestTags = {'GUI', 'Structural'})
         function test_gui_layout_ui_axes_workbench(testCase)
@@ -39,11 +39,11 @@ function verify_gui_layout_ui_axes_workbench()
     h.assertStandardWorkbenchLayout(ui.figure);
     h.assertTabTitles(ui.figure, {'Setup', 'Preview', 'Inputs'});
     assert(isequal(ui.main.ColumnWidth, {420, 6, '1x'}), ...
-        'UI 5 app builder should create the standard resizable workbench layout.');
+        'Declarative app builder should create the standard resizable workbench layout.');
     assert(numel(ui.main.RowHeight) == 3 && isequal(ui.main.RowHeight{1}, 0), ...
-        'UI 5 workbench shell should put utility actions in native window menus.');
+        'Declarative workbench shell should put utility actions in native window menus.');
     assert(strcmp(ui.rightPanel.Title, 'Preview'), ...
-        'UI 5 app builder should preserve the workspace title.');
+        'Declarative app builder should preserve the workspace title.');
 
     plotAx = ui.controls.plotPreview.axesById.plot;
     sourceLine = plot(plotAx, 1:3, [1 4 2], 'DisplayName', 'probe', ...
@@ -104,7 +104,7 @@ function verify_gui_layout_ui_axes_workbench()
     plotAx.XScale = 'linear';
     plotAx.YScale = 'linear';
     h.assertAxesPopoutEnabled(plotAx, ...
-        'UI 5 preview axes should install the LabKit popout context action.');
+        'Declarative preview axes should install the LabKit popout context action.');
     menuItem = findall(plotAx.ContextMenu, 'Type', 'uimenu', ...
         'Tag', 'labkitAxesPopoutMenu');
     h.invokeCallback(menuItem, 'MenuSelectedFcn');

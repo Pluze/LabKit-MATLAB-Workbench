@@ -1,5 +1,5 @@
 % Private UI runtime helper. Expected caller: semantic presentation helpers.
-% Resolves a semantic control id against a UI 5 registry, or passes through
+% Resolves a semantic control id against a runtime registry, or passes through
 % an adapter struct already returned by the registry.
 function control = resolveControl(uiOrControl, id)
     if nargin < 2

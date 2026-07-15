@@ -1,5 +1,5 @@
 % Private UI runtime helper. Expected caller: resolvePreviewAxes.
-% Returns the requested axes from a previewArea or axes-like UI 5 adapter.
+% Returns the requested axes from a previewArea or axes-like runtime adapter.
 function ax = controlAxes(control, axisId)
     if nargin < 2
         axisId = "";

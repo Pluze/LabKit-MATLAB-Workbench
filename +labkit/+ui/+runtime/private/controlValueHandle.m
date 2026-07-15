@@ -1,5 +1,5 @@
 % Private UI runtime helper. Expected caller: semantic presentation helpers.
-% Returns the primary value-bearing MATLAB handle from a UI 5 control
+% Returns the primary value-bearing MATLAB handle from a runtime control
 % adapter. The adapter shape is internal and may vary by spec family.
 function handle = controlValueHandle(control)
     if isfield(control, 'valueHandle') && isvalidHandle(control.valueHandle)
