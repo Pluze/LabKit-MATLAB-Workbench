@@ -246,12 +246,12 @@ function fig = runLauncher(root)
         'ButtonPushedFcn', @onRunCodeCheck);
     btnCode.Layout.Row = 1;
     btnCode.Layout.Column = 1;
-    btnProfile = uibutton(maintenanceGrid, 'Text', 'Profile Next App', ...
-        'ButtonPushedFcn', @onArmPerformanceProfile);
+    btnProfile = uibutton(maintenanceGrid, 'Text', 'Profile Selected App', ...
+        'ButtonPushedFcn', @onProfileSelectedApp);
     btnProfile.Layout.Row = 1;
     btnProfile.Layout.Column = 2;
     if isprop(btnProfile, 'Tooltip')
-        btnProfile.Tooltip = ['Profile the next app launched from this launcher ' ...
+        btnProfile.Tooltip = ['Launch and profile the selected app ' ...
             'until that app window closes. Saves the report without opening a browser.'];
     end
     if isprop(btnPackage, 'Tooltip')
@@ -286,7 +286,7 @@ function fig = runLauncher(root)
     state = struct('apps', emptyAppStruct(), 'visibleApps', emptyAppStruct(), ...
         'selectedRow', 1, 'status', "Loading app list...", ...
         'packageCommands', strings(0, 1), ...
-        'profileNextLaunch', false, 'actionBusy', false, ...
+        'actionBusy', false, ...
         'tools', launcherToolAvailability(root));
     applyToolButtonTooltips();
     appTable.Data = cell(0, 7);
@@ -392,14 +392,19 @@ function fig = runLauncher(root)
         end
     end
 
-    function onArmPerformanceProfile(varargin)
+    function onProfileSelectedApp(varargin)
         if state.actionBusy
             return;
         end
-        state.profileNextLaunch = true;
-        btnProfile.Text = 'Profiler Armed';
-        setStatus(['Performance profiler armed. Open the selected app; ' ...
-            'the report will be written after the app closes.']);
+        if isempty(state.visibleApps)
+            setStatus('No app entry points found. Use GitHub Update to repair this install.');
+            return;
+        end
+        row = min(max(state.selectedRow, 1), numel(state.visibleApps));
+        app = state.visibleApps(row);
+        beginLauncherAction(profileStartStatus(app, false));
+        profileSelectedApp(app, false);
+        endLauncherAction();
     end
 
     function onPackageCheckedApps(usePcode)
@@ -594,13 +599,6 @@ function fig = runLauncher(root)
         beginLauncherAction(launchStartStatus(app, debugMode));
         setStatus(launchStartStatus(app, debugMode));
         drawnow;
-        if state.profileNextLaunch
-            state.profileNextLaunch = false;
-            btnProfile.Text = 'Profile Next App';
-            profileSelectedApp(app, debugMode);
-            endLauncherAction();
-            return;
-        end
         dlg = [];
         try
             dlg = uiprogressdlg(fig, 'Title', 'Open LabKit App', ...
@@ -747,7 +745,7 @@ function fig = runLauncher(root)
             btnCode.Tooltip = missingToolTooltip('tools/codecheck/runCodecheckReport.m or .p');
         end
         if state.tools.profile
-            btnProfile.Tooltip = ['Profile the next app launched from this launcher ' ...
+            btnProfile.Tooltip = ['Launch and profile the selected app ' ...
                 'until that app window closes. Saves the report without opening a browser.'];
         else
             btnProfile.Tooltip = missingToolTooltip('tools/profiling/profileLabKitTarget.m or .p');

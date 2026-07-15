@@ -163,7 +163,7 @@ classdef LauncherCodeAnalyzerTest < matlab.unittest.TestCase
             assertButtonEnabled(fig, "Open Selected App", true);
             assertButtonEnabled(fig, "Open Debug", true);
             assertButtonEnabled(fig, "Run Code Analyzer", false);
-            assertButtonEnabled(fig, "Profile Next App", false);
+            assertButtonEnabled(fig, "Profile Selected App", false);
             assertButtonEnabled(fig, "Package Checked", false);
             assertButtonEnabled(fig, "Checked P-code", false);
 
