@@ -48,6 +48,14 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
   unless CI licensing for independent child MATLAB processes has been proven in
   the workflow. The public CI entry should remain `buildtool headless`.
 - Keep architecture guardrails in the narrowest project-suite file that matches the concern.
+- Toolbox debt guardrails must distinguish an exact, temporary declared
+  product path from an undeclared dependency. A declaration names its source,
+  symbol, MathWorks product, owner, no-Toolbox fallback test, parity test, and replacement;
+  it does not suppress static product discovery. Reject stale declarations,
+  missing fallback evidence, broad product allowlists, and dynamic-call tricks.
+- Numeric/scientific replacement tests must prove deterministic repeated
+  results and compare app-consumed outputs with the Toolbox reference using a
+  justified tolerance. A screenshot or qualitative assertion is insufficient.
 - Use `tests/shared/` for small test-facing assertions, fixture builders, GUI
   probes, cleanup, and lookup helpers. Keep ordinary MATLAB helper functions
   as one-function files unless a grouped API materially improves call sites.

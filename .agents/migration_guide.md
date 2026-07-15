@@ -37,6 +37,7 @@ Active migration debt:
 ```text
 ui-runtime-v2: active
 app-project-and-result-contracts: active
+toolbox-product-debt: none
 ```
 
 Current facts from the architecture audit:
@@ -61,8 +62,10 @@ Current facts from the architecture audit:
   The earlier 32-function planning target is not a completion gate: the four
   remaining functions above it own distinct low-level framework, test-support,
   or app-facing contracts, and combining them would make the API less clear.
-- `docs/ui-runtime-redesign.md` is an implemented design record. `docs/ui.md`,
-  `docs/apps.md`, and `docs/architecture.md` describe the current contracts.
+- Current contracts live in `docs/ui.md`, `docs/apps.md`, and `docs/architecture.md`.
+
+Temporary MathWorks product debt is declared in `labkitToolboxDebt`; each entry
+needs a matching active record here and stays statically visible until retired.
 
 ## Goal Prompt: Migrate All Apps To UI Runtime V2
 

@@ -114,6 +114,13 @@ the earlier 32-function planning target was not forced through vague APIs.
   formats; subsequent saves use the current project codec.
 - Updated app requirements to `labkit.ui >=6 <7` and made UI 6 the breaking
   public facade boundary.
+- Replaced Video Marker's optional `vision.PointTracker` branch with one
+  deterministic app-owned multiscale patch matcher, retaining confidence,
+  constant-velocity fallback, subpixel coordinates, and forward-cache behavior
+  without Computer Vision Toolbox.
+- Added traceable temporary MathWorks-product debt declarations: rapid app work
+  must ship a base-MATLAB fallback plus deterministic and Toolbox-parity tests,
+  and product analysis must continue to see the dependency until replacement.
 
 #### User and data impact
 
@@ -138,6 +145,11 @@ The Phase-6 `buildtool changedFast` checkpoint passed 15 framework GUI tests,
 284 headless tests with one environment-assumption skip, and six representative
 GUI workflows. Final broad gates and manual pointer/visual checks are recorded
 when the branch reaches PR handoff.
+
+Video Marker replacement tests exercise integer and subpixel translation,
+flat-patch fallback, repeated-input determinism, prediction caching, and
+coordinate parity with `vision.PointTracker` when that product is installed.
+`buildtool baseMatlab` confirms the production source resolves only to MATLAB.
 
 #### Evidence
 

@@ -18,6 +18,16 @@ Apps are first-class deliverables. Do not treat them as examples for a hidden pl
   weights, or network-installed inference assets. Additional MathWorks product
   use must be deliberate, visible in app behavior or requirements, and must
   not trigger installation from an app callback.
+- A rapid-development MathWorks Toolbox path is temporary debt, not the app's
+  only implementation. Ship and directly test a comparable base-MATLAB path,
+  keep the Toolbox symbol visible to dependency analysis, register fallback
+  and parity tests through `labkitToolboxDebt`, and point its ledger record at the planned
+  repository-owned replacement. Availability checks must select a working
+  fallback; they must not conceal the dependency from guardrails.
+- App-owned numeric or scientific replacements must produce deterministic
+  outputs for repeated identical inputs. Their parity tests compare the values
+  the app actually consumes, including any downstream decision or export
+  fields, against the Toolbox reference with a documented tolerance.
 - Keep domain formulas, thresholds, integration rules, option defaults, plot labels, result fields, export columns, failed-row behavior, alert wording/trigger decisions, and log wording app-local unless the user explicitly approves a boundary change.
 - Private apps under `private_apps/apps/` or `LABKIT_PRIVATE_APP_ROOTS` should
   follow the same app-owned package shape as public apps, but their app

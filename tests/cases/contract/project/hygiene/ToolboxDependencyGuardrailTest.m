@@ -5,12 +5,14 @@ classdef ToolboxDependencyGuardrailTest < matlab.unittest.TestCase
         function appAndFacadeSourceAvoidsHardToolboxDependencies(testCase)
             root = setupLabKitTestPath();
             files = trackedSourceFiles(root);
-            actual = collectHardToolboxCalls(root, files);
+            actual = unexpectedHardToolboxCalls( ...
+                collectHardToolboxCalls(root, files), labkitToolboxDebt());
             testCase.verifyEmpty(actual, ...
                 ['apps, LabKit facades, and maintainer scripts must not hard-depend on non-base ' ...
-                'MATLAB toolbox helpers. Use LabKit primitives or app-local ' ...
-                'base-MATLAB implementations so every installation follows ' ...
-                'the same execution path. Findings: ' ...
+                'MATLAB toolbox helpers unless an exact temporary debt entry ' ...
+                'names the source, symbol, product, owner, fallback test, ' ...
+                'parity test, and replacement. Never hide dependencies from ' ...
+                'the scanner. Findings: ' ...
                 strjoin(cellstr(actual), ', ')]);
         end
 
@@ -19,10 +21,21 @@ classdef ToolboxDependencyGuardrailTest < matlab.unittest.TestCase
                 "Product ownership scan runs through buildtool baseMatlab.");
             root = setupLabKitTestPath();
             files = trackedSourceFiles(root);
-            findings = dependencyProductFindings(root, files);
+            findings = dependencyProductFindings(root, files, labkitToolboxDebt());
             testCase.verifyEmpty(findings, ...
-                ["Each source ownership domain must resolve only to base MATLAB. " + ...
+                ["Each source ownership domain must resolve only to MATLAB or " + ...
+                "an exact declared temporary toolbox debt. " + ...
                 "Findings: " + strjoin(findings, ", ")]);
+        end
+
+        function declaredToolboxDebtIsTraceable(testCase)
+            root = setupLabKitTestPath();
+            findings = toolboxDebtTraceabilityFindings(root, labkitToolboxDebt());
+            testCase.verifyEmpty(findings, ...
+                ["Every temporary toolbox dependency must be exact, have a " + ...
+                "resolvable fallback test, and remain active in the migration " + ...
+                "ledger until its app-owned replacement retires it. Findings: " + ...
+                strjoin(findings, ", ")]);
         end
 
         function hardDependencyPatternCatchesUnguardedCalls(testCase)
@@ -41,11 +54,23 @@ classdef ToolboxDependencyGuardrailTest < matlab.unittest.TestCase
             actual = collectHardToolboxCallsFromContents(root, files, contents);
 
             testCase.verifyEqual(actual(:), [
-                "apps/example/run.m:1"
-                "apps/example/run.m:2"
-                "apps/example/run.m:4"
-                "+labkit/+image/helper.m:1"
+                "apps/example/run.m:imresize:1"
+                "apps/example/run.m:fitcsvm:2"
+                "apps/example/run.m:imresize:4"
+                "+labkit/+image/helper.m:optimoptions:1"
             ]);
+        end
+
+        function debtDeclarationAllowsOnlyExactSourceAndSymbol(testCase)
+            findings = [
+                "apps/example/run.m:fitcsvm:2"
+                "apps/example/run.m:imresize:4"
+                "apps/other/run.m:fitcsvm:8"];
+            debt = struct('source', "apps/example/run.m", 'symbol', "fitcsvm");
+            actual = unexpectedHardToolboxCalls(findings, debt);
+            testCase.verifyEqual(actual(:), [
+                "apps/example/run.m:imresize:4"
+                "apps/other/run.m:fitcsvm:8"]);
         end
 
         function representativeWorkflowsRunWithToolboxHelpersShadowed(testCase)
@@ -220,8 +245,18 @@ function findings = collectHardToolboxCallsFromContents(~, files, contents)
                 isempty(regexp(char(line), pattern, 'once'))
                 continue;
             end
-            findings(end + 1) = file + ":" + string(iLine);
+            tokens = regexp(char(line), pattern, 'tokens', 'once');
+            symbol = string(tokens{2});
+            findings(end + 1) = file + ":" + symbol + ":" + string(iLine);
         end
+    end
+end
+
+function findings = unexpectedHardToolboxCalls(findings, debt)
+    for iDebt = 1:numel(debt)
+        prefix = slashPath(debt(iDebt).source) + ":" + ...
+            string(debt(iDebt).symbol) + ":";
+        findings(startsWith(findings, prefix)) = [];
     end
 end
 
@@ -259,7 +294,7 @@ function names = guardedToolboxFunctionNames()
         "parpool", "gpuArray", "optimoptions", "fmincon", "lsqcurvefit", "lsqnonlin"];
 end
 
-function findings = dependencyProductFindings(root, files)
+function findings = dependencyProductFindings(root, files, debt)
     groups = [ ...
         "+labkit"
         "apps/dic/dic_preprocess"
@@ -285,12 +320,65 @@ function findings = dependencyProductFindings(root, files)
         certain = logical([products.Certain]);
         productNames = string({products.Name});
         nonBase = productNames(certain & productNames ~= "MATLAB");
+        inGroupDebt = startsWith(slashPath(string({debt.source})), groups(iGroup) + "/");
+        declaredProducts = string({debt(inGroupDebt).product});
+        nonBase = setdiff(nonBase, declaredProducts, 'stable');
         for iProduct = 1:numel(nonBase)
             findings(end + 1) = groups(iGroup) + ": " + nonBase(iProduct);
         end
     end
     assert(all(assigned), ...
         'Every tracked source file must belong to a product-ownership scan group.');
+end
+
+function findings = toolboxDebtTraceabilityFindings(root, debt)
+    findings = strings(1, 0);
+    requiredFields = ["id", "source", "symbol", "product", "owner", ...
+        "fallbackTest", "parityTest", "replacement"];
+    if isempty(debt)
+        return;
+    end
+    if ~all(isfield(debt, cellstr(requiredFields)))
+        findings(end + 1) = "registry: missing required fields";
+        return;
+    end
+    ids = string({debt.id});
+    if numel(unique(ids)) ~= numel(ids)
+        findings(end + 1) = "registry: duplicate debt ids";
+    end
+    ledger = string(fileread(fullfile(root, '.agents', 'migration_guide.md')));
+    for iDebt = 1:numel(debt)
+        entry = debt(iDebt);
+        values = string({entry.id, entry.source, entry.symbol, entry.product, ...
+            entry.owner, entry.fallbackTest, entry.parityTest, entry.replacement});
+        if any(strlength(values) == 0)
+            findings(end + 1) = "registry entry " + string(iDebt) + ": empty field";
+            continue;
+        end
+        source = fullfile(root, char(entry.source));
+        if exist(source, 'file') ~= 2
+            findings(end + 1) = string(entry.id) + ": missing source";
+        elseif ~contains(string(fileread(source)), string(entry.symbol))
+            findings(end + 1) = string(entry.id) + ": symbol absent from source";
+        end
+        if ~contains(ledger, string(entry.id))
+            findings(end + 1) = string(entry.id) + ": missing active ledger record";
+        end
+        if ~testSelectorExists(entry.fallbackTest)
+            findings(end + 1) = string(entry.id) + ": fallback test not found";
+        end
+        if ~testSelectorExists(entry.parityTest)
+            findings(end + 1) = string(entry.id) + ": parity test not found";
+        end
+    end
+end
+
+function tf = testSelectorExists(selector)
+    try
+        tf = ~isempty(matlab.unittest.TestSuite.fromName(char(selector)));
+    catch
+        tf = false;
+    end
 end
 
 function cleanupShadowFolder(folder)

@@ -26,11 +26,23 @@ packages, download model weights, or require a network connection on first
 use. This keeps source checkouts, offline packages, and restored lab systems
 reproducible.
 
-An app may use a MathWorks product already available in the MATLAB installation
-when the capability is deliberate and its unavailable state remains
-understandable. Adding any third-party runtime is an architecture and deployment
-decision requiring explicit approval; it is not an ordinary app-local
-implementation choice.
+During rapid development, an app may temporarily accelerate a capability with
+a MathWorks Toolbox only when it also ships a repository-owned base-MATLAB
+implementation with comparable user-visible behavior. The app must remain
+usable without the product, and automated tests must exercise that fallback.
+When values feed scientific interpretation, branching, exports, or later
+calculations, identical inputs must give deterministic results and a parity
+test must compare app-consumed outputs against the Toolbox reference within a
+documented tolerance. Visual similarity is not sufficient evidence.
+The exact source, symbol, product, owner, fallback evidence, and replacement
+plan plus fallback and parity evidence are recorded as active migration debt. Dependency analysis continues to
+report the Toolbox call; hiding it behind reflection or string dispatch is not
+an accepted compatibility technique. The debt closes by removing the Toolbox
+branch once the owned implementation replaces it.
+
+Adding any third-party runtime remains an architecture and deployment decision
+requiring explicit approval; it is not an ordinary app-local implementation
+choice.
 
 ## Runtime Entrypoints
 

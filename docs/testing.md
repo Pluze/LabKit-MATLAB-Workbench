@@ -92,11 +92,19 @@ source to the public repository. For temporary local checks,
 the sentinel file.
 
 Toolbox compatibility guardrails protect the base-MATLAB user path. They
-reject non-base calls under `apps/` and `+labkit/`, verify MATLAB's dependency
-analysis resolves source only to the `MATLAB` product, and run representative
-workflows with known toolbox helper names shadowed on the MATLAB path. App
-workflows use the same base-MATLAB implementation whether or not optional
-toolboxes happen to be installed.
+reject undeclared non-base calls under `apps/` and `+labkit/`, verify MATLAB's
+dependency analysis resolves every product, and run representative workflows
+with known toolbox helpers shadowed on the MATLAB path. A temporary MathWorks
+product path is accepted only through an exact entry in
+`tests/runner/labkitToolboxDebt.m` that names its source, symbol, product,
+owner, no-Toolbox fallback test, Toolbox parity test, and repository-owned
+replacement. Numeric or scientific replacements must also prove deterministic
+repeated results and compare the outputs consumed by the app, including
+downstream decisions or exports, within a documented tolerance. The same ID
+must remain active in `.agents/migration_guide.md`. This records debt without
+hiding it: dynamic invocation does not satisfy the contract, broad product
+allowlists are rejected, and the base-MATLAB path must provide comparable
+user-visible behavior until the Toolbox branch is deleted.
 
 Private workspaces under `private_apps/` are separate Git repositories, so the
 public `changed` and `changedFast` tasks do not discover their diffs. Validate a
