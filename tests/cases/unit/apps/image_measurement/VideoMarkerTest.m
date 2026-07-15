@@ -27,6 +27,9 @@ classdef VideoMarkerTest < matlab.unittest.TestCase
             testCase.verifyEqual(newIndex, 1);
             testCase.verifyEqual(skeleton.pointNames, ["knee"; "hip"]);
             testCase.verifyEqual(skeleton.edges, [1 2]);
+            skeleton = video_marker.skeletonDefinition.removeEdge(skeleton, 1);
+            testCase.verifyEmpty(skeleton.edges);
+            skeleton = video_marker.skeletonDefinition.addEdge(skeleton, 1, 2);
             skeleton = video_marker.skeletonDefinition.removePoint(skeleton, 1);
             testCase.verifyEqual(skeleton.pointNames, "hip");
             testCase.verifyEmpty(skeleton.edges);

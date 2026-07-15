@@ -121,6 +121,9 @@ the earlier 32-function planning target was not forced through vague APIs.
 - Added traceable temporary MathWorks-product debt declarations: rapid app work
   must ship a base-MATLAB fallback plus deterministic and Toolbox-parity tests,
   and product analysis must continue to see the dependency until replacement.
+- Re-audited already migrated apps, removed five dead or presenter-only helper
+  files, and updated helper-quality classification from retired role packages
+  to the current workflow-first lifecycle/state/result/UI boundaries.
 
 #### User and data impact
 

@@ -314,6 +314,23 @@ function className = boundaryClass(path)
         className = "test-api";
     elseif startsWith(path, "tests/runner/")
         className = "runner-api";
+    elseif contains(path, "/+resultFiles/") && ...
+            any(startsWith(name, ["create", "save", "write"]))
+        className = "result-file-boundary";
+    elseif contains(path, "/+appLifecycle/") && ...
+            any(startsWith(name, ["apply", "create", "import", "migrate", "validate"]))
+        className = "app-lifecycle-contract";
+    elseif contains(path, "/+appState/") && ...
+            any(startsWith(name, ["empty", "default", "initial"]))
+        className = "app-state-factory";
+    elseif contains(path, "/+appState/") && any(startsWith(name, ...
+            ["active", "clear", "count", "has", "is", "read", "restore", ...
+            "set", "with"]))
+        className = "app-state-contract";
+    elseif any(endsWith(name, ["Choices", "Items", "Labels", "Names"]))
+        className = "user-visible-enum";
+    elseif startsWith(name, "default")
+        className = "app-state-factory";
     elseif contains(path, "/+export/") && startsWith(name, "write")
         className = "export-side-effect";
     elseif contains(path, "/+io/") && startsWith(name, "prompt")
@@ -346,10 +363,12 @@ function className = boundaryClass(path)
 end
 
 function className = allowedExceptionClass(boundary)
-    keepClasses = ["dialog-side-effect", "export-side-effect", ...
+    keepClasses = ["app-lifecycle-contract", "app-state-contract", ...
+        "app-state-factory", "dialog-side-effect", "export-side-effect", ...
         "input-policy", "public-framework-api", "runner-api", ...
-        "io-side-effect", "state-contract", "state-factory", "test-api", ...
-        "ui-builder-adapter"];
+        "io-side-effect", "result-file-boundary", "state-contract", ...
+        "state-factory", "test-api", "ui-builder-adapter", ...
+        "user-visible-enum"];
     if any(string(boundary) == keepClasses)
         className = boundary;
     else

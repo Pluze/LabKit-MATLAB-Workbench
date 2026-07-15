@@ -205,11 +205,13 @@ function spec = coordinateSpec(enabled, state, dimension)
         item = state.project.inputs.items(currentIndex(state));
         value = item.centerXY(dimension);
         [geometry, ~] = previewGeometry(state);
-        coordinateLimits = batch_crop.userInterface.centerCoordinateLimits(geometry);
+        scale = batch_crop.cropGeometry.geometryScale(geometry);
         if dimension == 1
-            limits = coordinateLimits.x;
+            limits = [1 - double(geometry.padding.left) / scale, ...
+                double(geometry.sourceWidth) + double(geometry.padding.right) / scale];
         else
-            limits = coordinateLimits.y;
+            limits = [1 - double(geometry.padding.top) / scale, ...
+                double(geometry.sourceHeight) + double(geometry.padding.bottom) / scale];
         end
     end
     spec = struct("Enabled", enabled, "Value", value, "Limits", limits);
@@ -218,7 +220,9 @@ end
 function value = cropLimit(items, index)
     value = 100000;
     if index >= 1 && index <= numel(items) && ~isempty(items(index).image)
-        value = batch_crop.cropGeometry.cropSizeUpperLimit(items(index).image);
+        imageData = items(index).image;
+        value = max(1, ceil(2 .* hypot(double(size(imageData, 2)), ...
+            double(size(imageData, 1)))));
     end
 end
 
