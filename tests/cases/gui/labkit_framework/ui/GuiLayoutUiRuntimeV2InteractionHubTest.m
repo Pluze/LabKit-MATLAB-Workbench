@@ -11,7 +11,36 @@ classdef GuiLayoutUiRuntimeV2InteractionHubTest < matlab.unittest.TestCase
             setupLabKitTestPath();
             verifyControlledInteraction();
         end
+
+        function controlled_interval_routes_semantic_wheel_events(testCase)
+            setupLabKitTestPath();
+            verifyControlledInterval();
+        end
     end
+end
+
+function verifyControlledInterval()
+    h = guiTestHelpers();
+    h.assertUifigureAvailable();
+    oldMode = getenv('LABKIT_GUI_TEST_MODE');
+    setenv('LABKIT_GUI_TEST_MODE', 'hidden');
+    cleanupMode = onCleanup(@() setenv('LABKIT_GUI_TEST_MODE', oldMode));
+    cleanupFigures = onCleanup(@() h.closeAllFigures());
+    fig = labkit.ui.runtime.launch( ...
+        @intervalDefinition, @requirements, @versionInfo);
+    h.waitForUiIdle(fig);
+    runtime = getappdata(fig, 'labkitUiAppRuntime');
+    resource = interactionResource(runtime.resources, "timeRange");
+    assert(resource.spec.Kind == "interval" && ...
+        resource.spec.ScrollEvent == "windowScrolled", ...
+        'Interval interactions should normalize their semantic wheel event.');
+    runtime.interactionHub.routeWheel("image", ...
+        struct("VerticalScrollCount", 1));
+    runtime = getappdata(fig, 'labkitUiAppRuntime');
+    assert(runtime.state.project.annotations.scrollCount == 1, ...
+        'A routed interval wheel gesture should enqueue one semantic event.');
+    delete(fig);
+    clear cleanupFigures cleanupMode;
 end
 
 function verifyHubMechanics()
@@ -137,6 +166,12 @@ function def = controlledDefinition()
     def = definitionBase(@controlledLayout, actions, @controlledPresentation);
 end
 
+function def = intervalDefinition()
+    actions = struct("rangeEdited", @rangeEdited, ...
+        "windowScrolled", @windowScrolled);
+    def = definitionBase(@controlledLayout, actions, @intervalPresentation);
+end
+
 function def = definitionBase(layout, actions, presenter)
     project = struct("Version", 1, "Create", @createProject, ...
         "Validate", @(~) true, "Migrations", {{}});
@@ -155,7 +190,7 @@ function project = createProject()
         "inputs", struct(), ...
         "parameters", struct(), ...
         "annotations", struct("points", [10 10; 20 20], ...
-            "editCount", 0), ...
+            "editCount", 0, "range", [NaN NaN], "scrollCount", 0), ...
         "results", struct(), ...
         "extensions", struct());
 end
@@ -200,10 +235,27 @@ function view = controlledPresentation(state)
         "ChangePolicy", "commit");
 end
 
+function view = intervalPresentation(state)
+    view = struct();
+    view.interactions.timeRange = struct( ...
+        "Kind", "interval", "Targets", "image", ...
+        "Value", state.project.annotations.range, ...
+        "Event", "rangeEdited", "ScrollEvent", "windowScrolled");
+end
+
 function state = pointsEdited(state, event, ~)
     state.project.annotations.points = event.value;
     state.project.annotations.editCount = ...
         state.project.annotations.editCount + 1;
+end
+
+function state = rangeEdited(state, event, ~)
+    state.project.annotations.range = event.value;
+end
+
+function state = windowScrolled(state, ~, ~)
+    state.project.annotations.scrollCount = ...
+        state.project.annotations.scrollCount + 1;
 end
 
 function state = noop(state, ~, ~)

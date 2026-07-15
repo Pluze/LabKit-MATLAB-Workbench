@@ -43,9 +43,9 @@ Current facts from the architecture audit:
 
 - Package-root app `run.m` orchestration and `+ui/runApp.m` lifecycle adapters
   are retired.
-- Nine public apps now use Runtime V2: `chrono_overlay`, `cic`, `csc`, `eis`,
+- Ten public apps now use Runtime V2: `chrono_overlay`, `cic`, `csc`, `eis`,
   `vt_resistance`, `dic_postprocess`, `batch_crop`, `dic_preprocess`, and
-  `video_marker`. Eleven public apps and
+  `video_marker`, plus `rhs_preview`. Ten public apps and
   the nested private app still use the v1 definition path.
 - The five pilots use canonical project/session state, native presenters,
   registered renderers, managed interactions/resources, standard project
@@ -379,11 +379,11 @@ archetype so one framework issue is solved once per wave.
 ```text
 phase: 5/full-app-migration-waves
 status: in progress
-completed contracts: CIC source-only project, durable analysis/view parameters, session-owned decoded and analyzed DTA cache, native presenter and registered axis renderer, standard result manifest; CSC source-only project, bound comparison/plot settings, session-owned curve selection and decoded DTA cache, pure comparison/table/two-axis presentation, and result manifests for both export forms; EIS source-only project, bound plot/export parameters, session-owned multi-file selection and decoded cache, pure summary/overlay presentation, and standard result manifest; VT Resistance source-only project, bound resistance/plot settings, session-owned decoded and analyzed DTA cache, pure summary/table/two-axis presentation, and standard result manifest
-migrated apps: cic; csc; eis; vt_resistance
-compatibility retained: CIC calculations, threshold defaults, pulse modes, summary meanings, plot annotations, 8-column batch table, and 14-column CSV contract; CSC CV/CT parsing, all/single-cycle selection, comparison modes, edge-cycle filtering, plot/trim behavior, six-column visible table, full all-cycle CSV, and point-level CV CSV contracts; EIS axis choices, multi-selection, Nyquist/Bode plotting, log-axis behavior, summary, and plot-data CSV contract; VT Resistance pulse detection, steady-window and voltage modes, resistance calculations, double-axis annotations, 9-column batch table, and 15-column CSV contract
-tests: CIC export/project/presenter, view, and calculation tests plus hidden GUI load/recompute/plot/export/project-reopen workflow passed 9/9; CSC 42-test electrochem non-GUI selection and hidden GUI load/compare/plot/export/project-reopen workflow passed at the migration checkpoint; EIS hidden GUI load/selection/log-plot/export/project-reopen workflow passed at its focused checkpoint; VT Resistance passed 42/42 electrochem non-GUI tests and its hidden Runtime V2 load/recompute/plot/export/project-reopen workflow
-next app: rhs_preview
+completed contracts: CIC source-only project, durable analysis/view parameters, session-owned decoded and analyzed DTA cache, native presenter and registered axis renderer, standard result manifest; CSC source-only project, bound comparison/plot settings, session-owned curve selection and decoded DTA cache, pure comparison/table/two-axis presentation, and result manifests for both export forms; EIS source-only project, bound plot/export parameters, session-owned multi-file selection and decoded cache, pure summary/overlay presentation, and standard result manifest; VT Resistance source-only project, bound resistance/plot settings, session-owned decoded and analyzed DTA cache, pure summary/table/two-axis presentation, and standard result manifest; app-neutral controlled interval drag and semantic wheel events; RHS Preview portable RHS/protocol/filter sources, durable channel/filter decisions, session-owned header/index/window caches, pure presentation, controlled waveform interval/zoom, and manifests for both JSON outputs
+migrated apps: cic; csc; eis; vt_resistance; rhs_preview
+compatibility retained: CIC calculations, threshold defaults, pulse modes, summary meanings, plot annotations, 8-column batch table, and 14-column CSV contract; CSC CV/CT parsing, all/single-cycle selection, comparison modes, edge-cycle filtering, plot/trim behavior, six-column visible table, full all-cycle CSV, and point-level CV CSV contracts; EIS axis choices, multi-selection, Nyquist/Bode plotting, log-axis behavior, summary, and plot-data CSV contract; VT Resistance pulse detection, steady-window and voltage modes, resistance calculations, double-axis annotations, 9-column batch table, and 15-column CSV contract; RHS lazy index/window reads, adaptive pan/zoom, waveform ROI, protocol draft, manual filter curation, and existing JSON schemas/filenames
+tests: CIC export/project/presenter, view, and calculation tests plus hidden GUI load/recompute/plot/export/project-reopen workflow passed 9/9; CSC 42-test electrochem non-GUI selection and hidden GUI load/compare/plot/export/project-reopen workflow passed at the migration checkpoint; EIS hidden GUI load/selection/log-plot/export/project-reopen workflow passed at its focused checkpoint; VT Resistance passed 42/42 electrochem non-GUI tests and its hidden Runtime V2 load/recompute/plot/export/project-reopen workflow; Runtime V2 interaction-hub tests passed 3/3 including interval wheel routing; RHS Preview passed 33/33 neurophysiology non-GUI tests and its hidden indexing/preview/filter/export/project-reopen workflow
+next app: nerve_response_analysis
 blocker:
 ```
 
@@ -395,6 +395,7 @@ Phase-5 author-cost evidence against pre-V2 commit `6bfd74c8`:
 | `csc` | 2267 -> 2271 | 644 -> 316 | retain the near-neutral total after bindings and pure presentation; deleted direct-control refresh orchestration and two dialog-only export wrappers |
 | `eis` | 903 -> 1001 | 200 -> 201 | retain explicit source/session/presenter/result contracts; removed UI-registry reads and no-op refresh actions, while axis-label ownership is centralized |
 | `vt_resistance` | 1558 -> 1689 | 253 -> 218 | retain explicit source/session/presenter/result contracts and domain-owned dual-axis annotations; removed direct-control rendering, UI-derived analysis options, startup action, and no-op plot refresh |
+| `rhs_preview` | 2396 -> 2371 | 643 -> 463 | naturally smaller after replacing closure state, direct-control refresh, figure callback ownership, dialog wrappers, and debug glue with bindings, pure presentation, controlled interval interaction, and runtime services |
 
 Pilot durable/resource focus:
 

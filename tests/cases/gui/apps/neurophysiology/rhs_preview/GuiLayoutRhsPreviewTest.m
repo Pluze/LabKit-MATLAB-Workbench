@@ -40,6 +40,13 @@ classdef GuiLayoutRhsPreviewTest < matlab.unittest.TestCase
                 'RHS preview channel table should include indexed amplifier channels.');
             assert(any(contains(string(workflow.textAreaValue('details')), 'C-001')), ...
                 'RHS details should expose synthetic amplifier channel names.');
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            assert(runtime.definition.contractVersion == 2, ...
+                'RHS Preview must execute through Runtime V2.');
+            assert(~isfield(runtime.state.project.inputs, 'info'), ...
+                'RHS project must not persist decoded header/index data.');
+            assert(~isempty(runtime.state.session.cache.index), ...
+                'RHS index data should live in session cache.');
 
             workflow.chooseFiles('rhsFolder', [string(primaryPath); string(secondaryPath)]);
             workflow.click('Add RHS files or folder');
@@ -48,6 +55,43 @@ classdef GuiLayoutRhsPreviewTest < matlab.unittest.TestCase
             filterRows = workflow.tableData('fileFilterTable');
             assert(size(filterRows, 1) == 2, ...
                 'RHS filter table should include both selected synthetic RHS files.');
+
+            outputFolder = string(tempname);
+            mkdir(outputFolder);
+            outputCleanup = onCleanup(@() removeTempFolder(outputFolder));
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            outputs = ["rhs_protocol_draft.json", "rhs_filter_record.json"];
+            outputIndex = 0;
+            runtime.request.outputChooser = @chooseOutput;
+            setappdata(fig, 'labkitUiAppRuntime', runtime);
+            workflow.click('Save Protocol Draft');
+            workflow.click('Save Filter Record');
+            assert(isfile(fullfile(outputFolder, outputs(1))));
+            assert(isfile(fullfile(outputFolder, outputs(2))));
+            assert(isfile(fullfile(outputFolder, ...
+                'rhs_protocol_draft.labkit.json')));
+            assert(isfile(fullfile(outputFolder, ...
+                'rhs_filter_record.labkit.json')));
+
+            projectPath = fullfile(outputFolder, 'rhs-preview-project.mat');
+            labkit.ui.runtime.saveState(fig, projectPath);
+            saved = load(projectPath, 'labkitProject');
+            assert(saved.labkitProject.app.payloadVersion == 1);
+            assert(~isfield(saved.labkitProject.payload.inputs, 'index'));
+            workflow.click('Reset');
+            labkit.ui.runtime.loadState(fig, projectPath);
+            h.waitForUiIdle(fig);
+            assert(workflow.previewChildCount('preview') > 0, ...
+                'Project reopen should rebuild the indexed preview cache.');
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            assert(numel(runtime.state.project.inputs.filterSources) == 2);
+            clear outputCleanup;
+
+            function [filename, folderPath] = chooseOutput(~, ~, ~)
+                outputIndex = outputIndex + 1;
+                filename = char(outputs(outputIndex));
+                folderPath = char(outputFolder);
+            end
         end
     end
 end

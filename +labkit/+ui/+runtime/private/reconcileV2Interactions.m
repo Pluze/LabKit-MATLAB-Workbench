@@ -66,6 +66,12 @@ function controlled = createControlledInteraction(hub, id, spec)
                 spec.Value, options);
             editors = {editor};
             update = @updateRectangle;
+        case "interval"
+            editor = createIntervalEditor( ...
+                hub.adapter(spec.Targets(1), group), spec, ...
+                @emitValue, @emitScroll);
+            editors = {editor};
+            update = @updateInterval;
         otherwise
             error('labkit:ui:runtime:UnknownInteractionKind', ...
                 'Interaction "%s" has unsupported Kind "%s".', id, spec.Kind);
@@ -90,6 +96,10 @@ function controlled = createControlledInteraction(hub, id, spec)
 
     function updateRectangle(value)
         withSuppression(@() editors{1}.setPosition(value));
+    end
+
+    function updateInterval(value)
+        withSuppression(@() editors{1}.setRange(value));
     end
 
     function setAnchorValue(targetEditor, value)
@@ -122,6 +132,12 @@ function controlled = createControlledInteraction(hub, id, spec)
             hub.point(spec.Targets(1)), "commit");
     end
 
+    function emitScroll(value)
+        if ~suppressed && strlength(spec.ScrollEvent) > 0
+            hub.dispatch(spec.ScrollEvent, id, value, "commit");
+        end
+    end
+
     function withSuppression(callback)
         suppressed = true;
         cleanupSuppression = onCleanup(@() clearSuppression());
@@ -152,6 +168,7 @@ function spec = normalizeSpec(id, value)
     spec.Event = string(requiredValue(value, 'Event', id));
     spec.BackgroundEvent = string(optionValue( ...
         value, 'BackgroundEvent', ""));
+    spec.ScrollEvent = string(optionValue(value, 'ScrollEvent', ""));
     spec.ChangePolicy = string(optionValue( ...
         value, 'ChangePolicy', 'commit'));
     spec.ImageSize = optionValue(value, 'ImageSize', []);
@@ -182,7 +199,119 @@ function tf = sameIdentity(left, right)
         isequaln(left.Options, right.Options) && ...
         left.Event == right.Event && ...
         left.BackgroundEvent == right.BackgroundEvent && ...
+        left.ScrollEvent == right.ScrollEvent && ...
         left.ChangePolicy == right.ChangePolicy;
+end
+
+function editor = createIntervalEditor(runtime, spec, onChanged, onScroll)
+    ax = runtime.axes();
+    range = normalizeInterval(spec.Value);
+    color = optionValue(spec.Options, 'color', [0.2 0.55 1]);
+    faceColor = optionValue(spec.Options, 'faceColor', color);
+    faceAlpha = optionValue(spec.Options, 'faceAlpha', 0.12);
+    overlay = gobjects(1, 0);
+    startX = NaN;
+    options = struct("name", "intervalEditor", ...
+        "onPointerDown", @pointerDown, ...
+        "onScroll", @scroll, "installScrollWheel", true);
+    session = runtime.createSession(options);
+    session.activate();
+    editor = struct("setRange", @setRange, "delete", @deleteEditor);
+    refresh();
+
+    function setRange(value)
+        range = normalizeInterval(value);
+        refresh();
+    end
+
+    function pointerDown(~, ~)
+        point = axesPoint();
+        if ~isfinite(point)
+            return;
+        end
+        startX = point;
+        range = [point point];
+        refresh();
+        session.captureDrag(@drag, @release);
+    end
+
+    function drag(~, ~)
+        point = axesPoint();
+        if isfinite(point)
+            range = sort([startX point]);
+            refresh();
+        end
+    end
+
+    function release(~, ~)
+        if all(isfinite(range)) && diff(range) > 0
+            onChanged(range);
+        end
+    end
+
+    function scroll(~, event)
+        point = axesPoint();
+        count = scrollCount(event);
+        if count ~= 0
+            onScroll(struct("anchor", point, "count", count));
+        end
+    end
+
+    function refresh()
+        if ~isgraphics(ax)
+            return;
+        end
+        if isempty(overlay) || ~all(isgraphics(overlay))
+            overlay = patch(ax, NaN, NaN, faceColor, ...
+                'FaceAlpha', faceAlpha, 'EdgeColor', color, ...
+                'LineStyle', ':', 'LineWidth', 1, 'HitTest', 'off', ...
+                'PickableParts', 'none');
+        end
+        if all(isfinite(range))
+            limits = ylim(ax);
+            overlay.XData = [range(1) range(2) range(2) range(1)];
+            overlay.YData = [limits(1) limits(1) limits(2) limits(2)];
+        else
+            overlay.XData = NaN;
+            overlay.YData = NaN;
+        end
+        session.setGraphics(overlay);
+        session.refresh();
+    end
+
+    function value = axesPoint()
+        current = double(ax.CurrentPoint);
+        value = current(1, 1);
+    end
+
+    function deleteEditor()
+        session.delete();
+        if ~isempty(overlay) && all(isgraphics(overlay))
+            delete(overlay);
+        end
+        overlay = gobjects(1, 0);
+    end
+end
+
+function value = normalizeInterval(value)
+    value = double(value(:).');
+    if numel(value) ~= 2 || ~all(isfinite(value))
+        value = [NaN NaN];
+    else
+        value = sort(value);
+    end
+end
+
+function count = scrollCount(event)
+    count = 0;
+    if isstruct(event) && isfield(event, 'VerticalScrollCount')
+        count = double(event.VerticalScrollCount);
+    elseif isobject(event) && isprop(event, 'VerticalScrollCount')
+        count = double(event.VerticalScrollCount);
+    end
+    if ~isscalar(count) || ~isfinite(count)
+        count = 0;
+    end
 end
 
 function options = anchorOptions(spec, callback)
