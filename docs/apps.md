@@ -186,6 +186,10 @@ the display curve interactively.
 already been tracked or manually marked. It accepts generic wide coordinate
 CSV/TSV/TXT files, LabKit coordinate CSV shapes with `point__x` and `point__y`
 columns, and MAT pose files with `coords` plus `pointNames`.
+It also reads explicit Video Marker project MAT files and their recovery or
+autosave MAT files directly, extracting the saved skeleton names and frame
+coordinates so users do not need to export an intermediate CSV first. Gait
+analysis still owns its role mapping, frame-rate choice, and scale settings.
 
 Users map the iliac, hip, knee, ankle, and foot roles, optionally set frame
 rate, scale calibration, and whether exported coordinates should use the first

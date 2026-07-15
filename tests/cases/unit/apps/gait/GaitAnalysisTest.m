@@ -86,6 +86,44 @@ classdef GaitAnalysisTest < matlab.unittest.TestCase
             testCase.verifyTrue(any(string(stepTable.Properties.VariableNames) == "hip_rom_deg"));
         end
 
+        function video_marker_project_and_autosave_import_as_pose(testCase)
+            setupLabKitTestPath();
+            folder = string(tempname);
+            mkdir(folder);
+            cleanup = onCleanup(@() cleanupFolder(folder));
+
+            skeleton = video_marker.skeletonDefinition.fromParts( ...
+                ["iliac"; "hip"; "knee"; "ankle"; "foot"], ...
+                [1 2; 2 3; 3 4; 4 5]);
+            frames = video_marker.frameAnnotations.emptyAnnotations(4, 5);
+            expected = reshape(1:40, [4 5 2]);
+            frames.coords = expected;
+            project = video_marker.appLifecycle.createProject();
+            project.annotations.skeleton = skeleton;
+            project.annotations.frames = frames;
+            labkitProject = struct( ...
+                "format", "labkit.project", ...
+                "formatVersion", struct("major", 1, "minor", 0), ...
+                "app", struct("id", "video_marker", "payloadVersion", 1), ...
+                "document", struct(), "producer", struct(), ...
+                "sources", struct([]), "payload", project);
+
+            projectPath = fullfile(folder, "video-marker-project.mat");
+            save(projectPath, "labkitProject");
+            pose = gait_analysis.sourceFiles.readPoseFile(projectPath);
+            testCase.verifyEqual(pose.sourceFormat, ...
+                "mat.labkitMarkerProject");
+            testCase.verifyEqual(pose.pointNames, skeleton.pointNames);
+            testCase.verifyEqual(pose.coords, expected);
+            testCase.verifyEqual(pose.frameIndex, (1:4).');
+            testCase.verifyTrue(all(isnan(pose.time)));
+
+            autosavePath = fullfile(folder, "recovery.mat");
+            save(autosavePath, "labkitProject");
+            autosavePose = gait_analysis.sourceFiles.readPoseFile(autosavePath);
+            testCase.verifyEqual(autosavePose.coords, expected);
+        end
+
         function coordinate_export_keeps_pixels_and_scaled_origin_columns(testCase)
             setupLabKitTestPath();
             folder = string(tempname);

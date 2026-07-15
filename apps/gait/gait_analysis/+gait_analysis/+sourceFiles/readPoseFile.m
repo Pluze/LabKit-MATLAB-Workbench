@@ -60,6 +60,19 @@ end
 
 function pose = readPoseMat(filepath)
     raw = load(filepath);
+    if isfield(raw, "labkitProject")
+        pose = poseFromMarkerEnvelope(raw.labkitProject);
+        pose.sourceFormat = "mat.labkitMarkerProject";
+        return;
+    end
+    legacyNames = ["videoMarkerProject", "imageMarkerProject"];
+    for name = legacyNames
+        if isfield(raw, name)
+            pose = poseFromMarkerPayload(raw.(name));
+            pose.sourceFormat = "mat.legacyMarkerProject";
+            return;
+        end
+    end
     if isfield(raw, "pose")
         pose = normalizePoseStruct(raw.pose);
         pose.sourceFormat = "mat.pose";
@@ -81,6 +94,47 @@ function pose = readPoseMat(filepath)
     pose.frameIndex = optionalVector(raw, "frameIndex", size(pose.coords, 1));
     pose.time = optionalVector(raw, "time", size(pose.coords, 1));
     pose.unitName = optionalString(raw, "unitName", "px");
+    pose = validatePose(pose);
+end
+
+function pose = poseFromMarkerEnvelope(envelope)
+    if ~isstruct(envelope) || ~isscalar(envelope) || ...
+            ~isfield(envelope, "format") || ...
+            string(envelope.format) ~= "labkit.project" || ...
+            ~isfield(envelope, "app") || ...
+            ~isfield(envelope.app, "id") || ...
+            string(envelope.app.id) ~= "video_marker" || ...
+            ~isfield(envelope, "payload")
+        error('labkit_GaitAnalysis_app:InvalidMarkerProject', ...
+            'The MAT file is not a supported Video Marker project or autosave.');
+    end
+    pose = poseFromMarkerPayload(envelope.payload);
+end
+
+function pose = poseFromMarkerPayload(payload)
+    if isfield(payload, "annotations") && ...
+            isfield(payload.annotations, "frames") && ...
+            isfield(payload.annotations, "skeleton")
+        frames = payload.annotations.frames;
+        skeleton = payload.annotations.skeleton;
+    elseif all(isfield(payload, ["annotations", "skeleton"]))
+        frames = payload.annotations;
+        skeleton = payload.skeleton;
+    else
+        error('labkit_GaitAnalysis_app:InvalidMarkerProject', ...
+            'Marker project annotations or skeleton data are missing.');
+    end
+    if ~isstruct(frames) || ~isfield(frames, "coords") || ...
+            ~isstruct(skeleton) || ~isfield(skeleton, "pointNames")
+        error('labkit_GaitAnalysis_app:InvalidMarkerProject', ...
+            'Marker project coordinate data are malformed.');
+    end
+    pose = gait_analysis.sourceFiles.emptyPoseData();
+    pose.coords = double(frames.coords);
+    pose.pointNames = string(skeleton.pointNames(:));
+    pose.frameIndex = (1:size(pose.coords, 1)).';
+    pose.time = NaN(size(pose.coords, 1), 1);
+    pose.unitName = "px";
     pose = validatePose(pose);
 end
 
