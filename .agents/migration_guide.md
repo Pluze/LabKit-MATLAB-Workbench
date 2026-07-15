@@ -326,14 +326,31 @@ durable-project archetypes all work through the same target contracts.
 
 ```text
 phase: 4/archetype-pilots
-status: in progress
-completed contracts: five app-neutral V2 functional paths; dynamic presentation constraints before bindings; optional app-owned resume creation/application; service-owned input dialogs; reusable scale-bar geometry; Video Marker framework recovery and read-only legacy project import
+status: complete
+completed contracts: five app-neutral V2 functional paths; dynamic presentation constraints before bindings; optional app-owned resume creation/application; service-owned input dialogs; reusable scale-bar geometry; framework-owned workflow-log presentation and source upsert; source-only DIC Postprocess projects; source-linked Batch Crop tasks with decoded images in session cache and ordered v1-to-v2 migration; Video Marker framework recovery and read-only legacy project import
 migrated apps: chrono_overlay; dic_postprocess; batch_crop; dic_preprocess; video_marker
 compatibility retained: v1 runtime for the remaining public/private fleet; strict v1 snapshot imports; named Video Marker legacy project import; published scientific inputs, calculations, plots, outputs, and workflow behavior
-tests: all five pilot unit/GUI suites passed at their checkpoints; final Video Marker, reusable geometry, and Runtime V2 project validation passed 16/16
-next phase: author-cost audit and simplification of all five pilots before full app waves; include app production-line delta, largest-file delta, and remaining app-owned runtime glue in the exit evidence
+tests: all five pilot unit/GUI suites passed at their checkpoints; final Batch Crop ownership checkpoint passed 39 image-family unit/guardrail tests and its GUI workflow through buildtool changed
+next phase: full app migration waves, beginning with the four electrochem apps
 blocker:
 ```
+
+Author-cost audit against pre-V2 commit `6bfd74c8`:
+
+| Pilot | Production lines before -> after | Largest file before -> after | Audit decision |
+| --- | ---: | ---: | --- |
+| `chrono_overlay` | 902 -> 890 | 194 -> 180 | naturally smaller after shared workflow services |
+| `dic_postprocess` | 946 -> 1084 | 224 -> 209 | retain app-owned source decoding, result summaries, and overlay contracts |
+| `batch_crop` | 3368 -> 3812 | 619 -> 673 | retain explicit task/source/cache assembly and v1 project migration; decoded pixels no longer live in durable tasks |
+| `dic_preprocess` | 2327 -> 2127 | 637 -> 612 | naturally smaller after runtime interaction and source services |
+| `video_marker` | 2489 -> 2696 | 649 -> 536 | retain domain-owned skeleton, annotation, tracking, import, export, and recovery workflows |
+
+Production line count is audit evidence, not an acceptance threshold. A pilot
+may grow when the added code makes durable project, ephemeral session, cache,
+resource, migration, or result ownership explicit. Simplify repeated
+app-neutral mechanics in the framework, but do not inline cohesive app
+contracts, invent a universal workflow DSL, or obscure workflow order merely
+to reduce file or line counts.
 
 ### Phase 5: Full App Migration Waves
 
