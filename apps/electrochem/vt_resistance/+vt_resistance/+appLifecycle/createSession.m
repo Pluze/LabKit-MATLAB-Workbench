@@ -1,0 +1,16 @@
+% Expected caller: Runtime V2. Input is one validated VT Resistance project
+% with resolved source records. Output owns selection, workflow log, and the
+% rebuildable decoded/analyzed DTA cache.
+function session = createSession(project)
+    items = vt_resistance.sourceFiles.loadProjectItems( ...
+        project.inputs.sources, project.parameters);
+    currentIndex = 0;
+    if ~isempty(items)
+        currentIndex = 1;
+    end
+    session = struct( ...
+        "selection", struct("currentIndex", currentIndex), ...
+        "workflow", struct("logLines", strings(0, 1)), ...
+        "view", struct(), ...
+        "cache", struct("items", items));
+end

@@ -98,7 +98,8 @@ function A = computeResistance(item, opts)
     A.Rc_dV_ohm = safeDivide(A.dVc_V, A.Ic_est_A);
     A.Ra_dV_ohm = safeDivide(A.dVa_V, A.Ia_est_A);
 
-    if strcmp(A.voltageMode, 'Raw Vf/I')
+    choices = vt_resistance.userInterface.analysisChoices();
+    if string(A.voltageMode) == choices.voltageModes(2)
         A.Rc_ohm = A.Rc_raw_ohm;
         A.Ra_ohm = A.Ra_raw_ohm;
     else
@@ -119,14 +120,15 @@ function A = computeResistance(item, opts)
 end
 
 function opts = fillResistanceOptions(opts)
+    choices = vt_resistance.userInterface.analysisChoices();
     if ~isfield(opts, 'windowMode')
-        opts.windowMode = 'Full pulse median';
+        opts.windowMode = choices.steadyWindows(1);
     end
     if ~isfield(opts, 'voltageMode')
-        opts.voltageMode = 'Baseline-corrected dV/I';
+        opts.voltageMode = choices.voltageModes(1);
     end
     if ~isfield(opts, 'pulseMode')
-        opts.pulseMode = 'Metadata first, then auto';
+        opts.pulseMode = choices.pulseModes(1);
     end
 end
 
@@ -166,7 +168,9 @@ end
 function [t1, t2] = selectSteadyWindow(p1, p2, modeText)
     t1 = p1;
     t2 = p2;
-    if strcmp(modeText, 'Center 60% median') && isfinite(p1) && isfinite(p2) && p2 > p1
+    choices = vt_resistance.userInterface.analysisChoices();
+    if string(modeText) == choices.steadyWindows(2) && ...
+            isfinite(p1) && isfinite(p2) && p2 > p1
         dt = p2 - p1;
         t1 = p1 + 0.20 * dt;
         t2 = p1 + 0.80 * dt;
