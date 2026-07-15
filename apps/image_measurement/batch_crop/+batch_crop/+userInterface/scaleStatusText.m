@@ -9,14 +9,15 @@ function text = scaleStatusText(state, currentIndex, mode, physicalSize, unitNam
         return;
     end
 
-    if isempty(state.items)
+    items = state.project.inputs.items;
+    if isempty(items)
         text = sprintf('Physical mode: set %.6g x %.6g %s and load images.', ...
             physicalSize(1), physicalSize(2), char(string(unitName)));
         return;
     end
 
-    scaleSummary = batch_crop.appState.scaleCalibrationSummary(state.items);
-    item = state.items(currentIndex);
+    scaleSummary = batch_crop.appState.scaleCalibrationSummary(items);
+    item = items(currentIndex);
     cal = item.scaleCalibration;
     if batch_crop.appState.isScaleCalibrationSet(cal)
         cropPixelsPerUnit = batch_crop.cropGeometry.pixelsPerUnitForUnit(cal, unitName);

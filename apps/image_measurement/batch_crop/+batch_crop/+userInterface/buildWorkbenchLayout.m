@@ -3,9 +3,6 @@
 % global preferences bound to project parameters.
 function layout = buildWorkbenchLayout(callbacks, state)
     initialOutputFolder = state.project.parameters.outputFolder;
-    if strlength(initialOutputFolder) == 0
-        initialOutputFolder = string(labkit.ui.runtime.defaultDialogFolder("output"));
-    end
 
     layout = labkit.ui.layout.workbench("batchCropApp", ...
         "Microscope Batch Image Crop", ...

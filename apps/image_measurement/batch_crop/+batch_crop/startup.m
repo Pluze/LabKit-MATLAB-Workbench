@@ -4,7 +4,7 @@
 function state = startup(state, ~, services)
     if strlength(state.project.parameters.outputFolder) == 0
         state.project.parameters.outputFolder = string( ...
-            labkit.ui.runtime.defaultDialogFolder("output"));
+            services.dialogs.defaultFolder("output"));
     end
     if ~isDebugEnabled(services.debug)
         return;

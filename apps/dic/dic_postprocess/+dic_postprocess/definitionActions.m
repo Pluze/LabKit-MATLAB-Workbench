@@ -13,7 +13,7 @@ function actions = definitionActions()
 end
 
 function state = onMatChosen(state, event, services)
-    filepath = firstEventPath(event);
+    filepath = firstEventPath(event, services);
     if strlength(filepath) == 0
         state = addLog(state, services, "DIC MAT selection cancelled.");
         return;
@@ -21,13 +21,13 @@ function state = onMatChosen(state, event, services)
     state.project.inputs.matPath = filepath;
     state.project.inputs.strain = struct();
     state.project.inputs.sources = setSource( ...
-        state.project.inputs.sources, "dicMat", "strain", filepath);
+        state.project.inputs.sources, "dicMat", "strain", filepath, services);
     state = clearPreparedOutputs(state);
     state = addLog(state, services, "Selected DIC MAT: " + filepath);
 end
 
 function state = onReferenceChosen(state, event, services)
-    filepath = firstEventPath(event);
+    filepath = firstEventPath(event, services);
     if strlength(filepath) == 0
         state = addLog(state, services, ...
             "Reference image selection cancelled.");
@@ -36,13 +36,14 @@ function state = onReferenceChosen(state, event, services)
     state.project.inputs.referencePath = filepath;
     state.project.inputs.referenceImage = imread(filepath);
     state.project.inputs.sources = setSource( ...
-        state.project.inputs.sources, "referenceImage", "reference", filepath);
+        state.project.inputs.sources, "referenceImage", "reference", ...
+        filepath, services);
     state = clearPreparedOutputs(state);
     state = addLog(state, services, "Loaded reference image: " + filepath);
 end
 
 function state = onMaskChosen(state, event, services)
-    filepath = firstEventPath(event);
+    filepath = firstEventPath(event, services);
     if strlength(filepath) == 0
         state = addLog(state, services, "Mask image selection cancelled.");
         return;
@@ -50,7 +51,7 @@ function state = onMaskChosen(state, event, services)
     state.project.inputs.maskPath = filepath;
     state.project.inputs.maskImage = imread(filepath);
     state.project.inputs.sources = setSource( ...
-        state.project.inputs.sources, "maskImage", "mask", filepath);
+        state.project.inputs.sources, "maskImage", "mask", filepath, services);
     state = clearPreparedOutputs(state);
     state = addLog(state, services, "Loaded mask image: " + filepath);
 end
@@ -59,13 +60,13 @@ function state = onGenerate(state, ~, services)
     inputs = state.project.inputs;
     if strlength(inputs.matPath) == 0 || isempty(inputs.referenceImage) || ...
             isempty(inputs.maskImage)
-        labkit.ui.runtime.showAlert(services.figure, ...
+        services.dialogs.alert( ...
             'Load the DIC MAT file, reference image, and mask image first.', ...
             'Missing inputs');
         return;
     end
     if ~validColorRange(state.project.parameters)
-        labkit.ui.runtime.showAlert(services.figure, ...
+        services.dialogs.alert( ...
             'Color max must be greater than color min.', 'Invalid color range');
         return;
     end
@@ -77,7 +78,7 @@ function state = onGenerate(state, ~, services)
             "Generated EXX/EYY overlays and ROI summary.");
     catch ME
         reportException(services, 'Generate failed', ME);
-        labkit.ui.runtime.showAlert(services.figure, ME.message, ...
+        services.dialogs.alert(ME.message, ...
             'DIC postprocess error');
         state = addLog(state, services, "Generate failed: " + ME.message);
     end
@@ -104,11 +105,12 @@ end
 function state = onSaveOverlays(state, ~, services)
     if isempty(state.session.cache.overlayExx) || ...
             isempty(state.session.cache.overlayEyy)
-        labkit.ui.runtime.showAlert(services.figure, ...
+        services.dialogs.alert( ...
             'Generate overlays before saving.', 'Save overlays');
         return;
     end
-    [folder, cancelled] = promptOverlayFolder(services);
+    [folder, cancelled] = services.dialogs.outputFolder( ...
+        'Select folder for overlay PNGs', "");
     if cancelled
         state = addLog(state, services, "Save overlay PNGs cancelled.");
         return;
@@ -123,8 +125,10 @@ function state = onSaveOverlays(state, ~, services)
         state.session.cache.overlayExx, exxFile);
     dic_postprocess.resultFiles.exportOverlayImage( ...
         state.session.cache.overlayEyy, eyyFile);
-    outputs = [resultOutput("exxOverlay", "primary", exxName, "image/png"); ...
-        resultOutput("eyyOverlay", "primary", eyyName, "image/png")];
+    outputs = [services.results.output( ...
+        "exxOverlay", "primary", exxName, "image/png"); ...
+        services.results.output( ...
+        "eyyOverlay", "primary", eyyName, "image/png")];
     spec = resultSpec(state, outputs);
     spec.ManifestName = "dic_overlays_" + tag + ".labkit.json";
     [manifestPath, ~] = services.results.writeManifest(folder, spec);
@@ -136,11 +140,15 @@ end
 function state = onExportSummary(state, ~, services)
     summary = state.project.results.summaryTable;
     if isempty(summary) || height(summary) == 0
-        labkit.ui.runtime.showAlert(services.figure, ...
+        services.dialogs.alert( ...
             'Generate a summary before exporting.', 'Export summary');
         return;
     end
-    [out, cancelled] = promptSummaryFile(state.project.inputs.matPath, services);
+    [folder, name] = fileparts(char(state.project.inputs.matPath));
+    folder = services.dialogs.defaultFolder("output", folder);
+    defaultName = fullfile(folder, [name '_strain_summary.csv']);
+    [out, cancelled] = services.dialogs.outputFile( ...
+        '*.csv', 'Save strain summary CSV', defaultName);
     if cancelled
         state = addLog(state, services, "Export summary cancelled.");
         return;
@@ -148,7 +156,7 @@ function state = onExportSummary(state, ~, services)
     writetable(summary, out);
     [folder, base, extension] = fileparts(out);
     outputName = string(base) + string(extension);
-    spec = resultSpec(state, resultOutput( ...
+    spec = resultSpec(state, services.results.output( ...
         "strainSummary", "primary", outputName, "text/csv"));
     spec.ManifestName = string(base) + ".labkit.json";
     [manifestPath, ~] = services.results.writeManifest(folder, spec);
@@ -180,23 +188,16 @@ function tf = validColorRange(parameters)
     tf = parameters.colorMax > parameters.colorMin;
 end
 
-function filepath = firstEventPath(event)
+function filepath = firstEventPath(event, services)
+    paths = services.events.paths(event, "addedFiles");
     filepath = "";
-    if ~isfield(event, 'meta') || ~isfield(event.meta, 'original') || ...
-            ~isfield(event.meta.original, 'addedFiles')
-        return;
-    end
-    files = event.meta.original.addedFiles;
-    if isstruct(files) && ~isempty(files) && isfield(files, 'path')
-        filepath = string(files(1).path);
-    elseif ~isempty(files)
-        values = string(files(:));
-        filepath = values(1);
+    if ~isempty(paths)
+        filepath = paths(1);
     end
 end
 
-function sources = setSource(sources, id, role, filepath)
-    source = sourceRecord(id, role, filepath);
+function sources = setSource(sources, id, role, filepath, services)
+    source = services.project.sourceRecord(id, role, filepath, true);
     if isempty(sources)
         sources = source;
         return;
@@ -207,47 +208,6 @@ function sources = setSource(sources, id, role, filepath)
     else
         sources(match) = source;
     end
-end
-
-function source = sourceRecord(id, role, filepath)
-    [~, name, extension] = fileparts(filepath);
-    reference = struct( ...
-        "schemaVersion", 1, "relativePath", "", ...
-        "originalPath", string(filepath), ...
-        "fileName", string(name) + string(extension));
-    source = struct("id", string(id), "required", true, ...
-        "role", string(role), "reference", reference);
-end
-
-function [folder, cancelled] = promptOverlayFolder(services)
-    promptArgs = {};
-    if isstruct(services.request) && ...
-            isfield(services.request, 'outputFolderChooser') && ...
-            isa(services.request.outputFolderChooser, 'function_handle')
-        promptArgs = {'Chooser', services.request.outputFolderChooser};
-    end
-    [folder, cancelled] = labkit.ui.runtime.promptOutputFolder( ...
-        'Select folder for overlay PNGs', "", promptArgs{:});
-end
-
-function [out, cancelled] = promptSummaryFile(matPath, services)
-    [folder, name] = fileparts(char(matPath));
-    folder = labkit.ui.runtime.defaultDialogFolder("output", folder);
-    defaultName = fullfile(folder, [name '_strain_summary.csv']);
-    promptArgs = {};
-    if isstruct(services.request) && ...
-            isfield(services.request, 'outputFileChooser') && ...
-            isa(services.request.outputFileChooser, 'function_handle')
-        promptArgs = {'Chooser', services.request.outputFileChooser};
-    end
-    [out, cancelled] = labkit.ui.runtime.promptOutputFile( ...
-        '*.csv', 'Save strain summary CSV', defaultName, promptArgs{:});
-end
-
-function output = resultOutput(id, role, pathValue, mediaType)
-    output = struct("Id", string(id), "Role", string(role), ...
-        "Path", string(pathValue), "MediaType", string(mediaType), ...
-        "Status", "success", "Message", "");
 end
 
 function spec = resultSpec(state, outputs)

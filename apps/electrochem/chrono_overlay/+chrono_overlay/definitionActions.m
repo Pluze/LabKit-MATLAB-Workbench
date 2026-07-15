@@ -10,7 +10,7 @@ function actions = definitionActions()
 end
 
 function state = onOpenFilesChosen(state, event, services)
-    paths = eventPaths(event, "addedFiles");
+    paths = services.events.paths(event, "addedFiles");
     if isempty(paths)
         state = addLog(state, services, "Open cancelled.");
         return;
@@ -35,7 +35,7 @@ function state = onOpenFilesChosen(state, event, services)
         state.project.inputs.items = appendItem( ...
             state.project.inputs.items, item);
         state.project.inputs.sources = appendSource( ...
-            state.project.inputs.sources, filepath);
+            state.project.inputs.sources, filepath, services);
         state.session.selection.paths(end + 1, 1) = filepath;
         state = addLog(state, services, alignMessage);
         for iMessage = 1:numel(item.logmsg)
@@ -46,14 +46,14 @@ function state = onOpenFilesChosen(state, event, services)
     end
     if ~isempty(failed)
         firstError = failed(1);
-        labkit.ui.runtime.showAlert(services.figure, sprintf( ...
+        services.dialogs.alert(sprintf( ...
             'Failed to load:\n%s\n\n%s', firstError.filepath, ...
             firstError.message), 'Load error');
     end
 end
 
 function state = onRemoveSelected(state, event, services)
-    paths = eventPaths(event, "removedFiles");
+    paths = services.events.paths(event, "removedFiles");
     if isempty(paths)
         return;
     end
@@ -75,23 +75,26 @@ function state = onClearAll(state, ~, services)
     state = addLog(state, services, "Cleared all files.");
 end
 
-function state = onSelectionChanged(state, event, ~)
-    state.session.selection.paths = eventPaths(event, "selectedFiles");
+function state = onSelectionChanged(state, event, services)
+    state.session.selection.paths = ...
+        services.events.paths(event, "selectedFiles");
 end
 
 function state = onExportCSV(state, ~, services)
     if isempty(state.project.inputs.items)
-        labkit.ui.runtime.showAlert(services.figure, ...
+        services.dialogs.alert( ...
             'No files loaded.', 'Export');
         return;
     end
     items = selectedItems(state);
     if isempty(items)
-        labkit.ui.runtime.showAlert(services.figure, ...
+        services.dialogs.alert( ...
             'No files selected for export.', 'Export');
         return;
     end
-    [out, cancelled] = promptExportPath(services);
+    [out, cancelled] = services.dialogs.outputFile( ...
+        'gamry_overlay_curves.csv', 'Save overlay curves CSV', ...
+        'gamry_overlay_curves.csv');
     if cancelled
         return;
     end
@@ -99,9 +102,8 @@ function state = onExportCSV(state, ~, services)
     writetable(tableValue, out);
     [folder, base, extension] = fileparts(out);
     outputName = string(base) + string(extension);
-    outputs = struct("Id", "overlayCurves", "Role", "primary", ...
-        "Path", outputName, "MediaType", "text/csv", ...
-        "Status", "success", "Message", "");
+    outputs = services.results.output( ...
+        "overlayCurves", "primary", outputName, "text/csv");
     spec = struct();
     spec.Outputs = outputs;
     spec.Inputs = state.project.inputs.sources;
@@ -113,18 +115,6 @@ function state = onExportCSV(state, ~, services)
     state = addLog(state, services, "Exported CSV: " + string(out));
 end
 
-function [out, cancelled] = promptExportPath(services)
-    promptArgs = {};
-    if isstruct(services.request) && ...
-            isfield(services.request, 'outputChooser') && ...
-            isa(services.request.outputChooser, 'function_handle')
-        promptArgs = {'Chooser', services.request.outputChooser};
-    end
-    [out, cancelled] = labkit.ui.runtime.promptOutputFile( ...
-        'gamry_overlay_curves.csv', 'Save overlay curves CSV', ...
-        'gamry_overlay_curves.csv', promptArgs{:});
-end
-
 function items = selectedItems(state)
     items = state.project.inputs.items;
     if isempty(items)
@@ -133,21 +123,6 @@ function items = selectedItems(state)
     selected = state.session.selection.paths;
     keep = ismember(string({items.filepath}), selected(:));
     items = items(keep);
-end
-
-function paths = eventPaths(event, fieldName)
-    values = [];
-    if isfield(event, 'meta') && isstruct(event.meta) && ...
-            isfield(event.meta, 'original') && ...
-            isfield(event.meta.original, fieldName)
-        values = event.meta.original.(char(fieldName));
-    end
-    if isstruct(values) && isfield(values, 'path')
-        paths = string({values.path}).';
-    else
-        paths = string(values(:));
-    end
-    paths = paths(strlength(paths) > 0);
 end
 
 function tf = isLoaded(items, filepath)
@@ -163,18 +138,9 @@ function items = appendItem(items, item)
     end
 end
 
-function sources = appendSource(sources, filepath)
-    [~, name, extension] = fileparts(filepath);
-    reference = struct( ...
-        "schemaVersion", 1, ...
-        "relativePath", "", ...
-        "originalPath", string(filepath), ...
-        "fileName", string(name) + string(extension));
-    source = struct( ...
-        "id", "dta" + string(numel(sources) + 1), ...
-        "required", true, ...
-        "role", "chrono", ...
-        "reference", reference);
+function sources = appendSource(sources, filepath, services)
+    source = services.project.sourceRecord( ...
+        "dta" + string(numel(sources) + 1), "chrono", filepath, true);
     if isempty(sources)
         sources = source;
     else

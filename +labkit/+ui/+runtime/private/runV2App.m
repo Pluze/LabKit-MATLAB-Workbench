@@ -194,7 +194,9 @@ function processEvent(fig, event)
     startedAt = tic;
     try
         next = applyBinding(previous, event);
-        services = runtimeServices(fig, runtime);
+        services = buildV2RuntimeServices(fig, runtime, ...
+            @(event, varargin) dispatchProgrammatic( ...
+            fig, event, varargin{:}));
         handler = eventHandler(runtime, event);
         if ~isempty(handler)
             next = invokeHandler(handler, next, event, services);
@@ -300,42 +302,6 @@ function next = invokeHandler(handler, state, event, services)
     else
         next = handler(state, event, services);
     end
-end
-
-function services = runtimeServices(fig, runtime)
-    services = struct();
-    services.figure = fig;
-    services.debug = runtime.debug;
-    services.request = runtime.request;
-    services.dispatch = @(event, varargin) dispatchProgrammatic( ...
-        fig, event, varargin{:});
-    services.resources = struct( ...
-        "set", @(scope, id, value, cleanup) v2ResourceRegistry( ...
-            fig, "set", scope, id, value, cleanup), ...
-        "get", @(scope, id) v2ResourceRegistry(fig, "get", scope, id), ...
-        "remove", @(scope, id) v2ResourceRegistry(fig, "remove", scope, id), ...
-        "clearScope", @(scope) v2ResourceRegistry(fig, "clearScope", scope));
-    services.results = struct( ...
-        "writeManifest", @(folder, spec) writeResultManifest( ...
-            fig, folder, spec));
-end
-
-function varargout = writeResultManifest(fig, folder, spec)
-    runtime = getAppRuntime(fig);
-    runtime.document.exporting = true;
-    setappdata(fig, appRuntimeKey(), runtime);
-    cleanup = onCleanup(@() clearExporting(fig));
-    [varargout{1:nargout}] = writeV2ResultManifest(runtime, folder, spec);
-    clear cleanup;
-end
-
-function clearExporting(fig)
-    if isempty(fig) || ~isvalid(fig) || ~isappdata(fig, appRuntimeKey())
-        return;
-    end
-    runtime = getAppRuntime(fig);
-    runtime.document.exporting = false;
-    setappdata(fig, appRuntimeKey(), runtime);
 end
 
 function dispatchProgrammatic(fig, event, varargin)

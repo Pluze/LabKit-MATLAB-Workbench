@@ -31,8 +31,8 @@ function actions = definitionActions()
 end
 
 function state = onImagesChosen(state, event, services)
-    added = eventPaths(event, "addedFiles");
-    paths = eventPaths(event, "files");
+    added = services.events.paths(event, "addedFiles");
+    paths = services.events.paths(event, "files");
     if isempty(paths)
         paths = added;
     end
@@ -43,11 +43,12 @@ function state = onImagesChosen(state, event, services)
     chosen = batch_crop.appState.itemsForPaths(paths);
     state.project.inputs.items = batch_crop.appState.mergeChosenItems( ...
         state.project.inputs.items, chosen);
-    state.project.inputs.sources = sourcesForItems(state.project.inputs.items);
+    state.project.inputs.sources = sourcesForItems( ...
+        state.project.inputs.items, services);
     state.session.selection.currentIndex = selectedAddedIndex( ...
         state.project.inputs.items, added);
     state.project.parameters.outputFolder = string( ...
-        labkit.ui.runtime.defaultOutputFolder(paths, "batch_crop", ...
+        services.dialogs.defaultOutputFolder(paths, "batch_crop", ...
         state.project.parameters.outputFolder));
     state = clearExportAndCanvas(state);
     [state, loaded] = ensureCurrentImageLoaded(state, services);
@@ -73,13 +74,13 @@ end
 
 function state = onRemoveImages(state, event, services)
     items = state.project.inputs.items;
-    indices = eventIndices(event, "removedFiles", numel(items));
+    indices = services.events.indices(event, "removedFiles", numel(items));
     if isempty(indices)
         return;
     end
     items(indices) = [];
     state.project.inputs.items = items;
-    state.project.inputs.sources = sourcesForItems(items);
+    state.project.inputs.sources = sourcesForItems(items, services);
     if isempty(items)
         state.session.selection.currentIndex = 0;
     else
@@ -120,7 +121,7 @@ function state = onDuplicateImage(state, ~, services)
 end
 
 function state = onImageSelectionChanged(state, event, services)
-    indices = eventIndices(event, "selectedFiles", ...
+    indices = services.events.indices(event, "selectedFiles", ...
         numel(state.project.inputs.items));
     if isempty(indices)
         return;
@@ -366,15 +367,9 @@ function state = onExportSettingChanged(state, ~, ~)
 end
 
 function state = onChooseOutputFolder(state, ~, services)
-    promptArgs = {};
-    if isstruct(services.request) && ...
-            isfield(services.request, 'outputFolderChooser') && ...
-            isa(services.request.outputFolderChooser, 'function_handle')
-        promptArgs = {'Chooser', services.request.outputFolderChooser};
-    end
-    [folder, cancelled] = labkit.ui.runtime.promptOutputFolder( ...
+    [folder, cancelled] = services.dialogs.outputFolder( ...
         'Select crop export folder', ...
-        state.project.parameters.outputFolder, promptArgs{:});
+        state.project.parameters.outputFolder);
     if cancelled
         state = addLog(state, services, "Export folder selection cancelled.");
         return;
@@ -453,7 +448,7 @@ function state = onExportCrops(state, ~, services)
     try
         payload = batch_crop.resultFiles.writeOutputs( ...
             state.project.inputs.items, opts);
-        spec = standardResultSpec(state, payload);
+        spec = standardResultSpec(state, payload, services);
         [manifestPath, ~] = services.results.writeManifest( ...
             opts.outputFolder, spec);
     catch ME
@@ -590,8 +585,8 @@ function opts = currentExportOptions(state)
         parameters.targetPixelsPerUnit, parameters.maxUpsamplePercent);
 end
 
-function spec = standardResultSpec(state, payload)
-    cropOutputs = repmat(resultOutput("", "", "", "", "", ""), ...
+function spec = standardResultSpec(state, payload, services)
+    cropOutputs = repmat(services.results.output("", "", "", ""), ...
         numel(payload.results), 1);
     for k = 1:numel(payload.results)
         result = payload.results(k);
@@ -602,13 +597,14 @@ function spec = standardResultSpec(state, payload)
             extension = formatExtension(state.project.parameters.format);
             name = "crop" + string(k) + "_failed";
         end
-        cropOutputs(k) = resultOutput("crop" + string(k), "primary", ...
+        cropOutputs(k) = services.results.output( ...
+            "crop" + string(k), "primary", ...
             string(name) + string(extension), mediaType(extension), status, ...
             string(result.message));
     end
     [~, csvName, csvExtension] = fileparts(payload.manifestPath);
-    csvOutput = resultOutput("cropManifest", "manifest", ...
-        string(csvName) + string(csvExtension), "text/csv", "success", "");
+    csvOutput = services.results.output("cropManifest", "manifest", ...
+        string(csvName) + string(csvExtension), "text/csv");
     spec = struct();
     spec.Outputs = [cropOutputs; csvOutput];
     spec.Inputs = state.project.inputs.sources;
@@ -627,12 +623,6 @@ function extension = formatExtension(formatValue)
         otherwise
             extension = ".jpg";
     end
-end
-
-function output = resultOutput(id, role, pathValue, type, status, message)
-    output = struct("Id", string(id), "Role", string(role), ...
-        "Path", string(pathValue), "MediaType", string(type), ...
-        "Status", string(status), "Message", string(message));
 end
 
 function type = mediaType(extension)
@@ -687,61 +677,15 @@ function index = selectedAddedIndex(items, added)
     end
 end
 
-function indices = eventIndices(event, fieldName, count)
-    entries = eventEntries(event, fieldName);
-    indices = zeros(0, 1);
-    if isempty(entries)
-        return;
-    end
-    if isstruct(entries) && isfield(entries, 'id')
-        ids = string({entries.id});
-        values = regexp(ids, '^item(\d+)$', 'tokens', 'once');
-        for k = 1:numel(values)
-            if ~isempty(values{k})
-                indices(end + 1, 1) = str2double(values{k}{1});
-            end
-        end
-    end
-    if isempty(indices) && isstruct(entries) && isfield(entries, 'path')
-        paths = string({entries.path});
-        allPaths = string({event.meta.original.files.path});
-        [~, indices] = ismember(paths, allPaths);
-    end
-    indices = unique(indices(indices >= 1 & indices <= count), 'stable');
-end
-
-function paths = eventPaths(event, fieldName)
-    values = eventEntries(event, fieldName);
-    if isstruct(values) && isfield(values, 'path')
-        paths = string({values.path}).';
-    else
-        paths = string(values(:));
-    end
-    paths = paths(strlength(paths) > 0);
-end
-
-function values = eventEntries(event, fieldName)
-    values = [];
-    if isfield(event, 'meta') && isstruct(event.meta) && ...
-            isfield(event.meta, 'original') && ...
-            isfield(event.meta.original, char(fieldName))
-        values = event.meta.original.(char(fieldName));
-    end
-end
-
-function sources = sourcesForItems(items)
+function sources = sourcesForItems(items, services)
     sources = emptySources();
     if isempty(items)
         return;
     end
     paths = unique(string({items.path}), 'stable');
     for k = 1:numel(paths)
-        [~, name, extension] = fileparts(paths(k));
-        reference = struct("schemaVersion", 1, "relativePath", "", ...
-            "originalPath", paths(k), ...
-            "fileName", string(name) + string(extension));
-        source = struct("id", "image" + string(k), "required", true, ...
-            "role", "cropSource", "reference", reference);
+        source = services.project.sourceRecord( ...
+            "image" + string(k), "cropSource", paths(k), true);
         if isempty(sources)
             sources = source;
         else
@@ -796,7 +740,7 @@ function value = positiveOrNaN(candidate)
 end
 
 function showError(services, titleText, message)
-    labkit.ui.runtime.showAlert(services.figure, message, titleText);
+    services.dialogs.alert(message, titleText);
 end
 
 function state = addLog(state, services, message)
