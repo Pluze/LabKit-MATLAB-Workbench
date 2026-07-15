@@ -2,6 +2,26 @@ classdef BuildTaskEfficiencyGuardrailTest < matlab.unittest.TestCase
     %BUILDTASKEFFICIENCYGUARDRAILTEST Guardrails for fast validation routing.
 
     methods (Test, TestTags = {'Integration', 'Style'})
+        function broadGateShardPlansSeparateSpeedFromGuiIsolation(testCase)
+            setupLabKitTestPath();
+
+            headless = labkitInternalShardPlan("headless", 293);
+            gui = labkitInternalShardPlan("gui", 75);
+            smallGui = labkitInternalShardPlan("gui", 20);
+
+            testCase.verifyEqual(headless.Count, 2);
+            testCase.verifyTrue(headless.RunInParallel, ...
+                "Local headless shards should retain parallel speedup.");
+            testCase.verifyEqual(gui.Count, 4, ...
+                ["The full GUI gate should keep each MATLAB process below " ...
+                "the observed accumulated graphics-state failure point."]);
+            testCase.verifyFalse(gui.RunInParallel, ...
+                ["Broad GUI gates should isolate accumulated graphics state " ...
+                "without running display-heavy MATLAB workers concurrently."]);
+            testCase.verifyEqual(smallGui.Count, 1, ...
+                "Small GUI selections should avoid unnecessary process startup.");
+        end
+
         function focusedRunnerSupportsDeterministicShards(testCase)
             setupLabKitTestPath();
 

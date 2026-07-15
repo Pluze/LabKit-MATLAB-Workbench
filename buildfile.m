@@ -162,7 +162,7 @@ end
 
 function handled = runWithInternalShards(spec, args)
     handled = false;
-    if spec.Name ~= "headless" || isInternalShardWorker() || ...
+    if ~any(spec.Name == ["headless", "gui"]) || isInternalShardWorker() || ...
             isGitHubActions() || ispc
         return;
     end
@@ -179,14 +179,16 @@ function handled = runWithInternalShards(spec, args)
         return;
     end
 
-    shardCount = recommendedShardCount(probe.count);
-    if shardCount <= 1
+    shardPlan = labkitInternalShardPlan(spec.Name, probe.count);
+    if shardPlan.Count <= 1
         return;
     end
 
-    fprintf("LabKit shard probe: %d test(s) matched; running %d internal headless shard(s).\n", ...
-        probe.count, shardCount);
-    runInternalShardWorkers(root, spec.Name, args, shardCount);
+    fprintf(['LabKit shard probe: %d test(s) matched; running %d ' ...
+        'internal %s shard(s).\n'], probe.count, shardPlan.Count, ...
+        shardPlan.ExecutionLabel);
+    runInternalShardWorkers(root, spec.Name, args, shardPlan.Count, ...
+        shardPlan.RunInParallel);
     handled = true;
 end
 
@@ -198,17 +200,7 @@ function tf = isGitHubActions()
     tf = string(getenv("GITHUB_ACTIONS")) == "true";
 end
 
-function shardCount = recommendedShardCount(testCount)
-    if testCount >= 300
-        shardCount = 3;
-    elseif testCount >= 80
-        shardCount = 2;
-    else
-        shardCount = 1;
-    end
-end
-
-function runInternalShardWorkers(root, runName, args, shardCount)
+function runInternalShardWorkers(root, runName, args, shardCount, runInParallel)
     logsRoot = fullfile(root, "artifacts", "logs", runName + "-orchestrator");
     ensureFolder(logsRoot);
     scriptPath = fullfile(logsRoot, "run_shards.sh");
@@ -225,12 +217,19 @@ function runInternalShardWorkers(root, runName, args, shardCount)
         shardName = sprintf("%s-shard-%d", runName, k);
         workerLog = fullfile(logsRoot, shardName + ".log");
         batch = shardBatchCommand(root, args, shardName, shardCount, k);
-        fprintf(fid, "LABKIT_INTERNAL_SHARD_WORKER=1 %s -batch %s > %s 2>&1 &\n", ...
-            shellQuote(matlabExe), shellQuote(batch), shellQuote(workerLog));
-        fprintf(fid, "pids_%d=$!\n", k + 1);
+        if runInParallel
+            fprintf(fid, "LABKIT_INTERNAL_SHARD_WORKER=1 %s -batch %s > %s 2>&1 &\n", ...
+                shellQuote(matlabExe), shellQuote(batch), shellQuote(workerLog));
+            fprintf(fid, "pids_%d=$!\n", k + 1);
+        else
+            fprintf(fid, "LABKIT_INTERNAL_SHARD_WORKER=1 %s -batch %s > %s 2>&1 || status=1\n", ...
+                shellQuote(matlabExe), shellQuote(batch), shellQuote(workerLog));
+        end
     end
-    for k = 1:shardCount
-        fprintf(fid, "wait $pids_%d || status=1\n", k);
+    if runInParallel
+        for k = 1:shardCount
+            fprintf(fid, "wait $pids_%d || status=1\n", k);
+        end
     end
     fprintf(fid, 'if [ "$status" -ne 0 ]; then\n');
     fprintf(fid, "  cat %s/*.log\n", shellQuote(logsRoot));
