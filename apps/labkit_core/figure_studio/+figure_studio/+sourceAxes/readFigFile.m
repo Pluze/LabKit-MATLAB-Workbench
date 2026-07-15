@@ -1,7 +1,6 @@
-% Import one axes from a MATLAB FIG file into a preview axes. Expected caller
-% is figure_studio.definitionActions; returns source style metadata and mutates
-% only the destination axes.
-function sourceStyle = importFigFile(filepath, dstAx)
+% Expected caller: Figure Studio source actions and session recreation. Input
+% is one FIG path. Outputs are a serializable plot model and source style.
+function [plotData, sourceStyle] = readFigFile(filepath)
     srcFig = openfig(char(filepath), 'invisible');
     cleanup = onCleanup(@() delete(srcFig));
     axesHandles = findobj(srcFig, 'Type', 'axes');
@@ -13,5 +12,5 @@ function sourceStyle = importFigFile(filepath, dstAx)
     srcAx = axesHandles(1);
     sourceStyle = figure_studio.sourceAxes.sourceStyle(srcAx, ...
         "PreserveAspect", false);
-    figure_studio.sourceAxes.copyToPreview(srcAx, dstAx);
+    plotData = figure_studio.resultFiles.extractAxesData(srcAx);
 end

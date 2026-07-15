@@ -1,0 +1,34 @@
+% Expected caller: the LabKit V2 runtime. Output owns portable FIG sources,
+% an optional embedded handoff plot, durable style, and compact export results.
+function project = createProject()
+    preset = "LabKit figure";
+    style = figure_studio.styleLibrary.styleForPreset(preset);
+    project = struct();
+    project.inputs = struct("sources", emptySources());
+    project.parameters = struct( ...
+        "preset", preset, ...
+        "style", style, ...
+        "aspectPreset", "4:3", ...
+        "gridChoice", onOff(style.gridVisible), ...
+        "boundaryChoice", onOff(style.boundaryLines), ...
+        "outputFolder", "");
+    project.annotations = struct( ...
+        "embeddedPlot", [], ...
+        "sourceDefaultStyle", style);
+    project.results = struct( ...
+        "lastExport", [], ...
+        "resultManifestPath", "");
+    project.extensions = struct();
+end
+
+function sources = emptySources()
+    sources = struct("id", {}, "required", {}, "role", {}, "reference", {});
+end
+
+function value = onOff(tf)
+    if tf
+        value = "On";
+    else
+        value = "Off";
+    end
+end

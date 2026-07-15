@@ -352,7 +352,7 @@ variables import read-only. V1 snapshots remain for unmigrated apps.
 After shell, state, first presentation, and interaction hub exist, the runtime
 queues optional `Start` with injected app-neutral `services`. An optional
 `DebugSample` writer runs only for debug launches, without app startup glue.
-V2 commits mirror `session.workflow.logLines` into semantic `logPanel` controls. Injected `services.dialogs` owns input-file, input-folder, output-file, and output-folder selection with safe defaults and test-injectable choosers; app handlers should not call `uigetfile`, `uigetdir`, or save-dialog helpers directly.
+V2 commits mirror `session.workflow.logLines` into semantic `logPanel` controls. Injected `services.dialogs` owns input-file, input-folder, output-file, and output-folder selection with safe defaults and test-injectable choosers; app handlers should not call `uigetfile`, `uigetdir`, or save-dialog helpers directly. Startup may resolve a registered preview with `services.previews.axes(previewId, axisId)` only to attach a framework-managed listener or timer; actions, presenters, and semantic state still use plain data and preview models.
 
 Each v2 figure owns one private interaction hub. Preview targets register as
 `previewId` or `previewId.axisId`; the hub owns hover wheel/zoom routing,
