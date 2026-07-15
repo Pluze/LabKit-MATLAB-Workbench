@@ -103,6 +103,15 @@ function verifyControlledPointSlots()
         value.selectedIndex == 3 && value.changedIndex == 2 && ...
         value.reason == "place", ...
         'Point slots should fill the selected empty slot and retain its index.');
+    resource = interactionResource(runtime.resources, "slots");
+    resource.editors{1}.insertPoint([45 50]);
+    runtime = getappdata(fig, 'labkitUiAppRuntime');
+    resource = interactionResource(runtime.resources, "slots");
+    resource.editors{1}.insertPoint([60 65]);
+    runtime = getappdata(fig, 'labkitUiAppRuntime');
+    value = runtime.state.project.annotations.slots;
+    assert(isequal(value.points(3, :), [60 65]), ...
+        'Configured point slots should replace the selected point on background clicks.');
     delete(fig);
     clear cleanupFigures cleanupMode;
 end
@@ -469,6 +478,8 @@ function view = pointSlotsPresentation(state)
         "Kind", "pointSlots", "Targets", "image", ...
         "Value", value, "Event", "slotsEdited", ...
         "ImageSize", [100 100], "ChangePolicy", "commit");
+    view.interactions.slots.Options = struct( ...
+        "placeSelectedOnBackground", true);
 end
 
 function state = pointsEdited(state, event, ~)

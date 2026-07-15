@@ -23,8 +23,7 @@ function actions = definitionActions()
         "scaleReferenceEdited", @onScaleReferenceEdited, ...
         "scaleBarSettingChanged", @onScaleBarSettingChanged, ...
         "placeScaleBar", @onPlaceScaleBar, ...
-        "previewPointerDown", @onPreviewPointerDown, ...
-        "cropRectangleMoved", @onCropRectangleMoved);
+        "cropCenterEdited", @onCropCenterEdited);
     actions = mergeActions(actions, ...
         batch_crop.resultFiles.definitionActions());
 end
@@ -368,39 +367,25 @@ function state = onPlaceScaleBar(state, ~, services)
     end
 end
 
-function state = onPreviewPointerDown(state, event, services)
+function state = onCropCenterEdited(state, event, services)
     [state, ok] = ensureCurrentReady(state, services);
-    if ~ok || isempty(event.value) || numel(event.value) < 2
+    if ~ok || ~isstruct(event.value) || ...
+            ~isfield(event.value, 'points') || ...
+            size(event.value.points, 2) ~= 2 || isempty(event.value.points)
         return;
     end
     [geometry, placement] = currentGeometryAndPlacement(state);
-    canvas = double(event.value(1:2)) - placement.offset;
-    canvas(1) = min(max(canvas(1), 1), size(geometry.canvas, 2));
-    canvas(2) = min(max(canvas(2), 1), size(geometry.canvas, 1));
+    canvas = double(event.value.points(1, :)) - placement.offset;
     center = batch_crop.cropGeometry.canvasToOriginal(geometry, canvas);
     state = setCurrentCenter(state, center, true);
     state = clearExport(state);
-    state = services.workflow.log(state, sprintf( ...
-        'Picked crop center for image %d: x=%.1f, y=%.1f.', ...
-        currentIndex(state), state.project.inputs.items( ...
-        currentIndex(state)).centerXY));
-end
-
-function state = onCropRectangleMoved(state, event, services)
-    [state, ok] = ensureCurrentReady(state, services);
-    if ~ok || isempty(event.value) || numel(event.value) ~= 4
-        return;
+    action = "Placed";
+    if isfield(event.value, 'reason') && string(event.value.reason) == "move"
+        action = "Dragged";
     end
-    position = double(event.value);
-    [geometry, placement] = currentGeometryAndPlacement(state);
-    canvas = [position(1) + position(3) / 2, ...
-        position(2) + position(4) / 2] - placement.offset;
-    center = batch_crop.cropGeometry.canvasToOriginal(geometry, canvas);
-    state = setCurrentCenter(state, center, true);
-    state = clearExport(state);
     state = services.workflow.log(state, sprintf( ...
-        'Dragged crop center for image %d: x=%.1f, y=%.1f.', ...
-        currentIndex(state), state.project.inputs.items( ...
+        '%s crop center for image %d: x=%.1f, y=%.1f.', ...
+        char(action), currentIndex(state), state.project.inputs.items( ...
         currentIndex(state)).centerXY));
 end
 

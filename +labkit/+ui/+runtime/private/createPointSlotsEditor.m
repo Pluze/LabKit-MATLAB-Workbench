@@ -6,6 +6,8 @@ function editor = createPointSlotsEditor(runtime, imageSize, opts, onChanged)
     imageSize = normalizeImageSize(imageSize);
     color = optionValue(opts, 'color', [0.05 0.45 0.95]);
     selectedColor = optionValue(opts, 'selectedColor', [1 0.9 0.15]);
+    placeSelectedOnBackground = logical(optionValue( ...
+        opts, 'placeSelectedOnBackground', false));
     value = normalizeValue(struct("points", NaN(1, 2), ...
         "selectedIndex", 1, "locked", false));
     anchorLine = gobjects(1, 0);
@@ -33,6 +35,9 @@ function editor = createPointSlotsEditor(runtime, imageSize, opts, onChanged)
 
     function insertPoint(point)
         targetIndex = nextPlacementIndex();
+        if isempty(targetIndex) && placeSelectedOnBackground
+            targetIndex = value.selectedIndex;
+        end
         if isempty(targetIndex)
             return;
         end
