@@ -2,7 +2,7 @@
 % state. Output is a deterministic control and multi-axis preview model with
 % no access to the UI registry.
 function view = presentWorkbench(state)
-    items = state.project.inputs.items;
+    items = state.session.cache.items;
     files = fileEntries(items);
     selectedIds = selectedFileIds(items, state.session.selection.paths);
     plotItems = selectedItems(items, state.session.selection.paths);

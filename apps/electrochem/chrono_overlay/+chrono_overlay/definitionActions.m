@@ -18,7 +18,7 @@ function state = onOpenFilesChosen(state, event, services)
     failed = struct('filepath', {}, 'message', {});
     for k = 1:numel(paths)
         filepath = paths(k);
-        if isLoaded(state.project.inputs.items, filepath)
+        if isLoaded(state.session.cache.items, filepath)
             state = services.workflow.log(state, ...
                 "Skipped already loaded: " + filepath);
             continue;
@@ -32,8 +32,8 @@ function state = onOpenFilesChosen(state, event, services)
             continue;
         end
         [item, alignMessage] = chrono_overlay.sourceFiles.alignByPulseGap(item);
-        state.project.inputs.items = appendItem( ...
-            state.project.inputs.items, item);
+        state.session.cache.items = appendItem( ...
+            state.session.cache.items, item);
         state.project.inputs.sources = appendSource( ...
             state.project.inputs.sources, filepath, services);
         state.session.selection.paths(end + 1, 1) = filepath;
@@ -57,8 +57,8 @@ function state = onRemoveSelected(state, event, services)
     if isempty(paths)
         return;
     end
-    [state.project.inputs.items, removed] = removeItems( ...
-        state.project.inputs.items, paths);
+    [state.session.cache.items, removed] = removeItems( ...
+        state.session.cache.items, paths);
     state.project.inputs.sources = removeSources( ...
         state.project.inputs.sources, paths);
     state.session.selection.paths = setdiff( ...
@@ -69,7 +69,7 @@ function state = onRemoveSelected(state, event, services)
 end
 
 function state = onClearAll(state, ~, services)
-    state.project.inputs.items = struct([]);
+    state.session.cache.items = struct([]);
     state.project.inputs.sources = state.project.inputs.sources([]);
     state.session.selection.paths = strings(0, 1);
     state = services.workflow.log(state, "Cleared all files.");
@@ -81,7 +81,7 @@ function state = onSelectionChanged(state, event, services)
 end
 
 function state = onExportCSV(state, ~, services)
-    if isempty(state.project.inputs.items)
+    if isempty(state.session.cache.items)
         services.dialogs.alert( ...
             'No files loaded.', 'Export');
         return;
@@ -116,7 +116,7 @@ function state = onExportCSV(state, ~, services)
 end
 
 function items = selectedItems(state)
-    items = state.project.inputs.items;
+    items = state.session.cache.items;
     if isempty(items)
         return;
     end

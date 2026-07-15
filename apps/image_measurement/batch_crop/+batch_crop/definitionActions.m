@@ -39,9 +39,9 @@ function state = onImagesChosen(state, event, services)
         state = services.workflow.log(state, "Image file selection cancelled.");
         return;
     end
-    [tasks, sources, images] = reconcileSelectedSources( ...
+    [tasks, sources, images] = batch_crop.appState.reconcileSelectedSources( ...
         state.project.inputs.items, state.project.inputs.sources, ...
-        state.session.cache.images, paths, services);
+        state.session.cache.images, paths, services.project.sourceRecord);
     state.project.inputs.items = tasks;
     state.project.inputs.sources = sources;
     state.session.cache.images = images;
@@ -534,54 +534,6 @@ function index = selectedAddedIndex(items, sources, added)
     end
     if ~isempty(match)
         index = match;
-    end
-end
-
-function [tasks, sources, images] = reconcileSelectedSources( ...
-        existingTasks, existingSources, existingImages, paths, services)
-    tasks = repmat(batch_crop.appState.emptyTask(), 0, 1);
-    sources = emptySources();
-    images = cell(0, 1);
-    paths = unique(string(paths), 'stable');
-    for k = 1:numel(paths)
-        sourceIndex = find(sourcePaths(existingSources) == paths(k), ...
-            1, 'first');
-        if isempty(sourceIndex)
-            sourceId = nextSourceId(existingSources, sources);
-            source = services.project.sourceRecord( ...
-                sourceId, "cropSource", paths(k), true);
-            matchingTasks = [];
-        else
-            source = existingSources(sourceIndex);
-            sourceId = string(source.id);
-            matchingTasks = find(string({existingTasks.sourceId}) == sourceId);
-        end
-        sources(end + 1) = source;
-        if isempty(matchingTasks)
-            task = batch_crop.appState.emptyTask();
-            task.sourceId = sourceId;
-            tasks(end + 1, 1) = task;
-            images{end + 1, 1} = [];
-        else
-            for taskIndex = matchingTasks(:).'
-                tasks(end + 1, 1) = existingTasks(taskIndex);
-                if taskIndex <= numel(existingImages)
-                    images{end + 1, 1} = existingImages{taskIndex};
-                else
-                    images{end + 1, 1} = [];
-                end
-            end
-        end
-    end
-end
-
-function sourceId = nextSourceId(existingSources, newSources)
-    ids = [string({existingSources.id}), string({newSources.id})];
-    number = numel(ids) + 1;
-    sourceId = "image" + string(number);
-    while any(ids == sourceId)
-        number = number + 1;
-        sourceId = "image" + string(number);
     end
 end
 
