@@ -5,6 +5,7 @@
 function A = computeCSC(curve, opts)
 %COMPUTECSC Compute CV/CT charge comparison and CSC for the CSC app.
 
+    choices = csc.userInterface.analysisChoices();
     if nargin < 2
         opts = struct();
     end
@@ -72,14 +73,14 @@ function A = computeCSC(curve, opts)
     A.dtErr = CV.dtErr;
 
     switch A.mode
-        case 'Cathodic'
+        case char(choices.modes(2))
             A.Qct = A.QctCath;
             A.Qcv = A.QcvCath;
-        case 'Anodic'
+        case char(choices.modes(3))
             A.Qct = A.QctAnod;
             A.Qcv = A.QcvAnod;
         otherwise
-            A.mode = 'Full';
+            A.mode = char(choices.modes(1));
             A.Qct = A.QctFull;
             A.Qcv = A.QcvFull;
     end
@@ -108,7 +109,8 @@ end
 
 function opts = fillOptions(opts)
     if ~isfield(opts, 'mode')
-        opts.mode = 'Full';
+        choices = csc.userInterface.analysisChoices();
+        opts.mode = char(choices.modes(1));
     end
     if ~isfield(opts, 'scanRate')
         opts.scanRate = NaN;

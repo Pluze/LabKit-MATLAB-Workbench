@@ -18,6 +18,7 @@ function T = buildResultsTable(items, opts)
 end
 
 function rows = collectRows(items, opts)
+    choices = csc.userInterface.analysisChoices();
     rowCells = {};
     for iItem = 1:numel(items)
         item = items(iItem);
@@ -30,7 +31,7 @@ function rows = collectRows(items, opts)
         for iCurve = curveIndices
             curve = curves(iCurve);
             result = csc.analysisRun.computeCSC(curve, struct( ...
-                'mode', 'Full', ...
+                'mode', char(choices.modes(1)), ...
                 'scanRate', itemScanRate(item), ...
                 'area_cm2', opts.area_cm2));
             rowCells{end + 1} = resultRow(item, iCurve, curve, opts, result);

@@ -13,13 +13,14 @@ function verify_cicExport()
 %TEST_CICEXPORT Verify app-side CIC result/export table helpers.
 
     item = makeChronoFixtureItem('', 'chrono "cic".DTA');
+    choices = cic.userInterface.analysisChoices();
 
     opts = struct();
     opts.delay_s = 10e-6;
     opts.cathLimit = -0.6;
     opts.anodLimit = 0.8;
     opts.areaOverride = '';
-    opts.pulseMode = 'Metadata first, then auto';
+    opts.pulseMode = char(choices.pulseModes(1));
     opts.usedMeasuredCurrent = true;
     item.analysis = computeCIC(item, opts);
     assert(item.analysis.ok, item.analysis.message);

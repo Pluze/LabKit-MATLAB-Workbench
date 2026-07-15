@@ -5,14 +5,15 @@
 function request = plotRequest(A, itemName, xChoice, yChoice)
 %PLOTREQUEST Prepare deterministic CIC plot payload for runner drawing.
 
+    choices = cic.userInterface.analysisChoices();
     if nargin < 2 || isempty(itemName)
         itemName = 'file';
     end
     if nargin < 3 || isempty(xChoice)
-        xChoice = 'Time (s)';
+        xChoice = char(choices.xAxes(1));
     end
     if nargin < 4 || isempty(yChoice)
-        yChoice = 'VT: Vf vs time';
+        yChoice = char(choices.yAxes(1));
     end
 
     request = struct();
@@ -37,9 +38,10 @@ function request = plotRequest(A, itemName, xChoice, yChoice)
 end
 
 function [x, xLabel, coords] = xPayload(A, xChoice)
-    if strcmp(xChoice, 'Sample #')
+    choices = cic.userInterface.analysisChoices();
+    if strcmp(xChoice, choices.xAxes(2))
         x = A.pt;
-        xLabel = 'Sample #';
+        xLabel = char(choices.xAxes(2));
         coords = struct( ...
             'cathStartX', interp1Safe(A.t, A.pt, A.pulse.cath_start), ...
             'cathEndX', interp1Safe(A.t, A.pt, A.pulse.cath_end), ...
@@ -49,7 +51,7 @@ function [x, xLabel, coords] = xPayload(A, xChoice)
             'emaX', interp1Safe(A.t, A.pt, A.t_ema));
     else
         x = A.t;
-        xLabel = 'Time (s)';
+        xLabel = char(choices.xAxes(1));
         coords = struct( ...
             'cathStartX', A.pulse.cath_start, ...
             'cathEndX', A.pulse.cath_end, ...

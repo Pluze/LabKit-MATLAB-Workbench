@@ -55,7 +55,8 @@ function drawDurationBracket(ax, x1, x2, y, labelText)
 end
 
 function x = chooseX(A, xChoice)
-    if strcmp(xChoice, 'Sample #')
+    choices = cic.userInterface.analysisChoices();
+    if strcmp(xChoice, choices.xAxes(2))
         x = A.pt;
     else
         x = A.t;

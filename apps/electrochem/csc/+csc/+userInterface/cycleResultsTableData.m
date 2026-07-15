@@ -22,12 +22,13 @@ function data = cycleResultsTableData(results, mode)
 end
 
 function fields = modeFields(mode)
+    choices = csc.userInterface.analysisChoices();
     switch char(string(mode))
-        case 'Cathodic'
+        case char(choices.modes(2))
             fields = struct('cv', 'CSCcvCath_mCcm2', ...
                 'ct', 'CSCctCath_mCcm2', ...
                 'rel', 'RelativeDiffCath_pct');
-        case 'Anodic'
+        case char(choices.modes(3))
             fields = struct('cv', 'CSCcvAnod_mCcm2', ...
                 'ct', 'CSCctAnod_mCcm2', ...
                 'rel', 'RelativeDiffAnod_pct');

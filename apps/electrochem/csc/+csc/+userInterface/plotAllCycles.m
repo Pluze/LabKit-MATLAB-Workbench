@@ -52,7 +52,8 @@ function opts = fillOptions(opts, curveCount)
         opts.lineWidth = 1.1;
     end
     if ~isfield(opts, 'title')
-        opts.title = 'All cycles';
+        choices = csc.userInterface.analysisChoices();
+        opts.title = char(choices.allCycles);
     end
     if ~isfield(opts, 'curveIndices')
         opts.curveIndices = 1:curveCount;

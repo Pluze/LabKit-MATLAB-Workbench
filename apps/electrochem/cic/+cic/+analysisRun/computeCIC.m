@@ -122,7 +122,8 @@ function opts = fillCICOptions(opts)
         opts.area_cm2 = NaN;
     end
     if ~isfield(opts, 'pulseMode')
-        opts.pulseMode = 'Metadata first, then auto';
+        choices = cic.userInterface.analysisChoices();
+        opts.pulseMode = char(choices.pulseModes(1));
     end
     if ~isfield(opts, 'usedMeasuredCurrent')
         opts.usedMeasuredCurrent = true;

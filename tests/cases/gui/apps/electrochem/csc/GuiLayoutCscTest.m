@@ -13,8 +13,9 @@ classdef GuiLayoutCscTest < matlab.unittest.TestCase
             fig = h.launchFigure('labkit_CSC_app', ...
                 'Gamry DTA GUI (literature CSC)');
             assertCscLayout(h, fig);
-            h.invokeDropdownValue(fig, 'Cathodic');
-            h.invokeDropdownValue(fig, 'Full');
+            choices = csc.userInterface.analysisChoices();
+            h.invokeDropdownValue(fig, char(choices.modes(2)));
+            h.invokeDropdownValue(fig, char(choices.modes(1)));
             driver = labkitWorkflowDriver(fig);
             driver.chooseFiles('files', fixture);
 
@@ -31,8 +32,16 @@ classdef GuiLayoutCscTest < matlab.unittest.TestCase
                 'CSC workflow should refresh the scan-rate field.');
             testCase.verifyGreaterThan(numel(ui.controls.curve.valueHandle.Items), 1, ...
                 'CSC workflow should populate parsed curve choices.');
-            testCase.verifyEqual(string(ui.controls.curve.valueHandle.Value), "All cycles", ...
+            testCase.verifyEqual(string(ui.controls.curve.valueHandle.Value), ...
+                choices.allCycles, ...
                 'CSC workflow should default to all-cycle display.');
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            testCase.verifyEqual(runtime.definition.contractVersion, 2, ...
+                'CSC workflow must execute through Runtime V2.');
+            testCase.verifyFalse(isfield(runtime.state.project.inputs, 'items'), ...
+                'CSC durable project must not own decoded DTA items.');
+            testCase.verifyEqual(numel(runtime.state.session.cache.items), 1, ...
+                'CSC decoded DTA items should live in the session cache.');
             cycleData = driver.tableData('cycleResults');
             testCase.verifyEqual(size(cycleData, 1), ...
                 numel(ui.controls.curve.valueHandle.Items) - 1, ...
@@ -78,6 +87,39 @@ classdef GuiLayoutCscTest < matlab.unittest.TestCase
                 'cv_cyclic_voltammetry_pt_replicate.DTA'), ...
                 'CSC append should select the newly added CV/CT file.');
 
+            outputFolder = string(tempname);
+            mkdir(outputFolder);
+            outputCleanup = onCleanup(@() rmdir(outputFolder, 's'));
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            runtime.request.outputChooser = @(~, ~, ~) deal( ...
+                'csc_all_cycles.csv', char(outputFolder));
+            setappdata(fig, 'labkitUiAppRuntime', runtime);
+            driver.click('Export all cycles CSV');
+            testCase.verifyTrue(isfile(fullfile( ...
+                outputFolder, 'csc_all_cycles.csv')));
+            manifestPath = fullfile(outputFolder, ...
+                'csc_all_cycles.labkit.json');
+            testCase.verifyTrue(isfile(manifestPath), ...
+                'CSC export should write a standard result manifest.');
+            manifest = jsondecode(fileread(manifestPath));
+            testCase.verifyEqual(string(manifest.format), "labkit.result");
+
+            projectPath = fullfile(outputFolder, 'csc-project.mat');
+            labkit.ui.runtime.saveState(fig, projectPath);
+            saved = load(projectPath, 'labkitProject');
+            testCase.verifyEqual(saved.labkitProject.app.payloadVersion, 1);
+            testCase.verifyFalse(isfield( ...
+                saved.labkitProject.payload.inputs, 'items'), ...
+                'CSC project files must exclude decoded DTA items.');
+            driver.click('Clear all');
+            labkit.ui.runtime.loadState(fig, projectPath);
+            h.waitForUiIdle(fig);
+            testCase.verifyEqual(char(driver.fileStatus('files')), ...
+                '2 file(s) loaded', ...
+                'CSC project reopen should rebuild decoded sources.');
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            testCase.verifyEqual(numel(runtime.state.session.cache.items), 2);
+
             topAxes.XLim = [-0.01 0.01];
             topAxes.YLim = [-1e-12 1e-12];
             driver.click('Clear all');
@@ -90,6 +132,7 @@ classdef GuiLayoutCscTest < matlab.unittest.TestCase
                 'CSC clear-all should restore automatic X limits.');
             testCase.verifyEqual(topAxes.YLimMode, 'auto', ...
                 'CSC clear-all should restore automatic Y limits.');
+            clear outputCleanup;
         end
     end
 end
@@ -103,9 +146,10 @@ function assertCscLayout(h, fig)
         'Compare Q / CSC', 'Refresh Plots', 'Clear Both'});
     h.assertCheckboxContract(fig, {'Grid', 'Hold', 'Show Trim'});
     h.assertCheckboxContract(fig, {'Ignore first/last cycle'});
+    choices = csc.userInterface.analysisChoices();
     h.assertDropdownGroups(fig, [ ...
-        h.dropdownGroup({'(none)'}, 5), ...
-        h.dropdownGroup({'Full', 'Cathodic', 'Anodic'}, 1)]);
+        h.dropdownGroup(cellstr(choices.empty), 5), ...
+        h.dropdownGroup(cellstr(choices.modes), 1)]);
     h.assertTabTitles(fig, {'Files + Analysis', 'Summary + Results', 'Log'});
     h.assertDropdownCallbacksPresent(fig);
 end

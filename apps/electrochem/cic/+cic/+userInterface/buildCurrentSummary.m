@@ -5,11 +5,12 @@
 function summary = buildCurrentSummary(items, currentIndex, modeLabel, unitLabel)
 %BUILDCURRENTSUMMARY Build CIC current-file summary text.
 
+    choices = cic.userInterface.analysisChoices();
     if nargin < 2
         currentIndex = [];
     end
     if nargin < 3 || isempty(modeLabel)
-        modeLabel = 'Total biphasic';
+        modeLabel = char(choices.cicModes(3));
     end
     if nargin < 4
         unitLabel = 'mC/cm^2';
@@ -113,10 +114,11 @@ function out = bestSafeString(items, modeLabel, unitLabel)
 end
 
 function v = selectedCICValue(A, modeLabel)
+    choices = cic.userInterface.analysisChoices();
     switch modeLabel
-        case 'Cathodic phase'
+        case char(choices.cicModes(1))
             v = A.CICc_mCcm2;
-        case 'Anodic phase'
+        case char(choices.cicModes(2))
             v = A.CICa_mCcm2;
         otherwise
             v = A.CICt_mCcm2;
@@ -124,10 +126,11 @@ function v = selectedCICValue(A, modeLabel)
 end
 
 function s = shortModeName(modeLabel)
+    choices = cic.userInterface.analysisChoices();
     switch modeLabel
-        case 'Cathodic phase'
+        case char(choices.cicModes(1))
             s = 'CICc';
-        case 'Anodic phase'
+        case char(choices.cicModes(2))
             s = 'CICa';
         otherwise
             s = 'CICtotal';

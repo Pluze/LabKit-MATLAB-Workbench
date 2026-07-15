@@ -84,7 +84,9 @@ classdef CscViewTest < matlab.unittest.TestCase
                 'dtErr', 3.25e-6, ...
                 'area_cm2', 2);
 
-            readout = csc.userInterface.comparisonReadout(result, 'Cathodic');
+            choices = csc.userInterface.analysisChoices();
+            readout = csc.userInterface.comparisonReadout( ...
+                result, choices.modes(2));
 
             testCase.verifyTrue(readout.ok);
             testCase.verifyEqual(readout.qctText, ...
@@ -99,7 +101,8 @@ classdef CscViewTest < matlab.unittest.TestCase
             testCase.verifyEqual(readout.logMessage, ...
                 sprintf(['Compare [%s]: Qct=%.6e C, Qcv=%.6e C, ', ...
                 'rel=%.6f %%, maxdt=%.3e s'], ...
-                'Cathodic', result.Qct, result.Qcv, result.rel_pct, result.dtErr));
+                choices.modes(2), result.Qct, result.Qcv, ...
+                result.rel_pct, result.dtErr));
         end
 
         function comparisonReadoutPreservesChargeOnlyStatus(testCase)
@@ -114,7 +117,9 @@ classdef CscViewTest < matlab.unittest.TestCase
                 'dtErr', 3.25e-6, ...
                 'area_cm2', NaN);
 
-            readout = csc.userInterface.comparisonReadout(result, 'Full');
+            choices = csc.userInterface.analysisChoices();
+            readout = csc.userInterface.comparisonReadout( ...
+                result, choices.modes(1));
 
             testCase.verifyEqual(readout.qctText, sprintf('%.12e C', result.Qct));
             testCase.verifyEqual(readout.diffText, sprintf('%.12e C', result.diff_C));
@@ -129,7 +134,9 @@ classdef CscViewTest < matlab.unittest.TestCase
                 'message', 'No matching CV/CT curve data.', ...
                 'logMessage', 'Compare skipped: No matching CV/CT curve data.');
 
-            readout = csc.userInterface.comparisonReadout(result, 'Full');
+            choices = csc.userInterface.analysisChoices();
+            readout = csc.userInterface.comparisonReadout( ...
+                result, choices.modes(1));
 
             testCase.verifyFalse(readout.ok);
             testCase.verifyEqual(readout.qctText, result.message);

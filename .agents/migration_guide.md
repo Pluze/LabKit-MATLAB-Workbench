@@ -379,13 +379,20 @@ archetype so one framework issue is solved once per wave.
 ```text
 phase: 5/full-app-migration-waves
 status: in progress
-completed contracts: CIC source-only project, durable analysis/view parameters, session-owned decoded and analyzed DTA cache, native presenter and registered axis renderer, standard result manifest
-migrated apps: cic
-compatibility retained: CIC calculations, threshold defaults, pulse modes, summary meanings, plot annotations, 8-column batch table, and 14-column CSV contract
-tests: CIC export/project/presenter, view, and calculation tests plus hidden GUI load/recompute/plot/export/project-reopen workflow passed 9/9
-next app: csc
+completed contracts: CIC source-only project, durable analysis/view parameters, session-owned decoded and analyzed DTA cache, native presenter and registered axis renderer, standard result manifest; CSC source-only project, bound comparison/plot settings, session-owned curve selection and decoded DTA cache, pure comparison/table/two-axis presentation, and result manifests for both export forms
+migrated apps: cic; csc
+compatibility retained: CIC calculations, threshold defaults, pulse modes, summary meanings, plot annotations, 8-column batch table, and 14-column CSV contract; CSC CV/CT parsing, all/single-cycle selection, comparison modes, edge-cycle filtering, plot/trim behavior, six-column visible table, full all-cycle CSV, and point-level CV CSV contracts
+tests: CIC export/project/presenter, view, and calculation tests plus hidden GUI load/recompute/plot/export/project-reopen workflow passed 9/9; CSC 42-test electrochem non-GUI selection and hidden GUI load/compare/plot/export/project-reopen workflow passed at the migration checkpoint
+next app: eis
 blocker:
 ```
+
+Phase-5 author-cost evidence against pre-V2 commit `6bfd74c8`:
+
+| App | Production lines before -> after | Largest file before -> after | Audit decision |
+| --- | ---: | ---: | --- |
+| `cic` | 2032 -> 2223 | 331 -> 332 | retain explicit project/session/presentation/export ownership and centralized workflow enums; revisit only mechanics repeated by later apps |
+| `csc` | 2267 -> 2271 | 644 -> 316 | retain the near-neutral total after bindings and pure presentation; deleted direct-control refresh orchestration and two dialog-only export wrappers |
 
 Pilot durable/resource focus:
 

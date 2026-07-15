@@ -20,8 +20,9 @@ classdef CicViewTest < matlab.unittest.TestCase
             setupLabKitTestPath();
 
             items = makeItems();
+            choices = cic.userInterface.analysisChoices();
             summary = cic.userInterface.buildCurrentSummary(items, 1, ...
-                'Cathodic phase', 'uC/cm^2');
+                choices.cicModes(1), 'uC/cm^2');
 
             testCase.verifyEqual(summary.controlMode, 'Current-controlled chrono');
             testCase.verifyEqual(summary.detect, 'metadata-current | pulse metadata');
@@ -43,9 +44,10 @@ classdef CicViewTest < matlab.unittest.TestCase
             items(1).controlMode = 'unknown';
             items(1).analysis = struct('ok', false, 'message', 'bad pulse window');
             items(2).analysis.safe = false;
+            choices = cic.userInterface.analysisChoices();
 
             summary = cic.userInterface.buildCurrentSummary(items, 1, ...
-                'Total biphasic', 'mC/cm^2');
+                choices.cicModes(3), 'mC/cm^2');
 
             testCase.verifyEqual(summary.controlMode, 'Unknown chrono control mode');
             testCase.verifyEqual(summary.detect, '-');
@@ -59,14 +61,15 @@ classdef CicViewTest < matlab.unittest.TestCase
             setupLabKitTestPath();
 
             items = makeItems();
+            choices = cic.userInterface.analysisChoices();
 
             summary = cic.userInterface.buildCurrentSummary(items, [], ...
-                'Total biphasic', 'mC/cm^2');
+                choices.cicModes(3), 'mC/cm^2');
             testCase.verifyEqual(summary.controlMode, '-');
             testCase.verifyEqual(summary.bestSafe, 'safe-second | CICtotal = 0.012 mC/cm^2');
 
             emptySummary = cic.userInterface.buildCurrentSummary(struct([]), [], ...
-                'Total biphasic', 'mC/cm^2');
+                choices.cicModes(3), 'mC/cm^2');
             testCase.verifyEqual(emptySummary.bestSafe, '-');
         end
 
@@ -74,14 +77,15 @@ classdef CicViewTest < matlab.unittest.TestCase
             setupLabKitTestPath();
 
             A = makeAnalysis(false, 0.0025, 0.0035, 0.0060);
+            choices = cic.userInterface.analysisChoices();
 
             request = cic.userInterface.plotRequest(A, 'sample-file', ...
-                'Time (s)', 'VT: Vf vs time');
+                choices.xAxes(1), choices.yAxes(1));
 
             testCase.verifyEqual(request.kind, 'VT');
             testCase.verifyEqual(request.x, A.t);
             testCase.verifyEqual(request.y, A.Vf);
-            testCase.verifyEqual(request.xLabel, 'Time (s)');
+            testCase.verifyEqual(string(request.xLabel), choices.xAxes(1));
             testCase.verifyEqual(request.yLabel, 'Vf (V vs Ref.)');
             testCase.verifyEqual(request.baseColor, [0 0.4470 0.7410]);
             testCase.verifyEqual(request.title, 'sample-file | VT | UNSAFE');
@@ -97,14 +101,15 @@ classdef CicViewTest < matlab.unittest.TestCase
             setupLabKitTestPath();
 
             A = makeAnalysis(true, 0.0090, 0.0040, 0.0120);
+            choices = cic.userInterface.analysisChoices();
 
             request = cic.userInterface.plotRequest(A, 'safe-file', ...
-                'Sample #', 'IT: Im vs time');
+                choices.xAxes(2), choices.yAxes(2));
 
             testCase.verifyEqual(request.kind, 'IT');
             testCase.verifyEqual(request.x, A.pt);
             testCase.verifyEqual(request.y, A.Im);
-            testCase.verifyEqual(request.xLabel, 'Sample #');
+            testCase.verifyEqual(string(request.xLabel), choices.xAxes(2));
             testCase.verifyEqual(request.yLabel, 'Im (A)');
             testCase.verifyEqual(request.baseColor, [0.8500 0.3250 0.0980]);
             testCase.verifyEqual(request.title, 'safe-file | IT | |I|max = 0.0035 A');
