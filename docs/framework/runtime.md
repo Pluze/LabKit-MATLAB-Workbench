@@ -194,6 +194,17 @@ project and recalculates every relative path from that write's actual MAT-file
 destination. It preserves additive reference fields and does not mutate the
 live project merely to serialize it.
 
+For unordered file collections, the injected
+`services.project.reconcileSources(existing,paths,role,idPrefix,required)`
+service preserves existing IDs by resolved path and assigns stable nonempty
+IDs to newly selected files. An empty selection returns the canonical empty
+source array; Apps do not create a placeholder record with an empty ID.
+
+Result manifests follow the same rule. Start a variable-length output list
+with `services.results.emptyOutputs()`, then append records returned by
+`services.results.output(...)`. The output factory validates real IDs and is
+not a struct-template constructor.
+
 The runtime first tries the saved relative and original locations. When a
 required source cannot be resolved, it identifies the source by app ID, role,
 and filename and lets the user locate a replacement. Cancelling leaves the

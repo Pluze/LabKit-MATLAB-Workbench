@@ -98,4 +98,9 @@ objects.
 
 ## Framework Compatibility
 
-This App uses the Runtime V2 lifecycle and requires `labkit.ui >=7 <8`. App code uses semantic actions and injected project services; busy-state and portable-reference serialization mechanics remain framework-private.
+This App's `definition.m` owns its product metadata, `labkit.ui >=7 <8`
+requirement, layout, project/session factories, actions, presentation, and
+startup capability. The entrypoint only adapts the optional axes handoff and
+delegates to Runtime V2. App code uses semantic actions and injected project
+services; busy-state and portable-reference serialization mechanics remain
+framework-private.

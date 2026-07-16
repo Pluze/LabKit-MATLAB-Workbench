@@ -62,6 +62,11 @@ recovery write recalculates source-relative paths from that MAT file's actual
 destination, so moving a saved project tree does not depend on the folder from
 which the source was first imported.
 
+Variable-length sources and manifest outputs start from framework-provided
+empty arrays (`emptySourceRecords` and `services.results.emptyOutputs()`),
+then append validated real records. Apps do not construct empty-ID placeholder
+records merely to copy their struct shape.
+
 Read [Runtime and lifecycle](runtime.md) for the detailed definition fields,
 state transaction rules, startup/readiness behavior, plot and interaction
 contracts, debug semantics, callback policy, and the responsibilities of the

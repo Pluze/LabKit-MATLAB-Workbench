@@ -131,7 +131,8 @@ function def = define(varargin)
 %       optional cleanup functions at event, interaction, or figure scope.
 %       set replaces and disposes an existing resource with the same scope and
 %       id; choose distinct ids for resources that must coexist.
-%   services.results - results.output creates a manifest output record;
+%   services.results - results.emptyOutputs creates the canonical empty
+%       output array; results.output creates one validated manifest output;
 %       results.writeManifest writes the app's result manifest.
 %
 % Action Processing:

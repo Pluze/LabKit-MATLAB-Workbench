@@ -258,8 +258,19 @@ function artifact = versionedArtifactForPath(root, path)
     if numel(parts) >= 3 && parts(1) == "apps"
         appRoot = strjoin(parts(1:3), "/");
         appSlug = parts(3);
-        versionPath = appRoot + "/+" + appSlug + "/version.m";
+        versionPath = appVersionSourcePath(root, appRoot, appSlug);
         artifact = makeArtifact(appRoot, versionPath);
+    end
+end
+
+function versionPath = appVersionSourcePath(root, appRoot, appSlug)
+    definitionPath = appRoot + "/+" + appSlug + "/definition.m";
+    parts = [{char(root)}; cellstr(split(definitionPath, "/"))];
+    if exist(fullfile(parts{:}), "file") == 2 && ...
+            contains(string(fileread(fullfile(parts{:}))), '"AppVersion"')
+        versionPath = definitionPath;
+    else
+        versionPath = appRoot + "/+" + appSlug + "/version.m";
     end
 end
 
@@ -307,7 +318,11 @@ function component = versionedComponentName(root, artifact)
     parts = [{char(root)}; cellstr(split(artifact.versionPath, "/"))];
     source = string(fileread(fullfile(parts{:})));
     name = regexp(source, ...
-        '["'']name["'']\s*,\s*["'']([^"'']+)["'']', "tokens", "once");
+        '["'']Command["'']\s*,\s*["'']([^"'']+)["'']', "tokens", "once");
+    if isempty(name)
+        name = regexp(source, ...
+            '["'']name["'']\s*,\s*["'']([^"'']+)["'']', "tokens", "once");
+    end
     if isempty(name)
         component = artifact.label;
     else
@@ -324,11 +339,25 @@ function version = versionInGit(root, ref, relPath)
         return;
     end
     version = versionInText(string(output));
+    if strlength(version) == 0 && endsWith(relPath, "/definition.m")
+        legacyPath = replace(relPath, "/definition.m", "/version.m");
+        command = gitCommand(root, "show " + ...
+            shellDoubleQuote(validateGitRef(ref) + ":" + ...
+            normalizePath(legacyPath)));
+        [status, output] = system(char(command));
+        if status == 0
+            version = versionInText(string(output));
+        end
+    end
 end
 
 function version = versionInText(text)
-    version = regexp(text, '["'']version["'']\s*,\s*["'']([^"'']+)["'']', ...
+    version = regexp(text, '["'']AppVersion["'']\s*,\s*["'']([^"'']+)["'']', ...
         "tokens", "once");
+    if isempty(version)
+        version = regexp(text, '["'']version["'']\s*,\s*["'']([^"'']+)["'']', ...
+            "tokens", "once");
+    end
     if isempty(version)
         version = regexp(text, ...
             'versionInfo\([^,]+,\s*["'']([^"'']+)["'']', ...

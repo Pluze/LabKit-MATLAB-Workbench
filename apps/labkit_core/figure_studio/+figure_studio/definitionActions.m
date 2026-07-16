@@ -310,11 +310,10 @@ function outputs = packageOutputs(payload, services)
         roles(end + 1, 1) = "plot-data-csv";
         media(end + 1, 1) = "text/csv";
     end
-    outputs = repmat(services.results.output("", "", "", ""), ...
-        numel(paths), 1);
+    outputs = services.results.emptyOutputs();
     for k = 1:numel(paths)
         [~, name, extension] = fileparts(paths(k));
-        outputs(k) = services.results.output(roles(k), roles(k), ...
+        outputs(end + 1, 1) = services.results.output(roles(k), roles(k), ...
             string(name) + string(extension), media(k));
     end
 end
