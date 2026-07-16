@@ -37,16 +37,16 @@ An App declares a definition and passes it to `labkit.ui.runtime.launch`:
 ```matlab
 function varargout = labkit_Example_app(varargin)
     [varargout{1:nargout}] = labkit.ui.runtime.launch( ...
-        @example.definition, @example.requirements, @example.version, ...
-        varargin{:});
+        @example.definition, varargin{:});
 end
 ```
 
-A static App definition needs only stable `Id` and `Title` values plus a
-semantic `Layout`. The runtime supplies an empty version-1 project, an empty
-session, no actions, and an empty presentation model. Add project, session,
-action, presenter, renderer, or startup callbacks only when the App actually
-owns that behavior.
+A static App package needs only that thin entrypoint, one `definition.m`, and
+its semantic layout. The definition is the single product contract: it owns
+the command, stable ID, names, family, App version, update date, LabKit
+requirements, layout, and any optional capabilities. The runtime supplies an
+empty version-1 project, empty session, no actions, and an empty presentation
+model until the App opts into more behavior.
 
 The framework then validates the definition, creates canonical project and
 session state, builds the semantic layout, generates callbacks, commits the

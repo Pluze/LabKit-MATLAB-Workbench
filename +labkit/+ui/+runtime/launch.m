@@ -1,9 +1,8 @@
-function varargout = launch(definitionFcn, requirementsFcn, versionFcn, varargin)
+function varargout = launch(definitionFcn, varargin)
 %LAUNCH Dispatch requests and launch a LabKit runtime definition.
 %
 % Usage:
-%   fig = labkit.ui.runtime.launch(definitionFcn, requirementsFcn, ...
-%       versionFcn, varargin{:})
+%   fig = labkit.ui.runtime.launch(definitionFcn, varargin{:})
 %   [fig, debug] = labkit.ui.runtime.launch(..., "debug")
 %   requirements = labkit.ui.runtime.launch(..., "requirements")
 %   version = labkit.ui.runtime.launch(..., "version")
@@ -11,9 +10,6 @@ function varargout = launch(definitionFcn, requirementsFcn, versionFcn, varargin
 %
 % Inputs:
 %   definitionFcn - Function handle returning a definition created by define.
-%   requirementsFcn - Function handle returning the app's requirements struct.
-%   versionFcn - Function handle returning app version metadata with a name
-%       field used for titles and app-specific error identifiers.
 %
 % Outputs:
 %   fig - App figure for normal and debug launches.
@@ -38,17 +34,15 @@ function varargout = launch(definitionFcn, requirementsFcn, versionFcn, varargin
 %   as {} or {"debug"}.
 %
 % Typical Call:
-%   fig = labkit.ui.runtime.launch(@appDefinition, @requirements, @version);
+%   fig = labkit.ui.runtime.launch(@appDefinition);
 %
 % See also labkit.ui.runtime.define
 
     assertFactory(definitionFcn, "definitionFcn");
-    assertFactory(requirementsFcn, "requirementsFcn");
-    assertFactory(versionFcn, "versionFcn");
-    requirements = requirementsFcn();
-    info = versionFcn();
+    [definition, requirements, info, launchArgs] = ...
+        resolveDefinitionContract(definitionFcn, varargin);
     appName = char(string(info.name));
-    [request, dispatchArgs] = prepareRequest(varargin);
+    [request, dispatchArgs] = prepareRequest(launchArgs);
     [handled, outputs, debug] = dispatchRequest( ...
         appName, dispatchArgs, nargout, "Requirements", requirements, ...
         "Version", info);
@@ -58,7 +52,7 @@ function varargout = launch(definitionFcn, requirementsFcn, versionFcn, varargin
     end
     validateOutputCount(appName, debug, nargout);
     request.debug = debug;
-    fig = runAppDefinition(definitionFcn(), request);
+    fig = runAppDefinition(definition, request);
     applyVersionTitle(fig, info);
     if nargout >= 1
         varargout{1} = fig;
@@ -66,6 +60,64 @@ function varargout = launch(definitionFcn, requirementsFcn, versionFcn, varargin
     if nargout >= 2
         varargout{2} = debug;
     end
+end
+
+function [definition, requirements, info, launchArgs] = ...
+        resolveDefinitionContract(definitionFcn, args)
+    definition = [];
+    if ~isempty(args) && isa(args{1}, 'function_handle')
+        if numel(args) < 2 || ~isa(args{2}, 'function_handle')
+            error('labkit:ui:runtime:InvalidLaunchFactory', ...
+                ['The transitional launch form requires both requirements ' ...
+                'and version factories.']);
+        end
+        requirements = args{1}();
+        info = args{2}();
+        launchArgs = args(3:end);
+        definition = definitionFcn();
+        return;
+    end
+
+    definition = definitionFcn();
+    [requirements, info] = definitionLaunchMetadata(definition);
+    launchArgs = args;
+end
+
+function [requirements, info] = definitionLaunchMetadata(definition)
+    if ~isstruct(definition) || ~isscalar(definition) || ...
+            ~isfield(definition, 'product') || ...
+            ~isfield(definition, 'requirements')
+        error('labkit:ui:runtime:MissingProductMetadata', ...
+            'Single-definition launch requires Runtime V2 product metadata.');
+    end
+    product = definition.product;
+    fields = ["command", "displayName", "family", "version", "updated"];
+    for field = fields
+        if ~isfield(product, field) || ...
+                strlength(strtrim(string(product.(field)))) == 0
+            error('labkit:ui:runtime:MissingProductMetadata', ...
+                'Single-definition launch requires product field %s.', field);
+        end
+    end
+    if isempty(regexp(char(product.version), '^\d+\.\d+\.\d+$', 'once'))
+        error('labkit:ui:runtime:InvalidProductMetadata', ...
+            'AppVersion must use X.Y.Z semantic version form.');
+    end
+    if isempty(regexp(char(product.updated), '^\d{4}-\d{2}-\d{2}$', 'once'))
+        error('labkit:ui:runtime:InvalidProductMetadata', ...
+            'Updated must use YYYY-MM-DD form.');
+    end
+    requirements = definition.requirements;
+    if isempty(requirements)
+        error('labkit:ui:runtime:MissingProductMetadata', ...
+            'Single-definition launch requires Requirements.');
+    end
+    info = struct( ...
+        "name", string(product.command), ...
+        "displayName", string(product.displayName), ...
+        "family", string(product.family), ...
+        "version", string(product.version), ...
+        "updated", string(product.updated));
 end
 
 function [request, dispatchArgs] = prepareRequest(args)

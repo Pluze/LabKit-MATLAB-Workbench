@@ -25,16 +25,14 @@
 <p>LabKit apps are first-class deliverables. Each app owns its scientific workflow, state, plots, result schema, and exports; the reusable framework owns lifecycle and domain-neutral UI mechanics.</p>
 <h2 id="create-an-app">Create An App</h2>
 <p>Start from the LabKit app template rather than copying a complete neighboring app. Use the smallest nearby app only as a workflow example.</p>
-<p>A static App begins with only the product entrypoint, metadata, definition, and layout it actually uses:</p>
+<p>A static App begins with only the product entrypoint, definition, and layout it actually uses:</p>
 <pre><code class="language-text">apps/&lt;family&gt;/&lt;app_slug&gt;/labkit_&lt;AppName&gt;_app.m
 apps/&lt;family&gt;/&lt;app_slug&gt;/+&lt;app_slug&gt;/definition.m
-apps/&lt;family&gt;/&lt;app_slug&gt;/+&lt;app_slug&gt;/requirements.m
-apps/&lt;family&gt;/&lt;app_slug&gt;/+&lt;app_slug&gt;/version.m
 apps/&lt;family&gt;/&lt;app_slug&gt;/+&lt;app_slug&gt;/+userInterface/buildWorkbenchLayout.m</code></pre>
 <p><code>runtime.define</code> supplies an empty version-1 project, empty session, empty action registry, and empty presenter model when those components are omitted. Add <code>definitionActions.m</code> for interactions, a presenter for dynamic views, <code>createSession.m</code> for transient decoded/cache state, and a project declaration only when the App owns durable data. A migration callback exists only after a saved project schema has actually changed.</p>
 <p>Create additional packages only for concrete workflows that need them, for example <code>+sourceFiles</code>, <code>+analysisRun</code>, <code>+resultFiles</code>, <code>+cropGeometry</code>, or <code>+thermalFrames</code>. Avoid generic buckets such as <code>+actions</code>, <code>+ops</code>, <code>+io</code>, <code>+helpers</code>, and <code>+utils</code>.</p>
 <h2 id="define-the-runtime-contract">Define The Runtime Contract</h2>
-<p><code>definition.m</code> returns a plain struct created by <code>labkit.ui.runtime.define</code>. Every definition names the app id, title, and layout builder. Project schema, session factory, action registry, presenter, renderers, and startup event are opt-in capabilities.</p>
+<p><code>definition.m</code> returns a plain struct created by <code>labkit.ui.runtime.define</code>. It is the App's single product contract and names the public command, stable ID, display metadata, App version, compatible LabKit facades, and layout builder. Project schema, session factory, action registry, presenter, renderers, and startup event are opt-in capabilities.</p>
 <p>The complete field tables, callback signatures, canonical project/session buckets, presenter shape, and renderer contract are documented in <a href="../framework/runtime.html#definition-component-contract">Runtime and Lifecycle</a>. For a complete file-by-file implementation, follow <a href="complete-app.html">Build a Complete App</a>.</p>
 <p>The framework owns:</p>
 <ul>
@@ -68,7 +66,7 @@ apps/&lt;family&gt;/&lt;app_slug&gt;/+&lt;app_slug&gt;/+userInterface/buildWorkb
 </ul>
 <p>Move code into <code>+labkit</code> only when it is domain-neutral, independent of app state, directly testable, used broadly, and makes the public API clearer. See <a href="architecture.html#reusable-extraction-rule">Architecture</a>.</p>
 <h2 id="version-and-requirements">Version And Requirements</h2>
-<p><code>requirements.m</code> declares supported LabKit facade ranges. <code>version.m</code> declares the app command, display name, family, semantic version, and last change date. App behavior changes update the version, app documentation, and component-owned history record in the same coherent change.</p>
+<p><code>definition.m</code> owns supported LabKit facade ranges together with the App command, display name, family, semantic version, and last change date. There is no second metadata registry. App behavior changes update this definition, the App documentation, and component-owned history in the same coherent change.</p>
 <h2 id="validation">Validation</h2>
 <p>Use focused app tests while editing, then follow the stable gates in <a href="testing.html">Testing</a>. Automated GUI tests cover launch, layout, callbacks, debug plumbing, and synthetic workflows; visual quality and manual interaction feel still require a human MATLAB check.</p>
 <h2 id="related-reference">Related Reference</h2>

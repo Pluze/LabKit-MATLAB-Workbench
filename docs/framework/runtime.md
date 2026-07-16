@@ -36,22 +36,26 @@ diagnostics, persistence, and resources. App packages declare durable project
 data, transient session data, workflow handlers, presentation, and data-only
 UI structure.
 
-Public launch files stay thin. They route requests, expose requirements and
-version metadata, and delegate the GUI to the framework runtime:
+Public launch files stay thin. They delegate requests and GUI creation to the
+single app-owned definition:
 
 ```matlab
 function varargout = labkit_Example_app(varargin)
     [varargout{1:nargout}] = labkit.ui.runtime.launch( ...
-        @example.definition, @example.requirements, @example.version, ...
-        varargin{:});
+        @example.definition, varargin{:});
 end
 ```
 
 ```matlab
 function def = definition()
 def = labkit.ui.runtime.define( ...
+    "Command", "labkit_Example_app", ...
     "Id", "example", ...
     "Title", "Example App", ...
+    "Family", "Examples", ...
+    "AppVersion", "1.0.0", ...
+    "Updated", "2026-07-16", ...
+    "Requirements", labkit.contract.requirements("ui", ">=7 <8"), ...
     "Layout", @example.userInterface.buildWorkbenchLayout);
 end
 ```
@@ -70,8 +74,14 @@ must provide the field; optional components may be omitted.
 
 | Component | Required | Value and signature | Responsibility |
 | --- | --- | --- | --- |
+| `Command` | Yes | Public MATLAB function name | Stable launcher command and request-error identity. |
 | `Id` | Yes | Stable nonempty text | Permanent project, recovery, result, and diagnostic identity. |
 | `Title` | Yes | Nonempty text | Window title without the runtime-added version and file state. |
+| `DisplayName` | No | Nonempty text | Short launcher name. Default: `Title`. |
+| `Family` | Yes | Nonempty text | App family used for launcher grouping and documentation. |
+| `AppVersion` | Yes | `X.Y.Z` text | App product version, independent of project payload version. |
+| `Updated` | Yes | `YYYY-MM-DD` text | Date of the App product version. |
+| `Requirements` | Yes | `labkit.contract.requirements(...)` | Compatible reusable LabKit facade ranges. |
 | `Project` | No | Scalar project-declaration struct described below | Durable schema, validation, migration, and source relinking. Omission uses an empty version-1 project. |
 | `CreateSession` | No | `session = createSession()` or `session = createSession(project)` | Rebuild transient selection, workflow, view, and cache state. |
 | `Layout` | Yes | `layout()`, `layout(callbacks)`, or `layout(callbacks,state)` | Return one data-only `labkit.ui.layout.workbench` tree. |
@@ -511,8 +521,9 @@ stack is intentional.
 
 ### Runtime State And Transactions
 
-A definition always declares `Id`, `Title`, and `Layout`. It may add `Project`,
-`CreateSession`, `Actions`, `Present`, `Renderers`, and `Start`. It launches through
+A definition always declares product metadata, requirements, `Id`, `Title`,
+and `Layout`. It may add `Project`, `CreateSession`, `Actions`, `Present`,
+`Renderers`, and `Start`. It launches through
 `labkit.ui.runtime.launch`, which owns lightweight request dispatch, contract
 checks, runtime creation, output normalization, and the versioned title.
 

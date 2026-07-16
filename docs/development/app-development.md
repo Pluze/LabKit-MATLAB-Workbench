@@ -9,14 +9,12 @@ lifecycle and domain-neutral UI mechanics.
 Start from the LabKit app template rather than copying a complete neighboring
 app. Use the smallest nearby app only as a workflow example.
 
-A static App begins with only the product entrypoint, metadata, definition,
-and layout it actually uses:
+A static App begins with only the product entrypoint, definition, and layout
+it actually uses:
 
 ```text
 apps/<family>/<app_slug>/labkit_<AppName>_app.m
 apps/<family>/<app_slug>/+<app_slug>/definition.m
-apps/<family>/<app_slug>/+<app_slug>/requirements.m
-apps/<family>/<app_slug>/+<app_slug>/version.m
 apps/<family>/<app_slug>/+<app_slug>/+userInterface/buildWorkbenchLayout.m
 ```
 
@@ -35,9 +33,10 @@ example `+sourceFiles`, `+analysisRun`, `+resultFiles`, `+cropGeometry`, or
 ## Define The Runtime Contract
 
 `definition.m` returns a plain struct created by
-`labkit.ui.runtime.define`. Every definition names the app id, title, and
-layout builder. Project schema, session factory, action registry, presenter,
-renderers, and startup event are opt-in capabilities.
+`labkit.ui.runtime.define`. It is the App's single product contract and names
+the public command, stable ID, display metadata, App version, compatible
+LabKit facades, and layout builder. Project schema, session factory, action
+registry, presenter, renderers, and startup event are opt-in capabilities.
 
 The complete field tables, callback signatures, canonical project/session
 buckets, presenter shape, and renderer contract are documented in
@@ -109,10 +108,11 @@ state, directly testable, used broadly, and makes the public API clearer. See
 
 ## Version And Requirements
 
-`requirements.m` declares supported LabKit facade ranges.
-`version.m` declares the app command, display name, family, semantic version,
-and last change date. App behavior changes update the version, app
-documentation, and component-owned history record in the same coherent change.
+`definition.m` owns supported LabKit facade ranges together with the App
+command, display name, family, semantic version, and last change date. There
+is no second metadata registry. App behavior changes update this definition,
+the App documentation, and component-owned history in the same coherent
+change.
 
 ## Validation
 

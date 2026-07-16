@@ -10,7 +10,8 @@ function validateAppDefinition(def)
 end
 
 function validateV2Definition(def)
-    required = ["type", "contractVersion", "id", "title", "project", ...
+    required = ["type", "contractVersion", "id", "title", "product", ...
+        "requirements", "project", ...
         "createSession", "layout", "actions", "present", "renderers", ...
         "start", "debugSample", "utilities"];
     requireFields(def, required);
@@ -20,6 +21,8 @@ function validateV2Definition(def)
     end
     assertAppId(def.id);
     assertScalarText(def.title, "title");
+    validateProductMetadata(def.product);
+    validateRequirements(def.requirements);
     validateProjectSpec(def.project);
     if ~isempty(def.createSession) && ~isa(def.createSession, 'function_handle')
         error('labkit:ui:runtime:InvalidDefinition', ...
@@ -48,6 +51,48 @@ function validateV2Definition(def)
             'DebugSample must be a function handle when supplied.');
     end
     validateUtilitiesSpec(def.utilities);
+end
+
+function validateProductMetadata(product)
+    if ~isstruct(product) || ~isscalar(product)
+        error('labkit:ui:runtime:InvalidDefinition', ...
+            'App product metadata must be a scalar struct.');
+    end
+    fields = ["command", "displayName", "family", "version", "updated"];
+    requireFields(product, fields);
+    for field = fields
+        value = product.(field);
+        if ~(ischar(value) || (isstring(value) && isscalar(value)))
+            error('labkit:ui:runtime:InvalidDefinition', ...
+                'App product metadata field %s must be scalar text.', field);
+        end
+    end
+    if strlength(string(product.displayName)) == 0
+        error('labkit:ui:runtime:InvalidDefinition', ...
+            'App product displayName must be nonempty scalar text.');
+    end
+    populated = strlength([string(product.command), string(product.family), ...
+        string(product.version), string(product.updated)]) > 0;
+    if any(populated) && ~all(populated)
+        error('labkit:ui:runtime:InvalidDefinition', ...
+            ['Command, Family, AppVersion, and Updated must be supplied ' ...
+            'together.']);
+    end
+end
+
+function validateRequirements(requirements)
+    if isempty(requirements)
+        return;
+    end
+    if ~isstruct(requirements) || ~isscalar(requirements) || ...
+            ~isfield(requirements, 'type') || ...
+            string(requirements.type) ~= "labkit.requirements" || ...
+            ~isfield(requirements, 'facades') || ...
+            ~isstruct(requirements.facades)
+        error('labkit:ui:runtime:InvalidDefinition', ...
+            ['Requirements must be a scalar result returned by ' ...
+            'labkit.contract.requirements.']);
+    end
 end
 
 function assertAppId(value)

@@ -2,7 +2,9 @@ function def = define(varargin)
 %DEFINE Create a LabKit declarative app runtime definition.
 %
 % Usage:
-%   def = labkit.ui.runtime.define("Id", id, "Title", title, ...
+%   def = labkit.ui.runtime.define("Command", command, "Id", id, ...
+%       "Title", title, "Family", family, "AppVersion", version, ...
+%       "Updated", date, "Requirements", requirements, ...
 %       "Layout", layoutFcn)
 %   def = labkit.ui.runtime.define(..., Name=Value)
 %
@@ -17,16 +19,26 @@ function def = define(varargin)
 %   app begins startup.
 %
 % Required Name-Value Arguments:
+%   Command - Public MATLAB function used to launch the App, for example
+%       "labkit_Example_app". Single-definition launch uses this value for
+%       request errors and version metadata.
 %   Id - Stable scalar text identifier for saved projects, recovery storage,
 %       results, and diagnostics. It starts with an ASCII letter and contains
 %       only letters, digits, underscore, hyphen, or period. Treat it as a
 %       permanent compatibility identifier after projects have been saved.
 %   Title - Text shown in the app window title.
+%   Family - Reader-facing App family used by the launcher and documentation.
+%   AppVersion - Semantic App version in X.Y.Z form. This versions the App
+%       product, not the Runtime V2 project payload.
+%   Updated - Last product-change date in YYYY-MM-DD form.
+%   Requirements - labkit.contract.requirements result declaring compatible
+%       reusable LabKit facades.
 %   Layout - Function handle returning a labkit.ui.layout.workbench tree. It
 %       may accept no inputs, callbacks, or callbacks and initial state:
 %       layoutFcn(), layoutFcn(callbacks), or layoutFcn(callbacks,state).
 %
 % Optional Name-Value Arguments:
+%   DisplayName - Short product name shown by the launcher. Default: Title.
 %   Project - Scalar struct that owns a durable project schema. Omit it for an
 %       empty version-1 project with no App validator or migrations. Supplied
 %       project fields are listed under Project Fields.
@@ -132,7 +144,11 @@ function def = define(varargin)
 %
 % Typical Call:
 %   def = labkit.ui.runtime.define( ...
+%       "Command", "labkit_ExampleViewer_app", ...
 %       "Id", "org.example.viewer", "Title", "Example Viewer", ...
+%       "Family", "Examples", "AppVersion", "1.0.0", ...
+%       "Updated", "2026-07-16", ...
+%       "Requirements", labkit.contract.requirements("ui", ">=7 <8"), ...
 %       "Layout", @buildStaticLayout);
 %
 % See also labkit.ui.runtime.launch, labkit.ui.runtime.saveState,
@@ -149,6 +165,8 @@ function def = createV2Definition(opts)
     def.contractVersion = 2;
     def.id = string(requiredOption(opts, "Id"));
     def.title = string(requiredOption(opts, "Title"));
+    def.product = productMetadata(opts, def.title);
+    def.requirements = optionValue(opts, "Requirements", []);
     def.project = optionValue(opts, "Project", defaultProjectSpec());
     def.createSession = optionValue(opts, "CreateSession", []);
     def.layout = requiredOption(opts, "Layout");
@@ -158,6 +176,15 @@ function def = createV2Definition(opts)
     def.start = optionValue(opts, "Start", []);
     def.debugSample = optionValue(opts, "DebugSample", []);
     def.utilities = optionValue(opts, "Utilities", struct());
+end
+
+function product = productMetadata(opts, title)
+    product = struct( ...
+        "command", string(optionValue(opts, "Command", "")), ...
+        "displayName", string(optionValue(opts, "DisplayName", title)), ...
+        "family", string(optionValue(opts, "Family", "")), ...
+        "version", string(optionValue(opts, "AppVersion", "")), ...
+        "updated", string(optionValue(opts, "Updated", "")));
 end
 
 function spec = defaultProjectSpec()
