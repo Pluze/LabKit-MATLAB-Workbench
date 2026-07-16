@@ -25,9 +25,10 @@ Tests mirror source ownership and use MATLAB's official test framework.
 - CI calls public build tasks. Internal local sharding must cover each selected
   test exactly once and use distinct artifact run names; GitHub Actions stays
   single-process unless licensing for child MATLAB processes is proven.
-- Focused iteration uses `runLabKitTests("Suites", ...)`. Run `changedFast` at
-  a coherent checkpoint and `changed` once for a stable handoff. After a
-  failure, repair and rerun the narrowest failed suite.
+- Focused iteration normally uses `runLabKitTests("Files", ...)`; use `Suites`
+  for folders and `Tests` for class or method names. Run `changedFast` at a
+  coherent checkpoint and `changed` once for a stable handoff. After a
+  failure, repair and rerun the narrowest failed file or method.
 - Unknown changed paths fall back to full non-GUI validation rather than a
   narrow false signal. GUI changes route to the owning hidden-GUI suite.
 - Exact public tasks and examples belong only in

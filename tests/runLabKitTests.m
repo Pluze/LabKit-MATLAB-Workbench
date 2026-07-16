@@ -130,7 +130,8 @@ function output = runValidationPlan(root, opts)
         steps = labkitValidationPlanForChangedPaths(root, changedPaths, ...
             "Mode", "fast");
     else
-        steps = namedValidationPlan(planName);
+        error("LabKit:Tests:UnknownValidationPlan", ...
+            "Plan must be changed or changedFast: %s.", planName);
     end
 
     if isempty(steps)
@@ -179,10 +180,11 @@ function output = runValidationPlan(root, opts)
 end
 
 function ensurePlanHasNoExplicitSelectors(opts)
-    if ~isempty(opts.Suites) || ~isempty(opts.Tests) || ~isempty(opts.Tags) || ...
+    if ~isempty(opts.Suites) || ~isempty(opts.Files) || ...
+            ~isempty(opts.Tests) || ~isempty(opts.Tags) || ...
             ~isempty(opts.ExcludeTags)
         error("LabKit:Tests:InvalidValidationPlan", ...
-            "Plan cannot be combined with explicit suite, test, or tag selectors.");
+            "Plan cannot be combined with explicit suite, file, test, or tag selectors.");
     end
 end
 
@@ -190,6 +192,9 @@ function args = validationPlanStepArgs(step)
     args = {};
     if ~isempty(step.Suites)
         args = [args, {"Suites", step.Suites}];
+    end
+    if isfield(step, "Files") && ~isempty(step.Files)
+        args = [args, {"Files", step.Files}];
     end
     if isfield(step, "Tests") && ~isempty(step.Tests)
         args = [args, {"Tests", step.Tests}];
@@ -199,10 +204,18 @@ end
 
 function printValidationPlanSteps(steps)
     for k = 1:numel(steps)
-        fprintf("  %d. %s includeGui=%d suites=%s tests=%s reason=%s\n", ...
+        fprintf("  %d. %s includeGui=%d suites=%s files=%s tests=%s reason=%s\n", ...
             k, steps(k).RunNameSuffix, steps(k).IncludeGui, ...
-            stepSuitesLabel(steps(k)), stepTestsLabel(steps(k)), ...
+            stepSuitesLabel(steps(k)), stepFilesLabel(steps(k)), ...
+            stepTestsLabel(steps(k)), ...
             stepReasonLabel(steps(k)));
+    end
+end
+function label = stepFilesLabel(step)
+    if ~isfield(step, "Files") || isempty(step.Files)
+        label = "<none>";
+    else
+        label = strjoin(step.Files, ",");
     end
 end
 
@@ -229,31 +242,6 @@ function label = stepReasonLabel(step)
     end
 end
 
-function steps = namedValidationPlan(planName)
-    switch planName
-        case "ui"
-            steps = [ ...
-                validationPlanStep("labkit_framework_ui", "labkit_framework/ui", true), ...
-                validationPlanStep("gui_apps", "gui/apps", true)];
-        case {"app", "apps"}
-            steps = [ ...
-                validationPlanStep("apps", "apps", false), ...
-                validationPlanStep("gui_apps", "gui/apps", true)];
-        case "project"
-            steps = validationPlanStep("project", "project", false);
-        otherwise
-            error("LabKit:Tests:UnknownValidationPlan", ...
-                "Unknown validation plan: %s.", planName);
-    end
-end
-
-function step = validationPlanStep(runNameSuffix, suites, includeGui)
-    step = struct( ...
-        "RunNameSuffix", string(runNameSuffix), ...
-        "Suites", {normalizeTextList(suites)}, ...
-        "IncludeGui", logical(includeGui));
-end
-
 function paths = detectAffectedValidationPaths(root)
     assertChangedValidationGitAvailable(root);
     changedPaths = [ ...
@@ -276,17 +264,36 @@ function assertChangedValidationGitAvailable(root)
 end
 
 function suite = discoverOfficialSuite(root, opts)
-    casesRoot = fullfile(root, "tests", "cases");
-    groups = discoverOfficialGroups(casesRoot, opts);
-    groups = filterGroupsBySuite(groups, opts);
+    if ~isempty(opts.Files)
+        suite = discoverExplicitFileSuite(opts.Files, opts.IncludeGui);
+    else
+        casesRoot = fullfile(root, "tests", "cases");
+        groups = discoverOfficialGroups(casesRoot, opts);
+        groups = filterGroupsBySuite(groups, opts);
 
-    suite = matlab.unittest.Test.empty(1, 0);
-    for k = 1:numel(groups)
-        suite = [suite, groups(k).suite];
+        if isempty(groups)
+            suite = matlab.unittest.Test.empty(1, 0);
+        else
+            suiteParts = {groups.suite};
+            suite = [suiteParts{:}];
+        end
     end
 
     suite = filterSuiteByName(suite, opts.Tests, opts.FailIfNoTests);
     suite = filterSuiteByTags(suite, opts.Tags, opts.ExcludeTags);
+end
+
+function suite = discoverExplicitFileSuite(files, includeGui)
+    suiteParts = cell(1, numel(files));
+    for k = 1:numel(files)
+        normalized = replace(string(files(k)), "\", "/");
+        if contains(normalized, "/tests/cases/gui/") && ~includeGui
+            error("LabKit:Tests:GuiFileRequiresIncludeGui", ...
+                "GUI test files require IncludeGui=true: %s", files(k));
+        end
+        suiteParts{k} = matlab.unittest.TestSuite.fromFile(files(k));
+    end
+    suite = [suiteParts{:}];
 end
 
 function listing = suiteListingTable(suite)
@@ -357,7 +364,7 @@ function groups = discoverOfficialGroups(casesRoot, opts)
 end
 
 function signature = testTreeSignature(root)
-    files = testTreeMFiles(root);
+    files = labkitTestTreeMFiles(root);
     if isempty(files)
         signature = strings(1, 0);
         return;
@@ -376,44 +383,13 @@ function signature = testTreeSignature(root)
     signature = strjoin(parts, newline);
 end
 
-function files = testTreeMFiles(root)
-    files = strings(1, 0);
-    entries = dir(root);
-    [~, order] = sort({entries.name});
-    entries = entries(order);
-    for k = 1:numel(entries)
-        entry = entries(k);
-        if entry.isdir
-            if strcmp(entry.name, ".") || strcmp(entry.name, "..")
-                continue;
-            end
-            files = [files, testTreeMFiles(fullfile(entry.folder, entry.name))];
-        elseif endsWith(entry.name, ".m")
-            files(end+1) = string(fullfile(entry.folder, entry.name));
-        end
-    end
-end
-
 function folders = foldersWithMFiles(root)
-    folders = strings(1, 0);
-    entries = dir(root);
-    [~, order] = sort({entries.name});
-    entries = entries(order);
-    hasMFile = false;
-    for k = 1:numel(entries)
-        entry = entries(k);
-        if entry.isdir
-            if strcmp(entry.name, ".") || strcmp(entry.name, "..")
-                continue;
-            end
-            folders = [folders, foldersWithMFiles(fullfile(entry.folder, entry.name))];
-        elseif endsWith(entry.name, ".m")
-            hasMFile = true;
-        end
+    files = labkitTestTreeMFiles(root);
+    folders = strings(1, numel(files));
+    for k = 1:numel(files)
+        folders(k) = string(fileparts(files(k)));
     end
-    if hasMFile
-        folders = [string(root), folders];
-    end
+    folders = unique(folders, "stable");
 end
 
 function groups = filterGroupsBySuite(groups, opts)
@@ -421,7 +397,7 @@ function groups = filterGroupsBySuite(groups, opts)
         return;
     end
 
-    suiteTargets = lower(normalizeSuiteTargets(opts.Suites));
+    suiteTargets = lower(labkitNormalizeSuiteTargets(opts.Suites));
     guiOnly = any(suiteTargets == "gui");
     suiteTargets(suiteTargets == "gui") = [];
 
@@ -585,24 +561,6 @@ function key = relativeTestKey(folder, testsRoot)
     end
 end
 
-function targets = normalizeSuiteTargets(targets)
-    targets = normalizeTextList(targets);
-    for k = 1:numel(targets)
-        target = replace(targets(k), "\", "/");
-        target = erase(target, "tests/cases/unit/");
-        target = erase(target, "tests/cases/contract/");
-        target = erase(target, "tests/cases/gui/");
-        target = erase(target, "tests/cases/");
-        while startsWith(target, "/")
-            target = extractAfter(target, 1);
-        end
-        while endsWith(target, "/")
-            target = extractBefore(target, strlength(target));
-        end
-        targets(k) = target;
-    end
-end
-
 function values = normalizeTextList(values)
     if isempty(values)
         values = strings(1, 0);
@@ -615,12 +573,4 @@ function values = normalizeTextList(values)
     end
     values = values(:).';
     values = values(strlength(values) > 0);
-end
-
-function tf = isStringLikeList(value)
-    tf = ischar(value) || isstring(value) || iscellstr(value);
-end
-
-function tf = isTextScalar(value)
-    tf = (ischar(value) || (isstring(value) && isscalar(value)));
 end

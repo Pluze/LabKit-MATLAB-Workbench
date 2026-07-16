@@ -135,8 +135,10 @@ classdef BuildTaskEfficiencyGuardrailTest < matlab.unittest.TestCase
                 "tests/cases/gui/project/launcher/LauncherGuiTest.m");
             signatures = validationStepSignatures(steps);
 
-            testCase.verifyEqual(signatures, "gui/project/launcher|true", ...
-                "Project GUI test changes should rerun the owning project GUI suite.");
+            testCase.verifyEqual(signatures, "|true");
+            testCase.verifyEqual(validationStepFileSelectors(steps), ...
+                "tests/cases/gui/project/launcher/LauncherGuiTest.m", ...
+                "A changed project GUI test should rerun exactly itself.");
         end
 
         function changedValidationPlanTargetsChangedProjectTest(testCase)
@@ -145,12 +147,11 @@ classdef BuildTaskEfficiencyGuardrailTest < matlab.unittest.TestCase
             steps = labkitValidationPlanForChangedPaths(root, ...
                 "tests/cases/unit/project/PackageLabKitAppToolTest.m");
             signatures = validationStepSignatures(steps);
-            selectors = validationStepTestSelectors(steps);
 
-            testCase.verifyEqual(signatures, "project|false", ...
-                "Project unit tests should remain in the project suite.");
-            testCase.verifyEqual(selectors, "PackageLabKitAppToolTest", ...
-                "A changed project unit test should rerun only its owning class.");
+            testCase.verifyEqual(signatures, "|false");
+            testCase.verifyEqual(validationStepFileSelectors(steps), ...
+                "tests/cases/unit/project/PackageLabKitAppToolTest.m", ...
+                "A changed project unit test should rerun exactly itself.");
         end
 
         function changedValidationPlanRoutesFrameworkGuiTestsByOwner(testCase)
@@ -160,8 +161,10 @@ classdef BuildTaskEfficiencyGuardrailTest < matlab.unittest.TestCase
                 "tests/cases/gui/labkit_framework/ui/GuiLayoutUiRuntimeV2InteractionHubTest.m");
             signatures = validationStepSignatures(steps);
 
-            testCase.verifyEqual(signatures, "gui/labkit_framework/ui|true", ...
-                "LabKit framework GUI test changes should rerun the owning framework GUI suite.");
+            testCase.verifyEqual(signatures, "|true");
+            testCase.verifyEqual(validationStepFileSelectors(steps), ...
+                "tests/cases/gui/labkit_framework/ui/GuiLayoutUiRuntimeV2InteractionHubTest.m", ...
+                "A changed framework GUI test should rerun exactly itself.");
         end
 
         function changedValidationPlanTargetsSharedHelperConsumers(testCase)
@@ -237,6 +240,15 @@ function selectors = validationStepTestSelectors(steps)
     for k = 1:numel(steps)
         if isfield(steps(k), "Tests")
             selectors(k) = strjoin(steps(k).Tests, ",");
+        end
+    end
+end
+
+function selectors = validationStepFileSelectors(steps)
+    selectors = strings(1, numel(steps));
+    for k = 1:numel(steps)
+        if isfield(steps(k), "Files")
+            selectors(k) = strjoin(steps(k).Files, ",");
         end
     end
 end

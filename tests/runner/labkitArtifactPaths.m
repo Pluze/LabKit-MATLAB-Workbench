@@ -11,7 +11,7 @@ function paths = labkitArtifactPaths(varargin)
 % snapshot locations.
 
     p = inputParser;
-    p.addParameter("Root", defaultArtifactRoot(), @(v) ischar(v) || isstring(v));
+    p.addParameter("Root", defaultArtifactRoot(), @isTextScalar);
     p.addParameter("RunName", getenv("LABKIT_RUN_NAME"), @isTextScalar);
     p.addParameter("Create", false, @isLogicalScalar);
     p.parse(varargin{:});

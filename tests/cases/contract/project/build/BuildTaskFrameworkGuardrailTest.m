@@ -4,21 +4,21 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
     methods (Test, TestTags = {'Integration', 'Style'})
         function buildTaskCatalogMatchesTaskFunctions(testCase)
             root = setupLabKitTestPath();
-            catalog = extractBuildfileCatalog(root);
+            catalog = labkitBuildTaskCatalog();
             taskFunctions = extractTaskFunctionNames(root);
 
-            testCase.verifyEqual(sort(catalog.Name(:).'), sort(taskFunctions(:).'), ...
+            testCase.verifyEqual(sort([catalog.Name]), sort(taskFunctions(:).'), ...
                 'Every public build task function should have one catalog entry.');
-            testCase.verifyEqual(numel(unique(catalog.Name)), numel(catalog.Name), ...
+            testCase.verifyEqual(numel(unique([catalog.Name])), numel(catalog), ...
                 'Build task catalog entries should be unique.');
-            testCase.verifyTrue(all(strlength(catalog.Description) > 0), ...
+            testCase.verifyTrue(all(strlength([catalog.Description]) > 0), ...
                 'Build task catalog entries should carry non-empty descriptions.');
         end
 
         function documentedBuildTasksStayInCatalog(testCase)
             root = setupLabKitTestPath();
-            catalog = extractBuildfileCatalog(root);
-            catalogNames = catalog.Name(catalog.Visibility == "public");
+            catalog = labkitBuildTaskCatalog();
+            catalogNames = [catalog([catalog.Visibility] == "public").Name];
 
             testingDoc = fullfile(root, "docs", "development", "testing.md");
             matrixTasks = extractPrimaryTestingCommandMatrix(fileread(testingDoc));
@@ -40,7 +40,8 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
 
         function runnableBuildTaskSpecsMapToKnownTestScopes(testCase)
             root = setupLabKitTestPath();
-            taskSpecs = focusedTaskSpecs(root);
+            catalog = labkitBuildTaskCatalog();
+            taskSpecs = catalog([catalog.RunTests] & [catalog.Required]);
             testCase.assertFalse(isempty(taskSpecs), ...
                 "Runnable build task specs should be discovered from buildfile.m.");
             for k = 1:numel(taskSpecs)
@@ -60,6 +61,52 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
                 'Default non-GUI runner selection should not be empty.');
             testCase.verifyFalse(any(contains(output.tests.Tags, "GUI")), ...
                 'Default non-GUI runner selection must not include GUI tests.');
+        end
+
+        function runnerRejectsFilePathsAsSuiteSelectors(testCase)
+            setupLabKitTestPath();
+            testCase.verifyError(@() runLabKitTests( ...
+                "Suites", "tests/cases/unit/project/PlatformSkeletonTest.m", ...
+                "ListOnly", true), ...
+                "LabKit:Tests:SuiteSelectorIsFile");
+        end
+
+        function runnerFilesSelectsOnlyTheRequestedTestFile(testCase)
+            root = setupLabKitTestPath();
+            output = listLabKitTestsQuietly( ...
+                "Files", fullfile(root, "tests", "cases", "unit", ...
+                "project", "PlatformSkeletonTest.m"), ...
+                "Tests", "artifactPathsUseRunnerLayout", ...
+                "RunName", "explicit_file_probe");
+            testCase.verifyEqual(output.count, 1);
+            testCase.verifyTrue(contains(output.tests.Name, ...
+                "PlatformSkeletonTest/artifactPathsUseRunnerLayout"));
+        end
+
+        function runnerFilesRequiresGuiModeForGuiFiles(testCase)
+            root = setupLabKitTestPath();
+            guiFile = fullfile(root, "tests", "cases", "gui", ...
+                "labkit_framework", "ui", "GuiStartupLifecycleTest.m");
+            testCase.verifyError(@() runLabKitTests( ...
+                "Files", guiFile, "ListOnly", true), ...
+                "LabKit:Tests:GuiFileRequiresIncludeGui");
+        end
+
+        function runnerRejectsNonfiniteLogicalOptions(testCase)
+            root = setupLabKitTestPath();
+            testCase.verifyError(@() labkitParseRunnerOptions(root, ...
+                "IncludeGui", NaN), ...
+                "MATLAB:InputParser:ArgumentFailedValidation");
+        end
+
+        function suiteTargetNormalizationRemovesOnlyLeadingPrefixes(testCase)
+            setupLabKitTestPath();
+            actual = labkitNormalizeSuiteTargets([ ...
+                "tests/cases/unit/project/build/", ...
+                "archive/tests/cases/unit/project/build"]);
+            testCase.verifyEqual(actual, [ ...
+                "project/build", ...
+                "archive/tests/cases/unit/project/build"]);
         end
 
         function focusedRunnerCanSkipHtmlReport(testCase)
@@ -91,24 +138,6 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
             clear cleanup
         end
 
-        function validationPlanListsMultipleSelections(testCase)
-            setupLabKitTestPath();
-
-            output = listLabKitTestsQuietly( ...
-                "Plan", "ui", ...
-                "HtmlReport", false, ...
-                "RunName", "ui_plan_probe");
-
-            testCase.verifyEqual(output.plan, "ui", ...
-                "Plan should report the selected named validation plan.");
-            testCase.verifyEqual(numel(output.steps), 2, ...
-                "The UI validation plan should run reusable UI and downstream app GUI checks.");
-            testCase.verifyEqual([output.steps.IncludeGui], [true true], ...
-                "The UI validation plan should include GUI structural coverage.");
-            testCase.verifyGreaterThan(output.count, 0, ...
-                "Plan=list-only mode should still discover tests.");
-        end
-
         function changedValidationPlanQuotesParentGitRefs(testCase)
             root = setupLabKitTestPath();
 
@@ -117,8 +146,8 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
                 "tests/cases/contract/project/build/BuildTaskFrameworkGuardrailTest.m"]);
             signatures = validationStepSignatures(steps);
 
-            testCase.verifyEqual(signatures, "project|false", ...
-                "Changed runner and contract test files should route to project guardrails.");
+            testCase.verifyEqual(signatures, "project/build|false", ...
+                "Runner changes should route to runner/build contracts.");
 
             runnerSource = string(fileread(fullfile(root, "tests", "runLabKitTests.m")));
             required = [
@@ -138,7 +167,7 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
 
             steps = labkitValidationPlanForChangedPaths(root, [ ...
                 "+labkit/+ui/+runtime/runBusy.m", ...
-                "apps/image_measurement/batch_crop/run.m"]);
+                "apps/image_measurement/batch_crop/+batch_crop/definition.m"]);
             signatures = validationStepSignatures(steps);
 
             testCase.verifyTrue(any(signatures == "labkit_framework/ui|true"), ...
@@ -171,7 +200,7 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
             root = setupLabKitTestPath();
 
             steps = labkitValidationPlanForChangedPaths(root, ...
-                "apps/image_measurement/batch_crop/run.m");
+                "apps/image_measurement/batch_crop/+batch_crop/definition.m");
             signatures = validationStepSignatures(steps);
 
             testCase.verifyTrue(any(signatures == ...
@@ -183,7 +212,7 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
             root = setupLabKitTestPath();
 
             steps = labkitValidationPlanForChangedPaths(root, ...
-                "apps/image_measurement/batch_crop/+batch_crop/run.m");
+                "apps/image_measurement/batch_crop/+batch_crop/definitionActions.m");
             signatures = validationStepSignatures(steps);
 
             testCase.verifyTrue(any(signatures == "apps/image_measurement|false"), ...
@@ -215,10 +244,21 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
                 "tests/runner/labkitArtifactPaths.m"]);
             signatures = validationStepSignatures(steps);
 
-            testCase.verifyEqual(signatures, "|false", ...
-                "Docs plus runner changes should compress to one headless step.");
+            testCase.verifyEqual(sort(signatures), ...
+                sort(["project/docs|false", "project/build|false"]), ...
+                "Docs and runner changes should keep their two focused contracts.");
             testCase.verifyFalse(any([steps.IncludeGui]), ...
                 "Docs and runner changes should not trigger GUI validation.");
+        end
+
+        function generatedSiteAndRendererRouteToDocumentationChecks(testCase)
+            root = setupLabKitTestPath();
+            steps = labkitValidationPlanForChangedPaths(root, [ ...
+                "site/reference/api/labkit/image/readFiles.html", ...
+                "tools/docs/renderLabKitDocs.m"]);
+            testCase.verifyEqual(validationStepSignatures(steps), ...
+                "project/docs|false", ...
+                "Generated site and renderer changes should use documentation guardrails.");
         end
 
         function changedValidationPlanRoutesScopedAgentDocsToProject(testCase)
@@ -252,25 +292,27 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
             root = setupLabKitTestPath();
 
             steps = labkitValidationPlanForChangedPaths(root, [ ...
-                "tests/cases/gui/apps/AppLaunchGuiTest.m", ...
+                "+labkit/+ui/+runtime/runBusy.m", ...
                 "tests/cases/gui/apps/image_measurement/batch_crop/GuiLayoutBatchCropTest.m"]);
             signatures = validationStepSignatures(steps);
 
-            testCase.verifyEqual(signatures, "gui|true", ...
-                "The broad GUI step should cover narrower app GUI targets.");
+            testCase.verifyTrue(any(signatures == "gui/apps|true"), ...
+                "Broad downstream GUI coverage should cover the changed app GUI test.");
+            testCase.verifyTrue(all(arrayfun(@(step) isempty(step.Files), steps)), ...
+                "A covered exact test-file step should be removed from the plan.");
         end
 
         function buildTaskCatalogStaysCompactAndDiscoveryDriven(testCase)
             root = setupLabKitTestPath();
-            catalog = extractBuildfileCatalog(root);
+            catalog = labkitBuildTaskCatalog();
 
             expectedTasks = ["changed", "changedFast", "baseMatlab", ...
                 "docs", "docsCheck", "headless", "gui", "coverage", "listTasks"];
-            publicTasks = catalog.Name(catalog.Visibility == "public").';
+            publicTasks = [catalog([catalog.Visibility] == "public").Name];
             testCase.verifyEqual(publicTasks, expectedTasks, ...
                 "Build task catalog should expose a compact public task set.");
 
-            ciTasks = catalog.Name(catalog.Visibility == "ci").';
+            ciTasks = [catalog([catalog.Visibility] == "ci").Name];
             testCase.verifyEmpty(ciTasks, ...
                 "CI should call public build tasks rather than maintaining CI-only buildfile tasks.");
 
@@ -278,11 +320,11 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
 
         function guiBuildTaskRunsHiddenByDefault(testCase)
             root = setupLabKitTestPath();
-            taskSpecs = parseRunnableTaskSpecs(root);
+            taskSpecs = labkitBuildTaskCatalog();
             guiSpec = taskSpecs([taskSpecs.Name] == "gui");
             testCase.assertEqual(numel(guiSpec), 1, ...
                 "Build task catalog should contain one gui task spec.");
-            testCase.verifyEqual(taskSpecStringValues(guiSpec, "GuiMode"), "hidden", ...
+            testCase.verifyEqual(guiSpec.GuiMode, "hidden", ...
                 "buildtool gui should keep automated GUI windows hidden by default.");
 
             runnerSource = string(fileread(fullfile(root, "tests", "runLabKitTests.m")));
@@ -329,30 +371,6 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
         end
 
     end
-end
-
-function catalog = extractBuildfileCatalog(root)
-    lines = string(splitlines(fileread(fullfile(root, "buildfile.m"))));
-    lines = lines(contains(lines, "taskSpec("));
-    names = strings(1, 0);
-    descriptions = strings(1, 0);
-    visibility = strings(1, 0);
-    for k = 1:numel(lines)
-        tokens = regexp(lines(k), 'taskSpec\("([^"]+)",\s*"([^"]+)"', ...
-            'tokens', 'once');
-        if isempty(tokens)
-            continue;
-        end
-        names(end+1) = string(tokens{1});
-        descriptions(end+1) = string(tokens{2});
-        visible = extractNameValueStrings(lines(k), "Visibility");
-        if isempty(visible)
-            visible = "public";
-        end
-        visibility(end+1) = visible(1);
-    end
-    catalog = table(names.', descriptions.', ...
-        visibility.', 'VariableNames', {'Name', 'Description', 'Visibility'});
 end
 
 function names = extractTaskFunctionNames(root)
@@ -411,53 +429,15 @@ function verifyTaskSubset(testCase, tasks, catalogNames, label)
         label + " not in buildfile catalog: " + strjoin(missing, ", "));
 end
 
-function taskSpecs = focusedTaskSpecs(root)
-    specs = parseRunnableTaskSpecs(root);
-    taskSpecs = specs([specs.Required]);
-end
-
-function specs = parseRunnableTaskSpecs(root)
-    content = fileread(fullfile(root, "buildfile.m"));
-    lines = string(splitlines(content));
-    lines = lines(contains(lines, "taskSpec("));
-    specs = struct("Name", {}, "Args", {}, "Required", {});
-    for k = 1:numel(lines)
-        line = string(lines{k});
-        nameTokens = regexp(line, 'taskSpec\("([^"]+)"', 'tokens', 'once');
-        if isempty(nameTokens) || contains(line, '"RunTests", false')
-            continue;
-        end
-
-        required = ~contains(line, '"Required", false');
-        args = taskSpecArguments(line);
-        specs(end+1) = struct( ...
-            "Name", string(nameTokens{1}), ...
-            "Args", {args}, ...
-            "Required", required);
-    end
-end
-
-function args = taskSpecArguments(line)
-    args = {};
-    args = appendStringListArgument(args, line, "Suites");
-    args = appendStringListArgument(args, line, "Tests");
-    args = appendStringListArgument(args, line, "Plan");
-    args = appendStringListArgument(args, line, "Tags");
-    args = appendStringListArgument(args, line, "GuiMode");
-    args = appendLogicalArgument(args, line, "IncludeGui");
-    args = appendLogicalArgument(args, line, "IncludeCoverage");
-    args = appendLogicalArgument(args, line, "HtmlReport");
-end
-
 function tf = taskSpecMapsToKnownTests(root, spec)
-    if any(strcmp(spec.Args, "Plan"))
-        tf = taskSpecUsesKnownPlan(spec);
+    if strlength(spec.Plan) > 0
+        tf = any(lower(spec.Plan) == ["changed", "changedfast"]);
         return;
     end
 
-    suites = lower(taskSpecStringValues(spec, "Suites"));
-    tests = taskSpecStringValues(spec, "Tests");
-    tags = taskSpecStringValues(spec, "Tags");
+    suites = lower(spec.Suites);
+    tests = spec.Tests;
+    tags = spec.Tags;
     suiteOk = isempty(suites) || all(ismember(suites, knownSuiteTargets(root)));
     testOk = isempty(tests) || taskSelectorsExist(root, suites, tests);
     tagOk = isempty(tags) || all(ismember(tags, knownRunnerTags()));
@@ -468,12 +448,6 @@ function tf = taskSelectorsExist(root, suites, tests)
     output = listLabKitTestsQuietly( ...
         "Suites", suites, "Tests", tests, "RunName", "task_spec_probe");
     tf = output.count > 0;
-end
-
-function tf = taskSpecUsesKnownPlan(spec)
-    plans = taskSpecStringValues(spec, "Plan");
-    tf = ~isempty(plans) && all(ismember(lower(plans), ...
-        ["changed", "changedfast", "ui", "apps", "app", "project"]));
 end
 
 function targets = knownSuiteTargets(root)
@@ -508,96 +482,19 @@ function tags = knownRunnerTags()
         "Workflow", "Gesture", "Style", "Smoke"];
 end
 
-function values = taskSpecStringValues(spec, name)
-    values = strings(1, 0);
-    for k = 1:numel(spec.Args)
-        if isequal(spec.Args{k}, char(name)) && k < numel(spec.Args)
-            values = string(spec.Args{k + 1});
-            return;
-        end
-    end
-end
-
-function args = appendStringListArgument(args, line, name)
-    values = extractNameValueStrings(line, name);
-    if isempty(values)
-        return;
-    end
-    args = [args, {char(name), values}];
-end
-
-function values = extractNameValueStrings(line, name)
-    pattern = '"' + name + '"\s*,\s*(\[[^\]]+\]|"[^"]*")';
-    token = regexp(line, pattern, 'tokens', 'once');
-    if isempty(token)
-        values = strings(1, 0);
-        return;
-    end
-
-    valueTokens = regexp(token{1}, '"([^"]+)"', 'tokens');
-    values = strings(1, numel(valueTokens));
-    for k = 1:numel(valueTokens)
-        values(k) = string(valueTokens{k}{1});
-    end
-end
-
-function args = appendLogicalArgument(args, line, name)
-    value = extractNameValueLogical(line, name);
-    if isempty(value)
-        return;
-    end
-    args = [args, {char(name), value}];
-end
-
-function value = extractNameValueLogical(line, name)
-    pattern = '"' + name + '"\s*,\s*(true|false)';
-    token = regexp(line, pattern, 'tokens', 'once');
-    if isempty(token)
-        value = [];
-        return;
-    end
-
-    value = strcmp(token{1}, "true");
-end
-
 function folders = collectTestFolders(root)
-    folders = strings(1, 0);
-    entries = dir(root);
-    [~, order] = sort({entries.name});
-    entries = entries(order);
-    hasTestFile = false;
-    for k = 1:numel(entries)
-        entry = entries(k);
-        if entry.isdir
-            if strcmp(entry.name, ".") || strcmp(entry.name, "..")
-                continue;
-            end
-            folders = [folders, collectTestFolders(fullfile(entry.folder, entry.name))];
-        elseif endsWith(entry.name, "Test.m")
-            hasTestFile = true;
-        end
+    files = labkitTestTreeMFiles(root);
+    files = files(endsWith(files, "Test.m"));
+    folders = strings(1, numel(files));
+    for k = 1:numel(files)
+        folders(k) = string(fileparts(files(k)));
     end
-    if hasTestFile
-        folders = [string(root), folders];
-    end
+    folders = unique(folders, "stable");
 end
 
 function files = collectTestFiles(root)
-    files = strings(1, 0);
-    entries = dir(root);
-    [~, order] = sort({entries.name});
-    entries = entries(order);
-    for k = 1:numel(entries)
-        entry = entries(k);
-        if entry.isdir
-            if strcmp(entry.name, ".") || strcmp(entry.name, "..")
-                continue;
-            end
-            files = [files, collectTestFiles(fullfile(entry.folder, entry.name))];
-        elseif endsWith(entry.name, "Test.m")
-            files(end+1) = string(fullfile(entry.folder, entry.name));
-        end
-    end
+    files = labkitTestTreeMFiles(root);
+    files = files(endsWith(files, "Test.m"));
 end
 
 function tags = extractQuotedTags(content)

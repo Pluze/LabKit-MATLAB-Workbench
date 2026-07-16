@@ -17,6 +17,8 @@ function plan = buildfile
 % lives in the runner and changed-file planner, derived from
 % tests/cases/<kind>/<owner>/<area>/ paths.
 
+    root = fileparts(mfilename("fullpath"));
+    addpath(fullfile(root, "tests", "runner"));
     plan = buildplan(localfunctions);
     plan.DefaultTasks = "headless";
 
@@ -67,49 +69,7 @@ function listTasksTask(~)
 end
 
 function catalog = taskCatalog()
-    catalog = [ ...
-        taskSpec("changed", "Run conservative changed-file validation.", "Plan", "changed", "HtmlReport", false), ...
-        taskSpec("changedFast", "Run fast changed-file validation for local iteration.", "Plan", "changedFast", "HtmlReport", false), ...
-        taskSpec("baseMatlab", "Verify source workflows require only base MATLAB.", "Suites", "project/hygiene", "Tests", "ToolboxDependencyGuardrailTest", "HtmlReport", false), ...
-        taskSpec("docs", "Rebuild the tracked static documentation site.", "RunTests", false), ...
-        taskSpec("docsCheck", "Verify tracked documentation output is current.", "RunTests", false), ...
-        taskSpec("headless", "Run the full non-GUI validation set.", "IncludeGui", false), ...
-        taskSpec("gui", "Run noninteractive GUI launch, layout, and gesture checks.", "Suites", "gui", "IncludeGui", true, "GuiMode", "hidden"), ...
-        taskSpec("coverage", "Run official tests with coverage artifacts.", "Tags", ["Unit", "Integration"], "IncludeCoverage", true), ...
-        taskSpec("listTasks", "List official LabKit build tasks.", "RunTests", false)];
-end
-
-function spec = taskSpec(name, description, varargin)
-    p = inputParser;
-    p.FunctionName = "taskSpec";
-    p.addParameter("RunTests", true, @isLogicalScalar);
-    p.addParameter("Suites", strings(1, 0), @isStringLikeList);
-    p.addParameter("Tests", strings(1, 0), @isStringLikeList);
-    p.addParameter("Plan", "", @isTextScalar);
-    p.addParameter("Tags", strings(1, 0), @isStringLikeList);
-    p.addParameter("IncludeGui", [], @isEmptyOrLogicalScalar);
-    p.addParameter("IncludeCoverage", [], @isEmptyOrLogicalScalar);
-    p.addParameter("HtmlReport", [], @isEmptyOrLogicalScalar);
-    p.addParameter("GuiMode", "", @isTextScalar);
-    p.addParameter("Required", true, @isLogicalScalar);
-    p.addParameter("Visibility", "public", @isTextScalar);
-    p.parse(varargin{:});
-
-    runTests = logical(p.Results.RunTests);
-    spec = struct( ...
-        "Name", string(name), ...
-        "Description", string(description), ...
-        "Visibility", string(p.Results.Visibility), ...
-        "RunTests", runTests, ...
-        "Suites", normalizeTextList(p.Results.Suites), ...
-        "Tests", normalizeTextList(p.Results.Tests), ...
-        "Plan", string(p.Results.Plan), ...
-        "Tags", normalizeTextList(p.Results.Tags), ...
-        "IncludeGui", normalizeOptionalLogical(p.Results.IncludeGui), ...
-        "IncludeCoverage", normalizeOptionalLogical(p.Results.IncludeCoverage), ...
-        "HtmlReport", normalizeOptionalLogical(p.Results.HtmlReport), ...
-        "GuiMode", string(p.Results.GuiMode), ...
-        "Required", runTests && logical(p.Results.Required));
+    catalog = labkitBuildTaskCatalog();
 end
 
 function runCatalogTask(runName)
@@ -198,15 +158,11 @@ function handled = runWithInternalShards(spec, args)
 
     root = fileparts(mfilename("fullpath"));
     addpath(fullfile(root, "tests"));
-    try
-        probe = runLabKitTests(args{:}, ...
-            "ListOnly", true, ...
-            "FailIfNoTests", false, ...
-            "RunName", spec.Name + "_probe", ...
-            "ArtifactsRoot", fullfile(root, "artifacts"));
-    catch
-        return;
-    end
+    probe = runLabKitTests(args{:}, ...
+        "ListOnly", true, ...
+        "FailIfNoTests", false, ...
+        "RunName", spec.Name + "_probe", ...
+        "ArtifactsRoot", fullfile(root, "artifacts"));
 
     shardPlan = labkitInternalShardPlan(spec.Name, probe.count);
     if shardPlan.Count <= 1
@@ -333,41 +289,4 @@ function printTaskCatalog(catalog)
         end
         fprintf("  %-30s %s\n", catalog(k).Name, catalog(k).Description);
     end
-end
-
-function values = normalizeTextList(values)
-    if isempty(values)
-        values = strings(1, 0);
-    elseif ischar(values)
-        values = string({values});
-    elseif iscell(values)
-        values = string(values);
-    else
-        values = string(values);
-    end
-    values = values(:).';
-    values = values(strlength(values) > 0);
-end
-
-function value = normalizeOptionalLogical(value)
-    if isempty(value)
-        return;
-    end
-    value = logical(value);
-end
-
-function tf = isStringLikeList(value)
-    tf = ischar(value) || isstring(value) || iscellstr(value);
-end
-
-function tf = isLogicalScalar(value)
-    tf = (islogical(value) || isnumeric(value)) && isscalar(value);
-end
-
-function tf = isTextScalar(value)
-    tf = ischar(value) || (isstring(value) && isscalar(value));
-end
-
-function tf = isEmptyOrLogicalScalar(value)
-    tf = isempty(value) || isLogicalScalar(value);
 end

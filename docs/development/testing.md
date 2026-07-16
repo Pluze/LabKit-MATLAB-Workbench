@@ -11,13 +11,13 @@ current git diff and print why each selected scope is being run.
 
 `buildfile.m` owns the stable human and CI commands. Those tasks select a
 validation plan and call `tests/runLabKitTests.m`, which discovers official
-`matlab.unittest` tests beneath `tests/cases/`, applies suite, name, tag, GUI,
-and shard selectors, then runs them with progress, JUnit, optional HTML, and
-optional coverage plugins.
+`matlab.unittest` tests beneath `tests/cases/`, applies folder, exact-file,
+name, tag, GUI, and shard selectors, then runs them with progress, JUnit,
+optional HTML, and optional coverage plugins.
 
 ```text
 buildtool <task>
-  -> validation plan or explicit suite
+  -> changed-file plan or explicit selection
     -> runLabKitTests discovery and selectors
       -> unit, contract, or GUI tests
         -> progress, JUnit, HTML, coverage, and debug artifacts
@@ -108,7 +108,7 @@ Common choices:
 
 | Change area | Build task |
 | --- | --- |
-| Tight local iteration on one known component | Focused `runLabKitTests("Suites", ...)` |
+| Tight local iteration on one known component | Focused `runLabKitTests` folder or test-name selection |
 | Coherent local checkpoint while files are still changing | `buildtool changedFast` |
 | Before commit, PR, or handoff | `buildtool changed` |
 | Verify the repository on a machine that has toolboxes installed | `buildtool baseMatlab` |
@@ -173,9 +173,11 @@ The changed-file planner routes by source ownership. For example, a single app
 change maps to that app family plus its GUI folder when one exists; reusable
 UI changes map to reusable UI coverage plus downstream GUI coverage; launcher,
 deployment, profiling, documentation, and release files map to their direct
-project or GUI contracts. Unknown files and runner infrastructure still fall
-back conservatively. The printed plan includes the selected suites, test-name
-selectors, GUI mode, and reason for each step.
+project or GUI contracts. A changed test file reruns exactly that file, while
+runner and buildfile changes map to the focused `project/build` self-tests.
+Unknown production or repository files still fall back conservatively. The
+printed plan includes selected folders, files, test-name selectors, GUI mode,
+and the reason for each step.
 
 ## Validation Cadence
 
@@ -183,8 +185,12 @@ Prefer a staged validation cadence so small follow-up edits do not repeatedly
 pay the cost of broad changed-file planning:
 
 1. While actively editing one known component, run the smallest direct
-   `runLabKitTests("Suites", ...)` selection that covers the behavior being
-   changed. For GUI wiring, use the affected app GUI suite with
+   `runLabKitTests` selection that covers the behavior being changed. Use
+   `Suites` for a folder scope under `tests/cases`; use `Tests` for a class or
+   method-name selector, or `Files` for exact `.m` paths. `Suites` deliberately
+   rejects `.m` file paths so a mistaken file selection cannot silently expand
+   into a whole folder. For GUI
+   wiring, use the affected app GUI suite with
    `IncludeGui=true`, `GuiMode="hidden"`, and `HtmlReport=false` during
    iteration.
 2. After a coherent checkpoint, run `buildtool changedFast` once to verify the
@@ -289,11 +295,28 @@ runLabKitTests("Suites", "gui/apps/image_measurement/batch_crop", ...
     "IncludeGui", true, "GuiMode", "hidden", "HtmlReport", false)
 ```
 
+To run one class or method, pass its name through `Tests`:
+
+```matlab
+runLabKitTests("Tests", "GuiLayoutBatchCropTest", ...
+    "IncludeGui", true, "GuiMode", "hidden", "HtmlReport", false)
+```
+
+For the lowest-learning-cost exact rerun, select the test file directly:
+
+```matlab
+runLabKitTests("Files", ...
+    "tests/cases/unit/project/PlatformSkeletonTest.m", ...
+    "HtmlReport", false)
+```
+
 Use `buildtool` for broad validation. The buildfile owns execution mode
 decisions, including whether a large non-GUI run is worth splitting across
-multiple MATLAB worker processes after a lightweight probe. In environments
-where child MATLAB processes cannot acquire their own license, the same build
-task stays serial. Users and CI should not maintain separate shard commands.
+multiple MATLAB worker processes after a lightweight probe. GitHub Actions and
+Windows runs remain serial; supported local broad runs use the repository's
+deterministic shard policy. Probe or worker failures are reported instead of
+being hidden behind an implicit serial retry. Users and CI should not maintain
+separate shard commands.
 
 ## GUI Validation
 

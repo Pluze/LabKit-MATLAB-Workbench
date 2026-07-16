@@ -13,7 +13,16 @@ shared context already inspected for another active skill.
 
 ## Select evidence
 
-Start with the smallest suite that exercises the changed owner:
+Keep the calling model small:
+
+- use `buildtool changedFast` while a coherent change is still evolving;
+- use `buildtool changed` for the stable handoff gate;
+- use `runLabKitTests("Files", path)` to reproduce one or more known test
+  files;
+- use `Suites` only for a folder scope and `Tests` only for a class or method
+  name.
+
+Common folder scopes are:
 
 ```text
 labkit_framework/<area>           reusable facade behavior
@@ -24,8 +33,8 @@ gui/project/launcher              launcher behavior
 project/<topic>                   repository contracts
 ```
 
-Use focused `runLabKitTests` during iteration, `changedFast` at a coherent
-checkpoint, and `changed` once for stable handoff. Pair facade changes with
+Do not make callers learn internal validation-plan names, shard commands, or
+test-discovery implementation. Pair facade changes with
 downstream apps when their contract can be affected. After a failure, repair
 and rerun the narrowest failed test; broaden again only when the fix crosses
 another boundary or final policy requires it.

@@ -38,6 +38,9 @@ function steps = stepsForChangedPath(root, path)
             "Reason", "launcher entrypoint change needs project guardrails"), ...
             planStep("gui_project_launcher", "gui/project/launcher", true, ...
             "Reason", "launcher entrypoint change needs launcher GUI coverage")];
+    elseif path == "buildfile.m"
+        steps = planStep("project_build", "project/build", false, ...
+            "Reason", "build task change needs runner/build contracts");
     elseif path == "README.md"
         steps = planStep("project_docs", "project/docs", false, ...
             "Reason", "README change needs documentation guardrails");
@@ -50,15 +53,13 @@ function steps = stepsForChangedPath(root, path)
         steps = appSourceSteps(root, parts);
     elseif first == "tests"
         steps = testPathSteps(root, parts);
-    elseif first == "docs"
-        steps = docPathSteps(parts);
+    elseif first == "docs" || first == "site"
+        steps = docPathSteps();
     elseif first == "tools"
         steps = toolPathSteps(parts);
     elseif startsWith(first, ".github") || first == ".agents"
         steps = planStep("project", "project", false, ...
             "Reason", "agent docs or GitHub workflow changed");
-    elseif isHeadlessRoutingPath(path)
-        steps = fullNonGuiStep();
     else
         steps = fullNonGuiStep();
     end
@@ -153,22 +154,18 @@ function steps = appSourceSteps(root, parts)
 end
 
 function steps = testPathSteps(root, parts)
-    if numel(parts) >= 4 && all(parts(1:3) == ["tests", "cases", "unit"])
-        steps = unitTestPathSteps(parts);
-    elseif numel(parts) >= 4 && all(parts(1:3) == ["tests", "cases", "gui"])
-        steps = guiTestPathSteps(root, parts);
-    elseif numel(parts) >= 6 && ...
-            all(parts(1:4) == ["tests", "cases", "contract", "project"])
-        area = parts(5);
-        steps = planStep("project_" + safeRunNamePart(area), ...
-            "project/" + area, false, ...
-            "Tests", testFileSelector(parts), ...
-            "Reason", "project contract test change should rerun the owning test");
-    elseif numel(parts) >= 3 && all(parts(1:2) == ["tests", "cases"])
-        steps = planStep("project", "project", false, ...
-            "Reason", "contract test change needs project guardrails");
+    if numel(parts) >= 4 && all(parts(1:2) == ["tests", "cases"]) && ...
+            endsWith(parts(end), ".m")
+        includeGui = parts(3) == "gui";
+        steps = planStep("changed_test_file", strings(1, 0), includeGui, ...
+            "Files", strjoin(parts, "/"), ...
+            "Reason", "changed test file should rerun exactly itself");
+    elseif numel(parts) >= 2 && parts(2) == "runLabKitTests.m"
+        steps = planStep("project_build", "project/build", false, ...
+            "Reason", "runner entrypoint change needs runner/build contracts");
     elseif numel(parts) >= 2 && parts(2) == "runner"
-        steps = fullNonGuiStep();
+        steps = planStep("project_build", "project/build", false, ...
+            "Reason", "runner implementation change needs runner/build contracts");
     elseif numel(parts) >= 2 && parts(2) == "shared"
         steps = sharedTestPathSteps(root, parts);
     else
@@ -177,65 +174,16 @@ function steps = testPathSteps(root, parts)
     end
 end
 
-function steps = unitTestPathSteps(parts)
-    if numel(parts) >= 5 && parts(4) == "labkit_framework"
-        area = parts(5);
-        steps = planStep("labkit_framework_" + safeRunNamePart(area), ...
-            "labkit_framework/" + area, false, ...
-            "Reason", "LabKit framework unit test change should rerun the same area");
-    elseif numel(parts) >= 5 && parts(4) == "apps"
-        family = parts(5);
-        steps = planStep("apps_" + safeRunNamePart(family), ...
-            "apps/" + family, false, ...
-            "Reason", "app unit test change should rerun the same family");
-    elseif numel(parts) >= 4 && parts(4) == "project"
-        steps = planStep("project", "project", false, ...
-            "Tests", testFileSelector(parts), ...
-            "Reason", "project unit test change should rerun the owning test");
-    else
-        steps = fullNonGuiStep();
-    end
-end
-
-function steps = guiTestPathSteps(root, parts)
-    if numel(parts) >= 6 && parts(4) == "apps"
-        family = parts(5);
-        slug = "";
-        if numel(parts) >= 6
-            slug = parts(6);
-        end
-        target = appGuiSuiteTarget(root, family, slug);
-        steps = planStep(suiteRunNameSuffix(target), target, true, ...
-            "Reason", "GUI test change should rerun the same GUI suite");
-    elseif numel(parts) >= 5 && parts(4) == "labkit_framework"
-        area = parts(5);
-        if area == "ui"
-            steps = planStep("gui_labkit_framework_ui", ...
-                "gui/labkit_framework/ui", true, ...
-                "Reason", "LabKit framework UI GUI test changed");
-        else
-            steps = planStep("gui_labkit_framework_" + safeRunNamePart(area), ...
-                "gui/labkit_framework/" + area, true, ...
-                "Reason", "LabKit framework GUI test changed");
-        end
-    elseif numel(parts) >= 5 && parts(4) == "project"
-        area = parts(5);
-        steps = planStep("gui_project_" + safeRunNamePart(area), ...
-            "gui/project/" + area, true, ...
-            "Reason", "project GUI test changed");
-    else
-        steps = planStep("gui", "gui", true, ...
-            "Reason", "broad GUI test change needs full GUI coverage");
-    end
-end
-
-function steps = docPathSteps(parts)
+function steps = docPathSteps()
     steps = planStep("project_docs", "project/docs", false, ...
         "Reason", "human documentation changed");
 end
 
 function steps = toolPathSteps(parts)
-    if numel(parts) >= 2 && parts(2) == "deployment"
+    if numel(parts) >= 2 && parts(2) == "docs"
+        steps = planStep("project_docs", "project/docs", false, ...
+            "Reason", "documentation renderer change needs documentation guardrails");
+    elseif numel(parts) >= 2 && parts(2) == "deployment"
         steps = planStep("project_package", "project", false, ...
             "Tests", "PackageLabKitAppToolTest", ...
             "Reason", "deployment tool change needs package tool coverage");
@@ -309,19 +257,12 @@ function consumers = sharedHelperConsumers(root, filename)
     consumers.nonGuiTests = unique(consumers.nonGuiTests, "stable");
 end
 
-function tf = isHeadlessRoutingPath(path)
-    path = string(path);
-    tf = ismember(path, [ ...
-        "tests/runLabKitTests.m"]);
-end
-
 function tf = isProjectRoutingPath(path)
     path = string(path);
     tf = ismember(path, [ ...
         "AGENTS.md", ...
         "+labkit/AGENTS.md", ...
         "apps/AGENTS.md", ...
-        "buildfile.m", ...
         "tests/AGENTS.md"]);
 end
 
@@ -333,11 +274,6 @@ function tests = launcherProjectTests()
         "RepositoryHygieneGuardrailTest", ...
         "PackageLabKitAppToolTest", ...
         "ProfileLabKitToolTest"];
-end
-
-function selector = testFileSelector(parts)
-    [~, name] = fileparts(char(parts(end)));
-    selector = string(name);
 end
 
 function slug = appSlug(parts)
@@ -385,19 +321,23 @@ end
 
 function step = planStep(runNameSuffix, suites, includeGui, varargin)
     tests = strings(1, 0);
+    files = strings(1, 0);
     reason = "";
     if ~isempty(varargin)
         p = inputParser;
         p.FunctionName = "planStep";
         p.addParameter("Tests", tests, @isStringLikeList);
+        p.addParameter("Files", files, @isStringLikeList);
         p.addParameter("Reason", reason, @isTextScalar);
         p.parse(varargin{:});
         tests = normalizeTextList(p.Results.Tests);
+        files = normalizeTextList(p.Results.Files);
         reason = string(p.Results.Reason);
     end
     step = struct( ...
         "RunNameSuffix", string(runNameSuffix), ...
         "Suites", {normalizeTextList(suites)}, ...
+        "Files", {files}, ...
         "Tests", {tests}, ...
         "IncludeGui", logical(includeGui), ...
         "Reason", reason);
@@ -486,7 +426,7 @@ function mode = parseMode(varargin)
 end
 
 function steps = emptyPlanSteps()
-    steps = struct("RunNameSuffix", {}, "Suites", {}, "Tests", {}, ...
+    steps = struct("RunNameSuffix", {}, "Suites", {}, "Files", {}, "Tests", {}, ...
         "IncludeGui", {}, "Reason", {});
 end
 
@@ -537,9 +477,17 @@ function tf = stepCovers(candidate, step)
         tf = false;
         return;
     end
+    if ~filesCover(candidate, step)
+        tf = false;
+        return;
+    end
 
     candidateSuites = normalizeTextList(candidate.Suites);
     stepSuites = normalizeTextList(step.Suites);
+    if isempty(stepSuites) && ~isempty(step.Files)
+        tf = true;
+        return;
+    end
     if isempty(candidateSuites)
         tf = ~step.IncludeGui;
         return;
@@ -552,6 +500,42 @@ function tf = stepCovers(candidate, step)
     tf = true;
     for k = 1:numel(stepSuites)
         tf = tf && suiteCoveredByAny(candidateSuites, stepSuites(k));
+    end
+end
+
+function tf = filesCover(candidate, step)
+    candidateFiles = normalizeTextList(candidate.Files);
+    stepFiles = normalizeTextList(step.Files);
+    if isempty(candidateFiles)
+        if isempty(stepFiles)
+            tf = true;
+            return;
+        end
+        candidateSuites = normalizeTextList(candidate.Suites);
+        if isempty(candidateSuites)
+            tf = ~candidate.IncludeGui;
+            return;
+        end
+        tf = all(arrayfun(@(file) fileCoveredBySuites( ...
+            candidateSuites, file), stepFiles));
+    elseif isempty(stepFiles)
+        tf = false;
+    else
+        tf = all(ismember(stepFiles, candidateFiles));
+    end
+end
+
+function tf = fileCoveredBySuites(suites, file)
+    folder = replace(string(fileparts(char(file))), "\", "/");
+    folder = eraseLeadingPrefix(folder, "tests/cases/");
+    folder = eraseLeadingPrefix(folder, "unit/");
+    folder = eraseLeadingPrefix(folder, "contract/");
+    tf = suiteCoveredByAny(suites, folder);
+end
+
+function value = eraseLeadingPrefix(value, prefix)
+    if startsWith(value, prefix)
+        value = extractAfter(value, strlength(prefix));
     end
 end
 
@@ -578,7 +562,8 @@ end
 
 function signature = stepSignature(step)
     signature = strjoin(step.Suites, ",") + "|" + ...
-        strjoin(step.Tests, ",") + "|" + string(step.IncludeGui);
+        strjoin(step.Files, ",") + "|" + strjoin(step.Tests, ",") + ...
+        "|" + string(step.IncludeGui);
 end
 
 function paths = normalizeChangedPaths(paths)

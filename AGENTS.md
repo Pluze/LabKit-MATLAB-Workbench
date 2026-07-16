@@ -101,7 +101,7 @@ tests, history, and details out of the public repository.
 - Run the smallest source-aligned test during iteration. Use `changedFast` at a
   coherent checkpoint and `buildtool changed` once for a stable handoff unless
   the user requested a narrower strategy or a broader completed gate covers it.
-- After failure, fix and rerun the narrowest failed suite; do not repeatedly
+- After failure, fix and rerun the narrowest failed file, method, or suite; do not repeatedly
   invoke the planner. Exact commands and scope live in
   `docs/development/testing.md`.
 - MATLAB and GitHub inspection require host runtime/network permissions. If

@@ -187,16 +187,14 @@ classdef labkitProgressPlugin < matlab.unittest.plugins.TestRunnerPlugin
         end
 
         function writeJson(~, filepath, payload, mode)
-            try
-                fid = fopen(filepath, mode);
-                if fid < 0
-                    return;
-                end
-                cleanup = onCleanup(@() fclose(fid));
-                fprintf(fid, "%s\n", jsonencode(payload));
-                clear cleanup
-            catch
+            fid = fopen(filepath, mode);
+            if fid < 0
+                error("LabKit:Tests:ProgressArtifactWrite", ...
+                    "Could not write test progress artifact: %s", filepath);
             end
+            cleanup = onCleanup(@() fclose(fid));
+            fprintf(fid, "%s\n", jsonencode(payload));
+            clear cleanup
         end
     end
 

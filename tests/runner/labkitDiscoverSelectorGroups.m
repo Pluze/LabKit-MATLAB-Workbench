@@ -23,7 +23,7 @@ function folders = selectorCandidateFolders(casesRoot, opts)
     roots = selectorSearchRoots(casesRoot, opts);
     folders = strings(1, 0);
     for r = 1:numel(roots)
-        files = testTreeMFiles(roots(r));
+        files = labkitTestTreeMFiles(roots(r));
         for k = 1:numel(files)
             if fileMayContainSelector(files(k), selectors)
                 folders(end+1) = string(fileparts(char(files(k))));
@@ -34,7 +34,7 @@ function folders = selectorCandidateFolders(casesRoot, opts)
 end
 
 function roots = selectorSearchRoots(casesRoot, opts)
-    targets = lower(normalizeSuiteTargets(opts.Suites));
+    targets = lower(labkitNormalizeSuiteTargets(opts.Suites));
     if isempty(targets)
         roots = string(casesRoot);
         return;
@@ -66,47 +66,11 @@ function tf = fileMayContainSelector(file, selectors)
     tf = any(contains(haystack, selectors));
 end
 
-function files = testTreeMFiles(root)
-    files = strings(1, 0);
-    entries = dir(root);
-    [~, order] = sort({entries.name});
-    entries = entries(order);
-    for k = 1:numel(entries)
-        entry = entries(k);
-        if entry.isdir
-            if strcmp(entry.name, ".") || strcmp(entry.name, "..")
-                continue;
-            end
-            files = [files, testTreeMFiles(fullfile(entry.folder, entry.name))];
-        elseif endsWith(entry.name, ".m")
-            files(end+1) = string(fullfile(entry.folder, entry.name));
-        end
-    end
-end
-
 function key = relativeTestKey(folder, testsRoot)
     key = extractAfter(string(folder), strlength(string(testsRoot)) + 1);
     key = replace(key, filesep, "/");
     while startsWith(key, "/")
         key = extractAfter(key, 1);
-    end
-end
-
-function targets = normalizeSuiteTargets(targets)
-    targets = normalizeTextList(targets);
-    for k = 1:numel(targets)
-        target = replace(targets(k), "\", "/");
-        target = erase(target, "tests/cases/unit/");
-        target = erase(target, "tests/cases/contract/");
-        target = erase(target, "tests/cases/gui/");
-        target = erase(target, "tests/cases/");
-        while startsWith(target, "/")
-            target = extractAfter(target, 1);
-        end
-        while endsWith(target, "/")
-            target = extractBefore(target, strlength(target));
-        end
-        targets(k) = target;
     end
 end
 

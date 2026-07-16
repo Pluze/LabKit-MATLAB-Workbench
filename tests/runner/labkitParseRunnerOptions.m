@@ -12,6 +12,7 @@ function opts = labkitParseRunnerOptions(root, varargin)
     p.FunctionName = "runLabKitTests";
     p.addParameter("IncludeGui", false, @isLogicalScalar);
     p.addParameter("Suites", strings(1, 0), @isStringLikeList);
+    p.addParameter("Files", strings(1, 0), @isStringLikeList);
     p.addParameter("Tests", strings(1, 0), @isStringLikeList);
     p.addParameter("Tags", strings(1, 0), @isStringLikeList);
     p.addParameter("ExcludeTags", strings(1, 0), @isStringLikeList);
@@ -36,7 +37,8 @@ function opts = labkitParseRunnerOptions(root, varargin)
     opts.HtmlReport = logical(opts.HtmlReport);
     opts.FailIfNoTests = logical(opts.FailIfNoTests);
     opts.ListOnly = logical(opts.ListOnly);
-    opts.Suites = normalizeTextList(opts.Suites);
+    opts.Suites = labkitNormalizeSuiteTargets(opts.Suites);
+    opts.Files = labkitNormalizeTestFileSelectors(root, opts.Files);
     opts.Tests = normalizeTextList(opts.Tests);
     opts.Tags = normalizeTextList(opts.Tags);
     opts.ExcludeTags = normalizeTextList(opts.ExcludeTags);
@@ -45,6 +47,10 @@ function opts = labkitParseRunnerOptions(root, varargin)
     opts.RunName = string(opts.RunName);
     opts.ShardCount = double(opts.ShardCount);
     opts.ShardIndex = double(opts.ShardIndex);
+    if ~isempty(opts.Suites) && ~isempty(opts.Files)
+        error("LabKit:Tests:ConflictingSelectors", ...
+            "Suites and Files are alternative scopes; specify only one.");
+    end
     if opts.ShardIndex >= opts.ShardCount
         error("LabKit:Tests:InvalidShard", ...
             "ShardIndex must be less than ShardCount.");
@@ -74,7 +80,8 @@ function tf = isTextScalar(value)
 end
 
 function tf = isLogicalScalar(value)
-    tf = (islogical(value) || isnumeric(value)) && isscalar(value);
+    tf = (islogical(value) || isnumeric(value)) && isscalar(value) && ...
+        isfinite(double(value));
 end
 
 function tf = isPositiveIntegerScalar(value)
@@ -85,4 +92,37 @@ end
 function tf = isNonnegativeIntegerScalar(value)
     tf = isnumeric(value) && isscalar(value) && isfinite(value) && ...
         value >= 0 && fix(value) == value;
+end
+
+function files = labkitNormalizeTestFileSelectors(root, values)
+    values = normalizeTextList(values);
+    casesRoot = canonicalPath(fullfile(root, "tests", "cases"));
+    files = strings(1, numel(values));
+    for k = 1:numel(values)
+        value = strip(values(k));
+        candidates = [value, string(fullfile(root, value)), ...
+            string(fullfile(casesRoot, value))];
+        candidate = candidates(find(arrayfun(@isfile, candidates), 1));
+        if isempty(candidate)
+            error("LabKit:Tests:TestFileNotFound", ...
+                "Official test file does not exist: %s", value);
+        end
+        candidate = canonicalPath(candidate);
+        if ~startsWith(candidate, casesRoot + filesep) || ...
+                ~endsWith(lower(candidate), ".m")
+            error("LabKit:Tests:TestFileOutsideCases", ...
+                "Files must select .m tests under tests/cases: %s", value);
+        end
+        files(k) = candidate;
+    end
+    files = unique(files, "stable");
+end
+
+function path = canonicalPath(path)
+    [status, attributes] = fileattrib(path);
+    if ~status
+        error("LabKit:Tests:UnresolvablePath", ...
+            "Could not resolve test path: %s", string(path));
+    end
+    path = string(attributes.Name);
 end
