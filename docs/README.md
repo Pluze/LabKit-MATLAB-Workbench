@@ -66,5 +66,3 @@ owned by MATLAB source help blocks. Handwritten HTML is never a source.
 - [Project history](history/README.md) lists all change records and connects
   them to the affected apps, framework, and libraries.
 - [Support](../.github/SUPPORT.md) explains how to report workflow problems.
-Agent execution rules, skills, and active migration debt stay outside this
-human documentation set in scoped `AGENTS.md` files and `.agents/`.

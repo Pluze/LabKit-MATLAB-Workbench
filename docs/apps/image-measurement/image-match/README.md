@@ -29,8 +29,8 @@ the source height and width.
 6. Undo/reset history or add another step.
 7. Export matched images.
 
-Changing method or strength previews the pending match; **Apply match** adds it
-to the ordered durable history.
+Changing method or strength previews the pending match; **Apply match** saves
+the settings as the next step in the image's processing history.
 
 ## Matching Methods
 

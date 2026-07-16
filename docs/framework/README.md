@@ -1,10 +1,10 @@
 # LabKit App Framework
 
-`labkit.ui` is the framework above the domain libraries and concrete Apps. It
-owns the common application lifecycle, semantic workbench layout, callback
-dispatch, project/session boundary, presentation commits, managed interactions,
-debug traces, and top-level utilities. App packages supply workflow decisions,
-scientific calculations, data schemas, labels, and exports.
+`labkit.ui` is the application framework above the domain libraries and
+concrete apps. It provides lifecycle management, semantic workbench layouts,
+action dispatch, project save/load support, presentation updates, managed
+interactions, debug traces, and top-level utilities. App packages supply the
+workflow decisions, scientific calculations, data schemas, labels, and exports.
 
 ## Start Here
 

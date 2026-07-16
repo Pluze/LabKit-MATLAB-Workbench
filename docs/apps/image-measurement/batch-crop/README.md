@@ -15,7 +15,7 @@ labkit_BatchImageCrop_app
 ## Inputs
 
 Use **Add images or folder** to load supported image files. A folder selection
-loads supported files from that folder. Each list row owns crop center,
+loads supported files from that folder. Each list row stores its own crop center,
 rotation, padding, and optional scale calibration. **Duplicate image** creates
 another task for the same source so multiple ROIs can be exported without
 loading duplicate files.
@@ -64,8 +64,8 @@ its placement does not change crop geometry or scale calculations.
 Exports support PNG, TIFF, and JPEG. Each task produces one image at the
 planned output dimensions. The crop manifest records source, task identity,
 center, rotation, padding, source/output scale, requested physical geometry,
-format, and output filename. Runtime provenance JSON records common project
-parameters and output roles.
+format, and output filename. A second LabKit result JSON records project-wide
+parameters and identifies each output file.
 
 ## Use Without The GUI
 

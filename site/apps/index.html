@@ -34,22 +34,22 @@ labkit_CIC_app</code></pre>
 <div class="table-wrap"><table><thead><tr><th>Task</th><th>App</th><th>Input</th><th>Principal output</th></tr></thead><tbody><tr><td>Register, crop, and mask image pairs for DIC</td><td><a href="dic/dic-preprocess.html">DIC Preprocess</a></td><td>Reference and moving images</td><td>Aligned images, crops, mask</td></tr><tr><td>Render and summarize Ncorr strain results</td><td><a href="dic/dic-postprocess.html">DIC Postprocess</a></td><td>Ncorr MAT, reference image, mask</td><td>Strain overlays and summary CSV</td></tr><tr><td>Overlay chrono voltage and current traces</td><td><a href="electrochemistry/chrono-overlay.html">Chrono Overlay</a></td><td>Chrono DTA</td><td>Plot and CSV</td></tr><tr><td>Measure charge-injection capacity</td><td><a href="electrochemistry/cic.html">CIC</a></td><td>Chrono DTA</td><td>CIC result table and CSV</td></tr><tr><td>Compare cyclic and time-domain CSC</td><td><a href="electrochemistry/csc.html">CSC</a></td><td>CV/CT DTA</td><td>Per-cycle CSC and CV data</td></tr><tr><td>Inspect impedance curves</td><td><a href="electrochemistry/eis.html">EIS</a></td><td>EIS DTA</td><td>Nyquist/Bode plots and CSV</td></tr><tr><td>Estimate voltage-transient resistance</td><td><a href="electrochemistry/vt-resistance.html">VT Resistance</a></td><td>Chrono DTA</td><td>Resistance table and CSV</td></tr><tr><td>Convert tracked points into gait metrics</td><td><a href="gait/gait-analysis.html">Gait Analysis</a></td><td>Coordinate table or marker MAT</td><td>Frame, step, coordinate, and summary tables</td></tr><tr><td>Crop image batches at repeatable geometry</td><td><a href="image-measurement/batch-crop.html">Batch Image Crop</a></td><td>Image files</td><td>Same-size crops and manifest</td></tr><tr><td>Measure curve radius, curvature, and length</td><td><a href="image-measurement/curvature.html">Curvature Measurement</a></td><td>Image</td><td>Overlay and measurement CSV</td></tr><tr><td>Decode and measure radiometric images</td><td><a href="image-measurement/flir-thermal.html">FLIR Thermal</a></td><td>FLIR radiometric image</td><td>Temperature data, measurements, rendered image</td></tr><tr><td>Fuse focal planes</td><td><a href="image-measurement/focus-stack.html">Focus Stack</a></td><td>Aligned image stack</td><td>Fused image and focus map</td></tr><tr><td>Apply a repeatable enhancement pipeline</td><td><a href="image-measurement/image-enhance.html">Image Enhance</a></td><td>Image files</td><td>Enhanced images and manifest</td></tr><tr><td>Match appearance to a reference image</td><td><a href="image-measurement/image-match.html">Image Match</a></td><td>Source and reference images</td><td>Matched images and manifest</td></tr><tr><td>Annotate ordered landmarks across video</td><td><a href="image-measurement/video-marker.html">Video Marker</a></td><td>Video</td><td>Project MAT and coordinate CSV</td></tr><tr><td>Restyle figures and export visible plot data</td><td><a href="labkit-core/figure-studio.html">Figure Studio</a></td><td>FIG or popout axes</td><td>Styled figure and plot data</td></tr><tr><td>Inspect RHS recordings and define channels</td><td><a href="neurophysiology/rhs-preview.html">RHS Preview</a></td><td>RHS file or folder</td><td>Preview, protocol JSON, filter record</td></tr><tr><td>Detect trains and measure neural responses</td><td><a href="neurophysiology/nerve-response-analysis.html">Nerve Response Analysis</a></td><td>Filter record and protocol JSON</td><td>Analysis JSON and CAP metrics</td></tr><tr><td>Review aligned responses and statistics</td><td><a href="neurophysiology/response-review-stats.html">Response Review and Stats</a></td><td>Analysis JSON or segment CSV</td><td>Metrics CSV and summary</td></tr><tr><td>Inspect ECG and measure segment SNR</td><td><a href="wearable/ecg-print.html">ECG Print</a></td><td>MAT or delimited table</td><td>Segment SNR CSV and waveform image</td></tr></tbody></table></div>
 <h2 id="browse-by-family">Browse By Family</h2>
 <ul>
-<li><a href="dic/index.html">DIC</a> — preparation and postprocessing around a DIC solver.</li>
-<li><a href="electrochemistry/index.html">Electrochemistry</a> — DTA-based chrono, CV/CT,</li>
+<li><a href="dic/index.html">DIC</a> - preparation and postprocessing around a DIC solver.</li>
+<li><a href="electrochemistry/index.html">Electrochemistry</a> - DTA-based chrono, CV/CT,</li>
 </ul>
 <p>impedance, charge, and resistance workflows.</p>
 <ul>
-<li><a href="gait/index.html">Gait</a> — pose-coordinate analysis and gait metrics.</li>
-<li><a href="image-measurement/index.html">Image Measurement</a> — calibrated image,</li>
+<li><a href="gait/index.html">Gait</a> - pose-coordinate analysis and gait metrics.</li>
+<li><a href="image-measurement/index.html">Image Measurement</a> - calibrated image,</li>
 </ul>
 <p>thermal, annotation, crop, fusion, and appearance workflows.</p>
 <ul>
-<li><a href="labkit-core/index.html">LabKit Core</a> — general MATLAB graphics tools.</li>
-<li><a href="neurophysiology/index.html">Neurophysiology</a> — RHS inspection, response</li>
+<li><a href="labkit-core/index.html">LabKit Core</a> - general MATLAB graphics tools.</li>
+<li><a href="neurophysiology/index.html">Neurophysiology</a> - RHS inspection, response</li>
 </ul>
 <p>analysis, and review.</p>
 <ul>
-<li><a href="wearable/index.html">Wearable</a> — wearable biosignal workflows.</li>
+<li><a href="wearable/index.html">Wearable</a> - wearable biosignal workflows.</li>
 </ul>
 <h2 id="how-to-read-an-app-page">How To Read An App Page</h2>
 <p>Concrete app pages use a common MATLAB-style order:</p>

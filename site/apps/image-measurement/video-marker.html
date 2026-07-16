@@ -51,7 +51,7 @@
 </ul>
 <p>Marker CSV is the round-trip editing format. Coordinate CSV is the plotting-oriented table after optional calibration, origin shift, and Y-axis conversion. Raw pixel coordinates remain available in the project.</p>
 <h2 id="autosave-recovery-and-portability">Autosave, Recovery, And Portability</h2>
-<p>Durable annotation changes are atomically saved to <code>Video Marker Autosaves</code> beside the source video. Autosave and explicit project MAT files use the same project payload. The payload stores the video path relative to the MAT file, the original path, and same-folder filename fallbacks.</p>
+<p>Changes to the skeleton or annotations are atomically saved to <code>Video Marker Autosaves</code> beside the source video. Autosave and explicit project MAT files use the same project data. They store the video path relative to the MAT file, the original path, and same-folder filename fallbacks.</p>
 <p>When a project tree moves between folders, users, or operating systems, the relative reference is tried first. If no candidate exists, the app asks the user to locate the video without discarding skeleton or annotations. Opening a video with adjacent recovery data asks whether to restore it or start new.</p>
 <h2 id="outputs">Outputs</h2>
 <ul>

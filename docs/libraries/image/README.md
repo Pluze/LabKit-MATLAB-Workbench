@@ -2,10 +2,9 @@
 
 [Public API index](../README.md) | [App guide](../../apps/README.md)
 
-`labkit.image.*` is the GUI-free facade for reusable image file IO and basic
-image processing primitives. It is intentionally not an image-workflow engine:
-apps still own tool lists, parameter presets, ROI policy, matching workflows,
-crop/export schemas, result tables, alerts, and log wording.
+`labkit.image.*` provides GUI-free image file IO, conversion, preview sizing,
+and common enhancement operations. App-specific registration, measurement,
+ROI, matching, and export workflows build on these functions.
 
 `labkit.image.version()` returns the image facade contract version used by app
 `requirements.m` declarations.
@@ -46,9 +45,9 @@ to three channels or drops channels after RGB without changing class or sample
 values. Callers that need display-ready RGB data explicitly compose
 `im2double`, `ensureRgb`, and `[0, 1]` clamping as shown above.
 
-## Ownership
+## Provided Operations
 
-The facade may own:
+The module provides:
 
 - supported source-image extension lists and file-dialog filters
 - path normalization and display names
@@ -60,7 +59,7 @@ The facade may own:
 - generic image enhancement primitives such as brightness/contrast, HSV
   hue/saturation, gray-world white balance, local contrast, and sharpening
 
-Apps own:
+Applications add:
 
 - which filters or processing steps appear in the app UI
 - parameter labels, defaults, validation ranges, and step history semantics
@@ -71,12 +70,5 @@ Apps own:
 
 Use `labkit.image.readFiles` when an app needs generic source-image records.
 Apps may copy the returned `path`, `name`, and `image` fields into their own
-item structs. Keep app-owned readers when the app item shape is part of its
-state contract.
-
-## Promotion Rule
-
-Promote image behavior into `labkit.image` only when it is GUI-free, reusable
-outside one workflow, independently testable, and has a neutral name. Do not
-promote app-specific workflow semantics simply because two image apps both use
-images.
+item structures. Specialized formats and result structures remain documented
+by the app that uses them.

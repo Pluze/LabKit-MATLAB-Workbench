@@ -60,7 +60,7 @@ recognizes visible line, scatter, image, surface, patch, text, and constant-line
 objects. Unsupported graphics are skipped and reported as warnings.
 
 The package represents displayed graphics in axes child order. It is intended
-for audit, handoff, and plot recreation—not for reconstructing hidden source
+for audit, handoff, and plot recreation, not for reconstructing hidden source
 data or rerunning the original analysis.
 
 ## Programmatic Data Extraction

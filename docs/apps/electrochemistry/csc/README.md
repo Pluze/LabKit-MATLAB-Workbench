@@ -15,8 +15,8 @@ labkit_CSC_app
 
 ## Inputs And Selection
 
-Add one or more CV/CT `.DTA` files. The selected file owns the current curve
-list, readout, and plots. Selecting another file resets the curve selection and
+Add one or more CV/CT `.DTA` files. The selected file determines the current
+curve list, readout, and plots. Selecting another file resets the curve selection and
 default plot quantities to that file; it does not silently keep a cycle from
 the previous source.
 

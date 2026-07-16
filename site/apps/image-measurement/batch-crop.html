@@ -27,7 +27,7 @@
 <p>The app requires the LabKit UI and Image facades.</p>
 <pre><code class="language-matlab">labkit_BatchImageCrop_app</code></pre>
 <h2 id="inputs">Inputs</h2>
-<p>Use <strong>Add images or folder</strong> to load supported image files. A folder selection loads supported files from that folder. Each list row owns crop center, rotation, padding, and optional scale calibration. <strong>Duplicate image</strong> creates another task for the same source so multiple ROIs can be exported without loading duplicate files.</p>
+<p>Use <strong>Add images or folder</strong> to load supported image files. A folder selection loads supported files from that folder. Each list row stores its own crop center, rotation, padding, and optional scale calibration. <strong>Duplicate image</strong> creates another task for the same source so multiple ROIs can be exported without loading duplicate files.</p>
 <h2 id="basic-workflow">Basic Workflow</h2>
 <ol>
 <li>Load images and select a task.</li>
@@ -47,7 +47,7 @@
 <h2 id="scale-bar">Scale Bar</h2>
 <p>The scale-bar length defaults to 100 selected units, at Bottom right, in Black. Measure the reference first, then place the bar. The bar is an export overlay; its placement does not change crop geometry or scale calculations.</p>
 <h2 id="outputs">Outputs</h2>
-<p>Exports support PNG, TIFF, and JPEG. Each task produces one image at the planned output dimensions. The crop manifest records source, task identity, center, rotation, padding, source/output scale, requested physical geometry, format, and output filename. Runtime provenance JSON records common project parameters and output roles.</p>
+<p>Exports support PNG, TIFF, and JPEG. Each task produces one image at the planned output dimensions. The crop manifest records source, task identity, center, rotation, padding, source/output scale, requested physical geometry, format, and output filename. A second LabKit result JSON records project-wide parameters and identifies each output file.</p>
 <h2 id="use-without-the-gui">Use Without The GUI</h2>
 <pre><code class="language-matlab">plan = batch_crop.cropGeometry.scalePlan(sourcePixelsPerUnit, ...
     100, 100, &quot;um&quot;, 0);

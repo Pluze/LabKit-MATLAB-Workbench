@@ -2,12 +2,17 @@
 
 [Public API index](../README.md) | [App guide](../../apps/README.md)
 
-`labkit.biosignal.*` is the GUI-free facade for physiological or wearable time-series data. It is a peer of `labkit.dta`, not a replacement for app-owned workflow logic.
+`labkit.biosignal.*` provides GUI-free import and processing functions for
+physiological and wearable time-series data. Use it to build a MATLAB script
+from the same recording, channel, event, segment, template, and measurement
+structures used by LabKit apps.
 
 `labkit.biosignal.version()` returns the biosignal facade contract version
 struct used by `labkit.contract` requirement checks.
 
-The module currently supports the first ECG-oriented wearable app, but the public API intentionally uses generic signal vocabulary: recordings, channels, events, segments, templates, measurements, and groups.
+ECG peak detection is the only modality-specific detector in the current
+module. Import, filtering, segmentation, template construction, measurement,
+and group comparison use generic biosignal structures.
 
 ## Public Surface
 
@@ -27,7 +32,8 @@ measurements = labkit.biosignal.measureSegments(segments, template, measureOptio
 comparison = labkit.biosignal.compareGroups(values, groups);
 ```
 
-`readRecording` currently accepts MAT files containing timetable variables and delimited text tables such as CSV/TSV. Low-level format normalization lives under `+labkit/+biosignal/private`.
+`readRecording` accepts MAT files containing timetable variables and delimited
+text tables such as CSV and TSV.
 
 For delimited text tables, time handling is deliberately conservative. The reader does not treat an arbitrary monotonic numeric column as seconds. It uses a table column as time only when the column is `datetime`/`duration`, when the column name is time-like such as `time_s` or `time_ms`, or when the caller explicitly passes `timeColumn` and optionally `timeUnit`. Otherwise the recording uses a synthetic sample-index time axis and keeps numeric columns as signal channels.
 
@@ -56,9 +62,9 @@ Useful delimited-table options include `headerLine`, `hasHeader`, `timeColumn`, 
 | `gapFactor` | positive scalar | `20` | Positive gaps larger than this multiple of nominal `dt` are counted as large gaps. |
 | `useFirstNumericColumnAsTime` | logical | `false` | Opt-in fallback for ambiguous text tables. |
 
-## Data Shape
+## Data Structures
 
-The first version uses structs rather than MATLAB classes:
+Functions exchange ordinary MATLAB structures with these principal fields:
 
 ```text
 recording.sourcePath, recording.name, recording.signals, recording.metadata
@@ -69,22 +75,25 @@ template.values, template.timeOffset, template.keptSegmentIndex, template.score
 measurements.perSegment, measurements.summary
 ```
 
-This keeps the API easy to test and avoids committing to a class hierarchy before the wearable workflows stabilize.
+Open an individual function page for required fields, row/column orientation,
+units, empty-result behavior, and errors.
 
-## Ownership Boundary
+## Processing Provided By This Module
 
-The biosignal facade may own:
+The public functions cover:
 
 - file loading and timetable/table normalization
 - channel listing and extraction
 - time ROI cropping
 - generic filtering
-- ECG/QRS peak detection through a public facade with private algorithm implementations
+- ECG/QRS peak detection
 - event-centered segmentation
 - template building and template-residual SNR-style segment measurements
 - generic group summaries and pairwise Welch-style comparisons
 
-`detectEcgPeaks` is intentionally ECG-specific. It exposes a stable app-facing facade while keeping the concrete peak detectors private. Supported methods are `qrs-streaming`, `pan-tompkins`, and `local`; apps can switch methods for visual/performance comparison without calling the private implementations directly.
+`detectEcgPeaks` supports `qrs-streaming`, `pan-tompkins`, and `local` methods.
+Select the method through its options; no detector-specific helper call is
+required.
 
 ### `detectEcgPeaks` Options
 
@@ -123,12 +132,13 @@ events = labkit.biosignal.detectEcgPeaks(signal, opts);
 | `buildTemplate(segments, opts)` | `opts.topN`: positive integer, default `min(30, segmentCount)`. |
 | `measureSegments(segments, template, opts)` | `opts.signalWindowSec`: `[start end]`, default `[-0.06 0.06]`; `opts.noiseWindowsSec`: N-by-2 matrix, default `[-0.30 -0.20; 0.40 0.50]`. |
 
-Apps own:
+Applications decide:
 
 - ECG-specific labels and workflow wording
 - which channel is treated as ECG
-- GUI controls, previews, plot arrangement, and printing/export layout
+- GUI controls, previews, plot arrangement, and printing or export layout
 - which measurements are displayed or exported
 - class labels and interpretation of group comparisons
 
-Do not put GUI construction, `uigetfile`, app-specific plot labels, export filenames, or ECG-only workflow text inside `labkit.biosignal`.
+These application choices are intentionally not parameters of the generic
+biosignal functions.

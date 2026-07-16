@@ -133,7 +133,7 @@ runLabKitTests(&quot;Suites&quot;, &quot;gui/apps/image_measurement/batch_crop&q
 <pre><code class="language-matlab">abs(oldValue - newValue) &lt; 1e-9</code></pre>
 <p>Use looser tolerances only for interpolation, plotting alignment, or format conversion, and document why the looser tolerance is valid.</p>
 <h2 id="artifacts">Artifacts</h2>
-<p>The <code>artifacts/</code> tree is ignored and reserved for generated outputs, local scratch evidence, and temporary design notes that support one improvement round. Do not track files under <code>artifacts/</code>; durable design decisions belong in the relevant human doc, source comment, test, or scoped agent rule instead.</p>
+<p>The <code>artifacts/</code> tree is ignored and reserved for generated outputs, local scratch evidence, and temporary design notes that support one improvement round. Do not track files under <code>artifacts/</code>; lasting design decisions belong in the relevant documentation, source comment, or test instead.</p>
 <p>Test artifacts are written under:</p>
 <pre><code class="language-text">artifacts/test-results/&lt;RunName&gt;/
 artifacts/coverage/&lt;RunName&gt;/
@@ -182,7 +182,7 @@ profileLabKitTarget(&quot;labkit_launcher&quot;)</code></pre>
 <li><code>profile_*.json</code>: machine-readable metadata, summary text/tables, and all</li>
 </ul>
 <p>captured function rows.</p>
-<p>No profiler rows are dropped. Read <code>top_project_self_time</code> first for editable LabKit code, then use <code>top_captured_total_time</code> for captured workflow context such as deliberate clicks, downstream app launches, network calls, GUI close cost, or MATLAB callbacks. Default summary rankings exclude <code>profiler_tool</code> rows, but the JSON <code>functions</code> array still keeps them for audit. Agent-side filtering should use each row's <code>source_tag</code> and <code>tags</code> fields, for example <code>project</code>, <code>matlab_internal</code>, <code>external</code>, or <code>profiler_tool</code>.</p>
+<p>No profiler rows are dropped. Read <code>top_project_self_time</code> first for editable LabKit code, then use <code>top_captured_total_time</code> for captured workflow context such as deliberate clicks, downstream app launches, network calls, GUI close cost, or MATLAB callbacks. Default summary rankings exclude <code>profiler_tool</code> rows, but the JSON <code>functions</code> array still keeps them for audit. Automated analysis can filter with each row's <code>source_tag</code> and <code>tags</code> fields, for example <code>project</code>, <code>matlab_internal</code>, <code>external</code>, or <code>profiler_tool</code>.</p>
 <p>Measure one user-perceived cost at a time. Startup targets should open the launcher or app, call <code>drawnow</code>, pause briefly, and let <code>CloseFiguresAfterRun</code> clean up after profiling; profile explicit <code>close(fig)</code> latency as its own target. Profile debug launches separately from normal launches because visible trace mirroring can dominate app-owned startup cost. For large-file workflows, use synthetic multi-file targets to compare path registration with actual file reads before changing algorithms. Single GUI profile runs can be noisy, so compare repeated or representative runs and keep the HTML/JSON artifact paths in the handoff.</p>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>
 </main>

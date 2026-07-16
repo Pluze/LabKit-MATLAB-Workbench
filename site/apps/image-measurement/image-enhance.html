@@ -27,7 +27,7 @@
 <p>The app requires the LabKit UI and Image facades. All processing is implemented with MATLAB and repository-owned code.</p>
 <pre><code class="language-matlab">labkit_ImageEnhance_app</code></pre>
 <h2 id="inputs-and-batch-mode">Inputs And Batch Mode</h2>
-<p>Add supported image files or a folder. In <strong>Batch shared processing</strong> mode, one shared step history is applied to every source. When batch mode is off, each image owns its own history and optional white ROI. Selecting another image updates the preview without recalculating unrelated files.</p>
+<p>Add supported image files or a folder. In <strong>Batch shared processing</strong> mode, one shared step history is applied to every source. When batch mode is off, each image keeps a separate history and optional white ROI. Selecting another image updates the preview without recalculating unrelated files.</p>
 <h2 id="basic-workflow">Basic Workflow</h2>
 <ol>
 <li>Load images and select a representative source.</li>
@@ -38,7 +38,7 @@
 <li>Undo or reset history as needed.</li>
 <li>Choose output format/folder and export.</li>
 </ol>
-<p>Each <strong>Apply tool</strong> action adds a durable step. Panner changes only preview the pending tool until it is applied. ROI creation and overlay refresh preserve the current zoom.</p>
+<p>Each <strong>Apply tool</strong> action saves one processing step. Panner changes preview the pending tool without changing the saved history until <strong>Apply tool</strong> is chosen. ROI creation and overlay refresh preserve the current zoom.</p>
 <h2 id="tools-and-defaults">Tools And Defaults</h2>
 <div class="table-wrap"><table><thead><tr><th>Tool</th><th>Primary control</th><th>Secondary control</th></tr></thead><tbody><tr><td>Brightness/contrast</td><td>Brightness 0%</td><td>Contrast 15%</td></tr><tr><td>Local contrast</td><td>Clarity 30%</td><td>Radius 12 px</td></tr><tr><td>Sharpen</td><td>Sharpen 35%</td><td>Radius 1.5 px</td></tr><tr><td>Hue/saturation</td><td>Hue 0 degrees</td><td>Saturation 10%</td></tr><tr><td>White balance</td><td>Strength 100%</td><td>Temperature 0%</td></tr><tr><td>White ROI calibration</td><td>Strength 100%</td><td>White target 92%</td></tr><tr><td>Subject-preserving enhance</td><td>Strength 70%</td><td>Background target 90%</td></tr></tbody></table></div>
 <p>Processing converts input to RGB double in <code>[0,1]</code>, applies steps in table order, and clamps the final image. Brightness, local contrast, sharpening, hue/saturation, and gray-world white balance call the linked <code>labkit.image</code> primitives.</p>
@@ -46,7 +46,7 @@
 <h2 id="history-and-reproducibility">History And Reproducibility</h2>
 <p>The history table records step kind and settings in execution order. <strong>Undo history</strong> removes the latest applied step; <strong>Reset history</strong> returns to the normalized original. Source images are not modified. Shared and per-image histories are stored separately in project state so switching batch mode does not ambiguously merge them.</p>
 <h2 id="outputs">Outputs</h2>
-<p>Export supports PNG, TIFF, and JPEG. Each output is rendered from the source plus its effective stored pipeline, not from a downsampled preview. The export manifest records source, ordered steps, ROI geometry, batch mode, format, and output filename; the runtime result JSON records the output set and project parameters.</p>
+<p>Export supports PNG, TIFF, and JPEG. Each output is rendered from the source plus its effective stored pipeline, not from a downsampled preview. The export manifest records source, ordered steps, ROI geometry, batch mode, format, and output filename. A LabKit result JSON records the complete output set and the project parameters used to create it.</p>
 <h2 id="use-without-the-gui">Use Without The GUI</h2>
 <pre><code class="language-matlab">steps = [ ...
     image_enhance.analysisRun.makeStep(&quot;Brightness/contrast&quot;, 0, 15), ...

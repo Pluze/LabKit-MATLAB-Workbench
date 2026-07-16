@@ -55,7 +55,7 @@ recorded time range.
 
 **Export curves CSV** writes `TimeGapCenterAligned_s` followed by paired
 voltage and current columns for each source. Column names retain a sanitized
-source identity. The runtime also writes a result manifest containing source
+source identity. The app also writes a result manifest containing source
 references, current parameters, and the CSV output role.
 
 ## Use Without The GUI

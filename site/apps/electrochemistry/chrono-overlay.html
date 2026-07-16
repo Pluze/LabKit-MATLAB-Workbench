@@ -43,7 +43,7 @@
 <h2 id="parameters">Parameters</h2>
 <div class="table-wrap"><table><thead><tr><th>Parameter</th><th>Default</th><th>Effect</th></tr></thead><tbody><tr><td>X axis</td><td>Time (s)</td><td>plot coordinate only; alternatives are Time (ms) and Sample #</td></tr><tr><td>Line width</td><td>1.3</td><td>rendered curve width</td></tr><tr><td>Show file-name legend</td><td>on</td><td>legend visibility</td></tr><tr><td>Show grid</td><td>on</td><td>axes grid visibility</td></tr></tbody></table></div>
 <h2 id="output">Output</h2>
-<p><strong>Export curves CSV</strong> writes <code>TimeGapCenterAligned_s</code> followed by paired voltage and current columns for each source. Column names retain a sanitized source identity. The runtime also writes a result manifest containing source references, current parameters, and the CSV output role.</p>
+<p><strong>Export curves CSV</strong> writes <code>TimeGapCenterAligned_s</code> followed by paired voltage and current columns for each source. Column names retain a sanitized source identity. The app also writes a result manifest containing source references, current parameters, and the CSV output role.</p>
 <h2 id="use-without-the-gui">Use Without The GUI</h2>
 <pre><code class="language-matlab">[items, status] = labkit.dta.loadFiles([&quot;run01.DTA&quot;, &quot;run02.DTA&quot;], ...
     &quot;chrono&quot;);

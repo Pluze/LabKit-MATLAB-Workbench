@@ -43,7 +43,7 @@
 <p>Each quick export also writes a LabKit result manifest beside the selected file. The manifest records the source, style parameters, output identity, and summary metadata.</p>
 <h2 id="export-a-data-package">Export A Data Package</h2>
 <p>On <strong>Export</strong>, select an output folder and choose <strong>Export data + script</strong>. Figure Studio creates a package containing supported visible data, style and axes metadata, and a MATLAB recreation script. The extractor currently recognizes visible line, scatter, image, surface, patch, text, and constant-line objects. Unsupported graphics are skipped and reported as warnings.</p>
-<p>The package represents displayed graphics in axes child order. It is intended for audit, handoff, and plot recreation—not for reconstructing hidden source data or rerunning the original analysis.</p>
+<p>The package represents displayed graphics in axes child order. It is intended for audit, handoff, and plot recreation, not for reconstructing hidden source data or rerunning the original analysis.</p>
 <h2 id="programmatic-data-extraction">Programmatic Data Extraction</h2>
 <pre><code class="language-matlab">fig = openfig(&quot;result.fig&quot;, &quot;invisible&quot;);
 cleanup = onCleanup(@() close(fig));

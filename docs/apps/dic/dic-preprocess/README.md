@@ -74,7 +74,7 @@ clustered points provide weak rotational leverage.
 ## Automatic Alignment
 
 **Auto align current pair** runs the app-owned base-MATLAB registration path.
-It returns the same aligned-image and transform contract as manual alignment.
+It returns the same aligned image and transform fields as manual alignment.
 Automatic alignment is a starting estimate, not a guarantee of DIC-quality
 correspondence. Always inspect the false-color overlay and prefer manual points
 when the image has repeated texture, large occlusion, or weak contrast.
@@ -107,13 +107,14 @@ reference domain.
 
 **Save current images** writes two images to the selected folder using stable
 reference and moving result names. **Save ROI mask** writes a binary image to
-the selected file. Runtime result manifests record source references,
+the selected file. LabKit result manifests record source references,
 parameters, output roles, and generated filenames; the manifest JSON is
 provenance metadata, not an additional scientific result.
 
-The durable project state stores portable source references, preview choices,
-edit steps, crop and mask annotations, and result references. Decoded and
-working image arrays are session cache and are rebuilt after load.
+The saved project stores portable source references, preview choices, edit
+steps, crop and mask annotations, and result references. Decoded source images
+and intermediate working images are loaded or recomputed when the project is
+opened; they are not duplicated inside the project file.
 
 ## Use Without The GUI
 

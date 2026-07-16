@@ -30,4 +30,4 @@ is public within its facade version; compatibility across a breaking facade
 version is not implied.
 
 The tables below are generated from current MATLAB source and the app API
-catalog. Do not maintain a second handwritten list of symbols.
+catalog, so each entry links to the current function help.

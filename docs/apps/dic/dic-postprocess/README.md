@@ -80,7 +80,7 @@ table schema and non-finite-value behavior.
 - a clean EXX overlay PNG;
 - a clean EYY overlay PNG;
 - a CSV table containing the ROI strain summary;
-- a runtime result manifest describing inputs, parameters, and output roles.
+- a LabKit result manifest describing inputs, parameters, and output roles.
 
 The clean PNG exports contain only the composed image, not axes chrome or
 interactive toolbar controls. Input MAT, reference, and mask files are never

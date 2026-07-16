@@ -65,10 +65,10 @@ conversion. Raw pixel coordinates remain available in the project.
 
 ## Autosave, Recovery, And Portability
 
-Durable annotation changes are atomically saved to `Video Marker Autosaves`
-beside the source video. Autosave and explicit project MAT files use the same
-project payload. The payload stores the video path relative to the MAT file,
-the original path, and same-folder filename fallbacks.
+Changes to the skeleton or annotations are atomically saved to `Video Marker
+Autosaves` beside the source video. Autosave and explicit project MAT files use
+the same project data. They store the video path relative to the MAT file, the
+original path, and same-folder filename fallbacks.
 
 When a project tree moves between folders, users, or operating systems, the
 relative reference is tried first. If no candidate exists, the app asks the

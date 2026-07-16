@@ -38,7 +38,7 @@
 <li>Undo/reset history or add another step.</li>
 <li>Export matched images.</li>
 </ol>
-<p>Changing method or strength previews the pending match; <strong>Apply match</strong> adds it to the ordered durable history.</p>
+<p>Changing method or strength previews the pending match; <strong>Apply match</strong> saves the settings as the next step in the image's processing history.</p>
 <h2 id="matching-methods">Matching Methods</h2>
 <div class="table-wrap"><table><thead><tr><th>Method</th><th>Behavior</th></tr></thead><tbody><tr><td>Balanced</td><td>robust white-point match followed by Lab-style tone/color transfer</td></tr><tr><td>White balance</td><td>match robust bright-neutral RGB white points</td></tr><tr><td>Tone only</td><td>quantile-match Lab lightness only</td></tr><tr><td>Protected tone</td><td>constrained luminance/background adjustment with shadow, highlight, and saturation guards</td></tr><tr><td>Lab style</td><td>quantile-match lightness and covariance-match Lab chroma</td></tr><tr><td>Histogram</td><td>independently quantile-match all three Lab channels</td></tr></tbody></table></div>
 <p>Overall strength blends the matched result with the original. Tone and color strength separately blend lightness and chroma behavior where the selected method supports them. All three default to 100%.</p>

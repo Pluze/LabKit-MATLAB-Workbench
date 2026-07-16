@@ -35,14 +35,15 @@ usable without the product, and automated tests must exercise that fallback.
 When values feed scientific interpretation, branching, exports, or later
 calculations, identical inputs must be idempotent: pure calculations reproduce
 the same app-consumed values, while safely repeated stateful operations do not
-compound state or side effects. A parity
-test must compare app-consumed outputs against the Toolbox reference within a
-documented tolerance. Visual similarity is not sufficient evidence.
-The exact source, symbol, product, owner, fallback evidence, and replacement
-plan plus fallback, idempotency, and parity evidence are recorded as active migration debt. Dependency analysis continues to
-report the Toolbox call; hiding it behind reflection or string dispatch is not
-an accepted compatibility technique. The debt closes by removing the Toolbox
-branch once the owned implementation replaces it.
+compound state or side effects. A parity test must compare app-consumed outputs
+against the Toolbox reference within a documented tolerance. Visual similarity
+is not sufficient evidence.
+
+Record each temporary Toolbox dependency with its source function, MathWorks
+product, responsible app, fallback tests, idempotency/parity evidence, and
+replacement plan. Dependency reports continue to show the Toolbox call while
+that debt is open. The debt closes when the repository implementation replaces
+the Toolbox branch and the branch is removed.
 
 Adding any third-party runtime remains an architecture and deployment decision
 requiring explicit approval; it is not an ordinary app-local implementation
@@ -65,8 +66,8 @@ Source checkouts may also keep local private apps under an ignored
 `private_apps/apps/` workspace or roots named by `LABKIT_PRIVATE_APP_ROOTS`.
 Any developer can create that local workspace for their own private apps. The
 launcher can list and launch those apps with `Visibility` set to `private`, but
-the public repository, release artifacts, and CI guardrails own only the public
-`apps/` tree. Keep each private workspace as a separate private Git repository
+public releases and CI checks cover only the public `apps/` tree. Keep each
+private workspace as a separate private Git repository
 rather than mixing private app files into the public repo history. The public
 structure guide is [private-apps.md](private-apps.md); private app
 documentation belongs in the private workspace.
@@ -161,10 +162,8 @@ Apps also publish app-local `version.m` metadata for display in the launcher and
 app window title. App versions are not dependency constraints and do not belong
 in `labkit.contract`. Project guardrails check `X.Y.Z` format and require
 versioned code changes to increase the corresponding app, launcher, or facade
-version. Pick the next version from the version file in the latest `main`
-commit, not from intermediate local working-tree edits made during an
-unfinished migration. Feature-branch work may batch that version bump into the
-final squash, PR handoff, or direct `main` integration step.
+version. The [release guide](release.md) explains how to select and publish the
+next version.
 
 Image workflows may use `labkit.image` for generic image file filters, source
 image reads, display-name normalization, RGB double conversion, preview-size
@@ -230,10 +229,6 @@ line count. Repository line budgets count effective MATLAB code lines: blank
 lines and comment-only documentation do not consume the budget. Physical line
 counts remain useful diagnostic context, but they must not discourage complete
 function help.
-
-## Current Exceptions
-
-Current architecture exceptions: none.
 
 ## Validation Boundary
 

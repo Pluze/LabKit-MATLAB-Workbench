@@ -50,7 +50,7 @@ assumptions. Preserve conversion diagnostics with reported measurements.
 ## Display Controls
 
 Palettes are Turbo, Iron, Hot, Parula, and Gray. Mapping modes are Linear, Log,
-and Gamma; gamma defaults to 2.2 and is limited to 0.1–5. Display ranges are
+and Gamma; gamma defaults to 2.2 and is limited to 0.1-5. Display ranges are
 stored per image. Actions can set each image independently, apply one shared
 group range, fit the current image, or round configured bounds.
 

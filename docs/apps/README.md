@@ -49,16 +49,16 @@ version selection, and source-checkout setup.
 
 ## Browse By Family
 
-- [DIC](dic/README.md) — preparation and postprocessing around a DIC solver.
-- [Electrochemistry](electrochemistry/README.md) — DTA-based chrono, CV/CT,
+- [DIC](dic/README.md) - preparation and postprocessing around a DIC solver.
+- [Electrochemistry](electrochemistry/README.md) - DTA-based chrono, CV/CT,
   impedance, charge, and resistance workflows.
-- [Gait](gait/README.md) — pose-coordinate analysis and gait metrics.
-- [Image Measurement](image-measurement/README.md) — calibrated image,
+- [Gait](gait/README.md) - pose-coordinate analysis and gait metrics.
+- [Image Measurement](image-measurement/README.md) - calibrated image,
   thermal, annotation, crop, fusion, and appearance workflows.
-- [LabKit Core](labkit-core/README.md) — general MATLAB graphics tools.
-- [Neurophysiology](neurophysiology/README.md) — RHS inspection, response
+- [LabKit Core](labkit-core/README.md) - general MATLAB graphics tools.
+- [Neurophysiology](neurophysiology/README.md) - RHS inspection, response
   analysis, and review.
-- [Wearable](wearable/README.md) — wearable biosignal workflows.
+- [Wearable](wearable/README.md) - wearable biosignal workflows.
 
 ## How To Read An App Page
 

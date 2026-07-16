@@ -16,7 +16,7 @@ labkit_ImageEnhance_app
 
 Add supported image files or a folder. In **Batch shared processing** mode, one
 shared step history is applied to every source. When batch mode is off, each
-image owns its own history and optional white ROI. Selecting another image
+image keeps a separate history and optional white ROI. Selecting another image
 updates the preview without recalculating unrelated files.
 
 ## Basic Workflow
@@ -29,9 +29,9 @@ updates the preview without recalculating unrelated files.
 6. Undo or reset history as needed.
 7. Choose output format/folder and export.
 
-Each **Apply tool** action adds a durable step. Panner changes only preview the
-pending tool until it is applied. ROI creation and overlay refresh preserve the
-current zoom.
+Each **Apply tool** action saves one processing step. Panner changes preview the
+pending tool without changing the saved history until **Apply tool** is chosen.
+ROI creation and overlay refresh preserve the current zoom.
 
 ## Tools And Defaults
 
@@ -69,8 +69,8 @@ not ambiguously merge them.
 Export supports PNG, TIFF, and JPEG. Each output is rendered from the source
 plus its effective stored pipeline, not from a downsampled preview. The export
 manifest records source, ordered steps, ROI geometry, batch mode, format, and
-output filename; the runtime result JSON records the output set and project
-parameters.
+output filename. A LabKit result JSON records the complete output set and the
+project parameters used to create it.
 
 ## Use Without The GUI
 

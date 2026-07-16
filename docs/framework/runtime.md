@@ -2,12 +2,13 @@
 
 [Public API index](../libraries/README.md) | [App development](../development/app-development.md)
 
-This page documents the current supported UI contract. Runtime V2 owns queued
-events, canonical project/session state, presentation, resources,
-interactions, projects, and result manifests. Old runtime snapshots remain a
-read-only import format; the V1 lifecycle is retired.
+This page explains how a LabKit app is declared, launched, updated, saved, and
+debugged. The current runtime manages queued events, project and session state,
+presentation, resources, interactions, saved projects, and result manifests.
+Old runtime snapshots can still be imported, but new apps use the current
+lifecycle exclusively.
 
-`labkit.ui` is the reusable MATLAB GUI foundation. It is split into app-facing facade packages:
+`labkit.ui` is divided into these public packages:
 
 | Facade | Owns | Main APIs |
 | --- | --- | --- |
@@ -16,12 +17,16 @@ read-only import format; the V1 lifecycle is retired.
 | `labkit.ui.plot` | Advanced renderer viewport and coordinate mechanics. | `clear`, `fit`, `fitCanvas`, `message`, `offsetData`, `clampData`. |
 | `labkit.ui.interaction` | Managed-interaction calculation helpers and popout enablement. | `anchorPath`, `scaleBarCalibration`, `scaleBarGeometry`, `enablePopout`. |
 
-The root `labkit.ui.*` flat helper surface has been removed. Apps should call the facade that owns the behavior they need. Private implementation details live under each facade's `private/` folder.
+Apps call the package that provides the behavior they need. The earlier flat
+`labkit.ui.*` helper surface is no longer supported, and implementation details
+inside each package's `private/` folder are not public APIs.
 
 `labkit.ui.version()` returns the UI facade contract version struct used by
 `labkit.contract` requirement checks.
 
 ## Declarative App Runtime
+
+### Definition And Launch
 
 The UI surface makes app code read as a semantic description of a LabKit
 workflow, not as grid construction or a general MATLAB GUI DSL. Apps expose an
@@ -118,7 +123,9 @@ semantic callbacks and returns a workbench layout. It does not create MATLAB
 handles, run IO, compute data, mutate app state, schedule startup work, or set
 concrete layout geometry.
 
-Use these app-facing contracts:
+### Layout And Action Rules
+
+Use these app-facing rules:
 
 - The default shell is a LabKit workbench: control tabs on the left and primary
   preview, plot, waveform, image, or canvas content on the right.
@@ -146,6 +153,9 @@ Use these app-facing contracts:
 - App handlers should be named by user intent. They receive semantic events
   and injected services, then return updated canonical state without directly
   mutating framework lifecycle state.
+
+### File Selection And Dialogs
+
 - `filePanel` owns file input mechanics: file chooser defaults, optional
   recursive folder scans, duplicate filename display, current selection, and
   file-entry events. Each file entry exposes `id`, `index`, `path`, `name`,
@@ -189,6 +199,9 @@ Use these app-facing contracts:
   creates the app-specific subfolder before returning it.
 - App-owned alerts use `services.dialogs.alert(message, title)`. Apps still own
   the wording and decision; the runtime owns modal and hidden-test mechanics.
+
+### Saved Projects And Result Utilities
+
 - `labkit.ui.runtime.saveState/loadState` retain one stable public signature.
   Apps write a versioned `labkitProject` envelope with only durable project
   buckets, ordered app payload migrations, producer
@@ -216,6 +229,9 @@ Use these app-facing contracts:
   metadata distinguishes automatic matches, manual selections, cancellation,
   and invalid selections. Direct one-file imports already begin with a chooser
   and do not need a redundant reference fallback.
+
+### Workbench Utilities And Preview Axes
+
 - The workbench shell includes a native `Plot` menu plus top-level
   `Screenshot`, `Save State`, and `Load State` entries. Plot commands operate
   on every registered preview axes
@@ -245,6 +261,9 @@ Use these app-facing contracts:
   Data-package export and generated reconstruction scripts belong in the
   Figure Studio workflow rather than the lightweight popout window; app-owned
   scientific CSV/MAT result exports still belong in the app package.
+
+### Parameter Controls And Layout Sizing
+
 - Parameter value controls (`field`, `rangeField`, and `panner`) debounce
   semantic `onChange` callbacks by default so short bursts of edits submit
   only the latest value after roughly 0.5 seconds of idle time. Explicit
@@ -339,7 +358,14 @@ while silently discarding user changes.
 After shell, state, first presentation, and interaction hub exist, the runtime
 queues optional `Start` with injected app-neutral `services`. An optional
 `DebugSample` writer runs only for debug launches, without app startup glue.
-V2 commits mirror `session.workflow.logLines` into semantic `logPanel` controls. Injected `services.dialogs` owns input-file, input-folder, output-file, and output-folder selection with safe defaults and test-injectable choosers; app handlers should not call `uigetfile`, `uigetdir`, or save-dialog helpers directly. A `Start` handler may resolve a registered preview with `services.previews.axes(previewId, axisId)` only to attach a framework-managed listener or timer; actions, presenters, and semantic state still use plain data and preview models.
+V2 commits mirror `session.workflow.logLines` into semantic `logPanel` controls.
+Injected `services.dialogs` provides input-file, input-folder, output-file, and
+output-folder selection with safe defaults and test-injectable choosers. App
+handlers therefore do not call `uigetfile`, `uigetdir`, or save-dialog helpers
+directly. A `Start` handler may resolve a registered preview with
+`services.previews.axes(previewId, axisId)` only to attach a framework-managed
+listener or timer; actions, presenters, and semantic state still use plain data
+and preview models.
 
 Each figure owns one private interaction hub. Preview targets register as
 `previewId` or `previewId.axisId`; the hub owns hover wheel/zoom routing,
@@ -509,13 +535,21 @@ Reusable helpers and tools keep three callback classes separate:
 | Internal refresh callbacks | Keep controls, graphics, and derived readouts synchronized without re-entering app semantics. |
 | Programmatic callbacks | Apply app-initiated state changes and report source as programmatic when exposed through trace. |
 
-All `setX(value)` style APIs should no-op when the requested value is already current. Internal synchronization should not fire app-facing semantic callbacks. Composed tools should trace callback reason/source as `user`, `internal`, or `programmatic` when the event crosses the app/tool boundary.
+All `setX(value)` style APIs should do nothing when the requested value is
+already current. Internal synchronization should not fire app-facing semantic
+callbacks. Composed tools should trace callback reason/source as `user`,
+`internal`, or `programmatic` when an event crosses the app/tool boundary.
 
 ## Ownership Boundary
 
-`labkit.ui` may provide app-neutral GUI shell, view construction, axes rendering, interaction lifecycle, composed tools, diagnostics, and reusable control state mechanics.
+`labkit.ui` provides the app-neutral GUI shell, view construction, axes
+rendering, interaction lifecycle, composed tools, diagnostics, and reusable
+control-state mechanics.
 
-`labkit.ui` should not own experiment names, formulas, thresholds, parser calls, result fields, export schemas, plotting annotations, or app-specific workflow choreography. Apps pass labels, semantic action ids, prepared vectors, tables, debug contexts, and option values into UI helpers.
+Experiment names, formulas, thresholds, parser calls, result fields, export
+schemas, plotting annotations, and workflow-specific action order remain in the
+app. Apps pass labels, semantic action ids, prepared vectors, tables, debug
+contexts, and option values into UI helpers.
 
 ## Validation
 

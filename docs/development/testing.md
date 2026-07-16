@@ -348,8 +348,8 @@ conversion, and document why the looser tolerance is valid.
 
 The `artifacts/` tree is ignored and reserved for generated outputs, local
 scratch evidence, and temporary design notes that support one improvement
-round. Do not track files under `artifacts/`; durable design decisions belong
-in the relevant human doc, source comment, test, or scoped agent rule instead.
+round. Do not track files under `artifacts/`; lasting design decisions belong
+in the relevant documentation, source comment, or test instead.
 
 Test artifacts are written under:
 
@@ -426,8 +426,8 @@ No profiler rows are dropped. Read `top_project_self_time` first for editable
 LabKit code, then use `top_captured_total_time` for captured workflow context
 such as deliberate clicks, downstream app launches, network calls, GUI close
 cost, or MATLAB callbacks. Default summary rankings exclude `profiler_tool`
-rows, but the JSON `functions` array still keeps them for audit. Agent-side
-filtering should use each row's `source_tag` and `tags` fields, for example
+rows, but the JSON `functions` array still keeps them for audit. Automated
+analysis can filter with each row's `source_tag` and `tags` fields, for example
 `project`, `matlab_internal`, `external`, or `profiler_tool`.
 
 Measure one user-perceived cost at a time. Startup targets should open the
