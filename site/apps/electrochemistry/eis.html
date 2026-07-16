@@ -24,7 +24,7 @@
 <h1 id="eis">EIS</h1>
 <p>EIS overlays impedance data from one or more Gamry <code>ZCURVE</code> tables, supports Nyquist and Bode-style axis combinations, and exports the values currently selected for plotting.</p>
 <h2 id="requirements-and-launch">Requirements And Launch</h2>
-<p>The app requires the LabKit UI and DTA facades.</p>
+<p>The app uses the LabKit UI framework and DTA library.</p>
 <pre><code class="language-matlab">labkit_EIS_app</code></pre>
 <h2 id="inputs">Inputs</h2>
 <p>Add one or more <code>.DTA</code> files containing a readable EIS <code>ZCURVE</code>. Files that do not contain the required curve are reported and omitted from the plot. The source list is preserved in project state through portable references.</p>

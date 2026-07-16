@@ -6,7 +6,7 @@ validated ROI. It is a rendering and summary tool; it does not rerun DIC.
 
 ## Requirements And Launch
 
-The app requires the LabKit UI and Image facades. Input MAT files must contain
+The app uses the LabKit UI framework and Image library. Input MAT files must contain
 the Ncorr result structure recognized by the app loader.
 
 ```matlab

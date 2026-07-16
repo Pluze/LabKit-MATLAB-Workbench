@@ -49,9 +49,10 @@ representative workflow tests guard the new behavior.
 
 ## Evidence
 
-The command matrix is in `docs/development/testing.md`; CI uploads official runner logs and
-active-test artifacts. Branch checkpoints `28ff8edb`, `37bd7fd5`, and
-`2c9b8792` carry the implementation before the final squash merge.
+The command matrix is in `docs/development/testing.md`; CI uploads official
+runner logs and active-test artifacts. Commit `28ff8edb` made MATLAB failures
+traceable, `37bd7fd5` enforced Base MATLAB compatibility, and `2c9b8792`
+preserved launcher validation ownership.
 
 ## Known limitations and follow-up
 

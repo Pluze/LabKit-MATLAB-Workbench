@@ -46,8 +46,8 @@ is not a substitute for backing up lab data.
 ## Open An App
 
 Select one row in the launcher and choose **Open**. The launcher prepares the
-MATLAB path, checks reusable facade requirements, and displays startup progress
-until the app is ready.
+MATLAB path, checks the app's LabKit version requirements, and displays startup
+progress until the app is ready.
 
 Use the [app catalog](../apps/README.md) to choose a workflow and confirm its
 input and output formats.

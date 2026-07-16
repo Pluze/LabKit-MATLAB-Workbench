@@ -5,7 +5,7 @@ multilevel Laplacian focus evidence and exports a focus-depth index map.
 
 ## Requirements And Launch
 
-The app requires the LabKit UI and Image facades. Inputs should show the same
+The app uses the LabKit UI framework and Image library. Inputs should show the same
 field of view at different focus positions.
 
 ```matlab

@@ -5,7 +5,7 @@ or a batch and exports the resulting images with the exact step sequence.
 
 ## Requirements And Launch
 
-The app requires the LabKit UI and Image facades. All processing is implemented
+The app uses the LabKit UI framework and Image library. All processing is implemented
 with MATLAB and repository-owned code.
 
 ```matlab

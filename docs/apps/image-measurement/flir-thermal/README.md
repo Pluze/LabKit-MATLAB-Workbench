@@ -6,7 +6,7 @@ rendered images with Celsius data.
 
 ## Requirements And Launch
 
-The app requires the LabKit UI and Thermal facades. A `.jpg`, `.jpeg`, or
+The app uses the LabKit UI framework and Thermal library. A `.jpg`, `.jpeg`, or
 `.rjpg` extension alone is insufficient; the file must contain a readable FLIR
 raw thermal record and calibration metadata.
 

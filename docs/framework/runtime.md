@@ -10,7 +10,7 @@ lifecycle exclusively.
 
 `labkit.ui` is divided into these public packages:
 
-| Facade | Owns | Main APIs |
+| Package | Owns | Main APIs |
 | --- | --- | --- |
 | `labkit.ui.runtime` | Launch, canonical state, queued events, services, projects, and resources. | `launch`, `define`, `emptySourceRecords`, `saveState`, `loadState`, `createPortableFileReference`, `resolvePortableFileReference`, `defaultOutputFolder`. |
 | `labkit.ui.layout` | Data-only semantic workbench layouts. | `workbench`, `workspace`, `tab`, `section`, `group`, `field`, `rangeField`, `panner`, `action`, `filePanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`. |
@@ -21,8 +21,8 @@ Apps call the package that provides the behavior they need. The earlier flat
 `labkit.ui.*` helper surface is no longer supported, and implementation details
 inside each package's `private/` folder are not public APIs.
 
-`labkit.ui.version()` returns the UI facade contract version struct used by
-`labkit.contract` requirement checks.
+`labkit.ui.version()` returns the UI framework's version and compatibility
+information for `labkit.contract` requirement checks.
 
 ## Declarative App Runtime
 

@@ -6,7 +6,7 @@ selected for plotting.
 
 ## Requirements And Launch
 
-The app requires the LabKit UI and DTA facades.
+The app uses the LabKit UI framework and DTA library.
 
 ```matlab
 labkit_EIS_app

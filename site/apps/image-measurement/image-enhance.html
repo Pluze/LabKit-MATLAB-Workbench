@@ -24,7 +24,7 @@
 <h1 id="image-enhance">Image Enhance</h1>
 <p>Image Enhance builds an ordered, reversible processing history for one image or a batch and exports the resulting images with the exact step sequence.</p>
 <h2 id="requirements-and-launch">Requirements And Launch</h2>
-<p>The app requires the LabKit UI and Image facades. All processing is implemented with MATLAB and repository-owned code.</p>
+<p>The app uses the LabKit UI framework and Image library. All processing is implemented with MATLAB and repository-owned code.</p>
 <pre><code class="language-matlab">labkit_ImageEnhance_app</code></pre>
 <h2 id="inputs-and-batch-mode">Inputs And Batch Mode</h2>
 <p>Add supported image files or a folder. In <strong>Batch shared processing</strong> mode, one shared step history is applied to every source. When batch mode is off, each image keeps a separate history and optional white ROI. Selecting another image updates the preview without recalculating unrelated files.</p>

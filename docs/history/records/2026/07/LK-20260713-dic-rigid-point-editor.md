@@ -49,8 +49,8 @@ DIC GUI workflow covers toolbox-free modal cancellation and app launch wiring.
 ## Evidence
 
 Primary sources are `labkit.ui.interaction.anchorEditor` and
-`dic_preprocess.userInterface.selectRigidPointPairs`; branch checkpoint
-`392a073e` carries the implementation before the final squash merge.
+`dic_preprocess.userInterface.selectRigidPointPairs`. Commit `392a073e`
+introduced their shared DIC rigid-point interaction.
 
 ## Known limitations and follow-up
 

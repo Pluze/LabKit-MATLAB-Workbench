@@ -24,7 +24,7 @@
 <h1 id="vt-resistance">VT Resistance</h1>
 <p>VT Resistance estimates cathodic and anodic steady resistance from a biphasic voltage transient and reports the mean of their absolute values.</p>
 <h2 id="requirements-and-launch">Requirements And Launch</h2>
-<p>The app requires the LabKit UI and DTA facades and a chrono DTA curve with valid time, voltage, and current columns.</p>
+<p>The app uses the LabKit UI framework and DTA library and requires a chrono DTA curve with valid time, voltage, and current columns.</p>
 <pre><code class="language-matlab">labkit_VTResistance_app</code></pre>
 <h2 id="inputs-and-batch-behavior">Inputs And Batch Behavior</h2>
 <p>Add one or more chrono <code>.DTA</code> files. The selected file is decoded and analyzed for preview; exporting applies the current settings to the full source list. No electrode-area normalization is performed because the reported quantity is electrical resistance in ohms.</p>

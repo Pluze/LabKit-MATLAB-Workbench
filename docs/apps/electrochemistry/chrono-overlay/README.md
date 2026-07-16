@@ -5,7 +5,7 @@ files on a common pulse-centered time axis and exports the aligned curves.
 
 ## Requirements And Launch
 
-The app requires the LabKit UI and DTA facades. Each source must contain a
+The app uses the LabKit UI framework and DTA library. Each source must contain a
 readable chrono curve with time, voltage, and current data.
 
 ```matlab

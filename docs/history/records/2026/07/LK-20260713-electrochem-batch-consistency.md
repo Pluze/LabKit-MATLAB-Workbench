@@ -47,8 +47,8 @@ out-of-range handling, and export-time refresh.
 
 ## Evidence
 
-The guarded calculations and export builders are app-owned; branch checkpoint
-`67ea2286` carries the fix before the final squash merge.
+The guarded calculations and export builders are app-owned. Commit `67ea2286`
+introduced the consistent batch-analysis and export behavior.
 
 ## Known limitations and follow-up
 

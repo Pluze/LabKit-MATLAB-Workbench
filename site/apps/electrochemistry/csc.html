@@ -24,7 +24,7 @@
 <h1 id="charge-storage-capacity">Charge-Storage Capacity</h1>
 <p>The CSC app compares charge obtained from time-domain current integration with charge obtained from cyclic-voltammetry integration for every readable CV/CT cycle in one or more Gamry DTA files.</p>
 <h2 id="requirements-and-launch">Requirements And Launch</h2>
-<p>The app requires the LabKit UI and DTA facades. Each analyzed cycle must expose exact <code>T</code>, <code>Vf</code>, and <code>Im</code> columns and a positive scan rate.</p>
+<p>The app uses the LabKit UI framework and DTA library. Each analyzed cycle must expose exact <code>T</code>, <code>Vf</code>, and <code>Im</code> columns and a positive scan rate.</p>
 <pre><code class="language-matlab">labkit_CSC_app</code></pre>
 <h2 id="inputs-and-selection">Inputs And Selection</h2>
 <p>Add one or more CV/CT <code>.DTA</code> files. The selected file determines the current curve list, readout, and plots. Selecting another file resets the curve selection and default plot quantities to that file; it does not silently keep a cycle from the previous source.</p>

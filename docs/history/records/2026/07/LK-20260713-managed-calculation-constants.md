@@ -47,14 +47,14 @@ schemas are unchanged by this record.
 
 ## Validation
 
-`MagicNumberGovernanceTest`, rectangle governance, facade tests, and affected
+`MagicNumberGovernanceTest`, rectangle governance, module compatibility tests, and affected
 app tests cover centralized ownership and preserved numeric behavior.
 
 ## Evidence
 
 Source comments use the `Constant:` marker and guardrail diagnostics name the
-unmanaged file and line. Branch checkpoint `125338c0` carries the governance
-work before the final squash merge.
+unmanaged file and line. Commit `125338c0` introduced the calculation-constant
+checks and the corresponding source annotations.
 
 ## Known limitations and follow-up
 

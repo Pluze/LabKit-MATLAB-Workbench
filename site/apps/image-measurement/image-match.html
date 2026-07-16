@@ -24,7 +24,7 @@
 <h1 id="image-match">Image Match</h1>
 <p>Image Match transfers tone and color statistics from one reference image to one or more source images while preserving each source image's geometry.</p>
 <h2 id="requirements-and-launch">Requirements And Launch</h2>
-<p>The app requires the LabKit UI and Image facades. It performs appearance matching only; it does not geometrically register images.</p>
+<p>The app uses the LabKit UI framework and Image library. It performs appearance matching only; it does not geometrically register images.</p>
 <pre><code class="language-matlab">labkit_ImageMatch_app</code></pre>
 <h2 id="inputs">Inputs</h2>
 <p>Choose one reference image and add source images or a source folder. The reference supplies appearance statistics and is not exported as a matched source. All images are normalized to RGB double data in <code>[0,1]</code>; output retains the source height and width.</p>

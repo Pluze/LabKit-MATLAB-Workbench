@@ -7,8 +7,8 @@ external DIC solver is run.
 
 ## Requirements And Launch
 
-The app requires the LabKit UI and Image facades and uses MATLAB-native image
-IO. No external registration package is installed at run time.
+The app uses the LabKit UI framework and Image library. Image IO and
+registration run in MATLAB; no external registration package is installed.
 
 ```matlab
 labkit_DICPreprocess_app

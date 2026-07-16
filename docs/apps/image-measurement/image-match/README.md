@@ -5,7 +5,7 @@ one or more source images while preserving each source image's geometry.
 
 ## Requirements And Launch
 
-The app requires the LabKit UI and Image facades. It performs appearance
+The app uses the LabKit UI framework and Image library. It performs appearance
 matching only; it does not geometrically register images.
 
 ```matlab

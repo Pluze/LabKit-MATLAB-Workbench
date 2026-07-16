@@ -22,7 +22,7 @@ and VT Resistance use the selected row as the active preview while retaining
 the loaded source list for batch export. Invalid items are reported per file;
 one failed item does not silently replace another result.
 
-The DTA facade returns structured items, curve tables, headers, units,
+The DTA library returns structured items, curve tables, headers, units,
 metadata, parser messages, and status. Apps use exact required columns for
 scientific calculations and do not infer missing physical quantities from a
 plot label.

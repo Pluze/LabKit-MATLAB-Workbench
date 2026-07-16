@@ -6,7 +6,7 @@ calibration.
 
 ## Requirements And Launch
 
-The app requires the LabKit UI and Image facades.
+The app uses the LabKit UI framework and Image library.
 
 ```matlab
 labkit_CurvatureMeasurement_app

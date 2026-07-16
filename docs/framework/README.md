@@ -12,7 +12,7 @@ workflow decisions, scientific calculations, data schemas, labels, and exports.
 | --- | --- |
 | Understand how an App starts and processes actions | [Runtime and lifecycle](runtime.md) |
 | Build or refactor a concrete App | [App development](../development/app-development.md) |
-| Choose reusable facade boundaries | [Architecture](../development/architecture.md) |
+| Choose reusable package boundaries | [Architecture](../development/architecture.md) |
 | Look up exact MATLAB function syntax | [Public API reference](../libraries/README.md) |
 | Validate framework or GUI changes | [Testing](../development/testing.md) |
 
@@ -51,7 +51,8 @@ lifetimes.
 
 Read [Runtime and lifecycle](runtime.md) for the detailed definition fields,
 state transaction rules, startup/readiness behavior, plot and interaction
-contracts, debug semantics, callback policy, and ownership boundary.
+contracts, debug semantics, callback policy, and the responsibilities of the
+framework and app.
 
 ## Public API Documentation
 

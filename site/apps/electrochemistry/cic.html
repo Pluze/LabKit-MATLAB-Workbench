@@ -24,7 +24,7 @@
 <h1 id="charge-injection-capacity">Charge-Injection Capacity</h1>
 <p>The CIC app measures charge delivered by a biphasic current pulse, normalizes charge by electrode area, and reports voltage-transient polarization metrics at a controlled delay after each pulse phase.</p>
 <h2 id="requirements-and-launch">Requirements And Launch</h2>
-<p>The app requires the LabKit UI and DTA facades and a chrono DTA curve with valid <code>T</code>, <code>Vf</code>, and <code>Im</code> columns.</p>
+<p>The app uses the LabKit UI framework and DTA library and requires a chrono DTA curve with valid <code>T</code>, <code>Vf</code>, and <code>Im</code> columns.</p>
 <pre><code class="language-matlab">labkit_CIC_app</code></pre>
 <h2 id="inputs-and-batch-behavior">Inputs And Batch Behavior</h2>
 <p>Add one or more chrono <code>.DTA</code> files. The selected row is decoded for immediate preview; batch calculation is performed with the same analysis settings when results are exported. This avoids repeatedly decoding every large file while the user is only switching previews.</p>

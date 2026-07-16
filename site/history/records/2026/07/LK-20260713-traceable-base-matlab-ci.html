@@ -53,7 +53,7 @@ scope: GitHub Actions and MATLAB validation routing</code></pre>
 <h2 id="validation">Validation</h2>
 <p>CI policy, build-task framework, changed-routing, toolbox dependency, and representative workflow tests guard the new behavior.</p>
 <h2 id="evidence">Evidence</h2>
-<p>The command matrix is in <code>docs/development/testing.md</code>; CI uploads official runner logs and active-test artifacts. Branch checkpoints <code>28ff8edb</code>, <code>37bd7fd5</code>, and <code>2c9b8792</code> carry the implementation before the final squash merge.</p>
+<p>The command matrix is in <code>docs/development/testing.md</code>; CI uploads official runner logs and active-test artifacts. Commit <code>28ff8edb</code> made MATLAB failures traceable, <code>37bd7fd5</code> enforced Base MATLAB compatibility, and <code>2c9b8792</code> preserved launcher validation ownership.</p>
 <h2 id="known-limitations-and-follow-up">Known limitations and follow-up</h2>
 <p>Shadow tests cover known dependency risks and cannot simulate every licensed toolbox combination; MATLAB product-ownership analysis remains the broad check.</p>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>

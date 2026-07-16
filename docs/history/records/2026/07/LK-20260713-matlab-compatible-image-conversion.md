@@ -50,8 +50,9 @@ cover class conversion, luma values, and representative workflows.
 
 ## Evidence
 
-The API contracts are documented in `docs/api/image.md`; branch checkpoint
-`e3f71c2d` carries the migration before the final squash merge.
+The current API contracts are documented in the
+[Image Library](../../../../libraries/image/README.md). Commit `e3f71c2d`
+aligned the conversion functions with MATLAB call behavior.
 
 ## Known limitations and follow-up
 

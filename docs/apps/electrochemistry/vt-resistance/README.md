@@ -5,7 +5,7 @@ voltage transient and reports the mean of their absolute values.
 
 ## Requirements And Launch
 
-The app requires the LabKit UI and DTA facades and a chrono DTA curve with
+The app uses the LabKit UI framework and DTA library and requires a chrono DTA curve with
 valid time, voltage, and current columns.
 
 ```matlab

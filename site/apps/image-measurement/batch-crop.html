@@ -24,7 +24,7 @@
 <h1 id="batch-image-crop">Batch Image Crop</h1>
 <p>Batch Image Crop defines one crop task per image, previews rotation and edge-continuous padding, and exports repeatable same-size crops in pixel or physical-scale mode.</p>
 <h2 id="requirements-and-launch">Requirements And Launch</h2>
-<p>The app requires the LabKit UI and Image facades.</p>
+<p>The app uses the LabKit UI framework and Image library.</p>
 <pre><code class="language-matlab">labkit_BatchImageCrop_app</code></pre>
 <h2 id="inputs">Inputs</h2>
 <p>Use <strong>Add images or folder</strong> to load supported image files. A folder selection loads supported files from that folder. Each list row stores its own crop center, rotation, padding, and optional scale calibration. <strong>Duplicate image</strong> creates another task for the same source so multiple ROIs can be exported without loading duplicate files.</p>

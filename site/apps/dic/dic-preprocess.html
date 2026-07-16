@@ -24,7 +24,7 @@
 <h1 id="dic-preprocess">DIC Preprocess</h1>
 <p>DIC Preprocess registers a moving optical image to a reference image, applies repeatable crop operations to the pair, and creates a binary analysis mask. Use it when camera motion or framing differences must be removed before an external DIC solver is run.</p>
 <h2 id="requirements-and-launch">Requirements And Launch</h2>
-<p>The app requires the LabKit UI and Image facades and uses MATLAB-native image IO. No external registration package is installed at run time.</p>
+<p>The app uses the LabKit UI framework and Image library. Image IO and registration run in MATLAB; no external registration package is installed.</p>
 <pre><code class="language-matlab">labkit_DICPreprocess_app</code></pre>
 <h2 id="inputs">Inputs</h2>
 <p>Choose one reference image and one moving image. Supported extensions are the formats returned by <code>labkit.image.supportedExtensions</code>, including common PNG, JPEG, TIFF, and BMP files. The reference and moving images may initially have different dimensions; alignment produces a moving image on the reference domain.</p>

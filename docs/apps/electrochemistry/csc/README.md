@@ -6,7 +6,7 @@ cycle in one or more Gamry DTA files.
 
 ## Requirements And Launch
 
-The app requires the LabKit UI and DTA facades. Each analyzed cycle must expose
+The app uses the LabKit UI framework and DTA library. Each analyzed cycle must expose
 exact `T`, `Vf`, and `Im` columns and a positive scan rate.
 
 ```matlab
