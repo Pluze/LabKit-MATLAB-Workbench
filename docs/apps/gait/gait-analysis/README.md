@@ -1,9 +1,10 @@
 # Gait Analysis
 
-Gait Analysis converts named two-dimensional pose coordinates into frame,
-coordinate, step, and summary tables. The app keeps role mapping, time and
-scale calibration, smoothing, event detection, preview, and export in one
-reproducible project.
+Gait Analysis 2 converts a current Video Marker project into independently
+segmented treadmill swing steps, per-frame kinematics, per-step gait
+parameters, visual step reports, and reproducible CSV outputs. Loading and
+analysis are deliberately separate: loading first shows the complete tracked
+skeleton trajectory; analysis then enables one-step-at-a-time review.
 
 ## Open Gait Analysis
 
@@ -14,112 +15,165 @@ source checkout, run:
 labkit_GaitAnalysis_app
 ```
 
-## Supported Inputs
+## Input Contract
 
-Use **Source > Open pose file** to open one of these inputs:
+The only file input is a current Video Marker `labkitProject` MAT document or
+autosave. The MAT file is the analysis source of truth. Gait Analysis reads:
 
-- CSV, TSV, or TXT with paired `point_x`/`point_y` or
-  `point__x`/`point__y` columns;
-- MAT containing a `pose` or `poseData` structure;
-- MAT containing `coords` and `pointNames` variables;
-- a current Video Marker `labkit.project` document or autosave;
-- compatible legacy `videoMarkerProject` or `imageMarkerProject` payloads.
+- frames-by-points-by-2 pixel coordinates;
+- point IDs, point names, and skeleton edges;
+- frame annotation status and source when present;
+- video frame count, frame rate, duration, width, and height;
+- scale calibration and physical unit when calibrated.
 
-Normalized coordinates have shape frames-by-points-by-2. Point names must
-match the second dimension. A supplied frame index or time vector must match
-the frame count. Trajectory preview uses image coordinates: the origin is at
-the upper left and Y increases downward, matching Video Marker and Image
-Marker source data. Angle and step time-series previews retain conventional
-plot axes.
+The app does not reopen the original video to obtain scientific metadata.
+Video Marker payloads older than the embedded-video-metadata contract must be
+opened and saved with the current Video Marker before analysis. Gait Analysis
+rejects generic coordinate tables and arbitrary MAT variables because they do
+not jointly own timing, skeleton, calibration, and annotation provenance.
+`computeGait` still accepts an in-memory normalized pose for deterministic
+tests and programmatic calculations.
 
-## Analyze A Recording
+Coordinates use image convention: the origin is at the upper left and Y
+increases downward. The skeleton preview preserves that convention. Angle and
+length time series use conventional plot axes.
 
-1. On **Source**, open a pose or marker-project file.
-2. On **Roles + Detection**, enter the exact point name for each anatomical
-   role.
-3. Set frame rate, pixels per unit, output unit, and optional origin shift.
-4. Set smoothing and step quality thresholds.
-5. Return to **Source** and choose **Run analysis**.
-6. Use the preview mode selector to inspect **Trajectory**, **Angles**, or
-   **Steps**.
-7. On **Results + Export**, review the summary and step table, choose an output
-   folder, and choose **Export CSV set**.
+## Two-Stage Workflow
 
-Changing an option invalidates the previous result. Repeating a run with the
-same source and options is skipped when the result fingerprint is unchanged.
+### 1. Load And Inspect All Trajectories
+
+Choose **Open Video Marker MAT**. Before any analysis runs, the workspace overlays
+every recorded skeleton and each named point trajectory. This view is intended
+to expose gross tracking failures, missing landmarks, unexpected skeleton
+order, and coordinate orientation before derived numbers are produced.
+
+The source summary reports frame count, point count, embedded frame rate,
+source format, and unit. Role fields are populated from matching source point
+names; `iliac_crest` is accepted for the iliac role.
+
+### 2. Analyze And Review One Step
+
+Choose **Run analysis**. Select a row in the step table or use **Previous
+step** and **Next step**. The workspace then shows only that step:
+
+1. all skeleton poses from lift-off through landing, with point trajectories;
+2. hip, knee, and ankle angle traces;
+3. iliac-hip, hip-knee, knee-ankle, and ankle-foot length traces.
+
+The skeleton plot annotates swing duration, step length, iliac/hip/knee/ankle/
+foot translations, and each joint's minimum, maximum, and range of motion. This is the app version
+of the earlier per-step gait figure; the figures no longer need to be generated
+as an intermediate image set merely to inspect each step.
+
+## Step Segmentation
+
+The default treadmill detector operates on the smoothed foot X coordinate.
+A lift-off candidate is a local maximum whose prominence is at least the
+configured threshold and whose height is at least the configured
+mean-minus-sigma standard-deviation floor. Candidates closer than the minimum
+interval retain the higher peak. Every accepted lift-off is independently paired with the lowest
+subsequent foot X value before the next lift-off, or before the recording ends.
+That following minimum is the landing event.
+
+This pairing is important: a completed last swing remains a valid step even
+when the recording ends before another lift-off. Earlier contact-to-contact
+implementations lost that final step. These are image-kinematic treadmill
+events, not force-plate contact measurements.
+
+When a later lift-off exists, the app additionally derives cycle time, stance
+time, cadence, and duty factor. Those values are legitimately unavailable for
+the final independently complete swing if no next lift-off was recorded.
 
 ## Parameters
 
 | Parameter | Default | Meaning |
 | --- | --- | --- |
-| Iliac, hip, knee, ankle, foot point | matching lowercase role name | Exact, case-insensitive source point name assigned to each role |
-| Frame rate | 30 Hz | Used only when the source does not provide a usable time vector |
-| Pixels per unit | 1 | Coordinate scale; physical distance equals pixels divided by this value |
-| Unit name | `px` | Label attached to scaled coordinate and distance outputs |
-| Use first-frame first point as origin | Off | Shifts derived export coordinates while retaining raw pixel columns |
-| Smooth window | 5 frames | Centered finite-value mean applied independently to every coordinate |
-| Minimum step | 3 frames | Shorter candidates fail step quality control |
-| Maximum step | 300 frames | Longer candidates fail step quality control |
-| Minimum stride | 1 output unit | Smaller candidates fail step quality control |
-| Maximum hip drift | 1,000,000 output units | Upper drift rule; the default effectively leaves it disabled |
+| Iliac, hip, knee, ankle, foot point | Matching role name | Exact, case-insensitive source point assigned to each anatomical role. |
+| Frame rate | `0` until supplied by the source | Used only when the source has no usable per-frame time vector. Current Video Marker projects populate it automatically. |
+| Pixels per unit | `1` | Pixel density for physical outputs. A valid Video Marker calibration replaces it automatically. |
+| Unit name | `px` | Physical unit label associated with pixels per unit. |
+| First-frame first point as origin | Off | Shifts scaled coordinate exports; raw pixel coordinates remain unchanged. |
+| Smooth window | 5 frames | Centered finite-value mean applied independently to each point and axis. |
+| Minimum foot-X prominence | 20 source units | Minimum lift-off peak prominence inherited from the legacy treadmill workflow. |
+| Peak-height sigma | 2 | Requires a lift-off peak to be at least mean foot X minus this many standard deviations, matching the legacy treadmill detector. |
+| Minimum interval | 0.2 s | Minimum time between lift-off peaks; converted to frames from source timing. |
+| Minimum swing | 3 frames | Minimum accepted inclusive lift-off-to-landing span and timing-free separation fallback. |
+| Maximum swing | 300 frames | Maximum accepted inclusive lift-off-to-landing span. |
+| Minimum step length | 1 output unit | Minimum two-dimensional foot endpoint displacement. |
+| Maximum hip translation | 1,000,000 output units | Upper endpoint-displacement QC rule; the default normally leaves it inactive. |
 
-## Calculation Sequence
+Changing any parameter invalidates the previous result. Repeating a run with
+the same source and parameters is skipped when its deterministic fingerprint
+is unchanged.
 
-`computeGait` resolves the five role names, selects source time or derives time
-from frame rate, determines coordinate scale, and smooths each point and axis.
-It then computes hip, knee, and ankle angles from adjacent segment vectors,
-computes scaled segment lengths, detects step events, evaluates step quality,
-and assembles all result tables.
+## Calculations
 
-Joint angles use the vector dot product and are reported in degrees. A zero or
-nonfinite segment produces `NaN`; the app does not invent an angle. Missing
-coordinate samples are ignored inside each smoothing window when at least one
-finite value is available.
+For each frame the app calculates unsigned 0-180 degree hip, knee, and ankle
+angles from adjacent segment vectors and four Euclidean segment lengths. A
+nonfinite or zero-length vector produces `NaN`; the app does not invent an
+angle.
+
+For each lift-off-to-landing step it calculates:
+
+- swing duration;
+- two-dimensional foot endpoint displacement, reported as step length;
+- two-dimensional endpoint translation for iliac, hip, knee, ankle, and foot;
+- minimum, maximum, and range of motion for hip, knee, and ankle;
+- cycle time, stance time, cadence per minute, and duty factor when the next
+  lift-off exists;
+- validity and a concrete rejection reason for duration, step length, or hip
+  translation rules.
+
+The former scripts sometimes called foot displacement `stride_length` even
+though only one active swing was measured. Version 2 uses `step_length` so the
+column name matches the calculation.
 
 ## Outputs
 
-**Export CSV set** writes four CSV files and one LabKit result manifest:
+**Export CSV set** writes:
 
-- frame metrics, including time, angles, lengths, and step membership;
-- coordinates, including raw pixels and optional scaled/origin-shifted values;
-- one row per detected step with quality status and step measurements;
-- summary metrics;
-- `<source>_gait.labkit.json`, which records inputs, parameters, output names,
-  and the valid-step count.
+- `<source>_frames.csv`: frame/time, step membership, event flags, three joint
+  angles, four segment lengths, and scaled point coordinates;
+- `<source>_coordinates.csv`: raw pixel and scaled/origin-shifted coordinates;
+- `<source>_steps.csv`: event boundaries, timing, cadence/duty factor, step
+  length, five point translations, joint extrema/ROM, validity and reason;
+- `<source>_summary.csv`: source geometry, counts, valid-step means, and global
+  joint extrema;
+- `<source>_gait.labkit.json`: provenance manifest for inputs, parameters,
+  outputs, and valid-step count.
 
-The manifest is provenance metadata, not an extra scientific result.
-
-## Use Gait Analysis Without The GUI
+## Use Without The GUI
 
 ```matlab
 pose = gait_analysis.sourceFiles.readPoseFile("marker-project.mat");
-
-opts = gait_analysis.appState.defaultOptions();
-opts.frameRate = 120;
-opts.pixelsPerUnit = 24.6;
-opts.unitName = "mm";
-
+opts = gait_analysis.appState.optionsForPose( ...
+    pose, gait_analysis.appState.defaultOptions());
 result = gait_analysis.analysisRun.computeGait(pose, opts);
 writetable(result.stepTable, "steps.csv");
 ```
 
-The returned structure contains `frameTable`, `coordinateTable`, `stepTable`,
-`summaryTable`, detected `events`, the normalized `options`, `ok`, and a
-message. `computeGait` performs no UI or file writes.
+`computeGait` performs no UI or file writes. Its result contains `frameTable`,
+`coordinateTable`, `stepTable`, `summaryTable`, paired `events`, normalized
+`options`, `ok`, and `message`.
 
-## Errors And Limitations
+## Limitations
 
-- Every required role name must resolve to a source point.
-- Coordinate units are only as valid as the entered calibration.
-- Frame rate is ignored when a usable source time vector is present.
-- Smoothing changes event locations and derived angles; save the chosen window
-  with any reported results.
-- The app analyzes existing coordinates; it does not assess landmark placement
-  accuracy.
+- Kinematic lift-off and landing are not substitutes for force or pressure
+  measurements.
+- The default detector reflects lateral treadmill motion and assumes the foot
+  travels toward increasing X before returning toward decreasing X.
+- Smoothing and prominence affect event boundaries and must be reported with
+  scientific results.
+- Tracking confidence and manual/predicted frame status are preserved from
+  Video Marker but are not yet automatic step-exclusion rules.
+- Group statistics and between-animal inference are outside this single-
+  recording app; exported step tables are the boundary for that workflow.
 
 ## Related Functions And Apps
 
 - `gait_analysis.sourceFiles.readPoseFile`
+- `gait_analysis.appState.defaultOptions`
+- `gait_analysis.appState.optionsForPose`
 - `gait_analysis.analysisRun.computeGait`
 - [Video Marker](../../image-measurement/video-marker/README.md)
 - [Gait apps](../README.md)

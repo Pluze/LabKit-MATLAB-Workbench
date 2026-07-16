@@ -1,4 +1,4 @@
-% Expected caller: gait_analysis.definition. Output is a durable version-1
+% Expected caller: gait_analysis.definition. Output is a durable version-2
 % pose source, reproducible analysis parameters/result, and export record.
 function project = createProject()
     project = struct();

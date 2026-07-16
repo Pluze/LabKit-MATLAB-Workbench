@@ -8,7 +8,9 @@ function actions = definitionActions()
         "runAnalysis", @onRunAnalysis, ...
         "chooseOutputFolder", @onChooseOutputFolder, ...
         "exportResults", @onExportResults, ...
-        "previewModeChanged", @onPreviewModeChanged);
+        "stepSelected", @onStepSelected, ...
+        "previousStep", @onPreviousStep, ...
+        "nextStep", @onNextStep);
 end
 
 function state = onOpenPoseFile(state, event, services)
@@ -27,11 +29,14 @@ function state = onOpenPoseFile(state, event, services)
     end
     state.project.inputs.source = services.project.sourceRecord( ...
         "pose", "poseCoordinates", filepath, true);
+    state.project.parameters = gait_analysis.appState.optionsForPose( ...
+        pose, state.project.parameters);
     state.project.results.analysis = gait_analysis.appState.emptyResult();
     state.project.results.lastExport = [];
     state.session.cache.filepath = filepath;
     state.session.cache.pose = pose;
     state.session.cache.lastRunFingerprint = "";
+    state.session.selection.currentStepIndex = 1;
     state.session.workflow.outputFolder = string( ...
         services.dialogs.defaultOutputFolder(filepath, ...
         "gait_analysis", state.session.workflow.outputFolder));
@@ -51,7 +56,7 @@ function state = onRunAnalysis(state, ~, services)
     pose = state.session.cache.pose;
     if ~pose.ok
         services.dialogs.alert( ...
-            "Load a pose coordinate file before running gait analysis.", ...
+            "Open a current Video Marker MAT before running gait analysis.", ...
             "No pose data");
         return;
     end
@@ -77,6 +82,7 @@ function state = onRunAnalysis(state, ~, services)
     state.project.results.analysis = result;
     state.project.results.lastExport = [];
     state.session.cache.lastRunFingerprint = task.fingerprint;
+    state.session.selection.currentStepIndex = 1;
     state = services.workflow.log(state, sprintf( ...
         "Gait analysis complete: %d valid step(s).", ...
         validStepCount(result.stepTable)));
@@ -137,10 +143,30 @@ function state = onExportResults(state, ~, services)
         "Exported gait CSV set and manifest: " + string(manifestPath));
 end
 
-function state = onPreviewModeChanged(state, event, ~)
-    value = string(event.value);
-    if isscalar(value) && any(value == ["Trajectory", "Angles", "Steps"])
-        state.session.view.previewMode = value;
+function state = onStepSelected(state, event, ~)
+    if isempty(event.indices)
+        return;
+    end
+    state.session.selection.currentStepIndex = selectedStep( ...
+        state, event.indices(1));
+end
+
+function state = onPreviousStep(state, ~, ~)
+    state.session.selection.currentStepIndex = selectedStep( ...
+        state, state.session.selection.currentStepIndex - 1);
+end
+
+function state = onNextStep(state, ~, ~)
+    state.session.selection.currentStepIndex = selectedStep( ...
+        state, state.session.selection.currentStepIndex + 1);
+end
+
+function value = selectedStep(state, requested)
+    count = height(state.project.results.analysis.stepTable);
+    if count == 0
+        value = 1;
+    else
+        value = min(max(1, round(double(requested))), count);
     end
 end
 
@@ -153,7 +179,9 @@ end
 function options = sanitizeOptions(options)
     defaults = gait_analysis.appState.defaultOptions();
     numeric = ["frameRate", "pixelsPerUnit", "smoothWindow", ...
-        "minStepFrames", "maxStepFrames", "minStride", "maxBodyDrift"];
+        "detectionProminence", "detectionMinHeightSigma", ...
+        "minLiftOffIntervalSeconds", "minSwingFrames", ...
+        "maxSwingFrames", "minStepLength", "maxHipTranslation"];
     for name = numeric
         value = double(options.(name));
         if isempty(value) || ~isscalar(value) || ~isfinite(value)

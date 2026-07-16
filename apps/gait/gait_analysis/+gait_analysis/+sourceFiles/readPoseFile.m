@@ -1,306 +1,201 @@
-%READPOSEFILE Read pose coordinates from CSV or MAT into a normalized shape.
-% Expected caller: app load action and tests. Supported CSV layouts include
-% LabKit marker CSV, LabKit coordinate CSV, and generic wide tables with
-% point_x/point_y or point__x/point__y columns. MAT files may contain either
-% a pose struct or coords plus pointNames variables.
 function pose = readPoseFile(filepath)
+%READPOSEFILE Read one current Video Marker MAT project for gait analysis.
+%
+% Usage:
+%   pose = gait_analysis.sourceFiles.readPoseFile(filepath)
+%
+% Inputs:
+%   filepath - Scalar path to a MAT file containing one current
+%       `labkitProject` envelope produced by Video Marker payload version 2.
+%       The reader loads only that named variable and never reopens the video.
+%
+% Outputs:
+%   pose - Normalized scalar structure. coords is F-by-P-by-2 [x y] image
+%       coordinates; pointNames and skeleton preserve the Video Marker order;
+%       frameIndex is 1:F; time is derived from embedded frameRate; annotation
+%       status/source, calibration, video metadata, and units are preserved.
+%
+% Errors:
+%   labkit_GaitAnalysis_app:PoseFileNotFound - filepath does not exist.
+%   labkit_GaitAnalysis_app:UnsupportedPoseFile - filepath is not MAT.
+%   labkit_GaitAnalysis_app:InvalidMarkerProject - The file is not a current
+%       Video Marker project or its coordinate/skeleton shapes disagree.
+%   labkit_GaitAnalysis_app:MissingVideoMetadata - Embedded timing metadata is
+%       absent, invalid, or has a nonpositive frame rate.
+%
+% Description:
+%   Video Marker MAT is the sole file-input contract for Gait Analysis. CSV,
+%   arbitrary workspace MAT variables, and legacy marker payloads are rejected
+%   because they do not jointly own timing, skeleton, calibration, and frame
+%   provenance. `computeGait` remains callable with an in-memory normalized pose
+%   for deterministic tests and GUI-free calculations.
+%
+% Typical Call:
+%   pose = gait_analysis.sourceFiles.readPoseFile("walk.video_marker.autosave.mat");
+%   assert(pose.ok && pose.frameRate > 0)
+%
+% See also gait_analysis.analysisRun.computeGait,
+%   video_marker.videoSource.metadataFromInfo
+
     filepath = string(filepath);
-    if strlength(filepath) == 0 || exist(filepath, "file") ~= 2
+    if ~isscalar(filepath) || strlength(filepath) == 0 || ~isfile(filepath)
         error('labkit_GaitAnalysis_app:PoseFileNotFound', ...
-            'Pose coordinate file was not found.');
+            'Video Marker project file was not found.');
     end
-
-    [~, ~, ext] = fileparts(filepath);
-    ext = lower(string(ext));
-    if ext == ".csv" || ext == ".txt" || ext == ".tsv"
-        pose = readPoseCsv(filepath);
-    elseif ext == ".mat"
-        pose = readPoseMat(filepath);
-    else
+    [~, ~, extension] = fileparts(filepath);
+    if lower(string(extension)) ~= ".mat"
         error('labkit_GaitAnalysis_app:UnsupportedPoseFile', ...
-            'Supported pose input formats are CSV, TXT, TSV, and MAT.');
+            'Gait Analysis accepts current Video Marker MAT projects only.');
     end
+    inventory = string(who('-file', filepath));
+    if ~any(inventory == "labkitProject")
+        invalidMarker(['MAT file does not contain a current labkitProject. ' ...
+            'Open and save it with the current Video Marker first.']);
+    end
+    loaded = load(filepath, 'labkitProject');
+    pose = poseFromEnvelope(loaded.labkitProject);
     pose.sourcePath = filepath;
+    pose.sourceFormat = "mat.videoMarkerProjectV2";
     pose.ok = true;
 end
 
-function pose = readPoseCsv(filepath)
-    delimiter = delimiterForFile(filepath);
-    T = readtable(filepath, "FileType", "text", ...
-        "CommentStyle", "#", "Delimiter", delimiter, ...
-        "TextType", "string", "VariableNamingRule", "preserve");
-    if height(T) == 0
-        error('labkit_GaitAnalysis_app:EmptyPoseTable', ...
-            'Pose coordinate table is empty.');
-    end
-
-    varNames = string(T.Properties.VariableNames);
-    columns = detectCoordinateColumns(varNames);
-    if isempty(columns.pointNames)
-        error('labkit_GaitAnalysis_app:MissingCoordinateColumns', ...
-            'Pose table must contain paired X/Y columns for at least one point.');
-    end
-
-    frameCount = height(T);
-    pointCount = numel(columns.pointNames);
-    coords = NaN(frameCount, pointCount, 2);
-    for p = 1:pointCount
-        coords(:, p, 1) = numericColumn(T, columns.xNames(p));
-        coords(:, p, 2) = numericColumn(T, columns.yNames(p));
-    end
-
-    pose = gait_analysis.sourceFiles.emptyPoseData();
-    pose.sourceFormat = "csv";
-    pose.pointNames = columns.pointNames(:);
-    pose.coords = coords;
-    pose.frameIndex = frameIndexFromTable(T, frameCount);
-    pose.time = timeFromTable(T, frameCount);
-    pose.unitName = unitFromTable(T, columns);
-end
-
-function pose = readPoseMat(filepath)
-    raw = load(filepath);
-    if isfield(raw, "labkitProject")
-        pose = poseFromMarkerEnvelope(raw.labkitProject);
-        pose.sourceFormat = "mat.labkitMarkerProject";
-        return;
-    end
-    legacyNames = ["videoMarkerProject", "imageMarkerProject"];
-    for name = legacyNames
-        if isfield(raw, name)
-            pose = poseFromMarkerPayload(raw.(name));
-            pose.sourceFormat = "mat.legacyMarkerProject";
-            return;
-        end
-    end
-    if isfield(raw, "pose")
-        pose = normalizePoseStruct(raw.pose);
-        pose.sourceFormat = "mat.pose";
-        return;
-    end
-    if isfield(raw, "poseData")
-        pose = normalizePoseStruct(raw.poseData);
-        pose.sourceFormat = "mat.poseData";
-        return;
-    end
-    if ~isfield(raw, "coords") || ~isfield(raw, "pointNames")
-        error('labkit_GaitAnalysis_app:InvalidPoseMat', ...
-            'MAT pose files must contain pose, poseData, or coords plus pointNames.');
-    end
-    pose = gait_analysis.sourceFiles.emptyPoseData();
-    pose.sourceFormat = "mat.coords";
-    pose.coords = double(raw.coords);
-    pose.pointNames = string(raw.pointNames(:));
-    pose.frameIndex = optionalVector(raw, "frameIndex", size(pose.coords, 1));
-    pose.time = optionalVector(raw, "time", size(pose.coords, 1));
-    pose.unitName = optionalString(raw, "unitName", "px");
-    pose = validatePose(pose);
-end
-
-function pose = poseFromMarkerEnvelope(envelope)
+function pose = poseFromEnvelope(envelope)
     if ~isstruct(envelope) || ~isscalar(envelope) || ...
-            ~isfield(envelope, "format") || ...
+            ~all(isfield(envelope, {'format', 'app', 'payload'})) || ...
             string(envelope.format) ~= "labkit.project" || ...
-            ~isfield(envelope, "app") || ...
-            ~isfield(envelope.app, "id") || ...
+            ~isstruct(envelope.app) || ...
+            ~all(isfield(envelope.app, {'id', 'payloadVersion'})) || ...
             string(envelope.app.id) ~= "video_marker" || ...
-            ~isfield(envelope, "payload")
-        error('labkit_GaitAnalysis_app:InvalidMarkerProject', ...
-            'The MAT file is not a supported Video Marker project or autosave.');
+            double(envelope.app.payloadVersion) ~= 2
+        invalidMarker(['Gait Analysis requires a current Video Marker payload ' ...
+            'version 2 project or autosave.']);
     end
-    pose = poseFromMarkerPayload(envelope.payload);
-end
+    payload = envelope.payload;
+    if ~isstruct(payload) || ~isscalar(payload) || ...
+            ~all(isfield(payload, {'inputs', 'annotations'})) || ...
+            ~isfield(payload.annotations, 'frames') || ...
+            ~isfield(payload.annotations, 'skeleton')
+        invalidMarker('Video Marker payload annotations are incomplete.');
+    end
+    frames = payload.annotations.frames;
+    rawSkeleton = payload.annotations.skeleton;
+    if ~isstruct(frames) || ~isscalar(frames) || ...
+            ~isfield(frames, 'coords') || ~isnumeric(frames.coords)
+        invalidMarker('Video Marker frame coordinates are malformed.');
+    end
+    coords = double(frames.coords);
+    if isempty(coords) || ndims(coords) ~= 3 || size(coords, 3) ~= 2
+        invalidMarker('Video Marker coordinates must be nonempty F-by-P-by-2 data.');
+    end
+    skeleton = normalizedSkeleton(rawSkeleton, size(coords, 2));
+    metadata = videoMetadata(payload.inputs, size(coords, 1));
 
-function pose = poseFromMarkerPayload(payload)
-    if isfield(payload, "annotations") && ...
-            isfield(payload.annotations, "frames") && ...
-            isfield(payload.annotations, "skeleton")
-        frames = payload.annotations.frames;
-        skeleton = payload.annotations.skeleton;
-    elseif all(isfield(payload, ["annotations", "skeleton"]))
-        frames = payload.annotations;
-        skeleton = payload.skeleton;
-    else
-        error('labkit_GaitAnalysis_app:InvalidMarkerProject', ...
-            'Marker project annotations or skeleton data are missing.');
-    end
-    if ~isstruct(frames) || ~isfield(frames, "coords") || ...
-            ~isstruct(skeleton) || ~isfield(skeleton, "pointNames")
-        error('labkit_GaitAnalysis_app:InvalidMarkerProject', ...
-            'Marker project coordinate data are malformed.');
-    end
     pose = gait_analysis.sourceFiles.emptyPoseData();
-    pose.coords = double(frames.coords);
-    pose.pointNames = string(skeleton.pointNames(:));
-    pose.frameIndex = (1:size(pose.coords, 1)).';
-    pose.time = NaN(size(pose.coords, 1), 1);
-    pose.unitName = "px";
-    pose = validatePose(pose);
-end
-
-function pose = normalizePoseStruct(raw)
-    pose = gait_analysis.sourceFiles.emptyPoseData();
-    pose.coords = double(raw.coords);
-    pose.pointNames = string(raw.pointNames(:));
-    pose.frameIndex = optionalVector(raw, "frameIndex", size(pose.coords, 1));
-    pose.time = optionalVector(raw, "time", size(pose.coords, 1));
-    pose.unitName = optionalString(raw, "unitName", "px");
-    pose = validatePose(pose);
-end
-
-function pose = validatePose(pose)
-    if ndims(pose.coords) ~= 3 || size(pose.coords, 3) ~= 2
-        error('labkit_GaitAnalysis_app:InvalidPoseShape', ...
-            'Pose coordinates must be frame-by-point-by-2.');
-    end
-    if size(pose.coords, 2) ~= numel(pose.pointNames)
-        error('labkit_GaitAnalysis_app:InvalidPoseShape', ...
-            'Point name count must match coordinate point count.');
-    end
-    frameCount = size(pose.coords, 1);
-    if isempty(pose.frameIndex)
-        pose.frameIndex = (1:frameCount).';
-    end
-    if isempty(pose.time)
-        pose.time = NaN(frameCount, 1);
-    end
-    pose.frameIndex = double(pose.frameIndex(:));
-    pose.time = double(pose.time(:));
-    if numel(pose.frameIndex) ~= frameCount || numel(pose.time) ~= frameCount
-        error('labkit_GaitAnalysis_app:InvalidPoseShape', ...
-            'Frame index and time vectors must match the frame count.');
-    end
-    pose.ok = true;
-end
-
-function delimiter = delimiterForFile(filepath)
-    [~, ~, ext] = fileparts(filepath);
-    if lower(string(ext)) == ".tsv"
-        delimiter = "\t";
-    else
-        delimiter = ",";
+    pose.coords = coords;
+    pose.pointNames = skeleton.pointNames;
+    pose.skeleton = skeleton;
+    pose.frameIndex = (1:size(coords, 1)).';
+    pose.videoMetadata = metadata;
+    pose.frameRate = metadata.frameRate;
+    pose.time = (pose.frameIndex - 1) ./ metadata.frameRate;
+    pose.frameStatus = optionalFrameVector( ...
+        frames, 'frameStatus', size(coords, 1), 'uint8');
+    pose.frameSource = optionalFrameVector( ...
+        frames, 'frameSource', size(coords, 1), 'uint8');
+    pose.calibration = markerCalibration(payload.annotations);
+    if pose.calibration.isCalibrated
+        pose.pixelsPerUnit = pose.calibration.pixelsPerUnit;
+        pose.unitName = pose.calibration.unit;
     end
 end
 
-function columns = detectCoordinateColumns(varNames)
-    pointNames = strings(0, 1);
-    xNames = strings(0, 1);
-    yNames = strings(0, 1);
-    for k = 1:numel(varNames)
-        [pointName, axisName] = parseCoordinateColumn(varNames(k));
-        if axisName ~= "x"
-            continue;
+function skeleton = normalizedSkeleton(raw, pointCount)
+    if ~isstruct(raw) || ~isscalar(raw) || ...
+            ~all(isfield(raw, {'pointIds', 'pointNames', 'edges'}))
+        invalidMarker('Video Marker skeleton is incomplete.');
+    end
+    ids = string(raw.pointIds(:));
+    names = string(raw.pointNames(:));
+    edges = double(raw.edges);
+    validEdges = isempty(edges) || ...
+        (ismatrix(edges) && size(edges, 2) == 2 && ...
+        all(isfinite(edges), 'all') && all(edges == fix(edges), 'all') && ...
+        all(edges >= 1, 'all') && all(edges <= pointCount, 'all'));
+    if numel(ids) ~= pointCount || numel(names) ~= pointCount || ...
+            any(strlength(ids) == 0) || any(strlength(names) == 0) || ...
+            ~validEdges
+        invalidMarker('Video Marker skeleton does not match coordinate columns.');
+    end
+    skeleton = struct('pointIds', ids, 'pointNames', names, 'edges', edges);
+end
+
+function metadata = videoMetadata(inputs, frameCount)
+    required = ["frameCount", "frameRate", "duration", "height", "width"];
+    if ~isstruct(inputs) || ~isscalar(inputs) || ...
+            ~isfield(inputs, 'videoMetadata')
+        missingMetadata('Video Marker project has no embedded video metadata.');
+    end
+    raw = inputs.videoMetadata;
+    if ~isstruct(raw) || ~isscalar(raw) || ...
+            ~all(isfield(raw, cellstr(required)))
+        missingMetadata('Video Marker video metadata are incomplete.');
+    end
+    metadata = struct();
+    for field = required
+        value = double(raw.(field));
+        if ~isscalar(value) || ~isfinite(value) || value < 0
+            missingMetadata('Video Marker video metadata contain invalid values.');
         end
-        if any(pointNames == pointName)
-            continue;
-        end
-        yName = pairedYColumn(varNames, pointName, varNames(k));
-        if yName == ""
-            continue;
-        end
-        pointNames(end+1, 1) = pointName;
-        xNames(end+1, 1) = varNames(k);
-        yNames(end+1, 1) = yName;
+        metadata.(field) = value;
     end
-    columns = struct("pointNames", pointNames, "xNames", xNames, "yNames", yNames);
-end
-
-function [pointName, axisName] = parseCoordinateColumn(varName)
-    text = char(varName);
-    tokens = regexp(text, '^(.+)__(x|y)(_px)?$', 'tokens', 'once');
-    if isempty(tokens)
-        tokens = regexp(text, '^(.+)_(x|y)(_px)?$', 'tokens', 'once');
+    if metadata.frameCount ~= frameCount
+        invalidMarker('Embedded frame count does not match coordinate rows.');
     end
-    if isempty(tokens)
-        tokens = regexp(text, '^(x|y)_(.+)$', 'tokens', 'once');
-        if isempty(tokens)
-            pointName = "";
-            axisName = "";
-        else
-            pointName = string(tokens{2});
-            axisName = string(tokens{1});
-        end
-    else
-        pointName = string(tokens{1});
-        axisName = string(tokens{2});
+    if metadata.frameRate <= 0
+        missingMetadata(['Embedded frame rate is missing. Reopen the source ' ...
+            'in the current Video Marker and press Save autosave.']);
     end
 end
 
-function yName = pairedYColumn(varNames, pointName, xName)
-    candidates = [
-        pointName + "__y_px"
-        pointName + "__y"
-        pointName + "_y_px"
-        pointName + "_y"
-        "y_" + pointName];
-    yName = "";
-    for k = 1:numel(candidates)
-        if any(varNames == candidates(k)) && xName ~= candidates(k)
-            yName = candidates(k);
-            return;
-        end
-    end
-end
-
-function values = numericColumn(T, varName)
-    raw = T.(char(varName));
-    if isnumeric(raw)
-        values = double(raw);
-    else
-        values = str2double(string(raw));
-    end
-    values = values(:);
-end
-
-function frames = frameIndexFromTable(T, frameCount)
-    if any(string(T.Properties.VariableNames) == "frame_index")
-        frames = numericColumn(T, "frame_index");
-    elseif any(string(T.Properties.VariableNames) == "frame")
-        frames = numericColumn(T, "frame");
-    else
-        frames = (1:frameCount).';
-    end
-end
-
-function time = timeFromTable(T, frameCount)
-    if any(string(T.Properties.VariableNames) == "time_s")
-        time = numericColumn(T, "time_s");
-    elseif any(string(T.Properties.VariableNames) == "time")
-        time = numericColumn(T, "time");
-    else
-        time = NaN(frameCount, 1);
-    end
-end
-
-function unitName = unitFromTable(T, columns)
-    if all(endsWith(columns.xNames, "_px")) && all(endsWith(columns.yNames, "_px"))
-        unitName = "px";
+function values = optionalFrameVector(source, field, count, typeName)
+    values = zeros(0, 1, typeName);
+    if ~isfield(source, field)
         return;
     end
-    unitName = "px";
-    if any(string(T.Properties.VariableNames) == "coordinate_unit")
-        values = string(T.coordinate_unit);
-        values = values(strlength(values) > 0);
-        if ~isempty(values)
-            unitName = values(1);
+    values = source.(field)(:);
+    if numel(values) ~= count
+        invalidMarker('Video Marker frame provenance does not match frame count.');
+    end
+    values = cast(values, typeName);
+end
+
+function calibration = markerCalibration(annotations)
+    calibration = gait_analysis.sourceFiles.emptyPoseData().calibration;
+    if ~isfield(annotations, 'calibration') || ...
+            ~isstruct(annotations.calibration)
+        return;
+    end
+    raw = annotations.calibration;
+    for field = ["referencePixels", "referenceLength", "pixelsPerUnit"]
+        if isfield(raw, field)
+            value = double(raw.(field));
+            if isscalar(value)
+                calibration.(field) = value;
+            end
         end
     end
+    if isfield(raw, 'unit')
+        calibration.unit = string(raw.unit);
+    end
+    calibration.isCalibrated = isfinite(calibration.pixelsPerUnit) && ...
+        calibration.pixelsPerUnit > 0 && isscalar(calibration.unit) && ...
+        strlength(calibration.unit) > 0;
 end
 
-function values = optionalVector(raw, fieldName, frameCount)
-    fieldName = char(fieldName);
-    if isstruct(raw) && isfield(raw, fieldName)
-        values = double(raw.(fieldName)(:));
-    else
-        values = NaN(frameCount, 1);
-    end
+function invalidMarker(message)
+    error('labkit_GaitAnalysis_app:InvalidMarkerProject', '%s', message);
 end
 
-function value = optionalString(raw, fieldName, fallback)
-    fieldName = char(fieldName);
-    if isstruct(raw) && isfield(raw, fieldName)
-        value = string(raw.(fieldName));
-    else
-        value = string(fallback);
-    end
+function missingMetadata(message)
+    error('labkit_GaitAnalysis_app:MissingVideoMetadata', '%s', message);
 end

@@ -1,200 +1,214 @@
 classdef GaitAnalysisTest < matlab.unittest.TestCase
-    %GAITANALYSISTEST Verify Gait Analysis app-owned input and metric contracts.
+    %GAITANALYSISTEST Verify current Video Marker input and gait metrics.
 
     methods (Test, TestTags = {'Unit'})
-        function generic_csv_imports_and_computes_step_metrics(testCase)
+        function current_video_marker_project_imports_source_facts(testCase)
             setupLabKitTestPath();
-            folder = string(tempname);
-            mkdir(folder);
+            folder = makeFolder();
             cleanup = onCleanup(@() cleanupFolder(folder));
+            [labkitProject, expected] = markerProject();
+            projectPath = fullfile(folder, "walk.video_marker.autosave.mat");
+            save(projectPath, "labkitProject");
 
-            csvPath = fullfile(folder, "pose.csv");
-            writetable(syntheticPoseTable(), csvPath);
+            pose = gait_analysis.sourceFiles.readPoseFile(projectPath);
 
-            pose = gait_analysis.sourceFiles.readPoseFile(csvPath);
+            testCase.verifyEqual(pose.sourceFormat, ...
+                "mat.videoMarkerProjectV2");
+            testCase.verifyEqual(pose.coords, expected);
             testCase.verifyEqual(pose.pointNames, ...
                 ["iliac"; "hip"; "knee"; "ankle"; "foot"]);
+            testCase.verifyEqual(pose.frameIndex, (1:12).');
+            testCase.verifyEqual(pose.time, (0:11).' ./ 30, "AbsTol", 1e-12);
+            testCase.verifyEqual(pose.frameRate, 30);
+            testCase.verifyEqual(pose.skeleton.edges, ...
+                [1 2; 2 3; 3 4; 4 5]);
+            testCase.verifyEqual(pose.pixelsPerUnit, 10);
+            testCase.verifyEqual(pose.unitName, "mm");
+        end
 
+        function analysis_segments_active_swings_and_reports_metrics(testCase)
+            setupLabKitTestPath();
+            pose = syntheticPose();
             opts = gait_analysis.appState.defaultOptions();
             opts.smoothWindow = 1;
-            opts.minStepFrames = 3;
-            opts.minStride = 2;
+            opts.detectionProminence = 2;
+            opts.minLiftOffIntervalSeconds = 0.1;
+            opts.minStepLength = 2;
+
             result = gait_analysis.analysisRun.computeGait(pose, opts);
 
             testCase.verifyTrue(result.ok);
-            testCase.verifyEqual(result.events.contactFrames, [2; 6; 10]);
+            testCase.verifyEqual(result.events.liftOffFrames, [3; 9]);
+            testCase.verifyEqual(result.events.landingFrames, [5; 11]);
             testCase.verifyEqual(height(result.stepTable), 2);
             testCase.verifyEqual(result.stepTable.is_valid, [true; true]);
-            testCase.verifyEqual(result.stepTable.stride_length, [7; 7], ...
+            testCase.verifyEqual(result.stepTable.step_length, [5; 6], ...
                 "AbsTol", 1e-12);
-            testCase.verifyEqual(result.stepTable.step_time_s, [4; 4] ./ 30, ...
+            testCase.verifyEqual(result.stepTable.swing_time_s, [2; 2] ./ 30, ...
                 "AbsTol", 1e-12);
-            testCase.verifyTrue(any(result.summaryTable.Metric == "Valid steps"));
+            testCase.verifyTrue(all(ismember( ...
+                ["hip_min_deg", "hip_max_deg", "hip_rom_deg"], ...
+                string(result.stepTable.Properties.VariableNames))));
+            testCase.verifyEqual(find(result.frameTable.landing_event), [5; 11]);
         end
 
-        function labkit_coordinate_csv_imports_double_underscore_columns(testCase)
+        function completed_final_swing_is_not_dropped(testCase)
             setupLabKitTestPath();
-            folder = string(tempname);
-            mkdir(folder);
-            cleanup = onCleanup(@() cleanupFolder(folder));
-
-            T = table();
-            T.frame_index = [1; 2];
-            T.time_s = [0; 0.1];
-            T.coordinate_unit = ["mm"; "mm"];
-            T.hip__x = [1; 2];
-            T.hip__y = [3; 4];
-            T.foot__x = [5; 6];
-            T.foot__y = [7; 8];
-            csvPath = fullfile(folder, "coordinates.csv");
-            writetable(T, csvPath);
-
-            pose = gait_analysis.sourceFiles.readPoseFile(csvPath);
-
-            testCase.verifyEqual(pose.unitName, "mm");
-            testCase.verifyEqual(pose.pointNames, ["hip"; "foot"]);
-            testCase.verifyEqual(squeeze(pose.coords(:, 1, 1)), [1; 2]);
-            testCase.verifyEqual(squeeze(pose.coords(:, 2, 2)), [7; 8]);
-        end
-
-        function mat_pose_and_result_csv_set_round_trip(testCase)
-            setupLabKitTestPath();
-            folder = string(tempname);
-            mkdir(folder);
-            cleanup = onCleanup(@() cleanupFolder(folder));
-
-            pose = tableToPose(syntheticPoseTable());
-            matPath = fullfile(folder, "pose.mat");
-            coords = pose.coords;
-            pointNames = pose.pointNames;
-            frameIndex = pose.frameIndex;
-            time = pose.time;
-            unitName = "px";
-            save(matPath, "coords", "pointNames", "frameIndex", "time", "unitName");
-
-            imported = gait_analysis.sourceFiles.readPoseFile(matPath);
+            pose = syntheticPose();
+            pose.coords = pose.coords(7:end, :, :);
+            pose.frameIndex = (1:6).';
+            pose.time = (0:5).' ./ 30;
             opts = gait_analysis.appState.defaultOptions();
             opts.smoothWindow = 1;
-            result = gait_analysis.analysisRun.computeGait(imported, opts);
-            outputs = gait_analysis.resultFiles.writeOutputs(folder, "gait", result);
+            opts.detectionProminence = 2;
 
-            testCase.verifyTrue(isfile(outputs.frameCsv));
-            testCase.verifyTrue(isfile(outputs.coordinateCsv));
-            testCase.verifyTrue(isfile(outputs.stepCsv));
-            testCase.verifyTrue(isfile(outputs.summaryCsv));
-            stepTable = readtable(outputs.stepCsv, "TextType", "string");
-            testCase.verifyTrue(any(string(stepTable.Properties.VariableNames) == "hip_rom_deg"));
-        end
-
-        function video_marker_project_and_autosave_import_as_pose(testCase)
-            setupLabKitTestPath();
-            folder = string(tempname);
-            mkdir(folder);
-            cleanup = onCleanup(@() cleanupFolder(folder));
-
-            skeleton = video_marker.skeletonDefinition.fromParts( ...
-                ["iliac"; "hip"; "knee"; "ankle"; "foot"], ...
-                [1 2; 2 3; 3 4; 4 5]);
-            frames = video_marker.frameAnnotations.emptyAnnotations(4, 5);
-            expected = reshape(1:40, [4 5 2]);
-            frames.coords = expected;
-            project = video_marker.appLifecycle.createProject();
-            project.annotations.skeleton = skeleton;
-            project.annotations.frames = frames;
-            labkitProject = struct( ...
-                "format", "labkit.project", ...
-                "formatVersion", struct("major", 1, "minor", 0), ...
-                "app", struct("id", "video_marker", "payloadVersion", 1), ...
-                "document", struct(), "producer", struct(), ...
-                "sources", struct([]), "payload", project);
-
-            projectPath = fullfile(folder, "video-marker-project.mat");
-            save(projectPath, "labkitProject");
-            pose = gait_analysis.sourceFiles.readPoseFile(projectPath);
-            testCase.verifyEqual(pose.sourceFormat, ...
-                "mat.labkitMarkerProject");
-            testCase.verifyEqual(pose.pointNames, skeleton.pointNames);
-            testCase.verifyEqual(pose.coords, expected);
-            testCase.verifyEqual(pose.frameIndex, (1:4).');
-            testCase.verifyTrue(all(isnan(pose.time)));
-
-            autosavePath = fullfile(folder, "recovery.mat");
-            save(autosavePath, "labkitProject");
-            autosavePose = gait_analysis.sourceFiles.readPoseFile(autosavePath);
-            testCase.verifyEqual(autosavePose.coords, expected);
-        end
-
-        function coordinate_export_keeps_pixels_and_scaled_origin_columns(testCase)
-            setupLabKitTestPath();
-            folder = string(tempname);
-            mkdir(folder);
-            cleanup = onCleanup(@() cleanupFolder(folder));
-
-            pose = tableToPose(syntheticPoseTable());
-            opts = gait_analysis.appState.defaultOptions();
-            opts.smoothWindow = 1;
-            opts.pixelsPerUnit = 2;
-            opts.unitName = "mm";
-            opts.originAtFirstFrameFirstPoint = true;
             result = gait_analysis.analysisRun.computeGait(pose, opts);
-            outputs = gait_analysis.resultFiles.writeOutputs(folder, "gait", result);
 
-            coordinates = readtable(outputs.coordinateCsv, ...
-                "TextType", "string", "VariableNamingRule", "preserve");
-            testCase.verifyEqual(coordinates.coordinate_unit(1), "mm");
-            testCase.verifyEqual(coordinates.origin_mode(1), "first_frame_first_point");
-            testCase.verifyEqual(coordinates.origin_point(1), "iliac");
-            testCase.verifyEqual(coordinates.origin_x_px_value(1), -2);
-            testCase.verifyEqual(coordinates.origin_y_px_value(1), 8);
-            testCase.verifyEqual(coordinates.("hip__x_px")(1), 0);
-            testCase.verifyEqual(coordinates.("hip__y_px")(1), 6);
-            testCase.verifyEqual(coordinates.("hip__x")(1), 1);
-            testCase.verifyEqual(coordinates.("hip__y")(1), -1);
+            testCase.verifyEqual(result.events.liftOffFrames, 3);
+            testCase.verifyEqual(result.events.landingFrames, 5);
+            testCase.verifyEqual(height(result.stepTable), 1);
+        end
 
-            reloaded = gait_analysis.sourceFiles.readPoseFile(outputs.coordinateCsv);
-            testCase.verifyEqual(reloaded.pointNames, ...
-                ["iliac"; "hip"; "knee"; "ankle"; "foot"]);
-            testCase.verifyEqual(reloaded.unitName, "px");
-            testCase.verifyEqual(squeeze(reloaded.coords(1, 2, :)), [0; 6]);
+        function rejects_legacy_and_unrelated_mat_files(testCase)
+            setupLabKitTestPath();
+            folder = makeFolder();
+            cleanup = onCleanup(@() cleanupFolder(folder));
+            coords = zeros(4, 5, 2);
+            legacyPath = fullfile(folder, "legacy.mat");
+            save(legacyPath, "coords");
+
+            testCase.verifyError( ...
+                @() gait_analysis.sourceFiles.readPoseFile(legacyPath), ...
+                'labkit_GaitAnalysis_app:InvalidMarkerProject');
+        end
+
+        function rejects_marker_project_without_timing_metadata(testCase)
+            setupLabKitTestPath();
+            folder = makeFolder();
+            cleanup = onCleanup(@() cleanupFolder(folder));
+            [labkitProject, ~] = markerProject();
+            labkitProject.payload.inputs.videoMetadata.frameRate = 0;
+            projectPath = fullfile(folder, "missing-rate.mat");
+            save(projectPath, "labkitProject");
+
+            testCase.verifyError( ...
+                @() gait_analysis.sourceFiles.readPoseFile(projectPath), ...
+                'labkit_GaitAnalysis_app:MissingVideoMetadata');
+        end
+
+        function source_facts_replace_previous_time_scale_and_roles(testCase)
+            setupLabKitTestPath();
+            pose = syntheticPose();
+            pose.frameRate = 120;
+            pose.pointNames(1) = "iliac_crest";
+            options = gait_analysis.appState.defaultOptions();
+            options.frameRate = 10;
+            options.pixelsPerUnit = 22;
+            options.unitName = "mm";
+            options.iliacPoint = "old_iliac";
+
+            actual = gait_analysis.appState.optionsForPose(pose, options);
+
+            testCase.verifyEqual(actual.frameRate, 120);
+            testCase.verifyEqual(actual.pixelsPerUnit, 1);
+            testCase.verifyEqual(actual.unitName, "px");
+            testCase.verifyEqual(actual.iliacPoint, "iliac_crest");
+        end
+
+        function result_csv_set_round_trips(testCase)
+            setupLabKitTestPath();
+            folder = makeFolder();
+            cleanup = onCleanup(@() cleanupFolder(folder));
+            result = gait_analysis.analysisRun.computeGait( ...
+                syntheticPose(), analysisOptions());
+
+            outputs = gait_analysis.resultFiles.writeOutputs( ...
+                folder, "gait", result);
+
+            testCase.verifyTrue(all(isfile(struct2array(outputs))));
+            steps = readtable(outputs.stepCsv, "TextType", "string");
+            testCase.verifyTrue(any(string(steps.Properties.VariableNames) == ...
+                "swing_time_s"));
+        end
+
+        function project_migration_renames_v1_options(testCase)
+            setupLabKitTestPath();
+            project = gait_analysis.appLifecycle.createProject();
+            project.parameters = rmfield(project.parameters, ...
+                {'minLiftOffIntervalSeconds', 'minSwingFrames', ...
+                'maxSwingFrames', 'minStepLength', 'maxHipTranslation', ...
+                'detectionMinHeightSigma'});
+            project.parameters.minStepIntervalSeconds = 0.25;
+            project.parameters.minStepFrames = 4;
+            project.parameters.maxStepFrames = 40;
+            project.parameters.minStride = 3;
+            project.parameters.maxBodyDrift = 9;
+
+            migrated = gait_analysis.appLifecycle.migrateProjectV1ToV2(project);
+
+            testCase.verifyEqual(migrated.parameters.minLiftOffIntervalSeconds, 0.25);
+            testCase.verifyEqual(migrated.parameters.minSwingFrames, 4);
+            testCase.verifyEqual(migrated.parameters.maxSwingFrames, 40);
+            testCase.verifyEqual(migrated.parameters.minStepLength, 3);
+            testCase.verifyEqual(migrated.parameters.maxHipTranslation, 9);
+            testCase.verifyEqual(migrated.parameters.detectionMinHeightSigma, 2);
+            testCase.verifyFalse(isfield(migrated.parameters, 'minStride'));
         end
     end
 end
 
-function T = syntheticPoseTable()
-    frames = (1:12).';
-    time = (frames - 1) ./ 30;
-    hipX = zeros(size(frames));
-    footRel = [-2; -3; -1; 2; 4; -3; -1; 2; 4; -3; -1; 1];
-    T = table();
-    T.frame_index = frames;
-    T.time_s = time;
-    T.iliac_x = hipX - 2;
-    T.iliac_y = 8 + zeros(size(frames));
-    T.hip_x = hipX;
-    T.hip_y = 6 + zeros(size(frames));
-    T.knee_x = hipX + 1;
-    T.knee_y = 4 + 0.2 .* sin(frames);
-    T.ankle_x = hipX + 2;
-    T.ankle_y = 2 + 0.2 .* cos(frames);
-    T.foot_x = hipX + footRel;
-    T.foot_y = zeros(size(frames));
+function [labkitProject, coords] = markerProject()
+    pose = syntheticPose();
+    coords = pose.coords;
+    project = video_marker.appLifecycle.createProject();
+    project.annotations.skeleton = video_marker.skeletonDefinition.fromParts( ...
+        pose.pointNames, [1 2; 2 3; 3 4; 4 5]);
+    project.annotations.frames = ...
+        video_marker.frameAnnotations.emptyAnnotations(12, 5);
+    project.annotations.frames.coords = coords;
+    project.inputs.videoMetadata = struct( ...
+        "frameCount", 12, "frameRate", 30, "duration", 12/30, ...
+        "height", 100, "width", 200);
+    project.annotations.calibration = ...
+        labkit.ui.interaction.scaleBarCalibration(20, 2, "mm");
+    labkitProject = struct( ...
+        "format", "labkit.project", ...
+        "formatVersion", struct("major", 1, "minor", 0), ...
+        "app", struct("id", "video_marker", "payloadVersion", 2), ...
+        "document", struct(), "producer", struct(), ...
+        "sources", struct([]), "payload", project);
 end
 
-function pose = tableToPose(T)
+function pose = syntheticPose()
+    frames = (1:12).';
+    footX = [0; 1; 5; 3; 0; 1; 0; 1; 6; 4; 0; 1];
     pose = gait_analysis.sourceFiles.emptyPoseData();
     pose.sourceFormat = "synthetic";
     pose.pointNames = ["iliac"; "hip"; "knee"; "ankle"; "foot"];
-    pose.frameIndex = T.frame_index;
-    pose.time = T.time_s;
+    pose.frameIndex = frames;
+    pose.time = (frames - 1) ./ 30;
+    pose.frameRate = 30;
     pose.unitName = "px";
-    coords = NaN(height(T), numel(pose.pointNames), 2);
-    for p = 1:numel(pose.pointNames)
-        name = char(pose.pointNames(p));
-        coords(:, p, 1) = T.([name '_x']);
-        coords(:, p, 2) = T.([name '_y']);
-    end
+    pose.skeleton = struct("pointIds", pose.pointNames, ...
+        "pointNames", pose.pointNames, "edges", [1 2; 2 3; 3 4; 4 5]);
+    coords = NaN(12, 5, 2);
+    coords(:, :, 1) = [-2*ones(12,1), zeros(12,1), ...
+        ones(12,1), 2*ones(12,1), footX];
+    coords(:, :, 2) = [8*ones(12,1), 6*ones(12,1), ...
+        4 + 0.2.*sin(frames), 2 + 0.2.*cos(frames), zeros(12,1)];
     pose.coords = coords;
     pose.ok = true;
+end
+
+function opts = analysisOptions()
+    opts = gait_analysis.appState.defaultOptions();
+    opts.smoothWindow = 1;
+    opts.detectionProminence = 2;
+end
+
+function folder = makeFolder()
+    folder = string(tempname);
+    mkdir(folder);
 end
 
 function cleanupFolder(folder)

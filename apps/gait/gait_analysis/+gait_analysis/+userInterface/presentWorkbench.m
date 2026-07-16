@@ -11,6 +11,11 @@ function view = presentWorkbench(state)
     view.controls.analysisStatus = valueSpec(result.message);
     view.controls.runAnalysis = enabledSpec(pose.ok);
     view.controls.exportResults = enabledSpec(result.ok);
+    stepCount = height(result.stepTable);
+    selectedStep = min(max(1, double( ...
+        state.session.selection.currentStepIndex)), max(1, stepCount));
+    view.controls.previousStep = enabledSpec(result.ok && selectedStep > 1);
+    view.controls.nextStep = enabledSpec(result.ok && selectedStep < stepCount);
     if result.ok
         view.controls.summaryTable = tableSpec(summaryData(result.summaryTable));
         view.controls.stepTable = tableSpec(stepPreviewData(result.stepTable));
@@ -18,11 +23,16 @@ function view = presentWorkbench(state)
         view.controls.summaryTable = tableSpec({'Status', char(result.message)});
         view.controls.stepTable = tableSpec(cell(0, 4));
     end
-    view.controls.gaitAxes = valueSpec(state.session.view.previewMode);
-    model = struct("pose", pose, "result", result, ...
-        "mode", state.session.view.previewMode);
-    view.previews.gaitAxes = struct( ...
-        "Renderer", "gaitPreview", "Model", model);
+    base = struct("pose", pose, "result", result, ...
+        "selectedStep", selectedStep);
+    view.previews.gaitAxes.Axes.skeleton = axisSpec(base, "skeleton");
+    view.previews.gaitAxes.Axes.angles = axisSpec(base, "angles");
+    view.previews.gaitAxes.Axes.segments = axisSpec(base, "segments");
+end
+
+function spec = axisSpec(model, kind)
+    model.kind = string(kind);
+    spec = struct("Renderer", "gaitPreview", "Model", model);
 end
 
 function spec = sourcePanel(sources)
@@ -39,9 +49,9 @@ end
 function text = sourceSummary(pose)
     text = "No pose file loaded";
     if pose.ok
-        text = string(sprintf('%d frames | %d points | %s | unit %s', ...
+        text = string(sprintf('%d frames | %d points | %.6g Hz | %s | unit %s', ...
             size(pose.coords, 1), numel(pose.pointNames), ...
-            pose.sourceFormat, pose.unitName));
+            pose.frameRate, pose.sourceFormat, pose.unitName));
     end
 end
 
@@ -60,13 +70,13 @@ function data = summaryData(value)
 end
 
 function data = stepPreviewData(value)
-    count = min(height(value), 20);
+    count = height(value);
     data = cell(count, 4);
     for k = 1:count
         data{k, 1} = value.step_index(k);
         data{k, 2} = logical(value.is_valid(k));
-        data{k, 3} = value.step_time_s(k);
-        data{k, 4} = value.stride_length(k);
+        data{k, 3} = value.swing_time_s(k);
+        data{k, 4} = value.step_length(k);
     end
 end
 

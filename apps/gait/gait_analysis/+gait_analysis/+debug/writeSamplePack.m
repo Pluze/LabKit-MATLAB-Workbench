@@ -1,39 +1,47 @@
-%WRITESAMPLEPACK Create synthetic debug files for labkit_GaitAnalysis_app.
-% Expected caller: debug startup and debug sample-pack tests. Files contain
-% synthetic pose data only and no lab sample identifiers.
+%WRITESAMPLEPACK Create a synthetic current Video Marker project for Gait.
+% Expected caller: debug startup and GUI tests. The MAT contains no source
+% path, sample identifier, or lab data.
 function pack = writeSamplePack(debugLog)
     root = fullfile(tempdir, "labkit_gait_analysis_debug");
-    if exist(root, "dir") ~= 7
+    if ~isfolder(root)
         mkdir(root);
     end
-    posePath = fullfile(root, "synthetic_gait_pose.csv");
-    T = syntheticPoseTable();
-    writetable(T, posePath);
+    project = video_marker.appLifecycle.createProject();
+    project.annotations.skeleton = video_marker.skeletonDefinition.fromParts( ...
+        ["iliac"; "hip"; "knee"; "ankle"; "foot"], ...
+        [1 2; 2 3; 3 4; 4 5]);
+    project.annotations.frames = syntheticAnnotations();
+    project.inputs.videoMetadata = struct( ...
+        "frameCount", 12, "frameRate", 30, "duration", 12/30, ...
+        "height", 16, "width", 128);
+    project.annotations.calibration = ...
+        labkit.ui.interaction.scaleBarCalibration([], [], "px");
+    labkitProject = struct( ...
+        "format", "labkit.project", ...
+        "formatVersion", struct("major", 1, "minor", 0), ...
+        "app", struct("id", "video_marker", "payloadVersion", 2), ...
+        "document", struct(), "producer", struct(), ...
+        "sources", struct([]), "payload", project);
+    posePath = fullfile(root, "synthetic.video_marker.autosave.mat");
+    save(posePath, 'labkitProject');
 
-    pack = struct();
-    pack.sampleFolder = string(root);
-    pack.representativeFiles = string(posePath);
+    pack = struct("sampleFolder", string(root), ...
+        "representativeFiles", string(posePath));
     if nargin > 0 && ismethod(debugLog, "trace")
-        debugLog.trace("Gait analysis debug sample pack written.");
+        debugLog.trace("Gait analysis debug Video Marker project written.");
     end
 end
 
-function T = syntheticPoseTable()
-    frames = (1:12).';
-    time = (frames - 1) ./ 30;
-    hipX = zeros(size(frames));
-    footRel = [-2; -3; -1; 2; 4; -3; -1; 2; 4; -3; -1; 1];
-    T = table();
-    T.frame_index = frames;
-    T.time_s = time;
-    T.iliac_x = hipX - 2;
-    T.iliac_y = 8 + zeros(size(frames));
-    T.hip_x = hipX;
-    T.hip_y = 6 + zeros(size(frames));
-    T.knee_x = hipX + 1;
-    T.knee_y = 4 + 0.2 .* sin(frames);
-    T.ankle_x = hipX + 2;
-    T.ankle_y = 2 + 0.2 .* cos(frames);
-    T.foot_x = hipX + footRel;
-    T.foot_y = zeros(size(frames));
+function annotations = syntheticAnnotations()
+    frame = (1:12).';
+    footX = [0; 2; 100; 30; 0; 2; 0; 2; 110; 35; 0; 2];
+    coords = NaN(12, 5, 2);
+    coords(:, :, 1) = [-2*ones(12, 1), zeros(12, 1), ...
+        ones(12, 1), 2*ones(12, 1), footX];
+    coords(:, :, 2) = [8*ones(12, 1), 6*ones(12, 1), ...
+        4 + 0.2 .* sin(frame), 2 + 0.2 .* cos(frame), zeros(12, 1)];
+    annotations = video_marker.frameAnnotations.emptyAnnotations(12, 5);
+    annotations.coords = coords;
+    annotations.frameStatus(:) = uint8(2);
+    annotations.frameSource(:) = uint8(1);
 end

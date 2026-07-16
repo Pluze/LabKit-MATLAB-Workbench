@@ -12,11 +12,10 @@ classdef GuiLayoutGaitAnalysisTest < matlab.unittest.TestCase
             drawnow;
 
             h.assertStandardWorkbenchLayout(fig);
-            h.assertButtonContract(fig, {'Open pose file', 'Run analysis', ...
+            h.assertButtonContract(fig, {'Open Video Marker MAT', 'Run analysis', ...
                 'Choose output folder', 'Export CSV set'});
             h.assertTabTitles(fig, {'Source', 'Roles + Detection', ...
                 'Results + Export', 'Log'});
-            h.assertDropdownGroups(fig, h.dropdownGroup({'Trajectory', 'Angles', 'Steps'}, 1));
             testCase.verifyTrue(debug.enabled && debug.traceEnabled);
             assertAnyTextAreaContains(h, fig, 'Debug sample generation enabled', ...
                 'Runtime debug-sample lifecycle should be mirrored into the Log tab.');
@@ -27,11 +26,11 @@ classdef GuiLayoutGaitAnalysisTest < matlab.unittest.TestCase
             driver = labkitWorkflowDriver(fig);
             pack = gait_analysis.debug.writeSamplePack(debug);
             driver.chooseFiles('poseFile', pack.representativeFiles);
-            driver.click('Open pose file');
+            driver.click('Open Video Marker MAT');
             testCase.verifyTrue(driver.enabled('runAnalysis'));
             testCase.verifyGreaterThan(driver.previewChildCount('gaitAxes'), 0);
             ui = getappdata(fig, 'labkitUiRegistry');
-            gaitAxes = ui.controls.gaitAxes.axesById.main;
+            gaitAxes = ui.controls.gaitAxes.axesById.skeleton;
             testCase.verifyEqual(string(gaitAxes.YDir), "reverse", ...
                 ['Trajectory preview should use the same top-left image ' ...
                 'coordinate origin as marker source data.']);
@@ -39,9 +38,9 @@ classdef GuiLayoutGaitAnalysisTest < matlab.unittest.TestCase
             testCase.verifyTrue(driver.enabled('exportResults'));
             testCase.verifyGreaterThan(height( ...
                 getappdata(fig, 'labkitUiAppRuntime').state.project.results.analysis.frameTable), 0);
-            driver.dropdown('Angles');
-            testCase.verifyGreaterThan(driver.previewChildCount('gaitAxes'), 0);
-            testCase.verifyEqual(string(gaitAxes.YDir), "normal", ...
+            angleAxes = ui.controls.gaitAxes.axesById.angles;
+            testCase.verifyGreaterThan(numel(angleAxes.Children), 0);
+            testCase.verifyEqual(string(angleAxes.YDir), "normal", ...
                 'Time-series previews should restore the normal Y direction.');
 
             outputFolder = string(tempname);
@@ -52,11 +51,11 @@ classdef GuiLayoutGaitAnalysisTest < matlab.unittest.TestCase
             setappdata(fig, 'labkitUiAppRuntime', runtime);
             driver.click('Choose output folder');
             driver.click('Export CSV set');
-            expected = ["synthetic_gait_pose_frames.csv", ...
-                "synthetic_gait_pose_coordinates.csv", ...
-                "synthetic_gait_pose_steps.csv", ...
-                "synthetic_gait_pose_summary.csv", ...
-                "synthetic_gait_pose_gait.labkit.json"];
+            expected = ["synthetic_video_marker_autosave_frames.csv", ...
+                "synthetic_video_marker_autosave_coordinates.csv", ...
+                "synthetic_video_marker_autosave_steps.csv", ...
+                "synthetic_video_marker_autosave_summary.csv", ...
+                "synthetic.video_marker.autosave_gait.labkit.json"];
             for filepath = fullfile(outputFolder, expected)
                 testCase.verifyTrue(isfile(filepath), ...
                     "Missing gait output: " + filepath);
@@ -65,7 +64,7 @@ classdef GuiLayoutGaitAnalysisTest < matlab.unittest.TestCase
             projectPath = fullfile(outputFolder, 'gait-project.mat');
             labkit.ui.runtime.saveState(fig, projectPath);
             saved = load(projectPath, 'labkitProject');
-            testCase.verifyEqual(saved.labkitProject.app.payloadVersion, 1);
+            testCase.verifyEqual(saved.labkitProject.app.payloadVersion, 2);
             testCase.verifyFalse(isfield(saved.labkitProject.payload, 'pose'));
             labkit.ui.runtime.loadState(fig, projectPath);
             h.waitForUiIdle(fig);

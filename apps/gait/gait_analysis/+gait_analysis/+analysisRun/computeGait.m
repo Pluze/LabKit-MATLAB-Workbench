@@ -1,5 +1,5 @@
 function result = computeGait(pose, opts)
-%COMPUTEGAIT Calculate joint, segment, stride, and step-quality measurements.
+%COMPUTEGAIT Calculate joint, segment, swing, and step-quality measurements.
 %
 % Usage:
 %   result = gait_analysis.analysisRun.computeGait(pose, opts)
@@ -8,7 +8,7 @@ function result = computeGait(pose, opts)
 %   Analyzes named two-dimensional pose coordinates without opening the app.
 %   The function maps five anatomical roles to source points, smooths their
 %   coordinates, calculates joint angles and segment lengths, detects repeated
-%   foot-contact cycles, evaluates each cycle against quality thresholds, and
+%   active swings, evaluates each swing against quality thresholds, and
 %   returns the same four tables used by app preview and CSV export.
 %
 % Inputs:
@@ -27,10 +27,11 @@ function result = computeGait(pose, opts)
 %   hipPoint - Point name assigned to the hip role. Default: "hip".
 %   kneePoint - Point name assigned to the knee role. Default: "knee".
 %   anklePoint - Point name assigned to the ankle role. Default: "ankle".
-%   footPoint - Point name used for contact detection and stride length.
+%   footPoint - Point name used for event detection and step length.
 %       Default: "foot".
 %   frameRate - Frames per second used only when pose.time has no finite values.
-%       A nonpositive or invalid value leaves time_s as NaN. Default: 30.
+%       Current Video Marker projects supply this value from embedded video
+%       metadata. Zero leaves time_s as NaN. Default: 0.
 %   pixelsPerUnit - Positive pixel density for physical output. Distances and
 %       scaled coordinates are divided by this value. When invalid, pose.unitName
 %       is retained at scale 1 when present; otherwise output uses pixels.
@@ -43,30 +44,39 @@ function result = computeGait(pose, opts)
 %       integer of at least one. The effective odd span is
 %       2*floor((smoothWindow-1)/2)+1. Finite values are averaged separately for
 %       each point and axis. Default: 5.
-%   minStepFrames - Minimum contact-to-contact separation and minimum accepted
-%       cycle length in frames, rounded to an integer. Default: 3.
-%   maxStepFrames - Maximum accepted inclusive contact-to-contact cycle length,
-%       rounded to an integer. It does not change contact detection. Default: 300.
-%   minStride - Minimum accepted foot x-coordinate span in output units.
+%   detectionProminence - Minimum foot-X peak prominence in source coordinate
+%       units. Default: 20, preserving the legacy treadmill workflow threshold.
+%   detectionMinHeightSigma - A lift-off peak must be at least
+%       mean(foot X)-value*std(foot X). Default: 2, preserving the legacy
+%       treadmill peak-height floor.
+%   minLiftOffIntervalSeconds - Minimum separation between lift-off peaks. It is
+%       converted to frames from source time/frame rate. Default: 0.2 seconds.
+%   minSwingFrames - Minimum accepted lift-off-to-landing span. It is also the
+%       event separation fallback when source timing is unavailable. Default: 3.
+%   maxSwingFrames - Maximum accepted inclusive lift-off-to-landing span.
+%       Default: 300.
+%   minStepLength - Minimum accepted two-dimensional foot endpoint displacement.
 %       Default: 1.
-%   maxBodyDrift - Maximum accepted hip x-coordinate span in output units.
+%   maxHipTranslation - Maximum accepted hip endpoint displacement in output units.
 %       Default: 1000000, which normally leaves this check inactive.
 %
 % Event Detection:
-%   The detection trace is foot_x - hip_x after smoothing. A contact is a local
-%   minimum whose value is no greater than the preceding frame and strictly
-%   less than the following frame. Candidates closer than minStepFrames retain
-%   the lower minimum. Each adjacent pair of contacts defines one cycle; its
-%   lift-off frame is the maximum relative foot x value between those contacts.
-%   This is a kinematic event definition, not a force-plate contact measurement.
+%   The detection trace is smoothed foot X. A lift-off candidate is a local
+%   maximum meeting detectionProminence; nearby candidates retain the higher
+%   peak. Each lift-off is independently paired with the following foot-X
+%   minimum before the next lift-off, or before the recording ends. Therefore
+%   a completed final swing is retained even without a later lift-off. These
+%   are kinematic treadmill events, not force-plate contact measurements.
 %
 % Measurements:
 %   Hip, knee, and ankle angles are the unsigned angles from 0 to 180 degrees
 %   between the two adjacent segment vectors. A zero-length or nonfinite segment
 %   produces NaN. Segment lengths are Euclidean distances. For each cycle,
-%   stride_length and each point translation are the finite maximum-minus-
-%   minimum x coordinate, not endpoint displacement. Range of motion is the
-%   corresponding finite maximum-minus-minimum joint angle.
+%   Step length and each point translation are Euclidean endpoint
+%   displacements from lift-off to landing. Range of motion is the finite
+%   maximum-minus-minimum joint angle within that swing. When a
+%   next lift-off exists, cycle time, stance time, cadence, and duty factor are
+%   also reported; the final complete swing may legitimately lack them.
 %
 % Outputs:
 %   result - Scalar structure containing status, normalized options, events,
@@ -75,22 +85,23 @@ function result = computeGait(pose, opts)
 % Result Fields:
 %   ok, message - true and "Analysis complete" after successful calculation.
 %   options - Effective options after defaults, scalar cleanup, and rounding.
-%   events - Structure with contactFrames, liftOffFrames, and the smoothed
-%       footRelativeX detection trace.
+%   events - Structure with paired liftOffFrames and landingFrames, peak
+%       prominence, the foot-X detectionSignal, and footRelativeX diagnostic.
 %   frameTable - One row per frame. It contains frame/time/step membership,
-%       contact and lift-off flags, coordinate unit, three joint angles, four
+%       landing and lift-off flags, coordinate unit, three joint angles, four
 %       segment lengths, and scaled <point>_x/<point>_y columns.
 %   coordinateTable - One row per frame with frame/time and origin metadata,
 %       raw <point>__x_px/<point>__y_px columns, and scaled, optionally shifted
 %       <point>__x/<point>__y columns. The unshifted origin is [0 0] in pixel
 %       coordinates rather than the center of pixel [1 1].
-%   stepTable - One row per adjacent contact pair. It contains validity and
-%       reason, contact/lift-off frames, duration, stride, five x translations,
-%       three joint ranges of motion, and recording-wide joint extrema.
-%       invalid_reason is "ok", "duration_out_of_range", "stride_too_small",
-%       or "body_drift_too_large".
+%   stepTable - One row per paired lift-off-to-landing swing. It contains
+%       validity and reason, event frames, swing/cycle/stance timing, cadence,
+%       duty factor, two-dimensional step length and point translations, three
+%       joint extrema/ranges of motion, and recording-wide joint extrema.
+%       invalid_reason is "ok", "duration_out_of_range",
+%       "step_length_too_small", or "hip_translation_too_large".
 %   summaryTable - Metric/value text table reporting source geometry, detected
-%       and valid cycle counts, mean valid-cycle time and stride, and global
+%       and valid step counts, mean valid-swing time and step length, and global
 %       finite joint-angle extrema.
 %
 % Errors:
@@ -132,7 +143,7 @@ function result = computeGait(pose, opts)
 
     angles = computeJointAngles(smoothCoords, role);
     segments = computeSegmentLengths(smoothCoords, role, scale);
-    events = detectStepEvents(smoothCoords, role, opts);
+    events = detectStepEvents(smoothCoords, role, opts, time);
     stepPayload = buildStepPayload(smoothCoords, angles, events, time, ...
         opts, role, scale);
 
@@ -169,10 +180,17 @@ function opts = normalizeOptions(opts)
     opts.unitName = string(opts.unitName);
     opts.originAtFirstFrameFirstPoint = logicalScalar(opts.originAtFirstFrameFirstPoint);
     opts.smoothWindow = finiteScalar(opts.smoothWindow, 5, 1, Inf, true);
-    opts.minStepFrames = finiteScalar(opts.minStepFrames, 3, 1, Inf, true);
-    opts.maxStepFrames = finiteScalar(opts.maxStepFrames, Inf, 1, Inf, true);
-    opts.minStride = finiteScalar(opts.minStride, 1, 0, Inf, false);
-    opts.maxBodyDrift = finiteScalar(opts.maxBodyDrift, Inf, 0, Inf, false);
+    opts.detectionProminence = finiteScalar( ...
+        opts.detectionProminence, 20, 0, Inf, false);
+    opts.detectionMinHeightSigma = finiteScalar( ...
+        opts.detectionMinHeightSigma, 2, 0, Inf, false);
+    opts.minLiftOffIntervalSeconds = finiteScalar( ...
+        opts.minLiftOffIntervalSeconds, 0.2, 0, Inf, false);
+    opts.minSwingFrames = finiteScalar(opts.minSwingFrames, 3, 1, Inf, true);
+    opts.maxSwingFrames = finiteScalar(opts.maxSwingFrames, Inf, 1, Inf, true);
+    opts.minStepLength = finiteScalar(opts.minStepLength, 1, 0, Inf, false);
+    opts.maxHipTranslation = finiteScalar( ...
+        opts.maxHipTranslation, Inf, 0, Inf, false);
 end
 
 function value = logicalScalar(value)
@@ -306,76 +324,199 @@ function d = distance(a, b)
     d = sqrt(sum(delta .* delta, 2));
 end
 
-function events = detectStepEvents(coords, role, opts)
-    footRelativeX = coords(:, role.foot, 1) - coords(:, role.hip, 1);
-    contactFrames = localMinima(footRelativeX, opts.minStepFrames);
-    liftOffFrames = zeros(max(0, numel(contactFrames) - 1), 1);
+function events = detectStepEvents(coords, role, opts, time)
+    signal = double(coords(:, role.foot, 1));
+    rate = effectiveFrameRate(time, opts.frameRate);
+    if rate > 0
+        minSeparation = max(1, round(rate .* opts.minLiftOffIntervalSeconds));
+    else
+        minSeparation = opts.minSwingFrames;
+    end
+    finiteSignal = signal(isfinite(signal));
+    minimumPeakHeight = -Inf;
+    if ~isempty(finiteSignal)
+        minimumPeakHeight = mean(finiteSignal) - ...
+            opts.detectionMinHeightSigma .* std(finiteSignal);
+    end
+    [liftOffFrames, prominence] = prominentMaxima( ...
+        signal, opts.detectionProminence, minSeparation, minimumPeakHeight);
+    landingFrames = zeros(size(liftOffFrames));
+    keep = false(size(liftOffFrames));
     for k = 1:numel(liftOffFrames)
-        segment = footRelativeX(contactFrames(k):contactFrames(k + 1));
-        [~, offset] = max(segment);
-        liftOffFrames(k) = contactFrames(k) + offset - 1;
+        first = liftOffFrames(k) + 1;
+        last = numel(signal);
+        if k < numel(liftOffFrames)
+            last = liftOffFrames(k + 1) - 1;
+        end
+        if first > last
+            continue;
+        end
+        segment = signal(first:last);
+        finite = find(isfinite(segment));
+        if isempty(finite)
+            continue;
+        end
+        [~, relative] = min(segment(finite));
+        landingFrames(k) = first + finite(relative) - 1;
+        keep(k) = landingFrames(k) > liftOffFrames(k);
     end
     events = struct();
-    events.contactFrames = contactFrames(:);
-    events.liftOffFrames = liftOffFrames(:);
-    events.footRelativeX = footRelativeX(:);
+    events.liftOffFrames = liftOffFrames(keep);
+    events.landingFrames = landingFrames(keep);
+    events.detectionSignal = signal(:);
+    events.footRelativeX = signal(:) - coords(:, role.hip, 1);
+    events.prominence = prominence(keep);
+    events.minimumPeakHeight = minimumPeakHeight;
 end
 
-function frames = localMinima(values, minSeparation)
+function rate = effectiveFrameRate(time, configured)
+    rate = 0;
+    finiteTime = double(time(isfinite(time)));
+    if numel(finiteTime) > 1
+        intervals = diff(finiteTime);
+        intervals = intervals(isfinite(intervals) & intervals > 0);
+        if ~isempty(intervals)
+            rate = 1 ./ median(intervals);
+        end
+    elseif isfinite(configured) && configured > 0
+        rate = configured;
+    end
+end
+
+function [frames, prominence] = prominentMaxima( ...
+        values, minProminence, minSeparation, minimumHeight)
     values = double(values(:));
-    candidates = [];
+    candidates = zeros(numel(values), 1);
+    candidateProminence = zeros(numel(values), 1);
+    candidateCount = 0;
     for k = 2:numel(values)-1
-        if isfinite(values(k)) && values(k) <= values(k - 1) && values(k) < values(k + 1)
-            candidates(end+1, 1) = k;
+        if ~isfinite(values(k)) || values(k) < minimumHeight || ...
+                values(k) < values(k - 1) || ...
+                values(k) <= values(k + 1)
+            continue;
+        end
+        value = peakProminence(values, k);
+        if value >= minProminence
+            candidateCount = candidateCount + 1;
+            candidates(candidateCount) = k;
+            candidateProminence(candidateCount) = value;
         end
     end
-    frames = zeros(0, 1);
-    for k = 1:numel(candidates)
-        candidate = candidates(k);
-        if isempty(frames) || candidate - frames(end) >= minSeparation
-            frames(end+1, 1) = candidate;
-        elseif values(candidate) < values(frames(end))
-            frames(end) = candidate;
+    candidates = candidates(1:candidateCount);
+    candidateProminence = candidateProminence(1:candidateCount);
+    if isempty(candidates)
+        frames = candidates;
+        prominence = candidateProminence;
+        return;
+    end
+    [~, order] = sort(values(candidates), "descend");
+    selected = false(size(candidates));
+    accepted = zeros(numel(candidates), 1);
+    acceptedCount = 0;
+    for index = order(:).'
+        candidate = candidates(index);
+        prior = accepted(1:acceptedCount);
+        if acceptedCount == 0 || all(abs(candidate - prior) >= minSeparation)
+            selected(index) = true;
+            acceptedCount = acceptedCount + 1;
+            accepted(acceptedCount) = candidate;
         end
+    end
+    frames = candidates(selected);
+    prominence = candidateProminence(selected);
+    [frames, order] = sort(frames);
+    prominence = prominence(order);
+end
+
+function value = peakProminence(values, peak)
+    peakValue = values(peak);
+    leftLimit = 1;
+    for k = peak-1:-1:1
+        if isfinite(values(k)) && values(k) > peakValue
+            leftLimit = k;
+            break;
+        end
+    end
+    rightLimit = numel(values);
+    for k = peak+1:numel(values)
+        if isfinite(values(k)) && values(k) > peakValue
+            rightLimit = k;
+            break;
+        end
+    end
+    left = values(leftLimit:peak);
+    right = values(peak:rightLimit);
+    left = left(isfinite(left));
+    right = right(isfinite(right));
+    if isempty(left) || isempty(right)
+        value = 0;
+    else
+        value = peakValue - max(min(left), min(right));
     end
 end
 
 function payload = buildStepPayload(coords, angles, events, time, opts, role, scale)
-    contactFrames = events.contactFrames;
-    stepCount = max(0, numel(contactFrames) - 1);
+    stepCount = numel(events.liftOffFrames);
     frameCount = size(coords, 1);
     payload = struct();
-    payload.startFrame = zeros(stepCount, 1);
-    payload.endFrame = zeros(stepCount, 1);
     payload.liftOffFrame = zeros(stepCount, 1);
+    payload.landingFrame = zeros(stepCount, 1);
     payload.stepTime = NaN(stepCount, 1);
-    payload.strideLength = NaN(stepCount, 1);
+    payload.stepLength = NaN(stepCount, 1);
+    payload.cycleTime = NaN(stepCount, 1);
+    payload.stanceTime = NaN(stepCount, 1);
+    payload.cadence = NaN(stepCount, 1);
+    payload.dutyFactor = NaN(stepCount, 1);
     payload.isValid = false(stepCount, 1);
     payload.invalidReason = strings(stepCount, 1);
     payload.translations = NaN(stepCount, numel(role.pointIndices));
     payload.rom = NaN(stepCount, 3);
+    payload.angleMin = NaN(stepCount, 3);
+    payload.angleMax = NaN(stepCount, 3);
     payload.frameStepIndex = zeros(frameCount, 1);
 
     for s = 1:stepCount
-        startFrame = contactFrames(s);
-        endFrame = contactFrames(s + 1);
+        startFrame = events.liftOffFrames(s);
+        endFrame = events.landingFrames(s);
         idx = startFrame:endFrame;
-        payload.startFrame(s) = startFrame;
-        payload.endFrame(s) = endFrame;
         payload.liftOffFrame(s) = events.liftOffFrames(s);
+        payload.landingFrame(s) = endFrame;
         payload.frameStepIndex(idx) = s;
         payload.stepTime(s) = durationForFrames(time, startFrame, endFrame);
-        footX = coords(idx, role.foot, 1);
-        payload.strideLength(s) = finiteSpan(footX) .* scale;
+        payload.stepLength(s) = endpointDistance( ...
+            coords, startFrame, endFrame, role.foot) .* scale;
         for p = 1:numel(role.pointIndices)
-            x = coords(idx, role.pointIndices(p), 1);
-            payload.translations(s, p) = finiteSpan(x) .* scale;
+            payload.translations(s, p) = endpointDistance( ...
+                coords, startFrame, endFrame, role.pointIndices(p)) .* scale;
         end
-        payload.rom(s, :) = [finiteSpan(angles.hip(idx)), ...
-            finiteSpan(angles.knee(idx)), finiteSpan(angles.ankle(idx))];
+        angleValues = [angles.hip(idx), angles.knee(idx), angles.ankle(idx)];
+        for joint = 1:3
+            payload.angleMin(s, joint) = finiteMin(angleValues(:, joint));
+            payload.angleMax(s, joint) = finiteMax(angleValues(:, joint));
+        end
+        payload.rom(s, :) = payload.angleMax(s, :) - payload.angleMin(s, :);
+        if s < stepCount
+            nextLiftOff = events.liftOffFrames(s + 1);
+            payload.cycleTime(s) = durationForFrames(time, startFrame, nextLiftOff);
+            payload.stanceTime(s) = durationForFrames(time, endFrame, nextLiftOff);
+            if isfinite(payload.cycleTime(s)) && payload.cycleTime(s) > 0
+                payload.cadence(s) = 60 ./ payload.cycleTime(s);
+                payload.dutyFactor(s) = payload.stanceTime(s) ./ payload.cycleTime(s);
+            end
+        end
         [payload.isValid(s), payload.invalidReason(s)] = validateStep( ...
-            endFrame - startFrame + 1, payload.strideLength(s), ...
+            endFrame - startFrame + 1, payload.stepLength(s), ...
             payload.translations(s, 2), opts);
+    end
+end
+
+function value = endpointDistance(coords, first, last, point)
+    a = squeeze(coords(first, point, :));
+    b = squeeze(coords(last, point, :));
+    if numel(a) ~= 2 || numel(b) ~= 2 || any(~isfinite([a(:); b(:)]))
+        value = NaN;
+    else
+        value = hypot(b(1) - a(1), b(2) - a(2));
     end
 end
 
@@ -387,29 +528,19 @@ function value = durationForFrames(time, startFrame, endFrame)
     end
 end
 
-function value = finiteSpan(values)
-    values = double(values(:));
-    values = values(isfinite(values));
-    if isempty(values)
-        value = NaN;
-    else
-        value = max(values) - min(values);
-    end
-end
-
-function [tf, reason] = validateStep(frameSpan, strideLength, hipTranslation, opts)
+function [tf, reason] = validateStep(frameSpan, stepLength, hipTranslation, opts)
     tf = true;
     reason = "ok";
-    if frameSpan < opts.minStepFrames || frameSpan > opts.maxStepFrames
+    if frameSpan < opts.minSwingFrames || frameSpan > opts.maxSwingFrames
         tf = false;
         reason = "duration_out_of_range";
-    elseif ~isfinite(strideLength) || strideLength < opts.minStride
+    elseif ~isfinite(stepLength) || stepLength < opts.minStepLength
         tf = false;
-        reason = "stride_too_small";
-    elseif isfinite(opts.maxBodyDrift) && isfinite(hipTranslation) && ...
-            hipTranslation > opts.maxBodyDrift
+        reason = "step_length_too_small";
+    elseif isfinite(opts.maxHipTranslation) && isfinite(hipTranslation) && ...
+            hipTranslation > opts.maxHipTranslation
         tf = false;
-        reason = "body_drift_too_large";
+        reason = "hip_translation_too_large";
     end
 end
 
@@ -420,7 +551,7 @@ function T = buildFrameTable(frameIndex, time, coords, pointNames, angles, ...
     T.frame_index = frameIndex(:);
     T.time_s = time(:);
     T.step_index = frameStepIndex(:);
-    T.contact_event = ismember((1:frameCount).', events.contactFrames);
+    T.landing_event = ismember((1:frameCount).', events.landingFrames);
     T.lift_off_event = ismember((1:frameCount).', events.liftOffFrames);
     T.coordinate_unit = repmat(string(coordinateUnit), frameCount, 1);
     T.hip_angle_deg = angles.hip(:);
@@ -477,17 +608,20 @@ function origin = exportOrigin(coords, pointNames, opts)
 end
 
 function T = buildStepTable(payload, angles, coordinateUnit)
-    stepCount = numel(payload.startFrame);
+    stepCount = numel(payload.liftOffFrame);
     T = table();
     T.step_index = (1:stepCount).';
     T.is_valid = payload.isValid(:);
     T.invalid_reason = payload.invalidReason(:);
-    T.start_frame = payload.startFrame(:);
     T.lift_off_frame = payload.liftOffFrame(:);
-    T.end_frame = payload.endFrame(:);
-    T.step_time_s = payload.stepTime(:);
+    T.landing_frame = payload.landingFrame(:);
+    T.swing_time_s = payload.stepTime(:);
+    T.cycle_time_s = payload.cycleTime(:);
+    T.stance_time_s = payload.stanceTime(:);
+    T.cadence_per_min = payload.cadence(:);
+    T.duty_factor = payload.dutyFactor(:);
     T.coordinate_unit = repmat(string(coordinateUnit), stepCount, 1);
-    T.stride_length = payload.strideLength(:);
+    T.step_length = payload.stepLength(:);
     roleNames = ["iliac", "hip", "knee", "ankle", "foot"];
     for p = 1:numel(roleNames)
         T.(char(roleNames(p) + "_translation")) = payload.translations(:, p);
@@ -495,6 +629,12 @@ function T = buildStepTable(payload, angles, coordinateUnit)
     T.hip_rom_deg = payload.rom(:, 1);
     T.knee_rom_deg = payload.rom(:, 2);
     T.ankle_rom_deg = payload.rom(:, 3);
+    T.hip_min_deg = payload.angleMin(:, 1);
+    T.hip_max_deg = payload.angleMax(:, 1);
+    T.knee_min_deg = payload.angleMin(:, 2);
+    T.knee_max_deg = payload.angleMax(:, 2);
+    T.ankle_min_deg = payload.angleMin(:, 3);
+    T.ankle_max_deg = payload.angleMax(:, 3);
     T.global_hip_min_deg = repmat(finiteMin(angles.hip), stepCount, 1);
     T.global_hip_max_deg = repmat(finiteMax(angles.hip), stepCount, 1);
     T.global_knee_min_deg = repmat(finiteMin(angles.knee), stepCount, 1);
@@ -516,8 +656,8 @@ function T = buildSummaryTable(result, pose, coordinateUnit)
         "Detected steps";
         "Valid steps";
         "Coordinate unit";
-        "Mean step time s";
-        "Mean stride length";
+        "Mean swing time s";
+        "Mean step length";
         "Hip angle min deg";
         "Hip angle max deg";
         "Knee angle min deg";
@@ -531,8 +671,8 @@ function T = buildSummaryTable(result, pose, coordinateUnit)
         string(height(steps));
         string(sum(validRows));
         string(coordinateUnit);
-        formatNumber(finiteMean(tableColumn(steps, "step_time_s", validRows)));
-        formatNumber(finiteMean(tableColumn(steps, "stride_length", validRows)));
+        formatNumber(finiteMean(tableColumn(steps, "swing_time_s", validRows)));
+        formatNumber(finiteMean(tableColumn(steps, "step_length", validRows)));
         formatNumber(finiteMin(result.frameTable.hip_angle_deg));
         formatNumber(finiteMax(result.frameTable.hip_angle_deg));
         formatNumber(finiteMin(result.frameTable.knee_angle_deg));
