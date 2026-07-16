@@ -62,7 +62,7 @@ function state = onImageChosen(state, event, services, role)
         state.project.inputs.sources, role + "Image", role, filepath, true);
     cacheField = char(role + "Image");
     state.session.cache.(cacheField) = imageData;
-    state.project = dic_preprocess.appState.resetForNewInput(state.project);
+    state.project = dic_preprocess.editHistory.resetForNewInput(state.project);
     state = rebuildCache(state);
     state = stopEditors(state);
     state.project.parameters.previewMode = defaultPreviewMode(state);
@@ -84,7 +84,7 @@ function state = onImageCleared(state, services, role)
     state.project.inputs.sources = removeSource( ...
         state.project.inputs.sources, role);
     state.session.cache.(char(role + "Image")) = [];
-    state.project = dic_preprocess.appState.resetForNewInput(state.project);
+    state.project = dic_preprocess.editHistory.resetForNewInput(state.project);
     state = rebuildCache(state);
     state = stopEditors(state);
     state.project.parameters.previewMode = defaultPreviewMode(state);
@@ -163,7 +163,7 @@ function state = onApplyPointAlignment(state, ~, services)
     state.project = appendEditStep(state.project, ...
         "alignment", transform, [], "manual alignment");
     state.project = ...
-        dic_preprocess.appState.clearOperationDerivedState(state.project);
+        dic_preprocess.maskEditing.clearOperationDerivedState(state.project);
     state = rebuildCache(state);
     state = stopEditors(state);
     state.project.parameters.previewMode = "False-color overlay";
@@ -228,7 +228,7 @@ function state = onAutoAlign(state, ~, services)
     state.project = appendEditStep(state.project, ...
         "alignment", transform, [], "automatic alignment");
     state.project = ...
-        dic_preprocess.appState.clearOperationDerivedState(state.project);
+        dic_preprocess.maskEditing.clearOperationDerivedState(state.project);
     state = rebuildCache(state);
     state.project.parameters.previewMode = "False-color overlay";
     state.session.workflow.details = ...
@@ -285,7 +285,7 @@ function state = onApplyCropRoi(state, ~, services)
         "crop", [], rect, "crop");
     state.project.annotations.cropRect = rect;
     state.project = ...
-        dic_preprocess.appState.clearOperationDerivedState(state.project);
+        dic_preprocess.maskEditing.clearOperationDerivedState(state.project);
     state = rebuildCache(state);
     state = stopEditors(state);
     state.project.parameters.previewMode = "Current pair";
@@ -313,7 +313,7 @@ function state = onUndoEdit(state, ~, services)
     snapshot = history(end);
     history(end) = [];
     state.project.annotations.history = history;
-    state.project = dic_preprocess.appState.restoreEditSnapshot( ...
+    state.project = dic_preprocess.editHistory.restoreEditSnapshot( ...
         state.project, snapshot);
     state = rebuildCache(state);
     state = stopEditors(state);
@@ -332,7 +332,7 @@ function state = onResetToOriginals(state, ~, services)
         return;
     end
     state = pushEditHistory(state, 'reset to originals');
-    state.project = dic_preprocess.appState.resetToOriginals(state.project);
+    state.project = dic_preprocess.editHistory.resetToOriginals(state.project);
     state = rebuildCache(state);
     state = stopEditors(state);
     state.project.parameters.previewMode = "Current pair";
@@ -447,7 +447,7 @@ function state = applyBoundary(state, services, operation)
     end
     state = pushMaskHistory(state, operation + " boundary");
     state.project.annotations.maskImage = ...
-        dic_preprocess.appState.applyBoundaryToMask( ...
+        dic_preprocess.maskEditing.applyBoundaryToMask( ...
         state.project.annotations.maskImage, ...
         state.session.cache.currentReferenceImage, boundaryMask, operation);
     state.project.parameters.previewMode = "ROI mask";
@@ -473,7 +473,7 @@ function state = onUndoMaskEdit(state, ~, services)
     snapshot = history(end);
     history(end) = [];
     state.project.annotations.maskHistory = history;
-    state.project = dic_preprocess.appState.restoreMaskSnapshot( ...
+    state.project = dic_preprocess.maskEditing.restoreMaskSnapshot( ...
         state.project, snapshot);
     state.project.parameters.previewMode = "ROI mask";
     state = clearResults(state);
@@ -534,12 +534,12 @@ function state = onSaveMask(state, ~, services)
 end
 
 function state = pushEditHistory(state, description)
-    state.project = dic_preprocess.appState.appendEditHistory( ...
+    state.project = dic_preprocess.editHistory.appendEditHistory( ...
         state.project, description);
 end
 
 function state = pushMaskHistory(state, description)
-    state.project = dic_preprocess.appState.appendMaskHistory( ...
+    state.project = dic_preprocess.maskEditing.appendMaskHistory( ...
         state.project, description);
 end
 
@@ -579,14 +579,14 @@ function state = stopEditors(state)
 end
 
 function tf = alertIfMissingPair(state, services, message, titleText)
-    tf = ~dic_preprocess.appState.hasImagePair(state.session.cache);
+    tf = ~dic_preprocess.sourceFiles.hasImagePair(state.session.cache);
     if tf
         services.dialogs.alert(message, titleText);
     end
 end
 
 function value = defaultPreviewMode(state)
-    if ~dic_preprocess.appState.hasImagePair(state.session.cache)
+    if ~dic_preprocess.sourceFiles.hasImagePair(state.session.cache)
         value = "Current pair";
     else
         value = "False-color overlay";

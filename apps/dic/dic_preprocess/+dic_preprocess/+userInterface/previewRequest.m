@@ -39,7 +39,7 @@ function request = previewRequest(state, previewValue)
                 request.bottomImage = cache.currentMovingImage;
                 request.bottomTitle = previewValue;
             elseif previewValue == "False-color overlay" && ...
-                    dic_preprocess.appState.hasImagePair(cache)
+                    dic_preprocess.sourceFiles.hasImagePair(cache)
                 request.bottomImage = dic_preprocess.analysisRun.makeFalseColorOverlay( ...
                     cache.currentReferenceImage, cache.currentMovingImage);
                 request.bottomTitle = previewValue;

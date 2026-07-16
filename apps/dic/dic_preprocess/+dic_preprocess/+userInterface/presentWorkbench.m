@@ -7,7 +7,7 @@ function view = presentWorkbench(state)
     annotations = project.annotations;
     mode = string(state.session.workflow.mode);
     hasReference = ~isempty(cache.currentReferenceImage);
-    hasPair = dic_preprocess.appState.hasImagePair(cache);
+    hasPair = dic_preprocess.sourceFiles.hasImagePair(cache);
     matching = mode == "matching";
     cropping = mode == "crop";
     masking = mode == "mask";
@@ -129,7 +129,7 @@ function request = previewForMode(state, mode)
             maskImage = [];
         end
     end
-    maskImage = dic_preprocess.appState.maskCanvas(maskImage, referenceImage);
+    maskImage = dic_preprocess.maskEditing.maskCanvas(maskImage, referenceImage);
     request = struct( ...
         "topImage", referenceImage, ...
         "topTitle", "Current reference", ...

@@ -1,4 +1,4 @@
-% Expected caller: DIC preprocess V2 actions/presentation and unit tests.
+% Expected caller: DIC preprocess actions/presentation and unit tests.
 % Input is the rebuildable session image cache; output reports a current pair.
 
 function tf = hasImagePair(cache)

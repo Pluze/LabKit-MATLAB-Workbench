@@ -161,3 +161,9 @@ rebuilds decoded source images and replays applied alignment/crop steps because
 those images are transient caches rather than project data. The App requires
 `labkit.ui >=7 <8` and `labkit.image >=2 <3`; busy-state, managed interactions,
 and portable-reference serialization remain framework-private.
+
+App-owned state operations are grouped by capability: `editHistory` owns
+align/crop undo and reset semantics, `maskEditing` owns mask canvas and mask
+undo semantics, and `sourceFiles.hasImagePair` reports whether the transient
+image cache is ready. There is no generic app-state service or alternate
+lifecycle layer.

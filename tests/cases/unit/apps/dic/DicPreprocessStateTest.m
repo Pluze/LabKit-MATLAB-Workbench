@@ -9,7 +9,7 @@ classdef DicPreprocessStateTest < matlab.unittest.TestCase
                 project.annotations.editSteps = editStep("crop", [], ...
                     [k k 4 4], "step" + k);
                 [project, appended] = ...
-                    dic_preprocess.appState.appendEditHistory( ...
+                    dic_preprocess.editHistory.appendEditHistory( ...
                     project, "step" + k, 2);
                 testCase.verifyTrue(appended);
             end
@@ -27,7 +27,7 @@ classdef DicPreprocessStateTest < matlab.unittest.TestCase
             for k = 1:4
                 project.annotations.maskImage = uint8(k);
                 project.annotations.maskPoints = [k k+1];
-                project = dic_preprocess.appState.appendMaskHistory( ...
+                project = dic_preprocess.maskEditing.appendMaskHistory( ...
                     project, "mask" + k, 3);
             end
 
@@ -41,7 +41,7 @@ classdef DicPreprocessStateTest < matlab.unittest.TestCase
         function resetForNewInputClearsDurableDerivedWork(testCase)
             setupLabKitTestPath();
             project = populatedProject();
-            reset = dic_preprocess.appState.resetForNewInput(project);
+            reset = dic_preprocess.editHistory.resetForNewInput(project);
 
             testCase.verifyEqual(reset.inputs.sources, project.inputs.sources);
             testCase.verifyEmpty(reset.annotations.editSteps);
@@ -54,11 +54,11 @@ classdef DicPreprocessStateTest < matlab.unittest.TestCase
         function resetToOriginalsCanBeUndoneFromStepSnapshot(testCase)
             setupLabKitTestPath();
             project = populatedProject();
-            [project, ~] = dic_preprocess.appState.appendEditHistory( ...
+            [project, ~] = dic_preprocess.editHistory.appendEditHistory( ...
                 project, "reset to originals");
-            reset = dic_preprocess.appState.resetToOriginals(project);
+            reset = dic_preprocess.editHistory.resetToOriginals(project);
             snapshot = reset.annotations.history(end);
-            restored = dic_preprocess.appState.restoreEditSnapshot( ...
+            restored = dic_preprocess.editHistory.restoreEditSnapshot( ...
                 reset, snapshot);
 
             testCase.verifyEmpty(reset.annotations.editSteps);
@@ -75,7 +75,7 @@ classdef DicPreprocessStateTest < matlab.unittest.TestCase
                 "maskImage", uint8([255 0]), ...
                 "maskPoints", [5 6; 7 8], ...
                 "description", "mask");
-            project = dic_preprocess.appState.restoreMaskSnapshot( ...
+            project = dic_preprocess.maskEditing.restoreMaskSnapshot( ...
                 project, snapshot);
 
             testCase.verifyEqual(project.annotations.maskImage, uint8([255 0]));
@@ -87,18 +87,18 @@ classdef DicPreprocessStateTest < matlab.unittest.TestCase
             project = baseProject();
             cache = dic_preprocess.analysisRun.replayEditSteps( ...
                 uint8(1), [], project.annotations.editSteps);
-            testCase.verifyFalse(dic_preprocess.appState.hasImagePair(cache));
+            testCase.verifyFalse(dic_preprocess.sourceFiles.hasImagePair(cache));
             cache.movingImage = uint8(2);
             cache.currentMovingImage = uint8(2);
-            testCase.verifyTrue(dic_preprocess.appState.hasImagePair(cache));
+            testCase.verifyTrue(dic_preprocess.sourceFiles.hasImagePair(cache));
             testCase.verifyFalse(isfield(project.inputs, 'referenceImage'));
         end
 
         function maskCanvasInitializesFromReferenceSize(testCase)
             setupLabKitTestPath();
-            emptyCanvas = dic_preprocess.appState.maskCanvas( ...
+            emptyCanvas = dic_preprocess.maskEditing.maskCanvas( ...
                 [], zeros(3, 4, 3, 'uint8'));
-            existingCanvas = dic_preprocess.appState.maskCanvas( ...
+            existingCanvas = dic_preprocess.maskEditing.maskCanvas( ...
                 uint8([0 255]), zeros(3, 4));
 
             testCase.verifyEqual(emptyCanvas, zeros(3, 4, 'uint8'));
@@ -111,9 +111,9 @@ classdef DicPreprocessStateTest < matlab.unittest.TestCase
             boundary = uint8([0 255 0 0; 0 255 255 0; 0 0 0 0]);
             existing = uint8([255 0 0 0; 0 255 0 0; 0 0 0 0]);
 
-            added = dic_preprocess.appState.applyBoundaryToMask([], ...
+            added = dic_preprocess.maskEditing.applyBoundaryToMask([], ...
                 reference, boundary, 'add');
-            subtracted = dic_preprocess.appState.applyBoundaryToMask(existing, ...
+            subtracted = dic_preprocess.maskEditing.applyBoundaryToMask(existing, ...
                 reference, boundary, 'subtract');
 
             testCase.verifyEqual(added, boundary);

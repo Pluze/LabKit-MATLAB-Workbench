@@ -7,7 +7,7 @@ function project = resetForNewInput(project)
     project.annotations.cropRect = [];
     steps = project.annotations.editSteps;
     project.annotations.editSteps = steps([]);
-    project = dic_preprocess.appState.clearOperationDerivedState(project);
+    project = dic_preprocess.maskEditing.clearOperationDerivedState(project);
     history = project.annotations.history;
     project.annotations.history = history([]);
 end

@@ -1,4 +1,4 @@
-% Expected caller: DIC preprocess V2 actions and unit tests. Input/output is the
+% Expected caller: DIC preprocess actions and unit tests. Input/output is the
 % canonical durable project; mask annotations invalidated by pair edits clear.
 
 function project = clearOperationDerivedState(project)

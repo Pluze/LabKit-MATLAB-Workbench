@@ -1,4 +1,4 @@
-% Expected caller: DIC preprocess runner and direct unit tests. Inputs are the
+% Expected caller: DIC preprocess actions/presenter and unit tests. Inputs are the
 % current mask image and reference image. Output is the active uint8 mask canvas,
 % initialized to the reference image height and width when empty. Side effects:
 % none.

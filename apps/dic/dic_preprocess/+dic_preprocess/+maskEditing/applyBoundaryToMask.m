@@ -5,7 +5,7 @@
 function maskImage = applyBoundaryToMask(maskImage, referenceImage, boundaryMask, operation)
 %APPLYBOUNDARYTOMASK Add or subtract a boundary from the DIC ROI mask canvas.
 
-    maskImage = dic_preprocess.appState.maskCanvas(maskImage, referenceImage);
+    maskImage = dic_preprocess.maskEditing.maskCanvas(maskImage, referenceImage);
     if strcmp(string(operation), "add")
         maskImage = max(maskImage, boundaryMask);
     else

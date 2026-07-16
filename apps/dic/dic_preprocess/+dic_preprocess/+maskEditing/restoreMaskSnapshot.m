@@ -1,4 +1,4 @@
-% Expected caller: DIC preprocess V2 actions and unit tests. Inputs are the
+% Expected caller: DIC preprocess actions and unit tests. Inputs are the
 % canonical durable project and one mask snapshot; output restores annotations.
 
 function project = restoreMaskSnapshot(project, snapshot)

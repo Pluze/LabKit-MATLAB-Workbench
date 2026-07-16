@@ -1,4 +1,4 @@
-% Expected callers: DIC preprocess V2 actions and unit tests. Input is the
+% Expected callers: DIC preprocess actions and unit tests. Input is the
 % canonical durable project, description, and optional undo limit. Output
 % appends a project-owned mask snapshot.
 
