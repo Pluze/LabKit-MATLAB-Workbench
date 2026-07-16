@@ -11,14 +11,15 @@ scope: historical project evolution
 
 ## Context
 
-- Maintainers get a concrete pre-publication release signal that covers all
-  supported automated test projects, and GUI CI should fail on contract drift
-  rather than platform layout rounding.
+Release-candidate tags did not yet require one explicit summary gate over the
+headless, coverage, and GUI jobs. Some GUI assertions also depended on exact
+pixel ordering or timing that varied across CI display backends.
 
 ## Decision and rationale
 
-Treat this as one coherent evolution record because the listed versions and
-evidence changed together to address the stated user or maintainer need.
+Require every release test job before publication, while testing semantic grid
+structure instead of platform-specific pixel rounding. Increase the shared GUI
+idle allowance so slower hosted displays can finish registered UI work.
 
 ## Changes
 
@@ -33,9 +34,9 @@ evidence changed together to address the stated user or maintainer need.
 
 ## User and data impact
 
-- Maintainers get a concrete pre-publication release signal that covers all
-  supported automated test projects, and GUI CI should fail on contract drift
-  rather than platform layout rounding.
+Published release candidates gained a single pass/fail validation signal.
+Application behavior and data formats did not change; the GUI suite became less
+sensitive to harmless platform layout differences.
 
 ## Compatibility and migration
 
@@ -43,9 +44,9 @@ evidence changed together to address the stated user or maintainer need.
 
 ## Validation
 
-Historical test commands were not recorded consistently. The carrying
-mainline commits and release tags below are the authoritative evidence;
-current guardrails protect the surviving contracts.
+The carrying commit updated CI policy tests, declarative UI tests, launcher GUI
+tests, and shared wait behavior. The exact historical local command was not
+recorded.
 
 ## Evidence
 
@@ -53,4 +54,5 @@ current guardrails protect the surviving contracts.
 
 ## Known limitations and follow-up
 
-This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+The gate covers automated checks only. Interactive workflow feel and scientific
+visual review remain outside hosted CI.

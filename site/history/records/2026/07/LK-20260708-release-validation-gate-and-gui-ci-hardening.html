@@ -29,12 +29,9 @@ type: ci
 compatibility: compatible
 scope: historical project evolution</code></pre>
 <h2 id="context">Context</h2>
-<ul>
-<li>Maintainers get a concrete pre-publication release signal that covers all</li>
-</ul>
-<p>supported automated test projects, and GUI CI should fail on contract drift rather than platform layout rounding.</p>
+<p>Release-candidate tags did not yet require one explicit summary gate over the headless, coverage, and GUI jobs. Some GUI assertions also depended on exact pixel ordering or timing that varied across CI display backends.</p>
 <h2 id="decision-and-rationale">Decision and rationale</h2>
-<p>Treat this as one coherent evolution record because the listed versions and evidence changed together to address the stated user or maintainer need.</p>
+<p>Require every release test job before publication, while testing semantic grid structure instead of platform-specific pixel rounding. Increase the shared GUI idle allowance so slower hosted displays can finish registered UI work.</p>
 <h2 id="changes">Changes</h2>
 <ul>
 <li>Project validation workflow, no component version change.</li>
@@ -52,22 +49,19 @@ scope: historical project evolution</code></pre>
 </ul>
 <p>finish registered UI work.</p>
 <h2 id="user-and-data-impact">User and data impact</h2>
-<ul>
-<li>Maintainers get a concrete pre-publication release signal that covers all</li>
-</ul>
-<p>supported automated test projects, and GUI CI should fail on contract drift rather than platform layout rounding.</p>
+<p>Published release candidates gained a single pass/fail validation signal. Application behavior and data formats did not change; the GUI suite became less sensitive to harmless platform layout differences.</p>
 <h2 id="compatibility-and-migration">Compatibility and migration</h2>
 <ul>
 <li>No known manual migration.</li>
 </ul>
 <h2 id="validation">Validation</h2>
-<p>Historical test commands were not recorded consistently. The carrying mainline commits and release tags below are the authoritative evidence; current guardrails protect the surviving contracts.</p>
+<p>The carrying commit updated CI policy tests, declarative UI tests, launcher GUI tests, and shared wait behavior. The exact historical local command was not recorded.</p>
 <h2 id="evidence">Evidence</h2>
 <ul>
 <li>Mainline commit <code>f359518</code>.</li>
 </ul>
 <h2 id="known-limitations-and-follow-up">Known limitations and follow-up</h2>
-<p>This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.</p>
+<p>The gate covers automated checks only. Interactive workflow feel and scientific visual review remain outside hosted CI.</p>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>
 </main>
 </div>

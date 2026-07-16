@@ -11,13 +11,16 @@ scope: historical project evolution
 
 ## Context
 
-- This is the period where LabKit changed from loose scripts into an app
-  workbench with a small reusable foundation.
+LabKit began as a collection of MATLAB scripts and GUI entry points. The first
+release series established independent apps, a launcher, and reusable code for
+file parsing and common UI behavior.
 
 ## Decision and rationale
 
-Treat this as one coherent evolution record because the listed versions and
-evidence changed together to address the stated user or maintainer need.
+Organize the imported workflows as separately launchable apps instead of one
+monolithic analysis program. Share only mechanics that were useful across
+apps, while keeping experiment-specific calculations and outputs with their
+owning workflow.
 
 ## Changes
 
@@ -34,8 +37,9 @@ evidence changed together to address the stated user or maintainer need.
 
 ## User and data impact
 
-- This is the period where LabKit changed from loose scripts into an app
-  workbench with a small reusable foundation.
+Users gained named app commands and a launcher instead of opening unrelated
+legacy scripts manually. Existing laboratory files remained external inputs;
+the workbench did not convert them into a central LabKit data store.
 
 ## Compatibility and migration
 
@@ -45,9 +49,8 @@ evidence changed together to address the stated user or maintainer need.
 
 ## Validation
 
-Historical test commands were not recorded consistently. The carrying
-mainline commits and release tags below are the authoritative evidence;
-current guardrails protect the surviving contracts.
+Historical test commands were not recorded consistently. The commit range and
+release tags below identify the code that was shipped during this period.
 
 ## Evidence
 
@@ -57,4 +60,6 @@ current guardrails protect the surviving contracts.
 
 ## Known limitations and follow-up
 
-This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+Per-component version files and structured validation records were introduced
+later, so exact app-by-app changes in this period must be traced through the
+listed tags and commits.

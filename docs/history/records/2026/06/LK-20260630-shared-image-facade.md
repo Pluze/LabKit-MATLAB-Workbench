@@ -17,13 +17,16 @@ scope: historical project evolution
 
 ## Context
 
-- Image app behavior became more consistent, and reusable image IO stopped
-  living inside individual GUI workflows.
+Batch Crop, Focus Stack, Image Enhance, and Image Match each carried similar
+code for supported extensions, path normalization, image reads, preview sizing,
+and basic enhancement. Small differences between those copies produced
+inconsistent file and display behavior.
 
 ## Decision and rationale
 
-Treat this as one coherent evolution record because the listed versions and
-evidence changed together to address the stated user or maintainer need.
+Introduce `labkit.image` for GUI-free operations with neutral meaning, then
+move the image apps to that shared API. Keep crop geometry, focus fusion,
+matching, protected enhancement, and export schemas in their respective apps.
 
 ## Changes
 
@@ -37,8 +40,9 @@ evidence changed together to address the stated user or maintainer need.
 
 ## User and data impact
 
-- Image app behavior became more consistent, and reusable image IO stopped
-  living inside individual GUI workflows.
+Supported image selection, display-name handling, preview normalization, and
+common enhancement primitives became consistent across the migrated apps.
+Scientific app outputs and source files did not change format.
 
 ## Compatibility and migration
 
@@ -46,9 +50,9 @@ No manual migration was recorded for this historical change.
 
 ## Validation
 
-Historical test commands were not recorded consistently. The carrying
-mainline commits and release tags below are the authoritative evidence;
-current guardrails protect the surviving contracts.
+The carrying commit added a dedicated `LabKitImageFacadeTest` suite and updated
+app compatibility, package-boundary, public-surface, and focused image-app
+tests. The exact historical command was not recorded.
 
 ## Evidence
 
@@ -56,4 +60,6 @@ current guardrails protect the surviving contracts.
 
 ## Known limitations and follow-up
 
-This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+The first facade release covered common MATLAB image formats and basic
+processing only. Thermal decoding and workflow-specific algorithms remained
+outside `labkit.image`.

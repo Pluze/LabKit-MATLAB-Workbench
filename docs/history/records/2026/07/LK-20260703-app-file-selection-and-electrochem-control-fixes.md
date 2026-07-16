@@ -22,13 +22,15 @@ scope: historical project evolution
 
 ## Context
 
-- Multi-file workflows stopped losing appended selections, and electrochem app
-  controls became less misleading.
+Adding files to an existing multi-file session could replace or select the
+wrong entry in several apps. CIC, CSC, and VT Resistance also exposed manual
+plot controls that no longer matched their intended result-review workflow.
 
 ## Decision and rationale
 
-Treat this as one coherent evolution record because the listed versions and
-evidence changed together to address the stated user or maintainer need.
+Preserve the complete file list when new selections are appended and select a
+newly added item predictably. Remove obsolete electrochem controls instead of
+keeping buttons whose effect was ambiguous or redundant.
 
 ## Changes
 
@@ -42,8 +44,9 @@ evidence changed together to address the stated user or maintainer need.
 
 ## User and data impact
 
-- Multi-file workflows stopped losing appended selections, and electrochem app
-  controls became less misleading.
+Users could add another batch without losing files already loaded, across the
+listed electrochem and image apps. The electrochem workbenches became simpler;
+calculations and exported result schemas were unchanged.
 
 ## Compatibility and migration
 
@@ -51,9 +54,9 @@ No manual migration was recorded for this historical change.
 
 ## Validation
 
-Historical test commands were not recorded consistently. The carrying
-mainline commits and release tags below are the authoritative evidence;
-current guardrails protect the surviving contracts.
+The file-selection commit added GUI regression coverage to every affected app.
+The control-removal commit updated the three electrochem GUI workflows and
+shared test helpers. Exact historical commands were not recorded.
 
 ## Evidence
 
@@ -61,4 +64,5 @@ current guardrails protect the surviving contracts.
 
 ## Known limitations and follow-up
 
-This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+The change covered app-level append handling. Later framework work unified the
+native file-selection behavior across platforms.

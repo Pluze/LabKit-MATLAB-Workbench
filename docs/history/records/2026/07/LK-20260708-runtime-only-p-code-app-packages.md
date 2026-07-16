@@ -11,14 +11,15 @@ scope: historical project evolution
 
 ## Context
 
-- P-code distributions no longer expose or depend on launcher behavior that is
-  source-checkout oriented, including launcher version/date metadata and
-  follow-on packaging actions.
+Single-app P-code packages included a P-coded copy of the full launcher even
+though their purpose was to run one protected app. That exposed maintenance and
+packaging actions that were meaningful only in a source checkout.
 
 ## Decision and rationale
 
-Treat this as one coherent evolution record because the listed versions and
-evidence changed together to address the stated user or maintainer need.
+Make P-code output a minimal runtime package with a direct app entry script.
+Keep the full launcher in source and source-package distributions, where its
+installation, profiling, and packaging tools are available.
 
 ## Changes
 
@@ -33,9 +34,9 @@ evidence changed together to address the stated user or maintainer need.
 
 ## User and data impact
 
-- P-code distributions no longer expose or depend on launcher behavior that is
-  source-checkout oriented, including launcher version/date metadata and
-  follow-on packaging actions.
+Recipients of a P-code package start the protected app with
+`run_<app_command>` and no longer see unrelated launcher maintenance actions.
+The protected app and its data formats are unchanged.
 
 ## Compatibility and migration
 
@@ -45,9 +46,9 @@ evidence changed together to address the stated user or maintainer need.
 
 ## Validation
 
-Historical test commands were not recorded consistently. The carrying
-mainline commits and release tags below are the authoritative evidence;
-current guardrails protect the surviving contracts.
+The carrying commit expanded `PackageLabKitAppToolTest` for runtime-only package
+contents and updated the generated package instructions. The exact historical
+test command was not recorded.
 
 ## Evidence
 
@@ -55,4 +56,6 @@ current guardrails protect the surviving contracts.
 
 ## Known limitations and follow-up
 
-This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+P-code packages intentionally omit source-oriented launcher features. Users who
+need installation or packaging tools should use a source or source-package
+distribution.

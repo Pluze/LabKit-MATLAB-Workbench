@@ -29,12 +29,9 @@ type: feat
 compatibility: compatible
 scope: historical project evolution</code></pre>
 <h2 id="context">Context</h2>
-<ul>
-<li>This is the period where LabKit changed from loose scripts into an app</li>
-</ul>
-<p>workbench with a small reusable foundation.</p>
+<p>LabKit began as a collection of MATLAB scripts and GUI entry points. The first release series established independent apps, a launcher, and reusable code for file parsing and common UI behavior.</p>
 <h2 id="decision-and-rationale">Decision and rationale</h2>
-<p>Treat this as one coherent evolution record because the listed versions and evidence changed together to address the stated user or maintainer need.</p>
+<p>Organize the imported workflows as separately launchable apps instead of one monolithic analysis program. Share only mechanics that were useful across apps, while keeping experiment-specific calculations and outputs with their owning workflow.</p>
 <h2 id="changes">Changes</h2>
 <ul>
 <li>Release tags <code>v1.0</code>, <code>v2.0</code>, legacy <code>2.1</code>, <code>v2.2.0</code>, <code>v2.3.0</code>, <code>v2.3.1</code>,</li>
@@ -51,17 +48,14 @@ scope: historical project evolution</code></pre>
 </ul>
 <p>logging, launcher/project metadata, release updater support, and reproducible release-asset rules.</p>
 <h2 id="user-and-data-impact">User and data impact</h2>
-<ul>
-<li>This is the period where LabKit changed from loose scripts into an app</li>
-</ul>
-<p>workbench with a small reusable foundation.</p>
+<p>Users gained named app commands and a launcher instead of opening unrelated legacy scripts manually. Existing laboratory files remained external inputs; the workbench did not convert them into a central LabKit data store.</p>
 <h2 id="compatibility-and-migration">Compatibility and migration</h2>
 <ul>
 <li>Component/app version files did not exist yet, so this era is tracked by</li>
 </ul>
 <p>release tags, commit ranges, and workflow milestones rather than per-app version numbers.</p>
 <h2 id="validation">Validation</h2>
-<p>Historical test commands were not recorded consistently. The carrying mainline commits and release tags below are the authoritative evidence; current guardrails protect the surviving contracts.</p>
+<p>Historical test commands were not recorded consistently. The commit range and release tags below identify the code that was shipped during this period.</p>
 <h2 id="evidence">Evidence</h2>
 <ul>
 <li>Main history from <code>5973bde0</code> through <code>a7e7dfb1</code>.</li>
@@ -69,7 +63,7 @@ scope: historical project evolution</code></pre>
 </ul>
 <p><code>v2.3.2</code>, <code>v2.3.3</code>.</p>
 <h2 id="known-limitations-and-follow-up">Known limitations and follow-up</h2>
-<p>This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.</p>
+<p>Per-component version files and structured validation records were introduced later, so exact app-by-app changes in this period must be traced through the listed tags and commits.</p>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>
 </main>
 </div>

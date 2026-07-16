@@ -13,25 +13,31 @@ scope: historical project evolution
 
 ## Context
 
-- The image enhancement apps gained a more deliberate workflow boundary before
-  later image-facade adoption.
+The existing appearance adjustments could change a subject together with its
+background. Image Enhance and Image Match needed modes that protected subject
+detail while correcting bright backgrounds and tone.
 
 ## Decision and rationale
 
-Treat this as one coherent evolution record because the listed versions and
-evidence changed together to address the stated user or maintainer need.
+Add subject-preserving enhancement and protected tone matching as explicit
+methods with their own parameters, descriptions, and tests. Keep these methods
+inside the image apps because they encode workflow-specific decisions rather
+than generic image primitives.
 
 ## Changes
 
 - Image Enhance `1.2.2 -> 1.3.0`
 - Image Match `1.2.1 -> 1.3.0`
 
-- Added protected image enhancement workflows.
+- Added Subject-preserving enhance to Image Enhance.
+- Added Protected tone to Image Match.
+- Added calculation and GUI coverage for both methods.
 
 ## User and data impact
 
-- The image enhancement apps gained a more deliberate workflow boundary before
-  later image-facade adoption.
+Users could brighten or normalize a background with less change to the main
+subject. The new methods were optional; existing histories and other matching
+methods retained their previous behavior.
 
 ## Compatibility and migration
 
@@ -39,9 +45,9 @@ No manual migration was recorded for this historical change.
 
 ## Validation
 
-Historical test commands were not recorded consistently. The carrying
-mainline commits and release tags below are the authoritative evidence;
-current guardrails protect the surviving contracts.
+The carrying commit added focused Image Enhance and Image Match unit tests and
+updated both GUI workflow tests. The exact historical test command was not
+recorded.
 
 ## Evidence
 
@@ -49,4 +55,5 @@ current guardrails protect the surviving contracts.
 
 ## Known limitations and follow-up
 
-This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+The protected methods reduce unwanted subject changes but cannot infer semantic
+foreground perfectly. Their result still requires visual review.

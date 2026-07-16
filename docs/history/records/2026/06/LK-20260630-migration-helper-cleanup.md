@@ -18,13 +18,16 @@ scope: historical project evolution
 
 ## Context
 
-- Maintainers no longer need to route through temporary migration helpers to
-  understand these workflows.
+Several apps still split one small decision across multiple temporary helper
+files created during earlier package migrations. That made simple state and
+preview behavior harder to follow without creating a reusable API.
 
 ## Decision and rationale
 
-Treat this as one coherent evolution record because the listed versions and
-evidence changed together to address the stated user or maintainer need.
+Consolidate related values behind one clearly named operation and delete
+pass-through helpers whose only purpose was reducing file length. Preserve the
+visible app behavior while making each calculation or state summary traceable
+from its caller.
 
 ## Changes
 
@@ -36,8 +39,9 @@ evidence changed together to address the stated user or maintainer need.
 
 ## User and data impact
 
-- Maintainers no longer need to route through temporary migration helpers to
-  understand these workflows.
+No workflow or result format changed. The cleanup reduced internal indirection
+in Image Enhance export, Batch Crop scale summaries, RHS Preview window bounds,
+and a small set of DIC/electrochem helpers.
 
 ## Compatibility and migration
 
@@ -45,9 +49,8 @@ No manual migration was recorded for this historical change.
 
 ## Validation
 
-Historical test commands were not recorded consistently. The carrying
-mainline commits and release tags below are the authoritative evidence;
-current guardrails protect the surviving contracts.
+The carrying commits added or updated focused tests for each consolidated
+operation. The exact combined historical test command was not recorded.
 
 ## Evidence
 
@@ -55,4 +58,5 @@ current guardrails protect the surviving contracts.
 
 ## Known limitations and follow-up
 
-This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+This was a behavior-preserving cleanup. Later workflow-first packages replaced
+some of the package names shown in the historical commits.
