@@ -1,20 +1,58 @@
-% Expected caller: response_review_stats.run or tests. Input is an aligned
-% segment model and metric options. Output is a manual-segment metric table.
-% No side effects.
 function metrics = measureAlignedSegments(aligned, opts)
 %MEASUREALIGNEDSEGMENTS Measure peak-to-peak, noise, and SNR per segment.
+%
+% Usage:
 %   metrics = response_review_stats.analysisRun.measureAlignedSegments(aligned)
-%   accepts the model from alignSegments. opts may contain
-%   baselineWindowSec (default [0.007 0.009]), noiseWindowSec (defaults to the
-%   baseline), and measurementWindowSec (default all aligned samples).
+%   metrics = response_review_stats.analysisRun.measureAlignedSegments( ...
+%       aligned, opts)
 %
-%   The output table reports segment identity, window limits, positive and
-%   negative extrema/times, PeakToPeak, NoiseRMS, and SNR_dB. Baseline mean is
-%   subtracted before measurement and non-finite values are omitted. Windows
-%   with no usable samples produce NaN metrics rather than invented values.
+% Description:
+%   Baseline-corrects every aligned trace, measures its positive and negative
+%   extrema, and estimates baseline noise and peak-to-peak SNR. Each segment is
+%   measured independently and produces one output row. Peaks use only finite
+%   samples; NaN samples are omitted from baseline and noise means.
 %
-%   See also response_review_stats.analysisRun.alignSegments,
-%   response_review_stats.analysisRun.summarizeMetrics.
+% Inputs:
+%   aligned - Structure returned by
+%       response_review_stats.analysisRun.alignSegments. timeSec is G-by-1,
+%       values is G-by-N, and segmentNames contains N names.
+%   opts - Optional scalar structure containing the measurement windows below.
+%
+% Options:
+%   baselineWindowSec - Inclusive [start end] interval in aligned seconds used
+%       to calculate and subtract the baseline mean. Default: [0.007 0.009].
+%   noiseWindowSec - Inclusive interval used for noise RMS after baseline
+%       subtraction. Default: baselineWindowSec.
+%   measurementWindowSec - Inclusive interval used for positive and negative
+%       peaks. Empty input uses all aligned samples. Default: [].
+%
+% Calculations:
+%   PeakToPeak = Peak1Value-Peak2Value, where Peak1 is the finite maximum and
+%   Peak2 is the finite minimum in the measurement window. NoiseRMS is the root
+%   mean square deviation from the finite noise-window mean. When NoiseRMS is
+%   positive and PeakToPeak is finite, SNR_dB is
+%   20*log10(abs(PeakToPeak)/NoiseRMS). A window without usable samples leaves
+%   its metrics as NaN. A missing baseline also makes that segment's corrected
+%   trace and downstream measurements NaN.
+%
+% Outputs:
+%   metrics - N-row table with SegmentName, BaselineStart_s, BaselineEnd_s,
+%       PeakToPeak, Peak1Time_s, Peak1Value, Peak2Time_s, Peak2Value,
+%       NoiseStart_s, NoiseEnd_s, NoiseRMS, and SNR_dB columns.
+%
+% Example:
+%   aligned = struct("timeSec", (0:0.001:0.012).', ...
+%       "values", zeros(13, 1), "segmentNames", "response", "status", "ok");
+%   aligned.values(7) = 2;
+%   aligned.values(11) = -1;
+%   opts = struct("baselineWindowSec", [0 0.002], ...
+%       "noiseWindowSec", [0 0.002]);
+%   metrics = response_review_stats.analysisRun.measureAlignedSegments( ...
+%       aligned, opts);
+%   assert(metrics.PeakToPeak == 3)
+%
+% See also response_review_stats.analysisRun.alignSegments,
+%   response_review_stats.analysisRun.summarizeMetrics
 
     if nargin < 2 || isempty(opts)
         opts = struct();

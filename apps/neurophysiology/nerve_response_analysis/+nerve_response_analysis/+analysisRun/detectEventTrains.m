@@ -1,21 +1,103 @@
-% Expected caller: nerve_response_analysis.analysisRun.analyzeRecording or tests.
-% Inputs are one time vector, one event-source signal, and optional analysis
-% event-detection options. Outputs are event and train tables. No side effects.
 function [events, trains] = detectEventTrains(timeSec, signal, opts)
 %DETECTEVENTTRAINS Detect pulse candidates and group them into trains.
-%   [events, trains] =
-%   nerve_response_analysis.analysisRun.detectEventTrains(timeSec, signal)
-%   accepts equal-length numeric vectors in seconds and signal units. opts can
-%   supply sourceId, stdMultiplier, minScore, minPeakDistanceSec,
-%   groupGapSec, minDetectedPulses, maxTrainDurationSec, isolationWindowSec,
-%   requireIsolation, and stimShiftSec, directly or through eventDetection.
 %
-%   Detection scores the absolute first difference, estimates robust noise,
-%   keeps separated local maxima, shifts their reported physical times, and
-%   groups candidates by temporal policy. Empty input/no candidates returns
-%   stable empty tables. Length mismatch throws EventSizeMismatch.
+% Usage:
+%   [events, trains] = ...
+%       nerve_response_analysis.analysisRun.detectEventTrains(timeSec, signal)
+%   [events, trains] = ...
+%       nerve_response_analysis.analysisRun.detectEventTrains( ...
+%       timeSec, signal, opts)
 %
-%   See also nerve_response_analysis.analysisRun.measureCapMetrics.
+% Description:
+%   Detects abrupt signal transitions and groups nearby candidates into pulse
+%   trains. Missing signal samples are linearly interpolated before the absolute
+%   first difference is calculated. Candidate peaks must exceed both a robust
+%   noise threshold and an optional absolute score, and nearby candidates are
+%   reduced to the one with the larger score. Reported event times may then be
+%   shifted to compensate for the delay between a derivative peak and physical
+%   stimulus onset.
+%
+% Inputs:
+%   timeSec - Numeric sample-time vector in seconds.
+%   signal - Numeric event-source vector with the same number of samples as
+%       timeSec. Units are arbitrary but must be consistent with minScore.
+%   opts - Optional scalar structure. Options may be supplied directly. A
+%       protocol-style structure may instead place source definitions and train
+%       policy under opts.eventDetection.
+%
+% Options:
+%   sourceId - Text copied to event and train source columns. Default: the first
+%       derivative source id in eventDetection.sources, or "analog_derivative".
+%   stdMultiplier - Multiplier applied to robust score noise. A derivative
+%       source's threshold.multiplier takes precedence. Default: 2.
+%   minScore - Absolute lower bound for the derivative score. The effective
+%       threshold is max(minScore, stdMultiplier*noise). Default: 0.
+%   minPeakDistanceSec - Minimum separation between retained candidates. A
+%       derivative source's value takes precedence. Default: 0.005 seconds.
+%   groupGapSec - A gap larger than this value starts a new train. Supply it in
+%       opts.train or opts.eventDetection.train. Default: 0.100 seconds.
+%   minDetectedPulses - Minimum pulse count for a valid train. Default: 4.
+%   maxTrainDurationSec - Maximum first-to-last event duration for a valid
+%       train. Default: 0.060 seconds.
+%   isolationWindowSec - Minimum preceding and following inter-train gaps for
+%       isIsolated=true. Missing neighboring trains imply an infinite gap.
+%       Default: 0.500 seconds.
+%   requireIsolation - When true, isolation is also required for train validity.
+%       Default: false.
+%   stimShiftSec - Offset added to every retained raw event time. Default:
+%       -0.0005 seconds, moving derivative peaks 0.5 ms earlier.
+%
+% Detection Details:
+%   Robust noise is median(abs(score-median(score)))/0.6745, with ordinary
+%   standard deviation used when that estimate is zero or invalid. A local
+%   maximum is at least as large as its left neighbor and strictly larger than
+%   its right neighbor. Train validity requires pulseCount >= minDetectedPulses,
+%   durationSec <= maxTrainDurationSec, and isolation when requested.
+%
+% Outputs:
+%   events - One row per retained candidate.
+%   trains - One row per temporal group.
+%
+% Event Columns:
+%   trainId, pulseIndex - One-based group and within-group indices.
+%   timeSec - Shifted event time in seconds.
+%   rawTimeSec - Unshifted sample time in seconds.
+%   sampleIndex - One-based index into the input vectors.
+%   score - Absolute first-difference score.
+%   source - Effective sourceId.
+%
+% Train Columns:
+%   trainId, startSec, endSec, pulseCount, durationSec - Group identity and
+%       shifted-time geometry.
+%   isIsolated - True when both neighboring train gaps satisfy
+%       isolationWindowSec.
+%   isValid - Result of pulse-count, duration, and optional isolation rules.
+%   source - Effective sourceId.
+%   status - "valid" or "needsReview".
+%
+% Failure Behavior:
+%   Empty input or a signal with no qualifying candidates returns empty tables
+%   with stable column names.
+%
+% Errors:
+%   nerve_response_analysis:EventSizeMismatch - timeSec and signal lengths
+%       differ.
+%
+% Example:
+%   sampleRate = 10000;
+%   timeSec = (0:1/sampleRate:0.12).';
+%   signal = zeros(size(timeSec));
+%   pulseTimes = 0.03 + (0:4).' * 0.01;
+%   signal(round(pulseTimes*sampleRate)+1) = 5;
+%   opts = struct("sourceId", "stim", "stimShiftSec", 0, ...
+%       "train", struct("minDetectedPulses", 5));
+%   [events, trains] = ...
+%       nerve_response_analysis.analysisRun.detectEventTrains( ...
+%       timeSec, signal, opts);
+%   assert(height(events) == 5 && trains.isValid(1))
+%
+% See also nerve_response_analysis.analysisRun.measureCapMetrics,
+%   nerve_response_analysis.analysisRun.analyzeRecording
 
     if nargin < 3 || isempty(opts)
         opts = struct();
