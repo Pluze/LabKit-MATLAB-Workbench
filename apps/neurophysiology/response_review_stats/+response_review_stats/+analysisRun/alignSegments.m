@@ -34,8 +34,7 @@ function aligned = alignSegments(segments, opts)
     end
     windowSec = fieldOrDefault(opts, "windowSec", []);
     if isempty(windowSec)
-        starts = arrayfun(@(s) min(s.timeSec), segments);
-        stops = arrayfun(@(s) max(s.timeSec), segments);
+        [starts, stops] = alignedTimeBounds(segments, opts);
         windowSec = [max(starts) min(stops)];
     end
     grid = (windowSec(1):dt:windowSec(2)).';
@@ -66,6 +65,18 @@ function aligned = alignSegments(segments, opts)
         "values", values, ...
         "segmentNames", segmentNames, ...
         "status", "ok");
+end
+
+function [starts, stops] = alignedTimeBounds(segments, opts)
+    starts = NaN(size(segments));
+    stops = NaN(size(segments));
+    for k = 1:numel(segments)
+        alignTimeSec = double(fieldOrDefault(segments(k), "alignTimeSec", ...
+            fieldOrDefault(opts, "alignTimeSec", 0)));
+        alignedTimeSec = double(segments(k).timeSec(:)) - alignTimeSec;
+        starts(k) = min(alignedTimeSec);
+        stops(k) = max(alignedTimeSec);
+    end
 end
 
 function value = fieldOrDefault(S, fieldName, defaultValue)

@@ -50,7 +50,7 @@
 <ul>
 <li>CSV that can be interpreted as waveform segments with time and values.</li>
 </ul>
-<p>When segments have different time grids, the app interpolates them onto a shared grid. If no interval is specified in code, it uses the median positive source interval. If the timestamps cannot provide one, it uses 0.0001 seconds. Samples outside a segment's original range remain <code>NaN</code>.</p>
+<p>When segments have different time grids, the app interpolates them onto a shared grid. If no interval is specified in code, it uses the median positive source interval. If the timestamps cannot provide one, it uses 0.0001 seconds. When no window is specified, the grid spans the intersection of the time ranges after each segment's alignment-time shift. Samples outside an aligned segment's original range remain <code>NaN</code>.</p>
 <h2 id="measurements-and-summary">Measurements And Summary</h2>
 <p>For each aligned segment, the calculation subtracts the baseline mean and reports positive and negative peaks, peak-to-peak amplitude, noise RMS, and SNR. The summary groups rows by <code>pairId</code> when available; otherwise it uses the segment name. Counts are included so exclusions and missing rows remain visible.</p>
 <h2 id="output-files">Output Files</h2>

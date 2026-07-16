@@ -38,7 +38,9 @@ measurements rather than recreating unavailable waveform data.
 When segments have different time grids, the app interpolates them onto a
 shared grid. If no interval is specified in code, it uses the median positive
 source interval. If the timestamps cannot provide one, it uses 0.0001 seconds.
-Samples outside a segment's original range remain `NaN`.
+When no window is specified, the grid spans the intersection of the time
+ranges after each segment's alignment-time shift. Samples outside an aligned
+segment's original range remain `NaN`.
 
 ## Measurements And Summary
 
