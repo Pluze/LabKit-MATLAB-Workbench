@@ -1,18 +1,53 @@
-% Expected caller: labkit_ImageMatch_app, batch export, and tests. Inputs are
-% source RGB images, an ordered reference-match step array, and one immutable
-% reference RGB image. Output is a cell array after applying each match step to
-% source images only; the reference image is never modified or exported.
 function processed = applyPipeline(images, steps, referenceImage)
 %APPLYPIPELINE Replay ordered reference-match steps over source images.
-%   processed = image_match.analysisRun.applyPipeline(images, steps,
-%   referenceImage) accepts one numeric image or a cell array of images, a
-%   step array, and an optional immutable reference image. Inputs and outputs
-%   are normalized RGB doubles in [0,1]. processed is always a column cell
-%   array and contains source images only; the reference is never modified or
-%   exported. Steps run in array order for every source.
 %
-%   See also image_match.analysisRun.applyMatch,
-%   image_match.analysisRun.makeStep.
+% Usage:
+%   processed = image_match.analysisRun.applyPipeline(images, steps)
+%   processed = image_match.analysisRun.applyPipeline( ...
+%       images, steps, referenceImage)
+%
+% Description:
+%   Normalizes each source image and applies the ordered reference-match history
+%   independently to every source. A step sees the output of the preceding
+%   step. The reference image is normalized once, remains separate from the
+%   source batch, and is never included in the returned cell array.
+%
+% Inputs:
+%   images - One numeric image or a cell array of source images. Each source is
+%       converted to RGB double data in [0,1]. Cell order is preserved.
+%   steps - Structure array created by image_match.analysisRun.makeStep. Steps
+%       are reshaped to a column and executed in array order. An empty array
+%       performs source normalization only.
+%   referenceImage - Optional numeric reference image. Its dimensions may differ
+%       from the sources. Empty or omitted input makes every match step a no-op
+%       after source normalization. Default: [].
+%
+% Step Fields:
+%   kind - History category; makeStep sets it to "Reference match".
+%   matchMethod - "Balanced", "White balance", "Tone only", "Protected
+%       tone", "Lab style", or "Histogram".
+%   amount - Overall match blend percentage.
+%   secondary - Tone-match percentage.
+%   colorStrength - Color-match percentage.
+%   label - Display text retained for history and export; it does not control
+%       the calculation.
+%
+% Outputs:
+%   processed - Column cell array containing only processed source images. Each
+%       entry is an M-by-N-by-3 double image in [0,1] and keeps its own source
+%       height and width.
+%
+% Example:
+%   sourceA = cat(3, 0.2*ones(6), 0.4*ones(6), 0.7*ones(6));
+%   sourceB = 0.6*ones(4, 5);
+%   reference = cat(3, 0.7*ones(8), 0.5*ones(8), 0.3*ones(8));
+%   step = image_match.analysisRun.makeStep("Balanced", 75, 100, 80);
+%   processed = image_match.analysisRun.applyPipeline( ...
+%       {sourceA, sourceB}, step, reference);
+%   assert(numel(processed) == 2 && isequal(size(processed{2}), [4 5 3]))
+%
+% See also image_match.analysisRun.applyMatch,
+%   image_match.analysisRun.makeStep, image_match.userInterface.matchMethods
 
     images = normalizeImages(images);
     if nargin < 3

@@ -1,11 +1,68 @@
-%TRACKPOINTS Predict ordered points with base-MATLAB multiscale patch matching.
-% Expected callers are Video Marker forward propagation and focused tests.
-% Inputs are same-sized RGB/grayscale frames, N-by-2 source points, and an
-% optional N-by-2 constant-velocity prior. Outputs preserve point order and
-% return per-point confidence plus diagnostics. Every installation uses the
-% same app-owned implementation; failed matches retain the motion prior.
-function [points, confidence, diagnostics] = trackPoints( ...
-        previousImage, currentImage, previousPoints, priorDisplacement)
+function [points, confidence, diagnostics] = trackPoints(previousImage, currentImage, previousPoints, priorDisplacement)
+%TRACKPOINTS Track ordered image points between two consecutive video frames.
+%
+% Usage:
+%   [points, confidence, diagnostics] = ...
+%       video_marker.motionEstimate.trackPoints( ...
+%       previousImage, currentImage, previousPoints)
+%   [points, confidence, diagnostics] = ...
+%       video_marker.motionEstimate.trackPoints( ...
+%       previousImage, currentImage, previousPoints, priorDisplacement)
+%
+% Description:
+%   Tracks each point with deterministic base-MATLAB multiscale patch matching.
+%   A grayscale pyramid provides up to four resolution levels. At every level,
+%   a 7-by-7 mean-centered template is compared by normalized correlation in a
+%   plus-or-minus four-pixel search around the predicted location. A parabolic
+%   peak fit refines the final match to subpixel coordinates.
+%
+%   Points are processed independently and preserve their input order. A flat,
+%   out-of-frame, or weakly correlated patch is not treated as a hard error:
+%   the output retains the clamped motion-prior prediction and reports zero
+%   confidence for that point.
+%
+% Inputs:
+%   previousImage - Finite numeric or logical grayscale or RGB source frame.
+%   currentImage - Finite frame with exactly the same size as previousImage.
+%   previousPoints - Finite N-by-2 array of [x y] coordinates in the previous
+%       frame, where x is the column and y is the row. N may be zero.
+%   priorDisplacement - Optional finite [dx dy] motion prediction. A 1-by-2
+%       value is shared by all points; an N-by-2 array supplies one prior per
+%       point. Default: zeros(N,2).
+%
+% Outputs:
+%   points - N-by-2 tracked [x y] coordinates, limited to currentImage bounds.
+%       Failed matches contain the limited previousPoints+priorDisplacement.
+%   confidence - N-by-1 values in [0,1]. Accepted normalized-correlation scores
+%       are mapped with (score+1)/2; failed matches are zero. A correlation of
+%       at least 0.55 is required for acceptance.
+%   diagnostics - Scalar structure with engine, valid, and failureMessage.
+%       engine is "multiscale_patch". valid is an N-by-1 logical mask.
+%       failureMessage is empty when every point succeeds and explains partial
+%       tracking failure otherwise.
+%
+% Errors:
+%   labkit_VideoMarker_app:FrameSizeMismatch - Frame arrays differ in size.
+%   labkit_VideoMarker_app:InvalidTrackingPoints - previousPoints is not a
+%       finite N-by-2 array.
+%   labkit_VideoMarker_app:InvalidMotionPrior - priorDisplacement is neither a
+%       finite 1-by-2 nor finite N-by-2 array.
+%   labkit_VideoMarker_app:InvalidTrackingImage - A frame is not grayscale or
+%       RGB after conversion, or contains nonfinite values.
+%
+% Example:
+%   rng(7)
+%   previousImage = rand(60, 70);
+%   currentImage = circshift(previousImage, [-2 3]);
+%   [point, confidence, diagnostics] = ...
+%       video_marker.motionEstimate.trackPoints( ...
+%       previousImage, currentImage, [35 30]);
+%   assert(norm(point - [38 28]) < 0.5)
+%   assert(confidence > 0.5 && diagnostics.valid)
+%
+% See also video_marker.motionEstimate.predictForward,
+%   video_marker.frameAnnotations.setFramePoints
+
     if ~isequal(size(previousImage), size(currentImage))
         error('labkit_VideoMarker_app:FrameSizeMismatch', ...
             'Motion estimation requires consecutive frames with the same size.');
