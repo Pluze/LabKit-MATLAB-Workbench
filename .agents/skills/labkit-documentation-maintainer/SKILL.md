@@ -44,8 +44,11 @@ copy edits, or generated-site churn.
 
 1. Change authored sources or renderer code.
 2. Run the smallest documentation contract/regression test during iteration.
-3. Run the MATLAB renderer to synchronize `site/`; it must rebuild from a
-   missing output root and remove pages no longer present in the source model.
+3. From the repository root, run `addpath("tools/docs"); renderLabKitDocs()`
+   to synchronize the default `docs/` sources into `site/`. Custom roots use
+   positional arguments `renderLabKitDocs(sourceRoot, outputRoot)`; the
+   renderer does not accept Name-Value options. It must rebuild from a missing
+   output root and remove pages no longer present in the source model.
 4. Run `docsCheck` to rebuild in a temporary tree and byte-compare output.
 5. Inspect changed HTML visually when layout, navigation, responsive behavior,
    ordered lists, links, or client-side search changed.
