@@ -197,7 +197,7 @@ it may reuse the public runner and shared guardrails. Use explicit public
 suites or guardrails only when the change requires them. A private workspace's
 `.labkit-accept-main-guardrails` sentinel expands public quality scans to its
 source files. When a nested private workspace with that sentinel has unpushed
-source, test, documentation, changelog, or version changes, run the relevant
+source, test, documentation, component-history, or version changes, run the relevant
 private tests and the public `buildtool changed` guardrail before commit or
 handoff, or report the exact blocker if MATLAB cannot run. The sentinel does
 not add the nested Git diff to public `changed` or `changedFast` path detection,
@@ -337,23 +337,17 @@ one type would hide a distinct behavior, test, documentation, or CI change.
 Use `docs/development/release.md` as the human-facing source of truth for version-number
 selection, release tag naming, and GitHub release note format.
 
-Use `CHANGELOG.md` as the project evolution map for users, maintainers, and
-agents. When a change bumps `labkit_launcher.m`, a `+labkit/**/version.m`
-facade, or an `apps/**/version.m` app metadata file, update `CHANGELOG.md` in
-the same change with the affected versions, what changed, why it matters,
-compatibility notes when relevant, optional direction notes, and evidence.
-When adding a newly versioned component, record its first version as an
-`introduced` event and preserve one continuous chain through current metadata.
-Organize entries by coherent user-facing or maintainer-facing evolution, not
-by raw tag rows, commit rows, or issue lists. Release tags are public anchors
-inside affected versions and evidence; commits are evidence. Every entry uses
-the schema-v1 `labkit-change` metadata block and required narrative sections
-under `Structured Change Records`. Use one stable Change ID on branches and
-main; do not add delivery-status sections such as Unreleased or Pending.
-Branch evidence may name checkpoint commits or a PR, then a later audit may
-add the mainline SHA without moving the record. Validate the file with
-`tools/release/parseLabKitChangelog.m`. Do not reduce entries to raw commit-log
-dumps.
+Keep project evolution with the documentation area that owns the affected
+behavior. When a change bumps `labkit_launcher.m`, a `+labkit/**/version.m`
+facade, or an `apps/**/version.m` app metadata file, update that component's
+human documentation and add one Markdown record under the relevant
+`docs/**/history/` directory in the same change. Use a stable Change ID,
+`labkit-change` metadata, compatibility impact, rationale, user/data impact,
+validation, evidence, and known follow-up. Cross-component changes are written
+once with every affected component in metadata; the documentation compiler
+shows that record on each related page. Current versions come from source
+metadata, not a duplicated lookup table. Do not introduce a root aggregate
+changelog or a separate release-history parser.
 
 For new releases, use `vX.Y.Z` tags, for example `v2.2.0`. Do not rename or
 delete already published historical tags only to normalize naming; preserve

@@ -47,8 +47,7 @@ pages describe current contracts rather than migration history.
 
 ## Project History And Support
 
-- [Component changelog](../CHANGELOG.md) records current versions and
-  structured evolution.
+- [Project history](history.md) aggregates component-owned change records.
 - [Support](../.github/SUPPORT.md) explains how to report workflow problems.
 - [Documentation asset guide](guides/workflow-assets.md) explains how to
   generate synthetic screenshots and example outputs.

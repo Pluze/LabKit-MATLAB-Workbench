@@ -74,12 +74,11 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
   feature-branch iteration may use small commits without bumping versions each
   time; before squash, PR handoff, or direct `main` push, choose the next
   version from the latest `main` version file and make the aggregate bump once.
-  The same aggregate version bump must be recorded in `CHANGELOG.md` with user
-  impact and evidence. Branch and mainline records use the same schema-v1
-  `labkit-change` block and stable Change ID under `Structured Change Records`;
-  do not create Unreleased or Pending lifecycle sections. Changelog guardrails
-  should parse records through `tools/release/parseLabKitChangelog.m` instead
-  of duplicating the file grammar in tests.
+  The same aggregate version bump must update the component's owned
+  documentation and add one distributed `docs/**/history/*.md` record with user
+  impact and evidence. Guardrails should verify record identity, required
+  decision sections, and generated component-page aggregation without
+  reintroducing a root changelog or a release-history parser.
 - Boundary tests may require app-owned logic to stay under the owning app tree, but should not require GUI-free helpers to remain inside the public app entry-point file or assert exact app-private helper file lists.
 - App-owned workflow packages need direct unit coverage for non-UI functions;
   GUI structural tests only prove launch/layout wiring.

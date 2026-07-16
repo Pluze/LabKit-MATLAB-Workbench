@@ -119,7 +119,7 @@ classdef BuildTaskEfficiencyGuardrailTest < matlab.unittest.TestCase
             selectors = validationStepTestSelectors(steps);
 
             testCase.verifyTrue(any(signatures == "project/release|false"), ...
-                "CHANGELOG changes should route to release guardrails instead of full headless.");
+                "Legacy aggregate-history removal should route to release guardrails.");
             testCase.verifyTrue(any(signatures == "project/docs|false"), ...
                 "Human docs should route to documentation guardrails.");
             packageStep = signatures == "project|false";

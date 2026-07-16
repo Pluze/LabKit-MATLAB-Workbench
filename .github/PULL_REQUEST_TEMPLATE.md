@@ -21,7 +21,7 @@ Command and result:
 
 - [ ] Human docs were updated where user-facing behavior or public contracts changed.
 - [ ] Docs/AGENTS were left unchanged because behavior and governance contracts were preserved.
-- [ ] CHANGELOG.md was updated if launcher, facade, or app version metadata changed.
+- [ ] Versioned component docs and a related `docs/**/history/*.md` record were updated.
 - [ ] App-specific workflow logic stayed in the owning app.
 - [ ] Reusable `+labkit` changes, if any, are domain-neutral and app-facing.
 

@@ -102,8 +102,8 @@ state, directly testable, used broadly, and makes the public API clearer. See
 
 `requirements.m` declares supported LabKit facade ranges.
 `version.m` declares the app command, display name, family, semantic version,
-and last change date. App behavior changes update the version and structured
-changelog record in the same coherent change.
+and last change date. App behavior changes update the version, app
+documentation, and component-owned history record in the same coherent change.
 
 ## Validation
 

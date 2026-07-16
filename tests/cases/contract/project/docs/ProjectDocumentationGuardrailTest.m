@@ -247,7 +247,10 @@ function files = collectHumanDocFiles(root)
     files = string(fullfile(root, "README.md"));
     entries = dir(fullfile(root, "docs", "**", "*.md"));
     for k = 1:numel(entries)
-        files(end+1) = string(fullfile(entries(k).folder, entries(k).name));
+        filepath = string(fullfile(entries(k).folder, entries(k).name));
+        if ~isHistoryDocument(filepath)
+            files(end+1) = filepath;
+        end
     end
 end
 
@@ -262,7 +265,8 @@ function files = collectGuidanceFilesExceptTesting(root)
     docEntries = dir(fullfile(root, "docs", "**", "*.md"));
     for k = 1:numel(docEntries)
         filepath = string(fullfile(docEntries(k).folder, docEntries(k).name));
-        if endsWith(filepath, fullfile("docs", "development", "testing.md"))
+        if endsWith(filepath, fullfile("docs", "development", "testing.md")) || ...
+                isHistoryDocument(filepath)
             continue;
         end
         files(end+1) = filepath;
@@ -272,6 +276,10 @@ function files = collectGuidanceFilesExceptTesting(root)
     for k = 1:numel(skillEntries)
         files(end+1) = string(fullfile(skillEntries(k).folder, skillEntries(k).name));
     end
+end
+
+function tf = isHistoryDocument(filepath)
+    tf = contains(string(filepath), filesep + "history" + filesep);
 end
 
 function tasks = extractBuildtoolTaskNames(content)

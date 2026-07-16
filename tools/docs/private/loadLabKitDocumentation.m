@@ -25,7 +25,8 @@ function model = loadLabKitDocumentation(repoRoot, sourceRoot)
         pages(k) = validatePage(rawPages(k), sourceRoot);
     end
     [appPages, apps] = loadAppCatalog(repoRoot, sourceRoot);
-    pages = [pages; appPages];
+    historyPages = discoverHistoryPages(sourceRoot);
+    pages = [pages; appPages; historyPages];
     assertUnique(string({pages.id}), "page id");
     assertUnique(string({pages.source}), "page source");
     assertUnique(string({pages.output}), "page output");
@@ -46,6 +47,7 @@ function model = loadLabKitDocumentation(repoRoot, sourceRoot)
         "repositoryUrl", string(config.repositoryUrl), ...
         "pages", pages, ...
         "apps", apps, ...
+        "history", historyPages, ...
         "api", api);
 end
 
@@ -83,7 +85,79 @@ function page = emptyPage()
     page = struct("id", "", "source", "", "sourcePath", "", ...
         "output", "", "title", "", "kind", "", ...
         "nav", strings(0, 1), "order", 0, ...
-        "keywords", strings(0, 1), "components", strings(0, 1));
+        "keywords", strings(0, 1), "components", strings(0, 1), ...
+        "historyId", "", "historyDate", "", "changeType", "", ...
+        "compatibility", "");
+end
+
+function pages = discoverHistoryPages(sourceRoot)
+    entries = dir(fullfile(sourceRoot, "**", "history", "**", "*.md"));
+    pages = repmat(emptyPage(), numel(entries), 1);
+    for k = 1:numel(entries)
+        filepath = string(fullfile(entries(k).folder, entries(k).name));
+        source = replace(extractAfter(filepath, string(sourceRoot) + filesep), ...
+            filesep, "/");
+        text = string(fileread(filepath));
+        lines = splitlines(text);
+        titleLine = find(startsWith(lines, "# "), 1);
+        if isempty(titleLine)
+            error("LabKit:Docs:InvalidHistory", ...
+                "History page has no level-one title: %s", source);
+        end
+        historyId = historyScalar(lines, "id", source);
+        historyDate = historyScalar(lines, "date", source);
+        changeType = historyScalar(lines, "type", source);
+        compatibility = historyScalar(lines, "compatibility", source);
+        componentLines = lines(startsWith(lines, "component:") | ...
+            startsWith(lines, "introduced:"));
+        components = strings(0, 1);
+        for iLine = 1:numel(componentLines)
+            token = regexp(componentLines(iLine), ...
+                '^(?:component|introduced):\s*`([^`]+)`', "tokens", "once");
+            if isempty(token)
+                error("LabKit:Docs:InvalidHistory", ...
+                    "History page has malformed component metadata: %s", source);
+            end
+            components(end + 1, 1) = string(token{1});
+        end
+        raw = struct( ...
+            "id", "history-" + historyId, ...
+            "source", source, ...
+            "output", erase(source, ".md") + ".html", ...
+            "title", extractAfter(lines(titleLine), "# "), ...
+            "kind", "history", ...
+            "nav", strings(0, 1), ...
+            "order", 1000, ...
+            "keywords", [historyId; historyDate; changeType; compatibility; components], ...
+            "components", unique(components, "stable"));
+        page = validatePage(raw, sourceRoot);
+        page.historyId = historyId;
+        page.historyDate = historyDate;
+        page.changeType = changeType;
+        page.compatibility = compatibility;
+        pages(k) = page;
+    end
+    if isempty(pages)
+        return;
+    end
+    assertUnique(string({pages.historyId}), "history Change ID");
+    [~, order] = sortrows([string({pages.historyDate}).', ...
+        string({pages.historyId}).'], [-1 2]);
+    pages = pages(order);
+end
+
+function value = historyScalar(lines, key, source)
+    prefix = key + ":";
+    matches = lines(startsWith(lines, prefix));
+    if numel(matches) ~= 1
+        error("LabKit:Docs:InvalidHistory", ...
+            "History page %s must contain one %s metadata field.", source, key);
+    end
+    value = strtrim(extractAfter(matches, prefix));
+    if strlength(value) == 0
+        error("LabKit:Docs:InvalidHistory", ...
+            "History page %s has an empty %s metadata field.", source, key);
+    end
 end
 
 function [pages, apps] = loadAppCatalog(repoRoot, sourceRoot)
@@ -340,6 +414,19 @@ function values = normalizeStructArray(values)
     if isempty(values)
         values = struct([]);
     elseif iscell(values)
-        values = [values{:}];
+        fields = strings(0, 1);
+        for k = 1:numel(values)
+            fields = union(fields, string(fieldnames(values{k})), "stable");
+        end
+        template = cell2struct(cell(numel(fields), 1), cellstr(fields), 1);
+        normalized = repmat(template, numel(values), 1);
+        for k = 1:numel(values)
+            itemFields = string(fieldnames(values{k}));
+            for iField = 1:numel(itemFields)
+                field = itemFields(iField);
+                normalized(k).(field) = values{k}.(field);
+            end
+        end
+        values = normalized;
     end
 end

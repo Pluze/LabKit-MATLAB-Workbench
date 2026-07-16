@@ -30,6 +30,7 @@ Only these inputs are edited:
 | `docs/**/*.md` | Narrative tutorials, guides, explanations, and app pages. |
 | `docs/site.json` | Page identity, navigation, output paths, and search keywords. |
 | `docs/catalogs/api.json` | Explicit app-owned public API surface. |
+| `docs/**/history/*.md` | Component-owned change rationale and evidence. |
 | Public MATLAB help blocks | Function signature and callable contract. |
 
 The renderer under `tools/docs/` uses only MATLAB and emits the complete
@@ -83,3 +84,7 @@ terms.
 
 GitHub Pages publishes the tracked `site/` tree. A stale or manually modified
 site is a validation failure rather than a second documentation truth.
+
+History records are rendered as searchable pages and linked automatically from
+every component named in their metadata. The project therefore has no root
+aggregate changelog and no separate release-history parser.

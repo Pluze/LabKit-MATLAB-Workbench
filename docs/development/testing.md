@@ -124,8 +124,8 @@ runner and shared guardrails.
 Do not substitute the full public `headless` task only because the public
 checkout has no changed paths. The `.labkit-accept-main-guardrails` sentinel
 controls quality-scan inclusion; it does not change Git diff discovery. When an
-accepted private workspace has unpushed source, test, documentation, changelog,
-or version changes, run that workspace's private tests and the public
+accepted private workspace has unpushed source, test, documentation, component
+history, or version changes, run that workspace's private tests and the public
 `buildtool changed` guardrail before commit or handoff, or record the exact
 MATLAB/runtime blocker. The public guardrail must be invoked intentionally from
 the public checkout because the private Git diff is invisible to the public

@@ -54,6 +54,9 @@ function output = renderNarrativePages(model, stagingRoot)
     for k = 1:numel(model.pages)
         page = model.pages(k);
         [body, plainText] = renderLabKitMarkdown(model, page);
+        [historyBody, historyText] = renderLabKitHistoryLinks(model, page);
+        body = body + historyBody;
+        plainText = plainText + " " + historyText;
         html = renderLabKitPage(model, page.title, page.output, ...
             page.kind, body);
         writeDocText(fullfile(stagingRoot, page.output), html);

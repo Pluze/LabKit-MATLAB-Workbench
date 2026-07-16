@@ -126,5 +126,5 @@ configured private roots even without the sentinel file.
 Because private workspaces are separate Git repositories, public changed-file
 tasks do not discover private diffs. For an accepted private workspace, run the
 private repository's own tests and the public `buildtool changed` guardrail
-before commit or handoff when private source, tests, docs, changelog, or version
-metadata changed.
+before commit or handoff when private source, tests, docs, component history, or
+version metadata changed.
