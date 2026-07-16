@@ -1,19 +1,51 @@
-% App-owned image measurement package helper. Expected caller: owning app callbacks
-% and package tests. Inputs, outputs, and side effects are
-% documented with the helper function below.
 function lengthResult = computeCurveLength(xPix, yPix, calibration)
-%COMPUTECURVELENGTH Measure traced curve length for labkit_CurvatureMeasurement_app.
+%COMPUTECURVELENGTH Measure the polyline length of traced image points.
 %
-% Expected caller:
-%   labkit_CurvatureMeasurement_app callbacks, package tests, and private
-%   curvature fit helpers.
+% Usage:
+%   lengthResult = curvature.analysisRun.computeCurveLength(xPix, yPix)
+%   lengthResult = curvature.analysisRun.computeCurveLength( ...
+%       xPix, yPix, calibration)
 %
-% Inputs/outputs:
-%   Pixel vectors plus a GUI-free scale calibration struct. Returns the same
-%   length-result struct previously built inside the app file.
+% Description:
+%   Removes consecutive points closer than the app's duplicate tolerance and
+%   sums the Euclidean distance between the remaining adjacent points. A valid
+%   calibration converts the pixel length to the requested physical unit. The
+%   function does not smooth, interpolate, close the path, plot, or write files.
 %
-% Side effects:
-%   None. This helper performs GUI-free numeric length measurement only.
+% Inputs:
+%   xPix - Numeric x-coordinate vector in image pixels (image columns). At
+%       least two unique consecutive point pairs are required.
+%   yPix - Numeric y-coordinate vector in image pixels (image rows), with the
+%       same number of elements as xPix.
+%   calibration - Scale structure accepted by
+%       curvature.analysisRun.normalizeScaleCalibration. Empty or omitted
+%       input reports length in pixels.
+%
+% Outputs:
+%   lengthResult - Scalar structure with the following fields.
+%
+% Result Fields:
+%   ok, message - true and empty text after a successful calculation.
+%   length_px - Sum of adjacent segment lengths in pixels.
+%   length_show - length_px divided by pixelsPerUnit when calibrated;
+%       otherwise length_px.
+%   unitLen - Calibration unit when calibrated, otherwise "px".
+%   referencePx, referenceLength, scaleUnit, px_per_unit,
+%       usePhysicalScale - Effective scale metadata.
+%   pointCount - Number of points remaining after duplicate removal.
+%
+% Errors:
+%   labkit_CurvatureMeasurement_app:NotEnoughLengthPoints - Fewer than two
+%       unique points remain.
+%
+% Example:
+%   x = [0 3 3];
+%   y = [0 0 4];
+%   result = curvature.analysisRun.computeCurveLength(x, y);
+%   assert(result.length_px == 7 && result.unitLen == "px")
+%
+% See also curvature.analysisRun.computeCurvatureFit,
+%   curvature.analysisRun.normalizeScaleCalibration
 
     lengthResult = curvature.appState.emptyLengthResult();
     xPix = xPix(:);

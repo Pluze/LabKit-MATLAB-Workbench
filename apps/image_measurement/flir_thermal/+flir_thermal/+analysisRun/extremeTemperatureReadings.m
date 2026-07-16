@@ -1,17 +1,36 @@
-% Expected caller: FLIR thermal IO and tests. Input is a Celsius temperature
-% matrix. Outputs are hot/cold point readings with pixel coordinates and
-% Celsius values. Side effects: none.
 function [hotSpot, coldSpot] = extremeTemperatureReadings(temperatureC)
 %EXTREMETEMPERATUREREADINGS Locate finite global thermal extrema.
-%   [hotSpot, coldSpot] =
-%   flir_thermal.analysisRun.extremeTemperatureReadings(temperatureC)
-%   scans a 2-D Celsius matrix while ignoring NaN and Inf values. Each output
-%   contains one-based x, y, and temperatureC fields. Empty, non-matrix, or
-%   all-nonfinite input returns stable NaN records. Display color limits do not
-%   participate in this numeric calculation.
 %
-%   See also labkit.thermal.readFile,
-%   flir_thermal.analysisRun.roiTemperatureMeanReading.
+% Usage:
+%   [hotSpot, coldSpot] = ...
+%       flir_thermal.analysisRun.extremeTemperatureReadings(temperatureC)
+%
+% Description:
+%   Finds the highest and lowest finite values in a calibrated temperature
+%   image. NaN, Inf, and -Inf pixels are ignored. Coordinates are one-based
+%   image coordinates: x is the column and y is the row. If an extreme occurs
+%   more than once, MATLAB column-major order selects the first occurrence.
+%   Display palettes and color limits do not affect this calculation.
+%
+% Inputs:
+%   temperatureC - Two-dimensional numeric temperature matrix in degrees
+%       Celsius. The values are converted to double before calculation.
+%
+% Outputs:
+%   hotSpot - Scalar structure containing the finite maximum's x, y, and
+%       temperatureC fields.
+%   coldSpot - Scalar structure containing the finite minimum's x, y, and
+%       temperatureC fields. Empty, nonmatrix, or all-nonfinite input returns
+%       NaN in every field of both outputs.
+%
+% Example:
+%   T = [NaN 24; 18 31];
+%   [hot, cold] = flir_thermal.analysisRun.extremeTemperatureReadings(T);
+%   assert(hot.x == 2 && hot.y == 2 && hot.temperatureC == 31)
+%   assert(cold.x == 1 && cold.y == 2 && cold.temperatureC == 18)
+%
+% See also labkit.thermal.readFile,
+%   flir_thermal.analysisRun.roiTemperatureMeanReading
 
     values = double(temperatureC);
     hotSpot = emptyReading();
