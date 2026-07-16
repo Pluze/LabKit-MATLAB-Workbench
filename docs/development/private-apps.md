@@ -8,18 +8,27 @@ extension point, folder shape, and development contract. Private app names,
 workflow notes, data assumptions, validation details, and release notes belong
 in the private app repository itself.
 
-## Workspace Location
+## Repository And Mounting Model
 
-In a LabKit source checkout, create an ignored `private_apps/` workspace:
+A private app workspace is its own Git repository. It owns its app source,
+tests, manuals, histories, and repository rules regardless of where it is
+stored. The public repository never owns or migrates those files.
+
+For convenient local development, the independent repository may be checked
+out at the public checkout's ignored `private_apps/` mount point:
 
 ```text
 LabKit-MATLAB-Workbench/
   apps/                  public apps tracked by this repository
   +labkit/               shared LabKit facades
-  private_apps/          local private app workspace, ignored here
+  private_apps/          independent private Git repository, ignored here
+    README.md
+    tests/
     apps/
       <private_family>/
         <app_slug>/
+          README.md
+          HISTORY.md
           labkit_<PrivateAppName>_app.m
           +<app_slug>/
             definition.m
@@ -36,10 +45,12 @@ LabKit-MATLAB-Workbench/
             +resultFiles/...
 ```
 
-The launcher also reads additional private workspaces from
-`LABKIT_PRIVATE_APP_ROOTS`. Each entry can point either at a private workspace
-root or directly at its `apps/` folder. Separate multiple entries with the
-platform path separator.
+That physical nesting is only a launcher mount; it does not make the private
+repository a folder owned by the public repository. The private repository may
+instead live anywhere and be registered through `LABKIT_PRIVATE_APP_ROOTS`.
+Each entry points either to a private repository root containing `apps/` or
+directly to its `apps/` folder. Separate entries with the platform path
+separator.
 
 ## Launcher Discovery
 
@@ -63,7 +74,8 @@ machine's environment variable or private workspace path.
 
 ## Git Ownership
 
-Keep `private_apps/` as a separate private Git repository:
+Create or clone the private repository independently, then choose either the
+ignored mount point or the environment-variable registration:
 
 ```bash
 cd LabKit-MATLAB-Workbench
@@ -73,10 +85,11 @@ git init
 git remote add origin git@github.com:<owner>/<private-repo>.git
 ```
 
-The public LabKit repository ignores `private_apps/`, so private app files are
-not added to public history, public release zips, or public CI. Do not use a
-submodule unless you intentionally want the public repository to record a
-private remote URL and commit pointer.
+The public LabKit repository ignores its `private_apps/` mount point, so a
+nested checkout remains a normal independent repository and is not added to
+public history, public release zips, or public CI. Do not use a submodule
+unless you intentionally want the public repository to record a private remote
+URL and commit pointer.
 
 ## Structure Rules
 
@@ -92,6 +105,13 @@ Private apps should follow the same app-owned package shape as public apps:
 - use shared LabKit facades such as `labkit.ui.*`, `labkit.image.*`,
   `labkit.thermal.*`, `labkit.dta.*`, `labkit.rhs.*`, and
   `labkit.biosignal.*`
+
+The minimal lifecycle files are `createProject.m`, `createSession.m`, and
+`validateProject.m`. Versioned payloads add ordered migration files such as
+`migrateProjectV1ToV2.m`; supported legacy top-level MAT variables add explicit
+import functions. See [Build a Complete App](complete-app.md) for a working
+file-by-file example and [Runtime and Lifecycle](../framework/runtime.md) for
+every definition, project, session, action, presenter, and renderer field.
 
 Do not put private app source under public `apps/`. Do not move private
 workflow formulas, private result schemas, private labels, or private data

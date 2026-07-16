@@ -14,6 +14,7 @@
     {"source":"apps/electrochem/csc/+csc/+analysisRun/computeCSC.m","app":"csc","family":"Electrochemistry"},
     {"source":"apps/electrochem/vt_resistance/+vt_resistance/+analysisRun/computeResistance.m","app":"vt_resistance","family":"Electrochemistry"},
     {"source":"apps/gait/gait_analysis/+gait_analysis/+analysisRun/computeGait.m","app":"gait_analysis","family":"Gait"},
+    {"source":"apps/gait/gait_analysis/+gait_analysis/+sourceFiles/readPoseFile.m","app":"gait_analysis","family":"Gait"},
     {"source":"apps/image_measurement/batch_crop/+batch_crop/+cropGeometry/cropImage.m","app":"batch_crop","family":"Image Measurement"},
     {"source":"apps/image_measurement/batch_crop/+batch_crop/+cropGeometry/cropScaledImage.m","app":"batch_crop","family":"Image Measurement"},
     {"source":"apps/image_measurement/batch_crop/+batch_crop/+cropGeometry/scalePlan.m","app":"batch_crop","family":"Image Measurement"},

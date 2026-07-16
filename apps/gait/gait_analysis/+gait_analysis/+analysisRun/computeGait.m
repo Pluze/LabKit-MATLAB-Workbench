@@ -121,6 +121,8 @@ function result = computeGait(pose, opts)
 %   pose.coords(:, :, 2) = repmat([8 6 4 2 0], 12, 1);
 %   opts = gait_analysis.appState.defaultOptions();
 %   opts.smoothWindow = 1;
+%   opts.detectionProminence = 2;
+%   opts.minLiftOffIntervalSeconds = 0.1;
 %   result = gait_analysis.analysisRun.computeGait(pose, opts);
 %   assert(result.ok && height(result.stepTable) == 2)
 %

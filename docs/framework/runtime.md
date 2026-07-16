@@ -49,15 +49,21 @@ end
 
 ```matlab
 function def = definition()
+project = struct( ...
+    "Version", 1, ...
+    "Create", @example.appLifecycle.createProject, ...
+    "Validate", @example.appLifecycle.validateProject, ...
+    "Migrations", {{}});
 def = labkit.ui.runtime.define( ...
     "Id", "example", ...
     "Title", "Example App", ...
-    "Project", example.projectSpec(), ...
-    "CreateSession", @example.createSession, ...
+    "Project", project, ...
+    "CreateSession", @example.appLifecycle.createSession, ...
     "Layout", @example.userInterface.buildWorkbenchLayout, ...
     "Actions", example.definitionActions(), ...
     "Present", @example.userInterface.presentWorkbench, ...
-    "Renderers", example.userInterface.previewRenderers(), ...
+    "Renderers", struct("preview", ...
+        @example.userInterface.drawPreview), ...
     "Start", "start");
 end
 ```
@@ -69,8 +75,169 @@ callbacks, builds the workbench, commits the first presentation, and queues
 the optional `Start` event. App-specific launch payloads are available
 read-only through injected services.
 
-Apps use `projectSpec.m`, `createSession.m`, `definitionActions.m`, and
-`+userInterface`;
+### Definition Component Contract
+
+`labkit.ui.runtime.define` accepts these components. Required means every app
+must provide the field; optional components may be omitted.
+
+| Component | Required | Value and signature | Responsibility |
+| --- | --- | --- | --- |
+| `Id` | Yes | Stable nonempty text | Permanent project, recovery, result, and diagnostic identity. |
+| `Title` | Yes | Nonempty text | Window title without the runtime-added version and file state. |
+| `Project` | Yes | Scalar project-declaration struct described below | Durable schema, validation, migration, and source relinking. |
+| `CreateSession` | No | `session = createSession()` or `session = createSession(project)` | Rebuild transient selection, workflow, view, and cache state. |
+| `Layout` | Yes | `layout()`, `layout(callbacks)`, or `layout(callbacks,state)` | Return one data-only `labkit.ui.layout.workbench` tree. |
+| `Actions` | Yes | Nonempty struct mapping action IDs to `state = action(state,event,services)` | Apply one semantic workflow transaction. |
+| `Present` | Yes | `view = present(state)` | Convert canonical state into semantic control, preview, and interaction properties. |
+| `Renderers` | No | Struct mapping renderer IDs to `renderer()`, `renderer(model)`, or `renderer(ax,model)` | Draw a prepared presenter model without changing workflow state. |
+| `Start` | No | Registered action ID or an action function | Queue optional initialization after the first visible presentation. |
+| `DebugSample` | No | `pack = writer(debugContext)` | Create synthetic local debug inputs only during a debug launch. |
+| `Utilities` | No | Scalar struct | Configure framework-owned plot, screenshot, and state commands. |
+
+#### Project Declaration And Durable Payload
+
+`Project` is not the saved payload itself. It is the declaration that tells
+the runtime how to create, validate, migrate, and restore that payload:
+
+| Field | Required | Contract |
+| --- | --- | --- |
+| `Version` | Yes | Positive integer payload version. Version 1 has no migration entries. |
+| `Create` | Yes | `project = createProject()` returns a complete new durable payload. |
+| `Validate` | Yes | `accepted = validateProject(project)` returns a logical scalar or throws a field-specific error. |
+| `Migrations` | For version > 1 | Cell entry `k` is `project = migrateV{k}ToV{k+1}(project)`. Exactly `Version-1` entries are required. |
+| `LegacyImports` | No | Struct mapping a trusted top-level MAT variable name to `project = import(value)` or `[project,resume] = import(value)`. Imports are read-only adapters. |
+| `CreateResume` | No | `resume = createResume(session,project)` saves small navigation convenience, never authoritative data. |
+| `ApplyResume` | No | `session = applyResume(session,resume,project)` applies that convenience after a fresh session is built. |
+| `RelinkSources` | No | `project = relink(project,unresolved,projectFile)` handles a nonstandard source schema. Returning `[]` cancels load. |
+
+`createProject` returns one scalar struct with the five canonical buckets:
+
+```matlab
+function project = createProject()
+project = struct();
+project.inputs = struct( ...
+    "sources", labkit.ui.runtime.emptySourceRecords());
+project.parameters = struct("threshold", 0.5);
+project.annotations = struct();
+project.results = struct("analysis", table());
+project.extensions = struct();
+end
+```
+
+The bucket names are stable; their app-owned fields are not prescribed by the
+framework. `inputs` stores portable source records and durable input metadata;
+`parameters` stores reproducible analysis and export choices; `annotations`
+stores user-authored scientific edits; `results` stores reproducible results
+that should survive reopen; and `extensions` is reserved for explicit future
+schema additions. Decoded images, open readers, graphics, listeners, timers,
+dialogs, and service handles never belong in the payload.
+
+The runtime saves this payload inside one `labkitProject` envelope. The
+envelope owns format and producer metadata, source portability, payload
+version, and optional resume state; apps own only their payload fields and do
+not construct the envelope themselves.
+
+For a project at version `N`, `Migrations` contains exactly `N-1` ordered
+functions. Cell 1 converts payload version 1 to 2, cell 2 converts 2 to 3, and
+so on. When an older document is opened, the runtime applies every missing
+step in order, validates the final current payload, rebuilds the session, and
+keeps the document visibly dirty until the user saves it. A migration changes
+durable data only; it does not open dialogs, draw, dispatch actions, or invent
+scientific values that cannot be derived from the saved payload.
+
+For example, a current version-3 app declares:
+
+```matlab
+project = struct( ...
+    "Version", 3, ...
+    "Create", @example.appLifecycle.createProject, ...
+    "Validate", @example.appLifecycle.validateProject, ...
+    "Migrations", {{ ...
+        @example.appLifecycle.migrateProjectV1ToV2, ...
+        @example.appLifecycle.migrateProjectV2ToV3}});
+```
+
+`migrateProjectV1ToV2` exists because a version-1 saved payload cannot already
+have version-2 fields or semantics. It is called only while loading that older
+payload; new projects start from `Create`, and current projects skip it.
+
+#### Portable Source Records
+
+Apps create external-file references through the injected
+`services.project.sourceRecord(id,role,filepath,required)` service. The durable
+record shape is:
+
+```matlab
+source = struct( ...
+    "id", "trace", ...
+    "required", true, ...
+    "role", "numericTrace", ...
+    "reference", struct( ...
+        "schemaVersion", 1, ...
+        "relativePath", "", ...
+        "originalPath", "/current/path/trace.csv", ...
+        "fileName", "trace.csv"));
+```
+
+| Field | Meaning |
+| --- | --- |
+| `id` | App-stable identity for this source inside the project. IDs are unique within the app's source collection and are not file names. |
+| `required` | Whether project load must resolve the file before committing the loaded state. |
+| `role` | App-owned semantic role such as `numericTrace`, `referenceImage`, or `movingImage`. |
+| `reference.schemaVersion` | Runtime-owned portable-reference schema version. |
+| `reference.relativePath` | Path relative to the saved project when the runtime can establish one. |
+| `reference.originalPath` | Current resolved path used by app readers after load/relink. |
+| `reference.fileName` | Last path component used in matching and user messages. |
+
+The runtime first tries the saved relative and original locations. When a
+required source cannot be resolved, it identifies the source by app ID, role,
+and filename and lets the user locate a replacement. Cancelling leaves the
+currently open app state unchanged. Apps normally read the resolved
+`reference.originalPath` in `CreateSession`; they do not parse the portable
+reference or implement their own repeated file-dialog loop.
+
+#### Session, Actions, Presentation, And Renderers
+
+`CreateSession` returns one scalar struct with four transient buckets. Missing
+buckets are added by the runtime:
+
+```matlab
+session = struct( ...
+    "selection", struct("currentIndex", 1), ...
+    "workflow", struct("logLines", strings(0,1)), ...
+    "view", struct("mode", "Preview"), ...
+    "cache", struct("decodedInput", []));
+```
+
+`selection` is current user focus, `workflow` is transient progress and log
+state, `view` is presentation convenience, and `cache` is rebuildable decoded
+or calculated data. Session values are never the sole owner of scientific
+inputs, parameters, annotations, or results.
+
+Each action receives the complete `state.project` and `state.session`, one
+normalized event, and injected services. It returns the complete updated
+state. An action may coordinate app-owned reader or calculation functions, but
+does not read controls or mutate graphics. The runtime validates and commits
+the returned state atomically.
+
+`Present(state)` returns a scalar view struct whose optional roots are
+`controls`, `previews`, and `interactions`. Control fields are addressed by
+layout ID and contain semantic properties such as `Value`, `Enabled`, `Items`,
+`Limits`, `Data`, `Files`, or `Status`. A single-axis preview may specify
+`Renderer` and `Model` directly; a multi-axis preview uses
+`previews.<previewId>.Axes.<axisId>`. Interaction entries declare managed
+interaction kinds, targets, values, and semantic event IDs.
+
+A registered renderer receives only its prepared model and, when requested,
+the declared target axes. It may clear and draw that axes, but it does not
+change project/session state, open files, display workflow dialogs, or install
+figure callbacks. Renderer IDs in presentation must exactly match fields in
+`Renderers`; action and interaction event IDs must exactly match fields in
+`Actions`.
+
+Apps declare the project contract in `definition.m`, use `+appLifecycle` for
+`createProject.m`, `createSession.m`, `validateProject.m`, and ordered
+migrations or imports, and use `definitionActions.m` plus `+userInterface`;
 app-specific work belongs in concrete workflow packages such as
 `+sourceFiles`, `+analysisRun`, `+resultFiles`, or a domain-specific package.
 The older `+state`, `+actions`, `+ui`, and `+view` adapter packages have been
@@ -147,12 +314,12 @@ Use these app-facing rules:
   named host when a reusable `labkit.ui.interaction.*` control needs to attach a
   composed runtime widget from app command or UI-update code; do not leave
   empty titled sections as placeholders.
-- Public callbacks use `function callback(control, event)`. Events carry
-  semantic fields such as `id`, `kind`, `source`, `value`, `previousValue`,
-  and `ui`.
-- App handlers should be named by user intent. They receive semantic events
-  and injected services, then return updated canonical state without directly
-  mutating framework lifecycle state.
+- Callback values placed in the layout are framework-generated adapters; apps
+  do not implement control-handle callbacks. App handlers are the functions in
+  `definitionActions.m`, are named by user intent, and use
+  `state = handler(state,event,services)`. The normalized event carries
+  `id`, `source`, `target`, `value`, and `meta`; injected services decode file
+  entries and indices without exposing the UI registry.
 
 ### Identity Contracts
 

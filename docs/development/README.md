@@ -9,7 +9,7 @@ only [Getting started](../getting-started/README.md) and the
 | Task | Page |
 | --- | --- |
 | Understand repository and package ownership | [Architecture](architecture.md) |
-| Create or refactor an app | [App development](app-development.md) |
+| Create or refactor an app | [App development](app-development.md) and [complete app tutorial](complete-app.md) |
 | Work with an ignored private app repository | [Private apps](private-apps.md) |
 | Select tests, GUI checks, or profiling | [Testing](testing.md) |
 | Call source-checkout packaging, profiling, codecheck, or documentation tools | [Maintainer tools](tools/README.md) |

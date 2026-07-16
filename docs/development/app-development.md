@@ -36,6 +36,12 @@ example `+sourceFiles`, `+analysisRun`, `+resultFiles`, `+cropGeometry`, or
 session factory, layout builder, action registry, presenter, renderers, and
 optional startup event.
 
+The complete field tables, callback signatures, canonical project/session
+buckets, presenter shape, and renderer contract are documented in
+[Runtime and Lifecycle](../framework/runtime.md#definition-component-contract).
+For a complete file-by-file implementation, follow
+[Build a Complete App](complete-app.md).
+
 The framework owns:
 
 - startup, readiness, and busy state
