@@ -2,7 +2,7 @@ classdef DebugSamplePackCoverageTest < matlab.unittest.TestCase
     %DEBUGSAMPLEPACKCOVERAGETEST Guard debug sample-pack coverage.
 
     methods (Test, TestTags = {'Unit'})
-        function every_supported_app_has_debug_sample_writer_and_wiring(testCase)
+        function everySupportedAppDefinesDebugSampleWriter(testCase)
             setupLabKitTestPath();
             root = string(labkitRepoRoot());
             appFiles = dir(fullfile(root, "apps", "**", "labkit_*_app.m"));
@@ -14,19 +14,12 @@ classdef DebugSamplePackCoverageTest < matlab.unittest.TestCase
                 appFile = string(fullfile(appFiles(k).folder, appFiles(k).name));
                 appFolder = string(appFiles(k).folder);
                 slug = appSlugFromEntrypoint(appFile);
-                runner = fullfile(appFolder, "+" + slug, "run.m");
                 definition = fullfile(appFolder, "+" + slug, "definition.m");
-                definitionActions = fullfile(appFolder, "+" + slug, ...
-                    "definitionActions.m");
-                startup = fullfile(appFolder, "+" + slug, "startup.m");
-                actions = fullfile(appFolder, "+" + slug, "+actions", "table.m");
                 writer = fullfile(appFolder, "+" + slug, "+debug", "writeSamplePack.m");
 
-                wiringFiles = [runner, definition, definitionActions, startup, actions];
-                wiringFiles = wiringFiles(isfile(wiringFiles));
-                if isempty(wiringFiles)
+                if ~isfile(definition)
                     missing(end + 1, 1) = appFile + ...
-                        " missing runtime wiring source for debug samples";
+                        " missing definition.m runtime contract";
                     continue;
                 end
                 if ~isfile(writer)
@@ -34,17 +27,11 @@ classdef DebugSamplePackCoverageTest < matlab.unittest.TestCase
                     continue;
                 end
 
-                body = "";
-                for iFile = 1:numel(wiringFiles)
-                    body = body + newline + string(fileread(wiringFiles(iFile)));
-                end
-                directCall = slug + ".debug.writeAndLogSamplePack(";
-                samplePackCall = slug + ".debug.writeSamplePack(";
+                body = string(fileread(definition));
                 samplePackHandle = "@" + slug + ".debug.writeSamplePack";
-                if ~(contains(body, directCall) || ...
-                        contains(body, samplePackCall) || ...
-                        contains(body, samplePackHandle))
-                    missing(end + 1, 1) = appFile + " does not call app-owned debug sample writer";
+                if ~contains(body, samplePackHandle)
+                    missing(end + 1, 1) = appFile + ...
+                        " does not define its app-owned DebugSample writer";
                 end
             end
 

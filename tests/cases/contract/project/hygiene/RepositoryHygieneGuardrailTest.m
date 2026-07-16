@@ -164,10 +164,10 @@ classdef RepositoryHygieneGuardrailTest < matlab.unittest.TestCase
         end
 
         function appUiLabelHelperPatternCatchesDuplicatedLiteral(testCase)
-            helperFile = "apps/family/sample/+sample/+view/sampleLabels.m";
+            helperFile = "apps/family/sample/+sample/+userInterface/sampleLabels.m";
             appFiles = [
                 helperFile
-                "apps/family/sample/+sample/run.m"
+                "apps/family/sample/+sample/definition.m"
                 "tests/cases/gui/apps/family/sample/GuiLayoutSampleTest.m"
             ];
             contents = containers.Map('KeyType', 'char', 'ValueType', 'any');
@@ -412,7 +412,7 @@ end
 function tf = isAppUiLabelHelperFile(file)
     file = slashPath(file);
     tf = contains("/" + file, "/apps/") && ...
-        (contains(file, "/+view/") || contains(file, "/+userInterface/")) && ...
+        contains(file, "/+userInterface/") && ...
         ~isempty(regexp(file, '(Labels|Choices|Items)\.m$', 'once'));
 end
 
