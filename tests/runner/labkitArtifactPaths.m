@@ -13,7 +13,7 @@ function paths = labkitArtifactPaths(varargin)
     p = inputParser;
     p.addParameter("Root", defaultArtifactRoot(), @(v) ischar(v) || isstring(v));
     p.addParameter("RunName", getenv("LABKIT_RUN_NAME"), @isTextScalar);
-    p.addParameter("Create", false, @(v) islogical(v) || isnumeric(v));
+    p.addParameter("Create", false, @isLogicalScalar);
     p.parse(varargin{:});
 
     artifactRoot = char(p.Results.Root);
@@ -88,4 +88,9 @@ end
 
 function tf = isTextScalar(value)
     tf = ischar(value) || (isstring(value) && isscalar(value));
+end
+
+function tf = isLogicalScalar(value)
+    tf = (islogical(value) || isnumeric(value)) && isscalar(value) && ...
+        isfinite(double(value));
 end

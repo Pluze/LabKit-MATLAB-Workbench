@@ -1,5 +1,5 @@
 classdef UiLayoutTest < matlab.unittest.TestCase
-    %UILAYOUTTEST Verify LabKit UI 5 declarative layout contracts.
+    %UILAYOUTTEST Verify current LabKit declarative layout contracts.
 
     methods (Test, TestTags = {'Unit'})
         function test_uiLayout(testCase)
@@ -10,7 +10,7 @@ classdef UiLayoutTest < matlab.unittest.TestCase
 end
 
 function verify_uiLayout()
-%TEST_UILAYOUT Verify UI 5 layout grammar and GUI-free validation.
+%TEST_UILAYOUT Verify layout grammar and GUI-free validation.
 
     checkCommonLayoutShape();
     checkChildrenMustBeCellRows();
@@ -165,7 +165,7 @@ function checkFieldKindWhitelist()
     end
     assertThrows(@() labkit.ui.layout.field('radio', 'Radio', ...
         'kind', 'radioGroup'), 'labkit:ui:layout:InvalidFieldKind', ...
-        'Primitive or unproven field kinds should stay out of UI 5.');
+        'Primitive or unproven field kinds should stay out of the public layout grammar.');
 end
 
 function checkPannerLayout()

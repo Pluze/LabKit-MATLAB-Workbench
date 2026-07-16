@@ -11,13 +11,26 @@ function root = setupLabKitTestPath()
 
     pathEntries = addPathIfMissing(root, pathEntries);
     pathEntries = addPathIfMissing(fullfile(root, "apps"), pathEntries, "-end");
-    apps = labkit_launcher("list");
-    for k = 1:height(apps)
-        pathEntries = addPathIfMissing(char(apps.Folder(k)), pathEntries, "-end");
+    appFolders = publicAppEntryFolders(root);
+    for k = 1:numel(appFolders)
+        pathEntries = addPathIfMissing(char(appFolders(k)), pathEntries, "-end");
     end
     pathEntries = addPathIfMissing(fullfile(root, "tests"), pathEntries);
     pathEntries = addPathIfMissing(fullfile(root, "tests", "runner"), pathEntries);
     addPathIfMissing(fullfile(root, "tests", "shared"), pathEntries);
+end
+
+function folders = publicAppEntryFolders(root)
+    persistent cachedRoot cachedFolders
+    if isequal(cachedRoot, string(root)) && ~isempty(cachedFolders)
+        folders = cachedFolders;
+        return;
+    end
+    entries = dir(fullfile(root, "apps", "**", "labkit_*_app.m"));
+    folders = unique(string({entries.folder}), "stable");
+    folders = sort(folders);
+    cachedRoot = string(root);
+    cachedFolders = folders;
 end
 
 function pathEntries = addPathIfMissing(folder, pathEntries, varargin)

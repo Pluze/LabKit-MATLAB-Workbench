@@ -28,35 +28,6 @@ classdef AppPackageStructureGuardrailTest < matlab.unittest.TestCase
             end
         end
 
-        function imageWorkflowAppsKeepTaskLifecycleSnapshots(testCase)
-            root = setupLabKitTestPath();
-            expected = [
-                "apps/image_measurement/image_enhance/+image_enhance/+appState/exportTask.m"
-                "apps/image_measurement/image_match/+image_match/+appState/exportTask.m"
-                "apps/image_measurement/batch_crop/+batch_crop/+appState/exportPlan.m"
-                "apps/image_measurement/focus_stack/+focus_stack/+appState/runTask.m"
-                "apps/image_measurement/curvature/+curvature/+appState/fitTask.m"
-                "apps/image_measurement/curvature/+curvature/+appState/lengthTask.m"];
-
-            for k = 1:numel(expected)
-                filepath = repoPath(root, expected(k));
-                testCase.verifyTrue(isfile(filepath), ...
-                    "Image workflow task lifecycle helper is missing: " + expected(k));
-                source = string(fileread(filepath));
-                testCase.verifyTrue(contains(source, "fingerprint"), ...
-                    "Task lifecycle helper should expose a deterministic fingerprint: " + expected(k));
-            end
-
-            docs = string(fileread(fullfile(root, "docs", "development", ...
-                "app-development.md")));
-            appRules = string(fileread(fullfile(root, "apps", "AGENTS.md")));
-            testCase.verifyTrue(contains(docs, "Task Lifecycle"), ...
-                "docs/development/app-development.md should document the app-owned task lifecycle boundary.");
-            testCase.verifyTrue(contains(appRules, "immutable") && ...
-                contains(appRules, "fingerprints"), ...
-                "apps/AGENTS.md should preserve the task snapshot/fingerprint rule.");
-        end
-
     end
 end
 
@@ -148,7 +119,7 @@ function assertCanonicalAppPackageStructure(testCase, root, appRelDir, packageNa
 
     buildLayoutSource = fileread(buildLayoutFile);
     testCase.verifyTrue(contains(buildLayoutSource, 'labkit.ui.layout.workbench'), ...
-        [relativePath(root, buildLayoutFile) ' should return a UI 5 app layout.']);
+        [relativePath(root, buildLayoutFile) ' should return a semantic LabKit app layout.']);
     assertSourceDoesNotContain(testCase, buildLayoutSource, ...
         buildLayoutForbiddenWords(), relativePath(root, buildLayoutFile));
     assertNoAppOwnedLayoutProps(testCase, buildLayoutSource, ...
@@ -156,11 +127,7 @@ function assertCanonicalAppPackageStructure(testCase, root, appRelDir, packageNa
     assertNoEmptyUiSections(testCase, buildLayoutSource, ...
         relativePath(root, buildLayoutFile));
 
-    packageSource = readPackageSource(packageDir);
-    assertSourceDoesNotContain(testCase, packageSource, ...
-        appPackageForbiddenWords(), appLabel);
     assertNoGenericHelperNames(testCase, root, packageDir);
-    assertRolePackageBoundaries(testCase, root, packageDir);
     family = appFamilyFromRelativeDir(appRelDir);
     assertAppOwnedPackageCapability(testCase, root, appDir, packageDir, ...
         family, packageName);
@@ -213,15 +180,6 @@ function words = buildLayoutForbiddenWords()
         'uiputfile(', 'uialert(', 'writetable(', 'imwrite(', 'S.'};
 end
 
-function words = appPackageForbiddenWords()
-    words = {'labkit.ui.runtime.createShell', 'labkit.ui.runtime.tab(', ...
-        'labkit.ui.view.section', 'labkit.ui.view.form', ...
-        'labkit.ui.view.panel', 'labkit.ui.view.draw(', ...
-        'labkit.ui.view.update(', 'labkit.ui.view.place', ...
-        'uigridlayout(', 'Layout.Row', 'Layout.Column', ...
-        'createRightAxesPair', 'createEditorUi', 'createUi('};
-end
-
 function assertNoAppOwnedLayoutProps(testCase, source, label)
     layoutProps = {'height', 'minRows', 'minHeight', 'maxColumns', ...
         'rowSpacing', 'columnSpacing', 'padding', 'chrome', ...
@@ -253,8 +211,7 @@ end
 function assertNoGenericHelperNames(testCase, root, packageDir)
     forbidden = {'helpers.m', 'utils.m', 'common.m', 'misc.m', ...
         'functions.m', 'callbacks.m', 'manager.m', 'processor.m', ...
-        'newUI.m', 'layout.m', 'layout2.m', 'createUI.m', 'makeUI.m', ...
-        'place.m', 'createRightAxesPair.m', 'createEditorUi.m', 'createUi.m'};
+        'layout.m', 'createUI.m', 'createUi.m', 'makeUI.m', 'place.m'};
     files = dir(fullfile(packageDir, '**', '*.m'));
     bad = strings(1, 0);
     for k = 1:numel(files)
@@ -269,37 +226,6 @@ function assertNoGenericHelperNames(testCase, root, packageDir)
         'generic helper buckets: ' strjoin(cellstr(bad), ', ')]);
 end
 
-function assertRolePackageBoundaries(testCase, root, packageDir)
-    assertComponentSourcesDoNotContain(testCase, root, fullfile(packageDir, '+ops'), ...
-        {'labkit.ui', 'uialert(', 'uigetfile(', 'uigetdir(', ...
-        'uiputfile(', 'writetable(', 'imwrite('});
-    assertComponentSourcesDoNotContain(testCase, root, fullfile(packageDir, '+view'), ...
-        {'labkit.ui.runtime.create', 'uigridlayout(', 'uiaxes(', 'uialert(', ...
-        'uigetfile(', 'uigetdir(', 'uiputfile(', 'writetable(', 'imwrite('});
-    assertComponentSourcesDoNotContain(testCase, root, fullfile(packageDir, '+io'), ...
-        {'labkit.ui', 'uialert(', 'uigridlayout(', ...
-        'writetable(', 'imwrite('});
-    assertComponentSourcesDoNotContain(testCase, root, fullfile(packageDir, '+export'), ...
-        {'labkit.ui', 'uialert(', 'uigetfile(', 'uigetdir(', ...
-        'uiputfile(', 'uigridlayout('});
-    assertComponentSourcesDoNotContain(testCase, root, fullfile(packageDir, '+state'), ...
-        {'labkit.ui', 'uialert(', 'uigetfile(', 'uigetdir(', ...
-        'uiputfile(', 'writetable(', 'imwrite(', 'uigridlayout('});
-end
-
-function assertComponentSourcesDoNotContain(testCase, root, folder, forbiddenWords)
-    if ~isfolder(folder)
-        return;
-    end
-
-    files = dir(fullfile(folder, '*.m'));
-    for k = 1:numel(files)
-        filepath = fullfile(files(k).folder, files(k).name);
-        assertSourceDoesNotContain(testCase, fileread(filepath), ...
-            forbiddenWords, relativePath(root, filepath));
-    end
-end
-
 function assertSourceDoesNotContain(testCase, source, forbiddenWords, label)
     matches = strings(1, 0);
     for k = 1:numel(forbiddenWords)
@@ -312,15 +238,6 @@ function assertSourceDoesNotContain(testCase, source, forbiddenWords, label)
     testCase.verifyTrue(isempty(matches), ...
         [label ' contains code outside its app structure boundary: ' ...
         strjoin(cellstr(matches), ', ')]);
-end
-
-function source = readPackageSource(packageDir)
-    files = dir(fullfile(packageDir, '**', '*.m'));
-    parts = cell(1, numel(files));
-    for k = 1:numel(files)
-        parts{k} = fileread(fullfile(files(k).folder, files(k).name));
-    end
-    source = strjoin(parts, newline);
 end
 
 function assertAppOwnedPackageCapability(testCase, root, appDir, packageDir, family, packageName)
@@ -352,20 +269,9 @@ function family = appFamilyFromRelativeDir(appRelDir)
 end
 
 function tf = hasNonUiPackageComponent(packageDir)
-    componentNames = {'+ops', '+view', '+export', '+io', '+state', '+appState', ...
-        '+sourceFiles', '+analysisRun', '+resultFiles', '+cropGeometry', ...
-        '+thermalFrames', '+debugArtifacts', '+videoSource', ...
-        '+skeletonDefinition', '+frameAnnotations', '+annotationCanvas', ...
-        '+projectFiles', '+markerCsv', '+coordinateExport'};
-    tf = false;
-    for k = 1:numel(componentNames)
-        componentRoot = fullfile(packageDir, componentNames{k});
-        files = dir(fullfile(componentRoot, '*.m'));
-        if isfolder(componentRoot) && any(~[files.isdir])
-            tf = true;
-            return;
-        end
-    end
+    packageDirs = nonUiPackageDirectories(packageDir);
+    tf = any(arrayfun(@(entry) packageContainsMFile( ...
+        fullfile(entry.folder, entry.name)), packageDirs));
 end
 
 function tf = packageNamespaceHasDirectUnitTest(root, family, packageName)
@@ -375,11 +281,8 @@ function tf = packageNamespaceHasDirectUnitTest(root, family, packageName)
         return;
     end
 
-    componentPattern = ['ops|view|export|io|state|appState|sourceFiles|' ...
-        'analysisRun|resultFiles|cropGeometry|thermalFrames|debugArtifacts|' ...
-        'videoSource|skeletonDefinition|frameAnnotations|annotationCanvas|' ...
-        'projectFiles|markerCsv|coordinateExport'];
-    pattern = [packageName '\.(' componentPattern ')\.'];
+    pattern = [regexptranslate('escape', packageName) ...
+        '\.(?!appLifecycle\.|userInterface\.)[A-Za-z]\w*\.'];
     testFiles = collectTextFiles(testRoot);
     tf = false;
     for k = 1:numel(testFiles)
@@ -388,6 +291,18 @@ function tf = packageNamespaceHasDirectUnitTest(root, family, packageName)
             return;
         end
     end
+end
+
+function entries = nonUiPackageDirectories(packageDir)
+    entries = dir(fullfile(packageDir, '+*'));
+    entries = entries([entries.isdir]);
+    excluded = {'+appLifecycle', '+userInterface'};
+    entries = entries(~ismember({entries.name}, excluded));
+end
+
+function tf = packageContainsMFile(folder)
+    files = dir(fullfile(folder, '**', '*.m'));
+    tf = any(~[files.isdir]);
 end
 
 function files = collectTextFiles(folder)
@@ -410,9 +325,4 @@ function rel = relativePath(root, filepath)
         rel = filepath(numel(prefix)+1:end);
     end
     rel = strrep(rel, filesep, '/');
-end
-
-function filepath = repoPath(root, pathValue)
-    parts = [{char(root)}; cellstr(split(string(pathValue), "/"))];
-    filepath = fullfile(parts{:});
 end

@@ -1,7 +1,7 @@
 function recorder = createLabKitTraceRecorder(varargin)
 %CREATELABKITTRACERECORDER Create a structured diagnostic trace recorder.
 %
-% Expected caller: official tests and future GUI diagnostics. The returned
+% Expected caller: official diagnostic trace tests. The returned
 % struct exposes record, events, writeJsonl, and writeText function handles.
 % Trace details are sanitized to avoid local paths and sensitive sample tokens.
 

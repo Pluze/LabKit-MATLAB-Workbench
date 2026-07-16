@@ -18,5 +18,5 @@ function assertClose(actual, expected, varargin)
         '%s should have the expected shape.', label);
 
     delta = abs(actual(:) - expected(:));
-    assert(all(delta < tol), '%s should match expected value.', label);
+    assert(all(delta <= tol), '%s should match expected value.', label);
 end

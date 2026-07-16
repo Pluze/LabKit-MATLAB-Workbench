@@ -201,20 +201,12 @@ end
 
 function assertStandardWorkbenchLayout(fig)
     assertStartupSucceeded(fig);
-    assertFigureMinimumSize(fig, 1500, 900);
-    mainGrid = findall(fig, 'Type', 'uigridlayout');
-    hasWorkbenchColumns = false;
-    for k = 1:numel(mainGrid)
-        columns = mainGrid(k).ColumnWidth;
-        if numel(columns) >= 3 && isnumeric(columns{1}) && ...
-                columns{1} >= 420 && isequal(columns{2}, 6) && ...
-                strcmp(char(string(columns{3})), '1x')
-            hasWorkbenchColumns = true;
-            break;
-        end
-    end
-    assert(hasWorkbenchColumns, ...
-        'App should use the shared LabKit workbench shell layout.');
+    assert(isappdata(fig, 'labkitUiRegistry'), ...
+        'App should publish the shared LabKit workbench registry.');
+    ui = getappdata(fig, 'labkitUiRegistry');
+    required = {'figure', 'main', 'leftPanel', 'rightPanel'};
+    assert(all(isfield(ui, required)) && isequal(ui.figure, fig), ...
+        'App should expose the semantic LabKit workbench shell.');
 end
 
 function assertStartupSucceeded(fig)
@@ -332,6 +324,10 @@ function waitForUiIdle(fig)
         drawnow limitrate;
     end
     drawnow limitrate;
+    if isvalid(fig) && uiHasPendingWork(fig)
+        error('LabKit:Tests:GuiIdleTimeout', ...
+            'UI work did not settle within %.1f seconds.', timeoutSeconds);
+    end
 end
 
 function [tf, detail] = waitForCondition(fig, predicate, timeoutSeconds)

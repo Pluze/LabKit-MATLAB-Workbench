@@ -1,5 +1,5 @@
 classdef PlatformSkeletonTest < matlab.unittest.TestCase
-    %PLATFORMSKELETONTEST Seed official tests for the new LabKit platform.
+    %PLATFORMSKELETONTEST Verify official test-runner artifact contracts.
     %
     % This class tests runner artifact contracts used by the official suite.
 
@@ -48,6 +48,11 @@ classdef PlatformSkeletonTest < matlab.unittest.TestCase
                 fullfile("gui", "testUnit", "trace")));
             testCase.verifyTrue(endsWith(string(runPaths.guiSnapshots), ...
                 fullfile("gui", "testUnit", "snapshots")));
+
+            testCase.verifyError(@() labkitArtifactPaths("Create", [true false]), ...
+                "MATLAB:InputParser:ArgumentFailedValidation");
+            testCase.verifyError(@() labkitArtifactPaths("Create", NaN), ...
+                "MATLAB:InputParser:ArgumentFailedValidation");
         end
 
         function traceArtifactsAreStructuredAndSanitized(testCase)

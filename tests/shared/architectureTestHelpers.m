@@ -4,7 +4,6 @@ function h = architectureTestHelpers()
     h = struct();
     h.assertNoPackageMFiles = @assertNoPackageMFiles;
     h.assertTopLevelMFiles = @assertTopLevelMFiles;
-    h.assertPackageMFiles = @assertPackageMFiles;
     h.assertPackageSourcesDoNotContain = @assertPackageSourcesDoNotContain;
     h.sourceContainsForbiddenWord = @sourceContainsForbiddenWord;
     h.assertAppEntrypoint = @assertAppEntrypoint;
@@ -13,7 +12,6 @@ function h = architectureTestHelpers()
     h.assertImageMeasurementAppBoundary = @assertImageMeasurementAppBoundary;
     h.assertGaitAppBoundary = @assertGaitAppBoundary;
     h.assertWearableAppBoundary = @assertWearableAppBoundary;
-    h.assertUsesGuiFoundation = @assertUsesGuiFoundation;
     h.guiWords = @guiWords;
     h.appEntrypointWords = @appEntrypointWords;
     h.experimentWorkflowWords = @experimentWorkflowWords;
@@ -180,22 +178,6 @@ end
 function assertUsesGuiFoundation(source, appName)
     assert(contains(source, 'labkit.ui.runtime.launch('), ...
         [appName ' should build from the reusable GUI foundation.']);
-end
-
-function assertPackageMFiles(packageDir, expectedFiles, label)
-    assert(exist(packageDir, 'dir') == 7, [label ' package directory should exist.']);
-
-    fileEntries = dir(fullfile(packageDir, '*.m'));
-    actualFiles = sort({fileEntries.name});
-    expectedFiles = sort(expectedFiles);
-    assert(isequal(actualFiles, expectedFiles), ...
-        [label ' package .m files should be exactly: ' strjoin(expectedFiles, ', ')]);
-
-    dirEntries = dir(packageDir);
-    childDirs = {dirEntries([dirEntries.isdir]).name};
-    childDirs = childDirs(~ismember(childDirs, {'.', '..'}));
-    assert(isempty(childDirs), ...
-        [label ' package should not keep child directories: ' strjoin(childDirs, ', ')]);
 end
 
 function assertTopLevelMFiles(packageDir, expectedFiles, label)
