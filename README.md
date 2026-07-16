@@ -85,9 +85,11 @@ component history.
 | Browse the complete documentation | [LabKit documentation site](https://pluze.github.io/LabKit-MATLAB-Workbench/) |
 | Install or update LabKit | [Getting Started](https://pluze.github.io/LabKit-MATLAB-Workbench/getting-started/) |
 | Open LabKit or pick an app | [App catalog](https://pluze.github.io/LabKit-MATLAB-Workbench/apps/) |
+| Understand launcher buttons, commands, and history | [LabKit Launcher](https://pluze.github.io/LabKit-MATLAB-Workbench/apps/labkit-core/launcher/) |
 | Report a problem or ask for workflow support | [.github/SUPPORT.md](.github/SUPPORT.md) |
 | Call a public LabKit function | [docs/libraries/README.md](docs/libraries/README.md) |
 | Change source code or run checks | [docs/development/testing.md](docs/development/testing.md) |
+| Call packaging, profiling, codecheck, or documentation tools | [docs/development/tools/README.md](docs/development/tools/README.md) |
 | Understand package and app boundaries | [docs/development/architecture.md](docs/development/architecture.md) |
 | Build local private apps outside the public repo | [docs/development/private-apps.md](docs/development/private-apps.md) |
 | Prepare a public release | [docs/development/release.md](docs/development/release.md) |

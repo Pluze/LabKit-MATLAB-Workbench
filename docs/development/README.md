@@ -12,8 +12,11 @@ only [Getting started](../getting-started/README.md) and the
 | Create or refactor an app | [App development](app-development.md) |
 | Work with an ignored private app repository | [Private apps](private-apps.md) |
 | Select tests, GUI checks, or profiling | [Testing](testing.md) |
+| Call source-checkout packaging, profiling, codecheck, or documentation tools | [Maintainer tools](tools/README.md) |
 | Maintain the structured documentation and generated site | [Documentation system](documentation.md) |
 | Choose versions, tags, and release evidence | [Release process](release.md) |
 
 Reusable facade calls are documented separately in the
-[public API reference](../libraries/README.md).
+[public API reference](../libraries/README.md). Launcher behavior belongs with
+the [LabKit Core apps](../apps/labkit-core/README.md), not in maintainer-only
+development pages.

@@ -1,10 +1,42 @@
 # Testing
 
-[Development index](README.md) | [Architecture](architecture.md)
+[Development index](README.md) | [Architecture](architecture.md) |
+[Maintainer Tools](tools/README.md) | [Performance Profiling](tools/profiling.md)
 
 Use this page to choose the smallest supported validation entry point. The
 public build-task set is intentionally small; changed-file tasks inspect the
 current git diff and print why each selected scope is being run.
+
+## How The Test System Fits Together
+
+`buildfile.m` owns the stable human and CI commands. Those tasks select a
+validation plan and call `tests/runLabKitTests.m`, which discovers official
+`matlab.unittest` tests beneath `tests/cases/`, applies suite, name, tag, GUI,
+and shard selectors, then runs them with progress, JUnit, optional HTML, and
+optional coverage plugins.
+
+```text
+buildtool task
+  -> validation plan or explicit suite
+    -> runLabKitTests discovery and selectors
+      -> unit, contract, or GUI tests
+        -> progress, JUnit, HTML, coverage, and debug artifacts
+```
+
+Test ownership mirrors production ownership:
+
+- unit tests exercise deterministic calculations, parsers, and project tools;
+- contract tests protect public APIs, architecture, documentation, packaging,
+  release rules, and repository hygiene;
+- GUI structural tests validate launch, layout, and callback wiring;
+- GUI workflow tests use hidden real figures and synthetic data to validate
+  semantic outcomes;
+- manual testing remains responsible for file dialogs, drawing feel, visual
+  quality, scientific review, and complete interactive workflows.
+
+The changed-file planner maps modified paths to these owners. It is routing,
+not a second test framework: the selected tests still run through the same
+official runner used by broad build tasks and CI.
 
 ## Default Check
 
@@ -403,45 +435,10 @@ launch-only suite:
   is used for performance regressions and should not replace correctness
   assertions.
 
-## Profiling GUI Startup
+## Profiling Is Supporting Evidence
 
-For source-checkout performance work, the profiling tools live under
-`tools/profiling/` and write ignored artifacts under `artifacts/profile/`.
-
-Batch-friendly run:
-
-```bash
-matlab -batch "addpath(fullfile('tools','profiling')); profileLabKitTarget('labkit_launcher', [], 'OpenReport', false, 'WaitForGuiClose', false, 'CloseFiguresAfterRun', true, 'PrintSummary', true)"
-```
-
-Interactive run:
-
-```matlab
-addpath(fullfile("tools", "profiling"))
-profileLabKitTarget("labkit_launcher")
-```
-
-The profiler writes:
-
-- `profile_*.html`: interactive flame graph, function table, `profile-json`,
-  `agent-summary-json`, and a searchable `AGENT_SUMMARY_BEGIN` block.
-- `profile_*.json`: machine-readable metadata, summary text/tables, and all
-  captured function rows.
-
-No profiler rows are dropped. Read `top_project_self_time` first for editable
-LabKit code, then use `top_captured_total_time` for captured workflow context
-such as deliberate clicks, downstream app launches, network calls, GUI close
-cost, or MATLAB callbacks. Default summary rankings exclude `profiler_tool`
-rows, but the JSON `functions` array still keeps them for audit. Automated
-analysis can filter with each row's `source_tag` and `tags` fields, for example
-`project`, `matlab_internal`, `external`, or `profiler_tool`.
-
-Measure one user-perceived cost at a time. Startup targets should open the
-launcher or app, call `drawnow`, pause briefly, and let
-`CloseFiguresAfterRun` clean up after profiling; profile explicit `close(fig)`
-latency as its own target. Profile debug launches separately from normal
-launches because visible trace mirroring can dominate app-owned startup cost.
-For large-file workflows, use synthetic multi-file targets to compare path
-registration with actual file reads before changing algorithms. Single GUI
-profile runs can be noisy, so compare repeated or representative runs and keep
-the HTML/JSON artifact paths in the handoff.
+Performance profiling is a maintainer tool rather than a correctness test. Use
+the complete [Performance Profiling](tools/profiling.md) reference for targets,
+options, report fields, and interpretation. A profile can identify startup or
+callback cost, but it does not replace outcome assertions, numeric parity, GUI
+workflow coverage, or manual scientific review.

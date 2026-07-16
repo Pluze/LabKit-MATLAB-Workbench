@@ -1,6 +1,8 @@
 # Architecture
 
-[Development index](README.md) | [Public API index](../libraries/README.md)
+[Development index](README.md) | [Public API index](../libraries/README.md) |
+[LabKit Launcher](../apps/labkit-core/launcher/README.md) |
+[Maintainer Tools](tools/README.md)
 
 LabKit is an app-first MATLAB workbench. Apps are the deliverables; `+labkit`
 is the small reusable foundation they share.
@@ -83,6 +85,8 @@ runtime APIs. The launcher may call a small, explicit subset for maintenance
 and deployment actions, such as profiling a selected app or packaging a single
 app for offline deployment. Single-app deployment packages include the launcher
 and only those launcher-needed tool folders, not the whole source checkout.
+Direct syntax, options, outputs, and artifact behavior are documented in
+[Maintainer Tools](tools/README.md).
 
 ## Ownership Boundaries
 

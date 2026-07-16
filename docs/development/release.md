@@ -1,6 +1,8 @@
 # Release Policy
 
-[Development index](README.md) | [Project history](../history/README.md)
+[Development index](README.md) | [Project history](../history/README.md) |
+[Deployment tool](tools/deployment.md) |
+[LabKit Launcher](../apps/labkit-core/launcher/README.md)
 
 Use semantic versioning for public releases.
 

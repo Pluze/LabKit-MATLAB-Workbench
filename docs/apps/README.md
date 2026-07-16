@@ -20,12 +20,15 @@ labkit_CIC_app
 ```
 
 See [Getting Started](../getting-started/README.md) for installation, updating,
-version selection, and source-checkout setup.
+version selection, and source-checkout setup. The
+[LabKit Launcher manual](labkit-core/launcher/README.md) documents its complete
+interactive and programmatic surface.
 
 ## Choose An App
 
 | Task | App | Input | Principal output |
 | --- | --- | --- | --- |
+| Discover, install, launch, diagnose, and package LabKit apps | [LabKit Launcher](labkit-core/launcher/README.md) | Installed or source LabKit tree | Running app, maintenance report, or deployment ZIP |
 | Register, crop, and mask image pairs for DIC | [DIC Preprocess](dic/dic-preprocess/README.md) | Reference and moving images | Aligned images, crops, mask |
 | Render and summarize Ncorr strain results | [DIC Postprocess](dic/dic-postprocess/README.md) | Ncorr MAT, reference image, mask | Strain overlays and summary CSV |
 | Overlay chrono voltage and current traces | [Chrono Overlay](electrochemistry/chrono-overlay/README.md) | Chrono DTA | Plot and CSV |
@@ -55,7 +58,7 @@ version selection, and source-checkout setup.
 - [Gait](gait/README.md) - pose-coordinate analysis and gait metrics.
 - [Image Measurement](image-measurement/README.md) - calibrated image,
   thermal, annotation, crop, fusion, and appearance workflows.
-- [LabKit Core](labkit-core/README.md) - general MATLAB graphics tools.
+- [LabKit Core](labkit-core/README.md) - the launcher and general MATLAB graphics tools.
 - [Neurophysiology](neurophysiology/README.md) - RHS inspection, response
   analysis, and review.
 - [Wearable](wearable/README.md) - wearable biosignal workflows.
@@ -115,6 +118,7 @@ development files that should not become global MATLAB commands.
 ## Related Documentation
 
 - [Getting Started](../getting-started/README.md)
+- [LabKit Launcher](labkit-core/launcher/README.md)
 - [App Framework](../framework/README.md)
 - [API Reference](../libraries/README.md)
 - [App Development](../development/app-development.md)

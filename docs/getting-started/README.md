@@ -30,7 +30,8 @@ labkit_launcher
 
 The launcher can install or update the runtime, discover available apps, and
 start the selected app. Keep experimental data and exported results outside
-the LabKit runtime folder.
+the LabKit runtime folder. See the [LabKit Launcher manual](../apps/labkit-core/launcher/README.md)
+for every button, programmatic mode, discovery rule, and maintenance action.
 
 ## Choose A Version
 
@@ -81,5 +82,6 @@ See [Testing](../development/testing.md) before choosing a broader build task.
 ## Next Steps
 
 - [App guide](../apps/README.md)
+- [LabKit Launcher](../apps/labkit-core/launcher/README.md)
 - [Public API reference](../libraries/README.md)
 - [Development guide](../development/README.md)

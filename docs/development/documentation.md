@@ -43,6 +43,9 @@ docs/
     <facade>/history/
   how-to/
   development/
+    tools/
+      README.md
+      <tool>.md
   history/README.md
   catalogs/
   site.json
@@ -52,6 +55,11 @@ Executable renderer code and synthetic-asset generators live under
 `tools/docs/`. Generated HTML, CSS, JavaScript, and search data live under
 `site/`. No executable `.m` file belongs under `docs/`, and no generated file
 under `site/` is edited by hand.
+
+Launcher documentation follows the user-facing app map under
+`docs/apps/labkit-core/launcher/`. Direct-call references for maintainer tools
+follow their development ownership under `docs/development/tools/`; executable
+implementations remain under the repository `tools/` tree.
 
 ## Page Types
 
@@ -243,6 +251,10 @@ updated, obsolete files and empty directories are removed, and the canonical
 `site/` directory itself is preserved. Keeping that root stable avoids numbered
 conflict copies when the repository is stored in a synchronized folder.
 
+For direct MATLAB syntax, result fields, missing-output reconstruction, and
+consistency-check behavior, see
+[Documentation Build Tools](tools/documentation.md).
+
 ## Build And Validate
 
 Use the documentation build and consistency tasks listed in
@@ -266,4 +278,5 @@ Before committing documentation work:
 - [Architecture](architecture.md)
 - [App Development](app-development.md)
 - [Testing](testing.md)
+- [Maintainer Tools](tools/README.md)
 - [Release Process](release.md)

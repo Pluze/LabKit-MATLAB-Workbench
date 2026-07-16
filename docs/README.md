@@ -9,11 +9,13 @@ MATLAB call syntax or returned data shapes.
 | I want to | Start here |
 | --- | --- |
 | Install, update, or open LabKit | [Getting started](getting-started/README.md) |
+| Understand every launcher action or call it from MATLAB | [LabKit Launcher](apps/labkit-core/launcher/README.md) |
 | Choose an app and understand its inputs and outputs | [App guide](apps/README.md) |
 | Call a reusable `labkit.*` function | [Public API reference](libraries/README.md) |
 | Understand ownership and package boundaries | [Architecture](development/architecture.md) |
 | Create or modify an app | [App development](development/app-development.md) |
 | Run tests or diagnose performance | [Testing](development/testing.md) |
+| Call packaging, profiling, codecheck, or documentation tools | [Maintainer tools](development/tools/README.md) |
 | Understand documentation sources and generated HTML | [Documentation system](development/documentation.md) |
 | Maintain a private app workspace | [Private apps](development/private-apps.md) |
 | Prepare a release | [Release process](development/release.md) |
@@ -23,9 +25,10 @@ MATLAB call syntax or returned data shapes.
 ```text
 getting-started/  installation, launcher, updates, and first-run concepts
 apps/             one directory per family and one subdirectory per app
+                  including the LabKit Launcher under LabKit Core
 framework/        UI runtime concepts, behavior, and app-authoring contracts
 libraries/        one directory per reusable public MATLAB facade
-development/      architecture, app authoring, testing, private apps, release
+development/      architecture, app authoring, testing, tools, private apps, release
 history/          chronological change records and the project history index
 catalogs/         structured app and app-owned API membership metadata
 site.json         navigation, page identity, source, and output mapping

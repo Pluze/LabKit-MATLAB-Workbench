@@ -18,12 +18,28 @@
 </header>
 <nav class="product-nav" aria-label="Documentation areas"><div class="product-nav-inner"><a class="product-nav-link" href="../getting-started/index.html">Get Started</a><a class="product-nav-link" href="../apps/index.html">Apps</a><a class="product-nav-link" href="../reference/index.html">Functions</a><a class="product-nav-link" href="../framework/index.html">Framework</a><a class="product-nav-link active" href="index.html">Development</a><a class="product-nav-link" href="../history/index.html">History</a></div></nav>
 <div class="shell">
-<aside id="local-navigation" class="sidebar"><nav aria-label="Current documentation"><a class="context-home" href="../index.html">Documentation Home</a><a class="context-parent" href="index.html">Development</a><p class="current-page">Testing</p><section class="local-group"><h2>In this section</h2><a class="local-link" href="index.html">Development</a><a class="local-link" href="architecture.html">Architecture</a><a class="local-link" href="app-development.html">App Development</a><a class="local-link" href="private-apps.html">Private Apps</a><a class="local-link" href="documentation.html">Documentation System</a><a class="local-link" href="release.html">Release Process</a></section><section class="local-group on-this-page"><h2>On this page</h2><a class="toc-link" href="#default-check">Default Check</a><a class="toc-link" href="#build-tasks">Build Tasks</a><a class="toc-link" href="#choosing-a-task">Choosing A Task</a><a class="toc-link" href="#validation-cadence">Validation Cadence</a><a class="toc-link" href="#ci-scope">CI Scope</a><a class="toc-link" href="#test-layout">Test Layout</a><a class="toc-link" href="#focused-iteration">Focused Iteration</a><a class="toc-link" href="#gui-validation">GUI Validation</a><a class="toc-link" href="#fixtures-and-data-hygiene">Fixtures And Data Hygiene</a><a class="toc-link" href="#numerical-tolerance">Numerical Tolerance</a><a class="toc-link" href="#artifacts">Artifacts</a><a class="toc-link" href="#runtime-v2-contract-coverage">Runtime V2 Contract Coverage</a><a class="toc-link" href="#profiling-gui-startup">Profiling GUI Startup</a></section></nav></aside>
+<aside id="local-navigation" class="sidebar"><nav aria-label="Current documentation"><a class="context-home" href="../index.html">Documentation Home</a><a class="context-parent" href="index.html">Development</a><p class="current-page">Testing</p><section class="local-group"><h2>In this section</h2><a class="local-link" href="index.html">Development</a><a class="local-link" href="tools/deployment.html">App Deployment Packages</a><a class="local-link" href="tools/documentation.html">Documentation Build Tools</a><a class="local-link" href="tools/profiling.html">Performance Profiling</a><a class="local-link" href="architecture.html">Architecture</a><a class="local-link" href="app-development.html">App Development</a><a class="local-link" href="private-apps.html">Private Apps</a><a class="local-link" href="documentation.html">Documentation System</a><a class="local-link" href="release.html">Release Process</a><a class="local-link" href="tools/index.html">Maintainer Tools</a><a class="local-link" href="tools/codecheck.html">Code Analyzer Reports</a></section><section class="local-group on-this-page"><h2>On this page</h2><a class="toc-link" href="#how-the-test-system-fits-together">How The Test System Fits Together</a><a class="toc-link" href="#default-check">Default Check</a><a class="toc-link" href="#build-tasks">Build Tasks</a><a class="toc-link" href="#choosing-a-task">Choosing A Task</a><a class="toc-link" href="#validation-cadence">Validation Cadence</a><a class="toc-link" href="#ci-scope">CI Scope</a><a class="toc-link" href="#test-layout">Test Layout</a><a class="toc-link" href="#focused-iteration">Focused Iteration</a><a class="toc-link" href="#gui-validation">GUI Validation</a><a class="toc-link" href="#fixtures-and-data-hygiene">Fixtures And Data Hygiene</a><a class="toc-link" href="#numerical-tolerance">Numerical Tolerance</a><a class="toc-link" href="#artifacts">Artifacts</a><a class="toc-link" href="#runtime-v2-contract-coverage">Runtime V2 Contract Coverage</a><a class="toc-link" href="#profiling-is-supporting-evidence">Profiling Is Supporting Evidence</a></section></nav></aside>
 <main class="content">
 <p class="page-kind">how-to</p>
 <h1 id="testing">Testing</h1>
-<p><a href="index.html">Development index</a> | <a href="architecture.html">Architecture</a></p>
+<p><a href="index.html">Development index</a> | <a href="architecture.html">Architecture</a> | <a href="tools/index.html">Maintainer Tools</a> | <a href="tools/profiling.html">Performance Profiling</a></p>
 <p>Use this page to choose the smallest supported validation entry point. The public build-task set is intentionally small; changed-file tasks inspect the current git diff and print why each selected scope is being run.</p>
+<h2 id="how-the-test-system-fits-together">How The Test System Fits Together</h2>
+<p><code>buildfile.m</code> owns the stable human and CI commands. Those tasks select a validation plan and call <code>tests/runLabKitTests.m</code>, which discovers official <code>matlab.unittest</code> tests beneath <code>tests/cases/</code>, applies suite, name, tag, GUI, and shard selectors, then runs them with progress, JUnit, optional HTML, and optional coverage plugins.</p>
+<pre><code class="language-text">buildtool task
+  -&gt; validation plan or explicit suite
+    -&gt; runLabKitTests discovery and selectors
+      -&gt; unit, contract, or GUI tests
+        -&gt; progress, JUnit, HTML, coverage, and debug artifacts</code></pre>
+<p>Test ownership mirrors production ownership:</p>
+<ul>
+<li>unit tests exercise deterministic calculations, parsers, and project tools;</li>
+<li>contract tests protect public APIs, architecture, documentation, packaging, release rules, and repository hygiene;</li>
+<li>GUI structural tests validate launch, layout, and callback wiring;</li>
+<li>GUI workflow tests use hidden real figures and synthetic data to validate semantic outcomes;</li>
+<li>manual testing remains responsible for file dialogs, drawing feel, visual quality, scientific review, and complete interactive workflows.</li>
+</ul>
+<p>The changed-file planner maps modified paths to these owners. It is routing, not a second test framework: the selected tests still run through the same official runner used by broad build tasks and CI.</p>
 <h2 id="default-check">Default Check</h2>
 <p>Run the default broad non-GUI check when you are not sure which focused scope applies:</p>
 <pre><code class="language-bash">buildtool headless</code></pre>
@@ -144,20 +160,8 @@ artifacts/logs/&lt;RunName&gt;/</code></pre>
 <li>App GUI workflow tests should cover semantic controls, enabled states, workflow outcomes, debug traces, and exported results. Do not add broad launch-only coverage for every app when a real workflow or guardrail already covers the contract.</li>
 <li>Debug sample-pack tests cover clean-room debug artifacts. Profiler evidence is used for performance regressions and should not replace correctness assertions.</li>
 </ul>
-<h2 id="profiling-gui-startup">Profiling GUI Startup</h2>
-<p>For source-checkout performance work, the profiling tools live under <code>tools/profiling/</code> and write ignored artifacts under <code>artifacts/profile/</code>.</p>
-<p>Batch-friendly run:</p>
-<pre><code class="language-bash">matlab -batch &quot;addpath(fullfile('tools','profiling')); profileLabKitTarget('labkit_launcher', [], 'OpenReport', false, 'WaitForGuiClose', false, 'CloseFiguresAfterRun', true, 'PrintSummary', true)&quot;</code></pre>
-<p>Interactive run:</p>
-<pre><code class="language-matlab">addpath(fullfile(&quot;tools&quot;, &quot;profiling&quot;))
-profileLabKitTarget(&quot;labkit_launcher&quot;)</code></pre>
-<p>The profiler writes:</p>
-<ul>
-<li><code>profile_*.html</code>: interactive flame graph, function table, <code>profile-json</code>, <code>agent-summary-json</code>, and a searchable <code>AGENT_SUMMARY_BEGIN</code> block.</li>
-<li><code>profile_*.json</code>: machine-readable metadata, summary text/tables, and all captured function rows.</li>
-</ul>
-<p>No profiler rows are dropped. Read <code>top_project_self_time</code> first for editable LabKit code, then use <code>top_captured_total_time</code> for captured workflow context such as deliberate clicks, downstream app launches, network calls, GUI close cost, or MATLAB callbacks. Default summary rankings exclude <code>profiler_tool</code> rows, but the JSON <code>functions</code> array still keeps them for audit. Automated analysis can filter with each row's <code>source_tag</code> and <code>tags</code> fields, for example <code>project</code>, <code>matlab_internal</code>, <code>external</code>, or <code>profiler_tool</code>.</p>
-<p>Measure one user-perceived cost at a time. Startup targets should open the launcher or app, call <code>drawnow</code>, pause briefly, and let <code>CloseFiguresAfterRun</code> clean up after profiling; profile explicit <code>close(fig)</code> latency as its own target. Profile debug launches separately from normal launches because visible trace mirroring can dominate app-owned startup cost. For large-file workflows, use synthetic multi-file targets to compare path registration with actual file reads before changing algorithms. Single GUI profile runs can be noisy, so compare repeated or representative runs and keep the HTML/JSON artifact paths in the handoff.</p>
+<h2 id="profiling-is-supporting-evidence">Profiling Is Supporting Evidence</h2>
+<p>Performance profiling is a maintainer tool rather than a correctness test. Use the complete <a href="tools/profiling.html">Performance Profiling</a> reference for targets, options, report fields, and interpretation. A profile can identify startup or callback cost, but it does not replace outcome assertions, numeric parity, GUI workflow coverage, or manual scientific review.</p>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>
 </main>
 </div>

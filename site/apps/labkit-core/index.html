@@ -18,19 +18,22 @@
 </header>
 <nav class="product-nav" aria-label="Documentation areas"><div class="product-nav-inner"><a class="product-nav-link" href="../../getting-started/index.html">Get Started</a><a class="product-nav-link active" href="../index.html">Apps</a><a class="product-nav-link" href="../../reference/index.html">Functions</a><a class="product-nav-link" href="../../framework/index.html">Framework</a><a class="product-nav-link" href="../../development/index.html">Development</a><a class="product-nav-link" href="../../history/index.html">History</a></div></nav>
 <div class="shell">
-<aside id="local-navigation" class="sidebar"><nav aria-label="Current documentation"><a class="context-home" href="../../index.html">Documentation Home</a><a class="context-parent" href="../index.html">Apps</a><p class="current-page">LabKit Core</p><section class="local-group"><h2>In this section</h2><a class="local-link" href="figure-studio.html">Figure Studio</a></section><section class="local-group on-this-page"><h2>On this page</h2><a class="toc-link" href="#choose-an-app">Choose An App</a><a class="toc-link" href="#figure-handoff">Figure Handoff</a><a class="toc-link" href="#related-documentation">Related Documentation</a></section></nav></aside>
+<aside id="local-navigation" class="sidebar"><nav aria-label="Current documentation"><a class="context-home" href="../../index.html">Documentation Home</a><a class="context-parent" href="../index.html">Apps</a><p class="current-page">LabKit Core</p><section class="local-group"><h2>In this section</h2><a class="local-link" href="launcher/index.html">LabKit Launcher</a><a class="local-link" href="figure-studio.html">Figure Studio</a></section><section class="local-group on-this-page"><h2>On this page</h2><a class="toc-link" href="#choose-an-app">Choose An App</a><a class="toc-link" href="#workbench-entry-point">Workbench Entry Point</a><a class="toc-link" href="#figure-handoff">Figure Handoff</a><a class="toc-link" href="#related-documentation">Related Documentation</a></section></nav></aside>
 <main class="content">
 <p class="page-kind">app family</p>
 <h1 id="labkit-core-apps">LabKit Core Apps</h1>
-<p>Core apps provide cross-domain tools that are useful to many LabKit workflows but do not own a scientific measurement or experiment-specific formula.</p>
+<p>Core apps provide the LabKit workbench entry point and cross-domain tools that are useful to many workflows but do not own a scientific measurement or experiment-specific formula.</p>
 <h2 id="choose-an-app">Choose An App</h2>
-<div class="table-wrap"><table><thead><tr><th>Task</th><th>App</th></tr></thead><tbody><tr><td>Restyle a MATLAB figure and export its visible graphics</td><td><a href="figure-studio.html">Figure Studio</a></td></tr></tbody></table></div>
+<div class="table-wrap"><table><thead><tr><th>Task</th><th>App</th></tr></thead><tbody><tr><td>Discover, install, launch, diagnose, and package apps</td><td><a href="launcher/index.html">LabKit Launcher</a></td></tr><tr><td>Restyle a MATLAB figure and export its visible graphics</td><td><a href="figure-studio.html">Figure Studio</a></td></tr></tbody></table></div>
+<h2 id="workbench-entry-point">Workbench Entry Point</h2>
+<p>The launcher is documented here because users operate it as the first LabKit application. Its implementation remains a self-contained root file so it can repair a damaged installation without depending on the app framework.</p>
 <h2 id="figure-handoff">Figure Handoff</h2>
 <p>Figure Studio can open tracked <code>.fig</code> files or receive a plot sent from a LabKit plot context menu. The lightweight framework popout is intended for inspection; Figure Studio provides the complete workflow for controlled canvas and style settings, raster/vector export, and a data-plus-recreation-script package.</p>
 <p>Figure Studio snapshots visible graphics. It does not rerun the calculation that produced the original figure and does not claim that displayed graphics are a lossless replacement for the original scientific dataset.</p>
 <h2 id="related-documentation">Related Documentation</h2>
 <ul>
 <li><a href="figure-studio.html">Figure Studio manual</a></li>
+<li><a href="launcher/index.html">LabKit Launcher manual</a></li>
 <li><a href="../../framework/index.html">App Framework</a></li>
 <li><a href="../../development/architecture.html">Architecture</a></li>
 </ul>
