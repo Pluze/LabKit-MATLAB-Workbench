@@ -115,7 +115,11 @@ function path = documentationSourceForArtifact(root, artifact)
     end
     if startsWith(artifact.label, "labkit.")
         facade = extractAfter(artifact.label, "labkit.");
-        path = "docs/api/" + facade + ".md";
+        if facade == "ui"
+            path = "docs/framework/README.md";
+        else
+            path = "docs/libraries/" + facade + "/README.md";
+        end
         return;
     end
     catalogPath = fullfile(root, "docs", "catalogs", "apps.json");

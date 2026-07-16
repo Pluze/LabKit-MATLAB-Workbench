@@ -115,6 +115,6 @@ feel still require a human MATLAB check.
 ## Related Reference
 
 - [App catalog and workflows](../apps/README.md)
-- [UI API](../api/ui.md)
+- [App Framework](../framework/README.md)
 - [Architecture](architecture.md)
 - [Testing](testing.md)

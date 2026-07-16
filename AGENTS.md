@@ -21,14 +21,14 @@ roadmaps:
 Read component docs only when relevant:
 
 - `docs/development/architecture.md` for package boundaries or entrypoint work
-- `docs/api/ui.md` for reusable GUI shell, components, or layout work
-- `docs/api/image.md` for image file IO, display normalization, resizing,
+- `docs/framework/README.md` for reusable GUI shell, components, or layout work
+- `docs/libraries/image/README.md` for image file IO, display normalization, resizing,
   filtering, enhancement primitives, or image facade work
-- `docs/api/thermal.md` for thermal image file parsing, raw-to-temperature
+- `docs/libraries/thermal/README.md` for thermal image file parsing, raw-to-temperature
   conversion, thermal rendering, or FLIR radiometric JPEG work
-- `docs/api/dta.md` for DTA API, parser, item, pulse, or session work
-- `docs/api/rhs.md` for RHS API, parser, channel metadata, indexing, or waveform window reads
-- `docs/api/biosignal.md` for biosignal recording, waveform processing, events, or wearable work
+- `docs/libraries/dta/README.md` for DTA API, parser, item, pulse, or session work
+- `docs/libraries/rhs/README.md` for RHS API, parser, channel metadata, indexing, or waveform window reads
+- `docs/libraries/biosignal/README.md` for biosignal recording, waveform processing, events, or wearable work
 - `docs/apps/README.md` for app entrypoints and current user workflows
 - `docs/development/app-development.md` for new app or app-structure work
 - `docs/development/testing.md` for validation choices or test layout changes

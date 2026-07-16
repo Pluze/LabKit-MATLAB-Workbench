@@ -33,9 +33,10 @@ Use a deep pass only for the boundary being touched:
 - read `tests/AGENTS.md` if adding tests or fixtures
 - read `docs/apps/README.md` for public workflows and
   `docs/development/app-development.md` for app shape or entrypoint changes
-- read `docs/api/ui.md` for shell, layout, controls, axes, callbacks, or debug UI
-- read `docs/api/image.md`, `docs/api/dta.md`, `docs/api/rhs.md`, or
-  `docs/api/biosignal.md` only for those facade-backed apps
+- read `docs/framework/README.md` for shell, layout, controls, axes, callbacks, or debug UI
+- read `docs/libraries/image/README.md`, `docs/libraries/dta/README.md`,
+  `docs/libraries/rhs/README.md`, or `docs/libraries/biosignal/README.md`
+  only for those facade-backed apps
 
 Do not copy local paths, real filenames, sample labels, subject names, timestamps, device IDs, or proprietary row values into tracked files.
 

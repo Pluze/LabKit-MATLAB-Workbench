@@ -29,7 +29,7 @@ Landed facts:
 - The public UI surface has 36 reviewed functions. The earlier numerical
   planning target is not a completion gate; every retained function owns a
   distinct current contract.
-- Current human contracts live in `docs/api/ui.md`, `docs/apps/README.md`, and
+- Current human contracts live in `docs/framework/README.md`, `docs/apps/README.md`, and
   `docs/development/architecture.md`. The temporary Runtime V2 design record is retired.
 
 ## Exact Remaining Closure

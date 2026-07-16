@@ -10,7 +10,7 @@ MATLAB call syntax or returned data shapes.
 | --- | --- |
 | Install, update, or open LabKit | [Getting started](getting-started/README.md) |
 | Choose an app and understand its inputs and outputs | [App guide](apps/README.md) |
-| Call a reusable `labkit.*` function | [Public API reference](api/README.md) |
+| Call a reusable `labkit.*` function | [Public API reference](libraries/README.md) |
 | Understand ownership and package boundaries | [Architecture](development/architecture.md) |
 | Create or modify an app | [App development](development/app-development.md) |
 | Run tests or diagnose performance | [Testing](development/testing.md) |
@@ -22,10 +22,14 @@ MATLAB call syntax or returned data shapes.
 
 ```text
 getting-started/  installation, launcher, updates, and first-run concepts
-apps/             task-oriented app catalog and workflow behavior
-api/              supported public MATLAB functions grouped by facade
+apps/             one directory per family and one subdirectory per app
+framework/        UI runtime concepts, behavior, and app-authoring contracts
+libraries/        one directory per reusable public MATLAB facade
+how-to/           focused task recipes and documentation asset workflows
 development/      architecture, app authoring, testing, private apps, release
-guides/           focused maintainer recipes and generated documentation assets
+history/          the global index over component-owned history records
+catalogs/         structured app and app-owned API membership metadata
+site.json         navigation, page identity, source, and output mapping
 ```
 
 The structure follows the same separation used by mature technical
@@ -35,21 +39,34 @@ does not mirror the source tree one file at a time.
 
 ## Reference Conventions
 
-Public API pages use a consistent order:
+Public function pages follow the MATLAB reference pattern:
 
-1. purpose and ownership boundary
-2. common calls or syntax
-3. inputs, options, outputs, and data shapes
-4. examples and related functions
+1. summary and syntax
+2. description and behavior
+3. input arguments and options
+4. output arguments and data shapes
+5. algorithms or scientific semantics where relevant
+6. errors and limitations
+7. executable examples
+8. version history, See Also, and related topics
 
-App pages describe user workflows rather than internal callbacks. Development
-pages describe current contracts rather than migration history.
+Each app family has a landing page. Each concrete app owns a directory whose
+`README.md` is its Get Started and detailed behavior page; complex apps can add
+focused workflow, file-format, or algorithm topics beside it. App pages explain
+launch, task flow, interaction rules, inputs, outputs, persistence, scientific
+meaning, non-GUI APIs, errors, limitations, examples, related topics, and
+component history as applicable. They do not document internal callbacks.
+
+Framework and library landing pages follow the Qt module pattern: overview and
+ownership first, followed by grouped concepts, supported public members,
+detailed behavior, examples, and related modules. Generated function pages are
+owned by MATLAB source help blocks. Handwritten HTML is never a source.
 
 ## Project History And Support
 
-- [Project history](history.md) aggregates component-owned change records.
+- [Project history](history/README.md) aggregates component-owned change records.
 - [Support](../.github/SUPPORT.md) explains how to report workflow problems.
-- [Documentation asset guide](guides/workflow-assets.md) explains how to
+- [Documentation asset guide](how-to/workflow-assets.md) explains how to
   generate synthetic screenshots and example outputs.
 
 Agent execution rules, skills, and active migration debt stay outside this

@@ -1,6 +1,6 @@
 # Release Policy
 
-[Development index](README.md) | [Project history](../history.md)
+[Development index](README.md) | [Project history](../history/README.md)
 
 Use semantic versioning for public releases.
 
@@ -80,7 +80,7 @@ Release notes summarize one public release. Long-lived change explanations
 live with the framework, library, app, launcher, or project documentation they
 affect. Each record is one Markdown file under a relevant `history/` directory.
 The generated documentation site aggregates those files into the
-[Project History](../history.md) page and automatically lists matching records
+[Project History](../history/README.md) page and automatically lists matching records
 on every related component page.
 
 When a change bumps `labkit_launcher.m`, a `+labkit/**/version.m` facade, or an

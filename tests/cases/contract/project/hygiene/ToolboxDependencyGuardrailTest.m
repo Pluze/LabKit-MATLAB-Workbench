@@ -181,7 +181,8 @@ function smokeImageMeasurementApps()
 end
 
 function files = trackedSourceFiles(root)
-    [status, output] = system(sprintf('git -C "%s" ls-files apps +labkit docs/tools', root));
+    [status, output] = system(sprintf( ...
+        'git -C "%s" ls-files apps +labkit tools/docs/assets', root));
     assert(status == 0, 'Could not list tracked app, +labkit, and docs/tool files.');
     files = string(splitlines(strtrim(output)));
     files = files(endsWith(files, ".m"));
@@ -305,7 +306,7 @@ function findings = dependencyProductFindings(root, files, debt)
         "apps/labkit_core"
         "apps/neurophysiology"
         "apps/wearable"
-        "docs/tools"];
+        "tools/docs/assets"];
     findings = strings(1, 0);
     assigned = false(size(files));
     for iGroup = 1:numel(groups)

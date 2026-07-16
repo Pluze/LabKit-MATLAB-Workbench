@@ -254,7 +254,11 @@ function target = rewriteLink(model, page, target)
     if startsWith(resolved, "../")
         repositoryPath = extractAfter(resolved, 3);
         target = model.repositoryUrl + "/blob/main/" + repositoryPath + fragment;
+        return;
     end
+    error("LabKit:Docs:UnresolvedLink", ...
+        "Page %s links to an unregistered Markdown source: %s", ...
+        page.source, target);
 end
 
 function path = normalizeDocPath(path)
@@ -264,7 +268,7 @@ function path = normalizeDocPath(path)
         if parts(k) == "." || strlength(parts(k)) == 0
             continue;
         elseif parts(k) == ".." && ~isempty(kept) && kept(end) ~= ".."
-            kept(end) = [];
+            kept(end, :) = [];
         else
             kept(end + 1, 1) = parts(k);
         end

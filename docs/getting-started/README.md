@@ -81,5 +81,5 @@ See [Testing](../development/testing.md) before choosing a broader build task.
 ## Next Steps
 
 - [App guide](../apps/README.md)
-- [Public API reference](../api/README.md)
+- [Public API reference](../libraries/README.md)
 - [Development guide](../development/README.md)

@@ -115,23 +115,51 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
 
         function publicApiIndexCoversPublicLibrarySurface(testCase)
             root = setupLabKitTestPath();
-            indexText = string(fileread(fullfile(root, "docs", "api", ...
-                "README.md")));
+            referenceRoot = fullfile(root, "site", "reference");
+            indexText = string(fileread(fullfile(referenceRoot, "index.html")));
             publicFiles = collectPublicLibraryFiles(root);
             missing = strings(1, 0);
             for k = 1:numel(publicFiles)
-                [facade, functionName] = publicApiIdentity(root, publicFiles(k));
-                section = publicApiSection(indexText, facade);
-                if strlength(section) == 0 || ...
-                        ~contains(section, "`" + functionName + "`")
-                    missing(end+1) = facade + "." + functionName;
+                symbol = publicApiSymbol(root, publicFiles(k));
+                relativeOutput = "api/" + replace(symbol, ".", "/") + ".html";
+                outputFile = fullfile(referenceRoot, ...
+                    replace(relativeOutput, "/", filesep));
+                expectedLink = "href=""" + relativeOutput + """";
+                if ~isfile(outputFile) || ~contains(indexText, expectedLink)
+                    missing(end+1) = symbol;
                 end
             end
 
             testCase.verifyTrue(isempty(missing), ...
-                ['docs/api/README.md should list every supported public ' ...
-                '+labkit function under its owning facade: ' ...
+                ['Generated API reference should link every supported public ' ...
+                '+labkit function to its own source-bound page: ' ...
                 strjoin(cellstr(missing), ', ')]);
+        end
+
+        function documentationSourcesUseReaderOrientedHierarchy(testCase)
+            root = setupLabKitTestPath();
+            docsRoot = fullfile(root, "docs");
+            retired = ["api", "guides", "tools"];
+            for k = 1:numel(retired)
+                testCase.verifyFalse(isfolder(fullfile(docsRoot, retired(k))), ...
+                    "Retired mixed-purpose documentation folder returned: " + retired(k));
+            end
+
+            mFiles = dir(fullfile(docsRoot, "**", "*.m"));
+            testCase.verifyEmpty(mFiles, ...
+                "docs/ contains structured documentation sources, not executable tools.");
+            testCase.verifyTrue(isfile(fullfile(docsRoot, "framework", "README.md")));
+            testCase.verifyTrue(isfile(fullfile(docsRoot, "libraries", "README.md")));
+            testCase.verifyTrue(isfile(fullfile(docsRoot, "history", "README.md")));
+
+            catalog = jsondecode(fileread(fullfile(docsRoot, "catalogs", "apps.json")));
+            apps = normalizeDocStructArray(catalog.apps);
+            for k = 1:numel(apps)
+                expected = "apps/" + string(apps(k).family) + "/" + ...
+                    string(apps(k).id) + "/README.md";
+                testCase.verifyEqual(string(apps(k).source), expected, ...
+                    "Each app should own one immediately recognizable documentation directory.");
+            end
         end
 
         function generatedDocumentationMatchesTrackedSources(testCase)
@@ -204,6 +232,23 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
             testCase.verifyFalse(contains(homePage, ...
                 "[Getting started](getting-started/README.md)"), ...
                 "Generated HTML must not expose unparsed Markdown links.");
+        end
+
+        function generatedSiteContainsNoLocalMarkdownLinks(testCase)
+            root = setupLabKitTestPath();
+            pages = dir(fullfile(root, "site", "**", "*.html"));
+            offenders = strings(0, 1);
+            for k = 1:numel(pages)
+                text = string(fileread(fullfile(pages(k).folder, pages(k).name)));
+                if ~isempty(regexp(text, ...
+                        'href="(?!https?://|mailto:)[^"]+[.]md(?:#[^"]*)?"', ...
+                        'once'))
+                    offenders(end + 1, 1) = string(fullfile( ...
+                        pages(k).folder, pages(k).name));
+                end
+            end
+            testCase.verifyEmpty(offenders, ...
+                "Generated pages must resolve every local Markdown link to HTML.");
         end
 
         function appApiCatalogIsExplicitAndContainsNoPrivatePaths(testCase)
@@ -319,29 +364,12 @@ function files = collectPublicLibraryFiles(root)
     end
 end
 
-function [facade, functionName] = publicApiIdentity(root, filepath)
+function symbol = publicApiSymbol(root, filepath)
     rel = string(relativePath(root, filepath));
     parts = split(rel, "/");
-    facade = erase(parts(2), "+");
+    packageParts = erase(parts(startsWith(parts, "+")), "+");
     functionName = erase(parts(end), ".m");
-end
-
-function section = publicApiSection(indexText, facade)
-    title = upper(extractBefore(facade, 2)) + extractAfter(facade, 1);
-    if facade == "ui"
-        title = "UI";
-    elseif facade == "dta"
-        title = "DTA";
-    elseif facade == "rhs"
-        title = "RHS";
-    end
-    blocks = split(indexText, newline + "## ");
-    match = blocks(startsWith(blocks, title + newline));
-    if isempty(match)
-        section = "";
-    else
-        section = match(1);
-    end
+    symbol = strjoin([packageParts; functionName], ".");
 end
 
 function tf = hasFunctionContractComment(filepath)

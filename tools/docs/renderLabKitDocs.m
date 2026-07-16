@@ -54,6 +54,15 @@ function output = renderNarrativePages(model, stagingRoot)
     for k = 1:numel(model.pages)
         page = model.pages(k);
         [body, plainText] = renderLabKitMarkdown(model, page);
+        if page.id == "api"
+            [apiIndexBody, apiIndexText] = renderLabKitApiIndex(model, page.output);
+            body = body + apiIndexBody;
+            plainText = plainText + " " + apiIndexText;
+        else
+            [apiLinksBody, apiLinksText] = renderLabKitPageApiLinks(model, page);
+            body = body + apiLinksBody;
+            plainText = plainText + " " + apiLinksText;
+        end
         [historyBody, historyText] = renderLabKitHistoryLinks(model, page);
         body = body + historyBody;
         plainText = plainText + " " + historyText;

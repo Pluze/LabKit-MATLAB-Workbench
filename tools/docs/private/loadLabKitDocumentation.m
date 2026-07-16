@@ -92,6 +92,7 @@ end
 
 function pages = discoverHistoryPages(sourceRoot)
     entries = dir(fullfile(sourceRoot, "**", "history", "**", "*.md"));
+    entries = entries(~strcmpi(string({entries.name}), "README.md"));
     pages = repmat(emptyPage(), numel(entries), 1);
     for k = 1:numel(entries)
         filepath = string(fullfile(entries(k).folder, entries(k).name));

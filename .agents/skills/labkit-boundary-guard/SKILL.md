@@ -31,8 +31,9 @@ the touched files:
 - read `docs/development/architecture.md` for public package surfaces, allowed debt, or
   app-vs-library ownership changes
 - read the relevant component doc only for the touched facade:
-  `docs/apps/README.md`, `docs/api/ui.md`, `docs/api/image.md`,
-  `docs/api/dta.md`, `docs/api/rhs.md`, or `docs/api/biosignal.md`
+  `docs/apps/README.md`, `docs/framework/README.md`,
+  `docs/libraries/image/README.md`, `docs/libraries/dta/README.md`,
+  `docs/libraries/rhs/README.md`, or `docs/libraries/biosignal/README.md`
 
 ## Boundary Decision
 

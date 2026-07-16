@@ -14,45 +14,131 @@
 <div class="search"><label class="sr-only" for="doc-search">Search documentation</label><input id="doc-search" type="search" placeholder="Search apps, guides, and APIs" autocomplete="off"><div id="search-results" class="search-results" hidden></div></div>
 </header>
 <div class="shell">
-<aside class="sidebar"><p class="tagline">Apps, framework guides, and MATLAB API reference for laboratory workflows.</p><nav aria-label="Documentation"><a class="nav-link" href="../index.html">Home</a><section class="nav-group"><h2>API Reference</h2><a class="nav-link" href="../reference/index.html">API Reference</a></section><section class="nav-group"><h2>App Framework</h2><a class="nav-link" href="../framework/index.html">App Framework</a></section><section class="nav-group"><h2>Apps</h2><a class="nav-link" href="../apps/index.html">Apps</a><a class="nav-link" href="../apps/dic/index.html">DIC</a><a class="nav-link" href="../apps/electrochemistry/index.html">Electrochemistry</a><a class="nav-link" href="../apps/gait/index.html">Gait</a><a class="nav-link" href="../apps/image-measurement/index.html">Image Measurement</a><a class="nav-link" href="../apps/labkit-core/index.html">LabKit Core</a><a class="nav-link" href="../apps/neurophysiology/index.html">Neurophysiology</a><a class="nav-link" href="../apps/wearable/index.html">Wearable</a><a class="nav-link" href="../apps/dic/dic-postprocess.html">DIC Postprocess</a><a class="nav-link" href="../apps/dic/dic-preprocess.html">DIC Preprocess</a><a class="nav-link" href="../apps/electrochemistry/cic.html">CIC</a><a class="nav-link" href="../apps/electrochemistry/csc.html">CSC</a><a class="nav-link" href="../apps/electrochemistry/chrono-overlay.html">Chrono Overlay</a><a class="nav-link" href="../apps/electrochemistry/eis.html">EIS</a><a class="nav-link" href="../apps/electrochemistry/vt-resistance.html">VT Resistance</a><a class="nav-link" href="../apps/gait/gait-analysis.html">Gait Analysis</a><a class="nav-link" href="../apps/image-measurement/batch-crop.html">Batch Image Crop</a><a class="nav-link" href="../apps/image-measurement/curvature.html">Curvature Measurement</a><a class="nav-link" href="../apps/image-measurement/flir-thermal.html">FLIR Thermal</a><a class="nav-link" href="../apps/image-measurement/focus-stack.html">Focus Stack</a><a class="nav-link" href="../apps/image-measurement/image-enhance.html">Image Enhance</a><a class="nav-link" href="../apps/image-measurement/image-match.html">Image Match</a><a class="nav-link" href="../apps/image-measurement/video-marker.html">Video Marker</a><a class="nav-link" href="../apps/labkit-core/figure-studio.html">Figure Studio</a><a class="nav-link" href="../apps/neurophysiology/nerve-response-analysis.html">Nerve Response Analysis</a><a class="nav-link" href="../apps/neurophysiology/rhs-preview.html">RHS Preview</a><a class="nav-link" href="../apps/neurophysiology/response-review-stats.html">Response Review and Stats</a><a class="nav-link" href="../apps/wearable/ecg-print.html">ECG Print</a></section><section class="nav-group"><h2>Libraries</h2><a class="nav-link" href="../libraries/contracts/index.html">Contracts</a><a class="nav-link" href="../libraries/image/index.html">Image Library</a><a class="nav-link" href="../libraries/thermal/index.html">Thermal Library</a><a class="nav-link" href="../libraries/dta/index.html">DTA Library</a><a class="nav-link" href="../libraries/rhs/index.html">RHS Library</a><a class="nav-link" href="../libraries/biosignal/index.html">Biosignal Library</a></section><section class="nav-group"><h2>Development</h2><a class="nav-link" href="index.html">Development</a><a class="nav-link" href="architecture.html">Architecture</a><a class="nav-link" href="app-development.html">App Development</a><a class="nav-link" href="private-apps.html">Private Apps</a><a class="nav-link" href="testing.html">Testing</a><a class="nav-link active" href="documentation.html">Documentation System</a><a class="nav-link" href="release.html">Release Process</a></section><section class="nav-group"><h2>Getting Started</h2><a class="nav-link" href="../getting-started/index.html">Getting Started</a></section><section class="nav-group"><h2>How-to Guides</h2><a class="nav-link" href="../how-to/index.html">How-to Guides</a><a class="nav-link" href="../how-to/workflow-assets.html">Generate Workflow Assets</a></section><section class="nav-group"><h2>History</h2><a class="nav-link" href="../history/index.html">Project History</a></section></nav></aside>
+<aside class="sidebar"><p class="tagline">Apps, framework guides, and MATLAB API reference for laboratory workflows.</p><nav aria-label="Documentation"><a class="nav-link" href="../index.html">Home</a><section class="nav-group"><h2>API Reference</h2><a class="nav-link" href="../reference/index.html">API Reference</a></section><section class="nav-group"><h2>App Framework</h2><a class="nav-link" href="../framework/index.html">App Framework</a><a class="nav-link" href="../framework/runtime.html">Runtime and Lifecycle</a></section><section class="nav-group"><h2>Apps</h2><a class="nav-link" href="../apps/index.html">Apps</a><a class="nav-link" href="../apps/dic/index.html">DIC</a><a class="nav-link" href="../apps/electrochemistry/index.html">Electrochemistry</a><a class="nav-link" href="../apps/gait/index.html">Gait</a><a class="nav-link" href="../apps/image-measurement/index.html">Image Measurement</a><a class="nav-link" href="../apps/labkit-core/index.html">LabKit Core</a><a class="nav-link" href="../apps/neurophysiology/index.html">Neurophysiology</a><a class="nav-link" href="../apps/wearable/index.html">Wearable</a><a class="nav-link" href="../apps/dic/dic-postprocess.html">DIC Postprocess</a><a class="nav-link" href="../apps/dic/dic-preprocess.html">DIC Preprocess</a><a class="nav-link" href="../apps/electrochemistry/cic.html">CIC</a><a class="nav-link" href="../apps/electrochemistry/csc.html">CSC</a><a class="nav-link" href="../apps/electrochemistry/chrono-overlay.html">Chrono Overlay</a><a class="nav-link" href="../apps/electrochemistry/eis.html">EIS</a><a class="nav-link" href="../apps/electrochemistry/vt-resistance.html">VT Resistance</a><a class="nav-link" href="../apps/gait/gait-analysis.html">Gait Analysis</a><a class="nav-link" href="../apps/image-measurement/batch-crop.html">Batch Image Crop</a><a class="nav-link" href="../apps/image-measurement/curvature.html">Curvature Measurement</a><a class="nav-link" href="../apps/image-measurement/flir-thermal.html">FLIR Thermal</a><a class="nav-link" href="../apps/image-measurement/focus-stack.html">Focus Stack</a><a class="nav-link" href="../apps/image-measurement/image-enhance.html">Image Enhance</a><a class="nav-link" href="../apps/image-measurement/image-match.html">Image Match</a><a class="nav-link" href="../apps/image-measurement/video-marker.html">Video Marker</a><a class="nav-link" href="../apps/labkit-core/figure-studio.html">Figure Studio</a><a class="nav-link" href="../apps/neurophysiology/nerve-response-analysis.html">Nerve Response Analysis</a><a class="nav-link" href="../apps/neurophysiology/rhs-preview.html">RHS Preview</a><a class="nav-link" href="../apps/neurophysiology/response-review-stats.html">Response Review and Stats</a><a class="nav-link" href="../apps/wearable/ecg-print.html">ECG Print</a></section><section class="nav-group"><h2>Libraries</h2><a class="nav-link" href="../libraries/contracts/index.html">Contracts</a><a class="nav-link" href="../libraries/image/index.html">Image Library</a><a class="nav-link" href="../libraries/thermal/index.html">Thermal Library</a><a class="nav-link" href="../libraries/dta/index.html">DTA Library</a><a class="nav-link" href="../libraries/rhs/index.html">RHS Library</a><a class="nav-link" href="../libraries/biosignal/index.html">Biosignal Library</a></section><section class="nav-group"><h2>Development</h2><a class="nav-link" href="index.html">Development</a><a class="nav-link" href="architecture.html">Architecture</a><a class="nav-link" href="app-development.html">App Development</a><a class="nav-link" href="private-apps.html">Private Apps</a><a class="nav-link" href="testing.html">Testing</a><a class="nav-link active" href="documentation.html">Documentation System</a><a class="nav-link" href="release.html">Release Process</a></section><section class="nav-group"><h2>Getting Started</h2><a class="nav-link" href="../getting-started/index.html">Getting Started</a></section><section class="nav-group"><h2>How-to Guides</h2><a class="nav-link" href="../how-to/index.html">How-to Guides</a><a class="nav-link" href="../how-to/workflow-assets.html">Generate Workflow Assets</a></section><section class="nav-group"><h2>History</h2><a class="nav-link" href="../history/index.html">Project History</a></section></nav></aside>
 <main class="content">
 <p class="page-kind">explanation</p>
-<h1 id="documentation-system">Documentation System</h1>
-<p><a href="index.html">Development index</a> | <a href="testing.html">Testing</a></p>
-<p>LabKit keeps author-written documentation and generated presentation separate. The source set is optimized for maintainers and machine readers; the generated site is optimized for browsing, cross-reference, and search.</p>
-<h2 id="information-architecture">Information Architecture</h2>
-<p>The documentation follows four reading modes used by mature technical documentation sets:</p>
+<h1 id="documentation-architecture">Documentation Architecture</h1>
+<p>This page defines how LabKit documentation is authored, organized, rendered, and validated. It is a maintainer reference; readers looking for an app or a MATLAB function should start at the <a href="../index.html">documentation home</a>.</p>
+<h2 id="design-goals">Design Goals</h2>
+<p>LabKit documentation must support four distinct reading tasks:</p>
 <ul>
-<li>tutorials help a new user complete a first successful workflow;</li>
-<li>how-to guides solve a specific task;</li>
-<li>explanations describe architecture, behavior, and scientific meaning;</li>
-<li>reference pages support exact lookup of apps, files, fields, and APIs.</li>
+<li>learn a workflow from a complete example;</li>
+<li>complete a specific task without reading architecture material;</li>
+<li>understand why a framework or scientific operation behaves as it does;</li>
+<li>look up exact MATLAB syntax, argument rules, fields, units, and errors.</li>
 </ul>
-<p>The App Framework is above the reusable domain libraries because it owns app lifecycle, callbacks, state, presentation, file input, and interaction. App families organize user workflows. API reference is organized by callable code entity rather than by GUI screen.</p>
-<h2 id="source-of-truth">Source Of Truth</h2>
-<p>Only these inputs are edited:</p>
-<div class="table-wrap"><table><thead><tr><th>Source</th><th>Ownership</th></tr></thead><tbody><tr><td><code>docs/**/*.md</code></td><td>Narrative tutorials, guides, explanations, and app pages.</td></tr><tr><td><code>docs/site.json</code></td><td>Page identity, navigation, output paths, and search keywords.</td></tr><tr><td><code>docs/catalogs/api.json</code></td><td>Explicit app-owned public API surface.</td></tr><tr><td><code>docs/**/history/*.md</code></td><td>Component-owned change rationale and evidence.</td></tr><tr><td>Public MATLAB help blocks</td><td>Function signature and callable contract.</td></tr></tbody></table></div>
-<p>The renderer under <code>tools/docs/</code> uses only MATLAB and emits the complete static site under <code>site/</code>. Files under <code>site/</code> are tracked release artifacts, not authoring sources. Every generated HTML page contains a generated-file marker. Never edit HTML, CSS, JavaScript, or the search index under <code>site/</code> directly; regenerate them from the source set.</p>
-<p>See <a href="testing.html">Testing</a> for the documentation build and reproducibility commands.</p>
-<h2 id="api-reference-policy">API Reference Policy</h2>
-<p>All non-private <code>labkit.*</code> functions are part of the documented reusable surface. App-owned APIs are documented only when they appear in <code>docs/catalogs/api.json</code>. The explicit catalog prevents callback glue and implementation helpers from being mistaken for supported scientific APIs.</p>
-<p>Important scientific functions should document:</p>
+<p>The organization follows the successful division visible in MATLAB and Qt documentation: product and module landing pages orient the reader, task pages teach workflows, concept pages explain behavior, and one page per callable entity provides exact reference. A single long narrative must not try to serve all four purposes.</p>
+<h2 id="source-tree">Source Tree</h2>
+<p><code>docs/</code> contains only author-maintained, human-readable documentation data:</p>
+<pre><code class="language-text">docs/
+  README.md
+  getting-started/
+  apps/
+    &lt;family&gt;/README.md
+    &lt;family&gt;/&lt;app&gt;/README.md
+    &lt;family&gt;/&lt;app&gt;/&lt;topic&gt;.md
+    &lt;family&gt;/history/
+  framework/
+    README.md
+    &lt;topic&gt;.md
+    history/
+  libraries/
+    README.md
+    &lt;facade&gt;/README.md
+    &lt;facade&gt;/&lt;topic&gt;.md
+    &lt;facade&gt;/history/
+  how-to/
+  development/
+  history/README.md
+  catalogs/
+  site.json</code></pre>
+<p>Executable renderer code and synthetic-asset generators live under <code>tools/docs/</code>. Generated HTML, CSS, JavaScript, and search data live under <code>site/</code>. No executable <code>.m</code> file belongs under <code>docs/</code>, and no generated file under <code>site/</code> is edited by hand.</p>
+<h2 id="page-types">Page Types</h2>
+<h3 id="product-landing-page">Product landing page</h3>
+<p>The documentation home answers what LabKit is, who each major section is for, and where a reader should begin. It is a routing page, not a project history, launcher manual, or API dump.</p>
+<h3 id="tutorial">Tutorial</h3>
+<p>A tutorial leads a new reader through one complete, successful result. It states prerequisites, sample/input expectations, ordered actions, the expected result, and the next relevant topic. Tutorials may teach one path and defer alternatives.</p>
+<h3 id="how-to-guide">How-to guide</h3>
+<p>A how-to guide begins with a concrete goal and gives the shortest reliable procedure. It includes prerequisites, commands or actions, verification, and failure recovery. Background explanation is linked, not repeated.</p>
+<h3 id="app-family-page">App family page</h3>
+<p>A family page explains the shared experimental domain, compares sibling apps, shows how their files or outputs connect, and links the relevant reusable libraries. It must not contain detailed instructions for one app.</p>
+<h3 id="app-manual">App manual</h3>
+<p>Every public app owns one manual at <code>docs/apps/&lt;family&gt;/&lt;app&gt;/README.md</code>. Its normal section order is:</p>
 <ol>
-<li>syntax and purpose;</li>
-<li>inputs, outputs, option fields, defaults, and legal values;</li>
-<li>scientific definitions, units, assumptions, and numerical behavior;</li>
-<li>errors and failure-result behavior;</li>
-<li>a GUI-free MATLAB example;</li>
-<li>related functions and the owning app workflow.</li>
+<li>purpose and applicability;</li>
+<li>requirements and launch;</li>
+<li>supported inputs and file interpretation;</li>
+<li>a shortest successful workflow;</li>
+<li>controls and interaction modes;</li>
+<li>parameters, defaults, legal values, and units;</li>
+<li>calculations, algorithms, and scientific assumptions;</li>
+<li>outputs and result schemas;</li>
+<li>project state, autosave, recovery, and overwrite behavior;</li>
+<li>use without the GUI;</li>
+<li>errors, limitations, troubleshooting, related topics, and history.</li>
 </ol>
-<p>Private helpers do not receive detailed site pages. They retain concise source contracts that identify callers, shapes, side effects, and assumptions.</p>
-<h2 id="app-documentation-policy">App Documentation Policy</h2>
-<p>Every app has one landing page that answers what the app is for, how to launch it, supported inputs, expected outputs, and the shortest successful workflow. Larger apps add task guides and explanation pages for interactive tools, project formats, recovery, algorithms, scientific semantics, and app-owned APIs. Family pages connect apps that operate in the same experimental domain.</p>
-<p>GUI instructions and programmatic examples link to each other instead of duplicating full API contracts. Pages must describe visible interaction modes where the user acts, including point placement, deletion, dragging, zoom preservation, confirmation, and cancellation behavior.</p>
-<h2 id="generated-site-contract">Generated Site Contract</h2>
-<p>The generated site is deterministic for the same repository content. It contains navigation, responsive styling, individual public API pages, source links, related-API links, and a static search index. Search covers page titles, headings, keywords, MATLAB symbols, help contracts, app names, and scientific terms.</p>
-<p>GitHub Pages publishes the tracked <code>site/</code> tree. A stale or manually modified site is a validation failure rather than a second documentation truth.</p>
-<p>History records are rendered as searchable pages and linked automatically from every component named in their metadata. The project therefore has no root aggregate changelog and no separate release-history parser.</p>
+<p>Sections that genuinely do not apply may be omitted. Applicable information must not be hidden in an app catalog, family overview, changelog, or source comment. Complex apps add focused topic pages beside the manual rather than turning the manual into an unstructured notebook.</p>
+<h3 id="framework-module-page">Framework module page</h3>
+<p>The framework landing page presents ownership and module relationships. Topic pages then document lifecycle, definition, callbacks, state transactions, busy behavior, file selection, persistence, layout, plotting, interactions, debugging, and extension rules. Each topic identifies:</p>
+<ul>
+<li>the problem and owning package;</li>
+<li>the observable behavior guaranteed to apps;</li>
+<li>the normal call sequence;</li>
+<li>public types or functions grouped by role;</li>
+<li>examples, failure behavior, and related topics.</li>
+</ul>
+<p>Private runtime mechanics are explained only when necessary to understand a public behavior; private functions do not receive reference pages.</p>
+<h3 id="library-module-page">Library module page</h3>
+<p>Each <code>labkit.*</code> facade has a module landing page comparable to a MATLAB toolbox or Qt module page. It states scope, dependencies, data model, grouped public functions, common call sequences, numerical/scientific semantics, compatibility, errors, examples, and related apps. Exact per-function syntax is linked to generated reference pages.</p>
+<h3 id="function-reference-page">Function reference page</h3>
+<p>Every public function has one generated page. The MATLAB help block immediately after its declaration is the only authoring source and documents, as applicable:</p>
+<ul>
+<li>all supported syntax forms;</li>
+<li>concise description and observable behavior;</li>
+<li>each input, name-value option, and struct field;</li>
+<li>defaults, legal values, units, shape, type, and empty-value behavior;</li>
+<li>each output and its fields;</li>
+<li>algorithms, scientific definitions, and numerical assumptions;</li>
+<li>thrown errors or status-return failure behavior;</li>
+<li>a copyable example;</li>
+<li>related functions and the owning app or module.</li>
+</ul>
+<p>Function reference must not promise an overload, field, or default that the current implementation and tests do not support.</p>
+<h3 id="history-record">History record</h3>
+<p>History is component-owned. A record explains what changed, why it matters, compatibility, affected components, and validation evidence. It is not an instruction manual and must link to the current page that describes the final behavior. The global history page is only an index.</p>
+<h2 id="structured-sources">Structured Sources</h2>
+<p>The documentation model is assembled from four source classes:</p>
+<div class="table-wrap"><table><thead><tr><th>Source</th><th>Authority</th></tr></thead><tbody><tr><td><code>docs/site.json</code></td><td>Top-level page identity, kind, navigation, order, output path, keywords, and component association.</td></tr><tr><td><code>docs/catalogs/apps.json</code></td><td>App families, commands, source folders, manual pages, descriptions, and search terms.</td></tr><tr><td><code>docs/catalogs/api.json</code></td><td>App-owned functions intentionally supported as public non-GUI APIs.</td></tr><tr><td>Markdown and MATLAB help blocks</td><td>Narrative content and callable contracts.</td></tr></tbody></table></div>
+<p>Catalog data must not be copied into another catalog merely for rendering. Narrative pages may summarize it for readers, but catalog consistency and links are validated against the owning structured source.</p>
+<h2 id="authoring-from-current-code">Authoring From Current Code</h2>
+<p>Documentation changes begin from the current implementation, not from old prose. For an app manual, inspect at least its entrypoint, runtime definition, workbench layout, state/options owner, input loader, output writer, public app-owned APIs, and focused tests. For a library, inspect its complete public surface and tests. Existing documentation and history may identify questions to investigate, but they are not evidence that a behavior still exists.</p>
+<p>User-visible labels, defaults, supported file types, state fields, output columns, formulas, units, and error behavior must match their current code owners. If code and documentation disagree, resolve the product contract rather than documenting both as alternatives.</p>
+<h2 id="cross-references">Cross-References</h2>
+<p>Use relative Markdown links between narrative sources. Link the first useful mention of an app, framework topic, library, or related guide. Function names use fully qualified MATLAB symbols so the renderer can link them to generated API pages.</p>
+<p>Every app manual links its family, related apps, relevant libraries, public app APIs, and component history when records exist. Every library landing links representative apps. Related links should help the reader continue a task; they are not a list of every page sharing a keyword.</p>
+<p>The renderer rejects unresolved local Markdown targets. External links remain ordinary HTTPS links and are not copied into the site.</p>
+<h2 id="rendering-and-search">Rendering And Search</h2>
+<p><code>tools/docs/renderLabKitDocs.m</code> reads the structured model, renders all narrative and API pages, builds navigation and related links, and writes the static site to <code>site/</code>. The renderer uses MATLAB only and introduces no third-party runtime dependency.</p>
+<p>Search is a generated static index containing titles, headings, descriptions, keywords, components, MATLAB symbols, and help text. It works from GitHub Pages and when <code>site/index.html</code> is opened directly from disk; it must not depend on a local web server or a fetch request.</p>
+<p>Generated pages carry a generated-file marker. Regeneration replaces the complete generated tree, so obsolete pages cannot survive a source move.</p>
+<h2 id="build-and-validate">Build And Validate</h2>
+<p>Use the documentation build and consistency tasks listed in <a href="testing.html">Testing</a>. The build regenerates the tracked site; the consistency check renders independently and compares that result with <code>site/</code>. Project documentation tests additionally check page/catalog uniqueness, source and output existence, API coverage, local links, direct-file search, generated markers, and prohibited retired paths.</p>
+<p>Before committing documentation work:</p>
+<ol>
+<li>review the Markdown diff for claims not backed by current code;</li>
+<li>regenerate <code>site/</code>;</li>
+<li>run the focused documentation guardrail;</li>
+<li>open representative app, module, API, history, and search pages;</li>
+<li>commit source and generated output together.</li>
+</ol>
+<h2 id="related-topics">Related Topics</h2>
+<ul>
+<li><a href="../index.html">Documentation Home</a></li>
+<li><a href="architecture.html">Architecture</a></li>
+<li><a href="app-development.html">App Development</a></li>
+<li><a href="testing.html">Testing</a></li>
+<li><a href="release.html">Release Process</a></li>
+</ul>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>
 </main>
 </div>
