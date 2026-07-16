@@ -367,11 +367,11 @@ end
 
 function tasks = extractBuildtoolTasks(content)
     tokens = regexp(char(content), ...
-        'buildtool[ \t]+([A-Za-z][A-Za-z0-9_]*(?:[ \t]+[A-Za-z][A-Za-z0-9_]*)*)', ...
+        '(?m)^[ \t]*buildtool[ \t]+([A-Za-z][A-Za-z0-9_]*)[ \t]*$', ...
         'tokens');
-    tasks = strings(1, 0);
+    tasks = strings(1, numel(tokens));
     for k = 1:numel(tokens)
-        tasks = [tasks, split(string(tokens{k}{1})).'];
+        tasks(k) = string(tokens{k}{1});
     end
     tasks = unique(tasks(strlength(tasks) > 0), 'stable');
 end

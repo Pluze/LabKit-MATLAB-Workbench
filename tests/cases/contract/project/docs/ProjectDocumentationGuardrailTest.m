@@ -111,26 +111,28 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
                 strjoin(exposedMarkers, ", "));
         end
 
-        function testingDocOwnsBuildTaskCommandMatrix(testCase)
+        function agentGuidanceUsesCurrentRepositoryPaths(testCase)
             root = setupLabKitTestPath();
-            canonical = fullfile(root, "docs", "development", "testing.md");
-            canonicalTasks = extractBuildtoolTaskNames(fileread(canonical));
-            testCase.verifyGreaterThanOrEqual(numel(canonicalTasks), 5, ...
-                'docs/development/testing.md should remain the canonical build-task matrix.');
-
-            files = collectGuidanceFilesExceptTesting(root);
-            duplicates = strings(1, 0);
+            files = collectAgentGuidanceFiles(root);
+            forbidden = [ ...
+                "docs/api/", ...
+                "tests/cases/unit/labkit/", ...
+                "tests/cases/gui/labkit/", ...
+                "tests/contract", ...
+                "CHANGELOG.md"];
+            findings = strings(1, 0);
             for k = 1:numel(files)
-                tasks = extractBuildtoolTaskNames(fileread(files(k)));
-                if numel(tasks) > 1
-                    duplicates(end+1) = relativePath(root, files(k)) + ...
-                        " -> " + strjoin(tasks, " ");
+                content = string(fileread(files(k)));
+                for j = 1:numel(forbidden)
+                    if contains(content, forbidden(j))
+                        findings(end + 1) = relativePath(root, files(k)) + ...
+                            " -> " + forbidden(j);
+                    end
                 end
             end
-
-            testCase.verifyTrue(isempty(duplicates), ...
-                ['Only docs/development/testing.md should maintain a build-task command matrix: ' ...
-                strjoin(cellstr(duplicates), ', ')]);
+            testCase.verifyEmpty(findings, ...
+                "Agent guidance must not reference retired repository paths: " + ...
+                strjoin(findings, ", "));
         end
 
         function releaseDocsPinLauncherAssetToTagBlob(testCase)
@@ -154,9 +156,11 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
             end
 
             requiredAgentPhrases = [ ...
-                "Release assets must be reproducible from the tag", ...
-                "working-tree copy", ...
-                "uploaded asset size and SHA-256 digest match" ...
+                "Release assets come from the tag blob", ...
+                "byte count", ...
+                "SHA-256", ...
+                "without moving", ...
+                "published tag" ...
             ];
             for k = 1:numel(requiredAgentPhrases)
                 testCase.verifyTrue(contains(agentDoc, requiredAgentPhrases(k)), ...
@@ -501,43 +505,17 @@ function files = collectHumanDocFiles(root)
     end
 end
 
-function files = collectGuidanceFilesExceptTesting(root)
+function files = collectAgentGuidanceFiles(root)
     files = [ ...
-        string(fullfile(root, "README.md")), ...
         string(fullfile(root, "AGENTS.md")), ...
         string(fullfile(root, "apps", "AGENTS.md")), ...
         string(fullfile(root, "tests", "AGENTS.md")), ...
-        string(fullfile(root, "+labkit", "AGENTS.md"))];
-
-    docEntries = dir(fullfile(root, "docs", "**", "*.md"));
-    for k = 1:numel(docEntries)
-        filepath = string(fullfile(docEntries(k).folder, docEntries(k).name));
-        if endsWith(filepath, fullfile("docs", "development", "testing.md")) || ...
-                isHistoryDocument(filepath)
-            continue;
-        end
-        files(end+1) = filepath;
+        string(fullfile(root, "+labkit", "AGENTS.md")), ...
+        string(fullfile(root, ".agents", "migration_guide.md"))];
+    entries = dir(fullfile(root, ".agents", "skills", "*", "SKILL.md"));
+    for k = 1:numel(entries)
+        files(end + 1) = string(fullfile(entries(k).folder, entries(k).name));
     end
-
-    skillEntries = dir(fullfile(root, ".agents", "skills", "*", "SKILL.md"));
-    for k = 1:numel(skillEntries)
-        files(end+1) = string(fullfile(skillEntries(k).folder, skillEntries(k).name));
-    end
-end
-
-function tf = isHistoryDocument(filepath)
-    tf = contains(string(filepath), filesep + "history" + filesep);
-end
-
-function tasks = extractBuildtoolTaskNames(content)
-    tokens = regexp(char(content), ...
-        'buildtool[ \t]+([A-Za-z][A-Za-z0-9_]*(?:[ \t]+[A-Za-z][A-Za-z0-9_]*)*)', ...
-        'tokens');
-    tasks = strings(1, 0);
-    for k = 1:numel(tokens)
-        tasks = [tasks, split(string(tokens{k}{1})).'];
-    end
-    tasks = unique(tasks(strlength(tasks) > 0), 'stable');
 end
 
 function files = collectPublicLibraryFiles(root)

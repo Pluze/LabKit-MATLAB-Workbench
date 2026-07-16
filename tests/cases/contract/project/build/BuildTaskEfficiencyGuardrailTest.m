@@ -110,7 +110,7 @@ classdef BuildTaskEfficiencyGuardrailTest < matlab.unittest.TestCase
             root = setupLabKitTestPath();
 
             steps = labkitValidationPlanForChangedPaths(root, [ ...
-                "CHANGELOG.md"
+                "docs/history/records/2026/07/LK-20260716-runtime-identity-contracts.md"
                 "docs/apps/README.md"
                 "tools/deployment/packageLabKitApp.m"
                 "tools/deployment/private/packageManifestText.m"
@@ -118,10 +118,8 @@ classdef BuildTaskEfficiencyGuardrailTest < matlab.unittest.TestCase
             signatures = validationStepSignatures(steps);
             selectors = validationStepTestSelectors(steps);
 
-            testCase.verifyTrue(any(signatures == "project/release|false"), ...
-                "Legacy aggregate-history removal should route to release guardrails.");
             testCase.verifyTrue(any(signatures == "project/docs|false"), ...
-                "Human docs should route to documentation guardrails.");
+                "Human docs and component history should route to documentation guardrails.");
             packageStep = signatures == "project|false";
             testCase.verifyTrue(any(contains(selectors(packageStep), ...
                 "PackageLabKitAppToolTest")), ...

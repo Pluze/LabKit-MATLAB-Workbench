@@ -26,7 +26,7 @@
 <p>Use this page to choose the smallest supported validation entry point. The public build-task set is intentionally small; changed-file tasks inspect the current git diff and print why each selected scope is being run.</p>
 <h2 id="how-the-test-system-fits-together">How The Test System Fits Together</h2>
 <p><code>buildfile.m</code> owns the stable human and CI commands. Those tasks select a validation plan and call <code>tests/runLabKitTests.m</code>, which discovers official <code>matlab.unittest</code> tests beneath <code>tests/cases/</code>, applies suite, name, tag, GUI, and shard selectors, then runs them with progress, JUnit, optional HTML, and optional coverage plugins.</p>
-<pre><code class="language-text">buildtool task
+<pre><code class="language-text">buildtool &lt;task&gt;
   -&gt; validation plan or explicit suite
     -&gt; runLabKitTests discovery and selectors
       -&gt; unit, contract, or GUI tests

@@ -1,211 +1,81 @@
-# Tests Agent Rules
+# Test Rules
 
-Tests mirror source ownership. Do not create a parallel runner framework unless explicitly approved.
+Tests mirror source ownership and use MATLAB's official test framework.
 
-## Read Before Editing
+## Structure
 
-- `docs/development/testing.md`
-- affected source files
-- nearby tests under `tests/cases/unit/`, `tests/cases/contract/`, or
-  `tests/cases/gui/`
+- Runnable tests live under `tests/cases/unit`, `contract`, or `gui`.
+- App logic tests use `unit/apps/<family>`; app GUI tests use
+  `gui/apps/<family>/<app_slug>`.
+- Reusable library tests use `unit/labkit_framework/<area>` and
+  `gui/labkit_framework/<area>`.
+- Project contracts are grouped under `contract/project/<topic>`; project GUI
+  tests use `gui/project/<area>`.
+- `tests/shared` contains reusable test-facing fixtures and assertions.
+  `tests/runner` contains only runner selection, setup, progress, artifact, and
+  validation-plan support. Delete unused helpers instead of preserving a
+  speculative test API.
 
-## Test Layout
+## Runner and routing
 
-- Add runnable tests under `tests/cases/unit/`, `tests/cases/contract/apps/`,
-  `tests/cases/contract/project/`, or `tests/cases/gui/` using
-  `matlab.unittest` or `matlab.uitest` styles.
-- Under `tests/cases/contract/project/`, group guardrails by topic such as
-  `build`, `ci`, `docs`, `hygiene`, `packages`, `runtime`, or `release`
-  instead of adding unrelated project guardrails to one flat folder.
-- Keep app GUI tests under
-  `tests/cases/gui/apps/<family>/<app_slug>/` so local validation can target
-  one affected app without running unrelated app GUIs.
-- Keep reusable `+labkit` framework tests under
-  `tests/cases/<kind>/labkit_framework/<area>/`.
-- Keep project-level GUI entry points such as the root launcher under
-  `tests/cases/gui/project/<area>/`.
-- Use `TestTags` such as `Gesture`, `Workflow`, or `Structural` for test style;
-  do not create extra ownership paths for style categories.
-- Do not add a separate custom runner or direct pass/fail test tree. Build
-  tasks are the human and CI entry points; `tests/runLabKitTests.m` is the
-  lower-level implementation behind those tasks.
-- Do not add public build tasks for every timing strategy. Keep the public
-  build-task set compact and improve changed-file planner routing, printed
-  plan reasons, representative selectors, or sharding support instead.
-- CI and local broad validation should call the same public buildfile tasks.
-  Workflow YAML must not call `tests/runLabKitTests.m`, maintain test-class
-  selector lists, expose shard environment variables, or add the runner path by
-  hand.
-- Release candidate tag CI must run the public `headless`, `coverage`, and
-  `gui` build tasks before a GitHub release is published. Keep the gate as
-  workflow orchestration around public tasks instead of creating CI-only test
-  selectors.
-- Keep multi-process routing inside `buildfile.m` or the runner. If a build
-  task uses worker shards, it must first probe the selected test set and then
-  launch deterministic shards with distinct `RunName` values so artifact
-  directories do not collide.
-- Do not spawn buildfile-managed MATLAB worker processes on GitHub Actions
-  unless CI licensing for independent child MATLAB processes has been proven in
-  the workflow. The public CI entry should remain `buildtool headless`.
-- Keep architecture guardrails in the narrowest project-suite file that matches the concern.
-- Toolbox debt guardrails must distinguish an exact, temporary declared
-  product path from an undeclared dependency. A declaration names its source,
-  symbol, MathWorks product, owner, no-Toolbox fallback test, idempotency test,
-  parity test, and replacement;
-  it does not suppress static product discovery. Reject stale declarations,
-  missing fallback evidence, broad product allowlists, and dynamic-call tricks.
-- Numeric/scientific replacement tests must prove idempotent repeated results;
-  stateful operations must also prove that safe repetition does not accumulate
-  state or side effects. Compare app-consumed outputs with the Toolbox reference using a
-  justified tolerance. A screenshot or qualitative assertion is insufficient.
-- Use `tests/shared/` for small test-facing assertions, fixture builders, GUI
-  probes, cleanup, and lookup helpers. Keep ordinary MATLAB helper functions
-  as one-function files unless a grouped API materially improves call sites.
-- Use `tests/runner/` for official-runner setup, artifact paths, structured
-  trace capture, and artifact writers that keep the test runner working.
-- Do not move app-specific formulas, expected scientific values, result schemas, or export columns into shared test helpers.
-- Keep compatibility bridge assertions isolated in named compatibility tests. Ordinary app and facade tests should prefer current canonical fields and direct package functions.
-- Unit app tests should not read app source text to prove behavior. Keep source-string scans in project guardrails.
-- Version-change guardrails belong in the project contract suite and should use
-  git changed paths plus current version APIs instead of maintaining app
-  registries by hand. They should reject malformed, unchanged, or lower
-  versions for changed versioned code on `main`, in pull-request CI, or when
-  `LABKIT_ENFORCE_VERSION_BUMPS=1` is set for final branch cleanup. Local
-  feature-branch iteration may use small commits without bumping versions each
-  time; before squash, PR handoff, or direct `main` push, choose the next
-  version from the latest `main` version file and make the aggregate bump once.
-  The same aggregate version bump must update the component's owned
-  documentation and add one distributed `docs/**/history/*.md` record with user
-  impact and evidence. Guardrails should verify record identity, required
-  decision sections, and generated component-page aggregation without
-  reintroducing a root changelog or a release-history parser.
-- Boundary tests may require app-owned logic to stay under the owning app tree, but should not require GUI-free helpers to remain inside the public app entry-point file or assert exact app-private helper file lists.
-- App-owned workflow packages need direct unit coverage for non-UI functions;
-  GUI structural tests only prove launch/layout wiring.
-- Guardrails should prevent app lifecycle orchestration from living in
-  `+ui/runApp.m` or package-root eager `run.m`. Apps launch through
-  `definition.m` and `labkit.ui.runtime.launch`; workflow-first apps keep data-only
-  layouts in `+userInterface/buildWorkbenchLayout.m`. Ordinary tests should call
-  package helpers directly.
-- UI public-surface tests should assert the layered
-  `labkit.ui.runtime/layout/plot/interaction/debug` facade and keep registry
-  mutation, low-level controls, row resize, panel internals, and popout
-  implementation private.
-- GUI launch/debug tests may assert that every app supports debug launch and visible startup trace, but should not claim full interactive workflow validation.
-- App GUI tests should prefer semantic contracts such as expected command
-  buttons, dropdown choices, tabs, tables, axes, callbacks, workflow outcomes,
-  and debug traces.
-  When an app exposes user-visible labels, option values, or action text
-  through an app-local `*Labels`, `*Choices`, or `*Items` helper, GUI and unit
-  tests must call that helper instead of duplicating the literal strings.
-  Do not use raw component-class count snapshots in app GUI tests; those couple
-  app tests to framework implementation details such as whether a readonly
-  display is backed by an edit field, label, or text area. Put low-level
-  control-shape assertions in focused
-  `tests/cases/gui/labkit_framework/...` tests only when the control shape is
-  itself the framework contract.
-- Do not duplicate expensive app figure launches for the same contract. If an
-  app already has dedicated GUI coverage, broad entry-point checks should act
-  as missing-coverage guardrails rather than launching it again. For apps
-  without dedicated GUI coverage, prefer one debug launch that verifies
-  startup, figure creation, path hygiene, and trace plumbing until dedicated
-  layout or workflow tests are added.
-- Prefer `guiTestHelpers().waitForUiIdle(...)` or a bounded state-stability
-  helper over fixed GUI sleeps. If a test must wait for framework debounce,
-  the owning UI/tool implementation should register pending work through the
-  GUI idle appdata contract instead of relying on `pause(...)` duration.
-- Scientific and visualization tests should prefer deterministic state, data,
-  numeric, export, axis-label, callback-event, or debug-trace assertions over
-  whole-GUI or whole-image snapshots. Use minimal synthetic inputs. Add pixel
-  or screenshot baselines only when the rendered pixels are the behavior being
-  protected, and keep those baselines narrowly scoped.
-- Repository-wide guardrails should cache tracked-file lists or file contents
-  within the test process when multiple assertions scan the same scope. Do not
-  add duplicate full-tree scans that differ only by diagnostic wording.
-- File-length and short-helper audits must use the shared effective MATLAB
-  code-line counter. It excludes blank lines, full-line comments, and block
-  comments, counts lines that contain code plus an inline comment, and reports
-  physical lines only as diagnostic context.
-- Public help sections titled `Example:` must be extracted from source and
-  executed by MATLAB. File-dependent or interactive sketches belong under
-  `Typical Call:` until they have self-contained synthetic setup.
-- Project hygiene guardrails may scan app source and test text to enforce that
-  declared UI label helpers own their long user-visible literals. Keep this
-  check scoped to named label/choice helpers so ordinary one-off UI labels,
-  axis labels, error messages, and short units do not become false-positive
-  architecture debt.
-- Runner-complexity and helper-quality checks should start as dry-run reports.
-  Do not add a blocking minimum-helper-length guardrail. If a helper-quality
-  guardrail becomes necessary, it must report boundary class, call count,
-  direct test references, and review reason. It must distinguish cosmetic
-  micro-extraction from legitimate small public facades, framework-private
-  implementation details, factories, filters, defaults, role-package contracts,
-  export/dialog side-effect boundaries, and test-facing helpers. Do not use
-  helper-count reduction or runner line-count reduction as proof of better
-  organization unless the resulting files have coherent contracts.
-- When one test file grows too broad, add new focused `test_*.m` files instead of appending unrelated coverage.
-- GUI `Structural` tests are launch/layout/callback checks. GUI `Workflow`
-  tests may cover hidden synthetic core flows through semantic UI operations,
-  but must not claim manual visual review, scientific validity, or full
-  interactive workflow validation.
+- `buildfile.m` owns stable human/CI tasks; `runLabKitTests.m` is the low-level
+  selector. Do not add a parallel runner, per-app build tasks, or selector
+  lists in workflow YAML.
+- Keep public tasks compact. Improve changed-file routing before adding a task.
+- CI calls public build tasks. Internal local sharding must cover each selected
+  test exactly once and use distinct artifact run names; GitHub Actions stays
+  single-process unless licensing for child MATLAB processes is proven.
+- Focused iteration uses `runLabKitTests("Suites", ...)`. Run `changedFast` at
+  a coherent checkpoint and `changed` once for a stable handoff. After a
+  failure, repair and rerun the narrowest failed suite.
+- Unknown changed paths fall back to full non-GUI validation rather than a
+  narrow false signal. GUI changes route to the owning hidden-GUI suite.
+- Exact public tasks and examples belong only in
+  `docs/development/testing.md`.
 
-## Validation Scope Discipline
+## Test design
 
-- Use focused `runLabKitTests("Suites", ...)` selections for active iteration
-  on one known component. Use the fast changed-file build task once at a
-  coherent checkpoint, and the conservative changed-file build task for
-  pre-handoff validation when git state is available. These tasks should route
-  from the current diff and print why each selected scope is being run.
-- Prefer owner-specific suites or test selectors for known launcher, tool,
-  documentation, release, and shared-helper paths. Reserve full headless
-  fallback for unknown paths and runner infrastructure.
-- Do not rerun changed-file build tasks after every small source edit when the
-  same focused suite directly covers the behavior. Escalate back to
-  `changedFast` or `changed` when the fix touches additional ownership areas,
-  changes validation routing, updates docs/AGENTS, or is ready for final
-  handoff.
-- If a changed-file plan fails, fix the specific failure and rerun the
-  narrowest failing scope or suite directly; do not rerun the changed-file
-  planner just to rediscover the same plan.
-- For new timing strategies, first improve planner routing or representative
-  selectors. Add a new public task only when the workflow cannot be expressed
-  through the compact task set listed in `docs/development/testing.md` or a focused
-  `runLabKitTests` invocation.
-- Prefer `runLabKitTests("Suites", "...")` for rerunning a failed suite such
-  as `project`, `labkit_framework/ui`, `labkit_framework/image`,
-  `labkit_framework/thermal`, or
-  `apps/image_measurement`. Rerun broader
-  build tasks only when the fix changes validation routing, touches additional
-  source areas, or the user explicitly asks for a release/full gate.
-- Stop an accidentally overbroad GUI run when it is not needed; GUI tests can
-  steal focus and should be treated as a scarce validation resource.
-- Official GUI build tasks should run with hidden test windows by default.
-  Hidden mode must still create real MATLAB figures and controls rather than
-  mock GUI objects; visible or minimized GUI mode is for observing the same
-  automated checks during local diagnosis.
-- Hidden GUI tests that invoke semantic callbacks or inspect real controls must
-  inherit from `matlab.unittest.TestCase`. Use `matlab.uitest.TestCase` only
-  for a visible automation workflow that actually calls its press, choose,
-  drag, scroll, or type methods; its display driver is incompatible with
-  hidden CI figures.
+- Unit tests call behavior; source-text scans belong only in project
+  guardrails.
+- App-owned calculations and exports have direct tests. GUI structural tests
+  prove launch/layout/callback wiring; workflow tests prove bounded synthetic
+  flows. Neither substitutes for manual visual, pointer, native-dialog, or
+  scientific validation.
+- Prefer semantic controls, events, numeric outputs, export schemas, axes
+  properties, and debug traces over component counts, fixed sleeps, or whole
+  screenshots. Use bounded idle/stability helpers for asynchronous UI work.
+- Tests use the app's label/choice owner instead of duplicating state literals.
+- Compatibility assertions are isolated in named compatibility tests; ordinary
+  tests use current schemas and APIs.
+- Public `Example:` help blocks execute in a clean session. Interactive or
+  file-dependent snippets remain `Typical Call:`.
 
-## Fixture and Hygiene Rules
+## Guardrails
 
-- Keep fixtures synthetic and minimal.
-- Never copy raw local lab files, real filenames, timestamps, absolute paths, subject names, device IDs, or proprietary metadata into tracked files.
-- Parser regressions should preserve only structural format details required for coverage.
-- Thermal/FLIR parser regressions must use anonymous synthetic fixtures that
-  preserve only container shape, directory records, calibration fields, byte
-  order, and pixel matrix behavior needed by the test. Do not commit real
-  radiometric images, camera serials, firmware strings, capture timestamps,
-  source filenames, local paths, or vendor metadata copied from lab files.
-  External parsers may inform compatibility analysis, but tests must exercise
-  LabKit's own parser code without runtime dependency on those tools.
-- Run the project guardrail task after fixture, hygiene, architecture, or
-  test-layout changes. Use `docs/development/testing.md` for the exact command.
+- Guardrails protect current public boundaries and known failure modes. Do not
+  preserve completed migration routes, non-blocking audit machinery, exact
+  helper inventories, or line-count-driven architecture.
+- Effective MATLAB line counts exclude blank and full-comment lines. Physical
+  lines are diagnostic only.
+- Toolbox debt checks require an exact visible product call, owned fallback,
+  fallback/idempotency/parity tests, and documented tolerance; they never hide
+  dependency discovery.
+- Version/history checks derive components from source and changed paths, not a
+  duplicated registry.
+- Repository-wide scans reuse cached file/content inventories when possible.
+- Never add Code Analyzer suppression pragmas.
 
-## Documentation Sync
+## Fixtures and GUI safety
 
-- Test layout, validation strategy, CI scope, or fixture policy changes update `docs/development/testing.md`.
-- Agent-specific validation routing or fixture-handling rule changes update this file.
-- Do not update this file for ordinary test additions that follow the existing layout and policies; state that docs/AGENTS were unchanged because contracts were preserved when the change is nontrivial.
+- Fixtures are minimal and synthetic. Never track real lab filenames, paths,
+  timestamps, subject/device identifiers, proprietary metadata, or raw local
+  samples.
+- Parser fixtures preserve only the structural details needed for regression.
+- Hidden GUI tests create real MATLAB figures and controls. Use
+  `matlab.unittest.TestCase` for hidden semantic interaction; reserve
+  `matlab.uitest.TestCase` for visible driver gestures.
+- Do not run manual interactive workflows in `-batch`. Broad GUI runs can steal
+  focus and should be used only when required.
+
+Update `docs/development/testing.md` when public tasks, validation strategy, CI
+scope, test layout, or fixture policy changes.

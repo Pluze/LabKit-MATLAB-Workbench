@@ -1,7 +1,7 @@
 classdef AppIdentityContractTest < matlab.unittest.TestCase
     %APPIDENTITYCONTRACTTEST Protect stable globally unique runtime app ids.
 
-    methods (Test, TestTags = {'Integration', 'Architecture'})
+    methods (Test, TestTags = {'Integration', 'Style'})
         function publicDefinitionsDeclareUniqueStableIds(testCase)
             root = setupLabKitTestPath();
             catalog = jsondecode(fileread(fullfile( ...

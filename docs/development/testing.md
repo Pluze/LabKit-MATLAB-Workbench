@@ -16,7 +16,7 @@ and shard selectors, then runs them with progress, JUnit, optional HTML, and
 optional coverage plugins.
 
 ```text
-buildtool task
+buildtool <task>
   -> validation plan or explicit suite
     -> runLabKitTests discovery and selectors
       -> unit, contract, or GUI tests

@@ -1,103 +1,35 @@
 ---
 name: labkit-codecheck-fixer
-description: "Manual trigger only: use when the user explicitly asks to run the manual MATLAB Code Analyzer JSON tool and fix the first reported file or a named reported file until that file has no codecheck messages. Do not use for ordinary development, tests, CI, reviews, or incidental Code Analyzer output."
+description: "Manual trigger only: use when the user explicitly asks to run MATLAB Code Analyzer and fix one named file or the first reported file."
 ---
 
-# LabKit Codecheck Fixer
+# LabKit Code Analyzer Fixer
 
-## Goal
+Use only on explicit request. Code Analyzer reports are a maintainer tool, not
+an ordinary CI or review gate.
 
-Manually burn down MATLAB Code Analyzer findings for one file at a time without
-turning Code Analyzer into a normal test, CI, or review gate.
+## Read
 
-Use this skill only when the user explicitly asks for this workflow, for
-example:
-
-```text
-run codecheck and fix the first file
-fix codecheck issues in +labkit/+biosignal/compareGroups.m
-use the codecheck fixer skill
-```
-
-Do not trigger this skill just because
-`artifacts/code-check/matlab_code_check.json` exists or because unrelated work
-produces Code Analyzer messages.
-
-## Required Read Order
-
-1. `AGENTS.md`
-2. nearest scoped `AGENTS.md` for the target file, if any
-3. the target source file
-4. focused tests for the target source area
-5. `docs/development/testing.md` only if validation routing is not obvious
-
-Coordinate with:
-
-- `labkit-boundary-guard` when the target is under `+labkit` or a fix would
-  move helper ownership across app/library boundaries.
-- `labkit-test-planner` for choosing and reporting validation.
+Read `AGENTS.md`, nearest scoped rules, the target file and focused tests, and
+`docs/development/tools/codecheck.md`. Use the boundary guard if ownership
+would move and the test planner for validation.
 
 ## Workflow
 
-1. Run the manual Code Analyzer action from the self-contained launcher:
+1. Run the launcher's **Run Code Analyzer** action or call
+   `runCodecheckReport(root,"OpenReport",false)`. Reports are timestamped
+   `artifacts/code-check/matlab_code_issues_*.json/.html`; use the returned
+   `jsonFile`, not a fixed filename.
+2. Use the user-named file, or choose the first file with an unsuppressed issue
+   in the newest report from this run.
+3. Fix all findings for that file coherently. Preserve behavior and public
+   contracts; prefer correct initialization, preallocation, placeholders, and
+   clear control flow. Never add `%#ok` suppressions or conceal calls.
+4. Run the smallest source-aligned tests.
+5. Generate a fresh timestamped report and confirm that the target file has no
+   unsuppressed issues. Repeat only for that file.
 
-   ```matlab
-   labkit_launcher
-   ```
-
-   Click `Run Code Analyzer`. The ignored report is
-   `artifacts/code-check/matlab_code_check.json`.
-
-2. Choose the target file:
-
-   - If the user named a file, use that file.
-   - Otherwise use the first entry in
-     `artifacts/code-check/matlab_code_check.json.files`.
-
-3. Read only that file's messages from JSON. Fix all messages reported for that
-   file in one coherent pass.
-
-4. Fix logically, not mechanically:
-
-   - Preserve scientific results, app workflow behavior, plots, exports, and
-     public API contracts.
-   - Prefer preallocation, clearer initialization, `~` placeholders, helper
-     extraction, or small control-flow cleanup over adding suppressions.
-   - Do not add `%#ok<...>` or weaken the suppression policy.
-   - Do not change unrelated Code Analyzer findings in other files unless the
-     same local edit naturally fixes them.
-
-5. Run focused validation for the touched area. Pick the smallest
-   source-aligned `buildtool` task from `docs/development/testing.md` that covers the
-   behavior, adding the project guardrail task when project guardrails or
-   suppression policy could be affected.
-
-6. Rerun the launcher Code Analyzer action and confirm the target file no
-   longer appears in `artifacts/code-check/matlab_code_check.json.files`.
-
-7. Repeat steps 3-6 only for the same target file until it is clean, or stop and
-   report the blocker if a warning cannot be fixed without behavior or boundary
-   risk.
-
-## Git Handling
-
-After the target file is clean and validation passes, stage only the files
-changed for this Code Analyzer fix. Do not commit or push unless the user
-explicitly asks. Leave unrelated working-tree changes untouched.
-
-## Output Expectations
-
-Report:
-
-- target file
-- Code Analyzer IDs fixed
-- behavior-preservation strategy
-- validation commands and results
-- whether the target file is absent from the refreshed
-  `artifacts/code-check/matlab_code_check.json.files`
-- staged files
-- any remaining Code Analyzer findings in other files as intentionally out of
-  scope
-
-Do not claim project-wide Code Analyzer cleanliness unless the JSON report is
-empty.
+Do not stage, commit, or push unless requested. Report target, analyzer IDs,
+behavior-preservation strategy, test results, both report paths, target-file
+status, and other findings intentionally left out of scope. Do not claim
+project-wide cleanliness unless the fresh report contains no issues.

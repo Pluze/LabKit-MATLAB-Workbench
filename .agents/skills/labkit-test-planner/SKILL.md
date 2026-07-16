@@ -1,128 +1,51 @@
 ---
 name: labkit-test-planner
-description: "Use for LabKit validation planning, running tests, pre-commit checks, MATLAB source/test/fixture changes, or deciding which build task to run. Trigger on validate, test plan, before commit, CI, GUI check, parser regression, fixture, or sample hygiene work."
+description: "Use for validation planning, MATLAB test execution, pre-commit checks, CI scope, GUI checks, fixtures, or test-runner changes."
 ---
 
 # LabKit Test Planner
 
-## Goal
+## Read
 
-Choose visible, source-aligned validation without overstating coverage.
+Read `AGENTS.md`, `tests/AGENTS.md`, affected source/tests, and
+`docs/development/testing.md` when exact tasks or routing matter. Do not reread
+shared context already inspected for another active skill.
 
-## Required Read Order
+## Select evidence
 
-Start with a quick pass:
-
-1. `AGENTS.md`
-2. nearest scoped `AGENTS.md`
-3. touched source, tests, and fixture files
-
-Read `docs/development/testing.md` only when exact build-task names, CI scope, fixture
-policy, GUI/non-GUI pairing, or validation-routing changes are needed. When
-another skill already read shared AGENTS context, do not reread it.
-
-## Task Routing
-
-Use the smallest source-aligned validation set that covers the touched
-boundary. `docs/development/testing.md` owns the stable build-task names, CI scope, and
-command examples. Keep the public build-task set small: improve changed-file
-planner routing, representative selectors, printed plan reasons, or focused
-runner selectors before adding a new public task.
-
-Use focused `runLabKitTests("Suites", ...)` selections for tight local
-iteration after the affected scope is known. Use the fast changed-file build
-task once at a coherent checkpoint, and reserve the conservative
-`buildtool changed` task as the final changed-file gate for one logical commit
-or handoff. Changed-file tasks inspect the current diff and print why each
-selected scope is being run, but they should not be rerun after every small
-source edit when a focused suite covers the same behavior. For local GUI edits
-that only touch one app, prefer the app-level GUI folder, for example a
-`Suites` value such as `gui/apps/image_measurement/batch_crop` with
-`IncludeGui=true`, `GuiMode="hidden"`, and `HtmlReport=false` during iteration.
-
-For broad validation, prefer public buildfile tasks and let the buildfile own
-whether a large selected test set should run serially or through internal
-worker shards. Use runner-level shard arguments only when developing or
-debugging the runner itself; every shard must have a distinct `RunName` and the
-combined shards must cover the same selected suite. On GitHub Actions, keep the
-public CI entry as the documented headless build task and let the buildfile
-choose serial execution unless independent child MATLAB licensing has been
-proven.
-
-For a dirty worktree with unclear ownership, route through the changed-file
-validation planner before manually choosing tests. When ownership is clear,
-start with the smallest direct suite that covers the edited behavior, then use
-`changedFast` for a coherent checkpoint and `changed` only for final handoff.
-If release validation or an explicit user request requires broader gates, run
-them after focused iteration or state why a completed broader gate fully covers
-the affected plan instead of rerunning narrower tests for ceremony.
-
-For a nested private app repository, run that workspace's private tests first.
-If the private workspace contains `.labkit-accept-main-guardrails` and has
-unpushed source, test, documentation, changelog, or version changes, also run
-the public checkout's `buildtool changed` guardrail before commit or handoff.
-The sentinel opts private source into public quality scans, but the public
-changed-file planner cannot see the nested Git diff, so this public guardrail
-must be invoked intentionally.
-
-After a planned run fails, do not rerun the planner just to discover the same
-scope again. Fix the root cause and rerun the narrowest failed suite or test
-directly, for example `runLabKitTests("Suites", "project")` after a project
-guardrail failure. Escalate back to the changed-file, headless, or GUI build
-task only when the fix touches additional areas, changes validation routing,
-the final stable diff needs its one `buildtool changed` handoff gate, or the
-user explicitly asks for a broader/release gate.
+Start with the smallest suite that exercises the changed owner:
 
 ```text
-project                    startup, architecture, package surface, sample-data hygiene
-labkit_framework/dta       DTA parser, facade, session, item, pulse behavior
-labkit_framework/image     image file IO, RGB normalization, resizing, mean filtering, basic enhancement primitives
-labkit_framework/biosignal biosignal import, processing, ECG peaks, segments, measurements
-labkit_framework/ui        reusable UI helpers; include GUI coverage for layout/callback/shell/debug/tool checks
-apps/electrochem           electrochem app-owned calculations, exports, layout
-apps/dic                   DIC app layout
-apps/image_measurement     image measurement calculations, exports, layout
-apps/wearable              wearable app layout
-gui/apps                   app GUI launch, layout, callback wiring, and workflow checks
-gui/apps/<family>/<app_slug>
-                           one app GUI layout, callback wiring, and workflow checks
-gui/project/launcher       launcher discovery and layout checks
-gui/labkit_framework/ui    reusable UI GUI, workflow, and gesture checks
+labkit_framework/<area>           reusable facade behavior
+apps/<family>                     app logic and exports
+gui/labkit_framework/ui           framework GUI and interactions
+gui/apps/<family>/<app_slug>      one app workflow/layout
+gui/project/launcher              launcher behavior
+project/<topic>                   repository contracts
 ```
 
-Pair reusable changes with downstream apps when the app-facing contract could
-be affected. Use the default non-GUI build task for broad non-GUI changes, the
-labkit/app GUI build tasks for broad GUI structural routing, and runner suite
-selectors for narrower local diagnosis.
+Use focused `runLabKitTests` during iteration, `changedFast` at a coherent
+checkpoint, and `changed` once for stable handoff. Pair facade changes with
+downstream apps when their contract can be affected. After a failure, repair
+and rerun the narrowest failed test; broaden again only when the fix crosses
+another boundary or final policy requires it.
 
-In Codex sandbox sessions, run MATLAB validation commands and GitHub CI
-inspection commands with escalated sandbox permissions on the first attempt.
-MATLAB build tasks need the host runtime, and `gh`/GitHub API checks need
-network plus the host keyring; probing in the restricted sandbox first only
-adds a known false failure.
+For private workspaces, run private tests first. The acceptance sentinel opts
+private source into public scans but does not expose its Git diff to the public
+planner, so invoke the relevant public guardrail explicitly.
 
-When local GUI validation is needed, account for focus stealing. MATLAB GUI
-tests open real figures on macOS and can interrupt the user's typing. Prefer
-the focused GUI target, CI, or another noninteractive display for broad GUI
-validation; only start full local GUI validation when the user asked for it,
-release validation requires it, or the user is not actively using the keyboard.
+Run MATLAB with host permission in sandboxed sessions. Keep broad GUI runs
+hidden and avoid them while the user is actively interacting with the desktop.
+Never automate manual native-dialog or pointer workflows in `-batch`.
 
-## GUI Claims
+## Claims
 
-- Default non-GUI tests do not validate interactive GUI workflow behavior.
-- Automated GUI tests include `Structural` launch/layout/callback checks and
-  `Workflow` hidden synthetic app flows.
-- Debug GUI checks validate trace plumbing and callback instrumentation, not full user interaction quality.
-- Interactive file selection, drawing, visual inspection, scientific validity,
-  and full workflow feel require manual user validation.
-- Do not run interactive GUI workflows in MATLAB `-batch` mode.
+- Non-GUI tests do not validate GUI behavior.
+- Structural GUI tests validate launch/layout/callback wiring.
+- Workflow GUI tests validate bounded synthetic flows.
+- Debug tests validate diagnostics, not usability.
+- Native dialogs, visual quality, pointer feel, real data, and scientific
+  validity remain manual unless a dedicated deterministic test proves them.
 
-## Handoff Requirements
-
-Report:
-
-- MATLAB availability
-- automated tests run and pass/fail result
-- GUI/manual validation status
-- unverified behavior
-- why any relevant task was not run
+Report MATLAB availability, exact commands/results, GUI/manual status,
+unverified behavior, and why any expected gate was intentionally omitted.
