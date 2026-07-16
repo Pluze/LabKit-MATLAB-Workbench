@@ -1,5 +1,6 @@
-% Expected caller: the LabKit V2 runtime. Input is a validated durable DIC
-% project. Output owns ephemeral overlays, workflow log, selection, and view.
+%CREATESESSION Rebuild transient DIC inputs and prepared overlay caches.
+% Expected caller: Runtime V2 through dic_postprocess.definition. Input is a
+% validated durable project; file-read failures are handled by sourceFiles.
 function session = createSession(project)
     cache = dic_postprocess.sourceFiles.loadProjectInputs( ...
         project.inputs.sources, ~isempty(project.results.summaryTable));
@@ -20,8 +21,7 @@ function [overlayExx, overlayEyy] = preparedOverlays(cache, parameters)
         return;
     end
     [~, overlayExx, overlayEyy] = ...
-        dic_postprocess.analysisRun.prepareOutputs( ...
-        cache, parameters);
+        dic_postprocess.analysisRun.prepareOutputs(cache, parameters);
 end
 
 function tf = hasPreparedInputs(inputs)

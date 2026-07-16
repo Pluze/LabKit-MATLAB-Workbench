@@ -1,4 +1,4 @@
-% Expected caller: dic_postprocess.appLifecycle.createSession. Inputs are
+% Expected caller: dic_postprocess.createSession. Inputs are
 % resolved source records and whether saved results require strain reload.
 % Output is rebuildable decoded cache data; missing records stay empty.
 function cache = loadProjectInputs(sources, loadStrain)
