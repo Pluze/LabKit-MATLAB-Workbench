@@ -389,11 +389,10 @@ function [steps, itemSteps] = exportSteps(state)
 end
 
 function outputs = resultOutputs(results, services)
-    outputs = repmat(services.results.output("", "", "", ""), ...
-        numel(results), 1);
+    outputs = services.results.emptyOutputs();
     for k = 1:numel(results)
         [~, name, extension] = fileparts(results(k).outputPath);
-        outputs(k) = services.results.output("enhanced-" + string(k), ...
+        outputs(end + 1, 1) = services.results.output("enhanced-" + string(k), ...
             "enhanced-image", string(name) + string(extension), ...
             mediaType(extension), results(k).status, results(k).message);
     end

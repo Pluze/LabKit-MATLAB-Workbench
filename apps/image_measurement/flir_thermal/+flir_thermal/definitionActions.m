@@ -572,17 +572,14 @@ function state = reportFailure(state, titleText, ME, services)
 end
 
 function outputs = resultOutputs(results, services)
-    outputs = repmat(services.results.output("", "", "", ""), ...
-        numel(results) * 3, 1);
-    cursor = 0;
+    outputs = services.results.emptyOutputs();
     fields = ["thermalImagePath", "colorbarPath", "temperatureCsvPath"];
     roles = ["thermal-image", "temperature-colorbar", "temperature-csv"];
     for k = 1:numel(results)
         for j = 1:numel(fields)
-            cursor = cursor + 1;
             path = string(results(k).(fields(j)));
             [~, name, extension] = fileparts(path);
-            outputs(cursor) = services.results.output( ...
+            outputs(end + 1, 1) = services.results.output( ...
                 roles(j) + "-" + string(k), roles(j), ...
                 string(name) + string(extension), mediaType(extension), ...
                 results(k).status, results(k).message);

@@ -105,3 +105,6 @@ point = flir_thermal.analysisRun.pointTemperatureReading( ...
 ## Framework Compatibility
 
 This App uses the Runtime V2 lifecycle and requires `labkit.ui >=7 <8`. App code uses semantic actions and injected project services; busy-state and portable-reference serialization mechanics remain framework-private.
+Thermal image, colorbar, and CSV manifest outputs are appended to the
+framework's canonical empty output array; no invalid placeholder result is
+created before batch export.

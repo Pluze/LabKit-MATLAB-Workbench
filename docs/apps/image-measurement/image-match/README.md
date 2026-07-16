@@ -90,3 +90,5 @@ output = image_match.analysisRun.applyPipeline(source, reference, step);
 ## Framework Compatibility
 
 This App uses the Runtime V2 lifecycle and requires `labkit.ui >=7 <8`. App code uses semantic actions and injected project services; busy-state and portable-reference serialization mechanics remain framework-private.
+Matched-image manifest outputs use the framework's canonical empty output
+array, so export validation applies only to real output records.

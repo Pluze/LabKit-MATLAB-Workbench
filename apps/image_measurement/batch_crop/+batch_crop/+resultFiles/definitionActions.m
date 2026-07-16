@@ -110,8 +110,7 @@ function opts = currentExportOptions(state)
 end
 
 function spec = standardResultSpec(state, payload, services)
-    cropOutputs = repmat(services.results.output("", "", "", ""), ...
-        numel(payload.results), 1);
+    cropOutputs = services.results.emptyOutputs();
     for k = 1:numel(payload.results)
         result = payload.results(k);
         [~, name, extension] = fileparts(result.outputPath);
@@ -121,7 +120,7 @@ function spec = standardResultSpec(state, payload, services)
             extension = formatExtension(state.project.parameters.format);
             name = "crop" + string(k) + "_failed";
         end
-        cropOutputs(k) = services.results.output( ...
+        cropOutputs(end + 1, 1) = services.results.output( ...
             "crop" + string(k), "primary", ...
             string(name) + string(extension), mediaType(extension), status, ...
             string(result.message));
