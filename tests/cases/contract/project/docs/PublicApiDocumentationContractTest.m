@@ -113,7 +113,8 @@ end
 
 function files = rewrittenModuleFiles(root)
     moduleFolders = ["+biosignal", "+contract", "+dta", "+image", "+rhs", ...
-        "+thermal", fullfile("+ui", "+runtime")];
+        "+thermal", fullfile("+ui", "+layout"), ...
+        fullfile("+ui", "+runtime")];
     files = strings(0, 1);
     for iModule = 1:numel(moduleFolders)
         entries = dir(fullfile(root, "+labkit", moduleFolders(iModule), "*.m"));

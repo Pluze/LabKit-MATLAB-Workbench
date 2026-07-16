@@ -1,17 +1,31 @@
 function layout = workspace(id, titleText, children, varargin)
 %WORKSPACE Create a right-side LabKit workbench workspace layout node.
 %
-% App-facing contract:
-%   layout = labkit.ui.layout.workspace(id, title, children, opts...)
+% Usage:
+%   layout = labkit.ui.layout.workspace(id, titleText, children)
 %
 % Inputs:
-%   id - globally unique workspace id.
-%   titleText - workspace panel title.
-%   children - cell row vector of workspace child layout nodes, usually previewArea.
-%   Concrete workspace row layout is owned by the framework.
+%   id - Text scalar used to identify the workspace. It must be a valid MATLAB
+%       variable name and unique within the workbench.
+%   titleText - Text displayed above the right-side workspace.
+%   children - Cell row vector of previewArea, resultTable, statusPanel, or
+%       logPanel nodes in display order. Default: {}.
 %
-% Output:
-%   layout - scalar data-only UI layout struct.
+% Outputs:
+%   layout - Scalar workspace node with kind, id, props, children, and slots
+%       fields.
+%
+% Description:
+%   workspace defines the app's right-hand content area. The workbench assigns
+%   rows and sizing from the child types; apps choose only the semantic content
+%   and order.
+%
+% Example:
+%   preview = labkit.ui.layout.workspace("workspace", "Preview", { ...
+%       labkit.ui.layout.previewArea("image", "Image")});
+%   assert(preview.kind == "workspace")
+%
+% See also labkit.ui.layout.previewArea, labkit.ui.layout.workbench
 
     if nargin < 3
         children = {};
