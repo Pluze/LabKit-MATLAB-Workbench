@@ -1,5 +1,5 @@
 classdef DocumentationRendererRegressionTest < matlab.unittest.TestCase
-    methods (Test)
+    methods (Test, TestTags = {'Integration', 'Style'})
         function orderedListsPreserveItemsAndContinuations(testCase)
             root = setupLabKitTestPath();
             page = string(fileread(fullfile(root, "site", "apps", ...
