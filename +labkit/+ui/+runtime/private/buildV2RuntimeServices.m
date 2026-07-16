@@ -39,7 +39,8 @@ function services = buildV2RuntimeServices(fig, runtime, dispatch)
         "upsertSource", @upsertSource, ...
         "reconcileSources", @reconcileSources, ...
         "saveState", @() saveProjectState(fig, runtime.request), ...
-        "saveAutosave", @(state) saveAutosaveState(fig, state));
+        "saveAutosave", @(state, varargin) ...
+            saveAutosaveState(fig, state, varargin{:}));
     services.previews = struct( ...
         "axes", @(previewId, axisId) resolvePreviewAxes( ...
             runtime.ui, previewId, axisId));
@@ -85,10 +86,19 @@ function filepath = saveProjectState(fig, request)
     end
 end
 
-function filepath = saveAutosaveState(fig, state)
+function filepath = saveAutosaveState(fig, state, filepath)
     current = getAppRuntime(fig);
     current.state = state;
-    filepath = writeV2RecoveryFile(current);
+    if nargin < 3 || strlength(string(filepath)) == 0
+        filepath = writeV2RecoveryFile(current);
+    else
+        filepath = string(filepath);
+        folder = string(fileparts(filepath));
+        if strlength(folder) > 0 && ~isfolder(folder)
+            mkdir(folder);
+        end
+        writeV2ProjectFile(filepath, createV2ProjectEnvelope(current));
+    end
     setappdata(fig, 'labkitV2RecoveryFile', string(filepath));
 end
 

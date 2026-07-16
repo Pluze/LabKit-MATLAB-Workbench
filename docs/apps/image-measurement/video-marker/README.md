@@ -19,11 +19,11 @@ labkit_VideoMarker_app
 
 The **Session** panel appears first in the Video tab. **Open MAT** uses the same
 loader as the window's top-level Load State action and accepts an explicit
-project or compatible autosave. **Save autosave** immediately updates the
-framework-managed recovery copy without asking for a path and without turning
-that recovery copy into the named project file. **New setup** offers Cancel,
-Save and start new, or Discard and start new; it never silently clears the
-current session.
+project or compatible autosave. **Save autosave** immediately updates
+`Video Marker Autosaves/<video>.video_marker.autosave.mat` beside the source
+video without asking for a path and without turning that recovery copy into the
+named project file. **New setup** offers Cancel, Save and start new, or Discard
+and start new; it never silently clears the current session.
 
 For a new project, choose a preset or add keypoints, edit their names, reorder
 them, and define connections. **Connect in order** links every adjacent pair.

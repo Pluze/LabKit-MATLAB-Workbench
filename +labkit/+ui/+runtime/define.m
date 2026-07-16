@@ -107,7 +107,9 @@ function def = define(varargin)
 %   services.project - sourceRecord, upsertSource, and reconcileSources create
 %       external-file records understood by project save/load; saveState saves
 %       a named project, while saveAutosave(state) immediately writes the
-%       framework-managed recovery copy without prompting for a path.
+%       framework-managed recovery copy. saveAutosave(state,filepath) writes
+%       the same recovery envelope to an app-determined path. Neither form
+%       prompts for a path or changes named-project ownership.
 %   services.previews - previews.axes(previewId,axisId) returns axes owned by a
 %       declared preview area.
 %   services.resources - set, get, remove, and clearScope manage resources with

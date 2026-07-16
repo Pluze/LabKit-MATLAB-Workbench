@@ -84,6 +84,16 @@ classdef GuiLayoutVideoMarkerTest < matlab.unittest.TestCase
             drawnow;
 
             ui = getappdata(fig, 'labkitUiRegistry');
+            testCase.verifyEqual(string(ui.controls.saveAutosave.button.Enable), ...
+                "on");
+            invoke(ui.controls.saveAutosave.button);
+            expectedAutosave = video_marker.autosave.filePath( ...
+                pack.representativeFiles(1));
+            testCase.verifyTrue(isfile(expectedAutosave), ...
+                'Save autosave should use the visible source-adjacent path.');
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            testCase.verifyEqual(string(runtime.document.path), "", ...
+                'An autosave must not become the named project file.');
             registered = getappdata(ui.controls.videoAxes.primaryAxes, ...
                 'labkit_ui_activeAnchorEditor');
             ax = ui.controls.videoAxes.primaryAxes;
@@ -160,16 +170,6 @@ classdef GuiLayoutVideoMarkerTest < matlab.unittest.TestCase
             folder = string(tempname);
             mkdir(folder);
             folderCleanup = onCleanup(@() removeTempFolder(folder));
-            runtime = getappdata(fig, 'labkitUiAppRuntime');
-            runtime.request.recoveryRoot = fullfile(folder, "recovery");
-            setappdata(fig, 'labkitUiAppRuntime', runtime);
-            invoke(ui.controls.saveAutosave.button);
-            recoveryPath = string(getappdata(fig, 'labkitV2RecoveryFile'));
-            runtime = getappdata(fig, 'labkitUiAppRuntime');
-            testCase.verifyTrue(isfile(recoveryPath), ...
-                'Save autosave should write a recovery copy immediately.');
-            testCase.verifyEqual(string(runtime.document.path), "", ...
-                'An autosave must not become the named project file.');
             projectPath = fullfile(folder, "saved-project.mat");
             labkit.ui.runtime.saveState(fig, projectPath);
             setChoiceAnswer(fig, choices.discardAndStart);

@@ -412,8 +412,23 @@ function state = onExportCoordinateCsv(state, ~, services)
 end
 
 function state = onSaveAutosave(state, ~, services)
-    services.project.saveAutosave(state);
-    state = services.workflow.log(state, "Autosave updated.");
+    videoPath = video_marker.sourceFiles.pathForId( ...
+        state.project.inputs.sources, "video");
+    if strlength(videoPath) == 0
+        state = services.workflow.log(state, ...
+            "Autosave unavailable until a video is open.");
+        return;
+    end
+    try
+        filepath = video_marker.autosave.filePath(videoPath);
+        services.project.saveAutosave(state, filepath);
+    catch ME
+        services.diagnostics.report('Could not save Video Marker autosave', ME);
+        services.dialogs.alert(ME.message, 'Could not save autosave');
+        state = services.workflow.log(state, "Autosave failed: " + ME.message);
+        return;
+    end
+    state = services.workflow.log(state, "Autosave updated: " + filepath);
 end
 
 function state = onNewSetup(state, ~, services)

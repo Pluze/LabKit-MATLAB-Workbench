@@ -240,8 +240,10 @@ readable while all new writes use the collision-free key.
   debounced bounded recovery, and unsaved-close wording; recovery never owns
   or overwrites an explicit project path. An app action may call
   `services.project.saveAutosave(state)` to update that same recovery copy
-  immediately without opening a file dialog or marking it as the named
-  project. Declared old snapshots and legacy
+  immediately. Apps with a stable product-owned recovery location may call
+  `saveAutosave(state,filepath)` instead. Both forms avoid a file dialog and
+  leave the named project path and dirty status unchanged. Declared old
+  snapshots and legacy
   app variables are import-only and are never written again.
 - Apps whose saved state refers to external source files should store
   `labkit.ui.runtime.createPortableFileReference(anchorFile, targetFile)` in
