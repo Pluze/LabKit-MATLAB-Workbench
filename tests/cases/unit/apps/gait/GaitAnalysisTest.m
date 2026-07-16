@@ -125,7 +125,9 @@ classdef GaitAnalysisTest < matlab.unittest.TestCase
             outputs = gait_analysis.resultFiles.writeOutputs( ...
                 folder, "gait", result);
 
-            testCase.verifyTrue(all(isfile(struct2array(outputs))));
+            outputPaths = [outputs.frameCsv; outputs.coordinateCsv; ...
+                outputs.stepCsv; outputs.summaryCsv];
+            testCase.verifyTrue(all(isfile(outputPaths)));
             steps = readtable(outputs.stepCsv, "TextType", "string");
             testCase.verifyTrue(any(string(steps.Properties.VariableNames) == ...
                 "swing_time_s"));
