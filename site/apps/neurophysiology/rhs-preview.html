@@ -24,9 +24,27 @@
 <h2 id="workflow">Workflow</h2>
 <p>Choose an RHS file, select channels and a time window, inspect waveform and stimulation context, then save the preview or draft protocol information. Windowed reads avoid decoding an entire long recording for each navigation action.</p>
 <h2 id="use-without-the-gui">Use Without The GUI</h2>
-<pre><code class="language-matlab">window = rhs_preview.analysisRun.readPreviewWindow( ...
-    &quot;recording.rhs&quot;, channelSelection, startSample, sampleCount);</code></pre>
-<p>The result retains sampling and channel metadata needed to interpret the returned waveform matrix.</p>
+<p>For ordinary non-GUI waveform access, call the reusable RHS facade directly:</p>
+<pre><code class="language-matlab">[index, status] = labkit.rhs.indexFile(&quot;recording.rhs&quot;);
+assert(status.ok, status.message);
+options = struct( ...
+    &quot;family&quot;, &quot;amplifier&quot;, ...
+    &quot;channels&quot;, [&quot;A-000&quot;, &quot;A-001&quot;], ...
+    &quot;timeRangeSec&quot;, [1.0 1.5]);
+[window, status] = labkit.rhs.readWindow(&quot;recording.rhs&quot;, options);
+assert(status.ok, status.message);</code></pre>
+<p><code>indexFile</code> reads recording metadata without decoding the full waveform. <code>readWindow</code> returns the bounded data and retains sampling and channel metadata needed to interpret the waveform matrix.</p>
+<p><code>rhs_preview.analysisRun.readPreviewWindow</code> is also documented because it is an app-owned callable contract, but it is intended for Runtime V2 state transitions. It accepts the complete RHS Preview state, selected channel ids, an action label, and a preserve-ROI flag, then returns updated state, an <code>ok</code> flag, and a log message. Scripts that only need data should prefer <code>labkit.rhs.readWindow</code>.</p>
+<h2 id="errors-and-limitations">Errors And Limitations</h2>
+<ul>
+<li>File indexing can succeed even when a requested family or channel selection</li>
+</ul>
+<p>is unavailable; check the status from each read.</p>
+<ul>
+<li>Time ranges use seconds and are clamped by app state in the GUI workflow.</li>
+<li>Windowed reads reduce IO and memory cost but do not cache an unlimited number</li>
+</ul>
+<p>of decoded windows.</p>
 <h2 id="troubleshooting">Troubleshooting</h2>
 <ul>
 <li>Keep start and sample-count values inside the recording bounds.</li>

@@ -1,7 +1,14 @@
 % Expected caller: response_review_stats.run or tests. Input is a metric
 % table. Output is compact descriptive statistics. No side effects.
 function summary = summarizeMetrics(metrics)
-%SUMMARIZEMETRICS Compute high-level metric counts and means.
+%SUMMARIZEMETRICS Compute grouped metric counts and finite means.
+%   summary = response_review_stats.analysisRun.summarizeMetrics(metrics)
+%   accepts a metric table. Rows group by pairId when present, otherwise by
+%   SegmentName, otherwise as "all". PeakToPeak/peakToPeak and
+%   SNR_dB/snrDb spellings are accepted. The output table contains Group,
+%   Count, MeanPeakToPeak, and MeanSnrDb. Empty/non-table input returns one
+%   "all" row with count zero and NaN means. Non-finite metrics are omitted.
+%   No inferential statistics or weighting are applied.
 
     if ~istable(metrics) || height(metrics) == 0
         summary = table("all", 0, NaN, NaN, ...

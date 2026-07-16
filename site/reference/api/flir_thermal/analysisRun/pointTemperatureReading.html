@@ -19,11 +19,24 @@
 <p class="page-kind">reference</p>
 <p><a href="../../../index.html">API Reference</a></p>
 <h1>flir_thermal.analysisRun.pointTemperatureReading</h1>
-<p class="lead">Expected caller: FLIR thermal plot callbacks and tests. Inputs are a</p>
+<p class="lead">POINTTEMPERATUREREADING Read the nearest calibrated thermal pixel.</p>
 <h2 id="syntax">Syntax</h2>
 <pre><code class="language-matlab">function reading = pointTemperatureReading(temperatureC, pointXY)</code></pre>
 <h2 id="contract">Contract</h2>
-<pre class="help-contract">Expected caller: FLIR thermal plot callbacks and tests. Inputs are a
+<pre class="help-contract">POINTTEMPERATUREREADING Read the nearest calibrated thermal pixel.
+  reading = flir_thermal.analysisRun.pointTemperatureReading(temperatureC, pointXY)
+  accepts a 2-D Celsius matrix and an [x y] image coordinate. The coordinate
+  is rounded to the nearest pixel and clamped to the matrix bounds. reading
+  contains x, y, and temperatureC. Invalid matrices or coordinates return
+  the same fields filled with NaN. The function has no graphics side effects.
+
+  Example:
+    reading = flir_thermal.analysisRun.pointTemperatureReading(T, [120 80]);
+
+  See also labkit.thermal.readFile,
+  flir_thermal.analysisRun.roiTemperatureMeanReading.
+
+Expected caller: FLIR thermal plot callbacks and tests. Inputs are a
 Celsius temperature matrix and an image point in pixel coordinates. Output
 is the clamped nearest-pixel reading. Side effects: none.</pre>
 <h2 id="source">Source</h2>

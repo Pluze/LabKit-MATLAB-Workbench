@@ -3,6 +3,16 @@
 % reference RGB image. Output is a cell array after applying each match step to
 % source images only; the reference image is never modified or exported.
 function processed = applyPipeline(images, steps, referenceImage)
+%APPLYPIPELINE Replay ordered reference-match steps over source images.
+%   processed = image_match.analysisRun.applyPipeline(images, steps,
+%   referenceImage) accepts one numeric image or a cell array of images, a
+%   step array, and an optional immutable reference image. Inputs and outputs
+%   are normalized RGB doubles in [0,1]. processed is always a column cell
+%   array and contains source images only; the reference is never modified or
+%   exported. Steps run in array order for every source.
+%
+%   See also image_match.analysisRun.applyMatch,
+%   image_match.analysisRun.makeStep.
 
     images = normalizeImages(images);
     if nargin < 3

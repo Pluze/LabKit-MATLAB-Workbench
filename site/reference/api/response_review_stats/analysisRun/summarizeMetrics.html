@@ -19,11 +19,18 @@
 <p class="page-kind">reference</p>
 <p><a href="../../../index.html">API Reference</a></p>
 <h1>response_review_stats.analysisRun.summarizeMetrics</h1>
-<p class="lead">SUMMARIZEMETRICS Compute high-level metric counts and means.</p>
+<p class="lead">SUMMARIZEMETRICS Compute grouped metric counts and finite means.</p>
 <h2 id="syntax">Syntax</h2>
 <pre><code class="language-matlab">function summary = summarizeMetrics(metrics)</code></pre>
 <h2 id="contract">Contract</h2>
-<pre class="help-contract">SUMMARIZEMETRICS Compute high-level metric counts and means.
+<pre class="help-contract">SUMMARIZEMETRICS Compute grouped metric counts and finite means.
+  summary = response_review_stats.analysisRun.summarizeMetrics(metrics)
+  accepts a metric table. Rows group by pairId when present, otherwise by
+  SegmentName, otherwise as &quot;all&quot;. PeakToPeak/peakToPeak and
+  SNR_dB/snrDb spellings are accepted. The output table contains Group,
+  Count, MeanPeakToPeak, and MeanSnrDb. Empty/non-table input returns one
+  &quot;all&quot; row with count zero and NaN means. Non-finite metrics are omitted.
+  No inferential statistics or weighting are applied.
 
 Expected caller: response_review_stats.run or tests. Input is a metric
 table. Output is compact descriptive statistics. No side effects.</pre>

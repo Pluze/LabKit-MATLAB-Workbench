@@ -3,6 +3,20 @@
 % recording analysis struct. Side effects are lazy RHS window reads only.
 function analysis = analyzeRecording(filepath, protocol, opts)
 %ANALYZERECORDING Analyze one RHS recording according to a protocol.
+%   analysis = nerve_response_analysis.analysisRun.analyzeRecording(filepath)
+%   analysis = nerve_response_analysis.analysisRun.analyzeRecording(filepath,
+%   protocol, opts) indexes one RHS file, resolves protocol channel roles,
+%   detects stimulation events/trains, and measures every declared response
+%   pair. opts may contain recordingId, maxDurationSec, and eventDetection.
+%
+%   analysis contains type/version, recordingId, filepath, protocolSnapshot,
+%   events, trains, metrics, and issues. Parser or per-pair problems are kept in
+%   issues so batch callers can retain partial results. RHS samples are read in
+%   bounded windows; the function does not create UI or write output files.
+%
+%   See also nerve_response_analysis.analysisRun.analyzeSession,
+%   nerve_response_analysis.analysisRun.detectEventTrains,
+%   nerve_response_analysis.analysisRun.measureCapMetrics.
 
     if nargin < 2 || isempty(protocol)
         protocol = struct();

@@ -19,11 +19,29 @@
 <p class="page-kind">reference</p>
 <p><a href="../../../index.html">API Reference</a></p>
 <h1>image_match.analysisRun.applyMatch</h1>
-<p class="lead">Expected caller: image_match.analysisRun.applyStep and tests. Inputs are a source</p>
+<p class="lead">APPLYMATCH Transfer reference appearance statistics to one image.</p>
 <h2 id="syntax">Syntax</h2>
 <pre><code class="language-matlab">function outputImage = applyMatch(inputImage, referenceImage, step)</code></pre>
 <h2 id="contract">Contract</h2>
-<pre class="help-contract">Expected caller: image_match.analysisRun.applyStep and tests. Inputs are a source
+<pre class="help-contract">APPLYMATCH Transfer reference appearance statistics to one image.
+  outputImage = image_match.analysisRun.applyMatch(inputImage,
+  referenceImage, step) converts both images to RGB double data in [0,1].
+  step is produced by image_match.analysisRun.makeStep and contains
+  matchMethod, amount, secondary, and colorStrength. The percentage controls
+  select overall, tone, and color blend strength. An empty reference returns
+  the normalized input. Geometry is never registered or resampled.
+
+  Supported method labels come from image_match.userInterface.matchMethods.
+  The returned image has the source geometry and three color channels.
+
+  Example:
+    step = image_match.analysisRun.makeStep(&quot;Balanced&quot;,100,100,100);
+    out = image_match.analysisRun.applyMatch(source, reference, step);
+
+  See also image_match.analysisRun.applyPipeline,
+  image_match.analysisRun.makeStep.
+
+Expected caller: image_match.analysisRun.applyStep and tests. Inputs are a source
 image, a reference image, and a match step with method/strength fields.
 Output is a display-ready RGB double image in [0, 1].</pre>
 <h2 id="source">Source</h2>

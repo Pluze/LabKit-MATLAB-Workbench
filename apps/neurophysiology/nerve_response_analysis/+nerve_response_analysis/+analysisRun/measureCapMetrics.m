@@ -3,6 +3,18 @@
 % metric options. Output is one CAP metric table. No side effects.
 function metrics = measureCapMetrics(timeSec, signal, eventTimesSec, opts)
 %MEASURECAPMETRICS Measure event-locked CAP response features.
+%   metrics = nerve_response_analysis.analysisRun.measureCapMetrics(timeSec,
+%   signal, eventTimesSec, opts) accepts equal-length time/signal vectors,
+%   event times in seconds, and optional baselineWindowSec,
+%   blankingAfterPulseSec, and searchEndAfterPulseSec policies.
+%
+%   One output row is returned per event with baselineMean, noiseRms, positive
+%   and negative peaks, peakToPeak, peakTimeSec, latencySec, snrDb, and status.
+%   Baseline is measured before the event; the response search begins after the
+%   blanking interval. Missing search samples produce status "noSamples".
+%   Length mismatch throws MetricSizeMismatch. No files or graphics are used.
+%
+%   See also nerve_response_analysis.analysisRun.detectEventTrains.
 
     if nargin < 4 || isempty(opts)
         opts = struct();

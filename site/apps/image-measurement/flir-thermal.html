@@ -26,14 +26,35 @@
 <h2 id="scientific-semantics">Scientific Semantics</h2>
 <p>Temperature comes from the embedded raw sensor values and calibration metadata through <code>labkit.thermal</code>. Point measurements sample the selected pixel. ROI measurements use the pixels inside the ROI. Extreme measurements report both value and location. Display color limits do not change numeric temperature results.</p>
 <h2 id="use-without-the-gui">Use Without The GUI</h2>
-<pre><code class="language-matlab">[thermal, status] = labkit.thermal.readRadiometricJpeg(&quot;capture.jpg&quot;);
-assert(status.ok, status.message);
-point = flir_thermal.analysisRun.pointTemperatureReading(thermal, [120 80]);
-roi = flir_thermal.analysisRun.roiTemperatureMeanReading(thermal, [90 60 80 70]);
-extremes = flir_thermal.analysisRun.extremeTemperatureReadings(thermal);</code></pre>
+<pre><code class="language-matlab">record = labkit.thermal.readFile(&quot;capture.jpg&quot;);
+temperatureC = record.temperatureC;
+
+point = flir_thermal.analysisRun.pointTemperatureReading( ...
+    temperatureC, [120 80]);
+[roiHot, roiCold, roiMean] = ...
+    flir_thermal.analysisRun.roiTemperatureMeanReading( ...
+    temperatureC, [90 60], [169 129]);
+[imageHot, imageCold] = ...
+    flir_thermal.analysisRun.extremeTemperatureReadings(temperatureC);</code></pre>
+<p><code>pointTemperatureReading</code> rounds and clamps an <code>[x y]</code> pixel coordinate. <code>roiTemperatureMeanReading</code> accepts two opposite ROI corners, includes both boundary pixels, ignores non-finite temperature values, and reports hot, cold, and mean records. Every point record contains <code>x</code>, <code>y</code>, and <code>temperatureC</code>; the mean record also contains ROI geometry and <code>pixelCount</code>.</p>
+<p><code>labkit.thermal.readFile</code> accepts an optional <code>TemperatureCorrection</code> field. Use <code>&quot;environment&quot;</code> for the metadata-aware correction path or <code>&quot;planck-basic&quot;</code> when the intended calculation deliberately omits reflected, atmospheric, distance, and window corrections.</p>
+<h2 id="errors-and-limitations">Errors And Limitations</h2>
+<ul>
+<li>A supported JPEG extension does not guarantee that the file contains an</li>
+</ul>
+<p>embedded radiometric record and usable calibration metadata.</p>
+<ul>
+<li>Pixel coordinates refer to the calibrated thermal matrix, not a separately</li>
+</ul>
+<p>scaled screenshot or visible-light preview.</p>
+<ul>
+<li>Emissivity and environmental assumptions affect absolute temperature; keep</li>
+</ul>
+<p>the conversion metadata with any reported result.</p>
 <h2 id="see-also">See Also</h2>
 <ul>
 <li><a href="../../api/thermal.md">Thermal Library</a></li>
+<li><code>labkit.thermal.readFile</code></li>
 <li><code>labkit.thermal.rawToTemperatureC</code></li>
 </ul><section class="component-history"><h2>Change history</h2><ul><li><a href="../../framework/history/LK-20260715-runtime-v2-app-migration.html">2026-07-15 - Runtime V2 lifecycle ownership across the app fleet</a><small>refactor | breaking</small></li><li><a href="../../api/history/thermal/LK-20260713-flir-calibration-provenance.html">2026-07-13 - Traceable FLIR temperature calibration</a><small>feat | additive</small></li><li><a href="../../development/history/launcher/LK-20260706-ui-5-facade-redesign-app-migration-and-plot-refresh.html">2026-07-06 - UI 5 facade redesign, app migration, and plot refresh</a><small>refactor | breaking</small></li><li><a href="../history/electrochemistry/LK-20260703-app-file-selection-and-electrochem-control-fixes.html">2026-07-03 - App file-selection and electrochem control fixes</a><small>fix | compatible</small></li><li><a href="../../framework/history/LK-20260703-csc-export-and-viewport-policy.html">2026-07-03 - CSC export and viewport policy</a><small>feat | compatible</small></li><li><a href="../../framework/history/LK-20260703-declarative-app-runtime.html">2026-07-03 - Declarative app runtime</a><small>refactor | compatible</small></li><li><a href="../history/electrochemistry/LK-20260703-flir-display-tuning.html">2026-07-03 - FLIR display tuning</a><small>feat | compatible</small></li><li><a href="../../framework/history/LK-20260703-ui-groups-migration.html">2026-07-03 - UI groups migration</a><small>refactor | compatible</small></li><li><a href="../../framework/history/LK-20260701-debug-sample-packs.html">2026-07-01 - Debug sample packs</a><small>feat | compatible</small></li><li><a href="../../development/history/launcher/LK-20260701-image-app-workflow-improvements.html">2026-07-01 - Image app workflow improvements</a><small>feat | compatible</small></li><li><a href="../../api/history/thermal/LK-20260701-thermal-facade-and-flir-app.html">2026-07-01 - Thermal facade and FLIR app</a><small>feat | compatible</small></li></ul></section>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>

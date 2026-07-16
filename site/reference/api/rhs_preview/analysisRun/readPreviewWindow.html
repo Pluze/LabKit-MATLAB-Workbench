@@ -19,12 +19,24 @@
 <p class="page-kind">reference</p>
 <p><a href="../../../index.html">API Reference</a></p>
 <h1>rhs_preview.analysisRun.readPreviewWindow</h1>
-<p class="lead">READPREVIEWWINDOW Read the requested RHS preview window from state.</p>
+<p class="lead">READPREVIEWWINDOW Read the requested RHS preview window from app state.</p>
 <h2 id="syntax">Syntax</h2>
 <pre><code class="language-matlab">function [S, ok, logMessage] = readPreviewWindow(S, selectedChannels, ...
 actionLabel, preserveRoi)</code></pre>
 <h2 id="contract">Contract</h2>
-<pre class="help-contract">READPREVIEWWINDOW Read the requested RHS preview window from state.
+<pre class="help-contract">READPREVIEWWINDOW Read the requested RHS preview window from app state.
+  [S, ok, logMessage] = rhs_preview.analysisRun.readPreviewWindow(S,
+  selectedChannels, actionLabel, preserveRoi) consumes the RHS Preview state
+  fields rhsFile, family, windowStartSec, windowDurationSec, roiSec, preview,
+  statusMessage, and lastAction. selectedChannels are RHS channel ids.
+  preserveRoi defaults false.
+
+  The function clamps the window start, calls labkit.rhs.readWindow, updates
+  preview/workflow fields, and optionally clamps the previous ROI to the new
+  time range. ok reports a successful read; logMessage is empty or one
+  app-facing line. Exceptions are converted into failed state instead of
+  escaping. Scripts needing only waveform data should call
+  labkit.rhs.readWindow directly.
 
 Expected caller: rhs_preview.definitionActions. Inputs are app state, selected channels,
 action label, and ROI behavior. Output is updated state plus read status

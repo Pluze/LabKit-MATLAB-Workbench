@@ -3,6 +3,18 @@
 % No side effects.
 function metrics = measureAlignedSegments(aligned, opts)
 %MEASUREALIGNEDSEGMENTS Measure peak-to-peak, noise, and SNR per segment.
+%   metrics = response_review_stats.analysisRun.measureAlignedSegments(aligned)
+%   accepts the model from alignSegments. opts may contain
+%   baselineWindowSec (default [0.007 0.009]), noiseWindowSec (defaults to the
+%   baseline), and measurementWindowSec (default all aligned samples).
+%
+%   The output table reports segment identity, window limits, positive and
+%   negative extrema/times, PeakToPeak, NoiseRMS, and SNR_dB. Baseline mean is
+%   subtracted before measurement and non-finite values are omitted. Windows
+%   with no usable samples produce NaN metrics rather than invented values.
+%
+%   See also response_review_stats.analysisRun.alignSegments,
+%   response_review_stats.analysisRun.summarizeMetrics.
 
     if nargin < 2 || isempty(opts)
         opts = struct();

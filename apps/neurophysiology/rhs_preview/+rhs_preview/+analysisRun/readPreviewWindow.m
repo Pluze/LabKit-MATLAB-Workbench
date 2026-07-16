@@ -3,7 +3,19 @@
 % and one optional log line. No UI handles are touched.
 function [S, ok, logMessage] = readPreviewWindow(S, selectedChannels, ...
         actionLabel, preserveRoi)
-%READPREVIEWWINDOW Read the requested RHS preview window from state.
+%READPREVIEWWINDOW Read the requested RHS preview window from app state.
+%   [S, ok, logMessage] = rhs_preview.analysisRun.readPreviewWindow(S,
+%   selectedChannels, actionLabel, preserveRoi) consumes the RHS Preview state
+%   fields rhsFile, family, windowStartSec, windowDurationSec, roiSec, preview,
+%   statusMessage, and lastAction. selectedChannels are RHS channel ids.
+%   preserveRoi defaults false.
+%
+%   The function clamps the window start, calls labkit.rhs.readWindow, updates
+%   preview/workflow fields, and optionally clamps the previous ROI to the new
+%   time range. ok reports a successful read; logMessage is empty or one
+%   app-facing line. Exceptions are converted into failed state instead of
+%   escaping. Scripts needing only waveform data should call
+%   labkit.rhs.readWindow directly.
 
     if nargin < 4
         preserveRoi = false;

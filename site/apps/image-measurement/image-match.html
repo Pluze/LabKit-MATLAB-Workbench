@@ -28,12 +28,32 @@
 <h2 id="use-without-the-gui">Use Without The GUI</h2>
 <pre><code class="language-matlab">source = imread(&quot;source.png&quot;);
 reference = imread(&quot;reference.png&quot;);
-matched = image_match.analysisRun.applyMatch(source, reference, struct());
+step = image_match.analysisRun.makeStep(&quot;Balanced&quot;, 100, 100, 100);
+matched = image_match.analysisRun.applyMatch(source, reference, step);
 imwrite(matched, &quot;matched.png&quot;);</code></pre>
-<p>Pipelines can be replayed with <code>image_match.analysisRun.applyPipeline</code>.</p>
+<p>The four step arguments are method, overall strength, tone strength, and color strength, expressed as percentages. Supported methods are defined by <code>image_match.userInterface.matchMethods</code>; callers should use those values instead of inventing method strings. <code>applyMatch</code> converts inputs to RGB double precision in <code>[0, 1]</code> and returns the same display-ready representation.</p>
+<p>Pipelines can be replayed over one image, a numeric stack, or a cell array:</p>
+<pre><code class="language-matlab">steps = [ ...
+    image_match.analysisRun.makeStep(&quot;White balance&quot;, 80, 100, 100)
+    image_match.analysisRun.makeStep(&quot;Tone only&quot;, 50, 70, 0)];
+processed = image_match.analysisRun.applyPipeline( ...
+    {source}, steps, reference);
+matched = processed{1};</code></pre>
+<p>The reference is immutable and is never included in <code>processed</code>.</p>
+<h2 id="errors-and-limitations">Errors And Limitations</h2>
+<ul>
+<li>Appearance matching does not register geometry or align objects.</li>
+<li>A non-representative reference can produce technically valid but misleading</li>
+</ul>
+<p>color or tone statistics.</p>
+<ul>
+<li>Use the normalized step factory so missing fields cannot silently change the</li>
+</ul>
+<p>algorithm branch.</p>
 <h2 id="see-also">See Also</h2>
 <ul>
 <li><code>image_match.analysisRun.applyMatch</code></li>
+<li><code>image_match.analysisRun.applyPipeline</code></li>
 <li><a href="../../api/image.md">Image Library</a></li>
 </ul><section class="component-history"><h2>Change history</h2><ul><li><a href="../../framework/history/LK-20260715-runtime-v2-app-migration.html">2026-07-15 - Runtime V2 lifecycle ownership across the app fleet</a><small>refactor | breaking</small></li><li><a href="../../api/history/image/LK-20260713-base-matlab-image-compatibility.html">2026-07-13 - Base-MATLAB image compatibility</a><small>feat | compatible</small></li><li><a href="../../api/history/image/LK-20260713-matlab-compatible-image-conversion.html">2026-07-13 - MATLAB-compatible image conversion API</a><small>refactor | breaking</small></li><li><a href="../../framework/history/LK-20260709-default-labkit-close-protection.html">2026-07-09 - Default LabKit close protection</a><small>fix | compatible</small></li><li><a href="../../development/history/launcher/LK-20260706-ui-5-facade-redesign-app-migration-and-plot-refresh.html">2026-07-06 - UI 5 facade redesign, app migration, and plot refresh</a><small>refactor | breaking</small></li><li><a href="../history/electrochemistry/LK-20260703-app-file-selection-and-electrochem-control-fixes.html">2026-07-03 - App file-selection and electrochem control fixes</a><small>fix | compatible</small></li><li><a href="../../framework/history/LK-20260703-csc-export-and-viewport-policy.html">2026-07-03 - CSC export and viewport policy</a><small>feat | compatible</small></li><li><a href="../../framework/history/LK-20260703-declarative-app-runtime.html">2026-07-03 - Declarative app runtime</a><small>refactor | compatible</small></li><li><a href="../../framework/history/LK-20260703-ui-groups-migration.html">2026-07-03 - UI groups migration</a><small>refactor | compatible</small></li><li><a href="../../framework/history/LK-20260701-debug-sample-packs.html">2026-07-01 - Debug sample packs</a><small>feat | compatible</small></li><li><a href="../../development/history/launcher/LK-20260701-image-app-workflow-improvements.html">2026-07-01 - Image app workflow improvements</a><small>feat | compatible</small></li><li><a href="../../framework/history/LK-20260630-app-alerts-through-ui-facade.html">2026-06-30 - App alerts through UI facade</a><small>feat | compatible</small></li><li><a href="../../framework/history/LK-20260630-close-guards-and-caught-exception-diagnostics.html">2026-06-30 - Close guards and caught-exception diagnostics</a><small>feat | compatible</small></li><li><a href="../../framework/history/LK-20260630-output-folder-prompts.html">2026-06-30 - Output folder prompts</a><small>feat | compatible</small></li><li><a href="../../api/history/image/LK-20260630-shared-image-facade.html">2026-06-30 - Shared image facade</a><small>feat | compatible</small></li><li><a href="../history/image-measurement/LK-20260629-protected-image-enhancement-workflows.html">2026-06-29 - Protected image enhancement workflows</a><small>feat | compatible</small></li><li><a href="../../framework/history/LK-20260629-tool-panel-hosts-and-image-app-fixes.html">2026-06-29 - Tool-panel hosts and image app fixes</a><small>fix | compatible</small></li><li><a href="../../development/history/launcher/LK-20260628-app-diagnostics-and-hardened-ui-workflows.html">2026-06-28 - App diagnostics and hardened UI workflows</a><small>feat | compatible</small></li><li><a href="../../api/history/dta/LK-20260624-file-panel-migration.html">2026-06-24 - File-panel migration</a><small>refactor | breaking</small></li><li><a href="../../development/history/launcher/LK-20260623-version-metadata-baseline.html">2026-06-23 - Version metadata baseline</a><small>feat | compatible</small></li></ul></section>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>

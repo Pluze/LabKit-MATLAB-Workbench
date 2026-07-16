@@ -19,12 +19,28 @@
 <p class="page-kind">reference</p>
 <p><a href="../../../index.html">API Reference</a></p>
 <h1>flir_thermal.analysisRun.roiTemperatureMeanReading</h1>
-<p class="lead">Expected caller: FLIR thermal drag callback and tests. Inputs are a Celsius</p>
+<p class="lead">ROITEMPERATUREMEANREADING Measure an inclusive rectangular thermal ROI.</p>
 <h2 id="syntax">Syntax</h2>
 <pre><code class="language-matlab">function [hotSpot, coldSpot, meanReading] = roiTemperatureMeanReading( ...
 temperatureC, startXY, endXY)</code></pre>
 <h2 id="contract">Contract</h2>
-<pre class="help-contract">Expected caller: FLIR thermal drag callback and tests. Inputs are a Celsius
+<pre class="help-contract">ROITEMPERATUREMEANREADING Measure an inclusive rectangular thermal ROI.
+  [hotSpot, coldSpot, meanReading] =
+  flir_thermal.analysisRun.roiTemperatureMeanReading(T, startXY, endXY)
+  accepts a 2-D Celsius matrix and two opposite [x y] corners. Pixel bounds
+  are rounded, ordered, and clamped. Non-finite pixels are excluded.
+  hotSpot and coldSpot contain x, y, and temperatureC. meanReading also
+  contains x, y, width, height, and pixelCount. Invalid or all-nonfinite
+  inputs return stable empty records with NaN measurements.
+
+  Example:
+    [hot, cold, avg] = ...
+      flir_thermal.analysisRun.roiTemperatureMeanReading(T,[10 20],[40 60]);
+
+  See also flir_thermal.analysisRun.pointTemperatureReading,
+  flir_thermal.analysisRun.extremeTemperatureReadings.
+
+Expected caller: FLIR thermal drag callback and tests. Inputs are a Celsius
 temperature matrix and two image points. Outputs are clamped ROI hot, cold,
 and mean readings. Side effects: none.</pre>
 <h2 id="source">Source</h2>

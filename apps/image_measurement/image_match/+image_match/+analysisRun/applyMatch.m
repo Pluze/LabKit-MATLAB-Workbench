@@ -2,6 +2,23 @@
 % image, a reference image, and a match step with method/strength fields.
 % Output is a display-ready RGB double image in [0, 1].
 function outputImage = applyMatch(inputImage, referenceImage, step)
+%APPLYMATCH Transfer reference appearance statistics to one image.
+%   outputImage = image_match.analysisRun.applyMatch(inputImage,
+%   referenceImage, step) converts both images to RGB double data in [0,1].
+%   step is produced by image_match.analysisRun.makeStep and contains
+%   matchMethod, amount, secondary, and colorStrength. The percentage controls
+%   select overall, tone, and color blend strength. An empty reference returns
+%   the normalized input. Geometry is never registered or resampled.
+%
+%   Supported method labels come from image_match.userInterface.matchMethods.
+%   The returned image has the source geometry and three color channels.
+%
+%   Example:
+%     step = image_match.analysisRun.makeStep("Balanced",100,100,100);
+%     out = image_match.analysisRun.applyMatch(source, reference, step);
+%
+%   See also image_match.analysisRun.applyPipeline,
+%   image_match.analysisRun.makeStep.
 
     inputImage = labkit.image.ensureRgb(labkit.image.im2double(inputImage));
     inputImage = min(max(inputImage, 0), 1);

@@ -4,16 +4,21 @@
 function result = computeFocusStack(images, opts)
 %COMPUTEFOCUSSTACK Fuse focus-stack images for labkit_FocusStack_app.
 %
-% Expected caller:
-%   labkit_FocusStack_app run callback and package tests.
+%   result = focus_stack.analysisRun.computeFocusStack(images)
+%   result = focus_stack.analysisRun.computeFocusStack(images, opts)
+%   accepts at least two grayscale/RGB images as a cell array or numeric stack.
+%   opts may contain focusWindow (default 31), smoothRadius (4),
+%   minConfidence (0.05 in [0,1]), and pyramidLevels (4, bounded by geometry).
+%   Differently sized inputs are resized to the common working geometry.
 %
-% Inputs/outputs:
-%   Cell array or numeric stack of images plus fusion options. Returns the
-%   app-owned result struct with fused image, focus map, coverage, and option
-%   metadata.
+%   result contains fused, focusIndex, confidence, focusCoverage, input and
+%   image geometry, normalized options, method, resizedCount, and ok/message
+%   status fields. Fusion uses multilevel Laplacian focus evidence; it does not
+%   correct parallax or moving scene content. The helper has no side effects.
 %
-% Side effects:
-%   None. This helper performs GUI-free fusion only.
+%   Example:
+%     result = focus_stack.analysisRun.computeFocusStack({z1,z2,z3});
+%     imwrite(result.fused, "stacked.png");
 
     if nargin < 2
         opts = struct();

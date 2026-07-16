@@ -27,9 +27,22 @@
 <p>The app registers the stack to a reference, evaluates local focus evidence, and combines the selected pixels or bands. Alignment prevents camera movement from appearing as double edges; it cannot correct large parallax or an object that moved between exposures.</p>
 <h2 id="use-without-the-gui">Use Without The GUI</h2>
 <pre><code class="language-matlab">images = {imread(&quot;z1.png&quot;), imread(&quot;z2.png&quot;), imread(&quot;z3.png&quot;)};
-options = struct();
+options = struct( ...
+    &quot;focusWindow&quot;, 31, ...
+    &quot;smoothRadius&quot;, 4, ...
+    &quot;minConfidence&quot;, 0.05, ...
+    &quot;pyramidLevels&quot;, 4);
 result = focus_stack.analysisRun.computeFocusStack(images, options);
-imwrite(result.image, &quot;stacked.png&quot;);</code></pre>
+imwrite(result.fused, &quot;stacked.png&quot;);</code></pre>
+<p>Inputs may be a cell array of grayscale/RGB images or a numeric stack. At least two images are required. <code>focusWindow</code> is normalized to an odd window of at least three pixels; <code>smoothRadius</code> regularizes the spatial selection; <code>minConfidence</code> is constrained to <code>[0, 1]</code>; and <code>pyramidLevels</code> is limited by the image size. Differently sized inputs are resized to the common working geometry and counted in <code>result.resizedCount</code>.</p>
+<p>The result contains <code>fused</code>, <code>focusIndex</code>, <code>confidence</code>, per-input <code>focusCoverage</code>, image geometry, normalized options, and method metadata. <code>focusIndex</code> is an explanatory selection map, while <code>confidence</code> reports how strongly the winning focus evidence separated from the next candidate.</p>
+<h2 id="errors-and-limitations">Errors And Limitations</h2>
+<ul>
+<li>The function rejects fewer than two inputs and invalid confidence values.</li>
+<li>Local fusion cannot recover detail absent from every input.</li>
+<li>Parallax, exposure changes, and moving objects can create seams even when</li>
+</ul>
+<p>the focus score is locally confident.</p>
 <h2 id="see-also">See Also</h2>
 <ul>
 <li><code>focus_stack.analysisRun.computeFocusStack</code></li>

@@ -2,6 +2,18 @@
 % Celsius temperature matrix and an image point in pixel coordinates. Output
 % is the clamped nearest-pixel reading. Side effects: none.
 function reading = pointTemperatureReading(temperatureC, pointXY)
+%POINTTEMPERATUREREADING Read the nearest calibrated thermal pixel.
+%   reading = flir_thermal.analysisRun.pointTemperatureReading(temperatureC, pointXY)
+%   accepts a 2-D Celsius matrix and an [x y] image coordinate. The coordinate
+%   is rounded to the nearest pixel and clamped to the matrix bounds. reading
+%   contains x, y, and temperatureC. Invalid matrices or coordinates return
+%   the same fields filled with NaN. The function has no graphics side effects.
+%
+%   Example:
+%     reading = flir_thermal.analysisRun.pointTemperatureReading(T, [120 80]);
+%
+%   See also labkit.thermal.readFile,
+%   flir_thermal.analysisRun.roiTemperatureMeanReading.
 
     values = double(temperatureC);
     reading = emptyReading();

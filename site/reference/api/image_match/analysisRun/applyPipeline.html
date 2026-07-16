@@ -19,11 +19,22 @@
 <p class="page-kind">reference</p>
 <p><a href="../../../index.html">API Reference</a></p>
 <h1>image_match.analysisRun.applyPipeline</h1>
-<p class="lead">Expected caller: labkit_ImageMatch_app, batch export, and tests. Inputs are</p>
+<p class="lead">APPLYPIPELINE Replay ordered reference-match steps over source images.</p>
 <h2 id="syntax">Syntax</h2>
 <pre><code class="language-matlab">function processed = applyPipeline(images, steps, referenceImage)</code></pre>
 <h2 id="contract">Contract</h2>
-<pre class="help-contract">Expected caller: labkit_ImageMatch_app, batch export, and tests. Inputs are
+<pre class="help-contract">APPLYPIPELINE Replay ordered reference-match steps over source images.
+  processed = image_match.analysisRun.applyPipeline(images, steps,
+  referenceImage) accepts one numeric image or a cell array of images, a
+  step array, and an optional immutable reference image. Inputs and outputs
+  are normalized RGB doubles in [0,1]. processed is always a column cell
+  array and contains source images only; the reference is never modified or
+  exported. Steps run in array order for every source.
+
+  See also image_match.analysisRun.applyMatch,
+  image_match.analysisRun.makeStep.
+
+Expected caller: labkit_ImageMatch_app, batch export, and tests. Inputs are
 source RGB images, an ordered reference-match step array, and one immutable
 reference RGB image. Output is a cell array after applying each match step to
 source images only; the reference image is never modified or exported.</pre>

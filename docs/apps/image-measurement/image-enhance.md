@@ -26,13 +26,33 @@ different path.
 
 ```matlab
 image = imread("input.png");
-steps = struct("type", "brightness", "amount", 0.1);
-enhanced = image_enhance.analysisRun.applyPipeline(image, steps);
-imwrite(enhanced, "enhanced.png");
+step = image_enhance.analysisRun.makeStep( ...
+    "Brightness / Contrast", 8, 15, 0);
+processed = image_enhance.analysisRun.applyPipeline({image}, step);
+imwrite(processed{1}, "enhanced.png");
 ```
+
+`makeStep(kind, amount, secondary, referenceIndex)` creates the complete
+history record expected by the pipeline. The meaning and legal range of the
+two numeric controls depend on `kind`; query
+`image_enhance.analysisRun.defaultStepValues(kind)` when constructing a tool
+programmatically. The optional third `contexts` argument to `applyPipeline`
+supplies per-image context for operations that use a reference image.
+
+Inputs are normalized to RGB double precision in `[0, 1]`. The function always
+returns a column cell array, even when the input was one numeric image. Steps
+run in array order, making the history directly replayable.
+
+## Errors And Limitations
+
+- Reordering nonlinear operations can change pixels substantially.
+- Repeated lossy file export is not equivalent to replaying the original
+  pipeline from the source image.
+- Step factories sanitize scalar values, but callers still own choosing
+  scientifically or visually justified parameters.
 
 ## See Also
 
 - `image_enhance.analysisRun.applyPipeline`
+- `image_enhance.analysisRun.makeStep`
 - [Image Library](../../api/image.md)
-

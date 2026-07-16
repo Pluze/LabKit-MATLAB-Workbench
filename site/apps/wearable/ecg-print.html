@@ -26,14 +26,38 @@
 <h2 id="scientific-semantics">Scientific Semantics</h2>
 <p>Filtering, polarity, minimum peak spacing, and SNR windows affect detection and must accompany reported heart-rate or quality results. The app retains source timing and does not infer a sample rate when required metadata is absent.</p>
 <h2 id="use-without-the-gui">Use Without The GUI</h2>
-<pre><code class="language-matlab">result = ecg_print.analysisRun.analyzeSignal(signal, sampleRate, options);
-assert(result.ok, result.message);</code></pre>
+<p><code>analyzeSignal</code> operates on the same decoded cache and durable parameters used by Runtime V2:</p>
+<pre><code class="language-matlab">[recording, status] = labkit.biosignal.readRecording(&quot;ecg.csv&quot;);
+assert(status.ok, status.message);
+signalRecord = labkit.biosignal.getChannel(recording, 1);
+cache = struct(&quot;signal&quot;, signalRecord);
+parameters = struct( ...
+    &quot;lowCut&quot;, 0.5, &quot;highCut&quot;, 40, ...
+    &quot;roiStart&quot;, 0, &quot;roiEnd&quot;, 0, ...
+    &quot;peakMethod&quot;, &quot;QRS streaming&quot;, &quot;peakDistance&quot;, 0.25, ...
+    &quot;segmentWindow&quot;, 0.4, &quot;templateTopN&quot;, 20);
+cache = ecg_print.analysisRun.analyzeSignal(cache, parameters);</code></pre>
+<p><code>signalRecord</code> is the normalized biosignal record returned by the app importer or <code>labkit.biosignal.readRecording</code>, not a bare numeric vector. The returned cache adds <code>workingSignal</code>, <code>filteredSignal</code>, <code>events</code>, <code>segments</code>, <code>template</code>, and <code>measurements</code>. When <code>roiEnd &lt;= roiStart</code>, the full signal is analyzed. The upper cutoff is constrained below the Nyquist frequency.</p>
+<p>For a smaller script that does not need the app cache, compose the public facade functions directly: <code>filterSignal</code>, <code>detectEcgPeaks</code>, <code>segmentByEvents</code>, <code>buildTemplate</code>, and <code>measureSegments</code>.</p>
 <h2 id="outputs">Outputs</h2>
 <ul>
 <li>detected peak and interval tables;</li>
 <li>segment SNR and summary measurements;</li>
 <li>printable ECG figures or reports.</li>
 </ul>
+<h2 id="errors-and-limitations">Errors And Limitations</h2>
+<ul>
+<li>Required channel and sampling metadata must be present in the normalized</li>
+</ul>
+<p>recording.</p>
+<ul>
+<li>Automatic polarity and threshold selection still require visual review when</li>
+</ul>
+<p>morphology or noise changes across a recording.</p>
+<ul>
+<li>Filter settings, detection options, and excluded time ranges belong with any</li>
+</ul>
+<p>derived heart-rate or signal-quality result.</p>
 <h2 id="see-also">See Also</h2>
 <ul>
 <li><a href="../../api/biosignal.md">Biosignal Library</a></li>

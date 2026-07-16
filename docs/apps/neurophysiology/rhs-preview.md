@@ -18,13 +18,37 @@ action.
 
 ## Use Without The GUI
 
+For ordinary non-GUI waveform access, call the reusable RHS facade directly:
+
 ```matlab
-window = rhs_preview.analysisRun.readPreviewWindow( ...
-    "recording.rhs", channelSelection, startSample, sampleCount);
+[index, status] = labkit.rhs.indexFile("recording.rhs");
+assert(status.ok, status.message);
+options = struct( ...
+    "family", "amplifier", ...
+    "channels", ["A-000", "A-001"], ...
+    "timeRangeSec", [1.0 1.5]);
+[window, status] = labkit.rhs.readWindow("recording.rhs", options);
+assert(status.ok, status.message);
 ```
 
-The result retains sampling and channel metadata needed to interpret the
-returned waveform matrix.
+`indexFile` reads recording metadata without decoding the full waveform.
+`readWindow` returns the bounded data and retains sampling and channel metadata
+needed to interpret the waveform matrix.
+
+`rhs_preview.analysisRun.readPreviewWindow` is also documented because it is
+an app-owned callable contract, but it is intended for Runtime V2 state
+transitions. It accepts the complete RHS Preview state, selected channel ids,
+an action label, and a preserve-ROI flag, then returns updated state, an `ok`
+flag, and a log message. Scripts that only need data should prefer
+`labkit.rhs.readWindow`.
+
+## Errors And Limitations
+
+- File indexing can succeed even when a requested family or channel selection
+  is unavailable; check the status from each read.
+- Time ranges use seconds and are clamped by app state in the GUI workflow.
+- Windowed reads reduce IO and memory cost but do not cache an unlimited number
+  of decoded windows.
 
 ## Troubleshooting
 
@@ -36,4 +60,3 @@ returned waveform matrix.
 
 - [RHS Library](../../api/rhs.md)
 - [Nerve Response Analysis](nerve-response-analysis.md)
-

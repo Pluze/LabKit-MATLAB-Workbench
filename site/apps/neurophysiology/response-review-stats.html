@@ -26,12 +26,36 @@
 <h2 id="scientific-semantics">Scientific Semantics</h2>
 <p>Alignment changes the common time origin but not source sampling. Measurement windows and baseline policy must be consistent across compared groups. Summaries report the retained sample count so exclusions remain auditable.</p>
 <h2 id="use-without-the-gui">Use Without The GUI</h2>
-<pre><code class="language-matlab">aligned = response_review_stats.analysisRun.alignSegments(segments, options);
-metrics = response_review_stats.analysisRun.measureAlignedSegments(aligned, options);
+<pre><code class="language-matlab">options = struct( ...
+    &quot;sampleIntervalSec&quot;, 1e-4, ...
+    &quot;windowSec&quot;, [-0.01 0.02], ...
+    &quot;baselineWindowSec&quot;, [-0.01 -0.002], ...
+    &quot;noiseWindowSec&quot;, [-0.01 -0.002], ...
+    &quot;measurementWindowSec&quot;, [0.002 0.012]);
+aligned = response_review_stats.analysisRun.alignSegments(segments, options);
+metrics = response_review_stats.analysisRun.measureAlignedSegments( ...
+    aligned, options);
 summary = response_review_stats.analysisRun.summarizeMetrics(metrics);</code></pre>
+<p>Each input segment must provide <code>timeSec</code>, <code>values</code>, and <code>name</code>; an optional <code>alignTimeSec</code> shifts that segment onto the common time origin. When <code>sampleIntervalSec</code> is omitted, the median positive source interval is used. When <code>windowSec</code> is omitted, alignment uses only the time range shared by all segments. Linear interpolation leaves out-of-range samples as <code>NaN</code>.</p>
+<p><code>measureAlignedSegments</code> returns one row per segment with baseline limits, positive and negative peaks, peak-to-peak amplitude, noise RMS, and SNR in dB. The baseline mean is subtracted before measuring. <code>summarizeMetrics</code> groups by <code>pairId</code> when present, otherwise by <code>SegmentName</code>, and reports count plus mean peak-to-peak and SNR values.</p>
+<h2 id="errors-and-limitations">Errors And Limitations</h2>
+<ul>
+<li>Empty input returns an aligned model with status <code>empty</code>; an invalid or</li>
+</ul>
+<p>unavailable sample interval falls back to a 10 kHz grid.</p>
+<ul>
+<li>Baseline, noise, and measurement windows use seconds and must overlap the</li>
+</ul>
+<p>aligned grid to produce finite measurements.</p>
+<ul>
+<li>Interpolation enables comparison on a shared grid but cannot recreate</li>
+</ul>
+<p>bandwidth or timing precision absent from the source samples.</p>
 <h2 id="see-also">See Also</h2>
 <ul>
 <li><a href="nerve-response-analysis.html">Nerve Response Analysis</a></li>
+<li><code>response_review_stats.analysisRun.alignSegments</code></li>
+<li><code>response_review_stats.analysisRun.measureAlignedSegments</code></li>
 <li><code>response_review_stats.analysisRun.summarizeMetrics</code></li>
 </ul><section class="component-history"><h2>Change history</h2><ul><li><a href="../../framework/history/LK-20260715-runtime-v2-app-migration.html">2026-07-15 - Runtime V2 lifecycle ownership across the app fleet</a><small>refactor | breaking</small></li><li><a href="../../api/history/dta/LK-20260713-managed-calculation-constants.html">2026-07-13 - Managed scientific and conversion constants</a><small>refactor | compatible</small></li><li><a href="../../development/history/launcher/LK-20260706-ui-5-facade-redesign-app-migration-and-plot-refresh.html">2026-07-06 - UI 5 facade redesign, app migration, and plot refresh</a><small>refactor | breaking</small></li><li><a href="../../framework/history/LK-20260703-csc-export-and-viewport-policy.html">2026-07-03 - CSC export and viewport policy</a><small>feat | compatible</small></li><li><a href="../../framework/history/LK-20260703-declarative-app-runtime.html">2026-07-03 - Declarative app runtime</a><small>refactor | compatible</small></li><li><a href="../../framework/history/LK-20260703-ui-groups-migration.html">2026-07-03 - UI groups migration</a><small>refactor | compatible</small></li><li><a href="../../framework/history/LK-20260701-debug-sample-packs.html">2026-07-01 - Debug sample packs</a><small>feat | compatible</small></li><li><a href="../../framework/history/LK-20260630-close-guards-and-caught-exception-diagnostics.html">2026-06-30 - Close guards and caught-exception diagnostics</a><small>feat | compatible</small></li><li><a href="../../framework/history/LK-20260630-output-folder-prompts.html">2026-06-30 - Output folder prompts</a><small>feat | compatible</small></li><li><a href="../../development/history/launcher/LK-20260628-app-diagnostics-and-hardened-ui-workflows.html">2026-06-28 - App diagnostics and hardened UI workflows</a><small>feat | compatible</small></li><li><a href="../../api/history/dta/LK-20260624-file-panel-migration.html">2026-06-24 - File-panel migration</a><small>refactor | breaking</small></li><li><a href="../../development/history/launcher/LK-20260623-version-metadata-baseline.html">2026-06-23 - Version metadata baseline</a><small>feat | compatible</small></li></ul></section>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>

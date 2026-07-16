@@ -26,15 +26,37 @@
 <h2 id="scientific-semantics">Scientific Semantics</h2>
 <p>Event thresholds and refractory rules identify candidate stimulation times. Train grouping operates on event spacing. CAP metrics are measured in explicit baseline and response windows with the recording sample rate and channel units preserved.</p>
 <h2 id="use-without-the-gui">Use Without The GUI</h2>
-<pre><code class="language-matlab">result = nerve_response_analysis.analysisRun.analyzeRecording(recording, options);
-trains = nerve_response_analysis.analysisRun.detectEventTrains(events, options);
+<pre><code class="language-matlab">protocol = struct();  % Supply channel roles and analysis pairs when available.
+options = struct(&quot;recordingId&quot;, &quot;recording-1&quot;, &quot;maxDurationSec&quot;, 30);
+analysis = nerve_response_analysis.analysisRun.analyzeRecording( ...
+    &quot;recording.rhs&quot;, protocol, options);</code></pre>
+<p>The result contains the source identity, protocol snapshot, detected <code>events</code> and <code>trains</code>, per-pair CAP <code>metrics</code>, and an <code>issues</code> table. Parse or detection problems are represented in <code>issues</code> so a batch can retain successful files. For multiple recordings, use <code>nerve_response_analysis.analysisRun.analyzeSession</code>.</p>
+<p>The detector and metric stages can also be called on already decoded arrays:</p>
+<pre><code class="language-matlab">[events, trains] = ...
+    nerve_response_analysis.analysisRun.detectEventTrains( ...
+    timeSec, eventSourceSignal, eventOptions);
 metrics = nerve_response_analysis.analysisRun.measureCapMetrics( ...
-    waveform, eventSamples, options);</code></pre>
-<p>For multiple recordings, use <code>nerve_response_analysis.analysisRun.analyzeSession</code>.</p>
+    timeSec, responseSignal, events.timeSec, metricOptions);</code></pre>
+<p><code>timeSec</code> and each signal must be equal-length column-compatible numeric vectors. <code>eventOptions</code> controls derivative-score thresholding, minimum event spacing, train grouping, isolation, and the physical stimulus-time shift. <code>metricOptions</code> controls the pre-stimulus baseline, post-pulse blanking, and CAP search end. Metric output includes baseline and noise, positive and negative peaks, peak-to-peak amplitude, latency, SNR, and per-event status.</p>
+<h2 id="errors-and-limitations">Errors And Limitations</h2>
+<ul>
+<li>Vector length mismatches throw named size errors; missing detections return</li>
+</ul>
+<p>empty tables rather than invented events.</p>
+<ul>
+<li>Default timing windows are policies, not universal physiology. Save the</li>
+</ul>
+<p>exact options and protocol used for each analysis.</p>
+<ul>
+<li>A derivative peak identifies an electrical transition; validate its relation</li>
+</ul>
+<p>to physical stimulus onset before interpreting latency.</p>
 <h2 id="see-also">See Also</h2>
 <ul>
 <li><a href="../../api/rhs.md">RHS Library</a></li>
 <li><a href="response-review-stats.html">Response Review and Stats</a></li>
+<li><code>nerve_response_analysis.analysisRun.detectEventTrains</code></li>
+<li><code>nerve_response_analysis.analysisRun.measureCapMetrics</code></li>
 </ul><section class="component-history"><h2>Change history</h2><ul><li><a href="../../framework/history/LK-20260715-runtime-v2-app-migration.html">2026-07-15 - Runtime V2 lifecycle ownership across the app fleet</a><small>refactor | breaking</small></li><li><a href="../../api/history/dta/LK-20260713-managed-calculation-constants.html">2026-07-13 - Managed scientific and conversion constants</a><small>refactor | compatible</small></li><li><a href="../../development/history/launcher/LK-20260706-ui-5-facade-redesign-app-migration-and-plot-refresh.html">2026-07-06 - UI 5 facade redesign, app migration, and plot refresh</a><small>refactor | breaking</small></li><li><a href="../../framework/history/LK-20260703-csc-export-and-viewport-policy.html">2026-07-03 - CSC export and viewport policy</a><small>feat | compatible</small></li><li><a href="../../framework/history/LK-20260703-declarative-app-runtime.html">2026-07-03 - Declarative app runtime</a><small>refactor | compatible</small></li><li><a href="../../framework/history/LK-20260703-ui-groups-migration.html">2026-07-03 - UI groups migration</a><small>refactor | compatible</small></li><li><a href="../../framework/history/LK-20260701-debug-sample-packs.html">2026-07-01 - Debug sample packs</a><small>feat | compatible</small></li><li><a href="../../framework/history/LK-20260630-close-guards-and-caught-exception-diagnostics.html">2026-06-30 - Close guards and caught-exception diagnostics</a><small>feat | compatible</small></li><li><a href="../../framework/history/LK-20260630-output-folder-prompts.html">2026-06-30 - Output folder prompts</a><small>feat | compatible</small></li><li><a href="../../development/history/launcher/LK-20260628-app-diagnostics-and-hardened-ui-workflows.html">2026-06-28 - App diagnostics and hardened UI workflows</a><small>feat | compatible</small></li><li><a href="../../api/history/dta/LK-20260624-file-panel-migration.html">2026-06-24 - File-panel migration</a><small>refactor | breaking</small></li><li><a href="../../development/history/launcher/LK-20260623-version-metadata-baseline.html">2026-06-23 - Version metadata baseline</a><small>feat | compatible</small></li></ul></section>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>
 </main>

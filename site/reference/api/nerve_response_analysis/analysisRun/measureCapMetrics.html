@@ -24,6 +24,18 @@
 <pre><code class="language-matlab">function metrics = measureCapMetrics(timeSec, signal, eventTimesSec, opts)</code></pre>
 <h2 id="contract">Contract</h2>
 <pre class="help-contract">MEASURECAPMETRICS Measure event-locked CAP response features.
+  metrics = nerve_response_analysis.analysisRun.measureCapMetrics(timeSec,
+  signal, eventTimesSec, opts) accepts equal-length time/signal vectors,
+  event times in seconds, and optional baselineWindowSec,
+  blankingAfterPulseSec, and searchEndAfterPulseSec policies.
+
+  One output row is returned per event with baselineMean, noiseRms, positive
+  and negative peaks, peakToPeak, peakTimeSec, latencySec, snrDb, and status.
+  Baseline is measured before the event; the response search begins after the
+  blanking interval. Missing search samples produce status &quot;noSamples&quot;.
+  Length mismatch throws MetricSizeMismatch. No files or graphics are used.
+
+  See also nerve_response_analysis.analysisRun.detectEventTrains.
 
 Expected caller: nerve_response_analysis.analysisRun.analyzeRecording or tests.
 Inputs are one time vector, one response signal, event times, and analysis

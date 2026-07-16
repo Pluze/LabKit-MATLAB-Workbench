@@ -3,6 +3,19 @@
 % event-detection options. Outputs are event and train tables. No side effects.
 function [events, trains] = detectEventTrains(timeSec, signal, opts)
 %DETECTEVENTTRAINS Detect pulse candidates and group them into trains.
+%   [events, trains] =
+%   nerve_response_analysis.analysisRun.detectEventTrains(timeSec, signal)
+%   accepts equal-length numeric vectors in seconds and signal units. opts can
+%   supply sourceId, stdMultiplier, minScore, minPeakDistanceSec,
+%   groupGapSec, minDetectedPulses, maxTrainDurationSec, isolationWindowSec,
+%   requireIsolation, and stimShiftSec, directly or through eventDetection.
+%
+%   Detection scores the absolute first difference, estimates robust noise,
+%   keeps separated local maxima, shifts their reported physical times, and
+%   groups candidates by temporal policy. Empty input/no candidates returns
+%   stable empty tables. Length mismatch throws EventSizeMismatch.
+%
+%   See also nerve_response_analysis.analysisRun.measureCapMetrics.
 
     if nargin < 3 || isempty(opts)
         opts = struct();

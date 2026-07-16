@@ -3,6 +3,18 @@
 % matrix data model. No side effects.
 function aligned = alignSegments(segments, opts)
 %ALIGNSEGMENTS Interpolate segment traces to a shared time grid.
+%   aligned = response_review_stats.analysisRun.alignSegments(segments, opts)
+%   accepts a struct array with timeSec, values, name, and optional
+%   alignTimeSec. opts may contain sampleIntervalSec, windowSec,
+%   baselineWindowSec, and alignTimeSec. Missing sample interval uses the
+%   median positive source step; an unavailable interval falls back to 1e-4 s.
+%
+%   Output fields are timeSec, values (samples-by-segments), segmentNames, and
+%   status. Linear interpolation returns NaN outside each source range. An
+%   omitted window uses the intersection shared by all segments. Empty input
+%   returns a stable empty model with status "empty". No side effects.
+%
+%   See also response_review_stats.analysisRun.measureAlignedSegments.
 
     if nargin < 2 || isempty(opts)
         opts = struct();
