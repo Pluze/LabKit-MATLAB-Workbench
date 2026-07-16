@@ -28,13 +28,14 @@ introduced: `labkit_ECGPrint_app` | `1.0.0`
 
 ## Context
 
-- This is the first point where app and launcher versions became first-class
-  user-facing metadata.
+The repository had release tags and package contracts, but the launcher and
+individual apps did not display their own component versions.
 
 ## Decision and rationale
 
-Treat this as one coherent evolution record because the listed versions and
-evidence changed together to address the stated user or maintainer need.
+Add lightweight `version` requests to every app and the launcher, show those
+versions in titles and the launcher catalog, and validate their format so a
+debug report can identify the exact component being run.
 
 ## Changes
 
@@ -49,8 +50,9 @@ evidence changed together to address the stated user or maintainer need.
 
 ## User and data impact
 
-- This is the first point where app and launcher versions became first-class
-  user-facing metadata.
+Users and maintainers could read the launcher and app version without
+inspecting Git history. The change added metadata only and did not modify saved
+data or numerical results.
 
 ## Compatibility and migration
 
@@ -58,9 +60,9 @@ No manual migration was recorded for this historical change.
 
 ## Validation
 
-Historical test commands were not recorded consistently. The carrying
-mainline commits and release tags below are the authoritative evidence;
-current guardrails protect the surviving contracts.
+The carrying commit added version-request, title, catalog, and format checks.
+Release tag `v2.4.0` identifies the shipped baseline; the exact historical test
+command was not recorded.
 
 ## Evidence
 
@@ -68,4 +70,5 @@ current guardrails protect the surviving contracts.
 
 ## Known limitations and follow-up
 
-This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+These component versions describe displayed app/library builds; compatibility
+between reusable packages is handled separately by `labkit.contract`.

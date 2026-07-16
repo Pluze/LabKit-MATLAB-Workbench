@@ -22,13 +22,15 @@ component: `labkit_RHSPreview_app` | `1.2.0 -> 1.2.1`
 
 ## Context
 
-- Maintainers get structured failure evidence instead of relying on screenshots
-  or vague crash reports.
+When an app stalled or caught an exception, screenshots and the visible Log tab
+often omitted the active callback and stack information needed to reproduce the
+problem.
 
 ## Decision and rationale
 
-Treat this as one coherent evolution record because the listed versions and
-evidence changed together to address the stated user or maintainer need.
+Capture active operations, uncaught crashes, caught errors, and suspected stalls
+in structured local reports while hardening the UI paths that generate those
+events. Keep reports outside project data so diagnostics cannot alter results.
 
 ## Changes
 
@@ -42,8 +44,9 @@ evidence changed together to address the stated user or maintainer need.
 
 ## User and data impact
 
-- Maintainers get structured failure evidence instead of relying on screenshots
-  or vague crash reports.
+Debug runs produced evidence that could identify the failing operation and app
+state without copying laboratory inputs into the repository. Normal projects
+and exports kept their previous formats.
 
 ## Compatibility and migration
 
@@ -51,9 +54,9 @@ No manual migration was recorded for this historical change.
 
 ## Validation
 
-Historical test commands were not recorded consistently. The carrying
-mainline commits and release tags below are the authoritative evidence;
-current guardrails protect the surviving contracts.
+The carrying commits updated launcher, framework, and affected app workflow
+tests for diagnostic creation and hardened callbacks. Exact historical commands
+were not recorded.
 
 ## Evidence
 
@@ -61,4 +64,5 @@ current guardrails protect the surviving contracts.
 
 ## Known limitations and follow-up
 
-This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+Diagnostics report the state and stack available at capture time; they do not
+replace a reproducible input or a focused regression test.

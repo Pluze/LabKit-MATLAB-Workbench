@@ -13,13 +13,15 @@ component: `labkit.ui` | `3.0.0 -> 3.0.1`
 
 ## Context
 
-- Users gained a deliberate path to choose recent releases, tags, or main
-  commits, and image interactions stopped carrying stale callback state.
+The launcher could update LabKit but did not offer an explicit choice among a
+recent release, a tag, and the main branch. Separately, image drag tools could
+leave old callbacks attached after an interaction ended.
 
 ## Decision and rationale
 
-Treat this as one coherent evolution record because the listed versions and
-evidence changed together to address the stated user or maintainer need.
+Add a managed version selector backed by an install manifest, and make image
+interaction cleanup restore or release every temporary callback. Both changes
+reduce hidden state that otherwise survives beyond the user's selected action.
 
 ## Changes
 
@@ -31,8 +33,9 @@ evidence changed together to address the stated user or maintainer need.
 
 ## User and data impact
 
-- Users gained a deliberate path to choose recent releases, tags, or main
-  commits, and image interactions stopped carrying stale callback state.
+Users could deliberately install a supported release or development revision.
+Ending an image drag no longer left the figure responding to an obsolete tool.
+Saved app data did not change.
 
 ## Compatibility and migration
 
@@ -40,9 +43,8 @@ No manual migration was recorded for this historical change.
 
 ## Validation
 
-Historical test commands were not recorded consistently. The carrying
-mainline commits and release tags below are the authoritative evidence;
-current guardrails protect the surviving contracts.
+The listed commits added launcher-manager/manifest coverage and regression
+checks for image callback cleanup. Exact historical commands were not recorded.
 
 ## Evidence
 
@@ -50,4 +52,5 @@ current guardrails protect the surviving contracts.
 
 ## Known limitations and follow-up
 
-This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+Version selection still depended on network access for remote revisions;
+already installed local versions remained usable offline.

@@ -12,12 +12,14 @@ component: `labkit_BatchImageCrop_app` | `1.2.0 -> 1.3.0`
 
 ## Context
 
-- Users can see which selected file a preview or result belongs to.
+In a multi-file Batch Crop session, the window and preview did not consistently
+show which list item supplied the current image and crop settings.
 
 ## Decision and rationale
 
-Treat this as one coherent evolution record because the listed versions and
-evidence changed together to address the stated user or maintainer need.
+Make the selected file part of the shared window-title context and update Batch
+Crop feedback whenever selection changes. Keep the title derived from the file
+panel so the app does not maintain a second selection label.
 
 ## Changes
 
@@ -29,7 +31,9 @@ evidence changed together to address the stated user or maintainer need.
 
 ## User and data impact
 
-- Users can see which selected file a preview or result belongs to.
+The active filename became visible while reviewing or editing a crop task,
+reducing the chance of applying settings to the wrong image. Crop geometry and
+exported data were unchanged.
 
 ## Compatibility and migration
 
@@ -37,9 +41,8 @@ No manual migration was recorded for this historical change.
 
 ## Validation
 
-Historical test commands were not recorded consistently. The carrying
-mainline commits and release tags below are the authoritative evidence;
-current guardrails protect the surviving contracts.
+The carrying commit updated shared title-context and Batch Crop GUI workflow
+coverage. The exact historical test command was not recorded.
 
 ## Evidence
 
@@ -47,4 +50,5 @@ current guardrails protect the surviving contracts.
 
 ## Known limitations and follow-up
 
-This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+Later file-panel work extended the same title context and append behavior to
+the rest of the app fleet.

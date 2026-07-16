@@ -28,13 +28,15 @@ component: `labkit_ECGPrint_app` | `1.0.0 -> 1.2.0`
 
 ## Context
 
-- File selection became a shared UI workflow instead of app-specific task-input
-  plumbing.
+Apps implemented file selection through separate task-input adapters, which
+produced inconsistent lists, selection events, and status feedback. The DTA
+session helper also coupled parsing to that older UI model.
 
 ## Decision and rationale
 
-Treat this as one coherent evolution record because the listed versions and
-evidence changed together to address the stated user or maintainer need.
+Move supported apps to one reusable file-panel model and make DTA loading a
+GUI-free file/curve API. Accept the breaking package versions because retaining
+both task-input and file-panel paths would preserve ambiguous callback behavior.
 
 ## Changes
 
@@ -47,8 +49,9 @@ evidence changed together to address the stated user or maintainer need.
 
 ## User and data impact
 
-- File selection became a shared UI workflow instead of app-specific task-input
-  plumbing.
+File lists, current selection, add/remove actions, and status display became
+consistent across the migrated apps. App code written against the removed task
+inputs or DTA session helpers required an update.
 
 ## Compatibility and migration
 
@@ -57,9 +60,9 @@ evidence changed together to address the stated user or maintainer need.
 
 ## Validation
 
-Historical test commands were not recorded consistently. The carrying
-mainline commits and release tags below are the authoritative evidence;
-current guardrails protect the surviving contracts.
+The carrying commit migrated app GUI workflows and package compatibility tests
+to the new file-panel and DTA APIs. The exact historical test command was not
+recorded.
 
 ## Evidence
 
@@ -67,4 +70,5 @@ current guardrails protect the surviving contracts.
 
 ## Known limitations and follow-up
 
-This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+This first file-panel generation was later refined for append behavior, native
+dialog edge cases, and Runtime V2 events.

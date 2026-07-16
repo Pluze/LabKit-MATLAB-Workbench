@@ -19,13 +19,16 @@ component: `labkit_CurvatureMeasurement_app` | `1.0.0 -> 1.0.1`
 
 ## Context
 
-- Reusable facades gained explicit compatibility contracts before the later
-  app-version and launcher-version work.
+Reusable packages exposed public MATLAB functions, but apps had no
+machine-checkable way to state which API versions they required. Release and CI
+checks also needed one consistent build-task entry path.
 
 ## Decision and rationale
 
-Treat this as one coherent evolution record because the listed versions and
-evidence changed together to address the stated user or maintainer need.
+Give each reusable package version metadata and let apps declare compatible
+ranges that are checked at launch and in tests. Route MATLAB CI shards through
+the same build tasks used by maintainers so release validation exercises the
+documented commands.
 
 ## Changes
 
@@ -42,8 +45,9 @@ evidence changed together to address the stated user or maintainer need.
 
 ## User and data impact
 
-- Reusable facades gained explicit compatibility contracts before the later
-  app-version and launcher-version work.
+An incompatible app/package combination could fail with a direct requirement
+message instead of producing a later missing-function error. Existing project
+and result data were unaffected.
 
 ## Compatibility and migration
 
@@ -51,9 +55,9 @@ No manual migration was recorded for this historical change.
 
 ## Validation
 
-Historical test commands were not recorded consistently. The carrying
-mainline commits and release tags below are the authoritative evidence;
-current guardrails protect the surviving contracts.
+The listed commits introduced contract, lifecycle, and CI build-task tests.
+Release tags `v2.4.1` and `v2.4.2` identify the shipped checkpoints; exact local
+commands were not recorded.
 
 ## Evidence
 
@@ -61,4 +65,5 @@ current guardrails protect the surviving contracts.
 
 ## Known limitations and follow-up
 
-This normalized baseline preserves the historical intent; consult the evidence for commit-level implementation details.
+App and launcher display versions were added in the separate version-metadata
+change later the same day.
