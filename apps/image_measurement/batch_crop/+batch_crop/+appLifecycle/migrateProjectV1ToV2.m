@@ -24,8 +24,7 @@ function project = migrateProjectV1ToV2(project)
         match = find(sourcePaths == reference, 1, 'first');
         if isempty(match)
             sourceId = "image" + string(numel(sources) + 1);
-            portableReference = labkit.ui.runtime.createPortableFileReference( ...
-                "", reference);
+            portableReference = legacyFileReference(reference);
             source = struct("id", sourceId, "required", true, ...
                 "role", "cropSource", "reference", portableReference);
             sources(end + 1) = source;
@@ -36,4 +35,14 @@ function project = migrateProjectV1ToV2(project)
     end
     project.inputs.items = rmfield(items, 'path');
     project.inputs.sources = sources;
+end
+
+function reference = legacyFileReference(pathValue)
+    pathValue = string(pathValue);
+    [~, name, extension] = fileparts(pathValue);
+    reference = struct( ...
+        "schemaVersion", 1, ...
+        "relativePath", "", ...
+        "originalPath", pathValue, ...
+        "fileName", string(name) + string(extension));
 end

@@ -6,7 +6,7 @@ portable project with autosave and recovery.
 
 ## Requirements And Launch
 
-The app declares compatibility with LabKit UI 6.x and uses the image functions
+The app declares compatibility with LabKit UI 7.x and uses the image functions
 shipped with the same workbench. Video decoding uses MATLAB's available video
 support. Predictive navigation is implemented in repository-owned MATLAB code;
 no model weights or third-party runtime package are downloaded.
@@ -132,3 +132,7 @@ coordinateTable = video_marker.coordinateExport.buildTable( ...
 - [Gait Analysis](../../gait/gait-analysis/README.md)
 - [Image Measurement family](../README.md)
 - [API Reference](../../../libraries/README.md)
+
+## Framework Compatibility
+
+This App uses the Runtime V2 lifecycle and requires `labkit.ui >=7 <8`. App code uses semantic actions and injected project services; busy-state and portable-reference serialization mechanics remain framework-private.

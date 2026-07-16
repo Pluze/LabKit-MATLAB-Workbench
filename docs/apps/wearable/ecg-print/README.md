@@ -121,3 +121,7 @@ segments, template, and measurements. For a more customized pipeline, call
 - `labkit.biosignal.detectEcgPeaks`
 - `labkit.biosignal.measureSegments`
 - [Biosignal library](../../../libraries/biosignal/README.md)
+
+## Framework Compatibility
+
+This App uses the Runtime V2 lifecycle and requires `labkit.ui >=7 <8`. App code uses semantic actions and injected project services; busy-state and portable-reference serialization mechanics remain framework-private.

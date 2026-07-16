@@ -14,8 +14,9 @@ function sources = emptySourceRecords()
 %   required - Logical value indicating whether project load must resolve the
 %       file before committing the project.
 %   role - App-defined description of how the source is used.
-%   reference - Portable file reference returned by
-%       labkit.ui.runtime.createPortableFileReference.
+%   reference - Runtime-owned portable reference with schemaVersion,
+%       relativePath, originalPath, and fileName fields. Apps normally obtain
+%       populated records from the injected services.project.sourceRecord.
 %
 % Description:
 %   Use this value to initialize project.inputs.sources when a new project has
@@ -27,7 +28,7 @@ function sources = emptySourceRecords()
 %       "sources", labkit.ui.runtime.emptySourceRecords());
 %   assert(isempty(project.inputs.sources))
 %
-% See also labkit.ui.runtime.createPortableFileReference
+% See also labkit.ui.runtime.define
 
     reference = struct("schemaVersion", 1, "relativePath", "", ...
         "originalPath", "", "fileName", "");

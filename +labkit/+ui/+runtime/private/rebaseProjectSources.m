@@ -17,8 +17,7 @@ function project = rebaseProjectSources(project, filepath)
             continue;
         end
         target = string(sources(k).reference.originalPath);
-        portable = labkit.ui.runtime.createPortableFileReference( ...
-            filepath, target);
+        portable = createPortableFileReference(filepath, target);
         reference = sources(k).reference;
         standardFields = fieldnames(portable);
         for fieldIndex = 1:numel(standardFields)

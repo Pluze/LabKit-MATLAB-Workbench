@@ -86,3 +86,7 @@ output = image_match.analysisRun.applyPipeline(source, reference, step);
 - [Image Enhance](../image-enhance/README.md)
 - [Image Library](../../../libraries/image/README.md)
 - [API Reference](../../../libraries/README.md)
+
+## Framework Compatibility
+
+This App uses the Runtime V2 lifecycle and requires `labkit.ui >=7 <8`. App code uses semantic actions and injected project services; busy-state and portable-reference serialization mechanics remain framework-private.

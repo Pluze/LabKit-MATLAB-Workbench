@@ -20,7 +20,7 @@ workflow decisions, scientific calculations, data schemas, labels, and exports.
 
 | Package | Responsibility | Typical entry points |
 | --- | --- | --- |
-| `labkit.ui.runtime` | Launch, lifecycle, queued actions, canonical state, persistence, dialogs, resources | `launch`, `define`, `saveState`, `loadState`, `runBusy` |
+| `labkit.ui.runtime` | Launch, lifecycle, queued actions, canonical state, persistence, dialogs, resources | `launch`, `define`, `saveState`, `loadState` |
 | `labkit.ui.layout` | Data-only semantic workbench descriptions | `workbench`, `tab`, `section`, `filePanel`, `previewArea`, `action` |
 | `labkit.ui.plot` | Viewport-safe plot and image mechanics | `clear`, `fit`, `fitCanvas`, `message`, `clampData` |
 | `labkit.ui.interaction` | Managed axes interactions and reusable geometry | `enablePopout`, `anchorPath`, `scaleBarGeometry` |

@@ -10,73 +10,11 @@ classdef GuiLayoutUiBusyStateTest < matlab.unittest.TestCase
 end
 
 function verify_gui_layout_ui_busy_state()
-%TEST_GUI_LAYOUT_UI_BUSY_STATE Verify runBusy app-wide busy contracts.
+%TEST_GUI_LAYOUT_UI_BUSY_STATE Verify app-wide semantic busy transactions.
 
     h = guiTestHelpers();
     h.assertUifigureAvailable();
     cleanup = onCleanup(@() h.closeAllFigures());
-
-    fig = uifigure('Visible', 'off', 'Name', 'labkit_busy_state_probe');
-    cleaner = onCleanup(@() delete(fig));
-    grid = uigridlayout(fig, [4 1]);
-    btnRun = uibutton(grid, 'Text', 'Run');
-    btnExport = uibutton(grid, 'Text', 'Export', 'Enable', 'off');
-    btnOther = uibutton(grid, 'Text', 'Other');
-    ax = uiaxes(grid);
-    oldHitTest = ax.HitTest;
-    oldPickableParts = ax.PickableParts;
-    fig.Pointer = 'arrow';
-    scrollCallback = @scrollProbe;
-    clickCallback = {@clickProbe, "cell callback"};
-    fig.WindowScrollWheelFcn = scrollCallback;
-    fig.WindowButtonDownFcn = clickCallback;
-
-    result = labkit.ui.runtime.runBusy(fig, ...
-        "Synthetic busy work", @probeWork);
-
-    assert(result == 42, ...
-        'Busy-state helper should return the work callback output.');
-    assert(strcmp(btnRun.Enable, 'on'), ...
-        'Busy-state helper should restore enabled controls.');
-    assert(strcmp(btnExport.Enable, 'off'), ...
-        'Busy-state helper should restore controls that started disabled.');
-    assert(strcmp(btnOther.Enable, 'on'), ...
-        'Busy-state helper should restore every app control.');
-    assert(strcmp(fig.Pointer, 'arrow'), ...
-        'Busy-state helper should restore the figure pointer.');
-    assert(strcmp(fig.Name, 'labkit_busy_state_probe'), ...
-        'Busy-state helper should restore the figure title.');
-    assert(~isappdata(fig, 'labkitUiBusy'), ...
-        'Busy-state helper should clear the busy flag after work.');
-    assert(sameCallback(fig.WindowScrollWheelFcn, scrollCallback), ...
-        'Busy-state helper should restore scroll callbacks.');
-    assert(sameCallback(fig.WindowButtonDownFcn, clickCallback), ...
-        'Busy-state helper should restore cell-form click callbacks.');
-    assert(strcmp(char(ax.HitTest), char(oldHitTest)), ...
-        'Busy-state helper should restore axes hit testing.');
-    assert(strcmp(char(ax.PickableParts), char(oldPickableParts)), ...
-        'Busy-state helper should restore axes pickable parts.');
-
-    assertThrows(@() labkit.ui.runtime.runBusy(fig, ...
-        "Failing busy work", @failingWork), ...
-        'labkit:ui:test:BusyFailure', ...
-        'Busy-state helper should rethrow callback errors.');
-    assert(strcmp(btnRun.Enable, 'on') && strcmp(btnExport.Enable, 'off'), ...
-        'Busy-state helper should restore control states after callback errors.');
-    assert(strcmp(fig.Pointer, 'arrow'), ...
-        'Busy-state helper should restore the pointer after callback errors.');
-    assert(strcmp(fig.Name, 'labkit_busy_state_probe'), ...
-        'Busy-state helper should restore the title after callback errors.');
-    assert(~isappdata(fig, 'labkitUiBusy'), ...
-        'Busy-state helper should clear the busy flag after callback errors.');
-
-    fig.Name = 'labkit_busy_state_probe [Working: Previous]';
-    nestedBusyTitle = "";
-    labkit.ui.runtime.runBusy(fig, "Next step", @captureBusyTitle);
-    assert(count(string(nestedBusyTitle), "[Working:") == 1, ...
-        'Busy-state helper should not stack working labels.');
-    assert(strcmp(fig.Name, 'labkit_busy_state_probe'), ...
-        'Busy-state helper should restore the base title after nested labels.');
 
     verifyBusyActionWrapper();
     verifyBusyNonActionWrappers();
@@ -86,45 +24,6 @@ function verify_gui_layout_ui_busy_state()
     verifyCloseKeyboardShortcut();
     verifyDefaultClosePromptShortcut();
 
-    function value = probeWork()
-        assert(strcmp(btnRun.Enable, 'on'), ...
-            'Busy-state helper should not mutate app-owned enabled controls.');
-        assert(strcmp(btnExport.Enable, 'off'), ...
-            'Busy-state helper should not mutate app-owned disabled controls.');
-        assert(strcmp(btnOther.Enable, 'on'), ...
-            'Busy-state helper should not mutate unrelated enabled controls.');
-        assert(strcmp(fig.Pointer, 'watch'), ...
-            'Busy-state helper should set a busy pointer during work.');
-        assert(isappdata(fig, 'labkitUiBusy') && getappdata(fig, 'labkitUiBusy'), ...
-            'Busy-state helper should mark the figure busy during work.');
-        assert(contains(fig.Name, '[Working: Synthetic busy work]'), ...
-            'Busy-state helper should expose busy text in the window title.');
-        assert(isempty(fig.WindowScrollWheelFcn), ...
-            'Busy-state helper should clear scroll callbacks during work.');
-        assert(isempty(fig.WindowButtonDownFcn), ...
-            'Busy-state helper should clear click callbacks during work.');
-        assert(strcmp(char(ax.HitTest), 'off'), ...
-            'Busy-state helper should turn axes hit testing off during work.');
-        assert(strcmp(char(ax.PickableParts), 'none'), ...
-            'Busy-state helper should turn axes pickable parts off during work.');
-        value = 42;
-    end
-
-    function failingWork()
-        assert(isappdata(fig, 'labkitUiBusy') && getappdata(fig, 'labkitUiBusy'), ...
-            'Busy-state helper should mark the figure busy before failing work runs.');
-        error('labkit:ui:test:BusyFailure', 'Synthetic busy-state failure.');
-    end
-
-    function captureBusyTitle()
-        nestedBusyTitle = string(fig.Name);
-    end
-
-    function scrollProbe(~, ~)
-    end
-
-    function clickProbe(~, ~, ~)
-    end
 end
 
 function verifyDefaultCloseGuard()

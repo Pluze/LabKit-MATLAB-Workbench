@@ -28,7 +28,7 @@
 <p>An app normally defines its requirements in a small function:</p>
 <pre><code class="language-matlab">function req = requirements()
     req = labkit.contract.requirements( ...
-        &quot;ui&quot;, &quot;&gt;=6 &lt;7&quot;, ...
+        &quot;ui&quot;, &quot;&gt;=7 &lt;8&quot;, ...
         &quot;image&quot;, &quot;&gt;=4 &lt;5&quot;);
 end</code></pre>
 <p>The app entry point checks them before creating the interface:</p>
@@ -39,7 +39,7 @@ end</code></pre>
 <div class="table-wrap"><table><thead><tr><th>Task</th><th>Function</th></tr></thead><tbody><tr><td>Build a requirement structure</td><td><a href="../../reference/api/labkit/contract/requirements.html"><code>labkit.contract.requirements</code></a></td></tr><tr><td>Inspect compatibility without throwing</td><td><a href="../../reference/api/labkit/contract/checkRequirements.html"><code>labkit.contract.checkRequirements</code></a></td></tr><tr><td>Stop startup when requirements fail</td><td><a href="../../reference/api/labkit/contract/assertRequirements.html"><code>labkit.contract.assertRequirements</code></a></td></tr><tr><td>Create the structure returned by a module's <code>version</code> function</td><td><a href="../../reference/api/labkit/contract/versionInfo.html"><code>labkit.contract.versionInfo</code></a></td></tr></tbody></table></div>
 <h2 id="version-ranges">Version Ranges</h2>
 <p>A range contains one or more whitespace-separated constraints. Supported operators are <code>&lt;</code>, <code>&lt;=</code>, <code>&gt;</code>, <code>&gt;=</code>, <code>=</code>, and <code>==</code>:</p>
-<pre><code class="language-matlab">&quot;&gt;=6 &lt;7&quot;       % 6.x releases
+<pre><code class="language-matlab">&quot;&gt;=7 &lt;8&quot;       % 7.x releases
 &quot;&gt;=2.1 &lt;=2.4&quot; % from 2.1 through 2.4, inclusive
 &quot;=1.3.0&quot;       % exactly 1.3.0</code></pre>
 <p>Versions may contain one, two, or three numeric components. Missing components are treated as zero during comparison, so <code>6</code>, <code>6.0</code>, and <code>6.0.0</code> compare as the same version.</p>

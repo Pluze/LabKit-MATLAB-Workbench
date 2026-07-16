@@ -95,3 +95,7 @@ objects.
 - `figure_studio.resultFiles.createStyledFigure`
 - [LabKit Core apps](../README.md)
 - [Plotting framework](../../../framework/README.md)
+
+## Framework Compatibility
+
+This App uses the Runtime V2 lifecycle and requires `labkit.ui >=7 <8`. App code uses semantic actions and injected project services; busy-state and portable-reference serialization mechanics remain framework-private.

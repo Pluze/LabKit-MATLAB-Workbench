@@ -2,5 +2,5 @@
 % Expected caller: the public app entrypoint and launcher discovery.
 function requirements = requirements()
     requirements = labkit.contract.requirements( ...
-        "ui", ">=6 <7");
+        "ui", ">=7 <8");
 end

@@ -46,7 +46,8 @@ classdef BuildTaskEfficiencyGuardrailTest < matlab.unittest.TestCase
             root = setupLabKitTestPath();
 
             steps = labkitValidationPlanForChangedPaths(root, ...
-                "+labkit/+ui/+runtime/runBusy.m", "Mode", "fast");
+                "+labkit/+ui/+runtime/private/runAppBusyCallback.m", ...
+                "Mode", "fast");
             signatures = validationStepSignatures(steps);
             tests = validationStepTestSelectors(steps);
             reasons = validationStepReasons(steps);

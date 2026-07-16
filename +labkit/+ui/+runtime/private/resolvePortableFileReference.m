@@ -1,33 +1,8 @@
+% Private Runtime V2 loading helper. Expected caller: project source
+% resolution. Inputs are the loaded MAT-file path and a portable-reference
+% struct. Outputs are the first existing candidate and its match kind; no user
+% interaction or reference mutation occurs here.
 function [targetFile, matchKind] = resolvePortableFileReference(anchorFile, reference)
-%RESOLVEPORTABLEFILEREFERENCE Resolve an external file after saved state moves.
-%
-% Usage:
-%   targetFile = labkit.ui.runtime.resolvePortableFileReference(anchorFile, reference)
-%   [targetFile, matchKind] = labkit.ui.runtime.resolvePortableFileReference(...)
-%
-% Inputs:
-%   anchorFile - Path of the loaded project or autosave file.
-%   reference - Struct returned by createPortableFileReference. Unknown fields
-%       are ignored.
-%
-% Outputs:
-%   targetFile - Canonical path of an existing file, or "" when no candidate
-%       can be resolved.
-%   matchKind - How the file was found: "relative", "original",
-%       "same_folder", or "none".
-%
-% Description:
-%   Candidates are checked in this order: relativePath from the anchor folder,
-%   originalPath, then fileName beside the anchor file. Only existing files are
-%   accepted; directories are ignored. The function does not display a dialog,
-%   read file contents, change app state, or access the network.
-%
-% Typical Call:
-%   [sourceFile, how] = labkit.ui.runtime.resolvePortableFileReference( ...
-%       projectFile, project.inputs.sources(1).reference);
-%
-% See also labkit.ui.runtime.createPortableFileReference
-
     anchorFile = string(anchorFile);
     [anchorFolder, ~, ~] = fileparts(anchorFile);
     candidates = strings(0, 1);

@@ -13,7 +13,7 @@ An app normally defines its requirements in a small function:
 ```matlab
 function req = requirements()
     req = labkit.contract.requirements( ...
-        "ui", ">=6 <7", ...
+        "ui", ">=7 <8", ...
         "image", ">=4 <5");
 end
 ```
@@ -44,7 +44,7 @@ A range contains one or more whitespace-separated constraints. Supported
 operators are `<`, `<=`, `>`, `>=`, `=`, and `==`:
 
 ```matlab
-">=6 <7"       % 6.x releases
+">=7 <8"       % 7.x releases
 ">=2.1 <=2.4" % from 2.1 through 2.4, inclusive
 "=1.3.0"       % exactly 1.3.0
 ```

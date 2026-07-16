@@ -12,7 +12,7 @@ lifecycle exclusively.
 
 | Package | Owns | Main APIs |
 | --- | --- | --- |
-| `labkit.ui.runtime` | Launch, canonical state, queued events, services, projects, and resources. | `launch`, `define`, `emptySourceRecords`, `saveState`, `loadState`, `createPortableFileReference`, `resolvePortableFileReference`, `defaultOutputFolder`. |
+| `labkit.ui.runtime` | Launch, canonical state, queued events, services, projects, and resources. | `launch`, `define`, `emptySourceRecords`, `saveState`, `loadState`, `defaultOutputFolder`. |
 | `labkit.ui.layout` | Data-only semantic workbench layouts. | `workbench`, `workspace`, `tab`, `section`, `group`, `field`, `rangeField`, `panner`, `action`, `filePanel`, `previewArea`, `resultTable`, `logPanel`, `statusPanel`. |
 | `labkit.ui.plot` | Advanced renderer viewport and coordinate mechanics. | `clear`, `fit`, `fitCanvas`, `message`, `offsetData`, `clampData`. |
 | `labkit.ui.interaction` | Managed-interaction calculation helpers and popout enablement. | `anchorPath`, `scaleBarCalibration`, `scaleBarGeometry`, `enablePopout`. |
@@ -422,11 +422,9 @@ readable while all new writes use the collision-free key.
 - Apps whose saved state refers to external source files store canonical
   source records created by `services.project.sourceRecord`. The runtime
   derives their portable relative references at each actual save destination.
-  Its lower-level `createPortableFileReference` and
-  `resolvePortableFileReference` algorithms create and resolve those reference
-  values; resolution checks the path
-  relative to the loaded project first, then the original absolute path, then
-  the saved filename beside the project. Relative references use `/` inside
+  On load it checks the path relative to the loaded project first, then the
+  original absolute path, then the saved filename beside the project. Relative
+  references use `/` inside
   MAT payloads, so a project/source directory tree can move between cloud-drive
   roots and operating systems. If a required source remains unresolved, the
   runtime identifies its saved filename and role, asks whether to locate it,
@@ -632,25 +630,15 @@ This displays `Working: Export cropped images` in the window title while the
 callback runs. Use `busyMessage` only when the title text needs to differ from
 the button label.
 
-`labkit.ui.runtime.runBusy` remains the lower-level helper for custom synchronous
-work that is not launched from a layout action:
-
-```matlab
-payload = labkit.ui.runtime.runBusy(fig, ...
-    "Writing cropped microscope images...", ...
-    @() batch_crop.export.writeOutputs(items, opts));
-```
-
 Busy state is app-wide. While the callback runs, LabKit marks the figure busy,
 sets a busy pointer, and appends the busy message to the window title. Direct
-`runBusy` calls also freeze figure-level mouse, wheel, motion, and keyboard
-callbacks and turn graphics hit testing off by default. Action transactions use
-a non-invasive mode so actions that start editors or plotting tools can leave
-their own pointer and callback state in place.
+changes made by the App callback to its pointer, title, or interaction state
+remain in place after the transaction; cleanup only restores framework-owned
+values that the callback left unchanged.
 
 LabKit-created app figures install a framework close guard. Closing any LabKit
 app shows an in-window confirmation prompt before deleting the figure. If the
-user tries to close an app while a semantic action or `runBusy` operation is
+user tries to close an app while a semantic action is
 active, the prompt uses busy-state wording.
 
 The app-window close shortcut uses the same path: Command-W on macOS and
@@ -661,9 +649,9 @@ holding the same close shortcut confirms the close.
 Apps should not maintain close-guard dirty state. The framework owns close
 confirmation for public and private LabKit apps.
 
-`runBusy` intentionally does not create modal progress dialogs. Apps should not
-maintain their own busy-control lists, and `runBusy` does not mutate control
-`Enable` values. App render logic still owns permanent button enablement rules.
+Busy transactions intentionally do not create modal progress dialogs or mutate
+control `Enable` values. Apps should not maintain their own busy-control lists;
+App render logic still owns permanent button enablement rules.
 
 ## Presentation And Plotting
 

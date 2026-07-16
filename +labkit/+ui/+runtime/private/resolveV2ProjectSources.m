@@ -102,7 +102,7 @@ function project = replaceSourceReference( ...
             'Project source "%s" cannot be relinked.', sourceId);
     end
     sources(match).reference = ...
-        labkit.ui.runtime.createPortableFileReference(projectFile, selected);
+        createPortableFileReference(projectFile, selected);
     project.inputs.sources = sources;
 end
 
@@ -139,8 +139,7 @@ function [resolved, unresolved] = resolveRecords(sources, filepath)
         source = sources(k);
         id = string(optionValue(source, 'id', "source" + k));
         reference = optionValue(source, 'reference', struct());
-        [target, kind] = labkit.ui.runtime.resolvePortableFileReference( ...
-            filepath, reference);
+        [target, kind] = resolvePortableFileReference(filepath, reference);
         if strlength(target) > 0
             resolved(end + 1) = struct( ...
                 "id", id, "path", target, "matchKind", kind);

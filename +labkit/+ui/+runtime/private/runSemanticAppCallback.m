@@ -15,9 +15,8 @@ function runSemanticAppCallback(ui, control, event, appCallback, id)
 end
 
 function runCallbackNow(fig, control, event, appCallback, id)
-    labkit.ui.runtime.runBusy(fig, actionBusyMessage(id, control.props), ...
-        @() appCallback(control, event), ...
-        struct('freezeInteractions', false));
+    runAppBusyCallback(fig, actionBusyMessage(id, control.props), ...
+        @() appCallback(control, event));
 end
 
 function scheduleDebouncedCallback(ui, control, event, appCallback, id)

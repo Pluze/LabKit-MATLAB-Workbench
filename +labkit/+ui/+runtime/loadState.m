@@ -29,8 +29,7 @@ function filepath = loadState(fig, filepath)
 % Typical Call:
 %   loadedFile = labkit.ui.runtime.loadState(fig, "analysis.project.mat");
 %
-% See also labkit.ui.runtime.saveState,
-%   labkit.ui.runtime.resolvePortableFileReference
+% See also labkit.ui.runtime.saveState, labkit.ui.runtime.define
 
     if nargin < 2
         filepath = chooseProjectInput();

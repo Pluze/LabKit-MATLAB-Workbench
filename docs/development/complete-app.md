@@ -61,7 +61,7 @@ uses:
 
 ```matlab
 function requirements = requirements()
-    requirements = labkit.contract.requirements("ui", ">=6 <7");
+    requirements = labkit.contract.requirements("ui", ">=7 <8");
 end
 ```
 
