@@ -1,9 +1,10 @@
 # Video Marker visual skeleton setup and continuous marking
 
 ```labkit-change
-schema: 1
+schema: 2
 id: LK-20260714-video-marker-continuous-marking
 date: 2026-07-14
+sequence: 57
 type: feat
 compatibility: compatible
 component: `labkit.ui` | `5.1.0 -> 5.1.1`

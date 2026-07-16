@@ -1,9 +1,10 @@
 # Shared image facade
 
 ```labkit-change
-schema: 1
+schema: 2
 id: LK-20260630-shared-image-facade
 date: 2026-06-30
+sequence: 24
 type: feat
 compatibility: compatible
 introduced: `labkit.image` | `1.0.0`

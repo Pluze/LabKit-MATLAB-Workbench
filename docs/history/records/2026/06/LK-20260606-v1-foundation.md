@@ -1,9 +1,10 @@
 # v1.0: app-owned packages and a standard test platform
 
 ```labkit-change
-schema: 1
+schema: 2
 id: LK-20260606-v1-foundation
 date: 2026-06-06
+sequence: 5
 type: refactor
 compatibility: compatible
 scope: historical project evolution

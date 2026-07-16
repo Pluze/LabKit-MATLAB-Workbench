@@ -1,9 +1,10 @@
 # App file-selection and electrochem control fixes
 
 ```labkit-change
-schema: 1
+schema: 2
 id: LK-20260703-app-file-selection-and-electrochem-control-fixes
 date: 2026-07-03
+sequence: 33
 type: fix
 compatibility: compatible
 component: `labkit_CIC_app` | `1.3.1 -> 1.3.2`

@@ -1,9 +1,10 @@
 # UI 5 facade redesign, app migration, and plot refresh
 
 ```labkit-change
-schema: 1
+schema: 2
 id: LK-20260706-ui-5-facade-redesign-app-migration-and-plot-refresh
 date: 2026-07-06
+sequence: 38
 type: refactor
 compatibility: breaking
 component: `labkit_launcher` | `1.2.3 -> 1.2.4`

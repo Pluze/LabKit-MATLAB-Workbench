@@ -1,9 +1,10 @@
 # App alerts through UI facade
 
 ```labkit-change
-schema: 1
+schema: 2
 id: LK-20260630-app-alerts-through-ui-facade
 date: 2026-06-30
+sequence: 22
 type: feat
 compatibility: compatible
 component: `labkit.ui` | `3.2.7 -> 3.2.8`

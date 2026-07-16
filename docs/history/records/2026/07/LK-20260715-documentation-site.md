@@ -1,9 +1,10 @@
 # Searchable MATLAB-generated documentation site and launcher workflow groups
 
 ```labkit-change
-schema: 1
+schema: 2
 id: LK-20260715-documentation-site
 date: 2026-07-15
+sequence: 60
 type: feat
 compatibility: additive
 component: `labkit_launcher` | `1.4.0 -> 1.5.0`

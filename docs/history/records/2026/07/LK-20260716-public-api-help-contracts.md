@@ -1,9 +1,10 @@
 # Public library help contracts and reference validation
 
 ```labkit-change
-schema: 1
+schema: 2
 id: LK-20260716-public-api-help-contracts
 date: 2026-07-16
+sequence: 62
 type: docs
 compatibility: compatible
 component: `labkit.biosignal` | `1.0.1 -> 1.0.2`

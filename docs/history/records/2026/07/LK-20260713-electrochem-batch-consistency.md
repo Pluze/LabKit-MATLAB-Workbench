@@ -1,9 +1,10 @@
 # Consistent electrochemistry batch analysis
 
 ```labkit-change
-schema: 1
+schema: 2
 id: LK-20260713-electrochem-batch-consistency
 date: 2026-07-13
+sequence: 46
 type: fix
 compatibility: additive
 component: `labkit_CIC_app` | `1.3.7 -> 1.3.8`

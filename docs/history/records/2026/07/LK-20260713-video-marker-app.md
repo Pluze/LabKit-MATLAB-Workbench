@@ -1,9 +1,10 @@
 # Video Marker app
 
 ```labkit-change
-schema: 1
+schema: 2
 id: LK-20260713-video-marker-app
 date: 2026-07-13
+sequence: 54
 type: feat
 compatibility: additive
 introduced: `labkit_VideoMarker_app` | `1.0.0`

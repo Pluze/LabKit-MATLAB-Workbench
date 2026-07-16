@@ -1,9 +1,10 @@
 # Base-MATLAB image compatibility
 
 ```labkit-change
-schema: 1
+schema: 2
 id: LK-20260713-base-matlab-image-compatibility
 date: 2026-07-13
+sequence: 45
 type: feat
 compatibility: compatible
 component: `labkit.image` | `1.1.0 -> 1.2.0`

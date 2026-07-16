@@ -1,9 +1,10 @@
 # v2.3.2 and v2.3.3: preview performance and release contracts
 
 ```labkit-change
-schema: 1
+schema: 2
 id: LK-20260623-v2-3-performance-and-release-contracts
 date: 2026-06-23
+sequence: 9
 type: fix
 compatibility: compatible
 scope: historical project evolution

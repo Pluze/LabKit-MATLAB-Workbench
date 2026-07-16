@@ -1,9 +1,10 @@
 # Video Marker startup validation
 
 ```labkit-change
-schema: 1
+schema: 2
 id: LK-20260714-video-marker-startup-fix
 date: 2026-07-14
+sequence: 56
 type: fix
 compatibility: compatible
 component: `labkit_VideoMarker_app` | `1.0.0 -> 1.0.1`

@@ -1,9 +1,10 @@
 # CSC export and viewport policy
 
 ```labkit-change
-schema: 1
+schema: 2
 id: LK-20260703-csc-export-and-viewport-policy
 date: 2026-07-03
+sequence: 35
 type: feat
 compatibility: compatible
 component: `labkit.ui` | `4.0.0 -> 4.1.0`

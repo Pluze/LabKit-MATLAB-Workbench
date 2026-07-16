@@ -1,9 +1,10 @@
 # Declarative app runtime
 
 ```labkit-change
-schema: 1
+schema: 2
 id: LK-20260703-declarative-app-runtime
 date: 2026-07-03
+sequence: 32
 type: refactor
 compatibility: compatible
 component: `labkit.ui` | `3.4.4 -> 3.4.5`

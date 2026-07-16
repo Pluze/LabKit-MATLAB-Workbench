@@ -1,9 +1,10 @@
 # App diagnostics and hardened UI workflows
 
 ```labkit-change
-schema: 1
+schema: 2
 id: LK-20260628-app-diagnostics-and-hardened-ui-workflows
 date: 2026-06-28
+sequence: 15
 type: feat
 compatibility: compatible
 component: `labkit_launcher` | `1.1.1 -> 1.1.2`

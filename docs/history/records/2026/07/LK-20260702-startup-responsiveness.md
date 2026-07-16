@@ -1,9 +1,10 @@
 # Startup responsiveness
 
 ```labkit-change
-schema: 1
+schema: 2
 id: LK-20260702-startup-responsiveness
 date: 2026-07-02
+sequence: 31
 type: perf
 compatibility: compatible
 component: `labkit_launcher` | `1.2.2 -> 1.2.3`

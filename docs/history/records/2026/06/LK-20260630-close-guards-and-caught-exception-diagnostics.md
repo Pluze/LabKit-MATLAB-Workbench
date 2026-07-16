@@ -1,9 +1,10 @@
 # Close guards and caught-exception diagnostics
 
 ```labkit-change
-schema: 1
+schema: 2
 id: LK-20260630-close-guards-and-caught-exception-diagnostics
 date: 2026-06-30
+sequence: 21
 type: feat
 compatibility: compatible
 component: `labkit.ui` | `3.2.6 -> 3.2.7`

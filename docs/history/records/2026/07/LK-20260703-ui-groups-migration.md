@@ -1,9 +1,10 @@
 # UI groups migration
 
 ```labkit-change
-schema: 1
+schema: 2
 id: LK-20260703-ui-groups-migration
 date: 2026-07-03
+sequence: 34
 type: refactor
 compatibility: compatible
 component: `labkit.ui` | `3.4.5 -> 4.0.0`

@@ -1,9 +1,10 @@
 # Runtime V2 lifecycle ownership across the app fleet
 
 ```labkit-change
-schema: 1
+schema: 2
 id: LK-20260715-runtime-v2-app-migration
 date: 2026-07-15
+sequence: 59
 type: refactor
 compatibility: breaking
 component: `labkit.ui` | `5.2.0 -> 6.0.0`

@@ -1,9 +1,10 @@
 # Managed scientific and conversion constants
 
 ```labkit-change
-schema: 1
+schema: 2
 id: LK-20260713-managed-calculation-constants
 date: 2026-07-13
+sequence: 48
 type: refactor
 compatibility: compatible
 component: `labkit.dta` | `2.0.0 -> 2.0.1`

@@ -1,9 +1,10 @@
 # Facade contract baseline and release validation hardening
 
 ```labkit-change
-schema: 1
+schema: 2
 id: LK-20260623-facade-contract-baseline-and-release-validation-hardening
 date: 2026-06-23
+sequence: 11
 type: ci
 compatibility: compatible
 introduced: `labkit.biosignal` | `1.0.0`

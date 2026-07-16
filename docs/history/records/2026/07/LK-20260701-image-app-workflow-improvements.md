@@ -1,9 +1,10 @@
 # Image app workflow improvements
 
 ```labkit-change
-schema: 1
+schema: 2
 id: LK-20260701-image-app-workflow-improvements
 date: 2026-07-01
+sequence: 27
 type: feat
 compatibility: compatible
 component: `labkit_launcher` | `1.1.5 -> 1.1.6`

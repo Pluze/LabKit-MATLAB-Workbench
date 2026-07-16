@@ -1,9 +1,10 @@
 # FLIR display tuning
 
 ```labkit-change
-schema: 1
+schema: 2
 id: LK-20260703-flir-display-tuning
 date: 2026-07-03
+sequence: 36
 type: feat
 compatibility: compatible
 component: `labkit_CSC_app` | `1.3.6 -> 1.3.7`

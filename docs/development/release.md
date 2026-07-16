@@ -87,8 +87,9 @@ When a change bumps `labkit_launcher.m`, a `+labkit/**/version.m` facade, or an
 `apps/**/version.m` app metadata file:
 
 1. update the owning component documentation;
-2. add one history record with a stable Change ID, ISO date, change type,
-   compatibility value, affected components, and direct version transition;
+2. add one history record with a stable Change ID, the next global history
+   sequence, ISO date, change type, compatibility value, affected components,
+   and direct version transition;
 3. explain context, decision and rationale, changes, user/data impact,
    compatibility, validation, evidence, and known follow-up;
 4. rebuild the generated site and verify the record appears on each affected

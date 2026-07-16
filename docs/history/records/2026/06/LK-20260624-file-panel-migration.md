@@ -1,9 +1,10 @@
 # File-panel migration
 
 ```labkit-change
-schema: 1
+schema: 2
 id: LK-20260624-file-panel-migration
 date: 2026-06-24
+sequence: 12
 type: refactor
 compatibility: breaking
 component: `labkit.dta` | `1.0.0 -> 2.0.0`

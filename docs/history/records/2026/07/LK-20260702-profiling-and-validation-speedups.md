@@ -1,9 +1,10 @@
 # Profiling and validation speedups
 
 ```labkit-change
-schema: 1
+schema: 2
 id: LK-20260702-profiling-and-validation-speedups
 date: 2026-07-02
+sequence: 30
 type: ci
 compatibility: compatible
 component: `labkit_launcher` | `1.2.0 -> 1.2.1`

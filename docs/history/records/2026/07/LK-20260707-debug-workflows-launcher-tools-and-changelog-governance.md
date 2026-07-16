@@ -1,9 +1,10 @@
 # Debug workflows, launcher tools, and changelog governance
 
 ```labkit-change
-schema: 1
+schema: 2
 id: LK-20260707-debug-workflows-launcher-tools-and-changelog-governance
 date: 2026-07-07
+sequence: 39
 type: feat
 compatibility: compatible
 component: `labkit_launcher` | `1.2.4 -> 1.2.5`

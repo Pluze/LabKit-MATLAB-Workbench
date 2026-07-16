@@ -86,7 +86,8 @@ function page = emptyPage()
         "output", "", "title", "", "kind", "", ...
         "nav", strings(0, 1), "order", 0, ...
         "keywords", strings(0, 1), "components", strings(0, 1), ...
-        "historyId", "", "historyDate", "", "changeType", "", ...
+        "historyId", "", "historyDate", "", "historySequence", NaN, ...
+        "changeType", "", ...
         "compatibility", "");
 end
 
@@ -104,8 +105,14 @@ function pages = discoverHistoryPages(sourceRoot)
             error("LabKit:Docs:InvalidHistory", ...
                 "History page has no level-one title: %s", source);
         end
+        historySchema = historyScalar(lines, "schema", source);
+        if historySchema ~= "2"
+            error("LabKit:Docs:UnsupportedHistorySchema", ...
+                "History page %s must use schema 2.", source);
+        end
         historyId = historyScalar(lines, "id", source);
         historyDate = historyScalar(lines, "date", source);
+        historySequence = historySequenceScalar(lines, source);
         changeType = historyScalar(lines, "type", source);
         compatibility = historyScalar(lines, "compatibility", source);
         componentLines = lines(startsWith(lines, "component:") | ...
@@ -128,11 +135,13 @@ function pages = discoverHistoryPages(sourceRoot)
             "kind", "history", ...
             "nav", strings(0, 1), ...
             "order", 1000, ...
-            "keywords", [historyId; historyDate; changeType; compatibility; components], ...
+            "keywords", [historyId; historyDate; string(historySequence); ...
+                changeType; compatibility; components], ...
             "components", unique(components, "stable"));
         page = validatePage(raw, sourceRoot);
         page.historyId = historyId;
         page.historyDate = historyDate;
+        page.historySequence = historySequence;
         page.changeType = changeType;
         page.compatibility = compatibility;
         pages(k) = page;
@@ -141,9 +150,31 @@ function pages = discoverHistoryPages(sourceRoot)
         return;
     end
     assertUnique(string({pages.historyId}), "history Change ID");
-    [~, order] = sortrows([string({pages.historyDate}).', ...
-        string({pages.historyId}).'], [-1 2]);
+    sequences = [pages.historySequence].';
+    assertUnique(string(sequences), "history sequence");
+    expected = (1:numel(pages)).';
+    if ~isequal(sort(sequences), expected)
+        error("LabKit:Docs:InvalidHistorySequence", ...
+            "History sequence values must contain every integer from 1 to %d.", ...
+            numel(pages));
+    end
+    [~, chronologicalOrder] = sort(sequences);
+    chronologicalDates = string({pages(chronologicalOrder).historyDate}).';
+    if ~isequal(chronologicalDates, sort(chronologicalDates))
+        error("LabKit:Docs:InvalidHistorySequence", ...
+            "History sequence must not move backward across record dates.");
+    end
+    [~, order] = sort(sequences, "descend");
     pages = pages(order);
+end
+
+function value = historySequenceScalar(lines, source)
+    text = historyScalar(lines, "sequence", source);
+    if isempty(regexp(text, '^[1-9][0-9]*$', 'once'))
+        error("LabKit:Docs:InvalidHistorySequence", ...
+            "History page %s sequence must be a positive integer.", source);
+    end
+    value = str2double(text);
 end
 
 function value = historyScalar(lines, key, source)

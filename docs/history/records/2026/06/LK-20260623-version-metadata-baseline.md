@@ -1,9 +1,10 @@
 # Version metadata baseline
 
 ```labkit-change
-schema: 1
+schema: 2
 id: LK-20260623-version-metadata-baseline
 date: 2026-06-23
+sequence: 10
 type: feat
 compatibility: compatible
 introduced: `labkit_launcher` | `1.0.0`

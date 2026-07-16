@@ -1,9 +1,10 @@
 # Thermal facade and FLIR app
 
 ```labkit-change
-schema: 1
+schema: 2
 id: LK-20260701-thermal-facade-and-flir-app
 date: 2026-07-01
+sequence: 26
 type: feat
 compatibility: compatible
 introduced: `labkit.thermal` | `1.0.0`

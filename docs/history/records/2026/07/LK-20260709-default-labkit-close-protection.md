@@ -1,9 +1,10 @@
 # Default LabKit close protection
 
 ```labkit-change
-schema: 1
+schema: 2
 id: LK-20260709-default-labkit-close-protection
 date: 2026-07-09
+sequence: 43
 type: fix
 compatibility: compatible
 component: `labkit.ui` | `5.0.2 -> 5.0.3`

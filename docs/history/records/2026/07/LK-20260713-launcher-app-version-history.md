@@ -1,9 +1,10 @@
 # Launcher app version history
 
 ```labkit-change
-schema: 1
+schema: 2
 id: LK-20260713-launcher-app-version-history
 date: 2026-07-13
+sequence: 53
 type: feat
 compatibility: additive
 component: `labkit_launcher` | `1.3.0 -> 1.4.0`

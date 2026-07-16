@@ -1,9 +1,10 @@
 # Video Marker predictive frame navigation
 
 ```labkit-change
-schema: 1
+schema: 2
 id: LK-20260714-video-marker-predictive-navigation
 date: 2026-07-14
+sequence: 58
 type: feat
 compatibility: compatible
 component: `labkit_VideoMarker_app` | `1.1.0 -> 1.2.0`

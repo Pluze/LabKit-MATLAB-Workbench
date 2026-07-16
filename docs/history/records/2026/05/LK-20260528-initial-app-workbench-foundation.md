@@ -1,9 +1,10 @@
 # Legacy import and first app workbench
 
 ```labkit-change
-schema: 1
+schema: 2
 id: LK-20260528-initial-app-workbench-foundation
 date: 2026-05-28
+sequence: 1
 type: feat
 compatibility: compatible
 scope: historical project evolution

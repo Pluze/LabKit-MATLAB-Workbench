@@ -1,9 +1,10 @@
 # Tool-panel hosts and image app fixes
 
 ```labkit-change
-schema: 1
+schema: 2
 id: LK-20260629-tool-panel-hosts-and-image-app-fixes
 date: 2026-06-29
+sequence: 18
 type: fix
 compatibility: compatible
 component: `labkit.ui` | `3.2.0 -> 3.2.2`

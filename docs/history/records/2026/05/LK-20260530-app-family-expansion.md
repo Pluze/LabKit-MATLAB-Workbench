@@ -1,9 +1,10 @@
 # LabKit name and the first multi-domain app families
 
 ```labkit-change
-schema: 1
+schema: 2
 id: LK-20260530-app-family-expansion
 date: 2026-05-30
+sequence: 3
 type: feat
 compatibility: compatible
 scope: historical project evolution

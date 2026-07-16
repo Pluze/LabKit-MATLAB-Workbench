@@ -1,9 +1,10 @@
 # Debug sample packs
 
 ```labkit-change
-schema: 1
+schema: 2
 id: LK-20260701-debug-sample-packs
 date: 2026-07-01
+sequence: 28
 type: feat
 compatibility: compatible
 component: `labkit.ui` | `3.3.1 -> 3.4.0`

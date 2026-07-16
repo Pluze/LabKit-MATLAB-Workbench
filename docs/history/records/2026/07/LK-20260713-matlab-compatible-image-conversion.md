@@ -1,9 +1,10 @@
 # MATLAB-compatible image conversion API
 
 ```labkit-change
-schema: 1
+schema: 2
 id: LK-20260713-matlab-compatible-image-conversion
 date: 2026-07-13
+sequence: 47
 type: refactor
 compatibility: breaking
 component: `labkit.image` | `1.2.0 -> 2.0.0`

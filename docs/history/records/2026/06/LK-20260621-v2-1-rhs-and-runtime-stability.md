@@ -1,9 +1,10 @@
 # 2.1: RHS apps and shared runtime stability
 
 ```labkit-change
-schema: 1
+schema: 2
 id: LK-20260621-v2-1-rhs-and-runtime-stability
 date: 2026-06-21
+sequence: 7
 type: feat
 compatibility: compatible
 scope: historical project evolution

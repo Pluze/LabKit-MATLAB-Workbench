@@ -1,9 +1,10 @@
 # Traceable and base-MATLAB CI validation
 
 ```labkit-change
-schema: 1
+schema: 2
 id: LK-20260713-traceable-base-matlab-ci
 date: 2026-07-13
+sequence: 51
 type: ci
 compatibility: compatible
 scope: GitHub Actions and MATLAB validation routing

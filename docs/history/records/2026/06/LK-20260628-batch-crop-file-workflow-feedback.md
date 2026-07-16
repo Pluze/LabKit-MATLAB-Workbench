@@ -1,9 +1,10 @@
 # Batch Crop file workflow feedback
 
 ```labkit-change
-schema: 1
+schema: 2
 id: LK-20260628-batch-crop-file-workflow-feedback
 date: 2026-06-28
+sequence: 14
 type: feat
 compatibility: compatible
 component: `labkit.ui` | `3.0.1 -> 3.1.0`

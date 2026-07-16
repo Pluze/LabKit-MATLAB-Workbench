@@ -150,7 +150,11 @@ current implementation and tests do not support.
 History is component-owned. A record explains what changed, why it matters,
 compatibility, affected components, and validation evidence. It is not an
 instruction manual and must link to the current page that describes the final
-behavior. The global history page is only an index.
+behavior. The global history page is only an index. History metadata schema 2
+requires a global positive-integer `sequence`; values are unique and
+contiguous, and a new record normally takes the previous maximum plus one. The
+renderer orders the timeline by descending sequence rather than inferring
+same-day order from a title, filename, filesystem timestamp, or Git checkout.
 
 ## Structured Sources
 

@@ -1,9 +1,10 @@
 # Protected image enhancement workflows
 
 ```labkit-change
-schema: 1
+schema: 2
 id: LK-20260629-protected-image-enhancement-workflows
 date: 2026-06-29
+sequence: 16
 type: feat
 compatibility: compatible
 component: `labkit_ImageEnhance_app` | `1.2.2 -> 1.3.0`

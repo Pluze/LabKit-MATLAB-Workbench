@@ -1,9 +1,10 @@
 # v2.0: launcher, image apps, and UI 2.0
 
 ```labkit-change
-schema: 1
+schema: 2
 id: LK-20260615-v2-launcher-and-ui2
 date: 2026-06-15
+sequence: 6
 type: feat
 compatibility: compatible
 scope: historical project evolution

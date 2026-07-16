@@ -1,9 +1,10 @@
 # Launcher code-analysis export
 
 ```labkit-change
-schema: 1
+schema: 2
 id: LK-20260701-launcher-code-analysis-export
 date: 2026-07-01
+sequence: 29
 type: feat
 compatibility: compatible
 component: `labkit_launcher` | `1.1.6 -> 1.2.0`
