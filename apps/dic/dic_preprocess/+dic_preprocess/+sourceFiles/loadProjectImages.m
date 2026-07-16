@@ -1,4 +1,4 @@
-% Expected caller: dic_preprocess.appLifecycle.createSession. Input is the
+% Expected caller: dic_preprocess.createSession. Input is the
 % validated portable source-record array. Outputs are decoded reference and
 % moving images; missing optional records produce empty arrays.
 function [referenceImage, movingImage] = loadProjectImages(sources)

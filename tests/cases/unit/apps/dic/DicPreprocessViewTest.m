@@ -138,10 +138,11 @@ classdef DicPreprocessViewTest < matlab.unittest.TestCase
 end
 
 function state = baseState()
-    project = dic_preprocess.appLifecycle.createProject();
+    definition = dic_preprocess.definition();
+    project = definition.project.Create();
     state = struct( ...
         "project", project, ...
-        "session", dic_preprocess.appLifecycle.createSession(project));
+        "session", dic_preprocess.createSession(project));
 end
 
 function source = sourceRecord(id, filepath)

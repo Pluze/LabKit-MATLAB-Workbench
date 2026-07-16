@@ -69,12 +69,12 @@ classdef DicPreprocessIoExportTest < matlab.unittest.TestCase
                 "rect", [1 1 2 2], "description", "crop");
 
             testCase.verifyTrue(definition.project.Validate(project));
-            testCase.verifyEmpty(definition.project.Migrations, ...
-                'Payload version 1 should not invent a legacy migration.');
+            testCase.verifyEmpty(definition.project.Migrate, ...
+                'Payload version 1 should not invent a migration callback.');
             testCase.verifyFalse(hasDurableImagePixels(project), ...
                 'Decoded and derived image pixels belong to session cache.');
 
-            session = dic_preprocess.appLifecycle.createSession(project);
+            session = dic_preprocess.createSession(project);
             testCase.verifyEqual(session.cache.referenceImage, reference);
             testCase.verifyEqual(session.cache.movingImage, moving);
             testCase.verifySize(session.cache.currentReferenceImage, [3 3 3]);

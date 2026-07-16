@@ -124,7 +124,8 @@ classdef DicPreprocessStateTest < matlab.unittest.TestCase
 end
 
 function project = baseProject()
-    project = dic_preprocess.appLifecycle.createProject();
+    definition = dic_preprocess.definition();
+    project = definition.project.Create();
 end
 
 function project = populatedProject()

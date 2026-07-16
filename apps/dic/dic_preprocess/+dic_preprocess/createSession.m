@@ -1,6 +1,6 @@
-% Expected caller: the LabKit V2 runtime. Input is a validated durable DIC
-% preprocess project. Output owns the active editor mode, workflow text, and
-% rebuildable view/cache state without live graphics resources.
+%CREATESESSION Rebuild transient DIC images and editor workflow state.
+% Expected caller: Runtime V2 through dic_preprocess.definition. Input is a
+% validated project; decoded and replayed images remain outside persistence.
 function session = createSession(project)
     [referenceImage, movingImage] = ...
         dic_preprocess.sourceFiles.loadProjectImages(project.inputs.sources);
