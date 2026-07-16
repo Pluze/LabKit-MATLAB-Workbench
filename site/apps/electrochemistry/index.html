@@ -20,7 +20,7 @@
 <h1 id="electrochemistry-apps">Electrochemistry Apps</h1>
 <p>The electrochemistry family reads Gamry DTA recordings through <code>labkit.dta</code> and keeps scientific calculations in app-owned, GUI-free functions.</p>
 <h2 id="choose-an-app">Choose An App</h2>
-<div class="table-wrap"><table><thead><tr><th>Measurement</th><th>App</th></tr></thead><tbody><tr><td>Overlay chrono voltage/current traces</td><td>[Chrono Overlay](../electrochemistry/chrono-overlay.md)</td></tr><tr><td>Charge-injection capacity and voltage transient limits</td><td>[CIC](../electrochemistry/cic.md)</td></tr><tr><td>Charge-storage capacity from CV and time integration</td><td>[CSC](../electrochemistry/csc.md)</td></tr><tr><td>Impedance curves and tabular export</td><td>[EIS](../electrochemistry/eis.md)</td></tr><tr><td>Steady resistance from pulse transients</td><td>[VT Resistance](../electrochemistry/vt-resistance.md)</td></tr></tbody></table></div>
+<div class="table-wrap"><table><thead><tr><th>Measurement</th><th>App</th></tr></thead><tbody><tr><td>Overlay chrono voltage/current traces</td><td><a href="chrono-overlay.html">Chrono Overlay</a></td></tr><tr><td>Charge-injection capacity and voltage transient limits</td><td><a href="cic.html">CIC</a></td></tr><tr><td>Charge-storage capacity from CV and time integration</td><td><a href="csc.html">CSC</a></td></tr><tr><td>Impedance curves and tabular export</td><td><a href="eis.html">EIS</a></td></tr><tr><td>Steady resistance from pulse transients</td><td><a href="vt-resistance.html">VT Resistance</a></td></tr></tbody></table></div>
 <h2 id="shared-data-model">Shared Data Model</h2>
 <p><code>labkit.dta.loadFile</code> and related functions decode a DTA file into an item struct with typed curves and status information. Apps own batch selection, analysis options, tables, plots, and exports. CIC and VT decode only the active file during interactive review and defer the rest of a large batch until needed for export.</p>
 <h2 id="scientific-traceability">Scientific Traceability</h2>
@@ -29,8 +29,8 @@
 <p>Use <code>labkit.dta.*</code> to inspect recordings without a GUI. Cataloged app APIs such as <code>cic.analysisRun.computeCIC</code>, <code>csc.analysisRun.computeCSC</code>, and <code>vt_resistance.analysisRun.computeResistance</code> reproduce the app calculations from decoded data and option structs.</p>
 <h2 id="related-libraries">Related Libraries</h2>
 <ul>
-<li>[DTA Library](../../api/dta.md)</li>
-<li>[Contracts](../../api/contracts.md)</li>
+<li><a href="../../api/dta.md">DTA Library</a></li>
+<li><a href="../../api/contracts.md">Contracts</a></li>
 </ul>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>
 </main>

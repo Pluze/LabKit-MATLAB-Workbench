@@ -18,7 +18,7 @@
 <main class="content">
 <p class="page-kind">explanation</p>
 <h1 id="documentation-system">Documentation System</h1>
-<p>[Development index](README.md) | [Testing](testing.md)</p>
+<p><a href="index.html">Development index</a> | <a href="testing.html">Testing</a></p>
 <p>LabKit keeps author-written documentation and generated presentation separate. The source set is optimized for maintainers and machine readers; the generated site is optimized for browsing, cross-reference, and search.</p>
 <h2 id="information-architecture">Information Architecture</h2>
 <p>The documentation follows four reading modes used by mature technical documentation sets:</p>
@@ -33,7 +33,7 @@
 <p>Only these inputs are edited:</p>
 <div class="table-wrap"><table><thead><tr><th>Source</th><th>Ownership</th></tr></thead><tbody><tr><td><code>docs/**/*.md</code></td><td>Narrative tutorials, guides, explanations, and app pages.</td></tr><tr><td><code>docs/site.json</code></td><td>Page identity, navigation, output paths, and search keywords.</td></tr><tr><td><code>docs/catalogs/api.json</code></td><td>Explicit app-owned public API surface.</td></tr><tr><td><code>docs/**/history/*.md</code></td><td>Component-owned change rationale and evidence.</td></tr><tr><td>Public MATLAB help blocks</td><td>Function signature and callable contract.</td></tr></tbody></table></div>
 <p>The renderer under <code>tools/docs/</code> uses only MATLAB and emits the complete static site under <code>site/</code>. Files under <code>site/</code> are tracked release artifacts, not authoring sources. Every generated HTML page contains a generated-file marker. Never edit HTML, CSS, JavaScript, or the search index under <code>site/</code> directly; regenerate them from the source set.</p>
-<p>See [Testing](testing.md) for the documentation build and reproducibility commands.</p>
+<p>See <a href="testing.html">Testing</a> for the documentation build and reproducibility commands.</p>
 <h2 id="api-reference-policy">API Reference Policy</h2>
 <p>All non-private <code>labkit.*</code> functions are part of the documented reusable surface. App-owned APIs are documented only when they appear in <code>docs/catalogs/api.json</code>. The explicit catalog prevents callback glue and implementation helpers from being mistaken for supported scientific APIs.</p>
 <p>Important scientific functions should document:</p>

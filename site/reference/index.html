@@ -20,9 +20,9 @@
 <h1 id="public-api-reference">Public API Reference</h1>
 <p>This index lists the supported app-facing MATLAB functions under <code>+labkit</code>. Private implementation files are intentionally omitted. Open the facade page for syntax, options, outputs, data shapes, and examples.</p>
 <h2 id="contract">Contract</h2>
-<p>[Contract reference](contracts.md): <code>labkit.contract</code> provides <code>assertRequirements</code>, <code>checkRequirements</code>, <code>requirements</code>, and <code>versionInfo</code>.</p>
+<p><a href="../libraries/contracts/index.html">Contract reference</a>: <code>labkit.contract</code> provides <code>assertRequirements</code>, <code>checkRequirements</code>, <code>requirements</code>, and <code>versionInfo</code>.</p>
 <h2 id="ui">UI</h2>
-<p>[UI reference](ui.md)</p>
+<p><a href="../framework/index.html">UI reference</a></p>
 <ul>
 <li><code>labkit.ui.runtime</code>: <code>create</code>, <code>createPortableFileReference</code>,</li>
 </ul>
@@ -44,18 +44,18 @@
 <li><code>labkit.ui</code>: <code>version</code></li>
 </ul>
 <h2 id="image">Image</h2>
-<p>[Image reference](image.md): <code>adjustBrightnessContrast</code>, <code>adjustHueSaturation</code>, <code>assertSupportedPaths</code>, <code>displayName</code>, <code>ensureRgb</code>, <code>fileDialogFilter</code>, <code>grayWorldWhiteBalance</code>, <code>im2double</code>, <code>isSupportedPath</code>, <code>localContrast</code>, <code>meanFilter2</code>, <code>normalizePaths</code>, <code>previewBudget</code>, <code>readFiles</code>, <code>resizeToFit</code>, <code>rgb2gray</code>, <code>sharpen</code>, <code>supportedExtensions</code>, <code>version</code>, and <code>writeFile</code>.</p>
+<p><a href="../libraries/image/index.html">Image reference</a>: <code>adjustBrightnessContrast</code>, <code>adjustHueSaturation</code>, <code>assertSupportedPaths</code>, <code>displayName</code>, <code>ensureRgb</code>, <code>fileDialogFilter</code>, <code>grayWorldWhiteBalance</code>, <code>im2double</code>, <code>isSupportedPath</code>, <code>localContrast</code>, <code>meanFilter2</code>, <code>normalizePaths</code>, <code>previewBudget</code>, <code>readFiles</code>, <code>resizeToFit</code>, <code>rgb2gray</code>, <code>sharpen</code>, <code>supportedExtensions</code>, <code>version</code>, and <code>writeFile</code>.</p>
 <h2 id="thermal">Thermal</h2>
-<p>[Thermal reference](thermal.md): <code>fileDialogFilter</code>, <code>inspectFile</code>, <code>isSupportedPath</code>, <code>rawToTemperatureC</code>, <code>readFile</code>, <code>readFiles</code>, <code>renderImage</code>, <code>supportedExtensions</code>, and <code>version</code>.</p>
+<p><a href="../libraries/thermal/index.html">Thermal reference</a>: <code>fileDialogFilter</code>, <code>inspectFile</code>, <code>isSupportedPath</code>, <code>rawToTemperatureC</code>, <code>readFile</code>, <code>readFiles</code>, <code>renderImage</code>, <code>supportedExtensions</code>, and <code>version</code>.</p>
 <h2 id="dta">DTA</h2>
-<p>[DTA reference](dta.md): <code>detectPulses</code>, <code>detectType</code>, <code>findFiles</code>, <code>getColumn</code>, <code>getCurveXY</code>, <code>getMainCurve</code>, <code>getZCurve</code>, <code>loadFile</code>, <code>loadFiles</code>, <code>loadFolder</code>, and <code>version</code>.</p>
+<p><a href="../libraries/dta/index.html">DTA reference</a>: <code>detectPulses</code>, <code>detectType</code>, <code>findFiles</code>, <code>getColumn</code>, <code>getCurveXY</code>, <code>getMainCurve</code>, <code>getZCurve</code>, <code>loadFile</code>, <code>loadFiles</code>, <code>loadFolder</code>, and <code>version</code>.</p>
 <h2 id="rhs">RHS</h2>
-<p>[RHS reference](rhs.md): <code>findFiles</code>, <code>indexFile</code>, <code>inspectFile</code>, <code>readWindow</code>, and <code>version</code>.</p>
+<p><a href="../libraries/rhs/index.html">RHS reference</a>: <code>findFiles</code>, <code>indexFile</code>, <code>inspectFile</code>, <code>readWindow</code>, and <code>version</code>.</p>
 <h2 id="biosignal">Biosignal</h2>
-<p>[Biosignal reference](biosignal.md): <code>buildTemplate</code>, <code>compareGroups</code>, <code>cropSignal</code>, <code>defaultEcgPeakOptions</code>, <code>detectEcgPeaks</code>, <code>filterSignal</code>, <code>getChannel</code>, <code>listChannels</code>, <code>measureSegments</code>, <code>readRecording</code>, <code>segmentByEvents</code>, and <code>version</code>.</p>
+<p><a href="../libraries/biosignal/index.html">Biosignal reference</a>: <code>buildTemplate</code>, <code>compareGroups</code>, <code>cropSignal</code>, <code>defaultEcgPeakOptions</code>, <code>detectEcgPeaks</code>, <code>filterSignal</code>, <code>getChannel</code>, <code>listChannels</code>, <code>measureSegments</code>, <code>readRecording</code>, <code>segmentByEvents</code>, and <code>version</code>.</p>
 <h2 id="api-stability">API Stability</h2>
 <p>Facade <code>version()</code> functions publish MATLAB-native contract versions. Apps declare compatible ranges in app-owned <code>requirements.m</code> files. Files under a facade's <code>private/</code> directory are not supported entry points.</p>
-<p>For task-oriented app behavior, use the [app guide](../apps/README.md) rather than this function index.</p>
+<p>For task-oriented app behavior, use the <a href="../apps/README.md">app guide</a> rather than this function index.</p>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>
 </main>
 </div>

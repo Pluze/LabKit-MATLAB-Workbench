@@ -18,7 +18,7 @@
 <main class="content">
 <p class="page-kind">reference</p>
 <h1 id="dta-api">DTA API</h1>
-<p>[Public API index](README.md) | [App guide](../apps/README.md)</p>
+<p><a href="../../reference/index.html">Public API index</a> | <a href="../apps/README.md">App guide</a></p>
 <p><code>labkit.dta.*</code> is the current electrochemistry/Gamry DTA facade. It provides GUI-free DTA discovery, loading, pulse detection, parser access, and parsed table/curve helpers for DTA-backed apps.</p>
 <p><code>labkit.dta.version()</code> returns the DTA facade contract version struct used by <code>labkit.contract</code> requirement checks.</p>
 <p>This facade exists because several electrochemistry workflows share the same file family. Other data or device families should become peer facades only after real apps need them; DTA-specific parser behavior should not leak into <code>labkit.ui</code> or unrelated apps.</p>

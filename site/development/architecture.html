@@ -18,7 +18,7 @@
 <main class="content">
 <p class="page-kind">explanation</p>
 <h1 id="architecture">Architecture</h1>
-<p>[Development index](README.md) | [Public API index](../api/README.md)</p>
+<p><a href="index.html">Development index</a> | <a href="../api/README.md">Public API index</a></p>
 <p>LabKit is an app-first MATLAB workbench. Apps are the deliverables; <code>+labkit</code> is the small reusable foundation they share.</p>
 <h2 id="project-model">Project Model</h2>
 <pre><code class="language-text">apps/      workflow-specific GUI apps and app-owned helpers
@@ -36,7 +36,7 @@ tools/     maintainer diagnostics, deployment packagers, and report generators</
 <p>Users normally start with:</p>
 <pre><code class="language-matlab">labkit_launcher</code></pre>
 <p>The launcher discovers public <code>apps/**/labkit_*_app.m</code> entry points. Public app command names are stable user entry points, for example <code>labkit_CIC_app</code>, <code>labkit_DICPreprocess_app</code>, <code>labkit_ECGPrint_app</code>, and <code>labkit_RHSPreview_app</code>.</p>
-<p>Source checkouts may also keep local private apps under an ignored <code>private_apps/apps/</code> workspace or roots named by <code>LABKIT_PRIVATE_APP_ROOTS</code>. Any developer can create that local workspace for their own private apps. The launcher can list and launch those apps with <code>Visibility</code> set to <code>private</code>, but the public repository, release artifacts, and CI guardrails own only the public <code>apps/</code> tree. Keep each private workspace as a separate private Git repository rather than mixing private app files into the public repo history. The public structure guide is [private-apps.md](private-apps.md); private app documentation belongs in the private workspace.</p>
+<p>Source checkouts may also keep local private apps under an ignored <code>private_apps/apps/</code> workspace or roots named by <code>LABKIT_PRIVATE_APP_ROOTS</code>. Any developer can create that local workspace for their own private apps. The launcher can list and launch those apps with <code>Visibility</code> set to <code>private</code>, but the public repository, release artifacts, and CI guardrails own only the public <code>apps/</code> tree. Keep each private workspace as a separate private Git repository rather than mixing private app files into the public repo history. The public structure guide is <a href="private-apps.html">private-apps.md</a>; private app documentation belongs in the private workspace.</p>
 <p>The launcher keeps update, discovery, and repair logic self-contained: it uses native MATLAB UI and local helper functions so users can repair a damaged zip install even if packages, apps, docs, or scripts have been deleted. It configures the MATLAB path for app entry points. MATLAB desktop project metadata belongs to each developer's local workspace.</p>
 <p>Tools under <code>tools/</code> are source-checkout support utilities rather than app runtime APIs. The launcher may call a small, explicit subset for maintenance and deployment actions, such as profiling a selected app or packaging a single app for offline deployment. Single-app deployment packages include the launcher and only those launcher-needed tool folders, not the whole source checkout.</p>
 <h2 id="ownership-boundaries">Ownership Boundaries</h2>

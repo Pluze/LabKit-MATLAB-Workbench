@@ -20,7 +20,7 @@
 <h1 id="apps">Apps</h1>
 <p>LabKit apps are independent MATLAB GUI tools for concrete lab workflows. Each app should be useful on its own, with a stable public launch command and app-owned workflow logic.</p>
 <h2 id="launching-apps">Launching Apps</h2>
-<p>For normal use, start from the single-file launcher linked in the root [README](../../README.md). Put <code>labkit_launcher.m</code> in a standalone LabKit folder, open MATLAB in that folder, and run:</p>
+<p>For normal use, start from the single-file launcher linked in the root <a href="../../README.md">README</a>. Put <code>labkit_launcher.m</code> in a standalone LabKit folder, open MATLAB in that folder, and run:</p>
 <pre><code class="language-matlab">labkit_launcher</code></pre>
 <p>The launcher is self-contained so it can open before the rest of LabKit is installed and report its own version. Use <code>Latest</code> to download the current <code>main</code> branch, <code>Release</code> to download the latest stable release, or <code>Versions</code> to choose a recent release, tag, or main-branch commit. The version manager is for deliberate upgrades or rollback when a newer build is unsuitable. After LabKit is present, the launcher initializes the MATLAB path, discovers app entry points with their app versions, and opens the selected app.</p>
 <p>Treat the LabKit folder as an application runtime folder. Keep source data and exported results in separate project folders; routine users do not need to inspect or edit the files downloaded by the launcher.</p>
@@ -37,7 +37,7 @@ labkit_CIC_app</code></pre>
 <p><code>Checked P-code</code> creates a runtime-only package with MATLAB code encoded as <code>.p</code> files instead of source <code>.m</code> files. It includes the checked app folders and assets, <code>+labkit/</code>, a <code>packaged_app_manifest.json</code>, and one direct <code>run_&lt;app_command&gt;</code> entry file per app. It intentionally does not include <code>labkit_launcher</code> or launcher maintenance tools, so users start the app through the direct entry file from the unzipped folder.</p>
 <p>Both package formats intentionally omit unchecked public apps, tests, docs, CI files, and source-checkout metadata.</p>
 <p>The launcher sets up the app path before opening an app. App-owned packages are reached through their owning app entrypoint and package namespace.</p>
-<p>Local private apps can live in an ignored workspace at <code>private_apps/apps/</code> inside any source checkout, or in one or more roots named by <code>LABKIT_PRIVATE_APP_ROOTS</code>. See [Private apps](../development/private-apps.md) for the generic structure and Git ownership model. Private app details belong in the private app repository, not in the public LabKit docs.</p>
+<p>Local private apps can live in an ignored workspace at <code>private_apps/apps/</code> inside any source checkout, or in one or more roots named by <code>LABKIT_PRIVATE_APP_ROOTS</code>. See <a href="../development/private-apps.md">Private apps</a> for the generic structure and Git ownership model. Private app details belong in the private app repository, not in the public LabKit docs.</p>
 <p>The launcher update flow treats the LabKit folder as a replaceable runtime directory. Before copying a selected GitHub zip into place, the launcher moves the current top-level runtime contents into a dated <code>LabKit-previous-*</code> subfolder under the same folder. It then copies the downloaded LabKit root as a whole replacement instead of tracking individual managed files.</p>
 <p>Keep lab data and exports outside the LabKit runtime folder. The update prompt warns that current folder contents will be moved into the dated snapshot. If a release removes or merges app entrypoints, the launcher gives an additional warning before replacing the runtime; users who need old entrypoints should choose an older release, tag, or commit through <code>Versions</code>.</p>
 <h2 id="app-catalog">App Catalog</h2>
@@ -62,10 +62,10 @@ labkit_CIC_app</code></pre>
 <p>After a video session starts, durable annotation changes are atomically saved to <code>Video Marker Autosaves</code> under the source video's folder. These visible MAT files use the same project payload as explicit project saves, so they can be backed up or opened manually. Both payloads store a portable video reference: the path relative to the MAT file is preferred, with the original path and same-folder filename as fallbacks. This lets a synchronized project/video directory tree move between Google Drive roots, users, and operating systems. If no candidate exists or the saved reference is malformed, project open asks the user to locate the source video without discarding the skeleton or annotations. Reopening the video detects its adjacent recovery data and asks whether to restore it or start a new session. Starting a new setup or declining recovery discards that video's autosave; explicit project saves and CSV exports remain separate outputs.</p>
 <h2 id="related-documentation">Related Documentation</h2>
 <ul>
-<li>[Getting started](../getting-started/README.md)</li>
-<li>[App development](../development/app-development.md)</li>
-<li>[Public API reference](../api/README.md)</li>
-<li>[Testing](../development/testing.md)</li>
+<li><a href="../getting-started/README.md">Getting started</a></li>
+<li><a href="../development/app-development.md">App development</a></li>
+<li><a href="../api/README.md">Public API reference</a></li>
+<li><a href="../development/testing.md">Testing</a></li>
 </ul>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>
 </main>

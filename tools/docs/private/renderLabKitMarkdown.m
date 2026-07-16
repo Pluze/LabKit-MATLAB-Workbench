@@ -190,9 +190,9 @@ function html = renderInline(model, page, text)
     [text, replacements] = protectTokens(text, replacements, ...
         '`([^`]+)`', @(token) "<code>" + htmlEscape(token{1}) + "</code>");
     [text, replacements] = protectTokens(text, replacements, ...
-        '!\[([^]]*)\]\(([^)]+)\)', @(token) renderImage(token));
+        '!\[([^\]]*)\]\(([^)]+)\)', @(token) renderImage(token));
     [text, replacements] = protectTokens(text, replacements, ...
-        '\[([^]]+)\]\(([^)]+)\)', @(token) renderLink(model, page, token));
+        '\[([^\]]+)\]\(([^)]+)\)', @(token) renderLink(model, page, token));
     html = htmlEscape(text);
     html = regexprep(html, '\*\*([^*]+)\*\*', '<strong>$1</strong>');
     html = regexprep(html, '(?<!\*)\*([^*]+)\*(?!\*)', '<em>$1</em>');

@@ -65,17 +65,17 @@ apps/&lt;family&gt;/&lt;app_slug&gt;/+&lt;app_slug&gt;/+userInterface/presentWor
 <li>plots, labels, result columns, and export schemas</li>
 <li>workflow ordering, user messages, and logs</li>
 </ul>
-<p>Move code into <code>+labkit</code> only when it is domain-neutral, independent of app state, directly testable, used broadly, and makes the public API clearer. See [Architecture](architecture.md#reusable-extraction-rule).</p>
+<p>Move code into <code>+labkit</code> only when it is domain-neutral, independent of app state, directly testable, used broadly, and makes the public API clearer. See <a href="architecture.html#reusable-extraction-rule">Architecture</a>.</p>
 <h2 id="version-and-requirements">Version And Requirements</h2>
 <p><code>requirements.m</code> declares supported LabKit facade ranges. <code>version.m</code> declares the app command, display name, family, semantic version, and last change date. App behavior changes update the version, app documentation, and component-owned history record in the same coherent change.</p>
 <h2 id="validation">Validation</h2>
-<p>Use focused app tests while editing, then follow the stable gates in [Testing](testing.md). Automated GUI tests cover launch, layout, callbacks, debug plumbing, and synthetic workflows; visual quality and manual interaction feel still require a human MATLAB check.</p>
+<p>Use focused app tests while editing, then follow the stable gates in <a href="testing.html">Testing</a>. Automated GUI tests cover launch, layout, callbacks, debug plumbing, and synthetic workflows; visual quality and manual interaction feel still require a human MATLAB check.</p>
 <h2 id="related-reference">Related Reference</h2>
 <ul>
-<li>[App catalog and workflows](../apps/README.md)</li>
-<li>[UI API](../api/ui.md)</li>
-<li>[Architecture](architecture.md)</li>
-<li>[Testing](testing.md)</li>
+<li><a href="../apps/README.md">App catalog and workflows</a></li>
+<li><a href="../api/ui.md">UI API</a></li>
+<li><a href="architecture.html">Architecture</a></li>
+<li><a href="testing.html">Testing</a></li>
 </ul>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>
 </main>

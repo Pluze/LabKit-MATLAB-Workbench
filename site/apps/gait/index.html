@@ -20,15 +20,15 @@
 <h1 id="gait-apps">Gait Apps</h1>
 <p>The gait family converts ordered pose coordinates into frame metrics, step events, joint angles, translations, range of motion, and quality-control previews.</p>
 <h2 id="app">App</h2>
-<p>[Gait Analysis](../gait/gait-analysis.md) reads coordinate tables, MAT coordinate payloads, and compatible Video Marker or legacy Image Marker projects and autosaves.</p>
+<p><a href="gait-analysis.html">Gait Analysis</a> reads coordinate tables, MAT coordinate payloads, and compatible Video Marker or legacy Image Marker projects and autosaves.</p>
 <h2 id="workflow-boundary">Workflow Boundary</h2>
 <p>Marker placement and frame annotation belong in Video Marker or Image Marker. Gait Analysis consumes those coordinates, maps point names to anatomical roles, applies configured smoothing and scale/origin transforms, and exports derived metrics without changing the annotation project.</p>
 <h2 id="programmatic-entry-point">Programmatic Entry Point</h2>
 <p><code>gait_analysis.analysisRun.computeGait</code> accepts normalized pose data and an option struct and returns the same GUI-free frame, coordinate, step, and summary tables used by the app.</p>
 <h2 id="related-apps">Related Apps</h2>
 <ul>
-<li>[Video Marker](../image-measurement/video-marker.md)</li>
-<li>[Gait Analysis](../gait/gait-analysis.md)</li>
+<li><a href="../image-measurement/video-marker.html">Video Marker</a></li>
+<li><a href="gait-analysis.html">Gait Analysis</a></li>
 </ul>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>
 </main>
