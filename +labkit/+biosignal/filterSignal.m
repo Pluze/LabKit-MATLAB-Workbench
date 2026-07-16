@@ -2,26 +2,64 @@ function filtered = filterSignal(signal, spec)
 %FILTERSIGNAL Apply a zero-phase FFT-domain filter to a biosignal.
 %
 % Usage:
-%   filtered = labkit.biosignal.filterSignal(signal);
-%   filtered = labkit.biosignal.filterSignal(signal, ...
-%       struct('type', 'bandpass', 'cutoffHz', [0.5 40]));
+%   filtered = labkit.biosignal.filterSignal(signal)
+%   filtered = labkit.biosignal.filterSignal(signal, spec)
+%
+% Description:
+%   Applies an ideal frequency mask in the discrete Fourier domain and uses
+%   an inverse transform to return a zero-phase filtered waveform. Low-pass
+%   and band-pass filtering restore the input mean after filtering;
+%   high-pass filtering does not. Missing samples are filled before the
+%   transform, so filtered.values is finite when the input contains enough
+%   finite data for interpolation.
+%
+%   Reflect edge mode extrapolates both ends of the waveform before applying
+%   the FFT and removes the padding afterward. A cosine taper is applied only
+%   to the outer padded samples. This reduces wraparound artifacts without
+%   changing the length or time axis of the signal. Use edgeMode "none" when
+%   the unpadded periodic FFT behavior is required.
 %
 % Inputs:
-%   signal - biosignal signal struct with values and fs fields.
-%   spec - optional struct.
+%   signal - Biosignal structure with values, fs, and metadata fields. fs is
+%            the sample rate in hertz.
+%   spec - Optional scalar struct containing the fields listed below.
 %
 % Options:
 %   type - "bandpass" (default), "lowpass", "highpass", "none", or "off".
-%   cutoffHz - scalar for low/high pass or [low high] for bandpass.
-%   edgeMode - "reflect" (default) or "none". Reflect mode pads both ends
-%              before FFT filtering, then crops back to the original length.
-%   edgePadSec - positive scalar padding seconds. Default is derived from
-%                the low cutoff and capped at 5 seconds.
-%   edgeTaperSec - positive scalar seconds used to taper only the padded
-%                  edges toward zero before FFT filtering. Default 1 second.
+%          The latter two skip frequency masking but still fill missing data.
+%   cutoffHz - Scalar cutoff for low-pass or high-pass filtering, or a
+%              two-element [low high] band for band-pass filtering. The
+%              default is [0.5 40] Hz. Empty or nonfinite values skip
+%              filtering and return the filled waveform.
+%   edgeMode - "reflect" (default) or "none". The aliases "reflection",
+%              "symmetric", "pad", and "padded" select reflection;
+%              "off" and "raw" select no padding.
+%   edgePadSec - Nonnegative padding duration in seconds. By default,
+%                band-pass and high-pass filters use three periods of the
+%                lowest cutoff, limited to 0.5 through 5 seconds. Other
+%                filters use 1 second. Padding cannot exceed half the
+%                available signal minus one sample.
+%   edgeTaperSec - Nonnegative duration of the outer padding taper. The
+%                  default is 1 second.
 %
-% Output:
-%   filtered - signal struct preserving metadata and replacing values.
+% Outputs:
+%   filtered - Copy of signal with filtered values. All other signal fields
+%              are preserved, and metadata.filter records spec exactly as
+%              supplied by the caller.
+%
+% Errors:
+%   labkit:biosignal:InvalidSignal - signal lacks values or fs.
+%   labkit:biosignal:UnsupportedFilter - type is not supported.
+%   labkit:biosignal:UnsupportedFilterEdgeMode - edgeMode is not supported.
+%
+% Example:
+%   fs = 100;
+%   time = (0:1/fs:2)';
+%   values = sin(2*pi*2*time) + 0.2*sin(2*pi*30*time);
+%   signal = struct('time', time, 'values', values, 'fs', fs, ...
+%       'metadata', struct());
+%   filtered = labkit.biosignal.filterSignal(signal, ...
+%       struct('type', 'lowpass', 'cutoffHz', 10));
 
     if nargin < 2
         spec = struct();

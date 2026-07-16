@@ -5,6 +5,8 @@ function plan = buildfile
 %   buildtool changed       conservative validation routed from the git diff
 %   buildtool changedFast   faster local iteration routed from the git diff
 %   buildtool baseMatlab    verify source workflows require only base MATLAB
+%   buildtool docs          rebuild the tracked static documentation site
+%   buildtool docsCheck     verify the tracked site matches its sources
 %   buildtool headless      full non-GUI validation
 %   buildtool gui           full automated GUI validation with hidden figures
 %   buildtool coverage      coverage report for manual or scheduled runs
@@ -40,6 +42,14 @@ function baseMatlabTask(~)
     clear cleanup
 end
 
+function docsTask(~)
+    runDocumentationTask(false);
+end
+
+function docsCheckTask(~)
+    runDocumentationTask(true);
+end
+
 function headlessTask(~)
     runCatalogTask("headless");
 end
@@ -61,6 +71,8 @@ function catalog = taskCatalog()
         taskSpec("changed", "Run conservative changed-file validation.", "Plan", "changed", "HtmlReport", false), ...
         taskSpec("changedFast", "Run fast changed-file validation for local iteration.", "Plan", "changedFast", "HtmlReport", false), ...
         taskSpec("baseMatlab", "Verify source workflows require only base MATLAB.", "Suites", "project/hygiene", "Tests", "ToolboxDependencyGuardrailTest", "HtmlReport", false), ...
+        taskSpec("docs", "Rebuild the tracked static documentation site.", "RunTests", false), ...
+        taskSpec("docsCheck", "Verify tracked documentation output is current.", "RunTests", false), ...
         taskSpec("headless", "Run the full non-GUI validation set.", "IncludeGui", false), ...
         taskSpec("gui", "Run noninteractive GUI launch, layout, and gesture checks.", "Suites", "gui", "IncludeGui", true, "GuiMode", "hidden"), ...
         taskSpec("coverage", "Run official tests with coverage artifacts.", "Tags", ["Unit", "Integration"], "IncludeCoverage", true), ...
@@ -160,9 +172,26 @@ function runBuildTests(runName, varargin)
         "ArtifactsRoot", fullfile(root, "artifacts"));
 end
 
+function runDocumentationTask(checkOnly)
+    root = fileparts(mfilename("fullpath"));
+    toolFolder = fullfile(root, "tools", "docs");
+    addpath(toolFolder);
+    cleanup = onCleanup(@() rmpath(toolFolder));
+    if checkOnly
+        result = checkLabKitDocs(fullfile(root, "docs"), fullfile(root, "site"));
+        fprintf("LabKit documentation is current: %d generated file(s).\n", ...
+            result.comparedFileCount);
+    else
+        result = renderLabKitDocs(fullfile(root, "docs"), fullfile(root, "site"));
+        fprintf("Generated %d narrative page(s) and %d API reference page(s) in %s.\n", ...
+            result.pageCount, result.apiCount, result.outputRoot);
+    end
+    clear cleanup
+end
+
 function handled = runWithInternalShards(spec, args)
     handled = false;
-    if spec.Name ~= "headless" || isInternalShardWorker() || ...
+    if ~any(spec.Name == ["headless", "gui"]) || isInternalShardWorker() || ...
             isGitHubActions() || ispc
         return;
     end
@@ -179,14 +208,16 @@ function handled = runWithInternalShards(spec, args)
         return;
     end
 
-    shardCount = recommendedShardCount(probe.count);
-    if shardCount <= 1
+    shardPlan = labkitInternalShardPlan(spec.Name, probe.count);
+    if shardPlan.Count <= 1
         return;
     end
 
-    fprintf("LabKit shard probe: %d test(s) matched; running %d internal headless shard(s).\n", ...
-        probe.count, shardCount);
-    runInternalShardWorkers(root, spec.Name, args, shardCount);
+    fprintf(['LabKit shard probe: %d test(s) matched; running %d ' ...
+        'internal %s shard(s).\n'], probe.count, shardPlan.Count, ...
+        shardPlan.ExecutionLabel);
+    runInternalShardWorkers(root, spec.Name, args, shardPlan.Count, ...
+        shardPlan.RunInParallel);
     handled = true;
 end
 
@@ -198,17 +229,7 @@ function tf = isGitHubActions()
     tf = string(getenv("GITHUB_ACTIONS")) == "true";
 end
 
-function shardCount = recommendedShardCount(testCount)
-    if testCount >= 300
-        shardCount = 3;
-    elseif testCount >= 80
-        shardCount = 2;
-    else
-        shardCount = 1;
-    end
-end
-
-function runInternalShardWorkers(root, runName, args, shardCount)
+function runInternalShardWorkers(root, runName, args, shardCount, runInParallel)
     logsRoot = fullfile(root, "artifacts", "logs", runName + "-orchestrator");
     ensureFolder(logsRoot);
     scriptPath = fullfile(logsRoot, "run_shards.sh");
@@ -225,12 +246,19 @@ function runInternalShardWorkers(root, runName, args, shardCount)
         shardName = sprintf("%s-shard-%d", runName, k);
         workerLog = fullfile(logsRoot, shardName + ".log");
         batch = shardBatchCommand(root, args, shardName, shardCount, k);
-        fprintf(fid, "LABKIT_INTERNAL_SHARD_WORKER=1 %s -batch %s > %s 2>&1 &\n", ...
-            shellQuote(matlabExe), shellQuote(batch), shellQuote(workerLog));
-        fprintf(fid, "pids_%d=$!\n", k + 1);
+        if runInParallel
+            fprintf(fid, "LABKIT_INTERNAL_SHARD_WORKER=1 %s -batch %s > %s 2>&1 &\n", ...
+                shellQuote(matlabExe), shellQuote(batch), shellQuote(workerLog));
+            fprintf(fid, "pids_%d=$!\n", k + 1);
+        else
+            fprintf(fid, "LABKIT_INTERNAL_SHARD_WORKER=1 %s -batch %s > %s 2>&1 || status=1\n", ...
+                shellQuote(matlabExe), shellQuote(batch), shellQuote(workerLog));
+        end
     end
-    for k = 1:shardCount
-        fprintf(fid, "wait $pids_%d || status=1\n", k);
+    if runInParallel
+        for k = 1:shardCount
+            fprintf(fid, "wait $pids_%d || status=1\n", k);
+        end
     end
     fprintf(fid, 'if [ "$status" -ne 0 ]; then\n');
     fprintf(fid, "  cat %s/*.log\n", shellQuote(logsRoot));

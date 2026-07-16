@@ -1,20 +1,39 @@
 function info = inspectFile(path, opts)
-%INSPECTFILE Report whether one file contains readable thermal data.
+%INSPECTFILE Check whether a file contains supported radiometric data.
 %
-% App-facing contract:
+% Usage:
 %   info = labkit.thermal.inspectFile(path)
 %   info = labkit.thermal.inspectFile(path, opts)
 %
+% Description:
+%   Performs the same format check and radiometric read as readFile, but
+%   returns the outcome instead of throwing when the extension, file contents,
+%   or calibration data are unsupported. Use this function to label files in a
+%   chooser or batch review before deciding which ones to read.
+%
 % Inputs:
-%   path - scalar char/string path.
-%   opts - optional scalar struct with fields accepted by
-%       labkit.thermal.readFile.
+%   path - Character vector or string scalar naming one candidate file.
+%   opts - Optional scalar structure. See Options.
+%
+% Options:
+%   RequireExisting - Logical scalar forwarded to readFile. Default: true.
+%   TemperatureCorrection - "environment" or "planck-basic", forwarded to
+%       readFile. Default: "environment".
 %
 % Outputs:
-%   info - scalar struct with path, name, supportedExtension, isThermal,
-%       format, identifier, and message fields. This function catches reader
-%       failures and never throws for unsupported or non-radiometric image
-%       content.
+%   info - Scalar structure with path, name, supportedExtension, isThermal,
+%       format, identifier, and message. supportedExtension reports only the
+%       filename extension. isThermal is true only after a supported
+%       radiometric payload is read successfully. On failure, identifier and
+%       message contain the caught reader error.
+%
+% Example:
+%   info = labkit.thermal.inspectFile("candidate.jpg");
+%   if info.isThermal
+%       fprintf("Readable thermal format: %s\n", info.format)
+%   else
+%       warning("%s", info.message)
+%   end
 
     if nargin < 2 || isempty(opts)
         opts = struct();

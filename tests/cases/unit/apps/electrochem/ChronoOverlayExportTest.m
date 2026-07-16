@@ -15,6 +15,46 @@ function verify_chronoOverlayExport()
     checkGapCenterAlignment();
     checkFallbackAlignment();
     checkMergedExportInterpolation();
+    checkRuntimeV2Contracts();
+end
+
+function checkRuntimeV2Contracts()
+    definition = chrono_overlay.definition();
+    assert(definition.contractVersion == 2, ...
+        'Chrono overlay should use the runtime V2 definition contract.');
+    project = definition.project.Create();
+    assert(definition.project.Validate(project), ...
+        'The default Chrono overlay project should validate.');
+    assert(definition.project.Version == 2 && ...
+        numel(definition.project.Migrations) == 1, ...
+        'Payload version 2 should migrate decoded v1 inputs out of the project.');
+
+    invalid = project;
+    invalid.parameters.lineWidth = Inf;
+    assert(~definition.project.Validate(invalid), ...
+        'The project validator should reject non-finite plot parameters.');
+
+    item = makeOverlayItem('synthetic.DTA', [-1; 0; 1], ...
+        [10; 20; 30], [1; 2; 3]);
+    item.filepath = '/synthetic/synthetic.DTA';
+    legacyProject = project;
+    legacyProject.inputs.items = item;
+    migrated = definition.project.Migrations{1}(legacyProject);
+    assert(~isfield(migrated.inputs, 'items'), ...
+        'Chrono Overlay v1 migration should remove decoded DTA items.');
+    session = chrono_overlay.appLifecycle.createSession(project);
+    session.cache.items = item;
+    session.selection.paths = string(item.filepath);
+    state = struct('project', project, 'session', session);
+    presentation = chrono_overlay.userInterface.presentWorkbench(state);
+    assert(isscalar(presentation) && ...
+        isscalar(presentation.controls.files), ...
+        'The presenter should return scalar declarative control specs.');
+    assert(string(presentation.controls.files.Selection) == "item1", ...
+        'A restored project should select its available source by default.');
+    assert(isfield(presentation.previews.overlayPlots.Axes, 'voltage') && ...
+        isfield(presentation.previews.overlayPlots.Axes, 'current'), ...
+        'The presenter should prepare both registered overlay axes.');
 end
 
 function checkGapCenterAlignment()

@@ -18,6 +18,7 @@ function driver = labkitWorkflowDriver(fig)
     driver.fileStatus = @fileStatus;
     driver.fileListItems = @fileListItems;
     driver.fileSelection = @fileSelection;
+    driver.selectFile = @selectFile;
     driver.tableData = @tableData;
     driver.textAreaValue = @textAreaValue;
     driver.logValue = @logValue;
@@ -53,6 +54,22 @@ function driver = labkitWorkflowDriver(fig)
     function value = fileSelection(panelId)
         control = filePanel(panelId);
         value = string(control.listbox.Value);
+    end
+
+    function selectFile(panelId, pathOrLabel)
+        control = filePanel(panelId);
+        labels = string(control.listbox.Items);
+        match = find(contains(labels, string(pathOrLabel)), 1, 'first');
+        assert(~isempty(match), ...
+            'Workflow filePanel %s has no item matching %s.', ...
+            char(string(panelId)), char(string(pathOrLabel)));
+        control.listbox.Value = control.listbox.Items{match};
+        callback = control.listbox.ValueChangedFcn;
+        assert(isa(callback, 'function_handle'), ...
+            'Workflow filePanel %s has no selection callback.', ...
+            char(string(panelId)));
+        callback(control.listbox, struct());
+        drawnow;
     end
 
     function value = textAreaValue(controlId)

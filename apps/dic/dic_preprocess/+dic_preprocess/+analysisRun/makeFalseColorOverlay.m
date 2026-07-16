@@ -1,9 +1,34 @@
-% Expected caller: DIC preprocess runner and direct unit tests. Inputs are the
-% reference image and current moving/aligned image. Output is the false-color
-% registration preview image. Side effects: none.
-
 function overlay = makeFalseColorOverlay(referenceImage, alignedImage)
-%MAKEFALSECOLOROVERLAY Build DIC preprocess false-color pair preview.
+%MAKEFALSECOLOROVERLAY Build a red/green registration preview.
+%
+% Usage:
+%   overlay = dic_preprocess.analysisRun.makeFalseColorOverlay( ...
+%       referenceImage, alignedImage)
+%
+% Inputs:
+%   referenceImage - Numeric grayscale or RGB reference image.
+%   alignedImage - Numeric grayscale or RGB moving image. A different height or
+%       width is resized to the reference dimensions by nearest neighbor.
+%
+% Outputs:
+%   overlay - Double RGB image the size of referenceImage. Red contains the
+%       independently normalized moving image, green contains the independently
+%       normalized reference, and blue is zero.
+%
+% Description:
+%   Coincident structure appears yellow, moving-only structure red, and
+%   reference-only structure green. Independent min/max grayscale normalization
+%   emphasizes geometry rather than preserving absolute intensity calibration.
+%
+% Example:
+%   reference = eye(5);
+%   moving = circshift(reference, [0 1]);
+%   overlay = dic_preprocess.analysisRun.makeFalseColorOverlay( ...
+%       reference, moving);
+%   assert(isequal(size(overlay), [5 5 3]))
+%   assert(all(overlay(:,:,3) == 0, "all"))
+%
+% See also dic_preprocess.analysisRun.autoAlignMovingToReference
 
     refGray = normalizeGray(referenceImage);
     movGray = normalizeGray(alignedImage);

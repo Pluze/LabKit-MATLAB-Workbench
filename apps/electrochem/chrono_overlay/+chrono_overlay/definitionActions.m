@@ -1,176 +1,133 @@
-% App-owned action table for Chrono Overlay. Expected caller is
-% chrono_overlay.definition. Output maps semantic action ids to handlers used
-% by labkit.ui.runtime.run. Handlers own app workflow transitions and IO/export
-% side effects; framework lifecycle scheduling stays in labkit.ui.runtime.
+% App-owned V2 action table for Chrono Overlay. Handlers receive canonical
+% state/events/services and never read or mutate UI controls directly.
 function actions = definitionActions()
     actions = struct( ...
-        "startup", @onStartup, ...
         "openFilesChosen", @onOpenFilesChosen, ...
         "removeSelected", @onRemoveSelected, ...
         "clearAll", @onClearAll, ...
         "exportCSV", @onExportCSV, ...
-        "selectionChanged", @onRefreshOnly, ...
-        "plotOptionsChanged", @onRefreshOnly);
+        "selectionChanged", @onSelectionChanged);
 end
 
-function state = onStartup(state, ~, services)
-    debugLog = services.debug;
-    if ~isDebugEnabled(debugLog)
-        return;
-    end
-    debugLog.trace('Chrono overlay debug trace enabled.');
-    try
-        pack = chrono_overlay.debug.writeSamplePack(debugLog);
-        addLog(services, sprintf('Debug sample files: %s', char(pack.sampleFolder)));
-        addLog(services, sprintf('Debug output folder: %s', char(pack.outputFolder)));
-    catch ME
-        debugLog.reportException('chronoOverlay', 'Debug sample setup failed', ME);
-        addLog(services, sprintf('Debug sample setup failed: %s', ME.message));
-    end
-end
-
-function state = onOpenFilesChosen(state, payload, services)
-    paths = labkit.ui.control.filePaths(payload.event.addedFiles);
+function state = onOpenFilesChosen(state, event, services)
+    paths = services.events.paths(event, "addedFiles");
     if isempty(paths)
-        addLog(services, 'Open cancelled.');
+        state = services.workflow.log(state, "Open cancelled.");
         return;
     end
-    state = loadFiles(state, paths, services);
-end
-
-function state = loadFiles(state, filepaths, services)
-    filepaths = normalizePaths(filepaths);
-    if isempty(filepaths)
-        return;
-    end
-
     failed = struct('filepath', {}, 'message', {});
-    for iFile = 1:numel(filepaths)
-        filepath = filepaths(iFile);
-        if isLoaded(state, filepath)
-            addLog(services, sprintf('Skipped already loaded: %s', char(filepath)));
+    for k = 1:numel(paths)
+        filepath = paths(k);
+        if isLoaded(state.session.cache.items, filepath)
+            state = services.workflow.log(state, ...
+                "Skipped already loaded: " + filepath);
             continue;
         end
-
         [item, status] = labkit.dta.loadFile(filepath, "chrono");
         if ~status.ok
             failed(end + 1) = struct( ...
-                'filepath', char(filepath), ...
-                'message', char(status.message));
-            addLog(services, sprintf('Failed: %s | %s', ...
-                char(filepath), char(status.message)));
+                'filepath', char(filepath), 'message', char(status.message));
+            state = services.workflow.log(state, ...
+                "Failed: " + filepath + " | " + status.message);
             continue;
         end
-
-        [item, alignMsg] = chrono_overlay.sourceFiles.alignByPulseGap(item);
-        state.items = appendItem(state.items, item);
-        addLog(services, alignMsg);
-        for ii = 1:numel(item.logmsg)
-            addLog(services, item.logmsg{ii});
+        [item, alignMessage] = chrono_overlay.sourceFiles.alignByPulseGap(item);
+        state.session.cache.items = appendItem( ...
+            state.session.cache.items, item);
+        state.project.inputs.sources = appendSource( ...
+            state.project.inputs.sources, filepath, services);
+        state.session.selection.paths(end + 1, 1) = filepath;
+        state = services.workflow.log(state, alignMessage);
+        for iMessage = 1:numel(item.logmsg)
+            state = services.workflow.log(state, item.logmsg{iMessage});
         end
-        addLog(services, sprintf('%s: %s', item.name, item.message));
-        addLog(services, sprintf('Loaded: %s', char(filepath)));
+        state = services.workflow.log(state, string(item.name) + ": " + item.message);
+        state = services.workflow.log(state, "Loaded: " + filepath);
     end
-
     if ~isempty(failed)
         firstError = failed(1);
-        labkit.ui.runtime.showAlert(services.figure, ...
-            sprintf('Failed to load:\n%s\n\n%s', ...
-            firstError.filepath, firstError.message), ...
-            'Load error');
+        services.dialogs.alert(sprintf( ...
+            'Failed to load:\n%s\n\n%s', firstError.filepath, ...
+            firstError.message), 'Load error');
     end
 end
 
-function state = onRemoveSelected(state, payload, services)
-    if isempty(state.items)
-        return;
-    end
-    paths = labkit.ui.control.filePaths(payload.event.removedFiles);
+function state = onRemoveSelected(state, event, services)
+    paths = services.events.paths(event, "removedFiles");
     if isempty(paths)
         return;
     end
-    [state, report] = removeItemsByPaths(state, paths);
-    for k = 1:numel(report.removed)
-        addLog(services, sprintf('Removed: %s', report.removed{k}));
+    [state.session.cache.items, removed] = removeItems( ...
+        state.session.cache.items, paths);
+    state.project.inputs.sources = removeSources( ...
+        state.project.inputs.sources, paths);
+    state.session.selection.paths = setdiff( ...
+        state.session.selection.paths, paths, 'stable');
+    for k = 1:numel(removed)
+        state = services.workflow.log(state, "Removed: " + removed(k));
     end
 end
 
 function state = onClearAll(state, ~, services)
-    state.items = struct([]);
-    addLog(services, 'Cleared all files.');
+    state.session.cache.items = struct([]);
+    state.project.inputs.sources = state.project.inputs.sources([]);
+    state.session.selection.paths = strings(0, 1);
+    state = services.workflow.log(state, "Cleared all files.");
+end
+
+function state = onSelectionChanged(state, event, services)
+    state.session.selection.paths = ...
+        services.events.paths(event, "selectedFiles");
 end
 
 function state = onExportCSV(state, ~, services)
-    if isempty(state.items)
-        labkit.ui.runtime.showAlert(services.figure, 'No files loaded.', 'Export');
+    if isempty(state.session.cache.items)
+        services.dialogs.alert( ...
+            'No files loaded.', 'Export');
         return;
     end
-
-    items = selectedItems(state, services.ui);
+    items = selectedItems(state);
     if isempty(items)
-        labkit.ui.runtime.showAlert(services.figure, ...
+        services.dialogs.alert( ...
             'No files selected for export.', 'Export');
         return;
     end
-
-    [out, cancelled] = labkit.ui.runtime.promptOutputFile( ...
+    [out, cancelled] = services.dialogs.outputFile( ...
         'gamry_overlay_curves.csv', 'Save overlay curves CSV', ...
         'gamry_overlay_curves.csv');
     if cancelled
         return;
     end
-
-    T = chrono_overlay.resultFiles.buildOverlayExportTable(items);
-    writetable(T, out);
-    addLog(services, sprintf('Exported CSV: %s', char(out)));
+    tableValue = chrono_overlay.resultFiles.buildOverlayExportTable(items);
+    writetable(tableValue, out);
+    [folder, base, extension] = fileparts(out);
+    outputName = string(base) + string(extension);
+    outputs = services.results.output( ...
+        "overlayCurves", "primary", outputName, "text/csv");
+    spec = struct();
+    spec.Outputs = outputs;
+    spec.Inputs = state.project.inputs.sources;
+    spec.Parameters = state.project.parameters;
+    spec.Summary = struct("fileCount", numel(items));
+    [manifestPath, ~] = services.results.writeManifest(folder, spec);
+    state.project.results.lastExport = struct( ...
+        "csvPath", string(out), "manifestPath", string(manifestPath));
+    state = services.workflow.log(state, "Exported CSV: " + string(out));
 end
 
-function state = onRefreshOnly(state, ~, ~)
-end
-
-function items = selectedItems(state, ui)
-    files = labkit.ui.control.getValue(ui, 'files');
-    paths = labkit.ui.control.filePaths(files);
-    if isempty(paths)
-        items = struct([]);
+function items = selectedItems(state)
+    items = state.session.cache.items;
+    if isempty(items)
         return;
     end
-    keep = ismember(string({state.items.filepath}), string(paths(:)));
-    items = state.items(keep);
+    selected = state.session.selection.paths;
+    keep = ismember(string({items.filepath}), selected(:));
+    items = items(keep);
 end
 
-function [state, report] = removeItemsByPaths(state, filepaths)
-    paths = normalizePaths(filepaths);
-    report = struct('removed', {{}}, 'missing', {{}});
-    if isempty(paths)
-        return;
-    end
-    if isempty(state.items)
-        report.missing = cellstr(paths(:).');
-        return;
-    end
-    keep = true(1, numel(state.items));
-    itemPaths = string({state.items.filepath});
-    for k = 1:numel(paths)
-        idx = find(itemPaths == paths(k) & keep, 1, 'first');
-        if isempty(idx)
-            report.missing{end + 1} = char(paths(k));
-            continue;
-        end
-        report.removed{end + 1} = char(paths(k));
-        keep(idx) = false;
-    end
-    state.items = state.items(keep);
-end
-
-function tf = isLoaded(state, filepath)
-    tf = ~isempty(state.items) && ...
-        any(string({state.items.filepath}) == string(filepath));
-end
-
-function paths = normalizePaths(paths)
-    paths = string(paths(:));
-    paths = paths(strlength(paths) > 0);
+function tf = isLoaded(items, filepath)
+    tf = ~isempty(items) && ...
+        any(string({items.filepath}) == string(filepath));
 end
 
 function items = appendItem(items, item)
@@ -181,14 +138,34 @@ function items = appendItem(items, item)
     end
 end
 
-function addLog(services, msg)
-    labkit.ui.control.appendLog(services.ui, 'appLog', msg);
-    if isDebugEnabled(services.debug)
-        services.debug.append(msg);
+function sources = appendSource(sources, filepath, services)
+    source = services.project.sourceRecord( ...
+        "dta" + string(numel(sources) + 1), "chrono", filepath, true);
+    if isempty(sources)
+        sources = source;
+    else
+        sources(end + 1) = source;
     end
 end
 
-function tf = isDebugEnabled(debugLog)
-    tf = isstruct(debugLog) && isfield(debugLog, 'enabled') && ...
-        logical(debugLog.enabled);
+function [items, removed] = removeItems(items, paths)
+    removed = strings(0, 1);
+    if isempty(items)
+        return;
+    end
+    itemPaths = string({items.filepath});
+    keep = ~ismember(itemPaths, paths(:));
+    removed = itemPaths(~keep).';
+    items = items(keep);
+end
+
+function sources = removeSources(sources, paths)
+    if isempty(sources)
+        return;
+    end
+    sourcePaths = strings(numel(sources), 1);
+    for k = 1:numel(sources)
+        sourcePaths(k) = string(sources(k).reference.originalPath);
+    end
+    sources = sources(~ismember(sourcePaths, paths(:)));
 end

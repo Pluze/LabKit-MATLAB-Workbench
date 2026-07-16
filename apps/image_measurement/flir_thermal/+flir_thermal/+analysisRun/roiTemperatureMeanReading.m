@@ -1,8 +1,49 @@
-% Expected caller: FLIR thermal drag callback and tests. Inputs are a Celsius
-% temperature matrix and two image points. Outputs are clamped ROI hot, cold,
-% and mean readings. Side effects: none.
-function [hotSpot, coldSpot, meanReading] = roiTemperatureMeanReading( ...
-        temperatureC, startXY, endXY)
+function [hotSpot, coldSpot, meanReading] = roiTemperatureMeanReading(temperatureC, startXY, endXY)
+%ROITEMPERATUREMEANREADING Measure an inclusive rectangular thermal ROI.
+%
+% Usage:
+%   [hotSpot, coldSpot, meanReading] = ...
+%       flir_thermal.analysisRun.roiTemperatureMeanReading( ...
+%       temperatureC, startXY, endXY)
+%
+% Description:
+%   Interprets two points as opposite corners of an inclusive rectangular ROI.
+%   Bounds are rounded, ordered, and limited to the image. NaN, Inf, and -Inf
+%   pixels are excluded from the extrema and arithmetic mean. Coordinates are
+%   one-based: x is the column and y is the row. No graphics are created.
+%
+% Inputs:
+%   temperatureC - Two-dimensional numeric temperature matrix in degrees
+%       Celsius. The values are converted to double before calculation.
+%   startXY - Numeric [x y] image coordinate at one ROI corner.
+%   endXY - Numeric [x y] image coordinate at the opposite corner. Corner
+%       order is irrelevant. Additional values are ignored; the first two
+%       values of each corner must be finite.
+%
+% Outputs:
+%   hotSpot - Scalar structure with x, y, and temperatureC for the finite ROI
+%       maximum.
+%   coldSpot - Scalar structure with x, y, and temperatureC for the finite ROI
+%       minimum. Ties select the first value in column-major order.
+%   meanReading - Scalar structure with x and y at the clamped upper-left ROI
+%       corner, inclusive width and height, mean temperatureC, and pixelCount.
+%       pixelCount counts only finite pixels, whereas width and height describe
+%       the entire clamped rectangle.
+%
+% Failure Behavior:
+%   Empty or nonmatrix temperature data, invalid corners, or an ROI with no
+%   finite pixels returns NaN point fields. meanReading contains NaN geometry
+%   and temperature and a pixelCount of zero.
+%
+% Example:
+%   T = [10 NaN 30; 40 50 60; 70 80 90];
+%   [hot, cold, avg] = ...
+%       flir_thermal.analysisRun.roiTemperatureMeanReading(T, [1 1], [2 2]);
+%   assert(hot.temperatureC == 50 && cold.temperatureC == 10)
+%   assert(avg.temperatureC == 100/3 && avg.pixelCount == 3)
+%
+% See also flir_thermal.analysisRun.pointTemperatureReading,
+%   flir_thermal.analysisRun.extremeTemperatureReadings
 
     values = double(temperatureC);
     hotSpot = emptyPointReading();

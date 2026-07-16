@@ -47,8 +47,7 @@ classdef LauncherProfilerTest < matlab.unittest.TestCase
 
             fig = labkit_launcher();
             drawnow;
-            h.invokeButton(fig, 'Profile Next App');
-            h.invokeButton(fig, 'Open Selected App');
+            h.invokeButton(fig, 'Profile Selected App');
             drawnow;
 
             outputRoot = fullfile(tempRoot, "artifacts", "profile", ...

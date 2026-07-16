@@ -1,35 +1,40 @@
 function varargout = runBusy(fig, message, workFcn, opts)
 %RUNBUSY Run synchronous GUI work while the whole app is busy.
 %
-% App-facing contract:
+% Usage:
 %   labkit.ui.runtime.runBusy(fig, "Writing outputs...", @() writeOutputs());
 %   result = labkit.ui.runtime.runBusy(fig, "Computing result...", @() compute());
+%   result = labkit.ui.runtime.runBusy(fig, message, workFcn, opts)
 %
 % Inputs:
-%   fig - owning uifigure or figure. Empty or invalid figures are accepted;
-%       the work callback still runs.
-%   message - short busy message appended to the figure title while work runs.
-%   workFcn - scalar function handle to run synchronously.
-%   opts - optional struct. freezeInteractions controls whether figure-level
-%       pointer, keyboard, click, motion, scroll, and graphics hit-testing are
-%       temporarily disabled. Default true.
+%   fig - Owning uifigure or figure. If it is empty, invalid, or already
+%       deleted, workFcn still runs without changing a window.
+%   message - Short status text appended to the figure title. Blank text is
+%       displayed as "Working".
+%   workFcn - Function handle called synchronously. Its outputs are returned
+%       unchanged.
+%   opts - Optional scalar struct described under Options.
 %
 % Outputs:
-%   varargout - outputs returned by workFcn. When no outputs are requested,
+%   varargout - Outputs returned by workFcn. When no outputs are requested,
 %       workFcn is called for side effects only.
 %
-% Behavior:
-%   The helper marks the app busy, sets the figure pointer to "watch", and
-%   appends a busy message to the window title. When freezeInteractions is true,
-%   it also clears app-level pointer, keyboard, click, motion, and scroll
-%   callbacks and turns graphics hit testing off where supported. It restores
-%   previous state after success or failure and rethrows callback errors.
+% Options:
+%   freezeInteractions - Logical scalar controlling temporary suppression of
+%       figure pointer, keyboard, click, motion, and scroll callbacks and
+%       graphics hit testing. Default: true.
 %
-% Notes:
-%   This helper is intended for synchronous callbacks that must block repeated
-%   user actions. It intentionally avoids transient modal progress dialogs.
-%   runBusy intentionally does not change control Enable states. App callbacks
-%   may update their own button enabled/disabled logic while the work runs.
+% Description:
+%   runBusy marks the figure busy, changes its pointer to "watch", appends the
+%   message to its title, and runs workFcn. All changed callbacks, hit-testing
+%   properties, appdata, title text, and pointer state are restored after either
+%   success or failure. Callback errors are rethrown. The function does not
+%   open a modal progress dialog and does not change any control's Enable
+%   property, so the app can continue to present its own enabled-state logic.
+%
+% Typical Call:
+%   result = labkit.ui.runtime.runBusy(fig, "Analyzing files...", ...
+%       @() analyzeFiles(files), struct("freezeInteractions", true));
 
     if nargin < 3
         error('labkit:ui:runBusy:InvalidInput', ...
@@ -134,9 +139,10 @@ function callbackState = clearFigureInteractionCallbacks(fig)
         if ~isprop(fig, name)
             continue;
         end
-        callbackState(end+1) = struct( ...
-            'property', name, ...
-            'value', fig.(name));
+        entry = struct();
+        entry.property = name;
+        entry.value = fig.(name);
+        callbackState(end+1) = entry;
         try
             fig.(name) = [];
         catch

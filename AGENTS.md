@@ -20,17 +20,18 @@ roadmaps:
 
 Read component docs only when relevant:
 
-- `docs/architecture.md` for package boundaries or entrypoint work
-- `docs/ui.md` for reusable GUI shell, components, or layout work
-- `docs/image.md` for image file IO, display normalization, resizing,
+- `docs/development/architecture.md` for package boundaries or entrypoint work
+- `docs/framework/README.md` for reusable GUI shell, components, or layout work
+- `docs/libraries/image/README.md` for image file IO, display normalization, resizing,
   filtering, enhancement primitives, or image facade work
-- `docs/thermal.md` for thermal image file parsing, raw-to-temperature
+- `docs/libraries/thermal/README.md` for thermal image file parsing, raw-to-temperature
   conversion, thermal rendering, or FLIR radiometric JPEG work
-- `docs/dta.md` for DTA API, parser, item, pulse, or session work
-- `docs/rhs.md` for RHS API, parser, channel metadata, indexing, or waveform window reads
-- `docs/biosignal.md` for biosignal recording, waveform processing, events, or wearable work
-- `docs/apps.md` for app entrypoints, app-owned workflow, or new app work
-- `docs/testing.md` for validation choices or test layout changes
+- `docs/libraries/dta/README.md` for DTA API, parser, item, pulse, or session work
+- `docs/libraries/rhs/README.md` for RHS API, parser, channel metadata, indexing, or waveform window reads
+- `docs/libraries/biosignal/README.md` for biosignal recording, waveform processing, events, or wearable work
+- `docs/apps/README.md` for app entrypoints and current user workflows
+- `docs/development/app-development.md` for new app or app-structure work
+- `docs/development/testing.md` for validation choices or test layout changes
 
 Read only the hot-path sections of `.agents/migration_guide.md` for app-runner
 migrations, debt burn-down planning, app `private/` debt, or future migration
@@ -48,15 +49,42 @@ debt for the touched area.
   and repository-owned LabKit code. A new third-party runtime dependency needs
   explicit user approval plus an architecture, deployment, and offline-use
   review; it must never arrive as an incidental implementation detail.
+- Rapid app development may temporarily use a MathWorks Toolbox capability
+  only when the owning app also ships a base-MATLAB implementation with
+  comparable user-visible behavior. Keep the Toolbox call statically visible,
+  declare the exact source/symbol/product/owner/fallback test/idempotency
+  test/parity test/replacement in
+  `tests/runner/labkitToolboxDebt.m`, and add the same debt ID to
+  `.agents/migration_guide.md`. The debt is retired only by deleting the
+  Toolbox branch after the repository-owned implementation replaces it; never
+  use dynamic invocation, reflection, or string dispatch to evade product scans.
+- When the repository-owned alternative affects numeric values, scientific
+  meaning, branching, exports, or downstream calculations, it must be
+  idempotent for repeated identical inputs: pure calculations return the same
+  app-consumed values, and stateful operations do not compound state or side
+  effects when the same operation is safely repeated. While a Toolbox reference
+  is available, test both implementations on representative synthetic cases and
+  compare the app-consumed outputs within an explained tolerance. Visual or
+  qualitative similarity alone is not replacement evidence.
 - Local private apps may live under ignored `private_apps/apps/` workspaces or
   `LABKIT_PRIVATE_APP_ROOTS`; keep their code, docs, tests, and release notes
   in their own private repositories. Public docs may describe only the generic
   private-app structure and constraints.
-- New app-facing UI work should use `labkit.ui.runtime.*`, `labkit.ui.layout.*`, `labkit.ui.control.*`, `labkit.ui.plot.*`, `labkit.ui.interaction.*`, and `labkit.ui.debug.*`; the older flat `labkit.ui.*` helper surface and retired `app/spec/view/tool/diag` UI package names have been removed.
+- New app-facing UI work uses `labkit.ui.runtime.launch/define`,
+  `labkit.ui.layout.*`, presenter models, injected services, and only the
+  documented advanced `labkit.ui.plot.*` or `labkit.ui.interaction.*` helpers.
+  Apps do not receive UI registries or use control setter/getter facades.
 - New app code must not call `labkit.io.*`, `labkit.data.*`, `labkit.analysis.*`, or `labkit.util.*`; use `labkit.dta.*`, `labkit.rhs.*`, `labkit.biosignal.*`, `labkit.image.*`, `labkit.thermal.*`, `labkit.ui.*`, or app-local helpers.
 - Do not reintroduce root-level legacy command wrappers, app-specific public helper packages, or public helper-dump packages such as `+labkit/+analysis`, `+data`, `+io`, or `+util`.
 - Do not convert struct models to MATLAB classes, rewrite all GUIs, replace separate app entry points with one launcher, or migrate code to another language without explicit approval.
-- Treat file line budgets as maintainability backstops, not extraction goals. Do not create or preserve tiny app helpers solely to lower a `run.m` line count; keep callback-local glue local when that makes workflow order clearer, and extract only cohesive app-owned contracts or reusable framework mechanics.
+- Treat file line budgets as maintainability backstops, not extraction goals.
+  MATLAB line budgets count nonblank, non-comment code lines; full-line help
+  text and block comments do not consume the budget, while a code line with an
+  inline comment still counts. Preserve the physical line count only in
+  diagnostics. Do not create or preserve tiny app helpers solely to lower a
+  `run.m` line count; keep callback-local glue local when that makes workflow
+  order clearer, and extract only cohesive app-owned contracts or reusable
+  framework mechanics.
 - Name functions for the specific action and object they own so callers can
   understand intent without opening the implementation. Avoid context-free
   names such as `normalize`, `process`, `handle`, or `manage` when a concrete
@@ -66,8 +94,8 @@ debt for the touched area.
 - Folder/path scalars must not be reshaped with `(:)`, because char paths become one element per character. Use `string(folder)` for one selected folder/path and reserve `paths(:)` for values already known to be string arrays or cell arrays of paths.
 - UI numeric control values must be sanitized to finite scalars before they are assigned into app state, step structs, or task structs. Do not write `step.amount = double(amount)` or similar directly from callback values; use a small scalar-normalization helper with a fallback.
 - User-visible UI text that also acts as a state enum, branch key, dropdown value, action label, or test contract must have one app-local source of truth, such as a `+userInterface/*Labels.m`, `+userInterface/*Choices.m`, or workflow-owned `*Items.m` helper. Do not repeat those literals in runners, view helpers, or tests; callers and tests should reference the helper. One-off section labels that are only displayed in `+userInterface/buildWorkbenchLayout.m` may stay inline.
-- Interactive image rectangles must use `labkit.ui.interaction.rectangleEditor`
-  or an interaction-runtime drag session. Direct `rectangle(...)` calls in apps
+- Interactive image rectangles must use a presenter-owned `rectangle` or
+  `regionSelection` interaction spec. Direct `rectangle(...)` calls in apps
   are only for non-pickable display/mirror overlays; they must disable hit
   testing so users are not presented with a rectangle that looks interactive
   but cannot be dragged.
@@ -98,6 +126,13 @@ the skill-specific decision sections needed for the current edit.
 
 Human-facing docs are for human users and maintainers. Keep `README.md` and `docs/*.md` readable, task-oriented, and free of agent-only workflow mandates, Codex-specific rules, git handoff instructions, or hidden governance process.
 
+Documentation sources are Markdown under `docs/`, navigation and catalog JSON,
+and public MATLAB help blocks. The tracked `site/` tree is generated only by
+`tools/docs/renderLabKitDocs.m`; never edit generated HTML, CSS, JavaScript, or
+search-index files directly. Regenerate and run the documentation consistency
+check whenever a source page, catalog entry, public help contract, or renderer
+changes.
+
 Agent-facing rules belong in the nearest relevant `AGENTS.md` file or repo-scoped skill. Sync documentation by contract impact, not by file count. Do not treat every code change as requiring README, human docs, scoped `AGENTS.md`, skills, and tests all at once.
 
 When behavior, package boundaries, validation strategy, or workflow rules change, update both:
@@ -110,7 +145,7 @@ Use this decision rule:
 - Internal refactors that preserve user-facing behavior and governance rules usually need source/tests only.
 - User-facing app behavior changes update the human app docs that advertise or explain that behavior.
 - Public facade or package-boundary changes update the relevant component docs and package guardrails.
-- Test layout, validation, fixture, or hygiene-policy changes update `docs/testing.md` and test agent rules when agent routing changes.
+- Test layout, validation, fixture, or hygiene-policy changes update `docs/development/testing.md` and test agent rules when agent routing changes.
 - Agent workflow or ownership-rule changes update the nearest scoped `AGENTS.md` or repo skill; update human docs only when the human-facing contract also changes.
 
 If a nontrivial change does not update human docs or scoped agent docs, say why in the handoff, for example: `Docs/AGENTS unchanged; behavior and governance contracts were preserved.`
@@ -121,7 +156,24 @@ Do not duplicate long policy text across human docs. Human docs may explain arch
 
 Every public library function under `+labkit/+ui`, `+labkit/+image`, `+labkit/+thermal`, `+labkit/+dta`, `+labkit/+rhs`, and `+labkit/+biosignal` must document its app-facing call contract immediately after the function declaration. Include inputs, outputs, options/spec fields, defaults, legal values, and examples where useful.
 
-Private and app-owned package helpers must include concise top-of-file implementation contracts: expected caller, input/output shapes, side effects, and non-obvious assumptions.
+Help sections titled `Example:` are executable contracts: they must be
+self-contained in a clean MATLAB session and covered by the documentation
+example runner. Use `Typical Call:` for a useful usage sketch that requires a
+user file, an existing app/session variable, or interactive input; do not label
+such a sketch as an example until the repository supplies executable setup.
+
+Detailed generated API reference covers all non-private `labkit.*` functions
+and only the app-owned functions explicitly declared in
+`docs/catalogs/api.json`. Cataloged scientific functions must be usable without
+the GUI and document syntax, units, assumptions, options, outputs, errors, a
+standalone example, and related APIs. Do not catalog `private/` helpers.
+
+Private and non-public app-owned package helpers must include concise top-of-file
+implementation contracts: expected caller, input/output shapes, side effects,
+and non-obvious assumptions. Cataloged public app APIs instead start with the
+function declaration followed immediately by their public MATLAB help block so
+`help package.function` displays the user contract rather than an internal
+caller note.
 
 ## Sensitive Sample Data
 
@@ -138,7 +190,7 @@ When using local lab files to reproduce a bug:
 
 Run relevant automated checks after executable MATLAB, test, fixture, package, or validation-rule changes. Use the smallest source-aligned checks during iteration and reserve broader changed-file or default non-GUI gates for coherent checkpoints, handoff, release work, or changes whose ownership is unclear.
 
-Use `docs/testing.md` as the canonical command matrix for build tasks, CI
+Use `docs/development/testing.md` as the canonical command matrix for build tasks, CI
 scope, fixture expectations, and GUI validation limits. Scoped
 `AGENTS.md` files should only route by ownership and should not duplicate the
 full task list.
@@ -163,7 +215,7 @@ it may reuse the public runner and shared guardrails. Use explicit public
 suites or guardrails only when the change requires them. A private workspace's
 `.labkit-accept-main-guardrails` sentinel expands public quality scans to its
 source files. When a nested private workspace with that sentinel has unpushed
-source, test, documentation, changelog, or version changes, run the relevant
+source, test, documentation, component-history, or version changes, run the relevant
 private tests and the public `buildtool changed` guardrail before commit or
 handoff, or report the exact blocker if MATLAB cannot run. The sentinel does
 not add the nested Git diff to public `changed` or `changedFast` path detection,
@@ -300,26 +352,20 @@ one type would hide a distinct behavior, test, documentation, or CI change.
 
 ## Release Workflow
 
-Use `docs/release.md` as the human-facing source of truth for version-number
+Use `docs/development/release.md` as the human-facing source of truth for version-number
 selection, release tag naming, and GitHub release note format.
 
-Use `CHANGELOG.md` as the project evolution map for users, maintainers, and
-agents. When a change bumps `labkit_launcher.m`, a `+labkit/**/version.m`
-facade, or an `apps/**/version.m` app metadata file, update `CHANGELOG.md` in
-the same change with the affected versions, what changed, why it matters,
-compatibility notes when relevant, optional direction notes, and evidence.
-When adding a newly versioned component, record its first version as an
-`introduced` event and preserve one continuous chain through current metadata.
-Organize entries by coherent user-facing or maintainer-facing evolution, not
-by raw tag rows, commit rows, or issue lists. Release tags are public anchors
-inside affected versions and evidence; commits are evidence. Every entry uses
-the schema-v1 `labkit-change` metadata block and required narrative sections
-under `Structured Change Records`. Use one stable Change ID on branches and
-main; do not add delivery-status sections such as Unreleased or Pending.
-Branch evidence may name checkpoint commits or a PR, then a later audit may
-add the mainline SHA without moving the record. Validate the file with
-`tools/release/parseLabKitChangelog.m`. Do not reduce entries to raw commit-log
-dumps.
+Keep project evolution with the documentation area that owns the affected
+behavior. When a change bumps `labkit_launcher.m`, a `+labkit/**/version.m`
+facade, or an `apps/**/version.m` app metadata file, update that component's
+human documentation and add one Markdown record under the relevant
+`docs/**/history/` directory in the same change. Use a stable Change ID,
+`labkit-change` metadata, compatibility impact, rationale, user/data impact,
+validation, evidence, and known follow-up. Cross-component changes are written
+once with every affected component in metadata; the documentation compiler
+shows that record on each related page. Current versions come from source
+metadata, not a duplicated lookup table. Do not introduce a root aggregate
+changelog or a separate release-history parser.
 
 For new releases, use `vX.Y.Z` tags, for example `v2.2.0`. Do not rename or
 delete already published historical tags only to normalize naming; preserve

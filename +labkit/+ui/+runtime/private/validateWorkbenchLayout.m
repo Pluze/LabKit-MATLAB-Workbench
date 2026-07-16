@@ -20,7 +20,7 @@ function validateWorkbenchLayout(layout)
     duplicate = firstDuplicate(ids);
     if strlength(duplicate) > 0
         error('labkit:ui:runtime:DuplicateId', ...
-            'Duplicate UI 5 layout id "%s".', char(duplicate));
+            'Duplicate declarative layout id "%s".', char(duplicate));
     end
     validateTreeShape(layout);
 end
@@ -160,7 +160,7 @@ function assertCommonLayoutNode(node)
             ~iscell(node.children) || ...
             ~(isempty(node.children) || isrow(node.children))
         error('labkit:ui:runtime:InvalidLayout', ...
-            'UI 5 layout nodes must be scalar structs with cell row children.');
+            'Declarative layout nodes must be scalar structs with cell row children.');
     end
 end
 

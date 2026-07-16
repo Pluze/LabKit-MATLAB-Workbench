@@ -30,10 +30,61 @@ function verify_batchImageCrop()
     checkRotatedCropKeepsRequestedSize();
     checkRotationBackgroundUsesWhiteFill();
     checkNewItemsDefaultToZeroPadding();
-    checkItemsForPathsDefersImageReads();
+    checkTasksForSourceIdsExcludeImagePixels();
     checkReadItemsAcceptsFilePanelCellPaths();
     checkDuplicateItemCreatesIndependentCropTask();
-    checkMergeChosenItemsPreservesDuplicateCropTasks();
+    checkV2ProjectPresentationAndScaleBarGeometry();
+end
+
+function checkV2ProjectPresentationAndScaleBarGeometry()
+    definition = batch_crop.definition();
+    assert(definition.contractVersion == 2, ...
+        'Batch crop definition should use the V2 runtime contract.');
+    project = definition.project.Create();
+    assert(definition.project.Version == 2 && ...
+        numel(definition.project.Migrations) == 1, ...
+        'Batch crop should migrate v1 pixel-owning projects to v2 tasks.');
+    assert(definition.project.Validate(project), ...
+        'Fresh batch crop projects should satisfy the app validator.');
+    item = batch_crop.appState.emptyItem();
+    item.path = "synthetic.png";
+    item.image = uint8(reshape(1:120, 10, 12));
+    item.centerXY = [6.5 5.5];
+    item.centerSet = true;
+    item.scaleCalibration = labkit.ui.interaction.scaleBarCalibration( ...
+        40, 10, "um", struct('defaultUnit', 'um', ...
+        'referenceLine', [2 2; 42 2]));
+    legacyProject = project;
+    legacyProject.inputs.items = item;
+    migrated = definition.project.Migrations{1}(legacyProject);
+    assert(~isfield(migrated.inputs.items, 'image') && ...
+        ~isfield(migrated.inputs.items, 'path') && ...
+        migrated.inputs.items.sourceId == "image1" && ...
+        migrated.inputs.sources(1).reference.originalPath == "synthetic.png", ...
+        'The v1 migration should replace embedded pixels and paths with a source id.');
+    task = rmfield(item, {'path', 'image'});
+    task.sourceId = "image1";
+    project.inputs.sources = struct("id", "image1", "required", true, ...
+        "role", "cropSource", "reference", "synthetic.png");
+    project.inputs.items = orderfields(task, batch_crop.appState.emptyTask());
+    session = definition.createSession(definition.project.Create());
+    session.selection.currentIndex = 1;
+    session.cache.images{1} = item.image;
+    state = struct("project", project, "session", session);
+    view = definition.present(state);
+    assert(isfield(view, 'interactions') && ...
+        isfield(view.interactions, 'cropCenter') && ...
+        view.interactions.cropCenter.Kind == "pointSlots" && ...
+        view.interactions.cropCenter.Event == "cropCenterEdited" && ...
+        view.interactions.cropCenter.Options.placeSelectedOnBackground, ...
+        'Batch crop should use a draggable center with one-click placement.');
+    assert(~contains(evalc('disp(state)'), 'matlab.ui'), ...
+        'Batch crop canonical state should contain no live UI handles.');
+    geometry = labkit.ui.interaction.scaleBarGeometry( ...
+        size(item.image), item.scaleCalibration, 0.1, "Bottom center", "White");
+    assert(size(geometry.line, 1) == 2 && ...
+        isequal(geometry.color, [1 1 1]) && geometry.barLength == 0.1, ...
+        'Scale-bar geometry should be deterministic and serializable.');
 end
 
 function checkCropCenterAvoidsInvalidRotatedMaskRegions()
@@ -332,20 +383,15 @@ function checkNewItemsDefaultToZeroPadding()
         'New batch-crop items should default to no repaired padding.');
 end
 
-function checkItemsForPathsDefersImageReads()
-    missingPath = fullfile(tempdir, 'labkit_missing_batch_crop_source.png');
-    if isfile(missingPath)
-        delete(missingPath);
-    end
-
-    items = batch_crop.appState.itemsForPaths({missingPath});
+function checkTasksForSourceIdsExcludeImagePixels()
+    items = batch_crop.appState.tasksForSourceIds("image1");
 
     assert(numel(items) == 1, ...
         'Batch crop path items should preserve one task per selected file.');
-    assert(items(1).path == string(missingPath), ...
-        'Batch crop path items should preserve the selected source path.');
-    assert(isempty(items(1).image), ...
-        'Batch crop file selection should defer image reads until preview or export needs pixels.');
+    assert(items(1).sourceId == "image1", ...
+        'Batch crop tasks should reference their source record by stable id.');
+    assert(~isfield(items, 'image') && ~isfield(items, 'path'), ...
+        'Durable crop tasks should not duplicate source paths or decoded pixels.');
     assert(~items(1).centerSet && all(isnan(items(1).centerXY)), ...
         'Deferred batch crop items should still require explicit crop-center confirmation.');
 end
@@ -393,34 +439,6 @@ function checkDuplicateItemCreatesIndependentCropTask()
     assert(duplicated.scaleCalibration.isCalibrated && ...
         duplicated.scaleCalibration.pixelsPerUnit == item.scaleCalibration.pixelsPerUnit, ...
         'Duplicated crop task should preserve source-image scale calibration.');
-end
-
-function checkMergeChosenItemsPreservesDuplicateCropTasks()
-    itemA = physicalItem("source_a.png", uint8(40 * ones(10, 12)), 4);
-    itemA.centerXY = [3, 4];
-    duplicateA = batch_crop.appState.duplicateItem(itemA);
-    duplicateA.centerXY = [8, 7];
-    duplicateA.centerSet = true;
-    duplicateA.scaleCalibration = labkit.ui.interaction.scaleBarCalibration(80, 10, "um", ...
-        struct('defaultUnit', 'um', 'referenceLine', [1 1; 81 1]));
-
-    loadedA = batch_crop.appState.emptyItem();
-    loadedA.path = "source_a.png";
-    loadedA.image = uint8(90 * ones(10, 12));
-    loadedB = batch_crop.appState.emptyItem();
-    loadedB.path = "source_b.png";
-    loadedB.image = uint8(120 * ones(8, 9));
-
-    merged = batch_crop.appState.mergeChosenItems([itemA; duplicateA], [loadedA; loadedB]);
-    assert(numel(merged) == 3, ...
-        'Choosing additional files should preserve duplicate crop tasks and append new images.');
-    assert(all([merged(1:2).path] == "source_a.png") && merged(3).path == "source_b.png", ...
-        'Merged crop tasks should keep existing duplicate-source tasks before new source items.');
-    assert(isequal(merged(1).centerXY, itemA.centerXY) && isequal(merged(2).centerXY, duplicateA.centerXY), ...
-        'Merged crop tasks should preserve each duplicate task crop center.');
-    assert(merged(1).scaleCalibration.pixelsPerUnit == 4 && ...
-        merged(2).scaleCalibration.pixelsPerUnit == 8, ...
-        'Merged duplicate crop tasks should keep independent per-task scale calibrations.');
 end
 
 function item = physicalItem(pathValue, imageData, pixelsPerUnit)

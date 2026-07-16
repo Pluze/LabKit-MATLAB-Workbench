@@ -10,6 +10,11 @@ classdef GuiLayoutCicTest < matlab.unittest.TestCase
 
             fixture = dtaFixturePath('chrono_chronopot_current_pulse_0p2ms.DTA');
             secondFixture = dtaFixturePath('chrono_chronopot_current_pulse_1ms.DTA');
+            thirdFolder = string(tempname);
+            mkdir(thirdFolder);
+            thirdCleanup = onCleanup(@() rmdir(thirdFolder, 's'));
+            thirdFixture = fullfile(thirdFolder, 'chrono_third_pulse.DTA');
+            copyfile(secondFixture, thirdFixture);
             fig = h.launchFigure('labkit_CIC_app', ...
                 'Gamry CIC GUI (Voltage Transient)');
             assertCicLayout(h, fig);
@@ -18,7 +23,7 @@ classdef GuiLayoutCicTest < matlab.unittest.TestCase
 
             driver.click('Add DTA files');
 
-            testCase.verifyEqual(char(driver.fileStatus('files')), '1 file(s) loaded');
+            testCase.verifyEqual(char(driver.fileStatus('files')), '1 file(s) registered');
             testCase.verifyTrue(any(contains(driver.fileListItems('files'), ...
                 'chrono_chronopot_current_pulse_0p2ms.DTA')), ...
                 'CIC workflow should list the loaded chrono fixture.');
@@ -42,19 +47,36 @@ classdef GuiLayoutCicTest < matlab.unittest.TestCase
                 'CIC workflow should draw the top plot.');
             testCase.verifyGreaterThan(numel(ui.controls.plotAxes.axesById.bottom.Children), 0, ...
                 'CIC workflow should draw the bottom plot.');
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            testCase.verifyEqual(runtime.definition.contractVersion, 2, ...
+                'CIC workflow must execute through Runtime V2.');
+            testCase.verifyFalse(isfield(runtime.state.project.inputs, 'items'), ...
+                'CIC durable project must not own decoded DTA items.');
+            testCase.verifyEqual(numel(runtime.state.session.cache.items), 1, ...
+                'CIC decoded DTA items should live in the session cache.');
             topAxes = ui.controls.plotAxes.axesById.top;
             bottomAxes = ui.controls.plotAxes.axesById.bottom;
             assertExtremaLabelsAreReadable(topAxes);
             topAxes.XLim = [-1 0];
             topAxes.YLim = [-0.01 0.01];
 
-            driver.chooseFiles('files', secondFixture);
+            driver.chooseFiles('files', [string(secondFixture); thirdFixture]);
             driver.click('Add DTA files');
 
-            testCase.verifyEqual(char(driver.fileStatus('files')), '2 file(s) loaded');
+            testCase.verifyEqual(char(driver.fileStatus('files')), '3 file(s) registered');
             testCase.verifyTrue(contains(driver.fileSelection('files'), ...
-                'chrono_chronopot_current_pulse_1ms.DTA'), ...
-                'CIC append should select the newly added chrono file.');
+                'chrono_third_pulse.DTA'), ...
+                'CIC batch append should select the last newly added chrono file.');
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            testCase.verifyEqual(numel(runtime.state.session.cache.items), 2, ...
+                ['CIC batch append should decode only the visible new file ' ...
+                'and defer the other selected file.']);
+            assertCicFileSelection(testCase, driver, fig, ...
+                'chrono_chronopot_current_pulse_0p2ms.DTA', 1);
+            assertCicFileSelection(testCase, driver, fig, ...
+                'chrono_chronopot_current_pulse_1ms.DTA', 2);
+            assertCicFileSelection(testCase, driver, fig, ...
+                'chrono_chronopot_current_pulse_0p2ms.DTA', 1);
             beforeAreaChange = driver.tableData('results');
             ui = driver.registry();
             ui.controls.area.valueHandle.Value = '2';
@@ -64,11 +86,44 @@ classdef GuiLayoutCicTest < matlab.unittest.TestCase
             testCase.verifyTrue(updated, h.waitDiagnostic(detail, ...
                 'operation', 'CIC whole-batch area recomputation'));
             afterAreaChange = driver.tableData('results');
-            for row = 1:2
+            for row = 1:3
                 testCase.verifyEqual(afterAreaChange{row, 7}, ...
                     0.5 * beforeAreaChange{row, 7}, 'RelTol', 1e-12, ...
                     'A shared CIC area change should recompute every loaded file.');
             end
+            outputFolder = string(tempname);
+            mkdir(outputFolder);
+            outputCleanup = onCleanup(@() rmdir(outputFolder, 's'));
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            runtime.request.outputChooser = @(~, ~, ~) deal( ...
+                'cic_results.csv', char(outputFolder));
+            setappdata(fig, 'labkitUiAppRuntime', runtime);
+            driver.click('Export results CSV');
+            testCase.verifyTrue(isfile(fullfile(outputFolder, 'cic_results.csv')));
+            resultManifestPath = fullfile(outputFolder, ...
+                'cic_results.labkit.json');
+            testCase.verifyTrue(isfile(resultManifestPath), ...
+                'CIC export should write a standard result manifest.');
+            resultManifest = jsondecode(fileread(resultManifestPath));
+            testCase.verifyEqual(string(resultManifest.format), "labkit.result");
+            testCase.verifyEqual(string(resultManifest.outputs.status), "success");
+
+            projectPath = fullfile(outputFolder, 'cic-project.mat');
+            labkit.ui.runtime.saveState(fig, projectPath);
+            saved = load(projectPath, 'labkitProject');
+            testCase.verifyEqual(saved.labkitProject.app.payloadVersion, 1);
+            testCase.verifyFalse(isfield( ...
+                saved.labkitProject.payload.inputs, 'items'), ...
+                'CIC project files must exclude decoded DTA items.');
+            driver.click('Clear all');
+            labkit.ui.runtime.loadState(fig, projectPath);
+            h.waitForUiIdle(fig);
+            testCase.verifyEqual(char(driver.fileStatus('files')), ...
+                '3 file(s) registered', ...
+                'CIC project reopen should rebuild decoded sources.');
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            testCase.verifyEqual(numel(runtime.state.session.cache.items), 1, ...
+                'CIC project reopen should decode only the first visible source.');
             testCase.verifyFalse(isequal(topAxes.XLim, [-1 0]), ...
                 'CIC append redraw should replace stale manual X limits.');
             testCase.verifyFalse(isequal(topAxes.YLim, [-0.01 0.01]), ...
@@ -84,16 +139,27 @@ classdef GuiLayoutCicTest < matlab.unittest.TestCase
                 'CIC clear-all should restore automatic X limits.');
             testCase.verifyEqual(topAxes.YLimMode, 'auto', ...
                 'CIC clear-all should restore automatic Y limits.');
+            clear outputCleanup;
+            clear thirdCleanup;
         end
     end
 end
 
 function tf = allRowsAreHalf(actual, previous)
-    tf = size(actual, 1) == 2 && size(previous, 1) == 2;
-    for row = 1:2
+    tf = size(actual, 1) == 3 && size(previous, 1) == 3;
+    for row = 1:3
         tf = tf && abs(actual{row, 7} - 0.5 * previous{row, 7}) <= ...
             1e-12 * max(1, abs(previous{row, 7}));
     end
+end
+
+function assertCicFileSelection(testCase, driver, fig, fileName, index)
+    driver.selectFile('files', fileName);
+    runtime = getappdata(fig, 'labkitUiAppRuntime');
+    testCase.verifyEqual(runtime.state.session.selection.currentIndex, index, ...
+        'Selecting an imported CIC file should update canonical selection.');
+    testCase.verifyTrue(contains(driver.fileSelection('files'), fileName), ...
+        'CIC should preserve the selected file after presentation.');
 end
 
 function assertCicLayout(h, fig)
@@ -106,16 +172,14 @@ function assertCicLayout(h, fig)
         'Show debug markers', 'Show window limits', 'Shade pulse windows', ...
         'Use measured Im integration for charge (recommended)'});
     h.assertTabTitles(fig, {'Files + Analysis', 'Summary + Results', 'Log'});
+    choices = cic.userInterface.analysisChoices();
     h.assertDropdownGroups(fig, [ ...
-        h.dropdownGroup({'Pt (-0.6 to 0.8 V)', ...
-        'PEDOT:PSS (-0.9 to 0.6 V)', 'Custom'}, 1), ...
-        h.dropdownGroup({'Metadata first, then auto', 'Metadata only', ...
-        'Auto from Im only'}, 1), ...
-        h.dropdownGroup({'Cathodic phase', 'Anodic phase', ...
-        'Total biphasic'}, 1), ...
-        h.dropdownGroup({'mC/cm^2', 'uC/cm^2'}, 1), ...
-        h.dropdownGroup({'Time (s)', 'Sample #'}, 2), ...
-        h.dropdownGroup({'VT: Vf vs time', 'IT: Im vs time'}, 2)]);
+        h.dropdownGroup(cellstr(choices.presets), 1), ...
+        h.dropdownGroup(cellstr(choices.pulseModes), 1), ...
+        h.dropdownGroup(cellstr(choices.cicModes), 1), ...
+        h.dropdownGroup(cellstr(choices.cicUnits), 1), ...
+        h.dropdownGroup(cellstr(choices.xAxes), 2), ...
+        h.dropdownGroup(cellstr(choices.yAxes), 2)]);
     h.assertDropdownCallbacksPresent(fig);
     labels = string(get(findall(fig, '-property', 'Text'), 'Text'));
     testLabel = "Delay after pulse end (us):";

@@ -12,7 +12,7 @@ primary evidence. Keep changes scoped to the slow path that the profile proves.
 
 1. Read `AGENTS.md`.
 2. Read the source or test files directly involved in the measured target.
-3. Read `docs/testing.md` for the current profiling command and validation
+3. Read `docs/development/testing.md` for the current profiling command and validation
    route.
 
 For package-boundary changes, also use `labkit-boundary-guard`. For validation
@@ -85,6 +85,6 @@ Keep measured scenarios narrow:
 3. Change the owning source only; do not move profiler helpers into public
    `+labkit` facades.
 4. Add or update focused tests for changed behavior or guardrails.
-5. Run validation using the changed-file route in `docs/testing.md`.
+5. Run validation using the changed-file route in `docs/development/testing.md`.
 6. Handoff the profile evidence, changed files, validation result, and any
    unverified interactive GUI behavior.

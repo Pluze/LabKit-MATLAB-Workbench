@@ -1,19 +1,41 @@
 function layout = group(id, titleText, children, varargin)
 %GROUP Create a grouped UI layout.
 %
-% App-facing contract:
-%   layout = labkit.ui.layout.group(id, title, children, opts...)
+% Usage:
+%   layout = labkit.ui.layout.group(id, titleText, children)
+%   layout = labkit.ui.layout.group(id, titleText, children, "layout", mode)
 %
 % Inputs:
-%   id - globally unique group id.
-%   titleText - optional group title. Use "" for untitled inline groups.
-%   children - cell row vector of semantic child layout nodes.
-%   opts - group options. layout may be "auto", "actions", "form",
-%       "inline", or "grid". The default "auto" uses action layout when all
-%       children are actions and form layout otherwise.
+%   id - Text scalar used to identify the group. It must be a valid MATLAB
+%       variable name and unique within the workbench.
+%   titleText - Optional group title. Use "" for an untitled group. Default:
+%       "".
+%   children - Nonempty cell row vector containing field, rangeField, panner,
+%       action, or nested group nodes. Default: {}. An empty group can be
+%       constructed but is rejected when the workbench is launched.
 %
-% Output:
-%   layout - scalar data-only UI layout struct.
+% Name-Value Arguments:
+%   layout - Group presentation mode: "auto", "actions", "form", "inline",
+%       or "grid". "auto" uses an action-button layout when every child is an
+%       action and a form layout otherwise. "actions" requires every child to
+%       be an action. The other modes currently use the standard form
+%       presentation. Default: "auto".
+%
+% Outputs:
+%   layout - Scalar group node with kind, id, props, children, and slots fields.
+%
+% Description:
+%   group keeps related controls together inside one section. It is useful for
+%   a row or block of commands and for a labeled subsection of fields. Concrete
+%   row heights, spacing, and column widths are selected by the workbench.
+%
+% Example:
+%   commands = labkit.ui.layout.group("commands", "Commands", { ...
+%       labkit.ui.layout.action("run", "Run", []), ...
+%       labkit.ui.layout.action("reset", "Reset", [])});
+%   assert(numel(commands.children) == 2)
+%
+% See also labkit.ui.layout.action, labkit.ui.layout.section
 
     if nargin < 2
         titleText = "";

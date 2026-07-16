@@ -1,19 +1,79 @@
-% App-owned image measurement package helper. Expected caller: owning app callbacks
-% and package tests. Inputs, outputs, and side effects are
-% documented with the helper function below.
 function fit = computeCurvatureFit(xPix, yPix, calibration, doDensify, denseN, fitPathX, fitPathY)
-%COMPUTECURVATUREFIT Fit image-curve curvature for labkit_CurvatureMeasurement_app.
+%COMPUTECURVATUREFIT Fit a circle and curvature to traced image points.
 %
-% Expected caller:
-%   labkit_CurvatureMeasurement_app callbacks and package tests.
+% Usage:
+%   fit = curvature.analysisRun.computeCurvatureFit(xPix, yPix)
+%   fit = curvature.analysisRun.computeCurvatureFit(xPix, yPix, calibration)
+%   fit = curvature.analysisRun.computeCurvatureFit(xPix, yPix, ...
+%       calibration, doDensify, denseN, fitPathX, fitPathY)
 %
-% Inputs/outputs:
-%   Pixel anchor vectors, a GUI-free scale calibration struct, and optional
-%   displayed fit-path vectors. Returns the same fit-result struct previously
-%   built inside the app file.
+% Description:
+%   Removes consecutive duplicate points, optionally resamples a traced path
+%   at equal arc-length intervals, obtains an algebraic Kasa circle estimate,
+%   and minimizes radial squared error with base-MATLAB fminsearch. The result
+%   includes pixel-space values and, when calibration is valid, physical radius,
+%   curvature, residuals, RMSE, and traced length. No GUI or file is required.
 %
-% Side effects:
-%   None. This helper performs GUI-free numeric fitting only.
+% Inputs:
+%   xPix - Numeric x-coordinate vector in image pixels (image columns). At
+%       least three unique consecutive point pairs must remain.
+%   yPix - Numeric y-coordinate vector in image pixels (image rows), with the
+%       same number of elements as xPix.
+%   calibration - Scale structure accepted by
+%       curvature.analysisRun.normalizeScaleCalibration. Important fields are
+%       referencePixels, referenceLength, unit, pixelsPerUnit, isCalibrated,
+%       and referenceLine. Empty or omitted input selects uncalibrated pixels.
+%   doDensify - Logical-like scalar controlling equal-arc-length resampling.
+%       Default: true.
+%   denseN - Number of resampled fitting points, rounded to an integer with a
+%       minimum of three. Default: 300.
+%   fitPathX - Optional displayed-path x-coordinate vector.
+%   fitPathY - Optional displayed-path y-coordinate vector. When fitPathX and
+%       fitPathY have equal length and at least three unique points, this path
+%       supplies curve length and, when doDensify is true, the circle fit.
+%       Otherwise the anchor vectors supply both calculations.
+%
+% Calculations:
+%   R_px is the fitted radius and kappa_per_px = 1/R_px. rmse_px is the root
+%   mean square radial residual of the points used by the optimizer. When
+%   calibration.isCalibrated is true, displayed lengths are divided by
+%   pixelsPerUnit and displayed curvature is the reciprocal physical radius.
+%   residuals_show always corresponds to the original unique anchor points.
+%
+% Outputs:
+%   fit - Scalar structure describing the successful fit.
+%
+% Fit Fields:
+%   ok, message - true and empty text after a successful calculation.
+%   xc_px, yc_px, R_px - Circle center and radius in pixels.
+%   kappa_per_px, rmse_px - Pixel curvature and radial RMSE.
+%   R_show, kappa_show, rmse_show - Values in unitLen/unitK when calibrated,
+%       otherwise the corresponding pixel values.
+%   unitLen, unitK - Length and curvature units, for example "um" and
+%       "1/um", or "px" and "1/px" without calibration.
+%   residuals_show - Anchor-point radial residual column vector in unitLen.
+%   xPix, yPix - Unique anchor coordinates used for reported residuals.
+%   xFit, yFit - Points passed to the circle optimizer.
+%   curveLength_px, curveLength_show, curveLengthUnit, curvePointCount -
+%       Polyline length result for the accepted fit path.
+%   referencePx, referenceLength, scaleUnit, px_per_unit,
+%       usePhysicalScale - Effective scale metadata.
+%
+% Errors:
+%   labkit_CurvatureMeasurement_app:NotEnoughPoints - Fewer than three unique
+%       anchor points remain.
+%   labkit_CurvatureMeasurement_app:InvalidFit - Optimization returns a
+%       nonfinite or nonpositive radius.
+%
+% Example:
+%   theta = (0:11).' * (2*pi/12);
+%   x = 30 + 10*cos(theta);
+%   y = 40 + 10*sin(theta);
+%   fit = curvature.analysisRun.computeCurvatureFit(x, y, [], false);
+%   assert(fit.ok && abs(fit.R_px - 10) < 1e-3)
+%
+% See also curvature.analysisRun.computeCurveLength,
+%   curvature.analysisRun.normalizeScaleCalibration
 
     fit = curvature.appState.emptyFitResult();
     xPix = xPix(:);

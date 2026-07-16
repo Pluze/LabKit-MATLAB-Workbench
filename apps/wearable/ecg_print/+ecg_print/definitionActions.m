@@ -1,286 +1,289 @@
-% App-owned action table for ECG Print. Expected caller is
-% ecg_print.definition. Output maps semantic action ids to handlers used by
-% labkit.ui.runtime.run. Handlers own recording import, analysis, exports, and
-% debug sample setup.
+% App-owned Runtime V2 actions for ECG Print. Handlers own source parsing,
+% channel/analysis transitions, and result exports without control reads,
+% figure callback state, UI-axis access, or startup plumbing.
 function actions = definitionActions()
     actions = struct( ...
-        "startup", @onStartup, ...
         "recordingChosen", @onRecordingChosen, ...
-        "clearRecording", @onClearRecording, ...
         "previewHeader", @onPreviewHeader, ...
         "importOptionChanged", @onImportOptionChanged, ...
         "refreshImport", @onRefreshImport, ...
         "channelChanged", @onChannelChanged, ...
         "analyze", @onAnalyze, ...
         "exportSegments", @onExportSegments, ...
-        "exportWaveform", @onExportWaveform, ...
-        "refreshPlots", @onRefreshOnly);
+        "exportWaveform", @onExportWaveform);
 end
 
-function state = onStartup(state, ~, services)
-    debugLog = services.debug;
-    if ~isDebugEnabled(debugLog)
+function state = onRecordingChosen(state, event, services)
+    filepath = firstEventPath(event, services);
+    if strlength(filepath) == 0
+        state = services.workflow.log(state, "Recording selection cancelled.");
         return;
     end
-    debugLog.trace('ECG print debug trace enabled.');
-    try
-        pack = ecg_print.debug.writeSamplePack(debugLog);
-        addLog(services, sprintf('Debug sample files: %s', char(pack.sampleFolder)));
-        addLog(services, sprintf('Debug output folder: %s', char(pack.outputFolder)));
-    catch ME
-        debugLog.reportException('ecgPrint', 'Debug sample setup failed', ME);
-        addLog(services, sprintf('Debug sample setup failed: %s', ME.message));
-    end
-end
-
-function state = onRecordingChosen(state, payload, services)
-    paths = labkit.ui.control.filePaths(payload.event.addedFiles);
-    if isempty(paths)
-        addLog(services, 'Recording selection cancelled.');
-        return;
-    end
-
-    state.filepath = paths(1);
-    state.fileStatus = string(state.filepath);
-    state = clearParsedRecording(state);
-    state = updateFilePreview(state, services);
-    state = refreshImportParsing(state, false, services);
-end
-
-function state = onClearRecording(state, ~, services)
-    state = ecg_print.appLifecycle.createInitialState();
-    labkit.ui.control.setValue(services.ui, "roiStart", 0);
-    labkit.ui.control.setValue(services.ui, "roiEnd", 0);
-    addLog(services, 'Cleared recording.');
-end
-
-function state = onRefreshImport(state, ~, services)
-    state = refreshImportParsing(state, true, services);
-end
-
-function state = refreshImportParsing(state, showAlertOnFailure, services)
-    if strlength(state.filepath) == 0
-        if showAlertOnFailure
-            showError(services, 'No recording selected', ...
-                'Open a recording before parsing.');
-        else
-            state.importStatus = "Open a recording before parsing.";
-        end
-        return;
-    end
-
-    selectedChannel = "";
-    ddChannel = services.ui.controls.channel.valueHandle;
-    if ~isempty(ddChannel.Items) && ~strcmp(ddChannel.Value, '(none)')
-        selectedChannel = string(ddChannel.Value);
-    end
-
-    importOpts = ecg_print.sourceFiles.importOptions( ...
-        services.ui.controls.fallbackFs.valueHandle.Value, ...
-        services.ui.controls.headerLine.valueHandle.Value, ...
-        services.ui.controls.hasHeader.valueHandle.Value, ...
-        services.ui.controls.timeColumn.valueHandle.Value, ...
-        services.ui.controls.timeUnit.valueHandle.Value, ...
-        services.ui.controls.signalColumns.valueHandle.Value);
-    [recording, status] = labkit.biosignal.readRecording( ...
-        char(state.filepath), importOpts);
-    if ~status.ok
-        state = clearParsedRecording(state);
-        state.importStatus = char("Parse failed. Inspect header/settings, then refresh: " + status.message);
-        if showAlertOnFailure
-            showError(services, 'Could not parse recording', status.message);
-        else
-            addLog(services, sprintf('Automatic parse failed: %s', ...
-                status.message));
-        end
-        return;
-    end
-
-    state.recording = recording;
-    channels = labkit.biosignal.listChannels(recording);
-    if isempty(channels)
-        state = clearParsedRecording(state);
-        state.importStatus = 'Parse failed: no numeric signal channels were found.';
-        if showAlertOnFailure
-            showError(services, 'Could not parse recording', ...
-                'No numeric signal channels were found.');
-        end
-        return;
-    end
-    state.channelItems = channels;
-    if any(strcmp(channels, selectedChannel))
-        state.selectedChannel = selectedChannel;
-    else
-        state.selectedChannel = string(channels{1});
-    end
-    state = setCurrentChannel(state, state.selectedChannel, services);
-    state.importStatus = ecg_print.userInterface.importStatusText(recording, ...
-        numel(channels));
-    addLog(services, sprintf('Parsed %d channel(s) from %s', ...
-        numel(channels), char(state.filepath)));
+    state.project.inputs.source = services.project.sourceRecord( ...
+        "recording", "biosignalRecording", filepath, true);
+    state.session.cache.filepath = filepath;
+    state.session.cache.filePreview = ...
+        ecg_print.sourceFiles.previewFileHeader(char(filepath), 18);
+    state = parseRecording(state, false, services);
 end
 
 function state = onPreviewHeader(state, ~, services)
-    state = updateFilePreview(state, services);
-end
-
-function state = updateFilePreview(state, services)
-    if strlength(state.filepath) == 0
-        state.filePreview = {'Open a CSV/text file, then use Preview file header.'};
+    filepath = state.session.cache.filepath;
+    if strlength(filepath) == 0
+        state.session.cache.filePreview = ...
+            {'Open a CSV/text file, then use Preview file header.'};
         return;
     end
-    state.filePreview = ecg_print.sourceFiles.previewFileHeader( ...
-        char(state.filepath), 18);
-    addLog(services, sprintf('Previewed file header: %s', ...
-        char(state.filepath)));
+    state.session.cache.filePreview = ...
+        ecg_print.sourceFiles.previewFileHeader(char(filepath), 18);
+    state = services.workflow.log(state, ...
+        "Previewed file header: " + filepath);
 end
 
 function state = onImportOptionChanged(state, ~, ~)
-    if strlength(state.filepath) > 0
-        state.importStatus = 'Import settings changed. Click Parse / refresh file.';
+    state = clearAnalysis(state);
+    if ~isempty(state.project.inputs.source)
+        state.session.workflow.importStatus = ...
+            "Import settings changed. Click Parse / refresh file.";
     end
 end
 
-function state = clearParsedRecording(state)
-    state.recording = [];
-    state.signal = [];
-    state.workingSignal = [];
-    state.filteredSignal = [];
-    state.events = [];
-    state.segments = [];
-    state.template = [];
-    state.measurements = [];
-    state.channelItems = {'(none)'};
-    state.selectedChannel = "(none)";
+function state = onRefreshImport(state, ~, services)
+    state = parseRecording(state, true, services);
 end
 
-function state = onChannelChanged(state, ~, services)
-    channelName = services.ui.controls.channel.valueHandle.Value;
-    if isempty(state.recording) || strcmp(channelName, '(none)')
+function state = parseRecording(state, showAlert, services)
+    filepath = state.session.cache.filepath;
+    if strlength(filepath) == 0
+        if showAlert
+            services.dialogs.alert( ...
+                "Open a recording before parsing.", "No recording selected");
+        else
+            state.session.workflow.importStatus = ...
+                "Open a recording before parsing.";
+        end
         return;
     end
-    state = setCurrentChannel(state, channelName, services);
+    try
+        [cache, importStatus] = ecg_print.sourceFiles.loadRecording( ...
+            filepath, state.project.parameters, ...
+            state.project.parameters.channel);
+        cache.filePreview = state.session.cache.filePreview;
+        state.session.cache = cache;
+        state.session.workflow.importStatus = importStatus;
+        state.project.parameters.channel = string(cache.signal.displayName);
+        state.project.parameters.roiStart = 0;
+        state.project.parameters.roiEnd = max(cache.signal.time);
+        state.project.results.lastAnalysis = struct();
+        state.project.results.lastSegmentExport = [];
+        state.project.results.lastWaveformExport = [];
+        state = services.workflow.log(state, sprintf( ...
+            "Parsed %d channel(s) from %s", ...
+            numel(cache.channelItems), filepath));
+    catch ME
+        services.diagnostics.report("Recording parse failed", ME);
+        state = clearDecodedRecording(state);
+        state.session.workflow.importStatus = ...
+            "Parse failed. Inspect header/settings, then refresh: " + ME.message;
+        state = services.workflow.log(state, ...
+            "Recording parse failed: " + ME.message);
+        if showAlert
+            services.dialogs.alert(ME.message, "Could not parse recording");
+        end
+    end
 end
 
-function state = setCurrentChannel(state, channelName, services)
-    state.selectedChannel = string(channelName);
-    state.signal = labkit.biosignal.getChannel(state.recording, channelName);
-    state.workingSignal = state.signal;
-    state.filteredSignal = [];
-    state.events = [];
-    state.segments = [];
-    state.template = [];
-    state.measurements = [];
-    if ~isempty(state.signal.time)
-        labkit.ui.control.setValue(services.ui, "roiStart", 0);
-        labkit.ui.control.setValue(services.ui, "roiEnd", max(state.signal.time));
+function state = onChannelChanged(state, event, services)
+    channel = string(event.value);
+    if isempty(state.session.cache.recording) || channel == "(none)"
+        return;
     end
+    try
+        signal = labkit.biosignal.getChannel( ...
+            state.session.cache.recording, channel);
+    catch ME
+        services.diagnostics.report("Channel selection failed", ME);
+        services.dialogs.alert(ME.message, "Channel selection failed");
+        return;
+    end
+    state.project.parameters.channel = channel;
+    state.project.parameters.roiStart = 0;
+    state.project.parameters.roiEnd = max(signal.time);
+    state.session.cache.signal = signal;
+    state.session.cache.workingSignal = signal;
+    state = clearAnalysis(state);
+    state = services.workflow.log(state, "Selected channel: " + channel);
 end
 
 function state = onAnalyze(state, ~, services)
-    if isempty(state.signal)
-        showError(services, 'No channel selected', ...
-            'Open a recording and select a channel first.');
+    if isempty(state.session.cache.signal)
+        services.dialogs.alert( ...
+            "Open a recording and select a channel first.", ...
+            "No channel selected");
         return;
     end
-
-    ui = services.ui;
+    state.project.parameters = sanitizeAnalysisParameters( ...
+        state.project.parameters, state.session.cache.signal.fs);
     try
-        timeRange = [ui.controls.roiStart.valueHandle.Value ...
-            ui.controls.roiEnd.valueHandle.Value];
-        highCut = min(ui.controls.highCut.valueHandle.Value, ...
-            max(ui.controls.lowCut.valueHandle.Value + eps, ...
-            0.45 * state.signal.fs));
-        filterSpec = struct('type', 'bandpass', 'cutoffHz', ...
-            [ui.controls.lowCut.valueHandle.Value highCut]);
-        fullFiltered = labkit.biosignal.filterSignal(state.signal, filterSpec);
-        if timeRange(2) > timeRange(1)
-            state.workingSignal = labkit.biosignal.cropSignal( ...
-                state.signal, timeRange);
-            state.filteredSignal = labkit.biosignal.cropSignal( ...
-                fullFiltered, timeRange);
-        else
-            state.workingSignal = state.signal;
-            state.filteredSignal = fullFiltered;
-        end
-        peakOpts = struct('polarity', 'auto', ...
-            'method', ecg_print.analysisRun.peakMethodValue( ...
-            ui.controls.peakMethod.valueHandle.Value), ...
-            'minDistanceSec', ui.controls.peakDistance.valueHandle.Value, ...
-            'thresholdStd', 2.8);
-        state.events = labkit.biosignal.detectEcgPeaks( ...
-            state.filteredSignal, peakOpts);
-        halfWin = ui.controls.segmentWindow.valueHandle.Value;
-        state.segments = labkit.biosignal.segmentByEvents( ...
-            state.filteredSignal, state.events, [-halfWin halfWin]);
-        state.template = labkit.biosignal.buildTemplate( ...
-            state.segments, struct('topN', ...
-            ui.controls.templateTopN.valueHandle.Value));
-        state.measurements = labkit.biosignal.measureSegments( ...
-            state.segments, state.template);
-
-        addLog(services, sprintf(['Filtered channel, then analyzed ROI ' ...
-            'with %s: %d peaks, %d valid segments.'], ...
-            ui.controls.peakMethod.valueHandle.Value, ...
-            numel(state.events.index), size(state.segments.values, 2)));
+        state.session.cache = ecg_print.analysisRun.analyzeSignal( ...
+            state.session.cache, state.project.parameters);
     catch ME
-        showException(services, 'Analysis failed', ME);
+        services.diagnostics.report("Analysis failed", ME);
+        services.dialogs.alert(ME.message, "Analysis failed");
+        state = services.workflow.log(state, "Analysis failed: " + ME.message);
+        return;
     end
+    state.project.results.lastAnalysis = analysisRecord(state);
+    state.project.results.lastSegmentExport = [];
+    state.project.results.lastWaveformExport = [];
+    state = services.workflow.log(state, sprintf( ...
+        "Analyzed ROI with %s: %d peaks, %d valid segments.", ...
+        state.project.parameters.peakMethod, ...
+        numel(state.session.cache.events.index), ...
+        size(state.session.cache.segments.values, 2)));
 end
 
 function state = onExportSegments(state, ~, services)
-    if isempty(state.measurements) || isempty(state.measurements.perSegment)
-        showError(services, 'No segment SNR', ...
-            'Analyze a signal before exporting segment SNR.');
+    measurements = state.session.cache.measurements;
+    if isempty(measurements) || isempty(measurements.perSegment)
+        services.dialogs.alert( ...
+            "Analyze a signal before exporting segment SNR.", ...
+            "No segment SNR");
         return;
     end
-    [out, cancelled] = labkit.ui.runtime.promptOutputFile( ...
-        'ecg_segment_snr.csv', 'Export segment SNR CSV', ...
-        'ecg_segment_snr.csv');
+    filename = "ecg_segment_snr.csv";
+    [out, cancelled] = services.dialogs.outputFile( ...
+        '*.csv', 'Export segment SNR CSV', filename);
     if cancelled
-        addLog(services, 'Segment SNR export cancelled.');
+        state = services.workflow.log(state, "Segment SNR export cancelled.");
         return;
     end
-    writetable(ecg_print.resultFiles.analysisTable(state.measurements.perSegment, ...
-        services.ui.controls.smoothBeats.valueHandle.Value), out);
-    addLog(services, sprintf('Exported segment SNR CSV: %s', char(out)));
+    analysis = ecg_print.resultFiles.analysisTable( ...
+        measurements.perSegment, state.project.parameters.smoothBeats);
+    writetable(analysis, out);
+    [manifestPath, ~] = writeManifest(state, services, out, ...
+        "ecgSegmentSnr", "text/csv", "ecg_segment_snr.labkit.json");
+    state.project.results.lastSegmentExport = struct( ...
+        "csvPath", string(out), "manifestPath", string(manifestPath));
+    state = services.workflow.log(state, ...
+        "Exported segment SNR CSV: " + string(out));
 end
 
 function state = onExportWaveform(state, ~, services)
-    [out, cancelled] = labkit.ui.runtime.promptOutputFile( ...
-        'ecg_waveform.png', 'Export waveform PNG', 'ecg_waveform.png');
-    if cancelled
-        addLog(services, 'Waveform export cancelled.');
+    request = ecg_print.userInterface.waveformPlotRequest( ...
+        state.session.cache.workingSignal, ...
+        state.session.cache.filteredSignal, state.session.cache.events);
+    if ~request.ok
+        services.dialogs.alert( ...
+            "Open a recording before exporting a waveform.", ...
+            "No waveform");
         return;
     end
-    exportgraphics(services.ui.controls.previewAxes.axesById.wave, out, ...
-        'Resolution', 300);
-    addLog(services, sprintf('Exported waveform PNG: %s', char(out)));
-end
-
-function state = onRefreshOnly(state, ~, ~)
-end
-
-function showError(services, titleText, message)
-    labkit.ui.runtime.showAlert(services.figure, char(message), titleText);
-    addLog(services, sprintf('%s: %s', titleText, message));
-end
-
-function showException(services, titleText, exception)
-    if isDebugEnabled(services.debug)
-        services.debug.reportException('ecgPrint', titleText, exception);
+    filename = "ecg_waveform.png";
+    [out, cancelled] = services.dialogs.outputFile( ...
+        '*.png', 'Export waveform PNG', filename);
+    if cancelled
+        state = services.workflow.log(state, "Waveform export cancelled.");
+        return;
     end
-    showError(services, titleText, exception.message);
+    ecg_print.resultFiles.writeWaveformPng(request, out);
+    [manifestPath, ~] = writeManifest(state, services, out, ...
+        "ecgWaveform", "image/png", "ecg_waveform.labkit.json");
+    state.project.results.lastWaveformExport = struct( ...
+        "pngPath", string(out), "manifestPath", string(manifestPath));
+    state = services.workflow.log(state, ...
+        "Exported waveform PNG: " + string(out));
 end
 
-function addLog(services, message)
-    labkit.ui.control.appendLog(services.ui, 'appLog', message);
-    if isDebugEnabled(services.debug)
-        services.debug.append(message);
+function record = analysisRecord(state)
+    cache = state.session.cache;
+    perSegment = table();
+    summary = struct();
+    if ~isempty(cache.measurements)
+        perSegment = cache.measurements.perSegment;
+        summary = cache.measurements.summary;
     end
+    record = struct( ...
+        "channel", state.project.parameters.channel, ...
+        "eventCount", numel(cache.events.index), ...
+        "segmentCount", size(cache.segments.values, 2), ...
+        "summary", summary, "perSegment", perSegment);
 end
 
-function tf = isDebugEnabled(debugLog)
-    tf = isstruct(debugLog) && isfield(debugLog, 'enabled') && ...
-        logical(debugLog.enabled);
+function [manifestPath, report] = writeManifest( ...
+        state, services, outputPath, id, mediaType, manifestName)
+    [folder, name, extension] = fileparts(outputPath);
+    output = services.results.output(id, "primary", ...
+        string(name) + string(extension), mediaType);
+    summary = struct();
+    if ~isempty(fieldnames(state.project.results.lastAnalysis))
+        summary = rmfield(state.project.results.lastAnalysis, "perSegment");
+    end
+    spec = struct( ...
+        "Outputs", output, "Inputs", state.project.inputs.source, ...
+        "Parameters", state.project.parameters, "Summary", summary, ...
+        "ManifestName", manifestName);
+    [manifestPath, report] = services.results.writeManifest(folder, spec);
+end
+
+function state = clearAnalysis(state)
+    state.session.cache.filteredSignal = [];
+    state.session.cache.events = [];
+    state.session.cache.segments = [];
+    state.session.cache.template = [];
+    state.session.cache.measurements = [];
+    if ~isempty(state.session.cache.signal)
+        state.session.cache.workingSignal = state.session.cache.signal;
+    end
+    state.project.results.lastAnalysis = struct();
+    state.project.results.lastSegmentExport = [];
+    state.project.results.lastWaveformExport = [];
+end
+
+function state = clearDecodedRecording(state)
+    filepath = state.session.cache.filepath;
+    preview = state.session.cache.filePreview;
+    project = ecg_print.appLifecycle.createProject();
+    empty = ecg_print.appLifecycle.createSession(project);
+    state.session.cache = empty.cache;
+    state.session.cache.filepath = filepath;
+    state.session.cache.filePreview = preview;
+    state.project.parameters.channel = "(none)";
+    state = clearAnalysis(state);
+end
+
+function parameters = sanitizeAnalysisParameters(parameters, sampleRate)
+    parameters.roiStart = finiteNonnegative(parameters.roiStart, 0);
+    parameters.roiEnd = finiteNonnegative(parameters.roiEnd, 0);
+    parameters.lowCut = finiteNonnegative(parameters.lowCut, 0.5);
+    parameters.highCut = finiteNonnegative(parameters.highCut, 40);
+    parameters.highCut = min(parameters.highCut, ...
+        max(parameters.lowCut + eps, 0.45 * sampleRate));
+    parameters.peakDistance = max(eps, ...
+        finiteNonnegative(parameters.peakDistance, 0.28));
+    parameters.segmentWindow = max(eps, ...
+        finiteNonnegative(parameters.segmentWindow, 0.7));
+    parameters.templateTopN = max(1, round( ...
+        finiteNonnegative(parameters.templateTopN, 30)));
+    parameters.smoothBeats = max(1, round( ...
+        finiteNonnegative(parameters.smoothBeats, 15)));
+end
+
+function value = finiteNonnegative(value, fallback)
+    value = double(value);
+    if isempty(value) || ~isscalar(value) || ~isfinite(value)
+        value = fallback;
+    end
+    value = max(0, value);
+end
+
+function filepath = firstEventPath(event, services)
+    paths = services.events.paths(event, "addedFiles");
+    if isempty(paths)
+        paths = services.events.paths(event, "files");
+    end
+    filepath = "";
+    if ~isempty(paths)
+        filepath = paths(1);
+    end
 end

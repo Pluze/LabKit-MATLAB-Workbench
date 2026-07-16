@@ -47,10 +47,11 @@ classdef AppPackageStructureGuardrailTest < matlab.unittest.TestCase
                     "Task lifecycle helper should expose a deterministic fingerprint: " + expected(k));
             end
 
-            docs = string(fileread(fullfile(root, "docs", "apps.md")));
+            docs = string(fileread(fullfile(root, "docs", "development", ...
+                "app-development.md")));
             appRules = string(fileread(fullfile(root, "apps", "AGENTS.md")));
             testCase.verifyTrue(contains(docs, "Task Lifecycle"), ...
-                "docs/apps.md should document the app-owned task lifecycle boundary.");
+                "docs/development/app-development.md should document the app-owned task lifecycle boundary.");
             testCase.verifyTrue(contains(appRules, "immutable") && ...
                 contains(appRules, "fingerprints"), ...
                 "apps/AGENTS.md should preserve the task snapshot/fingerprint rule.");
@@ -140,9 +141,10 @@ function assertCanonicalAppPackageStructure(testCase, root, appRelDir, packageNa
         ['@' packageName '.userInterface.buildWorkbenchLayout']);
     testCase.verifyTrue(usesBuildLayoutCall, ...
         [appLabel ' should call its canonical UI layout builder.']);
-    testCase.verifyTrue(contains(orchestrationSource, 'labkit.ui.runtime.run(') && ...
-        contains(orchestrationSource, [packageName '.definition()']), ...
-        [appLabel ' definitions should launch through labkit.ui.runtime.run.']);
+    usesLaunch = contains(orchestrationSource, 'labkit.ui.runtime.launch(') && ...
+        contains(orchestrationSource, ['@' packageName '.definition']);
+    testCase.verifyTrue(usesLaunch, ...
+        [appLabel ' entrypoints should use the standard LabKit launch facade.']);
 
     buildLayoutSource = fileread(buildLayoutFile);
     testCase.verifyTrue(contains(buildLayoutSource, 'labkit.ui.layout.workbench'), ...
@@ -167,9 +169,11 @@ end
 function assertWorkflowFirstPackageShape(testCase, root, packageDir)
     requiredFiles = [
         string(fullfile(packageDir, 'definitionActions.m'))
-        string(fullfile(packageDir, '+appLifecycle', 'createInitialState.m'))
+        string(fullfile(packageDir, '+appLifecycle', 'createProject.m'))
+        string(fullfile(packageDir, '+appLifecycle', 'createSession.m'))
+        string(fullfile(packageDir, '+appLifecycle', 'validateProject.m'))
         string(fullfile(packageDir, '+userInterface', 'buildWorkbenchLayout.m'))
-        string(fullfile(packageDir, '+userInterface', 'updateWorkbenchFromState.m'))];
+        string(fullfile(packageDir, '+userInterface', 'presentWorkbench.m'))];
     for k = 1:numel(requiredFiles)
         testCase.verifyTrue(isfile(requiredFiles(k)), ...
             ['Workflow-first app packages should include ' ...

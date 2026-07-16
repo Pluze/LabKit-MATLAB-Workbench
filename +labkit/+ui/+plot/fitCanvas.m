@@ -1,23 +1,36 @@
 function [applied, frame] = fitCanvas(ax, width, height, varargin)
-%FITCANVAS Fit one previewArea axes into a fixed pixel canvas frame.
+%FITCANVAS Fit a preview axes into a fixed-aspect pixel frame.
 %
-% App-facing contract:
-%   [applied, frame] = labkit.ui.plot.fitCanvas(ax, width, height, ...
-%       "margin", marginPx, "maxScale", maxScale)
+% Usage:
+%   [applied, frame] = labkit.ui.plot.fitCanvas(ax, width, height)
+%   [applied, frame] = labkit.ui.plot.fitCanvas(..., Name=Value)
 %
 % Inputs:
-%   ax - target UI axes hosted by a LabKit previewArea grid.
-%   width, height - desired canvas size in pixels.
-%   margin - optional parent-grid margin in pixels, default 24.
-%   maxScale - optional maximum preview scale, default 1.
+%   ax - UI axes whose parent is a uigridlayout created for a LabKit preview.
+%   width - Positive finite source-canvas width in pixels.
+%   height - Positive finite source-canvas height in pixels.
+%
+% Name-Value Arguments:
+%   margin - Preferred empty margin around the frame in pixels. Default: 24.
+%   maxScale - Largest allowed ratio between displayed and source dimensions.
+%       Default: 1, so the helper does not enlarge the source canvas.
 %
 % Outputs:
-%   applied - logical true when the axes was placed in a centered grid frame.
-%   frame - struct with width, height, ratio, position, scale, and
-%       pixelPosition fields. Empty struct when no frame could be applied.
+%   applied - true when the grid and axes positions were updated; false when
+%       the axes, parent grid, dimensions, or available space were unsuitable.
+%   frame - Scalar struct with width, height, ratio, position, scale, and
+%       pixelPosition fields. It is an empty struct when applied is false.
 %
-% Example:
+% Description:
+%   fitCanvas centers the axes in the middle row and column of a three-by-three
+%   flexible grid and preserves the requested aspect ratio. It returns false
+%   instead of throwing when the host has not been laid out yet or is smaller
+%   than the minimum usable preview area.
+%
+% Typical Call:
 %   [ok, frame] = labkit.ui.plot.fitCanvas(ax, 720, 540);
+%
+% See also labkit.ui.layout.previewArea
 
     opts = parseOptions(varargin);
     frame = struct();

@@ -1,235 +1,261 @@
-% App-owned action table for VT Resistance. Expected caller is
-% vt_resistance.definition. Output maps semantic action ids to handlers used
-% by labkit.ui.runtime.run. Handlers own workflow transitions, DTA loading,
-% analysis, and export side effects.
+% App-owned Runtime V2 action table for VT Resistance. Handlers receive
+% canonical state/events/services and own DTA selection, resistance analysis,
+% and result export without reading or mutating UI controls.
 function actions = definitionActions()
     actions = struct( ...
-        "startup", @onStartup, ...
         "openFilesChosen", @onOpenFilesChosen, ...
         "removeSelected", @onRemoveSelected, ...
         "clearAll", @onClearAll, ...
         "exportResults", @onExportResults, ...
         "fileSelectionChanged", @onFileSelectionChanged, ...
-        "analysisChanged", @onAnalyzeAllFiles, ...
-        "refreshPlots", @onRefreshOnly);
+        "analysisChanged", @onAnalysisChanged);
 end
 
-function state = onStartup(state, ~, services)
-    debugLog = services.debug;
-    if ~isDebugEnabled(debugLog)
-        return;
-    end
-    debugLog.trace('VT resistance debug trace enabled.');
-    try
-        pack = vt_resistance.debug.writeSamplePack(debugLog);
-        addLog(services, sprintf('Debug sample files: %s', char(pack.sampleFolder)));
-        addLog(services, sprintf('Debug output folder: %s', char(pack.outputFolder)));
-    catch ME
-        debugLog.reportException('vtResistance', ...
-            'Debug sample setup failed', ME);
-        addLog(services, sprintf('Debug sample setup failed: %s', ME.message));
-    end
-end
-
-function state = onOpenFilesChosen(state, payload, services)
-    paths = labkit.ui.control.filePaths(payload.event.addedFiles);
+function state = onOpenFilesChosen(state, event, services)
+    paths = services.events.paths(event, "addedFiles");
     if isempty(paths)
-        addLog(services, 'Open cancelled.');
-        return;
+        paths = services.events.paths(event, "files");
     end
-    state = addFiles(state, paths, services);
-end
-
-function state = addFiles(state, filepaths, services)
-    filepaths = normalizePaths(filepaths);
-    if isempty(filepaths)
+    if isempty(paths)
+        state = services.workflow.log(state, "Open cancelled.");
         return;
     end
 
-    failed = struct('filepath', {}, 'message', {});
-    lastAddedIndex = [];
-    for iFile = 1:numel(filepaths)
-        filepath = filepaths(iFile);
-        if isLoaded(state, filepath)
-            addLog(services, ['Skipped duplicate: ' char(filepath)]);
+    added = 0;
+    for k = 1:numel(paths)
+        filepath = paths(k);
+        if isRegistered(state.project.inputs.sources, filepath)
+            state = services.workflow.log(state, ...
+                "Skipped duplicate: " + filepath);
             continue;
         end
-
-        [item, status] = labkit.dta.loadFile(filepath, "chrono");
-        if ~status.ok
-            failed(end + 1) = struct( ...
-                'filepath', char(filepath), ...
-                'message', char(status.message));
-            addLog(services, sprintf('Failed to load %s: %s', ...
-                char(filepath), char(status.message)));
-            continue;
-        end
-
-        for ii = 1:numel(item.logmsg)
-            addLog(services, item.logmsg{ii});
-        end
-        item = analyzeItem(item, services);
-        state.items = appendItem(state.items, item);
-        lastAddedIndex = numel(state.items);
-        addLog(services, ['Loaded: ' char(filepath)]);
+        source = services.project.sourceRecord( ...
+            nextSourceId(state.project.inputs.sources), ...
+            "chrono", filepath, true);
+        state.project.inputs.sources = appendSource( ...
+            state.project.inputs.sources, source);
+        added = added + 1;
+        state = services.workflow.log(state, "Registered: " + filepath);
     end
-    if ~isempty(lastAddedIndex)
-        state.current = lastAddedIndex;
-    elseif ~isempty(state.items) && isempty(state.current)
-        state.current = 1;
-    end
-
-    if ~isempty(failed)
-        firstError = failed(1);
-        labkit.ui.runtime.showAlert(services.figure, ...
-            sprintf('Failed to load:\n%s\n\n%s', ...
-            firstError.filepath, firstError.message), ...
-            'Load error');
+    state.session.selection.currentIndex = numel(state.project.inputs.sources);
+    state = ensureCurrentItemLoaded(state, services);
+    state.project.parameters = resetPlotSelections(state.project.parameters);
+    state.project.results.lastExport = [];
+    if added > 1
+        state = services.workflow.log(state, sprintf( ...
+            'Deferred %d non-visible file(s) until selection or export.', ...
+            added - 1));
     end
 end
 
-function state = onAnalyzeAllFiles(state, ~, services)
+function state = onRemoveSelected(state, event, services)
+    sources = state.project.inputs.sources;
+    indices = services.events.indices(event, "removedFiles", numel(sources));
+    if isempty(indices)
+        return;
+    end
+    removed = sourcePaths(sources(indices));
+    state.session.cache.items = removeItemsByPath( ...
+        state.session.cache.items, removed);
+    state.project.inputs.sources(indices) = [];
+    state.session.selection.currentIndex = boundedIndex( ...
+        state.session.selection.currentIndex, numel(state.project.inputs.sources));
+    state.project.parameters = resetPlotSelections(state.project.parameters);
+    state.project.results.lastExport = [];
+    for k = 1:numel(removed)
+        state = services.workflow.log(state, "Removed: " + removed(k));
+    end
+end
+
+function state = onClearAll(state, ~, services)
+    state.project.inputs.sources = state.project.inputs.sources([]);
+    state.project.results.lastExport = [];
+    state.session.cache.items = struct([]);
+    state.session.selection.currentIndex = 0;
+    state.project.parameters = resetPlotSelections(state.project.parameters);
+    state = services.workflow.log(state, "Cleared all files.");
+end
+
+function state = onFileSelectionChanged(state, event, services)
+    indices = services.events.indices(event, "selectedFiles", ...
+        numel(state.project.inputs.sources));
+    if isempty(indices)
+        state.session.selection.currentIndex = 0;
+    else
+        state.session.selection.currentIndex = indices(1);
+    end
+    state = ensureCurrentItemLoaded(state, services);
+    state.project.parameters = resetPlotSelections(state.project.parameters);
+end
+
+function state = onAnalysisChanged(state, ~, services)
     state = analyzeAllFiles(state, services);
 end
 
 function state = analyzeAllFiles(state, services)
-    if isempty(state.items)
+    if isempty(state.session.cache.items)
+        state.project.results.lastExport = [];
         return;
     end
-    opts = analysisOptions(services.ui);
-    state.items = vt_resistance.analysisRun.recomputeItems(state.items, opts);
-    addLog(services, sprintf('Reanalyzed %d loaded file(s) with shared analysis settings.', ...
-        numel(state.items)));
-end
-
-function item = analyzeItem(item, services)
-    opts = analysisOptions(services.ui);
-    analysis = vt_resistance.analysisRun.computeResistance(item, opts);
-    if analysis.ok
-        addLog(services, sprintf('%s: Rc=%.6g ohm, Ra=%.6g ohm, Ravg=%.6g ohm', ...
-            item.name, analysis.Rc_abs_ohm, analysis.Ra_abs_ohm, ...
-            analysis.Ravg_abs_ohm));
-    elseif isfield(analysis, 'logOnFailure') && analysis.logOnFailure
-        addLog(services, sprintf('%s: %s', item.name, analysis.message));
-    end
-    item.analysis = analysis;
-end
-
-function opts = analysisOptions(ui)
-    opts = struct();
-    opts.windowMode = ui.controls.steadyWindow.valueHandle.Value;
-    opts.voltageMode = ui.controls.voltageMode.valueHandle.Value;
-    opts.pulseMode = ui.controls.pulseMode.valueHandle.Value;
-end
-
-function state = onFileSelectionChanged(state, ~, services)
-    files = labkit.ui.control.getValue(services.ui, 'files');
-    paths = labkit.ui.control.filePaths(files);
-    if isempty(paths) || isempty(state.items)
-        state.current = [];
-        return;
-    end
-
-    idx = find(string({state.items.filepath}) == string(paths(1)), 1);
-    if isempty(idx)
-        state.current = [];
-    else
-        state.current = idx;
-    end
-    restoreDefaultPlotSelections(services.ui);
-end
-
-function state = onRemoveSelected(state, payload, services)
-    if isempty(state.items)
-        return;
-    end
-    paths = labkit.ui.control.filePaths(payload.event.removedFiles);
-    if isempty(paths)
-        return;
-    end
-    [state, report] = removeItemsByPaths(state, paths);
-    for k = 1:numel(report.removed)
-        addLog(services, sprintf('Removed: %s', report.removed{k}));
-    end
-    state.current = min(state.current, numel(state.items));
-    if isempty(state.items)
-        state.current = [];
-    end
-    restoreDefaultPlotSelections(services.ui);
-end
-
-function state = onClearAll(state, ~, services)
-    state.items = struct([]);
-    state.current = [];
-    restoreDefaultPlotSelections(services.ui);
-    addLog(services, 'Cleared all files.');
+    opts = vt_resistance.analysisRun.optionsFromParameters( ...
+        state.project.parameters);
+    state.session.cache.items = vt_resistance.analysisRun.recomputeItems( ...
+        state.session.cache.items, opts);
+    state.project.results.lastExport = [];
+    state = services.workflow.log(state, sprintf( ...
+        'Reanalyzed %d loaded file(s) with shared analysis settings.', ...
+        numel(state.session.cache.items)));
 end
 
 function state = onExportResults(state, ~, services)
-    if isempty(state.items)
-        labkit.ui.runtime.showAlert(services.figure, ...
-            'No results to export.', 'Export');
+    if isempty(state.project.inputs.sources)
+        services.dialogs.alert('No results to export.', 'Export');
+        return;
+    end
+    [state, ok] = ensureAllItemsLoaded(state, services);
+    if ~ok
         return;
     end
     state = analyzeAllFiles(state, services);
-    [out, cancelled] = labkit.ui.runtime.promptOutputFile( ...
-        'vt_steady_resistance_results.csv', 'Save results CSV', ...
-        'vt_steady_resistance_results.csv');
+    filename = 'vt_steady_resistance_results.csv';
+    [out, cancelled] = services.dialogs.outputFile( ...
+        filename, 'Save results CSV', filename);
     if cancelled
+        state = services.workflow.log(state, "Result export cancelled.");
         return;
     end
-    [ok, msg] = vt_resistance.resultFiles.writeResultsCSV(state.items, out);
+    [ok, message] = vt_resistance.resultFiles.writeResultsCSV( ...
+        state.session.cache.items, out);
     if ~ok
-        labkit.ui.runtime.showAlert(services.figure, msg, 'Export');
+        services.dialogs.alert(message, 'Export');
         return;
     end
-    addLog(services, ['Exported CSV: ' char(out)]);
+    [folder, name, extension] = fileparts(out);
+    output = services.results.output("vtResistanceResults", "primary", ...
+        string(name) + string(extension), "text/csv");
+    spec = struct( ...
+        "Outputs", output, ...
+        "Inputs", state.project.inputs.sources, ...
+        "Parameters", state.project.parameters, ...
+        "Summary", struct("fileCount", numel(state.session.cache.items)), ...
+        "ManifestName", "vt_steady_resistance_results.labkit.json");
+    [manifestPath, ~] = services.results.writeManifest(folder, spec);
+    state.project.results.lastExport = struct( ...
+        "csvPath", string(out), "manifestPath", string(manifestPath));
+    state = services.workflow.log(state, "Exported CSV: " + string(out));
 end
 
-function state = onRefreshOnly(state, ~, ~)
+function state = logAnalysis(state, item)
+    analysis = item.analysis;
+    if analysis.ok
+        state.session.workflow.logLines(end + 1, 1) = string(sprintf( ...
+            '%s: Rc=%.6g ohm, Ra=%.6g ohm, Ravg=%.6g ohm', ...
+            item.name, analysis.Rc_abs_ohm, analysis.Ra_abs_ohm, ...
+            analysis.Ravg_abs_ohm));
+    elseif isfield(analysis, 'logOnFailure') && analysis.logOnFailure
+        state.session.workflow.logLines(end + 1, 1) = ...
+            string(item.name) + ": " + string(analysis.message);
+    end
 end
 
-function restoreDefaultPlotSelections(ui)
-    ui.controls.topX.valueHandle.Value = 'Time (s)';
-    ui.controls.topY.valueHandle.Value = 'VT: Vf vs time';
-    ui.controls.topGrid.valueHandle.Value = true;
-    ui.controls.bottomX.valueHandle.Value = 'Time (s)';
-    ui.controls.bottomY.valueHandle.Value = 'IT: Im vs time';
-    ui.controls.bottomGrid.valueHandle.Value = true;
+function parameters = resetPlotSelections(parameters)
+    choices = vt_resistance.userInterface.analysisChoices();
+    parameters.topX = choices.xAxes(1);
+    parameters.topY = choices.yAxes(1);
+    parameters.topGrid = true;
+    parameters.bottomX = choices.xAxes(1);
+    parameters.bottomY = choices.yAxes(2);
+    parameters.bottomGrid = true;
 end
 
-function [state, report] = removeItemsByPaths(state, filepaths)
-    paths = normalizePaths(filepaths);
-    report = struct('removed', {{}}, 'missing', {{}});
-    if isempty(paths)
+function index = boundedIndex(index, count)
+    if count == 0
+        index = 0;
+    else
+        index = min(max(1, round(double(index))), count);
+    end
+end
+
+function tf = isRegistered(sources, filepath)
+    tf = any(sourcePaths(sources) == string(filepath));
+end
+
+function state = ensureCurrentItemLoaded(state, services)
+    index = boundedIndex(state.session.selection.currentIndex, ...
+        numel(state.project.inputs.sources));
+    if index == 0
         return;
     end
-    if isempty(state.items)
-        report.missing = cellstr(paths(:).');
+    filepath = sourcePaths(state.project.inputs.sources(index));
+    if itemIsLoaded(state.session.cache.items, filepath)
         return;
     end
-    keep = true(1, numel(state.items));
-    itemPaths = string({state.items.filepath});
+    [item, status] = vt_resistance.sourceFiles.loadItem( ...
+        filepath, state.project.parameters);
+    if ~status.ok
+        state = services.workflow.log(state, ...
+            "Failed to load " + filepath + ": " + string(status.message));
+        services.dialogs.alert(sprintf('Failed to load:\n%s\n\n%s', ...
+            filepath, status.message), 'Load error');
+        return;
+    end
+    state.session.cache.items = appendItem(state.session.cache.items, item);
+    for messageIndex = 1:numel(item.logmsg)
+        state = services.workflow.log(state, item.logmsg{messageIndex});
+    end
+    state = logAnalysis(state, item);
+    state = services.workflow.log(state, "Loaded: " + filepath);
+end
+
+function [state, ok] = ensureAllItemsLoaded(state, services)
+    ok = true;
+    paths = sourcePaths(state.project.inputs.sources);
     for k = 1:numel(paths)
-        idx = find(itemPaths == paths(k) & keep, 1, 'first');
-        if isempty(idx)
-            report.missing{end + 1} = char(paths(k));
+        if itemIsLoaded(state.session.cache.items, paths(k))
             continue;
         end
-        report.removed{end + 1} = char(paths(k));
-        keep(idx) = false;
+        [item, status] = vt_resistance.sourceFiles.loadItem( ...
+            paths(k), state.project.parameters);
+        if ~status.ok
+            ok = false;
+            state = services.workflow.log(state, ...
+                "Failed to load " + paths(k) + ": " + string(status.message));
+            services.dialogs.alert(sprintf('Failed to load:\n%s\n\n%s', ...
+                paths(k), status.message), 'Load error');
+            return;
+        end
+        state.session.cache.items = appendItem(state.session.cache.items, item);
     end
-    state.items = state.items(keep);
 end
 
-function tf = isLoaded(state, filepath)
-    tf = ~isempty(state.items) && ...
-        any(string({state.items.filepath}) == string(filepath));
+function tf = itemIsLoaded(items, filepath)
+    tf = ~isempty(items) && any(string({items.filepath}) == filepath);
 end
 
-function paths = normalizePaths(paths)
-    paths = string(paths(:));
-    paths = paths(strlength(paths) > 0);
+function paths = sourcePaths(sources)
+    paths = strings(0, 1);
+    if ~isempty(sources)
+        paths = string(arrayfun(@(source) ...
+            source.reference.originalPath, sources, 'UniformOutput', false));
+        paths = paths(:);
+    end
+end
+
+function items = removeItemsByPath(items, paths)
+    if isempty(items)
+        return;
+    end
+    items(ismember(string({items.filepath}), paths(:))) = [];
+end
+
+function id = nextSourceId(sources)
+    ids = string({sources.id});
+    number = numel(ids) + 1;
+    id = "dta" + string(number);
+    while any(ids == id)
+        number = number + 1;
+        id = "dta" + string(number);
+    end
 end
 
 function items = appendItem(items, item)
@@ -240,14 +266,10 @@ function items = appendItem(items, item)
     end
 end
 
-function addLog(services, msg)
-    labkit.ui.control.appendLog(services.ui, 'appLog', msg);
-    if isDebugEnabled(services.debug)
-        services.debug.append(msg);
+function sources = appendSource(sources, source)
+    if isempty(sources)
+        sources = source;
+    else
+        sources(end + 1) = source;
     end
-end
-
-function tf = isDebugEnabled(debugLog)
-    tf = isstruct(debugLog) && isfield(debugLog, 'enabled') && ...
-        logical(debugLog.enabled);
 end

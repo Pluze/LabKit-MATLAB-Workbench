@@ -1,9 +1,7 @@
-% App-owned action table for Figure Studio. Expected caller is
-% figure_studio.definition. Handlers own FIG import, style parameter updates,
-% preview mutation, and export package side effects.
+% App-owned V2 actions for Figure Studio. Handlers own FIG source snapshots,
+% durable styles, serializable plot models, and exports without UI access.
 function actions = definitionActions()
     actions = struct( ...
-        "startup", @onStartup, ...
         "figuresChosen", @onFiguresChosen, ...
         "figuresRemoved", @onFiguresRemoved, ...
         "clearFigures", @onClearFigures, ...
@@ -18,437 +16,380 @@ function actions = definitionActions()
         "exportCurrent", @onExportCurrent);
 end
 
-function state = onExportPng(state, payload, services)
-    state = onQuickExport(state, payload, services, "png");
+function state = onFiguresChosen(state, event, services)
+    paths = services.events.paths(event, "files");
+    added = services.events.paths(event, "addedFiles");
+    if isempty(paths)
+        paths = added;
+    end
+    paths = paths(endsWith(lower(paths), ".fig"));
+    if isempty(paths)
+        state = services.workflow.log(state, "No FIG files selected.");
+        return;
+    end
+    sources = services.project.reconcileSources( ...
+        state.project.inputs.sources, paths, "matlab-figure", "figure", true);
+    index = selectedIndex(sources, added);
+    [candidate, loaded] = loadSource(state, sources, index, services);
+    if ~loaded
+        return;
+    end
+    state = candidate;
+    state.project.inputs.sources = sources;
+    state.project.annotations.embeddedPlot = [];
+    state.project.parameters.outputFolder = string( ...
+        services.dialogs.defaultOutputFolder(paths, "figure_studio", ...
+        state.project.parameters.outputFolder));
+    state.session.workflow.status = sprintf( ...
+        'Loaded %d FIG file(s).', numel(sources));
+    state = invalidateExport(state);
+    state = services.workflow.log(state, state.session.workflow.status);
 end
 
-function state = onExportJpg(state, payload, services)
-    state = onQuickExport(state, payload, services, "jpg");
+function state = onFiguresRemoved(state, event, services)
+    sources = state.project.inputs.sources;
+    indices = services.events.indices(event, "removedFiles", numel(sources));
+    if isempty(indices)
+        return;
+    end
+    sources(indices) = [];
+    state.project.inputs.sources = sources;
+    state.project.annotations.embeddedPlot = [];
+    if isempty(sources)
+        state = clearCurrentPlot(state, "No FIG files loaded.");
+    else
+        index = min(max(state.session.selection.currentIndex, 1), numel(sources));
+        [state, ~] = loadSource(state, sources, index, services);
+    end
+    state = invalidateExport(state);
 end
 
-function state = onExportSvg(state, payload, services)
-    state = onQuickExport(state, payload, services, "svg");
+function state = onClearFigures(state, ~, services)
+    state.project.inputs.sources = state.project.inputs.sources([]);
+    state.project.annotations.embeddedPlot = [];
+    state = clearCurrentPlot(state, "No FIG files loaded.");
+    state = invalidateExport(state);
+    state = services.workflow.log(state, "Cleared Figure Studio sources.");
+end
+
+function state = onSelectionChanged(state, event, services)
+    sources = state.project.inputs.sources;
+    indices = services.events.indices(event, "selectedFiles", numel(sources));
+    if isempty(indices)
+        return;
+    end
+    [state, ~] = loadSource(state, sources, indices(1), services);
+end
+
+function [state, loaded] = loadSource(state, sources, index, services)
+    loaded = false;
+    try
+        [plotData, sourceStyle] = figure_studio.sourceAxes.readFigFile( ...
+            sources(index).reference.originalPath);
+    catch ME
+        state = reportFailure(state, services, "Open FIG", ME);
+        return;
+    end
+    state.session.selection.currentIndex = index;
+    state.session.cache.plotData = plotData;
+    state.session.cache.sourceDefaultStyle = sourceStyle;
+    state.session.cache.currentSource = string( ...
+        sources(index).reference.originalPath);
+    state.project.annotations.sourceDefaultStyle = sourceStyle;
+    state = adoptSourceStyle(state, sourceStyle);
+    state.session.workflow.status = "Opened " + ...
+        string(sources(index).reference.fileName) + ".";
+    state = services.workflow.log(state, ...
+        "Opened FIG: " + state.session.cache.currentSource);
+    loaded = true;
+end
+
+function state = clearCurrentPlot(state, status)
+    state.session.selection.currentIndex = 0;
+    state.session.cache.plotData = [];
+    state.session.cache.currentSource = "";
+    state.session.workflow.status = string(status);
+end
+
+function state = adoptSourceStyle(state, sourceStyle)
+    p = state.project.parameters;
+    if p.preset == "FIG default"
+        p.style = sourceStyle;
+    else
+        p.style.canvasWidth = sourceStyle.canvasWidth;
+        p.style.canvasHeight = sourceStyle.canvasHeight;
+        p.aspectPreset = "Custom";
+    end
+    p.gridChoice = onOff(p.style.gridVisible);
+    p.boundaryChoice = onOff(p.style.boundaryLines);
+    state.project.parameters = p;
+end
+
+function state = onStyleChanged(state, ~, services)
+    p = state.project.parameters;
+    previous = p.style;
+    if p.preset == "FIG default"
+        p.style = state.session.cache.sourceDefaultStyle;
+    else
+        p.style = figure_studio.styleLibrary.styleForPreset(p.preset);
+        p.style.canvasWidth = previous.canvasWidth;
+        p.style.canvasHeight = previous.canvasHeight;
+        p.style.exportScale = previous.exportScale;
+    end
+    p.gridChoice = onOff(p.style.gridVisible);
+    p.boundaryChoice = onOff(p.style.boundaryLines);
+    state.project.parameters = p;
+    state.session.workflow.status = "Styled with " + p.preset + ".";
+    state = invalidateExport(state);
+    state = services.workflow.log(state, ...
+        "Selected style mode: " + p.preset);
+end
+
+function state = onStyleParameterChanged(state, event, ~)
+    p = state.project.parameters;
+    id = string(event.target);
+    p.style = sanitizeStyle(p.style);
+    if id == "baseFontSize"
+        p.style.titleFontSize = p.style.baseFontSize;
+        p.style.labelFontSize = p.style.baseFontSize;
+        p.style.tickFontSize = p.style.baseFontSize;
+        p.style = clearFontOverrides(p.style);
+    elseif any(id == ["titleFontSize", "labelFontSize", "tickFontSize"])
+        p.style = markFontOverride(p.style, id);
+    elseif id == "gridVisible"
+        p.style.gridVisible = p.gridChoice == "On";
+    elseif id == "boundaryLines"
+        p.style.boundaryLines = p.boundaryChoice == "On";
+    end
+    p.style = applyAspectPreset(p.style, p.aspectPreset, id);
+    state.project.parameters = p;
+    state.session.workflow.status = "Styled with " + p.preset + ".";
+    state = invalidateExport(state);
+end
+
+function state = onChooseOutputFolder(state, ~, services)
+    [folder, cancelled] = services.dialogs.outputFolder( ...
+        "Choose Figure Studio output folder", ...
+        state.project.parameters.outputFolder);
+    if cancelled
+        return;
+    end
+    state.project.parameters.outputFolder = string(folder);
+    state = invalidateExport(state);
+    state = services.workflow.log(state, "Output folder: " + string(folder));
 end
 
 function state = onSaveFig(state, ~, services)
-    ax = previewAxes(services.ui);
-    if ~hasPreviewContent(ax)
-        labkit.ui.runtime.showAlert(services.figure, ...
+    if ~hasPlot(state)
+        services.dialogs.alert( ...
             "No preview axes content is available to save.", "Figure Studio");
         return;
     end
-    [filepath, cancelled] = labkit.ui.runtime.promptOutputFile( ...
+    [filepath, cancelled] = services.dialogs.outputFile( ...
         {'*.fig', 'MATLAB figure (*.fig)'}, "Save FIG", ...
         quickExportPath(state, ".fig"));
     if cancelled
         return;
     end
-    tempFig = figure('Visible', 'off', 'Color', 'w');
-    cleanup = onCleanup(@() delete(tempFig));
-    dst = axes('Parent', tempFig);
-    figure_studio.sourceAxes.copyToPreview(ax, dst);
-    figure_studio.resultFiles.applyFigureStyle(dst, state.style);
-    savefig(tempFig, char(filepath));
-    clear cleanup;
-    state.status = "Saved FIG: " + filepath;
-    state.summary = summaryLines(state);
-    addLog(services, state.status);
-end
-
-function state = onStartup(state, ~, services)
-    installResizeHandler(services.figure);
-    state = adoptLaunchRequest(state, services);
-    if isfield(state, 'launchAxes') && ~isempty(state.launchAxes)
-        ax = state.launchAxes;
-        if ~isempty(ax) && isvalid(ax)
-            state = adoptSourceAxes(state, ax);
-            figure_studio.sourceAxes.copyToPreview(ax, previewAxes(services.ui));
-            state.currentSource = "Popout axes";
-            state.status = "Received copied axes from popout.";
-            state = applyStyleToPreviewIfReady(state, services);
-            state.summary = summaryLines(state);
-            addLog(services, "Received axes from popout window.");
-        end
-        state.launchAxes = [];
-    end
-    if isDebugEnabled(services.debug)
-        services.debug.trace('Figure Studio debug trace enabled.');
-        try
-            pack = figure_studio.debug.writeSamplePack(services.debug);
-            addLog(services, "Debug sample FIG: " + string(pack.representativeFiles));
-        catch ME
-            services.debug.reportException('figureStudio', ...
-                'Debug sample setup failed', ME);
-        end
-    end
-end
-
-function installResizeHandler(fig)
     try
-        runtime = getappdata(fig, 'labkitUiAppRuntime');
-        targets = resizeTargets(fig, runtime.ui);
-        listeners = cell(1, numel(targets));
-        for k = 1:numel(targets)
-            listeners{k} = addlistener(targets{k}, 'Position', 'PostSet', ...
-                @(~, event) onStudioResized(ancestor(event.AffectedObject, 'figure')));
-        end
-        setappdata(fig, 'labkitFigureStudioResizeListeners', listeners);
-        resizeTimer = timer( ...
-            'ExecutionMode', 'fixedSpacing', ...
-            'Period', 0.25, ...
-            'BusyMode', 'drop', ...
-            'TimerFcn', @(timerObj, ~) pollStudioResize(timerObj, fig), ...
-            'StopFcn', @(timerObj, ~) delete(timerObj));
-        setappdata(fig, 'labkitFigureStudioResizeTimer', resizeTimer);
-        start(resizeTimer);
-    catch
-    end
-end
-
-function pollStudioResize(timerObj, fig)
-    if isempty(fig) || ~isvalid(fig)
-        stop(timerObj);
-        return;
-    end
-    try
-        runtime = getappdata(fig, 'labkitUiAppRuntime');
-        ax = runtime.ui.controls.preview.axesById.main;
-        pos = getpixelposition(ax, true);
-        key = 'labkitFigureStudioLastPreviewPosition';
-        if isappdata(fig, key)
-            previous = getappdata(fig, key);
-            if isequal(round(previous), round(pos))
-                return;
-            end
-        end
-        setappdata(fig, key, pos);
-        if hasPreviewContent(ax)
-            figure_studio.resultFiles.applyFigureStyle(ax, previewStyle(runtime.state.style));
-            clearFrameworkPreviewTitle(ax);
-        end
-    catch
-    end
-end
-
-function targets = resizeTargets(fig, ui)
-    targets = {fig};
-    if isfield(ui, 'rightPanel') && isvalid(ui.rightPanel)
-        targets{end + 1} = ui.rightPanel;
-    end
-    if isfield(ui.controls, 'preview')
-        preview = ui.controls.preview;
-        if isfield(preview, 'panel') && isvalid(preview.panel)
-            targets{end + 1} = preview.panel;
-        end
-        if isfield(preview, 'axesGrid') && isvalid(preview.axesGrid)
-            targets{end + 1} = preview.axesGrid;
-        end
-        if isfield(preview, 'primaryAxes') && isvalid(preview.primaryAxes)
-            targets{end + 1} = preview.primaryAxes;
-        end
-    end
-end
-
-function onStudioResized(fig)
-    try
-        drawnow limitrate;
-        runtime = getappdata(fig, 'labkitUiAppRuntime');
-        if ~isstruct(runtime) || ~isfield(runtime, 'state') || ...
-                ~isfield(runtime, 'ui')
-            return;
-        end
-        ax = runtime.ui.controls.preview.axesById.main;
-        if hasPreviewContent(ax)
-            figure_studio.resultFiles.applyFigureStyle(ax, previewStyle(runtime.state.style));
-            clearFrameworkPreviewTitle(ax);
-        end
-    catch
-    end
-end
-
-function state = onFiguresChosen(state, payload, services)
-    paths = labkit.ui.control.filePaths(payload.event.addedFiles);
-    paths = paths(endsWith(lower(paths), ".fig"));
-    if isempty(paths)
-        addLog(services, "No FIG files selected.");
-        return;
-    end
-    for k = 1:numel(paths)
-        if ~isLoaded(state, paths(k))
-            state.items(end + 1) = itemFromPath(paths(k));
-        end
-    end
-    state.currentIndex = max(1, numel(state.items));
-    state.status = sprintf('Loaded %d FIG file(s).', numel(state.items));
-    state.summary = summaryLines(state);
-    addLog(services, state.status);
-    state = openCurrentItem(state, services);
-end
-
-function state = onFiguresRemoved(state, payload, services)
-    paths = labkit.ui.control.filePaths(payload.event.removedFiles);
-    if isempty(paths) || isempty(state.items)
-        return;
-    end
-    keep = ~ismember(string({state.items.path}), string(paths(:)));
-    state.items = state.items(keep);
-    state.currentIndex = min(state.currentIndex, numel(state.items));
-    if isempty(state.items)
-        state.currentIndex = 0;
-        state.currentSource = "";
-        state.status = "No FIG files loaded.";
-        labkit.ui.plot.reset(services.ui, 'preview', 'No figure loaded', true, 'main');
-    else
-        state = openCurrentItem(state, services);
-    end
-    state.summary = summaryLines(state);
-end
-
-function state = onClearFigures(state, ~, services)
-    state.items = struct('path', {}, 'name', {}, 'source', {}, 'status', {});
-    state.currentIndex = 0;
-    state.currentSource = "";
-    state.status = "No FIG files loaded.";
-    labkit.ui.plot.reset(services.ui, 'preview', 'No figure loaded', true, 'main');
-    state.summary = summaryLines(state);
-end
-
-function state = onSelectionChanged(state, payload, services)
-    paths = labkit.ui.control.filePaths(payload.event.selectedFiles);
-    if isempty(paths)
-        return;
-    end
-    itemPaths = string({state.items.path});
-    idx = find(itemPaths == paths(1), 1, 'first');
-    if ~isempty(idx)
-        state.currentIndex = idx;
-        state = openCurrentItem(state, services);
-    end
-end
-
-function state = openCurrentItem(state, services)
-    item = currentItem(state);
-    if isempty(item)
-        return;
-    end
-    try
-        sourceStyle = figure_studio.sourceAxes.importFigFile(item.path, ...
-            previewAxes(services.ui));
-        state = adoptSourceStyle(state, sourceStyle);
-        state.currentSource = string(item.path);
-        state = applyStyleToPreviewIfReady(state, services);
-        state.status = "Opened " + string(item.name) + ".";
-        state.summary = summaryLines(state);
-        addLog(services, "Opened FIG: " + string(item.path));
+        [fig, ~] = styledFigure(state);
+        cleanup = onCleanup(@() delete(fig));
+        savefig(fig, char(filepath));
+        [manifestPath, outputs] = writeSingleManifest( ...
+            state, services, filepath, "matlab-figure", ...
+            "application/x-matlab-figure");
     catch ME
-        reportException(services, "Open FIG", ME);
-        labkit.ui.runtime.showAlert(services.figure, ME.message, "Open FIG");
-    end
-end
-
-function state = onStyleChanged(state, ~, services)
-    state.preset = string(labkit.ui.control.getValue(services.ui, "stylePreset"));
-    previousStyle = state.style;
-    if state.preset == "FIG default"
-        state.style = state.figDefaultStyle;
-    else
-        state.style = figure_studio.styleLibrary.styleForPreset(state.preset);
-        state.style.canvasWidth = previousStyle.canvasWidth;
-        state.style.canvasHeight = previousStyle.canvasHeight;
-        state.style.exportScale = previousStyle.exportScale;
-    end
-    state = applyStyleToPreviewIfReady(state, services);
-    state.summary = summaryLines(state);
-    addLog(services, "Selected style mode: " + state.preset);
-end
-
-function state = onStyleParameterChanged(state, payload, services)
-    changedId = changedControlId(payload);
-    state.aspectPreset = string(labkit.ui.control.getValue(services.ui, "aspectPreset"));
-    state.style = styleFromUi(state, services.ui, state.style, changedId, ...
-        state.aspectPreset);
-    state = applyStyleToPreviewIfReady(state, services);
-    state.summary = summaryLines(state);
-end
-
-function state = applyStyleToPreviewIfReady(state, services)
-    ax = previewAxes(services.ui);
-    if ~hasPreviewContent(ax)
+        state = reportFailure(state, services, "Save FIG", ME);
         return;
     end
-    figure_studio.resultFiles.applyFigureStyle(ax, previewStyle(state.style));
-    clearFrameworkPreviewTitle(ax);
-    state.status = "Styled with " + state.preset + ".";
+    state = recordExport(state, "fig", filepath, manifestPath, outputs);
+    state = services.workflow.log(state, "Saved FIG: " + string(filepath));
 end
 
-function state = onChooseOutputFolder(state, ~, services)
-    [selected, cancelled] = labkit.ui.runtime.promptOutputFolder( ...
-        "Choose Figure Studio output folder", state.outputFolder);
+function state = onExportPng(state, ~, services)
+    state = onQuickExport(state, services, "png", "image/png");
+end
+
+function state = onExportJpg(state, ~, services)
+    state = onQuickExport(state, services, "jpg", "image/jpeg");
+end
+
+function state = onExportSvg(state, ~, services)
+    state = onQuickExport(state, services, "svg", "image/svg+xml");
+end
+
+function state = onQuickExport(state, services, format, mediaType)
+    if ~hasPlot(state)
+        services.dialogs.alert( ...
+            "No preview axes content is available to export.", "Figure Studio");
+        return;
+    end
+    extension = "." + format;
+    [filepath, cancelled] = services.dialogs.outputFile( ...
+        {char("*" + extension), char(upper(format) + " file")}, ...
+        "Export " + upper(format), quickExportPath(state, extension));
     if cancelled
         return;
     end
-    state.outputFolder = string(selected);
-    addLog(services, "Output folder: " + state.outputFolder);
+    try
+        [fig, ax] = styledFigure(state);
+        cleanup = onCleanup(@() delete(fig));
+        if format == "svg"
+            exportgraphics(ax, filepath, 'ContentType', 'vector');
+        else
+            exportgraphics(ax, filepath, 'Resolution', ...
+                max(72, round(300 * state.project.parameters.style.exportScale)));
+        end
+        [manifestPath, outputs] = writeSingleManifest( ...
+            state, services, filepath, format, mediaType);
+    catch ME
+        state = reportFailure(state, services, "Quick export", ME);
+        return;
+    end
+    state = recordExport(state, format, filepath, manifestPath, outputs);
+    state = services.workflow.log(state, ...
+        "Exported " + upper(format) + ": " + string(filepath));
 end
 
 function state = onExportCurrent(state, ~, services)
-    ax = previewAxes(services.ui);
-    if ~hasPreviewContent(ax)
-        labkit.ui.runtime.showAlert(services.figure, ...
+    if ~hasPlot(state)
+        services.dialogs.alert( ...
             "No preview axes content is available to export.", "Figure Studio");
         return;
     end
-    outFolder = string(fullfile(state.outputFolder, exportFolderName(state)));
+    folder = fullfile(state.project.parameters.outputFolder, ...
+        exportFolderName(state));
     try
-        manifest = figure_studio.resultFiles.exportAxesPackage(ax, outFolder);
-        state.lastExportFolder = string(manifest.folder);
-        state.status = "Exported package: " + string(manifest.folder);
-        state.summary = summaryLines(state);
-        addLog(services, state.status);
+        [fig, ax] = styledFigure(state);
+        cleanup = onCleanup(@() delete(fig));
+        payload = figure_studio.resultFiles.exportAxesPackage(ax, folder);
+        outputs = packageOutputs(payload, services);
+        spec = manifestSpec(state, outputs);
+        [manifestPath, ~] = services.results.writeManifest(folder, spec);
     catch ME
-        reportException(services, "Export package", ME);
-        labkit.ui.runtime.showAlert(services.figure, ME.message, "Export package");
-    end
-end
-
-function style = styleFromUi(state, ui, previousStyle, changedId, aspectPreset)
-    style = state.style;
-    if nargin < 3 || isempty(previousStyle)
-        previousStyle = style;
-    end
-    if nargin < 4
-        changedId = "";
-    end
-    if nargin < 5
-        aspectPreset = "Custom";
-    end
-    previousBase = finiteValue(previousStyle.baseFontSize, 12);
-    baseFontSize = finiteValue(labkit.ui.control.getValue(ui, "baseFontSize"), previousBase);
-    titleFontSize = finiteValue(labkit.ui.control.getValue(ui, "titleFontSize"), style.titleFontSize);
-    labelFontSize = finiteValue(labkit.ui.control.getValue(ui, "labelFontSize"), style.labelFontSize);
-    tickFontSize = finiteValue(labkit.ui.control.getValue(ui, "tickFontSize"), style.tickFontSize);
-    baseChanged = changedId == "baseFontSize" || ...
-        abs(baseFontSize - previousBase) > eps(previousBase);
-    style.baseFontSize = baseFontSize;
-    style = ensureFontOverrideFields(style);
-    if baseChanged
-        style.titleFontSize = baseFontSize;
-        style.labelFontSize = baseFontSize;
-        style.tickFontSize = baseFontSize;
-        style.fontOverrides.title = false;
-        style.fontOverrides.label = false;
-        style.fontOverrides.tick = false;
-    else
-        style.titleFontSize = titleFontSize;
-        style.labelFontSize = labelFontSize;
-        style.tickFontSize = tickFontSize;
-        style.fontOverrides.title = abs(titleFontSize - ...
-            (baseFontSize + finiteValue(style.titleFontOffset, 2))) > eps(baseFontSize);
-        style.fontOverrides.label = abs(labelFontSize - ...
-            (baseFontSize + finiteValue(style.labelFontOffset, 0))) > eps(baseFontSize);
-        style.fontOverrides.tick = abs(tickFontSize - ...
-            (baseFontSize + finiteValue(style.tickFontOffset, -1))) > eps(baseFontSize);
-    end
-    style.dataLineWidth = finiteValue(labkit.ui.control.getValue(ui, "dataLineWidth"), 1.5);
-    style.axesLineWidth = finiteValue(labkit.ui.control.getValue(ui, "axesLineWidth"), 1.25);
-    style.gridAlpha = min(max(finiteValue(labkit.ui.control.getValue(ui, "gridAlpha"), 0.12), 0), 1);
-    style.gridVisible = string(labkit.ui.control.getValue(ui, "gridVisible")) == "On";
-    style.canvasWidth = finiteValue(labkit.ui.control.getValue(ui, "canvasWidth"), 1200);
-    style.canvasHeight = finiteValue(labkit.ui.control.getValue(ui, "canvasHeight"), 900);
-    style.exportScale = finiteValue(labkit.ui.control.getValue(ui, "exportScale"), 2);
-    style.boundaryLines = string(labkit.ui.control.getValue(ui, "boundaryLines")) == "On";
-    style = applyAspectPreset(style, aspectPreset, changedId);
-end
-
-function state = onQuickExport(state, ~, services, format)
-    ax = previewAxes(services.ui);
-    if ~hasPreviewContent(ax)
-        labkit.ui.runtime.showAlert(services.figure, ...
-            "No preview axes content is available to export.", "Figure Studio");
+        state = reportFailure(state, services, "Export package", ME);
         return;
     end
-    ext = "." + format;
-    filepath = quickExportPath(state, ext);
-    [filepath, cancelled] = labkit.ui.runtime.promptOutputFile( ...
-        {char("*" + ext), char(upper(format) + " file")}, ...
-        "Export " + upper(format), filepath);
-    if cancelled
+    state = recordExport(state, "package", folder, manifestPath, outputs);
+    state = services.workflow.log(state, ...
+        "Exported package: " + string(folder));
+end
+
+function [fig, ax] = styledFigure(state)
+    [fig, ax] = figure_studio.resultFiles.createStyledFigure( ...
+        state.session.cache.plotData, state.project.parameters.style);
+end
+
+function [manifestPath, outputs] = writeSingleManifest( ...
+        state, services, filepath, role, mediaType)
+    [folder, name, extension] = fileparts(filepath);
+    outputs = services.results.output(role, role, ...
+        string(name) + string(extension), mediaType);
+    [manifestPath, ~] = services.results.writeManifest( ...
+        string(folder), manifestSpec(state, outputs));
+end
+
+function spec = manifestSpec(state, outputs)
+    plotData = state.session.cache.plotData;
+    spec = struct( ...
+        "Outputs", outputs, ...
+        "Inputs", state.project.inputs.sources, ...
+        "Parameters", state.project.parameters, ...
+        "Summary", struct( ...
+            "objectCount", numel(plotData.objects), ...
+            "warningCount", numel(plotData.warnings)), ...
+        "ManifestName", "figure_studio.labkit.json");
+end
+
+function outputs = packageOutputs(payload, services)
+    paths = [payload.mat; payload.script; payload.readme];
+    roles = ["plot-data", "recreation-script", "readme"];
+    media = ["application/x-matlab-data", "text/x-matlab", "text/plain"];
+    if strlength(payload.csv) > 0
+        paths(end + 1, 1) = payload.csv;
+        roles(end + 1, 1) = "plot-data-csv";
+        media(end + 1, 1) = "text/csv";
+    end
+    outputs = repmat(services.results.output("", "", "", ""), ...
+        numel(paths), 1);
+    for k = 1:numel(paths)
+        [~, name, extension] = fileparts(paths(k));
+        outputs(k) = services.results.output(roles(k), roles(k), ...
+            string(name) + string(extension), media(k));
+    end
+end
+
+function state = recordExport(state, kind, path, manifestPath, outputs)
+    state.project.results.lastExport = struct( ...
+        "kind", string(kind), ...
+        "path", string(path), ...
+        "outputs", outputs, ...
+        "manifestPath", string(manifestPath));
+    state.project.results.resultManifestPath = string(manifestPath);
+    state.session.workflow.status = "Exported " + string(kind) + ".";
+end
+
+function state = invalidateExport(state)
+    state.project.results.lastExport = [];
+    state.project.results.resultManifestPath = "";
+end
+
+function tf = hasPlot(state)
+    tf = ~isempty(state.session.cache.plotData);
+end
+
+function index = selectedIndex(sources, added)
+    index = max(1, numel(sources));
+    if isempty(added)
         return;
     end
-    try
-        figure_studio.resultFiles.applyFigureStyle(ax, state.style);
-        clearFrameworkPreviewTitle(ax);
-        if format == "svg"
-            exportgraphics(ax, filepath, "ContentType", "vector");
-        else
-            exportgraphics(ax, filepath, "Resolution", ...
-                max(72, round(300 * state.style.exportScale)));
-        end
-        state.status = "Exported " + upper(format) + ": " + filepath;
-        state.summary = summaryLines(state);
-        addLog(services, state.status);
-        figure_studio.resultFiles.applyFigureStyle(ax, previewStyle(state.style));
-        clearFrameworkPreviewTitle(ax);
-    catch ME
-        figure_studio.resultFiles.applyFigureStyle(ax, previewStyle(state.style));
-        clearFrameworkPreviewTitle(ax);
-        reportException(services, "Quick export", ME);
-        labkit.ui.runtime.showAlert(services.figure, ME.message, "Quick export");
-    end
-end
-
-function clearFrameworkPreviewTitle(ax)
-    try
-        titleText = join(string(ax.Title.String), " ");
-        if contains(titleText, " | file ") || startsWith(titleText, "file ")
-            title(ax, "");
-        end
-    catch
-    end
-end
-
-function state = adoptLaunchRequest(state, services)
-    if ~isstruct(services) || ~isfield(services, 'request') || ...
-            ~isstruct(services.request) || ~isfield(services.request, 'launch')
-        return;
-    end
-    launchRequest = services.request.launch;
-    if isstruct(launchRequest) && isfield(launchRequest, 'hasAxes') && ...
-            logical(launchRequest.hasAxes)
-        state.launchAxes = launchRequest.axes;
-    end
-end
-
-function style = previewStyle(style)
-    style.previewScale = true;
-end
-
-function filepath = quickExportPath(state, ext)
-    folder = string(state.outputFolder);
-    stem = "figure";
-    if strlength(state.currentSource) > 0
-        [~, stemValue] = fileparts(state.currentSource);
-        if strlength(stemValue) > 0
-            stem = string(matlab.lang.makeValidName(char(stemValue)));
+    for k = 1:numel(sources)
+        if string(sources(k).reference.originalPath) == string(added(end))
+            index = k;
+            return;
         end
     end
-    filepath = fullfile(folder, stem + ext);
 end
 
-function id = changedControlId(payload)
-    id = "";
-    if isstruct(payload) && isfield(payload, 'event') && ...
-            isstruct(payload.event) && isfield(payload.event, 'id')
-        id = string(payload.event.id);
-    elseif isstruct(payload) && isfield(payload, 'control') && ...
-            isstruct(payload.control) && isfield(payload.control, 'id')
-        id = string(payload.control.id);
+function style = sanitizeStyle(style)
+    defaults = figure_studio.styleLibrary.styleForPreset("LabKit figure");
+    names = ["baseFontSize", "titleFontSize", "labelFontSize", ...
+        "tickFontSize", "dataLineWidth", "axesLineWidth", ...
+        "gridAlpha", "canvasWidth", "canvasHeight", "exportScale"];
+    for name = names
+        field = char(name);
+        style.(field) = finiteValue(style.(field), defaults.(field));
+    end
+    style.gridAlpha = min(max(style.gridAlpha, 0), 1);
+    style.canvasWidth = min(max(style.canvasWidth, 400), 8000);
+    style.canvasHeight = min(max(style.canvasHeight, 300), 8000);
+    style.exportScale = min(max(style.exportScale, 1), 8);
+end
+
+function style = clearFontOverrides(style)
+    style = ensureFontOverrides(style);
+    style.fontOverrides.title = false;
+    style.fontOverrides.label = false;
+    style.fontOverrides.tick = false;
+end
+
+function style = markFontOverride(style, id)
+    style = ensureFontOverrides(style);
+    names = struct("titleFontSize", "title", ...
+        "labelFontSize", "label", "tickFontSize", "tick");
+    style.fontOverrides.(names.(char(id))) = true;
+end
+
+function style = ensureFontOverrides(style)
+    if ~isfield(style, 'fontOverrides') || ~isstruct(style.fontOverrides)
+        style.fontOverrides = struct( ...
+            "title", false, "label", false, "tick", false);
     end
 end
 
 function style = applyAspectPreset(style, preset, changedId)
     ratio = aspectRatio(preset);
-    if isnan(ratio)
+    if ~isfinite(ratio)
         return;
     end
     if changedId == "aspectPreset" || changedId == "canvasWidth"
@@ -473,87 +414,20 @@ function ratio = aspectRatio(preset)
     end
 end
 
-function style = ensureFontOverrideFields(style)
-    if ~isfield(style, 'titleFontOffset')
-        style.titleFontOffset = 2;
-    end
-    if ~isfield(style, 'labelFontOffset')
-        style.labelFontOffset = 0;
-    end
-    if ~isfield(style, 'tickFontOffset')
-        style.tickFontOffset = -1;
-    end
-    if ~isfield(style, 'fontOverrides') || ~isstruct(style.fontOverrides)
-        style.fontOverrides = struct('title', false, 'label', false, 'tick', false);
-    end
-    for name = ["title", "label", "tick"]
-        field = char(name);
-        if ~isfield(style.fontOverrides, field)
-            style.fontOverrides.(field) = false;
+function filepath = quickExportPath(state, extension)
+    stem = "figure";
+    source = state.session.cache.currentSource;
+    if strlength(source) > 0
+        [~, sourceStem] = fileparts(source);
+        if strlength(sourceStem) > 0
+            stem = string(matlab.lang.makeValidName(char(sourceStem)));
         end
     end
-end
-
-function value = finiteValue(value, fallback)
-    value = double(value);
-    if ~isscalar(value) || ~isfinite(value)
-        value = fallback;
-    end
-end
-
-function state = adoptSourceAxes(state, srcAx)
-    state = adoptSourceStyle(state, figure_studio.sourceAxes.sourceStyle(srcAx));
-end
-
-function state = adoptSourceStyle(state, sourceStyle)
-    if ~isstruct(sourceStyle)
-        return;
-    end
-    state.figDefaultStyle = sourceStyle;
-    if state.preset == "FIG default"
-        state.style = sourceStyle;
-    elseif isfield(sourceStyle, 'canvasWidth') && isfield(sourceStyle, 'canvasHeight')
-        state.style.canvasWidth = sourceStyle.canvasWidth;
-        state.style.canvasHeight = sourceStyle.canvasHeight;
-        state.aspectPreset = "Custom";
-    end
-end
-
-function ax = previewAxes(ui)
-    ax = ui.controls.preview.axesById.main;
-end
-
-function tf = hasPreviewContent(ax)
-    tf = ~isempty(ax) && isvalid(ax) && ~isempty(ax.Children);
-end
-
-function item = itemFromPath(filepath)
-    [~, name, ext] = fileparts(filepath);
-    item = struct( ...
-        'path', string(filepath), ...
-        'name', string(name) + string(ext), ...
-        'source', "fig", ...
-        'status', "Ready");
-end
-
-function item = currentItem(state)
-    item = [];
-    if isempty(state.items)
-        return;
-    end
-    idx = state.currentIndex;
-    if isempty(idx) || idx < 1 || idx > numel(state.items)
-        idx = 1;
-    end
-    item = state.items(idx);
-end
-
-function tf = isLoaded(state, filepath)
-    tf = ~isempty(state.items) && any(string({state.items.path}) == string(filepath));
+    filepath = fullfile(state.project.parameters.outputFolder, stem + extension);
 end
 
 function name = exportFolderName(state)
-    source = state.currentSource;
+    source = state.session.cache.currentSource;
     if strlength(source) == 0
         source = "figure";
     end
@@ -565,34 +439,24 @@ function name = exportFolderName(state)
         string(datestr(now, 'yyyymmdd_HHMMSS'));
 end
 
-function lines = summaryLines(state)
-    lines = strings(0, 1);
-    lines(end + 1, 1) = string(state.status);
-    lines(end + 1, 1) = "Style mode: " + string(state.preset);
-    lines(end + 1, 1) = sprintf(['Fonts title/label/tick: %.0f / %.0f / %.0f | ' ...
-        'line widths data/axes: %.2f / %.2f'], ...
-        state.style.titleFontSize, state.style.labelFontSize, ...
-        state.style.tickFontSize, state.style.dataLineWidth, ...
-        state.style.axesLineWidth);
-    if strlength(state.lastExportFolder) > 0
-        lines(end + 1, 1) = "Last export: " + state.lastExportFolder;
+function value = onOff(tf)
+    if tf
+        value = "On";
+    else
+        value = "Off";
     end
 end
 
-function addLog(services, msg)
-    labkit.ui.control.appendLog(services.ui, 'appLog', char(string(msg)));
-    if isDebugEnabled(services.debug)
-        services.debug.append(string(msg));
+function value = finiteValue(value, fallback)
+    value = double(value);
+    if isempty(value) || ~isscalar(value) || ~isfinite(value)
+        value = fallback;
     end
 end
 
-function reportException(services, event, ME)
-    if isDebugEnabled(services.debug)
-        services.debug.reportException('figureStudio', event, ME);
-    end
-end
-
-function tf = isDebugEnabled(debugLog)
-    tf = isstruct(debugLog) && isfield(debugLog, 'enabled') && ...
-        logical(debugLog.enabled);
+function state = reportFailure(state, services, context, exception)
+    services.diagnostics.report(context, exception);
+    services.dialogs.alert(exception.message, context);
+    state.session.workflow.status = context + " failed.";
+    state = services.workflow.log(state, context + ": " + exception.message);
 end

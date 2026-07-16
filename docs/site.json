@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "title": "LabKit MATLAB Workbench",
+  "tagline": "Apps, framework guides, and MATLAB API reference for laboratory workflows.",
+  "repositoryUrl": "https://github.com/Pluze/LabKit-MATLAB-Workbench",
+  "pages": [
+    {"id":"home","source":"README.md","output":"index.html","title":"LabKit Documentation","kind":"overview","nav":[],"order":1,"keywords":["documentation","start"]},
+    {"id":"getting-started","source":"getting-started/README.md","output":"getting-started/index.html","title":"Getting Started","kind":"tutorial","nav":["Getting Started"],"order":1,"keywords":["install","launcher","update"],"components":["labkit_launcher"]},
+    {"id":"apps","source":"apps/README.md","output":"apps/index.html","title":"Apps","kind":"overview","nav":["Apps"],"order":1,"keywords":["catalog","workflow"]},
+    {"id":"api","source":"libraries/README.md","output":"reference/index.html","title":"API Reference","kind":"reference","nav":["API Reference"],"order":1,"keywords":["MATLAB","functions"]},
+    {"id":"framework","source":"framework/README.md","output":"framework/index.html","title":"App Framework","kind":"explanation","nav":["App Framework"],"order":1,"keywords":["ui","runtime","lifecycle","callbacks"],"components":["labkit.ui"]},
+    {"id":"framework-runtime","source":"framework/runtime.md","output":"framework/runtime.html","title":"Runtime and Lifecycle","kind":"explanation","nav":["App Framework"],"order":2,"keywords":["definition","state","transactions","startup","busy","presentation","interaction","debug"],"components":["labkit.ui.runtime"]},
+    {"id":"contracts","source":"libraries/contracts/README.md","output":"libraries/contracts/index.html","title":"Contracts","kind":"reference","nav":["Libraries"],"order":1,"keywords":["requirements","versions"],"components":["labkit.contract"]},
+    {"id":"image","source":"libraries/image/README.md","output":"libraries/image/index.html","title":"Image Library","kind":"reference","nav":["Libraries"],"order":2,"keywords":["image","io","processing"],"components":["labkit.image"]},
+    {"id":"thermal","source":"libraries/thermal/README.md","output":"libraries/thermal/index.html","title":"Thermal Library","kind":"reference","nav":["Libraries"],"order":3,"keywords":["FLIR","temperature","radiometric"],"components":["labkit.thermal"]},
+    {"id":"dta","source":"libraries/dta/README.md","output":"libraries/dta/index.html","title":"DTA Library","kind":"reference","nav":["Libraries"],"order":4,"keywords":["Gamry","electrochemistry"],"components":["labkit.dta"]},
+    {"id":"rhs","source":"libraries/rhs/README.md","output":"libraries/rhs/index.html","title":"RHS Library","kind":"reference","nav":["Libraries"],"order":5,"keywords":["Intan","neurophysiology"],"components":["labkit.rhs"]},
+    {"id":"biosignal","source":"libraries/biosignal/README.md","output":"libraries/biosignal/index.html","title":"Biosignal Library","kind":"reference","nav":["Libraries"],"order":6,"keywords":["ECG","signals"],"components":["labkit.biosignal"]},
+    {"id":"history","source":"history/README.md","output":"history/index.html","title":"Project History","kind":"history index","nav":["History"],"order":1,"keywords":["changes","versions","evolution"]},
+    {"id":"development","source":"development/README.md","output":"development/index.html","title":"Development","kind":"overview","nav":["Development"],"order":1,"keywords":["maintainers","source"]},
+    {"id":"architecture","source":"development/architecture.md","output":"development/architecture.html","title":"Architecture","kind":"explanation","nav":["Development"],"order":2,"keywords":["ownership","boundaries"]},
+    {"id":"app-development","source":"development/app-development.md","output":"development/app-development.html","title":"App Development","kind":"how-to","nav":["Development"],"order":3,"keywords":["build","app"]},
+    {"id":"private-apps","source":"development/private-apps.md","output":"development/private-apps.html","title":"Private Apps","kind":"explanation","nav":["Development"],"order":4,"keywords":["private","workspace"]},
+    {"id":"testing","source":"development/testing.md","output":"development/testing.html","title":"Testing","kind":"how-to","nav":["Development"],"order":5,"keywords":["validation","CI"]},
+    {"id":"documentation","source":"development/documentation.md","output":"development/documentation.html","title":"Documentation System","kind":"explanation","nav":["Development"],"order":6,"keywords":["renderer","HTML","search"]},
+    {"id":"release","source":"development/release.md","output":"development/release.html","title":"Release Process","kind":"how-to","nav":["Development"],"order":7,"keywords":["release","version"]}
+  ]
+}

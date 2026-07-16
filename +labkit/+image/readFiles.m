@@ -1,27 +1,63 @@
 function records = readFiles(paths, opts)
 %READFILES Read image files into path/name/image records.
 %
-% App-facing contract:
+% Usage:
 %   records = labkit.image.readFiles(paths)
 %   records = labkit.image.readFiles(paths, opts)
 %
+% Description:
+%   Reads one or more image files in the supplied order and returns a uniform
+%   record for each file. The default path validates source extensions and
+%   file existence, converts data with labkit.image.im2double, expands
+%   grayscale to RGB, discards channels after the first three, and clamps
+%   values to [0,1]. Set Normalize to false when the exact class and channel
+%   layout returned by imread must be preserved.
+%
+%   progressFcn is called immediately before and after every imread. If a
+%   read, conversion, or callback fails, the error propagates and no partial
+%   records array is returned.
+%
 % Inputs:
-%   paths - char, string, cell array, or empty value accepted by
-%       labkit.image.normalizePaths.
-%   opts - optional struct with fields:
-%       Normalize - logical scalar, default true. When true, grayscale images
-%           are expanded to RGB, alpha channels are dropped, and image data is
-%           converted to double in [0, 1]. When false, image data is returned
-%           as read by imread.
-%       AllowEmpty - logical scalar, default true.
-%       ValidateExtensions - logical scalar, default true.
-%       RequireExisting - logical scalar, default true.
-%       progressFcn - function handle called before and after each read with
-%           fields stage, index, count, path, and name.
+%   paths - Character vector, string array, cell array, or empty value
+%           accepted by labkit.image.normalizePaths.
+%   opts - Optional scalar struct containing the fields listed below.
+%
+% Options:
+%   Normalize - Logical scalar controlling conversion to clamped RGB double.
+%               The default is true.
+%   AllowEmpty - Logical scalar controlling whether an empty path collection
+%                returns an empty record column. The default is true.
+%   ValidateExtensions - Logical scalar controlling validation with
+%                        assertSupportedPaths. The default is true.
+%   RequireExisting - Logical scalar controlling the explicit file-existence
+%                     check before imread. The default is true. imread can
+%                     still fail when this option is false.
+%   progressFcn - Function handle or []. The callback receives a scalar
+%                 structure before and after each read. The default is [].
 %
 % Outputs:
-%   records - struct column with path, name, and image fields. App workflows
-%       may copy these fields into app-owned item structs.
+%   records - N-by-1 structure array with path, name, and image fields. path
+%             and name are strings; image contains the normalized or raw
+%             image matrix.
+%
+% Progress Fields:
+%   stage - "beforeRead" or "afterRead".
+%   index - 1-based index of the current path.
+%   count - Total number of paths.
+%   path - Current path as a string scalar.
+%   name - Filename and extension from labkit.image.displayName.
+%
+% Errors:
+%   labkit:image:InvalidOptions - opts or one of its fields is invalid.
+%   labkit:image:NoPaths - paths is empty while AllowEmpty is false.
+%   labkit:image:UnsupportedImageFile - An extension is unsupported while
+%                                       ValidateExtensions is true.
+%   labkit:image:ImageFileNotFound - A file is missing while RequireExisting
+%                                    is true.
+%
+% Typical Call:
+%   opts = struct('Normalize', true, 'progressFcn', @updateProgress);
+%   records = labkit.image.readFiles(selectedPaths, opts);
 
     if nargin < 2 || isempty(opts)
         opts = struct();

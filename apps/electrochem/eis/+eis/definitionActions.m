@@ -1,182 +1,165 @@
-% App-owned action table for EIS Overlay. Expected caller is eis.definition.
-% Output maps semantic action ids to handlers used by labkit.ui.runtime.run.
-% Handlers own app workflow transitions and IO/export side effects.
+% App-owned Runtime V2 action table for EIS Overlay. Handlers own source
+% loading/removal, semantic selection, and plot-data export side effects.
 function actions = definitionActions()
     actions = struct( ...
-        "startup", @onStartup, ...
         "openFilesChosen", @onOpenFilesChosen, ...
         "removeSelected", @onRemoveSelected, ...
         "clearAll", @onClearAll, ...
         "exportCSV", @onExportCSV, ...
-        "selectionChanged", @onRefreshOnly, ...
-        "plotOptionsChanged", @onRefreshOnly);
+        "selectionChanged", @onSelectionChanged);
 end
 
-function state = onStartup(state, ~, services)
-    debugLog = services.debug;
-    if ~isDebugEnabled(debugLog)
-        return;
-    end
-    debugLog.trace('EIS debug trace enabled.');
-    try
-        pack = eis.debug.writeSamplePack(debugLog);
-        addLog(services, sprintf('Debug sample files: %s', char(pack.sampleFolder)));
-        addLog(services, sprintf('Debug output folder: %s', char(pack.outputFolder)));
-    catch ME
-        debugLog.reportException('eis', 'Debug sample setup failed', ME);
-        addLog(services, sprintf('Debug sample setup failed: %s', ME.message));
-    end
-end
-
-function state = onOpenFilesChosen(state, payload, services)
-    paths = labkit.ui.control.filePaths(payload.event.addedFiles);
+function state = onOpenFilesChosen(state, event, services)
+    paths = services.events.paths(event, "addedFiles");
     if isempty(paths)
-        addLog(services, 'Open cancelled.');
+        paths = services.events.paths(event, "files");
+    end
+    if isempty(paths)
+        state = services.workflow.log(state, "Open cancelled.");
         return;
     end
-    state = loadFiles(state, paths, services);
-end
-
-function state = loadFiles(state, filepaths, services)
-    filepaths = normalizePaths(filepaths);
-    if isempty(filepaths)
-        return;
-    end
-
-    failed = struct('filepath', {}, 'message', {});
-    for iFile = 1:numel(filepaths)
-        filepath = filepaths(iFile);
-        if isLoaded(state, filepath)
-            addLog(services, sprintf('Skipped already loaded: %s', char(filepath)));
+    failures = struct("filepath", {}, "message", {});
+    for k = 1:numel(paths)
+        filepath = paths(k);
+        if isLoaded(state.session.cache.items, filepath)
+            state = services.workflow.log(state, ...
+                "Skipped already loaded: " + filepath);
             continue;
         end
-
         [item, status] = labkit.dta.loadFile(filepath, "eis");
         if ~status.ok
-            failed(end + 1) = struct( ...
-                'filepath', char(filepath), ...
-                'message', char(status.message));
-            addLog(services, sprintf('Failed: %s | %s', ...
-                char(filepath), char(status.message)));
+            failures(end + 1) = struct( ...
+                "filepath", filepath, "message", string(status.message));
+            state = services.workflow.log(state, ...
+                "Failed: " + filepath + " | " + string(status.message));
             continue;
         end
-
-        state.items = appendItem(state.items, item);
-        addLoadedLog(services, char(filepath), item);
+        state.session.cache.items = appendItem( ...
+            state.session.cache.items, item);
+        source = services.project.sourceRecord( ...
+            nextSourceId(state.project.inputs.sources), ...
+            "eis", filepath, true);
+        state.project.inputs.sources = appendSource( ...
+            state.project.inputs.sources, source);
+        state = logLoadedItem(state, item, services);
     end
-
-    if ~isempty(failed)
-        firstError = failed(1);
-        labkit.ui.runtime.showAlert(services.figure, ...
-            sprintf('Failed to load:\n%s\n\n%s', ...
-            firstError.filepath, firstError.message), ...
-            'Load error');
+    state.session.selection.paths = ...
+        string({state.session.cache.items.filepath}).';
+    state.project.results.lastExport = [];
+    if ~isempty(failures)
+        first = failures(1);
+        services.dialogs.alert(sprintf('Failed to load:\n%s\n\n%s', ...
+            first.filepath, first.message), 'Load error');
     end
 end
 
-function addLoadedLog(services, filepath, item)
-    for ii = 1:numel(item.logmsg)
-        addLog(services, item.logmsg{ii});
-    end
-    addLog(services, sprintf('%s: %s', item.name, item.message));
-    addLog(services, sprintf('Loaded: %s', filepath));
-end
-
-function state = onRemoveSelected(state, payload, services)
-    if isempty(state.items)
-        return;
-    end
-    paths = labkit.ui.control.filePaths(payload.event.removedFiles);
+function state = onRemoveSelected(state, event, services)
+    paths = services.events.paths(event, "removedFiles");
     if isempty(paths)
         return;
     end
-    [state, report] = removeItemsByPaths(state, paths);
-    for k = 1:numel(report.removed)
-        addLog(services, sprintf('Removed: %s', report.removed{k}));
+    [state.session.cache.items, removed] = removeItems( ...
+        state.session.cache.items, paths);
+    state.project.inputs.sources = removeSources( ...
+        state.project.inputs.sources, paths);
+    state.session.selection.paths = setdiff( ...
+        state.session.selection.paths, removed, 'stable');
+    state.project.results.lastExport = [];
+    for k = 1:numel(removed)
+        state = services.workflow.log(state, "Removed: " + removed(k));
     end
 end
 
 function state = onClearAll(state, ~, services)
-    state.items = struct([]);
-    addLog(services, 'Cleared all files.');
+    state.project.inputs.sources = state.project.inputs.sources([]);
+    state.project.results.lastExport = [];
+    state.session.cache.items = struct([]);
+    state.session.selection.paths = strings(0, 1);
+    state = services.workflow.log(state, "Cleared all files.");
+end
+
+function state = onSelectionChanged(state, event, services)
+    state.session.selection.paths = ...
+        services.events.paths(event, "selectedFiles");
 end
 
 function state = onExportCSV(state, ~, services)
-    items = selectedItems(state, services.ui);
+    items = selectedItems(state);
     if isempty(items)
-        labkit.ui.runtime.showAlert(services.figure, ...
-            'No files selected for export.', 'Export');
+        services.dialogs.alert('No files selected for export.', 'Export');
         return;
     end
-
-    [out, cancelled] = labkit.ui.runtime.promptOutputFile( ...
+    [out, cancelled] = services.dialogs.outputFile( ...
         'gamry_eis_plot_export.csv', 'Save current X/Y plot CSV', ...
         'gamry_eis_plot_export.csv');
     if cancelled
+        state = services.workflow.log(state, "Plot export cancelled.");
         return;
     end
-
-    opts = plotOptions(services.ui);
-    T = eis.resultFiles.buildExportTable(items, opts.xName, opts.yName, ...
-        opts.logX, opts.logY);
-    writetable(T, out);
-    addLog(services, sprintf('Exported CSV: %s', char(out)));
+    p = state.project.parameters;
+    tableValue = eis.resultFiles.buildExportTable( ...
+        items, p.xName, p.yName, p.logX, p.logY);
+    writetable(tableValue, out);
+    [folder, name, extension] = fileparts(out);
+    output = services.results.output("eisPlotData", "primary", ...
+        string(name) + string(extension), "text/csv");
+    spec = struct( ...
+        "Outputs", output, ...
+        "Inputs", selectedSources(state), ...
+        "Parameters", p, ...
+        "Summary", struct("fileCount", numel(items)), ...
+        "ManifestName", "gamry_eis_plot_export.labkit.json");
+    [manifestPath, ~] = services.results.writeManifest(folder, spec);
+    state.project.results.lastExport = struct( ...
+        "csvPath", string(out), "manifestPath", string(manifestPath));
+    state = services.workflow.log(state, "Exported CSV: " + string(out));
 end
 
-function state = onRefreshOnly(state, ~, ~)
-end
-
-function items = selectedItems(state, ui)
-    files = labkit.ui.control.getValue(ui, 'files');
-    paths = labkit.ui.control.filePaths(files);
-    if isempty(paths)
-        items = struct([]);
+function items = selectedItems(state)
+    items = state.session.cache.items;
+    if isempty(items)
         return;
     end
-    keep = ismember(string({state.items.filepath}), string(paths(:)));
-    items = state.items(keep);
+    keep = ismember(string({items.filepath}), ...
+        state.session.selection.paths(:));
+    items = items(keep);
 end
 
-function opts = plotOptions(ui)
-    opts = struct();
-    opts.xName = ui.controls.xAxis.valueHandle.Value;
-    opts.yName = ui.controls.yAxis.valueHandle.Value;
-    opts.logX = ui.controls.logX.valueHandle.Value;
-    opts.logY = ui.controls.logY.valueHandle.Value;
-end
-
-function [state, report] = removeItemsByPaths(state, filepaths)
-    paths = normalizePaths(filepaths);
-    report = struct('removed', {{}}, 'missing', {{}});
-    if isempty(paths)
+function sources = selectedSources(state)
+    sources = state.project.inputs.sources;
+    if isempty(sources)
         return;
     end
-    if isempty(state.items)
-        report.missing = cellstr(paths(:).');
-        return;
+    paths = strings(numel(sources), 1);
+    for k = 1:numel(sources)
+        paths(k) = string(sources(k).reference.originalPath);
     end
-    keep = true(1, numel(state.items));
-    itemPaths = string({state.items.filepath});
-    for k = 1:numel(paths)
-        idx = find(itemPaths == paths(k) & keep, 1, 'first');
-        if isempty(idx)
-            report.missing{end + 1} = char(paths(k));
-            continue;
-        end
-        report.removed{end + 1} = char(paths(k));
-        keep(idx) = false;
-    end
-    state.items = state.items(keep);
+    sources = sources(ismember(paths, state.session.selection.paths(:)));
 end
 
-function tf = isLoaded(state, filepath)
-    tf = ~isempty(state.items) && ...
-        any(string({state.items.filepath}) == string(filepath));
+function state = logLoadedItem(state, item, services)
+    for k = 1:numel(item.logmsg)
+        state = services.workflow.log(state, item.logmsg{k});
+    end
+    state = services.workflow.log(state, ...
+        string(item.name) + ": " + string(item.message));
+    state = services.workflow.log(state, ...
+        "Loaded: " + string(item.filepath));
 end
 
-function paths = normalizePaths(paths)
-    paths = string(paths(:));
-    paths = paths(strlength(paths) > 0);
+function tf = isLoaded(items, filepath)
+    tf = ~isempty(items) && ...
+        any(string({items.filepath}) == string(filepath));
+end
+
+function id = nextSourceId(sources)
+    ids = string({sources.id});
+    number = numel(ids) + 1;
+    id = "dta" + string(number);
+    while any(ids == id)
+        number = number + 1;
+        id = "dta" + string(number);
+    end
 end
 
 function items = appendItem(items, item)
@@ -187,14 +170,32 @@ function items = appendItem(items, item)
     end
 end
 
-function addLog(services, msg)
-    labkit.ui.control.appendLog(services.ui, 'appLog', msg);
-    if isDebugEnabled(services.debug)
-        services.debug.append(msg);
+function sources = appendSource(sources, source)
+    if isempty(sources)
+        sources = source;
+    else
+        sources(end + 1) = source;
     end
 end
 
-function tf = isDebugEnabled(debugLog)
-    tf = isstruct(debugLog) && isfield(debugLog, 'enabled') && ...
-        logical(debugLog.enabled);
+function [items, removed] = removeItems(items, paths)
+    removed = strings(0, 1);
+    if isempty(items)
+        return;
+    end
+    itemPaths = string({items.filepath});
+    keep = ~ismember(itemPaths, paths(:));
+    removed = itemPaths(~keep).';
+    items = items(keep);
+end
+
+function sources = removeSources(sources, paths)
+    if isempty(sources)
+        return;
+    end
+    sourcePaths = strings(numel(sources), 1);
+    for k = 1:numel(sources)
+        sourcePaths(k) = string(sources(k).reference.originalPath);
+    end
+    sources = sources(~ismember(sourcePaths, paths(:)));
 end

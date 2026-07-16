@@ -1,9 +1,150 @@
-% Expected caller: CIC app runner and unit tests. Inputs are a DTA item struct
-% and CIC option struct. Output is the stable CIC analysis result struct. No file
-% or UI side effects.
-
 function A = computeCIC(item, opts)
-%COMPUTECIC Compute legacy-compatible CIC / voltage-transient metrics.
+%COMPUTECIC Calculate charge-injection and voltage-transient metrics.
+%
+% Usage:
+%   A = cic.analysisRun.computeCIC(item)
+%   A = cic.analysisRun.computeCIC(item, opts)
+%
+% Description:
+%   Analyzes one biphasic chronopotentiometry transient. The function detects
+%   the cathodic and anodic pulse windows, samples the polarization voltage
+%   after each phase, integrates injected charge, normalizes charge by
+%   electrode area, and checks the measured voltages against the selected
+%   cathodic and anodic limits. It performs no plotting or file export.
+%
+% Inputs:
+%   item - Scalar DTA item structure. item.curve, or the main curve selected
+%       from item.tables, must provide T in seconds, Vf in volts, and Im in
+%       amperes. Pt is optional; sample numbers are generated when it is
+%       absent. item.meta may contain pulse metadata and area_cm2.
+%   opts - Optional scalar structure. See Options.
+%
+% Options:
+%   delay_s - Time in seconds from the end of each pulse phase to the Emc or
+%       Ema sample. The voltage is linearly interpolated at cath_end+delay_s
+%       and anod_end+delay_s. Default: 10e-6 seconds.
+%   cathLimit - Cathodic water-window limit in volts. Emc passes when
+%       Emc >= cathLimit. Default: -0.6 V.
+%   anodLimit - Anodic water-window limit in volts. Ema passes when
+%       Ema <= anodLimit. Default: 0.8 V.
+%   areaOverride - Positive electrode area in square centimetres, supplied as
+%       a numeric scalar or numeric text. A valid value takes precedence over
+%       area_cm2 and item.meta.area_cm2. Default: "".
+%   area_cm2 - Positive numeric electrode area in square centimetres used when
+%       areaOverride is empty or invalid. If neither option supplies an area,
+%       item.meta.area_cm2 is used. Without a valid area, charge is still
+%       calculated but CIC density fields are NaN. Default: NaN.
+%   pulseMode - Pulse-detection policy. Allowed display values are "Metadata
+%       first, then auto", "Metadata only", and "Auto from Im only". The
+%       equivalent values "metadata_first", "metadata_only", and
+%       "current_only" are also accepted by labkit.dta.detectPulses. Default:
+%       "Metadata first, then auto".
+%   usedMeasuredCurrent - Logical scalar. When true, Qc and Qa are the absolute
+%       trapezoidal integrals of measured Im over the detected phase windows.
+%       When false, charge is the absolute nominal phase current multiplied by
+%       phase duration. Default: true.
+%
+% Calculations:
+%   Samples with NaN T, Vf, or Im are removed together. At least five remaining
+%   samples are required. Emc is Vf at cath_end+delay_s and Ema is Vf at
+%   anod_end+delay_s. The cathodic baseline Eipp uses the first finite value in
+%   this order: pre-pulse median, interpulse median, post-pulse median, zero.
+%   The anodic baseline Eipp_gap prefers the interpulse median, followed by the
+%   pre-pulse median, post-pulse median, and Eipp.
+%
+%   Qc_C and Qa_C are stored as positive charge magnitudes in coulombs;
+%   Qt_C = Qc_C + Qa_C. For a valid area, CIC density is
+%   1000*Q/area_cm2 in mC/cm^2. CICc_mCcm2, CICa_mCcm2, and CICt_mCcm2 refer
+%   to the cathodic, anodic, and summed biphasic charge respectively.
+%
+% Outputs:
+%   A - Scalar result structure. A.ok is true only when curve selection, pulse
+%       detection, delayed voltage sampling, and both charge integrations
+%       succeed. A.message is "OK" on success and explains the first failed
+%       stage otherwise.
+%
+% Output Fields:
+%   ok - Logical success flag.
+%   message - "OK" or a description of the first failed stage.
+%   delay_s - Effective delayed-voltage sampling interval in seconds.
+%   cathLimit - Effective cathodic voltage limit in volts.
+%   anodLimit - Effective anodic voltage limit in volts.
+%   area_cm2 - Selected positive electrode area in cm^2, or NaN when missing.
+%   usedMeasuredCurrent - Effective charge-integration policy.
+%   logOnFailure - True for failures that the app should copy into its visible
+%       diagnostic log; false for ordinary incomplete-input results.
+%   Emc - Delayed cathodic polarization voltage in volts.
+%   Ema - Delayed anodic polarization voltage in volts.
+%   t_emc - Requested Emc sample time in seconds.
+%   t_ema - Requested Ema sample time in seconds.
+%   emc_idx - Index of the recorded sample nearest t_emc.
+%   ema_idx - Index of the recorded sample nearest t_ema.
+%   Epre - Median pre-pulse voltage in volts.
+%   Ebetween - Median interpulse voltage in volts.
+%   Epost - Median post-pulse voltage in volts.
+%   Eipp - Baseline selected for the cathodic phase, in volts.
+%   Eipp_gap - Baseline selected for the anodic phase, in volts.
+%   baselineCathSource - Text naming the cathodic baseline source.
+%   baselineAnodSource - Text naming the anodic baseline source.
+%   baselineCathWindow - Two-element time window used for Eipp, in seconds.
+%   baselineAnodWindow - Two-element time window used for Eipp_gap, in seconds.
+%   Vc_on - Voltage sampled delay_s after cathodic phase onset, in volts.
+%   Va_on - Voltage sampled delay_s after anodic phase onset, in volts.
+%   t_conset - Requested cathodic onset sample time in seconds.
+%   t_aonset - Requested anodic onset sample time in seconds.
+%   Va_cath_mag - Absolute Eipp-to-Vc_on voltage change, in volts.
+%   Va_anod_mag - Absolute Eipp_gap-to-Va_on voltage change, in volts.
+%   tc_s - Cathodic phase duration in seconds.
+%   ta_s - Anodic phase duration in seconds.
+%   tip_s - Interpulse gap duration in seconds.
+%   Ic_est_A - Median measured cathodic current in amperes.
+%   Ia_est_A - Median measured anodic current in amperes.
+%   cathMask - Logical vector selecting cathodic phase samples.
+%   anodMask - Logical vector selecting anodic phase samples.
+%   Qc_C - Cathodic charge magnitude in coulombs.
+%   Qa_C - Anodic charge magnitude in coulombs.
+%   Qt_C - Qc_C + Qa_C in coulombs.
+%   CICc_mCcm2 - Cathodic charge density in mC/cm^2.
+%   CICa_mCcm2 - Anodic charge density in mC/cm^2.
+%   CICt_mCcm2 - Total biphasic charge density in mC/cm^2.
+%   cathOK - True when Emc is not below cathLimit.
+%   anodOK - True when Ema is not above anodLimit.
+%   safe - True when both cathOK and anodOK are true.
+%   limitSide - "safe", "cathodic exceeded", "anodic exceeded", or "both
+%       exceeded".
+%   pulse - Pulse geometry returned by labkit.dta.detectPulses.
+%   detectMode - Pulse-detection method that produced pulse.
+%   detectMsg - Pulse-detection status message.
+%   t - Filtered time vector in seconds.
+%   Vf - Filtered voltage vector in volts.
+%   Im - Filtered current vector in amperes.
+%   pt - Filtered source point numbers or generated zero-based sample numbers.
+%   sample_dt - Median difference between consecutive filtered times, in
+%       seconds. sample_dt_report contains the same value for exports.
+%   ampEstimate_A - Largest absolute filtered current in amperes.
+%
+% Failure Behavior:
+%   Missing curves, too few valid samples, failed pulse detection, an
+%   out-of-range delay, or a pulse window with fewer than two samples returns
+%   A.ok=false. These data failures normally return a message instead of
+%   throwing. Invalid MATLAB types or malformed structures can still raise an
+%   error from the DTA access or numeric functions.
+%
+% Typical Call:
+%   [item, status] = labkit.dta.loadFile("pulse.DTA", "chrono");
+%   assert(status.ok, status.message)
+%   opts = struct( ...
+%       "delay_s", 10e-6, ...
+%       "cathLimit", -0.6, ...
+%       "anodLimit", 0.8, ...
+%       "area_cm2", 0.03, ...
+%       "pulseMode", "Metadata first, then auto", ...
+%       "usedMeasuredCurrent", true);
+%   A = cic.analysisRun.computeCIC(item, opts);
+%   assert(A.ok, A.message)
+%   fprintf("Cathodic CIC: %.4g mC/cm^2\n", A.CICc_mCcm2)
+%
+% See also labkit.dta.detectPulses, vt_resistance.analysisRun.computeResistance
 
     if nargin < 2
         opts = struct();
@@ -122,7 +263,8 @@ function opts = fillCICOptions(opts)
         opts.area_cm2 = NaN;
     end
     if ~isfield(opts, 'pulseMode')
-        opts.pulseMode = 'Metadata first, then auto';
+        choices = cic.userInterface.analysisChoices();
+        opts.pulseMode = char(choices.pulseModes(1));
     end
     if ~isfield(opts, 'usedMeasuredCurrent')
         opts.usedMeasuredCurrent = true;

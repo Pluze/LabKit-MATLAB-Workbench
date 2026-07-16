@@ -1,4 +1,4 @@
-% Expected caller: cic.definitionActions startup action and unit tests. Input is a
+% Expected caller: Runtime V2 DebugSample lifecycle and unit tests. Input is a
 % LabKit debug context. Output is a deterministic synthetic chrono DTA sample
 % pack. Side effects: writes anonymous debug input files and records a session
 % manifest when available.

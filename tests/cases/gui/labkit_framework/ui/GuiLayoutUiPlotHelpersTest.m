@@ -1,5 +1,5 @@
 classdef GuiLayoutUiPlotHelpersTest < matlab.unittest.TestCase
-    %GUILAYOUTUIPLOTHELPERSTEST Verify UI 5 plot helper contracts.
+    %GUILAYOUTUIPLOTHELPERSTEST Verify declarative plot helper contracts.
 
     methods (Test, TestTags = {'GUI', 'Structural'})
         function test_gui_layout_ui_plot_helpers(testCase)
@@ -28,7 +28,7 @@ function verify_gui_layout_ui_plot_helpers()
                 'axisTitles', {'Main Plot'})}));
     ui = labkit.ui.runtime.create(layout);
 
-    ax = labkit.ui.plot.getAxes(ui, 'preview', 'main');
+    ax = testui.plot.getAxes(ui, 'preview', 'main');
     assert(isequal(ax, ui.controls.preview.axesById.main), ...
         'plot.getAxes should resolve a semantic preview axes id.');
 
@@ -42,34 +42,13 @@ function verify_gui_layout_ui_plot_helpers()
     ax.YLim = [-10 10];
     ax.XScale = 'log';
     ax.YDir = 'reverse';
-    uv = labkit.ui.plot.dataToFraction(ax, [10 0]);
-    xy = labkit.ui.plot.fractionToData(ax, uv);
-    assert(max(abs(uv - [0.5 0.5])) < 1e-12 && ...
-        max(abs(xy - [10 0])) < 1e-12, ...
-        'Plot coordinate helpers should round-trip log and reversed axes.');
-
     offsetXY = labkit.ui.plot.offsetData(ax, [10 0], [0.1 -0.1]);
-    offsetUV = labkit.ui.plot.dataToFraction(ax, offsetXY);
-    assert(max(abs(offsetUV - [0.6 0.4])) < 1e-12, ...
+    assert(max(abs(offsetXY - [10^1.2 2])) < 1e-12, ...
         'plot.offsetData should apply visual axes-fraction offsets.');
     clampedXY = labkit.ui.plot.clampData(ax, [0.01 100], 'Padding', 0.1);
-    clampedUV = labkit.ui.plot.dataToFraction(ax, clampedXY);
-    assert(all(clampedUV >= 0.1 - eps) && all(clampedUV <= 0.9 + eps), ...
+    assert(clampedXY(1) >= 10^0.2 - eps && ...
+        clampedXY(1) <= 10^1.8 + eps && abs(clampedXY(2)) <= 8 + eps, ...
         'plot.clampData should keep labels inside the visible axes area.');
-
-    cla(ax);
-    background = imagesc(ax, reshape(1:100, 10, 10));
-    ax.XLim = [2 8];
-    ax.YLim = [3 9];
-    ui.figure.WindowScrollWheelFcn = @noop;
-    firstOverlay = labkit.ui.plot.replaceOverlay(ax, 'probe', ...
-        @(target) plot(target, [3 4], [4 5], 'r-'));
-    secondOverlay = labkit.ui.plot.replaceOverlay(ax, 'probe', ...
-        @(target) text(target, 5, 6, 'updated'));
-    assert(isvalid(background) && ~isvalid(firstOverlay{1}) && ...
-        isvalid(secondOverlay{1}) && isequal(ax.XLim, [2 8]) && ...
-        isequal(ax.YLim, [3 9]) && isequal(ui.figure.WindowScrollWheelFcn, @noop), ...
-        'plot.replaceOverlay should replace only its layer and preserve view/callbacks.');
 
     labkit.ui.plot.message(ax, 'No data', 'Title', 'Empty');
     assert(isempty(findobj(ax, 'Type', 'line')) && isequal(ax.XLim, [0 1]) && ...

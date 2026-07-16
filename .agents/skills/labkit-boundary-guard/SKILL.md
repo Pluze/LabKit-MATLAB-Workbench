@@ -13,7 +13,7 @@ Preserve LabKit's app-first architecture:
 - `+labkit` owns small, stable UI/image/DTA/RHS/biosignal facades
 - no public helper-dump packages
 - UI apps should use the layered
-  `labkit.ui.runtime/layout/control/plot/interaction/debug` facades; the older
+  `labkit.ui.runtime/layout/plot/interaction/debug` facades; the older
   flat helper surface, retired `app/spec/view/tool/diag` package names, and
   pre-2.0 `createShell`/legacy view APIs have been removed
 
@@ -28,11 +28,12 @@ Start with a quick pass:
 Use a deep pass only when the boundary decision is not already obvious from
 the touched files:
 
-- read `docs/architecture.md` for public package surfaces, allowed debt, or
+- read `docs/development/architecture.md` for public package surfaces, allowed debt, or
   app-vs-library ownership changes
 - read the relevant component doc only for the touched facade:
-  `docs/apps.md`, `docs/ui.md`, `docs/image.md`, `docs/dta.md`,
-  `docs/rhs.md`, or `docs/biosignal.md`
+  `docs/apps/README.md`, `docs/framework/README.md`,
+  `docs/libraries/image/README.md`, `docs/libraries/dta/README.md`,
+  `docs/libraries/rhs/README.md`, or `docs/libraries/biosignal/README.md`
 
 ## Boundary Decision
 
@@ -60,24 +61,24 @@ enhancement primitives. App tool histories, ROI/background policy,
 reference-match workflows, crop/export schemas, focus-stack algorithms, DIC
 behavior, and workflow wording stay app-owned.
 
-For UI app lifecycle work, prefer `labkit.ui.app.define`,
-`labkit.ui.app.run`, and `labkit.ui.app.dispatchRequest`. Treat
-`labkit.ui.app.create` as the lower-level workbench construction and
-compatibility surface, not the normal app authoring entrypoint. For reusable
-UI pieces, prefer `labkit.ui.layout.*`, `labkit.ui.control.*`,
-`labkit.ui.plot.*`, `labkit.ui.interaction.*`, and `labkit.ui.debug.*`. App
+For UI app lifecycle work, use `labkit.ui.runtime.launch` and
+`labkit.ui.runtime.define`; request dispatch, runtime creation, queueing, and
+presentation commits are private framework mechanics. For reusable UI pieces,
+prefer `labkit.ui.layout.*`, `labkit.ui.plot.*`,
+`labkit.ui.interaction.*`, and `labkit.ui.debug.*`. App
 version metadata stays in app-owned `version.m` files; reusable UI may format
 or apply that title, but `labkit.contract` should not become an app metadata
 registry. Keep primitive builders private; do not expose public MATLAB
 primitive constructors such as button, dropdown, slider, listbox, table, or
 axes builders. Do not reintroduce `createShell` or legacy
-`view.section/form/panel/axes/draw/update/place` APIs.
+`view.section/form/panel/axes/draw/update/place` APIs, the retired public
+`labkit.ui.control.*` facade, or public interaction editor/runtime objects.
 
 ## Validation
 
 Run or recommend project guardrails for package-boundary and public-surface
 changes. Add focused DTA, RHS, biosignal, image, UI, or app-family validation when that
-boundary is touched, and use `docs/testing.md` for exact task names and
+boundary is touched, and use `docs/development/testing.md` for exact task names and
 pairings.
 
 If MATLAB is unavailable, report that clearly and do not claim tests passed.

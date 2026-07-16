@@ -1,19 +1,78 @@
-% App-owned image measurement package helper. Expected caller: owning app callbacks
-% and package tests. Inputs, outputs, and side effects are
-% documented with the helper function below.
 function result = computeFocusStack(images, opts)
-%COMPUTEFOCUSSTACK Fuse focus-stack images for labkit_FocusStack_app.
+%COMPUTEFOCUSSTACK Fuse a stack of images with different focus planes.
 %
-% Expected caller:
-%   labkit_FocusStack_app run callback and package tests.
+% Usage:
+%   result = focus_stack.analysisRun.computeFocusStack(images)
+%   result = focus_stack.analysisRun.computeFocusStack(images, opts)
 %
-% Inputs/outputs:
-%   Cell array or numeric stack of images plus fusion options. Returns the
-%   app-owned result struct with fused image, focus map, coverage, and option
-%   metadata.
+% Description:
+%   Builds a Laplacian pyramid for each input image, estimates local detail
+%   energy at every pyramid level, and blends pixels using the resulting focus
+%   weights. Low-confidence regions use normalized soft weights instead of a
+%   hard source selection. The first image defines the output height and width;
+%   other images are resized to that geometry. Grayscale and RGB inputs may be
+%   mixed, in which case the working stack and output are RGB.
 %
-% Side effects:
-%   None. This helper performs GUI-free fusion only.
+%   This function fuses focus only. It does not align images, compensate for
+%   parallax, or correct moving subjects. Use the app's registration step before
+%   calling it when the camera or specimen moved between frames.
+%
+% Inputs:
+%   images - At least two numeric images supplied as a cell array or numeric
+%       stack. A four-dimensional array uses its fourth dimension as the image
+%       index. A three-dimensional numeric array is interpreted as a stack of
+%       two-dimensional grayscale images, not as one RGB image; use a cell array
+%       for multiple RGB images. Values are converted with labkit.image.im2double.
+%   opts - Optional scalar structure containing the fusion options below.
+%
+% Options:
+%   focusWindow - Local detail-energy window in pixels. The value must be a
+%       positive finite scalar; it is rounded up to an odd integer of at least
+%       three. Default: 31.
+%   smoothRadius - Radius in pixels used to smooth source weights at the finest
+%       pyramid level. It is rounded to a nonnegative integer and reduced at
+%       coarser levels. Default: 4.
+%   minConfidence - Threshold in [0,1] below which fusion uses relative detail
+%       scores rather than only the best source image. Default: 0.05.
+%   pyramidLevels - Requested number of Laplacian levels. It is rounded and
+%       limited to the range supported by the image geometry, from one through
+%       five. Default: 4.
+%
+% Outputs:
+%   result - Scalar structure containing the fused image and diagnostics.
+%
+% Result Fields:
+%   ok, message - true and empty text after successful fusion.
+%   fused - Grayscale or RGB double image in [0,1].
+%   focusIndex - M-by-N uint16 map naming the source with the largest finest-
+%       level detail score at each pixel. Values run from 1 to inputCount.
+%   confidence - M-by-N double map in [0,1] measuring separation between the
+%       best and second-best finest-level detail scores.
+%   focusCoverage - One fraction per source image, calculated from focusIndex;
+%       the fractions sum to one.
+%   inputCount, imageHeight, imageWidth, channelCount - Working stack geometry.
+%   focusWindow, smoothRadius, minConfidence, pyramidLevels - Effective options.
+%   meanConfidence - Mean of the confidence map.
+%   method - "Laplacian pyramid focus fusion".
+%   resizedCount - Number of input images resized to the first image's geometry.
+%
+% Errors:
+%   labkit_FocusStack_app:NotEnoughImages - Fewer than two images are supplied.
+%   labkit_FocusStack_app:InvalidImages - The input container or one of its
+%       elements is not a supported numeric image.
+%   MATLAB validation errors - focusWindow or minConfidence is outside its
+%       documented numeric domain.
+%
+% Example:
+%   [x, y] = meshgrid(1:24, 1:20);
+%   first = double(mod(x, 4) < 2);
+%   second = double(mod(y, 4) < 2);
+%   result = focus_stack.analysisRun.computeFocusStack( ...
+%       {first, second}, struct("focusWindow", 5, "smoothRadius", 1));
+%   assert(result.ok && isequal(size(result.fused), [20 24]))
+%   assert(abs(sum(result.focusCoverage) - 1) < 1e-12)
+%
+% See also labkit.image.im2double, labkit.image.meanFilter2
 
     if nargin < 2
         opts = struct();

@@ -20,6 +20,8 @@ function adapter = buildMultiFilePanelControl(fileSpec, parentGrid, row, callbac
 
     adapter = baseFilePanelAdapter(fileSpec, props, panel, parts.grid, callbacks);
     adapter.chooseButton = parts.chooseButton;
+    adapter.folderButton = parts.folderButton;
+    adapter.recursiveFolderButton = parts.recursiveFolderButton;
     adapter.removeButton = parts.removeButton;
     adapter.clearButton = parts.clearButton;
     adapter.listbox = parts.listbox;
@@ -92,7 +94,8 @@ function adapter = attachFilePanelMethods(adapter)
     adapter.applySelection = @applyFileSelection;
     adapter.appendSelection = @appendFileSelection;
     adapter.removeSelection = @removeCurrentSelection;
-    adapter.choosePaths = @(varargin) chooseFilePaths(currentControl(adapter, varargin{:}));
+    adapter.choosePaths = @(control, request) chooseFilePaths( ...
+        currentControl(adapter, control), request);
     adapter.normalizePathList = @filePanelNormalizePathList;
     adapter.normalizeFiles = @normalizeFiles;
 end
@@ -216,9 +219,12 @@ function [control, removedFiles] = removeCurrentSelection(control)
     control = applyFileSelection(control, files, true);
 end
 
-function paths = chooseFilePaths(control)
+function paths = chooseFilePaths(control, request)
     props = control.props;
-    if isfield(props, 'dialogProvider') && isa(props.dialogProvider, 'function_handle')
+    request = string(request);
+    if (isSingleMode(props) || request == "file") && ...
+            isfield(props, 'dialogProvider') && ...
+            isa(props.dialogProvider, 'function_handle')
         traceFilePanelControl(control, 'dialog provider start', 'source=custom');
         paths = filePanelNormalizePathList(props.dialogProvider(props));
         traceFilePanelControl(control, 'dialog provider end', sprintf('count=%d', numel(paths)));
@@ -232,7 +238,7 @@ function paths = chooseFilePaths(control)
         return;
     end
 
-    startPath = labkit.ui.runtime.defaultDialogFolder("input", ...
+    startPath = defaultDialogFolder("input", ...
         optionValue(props, 'startPath', ""));
     if isSingleMode(props)
         traceFilePanelControl(control, 'file chooser start', 'mode=single');
@@ -244,18 +250,27 @@ function paths = chooseFilePaths(control)
         return;
     end
 
-    choice = questdlg('Add files or recursively load a folder?', ...
-        'Add files', 'Files', 'Folder', 'Cancel', 'Files');
-    switch choice
-        case 'Files'
-            traceFilePanelControl(control, 'file chooser start', 'mode=multi');
-            paths = chooseFiles(props, startPath);
-            traceFilePanelControl(control, 'file chooser end', sprintf('count=%d', numel(paths)));
-        case 'Folder'
-            folder = chooseFolder(startPath);
-            paths = expandFileChoices(string(folder), props, control);
-        otherwise
+    if request == "folder"
+        traceFilePanelControl(control, 'folder chooser start', 'mode=direct');
+        folder = chooseFolder(startPath, props);
+        paths = filesDirectlyUnderFolder(string(folder), props);
+        if ~isempty(paths) && shouldRejectLargeFolder( ...
+                paths, string(folder), props, control)
             paths = strings(0, 1);
+        end
+        traceFilePanelControl(control, 'folder chooser end', ...
+            sprintf('count=%d', numel(paths)));
+    elseif request == "recursiveFolder"
+        traceFilePanelControl(control, 'folder chooser start', 'mode=recursive');
+        folder = chooseFolder(startPath, props);
+        paths = expandFileChoices(string(folder), props, control);
+        traceFilePanelControl(control, 'folder chooser end', ...
+            sprintf('count=%d', numel(paths)));
+    else
+        traceFilePanelControl(control, 'file chooser start', 'mode=multi');
+        paths = chooseFiles(props, startPath);
+        traceFilePanelControl(control, 'file chooser end', ...
+            sprintf('count=%d', numel(paths)));
     end
 end
 
@@ -284,8 +299,35 @@ function paths = chooseFiles(props, startPath)
     end
 end
 
-function folder = chooseFolder(startPath)
-    folder = uigetdir(startPath, 'Choose folder');
+function paths = filesDirectlyUnderFolder(folder, props)
+    paths = strings(0, 1);
+    if strlength(folder) == 0 || ~isfolder(folder)
+        return;
+    end
+    filters = normalizeFilePanelFilters( ...
+        optionValue(props, 'filters', {'*.*', 'All files'}));
+    patterns = filePanelFilterPatterns(filters);
+    parts = cell(numel(patterns), 1);
+    for k = 1:numel(patterns)
+        entries = dir(fullfile(char(folder), char(patterns(k))));
+        entries = entries(~[entries.isdir]);
+        matches = strings(numel(entries), 1);
+        for iEntry = 1:numel(entries)
+            matches(iEntry) = string(fullfile( ...
+                entries(iEntry).folder, entries(iEntry).name));
+        end
+        parts{k} = matches;
+    end
+    paths = sort(unique(vertcat(parts{:}), 'stable'));
+end
+
+function folder = chooseFolder(startPath, props)
+    if isfield(props, 'folderDialogProvider') && ...
+            isa(props.folderDialogProvider, 'function_handle')
+        folder = props.folderDialogProvider(props);
+    else
+        folder = uigetdir(startPath, 'Choose folder');
+    end
     if isequal(folder, 0)
         folder = strings(0, 1);
     else
@@ -378,7 +420,7 @@ function labels = fileLabels(files)
             status(k) = string(files(k).status);
         end
     end
-    labels = labkit.ui.control.fileLabels(paths, 'status', status);
+    labels = formatFileLabels(paths, 'status', status);
 end
 
 function files = normalizeFiles(value)

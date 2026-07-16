@@ -11,12 +11,12 @@ classdef VersionChangeGuardrailTest < matlab.unittest.TestCase
                 strjoin(issues, ", "));
         end
 
-        function changedVersionedCodeUpdatesChangelog(testCase)
+        function changedVersionedCodeUpdatesOwnedDocumentation(testCase)
             root = setupLabKitTestPath();
-            issues = changedVersionedCodeWithoutChangelogRecord(root);
+            issues = changedVersionedCodeWithoutDocumentation(root);
 
             testCase.verifyEmpty(issues, ...
-                "Versioned code changed without matching CHANGELOG.md lookup: " + ...
+                "Versioned code changed without its component page and history record: " + ...
                 strjoin(issues, ", "));
         end
 
@@ -68,7 +68,7 @@ classdef VersionChangeGuardrailTest < matlab.unittest.TestCase
     end
 end
 
-function issues = changedVersionedCodeWithoutChangelogRecord(root)
+function issues = changedVersionedCodeWithoutDocumentation(root)
     changeSet = gitChangeSet(root);
     if ~shouldEnforceVersionBumps(changeSet)
         issues = strings(1, 0);
@@ -81,44 +81,57 @@ function issues = changedVersionedCodeWithoutChangelogRecord(root)
         return;
     end
 
-    changelogPath = fullfile(root, "CHANGELOG.md");
-    if exist(changelogPath, "file") ~= 2
-        issues = "CHANGELOG.md missing";
-        return;
-    end
-
-    changelogLines = splitlines(string(fileread(changelogPath)));
     issues = strings(1, 0);
     changedPaths = normalizePaths(changeSet.paths);
-    if ~any(changedPaths == "CHANGELOG.md")
-        issues(end+1) = "CHANGELOG.md not changed";
-    end
-
+    historyPaths = changedPaths(startsWith(changedPaths, "docs/") & ...
+        contains(changedPaths, "/history/") & endsWith(changedPaths, ".md"));
     for k = 1:numel(artifacts)
         artifact = artifacts(k);
-        currentVersion = versionInWorkingTree(root, artifact.versionPath);
-        baseVersion = versionInGit(root, changeSet.baseRef, artifact.versionPath);
-        if strlength(currentVersion) == 0
-            continue;
+        component = versionedComponentName(root, artifact);
+        docPath = documentationSourceForArtifact(root, artifact);
+        if strlength(docPath) == 0 || ~any(changedPaths == docPath)
+            issues(end+1) = component + " missing owned documentation update";
         end
-        hasLookupLine = any(contains(changelogLines, "`" + artifact.versionPath + "`") & ...
-            contains(changelogLines, "`" + currentVersion + "`"));
-        if ~hasLookupLine
-            issues(end+1) = artifact.label + " " + currentVersion + ...
-                " missing lookup row";
-        end
-        if strlength(baseVersion) > 0
-            component = changelogComponentName(root, artifact);
-            transition = "`" + baseVersion + " -> " + currentVersion + "`";
-            hasTransition = any(contains(changelogLines, "`" + component + "`") & ...
-                contains(changelogLines, transition));
-            if ~hasTransition
-                issues(end+1) = component + " missing direct baseline transition " + ...
-                    baseVersion + " -> " + currentVersion;
+        hasHistory = false;
+        for iPath = 1:numel(historyPaths)
+            parts = [{char(root)}; cellstr(split(historyPaths(iPath), "/"))];
+            if contains(string(fileread(fullfile(parts{:}))), ...
+                    "`" + component + "`")
+                hasHistory = true;
+                break;
             end
+        end
+        if ~hasHistory
+            issues(end+1) = component + " missing distributed history record";
         end
     end
     issues = unique(issues, "stable");
+end
+
+function path = documentationSourceForArtifact(root, artifact)
+    if artifact.label == "labkit_launcher"
+        path = "docs/getting-started/README.md";
+        return;
+    end
+    if startsWith(artifact.label, "labkit.")
+        facade = extractAfter(artifact.label, "labkit.");
+        if facade == "ui"
+            path = "docs/framework/README.md";
+        else
+            path = "docs/libraries/" + facade + "/README.md";
+        end
+        return;
+    end
+    catalogPath = fullfile(root, "docs", "catalogs", "apps.json");
+    catalog = jsondecode(fileread(catalogPath));
+    apps = catalog.apps;
+    appRoot = artifact.label;
+    match = find(string({apps.folder}) == appRoot, 1);
+    if isempty(match)
+        path = "";
+    else
+        path = "docs/" + string(apps(match).source);
+    end
 end
 
 function paths = normalizePaths(paths)
@@ -286,7 +299,7 @@ function version = versionInWorkingTree(root, relPath)
     version = versionInText(string(fileread(filepath)));
 end
 
-function component = changelogComponentName(root, artifact)
+function component = versionedComponentName(root, artifact)
     if startsWith(artifact.label, "labkit.") || artifact.label == "labkit_launcher"
         component = artifact.label;
         return;

@@ -1,5 +1,5 @@
 % Private UI runtime helper. Expected callers are labkit.ui.runtime.create and
-% labkit.ui.runtime.run. Inputs are app figures, internal UI registry handles,
+% Runtime V2 launch. Inputs are app figures, internal UI registry handles,
 % messages, and runtime task callbacks. Side effects are limited to framework
 % startup appdata, non-modal status UI, timer scheduling, and the startup busy
 % flag used to gate callbacks during first-render initialization.
@@ -27,7 +27,7 @@ function varargout = startupLifecycle(fig, action, varargin)
     end
 end
 
-function state = startState(fig, ui, message)
+function state = startState(fig, ui, message, varargin)
     state = defaultState(fig);
     state.mainGrid = ui.main;
     state.panel = ui.startupStatusPanel;
@@ -35,6 +35,9 @@ function state = startState(fig, ui, message)
     state.statusRow = ui.startupStatusPanel.Layout.Row;
     rememberHandles(fig, state);
     state.oldBusy = captureBusy(fig);
+    if ~isempty(varargin)
+        state.progressReporter = varargin{1};
+    end
     setappdata(fig, 'labkitUiBusy', true);
     state = updateStateWithMessage(state, message, false);
 end
@@ -93,6 +96,7 @@ function state = updateStateWithMessage(state, message, forceVisible)
         return;
     end
     state.message = string(message);
+    reportStartupProgress(state.progressReporter, state.message);
     becameVisible = false;
     if shouldShowStatus(state, forceVisible)
         state = showStatus(state);
@@ -136,8 +140,20 @@ function state = showStatus(state)
 end
 
 function tf = shouldFlushStatus(state, becameVisible)
-    tf = becameVisible || isFailureMessage(state.message) || ...
-        (state.visible && ~state.statusFlushed);
+    tf = isFigureVisible(state.fig) && (becameVisible || ...
+        isFailureMessage(state.message) || ...
+        (state.visible && ~state.statusFlushed));
+end
+
+function tf = isFigureVisible(fig)
+    tf = false;
+    if ~isLiveHandle(fig)
+        return;
+    end
+    try
+        tf = strcmp(fig.Visible, 'on');
+    catch
+    end
 end
 
 function tf = isFailureMessage(message)
@@ -184,6 +200,7 @@ function state = completeIfReady(state)
     if isempty(state) || state.failed || state.pending > 0 || ~state.finishRequested
         return;
     end
+    state = revealReadyFigure(state);
     state = hideStatus(state);
     restoreBusy(state.fig, state.oldBusy);
     if isLiveHandle(state.fig)
@@ -193,10 +210,6 @@ function state = completeIfReady(state)
 end
 
 function state = hideStatus(state)
-    if state.visible && isLiveHandle(state.panel) && ...
-            toc(state.visibleAt) < startupMinimumVisible()
-        pause(startupMinimumVisible() - toc(state.visibleAt));
-    end
     if isLiveHandle(state.panel)
         try
             state.panel.Visible = 'off';
@@ -214,6 +227,21 @@ function state = hideStatus(state)
         end
     end
     state.visible = false;
+end
+
+function state = revealReadyFigure(state)
+    if ~isLiveHandle(state.fig) || startupGuiMode() == "hidden"
+        return;
+    end
+    try
+        state.fig.Visible = 'on';
+        if startupGuiMode() == "minimized" && isprop(state.fig, 'WindowState')
+            state.fig.WindowState = 'minimized';
+        end
+        drawnow limitrate;
+        state.statusFlushed = true;
+    catch
+    end
 end
 
 function reportStartupException(fig, ME)
@@ -246,6 +274,7 @@ function state = defaultState(fig)
     state.statusLabelUpdated = false;
     state.statusFlushed = false;
     state.oldBusy = struct('hadValue', false, 'value', []);
+    state.progressReporter = [];
 end
 
 function rememberHandles(fig, state)
@@ -360,8 +389,15 @@ function key = startupKey()
 end
 
 function tf = startupStatusSuppressed()
-    mode = lower(strtrim(string(getenv('LABKIT_GUI_TEST_MODE'))));
+    mode = startupGuiMode();
     tf = mode == "hidden" || mode == "minimized";
+end
+
+function mode = startupGuiMode()
+    mode = lower(strtrim(string(getenv('LABKIT_GUI_TEST_MODE'))));
+    if strlength(mode) == 0
+        mode = "visible";
+    end
 end
 
 function tf = startupTaskRunsInline()
@@ -375,10 +411,6 @@ end
 
 function value = startupTaskDelay()
     value = 0.01;
-end
-
-function value = startupMinimumVisible()
-    value = 0.35;
 end
 
 function tf = isLiveHandle(h)

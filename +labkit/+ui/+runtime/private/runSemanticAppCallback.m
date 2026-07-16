@@ -1,4 +1,4 @@
-% Private UI runtime helper. Expected caller: UI 5 semantic callback wrappers.
+% Private UI runtime helper. Expected caller: semantic callback wrappers.
 % Inputs are the current UI registry, control adapter, event payload, app
 % callback, and control id. Side effects: runs the callback in app busy state.
 function runSemanticAppCallback(ui, control, event, appCallback, id)

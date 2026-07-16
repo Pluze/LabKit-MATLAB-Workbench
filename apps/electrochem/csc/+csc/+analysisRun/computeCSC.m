@@ -1,10 +1,90 @@
-% Expected caller: CSC app runner and unit tests. Inputs are a CV/CT curve struct
-% and CSC options. Output is the stable CSC comparison result struct. No file or
-% UI side effects.
-
 function A = computeCSC(curve, opts)
-%COMPUTECSC Compute CV/CT charge comparison and CSC for the CSC app.
+%COMPUTECSC Compare time-integrated and scan-rate-derived electrode charge.
+%
+% Usage:
+%   A = csc.analysisRun.computeCSC(curve)
+%   A = csc.analysisRun.computeCSC(curve, opts)
+%
+% Inputs:
+%   curve - Scalar DTA curve struct. curve.headers must contain the exact names
+%       T, Vf, and Im, and curve.data must hold the corresponding numeric
+%       columns. T is in seconds, Vf in volts, and Im in amperes.
+%   opts - Optional scalar struct described below. Default: struct().
+%
+% Options:
+%   scanRate - Positive finite voltage scan rate in V/s. This value is required
+%       for the CV-derived charge. Default: NaN, which returns ok=false.
+%   mode - Charge branch reported in Qct and Qcv: "Full", "Cathodic", or
+%       "Anodic". Unrecognized values use "Full". Default: "Full".
+%   area_cm2 - Positive electrode area in cm^2 as a numeric scalar or numeric
+%       text. Invalid or missing values leave density fields NaN while charge
+%       calculations still succeed. Default: NaN.
+%
+% Outputs:
+%   A - Scalar result struct. On success, it contains every field described
+%       below. Validation failures return ok=false, a stable message and
+%       logMessage, plus the option fields established before the failure.
+%
+% Result Fields:
+%   ok - Logical success flag.
+%   message - "OK", "scan rate missing", "Need T, Vf, Im", or "Not enough
+%       points".
+%   logMessage - User-facing explanation for a failed comparison; blank on
+%       success.
+%   mode - Effective branch used for Qct and Qcv.
+%   scanRate - Effective scan rate in V/s.
+%   area_cm2 - Parsed positive electrode area, or NaN.
+%   t - Filtered time vector in seconds.
+%   Vf - Filtered voltage vector in volts.
+%   Im - Filtered current vector in amperes.
+%   IcathDisp - Im with zero and anodic samples replaced by NaN.
+%   IanodDisp - Im with zero and cathodic samples replaced by NaN.
+%   QctCath - Absolute cathodic integral of I dt in coulombs.
+%   QctAnod - Anodic integral of I dt in coulombs.
+%   QctFull - QctCath + QctAnod in coulombs.
+%   QcvCath - Absolute cathodic scan-rate-derived charge in coulombs.
+%   QcvAnod - Anodic scan-rate-derived charge in coulombs.
+%   QcvFull - QcvCath + QcvAnod in coulombs.
+%   Qct - QctCath, QctAnod, or QctFull selected by mode.
+%   Qcv - QcvCath, QcvAnod, or QcvFull selected by mode.
+%   diff_C - Signed difference Qct-Qcv in coulombs.
+%   rel_pct - 100*abs(diff_C)/max(abs(Qct),abs(Qcv)); zero when both selected
+%       charges are zero.
+%   dtErr - Largest absolute difference, in seconds, between each measured time
+%       interval and abs(dV)/scanRate after zero-crossing subdivision.
+%   Qct_mC_cm2 - Selected CT charge density in mC/cm^2, or NaN without area.
+%   Qcv_mC_cm2 - Selected CV charge density in mC/cm^2, or NaN without area.
+%   diff_mC_cm2 - Signed density difference in mC/cm^2, or NaN without area.
+%
+% Description:
+%   computeCSC evaluates one current-voltage cycle two ways. The CT result uses
+%   recorded time, while the CV result reconstructs interval duration from the
+%   commanded scan rate. Reporting both values makes timing inconsistencies and
+%   charge-density differences visible without requiring the CSC GUI.
+%
+% Calculations:
+%   Rows containing NaN in T, Vf, or Im are removed together. Each adjacent
+%   sample interval is split where linearly interpolated current crosses zero.
+%   CT charge integrates current over measured time. CV charge uses
+%   dt=abs(dV)/scanRate for the same current endpoints. Cathodic contributions
+%   are stored as positive magnitudes, so each full charge is the sum of two
+%   nonnegative phase charges.
+%
+% Failure Behavior:
+%   A missing scan rate, missing exact column name, or fewer than two remaining
+%   samples returns ok=false instead of throwing. Malformed MATLAB types or
+%   inconsistent curve dimensions may still raise an indexing or numeric error.
+%
+% Example:
+%   curve = struct("headers", {{'T','Vf','Im'}}, ...
+%       "data", [0 0 -1; 1 1 1; 2 2 1]);
+%   A = csc.analysisRun.computeCSC(curve, ...
+%       struct("scanRate", 2, "mode", "Full"));
+%   assert(A.ok && abs(A.QctFull - 1.5) < 1e-12)
+%
+% See also csc.analysisRun.chargeDensity
 
+    choices = csc.userInterface.analysisChoices();
     if nargin < 2
         opts = struct();
     end
@@ -72,14 +152,14 @@ function A = computeCSC(curve, opts)
     A.dtErr = CV.dtErr;
 
     switch A.mode
-        case 'Cathodic'
+        case char(choices.modes(2))
             A.Qct = A.QctCath;
             A.Qcv = A.QcvCath;
-        case 'Anodic'
+        case char(choices.modes(3))
             A.Qct = A.QctAnod;
             A.Qcv = A.QcvAnod;
         otherwise
-            A.mode = 'Full';
+            A.mode = char(choices.modes(1));
             A.Qct = A.QctFull;
             A.Qcv = A.QcvFull;
     end
@@ -108,7 +188,8 @@ end
 
 function opts = fillOptions(opts)
     if ~isfield(opts, 'mode')
-        opts.mode = 'Full';
+        choices = csc.userInterface.analysisChoices();
+        opts.mode = char(choices.modes(1));
     end
     if ~isfield(opts, 'scanRate')
         opts.scanRate = NaN;

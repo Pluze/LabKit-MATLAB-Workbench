@@ -26,9 +26,9 @@ classdef GuiLayoutFlirThermalTest < matlab.unittest.TestCase
             ui = getappdata(fig, 'labkitUiRegistry');
             testCase.verifyTrue(isfile(debug.manifestFile), ...
                 'FLIR Thermal debug launch should record a sample manifest.');
-            testCase.verifyEqual(char(labkit.ui.control.getValue(ui, 'fileStatus')), 'Files: 0', ...
+            testCase.verifyEqual(char(testui.control.getValue(ui, 'fileStatus')), 'Files: 0', ...
                 'FLIR Thermal debug launch should not preload generated samples.');
-            testCase.verifyEqual(char(labkit.ui.control.getValue(ui, 'currentImage')), 'No FLIR image loaded', ...
+            testCase.verifyEqual(char(testui.control.getValue(ui, 'currentImage')), 'No FLIR image loaded', ...
                 'FLIR Thermal debug launch should not preload generated samples.');
 
             driver = labkitWorkflowDriver(fig);
@@ -40,7 +40,7 @@ classdef GuiLayoutFlirThermalTest < matlab.unittest.TestCase
             scaleAxes = ui.controls.preview.axesById.temperatureScale;
             labels = flir_thermal.userInterface.rangeControlLabels();
 
-            testCase.verifyEqual(string(labkit.ui.control.getValue(ui, 'rangePreset')), ...
+            testCase.verifyEqual(string(testui.control.getValue(ui, 'rangePreset')), ...
                 labels.defaultPreset);
             testCase.verifyTrue(isempty(ui.controls.thermalFiles.status));
             testCase.verifyTrue(driver.enabled('rangePreset'));
@@ -63,9 +63,42 @@ classdef GuiLayoutFlirThermalTest < matlab.unittest.TestCase
             testCase.verifyTrue(contains(driver.fileSelection('thermalFiles'), ...
                 'synthetic_flir_second.jpg'), ...
                 'FLIR Thermal append should select the newly added image.');
-            testCase.verifyTrue(contains(string(labkit.ui.control.getValue(ui, 'fileStatus')), ...
+            testCase.verifyTrue(contains(string(testui.control.getValue(ui, 'fileStatus')), ...
                 'Files: 2'), ...
                 'FLIR Thermal append should preserve the existing file.');
+
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            testCase.verifyEqual(runtime.definition.contractVersion, 2, ...
+                'FLIR Thermal should run on the Runtime V2 state contract.');
+            testCase.verifyEqual(numel(runtime.state.project.inputs.sources), 2);
+            testCase.verifyFalse(isfield(runtime.state.project.annotations.items, 'raw'));
+            testCase.verifyFalse(isfield(runtime.state.project.annotations.items, 'temperatureC'), ...
+                'Durable FLIR annotations must not persist decoded thermal matrices.');
+            testCase.verifyNotEmpty(runtime.state.session.cache.currentItem.temperatureC, ...
+                'The selected FLIR decode should remain an ephemeral session cache.');
+            resource = interactionResource(runtime.resources, 'temperatureReading');
+            testCase.verifyEqual(resource.spec.Kind, "regionSelection");
+            testCase.verifyEqual(resource.spec.Event, "temperatureRegionSelected");
+            testCase.verifyEqual(resource.spec.BackgroundEvent, ...
+                "temperaturePointSelected");
+
+            projectPath = fullfile(folder, 'flir-thermal-project.mat');
+            labkit.ui.runtime.saveState(fig, projectPath);
+            saved = load(projectPath, 'labkitProject');
+            testCase.verifyEqual(saved.labkitProject.app.payloadVersion, 1);
+            testCase.verifyFalse(isfield(saved.labkitProject.payload, 'session'), ...
+                'FLIR projects must exclude decoded caches and live interactions.');
+            labkit.ui.runtime.loadState(fig, projectPath);
+            h.waitForUiIdle(fig);
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            testCase.verifyNotEmpty(runtime.state.session.cache.currentItem.temperatureC, ...
+                'Project reopen should lazily rebuild the selected FLIR cache.');
+
+            h.invokeButton(fig, 'Export all');
+            h.waitForUiIdle(fig);
+            testCase.verifyTrue(isfile(fullfile(folder, 'flir_thermal', ...
+                'flir_thermal.labkit.json')), ...
+                'FLIR export should add a standard result manifest.');
         end
 
         function flir_shared_range_limits_manual_adjustment_to_shared_bounds(testCase)
@@ -93,12 +126,19 @@ classdef GuiLayoutFlirThermalTest < matlab.unittest.TestCase
             ui = getappdata(fig, 'labkitUiRegistry');
             minLimits = ui.controls.temperatureMin.slider.Limits;
             maxLimits = ui.controls.temperatureMax.slider.Limits;
-            currentMin = labkit.ui.control.getValue(ui, 'temperatureMin');
-            currentMax = labkit.ui.control.getValue(ui, 'temperatureMax');
+            currentMin = testui.control.getValue(ui, 'temperatureMin');
+            currentMax = testui.control.getValue(ui, 'temperatureMax');
             testCase.verifyLessThanOrEqual(max(abs(minLimits - [currentMin currentMax])), 0.05);
             testCase.verifyLessThanOrEqual(max(abs(maxLimits - [currentMin currentMax])), 0.05);
         end
     end
+end
+
+function resource = interactionResource(resources, id)
+    index = find([resources.scope] == "interaction" & ...
+        [resources.id] == string(id), 1);
+    assert(~isempty(index), 'Expected controlled FLIR interaction resource.');
+    resource = resources(index).value;
 end
 
 function assertFlirLayout(h, fig)

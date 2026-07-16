@@ -1,26 +1,53 @@
 function layout = previewArea(id, titleText, varargin)
 %PREVIEWAREA Create a workspace preview/axes area layout node.
 %
-% App-facing contract:
-%   layout = labkit.ui.layout.previewArea(id, title, "layout", layout, ...)
+% Usage:
+%   layout = labkit.ui.layout.previewArea(id, titleText)
+%   layout = labkit.ui.layout.previewArea(id, titleText, Name=Value)
 %
 % Inputs:
-%   id - globally unique preview id.
-%   titleText - preview area title.
-%   layout - single, pair, or stack.
-%   viewModes - optional cell array of user-facing view mode labels.
-%   onModeChange - optional callback(control, event) for the view-mode
-%       selector when viewModes are present.
-%   axisIds - optional cell array of valid axis ids.
-%   axisTitles, xLabels, yLabels - optional axis label cell arrays.
-%   columnWidths - optional uigridlayout ColumnWidth cell for pair layouts.
-%   rowHeights - optional uigridlayout RowHeight cell for stack layouts.
-%   scrollZoomAxes - optional cell array with one of "xy", "x", or "y" per
-%       axis, controlling mouse-wheel zoom axes for that preview axis.
-%   count - optional axes count for stack layouts.
+%   id - Text scalar used to identify the preview. It must be a valid MATLAB
+%       variable name and unique within the workbench.
+%   titleText - Text displayed in the preview panel title.
 %
-% Output:
-%   layout - scalar data-only UI layout struct.
+% Name-Value Arguments:
+%   layout - Axes arrangement: "single", "pair", or "stack". Default:
+%       "single".
+%   count - Positive integer number of axes. The default is 1 for single and 2
+%       for pair or stack. axisIds, when supplied, determines the count.
+%   axisIds - Cell array of valid MATLAB field names used to address each axes
+%       from presenters and services. Defaults to axis1, axis2, and so on.
+%   axisTitles - Cell array of axes titles in axis order. A single axes defaults
+%       to titleText; multiple axes default to their axis IDs.
+%   xLabels - Cell array of x-axis labels in axis order. Default: blank.
+%   yLabels - Cell array of y-axis labels in axis order. Default: blank.
+%   columnWidths - uigridlayout ColumnWidth cell array with one entry per axes
+%       in pair layout. Default: equal flexible widths.
+%   rowHeights - uigridlayout RowHeight cell array with one entry per axes in
+%       stack layout. Default: equal flexible heights.
+%   scrollZoomAxes - Cell array selecting wheel-zoom dimensions for each axes:
+%       "xy", "x", or "y". Invalid or missing entries use "xy".
+%   viewModes - Nonempty list of user-facing modes. When supplied, a dropdown
+%       is shown above the axes.
+%   onModeChange - Function handle called as onModeChange(control,event) when
+%       the mode changes. event.mode and event.value contain the selected text.
+%
+% Outputs:
+%   layout - Scalar previewArea node with kind, id, props, children, and slots
+%       fields.
+%
+% Description:
+%   previewArea reserves one or more managed uiaxes in the workspace. Runtime
+%   renderers address the panel by preview ID and, when needed, an axis ID. Each
+%   axes receives the standard LabKit pop-out menu and wheel navigation.
+%
+% Example:
+%   preview = labkit.ui.layout.previewArea("signals", "Signals", ...
+%       "layout", "pair", "axisIds", {"input","output"}, ...
+%       "xLabels", {"Time (s)","Time (s)"});
+%   assert(numel(preview.props.axisIds) == 2)
+%
+% See also labkit.ui.layout.workspace, labkit.ui.runtime.define
 
     props = optionStruct(varargin);
     props.title = char(string(titleText));

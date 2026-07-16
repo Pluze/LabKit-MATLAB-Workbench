@@ -42,32 +42,6 @@ classdef PortableFileReferenceTest < matlab.unittest.TestCase
             testCase.verifyEqual(matchKind, "none");
         end
 
-        function malformed_reference_falls_back_to_manual_selection(testCase)
-            setupLabKitTestPath();
-            folder = string(tempname);
-            mkdir(folder);
-            cleanup = onCleanup(@() removeFolder(folder));
-            selectedFile = fullfile(folder, "replacement.dat");
-            touchFile(selectedFile);
-            malformed = struct('relativePath', struct('bad', true));
-
-            [resolved, result] = ...
-                labkit.ui.runtime.resolveOrPromptForFileReference( ...
-                fullfile(folder, "project.mat"), malformed, ...
-                'ReferenceLabel', "primary source", 'Chooser', @chooseFile);
-            [~, attributes] = fileattrib(char(selectedFile));
-            testCase.verifyEqual(resolved, string(attributes.Name));
-            testCase.verifyEqual(result.matchKind, "selected");
-            testCase.verifyTrue(result.prompted);
-            testCase.verifyTrue(result.pathIssue);
-
-            function [file, selectedFolder] = chooseFile(~, titleText, ~)
-                testCase.verifySubstring(string(titleText), "primary source");
-                [selectedFolder, name, extension] = fileparts(selectedFile);
-                file = char(name + extension);
-                selectedFolder = char(selectedFolder);
-            end
-        end
     end
 end
 

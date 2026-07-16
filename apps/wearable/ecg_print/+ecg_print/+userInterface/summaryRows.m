@@ -1,4 +1,4 @@
-% Expected caller: ecg_print.userInterface.updateWorkbenchFromState and direct unit tests. Inputs are the
+% Expected caller: ecg_print.userInterface.presentWorkbench and direct unit tests. Inputs are the
 % current signal, events, segments, and measurement structs. Output is a
 % two-column cell array for the summary table. Side effects: none.
 

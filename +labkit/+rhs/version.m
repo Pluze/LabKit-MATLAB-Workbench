@@ -1,17 +1,24 @@
 function info = version()
-%VERSION Return the LabKit RHS facade contract version.
+%VERSION Return version information for the RHS API.
 %
-% App-facing contract:
+% Usage:
 %   info = labkit.rhs.version()
 %
-% Inputs:
-%   None.
+% Description:
+%   Reports the API version and compatibility range used when an app declares
+%   a dependency on labkit.rhs. This is not the file-format version stored in
+%   an Intan recording.
 %
 % Outputs:
-%   info - plain struct describing the current labkit.rhs contract, the
-%       compatible contract ranges implemented by this code, contract status,
-%       and a short maintainer note.
+%   info - Scalar structure returned by labkit.contract.versionInfo. name is
+%       "labkit.rhs"; facade is "rhs"; current is the current semantic
+%       version; compatible lists supported requirement ranges; status
+%       describes API maturity; and notes summarizes the module.
+%
+% Example:
+%   info = labkit.rhs.version();
+%   fprintf("RHS API %s (%s)\n", info.current, info.status)
 
-    info = labkit.contract.versionInfo("rhs", "1.0.1", ">=1.0 <2", ...
+    info = labkit.contract.versionInfo("rhs", "1.0.2", ">=1.0 <2", ...
         "stable", "RHS discovery, metadata, indexing, and waveform-window facade contract.");
 end

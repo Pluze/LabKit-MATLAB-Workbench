@@ -2,18 +2,51 @@ function segments = segmentByEvents(signal, events, windowSec)
 %SEGMENTBYEVENTS Extract fixed windows around event anchors.
 %
 % Usage:
-%   segments = labkit.biosignal.segmentByEvents(signal, events);
-%   segments = labkit.biosignal.segmentByEvents(signal, events, [-0.7 0.7]);
+%   segments = labkit.biosignal.segmentByEvents(signal, events)
+%   segments = labkit.biosignal.segmentByEvents(signal, events, windowSec)
+%
+% Description:
+%   Extracts one fixed-length signal segment around each event index. Events
+%   whose requested window would extend beyond the signal are omitted rather
+%   than padded. The returned columns therefore correspond only to interior
+%   events, and eventIndex and eventTime identify which events were retained.
+%
+%   Window boundaries are converted to sample counts by rounding after
+%   multiplication by signal.fs. The default window is 0.35 seconds before
+%   through 0.35 seconds after each event.
 %
 % Inputs:
-%   signal - biosignal signal struct with values and fs fields.
-%   events - event struct from detectEcgPeaks with index and time fields.
-%   windowSec - optional [start end] seconds around each event, default
-%               [-0.35 0.35].
+%   signal - Biosignal structure with values, fs, and displayName fields.
+%   events - Event structure returned by labkit.biosignal.detectEcgPeaks.
+%            index contains 1-based sample positions and time contains the
+%            corresponding event times.
+%   windowSec - Optional two-element vector [startSec endSec] relative to an
+%               event. Use a negative start and nonnegative end to span the
+%               event. The default is [-0.35 0.35] seconds.
 %
-% Output:
-%   segments - struct with values matrix, timeOffset, eventIndex,
-%              eventTime, fs, sourceName, and metadata.windowSec.
+% Outputs:
+%   segments - Structure containing the retained waveform segments.
+%
+% Output Fields:
+%   type - String scalar "biosignalSegments".
+%   values - M-by-N matrix with one retained event segment per column.
+%   timeOffset - M-by-1 vector of sample times relative to the event.
+%   eventIndex - N-by-1 source sample indices of retained events.
+%   eventTime - N-by-1 source times of retained events.
+%   fs - Sample rate in hertz copied from signal.
+%   sourceName - signal.displayName.
+%   metadata.windowSec - Requested window in seconds.
+%
+% Errors:
+%   labkit:biosignal:InvalidSignal - signal lacks values or fs.
+%   labkit:biosignal:InvalidEvents - events lacks index or time.
+%   labkit:biosignal:InvalidWindow - windowSec is not an increasing
+%                                   two-element vector.
+%
+% Example:
+%   signal = struct('values', (1:21)', 'fs', 10, 'displayName', "ECG");
+%   events = struct('index', [6; 16], 'time', [0.5; 1.5]);
+%   segments = labkit.biosignal.segmentByEvents(signal, events, [-0.2 0.2]);
 
     if nargin < 3 || isempty(windowSec)
         windowSec = [-0.35 0.35];

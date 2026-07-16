@@ -10,10 +10,11 @@ function names = cycleResultsColumnNames(mode)
 end
 
 function label = modeLabel(mode)
+    choices = csc.userInterface.analysisChoices();
     switch char(string(mode))
-        case 'Cathodic'
+        case char(choices.modes(2))
             label = '(cathodic mC/cm^2)';
-        case 'Anodic'
+        case char(choices.modes(3))
             label = '(anodic mC/cm^2)';
         otherwise
             label = '(full mC/cm^2)';

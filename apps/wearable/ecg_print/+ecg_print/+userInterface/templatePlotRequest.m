@@ -1,4 +1,4 @@
-% Expected caller: ecg_print.userInterface.updateWorkbenchFromState and direct unit tests. Inputs are ECG
+% Expected caller: ecg_print.userInterface.presentWorkbench and direct unit tests. Inputs are ECG
 % segment/template/measurement structs plus the selected template view label.
 % Output is a GUI-free plot request struct; no UI handles are read or mutated.
 

@@ -41,5 +41,21 @@ classdef ResponseReviewStatsOpsTest < matlab.unittest.TestCase
             testCase.verifyEqual(summary.Count(1), 2);
             testCase.verifyEqual(summary.MeanPeakToPeak(1), 4);
         end
+
+        function defaultWindowUsesAlignedTimeIntersection(testCase)
+            setupLabKitTestPath();
+
+            segments = struct( ...
+                "timeSec", {[10; 11; 12], [20; 21; 22]}, ...
+                "values", {[1; 2; 3], [4; 5; 6]}, ...
+                "name", {"first", "second"}, ...
+                "alignTimeSec", {10, 20});
+
+            aligned = response_review_stats.analysisRun.alignSegments( ...
+                segments, struct("sampleIntervalSec", 1));
+
+            testCase.verifyEqual(aligned.timeSec, [0; 1; 2]);
+            testCase.verifyEqual(aligned.values, [1 4; 2 5; 3 6]);
+        end
     end
 end

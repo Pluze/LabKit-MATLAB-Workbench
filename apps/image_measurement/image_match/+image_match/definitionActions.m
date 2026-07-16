@@ -1,607 +1,360 @@
-% App-owned action table for Image Match. Expected caller is
-% image_match.definition. Output maps semantic action ids to handlers used
-% by labkit.ui.runtime.run. Handlers preserve the reference-match workflow while
-% moving package-root lifecycle orchestration into the framework runtime.
+% App-owned V2 actions for Image Match. Handlers own source/reference records,
+% durable match history, selected-image caches, and exports without UI access.
 function actions = definitionActions()
-%DEFINITIONACTIONS Build the Image Match runtime action map.
-
-    S = [];
-    ui = [];
-    fig = [];
-    debugLog = [];
-
     actions = struct( ...
-        'startup', @onStartup, ...
-        'referenceImageChosen', @dispatchReferenceImageChosen, ...
-        'clearReference', @dispatchClearReference, ...
-        'sourceImagesChosen', @dispatchSourceImagesChosen, ...
-        'removeImages', @dispatchRemoveImages, ...
-        'clearImages', @dispatchClearImages, ...
-        'imageSelectionChanged', @dispatchImageSelectionChanged, ...
-        'previewModeChanged', @dispatchPreviewModeChanged, ...
-        'matchSettingChanged', @dispatchMatchSettingChanged, ...
-        'applyMatch', @dispatchApplyMatch, ...
-        'undoHistory', @dispatchUndoHistory, ...
-        'resetHistory', @dispatchResetHistory, ...
-        'chooseOutputFolder', @dispatchChooseOutputFolder, ...
-        'exportImages', @dispatchExportImages);
+        "referenceImageChosen", @onReferenceChosen, ...
+        "sourceImagesChosen", @onSourcesChosen, ...
+        "removeImages", @onRemoveImages, ...
+        "clearImages", @onClearImages, ...
+        "imageSelectionChanged", @onSelectionChanged, ...
+        "previewModeChanged", @onPreviewModeChanged, ...
+        "matchSettingChanged", @onMatchSettingChanged, ...
+        "applyMatch", @onApplyMatch, ...
+        "undoHistory", @onUndoHistory, ...
+        "resetHistory", @onResetHistory, ...
+        "exportSettingChanged", @onExportSettingChanged, ...
+        "chooseOutputFolder", @onChooseOutputFolder, ...
+        "exportImages", @onExportImages);
+end
 
-    function state = onStartup(state, ~, services)
-        S = state;
-        ui = services.ui;
-        fig = services.figure;
-        debugLog = services.debug;
-        if debugLog.enabled
-            debugLog.trace('Image match debug trace enabled.');
-            debugLog.instrumentFigure(fig);
-            setupDebugSamples();
-        end
+function state = onReferenceChosen(state, event, services)
+    paths = services.events.paths(event, "addedFiles");
+    if isempty(paths)
+        state = services.workflow.log(state, "Reference selection cancelled.");
+        return;
+    end
+    sources = state.project.inputs.sources;
+    sources = sources(string({sources.role}) ~= "reference-image");
+    reference = services.project.sourceRecord( ...
+        "reference", "reference-image", paths(1), true);
+    state.project.inputs.sources = [reference; sources(:)];
+    state.session.cache.referenceItem = loadItem(paths(1), services);
+    state.session.workflow.pendingDirty = false;
+    state = invalidateResults(state);
+    state = rebuildPreview(state);
+    state = services.workflow.log(state, ...
+        "Loaded reference image: " + displayName(paths(1)));
+end
 
-        resetPreviewAxes();
-        refreshAll();
-        state = S;
+function state = onSourcesChosen(state, event, services)
+    paths = services.events.paths(event, "files");
+    added = services.events.paths(event, "addedFiles");
+    if isempty(paths)
+        paths = added;
     end
+    if isempty(paths)
+        state = services.workflow.log(state, "Image selection cancelled.");
+        return;
+    end
+    allSources = state.project.inputs.sources;
+    reference = allSources(string({allSources.role}) == "reference-image");
+    oldSources = allSources(string({allSources.role}) == "source-image");
+    sources = services.project.reconcileSources( ...
+        oldSources, paths, "source-image", "image", true);
+    state.project.inputs.sources = [reference(:); sources(:)];
+    state.session.selection.currentIndex = selectedIndex(sources, added);
+    state.session.cache.currentItem = loadItem( ...
+        sources(state.session.selection.currentIndex).reference.originalPath, services);
+    state.project.parameters.outputFolder = string( ...
+        services.dialogs.defaultOutputFolder(paths, "image_match", ...
+        state.project.parameters.outputFolder));
+    state.session.workflow.pendingDirty = false;
+    state = invalidateResults(state);
+    state = rebuildPreview(state);
+    state = services.workflow.log(state, sprintf( ...
+        'Registered %d source image(s); loaded the selected preview only.', ...
+        numel(sources)));
+end
 
-    function state = dispatchWithEvent(state, payload, callback)
-        S = state;
-        callback([], payload.event);
-        state = S;
+function state = onRemoveImages(state, event, services)
+    [reference, sources] = sourceGroups(state.project.inputs.sources);
+    indices = services.events.indices(event, "removedFiles", numel(sources));
+    if isempty(indices)
+        return;
     end
+    sources(indices) = [];
+    state.project.inputs.sources = [reference(:); sources(:)];
+    state.session.selection.currentIndex = min( ...
+        state.session.selection.currentIndex, numel(sources));
+    if isempty(sources)
+        state.session.selection.currentIndex = 0;
+        state.session.cache.currentItem = [];
+    else
+        path = sources(state.session.selection.currentIndex).reference.originalPath;
+        state.session.cache.currentItem = loadItem(path, services);
+    end
+    state.session.workflow.pendingDirty = false;
+    state = invalidateResults(state);
+    state = rebuildPreview(state);
+end
 
-    function state = dispatchNoEvent(state, ~, callback)
-        S = state;
-        callback([], []);
-        state = S;
-    end
+function state = onClearImages(state, ~, services)
+    [reference, ~] = sourceGroups(state.project.inputs.sources);
+    state.project.inputs.sources = reference;
+    state.project.annotations.steps = repmat( ...
+        image_match.appState.emptyStep(), 0, 1);
+    state.session.selection.currentIndex = 0;
+    state.session.cache.currentItem = [];
+    state.session.workflow.pendingDirty = false;
+    state = invalidateResults(state);
+    state = rebuildPreview(state);
+    state = services.workflow.log(state, ...
+        "Cleared source images and match history.");
+end
 
-    function state = dispatchReferenceImageChosen(state, payload, ~)
-        state = dispatchWithEvent(state, payload, @onReferenceImageChosen);
+function state = onSelectionChanged(state, event, services)
+    [~, sources] = sourceGroups(state.project.inputs.sources);
+    indices = services.events.indices(event, "selectedFiles", numel(sources));
+    if isempty(indices)
+        return;
     end
-    function state = dispatchClearReference(state, payload, ~)
-        state = dispatchNoEvent(state, payload, @onClearReference);
-    end
-    function state = dispatchSourceImagesChosen(state, payload, ~)
-        state = dispatchWithEvent(state, payload, @onSourceImagesChosen);
-    end
-    function state = dispatchRemoveImages(state, payload, ~)
-        state = dispatchWithEvent(state, payload, @onRemoveImages);
-    end
-    function state = dispatchClearImages(state, payload, ~)
-        state = dispatchNoEvent(state, payload, @onClearImages);
-    end
-    function state = dispatchImageSelectionChanged(state, payload, ~)
-        state = dispatchWithEvent(state, payload, @onImageSelectionChanged);
-    end
-    function state = dispatchPreviewModeChanged(state, payload, ~)
-        state = dispatchNoEvent(state, payload, @onPreviewModeChanged);
-    end
-    function state = dispatchMatchSettingChanged(state, payload, ~)
-        state = dispatchNoEvent(state, payload, @onMatchSettingChanged);
-    end
-    function state = dispatchApplyMatch(state, payload, ~)
-        state = dispatchNoEvent(state, payload, @onApplyMatch);
-    end
-    function state = dispatchUndoHistory(state, payload, ~)
-        state = dispatchNoEvent(state, payload, @onUndoHistory);
-    end
-    function state = dispatchResetHistory(state, payload, ~)
-        state = dispatchNoEvent(state, payload, @onResetHistory);
-    end
-    function state = dispatchChooseOutputFolder(state, payload, ~)
-        state = dispatchNoEvent(state, payload, @onChooseOutputFolder);
-    end
-    function state = dispatchExportImages(state, payload, ~)
-        state = dispatchNoEvent(state, payload, @onExportImages);
-    end
+    state.session.selection.currentIndex = indices(1);
+    state.session.cache.currentItem = loadItem( ...
+        sources(indices(1)).reference.originalPath, services);
+    state.session.workflow.pendingDirty = false;
+    state = rebuildPreview(state);
+end
 
-    function onReferenceImageChosen(~, event)
-        paths = labkit.ui.control.filePaths(event.addedFiles);
-        if isempty(paths)
-            addLog('Reference image selection cancelled.');
-            return;
-        end
-        try
-            loaded = image_match.sourceFiles.readImages(paths(1));
-        catch ME
-            showException('Could not load reference image', ME);
-            refreshAll();
-            return;
-        end
-
-        S.referenceItem = loaded(1);
-        S.pendingDirty = false;
-        invalidatePreviewCache();
-        markExportDirty();
-        addLog(sprintf('Loaded reference image: %s.', char(S.referenceItem.name)));
-        refreshAll();
-    end
-
-    function onClearReference(~, ~)
-        S.referenceItem = [];
-        S.pendingDirty = false;
-        invalidatePreviewCache();
-        markExportDirty();
-        addLog('Cleared reference image.');
-        refreshAll();
-    end
-
-    function onSourceImagesChosen(~, event)
-        newFiles = labkit.ui.control.filePaths(event.addedFiles);
-        if isempty(newFiles)
-            addLog('Image selection cancelled.');
-            return;
-        end
-        paths = labkit.ui.control.filePaths(event.files);
-        if isempty(paths)
-            paths = newFiles;
-        end
-        try
-            S.items = readOrReuseImages(paths);
-        catch ME
-            showException('Could not load images', ME);
-            refreshAll();
-            return;
-        end
-
-        S.currentIndex = currentIndexForAddedPath(paths, newFiles(1));
-        S.steps = repmat(image_match.appState.emptyStep(), 0, 1);
-        S.pendingDirty = false;
-        invalidatePreviewCache();
-        S.outputFolder = string(labkit.ui.runtime.defaultOutputFolder( ...
-            paths, "image_match", S.outputFolder));
-        markExportDirty();
-        addLog(sprintf('Loaded %d image(s).', numel(S.items)));
-        refreshAll();
-    end
-
-    function onClearImages(~, ~)
-        S.items = repmat(image_match.appState.emptyItem(), 0, 1);
-        S.currentIndex = 0;
-        S.steps = repmat(image_match.appState.emptyStep(), 0, 1);
-        S.pendingDirty = false;
-        invalidatePreviewCache();
-        markExportDirty();
-        addLog('Cleared loaded images and match history.');
-        refreshAll();
-    end
-
-    function onRemoveImages(~, event)
-        if isempty(S.items)
-            return;
-        end
-        removeIdx = labkit.ui.control.fileIndices(event.removedFiles, numel(S.items));
-        if isempty(removeIdx)
-            refreshAll();
-            return;
-        end
-        S.items(removeIdx) = [];
-        S.currentIndex = min(S.currentIndex, numel(S.items));
-        if isempty(S.items)
-            S.currentIndex = 0;
-        end
-        pendingDirty = S.pendingDirty;
-        invalidatePreviewCache();
-        S.pendingDirty = pendingDirty;
-        markExportDirty();
-        addLog(sprintf('Removed image file(s); %d remaining.', numel(S.items)));
-        refreshAll();
-    end
-
-    function onImageSelectionChanged(~, event)
-        if isempty(S.items)
-            return;
-        end
-        idx = labkit.ui.control.fileIndices(event.selectedFiles, numel(S.items));
-        if isempty(idx)
-            return;
-        end
-        S.currentIndex = idx(1);
-        refreshSelection();
-        refreshPreview();
-        refreshMetrics();
-        refreshDetails();
-    end
-
-    function onPreviewModeChanged(~, ~)
-        refreshPreview();
-    end
-
-    function onMatchSettingChanged(~, ~)
-        S.pendingDirty = true;
-        markExportDirty();
-        refreshPreview();
-        refreshMatchStatus();
-    end
-
-    function onApplyMatch(~, ~)
-        if isempty(S.items)
-            showError('No images loaded', 'Load images before applying reference matches.');
-            return;
-        end
-        if ~hasReference()
-            showError('No reference image', 'Load a reference image before applying matches.');
-            return;
-        end
-        step = currentMatchStep();
-        S.steps(end + 1, 1) = step;
-        S.pendingDirty = false;
-        markExportDirty();
-        addLog(sprintf('Applied match: %s', char(step.label)));
-        refreshAll();
-    end
-
-    function onUndoHistory(~, ~)
-        if isempty(S.steps)
-            return;
-        end
-        removed = S.steps(end);
-        S.steps(end) = [];
-        S.pendingDirty = false;
-        markExportDirty();
-        addLog(sprintf('Undid match step: %s', char(removed.label)));
-        refreshAll();
-    end
-
-    function onResetHistory(~, ~)
-        if isempty(S.steps)
-            return;
-        end
-        S.steps = repmat(image_match.appState.emptyStep(), 0, 1);
-        S.pendingDirty = false;
-        markExportDirty();
-        addLog('Reset match history.');
-        refreshAll();
-    end
-
-    function onChooseOutputFolder(~, ~)
-        [folder, cancelled] = labkit.ui.runtime.promptOutputFolder( ...
-            'Select image match export folder', S.outputFolder);
-        if cancelled
-            addLog('Export folder selection cancelled.');
-            return;
-        end
-        S.outputFolder = string(folder);
-        markExportDirty();
-        refreshExportControls();
-        refreshDetails();
-    end
-
-    function onExportImages(~, ~)
-        if isempty(S.items)
-            showError('No images loaded', 'Load images before exporting matched outputs.');
-            return;
-        end
-        if ~hasReference()
-            showError('No reference image', 'Load a reference image before exporting matched outputs.');
-            return;
-        end
-        opts = struct();
-        opts.outputFolder = S.outputFolder;
-        opts.format = labkit.ui.control.getValue(ui, 'exportFormat');
-        task = image_match.appState.exportTask(S.items, S.referenceItem, S.steps, opts);
-        if ~isempty(S.lastExport) && S.lastExportFingerprint == task.fingerprint
-            addLog('Matched export is already up to date; skipped duplicate write.');
-            refreshDetails();
-            return;
-        end
-        try
-            S.lastExport = image_match.resultFiles.writeOutputs( ...
-                S.items, S.referenceItem, S.steps, opts);
-            S.lastExportFingerprint = task.fingerprint;
-        catch ME
-            showException('Export failed', ME);
-            return;
-        end
-        statuses = string({S.lastExport.results.status});
-        addLog(sprintf('Exported %d image(s), %d failed. Manifest: %s', ...
-            sum(statuses == "saved"), sum(statuses == "failed"), ...
-            char(S.lastExport.manifestPath)));
-        refreshDetails();
-    end
-
-    function refreshAll()
-        refreshSourceLibrary();
-        refreshReferenceLibrary();
-        refreshSelection();
-        refreshMatchControls();
-        refreshExportControls();
-        refreshHistory();
-        refreshPreview();
-        refreshMetrics();
-        refreshDetails();
-        refreshMatchStatus();
-    end
-
-    function refreshSourceLibrary()
-        if isempty(S.items)
-            labkit.ui.control.setValue(ui, 'sourceImages', {});
-            labkit.ui.control.setValue(ui, 'imageStatus', 'Images: 0');
-            return;
-        end
-
-        paths = cellstr(string({S.items.path}));
-        labkit.ui.control.setValue(ui, 'sourceImages', paths);
-        labkit.ui.control.setValue(ui, 'imageStatus', sprintf( ...
-            'Images: %d | match steps: %d', numel(S.items), numel(S.steps)));
-    end
-
-    function refreshReferenceLibrary()
-        if hasReference()
-            labkit.ui.control.setValue(ui, 'referenceImage', ...
-                cellstr(S.referenceItem.path));
-        else
-            labkit.ui.control.setValue(ui, 'referenceImage', {});
-        end
-    end
-
-    function refreshSelection()
-        if isempty(S.items)
-            return;
-        end
-        files = labkit.ui.control.getFiles(ui, 'sourceImages');
-        labkit.ui.control.setFileSelection( ...
-            ui, 'sourceImages', files(currentSelectionIndex()));
-    end
-
-    function refreshMatchControls()
-        hasImages = ~isempty(S.items);
-        refLoaded = hasReference();
-        hasSteps = ~isempty(S.steps);
-        ui.controls.sourceImages.clearButton.Enable = onOff(hasImages);
-        ui.controls.sourceImages.listbox.Enable = onOff(hasImages);
-        labkit.ui.control.setEnabled(ui, 'applyMatch', hasImages && refLoaded);
-        labkit.ui.control.setEnabled(ui, 'undoHistory', hasSteps);
-        labkit.ui.control.setEnabled(ui, 'resetHistory', hasSteps);
-        labkit.ui.control.setEnabled(ui, 'exportImages', hasImages && refLoaded);
-    end
-
-    function refreshExportControls()
-        labkit.ui.control.setValue(ui, 'outputFolder', char(S.outputFolder));
-    end
-
-    function refreshPreview()
-        if isempty(S.items)
-            resetPreviewAxes();
-            return;
-        end
-        original = currentPreviewSourceImage();
-        switch currentPreviewMode()
-            case 'Original'
-                labkit.ui.plot.image(ui, 'preview', original, ...
-                    'title', 'Original Preview');
-            case 'Before | After'
-                matched = currentPreviewImage(S.pendingDirty);
-                labkit.ui.plot.image(ui, 'preview', ...
-                    image_match.userInterface.beforeAfterImage(original, matched), ...
-                    'title', 'Before | After');
-            otherwise
-                matched = currentPreviewImage(S.pendingDirty);
-                labkit.ui.plot.image(ui, 'preview', matched, ...
-                    'title', 'Matched Preview');
-        end
-    end
-
-    function refreshMetrics()
-        if isempty(S.items)
-            ui.controls.metricsTable.table.Data = ...
-                image_match.userInterface.resultTableData([], [], 0);
-            return;
-        end
-        processedImage = currentPreviewImage(false);
-        ui.controls.metricsTable.table.Data = image_match.userInterface.resultTableData( ...
-            S.items(currentSelectionIndex()), ...
-            processedImage, numel(S.steps));
-    end
-
-    function refreshHistory()
-        ui.controls.historyTable.table.Data = image_match.userInterface.historyTableData(S.steps);
-        labkit.ui.control.setValue(ui, 'historyStatus', ...
-            sprintf('History steps: %d', numel(S.steps)));
-    end
-
-    function refreshDetails()
-        labkit.ui.control.setValue(ui, 'exportDetails', image_match.userInterface.detailLines( ...
-            S.items, max(currentSelectionIndex(), 1), S.referenceItem, ...
-            S.steps, S.lastExport));
-    end
-
-    function refreshMatchStatus()
-        labkit.ui.control.setValue(ui, 'matchFlow', ...
-            image_match.userInterface.matchFlowLines(labkit.ui.control.getValue(ui, 'matchMethod')));
-    end
-
-    function items = readOrReuseImages(paths)
-        paths = string(paths(:));
-        template = image_match.appState.emptyItem();
-        items = repmat(template, numel(paths), 1);
-        existingPaths = strings(0, 1);
-        if ~isempty(S.items)
-            existingPaths = string({S.items.path}).';
-        end
-        missing = paths(~ismember(paths, existingPaths));
-        loaded = image_match.sourceFiles.readImages(missing);
-        for k = 1:numel(paths)
-            existingIndex = find(existingPaths == paths(k), 1);
-            if ~isempty(existingIndex)
-                items(k) = S.items(existingIndex);
-                continue;
-            end
-            loadedIndex = find(string({loaded.path}) == paths(k), 1);
-            if ~isempty(loadedIndex)
-                items(k) = loaded(loadedIndex);
-            end
-        end
-    end
-
-    function idx = currentIndexForAddedPath(paths, addedPath)
-        idx = find(string(paths(:)) == string(addedPath), 1);
-        if isempty(idx)
-            idx = 1;
-        end
-    end
-
-    function imageOut = currentPreviewSourceImage()
-        if isempty(S.items)
-            imageOut = [];
-            return;
-        end
-        index = currentSelectionIndex();
-        if numel(S.previewImages) ~= numel(S.items)
-            S.previewImages = cell(numel(S.items), 1);
-            S.previewImageKeys = strings(numel(S.items), 1);
-        end
-        item = S.items(index);
-        key = previewImageKey(item);
-        if isempty(S.previewImages{index}) || S.previewImageKeys(index) ~= key
-            S.previewImages{index} = image_match.userInterface.previewImage(item.image);
-            S.previewImageKeys(index) = key;
-        end
-        imageOut = S.previewImages{index};
-    end
-
-    function imageOut = currentPreviewReferenceImage()
-        if ~hasReference()
-            imageOut = [];
-            return;
-        end
-        key = previewImageKey(S.referenceItem);
-        if isempty(S.referencePreviewImage) || S.referencePreviewKey ~= key
-            S.referencePreviewImage = image_match.userInterface.previewImage(S.referenceItem.image);
-            S.referencePreviewKey = key;
-        end
-        imageOut = S.referencePreviewImage;
-    end
-
-    function imageOut = currentPreviewImage(includePending)
-        imageOut = currentPreviewSourceImage();
-        referenceImage = currentPreviewReferenceImage();
-        steps = S.steps;
-        stepsForKey = steps;
-        if includePending
-            stepsForKey(end + 1, 1) = currentMatchStep();
-        end
-        key = currentPreviewResultKey(stepsForKey, includePending);
-        if ~isempty(S.previewResultImage) && S.previewResultKey == key
-            imageOut = S.previewResultImage;
-            return;
-        end
-        if ~isempty(steps)
-            imageOut = image_match.analysisRun.applyPipeline({imageOut}, steps, referenceImage);
-            imageOut = imageOut{1};
-        end
-        if includePending
-            imageOut = image_match.analysisRun.applyStep( ...
-                imageOut, currentMatchStep(), referenceImage);
-        end
-        S.previewResultImage = imageOut;
-        S.previewResultKey = key;
-    end
-
-    function invalidatePreviewCache()
-        S.previewImages = {};
-        S.previewImageKeys = strings(0, 1);
-        S.referencePreviewImage = [];
-        S.referencePreviewKey = "";
-        S.previewResultImage = [];
-        S.previewResultKey = "";
-    end
-
-    function key = currentPreviewResultKey(stepsForKey, includePending)
-        item = S.items(currentSelectionIndex());
-        referenceItem = S.referenceItem;
-        if ~hasReference()
-            referenceItem = [];
-        end
-        task = image_match.appState.exportTask(item, referenceItem, stepsForKey, struct( ...
-            'outputFolder', "preview", ...
-            'format', "display"));
-        key = task.fingerprint + sprintf('\n') + ...
-            "pending=" + string(logical(includePending));
-    end
-
-    function markExportDirty()
-        S.lastExport = [];
-        S.lastExportFingerprint = "";
-        S.previewResultImage = [];
-        S.previewResultKey = "";
-    end
-
-    function key = previewImageKey(item)
-        dims = strjoin(string(size(item.image)), "x");
-        key = strjoin([string(item.path), dims, string(class(item.image))], "|");
-    end
-
-    function step = currentMatchStep()
-        step = image_match.analysisRun.makeStep( ...
-            labkit.ui.control.getValue(ui, 'matchMethod'), ...
-            labkit.ui.control.getValue(ui, 'matchStrength'), ...
-            labkit.ui.control.getValue(ui, 'toneStrength'), ...
-            labkit.ui.control.getValue(ui, 'colorStrength'));
-    end
-
-    function tf = hasReference()
-        tf = ~isempty(S.referenceItem) && isfield(S.referenceItem, 'image') && ...
-            ~isempty(S.referenceItem.image);
-    end
-
-    function index = currentSelectionIndex()
-        if isempty(S.items)
-            index = 0;
-            return;
-        end
-        S.currentIndex = min(max(S.currentIndex, 1), numel(S.items));
-        index = S.currentIndex;
-    end
-
-    function mode = currentPreviewMode()
-        mode = string(labkit.ui.control.getValue(ui, 'preview'));
-        if strlength(mode) == 0
-            mode = "Matched";
-        end
-        mode = char(mode);
-    end
-
-    function resetPreviewAxes()
-        labkit.ui.plot.reset(ui, 'preview', 'Matched Preview', true);
-    end
-
-    function addLog(message)
-        labkit.ui.control.appendLog(ui, 'logPanel', message);
-        if debugLog.enabled
-            debugLog.append(message);
-        end
-    end
-
-    function setupDebugSamples()
-        try
-            pack = image_match.debug.writeSamplePack(debugLog);
-            addLog(sprintf('Debug sample files: %s', char(pack.sampleFolder)));
-            addLog(sprintf('Debug output folder: %s', char(pack.outputFolder)));
-        catch ME
-            debugLog.reportException('imageMatch', 'Debug sample setup failed', ME);
-            addLog(sprintf('Debug sample setup failed: %s', ME.message));
-        end
-    end
-
-    function showError(titleText, message)
-        addLog(sprintf('%s: %s', titleText, message));
-        labkit.ui.runtime.showAlert(fig, message, titleText);
-    end
-
-    function showException(titleText, exception)
-        debugLog.reportException('imageMatch', titleText, exception);
-        showError(titleText, exception.message);
+function state = onPreviewModeChanged(state, event, ~)
+    value = string(event.value);
+    if isscalar(value) && any(value == ["Matched", "Original", "Before | After"])
+        state.session.view.previewMode = value;
     end
 end
 
-function text = onOff(value)
-    if islogical(value) && isscalar(value)
-        if value
-            text = 'on';
-        else
-            text = 'off';
+function state = onMatchSettingChanged(state, event, ~)
+    id = string(event.id);
+    if id == "matchMethod"
+        value = string(event.value);
+        if any(value == string(image_match.userInterface.matchMethods()))
+            state.project.parameters.matchMethod = value;
         end
+    elseif any(id == ["matchStrength", "toneStrength", "colorStrength"])
+        state.project.parameters.(char(id)) = boundedPercent(event.value, ...
+            state.project.parameters.(char(id)));
+    end
+    state.session.workflow.pendingDirty = true;
+    state = invalidateResults(state);
+    state = rebuildPreview(state);
+end
+
+function state = onApplyMatch(state, ~, services)
+    if ~ready(state)
+        services.dialogs.alert( ...
+            "Load source and reference images before applying a match.", ...
+            "Match unavailable");
+        return;
+    end
+    step = currentStep(state);
+    state.project.annotations.steps(end + 1, 1) = step;
+    state.session.workflow.pendingDirty = false;
+    state = invalidateResults(state);
+    state = rebuildPreview(state);
+    state = services.workflow.log(state, "Applied match: " + string(step.label));
+end
+
+function state = onUndoHistory(state, ~, services)
+    steps = state.project.annotations.steps;
+    if isempty(steps)
+        return;
+    end
+    removed = steps(end);
+    steps(end) = [];
+    state.project.annotations.steps = steps;
+    state.session.workflow.pendingDirty = false;
+    state = invalidateResults(state);
+    state = rebuildPreview(state);
+    state = services.workflow.log(state, "Undid match step: " + string(removed.label));
+end
+
+function state = onResetHistory(state, ~, services)
+    state.project.annotations.steps = repmat( ...
+        image_match.appState.emptyStep(), 0, 1);
+    state.session.workflow.pendingDirty = false;
+    state = invalidateResults(state);
+    state = rebuildPreview(state);
+    state = services.workflow.log(state, "Reset match history.");
+end
+
+function state = onExportSettingChanged(state, event, ~)
+    value = upper(string(event.value));
+    if any(value == ["PNG", "TIFF", "JPEG"])
+        state.project.parameters.exportFormat = value;
+        state = invalidateResults(state);
+    end
+end
+
+function state = onChooseOutputFolder(state, ~, services)
+    [folder, cancelled] = services.dialogs.outputFolder( ...
+        "Select image match export folder", ...
+        state.project.parameters.outputFolder);
+    if cancelled
+        return;
+    end
+    state.project.parameters.outputFolder = string(folder);
+    state = invalidateResults(state);
+end
+
+function state = onExportImages(state, ~, services)
+    if ~ready(state)
+        services.dialogs.alert( ...
+            "Load source and reference images before exporting.", ...
+            "Export unavailable");
+        return;
+    end
+    [referenceSource, sources] = sourceGroups(state.project.inputs.sources);
+    try
+        items = loadItems(sources);
+        reference = image_match.sourceFiles.readImages( ...
+            referenceSource.reference.originalPath);
+        reference = reference(1);
+        opts = struct("outputFolder", state.project.parameters.outputFolder, ...
+            "format", state.project.parameters.exportFormat);
+        task = image_match.appState.exportTask(items, reference, ...
+            state.project.annotations.steps, opts);
+        if ~isempty(state.project.results.lastExport) && ...
+                state.project.results.lastExportFingerprint == task.fingerprint
+            state = services.workflow.log(state, ...
+                "Matched export is already up to date; skipped duplicate write.");
+            return;
+        end
+        payload = image_match.resultFiles.writeOutputs(items, reference, ...
+            state.project.annotations.steps, opts);
+        spec = struct("Outputs", resultOutputs(payload.results, services), ...
+            "Inputs", state.project.inputs.sources, ...
+            "Parameters", state.project.parameters, ...
+            "Summary", struct("imageCount", numel(items)), ...
+            "ManifestName", "image_match.labkit.json");
+        [manifestPath, ~] = services.results.writeManifest( ...
+            state.project.parameters.outputFolder, spec);
+    catch ME
+        services.diagnostics.report("Export failed", ME);
+        services.dialogs.alert(ME.message, "Export failed");
+        return;
+    end
+    payload.resultManifestPath = string(manifestPath);
+    state.project.results.lastExport = payload;
+    state.project.results.lastExportFingerprint = task.fingerprint;
+    state.project.results.resultManifestPath = string(manifestPath);
+    state = services.workflow.log(state, "Exported matched images: " + ...
+        string(payload.manifestPath));
+end
+
+function state = rebuildPreview(state)
+    cache = state.session.cache;
+    cache.previewSource = [];
+    cache.previewReference = [];
+    cache.previewResult = [];
+    cache.previewResultKey = "";
+    if isempty(cache.currentItem) || isempty(cache.referenceItem)
+        state.session.cache = cache;
+        return;
+    end
+    cache.previewSource = image_match.userInterface.previewImage( ...
+        cache.currentItem.image);
+    cache.previewReference = image_match.userInterface.previewImage( ...
+        cache.referenceItem.image);
+    steps = state.project.annotations.steps;
+    if state.session.workflow.pendingDirty
+        steps(end + 1, 1) = currentStep(state);
+    end
+    processed = image_match.analysisRun.applyPipeline( ...
+        {cache.previewSource}, steps, cache.previewReference);
+    cache.previewResult = processed{1};
+    cache.previewResultKey = strjoin(string({steps.label}), "|");
+    state.session.cache = cache;
+end
+
+function step = currentStep(state)
+    p = state.project.parameters;
+    step = image_match.analysisRun.makeStep(p.matchMethod, ...
+        p.matchStrength, p.toneStrength, p.colorStrength);
+end
+
+function item = loadItem(path, services)
+    item = [];
+    try
+        loaded = image_match.sourceFiles.readImages(path);
+        if ~isempty(loaded)
+            item = loaded(1);
+        end
+    catch ME
+        services.diagnostics.report("Could not load image", ME);
+        services.dialogs.alert(ME.message, "Could not load image");
+    end
+end
+
+function items = loadItems(sources)
+    paths = strings(numel(sources), 1);
+    for k = 1:numel(sources)
+        paths(k) = string(sources(k).reference.originalPath);
+    end
+    items = image_match.sourceFiles.readImages(paths);
+end
+
+function [reference, sources] = sourceGroups(allSources)
+    roles = string({allSources.role});
+    reference = allSources(roles == "reference-image");
+    sources = allSources(roles == "source-image");
+    if numel(reference) > 1
+        reference = reference(1);
+    end
+end
+
+function index = selectedIndex(sources, added)
+    index = 1;
+    if isempty(added)
+        return;
+    end
+    for k = 1:numel(sources)
+        if string(sources(k).reference.originalPath) == string(added(1))
+            index = k;
+            return;
+        end
+    end
+end
+
+function tf = ready(state)
+    tf = ~isempty(state.session.cache.currentItem) && ...
+        ~isempty(state.session.cache.referenceItem);
+end
+
+function state = invalidateResults(state)
+    state.project.results.lastExport = [];
+    state.project.results.lastExportFingerprint = "";
+    state.project.results.resultManifestPath = "";
+end
+
+function value = boundedPercent(value, fallback)
+    value = double(value);
+    if isempty(value) || ~isscalar(value) || ~isfinite(value)
+        value = fallback;
+    end
+    value = min(max(value, 0), 100);
+end
+
+function name = displayName(path)
+    [~, stem, extension] = fileparts(string(path));
+    name = string(stem) + string(extension);
+end
+
+function outputs = resultOutputs(results, services)
+    outputs = repmat(services.results.output("", "", "", ""), ...
+        numel(results), 1);
+    for k = 1:numel(results)
+        [~, name, extension] = fileparts(results(k).outputPath);
+        outputs(k) = services.results.output("matched-" + string(k), ...
+            "matched-image", string(name) + string(extension), ...
+            mediaType(extension), results(k).status, results(k).message);
+    end
+end
+
+function value = mediaType(extension)
+    if any(lower(string(extension)) == [".jpg", ".jpeg"])
+        value = "image/jpeg";
+    elseif any(lower(string(extension)) == [".tif", ".tiff"])
+        value = "image/tiff";
     else
-        text = char(string(value));
+        value = "image/png";
     end
 end

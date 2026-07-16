@@ -1,0 +1,19 @@
+% Expected caller: Runtime V2. Input is a validated CSC project. Output owns
+% active file/curve selection, workflow log, and rebuildable decoded DTA data.
+function session = createSession(project)
+    items = csc.sourceFiles.loadProjectItems(project.inputs.sources);
+    currentIndex = 0;
+    choices = csc.userInterface.analysisChoices();
+    currentCurve = choices.empty;
+    if ~isempty(items)
+        currentIndex = 1;
+        currentCurve = choices.allCycles;
+    end
+    session = struct( ...
+        "selection", struct( ...
+            "currentIndex", currentIndex, ...
+            "currentCurve", currentCurve), ...
+        "workflow", struct("logLines", strings(0, 1)), ...
+        "view", struct(), ...
+        "cache", struct("items", items));
+end

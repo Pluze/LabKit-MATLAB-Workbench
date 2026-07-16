@@ -2,15 +2,39 @@ function result = compareGroups(values, groups)
 %COMPAREGROUPS Summarize groups and compute pairwise Welch comparisons.
 %
 % Usage:
-%   result = labkit.biosignal.compareGroups(values, groups);
+%   result = labkit.biosignal.compareGroups(values, groups)
+%
+% Description:
+%   Calculates descriptive statistics for each group and a two-sided Welch
+%   t-test for every pair of groups. Welch's test does not assume equal
+%   variances. Group order follows the first occurrence of each label in
+%   groups.
+%
+%   Rows with a nonfinite measurement or a blank group label are discarded
+%   before calculation. A pairwise row is still returned when either group
+%   has fewer than two observations or the estimated standard error is zero;
+%   its test statistic, degrees of freedom, and p-value are NaN.
 %
 % Inputs:
-%   values - numeric vector of measurements.
-%   groups - string/cellstr/categorical-compatible vector of group labels.
+%   values - Numeric vector of measurements.
+%   groups - Vector of labels accepted by string, such as a string array,
+%            cell array of character vectors, or categorical array. It must
+%            contain one label for each element of values.
 %
-% Output:
-%   result - struct with summary table and pairwise Welch-comparison table.
-%            Missing values and blank group labels are ignored.
+% Outputs:
+%   result - Structure with summary and pairwise tables.
+%
+% Output Fields:
+%   summary - One row per group. Columns are Group, N, Mean, Std, Median,
+%             Min, and Max.
+%   pairwise - One row per unique group pair. Columns are GroupA, GroupB,
+%              MeanDifference, T, DF, and P. MeanDifference is mean(GroupA)
+%              minus mean(GroupB); P is the two-sided Welch-test p-value.
+%
+% Example:
+%   values = [4.8 5.1 5.0 6.2 6.0 6.4];
+%   groups = ["control" "control" "control" "treated" "treated" "treated"];
+%   result = labkit.biosignal.compareGroups(values, groups);
 
     values = double(values(:));
     groups = string(groups(:));

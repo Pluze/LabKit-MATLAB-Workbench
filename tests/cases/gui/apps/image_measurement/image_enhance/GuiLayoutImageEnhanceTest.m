@@ -28,7 +28,6 @@ classdef GuiLayoutImageEnhanceTest < matlab.unittest.TestCase
                 'Image enhance debug launch should record a sample manifest.');
             testCase.verifyEqual(char(driver.fileStatus('sourceImages')), 'No images loaded', ...
                 'Image enhance debug launch should not preload generated samples.');
-            verifyPerImageHistoryRefresh(fig);
             driver.chooseFiles('sourceImages', sourcePath);
 
             driver.click('Add images or folder');
@@ -39,6 +38,7 @@ classdef GuiLayoutImageEnhanceTest < matlab.unittest.TestCase
             testCase.verifyTrue(contains(driver.fileStatus('sourceImages'), '1'), ...
                 'Image enhance file status should report the loaded image count.');
 
+            driver.checkbox('Batch shared processing', false);
             driver.click('Apply tool');
             history = driver.tableData('historyTable');
             testCase.verifyEqual(size(history, 1), 1, ...
@@ -54,6 +54,9 @@ classdef GuiLayoutImageEnhanceTest < matlab.unittest.TestCase
                 'Image enhance workflow should write a manifest CSV.');
             testCase.verifyFalse(isempty(outputFiles), ...
                 'Image enhance workflow should write an enhanced PNG.');
+            testCase.verifyTrue(isfile(fullfile(outputFolder, ...
+                'image_enhance.labkit.json')), ...
+                'Image enhance export should add a standard result manifest.');
             testCase.verifyTrue(any(contains(string(driver.textAreaValue('exportDetails')), ...
                 'Last manifest')), ...
                 'Image enhance details should show the last manifest after export.');
@@ -65,6 +68,39 @@ classdef GuiLayoutImageEnhanceTest < matlab.unittest.TestCase
             testCase.verifyTrue(contains(driver.fileSelection('sourceImages'), ...
                 'paper_second.png'), ...
                 'Image enhance append should select the newly added source image.');
+            driver.dropdown('Sharpen');
+            driver.click('Apply tool');
+            secondHistory = driver.tableData('historyTable');
+            testCase.verifyTrue(contains(string(secondHistory{1, 2}), 'Sharpen'), ...
+                'The second image should own its independently applied tool.');
+            driver.selectFile('sourceImages', 'paper.png');
+            firstHistory = driver.tableData('historyTable');
+            testCase.verifyTrue(contains(string(firstHistory{1, 2}), 'Brightness'), ...
+                'Selecting the first image should restore its real persisted history.');
+            driver.selectFile('sourceImages', 'paper_second.png');
+            secondHistory = driver.tableData('historyTable');
+            testCase.verifyTrue(contains(string(secondHistory{1, 2}), 'Sharpen'), ...
+                'Selecting the second image should restore its real persisted history.');
+
+            projectPath = fullfile(folder, 'image-enhance-project.mat');
+            labkit.ui.runtime.saveState(fig, projectPath);
+            saved = load(projectPath, 'labkitProject');
+            testCase.verifyEqual(saved.labkitProject.app.payloadVersion, 1);
+            testCase.verifyFalse(isfield(saved.labkitProject.payload, 'session'), ...
+                'Image Enhance projects must exclude the rebuildable session.');
+            testCase.verifyFalse(any(isfield( ...
+                saved.labkitProject.payload.annotations.items, ...
+                {'image', 'previewImage', 'whiteRoiHandle'})), ...
+                'Image Enhance projects must exclude pixels and UI resources.');
+            labkit.ui.runtime.loadState(fig, projectPath);
+            h.waitForUiIdle(fig);
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            testCase.verifyNotEmpty(runtime.state.session.cache.item.image, ...
+                'Project reopen should lazily rebuild the selected image cache.');
+            testCase.verifyEqual(numel(runtime.state.project.inputs.sources), 2);
+            reopenedHistory = driver.tableData('historyTable');
+            testCase.verifyTrue(contains(string(reopenedHistory{1, 2}), 'Brightness'), ...
+                'Project reopen should rebuild the first selection and its history.');
         end
     end
 end
@@ -89,35 +125,6 @@ function img = syntheticPaperImage()
     [x, y] = meshgrid(1:64, 1:48);
     base = 0.45 + 0.25 .* sin(x ./ 7) + 0.20 .* cos(y ./ 5);
     img = uint8(255 .* min(max(base, 0), 1));
-end
-
-function verifyPerImageHistoryRefresh(fig)
-    ui = getappdata(fig, 'labkitUiRegistry');
-    item = image_enhance.appState.emptyItem();
-    item.path = "first.png";
-    item.name = "first.png";
-    item.image = ones(8, 8, 3) .* 0.5;
-    item.steps = image_enhance.analysisRun.makeStep('Brightness/contrast', 10, 0, 0);
-    second = item;
-    second.path = "second.png";
-    second.name = "second.png";
-    second.steps = image_enhance.analysisRun.makeStep('Sharpen', 20, 1, 0);
-    S = struct('items', [item; second], 'currentIndex', 1, ...
-        'steps', repmat(image_enhance.appState.emptyStep(), 0, 1), ...
-        'batchMode', false, 'pendingDirty', false);
-
-    ui.controls.historyTable.table.Data = image_enhance.userInterface.historyTableData( ...
-        image_enhance.appState.activeSteps(S));
-    firstData = ui.controls.historyTable.table.Data;
-    S.currentIndex = 2;
-    ui.controls.historyTable.table.Data = image_enhance.userInterface.historyTableData( ...
-        image_enhance.appState.activeSteps(S));
-    secondData = ui.controls.historyTable.table.Data;
-
-    assert(contains(string(firstData{1, 2}), "Brightness"), ...
-        'Per-image mode should show the first image history while first is selected.');
-    assert(contains(string(secondData{1, 2}), "Sharpen"), ...
-        'Per-image mode should refresh history when the selected image changes.');
 end
 
 function removeTempFolder(folder)

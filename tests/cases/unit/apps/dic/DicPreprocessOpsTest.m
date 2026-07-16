@@ -166,5 +166,31 @@ classdef DicPreprocessOpsTest < matlab.unittest.TestCase
             testCase.verifyEqual(tform, [1 0 0; 0 1 0; 3 -2 1]);
             testCase.verifyTrue(contains(method, 'toolbox-free'));
         end
+
+        function manualAlignmentUsesRowVectorRotationConvention(testCase)
+            setupLabKitTestPath();
+            movingPoints = [4 3; 14 5; 7 18; 20 16];
+            angle = pi / 7;
+            expectedRotation = [cos(angle) sin(angle); ...
+                -sin(angle) cos(angle)];
+            expectedTranslation = [11 -6];
+            fixedPoints = movingPoints * expectedRotation + ...
+                expectedTranslation;
+            reference = zeros(32, 40);
+            moving = zeros(size(reference));
+
+            [~, transform] = ...
+                dic_preprocess.analysisRun.alignMovingToReference( ...
+                reference, moving, fixedPoints, movingPoints);
+
+            transformedPoints = [movingPoints ones(size(movingPoints, 1), 1)] ...
+                * transform;
+            testCase.verifyEqual(transform(1:2, 1:2), expectedRotation, ...
+                'AbsTol', 1e-12, ...
+                'Manual alignment must use the row-vector rotation convention.');
+            testCase.verifyEqual(transformedPoints(:, 1:2), fixedPoints, ...
+                'AbsTol', 1e-11, ...
+                'The fitted transform must map every moving point to its reference match.');
+        end
     end
 end

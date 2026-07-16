@@ -1,19 +1,40 @@
 function layout = action(id, labelText, onInvoke, varargin)
 %ACTION Create an app-command layout node.
 %
-% App-facing contract:
-%   layout = labkit.ui.layout.action(id, label, onInvoke, opts...)
+% Usage:
+%   layout = labkit.ui.layout.action(id, labelText, onInvoke)
+%   layout = labkit.ui.layout.action(id, labelText, onInvoke, Name=Value)
 %
 % Inputs:
-%   id - globally unique action id.
-%   labelText - command label.
-%   onInvoke - function handle called as callback(control, event).
-%   enabled, priority, tooltip - optional app-neutral props.
-%   busyMessage - optional string. Overrides the default busy title text,
-%       which is the action label.
+%   id - Text scalar used to identify the action. It must be a valid MATLAB
+%       variable name and unique within the workbench.
+%   labelText - Text displayed on the push button.
+%   onInvoke - Function handle called as onInvoke(control,event) after the
+%       button is pressed. Use [] when a runtime binding will supply behavior.
+%       The default is [].
 %
-% Output:
-%   layout - scalar data-only UI layout struct.
+% Name-Value Arguments:
+%   enabled - Logical value controlling whether the button can be pressed.
+%       Default: true.
+%   busyMessage - Text appended to the app title while onInvoke runs. Default:
+%       labelText.
+%
+% Outputs:
+%   layout - Scalar action node with kind, id, props, children, and slots
+%       fields. The node creates no graphics until the workbench is launched.
+%
+% Description:
+%   action represents one app command. A section may contain an action directly,
+%   or several actions may be placed in an action group. The runtime ignores a
+%   press while the figure is already busy and restores the normal title after
+%   the callback completes or throws.
+%
+% Example:
+%   runAction = labkit.ui.layout.action( ...
+%       "runAnalysis", "Run analysis", @(~,~) disp("Running"));
+%   assert(runAction.kind == "action")
+%
+% See also labkit.ui.layout.group, labkit.ui.layout.section
 
     if nargin < 3
         onInvoke = [];

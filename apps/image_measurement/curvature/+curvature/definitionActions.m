@@ -1,609 +1,385 @@
-% App-owned action registry for Curvature Measurement. Expected caller is
-% curvature.definition. Output maps semantic action ids to handlers used by
-% labkit.ui.runtime.run while preserving the existing curve-edit workflow.
+% App-owned V2 action registry for Curvature Measurement. Handlers receive
+% canonical state/events/services and own durable curve/calibration edits,
+% scientific results, model-based exports, and workflow messages.
 function actions = definitionActions()
-%DEFINITIONACTIONS Build the Curvature Measurement runtime action map.
-
-    S = [];
-    ui = [];
-    fig = [];
-    debugLog = [];
-    imageRuntime = [];
-    scaleTool = [];
-    controls = [];
-    txtPointCount = [];
-    btnStartCurve = [];
-    btnUndoPoint = [];
-    btnClearCurve = [];
-    chkDensify = [];
-    edtDenseN = [];
-    chkShowDense = [];
-    btnFit = [];
-    btnMeasureLength = [];
-    btnExportCSV = [];
-    btnExportOverlay = [];
-    resultTable = [];
-    txtDetails = [];
-    txtLog = [];
-
     actions = struct( ...
-        'startup', @onStartup, ...
-        'onImageChosen', @dispatchImageChosen, ...
-        'onImageCleared', @dispatchImageCleared, ...
-        'onStartCurveEdit', @dispatchStartCurveEdit, ...
-        'onUndoCurvePoint', @dispatchUndoCurvePoint, ...
-        'onClearCurve', @dispatchClearCurve, ...
-        'onShowDenseChanged', @dispatchShowDenseChanged, ...
-        'onFitCurvature', @dispatchFitCurvature, ...
-        'onMeasureCurveLength', @dispatchMeasureCurveLength, ...
-        'onExportCSV', @dispatchExportCSV, ...
-        'onExportOverlay', @dispatchExportOverlay);
+        "openImage", @onOpenImage, ...
+        "toggleCurveEdit", @onToggleCurveEdit, ...
+        "curvePointsEdited", @onCurvePointsEdited, ...
+        "undoCurvePoint", @onUndoCurvePoint, ...
+        "clearCurve", @onClearCurve, ...
+        "measureScaleReference", @onMeasureScaleReference, ...
+        "scaleReferenceEdited", @onScaleReferenceEdited, ...
+        "scaleCalibrationChanged", @onScaleCalibrationChanged, ...
+        "scaleBarSettingChanged", @onScaleBarSettingChanged, ...
+        "placeScaleBar", @onPlaceScaleBar, ...
+        "fitSettingChanged", @onFitSettingChanged, ...
+        "viewSettingChanged", @onViewSettingChanged, ...
+        "fitCurvature", @onFitCurvature, ...
+        "measureCurveLength", @onMeasureCurveLength, ...
+        "exportCsv", @onExportCsv, ...
+        "exportOverlay", @onExportOverlay);
+end
 
-    function state = onStartup(state, ~, services)
-        S = state;
-        ui = services.ui;
-        fig = services.figure;
-        debugLog = services.debug;
-        ui.topAxes = ui.controls.imageAxes.primaryAxes;
-        imageRuntime = labkit.ui.interaction.runtime(ui.topAxes, ...
-            struct('figure', fig, ...
-            'onTrace', debugLog.trace));
-
-        scaleTool = labkit.ui.interaction.scaleBar(ui.controls.scaleBarHost.grid, ...
-            1, imageRuntime, struct( ...
-            'onBeforeReferenceEdit', @onBeforeReferenceEdit, ...
-            'onReferenceEditChanged', @onReferenceEditChanged, ...
-            'onCalibrationChanged', @onCalibrationSettingsChanged, ...
-            'onScaleBarChanged', @onScaleBarSettingsChanged, ...
-            'onScaleBarPlaced', @onScaleBarPlaced, ...
-            'onError', @onScaleToolError, ...
-            'onTrace', debugLog.trace));
-        controls = curvature.userInterface.mapControlHandles(ui, scaleTool);
-        txtPointCount = controls.txtPointCount;
-        btnStartCurve = controls.btnStartCurve;
-        btnUndoPoint = controls.btnUndoPoint;
-        btnClearCurve = controls.btnClearCurve;
-        scaleTool = controls.scaleTool;
-        chkDensify = controls.chkDensify;
-        edtDenseN = controls.edtDenseN;
-        chkShowDense = controls.chkShowDense;
-        btnFit = controls.btnFit;
-        btnMeasureLength = controls.btnMeasureLength;
-        btnExportCSV = controls.btnExportCSV;
-        btnExportOverlay = controls.btnExportOverlay;
-        resultTable = controls.resultTable;
-        txtDetails = controls.txtDetails;
-        txtLog = controls.txtLog;
-
-        if debugLog.enabled
-            debugLog.trace('Curvature measurement debug trace enabled.');
-            setupDebugSamples();
-        end
-
-        resetAxes();
-        refreshScaleReadout();
-        state = S;
+function state = onOpenImage(state, event, services)
+    paths = services.events.paths(event, "addedFiles");
+    if isempty(paths)
+        paths = services.events.paths(event, "files");
     end
-
-    function state = dispatchWithEvent(~, payload, callback)
-        callback([], payload.event);
-        state = S;
+    if isempty(paths)
+        state = services.workflow.log(state, "Image selection cancelled.");
+        return;
     end
-
-    function state = dispatchNoEvent(~, ~, callback)
-        callback([], []);
-        state = S;
+    try
+        imageData = imread(paths(1));
+    catch ME
+        services.diagnostics.report('Could not read image', ME);
+        services.dialogs.alert(ME.message, 'Could not read image');
+        return;
     end
+    state.project.inputs.source = services.project.sourceRecord( ...
+        "image", "image", paths(1), true);
+    state.project.annotations.curvePoints = zeros(0, 2);
+    calibration = state.project.annotations.calibration;
+    state.project.annotations.calibration = ...
+        labkit.ui.interaction.scaleBarCalibration( ...
+        [], calibration.referenceLength, calibration.unit);
+    state.session.cache.imagePath = paths(1);
+    state.session.cache.image = imageData;
+    state.session.workflow.editMode = "none";
+    state.session.workflow.statusMessage = "Image loaded.";
+    state.session.view.scaleBar = [];
+    state = clearMeasurements(state);
+    state = services.workflow.log(state, "Loaded image: " + paths(1));
+end
 
-    function state = dispatchImageChosen(state, payload, ~)
-        state = dispatchWithEvent(state, payload, @onImageChosen);
+function state = onToggleCurveEdit(state, ~, services)
+    if isempty(state.session.cache.image)
+        services.dialogs.alert('Open an image before editing curve points.', ...
+            'No image loaded');
+        return;
     end
-    function state = dispatchImageCleared(state, payload, ~)
-        state = dispatchNoEvent(state, payload, @onImageCleared);
+    if state.session.workflow.editMode == "curve"
+        state.session.workflow.editMode = "none";
+        message = "Finished curve edit.";
+    else
+        state.session.workflow.editMode = "curve";
+        state = clearMeasurements(state);
+        message = ["Started curve edit. Double-click blank image space to " ...
+            "add or insert points; drag points to move them; double-click " ...
+            "a point to delete it."];
     end
-    function state = dispatchStartCurveEdit(state, payload, ~)
-        state = dispatchNoEvent(state, payload, @onStartCurveEdit);
+    state = services.workflow.log(state, message);
+end
+
+function state = onCurvePointsEdited(state, event, services)
+    points = normalizePoints(event.value);
+    state.project.annotations.curvePoints = points;
+    state = clearMeasurements(state);
+    state = services.workflow.log(state, sprintf( ...
+        'Curve edit updated: %d point(s).', size(points, 1)));
+end
+
+function state = onUndoCurvePoint(state, ~, services)
+    points = state.project.annotations.curvePoints;
+    if isempty(points)
+        return;
     end
-    function state = dispatchUndoCurvePoint(state, payload, ~)
-        state = dispatchNoEvent(state, payload, @onUndoCurvePoint);
+    state.project.annotations.curvePoints(end, :) = [];
+    state = clearMeasurements(state);
+    state = services.workflow.log(state, "Undid last curve point.");
+end
+
+function state = onClearCurve(state, ~, services)
+    state.project.annotations.curvePoints = zeros(0, 2);
+    state = clearMeasurements(state);
+    state = services.workflow.log(state, "Cleared curve points.");
+end
+
+function state = onMeasureScaleReference(state, ~, services)
+    if isempty(state.session.cache.image)
+        services.dialogs.alert( ...
+            'Open an image before measuring reference pixels.', ...
+            'No image loaded');
+        return;
     end
-    function state = dispatchClearCurve(state, payload, ~)
-        state = dispatchNoEvent(state, payload, @onClearCurve);
+    if state.session.workflow.editMode == "reference"
+        state.session.workflow.editMode = "none";
+        message = "Finished reference-pixel edit.";
+    else
+        state.session.workflow.editMode = "reference";
+        state.session.view.scaleBar = [];
+        message = ["Started reference-pixel edit. Double-click two endpoints " ...
+            "and drag them to refine the reference line."];
     end
-    function state = dispatchShowDenseChanged(state, payload, ~)
-        state = dispatchNoEvent(state, payload, @refreshImageOverlayCallback);
+    state = clearMeasurements(state);
+    state = services.workflow.log(state, message);
+end
+
+function state = onScaleReferenceEdited(state, event, ~)
+    points = normalizePoints(event.value);
+    if size(points, 1) > 2
+        points = points(end-1:end, :);
     end
-    function state = dispatchFitCurvature(state, payload, ~)
-        state = dispatchNoEvent(state, payload, @onFitCurvature);
+    calibration = state.project.annotations.calibration;
+    state.project.annotations.calibration = ...
+        labkit.ui.interaction.scaleBarCalibration( ...
+        NaN, calibration.referenceLength, calibration.unit, ...
+        struct("referenceLine", points));
+    state.session.view.scaleBar = [];
+    state = clearMeasurements(state);
+end
+
+function state = onScaleCalibrationChanged(state, event, ~)
+    calibration = state.project.annotations.calibration;
+    referencePixels = calibration.referencePixels;
+    referenceLength = calibration.referenceLength;
+    unit = calibration.unit;
+    referenceLine = calibration.referenceLine;
+    target = string(event.target);
+    if target == "scaleReferencePixels"
+        referencePixels = positiveOrNaN(event.value);
+        referenceLine = zeros(0, 2);
+    elseif target == "scaleReferenceLength"
+        referenceLength = nonnegativeScalar(event.value, referenceLength);
+    elseif target == "scaleCalibrationUnit"
+        unit = string(event.value);
     end
-    function state = dispatchMeasureCurveLength(state, payload, ~)
-        state = dispatchNoEvent(state, payload, @onMeasureCurveLength);
+    state.project.annotations.calibration = ...
+        labkit.ui.interaction.scaleBarCalibration( ...
+        referencePixels, referenceLength, unit, ...
+        struct("referenceLine", referenceLine));
+    state.session.view.scaleBar = [];
+    state = clearMeasurements(state);
+end
+
+function state = onScaleBarSettingChanged(state, ~, ~)
+    state.project.parameters.scaleBarLength = nonnegativeScalar( ...
+        state.project.parameters.scaleBarLength, 0);
+    state.session.view.scaleBar = [];
+end
+
+function state = onPlaceScaleBar(state, ~, services)
+    calibration = state.project.annotations.calibration;
+    if isempty(state.session.cache.image) || ~calibration.isCalibrated
+        services.dialogs.alert(["Measure or enter reference pixels, then " ...
+            "enter a positive reference length and unit."], ...
+            'Calibration required');
+        return;
     end
-    function state = dispatchExportCSV(state, payload, ~)
-        state = dispatchNoEvent(state, payload, @onExportCSV);
-    end
-    function state = dispatchExportOverlay(state, payload, ~)
-        state = dispatchNoEvent(state, payload, @onExportOverlay);
-    end
-
-    function onImageChosen(~, event)
-        paths = labkit.ui.control.filePaths(event.addedFiles);
-        if isempty(paths)
-            addLog('Image selection cancelled.');
-            return;
-        end
-
-        filepath = paths(1);
-        try
-            img = imread(filepath);
-        catch ME
-            showException('Could not read image', ME);
-            return;
-        end
-
-        S.imagePath = filepath;
-        S.image = img;
-        S.xPix = [];
-        S.yPix = [];
-        scaleTool.resetForNewImage(size(S.image));
-        S.curveEditActive = false;
-        if ~isempty(S.curveEditor)
-            S.curveEditor.delete();
-        end
-        S.curveEditor = [];
-        S.fit = curvature.appState.emptyFitResult();
-        S.length = curvature.appState.emptyLengthResult();
-        clearTaskFingerprints();
-        addLog(sprintf('Loaded image: %s', filepath));
-        refreshAll();
-    end
-
-    function onImageCleared()
-        S.imagePath = "";
-        S.image = [];
-        S.xPix = [];
-        S.yPix = [];
-        S.curveEditActive = false;
-        if ~isempty(S.curveEditor)
-            S.curveEditor.delete();
-        end
-        S.curveEditor = [];
-        S.fit = curvature.appState.emptyFitResult();
-        S.length = curvature.appState.emptyLengthResult();
-        clearTaskFingerprints();
-        resetAxes();
-        addLog('Cleared image file.');
-        refreshAll();
-    end
-
-    function onStartCurveEdit(~, ~)
-        if isempty(S.image)
-            showError('No image loaded', 'Open an image before editing curve points.');
-            return;
-        end
-
-        if S.curveEditActive
-            S.curveEditActive = false;
-            if ~isempty(S.curveEditor)
-                S.curveEditor.setActive(false);
-            end
-            addLog('Finished curve edit.');
-            refreshAll();
-            return;
-        end
-
-        scaleTool.finishReferenceEdit(false);
-        S.curveEditActive = true;
-        ensureCurveEditor();
-        S.curveEditor.start([S.xPix(:), S.yPix(:)]);
-        S.fit = curvature.appState.emptyFitResult();
-        S.lastFitFingerprint = "";
-        addLog('Started curve edit. Double-click blank image space to add/insert points; drag points to move; double-click a point to delete it.');
-        refreshAll();
-    end
-
-    function onCurveEditorChanged(points, reason)
-        S.xPix = points(:, 1);
-        S.yPix = points(:, 2);
-        S.fit = curvature.appState.emptyFitResult();
-        S.length = curvature.appState.emptyLengthResult();
-        clearTaskFingerprints();
-        refreshSummary();
-        if any(strcmp(reason, {'add point', 'delete point', 'move point'}))
-            addLog(sprintf('Curve edit updated: %d point(s).', numel(S.xPix)));
-        end
-        syncRuntimeState();
-    end
-
-    function onUndoCurvePoint(~, ~)
-        if ~isempty(S.curveEditor)
-            S.curveEditor.undoLast();
-        end
-    end
-
-    function onClearCurve(~, ~)
-        if ~isempty(S.curveEditor)
-            S.curveEditor.clearPoints();
-        else
-            S.xPix = [];
-            S.yPix = [];
-            S.fit = curvature.appState.emptyFitResult();
-            S.length = curvature.appState.emptyLengthResult();
-            clearTaskFingerprints();
-            refreshAll();
-        end
-        addLog('Cleared curve points.');
-    end
-
-    function onBeforeReferenceEdit(~, ~)
-        S.curveEditActive = false;
-        if ~isempty(S.curveEditor)
-            S.curveEditor.setActive(false);
-        end
-        syncRuntimeState();
-    end
-
-    function onReferenceEditChanged(~, reason)
-        S.fit = curvature.appState.emptyFitResult();
-        S.length = curvature.appState.emptyLengthResult();
-        clearTaskFingerprints();
-        reasonText = char(string(reason));
-        if strcmp(reasonText, 'start')
-            addLog('Started reference-pixel edit. Double-click two endpoints, then drag endpoints to refine.');
-        elseif strcmp(reasonText, 'finish')
-            addLog('Finished reference-pixel edit.');
-        end
-        refreshScaleReadout();
-        refreshSummary();
-        syncRuntimeState();
-    end
-
-    function onScaleBarPlaced(~, ~)
-        scaleBar = scaleTool.placedScaleBar();
-        cal = scaleTool.calibration();
-        addLog(sprintf('Placed scale bar: %.6g %s (%.6g px).', ...
-            scaleBar.barLength, cal.unit, scaleBar.barLength * cal.pixelsPerUnit));
-        refreshAll();
-        syncRuntimeState();
-    end
-
-    function onScaleToolError(titleText, message)
-        showError(titleText, message);
-    end
-
-    function onFitCurvature(~, ~)
-        if numel(S.xPix) < 3
-            showError('Not enough points', 'At least 3 curve points are required to fit curvature.');
-            return;
-        end
-
-        try
-            fitPath = currentCurveFitPoints();
-            task = curvature.appState.fitTask([S.xPix(:), S.yPix(:)], ...
-                fitPath, scaleTool.calibration(), struct( ...
-                'doDensify', chkDensify.Value, ...
-                'denseN', round(edtDenseN.Value)));
-            if S.fit.ok && S.lastFitFingerprint == task.fingerprint
-                addLog('Curvature fit already matches current curve and scale.');
-                refreshSummary();
-                return;
-            end
-
-            S.fit = curvature.analysisRun.computeCurvatureFit( ...
-                task.points(:, 1), task.points(:, 2), task.calibration, ...
-                task.options.doDensify, task.options.denseN, ...
-                task.fitPath(:, 1), task.fitPath(:, 2));
-            S.length = curvature.appState.lengthResultFromFit(S.fit);
-            S.lastFitFingerprint = task.fingerprint;
-            S.lastLengthFingerprint = "";
-        catch ME
-            showException('Circle fit failed', ME);
-            return;
-        end
-
-        if S.fit.ok
-            addLog(sprintf('Fit complete: R = %.6g %s, curvature = %.6g %s.', ...
-                S.fit.R_show, S.fit.unitLen, S.fit.kappa_show, S.fit.unitK));
-        else
-            addLog(sprintf('Fit failed: %s', S.fit.message));
-        end
-        refreshAll();
-    end
-
-    function onMeasureCurveLength(~, ~)
-        if numel(S.xPix) < 2
-            showError('Not enough points', 'At least 2 curve points are required to measure curve length.');
-            return;
-        end
-
-        try
-            points = currentCurveLengthPoints();
-            task = curvature.appState.lengthTask([S.xPix(:), S.yPix(:)], ...
-                points, scaleTool.calibration());
-            if S.length.ok && S.lastLengthFingerprint == task.fingerprint
-                addLog('Curve length already matches current curve and scale.');
-                refreshSummary();
-                return;
-            end
-
-            S.length = curvature.analysisRun.computeCurveLength( ...
-                task.lengthPath(:, 1), task.lengthPath(:, 2), task.calibration);
-            S.lastLengthFingerprint = task.fingerprint;
-        catch ME
-            showException('Curve length failed', ME);
-            return;
-        end
-        addLog(sprintf('Curve length measured: %.6g %s.', ...
-            S.length.length_show, S.length.unitLen));
-        refreshAll();
-    end
-
-    function onExportCSV(~, ~)
-        if ~S.fit.ok && ~S.length.ok
-            showError('No measurement result', ...
-                'Fit curvature or measure curve length before exporting a result CSV.');
-            return;
-        end
-
-        [filepath, cancelled] = labkit.ui.runtime.promptOutputFile( ...
-            '*.csv', 'Export curvature result CSV', 'curvature_result.csv');
-        if cancelled
-            addLog('Export result CSV cancelled.');
-            return;
-        end
-
-        try
-            T = curvature.resultFiles.buildResultTable(S.fit, S.imagePath, S.length);
-            writetable(T, filepath);
-        catch ME
-            showException('Could not export result CSV', ME);
-            return;
-        end
-        addLog(sprintf('Exported result CSV: %s', filepath));
-    end
-
-    function onExportOverlay(~, ~)
-        if isempty(S.image)
-            showError('No image loaded', 'Open an image before exporting an overlay.');
-            return;
-        end
-
-        [filepath, cancelled] = labkit.ui.runtime.promptOutputFile( ...
-            '*.png', 'Export overlay PNG', 'curvature_overlay.png');
-        if cancelled
-            addLog('Export overlay PNG cancelled.');
-            return;
-        end
-
-        try
-            refreshImageOverlay();
-            exportgraphics(ui.topAxes, filepath, 'Resolution', 300);
-        catch ME
-            showException('Could not export overlay PNG', ME);
-            return;
-        end
-        addLog(sprintf('Exported overlay PNG: %s', filepath));
-    end
-
-    function refreshAll()
-        labkit.ui.control.setValue(ui, 'imageFile', fileValue(S.imagePath));
-        refreshScaleReadout();
-        refreshImageOverlay();
-        refreshSummary();
-    end
-
-    function ensureCurveEditor()
-        if isempty(S.image)
-            return;
-        end
-        if isempty(S.curveEditor)
-            S.curveEditor = labkit.ui.interaction.anchorEditor(imageRuntime, size(S.image), ...
-                struct('closed', false, ...
-                'style', 'Curve', ...
-                'onTrace', debugLog.trace, ...
-                'onChanged', @onCurveEditorChanged));
-        else
-            S.curveEditor.setImageSize(size(S.image));
-            S.curveEditor.setStyle('Curve');
-        end
-    end
-
-    function onCalibrationSettingsChanged(~, reason)
-        S.fit = curvature.appState.emptyFitResult();
-        S.length = curvature.appState.emptyLengthResult();
-        clearTaskFingerprints();
-        scaleTool.clearScaleBar();
-        if curvature.userInterface.isReferenceEditReason(reason)
-            refreshScaleReadout();
-            refreshSummary();
-        else
-            refreshAll();
-        end
-        syncRuntimeState();
-    end
-
-    function onScaleBarSettingsChanged(~, ~)
-        refreshAll();
-        syncRuntimeState();
-    end
-
-    function refreshImageOverlayCallback(~, ~)
-        refreshImageOverlay();
-    end
-
-    function clearTaskFingerprints()
-        S.lastFitFingerprint = "";
-        S.lastLengthFingerprint = "";
-    end
-
-    function points = currentCurveLengthPoints()
-        points = currentCurveDisplayPoints(2);
-    end
-
-    function points = currentCurveFitPoints()
-        points = currentCurveDisplayPoints(3);
-    end
-
-    function points = currentCurveDisplayPoints(minPointCount)
-        points = [S.xPix(:), S.yPix(:)];
-        if ~isempty(S.curveEditor)
-            curvePoints = S.curveEditor.curvePoints();
-            if size(curvePoints, 1) >= minPointCount
-                points = curvePoints;
-            end
-        end
-    end
-
-    function updateCurveGraphics()
-        if ~isempty(S.curveEditor)
-            S.curveEditor.refresh();
-        end
-    end
-
-    function refreshScaleReadout()
-        scaleTool.updateReadout();
-    end
-
-    function syncRuntimeState()
-        if isempty(fig) || ~isvalid(fig) || ...
-                ~isappdata(fig, 'labkitUiAppRuntime')
-            return;
-        end
-        runtime = getappdata(fig, 'labkitUiAppRuntime');
-        runtime.state = S;
-        setappdata(fig, 'labkitUiAppRuntime', runtime);
-    end
-
-    function updateModeControls()
-        hasImage = ~isempty(S.image);
-        hasCurve = ~isempty(S.xPix);
-        referenceEditActive = scaleTool.isReferenceEditActive();
-        editActive = S.curveEditActive || referenceEditActive;
-
-        btnStartCurve.Enable = curvature.userInterface.ternary(hasImage, 'on', 'off');
-        btnStartCurve.Text = curvature.userInterface.ternary(S.curveEditActive, ...
-            'Finish curve edit', 'Start curve edit');
-        scaleTool.setEnabled(struct( ...
-            'hasImage', hasImage, ...
-            'blockInputs', S.curveEditActive, ...
-            'blockPlacement', editActive));
-
-        btnUndoPoint.Enable = curvature.userInterface.ternary(hasCurve && ~referenceEditActive, 'on', 'off');
-        btnClearCurve.Enable = curvature.userInterface.ternary(hasCurve && ~referenceEditActive, 'on', 'off');
-        chkDensify.Enable = curvature.userInterface.ternary(~editActive, 'on', 'off');
-        edtDenseN.Enable = curvature.userInterface.ternary(~editActive, 'on', 'off');
-        chkShowDense.Enable = curvature.userInterface.ternary(S.fit.ok && ~editActive, 'on', 'off');
-        btnFit.Enable = curvature.userInterface.ternary(numel(S.xPix) >= 3 && ~editActive, 'on', 'off');
-        btnMeasureLength.Enable = curvature.userInterface.ternary(numel(S.xPix) >= 2 && ~editActive, 'on', 'off');
-        btnExportCSV.Enable = curvature.userInterface.ternary((S.fit.ok || S.length.ok) && ~editActive, 'on', 'off');
-        btnExportOverlay.Enable = curvature.userInterface.ternary(hasImage && ~editActive, 'on', 'off');
-    end
-
-    function refreshImageOverlay()
-        ax = ui.topAxes;
-        labkit.ui.plot.clear(ax, "ResetScale", true);
-
-        if isempty(S.image)
-            title(ax, 'Image + Circle Fit');
-            axis(ax, 'normal');
-            xlim(ax, [0 1]);
-            ylim(ax, [0 1]);
-            return;
-        end
-
-        hImage = labkit.ui.plot.image(ui, 'imageAxes', S.image, ...
-            "title", "Image + Circle Fit", ...
-            "options", struct('clearAxes', false));
-        hold(ax, 'on');
-
-        if S.fit.ok
-            t = linspace(-pi, pi, 600);
-            plot(ax, S.fit.xc_px + S.fit.R_px*cos(t), ...
-                S.fit.yc_px + S.fit.R_px*sin(t), ...
-                'r-', 'LineWidth', 2, ...
-                'HitTest', 'off', ...
-                'DisplayName', 'fit circle');
-            plot(ax, S.fit.xc_px, S.fit.yc_px, 'ro', ...
-                'MarkerFaceColor', 'r', ...
-                'HitTest', 'off', ...
-                'DisplayName', 'center');
-            title(ax, sprintf('R = %.4g %s, curvature = %.4g %s, RMSE = %.3g %s', ...
-                S.fit.R_show, S.fit.unitLen, S.fit.kappa_show, ...
-                S.fit.unitK, S.fit.rmse_show, S.fit.unitLen));
-        else
-            title(ax, 'Image + Circle Fit');
-        end
-
-        if S.curveEditActive
-            ensureCurveEditor();
-            S.curveEditor.setBackground(hImage);
-            S.curveEditor.refresh();
-        elseif scaleTool.isReferenceEditActive()
-            scaleTool.setBackground(hImage);
-            scaleTool.refresh();
-        else
-            plotStaticCurveAnchors(ax);
-        end
-
-        scaleTool.renderOverlay(ax);
-        hold(ax, 'off');
-    end
-
-    function plotStaticCurveAnchors(ax)
-        points = [S.xPix(:), S.yPix(:)];
-        curve = points;
-        if ~isempty(S.curveEditor)
-            curve = S.curveEditor.curvePoints();
-        end
-        curvature.userInterface.plotStaticCurveAnchors(ax, points, curve, S.fit, chkShowDense.Value);
-    end
-
-    function refreshSummary()
-        summary = curvature.userInterface.summaryViewData(S.imagePath, S.xPix, S.fit, ...
-            S.length, S.curveEditActive, scaleTool.isReferenceEditActive());
-        txtPointCount.Value = summary.pointCountText;
-        resultTable.Data = summary.tableData;
-        txtDetails.Value = summary.details;
-        updateModeControls();
-    end
-
-    function resetAxes()
-        refreshImageOverlay();
-        refreshSummary();
-    end
-
-    function addLog(message)
-        labkit.ui.control.appendLog(ui, 'appLog', message);
-        debugLog.append(message);
-    end
-
-    function setupDebugSamples()
-        try
-            pack = curvature.debug.writeSamplePack(debugLog);
-            addLog(sprintf('Debug sample files: %s', char(pack.sampleFolder)));
-            addLog(sprintf('Debug output folder: %s', char(pack.outputFolder)));
-        catch ME
-            debugLog.reportException('curvature', 'Debug sample setup failed', ME);
-            addLog(sprintf('Debug sample setup failed: %s', ME.message));
-        end
-    end
-
-    function showError(titleText, message)
-        addLog(sprintf('%s: %s', titleText, message));
-        labkit.ui.runtime.showAlert(fig, message, titleText);
-    end
-
-    function showException(titleText, exception)
-        debugLog.reportException('curvature', titleText, exception);
-        showError(titleText, exception.message);
+    try
+        state.session.view.scaleBar = ...
+            labkit.ui.interaction.scaleBarGeometry( ...
+            size(state.session.cache.image), calibration, ...
+            state.project.parameters.scaleBarLength, ...
+            state.project.parameters.scaleBarPosition, ...
+            state.project.parameters.scaleBarColor);
+        state.session.workflow.editMode = "none";
+        state = services.workflow.log(state, sprintf( ...
+            'Placed scale bar: %.6g %s.', ...
+            state.project.parameters.scaleBarLength, calibration.unit));
+    catch ME
+        services.diagnostics.report('Could not place scale bar', ME);
+        services.dialogs.alert(ME.message, 'Could not place scale bar');
     end
 end
 
-function items = fileValue(pathValue)
-    pathValue = string(pathValue);
-    if strlength(pathValue) == 0
-        items = strings(0, 1);
+function state = onFitSettingChanged(state, ~, ~)
+    state.project.parameters.densePointCount = max(3, round( ...
+        nonnegativeScalar(state.project.parameters.densePointCount, 300)));
+    state = clearMeasurements(state);
+end
+
+function state = onViewSettingChanged(state, ~, ~)
+    state.project.parameters.showDensePoints = ...
+        logical(state.project.parameters.showDensePoints);
+end
+
+function state = onFitCurvature(state, ~, services)
+    points = state.project.annotations.curvePoints;
+    if size(points, 1) < 3
+        services.dialogs.alert( ...
+            'At least 3 curve points are required to fit curvature.', ...
+            'Not enough points');
         return;
     end
-    items = pathValue;
+    try
+        path = visibleCurve(state);
+        task = curvature.appState.fitTask(points, path, ...
+            state.project.annotations.calibration, struct( ...
+            "doDensify", state.project.parameters.densify, ...
+            "denseN", state.project.parameters.densePointCount));
+        if state.project.results.fit.ok && ...
+                state.session.cache.fitFingerprint == task.fingerprint
+            state = services.workflow.log(state, ...
+                "Curvature fit already matches current curve and scale.");
+            return;
+        end
+        fit = curvature.analysisRun.computeCurvatureFit( ...
+            task.points(:, 1), task.points(:, 2), task.calibration, ...
+            task.options.doDensify, task.options.denseN, ...
+            task.fitPath(:, 1), task.fitPath(:, 2));
+    catch ME
+        services.diagnostics.report('Circle fit failed', ME);
+        services.dialogs.alert(ME.message, 'Circle fit failed');
+        return;
+    end
+    state.project.results.fit = fit;
+    state.project.results.length = curvature.appState.lengthResultFromFit(fit);
+    state.project.results.lastCsvExport = [];
+    state.project.results.lastOverlayExport = [];
+    state.session.cache.fitFingerprint = task.fingerprint;
+    state.session.cache.lengthFingerprint = "";
+    state = services.workflow.log(state, sprintf( ...
+        'Fit complete: R = %.6g %s, curvature = %.6g %s.', ...
+        fit.R_show, fit.unitLen, fit.kappa_show, fit.unitK));
+end
+
+function state = onMeasureCurveLength(state, ~, services)
+    points = state.project.annotations.curvePoints;
+    if size(points, 1) < 2
+        services.dialogs.alert( ...
+            'At least 2 curve points are required to measure curve length.', ...
+            'Not enough points');
+        return;
+    end
+    try
+        path = visibleCurve(state);
+        task = curvature.appState.lengthTask(points, path, ...
+            state.project.annotations.calibration);
+        if state.project.results.length.ok && ...
+                state.session.cache.lengthFingerprint == task.fingerprint
+            state = services.workflow.log(state, ...
+                "Curve length already matches current curve and scale.");
+            return;
+        end
+        result = curvature.analysisRun.computeCurveLength( ...
+            task.lengthPath(:, 1), task.lengthPath(:, 2), task.calibration);
+    catch ME
+        services.diagnostics.report('Curve length failed', ME);
+        services.dialogs.alert(ME.message, 'Curve length failed');
+        return;
+    end
+    state.project.results.length = result;
+    state.project.results.lastCsvExport = [];
+    state.session.cache.lengthFingerprint = task.fingerprint;
+    state = services.workflow.log(state, sprintf( ...
+        'Curve length measured: %.6g %s.', ...
+        result.length_show, result.unitLen));
+end
+
+function state = onExportCsv(state, ~, services)
+    fit = state.project.results.fit;
+    lengthResult = state.project.results.length;
+    if ~fit.ok && ~lengthResult.ok
+        services.dialogs.alert( ...
+            'Fit curvature or measure curve length before exporting.', ...
+            'No measurement result');
+        return;
+    end
+    [out, cancelled] = services.dialogs.outputFile( ...
+        '*.csv', 'Export curvature result CSV', 'curvature_result.csv');
+    if cancelled
+        state = services.workflow.log(state, "Result CSV export cancelled.");
+        return;
+    end
+    tableData = curvature.resultFiles.buildResultTable( ...
+        fit, state.session.cache.imagePath, lengthResult);
+    writetable(tableData, out);
+    [manifestPath, ~] = writeManifest(state, services, out, ...
+        "curvatureResults", "text/csv", "curvature_result.labkit.json");
+    state.project.results.lastCsvExport = struct( ...
+        "csvPath", string(out), "manifestPath", string(manifestPath));
+    state = services.workflow.log(state, "Exported result CSV: " + string(out));
+end
+
+function state = onExportOverlay(state, ~, services)
+    if isempty(state.session.cache.image)
+        services.dialogs.alert('Open an image before exporting an overlay.', ...
+            'No image loaded');
+        return;
+    end
+    [out, cancelled] = services.dialogs.outputFile( ...
+        '*.png', 'Export overlay PNG', 'curvature_overlay.png');
+    if cancelled
+        state = services.workflow.log(state, "Overlay PNG export cancelled.");
+        return;
+    end
+    model = previewModel(state);
+    curvature.resultFiles.writeOverlayPng(model, out);
+    [manifestPath, ~] = writeManifest(state, services, out, ...
+        "curvatureOverlay", "image/png", "curvature_overlay.labkit.json");
+    state.project.results.lastOverlayExport = struct( ...
+        "pngPath", string(out), "manifestPath", string(manifestPath));
+    state = services.workflow.log(state, "Exported overlay PNG: " + string(out));
+end
+
+function path = visibleCurve(state)
+    points = state.project.annotations.curvePoints;
+    path = points;
+    if size(points, 1) >= 2 && ~isempty(state.session.cache.image)
+        path = labkit.ui.interaction.anchorPath( ...
+            points, size(state.session.cache.image), ...
+            "Style", "Curve", "Closed", false);
+    end
+end
+
+function model = previewModel(state)
+    model = struct( ...
+        "imageData", state.session.cache.image, ...
+        "points", state.project.annotations.curvePoints, ...
+        "curve", visibleCurve(state), ...
+        "fit", state.project.results.fit, ...
+        "showDensePoints", state.project.parameters.showDensePoints, ...
+        "scaleBar", state.session.view.scaleBar);
+end
+
+function [manifestPath, report] = writeManifest( ...
+        state, services, outputPath, id, mediaType, manifestName)
+    [folder, name, extension] = fileparts(outputPath);
+    output = services.results.output(id, "primary", ...
+        string(name) + string(extension), mediaType);
+    summary = struct( ...
+        "fitOk", state.project.results.fit.ok, ...
+        "lengthOk", state.project.results.length.ok, ...
+        "pointCount", size(state.project.annotations.curvePoints, 1));
+    spec = struct( ...
+        "Outputs", output, "Inputs", state.project.inputs.source, ...
+        "Parameters", state.project.parameters, "Summary", summary, ...
+        "ManifestName", manifestName);
+    [manifestPath, report] = services.results.writeManifest(folder, spec);
+end
+
+function state = clearMeasurements(state)
+    state.project.results.fit = curvature.appState.emptyFitResult();
+    state.project.results.length = curvature.appState.emptyLengthResult();
+    state.project.results.lastCsvExport = [];
+    state.project.results.lastOverlayExport = [];
+    state.session.cache.fitFingerprint = "";
+    state.session.cache.lengthFingerprint = "";
+end
+
+function points = normalizePoints(value)
+    if isempty(value)
+        points = zeros(0, 2);
+        return;
+    end
+    points = double(value);
+    if size(points, 2) ~= 2 || any(~isfinite(points), 'all')
+        points = zeros(0, 2);
+    end
+end
+
+function value = positiveOrNaN(value)
+    value = double(value);
+    if isempty(value) || ~isscalar(value) || ~isfinite(value) || value <= 0
+        value = NaN;
+    end
+end
+
+function value = nonnegativeScalar(value, fallback)
+    value = double(value);
+    if isempty(value) || ~isscalar(value) || ~isfinite(value) || value < 0
+        value = fallback;
+    end
 end

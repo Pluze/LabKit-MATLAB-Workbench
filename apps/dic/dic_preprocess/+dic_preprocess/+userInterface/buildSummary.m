@@ -1,30 +1,39 @@
-% Expected caller: DIC preprocess runner and direct unit tests. Input is the
-% runner state struct with reference/moving paths, current image arrays, history,
-% aligned image, and mask image fields. Output is the summary text cell array
-% shown in the app. Side effects: none.
+% Expected caller: DIC preprocess V2 presenter and unit tests. Input is the
+% canonical state. Output summarizes durable sources and rebuildable cache.
 
-function lines = buildSummary(S)
+function lines = buildSummary(state)
 %BUILDSUMMARY Build DIC preprocess summary text from app state.
 
-    lines = {};
-    lines{end+1} = sprintf('Reference: %s', displayPath(S.referencePath));
-    lines{end+1} = sprintf('Moving: %s', displayPath(S.movingPath));
-    lines{end+1} = sprintf('Current pair: %s', currentPairSizeText(S));
-    lines{end+1} = sprintf('Undo steps: %d', numel(S.history));
-    lines{end+1} = sprintf('Last aligned image: %s', ...
-        ternary(~isempty(S.alignedImage), 'available', 'not generated'));
-    lines{end+1} = sprintf('ROI mask: %s', ...
-        ternary(~isempty(S.maskImage), 'available', 'not drawn'));
+    project = state.project;
+    cache = state.session.cache;
+    annotations = project.annotations;
+    lines = cell(0, 1);
+    lines{end+1, 1} = sprintf('Reference: %s', ...
+        displayPath(dic_preprocess.sourceFiles.pathForId( ...
+        project.inputs.sources, "referenceImage")));
+    lines{end+1, 1} = sprintf('Moving: %s', ...
+        displayPath(dic_preprocess.sourceFiles.pathForId( ...
+        project.inputs.sources, "movingImage")));
+    lines{end+1, 1} = sprintf('Current pair: %s', currentPairSizeText(cache));
+    lines{end+1, 1} = sprintf('Undo steps: %d', numel(annotations.history));
+    lines{end+1, 1} = sprintf('Last aligned image: %s', ...
+        ternary(any(string({annotations.editSteps.kind}) == "alignment"), ...
+        'available', 'not generated'));
+    lines{end+1, 1} = sprintf('ROI mask: %s', ...
+        ternary(~isempty(annotations.maskImage), 'available', 'not drawn'));
 end
 
-function txt = currentPairSizeText(S)
-    if isempty(S.currentReferenceImage) || isempty(S.currentMovingImage)
+function txt = currentPairSizeText(cache)
+    if isempty(cache.currentReferenceImage) || ...
+            isempty(cache.currentMovingImage)
         txt = 'not loaded';
         return;
     end
     txt = sprintf('reference %d x %d, moving %d x %d', ...
-        size(S.currentReferenceImage, 1), size(S.currentReferenceImage, 2), ...
-        size(S.currentMovingImage, 1), size(S.currentMovingImage, 2));
+        size(cache.currentReferenceImage, 1), ...
+        size(cache.currentReferenceImage, 2), ...
+        size(cache.currentMovingImage, 1), ...
+        size(cache.currentMovingImage, 2));
 end
 
 function txt = displayPath(pathValue)

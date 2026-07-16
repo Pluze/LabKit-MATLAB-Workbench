@@ -1,13 +1,30 @@
 function [curve, ok, msg] = getZCurve(tables)
-%GETZCURVE Return the EIS ZCURVE table, or a compatible impedance table.
+%GETZCURVE Select the impedance table from parsed EIS data.
+%
+% Usage:
+%   [curve, ok, msg] = labkit.dta.getZCurve(tables)
+%
+% Description:
+%   First selects a table named ZCURVE. If that name is absent, selects the
+%   first table whose headers include Freq, Zreal, and Zimag, using
+%   case-insensitive comparisons.
 %
 % Inputs:
-%   tables - parsed DTA table struct array.
+%   tables - Structure array of parsed DTA tables. Each element is expected to
+%       contain name, headers, and data fields.
 %
-% Output:
-%   curve - selected impedance curve/table struct, or empty struct.
-%   ok - logical success flag.
-%   msg - status text for logs or UI summaries.
+% Outputs:
+%   curve - Selected impedance table structure, or an empty structure on
+%       failure.
+%   ok - Logical scalar indicating whether a table was selected.
+%   msg - Character vector naming the selected table or stating that a
+%       ZCURVE table was not found.
+%
+% Typical Call:
+%   [curve, ok, msg] = labkit.dta.getZCurve(item.tables);
+%   if ok
+%       frequencyHz = labkit.dta.getColumn(curve, "Freq");
+%   end
 
     curve = struct();
     ok = false;

@@ -1,21 +1,36 @@
 function layout = logPanel(id, titleText, varargin)
 %LOGPANEL Create a read-only log panel layout node.
 %
-% App-facing contract:
-%   layout = labkit.ui.layout.logPanel(id, title, "value", lines)
+% Usage:
+%   layout = labkit.ui.layout.logPanel(id, titleText)
+%   layout = labkit.ui.layout.logPanel(id, titleText, "value", lines)
 %
 % Inputs:
-%   id - globally unique log panel id.
-%   titleText - log panel title.
-%   value - initial log lines as text or cellstr, default {'Ready.'}.
-%   Use app-level usage, not logPanel, for static workflow help.
-%   Log panels follow the latest appended line by default. Users can use the
-%   visible follow button or context menu to pause or resume automatic
-%   scrolling.
-%   Concrete log-panel sizing is owned by the framework.
+%   id - Text scalar used to identify the log. It must be a valid MATLAB
+%       variable name and unique within the workbench.
+%   titleText - Text displayed in the panel title.
 %
-% Output:
-%   layout - scalar data-only UI layout struct.
+% Name-Value Arguments:
+%   value - Initial log lines as text, a string array, or cellstr. Default:
+%       {'Ready.'}.
+%
+% Outputs:
+%   layout - Scalar logPanel node with kind, id, props, children, and slots
+%       fields.
+%
+% Description:
+%   logPanel displays changing workflow or diagnostic messages in a read-only
+%   text area. It follows the newest line by default. Users can pause or resume
+%   automatic scrolling with the visible button or the context menu. Use the
+%   workbench usage option for static instructions that should always remain
+%   visible.
+%
+% Example:
+%   logView = labkit.ui.layout.logPanel( ...
+%       "workflowLog", "Log", "value", ["Ready."; "Waiting for files."]);
+%   assert(logView.kind == "logPanel")
+%
+% See also labkit.ui.layout.statusPanel, labkit.ui.layout.workbench
 
     props = optionStruct(varargin);
     props.title = char(string(titleText));

@@ -1,24 +1,49 @@
 function [preview, info] = previewBudget(imageData, varargin)
 %PREVIEWBUDGET Downsample image data to fit a display pixel budget.
 %
-% App-facing contract:
-%   [preview, info] = labkit.image.previewBudget(imageData, "MaxPixels", n)
+% Usage:
+%   [preview, info] = labkit.image.previewBudget(imageData)
+%   [preview, info] = labkit.image.previewBudget(imageData, Name, Value)
+%
+% Description:
+%   Produces a lightweight preview by taking every Nth row and column. N is
+%   the smallest integer stride whose estimated processing area does not
+%   exceed MaxPixels. The estimate is source rows times source columns times
+%   Expansion, so callers can reserve memory for workflows that pad, tile, or
+%   otherwise enlarge an image before display.
+%
+%   This is sampling rather than interpolating resize. The first source pixel
+%   is always retained, and image class and channel count are preserved. A
+%   preview may use fewer pixels than the budget because the stride is an
+%   integer.
 %
 % Inputs:
-%   imageData - 2-D or 3-D image matrix. Class and channel count are preserved.
-%   MaxPixels - positive scalar display-pixel budget, default 1.2e6.
-%   Expansion - positive scalar estimated processing-area multiplier before
-%       preview rendering, default 1. Use this when a workflow pads or expands
-%       the image before display.
+%   imageData - Nonempty numeric or logical 2-D or 3-D image array.
+%
+% Name-Value Arguments:
+%   MaxPixels - Positive display-area budget. The default is 1.2e6 pixels.
+%               Invalid, empty, or nonpositive values fall back to the
+%               default rather than throwing an error.
+%   Expansion - Positive multiplier applied only to estimatedPixels. The
+%               default is 1. Invalid values fall back to 1.
 %
 % Outputs:
-%   preview - imageData sampled at an integer stride when needed.
-%   info - struct with scaleFactor, coordinateScale, maxPixels,
-%       estimatedPixels, sourceSize, and previewSize.
+%   preview - imageData sampled with the selected integer stride.
+%   info - Scalar structure describing the preview calculation.
+%
+% Info Fields:
+%   scaleFactor - Integer row and column stride N.
+%   coordinateScale - Reciprocal 1/N for mapping source distances to the
+%                     sampled preview scale.
+%   maxPixels - Validated display-area budget.
+%   estimatedPixels - Source row-column area multiplied by Expansion.
+%   sourceSize - Original size vector.
+%   previewSize - Returned preview size vector.
 %
 % Example:
+%   rgb = zeros(100, 200, 3, 'uint8');
 %   [preview, info] = labkit.image.previewBudget(rgb, ...
-%       "MaxPixels", 1.2e6, "Expansion", 25);
+%       "MaxPixels", 5000, "Expansion", 2);
 
     opts = parseOptions(varargin);
     validateImageData(imageData);

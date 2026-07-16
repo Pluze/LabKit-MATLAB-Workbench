@@ -20,12 +20,12 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
             catalog = extractBuildfileCatalog(root);
             catalogNames = catalog.Name(catalog.Visibility == "public");
 
-            testingDoc = fullfile(root, "docs", "testing.md");
+            testingDoc = fullfile(root, "docs", "development", "testing.md");
             matrixTasks = extractPrimaryTestingCommandMatrix(fileread(testingDoc));
             testCase.verifyFalse(isempty(matrixTasks), ...
-                "docs/testing.md task matrix should be parseable.");
+                "docs/development/testing.md task matrix should be parseable.");
             testCase.verifyEqual(matrixTasks(:), catalogNames(:), ...
-                "docs/testing.md task matrix should match buildfile catalog order.");
+                "docs/development/testing.md task matrix should match buildfile catalog order.");
 
             docFiles = [ ...
                 fullfile(root, "README.md"), ...
@@ -211,7 +211,7 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
             root = setupLabKitTestPath();
 
             steps = labkitValidationPlanForChangedPaths(root, [ ...
-                "docs/apps.md", ...
+                "docs/apps/README.md", ...
                 "tests/runner/labkitArtifactPaths.m"]);
             signatures = validationStepSignatures(steps);
 
@@ -264,8 +264,8 @@ classdef BuildTaskFrameworkGuardrailTest < matlab.unittest.TestCase
             root = setupLabKitTestPath();
             catalog = extractBuildfileCatalog(root);
 
-            expectedTasks = ["changed", "changedFast", "baseMatlab", "headless", "gui", ...
-                "coverage", "listTasks"];
+            expectedTasks = ["changed", "changedFast", "baseMatlab", ...
+                "docs", "docsCheck", "headless", "gui", "coverage", "listTasks"];
             publicTasks = catalog.Name(catalog.Visibility == "public").';
             testCase.verifyEqual(publicTasks, expectedTasks, ...
                 "Build task catalog should expose a compact public task set.");

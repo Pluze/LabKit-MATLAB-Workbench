@@ -1,17 +1,27 @@
 function filterSpec = fileDialogFilter(varargin)
-%FILEDIALOGFILTER Return a file-chooser-compatible thermal image filter.
+%FILEDIALOGFILTER Create a file-selection filter for thermal images.
 %
-% App-facing contract:
+% Usage:
 %   filterSpec = labkit.thermal.fileDialogFilter()
 %   filterSpec = labkit.thermal.fileDialogFilter("IncludeAll", true)
 %
-% Inputs:
-%   IncludeAll - optional logical scalar, default false. When true, append an
-%       "All files (*.*)" row after the thermal-file row.
+% Description:
+%   Returns the pattern and description rows used by MATLAB file-selection
+%   dialogs and LabKit file panels. The thermal row includes .jpg, .jpeg, and
+%   .rjpg files. A matching extension does not prove that a JPEG contains
+%   radiometric data; use labkit.thermal.inspectFile to inspect its contents.
+%
+% Name-Value Arguments:
+%   IncludeAll - Logical or numeric scalar. When true, adds an "All files"
+%       row after the thermal-image row. Default: false.
 %
 % Outputs:
-%   filterSpec - cell array accepted by filePanel filters and MATLAB
-%       file-chooser filter specs.
+%   filterSpec - One- or two-row cell array. Column 1 contains wildcard
+%       patterns and column 2 contains the text shown in the file dialog.
+%
+% Example:
+%   filters = labkit.thermal.fileDialogFilter("IncludeAll", true);
+%   assert(isequal(size(filters), [2 2]))
 
     opts = parseOptions(varargin{:});
     thermalRow = {'*.jpg;*.jpeg;*.rjpg', ...

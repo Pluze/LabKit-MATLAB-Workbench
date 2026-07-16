@@ -20,30 +20,6 @@ function varargout = labkit_CSC_app(varargin)
 % Optional normalization
 %   CSC = Q / area (cm^2); both charge and normalized CSC are shown.
 %
-    requirements = csc.requirements();
-    appVersion = csc.version();
-    [requestHandled, requestOutputs, debugLog] = labkit.ui.runtime.dispatchRequest( ...
-        'labkit_CSC_app', varargin, nargout, "Requirements", requirements, "Version", appVersion);
-    if requestHandled
-        varargout = requestOutputs;
-        return;
-    end
-    if debugLog.enabled
-        if nargout > 2
-            error('labkit_CSC_app:TooManyOutputs', ...
-                'labkit_CSC_app debug mode returns at most the app figure and debug log.');
-        end
-    elseif nargout > 1
-        error('labkit_CSC_app:TooManyOutputs', 'labkit_CSC_app returns at most the app figure handle.');
-    end
-
-    request = struct("debug", debugLog);
-    fig = labkit.ui.runtime.run(csc.definition(), request);
-    labkit.ui.runtime.applyVersionTitle(fig, appVersion);
-    if nargout >= 1
-        varargout{1} = fig;
-    end
-    if nargout >= 2
-        varargout{2} = debugLog;
-    end
+    [varargout{1:nargout}] = labkit.ui.runtime.launch( ...
+        @csc.definition, @csc.requirements, @csc.version, varargin{:});
 end

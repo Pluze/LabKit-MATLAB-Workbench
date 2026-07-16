@@ -7,10 +7,12 @@ classdef RectangleInteractionGovernanceTest < matlab.unittest.TestCase
             files = sourceFiles(root);
             directFiles = filesWithDirectRectangleCalls(root, files);
             expected = [
-                "+labkit/+ui/+interaction/rectangleEditor.m"
-                "apps/dic/dic_preprocess/+dic_preprocess/+userInterface/startCropRoi.m"
+                "+labkit/+ui/+runtime/private/createRectangleEditor.m"
+                "+labkit/+ui/+runtime/private/reconcileV2Interactions.m"
+                "apps/dic/dic_preprocess/+dic_preprocess/+userInterface/renderPreviewImage.m"
+                "apps/image_measurement/batch_crop/+batch_crop/+userInterface/renderCropPreview.m"
+                "apps/image_measurement/image_enhance/+image_enhance/+userInterface/renderImagePreview.m"
                 "apps/image_measurement/flir_thermal/+flir_thermal/+userInterface/drawTemperatureReadings.m"
-                "apps/image_measurement/flir_thermal/+flir_thermal/+userInterface/temperatureReadingTool.m"
             ];
             testCase.verifyEqual(sort(directFiles), sort(expected), ...
                 ['Interactive app rectangles must use rectangleEditor or an ' ...
@@ -29,23 +31,35 @@ classdef RectangleInteractionGovernanceTest < matlab.unittest.TestCase
 
         function knownInteractiveWorkflowsUseEditorOrDragSession(testCase)
             root = setupLabKitTestPath();
-            editorUsers = [
-                "apps/dic/dic_preprocess/+dic_preprocess/+userInterface/startCropRoi.m"
-                "apps/image_measurement/batch_crop/+batch_crop/definitionActions.m"
-                "apps/image_measurement/image_enhance/+image_enhance/definitionActions.m"
+            controlledUsers = [
+                "apps/dic/dic_preprocess/+dic_preprocess/+userInterface/presentWorkbench.m"
+                "apps/image_measurement/image_enhance/+image_enhance/+userInterface/presentWorkbench.m"
             ];
-            for k = 1:numel(editorUsers)
-                source = fileread(fullfile(root, char(editorUsers(k))));
-                testCase.verifyTrue(contains(source, ...
-                    "labkit.ui.interaction.rectangleEditor"), ...
-                    editorUsers(k) + " must keep its rectangle draggable.");
+            for k = 1:numel(controlledUsers)
+                source = fileread(fullfile(root, char(controlledUsers(k))));
+                testCase.verifyTrue(contains(source, '"Kind", "rectangle"'), ...
+                    controlledUsers(k) + ...
+                    " must declare a Runtime V2 controlled rectangle.");
             end
 
-            flirTool = fileread(fullfile(root, ...
+            batchCropPresenter = fileread(fullfile(root, ...
+                'apps/image_measurement/batch_crop/+batch_crop', ...
+                '+userInterface/presentWorkbench.m'));
+            testCase.verifyTrue(contains(batchCropPresenter, ...
+                '"Kind", "pointSlots"') && ...
+                contains(batchCropPresenter, ...
+                '"placeSelectedOnBackground", true'), ...
+                ['Batch Crop uses a fixed-size ROI, so its Imager-style ' ...
+                'interaction must expose a draggable center plus one-click ' ...
+                'placement instead of a misleading resizable rectangle.']);
+
+            flirPresenter = fileread(fullfile(root, ...
                 'apps/image_measurement/flir_thermal/+flir_thermal', ...
-                '+userInterface/temperatureReadingTool.m'));
-            testCase.verifyTrue(contains(flirTool, 'session.captureDrag'), ...
-                'FLIR rectangle selection must remain pointer-drag driven.');
+                '+userInterface/presentWorkbench.m'));
+            testCase.verifyTrue(contains(flirPresenter, ...
+                '"Kind", "regionSelection"'), ...
+                ['FLIR point and ROI reads must use the Runtime V2 ' ...
+                'controlled region-selection contract.']);
         end
     end
 end
@@ -57,6 +71,8 @@ function files = sourceFiles(root)
     assert(status == 0, 'Could not list rectangle source files.');
     files = string(splitlines(strtrim(output)));
     files = files(endsWith(files, ".m"));
+    existsNow = arrayfun(@(file) isfile(fullfile(root, file)), files);
+    files = files(existsNow);
 end
 
 function files = filesWithDirectRectangleCalls(root, candidates)

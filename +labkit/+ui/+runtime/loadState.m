@@ -1,39 +1,49 @@
 function filepath = loadState(fig, filepath)
-%LOADSTATE Load a compatible LabKit app state snapshot from a MAT file.
+%LOADSTATE Load a compatible Runtime V2 project or declared legacy import.
 %
-% App-facing contract:
+% Usage:
 %   filepath = labkit.ui.runtime.loadState(fig)
 %   filepath = labkit.ui.runtime.loadState(fig, filepath)
 %
 % Inputs:
-%   fig - LabKit app figure created by labkit.ui.runtime.run.
-%   filepath - optional scalar text MAT-file path. When omitted, an open
-%       dialog is shown.
+%   fig - Live app figure created by labkit.ui.runtime.launch.
+%   filepath - MAT-file to load. When omitted, MATLAB opens a file-selection
+%       dialog.
 %
-% Output:
-%   filepath - selected or supplied MAT-file path. Empty when the user
-%       cancels the open dialog.
+% Outputs:
+%   filepath - Selected or supplied path as a string scalar, or "" when the
+%       user cancels the dialog.
 %
-% Runtime behavior:
-%   Loads only a variable named `snapshot`, validates schema, app id,
-%   LabKit UI version, MATLAB release/platform, and optional app snapshot
-%   version before mutating runtime state. Failed loads restore the previous
-%   app state and visible render.
+% Description:
+%   loadState accepts a current labkitProject envelope, an older Runtime V2
+%   snapshot, or a MAT-file variable named in Project.LegacyImports. Current
+%   payloads are migrated one version at a time, validated, and checked for
+%   required source files. A fresh session is then created and optional resume
+%   data is applied. The live app changes only after the complete candidate and
+%   its first presentation succeed; an error leaves the previous project and
+%   view intact. Legacy formats can be opened but are never written back in
+%   their old format.
+%
+% Typical Call:
+%   loadedFile = labkit.ui.runtime.loadState(fig, "analysis.project.mat");
+%
+% See also labkit.ui.runtime.saveState,
+%   labkit.ui.runtime.resolvePortableFileReference
 
     if nargin < 2
-        filepath = chooseSnapshotInput();
+        filepath = chooseProjectInput();
         if strlength(filepath) == 0
             return;
         end
     else
         filepath = string(filepath);
     end
-    restoreSnapshot(fig, filepath);
+    restoreV2Project(fig, filepath);
 end
 
-function filepath = chooseSnapshotInput()
+function filepath = chooseProjectInput()
     [file, path] = uigetfile({'*.mat', 'MAT files (*.mat)'}, ...
-        'Load LabKit State Snapshot');
+        'Load LabKit Project');
     if isequal(file, 0) || isequal(path, 0)
         filepath = "";
     else

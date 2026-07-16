@@ -1,643 +1,459 @@
-% App-owned action table for RHS Preview. Expected caller is
-% rhs_preview.definition. Output maps semantic action ids to handlers used by
-% labkit.ui.runtime.run while preserving lazy RHS indexing and preview behavior.
+% App-owned Runtime V2 action table for RHS Preview. Handlers own RHS source
+% indexing, lazy window reads, protocol/filter drafting, and semantic interval
+% events without closure state, UI registry access, or figure callbacks.
 function actions = definitionActions()
-%DEFINITIONACTIONS Build the RHS Preview runtime action map.
-    S = [];
-    ui = [];
-    fig = [];
-    debugLog = [];
-    previewRuntime = [];
-    previewSession = [];
-    callbacks = struct( ...
+    actions = struct( ...
         "rhsChosen", @onRhsChosen, ...
-        "rhsCleared", @onRhsCleared, ...
         "folderChosen", @onFolderChosen, ...
         "folderRemoved", @onFolderRemoved, ...
         "folderCleared", @onFolderCleared, ...
         "protocolChosen", @onProtocolChosen, ...
-        "protocolCleared", @onProtocolCleared, ...
         "settingChanged", @onSettingChanged, ...
         "previewChannelEdited", @onPreviewChannelEdited, ...
         "fileFilterEdited", @onFileFilterEdited, ...
         "refreshPreviewWindow", @onRefreshPreviewWindow, ...
         "refreshFolderFiles", @onRefreshFolderFiles, ...
+        "previewRoiEdited", @onPreviewRoiEdited, ...
+        "previewWindowScrolled", @onPreviewWindowScrolled, ...
         "zoomToRoi", @onZoomToRoi, ...
         "saveProtocol", @onSaveProtocol, ...
         "saveFilterRecord", @onSaveFilterRecord, ...
         "resetWorkflow", @onResetWorkflow);
-    eventActions = ["rhsChosen", "folderChosen", "folderRemoved", ...
-        "protocolChosen", "settingChanged", "previewChannelEdited"];
-    actionIds = string(fieldnames(callbacks));
-    actions = struct("startup", @onStartup);
-    for kAction = 1:numel(actionIds)
-        actions.(char(actionIds(kAction))) = @dispatchAction;
+end
+
+function state = onRhsChosen(state, event, services)
+    paths = services.events.paths(event, "addedFiles");
+    if isempty(paths)
+        paths = services.events.paths(event, "files");
     end
-    function state = onStartup(state, ~, services)
-        S = state;
-        ui = services.ui;
-        fig = services.figure;
-        debugLog = services.debug;
-        previewRuntime = labkit.ui.interaction.runtime( ...
-            ui.controls.preview.primaryAxes, ...
-            struct("figure", fig, "defaultScrollFcn", @onPreviewScrollWheel));
-        previewSession = previewRuntime.createSession(struct( ...
-            "name", "rhsPreviewRoi", ...
-            "onPointerDown", @onPreviewAxesDown, ...
-            "installScrollWheel", false));
-        previewSession.setBackground(ui.controls.preview.primaryAxes);
-        previewSession.activate();
-        if debugLog.enabled
-            debugLog.trace("RHS Preview debug trace enabled.");
-            debugLog.instrumentFigure(fig);
-            rhs_preview.debug.writeAndLogSamplePack(debugLog, @addLog);
-        end
-        refreshAll();
-        addLog("RHS Preview ready.");
-        state = S;
+    if isempty(paths)
+        return;
     end
-    function state = dispatchAction(~, payload, ~)
-        id = string(payload.id);
-        if ~isfield(callbacks, char(id))
-            error('rhs_preview:actions:UnknownAction', ...
-                'Unknown RHS Preview action "%s".', payload.id);
-        end
-        event = [];
-        if any(id == eventActions)
-            event = payload.event;
-        end
-        callbacks.(char(id))([], event);
-        state = S;
+    filepath = paths(1);
+    [index, status] = labkit.rhs.indexFile(filepath);
+    if ~status.ok
+        state.session.workflow.statusMessage = string(status.message);
+        state = services.workflow.log(state, ...
+            "RHS inspect failed: " + string(status.message));
+        return;
     end
-    function onRhsChosen(~, event)
-        paths = labkit.ui.control.filePaths(event.addedFiles);
-        if isempty(paths)
-            return;
-        end
-        S.rhsFile = paths(1);
-        S.lastAction = "Selected RHS file";
-        addLog("Selected RHS file: " + rhs_preview.userInterface.displayFile(S.rhsFile));
-        indexed = inspectSelectedFile();
-        if indexed && rhs_preview.analysisRun.hasReadableChannel(S)
-            readPreviewWindowFromState("Auto preview window");
-        end
-        refreshAll();
+    state.project.inputs.rhsSource = services.project.sourceRecord( ...
+        "rhs", "recording", filepath, true);
+    state.session.cache.rhsPath = filepath;
+    state.session.cache.index = index;
+    state.session.cache.info = index.info;
+    selection = rhs_preview.userInterface.channelSelection( ...
+        index.info, state.project.parameters.family, "");
+    state.project.parameters.family = selection.family;
+    state.project.annotations.previewChannelRows = ...
+        rhs_preview.analysisRun.channelRows(index.info, selection.family, ...
+        state.project.parameters.maxPreviewChannels, ...
+        state.project.annotations.protocol);
+    state.session.cache.previewChannelRows = ...
+        state.project.annotations.previewChannelRows;
+    state.session.view.autoWindow = true;
+    state.session.view.windowStartSec = 0;
+    state = applyAdaptiveWindow(state);
+    state = readPreview(state, "Auto preview window", services, true, false);
+    state.session.workflow.statusMessage = string(status.message);
+    if strlength(state.session.workflow.statusMessage) == 0
+        state.session.workflow.statusMessage = "RHS header indexed.";
     end
-    function onRhsCleared(~, ~)
-        S.rhsFile = "";
-        S.info = [];
-        S.index = [];
-        S.preview = [];
-        S.roiSec = [NaN NaN];
-        S.family = "amplifier";
-        S.previewChannelRows = table();
-        S.statusMessage = "No RHS file selected.";
-        S.lastAction = "Cleared RHS file";
-        refreshAll();
+    state.session.workflow.lastAction = "Indexed RHS file";
+    state = services.workflow.log(state, sprintf( ...
+        'Indexed %s: %.3f s, %d amplifier channel(s).', ...
+        rhs_preview.userInterface.displayFile(filepath), index.durationSec, ...
+        numel(index.info.channelFamilies.amplifier)));
+end
+
+function state = onProtocolChosen(state, event, services)
+    paths = services.events.paths(event, "addedFiles");
+    if isempty(paths)
+        paths = services.events.paths(event, "files");
     end
-    function onFolderChosen(~, event)
-        paths = labkit.ui.control.filePaths(event.addedFiles);
-        if isempty(paths)
-            return;
-        end
-        S.rhsFolder = commonParentFolder(paths);
-        refreshFilterRowsFromPaths(paths, "Discovered RHS files");
-        refreshAll();
+    if isempty(paths)
+        return;
     end
-    function onFolderRemoved(~, event)
-        paths = labkit.ui.control.filePaths(event.removedFiles);
-        if isempty(paths) || isempty(S.filterRows) || height(S.filterRows) == 0
-            return;
+    filepath = paths(1);
+    protocol = rhs_preview.sourceFiles.loadProtocol(filepath);
+    state.project.inputs.protocolSource = services.project.sourceRecord( ...
+        "protocol", "protocol", filepath, false);
+    state.project.annotations.protocol = protocol;
+    state.session.cache.protocolPath = filepath;
+    state.session.cache.protocol = protocol;
+    state = rebuildPreviewRows(state);
+    state.session.workflow.lastAction = "Selected protocol";
+    state = services.workflow.log(state, ...
+        "Selected protocol: " + rhs_preview.userInterface.displayFile(filepath));
+end
+
+function state = onFolderChosen(state, event, services)
+    paths = services.events.paths(event, "addedFiles");
+    if isempty(paths)
+        paths = services.events.paths(event, "files");
+    end
+    if isempty(paths)
+        return;
+    end
+    try
+        rows = rhs_preview.analysisRun.discoverFilterRows( ...
+            paths, state.session.cache.filterRows);
+    catch ME
+        services.diagnostics.report("RHS task scan failed", ME);
+        state.session.workflow.statusMessage = string(ME.message);
+        return;
+    end
+    state.session.cache.filterRows = rows;
+    state.project.inputs.filterSources = sourceRecords(rows, services);
+    state = storeFilterAnnotations(state);
+    state.session.workflow.statusMessage = sprintf( ...
+        'Discovered %d RHS file(s).', height(rows));
+    state.session.workflow.lastAction = "Discovered RHS files";
+    state = services.workflow.log(state, state.session.workflow.statusMessage);
+end
+
+function state = onFolderRemoved(state, event, services)
+    rows = state.session.cache.filterRows;
+    indices = services.events.indices(event, "removedFiles", height(rows));
+    if isempty(indices)
+        return;
+    end
+    rows(indices, :) = [];
+    if height(rows) > 0
+        rows.recordingId = "R" + compose("%03d", (1:height(rows)).');
+    end
+    state.session.cache.filterRows = rows;
+    state.project.inputs.filterSources(indices) = [];
+    state = storeFilterAnnotations(state);
+    state.session.workflow.statusMessage = sprintf( ...
+        'Removed %d RHS filter task(s).', numel(indices));
+    state.session.workflow.lastAction = "Removed RHS filter files";
+    state = services.workflow.log(state, state.session.workflow.statusMessage);
+end
+
+function state = onFolderCleared(state, ~, services)
+    state.project.inputs.filterSources = state.project.inputs.filterSources([]);
+    state.project.annotations.filterLabels = strings(0, 1);
+    state.project.annotations.filterComments = strings(0, 1);
+    state.session.cache.filterRows = table();
+    state.session.workflow.statusMessage = "No RHS folder selected.";
+    state.session.workflow.lastAction = "Cleared RHS folder";
+    state = services.workflow.log(state, "Cleared RHS filter files.");
+end
+
+function state = onSettingChanged(state, event, services)
+    target = string(event.target);
+    if any(target == ["channelFamily", "maxPreviewChannels"])
+        state = rebuildPreviewRows(state);
+        if state.session.view.autoWindow
+            state = applyAdaptiveWindow(state);
         end
-        keep = ~ismember(string(S.filterRows.filePath), string(paths));
-        S.filterRows = S.filterRows(keep, :);
-        S.filterRows.recordingId = "R" + compose("%03d", ...
-            (1:height(S.filterRows)).');
-        remainingPaths = filterTaskPaths(S.filterRows);
-        if isempty(remainingPaths)
-            S.rhsFolder = "";
-            S.statusMessage = "No RHS folder selected.";
+    end
+    if hasReadableChannel(state)
+        state = readPreview(state, settingLabel(target), services, false, false);
+    end
+    state.session.workflow.lastAction = "Updated preview settings";
+end
+
+function state = onPreviewChannelEdited(state, event, services)
+    rows = rhs_preview.analysisRun.applyPreviewChannelsTableData( ...
+        state.session.cache.previewChannelRows, event.value);
+    state.session.cache.previewChannelRows = rows;
+    state.project.annotations.previewChannelRows = rows;
+    if state.session.view.autoWindow
+        state = applyAdaptiveWindow(state);
+    end
+    if hasReadableChannel(state)
+        state = readPreview(state, ...
+            "Updated preview channel window", services, false, false);
+    end
+    state.session.workflow.lastAction = "Updated preview channels";
+end
+
+function state = onFileFilterEdited(state, event, ~)
+    state.session.cache.filterRows = ...
+        rhs_preview.analysisRun.applyFileFilterTableData( ...
+        state.session.cache.filterRows, event.value);
+    state = storeFilterAnnotations(state);
+    state.session.workflow.statusMessage = "File filter updated.";
+    state.session.workflow.lastAction = "Updated file filter";
+end
+
+function state = onRefreshPreviewWindow(state, ~, services)
+    state = readPreview(state, "Refresh preview window", services, true, false);
+end
+
+function state = onRefreshFolderFiles(state, ~, services)
+    if isempty(state.project.inputs.filterSources)
+        state.session.workflow.statusMessage = "Select RHS filter files first.";
+        return;
+    end
+    paths = sourcePaths(state.project.inputs.filterSources);
+    try
+        state.session.cache.filterRows = ...
+            rhs_preview.analysisRun.discoverFilterRows( ...
+            paths, state.session.cache.filterRows);
+    catch ME
+        services.diagnostics.report("Folder scan failed", ME);
+        state.session.workflow.statusMessage = string(ME.message);
+        return;
+    end
+    state.project.inputs.filterSources = ...
+        sourceRecords(state.session.cache.filterRows, services);
+    state = storeFilterAnnotations(state);
+    state.session.workflow.statusMessage = sprintf( ...
+        'Discovered %d RHS file(s).', height(state.session.cache.filterRows));
+    state = services.workflow.log(state, state.session.workflow.statusMessage);
+end
+
+function state = onPreviewRoiEdited(state, event, ~)
+    context = previewContext(state);
+    state.session.view.roiSec = ...
+        rhs_preview.analysisRun.clampRoi(event.value, context.preview.timeSec);
+    state.session.workflow.statusMessage = sprintf('ROI %.6g to %.6g s.', ...
+        state.session.view.roiSec(1), state.session.view.roiSec(2));
+    state.session.workflow.lastAction = "Updated preview ROI";
+end
+
+function state = onPreviewWindowScrolled(state, event, services)
+    if ~hasReadableChannel(state) || ~isstruct(event.value)
+        return;
+    end
+    context = previewContext(state);
+    bounds = rhs_preview.analysisRun.previewWindowBounds(context);
+    if ~bounds.hasIndexedDuration
+        return;
+    end
+    count = finiteScalar(event.value.count, 0);
+    anchor = finiteScalar(event.value.anchor, ...
+        context.windowStartSec + context.windowDurationSec / 2);
+    oldDuration = max(context.windowDurationSec, bounds.minDurationSec);
+    fraction = min(1, max(0, (anchor - context.windowStartSec) / oldDuration));
+    factor = 1.25 .^ count;
+    context.windowDurationSec = min( ...
+        rhs_preview.analysisRun.maxInteractivePreviewDurationSec(context), ...
+        max(bounds.minDurationSec, oldDuration * factor));
+    context.windowStartSec = anchor - fraction * context.windowDurationSec;
+    context.windowStartSec = ...
+        rhs_preview.analysisRun.clampWindowStartSec(context.windowStartSec, context);
+    state = applyPreviewContext(state, context);
+    state.session.view.autoWindow = false;
+    state = readPreview(state, "Zoom preview window", services, false, false);
+    state.session.workflow.statusMessage = "Preview zoom updated.";
+end
+
+function state = onZoomToRoi(state, ~, services)
+    context = previewContext(state);
+    if ~rhs_preview.analysisRun.hasValidRoi(context)
+        state.session.workflow.statusMessage = ...
+            "Drag a preview ROI before using Zoom to ROI.";
+        return;
+    end
+    roi = sort(double(state.session.view.roiSec(:))).';
+    bounds = rhs_preview.analysisRun.previewWindowBounds(context);
+    state.session.view.windowDurationSec = max(diff(roi), bounds.minDurationSec);
+    if bounds.hasIndexedDuration
+        state.session.view.windowDurationSec = min( ...
+            state.session.view.windowDurationSec, bounds.durationSec);
+    end
+    state.session.view.windowStartSec = roi(1);
+    state.session.view.autoWindow = false;
+    state = readPreview(state, "Zoom to ROI window", services, true, true);
+end
+
+function state = onSaveProtocol(state, ~, services)
+    if height(state.session.cache.previewChannelRows) == 0
+        state.session.workflow.statusMessage = ...
+            "Select an RHS file before saving a protocol.";
+        return;
+    end
+    [out, cancelled] = services.dialogs.outputFile( ...
+        {'*.json', 'Protocol JSON'}, 'Save RHS protocol', ...
+        'rhs_protocol_draft.json');
+    if cancelled
+        return;
+    end
+    context = previewContext(state);
+    rhs_preview.resultFiles.writeProtocolJson(context, out);
+    state.project.annotations.protocol = ...
+        rhs_preview.resultFiles.protocolJsonStruct(context);
+    state.session.cache.protocol = state.project.annotations.protocol;
+    [manifest, ~] = writeJsonManifest(state, services, out, ...
+        "rhsProtocol", "rhs_protocol_draft.labkit.json");
+    state.project.results.lastProtocolExport = struct( ...
+        "jsonPath", string(out), "manifestPath", string(manifest));
+    state = services.workflow.log(state, "Saved protocol JSON: " + string(out));
+end
+
+function state = onSaveFilterRecord(state, ~, services)
+    if height(state.session.cache.filterRows) == 0
+        state.session.workflow.statusMessage = ...
+            "Select RHS filter files before saving a filter record.";
+        return;
+    end
+    [out, cancelled] = services.dialogs.outputFile( ...
+        {'*.json', 'Filter JSON'}, 'Save RHS filter record', ...
+        'rhs_filter_record.json');
+    if cancelled
+        return;
+    end
+    context = previewContext(state);
+    rhs_preview.resultFiles.writeFilterRecordJson(context, out);
+    [manifest, ~] = writeJsonManifest(state, services, out, ...
+        "rhsFilterRecord", "rhs_filter_record.labkit.json");
+    state.project.results.lastFilterExport = struct( ...
+        "jsonPath", string(out), "manifestPath", string(manifest));
+    state = services.workflow.log(state, ...
+        "Saved filter record JSON: " + string(out));
+end
+
+function state = onResetWorkflow(~, ~, services)
+    project = rhs_preview.appLifecycle.createProject();
+    state = struct("project", project, ...
+        "session", rhs_preview.appLifecycle.createSession(project));
+    state = services.workflow.log(state, "Reset RHS Preview state.");
+end
+
+function state = rebuildPreviewRows(state)
+    context = previewContext(state);
+    selection = rhs_preview.userInterface.channelSelection( ...
+        context.info, state.project.parameters.family, "");
+    state.project.parameters.family = selection.family;
+    rows = rhs_preview.analysisRun.channelRows(context.info, selection.family, ...
+        state.project.parameters.maxPreviewChannels, ...
+        state.project.annotations.protocol);
+    state.project.annotations.previewChannelRows = rows;
+    state.session.cache.previewChannelRows = rows;
+end
+
+function state = applyAdaptiveWindow(state)
+    duration = rhs_preview.analysisRun.suggestedPreviewDurationSec( ...
+        state.session.cache.index, state.session.cache.previewChannelRows, ...
+        state.project.parameters.maxPreviewChannels);
+    if isfinite(duration) && duration > 0
+        state.session.view.windowDurationSec = duration;
+        context = previewContext(state);
+        state.session.view.windowStartSec = ...
+            rhs_preview.analysisRun.clampWindowStartSec( ...
+            context.windowStartSec, context);
+    end
+end
+
+function state = readPreview(state, label, services, logRead, preserveRoi)
+    context = previewContext(state);
+    selected = selectedChannels(context.previewChannelRows, ...
+        context.maxPreviewChannels);
+    [context, ok, message] = rhs_preview.analysisRun.readPreviewWindow( ...
+        context, selected, label, preserveRoi);
+    state = applyPreviewContext(state, context);
+    if strlength(message) > 0 && (logRead || ~ok)
+        state = services.workflow.log(state, message);
+    end
+end
+
+function context = previewContext(state)
+    context = struct( ...
+        "rhsFile", state.session.cache.rhsPath, ...
+        "rhsFolder", commonParent(sourcePaths(state.project.inputs.filterSources)), ...
+        "protocolFile", state.session.cache.protocolPath, ...
+        "protocol", state.project.annotations.protocol, ...
+        "family", state.project.parameters.family, ...
+        "previewChannelRows", state.session.cache.previewChannelRows, ...
+        "filterRows", state.session.cache.filterRows, ...
+        "windowStartSec", state.session.view.windowStartSec, ...
+        "windowDurationSec", state.session.view.windowDurationSec, ...
+        "roiSec", state.session.view.roiSec, ...
+        "autoWindow", state.session.view.autoWindow, ...
+        "maxPreviewChannels", state.project.parameters.maxPreviewChannels, ...
+        "info", state.session.cache.info, "index", state.session.cache.index, ...
+        "preview", state.session.cache.preview, ...
+        "statusMessage", state.session.workflow.statusMessage, ...
+        "lastAction", state.session.workflow.lastAction);
+end
+
+function state = applyPreviewContext(state, context)
+    state.session.view.windowStartSec = context.windowStartSec;
+    state.session.view.windowDurationSec = context.windowDurationSec;
+    state.session.view.roiSec = context.roiSec;
+    state.session.cache.preview = context.preview;
+    state.session.workflow.statusMessage = context.statusMessage;
+    state.session.workflow.lastAction = context.lastAction;
+end
+
+function state = storeFilterAnnotations(state)
+    rows = state.session.cache.filterRows;
+    if height(rows) == 0
+        state.project.annotations.filterLabels = strings(0, 1);
+        state.project.annotations.filterComments = strings(0, 1);
+    else
+        state.project.annotations.filterLabels = string(rows.label);
+        state.project.annotations.filterComments = string(rows.comment);
+    end
+end
+
+function sources = sourceRecords(rows, services)
+    sources = labkit.ui.runtime.emptySourceRecords();
+    for k = 1:height(rows)
+        source = services.project.sourceRecord("filter" + string(k), ...
+            "filterRecording", string(rows.filePath(k)), true);
+        if isempty(sources)
+            sources = source;
         else
-            S.rhsFolder = commonParentFolder(remainingPaths);
-            S.statusMessage = sprintf("Removed %d RHS filter task(s).", ...
-                numel(paths));
+            sources(end + 1) = source;
         end
-        S.lastAction = "Removed RHS filter files";
-        refreshAll();
-    end
-    function onFolderCleared(~, ~)
-        S.rhsFolder = "";
-        S.filterRows = table();
-        S.statusMessage = "No RHS folder selected.";
-        S.lastAction = "Cleared RHS folder";
-        refreshAll();
-    end
-    function onProtocolChosen(~, event)
-        paths = labkit.ui.control.filePaths(event.addedFiles);
-        if isempty(paths)
-            return;
-        end
-        S.protocolFile = paths(1);
-        S.protocol = rhs_preview.sourceFiles.loadProtocol(S.protocolFile);
-        rebuildPreviewChannelRows();
-        S.lastAction = "Selected protocol";
-        addLog("Selected protocol: " + rhs_preview.userInterface.displayFile(S.protocolFile));
-        refreshAll();
-    end
-    function onProtocolCleared(~, ~)
-        S.protocolFile = "";
-        S.protocol = struct();
-        rebuildPreviewChannelRows();
-        S.lastAction = "Cleared protocol";
-        refreshAll();
-    end
-    function onSettingChanged(~, event)
-        previousFamily = S.family;
-        previousMaxChannels = S.maxPreviewChannels;
-        changedId = eventId(event);
-        S.family = string(labkit.ui.control.getValue(ui, "channelFamily"));
-        if changedId == "windowStartPanner"
-            S.windowStartSec = numericScalar(labkit.ui.control.getValue(ui, ...
-                "windowStartPanner"), S.windowStartSec);
-        end
-        S.maxPreviewChannels = max(1, floor(numericScalar(labkit.ui.control.getValue(ui, ...
-            "maxPreviewChannels"), S.maxPreviewChannels)));
-        if S.family ~= previousFamily || S.maxPreviewChannels ~= previousMaxChannels
-            S = rhs_preview.analysisRun.normalizeChannelSelection(S);
-            rebuildPreviewChannelRows();
-            if S.autoWindow
-                applyAdaptivePreviewWindow();
-            end
-        end
-        S.lastAction = "Updated preview settings";
-        if rhs_preview.analysisRun.hasReadableChannel(S)
-            readPreviewWindowFromState( ...
-                settingActionLabel(changedId), false);
-        end
-        refreshAll();
-    end
-    function onPreviewChannelEdited(~, event)
-        data = labkit.ui.control.getValue(ui, "previewChannelsTable");
-        S.previewChannelRows = rhs_preview.analysisRun.applyPreviewChannelsTableData( ...
-            S.previewChannelRows, data);
-        S.lastAction = "Updated preview channels";
-        if isPreviewToggleEdit(event) && rhs_preview.analysisRun.hasReadableChannel(S)
-            if S.autoWindow
-                applyAdaptivePreviewWindow();
-            end
-            readPreviewWindowFromState("Updated preview channel window", false);
-        end
-        refreshAll();
-    end
-    function onFileFilterEdited(~, ~)
-        data = labkit.ui.control.getValue(ui, "fileFilterTable");
-        S.filterRows = rhs_preview.analysisRun.applyFileFilterTableData( ...
-            S.filterRows, data);
-        S.statusMessage = "File filter updated.";
-        S.lastAction = "Updated file filter";
-        refreshAll();
-    end
-    function onRefreshPreviewWindow(~, ~)
-        readPreviewWindowFromState("Refresh preview window");
-        refreshAll();
-    end
-    function onRefreshFolderFiles(~, ~)
-        if strlength(S.rhsFolder) == 0
-            S.statusMessage = "Select an RHS folder first.";
-            refreshAll();
-            return;
-        end
-        refreshFolderFiles("Refreshed RHS file list");
-        refreshAll();
-    end
-    function onZoomToRoi(~, ~)
-        if ~rhs_preview.analysisRun.hasValidRoi(S)
-            S.statusMessage = "Drag a preview ROI before using Zoom to ROI.";
-            S.lastAction = "Zoom to ROI skipped";
-            refreshAll();
-            return;
-        end
-        roiSec = sort(double(S.roiSec(:))).';
-        bounds = rhs_preview.analysisRun.previewWindowBounds(S);
-        durationSec = max(diff(roiSec), bounds.minDurationSec);
-        if bounds.hasIndexedDuration
-            durationSec = min(durationSec, bounds.durationSec);
-        end
-        S.windowDurationSec = durationSec;
-        S.windowStartSec = roiSec(1);
-        S.windowStartSec = rhs_preview.analysisRun.clampWindowStartSec(S.windowStartSec, S);
-        S.autoWindow = false;
-        if readPreviewWindowFromState("Zoom to ROI window", true, true)
-            S.statusMessage = sprintf("Window set to ROI %.6g to %.6g s.", ...
-                roiSec(1), roiSec(2));
-        end
-        refreshAll();
-    end
-    function ok = readPreviewWindowFromState(actionLabel, logRead, preserveRoi)
-        if nargin < 2
-            logRead = true;
-        end
-        if nargin < 3
-            preserveRoi = false;
-        end
-        [S, ok, logMessage] = rhs_preview.analysisRun.readPreviewWindow( ...
-            S, selectedPreviewChannels(), actionLabel, preserveRoi);
-        if strlength(logMessage) > 0 && (logRead || ~ok)
-            addLog(logMessage);
-        end
-    end
-    function onPreviewAxesDown(source, ~)
-        if isempty(S.preview) || isempty(S.preview.timeSec)
-            return;
-        end
-        if ~isNormalClick(fig)
-            return;
-        end
-        startX = rhs_preview.userInterface.previewX(source);
-        if ~isfinite(startX)
-            return;
-        end
-        S.roiSec = rhs_preview.analysisRun.clampRoi([startX startX], S.preview.timeSec);
-        previewSession.captureDrag(@onPreviewAxesDrag, @onPreviewAxesUp);
-        refreshPreview();
-        syncRuntimeState();
-        function onPreviewAxesDrag(~, ~)
-            currentX = rhs_preview.userInterface.previewX(source);
-            if ~isfinite(currentX)
-                return;
-            end
-            S.roiSec = rhs_preview.analysisRun.clampRoi([startX currentX], S.preview.timeSec);
-            refreshPreview();
-            syncRuntimeState();
-        end
-        function onPreviewAxesUp(~, ~)
-            S.lastAction = "Updated preview ROI";
-            if all(isfinite(S.roiSec)) && diff(S.roiSec) > 0
-                S.statusMessage = sprintf("ROI %.6g to %.6g s.", ...
-                    S.roiSec(1), S.roiSec(2));
-            end
-            refreshAll();
-            syncRuntimeState();
-        end
-    end
-    function onPreviewScrollWheel(~, event)
-        bounds = rhs_preview.analysisRun.previewWindowBounds(S);
-        if ~rhs_preview.analysisRun.hasReadableChannel(S) || ~bounds.hasIndexedDuration
-            return;
-        end
-        scrollCount = scrollWheelCount(event);
-        if scrollCount == 0
-            return;
-        end
-        if ~shouldProcessPreviewScroll()
-            return;
-        end
-        centerSec = rhs_preview.userInterface.previewX(ui.controls.preview.primaryAxes);
-        if ~isfinite(centerSec)
-            centerSec = S.windowStartSec + S.windowDurationSec ./ 2;
-        end
-        oldStart = rhs_preview.analysisRun.clampWindowStartSec(S.windowStartSec, S);
-        oldDuration = max(S.windowDurationSec, bounds.minDurationSec);
-        fileDuration = bounds.durationSec;
-        factor = 1.25 .^ double(scrollCount);
-        newDuration = min(rhs_preview.analysisRun.maxInteractivePreviewDurationSec(S), ...
-            max(bounds.minDurationSec, oldDuration .* factor));
-        if ~isfinite(newDuration) || newDuration <= 0
-            return;
-        end
-        anchor = (centerSec - oldStart) ./ oldDuration;
-        anchor = min(1, max(0, anchor));
-        S.windowDurationSec = min(fileDuration, newDuration);
-        S.windowStartSec = centerSec - anchor .* S.windowDurationSec;
-        S.windowStartSec = rhs_preview.analysisRun.clampWindowStartSec(S.windowStartSec, S);
-        S.autoWindow = false;
-        if readPreviewWindowFromState("Zoom preview window", false)
-            S.statusMessage = "Preview zoom updated.";
-        end
-        refreshAll();
-        syncRuntimeState();
-    end
-    function onSaveProtocol(~, ~)
-        if isempty(S.previewChannelRows) || height(S.previewChannelRows) == 0
-            S.statusMessage = "Select an RHS file before saving a protocol.";
-            refreshAll();
-            return;
-        end
-        outputPath = rhs_preview.resultFiles.promptProtocolOutput( ...
-            labkit.ui.runtime.defaultOutputFolder(defaultOutputSources(), "rhs_preview"));
-        if strlength(outputPath) == 0
-            return;
-        end
-        rhs_preview.resultFiles.writeProtocolJson(S, outputPath);
-        S.protocolFile = outputPath;
-        S.protocol = rhs_preview.resultFiles.protocolJsonStruct(S);
-        S.statusMessage = "Saved protocol JSON.";
-        S.lastAction = "Saved protocol";
-        addLog("Saved protocol JSON: " + rhs_preview.userInterface.displayFile(outputPath));
-        refreshAll();
-    end
-    function onSaveFilterRecord(~, ~)
-        if isempty(S.filterRows) || height(S.filterRows) == 0
-            S.statusMessage = "Select an RHS folder before saving a filter record.";
-            refreshAll();
-            return;
-        end
-        data = labkit.ui.control.getValue(ui, "fileFilterTable");
-        S.filterRows = rhs_preview.analysisRun.applyFileFilterTableData(S.filterRows, data);
-        outputPath = rhs_preview.resultFiles.promptFilterRecordOutput( ...
-            labkit.ui.runtime.defaultOutputFolder(defaultOutputSources(), "rhs_preview"));
-        if strlength(outputPath) == 0
-            return;
-        end
-        rhs_preview.resultFiles.writeFilterRecordJson(S, outputPath);
-        S.statusMessage = "Saved filter record JSON.";
-        S.lastAction = "Saved filter record";
-        addLog("Saved filter record JSON: " + rhs_preview.userInterface.displayFile(outputPath));
-        refreshAll();
-    end
-    function onResetWorkflow(~, ~)
-        S = rhs_preview.appLifecycle.createInitialState();
-        labkit.ui.control.setValue(ui, "windowStartPanner", S.windowStartSec);
-        labkit.ui.control.setValue(ui, "maxPreviewChannels", S.maxPreviewChannels);
-        addLog("Reset RHS Preview state.");
-        refreshAll();
-    end
-    function ok = inspectSelectedFile()
-        ok = false;
-        if strlength(S.rhsFile) == 0
-            S.statusMessage = "No RHS file selected.";
-            return;
-        end
-        [index, status] = labkit.rhs.indexFile(S.rhsFile);
-        S.index = index;
-        S.info = index.info;
-        if status.ok
-            S.statusMessage = "RHS header indexed.";
-            if strlength(status.message) > 0
-                S.statusMessage = status.message;
-            end
-            S = rhs_preview.analysisRun.normalizeChannelSelection(S);
-            rebuildPreviewChannelRows();
-            S.autoWindow = true;
-            S.windowStartSec = 0;
-            applyAdaptivePreviewWindow();
-            addLog(sprintf("Indexed %s: %.3f s, %d amplifier channel(s).", ...
-                char(rhs_preview.userInterface.displayFile(S.rhsFile)), index.durationSec, ...
-                numel(index.info.channelFamilies.amplifier)));
-            ok = true;
-        else
-            S.statusMessage = status.message;
-            addLog("RHS inspect failed: " + status.message);
-        end
-        S.lastAction = "Indexed RHS file";
-    end
-    function refreshFolderFiles(actionLabel)
-        try
-            S.filterRows = rhs_preview.analysisRun.discoverFilterRows( ...
-                S.rhsFolder, S.filterRows);
-        catch ME
-            debugLog.reportException('rhsPreview', 'Folder scan failed', ME);
-            S.filterRows = table();
-            S.statusMessage = string(ME.message);
-            S.lastAction = "Folder scan failed";
-            addLog("Folder scan failed: " + S.statusMessage);
-            return;
-        end
-        S.statusMessage = sprintf("Discovered %d RHS file(s).", ...
-            height(S.filterRows));
-        S.lastAction = string(actionLabel);
-        addLog(S.statusMessage);
-    end
-    function refreshFilterRowsFromPaths(paths, actionLabel)
-        try
-            S.filterRows = rhs_preview.analysisRun.discoverFilterRows(paths, ...
-                S.filterRows);
-        catch ME
-            debugLog.reportException('rhsPreview', 'RHS task scan failed', ME);
-            S.filterRows = table();
-            S.statusMessage = string(ME.message);
-            S.lastAction = "RHS task scan failed";
-            addLog("RHS task scan failed: " + S.statusMessage);
-            return;
-        end
-        S.statusMessage = sprintf("Discovered %d RHS file(s).", ...
-            height(S.filterRows));
-        S.lastAction = string(actionLabel);
-        addLog(S.statusMessage);
-    end
-    function tf = isPreviewToggleEdit(event)
-        tf = true;
-        if (isstruct(event) && isfield(event, "indices")) || ...
-                (isobject(event) && isprop(event, "indices"))
-            indices = event.indices;
-            tf = isempty(indices) || any(indices(:, 2) == 1);
-        end
-    end
-    function refreshAll()
-        labkit.ui.control.setValue(ui, "rhsFile", fileValue(S.rhsFile));
-        labkit.ui.control.setValue(ui, "rhsFolder", filterTaskPaths(S.filterRows));
-        labkit.ui.control.setValue(ui, "protocolFile", fileValue(S.protocolFile));
-        refreshChannelControls();
-        refreshWindowControls();
-        labkit.ui.control.setEnabled(ui, "refreshPreviewWindow", ...
-            rhs_preview.analysisRun.hasReadableChannel(S));
-        labkit.ui.control.setEnabled(ui, "zoomToRoiWindow", ...
-            rhs_preview.analysisRun.hasReadableChannel(S) && ...
-            rhs_preview.analysisRun.hasValidRoi(S));
-        labkit.ui.control.setEnabled(ui, "saveProtocol", ~isempty(S.previewChannelRows) && ...
-            height(S.previewChannelRows) > 0);
-        labkit.ui.control.setEnabled(ui, "refreshFolderFiles", ...
-            strlength(S.rhsFolder) > 0);
-        labkit.ui.control.setEnabled(ui, "saveFilterRecord", ...
-            ~isempty(S.filterRows) && height(S.filterRows) > 0);
-        labkit.ui.control.setValue(ui, "statusField", char(S.statusMessage));
-        labkit.ui.control.setValue(ui, "summaryTable", ...
-            rhs_preview.userInterface.summaryTableData(S));
-        labkit.ui.control.setValue(ui, "previewChannelsTable", ...
-            rhs_preview.userInterface.previewChannelsTableData(S));
-        labkit.ui.control.setValue(ui, "fileFilterTable", ...
-            rhs_preview.userInterface.fileFilterTableData(S));
-        ui.controls.details.textArea.Value = rhs_preview.userInterface.detailLines(S);
-        refreshPreview();
-    end
-    function refreshChannelControls()
-        selection = rhs_preview.userInterface.channelSelection(S.info, S.family, ...
-            "");
-        S.family = selection.family;
-        rhs_preview.userInterface.setDropDown(ui.controls.channelFamily, selection.families, ...
-            selection.family, selection.hasChannels);
-    end
-    function refreshPreview()
-        rhs_preview.userInterface.drawStackedPreview(ui.controls.preview.primaryAxes, S);
-    end
-    function rebuildPreviewChannelRows()
-        S.previewChannelRows = rhs_preview.analysisRun.channelRows(S.info, S.family, ...
-            S.maxPreviewChannels, S.protocol);
-    end
-    function applyAdaptivePreviewWindow()
-        durationSec = rhs_preview.analysisRun.suggestedPreviewDurationSec( ...
-            S.index, S.previewChannelRows, S.maxPreviewChannels);
-        if ~isfinite(durationSec) || durationSec <= 0
-            return;
-        end
-        S.windowDurationSec = durationSec;
-        S.windowStartSec = rhs_preview.analysisRun.clampWindowStartSec(S.windowStartSec, S);
-    end
-    function refreshWindowControls()
-        bounds = rhs_preview.analysisRun.previewWindowBounds(S);
-        if ~bounds.hasIndexedDuration
-            labkit.ui.control.setLimits(ui, "windowStartPanner", [0 1]);
-            labkit.ui.control.setValue(ui, "windowStartPanner", 0);
-            labkit.ui.control.setEnabled(ui, "windowStartPanner", false);
-            labkit.ui.control.setValue(ui, "windowSummary", ...
-                "Select RHS to estimate preview length.");
-            return;
-        end
-        maxStartSec = bounds.maxStartSec;
-        sliderMax = max(maxStartSec, eps);
-        S.windowStartSec = rhs_preview.analysisRun.clampWindowStartSec(S.windowStartSec, S);
-        labkit.ui.control.setLimits(ui, "windowStartPanner", [0 sliderMax]);
-        labkit.ui.control.setValue(ui, "windowStartPanner", S.windowStartSec);
-        labkit.ui.control.setEnabled(ui, "windowStartPanner", maxStartSec > 0);
-        labkit.ui.control.setValue(ui, "windowSummary", ...
-            rhs_preview.analysisRun.windowSummaryText(S));
-    end
-    function selected = selectedPreviewChannels()
-        selected = strings(0, 1);
-        if isempty(S.previewChannelRows) || height(S.previewChannelRows) == 0
-            return;
-        end
-        mask = logical(S.previewChannelRows.preview);
-        selected = S.previewChannelRows.channel(mask);
-        if numel(selected) > S.maxPreviewChannels
-            selected = selected(1:S.maxPreviewChannels);
-            S.statusMessage = sprintf("Preview capped at %d channel(s).", ...
-                S.maxPreviewChannels);
-        end
-    end
-    function addLog(message)
-        labkit.ui.control.appendLog(ui, "logPanel", message);
-        debugLog.append(message);
-    end
-    function paths = defaultOutputSources()
-        paths = strings(0, 1);
-        candidates = [S.rhsFile, S.rhsFolder, S.protocolFile];
-        for k = 1:numel(candidates)
-            if strlength(candidates(k)) > 0
-                paths(end + 1, 1) = candidates(k);
-            end
-        end
-    end
-    function tf = shouldProcessPreviewScroll()
-        tf = true;
-        minIntervalSec = 0.080;
-        if isempty(S.lastScrollTic)
-            S.lastScrollTic = tic;
-            return;
-        end
-        if toc(S.lastScrollTic) < minIntervalSec
-            tf = false;
-            return;
-        end
-        S.lastScrollTic = tic;
-    end
-    function syncRuntimeState()
-        if isempty(fig) || ~isvalid(fig) || ...
-                ~isappdata(fig, 'labkitUiAppRuntime')
-            return;
-        end
-        runtime = getappdata(fig, 'labkitUiAppRuntime');
-        runtime.state = S;
-        setappdata(fig, 'labkitUiAppRuntime', runtime);
     end
 end
-function value = numericScalar(value, fallback)
-    value = double(value);
-    if isempty(value) || ~isscalar(value) || ~isfinite(value)
-        value = fallback;
+
+function paths = sourcePaths(sources)
+    paths = strings(0, 1);
+    for k = 1:numel(sources)
+        paths(end + 1, 1) = string(sources(k).reference.originalPath);
     end
 end
-function id = eventId(event)
-    id = "";
-    if isstruct(event) && isfield(event, "id")
-        id = string(event.id);
-    elseif isobject(event) && isprop(event, "id")
-        id = string(event.id);
+
+function selected = selectedChannels(rows, limit)
+    selected = strings(0, 1);
+    if istable(rows) && height(rows) > 0
+        selected = string(rows.channel(logical(rows.preview)));
+        selected = selected(1:min(numel(selected), limit));
     end
 end
-function label = settingActionLabel(changedId)
-    if string(changedId) == "windowStartPanner"
+
+function tf = hasReadableChannel(state)
+    tf = rhs_preview.analysisRun.hasReadableChannel(previewContext(state));
+end
+
+function label = settingLabel(target)
+    if target == "windowStartPanner"
         label = "Panned preview window";
     else
         label = "Updated preview window";
     end
 end
-function tf = isNormalClick(fig)
-    tf = true;
-    if isempty(fig) || ~isvalid(fig) || ~isprop(fig, 'SelectionType')
-        return;
-    end
-    tf = strcmp(fig.SelectionType, 'normal');
+
+function [manifestPath, report] = writeJsonManifest( ...
+        state, services, outputPath, id, manifestName)
+    [folder, name, extension] = fileparts(outputPath);
+    output = services.results.output(id, "primary", ...
+        string(name) + string(extension), "application/json");
+    spec = struct("Outputs", output, ...
+        "Inputs", [state.project.inputs.rhsSource, ...
+        state.project.inputs.protocolSource, state.project.inputs.filterSources], ...
+        "Parameters", state.project.parameters, ...
+        "Summary", struct(), "ManifestName", manifestName);
+    [manifestPath, report] = services.results.writeManifest(folder, spec);
 end
-function count = scrollWheelCount(event)
-    count = 0;
-    if isstruct(event) && isfield(event, "VerticalScrollCount")
-        count = double(event.VerticalScrollCount);
-    elseif isobject(event) && isprop(event, "VerticalScrollCount")
-        count = double(event.VerticalScrollCount);
-    end
-end
-function items = fileValue(pathValue)
-    pathValue = string(pathValue);
-    if strlength(pathValue) == 0
-        items = strings(0, 1);
-        return;
-    end
-    items = pathValue;
-end
-function paths = filterTaskPaths(rows)
-    if istable(rows) && height(rows) > 0 && any(strcmp(rows.Properties.VariableNames, "filePath"))
-        paths = string(rows.filePath);
-        paths = paths(:);
-    else
-        paths = strings(0, 1);
+
+function value = finiteScalar(value, fallback)
+    value = double(value);
+    if isempty(value) || ~isscalar(value) || ~isfinite(value)
+        value = fallback;
     end
 end
-function folder = commonParentFolder(paths)
-    paths = string(paths);
-    paths = paths(strlength(paths) > 0);
-    if isempty(paths)
-        folder = "";
-        return;
-    end
-    folders = strings(numel(paths), 1);
-    for k = 1:numel(paths)
-        folders(k) = string(fileparts(char(paths(k))));
-    end
-    folder = folders(1);
-    parts = split(folder, filesep);
-    for k = 2:numel(folders)
-        peer = split(folders(k), filesep);
-        n = min(numel(parts), numel(peer));
-        keep = false(n, 1);
-        for iPart = 1:n
-            keep(iPart) = parts(iPart) == peer(iPart);
-        end
-        firstMismatch = find(~keep, 1, "first");
-        if isempty(firstMismatch)
-            parts = parts(1:n);
-        elseif firstMismatch == 1
-            parts = strings(0, 1);
-        else
-            parts = parts(1:firstMismatch - 1);
-        end
-    end
-    parts = parts(strlength(parts) > 0);
-    if isempty(parts)
-        folder = fileparts(char(paths(1)));
-    elseif startsWith(folders(1), filesep)
-        folder = string(filesep) + strjoin(parts, filesep);
-    else
-        folder = strjoin(parts, filesep);
+
+function folder = commonParent(paths)
+    folder = "";
+    if ~isempty(paths)
+        folder = string(fileparts(char(paths(1))));
     end
 end

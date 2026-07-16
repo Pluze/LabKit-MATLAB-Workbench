@@ -1,18 +1,33 @@
 function layout = statusPanel(id, titleText, varargin)
 %STATUSPANEL Create a read-only status/details panel layout node.
 %
-% App-facing contract:
-%   layout = labkit.ui.layout.statusPanel(id, title, "value", lines)
+% Usage:
+%   layout = labkit.ui.layout.statusPanel(id, titleText)
+%   layout = labkit.ui.layout.statusPanel(id, titleText, "value", lines)
 %
 % Inputs:
-%   id - globally unique status panel id.
-%   titleText - status panel title.
-%   value - initial text or cellstr, default ''. Use app-level usage for
-%       static first-page workflow instructions.
-%   Concrete text-panel sizing is owned by the framework.
+%   id - Text scalar used to identify the panel. It must be a valid MATLAB
+%       variable name and unique within the workbench.
+%   titleText - Text displayed in the panel title.
 %
-% Output:
-%   layout - scalar data-only UI layout struct.
+% Name-Value Arguments:
+%   value - Initial details as text, a string array, or cellstr. Default: "".
+%
+% Outputs:
+%   layout - Scalar statusPanel node with kind, id, props, children, and slots
+%       fields.
+%
+% Description:
+%   statusPanel shows read-only summaries or details that the presenter may
+%   replace as app state changes. Unlike logPanel, it has no follow-latest
+%   controls. Use the workbench usage option for static workflow instructions.
+%
+% Example:
+%   status = labkit.ui.layout.statusPanel( ...
+%       "selectionStatus", "Selection", "value", "No file selected");
+%   assert(status.kind == "statusPanel")
+%
+% See also labkit.ui.layout.logPanel, labkit.ui.layout.resultTable
 
     props = optionStruct(varargin);
     props.title = char(string(titleText));

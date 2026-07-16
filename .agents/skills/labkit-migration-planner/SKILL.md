@@ -30,9 +30,10 @@ Use a deep pass only when the task needs it:
 - read any `Goal Prompt:` section completely before executing or revising an
   unattended migration route
 - read debt-specific notes only if the guide records active debt for that area
-- read `docs/architecture.md` for package-boundary or debt-exception changes
-- read `docs/apps.md` for app entrypoint or app-owned package shape changes
-- read `docs/testing.md` only when validation routing or CI scope changes
+- read `docs/development/architecture.md` for package-boundary or debt-exception changes
+- read `docs/apps/README.md` for current app workflows and
+  `docs/development/app-development.md` for app-owned package shape changes
+- read `docs/development/testing.md` only when validation routing or CI scope changes
 
 Use `labkit-boundary-guard` when deciding whether code belongs in `+labkit` or
 an app-owned package. Use `labkit-test-planner` before running or reporting
@@ -170,8 +171,10 @@ For each proposed migration, classify work as:
 - ordinary UI: keep the data-only spec in
   `+<app_slug>/+userInterface/buildWorkbenchLayout.m`; use app-local custom
   builders only for justified interactions
-- runtime orchestration: prefer `labkit.ui.app.define` plus
-  `labkit.ui.app.run`; public entrypoints stay thin dispatch wrappers
+- runtime orchestration: use the current `labkit.ui.runtime.define` plus
+  `labkit.ui.runtime.launch`; public entrypoints stay thin launch wrappers and
+  request dispatch, runtime construction, queueing, and presentation commits
+  remain private framework mechanics
 - reusable foundation: use `labkit-boundary-guard` before touching `+labkit`
 - validation routing: use `labkit-test-planner`
 - documentation drift: update only the source that owns the changed contract

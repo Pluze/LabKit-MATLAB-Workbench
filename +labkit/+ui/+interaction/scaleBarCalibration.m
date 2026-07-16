@@ -1,32 +1,51 @@
 function cal = scaleBarCalibration(referencePixels, referenceLength, unitName, opts)
-%SCALEBARCALIBRATION Build a reusable image scale-bar calibration struct.
+%SCALEBARCALIBRATION Convert a known image distance into pixels per unit.
 %
 % Usage:
-%   cal = labkit.ui.interaction.scaleBarCalibration(80, 20, "mm");
-%   if cal.isCalibrated
-%       physicalLength = pixelLength / cal.pixelsPerUnit;
-%   end
+%   cal = labkit.ui.interaction.scaleBarCalibration(referencePixels, ...
+%       referenceLength, unitName)
+%   cal = labkit.ui.interaction.scaleBarCalibration(..., opts)
 %
 % Inputs:
-%   referencePixels - measured or typed reference length in image pixels.
-%                     Nonpositive or nonfinite values are treated as missing.
-%   referenceLength - real reference length in the selected unit. Nonpositive
-%                     or nonfinite values produce an uncalibrated result.
-%   unitName - string-like display unit. The default unit set is
-%              {'m','cm','mm','um','nm'}; unsupported values use the default
-%              unit.
-%   opts - optional struct.
+%   referencePixels - Measured reference distance in image pixels. Empty,
+%       nonnumeric, nonfinite, or nonpositive values are treated as missing.
+%   referenceLength - Physical reference distance expressed in unitName.
+%       Missing, nonfinite, or negative values become 0.
+%   unitName - Unit label. With default options, legal values are "m", "cm",
+%       "mm", "um", and "nm". An unsupported value uses defaultUnit.
+%   opts - Optional scalar struct described below. Default: struct().
 %
 % Options:
-%   units - allowed unit labels, default {'m','cm','mm','um','nm'}.
-%   defaultUnit - fallback unit, default first allowed unit.
-%   referenceLine - optional N-by-2 reference endpoint array. When two points
-%                   are supplied and referencePixels is missing, their pixel
-%                   distance is used.
+%   units - Allowed unit labels. Default: {'m','cm','mm','um','nm'}.
+%   defaultUnit - Fallback unit. Default: the first entry in units.
+%   referenceLine - N-by-2 numeric reference points stored with the result.
+%       When it contains exactly two rows and referencePixels is missing, their
+%       Euclidean distance supplies referencePixels. Default: zeros(0,2).
 %
-% Output:
-%   cal - struct with fields referencePixels, referenceLength, unit,
-%         pixelsPerUnit, isCalibrated, and referenceLine.
+% Outputs:
+%   cal - Scalar struct with the fields described below.
+%
+% Calibration Fields:
+%   referencePixels - Positive measured pixel distance, or NaN when missing.
+%   referenceLength - Nonnegative physical reference distance.
+%   unit - Normalized unit label as a character vector.
+%   pixelsPerUnit - referencePixels/referenceLength, or 0 when calibration is
+%       incomplete.
+%   isCalibrated - true when pixelsPerUnit is positive.
+%   referenceLine - Normalized N-by-2 numeric reference coordinates.
+%
+% Description:
+%   This function builds a serializable calibration value; it does not read an
+%   image or draw a scale bar. Repeating the call with identical inputs returns
+%   identical numeric fields. Divide a pixel distance by pixelsPerUnit to obtain
+%   a distance in cal.unit.
+%
+% Example:
+%   cal = labkit.ui.interaction.scaleBarCalibration(80, 20, "mm");
+%   physicalLength = 40 / cal.pixelsPerUnit;
+%   assert(cal.isCalibrated && physicalLength == 10)
+%
+% See also labkit.ui.interaction.scaleBarGeometry
 
     if nargin < 1 || isempty(referencePixels)
         referencePixels = NaN;

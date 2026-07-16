@@ -6,7 +6,7 @@ function output = runLabKitTests(varargin)
 % and tests/cases/gui so buildfile.m can compose stable tasks without
 % duplicating test discovery.
 %
-% Internal options are parsed below; docs/testing.md owns build-task entry points.
+% Internal options are parsed below; docs/development/testing.md owns build-task entry points.
 
     root = fileparts(fileparts(mfilename("fullpath")));
     addpath(fullfile(root, "tests", "runner"));

@@ -1,113 +1,118 @@
 # Agent Migration Ledger
 
-This is the agent-facing migration debt ledger for LabKit. It is not an
-architecture manual, validation matrix, historical changelog, or general
-roadmap.
-
-Human-facing architecture and app behavior live in `docs/`. Exact validation
-commands live in `docs/testing.md` and are routed through
-`labkit-test-planner`. This ledger owns active migration debt facts, reopen
-triggers, and executable migration routes.
-
-## How To Use This File
-
-Use this file only for active migration debt, runner complexity, helper
-structure, app-owned package cleanup, framework hook extraction, or an
-explicitly requested executable migration route.
-
-Before executing or adding a route:
-
-1. Verify current facts with source scans; snapshots drift.
-2. Preserve app-first ownership: workflow stays in apps, reusable mechanics
-   move to `+labkit` only after the boundary test is clear.
-3. Prefer behavior-backed refactors. A smaller file is not progress unless
-   responsibilities become clearer and the real GUI/app path uses the helper.
-4. Update this file only when migration debt is added, reduced, retired, or
-   reprioritized.
-
-When a route completes, shrink this file. Completed work should become source,
-tests, docs, or guardrails, not permanent roadmap prose.
+This is the single agent-facing ledger for active LabKit migration debt. It is
+not an architecture manual, validation matrix, or history. Current contracts
+live in `docs/`; validation commands live in `docs/development/testing.md`; completed
+changes live in source, tests, and `CHANGELOG.md`.
 
 ## Current Debt Snapshot
 
-Last audited: 2026-07-10.
-
-Active migration debt:
+Last audited: 2026-07-15.
 
 ```text
-none
+ui-runtime-v2: full-validation-pr-ci-and-user-retest
+app-structure-debt: none
+app-project-and-result-contract-debt: none
+toolbox-product-debt: none
 ```
 
-Current facts from a lightweight source scan:
+Landed facts:
 
-- Package-root app `run.m` orchestration and `+ui/runApp.m` lifecycle adapters
-  are retired.
-- Workflow-first public apps use `definition.m`, `definitionActions.m`,
-  `+appLifecycle/createInitialState.m`,
-  `+userInterface/buildWorkbenchLayout.m`, and app-owned workflow packages such
-  as `+appState`, `+sourceFiles`, `+analysisRun`, `+cropGeometry`, and
-  `+resultFiles`.
-- Transitional app buckets such as `+state`, `+actions`, `+ui`, `+view`,
-  `+ops`, `+io`, and `+export` should not be reintroduced.
-- Source inventory at this audit: 920 tracked MATLAB files across `apps/`,
-  `+labkit/`, and `tests/`; the largest app file is 644 lines, the largest
-  `+labkit` file is 636 lines, and the largest test file is 650 lines.
-- Current hotspots are watchlist facts, not active migration routes by
-  themselves. Open a route only when the next change would add unrelated
-  behavior or a concrete responsibility split is found.
+- All twenty public apps and the nested private Imager app use Runtime V2.
+- Package-root runners, `+ui/runApp.m`, Runtime V1, the public control mutation
+  facade, and public interaction editor/runtime objects are retired.
+- Apps use `state.project` plus `state.session`, pure presenters, queued
+  actions, managed interactions/resources, standard project persistence, and
+  result manifests where they export files.
+- Named legacy Video Marker projects and V1 snapshots are read-only imports;
+  current writes use `labkitProject`.
+- The public UI surface has 36 reviewed functions. The earlier numerical
+  planning target is not a completion gate; every retained function owns a
+  distinct current contract.
+- Current human contracts live in `docs/framework/README.md`, `docs/apps/README.md`, and
+  `docs/development/architecture.md`. The temporary Runtime V2 design record is retired.
+
+## Exact Remaining Closure
+
+Do not reopen implementation phases unless validation or user retesting exposes
+a concrete regression. Finish only these items:
+
+1. Run the complete public headless and GUI gates for the stable branch diff,
+   plus the private repository's complete test entry point.
+2. Create or update the public and private PRs, then confirm all available CI
+   for the latest pushed commits is green.
+3. Stop with both PRs open and unmerged so the user can repeat manual pointer,
+   wheel, drag, file-selection, and visual workflow checks. Automated hidden
+   GUI tests do not prove this user experience.
+4. Merge and default-branch cleanup are a later user-approved step, not part of
+   the current closure. After that merge, re-audit the four debt fields above;
+   if no debt remains, replace the first field with `none` and keep this compact
+   ledger.
+
+Previous stable automated evidence before the final docs/test cleanup was:
+private 41/41, public base-MATLAB 7/7, changed 290, headless passed, and GUI
+69/69. A Linux CI failure caused only by tests expecting an untracked empty
+retired package directory was corrected by requiring that package to be absent;
+the focused package guardrails pass locally. Do not treat this prior evidence
+as coverage for a later executable diff.
+
+## Toolbox Product Debt Rule
+
+Rapid development may temporarily use a MathWorks Toolbox capability only
+when the app also ships and tests a repository-owned base-MATLAB path with
+comparable user-visible behavior. Record each temporary product call here with:
+
+```text
+source and symbol:
+MathWorks product:
+owner:
+owned fallback:
+base-MATLAB test:
+idempotency evidence:
+parity outputs and tolerance:
+replacement condition:
+```
+
+When outputs feed scientific interpretation, branching, exports, or later
+calculation, parity must compare the app-consumed numeric/data outputs within a
+documented tolerance; visual similarity is insufficient. Identical inputs must
+produce idempotent app behavior. Do not hide product calls behind reflection,
+string dispatch, or test-only indirection. Close the debt only by removing the
+Toolbox branch after the owned implementation replaces it.
 
 ## Reopen Triggers
 
-Open a new active route here only when current scans expose concrete debt:
+Open a minimal executable route here only when a current scan finds concrete
+debt, for example:
 
-- a package-root app `run.m` or `+ui/runApp.m` reappears
-- a new app uses broad technical buckets such as `+actions`, `+state`, `+ui`,
-  `+view`, `+ops`, `+io`, or `+export`
-- a substantive change would add unrelated behavior to a budget-watchlist
-  action table without a responsibility audit
-- helper-quality audit reports new `inline-or-merge-candidate` rows after
-  excluding valid contracts such as app entrypoints, `requirements.m`,
-  `version.m`, workflow layout builders, state factories, input policies,
-  framework adapters, and action-driven side-effect boundaries
-- a new app entry point appears without dedicated GUI coverage
-- hidden workflow validation needs a new app-neutral driver operation or
-  app-owned test hook to avoid OS/modal dialogs
-- current JUnit timing or profiler evidence identifies a new test-performance
-  hotspot whose fix would change runner behavior, validation policy, or
-  app/workflow coverage
-- migration exposes package-boundary drift that cannot be fixed locally without
-  a new `+labkit` API decision
+- a package-root runner, `+ui/runApp.m`, retired technical bucket, or app
+  `private/` workflow implementation reappears
+- a new app lacks canonical project/session state, a pure presenter, or
+  dedicated GUI workflow coverage
+- app code restores figure callbacks, mutates controls directly, or stores
+  handles/listeners/tools/services in semantic state
+- a Toolbox product call appears without the owned fallback and evidence above
+- a boundary decision cannot be resolved locally without a new public
+  `+labkit` contract
+
+Do not add a route for line count alone. Record debt only when ownership,
+testability, behavior, or cognitive load is concretely worse.
 
 ## Compatibility Queue
 
-The DTA facade intentionally keeps legacy bridge fields beside canonical
-unit-explicit fields. This is compatibility debt, not current cleanup debt.
-
-Do not remove fields such as chrono `t`, `Vf`, `Im`, `alignTime`, `tAligned`,
-or EIS `Pt`, `Freq`, `Zreal`, `Zimag`, `negZimag` during ordinary runner
-cleanup. A removal requires an explicit DTA major-version route after
-electrochem apps and tests have moved to canonical fields.
+The DTA facade intentionally retains legacy bridge fields beside canonical
+unit-explicit fields. Removing chrono `t`, `Vf`, `Im`, `alignTime`, `tAligned`,
+or EIS `Pt`, `Freq`, `Zreal`, `Zimag`, `negZimag` requires an explicit DTA
+major-version route after consumers and tests use canonical fields. This is a
+compatibility contract, not current cleanup debt.
 
 ## Migration Standard
 
-Apps are first-class products. `+labkit` stays a small domain-neutral
-foundation with UI, image, DTA, RHS, thermal, and biosignal facades.
-App-specific calculations, summaries, plots, exports, workflow wording, file
-conventions, and result schemas stay under the owning app tree.
+Apps are first-class products; `+labkit` is a small domain-neutral foundation.
+Migration is progress only when it clarifies responsibility, makes behavior
+directly testable on the real app path, removes duplicate mechanics, or lowers
+workflow cognitive load. Moving code, manufacturing tiny helpers, adding
+guardrails, or preserving completed roadmaps is not progress by itself.
 
-Migration progress means:
-
-- a responsibility boundary becomes clearer
-- deterministic behavior becomes directly testable
-- the real GUI or app path uses the extracted helper
-- duplicate app-neutral mechanics are removed from apps
-- total workflow cognitive load falls
-
-Migration is not progress when it only moves a large block, creates tiny
-cosmetic helpers, hides app workflow behind generic names, adds noisy
-guardrails, or adds docs without retiring stale debt or clarifying an active
-contract.
-
-Use `labkit-boundary-guard` before promoting behavior to `+labkit`. Use
-`labkit-test-planner` for validation routing and `docs/testing.md` for exact
-commands.
+Use `labkit-boundary-guard` before promoting behavior into `+labkit` and
+`labkit-test-planner` for validation routing.

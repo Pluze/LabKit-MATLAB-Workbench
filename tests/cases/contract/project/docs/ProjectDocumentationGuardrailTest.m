@@ -15,7 +15,9 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
                 "commit hash", ...
                 "branch deletion", ...
                 "current turn", ...
-                "final response"];
+                "final response", ...
+                ".agents/", ...
+                "AGENTS.md"];
 
             leaks = strings(1, 0);
             for k = 1:numel(files)
@@ -33,12 +35,88 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
                 strjoin(cellstr(leaks), ', ')]);
         end
 
+        function historyRecordsDoNotUseEmptyNormalizationBoilerplate(testCase)
+            root = setupLabKitTestPath();
+            entries = dir(fullfile(root, "docs", "history", "records", ...
+                "**", "*.md"));
+            forbidden = [ ...
+                "Treat this as one coherent evolution record", ...
+                "This normalized baseline preserves the historical intent", ...
+                "current guardrails protect the surviving contracts", ...
+                "Historical test commands were not recorded consistently", ...
+                "No manual migration was recorded for this historical change", ...
+                "located by Change ID", ...
+                "carrying commit", ...
+                "carrying change", ...
+                "carrying branch"];
+
+            offenders = strings(1, 0);
+            for k = 1:numel(entries)
+                filepath = fullfile(entries(k).folder, entries(k).name);
+                content = string(fileread(filepath));
+                for iPhrase = 1:numel(forbidden)
+                    if contains(content, forbidden(iPhrase))
+                        offenders(end + 1) = relativePath(root, filepath) + ...
+                            " -> " + forbidden(iPhrase);
+                    end
+                end
+            end
+
+            testCase.verifyEmpty(offenders, ...
+                ["History pages should explain the specific decision, effect, " ...
+                "and evidence instead of normalization boilerplate: " + ...
+                strjoin(offenders, ", ")]);
+        end
+
+        function markedAppManualExamplesExecute(testCase)
+            root = setupLabKitTestPath();
+            entries = dir(fullfile(root, "docs", "apps", "**", "README.md"));
+            failures = strings(1, 0);
+            exampleCount = 0;
+            pattern = ['<!-- labkit-runnable-example -->\s*```matlab\s*' ...
+                '([\s\S]*?)\s*```'];
+
+            for k = 1:numel(entries)
+                filepath = fullfile(entries(k).folder, entries(k).name);
+                examples = regexp(fileread(filepath), pattern, "tokens");
+                for iExample = 1:numel(examples)
+                    exampleCount = exampleCount + 1;
+                    try
+                        executeDocumentationExample(examples{iExample}{1});
+                    catch ME
+                        failures(end + 1) = relativePath(root, filepath) + ...
+                            " example " + iExample + ": " + string(ME.message);
+                    end
+                end
+            end
+
+            testCase.verifyGreaterThanOrEqual(exampleCount, 4, ...
+                "App manuals should retain executable synthetic examples.");
+            testCase.verifyEmpty(failures, ...
+                "Marked app-manual examples must execute: " + ...
+                strjoin(failures, ", "));
+
+            generatedPages = dir(fullfile(root, "site", "apps", "**", "*.html"));
+            exposedMarkers = strings(1, 0);
+            for k = 1:numel(generatedPages)
+                filepath = fullfile(generatedPages(k).folder, ...
+                    generatedPages(k).name);
+                if contains(fileread(filepath), "labkit-runnable-example")
+                    exposedMarkers(end + 1) = relativePath(root, filepath);
+                end
+            end
+            testCase.verifyEmpty(exposedMarkers, ...
+                "Runnable-example markers are source metadata and must not " + ...
+                "appear in generated app manuals: " + ...
+                strjoin(exposedMarkers, ", "));
+        end
+
         function testingDocOwnsBuildTaskCommandMatrix(testCase)
             root = setupLabKitTestPath();
-            canonical = fullfile(root, "docs", "testing.md");
+            canonical = fullfile(root, "docs", "development", "testing.md");
             canonicalTasks = extractBuildtoolTaskNames(fileread(canonical));
             testCase.verifyGreaterThanOrEqual(numel(canonicalTasks), 5, ...
-                'docs/testing.md should remain the canonical build-task matrix.');
+                'docs/development/testing.md should remain the canonical build-task matrix.');
 
             files = collectGuidanceFilesExceptTesting(root);
             duplicates = strings(1, 0);
@@ -51,13 +129,14 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
             end
 
             testCase.verifyTrue(isempty(duplicates), ...
-                ['Only docs/testing.md should maintain a build-task command matrix: ' ...
+                ['Only docs/development/testing.md should maintain a build-task command matrix: ' ...
                 strjoin(cellstr(duplicates), ', ')]);
         end
 
         function releaseDocsPinLauncherAssetToTagBlob(testCase)
             root = setupLabKitTestPath();
-            releaseDoc = string(fileread(fullfile(root, "docs", "release.md")));
+            releaseDoc = string(fileread(fullfile(root, "docs", ...
+                "development", "release.md")));
             agentDoc = string(fileread(fullfile(root, "AGENTS.md")));
             gitAttributes = string(fileread(fullfile(root, ".gitattributes")));
 
@@ -70,7 +149,7 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
             ];
             for k = 1:numel(requiredReleasePhrases)
                 testCase.verifyTrue(contains(releaseDoc, requiredReleasePhrases(k)), ...
-                    "docs/release.md should preserve launcher asset reproducibility rule: " + ...
+                    "docs/development/release.md should preserve launcher asset reproducibility rule: " + ...
                     requiredReleasePhrases(k));
             end
 
@@ -112,6 +191,265 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
                 'after the function declaration: ' strjoin(cellstr(missing), ', ')]);
         end
 
+        function publicApiIndexCoversPublicLibrarySurface(testCase)
+            root = setupLabKitTestPath();
+            referenceRoot = fullfile(root, "site", "reference");
+            indexText = string(fileread(fullfile(referenceRoot, "index.html")));
+            publicFiles = collectPublicLibraryFiles(root);
+            missing = strings(1, 0);
+            for k = 1:numel(publicFiles)
+                symbol = publicApiSymbol(root, publicFiles(k));
+                relativeOutput = "api/" + replace(symbol, ".", "/") + ".html";
+                outputFile = fullfile(referenceRoot, ...
+                    replace(relativeOutput, "/", filesep));
+                expectedLink = "href=""" + relativeOutput + """";
+                if ~isfile(outputFile) || ~contains(indexText, expectedLink)
+                    missing(end+1) = symbol;
+                end
+            end
+
+            testCase.verifyTrue(isempty(missing), ...
+                ['Generated API reference should link every supported public ' ...
+                '+labkit function to its own source-bound page: ' ...
+                strjoin(cellstr(missing), ', ')]);
+        end
+
+        function generatedPagesUseContextualReferenceNavigation(testCase)
+            root = setupLabKitTestPath();
+            page = string(fileread(fullfile(root, "site", "reference", ...
+                "api", "labkit", "dta", "loadFile.html")));
+            style = string(fileread(fullfile(root, "site", "assets", ...
+                "style.css")));
+
+            testCase.verifyTrue(contains(page, ...
+                '<nav class="product-nav" aria-label="Documentation areas">'));
+            testCase.verifyTrue(contains(page, 'id="local-navigation"'));
+            testCase.verifyTrue(contains(page, ...
+                '<section class="local-group on-this-page"><h2>On this page</h2>'));
+            testCase.verifyTrue(contains(page, ...
+                '<a class="context-parent" href="../../../../libraries/dta/index.html">DTA Library</a>'));
+            testCase.verifyTrue(contains(page, ...
+                '<a class="local-link" href="detectPulses.html">detectPulses</a>'));
+            testCase.verifyFalse(contains(page, ...
+                '<a class="local-link" href="../../../../apps/'));
+            testCase.verifyTrue(contains(page, ...
+                '<div class="syntax-signature"><div class="syntax-group">'));
+            testCase.verifyTrue(contains(style, ...
+                '.sidebar{position:sticky'));
+            testCase.verifyTrue(contains(style, ...
+                '@media(max-width:991px)'));
+        end
+
+        function generatedApiUsesPublicHelpInsteadOfImplementationPreamble(testCase)
+            root = setupLabKitTestPath();
+            page = string(fileread(fullfile(root, "site", "reference", "api", ...
+                "nerve_response_analysis", "analysisRun", ...
+                "detectEventTrains.html")));
+
+            testCase.verifyTrue(contains(page, ...
+                "Detect pulse candidates and group them into trains."));
+            testCase.verifyFalse(contains(page, "Expected caller:"), ...
+                ["A public API page should use the help block after the " ...
+                "function declaration, not a leading implementation note."]);
+        end
+
+        function generatedScientificApiExplainsOptionsAndResults(testCase)
+            root = setupLabKitTestPath();
+            page = string(fileread(fullfile(root, "site", "reference", "api", ...
+                "cic", "analysisRun", "computeCIC.html")));
+
+            testCase.verifyTrue(contains(page, '<h2 id="options">Options</h2>'));
+            testCase.verifyTrue(contains(page, "pulseMode"));
+            testCase.verifyTrue(contains(page, "Metadata first, then auto"));
+            testCase.verifyTrue(contains(page, "Metadata only"));
+            testCase.verifyTrue(contains(page, "Auto from Im only"));
+            testCase.verifyTrue(contains(page, "1000*Q/area_cm2"));
+            testCase.verifyTrue(contains(page, ...
+                '<h2 id="output-fields">Output Fields</h2>'));
+            testCase.verifyFalse(contains(page, "Expected caller:"));
+        end
+
+        function generatedContractReferenceUsesActualVersionFields(testCase)
+            root = setupLabKitTestPath();
+            apiRoot = fullfile(root, "site", "reference", "api", ...
+                "labkit", "contract");
+            functions = ["assertRequirements", "checkRequirements", ...
+                "requirements", "versionInfo"];
+            for k = 1:numel(functions)
+                page = string(fileread(fullfile(apiRoot, functions(k) + ".html")));
+                testCase.verifyTrue(contains(page, ...
+                    "labkit.contract." + functions(k) + "("));
+                testCase.verifyTrue(contains(page, ...
+                    '<h2 id="description">Description</h2>'));
+                testCase.verifyTrue(contains(page, '<h2 id="outputs">Outputs</h2>'));
+            end
+
+            versionPage = string(fileread(fullfile(apiRoot, "versionInfo.html")));
+            testCase.verifyTrue(contains(versionPage, "name, facade, current, compatible, status"));
+
+            moduleRoots = ["thermal", "dta", "rhs"];
+            for k = 1:numel(moduleRoots)
+                page = string(fileread(fullfile(root, "site", "reference", ...
+                    "api", "labkit", moduleRoots(k), "version.html")));
+                testCase.verifyTrue(contains(page, "info.current"));
+                testCase.verifyTrue(contains(page, "info.status"));
+                testCase.verifyFalse(contains(page, "info.version"));
+                testCase.verifyFalse(contains(page, "info.stability"));
+            end
+        end
+
+        function documentationSourcesUseReaderOrientedHierarchy(testCase)
+            root = setupLabKitTestPath();
+            docsRoot = fullfile(root, "docs");
+            retired = ["api", "guides", "tools"];
+            for k = 1:numel(retired)
+                testCase.verifyFalse(isfolder(fullfile(docsRoot, retired(k))), ...
+                    "Retired mixed-purpose documentation folder returned: " + retired(k));
+            end
+
+            mFiles = dir(fullfile(docsRoot, "**", "*.m"));
+            testCase.verifyEmpty(mFiles, ...
+                "docs/ contains structured documentation sources, not executable tools.");
+            testCase.verifyTrue(isfile(fullfile(docsRoot, "framework", "README.md")));
+            testCase.verifyTrue(isfile(fullfile(docsRoot, "libraries", "README.md")));
+            testCase.verifyTrue(isfile(fullfile(docsRoot, "history", "README.md")));
+
+            catalog = jsondecode(fileread(fullfile(docsRoot, "catalogs", "apps.json")));
+            apps = normalizeDocStructArray(catalog.apps);
+            for k = 1:numel(apps)
+                expected = "apps/" + string(apps(k).family) + "/" + ...
+                    string(apps(k).id) + "/README.md";
+                testCase.verifyEqual(string(apps(k).source), expected, ...
+                    "Each app should own one immediately recognizable documentation directory.");
+            end
+        end
+
+        function generatedDocumentationMatchesTrackedSources(testCase)
+            root = setupLabKitTestPath();
+            toolFolder = fullfile(root, "tools", "docs");
+            addpath(toolFolder);
+            cleanup = onCleanup(@() rmpath(toolFolder));
+
+            result = checkLabKitDocs(fullfile(root, "docs"), ...
+                fullfile(root, "site"));
+
+            testCase.verifyGreaterThan(result.pageCount, 15, ...
+                "Documentation site should contain the narrative hierarchy.");
+            testCase.verifyGreaterThan(result.apiCount, 100, ...
+                "Documentation site should include library and app-owned public APIs.");
+            testCase.verifyGreaterThan(result.comparedFileCount, result.apiCount, ...
+                "Generated tree comparison should include pages and static assets.");
+            clear cleanup
+        end
+
+        function generatedSearchIncludesPublicApisAndExcludesPrivateHelpers(testCase)
+            root = setupLabKitTestPath();
+            searchFile = fullfile(root, "site", "assets", "search-index.json");
+            testCase.assertTrue(isfile(searchFile), ...
+                "Tracked site should contain a generated search index.");
+            entries = jsondecode(fileread(searchFile));
+            titles = string({entries.title});
+
+            testCase.verifyTrue(any(titles == "labkit.thermal.rawToTemperatureC"), ...
+                "Search should index reusable scientific APIs.");
+            testCase.verifyTrue(any(titles == "cic.analysisRun.computeCIC"), ...
+                "Search should index explicitly cataloged app scientific APIs.");
+            testCase.verifyFalse(any(contains(titles, ".private.")), ...
+                "Search should not publish private implementation helpers.");
+        end
+
+        function generatedSearchWorksWhenSiteIsOpenedFromDisk(testCase)
+            root = setupLabKitTestPath();
+            assetFolder = fullfile(root, "site", "assets");
+            indexJson = string(fileread(fullfile(assetFolder, "search-index.json")));
+            indexScript = string(fileread(fullfile(assetFolder, "search-index.js")));
+            appScript = string(fileread(fullfile(assetFolder, "app.js")));
+            homePage = string(fileread(fullfile(root, "site", "index.html")));
+
+            testCase.verifyEqual(indexScript, ...
+                "window.LABKIT_SEARCH_INDEX = " + indexJson + ";", ...
+                "The file-safe search script should carry the generated JSON index.");
+            testCase.verifyTrue(contains(appScript, "window.LABKIT_SEARCH_INDEX"));
+            testCase.verifyFalse(contains(appScript, "fetch(") || ...
+                contains(appScript, "XMLHttpRequest"), ...
+                ["Search must not fetch a sibling file because browsers block " ...
+                "that request when generated HTML is opened through file://."]);
+            indexPosition = strfind(homePage, "assets/search-index.js");
+            appPosition = strfind(homePage, "assets/app.js");
+            testCase.verifyTrue(isscalar(indexPosition) && isscalar(appPosition) && ...
+                indexPosition < appPosition, ...
+                "Every page should load the search index before the search behavior.");
+        end
+
+        function generatedMarkdownLinksAreNavigable(testCase)
+            root = setupLabKitTestPath();
+            homePage = string(fileread(fullfile(root, "site", "index.html")));
+
+            testCase.verifyTrue(contains(homePage, ...
+                '<a href="getting-started/index.html">Getting started</a>'), ...
+                "Links inside Markdown tables should become site-relative anchors.");
+            testCase.verifyTrue(contains(homePage, ...
+                '<a href="history/index.html">Project history</a>'), ...
+                "Links inside Markdown lists should become site-relative anchors.");
+            testCase.verifyFalse(contains(homePage, ...
+                "[Getting started](getting-started/README.md)"), ...
+                "Generated HTML must not expose unparsed Markdown links.");
+        end
+
+        function generatedSiteContainsNoLocalMarkdownLinks(testCase)
+            root = setupLabKitTestPath();
+            pages = dir(fullfile(root, "site", "**", "*.html"));
+            offenders = strings(0, 1);
+            for k = 1:numel(pages)
+                text = string(fileread(fullfile(pages(k).folder, pages(k).name)));
+                if ~isempty(regexp(text, ...
+                        'href="(?!https?://|mailto:)[^"]+[.]md(?:#[^"]*)?"', ...
+                        'once'))
+                    offenders(end + 1, 1) = string(fullfile( ...
+                        pages(k).folder, pages(k).name));
+                end
+            end
+            testCase.verifyEmpty(offenders, ...
+                "Generated pages must resolve every local Markdown link to HTML.");
+        end
+
+        function generatedSiteContainsNoRendererPlaceholders(testCase)
+            root = setupLabKitTestPath();
+            pages = dir(fullfile(root, "site", "**", "*.html"));
+            offenders = strings(0, 1);
+            for k = 1:numel(pages)
+                text = string(fileread(fullfile(pages(k).folder, pages(k).name)));
+                if ~isempty(regexp(text, '@@LABKITDOC[0-9]+@@', 'once'))
+                    offenders(end + 1, 1) = string(fullfile( ...
+                        pages(k).folder, pages(k).name));
+                end
+            end
+            testCase.verifyEmpty(offenders, ...
+                "Generated pages must not expose internal renderer placeholders.");
+
+            gettingStarted = string(fileread(fullfile(root, "site", ...
+                "getting-started", "index.html")));
+            testCase.verifyTrue(contains(gettingStarted, ...
+                '<code>labkit_launcher.m</code></a>'), ...
+                "Inline code used as a link label should render inside its anchor.");
+        end
+
+        function appApiCatalogIsExplicitAndContainsNoPrivatePaths(testCase)
+            root = setupLabKitTestPath();
+            catalog = jsondecode(fileread(fullfile(root, "docs", ...
+                "catalogs", "api.json")));
+            entries = normalizeDocStructArray(catalog.appApis);
+            testCase.assertGreaterThan(numel(entries), 20, ...
+                "App API catalog should identify core GUI-free workflows.");
+            for k = 1:numel(entries)
+                source = string(entries(k).source);
+                testCase.verifyFalse(contains("/" + source + "/", "/private/"), ...
+                    "Private helpers must not enter detailed API documentation.");
+                testCase.verifyTrue(isfile(fullfile(root, source)), ...
+                    "Cataloged app API should exist: " + source);
+            end
+        end
+
         function privateHelpersDocumentImplementationContracts(testCase)
             root = setupLabKitTestPath();
             actual = collectPrivateHelpersMissingContracts(root);
@@ -123,8 +461,9 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
         function appOwnedPackageHelpersDocumentImplementationContracts(testCase)
             root = setupLabKitTestPath();
             files = collectAppOwnedPackageFiles(root);
+            files = setdiff(files, catalogedAppApiFiles(root), "stable");
             testCase.assertFalse(isempty(files), ...
-                'App-owned package contract guardrail should scan package helper files.');
+                'App-owned package contract guardrail should scan non-public helpers.');
 
             missing = strings(1, 0);
             for k = 1:numel(files)
@@ -134,17 +473,30 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
             end
 
             testCase.verifyTrue(isempty(missing), ...
-                ['App-owned package helpers need top-of-file implementation contracts: ' ...
+                ['Non-public app package helpers need top-of-file implementation contracts: ' ...
                 strjoin(cellstr(missing), ', ')]);
         end
     end
 end
 
+function executeDocumentationExample(code)
+    evalc(code);
+end
+
+function values = normalizeDocStructArray(values)
+    if isempty(values)
+        values = struct([]);
+    elseif iscell(values)
+        values = [values{:}];
+    end
+end
+
 function files = collectHumanDocFiles(root)
     files = string(fullfile(root, "README.md"));
-    entries = dir(fullfile(root, "docs", "*.md"));
+    entries = dir(fullfile(root, "docs", "**", "*.md"));
     for k = 1:numel(entries)
-        files(end+1) = string(fullfile(entries(k).folder, entries(k).name));
+        filepath = string(fullfile(entries(k).folder, entries(k).name));
+        files(end+1) = filepath;
     end
 end
 
@@ -156,10 +508,11 @@ function files = collectGuidanceFilesExceptTesting(root)
         string(fullfile(root, "tests", "AGENTS.md")), ...
         string(fullfile(root, "+labkit", "AGENTS.md"))];
 
-    docEntries = dir(fullfile(root, "docs", "*.md"));
+    docEntries = dir(fullfile(root, "docs", "**", "*.md"));
     for k = 1:numel(docEntries)
         filepath = string(fullfile(docEntries(k).folder, docEntries(k).name));
-        if endsWith(filepath, fullfile("docs", "testing.md"))
+        if endsWith(filepath, fullfile("docs", "development", "testing.md")) || ...
+                isHistoryDocument(filepath)
             continue;
         end
         files(end+1) = filepath;
@@ -169,6 +522,10 @@ function files = collectGuidanceFilesExceptTesting(root)
     for k = 1:numel(skillEntries)
         files(end+1) = string(fullfile(skillEntries(k).folder, skillEntries(k).name));
     end
+end
+
+function tf = isHistoryDocument(filepath)
+    tf = contains(string(filepath), filesep + "history" + filesep);
 end
 
 function tasks = extractBuildtoolTaskNames(content)
@@ -191,6 +548,14 @@ function files = collectPublicLibraryFiles(root)
             files(end+1) = string(filepath);
         end
     end
+end
+
+function symbol = publicApiSymbol(root, filepath)
+    rel = string(relativePath(root, filepath));
+    parts = split(rel, "/");
+    packageParts = erase(parts(startsWith(parts, "+")), "+");
+    functionName = erase(parts(end), ".m");
+    symbol = strjoin([packageParts; functionName], ".");
 end
 
 function tf = hasFunctionContractComment(filepath)
@@ -228,6 +593,17 @@ function files = collectAppOwnedPackageFiles(root)
             continue;
         end
         files(end+1) = filepath;
+    end
+    files = unique(files);
+end
+
+function files = catalogedAppApiFiles(root)
+    catalog = jsondecode(fileread(fullfile(root, "docs", "catalogs", ...
+        "api.json")));
+    entries = normalizeDocStructArray(catalog.appApis);
+    files = strings(1, numel(entries));
+    for k = 1:numel(entries)
+        files(k) = string(fullfile(root, entries(k).source));
     end
     files = unique(files);
 end

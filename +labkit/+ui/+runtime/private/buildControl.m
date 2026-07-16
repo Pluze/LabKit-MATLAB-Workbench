@@ -29,7 +29,7 @@ function ui = buildControl(ui, controlSpec, parentGrid, row, debug)
             ui = buildToolPanelControl(ui, controlSpec, parentGrid, row);
         otherwise
             error('labkit:ui:runtime:UnsupportedControl', ...
-                'Unsupported UI 5 control kind "%s".', controlSpec.kind);
+                'Unsupported declarative control kind "%s".', controlSpec.kind);
     end
 end
 
@@ -100,7 +100,7 @@ function control = createFieldControl(parentGrid, kind, props, enabled)
             applyTextFit(control);
         otherwise
             error('labkit:ui:runtime:UnsupportedFieldKind', ...
-                'Unsupported UI 5 field kind "%s".', kind);
+                'Unsupported declarative field kind "%s".', kind);
     end
     applyCommonValueProps(control, props);
     applySliderTicks(control, props);
@@ -430,7 +430,8 @@ function callback = semanticFileChooseCallback(id, appCallback)
         end
         control = ui.controls.(id);
         traceFilePanelFromSource(id, source, 'choose requested', 'user');
-        paths = control.normalizePathList(control.choosePaths(control));
+        paths = control.normalizePathList(control.choosePaths( ...
+            control, fileChooserRequest(source)));
         traceFilePanelFromSource(id, source, 'paths selected', ...
             sprintf('count=%d', numel(paths)));
         if isempty(paths)
@@ -440,7 +441,7 @@ function callback = semanticFileChooseCallback(id, appCallback)
         control = control.setFileSelection(control, addedFiles);
         ui.controls.(id) = control;
         setappdata(ui.figure, 'labkitUiRegistry', ui);
-        labkit.ui.control.setFileSelection(ui, id, control.currentSelectedFiles());
+        setControlFileSelection(ui, id, control.currentSelectedFiles());
         traceFilePanelFromSource(id, source, 'selection updated', sprintf( ...
             'total=%d added=%d selected=%d', numel(control.currentFiles()), ...
             numel(addedFiles), numel(control.currentSelectedFiles())));
@@ -449,6 +450,17 @@ function callback = semanticFileChooseCallback(id, appCallback)
         traceFilePanelFromSource(id, source, 'callback start', 'action=choose');
         runSemanticAppCallback(ui, control, event, appCallback, id);
         traceFilePanelFromSource(id, source, 'callback end', 'action=choose');
+    end
+end
+
+function request = fileChooserRequest(source)
+    request = "file";
+    if isempty(source) || ~isprop(source, 'UserData') || isempty(source.UserData)
+        return;
+    end
+    value = string(source.UserData);
+    if ~isempty(value) && strlength(value(1)) > 0
+        request = value(1);
     end
 end
 
@@ -464,7 +476,7 @@ function callback = semanticFileRemoveCallback(id, appCallback)
         [control, removedFiles] = control.removeSelection(control);
         ui.controls.(id) = control;
         setappdata(ui.figure, 'labkitUiRegistry', ui);
-        labkit.ui.control.setFileSelection(ui, id, control.currentSelectedFiles());
+        setControlFileSelection(ui, id, control.currentSelectedFiles());
         traceFilePanelFromSource(id, source, 'selection updated', sprintf( ...
             'total=%d removed=%d selected=%d', numel(control.currentFiles()), ...
             numel(removedFiles), numel(control.currentSelectedFiles())));
@@ -489,7 +501,7 @@ function callback = semanticFileClearCallback(id, appCallback)
         control = control.applySelection(control, {}, true);
         ui.controls.(id) = control;
         setappdata(ui.figure, 'labkitUiRegistry', ui);
-        labkit.ui.control.setFileSelection(ui, id, control.currentSelectedFiles());
+        setControlFileSelection(ui, id, control.currentSelectedFiles());
         traceFilePanelFromSource(id, source, 'selection updated', sprintf( ...
             'total=0 removed=%d selected=0', numel(previousFiles)));
         event = fileEvent(control, source, rawEvent, 'clear');
@@ -509,9 +521,11 @@ function callback = semanticFileSelectionCallback(id, appCallback)
             return;
         end
         control = ui.controls.(id);
-        labkit.ui.control.setFileSelection(ui, id, control.currentSelectedFiles());
+        setControlFileSelection(ui, id, control.currentSelectedFiles());
+        selectedFiles = control.currentSelectedFiles();
         traceFilePanelFromSource(id, source, 'selection changed', sprintf( ...
-            'selected=%d', numel(control.currentSelectedFiles())));
+            'selected=%d ids=%s', numel(selectedFiles), ...
+            char(strjoin(selectedFileIds(selectedFiles), ','))));
         if isempty(appCallback)
             return;
         end
@@ -519,6 +533,13 @@ function callback = semanticFileSelectionCallback(id, appCallback)
         traceFilePanelFromSource(id, source, 'callback start', 'action=select');
         runSemanticAppCallback(ui, control, event, appCallback, id);
         traceFilePanelFromSource(id, source, 'callback end', 'action=select');
+    end
+end
+
+function ids = selectedFileIds(files)
+    ids = strings(0, 1);
+    if isstruct(files) && isfield(files, 'id')
+        ids = string({files.id}).';
     end
 end
 

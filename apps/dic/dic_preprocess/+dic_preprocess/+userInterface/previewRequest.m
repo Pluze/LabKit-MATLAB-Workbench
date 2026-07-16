@@ -1,10 +1,11 @@
-% Expected caller: DIC preprocess runner and direct unit tests. Inputs are the
-% runner state and preview dropdown value. Output is a struct containing the
-% top/bottom preview images and titles to render. Side effects: none.
+% Expected caller: DIC preprocess V2 presenter and unit tests. Inputs are the
+% canonical state and preview choice. Output is prepared image data.
 
-function request = previewRequest(S, previewValue)
+function request = previewRequest(state, previewValue)
 %PREVIEWREQUEST Prepare DIC preprocess preview images for the selected mode.
 
+    cache = state.session.cache;
+    annotations = state.project.annotations;
     previewValue = string(previewValue);
     request = struct( ...
         'topImage', [], ...
@@ -14,36 +15,34 @@ function request = previewRequest(S, previewValue)
 
     switch previewValue
         case "Current pair"
-            request.topImage = S.currentReferenceImage;
+            request.topImage = cache.currentReferenceImage;
             request.topTitle = "Current reference";
-            request.bottomImage = S.currentMovingImage;
+            request.bottomImage = cache.currentMovingImage;
             request.bottomTitle = "Current moving";
         case "Original pair"
-            request.topImage = S.referenceImage;
+            request.topImage = cache.referenceImage;
             request.topTitle = "Original reference";
-            request.bottomImage = S.movingImage;
+            request.bottomImage = cache.movingImage;
             request.bottomTitle = "Original moving";
         case "ROI mask"
-            request.topImage = S.currentReferenceImage;
+            request.topImage = cache.currentReferenceImage;
             request.topTitle = "Current reference";
-            if ~isempty(S.maskImage)
-                request.bottomImage = dic_preprocess.analysisRun.maskRgb(S.maskImage);
+            if ~isempty(annotations.maskImage)
+                request.bottomImage = ...
+                    dic_preprocess.analysisRun.maskRgb(annotations.maskImage);
                 request.bottomTitle = "ROI mask";
             end
         otherwise
-            request.topImage = S.currentReferenceImage;
+            request.topImage = cache.currentReferenceImage;
             request.topTitle = "Current reference";
             if previewValue == "Current moving image"
-                request.bottomImage = S.currentMovingImage;
+                request.bottomImage = cache.currentMovingImage;
                 request.bottomTitle = previewValue;
-            elseif previewValue == "False-color overlay" && hasImagePair(S)
+            elseif previewValue == "False-color overlay" && ...
+                    dic_preprocess.appState.hasImagePair(cache)
                 request.bottomImage = dic_preprocess.analysisRun.makeFalseColorOverlay( ...
-                    S.currentReferenceImage, S.currentMovingImage);
+                    cache.currentReferenceImage, cache.currentMovingImage);
                 request.bottomTitle = previewValue;
             end
     end
-end
-
-function tf = hasImagePair(S)
-    tf = ~isempty(S.currentReferenceImage) && ~isempty(S.currentMovingImage);
 end

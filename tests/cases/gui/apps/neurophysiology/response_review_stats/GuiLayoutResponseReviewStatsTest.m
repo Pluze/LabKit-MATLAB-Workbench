@@ -17,6 +17,9 @@ classdef GuiLayoutResponseReviewStatsTest < matlab.unittest.TestCase
             fig = h.launchFigure('labkit_ResponseReviewStats_app', ...
                 'Response Review Stats');
             driver = labkitWorkflowDriver(fig);
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            testCase.verifyEqual(runtime.definition.contractVersion, 2, ...
+                'Response Review Stats must execute through Runtime V2.');
             driver.chooseFiles('inputFile', segmentPath);
 
             driver.click('Choose input');
@@ -50,6 +53,28 @@ classdef GuiLayoutResponseReviewStatsTest < matlab.unittest.TestCase
                 'response_review_metrics.csv');
             testCase.verifyTrue(exist(outputPath, 'file') == 2, ...
                 'Response-review workflow should export the metrics CSV.');
+            manifestPath = fullfile(folder, 'response_review_stats', ...
+                'response_review_metrics.labkit.json');
+            testCase.verifyTrue(exist(manifestPath, 'file') == 2, ...
+                'Response-review export should include a standard manifest.');
+
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            testCase.verifyFalse(isfield( ...
+                runtime.state.project.results.lastExport, 'metrics'), ...
+                'Durable export records must not embed metric cache data.');
+            testCase.verifyEqual(height(runtime.state.session.cache.metrics), 2);
+            projectPath = fullfile(folder, 'response-review-project.mat');
+            labkit.ui.runtime.saveState(fig, projectPath);
+            saved = load(projectPath, 'labkitProject');
+            testCase.verifyEqual(saved.labkitProject.app.payloadVersion, 1);
+            testCase.verifyFalse(isfield(saved.labkitProject.payload, 'cache'));
+            driver.click('Reset');
+            labkit.ui.runtime.loadState(fig, projectPath);
+            h.waitForUiIdle(fig);
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            testCase.verifyEqual(height(runtime.state.session.cache.metrics), 2, ...
+                'Project reopen should rebuild metric cache from its source.');
+            testCase.verifyGreaterThan(driver.previewChildCount('preview'), 0);
         end
     end
 end

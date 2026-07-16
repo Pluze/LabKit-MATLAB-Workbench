@@ -1,4 +1,4 @@
-% Private UI runtime helper. Expected caller: UI 5 control builders. Inputs are
+% Private UI runtime helper. Expected caller: declarative control builders. Inputs are
 % a MATLAB UI handle and validated spec props. Output is none. Side effects
 % assign common value, limit, item, and display-format properties when the
 % target handle supports them.

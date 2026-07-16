@@ -4,7 +4,7 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
 
 ## Read Before Editing
 
-- `docs/testing.md`
+- `docs/development/testing.md`
 - affected source files
 - nearby tests under `tests/cases/unit/`, `tests/cases/contract/`, or
   `tests/cases/gui/`
@@ -48,6 +48,16 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
   unless CI licensing for independent child MATLAB processes has been proven in
   the workflow. The public CI entry should remain `buildtool headless`.
 - Keep architecture guardrails in the narrowest project-suite file that matches the concern.
+- Toolbox debt guardrails must distinguish an exact, temporary declared
+  product path from an undeclared dependency. A declaration names its source,
+  symbol, MathWorks product, owner, no-Toolbox fallback test, idempotency test,
+  parity test, and replacement;
+  it does not suppress static product discovery. Reject stale declarations,
+  missing fallback evidence, broad product allowlists, and dynamic-call tricks.
+- Numeric/scientific replacement tests must prove idempotent repeated results;
+  stateful operations must also prove that safe repetition does not accumulate
+  state or side effects. Compare app-consumed outputs with the Toolbox reference using a
+  justified tolerance. A screenshot or qualitative assertion is insufficient.
 - Use `tests/shared/` for small test-facing assertions, fixture builders, GUI
   probes, cleanup, and lookup helpers. Keep ordinary MATLAB helper functions
   as one-function files unless a grouped API materially improves call sites.
@@ -64,21 +74,23 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
   feature-branch iteration may use small commits without bumping versions each
   time; before squash, PR handoff, or direct `main` push, choose the next
   version from the latest `main` version file and make the aggregate bump once.
-  The same aggregate version bump must be recorded in `CHANGELOG.md` with user
-  impact and evidence. Branch and mainline records use the same schema-v1
-  `labkit-change` block and stable Change ID under `Structured Change Records`;
-  do not create Unreleased or Pending lifecycle sections. Changelog guardrails
-  should parse records through `tools/release/parseLabKitChangelog.m` instead
-  of duplicating the file grammar in tests.
+  The same aggregate version bump must update the component's owned
+  documentation and add one distributed `docs/**/history/*.md` record with user
+  impact and evidence. Guardrails should verify record identity, required
+  decision sections, and generated component-page aggregation without
+  reintroducing a root changelog or a release-history parser.
 - Boundary tests may require app-owned logic to stay under the owning app tree, but should not require GUI-free helpers to remain inside the public app entry-point file or assert exact app-private helper file lists.
 - App-owned workflow packages need direct unit coverage for non-UI functions;
   GUI structural tests only prove launch/layout wiring.
 - Guardrails should prevent app lifecycle orchestration from living in
   `+ui/runApp.m` or package-root eager `run.m`. Apps launch through
-  `definition.m` and `labkit.ui.runtime.run`; workflow-first apps keep data-only
+  `definition.m` and `labkit.ui.runtime.launch`; workflow-first apps keep data-only
   layouts in `+userInterface/buildWorkbenchLayout.m`. Ordinary tests should call
   package helpers directly.
-- UI public-surface tests should assert the layered `labkit.ui.runtime/layout/control/plot/interaction/debug` facade and keep low-level controls, row resize, panel internals, and popout implementation private.
+- UI public-surface tests should assert the layered
+  `labkit.ui.runtime/layout/plot/interaction/debug` facade and keep registry
+  mutation, low-level controls, row resize, panel internals, and popout
+  implementation private.
 - GUI launch/debug tests may assert that every app supports debug launch and visible startup trace, but should not claim full interactive workflow validation.
 - App GUI tests should prefer semantic contracts such as expected command
   buttons, dropdown choices, tabs, tables, axes, callbacks, workflow outcomes,
@@ -110,6 +122,13 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
 - Repository-wide guardrails should cache tracked-file lists or file contents
   within the test process when multiple assertions scan the same scope. Do not
   add duplicate full-tree scans that differ only by diagnostic wording.
+- File-length and short-helper audits must use the shared effective MATLAB
+  code-line counter. It excludes blank lines, full-line comments, and block
+  comments, counts lines that contain code plus an inline comment, and reports
+  physical lines only as diagnostic context.
+- Public help sections titled `Example:` must be extracted from source and
+  executed by MATLAB. File-dependent or interactive sketches belong under
+  `Typical Call:` until they have self-contained synthetic setup.
 - Project hygiene guardrails may scan app source and test text to enforce that
   declared UI label helpers own their long user-visible literals. Keep this
   check scoped to named label/choice helpers so ordinary one-off UI labels,
@@ -150,7 +169,7 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
   planner just to rediscover the same plan.
 - For new timing strategies, first improve planner routing or representative
   selectors. Add a new public task only when the workflow cannot be expressed
-  through the compact task set listed in `docs/testing.md` or a focused
+  through the compact task set listed in `docs/development/testing.md` or a focused
   `runLabKitTests` invocation.
 - Prefer `runLabKitTests("Suites", "...")` for rerunning a failed suite such
   as `project`, `labkit_framework/ui`, `labkit_framework/image`,
@@ -183,10 +202,10 @@ Tests mirror source ownership. Do not create a parallel runner framework unless 
   External parsers may inform compatibility analysis, but tests must exercise
   LabKit's own parser code without runtime dependency on those tools.
 - Run the project guardrail task after fixture, hygiene, architecture, or
-  test-layout changes. Use `docs/testing.md` for the exact command.
+  test-layout changes. Use `docs/development/testing.md` for the exact command.
 
 ## Documentation Sync
 
-- Test layout, validation strategy, CI scope, or fixture policy changes update `docs/testing.md`.
+- Test layout, validation strategy, CI scope, or fixture policy changes update `docs/development/testing.md`.
 - Agent-specific validation routing or fixture-handling rule changes update this file.
 - Do not update this file for ordinary test additions that follow the existing layout and policies; state that docs/AGENTS were unchanged because contracts were preserved when the change is nontrivial.

@@ -50,48 +50,123 @@ classdef GuiLayoutDicPreprocessTest < matlab.unittest.TestCase
                 'DIC preprocess workflow should draw the reference preview.');
             testCase.verifyGreaterThan(numel(ui.controls.previewAxes.axesById.current.Children), 0, ...
                 'DIC preprocess workflow should draw the current preview.');
+            driver.click('Start/reset crop ROI');
+            assertCropRectangleDragStarts(fig);
         end
 
-        function manualPointPairSelectorCancelsWithoutToolbox(testCase)
+        function pointMatchingStaysInMainWorkbench(testCase)
             setupLabKitTestPath();
             h = guiTestHelpers();
             h.assertUifigureAvailable();
             cleanup = onCleanup(@() h.closeAllFigures());
-            % Retry for up to 10 seconds because editor construction time
-            % varies across local and hosted MATLAB graphics runtimes.
-            cancelTimer = timer('ExecutionMode', 'fixedSpacing', ...
-                'StartDelay', 0.25, 'Period', 0.25, 'TasksToExecute', 40, ...
-                'TimerFcn', @cancelPointPairDialog);
-            timerCleanup = onCleanup(@() deleteTimer(cancelTimer));
 
-            [movingPoints, fixedPoints] = ...
-                dic_preprocess.userInterface.selectRigidPointPairs( ...
-                zeros(20, 24), zeros(20, 24), ...
-                struct('onReady', @(~) start(cancelTimer)));
+            folder = tempname;
+            mkdir(folder);
+            folderCleanup = onCleanup(@() removeTempFolder(folder));
+            referencePath = fullfile(folder, 'reference.png');
+            movingPath = fullfile(folder, 'moving.png');
+            imageData = syntheticDicImage();
+            imwrite(imageData, referencePath);
+            imwrite(imageData, movingPath);
 
-            testCase.verifyEmpty(movingPoints, ...
-                'Cancelled manual alignment should return no moving points.');
-            testCase.verifyEmpty(fixedPoints, ...
-                'Cancelled manual alignment should return no fixed points.');
-            clear timerCleanup cleanup
+            fig = h.launchFigure('labkit_DICPreprocess_app', ...
+                'DIC Image Preprocess');
+            driver = labkitWorkflowDriver(fig);
+            driver.chooseFiles('referenceFile', referencePath);
+            driver.chooseFiles('movingFile', movingPath);
+            driver.click('Choose reference');
+            driver.click('Choose moving');
+            labels = dic_preprocess.userInterface.registrationLabels();
+            driver.click(labels.startPointMatching);
+
+            ui = driver.registry();
+            testCase.verifyEmpty(findall(groot, 'Type', 'figure', ...
+                'Name', 'DIC Manual Alignment'), ...
+                'Point matching should remain inside the main DIC workbench.');
+            testCase.verifyEqual(string( ...
+                ui.controls.applyPointAlignment.button.Enable), ...
+                "off", 'Alignment should wait for at least two complete pairs.');
+            testCase.verifyEqual(string( ...
+                ui.controls.cancelPointMatching.button.Enable), ...
+                "on", 'The active in-place point matcher should be cancellable.');
+            referenceAxes = ui.controls.previewAxes.axesById.reference;
+            movingAxes = ui.controls.previewAxes.axesById.current;
+            referenceImage = findobj(referenceAxes, 'Type', 'Image', ...
+                'Tag', 'labkitDicPreprocessPreviewImage');
+            movingImage = findobj(movingAxes, 'Type', 'Image', ...
+                'Tag', 'labkitDicPreprocessPreviewImage');
+            referenceAxes.XLim = [10 80];
+            referenceAxes.YLim = [10 70];
+            addPointPair(fig, [20 20], [20 20]);
+            addPointPair(fig, [60 40], [60 40]);
+            ui = driver.registry();
+            testCase.verifyEqual(findobj(referenceAxes, 'Type', 'Image', ...
+                'Tag', 'labkitDicPreprocessPreviewImage'), referenceImage, ...
+                'Point edits should preserve the reference image handle.');
+            testCase.verifyEqual(findobj(movingAxes, 'Type', 'Image', ...
+                'Tag', 'labkitDicPreprocessPreviewImage'), movingImage, ...
+                'Point edits should preserve the moving image handle.');
+            testCase.verifyEqual(referenceAxes.XLim, [10 80], ...
+                'Point edits should preserve the reference zoom viewport.');
+            testCase.verifyEqual(referenceAxes.YLim, [10 70], ...
+                'Point edits should preserve the reference zoom viewport.');
+            pointLabels = findobj(referenceAxes, 'Type', 'Text', ...
+                'Tag', 'labkitDicPreprocessPreviewOverlay');
+            testCase.verifyNotEmpty(pointLabels, ...
+                'Point matching should render numbered feature labels.');
+            testCase.verifyTrue(all(string({pointLabels.Clipping}) == "on"), ...
+                'Feature labels must be clipped to their owning preview axes.');
+            testCase.verifyEqual(string( ...
+                ui.controls.applyPointAlignment.button.Enable), ...
+                "on", 'Two complete point pairs should enable alignment.');
+            driver.click(labels.applyPointAlignment);
+            ui = driver.registry();
+            testCase.verifyEqual(string( ...
+                ui.controls.startPointMatching.button.Enable), ...
+                "on", 'Applying matched points should leave matching mode.');
+            testCase.verifyEqual(string(ui.controls.previewMode.valueHandle.Value), ...
+                "False-color overlay", ...
+                'Point alignment should switch to the comparison preview.');
+            clear folderCleanup cleanup
         end
     end
 end
 
-function cancelPointPairDialog(timerHandle, ~)
-    figures = findall(groot, 'Type', 'figure', 'Name', 'DIC Manual Alignment');
-    if isempty(figures)
-        return;
-    end
-    close(figures(1));
-    stop(timerHandle);
+function addPointPair(fig, referencePoint, movingPoint)
+    runtime = getappdata(fig, 'labkitUiAppRuntime');
+    resource = pointPairResource(runtime.resources);
+    resource.editors{1}.insertPoint(referencePoint);
+    runtime = getappdata(fig, 'labkitUiAppRuntime');
+    resource = pointPairResource(runtime.resources);
+    resource.editors{2}.insertPoint(movingPoint);
 end
 
-function deleteTimer(timerHandle)
-    if isvalid(timerHandle)
-        stop(timerHandle);
-        delete(timerHandle);
-    end
+function resource = pointPairResource(resources)
+    resource = interactionResource(resources, "pointPairs");
+end
+
+function assertCropRectangleDragStarts(fig)
+    runtime = getappdata(fig, 'labkitUiAppRuntime');
+    resource = interactionResource(runtime.resources, "cropRectangle");
+    graphics = resource.editors{1}.graphics();
+    box = graphics(find(arrayfun(@(item) isa(item, ...
+        'matlab.graphics.primitive.Rectangle'), graphics), 1, 'first'));
+    assert(~isempty(box), ...
+        'DIC crop mode should create one editable rectangle graphic.');
+    fig.WindowButtonDownFcn(fig, struct('HitObject', box));
+    assert(runtime.interactionHub.isDragging(), ...
+        'DIC crop rectangle should start a drag through the Runtime V2 hub.');
+    fig.WindowButtonUpFcn(fig, struct());
+    assert(~runtime.interactionHub.isDragging(), ...
+        'DIC crop rectangle should end its drag on pointer release.');
+end
+
+function resource = interactionResource(resources, id)
+    index = find([resources.scope] == "interaction" & ...
+        [resources.id] == string(id), 1, 'first');
+    assert(~isempty(index), ...
+        'DIC workflow should own the requested controlled interaction resource.');
+    resource = resources(index).value;
 end
 
 function tf = dicPreprocessAlignmentReady(driver)
@@ -104,9 +179,11 @@ function text = appLog(driver)
 end
 
 function assertDicPreprocessLayout(h, fig)
+    labels = dic_preprocess.userInterface.registrationLabels();
     h.assertStandardWorkbenchLayout(fig);
     h.assertButtonContract(fig, {'Choose reference', 'Choose moving', ...
-        'Select points + align', 'Auto align current pair', ...
+        labels.startPointMatching, labels.applyPointAlignment, ...
+        labels.cancelPointMatching, labels.undoPointPair, labels.autoAlign, ...
         'Start/reset crop ROI', 'Apply ROI crop', 'Cancel ROI', ...
         'Undo align/crop', 'Save current images', 'Reset to originals', ...
         'Start ROI edit', 'Preview ROI mask', 'Add to mask', ...

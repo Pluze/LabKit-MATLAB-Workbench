@@ -12,7 +12,8 @@ function addPaperStyleVTAnnotations(ax, A, xChoice, cathStartX, cathEndX, anodSt
     yMid = yl(1) + 0.55*dy;
     yLow = yl(1) + 0.18*dy;
 
-    if strcmp(xChoice,'Sample #')
+    choices = cic.userInterface.analysisChoices();
+    if strcmp(xChoice, choices.xAxes(2))
         cOnX = interp1Safe(A.t, A.pt, A.t_conset);
         aOnX = interp1Safe(A.t, A.pt, A.t_aonset);
         cathBase1 = interp1Safe(A.t, A.pt, A.baselineCathWindow(1));

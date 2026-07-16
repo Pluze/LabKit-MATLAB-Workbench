@@ -18,10 +18,11 @@ classdef DebugSamplePackCoverageTest < matlab.unittest.TestCase
                 definition = fullfile(appFolder, "+" + slug, "definition.m");
                 definitionActions = fullfile(appFolder, "+" + slug, ...
                     "definitionActions.m");
+                startup = fullfile(appFolder, "+" + slug, "startup.m");
                 actions = fullfile(appFolder, "+" + slug, "+actions", "table.m");
                 writer = fullfile(appFolder, "+" + slug, "+debug", "writeSamplePack.m");
 
-                wiringFiles = [runner, definition, definitionActions, actions];
+                wiringFiles = [runner, definition, definitionActions, startup, actions];
                 wiringFiles = wiringFiles(isfile(wiringFiles));
                 if isempty(wiringFiles)
                     missing(end + 1, 1) = appFile + ...
@@ -39,7 +40,10 @@ classdef DebugSamplePackCoverageTest < matlab.unittest.TestCase
                 end
                 directCall = slug + ".debug.writeAndLogSamplePack(";
                 samplePackCall = slug + ".debug.writeSamplePack(";
-                if ~(contains(body, directCall) || contains(body, samplePackCall))
+                samplePackHandle = "@" + slug + ".debug.writeSamplePack";
+                if ~(contains(body, directCall) || ...
+                        contains(body, samplePackCall) || ...
+                        contains(body, samplePackHandle))
                     missing(end + 1, 1) = appFile + " does not call app-owned debug sample writer";
                 end
             end

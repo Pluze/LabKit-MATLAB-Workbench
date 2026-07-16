@@ -1,9 +1,9 @@
-% Expected caller: DIC preprocess runner and direct unit tests. Input is the app
-% state. Output is true when both current image slots are populated. Side
-% effects: none.
+% Expected caller: DIC preprocess V2 actions/presentation and unit tests.
+% Input is the rebuildable session image cache; output reports a current pair.
 
-function tf = hasImagePair(S)
+function tf = hasImagePair(cache)
 %HASIMAGEPAIR Return whether the DIC preprocess current pair is loaded.
 
-    tf = ~isempty(S.currentReferenceImage) && ~isempty(S.currentMovingImage);
+    tf = ~isempty(cache.currentReferenceImage) && ...
+        ~isempty(cache.currentMovingImage);
 end

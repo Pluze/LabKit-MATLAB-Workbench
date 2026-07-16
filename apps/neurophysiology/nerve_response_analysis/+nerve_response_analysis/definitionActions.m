@@ -1,14 +1,10 @@
-% App-owned action table for Nerve Response Analysis. Expected caller is
-% nerve_response_analysis.definition. Output maps semantic action ids to
-% handlers used by labkit.ui.runtime.run. Handlers own workflow transitions,
-% analysis, and export side effects.
+% App-owned Runtime V2 action table for Nerve Response Analysis. Handlers own
+% source selection, analysis, preview selection, and export without UI reads,
+% figure callbacks, closure state, or app-managed lifecycle plumbing.
 function actions = definitionActions()
     actions = struct( ...
-        "startup", @onStartup, ...
         "sessionChosen", @onSessionChosen, ...
-        "sessionCleared", @onSessionCleared, ...
         "protocolChosen", @onProtocolChosen, ...
-        "protocolCleared", @onProtocolCleared, ...
         "outputFolderChosen", @onOutputFolderChosen, ...
         "outputFolderCleared", @onOutputFolderCleared, ...
         "settingChanged", @onSettingChanged, ...
@@ -18,195 +14,222 @@ function actions = definitionActions()
         "resetWorkflow", @onResetWorkflow);
 end
 
-function state = onStartup(state, ~, services)
-    debugLog = services.debug;
-    if isDebugEnabled(debugLog)
-        debugLog.trace("Nerve Response Analysis debug trace enabled.");
-        debugLog.instrumentFigure(services.figure);
-        state = setupDebugSamples(state, services);
-    end
-    addLog(services, "Nerve Response Analysis ready.");
-end
-
-function state = onSessionChosen(state, payload, services)
-    paths = eventPaths(payload.event);
-    if isempty(paths)
+function state = onSessionChosen(state, event, services)
+    filepath = firstEventPath(event, services);
+    if strlength(filepath) == 0
         return;
     end
-    state.sessionFile = paths(1);
-    state.outputFolder = string(labkit.ui.runtime.defaultOutputFolder( ...
-        paths, "nerve_response_analysis", state.outputFolder));
-    state.analysis = [];
-    state.statusMessage = "Filter record selected.";
-    state.lastAction = "Selected filter record";
-    addLog(services, "Selected filter record: " + displayPath(state.sessionFile));
-end
-
-function state = onSessionCleared(state, ~, ~)
-    state.sessionFile = "";
-    state.analysis = [];
-    state.statusMessage = "No filter record selected.";
-    state.lastAction = "Cleared filter record";
-end
-
-function state = onProtocolChosen(state, payload, services)
-    paths = eventPaths(payload.event);
-    if isempty(paths)
+    try
+        filterRecord = jsondecode(fileread(char(filepath)));
+    catch ME
+        services.diagnostics.report("Filter record load failed", ME);
+        state.session.workflow.statusMessage = string(ME.message);
+        state = services.workflow.log(state, ...
+            "Filter record load failed: " + string(ME.message));
         return;
     end
-    state.protocolFile = paths(1);
-    if ~isempty(state.analysis)
-        state.analysis = [];
-        state.statusMessage = "Protocol selected. Analyze session to refresh.";
-    end
-    state.lastAction = "Selected protocol";
-    addLog(services, "Selected protocol: " + displayPath(state.protocolFile));
+    state.project.inputs.filterSource = services.project.sourceRecord( ...
+        "filterRecord", "filterRecord", filepath, true);
+    state.project.results.lastExport = [];
+    state.session.cache.filterPath = filepath;
+    state.session.cache.filterRecord = filterRecord;
+    state.session.cache.analysis = [];
+    state.session.workflow.outputFolder = string( ...
+        services.dialogs.defaultOutputFolder( ...
+        filepath, "nerve_response_analysis", ...
+        state.session.workflow.outputFolder));
+    state.session.workflow.statusMessage = "Filter record selected.";
+    state.session.workflow.lastAction = "Selected filter record";
+    state = services.workflow.log(state, ...
+        "Selected filter record: " + displayPath(filepath));
 end
 
-function state = onProtocolCleared(state, ~, ~)
-    state.protocolFile = "";
-    if ~isempty(state.analysis)
-        state.analysis = [];
-        state.statusMessage = "Protocol cleared. Analyze session to refresh.";
+function state = onProtocolChosen(state, event, services)
+    filepath = firstEventPath(event, services);
+    if strlength(filepath) == 0
+        return;
     end
-    state.lastAction = "Cleared protocol";
+    protocol = loadOptionalProtocol(filepath);
+    state.project.inputs.protocolSource = services.project.sourceRecord( ...
+        "protocol", "protocol", filepath, false);
+    state.project.results.lastExport = [];
+    state.session.cache.protocolPath = filepath;
+    state.session.cache.protocol = protocol;
+    if hasAnalysis(state)
+        state.session.cache.analysis = [];
+        state.session.workflow.statusMessage = ...
+            "Protocol selected. Analyze session to refresh.";
+    end
+    state.session.workflow.lastAction = "Selected protocol";
+    state = services.workflow.log(state, ...
+        "Selected protocol: " + displayPath(filepath));
 end
 
 function state = onOutputFolderChosen(state, ~, services)
-    [folder, cancelled] = labkit.ui.runtime.promptOutputFolder( ...
-        "Select analysis output folder", state.outputFolder);
+    [folder, cancelled] = services.dialogs.outputFolder( ...
+        "Select analysis output folder", state.session.workflow.outputFolder);
     if cancelled
-        state.lastAction = "Output folder selection cancelled";
+        state.session.workflow.lastAction = ...
+            "Output folder selection cancelled";
         return;
     end
-    state.outputFolder = string(folder);
-    state.lastAction = "Selected output folder";
-    addLog(services, "Selected output folder: " + displayPath(state.outputFolder));
+    state.session.workflow.outputFolder = string(folder);
+    state.session.workflow.lastAction = "Selected output folder";
+    state = services.workflow.log(state, ...
+        "Selected output folder: " + displayPath(folder));
 end
 
 function state = onOutputFolderCleared(state, ~, ~)
-    state.outputFolder = "";
-    state.lastAction = "Cleared output folder";
+    state.session.workflow.outputFolder = "";
+    state.session.workflow.lastAction = "Cleared output folder";
 end
 
-function state = onSettingChanged(state, ~, services)
-    state.maxRecordings = finiteNonnegativeScalar( ...
-        labkit.ui.control.getValue(services.ui, "maxRecordings"), ...
-        state.maxRecordings);
-    state.maxDurationSec = finiteNonnegativeScalar( ...
-        labkit.ui.control.getValue(services.ui, "maxDurationSec"), ...
-        state.maxDurationSec);
-    if ~isempty(state.analysis)
-        state.analysis = [];
-        state.statusMessage = ...
+function state = onSettingChanged(state, ~, ~)
+    state.project.parameters.maxRecordings = finiteNonnegativeScalar( ...
+        state.project.parameters.maxRecordings, 0);
+    state.project.parameters.maxDurationSec = finiteNonnegativeScalar( ...
+        state.project.parameters.maxDurationSec, 0);
+    state.project.results.lastExport = [];
+    if hasAnalysis(state)
+        state.session.cache.analysis = [];
+        state.session.workflow.statusMessage = ...
             "Analysis options changed. Analyze session to refresh.";
     end
-    state.lastAction = "Updated analysis options";
+    state.session.workflow.lastAction = "Updated analysis options";
 end
 
-function state = onPreviewModeChanged(state, payload, ~)
-    value = eventValue(payload.event);
-    if strlength(value) > 0
-        state.previewMode = value;
+function state = onPreviewModeChanged(state, event, ~)
+    value = string(event.value);
+    if isscalar(value) && any(value == ["Counts", "Issues"])
+        state.session.view.previewMode = value;
     end
 end
 
 function state = onRunAnalysis(state, ~, services)
-    if strlength(state.sessionFile) == 0
-        state.statusMessage = "Select a filter record first.";
+    if isempty(state.project.inputs.filterSource)
+        state.session.workflow.statusMessage = "Select a filter record first.";
         return;
     end
     try
-        session = jsondecode(fileread(char(state.sessionFile)));
-        protocol = loadProtocol(state.protocolFile);
-        opts = struct();
-        if state.maxRecordings > 0
-            opts.maxRecordings = state.maxRecordings;
-        end
-        if state.maxDurationSec > 0
-            opts.maxDurationSec = state.maxDurationSec;
-        end
-        state.analysis = nerve_response_analysis.analysisRun.analyzeSession( ...
-            session, protocol, opts);
+        opts = analysisOptions(state.project.parameters);
+        state.session.cache.analysis = ...
+            nerve_response_analysis.analysisRun.analyzeSession( ...
+            state.session.cache.filterRecord, state.session.cache.protocol, opts);
     catch ME
-        services.debug.reportException('nerveResponseAnalysis', ...
-            'Analysis failed', ME);
-        state.analysis = [];
-        state.statusMessage = string(ME.message);
-        state.lastAction = "Analysis failed";
-        addLog(services, "Analysis failed: " + state.statusMessage);
+        services.diagnostics.report("Analysis failed", ME);
+        state.session.cache.analysis = [];
+        state.session.workflow.statusMessage = string(ME.message);
+        state.session.workflow.lastAction = "Analysis failed";
+        state = services.workflow.log(state, ...
+            "Analysis failed: " + state.session.workflow.statusMessage);
         return;
     end
-    state.statusMessage = sprintf("Analyzed %d recording(s).", ...
-        state.analysis.analyzedCount);
-    state.lastAction = "Analyzed filter record";
-    addLog(services, state.statusMessage);
+    state.project.results.lastExport = [];
+    state.session.workflow.statusMessage = sprintf( ...
+        "Analyzed %d recording(s).", ...
+        state.session.cache.analysis.analyzedCount);
+    state.session.workflow.lastAction = "Analyzed filter record";
+    state = services.workflow.log(state, state.session.workflow.statusMessage);
 end
 
 function state = onExportAnalysis(state, ~, services)
-    if isempty(state.analysis)
-        state.statusMessage = "Run analysis before exporting.";
+    if ~hasAnalysis(state)
+        state.session.workflow.statusMessage = "Run analysis before exporting.";
         return;
     end
-    if strlength(state.outputFolder) == 0
-        state.statusMessage = "Select an output folder first.";
+    folder = state.session.workflow.outputFolder;
+    if strlength(folder) == 0
+        state.session.workflow.statusMessage = "Select an output folder first.";
         return;
     end
-    outputPath = fullfile(char(state.outputFolder), ...
-        "nerve_response_analysis.json");
-    nerve_response_analysis.resultFiles.writeAnalysisJson(state.analysis, outputPath);
-    state.statusMessage = "Exported nerve-response analysis.";
-    state.lastAction = "Exported analysis";
-    addLog(services, "Exported analysis JSON: " + displayPath(outputPath));
+    outputName = "nerve_response_analysis.json";
+    outputPath = fullfile(char(folder), outputName);
+    if exist(char(folder), "dir") ~= 7
+        mkdir(char(folder));
+    end
+    nerve_response_analysis.resultFiles.writeAnalysisJson( ...
+        state.session.cache.analysis, outputPath);
+    output = services.results.output( ...
+        "nerveResponseAnalysis", "primary", outputName, "application/json");
+    spec = struct( ...
+        "Outputs", output, ...
+        "Inputs", allSources(state.project.inputs), ...
+        "Parameters", state.project.parameters, ...
+        "Summary", analysisSummary(state.session.cache.analysis), ...
+        "ManifestName", "nerve_response_analysis.labkit.json");
+    [manifestPath, ~] = services.results.writeManifest(folder, spec);
+    state.project.results.lastExport = struct( ...
+        "jsonPath", string(outputPath), ...
+        "manifestPath", string(manifestPath));
+    state.session.workflow.statusMessage = ...
+        "Exported nerve-response analysis.";
+    state.session.workflow.lastAction = "Exported analysis";
+    state = services.workflow.log(state, ...
+        "Exported analysis JSON: " + displayPath(outputPath));
 end
 
 function state = onResetWorkflow(~, ~, services)
-    state = nerve_response_analysis.appLifecycle.createInitialState();
-    addLog(services, "Reset Nerve Response Analysis state.");
+    project = nerve_response_analysis.appLifecycle.createProject();
+    state = struct("project", project, ...
+        "session", nerve_response_analysis.appLifecycle.createSession(project));
+    state = services.workflow.log(state, ...
+        "Reset Nerve Response Analysis state.");
 end
 
-function state = setupDebugSamples(state, services)
-    debugLog = services.debug;
-    try
-        pack = nerve_response_analysis.debug.writeSamplePack(debugLog);
-        addLog(services, "Debug sample files: " + string(pack.sampleFolder));
-        addLog(services, "Debug output folder: " + string(pack.outputFolder));
-    catch ME
-        debugLog.reportException('nerveResponseAnalysis', ...
-            'Debug sample setup failed', ME);
-        addLog(services, "Debug sample setup failed: " + string(ME.message));
+function opts = analysisOptions(parameters)
+    opts = struct();
+    if parameters.maxRecordings > 0
+        opts.maxRecordings = parameters.maxRecordings;
+    end
+    if parameters.maxDurationSec > 0
+        opts.maxDurationSec = parameters.maxDurationSec;
     end
 end
 
-function protocol = loadProtocol(protocolFile)
+function summary = analysisSummary(analysis)
+    summary = struct( ...
+        "recordingCount", double(analysis.recordingCount), ...
+        "analyzedCount", double(analysis.analyzedCount), ...
+        "eventCount", tableHeight(analysis, "events"), ...
+        "trainCount", tableHeight(analysis, "trains"), ...
+        "metricCount", tableHeight(analysis, "metrics"), ...
+        "issueCount", tableHeight(analysis, "issues"));
+end
+
+function count = tableHeight(analysis, fieldName)
+    count = 0;
+    if isfield(analysis, fieldName) && istable(analysis.(fieldName))
+        count = height(analysis.(fieldName));
+    end
+end
+
+function sources = allSources(inputs)
+    sources = [inputs.filterSource, inputs.protocolSource];
+end
+
+function protocol = loadOptionalProtocol(filepath)
     protocol = struct();
-    protocolFile = string(protocolFile);
-    if strlength(protocolFile) == 0 || exist(char(protocolFile), "file") ~= 2
-        return;
-    end
     try
-        protocol = jsondecode(fileread(char(protocolFile)));
+        protocol = jsondecode(fileread(char(filepath)));
     catch
         protocol = struct();
     end
 end
 
-function paths = eventPaths(event)
-    files = struct([]);
-    if isstruct(event) && isfield(event, "addedFiles")
-        files = event.addedFiles;
-    elseif isobject(event) && isprop(event, "addedFiles")
-        files = event.addedFiles;
-    elseif isstruct(event) && isfield(event, "selectedFiles")
-        files = event.selectedFiles;
-    elseif isobject(event) && isprop(event, "selectedFiles")
-        files = event.selectedFiles;
+function filepath = firstEventPath(event, services)
+    paths = services.events.paths(event, "addedFiles");
+    if isempty(paths)
+        paths = services.events.paths(event, "files");
     end
-    paths = labkit.ui.control.filePaths(files);
-    if ~(isstring(paths) && iscolumn(paths))
-        error('nerve_response_analysis:InvalidPathEvent', ...
-            'filePanel event file paths must be a string column.');
+    filepath = "";
+    if ~isempty(paths)
+        filepath = paths(1);
     end
+end
+
+function tf = hasAnalysis(state)
+    value = state.session.cache.analysis;
+    tf = isstruct(value) && isscalar(value) && ~isempty(fieldnames(value));
 end
 
 function value = finiteNonnegativeScalar(value, fallback)
@@ -218,35 +241,11 @@ function value = finiteNonnegativeScalar(value, fallback)
     value = max(0, value);
 end
 
-function value = eventValue(event)
-    value = "";
-    if isstruct(event) && isfield(event, "value")
-        value = string(event.value);
-    elseif isobject(event) && isprop(event, "value")
-        value = string(event.value);
-    end
-    if numel(value) > 1
-        value = value(1);
-    end
-end
-
 function text = displayPath(pathValue)
     pathValue = string(pathValue);
-    [~, base, ext] = fileparts(char(pathValue));
-    text = string([base ext]);
+    [~, base, extension] = fileparts(char(pathValue));
+    text = string(base) + string(extension);
     if strlength(text) == 0
         text = pathValue;
     end
-end
-
-function addLog(services, message)
-    labkit.ui.control.appendLog(services.ui, "logPanel", message);
-    if isDebugEnabled(services.debug)
-        services.debug.append(message);
-    end
-end
-
-function tf = isDebugEnabled(debugLog)
-    tf = isstruct(debugLog) && isfield(debugLog, 'enabled') && ...
-        logical(debugLog.enabled);
 end

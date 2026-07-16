@@ -1,608 +1,296 @@
-% App-owned action table for CSC. Expected caller is csc.definition. Output
-% maps semantic action ids to handlers used by labkit.ui.runtime.run. Handlers
-% preserve the legacy CSC GUI workflow while moving package-root orchestration
-% into the declarative runtime.
+% App-owned Runtime V2 action table for CSC. Handlers receive canonical
+% state/events/services and own DTA sources, selection, reload, and exports.
 function actions = definitionActions()
     actions = struct( ...
-        "startup", @onStartup, ...
         "openFilesChosen", @onOpenFilesChosen, ...
         "removeSelected", @onRemoveSelected, ...
-        "clearAll", @clearAllFiles, ...
-        "reloadSelected", @reloadSelectedFile, ...
+        "clearAll", @onClearAll, ...
+        "reloadSelected", @onReloadSelected, ...
         "exportResults", @onExportResults, ...
         "exportVoltageCurrent", @onExportVoltageCurrent, ...
-        "fileSelectionChanged", @onSelectFile, ...
-        "curveChanged", @onCurveChanged, ...
-        "refreshCompare", @refreshCompare, ...
-        "refreshPlotsOnly", @refreshPlotsOnly);
+        "fileSelectionChanged", @onFileSelectionChanged);
 end
 
-function state = onStartup(state, ~, services)
-    if services.debug.enabled
-        services.debug.trace('CSC debug trace enabled.');
-        state = setupDebugSamples(state, services);
-    end
-end
-
-function state = onOpenFilesChosen(state, payload, services)
-    paths = labkit.ui.control.filePaths(payload.event.addedFiles);
+function state = onOpenFilesChosen(state, event, services)
+    paths = services.events.paths(event, "addedFiles");
     if isempty(paths)
-        addLog(services, 'Open file canceled.');
-        return;
+        paths = services.events.paths(event, "files");
     end
-    state = addFiles(state, paths, services);
-end
-
-function state = addFiles(state, filepaths, services)
-    filepaths = normalizePaths(filepaths);
-    if isempty(filepaths)
+    if isempty(paths)
+        state = services.workflow.log(state, "Open file canceled.");
         return;
     end
 
-    failed = struct('filepath', {}, 'message', {});
-    lastAddedIndex = [];
-    for iFile = 1:numel(filepaths)
-        filepath = filepaths(iFile);
-        if isLoaded(state, filepath)
-            addLog(services, ['Skipped duplicate: ' char(filepath)]);
+    failures = struct("filepath", {}, "message", {});
+    for k = 1:numel(paths)
+        filepath = paths(k);
+        if isLoaded(state.session.cache.items, filepath)
+            state = services.workflow.log(state, ...
+                "Skipped duplicate: " + filepath);
             continue;
         end
-
         [item, status] = labkit.dta.loadFile(filepath, "cvct");
         if ~status.ok
-            failed(end + 1) = struct( ...
-                'filepath', char(filepath), ...
-                'message', char(status.message));
-            addLog(services, sprintf('Failed to load %s: %s', ...
-                char(filepath), char(status.message)));
+            failures(end + 1) = struct( ...
+                "filepath", filepath, "message", string(status.message));
+            state = services.workflow.log(state, ...
+                "Failed to load " + filepath + ": " + string(status.message));
             continue;
         end
-
-        item = prepareSessionItem(item);
-        state.items = appendItem(state.items, item);
-        lastAddedIndex = numel(state.items);
-        addLoadedItemLog(item, services);
+        state.session.cache.items = appendItem( ...
+            state.session.cache.items, item);
+        source = services.project.sourceRecord( ...
+            nextSourceId(state.project.inputs.sources), ...
+            "cvct", filepath, true);
+        state.project.inputs.sources = appendSource( ...
+            state.project.inputs.sources, source);
+        state.session.selection.currentIndex = ...
+            numel(state.session.cache.items);
+        state = logLoadedItem(state, item, services);
     end
-    if ~isempty(lastAddedIndex)
-        state.current = lastAddedIndex;
-    elseif ~isempty(state.items) && isempty(state.current)
-        state.current = 1;
-    end
-    state = refreshFileList(state, services);
-    state = loadCurrentItem(state, services);
-
-    if ~isempty(failed)
-        firstError = failed(1);
-        labkit.ui.runtime.showAlert(services.figure, ...
-            sprintf('Failed to load:\n%s\n\n%s', ...
-            firstError.filepath, firstError.message), 'Load error');
+    state = resetCurrentView(state);
+    state = clearExportReferences(state);
+    if ~isempty(failures)
+        first = failures(1);
+        services.dialogs.alert(sprintf('Failed to load:\n%s\n\n%s', ...
+            first.filepath, first.message), 'Load error');
     end
 end
 
-function addLoadedItemLog(item, services)
-    for iLog = 1:numel(item.logmsg)
-        addLog(services, item.logmsg{iLog});
-    end
-    addLog(services, ['Loaded: ' item.filepath]);
-end
-
-function state = onSelectFile(state, ~, services)
-    ui = services.ui;
-    files = labkit.ui.control.getValue(ui, 'files');
-    paths = labkit.ui.control.filePaths(files);
-    if isempty(state.items) || isempty(paths)
+function state = onRemoveSelected(state, event, services)
+    items = state.session.cache.items;
+    indices = services.events.indices(event, "removedFiles", numel(items));
+    if isempty(indices)
         return;
     end
-    idx = find(string({state.items.filepath}) == string(paths(1)), 1);
-    if isempty(idx)
-        idx = 1;
+    removed = string({items(indices).filepath});
+    state.session.cache.items(indices) = [];
+    state.project.inputs.sources(indices) = [];
+    state.session.selection.currentIndex = boundedIndex( ...
+        state.session.selection.currentIndex, numel(state.session.cache.items));
+    state = resetCurrentView(state);
+    state = clearExportReferences(state);
+    for k = 1:numel(removed)
+        state = services.workflow.log(state, "Removed: " + removed(k));
     end
-    state.current = idx;
-    state = loadCurrentItem(state, services);
 end
 
-function state = onRemoveSelected(state, payload, services)
-    if isempty(state.items)
-        return;
-    end
-    paths = labkit.ui.control.filePaths(payload.event.removedFiles);
-    if isempty(paths)
-        return;
-    end
-    [state, report] = removeItemsByPaths(state, paths);
-    for k = 1:numel(report.removed)
-        addLog(services, sprintf('Removed: %s', report.removed{k}));
-    end
-    state.current = min(state.current, numel(state.items));
-    if isempty(state.items)
-        state.current = [];
-        state = clearCurrentItem(state, services);
-    end
-    state = refreshFileList(state, services);
-    state = loadCurrentItem(state, services);
+function state = onClearAll(state, ~, services)
+    state.project.inputs.sources = state.project.inputs.sources([]);
+    state.session.cache.items = struct([]);
+    state.session.selection.currentIndex = 0;
+    state = resetCurrentView(state);
+    state = clearExportReferences(state);
+    state = services.workflow.log(state, "Cleared all files.");
 end
 
-function state = clearAllFiles(state, ~, services)
-    state.items = struct([]);
-    state.current = [];
-    state = clearCurrentItem(state, services);
-    state = refreshFileList(state, services);
-    clearBothAxes(state, [], services);
-    addLog(services, 'Cleared all files.');
-end
-
-function state = reloadSelectedFile(state, ~, services)
-    if isempty(state.items) || isempty(state.current)
-        labkit.ui.runtime.showAlert(services.figure, 'No file selected.', ...
-            'Reload');
-        addLog(services, 'Reload failed: no file selected.');
+function state = onReloadSelected(state, ~, services)
+    index = boundedIndex(state.session.selection.currentIndex, ...
+        numel(state.session.cache.items));
+    if index == 0
+        services.dialogs.alert('No file selected.', 'Reload');
+        state = services.workflow.log(state, ...
+            "Reload failed: no file selected.");
         return;
     end
-    filepath = state.items(state.current).filepath;
-    state = removeItemsByPaths(state, filepath);
-    state.current = [];
-    state = addFiles(state, {filepath}, services);
+    filepath = string(state.session.cache.items(index).filepath);
+    [item, status] = labkit.dta.loadFile(filepath, "cvct");
+    if ~status.ok
+        services.dialogs.alert(status.message, 'Reload');
+        state = services.workflow.log(state, ...
+            "Reload failed: " + filepath + " | " + string(status.message));
+        return;
+    end
+    state.session.cache.items(index) = item;
+    state = resetCurrentView(state);
+    state = clearExportReferences(state);
+    state = services.workflow.log(state, "Reloaded: " + filepath);
+end
+
+function state = onFileSelectionChanged(state, event, services)
+    indices = services.events.indices(event, "selectedFiles", ...
+        numel(state.session.cache.items));
+    if isempty(indices)
+        state.session.selection.currentIndex = 0;
+    else
+        state.session.selection.currentIndex = indices(1);
+    end
+    state = resetCurrentView(state);
 end
 
 function state = onExportResults(state, ~, services)
-    opts = struct( ...
-        'mode', services.ui.controls.mode.valueHandle.Value, ...
-        'area_cm2', services.ui.controls.area.valueHandle.Value, ...
-        'ignoreEdgeCycles', services.ui.controls.ignoreEdgeCycles.valueHandle.Value);
-    [ok, msg, cancelled] = csc.resultFiles.promptExportResults( ...
-        state.items, services, opts);
-    if ok && ~cancelled
-        addLog(services, msg);
+    items = state.session.cache.items;
+    if isempty(items)
+        services.dialogs.alert('No results to export.', 'Export');
+        return;
     end
+    [out, cancelled] = services.dialogs.outputFile( ...
+        'csc_all_cycles.csv', 'Save all-cycle CSC CSV', ...
+        'csc_all_cycles.csv');
+    if cancelled
+        state = services.workflow.log(state, "Result export cancelled.");
+        return;
+    end
+    parameters = state.project.parameters;
+    opts = struct( ...
+        "mode", char(parameters.mode), ...
+        "area_cm2", parameters.area, ...
+        "ignoreEdgeCycles", logical(parameters.ignoreEdgeCycles));
+    [ok, message] = csc.resultFiles.writeResultsCSV(items, out, opts);
+    if ~ok
+        services.dialogs.alert(message, 'Export');
+        return;
+    end
+    [folder, name, extension] = fileparts(out);
+    output = services.results.output("cscResults", "primary", ...
+        string(name) + string(extension), "text/csv");
+    spec = resultSpec(state, output, "csc_all_cycles.labkit.json");
+    [manifestPath, ~] = services.results.writeManifest(folder, spec);
+    state.project.results.lastResultsExport = struct( ...
+        "csvPath", string(out), "manifestPath", string(manifestPath));
+    state = services.workflow.log(state, ...
+        "Exported CSC CSV: " + string(out));
 end
 
 function state = onExportVoltageCurrent(state, ~, services)
-    opts = struct( ...
-        'ignoreEdgeCycles', services.ui.controls.ignoreEdgeCycles.valueHandle.Value);
-    [ok, msg, cancelled] = csc.resultFiles.promptExportVoltageCurrent( ...
-        state.items, services, opts);
-    if ok && ~cancelled
-        addLog(services, msg);
-    end
-end
-
-function state = refreshFileList(state, services)
-    ui = services.ui;
-    if isempty(state.items)
-        labkit.ui.control.setListItems(ui, 'files', {});
-        ui.controls.files.status.Value = 'No files loaded';
+    items = state.session.cache.items;
+    if isempty(items)
+        services.dialogs.alert( ...
+            'No voltage/current data to export.', 'Export');
         return;
     end
-    paths = string({state.items.filepath}).';
-    labkit.ui.control.setValue(ui, 'files', paths);
-    if isempty(state.current) || state.current < 1 || ...
-            state.current > numel(paths)
-        state.current = 1;
-    end
-    files = labkit.ui.control.getFiles(ui, 'files');
-    labkit.ui.control.setFileSelection(ui, 'files', files(state.current));
-    ui.controls.files.status.Value = sprintf('%d file(s) loaded', ...
-        numel(state.items));
-end
-
-function state = loadCurrentItem(state, services)
-    ui = services.ui;
-    if isempty(state.items)
-        state = clearCurrentItem(state, services);
+    [out, cancelled] = services.dialogs.outputFile( ...
+        'csc_cv_data.csv', 'Export CV data CSV', 'csc_cv_data.csv');
+    if cancelled
+        state = services.workflow.log(state, ...
+            "Voltage/current export cancelled.");
         return;
     end
-    if isempty(state.current) || state.current < 1 || ...
-            state.current > numel(state.items)
-        state.current = 1;
+    opts = struct("ignoreEdgeCycles", ...
+        logical(state.project.parameters.ignoreEdgeCycles));
+    [ok, message, info] = ...
+        csc.resultFiles.writeVoltageCurrentCSV(items, out, opts);
+    if ~ok
+        services.dialogs.alert(message, 'Export');
+        return;
     end
-    state.items(state.current).currentCurve = 0;
-    state.items(state.current).analysis = [];
-    item = state.items(state.current);
-    state.filepath = item.filepath;
-    state.scanRate = item.scanRate;
-    state.curves = item.curves;
-    state.currentCurve = 0;
-    ui.controls.filePath.valueHandle.Value = item.filepath;
-
-    if isnan(state.scanRate)
-        ui.controls.scanRate.valueHandle.Value = 'Not found';
+    outputs = outputRecords(info.files, services);
+    folder = fileparts(char(info.files(1)));
+    spec = resultSpec(state, outputs, "csc_cv_data.labkit.json");
+    [manifestPath, ~] = services.results.writeManifest(folder, spec);
+    state.project.results.lastVoltageCurrentExport = struct( ...
+        "csvPaths", string(info.files), ...
+        "manifestPath", string(manifestPath));
+    if numel(info.files) == 1
+        message = sprintf('Exported CV data CSV: %s (%d voltage rows)', ...
+            info.files(1), info.rows);
     else
-        ui.controls.scanRate.valueHandle.Value = sprintf( ...
-            '%.6f V/s (%.3f mV/s)', state.scanRate, ...
-            state.scanRate * 1000);
+        message = sprintf( ...
+            'Exported %d CV data CSV files in %s (%d voltage rows)', ...
+            numel(info.files), folder, info.rows);
     end
-
-    if isempty(state.curves)
-        ui.controls.curve.valueHandle.Items = {'(none)'};
-        ui.controls.curve.valueHandle.Value = '(none)';
-        ui.controls.status.valueHandle.Value = 'No curve found';
-        addLog(services, 'No curve parsed.');
-        return;
-    end
-
-    items = cell(1, numel(state.curves) + 1);
-    items{1} = allCyclesLabel();
-    for k = 1:numel(state.curves)
-        items{k + 1} = sprintf('%s (%d rows)', state.curves(k).name, ...
-            size(state.curves(k).data, 1));
-    end
-    ui.controls.curve.valueHandle.Items = items;
-    ui.controls.curve.valueHandle.Value = items{1};
-
-    ui.controls.status.valueHandle.Value = sprintf('Loaded %d curve(s)', ...
-        numel(state.curves));
-    addLog(services, sprintf('Loaded %d curve(s) from %s.', ...
-        numel(state.curves), item.name));
-
-    state = updateDropdowns(state, services);
-    state = autoSetDefaults(state, services);
-    state = refreshAll(state, [], services);
+    state = services.workflow.log(state, message);
 end
 
-function state = clearCurrentItem(state, services)
-    ui = services.ui;
-    state.filepath = '';
-    state.scanRate = NaN;
-    state.curves = struct('name', {}, 'headers', {}, 'units', {}, ...
-        'data', {}, 'numericMask', {});
-    state.currentCurve = 0;
-    ui.controls.filePath.valueHandle.Value = '';
-    ui.controls.scanRate.valueHandle.Value = '';
-    ui.controls.curve.valueHandle.Items = {'(none)'};
-    ui.controls.curve.valueHandle.Value = '(none)';
-    ui.controls.status.valueHandle.Value = 'Ready';
-    ui.controls.qct.valueHandle.Value = '';
-    ui.controls.qcv.valueHandle.Value = '';
-    ui.controls.diff.valueHandle.Value = '';
-    ui.controls.relativeDiff.valueHandle.Value = '';
-    ui.controls.dtError.valueHandle.Value = '';
-    ui.controls.cycleResults.table.ColumnName = ...
-        csc.userInterface.cycleResultsColumnNames('Full');
-    ui.controls.cycleResults.table.Data = cell(0, 6);
+function spec = resultSpec(state, outputs, manifestName)
+    spec = struct( ...
+        "Outputs", outputs, ...
+        "Inputs", state.project.inputs.sources, ...
+        "Parameters", state.project.parameters, ...
+        "Summary", struct("fileCount", ...
+            numel(state.session.cache.items)), ...
+        "ManifestName", manifestName);
 end
 
-function state = onCurveChanged(state, ~, services)
-    ui = services.ui;
-    if isempty(state.curves)
-        return;
-    end
-    idx = selectedCurveIndex(ui);
-    if isempty(idx)
-        idx = 0;
-    end
-    state.currentCurve = idx;
-    state = syncSessionCurrentCurve(state);
-    if idx == 0
-        addLog(services, 'Selected all cycles.');
-    else
-        addLog(services, sprintf('Selected curve %d', idx));
-    end
-    state = updateDropdowns(state, services);
-    state = autoSetDefaults(state, services);
-    state = refreshAll(state, [], services);
-end
-
-function state = clearBothAxes(state, ~, services)
-    axesById = services.ui.controls.plotAxes.axesById;
-    labkit.ui.plot.clear(axesById.top, "ResetScale", true);
-    labkit.ui.plot.clear(axesById.bottom, "ResetScale", true);
-    title(axesById.top, 'Top Plot');
-    xlabel(axesById.top, 'X');
-    ylabel(axesById.top, 'Y');
-    title(axesById.bottom, 'Bottom Plot');
-    xlabel(axesById.bottom, 'X');
-    ylabel(axesById.bottom, 'Y');
-    addLog(services, 'Cleared both axes.');
-end
-
-function state = syncSessionCurrentCurve(state)
-    if ~isempty(state.items) && ~isempty(state.current)
-        state.items(state.current).currentCurve = state.currentCurve;
-    end
-end
-
-function state = updateDropdowns(state, services)
-    ui = services.ui;
-    if isempty(state.curves)
-        return;
-    end
-    curve = selectedCurveForColumns(state);
-    cols = curve.headers(curve.numericMask);
-    if isempty(cols)
-        cols = {'(none)'};
-    end
-    ui.controls.topX.valueHandle.Items = cols;
-    ui.controls.topY.valueHandle.Items = cols;
-    ui.controls.bottomX.valueHandle.Items = cols;
-    ui.controls.bottomY.valueHandle.Items = cols;
-    addLog(services, ['Numeric columns: ' strjoin(cols, ', ')]);
-end
-
-function state = autoSetDefaults(state, services)
-    ui = services.ui;
-    if isempty(state.curves)
-        return;
-    end
-    defaults = csc.userInterface.defaultPlotSelections(ui.controls.topX.valueHandle.Items);
-    ui.controls.topX.valueHandle.Value = defaults.topX;
-    ui.controls.topY.valueHandle.Value = defaults.topY;
-    ui.controls.bottomX.valueHandle.Value = defaults.bottomX;
-    ui.controls.bottomY.valueHandle.Value = defaults.bottomY;
-end
-
-function state = refreshPlotsOnly(state, ~, services)
-    if isempty(state.curves)
-        return;
-    end
-    plotTop(state, services);
-    plotBottom(state, services);
-end
-
-function state = refreshAll(state, ~, services)
-    state = refreshPlotsOnly(state, [], services);
-    state = refreshCompare(state, [], services);
-end
-
-function plotTop(state, services)
-    if isempty(state.curves)
-        return;
-    end
-    if isAllCyclesSelected(state)
-        plotAllCycles(state, services, 'top');
-        return;
-    end
-    ui = services.ui;
-    curve = state.curves(state.currentCurve);
-    opts = struct('holdPlot', ui.controls.topHold.valueHandle.Value, ...
-        'showGrid', ui.controls.topGrid.valueHandle.Value, ...
-        'lineWidth', 1.2);
-    request = csc.userInterface.plotRequest(curve, ...
-        ui.controls.topX.valueHandle.Value, ...
-        ui.controls.topY.valueHandle.Value, 'Top');
-    info = csc.userInterface.plotXY(ui.controls.plotAxes.axesById.top, request.x, ...
-        request.y, request.labels, opts);
-    if ~info.ok
-        addLog(services, request.skipLog);
-        return;
-    end
-    addLog(services, request.successLog);
-end
-
-function plotBottom(state, services)
-    if isempty(state.curves)
-        return;
-    end
-    if isAllCyclesSelected(state)
-        plotAllCycles(state, services, 'bottom');
-        return;
-    end
-    ui = services.ui;
-    curve = state.curves(state.currentCurve);
-    opts = struct('holdPlot', ui.controls.bottomHold.valueHandle.Value, ...
-        'showGrid', ui.controls.bottomGrid.valueHandle.Value, ...
-        'lineWidth', 1.2);
-    request = csc.userInterface.plotRequest(curve, ...
-        ui.controls.bottomX.valueHandle.Value, ...
-        ui.controls.bottomY.valueHandle.Value, 'Bottom');
-    info = csc.userInterface.plotXY(ui.controls.plotAxes.axesById.bottom, request.x, ...
-        request.y, request.labels, opts);
-    if ~info.ok
-        addLog(services, request.skipLog);
-        return;
-    end
-    addLog(services, request.successLog);
-end
-
-function state = refreshCompare(state, ~, services)
-    ui = services.ui;
-    if isempty(state.curves)
-        ui.controls.qct.valueHandle.Value = '';
-        ui.controls.qcv.valueHandle.Value = '';
-        ui.controls.diff.valueHandle.Value = '';
-        ui.controls.relativeDiff.valueHandle.Value = '';
-        ui.controls.dtError.valueHandle.Value = '';
-        ui.controls.cycleResults.table.Data = cell(0, 6);
-        return;
-    end
-
-    opts = struct();
-    opts.mode = ui.controls.mode.valueHandle.Value;
-    opts.scanRate = state.scanRate;
-    opts.area_cm2 = ui.controls.area.valueHandle.Value;
-    opts.ignoreEdgeCycles = ui.controls.ignoreEdgeCycles.valueHandle.Value;
-    ui.controls.cycleResults.table.ColumnName = ...
-        csc.userInterface.cycleResultsColumnNames(opts.mode);
-    results = csc.resultFiles.buildResultsTable(state.items(state.current), opts);
-    ui.controls.cycleResults.table.Data = ...
-        csc.userInterface.cycleResultsTableData(results, opts.mode);
-
-    if isAllCyclesSelected(state)
-        clearTrim(ui.controls.plotAxes.axesById.top);
-        clearTrim(ui.controls.plotAxes.axesById.bottom);
-        ui.controls.qct.valueHandle.Value = 'See all-cycle table';
-        ui.controls.qcv.valueHandle.Value = 'See all-cycle table';
-        ui.controls.diff.valueHandle.Value = 'See all-cycle table';
-        ui.controls.relativeDiff.valueHandle.Value = 'See all-cycle table';
-        ui.controls.dtError.valueHandle.Value = maxDtErrorText(results);
-        ui.controls.status.valueHandle.Value = sprintf( ...
-            'Showing %d cycle result(s) normalized by %s', ...
-            height(results), areaStatusText(opts.area_cm2));
-        return;
-    end
-
-    curve = state.curves(state.currentCurve);
-    result = csc.analysisRun.computeCSC(curve, opts);
-    readout = csc.userInterface.comparisonReadout(result, ui.controls.mode.valueHandle.Value);
-
-    ui.controls.qct.valueHandle.Value = readout.qctText;
-    ui.controls.qcv.valueHandle.Value = readout.qcvText;
-    ui.controls.diff.valueHandle.Value = readout.diffText;
-    ui.controls.relativeDiff.valueHandle.Value = readout.relText;
-    ui.controls.dtError.valueHandle.Value = readout.dtErrText;
-
-    if ~readout.ok
-        if ~isempty(readout.logMessage)
-            addLog(services, readout.logMessage);
+function outputs = outputRecords(files, services)
+    outputs = struct([]);
+    for k = 1:numel(files)
+        [~, name, extension] = fileparts(files(k));
+        output = services.results.output( ...
+            "cvData" + string(k), outputRole(k), ...
+            string(name) + string(extension), "text/csv");
+        if isempty(outputs)
+            outputs = output;
+        else
+            outputs(end + 1) = output;
         end
-        return;
     end
-
-    axesById = ui.controls.plotAxes.axesById;
-    clearTrim(axesById.top);
-    clearTrim(axesById.bottom);
-
-    drawTrimOverlay(axesById.top, ui.controls.topTrim.valueHandle.Value, ...
-        ui.controls.topX.valueHandle.Value, ...
-        ui.controls.topY.valueHandle.Value, curve, result);
-    drawTrimOverlay(axesById.bottom, ui.controls.bottomTrim.valueHandle.Value, ...
-        ui.controls.bottomX.valueHandle.Value, ...
-        ui.controls.bottomY.valueHandle.Value, curve, result);
-
-    if ~isempty(readout.logMessage)
-        addLog(services, readout.logMessage);
-    end
-    ui.controls.status.valueHandle.Value = readout.statusText;
 end
 
-function plotAllCycles(state, services, axisId)
-    ui = services.ui;
-    ax = ui.controls.plotAxes.axesById.(axisId);
-    xControl = [axisId 'X'];
-    yControl = [axisId 'Y'];
-    gridControl = [axisId 'Grid'];
-    xSelection = ui.controls.(xControl).valueHandle.Value;
-    ySelection = ui.controls.(yControl).valueHandle.Value;
-    showGrid = ui.controls.(gridControl).valueHandle.Value;
-    opts = struct( ...
-        'showGrid', showGrid, ...
-        'title', [upperFirst(axisId) ' Plot (all cycles)'], ...
-        'curveIndices', plottedCurveIndices(numel(state.curves), ui));
-    info = csc.userInterface.plotAllCycles(ax, state.curves, xSelection, ...
-        ySelection, opts);
-    if ~info.ok
-        addLog(services, sprintf('%s plot skipped: invalid X/Y.', upperFirst(axisId)));
+function role = outputRole(index)
+    if index == 1
+        role = "primary";
     else
-        addLog(services, sprintf('%s plot all cycles: %s vs %s.', ...
-            upperFirst(axisId), info.yName, info.xName));
+        role = "additional";
     end
 end
 
-function indices = plottedCurveIndices(count, ui)
-    indices = 1:count;
-    if ui.controls.ignoreEdgeCycles.valueHandle.Value && count > 0
-        indices = indices(indices ~= 1 & indices ~= count);
-    end
-end
-
-function idx = selectedCurveIndex(ui)
-    value = ui.controls.curve.valueHandle.Value;
-    if strcmp(value, allCyclesLabel())
-        idx = 0;
-        return;
-    end
-    position = find(strcmp(ui.controls.curve.valueHandle.Items, value), 1);
-    if isempty(position)
-        idx = [];
+function state = resetCurrentView(state)
+    choices = csc.userInterface.analysisChoices();
+    index = boundedIndex(state.session.selection.currentIndex, ...
+        numel(state.session.cache.items));
+    state.session.selection.currentIndex = index;
+    if index == 0
+        state.session.selection.currentCurve = choices.empty;
+        defaults = struct( ...
+            "topX", choices.empty, "topY", choices.empty, ...
+            "bottomX", choices.empty, "bottomY", choices.empty);
     else
-        idx = position - 1;
+        item = state.session.cache.items(index);
+        state.session.selection.currentCurve = choices.allCycles;
+        columns = numericColumns(item.curves, choices.empty);
+        defaults = csc.userInterface.defaultPlotSelections(cellstr(columns));
     end
-end
-
-function tf = isAllCyclesSelected(state)
-    tf = isempty(state.currentCurve) || state.currentCurve == 0;
-end
-
-function curve = selectedCurveForColumns(state)
-    idx = state.currentCurve;
-    if isempty(idx) || idx < 1 || idx > numel(state.curves)
-        idx = 1;
-    end
-    curve = state.curves(idx);
-end
-
-function label = allCyclesLabel()
-    label = 'All cycles';
-end
-
-function text = upperFirst(value)
-    text = char(value);
-    text(1) = upper(text(1));
-end
-
-function text = maxDtErrorText(results)
-    if isempty(results) || height(results) == 0 || all(isnan(results.DtError_s))
-        text = '';
-    else
-        text = sprintf('max %.12e s', max(results.DtError_s, [], 'omitnan'));
-    end
-end
-
-function text = areaStatusText(area)
-    parsed = str2double(strtrim(char(string(area))));
-    if isnumeric(area)
-        parsed = area;
-    end
-    if isscalar(parsed) && isfinite(parsed) && parsed > 0
-        text = sprintf('%.6g cm^2', parsed);
-    else
-        text = 'charge only (area not set)';
-    end
-end
-
-function addLog(services, msg)
-    labkit.ui.control.appendLog(services.ui, 'appLog', msg);
-    services.debug.append(msg);
-end
-
-function state = setupDebugSamples(state, services)
-    try
-        pack = csc.debug.writeSamplePack(services.debug);
-        addLog(services, sprintf('Debug sample files: %s', ...
-            char(pack.sampleFolder)));
-        addLog(services, sprintf('Debug output folder: %s', ...
-            char(pack.outputFolder)));
-    catch ME
-        services.debug.reportException('csc', 'Debug sample setup failed', ME);
-        addLog(services, sprintf('Debug sample setup failed: %s', ME.message));
-    end
-end
-
-function [state, report] = removeItemsByPaths(state, filepaths)
-    paths = normalizePaths(filepaths);
-    report = struct('removed', {{}}, 'missing', {{}});
-    if isempty(paths)
-        return;
-    end
-    if isempty(state.items)
-        report.missing = cellstr(paths(:).');
-        return;
-    end
-    keep = true(1, numel(state.items));
-    itemPaths = string({state.items.filepath});
-    for k = 1:numel(paths)
-        idx = find(itemPaths == paths(k) & keep, 1, 'first');
-        if isempty(idx)
-            report.missing{end + 1} = char(paths(k));
-            continue;
+    fields = ["topX", "topY", "bottomX", "bottomY"];
+    for field = fields
+        value = string(defaults.(field));
+        if strlength(value) == 0
+            value = choices.empty;
         end
-        report.removed{end + 1} = char(paths(k));
-        keep(idx) = false;
+        state.project.parameters.(field) = value;
     end
-    state.items = state.items(keep);
 end
 
-function tf = isLoaded(state, filepath)
-    tf = ~isempty(state.items) && ...
-        any(string({state.items.filepath}) == string(filepath));
+function columns = numericColumns(curves, emptyChoice)
+    if isempty(curves)
+        columns = emptyChoice;
+        return;
+    end
+    columns = string(curves(1).headers(curves(1).numericMask));
+    if isempty(columns)
+        columns = emptyChoice;
+    end
 end
 
-function paths = normalizePaths(paths)
-    paths = string(paths(:));
-    paths = paths(strlength(paths) > 0);
+function state = clearExportReferences(state)
+    state.project.results.lastResultsExport = [];
+    state.project.results.lastVoltageCurrentExport = [];
+end
+
+function state = logLoadedItem(state, item, services)
+    for k = 1:numel(item.logmsg)
+        state = services.workflow.log(state, item.logmsg{k});
+    end
+    state = services.workflow.log(state, ...
+        "Loaded: " + string(item.filepath));
+end
+
+function tf = isLoaded(items, filepath)
+    tf = ~isempty(items) && ...
+        any(string({items.filepath}) == string(filepath));
+end
+
+function id = nextSourceId(sources)
+    ids = string({sources.id});
+    number = numel(ids) + 1;
+    id = "dta" + string(number);
+    while any(ids == id)
+        number = number + 1;
+        id = "dta" + string(number);
+    end
 end
 
 function items = appendItem(items, item)
-    item = prepareSessionItem(item);
     if isempty(items)
         items = item;
     else
@@ -610,35 +298,18 @@ function items = appendItem(items, item)
     end
 end
 
-function item = prepareSessionItem(item)
-    if ~isfield(item, 'currentCurve')
-        item.currentCurve = 1;
-    end
-    if ~isfield(item, 'analysis')
-        item.analysis = [];
+function sources = appendSource(sources, source)
+    if isempty(sources)
+        sources = source;
+    else
+        sources(end + 1) = source;
     end
 end
 
-function drawTrimOverlay(ax, enabled, xSelection, ySelection, curve, result)
-    if ~enabled || ~strcmp(ySelection, 'Im')
-        return;
+function index = boundedIndex(index, count)
+    if count == 0
+        index = 0;
+    else
+        index = min(max(1, round(double(index))), count);
     end
-
-    [xValues, ~, ~, ~] = labkit.dta.getCurveXY(curve, xSelection, ySelection);
-    overlay = csc.userInterface.trimOverlayData(enabled, ySelection, xValues, result);
-    if ~overlay.ok
-        return;
-    end
-
-    hold(ax, 'on');
-    plot(ax, overlay.x, overlay.cathY, 'Color', [0.1 0.6 0.1], ...
-        'LineWidth', 1.0, 'Tag', 'trimCath');
-    plot(ax, overlay.x, overlay.anodY, 'Color', [0.8 0.3 0.1], ...
-        'LineWidth', 1.0, 'Tag', 'trimAnod');
-    hold(ax, 'off');
-end
-
-function clearTrim(ax)
-    delete(findobj(ax, 'Tag', 'trimCath'));
-    delete(findobj(ax, 'Tag', 'trimAnod'));
 end

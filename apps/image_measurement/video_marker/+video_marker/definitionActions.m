@@ -1,649 +1,558 @@
-% App-owned action registry for Video Marker. Expected caller is
-% video_marker.definition. Handlers own video loading, frame navigation,
-% marker editing, project files, and CSV exports.
+% App-owned V2 action registry for Video Marker. Handlers receive canonical
+% state/events/services and own durable skeleton/annotation edits, lazy video
+% resources, frame navigation, scale calibration, and standard result exports.
 function actions = definitionActions()
-    setupActions = video_marker.userInterface.skeletonSetupActions();
-    S = [];
-    ui = [];
-    fig = [];
-    debugLog = [];
-    imageRuntime = [];
-    pointEditor = [];
-    scaleTool = [];
-    videoReader = [];
-    autosaveService = [];
-    decodedFrameCache = video_marker.videoSource.createDecodedFrameCache( ...
-        @readVideoFrameUncached);
     actions = struct( ...
-        "startup", @onStartup, ...
         "openVideo", @onOpenVideo, ...
         "frameChanged", @onFrameChanged, ...
         "previousFrame", @onPreviousFrame, ...
         "nextFrame", @onNextFrame, ...
+        "pointsEdited", @onPointsEdited, ...
         "undoPoint", @onUndoPoint, ...
         "clearFramePoints", @onClearFramePoints, ...
-        "useSkeletonPreset", setupActions.useSkeletonPreset, ...
-        "keypointEdited", setupActions.keypointEdited, ...
-        "keypointSelected", setupActions.keypointSelected, ...
-        "addKeypoint", setupActions.addKeypoint, ...
-        "removeKeypoint", setupActions.removeKeypoint, ...
-        "moveKeypointUp", setupActions.moveKeypointUp, ...
-        "moveKeypointDown", setupActions.moveKeypointDown, ...
-        "connectionSelected", setupActions.connectionSelected, ...
-        "connectionEndpointChanged", setupActions.connectionEndpointChanged, ...
-        "addConnection", setupActions.addConnection, ...
-        "connectInOrder", setupActions.connectInOrder, ...
-        "removeConnection", setupActions.removeConnection, ...
+        "measureScaleReference", @onMeasureScaleReference, ...
+        "scaleReferenceEdited", @onScaleReferenceEdited, ...
+        "scaleCalibrationChanged", @onScaleCalibrationChanged, ...
+        "scaleBarSettingChanged", @onScaleBarSettingChanged, ...
+        "placeScaleBar", @onPlaceScaleBar, ...
         "importMarkerCsv", @onImportMarkerCsv, ...
         "exportMarkerCsv", @onExportMarkerCsv, ...
+        "exportSettingChanged", @onExportSettingChanged, ...
         "exportCoordinateCsv", @onExportCoordinateCsv, ...
-        "openProject", @onOpenProject, ...
-        "saveProject", @onSaveProject, ...
         "newSetup", @onNewSetup);
+    actions = mergeActions(actions, ...
+        video_marker.skeletonSetup.definitionActions());
+end
 
-    function state = onStartup(state, ~, services)
-        S = state;
-        ui = services.ui;
-        fig = services.figure;
-        debugLog = services.debug;
-        autosaveService = video_marker.autosave.controller(fig, debugLog, @addLog);
-        ax = ui.controls.videoAxes.primaryAxes;
-        imageRuntime = labkit.ui.interaction.runtime(ax, struct( ...
-            'figure', fig, ...
-            'onTrace', debugLog.trace));
-        scaleTool = labkit.ui.interaction.scaleBar(ui.controls.scaleBarHost.grid, ...
-            1, imageRuntime, struct( ...
-                'onBeforeReferenceEdit', @onBeforeReferenceEdit, ...
-                'onReferenceEditChanged', @onReferenceEditChanged, ...
-                'onCalibrationChanged', @onCalibrationChanged, ...
-                'onScaleBarPlaced', @onScaleInteractionFinished, ...
-                'onError', @onScaleToolError, ...
-            'onTrace', debugLog.trace));
-        if debugLog.enabled
-            debugLog.trace('Video marker debug trace enabled.');
-            debugLog.instrumentFigure(fig);
-            setupDebugSamples();
-        end
-        refreshAll();
-        state = S;
+function state = onOpenVideo(state, event, services)
+    paths = services.events.paths(event, "addedFiles");
+    if isempty(paths)
+        paths = services.events.paths(event, "files");
     end
-    function state = onOpenVideo(state, payload, services)
-        capture(state, services);
-        paths = labkit.ui.control.filePaths(payload.event.files);
-        if isempty(paths)
-            paths = labkit.ui.control.filePaths(payload.event.addedFiles);
-        end
-        if isempty(paths)
-            addLog('Video selection cancelled.');
-            state = S;
-            return;
-        end
-        openVideoPath(paths(1));
-        state = S;
+    if isempty(paths)
+        state = services.workflow.log(state, "Video selection cancelled.");
+        return;
     end
-    function state = onFrameChanged(state, ~, services)
-        capture(state, services);
-        if ~hasVideo()
-            state = S;
-            return;
-        end
-        target = round(double(labkit.ui.control.getValue(ui, 'currentFrame')));
-        goToFrame(target);
-        state = S;
+    if isempty(state.project.annotations.skeleton.pointNames)
+        showError(services, 'Skeleton required', ...
+            'Add and name at least one keypoint before opening a video.');
+        return;
     end
-    function state = onPreviousFrame(state, ~, services)
-        capture(state, services);
-        goToFrame(S.currentFrame - 1);
-        state = S;
+    try
+        resource = openVideoResource(paths(1));
+        firstFrame = resource.cache.readFrame(1);
+        resource.cache.reset(1, firstFrame);
+        setVideoResource(services, resource);
+    catch ME
+        services.diagnostics.report('Could not open video', ME);
+        showError(services, 'Could not open video', ME.message);
+        return;
     end
-    function state = onNextFrame(state, ~, services)
-        capture(state, services);
-        goToFrame(S.currentFrame + 1);
-        state = S;
-    end
-    function state = onUndoPoint(state, ~, services)
-        capture(state, services);
-        if ~isempty(pointEditor)
-            pointEditor.undoLast();
-        end
-        state = S;
-    end
-    function state = onClearFramePoints(state, ~, services)
-        capture(state, services);
-        S.annotations = video_marker.frameAnnotations.setFramePoints( ...
-            S.annotations, S.currentFrame, zeros(0, 2), "empty");
-        if ~isempty(pointEditor)
-            pointEditor.clearPoints();
-        end
-        addLog(sprintf('Cleared frame %d points.', S.currentFrame));
-        refreshAll();
-        state = S;
-    end
-    function state = onImportMarkerCsv(state, ~, services)
-        capture(state, services);
-        [file, folder] = uigetfile({'*.csv', 'Marker CSV'}, 'Import marker CSV', ...
-            labkit.ui.runtime.defaultDialogFolder("input"));
-        if isequal(file, 0)
-            addLog('Marker CSV import cancelled.');
-            state = S;
-            return;
-        end
-        try
-            payload = video_marker.markerCsv.readFile(fullfile(folder, file));
-        catch ME
-            showException('Could not import marker CSV', ME);
-            state = S;
-            return;
-        end
-        S.skeleton = payload.skeleton;
-        S.selectedPointIndex = 0;
-        S.selectedEdgeIndex = 0;
-        S.annotations = payload.annotations;
-        S.videoInfo = payload.videoInfo;
-        S.videoPath = string(payload.videoInfo.path);
-        S.calibration = payload.calibration;
-        if strlength(S.videoPath) > 0 && exist(S.videoPath, 'file') == 2
-            try
-                [videoReader, S.videoInfo] = video_marker.videoSource.openVideo(S.videoPath);
-                S.currentFrame = 1;
-                S.currentImage = video_marker.videoSource.readFrame(videoReader, 1);
-                decodedFrameCache.reset(1, S.currentImage);
-                scaleTool.resetForNewImage(size(S.currentImage));
-                scaleTool.setCalibration(S.calibration);
-            catch ME
-                debugLog.reportException('videoMarker', 'Could not reopen marker CSV video', ME);
-                S.currentImage = [];
-            end
-        end
-        deletePointEditor();
-        activatePointEditorForCurrentFrame();
-        addLog(sprintf('Imported marker CSV: %s', fullfile(folder, file)));
-        refreshAll(false);
-        autosaveService.save(S, 'marker CSV import');
-        state = S;
-    end
-    function state = onExportMarkerCsv(state, ~, services)
-        capture(state, services);
-        if ~hasVideo()
-            showError('No video loaded', 'Open a video before exporting marker CSV.');
-            state = S;
-            return;
-        end
-        [filepath, cancelled] = labkit.ui.runtime.promptOutputFile( ...
-            '*.csv', 'Export marker CSV', 'video_marker_markers.csv');
-        if cancelled
-            addLog('Marker CSV export cancelled.');
-            state = S;
-            return;
-        end
-        try
-            S.calibration = scaleTool.calibration();
-            video_marker.markerCsv.writeFile(filepath, S.annotations, S.skeleton, S.videoInfo, S.calibration);
-        catch ME
-            showException('Could not export marker CSV', ME);
-            state = S;
-            return;
-        end
-        addLog(sprintf('Exported marker CSV: %s', filepath));
-        state = S;
-    end
-    function state = onExportCoordinateCsv(state, ~, services)
-        capture(state, services);
-        if ~hasVideo()
-            showError('No video loaded', 'Open a video before exporting coordinate CSV.');
-            state = S;
-            return;
-        end
-        opts = video_marker.coordinateExport.options( ...
-            "startFrame", labkit.ui.control.getValue(ui, 'coordinateStartFrame'), ...
-            "endFrame", labkit.ui.control.getValue(ui, 'coordinateEndFrame'), ...
-            "unitMode", labkit.ui.control.getValue(ui, 'coordinateUnitMode'), ...
-            "originMode", labkit.ui.control.getValue(ui, 'coordinateOriginMode'), ...
-            "yAxisMode", labkit.ui.control.getValue(ui, 'coordinateYAxisMode'));
-        [filepath, cancelled] = labkit.ui.runtime.promptOutputFile( ...
-            '*.csv', 'Export coordinate CSV', 'video_marker_coordinates.csv');
-        if cancelled
-            addLog('Coordinate CSV export cancelled.');
-            state = S;
-            return;
-        end
-        try
-            S.calibration = scaleTool.calibration();
-            T = video_marker.coordinateExport.buildTable( ...
-                S.annotations, S.skeleton, S.videoInfo, S.calibration, opts);
-            writetable(T, filepath);
-        catch ME
-            showException('Could not export coordinate CSV', ME);
-            state = S;
-            return;
-        end
-        addLog(sprintf('Exported coordinate CSV: %s', filepath));
-        state = S;
-    end
-    function state = onOpenProject(state, ~, services)
-        capture(state, services);
-        [file, folder] = uigetfile({'*.mat', 'Video Marker project'}, 'Open Video Marker project', ...
-            labkit.ui.runtime.defaultDialogFolder("input"));
-        if isequal(file, 0)
-            addLog('Project open cancelled.');
-            state = S;
-            return;
-        end
-        try
-            loaded = video_marker.projectFiles.loadProject(fullfile(folder, file));
-        catch ME
-            showException('Could not open project', ME);
-            state = S;
-            return;
-        end
-        S = loaded;
-        S.selectedPointIndex = 0;
-        S.selectedEdgeIndex = 0;
-        S.projectPath = string(fullfile(folder, file));
-        try
-            [videoReader, S, videoOpened] = ...
-                video_marker.projectFiles.openReferencedVideo(S, S.projectPath);
-            if videoOpened
-                decodedFrameCache.reset(S.currentFrame, S.currentImage);
-            end
-        catch ME
-            debugLog.reportException('videoMarker', 'Could not reopen project video', ME);
-        end
-        scaleTool.resetForNewImage(size(S.currentImage));
-        scaleTool.setCalibration(S.calibration);
-        deletePointEditor();
-        activatePointEditorForCurrentFrame();
-        addLog(sprintf('Opened project: %s', S.projectPath));
-        refreshAll(false);
-        autosaveService.save(S, 'project open');
-        state = S;
-    end
+    state.project.inputs.sources = services.project.sourceRecord( ...
+        "video", "video", paths(1), true);
+    pointCount = numel(state.project.annotations.skeleton.pointIds);
+    state.project.annotations.frames = ...
+        video_marker.frameAnnotations.emptyAnnotations( ...
+        resource.info.frameCount, pointCount);
+    state.project.annotations.calibration = ...
+        labkit.ui.interaction.scaleBarCalibration([], [], "um");
+    state.project.parameters.coordinateStartFrame = 1;
+    state.project.parameters.coordinateEndFrame = resource.info.frameCount;
+    state.session.selection.currentFrame = 1;
+    state.session.selection.selectedPointIndex = 0;
+    state.session.selection.selectedEdgeIndex = 0;
+    state.session.workflow.scaleReferenceEditing = false;
+    state.session.workflow.statusMessage = "Video opened.";
+    state.session.view.scaleBar = [];
+    state.session.cache.videoInfo = resource.info;
+    state.session.cache.currentImage = firstFrame;
+    state.session.cache.frameIndex = 1;
+    state = clearResults(state);
+    state = services.workflow.log(state, "Opened video: " + paths(1));
+end
 
-    function state = onSaveProject(state, ~, services)
-        capture(state, services);
-        defaultName = "video_marker_project.mat";
-        [filepath, cancelled] = labkit.ui.runtime.promptOutputFile( ...
-            '*.mat', 'Save Video Marker project', defaultName);
-        if cancelled
-            addLog('Project save cancelled.');
-            state = S;
-            return;
-        end
-        try
-            S.calibration = scaleTool.calibration();
-            S.projectPath = string(filepath);
-            video_marker.projectFiles.saveProject(filepath, S);
-        catch ME
-            showException('Could not save project', ME);
-            state = S;
-            return;
-        end
-        addLog(sprintf('Saved project: %s', filepath));
-        state = S;
+function state = onFrameChanged(state, event, services)
+    target = event.value;
+    if isempty(target)
+        target = state.session.selection.currentFrame;
     end
+    state = goToFrame(state, target, services);
+end
 
-    function state = onNewSetup(state, ~, services)
-        capture(state, services);
-        previousVideoPath = S.videoPath;
-        deletePointEditor();
-        videoReader = [];
-        decodedFrameCache.reset();
-        scaleTool.resetForNewImage();
-        if strlength(previousVideoPath) > 0
-            autosaveService.discard(previousVideoPath);
-        end
-        S = video_marker.appLifecycle.createInitialState();
-        labkit.ui.control.setValue(ui, 'videoFile', "");
-        addLog('Started a new skeleton setup and cleared the current annotation session.');
-        refreshAll();
-        state = S;
+function state = onPreviousFrame(state, ~, services)
+    state = goToFrame(state, state.session.cache.frameIndex - 1, services);
+end
+
+function state = onNextFrame(state, ~, services)
+    state = goToFrame(state, state.session.cache.frameIndex + 1, services);
+end
+
+function state = goToFrame(state, target, services)
+    info = state.session.cache.videoInfo;
+    if info.frameCount <= 0 || isempty(state.session.cache.currentImage)
+        return;
     end
-
-    function capture(state, services)
-        S = state;
-        if isempty(ui) && isfield(services, 'ui')
-            ui = services.ui;
-        end
-        if isempty(fig) && isfield(services, 'figure')
-            fig = services.figure;
-        end
-        if isempty(debugLog) && isfield(services, 'debug')
-            debugLog = services.debug;
-        end
+    target = min(max(1, round(finiteScalar(target, ...
+        state.session.cache.frameIndex))), info.frameCount);
+    startFrame = state.session.cache.frameIndex;
+    if target == startFrame
+        state.session.selection.currentFrame = target;
+        return;
     end
-
-    function openVideoPath(pathValue)
-        if restoreAutosaveIfAccepted(pathValue)
-            return;
-        end
-        if isempty(S.skeleton.pointNames)
-            showError('Skeleton required', ...
-                'Add and name at least one keypoint before opening a video.');
-            return;
-        end
-        try
-            [videoReader, info] = video_marker.videoSource.openVideo(pathValue);
-            frame = video_marker.videoSource.readFrame(videoReader, 1);
-        catch ME
-            showException('Could not open video', ME);
-            return;
-        end
-        S.videoPath = string(pathValue);
-        S.videoInfo = info;
-        S.currentFrame = 1;
-        S.currentImage = frame;
-        decodedFrameCache.reset(1, frame);
-        S.annotations = video_marker.frameAnnotations.emptyAnnotations( ...
-            info.frameCount, numel(S.skeleton.pointIds));
-        S.outputFolder = string(labkit.ui.runtime.defaultOutputFolder(S.videoPath, "video_marker"));
-        scaleTool.resetForNewImage(size(frame));
-        deletePointEditor();
-        activatePointEditorForCurrentFrame();
-        addLog(sprintf('Opened video: %s', S.videoPath));
-        refreshAll(false);
-        autosaveService.save(S, 'video open');
+    try
+        resource = ensureVideoResource(state, services);
+        [frames, imageData, report] = ...
+            video_marker.frameNavigation.loadTargetFrame( ...
+            resource.cache.readFrame, state.project.annotations.frames, ...
+            startFrame, target, state.session.cache.currentImage, ...
+            numel(state.project.annotations.skeleton.pointIds));
+    catch ME
+        services.diagnostics.report('Could not read frame', ME);
+        showError(services, 'Could not read frame', ME.message);
+        state.session.selection.currentFrame = startFrame;
+        return;
     end
-
-    function goToFrame(frameIndex)
-        if ~hasVideo()
-            return;
-        end
-        frameIndex = min(max(1, round(double(frameIndex))), S.videoInfo.frameCount);
-        if frameIndex == S.currentFrame
-            refreshAll();
-            return;
-        end
-        saveCurrentEditorPoints();
-        startFrame = S.currentFrame;
-        startImage = S.currentImage;
-        scaleTool.finishReferenceEdit(false);
-        try
-            [S.annotations, frame, report] = ...
-                video_marker.frameNavigation.loadTargetFrame( ...
-                decodedFrameCache.readFrame, S.annotations, startFrame, ...
-                frameIndex, startImage, numel(S.skeleton.pointIds));
-        catch ME
-            showException('Could not read frame', ME);
-            refreshAll();
-            return;
-        end
-        S.currentFrame = frameIndex;
-        S.currentImage = frame;
-        if S.annotations.frameStatus(frameIndex) == video_marker.frameAnnotations.statusCode("empty")
-            S.annotations = video_marker.frameAnnotations.inheritDraft(S.annotations, frameIndex);
-        end
-        activatePointEditorForCurrentFrame();
-        if report.predictedFrames > 0
-            addLog(sprintf(['Predicted %d frame(s) through frame %d; %d point(s) ' ...
-                'used motion fallback.'], report.predictedFrames, frameIndex, ...
-                report.fallbackPoints));
-        else
-            addLog(sprintf('Moved to frame %d.', frameIndex));
-        end
-        refreshAll();
-        autosaveService.save(S, 'frame change');
+    if frames.frameStatus(target) == ...
+            video_marker.frameAnnotations.statusCode("empty")
+        frames = video_marker.frameAnnotations.inheritDraft(frames, target);
     end
-
-    function ensurePointEditor()
-        if isempty(pointEditor)
-            pointEditor = labkit.ui.interaction.anchorEditor(imageRuntime, size(S.currentImage), ...
-                struct('mode', 'points', ...
-                'maxPoints', numel(S.skeleton.pointIds), ...
-                'onChanged', @onPointEditorChanged, ...
-                'onTrace', debugLog.trace));
-        else
-            pointEditor.setImageSize(size(S.currentImage));
-        end
+    state.project.annotations.frames = frames;
+    state.session.selection.currentFrame = target;
+    state.session.cache.currentImage = imageData;
+    state.session.cache.frameIndex = target;
+    state.session.workflow.scaleReferenceEditing = false;
+    state.session.view.scaleBar = [];
+    state = clearResults(state);
+    if report.predictedFrames > 0
+        message = sprintf(['Predicted %d frame(s) through frame %d; ' ...
+            '%d point(s) used motion fallback.'], ...
+            report.predictedFrames, target, report.fallbackPoints);
+    else
+        message = sprintf('Moved to frame %d.', target);
     end
+    state = services.workflow.log(state, message);
+end
 
-    function activatePointEditorForCurrentFrame()
-        if ~hasVideo()
-            return;
-        end
-        ensurePointEditor();
-        points = video_marker.frameAnnotations.framePoints(S.annotations, S.currentFrame);
-        pointEditor.setPoints(points);
-        pointEditor.setActive(true);
+function state = onPointsEdited(state, event, services)
+    if ~hasVideo(state)
+        return;
     end
-
-    function saveCurrentEditorPoints()
-        if isempty(pointEditor)
-            return;
-        end
-        points = pointEditor.getPoints();
-        storedPoints = video_marker.frameAnnotations.framePoints( ...
-            S.annotations, S.currentFrame);
-        if isequaln(points, storedPoints)
-            return;
-        end
-        sourceName = video_marker.frameAnnotations.sourceName( ...
-            S.annotations.frameSource(S.currentFrame));
-        statusName = "draft";
-        confidence = NaN(size(points, 1), 1);
-        if sourceName == "predicted"
-            confidence = S.annotations.trackingConfidence( ...
-                S.currentFrame, 1:size(points, 1)).';
-        else
-            sourceName = "manual";
-            confidence = ones(size(points, 1), 1);
-            if size(points, 1) == numel(S.skeleton.pointIds)
-                statusName = "confirmed";
-            end
-        end
-        S.annotations = video_marker.frameAnnotations.setFramePoints( ...
-            S.annotations, S.currentFrame, points, statusName, sourceName, confidence);
-    end
-
-    function onPointEditorChanged(points, reason)
-        if string(reason) == "set points"
-            return;
-        end
-        statusName = "draft";
-        if size(points, 1) == numel(S.skeleton.pointIds)
-            statusName = "confirmed";
-        end
-        S.annotations = video_marker.frameAnnotations.setFramePoints( ...
-            S.annotations, S.currentFrame, points, statusName, "manual", ...
-            ones(size(points, 1), 1));
-        if any(strcmp(string(reason), ["add point", "undo point", "clear points", "move point", "set points"]))
-            addLog(sprintf('Frame %d draft points: %d / %d.', ...
-                S.currentFrame, size(points, 1), numel(S.skeleton.pointIds)));
-        end
-        refreshPointOverlay();
-        refreshSummaryControls();
-        autosaveService.save(S, 'point edit');
-        syncRuntimeState();
-    end
-
-    function onBeforeReferenceEdit(~, ~)
-        if ~isempty(pointEditor)
-            pointEditor.setActive(false);
-        end
-        syncRuntimeState();
-    end
-
-    function onReferenceEditChanged(~, reason)
-        if string(reason) == "finish"
-            onScaleInteractionFinished();
-        end
-    end
-
-    function onScaleInteractionFinished(varargin)
-        if hasVideo() && ~isempty(pointEditor)
-            pointEditor.setActive(true);
-            refreshPreview();
-        end
-        syncRuntimeState();
-    end
-
-    function onCalibrationChanged(~, ~)
-        S.calibration = scaleTool.calibration();
-        refreshAll();
-        autosaveService.save(S, 'calibration change');
-        syncRuntimeState();
-    end
-
-    function onScaleToolError(titleText, message)
-        showError(titleText, message);
-    end
-
-    function restored = restoreAutosaveIfAccepted(pathValue)
-        restored = false;
-        [saved, decision] = autosaveService.offer(pathValue);
-        if decision ~= "restore"
-            return;
-        end
-        restored = true;
-        try
-            [videoReader, S] = video_marker.autosave.restoreSession(saved, pathValue);
-            decodedFrameCache.reset(S.currentFrame, S.currentImage);
-            scaleTool.resetForNewImage(size(S.currentImage));
-            scaleTool.setCalibration(S.calibration);
-            deletePointEditor();
-            activatePointEditorForCurrentFrame();
-            refreshAll(false);
-            autosaveService.save(S, 'recovery restore');
-            addLog(sprintf('Restored autosave at frame %d.', S.currentFrame));
-        catch ME
-            showException('Could not restore autosave', ME);
-        end
-    end
-
-    function tf = hasVideo()
-        tf = S.videoInfo.frameCount > 0 && ~isempty(S.currentImage);
-    end
-
-    function frame = readVideoFrameUncached(frameIndex)
-        frame = video_marker.videoSource.readFrame(videoReader, frameIndex);
-    end
-
-    function deletePointEditor()
-        if ~isempty(pointEditor)
-            pointEditor.delete();
-        end
-        pointEditor = [];
-    end
-
-    function refreshAll(preserveView)
-        if nargin < 1
-            preserveView = true;
-        end
-        if hasVideo()
-            labkit.ui.control.setValue(ui, 'videoFile', S.videoPath);
-            labkit.ui.control.setLimits(ui, 'currentFrame', [1 max(2, S.videoInfo.frameCount)]);
-            labkit.ui.control.setValue(ui, 'currentFrame', S.currentFrame);
-            labkit.ui.control.setValue(ui, 'coordinateEndFrame', S.videoInfo.frameCount);
-            refreshPreview(preserveView);
-        else
-            labkit.ui.plot.reset(ui, 'videoAxes', 'Frame + Skeleton', true, 'video');
-        end
-        refreshSummaryControls();
-        syncRuntimeState();
-    end
-
-    function refreshPreview(preserveView)
-        if nargin < 1
-            preserveView = true;
-        end
-        ax = ui.controls.videoAxes.primaryAxes;
-        hImage = video_marker.annotationCanvas.drawFrame( ...
-            ui, 'videoAxes', S.currentImage, S.skeleton, S.annotations, ...
-            S.currentFrame, preserveView);
-        if scaleTool.isReferenceEditActive()
-            scaleTool.setBackground(hImage);
-            scaleTool.refresh();
-        elseif ~isempty(pointEditor)
-            pointEditor.setBackground(hImage);
-            pointEditor.refresh();
-        end
-        scaleTool.renderOverlay(ax);
-    end
-
-    function refreshPointOverlay()
-        ax = ui.controls.videoAxes.primaryAxes;
-        video_marker.annotationCanvas.refreshOverlay( ...
-            ax, S.skeleton, S.annotations, S.currentFrame);
-    end
-
-    function refreshSummaryControls()
-        info = S.videoInfo;
-        if info.frameCount > 0
-            videoText = sprintf('%d frames | %.4g fps | %dx%d px', ...
-                info.frameCount, info.frameRate, info.width, info.height);
-        else
-            videoText = 'No video loaded';
-        end
-        labkit.ui.control.setValue(ui, 'videoSummary', videoText);
-        statusName = "empty";
+    points = double(event.value);
+    if isempty(points)
         points = zeros(0, 2);
-        if hasVideo()
-            statusName = video_marker.frameAnnotations.statusName(S.annotations.frameStatus(S.currentFrame));
-            sourceName = video_marker.frameAnnotations.sourceName( ...
-                S.annotations.frameSource(S.currentFrame));
-            points = video_marker.frameAnnotations.framePoints(S.annotations, S.currentFrame);
-        else
-            sourceName = "empty";
+    elseif size(points, 2) ~= 2
+        return;
+    end
+    total = numel(state.project.annotations.skeleton.pointIds);
+    if size(points, 1) > total
+        points = points(1:total, :);
+    end
+    status = "draft";
+    if size(points, 1) == total
+        status = "confirmed";
+    end
+    frame = state.session.cache.frameIndex;
+    state.project.annotations.frames = ...
+        video_marker.frameAnnotations.setFramePoints( ...
+        state.project.annotations.frames, frame, points, status, ...
+        "manual", ones(size(points, 1), 1));
+    state = clearResults(state);
+    state = services.workflow.log(state, sprintf( ...
+        'Frame %d points: %d / %d.', frame, size(points, 1), total));
+end
+
+function state = onUndoPoint(state, ~, services)
+    points = currentPoints(state);
+    if isempty(points)
+        return;
+    end
+    points(end, :) = [];
+    state = setCurrentPoints(state, points);
+    state = services.workflow.log(state, sprintf( ...
+        'Undid last point on frame %d.', state.session.cache.frameIndex));
+end
+
+function state = onClearFramePoints(state, ~, services)
+    if ~hasVideo(state)
+        return;
+    end
+    state = setCurrentPoints(state, zeros(0, 2));
+    state = services.workflow.log(state, sprintf( ...
+        'Cleared frame %d points.', state.session.cache.frameIndex));
+end
+
+function state = setCurrentPoints(state, points)
+    total = numel(state.project.annotations.skeleton.pointIds);
+    status = "draft";
+    if isempty(points)
+        status = "empty";
+    elseif size(points, 1) == total
+        status = "confirmed";
+    end
+    state.project.annotations.frames = ...
+        video_marker.frameAnnotations.setFramePoints( ...
+        state.project.annotations.frames, state.session.cache.frameIndex, ...
+        points, status, "manual", ones(size(points, 1), 1));
+    state = clearResults(state);
+end
+
+function state = onMeasureScaleReference(state, ~, services)
+    if ~hasVideo(state)
+        showError(services, 'No video loaded', ...
+            'Open a video before measuring reference pixels.');
+        return;
+    end
+    state.session.workflow.scaleReferenceEditing = ...
+        ~state.session.workflow.scaleReferenceEditing;
+    state.session.view.scaleBar = [];
+end
+
+function state = onScaleReferenceEdited(state, event, ~)
+    points = double(event.value);
+    if isempty(points)
+        points = zeros(0, 2);
+    elseif size(points, 2) ~= 2
+        return;
+    end
+    calibration = state.project.annotations.calibration;
+    state.project.annotations.calibration = ...
+        labkit.ui.interaction.scaleBarCalibration( ...
+        NaN, calibration.referenceLength, calibration.unit, ...
+        struct("referenceLine", points));
+    state.session.view.scaleBar = [];
+    state = clearResults(state);
+end
+
+function state = onScaleCalibrationChanged(state, event, ~)
+    calibration = state.project.annotations.calibration;
+    referencePixels = calibration.referencePixels;
+    referenceLength = calibration.referenceLength;
+    unit = calibration.unit;
+    referenceLine = calibration.referenceLine;
+    if event.target == "scaleReferencePixels"
+        referencePixels = positiveOrNaN(event.value);
+        referenceLine = zeros(0, 2);
+    elseif event.target == "scaleReferenceLength"
+        referenceLength = nonnegativeScalar(event.value, referenceLength);
+    elseif event.target == "scaleCalibrationUnit"
+        unit = string(event.value);
+    end
+    state.project.annotations.calibration = ...
+        labkit.ui.interaction.scaleBarCalibration( ...
+        referencePixels, referenceLength, unit, ...
+        struct("referenceLine", referenceLine));
+    state.session.view.scaleBar = [];
+    state = clearResults(state);
+end
+
+function state = onScaleBarSettingChanged(state, ~, ~)
+    state.project.parameters.scaleBarLength = nonnegativeScalar( ...
+        state.project.parameters.scaleBarLength, 0);
+    state.session.view.scaleBar = [];
+end
+
+function state = onPlaceScaleBar(state, ~, services)
+    calibration = state.project.annotations.calibration;
+    if ~hasVideo(state) || ~calibration.isCalibrated
+        showError(services, 'Calibration required', ...
+            ['Measure or enter reference pixels, then enter a positive ' ...
+            'reference length and unit.']);
+        return;
+    end
+    try
+        state.session.view.scaleBar = ...
+            labkit.ui.interaction.scaleBarGeometry( ...
+            size(state.session.cache.currentImage), calibration, ...
+            state.project.parameters.scaleBarLength, ...
+            state.project.parameters.scaleBarPosition, ...
+            state.project.parameters.scaleBarColor);
+        state.session.workflow.scaleReferenceEditing = false;
+    catch ME
+        services.diagnostics.report('Could not place scale bar', ME);
+        showError(services, 'Could not place scale bar', ME.message);
+    end
+end
+
+function state = onImportMarkerCsv(state, ~, services)
+    [filepath, cancelled] = services.dialogs.inputFile( ...
+        {'*.csv', 'Marker CSV'}, 'Import marker CSV', ...
+        services.dialogs.defaultFolder("input"));
+    if cancelled
+        state = services.workflow.log(state, "Marker CSV import cancelled.");
+        return;
+    end
+    try
+        payload = video_marker.markerCsv.readFile(filepath);
+    catch ME
+        services.diagnostics.report('Could not import marker CSV', ME);
+        showError(services, 'Could not import marker CSV', ME.message);
+        return;
+    end
+    state.project.annotations.skeleton = payload.skeleton;
+    state.project.annotations.frames = payload.annotations;
+    state.project.annotations.calibration = payload.calibration;
+    state = video_marker.skeletonSetup.normalizeSelection(state, true);
+    state.session.workflow.scaleReferenceEditing = false;
+    state.session.view.scaleBar = [];
+    pathValue = string(payload.videoInfo.path);
+    if strlength(pathValue) > 0
+        required = isfile(pathValue);
+        state.project.inputs.sources = services.project.sourceRecord( ...
+            "video", "video", pathValue, required);
+    else
+        state.project.inputs.sources = state.project.inputs.sources([]);
+    end
+    if isfile(pathValue)
+        try
+            resource = openVideoResource(pathValue);
+            verifyImportedShape(payload.annotations, payload.skeleton, resource.info);
+            imageData = resource.cache.readFrame(1);
+            resource.cache.reset(1, imageData);
+            setVideoResource(services, resource);
+            state.session.cache.videoInfo = resource.info;
+            state.session.cache.currentImage = imageData;
+            state.session.cache.frameIndex = 1;
+            state.session.selection.currentFrame = 1;
+        catch ME
+            services.diagnostics.report('Could not reopen marker CSV video', ME);
+            state.session.cache.videoInfo = payload.videoInfo;
+            state.session.cache.currentImage = [];
         end
-        labkit.ui.control.setValue(ui, 'frameStatus', sprintf( ...
-            'Frame %d: %s (%s) | points %d / %d', S.currentFrame, ...
-            statusName, sourceName, size(points, 1), numel(S.skeleton.pointIds)));
-        summary = video_marker.frameAnnotations.summary(S.annotations);
-        labkit.ui.control.setValue(ui, 'summaryTable', { ...
-            'Video', char(S.videoPath); ...
-            'Frames', sprintf('%d', summary.frameCount); ...
-            'Empty', sprintf('%d', summary.empty); ...
-            'Draft', sprintf('%d', summary.draft); ...
-            'Confirmed', sprintf('%d', summary.confirmed); ...
-            'Keypoints', sprintf('%d', numel(S.skeleton.pointIds))});
-        updateEnabledControls(size(points, 1));
+    else
+        state.session.cache.videoInfo = payload.videoInfo;
+        state.session.cache.currentImage = [];
     end
+    state.project.parameters.coordinateStartFrame = 1;
+    state.project.parameters.coordinateEndFrame = ...
+        max(1, payload.videoInfo.frameCount);
+    state = clearResults(state);
+    state = services.workflow.log(state, "Imported marker CSV: " + filepath);
+end
 
-    function updateEnabledControls(currentPointCount)
-        has = hasVideo();
-        labkit.ui.control.setEnabled(ui, 'previousFrame', has && S.currentFrame > 1);
-        labkit.ui.control.setEnabled(ui, 'nextFrame', has && S.currentFrame < S.videoInfo.frameCount);
-        labkit.ui.control.setEnabled(ui, 'undoPoint', has && currentPointCount > 0);
-        labkit.ui.control.setEnabled(ui, 'clearFramePoints', has && currentPointCount > 0);
-        labkit.ui.control.setEnabled(ui, 'exportMarkerCsv', has);
-        labkit.ui.control.setEnabled(ui, 'exportCoordinateCsv', has);
-        labkit.ui.control.setEnabled(ui, 'saveProject', has);
-        scaleTool.setEnabled(struct('hasImage', has, ...
-            'blockInputs', false, 'blockPlacement', false));
-        scaleTool.updateReadout();
+function state = onExportMarkerCsv(state, ~, services)
+    if ~hasVideo(state)
+        showError(services, 'No video loaded', ...
+            'Open a video before exporting marker CSV.');
+        return;
     end
+    [filepath, cancelled] = services.dialogs.outputFile( ...
+        {'*.csv', 'Marker CSV'}, 'Export marker CSV', ...
+        fullfile(defaultOutputFolder(state, services), ...
+        'video_marker_markers.csv'));
+    if cancelled
+        state = services.workflow.log(state, "Marker CSV export cancelled.");
+        return;
+    end
+    try
+        video_marker.markerCsv.writeFile(filepath, ...
+            state.project.annotations.frames, ...
+            state.project.annotations.skeleton, ...
+            state.session.cache.videoInfo, ...
+            state.project.annotations.calibration);
+        manifestPath = writeResultManifest(state, services, filepath, ...
+            "markerCsv", "text/csv", "video_marker_markers.labkit.json");
+    catch ME
+        services.diagnostics.report('Could not export marker CSV', ME);
+        showError(services, 'Could not export marker CSV', ME.message);
+        return;
+    end
+    state.project.results.markerManifestPath = string(manifestPath);
+    state = services.workflow.log(state, "Exported marker CSV: " + filepath);
+end
 
-    function syncRuntimeState()
-        if isempty(fig) || ~isvalid(fig) || ~isappdata(fig, 'labkitUiAppRuntime')
+function state = onExportSettingChanged(state, ~, ~)
+    count = max(1, state.session.cache.videoInfo.frameCount);
+    state.project.parameters.coordinateStartFrame = min(max(1, round( ...
+        finiteScalar(state.project.parameters.coordinateStartFrame, 1))), count);
+    state.project.parameters.coordinateEndFrame = min(max(1, round( ...
+        finiteScalar(state.project.parameters.coordinateEndFrame, count))), count);
+    state.project.results.coordinateManifestPath = "";
+end
+
+function state = onExportCoordinateCsv(state, ~, services)
+    if ~hasVideo(state)
+        showError(services, 'No video loaded', ...
+            'Open a video before exporting coordinate CSV.');
+        return;
+    end
+    parameters = state.project.parameters;
+    opts = video_marker.coordinateExport.options( ...
+        "startFrame", parameters.coordinateStartFrame, ...
+        "endFrame", parameters.coordinateEndFrame, ...
+        "unitMode", parameters.coordinateUnitMode, ...
+        "originMode", parameters.coordinateOriginMode, ...
+        "yAxisMode", parameters.coordinateYAxisMode);
+    [filepath, cancelled] = services.dialogs.outputFile( ...
+        {'*.csv', 'Coordinate CSV'}, 'Export coordinate CSV', ...
+        fullfile(defaultOutputFolder(state, services), ...
+        'video_marker_coordinates.csv'));
+    if cancelled
+        state = services.workflow.log(state, "Coordinate CSV export cancelled.");
+        return;
+    end
+    try
+        tableData = video_marker.coordinateExport.buildTable( ...
+            state.project.annotations.frames, ...
+            state.project.annotations.skeleton, ...
+            state.session.cache.videoInfo, ...
+            state.project.annotations.calibration, opts);
+        writetable(tableData, filepath);
+        manifestPath = writeResultManifest(state, services, filepath, ...
+            "coordinateCsv", "text/csv", ...
+            "video_marker_coordinates.labkit.json");
+    catch ME
+        services.diagnostics.report('Could not export coordinate CSV', ME);
+        showError(services, 'Could not export coordinate CSV', ME.message);
+        return;
+    end
+    state.project.results.coordinateManifestPath = string(manifestPath);
+    state = services.workflow.log(state, ...
+        "Exported coordinate CSV: " + filepath);
+end
+
+function state = onNewSetup(state, ~, services)
+    choices = video_marker.userInterface.sessionChoices();
+    answer = services.dialogs.choice( ...
+        ['Starting a new setup clears the current video, skeleton, and ' ...
+        'annotations. Saving the current project first is recommended.'], ...
+        'Start a new setup?', ...
+        [choices.cancel, choices.saveAndStart, choices.discardAndStart], ...
+        choices.saveAndStart, choices.cancel);
+    if answer == choices.cancel || strlength(answer) == 0
+        state = services.workflow.log(state, "New setup cancelled.");
+        return;
+    end
+    if answer == choices.saveAndStart
+        filepath = services.project.saveState();
+        if strlength(filepath) == 0
+            state = services.workflow.log(state, ...
+                "New setup cancelled because project save was cancelled.");
             return;
         end
-        runtime = getappdata(fig, 'labkitUiAppRuntime');
-        runtime.state = S;
-        setappdata(fig, 'labkitUiAppRuntime', runtime);
+    elseif answer ~= choices.discardAndStart
+        state = services.workflow.log(state, "New setup cancelled.");
+        return;
     end
+    services.resources.clearScope("session");
+    project = video_marker.appLifecycle.createProject();
+    session = video_marker.appLifecycle.createSession(project);
+    state = struct("project", project, "session", session);
+    state = services.workflow.log(state, ...
+        "Started a new skeleton setup and cleared the annotation session.");
+end
 
-    function addLog(message)
-        labkit.ui.control.appendLog(ui, 'appLog', message);
-        debugLog.append(message);
+function resource = ensureVideoResource(state, services)
+    pathValue = video_marker.sourceFiles.pathForId( ...
+        state.project.inputs.sources, "video");
+    resource = services.resources.get("session", "video");
+    if isstruct(resource) && isscalar(resource) && ...
+            isfield(resource, 'path') && resource.path == pathValue
+        return;
     end
-
-    function setupDebugSamples()
-        try
-            pack = video_marker.debug.writeSamplePack(debugLog);
-            addLog(sprintf('Debug sample files: %s', char(pack.sampleFolder)));
-            addLog(sprintf('Debug output folder: %s', char(pack.outputFolder)));
-        catch ME
-            debugLog.reportException('videoMarker', 'Debug sample setup failed', ME);
-            addLog(sprintf('Debug sample setup failed: %s', ME.message));
-        end
+    resource = openVideoResource(pathValue);
+    if ~isempty(state.session.cache.currentImage)
+        resource.cache.reset(state.session.cache.frameIndex, ...
+            state.session.cache.currentImage);
     end
+    setVideoResource(services, resource);
+end
 
-    function showError(titleText, message)
-        addLog(sprintf('%s: %s', titleText, message));
-        labkit.ui.runtime.showAlert(fig, message, titleText);
+function resource = openVideoResource(pathValue)
+    [reader, info] = video_marker.videoSource.openVideo(pathValue);
+    cache = video_marker.videoSource.createDecodedFrameCache( ...
+        @(index) video_marker.videoSource.readFrame(reader, index));
+    resource = struct("path", string(pathValue), ...
+        "reader", reader, "info", info, "cache", cache);
+end
+
+function setVideoResource(services, resource)
+    services.resources.set("session", "video", resource, @cleanupVideoResource);
+end
+
+function cleanupVideoResource(~)
+end
+
+function points = currentPoints(state)
+    points = zeros(0, 2);
+    if hasVideo(state)
+        points = video_marker.frameAnnotations.framePoints( ...
+            state.project.annotations.frames, ...
+            state.session.cache.frameIndex);
     end
+end
 
-    function showException(titleText, exception)
-        debugLog.reportException('videoMarker', titleText, exception);
-        showError(titleText, exception.message);
+function tf = hasVideo(state)
+    tf = state.session.cache.videoInfo.frameCount > 0 && ...
+        ~isempty(state.session.cache.currentImage);
+end
+
+function tf = skeletonLocked(state)
+    tf = state.session.cache.videoInfo.frameCount > 0;
+end
+
+function state = clearResults(state)
+    state.project.results.markerManifestPath = "";
+    state.project.results.coordinateManifestPath = "";
+end
+
+function folder = defaultOutputFolder(state, services)
+    videoPath = video_marker.sourceFiles.pathForId( ...
+        state.project.inputs.sources, "video");
+    folder = services.dialogs.defaultOutputFolder( ...
+        videoPath, "video_marker");
+end
+
+function manifestPath = writeResultManifest( ...
+        state, services, filepath, id, mediaType, manifestName)
+    [folder, name, extension] = fileparts(filepath);
+    output = services.results.output(id, "primary", ...
+        string(name) + string(extension), mediaType);
+    spec = struct( ...
+        "Outputs", output, ...
+        "Inputs", state.project.inputs.sources, ...
+        "Parameters", state.project.parameters, ...
+        "Summary", video_marker.frameAnnotations.summary( ...
+        state.project.annotations.frames), ...
+        "ManifestName", manifestName);
+    [manifestPath, ~] = services.results.writeManifest(folder, spec);
+end
+
+function verifyImportedShape(frames, skeleton, info)
+    if size(frames.coords, 1) ~= info.frameCount || ...
+            size(frames.coords, 2) ~= numel(skeleton.pointIds)
+        error('video_marker:ImportedShapeMismatch', ...
+            'Imported annotations do not match the referenced video.');
+    end
+end
+
+function showError(services, titleText, message)
+    services.dialogs.alert(message, titleText);
+end
+
+function value = finiteScalar(value, fallback)
+    value = double(value);
+    if isempty(value) || ~isscalar(value) || ~isfinite(value)
+        value = fallback;
+    end
+end
+
+function value = nonnegativeScalar(value, fallback)
+    value = finiteScalar(value, fallback);
+    if value < 0
+        value = fallback;
+    end
+end
+
+function value = positiveOrNaN(value)
+    value = finiteScalar(value, NaN);
+    if ~isfinite(value) || value <= 0
+        value = NaN;
+    end
+end
+
+function target = mergeActions(target, source)
+    names = fieldnames(source);
+    for k = 1:numel(names)
+        target.(names{k}) = source.(names{k});
     end
 end

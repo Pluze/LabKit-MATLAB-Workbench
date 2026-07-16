@@ -13,16 +13,42 @@ function verify_cicExport()
 %TEST_CICEXPORT Verify app-side CIC result/export table helpers.
 
     item = makeChronoFixtureItem('', 'chrono "cic".DTA');
+    choices = cic.userInterface.analysisChoices();
 
     opts = struct();
     opts.delay_s = 10e-6;
     opts.cathLimit = -0.6;
     opts.anodLimit = 0.8;
     opts.areaOverride = '';
-    opts.pulseMode = 'Metadata first, then auto';
+    opts.pulseMode = char(choices.pulseModes(1));
     opts.usedMeasuredCurrent = true;
     item.analysis = computeCIC(item, opts);
     assert(item.analysis.ok, item.analysis.message);
+
+    definition = cic.definition();
+    assert(definition.contractVersion == 2 && ...
+        definition.project.Version == 1 && ...
+        isempty(definition.project.Migrations), ...
+        'CIC should use a first-version Runtime V2 project contract.');
+    project = definition.project.Create();
+    assert(definition.project.Validate(project) && ...
+        ~isfield(project.inputs, 'items'), ...
+        'CIC projects should validate without persisting decoded DTA items.');
+    session = definition.createSession(project);
+    project.inputs.sources = struct( ...
+        "id", "item1", "required", true, "role", "chrono", ...
+        "reference", labkit.ui.runtime.createPortableFileReference( ...
+        "", item.filepath));
+    session.cache.items = item;
+    session.selection.currentIndex = 1;
+    state = struct("project", project, "session", session);
+    presentation = definition.present(state);
+    assert(isfield(presentation.previews.plotAxes.Axes, 'top') && ...
+        isfield(presentation.previews.plotAxes.Axes, 'bottom') && ...
+        string(presentation.controls.files.Selection) == "item1", ...
+        'CIC presenter should prepare both axes and current source selection.');
+    assert(~contains(evalc('disp(state)'), 'matlab.ui'), ...
+        'CIC canonical state should contain no UI handles.');
 
     failed = struct();
     failed.filepath = 'failed.DTA';

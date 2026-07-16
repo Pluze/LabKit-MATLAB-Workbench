@@ -1,15 +1,54 @@
 function [info, status] = inspectFile(filepath)
-%INSPECTFILE Read Intan RHS header metadata without loading waveform data.
+%INSPECTFILE Read metadata and data-layout information from an RHS file.
+%
+% Usage:
+%   [info, status] = labkit.rhs.inspectFile(filepath)
+%
+% Description:
+%   Reads the Intan RHS header and calculates the complete-block count,
+%   available sample count, and recording duration without loading waveform
+%   arrays. A missing, malformed, or unsupported file is returned as
+%   status.ok=false after filepath validation.
 %
 % Inputs:
-%   filepath - char/string path to one .rhs file.
+%   filepath - Character vector or string scalar naming one RHS file.
 %
 % Outputs:
-%   info - struct with file version, sample rate, channel metadata, data
-%          layout, block counts, duration, and exact-block status.
-%   status - struct with ok, message, and filepath. Missing, malformed, or
-%            unsupported files return ok=false instead of throwing after
-%            filepath input validation.
+%   info - Scalar structure containing the parsed header and calculated file
+%       layout. On failure, identity fields remain available and other fields
+%       contain empty or NaN values.
+%   status - Scalar structure with ok, message, and filepath. message is empty
+%       on success and explains the read failure otherwise.
+%
+% Output Fields:
+%   fileVersion - Two-element numeric vector [major minor].
+%   sampleRateHz - Amplifier sample rate in hertz.
+%   durationSec - Duration represented by complete data blocks, in seconds.
+%   channelFamilies - Structures for amplifier, boardAdc, boardDac,
+%       boardDigIn, and boardDigOut channels.
+%   channelTable - Table containing family and channel-name metadata for all
+%       enabled stored channels.
+%   frequencyParameters - Requested and actual filter/sample frequencies.
+%   stimParameters - Stimulation step size and charge-recovery settings.
+%   dcAmplifierSaved - Logical flag indicating whether DC amplifier samples
+%       are present.
+%   dataOffsetBytes - Byte offset of the first waveform block.
+%   bytesPerBlock - Calculated bytes in one complete 128-sample block.
+%   blockCount - Number of complete waveform blocks.
+%   sampleCount - Number of samples in complete blocks.
+%   exactBlocks - True when the data section has no trailing partial bytes.
+%
+% Errors:
+%   Throws labkit:rhs:InvalidFilepath when filepath is not a character vector
+%   or string scalar. File-open and header-format errors are returned in
+%   status instead of thrown.
+%
+% Example:
+%   [info, status] = labkit.rhs.inspectFile("recording.rhs");
+%   if status.ok
+%       fprintf("%.1f s at %.0f Hz\n", info.durationSec, info.sampleRateHz)
+%       disp(info.channelTable(:, ["family", "nativeName", "customName"]))
+%   end
 
     filepath = normalizeFilepath(filepath);
     info = emptyInfo(filepath);

@@ -10,6 +10,11 @@ classdef GuiLayoutVtResistanceTest < matlab.unittest.TestCase
 
             fixture = dtaFixturePath('chrono_chronopot_current_pulse_0p2ms.DTA');
             secondFixture = dtaFixturePath('chrono_chronopot_current_pulse_1ms.DTA');
+            thirdFolder = string(tempname);
+            mkdir(thirdFolder);
+            thirdCleanup = onCleanup(@() rmdir(thirdFolder, 's'));
+            thirdFixture = fullfile(thirdFolder, 'chrono_third_pulse.DTA');
+            copyfile(secondFixture, thirdFixture);
             fig = h.launchFigure('labkit_VTResistance_app', ...
                 'Gamry VT Steady Resistance GUI');
             assertVtResistanceLayout(h, fig);
@@ -19,7 +24,7 @@ classdef GuiLayoutVtResistanceTest < matlab.unittest.TestCase
 
             driver.click('Add DTA files');
 
-            testCase.verifyEqual(char(driver.fileStatus('files')), '1 file(s) loaded');
+            testCase.verifyEqual(char(driver.fileStatus('files')), '1 file(s) registered');
             testCase.verifyTrue(any(contains(driver.fileListItems('files'), ...
                 'chrono_chronopot_current_pulse_0p2ms.DTA')), ...
                 'VT resistance workflow should list the loaded chrono fixture.');
@@ -38,22 +43,79 @@ classdef GuiLayoutVtResistanceTest < matlab.unittest.TestCase
                 'VT resistance workflow should draw the top plot.');
             testCase.verifyGreaterThan(numel(ui.controls.plotAxes.axesById.bottom.Children), 0, ...
                 'VT resistance workflow should draw the bottom plot.');
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            testCase.verifyEqual(runtime.definition.contractVersion, 2, ...
+                'VT resistance workflow must execute through Runtime V2.');
+            testCase.verifyFalse(isfield(runtime.state.project.inputs, 'items'), ...
+                'VT resistance durable project must not own decoded DTA items.');
+            testCase.verifyEqual(numel(runtime.state.session.cache.items), 1, ...
+                'Decoded DTA items should live in the session cache.');
 
-            driver.chooseFiles('files', secondFixture);
+            driver.chooseFiles('files', [string(secondFixture); thirdFixture]);
             driver.click('Add DTA files');
 
-            testCase.verifyEqual(char(driver.fileStatus('files')), '2 file(s) loaded');
+            testCase.verifyEqual(char(driver.fileStatus('files')), '3 file(s) registered');
             testCase.verifyTrue(contains(driver.fileSelection('files'), ...
-                'chrono_chronopot_current_pulse_1ms.DTA'), ...
+                'chrono_third_pulse.DTA'), ...
                 'VT resistance append should select the newly added chrono file.');
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            testCase.verifyEqual(numel(runtime.state.session.cache.items), 2, ...
+                ['VT resistance batch append should decode only the visible ' ...
+                'new file and defer the other selected file.']);
+            driver.selectFile('files', ...
+                'chrono_chronopot_current_pulse_1ms.DTA');
+            driver.selectFile('files', ...
+                'chrono_chronopot_current_pulse_0p2ms.DTA');
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            testCase.verifyEqual(runtime.state.session.selection.currentIndex, 1, ...
+                'VT resistance should commit an explicit file switch.');
+            testCase.verifyTrue(contains(driver.fileSelection('files'), ...
+                'chrono_chronopot_current_pulse_0p2ms.DTA'), ...
+                'VT resistance presentation should preserve file selection.');
             ui = driver.registry();
-            ui.controls.voltageMode.valueHandle.Value = 'Raw Vf/I';
+            choices = vt_resistance.userInterface.analysisChoices();
+            ui.controls.voltageMode.valueHandle.Value = choices.voltageModes(2);
             h.invokeCallback(ui.controls.voltageMode.valueHandle, 'ValueChangedFcn');
             [updated, detail] = h.waitForCondition(fig, ...
                 @() any(contains(string(driver.logValue('appLog')), ...
-                'Reanalyzed 2 loaded file(s) with shared analysis settings.')), 5);
+                'Reanalyzed 3 loaded file(s) with shared analysis settings.')), 5);
             testCase.verifyTrue(updated, h.waitDiagnostic(detail, ...
                 'operation', 'VT resistance whole-batch recomputation'));
+
+            outputFolder = string(tempname);
+            mkdir(outputFolder);
+            outputCleanup = onCleanup(@() rmdir(outputFolder, 's'));
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            runtime.request.outputChooser = @(~, ~, ~) deal( ...
+                'vt_steady_resistance_results.csv', char(outputFolder));
+            setappdata(fig, 'labkitUiAppRuntime', runtime);
+            driver.click('Export results CSV');
+            testCase.verifyTrue(isfile(fullfile(outputFolder, ...
+                'vt_steady_resistance_results.csv')));
+            manifestPath = fullfile(outputFolder, ...
+                'vt_steady_resistance_results.labkit.json');
+            testCase.verifyTrue(isfile(manifestPath), ...
+                'VT resistance export should write a standard result manifest.');
+            manifest = jsondecode(fileread(manifestPath));
+            testCase.verifyEqual(string(manifest.format), "labkit.result");
+            testCase.verifyEqual(string(manifest.outputs.status), "success");
+
+            projectPath = fullfile(outputFolder, 'vt-resistance-project.mat');
+            labkit.ui.runtime.saveState(fig, projectPath);
+            saved = load(projectPath, 'labkitProject');
+            testCase.verifyEqual(saved.labkitProject.app.payloadVersion, 1);
+            testCase.verifyFalse(isfield(saved.labkitProject.payload.inputs, 'items'));
+            driver.click('Clear all');
+            labkit.ui.runtime.loadState(fig, projectPath);
+            h.waitForUiIdle(fig);
+            testCase.verifyEqual(char(driver.fileStatus('files')), ...
+                '3 file(s) registered');
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            testCase.verifyEqual(numel(runtime.state.session.cache.items), 1, ...
+                ['VT resistance project reopen should decode only the first ' ...
+                'visible source.']);
+            clear outputCleanup;
+            clear thirdCleanup;
         end
     end
 end
@@ -66,13 +128,13 @@ function assertVtResistanceLayout(h, fig)
         'Swap top / bottom', 'Reset axes'});
     h.assertCheckboxContract(fig, {'Show markers', 'Shade windows', 'Grid'});
     h.assertTabTitles(fig, {'Files + Analysis', 'Summary + Results', 'Log'});
+    choices = vt_resistance.userInterface.analysisChoices();
     h.assertDropdownGroups(fig, [ ...
-        h.dropdownGroup({'Metadata first, then auto', 'Metadata only', ...
-        'Auto from Im only'}, 1), ...
-        h.dropdownGroup({'Full pulse median', 'Center 60% median'}, 1), ...
-        h.dropdownGroup({'Baseline-corrected dV/I', 'Raw Vf/I'}, 1), ...
-        h.dropdownGroup({'Time (s)', 'Sample #'}, 2), ...
-        h.dropdownGroup({'VT: Vf vs time', 'IT: Im vs time'}, 2)]);
+        h.dropdownGroup(cellstr(choices.pulseModes), 1), ...
+        h.dropdownGroup(cellstr(choices.steadyWindows), 1), ...
+        h.dropdownGroup(cellstr(choices.voltageModes), 1), ...
+        h.dropdownGroup(cellstr(choices.xAxes), 2), ...
+        h.dropdownGroup(cellstr(choices.yAxes), 2)]);
     h.assertDropdownCallbacksPresent(fig);
 end
 

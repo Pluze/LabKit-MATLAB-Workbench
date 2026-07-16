@@ -1,6 +1,6 @@
-% Expected caller: eis.userInterface.updateWorkbenchFromState. Inputs are an
-% axes, EIS items, and plot options. Output is legend labels. Side effects are
-% limited to redrawing axes.
+% Expected callers: the Runtime V2 axis renderer and plot export. Inputs are
+% an axes, EIS items, and plot options. Output is legend labels. Side effects
+% are limited to redrawing axes.
 
 function labels = plotOverlay(ax, items, opts)
     if nargin < 3
@@ -62,11 +62,12 @@ function txt = labelForAxis(axisName)
 end
 
 function opts = fillPlotOptions(opts)
+    items = eis.userInterface.axisItems();
     if ~isfield(opts, 'xName')
-        opts.xName = 'Zreal (ohm)';
+        opts.xName = char(items(5));
     end
     if ~isfield(opts, 'yName')
-        opts.yName = '-Zimag (ohm)';
+        opts.yName = char(items(7));
     end
     if ~isfield(opts, 'logX')
         opts.logX = false;

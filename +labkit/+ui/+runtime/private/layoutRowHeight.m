@@ -1,5 +1,5 @@
 % Private UI runtime layout helper. Expected caller: buildShellFromLayout and
-% buildSection. Inputs are one validated UI 5 spec and an optional default
+% buildSection. Inputs are one validated declarative spec and an optional default
 % row height. Output is a MATLAB uigridlayout RowHeight value.
 function value = layoutRowHeight(spec, defaultValue)
     if nargin < 2

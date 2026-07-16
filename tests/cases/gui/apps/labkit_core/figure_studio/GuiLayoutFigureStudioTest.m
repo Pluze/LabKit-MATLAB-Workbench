@@ -20,28 +20,28 @@ classdef GuiLayoutFigureStudioTest < matlab.unittest.TestCase
             assert(isequal(string(ui.controls.stylePreset.valueHandle.Items), ...
                 ["LabKit figure", "FIG default"]), ...
                 'Figure Studio should expose only the LabKit style and FIG default modes.');
-            assert(labkit.ui.control.getValue(ui, "canvasWidth") == 720 && ...
-                labkit.ui.control.getValue(ui, "canvasHeight") == 540 && ...
-                labkit.ui.control.getValue(ui, "baseFontSize") == 36 && ...
-                labkit.ui.control.getValue(ui, "dataLineWidth") == 3 && ...
-                labkit.ui.control.getValue(ui, "axesLineWidth") == 3, ...
+            assert(testui.control.getValue(ui, "canvasWidth") == 720 && ...
+                testui.control.getValue(ui, "canvasHeight") == 540 && ...
+                testui.control.getValue(ui, "baseFontSize") == 36 && ...
+                testui.control.getValue(ui, "dataLineWidth") == 3 && ...
+                testui.control.getValue(ui, "axesLineWidth") == 3, ...
                 'Figure Studio default single-panel style should match the measured reference panel proportions.');
             setNumericControl(fig, 'baseFontSize', 24);
             ui = driver.registry();
-            assert(labkit.ui.control.getValue(ui, "titleFontSize") == 24 && ...
-                labkit.ui.control.getValue(ui, "labelFontSize") == 24 && ...
-                labkit.ui.control.getValue(ui, "tickFontSize") == 24, ...
+            assert(testui.control.getValue(ui, "titleFontSize") == 24 && ...
+                testui.control.getValue(ui, "labelFontSize") == 24 && ...
+                testui.control.getValue(ui, "tickFontSize") == 24, ...
                 'All font should synchronize title, label, and tick font controls.');
             setNumericControl(fig, 'titleFontSize', 32);
-            assert(labkit.ui.control.getValue(driver.registry(), "titleFontSize") == 32, ...
+            assert(testui.control.getValue(driver.registry(), "titleFontSize") == 32, ...
                 'Single font controls should be independently adjustable after global sync.');
             setDropdownControl(fig, 'aspectPreset', 'Custom');
             setNumericControl(fig, 'canvasWidth', 1550);
             setNumericControl(fig, 'canvasHeight', 777);
             ui = driver.registry();
-            assert(strcmp(string(labkit.ui.control.getValue(ui, "aspectPreset")), "Custom") && ...
-                labkit.ui.control.getValue(ui, "canvasWidth") == 1550 && ...
-                labkit.ui.control.getValue(ui, "canvasHeight") == 777, ...
+            assert(strcmp(string(testui.control.getValue(ui, "aspectPreset")), "Custom") && ...
+                testui.control.getValue(ui, "canvasWidth") == 1550 && ...
+                testui.control.getValue(ui, "canvasHeight") == 777, ...
                 'Custom aspect should preserve independently edited canvas dimensions.');
             folder = tempname();
             mkdir(folder);
@@ -58,6 +58,11 @@ classdef GuiLayoutFigureStudioTest < matlab.unittest.TestCase
             assert(driver.previewChildCount('preview') > 0 && ...
                 driver.enabled('exportCurrent'), ...
                 'Figure Studio should auto-open scanned FIG files into a styleable preview.');
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            testCase.verifyEqual(runtime.definition.contractVersion, 2, ...
+                'Figure Studio must execute through Runtime V2.');
+            testCase.verifyFalse(containsGraphicsHandle(runtime.state.project), ...
+                'Figure Studio projects must not retain axes or other graphics handles.');
             ax = driver.registry().controls.preview.axesById.main;
             assert(~contains(join(string(ax.Title.String), " "), " | file "), ...
                 'Figure Studio should not style framework file-title context as plot content.');
@@ -73,6 +78,26 @@ classdef GuiLayoutFigureStudioTest < matlab.unittest.TestCase
                 'Figure Studio should preserve canvas ratio and avoid enlarging preview scale when the app window resizes.');
             assert(~isfield(driver.registry().controls, 'applyStyle'), ...
                 'Figure Studio should apply style changes immediately without an Apply button.');
+
+            pngPath = fullfile(folder, 'styled-probe.png');
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            runtime.request.outputFileChooser = @(~, ~, ~) deal( ...
+                'styled-probe.png', folder);
+            runtime.request.outputFolderChooser = @(~, ~) folder;
+            setappdata(fig, 'labkitUiAppRuntime', runtime);
+            driver.click('PNG');
+            testCase.verifyTrue(isfile(pngPath));
+            testCase.verifyTrue(isfile(fullfile(folder, ...
+                'figure_studio.labkit.json')), ...
+                'Quick exports should add the standard Figure Studio manifest.');
+            driver.click('Choose output folder');
+            driver.click('Export data + script');
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            packagePath = string(runtime.state.project.results.lastExport.path);
+            testCase.verifyTrue(isfolder(packagePath));
+            testCase.verifyTrue(isfile(fullfile(packagePath, ...
+                'figure_studio.labkit.json')), ...
+                'Package exports should add the standard Figure Studio manifest.');
             assertNoDuplicateSpecIds(fig);
         end
 
@@ -97,11 +122,32 @@ classdef GuiLayoutFigureStudioTest < matlab.unittest.TestCase
                 driver.enabled('exportCurrent'), ...
                 'Figure Studio should enable styling after axes handoff.');
             ui = driver.registry();
-            canvasRatio = double(labkit.ui.control.getValue(ui, "canvasWidth")) / ...
-                double(labkit.ui.control.getValue(ui, "canvasHeight"));
+            canvasRatio = double(testui.control.getValue(ui, "canvasWidth")) / ...
+                double(testui.control.getValue(ui, "canvasHeight"));
             assert(abs(canvasRatio - 2) < 0.02 && ...
-                strcmp(string(labkit.ui.control.getValue(ui, "aspectPreset")), "Custom"), ...
+                strcmp(string(testui.control.getValue(ui, "aspectPreset")), "Custom"), ...
                 'Figure Studio axes handoff should preserve the source plot box ratio as a custom canvas.');
+
+            folder = tempname;
+            mkdir(folder);
+            folderCleanup = onCleanup(@() removeTempFolder(folder));
+            projectPath = fullfile(folder, 'figure-studio-project.mat');
+            labkit.ui.runtime.saveState(fig, projectPath);
+            saved = load(projectPath, 'labkitProject');
+            testCase.verifyEqual(saved.labkitProject.app.payloadVersion, 1);
+            testCase.verifyFalse(isfield(saved.labkitProject.payload, 'session'), ...
+                'Figure Studio projects must exclude runtime resources and caches.');
+            testCase.verifyFalse(containsGraphicsHandle(saved.labkitProject.payload), ...
+                'Serialized axes handoff data must not contain graphics handles.');
+            testCase.verifyNotEmpty(saved.labkitProject.payload.annotations.embeddedPlot, ...
+                'Axes handoff plot data should remain durable inside the project.');
+            labkit.ui.runtime.loadState(fig, projectPath);
+            h.waitForUiIdle(fig);
+            runtime = getappdata(fig, 'labkitUiAppRuntime');
+            testCase.verifyNotEmpty(runtime.state.session.cache.plotData, ...
+                'Project reopen should rebuild the plot session cache.');
+            testCase.verifyGreaterThan(driver.previewChildCount('preview'), 0, ...
+                'Project reopen should redraw the embedded axes handoff.');
         end
 
         function figure_studio_waits_for_stable_preview_canvas(testCase)
@@ -145,7 +191,12 @@ classdef GuiLayoutFigureStudioTest < matlab.unittest.TestCase
             plot(sourceAx, 1:3, [2 1 4], 'DisplayName', 'source');
             title(sourceAx, 'Source Plot');
 
-            popoutFig = labkit.ui.interaction.popout(sourceAx, "Title", "Source Plot");
+            labkit.ui.interaction.enablePopout(sourceAx);
+            menu = findall(sourceAx.ContextMenu, 'Type', 'uimenu', ...
+                'Tag', 'labkitAxesPopoutMenu');
+            menu(1).MenuSelectedFcn(menu(1), []);
+            popoutFig = findall(groot, 'Type', 'figure', 'Name', 'Source Plot');
+            popoutFig = popoutFig(1);
             hookCleanup = onCleanup(@() removeStudioHook());
             setappdata(groot, 'labkitFigureStudioLauncher', ...
                 @(ax) labkit_FigureStudio_app("axes", ax));
@@ -197,6 +248,8 @@ function setNumericControl(fig, id, value)
     control.valueSpinner.Value = value;
     control.valueSpinner.ValueChangedFcn(control.valueSpinner, ...
         struct('PreviousValue', previous));
+    pause(0.65);
+    waitForNotBusy(fig);
     drawnow;
 end
 
@@ -207,6 +260,8 @@ function setDropdownControl(fig, id, value)
     control.valueHandle.Value = value;
     control.valueHandle.ValueChangedFcn(control.valueHandle, ...
         struct('PreviousValue', previous));
+    pause(0.65);
+    waitForNotBusy(fig);
     drawnow;
 end
 
@@ -222,6 +277,31 @@ end
 function removeTempFolder(folder)
     if isfolder(folder)
         rmdir(folder, 's');
+    end
+end
+
+function tf = containsGraphicsHandle(value)
+    tf = isa(value, 'matlab.graphics.Graphics');
+    if tf
+        return;
+    end
+    if isstruct(value)
+        names = fieldnames(value);
+        for index = 1:numel(value)
+            for name = names.'
+                if containsGraphicsHandle(value(index).(name{1}))
+                    tf = true;
+                    return;
+                end
+            end
+        end
+    elseif iscell(value)
+        for index = 1:numel(value)
+            if containsGraphicsHandle(value{index})
+                tf = true;
+                return;
+            end
+        end
     end
 end
 

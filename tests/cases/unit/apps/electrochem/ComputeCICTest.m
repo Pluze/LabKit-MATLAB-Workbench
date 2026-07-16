@@ -13,13 +13,14 @@ function verify_computeCIC()
 %TEST_COMPUTECIC Verify app-side CIC / voltage-transient analysis.
 
     item = makeChronoFixtureItem();
+    choices = cic.userInterface.analysisChoices();
 
     opts = struct();
     opts.delay_s = 10e-6;
     opts.cathLimit = -0.6;
     opts.anodLimit = 0.8;
     opts.areaOverride = '';
-    opts.pulseMode = 'Metadata first, then auto';
+    opts.pulseMode = char(choices.pulseModes(1));
     opts.usedMeasuredCurrent = true;
 
     A = computeCIC(item, opts);

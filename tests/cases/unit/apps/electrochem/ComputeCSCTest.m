@@ -20,12 +20,15 @@ function verify_computeCSC()
     curves = item.curves;
     assert(~isempty(curves), 'CV/CT fixture should contain at least one curve.');
     curve = curves(1);
+    choices = csc.userInterface.analysisChoices();
 
-    opts = struct('scanRate', scanRate, 'mode', 'Full', 'area_cm2', '2');
+    opts = struct('scanRate', scanRate, ...
+        'mode', char(choices.modes(1)), 'area_cm2', '2');
     A = computeCSC(curve, opts);
     assert(A.ok, A.message);
     assert(strcmp(A.message, 'OK'), 'Successful CSC result should preserve OK status.');
-    assert(strcmp(A.mode, 'Full'), 'Full mode should be echoed in the result.');
+    assert(strcmp(A.mode, choices.modes(1)), ...
+        'Full mode should be echoed in the result.');
     assertClose(A.Qct, 0.0015, 1e-16, 'Full CT charge');
     assertClose(A.Qcv, 0.0075, 1e-16, 'Full CV charge');
     assertClose(A.diff_C, -0.006, 1e-18, 'Full charge difference');
@@ -36,7 +39,7 @@ function verify_computeCSC()
     assert(numel(A.IcathDisp) == numel(A.Im), 'Cathodic trim vector should match filtered data length.');
     assert(numel(A.IanodDisp) == numel(A.Im), 'Anodic trim vector should match filtered data length.');
 
-    opts.mode = 'Cathodic';
+    opts.mode = char(choices.modes(2));
     B = computeCSC(curve, opts);
     assert(B.ok, B.message);
     assertClose(B.Qct, 0.00025, 1e-16, 'Cathodic CT charge');
@@ -44,7 +47,7 @@ function verify_computeCSC()
     assertClose(B.rel_pct, 80, 1e-12, 'Cathodic relative difference');
     assertClose(B.Qct_mC_cm2, 0.125, 1e-13, 'Cathodic CSC');
 
-    opts.mode = 'Anodic';
+    opts.mode = char(choices.modes(3));
     C = computeCSC(curve, opts);
     assert(C.ok, C.message);
     assertClose(C.Qct, 0.00125, 1e-16, 'Anodic CT charge');
@@ -55,7 +58,8 @@ function verify_computeCSC()
     synthetic = struct();
     synthetic.headers = {'T', 'Vf', 'Im'};
     synthetic.data = [0 0 -1; 1 1 1; 2 2 1];
-    Z = computeCSC(synthetic, struct('scanRate', 2, 'mode', 'Full'));
+    Z = computeCSC(synthetic, struct( ...
+        'scanRate', 2, 'mode', char(choices.modes(1))));
     assert(Z.ok, 'Synthetic zero-crossing case should compute.');
     assertClose(Z.QctCath, 0.25, 1e-15, 'Synthetic CT cathodic charge');
     assertClose(Z.QctAnod, 1.25, 1e-15, 'Synthetic CT anodic charge');

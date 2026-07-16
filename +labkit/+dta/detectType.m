@@ -1,12 +1,36 @@
 function [kind, status] = detectType(filepath)
-%DETECTTYPE Detect the supported Gamry DTA family for one file.
+%DETECTTYPE Identify the supported Gamry DTA data family in a file.
+%
+% Usage:
+%   [kind, status] = labkit.dta.detectType(filepath)
+%
+% Description:
+%   Reads enough of one DTA file to determine whether it contains EIS,
+%   cyclic-voltammetry/charge-time, or chrono data. Detection verifies usable
+%   curve columns rather than relying on the filename. A missing or unsupported
+%   file is reported in status instead of throwing a read error.
 %
 % Inputs:
-%   filepath - char/string path to one DTA file.
+%   filepath - Character vector or string scalar naming one DTA file.
 %
-% Output:
-%   kind - "chrono", "eis", "cvct", or "unknown".
-%   status - struct with ok, message, kind, expectedKind, and filepath.
+% Outputs:
+%   kind - String scalar: "chrono", "eis", "cvct", or "unknown".
+%   status - Scalar structure describing detection. ok is true only for a
+%       recognized file; message is empty on success and explains failure
+%       otherwise; kind repeats the detected value; and filepath contains the
+%       normalized character-vector path.
+%
+% Errors:
+%   Throws labkit:dta:InvalidFilepath when filepath is not a character vector
+%   or string scalar.
+%
+% Example:
+%   [kind, status] = labkit.dta.detectType("experiment.DTA");
+%   if status.ok
+%       fprintf("Detected %s data.\n", kind)
+%   else
+%       warning("%s", status.message)
+%   end
 
     filepath = normalizeFilepath(filepath);
     kind = "unknown";

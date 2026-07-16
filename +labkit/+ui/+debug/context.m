@@ -1,40 +1,93 @@
 function debugContext = context(appName, opts)
-%CONTEXT Create an app-neutral debug and trace context.
+%CONTEXT Create an app-neutral callback tracing and diagnostic context.
 %
 % Usage:
-%   debug = labkit.ui.debug.context("labkit_Example_app", opts);
-%   debug.append("Loaded file");
-%   debug.trace("button pressed");
-%   debug.trace("scaleBar", "reference changed", "user");
-%   debug.reportException("load", caughtException);
-%   debug.attachTextLog(txtLog);
-%   debug.instrumentFigure(fig);
+%   debug = labkit.ui.debug.context(appName)
+%   debug = labkit.ui.debug.context(appName, opts)
 %
 % Inputs:
-%   appName - app entry-point name stored in debugContext.appName and trace.
-%   opts - optional struct with fields:
-%       enabled - logical, default true. Disabled contexts ignore append/trace.
-%       traceEnabled - logical, default same as enabled.
-%       logFile - char/string filepath, default ''. Appended and trace lines
-%           are mirrored to this file when enabled.
-%       logCallback - function handle, default []. Called for every captured
-%           line as logCallback(line).
-%       traceCallback - function handle, default []. Called only for trace
-%           lines as traceCallback(line).
-%       stallTimeoutSeconds - positive scalar, default 30. Instrumented
-%           callbacks still running after this duration write a crash report.
-%       crashReportFile - char/string filepath, default derived from logFile.
-%       activeOperationFile - char/string filepath, default derived from
-%           logFile. This file is written at callback start and removed only
-%           after callback completion so a process crash leaves the active
-%           callback visible on disk.
-%       artifactFolder, sampleFolder, outputFolder, manifestFile -
-%           char/string debug artifact paths derived from logFile by default.
+%   appName - Text scalar identifying the app in every structured trace line
+%       and diagnostic report.
+%   opts - Optional scalar struct described below. Default: struct().
 %
-% Output:
-%   debugContext - struct with appName, file paths, append/trace/report
-%       callbacks, figure instrumentation, recordArtifacts, and getLog.
-%       Trace lines include stable app, component, event, and reason fields.
+% Options:
+%   enabled - Logical master switch. A disabled context ignores captured
+%       messages and does not create artifact folders. Default: true.
+%   traceEnabled - Logical switch for trace and callback instrumentation.
+%       Default: enabled.
+%   logFile - Text file path. Existing content is replaced when the context is
+%       created, then every captured line is appended. Default: "".
+%   logCallback - Function handle called as logCallback(line) for every
+%       captured append or trace line. Default: [].
+%   traceCallback - Function handle called as traceCallback(line) only for
+%       structured trace lines. Default: [].
+%   stallTimeoutSeconds - Nonnegative callback duration in seconds before an
+%       instrumented operation writes a stalled-operation report. Default: 30.
+%   crashReportFile - Diagnostic report path. By default, uses the logFile
+%       folder and base name with a _crash_report.txt suffix.
+%   activeOperationFile - Path written at callback start and removed after
+%       successful or failed completion. A MATLAB process failure can therefore
+%       leave the last active callback on disk. The default is derived from
+%       logFile with an _active_operation.txt suffix.
+%   artifactFolder - Root folder for debug sample packs. Default: the logFile
+%       folder.
+%   sampleFolder - Folder for copied or synthetic input samples. Default:
+%       fullfile(artifactFolder,"samples").
+%   outputFolder - Folder for debug outputs. Default:
+%       fullfile(artifactFolder,"outputs").
+%   manifestFile - JSON manifest path. Default:
+%       fullfile(artifactFolder,"manifest.json").
+%
+% Outputs:
+%   debugContext - Scalar struct, shown as debug in the usage syntax, containing
+%       configuration fields and the methods below.
+%
+% Context Fields:
+%   appName - Normalized app name as a string scalar.
+%   enabled - Effective master switch.
+%   traceEnabled - Effective trace switch.
+%   logFile - Effective log path.
+%   crashReportFile - Effective caught-error and stall-report path.
+%   activeOperationFile - Effective active-operation marker path.
+%   artifactFolder - Effective artifact root.
+%   sampleFolder - Effective sample folder.
+%   outputFolder - Effective output folder.
+%   manifestFile - Effective manifest path.
+%
+% Context Methods:
+%   append(message) - Add one timestamped human-readable log line.
+%   trace(event) - Add a structured app-level trace with reason "internal".
+%   trace(component,event,reason) - Add a trace containing stable app,
+%       component, event, and reason fields.
+%   reportException(event,exception) - Trace and report an app-level exception.
+%   reportException(component,event,exception) - Trace and report a component
+%       exception. Non-MException values are recorded as caught error text.
+%   setTraceCallback(callback) - Replace the trace-only callback.
+%   attachTextLog(textArea) - Send future trace lines to a LabKit log text area.
+%   wrapCallback(name,callback) - Return a callback that records BEGIN, END,
+%       elapsed operation state, stalls, and errors while preserving outputs.
+%   instrumentFigure(fig) - Wrap supported callbacks already installed on a
+%       figure and its descendants; return the number wrapped.
+%   instrumentFigure(fig,opts) - Use opts.callbackProperties instead of the
+%       standard callback-property list.
+%   recordArtifacts(manifest) - Write manifest plus effective debug paths to
+%       manifestFile when that path is configured.
+%   getLog() - Return captured lines as a column cell array of character rows.
+%
+% Description:
+%   context provides opt-in diagnostics without coupling an app to a particular
+%   log panel. Instrumented callbacks are rethrown after reporting, so debugging
+%   does not change error control flow. File-chooser trace events suppress stall
+%   reports while a known modal dialog is active. With no file paths configured,
+%   messages remain in memory and no files or folders are created.
+%
+% Example:
+%   debug = labkit.ui.debug.context("example_app");
+%   debug.trace("loader", "file parsed", "user");
+%   lines = debug.getLog();
+%   assert(contains(lines{end}, "component=loader"))
+%
+% See also labkit.ui.runtime.launch
 
     if nargin < 2 || isempty(opts)
         opts = struct();
@@ -272,7 +325,6 @@ function debugContext = context(appName, opts)
             return;
         end
         stopStallTimer(op);
-        modalDialogDepth = 0;
         if status == "error"
             writeOperationReport("error", op, exception);
         end
@@ -390,10 +442,12 @@ function debugContext = context(appName, opts)
         end
         eventText = string(event);
         if contains(eventText, "file chooser start") || ...
+                contains(eventText, "folder chooser start") || ...
                 contains(eventText, "dialog provider start") || ...
                 contains(eventText, "large folder prompt")
             modalDialogDepth = modalDialogDepth + 1;
         elseif contains(eventText, "file chooser end") || ...
+                contains(eventText, "folder chooser end") || ...
                 contains(eventText, "dialog provider end") || ...
                 contains(eventText, "paths selected")
             modalDialogDepth = max(0, modalDialogDepth - 1);

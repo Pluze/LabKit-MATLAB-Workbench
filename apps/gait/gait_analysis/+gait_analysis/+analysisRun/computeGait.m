@@ -1,8 +1,122 @@
-%COMPUTEGAIT Compute gait frame, step, and summary metrics from pose data.
-% Expected caller: run-analysis action and tests. Inputs are normalized pose
-% coordinates and app-owned options. Output tables are GUI-free export
-% contracts.
 function result = computeGait(pose, opts)
+%COMPUTEGAIT Calculate joint, segment, stride, and step-quality measurements.
+%
+% Usage:
+%   result = gait_analysis.analysisRun.computeGait(pose, opts)
+%
+% Description:
+%   Analyzes named two-dimensional pose coordinates without opening the app.
+%   The function maps five anatomical roles to source points, smooths their
+%   coordinates, calculates joint angles and segment lengths, detects repeated
+%   foot-contact cycles, evaluates each cycle against quality thresholds, and
+%   returns the same four tables used by app preview and CSV export.
+%
+% Inputs:
+%   pose - Scalar normalized pose structure, normally returned by
+%       gait_analysis.sourceFiles.readPoseFile. Required fields are coords, an
+%       F-by-P-by-2 numeric array of [x y] image coordinates, and pointNames,
+%       a P-element text vector. Optional frameIndex and time vectors must have
+%       F elements. unitName labels coordinates that are already physical.
+%       sourceFormat is copied into the summary table.
+%   opts - Scalar option structure. Start with
+%       gait_analysis.appState.defaultOptions; missing fields use those defaults.
+%
+% Options:
+%   iliacPoint - Case-insensitive point name assigned to the iliac role.
+%       Default: "iliac".
+%   hipPoint - Point name assigned to the hip role. Default: "hip".
+%   kneePoint - Point name assigned to the knee role. Default: "knee".
+%   anklePoint - Point name assigned to the ankle role. Default: "ankle".
+%   footPoint - Point name used for contact detection and stride length.
+%       Default: "foot".
+%   frameRate - Frames per second used only when pose.time has no finite values.
+%       A nonpositive or invalid value leaves time_s as NaN. Default: 30.
+%   pixelsPerUnit - Positive pixel density for physical output. Distances and
+%       scaled coordinates are divided by this value. When invalid, pose.unitName
+%       is retained at scale 1 when present; otherwise output uses pixels.
+%       Default: 1.
+%   unitName - Label used with a valid pixelsPerUnit. Default: "px".
+%   originAtFirstFrameFirstPoint - When true, coordinateTable subtracts the
+%       first point's first-frame coordinate from every scaled point. Raw pixel
+%       columns are unchanged. Default: false.
+%   smoothWindow - Requested centered smoothing span in frames, rounded to an
+%       integer of at least one. The effective odd span is
+%       2*floor((smoothWindow-1)/2)+1. Finite values are averaged separately for
+%       each point and axis. Default: 5.
+%   minStepFrames - Minimum contact-to-contact separation and minimum accepted
+%       cycle length in frames, rounded to an integer. Default: 3.
+%   maxStepFrames - Maximum accepted inclusive contact-to-contact cycle length,
+%       rounded to an integer. It does not change contact detection. Default: 300.
+%   minStride - Minimum accepted foot x-coordinate span in output units.
+%       Default: 1.
+%   maxBodyDrift - Maximum accepted hip x-coordinate span in output units.
+%       Default: 1000000, which normally leaves this check inactive.
+%
+% Event Detection:
+%   The detection trace is foot_x - hip_x after smoothing. A contact is a local
+%   minimum whose value is no greater than the preceding frame and strictly
+%   less than the following frame. Candidates closer than minStepFrames retain
+%   the lower minimum. Each adjacent pair of contacts defines one cycle; its
+%   lift-off frame is the maximum relative foot x value between those contacts.
+%   This is a kinematic event definition, not a force-plate contact measurement.
+%
+% Measurements:
+%   Hip, knee, and ankle angles are the unsigned angles from 0 to 180 degrees
+%   between the two adjacent segment vectors. A zero-length or nonfinite segment
+%   produces NaN. Segment lengths are Euclidean distances. For each cycle,
+%   stride_length and each point translation are the finite maximum-minus-
+%   minimum x coordinate, not endpoint displacement. Range of motion is the
+%   corresponding finite maximum-minus-minimum joint angle.
+%
+% Outputs:
+%   result - Scalar structure containing status, normalized options, events,
+%       and four tables.
+%
+% Result Fields:
+%   ok, message - true and "Analysis complete" after successful calculation.
+%   options - Effective options after defaults, scalar cleanup, and rounding.
+%   events - Structure with contactFrames, liftOffFrames, and the smoothed
+%       footRelativeX detection trace.
+%   frameTable - One row per frame. It contains frame/time/step membership,
+%       contact and lift-off flags, coordinate unit, three joint angles, four
+%       segment lengths, and scaled <point>_x/<point>_y columns.
+%   coordinateTable - One row per frame with frame/time and origin metadata,
+%       raw <point>__x_px/<point>__y_px columns, and scaled, optionally shifted
+%       <point>__x/<point>__y columns. The unshifted origin is [0 0] in pixel
+%       coordinates rather than the center of pixel [1 1].
+%   stepTable - One row per adjacent contact pair. It contains validity and
+%       reason, contact/lift-off frames, duration, stride, five x translations,
+%       three joint ranges of motion, and recording-wide joint extrema.
+%       invalid_reason is "ok", "duration_out_of_range", "stride_too_small",
+%       or "body_drift_too_large".
+%   summaryTable - Metric/value text table reporting source geometry, detected
+%       and valid cycle counts, mean valid-cycle time and stride, and global
+%       finite joint-angle extrema.
+%
+% Errors:
+%   labkit_GaitAnalysis_app:NoPoseData - pose has no nonempty coords field.
+%   labkit_GaitAnalysis_app:MissingRolePoint - A configured role name is absent
+%       from pose.pointNames.
+%
+% Example:
+%   frame = (1:12).';
+%   footX = [-2; -3; -1; 2; 4; -3; -1; 2; 4; -3; -1; 1];
+%   pose = struct("coords", NaN(12, 5, 2), ...
+%       "pointNames", ["iliac"; "hip"; "knee"; "ankle"; "foot"], ...
+%       "frameIndex", frame, "time", (frame-1)/30, ...
+%       "unitName", "px", "sourceFormat", "synthetic");
+%   pose.coords(:, :, 1) = [-2*ones(12,1), zeros(12,1), ...
+%       ones(12,1), 2*ones(12,1), footX];
+%   pose.coords(:, :, 2) = repmat([8 6 4 2 0], 12, 1);
+%   opts = gait_analysis.appState.defaultOptions();
+%   opts.smoothWindow = 1;
+%   result = gait_analysis.analysisRun.computeGait(pose, opts);
+%   assert(result.ok && height(result.stepTable) == 2)
+%
+% See also gait_analysis.sourceFiles.readPoseFile,
+%   gait_analysis.appState.defaultOptions,
+%   video_marker.coordinateExport.buildTable
+
     if ~isstruct(pose) || ~isfield(pose, "coords") || isempty(pose.coords)
         error('labkit_GaitAnalysis_app:NoPoseData', ...
             'Load pose coordinates before running gait analysis.');

@@ -1,12 +1,9 @@
-% App-owned action table for Response Review Stats. Expected caller is
-% response_review_stats.definition. Output maps semantic action ids to
-% handlers used by labkit.ui.runtime.run. Handlers own workflow transitions,
-% metric loading, and export side effects.
+% App-owned Runtime V2 actions for Response Review Stats. Handlers own source
+% selection, cache rebuild, preview selection, and export without direct UI or
+% lifecycle plumbing.
 function actions = definitionActions()
     actions = struct( ...
-        "startup", @onStartup, ...
         "inputChosen", @onInputChosen, ...
-        "inputCleared", @onInputCleared, ...
         "outputFolderChosen", @onOutputFolderChosen, ...
         "outputFolderCleared", @onOutputFolderCleared, ...
         "settingChanged", @onSettingChanged, ...
@@ -16,229 +13,162 @@ function actions = definitionActions()
         "resetWorkflow", @onResetWorkflow);
 end
 
-function state = onStartup(state, ~, services)
-    debugLog = services.debug;
-    if isDebugEnabled(debugLog)
-        debugLog.trace("Response Review Stats debug trace enabled.");
-        debugLog.instrumentFigure(services.figure);
-        state = setupDebugSamples(state, services);
-    end
-    addLog(services, "Response Review Stats ready.");
-end
-
-function state = onInputChosen(state, payload, services)
-    paths = eventPaths(payload.event);
-    if isempty(paths)
+function state = onInputChosen(state, event, services)
+    filepath = firstEventPath(event, services);
+    if strlength(filepath) == 0
         return;
     end
-    state.inputFile = paths(1);
-    state.outputFolder = string(labkit.ui.runtime.defaultOutputFolder( ...
-        paths, "response_review_stats", state.outputFolder));
-    state.statusMessage = "Input selected.";
-    state.lastAction = "Selected input";
-    addLog(services, "Selected input: " + displayPath(state.inputFile));
-    state = loadMetricsFromState(state, "Auto-loaded metrics", services);
-end
-
-function state = onInputCleared(state, ~, ~)
-    state.inputFile = "";
-    state.metrics = table();
-    state.summary = table();
-    state.aligned = [];
-    state.statusMessage = "No input selected.";
-    state.lastAction = "Cleared input";
+    state.project.inputs.source = services.project.sourceRecord( ...
+        "reviewInput", "reviewInput", filepath, true);
+    state.project.results.lastExport = [];
+    state.session.cache.filepath = filepath;
+    state.session.workflow.outputFolder = string( ...
+        services.dialogs.defaultOutputFolder(filepath, ...
+        "response_review_stats", state.session.workflow.outputFolder));
+    state.session.workflow.lastAction = "Selected input";
+    state = services.workflow.log(state, ...
+        "Selected input: " + displayPath(filepath));
+    state = rebuildMetrics(state, "Auto-loaded metrics", services);
 end
 
 function state = onOutputFolderChosen(state, ~, services)
-    [folder, cancelled] = labkit.ui.runtime.promptOutputFolder( ...
-        "Select metrics output folder", state.outputFolder);
+    [folder, cancelled] = services.dialogs.outputFolder( ...
+        "Select metrics output folder", state.session.workflow.outputFolder);
     if cancelled
-        state.lastAction = "Output folder selection cancelled";
+        state.session.workflow.lastAction = ...
+            "Output folder selection cancelled";
         return;
     end
-    state.outputFolder = string(folder);
-    state.lastAction = "Selected output folder";
-    addLog(services, "Selected output folder: " + displayPath(state.outputFolder));
+    state.session.workflow.outputFolder = string(folder);
+    state.session.workflow.lastAction = "Selected output folder";
+    state = services.workflow.log(state, ...
+        "Selected output folder: " + displayPath(folder));
 end
 
 function state = onOutputFolderCleared(state, ~, ~)
-    state.outputFolder = "";
-    state.lastAction = "Cleared output folder";
+    state.session.workflow.outputFolder = "";
+    state.session.workflow.lastAction = "Cleared output folder";
 end
 
 function state = onSettingChanged(state, ~, services)
-    state.baselineWindowSec = numericScalar(labkit.ui.control.getValue( ...
-        services.ui, "baselineWindowSec"), state.baselineWindowSec);
-    state.noiseWindowSec = numericScalar(labkit.ui.control.getValue( ...
-        services.ui, "noiseWindowSec"), state.noiseWindowSec);
-    state.lastAction = "Updated metric windows";
-    if strlength(state.inputFile) > 0
-        state = loadMetricsFromState(state, ...
+    state.project.parameters.baselineWindowSec = validRange( ...
+        state.project.parameters.baselineWindowSec, [0.007 0.009]);
+    state.project.parameters.noiseWindowSec = validRange( ...
+        state.project.parameters.noiseWindowSec, [0.007 0.009]);
+    state.project.results.lastExport = [];
+    if ~isempty(state.project.inputs.source)
+        state = rebuildMetrics(state, ...
             "Refreshed metrics after window change", services);
     end
 end
 
-function state = onPreviewModeChanged(state, payload, ~)
-    value = eventValue(payload.event);
-    if strlength(value) > 0
-        state.previewMode = value;
+function state = onPreviewModeChanged(state, event, ~)
+    value = string(event.value);
+    if isscalar(value) && any(value == ["Summary", "Aligned"])
+        state.session.view.previewMode = value;
     end
 end
 
 function state = onLoadMetrics(state, ~, services)
-    state = loadMetricsFromState(state, "Loaded metrics", services);
+    state = rebuildMetrics(state, "Loaded metrics", services);
+end
+
+function state = rebuildMetrics(state, actionLabel, services)
+    if isempty(state.project.inputs.source)
+        state.session.workflow.statusMessage = ...
+            "Select an analysis JSON or segment CSV first.";
+        return;
+    end
+    try
+        [metrics, summary, aligned] = ...
+            response_review_stats.analysisRun.loadMetrics( ...
+            state.session.cache.filepath, state.project.parameters);
+    catch ME
+        services.diagnostics.report("Metric load failed", ME);
+        state.session.cache.metrics = table();
+        state.session.cache.summary = table();
+        state.session.cache.aligned = [];
+        state.session.workflow.statusMessage = string(ME.message);
+        state.session.workflow.lastAction = "Metric load failed";
+        state = services.workflow.log(state, ...
+            "Metric load failed: " + state.session.workflow.statusMessage);
+        return;
+    end
+    state.session.cache.metrics = metrics;
+    state.session.cache.summary = summary;
+    state.session.cache.aligned = aligned;
+    state.session.workflow.statusMessage = sprintf( ...
+        "Loaded %d metric row(s).", height(metrics));
+    state.session.workflow.lastAction = string(actionLabel);
+    state = services.workflow.log(state, state.session.workflow.statusMessage);
 end
 
 function state = onExportMetrics(state, ~, services)
-    if isempty(state.metrics) || height(state.metrics) == 0
-        state.statusMessage = "Load metrics before exporting.";
+    metrics = state.session.cache.metrics;
+    if height(metrics) == 0
+        state.session.workflow.statusMessage = "Load metrics before exporting.";
         return;
     end
-    if strlength(state.outputFolder) == 0
-        state.statusMessage = "Select an output folder first.";
+    folder = state.session.workflow.outputFolder;
+    if strlength(folder) == 0
+        state.session.workflow.statusMessage = "Select an output folder first.";
         return;
     end
-    outputPath = fullfile(char(state.outputFolder), ...
-        "response_review_metrics.csv");
-    response_review_stats.resultFiles.writeMetricsCsv(state.metrics, outputPath);
-    state.statusMessage = "Exported response-review metrics.";
-    state.lastAction = "Exported metrics";
-    addLog(services, "Exported metrics CSV: " + displayPath(outputPath));
+    if exist(char(folder), "dir") ~= 7
+        mkdir(char(folder));
+    end
+    outputName = "response_review_metrics.csv";
+    outputPath = fullfile(char(folder), outputName);
+    response_review_stats.resultFiles.writeMetricsCsv(metrics, outputPath);
+    output = services.results.output( ...
+        "responseReviewMetrics", "primary", outputName, "text/csv");
+    spec = struct( ...
+        "Outputs", output, "Inputs", state.project.inputs.source, ...
+        "Parameters", state.project.parameters, ...
+        "Summary", struct("metricCount", height(metrics), ...
+        "groupCount", height(state.session.cache.summary)), ...
+        "ManifestName", "response_review_metrics.labkit.json");
+    [manifestPath, ~] = services.results.writeManifest(folder, spec);
+    state.project.results.lastExport = struct( ...
+        "csvPath", string(outputPath), ...
+        "manifestPath", string(manifestPath));
+    state.session.workflow.statusMessage = "Exported response-review metrics.";
+    state.session.workflow.lastAction = "Exported metrics";
+    state = services.workflow.log(state, ...
+        "Exported metrics CSV: " + displayPath(outputPath));
 end
 
 function state = onResetWorkflow(~, ~, services)
-    state = response_review_stats.appLifecycle.createInitialState();
-    addLog(services, "Reset Response Review Stats state.");
+    project = response_review_stats.appLifecycle.createProject();
+    state = struct("project", project, ...
+        "session", response_review_stats.appLifecycle.createSession(project));
+    state = services.workflow.log(state, ...
+        "Reset Response Review Stats state.");
 end
 
-function state = setupDebugSamples(state, services)
-    debugLog = services.debug;
-    try
-        pack = response_review_stats.debug.writeSamplePack(debugLog);
-        addLog(services, "Debug sample files: " + string(pack.sampleFolder));
-        addLog(services, "Debug output folder: " + string(pack.outputFolder));
-    catch ME
-        debugLog.reportException('responseReviewStats', ...
-            'Debug sample setup failed', ME);
-        addLog(services, "Debug sample setup failed: " + string(ME.message));
+function filepath = firstEventPath(event, services)
+    paths = services.events.paths(event, "addedFiles");
+    if isempty(paths)
+        paths = services.events.paths(event, "files");
+    end
+    filepath = "";
+    if ~isempty(paths)
+        filepath = paths(1);
     end
 end
 
-function state = loadMetricsFromState(state, actionLabel, services)
-    if strlength(state.inputFile) == 0
-        state.statusMessage = "Select an analysis JSON or segment CSV first.";
-        return;
-    end
-
-    try
-        [~, ~, ext] = fileparts(char(state.inputFile));
-        if strcmpi(ext, ".json")
-            payload = jsondecode(fileread(char(state.inputFile)));
-            state.metrics = metricsFromAnalysisPayload(payload);
-            state.aligned = [];
-        else
-            T = readtable(char(state.inputFile));
-            segments = response_review_stats.sourceFiles.parseSegmentTable(T);
-            opts = struct( ...
-                "baselineWindowSec", state.baselineWindowSec, ...
-                "noiseWindowSec", state.noiseWindowSec);
-            state.aligned = response_review_stats.analysisRun.alignSegments( ...
-                segments, opts);
-            state.metrics = response_review_stats.analysisRun.measureAlignedSegments( ...
-                state.aligned, opts);
-        end
-    catch ME
-        services.debug.reportException('responseReviewStats', ...
-            'Metric load failed', ME);
-        state.metrics = table();
-        state.summary = table();
-        state.aligned = [];
-        state.statusMessage = string(ME.message);
-        state.lastAction = "Metric load failed";
-        addLog(services, "Metric load failed: " + state.statusMessage);
-        return;
-    end
-    state.summary = response_review_stats.analysisRun.summarizeMetrics(state.metrics);
-    state.statusMessage = sprintf("Loaded %d metric row(s).", ...
-        height(state.metrics));
-    state.lastAction = string(actionLabel);
-    addLog(services, state.statusMessage);
-end
-
-function value = numericScalar(value, fallback)
+function value = validRange(value, fallback)
     value = double(value);
-    if isempty(value) || ~isscalar(value) || ~isfinite(value)
+    if ~isequal(size(value), [1 2]) || any(~isfinite(value))
         value = fallback;
-    end
-end
-
-function metrics = metricsFromAnalysisPayload(payload)
-    if isfield(payload, "metrics") && isstruct(payload.metrics)
-        metrics = struct2table(payload.metrics);
-    else
-        metrics = table();
-    end
-    if height(metrics) == 0
-        return;
-    end
-    vars = string(metrics.Properties.VariableNames);
-    for k = 1:numel(vars)
-        if iscell(metrics.(vars(k)))
-            try
-                metrics.(vars(k)) = string(metrics.(vars(k)));
-            catch
-            end
-        end
-    end
-end
-
-function paths = eventPaths(event)
-    files = struct([]);
-    if isstruct(event) && isfield(event, "addedFiles")
-        files = event.addedFiles;
-    elseif isobject(event) && isprop(event, "addedFiles")
-        files = event.addedFiles;
-    elseif isstruct(event) && isfield(event, "selectedFiles")
-        files = event.selectedFiles;
-    elseif isobject(event) && isprop(event, "selectedFiles")
-        files = event.selectedFiles;
-    end
-    paths = labkit.ui.control.filePaths(files);
-    if ~(isstring(paths) && iscolumn(paths))
-        error('response_review_stats:InvalidPathEvent', ...
-            'filePanel event file paths must be a string column.');
-    end
-end
-
-function value = eventValue(event)
-    value = "";
-    if isstruct(event) && isfield(event, "value")
-        value = string(event.value);
-    elseif isobject(event) && isprop(event, "value")
-        value = string(event.value);
-    end
-    if numel(value) > 1
-        value = value(1);
     end
 end
 
 function text = displayPath(pathValue)
     pathValue = string(pathValue);
-    [~, base, ext] = fileparts(char(pathValue));
-    text = string([base ext]);
+    [~, base, extension] = fileparts(char(pathValue));
+    text = string(base) + string(extension);
     if strlength(text) == 0
         text = pathValue;
     end
-end
-
-function addLog(services, message)
-    labkit.ui.control.appendLog(services.ui, "logPanel", message);
-    if isDebugEnabled(services.debug)
-        services.debug.append(message);
-    end
-end
-
-function tf = isDebugEnabled(debugLog)
-    tf = isstruct(debugLog) && isfield(debugLog, 'enabled') && ...
-        logical(debugLog.enabled);
 end

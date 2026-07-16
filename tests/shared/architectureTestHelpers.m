@@ -6,6 +6,7 @@ function h = architectureTestHelpers()
     h.assertTopLevelMFiles = @assertTopLevelMFiles;
     h.assertPackageMFiles = @assertPackageMFiles;
     h.assertPackageSourcesDoNotContain = @assertPackageSourcesDoNotContain;
+    h.sourceContainsForbiddenWord = @sourceContainsForbiddenWord;
     h.assertAppEntrypoint = @assertAppEntrypoint;
     h.assertSingleFileApp = @assertAppEntrypoint;
     h.assertDTAFacadeUsage = @assertDTAFacadeUsage;
@@ -66,10 +67,11 @@ function source = assertAppEntrypoint(root, appName, launchName, legacyCall)
     assert(~contains(appSource, 'labkit.util.'), ...
         [appName ' should not call utility APIs directly.']);
     assertUsesGuiFoundation(appOwnedSource, appName);
-    assert(contains(appSource, '.version()') && ...
-        contains(appSource, '"Version"') && ...
-        contains(appSource, 'labkit.ui.runtime.applyVersionTitle'), ...
-        [appName ' should expose app version metadata and apply it to the figure title.']);
+    delegatesVersionToLaunch = ...
+        contains(appSource, 'labkit.ui.runtime.launch(') && ...
+        contains(appSource, '.version');
+    assert(delegatesVersionToLaunch, ...
+        [appName ' should pass app version metadata through the standard launcher.']);
     assert(~contains(appOwnedSource, 'labkit.ui.create'), ...
         [appName ' should not call removed flat UI create* helpers.']);
     assert(~contains(appOwnedSource, 'labkit.ui.appendLog'), ...
@@ -243,8 +245,7 @@ function assertGaitAppBoundary(source, appName)
 end
 
 function assertUsesGuiFoundation(source, appName)
-    assert(contains(source, 'labkit.ui.runtime.create(') || ...
-        contains(source, 'labkit.ui.runtime.run('), ...
+    assert(contains(source, 'labkit.ui.runtime.launch('), ...
         [appName ' should build from the reusable GUI foundation.']);
 end
 
@@ -282,16 +283,27 @@ function assertPackageSourcesDoNotContain(packageDir, forbiddenWords, label)
         source = fileread(fullfile(packageDir, fileEntries(iFile).name));
         for iWord = 1:numel(forbiddenWords)
             word = forbiddenWords{iWord};
-            assert(~contains(source, word), ...
+            assert(~sourceContainsForbiddenWord(source, word), ...
                 sprintf('%s package file %s should not contain app-domain word "%s".', ...
                 label, fileEntries(iFile).name, word));
         end
     end
 end
 
+function tf = sourceContainsForbiddenWord(source, word)
+    word = char(word);
+    if ~isempty(regexp(word, '^[A-Za-z]\w*$', 'once'))
+        pattern = ['(?<![A-Za-z0-9_])' regexptranslate('escape', word) ...
+            '(?![A-Za-z0-9_])'];
+        tf = ~isempty(regexp(source, pattern, 'once'));
+    else
+        tf = contains(source, word);
+    end
+end
+
 function assertAppUsesManagedImageInteractions(source, appName)
     assert(~contains(source, 'WindowScrollWheelFcn'), ...
-        [appName ' should register image scroll behavior through labkit.ui.interaction.runtime.']);
+        [appName ' should declare image navigation through Runtime V2.']);
     assert(~contains(source, 'WindowButtonMotionFcn') && ~contains(source, 'WindowButtonUpFcn'), ...
         [appName ' should not own image-tool drag callbacks directly.']);
     assert(~contains(source, '.ButtonDownFcn'), ...

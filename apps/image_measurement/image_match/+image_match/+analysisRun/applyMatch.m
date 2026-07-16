@@ -1,7 +1,58 @@
-% Expected caller: image_match.analysisRun.applyStep and tests. Inputs are a source
-% image, a reference image, and a match step with method/strength fields.
-% Output is a display-ready RGB double image in [0, 1].
 function outputImage = applyMatch(inputImage, referenceImage, step)
+%APPLYMATCH Transfer reference appearance statistics to one image.
+%
+% Usage:
+%   outputImage = image_match.analysisRun.applyMatch( ...
+%       inputImage, referenceImage, step)
+%
+% Description:
+%   Converts the source and reference to RGB double images, transfers the
+%   selected tone and color statistics from the reference, and blends the
+%   matched result with the source. Matching never registers, crops, or resizes
+%   either image; only appearance statistics are transferred. The source
+%   geometry therefore determines the output geometry.
+%
+% Inputs:
+%   inputImage - Numeric or logical grayscale, RGB, or multichannel source
+%       image. It is converted to M-by-N-by-3 double data in [0,1].
+%   referenceImage - Numeric or logical reference image. Its dimensions may
+%       differ from inputImage because matching uses image-wide statistics.
+%       Empty input returns the normalized source unchanged.
+%   step - Scalar structure created by image_match.analysisRun.makeStep.
+%
+% Step Fields:
+%   matchMethod - One label returned by image_match.userInterface.matchMethods.
+%       Punctuation and spaces are ignored when matching labels. An unknown or
+%       empty value uses "Balanced".
+%   amount - Overall blend percentage. Zero returns the source; 100 returns the
+%       selected matched result. Values are limited to [0,100].
+%   secondary - Tone-match percentage, limited to [0,100].
+%   colorStrength - Color-match percentage, limited to [0,100].
+%
+% Match Methods:
+%   Balanced - Applies robust white-balance gains, then Lab tone quantile and
+%       a/b covariance matching.
+%   White balance - Matches robust bright neutral RGB channel ratios only.
+%   Tone only - Quantile-matches Lab lightness; colorStrength is unused.
+%   Protected tone - Moves background lightness and color toward the reference
+%       while limiting changes in saturated subject regions.
+%   Lab style - Quantile-matches Lab lightness and covariance-matches the Lab
+%       a/b color channels.
+%   Histogram - Quantile-matches all three Lab channels independently.
+%
+% Outputs:
+%   outputImage - M-by-N-by-3 double image in [0,1], with the same height and
+%       width as inputImage.
+%
+% Example:
+%   source = cat(3, 0.3*ones(8), 0.5*ones(8), 0.8*ones(8));
+%   reference = cat(3, 0.8*ones(6), 0.5*ones(6), 0.3*ones(6));
+%   step = image_match.analysisRun.makeStep("White balance", 100, 100, 100);
+%   outputImage = image_match.analysisRun.applyMatch(source, reference, step);
+%   assert(isequal(size(outputImage), [8 8 3]))
+%
+% See also image_match.analysisRun.applyPipeline,
+%   image_match.analysisRun.makeStep, image_match.userInterface.matchMethods
 
     inputImage = labkit.image.ensureRgb(labkit.image.im2double(inputImage));
     inputImage = min(max(inputImage, 0), 1);

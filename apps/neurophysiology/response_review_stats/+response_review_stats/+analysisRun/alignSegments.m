@@ -1,8 +1,58 @@
-% Expected caller: response_review_stats.run or tests. Input is a segment
-% struct array and optional alignment/baseline options. Output is an aligned
-% matrix data model. No side effects.
 function aligned = alignSegments(segments, opts)
 %ALIGNSEGMENTS Interpolate segment traces to a shared time grid.
+%
+% Usage:
+%   aligned = response_review_stats.analysisRun.alignSegments(segments)
+%   aligned = response_review_stats.analysisRun.alignSegments(segments, opts)
+%
+% Description:
+%   Shifts each segment's time axis to a common alignment origin, constructs a
+%   shared uniformly spaced grid, and linearly interpolates every trace onto
+%   that grid. Duplicate source timestamps retain their first sample. Values
+%   outside a segment's aligned source range remain NaN. An optional baseline
+%   subtraction is performed after interpolation.
+%
+% Inputs:
+%   segments - Structure array with timeSec and values vectors of matching
+%       length and a name value for each segment. A segment-specific
+%       alignTimeSec may identify the source time that should become zero.
+%   opts - Optional scalar structure containing the alignment options below.
+%
+% Options:
+%   sampleIntervalSec - Positive output-grid interval in seconds. When omitted,
+%       the median of every finite positive source time difference is used. If
+%       no source supplies a usable difference, the fallback is 0.0001 seconds.
+%   windowSec - Two-element [start end] output interval in aligned seconds.
+%       When omitted, the function uses the intersection of all source ranges
+%       after alignment-time shifts.
+%   alignTimeSec - Global source time shifted to zero for segments without their
+%       own alignTimeSec field. Default: 0 seconds.
+%   baselineWindowSec - Optional inclusive [start end] interval in aligned
+%       seconds. The finite mean in this output-grid interval is subtracted from
+%       the entire corresponding segment. Default: no subtraction.
+%
+% Outputs:
+%   aligned - Scalar structure with these fields:
+%
+% Aligned Fields:
+%   timeSec - G-by-1 uniformly spaced aligned time vector in seconds.
+%   values - G-by-N double matrix with one interpolated segment per column.
+%   segmentNames - N-by-1 string vector copied from segments.name.
+%   status - "ok", or "empty" when segments is empty.
+%
+% Example:
+%   segments = struct( ...
+%       "timeSec", {[10; 11; 12], [20; 21; 22]}, ...
+%       "values", {[1; 2; 3], [4; 5; 6]}, ...
+%       "name", {"first", "second"}, ...
+%       "alignTimeSec", {10, 20});
+%   aligned = response_review_stats.analysisRun.alignSegments( ...
+%       segments, struct("sampleIntervalSec", 1));
+%   assert(isequal(aligned.timeSec, [0; 1; 2]))
+%   assert(isequal(aligned.values, [1 4; 2 5; 3 6]))
+%
+% See also response_review_stats.analysisRun.measureAlignedSegments,
+%   response_review_stats.analysisRun.summarizeMetrics
 
     if nargin < 2 || isempty(opts)
         opts = struct();
@@ -22,8 +72,7 @@ function aligned = alignSegments(segments, opts)
     end
     windowSec = fieldOrDefault(opts, "windowSec", []);
     if isempty(windowSec)
-        starts = arrayfun(@(s) min(s.timeSec), segments);
-        stops = arrayfun(@(s) max(s.timeSec), segments);
+        [starts, stops] = alignedTimeBounds(segments, opts);
         windowSec = [max(starts) min(stops)];
     end
     grid = (windowSec(1):dt:windowSec(2)).';
@@ -54,6 +103,18 @@ function aligned = alignSegments(segments, opts)
         "values", values, ...
         "segmentNames", segmentNames, ...
         "status", "ok");
+end
+
+function [starts, stops] = alignedTimeBounds(segments, opts)
+    starts = NaN(size(segments));
+    stops = NaN(size(segments));
+    for k = 1:numel(segments)
+        alignTimeSec = double(fieldOrDefault(segments(k), "alignTimeSec", ...
+            fieldOrDefault(opts, "alignTimeSec", 0)));
+        alignedTimeSec = double(segments(k).timeSec(:)) - alignTimeSec;
+        starts(k) = min(alignedTimeSec);
+        stops(k) = max(alignedTimeSec);
+    end
 end
 
 function value = fieldOrDefault(S, fieldName, defaultValue)

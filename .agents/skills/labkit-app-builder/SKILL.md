@@ -31,9 +31,12 @@ Use a deep pass only for the boundary being touched:
 
 - read `+labkit/AGENTS.md` if any reusable helper or facade may change
 - read `tests/AGENTS.md` if adding tests or fixtures
-- read `docs/apps.md` for public app shape or entrypoint changes
-- read `docs/ui.md` for shell, layout, controls, axes, callbacks, or debug UI
-- read `docs/image.md`, `docs/dta.md`, `docs/rhs.md`, or `docs/biosignal.md` only for those facade-backed apps
+- read `docs/apps/README.md` for public workflows and
+  `docs/development/app-development.md` for app shape or entrypoint changes
+- read `docs/framework/README.md` for shell, layout, controls, axes, callbacks, or debug UI
+- read `docs/libraries/image/README.md`, `docs/libraries/dta/README.md`,
+  `docs/libraries/rhs/README.md`, or `docs/libraries/biosignal/README.md`
+  only for those facade-backed apps
 
 Do not copy local paths, real filenames, sample labels, subject names, timestamps, device IDs, or proprietary row values into tracked files.
 
@@ -115,7 +118,7 @@ Use the closest existing app as the starting pattern, then reduce it to the actu
 For a new app, create the standard app shape directly and use only the
 smallest genuinely similar existing app as a reference. The first committed
 version should already express the real workflow: app definition, state,
-command handlers, visible-state updates, results, exports, and usage text
+command handlers, presentation, results, exports, and usage text
 should be specific to the new app.
 
 Keep app discovery source-based through `apps/**/labkit_*_app.m`; app
@@ -132,9 +135,11 @@ The target package shape is:
 +<app_slug>/definitionActions.m
 +<app_slug>/requirements.m
 +<app_slug>/version.m
-+<app_slug>/+appLifecycle/createInitialState.m
++<app_slug>/+appLifecycle/createProject.m
++<app_slug>/+appLifecycle/createSession.m
++<app_slug>/+appLifecycle/validateProject.m
 +<app_slug>/+userInterface/buildWorkbenchLayout.m
-+<app_slug>/+userInterface/updateWorkbenchFromState.m
++<app_slug>/+userInterface/presentWorkbench.m
 +<app_slug>/+<workflowArea>/...
 ```
 
@@ -146,18 +151,18 @@ Apps use the workflow-first shape above. Do not add or restore transitional
 Build the app in this order:
 
 1. Add or update app-local `requirements.m` and `version.m`, then keep the
-   public app entry point as a thin dispatch wrapper. It should pass metadata
-   to `labkit.ui.app.dispatchRequest`, launch
-   `labkit.ui.app.run(<app_slug>.definition(), request)`, and apply the app
-   version title to the returned figure.
-2. Add `+<app_slug>/definition.m` using `labkit.ui.app.define`. It should name
-   app id/title, initial state factory, data-only layout builder, command
-   registry, visible-state update function, startup phases, and optional
-   hydration phases. Do not put IO, computation, MATLAB handle creation,
-   timers, loading controls, or framework readiness mutation in
+   public app entry point as a thin wrapper around `labkit.ui.runtime.launch`.
+   The runtime owns lightweight requirements/version/debug requests, contract
+   checking, runtime creation, title application, and output normalization.
+2. Add `+<app_slug>/definition.m` using `labkit.ui.runtime.define`. It should
+   name the app id/title, project schema, optional session factory, data-only
+   layout builder, command registry, presenter, optional renderers, and
+   optional queued `Start` handler. Do not put IO, computation, MATLAB handle
+   creation, timers, loading controls, or framework readiness mutation in
    `definition.m`.
-3. Put the state factory in
-   `+<app_slug>/+appLifecycle/createInitialState.m`.
+3. Put project creation and validation in
+   `+appLifecycle/createProject.m` and `validateProject.m`; put ephemeral
+   defaults in optional `createSession.m`. Persist only the project slice.
 4. Put the data-only layout in
    `+<app_slug>/+userInterface/buildWorkbenchLayout.m`; the framework runtime
    generates callback handles and passes them into the layout builder.
@@ -165,9 +170,10 @@ Build the app in this order:
    update app state and request framework effects; handlers should not create
    UI handles, write exports directly unless the command is an export command,
    or hide broad workflow orchestration behind generic callback files.
-6. Add `+<app_slug>/+userInterface/updateWorkbenchFromState.m`. Visible-state
-   update helpers should update existing controls from prepared state without
-   IO, heavy computation, or exports.
+6. Add `+<app_slug>/+userInterface/presentWorkbench.m`. It should be a pure
+   mapping from canonical state to semantic control properties, prepared plot
+   models, and controlled interaction specs, without IO, heavy computation,
+   exports, UI handles, or direct control mutation.
 7. Keep the top of nontrivial `buildWorkbenchLayout.m` files shallow: the app constructor
    should name the control-tab tree and workspace, while local builder
    functions define each tab, section, and workspace region. Prefer this
@@ -176,8 +182,8 @@ Build the app in this order:
    wording into framework configuration. Order functions as
    `buildWorkbenchLayout`, tab tree, tab builders, section builders in visual
    order, workspace builder, small helper builders, then `callbackValue`.
-8. Keep `buildWorkbenchLayout.m` free of MATLAB handle creation,
-   `labkit.ui.app.create`, state mutation, IO, computation, export writing,
+8. Keep `buildWorkbenchLayout.m` free of MATLAB handle creation, state
+   mutation, IO, computation, export writing,
    nested callback implementations, and row/column layout mechanics. Use a
    named `+userInterface/build<Thing>.m` custom builder only for a justified
    interaction that the ordinary spec grammar cannot represent.
@@ -201,8 +207,10 @@ Build the app in this order:
 16. Do not add new package-root eager `run.m` orchestration, `private/`
    runners, `*Workflow.m` string-dispatch adapters, fixed `+app` package
    names, or app-local public helper packages.
-17. Render prepared data through `labkit.ui.plot.*`, `labkit.ui.control.*`, or
-   app-owned `+userInterface` helpers; keep analysis out of UI helpers.
+17. Render prepared data through registered renderers using ordinary MATLAB
+   graphics, `labkit.ui.plot.*`, or app-owned `+userInterface` helpers; keep
+   analysis out of UI helpers and do not restore the retired public control
+   mutation facade.
 18. Add export builders before CSV/PNG writing so output contracts can be tested.
 19. Add focused tests with synthetic fixtures or minimal generated data.
 20. Update human docs for user-facing behavior and scoped `AGENTS.md` only when rules change.
@@ -210,7 +218,7 @@ Build the app in this order:
 ## Validation
 
 Use `labkit-test-planner` to choose source-aligned validation. It should route
-to `docs/testing.md` for exact build-task names and GUI/non-GUI pairings.
+to `docs/development/testing.md` for exact build-task names and GUI/non-GUI pairings.
 
 For reusable facade changes, also use `labkit-boundary-guard`.
 

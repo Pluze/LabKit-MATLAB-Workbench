@@ -2,21 +2,54 @@ function template = buildTemplate(segments, opts)
 %BUILDTEMPLATE Build a representative segment template.
 %
 % Usage:
-%   template = labkit.biosignal.buildTemplate(segments);
-%   template = labkit.biosignal.buildTemplate(segments, struct('topN', 20));
+%   template = labkit.biosignal.buildTemplate(segments)
+%   template = labkit.biosignal.buildTemplate(segments, opts)
+%
+% Description:
+%   Forms a first-pass template by averaging every segment, then ranks each
+%   segment by its correlation with that average. The returned waveform is
+%   the sample-by-sample mean of the highest-ranked segments. This two-pass
+%   procedure reduces the influence of beats or trials whose shape differs
+%   from the majority.
+%
+%   Correlations are computed after subtracting each waveform's mean.
+%   Missing samples are omitted from means and correlations. A constant
+%   waveform has a NaN score and sorts behind finite scores. If segments
+%   contains no waveforms, the function returns an empty template with the
+%   same timeOffset vector.
 %
 % Inputs:
-%   segments - struct returned by segmentByEvents.
-%   opts - optional struct.
+%   segments - Segment struct returned by labkit.biosignal.segmentByEvents.
+%              segments.values is an M-by-N matrix, with one segment per
+%              column; segments.timeOffset contains the M relative times.
+%   opts - Optional scalar struct containing the fields listed below.
 %
 % Options:
-%   topN - positive integer, default min(30, segment count). The template
-%          is the mean of the top-N segments by correlation to a first-pass
-%          mean template.
+%   topN - Number of ranked segments to average. The default is the smaller
+%          of 30 and the number of available segments. The value is rounded
+%          to an integer and limited to the range 1:N.
 %
-% Output:
-%   template - struct with values, timeOffset, keptSegmentIndex, score,
-%              and metadata.topN.
+% Outputs:
+%   template - Structure containing the representative waveform and the
+%              ranking information used to construct it.
+%
+% Output Fields:
+%   type - String scalar "biosignalTemplate".
+%   values - M-by-1 template waveform, or an M-by-0 array when no segments
+%            are available.
+%   timeOffset - M-by-1 relative time vector copied from segments.
+%   keptSegmentIndex - Indices of the segment columns included in values,
+%                      ordered from highest to lowest correlation.
+%   score - N-by-1 correlation score for every input segment.
+%   metadata.topN - Number of segments included in a nonempty template.
+%   metadata.sourceName - Source signal name copied from segments for a
+%                         nonempty template. metadata is empty when no
+%                         segment waveforms are available.
+%
+% Example:
+%   segments = struct('values', [0 0; 1 0.9; 0 0], ...
+%       'timeOffset', [-1; 0; 1], 'sourceName', "ECG");
+%   template = labkit.biosignal.buildTemplate(segments, struct('topN', 1));
 
     if nargin < 2
         opts = struct();

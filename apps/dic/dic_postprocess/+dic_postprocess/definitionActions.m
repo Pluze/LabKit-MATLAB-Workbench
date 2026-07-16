@@ -1,224 +1,209 @@
-% App-owned action registry for DIC Postprocess. Expected caller is
-% dic_postprocess.definition. Output maps semantic action ids to handlers
-% used by labkit.ui.runtime.run. Handlers own workflow transitions, overlay
-% generation, and export side effects.
+% App-owned V2 action registry for DIC Postprocess. Handlers receive canonical
+% state/events/services and own source loading, overlay generation, and export
+% side effects without reading or mutating UI controls.
 function actions = definitionActions()
     actions = struct( ...
-        "startup", @onStartup, ...
         "matChosen", @onMatChosen, ...
-        "matCleared", @onMatCleared, ...
         "referenceChosen", @onReferenceChosen, ...
-        "referenceCleared", @onReferenceCleared, ...
         "maskChosen", @onMaskChosen, ...
-        "maskCleared", @onMaskCleared, ...
         "generate", @onGenerate, ...
         "optionsChanged", @onOptionsChanged, ...
         "saveOverlays", @onSaveOverlays, ...
         "exportSummary", @onExportSummary);
 end
 
-function state = onStartup(state, ~, services)
-    debugLog = services.debug;
-    if ~isDebugEnabled(debugLog)
+function state = onMatChosen(state, event, services)
+    filepath = firstEventPath(event, services);
+    if strlength(filepath) == 0
+        state = services.workflow.log(state, "DIC MAT selection cancelled.");
         return;
     end
-    debugLog.trace('DIC postprocess debug trace enabled.');
-    try
-        pack = dic_postprocess.debug.writeSamplePack(debugLog);
-        addLog(services, sprintf('Debug sample files: %s', char(pack.sampleFolder)));
-        addLog(services, sprintf('Debug output folder: %s', char(pack.outputFolder)));
-    catch ME
-        debugLog.reportException('dicPostprocess', ...
-            'Debug sample setup failed', ME);
-        addLog(services, sprintf('Debug sample setup failed: %s', ME.message));
-    end
+    state.project.inputs.sources = services.project.upsertSource( ...
+        state.project.inputs.sources, "dicMat", "strain", filepath, true);
+    state.session.cache.strain = struct();
+    state = clearPreparedOutputs(state);
+    state = services.workflow.log(state, "Selected DIC MAT: " + filepath);
 end
 
-function state = onMatChosen(state, payload, services)
-    paths = labkit.ui.control.filePaths(payload.event.addedFiles);
-    if isempty(paths)
-        addLog(services, 'DIC MAT selection cancelled.');
+function state = onReferenceChosen(state, event, services)
+    filepath = firstEventPath(event, services);
+    if strlength(filepath) == 0
+        state = services.workflow.log(state, ...
+            "Reference image selection cancelled.");
         return;
     end
-    state.matPath = paths(1);
-    addLog(services, sprintf('Selected DIC MAT: %s', state.matPath));
+    state.session.cache.referenceImage = imread(filepath);
+    state.project.inputs.sources = services.project.upsertSource( ...
+        state.project.inputs.sources, "referenceImage", "reference", ...
+        filepath, true);
+    state = clearPreparedOutputs(state);
+    state = services.workflow.log(state, "Loaded reference image: " + filepath);
 end
 
-function state = onMatCleared(state, ~, services)
-    state.matPath = "";
-    state.strain = struct();
-    state = clearOutputs(state);
-    addLog(services, 'Cleared DIC MAT task.');
-end
-
-function state = onReferenceChosen(state, payload, services)
-    paths = labkit.ui.control.filePaths(payload.event.addedFiles);
-    if isempty(paths)
-        addLog(services, 'Reference image selection cancelled.');
+function state = onMaskChosen(state, event, services)
+    filepath = firstEventPath(event, services);
+    if strlength(filepath) == 0
+        state = services.workflow.log(state, "Mask image selection cancelled.");
         return;
     end
-    filepath = paths(1);
-    state.referencePath = filepath;
-    state.referenceImage = imread(filepath);
-    addLog(services, sprintf('Loaded reference image: %s', filepath));
-end
-
-function state = onReferenceCleared(state, ~, services)
-    state.referencePath = "";
-    state.referenceImage = [];
-    state = clearOutputs(state);
-    addLog(services, 'Cleared reference image file.');
-end
-
-function state = onMaskChosen(state, payload, services)
-    paths = labkit.ui.control.filePaths(payload.event.addedFiles);
-    if isempty(paths)
-        addLog(services, 'Mask image selection cancelled.');
-        return;
-    end
-    filepath = paths(1);
-    state.maskPath = filepath;
-    state.maskImage = imread(filepath);
-    addLog(services, sprintf('Loaded mask image: %s', filepath));
-end
-
-function state = onMaskCleared(state, ~, services)
-    state.maskPath = "";
-    state.maskImage = [];
-    state = clearOutputs(state);
-    addLog(services, 'Cleared mask image file.');
+    state.session.cache.maskImage = imread(filepath);
+    state.project.inputs.sources = services.project.upsertSource( ...
+        state.project.inputs.sources, "maskImage", "mask", filepath, true);
+    state = clearPreparedOutputs(state);
+    state = services.workflow.log(state, "Loaded mask image: " + filepath);
 end
 
 function state = onGenerate(state, ~, services)
-    if strlength(state.matPath) == 0 || isempty(state.referenceImage) || ...
-            isempty(state.maskImage)
-        labkit.ui.runtime.showAlert(services.figure, ...
+    matPath = sourcePath(state, "dicMat");
+    cache = state.session.cache;
+    if strlength(matPath) == 0 || isempty(cache.referenceImage) || ...
+            isempty(cache.maskImage)
+        services.dialogs.alert( ...
             'Load the DIC MAT file, reference image, and mask image first.', ...
             'Missing inputs');
         return;
     end
-    opts = overlayOptionsFromControls(services.ui);
-    if opts.colorRange(2) <= opts.colorRange(1)
-        labkit.ui.runtime.showAlert(services.figure, ...
+    if ~validColorRange(state.project.parameters)
+        services.dialogs.alert( ...
             'Color max must be greater than color min.', 'Invalid color range');
         return;
     end
-
     try
-        state.strain = dic_postprocess.sourceFiles.loadNcorrStrain(char(state.matPath));
-        state = renderOverlays(state, opts);
-        addLog(services, 'Generated EXX/EYY overlays and ROI summary.');
+        state.session.cache.strain = ...
+            dic_postprocess.sourceFiles.loadNcorrStrain(matPath);
+        state = prepareOutputs(state);
+        state = services.workflow.log(state, ...
+            "Generated EXX/EYY overlays and ROI summary.");
     catch ME
-        services.debug.reportException('dicPostprocess', 'Generate failed', ME);
-        labkit.ui.runtime.showAlert(services.figure, ME.message, ...
+        services.diagnostics.report('Generate failed', ME);
+        services.dialogs.alert(ME.message, ...
             'DIC postprocess error');
-        addLog(services, sprintf('Generate failed: %s', ME.message));
+        state = services.workflow.log(state, "Generate failed: " + ME.message);
     end
 end
 
 function state = onOptionsChanged(state, ~, services)
-    if isfield(state.strain, 'exx') && ~isempty(state.referenceImage) && ...
-            ~isempty(state.maskImage)
-        try
-            state = renderOverlays(state, overlayOptionsFromControls(services.ui));
-        catch ME
-            services.debug.reportException('dicPostprocess', ...
-                'Option update skipped', ME);
-            addLog(services, sprintf('Option update skipped: %s', ME.message));
-        end
+    if ~hasPreparedInputs(state.session.cache)
+        return;
+    end
+    if ~validColorRange(state.project.parameters)
+        state = services.workflow.log(state, ...
+            "Option update skipped: Color max must exceed color min.");
+        return;
+    end
+    try
+        state = prepareOutputs(state);
+    catch ME
+        services.diagnostics.report('Option update skipped', ME);
+        state = services.workflow.log(state, ...
+            "Option update skipped: " + ME.message);
     end
 end
 
 function state = onSaveOverlays(state, ~, services)
-    if isempty(state.overlayExx) || isempty(state.overlayEyy)
-        labkit.ui.runtime.showAlert(services.figure, ...
+    if isempty(state.session.cache.overlayExx) || ...
+            isempty(state.session.cache.overlayEyy)
+        services.dialogs.alert( ...
             'Generate overlays before saving.', 'Save overlays');
         return;
     end
-
-    [folder, cancelled] = labkit.ui.runtime.promptOutputFolder( ...
+    [folder, cancelled] = services.dialogs.outputFolder( ...
         'Select folder for overlay PNGs', "");
     if cancelled
-        addLog(services, 'Save overlay PNGs cancelled.');
+        state = services.workflow.log(state, "Save overlay PNGs cancelled.");
         return;
     end
-
-    tag = dic_postprocess.userInterface.tagFromPath(char(state.matPath));
-    exxFile = fullfile(folder, sprintf('overlay_exx_%s.png', tag));
-    eyyFile = fullfile(folder, sprintf('overlay_eyy_%s.png', tag));
-    dic_postprocess.resultFiles.exportOverlayImage(state.overlayExx, exxFile);
-    dic_postprocess.resultFiles.exportOverlayImage(state.overlayEyy, eyyFile);
-    addLog(services, sprintf('Saved clean overlay PNGs: %s and %s', ...
-        exxFile, eyyFile));
+    tag = string(dic_postprocess.userInterface.tagFromPath( ...
+        char(sourcePath(state, "dicMat"))));
+    exxName = "overlay_exx_" + tag + ".png";
+    eyyName = "overlay_eyy_" + tag + ".png";
+    exxFile = fullfile(folder, exxName);
+    eyyFile = fullfile(folder, eyyName);
+    dic_postprocess.resultFiles.exportOverlayImage( ...
+        state.session.cache.overlayExx, exxFile);
+    dic_postprocess.resultFiles.exportOverlayImage( ...
+        state.session.cache.overlayEyy, eyyFile);
+    outputs = [services.results.output( ...
+        "exxOverlay", "primary", exxName, "image/png"); ...
+        services.results.output( ...
+        "eyyOverlay", "primary", eyyName, "image/png")];
+    spec = resultSpec(state, outputs);
+    spec.ManifestName = "dic_overlays_" + tag + ".labkit.json";
+    [manifestPath, ~] = services.results.writeManifest(folder, spec);
+    state.project.results.overlayManifestPath = string(manifestPath);
+    state = services.workflow.log(state, ...
+        "Saved clean overlay PNGs: " + exxFile + " and " + eyyFile);
 end
 
 function state = onExportSummary(state, ~, services)
-    if isempty(state.summaryTable) || height(state.summaryTable) == 0
-        labkit.ui.runtime.showAlert(services.figure, ...
+    summary = state.project.results.summaryTable;
+    if isempty(summary) || height(summary) == 0
+        services.dialogs.alert( ...
             'Generate a summary before exporting.', 'Export summary');
         return;
     end
-
-    [folder, name] = fileparts(char(state.matPath));
-    folder = labkit.ui.runtime.defaultDialogFolder("output", folder);
+    [folder, name] = fileparts(char(sourcePath(state, "dicMat")));
+    folder = services.dialogs.defaultFolder("output", folder);
     defaultName = fullfile(folder, [name '_strain_summary.csv']);
-    [out, cancelled] = labkit.ui.runtime.promptOutputFile( ...
+    [out, cancelled] = services.dialogs.outputFile( ...
         '*.csv', 'Save strain summary CSV', defaultName);
     if cancelled
-        addLog(services, 'Export summary cancelled.');
+        state = services.workflow.log(state, "Export summary cancelled.");
         return;
     end
-
-    writetable(state.summaryTable, out);
-    addLog(services, sprintf('Exported summary CSV: %s', char(out)));
+    writetable(summary, out);
+    [folder, base, extension] = fileparts(out);
+    outputName = string(base) + string(extension);
+    spec = resultSpec(state, services.results.output( ...
+        "strainSummary", "primary", outputName, "text/csv"));
+    spec.ManifestName = string(base) + ".labkit.json";
+    [manifestPath, ~] = services.results.writeManifest(folder, spec);
+    state.project.results.summaryManifestPath = string(manifestPath);
+    state = services.workflow.log(state, "Exported summary CSV: " + string(out));
 end
 
-function state = renderOverlays(state, opts)
-    overlayMask = dic_postprocess.analysisRun.imageMask(state.maskImage, ...
-        dic_postprocess.analysisRun.imageHeightWidth(state.referenceImage));
-    state.overlayExx = dic_postprocess.analysisRun.makeStrainOverlay( ...
-        state.referenceImage, state.strain.exx, overlayMask, ...
-        state.strain.roiMask, opts);
-    state.overlayEyy = dic_postprocess.analysisRun.makeStrainOverlay( ...
-        state.referenceImage, state.strain.eyy, overlayMask, ...
-        state.strain.roiMask, opts);
-    summaryMask = dic_postprocess.analysisRun.summaryMaskForStrain(state.strain);
-    state.summaryTable = dic_postprocess.analysisRun.summarizeStrain( ...
-        state.strain, summaryMask);
+function state = prepareOutputs(state)
+    [summary, overlayExx, overlayEyy] = ...
+        dic_postprocess.analysisRun.prepareOutputs( ...
+        state.session.cache, state.project.parameters);
+    state.project.results.summaryTable = summary;
+    state.session.cache.overlayExx = overlayExx;
+    state.session.cache.overlayEyy = overlayEyy;
 end
 
-function opts = overlayOptionsFromControls(ui)
-    opts = struct();
-    opts.alpha = ui.controls.alpha.valueHandle.Value;
-    opts.colorRange = [ui.controls.colorMin.valueHandle.Value ...
-        ui.controls.colorMax.valueHandle.Value];
-    opts.oversample = max(1, round(ui.controls.oversample.valueHandle.Value));
-    opts.sigmaSmooth = ui.controls.smoothSigma.valueHandle.Value;
-    opts.edgeTrim = max(0, round(ui.controls.edgeTrim.valueHandle.Value));
-    opts.colormap = jet(256);
-    opts.brightness = ui.controls.brightness.valueHandle.Value;
-    opts.contrast = ui.controls.contrast.valueHandle.Value;
-    opts.gamma = ui.controls.gamma.valueHandle.Value;
-    opts.saturation = ui.controls.saturation.valueHandle.Value;
-    opts.rgbGain = [ui.controls.redGain.valueHandle.Value ...
-        ui.controls.greenGain.valueHandle.Value ...
-        ui.controls.blueGain.valueHandle.Value];
+function state = clearPreparedOutputs(state)
+    state.project.results.summaryTable = table();
+    state.session.cache.overlayExx = [];
+    state.session.cache.overlayEyy = [];
 end
 
-function state = clearOutputs(state)
-    state.overlayExx = [];
-    state.overlayEyy = [];
-    state.summaryTable = table();
+function filepath = sourcePath(state, id)
+    filepath = dic_postprocess.sourceFiles.pathForId( ...
+        state.project.inputs.sources, id);
 end
 
-function addLog(services, msg)
-    labkit.ui.control.appendLog(services.ui, 'appLog', msg);
-    if isDebugEnabled(services.debug)
-        services.debug.append(msg);
+function tf = hasPreparedInputs(inputs)
+    tf = isfield(inputs.strain, 'exx') && ...
+        ~isempty(inputs.referenceImage) && ~isempty(inputs.maskImage);
+end
+
+function tf = validColorRange(parameters)
+    tf = parameters.colorMax > parameters.colorMin;
+end
+
+function filepath = firstEventPath(event, services)
+    paths = services.events.paths(event, "addedFiles");
+    filepath = "";
+    if ~isempty(paths)
+        filepath = paths(1);
     end
 end
 
-function tf = isDebugEnabled(debugLog)
-    tf = isstruct(debugLog) && isfield(debugLog, 'enabled') && ...
-        logical(debugLog.enabled);
+function spec = resultSpec(state, outputs)
+    spec = struct();
+    spec.Outputs = outputs;
+    spec.Inputs = state.project.inputs.sources;
+    spec.Parameters = state.project.parameters;
+    spec.Summary = struct("metricCount", ...
+        height(state.project.results.summaryTable));
 end

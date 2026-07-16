@@ -3,28 +3,29 @@
 % numeric vector. No side effects.
 
 function values = valuesForAxis(item, axisName)
+    items = eis.userInterface.axisItems();
     switch axisName
-        case 'Freq (Hz)'
+        case char(items(1))
             values = itemField(item, 'freq_Hz', 'Freq');
-        case 'log10(Freq)'
+        case char(items(2))
             values = log10(itemField(item, 'freq_Hz', 'Freq'));
-        case 'Time (s)'
+        case char(items(3))
             values = itemField(item, 'time_s', 'Time');
-        case 'Point #'
+        case char(items(4))
             values = itemField(item, 'point', 'Pt');
-        case 'Zreal (ohm)'
+        case char(items(5))
             values = itemField(item, 'Zreal_ohm', 'Zreal');
-        case 'Zimag (ohm)'
+        case char(items(6))
             values = itemField(item, 'Zimag_ohm', 'Zimag');
-        case '-Zimag (ohm)'
+        case char(items(7))
             values = itemField(item, 'negZimag_ohm', 'negZimag');
-        case 'Zmod (ohm)'
+        case char(items(8))
             values = itemField(item, 'Zmod_ohm', 'Zmod');
-        case 'Zphz (deg)'
+        case char(items(9))
             values = itemField(item, 'Zphz_deg', 'Zphz');
-        case 'Idc (A)'
+        case char(items(10))
             values = itemField(item, 'Idc_A', 'Idc');
-        case 'Vdc (V)'
+        case char(items(11))
             values = itemField(item, 'Vdc_V', 'Vdc');
         otherwise
             error('Unsupported axis selection: %s', axisName);

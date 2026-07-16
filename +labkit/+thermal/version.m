@@ -1,16 +1,24 @@
 function info = version()
-%VERSION Return the LabKit thermal facade contract version.
+%VERSION Return version information for the thermal API.
 %
-% App-facing contract:
+% Usage:
 %   info = labkit.thermal.version()
 %
-% Inputs:
-%   None.
+% Description:
+%   Reports the version and compatibility range used when an app declares a
+%   dependency on labkit.thermal. This is the API contract version, not the
+%   MATLAB release or the version of a particular thermal camera format.
 %
 % Outputs:
-%   info - plain struct describing the current labkit.thermal contract,
-%       compatible contract range, stability, and maintainer note.
+%   info - Scalar structure returned by labkit.contract.versionInfo. name is
+%       "labkit.thermal"; facade is "thermal"; current is the current semantic
+%       version; compatible lists supported requirement ranges; status
+%       describes API maturity; and notes summarizes the module.
+%
+% Example:
+%   info = labkit.thermal.version();
+%   fprintf("Thermal API %s (%s)\n", info.current, info.status)
 
-    info = labkit.contract.versionInfo("thermal", "1.1.0", ">=1.0 <2", ...
+    info = labkit.contract.versionInfo("thermal", "1.1.1", ">=1.0 <2", ...
         "experimental", "GUI-free thermal image facade for FLIR radiometric JPEG reads, raw sensor matrices, provenance-aware temperature conversion, and display rendering.");
 end

@@ -38,7 +38,8 @@ function files = calculationSourceFiles(root)
         endsWith(slashFiles, "/buildWorkbenchLayout.m") | ...
         endsWith(slashFiles, "/version.m") | ...
         endsWith(slashFiles, "/requirements.m");
-    files = files(productionSource & ~excludedSource);
+    existsNow = arrayfun(@(file) isfile(fullfile(root, file)), files);
+    files = files(productionSource & ~excludedSource & existsNow);
 end
 
 function findings = unexplainedConstantFindings(root, files)

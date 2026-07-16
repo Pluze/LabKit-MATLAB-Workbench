@@ -1,18 +1,37 @@
 function req = requirements(varargin)
-%REQUIREMENTS Build a LabKit facade requirement contract.
+%REQUIREMENTS Describe the LabKit API versions required by a caller.
 %
-% App-facing contract:
+% Usage:
 %   req = labkit.contract.requirements("ui", ">=2.0 <3", ...)
 %
+% Description:
+%   Builds a normalized requirement structure from facade/range pairs. A
+%   facade name may be written as "ui" or "labkit.ui". Names are converted to
+%   lowercase and the optional "labkit." prefix is removed. No compatibility
+%   check is performed until checkRequirements or assertRequirements is called.
+%
 % Inputs:
-%   Facade/range pairs - facade names such as "ui", "dta", "rhs",
-%       "biosignal", or "image", followed by simple semantic-version ranges.
-%       Ranges use whitespace-separated constraints such as ">=2.0 <3".
+%   varargin - Alternating facade names and version ranges. Facade names are
+%       text scalars containing letters, digits, or underscores. A range is a
+%       nonempty text scalar containing whitespace-separated constraints such
+%       as ">=2.0 <3". Supported operators are >, >=, <, <=, =, and ==.
 %
 % Outputs:
-%   req - struct with type and facades fields. The facades field is a struct
-%       array with facade and range fields, suitable for app requirements()
-%       functions and labkit.contract.checkRequirements.
+%   req - Scalar structure with type="labkit.requirements" and a facades
+%       structure array. Each facades element has normalized facade and range
+%       fields. Calling requirements() with no pairs returns an empty list.
+%
+% Errors:
+%   Throws labkit:contract:InvalidRequirements for an odd number of arguments,
+%   labkit:contract:InvalidFacadeName for an invalid name,
+%   labkit:contract:InvalidVersionRange for an empty or nontext range, and
+%   labkit:contract:DuplicateRequirement when a facade appears more than once.
+%
+% Example:
+%   req = labkit.contract.requirements( ...
+%       "ui", ">=6 <7", ...
+%       "image", ">=4.0 <5");
+%   report = labkit.contract.checkRequirements(req);
 
     if mod(numel(varargin), 2) ~= 0
         error('labkit:contract:InvalidRequirements', ...

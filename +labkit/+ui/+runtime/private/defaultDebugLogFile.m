@@ -1,5 +1,5 @@
 % Private debug-launch artifact helper. Expected caller:
-% labkit.ui.runtime.dispatchRequest. Input is an app entry-point name. Output is a
+% dispatchRequest. Input is an app entry-point name. Output is a
 % writable debug log file path under the canonical LabKit artifact root. Side
 % effect: creates one per-launch debug session directory.
 function filepath = defaultDebugLogFile(appName)
