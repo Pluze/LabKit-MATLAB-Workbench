@@ -1,12 +1,28 @@
 function filepaths = findFiles(rootDir)
-%FINDFILES Recursively collect Intan RHS files without GUI side effects.
+%FINDFILES Find Intan RHS files in a folder and its subfolders.
+%
+% Usage:
+%   filepaths = labkit.rhs.findFiles(rootDir)
+%
+% Description:
+%   Recursively collects files whose extension is .rhs and sorts their full
+%   paths for reproducible batch order. The function does not inspect file
+%   headers; use inspectFile when the contents must be validated.
 %
 % Inputs:
-%   rootDir - existing folder path.
+%   rootDir - Character vector or string scalar naming an existing folder.
 %
-% Output:
-%   filepaths - cell array of discovered *.rhs file paths, sorted for
-%               deterministic app display and batch processing.
+% Outputs:
+%   filepaths - Cell column vector of sorted full paths. The value is an empty
+%       cell array when no RHS files are found.
+%
+% Errors:
+%   Throws labkit:rhs:InvalidFolder when rootDir is not a text scalar or does
+%   not name an existing folder.
+%
+% Example:
+%   files = labkit.rhs.findFiles("recordings");
+%   [info, status] = labkit.rhs.inspectFile(files{1});
 
     rootDir = normalizeRootDir(rootDir);
     entries = dir(fullfile(rootDir, "**", "*.rhs"));

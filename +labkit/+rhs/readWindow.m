@@ -1,25 +1,76 @@
 function [window, status] = readWindow(filepath, opts)
-%READWINDOW Read selected Intan RHS samples by time window and channel family.
+%READWINDOW Read selected channels and times from an Intan RHS file.
 %
 % Usage:
-%   [window, status] = labkit.rhs.readWindow(filepath);
-%   opts = struct("family", "stim", "channels", "C013", ...
-%       "timeRangeSec", [0.1 0.2]);
-%   [window, status] = labkit.rhs.readWindow(filepath, opts);
+%   [window, status] = labkit.rhs.readWindow(filepath)
+%   [window, status] = labkit.rhs.readWindow(filepath, opts)
+%
+% Description:
+%   Reads only the complete data blocks needed for one time interval and one
+%   channel family. Returned values are converted to physical units using the
+%   Intan RHS scaling constants. File/header/read failures are returned in
+%   status; invalid option values throw errors.
 %
 % Inputs:
-%   filepath - char/string path to one .rhs file.
-%   opts - optional struct with fields:
-%          family - "amplifier" (default), "stim", "dcAmplifier",
-%                   "boardAdc", "boardDac", "boardDigIn", or "boardDigOut".
-%          channels - numeric indices, channel names, string array, cellstr,
-%                     or [] for all channels in the selected family.
-%          timeRangeSec - [start end] seconds, default [0 Inf].
+%   filepath - Character vector or string scalar naming one RHS file.
+%   opts - Optional scalar structure. See Options.
+%
+% Options:
+%   family - String scalar selecting a channel family. Canonical values are
+%       "amplifier", "stim", "dcAmplifier", "boardAdc", "boardDac",
+%       "boardDigIn", and "boardDigOut". Matching ignores case and
+%       punctuation. Short aliases include "amp", "dc", "adc", "dac",
+%       "digin", and "digout". Default: "amplifier".
+%   channels - Channel selection within the chosen family. Use [] for all
+%       channels; positive one-based numeric indices for positions in that
+%       family; or a character vector, string array, or cell array of native or
+%       custom channel names. Names are matched exactly first, then with case
+%       and punctuation removed. Default: [].
+%   timeRangeSec - Two-element numeric vector [start end] in seconds. A
+%       negative start is clamped to zero; Inf as the end reads through the
+%       last complete sample. Both calculated endpoint samples are included.
+%       Default: [0 Inf].
 %
 % Outputs:
-%   window - struct with timeSec, values, channels, unit, family, and source
-%            metadata. Values are samples-by-channels.
-%   status - struct with ok, message, and filepath.
+%   window - Scalar structure containing the selected waveform data. On a
+%       read failure it retains source identity and contains empty arrays.
+%   status - Scalar structure with ok, message, and filepath. A valid request
+%       beyond the recording duration returns ok=true, empty values, and a
+%       message stating that no samples were in the requested window.
+%
+% Output Fields:
+%   sourcePath - Source RHS path as a character vector.
+%   name - Source filename including extension.
+%   family - Canonical selected family name.
+%   unit - "microvolts" for amplifier, "microamps" for stim, "volts" for
+%       DC amplifier and board analog channels, or "logical" for digital
+%       channels.
+%   sampleRateHz - Sample rate in hertz.
+%   sampleRange - One-based inclusive [start end] sample indices.
+%   channels - String row vector of returned native channel names.
+%   timeSec - Sample-by-one time vector in seconds, derived from stored Intan
+%       timestamps.
+%   values - Samples-by-channels numeric matrix in the unit named by unit.
+%
+% Errors:
+%   Throws labkit:rhs:InvalidFilepath for an invalid path,
+%   labkit:rhs:InvalidFamily for an unsupported family,
+%   labkit:rhs:InvalidChannel for an unknown or out-of-range channel, and
+%   labkit:rhs:InvalidTimeRange for a malformed or reversed time range.
+%   Missing files, malformed headers, absent channel families, files without
+%   complete data blocks, and waveform read failures return status.ok=false.
+%
+% Example:
+%   opts = struct("family", "stim", ...
+%       "channels", ["C-001", "C-002"], ...
+%       "timeRangeSec", [0.1 0.2]);
+%   [window, status] = labkit.rhs.readWindow("recording.rhs", opts);
+%   if status.ok
+%       plot(window.timeSec, window.values)
+%       xlabel("Time (s)")
+%       ylabel("Stimulation current (microamps)")
+%       legend(window.channels)
+%   end
 
     if nargin < 2 || isempty(opts)
         opts = struct();

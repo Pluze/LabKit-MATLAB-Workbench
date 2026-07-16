@@ -1,253 +1,172 @@
-# RHS API
+# Intan RHS Recordings
 
-[Public API index](../README.md) | [App guide](../../apps/README.md)
+[API reference](../README.md) | [Neurophysiology apps](../../apps/neurophysiology/README.md)
 
-`labkit.rhs.*` is the GUI-free Intan RHS file facade. It provides file
-discovery, header inspection, block indexing, and lazy time-window reads for
-RHS-backed apps.
+The `labkit.rhs` functions inspect Intan RHS recordings and read selected
+waveform windows without loading an entire file into memory. They expose file
+metadata, channel names, data-block layout, timestamps, and samples in
+physical units. The functions can be called directly from MATLAB without
+opening a LabKit app.
 
-`labkit.rhs.version()` returns the RHS facade contract version struct used by
-`labkit.contract` requirement checks.
+## Start Here
 
-This facade owns the RHS file mechanics only. Experiment protocols, channel
-roles, stimulus-train interpretation, CAP thresholds, segment definitions,
-plots, and export schemas stay in the owning app or protocol file.
-
-## Public RHS API
-
-Common calls:
+Inspect a file first when you need to see its channels and duration:
 
 ```matlab
-filepaths = labkit.rhs.findFiles(folder);
-[info, status] = labkit.rhs.inspectFile(filepath);
-[index, status] = labkit.rhs.indexFile(filepath);
-[window, status] = labkit.rhs.readWindow(filepath, opts);
+[info, status] = labkit.rhs.inspectFile("recording.rhs");
+
+if ~status.ok
+    error("Could not inspect RHS file: %s", status.message)
+end
+
+fprintf("%.2f s at %.0f Hz\n", info.durationSec, info.sampleRateHz)
+disp(info.channelTable(:, ["family", "nativeName", "customName"]))
 ```
 
-`inspectFile` reads only the file header. `indexFile` adds data-offset,
-bytes-per-block, sample-count, duration, and exact-block status. `readWindow`
-loads only the requested full sample window rather than converting the whole
-file into a MAT file.
-
-`readWindow` options:
+Then read only the channels and times required by the analysis:
 
 ```matlab
 opts = struct( ...
     "family", "amplifier", ...
-    "channels", "C001", ...
-    "timeRangeSec", [0.0 0.050]);
-[window, status] = labkit.rhs.readWindow(filepath, opts);
+    "channels", ["C-001", "C-002"], ...
+    "timeRangeSec", [0.100 0.150]);
+
+[window, status] = labkit.rhs.readWindow("recording.rhs", opts);
+if status.ok
+    plot(window.timeSec, window.values)
+    xlabel("Time (s)")
+    ylabel("Amplitude (microvolts)")
+    legend(window.channels)
+end
 ```
 
-Supported families:
+`window.values` is always samples-by-channels. `window.timeSec` contains the
+timestamps stored in the recording, converted to seconds.
 
-```text
-amplifier
-stim
-dcAmplifier
-boardAdc
-boardDac
-boardDigIn
-boardDigOut
+## Choose a Function
+
+| Task | Function |
+| --- | --- |
+| Find RHS paths recursively | [`labkit.rhs.findFiles`](../../reference/api/labkit/rhs/findFiles.html) |
+| Read header, channel, and duration information | [`labkit.rhs.inspectFile`](../../reference/api/labkit/rhs/inspectFile.html) |
+| Build the byte/sample layout for later reads | [`labkit.rhs.indexFile`](../../reference/api/labkit/rhs/indexFile.html) |
+| Read one channel family and time interval | [`labkit.rhs.readWindow`](../../reference/api/labkit/rhs/readWindow.html) |
+| Check the API contract version | [`labkit.rhs.version`](../../reference/api/labkit/rhs/version.html) |
+
+## Header Information
+
+`inspectFile` reads the header and calculates how much complete waveform data
+is available. Important fields include:
+
+| Field | Meaning |
+| --- | --- |
+| `fileVersion` | Intan file-format major and minor version |
+| `sampleRateHz` | Amplifier sample rate in hertz |
+| `durationSec` | Duration represented by complete data blocks |
+| `channelFamilies` | Channel structures grouped as amplifier, board ADC, board DAC, digital input, and digital output |
+| `channelTable` | One table combining enabled stored channels and their native/custom names |
+| `frequencyParameters` | Requested and actual filter and bandwidth settings |
+| `stimParameters` | Stimulation step size and charge-recovery settings |
+| `dcAmplifierSaved` | Whether DC-amplifier samples are stored |
+| `blockCount`, `sampleCount` | Number of complete blocks and samples |
+| `exactBlocks` | Whether the data section ends on a complete block boundary |
+
+Header-only files can be inspected successfully and have a sample count of
+zero. A file with trailing partial bytes remains readable through its last
+complete block; `exactBlocks` is false and the status message reports the
+condition.
+
+## Channel Families and Units
+
+`readWindow` reads one family at a time:
+
+| Family | Accepted examples | Returned unit |
+| --- | --- | --- |
+| `"amplifier"` | `"amplifier"`, `"amp"` | microvolts |
+| `"stim"` | `"stim"`, `"stimulus"`, `"stimcurrent"` | microamps |
+| `"dcAmplifier"` | `"dc"`, `"dcamplifier"`, `"dcamp"` | volts |
+| `"boardAdc"` | `"boardadc"`, `"adc"` | volts |
+| `"boardDac"` | `"boarddac"`, `"dac"` | volts |
+| `"boardDigIn"` | `"boarddigin"`, `"digitalin"`, `"digin"` | logical 0 or 1 |
+| `"boardDigOut"` | `"boarddigout"`, `"digitalout"`, `"digout"` | logical 0 or 1 |
+
+Family matching ignores case and punctuation. Selecting a family that has no
+stored channels returns `status.ok=false` with an empty window.
+
+### Selecting Channels
+
+Set `channels=[]` to read every channel in the selected family. Otherwise use
+one-based numeric positions, native names, or custom names:
+
+```matlab
+opts.channels = [1 3];
+opts.channels = ["C-001", "C-003"];
+opts.channels = ["Reference", "Recording"];
 ```
 
-Channel selection may use numeric indices or native/custom channel names.
-Names are matched exactly first, then by a normalized comparison that ignores
-punctuation, so `C001` can match a native channel such as `C-001`.
+Names are matched exactly first. If no exact match is found, comparison ignores
+case and punctuation, so `"C001"` can match the native name `"C-001"`.
+Returned `window.channels` always contains native channel names.
 
-## Returned Structs
+## Selecting a Time Window
 
-`info` fields include:
+`timeRangeSec=[start end]` selects an inclusive sample interval. The start is
+clamped to zero, `Inf` reads through the last complete sample, and an end past
+the recording duration is clipped. For example:
 
-```text
-type, version, filepath, name, fileVersion, sampleRateHz,
-samplesPerBlock, frequencyParameters, stimParameters, notes,
-dcAmplifierSaved, boardMode, referenceChannel, channelFamilies,
-channelTable, spikeTriggers, signalGroups, fileBytes, dataOffsetBytes,
-bytesPerBlock, dataBytes, blockCount, sampleCount, durationSec,
-exactBlocks
+```matlab
+opts.timeRangeSec = [0 0.050];       % first 50 ms
+opts.timeRangeSec = [1.5 Inf];       % from 1.5 s to the end
 ```
 
-`window` fields include:
+A valid request that begins after the available data returns `status.ok=true`
+with empty `timeSec` and `values`, allowing a caller to distinguish an empty
+interval from a file-read failure.
 
-```text
-type, version, sourcePath, name, family, unit, sampleRateHz,
-sampleRange, channels, timeSec, values
+## Block Indexing and Lazy Reads
+
+RHS waveform data is stored in 128-sample blocks. `indexFile` calculates the
+header offset, bytes per block, complete block count, sample count, and
+duration without reading the waveform arrays. `readWindow` uses this index to
+seek directly to the blocks that overlap the requested interval.
+
+```matlab
+[index, status] = labkit.rhs.indexFile("recording.rhs");
+if status.ok
+    fprintf("%d samples in %d blocks\n", ...
+        index.sampleCount, index.blockCount)
+end
 ```
 
-`values` is always samples-by-channels. Amplifier data are returned in
-microvolts, stim current in microamps, ADC/DAC data in volts, and digital
-channels as logical-style 0/1 values.
+This makes short previews and event-centered analyses practical for recordings
+that are too large to load all at once.
 
-## Parser Basis
+## Physical-Unit Conversion
 
-The parser follows Intan's RHS MATLAB reader layout:
+The reader follows the Intan RHS block layout and applies the documented
+conversion gains and code offsets for amplifier, DC-amplifier, stimulation,
+board ADC, and board DAC data. Digital inputs and outputs are decoded from
+their stored bit positions. No filtering, baseline correction, event
+detection, channel-role interpretation, or response measurement is performed
+by these file-reading functions.
 
-```text
-header
-per-block timestamps
-per-block amplifier data
-optional per-block DC amplifier data
-per-block stim data
-per-block board ADC data
-per-block board DAC data
-optional digital input raw words
-optional digital output raw words
-```
+## Errors and Unsupported Files
 
-The facade preserves the same physical-unit scaling used by the Intan reader.
-It does not apply protocol-specific filtering, event detection, or CAP
-analysis.
+Missing files, malformed headers, unsupported magic numbers, absent channel
+families, and waveform read failures are returned through `status.ok=false`
+and `status.message`. Invalid function arguments, such as an unknown family,
+channel, or reversed time range, throw the documented `labkit:rhs:*` error.
 
-## Protocol Files
+Successful parsing confirms that the supported RHS header and complete block
+layout were readable. It does not validate an experiment protocol, decide
+which channels form a differential signal, or assess recording quality.
 
-Neurophysiology apps can use a lightweight protocol JSON to describe signal
-semantics for one experiment family. The protocol is a channel map, not an
-analysis settings dump.
+## Related Topics
 
-The protocol is intentionally app-owned. `labkit.rhs` can read the waveforms
-and metadata it describes, but it should not interpret nerve experiment
-semantics itself.
-
-The supported protocol shape records only channel meaning:
-
-```text
-channels.roles   named channel roles matched to RHS native channel names
-```
-
-Minimal saved shape:
-
-```json
-{
-  "schemaVersion": "labkit.rhs.protocol.v1",
-  "protocolId": "rhs_channel_protocol",
-  "label": "RHS Channel Protocol",
-  "channels": {
-    "roles": [
-      {
-        "id": "reference",
-        "label": "Reference",
-        "nativeName": "C-001"
-      }
-    ]
-  }
-}
-```
-
-Roles should express lab meaning such as `reference`, `cp_positive`,
-`cp_negative`, `stim_monitor`, or any other experiment-local name. Differential
-pairs, event detection, CAP search windows, metric lists, common-mode
-algorithm details, preview windows, file filtering, and export schemas belong
-to the owning apps, not the protocol file.
-
-`labkit_RHSPreview_app` is the visual protocol drafting surface. The Protocol
-tab loads an optional JSON, shows editable channel-role rows beside the
-stacked waveform preview, and saves a normalized lightweight draft. There is
-no tracked sample protocol file; users create one from an RHS recording in the
-Preview app.
-
-## Neurophysiology App Flow
-
-The RHS app family keeps raw RHS access lazy and channel-map aware:
-
-```text
-labkit_RHSPreview_app
-  RHS file + optional protocol JSON -> stacked waveform preview and channel protocol draft
-
-labkit_RHSPreview_app
-  RHS folder -> manual rhs_filter_record.json
-
-labkit_NerveResponseAnalysis_app
-  rhs_filter_record.json + recommended protocol JSON -> nerve_response_analysis.json
-
-labkit_ResponseReviewStats_app
-  nerve_response_analysis.json or segment CSV -> response_review_metrics.csv
-```
-
-## Required Files and Folder Shape
-
-`labkit_RHSPreview_app` only needs one Intan `.rhs` file. A protocol JSON is
-optional. If no protocol exists yet, load an RHS file, inspect the waveforms,
-fill the Protocol Channel Roles table, then save a protocol draft.
-
-Choosing an RHS file indexes the header/data blocks and immediately reads an
-adaptive preview window. The right pane shows selected channels as stacked,
-time-aligned waveforms. The default preview length is estimated from file
-duration, sample rate, and selected channel count so short files can show more
-data while long files stay interactive. Use the Pan panner to move through the
-file, the panner arrow buttons for small left/right steps, and the mouse wheel
-over the preview axes to zoom the time window. Dragging on the preview axes
-with the left mouse button marks a temporary ROI for visual review. Use Zoom to
-ROI to set the preview window to that marked time range and reread only that
-window.
-
-The Protocol tab is the protocol-drafting surface. Select which channels to
-plot, assign roles/labels, and use Save Protocol Draft to write a JSON draft.
-Apps should not require hand-written JSON for basic preview or analysis.
-
-The Filter tab is the manual folder curation surface. Choose an RHS folder in
-Preview and the app searches that folder recursively for `.rhs` recordings, so
-either flat or nested batches are valid:
-
-```text
-experiment_batch/
-  recording_001.rhs
-  recording_002.rhs
-  subfolder/
-    recording_003.rhs
-```
-
-The file list has one editable `label` field and one editable `comment` field
-per path. Use `good` for files that should go downstream and `bad` for files
-that should be skipped. Save Filter Record writes:
-
-```text
-rhs_filter_record.json
-```
-
-The filter record stores local paths to the original RHS files, plus the manual
-label and comment. It does not copy raw waveforms and it does not perform
-automated recording quality classification. If the RHS files move, refresh the
-folder or update the filter record paths before analysis.
-
-`labkit_NerveResponseAnalysis_app` needs the `rhs_filter_record.json` created
-by Preview. A protocol JSON is recommended for reliable role resolution, but
-the app should still run with best-effort fallbacks and issue rows when
-protocol information is missing. The RHS files referenced by the filter record
-must still be reachable. Export writes:
-
-```text
-nerve_response_analysis.json
-```
-
-`labkit_ResponseReviewStats_app` accepts either `nerve_response_analysis.json`
-or a legacy segment CSV. Selecting an input immediately loads metrics when
-possible. Segment CSVs can use a shared `Time_s` column with one or more signal
-columns, or paired columns such as `Segment1_Time_s` and `Segment1_Signal`.
-Export writes:
-
-```text
-response_review_metrics.csv
-```
-
-The analysis app reads only filter-record rows labeled `good`. For each good
-RHS file it reads only the channels it needs, using the protocol to resolve
-roles such as `reference`, `cp_positive`, and `cp_negative`.
-
-Event detection tries usable stimulus-current information first, then
-reference-channel derivative detection, then recording-channel fallbacks
-derived from analysis-owned role-pair inference or known role names. Missing or poor channels
-should produce issue rows or review flags, not a crashing batch.
-
-The response review app accepts the analysis metrics directly, and also accepts
-legacy segment CSV layouts by normalizing them to:
-
-```text
-segments -> aligned time grid -> metrics/statistics
-```
-
-This keeps old manual segment workflows usable while giving new workflows a
-stable aligned data model. CAP plots should stay visually plain: white
-background, thin lines, clear grid/axes, shared time axis for stacked traces,
-and explicit overlays for peaks, segment windows, or baseline windows when
-those data are available.
+- [RHS Preview](../../apps/neurophysiology/rhs-preview/README.md) provides
+  interactive waveform review and channel-role drafting.
+- [Nerve Response Analysis](../../apps/neurophysiology/nerve-response-analysis/README.md)
+  reads selected RHS channels for event and response calculations.
+- [Biosignal functions](../biosignal/README.md) operate on imported recordings
+  and generic waveforms after file IO.
+- [Project history](../../history/README.md) lists RHS parser and app changes.

@@ -1,15 +1,48 @@
 function [index, status] = indexFile(filepath)
-%INDEXFILE Build an Intan RHS sample/block index for lazy reads.
+%INDEXFILE Build a block index for reading selected RHS time windows.
+%
+% Usage:
+%   [index, status] = labkit.rhs.indexFile(filepath)
+%
+% Description:
+%   Inspects the file header and records the byte and sample layout used by
+%   readWindow. No waveform arrays are loaded. Header-only files produce a
+%   valid index with hasData=false. When trailing partial bytes are present,
+%   complete blocks remain usable and status.message describes the condition.
 %
 % Inputs:
-%   filepath - char/string path to one .rhs file.
+%   filepath - Character vector or string scalar naming one RHS file.
 %
 % Outputs:
-%   index - struct containing the parsed header plus byte/sample layout used
-%           by labkit.rhs.readWindow.
-%   status - struct with ok, message, and filepath. Header-only files and
-%            files with trailing partial bytes are represented without
-%            loading waveform arrays.
+%   index - Scalar structure containing header information and block layout.
+%       On inspection failure, hasData is false and numeric layout fields use
+%       empty defaults.
+%   status - Scalar structure with ok, message, and filepath. The index can be
+%       usable when ok is true and message reports trailing partial bytes.
+%
+% Output Fields:
+%   info - Full structure returned by inspectFile.
+%   sampleRateHz - Sample rate in hertz.
+%   samplesPerBlock - Number of samples in each complete block; currently 128.
+%   dataOffsetBytes - Byte offset of the first waveform block.
+%   bytesPerBlock - Calculated bytes in one complete block.
+%   dataBytes - Number of bytes following the header.
+%   blockCount - Number of complete waveform blocks.
+%   sampleCount - Number of samples in complete blocks.
+%   durationSec - Complete-block duration in seconds.
+%   exactBlocks - True when no trailing partial bytes remain.
+%   hasData - True when at least one complete sample is available.
+%
+% Errors:
+%   Throws labkit:rhs:InvalidFilepath for an invalid filepath argument.
+%   File and header failures are returned in status.
+%
+% Example:
+%   [index, status] = labkit.rhs.indexFile("recording.rhs");
+%   if status.ok && index.hasData
+%       fprintf("%d samples in %d blocks\n", ...
+%           index.sampleCount, index.blockCount)
+%   end
 
     filepath = normalizeFilepath(filepath);
     [info, status] = labkit.rhs.inspectFile(filepath);

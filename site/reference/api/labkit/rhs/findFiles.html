@@ -19,12 +19,16 @@
 <p class="page-kind">reference</p>
 <p class="api-context"><a href="../../../index.html">API Reference</a> &rsaquo; <a href="../../../../libraries/rhs/index.html">RHS Library</a></p>
 <h1><code>labkit.rhs.findFiles</code></h1>
-<p class="lead">Recursively collect Intan RHS files without GUI side effects.</p>
+<p class="lead">Find Intan RHS files in a folder and its subfolders.</p>
 <h2 id="syntax">Syntax</h2>
-<pre><code class="language-matlab">function filepaths = findFiles(rootDir)</code></pre>
-<section class="api-section"><h2 id="inputs">Inputs</h2><dl class="argument-list"><div class="argument"><dt><code>rootDir</code></dt><dd>existing folder path.</dd></div></dl></section>
-<section class="api-section"><h2 id="output">Output</h2><dl class="argument-list"><div class="argument"><dt><code>filepaths</code></dt><dd>cell array of discovered *.rhs file paths, sorted for deterministic app display and batch processing.</dd></div></dl></section>
-<h2 id="related-apis">Related APIs</h2><ul><li><a href="indexFile.html"><code>labkit.rhs.indexFile</code></a> — Build an Intan RHS sample/block index for lazy reads.</li><li><a href="inspectFile.html"><code>labkit.rhs.inspectFile</code></a> — Read Intan RHS header metadata without loading waveform data.</li><li><a href="readWindow.html"><code>labkit.rhs.readWindow</code></a> — Read selected Intan RHS samples by time window and channel family.</li><li><a href="version.html"><code>labkit.rhs.version</code></a> — Return the LabKit RHS facade contract version.</li></ul>
+<pre><code class="language-matlab">filepaths = labkit.rhs.findFiles(rootDir)</code></pre>
+<section class="api-section"><h2 id="description">Description</h2><p>Recursively collects files whose extension is .rhs and sorts their full paths for reproducible batch order. The function does not inspect file headers; use inspectFile when the contents must be validated.</p></section>
+<section class="api-section"><h2 id="inputs">Inputs</h2><dl class="argument-list"><div class="argument"><dt><code>rootDir</code></dt><dd>Character vector or string scalar naming an existing folder.</dd></div></dl></section>
+<section class="api-section"><h2 id="outputs">Outputs</h2><dl class="argument-list"><div class="argument"><dt><code>filepaths</code></dt><dd>Cell column vector of sorted full paths. The value is an empty cell array when no RHS files are found.</dd></div></dl></section>
+<section class="api-section"><h2 id="errors">Errors</h2><p>Throws labkit:rhs:InvalidFolder when rootDir is not a text scalar or does not name an existing folder.</p></section>
+<section class="api-section"><h2 id="example">Example</h2><pre><code class="language-matlab">files = labkit.rhs.findFiles(&quot;recordings&quot;);
+[info, status] = labkit.rhs.inspectFile(files{1});</code></pre></section>
+<h2 id="related-apis">Related APIs</h2><ul><li><a href="indexFile.html"><code>labkit.rhs.indexFile</code></a> — Build a block index for reading selected RHS time windows.</li><li><a href="inspectFile.html"><code>labkit.rhs.inspectFile</code></a> — Read metadata and data-layout information from an RHS file.</li><li><a href="readWindow.html"><code>labkit.rhs.readWindow</code></a> — Read selected channels and times from an Intan RHS file.</li><li><a href="version.html"><code>labkit.rhs.version</code></a> — Return version information for the RHS API.</li></ul>
 <h2 id="source">Source</h2>
 <p>This page is generated from the MATLAB help text in <a href="https://github.com/Pluze/LabKit-MATLAB-Workbench/blob/main/+labkit/+rhs/findFiles.m"><code>+labkit/+rhs/findFiles.m</code></a>.</p>
 <footer>Generated from tracked Markdown and MATLAB source contracts.</footer>

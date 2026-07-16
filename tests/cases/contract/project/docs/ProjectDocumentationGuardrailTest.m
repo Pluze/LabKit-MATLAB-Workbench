@@ -233,6 +233,35 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
             testCase.verifyTrue(contains(loadPage, "status.ok=false"));
         end
 
+        function generatedRhsReferenceExplainsLazyReadsAndUnits(testCase)
+            root = setupLabKitTestPath();
+            apiRoot = fullfile(root, "site", "reference", "api", ...
+                "labkit", "rhs");
+            functions = ["findFiles", "indexFile", "inspectFile", ...
+                "readWindow", "version"];
+            for k = 1:numel(functions)
+                page = string(fileread(fullfile(apiRoot, functions(k) + ".html")));
+                testCase.verifyTrue(contains(page, ...
+                    "labkit.rhs." + functions(k) + "("), ...
+                    functions(k) + " should show its public MATLAB call syntax.");
+                testCase.verifyTrue(contains(page, ...
+                    '<h2 id="description">Description</h2>'));
+                testCase.verifyTrue(contains(page, '<h2 id="outputs">Outputs</h2>'));
+            end
+
+            windowPage = string(fileread(fullfile(apiRoot, "readWindow.html")));
+            testCase.verifyTrue(contains(windowPage, '<h2 id="options">Options</h2>'));
+            testCase.verifyTrue(contains(lower(windowPage), "samples-by-channels"));
+            testCase.verifyTrue(contains(windowPage, "microvolts"));
+            testCase.verifyTrue(contains(windowPage, "microamps"));
+            testCase.verifyTrue(contains(windowPage, "Both calculated endpoint samples are included"));
+
+            inspectPage = string(fileread(fullfile(apiRoot, "inspectFile.html")));
+            testCase.verifyTrue(contains(inspectPage, ...
+                '<h2 id="output-fields">Output Fields</h2>'));
+            testCase.verifyTrue(contains(inspectPage, "exactBlocks"));
+        end
+
         function documentationSourcesUseReaderOrientedHierarchy(testCase)
             root = setupLabKitTestPath();
             docsRoot = fullfile(root, "docs");
