@@ -251,6 +251,27 @@ classdef ProjectDocumentationGuardrailTest < matlab.unittest.TestCase
                 "Generated pages must resolve every local Markdown link to HTML.");
         end
 
+        function generatedSiteContainsNoRendererPlaceholders(testCase)
+            root = setupLabKitTestPath();
+            pages = dir(fullfile(root, "site", "**", "*.html"));
+            offenders = strings(0, 1);
+            for k = 1:numel(pages)
+                text = string(fileread(fullfile(pages(k).folder, pages(k).name)));
+                if ~isempty(regexp(text, '@@LABKITDOC[0-9]+@@', 'once'))
+                    offenders(end + 1, 1) = string(fullfile( ...
+                        pages(k).folder, pages(k).name));
+                end
+            end
+            testCase.verifyEmpty(offenders, ...
+                "Generated pages must not expose internal renderer placeholders.");
+
+            gettingStarted = string(fileread(fullfile(root, "site", ...
+                "getting-started", "index.html")));
+            testCase.verifyTrue(contains(gettingStarted, ...
+                '<code>labkit_launcher.m</code></a>'), ...
+                "Inline code used as a link label should render inside its anchor.");
+        end
+
         function appApiCatalogIsExplicitAndContainsNoPrivatePaths(testCase)
             root = setupLabKitTestPath();
             catalog = jsondecode(fileread(fullfile(root, "docs", ...

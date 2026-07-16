@@ -196,7 +196,10 @@ function html = renderInline(model, page, text)
     html = htmlEscape(text);
     html = regexprep(html, '\*\*([^*]+)\*\*', '<strong>$1</strong>');
     html = regexprep(html, '(?<!\*)\*([^*]+)\*(?!\*)', '<em>$1</em>');
-    for k = 1:numel(replacements)
+    % Later replacements can contain markers created by earlier passes, as
+    % with a Markdown link whose label is inline code. Restore the outermost
+    % token first so nested markers are present when their turn is reached.
+    for k = numel(replacements):-1:1
         html = replace(html, tokenMarker(k), replacements(k));
     end
 end
